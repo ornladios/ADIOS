@@ -38,8 +38,7 @@ noinst_PROGRAMS = adios_test_c$(EXEEXT)
 subdir = tests/C
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/ac_alacrity.m4 \
-	$(top_srcdir)/config/ac_aplod.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/ac_aplod.m4 \
 	$(top_srcdir)/config/ac_bzip2.m4 \
 	$(top_srcdir)/config/ac_cray_pmi.m4 \
 	$(top_srcdir)/config/ac_cray_ugni.m4 \
@@ -53,6 +52,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_alacrity.m4 \
 	$(top_srcdir)/config/ac_lustre.m4 \
 	$(top_srcdir)/config/ac_mxml.m4 \
 	$(top_srcdir)/config/ac_nc4par.m4 \
+	$(top_srcdir)/config/ac_ncsu_timer.m4 \
 	$(top_srcdir)/config/ac_netcdf.m4 \
 	$(top_srcdir)/config/ac_nssi.m4 \
 	$(top_srcdir)/config/ac_pablo.m4 \
@@ -117,9 +117,6 @@ ADIOSREADLIB_SEQ_CFLAGS = @ADIOSREADLIB_SEQ_CFLAGS@
 ADIOSREADLIB_SEQ_CPPFLAGS = @ADIOSREADLIB_SEQ_CPPFLAGS@
 ADIOSREADLIB_SEQ_LDADD = @ADIOSREADLIB_SEQ_LDADD@
 ADIOSREADLIB_SEQ_LDFLAGS = @ADIOSREADLIB_SEQ_LDFLAGS@
-ALACRITY_CPPFLAGS = @ALACRITY_CPPFLAGS@
-ALACRITY_LDFLAGS = @ALACRITY_LDFLAGS@
-ALACRITY_LIBS = @ALACRITY_LIBS@
 AMTAR = @AMTAR@
 APLOD_CPPFLAGS = @APLOD_CPPFLAGS@
 APLOD_LDFLAGS = @APLOD_LDFLAGS@
@@ -262,6 +259,9 @@ STRIP = @STRIP@
 SZIP_CPPFLAGS = @SZIP_CPPFLAGS@
 SZIP_LDFLAGS = @SZIP_LDFLAGS@
 SZIP_LIBS = @SZIP_LIBS@
+TIMER_CPPFLAGS = @TIMER_CPPFLAGS@
+TIMER_LDFLAGS = @TIMER_LDFLAGS@
+TIMER_LIBS = @TIMER_LIBS@
 VERSION = @VERSION@
 ZLIB_CPPFLAGS = @ZLIB_CPPFLAGS@
 ZLIB_LDFLAGS = @ZLIB_LDFLAGS@

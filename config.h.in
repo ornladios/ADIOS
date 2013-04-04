@@ -17,9 +17,6 @@
 /* Define to 1 if your Fortran compiler doesn't accept -c and -o together. */
 #undef FC_NO_MINUS_C_MINUS_O
 
-/* Define if you have ALACRITY. */
-#undef HAVE_ALACRITY
-
 /* Define if you have APLOD. */
 #undef HAVE_APLOD
 
@@ -97,6 +94,9 @@
 
 /* Define to 1 if you have the `rt' library (-lrt). */
 #undef HAVE_LIBRT
+
+/* Define if you have libtimer */
+#undef HAVE_LIBTIMER
 
 /* Define if you have LUSTRE. */
 #undef HAVE_LUSTRE
@@ -217,6 +217,9 @@
 
 /* Define to 1 if you have the <szlib.h> header file. */
 #undef HAVE_SZLIB_H
+
+/* Define to 1 if you have the <timer.h> header file. */
+#undef HAVE_TIMER_H
 
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
