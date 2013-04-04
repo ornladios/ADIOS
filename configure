@@ -31582,12 +31582,10 @@ _ACEOF
 
     SKEL_HAVE_ADIOS_TIMING=true
 
-
-else
+        else
     SKEL_HAVE_ADIOS_TIMING=false
 
-
-fi
+    fi
 
 
 

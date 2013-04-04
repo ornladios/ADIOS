@@ -3,52 +3,15 @@
     <adios-group name="schema" coordination-communicator="comm">
     <var name="NX"   type="integer"/>
     <var name="size" type="integer"/>
-    <var name="size2" type="integer"/>
     <var name="rank" type="integer"/>
-    <var name="mean" type="double"/>
-    <var name="date" type="string" gwrite="str"/>
-    <var name="nspace" type="integer"/>
     <var name="X" dimensions="size,NX" type="float"/>
     <var name="Y" dimensions="size,NX" type="float"/>
-    <var name="XY" dimensions="size2" type="float"/>
     <global-bounds  dimensions="size,NX" offsets="rank,0">
-        <var name="temperature" mesh="mesh5" gwrite="t" gread="t" type="double" dimensions="1,NX"/>
+        <var name="temperature" mesh="mesh1" gwrite="t" gread="t" type="double" dimensions="1,NX"/>
     </global-bounds>
-    <!-- Mesh1: 
-         - dimensions
-         - points-multi-var
-         Note: nspace is not required for points-multi-var since 
-         the number of coordinates per node can be deducted from the number of 
-         variables provided to the points-multi-var tag
-    -->
     <mesh name="mesh1" type="structured" time-varying="no">
         <dimensions value="size,NX"/>
         <points-multi-var value="X,Y" />
-    </mesh>
-    <!-- Mesh2:
-         - dimensions
-         - nspace 
-         - points-single-var
-    -->
-    <mesh name="mesh2" type="structured" time-varying="no">
-        <dimensions value="size,NX"/>
-        <nspace value="2" />
-        <points-single-var value="XY" />
-    </mesh>
-    <!-- Mesh3: 
-         - nspace
-         - dimensions
-         - points-single-var
-         nspace is the number of coordinates per point. By default nspace=ndim or
-         number of dimensions provided. However it is possible to have a 2D mesh in
-         3D space. In this case, if the points are provided in the form of a single 
-         1D array, nspace=3 is required in order to correctly extracts the X & Y 
-         coordinates. 
-    -->
-    <mesh name="mesh3" type="structured" time-varying="no">
-        <dimensions value="size,NX"/>
-        <nspace value="nspace" />
-        <points-single-var value="XY" />
     </mesh>
 </adios-group>
 

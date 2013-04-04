@@ -16,7 +16,31 @@
 *.exe
 *.out
 *.app
+*.pyc
 
 #Makefiles
-*/Makefile
+Makefile
+!examples/coupling/Makefile
+!examples/staging/stage_write/Makefile
+
+# ADIOS generated files
+config.h
+adios_config.flags
+
+# http://www.gnu.org/software/autoconf
+
+/autom4te.cache
+/aclocal.m4
+/compile
+/depcomp
+/install-sh
+/missing
+config.log
+config.status
+config/depcomp
+stamp-h1
+
+# all crap
+*.~
+
 
