@@ -615,6 +615,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
         get_int_attr(attrs, attr_atom_from_string(strdup(atom_name)), &num_dims);
     	flexpath_var_chunk * curr_chunk = &var->chunks[0];
     	// scalar
+        fp_log("SEL","inquiring num_dims %d of var %s\n", num_dims, f->field_name);
     	if(num_dims == 0){
 	    
     	    curr_chunk->global_offsets = NULL;
