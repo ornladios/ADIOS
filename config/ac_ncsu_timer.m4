@@ -10,7 +10,7 @@ AC_ARG_WITH(
 )
 
 dnl If the timer lib was specified, verify that it exists and can compile
-if test "x$with_timer" != xno; then
+if test "x$with_timer" != xno -a "x$with_timer" != x; then
     TIMER_CPPFLAGS="-I$with_timer/include"
     TIMER_LDFLAGS="-L$with_timer/lib"
     TIMER_LIBS="-ltimer"
@@ -50,10 +50,6 @@ if test "x$with_timer" != xno; then
     AC_SUBST(TIMER_CPPFLAGS)
     AC_SUBST(TIMER_LDFLAGS)
     AC_SUBST(TIMER_LIBS)
-else
-  AC_MSG_FAILURE(
-    [--with-timer is required]dnl
-  )
 fi
 
 ]) dnl End of DEFUN
