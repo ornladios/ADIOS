@@ -78,6 +78,7 @@ AC_SZIP
 AC_ISOBAR
 AC_APLOD
 AC_ALACRITY
+AX_NCSU_LIBTIMER
 
 AC_LANG(C)
 
@@ -856,6 +857,17 @@ if test -z "${HAVE_ALACRITY_TRUE}"; then
     echo "      - ALACRITY_CPPFLAGS = $ALACRITY_CPPFLAGS";
     echo "      - ALACRITY_LDFLAGS = $ALACRITY_LDFLAGS";
     echo "      - ALACRITY_LIBS = $ALACRITY_LIBS";
+    echo
+else
+    echo "  - No ALACRITY to build ALACRITY transform method"
+fi
+
+if test -z "${HAVE_TIMER_TRUE}"; then
+    echo "  - NCSU timer lib";
+    echo "      - TIMER_CFLAGS = $TIMER_CFLAGS";
+    echo "      - TIMER_CPPFLAGS = $TIMER_CPPFLAGS";
+    echo "      - TIMER_LDFLAGS = $TIMER_LDFLAGS";
+    echo "      - TIMER_LIBS = $TIMER_LIBS";
     echo
 else
     echo "  - No ALACRITY to build ALACRITY transform method"
