@@ -862,7 +862,7 @@ else
     echo "  - No ALACRITY to build ALACRITY transform method"
 fi
 
-if test -z "${HAVE_TIMER_TRUE}"; then
+if test -z "${HAVE_HAVE_LIBTIMER}"; then
     echo "  - NCSU timer lib";
     echo "      - TIMER_CFLAGS = $TIMER_CFLAGS";
     echo "      - TIMER_CPPFLAGS = $TIMER_CPPFLAGS";
