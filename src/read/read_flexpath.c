@@ -549,10 +549,40 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     FMContext context = CMget_FMcontext(cm);
     void *base_data = FMheader_skip(context, vevent);
     FMFormat format = FMformat_from_ID(context, vevent);
+    
+    int var_count = 0;
+    FMStructDescList struct_list = 
+	FMcopy_struct_list(format_list_of_FMFormat(format));
+    FMField *f = struct_list[0].field_list;
+    
+    while(f->field_name != NULL){           
+	flexpath_var_info * curr_var = new_flexpath_var_info(f->field_name, var_count, f->field_size);
+	curr_var->num_chunks = 1;
+	curr_var->chunks = malloc(sizeof(flexpath_var_chunk)*curr_var->num_chunks);
+	memset(curr_var->chunks, 0, sizeof(flexpath_var_chunk)*curr_var->num_chunks);
+
+	flexpath_var_info * temp = fp->var_list;	
+	curr_var->next = temp;
+	fp->var_list = curr_var;
+	curr_var->type = adios_integer;
+	// because we're only doing scalars here, we know the dims is 0	
+        var_count++;
+        f++;
+    }
+
+    adiosfile->nvars = var_count;
+    adiosfile->var_namelist = malloc(var_count * sizeof(char *));
+    f = struct_list[0].field_list;  // f is top-level field list 
+    int i=0;
+    while(f->field_name != NULL) {
+        adiosfile->var_namelist[i++] = strdup(f->field_name);
+        f++;
+    }
+
     int condition;
 
     get_int_attr(attrs, attr_atom_from_string("fp_dst_condition"), &condition);   
-    fprintf(stderr, "raw handler is called with condition: %d.\n", condition);
+    fprintf(stderr, "raw handler is called now with condition: %d.\n", condition);
     int rank;       
     
     get_int_attr(attrs, attr_atom_from_string(FP_RANK_ATTR_NAME), &rank); 
@@ -562,10 +592,10 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     /* 	adios_error(err_file_open_error, "file not opened correctly.  Format not specified.\n"); */
     /* } */
 
-    FMStructDescList struct_list = FMcopy_struct_list(format_list_of_FMFormat(format));
-    FMField *f = struct_list[0].field_list;
+    f = struct_list[0].field_list;
     char * curr_offset = NULL;
-    int i = 0, l = 0, j = 0;
+    int l = 0, j = 0;
+    i = 0;
 
     while(f->field_name){
     	//curr_offset = &buffer[f->field_offset];	
@@ -925,104 +955,15 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
     adiosfile->fh = (uint64_t)fp;
     adiosfile->current_step = 0;
 
-    op_msg open_msg;    
-    open_msg.process_id = fp->rank;
-    open_msg.file_name = strdup(fp->file_name);
-    open_msg.type = 1;
-    open_msg.step = adiosfile->current_step;
-    open_msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
-    EVsubmit(fp->bridges[0].op_source, &open_msg, NULL);
-    fprintf(stderr, "waiting on condition: %d\n", open_msg.condition);
-    CMCondition_wait(fp_read_data->fp_cm, open_msg.condition);
-    // rank 0 gets format from server and then bcasts it to all
-    // other ranks.
-    int *lengths = calloc(2, sizeof(int*));
-    int myrank = fp_read_data->fp_comm_rank;
-    if(myrank == 0){
-	Flush_msg msg;
-	msg.rank = fp_read_data->fp_comm_rank;
-	msg.type = FORMAT;
-	msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
-	// telling writer to flush format.
-	EVsubmit(fp->bridges[0].flush_source, &msg, NULL);
-	
-	CMCondition_wait(fp_read_data->fp_cm, msg.condition);
-	/* while(file_data_list->polling) { */
-	/*     CMsleep(fp_read_data->fp_cm, 1); */
-	/* } */
-	lengths[0] = fp->rep_id_len;
-	lengths[1] = fp->id_len;
-    }
-    MPI_Bcast(lengths, 2, MPI_INT, 0, fp_read_data->fp_comm);
-
-    fp->rep_id_len = lengths[0];
-    fp->id_len = lengths[1];
-
-    if(myrank != 0){
-	fp->arr = malloc(sizeof(char)*fp->id_len);
-	fp->rep_id = malloc(sizeof(char)*fp->rep_id_len);	
-    }    
-
-    MPI_Bcast(fp->arr, fp->id_len, MPI_BYTE, 0, fp_read_data->fp_comm);
-    MPI_Bcast(fp->rep_id, fp->rep_id_len, MPI_BYTE, 0, fp_read_data->fp_comm);
-
-    fp->context = create_local_FMcontext();
-    if(fp->context != NULL) {
-	FMFormat my_format = load_external_format_FMcontext(fp->context, 
-							    fp->arr, 
-							    fp->id_len, 
-							    fp->rep_id);
-	if(!my_format){	
-	    adios_error(err_file_open_error,
-			"Could not get FMFormat from format server.");
-	}
-	fp->current_format = my_format;
-    }
-    // TODO: if my_context is null, then what?
-    int var_count = 0;
-    FMStructDescList struct_list = 
-	FMcopy_struct_list(format_list_of_FMFormat(fp->current_format));
-    FMField *f = struct_list[0].field_list;
-    
-    while(f->field_name != NULL){           
-	flexpath_var_info * curr_var = new_flexpath_var_info(f->field_name, var_count, f->field_size);
-	curr_var->num_chunks = 1;
-	curr_var->chunks = malloc(sizeof(flexpath_var_chunk)*curr_var->num_chunks);
-	memset(curr_var->chunks, 0, sizeof(flexpath_var_chunk)*curr_var->num_chunks);
-
-	flexpath_var_info * temp = fp->var_list;
-	
-	curr_var->next = temp;
-	fp->var_list = curr_var;
-	curr_var->type = adios_integer;
-	// because we're only doing scalars here, we know the dims is 0	
-        var_count++;
-        f++;
-    }
-
-    adiosfile->nvars = var_count;
-    adiosfile->var_namelist = malloc(var_count * sizeof(char *));
-    f = struct_list[0].field_list;  // f is top-level field list 
-    int i=0;
-    while(f->field_name != NULL) {
-        adiosfile->var_namelist[i++] = strdup(f->field_name);
-        f++;
-    }
-    // setting up terminal action for data
-    /* EVassoc_terminal_action(fp_read_data->fp_cm, */
-    /* 			    fp->data_stone, */
-    /* 			    struct_list, data_handler, */
-    /* 			    (void*)adiosfile); */
-    /* fprintf(stderr, "before assoc\n"); */
     EVassoc_raw_terminal_action(fp_read_data->fp_cm,
     				fp->data_stone,
     				raw_handler,
     				(void*)adiosfile);
     /* fprintf(stderr, "after assoc\n"); */
-    free(struct_list);
+    //free(struct_list);
     Flush_msg msg;
     msg.type = DATA;
-    msg.rank = myrank;
+    msg.rank = fp_read_data->fp_comm_rank;
     msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
     EVsubmit(fp->bridges[0].flush_source, &msg, NULL);
     CMCondition_wait(fp_read_data->fp_cm, msg.condition);
