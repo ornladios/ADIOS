@@ -136,7 +136,7 @@ typedef struct _flexpath_file_data
 
     int* sendees;
     int num_sendees;
-    struct _flexpath_file_data * next;
+    int ackCondition;    
 } flexpath_file_data;
 
 
@@ -180,7 +180,6 @@ new_flexpath_file_data(const char * fname)
     }
     fp->file_name = strdup(fname);
     fp->group_name = NULL;    
-    fp->next = NULL;
     fp->var_list = NULL;
     fp->gp = NULL;
     fp->bridges = NULL;
@@ -199,6 +198,7 @@ new_flexpath_file_data(const char * fname)
     fp->rep_id = NULL;
     fp->rep_id_len = 0;
     fp->id_len = 0;
+    int ackCondition = 0;
     return fp;        
 }
 
@@ -228,7 +228,7 @@ typedef struct _local_read_data
 static int compare_var_name(const char* varname, const flexpath_var_info *v);
 // this sructure holds all global data for flexpath read  methods
 flexpath_read_data* fp_read_data = NULL;
-int ackCondition;
+//int ackCondition;
 
 #define VAR_BITMAP_SIZE 16
 
@@ -323,8 +323,8 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
     fp->valid_evgroup = 1;
     global_var * vars = msg->vars;
     int num_vars = msg->num_vars;
-    CMCondition_signal(fp_read_data->fp_cm, ackCondition);
-    ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
+    //CMCondition_signal(fp_read_data->fp_cm, fp->ackCondition);
+    //ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
     return 0;
 
 }
@@ -810,7 +810,7 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
     }    
     
     flexpath_file_data *fp = new_flexpath_file_data(fname);
-    ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
+    fp->ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
 	
     adios_errno = 0;
     fp->data_stone = EValloc_stone(fp_read_data->fp_cm);	
