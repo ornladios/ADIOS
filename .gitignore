@@ -18,5 +18,5 @@
 *.app
 
 #Makefiles
-*/Makefile
-
+#*/Makefile
+Makefile
