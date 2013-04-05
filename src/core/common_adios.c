@@ -108,6 +108,7 @@ int common_adios_open (int64_t * fd, const char * group_name
                )
 {
 #ifdef WITH_TIMER
+    timer_start ("adios_open_to_close");
     timer_start ("adios_open");
 #endif
 
@@ -931,6 +932,7 @@ int common_adios_close (int64_t fd_p)
         // nothing to do so just return
 #ifdef WITH_TIMER
     timer_stop ("adios_close");
+    timer_stop ("adios_open_to_close");
 #endif
         return 0;
     }
@@ -1066,6 +1068,7 @@ int common_adios_close (int64_t fd_p)
     free ((void *) fd_p);
 #ifdef WITH_TIMER
     timer_stop ("adios_close");
+    timer_stop ("adios_open_to_close");
 //    printf ("Timers, ");
 //    printf ("%d, ", fd->group->process_id);
 //    printf ("%d, ", fd->group->time_index);
