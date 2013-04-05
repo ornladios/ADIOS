@@ -125,9 +125,26 @@ int adios_transform_alacrity_apply(struct adios_file_struct *fd,
 
     uint64_t mem_allowed = 0;
 
-    if (ALEncode (&config, input_buff, numElements, &output_partition) == ALErrorNone) {
+    uint8_t indexed = false;
+
+    if (config.indexForm == ALInvertedIndex) {
+        ALEncode (&config, input_buff, numElements, &output_partition);
         output_size = ALGetPartitionDataSize (&output_partition);
-    } else {
+        indexed = true;
+    } else if (config.indexForm == ALCompressedInvertedIndex) {
+        config.indexForm = ALInvertedIndex;
+
+        ALBinLookupTable binLookupTable; 
+        ALBuildBinLayout (&config, input_buff, numElements, &binLookupTable, &output_partition);
+
+        ALBuildInvertedIndexFromLayout (&config, input_buff, numElements, &binLookupTable, &output_partition);
+        ALConvertIndexForm (&output_partition.metadata, &output_partition.index, ALCompressedInvertedIndex);
+
+        output_size = ALGetPartitionDataSize (&output_partition);
+        indexed = true;
+    } 
+    
+    if (!indexed) {
 		*wrote_to_shared_buffer = 0;
 		output_buff = 0;
         log_error("Error on indexing %s. Reverting to original data\n", var->name);
@@ -165,8 +182,7 @@ int adios_transform_alacrity_apply(struct adios_file_struct *fd,
     ALSerializePartitionData (&output_partition, &ms);
 
     // Check this for later. What do you intend to add in the metadata
-    if(var->transform_metadata && var->transform_metadata_len > 0)
-    {
+    if(var->transform_metadata && var->transform_metadata_len > 0) {
         ((uint64_t * ) (var->transform_metadata)) [0] = ALGetMetadataSize (& (output_partition.metadata));
         ((uint64_t * ) (var->transform_metadata)) [1] = ALGetIndexSize (& (output_partition.index), & (output_partition.metadata));
         ((uint64_t * ) (var->transform_metadata)) [2] = ALGetDataSize  (& (output_partition.data), & (output_partition.metadata));
