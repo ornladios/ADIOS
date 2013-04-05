@@ -44,7 +44,6 @@ static uint64_t adios_patch_data_bb_to_bb(void *dst, const ADIOS_SELECTION_BOUND
     if (!inter_sel)
         return 0;
 
-    // Ensure the intersection is actually a bounding box
     // (this is guaranteed by the selection intersection code; this is just to check for bugs)
     assert(inter_sel->type == ADIOS_SELECTION_BOUNDINGBOX);
     inter_bb = &inter_sel->u.bb;
@@ -144,15 +143,11 @@ static uint64_t adios_patch_data_bb_to_pts(void *dst, const ADIOS_SELECTION_POIN
 
             memcpy((char*)dst + i * typelen, (char*)src + byte_offset_in_src, typelen);
             pts_copied++;
-
-            printf("Copied into point at index %llu!\n", i);
         }
     }
 
     free(src_strides);
     free(pt_relative_to_src);
-
-    printf("Copied %llu points!\n", pts_copied);
 
     return pts_copied;
 }
