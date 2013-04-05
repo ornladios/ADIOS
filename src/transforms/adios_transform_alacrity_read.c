@@ -60,7 +60,7 @@ adios_datablock * adios_transform_alacrity_pg_reqgroup_completed(adios_transform
 
     // Replace this with the one in writes
     int d = 0;
-    for(d = 0; d < reqgroup->raw_varinfo->ndim; d++)
+    for(d = 0; d < reqgroup->transinfo->orig_ndim; d++)
     {
         decompressed_len *= (uint64_t)(completed_pg_reqgroup->orig_varblock->count[d]);
     }
