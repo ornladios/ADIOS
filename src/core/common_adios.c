@@ -40,6 +40,8 @@
 #include "adios_transforms_read.h"
 #include "adios_transforms_write.h"
 
+#include "timer.h"
+
 #ifdef DMALLOC
 #include "dmalloc.h"
 #endif
@@ -49,6 +51,10 @@ extern struct adios_transport_struct * adios_transports;
 ///////////////////////////////////////////////////////////////////////////////
 int common_adios_init (const char * config)
 {
+#ifdef WITH_TIMER    
+    timer_init ();
+#endif
+
     MPI_Comm comm = MPI_COMM_WORLD; // FIXME: this should be an argument from app
     // parse the config file
     return adios_parse_config (config, comm);
@@ -78,6 +84,10 @@ int common_adios_finalize (int mype)
     }
 
     adios_cleanup ();
+
+#ifdef WITH_TIMER
+    timer_finalize ();
+#endif
 
     return 0;
 }
@@ -212,6 +222,10 @@ int common_adios_group_size (int64_t fd_p
                      ,uint64_t * total_size
                      )
 {
+#ifdef WITH_TIMER    
+    timer_start ("adios_group_size");
+#endif
+
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     if (!fd)
     {
@@ -380,6 +394,9 @@ int common_adios_group_size (int64_t fd_p
         }
     }
 
+#ifdef WITH_TIMER    
+    timer_stop ("adios_group_size");
+#endif
     // each var will be added to the buffer by the adios_write calls
     // attributes will be added by adios_close
 
@@ -545,6 +562,9 @@ static int common_adios_write_transform_helper(struct adios_file_struct * fd, st
  */
 int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct * v, void * var)
 {
+#ifdef WITH_TIMER
+    timer_start ("adios_write");
+#endif    
     struct adios_method_list_struct * m = fd->group->methods;
 
     // NCSU ALACRITY-ADIOS - Do some processing here depending on the transform
@@ -566,6 +586,9 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
     // Else, do a transform
     else
     {
+#ifdef WITH_TIMER
+    timer_start ("adios_transform");
+#endif    
         int success = common_adios_write_transform_helper(fd, v);
         if (success) {
             // Make it appear as if the user had supplied the transformed data
@@ -574,6 +597,9 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
             log_error("Error: unable to apply transform %s to variable %s; likely ran out of memory, check previous error messages\n", adios_transform_plugin_primary_xml_alias(v->transform_type), v->name);
             // FIXME: Reverse the transform metadata and write raw data as usual
         }
+#ifdef WITH_TIMER
+    timer_stop ("adios_transform");
+#endif    
     }
 
     // now tell each transport attached that it is being written
@@ -606,6 +632,9 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
     }
 
     v->write_count++;
+#ifdef WITH_TIMER
+    timer_stop ("adios_write");
+#endif    
 	// printf ("var: %s written %d\n", v->name, v->write_count);
     return 0;
 }
@@ -875,6 +904,10 @@ int common_adios_stop_calculation ()
 ///////////////////////////////////////////////////////////////////////////////
 int common_adios_close (int64_t fd_p)
 {
+#ifdef WITH_TIMER    
+    timer_start ("adios_close");
+#endif
+
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     if (!fd)
     {
@@ -1018,6 +1051,18 @@ int common_adios_close (int64_t fd_p)
     }
 
     free ((void *) fd_p);
+#ifdef WITH_TIMER    
+    timer_stop ("adios_close");
+    printf ("Timers, ");
+    printf ("%d, ", fd->group->process_id);
+    printf ("%d, ", fd->group->time_index);
+    printf ("%lf, ", timer_get_total_interval ("adios_open" ));
+    printf ("%lf, ", timer_get_total_interval ("adios_group_size"));
+    printf ("%lf, ", timer_get_total_interval ("adios_transform" ));
+    printf ("%lf, ", timer_get_total_interval ("adios_write" ));
+    printf ("%lf\n", timer_get_total_interval ("adios_close"     ));
+    timer_reset_timer ();
+#endif
 
     return 0;
 }
