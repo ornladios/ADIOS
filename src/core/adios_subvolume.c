@@ -355,6 +355,8 @@ void copy_subvolume_ragged_offset(void *dst, const void *src, int ndim, const ui
                                    src_end_offset - src_offset,
                                    NULL, NULL);
 
+        buffers_intersect = 0; // Look Ma, no asserts!
+
         // Enfoce the safety condition for overlapping buffers here
         if (buffers_intersect) {
             int dim;
