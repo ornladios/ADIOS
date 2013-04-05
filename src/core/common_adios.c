@@ -51,7 +51,7 @@ extern struct adios_transport_struct * adios_transports;
 ///////////////////////////////////////////////////////////////////////////////
 int common_adios_init (const char * config)
 {
-#ifdef WITH_TIMER    
+#ifdef WITH_TIMER
     timer_init ();
 #endif
 
@@ -107,7 +107,7 @@ int common_adios_open (int64_t * fd, const char * group_name
                 ,const char * name, const char * file_mode, void * comm
                )
 {
-#ifdef WITH_TIMER    
+#ifdef WITH_TIMER
     timer_start ("adios_open");
 #endif
 
@@ -210,7 +210,7 @@ int common_adios_open (int64_t * fd, const char * group_name
 
     *fd = (int64_t) fd_p;
 
-#ifdef WITH_TIMER    
+#ifdef WITH_TIMER
     timer_stop ("adios_open");
 #endif
     return 0;
@@ -229,7 +229,7 @@ int common_adios_group_size (int64_t fd_p
                      ,uint64_t * total_size
                      )
 {
-#ifdef WITH_TIMER    
+#ifdef WITH_TIMER
     timer_start ("adios_group_size");
 #endif
 
@@ -248,7 +248,7 @@ int common_adios_group_size (int64_t fd_p
         fd->write_size_bytes = 0;
         fd->buffer = 0;
         *total_size = 0;
-#ifdef WITH_TIMER    
+#ifdef WITH_TIMER
     timer_stop ("adios_group_size");
 #endif
         return 0;
@@ -404,7 +404,7 @@ int common_adios_group_size (int64_t fd_p
         }
     }
 
-#ifdef WITH_TIMER    
+#ifdef WITH_TIMER
     timer_stop ("adios_group_size");
 #endif
     // each var will be added to the buffer by the adios_write calls
@@ -574,7 +574,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
 {
 #ifdef WITH_TIMER
     timer_start ("adios_write");
-#endif    
+#endif
     struct adios_method_list_struct * m = fd->group->methods;
 
     // NCSU ALACRITY-ADIOS - Do some processing here depending on the transform
@@ -598,7 +598,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
     {
 #ifdef WITH_TIMER
     timer_start ("adios_transform");
-#endif    
+#endif
         int success = common_adios_write_transform_helper(fd, v);
         if (success) {
             // Make it appear as if the user had supplied the transformed data
@@ -609,7 +609,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
         }
 #ifdef WITH_TIMER
     timer_stop ("adios_transform");
-#endif    
+#endif
     }
 
     // now tell each transport attached that it is being written
@@ -644,8 +644,8 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
     v->write_count++;
 #ifdef WITH_TIMER
     timer_stop ("adios_write");
-#endif    
-	// printf ("var: %s written %d\n", v->name, v->write_count);
+#endif
+    // printf ("var: %s written %d\n", v->name, v->write_count);
     return 0;
 }
 
@@ -914,7 +914,7 @@ int common_adios_stop_calculation ()
 ///////////////////////////////////////////////////////////////////////////////
 int common_adios_close (int64_t fd_p)
 {
-#ifdef WITH_TIMER    
+#ifdef WITH_TIMER
     timer_start ("adios_close");
 #endif
 
@@ -929,7 +929,7 @@ int common_adios_close (int64_t fd_p)
     if (m && m->next == NULL && m->method->m == ADIOS_METHOD_NULL)
     {
         // nothing to do so just return
-#ifdef WITH_TIMER    
+#ifdef WITH_TIMER
     timer_stop ("adios_close");
 #endif
         return 0;
@@ -1064,7 +1064,7 @@ int common_adios_close (int64_t fd_p)
     }
 
     free ((void *) fd_p);
-#ifdef WITH_TIMER    
+#ifdef WITH_TIMER
     timer_stop ("adios_close");
 //    printf ("Timers, ");
 //    printf ("%d, ", fd->group->process_id);
@@ -1084,6 +1084,8 @@ int common_adios_close (int64_t fd_p)
     }
     printf("\n");
     free(results);
+
+    //timer_reset_timers ();
 #endif
 
     return 0;
