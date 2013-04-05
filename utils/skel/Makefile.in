@@ -55,6 +55,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_alacrity.m4 \
 	$(top_srcdir)/config/ac_lustre.m4 \
 	$(top_srcdir)/config/ac_mxml.m4 \
 	$(top_srcdir)/config/ac_nc4par.m4 \
+	$(top_srcdir)/config/ac_ncsu_timer.m4 \
 	$(top_srcdir)/config/ac_netcdf.m4 \
 	$(top_srcdir)/config/ac_nssi.m4 \
 	$(top_srcdir)/config/ac_pablo.m4 \
@@ -306,6 +307,9 @@ STRIP = @STRIP@
 SZIP_CPPFLAGS = @SZIP_CPPFLAGS@
 SZIP_LDFLAGS = @SZIP_LDFLAGS@
 SZIP_LIBS = @SZIP_LIBS@
+TIMER_CPPFLAGS = @TIMER_CPPFLAGS@
+TIMER_LDFLAGS = @TIMER_LDFLAGS@
+TIMER_LIBS = @TIMER_LIBS@
 VERSION = @VERSION@
 ZLIB_CPPFLAGS = @ZLIB_CPPFLAGS@
 ZLIB_LDFLAGS = @ZLIB_LDFLAGS@
