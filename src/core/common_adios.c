@@ -107,6 +107,10 @@ int common_adios_open (int64_t * fd, const char * group_name
                 ,const char * name, const char * file_mode, void * comm
                )
 {
+#ifdef WITH_TIMER    
+    timer_start ("adios_open");
+#endif
+
     int64_t group_id = 0;
     struct adios_file_struct * fd_p = (struct adios_file_struct *)
                                   malloc (sizeof (struct adios_file_struct));
@@ -206,6 +210,9 @@ int common_adios_open (int64_t * fd, const char * group_name
 
     *fd = (int64_t) fd_p;
 
+#ifdef WITH_TIMER    
+    timer_stop ("adios_open");
+#endif
     return 0;
 }
 
@@ -241,6 +248,9 @@ int common_adios_group_size (int64_t fd_p
         fd->write_size_bytes = 0;
         fd->buffer = 0;
         *total_size = 0;
+#ifdef WITH_TIMER    
+    timer_stop ("adios_group_size");
+#endif
         return 0;
     }
 
@@ -919,6 +929,9 @@ int common_adios_close (int64_t fd_p)
     if (m && m->next == NULL && m->method->m == ADIOS_METHOD_NULL)
     {
         // nothing to do so just return
+#ifdef WITH_TIMER    
+    timer_stop ("adios_close");
+#endif
         return 0;
     }
 
@@ -1053,15 +1066,24 @@ int common_adios_close (int64_t fd_p)
     free ((void *) fd_p);
 #ifdef WITH_TIMER    
     timer_stop ("adios_close");
-    printf ("Timers, ");
-    printf ("%d, ", fd->group->process_id);
-    printf ("%d, ", fd->group->time_index);
-    printf ("%lf, ", timer_get_total_interval ("adios_open" ));
-    printf ("%lf, ", timer_get_total_interval ("adios_group_size"));
-    printf ("%lf, ", timer_get_total_interval ("adios_transform" ));
-    printf ("%lf, ", timer_get_total_interval ("adios_write" ));
-    printf ("%lf\n", timer_get_total_interval ("adios_close"     ));
-    timer_reset_timer ();
+//    printf ("Timers, ");
+//    printf ("%d, ", fd->group->process_id);
+//    printf ("%d, ", fd->group->time_index);
+//    printf ("%lf, ", timer_get_total_interval ("adios_open" ));
+//    printf ("%lf, ", timer_get_total_interval ("adios_group_size"));
+//    printf ("%lf, ", timer_get_total_interval ("adios_transform" ));
+//    printf ("%lf, ", timer_get_total_interval ("adios_write" ));
+//    printf ("%lf\n", timer_get_total_interval ("adios_close"     ));
+//    timer_reset_timers ();
+
+    printf("[TIMERS] Proc: %d Time: %d ", fd->group->process_id, fd->group->time_index);
+    int i;
+    timer_result_t *results = timer_get_results_sorted();
+    for (i = 0; i < timer_get_num_timers(); i++) {
+        printf("%s: %0.4lf ", results[i].name, results[i].time);
+    }
+    printf("\n");
+    free(results);
 #endif
 
     return 0;
