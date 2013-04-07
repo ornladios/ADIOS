@@ -406,137 +406,6 @@ copyoffsets(int dim, // dimension index
     }
 }
 
-
-
-
-/*
- * gets the data and puts it in the appropriate flexpath_var_struct.  Need to do a bit different
- * things if it's a scalar vs. an array.
- * Format for this is gathered from the file_data_list->my_format field
- */
-static int
-data_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
-{
-    ADIOS_FILE *adios_file = client_data;
-    flexpath_file_data *fp = (flexpath_file_data*)adios_file->fh;
-    int condition;
-    get_int_attr(attrs, attr_atom_from_string("fp_dst_condition"), &condition);   
-    
-    int rank;
-    char * buffer = (char*)vevent;
-
-    get_int_attr(attrs, attr_atom_from_string(FP_RANK_ATTR_NAME), &rank);
-    fprintf(stderr, "Data handler is called with condition: %d and rank: %d.\n", condition, rank);
-    FMFormat format = fp->current_format;
-    if(!fp->current_format){
-	adios_error(err_file_open_error, "file not opened correctly. Format not specified.\n");
-    }
-
-    FMStructDescList struct_list = FMcopy_struct_list(format_list_of_FMFormat(format));
-    FMField *f = struct_list[0].field_list;
-    char * curr_offset = NULL;
-    int i = 0, l =0;
-    int j=0;
-    while(f->field_name != NULL){
-	curr_offset = &buffer[f->field_offset];
-        char atom_name[200] = "";
-	flexpath_var_info * var = find_fp_var(fp->var_list, strdup(f->field_name));
-
-	if(!var){
-	    adios_error(err_file_open_error,
-			"file not opened correctly. var does not match format.\n");
-	    return -1;
-	}
-        strcat(atom_name, f->field_name);
-        strcat(atom_name, "_");
-        strcat(atom_name, FP_NDIMS_ATTR_NAME);
-        int num_dims;
-        int i;
-        get_int_attr(attrs, attr_atom_from_string(strdup(atom_name)), &num_dims);
-// scalar
-	if(num_dims == 0){
-	    flexpath_var_chunk * curr_chunk = &var->chunks[0];
-	    curr_chunk->global_offsets = NULL;
-	    curr_chunk->global_bounds = NULL;
-	    curr_chunk->local_bounds = NULL;
-	    curr_chunk->data = malloc(var->data_size);
-	    memcpy(curr_chunk->data, curr_offset, var->data_size);
-	    curr_chunk->has_data = 1;
-// else it's an array
-	}else{
-            if(var->sel == NULL)
-	    {// var hasn't been scheduled yet.
-	    }
-	    else if(var->sel->type == ADIOS_SELECTION_WRITEBLOCK){
-		var->ndims = num_dims;
-		var->dims = (int*)malloc(sizeof(int)*num_dims);
-		if(var->was_scheduled == 1){
-		    var->array_size = var->data_size;
-		    for(i=0; i<num_dims; i++){
-			char* dim = malloc(200*sizeof(char));
-			atom_name[0] ='\0';
-			strcat(atom_name, f->field_name);
-			strcat(atom_name, "_");
-			strcat(atom_name, FP_DIM_ATTR_NAME);
-			strcat(atom_name, "_");
-			char dim_num[10] = "";
-			sprintf(dim_num, "%d", i+1);
-			strcat(atom_name, dim_num);
-			get_string_attr(attrs, attr_atom_from_string(atom_name), &dim);
-
-			FMField * temp_f = find_field(dim, f);
-			if(!temp_f){
-			    adios_error(err_invalid_varname,
-					"Could not find fieldname: %s\n",
-					dim);
-			}
-			else{
-// since it's a dimension, field size should be int.
-			    char * temp_offset = &buffer[temp_f->field_offset];
-			    int * temp_data = (int*)malloc(f->field_size);
-			    memcpy(temp_data, temp_offset, f->field_size);
-			    var->dims[i] = *temp_data;
-			    var->array_size = var->array_size * var->dims[i];
-			}
-		    }
-		    void* aptr8 = (void*)(*((unsigned long*)curr_offset));
-		    memcpy(var->chunks[0].data, aptr8, var->array_size);
-		}
-
-	    }
-	    else if(var->sel->type == ADIOS_SELECTION_BOUNDINGBOX){
-		int i;
-                global_var* gv = find_gbl_var(fp->gp->vars,
-					      var->varname,
-					      fp->gp->num_vars);
-                int * writer_count = gv->offsets[0].local_dimensions;
-                uint64_t * reader_count = var->sel->u.bb.count;
-		array_displacements * disp = find_displacement(var->displ,
-							       rank,
-							       var->num_displ);
-		void* aptr8 = (void*)(*((unsigned long*)curr_offset));
-		double * temp = (double*)curr_offset;
-
-                copyoffsets(0,
-			    disp->ndims,
-			    f->field_size,
-			    disp->start,
-			    disp->count,
-			    writer_count,
-			    reader_count,
-			    (char*)aptr8,
-			    (char*)var->chunks[0].data);
-	    }
-	}
-        j++;
-        f++;
-    }
-    
-    CMCondition_signal(fp_read_data->fp_cm, condition);
-    //ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
-    return 0;
-}
-
 /*
  * Will replace data handler once everything is figured out and working wrt conditions and the fm
  * get/set api.
@@ -587,10 +456,6 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     
     get_int_attr(attrs, attr_atom_from_string(FP_RANK_ATTR_NAME), &rank); 
     fp->current_format = format;
-
-    /* if(!fp->current_format){ */
-    /* 	adios_error(err_file_open_error, "file not opened correctly.  Format not specified.\n"); */
-    /* } */
 
     f = struct_list[0].field_list;
     char * curr_offset = NULL;
@@ -669,7 +534,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     								     temp_f->field_name,
     								     base_data);
     			     if(!temp_data)
-    				 fprintf(stderr, "\t\ttmep_data is null!!\n");
+    				 fprintf(stderr, "\t\ttemp_data is null!!\n");
     			    //memcpy(temp_data, temp_offset, f->field_size);
     			    var->dims[i] = *temp_data;
     			    var->array_size = var->array_size * var->dims[i];
@@ -680,7 +545,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     		    /* memcpy(var->chunks[0].data, aptr8, var->array_size); */
     		    fprintf(stderr, "getting data for var: %s, field_name: %s\n",
     			    var->varname, f->field_name);
-    		    var->chunks[0].data = get_FMPtrField_by_name(f, f->field_name, base_data, 1);
+    		    var->chunks[0].data = get_FMPtrField_by_name(f, f->field_name, base_data, 0);
     		}
 
     	    }
@@ -1046,7 +911,7 @@ int adios_read_flexpath_close(ADIOS_FILE * fp)
     	// free chunks; data has already been copied to user
     	int i;	
 	fprintf(stderr, "num_chunks for var: %s: %d\n", v->varname, v->num_chunks);
-    	for(i = 0; i<v->num_chunks; i++){    	
+    	for(i = 0; i<v->num_chunks; i++){    		    
 	    fprintf(stderr, "i: %d\n", i);
     	    flexpath_var_chunk * c = &v->chunks[i];	    
 	    if(!c)
