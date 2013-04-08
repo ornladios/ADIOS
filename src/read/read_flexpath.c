@@ -552,9 +552,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     		    }
     		    /* void* aptr8 = (void*)(*((unsigned long*)curr_offset)); */
     		    /* memcpy(var->chunks[0].data, aptr8, var->array_size); */
-    		    fprintf(stderr, "getting data for var: %s, field_name: %s\n",
-    			    var->varname, f->field_name);
-		    void *arrays_data  = get_FMPtrField_by_name(f, f->field_name, base_data, 0);
+		    void *arrays_data  = get_FMPtrField_by_name(f, f->field_name, base_data, 1);
 		    memcpy(var->chunks[0].data, arrays_data, var->array_size);
     		}
 
