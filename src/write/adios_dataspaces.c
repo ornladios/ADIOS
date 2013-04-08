@@ -101,6 +101,8 @@ static int get_dim_rank_value(struct adios_dimension_item_struct * dim_info, str
     }
 }
 
+#if 0
+/* Deprecated function. Remove */
 static void adios_dataspaces_var_to_comm  (const char * comm_name
                                     ,enum ADIOS_FLAG host_language_fortran
                                     ,void * data
@@ -167,7 +169,7 @@ static void adios_dataspaces_var_to_comm  (const char * comm_name
         *comm = MPI_COMM_WORLD;
     }
 }
-
+#endif
 
 static int connect_to_dspaces (struct adios_ds_data_struct * p, MPI_Comm comm)
 {
@@ -233,7 +235,7 @@ void adios_dataspaces_init (const PairStruct * parameters,
 #endif
     p->num_of_files = 0;
 
-    connect_to_dspaces (p, MPI_COMM_WORLD);
+    connect_to_dspaces (p, method->init_comm);
 
     log_info ("adios_dataspaces_init: done\n");
    
@@ -256,7 +258,8 @@ int adios_dataspaces_open (struct adios_file_struct * fd,
 #if HAVE_MPI
     // if we have MPI and a communicator, we can get the exact size of this application
     // that we need to tell DATASPACES
-    MPI_Comm group_comm;
+    MPI_Comm group_comm = *(MPI_Comm*)comm;
+    /*
     if (comm) {
         adios_dataspaces_var_to_comm (
                 fd->group->group_comm, 
@@ -265,6 +268,7 @@ int adios_dataspaces_open (struct adios_file_struct * fd,
     } else {
         group_comm = MPI_COMM_WORLD;
     }
+    */
     MPI_Comm_rank (group_comm, &(p->rank));
     MPI_Comm_size (group_comm, &(p->peers));
     p->mpi_comm = group_comm;

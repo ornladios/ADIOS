@@ -89,6 +89,8 @@ else
         LIBS="$LIBS -ldspaces -ldscommon -ldart"
     elif test "x${ac_portals_lib_ok}" == "xyes"; then 
         LIBS="$LIBS -ldart2 -lspaces"
+    elif test "x${ac_dmcf_lib_ok}" == "xyes"; then
+        LIBS="$LIBS -ldspaces -ldscommon -ldart"
     else
         LIBS="$LIBS -ldspaces -ldscommon -ldart"
     fi
@@ -115,6 +117,11 @@ else
                     [DATASPACES_LIBS="-ldspaces -ldscommon -ldart -lrdmacm"],
                     [AM_CONDITIONAL(HAVE_DATASPACES,false)])
         elif test -z "${HAVE_CRAY_PMI_TRUE}" -a -z "${HAVE_CRAY_UGNI_TRUE}"; then 
+            AC_TRY_COMPILE([#include "dataspaces.h"],
+                    [int err; err = dspaces_init(1,1);],
+                    [DATASPACES_LIBS="-ldspaces -ldscommon -ldart"],
+                    [AM_CONDITIONAL(HAVE_DATASPACES,false)])
+	elif test "x${ac_dcmf_lib_ok}" == "xyes"; then
             AC_TRY_COMPILE([#include "dataspaces.h"],
                     [int err; err = dspaces_init(1,1);],
                     [DATASPACES_LIBS="-ldspaces -ldscommon -ldart"],

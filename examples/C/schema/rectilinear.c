@@ -53,7 +53,7 @@ int main (int argc, char * argv[] )
 
     mean /= NX;
 
-    adios_init ("rectilinear.xml");
+    adios_init ("rectilinear.xml", comm);
 
     adios_open (&adios_handle, "schema", filename, "w", &comm);
 

@@ -29,7 +29,7 @@ int main (int argc, char ** argv)
 	MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 	MPI_Comm_size (comm, &size);
 
-	adios_init ("adios_globaltime.xml");
+	adios_init ("adios_globaltime.xml", comm);
     	strcpy (filename, "adios_globaltime.bp");
     	for (it =1; it <= 13; it++) {
 

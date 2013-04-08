@@ -38,17 +38,17 @@ int adios_set_application_id (int id)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int adios_init (const char * config)
+int adios_init (const char * config, MPI_Comm comm)
 {
-    return common_adios_init (config);
+    return common_adios_init (config, comm);
 }
 
 
 ///////////////////////////////////////////////////////////////////////////////
 // all XML file pieces will be provided by another series of calls
-int adios_init_noxml ()
+int adios_init_noxml (MPI_Comm comm)
 {
-    return common_adios_init_noxml ();
+    return common_adios_init_noxml (comm);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

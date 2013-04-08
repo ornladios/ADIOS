@@ -27,7 +27,9 @@ extern "C" {
 #endif
 
 // Global setup using the XML file
-int adios_init (const char * config);
+// Only processes of the provided communicator can later participate
+// in any adios activity
+int adios_init (const char * config, MPI_Comm comm);
 
 int adios_finalize (int mype);
 
@@ -72,7 +74,7 @@ int adios_stop_calculation (void);
 int adios_close (int64_t fd_p);
 
 // ADIOS No-XML API's
-int adios_init_noxml (void);
+int adios_init_noxml (MPI_Comm comm);
 
 // To allocate ADIOS buffer
 int adios_allocate_buffer (

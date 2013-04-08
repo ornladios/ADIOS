@@ -35,7 +35,7 @@ program arrays
     call MPI_Comm_rank (comm, rank, ierr)
     call MPI_Comm_size (comm, size, ierr)
 
-    call adios_init ("arrays.xml", adios_err);
+    call adios_init ("arrays.xml", comm, adios_err);
     call adios_open (adios_handle, "arrays", filename, "r", comm, adios_err);
 
     adios_groupsize = 0

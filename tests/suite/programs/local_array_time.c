@@ -61,7 +61,7 @@ int main( int argc, char ** argv)
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &size);
 
-    adios_init ("local_array_time.xml");
+    adios_init ("local_array_time.xml", comm);
     strcpy(filename, "local_array_time.bp");
 
 

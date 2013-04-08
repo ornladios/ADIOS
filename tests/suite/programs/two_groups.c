@@ -54,7 +54,7 @@ int main (int argc, char ** argv)
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &size);
 
-    adios_init ("two_groups.xml");
+    adios_init ("two_groups.xml", comm);
     err = adios_read_init_method(ADIOS_READ_METHOD_BP, comm, "verbose=2");
     if (err) {
         printE ("%s\n", adios_errmsg());

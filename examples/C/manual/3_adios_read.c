@@ -34,7 +34,7 @@ int main (int argc, char ** argv)
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
     sprintf (filename, "restart.bp");
-    adios_init ("config.xml");
+    adios_init ("config.xml", comm);
     adios_open (&adios_handle, "temperature", filename, "r", &comm);
     #include "gread_temperature.ch"
     adios_close (adios_handle);

@@ -42,7 +42,7 @@ int main (int argc, char ** argv)
 	 * there are 2 files generated. 
 	 */
 	sprintf (filename, "adios_global_%5.5d.bp", color);
-	adios_init ("adios_global.xml");
+	adios_init ("adios_global.xml", MPI_COMM_WORLD);
 	adios_open (&adios_handle, "temperature", filename, "w", &comm);
 	#include "gwrite_temperature.ch"
 	adios_close (adios_handle);

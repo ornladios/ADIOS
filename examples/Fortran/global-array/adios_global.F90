@@ -36,7 +36,7 @@ program adios_global
         t(i)  = 10.0*rank+i-1
     enddo
 
-    call adios_init ("adios_global.xml", adios_err)
+    call adios_init ("adios_global.xml", comm, adios_err)
 
     call adios_open (adios_handle, "temperature", filename, "w", comm, adios_err)
 #include "gwrite_temperature.fh"

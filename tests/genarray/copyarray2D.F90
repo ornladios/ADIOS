@@ -64,6 +64,7 @@ end module genarray2D_comm
 
 program genarray
     use genarray2D_comm
+    use adios_write_mod
     implicit none
     include 'mpif.h'
 
@@ -72,7 +73,7 @@ program genarray
     call MPI_Comm_rank (MPI_COMM_WORLD, rank, ierr)
     call MPI_Comm_size (group_comm, nproc , ierr)
 
-    call adios_init ("genarray.xml", ierr)
+    call adios_init ("genarray.xml", group_comm, ierr)
     !call MPI_Barrier (group_comm, ierr)
 
     call processArgs()
@@ -196,10 +197,11 @@ end subroutine generateLocalArray
 !!***************************
 subroutine readArray()
     use genarray2D_comm
+    use adios_write_mod
+    use adios_read_mod
     implicit none
     integer :: tstep
     character(2) :: mode = "r"
-    integer*8 adios_err
     include 'mpif.h'
 
     ! Write out data using ADIOS
@@ -211,7 +213,7 @@ subroutine readArray()
 
     adios_totalsize = group_size
 
-    call MPI_BARRIER(MPI_COMM_WORLD,adios_err)
+    call MPI_BARRIER(MPI_COMM_WORLD,ierr)
     cache_start_time = MPI_WTIME()
 
     call adios_open (handle, group, inputfile, mode, group_comm, err)
@@ -244,7 +246,7 @@ subroutine readArray()
     adios_buf_size = 4 * ndx * ndy
     call adios_read (handle, "int_xyt", int_xy, adios_buf_size, err)
 
-    call MPI_BARRIER(MPI_COMM_WORLD,adios_err)
+    call MPI_BARRIER(MPI_COMM_WORLD,ierr)
     cache_end_time = MPI_WTIME()
     cache_total_time = cache_end_time - cache_start_time
 
@@ -262,10 +264,10 @@ end subroutine readArray
 !!***************************
 subroutine writeArray()
     use genarray2D_comm
+    use adios_write_mod
     implicit none
     integer :: tstep
     character(2) :: mode = "w"
-    integer*8 adios_err
     include 'mpif.h'
 
     ! Write out data using ADIOS
@@ -282,7 +284,7 @@ subroutine writeArray()
         !print '("rank=",i0," group=",A," file=",A," group_size=",i0)', rank, trim(group), &
         !    trim(outputfile), group_size
 
-        call MPI_BARRIER(MPI_COMM_WORLD,adios_err)
+        call MPI_BARRIER(MPI_COMM_WORLD,ierr)
         cache_start_time = MPI_WTIME()
 
         call adios_open (handle, group, outputfile, mode, group_comm, err)
@@ -306,7 +308,7 @@ subroutine writeArray()
         endif
         call adios_write (handle, "int_xyt", int_xy, err)
 
-        call MPI_BARRIER(MPI_COMM_WORLD,adios_err)
+        call MPI_BARRIER(MPI_COMM_WORLD,ierr)
         cache_end_time = MPI_WTIME()
         cache_total_time = cache_end_time - cache_start_time
 

@@ -52,7 +52,7 @@ int main (int argc, char * argv[] )
     }
     mean /= NX;
 
-    adios_init ("structured.xml");
+    adios_init ("structured.xml", comm);
 
     adios_open (&adios_handle, "schema", filename, "w", &comm);
 
