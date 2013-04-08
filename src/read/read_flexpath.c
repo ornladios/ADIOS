@@ -554,7 +554,8 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     		    /* memcpy(var->chunks[0].data, aptr8, var->array_size); */
     		    fprintf(stderr, "getting data for var: %s, field_name: %s\n",
     			    var->varname, f->field_name);
-    		    var->chunks[0].data = get_FMPtrField_by_name(f, f->field_name, base_data, 0);
+		    void *arrays_data  = get_FMPtrField_by_name(f, f->field_name, base_data, 0);
+		    memcpy(var->chunks[0].data, arrays_data, var->array_size);
     		}
 
     	    }
@@ -1090,7 +1091,7 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
     if(nsteps != 1){
 	adios_error (err_invalid_timestep,
                      "Only one step can be read from a stream at a time. "
-                     "You requested %d steps in adios_schedule_read()\n", nsteps);
+                     "You requested % steps in adios_schedule_read()\n", nsteps);
         return err_invalid_timestep;
     }
     v->sel = sel;
