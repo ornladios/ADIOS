@@ -301,7 +301,6 @@ static FMField
 
 static int op_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
     op_msg* msg = (op_msg*)vevent;    
-    fprintf(stderr, "op_msg_handler condition: %d\n", msg->condition);
     if(msg->type==2) {
         CMCondition_signal(fp_read_data->fp_cm, msg->condition);
         //ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
@@ -458,7 +457,6 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     int condition;
 
     get_int_attr(attrs, attr_atom_from_string("fp_dst_condition"), &condition);   
-    fprintf(stderr, "raw handler is called now with condition: %d.\n", condition);
     int rank;       
     
     get_int_attr(attrs, attr_atom_from_string(FP_RANK_ATTR_NAME), &rank); 
@@ -495,26 +493,13 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     	    //curr_chunk->data = malloc(var->data_size);
     	    //void *tmpdata = malloc(var->data_size);
     	    var->chunks[0].data = get_FMfieldAddr_by_name(f, f->field_name, base_data);
-    	    /* fprintf(stderr, "\t\tf->field_name: %s\n", f->field_name); */
-    	    if(!strcmp(f->field_name, "NX")){
-    		int *tmpint = (int*)(var->chunks[0].data);
-    	     	fprintf(stderr, "\t\tNX VALUE: %d\n", *tmpint);
-    	    }
-    	    if(!strcmp(f->field_name, "NY")){
-    		int *tmpint = (int*)(var->chunks[0].data);
-    	     	fprintf(stderr, "\t\tNY VALUE: %d\n", *tmpint);
-    	    }
-    	    // memcpy(curr_chunk->data, curr_offset, var->data_size);
     	    curr_chunk->has_data = 1;
     	    // else it's an array
     	}else{
-	    fprintf(stderr, "got here at least\n");
-            if(!var->sel){// var hasn't been scheduled yet.
-		fprintf(stderr, "not selected.\n");
+            if(!var->sel){// var hasn't been scheduled yet.       
     		fp_log("SEL", "Variable has not yet been scheduled.  Cannot recieve data for it.\n");
     	    }
     	    else if(var->sel->type == ADIOS_SELECTION_WRITEBLOCK){
-		fprintf(stderr, "WRITEBLOCK\n");
     		var->ndims = num_dims;
     		var->dims = malloc(sizeof(int)*num_dims);
     		if(var->was_scheduled == 1){
@@ -542,8 +527,6 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     			    int *temp_data = get_FMfieldAddr_by_name(temp_f,
     								     temp_f->field_name,
     								     base_data);
-    			     if(!temp_data)
-    				 fprintf(stderr, "\t\ttemp_data is null!!\n");
     			    //memcpy(temp_data, temp_offset, f->field_size);
     			    var->dims[i] = *temp_data;
     			    var->array_size = var->array_size * var->dims[i];
@@ -595,7 +578,6 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 static int
 format_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
     Format_msg* msg = (Format_msg*)vevent;
-    fprintf(stderr, "FORMAT HANDLER CALLED with condition: %d\n", msg->condition);
     ADIOS_FILE *adiosfile = client_data;
     flexpath_file_data * fp = (flexpath_file_data*)adiosfile->fh;
     fp->arr = msg->format_id;
@@ -894,7 +876,6 @@ int adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float time
 
 int adios_read_flexpath_close(ADIOS_FILE * fp)
 {
-    fprintf(stderr, "flexpath close\n");
     flexpath_file_data * file = (flexpath_file_data*)fp->fh;
     int i;
     op_msg msg;
@@ -918,13 +899,11 @@ int adios_read_flexpath_close(ADIOS_FILE * fp)
     while(v){        	
     	// free chunks; data has already been copied to user
     	int i;	
-	fprintf(stderr, "num_chunks for var: %s: %d\n", v->varname, v->num_chunks);
     	for(i = 0; i<v->num_chunks; i++){    		    
-	    fprintf(stderr, "i: %d\n", i);
     	    flexpath_var_chunk * c = &v->chunks[i];	    
 	    if(!c)
 		fprintf(stderr, "should not happen!\n");
-	    free(c->data);    		
+	    //free(c->data);    		
 	    free(c->global_bounds);		
 	    free(c->global_offsets);
 	    free(c->local_bounds);
@@ -1062,9 +1041,7 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
 					   int from_steps,
 					   int nsteps,
 					   void * data)
-{
-    fprintf(stderr, "debug:schedule_read_byid\n");
-    
+{   
     flexpath_file_data * fp = (flexpath_file_data*)adiosfile->fh;
     flexpath_var_info * v = fp->var_list;
     while(v){
@@ -1074,14 +1051,11 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
     	v=v->next;
     }
     if(!v){
-	fprintf(stderr, "invalid varid\n");
         adios_error(err_invalid_varid,
     		"Invalid variable id: %d\n",
     		varid);
         return err_invalid_varid;
-    }
-    
-    fprintf(stderr, "in schedule_read: varname: %s\n", v->varname);
+    }    
     //store the user allocated buffer.
     flexpath_var_chunk * chunk = &v->chunks[0];  
     chunk->data = data;
@@ -1245,7 +1219,6 @@ int adios_read_flexpath_schedule_read(const ADIOS_FILE *adiosfile,
 			int nsteps,
 			void * data)
 {
-    fprintf(stderr, "in schedule_read\n");
     return 0;
 }
 
