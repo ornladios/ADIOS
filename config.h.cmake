@@ -70,6 +70,8 @@
 /* Define to 1 if you have <infiniband/verbs.h>. */
 #cmakedefine HAVE_IBVERBS_H 1
 
+#cmakedefine HAVE_IBVERBS 1
+
 /* Define if you have the Infiniband. */
 #cmakedefine HAVE_INFINIBAND 1
 
