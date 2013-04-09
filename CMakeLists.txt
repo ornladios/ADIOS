@@ -18,17 +18,14 @@ set(includedir ${prefix}/include)
 
 #option(PHDF5 "PHDF5" OFF)
 #option(LUSTRE "LUSTRE" OFF)
-if(MACRODEF)
-  set(MACRODEFFLAG "-WL,-D")
-else()
+if(NOT MACRODEFFLAG)
   set(MACRODEFFLAG "-D")
 endif()
-message(STATUS "MECRODEFFLAG = ${MACRODEFFLAG}")
+message(STATUS "MACRODEFFLAG = ${MACRODEFFLAG}")
 
 set(LIBS "")
 set(CPPFLAGS $ENV{CPPFLAGS})
 set(CFLAGS $ENV{CFLAGS})
-add_definitions(-DO_LARGEFILE=0)
 
 #################################### start generating config.h #######################################
 set(BUILD_WITH_CMAKE 1)
@@ -58,17 +55,106 @@ CHECK_FUNCTION_EXISTS(clock_gettime HAVE_CLOCK_GETTIME)
 # Define if you have CRAY_PMI.
 set(HAVE_CRAY_PMI 0)
 
-# Define if you have Cray Portals.
-set(HAVE_CRAY_PORTALS 0)
-
 # Define if you have CRAY_UGNI.
 set(HAVE_CRAY_UGNI 0)
 
-# Define if you have the DATASPACES.
-set(HAVE_DATASPACES 0)
+# Define to 1 if you have <infiniband/verbs.h>.
+CHECK_INCLUDE_FILES(infiniband/verbs.h HAVE_IBVERBS_H)
+
+CHECK_FUNCTION_EXISTS(ibv_alloc_pd HAVE_IBVERBS)
+
+# Define if you have the Infiniband.
+set(HAVE_INFINIBAND 0)
+if(HAVE_IBVERBS_H AND HAVE_IBVERBS)
+  set(HAVE_INFINIBAND 1)
+  set(INFINIBAND_LIBS "-libverbs")
+  set(LIBS "${LIBS} ${INFINIBAND_LIBS}")
+endif()
+
+# Define if you have the Portals.
+set(HAVE_PORTALS 0)
+
+# Define to 1 if you have <portals3.h>.
+#set(HAVE_PORTALS3_H 0)
+CHECK_INCLUDE_FILES(portals3.h HAVE_PORTALS3_H)
+
+# Define to 1 if you have <portals/portals3.h>.
+#set(HAVE_PORTALS_PORTALS3_H 0)
+CHECK_INCLUDE_FILES(portals/portals3.h HAVE_PORTALS_PORTALS3_H)
 
 # Define to 1 if you have the <dataspaces.h> header file.
 set(HAVE_DATASPACES_H 0)
+if(DATASPACES)
+  if(NOT DATASPACES_INCDIR)
+    set(DATASPACES_INCDIR "$ENV{DATASPACES_DIR}/include")
+  endif()
+#  message(STATUS "DATASPACES_INCDIR is: ${DATASPACES_INCDIR}")
+  find_path(DATASPACES_INCLUDE_DIR NAMES dataspaces.h PATHS ${DATASPACES_INCDIR})
+  if(DATASPACES_INCLUDE_DIR)
+    set(HAVE_DATASPACES_H 1)
+    set(DATASPACES_CPPFLAGS "-I ${DATASPACES_INCLUDE_DIR}")
+    include_directories(${DATASPACES_INCLUDE_DIR})
+  endif()
+endif()
+
+# Define if you have the DATASPACES.
+set(HAVE_DATASPACES 0)
+if(HAVE_DATASPACES_H)
+  set(CPPFLAGS "${CPPFLAGS} ${DATASPACES_CPPFLAGS}")
+  if(NOT DATASPACES_LIBDIR)
+    set(DATASPACES_LIBDIR "$ENV{DATASPACES_DIR}/lib")
+  endif()
+  
+  if(HAVE_INFINIBAND)
+    set(LIBS "${LIBS} -ldart -ldataspaces")
+    find_library(DATASPACES_LIBS1 NAMES dspaces PATHS ${DATASPACES_LIBDIR}) 
+    find_library(DATASPACES_LIBS2 NAMES dscommon PATHS ${DATASPACES_LIBDIR})
+    find_library(DATASPACES_LIBS3 NAMES dart  PATHS ${DATASPACES_LIBDIR})
+    find_library(DATASPACES_LIBS4 NAMES rdmacm  PATHS ${DATASPACES_LIBDIR})
+    if(DATASPACES_LIBS1)
+      set(DATASPACES_LIBS "${DATASPACES_LIBS} ${DATASPACES_LIBS1}")
+    endif()
+    if(DATASPACES_LIBS2)
+      set(DATASPACES_LIBS "${DATASPACES_LIBS} ${DATASPACES_LIBS2}")
+    endif()
+    if(DATASPACES_LIBS3)
+      set(DATASPACES_LIBS "${DATASPACES_LIBS} ${DATASPACES_LIBS3}")
+    endif()
+    if(DATASPACES_LIBS4)
+      set(DATASPACES_LIBS "${DATASPACES_LIBS} ${DATASPACES_LIBS4}")
+    endif()
+    set(DATASPACES_LIBS "${DATASPACES_LIBS}" CACHE STRING "")
+  elseif(HAVE_PORTALS)
+    set(LIBS "${LIBS} -ldart2 -lspaces")
+    find_library(DATASPACES_LIBS1 NAMES dart2 PATHS ${DATASPACES_LIBDIR})
+    find_library(DATASPACES_LIBS2 NAMES spaces PATHS ${DATASPACES_LIBDIR})
+    if(DATASPACES_LIBS1)
+      set(DATASPACES_LIBS "${DATASPACES_LIBS} ${DATASPACES_LIBS1}")
+    endif()
+    if(DATASPACES_LIBS2)
+      set(DATASPACES_LIBS "${DATASPACES_LIBS} ${DATASPACES_LIBS2}")
+    endif()
+    set(DATASPACES_LIBS "${DATASPACES_LIBS}" CACHE STRING "")
+  elseif(HAVE_CRAY_PMI)
+    set(LIBS "${LIBS} -ldspaces -ldscommon -ldart")
+    find_library(DATASPACES_LIBS1 NAMES dspaces PATHS ${DATASPACES_LIBDIR})
+    find_library(DATASPACES_LIBS2 NAMES dscommon PATHS ${DATASPACES_LIBDIR})
+    find_library(DATASPACES_LIBS3 NAMES dart  PATHS ${DATASPACES_LIBDIR})
+    if(DATASPACES_LIBS1)
+      set(DATASPACES_LIBS "${DATASPACES_LIBS} ${DATASPACES_LIBS1}")
+    endif()
+    if(DATASPACES_LIBS2)
+      set(DATASPACES_LIBS "${DATASPACES_LIBS} ${DATASPACES_LIBS2}")
+    endif()
+    if(DATASPACES_LIBS3)
+      set(DATASPACES_LIBS "${DATASPACES_LIBS} ${DATASPACES_LIBS3}")
+    endif()
+    set(DATASPACES_LIBS "${DATASPACES_LIBS}" CACHE STRING "")
+  endif()
+  if(DATASPACES_LIB_DIR)
+    set(HAVE_DATASPACES 1)
+  endif()
+endif()
 
 # Define if you have the DIMES.
 set(HAVE_DIMES 0)
@@ -91,46 +177,29 @@ CHECK_FUNCTION_EXISTS(fdatasync HAVE_FDATASYNC)
 # Define to 1 if you have the `gettimeofday' function.
 CHECK_FUNCTION_EXISTS(gettimeofday HAVE_GETTIMEOFDAY)
 
+set(HAVE_MPI 0)
+
 # Define if you have the MPI library.
 if(BUILD_FORTRAN)
   find_package(MPI COMPONENTS Fortran)
   if(MPI_FOUND)
-    if(MPI_LIBRARIES AND MPI_INCLUDE_PATH)
-      message(STATUS "find MPI library and header")
+#    if(MPI_LIBRARIES AND MPI_INCLUDE_PATH)
+      message(STATUS "find MPI")
       set (HAVE_MPI 1)
-      set(MPILIBS ${MPI_LIBRARIES})
-      include_directories(${MPI_INCLUDE_PATH})
-      set(LIBS ${MPILIBS})
-    else()
-      if(CMAKE_Fortran_COMPILER)
-      set (HAVE_MPI 1)
-      endif()
-    endif(MPI_LIBRARIES AND MPI_INCLUDE_PATH)
-  else()
-      if(CMAKE_Fortran_COMPILER)
-      set (HAVE_MPI 1)
-      endif()
+#      set(MPILIBS ${MPI_LIBRARIES})
+#      include_directories(${MPI_INCLUDE_PATH})
+#      set(LIBS ${MPILIBS})
   endif(MPI_FOUND)
 else()
   find_package(MPI)
   if(MPI_FOUND)
-#    message(STATUS "${MPI_LIBRARIES}")
-    if(MPI_LIBRARIES AND MPI_INCLUDE_PATH) 
-      message(STATUS "find MPI library and header")
+#    if(MPI_LIBRARIES AND MPI_INCLUDE_PATH) 
+      message(STATUS "find MPI")
       set (HAVE_MPI 1)
-      set(MPILIBS ${MPI_LIBRARIES})
+#      set(MPILIBS ${MPI_LIBRARIES})
 #    set(MPILIBS "-lmpi")
-      include_directories(${MPI_INCLUDE_PATH})
-      set(LIBS ${MPILIBS})
-    else()
-      if(CMAKE_CXX_COMPILER OR CMAKE_CXX_COMPILER)
-      set (HAVE_MPI 1)
-      endif()
-    endif(MPI_LIBRARIES AND MPI_INCLUDE_PATH)
-  else()
-    if(CMAKE_CXX_COMPILER OR CMAKE_CXX_COMPILER)
-      set (HAVE_MPI 1)
-    endif() 
+#      include_directories(${MPI_INCLUDE_PATH})
+#      set(LIBS ${MPILIBS})
   endif(MPI_FOUND)
 endif(BUILD_FORTRAN)
 
@@ -155,12 +224,6 @@ else()
   set(HAVE_HDF5 0)
   set(HAVE_HDF5_H 0)
 endif(HDF5)
-
-# Define to 1 if you have <infiniband/verbs.h>.
-CHECK_INCLUDE_FILES(infiniband/verbs.h HAVE_IBVERBS_H)
-
-# Define if you have the Infiniband.
-set(HAVE_INFINIBAND 0)
 
 # Define to 1 if you have the <inttypes.h> header file.
 CHECK_INCLUDE_FILES(inttypes.h HAVE_INTTYPES_H)
@@ -191,7 +254,7 @@ endif(LUSTRE)
 CHECK_INCLUDE_FILES(memory.h HAVE_MEMORY_H)
 
 # Define to 1 if you have the <mxml.h> header file.
-find_path(MXML_INCLUDE_DIR NAMES mxml.h PATHS $ENV{MXML_DIR}/include)
+find_path(MXML_INCLUDE_DIR NAMES mxml.h PATHS ${MXML_DIR}/include)
 if(NOT MXML_INCLUDE_DIR-NOTFOUND)
   message(STATUS "find mxml header")
   set(HAVE_MXML_H 1)
@@ -203,7 +266,7 @@ endif(NOT MXML_INCLUDE_DIR-NOTFOUND)
 # Define if you have the MXML.
 # MXML: /sw/analysis-x64/mxml/2.6/centos5.5_pgi10./9
 set(HAVE_MXML 0)
-find_library(MXML_LIBS NAMES mxml PATHS $ENV{MXML_DIR}/lib)
+find_library(MXML_LIBS NAMES mxml PATHS ${MXML_DIR}/lib)
 if(MXML_LIBS)
   message(STATUS "find mxml library")
 endif()
@@ -260,6 +323,8 @@ if(PHDF5)
       include_directories(${PHDF5_INCLUDE_DIR})
       set(CPPFLAGS "${CPPFLAGS} ${PHDF5_FLAGS}")
       set(LIBS "${LIBS} ${PHDF5_LIBS}")
+    elseif()
+      set(HAVE_PHDF5_H 0)
     endif()
   else()
     set(HAVE_PHDF5 0)
@@ -282,17 +347,6 @@ if(HAVE_PHDF5)
   endif()
 endif()
 
-
-# Define if you have the Portals.
-set(HAVE_PORTALS 0)
-
-# Define to 1 if you have <portals3.h>.
-#set(HAVE_PORTALS3_H 0)
-CHECK_INCLUDE_FILES(portals3.h HAVE_PORTALS3_H)
-
-# Define to 1 if you have <portals/portals3.h>.
-#set(HAVE_PORTALS_PORTALS3_H 0)
-CHECK_INCLUDE_FILES(portals/portals3.h HAVE_PORTALS_PORTALS3_H)
 
 # Define if you have POSIX threads libraries and header files.
 set(HAVE_PTHREAD 0)
