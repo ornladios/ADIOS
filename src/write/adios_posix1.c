@@ -20,7 +20,7 @@
 // xml parser
 #include <mxml.h>
 
-#include "public/adios.h" // MPI or dummy MPI
+#include "public/adios_mpi.h" // MPI or dummy MPI
 #include "core/adios_transport_hooks.h"
 #include "core/adios_bp_v1.h"
 #include "core/adios_internals.h"
@@ -64,7 +64,7 @@ void adios_posix1_init (const PairStruct * parameters
 }
 
 int adios_posix1_open (struct adios_file_struct * fd
-                     ,struct adios_method_struct * method, void * comm
+                     ,struct adios_method_struct * method, MPI_Comm comm
                      )
 {
     char * name;

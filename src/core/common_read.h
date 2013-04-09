@@ -14,14 +14,6 @@
 #include "public/adios_types.h"
 #include "public/adios_read_v2.h"  /* C API's struct's are used here */
 
-#ifdef _NOMPI
-    /* Sequential processes can use the library compiled with -D_NOMPI */
-#   include "public/mpidummy.h"
-#else
-    /* Parallel applications should use MPI to communicate file info and slices of data */
-#   include "mpi.h"
-#endif
-
 #include <stdint.h>
 
 int common_read_init_method (enum ADIOS_READ_METHOD method, 

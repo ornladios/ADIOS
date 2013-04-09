@@ -66,7 +66,7 @@ int adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when
 
 ///////////////////////////////////////////////////////////////////////////////
 int adios_open (int64_t * fd, const char * group_name, const char * name
-               ,const char * mode, void * comm
+               ,const char * mode, MPI_Comm comm
                )
 {
     return common_adios_open (fd, group_name, name, mode, comm);

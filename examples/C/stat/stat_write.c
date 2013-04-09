@@ -47,9 +47,9 @@ int main (int argc, char ** argv)
         t[0] = 1 / 0.0;    
 
         if (it==0)
-            adios_open (&adios_handle, "temperature", filename, "w", &comm);
+            adios_open (&adios_handle, "temperature", filename, "w", comm);
         else
-            adios_open (&adios_handle, "temperature", filename, "a", &comm);
+            adios_open (&adios_handle, "temperature", filename, "a", comm);
 
 #include "gwrite_stat.ch"
         adios_close (adios_handle);

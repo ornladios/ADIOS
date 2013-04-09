@@ -8,17 +8,10 @@
 #ifndef ADIOS_H
 #define ADIOS_H
 
+#include "adios_mpi.h"
 #include "adios_types.h"
 #include "adios_error.h"
 #include <stdint.h>
-
-#ifdef _NOMPI
-/* Sequential processes can use the library compiled with -D_NOMPI */
-#   include "mpidummy.h"
-#else
-/* Parallel applications should use MPI to communicate file info and slices of data */
-#   include "mpi.h"
-#endif
 
 // ADIOS - Adaptable IO System
 
@@ -39,7 +32,7 @@ int adios_open (int64_t * fd,
                 const char * group_name, 
                 const char * name,
                 const char * mode, 
-                void * comm
+                MPI_Comm comm
                );
 
 int adios_group_size (int64_t fd_p, 

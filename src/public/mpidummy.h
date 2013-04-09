@@ -50,6 +50,8 @@ typedef int MPI_Fint;
 #define MPI_ANY_SOURCE              0
 #define MPI_ANY_TAG                 0
 
+#define MPI_SUM                     0
+
 int MPI_Init(int *argc, char ***argv);
 int MPI_Finalize();
 int MPI_Initialized( int* flag ) ;

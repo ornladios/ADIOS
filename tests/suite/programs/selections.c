@@ -247,7 +247,7 @@ int write_file (int step)
     uint64_t       groupsize=0, totalsize;
 
     log ("Write step %d to %s\n", step, FILENAME);
-    adios_open (&fh, "selections", FILENAME, (step ? "a" : "w"), &comm);
+    adios_open (&fh, "selections", FILENAME, (step ? "a" : "w"), comm);
     
     groupsize  = 9 * sizeof(int);                           // dimensions 
     groupsize += 3 * sizeof(int);                           // scalars 

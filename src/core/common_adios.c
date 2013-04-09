@@ -35,21 +35,15 @@ extern struct adios_transport_struct * adios_transports;
 ///////////////////////////////////////////////////////////////////////////////
 int common_adios_init (const char * config, MPI_Comm comm)
 {
-    MPI_Comm init_comm = MPI_COMM_WORLD; // FIXME: this should be an argument from app
-    if (comm) 
-        init_comm = (MPI_Comm) comm;
     // parse the config file
-    return adios_parse_config (config, init_comm);
+    return adios_parse_config (config, comm);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // all XML file pieces will be provided by another series of calls
 int common_adios_init_noxml (MPI_Comm comm)
 {
-    MPI_Comm init_comm = MPI_COMM_WORLD; // FIXME: this should be an argument from app
-    if (comm) 
-        init_comm = (MPI_Comm) comm;
-    return adios_local_config (init_comm);
+    return adios_local_config (comm);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -85,7 +79,7 @@ int common_adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_allo
 
 ///////////////////////////////////////////////////////////////////////////////
 int common_adios_open (int64_t * fd, const char * group_name
-                ,const char * name, const char * file_mode, void * comm
+                ,const char * name, const char * file_mode, MPI_Comm comm
                )
 {
     int64_t group_id = 0;

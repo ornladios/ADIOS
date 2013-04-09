@@ -213,7 +213,7 @@ cpdef int64_t open(char * group_name,
                    MPI.Comm comm = MPI.COMM_WORLD):
     cdef int64_t fd
     cdef int result
-    result = adios_open(&fd, group_name, name, mode, &comm.ob_mpi)
+    result = adios_open(&fd, group_name, name, mode, comm.ob_mpi)
     return fd
 
 cpdef int64_t set_group_size(int64_t fd_p, uint64_t data_size):

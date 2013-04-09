@@ -74,7 +74,7 @@ int main (int argc, char ** argv)
                                           );
         }
    
-        adios_open (&m_adios_file, "restart", filename, "w", &comm);
+        adios_open (&m_adios_file, "restart", filename, "w", comm);
 
         adios_groupsize = nblocks * (4 + 4 + 4 + NX * 8);
 

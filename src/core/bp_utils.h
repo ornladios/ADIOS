@@ -10,12 +10,7 @@
 
 #include <stdio.h>
 #include <sys/types.h>
-#   include "public/adios_read.h" // ADIOS_FILE*
-#ifdef _NOMPI
-#   include "public/mpidummy.h"
-#else
-#   include "mpi.h"
-#endif
+#include "public/adios_read.h" // ADIOS_FILE*
 #include "core/bp_types.h"
 #define VARS_MINIHEADER_SIZE 10
 

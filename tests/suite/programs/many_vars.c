@@ -211,7 +211,7 @@ int write_file (int step)
     int           block, v, i;
 
     log ("Write step %d to %s\n", step, FILENAME);
-    adios_open (&fh, "multiblock", FILENAME, (step ? "a" : "w"), &comm);
+    adios_open (&fh, "multiblock", FILENAME, (step ? "a" : "w"), comm);
     
     groupsize  = (4 + NBLOCKS*2) * sizeof(int);             // dimensions 
     groupsize += NVARS * NBLOCKS * ldim1 * ldim2 * sizeof(int);     // 2D  blocks

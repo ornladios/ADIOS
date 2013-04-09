@@ -120,7 +120,7 @@ def generate_c_write (outfile, config, params, test):
 
         c_file.write ('\nMPI_Comm comm = MPI_COMM_WORLD;')
 
-        c_file.write ('\nadios_open(&adios_handle, "' + g.get_name() + '", "out_' + test.get_group_name() + '_' + test.get_type() + '.bp", "w", &comm);')
+        c_file.write ('\nadios_open(&adios_handle, "' + g.get_name() + '", "out_' + test.get_group_name() + '_' + test.get_type() + '.bp", "w", comm);')
 
         #end timing
         c_file.write ('\nskel_open_timer += MPI_Wtime();')

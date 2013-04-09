@@ -19,11 +19,10 @@
 #include <sys/ioctl.h>
 #include <assert.h>
 
-#include "mpi.h"
-
 // xml parser
 #include <mxml.h>
 
+#include "public/adios_mpi.h"
 #include "public/adios_error.h"
 #include "core/adios_transport_hooks.h"
 #include "core/adios_bp_v1.h"
@@ -270,91 +269,6 @@ static void print_metric (FILE * f, struct timing_metrics * t, int iteration, in
 }
 #endif
 
-static void adios_var_to_comm (const char * comm_name
-                              ,enum ADIOS_FLAG host_language_fortran
-                              ,void * data
-                              ,MPI_Comm * comm
-                              )
-{
-    if (data)
-    {
-        int t = *(int *) data;
-
-        if (!comm_name)
-        {
-            if (!t)
-            {
-                log_warn ("MPI method: communicator not provided and none "
-                          "listed in XML.  Defaulting to MPI_COMM_SELF\n");
-
-                *comm = MPI_COMM_SELF;
-            }
-            else
-            {
-                if (host_language_fortran == adios_flag_yes)
-                {
-                    *comm = MPI_Comm_f2c (t);
-                }
-                else
-                {
-                    *comm = *(MPI_Comm *) data;
-                }
-            }
-        }
-        else
-        {
-            if (!strcmp (comm_name, ""))
-            {
-                if (!t)
-                {
-                    log_warn ("MPI method: communicator not provided and none "
-                              "listed in XML.  Defaulting to MPI_COMM_SELF\n");
-
-                    *comm = MPI_COMM_SELF;
-                }
-                else
-                {
-                    if (host_language_fortran == adios_flag_yes)
-                    {
-                        *comm = MPI_Comm_f2c (t);
-                    }
-                    else
-                    {
-                        *comm = *(MPI_Comm *) data;
-                    }
-                }
-            }
-            else
-            {
-                if (!t)
-                {
-                    log_warn ("MPI method: communicator not provided but one "
-                              "listed in XML.  Defaulting to MPI_COMM_WORLD\n");
-
-                    *comm = MPI_COMM_WORLD;
-                }
-                else
-                {
-                    if (host_language_fortran == adios_flag_yes)
-                    {
-                        *comm = MPI_Comm_f2c (t);
-                    }
-                    else
-                    {
-                        *comm = *(MPI_Comm *) data;
-                    }
-                }
-            }
-        }
-    }
-    else
-    {
-        log_warn ("MPI method: coordination-communication not provided. "
-                  "Using MPI_COMM_WORLD instead\n");
-
-        *comm = MPI_COMM_WORLD;
-    }
-}
 
 void adios_mpi_init (const PairStruct * parameters
                     ,struct adios_method_struct * method
@@ -377,7 +291,7 @@ void adios_mpi_init (const PairStruct * parameters
     MPI_Info_set (md->info, "ind_wr_buffer_size", "16777216");
     md->rank = 0;
     md->size = 0;
-    md->group_comm = MPI_COMM_NULL;
+    md->group_comm = method->init_comm; // unused here, adios_open will set the current comm
     md->old_pg_root = 0;
     md->old_vars_root = 0;
     md->old_attrs_root = 0;
@@ -393,7 +307,7 @@ void adios_mpi_init (const PairStruct * parameters
 }
 
 int adios_mpi_open (struct adios_file_struct * fd
-                   ,struct adios_method_struct * method, void * comm
+                   ,struct adios_method_struct * method, MPI_Comm comm
                    )
 {
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
@@ -405,11 +319,7 @@ int adios_mpi_open (struct adios_file_struct * fd
 #endif
     adios_buffer_struct_clear (&md->b);
 
-    adios_var_to_comm (fd->group->group_comm
-                      ,fd->group->adios_host_language_fortran
-                      ,comm
-                      ,&md->group_comm
-                      );
+    md->group_comm = comm;
     if (md->group_comm != MPI_COMM_NULL)
     {
         MPI_Comm_rank (md->group_comm, &md->rank);

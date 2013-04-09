@@ -400,7 +400,7 @@ int read_write(int step)
     uint64_t total_size;
 
     // open output file
-    adios_open (&fh, group_namelist[0], outfilename, (step==1 ? "w" : "a"), &comm);
+    adios_open (&fh, group_namelist[0], outfilename, (step==1 ? "w" : "a"), comm);
     adios_group_size (fh, write_total, &total_size);
     
     for (i=0; i<f->nvars; i++) 

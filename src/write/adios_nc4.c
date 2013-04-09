@@ -103,8 +103,6 @@ struct adios_nc4_data_struct
     MPI_Comm group_comm;
     int      rank;
     int      size;
-
-    void * comm; // temporary until moved from should_buffer to open
 };
 
 #define NC4_PATH_MAX 1024
@@ -1313,24 +1311,6 @@ escape:
 
 
 static int adios_nc4_initialized = 0;
-static void adios_var_to_comm_nc4(
-        enum ADIOS_FLAG host_language_fortran,
-        void *data,
-        MPI_Comm *comm)
-{
-    if (data) {
-        int t = *(int *) data;
-        if (host_language_fortran == adios_flag_yes) {
-            *comm = MPI_Comm_f2c (t);
-        } else {
-            *comm = *(MPI_Comm *) data;
-        }
-    } else {
-        fprintf (stderr, "coordination-communication not provided. "
-                "Using MPI_COMM_WORLD instead\n");
-        *comm = MPI_COMM_WORLD;
-    }
-}
 void adios_nc4_init(
         const PairStruct *parameters,
         struct adios_method_struct *method)
@@ -1341,7 +1321,7 @@ void adios_nc4_init(
     if (!adios_nc4_initialized) {
         adios_nc4_initialized = 1;
 
-        MPI_Comm_rank(MPI_COMM_WORLD, &global_rank);
+        MPI_Comm_rank(method->init_comm, &global_rank);
 
         list_init(&open_file_list, open_file_free);
     }
@@ -1353,7 +1333,6 @@ void adios_nc4_init(
 //    md->root_ncid  = -1;
 //    md->rank       = -1;
 //    md->size       = 0;
-//    md->group_comm = MPI_COMM_NULL;
 }
 
 enum ADIOS_FLAG adios_nc4_should_buffer(
@@ -1377,16 +1356,14 @@ enum ADIOS_FLAG adios_nc4_should_buffer(
     }
     md=of->md;
 
-
     if (md->ncid != -1) {
         // file already open
         if (DEBUG>3) printf("adios_nc4_should_buffer: file is already open (fname=%s, ncid=%d)\n", fd->name, md->ncid);
         return adios_flag_no;
     }
 
-    adios_var_to_comm_nc4(fd->group->adios_host_language_fortran, md->comm, &md->group_comm);
     if (md->group_comm != MPI_COMM_NULL) {
-        if (DEBUG>3) printf("global_rank(%d): adios_nc4_should_buffer: get rank and size: comm(%p) group_comm(%p)\n", global_rank, md->comm, md->group_comm);
+        if (DEBUG>3) printf("global_rank(%d): adios_nc4_should_buffer: get rank and size: group_comm(%p)\n", global_rank, md->group_comm);
         MPI_Comm_rank(md->group_comm, &md->rank);
         MPI_Comm_size(md->group_comm, &md->size);
         if (DEBUG>3) printf("global_rank(%d): adios_nc4_should_buffer: size(%d) rank(%d)\n", global_rank, md->size, md->rank);
@@ -1447,7 +1424,7 @@ enum ADIOS_FLAG adios_nc4_should_buffer(
 int adios_nc4_open(
         struct adios_file_struct *fd,
         struct adios_method_struct *method,
-        void *comm)
+        MPI_Comm comm)
 {
     struct open_file *of=NULL;
     struct adios_nc4_data_struct *md=NULL;
@@ -1463,8 +1440,7 @@ int adios_nc4_open(
         md->root_ncid  = -1;
         md->rank       = -1;
         md->size       = 0;
-        md->group_comm = MPI_COMM_NULL;
-        md->comm       = comm;
+        md->group_comm = comm;
 
         of=open_file_create(method->base_path, fd->name, md, fd);
     } else {

@@ -507,7 +507,7 @@ int main (int argc, char *argv[])
     // data initialization for ( i=0; i<NX; i++)
     t [i] = i * (rank+1) + 0.1; // ADIOS routines 
     adios_init ("config.xml");
-    adios_open (&handle, "temperature", "data.bp", "w",&comm); 
+    adios_open (&handle, "temperature", "data.bp", "w",comm); 
     group_size = sizeof(int) \        // int NX
                + sizeof(double) * NX; // double array t
     adios_group_size (handle, 4, total_size);

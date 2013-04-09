@@ -75,20 +75,21 @@ void FC_FUNC_(adios_allocate_buffer, ADIOS_ALLOCATE_BUFFER) (int *sizeMB, int * 
 ///////////////////////////////////////////////////////////////////////////////
 void FC_FUNC_(adios_open, ADIOS_OPEN) 
     (int64_t * fd, const char * group_name, const char * name
-    ,const char * mode, void * comm, int * err
+    ,const char * mode, MPI_Fint *comm, int * err
     ,int group_name_size, int name_size, int mode_size
     )
 {
     char * buf1 = 0;
     char * buf2 = 0;
     char * buf3 = 0;
+    MPI_Comm c_comm = MPI_Comm_f2c (*comm);
 
     buf1 = futils_fstr_to_cstr (group_name, group_name_size);
     buf2 = futils_fstr_to_cstr (name, name_size);
     buf3 = futils_fstr_to_cstr (mode, mode_size);
 
     if (buf1 != 0 && buf2 != 0 && buf3 != 0) {
-        *err = common_adios_open (fd, buf1, buf2, buf3, comm);
+        *err = common_adios_open (fd, buf1, buf2, buf3, c_comm);
         free (buf1);
         free (buf2);
         free (buf3);

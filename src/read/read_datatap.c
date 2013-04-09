@@ -9,16 +9,7 @@
 #include <ffs.h>
 #include <atl.h>
 #include <evpath.h>
-//#include <mpi.h>
-
-#ifdef _NOMPI
-    /* Sequential processes can use the library compiled with -D_NOMPI */
-#   include "mpidummy.h"
-#define MPI_SUM 0
-#else
-    /* Parallel applications should use MPI to communicate file info and slices of data */
-#   include "mpi.h"
-#endif
+#include "public/adios_mpi.h"
 
 #include <pthread.h>
 #include "adios.h"

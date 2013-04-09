@@ -264,7 +264,7 @@ int main (int argc, char ** argv)
       if (WRITEME==1) {
 	// open up the file for writing....
 	if (DEBUG) printf("opening file = %s, with group %s, size=%lld\n",argv[2],f->group_namelist[gidx],adios_groupsize);
-	adios_open(&m_adios_file, f->group_namelist[gidx],argv[2],"w",&comm);
+	adios_open(&m_adios_file, f->group_namelist[gidx],argv[2],"w",comm);
 	adios_group_size( m_adios_file, adios_groupsize, &adios_totalsize);
 	// now we have to write out the variables.... since they are all declared now
 	// This will be the place we actually write out the data!!!!!!!!

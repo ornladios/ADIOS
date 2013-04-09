@@ -12,13 +12,14 @@
 #include <stdint.h>
 #include <string.h>
 #include "core/util.h" /* PairStruct* */
+#include "public/adios_mpi.h"
 
 #define FORWARD_DECLARE_EMPTY(a) \
 void adios_##a##_init (const PairStruct * parameters \
                       ,struct adios_method_struct * method \
                       ) {} \
 int adios_##a##_open (struct adios_file_struct * fd \
-                     ,struct adios_method_struct * method, void * comm \
+                     ,struct adios_method_struct * method, MPI_Comm comm \
                      ) {return 0;} \
 enum ADIOS_FLAG adios_##a##_should_buffer (struct adios_file_struct * fd \
                                           ,struct adios_method_struct * method \
@@ -57,7 +58,7 @@ void adios_##a##_init (const PairStruct * parameters \
                       ,struct adios_method_struct * method \
                       ); \
 int adios_##a##_open (struct adios_file_struct * fd \
-                     ,struct adios_method_struct * method, void * comm \
+                     ,struct adios_method_struct * method, MPI_Comm comm \
                      ); \
 enum ADIOS_FLAG adios_##a##_should_buffer (struct adios_file_struct * fd \
                                           ,struct adios_method_struct * method \

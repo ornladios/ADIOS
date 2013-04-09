@@ -39,7 +39,7 @@ int main (int argc, char ** argv)
     adios_init ("arrays.xml", comm);
 
     /* First read in the scalars to calculate the size of the arrays */
-    adios_open (&adios_handle, "arrays", filename, "r", &comm);
+    adios_open (&adios_handle, "arrays", filename, "r", comm);
     adios_groupsize = 0;
     adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
     adios_buf_size = 4;
@@ -55,7 +55,7 @@ int main (int argc, char ** argv)
     p = (int *) malloc (NX*sizeof(int));
 
     /* Read the arrays */
-    adios_open (&adios_handle, "arrays", filename, "r", &comm);
+    adios_open (&adios_handle, "arrays", filename, "r", comm);
     adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
     adios_buf_size = 8 * (NX) * (NY);
     adios_read (adios_handle, "var_double_2Darray", t, adios_buf_size);

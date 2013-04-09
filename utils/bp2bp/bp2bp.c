@@ -389,7 +389,7 @@ int main (int argc, char ** argv) {
             if(TIMING==100)
                 start_time[0] = MPI_Wtime();
 
-            adios_open(&m_adios_file, f->group_namelist[gidx],argv[2],"w",&comm);
+            adios_open(&m_adios_file, f->group_namelist[gidx],argv[2],"w",comm);
             adios_group_size( m_adios_file, adios_groupsize, &adios_totalsize);
 
             //get both the total adios_totalsize and total adios_groupsize summed across processes.

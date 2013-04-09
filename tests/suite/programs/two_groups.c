@@ -85,7 +85,7 @@ int write_group (int step)
     uint64_t       groupsize=0, totalsize;
 
     log ("Write group %d to %s\n", step, FILENAME);
-    adios_open (&fh, (step==1 ? "g2" : "g1"), FILENAME, (step==0 ? "w" : "a"), &comm);
+    adios_open (&fh, (step==1 ? "g2" : "g1"), FILENAME, (step==0 ? "w" : "a"), comm);
     
     groupsize  = sizeof(int);  // a scalar only
 

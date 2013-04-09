@@ -13,7 +13,6 @@
 #include <stdio.h>
 
 #include "config.h"
-#include "mpi.h"
 #include "adios.h"
 #include "adios_types.h"
 #include "adios_bp_v1.h"
@@ -51,8 +50,6 @@ struct adios_nssi_filter_data_struct
     MPI_Comm group_comm;
     int      rank;
     int      size;
-
-    void * comm; // temporary until moved from should_buffer to open
 
     struct adios_method_struct *submethod;
 };
@@ -774,26 +771,6 @@ static int gen_anonymous_dim_list(
     }
 }
 
-static void adios_var_to_comm_nssi(
-        enum ADIOS_FLAG host_language_fortran,
-        void *data,
-        MPI_Comm *comm)
-{
-    if (data) {
-        int t = *(int *) data;
-        if (host_language_fortran == adios_flag_yes) {
-            *comm = MPI_Comm_f2c (t);
-        } else {
-            *comm = *(MPI_Comm *) data;
-        }
-    } else {
-        fprintf (stderr, "coordination-communication not provided. "
-                "Using MPI_COMM_WORLD instead\n");
-        *comm = MPI_COMM_WORLD;
-    }
-
-    return;
-}
 
 void adios_nssi_filter_init(
         const char *parameters,
@@ -810,11 +787,10 @@ void adios_nssi_filter_init(
         adios_nssi_filter_initialized = 1;
     }
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &global_rank);
+    MPI_Comm_rank(method->init_comm, &global_rank);
 
     if (DEBUG>3) printf("rank(%d) enter adios_nssi_filter_init\n", global_rank);
 
-//    MPI_Comm_rank(md->group_comm, &log_rank);
 //    sprintf(logfile, "%s.%04d", "adios_nssi_filter_client.log", log_rank);
 //    logger_init((log_level)verbose, logfile);
 
@@ -934,7 +910,7 @@ enum ADIOS_FLAG adios_nssi_filter_should_buffer(
 int adios_nssi_filter_open(
         struct adios_file_struct *f,
         struct adios_method_struct *method,
-        void *comm)
+        MPI_Comm comm)
 {
     int rc=NSSI_OK;
 
@@ -951,8 +927,7 @@ int adios_nssi_filter_open(
         md->fd         = -1;
         md->rank       = -1;
         md->size       = 0;
-        md->group_comm = MPI_COMM_NULL;
-        md->comm       = comm;
+        md->group_comm = comm;
 
         md->submethod = init_submethod(self_md->sm_method, self_md->sm_parameters);
         md->submethod->group = group_deep_copy(f->group);
@@ -972,10 +947,8 @@ int adios_nssi_filter_open(
         }
     }
 
-    if (DEBUG>3) printf("global_rank(%d): adios_nssi_filter_open: setup group_comm\n", global_rank);
-    adios_var_to_comm_nssi(f->group->adios_host_language_fortran, md->comm, &md->group_comm);
     if (md->group_comm != MPI_COMM_NULL) {
-        if (DEBUG>3) printf("global_rank(%d): adios_nssi_filter_open: get rank and size: comm(%p) group_comm(%p)\n", global_rank, md->comm, md->group_comm);
+        if (DEBUG>3) printf("global_rank(%d): adios_nssi_filter_open: get rank and size: group_comm(%p)\n", global_rank, md->group_comm);
         MPI_Comm_rank(md->group_comm, &md->rank);
         MPI_Comm_size(md->group_comm, &md->size);
         if (DEBUG>3) printf("global_rank(%d): adios_nssi_filter_open: size(%d) rank(%d)\n", global_rank, md->size, md->rank);
@@ -1012,7 +985,7 @@ int adios_nssi_filter_open(
        )
     {
         adios_transports[md->submethod->m].adios_open_fn
-                                   (f, md->submethod, comm);
+                                   (f, md->submethod, md->group_comm);
     }
 
 

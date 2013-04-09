@@ -138,6 +138,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cray_pmi.m4 \
 	$(top_srcdir)/config/ac_cray_ugni.m4 \
 	$(top_srcdir)/config/ac_dataspaces.m4 \
 	$(top_srcdir)/config/ac_datatap.m4 \
+	$(top_srcdir)/config/ac_dcmf.m4 \
 	$(top_srcdir)/config/ac_dimes.m4 \
 	$(top_srcdir)/config/ac_dmalloc.m4 \
 	$(top_srcdir)/config/ac_hdf5.m4 \
@@ -867,6 +868,10 @@ CYGPATH_W = @CYGPATH_W@
 DATASPACES_CPPFLAGS = @DATASPACES_CPPFLAGS@
 DATASPACES_LDFLAGS = @DATASPACES_LDFLAGS@
 DATASPACES_LIBS = @DATASPACES_LIBS@
+DCMF_CFLAGS = @DCMF_CFLAGS@
+DCMF_CPPFLAGS = @DCMF_CPPFLAGS@
+DCMF_LDFLAGS = @DCMF_LDFLAGS@
+DCMF_LIBS = @DCMF_LIBS@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DIMES_CPPFLAGS = @DIMES_CPPFLAGS@
@@ -1047,9 +1052,10 @@ METASOURCES = AUTO
 @HAVE_NSSI_TRUE@	$(ADIOSLIB_LDADD) $(NSSI_SERVER_LIBS)
 CLEANFILES = $(am__append_24) $(am__append_31) $(am__append_47)
 include_HEADERS = public/adios.h public/adios_types.h \
-	public/adios_read.h public/adios_error.h public/mpidummy.h \
-	public/adios_read_v1.h public/adios_read_v1_defs.h \
-	public/adios_read_v2.h public/adios_selection.h
+	public/adios_read.h public/adios_error.h public/adios_mpi.h \
+	public/mpidummy.h public/adios_read_v1.h \
+	public/adios_read_v1_defs.h public/adios_read_v2.h \
+	public/adios_selection.h
 nodist_include_HEADERS = $(am__append_30) $(am__append_46)
 lib_LIBRARIES = $(am__append_2) $(am__append_3) libadiosread.a \
 	$(am__append_38) libadiosread_nompi.a $(am__append_54)

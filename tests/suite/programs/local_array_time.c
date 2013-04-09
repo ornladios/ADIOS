@@ -88,9 +88,9 @@ int main( int argc, char ** argv)
 
         if (timestep == 0.0) {
             printf("\n\n\nopen file\n\n\n");
-            adios_open (&adios_handle, "schema", filename, "w", &comm);
+            adios_open (&adios_handle, "schema", filename, "w", comm);
         } else {
-            adios_open (&adios_handle, "schema", filename, "a", &comm);
+            adios_open (&adios_handle, "schema", filename, "a", comm);
         }
 
         for (i=0; i<num_points; i++) {

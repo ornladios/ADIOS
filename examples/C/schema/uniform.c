@@ -40,7 +40,7 @@ int main (int argc, char * argv[] )
 
     adios_init ("uniform.xml", comm);
 
-    adios_open (&adios_handle, "schema", filename, "w", &comm);
+    adios_open (&adios_handle, "schema", filename, "w", comm);
 
     adios_groupsize = 4 \
                       + 4 \

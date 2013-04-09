@@ -78,7 +78,7 @@ int main (int argc, char ** argv)
 
     adios_init ("adios_amr_write.xml", comm);
 
-    adios_open (&adios_handle, "temperature", filename, "w", &comm);
+    adios_open (&adios_handle, "temperature", filename, "w", comm);
 
     adios_groupsize = 4  * 8\
                     + 8 * l1 * l2;

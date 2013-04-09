@@ -12,16 +12,9 @@
 #include <stdlib.h>
 
 // need the enum for the transports
+#include "public/adios_mpi.h"
 #include "core/adios_transport_hooks.h"
 #include "core/adios_bp_v1.h"
-
-#ifdef _NOMPI
-/* Sequential processes can use the library compiled with -D_NOMPI */
-#   include "public/mpidummy.h"
-#else
-/* Parallel applications should use MPI to communicate file info and slices of data */
-#   include "mpi.h"
-#endif
 
 #ifdef SKEL_TIMING
 #include "core/adios_timing.h"
@@ -241,7 +234,7 @@ typedef void (* ADIOS_INIT_FN) (const PairStruct * parameters
                                ,struct adios_method_struct * method
                                );
 typedef int (* ADIOS_OPEN_FN) (struct adios_file_struct * fd
-                              ,struct adios_method_struct * method, void * comm
+                              ,struct adios_method_struct * method, MPI_Comm comm
                               );
 typedef enum ADIOS_FLAG (* ADIOS_SHOULD_BUFFER_FN)
                                        (struct adios_file_struct * fd
