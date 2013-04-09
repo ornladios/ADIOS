@@ -71,6 +71,8 @@ if(HAVE_IBVERBS_H AND HAVE_IBVERBS)
   set(LIBS "${LIBS} ${INFINIBAND_LIBS}")
 endif()
 
+CHECK_FUNCTION_EXISTS(PtlInit HAVE_PTLINIT)
+
 # Define if you have the Portals.
 set(HAVE_PORTALS 0)
 
@@ -82,10 +84,18 @@ CHECK_INCLUDE_FILES(portals3.h HAVE_PORTALS3_H)
 #set(HAVE_PORTALS_PORTALS3_H 0)
 CHECK_INCLUDE_FILES(portals/portals3.h HAVE_PORTALS_PORTALS3_H)
 
+# Define to 1 if you have the <p3nal_utcp.h> header file.
+CHECK_INCLUDE_FILES(p3nal_utcp.h HAVE_P3NAL_UTCP_H)
+
+# Define to 1 if you have the <p3rt/p3rt.h> header file.
+CHECK_INCLUDE_FILES(p3rt/p3rt.h HAVE_P3RT_P3RT_H)
+
 # Define to 1 if you have the <dataspaces.h> header file.
 set(HAVE_DATASPACES_H 0)
 if(DATASPACES)
   if(NOT DATASPACES_INCDIR)
+    set(DATASPACES_INCDIR "$ENV{DATASPACES_DIR}/include")
+  elseif("${DATASPACES_INCDIR}" STREQUAL " ")
     set(DATASPACES_INCDIR "$ENV{DATASPACES_DIR}/include")
   endif()
 #  message(STATUS "DATASPACES_INCDIR is: ${DATASPACES_INCDIR}")
@@ -102,6 +112,8 @@ set(HAVE_DATASPACES 0)
 if(HAVE_DATASPACES_H)
   set(CPPFLAGS "${CPPFLAGS} ${DATASPACES_CPPFLAGS}")
   if(NOT DATASPACES_LIBDIR)
+    set(DATASPACES_LIBDIR "$ENV{DATASPACES_DIR}/lib")
+  elseif("${DATASPACES_LIBDIR}" STREQUAL " ")
     set(DATASPACES_LIBDIR "$ENV{DATASPACES_DIR}/lib")
   endif()
   
@@ -314,11 +326,6 @@ endif()
 # Define if you have NSSI.
 set(HAVE_NSSI 0)
 
-# Define to 1 if you have the <p3nal_utcp.h> header file.
-set(HAVE_P3NAL_UTCP_H 0)
-
-# Define to 1 if you have the <p3rt/p3rt.h> header file.
-set(HAVE_P3RT_P3RT_H 0)
 
 # Define if you have the Pablo.
 set(HAVE_PABLO 0)
