@@ -1785,7 +1785,7 @@ int bp_get_dimension_characteristics_notime (struct adios_index_characteristic_s
         is_global = is_global || gdims[k];
     }
 
-    has_time = (gdims[ndim - 1] == 0);
+    has_time = (gdims[ndim - 1] == 0 && ldims[ndim - 1] == 1);
     // change all the stuff to C ordering
     if (file_is_fortran)
     {
