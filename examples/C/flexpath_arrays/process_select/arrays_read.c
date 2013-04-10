@@ -50,7 +50,7 @@ int main (int argc, char ** argv)
     ADIOS_FILE* afile = adios_read_open_file("arrays", ADIOS_READ_METHOD_FLEXPATH, comm);
     /* Read arrays for each time step */
     int ii=0;
-    for(ii=0; ii<5; ii++) {        
+    for(ii=0; ii<30; ii++) {        
 
 	ADIOS_VARINFO* nx_info = adios_inq_var( afile, "NX");
 	if(nx_info->value) {

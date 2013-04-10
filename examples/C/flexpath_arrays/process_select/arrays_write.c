@@ -38,7 +38,7 @@ int main (int argc, char ** argv)
     
     /* write data 200 times so that it forms a stream */
     int ii=0;
-    for(ii=0; ii<6; ii++) {
+    for(ii=0; ii<30; ii++) {
         
         /* must open eveery time for stream api to work */
         adios_open (&adios_handle, "arrays", filename, "w", &comm);
