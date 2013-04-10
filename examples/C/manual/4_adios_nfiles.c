@@ -50,8 +50,8 @@ int main (int argc, char ** argv)
      * there are N files generated. 
      */
     sprintf (filename, "restart_%5.5d.bp", color);
-    adios_init ("config.xml");
-    adios_open (&adios_handle, "temperature", filename, "w", &comm);
+    adios_init ("config.xml", MPI_COMM_WORLD);
+    adios_open (&adios_handle, "temperature", filename, "w", comm);
     #include "gwrite_temperature.ch"
     adios_close (adios_handle);
     adios_finalize (rank);

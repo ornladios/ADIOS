@@ -121,7 +121,7 @@ int main (int argc, char ** argv)
                     ,"NX", "Global_bounds", "Offsets");
     }
 
-    adios_open (&m_adios_file, "restart", filename, "w", &comm);
+    adios_open (&m_adios_file, "restart", filename, "w", comm);
 
     adios_groupsize = sub_blocks * (4 + 4 + 4 + NX * 8);
 

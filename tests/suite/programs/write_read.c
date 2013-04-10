@@ -404,7 +404,7 @@ int main (int argc, char ** argv)
     MPI_Comm_size (comm, &size);
 
     init_vars();
-    adios_init ("write_read.xml");
+    adios_init ("write_read.xml", comm);
     err = adios_read_init_method(ADIOS_READ_METHOD_BP, comm, "verbose=2");
     if (err) {
         printE ("%s\n", adios_errmsg());
@@ -432,7 +432,7 @@ int write_file (char *fname)
     int64_t       s;
 
     log ("Write data to %s\n", fname);
-    adios_open (&fh, "alltypes", fname, "w", &comm);
+    adios_open (&fh, "alltypes", fname, "w", comm);
     
     s = 1+2+4+8 + 1+2+4+8 + 4+8 + 8+16; // sizeof different types
     groupsize  = 18*4;                       // dimensions 

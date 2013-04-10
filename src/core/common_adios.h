@@ -18,12 +18,12 @@
  */
 
 // Global setup using the XML file
-int common_adios_init (const char * config);
+int common_adios_init (const char * config, MPI_Comm comm);
 
 // setup, but all XML file pieces will be provided by another series of calls
 // yet to be worked out
 // TODO
-int common_adios_init_noxml (void);
+int common_adios_init_noxml (MPI_Comm comm);
 
 int common_adios_finalize (int mype);
 
@@ -33,7 +33,7 @@ int common_adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_allo
 // end user calls for each I/O operation
 // modes = "r" = "read", "w" = "write", "a" = "append", "u" = "update"
 int common_adios_open (int64_t * fd, const char * group_name, const char * name
-               ,const char * mode, void * comm
+               ,const char * mode, MPI_Comm comm
                );
 
 int common_adios_group_size (int64_t fd_p, uint64_t data_size

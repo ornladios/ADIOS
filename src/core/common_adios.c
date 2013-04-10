@@ -14,21 +14,13 @@
 #include <stdint.h>
 #include <sys/time.h> // gettimeofday
 
-#ifdef _NOMPI
-/* Sequential processes can use the library compiled with -D_NOMPI */
-#   include "public/mpidummy.h"
-#else
-/* Parallel applications should use MPI to communicate file info and slices of data */
-#   include "mpi.h"
-#endif
-
 // xml parser
 #include <mxml.h>
 
-#include "core/common_adios.h"
-#include "core/adios_bp_v1.h"
 #include "core/adios_internals.h"
 #include "core/adios_internals_mxml.h"
+#include "core/common_adios.h"
+#include "core/adios_bp_v1.h"
 #include "core/buffer.h"
 #include "core/adios_transport_hooks.h"
 #include "core/adios_logger.h"
@@ -41,18 +33,17 @@
 extern struct adios_transport_struct * adios_transports;
 
 ///////////////////////////////////////////////////////////////////////////////
-int common_adios_init (const char * config)
+int common_adios_init (const char * config, MPI_Comm comm)
 {
-    MPI_Comm comm = MPI_COMM_WORLD; // FIXME: this should be an argument from app
     // parse the config file
     return adios_parse_config (config, comm);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // all XML file pieces will be provided by another series of calls
-int common_adios_init_noxml ()
+int common_adios_init_noxml (MPI_Comm comm)
 {
-    return adios_local_config ();
+    return adios_local_config (comm);
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -88,7 +79,7 @@ int common_adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_allo
 
 ///////////////////////////////////////////////////////////////////////////////
 int common_adios_open (int64_t * fd, const char * group_name
-                ,const char * name, const char * file_mode, void * comm
+                ,const char * name, const char * file_mode, MPI_Comm comm
                )
 {
     int64_t group_id = 0;

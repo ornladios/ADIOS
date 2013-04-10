@@ -44,7 +44,7 @@ program arrays
         p(i) = rank*NX + i
     enddo
 
-    call adios_init ("arrays.xml", adios_err);
+    call adios_init ("arrays.xml", comm, adios_err);
     call adios_open (adios_handle, "arrays", filename, "w", comm, adios_err);
 #include "gwrite_arrays.fh"
     call adios_close (adios_handle, adios_err)

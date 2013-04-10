@@ -82,7 +82,7 @@ printf ("rank %d filename: %s\n", rank, filename);
 #else
     strcpy (filename, "restart.bp");
 #endif
-    if (!adios_init ("config_c.xml"))
+    if (!adios_init ("config_c.xml", comm))
         return -1;
 
     //uint64_t byte_test_length = 768LL * 1024 * 1024;
@@ -176,7 +176,7 @@ if (rank == 0) printf ("Byte_test_length: %llu\n", byte_test_length);
 #if DO_WRITE
 //printf ("XXXXXXXXXXXXXXXX do a write XXXXXXXXXXXXXXXXX\n");
     gettimeofday (&time_start, NULL);
-    adios_open (&io_handle, type_name, filename, "w", &comm);
+    adios_open (&io_handle, type_name, filename, "w", comm);
     gettimeofday (&time_open, NULL);
 #if 1
     adios_group_size (io_handle, 4 + byte_test_length, &total);
@@ -188,7 +188,7 @@ if (rank == 0) printf ("Byte_test_length: %llu\n", byte_test_length);
                                 + 4 + 4 * zionsize2 * zionsize3
                                 + 4
                                 + 4 + byte_test_length
-                     ,&total, &comm
+                     ,&total 
                      );
     gettimeofday (&time_group_size, NULL);
 
@@ -311,7 +311,7 @@ if (rank == 0) printf ("Byte_test_length: %llu\n", byte_test_length);
 #if DO_READ
 printf ("XXXXXXXXXXXXXXXX do a read XXXXXXXXXXXXXXXXX\n");
 
-    adios_open (&io_handle, type_name, filename, "r", &comm);
+    adios_open (&io_handle, type_name, filename, "r", comm);
     adios_group_size (io_handle, 0, &total);
     adios_read (io_handle, "/mype", &r_var_x1, 4);
     adios_read (io_handle, "/test/mype", &r_var_x2, 4);
@@ -365,7 +365,7 @@ for (int i = 0; i < 3; i++)
 {
 printf ("XXXXXXXXXXXXXXXX do an append XXXXXXXXXXXXXXXXX\n");
     var_x1 = 11;
-    adios_open (&io_handle, type_name, filename, "a", &comm);
+    adios_open (&io_handle, type_name, filename, "a", comm);
     adios_group_size (io_handle,  4 + 4
                                 + 4 * zionsize1
                                 + 4 + 4 * zionsize2 * zionsize2

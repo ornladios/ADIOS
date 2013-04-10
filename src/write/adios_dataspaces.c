@@ -101,73 +101,6 @@ static int get_dim_rank_value(struct adios_dimension_item_struct * dim_info, str
     }
 }
 
-static void adios_dataspaces_var_to_comm  (const char * comm_name
-                                    ,enum ADIOS_FLAG host_language_fortran
-                                    ,void * data
-                                    ,MPI_Comm * comm
-                                    )
-{
-    if (data)
-    {
-        int t = *(int *) data;
-
-        if (!comm_name || !strcmp (comm_name, ""))
-        {
-            if (!t)
-            {
-                log_error ("ERROR: communicator not provided and none "
-                                 "listed in XML.  Defaulting to "
-                                 "MPI_COMM_SELF\n"
-                        );
-
-                *comm = MPI_COMM_SELF;
-            }
-            else
-            {
-                if (host_language_fortran == adios_flag_yes)
-                {
-                    *comm = MPI_Comm_f2c (t);
-                }
-                else
-                {
-                    *comm = *(MPI_Comm *) data;
-                }
-            }
-        }
-        else
-        {
-            if (!t)
-            {
-                log_error ("ERROR: communicator not provided but one "
-                                 "listed in XML.  Defaulting to "
-                                 "MPI_COMM_WORLD\n"
-                        );
-
-                *comm = MPI_COMM_WORLD;
-            }
-            else
-            {
-                if (host_language_fortran == adios_flag_yes)
-                {
-                    *comm = MPI_Comm_f2c (t);
-                }
-                else
-                {
-                    *comm = *(MPI_Comm *) data;
-                }
-            }
-        }
-    }
-    else
-    {
-        log_error ("ERROR: coordination-communication not provided. "
-                         "Using MPI_COMM_WORLD instead\n"
-                );
-
-        *comm = MPI_COMM_WORLD;
-    }
-}
-
 
 static int connect_to_dspaces (struct adios_ds_data_struct * p, MPI_Comm comm)
 {
@@ -233,7 +166,7 @@ void adios_dataspaces_init (const PairStruct * parameters,
 #endif
     p->num_of_files = 0;
 
-    connect_to_dspaces (p, MPI_COMM_WORLD);
+    connect_to_dspaces (p, method->init_comm);
 
     log_info ("adios_dataspaces_init: done\n");
    
@@ -243,7 +176,7 @@ void adios_dataspaces_init (const PairStruct * parameters,
 
 int adios_dataspaces_open (struct adios_file_struct * fd,
                     struct adios_method_struct * method,
-                    void *comm
+                    MPI_Comm comm
                     )
 {
     int ret = 0;
@@ -256,24 +189,15 @@ int adios_dataspaces_open (struct adios_file_struct * fd,
 #if HAVE_MPI
     // if we have MPI and a communicator, we can get the exact size of this application
     // that we need to tell DATASPACES
-    MPI_Comm group_comm;
-    if (comm) {
-        adios_dataspaces_var_to_comm (
-                fd->group->group_comm, 
-                fd->group->adios_host_language_fortran,
-                comm, &group_comm);
-    } else {
-        group_comm = MPI_COMM_WORLD;
-    }
-    MPI_Comm_rank (group_comm, &(p->rank));
-    MPI_Comm_size (group_comm, &(p->peers));
-    p->mpi_comm = group_comm;
+    p->mpi_comm = comm;
+    MPI_Comm_rank (p->mpi_comm, &(p->rank));
+    MPI_Comm_size (p->mpi_comm, &(p->peers));
 #endif
 
     // connect to DATASPACES at the very first adios_open(), disconnect in adios_finalize()
     // connect only if the READ API has not connected yet
     /*
-    ret = connect_to_dspaces (p, group_comm);
+    ret = connect_to_dspaces (p, p->mpi_comm);
     if (ret)
         return ret;
     */

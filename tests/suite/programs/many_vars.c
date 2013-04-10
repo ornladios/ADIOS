@@ -152,7 +152,7 @@ int main (int argc, char ** argv)
     }
 
     alloc_vars();
-    adios_init_noxml ();
+    adios_init_noxml (comm);
     adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 10);
     err = adios_read_init_method(ADIOS_READ_METHOD_BP, comm, "verbose=2");
     if (err) {
@@ -211,7 +211,7 @@ int write_file (int step)
     int           block, v, i;
 
     log ("Write step %d to %s\n", step, FILENAME);
-    adios_open (&fh, "multiblock", FILENAME, (step ? "a" : "w"), &comm);
+    adios_open (&fh, "multiblock", FILENAME, (step ? "a" : "w"), comm);
     
     groupsize  = (4 + NBLOCKS*2) * sizeof(int);             // dimensions 
     groupsize += NVARS * NBLOCKS * ldim1 * ldim2 * sizeof(int);     // 2D  blocks

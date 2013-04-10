@@ -11,12 +11,11 @@
 #include <string.h>
 #include <errno.h>
 
-// mpi
-#include "mpi.h"
 
 // xml parser
 #include <mxml.h>
 
+#include "public/adios_mpi.h"
 #include "core/adios_transport_hooks.h"
 #include "core/adios_bp_v1.h"
 #include "core/adios_internals.h"
@@ -659,98 +658,6 @@ struct adios_var_header_struct_v1
 
 }
 #endif
-static void adios_var_to_comm (const char * comm_name
-                              ,enum ADIOS_FLAG host_language_fortran
-                              ,void * data
-                              ,MPI_Comm * comm
-                              )
-{
-    if (data)
-    {
-        int t = *(int *) data;
-
-        if (!comm_name)
-        {
-            if (!t)
-            {
-                fprintf (stderr, "communicator not provided and none "
-                                 "listed in XML.  Defaulting to "
-                                 "MPI_COMM_SELF\n"
-                        );
-
-                *comm = MPI_COMM_SELF;
-            }
-            else
-            {
-                if (host_language_fortran == adios_flag_yes)
-                {
-                    *comm = MPI_Comm_f2c (t);
-                }
-                else
-                {
-                    *comm = *(MPI_Comm *) data;
-                }
-            }
-        }
-        else
-        {
-            if (!strcmp (comm_name, ""))
-            {
-                if (!t)
-                {
-                    fprintf (stderr, "communicator not provided and none "
-                                     "listed in XML.  Defaulting to "
-                                     "MPI_COMM_SELF\n"
-                            );
-
-                    *comm = MPI_COMM_SELF;
-                }
-                else
-                {
-                    if (host_language_fortran == adios_flag_yes)
-                    {
-                        *comm = MPI_Comm_f2c (t);
-                    }
-                    else
-                    {
-                        *comm = *(MPI_Comm *) data;
-                    }
-                }
-            }
-            else
-            {
-                if (!t)
-                {
-                    fprintf (stderr, "communicator not provided but one "
-                                     "listed in XML.  Defaulting to "
-                                     "MPI_COMM_WORLD\n"
-                            );
-
-                    *comm = MPI_COMM_WORLD;
-                }
-                else
-                {
-                    if (host_language_fortran == adios_flag_yes)
-                    {
-                        *comm = MPI_Comm_f2c (t);
-                    }
-                    else
-                    {
-                        *comm = *(MPI_Comm *) data;
-                    }
-                }
-            }
-        }
-    }
-    else
-    {
-        fprintf (stderr, "coordination-communication not provided. "
-                         "Using MPI_COMM_WORLD instead\n"
-                );
-
-        *comm = MPI_COMM_WORLD;
-    }
-}
 
 void adios_mpi_amr1_init (const PairStruct * parameters
                     ,struct adios_method_struct * method
@@ -769,7 +676,7 @@ void adios_mpi_amr1_init (const PairStruct * parameters
     memset (&md->status, 0, sizeof (MPI_Status));
     md->rank = 0;
     md->size = 0;
-    md->group_comm = MPI_COMM_NULL;
+    md->group_comm = method->init_comm; //unused, adios_open sets current comm
     md->old_pg_root = 0;
     md->old_vars_root = 0;
     md->old_attrs_root = 0;
@@ -780,17 +687,12 @@ void adios_mpi_amr1_init (const PairStruct * parameters
 }
 
 int adios_mpi_amr1_open (struct adios_file_struct * fd
-                   ,struct adios_method_struct * method, void * comm
+                   ,struct adios_method_struct * method, MPI_Comm comm
                    )
 {
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                     method->method_data;
-
-    adios_var_to_comm (fd->group->group_comm
-                      ,fd->group->adios_host_language_fortran
-                      ,comm
-                      ,&md->group_comm
-                      );
+    md->group_comm = comm;
     if (md->group_comm != MPI_COMM_NULL)
     {
         MPI_Comm_rank (md->group_comm, &md->rank);

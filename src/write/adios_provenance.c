@@ -15,7 +15,7 @@
 // xml parser
 #include <mxml.h>
 
-#include "public/adios.h" // MPI or dummy MPI
+#include "public/adios_mpi.h" 
 #include "core/adios_transport_hooks.h"
 #include "core/adios_bp_v1.h"
 #include "core/adios_internals.h"
@@ -31,7 +31,7 @@
     - list of full paths of files (created by other methods)
     - index in bp binary format
 
-    It is the MPI_COMM_WORLD master process which communicates to the
+    It is the world master (communicator in adios_init) process which communicates to the
     external world. If there are several groups in the application 
     communicating with each other, their masters will communicate to 
     the world master. 
@@ -71,8 +71,6 @@
  */
 
 /* ======== PRIVATE FUNCTION DECLARATIONS ======== */
-static MPI_Comm _var_to_comm (enum ADIOS_FLAG host_language_fortran, void * data);
-
 static void _check_other_methods(struct adios_file_struct * fd
 				,struct adios_method_struct * method
 				);
@@ -121,11 +119,11 @@ struct adios_PROVENANCE_data_struct
 {
     MPI_Status status;   // status for MPI queries here to allocate memory 
 			 //   in the beginning and not during its use 
-    MPI_Comm group_comm; // communication for this group
+    MPI_Comm group_comm; // communication for the group in an open
     int rank;            // rank of this process within this group
     int size;            // number of processes in this group
 
-    void * comm; // temporary until moved from should_buffer to open
+    MPI_Comm world_comm; // all processes calling adios_open..adios_close
 
     enum   ADIOS_PROVENANCE_OUTPUTMETHOD output_method;
 
@@ -160,9 +158,10 @@ void adios_provenance_init (const PairStruct * parameters
 
     
     memset (&md->status, 0, sizeof (MPI_Status));
-    md->rank = 0;  // will be set in ..should_buffer()
-    md->size = 0;  // will be set in ..should_buffer()
-    md->group_comm = MPI_COMM_NULL; // will be set in ..should_buffer() -> ..var_to_comm()
+    md->rank = 0;  // will be set in ..open()
+    md->size = 0;  // will be set in ..open()
+    md->group_comm = MPI_COMM_NULL; // unused, adios_open sets current comm
+    md->world_comm = method->init_comm; 
     md->old_pg_root = 0;
     md->old_vars_root = 0;
     md->old_attrs_root = 0;
@@ -176,13 +175,13 @@ void adios_provenance_init (const PairStruct * parameters
     
     
 int adios_provenance_open (struct adios_file_struct * fd
-                          ,struct adios_method_struct * method, void * comm
+                          ,struct adios_method_struct * method, MPI_Comm comm
                           )
 {
     struct adios_PROVENANCE_data_struct * md = (struct adios_PROVENANCE_data_struct *)
                                                     method->method_data;
 
-    md->comm = comm;
+    int wrank;
 
     // TODO: record the filename fd->filename, which is different for each group
     //char *name;
@@ -192,10 +191,19 @@ int adios_provenance_open (struct adios_file_struct * fd
 
     _check_other_methods( fd, method); // set md->another_method
     
-    // The world master can open the file/socket/dbconnection now. 
-    int wrank;
-    MPI_Comm_rank (MPI_COMM_WORLD, &wrank);
+    // Get the MPI related info
+    md->group_comm = comm;
+    if (md->group_comm != MPI_COMM_NULL)
+    {
+	MPI_Comm_rank (md->group_comm, &md->rank);
+	MPI_Comm_size (md->group_comm, &md->size);
+    }
+    else {
+        md->size = 1;  // each process is a group 
+    }
 
+    MPI_Comm_rank (md->world_comm, &wrank);
+    // The worldmaster can open the file/socket/dbconnection now. 
     if (wrank == 0) 
     {
 	switch (fd->mode)
@@ -291,7 +299,7 @@ int adios_provenance_open (struct adios_file_struct * fd
 	}
 
 	
-    } // (wrank==0)
+    } // (md->rank==0)
     return 1;
 }
 
@@ -308,10 +316,6 @@ enum ADIOS_FLAG adios_provenance_should_buffer (struct adios_file_struct * fd
     struct adios_PROVENANCE_data_struct * md = (struct adios_PROVENANCE_data_struct *)
 	                                                        method->method_data;
 
-    // Get the MPI related info
-    // It is here, not in init or in open because open() does not get the communicator.
-    md->group_comm = _var_to_comm (fd->group->adios_host_language_fortran, md->comm);
-
     /* If the other (real output) method is POSIX, we must not use the communicator
        provided here. People usually provide the world communicator in the config file
        but the POSIX method does not use it. Each process writes its own file
@@ -321,14 +325,6 @@ enum ADIOS_FLAG adios_provenance_should_buffer (struct adios_file_struct * fd
 	md->group_comm = MPI_COMM_NULL;
     }
 
-    if (md->group_comm != MPI_COMM_NULL)
-    {
-	MPI_Comm_rank (md->group_comm, &md->rank);
-	MPI_Comm_size (md->group_comm, &md->size);
-    }
-    else {
-        md->size = 1;  // each process is a group 
-    }
     fd->group->process_id = md->rank;
 
 
@@ -604,11 +600,11 @@ void adios_provenance_close (struct adios_file_struct * fd
 	    // get the world master
 	    int wrank;
 	    int wsize;
-	    MPI_Comm_rank (MPI_COMM_WORLD, &wrank);
-	    MPI_Comm_size (MPI_COMM_WORLD, &wsize);
+            MPI_Comm_rank (md->world_comm, &wrank);
+	    MPI_Comm_size (md->world_comm, &wsize);
 
 
-	    if (md->group_comm != MPI_COMM_WORLD ) 
+	    if (md->group_comm != md->world_comm ) 
 	    {
 		/* FIXME: Here the group masters should send info to world master */
 		/* World master collects the file names and the indices from the
@@ -637,7 +633,7 @@ void adios_provenance_close (struct adios_file_struct * fd
                     {
 			// receive from any because we do not know the group masters 
                         MPI_Recv (buffer, buffer_size, MPI_BYTE, MPI_ANY_SOURCE
-                                 ,0, MPI_COMM_WORLD, &md->status
+                                 ,0, md->world_comm, &md->status
                                  );
                         MPI_Get_count (&md->status, MPI_BYTE, &count);
                         if (buffer_size <= count)
@@ -748,7 +744,7 @@ void adios_provenance_close (struct adios_file_struct * fd
 
 		    printf ("close(): wrank=%d, group size=%d, len=%d, file=%s, msg.len=%ld\n"
 			    , wrank, md->size, len, fd->name, buffer_offset);
-                    MPI_Send (buffer, buffer_offset, MPI_BYTE, 0, 0, MPI_COMM_WORLD);
+                    MPI_Send (buffer, buffer_offset, MPI_BYTE, 0, 0, md->world_comm);
 		    printf ("close(): wrank=%d sent msg\n", wrank);
 		}
 
@@ -886,33 +882,6 @@ void adios_provenance_stop_calculation (struct adios_method_struct * method)
 
 
 /* =========== PRIVATE FUNCTIONS ============== */
-
-/** If a valid communicator is passed in 'data', convert it to C MPI_Comm variable
-    and return it in 'comm'. If not, return MPI_COMM_WORLD.
-  */
-static MPI_Comm _var_to_comm (enum ADIOS_FLAG host_language_fortran, void * data)
-{
-    if (data)
-    {
-        int t = *(int *) data;
-        if (host_language_fortran == adios_flag_yes)
-        {
-            return MPI_Comm_f2c (t);
-        }
-        else
-        {
-            return *(MPI_Comm *) data;
-        }
-    }
-    else
-    {
-        fprintf (stderr, "%s Coordination-communication not provided. "
-                         "Using MPI_COMM_WORLD instead\n", LOGHDR
-                );
-        return MPI_COMM_WORLD;
-    }
-}
-
 
 /** Check what other methods are in use. We need to do different things if
     this method is the only one, or there is MPI or there is POSIX besides.

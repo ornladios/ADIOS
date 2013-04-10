@@ -362,10 +362,10 @@ int nssi_staging_open_stub(
         if (DEBUG>3) printf("start adios_open\n");
         if (args->use_single_server==TRUE) {
             if (DEBUG>3) printf("adios_open: using MPI_COMM_SELF\n");
-            Func_Timer("adios_open", rc = adios_open(&fd, args->gname, args->fname, omode, &comm_self););
+            Func_Timer("adios_open", rc = adios_open(&fd, args->gname, args->fname, omode, comm_self););
         } else {
             if (DEBUG>3) printf("adios_open: using MPI_COMM_WORLD\n");
-            Func_Timer("adios_open", rc = adios_open(&fd, args->gname, args->fname, omode, &comm_world););
+            Func_Timer("adios_open", rc = adios_open(&fd, args->gname, args->fname, omode, comm_world););
         }
         if (rc != 0) {
             printf("Error opening file \"%s\": %d\n", args->fname, rc);

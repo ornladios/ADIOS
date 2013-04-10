@@ -69,11 +69,11 @@ int main (int argc, char ** argv)
     }
 
     MPI_Init (&argc, &argv);
-    MPI_Comm_rank (MPI_COMM_WORLD, &rank);
-    if (!adios_init ("testbp_c.xml"))
+    MPI_Comm_rank (comm, &rank);
+    if (!adios_init ("testbp_c.xml", comm))
         return -1;
 
-    adios_open (&io_handle, type_name, filename, "w", &comm);
+    adios_open (&io_handle, type_name, filename, "w", comm);
     adios_group_size (io_handle, 32                             // 4 integers 
                                 + 4 * dim1                      // int_1D
                                 + 4 * dim1 * dim2               // int_2D

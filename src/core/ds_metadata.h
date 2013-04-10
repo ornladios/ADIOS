@@ -42,6 +42,17 @@ void ds_pack_group_info (struct adios_file_struct *fd
 
 //ADIOS_GROUP * ds_unpack_group_info (char * buf, struct adios_read_dart_group_struct * group);
 
+void dimes_dimension_ordering(int ndims, int is_app_fortran, int unpack, int *didx);
+
+void dimes_pack_file_info (int time, int nvars, int nattrs, int group_index_len, char * groupname,
+                        /*OUT*/char **buf, /*OUT*/int *buf_len);
+
+void dimes_pack_group_info (struct adios_file_struct *fd
+        ,struct adios_method_struct * method
+        ,struct adios_index_var_struct_v1 *vars_root
+        ,struct adios_index_attribute_struct_v1 * attrs_root
+        ,char ** buffer, int *buffer_size, int *nvars, int *nattrs
+        );
 
 /***********************
   FILE info buffer: 

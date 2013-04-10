@@ -15,16 +15,9 @@
 extern "C" {
 #endif
 
+#include "adios_mpi.h"
 #include "adios_types.h"
 #include "adios_selection.h"
-
-#ifdef _NOMPI
-    /* Sequential processes can use the library compiled with -D_NOMPI */
-#   include "mpidummy.h"
-#else
-    /* Parallel applications should use MPI to communicate file info and slices of data */
-#   include "mpi.h"
-#endif
 
 #include <stdint.h>
 

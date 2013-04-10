@@ -1638,7 +1638,7 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
     }
     t->var_count++;
 
-    return v;
+    return (int64_t)v;
 }
 
 void adios_common_get_group (int64_t * group_id, const char * name)

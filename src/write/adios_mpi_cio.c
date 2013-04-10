@@ -41,50 +41,9 @@ struct adios_MPI_Collective_data_struct
     int last_var_write_yes; // was the last item asked to write a write="yes"?
     uint64_t base_offset;
 
-    void * comm;
+    void * group_comm;
 };
 
-static void adios_var_to_comm (const char * varname
-                              ,struct adios_var_struct * vars
-                              ,MPI_Comm * comm
-                              ,enum ADIOS_FLAG unique_var_names
-                              )
-{
-    if (varname)
-    {
-        struct adios_var_struct * var =
-                    adios_find_var_by_name (vars, varname, unique_var_names);
-
-        if (var)
-        {
-            if (var->data)
-            {
-                *comm = *(MPI_Comm *) var->data;
-            }
-            else
-            {
-                fprintf (stderr, "coordination-communication: %s not provided. "
-                                 "Using MPI_COMM_WORLD instead\n"
-                        ,varname
-                        );
-                *comm = MPI_COMM_WORLD;
-            }
-        }
-        else
-        {
-            fprintf (stderr, "coordination-communicator: %s not found in "
-                             "adios-group.  Using MPI_COMM_WORLD instead\n"
-                    ,varname
-                    );
-
-            *comm = MPI_COMM_WORLD;
-        }
-    }
-    else
-    {
-        *comm = MPI_COMM_NULL;
-    }
-}
 
 void adios_mpi_cio_init (const PairStruct * parameters
                     ,struct adios_method_struct * method
@@ -110,32 +69,23 @@ void adios_mpi_cio_init (const PairStruct * parameters
 }
 
 int adios_mpi_cio_open (struct adios_file_struct * fd
-                       ,struct adios_method_struct * method, void * comm
+                       ,struct adios_method_struct * method, MPI_Comm comm
                        )
 {
     char name [STR_LEN];
     struct adios_MPI_Collective_data_struct * md = (struct adios_MPI_Collective_data_struct *)
                                                     method->method_data;
 
-    md->comm = comm;
+    md->group_comm = comm;
+    MPI_Comm_rank (md->group_comm, &md->rank);
+    MPI_Comm_size (md->group_comm, &md->size);
     sprintf (name, "%s%s", method->base_path, fd->name);
     MPI_Offset file_size_for_offset = 0;
 
     // if it is an append, add the base file size to the initial offset
     if (fd->mode == adios_mode_append)
     {
-        MPI_Comm group_comm = MPI_COMM_NULL;
-        int rank = -1;
-
-        if (fd->group->group_comm)
-        {
-            adios_var_to_comm (fd->group->group_comm, fd->group->vars
-                              ,&group_comm, fd->group->all_unique_var_names);
-            if (group_comm != MPI_COMM_NULL)
-                MPI_Comm_rank (group_comm, &rank);
-        }
-
-        if (group_comm == MPI_COMM_NULL || rank == 0)
+        if (md->group_comm == MPI_COMM_NULL || md->rank == 0)
         {
             int err;
             err = MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_RDONLY
@@ -153,8 +103,8 @@ printf ("file size: %llu\n", file_size_for_offset);
             MPI_File_close (&md->fh);  // just in case it opened
         }
 
-        if (group_comm != MPI_COMM_NULL)
-            MPI_Bcast (&file_size_for_offset, 1, MPI_LONG_LONG, 0, group_comm);
+        if (md->group_comm != MPI_COMM_NULL)
+            MPI_Bcast (&file_size_for_offset, 1, MPI_LONG_LONG, 0, md->group_comm);
 
         md->base_offset += file_size_for_offset;
 printf ("base offset: %llu\n", md->base_offset);
@@ -313,17 +263,6 @@ static void adios_mpi_cio_do_read (struct adios_file_struct * fd
     MPI_Offset read_offset;
     int amode = MPI_MODE_RDONLY;
     int err;
-    MPI_Comm group_comm;
-
-    if (fd->group->group_comm)
-    {
-        adios_var_to_comm (fd->group->group_comm, fd->group->vars, &group_comm
-                          ,fd->group->all_unique_var_names);
-    }
-    else
-    {
-        group_comm = MPI_COMM_NULL;
-    }
 
     // this code section is important if we want to write from
     // several processes to a single file.  For one file per process
@@ -339,11 +278,11 @@ static void adios_mpi_cio_do_read (struct adios_file_struct * fd
     // make a filename based on the size and current node
     // sprintf (buf1, "%%s.%%0%dd", (int) (log10 (size)));
     // sprintf (buf2, buf1, fd->name, fd->group->current);
-    if (group_comm != MPI_COMM_NULL)
+    if (md->group_comm != MPI_COMM_NULL)
     {
         int do_free_info = 0;
 
-        MPI_Scan(&my_data_len, &my_offset, 1, MPI_LONG_LONG, MPI_SUM, group_comm);
+        MPI_Scan(&my_data_len, &my_offset, 1, MPI_LONG_LONG, MPI_SUM, md->group_comm);
         my_offset -= my_data_len;
         read_offset = md->base_offset + my_offset;
 
@@ -354,7 +293,7 @@ static void adios_mpi_cio_do_read (struct adios_file_struct * fd
         MPI_Info_set(adios_mpi_info, "romio_no_indep_rw", "true");
         // this hint will enable aggregator I/O
 
-        MPI_File_open (group_comm, name, MPI_MODE_RDONLY, adios_mpi_info, &md->fh);
+        MPI_File_open (md->group_comm, name, MPI_MODE_RDONLY, adios_mpi_info, &md->fh);
 
         if (do_free_info) {
             MPI_Info_free(&adios_mpi_info);
@@ -423,17 +362,6 @@ static void adios_mpi_cio_do_write (struct adios_file_struct * fd
     struct adios_var_struct * v = fd->group->vars;
     struct adios_attribute_struct * a = fd->group->attributes;
     int err;
-    MPI_Comm group_comm;
-
-    if (fd->group->group_comm)
-    {
-        adios_var_to_comm (fd->group->group_comm, fd->group->vars, &group_comm
-                          ,fd->group->all_unique_var_names);
-    }
-    else
-    {
-        group_comm = MPI_COMM_NULL;
-    }
 
     // this code section is important if we want to write from
     // several processes to a single file.  For one file per process
@@ -449,11 +377,11 @@ static void adios_mpi_cio_do_write (struct adios_file_struct * fd
     // make a filename based on the size and current node
     // sprintf (buf1, "%%s.%%0%dd", (int) (log10 (size)));
     // sprintf (buf2, buf1, fd->name, fd->group->current);
-    if (group_comm != MPI_COMM_NULL)
+    if (md->group_comm != MPI_COMM_NULL)
     {
         int do_free_info = 0;
 
-        MPI_Scan(&my_data_len, &my_offset, 1, MPI_LONG_LONG, MPI_SUM, group_comm);
+        MPI_Scan(&my_data_len, &my_offset, 1, MPI_LONG_LONG, MPI_SUM, md->group_comm);
         my_offset -= my_data_len;
         write_offset = md->base_offset + my_offset;
 
@@ -464,7 +392,7 @@ static void adios_mpi_cio_do_write (struct adios_file_struct * fd
         MPI_Info_set(adios_mpi_info, "romio_no_indep_rw", "true");
         // this hint will enable aggregator I/O
 
-        MPI_File_open (group_comm, name, MPI_MODE_CREATE|MPI_MODE_WRONLY, adios_mpi_info, &md->fh);
+        MPI_File_open (md->group_comm, name, MPI_MODE_CREATE|MPI_MODE_WRONLY, adios_mpi_info, &md->fh);
 
         if (do_free_info) {
             MPI_Info_free(&adios_mpi_info);

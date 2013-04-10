@@ -50,8 +50,6 @@ struct adios_nssi_file_data_struct
     int      size;
     int      rank;
 
-    void * comm; // temporary until moved from should_buffer to open
-
     int      svc_index;
     MPI_Comm collective_op_comm;
     int      collective_op_size;
@@ -920,27 +918,6 @@ static int write_var(
 }
 
 
-static void adios_var_to_comm_nssi(
-        enum ADIOS_FLAG host_language_fortran,
-        void *data,
-        MPI_Comm *comm)
-{
-    if (data) {
-        int t = *(int *) data;
-        if (host_language_fortran == adios_flag_yes) {
-            *comm = MPI_Comm_f2c (t);
-        } else {
-            *comm = *(MPI_Comm *) data;
-        }
-    } else {
-        fprintf (stderr, "coordination-communication not provided. "
-                "Using MPI_COMM_WORLD instead\n");
-        *comm = MPI_COMM_WORLD;
-    }
-
-    return;
-}
-
 void adios_nssi_init(
         const PairStruct *parameters,
         struct adios_method_struct *method)
@@ -955,8 +932,8 @@ void adios_nssi_init(
         adios_nssi_initialized = 1;
     }
 
-    MPI_Comm_rank(MPI_COMM_WORLD, &global_rank);
-    MPI_Comm_size(MPI_COMM_WORLD, &global_size);
+    MPI_Comm_rank(method->init_comm, &global_rank);
+    MPI_Comm_size(method->init_comm, &global_size);
 
     if (DEBUG>3) printf("rank(%d) enter adios_nssi_init\n", global_rank);
 
@@ -1060,7 +1037,7 @@ enum ADIOS_FLAG adios_nssi_should_buffer(
 int adios_nssi_open(
         struct adios_file_struct *f,
         struct adios_method_struct *method,
-        void *comm)
+        MPI_Comm comm)
 {
     int rc=NSSI_OK;
 
@@ -1080,8 +1057,6 @@ int adios_nssi_open(
         file_data->group_comm = MPI_COMM_NULL;
         file_data->size       = 0;
         file_data->rank       = 0;
-
-        file_data->comm = NULL;
 
         file_data->svc_index=-1;
         file_data->collective_op_comm=MPI_COMM_NULL;
@@ -1104,9 +1079,8 @@ int adios_nssi_open(
 
     if (DEBUG>3) printf("global_rank(%d): enter adios_nssi_open (%s)\n", global_rank, f->name);
 
-    file_data->comm = comm;
+    file_data->group_comm = comm;
     if (DEBUG>3) printf("global_rank(%d): adios_nssi_open: setup group_comm\n", global_rank);
-    adios_var_to_comm_nssi(f->group->adios_host_language_fortran, file_data->comm, &file_data->group_comm);
     if (file_data->group_comm != MPI_COMM_NULL) {
         if (DEBUG>3) printf("global_rank(%d): adios_nssi_open: get rank and size\n", global_rank);
         MPI_Comm_rank(file_data->group_comm, &file_data->rank);

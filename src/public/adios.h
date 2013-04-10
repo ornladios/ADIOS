@@ -8,17 +8,10 @@
 #ifndef ADIOS_H
 #define ADIOS_H
 
+#include "adios_mpi.h"
 #include "adios_types.h"
 #include "adios_error.h"
 #include <stdint.h>
-
-#ifdef _NOMPI
-/* Sequential processes can use the library compiled with -D_NOMPI */
-#   include "mpidummy.h"
-#else
-/* Parallel applications should use MPI to communicate file info and slices of data */
-#   include "mpi.h"
-#endif
 
 // ADIOS - Adaptable IO System
 
@@ -27,7 +20,9 @@ extern "C" {
 #endif
 
 // Global setup using the XML file
-int adios_init (const char * config);
+// Only processes of the provided communicator can later participate
+// in any adios activity
+int adios_init (const char * config, MPI_Comm comm);
 
 int adios_finalize (int mype);
 
@@ -37,7 +32,7 @@ int adios_open (int64_t * fd,
                 const char * group_name, 
                 const char * name,
                 const char * mode, 
-                void * comm
+                MPI_Comm comm
                );
 
 int adios_group_size (int64_t fd_p, 
@@ -72,7 +67,7 @@ int adios_stop_calculation (void);
 int adios_close (int64_t fd_p);
 
 // ADIOS No-XML API's
-int adios_init_noxml (void);
+int adios_init_noxml (MPI_Comm comm);
 
 // To allocate ADIOS buffer
 int adios_allocate_buffer (

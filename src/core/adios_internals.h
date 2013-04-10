@@ -12,6 +12,7 @@
 #include <stdlib.h>
 
 // need the enum for the transports
+#include "public/adios_mpi.h"
 #include "core/adios_transport_hooks.h"
 #include "core/adios_bp_v1.h"
 
@@ -97,6 +98,7 @@ struct adios_method_struct
     int iterations;
     int priority;
     struct adios_group_struct * group;
+    MPI_Comm init_comm; // MPI Communicator used only for the method's init call
 };
 
 struct adios_method_list_struct
@@ -232,7 +234,7 @@ typedef void (* ADIOS_INIT_FN) (const PairStruct * parameters
                                ,struct adios_method_struct * method
                                );
 typedef int (* ADIOS_OPEN_FN) (struct adios_file_struct * fd
-                              ,struct adios_method_struct * method, void * comm
+                              ,struct adios_method_struct * method, MPI_Comm comm
                               );
 typedef enum ADIOS_FLAG (* ADIOS_SHOULD_BUFFER_FN)
                                        (struct adios_file_struct * fd

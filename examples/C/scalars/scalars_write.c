@@ -70,8 +70,8 @@ int main (int argc, char ** argv)
        xml file but of course one can write the individual adios_write() 
        statements here too 
     */
-    adios_init ("scalars.xml");
-    adios_open (&adios_handle, "scalars", filename, "w", &comm);
+    adios_init ("scalars.xml", comm);
+    adios_open (&adios_handle, "scalars", filename, "w", comm);
 #include "gwrite_scalars.ch"
     adios_close (adios_handle);
 

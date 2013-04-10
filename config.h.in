@@ -38,11 +38,17 @@
 /* Define to 1 if you have the <dataspaces.h> header file. */
 #undef HAVE_DATASPACES_H
 
+/* Define if you have the DCMF. */
+#undef HAVE_DCMF
+
+/* Define to 1 if you have the <dcmf.h> header file. */
+#undef HAVE_DCMF_H
+
 /* Define if you have the DIMES. */
 #undef HAVE_DIMES
 
-/* Define to 1 if you have the <dimes.h> header file. */
-#undef HAVE_DIMES_H
+/* Define to 1 if you have the <dimes_interface.h> header file. */
+#undef HAVE_DIMES_INTERFACE_H
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #undef HAVE_DLFCN_H
