@@ -93,11 +93,11 @@ AM_CONDITIONAL([SKEL_TIMING], [test "x$enable_skel_timing" == "xyes"])
 
 if test "x$enable_skel_timing" == "xyes"; then
     AC_DEFINE(SKEL_TIMING, 1, [Skel timing is enabled])
-    AC_SUBST(SKEL_HAVE_ADIOS_TIMING,true)
+    AC_SUBST(SKEL_HAVE_ADIOS_TIMING,True)
     dnl The macro AM_SUBST_NOTMAKE does not work on Hopper with automake 10.1
     dnl AM_SUBST_NOTMAKE(SKEL_HAVE_ADIOS_TIMING,true)
 else
-    AC_SUBST(SKEL_HAVE_ADIOS_TIMING,false)
+    AC_SUBST(SKEL_HAVE_ADIOS_TIMING,False)
     dnl AM_SUBST_NOTMAKE(SKEL_HAVE_ADIOS_TIMING,false)
 fi
 AC_SUBST(SKEL_TIMING)
