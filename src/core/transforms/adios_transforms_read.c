@@ -214,8 +214,8 @@ static int apply_datablock_to_result_and_free(adios_datablock *datablock,
     }
 
     uint64_t used_count =
-            adios_patch_data(reqgroup->orig_data, reqgroup->orig_sel,
-                             datablock->data, datablock->bounds,
+            adios_patch_data(reqgroup->orig_data, 0, reqgroup->orig_sel,
+                             datablock->data, datablock->ragged_offset, datablock->bounds,
                              datablock->elem_type, reqgroup->swap_endianness);
 
     adios_datablock_free(&datablock, 1);
@@ -302,8 +302,8 @@ static ADIOS_VARCHUNK * apply_datablock_to_chunk_and_free(adios_datablock *resul
         chunk->data = malloc(chunk_buffer_size);
         chunk->sel = inter_sel;
 
-        adios_patch_data(chunk->data, chunk->sel,
-                         result->data, result->bounds,
+        adios_patch_data(chunk->data, 0, chunk->sel,
+                         result->data, result->ragged_offset, result->bounds,
                          result->elem_type, reqgroup->swap_endianness);
 
         // Populate the chunk struct

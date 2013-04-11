@@ -46,6 +46,9 @@
 #include "public/adios_selection.h"
 #include "core/adios_copyspec.h"
 
+void vector_add(int ndim, uint64_t *dst_vec, const uint64_t *vec1, const uint64_t *vec2);
+void vector_sub(int ndim, uint64_t *dst, const uint64_t *vec1, const uint64_t *vec2);
+
 /*
  * Simple computation of the volume in elements of a given array.
  */

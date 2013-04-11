@@ -19,6 +19,11 @@ void vector_add(int ndim, uint64_t *dst_vec, const uint64_t *vec1, const uint64_
         *dst_vec++ = *vec1++ + *vec2++;
 }
 
+void vector_sub(int ndim, uint64_t *dst, const uint64_t *vec1, const uint64_t *vec2) {
+    while (ndim--)
+        *dst++ = *vec1++ - *vec2++;
+}
+
 uint64_t compute_volume(int ndim, const uint64_t *dims) {
     uint64_t volume = 1;
     while (ndim) {
