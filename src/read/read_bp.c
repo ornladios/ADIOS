@@ -343,6 +343,9 @@ static int get_new_step (ADIOS_FILE * fp, const char * fname, MPI_Comm comm, int
 */
 static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
 {
+#ifdef WITH_TIMER
+    timer_start ("read_bp_read_var");
+#endif
     BP_PROC * p;
     BP_FILE * fh;
     int size_of_type;
@@ -424,6 +427,9 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
             break;
     }
 
+#ifdef WITH_TIMER
+    timer_stop ("read_bp_read_var");
+#endif
     return chunk;
 }
 
@@ -433,6 +439,9 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
  */
 static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
 {
+#ifdef WITH_TIMER
+    timer_start ("read_bp_read_var_bb");
+#endif
     BP_PROC * p;
     BP_FILE * fh;
     ADIOS_SELECTION * sel;
@@ -560,17 +569,35 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
             {
             if (!has_subfile)
             {
+#ifdef WITH_TIMER
+    timer_start ("read_bp_read_var_bb_mpiread");
+#endif
                 MPI_FILE_READ_OPS1
+#ifdef WITH_TIMER
+    timer_stop ("read_bp_read_var_bb_mpiread");
+#endif
             }
             else
             {
+#ifdef WITH_TIMER
+    timer_start ("read_bp_read_var_bb_mpiread");
+#endif
                 MPI_FILE_READ_OPS2
+#ifdef WITH_TIMER
+    timer_stop ("read_bp_read_var_bb_mpiread");
+#endif
             }
             }
             else
             {
                 slice_offset = 0;
+#ifdef WITH_TIMER
+    timer_start ("read_bp_read_var_bb_mpiread");
+#endif
                 MPI_FILE_READ_OPS3
+#ifdef WITH_TIMER
+    timer_stop ("read_bp_read_var_bb_mpiread");
+#endif
             }
 
             memcpy ((char *)data, fh->b->buff + fh->b->offset, size_of_type);
@@ -727,17 +754,35 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                     {
                     if (!has_subfile)
                     {
+#ifdef WITH_TIMER
+    timer_start ("read_bp_read_var_bb_mpiread");
+#endif
                         MPI_FILE_READ_OPS1
+#ifdef WITH_TIMER
+    timer_stop ("read_bp_read_var_bb_mpiread");
+#endif
                     }
                     else
                     {
+#ifdef WITH_TIMER
+    timer_start ("read_bp_read_var_bb_mpiread");
+#endif
                         MPI_FILE_READ_OPS2
+#ifdef WITH_TIMER
+    timer_stop ("read_bp_read_var_bb_mpiread");
+#endif
                     }
                     }
                     else
                     {
                          slice_offset = 0;
+#ifdef WITH_TIMER
+    timer_start ("read_bp_read_var_bb_mpiread");
+#endif
                          MPI_FILE_READ_OPS3
+#ifdef WITH_TIMER
+    timer_stop ("read_bp_read_var_bb_mpiread");
+#endif
                     }
 
                     memcpy ((char *)data, fh->b->buff + fh->b->offset, slice_size);
@@ -790,17 +835,35 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                                      + offset_in_dset * datasize * size_of_type;
                         if (!has_subfile)
                         {
+#ifdef WITH_TIMER
+    timer_start ("read_bp_read_var_bb_mpiread");
+#endif
                             MPI_FILE_READ_OPS1
+#ifdef WITH_TIMER
+    timer_stop ("read_bp_read_var_bb_mpiread");
+#endif
                         }
                         else
                         {
+#ifdef WITH_TIMER
+    timer_start ("read_bp_read_var_bb_mpiread");
+#endif
                             MPI_FILE_READ_OPS2
+#ifdef WITH_TIMER
+    timer_stop ("read_bp_read_var_bb_mpiread");
+#endif
                         }
                     }
                     else
                     {
                         slice_offset = 0;
+#ifdef WITH_TIMER
+    timer_start ("read_bp_read_var_bb_mpiread");
+#endif
                         MPI_FILE_READ_OPS3
+#ifdef WITH_TIMER
+    timer_stop ("read_bp_read_var_bb_mpiread");
+#endif
                     }
 
                     memcpy ((char *)data + write_offset, fh->b->buff + fh->b->offset, slice_size);
@@ -883,17 +946,35 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                                   + start_in_payload;
                     if (!has_subfile)
                     {
+#ifdef WITH_TIMER
+    timer_start ("read_bp_read_var_bb_mpiread");
+#endif
                         MPI_FILE_READ_OPS1
+#ifdef WITH_TIMER
+    timer_stop ("read_bp_read_var_bb_mpiread");
+#endif
                     }
                     else
                     {
+#ifdef WITH_TIMER
+    timer_start ("read_bp_read_var_bb_mpiread");
+#endif
                        MPI_FILE_READ_OPS2
+#ifdef WITH_TIMER
+    timer_stop ("read_bp_read_var_bb_mpiread");
+#endif
                     }
                     }
                     else
                     {
                         slice_offset =  start_in_payload;
+#ifdef WITH_TIMER
+    timer_start ("read_bp_read_var_bb_mpiread");
+#endif
                         MPI_FILE_READ_OPS3
+#ifdef WITH_TIMER
+    timer_stop ("read_bp_read_var_bb_mpiread");
+#endif
                     }
 
                     for (i = 0; i < ndim; i++)
@@ -954,6 +1035,10 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     chunk->nsteps = r->nsteps;
     chunk->sel = copy_selection (r->sel);
     chunk->data = r->data;
+
+#ifdef WITH_TIMER
+    timer_stop ("read_bp_read_var_bb");
+#endif
     return chunk;
 }
 
@@ -3168,7 +3253,7 @@ int adios_read_bp_is_var_timed (const ADIOS_FILE *fp, int varid)
         retval = 1;
     }
         /* FIXME: This last test tests if the last l:g:o is only an 'l'.
-           This is true for a variable over time but also 
+           This is true for a variable over time but also
            true for a 1D local array (which has no global dimension)
            The characteristics_count is 1 only if the local array is written
            from one process and only at one timestep.

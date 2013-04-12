@@ -119,7 +119,13 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
                                                               pg_intersection_sel,
                                                               pg_bounds_sel);
 
+#ifdef WITH_TIMER
+    timer_start ("adios_transform_plugin_generate_read_requests");
+#endif
             adios_transform_generate_read_subrequests(new_reqgroup, new_pg_reqgroup);
+#ifdef WITH_TIMER
+    timer_stop ("adios_transform_plugin_generate_read_requests");
+#endif
 
             adios_transform_pg_read_request_append(new_reqgroup, new_pg_reqgroup);
         } else {
@@ -155,7 +161,9 @@ static adios_datablock * finish_subreq(
         adios_transform_read_request *reqgroup,
         adios_transform_pg_read_request *pg_reqgroup,
         adios_transform_raw_read_request *subreq) {
-
+#ifdef WITH_TIMER
+    timer_start ("adios_transform_plugin_handle_data");
+#endif
     adios_datablock *result, *tmp_result;
 
     // Mark the subrequest as complete
@@ -181,6 +189,9 @@ static adios_datablock * finish_subreq(
             result = tmp_result;
         }
     }
+#ifdef WITH_TIMER
+    timer_stop ("adios_transform_plugin_handle_data");
+#endif
 
     return result;
 }
@@ -213,10 +224,16 @@ static int apply_datablock_to_result_and_free(adios_datablock *datablock,
         assert(0);
     }
 
+#ifdef WITH_TIMER
+    timer_start ("adios_transform_patch_data");
+#endif
     uint64_t used_count =
             adios_patch_data(reqgroup->orig_data, 0, reqgroup->orig_sel,
                              datablock->data, datablock->ragged_offset, datablock->bounds,
                              datablock->elem_type, reqgroup->swap_endianness);
+#ifdef WITH_TIMER
+    timer_stop ("adios_transform_patch_data");
+#endif
 
     adios_datablock_free(&datablock, 1);
     //return intersects;
@@ -341,6 +358,9 @@ static ADIOS_VARCHUNK * extract_chunk_from_finished_read_reqgroup(adios_transfor
 // variable, consume it, and possibly replacing it with a detransformed chunk.
 // Otherwise, do nothing.
 void adios_transform_process_read_chunk(adios_transform_read_request **reqgroups_head, ADIOS_VARCHUNK ** chunk) {
+#ifdef WITH_TIMER
+    timer_start ("adios_transform_handle_data");
+#endif
     adios_transform_read_request *reqgroup;
     adios_transform_pg_read_request *pg_reqgroup;
     adios_transform_raw_read_request *subreq;
@@ -409,6 +429,9 @@ void adios_transform_process_read_chunk(adios_transform_read_request **reqgroups
         adios_transform_read_request_remove(reqgroups_head, reqgroup);
         adios_transform_read_request_free(&reqgroup);
     }
+#ifdef WITH_TIMER
+    timer_stop ("adios_transform_handle_data");
+#endif
 }
 
 /*
@@ -417,6 +440,9 @@ void adios_transform_process_read_chunk(adios_transform_read_request **reqgroups
  * (This function is called after a blocking perform_reads completes)
  */
 void adios_transform_process_all_reads(adios_transform_read_request **reqgroups_head) {
+#ifdef WITH_TIMER
+    timer_start ("adios_transform_process_all_reads");
+#endif
     // Mark all subrequests, PG request groups and read request groups
     // as completed, calling callbacks as needed
     adios_transform_read_request *reqgroup;
@@ -465,4 +491,7 @@ void adios_transform_process_all_reads(adios_transform_read_request **reqgroups_
         // Now that the read reqgroup has been processed, free it (which also frees all children)
         adios_transform_read_request_free(&reqgroup);
     }
+#ifdef WITH_TIMER
+    timer_stop ("adios_transform_process_all_reads");
+#endif
 }
