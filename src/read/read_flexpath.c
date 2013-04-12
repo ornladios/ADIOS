@@ -436,7 +436,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 	    flexpath_var_info * temp = fp->var_list;	
 	    curr_var->next = temp;
 	    fp->var_list = curr_var;
-	    curr_var->type = adios_integer;
+	    //curr_var->type = adios_integer;
 	    // because we're only doing scalars here, we know the dims is 0	
 	    var_count++;
 	    f++;
@@ -505,7 +505,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     		if(var->was_scheduled == 1){
     		    var->array_size = var->data_size;
     		    for(i=0; i<num_dims; i++){
-    			char *dim = malloc(200*sizeof(char));			
+    			char *dim;
     			atom_name[0] ='\0';
     			strcat(atom_name, f->field_name);
     			strcat(atom_name, "_");
@@ -515,7 +515,6 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     			sprintf(dim_num, "%d", i+1);
     			strcat(atom_name, dim_num);
     			get_string_attr(attrs, attr_atom_from_string(atom_name), &dim);
-
     			FMField * temp_f = find_field(dim, f);
     			if(!temp_f){
     			    adios_error(err_invalid_varname,
@@ -531,7 +530,6 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     			    var->dims[i] = *temp_data;
     			    var->array_size = var->array_size * var->dims[i];
     			}
-			free(dim);
     		    }
     		    /* void* aptr8 = (void*)(*((unsigned long*)curr_offset)); */
     		    /* memcpy(var->chunks[0].data, aptr8, var->array_size); */

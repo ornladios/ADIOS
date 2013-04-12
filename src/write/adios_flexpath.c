@@ -1171,8 +1171,9 @@ extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method
     // mpi setup
     MPI_Comm * group_comm = (MPI_Comm*)malloc(sizeof(MPI_Comm));
     adios_var_to_comm(fd->group->group_comm,
-	fd->group->adios_host_language_fortran, comm, group_comm);
+    	fd->group->adios_host_language_fortran, comm, group_comm);
     fileData->mpiComm = (MPI_Comm*)group_comm;
+    //fileData->mpiComm = comm;
     MPI_Comm_rank(*(fileData->mpiComm), &fileData->rank);
     MPI_Comm_size(*(fileData->mpiComm), &fileData->size);
     char *recv_buff = NULL;
@@ -1210,6 +1211,9 @@ extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method
     // read contact list
     sprintf(reader_info_filename, "%s_%s", fd->name, "reader_info.txt");
     FILE* reader_info = fopen(reader_info_filename, "r");
+    if(!reader_info){
+	reader_info = fopen(reader_info_filename, "r");
+    }
     char in_contact[CONTACT_STR_LEN] = "";
     int numBridges = 0;
     int stone_num;

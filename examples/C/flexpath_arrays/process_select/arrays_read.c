@@ -69,8 +69,7 @@ int main (int argc, char ** argv)
 	memset(p, 0, NX*sizeof(int));
         /* schedule a read of the arrays */
         adios_schedule_read (afile, &process_select, "var_double_2Darray", 0, 1, t);
-        adios_schedule_read (afile, &process_select, "var_int_1Darray", 0, 1, p);
-        
+        adios_schedule_read (afile, &process_select, "var_int_1Darray", 0, 1, p);	
         /* commit request and retrieve data */
         adios_perform_reads (afile, 1);
 
