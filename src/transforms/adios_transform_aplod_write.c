@@ -42,7 +42,7 @@ uint16_t adios_transform_aplod_get_metadata_size()
 { 
     // Write the component vector here
     // No more than 8 components per variable
-	return (8 * sizeof(uint64_t));
+	return (sizeof (uint64_t) + sizeof (int8_t) + 8 * sizeof(int32_t));
 }
 
 uint64_t adios_transform_aplod_calc_vars_transformed_size(uint64_t orig_size, int num_vars) 
@@ -152,19 +152,15 @@ int adios_transform_aplod_apply(struct adios_file_struct *fd,
     // printf ("Numcomponents: %hu\n", numComponents);
 
     // APLOD specific code - Start
-    memcpy (output_buff, &numComponents, sizeof (numComponents));
-    memcpy (output_buff + sizeof (numComponents), componentVector, numComponents * sizeof (int32_t));
     uint32_t numElements = input_size / bp_get_type_size (var->pre_transform_type, "");
-
-    char *compressed_buff = (((char *) output_buff) + sizeof (numComponents) + numComponents * sizeof (int32_t)); 
 
     APLODConfig_t *config = APLODConfigure (componentVector, numComponents);
 
     config->blockLengthElts = numElements;
-    APLODShuffleComponents (config, numElements, 0, numComponents, input_buff, compressed_buff);
-    // APLODReconstructComponents  (config, numElements, 0, numComponents, 0, 0, decompressed_buff, compressed_buff);
+    APLODShuffleComponents (config, numElements, 0, numComponents, input_buff, output_buff);
 
     // void *decompressed_buff = (void *) calloc (input_size, sizeof (char));
+    // APLODReconstructComponents  (config, numElements, 0, numComponents, 0, 0, decompressed_buff, output_buff);
     // assert (memcmp (input_buff, decompressed_buff, numElements * sizeof (double)) == 0);
     // free (decompressed_buff);
  
@@ -185,9 +181,16 @@ int adios_transform_aplod_apply(struct adios_file_struct *fd,
     // Do I copy the PLODHandle_t object as the metadata or do I serialize it into the buffer as well
     if(var->transform_metadata && var->transform_metadata_len > 0)
     {
-        memcpy(var->transform_metadata, &input_size, sizeof(uint64_t));
+        memcpy (var->transform_metadata, &input_size, sizeof(uint64_t));
+        memcpy (var->transform_metadata + sizeof (uint64_t), &numComponents, sizeof (numComponents));
+        memcpy (var->transform_metadata + sizeof (uint64_t) + sizeof (numComponents), componentVector, numComponents * sizeof (int32_t));
+
     }
-	
+
+    free (config->byteVector);
+    free (config->byteVectorPS);
+    free (config);
+
 	// printf("adios_transform_compress_apply compress %d input_size %d actual_output_size %d\n", 
 			// rtn, input_size, actual_output_size);
 	

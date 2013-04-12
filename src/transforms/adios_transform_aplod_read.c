@@ -82,14 +82,17 @@ adios_datablock * adios_transform_aplod_pg_reqgroup_completed(adios_transform_re
     void* decompressed_buff = malloc (decompressed_len);
 
     int8_t numComponents = 0;
-    int32_t componentVector [elementSize];
+    int32_t *componentVector = 0;
     uint32_t numElements = decompressed_len / elementSize;
 
-    memcpy (&numComponents, compressed_buff, sizeof (numComponents));
-    compressed_buff += sizeof (numComponents);
+    void *transform_metadata = reqgroup->transinfo->transform_metadata;
+    transform_metadata += sizeof (uint64_t);
 
-    memcpy (componentVector, compressed_buff, numComponents * sizeof (int32_t));
-    compressed_buff += (numComponents * sizeof (int32_t));
+    memcpy (&numComponents, transform_metadata, sizeof (numComponents));
+    transform_metadata += sizeof (numComponents);
+
+    componentVector = malloc (numElements * sizeof (int32_t));
+    memcpy (componentVector, transform_metadata, numComponents * sizeof (int32_t));
 
     APLODConfig_t *config = APLODConfigure (componentVector, numComponents);
     config->blockLengthElts = numElements;
@@ -102,8 +105,9 @@ adios_datablock * adios_transform_aplod_pg_reqgroup_completed(adios_transform_re
                                     0,
                                     decompressed_buff,
                                     compressed_buff
-                                );                                
+                                );
 
+    free (componentVector);
     free (config->byteVector);
     free (config->byteVectorPS);
     free (config);
