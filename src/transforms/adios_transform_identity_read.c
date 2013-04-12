@@ -24,30 +24,47 @@
 int adios_transform_identity_generate_read_subrequests(adios_transform_read_request *reqgroup,
                                                        adios_transform_pg_read_request *pg_reqgroup) {
 
-    int i;
-
-    ADIOS_SELECTION_BOUNDINGBOX_STRUCT *pgbb = &pg_reqgroup->pg_bounds_sel->u.bb; // Bounds for the PG
+    uint64_t i;
+    const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *pgbb = &pg_reqgroup->pg_bounds_sel->u.bb; // Bounds for the PG
     int datum_size = adios_get_type_size(reqgroup->transinfo->orig_type, NULL); // Get the data type size
     uint64_t tmp_point[MAX_DIMS]; // For scratchwork
 
-    uint64_t start_off = 0, end_off = 0; // Start/end byte offsets to read between
+    uint64_t start_off, end_off; // Start/end byte offsets to read between
     switch (pg_reqgroup->pg_intersection_sel->type) {
     case ADIOS_SELECTION_BOUNDINGBOX:
     {
         const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &pg_reqgroup->pg_intersection_sel->u.bb;
 
         vector_sub(bb->ndim, tmp_point, bb->start, pgbb->start); // Selection box start relative to PG
-        start_off = compute_ragged_array_offset(bb->ndim, tmp_point, pgbb->count);
+        start_off = compute_linear_offset_in_volume(bb->ndim, tmp_point, pgbb->count);
 
         vector_add(bb->ndim, tmp_point, tmp_point, bb->count); // Selection box end relative to PG
         for (i = 0; i < bb->ndim; i++)
             tmp_point[i]--; // Reduce all by 1 because bb->start+bb->count is exclusive
-        end_off = compute_ragged_array_offset(bb->ndim, tmp_point, pgbb->count) + 1; // Add 1 because this offset points to the last element, and we want one past that since end_off is exclusive
+        end_off = compute_linear_offset_in_volume(bb->ndim, tmp_point, pgbb->count) + 1; // Add 1 because this offset points to the last element, and we want one past that since end_off is exclusive
+
         break;
     }
     case ADIOS_SELECTION_POINTS:
-        assert(0); // Not yet supported
+    {
+        const ADIOS_SELECTION_POINTS_STRUCT *pts = &pg_reqgroup->pg_intersection_sel->u.points;
+
+        start_off = UINT64_MAX; // Set it to max so that the first point brings it down
+        end_off = 0;
+        for (i = 0; i < pts->npoints; i++) {
+            vector_sub(pts->ndim, tmp_point, pts->points + i * pts->ndim, pgbb->start);
+
+            const uint64_t point_off = compute_linear_offset_in_volume(pts->ndim, tmp_point, pgbb->count);
+            if (point_off < start_off)
+                start_off = point_off;
+            if (point_off > end_off)
+                end_off = point_off;
+        }
+
+        end_off++; // Advance past the last element to make it exclusive
+
         break;
+    }
     }
 
     const uint64_t buflen = (end_off - start_off) * datum_size;
@@ -76,23 +93,17 @@ adios_datablock * adios_transform_identity_pg_reqgroup_completed(
         adios_transform_read_request *reqgroup,
         adios_transform_pg_read_request *completed_pg_reqgroup) {
 
-    switch (completed_pg_reqgroup->pg_intersection_sel->type) {
-    case ADIOS_SELECTION_BOUNDINGBOX:
-    {
-        // Transfer ownership of the data buffer
-        void *pg_data = completed_pg_reqgroup->subreqs->data;
-        completed_pg_reqgroup->subreqs->data = NULL;
+    // Transfer ownership of the data buffer
+    void *pg_data = completed_pg_reqgroup->subreqs->data;
+    completed_pg_reqgroup->subreqs->data = NULL;
 
-        uint64_t ragged_offset = *(uint64_t*)completed_pg_reqgroup->subreqs->transform_internal;
+    uint64_t ragged_offset = *(uint64_t*)completed_pg_reqgroup->subreqs->transform_internal;
 
-        return adios_datablock_new_ragged_offset(reqgroup->transinfo->orig_type,
-                                                 completed_pg_reqgroup->timestep,
-                                                 completed_pg_reqgroup->pg_bounds_sel,
-                                                 ragged_offset,
-                                                 pg_data);
-    }
-    default: assert(0); break;
-    }
+    return adios_datablock_new_ragged_offset(reqgroup->transinfo->orig_type,
+                                            completed_pg_reqgroup->timestep,
+                                            completed_pg_reqgroup->pg_bounds_sel,
+                                            ragged_offset,
+                                            pg_data);
 }
 
 adios_datablock * adios_transform_identity_reqgroup_completed(
