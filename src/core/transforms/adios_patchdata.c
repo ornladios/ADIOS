@@ -116,6 +116,9 @@ static uint64_t adios_patch_data_bb_pts_helper(void *dst, uint64_t dst_ragged_of
         bb_volume *= bb->count[j];
     }
 
+    uint64_t dst_byte_ragged_offset = dst_ragged_offset * typelen;
+    uint64_t src_byte_ragged_offset = src_ragged_offset * typelen;
+
     // Check that the selection dimensions are compatible
     assert(pts->ndim == bb->ndim);
 
@@ -142,13 +145,13 @@ static uint64_t adios_patch_data_bb_pts_helper(void *dst, uint64_t dst_ragged_of
             byte_offset_in_pt_buffer = i * typelen;
 
             if (isDestPoints) {
-                assert(byte_offset_in_pt_buffer >= dst_ragged_offset);
-                assert(byte_offset_in_bb_buffer >= src_ragged_offset);
-                memcpy((char*)dst + byte_offset_in_pt_buffer - dst_ragged_offset, (char*)src + byte_offset_in_bb_buffer - src_ragged_offset, typelen);
+                assert(byte_offset_in_pt_buffer >= dst_byte_ragged_offset);
+                assert(byte_offset_in_bb_buffer >= src_byte_ragged_offset);
+                memcpy((char*)dst + byte_offset_in_pt_buffer - dst_byte_ragged_offset, (char*)src + byte_offset_in_bb_buffer - src_byte_ragged_offset, typelen);
             } else {
-                assert(byte_offset_in_bb_buffer >= dst_ragged_offset);
-                assert(byte_offset_in_pt_buffer >= src_ragged_offset);
-                memcpy((char*)dst + byte_offset_in_bb_buffer - dst_ragged_offset, (char*)src + byte_offset_in_pt_buffer - src_ragged_offset, typelen);
+                assert(byte_offset_in_bb_buffer >= dst_byte_ragged_offset);
+                assert(byte_offset_in_pt_buffer >= src_byte_ragged_offset);
+                memcpy((char*)dst + byte_offset_in_bb_buffer - dst_byte_ragged_offset, (char*)src + byte_offset_in_pt_buffer - src_byte_ragged_offset, typelen);
             }
             pts_copied++;
         }
