@@ -201,11 +201,11 @@ void copy_subvolume_ragged_offset_with_spec(void *dst, const void *src,
  * array.
  *
  * @param ndim number of dimensions of the volume
- * @param start_offset the offsets of the start of the ragged array
- * @param overall_dims the dimensions of the complete array
- * @return the element offset of the beginning of the ragged array
+ * @param point the point within the volume
+ * @param dims the dimensions of the volume
+ * @return the linearized element offset of the point within the volume
  */
-uint64_t compute_ragged_array_offset(int ndim, const uint64_t *start_offset, const uint64_t *overall_dims);
+uint64_t compute_linear_offset_in_volume(int ndim, const uint64_t *point, const uint64_t *dims);
 
 /*
  * Compacts a subvolume within a buffer volume to the beginning of the buffer,

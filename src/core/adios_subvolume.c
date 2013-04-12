@@ -185,11 +185,11 @@ void copy_subvolume_ragged(void *dst, const void *src, int ndim, const uint64_t 
 
     const uint64_t total_src_ragged_offset =
             src_ragged_offsets ?
-            compute_ragged_array_offset(ndim, src_ragged_offsets,
+            compute_linear_offset_in_volume(ndim, src_ragged_offsets,
                                         src_dims) : 0;
     const uint64_t total_dst_ragged_offset =
             dst_ragged_offsets ?
-            compute_ragged_array_offset(ndim, dst_ragged_offsets,
+            compute_linear_offset_in_volume(ndim, dst_ragged_offsets,
                                         dst_dims) : 0;
 
     copy_subvolume_ragged_offset(dst, src, ndim, subv_dims,
@@ -402,13 +402,13 @@ void copy_subvolume_ragged_offset(void *dst, const void *src, int ndim, const ui
     ((uint64_t*)subv_dims)[last_noncovering_dim] = first_contig_dim_value_old;
 }
 
-uint64_t compute_ragged_array_offset(int ndim, const uint64_t *start_offset, const uint64_t *overall_dims) {
+uint64_t compute_linear_offset_in_volume(int ndim, const uint64_t *point, const uint64_t *dims) {
     int dim;
     uint64_t ragged_off = 0;
     uint64_t volume_so_far = 1;
     for (dim = ndim - 1; dim >= 0; dim--) {
-        ragged_off += start_offset[dim] * volume_so_far;
-        volume_so_far *= overall_dims[dim];
+        ragged_off += point[dim] * volume_so_far;
+        volume_so_far *= dims[dim];
     }
     return ragged_off;
 }

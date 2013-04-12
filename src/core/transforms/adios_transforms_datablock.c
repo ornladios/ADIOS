@@ -45,7 +45,7 @@ adios_datablock * adios_datablock_new_ragged(
     assert(bounds->type == ADIOS_SELECTION_BOUNDINGBOX);
 
     const uint64_t ragged_offset = ragged_offsets ?
-            compute_ragged_array_offset(bounds->u.bb.ndim, ragged_offsets, bounds->u.bb.count) :
+            compute_linear_offset_in_volume(bounds->u.bb.ndim, ragged_offsets, bounds->u.bb.count) :
             0;
 
     return adios_datablock_new_ragged_offset(elem_type, timestep, bounds, ragged_offset, data);
