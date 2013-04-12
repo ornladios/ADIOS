@@ -23,6 +23,7 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <stdbool.h>
 #include <assert.h>
 
 #include "public/adios_error.h"
@@ -85,69 +86,92 @@ static uint64_t adios_patch_data_bb_to_bb(void *dst, uint64_t dst_ragged_offset,
     return volume;
 }
 
-static uint64_t adios_patch_data_pts_to_bb(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *dst_bb,
-                                           void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION_POINTS_STRUCT *src_pts,
-                                           enum ADIOS_DATATYPES datum_type,
-                                           enum ADIOS_FLAG swap_endianness) {
-    PATCH_UNIMPL("bounding box","points");
-    return 0;
-}
-
-static uint64_t adios_patch_data_bb_to_pts(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_POINTS_STRUCT *dst_pts,
-                                           void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *src_bb,
-                                           enum ADIOS_DATATYPES datum_type,
-                                           enum ADIOS_FLAG swap_endianness) {
-    const int ndim = dst_pts->ndim;
+// Whenever we are patching between a point selection and bounding box, we
+// will always iterate over the point selection, check each points for containment
+// within the bounding box, and compute byte offsets for the point within the point list
+// and bounding box, regardless of whether the point selection is on the source or
+// destination buffer. Therefore, we include a helper function with a boolean flag
+// to switch the copy direction, and just branch for a few lines during the copy
+// operation. This simplifies the code a lot, and reduces the LoC in this file (although
+// this comment makes up for a good bit of that savings).
+static uint64_t adios_patch_data_bb_pts_helper(void *dst, uint64_t dst_ragged_offset, void *src, uint64_t src_ragged_offset,
+                                               const ADIOS_SELECTION_POINTS_STRUCT *pts,
+                                               const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb,
+                                               _Bool isDestPoints, enum ADIOS_DATATYPES datum_type,
+                                               enum ADIOS_FLAG swap_endianness) {
+    const int ndim = pts->ndim;
     uint64_t i;
     int j;
     uint64_t pts_copied = 0;
-    uint64_t byte_offset_in_src;
+    uint64_t byte_offset_in_bb_buffer, byte_offset_in_pt_buffer;
     const uint64_t *cur_pt;
-    uint64_t *src_strides = malloc(sizeof(uint64_t) * ndim);
-    uint64_t *pt_relative_to_src = malloc(sizeof(uint64_t) * ndim);
+    uint64_t *bb_byte_strides = malloc(sizeof(uint64_t) * ndim);
+    uint64_t *pt_relative_to_bb = malloc(sizeof(uint64_t) * ndim);
 
     // Compute the strides into the source bounding box array
     int typelen = adios_get_type_size(datum_type, NULL);
-    uint64_t src_volume = typelen;
+    uint64_t bb_volume = typelen;
     for (j = ndim - 1; j >= 0; j--) {
-        src_strides[j] = src_volume;
-        src_volume *= src_bb->count[j];
+        bb_byte_strides[j] = bb_volume;
+        bb_volume *= bb->count[j];
     }
 
     // Check that the selection dimensions are compatible
-    assert(dst_pts->ndim == src_bb->ndim);
+    assert(pts->ndim == bb->ndim);
 
-    // Check each point in the destination; if it's in the source bounding box, copy it over
-    for (i = 0; i < dst_pts->npoints; i++) {
-        cur_pt = &dst_pts->points[i * ndim];
+    // Check each point; if it's in the bounding box, perform a copy
+    for (i = 0; i < pts->npoints; i++) {
+        cur_pt = &pts->points[i * ndim];
 
         for (j = 0; j < ndim; j++) {
             // If the point's coordinate in some dimension is outside the bounding box
-            if (cur_pt[j] < src_bb->start[j] ||
-                cur_pt[j] >= src_bb->start[j] + src_bb->count[j]) {
+            if (cur_pt[j] < bb->start[j] ||
+                cur_pt[j] >= bb->start[j] + bb->count[j]) {
                 break;
             }
         }
 
         // If the point is within the bounding box
         if (j == ndim) {
-            vector_sub(ndim, pt_relative_to_src, cur_pt, src_bb->start);
+            vector_sub(ndim, pt_relative_to_bb, cur_pt, bb->start);
 
-            byte_offset_in_src = 0;
+            byte_offset_in_bb_buffer = 0;
             for (j = 0; j < ndim; j++)
-                byte_offset_in_src += pt_relative_to_src[j] * src_strides[j];
+                byte_offset_in_bb_buffer += pt_relative_to_bb[j] * bb_byte_strides[j];
 
-            assert(i * typelen >= dst_ragged_offset);
-            assert(byte_offset_in_src >= src_ragged_offset);
-            memcpy((char*)dst + i * typelen - dst_ragged_offset, (char*)src + byte_offset_in_src - src_ragged_offset, typelen);
+            byte_offset_in_pt_buffer = i * typelen;
+
+            if (isDestPoints) {
+                assert(byte_offset_in_pt_buffer >= dst_ragged_offset);
+                assert(byte_offset_in_bb_buffer >= src_ragged_offset);
+                memcpy((char*)dst + byte_offset_in_pt_buffer - dst_ragged_offset, (char*)src + byte_offset_in_bb_buffer - src_ragged_offset, typelen);
+            } else {
+                assert(byte_offset_in_bb_buffer >= dst_ragged_offset);
+                assert(byte_offset_in_pt_buffer >= src_ragged_offset);
+                memcpy((char*)dst + byte_offset_in_bb_buffer - dst_ragged_offset, (char*)src + byte_offset_in_pt_buffer - src_ragged_offset, typelen);
+            }
             pts_copied++;
         }
     }
 
-    free(src_strides);
-    free(pt_relative_to_src);
+    free(bb_byte_strides);
+    free(pt_relative_to_bb);
 
     return pts_copied;
+}
+
+static uint64_t adios_patch_data_pts_to_bb(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *dst_bb,
+                                           void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION_POINTS_STRUCT *src_pts,
+                                           enum ADIOS_DATATYPES datum_type,
+                                           enum ADIOS_FLAG swap_endianness) {
+    return adios_patch_data_bb_pts_helper(dst, dst_ragged_offset, src, src_ragged_offset, src_pts, dst_bb, true, datum_type, swap_endianness);
+}
+
+static uint64_t adios_patch_data_bb_to_pts(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_POINTS_STRUCT *dst_pts,
+                                           void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *src_bb,
+                                           enum ADIOS_DATATYPES datum_type,
+                                           enum ADIOS_FLAG swap_endianness) {
+    return adios_patch_data_bb_pts_helper(dst, dst_ragged_offset, src, src_ragged_offset, dst_pts, src_bb, false, datum_type, swap_endianness);
 }
 
 static uint64_t adios_patch_data_pts_to_pts(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_POINTS_STRUCT *dst_pts,
