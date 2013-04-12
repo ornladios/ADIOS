@@ -32037,10 +32037,10 @@ cat >>confdefs.h <<\_ACEOF
 #define SKEL_TIMING 1
 _ACEOF
 
-    SKEL_HAVE_ADIOS_TIMING=true
+    SKEL_HAVE_ADIOS_TIMING=True
 
         else
-    SKEL_HAVE_ADIOS_TIMING=false
+    SKEL_HAVE_ADIOS_TIMING=False
 
     fi
 
