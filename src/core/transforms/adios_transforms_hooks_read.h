@@ -58,24 +58,40 @@ typedef struct {
             adios_transform_read_request *completed_reqgroup);
 } adios_transform_read_method;
 
-// Transform read method registry
-extern adios_transform_read_method TRANSFORM_READ_METHODS[num_adios_transform_types];
+//
+// Every transform plugin has a set of functions that must go through three stages:
+// * Declaration: as with a C header
+// * Definition: the functions must be defined with bodies (or defined as
+//   unimplemented using the DECLARE_TRANSFORM_READ_METHOD_UNIMPL utility macro)
+// * Registration: loading pointers to the functions into a callback table
+//
 
-// Transport method function declaration/assignment macros
+// Transform method function declarations
 #define DECLARE_TRANSFORM_READ_METHOD(tmethod)                            \
     int adios_transform_##tmethod##_generate_read_subrequests(            \
-            adios_transform_read_request *reqgroup,                    \
-            adios_transform_pg_read_request *pg_reqgroup);                    \
+            adios_transform_read_request *reqgroup,                       \
+            adios_transform_pg_read_request *pg_reqgroup);                \
    adios_datablock * adios_transform_##tmethod##_subrequest_completed(    \
-            adios_transform_read_request *reqgroup,                    \
-            adios_transform_pg_read_request *pg_reqgroup,                    \
-            adios_transform_raw_read_request *completed_subreq);            \
-   adios_datablock * adios_transform_##tmethod##_pg_reqgroup_completed(    \
-            adios_transform_read_request *reqgroup,                    \
-            adios_transform_pg_read_request *completed_pg_reqgroup);        \
-   adios_datablock * adios_transform_##tmethod##_reqgroup_completed(        \
+            adios_transform_read_request *reqgroup,                       \
+            adios_transform_pg_read_request *pg_reqgroup,                 \
+            adios_transform_raw_read_request *completed_subreq);          \
+   adios_datablock * adios_transform_##tmethod##_pg_reqgroup_completed(   \
+            adios_transform_read_request *reqgroup,                       \
+            adios_transform_pg_read_request *completed_pg_reqgroup);      \
+   adios_datablock * adios_transform_##tmethod##_reqgroup_completed(      \
             adios_transform_read_request *completed_reqgroup);
 
+// Transform method function registration
+#define TRANSFORM_READ_METHOD_HOOK_LIST(tmethod) \
+    adios_transform_##tmethod##_generate_read_subrequests, \
+    adios_transform_##tmethod##_subrequest_completed, \
+    adios_transform_##tmethod##_pg_reqgroup_completed, \
+    adios_transform_##tmethod##_reqgroup_completed \
+
+#define REGISTER_TRANSFORM_READ_METHOD_HOOKS(ttable, tmethod, method_type) \
+    ttable[method_type] = (adios_transform_read_method){ TRANSFORM_READ_METHOD_HOOK_LIST(tmethod) };
+
+// Transform method function helper definitions for unimplemented methods
 #define UNIMPL_TRANSFORM_READ_FN(tmethod, func) \
     adios_error(err_operation_not_supported,                                \
                 "Transport method %s is not supported for read in this "    \
@@ -107,11 +123,5 @@ extern adios_transform_read_method TRANSFORM_READ_METHODS[num_adios_transform_ty
         UNIMPL_TRANSFORM_READ_FN(tmethod, __FUNCTION__);                \
         return NULL;                                                    \
     }
-
-#define REGISTER_TRANSFORM_READ_METHOD(tmethod, method_type) \
-        TRANSFORM_READ_METHODS[method_type].transform_generate_read_subrequests = adios_transform_##tmethod##_generate_read_subrequests;    \
-        TRANSFORM_READ_METHODS[method_type].transform_subrequest_completed = adios_transform_##tmethod##_subrequest_completed;                \
-        TRANSFORM_READ_METHODS[method_type].transform_pg_reqgroup_completed = adios_transform_##tmethod##_pg_reqgroup_completed;            \
-        TRANSFORM_READ_METHODS[method_type].transform_reqgroup_completed = adios_transform_##tmethod##_reqgroup_completed;
 
 #endif /* ADIOS_TRANSFORMS_HOOKS_READ_H_ */

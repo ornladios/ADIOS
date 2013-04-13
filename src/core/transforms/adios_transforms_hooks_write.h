@@ -41,17 +41,33 @@ typedef struct {
             uint64_t *transformed_len, int use_shared_buffer, int *wrote_to_shared_buffer);
 } adios_transform_write_method;
 
-// Transform write method registry
-extern adios_transform_write_method TRANSFORM_WRITE_METHODS[num_adios_transform_types];
+//
+// Every transform plugin has a set of functions that must go through three stages:
+// * Declaration: as with a C header
+// * Definition: the functions must be defined with bodies (or defined as
+//   unimplemented using the DECLARE_TRANSFORM_WRITE_METHOD_UNIMPL utility macro)
+// * Registration: loading pointers to the functions into a callback table
+//
 
+// Transform method function declarations
 #define DECLARE_TRANSFORM_WRITE_METHOD(tmethod) \
     uint16_t adios_transform_##tmethod##_get_metadata_size(struct adios_transform_spec *transform_spec); \
-    uint64_t adios_transform_##tmethod##_calc_vars_transformed_size(enum ADIOS_TRANSFORM_TYPE type, \
-                                                                    uint64_t orig_size, int num_vars);	 \
-    int adios_transform_##tmethod##_apply(struct adios_file_struct *fd, struct adios_var_struct *var,	 \
-                                          uint64_t *transformed_len,									 \
+    uint64_t adios_transform_##tmethod##_calc_vars_transformed_size(struct adios_transform_spec *transform_spec, \
+                                                                    uint64_t orig_size, int num_vars);	\
+    int adios_transform_##tmethod##_apply(struct adios_file_struct *fd, struct adios_var_struct *var,	\
+                                          uint64_t *transformed_len,									\
                                           int use_shared_buffer, int *wrote_to_shared_buffer);
 
+// Transform method function registration
+#define TRANSFORM_WRITE_METHOD_HOOK_LIST(tmethod) \
+    adios_transform_##tmethod##_get_metadata_size, \
+    adios_transform_##tmethod##_calc_vars_transformed_size, \
+    adios_transform_##tmethod##_apply
+
+#define REGISTER_TRANSFORM_WRITE_METHOD_HOOKS(ttable, tmethod, method_type) \
+    ttable[method_type] = (adios_transform_write_method){ TRANSFORM_WRITE_METHOD_HOOK_LIST(tmethod) };
+
+// Transform method function helper definitions for unimplemented methods
 #define UNIMPL_TRANSFORM_WRITE_FN(tmethod, func) \
     adios_error(err_operation_not_supported,								\
                 "Transport method %s is not supported for write in this "	\
@@ -65,7 +81,7 @@ extern adios_transform_write_method TRANSFORM_WRITE_METHODS[num_adios_transform_
             UNIMPL_TRANSFORM_WRITE_FN(tmethod, __FUNCTION__);								\
             return 0;																		\
         }																					\
-        uint64_t adios_transform_##tmethod##_calc_vars_transformed_size(enum ADIOS_TRANSFORM_TYPE type, \
+        uint64_t adios_transform_##tmethod##_calc_vars_transformed_size(struct adios_transform_spec *transform_spec, \
                                                                         uint64_t orig_size, int num_vars) {	\
             UNIMPL_TRANSFORM_WRITE_FN(tmethod, __FUNCTION__);								\
             return 0;																		\
@@ -77,10 +93,5 @@ extern adios_transform_write_method TRANSFORM_WRITE_METHODS[num_adios_transform_
             UNIMPL_TRANSFORM_WRITE_FN(tmethod, __FUNCTION__);										\
             return 0;																				\
         }
-
-#define REGISTER_TRANSFORM_WRITE_METHOD(tmethod, method_type) \
-    TRANSFORM_WRITE_METHODS[method_type].transform_get_metadata_size = adios_transform_##tmethod##_get_metadata_size;		\
-    TRANSFORM_WRITE_METHODS[method_type].transform_calc_vars_transformed_size = adios_transform_##tmethod##_calc_vars_transformed_size;	\
-    TRANSFORM_WRITE_METHODS[method_type].transform_apply = adios_transform_##tmethod##_apply;
 
 #endif /* ADIOS_TRANSFORMS_HOOKS_WRITE_H_ */

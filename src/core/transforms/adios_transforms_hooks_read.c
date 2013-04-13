@@ -13,6 +13,7 @@
 #include "core/transforms/adios_transforms_reqgroup.h"
 #include "core/adios_subvolume.h"
 
+/*
 DECLARE_TRANSFORM_READ_METHOD_UNIMPL(none);
 DECLARE_TRANSFORM_READ_METHOD(identity);
 DECLARE_TRANSFORM_READ_METHOD(zlib);
@@ -21,6 +22,10 @@ DECLARE_TRANSFORM_READ_METHOD(szip);
 DECLARE_TRANSFORM_READ_METHOD(isobar);
 DECLARE_TRANSFORM_READ_METHOD(aplod);
 DECLARE_TRANSFORM_READ_METHOD(alacrity);
+*/
+
+// PLUGIN DETECT - Generate read-side function declarations for all plugins
+#include "core/transforms/plugindetect/detect_plugin_read_hook_decls.h"
 
 // Transform read method registry
 adios_transform_read_method TRANSFORM_READ_METHODS[num_adios_transform_types];
@@ -30,14 +35,22 @@ void adios_transform_read_init() {
     if (adios_transforms_initialized)
         return;
 
-    REGISTER_TRANSFORM_READ_METHOD(none, adios_transform_none);
-    REGISTER_TRANSFORM_READ_METHOD(identity, adios_transform_identity);
-    REGISTER_TRANSFORM_READ_METHOD(zlib, adios_transform_zlib);
-    REGISTER_TRANSFORM_READ_METHOD(bzip2, adios_transform_bzip2);
-    REGISTER_TRANSFORM_READ_METHOD(szip, adios_transform_szip);
-    REGISTER_TRANSFORM_READ_METHOD(isobar, adios_transform_isobar);
-    REGISTER_TRANSFORM_READ_METHOD(aplod, adios_transform_aplod);
-    REGISTER_TRANSFORM_READ_METHOD(alacrity, adios_transform_alacrity);
+    /*
+    REGISTER_TRANSFORM_READ_METHOD_HOOKS(TRANSFORM_READ_METHODS, none, adios_transform_none);
+    REGISTER_TRANSFORM_READ_METHOD_HOOKS(TRANSFORM_READ_METHODS, identity, adios_transform_identity);
+    REGISTER_TRANSFORM_READ_METHOD_HOOKS(TRANSFORM_READ_METHODS, zlib, adios_transform_zlib);
+    REGISTER_TRANSFORM_READ_METHOD_HOOKS(TRANSFORM_READ_METHODS, bzip2, adios_transform_bzip2);
+    REGISTER_TRANSFORM_READ_METHOD_HOOKS(TRANSFORM_READ_METHODS, szip, adios_transform_szip);
+    REGISTER_TRANSFORM_READ_METHOD_HOOKS(TRANSFORM_READ_METHODS, isobar, adios_transform_isobar);
+    REGISTER_TRANSFORM_READ_METHOD_HOOKS(TRANSFORM_READ_METHODS, aplod, adios_transform_aplod);
+    REGISTER_TRANSFORM_READ_METHOD_HOOKS(TRANSFORM_READ_METHODS, alacrity, adios_transform_alacrity);
+    */
+
+    // PLUGIN DETECT - Register read-side functions from all plugins in the table
+    // NOTE: Input macro "TRANSFORM_READ_METHODS" specifies the table to register into, but this
+    //       is already the name of our table, so no further action is needed
+    #include "core/transforms/plugindetect/detect_plugin_read_hook_reg.h"
+
     adios_transforms_initialized = 1;
 }
 

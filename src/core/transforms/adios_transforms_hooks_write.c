@@ -9,6 +9,7 @@
 #include "adios_transforms_hooks_write.h"
 #include "public/adios_selection.h"
 
+/*
 DECLARE_TRANSFORM_WRITE_METHOD_UNIMPL(none);
 DECLARE_TRANSFORM_WRITE_METHOD(identity);
 DECLARE_TRANSFORM_WRITE_METHOD(zlib);
@@ -17,6 +18,10 @@ DECLARE_TRANSFORM_WRITE_METHOD(szip);
 DECLARE_TRANSFORM_WRITE_METHOD(isobar);
 DECLARE_TRANSFORM_WRITE_METHOD(aplod);
 DECLARE_TRANSFORM_WRITE_METHOD(alacrity);
+*/
+
+// PLUGIN DETECT - Generate write-side function declarations for all plugins
+#include "core/transforms/plugindetect/detect_plugin_write_hook_decls.h"
 
 // Transform write method registry
 adios_transform_write_method TRANSFORM_WRITE_METHODS[num_adios_transform_types];
@@ -26,6 +31,7 @@ void adios_transform_init() {
     if (adios_transforms_initialized)
         return;
 
+    /*
     REGISTER_TRANSFORM_WRITE_METHOD(none, adios_transform_none);
     REGISTER_TRANSFORM_WRITE_METHOD(identity, adios_transform_identity);
     REGISTER_TRANSFORM_WRITE_METHOD(zlib, adios_transform_zlib);
@@ -34,6 +40,12 @@ void adios_transform_init() {
     REGISTER_TRANSFORM_WRITE_METHOD(isobar, adios_transform_isobar);
     REGISTER_TRANSFORM_WRITE_METHOD(aplod, adios_transform_aplod);
     REGISTER_TRANSFORM_WRITE_METHOD(alacrity, adios_transform_alacrity);
+    */
+
+    // PLUGIN DETECT - Register write-side functions from all plugins in the table
+    // NOTE: Input macro "TRANSFORM_WRITE_METHODS" specifies the table to register into, but this
+    //       is already the name of our table, so no further action is needed
+    #include "core/transforms/plugindetect/detect_plugin_write_hook_reg.h"
 
     adios_transforms_initialized = 1;
 }
