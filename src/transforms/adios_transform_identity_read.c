@@ -21,19 +21,17 @@
 
 #define MAX_DIMS 32
 
-int adios_transform_identity_generate_read_subrequests(adios_transform_read_request *reqgroup,
-                                                       adios_transform_pg_read_request *pg_reqgroup) {
-
+void compute_sieving_offsets_for_pg_selection(const ADIOS_SELECTION *intersect_sel,
+                                              const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *pgbb,
+                                              uint64_t *start_off_ptr, uint64_t *end_off_ptr) {
     uint64_t i;
-    const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *pgbb = &pg_reqgroup->pg_bounds_sel->u.bb; // Bounds for the PG
-    int datum_size = adios_get_type_size(reqgroup->transinfo->orig_type, NULL); // Get the data type size
     uint64_t tmp_point[MAX_DIMS]; // For scratchwork
 
     uint64_t start_off, end_off; // Start/end byte offsets to read between
-    switch (pg_reqgroup->pg_intersection_sel->type) {
+    switch (intersect_sel->type) {
     case ADIOS_SELECTION_BOUNDINGBOX:
     {
-        const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &pg_reqgroup->pg_intersection_sel->u.bb;
+        const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &intersect_sel->u.bb;
 
         vector_sub(bb->ndim, tmp_point, bb->start, pgbb->start); // Selection box start relative to PG
         start_off = compute_linear_offset_in_volume(bb->ndim, tmp_point, pgbb->count);
@@ -47,7 +45,7 @@ int adios_transform_identity_generate_read_subrequests(adios_transform_read_requ
     }
     case ADIOS_SELECTION_POINTS:
     {
-        const ADIOS_SELECTION_POINTS_STRUCT *pts = &pg_reqgroup->pg_intersection_sel->u.points;
+        const ADIOS_SELECTION_POINTS_STRUCT *pts = &intersect_sel->u.points;
 
         start_off = UINT64_MAX; // Set it to max so that the first point brings it down
         end_off = 0;
@@ -67,6 +65,19 @@ int adios_transform_identity_generate_read_subrequests(adios_transform_read_requ
     }
     }
 
+    *start_off_ptr = start_off;
+    *end_off_ptr = end_off;
+}
+
+int adios_transform_identity_generate_read_subrequests(adios_transform_read_request *reqgroup,
+                                                       adios_transform_pg_read_request *pg_reqgroup) {
+
+    uint64_t start_off, end_off; // Start/end byte offsets to read between
+    compute_sieving_offsets_for_pg_selection(pg_reqgroup->pg_intersection_sel, &pg_reqgroup->pg_bounds_sel->u.bb, &start_off, &end_off);
+
+    int datum_size = adios_get_type_size(reqgroup->transinfo->orig_type, NULL); // Get the data type size
+
+    // Allocate a buffer for the read, and create a raw read request for it
     const uint64_t buflen = (end_off - start_off) * datum_size;
     void *buf = malloc(buflen);
     adios_transform_raw_read_request *subreq =
@@ -76,6 +87,7 @@ int adios_transform_identity_generate_read_subrequests(adios_transform_read_requ
     subreq->transform_internal = malloc(sizeof(uint64_t));
     *(uint64_t*)subreq->transform_internal = start_off;
 
+    // Append the raw read request
     adios_transform_raw_read_request_append(pg_reqgroup, subreq);
 
     return 0;

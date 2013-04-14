@@ -9,46 +9,64 @@
 
 #ifdef APLOD
 
+#include <stdint.h>
+
 #include "aplod.h"
+#include "adios_transform_identity_read.h"
 
-int decompress_aplod_pre_allocated(const void* input_data, const uint64_t input_len,
-                                    void* output_data, uint64_t* output_len)
-{
-    assert(input_data != NULL && input_len > 0 && output_data != NULL && output_len != NULL && *output_len > 0);
+#define MAX_COMPONENTS 16
 
-    // uLongf dest_temp = *output_len;
+typedef struct {
+    int numComponents;
+    int32_t components[MAX_COMPONENTS];
+} aplod_meta_t;
 
-    // printf("decompress_aplod_pre_allocated %d %d\n", dest_temp, input_len);
+void parse_aplod_meta(char *transform_metadata, aplod_meta_t *metaout) {
+    transform_metadata += sizeof (uint64_t);
 
-    // int z_rtn = uncompress((Bytef*)output_data, &dest_temp, (Bytef*)input_data, input_len);
-    // if(z_rtn != Z_OK)
-    // {
-        // printf("aplod uncompress error %d\n", z_rtn);
-        // return -1;
-    // }
+    metaout->numComponents = *(int8_t*)transform_metadata;
+    transform_metadata += sizeof(int8_t);
 
-    // *output_len = (uint64_t)dest_temp;
-
-    return 0;
+    memcpy(metaout->components, transform_metadata, metaout->numComponents * sizeof(int32_t));
+    transform_metadata += metaout->numComponents * sizeof(int32_t);
 }
+
+typedef struct {
+    uint64_t numElements;
+    uint64_t startOff;
+    char *outputBuf;
+} aplod_read_meta_t;
 
 int adios_transform_aplod_generate_read_subrequests(adios_transform_read_request *reqgroup,
                                                     adios_transform_pg_read_request *pg_reqgroup)
 {
+    uint64_t start_off, end_off; // Start/end byte offsets to read between
+    compute_sieving_offsets_for_pg_selection(pg_reqgroup->pg_intersection_sel, &pg_reqgroup->pg_bounds_sel->u.bb, &start_off, &end_off);
 
-    assert(reqgroup && pg_reqgroup);
+    aplod_meta_t aplodmeta;
+    parse_aplod_meta(reqgroup->transinfo->transform_metadata, &aplodmeta);
 
-    void *buf = malloc(pg_reqgroup->raw_var_length);
+    int typelen = adios_get_type_size(reqgroup->transinfo->orig_type, NULL);
+    uint64_t elemcount = end_off - start_off;
+    char *buf = malloc(elemcount * typelen);
 
-    // printf("[adios_transform_aplod_generate_read_subrequests] raw_var_length %d %d %d %d %d\n",
-            // pg_reqgroup->raw_var_length, pg_reqgroup->raw_varblock->start[0], pg_reqgroup->raw_varblock->count[0],
-            // pg_reqgroup->raw_varblock->start[1], pg_reqgroup->raw_varblock->count[1]);
+    int numByteColsDone = 0;
+    int i;
 
-    // adios_transform_raw_read_request *subreq = adios_transform_raw_read_request_new(pg_reqgroup->raw_varblock, buf);
-    // adios_transform_raw_read_request_append(pg_reqgroup, subreq);
-	
-	adios_transform_raw_read_request *subreq = adios_transform_raw_read_request_new_whole_pg(pg_reqgroup->raw_varblock, buf);
-    adios_transform_raw_read_request_append(pg_reqgroup, subreq);
+    // Read the element start_pos..end_pos sieving segment from each column
+    for (i = 0; i < aplodmeta.numComponents; i++) {
+        adios_transform_raw_read_request *subreq = adios_transform_raw_read_request_new_byte_segment(
+                pg_reqgroup->raw_varblock,
+                numByteColsDone * elemcount + start_off * aplodmeta.components[i],
+                numByteColsDone * elemcount + end_off * aplodmeta.components[i],
+                buf + elemcount * numByteColsDone);
+        adios_transform_raw_read_request_append(pg_reqgroup, subreq);
+        numByteColsDone += aplodmeta.components[i];
+    }
+
+    aplod_read_meta_t *arm = (aplod_read_meta_t*)malloc(sizeof(aplod_read_meta_t));
+    *arm = (aplod_read_meta_t){ .numElements = elemcount, .outputBuf = buf, .startOff = start_off };
+    pg_reqgroup->transform_internal = arm; // Store it here to be safe, since each of the subreqs has a different piece of it
 
     return 0;
 }
@@ -66,56 +84,53 @@ adios_datablock * adios_transform_aplod_subrequest_completed(adios_transform_rea
 adios_datablock * adios_transform_aplod_pg_reqgroup_completed(adios_transform_read_request *reqgroup,
                                                              adios_transform_pg_read_request *completed_pg_reqgroup)
 {
-    uint64_t compressed_len = (uint64_t)completed_pg_reqgroup->raw_var_length;
-    void* compressed_buff = completed_pg_reqgroup->subreqs->data;
-
     uint32_t elementSize = adios_get_type_size(reqgroup->transinfo->orig_type, "");
-    uint64_t decompressed_len = elementSize;
 
-    // Replace this with the one in writes
-    int d = 0;
-    for(d = 0; d < reqgroup->transinfo->orig_ndim; d++)
-    {
-        decompressed_len *= (uint64_t)(completed_pg_reqgroup->orig_varblock->count[d]);
-    }
+    aplod_read_meta_t *arm = (aplod_read_meta_t *)completed_pg_reqgroup->transform_internal;
+    void *compressed_buff = arm->outputBuf;
 
+    uint32_t numElements = arm->numElements;
+    uint64_t decompressed_len = numElements * elementSize;
     void* decompressed_buff = malloc (decompressed_len);
 
     int8_t numComponents = 0;
     int32_t *componentVector = 0;
-    uint32_t numElements = decompressed_len / elementSize;
 
-    void *transform_metadata = reqgroup->transinfo->transform_metadata;
-    transform_metadata += sizeof (uint64_t);
+    aplod_meta_t aplodmeta;
+    parse_aplod_meta(reqgroup->transinfo->transform_metadata, &aplodmeta);
 
-    memcpy (&numComponents, transform_metadata, sizeof (numComponents));
-    transform_metadata += sizeof (numComponents);
-
-    componentVector = malloc (numElements * sizeof (int32_t));
-    memcpy (componentVector, transform_metadata, numComponents * sizeof (int32_t));
-
-    APLODConfig_t *config = APLODConfigure (componentVector, numComponents);
+    APLODConfig_t *config = APLODConfigure (aplodmeta.components, aplodmeta.numComponents);
     config->blockLengthElts = numElements;
 
     APLODReconstructComponents  (config,
                                     numElements,
                                     0,
-                                    numComponents,
+                                    aplodmeta.numComponents,
                                     0,
                                     0,
                                     decompressed_buff,
                                     compressed_buff
                                 );
 
-    free (componentVector);
     free (config->byteVector);
     free (config->byteVectorPS);
     free (config);
 
-    return adios_datablock_new(reqgroup->transinfo->orig_type,
-                               completed_pg_reqgroup->timestep,
-                               completed_pg_reqgroup->pg_bounds_sel,
-                               decompressed_buff);
+    // Clear the buffer pointers for all raw read requests, because they all point
+    // to the same buffer, and would be free'd by the framework if we didn't clear here
+    adios_transform_raw_read_request *rrr = completed_pg_reqgroup->subreqs;
+    for (; rrr; rrr = rrr->next)
+        rrr->data = NULL;
+
+    // Free the actual buffer, and the special metadata container we added
+    free (arm->outputBuf);
+    free (arm);
+
+    return adios_datablock_new_ragged_offset(reqgroup->transinfo->orig_type,
+                                             completed_pg_reqgroup->timestep,
+                                             completed_pg_reqgroup->pg_bounds_sel,
+                                             arm->startOff,
+                                             decompressed_buff);
 }
 
 adios_datablock * adios_transform_aplod_reqgroup_completed(adios_transform_read_request *completed_reqgroup)
