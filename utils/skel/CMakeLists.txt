@@ -1,10 +1,9 @@
 add_subdirectory(etc)
 
-install(FILES bin/skel bin/set_method.sh bin/skel_extract.py DESTINATION ${bindir})
+install(FILES bin/skel bin/set_method.sh bin/skel_extract.py bin/skel_cat.py DESTINATION ${bindir})
 
 install(FILES lib/adios.py 
 	lib/argparse.py 
-	lib/skel_cat.py 
 	lib/skel_install.py 
 	lib/skel_makefile.py 
 	lib/skel_params.py 
