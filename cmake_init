@@ -67,7 +67,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
 #        export CC=icc
 #        export CXX=icpc
 #        export FC=ifort
-        export DATASPACES_DIR=""
+        export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith/$TARGET"
     else
         echo "TARGET must be pgi or gnu or intel"
         exit 1
@@ -246,8 +246,6 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         echo "Configure on TITAN (XK7) for $TARGET env."
         export CC=cc
         #export CFLAGS="-Wall -g" 
-        export FC=ftn
-        export CXX=CC
         source /opt/modules/default/etc/modules.sh
         module unload szip
         module unload hdf5
@@ -274,19 +272,20 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
 	export PAR_HDF5_CLIB=$HDF5_CLIB
 	module unload hdf5-parallel/1.8.8
 	# Seq. and Parallel NetCDF 4 
-	module load netcdf/4.2.0
-	export SEQ_NC_DIR=$NETCDF_DIR
-	module unload netcdf
-	module load netcdf-hdf5parallel/4.2.0
-	export PAR_NC_DIR=$NETCDF_DIR
-	module unload netcdf
+#	module load netcdf/4.2.0
+#	export SEQ_NC_DIR=$NETCDF_DIR
+#	module unload netcdf
+#	module load netcdf-hdf5parallel/4.2.0
+#	export PAR_NC_DIR=$NETCDF_DIR
+#	module unload netcdf
 	# use the two lines below for openmpi
-        #export CC=mpicc
-        #export FC=mpif90
+	export BUILD_WRITE=ON
+	export BUILD_FORTRAN=ON
 	export CC=cc
         export FC=ftn
         export CXX=CC
         export CFLAGS="-g -fPIC" 
+	export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
 #          ./configure --prefix=/ccs/proj/e2e/qliu/ADIOS/test.$TARGET \
 #            --host=titan --host_alias=titan  \
 #            --enable-dependency-tracking \
