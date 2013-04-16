@@ -90,7 +90,7 @@ void bp_realloc_aligned (struct adios_bp_buffer_struct_v1 * b
     b->length = size;
 }
 
-/* Return 0: if file is little endian, 1 if file is big endian 
+/* Return 0: if file is little endian, 1 if file is big endian
  * We know if it is different from the current system, so here
  * we determine the current endianness and report accordingly.
  */
@@ -1259,7 +1259,7 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
                         }
 #define IS_MIN_MAX \
 if (idx == adios_statistic_min \
- || idx == adios_statistic_max) 
+ || idx == adios_statistic_max)
 
 #define IS_SUM \
 if (idx == adios_statistic_sum)
@@ -1328,7 +1328,7 @@ SET_DATA_3(t) \
                                 fr = * (float *) (*root)->characteristics [j].value;
                                 fi = * ((float *) (*root)->characteristics [j].value + 1);
 
-                                if (idx == adios_statistic_min || idx == adios_statistic_max) 
+                                if (idx == adios_statistic_min || idx == adios_statistic_max)
                                 {
                                     if (c == 0)
                                     {
@@ -1340,7 +1340,7 @@ SET_DATA_3(t) \
                                     }
                                     else if (c == 2)
                                     {
-                                        * (float *) data = sqrt (fr * fr + fi * fi); 
+                                        * (float *) data = sqrt (fr * fr + fi * fi);
                                     }
                                 }
                                 else if (idx == adios_statistic_sum)

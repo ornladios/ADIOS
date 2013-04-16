@@ -42,6 +42,11 @@ static int adios_step_to_time (const ADIOS_FILE * fp, int varid, int from_steps)
 static int map_req_varid (const ADIOS_FILE * fp, int varid);
 static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r);
 
+#ifdef WITH_TIMER
+uint64_t totalSeekCount = 0;
+uint64_t totalReadLength = 0;
+#endif
+
 // NCSU - For custom memory allocation
 #define CALLOC(var, num, sz, comment)\
 {\
@@ -76,6 +81,7 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r);
                       ,&status                      \
                       );                            \
         fh->b->offset = 0;                          \
+        totalSeekCount++; totalReadLength += slice_size; /*READ TIMER*/\
 
 // To read subfiles
 #define MPI_FILE_READ_OPS2                                                                  \
@@ -140,6 +146,7 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r);
                       ,&status                                                              \
                       );                                                                    \
         fh->b->offset = 0;                                                                  \
+        totalSeekCount++; totalReadLength += slice_size; /*READ TIMER*/\
 
 //We also need to be able to read old .bp which doesn't have 'payload_offset'
 #define MPI_FILE_READ_OPS3                                                                  \
@@ -158,7 +165,7 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r);
         MPI_File_read (fh->mpi_fh, fh->b->buff, tmpcount + 8, MPI_BYTE, &status);           \
         fh->b->offset = 0;                                                                  \
         adios_parse_var_data_header_v1 (fh->b, &var_header);                                \
-
+        totalSeekCount += 2; totalReadLength += tmpcount + 16; /*READ TIMER*/\
 
 /* This routine release one step. It only frees the var/attr namelist. */
 static void release_step (ADIOS_FILE *fp)
@@ -1331,6 +1338,8 @@ typedef struct {
     fp->version = fh->mfooter.version;
     fp->file_size = fh->mfooter.file_size;
 
+    totalSeekCount = 0; totalReadLength = 0; /*READ TIMER*/
+
     return fp;
 }
 
@@ -1388,6 +1397,8 @@ int adios_read_bp_close (ADIOS_FILE * fp)
     }
     // internal_data field is taken care of by common reader layer
     free (fp);
+
+    printf("[READSTATS] Seeks: %llu Bytes: %llu\n", totalSeekCount, totalReadLength); /*READ TIMER*/
 
     return 0;
 }
@@ -3368,6 +3379,10 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r)
  */
 static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
 {
+#ifdef WITH_TIMER
+    timer_start ("read_bp_read_var_wb");
+#endif
+
     BP_PROC * p = (BP_PROC *)fp->fh;
     BP_FILE * fh = (BP_FILE *)p->fh;;
     struct adios_index_var_struct_v1 * v;
@@ -3410,11 +3425,23 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
 
         if (!has_subfile)
         {
+#ifdef WITH_TIMER
+    timer_start ("read_bp_read_var_wb_mpiread");
+#endif
             MPI_FILE_READ_OPS1
+#ifdef WITH_TIMER
+    timer_stop ("read_bp_read_var_wb_mpiread");
+#endif
         }
         else
         {
+#ifdef WITH_TIMER
+    timer_start ("read_bp_read_var_wb_mpiread");
+#endif
             MPI_FILE_READ_OPS2
+#ifdef WITH_TIMER
+    timer_stop ("read_bp_read_var_wb_mpiread");
+#endif
         }
 
         memcpy((char *)data, fh->b->buff + fh->b->offset, size_of_type);
@@ -3456,11 +3483,23 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
 
         if (!has_subfile)
         {
+#ifdef WITH_TIMER
+    timer_start ("read_bp_read_var_wb_mpiread");
+#endif
             MPI_FILE_READ_OPS1
+#ifdef WITH_TIMER
+    timer_stop ("read_bp_read_var_wb_mpiread");
+#endif
         }
         else
         {
+#ifdef WITH_TIMER
+    timer_start ("read_bp_read_var_wb_mpiread");
+#endif
             MPI_FILE_READ_OPS2
+#ifdef WITH_TIMER
+    timer_stop ("read_bp_read_var_wb_mpiread");
+#endif
         }
 
         memcpy ((char *)data, fh->b->buff + fh->b->offset, slice_size);
@@ -3481,6 +3520,9 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
     chunk->sel = copy_selection (r->sel);
     chunk->data = data;
 
+#ifdef WITH_TIMER
+    timer_stop ("read_bp_read_var_wb");
+#endif
     return chunk;
 }
 
