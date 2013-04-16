@@ -13,18 +13,18 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-
-#include <timer.h>
 #include "mpi.h"
 #include "adios_read.h"
+
+#include <timer.h>
 
 int main (int argc, char ** argv)
 {
     char        filename [256];
-    int         i, j, datasize, if_any;
+    int         i, j, datasize, if_any, ndim;
     MPI_Comm    comm = MPI_COMM_WORLD;
     enum ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP;
-    ADIOS_SELECTION * sel1, * sel2;
+    ADIOS_SELECTION * wbsel, * sel2;
     ADIOS_VARCHUNK * chunk = 0;
     double * data = NULL;
     uint64_t start[2], count[2], npoints, * points;
@@ -36,56 +36,49 @@ int main (int argc, char ** argv)
 
     ADIOS_FILE * f = adios_read_open_file ("adios_global.bp", method, comm);
     ADIOS_VARINFO * varinfo = adios_inq_var (f, "temperature");
+    adios_inq_var_blockinfo(f, varinfo);
     if (varinfo)
     {
         int nranks;
 
-        assert(varinfo->ndim == 2);
+        ndim = varinfo->ndim;
+        assert(ndim == 2);
 
         nranks = varinfo->dims[0];
-        assert(nranks % 4 == 0);
         assert(varinfo->dims[1] == 10);
 
-        datasize = (nranks / 2) * varinfo->dims[1] * sizeof(double);
-        data = malloc (datasize);
+        assert(varinfo->nsteps >= 1);
+        assert(varinfo->nblocks[0] >= 3);
+        assert(varinfo->blockinfo[2].count[0] == 1);
+        assert(varinfo->blockinfo[2].count[1] == 10);
+        assert(varinfo->blockinfo[2].start[0] == 2);
+        assert(varinfo->blockinfo[2].start[1] == 0);
 
-        start[0] = nranks / 4;
-        start[1] = 2;
-        count[0] = nranks / 2;
-        count[1] = 6;
+        datasize = 1 * 6 * sizeof(double);
+        data = (double *)malloc(datasize);
 
-        sel1 = adios_selection_boundingbox (varinfo->ndim, start, count);
+        wbsel = adios_selection_writeblock(2);
+        wbsel->u.block.is_sub_pg_selection = 1;
+        wbsel->u.block.element_offset = 2;
+        wbsel->u.block.nelements = 6;
 
-        adios_schedule_read (f, sel1, "temperature", 0, 1, data);
+        adios_schedule_read (f, wbsel, "temperature", 0, 1, data);
         adios_perform_reads (f, 1);
 
-        printf("Subvolume at (%llu,%llu) of size (%llu,%llu):\n", start[0], start[1], count[0], count[1]);
-        for (i = 0; i < count[0]; i++) {
-            printf("[ ");
-            for (j = 0; j < count[1]; j++) {
-                printf("%.0lf ", data[i * count[1] + j]);
-            }
-            printf("]\n");
-        }
+        printf("Sub-PG writeblock for block %d reading elements in linear range [%llu, %llu):\n",
+               wbsel->u.block.index, wbsel->u.block.element_offset, wbsel->u.block.element_offset + wbsel->u.block.nelements);
+        printf("[ ");
+        for (i = 0; i < wbsel->u.block.nelements; i++)
+            printf("%.0lf ", data[i]);
+        printf("]\n");
 
-        adios_selection_delete (sel1);
+        adios_selection_delete (wbsel);
     }
 
     adios_free_varinfo (varinfo);
     adios_read_close (f);
 
     adios_read_finalize_method (ADIOS_READ_METHOD_BP);
-
-
-    printf("[TIMERS] ");
-    timer_result_t *results = timer_get_results_sorted();
-    for (i = 0; i < timer_get_num_timers(); i++) {
-        printf("%s: %0.4lf ", results[i].name, results[i].time);
-    }
-    printf("\n");
-    free(results);
-
-
     timer_finalize();
     MPI_Finalize ();
     return 0;

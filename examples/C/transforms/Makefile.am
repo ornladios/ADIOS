@@ -1,5 +1,5 @@
 INCLUDES = $(all_includes)
-INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public
+INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public $(TIMER_CPPFLAGS)
 
 AUTOMAKE_OPTIONS = no-dependencies
 

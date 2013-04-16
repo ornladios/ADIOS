@@ -16,6 +16,8 @@
 #include "mpi.h"
 #include "adios_read.h"
 
+#include <timer.h>
+
 int main (int argc, char ** argv) 
 {
     char        filename [256];
@@ -28,7 +30,7 @@ int main (int argc, char ** argv)
     uint64_t start[2], count[2], npoints, * points;
    
     MPI_Init (&argc, &argv);
-
+    timer_init();
     adios_read_init_method (method, comm, NULL);
 
     ADIOS_FILE * f = adios_read_open_file ("adios_global.bp", method, comm);
@@ -72,6 +74,7 @@ int main (int argc, char ** argv)
     adios_read_close (f);
 
     adios_read_finalize_method (ADIOS_READ_METHOD_BP);
+    timer_finalize();
     MPI_Finalize ();
     return 0;
 }
