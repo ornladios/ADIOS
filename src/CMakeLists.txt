@@ -254,7 +254,8 @@ set(libadios_nompi_a_SOURCES core/adios.c
 	)
     
     #include_directories(${nodist_include_HEADERS})
-    install(FILES ${nodist_include_HEADERS} DESTINATION ${includedir})
+#    install(FILES ${nodist_include_HEADERS} DESTINATION ${includedir})
+    install(FILES ${PROJECT_BINARY_DIR}/src/adios_write_mod.mod ${PROJECT_BINARY_DIR}/src/adios_defs_mod.mod DESTINATION ${includedir})
 #add library adiosf and adiosf_v1
     add_library(adiosf STATIC ${libadiosf_a_SOURCES})
     add_library(adiosf_v1 STATIC ${libadiosf_v1_a_SOURCES}) 
@@ -387,7 +388,8 @@ if(BUILD_FORTRAN)
 
 #add library adiosreadf and adiosreadf_v1
   #include_directories(${nodist_include_HEADERS})
-  install(FILES ${nodist_include_HEADERS} DESTINATION ${includedir})
+#  install(FILES ${nodist_include_HEADERS} DESTINATION ${includedir})
+  install(FILES ${PROJECT_BINARY_DIR}/src/adios_read_mod.mod DESTINATION ${includedir})
   add_library(adiosreadf ${libadiosreadf_a_SOURCES})
   set_target_properties(adiosreadf PROPERTIES COMPILE_FLAGS "${libadiosreadf_a_CPPFLAGS} ${libadiosreadf_a_CFLAGS}")
   
@@ -520,5 +522,18 @@ set(libadios_internal_nompi_a_CPPFLAGS "${MACRODEFFLAG}_INTERNAL ${ADIOSLIB_EXTR
 
 add_library(adios_internal_nompi ${libadios_internal_nompi_a_SOURCES})
 set_target_properties(adios_internal_nompi PROPERTIES COMPILE_FLAGS "${libadios_internal_nompi_a_CPPFLAGS}")
+
+install(FILES ${PROJECT_BINARY_DIR}/src/libadios.a
+	${PROJECT_BINARY_DIR}/src/libadios_nompi.a
+	${PROJECT_BINARY_DIR}/src/libadiosf.a
+	${PROJECT_BINARY_DIR}/src/libadiosf_v1.a
+	${PROJECT_BINARY_DIR}/src/libadiosread.a
+	${PROJECT_BINARY_DIR}/src/libadiosread_nompi.a
+	${PROJECT_BINARY_DIR}/src/libadiosreadf.a
+	${PROJECT_BINARY_DIR}/src/libadiosreadf_nompi.a
+	${PROJECT_BINARY_DIR}/src/libadiosreadf_nompi_v1.a
+	${PROJECT_BINARY_DIR}/src/libadiosreadf_v1.a
+	DESTINATION ${libdir})
+
 
 #Note: ${MACRODEFFLAG}NOMPI chokes IBM's bgxlf compiler but it can pass ${MACRODEFFLAG}_NOMPI.
