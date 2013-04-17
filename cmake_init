@@ -627,7 +627,7 @@ elif [ `hostname | cut -c 1-6` == "jaguar" ]; then
     
     fi
     
-elif [ `hostname -f | cut -c 8-15` == "intrepid" ]; then
+elif [ x`hostname -f | cut -c 8-15` == "xintrepid" ]; then
     #####################
     # Intrepid BlueGene #
     #####################
