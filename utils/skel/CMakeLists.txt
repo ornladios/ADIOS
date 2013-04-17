@@ -1,6 +1,6 @@
 add_subdirectory(etc)
 
-install(FILES bin/skel bin/set_method.sh bin/skel_extract.py bin/skel_cat.py DESTINATION ${bindir})
+install(PROGRAMS bin/skel bin/set_method.sh bin/skel_extract.py bin/skel_cat.py DESTINATION ${bindir})
 
 install(FILES lib/adios.py 
 	lib/argparse.py 
@@ -11,7 +11,8 @@ install(FILES lib/adios.py
 	lib/skel_source.py 
 	lib/skel_submit.py 
 	lib/skel_xml.py 
-	lib/skelconf.py 
+	lib/skelconf.py
+	lib/skel_have_adios_timing.py 
 	lib/typeMapper.py 
 	DESTINATION ${libdir}/python)
 
@@ -22,11 +23,11 @@ install(FILES etc/templates/Makefile.default.tpl
 	DESTINATION ${prefix}/etc/skel/templates)
 
 
-install(FILES etc/settings etc/compiler_fragment.mk
-	etc/templates/Makefile.default.tpl
-	etc/templates/submit_jaguar.tpl
-	etc/templates/submit_sith.tpl
-	DESTINATION ${PROJECT_BINARY_DIR}/utils/skel)
+#install(FILES etc/settings etc/compiler_fragment.mk
+#	etc/templates/Makefile.default.tpl
+#	etc/templates/submit_jaguar.tpl
+#	etc/templates/submit_sith.tpl
+#	DESTINATION ${PROJECT_BINARY_DIR}/utils/skel)
 
 #install(FILES bin/skel bin/set_method.sh bin/skel_extract.py DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 #install(FILES lib/adios.py lib/argparse.py lib/skel_cat.py lib/skel_install.py lib/skel_makefile.py lib/skel_params.py lib/skel_settings.py lib/skel_source.py lib/skel_submit.py lib/skel_xml.py lib/skelconf.py lib/typeMapper.py DESTINATION ${CMAKE_INSTALL_PREFIX}/lib/python)
