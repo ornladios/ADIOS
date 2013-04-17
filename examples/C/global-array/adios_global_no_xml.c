@@ -51,7 +51,7 @@ int main (int argc, char ** argv)
 
 	strcpy (filename, "adios_global_no_xml.bp");
 
-	adios_init_noxml ();
+	adios_init_noxml (comm);
         adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 10);
 
         int64_t       m_adios_group;
@@ -80,7 +80,7 @@ int main (int argc, char ** argv)
                         ,"NX", "Global_bounds", "Offsets");
         }
    
-        adios_open (&m_adios_file, "restart", filename, "w", &comm);
+        adios_open (&m_adios_file, "restart", filename, "w", comm);
 
         adios_groupsize = sub_blocks * (4 + 4 + 4 + NX * 8);
 

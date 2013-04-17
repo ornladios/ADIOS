@@ -909,6 +909,12 @@ INFINIBAND_CFLAGS
 INFINIBAND_CPPFLAGS
 HAVE_INFINIBAND_FALSE
 HAVE_INFINIBAND_TRUE
+DCMF_LIBS
+DCMF_LDFLAGS
+DCMF_CPPFLAGS
+DCMF_CFLAGS
+HAVE_DCMF_FALSE
+HAVE_DCMF_TRUE
 MXML_CPPFLAGS
 MXML_LDFLAGS
 MXML_LIBS
@@ -1053,6 +1059,7 @@ enable_fast_install
 with_gnu_ld
 enable_libtool_lock
 with_mxml
+with_dcmf
 with_infiniband
 with_portals
 with_cray_pmi
@@ -1770,6 +1777,7 @@ Optional Packages:
                           both]
   --with-gnu-ld           assume the C compiler uses GNU ld [default=no]
   --with-mxml=DIR      Location of Mini-XML library
+  --with-dcmf=DIR      Location of IBM DCMF
   --with-infiniband=DIR      Location of Infiniband
   --with-portals=DIR      Location of Portals (yes/no/path_to_portals)
   --with-cray-pmi=<location of CRAY_PMI installation>
@@ -8703,13 +8711,13 @@ if test "${lt_cv_nm_interface+set}" = set; then
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:8706: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:8714: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:8709: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:8717: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:8712: output\"" >&5)
+  (eval echo "\"\$as_me:8720: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -9914,7 +9922,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 9917 "configure"' > conftest.$ac_ext
+  echo '#line 9925 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -12591,11 +12599,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:12594: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:12602: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:12598: \$? = $ac_status" >&5
+   echo "$as_me:12606: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -12930,11 +12938,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:12933: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:12941: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:12937: \$? = $ac_status" >&5
+   echo "$as_me:12945: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -13035,11 +13043,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13038: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13046: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13042: \$? = $ac_status" >&5
+   echo "$as_me:13050: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -13090,11 +13098,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13093: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13101: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13097: \$? = $ac_status" >&5
+   echo "$as_me:13105: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -15973,7 +15981,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 15976 "configure"
+#line 15984 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -16069,7 +16077,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 16072 "configure"
+#line 16080 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -18105,11 +18113,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:18108: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:18116: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:18112: \$? = $ac_status" >&5
+   echo "$as_me:18120: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -18204,11 +18212,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:18207: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:18215: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:18211: \$? = $ac_status" >&5
+   echo "$as_me:18219: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -18256,11 +18264,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:18259: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:18267: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:18263: \$? = $ac_status" >&5
+   echo "$as_me:18271: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -19808,11 +19816,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:19811: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:19819: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:19815: \$? = $ac_status" >&5
+   echo "$as_me:19823: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -19907,11 +19915,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:19910: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:19918: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:19914: \$? = $ac_status" >&5
+   echo "$as_me:19922: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -19959,11 +19967,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:19962: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:19970: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:19966: \$? = $ac_status" >&5
+   echo "$as_me:19974: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -23034,6 +23042,295 @@ _ACEOF
 else
 
         :
+fi
+
+
+ac_dcmf_lib_ok=no
+
+DCMF_CFLAGS=""
+DCMF_CPPFLAGS=""
+DCMF_LDFLAGS=""
+DCMF_LIBS=""
+
+{ $as_echo "$as_me:$LINENO: === checking for IBM DCMF ===" >&5
+$as_echo "$as_me: === checking for IBM DCMF ===" >&6;}
+
+ if true; then
+  HAVE_DCMF_TRUE=
+  HAVE_DCMF_FALSE='#'
+else
+  HAVE_DCMF_TRUE='#'
+  HAVE_DCMF_FALSE=
+fi
+
+
+
+# Check whether --with-dcmf was given.
+if test "${with_dcmf+set}" = set; then
+  withval=$with_dcmf;  DCMF_CPPFLAGS="-I$withval/arch/include -I$withval/comm/include";
+              DCMF_LDFLAGS="-L$withval/comm/lib -L$withval/runtime/SPI";
+	      DCMF_LIBS="-ldcmf.cnk -ldcmfcoll.cnk -lpthread -lrt -lSPI.cna";
+fi
+
+
+save_CPPFLAGS="$CPPFLAGS"
+save_LDFLAGS="$LDFLAGS"
+save_LIBS="$LIBS"
+CPPFLAGS="$CPPFLAGS $DCMF_CPPFLAGS"
+LDFLAGS="$LDFLAGS $DCMF_LDFLAGS"
+LIBS="$LIBS $DCMF_LIBS"
+
+if test -z "${HAVE_DCMF_TRUE}"; then
+
+for ac_header in dcmf.h
+do
+as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  { $as_echo "$as_me:$LINENO: checking for $ac_header" >&5
+$as_echo_n "checking for $ac_header... " >&6; }
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  $as_echo_n "(cached) " >&6
+fi
+ac_res=`eval 'as_val=${'$as_ac_Header'}
+		 $as_echo "$as_val"'`
+	       { $as_echo "$as_me:$LINENO: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+else
+  # Is the header compilable?
+{ $as_echo "$as_me:$LINENO: checking $ac_header usability" >&5
+$as_echo_n "checking $ac_header usability... " >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+$ac_includes_default
+#include <$ac_header>
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  ac_header_compiler=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	ac_header_compiler=no
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+{ $as_echo "$as_me:$LINENO: result: $ac_header_compiler" >&5
+$as_echo "$ac_header_compiler" >&6; }
+
+# Is the header present?
+{ $as_echo "$as_me:$LINENO: checking $ac_header presence" >&5
+$as_echo_n "checking $ac_header presence... " >&6; }
+cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <$ac_header>
+_ACEOF
+if { (ac_try="$ac_cpp conftest.$ac_ext"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_cpp conftest.$ac_ext") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } >/dev/null && {
+	 test -z "$ac_c_preproc_warn_flag$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       }; then
+  ac_header_preproc=yes
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+  ac_header_preproc=no
+fi
+
+rm -f conftest.err conftest.$ac_ext
+{ $as_echo "$as_me:$LINENO: result: $ac_header_preproc" >&5
+$as_echo "$ac_header_preproc" >&6; }
+
+# So?  What about this header?
+case $ac_header_compiler:$ac_header_preproc:$ac_c_preproc_warn_flag in
+  yes:no: )
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&5
+$as_echo "$as_me: WARNING: $ac_header: accepted by the compiler, rejected by the preprocessor!" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the compiler's result" >&5
+$as_echo "$as_me: WARNING: $ac_header: proceeding with the compiler's result" >&2;}
+    ac_header_preproc=yes
+    ;;
+  no:yes:* )
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: present but cannot be compiled" >&5
+$as_echo "$as_me: WARNING: $ac_header: present but cannot be compiled" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header:     check for missing prerequisite headers?" >&5
+$as_echo "$as_me: WARNING: $ac_header:     check for missing prerequisite headers?" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: see the Autoconf documentation" >&5
+$as_echo "$as_me: WARNING: $ac_header: see the Autoconf documentation" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&5
+$as_echo "$as_me: WARNING: $ac_header:     section \"Present But Cannot Be Compiled\"" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: proceeding with the preprocessor's result" >&5
+$as_echo "$as_me: WARNING: $ac_header: proceeding with the preprocessor's result" >&2;}
+    { $as_echo "$as_me:$LINENO: WARNING: $ac_header: in the future, the compiler will take precedence" >&5
+$as_echo "$as_me: WARNING: $ac_header: in the future, the compiler will take precedence" >&2;}
+
+    ;;
+esac
+{ $as_echo "$as_me:$LINENO: checking for $ac_header" >&5
+$as_echo_n "checking for $ac_header... " >&6; }
+if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
+  $as_echo_n "(cached) " >&6
+else
+  eval "$as_ac_Header=\$ac_header_preproc"
+fi
+ac_res=`eval 'as_val=${'$as_ac_Header'}
+		 $as_echo "$as_val"'`
+	       { $as_echo "$as_me:$LINENO: result: $ac_res" >&5
+$as_echo "$ac_res" >&6; }
+
+fi
+as_val=`eval 'as_val=${'$as_ac_Header'}
+		 $as_echo "$as_val"'`
+   if test "x$as_val" = x""yes; then
+  cat >>confdefs.h <<_ACEOF
+#define `$as_echo "HAVE_$ac_header" | $as_tr_cpp` 1
+_ACEOF
+
+else
+   if false; then
+  HAVE_DCMF_TRUE=
+  HAVE_DCMF_FALSE='#'
+else
+  HAVE_DCMF_TRUE='#'
+  HAVE_DCMF_FALSE=
+fi
+
+fi
+
+done
+
+fi
+
+if test -z "${HAVE_DCMF_TRUE}"; then
+	{ $as_echo "$as_me:$LINENO: checking if dcmf code can be linked" >&5
+$as_echo_n "checking if dcmf code can be linked... " >&6; }
+	cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include "dcmf.h"
+#ifdef FC_DUMMY_MAIN
+#ifndef FC_DUMMY_MAIN_EQ_F77
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int FC_DUMMY_MAIN() { return 1; }
+#endif
+#endif
+int
+main ()
+{
+unsigned ret;
+		 ret = DCMF_Messager_initialize();
+		 ret = DCMF_Messager_finalize();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+  DCMF_LIBS="-ldcmf.cnk -ldcmfcoll.cnk -lpthread -lrt -lSPI.cna"
+		 { $as_echo "$as_me:$LINENO: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	 if false; then
+  HAVE_DCMF_TRUE=
+  HAVE_DCMF_FALSE='#'
+else
+  HAVE_DCMF_TRUE='#'
+  HAVE_DCMF_FALSE=
+fi
+
+		 { $as_echo "$as_me:$LINENO: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+fi
+
+LIBS="$save_LIBS"
+LDFLAGS="$save_LDFLAGS"
+CPPFLAGS="$save_CPPFLAGS"
+
+
+
+
+
+
+if test -z "${HAVE_DCMF_TRUE}"; then
+	ac_dcmf_lib_ok=yes
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_DCMF 1
+_ACEOF
+
+	:
+else
+
+	:
 fi
 
 
@@ -27528,6 +27825,8 @@ fi
                 LIBS="$LIBS -ldspaces -ldscommon -ldart"
     elif test "x${ac_portals_lib_ok}" == "xyes"; then
         LIBS="$LIBS -ldart2 -lspaces"
+    elif test "x${ac_dmcf_lib_ok}" == "xyes"; then
+        LIBS="$LIBS -ldspaces -ldscommon -ldart"
     else
         LIBS="$LIBS -ldspaces -ldscommon -ldart"
     fi
@@ -27868,6 +28167,64 @@ fi
 fi
 
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+	elif test "x${ac_dcmf_lib_ok}" == "xyes"; then
+            cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include "dataspaces.h"
+#ifdef FC_DUMMY_MAIN
+#ifndef FC_DUMMY_MAIN_EQ_F77
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int FC_DUMMY_MAIN() { return 1; }
+#endif
+#endif
+int
+main ()
+{
+int err; err = dspaces_init(1,1);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext
+if { (ac_try="$ac_compile"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_compile") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest.$ac_objext; then
+  DATASPACES_LIBS="-ldspaces -ldscommon -ldart"
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	 if false; then
+  HAVE_DATASPACES_TRUE=
+  HAVE_DATASPACES_FALSE='#'
+else
+  HAVE_DATASPACES_TRUE='#'
+  HAVE_DATASPACES_FALSE=
+fi
+
+fi
+
+rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
         else
              if false; then
   HAVE_DATASPACES_TRUE=
@@ -27981,13 +28338,37 @@ fi
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
-    LIBS="$LIBS -ldimes_portals -lspaces"
+    if test "x${ac_infiniband_lib_ok}" == "xyes"; then
+        	echo "DIMES currently NOT supported for Infiniband!"
+	 if false; then
+  HAVE_DIMES_TRUE=
+  HAVE_DIMES_FALSE='#'
+else
+  HAVE_DIMES_TRUE='#'
+  HAVE_DIMES_FALSE=
+fi
+
+    elif test "x${ac_portals_lib_ok}" == "xyes"; then
+        	echo "DIMES currently NOT supported for Cray Portals!"
+	 if false; then
+  HAVE_DIMES_TRUE=
+  HAVE_DIMES_FALSE='#'
+else
+  HAVE_DIMES_TRUE='#'
+  HAVE_DIMES_FALSE=
+fi
+
+    elif test "x${ac_dcmf_lib_ok}" == "xyes"; then
+        LIBS="$LIBS -ldspaces -ldscommon -ldart"
+    else
+        LIBS="$LIBS -ldspaces -ldscommon -ldart"
+    fi
     LDFLAGS="$LDFLAGS $DIMES_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $DIMES_CPPFLAGS"
 
     if test -z "${HAVE_DIMES_TRUE}"; then
 
-for ac_header in dimes.h
+for ac_header in dimes_interface.h
 do
 as_ac_Header=`$as_echo "ac_cv_header_$ac_header" | $as_tr_sh`
 if { as_var=$as_ac_Header; eval "test \"\${$as_var+set}\" = set"; }; then
@@ -28143,14 +28524,16 @@ done
 
     fi
 
-    # Check for the Mini-XML library and headers
-    cat >conftest.$ac_ext <<_ACEOF
+    if test -z "${HAVE_DIMES_TRUE}"; then
+        # Check for the DataSpaces/DIMES library and headers
+        if test -z "${HAVE_CRAY_PMI_TRUE}" -a -z "${HAVE_CRAY_UGNI_TRUE}"; then
+            cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
 cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
-#include "dimes.h"
+#include "dimes_interface.h"
 #ifdef FC_DUMMY_MAIN
 #ifndef FC_DUMMY_MAIN_EQ_F77
 #  ifdef __cplusplus
@@ -28162,7 +28545,70 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-int err; err = dimes_init(1,1,1);
+int err; dimes_free();
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+  DIMES_LIBS="-ldspaces -ldscommon -ldart"
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	 if false; then
+  HAVE_DIMES_TRUE=
+  HAVE_DIMES_FALSE='#'
+else
+  HAVE_DIMES_TRUE='#'
+  HAVE_DIMES_FALSE=
+fi
+
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+	elif test "x${ac_dcmf_lib_ok}" == "xyes"; then
+            cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include "dimes_interface.h"
+#ifdef FC_DUMMY_MAIN
+#ifndef FC_DUMMY_MAIN_EQ_F77
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int FC_DUMMY_MAIN() { return 1; }
+#endif
+#endif
+int
+main ()
+{
+int err; dimes_free();
   ;
   return 0;
 }
@@ -28185,7 +28631,7 @@ $as_echo "$ac_try_echo") >&5
 	 test -z "$ac_c_werror_flag" ||
 	 test ! -s conftest.err
        } && test -s conftest.$ac_objext; then
-  DIMES_LIBS="-ldimes_portals -lspaces"
+  DIMES_LIBS="-ldspaces -ldscommon -ldart"
 else
   $as_echo "$as_me: failed program was:" >&5
 sed 's/^/| /' conftest.$ac_ext >&5
@@ -28201,6 +28647,17 @@ fi
 fi
 
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+        else
+             if false; then
+  HAVE_DIMES_TRUE=
+  HAVE_DIMES_FALSE='#'
+else
+  HAVE_DIMES_TRUE='#'
+  HAVE_DIMES_FALSE=
+fi
+
+        fi
+    fi
 
     LIBS="$save_LIBS"
     LDFLAGS="$save_LDFLAGS"
@@ -28813,11 +29270,11 @@ fi
 
 search_list="$datatap_dir/thin_ib.h $datatap_dir/lib/thin_ib.h $datatap_dir/include/thin_ib.h $search_list /usr/include/thin_ib.h /usr/local/include/thin_ib.h /opt/ibpbio/include/thin_ib.h /opt/misc/include/thin_ib.h /opt/misc/include/$cercs_cv_archive/thin_ib.h"
 tmp_search_results=""
-echo "configure:28816: searching for $search_list " >&5
+echo "configure:29273: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:28820: first found $tmp_search_results " >&5
+	echo "configure:29277: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -28905,11 +29362,11 @@ fi
 
 search_list="$datatap_dir/libibclient.la $datatap_dir/lib/libibclient.la $datatap_dir/include/libibclient.la $search_list /usr/lib/libibclient.la /usr/local/lib/libibclient.la /opt/ibpbio/lib/libibclient.la /opt/misc/lib/libibclient.la /opt/misc/lib/$cercs_cv_archive/libibclient.la"
 tmp_search_results=""
-echo "configure:28908: searching for $search_list " >&5
+echo "configure:29365: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:28912: first found $tmp_search_results " >&5
+	echo "configure:29369: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -28978,11 +29435,11 @@ else
 
 search_list="$PWD/../ibpbio $PWD/../../ibpbio $PWD/../../../ibpbio"
 tmp_search_results=""
-echo "configure:28981: searching for $search_list " >&5
+echo "configure:29438: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:28985: first found $tmp_search_results " >&5
+	echo "configure:29442: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29020,11 +29477,11 @@ else
 
 search_list="$PWD/../ibpbio $PWD/../../ibpbio $PWD/../../../ibpbio"
 tmp_search_results=""
-echo "configure:29023: searching for $search_list " >&5
+echo "configure:29480: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29027: first found $tmp_search_results " >&5
+	echo "configure:29484: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29148,11 +29605,11 @@ fi
 
 search_list="$datatap_dir/ffs.h $datatap_dir/lib/ffs.h $datatap_dir/include/ffs.h $search_list /usr/include/ffs.h /usr/local/include/ffs.h /opt/ffs/include/ffs.h /opt/misc/include/ffs.h /opt/misc/include/$cercs_cv_archive/ffs.h"
 tmp_search_results=""
-echo "configure:29151: searching for $search_list " >&5
+echo "configure:29608: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29155: first found $tmp_search_results " >&5
+	echo "configure:29612: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29240,11 +29697,11 @@ fi
 
 search_list="$datatap_dir/libffs.la $datatap_dir/lib/libffs.la $datatap_dir/include/libffs.la $search_list /usr/lib/libffs.la /usr/local/lib/libffs.la /opt/ffs/lib/libffs.la /opt/misc/lib/libffs.la /opt/misc/lib/$cercs_cv_archive/libffs.la"
 tmp_search_results=""
-echo "configure:29243: searching for $search_list " >&5
+echo "configure:29700: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29247: first found $tmp_search_results " >&5
+	echo "configure:29704: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29313,11 +29770,11 @@ else
 
 search_list="$PWD/../ffs $PWD/../../ffs $PWD/../../../ffs"
 tmp_search_results=""
-echo "configure:29316: searching for $search_list " >&5
+echo "configure:29773: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29320: first found $tmp_search_results " >&5
+	echo "configure:29777: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29355,11 +29812,11 @@ else
 
 search_list="$PWD/../ffs $PWD/../../ffs $PWD/../../../ffs"
 tmp_search_results=""
-echo "configure:29358: searching for $search_list " >&5
+echo "configure:29815: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29362: first found $tmp_search_results " >&5
+	echo "configure:29819: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29483,11 +29940,11 @@ fi
 
 search_list="$datatap_dir/gen_thread.h $datatap_dir/lib/gen_thread.h $datatap_dir/include/gen_thread.h $search_list /usr/include/gen_thread.h /usr/local/include/gen_thread.h /opt/gen_thread/include/gen_thread.h /opt/misc/include/gen_thread.h /opt/misc/include/$cercs_cv_archive/gen_thread.h"
 tmp_search_results=""
-echo "configure:29486: searching for $search_list " >&5
+echo "configure:29943: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29490: first found $tmp_search_results " >&5
+	echo "configure:29947: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29575,11 +30032,11 @@ fi
 
 search_list="$datatap_dir/libgen_thread.la $datatap_dir/lib/libgen_thread.la $datatap_dir/include/libgen_thread.la $search_list /usr/lib/libgen_thread.la /usr/local/lib/libgen_thread.la /opt/gen_thread/lib/libgen_thread.la /opt/misc/lib/libgen_thread.la /opt/misc/lib/$cercs_cv_archive/libgen_thread.la"
 tmp_search_results=""
-echo "configure:29578: searching for $search_list " >&5
+echo "configure:30035: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29582: first found $tmp_search_results " >&5
+	echo "configure:30039: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29648,11 +30105,11 @@ else
 
 search_list="$PWD/../gen_thread $PWD/../../gen_thread $PWD/../../../gen_thread"
 tmp_search_results=""
-echo "configure:29651: searching for $search_list " >&5
+echo "configure:30108: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29655: first found $tmp_search_results " >&5
+	echo "configure:30112: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29690,11 +30147,11 @@ else
 
 search_list="$PWD/../gen_thread $PWD/../../gen_thread $PWD/../../../gen_thread"
 tmp_search_results=""
-echo "configure:29693: searching for $search_list " >&5
+echo "configure:30150: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29697: first found $tmp_search_results " >&5
+	echo "configure:30154: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29841,11 +30298,11 @@ fi
 
 search_list="$datatap_dir/thin_portal.h $datatap_dir/lib/thin_portal.h $datatap_dir/include/thin_portal.h $search_list /usr/include/thin_portal.h /usr/local/include/thin_portal.h /opt/ptlpbio/include/thin_portal.h /opt/misc/include/thin_portal.h /opt/misc/include/$cercs_cv_archive/thin_portal.h"
 tmp_search_results=""
-echo "configure:29844: searching for $search_list " >&5
+echo "configure:30301: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29848: first found $tmp_search_results " >&5
+	echo "configure:30305: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29933,11 +30390,11 @@ fi
 
 search_list="$datatap_dir/libptlclient.a $datatap_dir/lib/libptlclient.a $datatap_dir/include/libptlclient.a $search_list /usr/lib/libptlclient.a /usr/local/lib/libptlclient.a /opt/ptlpbio/lib/libptlclient.a /opt/misc/lib/libptlclient.a /opt/misc/lib/$cercs_cv_archive/libptlclient.a"
 tmp_search_results=""
-echo "configure:29936: searching for $search_list " >&5
+echo "configure:30393: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29940: first found $tmp_search_results " >&5
+	echo "configure:30397: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30006,11 +30463,11 @@ else
 
 search_list="$PWD/../ptlpbio $PWD/../../ptlpbio $PWD/../../../ptlpbio"
 tmp_search_results=""
-echo "configure:30009: searching for $search_list " >&5
+echo "configure:30466: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30013: first found $tmp_search_results " >&5
+	echo "configure:30470: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30048,11 +30505,11 @@ else
 
 search_list="$PWD/../ptlpbio $PWD/../../ptlpbio $PWD/../../../ptlpbio"
 tmp_search_results=""
-echo "configure:30051: searching for $search_list " >&5
+echo "configure:30508: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30055: first found $tmp_search_results " >&5
+	echo "configure:30512: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30208,11 +30665,11 @@ fi
 
 search_list="$datatap_dir/thin_ib.h $datatap_dir/lib/thin_ib.h $datatap_dir/include/thin_ib.h $search_list /usr/include/thin_ib.h /usr/local/include/thin_ib.h /opt/ibpbio/include/thin_ib.h /opt/misc/include/thin_ib.h /opt/misc/include/$cercs_cv_archive/thin_ib.h"
 tmp_search_results=""
-echo "configure:30211: searching for $search_list " >&5
+echo "configure:30668: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30215: first found $tmp_search_results " >&5
+	echo "configure:30672: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30300,11 +30757,11 @@ fi
 
 search_list="$datatap_dir/libibclient.la $datatap_dir/lib/libibclient.la $datatap_dir/include/libibclient.la $search_list /usr/lib/libibclient.la /usr/local/lib/libibclient.la /opt/ibpbio/lib/libibclient.la /opt/misc/lib/libibclient.la /opt/misc/lib/$cercs_cv_archive/libibclient.la"
 tmp_search_results=""
-echo "configure:30303: searching for $search_list " >&5
+echo "configure:30760: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30307: first found $tmp_search_results " >&5
+	echo "configure:30764: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30373,11 +30830,11 @@ else
 
 search_list="$PWD/../ibpbio $PWD/../../ibpbio $PWD/../../../ibpbio"
 tmp_search_results=""
-echo "configure:30376: searching for $search_list " >&5
+echo "configure:30833: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30380: first found $tmp_search_results " >&5
+	echo "configure:30837: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30415,11 +30872,11 @@ else
 
 search_list="$PWD/../ibpbio $PWD/../../ibpbio $PWD/../../../ibpbio"
 tmp_search_results=""
-echo "configure:30418: searching for $search_list " >&5
+echo "configure:30875: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30422: first found $tmp_search_results " >&5
+	echo "configure:30879: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30543,11 +31000,11 @@ fi
 
 search_list="$datatap_dir/ffs.h $datatap_dir/lib/ffs.h $datatap_dir/include/ffs.h $search_list /usr/include/ffs.h /usr/local/include/ffs.h /opt/ffs/include/ffs.h /opt/misc/include/ffs.h /opt/misc/include/$cercs_cv_archive/ffs.h"
 tmp_search_results=""
-echo "configure:30546: searching for $search_list " >&5
+echo "configure:31003: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30550: first found $tmp_search_results " >&5
+	echo "configure:31007: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30635,11 +31092,11 @@ fi
 
 search_list="$datatap_dir/libffs.la $datatap_dir/lib/libffs.la $datatap_dir/include/libffs.la $search_list /usr/lib/libffs.la /usr/local/lib/libffs.la /opt/ffs/lib/libffs.la /opt/misc/lib/libffs.la /opt/misc/lib/$cercs_cv_archive/libffs.la"
 tmp_search_results=""
-echo "configure:30638: searching for $search_list " >&5
+echo "configure:31095: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30642: first found $tmp_search_results " >&5
+	echo "configure:31099: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30708,11 +31165,11 @@ else
 
 search_list="$PWD/../ffs $PWD/../../ffs $PWD/../../../ffs"
 tmp_search_results=""
-echo "configure:30711: searching for $search_list " >&5
+echo "configure:31168: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30715: first found $tmp_search_results " >&5
+	echo "configure:31172: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30750,11 +31207,11 @@ else
 
 search_list="$PWD/../ffs $PWD/../../ffs $PWD/../../../ffs"
 tmp_search_results=""
-echo "configure:30753: searching for $search_list " >&5
+echo "configure:31210: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30757: first found $tmp_search_results " >&5
+	echo "configure:31214: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30878,11 +31335,11 @@ fi
 
 search_list="$datatap_dir/gen_thread.h $datatap_dir/lib/gen_thread.h $datatap_dir/include/gen_thread.h $search_list /usr/include/gen_thread.h /usr/local/include/gen_thread.h /opt/gen_thread/include/gen_thread.h /opt/misc/include/gen_thread.h /opt/misc/include/$cercs_cv_archive/gen_thread.h"
 tmp_search_results=""
-echo "configure:30881: searching for $search_list " >&5
+echo "configure:31338: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30885: first found $tmp_search_results " >&5
+	echo "configure:31342: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30970,11 +31427,11 @@ fi
 
 search_list="$datatap_dir/libgen_thread.la $datatap_dir/lib/libgen_thread.la $datatap_dir/include/libgen_thread.la $search_list /usr/lib/libgen_thread.la /usr/local/lib/libgen_thread.la /opt/gen_thread/lib/libgen_thread.la /opt/misc/lib/libgen_thread.la /opt/misc/lib/$cercs_cv_archive/libgen_thread.la"
 tmp_search_results=""
-echo "configure:30973: searching for $search_list " >&5
+echo "configure:31430: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30977: first found $tmp_search_results " >&5
+	echo "configure:31434: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31043,11 +31500,11 @@ else
 
 search_list="$PWD/../gen_thread $PWD/../../gen_thread $PWD/../../../gen_thread"
 tmp_search_results=""
-echo "configure:31046: searching for $search_list " >&5
+echo "configure:31503: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31050: first found $tmp_search_results " >&5
+	echo "configure:31507: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31085,11 +31542,11 @@ else
 
 search_list="$PWD/../gen_thread $PWD/../../gen_thread $PWD/../../../gen_thread"
 tmp_search_results=""
-echo "configure:31088: searching for $search_list " >&5
+echo "configure:31545: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31092: first found $tmp_search_results " >&5
+	echo "configure:31549: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31236,11 +31693,11 @@ fi
 
 search_list="$datatap_dir/thin_portal.h $datatap_dir/lib/thin_portal.h $datatap_dir/include/thin_portal.h $search_list /usr/include/thin_portal.h /usr/local/include/thin_portal.h /opt/ptlpbio/include/thin_portal.h /opt/misc/include/thin_portal.h /opt/misc/include/$cercs_cv_archive/thin_portal.h"
 tmp_search_results=""
-echo "configure:31239: searching for $search_list " >&5
+echo "configure:31696: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31243: first found $tmp_search_results " >&5
+	echo "configure:31700: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31328,11 +31785,11 @@ fi
 
 search_list="$datatap_dir/libptlclient.a $datatap_dir/lib/libptlclient.a $datatap_dir/include/libptlclient.a $search_list /usr/lib/libptlclient.a /usr/local/lib/libptlclient.a /opt/ptlpbio/lib/libptlclient.a /opt/misc/lib/libptlclient.a /opt/misc/lib/$cercs_cv_archive/libptlclient.a"
 tmp_search_results=""
-echo "configure:31331: searching for $search_list " >&5
+echo "configure:31788: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31335: first found $tmp_search_results " >&5
+	echo "configure:31792: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31401,11 +31858,11 @@ else
 
 search_list="$PWD/../ptlpbio $PWD/../../ptlpbio $PWD/../../../ptlpbio"
 tmp_search_results=""
-echo "configure:31404: searching for $search_list " >&5
+echo "configure:31861: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31408: first found $tmp_search_results " >&5
+	echo "configure:31865: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31443,11 +31900,11 @@ else
 
 search_list="$PWD/../ptlpbio $PWD/../../ptlpbio $PWD/../../../ptlpbio"
 tmp_search_results=""
-echo "configure:31446: searching for $search_list " >&5
+echo "configure:31903: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31450: first found $tmp_search_results " >&5
+	echo "configure:31907: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31580,14 +32037,12 @@ cat >>confdefs.h <<\_ACEOF
 #define SKEL_TIMING 1
 _ACEOF
 
-    SKEL_HAVE_ADIOS_TIMING=true
+    SKEL_HAVE_ADIOS_TIMING=True
 
+        else
+    SKEL_HAVE_ADIOS_TIMING=False
 
-else
-    SKEL_HAVE_ADIOS_TIMING=false
-
-
-fi
+    fi
 
 
 
@@ -31872,6 +32327,24 @@ if test -z "${HAVE_CRAY_UGNI_TRUE}"; then
     ADIOSREADLIB_SEQ_CFLAGS="${ADIOSREADLIB_SEQ_CFLAGS} ${CRAY_UGNI_CFLAGS}"
     ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${CRAY_UGNI_LDFLAGS}"
     ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${CRAY_UGNI_LIBS}"
+fi
+if test -z "${HAVE_DCMF_TRUE}"; then
+    ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} ${DCMF_CPPFLAGS}"
+    ADIOSLIB_CFLAGS="${ADIOSLIB_CFLAGS} ${DCMF_CFLAGS}"
+    ADIOSLIB_LDFLAGS="${ADIOSLIB_LDFLAGS} ${DCMF_LDFLAGS}"
+    ADIOSLIB_LDADD="${ADIOSLIB_LDADD} ${DCMF_LIBS}"
+    ADIOSLIB_SEQ_CPPFLAGS="${ADIOSLIB_SEQ_CPPFLAGS} ${DCMF_CPPFLAGS}"
+    ADIOSLIB_SEQ_CFLAGS="${ADIOSLIB_SEQ_CFLAGS} ${DCMF_CFLAGS}"
+    ADIOSLIB_SEQ_LDFLAGS="${ADIOSLIB_SEQ_LDFLAGS} ${DCMF_LDFLAGS}"
+    ADIOSLIB_SEQ_LDADD="${ADIOSLIB_SEQ_LDADD} ${DCMF_LIBS}"
+    ADIOSREADLIB_CPPFLAGS="${ADIOSREADLIB_CPPFLAGS} ${DCMF_CPPFLAGS}"
+    ADIOSREADLIB_CFLAGS="${ADIOSREADLIB_CFLAGS} ${DCMF_CFLAGS}"
+    ADIOSREADLIB_LDFLAGS="${ADIOSREADLIB_LDFLAGS} ${DCMF_LDFLAGS}"
+    ADIOSREADLIB_LDADD="${ADIOSREADLIB_LDADD} ${DCMF_LIBS}"
+    ADIOSREADLIB_SEQ_CPPFLAGS="${ADIOSREADLIB_SEQ_CPPFLAGS} ${DCMF_CPPFLAGS}"
+    ADIOSREADLIB_SEQ_CFLAGS="${ADIOSREADLIB_SEQ_CFLAGS} ${DCMF_CFLAGS}"
+    ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${DCMF_LDFLAGS}"
+    ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${DCMF_LIBS}"
 fi
 if test -z "${HAVE_NETCDF_TRUE}"; then
     ADIOSLIB_INT_CPPFLAGS="${ADIOSLIB_INT_CPPFLAGS} ${NETCDF_CPPFLAGS}"
@@ -32194,6 +32667,27 @@ $as_echo "$as_me: error: conditional \"HAVE_MXML\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
+if test -z "${HAVE_DCMF_TRUE}" && test -z "${HAVE_DCMF_FALSE}"; then
+  { { $as_echo "$as_me:$LINENO: error: conditional \"HAVE_DCMF\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+$as_echo "$as_me: error: conditional \"HAVE_DCMF\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_DCMF_TRUE}" && test -z "${HAVE_DCMF_FALSE}"; then
+  { { $as_echo "$as_me:$LINENO: error: conditional \"HAVE_DCMF\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+$as_echo "$as_me: error: conditional \"HAVE_DCMF\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_DCMF_TRUE}" && test -z "${HAVE_DCMF_FALSE}"; then
+  { { $as_echo "$as_me:$LINENO: error: conditional \"HAVE_DCMF\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+$as_echo "$as_me: error: conditional \"HAVE_DCMF\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
 if test -z "${HAVE_INFINIBAND_TRUE}" && test -z "${HAVE_INFINIBAND_FALSE}"; then
   { { $as_echo "$as_me:$LINENO: error: conditional \"HAVE_INFINIBAND\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
@@ -32506,6 +33000,41 @@ if test -z "${HAVE_DATASPACES_TRUE}" && test -z "${HAVE_DATASPACES_FALSE}"; then
   { { $as_echo "$as_me:$LINENO: error: conditional \"HAVE_DATASPACES\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 $as_echo "$as_me: error: conditional \"HAVE_DATASPACES\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_DATASPACES_TRUE}" && test -z "${HAVE_DATASPACES_FALSE}"; then
+  { { $as_echo "$as_me:$LINENO: error: conditional \"HAVE_DATASPACES\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+$as_echo "$as_me: error: conditional \"HAVE_DATASPACES\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_DIMES_TRUE}" && test -z "${HAVE_DIMES_FALSE}"; then
+  { { $as_echo "$as_me:$LINENO: error: conditional \"HAVE_DIMES\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+$as_echo "$as_me: error: conditional \"HAVE_DIMES\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_DIMES_TRUE}" && test -z "${HAVE_DIMES_FALSE}"; then
+  { { $as_echo "$as_me:$LINENO: error: conditional \"HAVE_DIMES\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+$as_echo "$as_me: error: conditional \"HAVE_DIMES\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_DIMES_TRUE}" && test -z "${HAVE_DIMES_FALSE}"; then
+  { { $as_echo "$as_me:$LINENO: error: conditional \"HAVE_DIMES\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+$as_echo "$as_me: error: conditional \"HAVE_DIMES\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_DIMES_TRUE}" && test -z "${HAVE_DIMES_FALSE}"; then
+  { { $as_echo "$as_me:$LINENO: error: conditional \"HAVE_DIMES\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+$as_echo "$as_me: error: conditional \"HAVE_DIMES\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -35504,6 +36033,13 @@ elif test -z "${HAVE_CRAY_PMI_TRUE}" -a -z "${HAVE_CRAY_UGNI_TRUE}"; then
 #else
 #    echo "  - No Cray uGNI"
 
+elif test -z "${HAVE_DCMF_TRUE}"; then
+    echo "    - IBM DCMF";
+    echo "      - DCMF_CFLAGS = $DCMF_CFLAGS";
+    echo "      - DCMF_CPPFLAGS = $DCMF_CPPFLAGS";
+    echo "      - DCMF_LDFLAGS = $DCMF_LDFLAGS";
+    echo "      - DCMF_LIBS = $DCMF_LIBS";
+    echo
 else
     echo "    - No supported networking library found"
 fi

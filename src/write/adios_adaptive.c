@@ -50,8 +50,6 @@ struct adios_adaptive_data_struct
     int size;
     char * subfile_name;
 
-    void * comm;  // temporary until finished moving from should_buffer to open
-
     struct adios_bp_buffer_struct_v1 b;
 
     struct adios_index_process_group_struct_v1 * old_pg_root;
@@ -830,99 +828,6 @@ static void set_stripe_size (struct adios_adaptive_data_struct * md
                             ,const char * filename
                             );
 
-static void adios_var_to_comm (const char * comm_name
-                              ,enum ADIOS_FLAG host_language_fortran
-                              ,void * data
-                              ,MPI_Comm * comm
-                              )
-{
-    if (data)
-    {
-        int t = *(int *) data;
-
-        if (!comm_name)
-        {
-            if (!t)
-            {
-                fprintf (stderr, "communicator not provided and none "
-                                 "listed in XML.  Defaulting to "
-                                 "MPI_COMM_SELF\n"
-                        );
-
-                *comm = MPI_COMM_SELF;
-            }
-            else
-            {
-                if (host_language_fortran == adios_flag_yes)
-                {
-                    *comm = MPI_Comm_f2c (t);
-                }
-                else
-                {
-                    *comm = *(MPI_Comm *) data;
-                }
-            }
-        }
-        else
-        {
-            if (!strcmp (comm_name, ""))
-            {
-                if (!t)
-                {
-                    fprintf (stderr, "communicator not provided and none "
-                                     "listed in XML.  Defaulting to "
-                                     "MPI_COMM_SELF\n"
-                            );
-
-                    *comm = MPI_COMM_SELF;
-                }
-                else
-                {
-                    if (host_language_fortran == adios_flag_yes)
-                    {
-                        *comm = MPI_Comm_f2c (t);
-                    }
-                    else
-                    {
-                        *comm = *(MPI_Comm *) data;
-                    }
-                }
-            }
-            else
-            {
-                if (!t)
-                {
-                    fprintf (stderr, "communicator not provided but one "
-                                     "listed in XML.  Defaulting to "
-                                     "MPI_COMM_WORLD\n"
-                            );
-
-                    *comm = MPI_COMM_WORLD;
-                }
-                else
-                {
-                    if (host_language_fortran == adios_flag_yes)
-                    {
-                        *comm = MPI_Comm_f2c (t);
-                    }
-                    else
-                    {
-                        *comm = *(MPI_Comm *) data;
-                    }
-                }
-            }
-        }
-    }
-    else
-    {
-        fprintf (stderr, "coordination-communication not provided. "
-                         "Using MPI_COMM_WORLD instead\n"
-                );
-
-        *comm = MPI_COMM_WORLD;
-    }
-}
-
 void adios_adaptive_init (const PairStruct * parameters
                          ,struct adios_method_struct * method
                          )
@@ -942,7 +847,7 @@ void adios_adaptive_init (const PairStruct * parameters
     memset (&md->status, 0, sizeof (MPI_Status));
     md->rank = 0;
     md->size = 0;
-    md->group_comm = MPI_COMM_NULL;
+    md->group_comm = method->init_comm; //unused, adios_open sets current comm
     md->old_pg_root = 0;
     md->old_vars_root = 0;
     md->old_attrs_root = 0;
@@ -1113,7 +1018,7 @@ void adios_adaptive_init (const PairStruct * parameters
 }
 
 int adios_adaptive_open (struct adios_file_struct * fd
-                        ,struct adios_method_struct * method, void * comm
+                        ,struct adios_method_struct * method, MPI_Comm comm
                         )
 {
     struct adios_adaptive_data_struct * md =
@@ -1126,7 +1031,12 @@ int adios_adaptive_open (struct adios_file_struct * fd
     // before we can do an open for any of the modes
     md->fd = fd;
     md->method = method;
-    md->comm = comm;
+    md->group_comm = comm;
+    if (md->group_comm != MPI_COMM_NULL)
+    {
+        MPI_Comm_rank (md->group_comm, &md->rank);
+        MPI_Comm_size (md->group_comm, &md->size);
+    }
 
 #if COLLECT_METRICS
     timing.write_count = 0;
@@ -1643,16 +1553,6 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
     name = malloc (strlen (method->base_path) + strlen (fd->name) + 1);
     sprintf (name, "%s%s", method->base_path, fd->name);
 
-    adios_var_to_comm (fd->group->group_comm
-                      ,fd->group->adios_host_language_fortran
-                      ,md->comm
-                      ,&md->group_comm
-                      );
-    if (md->group_comm != MPI_COMM_NULL)
-    {
-        MPI_Comm_rank (md->group_comm, &md->rank);
-        MPI_Comm_size (md->group_comm, &md->size);
-    }
     fd->group->process_id = md->rank;
 
     if (md->rank == md->size - 1)

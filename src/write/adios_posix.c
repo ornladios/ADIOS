@@ -21,7 +21,7 @@
 // xml parser
 #include <mxml.h>
 
-#include "public/adios.h" // MPI or dummy MPI for seq. build
+#include "public/adios_mpi.h" // MPI or dummy MPI for seq. build
 #include "core/adios_transport_hooks.h"
 #include "core/adios_bp_v1.h"
 #include "core/adios_internals.h"
@@ -68,100 +68,6 @@ struct adios_POSIX_data_struct
 #endif
 };
 
-#ifdef HAVE_MPI
-static void adios_var_to_comm (const char * comm_name
-                              ,enum ADIOS_FLAG host_language_fortran
-                              ,void * data
-                              ,MPI_Comm * comm
-                              )
-{
-    if (data)
-    {
-        int t = *(int *) data;
-
-        if (!comm_name)
-        {
-            if (!t)
-            {
-                fprintf (stderr, "communicator not provided and none "
-                                 "listed in XML.  Defaulting to "
-                                 "MPI_COMM_SELF\n"
-                        );
-
-                *comm = MPI_COMM_SELF;
-            }
-            else
-            {
-                if (host_language_fortran == adios_flag_yes)
-                {
-                    *comm = MPI_Comm_f2c (t);
-                }
-                else
-                {
-                    *comm = *(MPI_Comm *) data;
-                }
-            }
-        }
-        else
-        {
-            if (!strcmp (comm_name, ""))
-            {
-                if (!t)
-                {
-                    fprintf (stderr, "communicator not provided and none "
-                                     "listed in XML.  Defaulting to "
-                                     "MPI_COMM_SELF\n"
-                            );
-
-                    *comm = MPI_COMM_SELF;
-                }
-                else
-                {
-                    if (host_language_fortran == adios_flag_yes)
-                    {
-                        *comm = MPI_Comm_f2c (t);
-                    }
-                    else
-                    {
-                        *comm = *(MPI_Comm *) data;
-                    }
-                }
-            }
-            else
-            {
-                if (!t)
-                {
-                    fprintf (stderr, "communicator not provided but one "
-                                     "listed in XML.  Defaulting to "
-                                     "MPI_COMM_WORLD\n"
-                            );
-
-                    *comm = MPI_COMM_WORLD;
-                }
-                else
-                {
-                    if (host_language_fortran == adios_flag_yes)
-                    {
-                        *comm = MPI_Comm_f2c (t);
-                    }
-                    else
-                    {
-                        *comm = *(MPI_Comm *) data;
-                    }
-                }
-            }
-        }
-    }
-    else
-    {
-        fprintf (stderr, "coordination-communication not provided. "
-                         "Using MPI_COMM_SELF instead\n"
-                );
-
-        *comm = MPI_COMM_SELF;
-    }
-}
-#endif
 
 void adios_posix_init (const PairStruct * parameters
                       ,struct adios_method_struct * method
@@ -203,7 +109,7 @@ int ADIOS_TIMER_POSIX_AD_SHOULD_BUFFER = ADIOS_TIMING_MAX_USER_TIMERS + 6;
 #endif
 
 int adios_posix_open (struct adios_file_struct * fd
-                     ,struct adios_method_struct * method, void * comm
+                     ,struct adios_method_struct * method, MPI_Comm comm
                      )
 {
     char * subfile_name;
@@ -231,12 +137,7 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
 
 #ifdef HAVE_MPI
     // Need to figure out new the new fd->name, such as restart.bp.0, restart.bp.1....
-    adios_var_to_comm (fd->group->group_comm
-                      ,fd->group->adios_host_language_fortran
-                      ,comm
-                      ,&p->group_comm
-                      );
-
+    p->group_comm = comm;
     if (p->group_comm == MPI_COMM_NULL)
     {
         p->group_comm = MPI_COMM_SELF;

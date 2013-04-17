@@ -29,7 +29,7 @@ int main (int argc, char ** argv)
 	MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 	MPI_Comm_size (comm, &size);
 
-	adios_init ("adios_globaltime.xml");
+	adios_init ("adios_globaltime.xml", comm);
     	strcpy (filename, "adios_globaltime.bp");
     	for (it =1; it <= 13; it++) {
 
@@ -40,9 +40,9 @@ int main (int argc, char ** argv)
             		p[i] = it*1000.0 + rank*NY + i;
 		
                 if (it==1)
-		    adios_open (&adios_handle, "restart", filename, "w", &comm);
+		    adios_open (&adios_handle, "restart", filename, "w", comm);
                 else
-		    adios_open (&adios_handle, "restart", filename, "a", &comm);
+		    adios_open (&adios_handle, "restart", filename, "a", comm);
 
         	#include "gwrite_restart.ch"
         	adios_close (adios_handle);

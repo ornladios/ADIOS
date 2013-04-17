@@ -74,7 +74,7 @@ int main (int argc, char ** argv)
 
     for (step = 0; step < 10; step++)
     {
-        adios_open (&adios_handle, "scalars", filename, "a", &comm);
+        adios_open (&adios_handle, "scalars", filename, "a", comm);
 #include "gwrite_scalars_steps.ch"
         adios_close (adios_handle);
     }

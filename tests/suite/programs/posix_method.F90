@@ -11,6 +11,7 @@
 !/*     Similar example is examples/Fortran/arrays/arrays_write.c     */
 !/*************************************************************/
 program posix_method
+    use adios_write_mod
     implicit none
     include 'mpif.h'
 
@@ -44,7 +45,7 @@ program posix_method
         p(i) = rank*NX + i
     enddo
 
-    call adios_init ("posix_method.xml", adios_err);
+    call adios_init ("posix_method.xml", comm, adios_err);
 
 
     ! Write data out

@@ -136,7 +136,7 @@ int main (int argc, char ** argv) {
         end_time[4] = MPI_Wtime();
         total_time[4] = end_time[4]-start_time[4];
     }
-    adios_init_noxml(); // no xml will be used to write the new adios file
+    adios_init_noxml(comm); // no xml will be used to write the new adios file
     read_buffer = atoi(argv[3]);
     write_buffer = atoi(argv[4]);
     adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, write_buffer); // allocate MB buffer
@@ -389,7 +389,7 @@ int main (int argc, char ** argv) {
             if(TIMING==100)
                 start_time[0] = MPI_Wtime();
 
-            adios_open(&m_adios_file, f->group_namelist[gidx],argv[2],"w",&comm);
+            adios_open(&m_adios_file, f->group_namelist[gidx],argv[2],"w",comm);
             adios_group_size( m_adios_file, adios_groupsize, &adios_totalsize);
 
             //get both the total adios_totalsize and total adios_groupsize summed across processes.

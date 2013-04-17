@@ -6,7 +6,9 @@ import argparse
 import adios
 import skelconf
 import skel_settings
+import skel_have_adios_timing
 
+print "value is %s\n" % skel_have_adios_timing
 
 def generate_c (outfile, config, params, test):
     if test.get_type() == 'write':
@@ -120,7 +122,7 @@ def generate_c_write (outfile, config, params, test):
 
         c_file.write ('\nMPI_Comm comm = MPI_COMM_WORLD;')
 
-        c_file.write ('\nadios_open(&adios_handle, "' + g.get_name() + '", "out_' + test.get_group_name() + '_' + test.get_type() + '.bp", "w", &comm);')
+        c_file.write ('\nadios_open(&adios_handle, "' + g.get_name() + '", "out_' + test.get_group_name() + '_' + test.get_type() + '.bp", "w", comm);')
 
         #end timing
         c_file.write ('\nskel_open_timer += MPI_Wtime();')
@@ -190,15 +192,15 @@ def generate_c_write (outfile, config, params, test):
 
 
 
+        if skel_have_adios_timing == true:
+            if measure.report_all():
+                print "Use adios timing"
+            else:
+                print "ADIOS built with timing support, but report_all set to false"
+        else:
+            print "ADIOS built without timing support."
 
 
-
-
-
-
-
-        if measure.report_all():
-            pass
             # Detailed reporting disabled, use adios timing instead.
 
             #c_file.write ('\n    fprintf (stdout, "rank, %i, open: %f, access %f, close %f, total %f\\n", skel_mpi_rank, skel_open_timer, skel_access_timer, skel_close_timer, skel_total_timer);')
@@ -443,8 +445,17 @@ def generate_fortran_write (outfile, config, params, test):
             f_file.write ('\n  skel_total_close = skel_close_timer')
             f_file.write ('\n  skel_total_total = skel_total_timer')
 
-        if measure.report_all():
-            pass
+
+
+
+        if skel_have_adios_timing == true:
+            if measure.report_all():
+                print "Use adios timing"
+            else:
+                print "ADIOS built with timing support, but report_all set to false"
+        else:
+            print "ADIOS built without timing support."
+
             # All rank reporting disabled for skel, use ADIOS timing library instead.
 
             #f_file.write ('\n    fprintf (stdout, "rank, %i, open: %f, access %f, close %f, total %f\\n", skel_mpi_rank, skel_open_timer, skel_access_timer, skel_close_timer, skel_total_timer);')

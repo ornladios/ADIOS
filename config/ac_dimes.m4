@@ -81,22 +81,45 @@ else
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
-    LIBS="$LIBS -ldimes_portals -lspaces"
+    if test "x${ac_infiniband_lib_ok}" == "xyes"; then 
+        dnl LIBS="$LIBS -ldspaces -ldscommon -ldart"
+	echo "DIMES currently NOT supported for Infiniband!"
+	AM_CONDITIONAL(HAVE_DIMES, false)
+    elif test "x${ac_portals_lib_ok}" == "xyes"; then 
+        dnl LIBS="$LIBS -ldart2 -lspaces"
+	echo "DIMES currently NOT supported for Cray Portals!"
+	AM_CONDITIONAL(HAVE_DIMES, false)
+    elif test "x${ac_dcmf_lib_ok}" == "xyes"; then
+        LIBS="$LIBS -ldspaces -ldscommon -ldart"
+    else
+        LIBS="$LIBS -ldspaces -ldscommon -ldart"
+    fi
     LDFLAGS="$LDFLAGS $DIMES_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $DIMES_CPPFLAGS"
     
     if test -z "${HAVE_DIMES_TRUE}"; then
-            AC_CHECK_HEADERS(dimes.h,
+            AC_CHECK_HEADERS(dimes_interface.h,
                     ,
                     [AM_CONDITIONAL(HAVE_DIMES,false)])
     fi
     
-    # Check for the Mini-XML library and headers
-    AC_TRY_COMPILE([#include "dimes.h"],
-            [int err; err = dimes_init(1,1,1);],
-            [DIMES_LIBS="-ldimes_portals -lspaces"],
-            [AM_CONDITIONAL(HAVE_DIMES,false)])
-    
+    if test -z "${HAVE_DIMES_TRUE}"; then
+        # Check for the DataSpaces/DIMES library and headers
+        if test -z "${HAVE_CRAY_PMI_TRUE}" -a -z "${HAVE_CRAY_UGNI_TRUE}"; then 
+            AC_TRY_LINK([#include "dimes_interface.h"],
+                    [int err; dimes_free();],
+                    [DIMES_LIBS="-ldspaces -ldscommon -ldart"],
+                    [AM_CONDITIONAL(HAVE_DIMES,false)])
+	elif test "x${ac_dcmf_lib_ok}" == "xyes"; then
+            AC_TRY_COMPILE([#include "dimes_interface.h"],
+                    [int err; dimes_free();],
+                    [DIMES_LIBS="-ldspaces -ldscommon -ldart"],
+                    [AM_CONDITIONAL(HAVE_DIMES,false)])
+        else
+            AM_CONDITIONAL(HAVE_DIMES,false)
+        fi
+    fi
+ 
     LIBS="$save_LIBS"
     LDFLAGS="$save_LDFLAGS"
     CPPFLAGS="$save_CPPFLAGS"
@@ -116,4 +139,3 @@ else
 
 fi
 ])dnl AC_DIMES
-

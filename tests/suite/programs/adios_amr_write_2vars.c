@@ -78,9 +78,9 @@ int main (int argc, char ** argv)
 
     strcpy (filename, "adios_amr_write_2vars.bp");
 
-    adios_init ("adios_amr_write_2vars.xml");
+    adios_init ("adios_amr_write_2vars.xml", comm);
 
-    adios_open (&adios_handle, "temperature", filename, "w", &comm);
+    adios_open (&adios_handle, "temperature", filename, "w", comm);
 
     adios_groupsize = 4  * 8\
                     + 8 * l1 * l2

@@ -36,7 +36,7 @@ program adios_global
     call MPI_Comm_rank (comm, rank, ierr)
     call MPI_Comm_size (comm, size, ierr)
 
-    call adios_init ("adios_globaltime.xml", adios_err)
+    call adios_init ("adios_globaltime.xml", comm, adios_err)
 
     do it = 1, 13
         do i = 1, NX

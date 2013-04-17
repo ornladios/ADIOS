@@ -42,7 +42,6 @@ module genarray_comm
     character (len=200) :: filename
     !character (len=6)   :: nprocstr
     integer*8 :: handle, total_size, group_size, adios_totalsize
-    integer   :: err
 
     real*8 :: start_time, end_time, total_time,gbs,sz
     real*8 :: io_start_time, io_end_time, io_total_time
@@ -62,7 +61,7 @@ program genarray
     call MPI_Comm_rank (MPI_COMM_WORLD, rank, ierr)
     call MPI_Comm_size (group_comm, nproc , ierr)
 
-    call adios_init ("genarray3d.xml", ierr)
+    call adios_init ("genarray3d.xml", group_comm, ierr)
     !call MPI_Barrier (group_comm, ierr)
 
     call processArgs()
@@ -178,14 +177,14 @@ subroutine writeArray()
     do tstep=1,timesteps
         !if (tstep > 1) mode = "a"
         double_xyz = tstep + double_xyz
-        call MPI_BARRIER(MPI_COMM_WORLD,adios_err)
+        call MPI_BARRIER(MPI_COMM_WORLD,ierr)
         io_start_time = MPI_WTIME()
         group = "genarray"
         write (outfilename,'(a,".",i3.3,".bp")') trim(outputfile),tstep
         call adios_open (adios_handle, group, outfilename, mode, group_comm, adios_err)
 #include "gwrite_genarray.fh"
         call adios_close (adios_handle, adios_err)
-        call MPI_BARRIER(MPI_COMM_WORLD,adios_err)
+        call MPI_BARRIER(MPI_COMM_WORLD,ierr)
         io_end_time = MPI_WTIME()
         io_total_time = io_end_time - io_start_time
         sz = adios_totalsize * nproc/1024.d0/1024.d0/1024.d0 !size in GB

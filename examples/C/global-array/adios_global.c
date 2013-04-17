@@ -38,9 +38,9 @@ int main (int argc, char ** argv)
 
 	strcpy (filename, "adios_global.bp");
 
-	adios_init ("adios_global.xml");
+	adios_init ("adios_global.xml", comm);
 
-	adios_open (&adios_handle, "temperature", filename, "w", &comm);
+	adios_open (&adios_handle, "temperature", filename, "w", comm);
 	#include "gwrite_temperature.ch"
 	adios_close (adios_handle);
 

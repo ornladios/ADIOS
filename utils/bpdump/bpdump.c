@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 #include "adios_types.h"
+#include "adios_internals.h"
 #include "adios_transport_hooks.h"
 #include "adios_bp_v1.h"
 #include "bp_utils.h"
@@ -993,7 +994,9 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
                    ,vars_root->var_name, vars_root->group_name, vars_root->id
                    );
 	}
-        printf ("\tDatatype: %s\n", adios_type_to_string_int (vars_root->type));
+        char * typestr = adios_type_to_string_int (vars_root->type);
+        printf ("\tDatatype: %s\n", typestr);
+        //printf ("\tDatatype: %s\n", adios_type_to_string_int (vars_root->type));
         printf ("\tVars Characteristics: %llu\n"
                ,vars_root->characteristics_count
                );

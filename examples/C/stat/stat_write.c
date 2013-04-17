@@ -34,7 +34,7 @@ int main (int argc, char ** argv)
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
     MPI_Comm_size (comm, &size);
 
-    adios_init ("stat.xml");
+    adios_init ("stat.xml", comm);
     strcpy (filename, "adios_stat.bp");
 
     for (it =0; it < 13; it++) {
@@ -47,9 +47,9 @@ int main (int argc, char ** argv)
         t[0] = 1 / 0.0;    
 
         if (it==0)
-            adios_open (&adios_handle, "temperature", filename, "w", &comm);
+            adios_open (&adios_handle, "temperature", filename, "w", comm);
         else
-            adios_open (&adios_handle, "temperature", filename, "a", &comm);
+            adios_open (&adios_handle, "temperature", filename, "a", comm);
 
 #include "gwrite_stat.ch"
         adios_close (adios_handle);

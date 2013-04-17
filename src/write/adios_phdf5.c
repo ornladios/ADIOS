@@ -55,7 +55,7 @@ enum ADIOS_FLAG adios_phdf5_should_buffer (struct adios_file_struct * fd
                             ){ return adios_flag_unknown; }
 int adios_phdf5_open(struct adios_file_struct *fd
                     ,struct adios_method_struct * method
-                    ,void * comm
+                    ,MPI_Comm comm
                     ){ return -1; }
 void adios_phdf5_close (struct adios_file_struct * fd
                      ,struct adios_method_struct * method
@@ -113,35 +113,8 @@ struct adios_phdf5_data_struct
   MPI_Comm group_comm;
   int rank;
   int size;
-
-  void * comm; // temporary until moved from should_buffer to open
 };
 int adios_phdf5_initialized = 0;
-static void adios_var_to_comm_phdf5 (enum ADIOS_FLAG host_language_fortran
-                                    ,void * data
-                                    ,MPI_Comm * comm
-                                    )
-{
-    if (data)
-    {
-        int t = *(int *) data;
-        if (host_language_fortran == adios_flag_yes)
-        {
-            *comm = MPI_Comm_f2c (t);
-        }
-        else
-        {
-            *comm = *(MPI_Comm *) data;
-        }
-    }
-    else
-    {
-        fprintf (stderr, "coordination-communication not provided. "
-                         "Using MPI_COMM_WORLD instead\n"
-                );
-        *comm = MPI_COMM_WORLD;
-    }
-}
 void adios_phdf5_init(const PairStruct * parameters
                      ,struct adios_method_struct * method
                      )
@@ -170,19 +143,8 @@ enum ADIOS_FLAG adios_phdf5_should_buffer (struct adios_file_struct * fd
     MPI_Info info = MPI_INFO_NULL;
     hid_t fapl_id;
     fapl_id = H5P_DEFAULT;
-    adios_var_to_comm_phdf5 (fd->group->adios_host_language_fortran
-                      ,md->comm
-                      ,&md->group_comm
-                      );
     // no shared buffer 
     //fd->shared_buffer = adios_flag_no;
-    if (md->group_comm != MPI_COMM_NULL)
-    {
-        MPI_Comm_rank (md->group_comm, &md->rank);
-        MPI_Comm_size (md->group_comm, &md->size);
-    }
-    else 
-       md->group_comm=MPI_COMM_SELF;
     fd->group->process_id = md->rank;
     name = malloc (strlen (method->base_path) + strlen (fd->name) + 1);
     sprintf(name, "%s%s", method->base_path, fd->name);
@@ -232,14 +194,72 @@ enum ADIOS_FLAG adios_phdf5_should_buffer (struct adios_file_struct * fd
 }
  
 int adios_phdf5_open(struct adios_file_struct *fd
-                    ,struct adios_method_struct * method, void * comm
+                    ,struct adios_method_struct * method, MPI_Comm comm
                     )
 {
     struct adios_phdf5_data_struct * md = (struct adios_phdf5_data_struct *)
                                                     method->method_data;
 
-    md->comm = comm;
+    char * name;
+    MPI_Info info = MPI_INFO_NULL;
+    hid_t fapl_id;
+    fapl_id = H5P_DEFAULT;
+    // no shared buffer 
+    //fd->shared_buffer = adios_flag_no;
+    fd->group->process_id = md->rank;
+    name = malloc (strlen (method->base_path) + strlen (fd->name) + 1);
+    sprintf(name, "%s%s", method->base_path, fd->name);
 
+    H5Eset_auto ( NULL, NULL);
+
+    fapl_id = H5Pcreate(H5P_FILE_ACCESS);
+    H5Pset_fapl_mpio(fapl_id,md->group_comm,info);
+
+    // create a new file. If file exists its contents will be overwritten. //
+    md->group_comm = comm;
+    if (md->group_comm != MPI_COMM_NULL)
+    {
+        MPI_Comm_rank (md->group_comm, &md->rank);
+        MPI_Comm_size (md->group_comm, &md->size);
+    }
+    else 
+       md->group_comm=MPI_COMM_SELF;
+
+
+    switch (fd->mode) {
+        case adios_mode_read:
+        {
+            md->fh = H5Fopen (name, H5F_ACC_RDONLY, fapl_id);
+            if (md->fh <= 0)
+            {
+                fprintf (stderr, "ADIOS PHDF5: file not found: %s\n", fd->name);
+                free (name);
+                return adios_flag_no;
+            } 
+            break;
+        }
+        case adios_mode_write:
+        case adios_mode_append:
+            md->fh = H5Fcreate (name, H5F_ACC_EXCL, H5P_DEFAULT, fapl_id);
+            if (md->fh < 0)
+            {
+                md->fh = H5Fopen (name, H5F_ACC_RDWR, fapl_id);
+                //md->fh = H5Fcreate (name, H5F_ACC_TRUNC, H5P_DEFAULT, fapl_id);
+            }
+            if (md->fh < 0)
+            {
+                fprintf (stderr, "ADIOS PHDF5: file not create/append: %s\n", fd->name);
+                free (name);
+                return adios_flag_no;
+            } 
+            break;
+    }
+
+    md->root_id = H5Gopen(md->fh,"/");
+    if(md->root_id < 0)
+        md->root_id = H5Gcreate(md->fh,"/",0);
+    H5Pclose(fapl_id);
+    free (name); 
     return 1;
 }
 
@@ -259,7 +279,7 @@ void adios_phdf5_write (struct adios_file_struct * fd
         }
         hw_var (md->root_id, fd->group->vars, fd->group->attributes
                  ,v, fd->group->adios_host_language_fortran,md->rank,md->size);
-        MPI_Barrier(md->comm);
+        MPI_Barrier(md->group_comm);
     }
     else
     {

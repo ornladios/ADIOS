@@ -42,6 +42,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cray_pmi.m4 \
 	$(top_srcdir)/config/ac_cray_ugni.m4 \
 	$(top_srcdir)/config/ac_dataspaces.m4 \
 	$(top_srcdir)/config/ac_datatap.m4 \
+	$(top_srcdir)/config/ac_dcmf.m4 \
 	$(top_srcdir)/config/ac_dimes.m4 \
 	$(top_srcdir)/config/ac_dmalloc.m4 \
 	$(top_srcdir)/config/ac_hdf5.m4 \
@@ -140,6 +141,10 @@ CYGPATH_W = @CYGPATH_W@
 DATASPACES_CPPFLAGS = @DATASPACES_CPPFLAGS@
 DATASPACES_LDFLAGS = @DATASPACES_LDFLAGS@
 DATASPACES_LIBS = @DATASPACES_LIBS@
+DCMF_CFLAGS = @DCMF_CFLAGS@
+DCMF_CPPFLAGS = @DCMF_CPPFLAGS@
+DCMF_LDFLAGS = @DCMF_LDFLAGS@
+DCMF_LIBS = @DCMF_LIBS@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DIMES_CPPFLAGS = @DIMES_CPPFLAGS@
@@ -243,6 +248,7 @@ RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
+SKEL_HAVE_ADIOS_TIMING = @SKEL_HAVE_ADIOS_TIMING@
 SKEL_TIMING = @SKEL_TIMING@
 STRIP = @STRIP@
 VERSION = @VERSION@
@@ -304,7 +310,7 @@ INCLUDES = $(all_includes) -I$(top_builddir)/src \
 	-I$(top_builddir)/src/public
 AUTOMAKE_OPTIONS = no-dependencies
 bp2bp_SOURCES = bp2bp.c
-bp2bp_CPPFLAGS = -DADIOS_USE_READ_API_1 $(ADIOSLIB_CPPFLAGS) $(ADIOSLIB_CFLAGS) $(ADIOSLIB_EXTRA_CPPFLAGS) 
+bp2bp_CPPFLAGS = ${MACRODEFFLAG}ADIOS_USE_READ_API_1 $(ADIOSLIB_CPPFLAGS) $(ADIOSLIB_CFLAGS) $(ADIOSLIB_EXTRA_CPPFLAGS) 
 bp2bp_LDFLAGS = $(ADIOSLIB_LDFLAGS) 
 bp2bp_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 all: all-am

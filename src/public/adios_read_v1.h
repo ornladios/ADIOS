@@ -13,16 +13,9 @@
 #ifndef __ADIOS_READ_V1_H__
 #define __ADIOS_READ_V1_H__
 
+#include "adios_mpi.h"
 #include "adios_read_v1_defs.h"
 #include "adios_types.h"
-
-#ifdef _NOMPI
-    /* Sequential processes can use the library compiled with -D_NOMPI */
-#   include "mpidummy.h"
-#else
-    /* Parallel applications should use MPI to communicate file info and slices of data */
-#   include "mpi.h"
-#endif
 
 #include <stdint.h>
 

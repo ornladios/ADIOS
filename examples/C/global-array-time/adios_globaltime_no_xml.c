@@ -42,7 +42,7 @@ int main (int argc, char ** argv)
 
 	strcpy (filename, "adios_globaltime.bp");
 
-	adios_init_noxml ();
+	adios_init_noxml (comm);
         adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 10);
 
         int64_t       m_adios_group;
@@ -76,7 +76,7 @@ int main (int argc, char ** argv)
             for (i = 0; i < NX; i++)
                 t[i] = rank + it*0.1 + 0.01;
 
-        	adios_open (&m_adios_file, "restart", filename, "a", &comm);
+        	adios_open (&m_adios_file, "restart", filename, "a", comm);
         	adios_groupsize = 4 + 4 + 4 + NX * 8
                         	+ 4 + 4 + 4 + NX * 8;
         	adios_group_size (m_adios_file, adios_groupsize, &adios_totalsize);

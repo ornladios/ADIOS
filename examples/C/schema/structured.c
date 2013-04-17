@@ -52,32 +52,29 @@ int main (int argc, char * argv[] )
     }
     mean /= NX;
 
-    adios_init ("structured.xml");
+    adios_init ("structured.xml", comm);
 
-    adios_open (&adios_handle, "schema", filename, "w", &comm);
+    adios_open (&adios_handle, "schema", filename, "w", comm);
 
     adios_groupsize = 4 \
                       + 4 \
                 + 4 \
                 + 4 \
-                + 4 \
-                + 8 \
                 + strlen(str) \
                 + sizeof(float) * (size) * (NX) \
                 + sizeof(float) * (size) * (NX) \
-                + sizeof(float) * (2*NX*size) \
                 + sizeof(double) * (NX);
     adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
     adios_write (adios_handle, "NX", &NX);
     adios_write (adios_handle, "size", &size);
-    adios_write (adios_handle, "size2", &size2);
+    //adios_write (adios_handle, "size2", &size2);
     adios_write (adios_handle, "rank", &rank);
-    adios_write (adios_handle, "mean", &mean);
-    adios_write (adios_handle, "nspace", &nspace);
+    //adios_write (adios_handle, "mean", &mean);
+    //adios_write (adios_handle, "nspace", &nspace);
     adios_write (adios_handle, "X", X);
     adios_write (adios_handle, "Y", Y);
-    adios_write (adios_handle, "XY",  XY);
-    adios_write (adios_handle, "date", str);
+    //adios_write (adios_handle, "XY",  XY);
+    //adios_write (adios_handle, "date", str);
     adios_write (adios_handle, "temperature", t);
 
     adios_close (adios_handle);

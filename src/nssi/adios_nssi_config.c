@@ -13,14 +13,7 @@
 // xml parser
 #include <mxml.h>
 
-#ifdef _NOMPI
-    /* Sequential processes can use the library compiled with -D_NOMPI */
-#   include "mpidummy.h"
-#else
-    /* Parallel applications should use MPI to communicate  */
-#   include "mpi.h"
-#endif
-
+#include "public/adios_mpi.h"
 #include "nssi_client.h"
 #include "adios_nssi_args.h"
 #include "adios_nssi_config.h"

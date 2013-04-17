@@ -39,8 +39,8 @@ int main (int argc, char ** argv)
         p[i] = rank * NX + i;
 
     strcpy (filename, "arrays.bp");
-    adios_init ("arrays.xml");
-    adios_open (&adios_handle, "arrays", filename, "w", &comm);
+    adios_init ("arrays.xml", comm);
+    adios_open (&adios_handle, "arrays", filename, "w", comm);
 #include "gwrite_arrays.ch"
     adios_close (adios_handle);
 

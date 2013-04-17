@@ -551,7 +551,7 @@ int write_cache(const char *client_id, int8_t free_memory)
         int64_t fd;
         if (DEBUG>3) printf("start adios_open\n");
         if (DEBUG>3) printf("adios_open: using MPI_COMM_WORLD\n");
-        Func_Timer("adios_open", rc = adios_open(&fd, of->gname, of->ofname, of->omode, &comm_world););
+        Func_Timer("adios_open", rc = adios_open(&fd, of->gname, of->ofname, of->omode, comm_world););
         if (rc != 0) {
             printf("Error opening file \"%s\": %d\n", of->ofname, rc);
         }

@@ -61,7 +61,7 @@ int main( int argc, char ** argv)
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &size);
 
-    adios_init ("local_array_time.xml");
+    adios_init ("local_array_time.xml", comm);
     strcpy(filename, "local_array_time.bp");
 
 
@@ -88,9 +88,9 @@ int main( int argc, char ** argv)
 
         if (timestep == 0.0) {
             printf("\n\n\nopen file\n\n\n");
-            adios_open (&adios_handle, "schema", filename, "w", &comm);
+            adios_open (&adios_handle, "schema", filename, "w", comm);
         } else {
-            adios_open (&adios_handle, "schema", filename, "a", &comm);
+            adios_open (&adios_handle, "schema", filename, "a", comm);
         }
 
         for (i=0; i<num_points; i++) {

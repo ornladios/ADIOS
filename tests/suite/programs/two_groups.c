@@ -54,7 +54,7 @@ int main (int argc, char ** argv)
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &size);
 
-    adios_init ("two_groups.xml");
+    adios_init ("two_groups.xml", comm);
     err = adios_read_init_method(ADIOS_READ_METHOD_BP, comm, "verbose=2");
     if (err) {
         printE ("%s\n", adios_errmsg());
@@ -85,7 +85,7 @@ int write_group (int step)
     uint64_t       groupsize=0, totalsize;
 
     log ("Write group %d to %s\n", step, FILENAME);
-    adios_open (&fh, (step==1 ? "g2" : "g1"), FILENAME, (step==0 ? "w" : "a"), &comm);
+    adios_open (&fh, (step==1 ? "g2" : "g1"), FILENAME, (step==0 ? "w" : "a"), comm);
     
     groupsize  = sizeof(int);  // a scalar only
 

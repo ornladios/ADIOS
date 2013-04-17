@@ -78,7 +78,7 @@ program genarray
     call MPI_Comm_size (app_comm, nproc , ierr)
 
     !print *,"call adios_init "
-    call adios_init ("genarray_stream.xml", ierr)
+    call adios_init ("genarray_stream.xml", app_comm, ierr)
     !print *,"MPI_Barrier "
     call MPI_Barrier (app_comm, ierr)
 
