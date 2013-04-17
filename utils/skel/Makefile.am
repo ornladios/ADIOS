@@ -25,8 +25,10 @@ dist_template_DATA=\
 	etc/templates/submit_sith.tpl\
 	etc/templates/submit_jaguar.tpl
 
-EXTRA_DIST=etc/settings etc/compiler_fragment.mk \
+EXTRA_DIST=etc/settings \
            etc/templates/Makefile.default.tpl \
            etc/templates/submit_jaguar.tpl \
            etc/templates/submit_sith.tpl \
-           bin/skel_have_adios_timing.py
+           lib/skel_have_adios_timing.py.in
+           ##etc/compiler_fragment.mk 
+
