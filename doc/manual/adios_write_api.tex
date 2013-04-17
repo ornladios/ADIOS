@@ -413,18 +413,15 @@ subroutine adios_set_path_var (fd, path, varname, err)
     integer,        intent(out) :: err
 end subroutine
 
-subroutine adios_end_iteration (fd, err)
-    integer*8,      intent(in)  :: fd
+subroutine adios_end_iteration (err)
     integer,        intent(out) :: err
 end subroutine
 
-subroutine adios_start_calculation (fd, err)
-    integer*8,      intent(in)  :: fd
+subroutine adios_start_calculation (err)
     integer,        intent(out) :: err
 end subroutine
 
-subroutine adios_stop_calculation (fd, err)
-    integer*8,      intent(in)  :: fd
+subroutine adios_stop_calculation (err)
     integer,        intent(out) :: err
 end subroutine
 

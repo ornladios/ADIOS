@@ -9,3 +9,4 @@ target_link_libraries(bpls adiosread_nompi ${ADIOSREADLIB_SEQ_LDADD})
 set_target_properties(bpls PROPERTIES COMPILE_FLAGS "${ADIOSLIB_EXTRA_CPPFLAGS} ${ADIOSREADLIB_SEQ_CPPFLAGS} ${ADIOSREADLIB_SEQ_CFLAGS}")
 
 install(FILES bpls.h DESTINATION ${PROJECT_BINARY_DIR}/utils/bpls)
+install(PROGRAMS bpls DESTINATION ${bindir})

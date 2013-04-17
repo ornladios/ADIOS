@@ -70,21 +70,18 @@ module adios_write_mod
             integer,        intent(out) :: err
         end subroutine
 
-        subroutine adios_end_iteration (fd, err)
+        subroutine adios_end_iteration (err)
             implicit none
-            integer*8,      intent(in)  :: fd
             integer,        intent(out) :: err
         end subroutine
 
-        subroutine adios_start_calculation (fd, err)
+        subroutine adios_start_calculation (err)
             implicit none
-            integer*8,      intent(in)  :: fd
             integer,        intent(out) :: err
         end subroutine
 
-        subroutine adios_stop_calculation (fd, err)
+        subroutine adios_stop_calculation (err)
             implicit none
-            integer*8,      intent(in)  :: fd
             integer,        intent(out) :: err
         end subroutine
 

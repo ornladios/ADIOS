@@ -70,6 +70,8 @@
 /* Define to 1 if you have <infiniband/verbs.h>. */
 #cmakedefine HAVE_IBVERBS_H 1
 
+#cmakedefine HAVE_IBVERBS 1
+
 /* Define if you have the Infiniband. */
 #cmakedefine HAVE_INFINIBAND 1
 
@@ -126,6 +128,8 @@
 
 /* Define if you have the Portals. */
 #cmakedefine HAVE_PORTALS 1
+
+#cmakedefine HAVE_PTLINIT 1
 
 /* Define to 1 if you have <portals3.h>. */
 #cmakedefine HAVE_PORTALS3_H 1
