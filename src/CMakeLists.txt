@@ -272,7 +272,8 @@ endif(BUILD_WRITE)
 set(include_HEADERS ${include_HEADERS} public/adios.h 
                    public/adios_types.h 
                    public/adios_read.h 
-                   public/adios_error.h 
+                   public/adios_error.h
+                   public/adios_mpi.h 
                    public/mpidummy.h 
                    public/adios_read_v1.h 
                    public/adios_read_v1_defs.h 
