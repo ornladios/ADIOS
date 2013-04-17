@@ -50,9 +50,11 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     #module unload netcdf
     export BUILD_WRITE=ON
     export BUILD_FORTRAN=ON
+    export skel_timing=ON
     export CC=mpicc
     export CXX=mpiCC
     export FC=mpif90
+    export INSTALL_PREFIX="/ccs/home/jya/ADIOS/sith.$TARGET"
     if [ "$TARGET" == "pgi" ]; then
 #        export CC=pgcc
 #        export CXX=pgCC
@@ -244,7 +246,6 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         ################
         TARGET=pgi
         echo "Configure on TITAN (XK7) for $TARGET env."
-        export CC=cc
         #export CFLAGS="-Wall -g" 
         source /opt/modules/default/etc/modules.sh
         module unload szip
@@ -286,6 +287,8 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         export CXX=CC
         export CFLAGS="-g -fPIC" 
 	export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
+	export skel_timing=ON
+	export INSTALL_PREFIX="/ccs/home/jya/ADIOS/titan.$TARGET"
 #          ./configure --prefix=/ccs/proj/e2e/qliu/ADIOS/test.$TARGET \
 #            --host=titan --host_alias=titan  \
 #            --enable-dependency-tracking \
@@ -330,6 +333,8 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
 	#module load dataspaces/1.0.0
         unset EXTRA_LIBS
         unset LDFLAGS
+	export skel_timing=ON
+        export INSTALL_PREFIX="/ccs/home/jya/ADIOS/titan.$TARGET"
         if [ "$TARGET" == "pgi" ]; then
             #module swap pgi pgi/11.8.0
             # NSSI needs -pgcpplibs flag 
