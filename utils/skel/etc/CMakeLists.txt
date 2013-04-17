@@ -4,8 +4,6 @@ link_directories(${PROJECT_BINARY_DIR}/utils/skel/etc)
 
 set(etcdir ${prefix}/etc/skel)
 
-install(FILES ${PROJECT_BINARY_DIR}/utils/skel/etc/compiler_fragment.mk settings DESTINATION ${etcdir})
-
 #ADD_EXECUTABLE(all compiler_fragment.mk)
 
 #ADD_CUSTOM_TARGET(Dummy ALL)
@@ -27,3 +25,4 @@ add_custom_command(
 	COMMAND grep -e'^prefix\ =' -e '^CMAKE_C_COMPILER:FILEPATH=' -e'^CMAKE_Fortran_COMPILER:FILEPATH=' -e'^CMAKE_C_FLAGS:STRING=' -e'^CMAKE_Fortran_FLAGS:STRING='  < ${PROJECT_BINARY_DIR}/CMakeCache.txt > compiler_fragment.tmp
 	DEPENDS ${PROJECT_BINARY_DIR}/CMakeCache.txt)
 
+install(FILES ${PROJECT_BINARY_DIR}/utils/skel/etc/compiler_fragment.mk settings DESTINATION ${etcdir})
