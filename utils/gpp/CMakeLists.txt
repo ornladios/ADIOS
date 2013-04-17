@@ -1,2 +1,1 @@
-#install(PROGRAMS gpp.py ad_config.py type_mapper.py DESTINATION ${bindir})
-install(FILES gpp.py ad_config.py type_mapper.py DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+install(PROGRAMS gpp.py ad_config.py type_mapper.py DESTINATION ${bindir})
