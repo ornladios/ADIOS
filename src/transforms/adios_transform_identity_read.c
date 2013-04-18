@@ -81,7 +81,7 @@ int adios_transform_identity_generate_read_subrequests(adios_transform_read_requ
     const uint64_t buflen = (end_off - start_off) * datum_size;
     void *buf = malloc(buflen);
     adios_transform_raw_read_request *subreq =
-            adios_transform_raw_read_request_new_byte_segment(pg_reqgroup->raw_varblock, start_off * datum_size, buflen, buf);
+            adios_transform_raw_read_request_new_byte_segment(pg_reqgroup, start_off * datum_size, buflen, buf);
 
     // Store the ragged start offset
     subreq->transform_internal = malloc(sizeof(uint64_t));

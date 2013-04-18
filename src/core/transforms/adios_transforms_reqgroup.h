@@ -96,8 +96,8 @@ typedef struct _adios_transform_read_request {
 // adios_transform_raw_read_request manipulation
 //
 adios_transform_raw_read_request * adios_transform_raw_read_request_new(ADIOS_SELECTION *sel, void *data);
-adios_transform_raw_read_request * adios_transform_raw_read_request_new_byte_segment(const ADIOS_VARBLOCK *raw_varblock, uint64_t start, uint64_t count, void *data);
-adios_transform_raw_read_request * adios_transform_raw_read_request_new_whole_pg(const ADIOS_VARBLOCK *raw_varblock, void *data);
+adios_transform_raw_read_request * adios_transform_raw_read_request_new_byte_segment(const adios_transform_pg_read_request *pg_reqgroup, uint64_t start, uint64_t count, void *data);
+adios_transform_raw_read_request * adios_transform_raw_read_request_new_whole_pg(const adios_transform_pg_read_request *pg_reqgroup, void *data);
 void adios_transform_raw_read_request_free(adios_transform_raw_read_request **subreq_ptr);
 
 void adios_transform_raw_read_request_mark_complete(adios_transform_read_request *regroup_parent,

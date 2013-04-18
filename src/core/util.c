@@ -339,6 +339,11 @@ ADIOS_SELECTION * copy_selection (const ADIOS_SELECTION * sel)
     else if (sel->type == ADIOS_SELECTION_WRITEBLOCK)
     {
         nsel->u.block.index = sel->u.block.index;
+        // NCSU ALACRITY-ADIOS: Copy the new fields
+        nsel->u.block.is_absolute_index = sel->u.block.is_absolute_index;
+        nsel->u.block.is_sub_pg_selection = sel->u.block.is_sub_pg_selection;
+        nsel->u.block.element_offset = sel->u.block.element_offset;
+        nsel->u.block.nelements = sel->u.block.nelements;
     }
     else if (sel->type == ADIOS_SELECTION_AUTO)
     {

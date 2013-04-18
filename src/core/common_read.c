@@ -1149,6 +1149,9 @@ ADIOS_SELECTION * common_read_selection_writeblock (int index)
     if (sel) {
         sel->type = ADIOS_SELECTION_WRITEBLOCK;
         sel->u.block.index = index;
+        // NCSU ALACRITY-ADIOS: Set the writeblock selection to be a full-PG selection by default
+        sel->u.block.is_absolute_index = 0;
+        sel->u.block.is_sub_pg_selection = 0;
     } else {
         adios_error(err_no_memory, "Cannot allocate memory for writeblock selection\n");
     }

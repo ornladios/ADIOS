@@ -46,8 +46,8 @@ int adios_transform_zlib_generate_read_subrequests(adios_transform_read_request 
 
     // adios_transform_raw_read_request *subreq = adios_transform_raw_read_request_new(pg_reqgroup->raw_varblock, buf);
     // adios_transform_raw_read_request_append(pg_reqgroup, subreq);
-	
-	adios_transform_raw_read_request *subreq = adios_transform_raw_read_request_new_whole_pg(pg_reqgroup->raw_varblock, buf);
+
+    adios_transform_raw_read_request *subreq = adios_transform_raw_read_request_new_whole_pg(pg_reqgroup, buf);
     adios_transform_raw_read_request_append(pg_reqgroup, subreq);
 
     return 0;

@@ -117,6 +117,18 @@ static int common_adios_selection_equal(ADIOS_SELECTION *sel1, ADIOS_SELECTION *
                memcmp(bb1->start, bb2->start, bb1->ndim * sizeof(uint64_t)) == 0 &&
                memcmp(bb1->count, bb2->count, bb1->ndim * sizeof(uint64_t)) == 0;
     }
+    case ADIOS_SELECTION_WRITEBLOCK:
+    {
+        ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb1 = &sel1->u.block;
+        ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb2 = &sel2->u.block;
+        return (wb1->index == wb2->index) &&
+               (wb1->is_absolute_index == wb2->is_absolute_index) &&
+               (wb1->is_sub_pg_selection == wb2->is_sub_pg_selection) &&
+               (!wb1->is_sub_pg_selection || (
+                    (wb1->element_offset == wb2->element_offset) &&
+                    (wb1->nelements == wb2->nelements)
+               ));
+    }
     default:
         adios_error(err_operation_not_supported, "Selection types other than bounding box not supported in %s\n", __FUNCTION__);
         return 0;
@@ -137,8 +149,30 @@ adios_transform_raw_read_request * adios_transform_raw_read_request_new(ADIOS_SE
     return new_subreq;
 }
 
-adios_transform_raw_read_request * adios_transform_raw_read_request_new_byte_segment(const ADIOS_VARBLOCK *raw_varblock, uint64_t start, uint64_t count, void *data) {
+// Define to use the new writeblock-based raw read interface to the I/O transport layer
+#define RAW_READS_USE_WRITEBLOCK
+
+adios_transform_raw_read_request * adios_transform_raw_read_request_new_byte_segment(const adios_transform_pg_read_request *pg_reqgroup, uint64_t start, uint64_t count, void *data) {
     ADIOS_SELECTION *sel;
+
+#ifdef RAW_READS_USE_WRITEBLOCK
+    ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb;
+
+    // NOTE: We use the absolute PG index, along with the is_absolute_index flag below
+    sel = common_read_selection_writeblock(pg_reqgroup->blockidx_in_pg);
+
+    wb = &sel->u.block;
+    wb->is_absolute_index = 1;
+    wb->is_sub_pg_selection = 1;
+    wb->element_offset = start; // Assume element type of the raw variable is byte
+    wb->nelements = count;
+
+    // Check separately to avoid wrap-around error from masking a problem
+    assert(start <= pg_reqgroup->raw_varblock->count[1]);
+    assert(count <= pg_reqgroup->raw_varblock->count[1]);
+    assert(start + count <= pg_reqgroup->raw_varblock->count[1]);
+#else
+    const ADIOS_VARBLOCK *raw_varblock = pg_reqgroup->raw_varblock;
     uint64_t *start_sel, *count_sel;
 
     // TODO: Move this bounding box construction to a separate function?
@@ -154,13 +188,20 @@ adios_transform_raw_read_request * adios_transform_raw_read_request_new_byte_seg
     // Transfer ownership of the our start/count vectors
     sel = common_read_selection_boundingbox(2, start_sel, count_sel);
     start_sel = count_sel = NULL;
+#endif
 
     return adios_transform_raw_read_request_new(sel, data);
 }
 
-adios_transform_raw_read_request * adios_transform_raw_read_request_new_whole_pg(const ADIOS_VARBLOCK *raw_varblock, void *data) {
+adios_transform_raw_read_request * adios_transform_raw_read_request_new_whole_pg(const adios_transform_pg_read_request *pg_reqgroup, void *data) {
     // raw_varblock has two dimensions: PG ID and byte offset. Thus, the length of this (raw) PG is the length of the 2nd dimension.
-    return adios_transform_raw_read_request_new_byte_segment(raw_varblock, 0, raw_varblock->count[1], data);
+#ifdef RAW_READS_USE_WRITEBLOCK
+    ADIOS_SELECTION *sel = common_read_selection_writeblock(pg_reqgroup->blockidx_in_timestep);
+    return adios_transform_raw_read_request_new(sel, data);
+#else
+    const ADIOS_VARBLOCK *raw_varblock = pg_reqgroup->raw_varblock;
+    return adios_transform_raw_read_request_new_byte_segment(pg_reqgroup, 0, raw_varblock->count[1], data);
+#endif
 }
 
 void adios_transform_raw_read_request_mark_complete(adios_transform_read_request *parent_reqgroup, adios_transform_pg_read_request *parent_pg_reqgroup,

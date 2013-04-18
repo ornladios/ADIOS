@@ -2355,12 +2355,20 @@ uint64_t get_req_datasize (const ADIOS_FILE * fp, read_request * r, struct adios
     }
     else if (sel->type == ADIOS_SELECTION_WRITEBLOCK)
     {
-        pgidx = adios_wbidx_to_pgidx (fp, r);
+        // NCSU ALACRITY-ADIOS: Adding absoluet PG indexing
+        pgidx = sel->u.block.is_absolute_index ?
+                    sel->u.block.index :
+                    adios_wbidx_to_pgidx (fp, r);
 
-        ndims = v->characteristics[pgidx].dims.count;
-        for (i = 0; i < ndims; i++)
-        {
-            datasize *= v->characteristics[pgidx].dims.dims[i * 3];
+        // NCSU ALACRITY-ADIOS: Adding sub-PG writeblock read support
+        if (sel->u.block.is_sub_pg_selection) {
+            datasize = sel->u.block.nelements;
+        } else {
+            ndims = v->characteristics[pgidx].dims.count;
+            for (i = 0; i < ndims; i++)
+            {
+                datasize *= v->characteristics[pgidx].dims.dims[i * 3];
+            }
         }
     }
 
@@ -3395,6 +3403,7 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
     void * data;
     ADIOS_VARCHUNK * chunk;
     MPI_Status status;
+    const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb;// NCSU ALACRITY-ADIOS
 
     adios_errno = 0;
 
@@ -3404,7 +3413,12 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
     varid = map_req_varid (fp, r->varid);
     v = bp_find_var_byid (fh, varid);
     time = adios_step_to_time (fp, r->varid, r->from_steps);
-    idx = adios_wbidx_to_pgidx (fp, r);
+
+    // NCSU ALACRITY-ADIOS: Add support for absolute PG index for efficiency
+    assert(r->sel->type == ADIOS_SELECTION_WRITEBLOCK);
+    wb = &r->sel->u.block;
+
+    idx = wb->is_absolute_index ? wb->index : adios_wbidx_to_pgidx (fp, r);
     assert (idx >= 0);
 
     ndim = v->characteristics [idx].dims.count;
@@ -3465,11 +3479,20 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
 
         /* To get ldims for the chunk and then calculate payload size */
         bp_get_dimension_characteristics (&(v->characteristics[idx]),
-                                         ldims, gdims, offsets);
+                ldims, gdims, offsets);
 
         for (j = 0; j < ndim; j++)
         {
             slice_size *= ldims [j];
+        }
+
+        // NCSU ALACRITY-ADIOS: Added sub-PG writeblock selection support
+        // If this is a sub-PG selection, use nelements to compute slice_size
+        // instead (safety assert() for now; if deemed safe, the above block
+        // computing slice_size can be eliminated via conditional in this case)
+        if (wb->is_sub_pg_selection) {
+            // The start and end of the sub-PG selection must fall within the PG
+            slice_size = wb->nelements * size_of_type;
         }
 
         r->datasize = slice_size;
@@ -3480,6 +3503,12 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
          */
         start_idx = 0;
         slice_offset = v->characteristics[idx].payload_offset;
+
+        // NCSU ALACRITY-ADIOS: Added sub-PG writeblock selection support
+        // If this is a sub-PG read, add the element_offset within the PG to the base offset in the file
+        if (wb->is_sub_pg_selection) {
+            slice_offset += wb->element_offset * size_of_type;
+        }
 
         if (!has_subfile)
         {

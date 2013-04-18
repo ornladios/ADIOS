@@ -56,7 +56,7 @@ int adios_transform_aplod_generate_read_subrequests(adios_transform_read_request
     // Read the element start_pos..end_pos sieving segment from each column
     for (i = 0; i < aplodmeta.numComponents; i++) {
         adios_transform_raw_read_request *subreq = adios_transform_raw_read_request_new_byte_segment(
-                pg_reqgroup->raw_varblock,
+                pg_reqgroup,
                 numByteColsDone * elemcount + start_off * aplodmeta.components[i],
                 numByteColsDone * elemcount + end_off * aplodmeta.components[i],
                 buf + elemcount * numByteColsDone);

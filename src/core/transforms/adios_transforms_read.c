@@ -114,10 +114,10 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
 
             // Transfer ownership of pg_intersection_to_global_copyspec
             new_pg_reqgroup = adios_transform_pg_read_request_new(timestep, timestep_blockidx,
-                                                              blockidx,
-                                                              orig_vb, raw_vb,
-                                                              pg_intersection_sel,
-                                                              pg_bounds_sel);
+                                                                  blockidx,
+                                                                  orig_vb, raw_vb,
+                                                                  pg_intersection_sel,
+                                                                  pg_bounds_sel);
 
 #ifdef WITH_TIMER
     timer_start ("adios_transform_plugin_generate_read_requests");
@@ -242,6 +242,8 @@ static int apply_datablock_to_result_and_free(adios_datablock *datablock,
 
 static uint64_t compute_selection_size_in_bytes(const ADIOS_SELECTION *sel,
                                                 enum ADIOS_DATATYPES datum_type,
+                                                int timestep,
+                                                const ADIOS_VARINFO *raw_varinfo,
                                                 const ADIOS_TRANSINFO *transinfo) {
     int typesize = adios_get_type_size(datum_type, NULL);
     switch (sel->type) {
@@ -265,25 +267,32 @@ static uint64_t compute_selection_size_in_bytes(const ADIOS_SELECTION *sel,
     case ADIOS_SELECTION_WRITEBLOCK:
     {
         const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb = &sel->u.block;
-        const ADIOS_VARBLOCK *theblock = &transinfo->orig_blockinfo[wb->index];
-        int i;
 
-<<<<<<< HEAD
-        uint64_t size = typesize;
-        for (i = 0; i < transinfo->orig_ndim; i++)
-            size *= theblock->count[i];
-
-        return size;
-=======
         if (wb->is_sub_pg_selection) {
             return wb->nelements * typesize;
         } else {
+            const ADIOS_VARBLOCK *theblock;
             uint64_t size = typesize;
+            int absolute_idx;
+            int i;
+
+            if (wb->is_absolute_index) {
+                absolute_idx = wb->index;
+            } else {
+                int timestep_start_idx = 0;
+                for (i = 0; i < timestep; i++)
+                    timestep_start_idx += raw_varinfo->nblocks[i];
+
+                absolute_idx = timestep_start_idx + wb->index;
+            }
+
+            theblock = &transinfo->orig_blockinfo[absolute_idx];
+
             for (i = 0; i < transinfo->orig_ndim; i++)
                 size *= theblock->count[i];
+
             return size;
         }
->>>>>>> 610697a... Added example program to test sub-PG writeblock read selection.
     }
     case ADIOS_SELECTION_AUTO:
     default:
@@ -324,7 +333,7 @@ static ADIOS_VARCHUNK * apply_datablock_to_chunk_and_free(adios_datablock *resul
         //       ends up being slow, this can be fixed.
 
         // Compute the number of bytes to allocate for this chunk
-        chunk_buffer_size = compute_selection_size_in_bytes(inter_sel, result->elem_type, reqgroup->transinfo);
+        chunk_buffer_size = compute_selection_size_in_bytes(inter_sel, result->elem_type, result->timestep, reqgroup->raw_varinfo, reqgroup->transinfo);
 
         chunk = malloc(sizeof(ADIOS_VARCHUNK));
         chunk->data = malloc(chunk_buffer_size);

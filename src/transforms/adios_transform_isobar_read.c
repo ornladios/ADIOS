@@ -17,36 +17,36 @@ int decompress_isobar_pre_allocated(const void* input_data, const uint64_t input
                                     void* output_data, uint64_t* output_len)
 {
     assert(input_data != NULL && input_len > 0 && output_data != NULL && output_len != NULL && *output_len > 0);
-	
-	enum ISOBAR_status status;
+
+    enum ISOBAR_status status;
     struct isobar_stream i_strm;
-    
+
     status = isobarInflateInit(&i_strm, ELEMENT_BYTES);
     if(status != ISOBAR_SUCCESS)
-	{
-		printf("isobarInflateInit error\n");
-		return -1;
-	}
+    {
+        printf("isobarInflateInit error\n");
+        return -1;
+    }
 
     i_strm.next_in = (void*) input_data;
     i_strm.avail_in = input_len;
     i_strm.next_out = (void*) output_data;
     i_strm.avail_out = *output_len;;
-	
+
     status = isobarInflate(&i_strm, ISOBAR_FINISH);
     if(status != ISOBAR_SUCCESS)
-	{
-		printf("isobarInflate error\n");
-		return -1;
-	}
+    {
+        printf("isobarInflate error\n");
+        return -1;
+    }
 
     status = isobarInflateEnd(&i_strm);
     if(status != ISOBAR_SUCCESS)
-	{
-		printf("isobarInflateEnd error\n");
-		return -1;
-	}
-	
+    {
+        printf("isobarInflateEnd error\n");
+        return -1;
+    }
+
     // uLongf dest_temp = *output_len;
 
     // printf("decompress_isobar_pre_allocated %d %d\n", dest_temp, input_len);
@@ -77,8 +77,8 @@ int adios_transform_isobar_generate_read_subrequests(adios_transform_read_reques
 
     // adios_transform_raw_read_request *subreq = adios_transform_raw_read_request_new(pg_reqgroup->raw_varblock, buf);
     // adios_transform_raw_read_request_append(pg_reqgroup, subreq);
-	
-	adios_transform_raw_read_request *subreq = adios_transform_raw_read_request_new_whole_pg(pg_reqgroup->raw_varblock, buf);
+
+    adios_transform_raw_read_request *subreq = adios_transform_raw_read_request_new_whole_pg(pg_reqgroup, buf);
     adios_transform_raw_read_request_append(pg_reqgroup, subreq);
 
     return 0;
