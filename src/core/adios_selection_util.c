@@ -88,7 +88,7 @@ ADIOS_SELECTION * adios_selection_intersect_bb_pts(const ADIOS_SELECTION_BOUNDIN
         free(new_pts);
         return NULL;
     } else {
-        new_pts = (uint64_t*)realloc(new_pts, new_npts * sizeof(uint64_t));
+        new_pts = (uint64_t*)realloc(new_pts, new_npts * ndim * sizeof(uint64_t));
         return common_read_selection_points(ndim, new_npts, new_pts);
     }
 }
