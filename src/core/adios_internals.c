@@ -949,6 +949,78 @@ int adios_common_define_attribute (int64_t group, const char * name
     return 1;
 }
 
+
+/* define an attribute by passing the value directly, not by a string */
+int adios_common_define_attribute_byvalue (int64_t group, const char * name
+                                  ,const char * path
+                                  ,enum ADIOS_DATATYPES type
+                                  ,void * value
+                                  )
+{
+    struct adios_group_struct * g = (struct adios_group_struct *) group;
+    struct adios_attribute_struct * attr = (struct adios_attribute_struct *)
+                              malloc (sizeof (struct adios_attribute_struct));
+    uint64_t size;
+
+    attr->name = strdup (name);
+    attr->path = strdup (path);
+    if (value)
+    {
+        if (type == adios_unknown)
+        {
+            adios_error (err_invalid_type_attr, 
+                         "config.xml: attribute element %s has invalid "
+                         "type attribute\n",
+                         name);
+
+            free (attr->name);
+            free (attr->path);
+            free (attr);
+
+            return 0;
+        }
+        attr->type = type;
+        size = adios_get_type_size (attr->type, value);
+        if (size > 0)
+        {
+            attr->value = malloc (size);
+            memcpy (attr->value, value, size);
+            attr->var = 0;
+        }
+        else
+        {
+            adios_error (err_invalid_value_attr, 
+                         "Attribute element %s has invalid "
+                         "value attribute\n", name);
+
+            free (attr->value);
+            free (attr->name);
+            free (attr->path);
+            free (attr);
+
+            return 0;
+        }
+    }
+    else
+    {
+        adios_error (err_invalid_value_attr, 
+                     "Attribute element %s has invalid "
+                     "value attribute\n", name);
+
+        free (attr->name);
+        free (attr->path);
+        free (attr);
+
+        return 0;
+    }
+
+    attr->next = 0;
+
+    adios_append_attribute (&g->attributes, attr, ++g->member_count);
+
+    return 1;
+}
+
 /*void adios_extract_string (char ** out, const char * in, int size)
 {
     if (in && out)
