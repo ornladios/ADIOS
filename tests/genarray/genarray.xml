@@ -44,7 +44,7 @@
 
   </adios-group>
 
-  <method group="genarray" method="MPI"/>
+  <method group="genarray" method="CHUNK">io_method=MPI</method>
 
   <buffer size-MB="400" allocate-time="now"/>
 
