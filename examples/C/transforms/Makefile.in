@@ -35,8 +35,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = adios_global$(EXEEXT) adios_read_subv$(EXEEXT) \
-	adios_read_points$(EXEEXT) adios_read_all_3D$(EXEEXT) \
-	adios_write_all_3D$(EXEEXT)
+	adios_read_points$(EXEEXT) adios_read_wb_subpg$(EXEEXT) \
+	adios_read_all_3D$(EXEEXT) adios_write_all_3D$(EXEEXT)
 subdir = examples/C/transforms
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -102,6 +102,13 @@ adios_read_subv_DEPENDENCIES = $(top_builddir)/src/libadiosread.a \
 adios_read_subv_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(adios_read_subv_LDFLAGS) $(LDFLAGS) -o $@
+am_adios_read_wb_subpg_OBJECTS = adios_read_wb_subpg.$(OBJEXT)
+adios_read_wb_subpg_OBJECTS = $(am_adios_read_wb_subpg_OBJECTS)
+adios_read_wb_subpg_DEPENDENCIES = $(top_builddir)/src/libadiosread.a \
+	$(am__DEPENDENCIES_1)
+adios_read_wb_subpg_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(adios_read_wb_subpg_LDFLAGS) $(LDFLAGS) -o $@
 am_adios_write_all_3D_OBJECTS = adios_write_all_3D.$(OBJEXT)
 adios_write_all_3D_OBJECTS = $(am_adios_write_all_3D_OBJECTS)
 adios_write_all_3D_DEPENDENCIES = $(top_builddir)/src/libadios.a \
@@ -123,10 +130,10 @@ LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	$(LDFLAGS) -o $@
 SOURCES = $(adios_global_SOURCES) $(adios_read_all_3D_SOURCES) \
 	$(adios_read_points_SOURCES) $(adios_read_subv_SOURCES) \
-	$(adios_write_all_3D_SOURCES)
+	$(adios_read_wb_subpg_SOURCES) $(adios_write_all_3D_SOURCES)
 DIST_SOURCES = $(adios_global_SOURCES) $(adios_read_all_3D_SOURCES) \
 	$(adios_read_points_SOURCES) $(adios_read_subv_SOURCES) \
-	$(adios_write_all_3D_SOURCES)
+	$(adios_read_wb_subpg_SOURCES) $(adios_write_all_3D_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -359,11 +366,15 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 INCLUDES = $(all_includes) -I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/public
+	-I$(top_srcdir)/src/public $(TIMER_CPPFLAGS)
 AUTOMAKE_OPTIONS = no-dependencies
 adios_global_SOURCES = adios_global.c
 adios_global_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 adios_global_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+adios_write_all_3D_SOURCES = adios_write_all_3D.c
+adios_write_all_3D_LDADD = $(top_builddir)/src/libadios.a \
+	$(ADIOSLIB_LDADD)
+adios_write_all_3D_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 adios_read_subv_SOURCES = adios_read_subv.c
 adios_read_subv_LDADD = $(top_builddir)/src/libadiosread.a \
 	$(ADIOSLIB_LDADD)
@@ -372,14 +383,14 @@ adios_read_points_SOURCES = adios_read_points.c
 adios_read_points_LDADD = $(top_builddir)/src/libadiosread.a \
 	$(ADIOSLIB_LDADD)
 adios_read_points_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+adios_read_wb_subpg_SOURCES = adios_read_wb_subpg.c
+adios_read_wb_subpg_LDADD = $(top_builddir)/src/libadiosread.a \
+	$(ADIOSLIB_LDADD)
+adios_read_wb_subpg_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 adios_read_all_3D_SOURCES = adios_read_all_3D.c
 adios_read_all_3D_LDADD = $(top_builddir)/src/libadiosread.a \
 	$(ADIOSLIB_LDADD)
 adios_read_all_3D_LDFLAGS = $(ADIOSLIB_LDFLAGS)
-adios_write_all_3D_SOURCES = adios_write_all_3D.c
-adios_write_all_3D_LDADD = $(top_builddir)/src/libadios.a \
-	$(ADIOSLIB_LDADD)
-adios_write_all_3D_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 CLEANFILES = *.bp
 EXTRA_DIST = adios_global.xml gread_temperature.ch gwrite_temperature.ch job.pbs
 all: all-am
@@ -437,6 +448,9 @@ adios_read_points$(EXEEXT): $(adios_read_points_OBJECTS) $(adios_read_points_DEP
 adios_read_subv$(EXEEXT): $(adios_read_subv_OBJECTS) $(adios_read_subv_DEPENDENCIES) 
 	@rm -f adios_read_subv$(EXEEXT)
 	$(adios_read_subv_LINK) $(adios_read_subv_OBJECTS) $(adios_read_subv_LDADD) $(LIBS)
+adios_read_wb_subpg$(EXEEXT): $(adios_read_wb_subpg_OBJECTS) $(adios_read_wb_subpg_DEPENDENCIES) 
+	@rm -f adios_read_wb_subpg$(EXEEXT)
+	$(adios_read_wb_subpg_LINK) $(adios_read_wb_subpg_OBJECTS) $(adios_read_wb_subpg_LDADD) $(LIBS)
 adios_write_all_3D$(EXEEXT): $(adios_write_all_3D_OBJECTS) $(adios_write_all_3D_DEPENDENCIES) 
 	@rm -f adios_write_all_3D$(EXEEXT)
 	$(adios_write_all_3D_LINK) $(adios_write_all_3D_OBJECTS) $(adios_write_all_3D_LDADD) $(LIBS)

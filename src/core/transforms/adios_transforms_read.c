@@ -268,11 +268,22 @@ static uint64_t compute_selection_size_in_bytes(const ADIOS_SELECTION *sel,
         const ADIOS_VARBLOCK *theblock = &transinfo->orig_blockinfo[wb->index];
         int i;
 
+<<<<<<< HEAD
         uint64_t size = typesize;
         for (i = 0; i < transinfo->orig_ndim; i++)
             size *= theblock->count[i];
 
         return size;
+=======
+        if (wb->is_sub_pg_selection) {
+            return wb->nelements * typesize;
+        } else {
+            uint64_t size = typesize;
+            for (i = 0; i < transinfo->orig_ndim; i++)
+                size *= theblock->count[i];
+            return size;
+        }
+>>>>>>> 610697a... Added example program to test sub-PG writeblock read selection.
     }
     case ADIOS_SELECTION_AUTO:
     default:
