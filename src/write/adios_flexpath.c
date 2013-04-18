@@ -501,6 +501,7 @@ int get_local_offsets(struct adios_var_struct * list, struct adios_group_struct 
 // creates multiqueue function to handle ctrl messages for given bridge stones 
 char* multiqueue_action = "{\n\
     int found = 0;\n\
+    int flush_data_count = 0; \n\
     int my_rank = -1;\n\
     attr_list mine;\n\
     if(EVcount_varMsg()>0) {\n\
@@ -532,17 +533,20 @@ char* multiqueue_action = "{\n\
             }\n\
         } else {\n\
             EVdiscard_and_submit_flush(0,0);\n\
+            flush_data_count++;\n\
         }\n\
     }\n\
     if(EVcount_evgroup()>0){\n\
-        evgroup* g = EVdata_evgroup(0);\n\
-        mine = EVget_attrs_evgroup(0);\n\
-        found = attr_ivalue(mine, \"fp_size\");\n\
-        int k;\n\
-        for(k=0; k<found; k++){\n\
-            EVsubmit(k+1,g);\n\
+        if(flush_data_count > 0){\n\
+          evgroup* g = EVdata_evgroup(0);\n\
+          mine = EVget_attrs_evgroup(0);\n\
+          found = attr_ivalue(mine, \"fp_size\");\n\
+          int k;\n\
+          for(k=0; k<found; k++){\n\
+              EVsubmit(k+1,g);\n\
+          }\n\
+          EVdiscard_evgroup(0);\n\
         }\n\
-        EVdiscard_evgroup(0);\n\
     }\n\
     if(EVcount_anonymous()>0){\n\
         mine = EVget_attrs_anonymous(0);\n\

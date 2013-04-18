@@ -314,7 +314,7 @@ static int op_msg_handler(CManager cm, void *vevent, void *client_data, attr_lis
 static int
 group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 {
-    EVtake_event_buffer(fp_read_data->fp_cm, vevent);
+    //EVtake_event_buffer(fp_read_data->fp_cm, vevent);
     evgroup * msg = (evgroup*)vevent;
     ADIOS_FILE *adiosfile = client_data;
     flexpath_file_data * fp = (flexpath_file_data*)adiosfile->fh;
@@ -763,11 +763,13 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
 	fprintf(fp_out, "ready");
 	fclose(fp_out);
 	free(recvbuf);
-    }
 
-    FILE * read_ready = fopen(reader_ready_filename, "w");
-    fprintf(read_ready, "ready");
-    fclose(read_ready);
+	FILE * read_ready = fopen(reader_ready_filename, "w");
+	fprintf(read_ready, "ready");
+	fclose(read_ready);
+    }
+    MPI_Barrier(fp->comm);
+    
     //may need to switch to rank 0 and mpi broadcast
     FILE * fp_in = fopen(writer_ready_filename,"r");
     while(!fp_in) {
