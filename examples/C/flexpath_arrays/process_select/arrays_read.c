@@ -50,7 +50,7 @@ int main (int argc, char ** argv)
     ADIOS_FILE* afile = adios_read_open_file("arrays", ADIOS_READ_METHOD_FLEXPATH, comm);
     /* Read arrays for each time step */
     int ii=0;
-    for(ii=0; ii<5; ii++) {        
+    for(ii=0; ii<30; ii++) {        
 
 	ADIOS_VARINFO* nx_info = adios_inq_var( afile, "NX");
 	if(nx_info->value) {
@@ -69,8 +69,7 @@ int main (int argc, char ** argv)
 	memset(p, 0, NX*sizeof(int));
         /* schedule a read of the arrays */
         adios_schedule_read (afile, &process_select, "var_double_2Darray", 0, 1, t);
-        adios_schedule_read (afile, &process_select, "var_int_1Darray", 0, 1, p);
-        
+        adios_schedule_read (afile, &process_select, "var_int_1Darray", 0, 1, p);	
         /* commit request and retrieve data */
         adios_perform_reads (afile, 1);
 

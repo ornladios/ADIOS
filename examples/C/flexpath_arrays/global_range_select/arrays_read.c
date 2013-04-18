@@ -90,7 +90,7 @@ int main (int argc, char ** argv)
 	printf("]\n");
         adios_advance_step(afile, 0, 30);
 	MPI_Barrier (comm);
-	sleep(1);
+	//sleep(1);
     }
     //
     adios_read_close(afile);

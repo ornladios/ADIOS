@@ -1,7 +1,6 @@
 /*
     adios_flexpath.c
-    Originally copied from adios_datatap.c
-    Goal: to use evpath for io in conjunction with read/read_flexpath.c
+    uses evpath for io in conjunction with read/read_flexpath.c
 */
 
 
@@ -10,305 +9,281 @@
 // system libraries
 #include <stdio.h>
 #include <stdlib.h>
-#include <string.h>
-#include <ffs.h>
-#include <atl.h>
-#include <evpath.h>
-#include <fm.h>
-#include <gen_thread.h>
 #include <sys/queue.h>
-#include <pthread.h>
+
+// evpath libraries
+#include <evpath.h>
+#include <gen_thread.h>
 
 // local libraries
 #include "config.h"
-#include "public/adios.h"
 #include "core/adios_internals.h"
 #include "core/adios_transport_hooks.h"
 #include "core/util.h"
+#include "public/adios.h"
 #include "public/flexpath.h"
 
-//static LIST_HEAD(listhead, _fm_structure) globallist;
+/************************* Structure and Type Definitions ***********************/
+// used for messages in the control queue
+typedef enum {VAR=0, DATA_FLUSH, OPEN, CLOSE, DATA_BUFFER, OFFSET_MSG} FlexpathMessageType;
 
-
-/************************* Global Variable Declarations *************************/
-#define STARTINGSIZE 16
-#define OPLEN 7
-static char opList[OPLEN] = { '+', '-', '*', '/', '.', '>', '<' };
-static char *opRepList[OPLEN] = { "_plus_", "_minus_", "_mult_", "_div_", "_dot_", "_greater_", "_less_" };
-typedef enum {VAR=0, DATA_FLUSH, OPEN, CLOSE, DATA_BUFFER, OFFSET_MSG} MsgType;
-
-/************************* EVPath/FFS Definitions *******************************/
-/* NOTE: may need to move to a shared reader/writer header at some point for versioning control */
-
-typedef struct _stone {
+// maintains connection information
+typedef struct _flexpath_stone {
     int myNum;
     int theirNum;
     int step;
     int opened;
+    int condition;
     char* contact;
-} Stone;
+} FlexpathStone;
 
-typedef struct _var_node {
+// maintains variable dimension information
+typedef struct _flexpath_var_node {
     char* varName;
-    struct _var_node* dims;
-    struct _var_node* next;
+    struct _flexpath_var_node* dimensions;
+    struct _flexpath_var_node* next;
     int rank;
-} VarNode;
+} FlexpathVarNode;
 
-typedef struct _QueueNode {
+// used to construct message queues
+typedef struct _flexpath_queue_node {
     void* data;
-    MsgType type;
-    struct _QueueNode* next;
-} QueueNode;
+    FlexpathMessageType type;
+    struct _flexpath_queue_node* next;
+} FlexpathQueueNode;
 
-/************************* Structure and Type Definitions ***********************/
-
-typedef struct _name_table {
+// used to sanitize names
+typedef struct _flexpath_name_table {
     char *originalName;
     char *mangledName;
-    LIST_ENTRY(_name_table) entries;
-} NameTable;
+    LIST_ENTRY(_flexpath_name_table) entries;
+} FlexpathNameTable;
 
-typedef struct _alt_name {
+// used to sanitize names
+typedef struct _flexpath_alt_name {
     char *name;
-    FMField *field;                 //contains the field list
-    LIST_ENTRY(_alt_name) entries;
-} AltName;
+    FMField *field;
+    LIST_ENTRY(_flexpath_alt_name) entries;
+} FlexpathAltName;
 
-typedef struct _dim_names {
+// used to sanitize names
+typedef struct _flexpath_dim_names {
     char *name;
-    LIST_HEAD(alts, _alt_name) altList;
-    LIST_ENTRY(_dim_names) entries;
-} DimNames;
+    LIST_HEAD(alts, _flexpath_alt_name) altList;
+    LIST_ENTRY(_flexpath_dim_names) entries;
+} FlexpathDimNames;
 
-struct _fm_structure {
+// structure for file data (metadata and buffer)
+typedef struct _flexpath_fm_structure {
     FMStructDescRec *format;
-    int size;	            //in bytes - no padding
-    unsigned char *buffer;    //big enough to hold top-level data.
-    int sndCount;
+    int size;
+    unsigned char *buffer;
     FMFormat ioFormat;
     attr_list attrList;	
-    LIST_HEAD(tableHead, _name_table) nameList;
-    LIST_HEAD(dims, _dim_names) dimList;
-};
+    LIST_HEAD(tableHead, _flexpath_name_table) nameList;
+    LIST_HEAD(dims, _flexpath_dim_names) dimList;
+} FlexpathFMStructure;
 
-typedef struct _local_write_data {
+// information used per each flexpath file
+typedef struct _flexpath_write_file_data {
     // MPI stuff
     MPI_Comm * mpiComm;
     int rank;
     int size;
 
     // EVPath stuff
-    CManager cm;
     EVstone multiStone;
     EVstone sinkStone;
     EVsource formatSource;
     EVsource dataSource;
     EVsource offsetSource;
     EVsource opSource;
-    Stone* bridges;
+    FlexpathStone* bridges;
     int numBridges;
     attr_list attrs;
-    atom_t CM_TRANSPORT;
 
     // server state
+    int maxQueueSize;
     int openCount;
+    int currentStep;
     thr_mutex_t openMutex;
-    int setupCorrect;
-    int cycleId;
-    char *pFile;
-    struct _fm_structure *fm;
-    VarNode* askedVars;
-    VarNode* writtenVars;
-    VarNode* formatVars;
-    QueueNode* controlQueue;
+    FlexpathFMStructure* fm;
+    FlexpathVarNode* askedVars;
+    FlexpathVarNode* writtenVars;
+    FlexpathVarNode* formatVars;
+    FlexpathQueueNode* controlQueue;
+    FlexpathQueueNode* dataQueue;    
     thr_mutex_t controlMutex;
-    int controlCondition;
-    int outCondition;
-    QueueNode* dataQueue;    
     thr_mutex_t dataMutex;
-    int emptyCondition;
-    int dataCondition;
-    int max_queue_size;
-    //global array distribution data;
-    int global_count; //field to keep track if this file is handling global arrays.
-    int sent_global_offsets;
+    thr_condition_t controlCondition;
+    thr_condition_t dataCondition;
+
+    // global array distribution data
+    int globalCount;
+    int sentGlobalOffsets;
     evgroup *gp;
+
+    // for maintaining open file list
+    struct _flexpath_write_file_data* next;
+    char* name;
+} FlexpathWriteFileData;
+
+typedef struct _flexpath_write_data {
+    int rank;
+    FlexpathWriteFileData* openFiles;
+    CManager cm;
 } FlexpathWriteData;
 
-// local storage pointer
-FlexpathWriteData* localWriteData = NULL;
-int currentStep = 0;
+/************************* Global Variable Declarations *************************/
+// used for sanitizing names
+#define OPLEN 7
+static char opList[OPLEN] = { '+', '-', '*', '/', '.', '>', '<' };
+static char *opRepList[OPLEN] = { "_plus_", "_minus_", "_mult_", "_div_", "_dot_", "_greater_", "_less_" };
+
+// used for global communication and data structures
+FlexpathWriteData flexpathWriteData;
 
 /**************************** Function Definitions *********************************/
 
-static void adios_var_to_comm (
-    const char * comm_name
-    ,enum ADIOS_FLAG host_language_fortran
-    ,void * data
-    ,MPI_Comm * comm
-    )
-{
-    if (data){    
-        int t = *(int *) data;
-        if (!comm_name){        
-            if (!t){            
-                fprintf (stderr, "communicator not provided and none "
-			 "listed in XML.  Defaulting to "
-			 "MPI_COMM_SELF\n"
-		    );
+// checks for a valid mpi communicator 
+static void adios_var_to_comm(const char* commName, enum ADIOS_FLAG hostLanguageFortran, void* data, MPI_Comm* comm) {
+    fp_write_log("SETUP", "running var to comm function\n");
+    if(data) {    
+        int t = *(int*)data;
+        if(!commName) {        
+            if(!t) {            
+                fprintf(stderr, "communicator not provided and none "
+			 "listed in XML.  Defaulting to MPI_COMM_SELF\n");
                 *comm = MPI_COMM_SELF;
-            }
-            else{            
-                if (host_language_fortran == adios_flag_yes){                
-                    *comm = MPI_Comm_f2c (t);
-                }
-                else{                
-                    *comm = *(MPI_Comm *) data;
+            } else {            
+                if(hostLanguageFortran == adios_flag_yes) {                
+                    *comm = MPI_Comm_f2c(t);
+                } else {                
+                    *comm = *(MPI_Comm*)data;
                 }
             }
-        }
-	else{        
-            if (!strcmp (comm_name, "")){            
-                if (!t){                
-                    fprintf (stderr, "communicator not provided and none "
-			     "listed in XML.  Defaulting to "
-			     "MPI_COMM_SELF\n"
-			);
+        } else {        
+            if(!strcmp(commName, "")) {            
+                if(!t) {                
+                    fprintf(stderr, "communicator not provided and none "
+			     "listed in XML.  Defaulting to MPI_COMM_SELF\n");
                     *comm = MPI_COMM_SELF;
-                }
-                else{                
-                    if (host_language_fortran == adios_flag_yes){                    
-                        *comm = MPI_Comm_f2c (t);
-                    }
-                    else{                    
-                        *comm = *(MPI_Comm *) data;
+                } else {                
+                    if(hostLanguageFortran == adios_flag_yes) {                    
+                        *comm = MPI_Comm_f2c(t);
+                    } else {                    
+                        *comm = *(MPI_Comm*)data;
                     }
                 }
-            }
-            else{            
-                if (!t){                
-                    fprintf (stderr, "communicator not provided but one "
-			     "listed in XML.  Defaulting to "
-			     "MPI_COMM_WORLD\n"
-			);
+            } else {            
+                if(!t) {                
+                    fprintf(stderr, "communicator not provided but one "
+			     "listed in XML.  Defaulting to MPI_COMM_WORLD\n");
                     *comm = MPI_COMM_WORLD;
-                }
-                else{                
-		    if(host_language_fortran == adios_flag_yes){                    
-                        *comm = MPI_Comm_f2c (t);
-                    }
-                    else{                   
-                        *comm = *(MPI_Comm *) data;
+                } else {                
+		    if(hostLanguageFortran == adios_flag_yes){                    
+                        *comm = MPI_Comm_f2c(t);
+                    } else {                   
+                        *comm = *(MPI_Comm*)data;
                     }
                 }
             }
         }
-    }
-    else
-    {
-        fprintf (stderr, "coordination-communication not provided. "
-		 "Using MPI_COMM_WORLD instead\n"
-	    );
+    } else {
+        fprintf(stderr, "coordination-communication not provided. "
+		 "Using MPI_COMM_WORLD instead\n");
         *comm = MPI_COMM_WORLD;
     }
 }
 
-void
-set_attr_dimensions(char* tempName, char * aname, int num_dims)
-{
-    char atom_name[200];
-    atom_name[0] = '\0';
-    strcat(atom_name, tempName);
-    strcat(atom_name, "_");
-    strcat(atom_name, FP_DIM_ATTR_NAME);
-    strcat(atom_name, "_");
-    char dim_num[10] = "";
-    sprintf(dim_num, "%d", num_dims);
-    strcat(atom_name, dim_num);
-    atom_t dim_atom = attr_atom_from_string(atom_name);
-    add_string_attr(localWriteData->attrs, dim_atom, aname);
-    //perr( "added attr %s with value %s\n\n\n", atom_name, aname);
-    // attach 0 ndims for that dimension alt name
-    atom_name[0] = '\0';
-    strcat(atom_name, aname);
-    strcat(atom_name, "_");
-    strcat(atom_name, FP_NDIMS_ATTR_NAME);
-    atom_t ndims_atom = attr_atom_from_string(atom_name);
-    add_int_attr(localWriteData->attrs, ndims_atom, 0);
+// add an attr for each dimension to an attr_list
+void set_attr_dimensions(char* varName, char* altName, int numDims, attr_list attrs) {
+    fp_write_log("ATTR", "adding dim attr %s and ndim attr %d\n", varName, numDims);
+    char atomName[200] = "";
+    char dimNum[10];
+    strcat(atomName, varName);
+    strcat(atomName, "_");
+    strcat(atomName, FP_DIM_ATTR_NAME);
+    strcat(atomName, "_");
+    sprintf(dimNum, "%d", numDims);
+    strcat(atomName, dimNum);
+    atom_t dimAtom = attr_atom_from_string(atomName);
+    add_string_attr(attrs, dimAtom, altName);
+    atomName[0] = '\0';
+    strcat(atomName, altName);
+    strcat(atomName, "_");
+    strcat(atomName, FP_NDIMS_ATTR_NAME);
+    atom_t ndimsAtom = attr_atom_from_string(atomName);
+    add_int_attr(attrs, ndimsAtom, 0);
 }
 
-void data_free(void* temp, void* a) {
-    //perr( "\n\n\n\n\nfree\n\n\n\n\n\n");
-    //free(temp);
+// free format packets once EVPath is finished with them
+void format_free(void* eventData, void* clientData) {
+    fp_write_log("FORMAT", "freeing a format message\n");
+    Format_msg* format = (Format_msg*) eventData;
+    free(format);
 }
 
-void op_free(void* temp, void* a) {
-    op_msg* op = (op_msg*) temp;
-    //perr( "\n\nop free\n\n\n");
+// free data packets once EVPath is finished with them
+void data_free(void* eventData, void* clientData) {
+    fp_write_log("DATA", "freeing a data message\n");
+    FlexpathWriteFileData* fileData = (FlexpathWriteFileData*)clientData;
+    FMfree_var_rec_elements(fileData->fm->ioFormat, eventData);
+    free(eventData);
+}
+
+// free op packets once EVPath is finished with them
+void op_free(void* eventData, void* clientData) {
+    fp_write_log("OP", "freeing an op message\n");
+    op_msg* op = (op_msg*) eventData;
+    if(op->file_name) {
+        free(op->file_name);
+    }
     free(op);
 }
 
-
-//add to head
-void threaded_enqueue(QueueNode** queue, void* item, MsgType type, thr_mutex_t mutex, int* cond) {
-    fp_log("QUEUE","rank %d enter enqueue\n", localWriteData->rank);
-    //perr( "attempting enqueue\n");
+// message queue add to head
+void threaded_enqueue(FlexpathQueueNode** queue, void* item, FlexpathMessageType type, thr_mutex_t mutex, thr_condition_t condition) {
+    fp_write_log("QUEUE", "enqueing a message\n");
     thr_mutex_lock(mutex);
-    //perr( "got lock\n");
-    QueueNode* newNode = (QueueNode*) malloc(sizeof(QueueNode));
+    fp_write_log("MUTEX","lock 2\n");
+    FlexpathQueueNode* newNode = (FlexpathQueueNode*) malloc(sizeof(FlexpathQueueNode));
     newNode->data = item;
     newNode->type = type;
     newNode->next = *queue;
     *queue = newNode;
-    //perr( "made node with data %p\n", newNode->data);
-    //if(newNode->next) {
-    //    perr( "next node has data %p\n", newNode->next->data);
-    //}
-    //perr( "released lock\n");
-    //if(localWriteData->rank>0) perr( "rank %d signalling %d\n", localWriteData->rank, *cond);
-    //perr( "start signal1\n");
-    CMCondition_signal(localWriteData->cm, *cond);
-    *cond = CMCondition_get(localWriteData->cm, NULL);
-    //perr( "done signal1\n");
-
-    //reset condition
+    thr_condition_broadcast(condition);
+    fp_write_log("MUTEX","unlock 2\n");
     thr_mutex_unlock(mutex);
-     //perr( "signaled exiting\n");
 }
 
-int queue_count(QueueNode** queue, thr_mutex_t mutex) {
-  thr_mutex_lock(mutex);
-  if(*queue==NULL) {
-    thr_mutex_unlock(mutex);
-    return 0;
-  }
-  int count = 1;
-  QueueNode* current = *queue;
-  while(current && current->next) {
-    count++;
-    current = current->next;
-  }
-  thr_mutex_unlock(mutex);
-  return count;
-}
-
-//remove from tail
-QueueNode* threaded_dequeue(QueueNode** queue, thr_mutex_t mutex, int* cond) {
-    fp_log("QUEUE", "rank %d enter dequeue\n", localWriteData->rank);
-    thr_mutex_lock(mutex);
+// message queue count
+int queue_count(FlexpathQueueNode** queue, thr_mutex_t mutex) {
+    fp_write_log("QUEUE", "counting a queue\n");
     if(*queue==NULL) {
-        //empty queue, wait for item
-        thr_mutex_unlock(mutex);
-        //if(localWriteData->rank>0) perr( "rank %d dequeue waiting on %d\n", localWriteData->rank, *cond);
-        //perr( "start wait1\n");
-        int res = CMCondition_wait(localWriteData->cm, *cond);
-        //perr( "done wait1 %d\n", res);
-        thr_mutex_lock(mutex);
-        //if(localWriteData->rank>0) perr( "rank %d dequeue new cond %d\n", localWriteData->rank, *cond);
+        return 0;
     }
-    QueueNode* tail;
-    QueueNode* prev = NULL;
+    int count = 1;
+    FlexpathQueueNode* current = *queue;
+    while(current && current->next) {
+        count++;
+        current = current->next;
+    }
+    fp_write_log("QUEUE", "returning count\n");
+    return count;
+}
+
+// remove from tail of a message queue
+FlexpathQueueNode* threaded_dequeue(FlexpathQueueNode** queue, thr_mutex_t mutex, thr_condition_t condition) {
+    fp_write_log("QUEUE", "dequeue\n");
+    thr_mutex_lock(mutex);
+    fp_write_log("MUTEX","lock 4\n");
+    while(*queue==NULL) {
+        fp_write_log("QUEUE", "queue is null\n");
+        thr_condition_wait(condition, mutex);
+    }
+    FlexpathQueueNode* tail;
+    FlexpathQueueNode* prev = NULL;
     tail = *queue;
     while(tail && tail->next) {
         prev=tail;
@@ -319,48 +294,50 @@ QueueNode* threaded_dequeue(QueueNode** queue, thr_mutex_t mutex, int* cond) {
     } else {
         *queue = NULL;
     }
+    fp_write_log("MUTEX","unlock 4\n");
     thr_mutex_unlock(mutex);
-    return tail;  // match holds either the matching item or NULL
+    fp_write_log("QUEUE", "exiting dequeue\n");
+    return tail;
 }
 
-//peek at tail
-QueueNode* threaded_peek(QueueNode** queue, thr_mutex_t mutex, int* cond) {
-    fp_log("QUEUE", "rank %d enter peek\n", localWriteData->rank);
+// peek at tail of message queue
+FlexpathQueueNode* threaded_peek(FlexpathQueueNode** queue, thr_mutex_t mutex, thr_condition_t condition) {
+    int q = queue_count(queue, mutex);
+    fp_write_log("QUEUE", "peeking at a queue\n");
+    fp_write_log("QUEUE", "queue count %d\n", q);
     thr_mutex_lock(mutex);
+    fp_write_log("QUEUE", "recieved lock\n");
+    fp_write_log("MUTEX","lock 5\n");
     if(*queue==NULL) {
-        fp_log("QUEUE", "rank %d peek waiting\n", localWriteData->rank);
-        thr_mutex_unlock(mutex);
-        //perr( "start wait2\n");
-        int res = CMCondition_wait(localWriteData->cm, *cond);
-        //perr( "done wait2 %d\n", res);
-        thr_mutex_lock(mutex);
+        thr_condition_wait(condition, mutex);
     }
-    QueueNode* tail;
+    FlexpathQueueNode* tail;
     tail = *queue;
     while(tail && tail->next) {
         tail=tail->next;
     }
+    fp_write_log("MUTEX","unlock 5\n");
     thr_mutex_unlock(mutex);
-    fp_log("QUEUE", "rank %d exit peek\n", localWriteData->rank);
     return tail;
 }
 
-
-VarNode* add_var(VarNode* queue, char* varName, VarNode* dims, int rank){
+// add new var to a var list
+FlexpathVarNode* add_var(FlexpathVarNode* queue, char* varName, FlexpathVarNode* dims, int rank){
     if(queue) {
         queue->next=add_var(queue->next, varName, dims, rank);
         return queue;
     } else {
-        queue = (VarNode*) malloc(sizeof(VarNode));
+        queue = (FlexpathVarNode*) malloc(sizeof(FlexpathVarNode));
         queue->varName = strdup(varName);
-        queue->dims = dims;
+        queue->dimensions = dims;
         queue->next = NULL;
         queue->rank = rank;
         return queue;
     }
 }
 
-void free_vars(VarNode* queue){
+// free a var list
+void free_vars(FlexpathVarNode* queue){
     if(queue) {
         free_vars(queue->next);
         free(queue->varName);
@@ -368,12 +345,13 @@ void free_vars(VarNode* queue){
     }
 }
 
-VarNode* queue_contains(VarNode* queue, const char* name, int rank) {
+// search a var list
+FlexpathVarNode* queue_contains(FlexpathVarNode* queue, const char* name, int rank) {
     int compare_rank = 0;
     if(rank >= 0 ) {
         compare_rank = 1;
     }
-    VarNode* tmp = queue;
+    FlexpathVarNode* tmp = queue;
     while(tmp) {
         if(strcmp(tmp->varName, name)==0){
             if(compare_rank) {
@@ -389,27 +367,16 @@ VarNode* queue_contains(VarNode* queue, const char* name, int rank) {
     return NULL;
 }
 
-
-void print_format(FMStructDescRec *format) {
-    FMField *f =  format->field_list;
-    int x = 0;
-    for (x=0; 1; x++) {
-      f = &format->field_list[x];
-      if (f == NULL || f->field_name == NULL || f->field_size == 0)
-	break;
-    }
-}
-
-// return name with operators removed
-static char *get_fixed_name(char *name) {
-    char *oldName = strdup(name);
-    char *newName = (char *) malloc(sizeof(char) * 255);
+// sanitize a name
+char* get_fixed_name(char* name) {
+    char* oldName = strdup(name);
+    char* newName = (char*) malloc(sizeof(char) * 255);
     int i;
     for (i=0; i< OPLEN; i++){
-        char op[]={opList[i],'\0'};
-        char *opRep=opRepList[i];
-        char *token = strtok(oldName, op);
-        char *lastTok=NULL;
+        char op[] = {opList[i], '\0'};
+        char* opRep=opRepList[i];
+        char* token = strtok(oldName, op);
+        char* lastTok=NULL;
 	strcpy(newName, "");
 	while(token != NULL){
 	    strcat(newName, token);
@@ -428,9 +395,9 @@ static char *get_fixed_name(char *name) {
     return newName;
 }
 
-// return name with operators removed from lookup list
-static char *find_fixed_name(struct _fm_structure *fm, char *name) {
-    NameTable *node;
+// return name with operators removed by using the lookup list
+static char* find_fixed_name(FlexpathFMStructure *fm, char *name) {
+    FlexpathNameTable *node;
     for (node = fm->nameList.lh_first; node != NULL; node = node->entries.le_next) {
         if (!strcmp(node->originalName, name)) {
 	    return node->mangledName;
@@ -439,9 +406,8 @@ static char *find_fixed_name(struct _fm_structure *fm, char *name) {
     return name;
 }
 
-// return a list of all the names associated with the variable
+// returns a name with the dimension prepended
 static char *get_alt_name(char *name, char *dimName) {
-    //perr( "debug: get_alt_name\n");
     int len = strlen(name) + strlen(dimName) + 2;
     char *newName = (char *) malloc(sizeof(char) * len);
     strcpy(newName, dimName);
@@ -450,11 +416,10 @@ static char *get_alt_name(char *name, char *dimName) {
     return newName;
 }
 
-// returns a name with the appropriate dimension appended
-static AltName *find_alt_name(struct _fm_structure *currentFm, char *dimName, char *varName) {
-    //perr( "debug: findAltName\n");
+// lookup a dimensions real name
+static FlexpathAltName *find_alt_name(FlexpathFMStructure *currentFm, char *dimName, char *varName) {
     char *altName = get_alt_name(varName, dimName);
-    DimNames *d = NULL;
+    FlexpathDimNames *d = NULL;
 
     // move to dim name in fm dim name list
     for (d = currentFm->dimList.lh_first; d != NULL; d = d->entries.le_next) {
@@ -465,16 +430,14 @@ static AltName *find_alt_name(struct _fm_structure *currentFm, char *dimName, ch
 
     // if reached end of list - create list with current dim name at head
     if (d == NULL) {
-        d = (DimNames *) malloc(sizeof(DimNames));
+        d = (FlexpathDimNames *) malloc(sizeof(FlexpathDimNames));
         d->name = dimName;
         LIST_INIT(&d->altList);
         LIST_INSERT_HEAD(&currentFm->dimList, d, entries);
     }
 
-    // d now points to an entry in fm dimList with name == dimname
-    
-    // create AltName structure and field with alternative name in it 
-    AltName *a = (AltName *) malloc(sizeof(AltName));
+    // create FlexpathAltName structure and field with alternative name in it 
+    FlexpathAltName *a = (FlexpathAltName *) malloc(sizeof(FlexpathAltName));
     a->name = altName;
     FMField *field = (FMField *) malloc(sizeof(FMField));
     a->field = field;
@@ -483,17 +446,12 @@ static AltName *find_alt_name(struct _fm_structure *currentFm, char *dimName, ch
     field->field_type = strdup("integer");
     field->field_size = sizeof(int);
     field->field_offset = -1;
-    
-    // insert AltName structure into dimname list
     LIST_INSERT_HEAD(&d->altList, a, entries);
     return a;
 }
 
-int
-get_local_offsets(struct adios_var_struct * list, 
-		  struct adios_group_struct * g, 
-		  int** offsets,
-		  int** dimensions)
+// populates offsets array
+int get_local_offsets(struct adios_var_struct * list, struct adios_group_struct * g, int** offsets, int** dimensions)
 {
     //perr("\t\t\toffsets for var: %s\n", list->name);	    
     struct adios_dimension_struct * dim_list = list->dimensions;	    
@@ -501,29 +459,29 @@ get_local_offsets(struct adios_var_struct * list,
 	// if this var has a global dimension, then by default, it has local_offset
 	uint16_t gdim_id = dim_list->global_dimension.id;
 	uint16_t ldim_id = dim_list->dimension.id;
-	if(gdim_id > 0){	   
+	if(gdim_id > 0) {	   
 	    int num_local_offsets = 0;
 	    int * local_offsets = NULL;		
 	    int * local_dimensions = NULL;
 	    int curr_offset = 0;
-	    while(dim_list){		
+	    while(dim_list) {		
 		uint16_t offset_id = dim_list->local_offset.id;
 		uint16_t ldim_id = dim_list->dimension.id;
-		if(offset_id > 0){							       
+		if(offset_id > 0) {							       
 		    struct adios_var_struct * tmp_var = adios_find_var_by_id(g->vars, 
 									     offset_id);
 		    local_offsets = realloc(local_offsets, sizeof(int) * (num_local_offsets+1));
 		    memcpy(&local_offsets[curr_offset], tmp_var->data, sizeof(int));
 		    // no id, so it must be a literal in the xml doc
-		}else{
+		} else {
 		    local_offsets = realloc(local_offsets, sizeof(int) * (num_local_offsets+1));
 		    local_offsets[curr_offset] = (int)dim_list->local_offset.rank;
 		}
-		if(ldim_id > 0){
+		if(ldim_id > 0) {
 		    struct adios_var_struct * tmp_var = adios_find_var_by_id(g->vars, ldim_id);
 		    local_dimensions = realloc(local_dimensions, sizeof(int) * (num_local_offsets+1));
 		    memcpy(&local_dimensions[curr_offset], tmp_var->data, sizeof(int));
-		}else{
+		} else {
 		    local_dimensions = realloc(local_dimensions, sizeof(int) * (num_local_offsets+1));
 		    local_dimensions[curr_offset] = (int)dim_list->dimension.rank;
 		}
@@ -543,6 +501,7 @@ get_local_offsets(struct adios_var_struct * list,
 // creates multiqueue function to handle ctrl messages for given bridge stones 
 char* multiqueue_action = "{\n\
     int found = 0;\n\
+    int flush_data_count = 0; \n\
     int my_rank = -1;\n\
     attr_list mine;\n\
     if(EVcount_varMsg()>0) {\n\
@@ -574,17 +533,20 @@ char* multiqueue_action = "{\n\
             }\n\
         } else {\n\
             EVdiscard_and_submit_flush(0,0);\n\
+            flush_data_count++;\n\
         }\n\
     }\n\
     if(EVcount_evgroup()>0){\n\
-        evgroup* g = EVdata_evgroup(0);\n\
-        mine = EVget_attrs_evgroup(0);\n\
-        found = attr_ivalue(mine, \"fp_size\");\n\
-        int k;\n\
-        for(k=0; k<found; k++){\n\
-            EVsubmit(k+1,g);\n\
+        if(flush_data_count > 0){\n\
+          evgroup* g = EVdata_evgroup(0);\n\
+          mine = EVget_attrs_evgroup(0);\n\
+          found = attr_ivalue(mine, \"fp_size\");\n\
+          int k;\n\
+          for(k=0; k<found; k++){\n\
+              EVsubmit(k+1,g);\n\
+          }\n\
+          EVdiscard_evgroup(0);\n\
         }\n\
-        EVdiscard_evgroup(0);\n\
     }\n\
     if(EVcount_anonymous()>0){\n\
         mine = EVget_attrs_anonymous(0);\n\
@@ -593,12 +555,12 @@ char* multiqueue_action = "{\n\
     }\n\
  }";
 
+// sets a field based on data type
 void set_field(int type, FMFieldList* field_list_ptr, int fieldNo, int* size){
-    //perr( "debug: set_field\n");
     FMFieldList field_list = *field_list_ptr;
     switch (type) {
 	case adios_unknown:
-	  //perr( "bad type error\n");
+	  perr("set_field: Bad Type Error\n");
 	  break;
 
 	case adios_integer:
@@ -637,199 +599,145 @@ void set_field(int type, FMFieldList* field_list_ptr, int fieldNo, int* size){
 	  break;
 
 	default:
-	  //perr( "unknown type error\n");
+	  perr("set_field: Unknown Type Error\n");
 	  break;
     }
     *field_list_ptr = field_list;
 }
 
-
+// find a field in a given field list
 static FMField *internal_find_field(char *name, FMFieldList flist) {
-    //perr( "debug: internal_find_field\n");
     FMField *f = flist;
-    while (f->field_name != NULL && strcmp(f->field_name, name))
-    {
+    while (f->field_name != NULL && strcmp(f->field_name, name)) {
 	f++;
     }
-
     return f;
 }
 
-struct _fm_structure* setFormat(struct adios_group_struct* t,struct adios_var_struct* fields){
- //iterate through all the types
-    //create a format rec -- size 2 OK because only single-level structs allowed through ADIOS.
-    FMStructDescRec *format = (FMStructDescRec *) malloc(sizeof(FMStructDescRec) * 2);
-    //perr( "entering setFormat\n");
-
-    // attach rank attr
-    atom_t rank_atom = attr_atom_from_string(FP_RANK_ATTR_NAME);
-    add_int_attr(localWriteData->attrs, rank_atom, localWriteData->rank);
-    //perr( "added attr %s with value %d\n", FP_RANK_ATTR_NAME, localWriteData->rank);
-
-    if (format == NULL) {
-	perror("memory allocation failed");
-	return NULL;
+// generic memory check for after mallocs
+void mem_check(void* ptr, const char* str) {
+    if(!ptr) {
+        adios_error(err_no_memory, "Cannot allocate memory for flexpath %s.", str);
     }
-    memset(format, 0, sizeof(FMStructDescRec) * 2);
-    struct _fm_structure *currentFm = (struct _fm_structure *) malloc(sizeof(struct _fm_structure));
-    if (currentFm == NULL) {
-        perror("memory allocation failed");
-	return NULL;
-    }
+}
 
-    memset(currentFm, 0, sizeof(struct _fm_structure));
+// construct an fm structure based off the group xml file
+FlexpathFMStructure* set_format(struct adios_group_struct* t,struct adios_var_struct* fields, FlexpathWriteFileData* fileData){
+    FMStructDescRec *format = (FMStructDescRec*) malloc(sizeof(FMStructDescRec)*2);
+    mem_check(format, "format");
+    memset(format, 0, sizeof(FMStructDescRec)*2);
+    
+    FlexpathFMStructure *currentFm = (FlexpathFMStructure *) malloc(sizeof(FlexpathFMStructure));
+    mem_check(currentFm, "currentFm");
+    memset(currentFm, 0, sizeof(FlexpathFMStructure));
 
-    //store writer's communicator size in attribute list.
-    currentFm->attrList = create_attr_list();
-    set_int_attr(currentFm->attrList, attr_atom_from_string("mpisize"), localWriteData->size);
-	  
     LIST_INIT(&currentFm->nameList);
     LIST_INIT(&currentFm->dimList);
-  
-    //associate the FMStructDescRec with the _fm_structure
     currentFm->format = format;
-    /*TO FIX: Should be sure that the PG name t->name doesn't need name mangling to be a valid format name string.*/
     format->format_name = strdup(t->name);
 
-    //allocate field list
     if (t->var_count == 0) {
-	//perr( "no variables in this group - possibly an error\n");
+	perr("set_format: No Variables In Group\n");
 	return NULL;
     }
-
-    int altvarcount = 0;
 
     FMFieldList field_list = (FMFieldList) malloc(sizeof(FMField) * (t->var_count + 1));
     if (field_list == NULL) {
-	perror("memory allocation failed");
+	perr("set_format: Field List Memory Allocation Failed");
 	return NULL;
     }
 
-    //keep count of the total number of fields -- will count up to t->var_count
     int fieldNo = 0;
+    int altvarcount = 0;
 
-    //for each type look through all the fields
+    // for each type look through all the fields
     struct adios_var_struct *f;
     for (f = t->vars; f != NULL; f = f->next, fieldNo++) {
-	//make the field list
-	//check name for + - * / (operators) and replace them
 	char *tempName = get_fixed_name(f->name);
 	if (strcmp(tempName, f->name)) {
-	    //strings don't match
-	    //add to name list
-	    NameTable *nameNode = (NameTable *) malloc(sizeof(NameTable));
+	    FlexpathNameTable *nameNode = (FlexpathNameTable *) malloc(sizeof(FlexpathNameTable));
 	    nameNode->originalName = strdup(f->name);
 	    nameNode->mangledName = strdup(tempName);
 	    LIST_INSERT_HEAD(&currentFm->nameList, nameNode, entries);
 	}
 
-	//use the mangled name for the field.
+	// use the mangled name for the field.
 	field_list[fieldNo].field_name = tempName;
         if(tempName!=NULL) {
-            //perr( "looking at var %s\n", tempName);
             int num_dims = 0;
-            char atom_name[200];
-            VarNode* dims=NULL;
+            char atom_name[200] = "";
+            FlexpathVarNode* dims=NULL;
             if(f->dimensions) {
                 struct adios_dimension_struct* adim = f->dimensions;  
-		
-                for(; adim != NULL; adim = adim->next){
+	
+                // attach appropriate attrs for dimensions	
+                for(; adim != NULL; adim = adim->next) {
                     num_dims++;		    
-		    // this part is for local arrays only.
 		    uint16_t dim_id = adim->dimension.id;
 		    uint16_t gdim_id = adim->global_dimension.id;
 		    uint16_t local_id = adim->local_offset.id;
-		    if(dim_id > 0){		    
+		    if(dim_id > 0) {		    
 			struct adios_var_struct *tmp_var = adios_find_var_by_id(t->vars, dim_id);
 			char *name = find_fixed_name(currentFm, tmp_var->name);
 			char *aname = get_alt_name(tempName,  name);
-			//perr("\t\t\ttmp_var->name: %s name: %s, aname: %s\n", tmp_var->name, name, aname);
 			dims=add_var(dims, strdup(aname), NULL, 0);
-			// attach a dimension attr
-			set_attr_dimensions(tempName, aname, num_dims);
+			set_attr_dimensions(tempName, aname, num_dims, fileData->attrs);
 		    }
-		    if(gdim_id> 0){
-			localWriteData->global_count++;
+		    if(gdim_id> 0) {
+			fileData->globalCount++;
 			struct adios_var_struct *tmp_var = adios_find_var_by_id(t->vars, gdim_id);
 			char *name = find_fixed_name(currentFm, tmp_var->name);
 			char *aname = get_alt_name(tempName, name);
-			//perr("\t\t\tgbl tmp_var->name: %s name: %s, aname: %s\n", tmp_var->name, name, aname);
 			dims=add_var(dims, strdup(aname), NULL, 0);
-			set_attr_dimensions(tempName, aname, num_dims);			
+			set_attr_dimensions(tempName, aname, num_dims, fileData->attrs);			
 		    }
                 }
             }
             // attach ndims attr
-            atom_name[0] = '\0';
             strcat(atom_name, tempName);
             strcat(atom_name, "_");
             strcat(atom_name, FP_NDIMS_ATTR_NAME);
             atom_t ndims_atom = attr_atom_from_string(strdup(atom_name));
-            add_int_attr(localWriteData->attrs, ndims_atom, num_dims);
-            //perr( "added attr %s with value %d\n\n\n", atom_name, num_dims);
-            //perr( "adding %s %d to %p\n", tempName, num_dims, localWriteData->formatVars);
-            localWriteData->formatVars = add_var(localWriteData->formatVars, tempName, dims, 0);
+            add_int_attr(fileData->attrs, ndims_atom, num_dims);
+            fileData->formatVars = add_var(fileData->formatVars, tempName, dims, 0);
         }
 	// if its a single field
 	if (!f->dimensions) {
 	    // set the field type size and offset approrpriately
 	    set_field(f->type, &field_list, fieldNo, &currentFm->size);
-	}
-	else
-	{
+	} else {
 	    //it's a vector!
-	    //find out the dimensions by walking the dimension list
-
-#define DIMSIZE 10240
-#define ELSIZE 256
 	    struct adios_dimension_struct *d = f->dimensions;
-	    char dims[DIMSIZE] = { 0 };
-	    char el[ELSIZE] = { 0 };
+            #define DIMSIZE 10240
+	    #define ELSIZE 256
+            char dims[DIMSIZE] = "";
+	    char el[ELSIZE] = "";
 	    int v_offset=-1;
 		  
-		  
 	    //create the textual representation of the dimensions
-	    for (; d != NULL; d = d->next)
-	    {
-		//for each dimension just take the upper_bound
-		if (d->dimension.id)
-		{
-		    //find_fixed_name returns the mangled name from the original name
+	    for (; d != NULL; d = d->next) {
+		if (d->dimension.id) {
 		    struct adios_var_struct *tmp_var = adios_find_var_by_id(t->vars, d->dimension.id);
-		    char *name =
-			find_fixed_name(currentFm, 
-				      tmp_var->name);
-		    //create the alternate name for this variable and the array its defining
-		    AltName *a = find_alt_name(currentFm, name,
-					     (char*)field_list[fieldNo].field_name);
-		    //AltName is a new variable that we need to add to the field list
+		    char *name = find_fixed_name(currentFm, tmp_var->name);
+		    FlexpathAltName *a = find_alt_name(currentFm, name, (char*)field_list[fieldNo].field_name);
 		    altvarcount++;
-			  
 		    snprintf(el, ELSIZE, "[%s]", a->name);
-		    //If any of the dimentions of the array are variable, we'll have a pointer in the data struct.
 		    v_offset = 0;
-			  
-		}
-		else			//it's a number
-		{
+		} else {
 		    snprintf(el, ELSIZE, "[%llu]", d->dimension.rank);
-		    //if it's a number the offset will be the size of the variable*rank
-		    //if it's multidimensional with any variable, v_offset=0.  If they're all integer, v_offset = -1*allocation
 		    v_offset *= d->dimension.rank;
 		}
 		strncat(dims, el, DIMSIZE);
 	    }
-	    v_offset *= -1; // make it positive.  Actual offset = v_offset*sizeof(var).
+	    v_offset *= -1;
 		  
-	    while(currentFm->size % 8 != 0)
-	    {
+	    while(currentFm->size % 8 != 0) {
 		currentFm->size ++;					
 	    }
 		  
-	    switch (f->type)
-	    {
+	    switch (f->type) {
 	    case adios_unknown:
-		//perr( "bad type error\n");
+		perr( "set_format: Bad Type Error\n");
 		fieldNo--;
 		break;
 		      
@@ -864,7 +772,6 @@ struct _fm_structure* setFormat(struct adios_group_struct* t,struct adios_var_st
 		field_list[fieldNo].field_type = strdup("string");
 		field_list[fieldNo].field_size = sizeof(char);
 		field_list[fieldNo].field_offset = currentFm->size;
-		//To Fix:  Do we have to worry about char[30]?  I think so... did the v_offset logic work in that case?
 		currentFm->size += sizeof(void *);
 		break;
 
@@ -895,36 +802,29 @@ struct _fm_structure* setFormat(struct adios_group_struct* t,struct adios_var_st
 		break;
 
 	    default:
-		//perr( "unknown type error %d\n", f->type);
+		perr("set_format: Unknown Type Error %d\n", f->type);
 		fieldNo--;
 		break;
-	    } //end switch
+	    }
+	}
 
-	} //end vector handling case
+	fp_write_log("FORMAT","field: %s, %s, %d, %d\n", field_list[fieldNo].field_name, field_list[fieldNo].field_type,field_list[fieldNo].field_size,field_list[fieldNo].field_offset); 
+    }
 
-	//      fprintf(formatfile, "%s, %s, %d, %d\n", field_list[fieldNo].field_name, field_list[fieldNo].field_type,field_list[fieldNo].field_size,field_list[fieldNo].field_offset); 
-
-
-    } //end handling of basic variable list
-
-    DimNames *d = NULL;
+    FlexpathDimNames *d = NULL;
     field_list = (FMFieldList) realloc(field_list, sizeof(FMField) * (altvarcount + t->var_count + 1));
 
     for (d = currentFm->dimList.lh_first; d != NULL; d = d->entries.le_next) {
-	AltName *a = NULL;
-	for (a = d->altList.lh_first; a != NULL; a = a->entries.le_next)
-	{
+	FlexpathAltName *a = NULL;
+	for (a = d->altList.lh_first; a != NULL; a = a->entries.le_next) {
 	    a->field->field_offset = currentFm->size;
 	    currentFm->size += sizeof(int);
 	    memcpy(&field_list[fieldNo], a->field, sizeof(FMField));
 	    fieldNo++;
-
 	}
-
     }
 
-    for (; fieldNo < (t->var_count + 1+altvarcount); fieldNo++)
-    {
+    for (; fieldNo < (t->var_count + 1+altvarcount); fieldNo++) {
 	field_list[fieldNo].field_type = NULL;
 	field_list[fieldNo].field_name = NULL;
 	field_list[fieldNo].field_offset = 0;
@@ -932,50 +832,36 @@ struct _fm_structure* setFormat(struct adios_group_struct* t,struct adios_var_st
     }
 
     format->field_list = field_list;
-
-
     currentFm->format->struct_size = currentFm->size;
-
-    // create buffer to hold top-level (non-variable array) data.
 
     currentFm->buffer = (unsigned char *) malloc(currentFm->size);
     memset(currentFm->buffer, 0, currentFm->size);
 
-    currentFm->sndCount = 0;
-
     return currentFm;
 }
 
-
-
-
 // copies buffer zeroing out arrays that havent been asked for
-void* copy_buffer(void* buffer, int rank){
-    char* temp = (char*)malloc(localWriteData->fm->size);
-    memcpy(temp, buffer, localWriteData->fm->size);
-    FMField *f = localWriteData->fm->format->field_list;
+void* copy_buffer(void* buffer, int rank, FlexpathWriteFileData* fileData){
+    char* temp = (char*)malloc(fileData->fm->size);
+    memcpy(temp, buffer, fileData->fm->size);
+    FMField *f = fileData->fm->format->field_list;
     while (f->field_name != NULL)
     {
-        //if we wrote an array and didnt get asked for it, zero it out
-        VarNode* a;
-        if(!queue_contains(localWriteData->askedVars, f->field_name, rank)) {
-            if((a=queue_contains(localWriteData->formatVars, f->field_name, -1)) 
+        FlexpathVarNode* a;
+        if(!queue_contains(fileData->askedVars, f->field_name, rank)) {
+            if((a=queue_contains(fileData->formatVars, f->field_name, -1)) 
 	       && 
-	       (a->dims != NULL)) {
-                //perr( "rank %d won't send array %s\n", localWriteData->rank, f->field_name);
-                VarNode* dim = a->dims;
+	       (a->dimensions != NULL)) {
+                FlexpathVarNode* dim = a->dimensions;
                 while(dim) {
-                    //perr( "looking at %s\n", dim->varName);
-                    FMField *f2 = localWriteData->fm->format->field_list;
+                    FMField *f2 = fileData->fm->format->field_list;
                     while(f2->field_name != NULL) {
-                        //perr( "compared to %s\n", f2->field_name);
                         if(strcmp(f2->field_name, dim->varName)==0) {
                             break;
                         }
                         f2++;
                     }
                     if(f2->field_name != NULL) {
-                        //perr( "zero out dim %s\n", f2->field_name);
                         memset(&temp[f2->field_offset], 0, f2->field_size);
                     }
                     dim = dim->next;
@@ -988,50 +874,46 @@ void* copy_buffer(void* buffer, int rank){
     return temp;
 }
 
-
-
-
+// terminal action for var messages: enqueues
 static int var_handler(CManager cm, void *vevent, void *client_data, attr_list attrs){
+    FlexpathWriteFileData* fileData = (FlexpathWriteFileData*) client_data;
     Var_msg* msg = (Var_msg*) vevent;
     EVtake_event_buffer(cm, msg);
-    fp_log("MSG", "rank %d <- var_msg : rank %d\n", localWriteData->rank, msg->rank);
-    threaded_enqueue(&localWriteData->controlQueue, 
-		     msg, 
-		     VAR, 
-		     localWriteData->controlMutex, 
-		     &localWriteData->controlCondition);
+    fp_write_log("MSG", "recieved var_msg : rank %d\n", msg->rank);
+    threaded_enqueue(&fileData->controlQueue, msg, VAR, 
+        fileData->controlMutex, fileData->controlCondition);
     return 0;
 }
 
+// terminal action for flush messages: enqueues
 static int flush_handler(CManager cm, void* vevent, void* client_data, attr_list attrs) {
+    FlexpathWriteFileData* fileData = (FlexpathWriteFileData*) client_data;
     Flush_msg* msg = (Flush_msg*) vevent;
     EVtake_event_buffer(cm, msg);
-    // Don't have to take buffer since we're only copying the rank onto the stack.
-    perr("rank %d <- flush data : rank %d\n", 
-	    localWriteData->rank, msg->rank);
-    threaded_enqueue(&localWriteData->controlQueue, 
-		     msg, 
-		     DATA_FLUSH, 
-		     localWriteData->controlMutex, 
-		     &localWriteData->controlCondition);
+    fp_write_log("MSG", "recieved flush : rank %d type data\n", msg->rank);
+    threaded_enqueue(&fileData->controlQueue, msg, DATA_FLUSH, 
+        fileData->controlMutex, fileData->controlCondition);
     return 0;
 }
 
+// terminal action for op messages: enqueues
 static int op_handler(CManager cm, void* vevent, void* client_data, attr_list attrs) {
+    FlexpathWriteFileData* fileData = (FlexpathWriteFileData*) client_data;
     op_msg* msg = (op_msg*) vevent;
     EVtake_event_buffer(cm, msg);
-    fprintf(stderr, "rank %d <- op_msg : rank %d type %d: condition: %d\n", 
-	    localWriteData->rank, msg->process_id, msg->type, msg->condition);
+    fp_write_log("MSG", "recieved op_msg : rank %d type %d: condition: %d\n", 
+        msg->process_id, msg->type, msg->condition);
     if(msg->type == 1) {
-        //perr( "recieved open\n");
-        threaded_enqueue(&localWriteData->controlQueue, msg, OPEN, localWriteData->controlMutex, &localWriteData->controlCondition);
+        threaded_enqueue(&fileData->controlQueue, msg, OPEN, 
+            fileData->controlMutex, fileData->controlCondition);
     } else {
-        //perr( "recieved close\n");
-        threaded_enqueue(&localWriteData->controlQueue, msg, CLOSE, localWriteData->controlMutex, &localWriteData->controlCondition);
+        threaded_enqueue(&fileData->controlQueue, msg, CLOSE, 
+            fileData->controlMutex, fileData->controlCondition);
     }
     return 0;
 }
 
+// sets a size atom
 attr_list set_size_atom(attr_list attrs, int value) {
     atom_t dst_atom = attr_atom_from_string("fp_size");
     int size;
@@ -1042,6 +924,7 @@ attr_list set_size_atom(attr_list attrs, int value) {
     return attrs;
 }
 
+// sets a dst rank atom
 attr_list set_dst_rank_atom(attr_list attrs, int value) {
     atom_t dst_atom = attr_atom_from_string("fp_dst_rank");
     int dst;
@@ -1052,6 +935,7 @@ attr_list set_dst_rank_atom(attr_list attrs, int value) {
     return attrs;
 }
 
+// sets a dst condition atom
 attr_list set_dst_condition_atom(attr_list attrs, int condition){
     atom_t dst_atom = attr_atom_from_string("fp_dst_condition");
     int dst;
@@ -1062,475 +946,404 @@ attr_list set_dst_condition_atom(attr_list attrs, int condition){
     return attrs;
 }
 
+// processes messages from control queue
 int control_thread(void* arg) {
-    int rank = *((int*) arg);
-    //perr( "entered control thread on rank %d\n", rank);
-    QueueNode* controlMsg;
-    QueueNode* dataNode;
-    //perr( "waiting for control message\n");
+    FlexpathWriteFileData* fileData = (FlexpathWriteFileData*)arg;
+    int rank = fileData->rank;
+    FlexpathQueueNode* controlMsg;
+    FlexpathQueueNode* dataNode;
     while(1) {
-	if((controlMsg = threaded_dequeue(&localWriteData->controlQueue, 
-					  localWriteData->controlMutex, 
-					  &localWriteData->controlCondition))) {
+        fp_write_log("CONTROL", "control message attempts dequeue\n");
+	if((controlMsg = threaded_dequeue(&fileData->controlQueue, 
+	    fileData->controlMutex, fileData->controlCondition))) {
+            fp_write_log("CONTROL", "control message dequeued\n");
 	    if(controlMsg->type==VAR) {
-		//add to localWriteData->askedVars
 		Var_msg* varMsg = (Var_msg*) controlMsg->data;
-		//perr( "recieved var message---------------------++++++%d\n",varMsg->rank);
-		localWriteData->askedVars = add_var(localWriteData->askedVars, 
-						    strdup(varMsg->var_name), 
-						    NULL, 
-						    varMsg->rank);
-		EVreturn_event_buffer(localWriteData->cm,controlMsg->data);
-	    } else if(controlMsg->type==DATA_FLUSH) { 
-		//perr( "recieved data flush message\n");
-                
-                    
-		//make copy of buffer
-		dataNode = threaded_peek(&localWriteData->dataQueue, 
-					 localWriteData->dataMutex, 
-					 &localWriteData->dataCondition);
-		//perr( "peeked at dataNode %p\n", dataNode->data);
+		fileData->askedVars = add_var(fileData->askedVars, 
+		    strdup(varMsg->var_name), NULL, varMsg->rank);
+		EVreturn_event_buffer(flexpathWriteData.cm,controlMsg->data);
+	    } else if(controlMsg->type==DATA_FLUSH) {
+                fp_write_log("DATAMUTEX", "in use 1\n"); 
+		dataNode = threaded_peek(&fileData->dataQueue, 
+		    fileData->dataMutex, &fileData->dataCondition);
+                fp_write_log("DATAMUTEX", "no use 1\n"); 
+                thr_mutex_lock(fileData->dataMutex);
+                thr_mutex_unlock(fileData->dataMutex);
+                fp_write_log("DATAMUTEX", "no use 1\n"); 
 		Flush_msg* flushMsg = (Flush_msg*) controlMsg->data;
-		//perr( "looking at flush msg\n");
-		void* temp = copy_buffer(dataNode->data, flushMsg->rank);
-		//add dst attr 
-		//perr( "adding dst attr\n");
-		fprintf(stderr, "flushMsg condition in attr: %d\n", flushMsg->condition);
-		localWriteData->attrs = set_dst_rank_atom(localWriteData->attrs, flushMsg->rank);
-		localWriteData->attrs = set_dst_condition_atom(localWriteData->attrs, flushMsg->condition);
-		if(!localWriteData->bridges[flushMsg->rank].opened) {
-                  perr("rank %d data flush setting bridge %d to open\n", localWriteData->rank, flushMsg->rank);
-                  localWriteData->bridges[flushMsg->rank].opened=1;
-                  localWriteData->openCount++;
+		void* temp = copy_buffer(dataNode->data, flushMsg->rank, fileData);
+		fileData->attrs = set_dst_rank_atom(fileData->attrs, flushMsg->rank);
+		fileData->attrs = set_dst_condition_atom(fileData->attrs, flushMsg->condition);
+		if(!fileData->bridges[flushMsg->rank].opened) {
+                  fileData->bridges[flushMsg->rank].opened=1;
+                  fileData->openCount++;
                 }
-                //send data on multiqueue stone
-		perr( "rank %d sending step %d to rank %d\n", localWriteData->rank, currentStep, flushMsg->rank);
-		EVsubmit_general(localWriteData->dataSource, temp, data_free, localWriteData->attrs);
+		fp_write_log("MSG", " sending data_msg : rank %d step %d\n", 
+                    flushMsg->rank, fileData->currentStep);
+		EVsubmit_general(fileData->dataSource, temp, data_free, fileData->attrs);
 	    } else if(controlMsg->type==OPEN) {
-		perr( "recieved open message\n");
                 op_msg* open = (op_msg*) controlMsg->data;
-                perr( "rank %d has step %d\n", localWriteData->rank, open->step);
-                localWriteData->bridges[open->process_id].step = open->step;
-                if(open->step < currentStep) {
-                    perr( "error! recieved open for past step...\n");
-                } else if (open->step == currentStep){
-                    perr( "equal to step\n");
-                    thr_mutex_lock(localWriteData->openMutex);
-                    localWriteData->openCount++;  
-                    perr( "rank %d setting bridge %d to open\n", localWriteData->rank, open->process_id);
-                    localWriteData->bridges[open->process_id].opened = 1;
-                    perr( "opencount %d\n", localWriteData->openCount);      
-		    thr_mutex_unlock(localWriteData->openMutex);
-                    perr( "send ack\n");
+                fileData->bridges[open->process_id].step = open->step;
+                fileData->bridges[open->process_id].condition = open->condition;
+                if(open->step < fileData->currentStep) {
+                    perr("control_thread: Recieved Past Step Open\n");
+                } else if (open->step == fileData->currentStep){
+                    fp_write_log("STEP", "recieved op with current step\n");
+                    thr_mutex_lock(fileData->openMutex);
+                    fp_write_log("MUTEX","lock 6\n");
+                    fileData->openCount++;  
+                    fileData->bridges[open->process_id].opened = 1;
+                    fp_write_log("MUTEX","unlock 6\n");
+		    thr_mutex_unlock(fileData->openMutex);
                     op_msg* ack = (op_msg*) malloc(sizeof(op_msg));
-                    ack->file_name = "hey";
-                    ack->process_id = localWriteData->rank;
-                    ack->step = currentStep;
+                    ack->file_name = strdup(fileData->name);
+                    ack->process_id = fileData->rank;
+                    ack->step = fileData->currentStep;
                     ack->type = 2;
 		    ack->condition = open->condition;
-                    localWriteData->attrs = set_dst_rank_atom(localWriteData->attrs, open->process_id+1);
-                    EVsubmit_general(localWriteData->opSource, ack, op_free, localWriteData->attrs);
-                    perr( "continue\n");
+                    fileData->attrs = set_dst_rank_atom(fileData->attrs, open->process_id+1);
+		    fp_write_log("MSG", " sending op_msg : dst %d step %d type ack\n",
+                        open->process_id, fileData->currentStep); 
+                    EVsubmit_general(fileData->opSource, ack, op_free, fileData->attrs);
                 } else {
-                    perr( "future step\n");
+                    fp_write_log("STEP", "recieved op with future step\n");
                 }
             } else if(controlMsg->type==CLOSE) {
                 op_msg* close = (op_msg*) controlMsg->data;
-		//perr( "recieved close message\n");
-		thr_mutex_lock(localWriteData->openMutex);
-		localWriteData->openCount--;
-                localWriteData->bridges[close->process_id].opened=0;
-                perr( "queue size %d\n", queue_count(&localWriteData->dataQueue, localWriteData->dataMutex));
-                perr( "opencount %d\n", localWriteData->openCount);
-		thr_mutex_unlock(localWriteData->openMutex);
-		perr( "unlocked...\n");
-                 if(localWriteData->openCount==0) {
-		    QueueNode* node = threaded_dequeue(&localWriteData->dataQueue, 
-				     localWriteData->dataMutex, 
-				     &localWriteData->dataCondition);
-                    FMfree_var_rec_elements(localWriteData->fm->ioFormat, node->data);
-                    if(queue_count(&localWriteData->dataQueue, localWriteData->dataMutex)==localWriteData->max_queue_size) {
-                      CMCondition_signal(localWriteData->cm, localWriteData->emptyCondition);
-                    }
-                    localWriteData->emptyCondition = CMCondition_get(localWriteData->cm, NULL);
-                perr( "queue size %d\n", queue_count(&localWriteData->dataQueue, localWriteData->dataMutex));
-                    perr( "end of step %d\n", currentStep);
-                    currentStep++;
-                    //for all bridges if step == currentstep send ack
+		thr_mutex_lock(fileData->openMutex);
+                fp_write_log("MUTEX","lock 7\n");
+		fileData->openCount--;
+                fileData->bridges[close->process_id].opened=0;
+                fp_write_log("MUTEX","unlock 7\n");
+		thr_mutex_unlock(fileData->openMutex);
+                 if(fileData->openCount==0) {
+                    fp_write_log("STEP", "advancing\n");
+                    fp_write_log("DATAMUTEX", "in use 2\n"); 
+		    FlexpathQueueNode* node = threaded_dequeue(&fileData->dataQueue, 
+		        fileData->dataMutex, fileData->dataCondition);
+                    fp_write_log("DATAMUTEX", "no use 2\n"); 
+                    thr_mutex_lock(fileData->dataMutex);
+                    thr_mutex_unlock(fileData->dataMutex);
+                    fp_write_log("DATAMUTEX", "no use 2\n"); 
+                    int q = queue_count(&fileData->dataQueue, fileData->dataMutex);
+                    fp_write_log("QUEUE", "after step queue count now %d\n", q);
+                    FMfree_var_rec_elements(fileData->fm->ioFormat, node->data);
+                    fileData->currentStep++;
+                    
                     int i;
-                    for(i=0; i<localWriteData->numBridges; i++) {
-                      perr( "bridge %d\n", i);
-                      if(localWriteData->bridges[i].step==currentStep) {
-                        localWriteData->openCount++;
-                        perr( "rank %d setting bridge %d to open\n", localWriteData->rank, i); 
-                        localWriteData->bridges[i].opened = 1;
+                    //for all bridges if step == currentstep send ack
+                    for(i=0; i<fileData->numBridges; i++) {
+                      if(fileData->bridges[i].step==fileData->currentStep) {
+                        fileData->openCount++;
+                        fileData->bridges[i].opened = 1;
                         op_msg* ack = (op_msg*) malloc(sizeof(op_msg));
-                        ack->file_name = "hey";
-                        ack->process_id = localWriteData->rank;
-                        ack->step = currentStep;
+                        ack->file_name = strdup(fileData->name);
+                        ack->process_id = fileData->rank;
+                        ack->step = fileData->currentStep;
                         ack->type = 2;
-			ack->condition = close->condition;
-                        localWriteData->attrs = set_dst_rank_atom(localWriteData->attrs, i+1);
-                        EVsubmit_general(localWriteData->opSource, ack, op_free, localWriteData->attrs);
+			ack->condition = fileData->bridges[i].condition;
+                        fileData->attrs = set_dst_rank_atom(fileData->attrs, i+1);
+		        fp_write_log("MSG", " sending op_msg : dst %d step %d type ack\n",
+                            i, fileData->currentStep);
+                        EVsubmit_general(fileData->opSource, ack, op_free, fileData->attrs);
                       }
                     }
 		}
 	    } else {
-		perr( "unrecognized control message in control thread\n");
+		perr("control_thread: Unrecognized Control Message\n");
 	    }
 	}
     }
-    //perr( "exiting control thread\n");
     return 0;
 }
 
-// Flexpath Functions
+// adds an open file handle to global open file list
+void add_open_file(FlexpathWriteFileData* newFile) {
+    FlexpathWriteFileData* last = flexpathWriteData.openFiles;
+    while(last && last->next) {
+        last = last->next;
+    }
+    if(last) {
+        last->next = newFile;
+    } else {
+        flexpathWriteData.openFiles = newFile;
+    }
+}
 
-/*
- * Initializes flexpath write local data structures for client writes
- * - malloc space for global values
- * - store reference to new connection manager instance
- */
+// searches for an open file handle
+FlexpathWriteFileData* find_open_file(char* name) {
+    FlexpathWriteFileData* file = flexpathWriteData.openFiles;
+    while(file && strcmp(file->name, name)) {
+        file = file->next;
+    }
+    return file;
+}
 
-extern void 
-adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method) 
+
+// Initializes flexpath write local data structures
+extern void adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method) 
 {
-    setenv("CMSelfFormats", "1", 1);
-    localWriteData = (FlexpathWriteData *) malloc(sizeof(FlexpathWriteData));
-    if(!localWriteData) {
-        adios_error(err_no_memory, "Cannot allocate memory for flexpath.");
-    }
-    memset(localWriteData, 0, sizeof(FlexpathWriteData));
-    localWriteData->CM_TRANSPORT = attr_atom_from_string("CM_TRANSPORT");
-
-    attr_list listen_list = NULL;
-    char * transport = NULL;
-    transport = getenv("CMTransport");
-    localWriteData->max_queue_size=0;
-    if(method!=NULL) {
-        perr( "recieved method struct\n");
-        if(method->parameters) {
-          perr("parameters:%s\n",method->parameters);
-          sscanf(method->parameters,"QUEUE_SIZE=%d;",&localWriteData->max_queue_size);
-          perr("max_queue_size:%d\n", localWriteData->max_queue_size);
-        }
-        sleep(1);
-    }
+    // global data structure creation
+    flexpathWriteData.rank = -1;
+    flexpathWriteData.openFiles = NULL;
     
-    localWriteData->attrs = create_attr_list();
-    gen_pthread_init();
-    localWriteData->cm = CManager_create();
-
+    // setup CM
+    flexpathWriteData.cm = CManager_create();
+    atom_t CM_TRANSPORT = attr_atom_from_string("CM_TRANSPORT");
+    char * transport = getenv("CMTransport");
     if(transport == NULL){
-	perr("transport is null\n");
-	if(CMlisten(localWriteData->cm) == 0) {
+	fp_write_log("SETUP","transport is null\n");
+	if(CMlisten(flexpathWriteData.cm) == 0) {
 	    perr( "error: unable to initialize connection manager.\n");
 	    exit(1);
 	}
-    }else{
-	perr("writer transport: %s\n", transport);
-	listen_list = create_attr_list();
-	add_attr(listen_list, localWriteData->CM_TRANSPORT, Attr_String, (attr_value)strdup(transport));
-	CMlisten_specific(localWriteData->cm, listen_list);
+    } else {
+	fp_write_log("SETUP", "writer transport: %s\n", transport);
+	attr_list listen_list = create_attr_list();
+	add_attr(listen_list, CM_TRANSPORT, Attr_String, (attr_value)strdup(transport));
+	CMlisten_specific(flexpathWriteData.cm, listen_list);
     }
-
-    // setup mutexs
-    localWriteData->controlMutex = thr_mutex_alloc();
-    localWriteData->dataMutex = thr_mutex_alloc();
-    localWriteData->openMutex = thr_mutex_alloc();
-    localWriteData->openCount = 0;
-    // setup conditions
-    localWriteData->controlCondition = CMCondition_get(localWriteData->cm, NULL);
-    localWriteData->dataCondition = CMCondition_get(localWriteData->cm, NULL);
-    localWriteData->emptyCondition = CMCondition_get(localWriteData->cm, NULL);
-
+    
+    // configuration setup
+    gen_pthread_init();
+    setenv("CMSelfFormats", "1", 1);
+    
     // fork communications thread
-    int forked = CMfork_comm_thread(localWriteData->cm);   
+    int forked = CMfork_comm_thread(flexpathWriteData.cm);   
     if(!forked) {
          perr( "error forking comm thread\n");
     }
-
-
-    //perr( "debug: flexpath write structures initialized\n");
-    return;
 }
 
-/*
- * Sets up local data structure for a series of writes to an adios file.
- * - store reference to MPI_Comm and get MPI information
- */
-
-void 
-print_array(char* arr, int len) 
-{
-    //perr( "array:");
-    int i;
-    /*
-    for (i = 0; i < len; i++) {
-        perr( " 0x%x", arr[i]);
-    }
-    perr( "\n");
-    */
-}
-
-extern int 
-adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *method, void*comm) 
+// opens a new adios file for writes
+extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *method, void*comm) 
 { 
-    //perr("opening\n");
-    //char * filebase = "/tmp/work/jdayal3/titan/";
+    if( fd == NULL || method == NULL) {
+        perr("open: Bad input parameters\n");
+        return -1;
+    }
+
+    // file creation
+    if(find_open_file(method->group->name)) {
+        // stream already open
+        return 0;
+    }
+
+    FlexpathWriteFileData* fileData = (FlexpathWriteFileData *) malloc(sizeof(FlexpathWriteFileData));
+    mem_check(fileData, "fileData");
+    memset(fileData, 0, sizeof(FlexpathWriteFileData));
+    fileData->maxQueueSize=0;
+    if(method->parameters) {
+        sscanf(method->parameters,"QUEUE_SIZE=%d;",&fileData->maxQueueSize);
+        fp_write_log("SETUP", "setting max queue size to %d\n", fileData->maxQueueSize);
+    }
+    
+    // setup step state
+    fileData->attrs = create_attr_list();
+    fileData->openCount = 0;
+    fileData->currentStep = 0;
+
+    // setup mutexs
+    fileData->controlMutex = thr_mutex_alloc();
+    fileData->dataMutex = thr_mutex_alloc();
+    fileData->openMutex = thr_mutex_alloc();
+    
+    // setup conditions
+    fileData->controlCondition = thr_condition_alloc();
+    fileData->dataCondition = thr_condition_alloc();
+
+    // communication channel setup
     char writer_info_filename[200];
     char writer_ready_filename[200];
     char reader_info_filename[200];
     char reader_ready_filename[200];
     
     /*
+    // Titan filesystem specific
+    char * filebase = "/tmp/work/jdayal3/titan/";
     sprintf(writer_info_filename, "%s", filebase);
     sprintf(writer_ready_filename, "%s", filebase);
     sprintf(reader_info_filename, "%s", filebase);
     sprintf(reader_ready_filename, "%s", filebase);
     */
 
-    char *recv_buff = NULL;
-    int i;
-    char sendmsg[CONTACT_STR_LEN];
-    //perr( "debug: entering adios_flexpath_open\n");
+    int i=0;
+    flexpathWriteData.rank = fileData->rank;
+    fileData->globalCount = 0;
+    fileData->sentGlobalOffsets = 0;
 
-
-    if( fd == NULL || method == NULL) {
-        //perr( "Bad input parameters\n");
-        return -1;
-    }
-    /*
+    // mpi setup
     MPI_Comm * group_comm = (MPI_Comm*)malloc(sizeof(MPI_Comm));
     adios_var_to_comm(fd->group->group_comm,
-		      fd->group->adios_host_language_fortran,
-		      comm,		      
-		      group_comm);
-    */
-    localWriteData->mpiComm = (MPI_Comm*)comm;
-    //localWriteData->mpiComm = group_comm;
-    localWriteData->global_count = 0;
-    localWriteData->sent_global_offsets = 0;
-    // if evpath graph is not created and correct, exchange contact list and setup
-    if(localWriteData->setupCorrect == 0) {
-        // get some mpi information
-        MPI_Comm_rank(*(localWriteData->mpiComm), &localWriteData->rank);
-        MPI_Comm_size(*(localWriteData->mpiComm), &localWriteData->size);
-
-        //if rank 0 allocate buffer
-        if(localWriteData->rank == 0) {
-            
-            recv_buff = (char *) malloc(localWriteData->size*CONTACT_STR_LEN*sizeof(char));
-        }
+    	fd->group->adios_host_language_fortran, comm, group_comm);
+    fileData->mpiComm = (MPI_Comm*)group_comm;
+    //fileData->mpiComm = comm;
+    MPI_Comm_rank(*(fileData->mpiComm), &fileData->rank);
+    MPI_Comm_size(*(fileData->mpiComm), &fileData->size);
+    char *recv_buff = NULL;
+    char sendmsg[CONTACT_STR_LEN];
+    if(fileData->rank == 0) {
+        recv_buff = (char *) malloc(fileData->size*CONTACT_STR_LEN*sizeof(char));
+    }
         
-        // get contact string
-        char * contact = attr_list_to_string(CMget_contact_list(localWriteData->cm));
+    // send out contact string
+    char * contact = attr_list_to_string(CMget_contact_list(flexpathWriteData.cm));
+    fileData->multiStone = EValloc_stone(flexpathWriteData.cm);
+    fileData->sinkStone = EValloc_stone(flexpathWriteData.cm);
+    sprintf(&sendmsg[0], "%d:%s", fileData->multiStone, contact);
+    MPI_Gather(sendmsg, CONTACT_STR_LEN, MPI_CHAR, recv_buff, 
+        CONTACT_STR_LEN, MPI_CHAR, 0, *(fileData->mpiComm));
 
-	// allocate our stones
-	localWriteData->multiStone = EValloc_stone(localWriteData->cm);
-        localWriteData->sinkStone = EValloc_stone(localWriteData->cm);
-
-        // send out contact string
-	sprintf(&sendmsg[0], "%d:%s", localWriteData->multiStone, contact);
-        MPI_Gather(sendmsg, 
-		   CONTACT_STR_LEN, 
-		   MPI_CHAR, recv_buff, 
-		   CONTACT_STR_LEN, 
-		   MPI_CHAR, 
-		   0, 
-		   *(localWriteData->mpiComm));
-
-        //if rank 0 write contact info to file
-        if(localWriteData->rank == 0) {
-	    //perr( "rank 0 writting info\n");
-	    sprintf(writer_info_filename, "%s_%s", fd->name, "writer_info.txt");
-            FILE* writer_info = fopen(writer_info_filename,"w");
-            for(i=0; i<localWriteData->size; i++) {
-                fprintf(writer_info, "%s\n",&recv_buff[i*CONTACT_STR_LEN]); 
-            }
-            fclose(writer_info);
+    // rank 0 prints contact info to file
+    if(fileData->rank == 0) {
+        sprintf(writer_info_filename, "%s_%s", fd->name, "writer_info.txt");
+        FILE* writer_info = fopen(writer_info_filename,"w");
+        for(i=0; i<fileData->size; i++) {
+            fprintf(writer_info, "%s\n",&recv_buff[i*CONTACT_STR_LEN]); 
         }
-
-        //poll file - race condition issues
-	FILE* reader_ready = NULL;
-	sprintf(reader_ready_filename, "%s_%s", fd->name, "reader_ready.txt");
-        //perr( "polling reader_ready.txt file\n");
-	while(!reader_ready){
-	    reader_ready = fopen(reader_ready_filename,"r");
-	}
-	fclose(reader_ready);
-
-        //read contact list
-	//perr( "processing file\n");
-	sprintf(reader_info_filename, "%s_%s", fd->name, "reader_info.txt");
-        FILE* reader_info = fopen(reader_info_filename, "r");
-	while(!reader_info){
-	  reader_info = fopen(reader_info_filename, "r");
-	}
-        char in_contact[CONTACT_STR_LEN] = "";
-       
-        int numBridges = 0;
-        int stone_num;
-        //perr( "rank %d enters loop\n",localWriteData->rank);
-        while(fscanf(reader_info, "%d:%s",&stone_num, in_contact)!=EOF){
-            //perr( "rank %d recieved contact %s for stone %d\n", localWriteData->rank, in_contact, stone_num);
-            //for each line create bridge stone
-            localWriteData->bridges = realloc(localWriteData->bridges, sizeof(Stone) * (numBridges + 1));
-	    //perr( "resized bridge array\n");
-            attr_list contact_list = attr_list_from_string(in_contact);
-            //perr( "generated contact list\n");
-            localWriteData->bridges[numBridges].myNum = EVcreate_bridge_action(localWriteData->cm, contact_list, stone_num);
-            //perr( "created bridge action\n");
-            localWriteData->bridges[numBridges].opened = 0;
-            localWriteData->bridges[numBridges].step = 0;
-            localWriteData->bridges[numBridges].theirNum = stone_num;
-            localWriteData->bridges[numBridges].contact = strdup(in_contact);
-            numBridges += 1;
-        }
-        //perr( "rank %d exits loop\n", localWriteData->rank);
-        localWriteData->numBridges = numBridges;
-        fclose(reader_info);
-	// cleanup of reader file (writer is done with it).
-	if(localWriteData->rank == 0){
-	    unlink(reader_info_filename);
-	    unlink(reader_ready_filename);
-	}
-	
-        //process group format
-	struct adios_group_struct *t = method->group;
-	struct adios_var_struct *fields = t->vars;
-	if(t == NULL)
-	    perr("t is null\n");
-	if(fields == NULL)
-	    perr("t is null\n");
-
-	localWriteData->fm = setFormat(t, fields);
-	print_format(localWriteData->fm->format);
-
-        //generate multiqueue function that sends formats or all data based on flush msg
-        FMStructDescList queue_list[] = {flush_format_list, 
-					 format_format_list, 
-					 var_format_list, 
-					 op_format_list, 
-					 evgroup_format_list,
-					 data_format_list,					 
-					 NULL};
-        char* q_action_spec = create_multityped_action_spec(queue_list, multiqueue_action); 
-        EVaction multi_action = EVassoc_multi_action(localWriteData->cm, 
-						     localWriteData->multiStone, 
-						     q_action_spec, 
-						     NULL);
-	localWriteData->formatSource = EVcreate_submit_handle(localWriteData->cm, 
-							      localWriteData->multiStone, 
-							      format_format_list);
-        localWriteData->dataSource = EVcreate_submit_handle_free(localWriteData->cm, localWriteData->multiStone, localWriteData->fm->format, data_free,  NULL); 
-        localWriteData->opSource = EVcreate_submit_handle_free(localWriteData->cm, localWriteData->multiStone, op_format_list, op_free,  NULL); 
-	localWriteData->offsetSource = EVcreate_submit_handle(localWriteData->cm, 
-							      localWriteData->multiStone, 
-							      evgroup_format_list);
-        EVassoc_terminal_action(localWriteData->cm, 
-				localWriteData->sinkStone, 
-				var_format_list, 
-				var_handler, 
-				NULL);
-        EVassoc_terminal_action(localWriteData->cm, 
-				localWriteData->sinkStone, 
-				op_format_list, 
-				op_handler, 
-				NULL);
-        EVassoc_terminal_action(localWriteData->cm, 
-				localWriteData->sinkStone, 
-				flush_format_list, 
-				flush_handler, 
-				NULL);
-
-        //link multiqueue to sink
-        EVaction_set_output(localWriteData->cm, 
-			    localWriteData->multiStone, 
-			    multi_action, 
-			    0, 
-			    localWriteData->sinkStone);
-
-        //link up multiqueue ports to bridge stones
-        int i=0;
-        for(i=0; i<numBridges; i++) {
-            //perr( "linking port %d to rank %d\n", i+1, i);
-            EVaction_set_output(localWriteData->cm, 
-				localWriteData->multiStone, 
-				multi_action, 
-				i+1, 
-				localWriteData->bridges[i].myNum);
-	}
-	
-	//store format id in multiqueue
-	Format_msg *initial_format_msg = malloc(sizeof(Format_msg));
-        FMContext my_context = create_local_FMcontext();	
-	localWriteData->fm->ioFormat = register_data_format(my_context, localWriteData->fm->format);
-        int id_len;
-        char* temp = get_server_ID_FMformat(localWriteData->fm->ioFormat, &id_len);
-	/*for(i=0; i<id_len; i++) {
-            temp[i]=temp[i]+1;
-	    }*/
-        initial_format_msg->format_id = temp;
-        initial_format_msg->id_len = id_len;
-
-	int rep_len;
-	char *temp2 = get_server_rep_FMformat(localWriteData->fm->ioFormat, &rep_len);
-	//for(i=0; i<id_len; i++)
-	//    temp2[i]=temp2[i]+1;
-	initial_format_msg->rep_id = temp2;
-	initial_format_msg->rep_id_len = rep_len;
-        print_array(temp, id_len);
-        CMsleep(localWriteData->cm, 1); 
-	/* 
-	 * this is a memory leak of initial_format_msg (and my_context, etc).
-	 * Fix by changing to EVsubmit_general and using a free call.
-	 */
-	EVsubmit(localWriteData->formatSource, initial_format_msg, localWriteData->attrs);
-        //perr( "notifing reader its ok to send msgs\n");
-        CMsleep(localWriteData->cm, 1); 
-	sprintf(writer_ready_filename, "%s_%s", fd->name, "writer_ready.txt");
-        if(localWriteData->rank == 0) {
-            FILE* writer_info = fopen(writer_ready_filename, "w");
-            fprintf(writer_info, "ready");
-            fclose(writer_info);
-        }
-        
-        CMsleep(localWriteData->cm, 5); 
-	//indicate evpath is setup correctly
-	localWriteData->setupCorrect = 1;
-        // fork control thread
-        thr_thread_t forked_thread = thr_fork(control_thread, &localWriteData->rank);
-        if(forked_thread) {
-            //perr( "successfully forked control thread\n");
-        } else {
-            //perr( "error forking control thread\n");
-        }
-    //perr( "continuing\n");
+        fclose(writer_info);
     }
 
-    return 0;
+    // poll file - race condition issues
+    FILE* reader_ready = NULL;
+    sprintf(reader_ready_filename, "%s_%s", fd->name, "reader_ready.txt");
+    while(!reader_ready){
+	reader_ready = fopen(reader_ready_filename,"r");
+    }
+    fclose(reader_ready);
+
+    // read contact list
+    sprintf(reader_info_filename, "%s_%s", fd->name, "reader_info.txt");
+    FILE* reader_info = fopen(reader_info_filename, "r");
+    if(!reader_info){
+	reader_info = fopen(reader_info_filename, "r");
+    }
+    char in_contact[CONTACT_STR_LEN] = "";
+    int numBridges = 0;
+    int stone_num;
+    // build a bridge per line
+    while(fscanf(reader_info, "%d:%s",&stone_num, in_contact)!=EOF){
+        fileData->bridges = realloc(fileData->bridges, sizeof(FlexpathStone) * (numBridges + 1));
+        attr_list contact_list = attr_list_from_string(in_contact);
+        fileData->bridges[numBridges].myNum = EVcreate_bridge_action(flexpathWriteData.cm, contact_list, stone_num);
+        fileData->bridges[numBridges].opened = 0;
+        fileData->bridges[numBridges].step = 0;
+        fileData->bridges[numBridges].theirNum = stone_num;
+        fileData->bridges[numBridges].contact = strdup(in_contact);
+        numBridges += 1;
+    }
+    fileData->numBridges = numBridges;
+    fclose(reader_info);
+
+    MPI_Barrier(*(fileData->mpiComm));
+    
+    // cleanup of reader files (writer is done with it).
+    if(fileData->rank == 0){
+	unlink(reader_info_filename);
+	unlink(reader_ready_filename);
+    }
 	
+    //process group format
+    struct adios_group_struct *t = method->group;
+    struct adios_var_struct *fields = t->vars;
+    if(t == NULL)
+	perr("t is null\n");
+    if(fields == NULL)
+	perr("t is null\n");
+
+    fileData->fm = set_format(t, fields, fileData);
+    fp_write_log("SETUP", "set format complete\n");
+
+    // attach rank attr and add file to open list
+    fp_write_log("FILE", "opening file %s\n", method->group->name);
+    fileData->name = strdup(method->group->name); 
+    add_open_file(fileData);
+    atom_t rank_atom = attr_atom_from_string(FP_RANK_ATTR_NAME);
+    add_int_attr(fileData->attrs, rank_atom, fileData->rank);
+
+    //generate multiqueue function that sends formats or all data based on flush msg
+    fp_write_log("SETUP", "setup graph\n");
+    FMStructDescList queue_list[] = {flush_format_list, format_format_list, 
+	var_format_list, op_format_list, evgroup_format_list, 
+        data_format_list, NULL};
+    char* q_action_spec = create_multityped_action_spec(queue_list, 
+        multiqueue_action); 
+    EVaction multi_action = EVassoc_multi_action(flexpathWriteData.cm, 
+	fileData->multiStone, q_action_spec, NULL);
+    fileData->formatSource = EVcreate_submit_handle(flexpathWriteData.cm, 
+        fileData->multiStone, format_format_list);
+    fileData->dataSource = EVcreate_submit_handle_free(flexpathWriteData.cm, 
+        fileData->multiStone, fileData->fm->format, data_free,  NULL); 
+    fileData->opSource = EVcreate_submit_handle_free(flexpathWriteData.cm, 
+        fileData->multiStone, op_format_list, op_free,  NULL); 
+    fileData->offsetSource = EVcreate_submit_handle(flexpathWriteData.cm, 
+	fileData->multiStone, evgroup_format_list);
+    
+    fp_write_log("SETUP", "setup terminal actions\n");
+    EVassoc_terminal_action(flexpathWriteData.cm, fileData->sinkStone, 
+	var_format_list, var_handler, fileData);
+    EVassoc_terminal_action(flexpathWriteData.cm, fileData->sinkStone, 
+	op_format_list, op_handler, fileData);
+    EVassoc_terminal_action(flexpathWriteData.cm, fileData->sinkStone, 
+	flush_format_list, flush_handler, fileData);
+
+    //link multiqueue to sink
+    fp_write_log("SETUP", "linking stones\n");
+    EVaction_set_output(flexpathWriteData.cm, fileData->multiStone, 
+        multi_action, 0, fileData->sinkStone);
+
+    //link up multiqueue ports to bridge stones
+    for(i=0; i<numBridges; i++) {
+        EVaction_set_output(flexpathWriteData.cm, 
+            fileData->multiStone, multi_action, i+1, fileData->bridges[i].myNum);
+    }
+    
+    fp_write_log("SETUP", "arranged evpath graph\n");
+	
+    //store format id in multiqueue
+    Format_msg *initial_format_msg = malloc(sizeof(Format_msg));
+    FMContext my_context = create_local_FMcontext();	
+    fileData->fm->ioFormat = register_data_format(my_context, fileData->fm->format);
+    int id_len;
+    char* temp = get_server_ID_FMformat(fileData->fm->ioFormat, &id_len);
+    initial_format_msg->format_id = temp;
+    initial_format_msg->id_len = id_len;
+    int rep_len;
+    char *temp2 = get_server_rep_FMformat(fileData->fm->ioFormat, &rep_len);
+    initial_format_msg->rep_id = temp2;
+    initial_format_msg->rep_id_len = rep_len;
+    
+    fp_write_log("SETUP", "submitting format stuff\n");
+    EVsubmit_general(fileData->formatSource, initial_format_msg, format_free, fileData->attrs);
+    
+    fp_write_log("SETUP", "indicating to reader that ready\n");
+    sprintf(writer_ready_filename, "%s_%s", fd->name, "writer_ready.txt");
+    if(fileData->rank == 0) {
+        FILE* writer_info = fopen(writer_ready_filename, "w");
+        fprintf(writer_info, "ready");
+        fclose(writer_info);
+    }
+        
+    fp_write_log("SETUP", "fork control thread\n");
+    thr_thread_t forked_thread = thr_fork(control_thread, fileData);
+    if(!forked_thread) {
+        perr("on open ERROR forking control thread");
+    }
+   
+    return 0;	
 }
 
 
-extern enum ADIOS_FLAG adios_flexpath_should_buffer (struct adios_file_struct * fd,struct adios_method_struct * method) {
-    //perr( "debug: adios_flexpath_should_buffer\n");
-  return adios_flag_unknown;
-}
 
 
 //  writes data to multiqueue
 extern void adios_flexpath_write(struct adios_file_struct *fd, struct adios_var_struct *f, void *data, struct adios_method_struct *method) {
-    //perr( "debug: adios_flexpath_write\n");
-    
-    //perr( "submitting var %s\n", f->name);
-    
-    struct _fm_structure* fm = localWriteData->fm;
+    fp_write_log("FILE", "entering flexpath file %s write\n", method->group->name);
+    FlexpathWriteFileData* fileData = find_open_file(method->group->name);
+    FlexpathFMStructure* fm = fileData->fm;
 
     if (fm == NULL)
     {
-	//perr( "group or fm is null - improperly initialized\n");
 	return;
 
     }
@@ -1548,17 +1361,17 @@ extern void adios_flexpath_write(struct adios_file_struct *fd, struct adios_var_
 		//why wouldn't it have data?
 		memcpy(&fm->buffer[field->field_offset], data, field->field_size);
 
-		//scalar quantities can have AltNames also so assign those
+		//scalar quantities can have FlexpathAltNames also so assign those
 		if(field->field_name != NULL) {
 					
-		    DimNames *d = NULL;
+		    FlexpathDimNames *d = NULL;
 		    for (d = fm->dimList.lh_first; d != NULL; d = d->entries.le_next) {
 			if (!strcmp(d->name, field->field_name)) {
 			    //matches
-			    //check if there are AltNames
-			    AltName *a = NULL;
+			    //check if there are FlexpathAltNames
+			    FlexpathAltName *a = NULL;
 			    for (a = d->altList.lh_first; a != NULL; a = a->entries.le_next) {
-				//use the AltName field to get the data into the buffer
+				//use the FlexpathAltName field to get the data into the buffer
 				memcpy(&fm->buffer[a->field->field_offset], 
 				       data, 
 				       a->field->field_size);
@@ -1591,14 +1404,9 @@ extern void adios_flexpath_write(struct adios_file_struct *fd, struct adios_var_
 extern void 
 adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *method) 
 {
-    //perr( "debug: adios_flexpath_close\n");
-    //perr( "enqueueing data\n");   
-    
-    //no copy
-    //void* buffer =  localWriteData->fm->buffer;
-    
-    //copy
-    void* buffer = malloc(localWriteData->fm->size);
+    fp_write_log("FILE", "file close %s\n", method->group->name);
+    FlexpathWriteFileData* fileData = find_open_file(method->group->name);
+    void* buffer = malloc(fileData->fm->size);
 
     struct adios_group_struct * g2 = fd->group;
     struct adios_var_struct * fields = g2->vars;
@@ -1619,9 +1427,9 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
                 total_size *= size;
                 dims = dims->next;
             }		
-            FMFieldList flist = localWriteData->fm->format->field_list;
+            FMFieldList flist = fileData->fm->format->field_list;
             FMField *field = NULL;
-            char *fixedname = find_fixed_name(localWriteData->fm, fields->name);
+            char *fixedname = find_fixed_name(fileData->fm, fields->name);
             field = internal_find_field(fixedname, flist);
             //perr( "field offset %d size %d\n", field->field_offset, field->field_size);
 
@@ -1637,43 +1445,41 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
                 //block
             }
                 
-            fp_log("DATA","Attempting to get pointer to user data\n");
-            void* temp = get_FMPtrField_by_name(flist, fields->name, localWriteData->fm->buffer, 0);
-            perr("got %p for field %s", temp, fields->name);
-            fp_log("DATA","Copying user data to new space\n");
+            fp_write_log("DATA","Attempting to get pointer to user data\n");
+            void* temp = get_FMPtrField_by_name(flist, fields->name, fileData->fm->buffer, 0);
+            fp_write_log("DATA","Copying user data to new space\n");
             memcpy(pointer_data_copy, temp, total_size);
-            fp_log("DATA","Setting pointer to new space\n");
-            set_FMPtrField_by_name(flist, fields->name, localWriteData->fm->buffer, pointer_data_copy);
+            fp_write_log("DATA","Setting pointer to new space\n");
+            set_FMPtrField_by_name(flist, fields->name, fileData->fm->buffer, pointer_data_copy);
         }    
         fields = fields->next;
     }
 
     
-    memcpy(buffer, localWriteData->fm->buffer, localWriteData->fm->size);
+    memcpy(buffer, fileData->fm->buffer, fileData->fm->size);
 
-    //perr( "got buffer %p\n", buffer);
-    threaded_enqueue(&localWriteData->dataQueue, 
-		     buffer, 
-		     DATA_BUFFER, 
-		     localWriteData->dataMutex, 
-		     &localWriteData->dataCondition);
-    localWriteData->fm->sndCount++;
-    perr( "close sucessfully enqueued\n");
+    fp_write_log("DATAMUTEX", "in use 3\n"); 
+    threaded_enqueue(&fileData->dataQueue, buffer, 
+        DATA_BUFFER, fileData->dataMutex, fileData->dataCondition);
+    fp_write_log("DATAMUTEX", "no use 3\n"); 
+    thr_mutex_lock(fileData->dataMutex);
+    thr_mutex_unlock(fileData->dataMutex);
+    fp_write_log("DATAMUTEX", "no use 3\n"); 
+    
     int c = 0;
-
  
     // now gather offsets and send them via MPI to root
     struct adios_group_struct * g = fd->group;
     struct adios_var_struct * list = g->vars;
 
-    if(localWriteData->global_count > 0 && !localWriteData->sent_global_offsets){	
-	fp_log("BOUNDING", "check offsets\n");
+    if(fileData->globalCount > 0 && !fileData->sentGlobalOffsets){	
+	fp_write_log("BOUNDING", "check offsets\n");
         // process local offsets here	
 	int num_gbl_vars = 0;
         global_var * gbl_vars = NULL;
 	int num_vars = 0;
-	int myrank = localWriteData->rank;
-	int commsize = localWriteData->size;
+	int myrank = fileData->rank;
+	int commsize = fileData->size;
 
 	while(list){
 	    //int num_local_offsets = 0;
@@ -1692,11 +1498,11 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 
 		MPI_Gather(local_offsets, num_local_offsets, MPI_INT, 
 			   all_offsets, num_local_offsets, MPI_INT,
-			   0, *localWriteData->mpiComm);
+			   0, *fileData->mpiComm);
 
 		MPI_Gather(local_dimensions, num_local_offsets, MPI_INT, 
 			   all_local_dims, num_local_offsets, MPI_INT,
-			   0, *localWriteData->mpiComm);
+			   0, *fileData->mpiComm);
 
 		if(myrank == 0){
 		    num_gbl_vars++;
@@ -1742,7 +1548,6 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 		}		
 	    }
 	    list=list->next;
-	    //okay, no more dims, now send it to root.
 	}
 	if(myrank == 0){
 	    int i;
@@ -1755,84 +1560,70 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 	    gp->num_vars = num_gbl_vars;
 	    perr("num global vars %d\n", num_gbl_vars);
             gp->vars = gbl_vars;
-	    localWriteData->gp = gp;
-	    localWriteData->attrs = set_size_atom(localWriteData->attrs, localWriteData->size);
-	    perr("size:%d\n\n\n", localWriteData->size);
-            EVsubmit(localWriteData->offsetSource, gp, localWriteData->attrs);
-	    /*
-	    threaded_enqueue(&localWriteData->offsetQueue, 
-			     gp, 
-			     OFFSET_MSG, 
-			     localWriteData->offsetMutex, 
-			     &localWriteData->offsetCondition);
-	    */
+	    fileData->gp = gp;
+	    fileData->attrs = set_size_atom(fileData->attrs, fileData->size);
+	    perr("size:%d\n\n\n", fileData->size);
+            EVsubmit(fileData->offsetSource, gp, fileData->attrs);
 	}
-	localWriteData->sent_global_offsets = 1;
+	fileData->sentGlobalOffsets = 1;
     }
 
-    fp_log("QUEUE", "queue check...\n");
-    while((c=queue_count(&localWriteData->dataQueue, localWriteData->dataMutex))>localWriteData->max_queue_size) {
-      perr("sleeping for queue size %d, current %d\n", localWriteData->max_queue_size, c);
-      CMCondition_wait(localWriteData->cm, localWriteData->emptyCondition);
-      perr("woke up from queue size sleep %d, %d\n", localWriteData->max_queue_size, queue_count(&localWriteData->dataQueue, localWriteData->dataMutex));
+    while((c=queue_count(&fileData->dataQueue, fileData->dataMutex))>fileData->maxQueueSize) {
+        fp_write_log("QUEUE", "waiting for queue to be below max size\n");
+        thr_condition_wait(fileData->dataCondition, fileData->dataMutex);
+        fp_write_log("QUEUE", "wakeup on queue size\n");
     }
-    perr( "exiting close\n");
+    fp_write_log("FILE", "file close %s exiting\n", method->group->name);
 }
 
+// wait until all open files have finished sending data to shutdown
 extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method) {
-    //perr( "debug: adios_flexpath_finalize\n");
-    while(localWriteData->dataQueue!=NULL) {
-        perr( "queue size %d\n", queue_count(&localWriteData->dataQueue, localWriteData->dataMutex));
-      
-        perr( "rank %d data still in data queue\n", localWriteData->rank);
-        sleep(1);
+    FlexpathWriteFileData* fileData = flexpathWriteData.openFiles;
+    fp_write_log("FILE", "Entered finalize\n");
+    while(fileData) {
+        fp_write_log("DATAMUTEX", "in use 4\n"); 
+        thr_mutex_lock(fileData->dataMutex);
+        fp_write_log("MUTEX","lock 1\n");
+        while(fileData->dataQueue!=NULL) {
+            fp_write_log("FILE", "waiting on %s to empty data\n", fileData->name);
+            thr_condition_wait(fileData->dataCondition, fileData->dataMutex);
+        }
+        fp_write_log("MUTEX","unlock 1\n");
+        thr_mutex_unlock(fileData->dataMutex);
+        fp_write_log("DATAMUTEX", "no use 4\n"); 
+        fileData = fileData->next;
     }
 }
 
+// provides unknown functionality
+extern enum ADIOS_FLAG adios_flexpath_should_buffer (struct adios_file_struct * fd,struct adios_method_struct * method) {
+    fp_write_log("UNIMPLEMENTED", "adios_flexpath_should_buffer\n");
+    return adios_flag_unknown;
+}
+
+// provides unknown functionality
 extern void adios_flexpath_end_iteration(struct adios_method_struct *method) {
-    //perr( "debug: adios_flexpath_end_iteration\n");
-    struct _fm_structure *fm;
-    FlexpathWriteData *mdata = (FlexpathWriteData *) method->method_data;
-    fm = mdata->fm;
-
-    if (fm == NULL)
-	return;
-
-    mdata->cycleId = 0;
-
+    fp_write_log("UNIMPLEMENTED", "adios_flexpath_end_iteration\n");
 }
 
+// provides unknown functionality
 extern void adios_flexpath_start_calculation(struct adios_method_struct *method) {
-    //perr( "debug: adios_flexpath_start_calculation\n");
-    struct _fm_structure *fm;
-    FlexpathWriteData *mdata = (FlexpathWriteData *) method->method_data;
-    fm = mdata->fm;
-  
-    if (fm == NULL)
-	return;
-  
+    fp_write_log("UNIMPLEMENTED", "adios_flexpath_start_calculation\n");
 }
 
+// provides unknown functionality
 extern void adios_flexpath_stop_calculation(struct adios_method_struct *method) {
-    //perr( "debug: adios_flexpath_stop_calculation\n");
-    struct _fm_structure *fm;
-    FlexpathWriteData *mdata = (FlexpathWriteData *) method->method_data;
-    fm = mdata->fm;
-  
-    if (fm == NULL)
-	return;
-
-    mdata->cycleId++;
+    fp_write_log("UNIMPLEMENTED", "adios_flexpath_stop_calculation\n");
 }
 
+// provides unknown functionality
 extern void adios_flexpath_get_write_buffer(struct adios_file_struct *fd,struct adios_var_struct *f, uint64_t *size, void **buffer, struct adios_method_struct *method) {
-    //perr( "debug: adios_flexpath_get_write_buffer\n");
-  //MDW: What is this function for?????
-  //perr( "adios_flexpath_write_get_buffer: flexpath disabled, no portals support\n");
+    fp_write_log("UNIMPLEMENTED", "adios_flexpath_get_write_buffer\n");
 }
 
+// should not be called from write, reason for inclusion here unknown
 void adios_flexpath_read(struct adios_file_struct *fd, struct adios_var_struct *f, void *buffer, uint64_t buffer_size, struct adios_method_struct *method) {
-    // not required by write api
+    fp_write_log("UNIMPLEMENTED", "adios_flexpath_read\n");
 }
 
 #else // print empty version of all functions (if NO_FLEXPATH == 1)
