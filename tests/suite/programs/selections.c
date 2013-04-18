@@ -333,8 +333,8 @@ int read_points ()
     reset_readvars();
 
     log ("Read and check data in %s using point selections\n", FILENAME);
-    f = adios_read_open_stream (FILENAME, read_method, comm,
-                                ADIOS_LOCKMODE_CURRENT, 0.0);
+    f = adios_read_open (FILENAME, read_method, comm,
+                         ADIOS_LOCKMODE_CURRENT, 0.0);
     if (f == NULL) {
         printE ("Error at opening file: %s\n", rank, adios_errmsg());
         return 1;

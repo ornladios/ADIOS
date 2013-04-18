@@ -67,7 +67,7 @@ void FC_FUNC_(adios_read_finalize_method, ADIOS_READ_FINALIZE_METHOD) (int *fmet
 }
 
 
-void FC_FUNC_(adios_read_open_stream, ADIOS_READ_OPEN_STREAM)
+void FC_FUNC_(adios_read_open, ADIOS_READ_OPEN)
         (int64_t * fp,
          char    * fname,
          int     * fmethod,
@@ -86,7 +86,7 @@ void FC_FUNC_(adios_read_open_stream, ADIOS_READ_OPEN_STREAM)
 
     namestr = futils_fstr_to_cstr(fname, fname_len);
     if (namestr != NULL) {
-        afp = common_read_open_stream (namestr, method, comm, lockm, *timeout_sec);
+        afp = common_read_open (namestr, method, comm, lockm, *timeout_sec);
         *fp = (int64_t) afp;
         free(namestr);
     } else {

@@ -92,7 +92,7 @@ program coupling
     !write (*,*) 'rank ', rank, "init completed"
     !write (nprocstr,'(i0)') nproc
 
-    call adios_read_open_stream (inh, infn, read_method, group_comm, ADIOS_LOCKMODE_CURRENT, 180.0, ierr)
+    call adios_read_open (inh, infn, read_method, group_comm, ADIOS_LOCKMODE_CURRENT, 180.0, ierr)
     if (ierr .ne. 0) then
         print '(" Failed to open stream: ",a0)', infn
         print '(" open stream ierr=: ",i0)', ierr

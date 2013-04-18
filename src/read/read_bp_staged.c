@@ -2006,9 +2006,9 @@ int adios_read_bp_staged_finalize_method ()
     return 0;
 }
 
-ADIOS_FILE * adios_read_bp_staged_open_stream (const char * fname, MPI_Comm comm, enum ADIOS_LOCKMODE lock_mode, float timeout_sec)
+ADIOS_FILE * adios_read_bp_staged_open (const char * fname, MPI_Comm comm, enum ADIOS_LOCKMODE lock_mode, float timeout_sec)
 {
-    log_error (" adios_read_open_stream() is not supported in this method.\n");
+    log_error (" adios_read_open() is not supported in this method. Use the file-only adios_read_open_file().\n");
     return 0;
 }
 

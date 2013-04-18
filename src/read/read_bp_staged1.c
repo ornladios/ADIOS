@@ -45,7 +45,7 @@ int adios_read_bp_staged1_finalize_method ()
     return 0;
 }
 
-ADIOS_FILE * adios_read_bp_staged1_open_stream (const char * fname, MPI_Comm comm, enum ADIOS_LOCKMODE lock_mode, float timeout_sec)
+ADIOS_FILE * adios_read_bp_staged1_open (const char * fname, MPI_Comm comm, enum ADIOS_LOCKMODE lock_mode, float timeout_sec)
 {
     return 0;
 }

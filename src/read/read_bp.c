@@ -1093,9 +1093,9 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
 /* As opposed to open_file, open_stream opens the first step in the file only.
  * The lock_mode for file reading is ignored for now.
  */
-ADIOS_FILE * adios_read_bp_open_stream (const char * fname, MPI_Comm comm, enum ADIOS_LOCKMODE lock_mode, float timeout_sec)
+ADIOS_FILE * adios_read_bp_open (const char * fname, MPI_Comm comm, enum ADIOS_LOCKMODE lock_mode, float timeout_sec)
 {
-    log_debug ("adios_read_bp_open_stream\n");
+    log_debug ("adios_read_bp_open\n");
 
     ADIOS_FILE * fp = (ADIOS_FILE *) malloc (sizeof (ADIOS_FILE));
     assert (fp);

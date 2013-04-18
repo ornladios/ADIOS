@@ -17,7 +17,7 @@ if (!strcasecmp (buf,b)) \
 #define ASSIGN_FNS(a,b) \
 (*t) [b].adios_init_method_fn = adios_read_##a##_init_method; \
 (*t) [b].adios_finalize_method_fn = adios_read_##a##_finalize_method; \
-(*t) [b].adios_open_stream_fn = adios_read_##a##_open_stream; \
+(*t) [b].adios_open_fn = adios_read_##a##_open; \
 (*t) [b].adios_open_file_fn = adios_read_##a##_open_file; \
 (*t) [b].adios_close_fn = adios_read_##a##_close; \
 (*t) [b].adios_advance_step_fn = adios_read_##a##_advance_step; \

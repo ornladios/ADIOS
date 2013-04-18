@@ -34,8 +34,8 @@ int main (int argc, char ** argv)
 
     adios_read_init_method (ADIOS_READ_METHOD_BP, comm, "verbose=4");
 
-    fp = adios_read_open_stream ("adios_globaltime.bp", ADIOS_READ_METHOD_BP,
-                                 comm, ADIOS_LOCKMODE_NONE, 0);
+    fp = adios_read_open ("adios_globaltime.bp", ADIOS_READ_METHOD_BP,
+                          comm, ADIOS_LOCKMODE_NONE, 0);
     vi = adios_inq_var (fp, "temperature");
     adios_inq_var_blockinfo (fp, vi);
 

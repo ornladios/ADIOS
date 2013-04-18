@@ -17,7 +17,7 @@
 #define FORWARD_DECLARE(a) \
 int adios_read_##a##_init_method (MPI_Comm comm, PairStruct *params); \
 int adios_read_##a##_finalize_method (); \
-ADIOS_FILE * adios_read_##a##_open_stream (const char * fname, MPI_Comm comm, enum ADIOS_LOCKMODE lock_mode, float timeout_sec); \
+ADIOS_FILE * adios_read_##a##_open (const char * fname, MPI_Comm comm, enum ADIOS_LOCKMODE lock_mode, float timeout_sec); \
 ADIOS_FILE * adios_read_##a##_open_file (const char * fname, MPI_Comm comm); \
 int adios_read_##a##_close (ADIOS_FILE *fp); \
 int adios_read_##a##_advance_step (ADIOS_FILE *fp, int last, float timeout_sec); \
@@ -65,7 +65,7 @@ FORWARD_DECLARE(datatap)
 
 typedef int  (* ADIOS_INIT_METHOD_FN) (MPI_Comm comm, PairStruct * params);
 typedef int  (* ADIOS_FINALIZE_METHOD_FN) ();
-typedef ADIOS_FILE * (* ADIOS_OPEN_STREAM_FN) (const char * fname, MPI_Comm comm, 
+typedef ADIOS_FILE * (* ADIOS_OPEN_FN) (const char * fname, MPI_Comm comm, 
                                  enum ADIOS_LOCKMODE lock_mode, float timeout_sec);
 typedef ADIOS_FILE * (* ADIOS_OPEN_FILE_FN) (const char * fname, MPI_Comm comm);
 typedef int  (* ADIOS_CLOSE_FN) (ADIOS_FILE *fp);
@@ -89,7 +89,7 @@ struct adios_read_hooks_struct
 {
     ADIOS_INIT_METHOD_FN            adios_init_method_fn;
     ADIOS_FINALIZE_METHOD_FN        adios_finalize_method_fn;
-    ADIOS_OPEN_STREAM_FN            adios_open_stream_fn;
+    ADIOS_OPEN_FN                   adios_open_fn;
     ADIOS_OPEN_FILE_FN              adios_open_file_fn;
     ADIOS_CLOSE_FN                  adios_close_fn;
     ADIOS_ADVANCE_STEP_FN           adios_advance_step_fn;

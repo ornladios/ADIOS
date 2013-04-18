@@ -31,13 +31,13 @@ int adios_read_finalize_method(enum ADIOS_READ_METHOD method)
     return retval;
 }
 
-ADIOS_FILE * adios_read_open_stream (const char * fname,
-                                     enum ADIOS_READ_METHOD method,
-                                     MPI_Comm comm,
-                                     enum ADIOS_LOCKMODE lock_mode,
-                                     float timeout_sec)
+ADIOS_FILE * adios_read_open (const char * fname,
+                              enum ADIOS_READ_METHOD method,
+                              MPI_Comm comm,
+                              enum ADIOS_LOCKMODE lock_mode,
+                              float timeout_sec)
 {
-    return common_read_open_stream (fname, method, comm, lock_mode, timeout_sec);
+    return common_read_open (fname, method, comm, lock_mode, timeout_sec);
 }
 
 ADIOS_FILE * adios_read_open_file (const char * fname,

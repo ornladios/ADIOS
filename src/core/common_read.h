@@ -22,11 +22,11 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
 
 int common_read_finalize_method(enum ADIOS_READ_METHOD method);
 
-ADIOS_FILE * common_read_open_stream (const char * fname,
-                                     enum ADIOS_READ_METHOD method,
-                                     MPI_Comm comm,
-                                     enum ADIOS_LOCKMODE lock_mode,
-                                     float timeout_sec);
+ADIOS_FILE * common_read_open (const char * fname,
+                               enum ADIOS_READ_METHOD method,
+                               MPI_Comm comm,
+                               enum ADIOS_LOCKMODE lock_mode,
+                               float timeout_sec);
 
 ADIOS_FILE * common_read_open_file   (const char * fname,
                                      enum ADIOS_READ_METHOD method,

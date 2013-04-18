@@ -74,7 +74,7 @@ All reading methods understand and can serve read requests over such selections.
 First, before opening a file/stream, we have to choose a reading method and initialize it with the \linebreak \verb+adios_read_init_method()+. Also, an \verb+adios_read_finalize_method()+ is necessary at the end of the application run. Note, that there is a separate initialization call for each read method the application intends to use.
 
 A file has to be opened with \verb+adios_read_open_file(fname, method, comm)+ if the application wants to handle it as file (all steps accessible at once). A name, a read method and an MPI communicator should be provided. A stream (or a file handled as a stream) has to be opened with \linebreak
-\verb+adios_read_open_stream(fname, method, comm, lock_mode, timeout_msec)+.  A locking strategy has to be specified and some timeout can be specified for waiting for the stream to appear.  
+\verb+adios_read_open(fname, method, comm, lock_mode, timeout_msec)+.  A locking strategy has to be specified and some timeout can be specified for waiting for the stream to appear.  
 
 In C, a transparent data struct is returned (\verb+ADIOS_FILE+), which enumerates the list of variables and attributes,  the current step and the available steps in the staging memory at the time of opening. The available steps are updated whenever seeking with \verb+adios_advance_step()+. Seeking is allowed to the next available step or to the last (newest) available step, with the possible errors of not finding any new step or finding that the stream has terminated. The current step can be released without advancing the step too, to free resources in the staging area. This optimization call is highly encouraged in every application to give free space to the writing application as early as possible. 
 
@@ -258,11 +258,11 @@ Possible errors (adios\_errno values)
 
 
 \begin{lstlisting}[alsolanguage=C]
-ADIOS_FILE * adios_read_open_stream (const char * fname, 
-                                     enum ADIOS_READ_METHOD method, 
-                                     MPI_Comm comm, 
-                                     enum ADIOS_LOCKMODE lock_mode,
-                                     float timeout_sec);
+ADIOS_FILE * adios_read_open (const char * fname, 
+                              enum ADIOS_READ_METHOD method, 
+                              MPI_Comm comm, 
+                              enum ADIOS_LOCKMODE lock_mode,
+                              float timeout_sec);
 \end{lstlisting}
 
 \noindent The returned ADIOS\_FILE structure includes the following information:
@@ -915,8 +915,8 @@ subroutine adios_read_finalize_method (method, err)
     integer,        intent(out) :: err
 end subroutine
 
-subroutine adios_read_open_stream (fp, fname, method, comm, lockmode, 
-                                   timeout_msec, err)
+subroutine adios_read_open (fp, fname, method, comm, lockmode, 
+                            timeout_msec, err)
     integer*8,      intent(out) :: fp
     character(*),   intent(in)  :: fname
     integer,        intent(in)  :: method
@@ -1322,13 +1322,13 @@ The opening of a stream has to be repeated in case the stream is not yet availab
 
 \begin{lstlisting}[numbers=left, numberstyle=\color{gray}, stepnumber=2,
                    caption={While loop to open a stream},  label=code:open_stream]
-fp = adios_read_open_stream ("myfile.bp", ADIOS_READ_METHOD_BP, comm, 
-                             ADIOS_LOCKMODE_CURRENT, timeout_msec);
+fp = adios_read_open ("myfile.bp", ADIOS_READ_METHOD_BP, comm, 
+                      ADIOS_LOCKMODE_CURRENT, timeout_msec);
 while (adios_errno == err_file_not_found) {
     fprintf (stderr, "rank %d: Wait on stream: %s\n", rank, adios_errmsg());
     sleep(1);
-    fp = adios_read_open_stream ("myfile.bp", comm, 
-                                 ADIOS_LOCKMODE_CURRENT, timeout_msec);
+    fp = adios_read_open ("myfile.bp", comm, 
+                          ADIOS_LOCKMODE_CURRENT, timeout_msec);
 }
 if (adios_errno == err_end_of_stream) {
     // stream has been gone before we tried to open
@@ -1409,8 +1409,8 @@ First, we need to tell the reading method how much maximum memory it can use for
                              caption={Read variable with auto selection in chunks from a stream}, label=code:auto_read_chunks]
 adios_read_init_method (ADIOS_READ_METHOD_DATASPACES, comm, 
                         "max_chunk_size=100"); // 100 MB 
-fp = adios_read_open_stream ("myfile.bp", ADIOS_READ_METHOD_BP, comm,
-                             ADIOS_LOCKMODE_CURRENT, 0); // 0: wait forever
+fp = adios_read_open ("myfile.bp", ADIOS_READ_METHOD_BP, comm,
+                      ADIOS_LOCKMODE_CURRENT, 0); // 0: wait forever
 vi = adios_inq_var (fp, "P");
 adios_schedule_read (fp, s, "P", 0, 1, `\color{red}{\bf NULL}`);
 adios_perform_reads (fp, `\color{red}{\bf 0}`);   

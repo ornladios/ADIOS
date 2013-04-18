@@ -219,11 +219,14 @@ int adios_read_finalize_method(enum ADIOS_READ_METHOD method);
  *       err_end_of_stream         Stream has ended, nothing is available and
  *                                 no more steps should be expected.
  */
-ADIOS_FILE * adios_read_open_stream (const char * fname, 
-                                     enum ADIOS_READ_METHOD method, 
-                                     MPI_Comm comm, 
-                                     enum ADIOS_LOCKMODE lock_mode,
-                                     float timeout_sec);
+ADIOS_FILE * adios_read_open (const char * fname, 
+                              enum ADIOS_READ_METHOD method, 
+                              MPI_Comm comm, 
+                              enum ADIOS_LOCKMODE lock_mode,
+                              float timeout_sec);
+
+/* Backward compatibility to 1.5 */
+#define adios_read_open_stream adios_read_open
 
 /** Open an adios file as a file.
  *  Each variable can have different number of steps, which is reported in adios_inq_var(). 

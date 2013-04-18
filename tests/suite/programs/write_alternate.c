@@ -403,8 +403,8 @@ int read_stream ()
     reset_readvars();
 
     log ("Read as stream and check data in %s\n", FILENAME);
-    f = adios_read_open_stream (FILENAME, ADIOS_READ_METHOD_BP, comm,
-                                ADIOS_LOCKMODE_NONE, 0.0);
+    f = adios_read_open (FILENAME, ADIOS_READ_METHOD_BP, comm,
+                         ADIOS_LOCKMODE_NONE, 0.0);
     if (f == NULL) {
         printE ("Error at opening file as stream: %s\n", rank, adios_errmsg());
         return 1;

@@ -283,7 +283,7 @@ static int ds_unpack_file_info (ADIOS_FILE *fp, char * buf, int buf_len)
     ds->group_name = (char *) malloc (strlen(b)+1);
     if (!ds->group_name) {
         adios_error (err_no_memory, 
-                "Could not allocate buffer for group name in adios_read_open_stream()\n");
+                "Could not allocate buffer for group name in adios_read_open()\n");
         free(fp);
         return 1;
     }
@@ -726,15 +726,15 @@ ADIOS_FILE * adios_read_dataspaces_open_file (const char * fname, MPI_Comm comm)
 {
     adios_error (err_operation_not_supported, 
                  "DATASPACES staging method does not support file mode for reading. "
-                 "Use adios_read_open_stream() to open a dataset.\n");
+                 "Use adios_read_open() to open a dataset.\n");
     return NULL;
 }
 
 
-ADIOS_FILE * adios_read_dataspaces_open_stream (const char * fname, 
-                                                MPI_Comm comm, 
-                                                enum ADIOS_LOCKMODE lock_mode, 
-                                                float timeout_sec)
+ADIOS_FILE * adios_read_dataspaces_open (const char * fname, 
+                                         MPI_Comm comm, 
+                                         enum ADIOS_LOCKMODE lock_mode, 
+                                         float timeout_sec)
 {
     ADIOS_FILE * fp;
     struct dataspaces_data_struct * ds;
@@ -1249,7 +1249,7 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE *fp, read_request * r)
         ds->chunk = (ADIOS_VARCHUNK *) malloc (sizeof (ADIOS_VARCHUNK));
     if (!ds->chunk) {
         adios_error (err_no_memory, 
-                "Could not allocate buffer for group name in adios_read_open_stream()\n");
+                "Could not allocate buffer for group name in adios_read_open()\n");
         return NULL;
     }
     ds->chunk->varid = r->varid;

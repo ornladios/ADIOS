@@ -37,7 +37,7 @@ module adios_read_mod
             integer,        intent(out) :: err
         end subroutine
 
-        subroutine adios_read_open_stream (fp, fname, method, comm, lockmode, timeout_sec, err)
+        subroutine adios_read_open (fp, fname, method, comm, lockmode, timeout_sec, err)
             implicit none
             integer*8,      intent(out) :: fp
             character(*),   intent(in)  :: fname
@@ -773,7 +773,6 @@ module adios_read_mod
 
 
     contains 
-
 
     !
     ! ADIOS_SCHEDULE_READ procedures
@@ -2080,6 +2079,21 @@ module adios_read_mod
             integer,        intent(in)  :: err 
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
+        end subroutine
+
+    !
+    ! Backward compatibility for 1.4
+    !
+        subroutine adios_read_open_stream (fp, fname, method, comm, lockmode, timeout_sec, err)
+            implicit none
+            integer*8,      intent(out) :: fp
+            character(*),   intent(in)  :: fname
+            integer,        intent(in)  :: method
+            integer,        intent(in)  :: comm
+            integer,        intent(in)  :: lockmode
+            real,           intent(in)  :: timeout_sec
+            integer,        intent(out) :: err
+            call adios_read_open (fp, fname, method, comm, lockmode, timeout_sec, err)
         end subroutine
 
 end module

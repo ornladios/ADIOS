@@ -147,18 +147,18 @@ int common_read_finalize_method(enum ADIOS_READ_METHOD method)
 }
 
 
-ADIOS_FILE * common_read_open_stream (const char * fname, 
-                                      enum ADIOS_READ_METHOD method, 
-                                      MPI_Comm comm, 
-                                      enum ADIOS_LOCKMODE lock_mode, 
-                                      float timeout_sec)
+ADIOS_FILE * common_read_open (const char * fname, 
+                               enum ADIOS_READ_METHOD method, 
+                               MPI_Comm comm, 
+                               enum ADIOS_LOCKMODE lock_mode, 
+                               float timeout_sec)
 {
     ADIOS_FILE * fp;
     struct common_read_internals_struct * internals; 
 
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
         adios_error (err_invalid_read_method, 
-            "Invalid read method (=%d) passed to adios_read_open_stream().\n", (int)method);
+            "Invalid read method (=%d) passed to adios_read_open().\n", (int)method);
         return NULL;
     } 
 
@@ -171,7 +171,7 @@ ADIOS_FILE * common_read_open_stream (const char * fname,
     internals->method = method;
     internals->read_hooks = adios_read_hooks;
 
-    fp = adios_read_hooks[internals->method].adios_open_stream_fn (fname, comm, lock_mode, timeout_sec);
+    fp = adios_read_hooks[internals->method].adios_open_fn (fname, comm, lock_mode, timeout_sec);
 
     // save the method and group information in fp->internal_data
     if (fp){
