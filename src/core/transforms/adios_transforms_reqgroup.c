@@ -1,6 +1,28 @@
 /*
  * adios_transforms_reqgroup.c
  *
+ * All node types from the transform read request tree are implemented here.
+ *
+ * Note on use of PREPEND rather than APPEND when adding read requests: the ultimate
+ * goal is to ensure all raw_read_requests are scheduled with the I/O transport layer
+ * according to the pre-order traversal of *how they were added* (not necessarily on
+ * actual tree). For instance, if pg_reqgroup A is added before pg_reqgroup B, then
+ * all raw_read_requests of A should be scheduled before those of B, and within these
+ * groups, in the same order they were appended.
+ *
+ * However, currently the Read BP transport method stores read requests in *reverse order*
+ * from how they are scheduled (internally, it does a list prepend). Thus, the simplest way
+ * to counteract this is to also use list prepends in the read request tree, causing a
+ * pre-order traversal to yield raw_read_requests in reverse order. When they are scheduled
+ * in this order, they will be re-reversed, thus finally ending up in the correct order.
+ *
+ * This problem could also be solved by maintaining list appends in the tree, and then
+ * reversing the list orders before scheduling, or simply iterating over the tree in
+ * post-order traversal (although this would require either reworking the singly-linked
+ * list structure, or using a fancy algorithm that reverses the list, then reverses it
+ * again during iteration). For now, this approach is the safest and most straightforward.
+ *
+ *
  *  Created on: Jul 30, 2012
  *      Author: David A. Boyuka II
  */
@@ -31,16 +53,23 @@
 // Generic list manipulation
 // Assumes the list node struct has a ->next field
 
-#define LIST_APPEND(head, elem, elem_type)         \
-    if (!(head)) {                                \
-        (head) = (elem);                        \
-    } else {                                    \
-        elem_type *_cur = (head);                \
-        while (_cur->next)                        \
-            _cur = _cur->next;                    \
-        _cur->next = (elem);                    \
-    }                                            \
+#define LIST_APPEND(head, elem, elem_type) \
+    if (!(head)) {                         \
+        (head) = (elem);                   \
+    } else {                               \
+        elem_type *_cur = (head);          \
+        while (_cur->next)                 \
+            _cur = _cur->next;             \
+        _cur->next = (elem);               \
+    }                                      \
 
+#define LIST_PREPEND(head, elem, elem_type) \
+    if (!(head)) {                          \
+        (head) = (elem);                    \
+    } else {                                \
+        (elem)->next = (head);              \
+        (head) = elem;                      \
+    }                                       \
 
 #define LIST_REMOVE(head, elem, elem_type, removed) \
     LIST_REMOVE_PRED(head, (_cur == (elem)), elem_type, removed)
@@ -200,7 +229,7 @@ adios_transform_pg_read_request * adios_transform_pg_read_request_new(
 }
 
 void adios_transform_raw_read_request_append(adios_transform_pg_read_request *pg_reqgroup, adios_transform_raw_read_request *subreq) {
-    LIST_APPEND(pg_reqgroup->subreqs, subreq, adios_transform_raw_read_request);
+    LIST_PREPEND(pg_reqgroup->subreqs, subreq, adios_transform_raw_read_request);
     pg_reqgroup->num_subreqs++;
 }
 
@@ -277,7 +306,7 @@ adios_transform_read_request * adios_transform_read_request_new(
 }
 
 void adios_transform_pg_read_request_append(adios_transform_read_request *reqgroup, adios_transform_pg_read_request *pg_reqgroup) {
-    LIST_APPEND(reqgroup->pg_reqgroups, pg_reqgroup, adios_transform_pg_read_request);
+    LIST_PREPEND(reqgroup->pg_reqgroups, pg_reqgroup, adios_transform_pg_read_request);
     reqgroup->num_pg_reqgroups++;
 }
 
@@ -298,8 +327,8 @@ adios_transform_pg_read_request * adios_transform_pg_read_request_pop(adios_tran
 }
 
 void adios_transform_read_request_append(adios_transform_read_request **head, adios_transform_read_request *new_reqgroup) {
-    LIST_APPEND(*head, new_reqgroup, adios_transform_read_request);
-    }
+    LIST_PREPEND(*head, new_reqgroup, adios_transform_read_request);
+}
 
 adios_transform_read_request * adios_transform_read_request_remove(adios_transform_read_request **head, adios_transform_read_request *reqgroup) {
     adios_transform_read_request *removed;
