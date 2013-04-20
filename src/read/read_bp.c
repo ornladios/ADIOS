@@ -31,6 +31,11 @@
 #include "dmalloc.h"
 #endif
 
+// NCSU ALACRITY-ADIOS: Define this macro to print a message every time a PG is about to be
+//   accessed via bounding box or writeblock selection (and also point selection, since it's
+//   reduced to bounding boxes)
+//#define DEBUG_PRINT_PG_ACCESSES
+
 static int chunk_buffer_size = 1024*1024*16;
 static int poll_interval_msec = 10000; // 10 secs by default
 static int show_hidden_attrs = 0; // don't show hidden attr by default
@@ -689,6 +694,10 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                 {
                     continue;
                 }
+
+#ifdef DEBUG_PRINT_PG_ACCESSES
+                printf("[BB] Reading from PG %d\n", idx);
+#endif
 
                 /* determined how many (fastest changing) dimensions can we read in in one read */
                 int hole_break;
@@ -3427,6 +3436,10 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
     idx = wb->is_absolute_index ? wb->index : adios_wbidx_to_pgidx (fp, r);
     if (!wb->is_absolute_index) printf("Timestep-relative writeblock index used!\n");
     assert (idx >= 0);
+
+#ifdef DEBUG_PRINT_PG_ACCESSES
+    printf("[WB] Reading from PG %d\n", idx);
+#endif
 
     ndim = v->characteristics [idx].dims.count;
     size_of_type = bp_get_type_size (v->type, v->characteristics [idx].value);
