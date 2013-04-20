@@ -56,10 +56,10 @@ static int intersect_segments(uint64_t start1, uint64_t len1, uint64_t start2, u
         return 0;
 
     if (inter_start) {
-        *inter_start = start2;					// Intersection starts at the beginning of the later segment
+        *inter_start = start2;                    // Intersection starts at the beginning of the later segment
     }
     if (inter_len) {
-        inter_end = end1 <= end2 ? end1 : end2;	// Intersection ends at the earlier of the two segment ends
+        inter_end = end1 <= end2 ? end1 : end2;    // Intersection ends at the earlier of the two segment ends
         *inter_len = inter_end - *inter_start;
     }
 
@@ -340,7 +340,7 @@ void copy_subvolume_ragged_offset(void *dst, const void *src, int ndim, const ui
 
     // Compute whether the memory regions for the copy overlap
     // If so, we need to use a safer copy method
-    {
+    if (0) { // FOR NOW, DON'T DO THIS, AS WE NEVER USE OVERLAPPING BUFFERS
         uint64_t dst_end_offset = dst_offset;
         uint64_t src_end_offset = src_offset;
         // Match the stride counts as executed by the helper function: all but
@@ -376,25 +376,25 @@ void copy_subvolume_ragged_offset(void *dst, const void *src, int ndim, const ui
     // Finally, delegate to the recursive worker function
     if (buffers_intersect) {
         copy_subvolume_helper_safe(
-                (char*)dst + dst_offset,			/* Offset dst buffer to the first element */
-                (char*)src + src_offset,			/* Offset src buffer to the first element */
-                last_noncovering_dim + 1,			/* Number of dimensions, modified for collapsed contiguous dimensions */
-                subv_dims,							/* Subvolume dimensions (modified to collapse all contiguous dimensions) */
-                dst_strides,						/* dst buffer dimension strides */
-                src_strides,						/* src buffer dimension strides */
-                datum_type,							/* The datatype of the buffer elements */
-                swap_endianness == adios_flag_yes	/* Whether to swap endianness */
+                (char*)dst + dst_offset,            /* Offset dst buffer to the first element */
+                (char*)src + src_offset,            /* Offset src buffer to the first element */
+                last_noncovering_dim + 1,           /* Number of dimensions, modified for collapsed contiguous dimensions */
+                subv_dims,                          /* Subvolume dimensions (modified to collapse all contiguous dimensions) */
+                dst_strides,                        /* dst buffer dimension strides */
+                src_strides,                        /* src buffer dimension strides */
+                datum_type,                         /* The datatype of the buffer elements */
+                swap_endianness == adios_flag_yes   /* Whether to swap endianness */
         );
     } else {
         copy_subvolume_helper(
-                (char*)dst + dst_offset,			/* Offset dst buffer to the first element */
-                (char*)src + src_offset,			/* Offset src buffer to the first element */
-                last_noncovering_dim + 1,			/* Number of dimensions, modified for collapsed contiguous dimensions */
-                subv_dims,							/* Subvolume dimensions (modified to collapse all contiguous dimensions) */
-                dst_strides,						/* dst buffer dimension strides */
-                src_strides,						/* src buffer dimension strides */
-                datum_type,							/* The datatype of the buffer elements */
-                swap_endianness == adios_flag_yes	/* Whether to swap endianness */
+                (char*)dst + dst_offset,            /* Offset dst buffer to the first element */
+                (char*)src + src_offset,            /* Offset src buffer to the first element */
+                last_noncovering_dim + 1,           /* Number of dimensions, modified for collapsed contiguous dimensions */
+                subv_dims,                          /* Subvolume dimensions (modified to collapse all contiguous dimensions) */
+                dst_strides,                        /* dst buffer dimension strides */
+                src_strides,                        /* src buffer dimension strides */
+                datum_type,                         /* The datatype of the buffer elements */
+                swap_endianness == adios_flag_yes   /* Whether to swap endianness */
         );
     }
 
