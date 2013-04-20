@@ -3389,6 +3389,7 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
 {
 #ifdef WITH_TIMER
     timer_start ("read_bp_read_var_wb");
+    timer_start ("read_bp_read_var_wb_init");
 #endif
 
     BP_PROC * p = (BP_PROC *)fp->fh;
@@ -3412,17 +3413,22 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
     data = r->data;
     varid = map_req_varid (fp, r->varid);
     v = bp_find_var_byid (fh, varid);
-    time = adios_step_to_time (fp, r->varid, r->from_steps);
+    //time = adios_step_to_time (fp, r->varid, r->from_steps); // NCSU ALACRITY-ADIOS: This is burning time for no reason
 
     // NCSU ALACRITY-ADIOS: Add support for absolute PG index for efficiency
     assert(r->sel->type == ADIOS_SELECTION_WRITEBLOCK);
     wb = &r->sel->u.block;
 
     idx = wb->is_absolute_index ? wb->index : adios_wbidx_to_pgidx (fp, r);
+    if (!wb->is_absolute_index) printf("Timestep-relative writeblock index used!\n");
     assert (idx >= 0);
 
     ndim = v->characteristics [idx].dims.count;
     size_of_type = bp_get_type_size (v->type, v->characteristics [idx].value);
+
+#ifdef WITH_TIMER
+    timer_stop ("read_bp_read_var_wb_init");
+#endif
 
     if (ndim == 0)
     {
@@ -3475,24 +3481,24 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
     }
     else
     {
-        slice_size = size_of_type;
-
-        /* To get ldims for the chunk and then calculate payload size */
-        bp_get_dimension_characteristics (&(v->characteristics[idx]),
-                ldims, gdims, offsets);
-
-        for (j = 0; j < ndim; j++)
-        {
-            slice_size *= ldims [j];
-        }
-
         // NCSU ALACRITY-ADIOS: Added sub-PG writeblock selection support
         // If this is a sub-PG selection, use nelements to compute slice_size
-        // instead (safety assert() for now; if deemed safe, the above block
-        // computing slice_size can be eliminated via conditional in this case)
+        // instead
         if (wb->is_sub_pg_selection) {
             // The start and end of the sub-PG selection must fall within the PG
             slice_size = wb->nelements * size_of_type;
+        } else {
+            // Else, do the old method of computing PG size from bounds
+            slice_size = size_of_type;
+
+            /* To get ldims for the chunk and then calculate payload size */
+            bp_get_dimension_characteristics (&(v->characteristics[idx]),
+                    ldims, gdims, offsets);
+
+            for (j = 0; j < ndim; j++)
+            {
+                slice_size *= ldims [j];
+            }
         }
 
         r->datasize = slice_size;
