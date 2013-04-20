@@ -51,7 +51,7 @@ extern struct adios_transport_struct * adios_transports;
 ///////////////////////////////////////////////////////////////////////////////
 int common_adios_init (const char * config)
 {
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_init ();
 #endif
 
@@ -85,7 +85,7 @@ int common_adios_finalize (int mype)
 
     adios_cleanup ();
 
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_finalize ();
 #endif
 
@@ -107,7 +107,7 @@ int common_adios_open (int64_t * fd, const char * group_name
                 ,const char * name, const char * file_mode, void * comm
                )
 {
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_start ("adios_open_to_close");
     timer_start ("adios_open");
 #endif
@@ -211,7 +211,7 @@ int common_adios_open (int64_t * fd, const char * group_name
 
     *fd = (int64_t) fd_p;
 
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop ("adios_open");
 #endif
     return 0;
@@ -230,7 +230,7 @@ int common_adios_group_size (int64_t fd_p
                      ,uint64_t * total_size
                      )
 {
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_start ("adios_group_size");
 #endif
 
@@ -249,7 +249,7 @@ int common_adios_group_size (int64_t fd_p
         fd->write_size_bytes = 0;
         fd->buffer = 0;
         *total_size = 0;
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop ("adios_group_size");
 #endif
         return 0;
@@ -405,7 +405,7 @@ int common_adios_group_size (int64_t fd_p
         }
     }
 
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop ("adios_group_size");
 #endif
     // each var will be added to the buffer by the adios_write calls
@@ -573,7 +573,7 @@ static int common_adios_write_transform_helper(struct adios_file_struct * fd, st
  */
 int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct * v, void * var)
 {
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_start ("adios_write");
 #endif
     struct adios_method_list_struct * m = fd->group->methods;
@@ -597,7 +597,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
     // Else, do a transform
     else
     {
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_start ("adios_transform");
 #endif
         int success = common_adios_write_transform_helper(fd, v);
@@ -608,7 +608,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
             log_error("Error: unable to apply transform %s to variable %s; likely ran out of memory, check previous error messages\n", adios_transform_plugin_primary_xml_alias(v->transform_type), v->name);
             // FIXME: Reverse the transform metadata and write raw data as usual
         }
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop ("adios_transform");
 #endif
     }
@@ -643,7 +643,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
     }
 
     v->write_count++;
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop ("adios_write");
 #endif
     // printf ("var: %s written %d\n", v->name, v->write_count);
@@ -915,7 +915,7 @@ int common_adios_stop_calculation ()
 ///////////////////////////////////////////////////////////////////////////////
 int common_adios_close (int64_t fd_p)
 {
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_start ("adios_close");
 #endif
 
@@ -930,7 +930,7 @@ int common_adios_close (int64_t fd_p)
     if (m && m->next == NULL && m->method->m == ADIOS_METHOD_NULL)
     {
         // nothing to do so just return
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop ("adios_close");
     timer_stop ("adios_open_to_close");
 #endif
@@ -1066,7 +1066,7 @@ int common_adios_close (int64_t fd_p)
     }
 
     free ((void *) fd_p);
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop ("adios_close");
     timer_stop ("adios_open_to_close");
 //    printf ("Timers, ");

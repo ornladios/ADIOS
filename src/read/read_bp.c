@@ -42,10 +42,10 @@ static int adios_step_to_time (const ADIOS_FILE * fp, int varid, int from_steps)
 static int map_req_varid (const ADIOS_FILE * fp, int varid);
 static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r);
 
-#ifdef WITH_TIMER
+//#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
 uint64_t totalSeekCount = 0;
 uint64_t totalReadLength = 0;
-#endif
+//#endif
 
 // NCSU - For custom memory allocation
 #define CALLOC(var, num, sz, comment)\
@@ -350,7 +350,7 @@ static int get_new_step (ADIOS_FILE * fp, const char * fname, MPI_Comm comm, int
 */
 static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
 {
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("read_bp_read_var");
 #endif
     BP_PROC * p;
@@ -434,7 +434,7 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
             break;
     }
 
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("read_bp_read_var");
 #endif
     return chunk;
@@ -446,7 +446,7 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
  */
 static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
 {
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("read_bp_read_var_bb");
 #endif
     BP_PROC * p;
@@ -576,21 +576,21 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
             {
             if (!has_subfile)
             {
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("read_bp_read_var_bb_mpiread");
 #endif
                 MPI_FILE_READ_OPS1
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("read_bp_read_var_bb_mpiread");
 #endif
             }
             else
             {
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("read_bp_read_var_bb_mpiread");
 #endif
                 MPI_FILE_READ_OPS2
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("read_bp_read_var_bb_mpiread");
 #endif
             }
@@ -598,11 +598,11 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
             else
             {
                 slice_offset = 0;
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("read_bp_read_var_bb_mpiread");
 #endif
                 MPI_FILE_READ_OPS3
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("read_bp_read_var_bb_mpiread");
 #endif
             }
@@ -761,21 +761,21 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                     {
                     if (!has_subfile)
                     {
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("read_bp_read_var_bb_mpiread");
 #endif
                         MPI_FILE_READ_OPS1
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("read_bp_read_var_bb_mpiread");
 #endif
                     }
                     else
                     {
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("read_bp_read_var_bb_mpiread");
 #endif
                         MPI_FILE_READ_OPS2
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("read_bp_read_var_bb_mpiread");
 #endif
                     }
@@ -783,11 +783,11 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                     else
                     {
                          slice_offset = 0;
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("read_bp_read_var_bb_mpiread");
 #endif
                          MPI_FILE_READ_OPS3
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("read_bp_read_var_bb_mpiread");
 #endif
                     }
@@ -842,21 +842,21 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                                      + offset_in_dset * datasize * size_of_type;
                         if (!has_subfile)
                         {
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("read_bp_read_var_bb_mpiread");
 #endif
                             MPI_FILE_READ_OPS1
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("read_bp_read_var_bb_mpiread");
 #endif
                         }
                         else
                         {
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("read_bp_read_var_bb_mpiread");
 #endif
                             MPI_FILE_READ_OPS2
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("read_bp_read_var_bb_mpiread");
 #endif
                         }
@@ -864,11 +864,11 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                     else
                     {
                         slice_offset = 0;
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("read_bp_read_var_bb_mpiread");
 #endif
                         MPI_FILE_READ_OPS3
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("read_bp_read_var_bb_mpiread");
 #endif
                     }
@@ -953,21 +953,21 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                                   + start_in_payload;
                     if (!has_subfile)
                     {
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("read_bp_read_var_bb_mpiread");
 #endif
                         MPI_FILE_READ_OPS1
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("read_bp_read_var_bb_mpiread");
 #endif
                     }
                     else
                     {
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("read_bp_read_var_bb_mpiread");
 #endif
                        MPI_FILE_READ_OPS2
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("read_bp_read_var_bb_mpiread");
 #endif
                     }
@@ -975,11 +975,11 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                     else
                     {
                         slice_offset =  start_in_payload;
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("read_bp_read_var_bb_mpiread");
 #endif
                         MPI_FILE_READ_OPS3
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("read_bp_read_var_bb_mpiread");
 #endif
                     }
@@ -998,6 +998,9 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                         dset_offset = offset_in_dset[i] + dset_offset * ldims[i];
                     }
 
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_start ("adios_copy_data");
+#endif
                     copy_data (data
                               ,fh->b->buff + fh->b->offset
                               ,0
@@ -1012,6 +1015,9 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                               ,datasize
                               ,size_of_type
                               );
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_stop ("adios_copy_data");
+#endif
                 }
             }  // end for (idx ... loop over pgs
 
@@ -1043,7 +1049,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     chunk->sel = copy_selection (r->sel);
     chunk->data = r->data;
 
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("read_bp_read_var_bb");
 #endif
     return chunk;
@@ -3387,9 +3393,8 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r)
  */
 static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
 {
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("read_bp_read_var_wb");
-    timer_start ("read_bp_read_var_wb_init");
 #endif
 
     BP_PROC * p = (BP_PROC *)fp->fh;
@@ -3426,10 +3431,6 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
     ndim = v->characteristics [idx].dims.count;
     size_of_type = bp_get_type_size (v->type, v->characteristics [idx].value);
 
-#ifdef WITH_TIMER
-    timer_stop ("read_bp_read_var_wb_init");
-#endif
-
     if (ndim == 0)
     {
         r->datasize = size_of_type;
@@ -3445,21 +3446,21 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
 
         if (!has_subfile)
         {
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("read_bp_read_var_wb_mpiread");
 #endif
             MPI_FILE_READ_OPS1
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("read_bp_read_var_wb_mpiread");
 #endif
         }
         else
         {
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("read_bp_read_var_wb_mpiread");
 #endif
             MPI_FILE_READ_OPS2
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("read_bp_read_var_wb_mpiread");
 #endif
         }
@@ -3481,6 +3482,9 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
     }
     else
     {
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_start ("read_bp_read_var_wb_read_calc");
+#endif
         // NCSU ALACRITY-ADIOS: Added sub-PG writeblock selection support
         // If this is a sub-PG selection, use nelements to compute slice_size
         // instead
@@ -3515,33 +3519,48 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
         if (wb->is_sub_pg_selection) {
             slice_offset += wb->element_offset * size_of_type;
         }
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_stop ("read_bp_read_var_wb_read_calc");
+#endif
 
         if (!has_subfile)
         {
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("read_bp_read_var_wb_mpiread");
 #endif
             MPI_FILE_READ_OPS1
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("read_bp_read_var_wb_mpiread");
 #endif
         }
         else
         {
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("read_bp_read_var_wb_mpiread");
 #endif
             MPI_FILE_READ_OPS2
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("read_bp_read_var_wb_mpiread");
 #endif
         }
 
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_start ("read_bp_read_var_wb_dumb_memcpy");
+#endif
         memcpy ((char *)data, fh->b->buff + fh->b->offset, slice_size);
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_stop ("read_bp_read_var_wb_dumb_memcpy");
+#endif
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_start ("read_bp_read_var_wb_change_endian");
+#endif
         if (fh->mfooter.change_endianness == adios_flag_yes)
         {
             change_endianness ((char *)data, slice_size, v->type);
         }
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_stop ("read_bp_read_var_wb_change_endian");
+#endif
     }
 
     chunk = (ADIOS_VARCHUNK *) malloc (sizeof (ADIOS_VARCHUNK));
@@ -3555,7 +3574,7 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
     chunk->sel = copy_selection (r->sel);
     chunk->data = data;
 
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("read_bp_read_var_wb");
 #endif
     return chunk;

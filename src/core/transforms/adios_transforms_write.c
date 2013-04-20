@@ -325,13 +325,13 @@ int adios_transform_variable_data(struct adios_file_struct * fd,
     assert(var->type == adios_byte); // Assume byte array
     assert(var->transform_type != adios_transform_none);
 
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_start ("adios_transform_apply");
 #endif    
     // Transform the data, get the new length
     uint64_t transformed_len;
     int success = adios_transform_apply(var->transform_type, fd, var, &transformed_len, use_shared_buffer, wrote_to_shared_buffer);
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop ("adios_transform_apply");
 #endif    
 

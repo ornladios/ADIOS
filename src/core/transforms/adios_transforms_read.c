@@ -61,6 +61,9 @@ static ADIOS_SELECTION * create_pg_bounds(int ndim, ADIOS_VARBLOCK *orig_vb) {
 
 adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIOS_VARINFO *raw_varinfo, const ADIOS_TRANSINFO* transinfo, const ADIOS_FILE *fp,
                                                                        const ADIOS_SELECTION *sel, int from_steps, int nsteps, void *data) {
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_start ("adios_transform_generate_read_requests_init");
+#endif
     // Declares
     adios_transform_read_request *new_reqgroup;
     int blockidx, timestep, timestep_blockidx;
@@ -83,12 +86,21 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
 
     // Compute the blockidx range, given the timesteps
     compute_blockidx_range(raw_varinfo, from_steps, to_steps, &start_blockidx, &end_blockidx);
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_stop ("adios_transform_generate_read_requests_init");
+#endif
 
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_start ("adios_transform_generate_read_requests_blockinfo");
+#endif
     // Retrieve blockinfos, if they haven't been done retrieved
     if (!raw_varinfo->blockinfo)
         common_read_inq_var_blockinfo_raw(fp, raw_varinfo);
     if (!transinfo->orig_blockinfo)
         common_read_inq_trans_blockinfo(fp, raw_varinfo, transinfo);
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_stop ("adios_transform_generate_read_requests_blockinfo");
+#endif
 
     // Allocate a new, empty request group
     new_reqgroup = adios_transform_read_request_new(fp, raw_varinfo, transinfo, sel, from_steps, nsteps, data, swap_endianness);
@@ -100,13 +112,29 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
     while (blockidx != end_blockidx) { //for (blockidx = startblock_idx; blockidx != endblock_idx; blockidx++) {
         ADIOS_SELECTION *pg_bounds_sel, *pg_intersection_sel;
 
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_start ("adios_transform_generate_read_requests_createbounds");
+#endif
         raw_vb = &raw_varinfo->blockinfo[blockidx];
         orig_vb = &transinfo->orig_blockinfo[blockidx];
 
         pg_bounds_sel = create_pg_bounds(transinfo->orig_ndim, orig_vb);
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_stop ("adios_transform_generate_read_requests_createbounds");
+#endif
 
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_start ("adios_transform_generate_read_requests_intersect");
+#endif
         // Find the intersection, if any
         pg_intersection_sel = adios_selection_intersect(pg_bounds_sel, sel);
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_stop ("adios_transform_generate_read_requests_intersect");
+#endif
+
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_stop ("adios_transform_generate_read_requests_blockinfo");
+#endif
 
         if (pg_intersection_sel) {
             // Make a PG read request group, and fill it with some subrequests, and link it into the read reqgroup
@@ -119,18 +147,30 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
                                                                   pg_intersection_sel,
                                                                   pg_bounds_sel);
 
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("adios_transform_plugin_generate_read_requests");
 #endif
             adios_transform_generate_read_subrequests(new_reqgroup, new_pg_reqgroup);
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("adios_transform_plugin_generate_read_requests");
 #endif
 
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_start ("adios_transform_generate_read_requests_pgreq_append");
+#endif
             adios_transform_pg_read_request_append(new_reqgroup, new_pg_reqgroup);
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_stop ("adios_transform_generate_read_requests_pgreq_append");
+#endif
         } else {
             // Cleanup
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_start ("adios_transform_generate_read_requests_cleanup");
+#endif
             common_read_selection_delete(pg_bounds_sel);
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_stop ("adios_transform_generate_read_requests_cleanup");
+#endif
         }
 
         // Increment block indexes
@@ -161,7 +201,7 @@ static adios_datablock * finish_subreq(
         adios_transform_read_request *reqgroup,
         adios_transform_pg_read_request *pg_reqgroup,
         adios_transform_raw_read_request *subreq) {
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_start ("adios_transform_plugin_handle_data");
 #endif
     adios_datablock *result, *tmp_result;
@@ -189,7 +229,7 @@ static adios_datablock * finish_subreq(
             result = tmp_result;
         }
     }
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop ("adios_transform_plugin_handle_data");
 #endif
 
@@ -224,14 +264,14 @@ static int apply_datablock_to_result_and_free(adios_datablock *datablock,
         assert(0);
     }
 
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("adios_transform_patch_data");
 #endif
     uint64_t used_count =
             adios_patch_data(reqgroup->orig_data, 0, reqgroup->orig_sel,
                              datablock->data, datablock->ragged_offset, datablock->bounds,
                              datablock->elem_type, reqgroup->swap_endianness);
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("adios_transform_patch_data");
 #endif
 
@@ -378,7 +418,7 @@ static ADIOS_VARCHUNK * extract_chunk_from_finished_read_reqgroup(adios_transfor
 // variable, consume it, and possibly replacing it with a detransformed chunk.
 // Otherwise, do nothing.
 void adios_transform_process_read_chunk(adios_transform_read_request **reqgroups_head, ADIOS_VARCHUNK ** chunk) {
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_start ("adios_transform_handle_data");
 #endif
     adios_transform_read_request *reqgroup;
@@ -449,7 +489,7 @@ void adios_transform_process_read_chunk(adios_transform_read_request **reqgroups
         adios_transform_read_request_remove(reqgroups_head, reqgroup);
         adios_transform_read_request_free(&reqgroup);
     }
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop ("adios_transform_handle_data");
 #endif
 }
@@ -460,7 +500,7 @@ void adios_transform_process_read_chunk(adios_transform_read_request **reqgroups
  * (This function is called after a blocking perform_reads completes)
  */
 void adios_transform_process_all_reads(adios_transform_read_request **reqgroups_head) {
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("adios_transform_process_all_reads");
 #endif
     // Mark all subrequests, PG request groups and read request groups
@@ -489,29 +529,71 @@ void adios_transform_process_all_reads(adios_transform_read_request **reqgroups_
                 if (subreq->completed) continue;
 
                 // Mark the subreq as completed
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_start ("adios_transform_mark_subreq_complete");
+#endif
                 adios_transform_raw_read_request_mark_complete(reqgroup, pg_reqgroup, subreq);
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_stop ("adios_transform_mark_subreq_complete");
+#endif
                 assert(subreq->completed);
 
                 // Make the required call to the transform method to apply the results
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_start ("adios_transform_callback_subreq_completed");
+#endif
                 result = adios_transform_subrequest_completed(reqgroup, pg_reqgroup, subreq);
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_stop ("adios_transform_callback_subreq_completed");
+#endif
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_start ("adios_transform_apply_datablock_subreq");
+#endif
                 if (result) apply_datablock_to_result_and_free(result, reqgroup);
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_stop ("adios_transform_apply_datablock_subreq");
+#endif
             }
             assert(pg_reqgroup->completed);
 
             // Make the required call to the transform method to apply the results
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_start ("adios_transform_callback_pg_reqgroup_completed");
+#endif
             result = adios_transform_pg_reqgroup_completed(reqgroup, pg_reqgroup);
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_stop ("adios_transform_callback_pg_reqgroup_completed");
+#endif
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_start ("adios_transform_apply_datablock_pg_reqgroup");
+#endif
             if (result) apply_datablock_to_result_and_free(result, reqgroup);
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_stop ("adios_transform_apply_datablock_pg_reqgroup");
+#endif
         }
         assert(reqgroup->completed);
 
         // Make the required call to the transform method to apply the results
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_start ("adios_transform_callback_reqgroup_completed");
+#endif
         result = adios_transform_read_reqgroup_completed(reqgroup);
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_stop ("adios_transform_callback_reqgroup_completed");
+#endif
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_start ("adios_transform_apply_datablock_reqgroup");
+#endif
         if (result) apply_datablock_to_result_and_free(result, reqgroup);
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+    timer_stop ("adios_transform_apply_datablock_reqgroup");
+#endif
 
         // Now that the read reqgroup has been processed, free it (which also frees all children)
         adios_transform_read_request_free(&reqgroup);
     }
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("adios_transform_process_all_reads");
 #endif
 }

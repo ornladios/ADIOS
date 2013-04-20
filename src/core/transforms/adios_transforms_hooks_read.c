@@ -35,9 +35,9 @@ void adios_transform_read_init() {
     REGISTER_TRANSFORM_READ_METHOD(zlib, adios_transform_zlib);
     REGISTER_TRANSFORM_READ_METHOD(bzip2, adios_transform_bzip2);
     REGISTER_TRANSFORM_READ_METHOD(szip, adios_transform_szip);
-	REGISTER_TRANSFORM_READ_METHOD(isobar, adios_transform_isobar);
-	REGISTER_TRANSFORM_READ_METHOD(aplod, adios_transform_aplod);
-	REGISTER_TRANSFORM_READ_METHOD(alacrity, adios_transform_alacrity);
+    REGISTER_TRANSFORM_READ_METHOD(isobar, adios_transform_isobar);
+    REGISTER_TRANSFORM_READ_METHOD(aplod, adios_transform_aplod);
+    REGISTER_TRANSFORM_READ_METHOD(alacrity, adios_transform_alacrity);
     adios_transforms_initialized = 1;
 }
 

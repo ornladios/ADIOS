@@ -715,7 +715,7 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
         void                  * data)
 
 {
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("adios_schedule_read");
 #endif
     struct common_read_internals_struct * internals;
@@ -741,19 +741,19 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
 
                 internals = (struct common_read_internals_struct *) fp->internal_data;
 
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("adios_transform_generate_read_requests");
 #endif
                 // Generate the read request group and append it to the list
                 new_reqgroup = adios_transform_generate_read_reqgroup(raw_varinfo, transinfo, fp, sel, from_steps, nsteps, data);
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("adios_transform_generate_read_requests");
 #endif
 
                 // Proceed to register the read request and schedule all of its grandchild raw
                 // read requests ONLY IF a non-NULL reqgroup was returned (i.e., the user's
                 // selection intersected at least one PG).
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("adios_transform_submit_read_requests");
 #endif
                 if (new_reqgroup) {
@@ -768,7 +768,7 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
                         }
                     }
                 }
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("adios_transform_submit_read_requests");
 #endif
             } else {
@@ -787,7 +787,7 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
         retval = err_invalid_file_pointer;
     }
 
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("adios_schedule_read");
 #endif
     return retval;
@@ -797,7 +797,7 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
 //  read subrequests to answer original requests
 int common_read_perform_reads (const ADIOS_FILE *fp, int blocking)
 {
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("adios_perform_reads");
 #endif
     struct common_read_internals_struct * internals;
@@ -812,11 +812,11 @@ int common_read_perform_reads (const ADIOS_FILE *fp, int blocking)
         //   request groups completed, and reassemble via the transform method.
         //   Otherwise, do nothing.
         if (blocking) {
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("adios_transform_perform_reads");
 #endif
             adios_transform_process_all_reads(&internals->transform_reqgroups);
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("adios_transform_perform_reads");
 #endif
         } else {
@@ -826,7 +826,7 @@ int common_read_perform_reads (const ADIOS_FILE *fp, int blocking)
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_perform_reads()\n");
         retval = err_invalid_file_pointer;
     }
-#ifdef WITH_TIMER
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("adios_perform_reads");
 #endif
     return retval;
