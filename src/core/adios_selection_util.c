@@ -155,8 +155,8 @@ ADIOS_SELECTION * adios_selection_intersect_wb_wb(const ADIOS_SELECTION_WRITEBLO
 //
 
 // s2 can be selection type
-static ADIOS_SELECTION * adios_selection_intersect_bb(const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb1,
-                                                      const ADIOS_SELECTION *s2) {
+inline static ADIOS_SELECTION * adios_selection_intersect_bb(const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb1,
+                                                             const ADIOS_SELECTION *s2) {
     switch (s2->type) {
     case ADIOS_SELECTION_BOUNDINGBOX:
     {
@@ -181,8 +181,8 @@ static ADIOS_SELECTION * adios_selection_intersect_bb(const ADIOS_SELECTION_BOUN
 }
 
 // s2 can be any selection type except boundingbox
-static ADIOS_SELECTION * adios_selection_intersect_pts(const ADIOS_SELECTION_POINTS_STRUCT *pts1,
-                                                       const ADIOS_SELECTION *s2) {
+inline static ADIOS_SELECTION * adios_selection_intersect_pts(const ADIOS_SELECTION_POINTS_STRUCT *pts1,
+                                                              const ADIOS_SELECTION *s2) {
     switch (s2->type) {
     case ADIOS_SELECTION_POINTS:
     {
@@ -202,8 +202,8 @@ static ADIOS_SELECTION * adios_selection_intersect_pts(const ADIOS_SELECTION_POI
 }
 
 // s2 can be any selection except boundingbox and points
-static ADIOS_SELECTION * adios_selection_intersect_wb(const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb1,
-                                                      const ADIOS_SELECTION *s2) {
+inline static ADIOS_SELECTION * adios_selection_intersect_wb(const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb1,
+                                                             const ADIOS_SELECTION *s2) {
     switch (s2->type) {
     case ADIOS_SELECTION_WRITEBLOCK:
     {
@@ -220,8 +220,8 @@ static ADIOS_SELECTION * adios_selection_intersect_wb(const ADIOS_SELECTION_WRIT
 }
 
 // s2 can only be auto
-static ADIOS_SELECTION * adios_selection_intersect_auto(const ADIOS_SELECTION_AUTO_STRUCT *as1,
-                                                        const ADIOS_SELECTION *s2) {
+inline static ADIOS_SELECTION * adios_selection_intersect_auto(const ADIOS_SELECTION_AUTO_STRUCT *as1,
+                                                               const ADIOS_SELECTION *s2) {
     return copy_selection(s2);
 }
 

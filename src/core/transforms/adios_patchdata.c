@@ -38,10 +38,10 @@
                         srctype, dsttype);
 
 // One-to-one patch functions
-static uint64_t adios_patch_data_bb_to_bb(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *dst_bb,
-                                          void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *src_bb,
-                                          enum ADIOS_DATATYPES datum_type,
-                                          enum ADIOS_FLAG swap_endianness) {
+inline static uint64_t adios_patch_data_bb_to_bb(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *dst_bb,
+                                                 void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *src_bb,
+                                                 enum ADIOS_DATATYPES datum_type,
+                                                 enum ADIOS_FLAG swap_endianness) {
 
     const int ndim = dst_bb->ndim;
     const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *inter_bb;
@@ -94,11 +94,11 @@ static uint64_t adios_patch_data_bb_to_bb(void *dst, uint64_t dst_ragged_offset,
 // to switch the copy direction, and just branch for a few lines during the copy
 // operation. This simplifies the code a lot, and reduces the LoC in this file (although
 // this comment makes up for a good bit of that savings).
-static uint64_t adios_patch_data_bb_pts_helper(void *dst, uint64_t dst_ragged_offset, void *src, uint64_t src_ragged_offset,
-                                               const ADIOS_SELECTION_POINTS_STRUCT *pts,
-                                               const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb,
-                                               _Bool isDestPoints, enum ADIOS_DATATYPES datum_type,
-                                               enum ADIOS_FLAG swap_endianness) {
+inline static uint64_t adios_patch_data_bb_pts_helper(void *dst, uint64_t dst_ragged_offset, void *src, uint64_t src_ragged_offset,
+                                                      const ADIOS_SELECTION_POINTS_STRUCT *pts,
+                                                      const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb,
+                                                      _Bool isDestPoints, enum ADIOS_DATATYPES datum_type,
+                                                      enum ADIOS_FLAG swap_endianness) {
     const int ndim = pts->ndim;
     uint64_t i;
     int j;
@@ -163,40 +163,40 @@ static uint64_t adios_patch_data_bb_pts_helper(void *dst, uint64_t dst_ragged_of
     return pts_copied;
 }
 
-static uint64_t adios_patch_data_pts_to_bb(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *dst_bb,
-                                           void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION_POINTS_STRUCT *src_pts,
-                                           enum ADIOS_DATATYPES datum_type,
-                                           enum ADIOS_FLAG swap_endianness) {
+inline static uint64_t adios_patch_data_pts_to_bb(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *dst_bb,
+                                                  void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION_POINTS_STRUCT *src_pts,
+                                                  enum ADIOS_DATATYPES datum_type,
+                                                  enum ADIOS_FLAG swap_endianness) {
     return adios_patch_data_bb_pts_helper(dst, dst_ragged_offset, src, src_ragged_offset, src_pts, dst_bb, false, datum_type, swap_endianness);
 }
 
-static uint64_t adios_patch_data_bb_to_pts(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_POINTS_STRUCT *dst_pts,
-                                           void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *src_bb,
-                                           enum ADIOS_DATATYPES datum_type,
-                                           enum ADIOS_FLAG swap_endianness) {
+inline static uint64_t adios_patch_data_bb_to_pts(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_POINTS_STRUCT *dst_pts,
+                                                  void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *src_bb,
+                                                  enum ADIOS_DATATYPES datum_type,
+                                                  enum ADIOS_FLAG swap_endianness) {
     return adios_patch_data_bb_pts_helper(dst, dst_ragged_offset, src, src_ragged_offset, dst_pts, src_bb, true, datum_type, swap_endianness);
 }
 
-static uint64_t adios_patch_data_pts_to_pts(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_POINTS_STRUCT *dst_pts,
-                                            void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION_POINTS_STRUCT *src_pts,
-                                            enum ADIOS_DATATYPES datum_type,
-                                            enum ADIOS_FLAG swap_endianness) {
+inline static uint64_t adios_patch_data_pts_to_pts(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_POINTS_STRUCT *dst_pts,
+                                                   void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION_POINTS_STRUCT *src_pts,
+                                                   enum ADIOS_DATATYPES datum_type,
+                                                   enum ADIOS_FLAG swap_endianness) {
     PATCH_UNIMPL("points","points");
     return 0;
 }
 
-static uint64_t adios_patch_data_wb_to_wb(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_WRITEBLOCK_STRUCT *dst_wb,
-                                          void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION_WRITEBLOCK_STRUCT *src_wb,
-                                          enum ADIOS_DATATYPES datum_type,
-                                          enum ADIOS_FLAG swap_endianness) {
+inline static uint64_t adios_patch_data_wb_to_wb(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_WRITEBLOCK_STRUCT *dst_wb,
+                                                 void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION_WRITEBLOCK_STRUCT *src_wb,
+                                                 enum ADIOS_DATATYPES datum_type,
+                                                 enum ADIOS_FLAG swap_endianness) {
     PATCH_UNIMPL("writeblock","writeblock");
     return 0;
 }
 
-static uint64_t adios_patch_data_auto_to_auto(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_AUTO_STRUCT *dst_auto,
-                                              void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION_AUTO_STRUCT *src_auto,
-                                              enum ADIOS_DATATYPES datum_type,
-                                              enum ADIOS_FLAG swap_endianness) {
+inline static uint64_t adios_patch_data_auto_to_auto(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_AUTO_STRUCT *dst_auto,
+                                                     void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION_AUTO_STRUCT *src_auto,
+                                                     enum ADIOS_DATATYPES datum_type,
+                                                     enum ADIOS_FLAG swap_endianness) {
     PATCH_UNIMPL("auto","auto");
     return 0;
 }
@@ -204,10 +204,10 @@ static uint64_t adios_patch_data_auto_to_auto(void *dst, uint64_t dst_ragged_off
 
 // One-to-any patch functions
 
-static uint64_t adios_patch_data_to_bb(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *dst_bb,
-                                       void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION *src_sel,
-                                       enum ADIOS_DATATYPES datum_type,
-                                       enum ADIOS_FLAG swap_endianness) {
+inline static uint64_t adios_patch_data_to_bb(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *dst_bb,
+                                              void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION *src_sel,
+                                              enum ADIOS_DATATYPES datum_type,
+                                              enum ADIOS_FLAG swap_endianness) {
     switch (src_sel->type) {
     case ADIOS_SELECTION_BOUNDINGBOX:
     {
@@ -232,10 +232,10 @@ static uint64_t adios_patch_data_to_bb(void *dst, uint64_t dst_ragged_offset, co
 
 }
 
-static uint64_t adios_patch_data_to_pts(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_POINTS_STRUCT *dst_pts,
-                                        void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION *src_sel,
-                                        enum ADIOS_DATATYPES datum_type,
-                                        enum ADIOS_FLAG swap_endianness) {
+inline static uint64_t adios_patch_data_to_pts(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_POINTS_STRUCT *dst_pts,
+                                               void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION *src_sel,
+                                               enum ADIOS_DATATYPES datum_type,
+                                               enum ADIOS_FLAG swap_endianness) {
     switch (src_sel->type) {
     case ADIOS_SELECTION_BOUNDINGBOX:
     {
@@ -260,10 +260,10 @@ static uint64_t adios_patch_data_to_pts(void *dst, uint64_t dst_ragged_offset, c
 
 }
 
-static uint64_t adios_patch_data_to_wb(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_WRITEBLOCK_STRUCT *dst_wb,
-                                       void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION *src_sel,
-                                       enum ADIOS_DATATYPES datum_type,
-                                       enum ADIOS_FLAG swap_endianness) {
+inline static uint64_t adios_patch_data_to_wb(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_WRITEBLOCK_STRUCT *dst_wb,
+                                              void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION *src_sel,
+                                              enum ADIOS_DATATYPES datum_type,
+                                              enum ADIOS_FLAG swap_endianness) {
     switch (src_sel->type) {
     case ADIOS_SELECTION_WRITEBLOCK:
     {
@@ -283,10 +283,10 @@ static uint64_t adios_patch_data_to_wb(void *dst, uint64_t dst_ragged_offset, co
     }
 }
 
-static uint64_t adios_patch_data_to_auto(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_AUTO_STRUCT *dst_auto,
-                                         void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION *src_sel,
-                                         enum ADIOS_DATATYPES datum_type,
-                                         enum ADIOS_FLAG swap_endianness) {
+inline static uint64_t adios_patch_data_to_auto(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_AUTO_STRUCT *dst_auto,
+                                                void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION *src_sel,
+                                                enum ADIOS_DATATYPES datum_type,
+                                                enum ADIOS_FLAG swap_endianness) {
     switch (src_sel->type) {
     case ADIOS_SELECTION_AUTO:
     {

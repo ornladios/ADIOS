@@ -33,8 +33,8 @@ uint64_t compute_volume(int ndim, const uint64_t *dims) {
     return volume;
 }
 
-static int intersect_segments(uint64_t start1, uint64_t len1, uint64_t start2, uint64_t len2,
-                              uint64_t *inter_start, uint64_t *inter_len) {
+inline static int intersect_segments(uint64_t start1, uint64_t len1, uint64_t start2, uint64_t len2,
+                                     uint64_t *inter_start, uint64_t *inter_len) {
     int end1, end2;
     int inter_end;
 
