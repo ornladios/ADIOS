@@ -249,8 +249,14 @@ void list_insert_read_request_next (read_request ** h, read_request * q)
     }
     else
     {
-        q->next = head->next;
-        head->next = q;
+        // NCSU ALACRITY-ADIOS: Fixed this prepend ordering bug. Previously, prepending A, B, C, D would produce
+        //   [A, D, C, B], which causes poor seek performance for the Transforms layer versus raw Transport layer
+        //   due to backwards seeks. The fixed code now properly produces [D, C, B, A]
+
+        //q->next = head->next;
+        //head->next = q;
+        q->next = head;
+        *h = q;
     }
 
     return;
