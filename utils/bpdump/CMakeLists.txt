@@ -7,4 +7,4 @@ add_executable(bpdump bpdump.c)
 target_link_libraries(bpdump adios_internal_nompi ${ADIOSLIB_INT_LDADD})
 set_target_properties(bpdump PROPERTIES COMPILE_FLAGS "${ADIOSLIB_EXTRA_CPPFLAGS} ${ADIOSLIB_INT_CPPFLAGS} ${ADIOSLIB_INT_CFLAGS}")
 
-install(PROGRAMS bpdump DESTINATION ${bindir})
+install(PROGRAMS ${CMAKE_BINARY_DIR}/utils/bpdump/bpdump DESTINATION ${bindir})
