@@ -196,7 +196,9 @@ adios_transform_raw_read_request * adios_transform_raw_read_request_new_byte_seg
 adios_transform_raw_read_request * adios_transform_raw_read_request_new_whole_pg(const adios_transform_pg_read_request *pg_reqgroup, void *data) {
     // raw_varblock has two dimensions: PG ID and byte offset. Thus, the length of this (raw) PG is the length of the 2nd dimension.
 #ifdef RAW_READS_USE_WRITEBLOCK
-    ADIOS_SELECTION *sel = common_read_selection_writeblock(pg_reqgroup->blockidx_in_timestep);
+    // Use absolute time index, but not sub-PG read
+    ADIOS_SELECTION *sel = common_read_selection_writeblock(pg_reqgroup->blockidx_in_pg);
+    sel->u.block.is_absolute_index = 1;
     return adios_transform_raw_read_request_new(sel, data);
 #else
     const ADIOS_VARBLOCK *raw_varblock = pg_reqgroup->raw_varblock;
