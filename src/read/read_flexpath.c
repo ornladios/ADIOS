@@ -455,13 +455,10 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     }
 
     int condition;
-
+    int rank;          
     get_int_attr(attrs, attr_atom_from_string("fp_dst_condition"), &condition);   
-    int rank;       
-    
     get_int_attr(attrs, attr_atom_from_string(FP_RANK_ATTR_NAME), &rank); 
     fp->current_format = format;
-
     f = struct_list[0].field_list;
     char * curr_offset = NULL;
     int i = 0, l = 0, j = 0;
@@ -720,6 +717,10 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
 			    evgroup_format_list,
 			    group_msg_handler,
 			    adiosfile);
+    EVassoc_raw_terminal_action(fp_read_data->fp_cm,
+				fp->data_stone,
+				raw_handler,
+				(void*)adiosfile);
 
     char writer_ready_filename[200];
     char writer_info_filename[200];
@@ -803,23 +804,19 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
 
     fp->num_bridges = num_bridges;
     // clean up of writer's files
-    if(fp_read_data->fp_comm_rank == 0){
+    if(fp->rank == 0){
 	unlink(writer_info_filename);
 	unlink(writer_ready_filename);
     }	
     
     adiosfile->fh = (uint64_t)fp;
     adiosfile->current_step = 0;
-
-    EVassoc_raw_terminal_action(fp_read_data->fp_cm,
-    				fp->data_stone,
-    				raw_handler,
-    				(void*)adiosfile);
+   
     /* fprintf(stderr, "after assoc\n"); */
     //free(struct_list);
     Flush_msg msg;
     msg.type = DATA;
-    msg.rank = fp_read_data->fp_comm_rank;
+    msg.rank = fp->rank;
     msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
     EVsubmit(fp->bridges[0].flush_source, &msg, NULL);
     CMCondition_wait(fp_read_data->fp_cm, msg.condition);
@@ -927,7 +924,7 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
 {
     flexpath_file_data * fp = (flexpath_file_data*)adiosfile->fh;
     Flush_msg msg;
-    msg.rank = fp_read_data->fp_comm_rank;
+    msg.rank = fp->rank;
     msg.type = DATA;
     msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
     int i;
@@ -935,7 +932,7 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
     for(i = 0; i<num_sendees; i++)
     {
 	int sendee = fp->sendees[i];
-        fp_log("MSG","rank %d sending flush to %d\n", fp_read_data->fp_comm_rank, sendee);
+        fp_log("MSG","rank %d sending flush to %d\n", fp->rank, sendee);
 	EVsubmit(fp->bridges[sendee].flush_source, &msg, NULL);
     }
     if(blocking){    
@@ -1167,8 +1164,6 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
                 fp->sendees[fp->num_sendees-1] = reader;
             }
             if(!fp->bridges[reader].created) {
-                perr("rank %d building bridge to %d\n", 
-		    fp_read_data->fp_comm_rank, reader);
                 build_bridge(&(fp->bridges[reader]));
                 op_msg open_msg;
                 open_msg.process_id = fp->rank;
@@ -1189,8 +1184,6 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
 		   var.var_name, var.rank, fp->bridges[reader].var_source, reader);
 	        EVsubmit(fp->bridges[reader].var_source, &var, NULL);
             }
-            perr("rank %d sent var msg to %d\n", 
-	     fp_read_data->fp_comm_rank,reader);
 	}
 	v->displ = all_disp;
 	v->num_displ = need_count;
