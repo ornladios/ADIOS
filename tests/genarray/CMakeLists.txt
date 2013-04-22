@@ -20,7 +20,7 @@ add_executable(copyarray2D copyarray2D.F90)
 target_link_libraries(copyarray2D adiosf ${ADIOSLIB_LDADD})
 set_target_properties(copyarray2D PROPERTIES COMPILE_FLAGS "${ADIOSLIB_CPPFLAGS} ${ADIOSLIB_CFLAGS}")
 
-install(FILES genarray.xml genarray3d.xml job.ewok job2D.ewok DESTINATION ${PROJECT_BINARY_DIR}/tests/genarray) 
+#install(FILES genarray.xml genarray3d.xml job.ewok job2D.ewok DESTINATION ${PROJECT_BINARY_DIR}/tests/genarray) 
 
 add_custom_command(
 	OUTPUT gwrite_genarray.fh

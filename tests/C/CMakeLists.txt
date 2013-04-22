@@ -10,4 +10,4 @@ set(adios_test_c_CPPFLAGS "${ADIOSLIB_CPPFLAGS}")
 set(adios_test_c_CFLAGS "${ADIOSLIB_CFLAGS}")
 set_target_properties(adios_test_c PROPERTIES COMPILE_FLAGS "${adios_test_c_CFLAGS} ${adios_test_c_CPPFLAGS}")
 
-install(FILES config_c.xml DESTINATION ${PROJECT_BINARY_DIR}/tests/C)
+#install(FILES config_c.xml DESTINATION ${PROJECT_BINARY_DIR}/tests/C)

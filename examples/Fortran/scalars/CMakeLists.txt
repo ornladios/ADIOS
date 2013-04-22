@@ -10,4 +10,4 @@ target_link_libraries(scalars_write_f adiosf ${ADIOSLIB_LDADD})
 add_executable(scalars_read_f scalars_read.F90)
 target_link_libraries(scalars_read_f adiosf ${ADIOSLIB_LDADD})
 
-install(FILES scalars.xml gwrite_scalars.fh gread_scalars.fh job.pbs DESTINATION ${PROJECT_BINARY_DIR}/examples/Fortran/scalars)
+#install(FILES scalars.xml gwrite_scalars.fh gread_scalars.fh job.pbs DESTINATION ${PROJECT_BINARY_DIR}/examples/Fortran/scalars)

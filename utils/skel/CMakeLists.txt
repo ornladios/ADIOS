@@ -1,5 +1,7 @@
 add_subdirectory(etc)
 
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/lib/skel_have_adios_timing.py.in ${CMAKE_CURRENT_BINARY_DIR}/lib/skel_have_adios_timing.py)
+
 install(PROGRAMS bin/skel bin/set_method.sh bin/skel_extract.py bin/skel_cat.py DESTINATION ${bindir})
 
 install(FILES lib/adios.py 
@@ -12,7 +14,7 @@ install(FILES lib/adios.py
 	lib/skel_submit.py 
 	lib/skel_xml.py 
 	lib/skelconf.py
-	lib/skel_have_adios_timing.py 
+	${CMAKE_CURRENT_BINARY_DIR}/lib/skel_have_adios_timing.py 
 	lib/typeMapper.py 
 	DESTINATION ${libdir}/python)
 

@@ -40,11 +40,17 @@
 /* Define to 1 if you have the <dataspaces.h> header file. */
 #cmakedefine HAVE_DATASPACES_H 1
 
+/* Define if you have the DCMF. */
+#undef HAVE_DCMF
+
+/* Define to 1 if you have the <dcmf.h> header file. */
+#undef HAVE_DCMF_H
+
 /* Define if you have the DIMES. */
 #cmakedefine HAVE_DIMES 1
 
-/* Define to 1 if you have the <dimes.h> header file. */
-#cmakedefine HAVE_DIMES_H 1
+/* Define to 1 if you have the <dimes_interface.h> header file. */
+#undef HAVE_DIMES_INTERFACE_H
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #cmakedefine HAVE_DLFCN_H 1
@@ -98,6 +104,9 @@
 
 /* Define to 1 if you have the `nanosleep' function. */
 #cmakedefine HAVE_NANOSLEEP 1
+
+/* Define to 1 if you have the <netcdf.h> header file. */
+#cmakedefine HAVE_NC4PAR_H 1
 
 /* Define if you have NC4PAR. */
 #cmakedefine HAVE_NC4PAR 1
@@ -203,6 +212,10 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #cmakedefine HAVE_UNISTD_H 1
 
+/* Define to the sub-directory in which libtool stores uninstalled libraries.
+   */
+#undef LT_OBJDIR
+
 /* Datatap is disabled */
 #cmakedefine NO_DATATAP 1
 
@@ -210,22 +223,22 @@
 #cmakedefine NO_MINUS_C_MINUS_O 1
 
 /* Name of package */
-#cmakedefine PACKAGE "${PACKAGE}"
+#cmakedefine PACKAGE ${PACKAGE}
 
 /* Define to the address where bug reports for this package should be sent. */
-#cmakedefine PACKAGE_BUGREPORT "${PACKAGE_BUGREPORT}"
+#cmakedefine PACKAGE_BUGREPORT ${PACKAGE_BUGREPORT}
 
 /* Define to the full name of this package. */
-#cmakedefine PACKAGE_NAME "${PACKAGE_NAME}"
+#cmakedefine PACKAGE_NAME ${PACKAGE_NAME}
 
 /* Define to the full name and version of this package. */
-#cmakedefine PACKAGE_STRING "${PACKAGE_STRING}"
+#cmakedefine PACKAGE_STRING ${PACKAGE_STRING}
 
 /* Define to the one symbol short name of this package. */
-#cmakedefine PACKAGE_TARNAME "${PACKAGE_TARNAME}"
+#cmakedefine PACKAGE_TARNAME ${PACKAGE_TARNAME}
 
 /* Define to the version of this package. */
-#cmakedefine PACKAGE_VERSION "${PACKAGE_VERSION}"
+#cmakedefine PACKAGE_VERSION ${PACKAGE_VERSION}
 
 /* Define to the necessary symbol if this constant uses a non-standard name on
    your system. */
@@ -238,10 +251,10 @@
 #cmakedefine STDC_HEADERS 1
 
 /* Need to use MPI compiler for sequential utils */
-#cmakedefine USE_PARALLEL_COMPILE 1
+#cmakedefine USE_PARALLEL_COMPILER 1
 
 /* Version number of package */
-#cmakedefine VERSION "${VERSION}"
+#cmakedefine VERSION ${VERSION}
 
 /* Major version number */
 #cmakedefine VERSION_MAJOR ${VERSION_MAJOR}
@@ -253,4 +266,4 @@
 #cmakedefine VERSION_MINOR ${VERSION_MINOR}
 
 /* svn revision number */
-#cmakedefine VERSION_SVNREV "${VERSION_SVNREV}"
+#cmakedefine VERSION_SVNREV ${VERSION_SVNREV}

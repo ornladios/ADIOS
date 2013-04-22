@@ -38,6 +38,7 @@ if(BUILD_FORTRAN)
   if(BUILD_WRITE)
     add_executable(posix_method posix_method.F90 gwrite_posix_method.fh)
     target_link_libraries(posix_method adiosf ${ADIOSLIB_LDADD})
+    include_directories(${PROJECT_BINARY_DIR}/src)
     add_custom_command(
 	OUTPUT gwrite_posix_method.fh
 	COMMAND ${PROJECT_SOURCE_DIR}/utils/gpp/gpp.py ${PROJECT_SOURCE_DIR}/tests/suite/programs/posix_method.xml
@@ -46,4 +47,4 @@ if(BUILD_FORTRAN)
   endif(BUILD_WRITE)
 endif(BUILD_FORTRAN)
 
-install(FILES adios_amr_write_2vars.xml adios_amr_write.xml local_array_time.xml posix_method.xml write_alternate.xml write_read.xml DESTINATION ${PROJECT_BINARY_DIR}/tests/suite/programs)
+#install(FILES adios_amr_write_2vars.xml adios_amr_write.xml local_array_time.xml posix_method.xml write_alternate.xml write_read.xml DESTINATION ${PROJECT_BINARY_DIR}/tests/suite/programs)

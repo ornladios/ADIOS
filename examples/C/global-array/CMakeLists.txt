@@ -29,4 +29,4 @@ add_executable(adios_read_global_no_xml adios_read_global_no_xml.c)
 target_link_libraries(adios_read_global_no_xml adiosread ${ADIOSLIB_LDADD})
 set_target_properties(adios_read_global_no_xml PROPERTIES COMPILE_FLAGS "-DADIOS_USE_READ_API_1")
 
-install(FILES adios_global.xml gread_temperature.ch gwrite_temperature.ch job.pbs DESTINATION ${PROJECT_BINARY_DIR}/examples/C/global-array)
+#install(FILES adios_global.xml gread_temperature.ch gwrite_temperature.ch job.pbs DESTINATION ${PROJECT_BINARY_DIR}/examples/C/global-array)

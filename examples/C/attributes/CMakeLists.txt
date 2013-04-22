@@ -10,5 +10,5 @@ add_executable(attributes_read attributes_read.c)
 target_link_libraries(attributes_read adiosread ${ADIOSLIB_LDADD})
 set_target_properties(attributes_read PROPERTIES COMPILE_FLAGS "-DADIOS_USE_READ_API_1")
 
-install(FILES attributes.xml gwrite_temperature.ch gread_temperature.ch DESTINATION ${PROJECT_BINARY_DIR}/examples/C/attributes)
+#install(FILES attributes.xml gwrite_temperature.ch gread_temperature.ch DESTINATION ${PROJECT_BINARY_DIR}/examples/C/attributes)
 

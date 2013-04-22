@@ -244,15 +244,37 @@ set(libadios_nompi_a_SOURCES core/adios.c
                          core/adiosf_write_mod.f90 
                          core/adiosf_read_mod.f90)
 
+    set(libadiosf_v1_a_SOURCES ${libadiosf_v1_a_SOURCES} 
+                         core/adiosf_defs_mod.f90
+                         core/adiosf_write_mod.f90)
+
     set(nodist_include_HEADERS ${nodist_include_HEADERS} adios_write_mod.mod)
     set(CLEANFILES ${CLEANFILES} adios_write_mod.mod)
 
-    add_custom_command(
-	OUTPUT adios_write_mod.mod
-	COMMAND $(FC) -c core/adiosf_write_mod.f90
-	DEPENDS core/adiosf_write_mod.f90 adios_defs_mod.mod
-	)
-    
+#    add_custom_command(
+#	OUTPUT adios_write_mod.mod
+#	COMMAND $(FC) -c core/adiosf_write_mod.f90
+#	DEPENDS core/adiosf_write_mod.f90 adios_defs_mod.mod
+#	)
+#    add_custom_command(
+#	OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/adios_write_mod.mod
+#	COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/adios_write_mod.mod ${CMAKE_CURRENT_SOURCE_DIR}
+#	DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/adios_write_mod.mod
+#	)
+
+add_custom_command(
+OUTPUT adios_write_mod.mod
+COMMAND  $(FC) -c core/adiosf_write_mod.f90
+DEPENDS core/adiosf_write_mod.f90 adios_defs_mod.mod
+)
+
+add_custom_command(
+OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/adios_write_mod.mod
+COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/adios_write_mod.mod ${CMAKE_CURRENT_SOURCE_DIR}
+DEPENDS adios_write_mod.mod
+)
+#    file(COPY ${CMAKE_CURRENT_BINARY_DIR}/adios_write_mod.mod DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
+
     #include_directories(${nodist_include_HEADERS})
 #    install(FILES ${nodist_include_HEADERS} DESTINATION ${includedir})
     install(FILES ${PROJECT_BINARY_DIR}/src/adios_write_mod.mod ${PROJECT_BINARY_DIR}/src/adios_defs_mod.mod DESTINATION ${includedir})
@@ -380,13 +402,23 @@ if(BUILD_FORTRAN)
         COMMAND $(FC) -c core/adiosf_read_mod.f90
         DEPENDS core/adiosf_read_mod.f90 adios_defs_mod.mod
         )  
+  add_custom_command(
+        OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/adios_read_mod.mod
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/adios_read_mod.mod ${CMAKE_CURRENT_SOURCE_DIR}
+        DEPENDS adios_read_mod.mod
+        )
 
   ADD_CUSTOM_COMMAND(
         OUTPUT adios_defs_mod.mod
         COMMAND $(FC) -c core/adiosf_defs_mod.f90
         DEPENDS core/adios_defs_mod.f90
 	)
-
+  add_custom_command(
+        OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/adios_defs_mod.mod
+        COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/adios_defs_mod.mod ${CMAKE_CURRENT_SOURCE_DIR}
+        DEPENDS adios_defs_mod.mod
+        )
+#  file(COPY ${CMAKE_CURRENT_BINARY_DIR}/adios_defs_mod.mod DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
 #add library adiosreadf and adiosreadf_v1
   #include_directories(${nodist_include_HEADERS})
 #  install(FILES ${nodist_include_HEADERS} DESTINATION ${includedir})

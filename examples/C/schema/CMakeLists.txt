@@ -15,4 +15,4 @@ target_link_libraries(structured adios ${ADIOSLIB_LDADD})
 add_executable(unstructured unstructured.c)
 target_link_libraries(unstructured adios ${ADIOSLIB_LDADD})
 
-install(FILES structured.xml rectilinear.xml unstructured.xml uniform.xml DESTINATION ${PROJECT_BINARY_DIR}/examples/C/schema)
+#install(FILES structured.xml rectilinear.xml unstructured.xml uniform.xml DESTINATION ${PROJECT_BINARY_DIR}/examples/C/schema)
