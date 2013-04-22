@@ -699,7 +699,6 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
 
     MPI_Comm_size(fp->comm, &(fp->size));
     MPI_Comm_rank(fp->comm, &(fp->rank));
-
     EVassoc_terminal_action(fp_read_data->fp_cm,
 			    fp->data_stone,
 			    op_format_list,
@@ -770,7 +769,6 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
 	fclose(read_ready);
     }
     MPI_Barrier(fp->comm);
-    
     //may need to switch to rank 0 and mpi broadcast
     FILE * fp_in = fopen(writer_ready_filename,"r");
     while(!fp_in) {
@@ -804,6 +802,7 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
 
     fp->num_bridges = num_bridges;
     // clean up of writer's files
+    MPI_Barrier(fp->comm);
     if(fp->rank == 0){
 	unlink(writer_info_filename);
 	unlink(writer_ready_filename);
@@ -1272,14 +1271,14 @@ int adios_read_flexpath_get_attr_byid (const ADIOS_FILE *adiosfile, int attrid,
 
 ADIOS_VARINFO* adios_read_flexpath_inq_var(const ADIOS_FILE * adiosfile, const char* varname)
 {
+    flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
     ADIOS_VARINFO* v = malloc(sizeof(ADIOS_VARINFO));
     if(!v) {
         adios_error(err_no_memory, "Cannot allocate buffer in adios_read_datatap_inq_var()");
         return NULL;
     }
     memset(v, 0, sizeof(ADIOS_VARINFO));
-
-    flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
+    
     flexpath_var_info *current_var = find_fp_var(fp->var_list, varname);
     if(current_var) {
 	v = convert_file_info(current_var, v, varname, adiosfile);
@@ -1293,6 +1292,7 @@ ADIOS_VARINFO* adios_read_flexpath_inq_var(const ADIOS_FILE * adiosfile, const c
 
 ADIOS_VARINFO * adios_read_flexpath_inq_var_byid (const ADIOS_FILE * adiosfile, int varid)
 {
+    flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
     if(varid >= 0 && varid < adiosfile->nvars) {
         return adios_read_flexpath_inq_var(adiosfile, adiosfile->var_namelist[varid]);
     }
@@ -1330,7 +1330,6 @@ convert_file_info(flexpath_var_info * current_var,
 	flexpath_var_chunk * chunk = &current_var->chunks[0];
 	memcpy(v->value, chunk->data, value_size);
     }else{ // arrays
-	perr( "ARRAYS\n");
 	v->dims = (uint64_t *) malloc(v->ndim * sizeof(uint64_t));
 	if(!v->dims) {
 	    adios_error(err_no_memory, "Cannot allocate buffer in adios_read_datatap_inq_var()");
