@@ -46,9 +46,11 @@ int adios_transform_aplod_generate_read_subrequests(adios_transform_read_request
     aplod_meta_t aplodmeta;
     parse_aplod_meta(reqgroup->transinfo->transform_metadata, &aplodmeta);
 
-    int typelen = adios_get_type_size(reqgroup->transinfo->orig_type, NULL);
-    uint64_t elemcount = end_off - start_off;
-    char *buf = malloc(elemcount * typelen);
+    const int typelen = adios_get_type_size(reqgroup->transinfo->orig_type, NULL);
+    const uint64_t totalElementsInPG = pg_reqgroup->raw_var_length / typelen; // We can do this because APLOD leaves PG size unchanged
+
+    const uint64_t sieveElemCount = end_off - start_off;
+    char *buf = malloc(sieveElemCount * typelen);
 
     int numByteColsDone = 0;
     int i;
@@ -57,15 +59,15 @@ int adios_transform_aplod_generate_read_subrequests(adios_transform_read_request
     for (i = 0; i < aplodmeta.numComponents; i++) {
         adios_transform_raw_read_request *subreq = adios_transform_raw_read_request_new_byte_segment(
                 pg_reqgroup,
-                numByteColsDone * elemcount + start_off * aplodmeta.components[i],
-                numByteColsDone * elemcount + end_off * aplodmeta.components[i],
-                buf + elemcount * numByteColsDone);
+                totalElementsInPG * numByteColsDone + start_off * aplodmeta.components[i],
+                sieveElemCount * aplodmeta.components[i],
+                buf + sieveElemCount * numByteColsDone);
         adios_transform_raw_read_request_append(pg_reqgroup, subreq);
         numByteColsDone += aplodmeta.components[i];
     }
 
     aplod_read_meta_t *arm = (aplod_read_meta_t*)malloc(sizeof(aplod_read_meta_t));
-    *arm = (aplod_read_meta_t){ .numElements = elemcount, .outputBuf = buf, .startOff = start_off };
+    *arm = (aplod_read_meta_t){ .numElements = sieveElemCount, .outputBuf = buf, .startOff = start_off };
     pg_reqgroup->transform_internal = arm; // Store it here to be safe, since each of the subreqs has a different piece of it
 
     return 0;
@@ -87,6 +89,8 @@ adios_datablock * adios_transform_aplod_pg_reqgroup_completed(adios_transform_re
     uint32_t elementSize = adios_get_type_size(reqgroup->transinfo->orig_type, "");
 
     aplod_read_meta_t *arm = (aplod_read_meta_t *)completed_pg_reqgroup->transform_internal;
+    completed_pg_reqgroup->transform_internal = NULL;
+    uint64_t raggedOffset = arm->startOff;
     void *compressed_buff = arm->outputBuf;
 
     uint32_t numElements = arm->numElements;
@@ -129,7 +133,7 @@ adios_datablock * adios_transform_aplod_pg_reqgroup_completed(adios_transform_re
     return adios_datablock_new_ragged_offset(reqgroup->transinfo->orig_type,
                                              completed_pg_reqgroup->timestep,
                                              completed_pg_reqgroup->pg_bounds_sel,
-                                             arm->startOff,
+                                             raggedOffset,
                                              decompressed_buff);
 }
 
