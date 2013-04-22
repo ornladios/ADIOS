@@ -667,7 +667,7 @@ void build_bridge(bridge_info* bridge) {
  * change it so that we can support the timeouts and lock_modes.
  */
 ADIOS_FILE*
-adios_read_flexpath_open_stream(const char * fname,
+adios_read_flexpath_open(const char * fname,
 				MPI_Comm comm,
                                 enum ADIOS_LOCKMODE lock_mode,
 				float timeout_sec)
