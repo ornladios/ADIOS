@@ -1,10 +1,13 @@
 
 AC_INIT(configure.ac)
 AC_CONFIG_AUX_DIR(config)
+AC_CONFIG_MACRO_DIR(config)
 AC_REVISION($Revision$)
 
 AC_CONFIG_HEADERS(config.h)
 AM_INIT_AUTOMAKE(adios,1.4.1)
+
+AM_MAINTAINER_MODE([enable])
 
 AC_LANG(C)
 AC_C_STRINGIZE
@@ -73,6 +76,7 @@ AC_PROG_DIMES
 AC_DMALLOC
 AC_LUSTRE
 AC_DATATAP
+AC_FLEXPATH
 
 AC_LANG(C)
 
@@ -246,6 +250,24 @@ if test -z "${HAVE_NSSI_TRUE}"; then
     ADIOSREADLIB_SEQ_CFLAGS="${ADIOSREADLIB_SEQ_CFLAGS} ${MXML_CPPFLAGS} ${NSSI_CFLAGS}"
     ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${MXML_LDFLAGS} ${NSSI_LDFLAGS}"
     ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${MXML_LIBS} ${NSSI_LIBS}"
+fi
+if test -z "${HAVE_FLEXPATH_TRUE}"; then
+    ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} ${FP_CPPFLAGS}"
+    ADIOSLIB_CFLAGS="${ADIOSLIB_CFLAGS} ${FP_CFLAGS}"
+    ADIOSLIB_LDFLAGS="${ADIOSLIB_LDFLAGS} ${FP_LDFLAGS}"
+    ADIOSLIB_LDADD="${ADIOSLIB_LDADD} ${FP_LIBS}"
+    ADIOSLIB_SEQ_CPPFLAGS="${ADIOSLIB_SEQ_CPPFLAGS} ${FP_CPPFLAGS}"
+    ADIOSLIB_SEQ_CFLAGS="${ADIOSLIB_SEQ_CFLAGS} ${FP_CFLAGS}"
+    ADIOSLIB_SEQ_LDFLAGS="${ADIOSLIB_SEQ_LDFLAGS} ${FP_LDFLAGS}"
+    ADIOSLIB_SEQ_LDADD="${ADIOSLIB_SEQ_LDADD} ${FP_LIBS}"
+    ADIOSREADLIB_CPPFLAGS="${ADIOSREADLIB_CPPFLAGS} ${FP_CPPFLAGS}"
+    ADIOSREADLIB_CFLAGS="${ADIOSREADLIB_CFLAGS} ${FP_CFLAGS}"
+    ADIOSREADLIB_LDFLAGS="${ADIOSREADLIB_LDFLAGS} ${FP_LDFLAGS}"
+    ADIOSREADLIB_LDADD="${ADIOSREADLIB_LDADD} ${FP_LIBS}"
+    ADIOSREADLIB_SEQ_CPPFLAGS="${ADIOSREADLIB_SEQ_CPPFLAGS} ${FP_CPPFLAGS}"
+    ADIOSREADLIB_SEQ_CFLAGS="${ADIOSREADLIB_SEQ_CFLAGS} ${FP_CFLAGS}"
+    ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${FP_LDFLAGS}"
+    ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${FP_LIBS}"
 fi
 if test -z "${HAVE_NC4PAR_TRUE}"; then
     ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} ${NC4PAR_CPPFLAGS}"
@@ -472,6 +494,9 @@ AC_CONFIG_FILES([Makefile
                  examples/C/Makefile
                  examples/C/scalars/Makefile
                  examples/C/arrays/Makefile
+                 examples/C/flexpath_arrays/Makefile
+                 examples/C/flexpath_arrays/process_select/Makefile
+                 examples/C/flexpath_arrays/global_range_select/Makefile
                  examples/C/attributes/Makefile
                  examples/C/manual/Makefile
                  examples/C/global-array/Makefile
@@ -688,6 +713,17 @@ if test -z "${HAVE_NSSI_TRUE}"; then
     echo
 else
     echo "  - No NSSI to build NSSI transport method"
+fi
+
+if test -z "${HAVE_FLEXPATH_TRUE}"; then
+    echo "  - FLEXPATH";
+    echo "      - FP_CFLAGS = $FP_CFLAGS";
+    echo "      - FP_CPPFLAGS = $FP_CPPFLAGS";
+    echo "      - FP_LDFLAGS = $FP_LDFLAGS";
+    echo "      - FP_LIBS = $FP_LIBS";
+    echo
+else
+    echo "  - No FLEXPATH to build FLEXPATH transport method"
 fi
 
 echo "  - SVN version = ${SVNVERSION}"

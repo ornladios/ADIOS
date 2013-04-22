@@ -78,6 +78,10 @@ void adios_init_transports (struct adios_transport_struct ** t)
     ASSIGN_FNS(datatap,ADIOS_METHOD_DATATAP)
 #  endif
 
+# if NO_FLEXPATH == 0 
+	ASSIGN_FNS(flexpath,ADIOS_METHOD_FLEXPATH)
+# endif
+
     ASSIGN_FNS(posix,ADIOS_METHOD_POSIX)
     ASSIGN_FNS(posix1,ADIOS_METHOD_POSIX1)
 
@@ -86,7 +90,7 @@ void adios_init_transports (struct adios_transport_struct ** t)
 #  endif
 
 #  if HAVE_DIMES
-ASSIGN_FNS(dimes,ADIOS_METHOD_DIMES)
+	ASSIGN_FNS(dimes,ADIOS_METHOD_DIMES)
 #  endif
 
 #  ifndef NO_RESEARCH_TRANSPORTS
@@ -94,7 +98,7 @@ ASSIGN_FNS(dimes,ADIOS_METHOD_DIMES)
 #  endif
 
 #endif /* ADIOS_EMPTY_TRANSPORTS */
-}
+	}
 
 int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
                        ,int * requires_group_comm
@@ -141,6 +145,10 @@ int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
 
 #if HAVE_NC4PAR
     MATCH_STRING_TO_METHOD("NC4",ADIOS_METHOD_NC4,1)
+#endif
+
+#if NO_FLEXPATH == 0
+    MATCH_STRING_TO_METHOD("FLEXPATH",ADIOS_METHOD_FLEXPATH,0)
 #endif
 
 #if HAVE_NSSI
