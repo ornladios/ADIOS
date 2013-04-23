@@ -74,11 +74,11 @@ void adios_init_transports (struct adios_transport_struct ** t)
 
 #  endif /* _NOMPI */
 
-#  if NO_DATATAP == 0
+#  if HAVE_DATATAP
     ASSIGN_FNS(datatap,ADIOS_METHOD_DATATAP)
 #  endif
 
-# if NO_FLEXPATH == 0 
+# if HAVE_FLEXPATH
 	ASSIGN_FNS(flexpath,ADIOS_METHOD_FLEXPATH)
 # endif
 
@@ -147,7 +147,7 @@ int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
     MATCH_STRING_TO_METHOD("NC4",ADIOS_METHOD_NC4,1)
 #endif
 
-#if NO_FLEXPATH == 0
+#if HAVE_FLEXPATH
     MATCH_STRING_TO_METHOD("FLEXPATH",ADIOS_METHOD_FLEXPATH,0)
 #endif
 

@@ -4,7 +4,7 @@
 */
 
 
-#if NO_FLEXPATH == 0
+#if HAVE_FLEXPATH
 
 // system libraries
 #include <stdio.h>
@@ -1626,7 +1626,7 @@ void adios_flexpath_read(struct adios_file_struct *fd, struct adios_var_struct *
     fp_write_log("UNIMPLEMENTED", "adios_flexpath_read\n");
 }
 
-#else // print empty version of all functions (if NO_FLEXPATH == 1)
+#else // print empty version of all functions (if HAVE_FLEXPATH == 0)
 
 void adios_flexpath_read(struct adios_file_struct *fd, struct adios_var_struct *f, void *buffer, struct adios_method_struct *method) {
 }
