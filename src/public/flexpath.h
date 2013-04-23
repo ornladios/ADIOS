@@ -76,7 +76,7 @@ typedef struct _op_msg
 {
     int process_id;
     char * file_name;
-    int type; //3 = end_of_stream, 2 = ack, 1 = open, 0 = close,
+    int type; //4 = end_of_stream, 3 = init, 2 = ack, 1 = open, 0 = close,
     int step;
     int condition;
 } op_msg, *op_msg_ptr;

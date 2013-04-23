@@ -25,7 +25,7 @@
 
 /************************* Structure and Type Definitions ***********************/
 // used for messages in the control queue
-typedef enum {VAR=0, DATA_FLUSH, OPEN, CLOSE, DATA_BUFFER, OFFSET_MSG} FlexpathMessageType;
+typedef enum {VAR=0, DATA_FLUSH, OPEN, CLOSE, INIT, DATA_BUFFER, OFFSET_MSG} FlexpathMessageType;
 
 // maintains connection information
 typedef struct _flexpath_stone {
@@ -33,6 +33,7 @@ typedef struct _flexpath_stone {
     int theirNum;
     int step;
     int opened;
+    int created;
     int condition;
     char* contact;
 } FlexpathStone;
@@ -98,6 +99,7 @@ typedef struct _flexpath_write_file_data {
     EVsource dataSource;
     EVsource offsetSource;
     EVsource opSource;
+    EVaction multi_action;
     FlexpathStone* bridges;
     int numBridges;
     attr_list attrs;
@@ -527,7 +529,6 @@ char* multiqueue_action = "{\n\
             if(EVcount_formatMsg()>0) {\n\
                 formatMsg* msg = EVdata_formatMsg(0);\n\
                 msg->condition = c->condition;\n\
-                printf(\"condition in format msg: \\%d \\n\", msg->condition);\n\
                 EVdiscard_flush(0);\n\
                 EVsubmit(c->rank+1, msg);\n\
             }\n\
@@ -906,9 +907,13 @@ static int op_handler(CManager cm, void* vevent, void* client_data, attr_list at
     if(msg->type == 1) {
         threaded_enqueue(&fileData->controlQueue, msg, OPEN, 
             fileData->controlMutex, fileData->controlCondition);
-    } else {
+    } else if(msg->type == 0) {
         threaded_enqueue(&fileData->controlQueue, msg, CLOSE, 
-            fileData->controlMutex, fileData->controlCondition);
+			 fileData->controlMutex, fileData->controlCondition);
+    } else if(msg->type == 3) {
+	threaded_enqueue(&fileData->controlQueue, msg, INIT,
+			 fileData->controlMutex, fileData->controlCondition);
+			
     }
     return 0;
 }
@@ -985,7 +990,19 @@ int control_thread(void* arg) {
                 op_msg* open = (op_msg*) controlMsg->data;
                 fileData->bridges[open->process_id].step = open->step;
                 fileData->bridges[open->process_id].condition = open->condition;
-                if(open->step < fileData->currentStep) {
+		if(!fileData->bridges[open->process_id].created){
+		    fileData->bridges[open->process_id].myNum = 
+			EVcreate_bridge_action(flexpathWriteData.cm, 
+					       attr_list_from_string(fileData->bridges[open->process_id].contact), 
+					       fileData->bridges[open->process_id].theirNum);
+		
+		    EVaction_set_output(flexpathWriteData.cm, 
+					fileData->multiStone, 
+					fileData->multi_action, 
+					open->process_id+1, 
+					fileData->bridges[open->process_id].myNum);				    
+		}		
+            if(open->step < fileData->currentStep) {
                     perr("control_thread: Recieved Past Step Open\n");
                 } else if (open->step == fileData->currentStep){
                     fp_write_log("STEP", "recieved op with current step\n");
@@ -1049,7 +1066,37 @@ int control_thread(void* arg) {
                       }
                     }
 		}
-	    } else {
+	    }else if(controlMsg->type == INIT){ 
+		fp_write_log("DATAMUTEX", "in use 1\n"); 
+		dataNode = threaded_peek(&fileData->dataQueue, 
+		    fileData->dataMutex, &fileData->dataCondition);
+                fp_write_log("DATAMUTEX", "no use 1\n"); 
+                thr_mutex_lock(fileData->dataMutex);
+                thr_mutex_unlock(fileData->dataMutex);
+                fp_write_log("DATAMUTEX", "no use 1\n"); 
+		op_msg* initMsg = (op_msg*) controlMsg->data;
+		void* temp = copy_buffer(dataNode->data, initMsg->process_id, fileData);
+		fileData->attrs = set_dst_rank_atom(fileData->attrs, initMsg->process_id);
+		fileData->attrs = set_dst_condition_atom(fileData->attrs, initMsg->condition);
+		fileData->bridges[initMsg->process_id].created = 1;
+		fileData->bridges[initMsg->process_id].myNum = 
+		    EVcreate_bridge_action(flexpathWriteData.cm, 
+					   attr_list_from_string(fileData->bridges[initMsg->process_id].contact), 
+					   fileData->bridges[initMsg->process_id].theirNum);
+		    
+		EVaction_set_output(flexpathWriteData.cm, 
+				    fileData->multiStone, 
+				    fileData->multi_action, 
+				    initMsg->process_id+1, 
+				    fileData->bridges[initMsg->process_id].myNum);		
+		/* if(!fileData->bridges[initMsg->rank].opened) { */
+                /*   fileData->bridges[initMsg->rank].opened=1;                   */
+                /* } */
+		/* fp_write_log("MSG", " sending data_msg : rank %d step %d\n",  */
+                /*     flushMsg->rank, fileData->currentStep); */
+		EVsubmit_general(fileData->dataSource, temp, data_free, fileData->attrs);
+	    }
+	    else{
 		perr("control_thread: Unrecognized Control Message\n");
 	    }
 	}
@@ -1225,8 +1272,8 @@ extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method
     while(fscanf(reader_info, "%d:%s",&stone_num, in_contact)!=EOF){
         fileData->bridges = realloc(fileData->bridges, sizeof(FlexpathStone) * (numBridges + 1));
         attr_list contact_list = attr_list_from_string(in_contact);
-        fileData->bridges[numBridges].myNum = EVcreate_bridge_action(flexpathWriteData.cm, contact_list, stone_num);
         fileData->bridges[numBridges].opened = 0;
+	fileData->bridges[numBridges].created = 0;
         fileData->bridges[numBridges].step = 0;
         fileData->bridges[numBridges].theirNum = stone_num;
         fileData->bridges[numBridges].contact = strdup(in_contact);
@@ -1268,7 +1315,7 @@ extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method
         data_format_list, NULL};
     char* q_action_spec = create_multityped_action_spec(queue_list, 
         multiqueue_action); 
-    EVaction multi_action = EVassoc_multi_action(flexpathWriteData.cm, 
+    fileData->multi_action = EVassoc_multi_action(flexpathWriteData.cm, 
 	fileData->multiStone, q_action_spec, NULL);
     fileData->formatSource = EVcreate_submit_handle(flexpathWriteData.cm, 
         fileData->multiStone, format_format_list);
@@ -1290,13 +1337,13 @@ extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method
     //link multiqueue to sink
     fp_write_log("SETUP", "linking stones\n");
     EVaction_set_output(flexpathWriteData.cm, fileData->multiStone, 
-        multi_action, 0, fileData->sinkStone);
+        fileData->multi_action, 0, fileData->sinkStone);
 
     //link up multiqueue ports to bridge stones
-    for(i=0; i<numBridges; i++) {
-        EVaction_set_output(flexpathWriteData.cm, 
-            fileData->multiStone, multi_action, i+1, fileData->bridges[i].myNum);
-    }
+    /* for(i=0; i<numBridges; i++) { */
+    /*     EVaction_set_output(flexpathWriteData.cm,  */
+    /*         fileData->multiStone, multi_action, i+1, fileData->bridges[i].myNum); */
+    /* } */
     
     fp_write_log("SETUP", "arranged evpath graph\n");
 	
