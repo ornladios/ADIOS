@@ -517,6 +517,7 @@ char* multiqueue_action = "{\n\
         } else {\n\
             EVdiscard_and_submit_op_msg(0,0);\n\
         }\n\
+        flush_data_count = 1;\n\
     }\n\
     if(EVcount_formatMsg()>0) {\n\
         formatMsg* msg = EVdata_formatMsg(0);\n\
@@ -534,7 +535,6 @@ char* multiqueue_action = "{\n\
             }\n\
         } else {\n\
             EVdiscard_and_submit_flush(0,0);\n\
-            flush_data_count++;\n\
         }\n\
     }\n\
     if(EVcount_evgroup()>0){\n\
@@ -1078,17 +1078,19 @@ int control_thread(void* arg) {
 		void* temp = copy_buffer(dataNode->data, initMsg->process_id, fileData);
 		fileData->attrs = set_dst_rank_atom(fileData->attrs, initMsg->process_id);
 		fileData->attrs = set_dst_condition_atom(fileData->attrs, initMsg->condition);
-		fileData->bridges[initMsg->process_id].created = 1;
-		fileData->bridges[initMsg->process_id].myNum = 
-		    EVcreate_bridge_action(flexpathWriteData.cm, 
-					   attr_list_from_string(fileData->bridges[initMsg->process_id].contact), 
-					   fileData->bridges[initMsg->process_id].theirNum);
+		if(!fileData->bridges[initMsg->process_id].created){
+		    fileData->bridges[initMsg->process_id].created = 1;
+		    fileData->bridges[initMsg->process_id].myNum = 
+			EVcreate_bridge_action(flexpathWriteData.cm, 
+					       attr_list_from_string(fileData->bridges[initMsg->process_id].contact), 
+					       fileData->bridges[initMsg->process_id].theirNum);
 		    
-		EVaction_set_output(flexpathWriteData.cm, 
-				    fileData->multiStone, 
-				    fileData->multi_action, 
-				    initMsg->process_id+1, 
-				    fileData->bridges[initMsg->process_id].myNum);		
+		    EVaction_set_output(flexpathWriteData.cm, 
+					fileData->multiStone, 
+					fileData->multi_action, 
+					initMsg->process_id+1, 
+					fileData->bridges[initMsg->process_id].myNum);		
+		}
 		/* if(!fileData->bridges[initMsg->rank].opened) { */
                 /*   fileData->bridges[initMsg->rank].opened=1;                   */
                 /* } */
@@ -1273,7 +1275,13 @@ extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method
         fileData->bridges = realloc(fileData->bridges, sizeof(FlexpathStone) * (numBridges + 1));
         attr_list contact_list = attr_list_from_string(in_contact);
         fileData->bridges[numBridges].opened = 0;
-	fileData->bridges[numBridges].created = 0;
+	fileData->bridges[numBridges].created = 1;
+	if(numBridges == 0){
+	    fileData->bridges[0].myNum = 
+		EVcreate_bridge_action(flexpathWriteData.cm, 
+				       contact_list, 
+				       stone_num);	   
+	}
         fileData->bridges[numBridges].step = 0;
         fileData->bridges[numBridges].theirNum = stone_num;
         fileData->bridges[numBridges].contact = strdup(in_contact);
@@ -1339,6 +1347,13 @@ extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method
     EVaction_set_output(flexpathWriteData.cm, fileData->multiStone, 
         fileData->multi_action, 0, fileData->sinkStone);
 
+    // establish connection to reader rank 0, so we can send evgroup if needed.
+    EVaction_set_output(flexpathWriteData.cm, 
+			fileData->multiStone, 
+			fileData->multi_action, 
+			1, 
+			fileData->bridges[0].myNum);				    
+    
     //link up multiqueue ports to bridge stones
     /* for(i=0; i<numBridges; i++) { */
     /*     EVaction_set_output(flexpathWriteData.cm,  */
