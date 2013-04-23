@@ -51,7 +51,7 @@ FORWARD_DECLARE(bp_staged1)
 #if HAVE_DATASPACES
 FORWARD_DECLARE(dataspaces)
 #endif
-#if NO_FLEXPATH == 0
+#if HAVE_FLEXPATH
 FORWARD_DECLARE(flexpath)
 #endif
 #if HAVE_DIMES
