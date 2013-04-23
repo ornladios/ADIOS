@@ -316,7 +316,7 @@ INCLUDES = $(all_includes) -I$(top_builddir)/src \
 	-I$(top_builddir)/src/public
 AUTOMAKE_OPTIONS = no-dependencies
 read_all_SOURCES = read_all.c
-read_all_CPPFLAGS = -D_NOMPI -DADIOS_USE_READ_API_1
+read_all_CPPFLAGS = ${MACRODEFFLAG}_NOMPI ${MACRODEFFLAG}ADIOS_USE_READ_API_1
 read_all_LDADD = $(top_builddir)/src/libadiosread_nompi.a \
 	$(ADIOSREADLIB_LDADD)
 read_all_LDFLAGS = $(ADIOSREADLIB_LDFLAGS)

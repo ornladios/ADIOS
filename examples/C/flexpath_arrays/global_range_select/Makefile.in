@@ -42,6 +42,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cray_pmi.m4 \
 	$(top_srcdir)/config/ac_cray_ugni.m4 \
 	$(top_srcdir)/config/ac_dataspaces.m4 \
 	$(top_srcdir)/config/ac_datatap.m4 \
+	$(top_srcdir)/config/ac_dcmf.m4 \
 	$(top_srcdir)/config/ac_dimes.m4 \
 	$(top_srcdir)/config/ac_dmalloc.m4 \
 	$(top_srcdir)/config/ac_flexpath.m4 \
@@ -149,6 +150,10 @@ CYGPATH_W = @CYGPATH_W@
 DATASPACES_CPPFLAGS = @DATASPACES_CPPFLAGS@
 DATASPACES_LDFLAGS = @DATASPACES_LDFLAGS@
 DATASPACES_LIBS = @DATASPACES_LIBS@
+DCMF_CFLAGS = @DCMF_CFLAGS@
+DCMF_CPPFLAGS = @DCMF_CPPFLAGS@
+DCMF_LDFLAGS = @DCMF_LDFLAGS@
+DCMF_LIBS = @DCMF_LIBS@
 DEFS = @DEFS@
 DEPDIR = @DEPDIR@
 DIMES_CPPFLAGS = @DIMES_CPPFLAGS@
@@ -256,6 +261,8 @@ RANLIB = @RANLIB@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
+SKEL_HAVE_ADIOS_TIMING = @SKEL_HAVE_ADIOS_TIMING@
+SKEL_TIMING = @SKEL_TIMING@
 STRIP = @STRIP@
 VERSION = @VERSION@
 abs_builddir = @abs_builddir@
