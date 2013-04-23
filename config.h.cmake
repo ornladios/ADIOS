@@ -254,7 +254,7 @@
 #cmakedefine USE_PARALLEL_COMPILER 1
 
 /* Version number of package */
-#cmakedefine VERSION ${VERSION}
+#cmakedefine VERSION "${VERSION}"
 
 /* Major version number */
 #cmakedefine VERSION_MAJOR ${VERSION_MAJOR}
