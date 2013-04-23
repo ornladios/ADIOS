@@ -657,6 +657,7 @@ void build_bridge(bridge_info* bridge) {
 	    op_format_list);
 
     bridge->created = 1;
+
 }
 
 /*
@@ -794,8 +795,8 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
 	fp->bridges[num_bridges].their_num = their_stone;
 	fp->bridges[num_bridges].contact = strdup(in_contact);
 	fp->bridges[num_bridges].created = 0;
-	fp->bridges[num_bridges].opened = 0;
 	fp->bridges[num_bridges].step = 0;
+	fp->bridges[num_bridges].opened = 0;
 	num_bridges++;
     }
     fclose(fp_in);
@@ -814,13 +815,13 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
     
     // determining from which writer to read
     // if there are less writers
-    int writer_rank = 0;
-    if(num_bridges < fp->size){
-	writer_rank = fp->size % num_bridges;
-	// otherwise
-    }else{
-	writer_rank = fp->rank;
-    }
+    int writer_rank = fp->rank % num_bridges;
+    /* if(num_bridges < fp->size){ */
+    /* 	writer_rank = fp->size % num_bridges; */
+    /* 	// otherwise */
+    /* }else{ */
+    /* 	writer_rank = fp->rank; */
+    /* }     */
     build_bridge(&fp->bridges[writer_rank]);
 
     op_msg init;
@@ -862,7 +863,9 @@ void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
 
 int adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_sec) {
     flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
+    fprintf(stderr, "advance_step before barrier: %d\n", fp->rank);
     MPI_Barrier(fp->comm);
+    fprintf(stderr, "advance_step after barrier: %d\n", fp->rank);
     int i=0;
     for(i=0; i<fp->num_bridges; i++) {
         if(fp->bridges[i].created && fp->bridges[i].opened) {
@@ -870,18 +873,18 @@ int adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float time
             close.step = adiosfile->current_step;
             close.type = 0;
             close.process_id = fp->rank;
+	    close.condition = -1;
             close.file_name = "test";
-            EVsubmit(fp->bridges[i].op_source, &close, NULL);
 	    fp->bridges[i].opened = 0;
-        }
-        if(fp->bridges[i].created && !fp->bridges[i].opened) {
-	    fp->bridges[i].opened = 1;
+            EVsubmit(fp->bridges[i].op_source, &close, NULL);
+
             op_msg open;
             open.step = adiosfile->current_step +1;
             open.type = 1;
             open.process_id = fp->rank;
             open.file_name = "test";
 	    open.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
+	    fp->bridges[i].opened = 1;
             EVsubmit(fp->bridges[i].op_source, &open, NULL);
 	    fprintf(stderr, "mpi_rank: %d advance_step before condition.\n", fp->rank);
             CMCondition_wait(fp_read_data->fp_cm, open.condition);
@@ -1111,9 +1114,12 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
             fp->sendees=realloc(fp->sendees, fp->num_sendees*sizeof(int));
             fp->sendees[fp->num_sendees-1] = writer_index;
         }
-        if(!fp->bridges[writer_index].created && !fp->bridges[writer_index].opened) {
+        if(!fp->bridges[writer_index].created) {
             //perr("rank %d building bridge to %d\n", fp_read_data->fp_comm_rank, writer_index);
             build_bridge(&(fp->bridges[writer_index]));
+	}
+	if(!fp->bridges[writer_index].opened){
+	    fp->bridges[writer_index].opened = 1;
             op_msg open_msg;
             open_msg.process_id = fp->rank;
             open_msg.file_name = fp->file_name;
@@ -1139,7 +1145,7 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
 	array_displacements * all_disp = NULL;	
         for(j=0; j<fp->size; j++) {
             fp_log("BOUNDING", "checking writer %d\n", j);
-            int reader=0;	    	    	    
+            int reader=0;	    	    
             if(need_writer(fp, j, sel, fp->gp, v->varname)==1){
                 fp_log("BOUNDING", "yes it's neededi\n");		
 		need_count++;
@@ -1166,26 +1172,27 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
                 fp->sendees=realloc(fp->sendees, fp->num_sendees*sizeof(int));
                 fp->sendees[fp->num_sendees-1] = reader;
             }
-            if(!fp->bridges[reader].created){
+            if(!fp->bridges[reader].created) {
                 build_bridge(&(fp->bridges[reader]));
-	    }
-	    if(!fp->bridges[reader].opened) {
                 op_msg open_msg;
                 open_msg.process_id = fp->rank;
                 open_msg.file_name = "hey";
                 open_msg.type = 1;
-
-		open_msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
                 EVsubmit(fp->bridges[reader].op_source, &open_msg, NULL);
-		CMCondition_wait(fp_read_data->fp_cm, open_msg.condition);
-	    }
-	    Var_msg var;
-	    var.rank = fp->rank;
-	    var.var_name = strdup(v->varname);
-	    perr("1 sending %s from %d to %p aka %d\n", 
-		 var.var_name, var.rank, fp->bridges[reader].var_source, reader);
-	    EVsubmit(fp->bridges[reader].var_source, &var, NULL);           
-	    
+	        Var_msg var;
+	        var.rank = fp->rank;
+                var.var_name = strdup(v->varname);
+                perr("1 sending %s from %d to %p aka %d\n", 
+		   var.var_name, var.rank, fp->bridges[reader].var_source, reader);
+	        EVsubmit(fp->bridges[reader].var_source, &var, NULL);
+            } else {
+	        Var_msg var;
+	        var.rank = fp->rank;
+                var.var_name = strdup(v->varname);
+                perr("2 sending %s from %d to %p aka %d\n", 
+		   var.var_name, var.rank, fp->bridges[reader].var_source, reader);
+	        EVsubmit(fp->bridges[reader].var_source, &var, NULL);
+            }
 	}
 	v->displ = all_disp;
 	v->num_displ = need_count;
