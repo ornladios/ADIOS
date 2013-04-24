@@ -40,7 +40,7 @@ int main (int argc, char ** argv)
     global_range_select.type=ADIOS_SELECTION_BOUNDINGBOX;
     global_range_select.u.bb.start = malloc(sizeof(int));
     global_range_select.u.bb.count = malloc(sizeof(int));
-    (global_range_select.u.bb.start)[0] = 0;
+    (global_range_select.u.bb.start)[0] = 1;
     (global_range_select.u.bb.count)[0] = 1;
     (global_range_select.u.bb.start)[1] = 5;
     (global_range_select.u.bb.count)[1] = 5;
@@ -52,7 +52,7 @@ int main (int argc, char ** argv)
 					     comm);
     
     int ii;
-    for(ii = 0; ii<30; i++){   
+    for(ii = 0; ii<1000; ii++){   
 	/* get a bounding box - rank 0 for now*/
 	ADIOS_VARINFO* nx_info = adios_inq_var( afile, "NX");
 	ADIOS_VARINFO* ny_info = adios_inq_var( afile, "NY");
@@ -89,7 +89,7 @@ int main (int argc, char ** argv)
 	}
 	printf("]\n");
         adios_advance_step(afile, 0, 30);
-	MPI_Barrier (comm);
+	//MPI_Barrier (comm);
 	//sleep(1);
     }
     //
