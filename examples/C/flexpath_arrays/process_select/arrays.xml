@@ -8,7 +8,7 @@
         <var name="var_int_1Darray"     gwrite="p"  type="integer" dimensions="NX"/>
     </adios-group>
 
-<method group="arrays"  method="FLEXPATH">QUEUE_SIZE=100;</method>
+<method group="arrays"  method="FLEXPATH">QUEUE_SIZE=10;</method>
 
 <buffer size-MB="20" allocate-time="now"/>
 

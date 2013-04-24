@@ -117,8 +117,10 @@ typedef struct _flexpath_write_file_data {
     FlexpathQueueNode* dataQueue;    
     thr_mutex_t controlMutex;
     thr_mutex_t dataMutex;
+    thr_mutex_t dataMutex2;
     thr_condition_t controlCondition;
-    thr_condition_t dataCondition;
+    thr_condition_t dataCondition; //fill
+    thr_condition_t dataCondition2; //empty
 
     // global array distribution data
     int globalCount;
@@ -276,7 +278,7 @@ int queue_count(FlexpathQueueNode** queue, thr_mutex_t mutex) {
 }
 
 // remove from tail of a message queue
-FlexpathQueueNode* threaded_dequeue(FlexpathQueueNode** queue, thr_mutex_t mutex, thr_condition_t condition) {
+FlexpathQueueNode* threaded_dequeue(FlexpathQueueNode** queue, thr_mutex_t mutex, thr_condition_t condition, thr_condition_t condition2, int signal_dequeue) {
     fp_write_log("QUEUE", "dequeue\n");
     thr_mutex_lock(mutex);
     fp_write_log("MUTEX","lock 4\n");
@@ -298,7 +300,10 @@ FlexpathQueueNode* threaded_dequeue(FlexpathQueueNode** queue, thr_mutex_t mutex
     }
     fp_write_log("MUTEX","unlock 4\n");
     thr_mutex_unlock(mutex);
-    fp_write_log("QUEUE", "exiting dequeue\n");
+    fp_write_log("QUEUE", "exiting dequeue queue:%p ret:%p\n", *queue, tail);
+    if(signal_dequeue==1) {
+        thr_condition_broadcast(condition2);
+    }
     return tail;
 }
 
@@ -311,7 +316,9 @@ FlexpathQueueNode* threaded_peek(FlexpathQueueNode** queue, thr_mutex_t mutex, t
     fp_write_log("QUEUE", "recieved lock\n");
     fp_write_log("MUTEX","lock 5\n");
     if(*queue==NULL) {
+        fp_write_log("QUEUE", "null about to wait\n");
         thr_condition_wait(condition, mutex);
+        fp_write_log("QUEUE", "signaled with queue %p\n", *queue);
     }
     FlexpathQueueNode* tail;
     tail = *queue;
@@ -320,6 +327,7 @@ FlexpathQueueNode* threaded_peek(FlexpathQueueNode** queue, thr_mutex_t mutex, t
     }
     fp_write_log("MUTEX","unlock 5\n");
     thr_mutex_unlock(mutex);
+    fp_write_log("QUEUE", "returning %p\n", tail);
     return tail;
 }
 
@@ -960,7 +968,7 @@ int control_thread(void* arg) {
     while(1) {
         fp_write_log("CONTROL", "control message attempts dequeue\n");
 	if((controlMsg = threaded_dequeue(&fileData->controlQueue, 
-	    fileData->controlMutex, fileData->controlCondition))) {
+	    fileData->controlMutex, fileData->controlCondition, NULL, 0))) {
             fp_write_log("CONTROL", "control message dequeued\n");
 	    if(controlMsg->type==VAR) {
 		Var_msg* varMsg = (Var_msg*) controlMsg->data;
@@ -976,7 +984,8 @@ int control_thread(void* arg) {
                 thr_mutex_unlock(fileData->dataMutex);
                 fp_write_log("DATAMUTEX", "no use 1\n"); 
 		Flush_msg* flushMsg = (Flush_msg*) controlMsg->data;
-		void* temp = copy_buffer(dataNode->data, flushMsg->rank, fileData);
+		fp_write_log("QUEUE", "dataNode:%p, flushMsg:%p\n", dataNode, flushMsg);
+                void* temp = copy_buffer(dataNode->data, flushMsg->rank, fileData);
 		fileData->attrs = set_dst_rank_atom(fileData->attrs, flushMsg->rank);
 		fileData->attrs = set_dst_condition_atom(fileData->attrs, flushMsg->condition);
 		if(!fileData->bridges[flushMsg->rank].opened) {
@@ -1037,7 +1046,7 @@ int control_thread(void* arg) {
                     fp_write_log("STEP", "advancing\n");
                     fp_write_log("DATAMUTEX", "in use 2\n"); 
 		    FlexpathQueueNode* node = threaded_dequeue(&fileData->dataQueue, 
-		        fileData->dataMutex, fileData->dataCondition);
+		        fileData->dataMutex, fileData->dataCondition, fileData->dataCondition2, 1);
                     fp_write_log("DATAMUTEX", "no use 2\n"); 
                     thr_mutex_lock(fileData->dataMutex);
                     thr_mutex_unlock(fileData->dataMutex);
@@ -1193,11 +1202,13 @@ extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method
     // setup mutexs
     fileData->controlMutex = thr_mutex_alloc();
     fileData->dataMutex = thr_mutex_alloc();
+    fileData->dataMutex2 = thr_mutex_alloc();
     fileData->openMutex = thr_mutex_alloc();
     
     // setup conditions
     fileData->controlCondition = thr_condition_alloc();
     fileData->dataCondition = thr_condition_alloc();
+    fileData->dataCondition2 = thr_condition_alloc();
 
     // communication channel setup
     char writer_info_filename[200];
@@ -1617,7 +1628,7 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 
     while((c=queue_count(&fileData->dataQueue, fileData->dataMutex))>fileData->maxQueueSize) {
         fp_write_log("QUEUE", "waiting for queue to be below max size\n");
-        thr_condition_wait(fileData->dataCondition, fileData->dataMutex);
+        thr_condition_wait(fileData->dataCondition2, fileData->dataMutex2);
         fp_write_log("QUEUE", "wakeup on queue size\n");
     }
     fp_write_log("FILE", "file close %s exiting\n", method->group->name);
@@ -1629,14 +1640,14 @@ extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method
     fp_write_log("FILE", "Entered finalize\n");
     while(fileData) {
         fp_write_log("DATAMUTEX", "in use 4\n"); 
-        thr_mutex_lock(fileData->dataMutex);
+        thr_mutex_lock(fileData->dataMutex2);
         fp_write_log("MUTEX","lock 1\n");
         while(fileData->dataQueue!=NULL) {
             fp_write_log("FILE", "waiting on %s to empty data\n", fileData->name);
-            thr_condition_wait(fileData->dataCondition, fileData->dataMutex);
+            thr_condition_wait(fileData->dataCondition2, fileData->dataMutex2);
         }
         fp_write_log("MUTEX","unlock 1\n");
-        thr_mutex_unlock(fileData->dataMutex);
+        thr_mutex_unlock(fileData->dataMutex2);
         fp_write_log("DATAMUTEX", "no use 4\n"); 
         fileData = fileData->next;
     }
