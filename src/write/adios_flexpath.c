@@ -25,7 +25,7 @@
 
 /************************* Structure and Type Definitions ***********************/
 // used for messages in the control queue
-typedef enum {VAR=0, DATA_FLUSH, OPEN, CLOSE, INIT, DATA_BUFFER, OFFSET_MSG} FlexpathMessageType;
+typedef enum {VAR=0, DATA_FLUSH, OPEN, CLOSE, INIT, EVGROUP_FLUSH, DATA_BUFFER, OFFSET_MSG} FlexpathMessageType;
 
 // maintains connection information
 typedef struct _flexpath_stone {
@@ -533,6 +533,7 @@ char* multiqueue_action = "{\n\
     }\n\
     if(EVcount_flush()>0) {\n\
         flush* c = EVdata_flush(0);\n\
+        printf(\"writer recieved flush msg type: %d from reader %d\\n\", c->type, c->rank);\n\
         if(c->type == 0) {\n\
             if(EVcount_formatMsg()>0) {\n\
                 formatMsg* msg = EVdata_formatMsg(0);\n\
@@ -540,21 +541,16 @@ char* multiqueue_action = "{\n\
                 EVdiscard_flush(0);\n\
                 EVsubmit(c->rank+1, msg);\n\
             }\n\
+       }else if(c->type == 2){ \n\
+             if(EVcount_evgroup()>0){\n\
+               evgroup *g = EVdata_evgroup(0); \n\
+               g->condition = c->condition;\n\
+               EVsubmit(c->rank+1, g);\n\
+               EVdiscard_flush(0);\n\
+             }\n\
         } else {\n\
             EVdiscard_and_submit_flush(0,0);\n\
             flush_data_count++;\n\
-        }\n\
-    }\n\
-    if(EVcount_evgroup()>0){\n\
-        if(flush_data_count > 0){\n\
-          evgroup* g = EVdata_evgroup(0);\n\
-          mine = EVget_attrs_evgroup(0);\n\
-          found = attr_ivalue(mine, \"fp_size\");\n\
-          int k;\n\
-          for(k=0; k<found; k++){\n\
-              EVsubmit(k+1,g);\n\
-          }\n\
-          EVdiscard_evgroup(0);\n\
         }\n\
     }\n\
     if(EVcount_anonymous()>0){\n\
@@ -1058,6 +1054,10 @@ int control_thread(void* arg) {
                     
                     int i;
                     //for all bridges if step == currentstep send ack
+		    // this block gets repeated in finalize.  gets repeated
+		    // only AFTER sending finalize messages.  cp and past into finalize
+		    // do it for everyone that has opened.
+		    
                     for(i=0; i<fileData->numBridges; i++) {
                       if(fileData->bridges[i].step==fileData->currentStep) {
                         fileData->openCount++;
@@ -1548,81 +1548,81 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 	    if(num_local_offsets > 0){
 		int * all_offsets = NULL;
 		int * all_local_dims = NULL;
-		if(myrank == 0){
-		    int buf_size = num_local_offsets * commsize * sizeof(int);		    
-		    all_offsets = (int*)malloc(buf_size);		
-		    all_local_dims = (int*)malloc(buf_size);
-		}
+		
+		int buf_size = num_local_offsets * commsize * sizeof(int);		    
+		all_offsets = (int*)malloc(buf_size);		
+		all_local_dims = (int*)malloc(buf_size);
+		
 
-		MPI_Gather(local_offsets, num_local_offsets, MPI_INT, 
-			   all_offsets, num_local_offsets, MPI_INT,
-			   0, *fileData->mpiComm);
+		MPI_Allgather(local_offsets, num_local_offsets, MPI_INT, 
+			      all_offsets, num_local_offsets, MPI_INT,
+			      *fileData->mpiComm);
 
-		MPI_Gather(local_dimensions, num_local_offsets, MPI_INT, 
-			   all_local_dims, num_local_offsets, MPI_INT,
-			   0, *fileData->mpiComm);
+		MPI_Allgather(local_dimensions, num_local_offsets, MPI_INT, 
+			      all_local_dims, num_local_offsets, MPI_INT,
+			      *fileData->mpiComm);
 
-		if(myrank == 0){
-		    num_gbl_vars++;
-		    offset_struct * ostruct = (offset_struct*)malloc(sizeof(offset_struct));
-		    ostruct->offsets_per_rank = num_local_offsets;
-		    ostruct->total_offsets = num_local_offsets * commsize;
-		    ostruct->local_offsets = all_offsets;
-		    ostruct->local_dimensions = all_local_dims;
-		    gbl_vars = realloc(gbl_vars, sizeof(global_var) * num_gbl_vars);
-		    gbl_vars[num_gbl_vars - 1].name = strdup(list->name);
-		    gbl_vars[num_gbl_vars - 1].noffset_structs = 1;
-		    perr("\n\n\n\t\tnoffset_structs: %d\n", 
-		     gbl_vars[num_gbl_vars - 1].noffset_structs);
-		    gbl_vars[num_gbl_vars - 1].offsets = ostruct;
-		    int i;			   
-		    i = 0;
-		    perr("\t\t\tall offsets for var: %s\n", list->name);
-		    while(i<commsize * num_local_offsets){
-			int j;
+		
+		num_gbl_vars++;
+		offset_struct * ostruct = (offset_struct*)malloc(sizeof(offset_struct));
+		ostruct->offsets_per_rank = num_local_offsets;
+		ostruct->total_offsets = num_local_offsets * commsize;
+		ostruct->local_offsets = all_offsets;
+		ostruct->local_dimensions = all_local_dims;
+		gbl_vars = realloc(gbl_vars, sizeof(global_var) * num_gbl_vars);
+		gbl_vars[num_gbl_vars - 1].name = strdup(list->name);
+		gbl_vars[num_gbl_vars - 1].noffset_structs = 1;
+		/* perr("\n\n\n\t\tnoffset_structs: %d\n",  */
+		/*      gbl_vars[num_gbl_vars - 1].noffset_structs); */
+		gbl_vars[num_gbl_vars - 1].offsets = ostruct;
+		/* int i;			    */
+		/* i = 0; */
+		/* perr("\t\t\tall offsets for var: %s\n", list->name); */
+		/* while(i<commsize * num_local_offsets){ */
+		/*     int j; */
 			
-			for(j=0; j<num_local_offsets;j++){
-			    perr("\t\t\t%d ", all_offsets[i]);  
-			    i++;
-			}			
-			perr("\n");				
+		/*     for(j=0; j<num_local_offsets;j++){ */
+		/* 	perr("\t\t\t%d ", all_offsets[i]);   */
+		/* 	i++; */
+		/*     }			 */
+		/*     perr("\n");				 */
 			
-		    }
-		    perr("\n");
-		    perr("\t\t\tall local_dims for var: %s\n", list->name);
-		    i = 0;
+		/* } */
+		/* perr("\n"); */
+		/* perr("\t\t\tall local_dims for var: %s\n", list->name); */
+		/* i = 0; */
 		    
-		    while(i<commsize * num_local_offsets){
-			int j;				
-			for(j=0; j<num_local_offsets;j++){
-			    perr("\t\t\t%d ", all_local_dims[i]);  
-			    i++;
-			}			
-			perr("\n");
+		/* while(i<commsize * num_local_offsets){ */
+		/*     int j;				 */
+		/*     for(j=0; j<num_local_offsets;j++){ */
+		/* 	perr("\t\t\t%d ", all_local_dims[i]);   */
+		/* 	i++; */
+		/*     }			 */
+		/*     perr("\n"); */
 			
-		    }
-		    perr("\n");
+		/* } */
+		/* perr("\n"); */
 		    
-		}		
+				
 	    }
 	    list=list->next;
 	}
-	if(myrank == 0){
-	    int i;
+
+	int i;
 	    
-	    for(i=0; i<num_gbl_vars; i++){
-		perr("global_var: %s has local offsets\n", gbl_vars[i].name);
-	    }
-	    
-	    evgroup * gp = (evgroup*)malloc(sizeof(evgroup));
-	    gp->num_vars = num_gbl_vars;
-	    perr("num global vars %d\n", num_gbl_vars);
-            gp->vars = gbl_vars;
-	    fileData->gp = gp;
-	    fileData->attrs = set_size_atom(fileData->attrs, fileData->size);
-	    perr("size:%d\n\n\n", fileData->size);
-            EVsubmit(fileData->offsetSource, gp, fileData->attrs);
+	for(i=0; i<num_gbl_vars; i++){
+	    perr("global_var: %s has local offsets\n", gbl_vars[i].name);
 	}
+	    
+	evgroup * gp = (evgroup*)malloc(sizeof(evgroup));
+	gp->num_vars = num_gbl_vars;
+	perr("num global vars %d\n", num_gbl_vars);
+	gp->vars = gbl_vars;
+	fileData->gp = gp;
+	fileData->attrs = set_size_atom(fileData->attrs, fileData->size);
+	perr("size:%d\n\n\n", fileData->size);
+	EVsubmit(fileData->offsetSource, gp, fileData->attrs);
+	
 	fileData->sentGlobalOffsets = 1;
     }
 
@@ -1651,6 +1651,7 @@ extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method
         fp_write_log("DATAMUTEX", "no use 4\n"); 
         fileData = fileData->next;
     }
+    // add end_of_shit here
 }
 
 // provides unknown functionality

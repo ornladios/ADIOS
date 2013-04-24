@@ -124,6 +124,8 @@ typedef struct _flexpath_file_data
     FMFormat current_format;
     FMContext context;
 
+    int writer_coordinator;
+
     int num_vars;
     flexpath_var_info * var_list;
     int num_gp; // for array distribution.
@@ -186,7 +188,8 @@ new_flexpath_file_data(const char * fname)
     fp->bridges = NULL;
     fp->current_format = NULL;
     fp->context = NULL;
-
+    
+    fp->writer_coordinator = -1;
     fp->valid = 0;
     fp->num_bridges = 0;
     fp->num_gp = 0;
@@ -302,10 +305,14 @@ static FMField
 
 static int op_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
     op_msg* msg = (op_msg*)vevent;    
+    static int num_rec = 0;
     if(msg->type==2) {
         CMCondition_signal(fp_read_data->fp_cm, msg->condition);
         //ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
     }
+    
+    num_rec++;
+    
     return 0;
 }
 
@@ -319,12 +326,12 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
     evgroup * msg = (evgroup*)vevent;
     ADIOS_FILE *adiosfile = client_data;
     flexpath_file_data * fp = (flexpath_file_data*)adiosfile->fh;
+    fprintf(stderr, "reader rank: %d got evgroup msg\n", fp->rank);
     fp->gp = msg;
     fp->valid_evgroup = 1;
     global_var * vars = msg->vars;
     int num_vars = msg->num_vars;
-    //CMCondition_signal(fp_read_data->fp_cm, fp->ackCondition);
-    //ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
+    CMCondition_signal(fp_read_data->fp_cm, msg->condition);    
     return 0;
 
 }
@@ -823,7 +830,7 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
     /* 	writer_rank = fp->rank; */
     /* }     */
     build_bridge(&fp->bridges[writer_rank]);
-
+    fp->writer_coordinator = writer_rank;
     op_msg init;
     init.step = 0;
     init.type = 3;
@@ -1140,6 +1147,18 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
     case ADIOS_SELECTION_BOUNDINGBOX:
     {
         fp_log("BOUNDING", "bounding box scheduled read\n");
+	if(!fp->gp){
+	    Flush_msg msg;
+	    msg.type = EVGROUP;
+	    msg.rank = fp->rank;
+	    msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
+	    // maybe check to see if the bridge is create first.
+	    fprintf(stderr, "reader rank: %d before submit\n", fp->rank);
+	    EVsubmit(fp->bridges[fp->writer_coordinator].flush_source, &msg, NULL);
+	    fprintf(stderr, "reader rank: %d before condition\n", fp->rank);
+	    CMCondition_wait(fp_read_data->fp_cm, msg.condition);
+	    fprintf(stderr, "reader rank: %d after condition\n", fp->rank);
+	}
         int j=0;
 	int need_count = 0;
 	array_displacements * all_disp = NULL;	
@@ -1174,25 +1193,25 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
             }
             if(!fp->bridges[reader].created) {
                 build_bridge(&(fp->bridges[reader]));
-                op_msg open_msg;
-                open_msg.process_id = fp->rank;
-                open_msg.file_name = "hey";
-                open_msg.type = 1;
-                EVsubmit(fp->bridges[reader].op_source, &open_msg, NULL);
-	        Var_msg var;
-	        var.rank = fp->rank;
-                var.var_name = strdup(v->varname);
-                perr("1 sending %s from %d to %p aka %d\n", 
-		   var.var_name, var.rank, fp->bridges[reader].var_source, reader);
-	        EVsubmit(fp->bridges[reader].var_source, &var, NULL);
-            } else {
-	        Var_msg var;
-	        var.rank = fp->rank;
-                var.var_name = strdup(v->varname);
-                perr("2 sending %s from %d to %p aka %d\n", 
-		   var.var_name, var.rank, fp->bridges[reader].var_source, reader);
-	        EVsubmit(fp->bridges[reader].var_source, &var, NULL);
-            }
+	    }
+	    if(!fp->bridges[reader].opened){
+		op_msg open_msg;
+		open_msg.process_id = fp->rank;
+		open_msg.file_name = "hey";
+		open_msg.type = 1;
+		open_msg.step = adiosfile->current_step;
+		fp->bridges[reader].opened = 1;
+		open_msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
+		EVsubmit(fp->bridges[reader].op_source, &open_msg, NULL);
+		CMCondition_wait(fp_read_data->fp_cm, open_msg.condition);
+	    }
+	
+	    Var_msg var;
+	    var.rank = fp->rank;
+	    var.var_name = strdup(v->varname);
+	    perr("1 sending %s from %d to %p aka %d\n", 
+		 var.var_name, var.rank, fp->bridges[reader].var_source, reader);
+	    EVsubmit(fp->bridges[reader].var_source, &var, NULL);            
 	}
 	v->displ = all_disp;
 	v->num_displ = need_count;
