@@ -43,17 +43,11 @@ typedef struct {
 int adios_transform_aplod_generate_read_subrequests(adios_transform_read_request *reqgroup,
                                                     adios_transform_pg_read_request *pg_reqgroup)
 {
-    uint64_t start_off, end_off; // Start/end byte offsets to read between
-    compute_sieving_offsets_for_pg_selection(pg_reqgroup->pg_intersection_sel, &pg_reqgroup->pg_bounds_sel->u.bb, &start_off, &end_off);
+    int i;
 
+    // Retrieve APLOD metadata, determine how many components to use
     aplod_meta_t aplodmeta;
     parse_aplod_meta(reqgroup->transinfo->transform_metadata, &aplodmeta);
-
-    const int typelen = adios_get_type_size(reqgroup->transinfo->orig_type, NULL);
-    const uint64_t totalElementsInPG = pg_reqgroup->raw_var_length / typelen; // We can do this because APLOD leaves PG size unchanged
-
-    const uint64_t sieveElemCount = end_off - start_off;
-    char *buf = malloc(sieveElemCount * typelen);
 
     int numComponentsToUse;
     if (!reqgroup->read_param || strcmp(reqgroup->read_param, "") == 0)
@@ -62,23 +56,52 @@ int adios_transform_aplod_generate_read_subrequests(adios_transform_read_request
         numComponentsToUse = atoi(reqgroup->read_param);
 
     assert(numComponentsToUse > 0);
+    int totalComponentsSize = 0;
+    for (i = 0; i < numComponentsToUse; i++)
+        totalComponentsSize += aplodmeta.components[i];
 
-    int numByteColsDone = 0;
-    int i;
+    //
+    const int fulltypelen = adios_get_type_size(reqgroup->transinfo->orig_type, NULL);
+    const uint64_t totalElementsInPG = pg_reqgroup->raw_var_length / fulltypelen; // We can do this because APLOD leaves PG size unchanged
+    uint64_t start_off = 0, end_off = totalElementsInPG;
 
-    // Read the element start_pos..end_pos sieving segment from each column
-    for (i = 0; i < numComponentsToUse; i++) {
+    char *buf;
+
+    // Determine if we should sieve or not. Current heuristic: only if using 1 component (sieving is always better in this case)
+    if (numComponentsToUse == 1) {
+        // Sieve
+        compute_sieving_offsets_for_pg_selection(pg_reqgroup->pg_intersection_sel, &pg_reqgroup->pg_bounds_sel->u.bb, &start_off, &end_off);
+
+        const uint64_t sieveElemCount = end_off - start_off;
+        buf = malloc(sieveElemCount * totalComponentsSize);
+
+        int numByteColsDone = 0;
+
+        // Read the element start_pos..end_pos sieving segment from each column
+        for (i = 0; i < numComponentsToUse; i++) {
+            adios_transform_raw_read_request *subreq = adios_transform_raw_read_request_new_byte_segment(
+                    pg_reqgroup,
+                    totalElementsInPG * numByteColsDone + start_off * aplodmeta.components[i],
+                    sieveElemCount * aplodmeta.components[i],
+                    buf + sieveElemCount * numByteColsDone);
+            adios_transform_raw_read_request_append(pg_reqgroup, subreq);
+            numByteColsDone += aplodmeta.components[i];
+        }
+    } else {
+        // Don't sieve
+        buf = malloc(totalElementsInPG * totalComponentsSize);
+
         adios_transform_raw_read_request *subreq = adios_transform_raw_read_request_new_byte_segment(
                 pg_reqgroup,
-                totalElementsInPG * numByteColsDone + start_off * aplodmeta.components[i],
-                sieveElemCount * aplodmeta.components[i],
-                buf + sieveElemCount * numByteColsDone);
+                0,
+                totalElementsInPG * totalComponentsSize,
+                buf);
         adios_transform_raw_read_request_append(pg_reqgroup, subreq);
-        numByteColsDone += aplodmeta.components[i];
     }
 
+    // Set up some temp metadata to help us remember stuff for when the data is available
     aplod_read_meta_t *arm = (aplod_read_meta_t*)malloc(sizeof(aplod_read_meta_t));
-    *arm = (aplod_read_meta_t){ .numElements = sieveElemCount, .outputBuf = buf,
+    *arm = (aplod_read_meta_t){ .numElements = end_off - start_off, .outputBuf = buf,
                                 .startOff = start_off, .numComponentsToUse = numComponentsToUse };
     pg_reqgroup->transform_internal = arm; // Store it for later use
 
