@@ -1637,6 +1637,7 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 // wait until all open files have finished sending data to shutdown
 extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method) {
     FlexpathWriteFileData* fileData = flexpathWriteData.openFiles;
+    fprintf(stderr, "entered finalize: %d\n", fileData->rank);
     fp_write_log("FILE", "Entered finalize\n");
     while(fileData) {
         fp_write_log("DATAMUTEX", "in use 4\n"); 
@@ -1651,7 +1652,24 @@ extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method
         fp_write_log("DATAMUTEX", "no use 4\n"); 
         fileData = fileData->next;
     }
-    // add end_of_shit here
+    // all data has been read by all readers.
+    // we can send everyone end_of_stream messages.
+    int i;
+    for(i=0; i<fileData->numBridges; i++) {
+	if(fileData->bridges[i].created) {
+	    op_msg* ack = (op_msg*) malloc(sizeof(op_msg));
+	    ack->file_name = strdup(fileData->name);
+	    ack->process_id = fileData->rank;
+	    ack->step = fileData->currentStep;
+	    ack->type = 4;
+	    ack->condition = fileData->bridges[i].condition;
+	    fileData->attrs = set_dst_rank_atom(fileData->attrs, i+1);
+	    fp_write_log("FINALIZE", " sending opfinalize _msg : dst %d step %d type ack\n",
+			 i, fileData->currentStep);
+	    fprintf(stderr, "\t\t\t sending finalize message to %d\n", i);
+	    EVsubmit_general(fileData->opSource, ack, op_free, fileData->attrs);
+	}
+    }
 }
 
 // provides unknown functionality

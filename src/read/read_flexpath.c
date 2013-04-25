@@ -305,14 +305,17 @@ static FMField
 
 static int op_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
     op_msg* msg = (op_msg*)vevent;    
-    static int num_rec = 0;
+    ADIOS_FILE *adiosfile = (ADIOS_FILE*)client_data;
+    flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
     if(msg->type==2) {
         CMCondition_signal(fp_read_data->fp_cm, msg->condition);
         //ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
     }
-    
-    num_rec++;
-    
+    if(msg->type == 4){	
+	fprintf(stderr, "reader %d got end_of_stream with condition: %d\n", fp->rank, msg->condition);
+	adios_errno = err_end_of_stream;
+	CMCondition_signal(fp_read_data->fp_cm, msg->condition);
+    }       
     return 0;
 }
 
@@ -711,7 +714,7 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
 			    fp->data_stone,
 			    op_format_list,
 			    op_msg_handler,
-			    NULL);
+			    adiosfile);
 	
     EVassoc_terminal_action(fp_read_data->fp_cm,
 			    fp->data_stone,
@@ -845,6 +848,7 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
     /* msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL); */
     /* EVsubmit(fp->bridges[0].flush_source, &msg, NULL); */
     /* CMCondition_wait(fp_read_data->fp_cm, msg.condition); */
+    adios_errno == err_no_error;
     return adiosfile;
 }
 
