@@ -683,6 +683,7 @@ int common_read_schedule_read (const ADIOS_FILE      * fp,
                                const char            * varname,
                                int                     from_steps,
                                int                     nsteps,
+                               const char            * param, // NCSU ALACRITY-ADIOS
                                void                  * data)
 
 {
@@ -694,7 +695,7 @@ int common_read_schedule_read (const ADIOS_FILE      * fp,
         internals = (struct common_read_internals_struct *) fp->internal_data;
         int varid = common_read_find_name (fp->nvars, fp->var_namelist, varname, 0);
         if (varid >= 0) {
-            retval = common_read_schedule_read_byid (fp, sel, varid, from_steps, nsteps, data);
+            retval = common_read_schedule_read_byid (fp, sel, varid, from_steps, nsteps, param /* NCSU ALACRITY-ADIOS */, data);
         } else {
             retval = adios_errno; // adios_errno was set in common_read_find_name
         }
@@ -712,6 +713,7 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
         int                     varid,
         int                     from_steps,
         int                     nsteps,
+        const char            * param, // NCSU ALACRITY-ADIOS
         void                  * data)
 
 {
@@ -745,7 +747,7 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
     timer_start ("adios_transform_generate_read_requests");
 #endif
                 // Generate the read request group and append it to the list
-                new_reqgroup = adios_transform_generate_read_reqgroup(raw_varinfo, transinfo, fp, sel, from_steps, nsteps, data);
+                new_reqgroup = adios_transform_generate_read_reqgroup(raw_varinfo, transinfo, fp, sel, from_steps, nsteps, param, data);
 #if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
     timer_stop ("adios_transform_generate_read_requests");
 #endif

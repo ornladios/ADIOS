@@ -76,6 +76,7 @@ typedef struct _adios_transform_read_request {
     int                     from_steps;
     int                     nsteps;
     const ADIOS_SELECTION   *orig_sel;  // Global space
+    const char              *read_param; // Special read parameter passed by user, to be interpreted by the transform method
     void                    *orig_data; // User buffer supplied in schedule_reads (could be NULL)
 
     // Number of bytes in data within the selection per timestep
@@ -128,6 +129,7 @@ adios_transform_pg_read_request * adios_transform_pg_read_request_pop(adios_tran
 adios_transform_read_request * adios_transform_read_request_new(const ADIOS_FILE *fp, const ADIOS_VARINFO *varinfo,
                                                                   const ADIOS_TRANSINFO *transinfo,
                                                                   const ADIOS_SELECTION *sel, int from_steps, int nsteps,
+                                                                  const char *param,
                                                                   void *data, enum ADIOS_FLAG swap_endianness);
 void adios_transform_read_request_free(adios_transform_read_request **reqgroup_ptr);
 

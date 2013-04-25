@@ -323,6 +323,7 @@ void adios_transform_pg_read_request_free(adios_transform_pg_read_request **pg_r
 adios_transform_read_request * adios_transform_read_request_new(
         const ADIOS_FILE *fp, const ADIOS_VARINFO *varinfo, const ADIOS_TRANSINFO *transinfo,
         const ADIOS_SELECTION *sel, int from_steps, int nsteps,
+        const char *param,
         void *data, enum ADIOS_FLAG swap_endianness) {
 
     adios_transform_read_request *new_reqgroup;
@@ -337,6 +338,7 @@ adios_transform_read_request * adios_transform_read_request_new(
     new_reqgroup->from_steps = from_steps;
     new_reqgroup->nsteps = nsteps;
     new_reqgroup->orig_sel = copy_selection(sel);
+    new_reqgroup->read_param = param;
     new_reqgroup->orig_data = data;
     new_reqgroup->swap_endianness = swap_endianness;
 

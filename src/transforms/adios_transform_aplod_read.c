@@ -34,6 +34,9 @@ void parse_aplod_meta(char *transform_metadata, aplod_meta_t *metaout) {
 typedef struct {
     uint64_t numElements;
     uint64_t startOff;
+
+    int numComponentsToUse;
+
     char *outputBuf;
 } aplod_read_meta_t;
 
@@ -52,11 +55,19 @@ int adios_transform_aplod_generate_read_subrequests(adios_transform_read_request
     const uint64_t sieveElemCount = end_off - start_off;
     char *buf = malloc(sieveElemCount * typelen);
 
+    int numComponentsToUse;
+    if (!reqgroup->read_param || strcmp(reqgroup->read_param, "") == 0)
+        numComponentsToUse = aplodmeta.numComponents;
+    else
+        numComponentsToUse = atoi(reqgroup->read_param);
+
+    assert(numComponentsToUse > 0);
+
     int numByteColsDone = 0;
     int i;
 
     // Read the element start_pos..end_pos sieving segment from each column
-    for (i = 0; i < aplodmeta.numComponents; i++) {
+    for (i = 0; i < numComponentsToUse; i++) {
         adios_transform_raw_read_request *subreq = adios_transform_raw_read_request_new_byte_segment(
                 pg_reqgroup,
                 totalElementsInPG * numByteColsDone + start_off * aplodmeta.components[i],
@@ -67,8 +78,9 @@ int adios_transform_aplod_generate_read_subrequests(adios_transform_read_request
     }
 
     aplod_read_meta_t *arm = (aplod_read_meta_t*)malloc(sizeof(aplod_read_meta_t));
-    *arm = (aplod_read_meta_t){ .numElements = sieveElemCount, .outputBuf = buf, .startOff = start_off };
-    pg_reqgroup->transform_internal = arm; // Store it here to be safe, since each of the subreqs has a different piece of it
+    *arm = (aplod_read_meta_t){ .numElements = sieveElemCount, .outputBuf = buf,
+                                .startOff = start_off, .numComponentsToUse = numComponentsToUse };
+    pg_reqgroup->transform_internal = arm; // Store it for later use
 
     return 0;
 }
@@ -109,9 +121,9 @@ adios_datablock * adios_transform_aplod_pg_reqgroup_completed(adios_transform_re
     APLODReconstructComponents  (config,
                                     numElements,
                                     0,
-                                    aplodmeta.numComponents,
-                                    0,
-                                    0,
+                                    arm->numComponentsToUse, //aplodmeta.numComponents,
+                                    1, // use mask
+                                    0, // mask = 0
                                     decompressed_buff,
                                     compressed_buff
                                 );

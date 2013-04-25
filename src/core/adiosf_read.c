@@ -1,4 +1,4 @@
-/* 
+/*
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
@@ -122,7 +122,7 @@ void FC_FUNC_(adios_read_open_file, ADIOS_READ_OPEN_FILE)
 }
 
 
-int FC_FUNC_(adios_advance_step, ADIOS_ADVANCE_STEP) 
+int FC_FUNC_(adios_advance_step, ADIOS_ADVANCE_STEP)
         (int64_t *fp, int *last, float *timeout_sec, int *err)
 {
     ADIOS_FILE *afp = (ADIOS_FILE *) *fp;
@@ -160,7 +160,7 @@ void FC_FUNC_(adios_read_close, ADIOS_READ_CLOSE) (int64_t * fp, int * err)
         PRINT_ERRMSG();
 }
 
-void FC_FUNC_(adios_inq_ngroups, ADIOS_INQ_NGROUPS) 
+void FC_FUNC_(adios_inq_ngroups, ADIOS_INQ_NGROUPS)
         (int64_t * fp, int * groups_count, int * err)
 {
     ADIOS_FILE *afp = (ADIOS_FILE *) *fp;
@@ -196,7 +196,7 @@ void FC_FUNC_(adios_inq_groupnames, ADIOS_INQ_GROUPNAMES)
     }
 }
 
-void FC_FUNC_(adios_group_view, ADIOS_GROUP_VIEW) 
+void FC_FUNC_(adios_group_view, ADIOS_GROUP_VIEW)
         (int64_t * fp, int * groupid, int * err)
 {
     ADIOS_FILE *afp = (ADIOS_FILE *) *fp;
@@ -209,7 +209,7 @@ void FC_FUNC_(adios_group_view, ADIOS_GROUP_VIEW)
     }
 }
 
-void FC_FUNC_(adios_inq_file, ADIOS_INQ_FILE) 
+void FC_FUNC_(adios_inq_file, ADIOS_INQ_FILE)
         (int64_t * fp,
          int     * vars_count,
          int     * attrs_count,
@@ -264,8 +264,8 @@ void FC_FUNC_(adios_inq_attrnames, ADIOS_INQ_ATTRNAMES)
     }
 }
 
-void FC_FUNC_(adios_inq_var, ADIOS_INQ_VAR) 
-        (int64_t  * fp, 
+void FC_FUNC_(adios_inq_var, ADIOS_INQ_VAR)
+        (int64_t  * fp,
          char     * varname,
          int      * type,
          int      * nsteps,
@@ -301,7 +301,7 @@ void FC_FUNC_(adios_inq_var, ADIOS_INQ_VAR)
         PRINT_ERRMSG();
 }
 
-void FC_FUNC_(adios_get_scalar, ADIOS_GET_SCALAR) 
+void FC_FUNC_(adios_get_scalar, ADIOS_GET_SCALAR)
         (int64_t  * fp,
          char     * varname,
          void     * data,
@@ -329,7 +329,7 @@ void FC_FUNC_(adios_get_scalar, ADIOS_GET_SCALAR)
         PRINT_ERRMSG();
 }
 
-void FC_FUNC_(adios_schedule_read, ADIOS_SCHEDULE_READ) 
+void FC_FUNC_(adios_schedule_read, ADIOS_SCHEDULE_READ)
         (int64_t  * fp,
          int64_t  * fsel,
          char     * varname,
@@ -345,7 +345,7 @@ void FC_FUNC_(adios_schedule_read, ADIOS_SCHEDULE_READ)
     int i;
     varstr = futils_fstr_to_cstr(varname, varname_len);
     if (varstr != NULL) {
-        *err = common_read_schedule_read (afp, sel, varstr, *from_step, *nsteps, data);
+        *err = common_read_schedule_read (afp, sel, varstr, *from_step, *nsteps, NULL /* NCSU ALACRITY-ADIOS */, data);
         free(varstr);
     } else {
         *err = adios_errno;
@@ -356,7 +356,7 @@ void FC_FUNC_(adios_schedule_read, ADIOS_SCHEDULE_READ)
 
 void FC_FUNC_(adios_schedule_read_f2c, ADIOS_SCHEDULE_READ_F2C) (int64_t * fp, int64_t * fsel, char * varname, int * from_step, int * nsteps, void * data, int * err, int varname_len) { FC_FUNC_(adios_schedule_read, ADIOS_SCHEDULE_READ) (fp,fsel,varname,from_step,nsteps,data,err,varname_len); }
 
-void FC_FUNC_(adios_perform_reads, ADIOS_PERFORM_READS) 
+void FC_FUNC_(adios_perform_reads, ADIOS_PERFORM_READS)
         (int64_t * fp,
          int     * err)
 {
@@ -366,7 +366,7 @@ void FC_FUNC_(adios_perform_reads, ADIOS_PERFORM_READS)
         PRINT_ERRMSG();
 }
 
-void FC_FUNC_(adios_get_statistics, ADIOS_GET_STATISTICS) 
+void FC_FUNC_(adios_get_statistics, ADIOS_GET_STATISTICS)
         (int64_t * gp,
          char    * varname,
          void    * value,
@@ -395,28 +395,28 @@ void FC_FUNC_(adios_get_statistics, ADIOS_GET_STATISTICS)
     if (vi != NULL) {
         size = bp_get_type_size(vi->type, vi->value);
         // get statistics information per each step
-        common_read_inq_var_stat (afp, vi, 1, 0); 
+        common_read_inq_var_stat (afp, vi, 1, 0);
         if (vi->type == adios_string) size++;
         if (vi->value) memcpy(value, vi->value, size);
 
         if (vi->statistics) {
             if (vi->type == adios_complex || vi->type == adios_double_complex) {
-                /* For complex numbers, the statistics in ADIOS_VARINFO, like 
-                   gmin, gavg, std_devs etc, are of base type double. They also 
-                   have an additional dimension that stores the statistics for 
-                   the magnitude, the real part, and the imaginary part of the 
-                   complex number, individually. For example, gmin[0] holds the 
-                   overall minimum value of the magnitude of the complex numbers. 
-                   gmin[1] and gmin [2] contain the global minimums for the real 
-                   and the imaginary parts, respectively. 
+                /* For complex numbers, the statistics in ADIOS_VARINFO, like
+                   gmin, gavg, std_devs etc, are of base type double. They also
+                   have an additional dimension that stores the statistics for
+                   the magnitude, the real part, and the imaginary part of the
+                   complex number, individually. For example, gmin[0] holds the
+                   overall minimum value of the magnitude of the complex numbers.
+                   gmin[1] and gmin [2] contain the global minimums for the real
+                   and the imaginary parts, respectively.
                  */
-                if (vi->statistics->min) 
+                if (vi->statistics->min)
                     memcpy((char *) gmin, (char *) vi->statistics->min, 3*size);
-                if (vi->statistics->max) 
+                if (vi->statistics->max)
                     memcpy(((char *) gmax), (char *) vi->statistics->max, 3*size);
-                if (vi->statistics->avg) 
+                if (vi->statistics->avg)
                     memcpy(gavg, vi->statistics->avg, 3*sizeof(double));
-                if (vi->statistics->std_dev) 
+                if (vi->statistics->std_dev)
                     memcpy(gstd_dev, vi->statistics->std_dev, 3*sizeof(double));
 
                 /* FIXME: I do not know if mins is **void and mins[i] is a void * allocated
@@ -444,23 +444,23 @@ void FC_FUNC_(adios_get_statistics, ADIOS_GET_STATISTICS)
                 }
 
             } else {
-                if (vi->statistics->min) 
+                if (vi->statistics->min)
                     memcpy((char *) gmin, (char *) vi->statistics->min, size);
-                if (vi->statistics->max) 
+                if (vi->statistics->max)
                     memcpy((char *) gmax, (char *) vi->statistics->max, size);
-                if (vi->statistics->avg) 
+                if (vi->statistics->avg)
                     memcpy(gavg, vi->statistics->avg, sizeof(double));
-                if (vi->statistics->std_dev) 
+                if (vi->statistics->std_dev)
                     memcpy(gstd_dev, vi->statistics->std_dev, sizeof(double));
 
                 if (vi->statistics->steps) {
-                    if (vi->statistics->steps->mins) 
+                    if (vi->statistics->steps->mins)
                         memcpy((char *) mins, (char *) vi->statistics->steps->mins, vi->nsteps * size);
-                    if (vi->statistics->steps->maxs) 
+                    if (vi->statistics->steps->maxs)
                         memcpy((char *) maxs, (char *) vi->statistics->steps->maxs, vi->nsteps * size);
-                    if (vi->statistics->steps->avgs) 
+                    if (vi->statistics->steps->avgs)
                         memcpy(avgs, vi->statistics->steps->avgs, vi->nsteps * sizeof(double));
-                    if (vi->statistics->steps->std_devs) 
+                    if (vi->statistics->steps->std_devs)
                         memcpy(std_devs, vi->statistics->steps->std_devs, vi->nsteps * sizeof(double));
                 }
             }
@@ -472,7 +472,7 @@ void FC_FUNC_(adios_get_statistics, ADIOS_GET_STATISTICS)
         PRINT_ERRMSG();
 }
 
-void FC_FUNC_(adios_get_attr, ADIOS_GET_ATTR) 
+void FC_FUNC_(adios_get_attr, ADIOS_GET_ATTR)
         (int64_t * gp,
          char    * attrname,
          void    * attr,
@@ -500,7 +500,7 @@ void FC_FUNC_(adios_get_attr, ADIOS_GET_ATTR)
         PRINT_ERRMSG();
 }
 
-void FC_FUNC_(adios_inq_attr, ADIOS_INQ_ATTR) 
+void FC_FUNC_(adios_inq_attr, ADIOS_INQ_ATTR)
         (int64_t * gp,
          char    * attrname,
          int     * type,
@@ -524,14 +524,14 @@ void FC_FUNC_(adios_inq_attr, ADIOS_INQ_ATTR)
         PRINT_ERRMSG();
 }
 
-void FC_FUNC_(adios_selection_boundingbox, ADIOS_SELECTION_BOUNDINGBOX) 
+void FC_FUNC_(adios_selection_boundingbox, ADIOS_SELECTION_BOUNDINGBOX)
            (int64_t * fsel, uint64_t *ndim, uint64_t *start, uint64_t *count)
-{   
+{
     ADIOS_SELECTION * sel = common_read_selection_boundingbox (*ndim, start, count);
     *fsel = (int64_t) sel;
 }
 
-void FC_FUNC_(adios_selection_points, ADIOS_SELECTION_POINTS) 
+void FC_FUNC_(adios_selection_points, ADIOS_SELECTION_POINTS)
             (int64_t *fsel, uint64_t *ndim, uint64_t *npoints, uint64_t *points)
 {
     ADIOS_SELECTION * sel = common_read_selection_points (*ndim, *npoints, points);

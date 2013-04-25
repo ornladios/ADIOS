@@ -62,6 +62,7 @@ int common_read_schedule_read (const ADIOS_FILE      * fp,
                                const char            * varname,
                                int                     from_steps,
                                int                     nsteps,
+                               const char            * param,
                                void                  * data);
 
 int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
@@ -69,6 +70,7 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
                                     int                     varid,
                                     int                     from_steps,
                                     int                     nsteps,
+                                    const char            * param,
                                     void                  * data);
 
 int common_read_perform_reads (const ADIOS_FILE *fp, int blocking);

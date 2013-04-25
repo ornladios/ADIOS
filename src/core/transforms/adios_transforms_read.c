@@ -61,7 +61,7 @@ inline static const ADIOS_SELECTION * create_pg_bounds(int ndim, ADIOS_VARBLOCK 
 }
 
 adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIOS_VARINFO *raw_varinfo, const ADIOS_TRANSINFO* transinfo, const ADIOS_FILE *fp,
-                                                                       const ADIOS_SELECTION *sel, int from_steps, int nsteps, void *data) {
+                                                                       const ADIOS_SELECTION *sel, int from_steps, int nsteps, const char *param, void *data) {
 #if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_start ("adios_transform_generate_read_requests_init");
 #endif
@@ -104,7 +104,7 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
 #endif
 
     // Allocate a new, empty request group
-    new_reqgroup = adios_transform_read_request_new(fp, raw_varinfo, transinfo, sel, from_steps, nsteps, data, swap_endianness);
+    new_reqgroup = adios_transform_read_request_new(fp, raw_varinfo, transinfo, sel, from_steps, nsteps, param, data, swap_endianness);
 
     // Assemble read requests for each varblock
     blockidx = start_blockidx;

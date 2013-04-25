@@ -402,6 +402,23 @@ int adios_schedule_read_byid (const ADIOS_FILE * fp,
                               int                     nsteps,
                               void                  * data);
 
+// NCSU ALACRITY-ADIOS: Support for those transforms that can change reading behavior (e.g., level-of-detail)
+int adios_schedule_read_param (const ADIOS_FILE * fp,
+                               const ADIOS_SELECTION * sel,
+                               const char            * varname,
+                               int                     from_steps,
+                               int                     nsteps,
+                               const char            * param,
+                               void                  * data);
+
+int adios_schedule_read_byid_param (const ADIOS_FILE * fp,
+                                    const ADIOS_SELECTION * sel,
+                                    int                     varid,
+                                    int                     from_steps,
+                                    int                     nsteps,
+                                    const char            * param,
+                                    void                  * data);
+
 
 /** Let ADIOS perform the scheduled reads
  *  IN:  blocking  If non-zero, return only when all reads are completed.

@@ -23,7 +23,7 @@ enum ADIOS_TRANSFORM_REQGROUP_RESULT_MODE adios_transform_read_request_get_mode(
 
 // Delegation functions
 adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIOS_VARINFO *vi, const ADIOS_TRANSINFO* ti, const ADIOS_FILE *fp,
-                                                                       const ADIOS_SELECTION *sel, int from_steps, int nsteps, void *data);
+                                                                       const ADIOS_SELECTION *sel, int from_steps, int nsteps, const char *param, void *data);
 
 /*
  * Processes a VARCHUNK just returned by the read layer against the given list of outstanding transform

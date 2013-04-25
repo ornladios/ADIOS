@@ -1,4 +1,4 @@
-/* 
+/*
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
@@ -94,7 +94,7 @@ int adios_set_read_method_v1 (enum ADIOS_READ_METHOD_V1 method)
             break;
     }
     return 0;
-} 
+}
 
 
 int adios_read_init_v1(MPI_Comm comm)
@@ -116,13 +116,13 @@ ADIOS_FILE_V1 * adios_fopen_v1 (const char * fname, MPI_Comm comm)
         fp1 = (ADIOS_FILE_V1 *) malloc (sizeof(ADIOS_FILE_V1));
         if (fp1) {
             fp1->fh          = fp->fh;
-            fp1->vars_count  = fp->nvars;  
+            fp1->vars_count  = fp->nvars;
             fp1->attrs_count = fp->nattrs;
             fp1->tidx_start  = 1;
             fp1->ntimesteps  = fp->last_step;
-            fp1->version     = fp->version;  
+            fp1->version     = fp->version;
             fp1->file_size   = fp->file_size;
-            fp1->endianness  = fp->endianness; 
+            fp1->endianness  = fp->endianness;
 
             /* FIX: no groups in new version, extra function should support this */
             fp1->groups_count = common_read_get_grouplist(fp, &fp1->group_namelist);
@@ -135,7 +135,7 @@ ADIOS_FILE_V1 * adios_fopen_v1 (const char * fname, MPI_Comm comm)
     return fp1;
 }
 
-int adios_fclose_v1 (ADIOS_FILE_V1 *fp) 
+int adios_fclose_v1 (ADIOS_FILE_V1 *fp)
 {
     return common_read_close ((ADIOS_FILE*)fp->internal_data);
 }
@@ -206,23 +206,23 @@ int adios_get_attr_v1 (ADIOS_GROUP_V1  * gp, const char * attrname, enum ADIOS_D
     return common_read_get_attr ((ADIOS_FILE*)gp->fp->internal_data, attrname, type, size, data);
 }
 
-int adios_get_attr_byid_v1 (ADIOS_GROUP_V1  * gp, int attrid, 
+int adios_get_attr_byid_v1 (ADIOS_GROUP_V1  * gp, int attrid,
                     enum ADIOS_DATATYPES * type, int * size, void ** data)
 {
     return common_read_get_attr_byid ((ADIOS_FILE*)gp->fp->internal_data, attrid, type, size, data);
 }
 
-static ADIOS_VARINFO_V1 * adios_varinfo_to_v1 (ADIOS_GROUP_V1 *gp, ADIOS_VARINFO *vi, int getstat) 
+static ADIOS_VARINFO_V1 * adios_varinfo_to_v1 (ADIOS_GROUP_V1 *gp, ADIOS_VARINFO *vi, int getstat)
 {
     ADIOS_VARINFO_V1 * v = 0;
     if (vi) {
         v = (ADIOS_VARINFO_V1 *) malloc (sizeof(ADIOS_VARINFO_V1));
-        
+
         v->grpid = 0;
         v->varid = vi->varid;
         v->type = vi->type;
-        v->value = vi->value; 
-             
+        v->value = vi->value;
+
         /* TIME dimension should be emulated here !!! */
         int timed = common_read_is_var_timed((ADIOS_FILE *)gp->fp->internal_data, vi->varid);
         if (timed) {
@@ -244,14 +244,14 @@ static ADIOS_VARINFO_V1 * adios_varinfo_to_v1 (ADIOS_GROUP_V1 *gp, ADIOS_VARINFO
 
         ADIOS_VARSTAT * stat = NULL;
         if (getstat)
-            common_read_inq_var_stat ((ADIOS_FILE *)gp->fp->internal_data, 
+            common_read_inq_var_stat ((ADIOS_FILE *)gp->fp->internal_data,
                                        vi, 1, 0);
 
         if (stat) {
             v->characteristics_count;// = stat->characteristics_count; FIXME
-            v->gmin = stat->min; 
-            v->gmax = stat->max; 
-            v->gavg = stat->avg; 
+            v->gmin = stat->min;
+            v->gmax = stat->max;
+            v->gavg = stat->avg;
             v->gstd_dev = stat->std_dev;
             v->mins = stat->steps->mins;
             v->maxs = stat->steps->maxs;
@@ -265,13 +265,13 @@ static ADIOS_VARINFO_V1 * adios_varinfo_to_v1 (ADIOS_GROUP_V1 *gp, ADIOS_VARINFO
             v->hist->frequenciess = stat->histogram->frequencies;
             v->hist->gfrequencies = stat->histogram->gfrequencies;
         }
-        
+
         v->internal_data = (void *)vi;
     }
     return v;
 }
 
-ADIOS_VARINFO_V1 * adios_inq_var_v1 (ADIOS_GROUP_V1  *gp, const char * varname) 
+ADIOS_VARINFO_V1 * adios_inq_var_v1 (ADIOS_GROUP_V1  *gp, const char * varname)
 {
     ADIOS_VARINFO * vi = common_read_inq_var ((ADIOS_FILE*)gp->fp->internal_data, varname);
     return adios_varinfo_to_v1 (gp, vi, 1);
@@ -298,7 +298,7 @@ int64_t adios_read_var_v1 (ADIOS_GROUP_V1  * gp, const char * varname,
 
     /* variable name -> varid */
     ADIOS_VARINFO * vi = common_read_inq_var (f, varname);
-    if (!vi) 
+    if (!vi)
         return adios_errno;
 
     return adios_read_var_byid_v1 (gp, vi->varid, start, count, data);
@@ -315,7 +315,7 @@ int64_t adios_read_var_byid_v1 (ADIOS_GROUP_V1 * gp,
 
     /* First get the number of dimensions of the variable */
     ADIOS_VARINFO * vi = common_read_inq_var_byid (f, varid);
-    if (!vi) 
+    if (!vi)
         return adios_errno;
     ADIOS_VARINFO_V1 * v = adios_varinfo_to_v1 (gp, vi, 0); // fixes time
 
@@ -333,7 +333,7 @@ int64_t adios_read_var_byid_v1 (ADIOS_GROUP_V1 * gp,
 
     ADIOS_SELECTION * sel = adios_selection_boundingbox (ndim, start+tidx, count+tidx);
 
-    common_read_schedule_read_byid (f, sel, varid, from_step, nsteps, data);
+    common_read_schedule_read_byid (f, sel, varid, from_step, nsteps, NULL, data); // NCSU ALACRITY-ADIOS
     int ret = common_read_perform_reads (f, 1);
     int64_t rbytes;
     if (ret == err_no_error) {
@@ -367,7 +367,7 @@ int64_t adios_read_local_var_v1 (ADIOS_GROUP_V1 * gp,
        Otherwise we return an out of bound error, although it probably should
        be a "within bounds" error
 
-       Version 1: 
+       Version 1:
           - start/count has no time dimension for the local read
           - idx is for all timesteps, 0...timesteps*blocks
        Version 2:
@@ -377,7 +377,7 @@ int64_t adios_read_local_var_v1 (ADIOS_GROUP_V1 * gp,
 
     /* First get the number of dimensions of the variable */
     ADIOS_VARINFO * vi = common_read_inq_var (f, varname);
-    if (!vi) 
+    if (!vi)
         return adios_errno;
 
     /* get step from the idx, and check validity of idx */
@@ -402,7 +402,7 @@ int64_t adios_read_local_var_v1 (ADIOS_GROUP_V1 * gp,
             adios_error (err_out_of_bound, "ADIOS ERROR: when reading a local "
                 "variable, only the whole block can be requested; subselections "
                 "are not allowed. Variable %s, block %d, dimension %d size is %lld, "
-                "requested %lld from offset %lld\n", 
+                "requested %lld from offset %lld\n",
                 varname, idx, vi->blockinfo[idx].count[i], count[i], start[i]);
             return adios_errno;
         }
@@ -410,7 +410,7 @@ int64_t adios_read_local_var_v1 (ADIOS_GROUP_V1 * gp,
 
     ADIOS_SELECTION * sel = adios_selection_writeblock (idx_in_step);
 
-    common_read_schedule_read_byid (f, sel, vi->varid, step, 1, data);
+    common_read_schedule_read_byid (f, sel, vi->varid, step, 1, NULL, data); // NCSU ALACRITY-ADIOS
     int ret = common_read_perform_reads (f, 1);
     int64_t rbytes;
     if (ret == err_no_error) {
@@ -438,14 +438,14 @@ int adios_type_size_v1(enum ADIOS_DATATYPES type, void *data)
 }
 
 
-void adios_print_groupinfo (ADIOS_GROUP_V1 *gp) 
+void adios_print_groupinfo (ADIOS_GROUP_V1 *gp)
 {
     ADIOS_FILE *f = (ADIOS_FILE*)gp->fp->internal_data;
     common_read_print_fileinfo(f);
 }
 
 
-void adios_print_fileinfo_v1 (ADIOS_FILE_V1 *fp) 
+void adios_print_fileinfo_v1 (ADIOS_FILE_V1 *fp)
 {
     ADIOS_FILE *f = (ADIOS_FILE*)fp->internal_data;
     common_read_print_fileinfo(f);
@@ -465,27 +465,27 @@ double adios_stat_cor_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char *
 
     if (vix == NULL)
     {
-	adios_error(err_invalid_argument, "Variable not defined\n");
+    adios_error(err_invalid_argument, "Variable not defined\n");
         return 0;
     }
 
     // If the vix and viy are not time series objects, return.
     if ((vix->timedim < 0) && (viy->timedim < 0))
-    {             
+    {
         adios_error(err_invalid_argument, "Covariance must involve timeseries data\n");
         return 0;
-    }                                                                    
+    }
 
     uint32_t min = vix->dims[0] - 1;
     if (viy && (min > viy->dims[0] - 1))
-        min = viy->dims[0] - 1;         
-    
-    if(time_start == 0 && time_end == 0) 
+        min = viy->dims[0] - 1;
+
+    if(time_start == 0 && time_end == 0)
     { //global covariance
         if(viy == NULL) {
             adios_error(err_invalid_argument, "Must have two variables for global covariance\n");
             return 0;
-        }                                                                          
+        }
 
         // Assign vix to viy, and calculate covariance
         viy = vix;
@@ -500,7 +500,7 @@ double adios_stat_cor_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char *
         if(viy == NULL) //user must want to run covariance against itself
         {
             if(! (time_end+lag) > min)
-            {                                                                        
+            {
                 adios_error(err_invalid_timestep, "Must leave enough timesteps for lag\n");
                 return 0;
             }
@@ -515,9 +515,9 @@ double adios_stat_cor_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char *
 
                 for (i = time_start; i <= time_end; i ++)
                 {
-                    double val_x = bp_value_to_double (adios_double, vix->avgs[i]); 
-                    double val_lag = bp_value_to_double (adios_double, vix->avgs[i + lag]); 
-                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1); 
+                    double val_x = bp_value_to_double (adios_double, vix->avgs[i]);
+                    double val_lag = bp_value_to_double (adios_double, vix->avgs[i + lag]);
+                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1);
                     var_lag += (val_lag - avg_lag) * (val_lag - avg_lag) / (time_end - time_start + 1);
                     cov += (val_x - avg_x) * (val_lag - avg_lag) / (time_end - time_start + 1);
                 }
@@ -549,9 +549,9 @@ double adios_stat_cor_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char *
 
                 for (i = time_start; i <= time_end; i ++)
                 {
-                    double val_x = bp_value_to_double (vix->type, vix->mins[i]); 
-                    double val_lag = bp_value_to_double (vix->type, vix->mins[i + lag]); 
-                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1); 
+                    double val_x = bp_value_to_double (vix->type, vix->mins[i]);
+                    double val_lag = bp_value_to_double (vix->type, vix->mins[i + lag]);
+                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1);
                     var_lag += (val_lag - avg_lag) * (val_lag - avg_lag) / (time_end - time_start + 1);
                     cov += (val_x - avg_x) * (val_lag - avg_lag) / (time_end - time_start + 1);
                 }
@@ -566,9 +566,9 @@ double adios_stat_cor_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char *
 
                 for (i = time_start; i <= time_end; i ++)
                 {
-                    double val_x = bp_value_to_double (vix->type, vix->maxs[i]); 
-                    double val_lag = bp_value_to_double (vix->type, vix->maxs[i + lag]); 
-                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1); 
+                    double val_x = bp_value_to_double (vix->type, vix->maxs[i]);
+                    double val_lag = bp_value_to_double (vix->type, vix->maxs[i + lag]);
+                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1);
                     var_lag += (val_lag - avg_lag) * (val_lag - avg_lag) / (time_end - time_start + 1);
                     cov += (val_x - avg_x) * (val_lag - avg_lag) / (time_end - time_start + 1);
                 }
@@ -591,9 +591,9 @@ double adios_stat_cor_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char *
                 }
                 for (i = time_start; i <= time_end; i ++)
                 {
-                    double val_x = bp_value_to_double (adios_double, vix->avgs[i]); 
-                    double val_y = bp_value_to_double (adios_double, viy->avgs[i]); 
-                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1); 
+                    double val_x = bp_value_to_double (adios_double, vix->avgs[i]);
+                    double val_y = bp_value_to_double (adios_double, viy->avgs[i]);
+                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1);
                     var_y += (val_y - avg_y) * (val_y - avg_y) / (time_end - time_start + 1);
                     cov += (val_x - avg_x) * (val_y - avg_y) / (time_end - time_start + 1);
                 }
@@ -623,9 +623,9 @@ double adios_stat_cor_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char *
                 }
                 for (i = time_start; i <= time_end; i ++)
                 {
-                    double val_x = bp_value_to_double (vix->type, vix->mins[i]); 
-                    double val_y = bp_value_to_double (viy->type, viy->mins[i]); 
-                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1); 
+                    double val_x = bp_value_to_double (vix->type, vix->mins[i]);
+                    double val_y = bp_value_to_double (viy->type, viy->mins[i]);
+                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1);
                     var_y += (val_y - avg_y) * (val_y - avg_y) / (time_end - time_start + 1);
                     cov += (val_x - avg_x) * (val_y - avg_y) / (time_end - time_start + 1);
                 }
@@ -639,9 +639,9 @@ double adios_stat_cor_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char *
                 }
                 for (i = time_start; i <= time_end; i ++)
                 {
-                    double val_x = bp_value_to_double (vix->type, vix->maxs[i]); 
-                    double val_y = bp_value_to_double (viy->type, viy->maxs[i]); 
-                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1); 
+                    double val_x = bp_value_to_double (vix->type, vix->maxs[i]);
+                    double val_y = bp_value_to_double (viy->type, viy->maxs[i]);
+                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1);
                     var_y += (val_y - avg_y) * (val_y - avg_y) / (time_end - time_start + 1);
                     cov += (val_x - avg_x) * (val_y - avg_y) / (time_end - time_start + 1);
                 }
@@ -678,21 +678,21 @@ double adios_stat_cov_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char *
 
     // If the vix and viy are not time series objects, return.
     if ((vix->timedim < 0) && (viy->timedim < 0))
-    {             
+    {
         adios_error(err_invalid_argument, "Covariance must involve timeseries data\n");
         return 0;
-    }                                                                    
+    }
 
     uint32_t min = vix->dims[0] - 1;
     if (viy && (min > viy->dims[0] - 1))
-        min = viy->dims[0] - 1;         
-    
-    if(time_start == 0 && time_end == 0) 
+        min = viy->dims[0] - 1;
+
+    if(time_start == 0 && time_end == 0)
     { //global covariance
         if(viy == NULL) {
             adios_error(err_invalid_argument, "Must have two variables for global covariance\n");
             return 0;
-        }                                                                          
+        }
 
         // Assign vix to viy, and calculate covariance
         viy = vix;
@@ -707,7 +707,7 @@ double adios_stat_cov_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char *
         if(viy == NULL) //user must want to run covariance against itself
         {
             if(! (time_end+lag) > min)
-            {                                                                        
+            {
                 adios_error(err_invalid_timestep, "Must leave enough timesteps for lag\n");
                 return 0;
             }

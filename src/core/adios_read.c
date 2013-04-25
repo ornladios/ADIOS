@@ -1,4 +1,4 @@
-/* 
+/*
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
@@ -22,7 +22,7 @@ const char *adios_errmsg ()
 int adios_read_init_method (enum ADIOS_READ_METHOD method, MPI_Comm comm, const char * parameters)
 {
     return common_read_init_method (method,comm,parameters);
-} 
+}
 
 int adios_read_finalize_method(enum ADIOS_READ_METHOD method)
 {
@@ -47,7 +47,7 @@ ADIOS_FILE * adios_read_open_file (const char * fname,
     return common_read_open_file (fname, method, comm);
 }
 
-int adios_read_close (ADIOS_FILE *fp) 
+int adios_read_close (ADIOS_FILE *fp)
 {
     return common_read_close (fp);
 }
@@ -62,7 +62,7 @@ void adios_release_step (ADIOS_FILE *fp)
     common_read_release_step (fp);
 }
 
-ADIOS_VARINFO * adios_inq_var (ADIOS_FILE  *fp, const char * varname) 
+ADIOS_VARINFO * adios_inq_var (ADIOS_FILE  *fp, const char * varname)
 {
     return common_read_inq_var (fp, varname);
 }
@@ -95,7 +95,7 @@ int adios_schedule_read (const ADIOS_FILE      * fp,
                              int                     nsteps,
                              void                  * data)
 {
-    return common_read_schedule_read (fp, sel, varname, from_steps, nsteps, data);
+    return common_read_schedule_read (fp, sel, varname, from_steps, nsteps, NULL, data);
 }
 
 int adios_schedule_read_byid (const ADIOS_FILE      * fp,
@@ -105,7 +105,27 @@ int adios_schedule_read_byid (const ADIOS_FILE      * fp,
                                   int                     nsteps,
                                   void                  * data)
 {
-    return common_read_schedule_read_byid (fp, sel, varid, from_steps, nsteps, data);
+    return common_read_schedule_read_byid (fp, sel, varid, from_steps, nsteps, NULL, data);
+}
+
+int adios_schedule_read_param (const ADIOS_FILE * fp,
+                               const ADIOS_SELECTION * sel,
+                               const char            * varname,
+                               int                     from_steps,
+                               int                     nsteps,
+                               const char            * param,
+                               void                  * data) {
+    return common_read_schedule_read (fp, sel, varname, from_steps, nsteps, param, data);
+}
+
+int adios_schedule_read_byid_param (const ADIOS_FILE * fp,
+                                    const ADIOS_SELECTION * sel,
+                                    int                     varid,
+                                    int                     from_steps,
+                                    int                     nsteps,
+                                    const char            * param,
+                                    void                  * data) {
+    return common_read_schedule_read_byid (fp, sel, varid, from_steps, nsteps, param, data);
 }
 
 int adios_perform_reads (const ADIOS_FILE *fp, int blocking)
@@ -129,7 +149,7 @@ int adios_get_attr (ADIOS_FILE  * fp, const char * attrname, enum ADIOS_DATATYPE
     return common_read_get_attr (fp, attrname, type, size, data);
 }
 
-int adios_get_attr_byid (ADIOS_FILE  * fp, int attrid, 
+int adios_get_attr_byid (ADIOS_FILE  * fp, int attrid,
                     enum ADIOS_DATATYPES * type, int * size, void ** data)
 {
     return common_read_get_attr_byid (fp, attrid, type, size, data);
@@ -155,7 +175,7 @@ int adios_group_view (ADIOS_FILE  *fp, int groupid)
     return common_read_group_view (fp, groupid);
 }
 
-void adios_print_fileinfo (ADIOS_FILE *fp) 
+void adios_print_fileinfo (ADIOS_FILE *fp)
 {
     common_read_print_fileinfo(fp);
 }
