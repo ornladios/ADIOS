@@ -11,11 +11,6 @@
 
 #include "aplod.h"
 
-static int is_digit_str(char* input_str)
-{
-    return 1;
-}
-
 uint16_t adios_transform_aplod_get_metadata_size()
 {
     // Write the component vector here
@@ -34,12 +29,9 @@ int adios_transform_aplod_apply(struct adios_file_struct *fd,
                                 int use_shared_buffer,
                                 int *wrote_to_shared_buffer)
 {
-    // Assume this function is only called for COMPRESS transform type
-    assert(var->transform_type == adios_transform_aplod);
-
     // Get the input data and data length
     const uint64_t input_size = adios_transform_get_pre_transform_var_size(fd->group, var);
-    const void *input_buff= var->data;
+    const void *input_buff = var->data;
 
     // max size supported is long double
     int32_t componentVector [4];
@@ -102,59 +94,36 @@ int adios_transform_aplod_apply(struct adios_file_struct *fd,
     uint64_t output_size = input_size;
     void* output_buff = NULL;
 
-    uint64_t mem_allowed = 0;
-    if (use_shared_buffer)
-    {
-        *wrote_to_shared_buffer = 1;
+    if (use_shared_buffer) {
         // If shared buffer is permitted, serialize to there
-        if (!shared_buffer_reserve(fd, output_size))
-        {
-            log_error("Out of memory allocating %llu bytes for %s for aplod transform\n", output_size, var->name);
-            return 0;
-        }
+        assert(shared_buffer_reserve(fd, output_size));
 
         // Write directly to the shared buffer
         output_buff = fd->buffer + fd->offset;
-    }
-    else    // Else, fall back to var->data memory allocation
-    {
-        *wrote_to_shared_buffer = 0;
+    } else { // Else, fall back to var->data memory allocation
         output_buff = malloc(output_size);
-        if (!output_buff)
-        {
-            log_error("Out of memory allocating %llu bytes for %s for aplod transform\n", output_size, var->name);
-            return 0;
-        }
+        assert(output_buff);
     }
-
-    // printf ("Numcomponents: %hu\n", numComponents);
+    *wrote_to_shared_buffer = use_shared_buffer;
 
     // APLOD specific code - Start
     uint32_t numElements = input_size / bp_get_type_size (var->pre_transform_type, "");
 
     APLODConfig_t *config = APLODConfigure (componentVector, numComponents);
+    config->blockLengthElts = numElements; // Bug workaround, disable chunking
 
-    config->blockLengthElts = numElements;
     APLODShuffleComponents (config, numElements, 0, numComponents, input_buff, output_buff);
-
-    // void *decompressed_buff = (void *) calloc (input_size, sizeof (char));
-    // APLODReconstructComponents  (config, numElements, 0, numComponents, 0, 0, decompressed_buff, output_buff);
-    // assert (memcmp (input_buff, decompressed_buff, numElements * sizeof (double)) == 0);
-    // free (decompressed_buff);
-
     // APLOD specific code - End
 
     // Wrap up, depending on buffer mode
-    if (*wrote_to_shared_buffer)
-    {
+    if (*wrote_to_shared_buffer) {
         shared_buffer_mark_written(fd, output_size);
-    }
-    else
-    {
+    } else {
         var->data = output_buff;
         var->data_size = output_size;
         var->free_data = adios_flag_yes;
     }
+    *transformed_len = output_size; // Return the size of the data buffer
 
     // Do I copy the PLODHandle_t object as the metadata or do I serialize it into the buffer as well
     if(var->transform_metadata && var->transform_metadata_len > 0)
@@ -165,14 +134,8 @@ int adios_transform_aplod_apply(struct adios_file_struct *fd,
 
     }
 
-    free (config->byteVector);
-    free (config->byteVectorPS);
-    free (config);
-
-    // printf("adios_transform_compress_apply compress %d input_size %d actual_output_size %d\n",
-            // rtn, input_size, actual_output_size);
-
-    *transformed_len = output_size; // Return the size of the data buffer
+    // Cleanup time
+    APLODDestroy(config);
 
     return 1;
 }

@@ -139,7 +139,7 @@ adios_datablock * adios_transform_aplod_pg_reqgroup_completed(adios_transform_re
     parse_aplod_meta(reqgroup->transinfo->transform_metadata, &aplodmeta);
 
     APLODConfig_t *config = APLODConfigure (aplodmeta.components, aplodmeta.numComponents);
-    config->blockLengthElts = numElements;
+    config->blockLengthElts = numElements; // Bug workaround, disable chunking
 
     APLODReconstructComponents  (config,
                                     numElements,
@@ -151,9 +151,7 @@ adios_datablock * adios_transform_aplod_pg_reqgroup_completed(adios_transform_re
                                     compressed_buff
                                 );
 
-    free (config->byteVector);
-    free (config->byteVectorPS);
-    free (config);
+    APLODDestroy(config);
 
     // Clear the buffer pointers for all raw read requests, because they all point
     // to the same buffer, and would be free'd by the framework if we didn't clear here

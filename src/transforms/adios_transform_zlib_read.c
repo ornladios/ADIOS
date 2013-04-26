@@ -35,21 +35,9 @@ int decompress_zlib_pre_allocated(const void* input_data, const uint64_t input_l
 int adios_transform_zlib_generate_read_subrequests(adios_transform_read_request *reqgroup,
                                                     adios_transform_pg_read_request *pg_reqgroup)
 {
-
-    assert(reqgroup && pg_reqgroup);
-
     void *buf = malloc(pg_reqgroup->raw_var_length);
-
-    // printf("[adios_transform_zlib_generate_read_subrequests] raw_var_length %d %d %d %d %d\n",
-            // pg_reqgroup->raw_var_length, pg_reqgroup->raw_varblock->start[0], pg_reqgroup->raw_varblock->count[0],
-            // pg_reqgroup->raw_varblock->start[1], pg_reqgroup->raw_varblock->count[1]);
-
-    // adios_transform_raw_read_request *subreq = adios_transform_raw_read_request_new(pg_reqgroup->raw_varblock, buf);
-    // adios_transform_raw_read_request_append(pg_reqgroup, subreq);
-
     adios_transform_raw_read_request *subreq = adios_transform_raw_read_request_new_whole_pg(pg_reqgroup, buf);
     adios_transform_raw_read_request_append(pg_reqgroup, subreq);
-
     return 0;
 }
 
@@ -66,35 +54,26 @@ adios_datablock * adios_transform_zlib_subrequest_completed(adios_transform_read
 adios_datablock * adios_transform_zlib_pg_reqgroup_completed(adios_transform_read_request *reqgroup,
                                                              adios_transform_pg_read_request *completed_pg_reqgroup)
 {
-    uint64_t compressed_len = (uint64_t)completed_pg_reqgroup->raw_var_length;
-    void* compressed_buff = completed_pg_reqgroup->subreqs->data;
+    uint64_t raw_size = (uint64_t)completed_pg_reqgroup->raw_var_length;
+    void* raw_buff = completed_pg_reqgroup->subreqs->data;
 
-    uint64_t decompressed_len_test = adios_get_type_size(reqgroup->transinfo->orig_type, "");
+    uint64_t orig_size = adios_get_type_size(reqgroup->transinfo->orig_type, "");
     int d = 0;
     for(d = 0; d < reqgroup->transinfo->orig_ndim; d++)
-    {
-        decompressed_len_test *= (uint64_t)(completed_pg_reqgroup->orig_varblock->count[d]);
-    }
+        orig_size *= (uint64_t)(completed_pg_reqgroup->orig_varblock->count[d]);
 
-    // retrieve the original buffer length from metadata
-    uint64_t decompressed_len = *((uint64_t*)(reqgroup->transinfo->transform_metadata));
-    void* decompressed_buff = malloc(decompressed_len);
+    void* orig_buff = malloc(orig_size);
 
-    int rtn = decompress_zlib_pre_allocated(compressed_buff, compressed_len, decompressed_buff, &decompressed_len);
+    int rtn = decompress_zlib_pre_allocated(raw_buff, raw_size, orig_buff, &orig_size);
     if(0 != rtn)
     {
-        if(decompressed_buff)
-        {
-            free(decompressed_buff);
-            decompressed_buff = NULL;
-        }
         return NULL;
     }
 
     return adios_datablock_new(reqgroup->transinfo->orig_type,
                                completed_pg_reqgroup->timestep,
                                completed_pg_reqgroup->pg_bounds_sel,
-                               decompressed_buff);
+                               orig_buff);
 }
 
 adios_datablock * adios_transform_zlib_reqgroup_completed(adios_transform_read_request *completed_reqgroup)

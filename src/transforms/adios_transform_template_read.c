@@ -7,12 +7,10 @@
 #include "adios_transforms_hooks_read.h"
 #include "adios_transforms_reqgroup.h"
 
-#ifdef ALACRITY
+#ifdef TEMPLATE
 
-#include "alacrity.h"
-
-int adios_transform_alacrity_generate_read_subrequests(adios_transform_read_request *reqgroup,
-                                                    adios_transform_pg_read_request *pg_reqgroup)
+int adios_transform_template_generate_read_subrequests(adios_transform_read_request *reqgroup,
+                                                       adios_transform_pg_read_request *pg_reqgroup)
 {
     void *buf = malloc(pg_reqgroup->raw_var_length);
     adios_transform_raw_read_request *subreq = adios_transform_raw_read_request_new_whole_pg(pg_reqgroup, buf);
@@ -21,7 +19,7 @@ int adios_transform_alacrity_generate_read_subrequests(adios_transform_read_requ
 }
 
 // Do nothing for individual subrequest
-adios_datablock * adios_transform_alacrity_subrequest_completed(adios_transform_read_request *reqgroup,
+adios_datablock * adios_transform_template_subrequest_completed(adios_transform_read_request *reqgroup,
                                                                 adios_transform_pg_read_request *pg_reqgroup,
                                                                 adios_transform_raw_read_request *completed_subreq)
 {
@@ -30,10 +28,10 @@ adios_datablock * adios_transform_alacrity_subrequest_completed(adios_transform_
 
 
 
-adios_datablock * adios_transform_alacrity_pg_reqgroup_completed(adios_transform_read_request *reqgroup,
+adios_datablock * adios_transform_template_pg_reqgroup_completed(adios_transform_read_request *reqgroup,
                                                                  adios_transform_pg_read_request *completed_pg_reqgroup)
 {
-    //uint64_t raw_size = (uint64_t)completed_pg_reqgroup->raw_var_length;
+    uint64_t raw_size = (uint64_t)completed_pg_reqgroup->raw_var_length;
     void* raw_buff = completed_pg_reqgroup->subreqs->data;
 
     uint64_t orig_size = adios_get_type_size(reqgroup->transinfo->orig_type, "");
@@ -43,21 +41,7 @@ adios_datablock * adios_transform_alacrity_pg_reqgroup_completed(adios_transform
 
     void* orig_buff = malloc(orig_size);
 
-    ALPartitionData output_partition;
-    uint64_t numElements = 0;
-
-    // Decompress into output_partition from compressed_buf
-    memstream_t ms = memstreamInitReturn (raw_buff);
-
-    // Deserialize the ALPartitionData from memstream
-    ALDeserializePartitionData (&output_partition, &ms);
-
-    // Decode ALPartitionData into decompresed buffer
-    int rtn = ALDecode (&output_partition, orig_buff, &numElements);
-    if (ALErrorNone != rtn)
-        return NULL;
-
-    ALPartitionDataDestroy(&output_partition);
+    // Decompress into orig_buff
 
     return adios_datablock_new(reqgroup->transinfo->orig_type,
                                completed_pg_reqgroup->timestep,
@@ -65,7 +49,8 @@ adios_datablock * adios_transform_alacrity_pg_reqgroup_completed(adios_transform
                                orig_buff);
 }
 
-adios_datablock * adios_transform_alacrity_reqgroup_completed(adios_transform_read_request *completed_reqgroup)
+// Do nothing for the full read request complete (typical)
+adios_datablock * adios_transform_template_reqgroup_completed(adios_transform_read_request *completed_reqgroup)
 {
     return NULL;
 }
@@ -73,7 +58,7 @@ adios_datablock * adios_transform_alacrity_reqgroup_completed(adios_transform_re
 
 #else
 
-DECLARE_TRANSFORM_READ_METHOD_UNIMPL(alacrity);
+DECLARE_TRANSFORM_READ_METHOD_UNIMPL(zlib);
 
 #endif
 

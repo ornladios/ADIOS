@@ -23,17 +23,14 @@ uint64_t adios_transform_alacrity_calc_vars_transformed_size(uint64_t orig_size,
 }
 
 int adios_transform_alacrity_apply(struct adios_file_struct *fd,
-                                struct adios_var_struct *var,
-                                uint64_t *transformed_len,
-                                int use_shared_buffer,
-                                int *wrote_to_shared_buffer)
+                                   struct adios_var_struct *var,
+                                   uint64_t *transformed_len,
+                                   int use_shared_buffer,
+                                   int *wrote_to_shared_buffer)
 {
-    // Assume this function is only called for ALACRITY transform type
-    assert(var->transform_type == adios_transform_alacrity);
-
     // Get the input data and data length
     const uint64_t input_size = adios_transform_get_pre_transform_var_size(fd->group, var);
-    const void *input_buff= var->data;
+    const void *input_buff = var->data;
 
     ALEncoderConfig config;
     uint32_t numElements = 0;
@@ -47,16 +44,14 @@ int adios_transform_alacrity_apply(struct adios_file_struct *fd,
         ALEncoderConfigure(&config, 16, DATATYPE_FLOAT64, ALInvertedIndex);
         numElements = input_size / sizeof (double);
     } else {
-        // What should I do to ensure that the transform actually does nothing
-        // Check Error
         log_error("Can index only real datatypes. \n");
-        assert(0);
+        return 0;
     }
 
+    // Longest parameter-parsing code ever.
     // parse the parameter relating to sigbits, with index compression
     // Read all ALACRITY parameters here
-    if(var->transform_type_param)
-    {
+    if(var->transform_type_param) {
         char transform_param [1024];
         char *transform_param_ptr       = 0;
         uint16_t transform_param_length = 0;
@@ -123,29 +118,24 @@ int adios_transform_alacrity_apply(struct adios_file_struct *fd,
         ALConvertIndexForm (&output_partition.metadata, &output_partition.index, ALCompressedInvertedIndex);
     } else {
         log_error("Error on indexing %s\n", var->name);
-        assert(0);
+        return 0;
     }
 
     output_size = ALGetPartitionDataSize (&output_partition);
 
     if (use_shared_buffer) {
-        *wrote_to_shared_buffer = 1;
         // If shared buffer is permitted, serialize to there
-        if (!shared_buffer_reserve(fd, output_size)) {
-            log_error("Out of memory allocating %llu bytes for %s for ALACRITY transform\n", output_size, var->name);
-            assert(0);
-        }
+        assert(shared_buffer_reserve(fd, output_size));
 
         // Write directly to the shared buffer
         output_buff = fd->buffer + fd->offset;
-    } else {
-        *wrote_to_shared_buffer = 0;
-        output_buff = malloc (output_size);
+    } else { // Else, fall back to var->data memory allocation
+        output_buff = malloc(output_size);
+        assert(output_buff);
     }
-    assert(output_buff);
+    *wrote_to_shared_buffer = use_shared_buffer;
 
     memstream_t ms = memstreamInitReturn (output_buff);
-
     ALSerializePartitionData (&output_partition, &ms);
 
     // Check this for later. What do you intend to add in the metadata
@@ -158,13 +148,7 @@ int adios_transform_alacrity_apply(struct adios_file_struct *fd,
     assert(output_size == ((char*)ms.ptr - (char*)ms.buf)); // Make sure we computed the output size right
 
     ALPartitionDataDestroy (&output_partition);
-    memstreamDestroy (&ms, false);
-
-    // if ( actual_output_size > input_size)  // or size after compression is even larger (not likely to happen since compression lib will return non-zero in this case)
-    // {
-    //     memcpy(output_buff, input_buff, input_size);
-    //     actual_output_size = input_size;
-    // }
+    memstreamDestroy(&ms, false);
 
     // Wrap up, depending on buffer mode
     if (*wrote_to_shared_buffer) {
