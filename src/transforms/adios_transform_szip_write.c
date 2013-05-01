@@ -82,9 +82,9 @@ int adios_transform_szip_apply(struct adios_file_struct *fd,
     int ndims = 1;
     uint64_t dim[1] = {input_size/sizeof(double)};
 
-    double d1 = dclock();
+    // double d1 = dclock();
     int rtn = compress_szip_pre_allocated(input_buff, input_size, output_buff, &output_size, ndims, dim);
-    double d2 = dclock();
+    // double d2 = dclock();
 
     if(0 != rtn 					// compression failed for some reason, then just copy the buffer
         || output_size > input_size)  // or size after compression is even larger (not likely to happen since compression lib will return non-zero in this case)
