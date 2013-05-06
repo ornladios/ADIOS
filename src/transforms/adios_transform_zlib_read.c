@@ -11,19 +11,19 @@
 
 #include "zlib.h"
 
-int decompress_zlib_pre_allocated(const void* input_data, const uint64_t input_len,
-                                    void* output_data, uint64_t* output_len)
+int decompress_zlib_pre_allocated(const void* input_data, 
+									const uint64_t input_len,
+                                    void* output_data, 
+									uint64_t* output_len)
 {
     assert(input_data != NULL && input_len > 0 && output_data != NULL && output_len != NULL && *output_len > 0);
 
     uLongf dest_temp = *output_len;
 
-    // printf("decompress_zlib_pre_allocated %d %d\n", dest_temp, input_len);
-
     int z_rtn = uncompress((Bytef*)output_data, &dest_temp, (Bytef*)input_data, input_len);
     if(z_rtn != Z_OK)
     {
-        printf("zlib uncompress error %d\n", z_rtn);
+        // printf("zlib uncompress error %d\n", z_rtn);
         return -1;
     }
 
@@ -56,20 +56,37 @@ adios_datablock * adios_transform_zlib_pg_reqgroup_completed(adios_transform_rea
 {
     uint64_t raw_size = (uint64_t)completed_pg_reqgroup->raw_var_length;
     void* raw_buff = completed_pg_reqgroup->subreqs->data;
+	
+	uint64_t orig_size_meta = *((uint64_t*)reqgroup->transinfo->transform_metadata);
+	char compress_succ = *((char*)(reqgroup->transinfo->transform_metadata + sizeof(uint64_t)));
 
     uint64_t orig_size = adios_get_type_size(reqgroup->transinfo->orig_type, "");
     int d = 0;
     for(d = 0; d < reqgroup->transinfo->orig_ndim; d++)
+	{
         orig_size *= (uint64_t)(completed_pg_reqgroup->orig_varblock->count[d]);
+	}
+	
+	if(orig_size_meta != orig_size)
+	{
+		printf("possible wrong data size or corrupted metadata\n");
+	}
 
     void* orig_buff = malloc(orig_size);
-
-    int rtn = decompress_zlib_pre_allocated(raw_buff, raw_size, orig_buff, &orig_size);
-    if(0 != rtn)
-    {
-        return NULL;
-    }
-
+	
+	if(compress_succ == 1)	// compression is successful
+	{
+		int rtn = decompress_zlib_pre_allocated(raw_buff, raw_size, orig_buff, &orig_size);
+		if(0 != rtn)
+		{
+			return NULL;
+		}
+	}
+	else	// just copy the buffer since data is not compressed
+	{
+		memcpy(orig_buff, raw_buff, raw_size);
+	}
+	
     return adios_datablock_new(reqgroup->transinfo->orig_type,
                                completed_pg_reqgroup->timestep,
                                completed_pg_reqgroup->pg_bounds_sel,
