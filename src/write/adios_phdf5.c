@@ -699,7 +699,7 @@ int hw_var (hid_t root_id
     if (pvar->path)
         hw_gopen (root_id, pvar->path, grp_ids, &level, &flag_yes);
     }
-    printf("root_id=%d, grp_id=%d\n", root_id, grp_ids[level]);
+//    printf("root_id=%d, grp_id=%d\n", root_id, grp_ids[level]);
 
     if (!dims) {
         h5_dataspace_id = H5Screate(H5S_SCALAR);
