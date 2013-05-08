@@ -480,6 +480,7 @@ AC_CONFIG_FILES([Makefile
                  utils/Makefile
                  utils/skel/Makefile
                  utils/skel/etc/Makefile
+                 utils/skel/src/Makefile
                  utils/skel/lib/skel_have_adios_timing.py
                  utils/adios_lint/Makefile
                  utils/gpp/Makefile
