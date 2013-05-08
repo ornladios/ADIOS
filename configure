@@ -34671,7 +34671,7 @@ _ACEOF
 
 
 
-ac_config_files="$ac_config_files Makefile src/Makefile tests/Makefile tests/C/Makefile tests/Fortran/Makefile tests/genarray/Makefile tests/bp_read/Makefile tests/suite/Makefile tests/suite/programs/Makefile utils/Makefile utils/skel/Makefile utils/skel/etc/Makefile utils/skel/lib/skel_have_adios_timing.py utils/adios_lint/Makefile utils/gpp/Makefile utils/bpdump/Makefile utils/bp2h5/Makefile utils/bp2ncd/Makefile utils/bp2ascii/Makefile utils/bpsplit/Makefile utils/bpls/Makefile utils/bp2bp/Makefile examples/Makefile examples/C/Makefile examples/C/scalars/Makefile examples/C/arrays/Makefile examples/C/flexpath_arrays/Makefile examples/C/flexpath_arrays/process_select/Makefile examples/C/flexpath_arrays/global_range_select/Makefile examples/C/attributes/Makefile examples/C/manual/Makefile examples/C/global-array/Makefile examples/C/global-array-time/Makefile examples/C/stat/Makefile examples/C/read_all/Makefile examples/C/schema/Makefile examples/Fortran/Makefile examples/Fortran/scalars/Makefile examples/Fortran/arrays/Makefile examples/Fortran/global-array/Makefile examples/Fortran/global-array-time/Makefile adios_config.flags"
+ac_config_files="$ac_config_files Makefile src/Makefile tests/Makefile tests/C/Makefile tests/Fortran/Makefile tests/genarray/Makefile tests/bp_read/Makefile tests/suite/Makefile tests/suite/programs/Makefile utils/Makefile utils/skel/Makefile utils/skel/etc/Makefile utils/skel/src/Makefile utils/skel/lib/skel_have_adios_timing.py utils/adios_lint/Makefile utils/gpp/Makefile utils/bpdump/Makefile utils/bp2h5/Makefile utils/bp2ncd/Makefile utils/bp2ascii/Makefile utils/bpsplit/Makefile utils/bpls/Makefile utils/bp2bp/Makefile examples/Makefile examples/C/Makefile examples/C/scalars/Makefile examples/C/arrays/Makefile examples/C/flexpath_arrays/Makefile examples/C/flexpath_arrays/process_select/Makefile examples/C/flexpath_arrays/global_range_select/Makefile examples/C/attributes/Makefile examples/C/manual/Makefile examples/C/global-array/Makefile examples/C/global-array-time/Makefile examples/C/stat/Makefile examples/C/read_all/Makefile examples/C/schema/Makefile examples/Fortran/Makefile examples/Fortran/scalars/Makefile examples/Fortran/arrays/Makefile examples/Fortran/global-array/Makefile examples/Fortran/global-array-time/Makefile adios_config.flags"
 
 
 cat >confcache <<\_ACEOF
@@ -36353,6 +36353,7 @@ do
     "utils/Makefile") CONFIG_FILES="$CONFIG_FILES utils/Makefile" ;;
     "utils/skel/Makefile") CONFIG_FILES="$CONFIG_FILES utils/skel/Makefile" ;;
     "utils/skel/etc/Makefile") CONFIG_FILES="$CONFIG_FILES utils/skel/etc/Makefile" ;;
+    "utils/skel/src/Makefile") CONFIG_FILES="$CONFIG_FILES utils/skel/src/Makefile" ;;
     "utils/skel/lib/skel_have_adios_timing.py") CONFIG_FILES="$CONFIG_FILES utils/skel/lib/skel_have_adios_timing.py" ;;
     "utils/adios_lint/Makefile") CONFIG_FILES="$CONFIG_FILES utils/adios_lint/Makefile" ;;
     "utils/gpp/Makefile") CONFIG_FILES="$CONFIG_FILES utils/gpp/Makefile" ;;

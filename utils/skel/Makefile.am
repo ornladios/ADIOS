@@ -1,4 +1,4 @@
-SUBDIRS = etc
+SUBDIRS = etc src
 
 dist_bin_SCRIPTS = bin/skel bin/set_method.sh bin/skel_extract.py bin/skel_cat.py
 
