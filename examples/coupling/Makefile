@@ -6,6 +6,10 @@ FFLAGS=-g
 #FC=ftn
 #FFLAGS = -O3
 
+#BG/P IBM compiler
+#FC=mpixlf90
+#FFLAGS=-O0 -qarch=450 -qtune=450
+
 #TARGET=gnu
 TARGET=pgi
 

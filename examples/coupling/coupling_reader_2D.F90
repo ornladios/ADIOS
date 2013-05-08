@@ -63,11 +63,17 @@ program coupling
     use adios_read_mod
     implicit none
     include 'mpif.h'
+    integer :: key, color
 
     call MPI_Init (ierr)
-    call MPI_Comm_dup (MPI_COMM_WORLD, group_comm, ierr)
+    call MPI_Barrier(MPI_COMM_WORLD, ierr)
+    call MPI_Comm_rank(MPI_COMM_WORLD, key, ierr)
+
+    ! Split MPI_COMM_WORLD for MPMD execution
+    color = 2
+    call MPI_Comm_split(MPI_COMM_WORLD, color, key, group_comm, ierr)
     call MPI_Comm_dup (MPI_COMM_SELF, self_comm, ierr)
-    call MPI_Comm_rank (MPI_COMM_WORLD, rank, ierr)
+    call MPI_Comm_rank (group_comm, rank, ierr)
     call MPI_Comm_size (group_comm, nproc , ierr)
 
     call processArgs()
@@ -99,14 +105,14 @@ program coupling
         call exit(1)
     endif
 
-    call MPI_Barrier (MPI_COMM_WORLD, ierr)
+    call MPI_Barrier (group_comm, ierr)
     wts = 1  ! start reading from writer's 1st step
     do while (ierr==0)
         call readArrays()
         call adios_release_step(inh, ierr)
         call printArrays()
         call advanceArrays()
-        call MPI_Barrier (MPI_COMM_WORLD, ierr)
+        call MPI_Barrier (group_comm, ierr)
         call adios_advance_step(inh, 0, 10.0, ierr)
         if (ierr==err_end_of_stream .and. rank==0) then
             print *, " Stream has terminated. Quit reader"
@@ -118,7 +124,7 @@ program coupling
     call adios_read_close (inh, ierr)
 
     ! Terminate
-    call MPI_Barrier (MPI_COMM_WORLD, ierr)
+    call MPI_Barrier (group_comm, ierr)
     call adios_read_finalize_method (read_method, ierr)
     call adios_finalize (rank, ierr)
     call MPI_Finalize (ierr)

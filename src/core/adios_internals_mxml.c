@@ -603,8 +603,160 @@ static int parseMeshTimeScale (const char * timescale
     return 1;
 }
  
+// Parse var hyper slab: lines or planes from a higher dimension mesh
+static int parseVarHyperSlab ( const char * hyperslab,
+                                struct adios_group_struct * new_group,
+                                const char * name)
+{
+    char * c;                      // comma location
+    char * d1;                     // save of strdup
+    int64_t      p_new_group = (int64_t) new_group;
+    char * gethslabfrom0 = 0;     // hslab attribute xml value
+    char * gethslabfrom1 = 0;     // hslab attribute xml value
+    char * gethslabfrom2 = 0;     // hslab attribute xml value
+    char * hslab_var_att_nam = 0;   // hslab attribute name for var or num
+    char * hslab_start_att_nam = 0; // hslab attribute name for start
+    char * hslab_stride_att_nam = 0;// hslab attribute name for stride
+    char * hslab_count_att_nam = 0; // hslab attribute name for count
+    char * hslab_max_att_nam = 0;   // hslab attribute name for max
+    char * hslab_min_att_nam = 0;   // hslab attribute name for min
+    char * hslab_var_att_val = 0;   // hslab attribute value for var or num
+    char * hslab_start_att_val = 0; // hslab attribute value for start 
+    char * hslab_stride_att_val = 0;// hslab attribute value for stride
+    char * hslab_count_att_val = 0; // hslab attribute value for count
+    char * hslab_max_att_val = 0;   // hslab attribute value for max
+    char * hslab_min_att_val = 0;   // hslab attribute value for min
+    int counter = 0;               // used to get type of time hslab bounds
+    // We are going to allow
+    // 1. start/stride/count 3 components - indices of the mesh dimensions
+    // 2. min/max range of the mesh dimensions
+    
+    char counterstr[5] = {0,0,0,0,0}; // used to create tsteps attributes
 
-// Parse var var steps (integers = number of times vars are written)
+    /* We do not fail if this is not given as variables all have nsteps
+       in ADIOS_inq_var = # of times the var was written
+    */
+    if (!hyperslab){
+        return 1;
+    }
+
+    d1 = strdup (hyperslab);
+
+    c = strtok (d1, ",");
+
+    while (c)
+    {
+        struct adios_var_struct * var = 0;
+        if (adios_int_is_var (c))
+        {
+            var = adios_find_var_by_name (new_group->vars, c
+                                           ,new_group->all_unique_var_names
+                                           );
+            if (!var)
+            {
+                log_warn ("config.xml: invalid variable %s\n"
+                                 "for time-steps of var: %s\n"
+                                 ,c
+                                 ,name
+                        );
+                free (d1);
+
+                return 0;
+
+            }else{
+                // Found variable ==> create a dims attribute for it.
+                if (counter == 0){
+                    gethslabfrom0 = 0;
+                    gethslabfrom0 = strdup(c);
+                }else if (counter == 1){
+                    gethslabfrom1 = 0;
+                    gethslabfrom1 = strdup(c);
+                }else if (counter == 2){
+                    gethslabfrom2 = 0;
+                    gethslabfrom2 = strdup(c);
+                }
+                counter++;
+            }
+        }
+        else
+        {
+            if (counter == 0){
+                gethslabfrom0 = 0;
+                gethslabfrom0 = strdup(c);
+            }else if (counter == 1){
+                gethslabfrom1 = 0;
+                gethslabfrom1 = strdup(c);
+            }else if (counter == 2){
+                gethslabfrom2 = 0;
+                gethslabfrom2 = strdup(c);
+            }
+            counter++;
+        }
+
+        c = strtok (NULL, ",");
+    }
+    // TODO: these should be ints only, no decimal for start, stride count, not any number should work
+    if (counter == 3){
+        hslab_start_att_val = strdup(gethslabfrom0);
+        conca_var_att_nam(&hslab_start_att_nam, name, "start");
+        // if this is string
+        if (adios_int_is_var (hslab_start_att_val))
+            adios_common_define_attribute (p_new_group,hslab_start_att_nam,"/",adios_string,hslab_start_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,hslab_start_att_nam,"/",adios_double,hslab_start_att_val,"");
+        hslab_stride_att_val = strdup(gethslabfrom1);
+        conca_var_att_nam(&hslab_stride_att_nam, name, "stride");
+        // if this is string
+        if (adios_int_is_var (hslab_stride_att_val))
+            adios_common_define_attribute (p_new_group,hslab_stride_att_nam,"/",adios_string,hslab_stride_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,hslab_stride_att_nam,"/",adios_double,hslab_stride_att_val,"");
+        hslab_count_att_val = strdup(gethslabfrom2);
+        conca_var_att_nam(&hslab_count_att_nam, name, "count");
+        // if this is string
+        if (adios_int_is_var (hslab_count_att_val))
+            adios_common_define_attribute (p_new_group,hslab_count_att_nam,"/",adios_string,hslab_count_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,hslab_count_att_nam,"/",adios_double,hslab_count_att_val,"");
+         free(hslab_start_att_val);
+         free(hslab_stride_att_val);
+         free(hslab_count_att_val);
+         free(gethslabfrom2);
+         free(gethslabfrom1);
+         free(gethslabfrom0);
+    }else if (counter == 2) {
+        hslab_min_att_val = strdup(gethslabfrom0);
+        conca_var_att_nam(&hslab_min_att_nam, name, "min");
+        // if this is string
+        if (adios_int_is_var (hslab_min_att_val))
+            adios_common_define_attribute (p_new_group,hslab_min_att_nam,"/",adios_string,hslab_min_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,hslab_min_att_nam,"/",adios_double,hslab_min_att_val,"");
+        hslab_max_att_val = strdup(gethslabfrom1);
+        conca_var_att_nam(&hslab_max_att_nam, name, "max");
+        // if this is string
+        if (adios_int_is_var (hslab_max_att_val))
+            adios_common_define_attribute (p_new_group,hslab_max_att_nam,"/",adios_string,hslab_max_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,hslab_max_att_nam,"/",adios_double,hslab_max_att_val,"");
+         free(hslab_min_att_val);
+         free(hslab_max_att_val);
+         free(gethslabfrom1);
+         free(gethslabfrom0);
+    }else{
+       printf("Error: time format not recognized.\nPlease check documentation for time formatting.\n");
+       free(d1);
+       return 0;
+    }
+
+    free (d1);
+
+    return 1;
+
+}
+
+
+// Parse var time steps (integers = number of times vars are written)
 static int parseVarTimeSteps (const char * timesteps
                                       ,struct adios_group_struct * new_group
                                       ,const char * name
@@ -5608,6 +5760,7 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
             const char * tsteps = 0;
             const char * tscale = 0;
             const char * tformat = 0;
+            const char * hyperslab = 0;
             const char * dimensions = 0;
             const char * dimension = 0;
             const char * gread = 0;
@@ -5627,6 +5780,7 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                 GET_ATTR("time-steps",attr,tsteps,"var")
                 GET_ATTR("time-scale",attr,tscale,"var")
                 GET_ATTR("time-series-format",attr,tformat,"var")
+                GET_ATTR("hyperslab",attr,hyperslab,"var")
                 GET_ATTR("path",attr,path,"var")
                 GET_ATTR("type",attr,type,"var")
                 GET_ATTR("dimensions",attr,dimensions,"var")
@@ -5657,6 +5811,8 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                 tscale = "";  
             if (!tformat)
                 tformat = "";  
+            if (!hyperslab)
+                hyperslab = "";  
             t1 = parseType (type, name);
 
             if (!dimensions)
@@ -5709,6 +5865,11 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                 // parse it and define it
                 if (strcmp(tformat,"")){
                     parseVarTimeSeriesFormat(tformat,new_group,name);
+                }
+                // if a hyperslab attribute exists
+                // parse it and define it
+                if (strcmp(hyperslab,"")){
+                    parseVarHyperSlab(hyperslab,new_group,name);
                 }
             }
         } else
@@ -5794,6 +5955,7 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                     const char * tsteps = 0;
                     const char * tscale = 0;
                     const char * tformat = 0;
+                    const char * hyperslab = 0;
                     const char * path = 0;
                     const char * type = 0;
                     const char * dimension = 0;
@@ -5815,6 +5977,7 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                         GET_ATTR("time-steps",attr,tsteps,"var")
                         GET_ATTR("time-scale",attr,tscale,"var")
                         GET_ATTR("time-series-format",attr,tformat,"var")
+                        GET_ATTR("hyperslab",attr,hyperslab,"var")
                         GET_ATTR("path",attr,path,"var")
                         GET_ATTR("type",attr,type,"global-bounds var")
                         GET_ATTR("dimensions",attr,dimensions,"var")
@@ -5845,6 +6008,8 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                         tscale = ""; 
                     if (!tformat)
                         tformat = ""; 
+                    if (!hyperslab)
+                        hyperslab = ""; 
                     t1 = parseType (type, name);
                     if (!dimensions)
                         dimensions = dimension;
@@ -5892,6 +6057,11 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                         // parse it and define it
                         if (strcmp(tformat,"")){
                             parseVarTimeSeriesFormat(tformat,new_group,name);
+                        }
+                        // if a hyperslab attribute exists
+                        // parse it and define it
+                        if (strcmp(hyperslab,"")){
+                            parseVarHyperSlab(hyperslab,new_group,name);
                         }
                     }
                 } else

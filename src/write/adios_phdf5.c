@@ -137,59 +137,8 @@ enum ADIOS_FLAG adios_phdf5_should_buffer (struct adios_file_struct * fd
                             ,struct adios_method_struct * method
                             )
 {
-    struct adios_phdf5_data_struct * md = (struct adios_phdf5_data_struct *)
-                                                      method->method_data;
-    char * name;
-    MPI_Info info = MPI_INFO_NULL;
-    hid_t fapl_id;
-    fapl_id = H5P_DEFAULT;
-    // no shared buffer 
-    //fd->shared_buffer = adios_flag_no;
-    fd->group->process_id = md->rank;
-    name = malloc (strlen (method->base_path) + strlen (fd->name) + 1);
-    sprintf(name, "%s%s", method->base_path, fd->name);
-
-    H5Eset_auto ( NULL, NULL);
-
-    fapl_id = H5Pcreate(H5P_FILE_ACCESS);
-    H5Pset_fapl_mpio(fapl_id,md->group_comm,info);
-
-    // create a new file. If file exists its contents will be overwritten. //
-
-    switch (fd->mode) {
-        case adios_mode_read:
-        {
-            md->fh = H5Fopen (name, H5F_ACC_RDONLY, fapl_id);
-            if (md->fh <= 0)
-            {
-                fprintf (stderr, "ADIOS PHDF5: file not found: %s\n", fd->name);
-                free (name);
-                return adios_flag_no;
-            } 
-            break;
-        }
-        case adios_mode_write:
-        case adios_mode_append:
-            md->fh = H5Fcreate (name, H5F_ACC_EXCL, H5P_DEFAULT, fapl_id);
-            if (md->fh < 0)
-            {
-                md->fh = H5Fopen (name, H5F_ACC_RDWR, fapl_id);
-                //md->fh = H5Fcreate (name, H5F_ACC_TRUNC, H5P_DEFAULT, fapl_id);
-            }
-            if (md->fh < 0)
-            {
-                fprintf (stderr, "ADIOS PHDF5: file not create/append: %s\n", fd->name);
-                free (name);
-                return adios_flag_no;
-            } 
-            break;
-    }
-
-    md->root_id = H5Gopen(md->fh,"/");
-    if(md->root_id < 0)
-        md->root_id = H5Gcreate(md->fh,"/",0);
-    H5Pclose(fapl_id);
-    free (name); 
+    //struct adios_phdf5_data_struct * md = (struct adios_phdf5_data_struct *)
+    //                                                  method->method_data;
     return adios_flag_no;
 }
  
@@ -206,14 +155,6 @@ int adios_phdf5_open(struct adios_file_struct *fd
     fapl_id = H5P_DEFAULT;
     // no shared buffer 
     //fd->shared_buffer = adios_flag_no;
-    fd->group->process_id = md->rank;
-    name = malloc (strlen (method->base_path) + strlen (fd->name) + 1);
-    sprintf(name, "%s%s", method->base_path, fd->name);
-
-    H5Eset_auto ( NULL, NULL);
-
-    fapl_id = H5Pcreate(H5P_FILE_ACCESS);
-    H5Pset_fapl_mpio(fapl_id,md->group_comm,info);
 
     // create a new file. If file exists its contents will be overwritten. //
     md->group_comm = comm;
@@ -225,6 +166,15 @@ int adios_phdf5_open(struct adios_file_struct *fd
     else 
        md->group_comm=MPI_COMM_SELF;
 
+    fd->group->process_id = md->rank;
+    name = malloc (strlen (method->base_path) + strlen (fd->name) + 1);
+    sprintf(name, "%s%s", method->base_path, fd->name);
+
+    H5Eset_auto ( NULL, NULL);
+
+    fapl_id = H5Pcreate(H5P_FILE_ACCESS);
+    //fprintf (stderr, "************\n%s: comm=%x\n**************\n", __func__, md->group_comm);
+    H5Pset_fapl_mpio(fapl_id,md->group_comm,info);
 
     switch (fd->mode) {
         case adios_mode_read:
@@ -354,10 +304,14 @@ void adios_phdf5_close (struct adios_file_struct * fd
         //fprintf(stderr, "entering phdf5 write attribute mode!\n");
         while(a)
         {
-            hw_attribute ( md->root_id, fd->group->vars, a
-                          ,fd->group->adios_host_language_fortran
-                          ,md->rank
-                          ,md->size);
+            //fprintf(stderr, "Write attribute [%s]/[%s]\n", a->path, a->name);
+            if (strcmp(a->path, "/__adios__")) {
+
+                hw_attribute ( md->root_id, fd->group->vars, a
+                        ,fd->group->adios_host_language_fortran
+                        ,md->rank
+                        ,md->size);
+            }
             a = a->next;
         }
         if (debug && md->rank==0) {
@@ -406,7 +360,13 @@ int hw_attribute ( hid_t root_id
     h5_plist_id=H5P_DEFAULT;  
  
     H5Pset_dxpl_mpio(h5_plist_id, H5FD_MPIO_COLLECTIVE); 
-    hw_gopen (root_id, patt->path,grp_ids, &level, &flag);
+    char *path = patt->path;
+    /*
+    if (!strcmp(patt->path, "/__adios__")) 
+        path = strdup ("ADIOSINFO");
+    fprintf (stderr, "%s: write attribute %s under path %s\n", __func__, patt->name, path);
+    */
+    hw_gopen (root_id, path, grp_ids, &level, &flag);
     int err_code = 0;
     //printf("patt->type=%d patt->name : %s\n", patt->type, patt->name);
     if (patt->type == -1) {
@@ -739,7 +699,7 @@ int hw_var (hid_t root_id
     if (pvar->path)
         hw_gopen (root_id, pvar->path, grp_ids, &level, &flag_yes);
     }
-    printf("root_id=%d, grp_id=%d\n", root_id, grp_ids[level]);
+//    printf("root_id=%d, grp_id=%d\n", root_id, grp_ids[level]);
 
     if (!dims) {
         h5_dataspace_id = H5Screate(H5S_SCALAR);
@@ -1131,6 +1091,7 @@ void hw_gopen (hid_t root_id, char * path, hid_t * grp_id, int * level, enum ADI
     grp_id [0] = root_id; 
     len = strlen(path);
     for ( i = 0; i < *level; i++) {
+        //fprintf (stderr, "  -- open group [%s]\n", grp_name[i]);
         grp_id [i + 1] = H5Gopen (grp_id [i],grp_name [i]);
         if (grp_id [i + 1] < 0) {
             if ((i+1) == *level && (*flag == adios_flag_unknown)) {
