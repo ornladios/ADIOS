@@ -1967,16 +1967,17 @@ int adios_read_bp_inq_var_blockinfo (const ADIOS_FILE * fp, ADIOS_VARINFO * vari
     fh = (BP_FILE *) p->fh;
     file_is_fortran = is_fortran_file (fh);
     var_root = bp_find_var_byid (fh, varinfo->varid);
-
+printf ("var_root = %s\n", var_root->var_name);
+printf ("varinfo->sum_nblocks = %d\n", varinfo->sum_nblocks);
     varinfo->blockinfo = (ADIOS_VARBLOCK *) malloc (varinfo->sum_nblocks * sizeof (ADIOS_VARBLOCK));
     assert (varinfo->blockinfo);
-
+printf ("var_root->characteristics[0].dims.count = %d\n", var_root->characteristics[0].dims.count);
     /* dim.count possibily include 'time' dim in it. */
-    ldims = (uint64_t *) malloc (var_root->characteristics[0].dims.count);
-    gdims = (uint64_t *) malloc (var_root->characteristics[0].dims.count);
-    offsets = (uint64_t *) malloc (var_root->characteristics[0].dims.count);
+    ldims = (uint64_t *) malloc (var_root->characteristics[0].dims.count * 8);
+    gdims = (uint64_t *) malloc (var_root->characteristics[0].dims.count * 8);
+    offsets = (uint64_t *) malloc (var_root->characteristics[0].dims.count * 8);
     assert (ldims && gdims && offsets); 
-
+printf ("ndim = %d\n", varinfo->ndim);
     for (i = 0; i < varinfo->sum_nblocks; i++)
     {
         varinfo->blockinfo[i].start = (uint64_t *) malloc (varinfo->ndim * 8);
