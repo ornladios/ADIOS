@@ -101,7 +101,7 @@ int adios_transform_zlib_apply(struct adios_file_struct *fd,
 		*wrote_to_shared_buffer = 1;		
         if (!shared_buffer_reserve(fd, output_size))
         {
-            log_error("Out of memory allocating %llu bytes for %s for ZLIB transform\n", output_size, var->name);
+            log_error("Out of memory allocating %llu bytes for %s for zlib transform\n", output_size, var->name);
             return 0;
         }
 
@@ -114,23 +114,24 @@ int adios_transform_zlib_apply(struct adios_file_struct *fd,
 		output_buff = malloc(output_size);
         if (!output_buff)
         {
-            log_error("Out of memory allocating %llu bytes for %s for ZLIB transform\n", output_size, var->name);
+            log_error("Out of memory allocating %llu bytes for %s for zlib transform\n", output_size, var->name);
             return 0;
         }
     }
 
     // compress it
 	uint64_t actual_output_size = output_size;
-	char compress_succ = 1;
+	char compress_ok = 1;
     
 	int rtn = compress_zlib_pre_allocated(input_buff, input_size, output_buff, &actual_output_size, compress_level);
 	
     if(0 != rtn 					// compression failed for some reason, then just copy the buffer
         || actual_output_size > input_size)  // or size after compression is even larger (not likely to happen since compression lib will return non-zero in this case)
     {
+		// printf("compression failed, fall back to memory copy\n");
         memcpy(output_buff, input_buff, input_size);
         actual_output_size = input_size;
-		compress_succ = 0;	// succ sign set to 0
+		compress_ok = 0;	// succ sign set to 0
     }
 
     // Wrap up, depending on buffer mode
@@ -149,7 +150,7 @@ int adios_transform_zlib_apply(struct adios_file_struct *fd,
     if(var->transform_metadata && var->transform_metadata_len > 0)
     {
         memcpy(var->transform_metadata, &input_size, sizeof(uint64_t));
-		memcpy(var->transform_metadata + sizeof(uint64_t), &compress_succ, sizeof(char));
+		memcpy(var->transform_metadata + sizeof(uint64_t), &compress_ok, sizeof(char));
     }
 	
     *transformed_len = actual_output_size; // Return the size of the data buffer

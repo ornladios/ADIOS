@@ -36,6 +36,7 @@ int adios_transform_zlib_generate_read_subrequests(adios_transform_read_request 
                                                     adios_transform_pg_read_request *pg_reqgroup)
 {
     void *buf = malloc(pg_reqgroup->raw_var_length);
+	assert(buf);
     adios_transform_raw_read_request *subreq = adios_transform_raw_read_request_new_whole_pg(pg_reqgroup, buf);
     adios_transform_raw_read_request_append(pg_reqgroup, subreq);
     return 0;
@@ -54,29 +55,33 @@ adios_datablock * adios_transform_zlib_subrequest_completed(adios_transform_read
 adios_datablock * adios_transform_zlib_pg_reqgroup_completed(adios_transform_read_request *reqgroup,
                                                              adios_transform_pg_read_request *completed_pg_reqgroup)
 {
-    uint64_t raw_size = (uint64_t)completed_pg_reqgroup->raw_var_length;
-    void* raw_buff = completed_pg_reqgroup->subreqs->data;
+    uint64_t compressed_size = (uint64_t)completed_pg_reqgroup->raw_var_length;
+    void* compressed_data = completed_pg_reqgroup->subreqs->data;
 	
-	uint64_t orig_size_meta = *((uint64_t*)reqgroup->transinfo->transform_metadata);
-	char compress_succ = *((char*)(reqgroup->transinfo->transform_metadata + sizeof(uint64_t)));
+	uint64_t uncompressed_size_meta = *((uint64_t*)reqgroup->transinfo->transform_metadata);
+	char compress_ok = *((char*)(reqgroup->transinfo->transform_metadata + sizeof(uint64_t)));
 
-    uint64_t orig_size = adios_get_type_size(reqgroup->transinfo->orig_type, "");
+    uint64_t uncompressed_size = adios_get_type_size(reqgroup->transinfo->orig_type, "");
     int d = 0;
     for(d = 0; d < reqgroup->transinfo->orig_ndim; d++)
 	{
-        orig_size *= (uint64_t)(completed_pg_reqgroup->orig_varblock->count[d]);
+        uncompressed_size *= (uint64_t)(completed_pg_reqgroup->orig_varblock->count[d]);
 	}
 	
-	if(orig_size_meta != orig_size)
+	if(uncompressed_size_meta != uncompressed_size)
 	{
-		printf("possible wrong data size or corrupted metadata\n");
+		printf("WARNING: possible wrong data size or corrupted metadata\n");
 	}
 
-    void* orig_buff = malloc(orig_size);
-	
-	if(compress_succ == 1)	// compression is successful
+	void* uncompressed_data = malloc(uncompressed_size);
+	if(!uncompressed_data)
 	{
-		int rtn = decompress_zlib_pre_allocated(raw_buff, raw_size, orig_buff, &orig_size);
+		return NULL;
+	}
+	
+	if(compress_ok == 1)	// compression is successful
+	{
+		int rtn = decompress_zlib_pre_allocated(compressed_data, compressed_size, uncompressed_data, &uncompressed_size);
 		if(0 != rtn)
 		{
 			return NULL;
@@ -84,13 +89,14 @@ adios_datablock * adios_transform_zlib_pg_reqgroup_completed(adios_transform_rea
 	}
 	else	// just copy the buffer since data is not compressed
 	{
-		memcpy(orig_buff, raw_buff, raw_size);
+		// printf("compression failed before, fall back to memory copy\n");
+		memcpy(uncompressed_data, compressed_data, compressed_size);
 	}
 	
     return adios_datablock_new(reqgroup->transinfo->orig_type,
                                completed_pg_reqgroup->timestep,
                                completed_pg_reqgroup->pg_bounds_sel,
-                               orig_buff);
+                               uncompressed_data);
 }
 
 adios_datablock * adios_transform_zlib_reqgroup_completed(adios_transform_read_request *completed_reqgroup)
