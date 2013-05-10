@@ -8,7 +8,7 @@ ADIOS_DIR=`adios_config -d`
 LDFLAGS += `adios_config -l`
 CFLAGS += `adios_config -c`
 FCFLAGS += `adios_config -fc`          
-FCLIBS += `adios_config -fl`
+FCLIBS += `adios_config -fl` -L${ADIOS_DIR}/lib/skel -lskel
                
 APP=$$APP$$
 CTESTS=$$CTESTS$$
@@ -36,7 +36,6 @@ deploy:
 	cp $(FTESTS) submit* $(DEST_DIR)
 	cp $(prefix)/bin/set_method.sh $(DEST_DIR)
 	cp $(prefix)/bin/skel_cat.py $(DEST_DIR)
-
 
 clean:
 	rm -f *.c
