@@ -19,7 +19,7 @@ void adios_transform_init();
 
 // Delegation functions
 uint16_t adios_transform_get_metadata_size(struct adios_transform_spec *transform_spec);
-uint64_t adios_transform_calc_vars_transformed_size(struct adios_transform_spec *transform_spec, uint64_t orig_size, int num_vars);
+uint64_t adios_transform_calc_vars_transformed_size(enum ADIOS_TRANSFORM_TYPE transform_type, uint64_t orig_size, int num_vars);
 int adios_transform_apply(
         struct adios_file_struct *fd, struct adios_var_struct *var,
         uint64_t *transformed_len, int use_shared_buffer, int *wrote_to_shared_buffer);

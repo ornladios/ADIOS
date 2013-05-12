@@ -449,7 +449,7 @@ int adios_transform_variable_data(struct adios_file_struct * fd,
 #endif
     // Transform the data, get the new length
     uint64_t transformed_len;
-    int success = adios_transform_apply(var->transform_type, fd, var, &transformed_len, use_shared_buffer, wrote_to_shared_buffer);
+    int success = adios_transform_apply(fd, var, &transformed_len, use_shared_buffer, wrote_to_shared_buffer);
 #if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop ("adios_transform_apply");
 #endif
