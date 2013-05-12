@@ -12,12 +12,12 @@
 #include "alacrity.h"
 #include "alacrity-serialization-debug.h"
 
-uint16_t adios_transform_alacrity_get_metadata_size()
+uint16_t adios_transform_alacrity_get_metadata_size(struct adios_transform_spec *transform_spec)
 {
     return (3 * sizeof(uint64_t));
 }
 
-uint64_t adios_transform_alacrity_calc_vars_transformed_size(uint64_t orig_size, int num_vars)
+uint64_t adios_transform_alacrity_calc_vars_transformed_size(struct adios_transform_spec *transform_spec, uint64_t orig_size, int num_vars)
 {
     return (uint64_t)(1.75 * orig_size);
 }

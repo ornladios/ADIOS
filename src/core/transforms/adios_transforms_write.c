@@ -352,21 +352,6 @@ struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *
     if (orig_var->transform_metadata_len)
         orig_var->transform_metadata = malloc(orig_var->transform_metadata_len);
 
-    /*
-    // set the parameter string
-    if(transform_param && transform_param[0] != '\0')
-    {
-        size_t param_len = strlen(transform_param);
-        if(param_len > UINT16_MAX)
-        {
-            param_len = UINT16_MAX;
-        }
-
-        orig_var->transform_type_param_len = (uint16_t)param_len;
-        orig_var->transform_type_param = strdup(transform_param);
-    }
-    */
-
     orig_var->bitmap = 0; // Disable statistics
 
     //printf(">>> Statistics bitmap at define-time: %08lx\n", orig_var->bitmap);

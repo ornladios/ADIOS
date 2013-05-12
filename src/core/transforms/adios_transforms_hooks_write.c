@@ -40,22 +40,20 @@ void adios_transform_init() {
 
 // Delegate functions
 
-// TODO: Pass spec through to plugin
 uint16_t adios_transform_get_metadata_size(struct adios_transform_spec *transform_spec) {
     assert(transform_spec->transform_type >= adios_transform_none && transform_spec->transform_type < num_adios_transform_types);
-    return TRANSFORM_WRITE_METHODS[transform_spec->transform_type].transform_get_metadata_size();
+    return TRANSFORM_WRITE_METHODS[transform_spec->transform_type].transform_get_metadata_size(transform_spec);
 }
 
-uint64_t adios_transform_calc_vars_transformed_size(enum ADIOS_TRANSFORM_TYPE transform_type, uint64_t orig_size, int num_vars) {
-    assert(transform_type >= adios_transform_none && transform_type < num_adios_transform_types);
-    return TRANSFORM_WRITE_METHODS[transform_type].transform_calc_vars_transformed_size(orig_size, num_vars);
+uint64_t adios_transform_calc_vars_transformed_size(struct adios_transform_spec *transform_spec, uint64_t orig_size, int num_vars) {
+    assert(transform_spec->transform_type >= adios_transform_none && transform_spec->transform_type < num_adios_transform_types);
+    return TRANSFORM_WRITE_METHODS[transform_spec->transform_type].transform_calc_vars_transformed_size(transform_spec, orig_size, num_vars);
 }
 
 int adios_transform_apply(
-        enum ADIOS_TRANSFORM_TYPE transform_type,
         struct adios_file_struct *fd, struct adios_var_struct *var,
         uint64_t *transformed_len, int use_shared_buffer, int *wrote_to_shared_buffer) {
 
-    assert(transform_type >= adios_transform_none && transform_type < num_adios_transform_types);
-    return TRANSFORM_WRITE_METHODS[transform_type].transform_apply(fd, var, transformed_len, use_shared_buffer, wrote_to_shared_buffer);
+    assert(var->transform_type >= adios_transform_none && var->transform_type < num_adios_transform_types);
+    return TRANSFORM_WRITE_METHODS[var->transform_type].transform_apply(fd, var, transformed_len, use_shared_buffer, wrote_to_shared_buffer);
 }

@@ -19,14 +19,10 @@ void adios_transform_init();
 
 // Delegation functions
 uint16_t adios_transform_get_metadata_size(struct adios_transform_spec *transform_spec);
-uint64_t adios_transform_calc_vars_transformed_size(enum ADIOS_TRANSFORM_TYPE transform_type, uint64_t orig_size, int num_vars);
+uint64_t adios_transform_calc_vars_transformed_size(struct adios_transform_spec *transform_spec, uint64_t orig_size, int num_vars);
 int adios_transform_apply(
-        enum ADIOS_TRANSFORM_TYPE transform_type,
         struct adios_file_struct *fd, struct adios_var_struct *var,
         uint64_t *transformed_len, int use_shared_buffer, int *wrote_to_shared_buffer);
-
-
-
 
 /////////////////////////////////////////////////
 // Transform write method registry/registration
@@ -34,9 +30,11 @@ int adios_transform_apply(
 
 // Transform write method registry entry
 typedef struct {
-    uint16_t (*transform_get_metadata_size)();
+    uint16_t (*transform_get_metadata_size)(struct adios_transform_spec *transform_spec);
 
-    uint64_t (*transform_calc_vars_transformed_size)(uint64_t orig_size, int num_vars);
+    uint64_t (*transform_calc_vars_transformed_size)(
+                struct adios_transform_spec *transform_spec,
+                uint64_t orig_size, int num_vars);
 
     int (*transform_apply)(
             struct adios_file_struct *fd, struct adios_var_struct *var,
@@ -47,10 +45,11 @@ typedef struct {
 extern adios_transform_write_method TRANSFORM_WRITE_METHODS[num_adios_transform_types];
 
 #define DECLARE_TRANSFORM_WRITE_METHOD(tmethod) \
-    uint16_t adios_transform_##tmethod##_get_metadata_size();											\
-    uint64_t adios_transform_##tmethod##_calc_vars_transformed_size(uint64_t orig_size, int num_vars);	\
-    int adios_transform_##tmethod##_apply(struct adios_file_struct *fd, struct adios_var_struct *var,	\
-                                          uint64_t *transformed_len,									\
+    uint16_t adios_transform_##tmethod##_get_metadata_size(struct adios_transform_spec *transform_spec); \
+    uint64_t adios_transform_##tmethod##_calc_vars_transformed_size(struct adios_transform_spec *transform_spec, \
+                                                                    uint64_t orig_size, int num_vars);	 \
+    int adios_transform_##tmethod##_apply(struct adios_file_struct *fd, struct adios_var_struct *var,	 \
+                                          uint64_t *transformed_len,									 \
                                           int use_shared_buffer, int *wrote_to_shared_buffer);
 
 #define UNIMPL_TRANSFORM_WRITE_FN(tmethod, func) \
@@ -62,11 +61,12 @@ extern adios_transform_write_method TRANSFORM_WRITE_METHODS[num_adios_transform_
 // Note: this is actually a "definition" in the language-semantic sense, but this detail is
 //  irrelevant to users, so we name it similarly to DECLARE_TRANSFORM_WRITE_METHOD
 #define DECLARE_TRANSFORM_WRITE_METHOD_UNIMPL(tmethod) 										\
-        uint16_t adios_transform_##tmethod##_get_metadata_size() {							\
+        uint16_t adios_transform_##tmethod##_get_metadata_size(struct adios_transform_spec *transform_spec) { \
             UNIMPL_TRANSFORM_WRITE_FN(tmethod, __FUNCTION__);								\
             return 0;																		\
         }																					\
-        uint64_t adios_transform_##tmethod##_calc_vars_transformed_size(uint64_t orig_size, int num_vars) {	\
+        uint64_t adios_transform_##tmethod##_calc_vars_transformed_size(struct adios_transform_spec *transform_spec, \
+                                                                        uint64_t orig_size, int num_vars) {	\
             UNIMPL_TRANSFORM_WRITE_FN(tmethod, __FUNCTION__);								\
             return 0;																		\
         }																					\
