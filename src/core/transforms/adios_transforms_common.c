@@ -258,10 +258,11 @@ int adios_transform_init_transform_characteristic(struct adios_index_characteris
 
 int adios_transform_init_transform_var(struct adios_var_struct *var) {
     var->transform_type = adios_transform_none;
+    var->transform_spec = 0;
     var->pre_transform_dimensions = 0;
     var->pre_transform_type = adios_unknown;
-    var->transform_type_param_len = 0;
-    var->transform_type_param = 0;
+    //var->transform_type_param_len = 0;
+    //var->transform_type_param = 0;
     var->transform_metadata_len = 0;
     var->transform_metadata = 0;
     return 1;
@@ -325,6 +326,8 @@ int adios_transform_clear_transform_characteristic(struct adios_index_characteri
 
 int adios_transform_clear_transform_var(struct adios_var_struct *var) {
     var->transform_type = adios_transform_none;
+    if (var->transform_spec)
+        adios_transform_free_spec(&var->transform_spec); // Also clears to 0
 
     var->pre_transform_type = 0;
 
@@ -336,12 +339,7 @@ int adios_transform_clear_transform_var(struct adios_var_struct *var) {
         var->pre_transform_dimensions = dimensions;
     }
 
-    // free transform type parameters
-    var->transform_type_param_len = 0;
-    if (var->transform_type_param)
-        free(var->transform_type_param);
-    var->transform_type_param = 0;
-
+    // Free/clear transform-specific metadata
     var->transform_metadata_len = 0;
     if (var->transform_metadata)
         free(var->transform_metadata);
@@ -352,33 +350,6 @@ int adios_transform_clear_transform_var(struct adios_var_struct *var) {
 
 int adios_transform_swap_transform_characteristics(struct adios_index_characteristic_transform_struct *trans1,
                                                    struct adios_index_characteristic_transform_struct *trans2) {
-/*
-    enum ADIOS_TRANSFORM_TYPE t_tt;
-    enum ADIOS_DATATYPES t_dt;
-    struct adios_index_characteristic_dims_struct_v1 t_ads;
-    uint16_t t_tml;
-    void *t_tm;
-
-    t_tt = c1->transform_type;
-    t_dt = c1->pre_transform_type;
-    t_ads = c1->pre_transform_dimensions;
-    t_tml = c1->transform_metadata_len;
-    t_tm = c1->transform_metadata;
-
-    c1->transform_type = c2->transform_type;
-    c1->pre_transform_type = c2->pre_transform_type;
-    c1->pre_transform_dimensions = c2->pre_transform_dimensions;
-    c1->transform_metadata_len = c2->transform_metadata_len;
-    c1->transform_metadata = c2->transform_metadata;
-
-    c2->transform_type = t_tt;
-    c2->pre_transform_type = t_dt;
-    c2->pre_transform_dimensions = t_ads;
-    c2->transform_metadata_len = t_tml;
-    c2->transform_metadata = t_tm;
-
-    return 1; // Return success*/
-
     struct adios_index_characteristic_transform_struct tmp;
     tmp = *trans1;
     *trans1 = *trans2;

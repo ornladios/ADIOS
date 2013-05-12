@@ -1650,6 +1650,20 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
     // If we are given a transform type string, and it is not the empty string, parse it
     // Else, default to no transform
 
+    struct adios_transform_spec *transform_spec = adios_transform_parse_spec(transform_type_str);
+
+    // TODO: Change adios_transform_define_var signature to accept a transform_spec
+    // TODO: Manage/free the transform_spec
+    if (transform_spec->transform_type == adios_transform_unknown) {
+        log_error("Unknown transform type \"%s\" specified for variable \"%s\", ignoring it...\n",
+                  transform_spec->transform_type_str, v->name);
+        transform_spec->transform_type = adios_transform_none;
+    }
+
+    // This function sets the transform_type field. It does nothing if transform_type is none.
+    v = adios_transform_define_var(t, v, transform_spec->transform_type, transform_spec);
+
+    /*
     char sep = ':';
     if (transform_type_str && transform_type_str[0] != '\0' && transform_type_str[0] != sep) {
         // Break transform_type_str into "type" and "args" sections for parameterized transformations
@@ -1686,6 +1700,7 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
     } else {
         v->transform_type = adios_transform_none;
     }
+    */
 
     flag = adios_append_var (&t->vars, v, ++t->member_count);
     if (flag == adios_flag_no)

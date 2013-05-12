@@ -12,6 +12,23 @@
 #include "adios_internals.h"
 #include "adios_transforms_common.h"
 
+struct adios_transform_spec_kv_pair{
+    const char *key;
+    const char *value;
+};
+
+struct adios_transform_spec {
+    enum ADIOS_TRANSFORM_TYPE transform_type;
+    const char *transform_type_str;
+
+    int param_count;
+    struct adios_transform_spec_kv_pair * params;
+
+    // Internal
+    int backing_str_len;
+    char *backing_str;
+};
+
 /*
  * Returns the pre-transform size, in bytes, of a variable. Note: only works on
  * "dimensioned" variables (i.e., not a scalar or a string).
@@ -22,6 +39,26 @@
 uint64_t adios_transform_get_pre_transform_var_size(struct adios_group_struct *group, struct adios_var_struct *var);
 
 /*
+ * Parses the transform spec string (i.e. transform="zlib:5"), returning a struct
+ * describing the result
+ * @param transform_spec_str the transform spec string
+ * @return the parsed transform spec
+ */
+struct adios_transform_spec * adios_transform_parse_spec(const char *transform_spec_str);
+
+/*
+ * Copies a transform spec struct, creating a new, independent instance
+ * with the same contents.
+ */
+struct adios_transform_spec * adios_transform_spec_copy(struct adios_transform_spec *src);
+
+/*
+ * Frees an adios_transform_spec struct.
+ * @param spec the transform spec to free
+ */
+void adios_transform_free_spec(struct adios_transform_spec **spec);
+
+/*
  * Modifies the variable definition appropriately for the case that the variable
  * is to be transformed. In the current implementation, this includes converting
  * the variable type to a byte array, storing the old dimension/type metadata,
@@ -29,8 +66,7 @@ uint64_t adios_transform_get_pre_transform_var_size(struct adios_group_struct *g
  */
 struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *orig_var_grp,
                                                      struct adios_var_struct *orig_var,
-                                                     enum ADIOS_TRANSFORM_TYPE transform_type,
-													 char* transform_param);
+                                                     struct adios_transform_spec *transform_spec);
 
 /*
  * Transforms a given variable orig_var via the given transform type.

@@ -193,14 +193,144 @@ static void adios_transform_convert_var_to_byte_array(struct adios_group_struct 
 ////////////////////////////////////////
 // Definition phase - set up transform parameters
 ////////////////////////////////////////
+
+inline static char * strsplit(char *input, char split) {
+    char *pos = strchr(input, split);
+    if (!pos)
+        return NULL;
+
+    *pos = '\0';
+    return pos + 1;
+}
+
+inline static int strcount(char *input, char chr) {
+    int count = 0;
+    while ((input = strchr(input, chr))) {
+        count++;
+        input++;
+    }
+    return count;
+}
+
+// var is a pointer type
+#define MALLOC_ARRAY(var, count) ((var) = (typeof(var))malloc(sizeof(*var) * (count)))
+#define MALLOC_VAR(var) MALLOC_ARRAY(var, 1)
+
+struct adios_transform_spec * adios_transform_parse_spec(const char *spec_str) {
+    //struct adios_transform_spec *spec = (struct adios_transform_spec *)malloc(sizeof(struct adios_transform_spec));
+    struct adios_transform_spec *spec;
+    MALLOC_VAR(spec);
+
+    *spec = (struct adios_transform_spec){
+        .transform_type = adios_transform_none,
+        .transform_type_str = "",
+        .param_count = 0,
+        .params = NULL,
+        .backing_str = NULL,
+        .backing_str_len = 0,
+    };
+
+    // If the spec string is null/empty, stop now with a blank spec
+    if (!spec_str || strcmp(spec_str, "") == 0)
+        return spec;
+    assert(spec_str && strcmp(spec_str, "") != 0);
+
+    // Duplicate the spec string so we can chop it up
+    char *new_spec_str = strdup(spec_str);
+    spec->backing_str = new_spec_str;
+    spec->backing_str_len = strlen(new_spec_str);
+
+    // Mark the transform method string in the spec string (the beginning)
+    spec->transform_type_str = new_spec_str;
+
+    // Split off the parameters if present
+    char *param_list = strsplit(new_spec_str, ':');
+
+    // Parse the transform method string
+    spec->transform_type = adios_transform_find_type_by_xml_alias(spec->transform_type_str);
+
+    // If the transform type is unknown (error) or none, stop now and return
+    if (spec->transform_type == adios_transform_unknown ||
+        spec->transform_type == adios_transform_none)
+        return spec;
+    assert(spec->transform_type != adios_transform_unknown &&
+           spec->transform_type != adios_transform_none);
+
+    // If there is no parameter list, we are done
+    if (!param_list)
+        return spec;
+    assert(param_list);
+
+    spec->param_count = strcount(param_list, ',') + 1;
+    MALLOC_ARRAY(spec->params, spec->param_count);
+    //spec->params = (typeof(spec->params))malloc(sizeof(*spec->params));
+
+    struct adios_transform_spec_kv_pair *cur_kv = spec->params;
+    char *cur_param;
+    while (param_list) {
+        cur_param = param_list;
+        param_list = strsplit(param_list, ',');
+
+        cur_kv->key = cur_param;
+        cur_kv->value = strsplit(cur_param, '='); // NULL if no =
+
+        cur_kv++;
+    }
+
+    return spec;
+}
+
+struct adios_transform_spec * adios_transform_spec_copy(struct adios_transform_spec *src) {
+    struct adios_transform_spec *dst;
+    MALLOC_VAR(dst);
+
+    dst->transform_type = src->transform_type;
+
+    // Duplicate the backing string if needed, then rebase all strings pointing into it
+    if (src->backing_str) {
+        dst->backing_str_len = src->backing_str_len;
+        dst->backing_str = (char *)malloc(dst->backing_str_len + 1);
+        strncpy(dst->backing_str, src->backing_str, src->backing_str_len + 1);
+
+        if (src->transform_type_str)
+            dst->transform_type_str = src->transform_type_str - src->backing_str + dst->backing_str;
+
+        if (src->params) {
+            int i;
+            dst->param_count = src->param_count;
+            MALLOC_ARRAY(dst->params, dst->param_count);
+
+            for (i = 0; i < dst->param_count; i++) {
+                const struct adios_transform_spec_kv_pair *src_kv = &src->params[i];
+                struct adios_transform_spec_kv_pair *dst_kv = &dst->params[i];
+
+                if (src_kv->key)
+                    dst_kv->key = src_kv->key - src->backing_str + dst->backing_str;
+                if (src_kv->value)
+                    dst_kv->value = src_kv->value - src->backing_str + dst->backing_str;
+            }
+        }
+    }
+
+    return dst;
+}
+
+#define FREE(x) {if(x)free(x);(x)=NULL;}
+void adios_transform_free_spec(struct adios_transform_spec **spec_ptr) {
+    struct adios_transform_spec *spec = *spec_ptr;
+    FREE(spec->params);
+    FREE(spec->backing_str);
+    FREE(*spec_ptr)
+}
+#undef FREE
+
 struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *orig_var_grp,
                                                      struct adios_var_struct *orig_var,
-                                                     enum ADIOS_TRANSFORM_TYPE transform_type,
-                                                     char *transform_param) {
-    log_debug("Transforming variable %s with type %d\n", orig_var->name, transform_type);
+                                                     struct adios_transform_spec *transform_spec) {
+    log_debug("Transforming variable %s with type %d\n", orig_var->name, transform_spec->transform_type);
 
     // Check for the simple and error cases
-    if (transform_type == adios_transform_none) {
+    if (transform_spec->transform_type == adios_transform_none) {
         orig_var->transform_type = adios_transform_none;
         return orig_var;
     }
@@ -215,11 +345,14 @@ struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *
     log_debug("Converted variable %s into byte array\n", orig_var->name);
 
     // Set transform type and allocate the metadata buffer
-    orig_var->transform_type = transform_type;
-    orig_var->transform_metadata_len = adios_transform_get_metadata_size(transform_type);
+    orig_var->transform_type = transform_spec->transform_type;
+    orig_var->transform_spec = transform_spec;
+
+    orig_var->transform_metadata_len = adios_transform_get_metadata_size(transform_spec);
     if (orig_var->transform_metadata_len)
         orig_var->transform_metadata = malloc(orig_var->transform_metadata_len);
 
+    /*
     // set the parameter string
     if(transform_param && transform_param[0] != '\0')
     {
@@ -232,6 +365,7 @@ struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *
         orig_var->transform_type_param_len = (uint16_t)param_len;
         orig_var->transform_type_param = strdup(transform_param);
     }
+    */
 
     orig_var->bitmap = 0; // Disable statistics
 
@@ -327,13 +461,13 @@ int adios_transform_variable_data(struct adios_file_struct * fd,
 
 #if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_start ("adios_transform_apply");
-#endif    
+#endif
     // Transform the data, get the new length
     uint64_t transformed_len;
     int success = adios_transform_apply(var->transform_type, fd, var, &transformed_len, use_shared_buffer, wrote_to_shared_buffer);
 #if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop ("adios_transform_apply");
-#endif    
+#endif
 
     if (!success)
         return 0;
@@ -550,13 +684,7 @@ int adios_transform_copy_var_transform(struct adios_file_struct *fd, struct adio
     adios_transform_dereference_dimensions_var(fd, &dst_var->pre_transform_dimensions, src_var->pre_transform_dimensions);
 
     // for parameter
-    dst_var->transform_type_param_len = src_var->transform_type_param_len;
-    if (src_var->transform_type_param_len) {
-        dst_var->transform_type_param = malloc(src_var->transform_type_param_len);
-        memcpy(dst_var->transform_type_param, src_var->transform_type_param, src_var->transform_type_param_len);
-    } else {
-        dst_var->transform_type_param = 0;
-    }
+    dst_var->transform_spec = adios_transform_spec_copy(src_var->transform_spec);
 
     dst_var->transform_metadata_len = src_var->transform_metadata_len;
     if (src_var->transform_metadata_len) {

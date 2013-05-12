@@ -31,18 +31,19 @@ void adios_transform_init() {
     REGISTER_TRANSFORM_WRITE_METHOD(zlib, adios_transform_zlib);
     REGISTER_TRANSFORM_WRITE_METHOD(bzip2, adios_transform_bzip2);
     REGISTER_TRANSFORM_WRITE_METHOD(szip, adios_transform_szip);
-	REGISTER_TRANSFORM_WRITE_METHOD(isobar, adios_transform_isobar);
-	REGISTER_TRANSFORM_WRITE_METHOD(aplod, adios_transform_aplod);
-	REGISTER_TRANSFORM_WRITE_METHOD(alacrity, adios_transform_alacrity);
+    REGISTER_TRANSFORM_WRITE_METHOD(isobar, adios_transform_isobar);
+    REGISTER_TRANSFORM_WRITE_METHOD(aplod, adios_transform_aplod);
+    REGISTER_TRANSFORM_WRITE_METHOD(alacrity, adios_transform_alacrity);
 
     adios_transforms_initialized = 1;
 }
 
 // Delegate functions
 
-uint16_t adios_transform_get_metadata_size(enum ADIOS_TRANSFORM_TYPE transform_type) {
-    assert(transform_type >= adios_transform_none && transform_type < num_adios_transform_types);
-    return TRANSFORM_WRITE_METHODS[transform_type].transform_get_metadata_size();
+// TODO: Pass spec through to plugin
+uint16_t adios_transform_get_metadata_size(struct adios_transform_spec *transform_spec) {
+    assert(transform_spec->transform_type >= adios_transform_none && transform_spec->transform_type < num_adios_transform_types);
+    return TRANSFORM_WRITE_METHODS[transform_spec->transform_type].transform_get_metadata_size();
 }
 
 uint64_t adios_transform_calc_vars_transformed_size(enum ADIOS_TRANSFORM_TYPE transform_type, uint64_t orig_size, int num_vars) {

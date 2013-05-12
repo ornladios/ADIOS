@@ -18,7 +18,7 @@
 void adios_transform_init();
 
 // Delegation functions
-uint16_t adios_transform_get_metadata_size(enum ADIOS_TRANSFORM_TYPE transform_type);
+uint16_t adios_transform_get_metadata_size(struct adios_transform_spec *transform_spec);
 uint64_t adios_transform_calc_vars_transformed_size(enum ADIOS_TRANSFORM_TYPE transform_type, uint64_t orig_size, int num_vars);
 int adios_transform_apply(
         enum ADIOS_TRANSFORM_TYPE transform_type,
