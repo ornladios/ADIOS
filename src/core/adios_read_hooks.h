@@ -42,7 +42,7 @@ int adios_read_##a##_is_var_timed (const ADIOS_FILE *fp, int varid); \
 //////////////////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////////////////
 
-#define ADIOS_READ_METHOD_COUNT 8
+#define ADIOS_READ_METHOD_COUNT 9
 
 // forward declare the functions (or dummies for internals use)
 FORWARD_DECLARE(bp)
@@ -50,6 +50,9 @@ FORWARD_DECLARE(bp_staged)
 FORWARD_DECLARE(bp_staged1)
 #if HAVE_DATASPACES
 FORWARD_DECLARE(dataspaces)
+#endif
+#if HAVE_FLEXPATH
+FORWARD_DECLARE(flexpath)
 #endif
 #if HAVE_DIMES
 FORWARD_DECLARE(dimes)

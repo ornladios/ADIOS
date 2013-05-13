@@ -2,7 +2,7 @@
 # Submission script for the $$TARGET$$ target
 
 
-#PBS -A stf006
+#PBS -A $$ACCOUNT$$
 #PBS -N $$JOB_NAME$$
 #PBS -j oe
 #PBS -l walltime=$$WALLTIME$$,size=$$CORES_TOTAL$$16$$

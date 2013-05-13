@@ -47,6 +47,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cray_pmi.m4 \
 	$(top_srcdir)/config/ac_dcmf.m4 \
 	$(top_srcdir)/config/ac_dimes.m4 \
 	$(top_srcdir)/config/ac_dmalloc.m4 \
+	$(top_srcdir)/config/ac_flexpath.m4 \
 	$(top_srcdir)/config/ac_hdf5.m4 \
 	$(top_srcdir)/config/ac_infiniband.m4 \
 	$(top_srcdir)/config/ac_lustre.m4 \
@@ -208,6 +209,9 @@ FC = @FC@
 FCFLAGS = @FCFLAGS@
 FCLIBS = @FCLIBS@
 FGREP = @FGREP@
+FP_CPPFLAGS = @FP_CPPFLAGS@
+FP_LDFLAGS = @FP_LDFLAGS@
+FP_LIBS = @FP_LIBS@
 GREP = @GREP@
 HDF5_CPPFLAGS = @HDF5_CPPFLAGS@
 HDF5_LDFLAGS = @HDF5_LDFLAGS@
@@ -233,6 +237,7 @@ LUSTRE_CPPFLAGS = @LUSTRE_CPPFLAGS@
 LUSTRE_LDFLAGS = @LUSTRE_LDFLAGS@
 LUSTRE_LIBS = @LUSTRE_LIBS@
 MACRODEFFLAG = @MACRODEFFLAG@
+MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
 MKDIR_P = @MKDIR_P@
 MPICC = @MPICC@
@@ -347,7 +352,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = etc
+SUBDIRS = etc src
 dist_bin_SCRIPTS = bin/skel bin/set_method.sh bin/skel_extract.py bin/skel_cat.py
 pythonlibdir = @libdir@/python
 dist_pythonlib_DATA = \
@@ -368,18 +373,20 @@ templatedir = @prefix@/etc/skel/templates
 dist_template_DATA = \
     etc/templates/Makefile.default.tpl\
 	etc/templates/submit_sith.tpl\
+	etc/templates/submit_nautilus.tpl\
 	etc/templates/submit_jaguar.tpl
 
 EXTRA_DIST = etc/settings \
            etc/templates/Makefile.default.tpl \
            etc/templates/submit_jaguar.tpl \
            etc/templates/submit_sith.tpl \
+           etc/templates/submit_nautilus.tpl \
            lib/skel_have_adios_timing.py.in
 
 all: all-recursive
 
 .SUFFIXES:
-$(srcdir)/Makefile.in:  $(srcdir)/Makefile.am  $(am__configure_deps)
+$(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
 	    *$$dep*) \
@@ -404,9 +411,9 @@ Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 $(top_builddir)/config.status: $(top_srcdir)/configure $(CONFIG_STATUS_DEPENDENCIES)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 
-$(top_srcdir)/configure:  $(am__configure_deps)
+$(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
-$(ACLOCAL_M4):  $(am__aclocal_m4_deps)
+$(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
 install-dist_binSCRIPTS: $(dist_bin_SCRIPTS)

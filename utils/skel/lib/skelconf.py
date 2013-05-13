@@ -1,6 +1,7 @@
 import xml.dom.minidom
 
 import skel_settings
+import skel_have_adios_timing
 
 
 class skelConfig:
@@ -209,10 +210,10 @@ class measure:
 
     def use_adios_timing (self):
         val = self.settings_dict["use_adios_timing"]
-        if val =="no":
-            return False 
+        if val =="yes" and skel_have_adios_timing.skel_have_adios_timing == True:
+            return True 
 
-        return True
+        return False
 
     def use_sleep_before_open (self):
         val = self.settings_dict["sleep_before_open"]

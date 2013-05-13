@@ -171,7 +171,7 @@ int main (int argc, char ** argv)
     if (version & ADIOS_VERSION_HAVE_SUBFILE)
     {
         printf (DIVIDER);
-        return;
+        return 0;
     }
 
 

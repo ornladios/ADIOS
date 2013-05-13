@@ -27,7 +27,9 @@ def generate_makefiles_fortran (params):
 
     makefile = open ('Makefile', 'w')
 
-    makefile_template_name = '~/.skel/templates/Makefile.' + platform + '.tpl'
+    # Makefile generation no longer depends on the target, just using default here.
+    #makefile_template_name = '~/.skel/templates/Makefile.' + platform + '.tpl'
+    makefile_template_name = '~/.skel/templates/Makefile.default.tpl'
     makefile_template = open(os.path.expanduser(makefile_template_name), 'r')
 
     include_statement = "" + os.path.dirname (sys.argv[0]) + '/../etc/skel/compiler_fragment.mk'
@@ -66,7 +68,9 @@ def generate_makefiles_c (params):
 
     makefile = open ('Makefile', 'w')
 
-    makefile_template_name = os.path.dirname (sys.argv[0]) + '/../etc/skel/templates/Makefile.' + platform + '.tpl'
+    # Makefile generation no longer depends on the target, just using default here.
+    #makefile_template_name = os.path.dirname (sys.argv[0]) + '/../etc/skel/templates/Makefile.' + platform + '.tpl'
+    makefile_template_name = os.path.dirname (sys.argv[0]) + '/../etc/skel/templates/Makefile.default.tpl'
     makefile_template = open(os.path.expanduser(makefile_template_name), 'r')
 
     include_statement = "" + os.path.dirname (sys.argv[0]) + '/../etc/skel/compiler_fragment.mk'

@@ -1,4 +1,4 @@
-SUBDIRS = etc
+SUBDIRS = etc src
 
 dist_bin_SCRIPTS = bin/skel bin/set_method.sh bin/skel_extract.py bin/skel_cat.py
 
@@ -23,12 +23,14 @@ templatedir=@prefix@/etc/skel/templates
 dist_template_DATA=\
     etc/templates/Makefile.default.tpl\
 	etc/templates/submit_sith.tpl\
+	etc/templates/submit_nautilus.tpl\
 	etc/templates/submit_jaguar.tpl
 
 EXTRA_DIST=etc/settings \
            etc/templates/Makefile.default.tpl \
            etc/templates/submit_jaguar.tpl \
            etc/templates/submit_sith.tpl \
+           etc/templates/submit_nautilus.tpl \
            lib/skel_have_adios_timing.py.in
            ##etc/compiler_fragment.mk 
 

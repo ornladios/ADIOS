@@ -58,12 +58,18 @@ program coupling
     use adios_write_mod
     implicit none
     include 'mpif.h'
-    integer :: t
+    integer :: t, key, color
 
     call MPI_Init (ierr)
-    call MPI_Comm_dup (MPI_COMM_WORLD, group_comm, ierr)
-    call MPI_Comm_rank (MPI_COMM_WORLD, rank, ierr)
+    call MPI_Barrier(MPI_COMM_WORLD, ierr)
+    call MPI_Comm_rank(MPI_COMM_WORLD, key, ierr)
+   
+    ! Split MPI_COMM_WORLD for MPMD execution
+    color = 1
+    call MPI_Comm_split(MPI_COMM_WORLD, color, key, group_comm, ierr) 
+    call MPI_Comm_rank (group_comm, rank, ierr)
     call MPI_Comm_size (group_comm, nproc , ierr)
+
 
     call adios_init ("coupling_writer_2D.xml", group_comm, ierr)
     !call MPI_Barrier (group_comm, ierr)
@@ -88,14 +94,14 @@ program coupling
     do ts=1,timesteps
         call generateLocalArrays()
         call writeArrays()
-        call MPI_Barrier (MPI_COMM_WORLD, ierr)
+        call MPI_Barrier (group_comm, ierr)
         !print '("rank=",i0," goes to sleep after step ",i0)', rank, ts
         if (ts < timesteps) call sleep(2)
         !print '("rank=",i0," woke up")', rank
     enddo
 
     ! Terminate
-    call MPI_Barrier (MPI_COMM_WORLD, ierr)
+    call MPI_Barrier (group_comm, ierr)
     call adios_finalize (rank, adios_err)
     call MPI_Finalize (ierr)
 end program coupling

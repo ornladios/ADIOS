@@ -47,6 +47,19 @@ typedef struct {
         void     * internal_data;   /* Data for internal use                                          */
 } ADIOS_FILE;
 
+typedef struct {
+        uint64_t gh;                /* Group handler                                           */
+        int      grpid;             /* group index (0..ADIOS_FILE.groups_count-1)              */
+        int      vars_count;        /* Number of variables in this adios group                 */
+        char     ** var_namelist;   /* Variable names in a char* array                         */
+        int      attrs_count;       /* Number of attributes in this adios group                */
+        char     ** attr_namelist;  /* Attribute names in a char* array                        */
+        ADIOS_FILE * fp;            /* pointer to the parent ADIOS_FILE struct                 */
+        /* streaming API: */
+        int      timestep;          /* The current (only) timestep */
+        int      lasttimestep;      /* The currently available latest timestep in the stream   */
+
+} ADIOS_GROUP;
 
 typedef struct {
         void     * min;            /* minimum value in an array variable, = value for a scalar       */
@@ -128,6 +141,7 @@ enum ADIOS_READ_METHOD {
         ADIOS_READ_METHOD_DATASPACES    = 3,  /* Read from memory written by DATASPACES method               */
         ADIOS_READ_METHOD_DIMES         = 4,  /* Read from memory written by DIMES method                    */
         ADIOS_READ_METHOD_FLEXIO        = 5,  /* Read from memory written by FLEXIO method                   */
+        ADIOS_READ_METHOD_FLEXPATH      = 6,  /* Read from memory written by FLEXPATH method                 */
 };
 
 /** Locking mode for streams. 

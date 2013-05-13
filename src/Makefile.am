@@ -183,6 +183,13 @@ FortranLibSources += write/adios_nc4.c
 endif
 endif
 
+if HAVE_FLEXPATH
+libadios_a_SOURCES += write/adios_flexpath.c  read/read_flexpath.c
+if BUILD_FORTRAN
+FortranLibSources += write/adios_flexpath.c read/read_flexpath.c
+endif
+endif
+
 if HAVE_NSSI
 dist_libadios_a_SOURCES = nssi/adios_nssi_args.x
 nodist_libadios_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
@@ -306,6 +313,9 @@ endif
 if HAVE_DATATAP
 libadiosread_a_SOURCES += read/read_datatap.c
 endif
+if HAVE_FLEXPATH
+libadiosread_a_SOURCES += read/read_flexpath.c
+endif
 if HAVE_NSSI
 dist_libadiosread_a_SOURCES = nssi/adios_nssi_args.x
 nodist_libadiosread_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
@@ -332,7 +342,6 @@ FortranReadLibSource = core/adios_bp_v1.c \
                       read/read_bp.c \
                       read/read_bp_staged.c \
                       read/read_bp_staged1.c 
-                      
 if HAVE_DATASPACES
 FortranReadLibSource += read/read_dataspaces.c
 endif
@@ -341,6 +350,9 @@ FortranReadLibSource += read/read_dimes.c
 endif
 if HAVE_DATATAP
 FortranReadLibSource += read/read_datatap.c
+endif
+if HAVE_FLEXPATH 
+FortranReadLibSource += read/read_flexpath.c
 endif
 if HAVE_NSSI
 dist_libadiosreadf_a_SOURCES = nssi/adios_nssi_args.x
@@ -398,6 +410,9 @@ endif
 if HAVE_DATATAP
 libadiosread_nompi_a_SOURCES += read/read_datatap.c
 endif
+if HAVE_FLEXPATH
+libadiosread_nompi_a_SOURCES += read/read_flexpath.c
+endif
 if HAVE_NSSI
 dist_libadiosread_nompi_a_SOURCES = nssi/adios_nssi_args.x
 nodist_libadiosread_nompi_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
@@ -433,6 +448,9 @@ FortranReadSeqLibSource += read/read_dimes.c
 endif
 if HAVE_DATATAP
 FortranReadSeqLibSource += read/read_datatap.c
+endif
+if HAVE_FLEXPATH
+FortranReadSeqLibSource += read/read_flexpath.c
 endif
 if HAVE_NSSI
 dist_libadiosreadf_nompi_a_SOURCES = nssi/adios_nssi_args.x

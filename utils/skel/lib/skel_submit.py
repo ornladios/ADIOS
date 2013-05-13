@@ -12,6 +12,9 @@ import skel_settings
 # be two types of replacement, simple variables, and macros (for the
 # tests)
 def generate_submit_scripts (params):
+
+    settings = skel_settings.skel_settings()
+
     for batch in params.get_batches():
         #platform = params.get_target()
         settings = skel_settings.skel_settings()
@@ -33,14 +36,14 @@ def generate_submit_scripts (params):
                     j = template_start_index
                     template_line = template_lines[j]
                     while not '$$END_TEST$$' in template_line:
-                        sfile.write (submit_line_template_replace (template_line, params, batch, test))
+                        sfile.write (submit_line_template_replace (template_line, params, batch, test, settings))
                         j = j + 1
                         template_line = template_lines[j]
                     # Point at the first line after the macro
                     i = j + 1
             else:
                 # Fill in any replacement vars in this line...
-                template_line = submit_line_template_replace (template_line, params, batch, None)
+                template_line = submit_line_template_replace (template_line, params, batch, None, settings)
                 sfile.write (template_line)
                 i = i + 1
 
@@ -51,13 +54,14 @@ def generate_submit_scripts (params):
 import re
 import math
 
-def submit_line_template_replace (template_line, params, batch, test):
+def submit_line_template_replace (template_line, params, batch, test, settings):
 
     template_line = template_line.replace ('$$JOB_NAME$$', batch.get_name() + '_%d'%batch.get_cores() + '_skel_' + params.get_application() )
     template_line = template_line.replace ('$$WALLTIME$$', batch.get_walltime() )
     template_line = template_line.replace ('$$APP$$', params.get_application() )
     template_line = template_line.replace ('$$CORES_USED$$', '%d'%batch.get_cores() )
     template_line = template_line.replace ('$$TARGET$$', params.get_target() )
+    template_line = template_line.replace ('$$ACCOUNT$$', settings.get_account() )
 
     if test != None:
 

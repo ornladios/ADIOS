@@ -1967,14 +1967,13 @@ int adios_read_bp_inq_var_blockinfo (const ADIOS_FILE * fp, ADIOS_VARINFO * vari
     fh = (BP_FILE *) p->fh;
     file_is_fortran = is_fortran_file (fh);
     var_root = bp_find_var_byid (fh, varinfo->varid);
-
     varinfo->blockinfo = (ADIOS_VARBLOCK *) malloc (varinfo->sum_nblocks * sizeof (ADIOS_VARBLOCK));
     assert (varinfo->blockinfo);
 
     /* dim.count possibily include 'time' dim in it. */
-    ldims = (uint64_t *) malloc (var_root->characteristics[0].dims.count);
-    gdims = (uint64_t *) malloc (var_root->characteristics[0].dims.count);
-    offsets = (uint64_t *) malloc (var_root->characteristics[0].dims.count);
+    ldims = (uint64_t *) malloc (var_root->characteristics[0].dims.count * 8);
+    gdims = (uint64_t *) malloc (var_root->characteristics[0].dims.count * 8);
+    offsets = (uint64_t *) malloc (var_root->characteristics[0].dims.count * 8);
     assert (ldims && gdims && offsets); 
 
     for (i = 0; i < varinfo->sum_nblocks; i++)

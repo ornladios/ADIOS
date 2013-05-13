@@ -40,14 +40,14 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
 #    export PAR_HDF5_CLIB=$HDF5_CLIB
 #    module unload hdf5
     # Seq. and Parallel NetCDF 4 
-#    module load netcdf/4.1.3
-#    export SEQ_NC_DIR=$NETCDF_DIR
-#    export SEQ_NC_CLIB=$NETCDF_CLIB
-#    module unload netcdf
-#    module load netcdf/4.1.3_par
-#    export PAR_NC_DIR=$NETCDF_DIR
-#    export PAR_NC_CLIB=$NETCDF_CLIB
-#    module unload netcdf
+    module load netcdf/4.1.3
+    export SEQ_NC_DIR=$NETCDF_DIR
+    export SEQ_NC_CLIB=$NETCDF_CLIB 
+    module unload netcdf
+    module load netcdf/4.1.3_par
+    export PAR_NC_DIR=$NETCDF_DIR
+    export PAR_NC_CLIB=$NETCDF_CLIB
+    module unload netcdf
     export BUILD_WRITE=ON
     export BUILD_FORTRAN=ON
     export skel_timing=ON

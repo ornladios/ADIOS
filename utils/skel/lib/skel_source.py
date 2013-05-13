@@ -6,9 +6,7 @@ import argparse
 import adios
 import skelconf
 import skel_settings
-import skel_have_adios_timing
 
-print "value is %s\n" % skel_have_adios_timing
 
 def generate_c (outfile, config, params, test):
     if test.get_type() == 'write':
@@ -44,6 +42,7 @@ def generate_c_write (outfile, config, params, test):
         # Generate includes
         c_file.write ('\n#include "adios.h"')
         c_file.write ('\n#include "mpi.h"')
+        c_file.write ('\n#include "skel/skel_xml_output.h"')
         c_file.write ('\n#include <stdlib.h>')
         c_file.write ('\n#include <stdio.h>')
 
@@ -167,7 +166,12 @@ def generate_c_write (outfile, config, params, test):
         # In future we can gather and output all of the times to see variability
         c_file.write ('\n\n// Output results')
 
-        c_file.write ('\n\n adios_timing_write_xml (adios_handle, "' + params.get_application() + '_skel_time.xml");')
+        if measure.use_adios_timing():
+
+            c_file.write ('\n\n adios_timing_write_xml (adios_handle, "' + params.get_application() + '_skel_time.xml");')
+
+        else:
+            c_file.write ('\n\n skel_write_coarse_xml_data ();')
 
 
         c_file.write ('\ndouble skel_total_init, skel_total_open, skel_total_access, skel_total_close, skel_total_total;')
@@ -192,13 +196,10 @@ def generate_c_write (outfile, config, params, test):
 
 
 
-        if skel_have_adios_timing == true:
-            if measure.report_all():
-                print "Use adios timing"
-            else:
-                print "ADIOS built with timing support, but report_all set to false"
+        if measure.use_adios_timing():
+            print "Use adios timing"
         else:
-            print "ADIOS built without timing support."
+            print "Don't use adios timing"
 
 
             # Detailed reporting disabled, use adios timing instead.
@@ -329,7 +330,7 @@ def generate_fortran_write (outfile, config, params, test):
         f_file.write ('\n  call MPI_BARRIER (MPI_COMM_WORLD, error)')
         f_file.write ('\n  skel_init_timer = skel_init_timer - MPI_Wtime();')
 
-        f_file.write ('\n\n  call adios_init ("' + config.get_filename() + '", adios_error)')
+        f_file.write ('\n\n  call adios_init ("' + config.get_filename() + '", MPI_COMM_WORLD, adios_error)')
 
         f_file.write ('\n  skel_init_timer = skel_init_timer + MPI_WTIME();')
 
@@ -431,7 +432,9 @@ def generate_fortran_write (outfile, config, params, test):
 
         if measure.use_adios_timing():
             f_file.write ('\n\n  call adios_timing_write_xml (adios_handle, "' + params.get_application() + '_skel_time.xml")')
-
+        else:
+            f_file.write ('\n\n  call skel_write_coarse_xml_data_f ()')
+            
         if measure.use_reduce():
             f_file.write ('\n\n  call MPI_Reduce (skel_init_timer, skel_total_init, 1, MPI_DOUBLE_PRECISION, MPI_MAX, 0, MPI_COMM_WORLD, error)')
             f_file.write ('\n  call MPI_Reduce (skel_open_timer, skel_total_open, 1, MPI_DOUBLE_PRECISION, MPI_MAX, 0, MPI_COMM_WORLD, error)')
@@ -444,17 +447,6 @@ def generate_fortran_write (outfile, config, params, test):
             f_file.write ('\n  skel_total_access = skel_access_timer')
             f_file.write ('\n  skel_total_close = skel_close_timer')
             f_file.write ('\n  skel_total_total = skel_total_timer')
-
-
-
-
-        if skel_have_adios_timing == true:
-            if measure.report_all():
-                print "Use adios timing"
-            else:
-                print "ADIOS built with timing support, but report_all set to false"
-        else:
-            print "ADIOS built without timing support."
 
             # All rank reporting disabled for skel, use ADIOS timing library instead.
 
@@ -507,6 +499,7 @@ def generate_fortran_write (outfile, config, params, test):
     # end: generate_fortran_write
 
 
+# Needs to be updated to use new read API
 def generate_c_read_all (outfile, config, params, test):
 
     outfile = outfile.replace ('.c', '_read_all.c')
@@ -534,7 +527,7 @@ def generate_c_read_all (outfile, config, params, test):
         c_file.write ('\n{')
 
         c_file.write ('\n\nMPI_Init (&argc, &argv);')
-        c_file.write ('\nadios_init ("' + config.get_filename() + '");')
+        c_file.write ('\nadios_init ("' + config.get_filename() + '", MPI_COMM_WORLD);')
 
         c_file.write ('\nint skel_mpi_size, skel_mpi_rank, skel_i;')
         c_file.write ('\nMPI_Comm_rank (MPI_COMM_WORLD, &skel_mpi_rank);')
