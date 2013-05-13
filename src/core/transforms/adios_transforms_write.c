@@ -288,13 +288,18 @@ struct adios_transform_spec * adios_transform_spec_copy(struct adios_transform_s
 
     // Duplicate the backing string if needed, then rebase all strings pointing into it
     if (src->backing_str) {
+        // Duplicate the backing string
         dst->backing_str_len = src->backing_str_len;
         dst->backing_str = (char *)malloc(dst->backing_str_len + 1);
-        strncpy(dst->backing_str, src->backing_str, src->backing_str_len + 1);
+        strncpy(dst->backing_str, src->backing_str, src->backing_str_len + 1); // strncpy because it may have several \0's in it
 
+        // Rebase the transform type string
         if (src->transform_type_str)
             dst->transform_type_str = src->transform_type_str - src->backing_str + dst->backing_str;
+        else
+            dst->transform_type_str = NULL;
 
+        // Rebase all the parameters, if present
         if (src->params) {
             int i;
             dst->param_count = src->param_count;
@@ -306,10 +311,17 @@ struct adios_transform_spec * adios_transform_spec_copy(struct adios_transform_s
 
                 if (src_kv->key)
                     dst_kv->key = src_kv->key - src->backing_str + dst->backing_str;
+                else
+                    dst_kv->key = NULL;
+
                 if (src_kv->value)
                     dst_kv->value = src_kv->value - src->backing_str + dst->backing_str;
+                else
+                    dst_kv->value = NULL;
             }
         }
+    } else {
+        dst->backing_str = NULL;
     }
 
     return dst;
