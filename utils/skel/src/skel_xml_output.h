@@ -3,6 +3,8 @@
 
 #include "config.h"
 
-int FC_FUNC_(skel_write_coarse_xml_data, SKEL_WRITE_COARSE_XML_DATA) ();
+int FC_FUNC_(skel_write_coarse_xml_data_f, SKEL_WRITE_COARSE_XML_DATA_F) ();
+
+int skel_write_coarse_xml_data ();
 
 #endif

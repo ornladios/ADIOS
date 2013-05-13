@@ -37,10 +37,12 @@ class skel_settings:
     def get_submit_target (self):
         t = self.settings_dict['submit_target']
         if t == None or t == '':
-            return "jaguar"
+            return "sith"
         else:
             return t
 
+    def get_account (self):
+        return self.settings_dict['account']
 
     def get_settings_dict (self):
         return self.settings_dict
