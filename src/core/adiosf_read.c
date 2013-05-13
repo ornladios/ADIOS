@@ -31,7 +31,7 @@ extern int adios_errno;
 #define PRINT_ERRMSG() fprintf(stderr, "ADIOS READ ERROR: %s\n", adios_get_last_errmsg())
 
 #ifdef BUILD_WITH_CMAKE
-  #include "../../FC.h"
+  #include "FC.h"
 #endif
 
 /*********************/

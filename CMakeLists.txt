@@ -822,7 +822,7 @@ enable_language(Fortran)
 message(STATUS "CMAKE_Fortran_COMPILER_WORKS =${CMAKE_Fortran_COMPILER_WORKS}")
 
 include(FortranCInterface)
-FortranCInterface_HEADER(${CMAKE_CURRENT_SOURCE_DIR}/FC.h MACRO_NAMESPACE "FC_")
+FortranCInterface_HEADER(${CMAKE_CURRENT_BINARY_DIR}/FC.h MACRO_NAMESPACE "FC_")
 #FortranCInterface_VERIFY(CXX)
 endif()
 ################################ end of Fortran processing ##############################

@@ -1,5 +1,6 @@
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_BINARY_DIR}/src)
+include_directories(${PROJECT_BINARY_DIR})
 link_directories(${PROJECT_BINARY_DIR}/src)
 
 if(HAVE_NSSI)
@@ -555,6 +556,9 @@ set(libadios_internal_nompi_a_CPPFLAGS "${MACRODEFFLAG}_INTERNAL ${ADIOSLIB_EXTR
 
 add_library(adios_internal_nompi ${libadios_internal_nompi_a_SOURCES})
 set_target_properties(adios_internal_nompi PROPERTIES COMPILE_FLAGS "${libadios_internal_nompi_a_CPPFLAGS}")
+
+add_subdirectory(core)
+add_subdirectory(write)
 
 install(FILES ${PROJECT_BINARY_DIR}/src/libadios.a
 	${PROJECT_BINARY_DIR}/src/libadios_nompi.a

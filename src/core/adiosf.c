@@ -25,7 +25,7 @@ extern "C"  /* prevent C++ name mangling */
 
 
 #ifdef BUILD_WITH_CMAKE
-  #include "../../FC.h"
+  #include "FC.h"
 #endif
 
 extern int adios_errno;
