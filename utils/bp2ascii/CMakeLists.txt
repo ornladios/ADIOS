@@ -2,6 +2,7 @@ include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/utils/bp2ascii)
 include_directories(${PROJECT_SOURCE_DIR}/src/public)
 include_directories(${PROJECT_SOURCE_DIR}/src/core)
+include_directories(${PROJECT_BINARY_DIR})
 link_directories(${PROJECT_BINARY_DIR}/utils/bp2ascii)
 
 add_executable(bp2ascii bp2ascii.c)

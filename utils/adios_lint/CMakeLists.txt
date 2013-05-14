@@ -2,6 +2,7 @@ include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/src/public)
 include_directories(${PROJECT_SOURCE_DIR}/src/core)
 include_directories(${PROJECT_SOURCE_DIR}/utils/adios_lint)
+include_directories(${PROJECT_BINARY_DIR})
 link_directories(${PROJECT_BINARY_DIR}/utils/adios_lint)
 
 add_executable(adios_lint adios_lint.c)
