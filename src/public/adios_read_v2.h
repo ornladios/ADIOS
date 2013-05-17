@@ -48,20 +48,6 @@ typedef struct {
 } ADIOS_FILE;
 
 typedef struct {
-        uint64_t gh;                /* Group handler                                           */
-        int      grpid;             /* group index (0..ADIOS_FILE.groups_count-1)              */
-        int      vars_count;        /* Number of variables in this adios group                 */
-        char     ** var_namelist;   /* Variable names in a char* array                         */
-        int      attrs_count;       /* Number of attributes in this adios group                */
-        char     ** attr_namelist;  /* Attribute names in a char* array                        */
-        ADIOS_FILE * fp;            /* pointer to the parent ADIOS_FILE struct                 */
-        /* streaming API: */
-        int      timestep;          /* The current (only) timestep */
-        int      lasttimestep;      /* The currently available latest timestep in the stream   */
-
-} ADIOS_GROUP;
-
-typedef struct {
         void     * min;            /* minimum value in an array variable, = value for a scalar       */
         void     * max;            /* maximum value of an array variable (over all steps)            */
         double   * avg;            /* average value of an array variable (over all steps)            */
