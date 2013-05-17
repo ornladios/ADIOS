@@ -193,6 +193,8 @@ if(DEFINED ENV{CRAY_PMI_DIR})
   else()
     set(CRAY_PMI OFF CACHE BOOL "")
   endif()
+else()
+  set(CRAY_PMI OFF CACHE BOOL "")
 endif()
 
 if(DEFINED ENV{CRAY_UGNI_DIR})
