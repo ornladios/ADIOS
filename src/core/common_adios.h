@@ -1,4 +1,4 @@
-/* 
+/*
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
@@ -11,6 +11,7 @@
 #include <stdint.h>
 #include "public/adios_types.h"
 #include "core/adios_internals.h"
+#include "core/transforms/adios_transforms_specparse.h"
 
 /* Write functions for ADIOS
  *
