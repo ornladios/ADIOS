@@ -1661,7 +1661,7 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
     }
 
     // This function sets the transform_type field. It does nothing if transform_type is none.
-    v = adios_transform_define_var(t, v, transform_spec->transform_type, transform_spec);
+    v = adios_transform_define_var(t, v, transform_spec);
 
     /*
     char sep = ':';
