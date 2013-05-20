@@ -5,7 +5,10 @@
  *      Author: David A. Boyuka II
  */
 
-#incldue "core/transforms/adios_transforms_specparse.h"
+#include <stdlib.h>
+#include <stdint.h>
+#include "adios_types.h"
+#include "core/transforms/adios_transforms_specparse.h"
 
 inline static char * strsplit(char *input, char split) {
     char *pos = strchr(input, split);
