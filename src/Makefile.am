@@ -72,6 +72,7 @@ transforms_write_SOURCES = $(transforms_read_SOURCES) \
                            core/transforms/adios_transforms_write.c \
                            core/transforms/adios_transforms_hooks_write.c \
                            core/transforms/adios_transforms_util.c \
+                           core/transforms/adios_transforms_specparse.c \
                            $(transforms_write_method_SOURCES)
 
 if BUILD_WRITE
