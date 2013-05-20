@@ -15,6 +15,9 @@
 #include "core/adios_transport_hooks.h"
 #include "core/adios_bp_v1.h"
 
+// NCSU ALACRITY-ADIOS: Include needed for the transform spec struct
+#include "core/transforms/adios_transforms_specparse.h"
+
 #ifdef SKEL_TIMING
 #include "core/adios_timing.h"
 #endif

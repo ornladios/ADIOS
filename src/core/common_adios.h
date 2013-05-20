@@ -11,7 +11,6 @@
 #include <stdint.h>
 #include "public/adios_types.h"
 #include "core/adios_internals.h"
-#include "core/transforms/adios_transforms_specparse.h"
 
 /* Write functions for ADIOS
  *
