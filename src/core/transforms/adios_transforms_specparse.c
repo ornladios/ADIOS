@@ -7,7 +7,6 @@
 
 #include <stdlib.h>
 #include <stdint.h>
-#include "adios_types.h"
 #include "core/transforms/adios_transforms_specparse.h"
 
 inline static char * strsplit(char *input, char split) {
