@@ -26,13 +26,27 @@ if HAVE_NSSI
                    scripts/start.nssi.staging.sh
 endif
 
+#install-data-hook:
+#	echo -n "VERSIONSTRING=\"$(PACKAGE) version $(VERSION) svn revision " >> adios_config.flags
+#	if type svnversion &>/dev/null; then \
+#	    echo `svnversion`\" >> adios_config.flags; \
+#	else \
+#	    echo "unknown\"" >> adios_config.flags; \
+#	    echo "Error: svnversion command not found"; \
+#	fi 
+#	cp adios_config.flags $(DESTDIR)$(bindir)
+        
 install-data-hook:
-	echo -n "VERSIONSTRING=\"$(PACKAGE) version $(VERSION) svn revision " >> adios_config.flags
-	if type svnversion &>/dev/null; then \
-	    echo `svnversion`\" >> adios_config.flags; \
+	echo "SRCDIR=\"$(PWD)\"" >> adios_config.flags; \
+	if git rev-parse --git-dir &>/dev/null; then \
+	    echo "GITLOG=\"`git log -n 1 --format=\"Last commit on %ad hash %h\"`\"" >> adios_config.flags; \
+	    echo "read -d '' GITSTAT <<'_EOF_'" >> adios_config.flags; \
+	    git status -uno >> adios_config.flags; \
+	    echo "_EOF_" >> adios_config.flags; \
 	else \
-	    echo "unknown\"" >> adios_config.flags; \
-	    echo "Error: svnversion command not found"; \
+	    echo "GITLOG=\"\"" >> adios_config.flags; \
+	    echo "GITSTAT=\"\"" >> adios_config.flags; \
+	    echo "Error: git command not found"; \
 	fi 
 	cp adios_config.flags $(DESTDIR)$(bindir)
         
