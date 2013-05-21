@@ -7,9 +7,9 @@
 int common_skel_write_coarse_xml_data (double open_time, double write_time, double close_time, double total_time);
 
 
-int FC_FUNC_(skel_write_coarse_xml_data_f, SKEL_WRITE_COARSE_XML_DATA_F) (double open_time, double write_time, double close_time, double total_time)
+int FC_FUNC_(skel_write_coarse_xml_data_f, SKEL_WRITE_COARSE_XML_DATA_F) (double *open_time, double *write_time, double *close_time, double *total_time)
 {
-    return common_skel_write_coarse_xml_data (open_time, write_time, close_time, total_time);
+    return common_skel_write_coarse_xml_data (*open_time, *write_time, *close_time, *total_time);
 }
 
 
@@ -33,15 +33,43 @@ int common_skel_write_coarse_xml_data (double open_time, double write_time, doub
     MPI_Comm_size (MPI_COMM_WORLD, &size);
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 
-    //double close_time = 1.67f * rank;
+    
+    double * open_times = NULL;
+    double * write_times = NULL;
     double * close_times = NULL;
+    double * total_times = NULL;
 
     if (rank == 0)
     {
+        open_times = (double*) malloc (sizeof (double) * size);
+        write_times = (double*) malloc (sizeof (double) * size);
         close_times = (double*) malloc (sizeof (double) * size);
+        total_times = (double*) malloc (sizeof (double) * size);
     }
 
-    // Collect timing on proc 0
+    // Collect timings on proc 0
+
+    MPI_Gather (
+        &open_time,
+        1,  // sendcount
+        MPI_DOUBLE, // sendtype
+        open_times,
+        1, // recvcount
+        MPI_DOUBLE, // recvtype
+        0, // root
+        MPI_COMM_WORLD
+    );
+
+    MPI_Gather (
+        &write_time,
+        1,  // sendcount
+        MPI_DOUBLE, // sendtype
+        write_times,
+        1, // recvcount
+        MPI_DOUBLE, // recvtype
+        0, // root
+        MPI_COMM_WORLD
+    );
 
     MPI_Gather (
         &close_time,
@@ -54,19 +82,33 @@ int common_skel_write_coarse_xml_data (double open_time, double write_time, doub
         MPI_COMM_WORLD
     );
 
+    MPI_Gather (
+        &total_time,
+        1,  // sendcount
+        MPI_DOUBLE, // sendtype
+        total_times,
+        1, // recvcount
+        MPI_DOUBLE, // recvtype
+        0, // root
+        MPI_COMM_WORLD
+    );
+
+
+
+
     // Write it out (proc 0 only)
     if (rank == 0)
     {
         FILE* f = fopen (filename, "a");
 
-        char* key_str = "ad_close";
+        char* key_str = "ad_open,ad_write,ad_close,skel_total";
 
         fprintf (f, "<skel_result>\n");
         fprintf (f, "  <adios_timing cores='%i' keys='%s'>\n", size, key_str);
 
         for (i = 0; i < size; i++)
         {
-            fprintf (f, "    <proc id='%i' vals='%f' />\n", i, close_times[i]);
+            fprintf (f, "    <proc id='%i' vals='%f,%f,%f,%f' />\n", i, open_times[i], write_times[i], close_times[i], total_times[i]);
         }
 
         fprintf (f, "  </adios_timing>\n");
