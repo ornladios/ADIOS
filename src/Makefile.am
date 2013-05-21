@@ -103,7 +103,7 @@ libadios_nompi_a_SOURCES = core/adios.c \
 
 
 if BUILD_FORTRAN
-lib_LIBRARIES += libadiosf.a libadiosf_v1.a
+lib_LIBRARIES += libadiosf.a libadiosf_v1.a libadiosf_nompi.a libadiosf_nompi_v1.a
 FortranLibSources = core/adiosf.c \
                      core/common_adios.c \
                      core/adios_internals.c \
@@ -125,12 +125,14 @@ FortranLibSources = core/adiosf.c \
                      read/read_bp.c \
                      read/read_bp_staged.c \
                      read/read_bp_staged1.c \
-                     write/adios_mpi.c \
-                     write/adios_mpi_lustre.c \
-                     write/adios_mpi_amr.c \
                      write/adios_posix.c \
                      write/adios_posix1.c 
 
+FortranLibMPISources =  write/adios_mpi.c \
+                     write/adios_mpi_lustre.c \
+                     write/adios_mpi_amr.c 
+
+FortranLibSEQSources = core/mpidummy.c
 
 endif # BUILD_FORTRAN
 
@@ -140,6 +142,8 @@ libadios_nompi_a_CPPFLAGS = $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(A
 libadios_nompi_a_CFLAGS = $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_SEQ_CFLAGS) 
 libadiosf_a_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS) # $(MACRODEFFLAG)USE_TIMERS
 libadiosf_a_CFLAGS = $(ADIOSLIB_CFLAGS) 
+libadiosf_nompi_a_CPPFLAGS = $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_SEQ_CPPFLAGS) # $(MACRODEFFLAG)USE_TIMERS
+libadiosf_nompi_a_CFLAGS = $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_SEQ_CFLAGS) 
 
 if HAVE_DATASPACES
 libadios_a_SOURCES += write/adios_dataspaces.c read/read_dataspaces.c
@@ -171,7 +175,7 @@ libadios_a_SOURCES += write/adios_phdf5.c
 PHDF5_CPPFLAGS += $(MACRODEFFLAG)PHDF5 $(MACRODEFFLAG)H5_USE_16_API 
 libadios_a_CPPFLAGS += $(PHDF5_CPPFLAGS)
 if BUILD_FORTRAN
-FortranLibSources += write/adios_phdf5.c 
+FortranLibMPISources += write/adios_phdf5.c 
 libadiosf_a_CPPFLAGS += $(PHDF5_CPPFLAGS)
 endif
 endif
@@ -179,7 +183,7 @@ endif
 if HAVE_NC4PAR
 libadios_a_SOURCES += write/adios_nc4.c 
 if BUILD_FORTRAN
-FortranLibSources += write/adios_nc4.c 
+FortranLibMPISources += write/adios_nc4.c 
 endif
 endif
 
@@ -236,7 +240,7 @@ libadios_a_SOURCES += write/adios_mpi_stagger.c \
                       write/adios_mpi_amr1.c \
                       write/adios_adaptive.c 
 if BUILD_FORTRAN
-FortranLibSources += write/adios_mpi_stagger.c \
+FortranLibMPISources += write/adios_mpi_stagger.c \
                        write/adios_mpi_aggregate.c \
                        write/adios_provenance.c \
                        write/adios_mpi_cio.c \
@@ -248,21 +252,34 @@ else
 libadios_a_CPPFLAGS += $(MACRODEFFLAG)NO_RESEARCH_TRANSPORTS
 libadios_nompi_a_CPPFLAGS += $(MACRODEFFLAG)NO_RESEARCH_TRANSPORTS
 libadiosf_a_CPPFLAGS += $(MACRODEFFLAG)NO_RESEARCH_TRANSPORTS
+libadiosf_nompi_a_CPPFLAGS += $(MACRODEFFLAG)NO_RESEARCH_TRANSPORTS
 endif  # RESEARCH_TRANSPORTS
 
-# Build two different Fortran library, for the two read APIs
+# Build four different Fortran libraries, for the two read APIs
+# and their sequential versions
 if BUILD_FORTRAN
-libadiosf_a_SOURCES = $(FortranLibSources) core/adiosf_read.c
-libadiosf_v1_a_SOURCES = $(FortranLibSources) core/adiosf_read_v1.c
+libadiosf_a_SOURCES = $(FortranLibSources) $(FortranLibMPISources) core/adiosf_read.c
+libadiosf_v1_a_SOURCES = $(FortranLibSources) $(FortranLibMPISources) core/adiosf_read_v1.c
+libadiosf_nompi_a_SOURCES = $(FortranLibSources) $(FortranLibSEQSources) core/adiosf_read.c
+libadiosf_nompi_v1_a_SOURCES = $(FortranLibSources) $(FortranLibSEQSources) core/adiosf_read_v1.c
 libadiosf_v1_a_CPPFLAGS = $(libadiosf_a_CPPFLAGS) 
 libadiosf_v1_a_CFLAGS = $(libadiosf_a_CFLAGS) 
+libadiosf_nompi_v1_a_CPPFLAGS = $(libadiosf_nompi_a_CPPFLAGS) 
+libadiosf_nompi_v1_a_CFLAGS = $(libadiosf_nompi_a_CFLAGS) 
 
 libadiosf_a_SOURCES += core/adiosf_defs_mod.f90 \
                        core/adiosf_write_mod.f90 \
                        core/adiosf_read_mod.f90 
 
+libadiosf_nompi_a_SOURCES += core/adiosf_defs_mod.f90 \
+                             core/adiosf_write_mod.f90 \
+                             core/adiosf_read_mod.f90 
+
 libadiosf_v1_a_SOURCES += core/adiosf_defs_mod.f90 \
                           core/adiosf_write_mod.f90 
+
+libadiosf_nompi_v1_a_SOURCES += core/adiosf_defs_mod.f90 \
+                                core/adiosf_write_mod.f90 
 
 #nodist_libadiosreadf_a_SOURCES += adios_write.mod
 nodist_include_HEADERS += adios_write_mod.mod 
