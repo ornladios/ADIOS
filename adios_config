@@ -13,6 +13,11 @@ if [ ! -f ${FLAGSFILE} ]; then
 fi
 . ${FLAGSFILE}
 
+GITSTATFILE=`dirname $0`/git.status
+if [ -f ${GITSTATFILE} ]; then
+    . ${GITSTATFILE}
+fi
+
 function Usage () {
     echo "`basename $0` [-d | -c | -l] [-f] [-r] [-s] [-1] [-v] [-i]
 Arguments
