@@ -1,3 +1,19 @@
+1.5.0 Release May 2013
+    - Changes to Write API: 
+      - adios_init() and adios_init_noxml() has MPI_Comm argument
+      - adios_open() has MPI_comm argument instead of void * argument
+    - Changes to Read API:
+      - adios_read_open_stream() obsolete and now it's called
+        adios_read_open() indicating that it's used for both
+        files and staged data.
+    - New staging methods:
+      - DIMES
+      - FLEXPATH
+    - CMAKE build files (besides Automake files)
+    - New write method ADIOS_CHUNK for spatial-temporal aggregation of 
+      small per-process-output into larger chunks. It improves both
+      write and read performance for such applications. 
+
 1.4.1 Release Dec 2012
     - aggregated file reader method (from 1.3.1): 
       use ADIOS_READ_METHOD_BP_AGGREGATE
