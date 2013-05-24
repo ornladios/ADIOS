@@ -23,20 +23,25 @@
 
 #include "mpi.h"
 
+//tags for the placement of the MPI processes
+#define FORWARD 0
+#define REVERSE 1
+
 extern struct adios_transport_struct * adios_transports;
 static int varcnt=0;
-static int start_step=1;
-static int total_tsteps=0; 
 static char io_method[16]; //the IO method for data output
 static char io_parameters[256]; //the IO method parameters 
 static uint64_t totalsize=0;
 static int grpflag=0; //if there's data left in buffer
 char *grp_name;
 int64_t grp;
-static int aggr_level = 2; // currently fixed to 2 level of aggregation the most
+static int aggr_level; // currently fixed to 2 level of aggregation the most
 static int aggr_chunksize; //default aggregated chunk size = 2MB
 static int aggr_cnt[3][2]; //number of clients at each level for 1D, 2D and 3D variables
 static int my_aggregator[3][2]; //2 level of aggregators for three dimensions 
+static int layout;
+static int *proc_map;
+static int *sequence;
 
 enum ADIOS_IO_METHOD transport_method=ADIOS_METHOD_MPI;
 
@@ -266,23 +271,21 @@ static int cal_layout(int *procs, int rank, int nprocs, int ndims, MPI_Comm comm
 {
     char *sbuf, *recvbuf;
     int slen, recvlen, blen;
-    uint64_t *t_ldims, *t_offsets;
+    uint64_t *t_ldims, *t_offsets, prev_off[3];
     int i,j;
     int decomp=0;
 
-#if 1
 
-    for(i=0;i<ndims;i++)
-        procs[i]=1;
+    for(i=0;i<3;i++){ 
+        procs[i]=-1;
+        sequence[i]=-1;
+    }
 
-    //printf("ndims=%d %llu %llu %llu\n", ndims, gdims[0], gdims[1], gdims[2]);
     slen=0;
     //prepare the local dimensions and offsets into send buffer
     sbuf = (char *)malloc(ndims*2*sizeof(uint64_t));
     memcpy(sbuf, ldims, ndims*sizeof(uint64_t));
     slen+=ndims*sizeof(uint64_t);
-    //memcpy(sbuf+offset, gdims, ndims*sizeof(uint64_t));
-    //slen+=ndims*sizeof(uint64_t);
     memcpy(sbuf+slen, offsets, ndims*sizeof(uint64_t));
     slen+=ndims*sizeof(uint64_t);
             
@@ -293,61 +296,86 @@ static int cal_layout(int *procs, int rank, int nprocs, int ndims, MPI_Comm comm
         //gather all the info to rank 0
         MPI_Gather(MPI_IN_PLACE, slen, MPI_BYTE, recvbuf, slen, MPI_BYTE, 0, comm);
 
-        t_ldims=(uint64_t *)malloc(ndims*sizeof(uint64_t));
-        t_offsets=(uint64_t *)malloc(ndims*sizeof(uint64_t));
+        //fixed to 3D in order to make the algorithm general
+        t_ldims=(uint64_t *)malloc(3*sizeof(uint64_t));
+        t_offsets=(uint64_t *)malloc(3*sizeof(uint64_t));
 
         blen=2*ndims*sizeof(uint64_t);
         for(i=1;i<nprocs;i++) {
+            //clear the memory
+            memset(t_ldims, 0x00, 3*sizeof(uint64_t));
+            memset(t_offsets, 0x00, 3*sizeof(uint64_t));
+
             memcpy(t_ldims, recvbuf+blen, ndims*sizeof(uint64_t));
             blen+=ndims*sizeof(uint64_t);
             memcpy(t_offsets, recvbuf+blen, ndims*sizeof(uint64_t));
             blen+=ndims*sizeof(uint64_t);
 
-#ifdef DEBUG
-            printf("receive %d: ldims = %llu  %llu  %llu  offsets=%llu %llu %llu\n", i, t_ldims[0], t_ldims[1], t_ldims[2], t_offsets[0], t_offsets[1], t_offsets[2]);
-#endif
-
+            //keep the process count on each dimension
             //the last process on the (0,0,k) dimension will be the first
             //edge process on k
             //FIXME: hard coded for 3-D 
             for(j=0;j<ndims;j++) {
                 if(t_offsets[j]!=0 && t_ldims[j]+t_offsets[j]==gdims[j]) {
-                    if(procs[j]==1) {
-                        if(j==0) 
-                            procs[j]=i+1;
-                        else if(j==1) 
-                            procs[j]=i/procs[0]+1; 
-                        else if(j==2) { 
-                            procs[j]=nprocs/(procs[0]*procs[1]);
-//                            printf("ndims = %d  nprocs=%d npz=%d\n", ndims, nprocs, procs[j]);
-                        }
-                        decomp++;
+                    if(procs[j]==-1) {
+                        break;
                     }
                 }
-            }
+            } //end of for(j)
 
-#ifdef DEBUG 
-    printf("%d: npx= %d  npy=%d  npz=%d\n", rank, procs[0], procs[1], procs[2]); 
-#endif
+            //this is the first edge that we reached
+            //it could be any of three dimensions i,j,k
+            if(j<ndims && procs[j]==-1) {
+                if(decomp==0){
+                    procs[j]=i+1;
+                    sequence[decomp]=j;
+                    decomp++;
+                }
+                else if(decomp==1) { //the second edge that we reached
+                    //if(rank==0)
+                    procs[j]=i/procs[sequence[decomp-1]]+1;
+                    sequence[decomp]=j;
+                    decomp++;
+                }
+                else if(decomp==2) { //the third edge that we reached
+                    procs[j]=nprocs/(procs[sequence[decomp-2]]*procs[sequence[decomp-1]]);
+                    sequence[decomp]=j;
+                    decomp++;
+                }
+            }
+        } //end of for(i)
+
+        //see if the processes are laid out along the fast dimension or
+        //slow dimension
+        if(ndims==1 || (ndims>1 && sequence[0]<sequence[1])) 
+            layout=FORWARD; //along the fast dimension
+        else
+            layout=REVERSE; //along the slow dimension
+
+        for(i=0;i<3;i++)
+        {
+            if(procs[i]==-1)
+                procs[i]=1;
         }
+
         free(t_ldims);
         free(t_offsets);
 
         //send out the process info
         slen=0;
-        memset(sbuf, 0x00, (ndims+1)*sizeof(int));
-        memcpy(sbuf, procs, ndims*sizeof(int));
-#if 0
-        memcpy(sbuf, &npx, sizeof(int));
-        slen+=sizeof(int);
-        memcpy(sbuf+slen, &npy, sizeof(int));
-        slen+=sizeof(int);
-        memcpy(sbuf+slen, &npz, sizeof(int));
-        slen+=sizeof(int);
-#endif
-        slen+=ndims*sizeof(int);
+        sbuf=realloc(sbuf, (3+2+3)*sizeof(int));
+        memset(sbuf, 0x00, (3+2+3)*sizeof(int));
+        memcpy(sbuf, procs, 3*sizeof(int));
+        slen+=3*sizeof(int);
+
         memcpy(sbuf+slen, &decomp, sizeof(int));
         slen+=sizeof(int);
+
+        memcpy(sbuf+slen, &layout, sizeof(int));
+        slen+=sizeof(int);
+
+        memcpy(sbuf+slen, sequence, 3*sizeof(int));
+        slen+=3*sizeof(int);
 
         MPI_Bcast(sbuf, slen, MPI_BYTE, 0, comm);
     }
@@ -355,37 +383,38 @@ static int cal_layout(int *procs, int rank, int nprocs, int ndims, MPI_Comm comm
         MPI_Gather(sbuf, slen, MPI_BYTE, recvbuf, slen, MPI_BYTE, 0, comm);
 
         //receive npx, npy, npz from rank 0
-        memset(sbuf, 0x00, (ndims+1)*sizeof(int)); 
+        sbuf=realloc(sbuf, (3+2+3)*sizeof(int));
+        memset(sbuf, 0x00, (3+2+3)*sizeof(int));
 
-        slen=(ndims+1)*sizeof(int);
+        slen=(3+2+3)*sizeof(int);
         MPI_Bcast(sbuf, slen, MPI_BYTE, 0, comm);
-#if 0
-        //XXX: hard coded
-        memcpy(&npx, sbuf, sizeof(int));
-        memcpy(&npy, sbuf+sizeof(int), sizeof(int));
-        memcpy(&npz, sbuf+2*sizeof(int), sizeof(int));
-#endif
-        memcpy(procs, sbuf, ndims*sizeof(int));
-        memcpy(&decomp, sbuf+ndims*sizeof(int), sizeof(int));
+
+        memcpy(procs, sbuf, 3*sizeof(int));
+        memcpy(&decomp, sbuf+3*sizeof(int), sizeof(int));
+        memcpy(&layout, sbuf+(3+1)*sizeof(int), sizeof(int));
+        memcpy(sequence, sbuf+(3+2)*sizeof(int), 3*sizeof(int));
     }
 
-    /*npx=procs[0];
-    npy=procs[1];
-    npz=procs[2];
-    */
-
-#ifdef DEBUG
-    //printf("%d: received npx= %d  npy=%d  npz=%d\n", rank, npx, npy, npz);
-    printf("%d: received npx= %d  npy=%d  npz=%d\n", rank, procs[0], procs[1], procs[2]); 
-#endif
-
-#endif
     free(sbuf);
     free(recvbuf);
 
     return decomp;
 } 
 
+static void cal_offsets1(int *procs, int rank, int ndims, int decomp, int *offsets)
+{ 
+    int i;
+
+    if(decomp>=1) {
+        offsets[sequence[0]]=rank%procs[sequence[0]];
+    }
+    if (decomp>=2) {
+        offsets[sequence[1]]=rank/procs[sequence[0]]%procs[sequence[1]];
+    }
+    if (decomp>=3) {
+        offsets[sequence[2]]=rank/(procs[sequence[0]]*procs[sequence[1]]);
+    }
+}
 
 static void cal_offsets(int *procs, int rank, int ndims, int decomp, int *offsets)
 {
@@ -402,8 +431,14 @@ static void cal_offsets(int *procs, int rank, int ndims, int decomp, int *offset
                 offsets[1]=rank%procs[1];
         }
         else if(decomp==2) {
-            offsets[0]=rank%procs[0];
-            offsets[1]=rank/procs[0]%procs[1];
+            if(layout==0) { //along the fast dimension
+                offsets[0]=rank%procs[0];
+                offsets[1]=rank/procs[0]%procs[1];
+            }
+            else if(layout==1) { //along the slow dimension
+                offsets[1]=rank%procs[1];
+                offsets[0]=rank/procs[1]%procs[0];
+            }
         }
     }
     else {
@@ -417,28 +452,168 @@ static void cal_offsets(int *procs, int rank, int ndims, int decomp, int *offset
                 offsets[1]=rank%procs[1];
         }
         else if(decomp==2) {
-            //(j,k), (i,k), (i,j)
-            if(procs[0]==1) {
-                offsets[1]=rank%procs[1];
-                offsets[2]=rank/procs[1]%procs[2];
-            }
-            else if(procs[1]==1) {
-                offsets[0]=rank%procs[0];
-                offsets[2]=rank/procs[0]%procs[2];
-            }
-            else {
-                offsets[0]=rank%procs[0];
-                offsets[1]=rank/procs[0]%procs[1];
-            }
+                offsets[sequence[0]]=rank%procs[sequence[0]];
+                offsets[sequence[1]]=rank/procs[sequence[1]]%sequence[1];
         }
         else {
-            offsets[0]=rank%procs[0];
-            offsets[1]=rank/procs[0]%procs[1];
-            offsets[2]=rank/(procs[0]*procs[1]);
+            if(layout==0) { 
+                offsets[0]=rank%procs[0];
+                offsets[1]=rank/procs[0]%procs[1];
+                offsets[2]=rank/(procs[0]*procs[1]);
+            }
+            else {
+                offsets[2]=rank%procs[2];
+                offsets[1]=rank/procs[2]%procs[1];
+                offsets[0]=rank/(procs[2]*procs[1]);
+            }
         }
     }
 
 }
+
+static void cal_process_map1(int rank, int *procs)
+{
+    int i,j,k;
+    int pos, cnt=0;
+
+    for(i=0;i<procs[sequence[2]];i++) {
+        for(j=0;j<procs[sequence[1]];j++) {
+            for(k=0;k<procs[sequence[0]];k++) {
+                pos=i*procs[sequence[0]]*procs[sequence[1]]+j*procs[sequence[0]]+k;
+                proc_map[pos]=cnt;
+                cnt++;
+            }
+        }
+    }
+}
+
+
+static void cal_process_map(int rank, int *procs)
+{
+    int i,j,k;
+    int pos, cnt=0; 
+
+    if(layout==0) {
+        for(i=0;i<procs[2];i++) {
+            for(j=0;j<procs[1];j++) {
+                for(k=0;k<procs[0];k++) {
+                    pos=i*procs[0]*procs[1]+j*procs[0]+k;
+                    proc_map[i*procs[0]*procs[1]+j*procs[0]+k]=cnt;
+                    cnt++;
+                }
+            }
+        }
+    }
+    else {
+        for(i=0;i<procs[0];i++) {
+            for(j=0;j<procs[1];j++) {
+                for(k=0;k<procs[2];k++) {
+                    pos=k*procs[0]*procs[1]+j*procs[0]+i;
+                    proc_map[k*procs[0]*procs[1]+j*procs[0]+i]=cnt;
+                    cnt++;
+                }
+            }
+        }
+    
+    }
+}
+
+static int get_clients_2d(int ndims, int level, int *offsets, int scale, int *procs, int rank)
+{
+    int posx, posy, posz, pos;
+
+    if((offsets[0]+scale)<procs[0]) {
+        posx=offsets[0]+1*scale;
+        posy=offsets[1];
+        pos=posy*procs[0]+posx;
+        aggr2d_clients[level-1][aggr_cnt[ndims-1][level-1]].rank=proc_map[pos];
+        aggr_cnt[ndims-1][level-1]++;
+    }
+    if((offsets[1]+scale)<procs[1]) {
+        posx=offsets[0];
+        posy=offsets[1]+scale;
+        pos=posy*procs[0]+posx;
+
+        aggr2d_clients[level-1][aggr_cnt[ndims-1][level-1]].rank=proc_map[pos];
+        aggr_cnt[ndims-1][level-1]++;
+        if((offsets[0]+scale)<procs[0]) {
+            posx=offsets[0]+1*scale;
+            posy=offsets[1]+scale;
+            pos=posy*procs[0]+posx;
+            aggr2d_clients[level-1][aggr_cnt[ndims-1][level-1]].rank=proc_map[pos];
+            aggr_cnt[ndims-1][level-1]++;
+        }
+    }
+    return aggr_cnt[ndims-1][level-1];
+
+}
+
+
+//calculate the clients for 3D variables
+static void get_clients_3d(int ndims, int level, int *offsets, int scale, int *procs, int rank)
+{
+    int posx, posy, posz, pos;
+
+    if((offsets[0]+scale)<procs[0]) {
+        posx=offsets[0]+1*scale;
+        posy=offsets[1];
+        posz=offsets[2];
+        pos=posz*procs[0]*procs[1]+posy*procs[0]+posx;
+        aggr3d_clients[level-1][aggr_cnt[ndims-1][level-1]].rank=proc_map[pos];
+        aggr_cnt[ndims-1][level-1]++;
+    }
+    if((offsets[1]+scale)<procs[1]) {
+        posx=offsets[0];
+        posy=offsets[1]+scale;
+        posz=offsets[2];
+        pos=posz*procs[0]*procs[1]+posy*procs[0]+posx;
+        aggr3d_clients[level-1][aggr_cnt[ndims-1][level-1]].rank=proc_map[pos];
+        aggr_cnt[ndims-1][level-1]++;
+        if((offsets[0]+scale)<procs[0]) {
+            posx=offsets[0]+1*scale;
+            posy=offsets[1]+scale;
+            posz=offsets[2];
+            pos=posz*procs[0]*procs[1]+posy*procs[0]+posx;
+            aggr3d_clients[level-1][aggr_cnt[ndims-1][level-1]].rank=proc_map[pos];
+            aggr_cnt[ndims-1][level-1]++;
+        }
+    }
+    if((offsets[2]+scale)<procs[2]) {
+           posx=offsets[0];
+           posy=offsets[1];
+           posz=offsets[2]+scale;
+           pos=posz*procs[0]*procs[1]+posy*procs[0]+posx;
+           aggr3d_clients[level-1][aggr_cnt[ndims-1][level-1]].rank=proc_map[pos];
+           aggr_cnt[ndims-1][level-1]++;
+           if((offsets[0]+scale)<procs[0]) {
+               posx=offsets[0]+1*scale;
+               posy=offsets[1];
+               posz=offsets[2]+scale;
+               pos=posz*procs[0]*procs[1]+posy*procs[0]+posx;
+               aggr3d_clients[level-1][aggr_cnt[ndims-1][level-1]].rank=proc_map[pos];
+               aggr_cnt[ndims-1][level-1]++;
+           }
+           if((offsets[1]+scale)<procs[1]) {
+               posx=offsets[0];
+               posy=offsets[1]+scale;
+               posz=offsets[2]+scale;
+               pos=posz*procs[0]*procs[1]+posy*procs[0]+posx;
+               aggr3d_clients[level-1][aggr_cnt[ndims-1][level-1]].rank=proc_map[pos];
+               aggr_cnt[ndims-1][level-1]++;
+               if((offsets[0]+scale)<procs[0]) {
+                   posx=offsets[0]+1*scale;
+                   posy=offsets[1]+scale;
+                   posz=offsets[2]+scale;
+                   pos=posz*procs[0]*procs[1]+posy*procs[0]+posx;
+                   aggr3d_clients[level-1][aggr_cnt[ndims-1][level-1]].rank=proc_map[pos];
+                   aggr_cnt[ndims-1][level-1]++;
+               }
+           }
+     }
+
+}
+
+
 
 //prepare the aggregation group
 //XXX: not yet able to handle odd number of process on one dimension
@@ -453,12 +628,14 @@ static void prep_aggr(int *procs, int ndims, int decomp, int rank, int size, int
     int prev_step, hole;
     int *offsets;
 
-#if 1
-
     offsets=(int *)malloc(ndims*sizeof(int));
+    //clean the offsets to 0
     memset(offsets,0x00, ndims*sizeof(int));
 
-    cal_offsets(procs, rank, ndims, decomp, offsets);
+    //get the process map
+    cal_process_map(rank, procs);
+
+    cal_offsets1(procs, rank, ndims, decomp, offsets);
 
     aggr_cnt[ndims-1][0]=aggr_cnt[ndims-1][1]=1;
     prev_step=1;
@@ -466,11 +643,6 @@ static void prep_aggr(int *procs, int ndims, int decomp, int rank, int size, int
         scale=(int)pow(2, (i-1));
         step=(int)pow(2, i);
         
-#ifdef DEBUG 
-        if(rank==0) 
-            printf("level=%d :  step = %d  scale=%d\n", i-1, step, scale);
-#endif
-
         //detemine the aggregators and clients 
         hole=0;
         for(j=0;j<ndims;j++) {
@@ -480,10 +652,6 @@ static void prep_aggr(int *procs, int ndims, int decomp, int rank, int size, int
             }
         }
         if(hole==0) {//I'am aggregator
-//            printf("Aggregator %d: %d %d %d\n", rank, offsets[0], offsets[1], offsets[2]); 
-
-//            if(offsets[0]%step==0 && offsets[1]%step ==0 && offsets[2]%step ==0) { //I'am aggregator
-            //printf("%d: i am aggregator %d: %d %d %d\n", i-1, rank, offx, offy, offz);
             my_aggregator[ndims-1][i-1]=rank;
 
             //allocate the space for the list of clients
@@ -502,82 +670,28 @@ static void prep_aggr(int *procs, int ndims, int decomp, int rank, int size, int
                 memset(aggr1d_clients[i-1], 0x00, mal_size*sizeof(struct aggr_client));
             }
 
+            int posx, posy, posz, pos;
+
             //3D variable
-            if(ndims==3){
             /*FIXME XXX: hard coded for calculating aggr_clients*/
             //if(my_aggregator[i-1] == rank) {
-                     aggr_cnt[ndims-1][i-1]=0;
-                     //check if the clients'rank is valid on each dimension
-                     if((offsets[0]+scale)<procs[0]) {
-                         aggr3d_clients[i-1][aggr_cnt[ndims-1][i-1]].rank=rank+1*scale;
-                         aggr_cnt[ndims-1][i-1]++;
-                     }
-
-                     if((offsets[1]+scale)<procs[1]) {
-                         aggr3d_clients[i-1][aggr_cnt[ndims-1][i-1]].rank=rank+procs[0]*scale;
-                         aggr_cnt[ndims-1][i-1]++;
-                         if((offsets[0]+scale)<procs[0]) {
-                             aggr3d_clients[i-1][aggr_cnt[ndims-1][i-1]].rank=rank+procs[0]*scale+1*scale;
-                             aggr_cnt[ndims-1][i-1]++;
-                         }
-                     }
-                     
-                     if((offsets[2]+scale)<procs[2]) {
-                        aggr3d_clients[i-1][aggr_cnt[ndims-1][i-1]].rank=rank+procs[1]*scale*procs[0];
-                        aggr_cnt[ndims-1][i-1]++;
-                        if((offsets[0]+scale)<procs[0]) {
-                            aggr3d_clients[i-1][aggr_cnt[ndims-1][i-1]].rank=rank+procs[1]*scale*procs[0]+1*scale;
-                            aggr_cnt[ndims-1][i-1]++;
-                        }
-                        if((offsets[1]+scale)<procs[1]) {
-                            aggr3d_clients[i-1][aggr_cnt[ndims-1][i-1]].rank=rank+procs[1]*scale*procs[0]+procs[0]*scale;
-                            aggr_cnt[ndims-1][i-1]++;
-                            if((offsets[0]+scale)<procs[0]) {
-                                aggr3d_clients[i-1][aggr_cnt[ndims-1][i-1]].rank=rank+procs[1]*scale*procs[0]+procs[0]*scale+1*scale;
-                                aggr_cnt[ndims-1][i-1]++;
-                            }
-                        }
-                     //}
-                 }
+            if(ndims==3){
+                aggr_cnt[ndims-1][i-1]=0;
+                get_clients_3d(ndims, i, offsets, scale, procs, rank);
             }
             else if(ndims==2){ //2D variable
                 aggr_cnt[ndims-1][i-1]=0;
-                //check if the clients'rank is valid on each dimension
-                if((offsets[0]+scale)<procs[0]) {
-                    aggr2d_clients[i-1][aggr_cnt[ndims-1][i-1]].rank=rank+1*scale;
-                    aggr_cnt[ndims-1][i-1]++;
-                }
-
-                if((offsets[1]+scale)<procs[1]) {
-                    aggr2d_clients[i-1][aggr_cnt[ndims-1][i-1]].rank=rank+procs[0]*scale;
-                    aggr_cnt[ndims-1][i-1]++;
-                    if((offsets[0]+scale)<procs[0]) {
-                        aggr2d_clients[i-1][aggr_cnt[ndims-1][i-1]].rank=rank+procs[0]*scale+1*scale;
-                        aggr_cnt[ndims-1][i-1]++;
-                    }
-                }
+                get_clients_2d(ndims, i, offsets, scale, procs, rank);
             }
             else { //1D variable
                 aggr_cnt[ndims-1][i-1]=0;
                 //check if the clients'rank is valid on each dimension
                 if((offsets[0]+scale)<procs[0]) {
-                    aggr1d_clients[i-1][aggr_cnt[ndims-1][i-1]].rank=rank+1*scale;
+                    pos=offsets[0]+scale;
+                    aggr1d_clients[i-1][aggr_cnt[ndims-1][i-1]].rank=proc_map[pos];
                     aggr_cnt[ndims-1][i-1]++;
                 }
             }
-#ifdef DEBUG 
-            printf("%d: i am aggregator, level %d # of client = %d \n", rank, i, aggr_cnt[ndims-1][i-1]); 
-            int m;
-            for(m=0;m<aggr_cnt[ndims-1][i-1];m++) {
-                if(ndims==1)
-                    printf("%d  ", aggr1d_clients[i-1][m].rank);
-                if(ndims==2)
-                    printf("%d  ", aggr2d_clients[i-1][m].rank);
-                if(ndims==3)
-                    printf("%d  ", aggr3d_clients[i-1][m].rank);
-            }
-            printf("\n");
-#endif
          }
          else { //I am the clients
              aggrx=aggry=aggrz=0;
@@ -586,9 +700,9 @@ static void prep_aggr(int *procs, int ndims, int decomp, int rank, int size, int
                 aggry=offsets[1]-offsets[1]%step;
              if(ndims>=3) 
                  aggrz=offsets[2]-offsets[2]%step;
-             my_aggregator[ndims-1][i-1] = aggrz*procs[0]*procs[1]+aggry*procs[0]+aggrx;
+
+             my_aggregator[ndims-1][i-1] = proc_map[aggrz*procs[0]*procs[1]+aggry*procs[0]+aggrx];
                  
- //            printf("[%d] aggr offset= %d %d %d\n", rank, aggrx, aggry, aggrz);
  
              //check if this process needs to be included within the  
              //communication of this level
@@ -603,22 +717,9 @@ static void prep_aggr(int *procs, int ndims, int decomp, int rank, int size, int
                  if(hole==1)
                      my_aggregator[ndims-1][i-1]=-1;
              }
-#ifdef DEBUG 
-             printf("%d: level=%d  my aggregator = %d\n", rank, i, my_aggregator[ndims-1][i-1]);
-#endif
          } //end of if(hole==0)
          prev_step=step; 
     }//end of for()
-
-#endif
-#ifdef DEBUG
-    if(level>=1) {
-        if(my_aggregator[ndims-1][0]==rank)
-            printf("%d: i am aggregator, client = %d %d %d\n", rank, aggr3d_clients[0], aggr3d_clients[1], aggr3d_clients[2]);
-        else
-            printf("level %d:  [%d] = %d %d %d, myaggr=[%d]\n", level, rank, offz, offy, offx, my_aggregator[ndims-1][0]);
-    }
-#endif
 }
  
  
@@ -752,14 +853,7 @@ void output_vars(struct aggr_var_struct *vars, int varcnt, struct
     vars=header; 
     //write it out
     for(i=0;i<varcnt;i++) {
-/*        if(i!=13) {
-            int tmp=0;
-            memcpy(&tmp, vars->data, 4);
-            printf("i = %d,  var=%s   value=%d\n", i, vars->name, tmp);
-        }*/
-
         do_write(md->fpr, vars->name, vars->data);
-        //adios_write(md->fpr, vars->name, vars->data);
         vars=vars->next;
     }
     //close the file
@@ -776,7 +870,7 @@ void define_iogroup(char *group_name)
     grp_name=(char *)malloc(len);
     memset(grp_name, 0x00, len);
     sprintf(grp_name, "agg_%s",group_name);
-    declare_group (&grp,grp_name, "", adios_flag_no);
+    declare_group (&grp,grp_name, "", adios_flag_yes);
     select_method (grp, io_method,io_parameters,"");
     grpflag=1;
 }
@@ -798,19 +892,9 @@ void init_vars(struct aggr_var_struct *var, struct adios_var_struct * v, int ndi
     memset(vars->dimensions, 0x00, 128*sizeof(char));
     memset(vars->global_dimensions, 0x00, 128*sizeof(char));
     memset(vars->local_offsets, 0x00, 128*sizeof(char));
-    /*
-    vars->ldims= (uint64_t *)malloc((ndims+1)*sizeof(uint64_t));
-    vars->gdims= (uint64_t *)malloc((ndims+1)*sizeof(uint64_t));
-    vars->offsets= (uint64_t *)malloc((ndims+1)*sizeof(uint64_t)); 
-    vars->ndims=0; */
-    //vars->count=1;
-    //vars->iosize=0;
-    //vars->datasize=0;
-    //vars->flag=0;
 
     for(i=0;i<3;i++) {
         vars->set_aggr=-1;
-    //    vars->decomp[i]=0;
     }
 }
 
@@ -946,7 +1030,7 @@ void init_output_parameters(const char *parameters)
     }
     else
     {
-        aggr_chunksize=1048576*2;
+        aggr_chunksize=1048576*4;
     }
 
     strcpy (temp_string, parameters);
@@ -968,11 +1052,11 @@ void init_output_parameters(const char *parameters)
         strcpy(io_method, "MPI"); 
     }
 
-    strcpy (temp_string, parameters);
+    strcpy(temp_string, parameters);
     trim_spaces (temp_string);
     if (p_size = strstr (temp_string, "parameters"))
     {
-        char * p = strchr (p_size, ':');
+        char * p = strchr (p_size, '=');
         char * q = strtok (p, "<");
         memset(io_parameters, 256, 0x00);
         if (!q) 
@@ -987,50 +1071,50 @@ void init_output_parameters(const char *parameters)
     }
 }
 
+static void init_method_parameters()
+{
+    varcnt=0;
+    totalsize=0;
+    aggr_level=0;
+    memset(aggr_cnt, 0x00, 6*sizeof(int));
+    memset(my_aggregator, 0x00, 6*sizeof(int));
+}
+
 int adios_chunk_open (struct adios_file_struct * fd
                    ,struct adios_method_struct * method, MPI_Comm comm)
 {
 
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                     method->method_data;
-
-#if 0
- #if COLLECT_METRICS
-     gettimeofday (&timing.t0, NULL); // only used on rank == size - 1, but we don't
-                               // have the comm yet to get the rank/size
- #endif
-#endif
-// adios_buffer_struct_clear (&md->b);
  
-#if 0
-     adios_var_to_comm (fd->group->group_comm
-                       ,fd->group->adios_host_language_fortran
-                       ,comm
-                       ,&md->group_comm
-                       );
-#endif
-
-
-    md->group_comm = comm;
-    if (md->group_comm != MPI_COMM_NULL)
+    switch (fd->mode)
     {
-        MPI_Comm_rank (md->group_comm, &md->rank);
-        MPI_Comm_size (md->group_comm, &md->size);
+        case adios_mode_read:
+        {
+            adios_error (err_invalid_file_mode, "CHUNK method: Read mode is not supported.\n");
+            return -1;
+        }
+        case adios_mode_write:
+        {
+            md->group_comm = comm;
+            if (md->group_comm != MPI_COMM_NULL)
+            {
+                MPI_Comm_rank (md->group_comm, &md->rank);
+                MPI_Comm_size (md->group_comm, &md->size);
+            }
+            fd->group->process_id = md->rank;
+
+            //need to get the parameters form XML
+             init_output_parameters(method->parameters);
+             init_method_parameters();
+             break;
+        }
+        default:
+        {
+            adios_error (err_invalid_file_mode, "CHUNK method: Unknown file mode requested: %d\n", fd->mode);
+            return adios_flag_no;
+        }
     }
-    fd->group->process_id = md->rank;
-
-    //need to get the parameters form XML
-     init_output_parameters(method->parameters);
-//     md->comm=comm;
-
-#if 0
-#if COLLECT_METRICS
-    timing.write_count = 0;
-    timing.write_size = 0;
-    if (timing.t24) free (timing.t24);
-    timing.t24 = 0;
-#endif
-#endif
 
     return 1;
 }
@@ -1041,7 +1125,25 @@ enum ADIOS_FLAG adios_chunk_should_buffer (struct adios_file_struct * fd
 
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                     method->method_data;
-    define_iogroup(method->group->name); 
+    switch (fd->mode)
+    {
+        case adios_mode_read:
+        {
+            adios_error (err_invalid_file_mode, "MPI_CHUNK method: Read mode is not supported.\n");
+            break;
+        }
+ 
+        case adios_mode_write:
+        { 
+            define_iogroup(method->group->name); 
+            break;
+        }
+        default:
+        {
+            adios_error (err_invalid_file_mode, "MPI_CHUNK method: Unknown file mode requested: %d\n", fd->mode);
+            return adios_flag_no;
+        }
+    }
 
     //this method handles its own buffering
     return adios_flag_no;
@@ -1100,17 +1202,7 @@ void adios_chunk_write (struct adios_file_struct * fd
 
     ndims=0;
 
-//    tmp=(struct adios_MPI_data_struct *) malloc (sizeof(struct adios_MPI_data_struct));
     if(varcnt==0) {
-#if 0
-//XXX: write attributes
-        if(md->rank==0) {
-            struct adios_attribute_struct * a = fd->group->attributes;
-                adios_common_define_attribute(grp, a->name, a->path, a->type, (char *)a->value, ""); 
-                a=a->next;
-            }
-        }
-#endif
         vars = (struct aggr_var_struct *) malloc (sizeof(struct aggr_var_struct));
         vars->prev=NULL;
         header=vars; //assign the header of the variable list
@@ -1130,6 +1222,7 @@ void adios_chunk_write (struct adios_file_struct * fd
 
     //number of the dimensions of this variable
     ndims=count_dimensions(v->dimensions);
+    type_size=adios_get_type_size(v->type,data);
     if(ndims) //multidimensional data
     {
         vars->multidim=adios_flag_yes;
@@ -1167,28 +1260,39 @@ void adios_chunk_write (struct adios_file_struct * fd
             d=d->next;
         } //end of while (d) 
 
+        if(type_size==1) {
+            vars->multidim=adios_flag_yes; 
+            varsize=adios_get_var_size(v, method->group, data); 
+            vars->data=malloc(varsize);
+            memcpy(vars->data, data, varsize); 
+        }
+        else {
 
         //determine if we need to apply spatial aggregation
         //first find out the process layout and domain decomposition
         if(ndims<=3 && varsize<=aggr_chunksize && md->size>1 && vars->set_aggr==-1) {
+            //if we have not figured out the process layout yet, we need to
+            //calculate it
             if(md->layout[ndims-1]==-1) {
-                md->procs[ndims-1]=(int *)malloc(ndims*sizeof(int)); //FIXME
+                //process layout
+                md->procs[ndims-1]=(int *)malloc(3*sizeof(int)); //FIXME
+                //prepare the process map space 
+                proc_map=(int *)malloc(md->size*sizeof(int));
+                sequence=(int *)malloc(3*sizeof(int));
+                memset(sequence,0x00,3*sizeof(int));
                 decomp=cal_layout(md->procs[ndims-1], md->rank, md->size, ndims, md->group_comm, ldims, gdims, offsets);
                 md->layout[ndims-1]=1;
                 md->decomp[ndims-1]=decomp;
             }
             else
                 decomp=md->decomp[ndims-1];
-#ifdef DEBUG 
-            if(md->rank==0) 
-                printf("dims=%d decomp = %d npx=%d  npy=%d  npz=%d\n", ndims, decomp, md->procs[ndims-1][0], md->procs[ndims-1][1], md->procs[ndims-1][2]);
-#endif
+
             if(decomp==0) {
                 //FIXME: need to fix the error message
                 adios_error(err_corrupted_variable, "Wrong decomposition.");
                 exit(-1);
             }
-            else {
+            else { 
                 //the number of chunks to aggregate in one level of spatial aggregation 
                 //is decided by the domain decomposition
                 chunk_cnt=(int)pow(2, decomp);
@@ -1200,8 +1304,9 @@ void adios_chunk_write (struct adios_file_struct * fd
                 else {
                     vars->set_aggr=1;
 
-                    aggr_level=varsize/chunk_cnt;
                     //XXX: currently the maximum level is fixed to 2 considering the overhead
+                    //aggr_level=varsize/chunk_cnt;
+                    aggr_level=aggr_chunksize/chunk_cnt/varsize;
                     if(aggr_level>2) {
                         // we need at least twice the number of chunks for
                         // the first level aggregation in order to do higher
@@ -1211,19 +1316,18 @@ void adios_chunk_write (struct adios_file_struct * fd
                         else
                             aggr_level=2; 
                     }
-
+                    
                     //calculating the aggregator and client processes
                     prep_aggr(md->procs[ndims-1], ndims, decomp, md->rank, md->size, aggr_level);
                 }
-                //printf("aggr chunksize=%llu,  chunk_cnt=%d varsize=%llu\n", aggr_chunksize, chunk_cnt, varsize);
             }
         }
-
-        
+                    
         //no spatial aggregation, just copy data
         if(vars->set_aggr!=1) {
             vars->data=malloc(varsize);
             memcpy(vars->data, data, varsize);
+            //varcnt++;
         }
         else { //if we need to do spatial aggregation 
             //only the highest level aggregators need to allocate space for output 
@@ -1238,32 +1342,31 @@ void adios_chunk_write (struct adios_file_struct * fd
             new_ldims=(char *)malloc(128*sizeof(char));
             memset(new_ldims, 0x00, 128);
             type_size=adios_get_type_size(v->type,data);
+
             varsize=do_spatial_aggr(aggr_level, md->procs[ndims-1], ndims, ldims, offsets, new_ldims, md->rank, data, varsize, vars->data, type_size, md->group_comm);
 
             //only the highest level aggregators need to output
             if(my_aggregator[ndims-1][aggr_level-1]==md->rank) {
-            //    printf("%d: return var size = %llu\n", md->rank, varsize, new_ldims);
                 strcpy(vars->dimensions, new_ldims);
-                varcnt++;
             }
             else //clients and lower level aggregators skip the variable
               varsize=0;
         } //end of if(do_spatial_aggr)
-        //free(ldims);
+        }
     } //end of if(ndims)
     else //scalar 
     {
-     //   vars=allocate_vars(varcnt, vars);
         vars->multidim=adios_flag_no;
-        varsize=adios_get_type_size(v->type,data);
+
+        varsize=adios_get_var_size(v, method->group, data); 
         vars->data=malloc(varsize);
         memcpy(vars->data, data, varsize); 
-        varcnt++;
     }
 
     totalsize+=varsize;
     if(varsize>0) {
         adios_common_define_var(grp, vars->name, vars->path, vars->type, vars->dimensions, vars->global_dimensions, vars->local_offsets);
+        varcnt++;
     }
     else { //move back the pointer, and release the memory
         vars=vars->prev;
@@ -1283,12 +1386,19 @@ void adios_chunk_read (struct adios_file_struct * fd
 void release_resource()
 { 
     int cnt;
+    struct aggr_var_struct *next;
+
+    vars=header;
     for(cnt=0;cnt<varcnt;cnt++)
     {
+        if(cnt!=(varcnt-1)) 
+            next=vars->next;
         free(vars->data);
         free(vars->dimensions);
         free(vars->global_dimensions);
         free(vars->local_offsets);
+        free(vars); 
+        vars=next;
     }
 }
 
@@ -1298,13 +1408,30 @@ void adios_chunk_close (struct adios_file_struct * fd
 {
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                     method->method_data;
-#ifdef DEBUG
-    printf("%d: adios_close = %d\n", rank, varcnt);
-#endif
-    //write out the varaibles
-    output_vars(header, varcnt, md, fd);
-    //clean the counters
-    varcnt=0;
+
+    switch (fd->mode)
+    {
+        case adios_mode_read:
+        {
+            adios_error (err_invalid_file_mode, "CHUNK method: Read mode is not supported.\n");
+            break;
+        }
+        case adios_mode_write:
+        {
+            //write out the varaibles
+            output_vars(header, varcnt, md, fd);
+            //release the memories
+            release_resource();
+            //clean the counters
+            varcnt=0;
+            break;
+        }
+        default:
+        {
+            adios_error (err_invalid_file_mode, "CHUNK method: Unknown file mode requested: %d\n", fd->mode);
+            break;
+        }
+    }
 
     return;
 }
@@ -1357,9 +1484,6 @@ void copy_aggr_data (void *dst, void *src,
 
     if (ndim-1==idim) {
         for (i=0;i<size_in_dset[idim];i++) {
-#ifdef DEBUG 
-            printf("from: %d  copy to: %d ele_num=%d\n",i*src_stride+src_offset, i*dst_stride+dst_offset, ele_num);
-#endif
             memcpy ((char *)dst + (i*dst_stride+dst_offset)*size_of_type,
                     (char *)src + (i*src_stride+src_offset)*size_of_type,
                     ele_num*size_of_type);
@@ -1379,11 +1503,6 @@ void copy_aggr_data (void *dst, void *src,
         src_offset_new  =src_offset + i * src_stride * src_step;
         dst_offset_new  = dst_offset + i * dst_stride * dst_step;
 
-#ifdef DEBUG 
-printf("src_offset =%d, dst-offset= %d\n", src_offset_new, dst_offset_new);
-        printf("src_step=%d  dst_step=%d src_off=%d   dst_off=%d\n",\
-                src_step, dst_step, src_offset_new, dst_offset_new);
-#endif
         copy_aggr_data (dst, src, idim+1, ndim, size_in_dset, ldims,readsize, dst_stride, src_stride, dst_offset_new, src_offset_new, ele_num, size_of_type, rank);
     }
 }
@@ -1426,9 +1545,7 @@ static uint64_t do_spatial_aggr(int level, int *procs, int ndims, uint64_t *ldim
         if(my_aggregator[ndims-1][lev] == rank) {
             if(lev==0) {
                 alloc_size=varsize*(aggr_cnt[ndims-1][lev]+1);
-#ifdef DEBUG 
-                printf("%d: i am allocating %llu varsize=%llu\n", rank, alloc_size, varsize); 
-#endif
+
                 //XXX: hard coded memory allocation since realloc has seg fault
                 tmpbuf=(char *)malloc(alloc_size*sizeof(char));
                 //aggregator copies its own data first
@@ -1443,22 +1560,12 @@ static uint64_t do_spatial_aggr(int level, int *procs, int ndims, uint64_t *ldim
             }
             
             else{
-#ifdef DEBUG 
-                printf("%d: reallocating %llu varsize=%llu\n", rank, (aggr_cnt[ndims-1][lev]+1)*varsize, varsize); 
-#endif
                 tmpbuf=(char *)realloc(tmpbuf, (aggr_cnt[ndims-1][lev]+1)*varsize);
                 buff_offset=varsize;
             }
 
-#ifdef DEBUG 
-    printf("%d: ldims = %d %d %d  varsize=%llu nclient=%d \n", rank, ldims[0], ldims[1], ldims[2], varsize, aggr_cnt[ndims-1][lev]); 
-#endif
-
             //store the local dimensions of all the chunks
             if(lev==0) {
-#ifdef DEBUG
-                printf("%d: ldims_list size=%d  size+list = %d\n", rank, (ndims*(aggr_cnt[ndims-1][lev]+1)), aggr_cnt[ndims-1][lev]+1);
-#endif
                 ldims_list=(uint64_t *)malloc(ndims*(aggr_cnt[ndims-1][lev]+1)*sizeof(uint64_t));
                 size_list=(uint64_t *)malloc((aggr_cnt[ndims-1][lev]+1)*sizeof(uint64_t));
             }
@@ -1472,17 +1579,7 @@ static uint64_t do_spatial_aggr(int level, int *procs, int ndims, uint64_t *ldim
             k=1;
             //gather data from clients
             for(i=0;i<aggr_cnt[ndims-1][lev];i++) {
-//                printf("%d: inside of loop  client=%d\n", rank, aggr_cnt[ndims-1][lev]);
-#ifdef DEBUG 
-                if(ndims==2) 
-                    printf("rank %d: level=%d  waiting on................ %d \n", rank, lev, aggr2d_clients[lev][i].rank);
-                else if (ndims==3)
-                    printf("rank %d: level=%d  waiting on................ %d \n", rank, lev, aggr3d_clients[lev][i].rank);
-#endif
-                //memset(tmp_dims, 0x00, ndims*sizeof(uint64_t));
-                //memset(tmp_offsets, 0x00, ndims*sizeof(uint64_t));
                 //receive the ldims of the client process
-                
                 if(ndims==1) { 
                     MPI_Recv (recvbuf, 2*ndims*sizeof(uint64_t), MPI_BYTE, aggr1d_clients[lev][i].rank, 
                         aggr1d_clients[lev][i].rank, comm, &status);
@@ -1499,15 +1596,6 @@ static uint64_t do_spatial_aggr(int level, int *procs, int ndims, uint64_t *ldim
                 //keep the ldims to the list
                 memcpy(ldims_list+(i+1)*ndims, recvbuf, ndims*sizeof(uint64_t));
                 memcpy(tmp_dims, recvbuf, ndims*sizeof(uint64_t));
-
-#ifdef DEBUG 
-                if(ndims==1) 
-                    printf("%d: received from -- %d dims=%llu\n", rank, aggr1d_clients[lev][i].rank, tmp_dims[0]);
-                else if(ndims==2) 
-                    printf("%d: lev=%d received from -- %d dims=%llu   %llu\n", rank, lev, aggr2d_clients[lev][i].rank, tmp_dims[0], tmp_dims[1]); 
-                else if(ndims==3) 
-                    printf("%d: lev=%d received from -- %d dims=%llu   %llu\n", rank, lev, aggr3d_clients[lev][i].rank, tmp_dims[0], tmp_dims[1]); 
-#endif
 
                 //calculate the chunk size
                 tmpsize=type_size;
@@ -1530,34 +1618,18 @@ static uint64_t do_spatial_aggr(int level, int *procs, int ndims, uint64_t *ldim
                 //XXX: maybe better way to code this?
                 cal_gdims(ndims, tmp_offsets, offsets, tmp_dims, ldims, gdims);
 
-#ifdef DEBUG 
-            if(ndims==2) 
-                printf("rank %d: lev=%d waiting on................ %d size=%llu\n", rank, lev, aggr2d_clients[lev][i].rank, tmpsize); 
-            if(ndims==3) 
-                printf("rank %d: lev=%d waiting on................ %d size=%llu\n", rank, lev, aggr3d_clients[lev][i].rank, tmpsize); 
-#endif
-
                 //receive the data from the client process
                 if(ndims==1) { 
                     MPI_Recv (tmpbuf+buff_offset, tmpsize, MPI_BYTE, 
                             aggr1d_clients[lev][i].rank, aggr1d_clients[lev][i].rank, comm, &status);
-#ifdef DEBUG 
-            printf("%d: received from -- %d, lev=%d size=%llu now offset=%llu\n", rank, aggr1d_clients[lev][i].rank, lev, tmpsize, buff_offset);
-#endif
                 }
                 else if(ndims==2) { 
                     MPI_Recv (tmpbuf+buff_offset, tmpsize, MPI_BYTE, 
                             aggr2d_clients[lev][i].rank, aggr2d_clients[lev][i].rank, comm, &status);
-#ifdef DEBUG 
-            printf("%d: received from -- %d, lev=%d size=%llu now offset=%llu\n", rank, aggr2d_clients[lev][i].rank, lev, tmpsize, buff_offset);
-#endif
                 }
                 if(ndims==3) { 
                     MPI_Recv (tmpbuf+buff_offset, tmpsize, MPI_BYTE, 
                             aggr3d_clients[lev][i].rank, aggr3d_clients[lev][i].rank, comm, &status);
-#ifdef DEBUG 
-            printf("%d: received from -- %d, lev=%d size=%llu now offset=%llu\n", rank, aggr3d_clients[lev][i].rank, lev, tmpsize, buff_offset);
-#endif
                 }
 
                 //move the pointer
@@ -1589,9 +1661,6 @@ static uint64_t do_spatial_aggr(int level, int *procs, int ndims, uint64_t *ldim
                 continue;
             else 
                 sendbuf=(char *)malloc(2*ndims*sizeof(uint64_t));
-#ifdef DEBUG 
-            printf("rank %d: send...to %d, dims=%llu %llu %llu\n", rank, my_aggregator[ndims-1][lev], ldims[0], ldims[1], ldims[2]);
-#endif
                 
             //put in local dimensions
             memcpy(sendbuf, ldims, ndims*sizeof(uint64_t));
@@ -1600,11 +1669,7 @@ static uint64_t do_spatial_aggr(int level, int *procs, int ndims, uint64_t *ldim
             
             //clients send out the local dimension of data chunks
             MPI_Send(sendbuf, 2*ndims*sizeof(uint64_t), MPI_BYTE, my_aggregator[ndims-1][lev], rank, comm);
-#ifdef DEBUG 
-            printf("rank %d: sent...to %d, dims=%llu %llu %llu\n", rank, my_aggregator[ndims-1][lev], ldims[0], ldims[1], ldims[2]);
-            if(lev==1)
-                printf("%d:  sending to aggregator = %d size=%llu\n", rank, my_aggregator[ndims-1][lev], varsize);
-#endif
+
             /*clients send out the data*/
             if(lev==0)
                 MPI_Send(data, varsize, MPI_BYTE, my_aggregator[ndims-1][lev], rank, comm);
@@ -1645,11 +1710,6 @@ static void aggr_chunks(void **output, int *procs, int ndims, uint64_t *ldims_li
     uint64_t offx, offy, offz;
     int ni, nj, nk;
 
-#ifdef DEBUG
-    printf("%d: chunk size = %d   %d  %d \n", rank, gdims[0],gdims[1], gdims[2]);
-    printf("%d: totalsize = %llu nchunks=%d\n", rank, totalsize, nchunks);
-#endif
-
     chunk_cnt=(int)pow(2, ndims);
     input=(char *)malloc(totalsize);
     memcpy(input, *output, totalsize); 
@@ -1662,24 +1722,49 @@ static void aggr_chunks(void **output, int *procs, int ndims, uint64_t *ldims_li
     nj=1;
     ni=1;
 
-    m_offx=rank%procs[0];
-    m_offy=rank/procs[0]%procs[1];
-    m_offz=rank/(procs[0]*procs[1]);
+    if(layout==0) {
+        m_offx=rank%procs[0];
+        m_offy=rank/procs[0]%procs[1];
+        m_offz=rank/(procs[0]*procs[1]);
+    }
+    else if(layout==1) {
+        m_offz=rank%procs[2];
+        m_offy=rank/procs[2]%procs[1];
+        m_offx=rank/(procs[2]*procs[1]);
+    }
 
     //determine the number of chunks on each dimension
     for(i=0;i<aggr_cnt[ndims-1][level];i++) {
         offx=offy=offz=0;
         if(ndims==1) { 
-            offx=aggr1d_clients[level][i].rank%procs[0];
+            offx=aggr1d_clients[level][i].rank%procs[sequence[0]];
         }
         if(ndims==2) {
-            offx=aggr2d_clients[level][i].rank%procs[0];
-            offy=aggr2d_clients[level][i].rank/procs[0]%procs[1];
+            if(layout==0) {
+                offx=aggr2d_clients[level][i].rank%procs[0];
+                offy=aggr2d_clients[level][i].rank/procs[0]%procs[1];
+            }
+            else if(layout==1) {
+                offy=aggr2d_clients[level][i].rank%procs[1];
+                offx=aggr2d_clients[level][i].rank/procs[1]%procs[0];
+            }
         }
         else if(ndims==3) {
-            offx=aggr3d_clients[level][i].rank%procs[0];
-            offy=aggr3d_clients[level][i].rank/procs[0]%procs[1];
-            offz=aggr3d_clients[level][i].rank/(procs[0]*procs[1]);
+            /*
+                offx=aggr3d_clients[level][i].rank%procs[sequence[0]];
+                offy=aggr3d_clients[level][i].rank/procs[sequence[0]]%procs[sequence[1]];
+                offz=aggr3d_clients[level][i].rank/(procs[sequence[0]]*procs[sequence[1]]);
+                */
+            if(layout==0) {
+                offx=aggr3d_clients[level][i].rank%procs[0];
+                offy=aggr3d_clients[level][i].rank/procs[0]%procs[1];
+                offz=aggr3d_clients[level][i].rank/(procs[0]*procs[1]);
+            }
+            else if(layout==1) {
+                offz=aggr3d_clients[level][i].rank%procs[2];
+                offy=aggr3d_clients[level][i].rank/procs[2]%procs[1];
+                offx=aggr3d_clients[level][i].rank/(procs[2]*procs[1]);
+            }
         }
 
         if(offx!=m_offx && offy==m_offy) {
@@ -1696,20 +1781,11 @@ static void aggr_chunks(void **output, int *procs, int ndims, uint64_t *ldims_li
             ni++;
     }
     
-#ifdef DEBUG 
-    printf("ni=%d  nj=%d  nk=%d\n", ni, nj, nk);
-#endif
     cnt=0;
     prev_x=prev_y=prev_z=0;
     for(i=0;i<ni;i++) {
         for(j=0;j<nj;j++) {
             for(k=0;k<nk;k++) {
-#ifdef DEBUG 
-                if(ndims==2) 
-                    printf("%d: chunk size = %llu   %llu  datasize=%llu\n", rank, ldims_list[ndims*cnt+0], ldims_list[ndims*cnt+1], size_list[cnt]); 
-                if(ndims==3) 
-                    printf("chunk size = %llu   %llu  %llu datasize=%llu\n", ldims_list[ndims*cnt+0], ldims_list[ndims*cnt+1], ldims_list[ndims*cnt+2], size_list[cnt]); 
-#endif
                 if(ndims==1) {
                     size_in_dset[0]=1;
                     size_in_dset[1]=ldims_list[ndims*cnt+0];
@@ -1739,14 +1815,6 @@ static void aggr_chunks(void **output, int *procs, int ndims, uint64_t *ldims_li
                     buff_offset=0;
                 }
 
-#ifdef DEBUG 
-        printf("rank=%d: ******input a new chunk, dst_offset=%llu  input_offset=%llu\n", rank, dset_offset, buff_offset);
-#endif
-#ifdef DEBUG 
-        printf("size in dest= %llu %llu\n", size_in_dset[0], size_in_dset[1]);
-        printf("gdims = %llu %llu %llu\n", gdims[0], gdims[1], gdims[2]);
-        printf("dst_stride=%llu     src_stride=%llu     datasize=%llu\n", dst_stride, src_stride, datasize);
-#endif
                 copy_aggr_data(*output
                    ,input+buff_offset
                    ,0
