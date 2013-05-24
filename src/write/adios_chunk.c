@@ -683,7 +683,7 @@ static int do_write (int64_t fd_p, const char * name, void * var)
                        
 
 // temporary solution for compiling error
-int declare_group (int64_t * id, const char * name
+static int declare_group (int64_t * id, const char * name
                         ,const char * time_index
                         ,enum ADIOS_FLAG stats
                         )
@@ -703,7 +703,7 @@ int declare_group (int64_t * id, const char * name
 }
 
 // temporary solution for compiling error
-int select_method (int64_t group, const char * method
+static int select_method (int64_t group, const char * method
                         ,const char * parameters
                         ,const char * base_path
                         )
@@ -736,7 +736,7 @@ static int convert_file_mode(enum ADIOS_METHOD_MODE mode, char * file_mode)
 }
 
 //find the variable within the buffer link list
-int var_lookup(const char *varname, char *path, struct aggr_var_struct *list)
+static int var_lookup(const char *varname, char *path, struct aggr_var_struct *list)
 {
     int cnt=0;
 
@@ -757,7 +757,7 @@ int var_lookup(const char *varname, char *path, struct aggr_var_struct *list)
     return -1;
 }
 
-void output_vars(struct aggr_var_struct *vars, int varcnt, struct
+static void output_vars(struct aggr_var_struct *vars, int varcnt, struct
         adios_MPI_data_struct * md, struct adios_file_struct * fd) 
 {
     int i,j;
@@ -785,7 +785,7 @@ void output_vars(struct aggr_var_struct *vars, int varcnt, struct
 }
 
 
-void define_iogroup(char *group_name)
+static void define_iogroup(char *group_name)
 {
     int len;
 
@@ -800,7 +800,7 @@ void define_iogroup(char *group_name)
 }
 
 //initial variable structure
-void init_vars(struct aggr_var_struct *var, struct adios_var_struct * v, int ndims)
+static void init_vars(struct aggr_var_struct *var, struct adios_var_struct * v, int ndims)
 {
     int i;
 
