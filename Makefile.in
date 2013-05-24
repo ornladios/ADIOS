@@ -947,9 +947,9 @@ install-data-hook:
 	    git status -uno >> git.status; \
 	    echo "_EOF_" >> git.status; \
 	else \
-	    echo "GITLOG=\"\"" >> git.status; \
+	    echo "GITLOG=\"git log not available\"" >> git.status; \
 	    echo "GITSTAT=\"git status not available\"" >> git.status; \
-	    echo "Error: git command not found"; \
+	    echo "Note: git command not found or $(PWD) is not a git repository."; \
 	fi 
 	cp adios_config.flags $(DESTDIR)$(bindir)
 	cp git.status $(DESTDIR)$(bindir)

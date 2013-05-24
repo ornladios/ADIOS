@@ -13,8 +13,10 @@
 #include "core/adios_logger.h"
 #include <string.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <sys/time.h>
 
+#include "public/adios_mpi.h"
 //#include "mpi.h"
 
 
@@ -41,13 +43,53 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
         return;
     }
 
-    int size, rank, i;
+    int size, rank, i, p;
     MPI_Comm_size (MPI_COMM_WORLD, &size);
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 
+    double * internal_times = NULL;
+    double * user_times = NULL;
+
+    // Allocate space for aggregation
     if (rank == 0)
     {
-        FILE* f = fopen (filename, "a"); 
+        internal_times = (double*) malloc (sizeof (double) *
+                             fd->timing_obj->internal_count * size);
+        user_times = (double*) malloc (sizeof (double) *
+                             fd->timing_obj->user_count * size);
+    }
+
+    // Aggregate timing info on rank 0
+    // Handle internal counts and user counts separately
+   
+    MPI_Gather (
+        fd->timing_obj->times + ADIOS_TIMING_MAX_USER_TIMERS,
+        fd->timing_obj->internal_count,  // sendcount
+        MPI_DOUBLE, // sendtype
+        internal_times,
+        fd->timing_obj->internal_count, // recvcount
+        MPI_DOUBLE, // recvtype
+        0, // root
+        MPI_COMM_WORLD
+    );
+
+    MPI_Gather (
+        fd->timing_obj->times,  // sendbuf
+        fd->timing_obj->user_count,  // sendcount
+        MPI_DOUBLE, // sendtype
+        user_times,
+        fd->timing_obj->user_count, // recvcount
+        MPI_DOUBLE, // recvtype
+        0, // root
+        MPI_COMM_WORLD
+    );
+
+
+    // Now write all timing info from rank 0
+
+    if (rank == 0)
+    {
+        FILE* f = fopen (filename, "w"); 
 
         // Rank 0 starts the xml and includes the text labels
         fprintf (f, "<skel_result><adios_timing cores='%i' keys='", size);
@@ -89,77 +131,35 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
 
         fprintf (f, ">\n"); // Close the adios_timing element
 
-        // This part should be the same for all procs
-        fprintf (f, "<proc id='%i' vals='", rank);
-        for (i = 0; i < fd->timing_obj->user_count; i++)
+
+// Use the aggregated values here
+
+        for (p = 0; p < size; p++)
         {
-            fprintf (f, "%f, ", fd->timing_obj->times[i]);
-        }
-        for (i = 0; i < fd->timing_obj->internal_count; i++)
-        {
-            fprintf (f, "%f", fd->timing_obj->times[ADIOS_TIMING_MAX_USER_TIMERS + i]);
-            if (i != fd->timing_obj->internal_count - 1)
+            // This part should be the same for all procs
+            fprintf (f, "<proc id='%i' vals='", p);
+            for (i = 0; i < fd->timing_obj->user_count; i++)
             {
-                fprintf (f, ", ");
+                fprintf (f, "%f, ", user_times[p*fd->timing_obj->user_count+i]);
+                //fprintf (f, "%f, ", fd->timing_obj->times[i]);
             }
-        }
-        fprintf (f, "' />\n");
-
-        fclose (f);
-        MPI_Barrier (MPI_COMM_WORLD);
-        MPI_Barrier (MPI_COMM_WORLD);
-    }
-    else if (rank == size - 1)
-    {
-        MPI_Barrier (MPI_COMM_WORLD);
-        MPI_Barrier (MPI_COMM_WORLD);
-        FILE* f = fopen (filename, "a");
-
-        // This part should be the same for all procs 
-        fprintf (f, "<proc id='%i' vals='", rank);
-        for (i = 0; i < fd->timing_obj->user_count; i++)
-        {
-            fprintf (f, "%f, ", fd->timing_obj->times[i]);
-        }
-        for (i = 0; i < fd->timing_obj->internal_count; i++)
-        {
-            fprintf (f, "%f", fd->timing_obj->times[ADIOS_TIMING_MAX_USER_TIMERS + i]);
-            if (i != fd->timing_obj->internal_count - 1)
+            for (i = 0; i < fd->timing_obj->internal_count; i++)
             {
-                fprintf (f, ", ");
+                fprintf (f, "%f", internal_times[p*fd->timing_obj->internal_count+i]);
+                //fprintf (f, "%f", fd->timing_obj->times[ADIOS_TIMING_MAX_USER_TIMERS + i]);
+                if (i != fd->timing_obj->internal_count - 1)
+                {
+                    fprintf (f, ", ");
+                }
             }
+            fprintf (f, "' />\n");
         }
-        fprintf (f, "' />\n");
 
 
-        // The highest numbered rank ends the xml document
         fprintf (f, "</adios_timing></skel_result>\n");
         fclose (f);
-    }
-    else
-    {
-        MPI_Barrier (MPI_COMM_WORLD);
-        FILE* f = fopen (filename, "a"); 
-        
-        // This part should be the same for all procs
-        fprintf (f, "<proc id='%i' vals='", rank);
-        for (i = 0; i < fd->timing_obj->user_count; i++)
-        {
-            fprintf (f, "%f, ", fd->timing_obj->times[i]);
-        }
-        for (i = 0; i < fd->timing_obj->internal_count; i++)
-        {
-            fprintf (f, "%f", fd->timing_obj->times[ADIOS_TIMING_MAX_USER_TIMERS + i]);
-            if (i != fd->timing_obj->internal_count - 1)
-            {
-                fprintf (f, ", ");
-            }
-        }
-        fprintf (f, "' />\n");
 
-        fclose (f);
-        MPI_Barrier (MPI_COMM_WORLD);
-    }
+    }        
 #else
     log_warn ("Timing information is not currently available.\n"
               "To use the Skel timing functions, you must enable them when building ADIOS.\n"
