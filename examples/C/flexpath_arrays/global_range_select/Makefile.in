@@ -325,7 +325,7 @@ arrays_read_SOURCES = arrays_read.c
 arrays_read_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 arrays_read_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 CLEANFILES = *.bp
-EXTRA_DIST = arrays.xml gwrite_arrays.ch gread_arrays.ch job.pbs
+EXTRA_DIST = arrays.xml 
 all: all-am
 
 .SUFFIXES:
