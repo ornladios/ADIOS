@@ -32,7 +32,7 @@ int main (int argc, char ** argv)
     
     fprintf(stderr, "starting writer.\n");
     strcpy (filename, "arrays");
-    adios_init ("arrays.xml");
+    adios_init ("arrays.xml", comm);
     
     
     int ii;
@@ -40,7 +40,7 @@ int main (int argc, char ** argv)
       for (i = 0; i < NX; i++)
         t[i] = rank * NX + i*ii;
       fprintf(stderr, "open\n");
-      adios_open (&adios_handle, "temperature", filename, "w", &comm);
+      adios_open (&adios_handle, "temperature", filename, "w", comm);
       fprintf(stderr, "scalar write\n");
       adios_write (adios_handle, "NX", &NX);
       adios_write (adios_handle, "NY", &NY);

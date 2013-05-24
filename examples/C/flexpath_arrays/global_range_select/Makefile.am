@@ -14,4 +14,4 @@ arrays_read_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 
 CLEANFILES = *.bp
 CC=$(MPICC)
-EXTRA_DIST = arrays.xml gwrite_arrays.ch gread_arrays.ch job.pbs
+EXTRA_DIST = arrays.xml 
