@@ -33,8 +33,8 @@ static char io_method[16]; //the IO method for data output
 static char io_parameters[256]; //the IO method parameters 
 static uint64_t totalsize=0;
 static int grpflag=0; //if there's data left in buffer
-char *grp_name;
-int64_t grp;
+static char *grp_name;
+static int64_t grp;
 static int aggr_level; // currently fixed to 2 level of aggregation the most
 static int aggr_chunksize; //default aggregated chunk size = 2MB
 static int aggr_cnt[3][2]; //number of clients at each level for 1D, 2D and 3D variables
@@ -42,8 +42,6 @@ static int my_aggregator[3][2]; //2 level of aggregators for three dimensions
 static int layout;
 static int *proc_map;
 static int *sequence;
-
-enum ADIOS_IO_METHOD transport_method=ADIOS_METHOD_MPI;
 
 static void aggr_chunks(void **output, int *procs, int ndims, uint64_t *ldims_list, uint64_t *gdims, uint64_t *size_list, uint64_t totalsize, int nchunks, int rank, int level, int type_size);
 static uint64_t do_spatial_aggr(int level, int *procs, int ndims, uint64_t *ldims, uint64_t *offsets, char *new_ldims, int rank,  void *data, uint64_t varsize, void *output, int type_size, MPI_Comm comm);
@@ -77,10 +75,7 @@ struct adios_MPI_data_struct
 {
     int64_t fpr;
     MPI_File fh;
-    MPI_Request req;
-    MPI_Status status;
     MPI_Comm group_comm;
-    MPI_Info info;      // set with base
     int rank;
     int size;
 
@@ -401,7 +396,7 @@ static int cal_layout(int *procs, int rank, int nprocs, int ndims, MPI_Comm comm
     return decomp;
 } 
 
-static void cal_offsets1(int *procs, int rank, int ndims, int decomp, int *offsets)
+static void cal_offsets(int *procs, int rank, int ndims, int decomp, int *offsets)
 { 
     int i;
 
@@ -413,77 +408,6 @@ static void cal_offsets1(int *procs, int rank, int ndims, int decomp, int *offse
     }
     if (decomp>=3) {
         offsets[sequence[2]]=rank/(procs[sequence[0]]*procs[sequence[1]]);
-    }
-}
-
-static void cal_offsets(int *procs, int rank, int ndims, int decomp, int *offsets)
-{
-    if(ndims==1) {
-        offsets[0]=rank%procs[0];
-        return;
-    }
-    else if(ndims==2) {
-        //k or j
-        if(decomp==1) {
-            if(procs[1]==1) 
-                offsets[0]=rank%procs[0];
-            else if(procs[0]==1) 
-                offsets[1]=rank%procs[1];
-        }
-        else if(decomp==2) {
-            if(layout==0) { //along the fast dimension
-                offsets[0]=rank%procs[0];
-                offsets[1]=rank/procs[0]%procs[1];
-            }
-            else if(layout==1) { //along the slow dimension
-                offsets[1]=rank%procs[1];
-                offsets[0]=rank/procs[1]%procs[0];
-            }
-        }
-    }
-    else {
-        if(decomp==1) {
-            //i, j, k
-            if(procs[0]==1 && procs[1]==1)
-                offsets[2]=rank%procs[2];
-            else if(procs[1]==1 && procs[2]==1)
-                offsets[0]=rank%procs[0];
-            else if(procs[0]==1 && procs[2]==1)
-                offsets[1]=rank%procs[1];
-        }
-        else if(decomp==2) {
-                offsets[sequence[0]]=rank%procs[sequence[0]];
-                offsets[sequence[1]]=rank/procs[sequence[1]]%sequence[1];
-        }
-        else {
-            if(layout==0) { 
-                offsets[0]=rank%procs[0];
-                offsets[1]=rank/procs[0]%procs[1];
-                offsets[2]=rank/(procs[0]*procs[1]);
-            }
-            else {
-                offsets[2]=rank%procs[2];
-                offsets[1]=rank/procs[2]%procs[1];
-                offsets[0]=rank/(procs[2]*procs[1]);
-            }
-        }
-    }
-
-}
-
-static void cal_process_map1(int rank, int *procs)
-{
-    int i,j,k;
-    int pos, cnt=0;
-
-    for(i=0;i<procs[sequence[2]];i++) {
-        for(j=0;j<procs[sequence[1]];j++) {
-            for(k=0;k<procs[sequence[0]];k++) {
-                pos=i*procs[sequence[0]]*procs[sequence[1]]+j*procs[sequence[0]]+k;
-                proc_map[pos]=cnt;
-                cnt++;
-            }
-        }
     }
 }
 
@@ -635,7 +559,7 @@ static void prep_aggr(int *procs, int ndims, int decomp, int rank, int size, int
     //get the process map
     cal_process_map(rank, procs);
 
-    cal_offsets1(procs, rank, ndims, decomp, offsets);
+    cal_offsets(procs, rank, ndims, decomp, offsets);
 
     aggr_cnt[ndims-1][0]=aggr_cnt[ndims-1][1]=1;
     prev_step=1;
