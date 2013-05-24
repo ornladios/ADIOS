@@ -57,7 +57,8 @@ if(BUILD_WRITE)
                      write/adios_mpi_lustre.c
                      write/adios_mpi_amr.c
                      write/adios_posix.c
-                     write/adios_posix1.c)
+                     write/adios_posix1.c
+                     write/adios_chunk.c)
 
 set(libadios_nompi_a_SOURCES core/adios.c 
                      core/common_adios.c 
@@ -114,7 +115,8 @@ set(libadios_nompi_a_SOURCES core/adios.c
 
     set(FortranLibMPISources write/adios_mpi.c
                          write/adios_mpi_lustre.c
-	                 write/adios_mpi_amr.c)
+	                 write/adios_mpi_amr.c
+                         write/adios_chunk.c)
 
     set(FortranLibSEQSources core/mpidummy.c)
   endif(BUILD_FORTRAN)
