@@ -68,6 +68,14 @@ echo "Clean staging/coupling examples"
 echo "Add staging/coupling examples"
 tar -cO examples/staging examples/coupling  --exclude "\.svn" | tar -x -C adios-$VERSION
 
+echo "Add CMAKE build files"
+cp cmake_init toolchain.cmake config.h.cmake adios-$VERSION
+find . -name CMakeLists.txt | grep -v "adios-$VERSION" > cmakefiles.txt
+while read f; do
+  echo "cp $f adios-$VERSION/$f"
+  cp $f adios-$VERSION/$f
+done < cmakefiles.txt
+
 echo "Repack adios-$VERSION.tar.gz"
 rm -rf adios-$VERSION.tar.gz
 tar zcf adios-$VERSION.tar.gz adios-$VERSION
