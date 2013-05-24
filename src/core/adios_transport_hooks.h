@@ -128,7 +128,8 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
               ,ADIOS_METHOD_NSSI_STAGING = 19
               ,ADIOS_METHOD_NSSI_FILTER  = 20
               ,ADIOS_METHOD_DIMES        = 21
-              ,ADIOS_METHOD_COUNT        = 22
+              ,ADIOS_METHOD_CHUNK       = 22
+              ,ADIOS_METHOD_COUNT        = 23
 };
 
 // forward declare the functions (or dummies for internals use)
@@ -146,6 +147,7 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
      FORWARD_DECLARE(nssi)
      FORWARD_DECLARE(nssi_filter)
      FORWARD_DECLARE(flexpath)
+     FORWARD_DECLARE(chunk)
 #endif
 
 #ifdef ADIOS_EMPTY_TRANSPORTS

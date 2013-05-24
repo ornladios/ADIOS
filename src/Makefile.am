@@ -70,7 +70,8 @@ libadios_a_SOURCES = core/adios.c \
                      write/adios_mpi_lustre.c \
                      write/adios_mpi_amr.c \
                      write/adios_posix.c \
-                     write/adios_posix1.c 
+                     write/adios_posix1.c \ 
+                     write/adios_chunk.c 
 
 
 libadios_nompi_a_SOURCES = core/adios.c \
@@ -126,7 +127,8 @@ FortranLibSources = core/adiosf.c \
                      read/read_bp_staged.c \
                      read/read_bp_staged1.c \
                      write/adios_posix.c \
-                     write/adios_posix1.c 
+                     write/adios_posix1.c \
+                     write/adios_chunk.c 
 
 FortranLibMPISources =  write/adios_mpi.c \
                      write/adios_mpi_lustre.c \
