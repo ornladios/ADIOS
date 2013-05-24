@@ -109,11 +109,14 @@ set(libadios_nompi_a_SOURCES core/adios.c
                        read/read_bp.c 
                        read/read_bp_staged.c 
                        read/read_bp_staged1.c 
-                       write/adios_mpi.c 
-                       write/adios_mpi_lustre.c 
-                       write/adios_mpi_amr.c 
                        write/adios_posix.c 
                        write/adios_posix1.c)
+
+    set(FortranLibMPISources write/adios_mpi.c
+                         write/adios_mpi_lustre.c
+	                 write/adios_mpi_amr.c)
+
+    set(FortranLibSEQSources core/mpidummy.c)
   endif(BUILD_FORTRAN)
 
   set(libadios_a_CPPFLAGS "${ADIOSLIB_EXTRA_CPPFLAGS} ${ADIOSLIB_CPPFLAGS}")
@@ -122,6 +125,8 @@ set(libadios_nompi_a_SOURCES core/adios.c
   set(libadios_nompi_a_CFLAGS "${MACRODEFFLAG}_NOMPI ${ADIOSLIB_SEQ_CFLAGS}")
   set(libadiosf_a_CPPFLAGS "${ADIOSLIB_EXTRA_CPPFLAGS} ${ADIOSLIB_CPPFLAGS}")
   set(libadiosf_a_CFLAGS "${ADIOSLIB_CFLAGS}")
+  set(libadiosf_nompi_a_CPPFLAGS "${MACRODEFFLAG}_NOMPI ${ADIOSLIB_EXTRA_CPPFLAGS} ${ADIOSLIB_SEQ_CPPFLAGS}")
+  set(libadiosf_nompi_a_CFLAGS "${MACRODEFFLAG}_NOMPI ${ADIOSLIB_SEQ_CFLAGS}")
 
   if(HAVE_DATASPACES)
     set(libadios_a_SOURCES ${libadios_a_SOURCES} write/adios_dataspaces.c read/read_dataspaces.c)
@@ -152,7 +157,7 @@ set(libadios_nompi_a_SOURCES core/adios.c
     set(PHDF5_FLAGS "${PHDF5_FLAGS} ${MACRODEFFLAG}PHDF5 ${MACRODEFFLAG}H5_USE_16_API")
     set(libadios_a_CPPFLAGS "${libadios_a_CPPFLAGS} ${PHDF5_FLAGS}")
     if(BUILD_FORTRAN)
-      set(FortranLibSources ${FortranLibSources} write/adios_phdf5.c)
+      set(FortranLibMPISources ${FortranLibMPISources} write/adios_phdf5.c)
       set(libadiosf_a_CPPFLAGS "${libadiosf_a_CPPFLAGS} ${PHDF5_FLAGS}")
     endif(BUILD_FORTRAN) 
   endif(HAVE_PHDF5)
@@ -160,9 +165,16 @@ set(libadios_nompi_a_SOURCES core/adios.c
   if(HAVE_NC4PAR)
     set(libadios_a_SOURCES ${libadios_a_SOURCES} write/adios_nc4.c)
     if(BUILD_FORTRAN)
-      set(FortranLibSources ${FortranLibSources} write/adios_nc4.c)
+      set(FortranLibMPISources ${FortranLibMPISources} write/adios_nc4.c)
     endif(BUILD_FORTRAN)
   endif(HAVE_NC4PAR)
+
+  if(HAVE_FLEXPATH)
+    set(libadios_a_SOURCES ${libadios_a_SOURCES} write/adios_flexpath.c read/read_flexpath.c)
+    if(BUILD_FORTRAN)
+      set(FortranLibSources ${FortranLibSources} write/adios_flexpath.c read/read_flexpath.c)
+    endif(BUILD_FORTRAN)
+  endif(HAVE_FLEXPATH)
 
   if(HAVE_NSSI)
     set(dist_libadios_a_SOURCES  nssi/adios_nssi_args.x)
@@ -211,7 +223,7 @@ set(libadios_nompi_a_SOURCES core/adios.c
                       write/adios_mpi_amr1.c 
                       write/adios_adaptive.ci)
     if(BUILD_FORTRAN)
-      set(FortranLibSources ${FortranLibSources}
+      set(FortranLibMPISources ${FortranLibMPISources}
                           write/adios_mpi_stagger.c
                           write/adios_mpi_aggregate.c
                           write/adios_provenance.c
@@ -224,6 +236,7 @@ set(libadios_nompi_a_SOURCES core/adios.c
     set(libadios_a_CPPFLAGS "${libadios_a_CPPFLAGS} ${MACRODEFFLAG}NO_RESEARCH_TRANSPORTS")
     set(libadios_nompi_a_CPPFLAGS "${libadios_nompi_a_CPPFLAGS} ${MACRODEFFLAG}NO_RESEARCH_TRANSPORTS")
     set(libadiosf_a_CPPFLAGS "${libadiosf_a_CPPFLAGS} ${MACRODEFFLAG}NO_RESEARCH_TRANSPORTS")
+    set(libadiosf_nompi_a_CPPFLAGS "${libadiosf_nompi_a_CPPFLAGS} ${MACRODEFFLAG}NO_RESEARCH_TRANSPORTS")
   endif(RESEARCH_TRANSPORTS)
 
 # add library adios and adios_nompi
@@ -234,20 +247,35 @@ set(libadios_nompi_a_SOURCES core/adios.c
 #  message(STATUS "${libadios_a_CPPFLAGS}")
 #  message(STATUS "${libadios_a_CFLAGS}")
 
+# Build four different Fortran libraries, for the two read APIs
+# and their sequential versions
   if(BUILD_FORTRAN)
-    set(libadiosf_a_SOURCES ${libadiosf_a_SOURCES} ${FortranLibSources} core/adiosf_read.c)
-    set(libadiosf_v1_a_SOURCES ${FortranLibSources} core/adiosf_read_v1.c)
+    set(libadiosf_a_SOURCES ${libadiosf_a_SOURCES} ${FortranLibSources} ${FortranLibMPISources} core/adiosf_read.c)
+    set(libadiosf_v1_a_SOURCES ${FortranLibSources} ${FortranLibMPISources} core/adiosf_read_v1.c)
+    set(libadiosf_nompi_a_SOURCES ${FortranLibSources} ${FortranLibSEQSources} core/adiosf_read.c)
+    set(libadiosf_nompi_v1_a_SOURCES ${FortranLibSources} ${FortranLibSEQSources} core/adiosf_read_v1.c)
     set(libadiosf_v1_a_CPPFLAGS "${libadiosf_a_CPPFLAGS}")
     set(libadiosf_v1_a_CFLAGS "${libadiosf_a_CFLAGS}")
+    set(libadiosf_nompi_v1_a_CPPFLAGS "${libadiosf_nompi_a_CPPFLAGS}")
+    set(libadiosf_nompi_v1_a_CFLAGS "${libadiosf_nompi_a_CFLAGS}")
 
     set(libadiosf_a_SOURCES ${libadiosf_a_SOURCES}
                          core/adiosf_defs_mod.f90
                          core/adiosf_write_mod.f90 
                          core/adiosf_read_mod.f90)
+   
+    set(libadiosf_nompi_a_SOURCES ${libadiosf_nompi_a_SOURCES}
+                              core/adiosf_defs_mod.f90
+                              core/adiosf_write_mod.f90
+                              core/adiosf_read_mod.f90)
 
     set(libadiosf_v1_a_SOURCES ${libadiosf_v1_a_SOURCES} 
                          core/adiosf_defs_mod.f90
                          core/adiosf_write_mod.f90)
+
+    set(libadiosf_nompi_v1_a_SOURCES ${libadiosf_nompi_v1_a_SOURCES}
+                                  core/adiosf_defs_mod.f90
+                                  core/adiosf_write_mod.f90)
 
     set(nodist_include_HEADERS ${nodist_include_HEADERS} adios_write_mod.mod)
     set(CLEANFILES ${CLEANFILES} adios_write_mod.mod)
@@ -282,8 +310,12 @@ DEPENDS adios_write_mod.mod
 #add library adiosf and adiosf_v1
     add_library(adiosf STATIC ${libadiosf_a_SOURCES})
     add_library(adiosf_v1 STATIC ${libadiosf_v1_a_SOURCES}) 
+    add_library(adiosf_nompi STATIC ${libadiosf_nompi_a_SOURCES})
+    add_library(adiosf_nompi_v1 STATIC ${libadiosf_nompi_v1_a_SOURCES})
     set_target_properties(adiosf PROPERTIES COMPILE_FLAGS "${libadiosf_a_CPPFLAGS} ${libadiosf_a_CFLAGS}")
     set_target_properties(adiosf_v1 PROPERTIES COMPILE_FLAGS "${libadiosf_v1_a_CPPFLAGS} ${libadiosf_v1_a_CFLAGS}")
+    set_target_properties(adiosf_nompi PROPERTIES COMPILE_FLAGS "${libadiosf_nompi_a_CPPFLAGS} ${libadiosf_nompi_a_CFLAGS}")
+    set_target_properties(adiosf_nompi_v1 PROPERTIES COMPILE_FLAGS "${libadiosf_nompi_v1_a_CPPFLAGS} ${libadiosf_nompi_v1_a_CFLAGS}")
 #    message(STATUS "${libadiosf_a_CPPFLAGS}")
 #    message(STATUS "${libadiosf_a_CFLAGS}")
   endif(BUILD_FORTRAN)
@@ -336,6 +368,10 @@ if(HAVE_DATATAP)
   set(libadiosread_a_SOURCES ${libadiosread_a_SOURCES} read/read_datatap.c)
 endif(HAVE_DATATAP)
 
+if(HAVE_FLEXPATH)
+  set(libadiosread_a_SOURCES ${libadiosread_a_SOURCES} read/read_flexpath.c)
+endif(HAVE_FLEXPATH)
+
 if(HAVE_NSSI)
   set(dist_libadiosread_a_SOURCES nssi/adios_nssi_args.x)
   set(nodist_libadiosread_a_SOURCES adios_nssi_args.c adios_nssi_args.h)
@@ -379,6 +415,10 @@ if(BUILD_FORTRAN)
   if(HAVE_DATATAP)
     set(FortranReadLibSource ${FortranReadLibSource} read/read_datatap.c)
   endif(HAVE_DATATAP)
+
+  if(HAVE_FLEXPATH)
+    set(FortranReadLibSource ${FortranReadLibSource} read/read_flexpath.c)
+  endif(HAVE_FLEXPATH)
   
   if(HAVE_NSSI)
     set(dist_libadiosreadf_a_SOURCES nssi/adios_nssi_args.x)
@@ -470,6 +510,10 @@ if(HAVE_DATATAP)
   set(libadiosread_nompi_a_SOURCES ${libadiosread_nompi_a_SOURCES} read/read_datatap.c)
 endif(HAVE_DATATAP)
 
+if(HAVE_FLEXPATH)
+  set(libadiosread_nompi_a_SOURCES ${libadiosread_nompi_a_SOURCES} read/read_flexpath.c)
+endif(HAVE_FLEXPATH)
+
 if(HAVE_NSSI)
   set(dist_libadiosread_nompi_a_SOURCES nssi/adios_nssi_args.x)
   set(nodist_libadiosread_nompi_a_SOURCES adios_nssi_args.c adios_nssi_args.h)
@@ -510,6 +554,10 @@ if(BUILD_FORTRAN)
   if(HAVE_DATATAP)
     set(FortranReadSeqLibSource ${FortranReadSeqLibSource} read/read_datatap.c)
   endif(HAVE_DATATAP)
+
+  if(HAVE_FLEXPATH)
+    set(FortranReadSeqLibSource ${FortranReadSeqLibSource} read/read_flexpath.c)
+  endif(HAVE_FLEXPATH)
 
   if(HAVE_NSSI)
     set(dist_libadiosreadf_nompi_a_SOURCES nssi/adios_nssi_args.x)
@@ -570,6 +618,8 @@ install(FILES ${PROJECT_BINARY_DIR}/src/libadios.a
 	${PROJECT_BINARY_DIR}/src/libadiosreadf_nompi.a
 	${PROJECT_BINARY_DIR}/src/libadiosreadf_nompi_v1.a
 	${PROJECT_BINARY_DIR}/src/libadiosreadf_v1.a
+        ${PROJECT_BINARY_DIR}/src/libadiosf_nompi.a
+        ${PROJECT_BINARY_DIR}/src/libadiosf_nompi_v1.a
 	DESTINATION ${libdir})
 
 
