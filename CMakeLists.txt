@@ -803,10 +803,10 @@ set(PACKAGE adios)
 set(VERSION_MAJOR 1)
 
 # Minor version number
-set(VERSION_MINOR 4)
+set(VERSION_MINOR 5)
 
 # Micro version number
-set(VERSION_MICRO 1)
+set(VERSION_MICRO 0)
 
 # Version number of package
 set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MICRO})
