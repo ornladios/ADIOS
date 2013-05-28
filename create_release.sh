@@ -63,13 +63,18 @@ tar -cO examples/skel --exclude "\.svn" | tar -x -C adios-$VERSION
 
 echo "Clean staging/coupling examples"
 (cd examples/coupling; make distclean)
-for sd in examples/staging; do
-    (cd $sd; make distclean)
-done
-(cd examples/staging/staging_write; make -f Makefile.genarray_stream clean)
+(cd examples/staging/stage_write; make distclean; make -f Makefile.genarray_stream clean)
 
 echo "Add staging/coupling examples"
 tar -cO examples/staging examples/coupling  --exclude "\.svn" | tar -x -C adios-$VERSION
+
+echo "Add CMAKE build files"
+cp cmake_init toolchain.cmake config.h.cmake adios-$VERSION
+find . -name CMakeLists.txt | grep -v "adios-$VERSION" > cmakefiles.txt
+while read f; do
+  echo "cp $f adios-$VERSION/$f"
+  cp $f adios-$VERSION/$f
+done < cmakefiles.txt
 
 echo "Repack adios-$VERSION.tar.gz"
 rm -rf adios-$VERSION.tar.gz
