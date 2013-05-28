@@ -285,7 +285,7 @@ existing tools linked with NetCDF 3.x.  However, NetCDF4 provides a backward com
 API, so that these tools can be relinked with NetCDF4.  After relink, these tools 
 can open files in the ``netcdf-4 format''.
 
-\subsection{Dataspaces}
+\subsection{Dataspaces}\label{method-dataspaces}
 
 Dataspaces is an asynchronous I/O transfer method within ADIOS that enables low-overhead, 
 high-throughput data extraction from a running simulation. Dataspaces consists of two 
@@ -371,6 +371,50 @@ messages.
 %% The Dataspaces transport method is experimental and is not included with the public version 
 %% of the ADIOS source code in this release; however it is available for use on the 
 %% XT4 and XT5 machines at ORNL.
+
+\subsection{DIMES}
+% DIstributed MEmory Space (DIMES)
+DIMES is another asynchronous I/O transfer method within ADIOS that enables low-
+latency, scalable data extraction from a running simulation. It is designed to enable M$
+\times$N parallel data redistribution between tightly coupled applications, which 
+essentially performs RDMA-based memory-to-memory transfers of distributed data such 
+as global arrays from M processes of one application to N processes of another application.
+
+Both DIMES and Dataspaces methods are implemented based upon the open source 
+software library DataSpaces. However, unlike Dataspaces method which implements 
+memory-to-memory data sharing using dedicated server nodes in the \emph{staging 
+area}, DIMES method implements the parallel data redistribution through point-to-point 
+transfers directly between processes of data writing and reading applications, and thus 
+bypass the \emph{staging area}. 
+
+For applications using the ADIOS DIMES method, the new functionality is exposed 
+through the ADIOS write/read semantics. ADIOS layer is used to collect data written by 
+the application into a local RDMA memory buffer as data objects that can 
+be remotely accessed through the underlying RDMA get operations. Once data is 
+successfully copied from the application space, the control is transferred back to the 
+application, then the simulation data can be asynchronously extracted and redistributed 
+to the coupled reading applications. 
+
+Though the DIMES methods does not need simulation data to be transferred to the 
+\emph{staging area}, a stand-alone server module is still required for constructing a 
+distributed directory service to keep track of the in-memory data objects. Internally, client 
+applications would query the service to locate required data objects, and then perform 
+the subsequent RDMA-based parallel data transfers. 
+
+DIMES method can be selected by specifying the transport method in the external 
+ADIOS XML configuration file (as below).
+
+\begin{lstlisting}[language=XML, caption=Select DIMES as a transport method in the configuration file example.]
+<method group="fluxdiag" method="DIMES"/>
+\end{lstlisting}
+
+The dataspaces\_server component is extended to support the data locating service 
+mentioned above. To make use of the DIMES method, a job needs to also run the 
+dataspaces\_server with the applications. Each dataspaces\_server instance 
+needs to run on one dedicated processor core, and multiple sever instances can be 
+started in parallel to support the data locating service for larger scale applications. 
+Instructions on how to configure and run the dataspaces\_server can be found in 
+section~\ref{method-dataspaces}.
 
 
 \section{Research Methods}
