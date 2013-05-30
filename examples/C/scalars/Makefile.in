@@ -37,7 +37,7 @@ host_triplet = @host@
 noinst_PROGRAMS = scalars_write$(EXEEXT) scalars_read$(EXEEXT) \
 	scalars_write_step$(EXEEXT)
 subdir = examples/C/scalars
-DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_cray_pmi.m4 \
 	$(top_srcdir)/config/ac_cray_ugni.m4 \
@@ -70,7 +70,7 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_scalars_read_OBJECTS = scalars_read.$(OBJEXT)
 scalars_read_OBJECTS = $(am_scalars_read_OBJECTS)
 am__DEPENDENCIES_1 =
-scalars_read_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+scalars_read_DEPENDENCIES = $(top_builddir)/src/libadiosread.a \
 	$(am__DEPENDENCIES_1)
 scalars_read_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
@@ -332,8 +332,9 @@ scalars_write_SOURCES = scalars_write.c
 scalars_write_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 scalars_write_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 scalars_read_SOURCES = scalars_read.c
-scalars_read_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-scalars_read_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+scalars_read_LDADD = $(top_builddir)/src/libadiosread.a \
+	$(ADIOSREADLIB_LDADD)
+scalars_read_LDFLAGS = $(ADIOSREADLIB_LDFLAGS)
 scalars_write_step_SOURCES = scalars_write.c
 scalars_write_step_LDADD = $(top_builddir)/src/libadios.a \
 	$(ADIOSLIB_LDADD)

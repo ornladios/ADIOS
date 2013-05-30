@@ -66,8 +66,7 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_attributes_read_OBJECTS =  \
-	attributes_read-attributes_read.$(OBJEXT)
+am_attributes_read_OBJECTS = attributes_read.$(OBJEXT)
 attributes_read_OBJECTS = $(am_attributes_read_OBJECTS)
 am__DEPENDENCIES_1 =
 attributes_read_DEPENDENCIES = $(top_builddir)/src/libadiosread.a \
@@ -324,10 +323,9 @@ attributes_write_LDADD = $(top_builddir)/src/libadios.a \
 	$(ADIOSLIB_LDADD)
 attributes_write_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 attributes_read_SOURCES = attributes_read.c
-attributes_read_CPPFLAGS = -DADIOS_USE_READ_API_1
 attributes_read_LDADD = $(top_builddir)/src/libadiosread.a \
-	$(ADIOSLIB_LDADD)
-attributes_read_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+	$(ADIOSREADLIB_LDADD)
+attributes_read_LDFLAGS = $(ADIOSREADLIB_LDFLAGS)
 CLEANFILES = *.bp
 EXTRA_DIST = attributes.xml gwrite_temperature.ch gread_temperature.ch
 all: all-am
@@ -394,12 +392,6 @@ distclean-compile:
 
 .c.lo:
 	$(LTCOMPILE) -c -o $@ $<
-
-attributes_read-attributes_read.o: attributes_read.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(attributes_read_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o attributes_read-attributes_read.o `test -f 'attributes_read.c' || echo '$(srcdir)/'`attributes_read.c
-
-attributes_read-attributes_read.obj: attributes_read.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(attributes_read_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o attributes_read-attributes_read.obj `if test -f 'attributes_read.c'; then $(CYGPATH_W) 'attributes_read.c'; else $(CYGPATH_W) '$(srcdir)/attributes_read.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
