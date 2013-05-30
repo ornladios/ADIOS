@@ -11,9 +11,9 @@ arrays_write_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 arrays_write_LDADD += $(ADIOSLIB_LDADD)
 
 arrays_read_SOURCES = arrays_read.F90
-arrays_read_LDADD = $(top_builddir)/src/libadiosf.a 
-arrays_read_LDFLAGS = $(ADIOSLIB_LDFLAGS)
-arrays_read_LDADD += $(ADIOSLIB_LDADD)
+arrays_read_LDADD = $(top_builddir)/src/libadiosreadf.a 
+arrays_read_LDFLAGS = $(ADIOSREADLIB_LDFLAGS)
+arrays_read_LDADD += $(ADIOSREADLIB_LDADD)
 
 CLEANFILES = *.bp
 CC=$(MPICC)
