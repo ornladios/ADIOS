@@ -51,10 +51,15 @@ program scalars_read
     call adios_read_open (f, filename, method, comm, ADIOS_LOCKMODE_NONE, 1.0, ierr);
 
     sel = 0  ! sel must be integer*8
-    call adios_schedule_read (f, sel, "var_byte", 1, 1, v1, ierr)
-    call adios_schedule_read (f, sel, "var_short", 1, 1, v2, ierr)
-    call adios_schedule_read (f, sel, "var_int", 1, 1, v3, ierr)
-    call adios_schedule_read (f, sel, "var_long", 1, 1, v4, ierr)
+
+    ! option 1 for scalars: get it from the metadata read at open
+    call adios_get_scalar (f, "var_byte", v1, ierr)
+    call adios_get_scalar (f, "var_short", v2, ierr)
+    call adios_get_scalar (f, "var_int", v3, ierr)
+    call adios_get_scalar (f, "var_long", v4, ierr)
+    ! the above variables contain the value at this point
+
+    ! option 2 for scalars: read them from file
     call adios_schedule_read (f, sel, "var_ubyte", 1, 1, v5, ierr)
     call adios_schedule_read (f, sel, "var_ushort", 1, 1, v6, ierr)
     call adios_schedule_read (f, sel, "var_uint", 1, 1, v7, ierr)
@@ -64,8 +69,9 @@ program scalars_read
     call adios_schedule_read (f, sel, "var_string", 1, 1, v11, ierr)
     call adios_schedule_read (f, sel, "var_complex", 1, 1, v12, ierr)
     call adios_schedule_read (f, sel, "var_double_complex", 1, 1, v13, ierr)
-
+    ! no read has been performed yet!
     call adios_perform_reads (f, ierr)
+    ! the above variables contain the value only at this point
 
     if (rank == 0) then
         write (*, '("int*1      v1  = ",i3)') v1
