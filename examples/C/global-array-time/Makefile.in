@@ -86,8 +86,7 @@ adios_globaltime_no_xml_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 adios_globaltime_no_xml_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(adios_globaltime_no_xml_LDFLAGS) $(LDFLAGS) -o $@
-am_adios_read_globaltime_OBJECTS =  \
-	adios_read_globaltime-adios_read_globaltime.$(OBJEXT)
+am_adios_read_globaltime_OBJECTS = adios_read_globaltime.$(OBJEXT)
 adios_read_globaltime_OBJECTS = $(am_adios_read_globaltime_OBJECTS)
 adios_read_globaltime_DEPENDENCIES =  \
 	$(top_builddir)/src/libadiosread.a $(am__DEPENDENCIES_1)
@@ -356,14 +355,13 @@ adios_globaltime_no_xml_LDADD = $(top_builddir)/src/libadios.a \
 	$(ADIOSLIB_LDADD)
 adios_globaltime_no_xml_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 adios_read_globaltime_SOURCES = adios_read_globaltime.c
-adios_read_globaltime_CPPFLAGS = -DADIOS_USE_READ_API_1
 adios_read_globaltime_LDADD = $(top_builddir)/src/libadiosread.a \
-	$(ADIOSLIB_LDADD)
-adios_read_globaltime_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+	$(ADIOSREADLIB_LDADD)
+adios_read_globaltime_LDFLAGS = $(ADIOSREADLIB_LDFLAGS)
 adios_read_globaltime_streaming_SOURCES = adios_read_globaltime_streaming.c
 adios_read_globaltime_streaming_LDADD =  \
-	$(top_builddir)/src/libadiosread.a $(ADIOSLIB_LDADD)
-adios_read_globaltime_streaming_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+	$(top_builddir)/src/libadiosread.a $(ADIOSREADLIB_LDADD)
+adios_read_globaltime_streaming_LDFLAGS = $(ADIOSREADLIB_LDFLAGS)
 CLEANFILES = *.bp
 EXTRA_DIST = adios_globaltime.xml gread_restart.ch gwrite_restart.ch job.pbs
 all: all-am
@@ -436,12 +434,6 @@ distclean-compile:
 
 .c.lo:
 	$(LTCOMPILE) -c -o $@ $<
-
-adios_read_globaltime-adios_read_globaltime.o: adios_read_globaltime.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_read_globaltime_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_read_globaltime-adios_read_globaltime.o `test -f 'adios_read_globaltime.c' || echo '$(srcdir)/'`adios_read_globaltime.c
-
-adios_read_globaltime-adios_read_globaltime.obj: adios_read_globaltime.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_read_globaltime_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_read_globaltime-adios_read_globaltime.obj `if test -f 'adios_read_globaltime.c'; then $(CYGPATH_W) 'adios_read_globaltime.c'; else $(CYGPATH_W) '$(srcdir)/adios_read_globaltime.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
