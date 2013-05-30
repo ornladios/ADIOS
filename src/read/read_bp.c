@@ -877,7 +877,9 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                               ,var_offset
                               ,dset_offset
                               ,datasize
-                              ,size_of_type 
+                              ,size_of_type
+                              ,fh->mfooter.change_endianness
+                              ,v->type 
                               );
                 }
             }  // end for (idx ... loop over pgs
