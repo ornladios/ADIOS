@@ -58,7 +58,11 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cray_pmi.m4 \
 	$(top_srcdir)/config/ac_portals.m4 \
 	$(top_srcdir)/config/acx_mpi.m4 \
 	$(top_srcdir)/config/acx_pthread.m4 \
-	$(top_srcdir)/config/cercs.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/config/cercs.m4 $(top_srcdir)/config/libtool.m4 \
+	$(top_srcdir)/config/ltoptions.m4 \
+	$(top_srcdir)/config/ltsugar.m4 \
+	$(top_srcdir)/config/ltversion.m4 \
+	$(top_srcdir)/config/lt~obsolete.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -66,7 +70,7 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_stat_read_OBJECTS = stat_read-stat_read.$(OBJEXT)
+am_stat_read_OBJECTS = stat_read.$(OBJEXT)
 stat_read_OBJECTS = $(am_stat_read_OBJECTS)
 am__DEPENDENCIES_1 =
 stat_read_DEPENDENCIES = $(top_builddir)/src/libadios.a \
@@ -237,6 +241,7 @@ PACKAGE_BUGREPORT = @PACKAGE_BUGREPORT@
 PACKAGE_NAME = @PACKAGE_NAME@
 PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
+PACKAGE_URL = @PACKAGE_URL@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATHPROG = @PATHPROG@
 PATH_SEPARATOR = @PATH_SEPARATOR@
@@ -299,7 +304,6 @@ libdir = @libdir@
 libexecdir = @libexecdir@
 localedir = @localedir@
 localstatedir = @localstatedir@
-lt_ECHO = @lt_ECHO@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 oldincludedir = @oldincludedir@
@@ -322,7 +326,7 @@ stat_write_SOURCES = stat_write.c
 stat_write_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 stat_write_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 stat_read_SOURCES = stat_read.c
-stat_read_CPPFLAGS = -DADIOS_USE_READ_API_1
+#stat_read_CPPFLAGS = -DADIOS_USE_READ_API_1
 stat_read_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 stat_read_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 CLEANFILES = *.bp
@@ -391,12 +395,6 @@ distclean-compile:
 
 .c.lo:
 	$(LTCOMPILE) -c -o $@ $<
-
-stat_read-stat_read.o: stat_read.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stat_read_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o stat_read-stat_read.o `test -f 'stat_read.c' || echo '$(srcdir)/'`stat_read.c
-
-stat_read-stat_read.obj: stat_read.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(stat_read_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o stat_read-stat_read.obj `if test -f 'stat_read.c'; then $(CYGPATH_W) 'stat_read.c'; else $(CYGPATH_W) '$(srcdir)/stat_read.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
