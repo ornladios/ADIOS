@@ -17,8 +17,9 @@
 int main (int argc, char ** argv) 
 {
     char        filename [256];
-    int         rank, size, i, j, k;
+    int         rank, size, i, j, k, token;
     MPI_Comm    comm = MPI_COMM_WORLD;
+    MPI_Status  status;
     enum ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP;
     ADIOS_SELECTION * sel;
     void * data = NULL;
@@ -63,19 +64,31 @@ int main (int argc, char ** argv)
     adios_schedule_read (f, sel, "temperature", step, 2, data);
     adios_perform_reads (f, 1);
 
-    printf("rank=%d: ", rank);
+    if (rank == 0) 
+        printf ("Array size of temperature [0:%lld,0:%lld]\n", v->dims[0], v->dims[1]);   
+
+    if (rank > 0) {
+        MPI_Recv (&token, 1, MPI_INT, rank-1, 0, comm, &status);
+    }
+
+    printf("------------------------------------------------\n", rank);
+    printf("rank=%d: \n", rank);
     for (i = 0; i < 2; i++) {
-        printf ("T%lld [0:%lld,0:%lld] = [", step+i, v->dims[0], v->dims[1]);   
+        printf ("step %lld = [\n", step+i);   
         for (j = 0; j < v->dims[0]; j++) {
             printf (" [");
             for (k = 0; k < v->dims[1]; k++) {
                 printf ("%g ", ((double *)data) [ i * v->dims[0] * v->dims[1] + j * v->dims[1] + k]);
             }
-            printf ("]");
+            printf ("]\n");
         }
-        printf (" ]\t");
+        printf ("]\n");
     }
     printf ("\n");
+
+    if (rank < size-1) {
+        MPI_Send (&token, 1, MPI_INT, rank+1, 0, comm);
+    }
 
     free (data);
     adios_free_varinfo (v);
