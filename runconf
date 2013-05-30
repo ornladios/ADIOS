@@ -73,10 +73,10 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
     export CFLAGS="-g -fPIC" 
-    ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/lens.$TARGET \
+    ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/sith.$TARGET \
         --enable-dependency-tracking \
         --enable-research-transports \
-        --with-lustre=/usr/lib64 \ 
+        --with-lustre=/usr/lib64 \
         $WITHDART \
         --with-hdf5=${SEQ_HDF5_DIR} \
         --with-hdf5-libs="${SEQ_HDF5_CLIB}" \
