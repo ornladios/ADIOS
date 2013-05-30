@@ -34,7 +34,9 @@ void copy_data (void *dst, void *src,
                 uint64_t dst_offset,
                 uint64_t src_offset,
                 uint64_t ele_num,
-                int      size_of_type
+                int      size_of_type,
+                enum ADIOS_FLAG change_endiness,
+                enum ADIOS_DATATYPES type
                 );
 void alloc_namelist (char ***namelist, int length);
 void free_namelist (char **namelist, int length);

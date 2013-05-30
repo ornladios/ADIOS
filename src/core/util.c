@@ -118,7 +118,9 @@ void copy_data (void *dst, void *src,
         uint64_t dst_offset,
         uint64_t src_offset,
         uint64_t ele_num,
-        int      size_of_type
+        int      size_of_type,
+        enum ADIOS_FLAG change_endiness,
+        enum ADIOS_DATATYPES type
         )
 {
     unsigned int i, j;
@@ -130,6 +132,10 @@ void copy_data (void *dst, void *src,
             memcpy ((char *)dst + (i*dst_stride+dst_offset)*size_of_type,
                     (char *)src + (i*src_stride+src_offset)*size_of_type,
                     ele_num*size_of_type);
+            if (change_endiness == adios_flag_yes) {
+                change_endianness ((char *)dst + (i*dst_stride+dst_offset)*size_of_type, 
+                                   ele_num*size_of_type, type);
+            }
         }
         return;
     }
@@ -149,7 +155,7 @@ void copy_data (void *dst, void *src,
                 ldims,readsize,
                 dst_stride, src_stride,
                 dst_offset_new, src_offset_new,
-                ele_num, size_of_type);
+                ele_num, size_of_type, change_endiness, type);
     }
 }
 

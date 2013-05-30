@@ -1510,6 +1510,8 @@ static void read_buffer (const ADIOS_FILE * fp,
                               ,dset_offset
                               ,datasize
                               ,size_unit
+                              ,fh->mfooter.change_endianness
+                              ,v->type
                               );
 
                 }
