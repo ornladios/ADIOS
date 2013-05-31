@@ -43,7 +43,7 @@ static int layout;
 static int *proc_map;
 static int *sequence;
 
-static void aggr_chunks(void **output, int *procs, int ndims, uint64_t *ldims_list, uint64_t *gdims, uint64_t *size_list, uint64_t totalsize, int nchunks, int rank, int level, int type_size);
+static void aggr_chunks(char **output, int *procs, int ndims, uint64_t *ldims_list, uint64_t *gdims, uint64_t *size_list, uint64_t totalsize, int nchunks, int rank, int level, int type_size);
 static uint64_t do_spatial_aggr(int level, int *procs, int ndims, uint64_t *ldims, uint64_t *offsets, char *new_ldims, int rank,  void *data, uint64_t varsize, void *output, int type_size, MPI_Comm comm);
 
 
@@ -1617,7 +1617,7 @@ static uint64_t do_spatial_aggr(int level, int *procs, int ndims, uint64_t *ldim
 }
 
 
-static void aggr_chunks(void **output, int *procs, int ndims, uint64_t *ldims_list,
+static void aggr_chunks(char **output, int *procs, int ndims, uint64_t *ldims_list,
     uint64_t *gdims, uint64_t *size_list, uint64_t totalsize, int nchunks, int rank, int level, int type_size)
 {
     uint64_t count[3];
