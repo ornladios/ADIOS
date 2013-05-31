@@ -356,12 +356,14 @@ a Fortran90 keyword. The actual module source defines all possible combinations
 of type and dimensionality for such subroutines. 
 
 \begin{lstlisting}[language=ADIOS,alsolanguage=Fortran]
-subroutine adios_init (config, err)
+subroutine adios_init (config, comm, err)
     character(*),   intent(in)  :: config
+    integer,        intent(in)  :: comm
     integer,        intent(out) :: err
 end subroutine
 
-subroutine adios_init_noxml (err)
+subroutine adios_init_noxml (comm, err)
+    integer,        intent(in)  :: comm
     integer,        intent(out) :: err
 end subroutine
 
@@ -504,7 +506,7 @@ int main (int argc, char *argv[])
 
     // data initialization for ( i=0; i<NX; i++)
     t [i] = i * (rank+1) + 0.1; // ADIOS routines 
-    adios_init ("config.xml");
+    adios_init ("config.xml", comm);
     adios_open (&handle, "temperature", "data.bp", "w",comm); 
     group_size = sizeof(int) \        // int NX
                + sizeof(double) * NX; // double array t

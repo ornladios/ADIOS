@@ -187,11 +187,26 @@ DIMES is part of the DataSpaces library.
 
  
 \subsubsection{Flexpath staging method}
- 
+ Flexpath transport requires several packages from the Chaos repository at Georgia Tech: \verb+dill+, \verb+cercs_env+, \verb+gen_thread+, \verb+atl+, \verb+ffs+, and \verb+evpath+. 
+To download and install these libraries, a script (\verb+trunk/chaos_build.pl+) is available at: \url{http://svn.research.cc.gatech.edu/kaos/chaos_base/} (username: \verb+anon+, password: \verb+anon+). 
+Download the repository using SVN, and follow the instructions at the top of the script.
+
+\noindent To use ADIOS with Flexpath, configure adios with the option: 
+
 \begin{lstlisting}
---with-flexpath=DIR  Build the FLEXPATH transport method. Point to the
-                      FLEXPATH installation.
+--with-flexpath=DIR  Where DIR is the installation directory of 
+                                      the Chaos libraries.
 \end{lstlisting}
+
+The default network transport for Flexpath is sockets. Additionally, you can use ENET and NNTI (allowing for Infiniband, Portals, and Gemini), both of which
+are included in the \verb+chaos_build.pl+ script. To use these transports, set the \verb+CMTransport+ environment variable to either \verb+``nnti''+ or \verb+``enet''+ before running your applications with Flexpath.
+
+Additionally, in the ADIOS XML file, we allow for the user to specify a \verb+Queuesize+ parameter specifying how many timesteps the writer can buffer before it blocks. For example, 
+
+\begin{lstlisting}
+<method group="arrays" method="FLEXPATH">QUEUE_SIZE=10;</method>
+\end{lstlisting}
+
 
 
 \subsection{Read-only installation}
@@ -267,19 +282,20 @@ configure to build ADIOS and its support utilities:
 --with-dimes=<location of DataSpaces installation>
 --with-dimes-incdir=<location of dimes includes>
 --with-dimes-libdir=<location of dimes library>
---with-installed      Don''t use local copies of CERCS packages
---with-local          Use only local copies of CERCS packages
---with-ibpbio=DIR     Where to find ibpbio package
---with-ffs=DIR        Where to find ffs package
---with-gen_thread=DIR Where to find gen_thread package
---with-ptlpbio=DIR    Where to find ptlpbio package
---with-flexpath=DIR   Location of FlexPath
---with-evpath=DIR     Where to find evpath package
---with-atl=DIR        Where to find atl package
---with-dill=DIR       Where to find dill package
---with-cercs_env=DIR  Where to find cercs_env package
+--with-flexpath=<location of the Chaos packages>
 --with-lustre=<location of Lustreapi library>
 \end{lstlisting}
+
+%--with-installed      Don''t use local copies of CERCS packages
+%--with-local          Use only local copies of CERCS packages
+%--with-gen_thread=DIR Where to find gen_thread package
+%--with-ibpbio=DIR     Where to find ibpbio package
+%--with-ffs=DIR        Where to find ffs package
+%--with-ptlpbio=DIR    Where to find ptlpbio package
+%--with-evpath=DIR     Where to find evpath package
+%--with-atl=DIR        Where to find atl package
+%--with-dill=DIR       Where to find dill package
+%--with-cercs_env=DIR  Where to find cercs_env package
 
 Some influential environment variables are lists below:
 

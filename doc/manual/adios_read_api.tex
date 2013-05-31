@@ -188,7 +188,14 @@ The methods supported in ADIOS 1.5.0 are
 \item{\bf ADIOS\_READ\_METHOD\_BP}   Read from ADIOS BP file. 
 Every reading process will access the file(s) to serve its own reading needs.
 
-\item{\bf ADIOS\_READ\_METHOD\_DATASPACES} Read from staging memory using DataSpaces. The writer applications must use the DATASPACES transport method when writing.  
+\item{\bf ADIOS\_READ\_METHOD\_BP\_AGGREGATE}   Read from ADIOS BP file. 
+Only the aggregators will access the file(s) to serve all reading requests. They gather the scheduled reads from all reader processes, optimize the read operations and then distribute the requested data to all readers. Specify the number of aggregators by adding \verb+"num_aggregators=<N>"+ to the parameters of this function call.
+
+\item{\bf ADIOS\_READ\_METHOD\_DATASPACES} Read from staging memory using DataSpaces. The writer applications must use the DATASPACES transport method when writing. See Section~\ref{section-method-dataspaces} for details on this method.
+
+\item{\bf ADIOS\_READ\_METHOD\_DIMES} Read from the staging memory of another application using DIMES. The writer applications must use the DIMES transport method when writing. See Section~\ref{section-method-dimes} for details on this method.
+
+\item{\bf ADIOS\_READ\_METHOD\_FLEXPATH} Read from the staging memory of another application using FLEXPATH. The writer applications must use the FLEXPATH transport method when writing. See Section~\ref{section-method-flexpath} for details on this method.
 
 \end{itemize}
 
