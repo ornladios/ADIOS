@@ -405,7 +405,7 @@ add a unique prefix to the variable name.  A rank-based prefix is an example.
 
 \begin{lstlisting}[language=C, caption=Example C source]
 char path[1024];
-adios_init ("config.xml");
+adios_init ("config.xml", comm);
 adios_open (&adios_handle, "atoms", filename, "w", comm); 
 sprintf(path, "node_%d_", myrank); 
 adios_set_path(adios_handle, path);
