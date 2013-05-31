@@ -1889,26 +1889,27 @@ typedef struct {
             }
         }
 
-//TODO
-#if 0
-        if(ntimes > 0 && vs->min && (map[adios_statistic_sum] != -1) && (map[adios_statistic_sum_square] != -1))
+        if(nsteps > 0 && vs->min
+           && (map[adios_statistic_sum] != -1) 
+           && (map[adios_statistic_sum_square] != -1)
+          )
         {
             // min, max, summation exists only for arrays
             // Calculate average / timestep
-
-            for(timestep = 0; timestep < ntimes; timestep ++)
+            for(timestep = 0; timestep < nsteps; timestep ++)
             {
                 MALLOC(vs->steps->avgs[timestep], sum_size, "average per timestep")
                 *(vs->steps->avgs[timestep]) = *(sums[timestep]) / cnts[timestep];
 
                 MALLOC(vs->steps->std_devs[timestep], sum_size, "standard deviation per timestep")
-                *(vs->steps->std_devs[timestep]) = sqrt(*(sum_squares[timestep]) / cnts[timestep] - ((*(vs->steps->avgs[timestep]) * (*(vs->steps->avgs[timestep])))));
+                *(vs->steps->std_devs[timestep]) = sqrt(*(sum_squares[timestep]) / cnts[timestep] 
+                             - ((*(vs->steps->avgs[timestep]) * (*(vs->steps->avgs[timestep])))));
 
                 free (sums[timestep]);
                 free (sum_squares[timestep]);
             }
         }
-#endif
+
         // Calculate global average
         if(vs->min && gsum && (map[adios_statistic_sum] != -1) && (map[adios_statistic_sum_square] != -1))
         {

@@ -48,7 +48,7 @@
 
 #define CONTACT_STR_LEN 50
 
-typedef enum { FORMAT, DATA } Flush_type;
+typedef enum { FORMAT=0, DATA, EVGROUP } Flush_type;
 
 /*
  * Contains the offset information for a variable for all writers.
@@ -68,6 +68,7 @@ typedef struct _var {
 } global_var, *global_var_ptr;
 
 typedef struct _evgroup {    
+    int condition;
     int num_vars;
     global_var* vars;
 } evgroup, *evgroup_ptr;
@@ -76,7 +77,7 @@ typedef struct _op_msg
 {
     int process_id;
     char * file_name;
-    int type; //3 = end_of_stream, 2 = ack, 1 = open, 0 = close,
+    int type; //4 = end_of_stream, 3 = init, 2 = ack, 1 = open, 0 = close,
     int step;
     int condition;
 } op_msg, *op_msg_ptr;
@@ -120,6 +121,7 @@ static FMField global_var_field_list[]=
 
 static FMField evgroup_field_list[]=
 {
+    {"condition", "integer", sizeof(int), FMOffset(evgroup_ptr, condition)},
     {"num_vars", "integer", sizeof(int), FMOffset(evgroup_ptr, num_vars)},
     {"vars", "global_var[num_vars]", sizeof(global_var), FMOffset(evgroup_ptr, vars)},
     {NULL, NULL, 0, 0}
