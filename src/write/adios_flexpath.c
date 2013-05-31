@@ -4,24 +4,49 @@
 */
 
 
-#if HAVE_FLEXPATH
-
-// system libraries
-#include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>
 #include <stdlib.h>
-#include <sys/queue.h>
+#include <math.h>
+#include <string.h>
+#include <errno.h>
 
-// evpath libraries
+#include <pthread.h>
+
+// xml parser
+#include <mxml.h>
+
+// add by Kimmy 10/15/2012
+#include <sys/types.h>
+#include <sys/stat.h>
+// end of change
+
+#include "public/adios_mpi.h"
+#include "public/adios_error.h"
+#include "core/adios_transport_hooks.h"
+#include "core/adios_bp_v1.h"
+#include "core/adios_internals.h"
+#include "core/buffer.h"
+#include "core/util.h"
+#include "core/adios_logger.h"
+
+// // system libraries
+// #include <stdio.h>
+// #include <stdlib.h>
+#if HAVE_FLEXPATH==1
+
+// // evpath libraries
 #include <evpath.h>
 #include <gen_thread.h>
 
-// local libraries
-#include "config.h"
-#include "core/adios_internals.h"
-#include "core/adios_transport_hooks.h"
-#include "core/util.h"
-#include "public/adios.h"
+// // local libraries
+// #include "config.h"
+// #include "core/adios_internals.h"
+// #include "core/adios_transport_hooks.h"
+// #include "core/util.h"
+// #include "public/adios.h"
 #include "public/flexpath.h"
+#include <sys/queue.h>
 
 /************************* Structure and Type Definitions ***********************/
 // used for messages in the control queue
@@ -1172,7 +1197,7 @@ extern void adios_flexpath_init(const PairStruct *params, struct adios_method_st
 }
 
 // opens a new adios file for writes
-extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *method, void*comm) 
+extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *method, MPI_Comm comm) 
 { 
     if( fd == NULL || method == NULL) {
         perr("open: Bad input parameters\n");
@@ -1231,11 +1256,8 @@ extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method
     fileData->sentGlobalOffsets = 0;
 
     // mpi setup
-    MPI_Comm * group_comm = (MPI_Comm*)malloc(sizeof(MPI_Comm));
-    adios_var_to_comm(fd->group->group_comm,
-    	fd->group->adios_host_language_fortran, comm, group_comm);
-    fileData->mpiComm = (MPI_Comm*)group_comm;
-    //fileData->mpiComm = comm;
+
+    MPI_Comm_dup(comm, fileData->mpiComm);
     MPI_Comm_rank(*(fileData->mpiComm), &fileData->rank);
     MPI_Comm_size(*(fileData->mpiComm), &fileData->size);
     char *recv_buff = NULL;
