@@ -1077,9 +1077,9 @@ add_subdirectory(src)
 get_property(_LANGUAGES_ GLOBAL PROPERTY ENABLED_LANGUAGES)
 message(STATUS "${_LANGUAGES_}")
 
-message("ADIOSLIB_CPPFLAGS is ${ADIOSLIB_CPPFLAGS}")
-message("ADIOSLIB_CFLAGS is ${ADIOSLIB_CFLAGS}")
-message("ADIOSLIB_LDADD is ${ADIOSLIB_LDADD}")
+#message("ADIOSLIB_CPPFLAGS is ${ADIOSLIB_CPPFLAGS}")
+#message("ADIOSLIB_CFLAGS is ${ADIOSLIB_CFLAGS}")
+#message("ADIOSLIB_LDADD is ${ADIOSLIB_LDADD}")
 #####################start processing adios_config.flags.in #####################
 set(ADIOS_DIR "${CMAKE_INSTALL_PREFIX}")
 
