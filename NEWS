@@ -1,4 +1,4 @@
-1.5.0 Release May 2013
+1.5.0 Release June 2013
     - Changes to Write API: 
       - adios_init() and adios_init_noxml() has MPI_Comm argument
       - adios_open() has MPI_comm argument instead of void * argument
@@ -10,9 +10,14 @@
       - DIMES
       - FLEXPATH
     - CMAKE build files (besides Automake files)
-    - New write method ADIOS_CHUNK for spatial-temporal aggregation of 
+    - New write method VAR_MERGE for spatial-temporal aggregation of 
       small per-process-output into larger chunks. It improves both
       write and read performance for such applications. 
+    - fix: segfault in adios_inq_var_blockinfo()
+    - fix: endianness independence (
+    - fix: in adios_inq_var_stat() for getting statistics (avg, std.dev)
+    - fix: backward compatibility in reading old BP files containing 
+           scalars over time (a 1D array)
 
 1.4.1 Release Dec 2012
     - aggregated file reader method (from 1.3.1): 

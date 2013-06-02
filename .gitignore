@@ -26,6 +26,7 @@ Makefile
 # ADIOS generated files
 config.h
 adios_config.flags
+libtool
 
 # http://www.gnu.org/software/autoconf
 

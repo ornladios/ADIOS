@@ -7,6 +7,9 @@ add_executable(scalars_write scalars_write.c)
 target_link_libraries(scalars_write adios ${ADIOSLIB_LDADD})
 
 add_executable(scalars_read scalars_read.c)
-target_link_libraries(scalars_read adios ${ADIOSLIB_LDADD})
+target_link_libraries(scalars_read adiosread ${ADIOSREADLIB_LDADD})
+
+add_executable(scalars_write_step scalars_write.c)
+target_link_libraries(scalars_write_step adios ${ADIOSLIB_LDADD})
 
 #install(FILES scalars.xml gwrite_scalars.ch gread_scalars.ch job.pbs DESTINATION ${PROJECT_BINARY_DIR}/examples/C/scalars)
