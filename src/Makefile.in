@@ -205,11 +205,11 @@ am__libadios_a_SOURCES_DIST = core/adios.c core/common_adios.c \
 	core/adios_logger.c core/util.c read/read_bp.c \
 	read/read_bp_staged.c read/read_bp_staged1.c write/adios_mpi.c \
 	write/adios_mpi_lustre.c write/adios_mpi_amr.c \
-	write/adios_posix.c write/adios_posix1.c write/adios_chunk.c \
-	write/adios_dataspaces.c read/read_dataspaces.c \
-	write/adios_dimes.c read/read_dimes.c write/adios_datatap.c \
-	read/read_datatap.c write/adios_phdf5.c write/adios_nc4.c \
-	write/adios_flexpath.c read/read_flexpath.c \
+	write/adios_posix.c write/adios_posix1.c \
+	write/adios_var_merge.c write/adios_dataspaces.c \
+	read/read_dataspaces.c write/adios_dimes.c read/read_dimes.c \
+	write/adios_datatap.c read/read_datatap.c write/adios_phdf5.c \
+	write/adios_nc4.c write/adios_flexpath.c read/read_flexpath.c \
 	nssi/adios_nssi_config.c write/adios_nssi.c \
 	nssi/adios_nssi_filter.c read/read_nssi.c \
 	write/adios_mpi_stagger.c write/adios_mpi_aggregate.c \
@@ -265,7 +265,7 @@ am__libadios_a_SOURCES_DIST = core/adios.c core/common_adios.c \
 @BUILD_WRITE_TRUE@	libadios_a-adios_mpi_amr.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_posix.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_posix1.$(OBJEXT) \
-@BUILD_WRITE_TRUE@	libadios_a-adios_chunk.$(OBJEXT) \
+@BUILD_WRITE_TRUE@	libadios_a-adios_var_merge.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	$(am__objects_1) $(am__objects_2) \
 @BUILD_WRITE_TRUE@	$(am__objects_3) $(am__objects_4) \
 @BUILD_WRITE_TRUE@	$(am__objects_5) $(am__objects_6) \
@@ -361,13 +361,14 @@ am__libadiosf_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	read/read_flexpath.c nssi/adios_nssi_config.c \
 	write/adios_nssi.c nssi/adios_nssi_filter.c read/read_nssi.c \
 	write/adios_mpi.c write/adios_mpi_lustre.c \
-	write/adios_mpi_amr.c write/adios_chunk.c write/adios_phdf5.c \
-	write/adios_nc4.c write/adios_mpi_stagger.c \
-	write/adios_mpi_aggregate.c write/adios_provenance.c \
-	write/adios_mpi_cio.c write/adios_mpi_stripe.c \
-	write/adios_mpi_amr1.c write/adios_adaptive.c \
-	core/adiosf_read.c core/adiosf_defs_mod.f90 \
-	core/adiosf_write_mod.f90 core/adiosf_read_mod.f90
+	write/adios_mpi_amr.c write/adios_var_merge.c \
+	write/adios_phdf5.c write/adios_nc4.c \
+	write/adios_mpi_stagger.c write/adios_mpi_aggregate.c \
+	write/adios_provenance.c write/adios_mpi_cio.c \
+	write/adios_mpi_stripe.c write/adios_mpi_amr1.c \
+	write/adios_adaptive.c core/adiosf_read.c \
+	core/adiosf_defs_mod.f90 core/adiosf_write_mod.f90 \
+	core/adiosf_read_mod.f90
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_12 = libadiosf_a-adios_dataspaces.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@	libadiosf_a-read_dataspaces.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__objects_13 = libadiosf_a-adios_dimes.$(OBJEXT) \
@@ -420,7 +421,7 @@ am__libadiosf_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__objects_21 = libadiosf_a-adios_mpi.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_mpi_lustre.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_mpi_amr.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_chunk.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_var_merge.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_18) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_19) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_20)
@@ -587,13 +588,13 @@ am__libadiosf_v1_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	read/read_flexpath.c nssi/adios_nssi_config.c \
 	write/adios_nssi.c nssi/adios_nssi_filter.c read/read_nssi.c \
 	write/adios_mpi.c write/adios_mpi_lustre.c \
-	write/adios_mpi_amr.c write/adios_chunk.c write/adios_phdf5.c \
-	write/adios_nc4.c write/adios_mpi_stagger.c \
-	write/adios_mpi_aggregate.c write/adios_provenance.c \
-	write/adios_mpi_cio.c write/adios_mpi_stripe.c \
-	write/adios_mpi_amr1.c write/adios_adaptive.c \
-	core/adiosf_read_v1.c core/adiosf_defs_mod.f90 \
-	core/adiosf_write_mod.f90
+	write/adios_mpi_amr.c write/adios_var_merge.c \
+	write/adios_phdf5.c write/adios_nc4.c \
+	write/adios_mpi_stagger.c write/adios_mpi_aggregate.c \
+	write/adios_provenance.c write/adios_mpi_cio.c \
+	write/adios_mpi_stripe.c write/adios_mpi_amr1.c \
+	write/adios_adaptive.c core/adiosf_read_v1.c \
+	core/adiosf_defs_mod.f90 core/adiosf_write_mod.f90
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_36 = libadiosf_v1_a-adios_dataspaces.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@	libadiosf_v1_a-read_dataspaces.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__objects_37 = libadiosf_v1_a-adios_dimes.$(OBJEXT) \
@@ -646,7 +647,7 @@ am__libadiosf_v1_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__objects_45 = libadiosf_v1_a-adios_mpi.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-adios_mpi_lustre.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-adios_mpi_amr.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-adios_chunk.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-adios_var_merge.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_42) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_43) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_44)
@@ -1266,7 +1267,7 @@ libadiosreadf_nompi_a_CFLAGS = $(am__append_67)
 @BUILD_WRITE_TRUE@	read/read_bp_staged.c read/read_bp_staged1.c \
 @BUILD_WRITE_TRUE@	write/adios_mpi.c write/adios_mpi_lustre.c \
 @BUILD_WRITE_TRUE@	write/adios_mpi_amr.c write/adios_posix.c \
-@BUILD_WRITE_TRUE@	write/adios_posix1.c write/adios_chunk.c \
+@BUILD_WRITE_TRUE@	write/adios_posix1.c write/adios_var_merge.c \
 @BUILD_WRITE_TRUE@	$(am__append_4) $(am__append_7) \
 @BUILD_WRITE_TRUE@	$(am__append_10) $(am__append_13) \
 @BUILD_WRITE_TRUE@	$(am__append_18) $(am__append_20) \
@@ -1320,7 +1321,7 @@ libadiosreadf_nompi_a_CFLAGS = $(am__append_67)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	write/adios_mpi.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	write/adios_mpi_lustre.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	write/adios_mpi_amr.c \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	write/adios_chunk.c \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	write/adios_var_merge.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_16) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_19) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_28)
@@ -1828,11 +1829,11 @@ libadios_a-adios_posix1.o: write/adios_posix1.c
 libadios_a-adios_posix1.obj: write/adios_posix1.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_posix1.obj `if test -f 'write/adios_posix1.c'; then $(CYGPATH_W) 'write/adios_posix1.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_posix1.c'; fi`
 
-libadios_a-adios_chunk.o: write/adios_chunk.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_chunk.o `test -f 'write/adios_chunk.c' || echo '$(srcdir)/'`write/adios_chunk.c
+libadios_a-adios_var_merge.o: write/adios_var_merge.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_var_merge.o `test -f 'write/adios_var_merge.c' || echo '$(srcdir)/'`write/adios_var_merge.c
 
-libadios_a-adios_chunk.obj: write/adios_chunk.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_chunk.obj `if test -f 'write/adios_chunk.c'; then $(CYGPATH_W) 'write/adios_chunk.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_chunk.c'; fi`
+libadios_a-adios_var_merge.obj: write/adios_var_merge.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_var_merge.obj `if test -f 'write/adios_var_merge.c'; then $(CYGPATH_W) 'write/adios_var_merge.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_var_merge.c'; fi`
 
 libadios_a-adios_dataspaces.o: write/adios_dataspaces.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_dataspaces.o `test -f 'write/adios_dataspaces.c' || echo '$(srcdir)/'`write/adios_dataspaces.c
@@ -2464,11 +2465,11 @@ libadiosf_a-adios_mpi_amr.o: write/adios_mpi_amr.c
 libadiosf_a-adios_mpi_amr.obj: write/adios_mpi_amr.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_mpi_amr.obj `if test -f 'write/adios_mpi_amr.c'; then $(CYGPATH_W) 'write/adios_mpi_amr.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_mpi_amr.c'; fi`
 
-libadiosf_a-adios_chunk.o: write/adios_chunk.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_chunk.o `test -f 'write/adios_chunk.c' || echo '$(srcdir)/'`write/adios_chunk.c
+libadiosf_a-adios_var_merge.o: write/adios_var_merge.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_var_merge.o `test -f 'write/adios_var_merge.c' || echo '$(srcdir)/'`write/adios_var_merge.c
 
-libadiosf_a-adios_chunk.obj: write/adios_chunk.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_chunk.obj `if test -f 'write/adios_chunk.c'; then $(CYGPATH_W) 'write/adios_chunk.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_chunk.c'; fi`
+libadiosf_a-adios_var_merge.obj: write/adios_var_merge.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_var_merge.obj `if test -f 'write/adios_var_merge.c'; then $(CYGPATH_W) 'write/adios_var_merge.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_var_merge.c'; fi`
 
 libadiosf_a-adios_phdf5.o: write/adios_phdf5.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_phdf5.o `test -f 'write/adios_phdf5.c' || echo '$(srcdir)/'`write/adios_phdf5.c
@@ -3208,11 +3209,11 @@ libadiosf_v1_a-adios_mpi_amr.o: write/adios_mpi_amr.c
 libadiosf_v1_a-adios_mpi_amr.obj: write/adios_mpi_amr.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_mpi_amr.obj `if test -f 'write/adios_mpi_amr.c'; then $(CYGPATH_W) 'write/adios_mpi_amr.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_mpi_amr.c'; fi`
 
-libadiosf_v1_a-adios_chunk.o: write/adios_chunk.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_chunk.o `test -f 'write/adios_chunk.c' || echo '$(srcdir)/'`write/adios_chunk.c
+libadiosf_v1_a-adios_var_merge.o: write/adios_var_merge.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_var_merge.o `test -f 'write/adios_var_merge.c' || echo '$(srcdir)/'`write/adios_var_merge.c
 
-libadiosf_v1_a-adios_chunk.obj: write/adios_chunk.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_chunk.obj `if test -f 'write/adios_chunk.c'; then $(CYGPATH_W) 'write/adios_chunk.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_chunk.c'; fi`
+libadiosf_v1_a-adios_var_merge.obj: write/adios_var_merge.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_var_merge.obj `if test -f 'write/adios_var_merge.c'; then $(CYGPATH_W) 'write/adios_var_merge.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_var_merge.c'; fi`
 
 libadiosf_v1_a-adios_phdf5.o: write/adios_phdf5.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_phdf5.o `test -f 'write/adios_phdf5.c' || echo '$(srcdir)/'`write/adios_phdf5.c
