@@ -64,6 +64,8 @@ program coupling
     implicit none
     include 'mpif.h'
     integer :: key, color
+    real*8 :: t1,t2,io_time
+
 
     call MPI_Init (ierr)
     call MPI_Barrier(MPI_COMM_WORLD, ierr)
@@ -105,12 +107,18 @@ program coupling
         call exit(1)
     endif
 
+    t1=0;
+    t2=0;
     call MPI_Barrier (group_comm, ierr)
     wts = 1  ! start reading from writer's 1st step
     do while (ierr==0)
+        call MPI_Barrier (group_comm, ierr)
+        t1=MPI_Wtime();
         call readArrays()
+        call MPI_Barrier (group_comm, ierr)
+        t2=t2+(MPI_Wtime()-t1);
         call adios_release_step(inh, ierr)
-        call printArrays()
+!        call printArrays()
         call advanceArrays()
         call MPI_Barrier (group_comm, ierr)
         call adios_advance_step(inh, 0, 10.0, ierr)
@@ -122,6 +130,11 @@ program coupling
         wts = wts+1
     enddo
     call adios_read_close (inh, ierr)
+
+!    call mpi_allreduce(t2, io_time, 1, MPI_INTEGER, MPI_MAX,group_comm, ierr)
+    if(rank==0) then
+        print '("Total read time = ", d12.2)', t2 
+    endif
 
     ! Terminate
     call MPI_Barrier (group_comm, ierr)

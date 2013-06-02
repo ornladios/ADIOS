@@ -207,6 +207,64 @@ and sets the proper aggregation parameters. Also note that in previous versions
 of ADIOS (before 1.4), the MPI\_AGGR method was refered to as the MPI\_AMR
 method. 
 
+
+\subsection{VAR\_MERGE}
+\label{section-method-varmerge}
+The VAR\_MREGE method is designed to extends the capability of current ADIOS
+methods to address the I/O challenges for applications
+that write out small variables at scale. During data output, 
+VAR\_MERGE merges the small variable blocks from intensive chunking into
+larger data chunks with their spatial localities are reserved. The benefits
+are: 1) less contention at storage side during data
+output; 2) frequent read and seek operations can be avoided during reading.
+An example is given in Figure~\ref{fig:sar}. 
+
+
+\begin{figure}[htbp]
+\begin{center}
+\includegraphics[width=290pt, height=185pt]{figures/mpi-method-serialized-opens.png}
+\caption{Spatial Aggregation to merge small data blocks into large data
+    chunks}
+\label{fig:sar}
+\end{center}
+\end{figure}
+
+
+The following XML snippet shows how to use VAR\_MERGE method in ADIOS.
+There are two key parameters used in this method.
+
+\begin{lstlisting}[language=XML]
+<method group="test" method="VAR_MERGE"> chunk_size=2097152, io_method=MPI_AGGR, io_parameters=num_aggregators=24;num_ost=672
+</method>
+\end{lstlisting}
+
+\begin{itemize}
+\item \textbf{chunk\_size} specifies the chunk size after merging. If
+merging current data chunk leads to a chunk size that is larger than this
+value, merging will not be performed. The default value is 2MB without  
+specification in XML.  
+
+\item \textbf{io\_method} the underlying I/O method for data output.  
+VAR\_MERGE can work with any existing ADIOS transport method. 
+
+\item \textbf{io\_parameters} the parameters required for using the io\_method 
+\end{itemize}
+
+For example, if you want to merge data chunks into 4MB chunks and use
+MPI\_LUSTRE method to write out data, your XML looks like:  
+
+\begin{lstlisting}[language=XML]
+<method group="test" method="VAR_MERGE"> chunk_size=4194304,
+    io_method=MPI_LUSTRE, io_parameters=stripe_count=128,stripe_size=4194304
+</method>
+\end{lstlisting}
+
+Here we specified the data to be placed on 128 storage targes, and the stripe
+size is 4MB.
+Note that current VAR\_MERGE method only supports 1D, 2D and 3D variables.
+The maximum level of aggregation is 2 due to the consideration of
+merging overhead.  
+
 \subsection{Dataspaces}
 \label{section-method-dataspaces}
 

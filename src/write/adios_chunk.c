@@ -243,23 +243,6 @@ static uint8_t count_dimensions (struct adios_dimension_struct * dimensions)
     return count;
 }       
 
-#if 0
-static uint8_t check_boundary(int rank, int step)
-{
-    int offx, offy, offz;
-
-    offx=rank%npx;
-    offy=rank/npx%npy;
-    offz=rank/(npx*npy);
-        
-    //it is an aggregator
-    if(offx%step==0 && offy%step ==0 && offz%step ==0) 
-        return 1;
-    else 
-        return 0;
-}
-#endif
-
 
 //prepare the number of processes on each dimension
 static int cal_layout(int *procs, int rank, int nprocs, int ndims, MPI_Comm comm, uint64_t *ldims, uint64_t *gdims, uint64_t *offsets) 
@@ -830,7 +813,56 @@ static void init_layout_flag(struct adios_MPI_data_struct *md)
         md->layout[i]=-1;
 }
 
-void adios_chunk_init (const PairStruct * parameters, 
+void init_output_parameters(PairStruct *params)
+{
+    int len;
+    //char *temp_string, *p_size;
+
+    PairStruct *p = params;
+
+    while (p) {
+        if (!strcasecmp (p->name, "chunk_size")) {
+            errno = 0;
+            aggr_chunksize = strtol(p->value, NULL, 10);
+            if (aggr_chunksize > 0 && !errno) {
+                log_debug ("Chunk size set to %llu for VAR_MERGE method\n", aggr_chunksize);
+            } else {
+                log_error ("Invalid 'chunk_size' parameter given to the VAR_MERGE method"
+                           "method: '%s'\n", p->value);
+                aggr_chunksize=1048576*2;
+            }
+        } else if (!strcasecmp (p->name, "io_method")) {
+            errno = 0;
+            memset(io_method, 16, 0x00);
+            strcpy(io_method, p->value);
+            if (!errno) {
+                log_debug ("io_method set to %s for VAR_MERGE method\n", io_method);
+            } else {
+                log_error ("Invalid 'io_method' parameter given to the VAR_MERGE method: '%s'\n", p->value);
+                memset(io_method, 16, 0x00);
+                strcpy(io_method, "MPI");
+            }
+        } else if (!strcasecmp (p->name, "io_parameters")) {
+            errno = 0;
+            memset(io_parameters, 256, 0x00);
+            strcpy(io_parameters, p->value);
+            if (!errno) {
+                log_debug ("io_parameters set to %s for VAR_MERGE method\n", io_parameters);
+            } else {
+                log_error ("Invalid 'io_parameters' parameter given to the VAR_MERGE"
+                            "method: '%s'\n", p->value);
+                memset(io_parameters, 256, 0x00);
+            }
+        } else {
+            log_error ("Parameter name %s is not recognized by the VAR_MERGE "
+                        "method\n", p->name);
+        }
+        p = p->next;
+    }
+}
+
+
+void adios_var_merge_init(const PairStruct * parameters, 
                      struct adios_method_struct * method)
 {
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
@@ -840,6 +872,7 @@ void adios_chunk_init (const PairStruct * parameters,
     md = (struct adios_MPI_data_struct *) method->method_data;
 
     init_layout_flag(md);
+    init_output_parameters(parameters);
 }
 
 
@@ -929,72 +962,6 @@ static void adios_var_to_comm (const char * comm_name
      }
 }
 
-void init_output_parameters(const char *parameters)
-{
-    int len;
-    char *temp_string, *p_size;
-
-    // parsing XML to get the number of timesteps 
-    temp_string = (char *) malloc (strlen(parameters) + 1);
-
-    strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
-  
-    //set the aggregated chunk size
-    strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
-    if (p_size = strstr (temp_string, "chunk_size"))
-    {
-        char * p = strchr (p_size, '=');
-        char * q = strtok (p, ",");
-        if (!q) 
-            aggr_chunksize= atoi(q+1);
-        else
-            aggr_chunksize= atoi(p+1); 
-    }
-    else
-    {
-        aggr_chunksize=1048576*4;
-    }
-
-    strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
-    if (p_size = strstr (temp_string, "io_method"))
-    {
-        char * p = strchr (p_size, '=');
-        char * q = strtok (p, ",");
-        memset(io_method, 16, 0x00);
-        if (!q) 
-            strcpy(io_method, q+1);
-        else
-            strcpy(io_method, p+1);
-    }
-    else
-    {
-        //without specifing in the XML, no time buffering
-        memset(io_method, 16, 0x00);
-        strcpy(io_method, "MPI"); 
-    }
-
-    strcpy(temp_string, parameters);
-    trim_spaces (temp_string);
-    if (p_size = strstr (temp_string, "parameters"))
-    {
-        char * p = strchr (p_size, '=');
-        char * q = strtok (p, "<");
-        memset(io_parameters, 256, 0x00);
-        if (!q) 
-            strcpy(io_parameters, q+1);
-        else
-            strcpy(io_parameters, p+1);
-    }
-    else
-    {
-        //without specifing in the XML, no time buffering
-        memset(io_parameters, 256, 0x00);
-    }
-}
-
 static void init_method_parameters()
 {
     varcnt=0;
@@ -1004,7 +971,7 @@ static void init_method_parameters()
     memset(my_aggregator, 0x00, 6*sizeof(int));
 }
 
-int adios_chunk_open (struct adios_file_struct * fd
+int adios_var_merge_open (struct adios_file_struct * fd
                    ,struct adios_method_struct * method, MPI_Comm comm)
 {
 
@@ -1018,6 +985,7 @@ int adios_chunk_open (struct adios_file_struct * fd
             adios_error (err_invalid_file_mode, "CHUNK method: Read mode is not supported.\n");
             return -1;
         }
+        case adios_mode_append:
         case adios_mode_write:
         {
             md->group_comm = comm;
@@ -1029,7 +997,7 @@ int adios_chunk_open (struct adios_file_struct * fd
             fd->group->process_id = md->rank;
 
             //need to get the parameters form XML
-             init_output_parameters(method->parameters);
+             //init_output_parameters(method->parameters);
              init_method_parameters();
              break;
         }
@@ -1043,7 +1011,7 @@ int adios_chunk_open (struct adios_file_struct * fd
     return 1;
 }
 
-enum ADIOS_FLAG adios_chunk_should_buffer (struct adios_file_struct * fd
+enum ADIOS_FLAG adios_var_merge_should_buffer (struct adios_file_struct * fd
                                          ,struct adios_method_struct * method)
 {
 
@@ -1057,6 +1025,7 @@ enum ADIOS_FLAG adios_chunk_should_buffer (struct adios_file_struct * fd
             break;
         }
  
+        case adios_mode_append:
         case adios_mode_write:
         { 
             define_iogroup(method->group->name); 
@@ -1105,7 +1074,7 @@ static struct aggr_var_struct *allocate_vars(int varcnt, struct aggr_var_struct 
      return vars;
 }
 
-void adios_chunk_write (struct adios_file_struct * fd
+void adios_var_merge_write (struct adios_file_struct * fd
                      ,struct adios_var_struct * v
                      ,void * data
                      ,struct adios_method_struct * method
@@ -1298,7 +1267,7 @@ void adios_chunk_write (struct adios_file_struct * fd
     }
 }
 
-void adios_chunk_read (struct adios_file_struct * fd
+void adios_var_merge_read (struct adios_file_struct * fd
                     ,struct adios_var_struct * v, void * buffer
                     ,uint64_t buffer_size
                     ,struct adios_method_struct * method
@@ -1326,7 +1295,7 @@ void release_resource()
     }
 }
 
-void adios_chunk_close (struct adios_file_struct * fd
+void adios_var_merge_close (struct adios_file_struct * fd
                      ,struct adios_method_struct * method
                      )
 {
@@ -1340,6 +1309,7 @@ void adios_chunk_close (struct adios_file_struct * fd
             adios_error (err_invalid_file_mode, "CHUNK method: Read mode is not supported.\n");
             break;
         }
+        case adios_mode_append:
         case adios_mode_write:
         {
             //write out the varaibles
@@ -1360,7 +1330,7 @@ void adios_chunk_close (struct adios_file_struct * fd
     return;
 }
 
-void adios_chunk_get_write_buffer (struct adios_file_struct * fd
+void adios_var_merge_get_write_buffer (struct adios_file_struct * fd
                                 ,struct adios_var_struct * v
                                 ,uint64_t * size
                                 ,void ** buffer
@@ -1369,19 +1339,19 @@ void adios_chunk_get_write_buffer (struct adios_file_struct * fd
 {
 }
 
-void adios_chunk_finalize (int mype, struct adios_method_struct * method)
+void adios_var_merge_finalize (int mype, struct adios_method_struct * method)
 {
 }
 
-void adios_chunk_end_iteration (struct adios_method_struct * method)
+void adios_var_merge_end_iteration (struct adios_method_struct * method)
 {
 }
 
-void adios_chunk_start_calculation (struct adios_method_struct * method)
+void adios_var_merge_start_calculation (struct adios_method_struct * method)
 {
 }
 
-void adios_chunk_stop_calculation (struct adios_method_struct * method)
+void adios_var_merge_stop_calculation (struct adios_method_struct * method)
 {
 }
 
