@@ -20,6 +20,7 @@
 #include "core/adios_internals_mxml.h"
 #include "core/adios_logger.h"
 #include "core/common_adios.h"
+#include "core/util.h"
 
 #include "mpi.h"
 
@@ -813,12 +814,10 @@ static void init_layout_flag(struct adios_MPI_data_struct *md)
         md->layout[i]=-1;
 }
 
-void init_output_parameters(PairStruct *params)
+void init_output_parameters(const PairStruct *params)
 {
     int len;
-    //char *temp_string, *p_size;
-
-    PairStruct *p = params;
+    const PairStruct *p = params;
 
     while (p) {
         if (!strcasecmp (p->name, "chunk_size")) {
