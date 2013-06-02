@@ -832,25 +832,25 @@ void init_output_parameters(const PairStruct *params)
             }
         } else if (!strcasecmp (p->name, "io_method")) {
             errno = 0;
-            memset(io_method, 16, 0x00);
+            memset(io_method, 0x00, 16);
             strcpy(io_method, p->value);
             if (!errno) {
                 log_debug ("io_method set to %s for VAR_MERGE method\n", io_method);
             } else {
                 log_error ("Invalid 'io_method' parameter given to the VAR_MERGE method: '%s'\n", p->value);
-                memset(io_method, 16, 0x00);
+                memset(io_method, 0x00, 16);
                 strcpy(io_method, "MPI");
             }
         } else if (!strcasecmp (p->name, "io_parameters")) {
             errno = 0;
-            memset(io_parameters, 256, 0x00);
+            memset(io_parameters, 0x00, 256);
             strcpy(io_parameters, p->value);
             if (!errno) {
                 log_debug ("io_parameters set to %s for VAR_MERGE method\n", io_parameters);
             } else {
                 log_error ("Invalid 'io_parameters' parameter given to the VAR_MERGE"
                             "method: '%s'\n", p->value);
-                memset(io_parameters, 256, 0x00);
+                memset(io_parameters, 0x00, 256);
             }
         } else {
             log_error ("Parameter name %s is not recognized by the VAR_MERGE "
