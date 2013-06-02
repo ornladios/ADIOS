@@ -129,8 +129,6 @@ endif()
 #endif()
 
 if(DEFINED ENV{PAR_HDF5_DIR} AND DEFINED ENV{PAR_HDF5_CLIB})
-if("$ENV{PAR_HDF5_DIR}" STREQUAL "")
-endif()
   set(PHDF5 ON CACHE BOOL "")
   set(PHDF5_DIR $ENV{PAR_HDF5_DIR} CACHE FILEPATH "path to parallel hdf5 dir")
   set(PHDF5_FLAGS "-I${PHDF5_DIR}/include")
