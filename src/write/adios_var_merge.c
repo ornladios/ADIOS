@@ -981,7 +981,7 @@ int adios_var_merge_open (struct adios_file_struct * fd
     {
         case adios_mode_read:
         {
-            adios_error (err_invalid_file_mode, "CHUNK method: Read mode is not supported.\n");
+            adios_error (err_invalid_file_mode, "VAR_MERGE method: Read mode is not supported.\n");
             return -1;
         }
         case adios_mode_append:
@@ -1002,7 +1002,7 @@ int adios_var_merge_open (struct adios_file_struct * fd
         }
         default:
         {
-            adios_error (err_invalid_file_mode, "CHUNK method: Unknown file mode requested: %d\n", fd->mode);
+            adios_error (err_invalid_file_mode, "VAR_MERGE method: Unknown file mode requested: %d\n", fd->mode);
             return adios_flag_no;
         }
     }
@@ -1020,7 +1020,7 @@ enum ADIOS_FLAG adios_var_merge_should_buffer (struct adios_file_struct * fd
     {
         case adios_mode_read:
         {
-            adios_error (err_invalid_file_mode, "MPI_CHUNK method: Read mode is not supported.\n");
+            adios_error (err_invalid_file_mode, "VAR_MERGE method: Read mode is not supported.\n");
             break;
         }
  
@@ -1032,7 +1032,7 @@ enum ADIOS_FLAG adios_var_merge_should_buffer (struct adios_file_struct * fd
         }
         default:
         {
-            adios_error (err_invalid_file_mode, "MPI_CHUNK method: Unknown file mode requested: %d\n", fd->mode);
+            adios_error (err_invalid_file_mode, "VAR_MERGE method: Unknown file mode requested: %d\n", fd->mode);
             return adios_flag_no;
         }
     }
@@ -1305,7 +1305,7 @@ void adios_var_merge_close (struct adios_file_struct * fd
     {
         case adios_mode_read:
         {
-            adios_error (err_invalid_file_mode, "CHUNK method: Read mode is not supported.\n");
+            adios_error (err_invalid_file_mode, "VAR_MERGE method: Read mode is not supported.\n");
             break;
         }
         case adios_mode_append:
@@ -1321,7 +1321,7 @@ void adios_var_merge_close (struct adios_file_struct * fd
         }
         default:
         {
-            adios_error (err_invalid_file_mode, "CHUNK method: Unknown file mode requested: %d\n", fd->mode);
+            adios_error (err_invalid_file_mode, "VAR_MERGE method: Unknown file mode requested: %d\n", fd->mode);
             break;
         }
     }
