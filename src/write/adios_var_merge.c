@@ -37,7 +37,7 @@ static int grpflag=0; //if there's data left in buffer
 static char *grp_name;
 static int64_t grp;
 static int aggr_level; // currently fixed to 2 level of aggregation the most
-static int aggr_chunksize; //default aggregated chunk size = 2MB
+static int aggr_chunksize=1048576*2; //default aggregated chunk size = 2MB
 static int aggr_cnt[3][2]; //number of clients at each level for 1D, 2D and 3D variables
 static int my_aggregator[3][2]; //2 level of aggregators for three dimensions 
 static int layout;
@@ -1160,6 +1160,7 @@ void adios_var_merge_write (struct adios_file_struct * fd
         }
         else {
 
+
         //determine if we need to apply spatial aggregation
         //first find out the process layout and domain decomposition
         if(ndims<=3 && varsize<=aggr_chunksize && md->size>1 && vars->set_aggr==-1) {
@@ -1181,7 +1182,7 @@ void adios_var_merge_write (struct adios_file_struct * fd
 
             if(decomp==0) {
                 //FIXME: need to fix the error message
-                adios_error(err_corrupted_variable, "Wrong decomposition.");
+                adios_error(err_corrupted_variable, "Unrecognizable decomposition.");
                 exit(-1);
             }
             else { 
@@ -1214,6 +1215,8 @@ void adios_var_merge_write (struct adios_file_struct * fd
                 }
             }
         }
+        else 
+            log_error("Current VAR_MERGE only supports up to 3-D variables with minimum of 2 processes with 1D decomposition. No spatial merging will be performed.\n"); 
                     
         //no spatial aggregation, just copy data
         if(vars->set_aggr!=1) {
