@@ -14,12 +14,12 @@ FFLAGS=-g
 TARGET=pgi
 
 ## Set ADIOS_DIR here or before doing make
-override ADIOS_DIR:=/ccs/home/tianyua/install/adios-1.4.2-sith-pgi
+override ADIOS_DIR:=/ccs/proj/e2e/pnorbert/ADIOS/sith.pgi
 override ADIOS_INC:=` ${ADIOS_DIR}/bin/adios_config -c -f`
 override ADIOS_FLIB:=`${ADIOS_DIR}/bin/adios_config -l -f`
 override GPP = ${ADIOS_DIR}/bin/gpp.py
 
-default: coupling_writer_2D coupling_reader_2D coupling_writer_3D coupling_reader_3D
+default: coupling_writer_2D coupling_reader_2D 
 all: default
 
 coupling_writer_2D.o : coupling_writer_2D.F90 gwrite_writer2D.fh
@@ -41,26 +41,9 @@ gwrite_reader2D.fh: coupling_reader_2D.xml
 	${GPP} coupling_reader_2D.xml
 
 
-coupling_writer_3D.o : coupling_writer_3D.F90 gwrite_writer3D.fh
-	${FC} -g -c ${ADIOS_INC} coupling_writer_3D.F90  $<
-
-coupling_writer_3D:  coupling_writer_3D.o gwrite_writer3D.fh
-	${FC} -g -o coupling_writer_3D coupling_writer_3D.o ${ADIOS_FLIB} 
-
-gwrite_writer3D.fh: coupling_writer_3D.xml
-	${GPP} coupling_writer_3D.xml
-
-coupling_reader_3D.o : coupling_reader_3D.F90 gwrite_reader3D.fh
-	${FC} -g -c ${ADIOS_INC} coupling_reader_3D.F90  $<
-
-coupling_reader_3D:  coupling_reader_3D.o gwrite_reader3D.fh
-	${FC} -g -o coupling_reader_3D coupling_reader_3D.o ${ADIOS_FLIB} 
-
-gwrite_reader3D.fh: coupling_reader_3D.xml
-	${GPP} coupling_reader_3D.xml
 clean:
 	rm -f *.o *.mod *.fh core.* 
-	rm -f coupling_writer_2D coupling_reader_2D coupling_writer_3D coupling_reader_3D
+	rm -f coupling_writer_2D coupling_reader_2D 
         
 distclean: clean
 	rm -f log.* dataspaces.conf conf srv.lck *.bp

@@ -832,25 +832,25 @@ void init_output_parameters(const PairStruct *params)
             }
         } else if (!strcasecmp (p->name, "io_method")) {
             errno = 0;
-            memset(io_method, 16, 0x00);
+            memset(io_method, 0x00, 16);
             strcpy(io_method, p->value);
             if (!errno) {
                 log_debug ("io_method set to %s for VAR_MERGE method\n", io_method);
             } else {
                 log_error ("Invalid 'io_method' parameter given to the VAR_MERGE method: '%s'\n", p->value);
-                memset(io_method, 16, 0x00);
+                memset(io_method, 0x00, 16);
                 strcpy(io_method, "MPI");
             }
         } else if (!strcasecmp (p->name, "io_parameters")) {
             errno = 0;
-            memset(io_parameters, 256, 0x00);
+            memset(io_parameters, 0x00, 256);
             strcpy(io_parameters, p->value);
             if (!errno) {
                 log_debug ("io_parameters set to %s for VAR_MERGE method\n", io_parameters);
             } else {
                 log_error ("Invalid 'io_parameters' parameter given to the VAR_MERGE"
                             "method: '%s'\n", p->value);
-                memset(io_parameters, 256, 0x00);
+                memset(io_parameters, 0x00, 256);
             }
         } else {
             log_error ("Parameter name %s is not recognized by the VAR_MERGE "
@@ -981,7 +981,7 @@ int adios_var_merge_open (struct adios_file_struct * fd
     {
         case adios_mode_read:
         {
-            adios_error (err_invalid_file_mode, "CHUNK method: Read mode is not supported.\n");
+            adios_error (err_invalid_file_mode, "VAR_MERGE method: Read mode is not supported.\n");
             return -1;
         }
         case adios_mode_append:
@@ -1002,7 +1002,7 @@ int adios_var_merge_open (struct adios_file_struct * fd
         }
         default:
         {
-            adios_error (err_invalid_file_mode, "CHUNK method: Unknown file mode requested: %d\n", fd->mode);
+            adios_error (err_invalid_file_mode, "VAR_MERGE method: Unknown file mode requested: %d\n", fd->mode);
             return adios_flag_no;
         }
     }
@@ -1020,7 +1020,7 @@ enum ADIOS_FLAG adios_var_merge_should_buffer (struct adios_file_struct * fd
     {
         case adios_mode_read:
         {
-            adios_error (err_invalid_file_mode, "MPI_CHUNK method: Read mode is not supported.\n");
+            adios_error (err_invalid_file_mode, "VAR_MERGE method: Read mode is not supported.\n");
             break;
         }
  
@@ -1032,7 +1032,7 @@ enum ADIOS_FLAG adios_var_merge_should_buffer (struct adios_file_struct * fd
         }
         default:
         {
-            adios_error (err_invalid_file_mode, "MPI_CHUNK method: Unknown file mode requested: %d\n", fd->mode);
+            adios_error (err_invalid_file_mode, "VAR_MERGE method: Unknown file mode requested: %d\n", fd->mode);
             return adios_flag_no;
         }
     }
@@ -1305,7 +1305,7 @@ void adios_var_merge_close (struct adios_file_struct * fd
     {
         case adios_mode_read:
         {
-            adios_error (err_invalid_file_mode, "CHUNK method: Read mode is not supported.\n");
+            adios_error (err_invalid_file_mode, "VAR_MERGE method: Read mode is not supported.\n");
             break;
         }
         case adios_mode_append:
@@ -1321,7 +1321,7 @@ void adios_var_merge_close (struct adios_file_struct * fd
         }
         default:
         {
-            adios_error (err_invalid_file_mode, "CHUNK method: Unknown file mode requested: %d\n", fd->mode);
+            adios_error (err_invalid_file_mode, "VAR_MERGE method: Unknown file mode requested: %d\n", fd->mode);
             break;
         }
     }
