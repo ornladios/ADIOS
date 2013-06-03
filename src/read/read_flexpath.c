@@ -40,8 +40,7 @@
 #include "public/adios_read_v2.h"
 #include "core/adios_read_hooks.h"
 #include "public/adios_error.h"
-#include "core/globals.h"
-#include "public/flexpath.h"
+#include "core/flexpath.h"
 
 // conditional libraries
 #ifdef DMALLOC

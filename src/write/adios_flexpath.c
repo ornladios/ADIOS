@@ -45,7 +45,7 @@
 // #include "core/adios_transport_hooks.h"
 // #include "core/util.h"
 // #include "public/adios.h"
-#include "public/flexpath.h"
+#include "core/flexpath.h"
 #include <sys/queue.h>
 
 /************************* Structure and Type Definitions ***********************/
