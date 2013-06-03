@@ -11,6 +11,8 @@ http://www.olcf.ornl.gov/center-projects/adios
 
 \section{Quick Installation}
 
+\subsection{Quick installation with Automake}
+
 To get started with ADIOS, the following steps can be used to configure, build, 
 test, and install the ADIOS library, header files, and support programs. 
 
@@ -25,7 +27,7 @@ Note: There is a runconf batch script in the trunk set up for our machines. Stud
 it can help you setting up the appropriate environment variables and configure 
 options for your system.
 
-\subsection{Linux cluster}
+\subsubsection{Linux cluster}
 
 The following is a snapshot of the batch scripts on Sith, an Intel-based Infiniband 
 cluster running Linux:
@@ -55,7 +57,7 @@ login nodes. The -fPIC compiler flag is needed only if you build the
 Matlab language bindings later.
 
 
-\subsection{Cray XT5}
+\subsubsection{Cray XT5}
 
 To install ADIOS on a Cray XT5, the right compiler commands and configure flags 
 need to be set. The required commands for ADIOS installation on Jaguar are as follows:
@@ -70,6 +72,52 @@ export FC=ftn
             --with-netcdf=<location of netCDF installation>
 \end{lstlisting}
 
+\subsection{Quick installation with CMake}
+
+CMake is an alternative way used to configure, build, test, and install the ADIOS library, 
+header files, and support programs.
+
+\begin{lstlisting}
+cd trunk/
+source cmake_init
+mkdir build
+cd build
+cmake .. 
+make
+\end{lstlisting}
+
+Note: There is a cmake\_init batch script in the trunk set up for our machines. Studying
+it can help you setting up the appropriate environment variables and configure options for your system.
+
+The nice and highly recommended feature of CMake is the ability of out-of-source build. 
+More specifically, all generated temporary files, binary executables and new files are within
+the "build" folder, a completely separate directory, which will make source tree without cluttering up. To do this,
+users first create a build directory with "mkdir build" in your top-level folder 
+and then switch to the build directory and run cmake for ADIOS there.
+
+If crossing-compiling is required for a certain compiler, for example the intel compiler on Titan, 
+there is another cmake variable CMAKE\_TOOLCHAIN\_FILE need to be initialized. This changes the cmake
+command from
+
+\begin{lstlisting}
+cmake ..
+\end{lstlisting}
+to
+\begin{lstlisting}
+cmake -DCMAKE_TOOLCHAIN_FILE=../toolchain_intrepid.cmake ..
+\end{lstlisting}
+
+To install ADIOS on a Cray XT5, the right compiler commands and configure flags
+need to be set. The required commands for ADIOS installation on Jaguar are as follows:
+
+\begin{lstlisting}
+export CC=cc
+export CXX=CC
+export FC=ftn
+export MXML_DIR=<location of mini-xml installation>
+export SEQ_HDF5_DIR=<location of HDF5 installation>
+export SEQ_NC_DIR=<location of NETCDF installation>
+\end{lstlisting}
 
 \section{ADIOS Dependencies}
 
@@ -101,20 +149,41 @@ without Python.
 
 The Fortran~90 interface and example codes are compiled only if there is an f90 
 compiler available. By default it is required but you can disable it with the option 
-\verb+--disable-fortran+.
+\verb+--disable-fortran+ (Automake) or \verb+export BUILD_FORTRAN=OFF+ (CMake).
 
 \subsection{Serial NetCDF-3 (optional)}
 
 The bp2ncd converter utility to NetCDF format is built only if NetCDF~is available. 
  Currently ADIOS uses the NetCDF-3 library. Use the option \verb+--with-netcdf=<path>+ 
-or ensure that the \verb+NETCDF_DIR+ environment variable is set before configuring ADIOS.
+or ensure that the \verb+NETCDF_DIR+ environment variable is set before configuring ADIOS with Automake.
+While with CMake, the environment variables are set by the folloing:
+\begin{lstlisting}
+module load netcdf/4.2.0
+export SEQ_NC_DIR=$NETCDF_DIR
+module unload netcdf
+\end{lstlisting}
+or
+\begin{lstlisting}
+export SEQ_NC_DIR=<path>
+\end{lstlisting}
 
 \subsection{Serial HDF5 (optional)}
 
 The bp2h5 converter utility to HDF5 format is built only if a HDF5 library is available. 
 Currently ADIOS uses the 1.6 version of the HDF5 API but it can be built and used 
 with the 1.8.x version of the HDF5 library too. Use the option \verb+--with-hdf5=<path>+ 
-when configuring ADIOS.
+when configuring ADIOS with Automake or 
+
+\begin{lstlisting}
+module load hdf5/1.8.8
+export SEQ_HDF5_DIR=$HDF5_DIR
+module unload hdf5/1.8.8
+\end{lstlisting}
+or
+\begin{lstlisting}
+export SEQ_HDF5_DIR=<path>
+\end{lstlisting}
+\noindent with CMake.
 
 \subsection{Lustreapi (optional)}
 
@@ -140,16 +209,22 @@ on various systems.
 \vspace*{6pt}
 \noindent {\bf Infiniband. } 
 If you have an Infininband network with \verb+ibverbs+ and \verb+rdmacm+ libraries installed, you can configure ADIOS to use it for staging methods with the option
-\verb+--with-infiniband=DIR+  to define the path to the Infiniband libraries. 
+\verb+--with-infiniband=DIR+  in Automake to define the path to the Infiniband libraries. In CMake, library ibverbs is detected by examining if function \verb+ibv_alloc_pd+ exists auomatically without extra effort by the user.
 
 \vspace*{6pt}
 \noindent {\bf Cray Gemini network. }
-On newer Cray machines (XK6 and XE6) with the Gemini network, the \verb+PMI+ and \verb+uGNI+ libraries are used by the staging methods. Configure ADIOS with the options
+On newer Cray machines (XK6 and XE6) with the Gemini network, the \verb+PMI+ and \verb+uGNI+ libraries are used by the staging methods. Configure ADIOS with the options in Automake
 
 \begin{lstlisting}
 --with-cray-pmi=/opt/cray/pmi/default \
 --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
 --with-cray-ugni-libdir=/opt/cray/ugni/default/lib
+\end{lstlisting}
+
+\noindent or in CMake
+\begin{lstlisting}
+export CRAY_UGNI_DIR=<Point to the UGNI installation>
+export CRAY_PMI_DIR=<Point to the PMI installation>
 \end{lstlisting}
 
 \vspace*{6pt}
@@ -163,13 +238,18 @@ The DataSpaces model provides a separate server running on separate compute node
 It can also be used for interactive in-situ visualization, where the visualization can be multiple steps behind the application. 
 DataSpaces can be downloaded from \url{http://www.dataspaces.org}
 
-\noindent Build the DataSpaces method with the option:
+\noindent Build the DataSpaces method with the option in Automake:
 
 \begin{lstlisting}
 --with-dataspaces=DIR  Build the DATASPACES transport method. Point to the
                       DATASPACES installation.
 --with-dataspaces-incdir=<location of dataspaces includes>
 --with-dataspaces-libdir=<location of dataspaces library>
+\end{lstlisting}
+
+\noindent or in CMake
+\begin{lstlisting}
+export DATASPACES_DIR=<Point to the DATASPACES installation>
 \end{lstlisting}
 
 \subsubsection{DIMES staging method}
@@ -211,13 +291,23 @@ Additionally, in the ADIOS XML file, we allow for the user to specify a \verb+Qu
 
 \subsection{Read-only installation}
 
-If you just want the read API to be compiled for reading BP files, use the \verb+--disable-write+ option.
+If you just want the read API to be compiled for reading BP files, use the \verb+--disable-write+ option with Automake and \verb+export BUILD_WRITE=OFF+ with CMake.
 
 \subsection{PHDF5 (optional)}
 
 The transport method writing files in the Parallel HDF5 format is built only if 
 a parallel version of the HDF5 library is available. You need to use the 
-option \verb+--with-phdf5=<path>+ to build this transport method. 
+option \verb+--with-phdf5=<path>+ with Automake to build this transport method. 
+While in CMake, you can build this method with
+\begin{lstlisting}
+module load hdf5-parallel/1.8.8
+export PAR_HDF5_DIR=$HDF5_DIR
+module unload hdf5-parallel/1.8.8
+\end{lstlisting}
+or
+\begin{lstlisting}
+export PAR_HDF5_DIR=<path>
+\end{lstlisting}
 
 Note: Do not expect better performance with ADIOS/PHDF5 than with PHDF5 itself. ADIOS does not write differently to a HDF5 formatted file, it simply uses PHDF5 function calls to write out data. Also good to know, that the method in ADIOS uses the collective function calls, that requires that every process participates in the writing of each variable. 
 
@@ -242,9 +332,23 @@ is based on the parallel HDF5 library. You need to use the option
 \verb+--with-nc4par=<path>+ to build this transport method. 
 You also need to provide the parallel HDF5 library. 
 
+While with CMake, the environment variables are set by the folloing:
+\begin{lstlisting}
+module load netcdf/4.2.0
+export PAR_NC_DIR=$NETCDF_DIR
+module unload netcdf
+\end{lstlisting}
+or
+\begin{lstlisting}
+export PAR_NC_DIR=<path>
+\end{lstlisting}
+
+\subsection{Serial HDF5 (optional)}
 Note: Do not expect better performance with ADIOS/NC4 than with NC4 itself. ADIOS does not write differently to a HDF5 formatted file, it simply uses NC4 function calls to write out data. Also good to know, that this method requires that every process participates in the writing of each variable. 
 
 \section{Full Installation}
+
+\subsection{Full Installation with Automake}
 
 The following list is the complete set of options that can be used with 
 configure to build ADIOS and its support utilities:
@@ -318,6 +422,32 @@ MPICC     MPI C compiler command
 MPIFC     MPI Fortran compiler command
 \end{lstlisting}
 
+\subsection{Full Installation with CMake}
+
+The following list is the complete set of options that can be used with configure to build ADIOS and its support utilities:
+
+\begin{lstlisting}
+export MXML_DIR=<location of mxml installation>
+export SEQ_NC_DIR=<location of sequential netcdf installation>
+export PAR_NC_DIR=<location of parallel netcdf installation>
+export SEQ_HDF5_DIR=<location of sequential hdf5 installation>
+export PAR_HDF5_DIR=<location of parallel hdf5 installation>
+export CRAY_UGNI_DIR=<location of CRAY UGNI installation>
+export CRAY_PMI_DIR=<location of CRAY_PMI installation>
+export DATASPACES_DIR=<location of DataSpaces installation>
+\end{lstlisting}
+
+Some influential environment variables are lists below:
+\begin{lstlisting}
+CC        C compiler command
+CFLAGS    C compiler flags
+LDFLAGS   linker flags, e.g. -L<lib dir> if you have libraries 
+          in a nonstandard directory <lib dir>
+CXX       C++ compiler command
+CXXFLAGS  C++ compiler flags
+FC        Fortran compiler command
+FCFLAGS   Fortran compiler flags
+\end{lstlisting}
 
 \section{Compiling applications using ADIOS}
 \label{section:installation_compiling_apps}
@@ -386,7 +516,7 @@ for the sequential build.
 
 \section{Language bindings}
 
-ADIOS comes with various bindings to languages, that are not built with the automake tools discussed above. After building ADIOS, these bindings have to be manually built.
+ADIOS comes with various bindings to languages, that are not built with the Automake tools discussed above. After building ADIOS, these bindings have to be manually built.
 
 \subsection{Support for Matlab}
 \label{section-install-matlab}
