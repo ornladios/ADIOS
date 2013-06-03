@@ -217,13 +217,13 @@ VAR\_MERGE merges the small variable blocks from intensive chunking into
 larger data chunks with their spatial localities are reserved. The benefits
 are: 1) less contention at storage side during data
 output; 2) frequent read and seek operations can be avoided during reading.
-An example is given in Figure~\ref{fig:sar}. 
+An example of variable merging is given in Figure~\ref{fig:sar}. 
 
 
 \begin{figure}[htbp]
 \begin{center}
 \includegraphics[width=0.5\columnwidth]{figures/sar.pdf}
-\caption{Spatial Aggregation of a 2D Variable From 4 proceeses to Process 0}
+\caption{Spatial Aggregation of a 4x4 2D Variable From 4 proceeses to Process 0}
 \label{fig:sar}
 \end{center}
 \end{figure}
@@ -233,7 +233,8 @@ The following XML snippet shows how to use VAR\_MERGE method in ADIOS.
 There are two key parameters used in this method.
 
 \begin{lstlisting}[language=XML]
-<method group="test" method="VAR_MERGE"> chunk_size=2097152, io_method=MPI_AGGR, io_parameters=num_aggregators=24;num_ost=672
+<method group="test" method="VAR_MERGE"> chunk_size=2097152; io_method=MPI_AGGR; 
+    io_parameters=num_aggregators=24,num_ost=672
 </method>
 \end{lstlisting}
 
@@ -244,9 +245,11 @@ value, merging will not be performed. The default value is 2MB without
 specification in XML.  
 
 \item \textbf{io\_method} the underlying I/O method for data output.  
-VAR\_MERGE can work with any existing ADIOS transport method. 
+The ADIOS transport method that VAR\_MERGE can work with include POSIX, MPI,
+    MPI\_LUSTRE and MPI\_AGGR. 
 
-\item \textbf{io\_parameters} the parameters required for using the io\_method 
+\item \textbf{io\_parameters} the parameters required for using the
+io\_method. Note that the paramters needs to be separated by ",".  
 \end{itemize}
 
 For example, if you want to merge data chunks into 4MB chunks and use
