@@ -944,6 +944,26 @@ elif [ `hostname | cut -c 1-4` == "qliu" ]; then
         #--with-hdf5=/home/thkorde/local \
         #--with-netcdf=/home/thkorde/local
 
+elif [ `hostname | cut -c 1-7` == "esimmon" ]; then
+
+    #######################
+    # Esimmon Virtual Box #
+    #######################
+    echo "Configure on ESIMMON VirtualBox ."
+    export BUILD_WRITE=ON
+    export BUILD_FORTRAN=ON
+    export skel_timing=ON
+    export CC=mpicc
+    export CXX=mpicxx
+    export FC=mpif90
+    export INSTALL_PREFIX="/opt/adios/1.5.0"
+    export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
+    export CFLAGS="-g -fPIC"
+    export MXML_DIR=/opt/mxml
+    export SEQ_HDF5_DIR=/opt/hdf5
+    export PAR_HDF5_DIR=/opt/phdf5
+    export SEQ_NC_DIR=/opt/netcdf3
+    export PAR_NC_DIR=/opt/nc4par
 
 else
     echo "Could not determine what machine is this."
