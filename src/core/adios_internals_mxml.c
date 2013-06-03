@@ -646,30 +646,78 @@ static int parseVarHyperSlab ( const char * hyperslab,
 
     while (c)
     {
-        if (counter == 0){
-            gethslabfrom0 = 0;
-            gethslabfrom0 = strdup(c);
-        }else if (counter == 1){
-            gethslabfrom1 = 0;
-            gethslabfrom1 = strdup(c);
-        }else if (counter == 2){
-            gethslabfrom2 = 0;
-            gethslabfrom2 = strdup(c);
+        struct adios_var_struct * var = 0;
+        if (adios_int_is_var (c))
+        {
+            var = adios_find_var_by_name (new_group->vars, c
+                                           ,new_group->all_unique_var_names
+                                           );
+            if (!var)
+            {
+                log_warn ("config.xml: invalid variable %s\n"
+                                 "for time-steps of var: %s\n"
+                                 ,c
+                                 ,name
+                        );
+                free (d1);
+
+                return 0;
+
+            }else{
+                // Found variable ==> create a dims attribute for it.
+                if (counter == 0){
+                    gethslabfrom0 = 0;
+                    gethslabfrom0 = strdup(c);
+                }else if (counter == 1){
+                    gethslabfrom1 = 0;
+                    gethslabfrom1 = strdup(c);
+                }else if (counter == 2){
+                    gethslabfrom2 = 0;
+                    gethslabfrom2 = strdup(c);
+                }
+                counter++;
+            }
         }
-        counter++;
+        else
+        {
+            if (counter == 0){
+                gethslabfrom0 = 0;
+                gethslabfrom0 = strdup(c);
+            }else if (counter == 1){
+                gethslabfrom1 = 0;
+                gethslabfrom1 = strdup(c);
+            }else if (counter == 2){
+                gethslabfrom2 = 0;
+                gethslabfrom2 = strdup(c);
+            }
+            counter++;
+        }
+
         c = strtok (NULL, ",");
     }
     // TODO: these should be ints only, no decimal for start, stride count, not any number should work
     if (counter == 3){
         hslab_start_att_val = strdup(gethslabfrom0);
         conca_var_att_nam(&hslab_start_att_nam, name, "start");
-        adios_common_define_attribute (p_new_group,hslab_start_att_nam,"/",adios_string,hslab_start_att_val,"");
+        // if this is string
+        if (adios_int_is_var (hslab_start_att_val))
+            adios_common_define_attribute (p_new_group,hslab_start_att_nam,"/",adios_string,hslab_start_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,hslab_start_att_nam,"/",adios_double,hslab_start_att_val,"");
         hslab_stride_att_val = strdup(gethslabfrom1);
         conca_var_att_nam(&hslab_stride_att_nam, name, "stride");
-        adios_common_define_attribute (p_new_group,hslab_stride_att_nam,"/",adios_string,hslab_stride_att_val,"");
+        // if this is string
+        if (adios_int_is_var (hslab_stride_att_val))
+            adios_common_define_attribute (p_new_group,hslab_stride_att_nam,"/",adios_string,hslab_stride_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,hslab_stride_att_nam,"/",adios_double,hslab_stride_att_val,"");
         hslab_count_att_val = strdup(gethslabfrom2);
         conca_var_att_nam(&hslab_count_att_nam, name, "count");
-        adios_common_define_attribute (p_new_group,hslab_count_att_nam,"/",adios_string,hslab_count_att_val,"");
+        // if this is string
+        if (adios_int_is_var (hslab_count_att_val))
+            adios_common_define_attribute (p_new_group,hslab_count_att_nam,"/",adios_string,hslab_count_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,hslab_count_att_nam,"/",adios_double,hslab_count_att_val,"");
          free(hslab_start_att_val);
          free(hslab_stride_att_val);
          free(hslab_count_att_val);
@@ -679,10 +727,18 @@ static int parseVarHyperSlab ( const char * hyperslab,
     }else if (counter == 2) {
         hslab_min_att_val = strdup(gethslabfrom0);
         conca_var_att_nam(&hslab_min_att_nam, name, "min");
-        adios_common_define_attribute (p_new_group,hslab_min_att_nam,"/",adios_string,hslab_min_att_val,"");
+        // if this is string
+        if (adios_int_is_var (hslab_min_att_val))
+            adios_common_define_attribute (p_new_group,hslab_min_att_nam,"/",adios_string,hslab_min_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,hslab_min_att_nam,"/",adios_double,hslab_min_att_val,"");
         hslab_max_att_val = strdup(gethslabfrom1);
         conca_var_att_nam(&hslab_max_att_nam, name, "max");
-        adios_common_define_attribute (p_new_group,hslab_max_att_nam,"/",adios_string,hslab_max_att_val,"");
+        // if this is string
+        if (adios_int_is_var (hslab_max_att_val))
+            adios_common_define_attribute (p_new_group,hslab_max_att_nam,"/",adios_string,hslab_max_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,hslab_max_att_nam,"/",adios_double,hslab_max_att_val,"");
          free(hslab_min_att_val);
          free(hslab_max_att_val);
          free(gethslabfrom1);
@@ -6102,6 +6158,8 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
             {
                 t1 = adios_unknown;
             }
+// fix the bgp bugs
+//            if (!adios_common_define_attribute (*(int64_t *) &new_group, name
             if (!adios_common_define_attribute (ptr_new_group, name
                                                ,path, t1, value, var
                                                )
@@ -6109,7 +6167,8 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
             {
                 return 0;
             }
-        } else if (!strcasecmp (n->value.element.name, "mesh"))
+        } else
+        if (!strcasecmp (n->value.element.name, "mesh"))
         {
             const char * type;
             const char * time_varying;
@@ -6117,7 +6176,6 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
             const char * time_scale;
             const char * time_format;
             const char * mesh_file;
-            const char * mesh_group;
             int t_varying;
             const char * name;
 
@@ -6157,12 +6215,10 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
             char * meshtype = 0;
             char * meshtime = 0;
             char * meshfile = 0;
-            char * meshgroup = 0;
             char * meshtimeformat = 0;
             conca_mesh_att_nam(&meshtype, name, "type");
             conca_mesh_att_nam(&meshtime, name, "time-varying");
             conca_mesh_att_nam(&meshfile, name, "mesh-file");
-            conca_mesh_att_nam(&meshgroup, name, "mesh-group");
             conca_mesh_att_nam(&meshtimeformat, name, "time-series-format");
 
             // Define attribute for the type and time varying characteristics
@@ -6174,100 +6230,73 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
             // Only parse mesh if the variables are in this file
             // otherwise simply point the mesh file
             mesh_file = mxmlElementGetAttr(n, "file");
-            mesh_group = mxmlElementGetAttr(n, "group");
-            if (!strcasecmp (type, "uniform"))
-            {
-                if (mesh_file){
-                    adios_common_define_attribute (ptr_new_group,meshfile,"/",adios_string,mesh_file,"");
-                    if (mesh_group)
-                        adios_common_define_attribute (ptr_new_group,meshgroup,"/",adios_string,mesh_group,"");
-                    parseMeshUniform1 (n, ptr_new_group, name);
-                }else{
-                    if (mesh_group){
-                        adios_common_define_attribute (ptr_new_group,meshgroup,"/",adios_string,mesh_group,"");
-                        parseMeshUniform1 (n, ptr_new_group, name);
-                    }else{
-                        struct adios_mesh_struct * mes;
-                        mes = adios_common_define_mesh(ptr_new_group, name,
-                                t_varying, ADIOS_MESH_UNIFORM);
-                        if (mes) {
-                            parseMeshUniform0 (n, new_group, &mes->uniform, name);
-                        }
-                    }
-                }
-            } else if (!strcasecmp (type, "structured"))
-            {
-                if (mesh_file){
-                    adios_common_define_attribute (ptr_new_group,meshfile,"/",adios_string,mesh_file,"");
-                    if (mesh_group)
-                        adios_common_define_attribute (ptr_new_group,meshgroup,"/",adios_string,mesh_group,"");
-                    parseMeshStructured1(n, new_group, name);
-                }else{
-                    if (mesh_group){
-                        adios_common_define_attribute (ptr_new_group,meshgroup,"/",adios_string,mesh_group,"");
-                        parseMeshUniform1 (n, ptr_new_group, name);
-                    }else{
-                        struct adios_mesh_struct * mes;
-                        mes = adios_common_define_mesh(ptr_new_group, name,
-                                t_varying, ADIOS_MESH_STRUCTURED);
-                        if (mes) {
-                            parseMeshStructured0 (n, new_group, &mes->structured, name);
-                        }
-                    }
-                }
-            } else if (!strcasecmp (type, "rectilinear"))
-            {
-                if (mesh_file){
-                    adios_common_define_attribute (ptr_new_group,meshfile,"/",adios_string,mesh_file,"");
-                    if (mesh_group)
-                        adios_common_define_attribute (ptr_new_group,meshgroup,"/",adios_string,mesh_group,"");
-                    parseMeshRectilinear1 (n, new_group, name);
-                }else{
-                    if (mesh_group){
-                        adios_common_define_attribute (ptr_new_group,meshgroup,"/",adios_string,mesh_group,"");
-                        parseMeshUniform1 (n, ptr_new_group, name);
-                    }else{
-                        struct adios_mesh_struct * mes;
-                        mes = adios_common_define_mesh(ptr_new_group, name,
-                                t_varying, ADIOS_MESH_RECTILINEAR);
-                        if (mes) {
-                            parseMeshRectilinear0 (n, new_group, &mes->rectilinear, name);
-                        }
-                    }
-                }
-            } else if (!strcasecmp (type, "unstructured"))
-            {
-                if (mesh_file){
-                    adios_common_define_attribute (ptr_new_group,meshfile,"/",adios_string,mesh_file,"");
-                    if (mesh_group)
-                        adios_common_define_attribute (ptr_new_group,meshgroup,"/",adios_string,mesh_group,"");
-                    parseMeshUnstructured1 (n, new_group, name);
-                }else{
-                    if (mesh_group){
-                        printf("there is a mesh group\n");
-                        adios_common_define_attribute (ptr_new_group,meshgroup,"/",adios_string,mesh_group,"");
-                        parseMeshUniform1 (n, ptr_new_group, name);
-                    }else{
-                        struct adios_mesh_struct * mes;
-                        mes = adios_common_define_mesh(ptr_new_group, name,
-                                t_varying, ADIOS_MESH_UNSTRUCTURED);
-                        if (mes) {
-                            parseMeshUnstructured0 (n, new_group, &mes->unstructured, name);
-                        }
-                    }
-                }
-            } else
-            {
-                log_warn ("config.xml: invalid mesh type: '%s'\n"
-                        ,type
-                        );
-                return 0;
-            }
+//            if (mesh_file){
+//                adios_common_define_attribute (ptr_new_group,meshfile,"/",adios_string,mesh_file,"");
+//            }else{
+			if (!strcasecmp (type, "uniform"))
+			{
+				if (mesh_file){
+					adios_common_define_attribute (ptr_new_group,meshfile,"/",adios_string,mesh_file,"");
+					parseMeshUniform1 (n, ptr_new_group, name);
+				}else{
+					struct adios_mesh_struct * mes;
+					mes = adios_common_define_mesh(ptr_new_group, name,
+							t_varying, ADIOS_MESH_UNIFORM);
+					if (mes) {
+						parseMeshUniform0 (n, new_group, &mes->uniform, name);
+					}
+				}
+			} else if (!strcasecmp (type, "structured"))
+			{
+				if (mesh_file){
+					adios_common_define_attribute (ptr_new_group,meshfile,"/",adios_string,mesh_file,"");
+					parseMeshStructured1(n, new_group, name);
+				}else{
+					struct adios_mesh_struct * mes;
+					mes = adios_common_define_mesh(ptr_new_group, name,
+							t_varying, ADIOS_MESH_STRUCTURED);
+					if (mes) {
+						parseMeshStructured0 (n, new_group, &mes->structured, name);
+					}
+				}
+			} else if (!strcasecmp (type, "rectilinear"))
+			{
+				if (mesh_file){
+					adios_common_define_attribute (ptr_new_group,meshfile,"/",adios_string,mesh_file,"");
+					parseMeshRectilinear1 (n, new_group, name);
+				}else{
+					struct adios_mesh_struct * mes;
+					mes = adios_common_define_mesh(ptr_new_group, name,
+							t_varying, ADIOS_MESH_RECTILINEAR);
+					if (mes) {
+					   parseMeshRectilinear0 (n, new_group, &mes->rectilinear, name);
+					}
+				}
+			} else if (!strcasecmp (type, "unstructured"))
+			{
+				if (mesh_file){
+					adios_common_define_attribute (ptr_new_group,meshfile,"/",adios_string,mesh_file,"");
+					parseMeshUnstructured1 (n, new_group, name);
+				}else{
+					struct adios_mesh_struct * mes;
+					mes = adios_common_define_mesh(ptr_new_group, name,
+							t_varying, ADIOS_MESH_UNSTRUCTURED);
+					if (mes) {
+					   parseMeshUnstructured0 (n, new_group, &mes->unstructured, name);
+					}
+				}
+			} else
+			{
+				log_warn ("config.xml: invalid mesh type: '%s'\n"
+						,type
+						);
+				return 0;
+			}
             free (meshtype);
             free (meshtime);
             free (meshfile);
-            free (meshgroup);
-        } else if (!strcasecmp (n->value.element.name, "gwrite"))
+        } else
+        if (!strcasecmp (n->value.element.name, "gwrite"))
         {
             const char * src = 0;
 
@@ -6276,16 +6305,16 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                 mxml_attr_t * attr = &n->value.element.attrs [i];
 
                 GET_ATTR("src",attr,src,"var")
-                    log_warn ("config.xml: unknown attribute '%s' on %s "
-                            "(ignored)\n"
-                            ,attr->name
-                            ,"gwrite"
-                            );
+                log_warn ("config.xml: unknown attribute '%s' on %s "
+                                 "(ignored)\n"
+                        ,attr->name
+                        ,"gwrite"
+                        );
             }
             if (!src)
             {
                 log_warn ("config.xml: gwrite element requires "
-                        "src\n");
+                                 "src\n");
 
                 return 0;
             }
@@ -6305,6 +6334,24 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
             }
         }
     }
+
+    // now that we have declared the whole group, validate that the
+    // paths specified in attributes refer to real things or give
+    // a warning
+    /* // This is not required in ADIOS so why do this warnings?
+    struct adios_attribute_struct * a = new_group->attributes;
+    while (a)
+    {
+        if (!validatePath (new_group->vars, a->path))
+        {
+             log_warn ("config.xml warning: attribute element '%s' "
+                       "has path '%s' that does not match "
+                       "any var path or name.\n",a->name, a->path);
+        }
+
+        a = a->next;
+    }
+    */
 
     return 1;
 }
