@@ -54,7 +54,11 @@ else
     dnl We don't overwrite CRAY_UGNI_LIBDIR.
     if test -z "${CRAY_UGNI_LIBDIR}"; then
         if test -n "${CRAY_UGNI_DIR}"; then
-            CRAY_UGNI_LIBDIR="${CRAY_UGNI_DIR}/lib";
+            if test -d "${CRAY_UGNI_DIR}/lib64"; then
+                CRAY_UGNI_LIBDIR="${CRAY_UGNI_DIR}/lib64";
+            else
+                CRAY_UGNI_LIBDIR="${CRAY_UGNI_DIR}/lib";
+            fi
         fi
     fi
 
