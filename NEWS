@@ -10,7 +10,7 @@
       - DIMES
       - FLEXPATH
     - CMAKE build files (besides Automake files)
-    - New write method VAR_MERGE for spatial-temporal aggregation of 
+    - New write method VAR_MERGE for spatial aggregation of 
       small per-process-output into larger chunks. It improves both
       write and read performance for such applications. 
     - fix: segfault in adios_inq_var_blockinfo()
