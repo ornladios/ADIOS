@@ -113,7 +113,7 @@ typedef struct _flexpath_fm_structure {
 // information used per each flexpath file
 typedef struct _flexpath_write_file_data {
     // MPI stuff
-    MPI_Comm * mpiComm;
+    MPI_Comm mpiComm;
     int rank;
     int size;
 
@@ -1256,10 +1256,10 @@ extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method
     fileData->sentGlobalOffsets = 0;
 
     // mpi setup
+    MPI_Comm_dup(comm, &fileData->mpiComm);
 
-    MPI_Comm_dup(comm, fileData->mpiComm);
-    MPI_Comm_rank(*(fileData->mpiComm), &fileData->rank);
-    MPI_Comm_size(*(fileData->mpiComm), &fileData->size);
+    MPI_Comm_rank((fileData->mpiComm), &fileData->rank);
+    MPI_Comm_size((fileData->mpiComm), &fileData->size);
     char *recv_buff = NULL;
     char sendmsg[CONTACT_STR_LEN];
     if(fileData->rank == 0) {
@@ -1272,7 +1272,7 @@ extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method
     fileData->sinkStone = EValloc_stone(flexpathWriteData.cm);
     sprintf(&sendmsg[0], "%d:%s", fileData->multiStone, contact);
     MPI_Gather(sendmsg, CONTACT_STR_LEN, MPI_CHAR, recv_buff, 
-        CONTACT_STR_LEN, MPI_CHAR, 0, *(fileData->mpiComm));
+        CONTACT_STR_LEN, MPI_CHAR, 0, (fileData->mpiComm));
 
     // rank 0 prints contact info to file
     if(fileData->rank == 0) {
@@ -1315,7 +1315,7 @@ extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method
     fileData->numBridges = numBridges;
     fclose(reader_info);
 
-    MPI_Barrier(*(fileData->mpiComm));
+    MPI_Barrier((fileData->mpiComm));
     
     // cleanup of reader files (writer is done with it).
     if(fileData->rank == 0){
@@ -1578,11 +1578,11 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 
 		MPI_Allgather(local_offsets, num_local_offsets, MPI_INT, 
 			      all_offsets, num_local_offsets, MPI_INT,
-			      *fileData->mpiComm);
+			      fileData->mpiComm);
 
 		MPI_Allgather(local_dimensions, num_local_offsets, MPI_INT, 
 			      all_local_dims, num_local_offsets, MPI_INT,
-			      *fileData->mpiComm);
+			      fileData->mpiComm);
 
 		
 		num_gbl_vars++;
