@@ -311,7 +311,6 @@ static int op_msg_handler(CManager cm, void *vevent, void *client_data, attr_lis
         //ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
     }
     if(msg->type == 4){	
-	fprintf(stderr, "reader %d got end_of_stream with condition: %d\n", fp->rank, msg->condition);
 	adios_errno = err_end_of_stream;
 	CMCondition_signal(fp_read_data->fp_cm, msg->condition);
     }       
@@ -328,7 +327,6 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
     evgroup * msg = (evgroup*)vevent;
     ADIOS_FILE *adiosfile = client_data;
     flexpath_file_data * fp = (flexpath_file_data*)adiosfile->fh;
-    fprintf(stderr, "reader rank: %d got evgroup msg\n", fp->rank);
     fp->gp = msg;
     fp->valid_evgroup = 1;
     global_var * vars = msg->vars;
@@ -626,12 +624,10 @@ adios_read_flexpath_init_method (MPI_Comm comm, PairStruct* params)
     gen_pthread_init();
     fp_read_data->fp_cm = CManager_create();
     if(transport == NULL){
-	fprintf(stderr, "reader transport: sockets\n");
 	if(CMlisten(fp_read_data->fp_cm) == 0) {
 	    perr( "error: unable to initialize connection manager.\n");
 	}
     }else{
-	fprintf(stderr, "reader transport: %s\n", transport);
 	listen_list = create_attr_list();
 	add_attr(listen_list, fp_read_data->CM_TRANSPORT, Attr_String, 
 		 (attr_value)strdup(transport));
@@ -873,9 +869,7 @@ void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
 
 int adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_sec) {
     flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
-    fprintf(stderr, "advance_step before barrier: %d\n", fp->rank);
     MPI_Barrier(fp->comm);
-    fprintf(stderr, "advance_step after barrier: %d\n", fp->rank);
     int i=0;
     for(i=0; i<fp->num_bridges; i++) {
         if(fp->bridges[i].created && fp->bridges[i].opened) {
@@ -896,9 +890,7 @@ int adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float time
 	    open.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
 	    fp->bridges[i].opened = 1;
             EVsubmit(fp->bridges[i].op_source, &open, NULL);
-	    fprintf(stderr, "mpi_rank: %d advance_step before condition.\n", fp->rank);
             CMCondition_wait(fp_read_data->fp_cm, open.condition);
-	    fprintf(stderr, "mpi_rank: %d advance_step after condition.\n", fp->rank);
         }
     }
     adiosfile->current_step++;
@@ -1125,7 +1117,6 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
             fp->sendees[fp->num_sendees-1] = writer_index;
         }
         if(!fp->bridges[writer_index].created) {
-            //perr("rank %d building bridge to %d\n", fp_read_data->fp_comm_rank, writer_index);
             build_bridge(&(fp->bridges[writer_index]));
 	}
 	if(!fp->bridges[writer_index].opened){
@@ -1139,12 +1130,10 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
             EVsubmit(fp->bridges[writer_index].op_source, &open_msg, NULL);
             CMCondition_wait(fp_read_data->fp_cm, open_msg.condition);
 	}
-            //perr( "resuming\n");
 	Var_msg var;
 	var.rank = fp->rank;
 	var.var_name = strdup(v->varname);
-	EVsubmit(fp->bridges[writer_index].var_source, &var, NULL);
-    //perr("rank %d sent var msg to %d\n", fp_read_data->fp_comm_rank, writer_index);
+	EVsubmit(fp->bridges[writer_index].var_source, &var, NULL);    
 	break;
     }
     case ADIOS_SELECTION_BOUNDINGBOX:
@@ -1156,11 +1145,8 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
 	    msg.rank = fp->rank;
 	    msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
 	    // maybe check to see if the bridge is create first.
-	    fprintf(stderr, "reader rank: %d before submit\n", fp->rank);
 	    EVsubmit(fp->bridges[fp->writer_coordinator].flush_source, &msg, NULL);
-	    fprintf(stderr, "reader rank: %d before condition\n", fp->rank);
 	    CMCondition_wait(fp_read_data->fp_cm, msg.condition);
-	    fprintf(stderr, "reader rank: %d after condition\n", fp->rank);
 	}
         int j=0;
 	int need_count = 0;

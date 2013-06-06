@@ -488,7 +488,6 @@ static FlexpathAltName *find_alt_name(FlexpathFMStructure *currentFm, char *dimN
 // populates offsets array
 int get_local_offsets(struct adios_var_struct * list, struct adios_group_struct * g, int** offsets, int** dimensions)
 {
-    //perr("\t\t\toffsets for var: %s\n", list->name);	    
     struct adios_dimension_struct * dim_list = list->dimensions;	    
     if(dim_list){		
 	// if this var has a global dimension, then by default, it has local_offset
@@ -558,7 +557,6 @@ char* multiqueue_action = "{\n\
     }\n\
     if(EVcount_flush()>0) {\n\
         flush* c = EVdata_flush(0);\n\
-        printf(\"writer recieved flush msg type: %d from reader %d\\n\", c->type, c->rank);\n\
         if(c->type == 0) {\n\
             if(EVcount_formatMsg()>0) {\n\
                 formatMsg* msg = EVdata_formatMsg(0);\n\
@@ -1677,21 +1675,21 @@ extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method
     // all data has been read by all readers.
     // we can send everyone end_of_stream messages.
     int i;
-    for(i=0; i<fileData->numBridges; i++) {
-	if(fileData->bridges[i].created) {
-	    op_msg* ack = (op_msg*) malloc(sizeof(op_msg));
-	    ack->file_name = strdup(fileData->name);
-	    ack->process_id = fileData->rank;
-	    ack->step = fileData->currentStep;
-	    ack->type = 4;
-	    ack->condition = fileData->bridges[i].condition;
-	    fileData->attrs = set_dst_rank_atom(fileData->attrs, i+1);
-	    fp_write_log("FINALIZE", " sending opfinalize _msg : dst %d step %d type ack\n",
-			 i, fileData->currentStep);
-	    fprintf(stderr, "\t\t\t sending finalize message to %d\n", i);
-	    EVsubmit_general(fileData->opSource, ack, op_free, fileData->attrs);
-	}
-    }
+    /* for(i=0; i<fileData->numBridges; i++) { */
+    /* 	if(fileData->bridges[i].created) { */
+    /* 	    op_msg* ack = (op_msg*) malloc(sizeof(op_msg)); */
+    /* 	    ack->file_name = strdup(fileData->name); */
+    /* 	    ack->process_id = fileData->rank; */
+    /* 	    ack->step = fileData->currentStep; */
+    /* 	    ack->type = 4; */
+    /* 	    ack->condition = fileData->bridges[i].condition; */
+    /* 	    fileData->attrs = set_dst_rank_atom(fileData->attrs, i+1); */
+    /* 	    fp_write_log("FINALIZE", " sending opfinalize _msg : dst %d step %d type ack\n", */
+    /* 			 i, fileData->currentStep); */
+    /* 	    fprintf(stderr, "\t\t\t sending finalize message to %d\n", i); */
+    /* 	    EVsubmit_general(fileData->opSource, ack, op_free, fileData->attrs); */
+    /* 	} */
+    /* } */
 }
 
 // provides unknown functionality
