@@ -113,7 +113,7 @@ typedef struct _flexpath_fm_structure {
 // information used per each flexpath file
 typedef struct _flexpath_write_file_data {
     // MPI stuff
-    MPI_Comm * mpiComm;
+    MPI_Comm mpiComm;
     int rank;
     int size;
 
@@ -488,7 +488,6 @@ static FlexpathAltName *find_alt_name(FlexpathFMStructure *currentFm, char *dimN
 // populates offsets array
 int get_local_offsets(struct adios_var_struct * list, struct adios_group_struct * g, int** offsets, int** dimensions)
 {
-    //perr("\t\t\toffsets for var: %s\n", list->name);	    
     struct adios_dimension_struct * dim_list = list->dimensions;	    
     if(dim_list){		
 	// if this var has a global dimension, then by default, it has local_offset
@@ -558,7 +557,6 @@ char* multiqueue_action = "{\n\
     }\n\
     if(EVcount_flush()>0) {\n\
         flush* c = EVdata_flush(0);\n\
-        printf(\"writer recieved flush msg type: %d from reader %d\\n\", c->type, c->rank);\n\
         if(c->type == 0) {\n\
             if(EVcount_formatMsg()>0) {\n\
                 formatMsg* msg = EVdata_formatMsg(0);\n\
@@ -1256,10 +1254,10 @@ extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method
     fileData->sentGlobalOffsets = 0;
 
     // mpi setup
+    MPI_Comm_dup(comm, &fileData->mpiComm);
 
-    MPI_Comm_dup(comm, fileData->mpiComm);
-    MPI_Comm_rank(*(fileData->mpiComm), &fileData->rank);
-    MPI_Comm_size(*(fileData->mpiComm), &fileData->size);
+    MPI_Comm_rank((fileData->mpiComm), &fileData->rank);
+    MPI_Comm_size((fileData->mpiComm), &fileData->size);
     char *recv_buff = NULL;
     char sendmsg[CONTACT_STR_LEN];
     if(fileData->rank == 0) {
@@ -1272,7 +1270,7 @@ extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method
     fileData->sinkStone = EValloc_stone(flexpathWriteData.cm);
     sprintf(&sendmsg[0], "%d:%s", fileData->multiStone, contact);
     MPI_Gather(sendmsg, CONTACT_STR_LEN, MPI_CHAR, recv_buff, 
-        CONTACT_STR_LEN, MPI_CHAR, 0, *(fileData->mpiComm));
+        CONTACT_STR_LEN, MPI_CHAR, 0, (fileData->mpiComm));
 
     // rank 0 prints contact info to file
     if(fileData->rank == 0) {
@@ -1315,7 +1313,7 @@ extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method
     fileData->numBridges = numBridges;
     fclose(reader_info);
 
-    MPI_Barrier(*(fileData->mpiComm));
+    MPI_Barrier((fileData->mpiComm));
     
     // cleanup of reader files (writer is done with it).
     if(fileData->rank == 0){
@@ -1578,11 +1576,11 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 
 		MPI_Allgather(local_offsets, num_local_offsets, MPI_INT, 
 			      all_offsets, num_local_offsets, MPI_INT,
-			      *fileData->mpiComm);
+			      fileData->mpiComm);
 
 		MPI_Allgather(local_dimensions, num_local_offsets, MPI_INT, 
 			      all_local_dims, num_local_offsets, MPI_INT,
-			      *fileData->mpiComm);
+			      fileData->mpiComm);
 
 		
 		num_gbl_vars++;
@@ -1677,21 +1675,21 @@ extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method
     // all data has been read by all readers.
     // we can send everyone end_of_stream messages.
     int i;
-    for(i=0; i<fileData->numBridges; i++) {
-	if(fileData->bridges[i].created) {
-	    op_msg* ack = (op_msg*) malloc(sizeof(op_msg));
-	    ack->file_name = strdup(fileData->name);
-	    ack->process_id = fileData->rank;
-	    ack->step = fileData->currentStep;
-	    ack->type = 4;
-	    ack->condition = fileData->bridges[i].condition;
-	    fileData->attrs = set_dst_rank_atom(fileData->attrs, i+1);
-	    fp_write_log("FINALIZE", " sending opfinalize _msg : dst %d step %d type ack\n",
-			 i, fileData->currentStep);
-	    fprintf(stderr, "\t\t\t sending finalize message to %d\n", i);
-	    EVsubmit_general(fileData->opSource, ack, op_free, fileData->attrs);
-	}
-    }
+    /* for(i=0; i<fileData->numBridges; i++) { */
+    /* 	if(fileData->bridges[i].created) { */
+    /* 	    op_msg* ack = (op_msg*) malloc(sizeof(op_msg)); */
+    /* 	    ack->file_name = strdup(fileData->name); */
+    /* 	    ack->process_id = fileData->rank; */
+    /* 	    ack->step = fileData->currentStep; */
+    /* 	    ack->type = 4; */
+    /* 	    ack->condition = fileData->bridges[i].condition; */
+    /* 	    fileData->attrs = set_dst_rank_atom(fileData->attrs, i+1); */
+    /* 	    fp_write_log("FINALIZE", " sending opfinalize _msg : dst %d step %d type ack\n", */
+    /* 			 i, fileData->currentStep); */
+    /* 	    fprintf(stderr, "\t\t\t sending finalize message to %d\n", i); */
+    /* 	    EVsubmit_general(fileData->opSource, ack, op_free, fileData->attrs); */
+    /* 	} */
+    /* } */
 }
 
 // provides unknown functionality
