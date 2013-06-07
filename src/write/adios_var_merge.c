@@ -745,7 +745,7 @@ static void output_vars(struct aggr_var_struct *vars, int varcnt, struct
         adios_MPI_data_struct * md, struct adios_file_struct * fd) 
 {
     int i,j;
-    char file_mode[1];
+    char file_mode[2];
     char fname[256];
     uint64_t adios_size, datasize;
     int iocnt=0;
