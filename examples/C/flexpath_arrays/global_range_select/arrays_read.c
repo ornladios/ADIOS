@@ -72,9 +72,7 @@ int main (int argc, char ** argv)
 	t = (double *) malloc (5*1*sizeof(double));
 	fprintf(stderr, "t %p\n", t);
       
-	/* Read the arrays */
-	fprintf(stderr, "example is calling schedule read\n");
-	
+	/* Read the arrays */	
 	adios_schedule_read (afile, 
 			     &global_range_select, 
 			     "var_2d_array", 
@@ -89,6 +87,7 @@ int main (int argc, char ** argv)
 	    printf(", %6.2f", t[j]);
 	}
 	printf("]\n");
+	adios_release_step(afile);
         adios_advance_step(afile, 0, 30);
 	//MPI_Barrier (comm);
 	//sleep(1);
