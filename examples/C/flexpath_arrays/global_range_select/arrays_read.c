@@ -40,10 +40,10 @@ int main (int argc, char ** argv)
     global_range_select.type=ADIOS_SELECTION_BOUNDINGBOX;
     global_range_select.u.bb.start = malloc(sizeof(int)*2);
     global_range_select.u.bb.count = malloc(sizeof(int)*2);
-    (global_range_select.u.bb.start)[0] = 0;
+    (global_range_select.u.bb.start)[0] = 1;
     (global_range_select.u.bb.count)[0] = 1;
-    (global_range_select.u.bb.start)[1] = 5;
-    (global_range_select.u.bb.count)[1] = 4;
+    (global_range_select.u.bb.start)[1] = 0;
+    (global_range_select.u.bb.count)[1] = 40;
     global_range_select.u.bb.ndim = 2;
     //fprintf(stderr, "app got here\n");
     /* read the size of arrays using local inq_var */
@@ -69,8 +69,11 @@ int main (int argc, char ** argv)
 	printf("\trank=%d: NY=%d\n", rank, NY);
     
 	/* Allocate space for the arrays */
-	t = (double *) malloc (10*sizeof(double));
-	fprintf(stderr, "t %p\n", t);
+	int nelem = 40;
+	int arr_size = sizeof(double) * nelem;
+	t = (double *) malloc (arr_size);
+	memset(t, 0, arr_size);
+	//fprintf(stderr, "t %p\n", t);
       
 	/* Read the arrays */	
 	adios_schedule_read (afile, 
@@ -83,7 +86,7 @@ int main (int argc, char ** argv)
 	//sleep(20);
     
 	printf("rank=%d: t[0,5+x] = [%6.2f", rank, t[0]);
-	for(j=0; j<20; j++) {
+	for(j=0; j<nelem; j++) {
 	    printf(", %6.2f", t[j]);
 	}
 	printf("]\n");
@@ -97,7 +100,7 @@ int main (int argc, char ** argv)
 
     adios_read_finalize_method(ADIOS_READ_METHOD_FLEXPATH);
 
-    MPI_Finalize ();
+    //MPI_Finalize ();
 
     return 0;
 }
