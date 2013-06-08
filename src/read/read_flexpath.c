@@ -557,7 +557,34 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     		//void *aptr8 = (void*)(*((unsigned long*)curr_offset));		
 		void *aptr8 = get_FMPtrField_by_name(f, f->field_name, base_data, 1);
     		//double * temp = (double*)curr_offset;
+		printf("first call to copyoffsets\n");
+		printf("dim: %d\n", 0);
+		printf("ndims: %d\n", disp->ndims);
+		printf("data_size: %d\n", f->field_size);
 
+		printf("disp_start[]: ");
+		int k;
+		for(k=0; k<disp->ndims; k++){
+		    printf("%d ", disp->start[k]);
+		}
+		printf("\n");
+
+		printf("disp_count[]: ");
+		for(k=0; k<disp->ndims; k++){
+		    printf("%d ", disp->count[k]);
+		}
+		printf("\n");
+
+		printf("writer_count[]: ");
+		for(k=0; k<disp->ndims; k++){
+		    printf("%d ", writer_count[k]);
+		}
+		printf("\n");
+		
+		printf("reader_count[]: ");
+		for(k=0; k<disp->ndims; k++){
+		    printf("%d ", (int)reader_count[k]);
+		}
                 copyoffsets(0,
     			    disp->ndims,
     			    f->field_size,

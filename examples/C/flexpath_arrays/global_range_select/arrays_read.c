@@ -38,12 +38,12 @@ int main (int argc, char ** argv)
     ADIOS_SELECTION global_range_select;
     //if(rank == 0){
     global_range_select.type=ADIOS_SELECTION_BOUNDINGBOX;
-    global_range_select.u.bb.start = malloc(sizeof(int));
-    global_range_select.u.bb.count = malloc(sizeof(int));
-    (global_range_select.u.bb.start)[0] = 1;
+    global_range_select.u.bb.start = malloc(sizeof(int)*2);
+    global_range_select.u.bb.count = malloc(sizeof(int)*2);
+    (global_range_select.u.bb.start)[0] = 0;
     (global_range_select.u.bb.count)[0] = 1;
     (global_range_select.u.bb.start)[1] = 5;
-    (global_range_select.u.bb.count)[1] = 5;
+    (global_range_select.u.bb.count)[1] = 4;
     global_range_select.u.bb.ndim = 2;
     //fprintf(stderr, "app got here\n");
     /* read the size of arrays using local inq_var */
@@ -69,7 +69,7 @@ int main (int argc, char ** argv)
 	printf("\trank=%d: NY=%d\n", rank, NY);
     
 	/* Allocate space for the arrays */
-	t = (double *) malloc (5*1*sizeof(double));
+	t = (double *) malloc (10*sizeof(double));
 	fprintf(stderr, "t %p\n", t);
       
 	/* Read the arrays */	
@@ -83,7 +83,7 @@ int main (int argc, char ** argv)
 	//sleep(20);
     
 	printf("rank=%d: t[0,5+x] = [%6.2f", rank, t[0]);
-	for(j=1; j<5; j++) {
+	for(j=0; j<20; j++) {
 	    printf(", %6.2f", t[j]);
 	}
 	printf("]\n");
