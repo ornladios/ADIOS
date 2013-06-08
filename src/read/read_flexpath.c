@@ -856,13 +856,16 @@ void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
     int i;
     flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
     for(i=0; i<fp->num_bridges; i++) {
-        if(fp->bridges[i].created) {
-            op_msg close;
-            close.step = adiosfile->current_step;
-            close.type = 0;
-            close.process_id = fp->rank;
-            close.file_name = "test";
-            EVsubmit(fp->bridges[i].op_source, &close, NULL);
+        if(fp->bridges[i].created && !fp->bridges[i].opened) {
+            op_msg open;
+            open.step = adiosfile->current_step;
+            open.type = OPEN_MSG;
+            open.process_id = fp->rank;
+            open.file_name = "test";
+	    open.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
+            EVsubmit(fp->bridges[i].op_source, &open, NULL);
+            CMCondition_wait(fp_read_data->fp_cm, open.condition);
+	    fp->bridges[i].opened = 1;
         }
     }
 }

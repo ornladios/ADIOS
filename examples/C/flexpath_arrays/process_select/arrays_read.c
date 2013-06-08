@@ -43,7 +43,7 @@ int main (int argc, char ** argv)
     /* get everything from single process - rank 0 for now*/
     ADIOS_SELECTION process_select;
     process_select.type=ADIOS_SELECTION_WRITEBLOCK;
-    process_select.u.block.index = rank % 2;
+    process_select.u.block.index = rank %2;
 
     /* read the size of arrays using local inq_var */
 
@@ -77,7 +77,8 @@ int main (int argc, char ** argv)
         printf("Results Rank=%d Step=%d p[0] = %d t[0,0] = %f\n p[1] = %d t[0,1] = %f\n\n", 
 	       rank, ii, p[0], t[0], p[1], t[1]);
     
-        /* block until next step is available (30 sec timeout unsupported) */
+	/* block until next step is available (30 sec timeout unsupported) */
+	adios_release_step(afile);
         adios_advance_step(afile, 0, 30);
 	MPI_Barrier (comm);
 	

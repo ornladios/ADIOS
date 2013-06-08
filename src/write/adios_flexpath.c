@@ -931,10 +931,10 @@ static int op_handler(CManager cm, void* vevent, void* client_data, attr_list at
     EVtake_event_buffer(cm, msg);
     fp_write_log("MSG", "recieved op_msg : rank %d type %d: condition: %d step: %d\n", 
 		 msg->process_id, msg->type, msg->condition, msg->step);
-    if(msg->type == 1) {
+    if(msg->type == OPEN_MSG) {
         threaded_enqueue(&fileData->controlQueue, msg, OPEN, 
             fileData->controlMutex, fileData->controlCondition);
-    } else if(msg->type == 0) {
+    } else if(msg->type == CLOSE_MSG) {
         threaded_enqueue(&fileData->controlQueue, msg, CLOSE, 
 			 fileData->controlMutex, fileData->controlCondition);
     } else if(msg->type == 3) {
@@ -1030,8 +1030,9 @@ int control_thread(void* arg) {
 					open->process_id+1, 
 					fileData->bridges[open->process_id].myNum);				    
 		}		
-            if(open->step < fileData->currentStep) {
+		if(open->step < fileData->currentStep) {
                     perr("control_thread: Recieved Past Step Open\n");
+		    fprintf(stderr, "control_thread: Received Past Step Open\n");
                 } else if (open->step == fileData->currentStep){
                     fp_write_log("STEP", "recieved op with current step\n");
                     thr_mutex_lock(fileData->openMutex);
@@ -1048,7 +1049,7 @@ int control_thread(void* arg) {
 		    ack->condition = open->condition;
                     fileData->attrs = set_dst_rank_atom(fileData->attrs, open->process_id+1);
 		    fp_write_log("MSG", " sending op_msg : dst %d step %d type ack\n",
-                        open->process_id, fileData->currentStep); 
+				 open->process_id, fileData->currentStep); 
                     EVsubmit_general(fileData->opSource, ack, op_free, fileData->attrs);
                 } else {
                     fp_write_log("STEP", "recieved op with future step\n");
