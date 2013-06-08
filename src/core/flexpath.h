@@ -13,6 +13,9 @@
 #define FP_DIM_ATTR_NAME "fp_dim"
 #define FP_NDIMS_ATTR_NAME "fp_ndims"
 
+#define OPEN_MSG 1
+#define CLOSE_MSG 0
+
 #define perr(...) if(getenv("FP_DEBUG")) fprintf(stderr, __VA_ARGS__);
 
 #define fp_log(LOG, ...)                             \
