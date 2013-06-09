@@ -717,6 +717,7 @@ adios_read_flexpath_open(const char * fname,
 ADIOS_FILE*
 adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
 {
+    fprintf(stderr, "\t\t READER OPEN FILE\n\n");
     ADIOS_FILE *adiosfile = malloc(sizeof(ADIOS_FILE));        
     if(!adiosfile){
 	adios_error (err_no_memory, "Cannot allocate memory for file info.\n");
@@ -838,8 +839,8 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
     // clean up of writer's files
     MPI_Barrier(fp->comm);
     if(fp->rank == 0){
-	unlink(writer_info_filename);
-	unlink(writer_ready_filename);
+	//unlink(writer_info_filename);
+	//unlink(writer_ready_filename);
     }	
     
     adiosfile->fh = (uint64_t)fp;
@@ -871,6 +872,7 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
     /* EVsubmit(fp->bridges[0].flush_source, &msg, NULL); */
     /* CMCondition_wait(fp_read_data->fp_cm, msg.condition); */
     adios_errno == err_no_error;
+    fprintf(stderr, "\t\tREADER LEAVING OPEN\n");
     return adiosfile;
 }
 
@@ -881,6 +883,7 @@ int adios_read_flexpath_finalize_method ()
 
 void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
     int i;
+    fprintf(stderr, "\t\tREADER RELEASE_STEP\n");
     flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
     for(i=0; i<fp->num_bridges; i++) {
         if(fp->bridges[i].created && !fp->bridges[i].opened) {
@@ -899,6 +902,7 @@ void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
 
 int adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_sec) {
     flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
+    fprintf(stderr, "ADVANCE_STEP CALLED!\n");
     MPI_Barrier(fp->comm);
     int i=0;
     for(i=0; i<fp->num_bridges; i++) {
@@ -924,7 +928,8 @@ int adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float time
         }
     }
     adiosfile->current_step++;
-   return adiosfile->current_step;
+    
+   return 0;
 }
 
 int adios_read_flexpath_close(ADIOS_FILE * fp)
@@ -1095,6 +1100,7 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
 					   int nsteps,
 					   void * data)
 {   
+    fprintf(stderr, "\t\tREADER CALLING SCHEDULE_READ\n");
     flexpath_file_data * fp = (flexpath_file_data*)adiosfile->fh;
     flexpath_var_info * v = fp->var_list;
     while(v){
@@ -1249,6 +1255,7 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
 	break;
     }
     }
+    fprintf(stderr, "\t\tREADER LEAVING SCHEDULE_READ\n\n");
     return 0;
 }
 
@@ -1319,10 +1326,12 @@ int adios_read_flexpath_get_attr_byid (const ADIOS_FILE *adiosfile, int attrid,
 
 ADIOS_VARINFO* adios_read_flexpath_inq_var(const ADIOS_FILE * adiosfile, const char* varname)
 {
+    fprintf(stderr, "\t\tREADER CALLS INQ_VAR\n\n");
     flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
     ADIOS_VARINFO* v = malloc(sizeof(ADIOS_VARINFO));
     if(!v) {
         adios_error(err_no_memory, "Cannot allocate buffer in adios_read_datatap_inq_var()");
+	fprintf(stderr,"\t\tINQ_VAR_ERROR\n\n");
         return NULL;
     }
     memset(v, 0, sizeof(ADIOS_VARINFO));
@@ -1330,9 +1339,11 @@ ADIOS_VARINFO* adios_read_flexpath_inq_var(const ADIOS_FILE * adiosfile, const c
     flexpath_var_info *current_var = find_fp_var(fp->var_list, varname);
     if(current_var) {
 	v = convert_file_info(current_var, v, varname, adiosfile);
+	fprintf(stderr, "\t\tREADER LEAVING INQ_VAR\n");
 	return v;
     }
     else {
+	fprintf(stderr, "\t\tOOOPS\n");
         adios_error(err_invalid_varname, "Cannot find var %s\n", varname);
         return NULL;
     }
