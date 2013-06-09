@@ -523,8 +523,12 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
         }
         else
         {
-            time = t + 1;
+            // Fix: the assumption that for streaming mode, the time in file
+            // always starts from 1 is not correct. So here we add fh->tidx_start to adjust
+            // Q. Liu, 06/2013
+            time = fh->tidx_start + t;
         }
+
 //printf ("t = %d(%d,%d), time = %d\n", t, fp->current_step, r->from_steps, time);
 //printf ("c = %d, f = %d, time = %d\n", fp->current_step, r->from_steps, time);
         start_idx = get_var_start_index (v, time);
