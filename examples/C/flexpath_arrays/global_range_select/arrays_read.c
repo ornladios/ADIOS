@@ -38,8 +38,8 @@ int main (int argc, char ** argv)
     ADIOS_SELECTION global_range_select;
     //if(rank == 0){
     global_range_select.type=ADIOS_SELECTION_BOUNDINGBOX;
-    global_range_select.u.bb.start = malloc(sizeof(int)*2);
-    global_range_select.u.bb.count = malloc(sizeof(int)*2);
+    global_range_select.u.bb.start = malloc(sizeof(uint64_t)*2);
+    global_range_select.u.bb.count = malloc(sizeof(uint64_t)*2);
     (global_range_select.u.bb.start)[0] = rank;
     (global_range_select.u.bb.count)[0] = 1;
     (global_range_select.u.bb.start)[1] = 0;
