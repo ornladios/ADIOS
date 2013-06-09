@@ -74,8 +74,8 @@ int main (int argc, char ** argv)
         adios_perform_reads (afile, 1);
 
         /* print result */
-        printf("Results Rank=%d Step=%d p[0] = %d t[0,0] = %f\n p[1] = %d t[0,1] = %f\n\n", 
-	       rank, ii, p[0], t[0], p[1], t[1]);
+        printf("Results Rank=%d Step=%d p[] = [%d, %d,...] t[][] = [%.2f, %.2f]\n", 
+                rank, afile->current_step, p[0], p[1], t[0], t[1]);
     
 	/* block until next step is available (30 sec timeout unsupported) */
 	adios_release_step(afile);
