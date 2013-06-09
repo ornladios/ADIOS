@@ -40,7 +40,7 @@ int main (int argc, char ** argv)
     global_range_select.type=ADIOS_SELECTION_BOUNDINGBOX;
     global_range_select.u.bb.start = malloc(sizeof(int)*2);
     global_range_select.u.bb.count = malloc(sizeof(int)*2);
-    (global_range_select.u.bb.start)[0] = 1;
+    (global_range_select.u.bb.start)[0] = rank;
     (global_range_select.u.bb.count)[0] = 1;
     (global_range_select.u.bb.start)[1] = 0;
     (global_range_select.u.bb.count)[1] = 40;
@@ -51,13 +51,13 @@ int main (int argc, char ** argv)
 					     ADIOS_READ_METHOD_FLEXPATH, 
 					     comm);
     
-    int ii;
+    int ii = 0;
     while(adios_errno != err_end_of_stream){
-      //for(ii = 0; ii<1000; ii++){   
+	
 	/* get a bounding box - rank 0 for now*/
 	ADIOS_VARINFO* nx_info = adios_inq_var( afile, "NX");
 	ADIOS_VARINFO* ny_info = adios_inq_var( afile, "NY");
-	fprintf(stderr, "after inq var\n");
+
 	if(nx_info->value) {
 	    NX = *((int *)nx_info->value);
 	}
@@ -65,8 +65,8 @@ int main (int argc, char ** argv)
 	    NY= *((int*)ny_info->value);
 	}
     
-	printf("\trank=%d: NX=%d\n", rank, NX);
-	printf("\trank=%d: NY=%d\n", rank, NY);
+	//printf("\trank=%d: NX=%d\n", rank, NX);
+	//printf("\trank=%d: NY=%d\n", rank, NY);
     
 	/* Allocate space for the arrays */
 	int nelem = 40;
@@ -85,13 +85,14 @@ int main (int argc, char ** argv)
     
 	//sleep(20);
     
-	printf("rank=%d: t[0,5+x] = [%6.2f", rank, t[0]);
+	printf("Rank=%d: step: %d, t[0,5+x] = [%6.2f", rank, ii, t[0]);
 	for(j=0; j<nelem; j++) {
 	    printf(", %6.2f", t[j]);
 	}
 	printf("]\n");
 	adios_release_step(afile);
         adios_advance_step(afile, 0, 30);
+	ii++;
 	//MPI_Barrier (comm);
 	//sleep(1);
     }
