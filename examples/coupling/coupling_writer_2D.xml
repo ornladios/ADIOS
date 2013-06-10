@@ -36,6 +36,7 @@
   <transport group="writer2D" method="MPI">verbose=3</transport>
   <!--transport group="writer2D" method="VAR_MERGE">io_method=MPI</transport-->
   <!--transport group="writer2D" method="DATASPACES">verbose=3</transport-->
+  <!--transport group="writer2D" method="FLEXPATH">QUEUE_SIZE=10;verbose=3</transport-->
 
   <buffer size-MB="40" allocate-time="now"/>
 
