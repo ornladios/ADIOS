@@ -174,57 +174,6 @@ FlexpathWriteData flexpathWriteData;
 
 /**************************** Function Definitions *********************************/
 
-// checks for a valid mpi communicator 
-static void adios_var_to_comm(const char* commName, enum ADIOS_FLAG hostLanguageFortran, void* data, MPI_Comm* comm) {
-    fp_write_log("SETUP", "running var to comm function\n");
-    if(data) {    
-        int t = *(int*)data;
-        if(!commName) {        
-            if(!t) {            
-                fprintf(stderr, "communicator not provided and none "
-			 "listed in XML.  Defaulting to MPI_COMM_SELF\n");
-                *comm = MPI_COMM_SELF;
-            } else {            
-                if(hostLanguageFortran == adios_flag_yes) {                
-                    *comm = MPI_Comm_f2c(t);
-                } else {                
-                    *comm = *(MPI_Comm*)data;
-                }
-            }
-        } else {        
-            if(!strcmp(commName, "")) {            
-                if(!t) {                
-                    fprintf(stderr, "communicator not provided and none "
-			     "listed in XML.  Defaulting to MPI_COMM_SELF\n");
-                    *comm = MPI_COMM_SELF;
-                } else {                
-                    if(hostLanguageFortran == adios_flag_yes) {                    
-                        *comm = MPI_Comm_f2c(t);
-                    } else {                    
-                        *comm = *(MPI_Comm*)data;
-                    }
-                }
-            } else {            
-                if(!t) {                
-                    fprintf(stderr, "communicator not provided but one "
-			     "listed in XML.  Defaulting to MPI_COMM_WORLD\n");
-                    *comm = MPI_COMM_WORLD;
-                } else {                
-		    if(hostLanguageFortran == adios_flag_yes){                    
-                        *comm = MPI_Comm_f2c(t);
-                    } else {                   
-                        *comm = *(MPI_Comm*)data;
-                    }
-                }
-            }
-        }
-    } else {
-        fprintf(stderr, "coordination-communication not provided. "
-		 "Using MPI_COMM_WORLD instead\n");
-        *comm = MPI_COMM_WORLD;
-    }
-}
-
 // add an attr for each dimension to an attr_list
 void set_attr_dimensions(char* varName, char* altName, int numDims, attr_list attrs) {
     fp_write_log("ATTR", "adding dim attr %s and ndim attr %d\n", varName, numDims);
@@ -1032,7 +981,7 @@ int control_thread(void* arg) {
 		}		
 		if(open->step < fileData->currentStep) {
                     perr("control_thread: Recieved Past Step Open\n");
-		    fprintf(stderr, "control_thread: Received Past Step Open\n");
+		    log_error("Flexpath method control_thread: Received Past Step Open\n");
                 } else if (open->step == fileData->currentStep){
                     fp_write_log("STEP", "recieved op with current step\n");
                     thr_mutex_lock(fileData->openMutex);
@@ -1658,7 +1607,7 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 // wait until all open files have finished sending data to shutdown
 extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method) {
     FlexpathWriteFileData* fileData = flexpathWriteData.openFiles;
-    fprintf(stderr, "entered finalize: %d\n", fileData->rank);
+    log_info("Flexpath method entered finalize: %d\n", fileData->rank);
     fp_write_log("FILE", "Entered finalize\n");
     while(fileData) {
         fp_write_log("DATAMUTEX", "in use 4\n"); 
