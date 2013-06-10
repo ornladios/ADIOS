@@ -39,6 +39,7 @@
 #include "public/adios.h"
 #include "public/adios_read_v2.h"
 #include "core/adios_read_hooks.h"
+#include "core/adios_logger.h"
 #include "public/adios_error.h"
 #include "core/flexpath.h"
 
@@ -153,7 +154,7 @@ new_flexpath_var_info(const char * varname, int id, uint64_t data_size)
 {
     flexpath_var_info * var = malloc(sizeof(flexpath_var_info));
     if(var == NULL){
-	perr("Error creating new var: %s\n", varname);
+	log_error("Error creating new var: %s\n", varname);
 	exit(1);
     }
     
@@ -177,7 +178,7 @@ new_flexpath_file_data(const char * fname)
 {
     flexpath_file_data * fp = malloc(sizeof(flexpath_file_data));
     if(fp == NULL){
-	perr("Cannot create data for new file.\n");
+	log_error("Cannot create data for new file.\n");
 	exit(1);
     }
     fp->file_name = strdup(fname);
@@ -341,11 +342,11 @@ void
 print_int_arr(char * tag, int * arr, int count)
 {
     int i;
-    perr("%s: ", tag);
+    log_debug_cont("%s: ", tag);
     for(i=0; i<count; i++){
-	perr("%d ", arr[i]);
+	log_debug_cont("%d ", arr[i]);
     }
-    perr("\n");
+    log_debug("\n");
 }
 
 array_displacements*
@@ -652,7 +653,7 @@ adios_read_flexpath_init_method (MPI_Comm comm, PairStruct* params)
     fp_read_data->fp_cm = CManager_create();
     if(transport == NULL){
 	if(CMlisten(fp_read_data->fp_cm) == 0) {
-	    perr( "error: unable to initialize connection manager.\n");
+	    log_error( "Flexpath ERROR: unable to initialize connection manager.\n");
 	}
     }else{
 	listen_list = create_attr_list();
@@ -660,7 +661,7 @@ adios_read_flexpath_init_method (MPI_Comm comm, PairStruct* params)
 		 (attr_value)strdup(transport));
 	CMlisten_specific(fp_read_data->fp_cm, listen_list);
     }
-    if(CMfork_comm_thread(fp_read_data->fp_cm)) {/*perr( "forked\n");*/}
+    if(CMfork_comm_thread(fp_read_data->fp_cm)) {/*log_debug( "forked\n");*/}
     return 0;
 }
 
@@ -692,20 +693,20 @@ void build_bridge(bridge_info* bridge) {
 
 }
 
-/*
- * Still have work to do here.  will have to move code from open_file, and
- * change it so that we can support the timeouts and lock_modes.
- */
+
 ADIOS_FILE*
-adios_read_flexpath_open(const char * fname,
-				MPI_Comm comm,
-                                enum ADIOS_LOCKMODE lock_mode,
-				float timeout_sec)
+adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
 {
-    return adios_read_flexpath_open_file(fname, comm);
+    adios_error (err_operation_not_supported,
+                 "FLEXPATH staging method does not support file mode for reading. "
+                 "Use adios_read_open() to open a staged dataset.\n");
+    return NULL;
 }
 
-
+/*
+ * Still have work to do here.  
+ * Change it so that we can support the timeouts and lock_modes.
+ */
 /*
  * Sets up local data structure for series of reads on an adios file
  * - create evpath graph and structures
@@ -715,9 +716,12 @@ adios_read_flexpath_open(const char * fname,
  * -- create connections using contact info from file
  */
 ADIOS_FILE*
-adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
+adios_read_flexpath_open(const char * fname,
+				MPI_Comm comm,
+                                enum ADIOS_LOCKMODE lock_mode,
+				float timeout_sec)
 {
-    fprintf(stderr, "\t\t READER OPEN FILE\n\n");
+    log_debug("\t\t FLEXPATH READER OPEN\n\n");
     ADIOS_FILE *adiosfile = malloc(sizeof(ADIOS_FILE));        
     if(!adiosfile){
 	adios_error (err_no_memory, "Cannot allocate memory for file info.\n");
@@ -839,8 +843,8 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
     // clean up of writer's files
     MPI_Barrier(fp->comm);
     if(fp->rank == 0){
-	//unlink(writer_info_filename);
-	//unlink(writer_ready_filename);
+	unlink(writer_info_filename);
+	unlink(writer_ready_filename);
     }	
     
     adiosfile->fh = (uint64_t)fp;
@@ -872,7 +876,7 @@ adios_read_flexpath_open_file(const char * fname, MPI_Comm comm)
     /* EVsubmit(fp->bridges[0].flush_source, &msg, NULL); */
     /* CMCondition_wait(fp_read_data->fp_cm, msg.condition); */
     adios_errno == err_no_error;
-    fprintf(stderr, "\t\tREADER LEAVING OPEN\n");
+    log_debug("\t\tFLEXPATH READER LEAVING OPEN\n");
     return adiosfile;
 }
 
@@ -883,7 +887,7 @@ int adios_read_flexpath_finalize_method ()
 
 void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
     int i;
-    fprintf(stderr, "\t\tREADER RELEASE_STEP\n");
+    log_debug("\t\tFLEXPATH READER RELEASE_STEP\n");
     flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
     for(i=0; i<fp->num_bridges; i++) {
         if(fp->bridges[i].created && !fp->bridges[i].opened) {
@@ -902,7 +906,7 @@ void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
 
 int adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_sec) {
     flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
-    fprintf(stderr, "ADVANCE_STEP CALLED!\n");
+    log_debug("FLEXPATH ADVANCE_STEP CALLED!\n");
     MPI_Barrier(fp->comm);
     int i=0;
     for(i=0; i<fp->num_bridges; i++) {
@@ -960,7 +964,7 @@ int adios_read_flexpath_close(ADIOS_FILE * fp)
     	for(i = 0; i<v->num_chunks; i++){    		    
     	    flexpath_var_chunk * c = &v->chunks[i];	    
 	    if(!c)
-		fprintf(stderr, "should not happen!\n");
+		log_error("FLEXPATH: %s This should not happen! line %d\n",__func__,__LINE__);
 	    //free(c->data);    		
 	    free(c->global_bounds);		
 	    free(c->global_offsets);
@@ -979,7 +983,7 @@ int adios_read_flexpath_is_var_timed(const ADIOS_FILE* fp, int varid) { return 0
 
 void adios_read_flexpath_get_groupinfo(const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, int **nvars_per_group, int **nattrs_per_group) {}
 
-int adios_read_flexpath_check_reads(const ADIOS_FILE* fp, ADIOS_VARCHUNK** chunk) { perr( "debug:adios function check reads\n"); return 0; }
+int adios_read_flexpath_check_reads(const ADIOS_FILE* fp, ADIOS_VARCHUNK** chunk) { log_debug( "flexpath:adios function check reads\n"); return 0; }
 
 int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
 {
@@ -1004,13 +1008,13 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
 int
 adios_read_flexpath_inq_var_blockinfo(const ADIOS_FILE* fp,
 				      ADIOS_VARINFO* varinfo)
-{ /*perr( "debug:adios function inq var block info\n");*/ return 0; }
+{ /*log_debug( "flexpath:adios function inq var block info\n");*/ return 0; }
 int
 adios_read_flexpath_inq_var_stat(const ADIOS_FILE* fp,
 				 ADIOS_VARINFO* varinfo,
 				 int per_step_stat,
 				 int per_block_stat)
-{ /*perr( "debug:adios function inq var stat\n");*/ return 0; }
+{ /*log_debug( "flexpath:adios function inq var stat\n");*/ return 0; }
 void adiosread_flexpath_release_step (ADIOS_FILE *fp);
 
 
@@ -1077,18 +1081,18 @@ need_writer(flexpath_file_data *fp, int j, const ADIOS_SELECTION* sel, evgroup_p
         //if rank offset < selector offset and rank offset +size-1 > selector offset
 	
         if((rank_offset <= sel_offset) && (rank_offset + rank_size - 1 >=sel_offset)) {
-	     perr("matched overlap type 1\n");
+	     log_debug("matched overlap type 1\n");
         }
         //if rank offset < selector offset + selector size -1 and rank offset+size-1 > selector offset +selector size -1
         else if((rank_offset <= sel_offset + sel_size - 1) && \
 		(rank_offset+rank_size-1>=sel_offset+sel_size-1)) {
-            perr("matched overlap type 2\n");
+            log_debug("matched overlap type 2\n");
         } else {
-            perr("overlap not present\n\n");
+            log_debug("overlap not present\n\n");
             return 0;
         }
     }
-    perr("overlap detected\n\n");
+    log_debug("overlap detected\n\n");
     return 1;
 }
 
@@ -1100,7 +1104,7 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
 					   int nsteps,
 					   void * data)
 {   
-    fprintf(stderr, "\t\tREADER CALLING SCHEDULE_READ\n");
+    log_debug("\t\tFLEXPATH READER CALLING SCHEDULE_READ\n");
     flexpath_file_data * fp = (flexpath_file_data*)adiosfile->fh;
     flexpath_var_info * v = fp->var_list;
     while(v){
@@ -1137,7 +1141,7 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
 	}
 
 
-	//perr( "rank %d sending var message\n", fd->rank);
+	//log_debug( "rank %d sending var message\n", fd->rank);
 	//send to what is specified in selector
         int i = 0;
         int found = 0;
@@ -1234,7 +1238,7 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
 	    Var_msg var;
 	    var.rank = fp->rank;
 	    var.var_name = strdup(v->varname);
-	    perr("1 sending %s from %d to %p aka %d\n", 
+	    log_debug("1 sending %s from %d to %p aka %d\n", 
 		 var.var_name, var.rank, fp->bridges[reader].var_source, reader);
 	    EVsubmit(fp->bridges[reader].var_source, &var, NULL);            
 	}
@@ -1255,7 +1259,7 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
 	break;
     }
     }
-    fprintf(stderr, "\t\tREADER LEAVING SCHEDULE_READ\n\n");
+    log_debug("\t\tFLEXPATH READER LEAVING SCHEDULE_READ\n\n");
     return 0;
 }
 
@@ -1271,25 +1275,25 @@ int adios_read_flexpath_schedule_read(const ADIOS_FILE *adiosfile,
 
 int adios_read_flexpath_fclose(ADIOS_FILE *adiosfile)
 {
-    //perr( "debug: adios_read_flexpath_fclose\n");
+    //log_debug( "debug: adios_read_flexpath_fclose\n");
     return 0;
 }
 
 int * adios_read_flexpath_gopen (ADIOS_FILE *adiosfile, const char *grpname)
 {
-    //perr( "debug: adios_read_flexpath_gopen\n");
+    //log_debug( "debug: adios_read_flexpath_gopen\n");
     return NULL;
 }
 
 int * adios_read_flexpath_gopen_byid (ADIOS_FILE *adiosfile, int grpid)
 {
-    //perr( "debug: adios_read_flexpath_gopen_byid\n");
+    //log_debug( "debug: adios_read_flexpath_gopen_byid\n");
     return NULL;
 }
 
 int adios_read_flexpath_gclose (int *gp)
 {
-    perr( "debug: adios_read_flexpath_gclose\n");
+    log_debug( "adios_read_flexpath_gclose\n");
     adios_errno = 0;
     int i;
 //    free_namelist ((gp->var_namelist),gp->vars_count);
@@ -1302,7 +1306,7 @@ int adios_read_flexpath_get_attr (int *gp, const char *attrname,
                                  enum ADIOS_DATATYPES *type,
                                  int *size, void **data)
 {
-    //perr( "debug: adios_read_flexpath_get_attr\n");
+    //log_debug( "debug: adios_read_flexpath_get_attr\n");
     // TODO: borrowed from dimes
     adios_error(err_invalid_read_method, "adios_read_flexpath_get_attr is not implemented.");
     *size = 0;
@@ -1315,7 +1319,7 @@ int adios_read_flexpath_get_attr_byid (const ADIOS_FILE *adiosfile, int attrid,
                                       enum ADIOS_DATATYPES *type,
                                       int *size, void **data)
 {
-//    perr( "debug: adios_read_flexpath_get_attr_byid\n");
+//    log_debug( "debug: adios_read_flexpath_get_attr_byid\n");
     // TODO: borrowed from dimes
     adios_error(err_invalid_read_method, "adios_read_flexpath_get_attr_byid is not implemented.");
     *size = 0;
@@ -1326,12 +1330,12 @@ int adios_read_flexpath_get_attr_byid (const ADIOS_FILE *adiosfile, int attrid,
 
 ADIOS_VARINFO* adios_read_flexpath_inq_var(const ADIOS_FILE * adiosfile, const char* varname)
 {
-    fprintf(stderr, "\t\tREADER CALLS INQ_VAR\n\n");
+    log_debug("\t\tFLEXPATH READER CALLS INQ_VAR\n\n");
     flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
     ADIOS_VARINFO* v = malloc(sizeof(ADIOS_VARINFO));
     if(!v) {
         adios_error(err_no_memory, "Cannot allocate buffer in adios_read_datatap_inq_var()");
-	fprintf(stderr,"\t\tINQ_VAR_ERROR\n\n");
+	log_debug("\t\tFLEXPATH INQ_VAR_ERROR\n\n");
         return NULL;
     }
     memset(v, 0, sizeof(ADIOS_VARINFO));
@@ -1339,11 +1343,11 @@ ADIOS_VARINFO* adios_read_flexpath_inq_var(const ADIOS_FILE * adiosfile, const c
     flexpath_var_info *current_var = find_fp_var(fp->var_list, varname);
     if(current_var) {
 	v = convert_file_info(current_var, v, varname, adiosfile);
-	fprintf(stderr, "\t\tREADER LEAVING INQ_VAR\n");
+	log_debug("\t\tFLEXPATH READER LEAVING INQ_VAR\n");
 	return v;
     }
     else {
-	fprintf(stderr, "\t\tOOOPS\n");
+	log_debug("\t\t%s OOOPS, line %d\n", __func__, __LINE__);
         adios_error(err_invalid_varname, "Cannot find var %s\n", varname);
         return NULL;
     }
@@ -1356,7 +1360,7 @@ ADIOS_VARINFO * adios_read_flexpath_inq_var_byid (const ADIOS_FILE * adiosfile, 
         return adios_read_flexpath_inq_var(adiosfile, adiosfile->var_namelist[varid]);
     }
     else {
-        adios_error(err_invalid_varid, "Cannot find var %d\n", varid);
+        adios_error(err_invalid_varid, "FLEXPATH method: Cannot find var %d\n", varid);
         return NULL;
     }
 }
@@ -1406,7 +1410,7 @@ convert_file_info(flexpath_var_info * current_var,
 
 void adios_read_flexpath_free_varinfo (ADIOS_VARINFO *adiosvar)
 {
-    //perr( "debug: adios_read_flexpath_free_varinfo\n");
+    //log_debug( "debug: adios_read_flexpath_free_varinfo\n");
     return;
 }
 
@@ -1414,7 +1418,7 @@ int64_t adios_read_flexpath_read_var (int *gp, const char *varname,
                                      const uint64_t *start, const uint64_t *count,
                                      void *data)
 {
-    //perr( "debug: adios_read_flexpath_read_var\n");
+    //log_debug( "debug: adios_read_flexpath_read_var\n");
     return (int64_t)0;
 }
 
@@ -1423,12 +1427,12 @@ int64_t adios_read_flexpath_read_var_byid (int *gp, int varid,
                                           const uint64_t *count,
                                           void *data)
 {
-    //perr( "debug: adios_read_flexpath_read_var_byid\n");
+    //log_debug( "debug: adios_read_flexpath_read_var_byid\n");
     return (int64_t)0;
 }
 
 void adios_read_flexpath_reset_dimension_order (const ADIOS_FILE *adiosfile, int is_fortran)
 {
-    //perr( "debug: adios_read_flexpath_reset_dimension_order\n");
+    //log_debug( "debug: adios_read_flexpath_reset_dimension_order\n");
     adios_error(err_invalid_read_method, "adios_read_flexpath_reset_dimension_order is not implemented.");
 }
