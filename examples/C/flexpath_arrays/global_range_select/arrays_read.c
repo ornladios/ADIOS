@@ -47,54 +47,55 @@ int main (int argc, char ** argv)
     global_range_select.u.bb.ndim = 2;
     //fprintf(stderr, "app got here\n");
     /* read the size of arrays using local inq_var */
-    ADIOS_FILE* afile = adios_read_open_file("arrays", 
-					     ADIOS_READ_METHOD_FLEXPATH, 
-					     comm);
+    ADIOS_FILE* afile = adios_read_open("arrays", 
+                                         ADIOS_READ_METHOD_FLEXPATH, 
+                                         comm,
+                                         ADIOS_LOCKMODE_NONE, 0.0);
     
     int ii = 0;
     while(adios_errno != err_end_of_stream){
-	
-	/* get a bounding box - rank 0 for now*/
-	ADIOS_VARINFO* nx_info = adios_inq_var( afile, "NX");
-	ADIOS_VARINFO* ny_info = adios_inq_var( afile, "NY");
+        
+        /* get a bounding box - rank 0 for now*/
+        ADIOS_VARINFO* nx_info = adios_inq_var( afile, "NX");
+        ADIOS_VARINFO* ny_info = adios_inq_var( afile, "NY");
 
-	if(nx_info->value) {
-	    NX = *((int *)nx_info->value);
-	}
-	if(ny_info->value){
-	    NY= *((int*)ny_info->value);
-	}
+        if(nx_info->value) {
+            NX = *((int *)nx_info->value);
+        }
+        if(ny_info->value){
+            NY= *((int*)ny_info->value);
+        }
     
-	//printf("\trank=%d: NX=%d\n", rank, NX);
-	//printf("\trank=%d: NY=%d\n", rank, NY);
+        //printf("\trank=%d: NX=%d\n", rank, NX);
+        //printf("\trank=%d: NY=%d\n", rank, NY);
     
-	/* Allocate space for the arrays */
-	int nelem = 40;
-	int arr_size = sizeof(double) * nelem;
-	t = (double *) malloc (arr_size);
-	memset(t, 0, arr_size);
-	//fprintf(stderr, "t %p\n", t);
+        /* Allocate space for the arrays */
+        int nelem = 40;
+        int arr_size = sizeof(double) * nelem;
+        t = (double *) malloc (arr_size);
+        memset(t, 0, arr_size);
+        //fprintf(stderr, "t %p\n", t);
       
-	/* Read the arrays */	
-	adios_schedule_read (afile, 
-			     &global_range_select, 
-			     "var_2d_array", 
-			     0, 1, t);
+        /* Read the arrays */        
+        adios_schedule_read (afile, 
+                             &global_range_select, 
+                             "var_2d_array", 
+                             0, 1, t);
         fprintf(stderr, "example is calling perform reads\n");
-	adios_perform_reads (afile, 1);		
+        adios_perform_reads (afile, 1);                
     
-	//sleep(20);
+        //sleep(20);
     
-	printf("Rank=%d: step: %d, t[0,5+x] = [%6.2f", rank, ii, t[0]);
-	for(j=0; j<nelem; j++) {
-	    printf(", %6.2f", t[j]);
-	}
-	printf("]\n");
-	adios_release_step(afile);
+        printf("Rank=%d: step: %d, t[0,5+x] = [%6.2f", rank, ii, t[0]);
+        for(j=0; j<nelem; j++) {
+            printf(", %6.2f", t[j]);
+        }
+        printf("]\n");
+        adios_release_step(afile);
         adios_advance_step(afile, 0, 30);
-	ii++;
-	//MPI_Barrier (comm);
-	//sleep(1);
+        ii++;
+        //MPI_Barrier (comm);
+        //sleep(1);
     }
     //
     adios_read_close(afile);

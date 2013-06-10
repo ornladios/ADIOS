@@ -47,7 +47,9 @@ int main (int argc, char ** argv)
 
     /* read the size of arrays using local inq_var */
 
-    ADIOS_FILE* afile = adios_read_open_file("arrays", ADIOS_READ_METHOD_FLEXPATH, comm);
+    /* Note: at this moment, timeout is not handled. It blocks until writer appears */
+    ADIOS_FILE* afile = adios_read_open("arrays", ADIOS_READ_METHOD_FLEXPATH, comm, 
+                                        ADIOS_LOCKMODE_NONE, 30.0);
     /* Read arrays for each time step */
     int ii=0;
     while(adios_errno != err_end_of_stream){
