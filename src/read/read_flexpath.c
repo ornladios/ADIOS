@@ -558,33 +558,33 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     		//void *aptr8 = (void*)(*((unsigned long*)curr_offset));		
 		void *aptr8 = get_FMPtrField_by_name(f, f->field_name, base_data, 1);
     		//double * temp = (double*)curr_offset;
-		printf("first call to copyoffsets\n");
-		printf("dim: %d\n", 0);
-		printf("ndims: %d\n", disp->ndims);
-		printf("data_size: %d\n", f->field_size);
+		log_debug("first call to copyoffsets\n");
+		log_debug("dim: %d\n", 0);
+		log_debug("ndims: %d\n", disp->ndims);
+		log_debug("data_size: %d\n", f->field_size);
 
-		printf("disp_start[]: ");
+		log_debug_cont("disp_start[]: ");
 		int k;
 		for(k=0; k<disp->ndims; k++){
-		    printf("%d ", disp->start[k]);
+		    log_debug_cont("%d ", disp->start[k]);
 		}
-		printf("\n");
+		log_debug("\n");
 
-		printf("disp_count[]: ");
+		log_debug("disp_count[]: ");
 		for(k=0; k<disp->ndims; k++){
-		    printf("%d ", disp->count[k]);
+		    log_debug_cont("%d ", disp->count[k]);
 		}
-		printf("\n");
+		log_debug("\n");
 
-		printf("writer_count[]: ");
+		log_debug("writer_count[]: ");
 		for(k=0; k<disp->ndims; k++){
-		    printf("%d ", writer_count[k]);
+		    log_debug_cont("%d ", writer_count[k]);
 		}
-		printf("\n");
+		log_debug("\n");
 		
-		printf("reader_count[]: ");
+		log_debug("reader_count[]: ");
 		for(k=0; k<disp->ndims; k++){
-		    printf("%d ", (int)reader_count[k]);
+		    log_debug_cont("%d ", (int)reader_count[k]);
 		}
                 copyoffsets(0,
     			    disp->ndims,
