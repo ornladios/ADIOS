@@ -447,8 +447,6 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 	    flexpath_var_info * temp = fp->var_list;	
 	    curr_var->next = temp;
 	    fp->var_list = curr_var;
-	    //curr_var->type = adios_integer;
-	    // because we're only doing scalars here, we know the dims is 0	
 	    var_count++;
 	    f++;
 	}
@@ -474,7 +472,6 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     int i = 0, l = 0, j = 0;
 
     while(f->field_name){
-    	//curr_offset = &buffer[f->field_offset];	
         char atom_name[200] = "";
     	flexpath_var_info * var = find_fp_var(fp->var_list, strdup(f->field_name));
 	
@@ -497,8 +494,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     	    curr_chunk->global_offsets = NULL;
     	    curr_chunk->global_bounds = NULL;
     	    curr_chunk->local_bounds = NULL;
-    	    //curr_chunk->data = malloc(var->data_size);
-    	    //void *tmpdata = malloc(var->data_size);
+
 	    void *tmp_data = get_FMfieldAddr_by_name(f, f->field_name, base_data);
 	    if(var->sel){
 		memcpy(var->chunks[0].data, tmp_data, f->field_size);
@@ -534,18 +530,14 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     					"Could not find fieldname: %s\n",
     					dim);
     			}
-    			else{
-    			    // since it's a dimension, field size should be int.
+    			else{    			    
     			    int *temp_data = get_FMfieldAddr_by_name(temp_f,
     								     temp_f->field_name,
     								     base_data);
-    			    //memcpy(temp_data, temp_offset, f->field_size);
-    			    var->dims[i] = *temp_data;
+			    var->dims[i] = *temp_data;
     			    var->array_size = var->array_size * var->dims[i];
     			}
-    		    }
-    		    /* void* aptr8 = (void*)(*((unsigned long*)curr_offset)); */
-    		    /* memcpy(var->chunks[0].data, aptr8, var->array_size); */
+    		    }    	       
 		    void *arrays_data  = get_FMPtrField_by_name(f, f->field_name, base_data, 1);
 		    memcpy(var->chunks[0].data, arrays_data, var->array_size);
     		}
@@ -562,9 +554,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     							       rank,
     							       var->num_displ);
 		
-    		//void *aptr8 = (void*)(*((unsigned long*)curr_offset));		
 		void *aptr8 = get_FMPtrField_by_name(f, f->field_name, base_data, 1);
-
                 copyoffsets(0,
     			    disp->ndims,
     			    f->field_size,
@@ -580,24 +570,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
         f++;
     }
     CMCondition_signal(fp_read_data->fp_cm, condition);
-    //CMCondition_signal(fp_read_data->fp_cm, ackCondition);
-    //ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
     return 0; 
-}
-
-static int
-format_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
-    Format_msg* msg = (Format_msg*)vevent;
-    ADIOS_FILE *adiosfile = client_data;
-    flexpath_file_data * fp = (flexpath_file_data*)adiosfile->fh;
-    fp->arr = msg->format_id;
-    fp->rep_id = msg->rep_id;
-    fp->rep_id_len = msg->rep_id_len;
-    fp->id_len = msg->id_len;
-    
-    CMCondition_signal(fp_read_data->fp_cm, msg->condition);
-    //ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
-    return 0;
 }
 
 /*
@@ -700,7 +673,6 @@ adios_read_flexpath_open(const char * fname,
                                 enum ADIOS_LOCKMODE lock_mode,
 				float timeout_sec)
 {
-    log_debug("\t\t FLEXPATH READER OPEN\n\n");
     ADIOS_FILE *adiosfile = malloc(sizeof(ADIOS_FILE));        
     if(!adiosfile){
 	adios_error (err_no_memory, "Cannot allocate memory for file info.\n");
@@ -720,13 +692,7 @@ adios_read_flexpath_open(const char * fname,
 			    fp->data_stone,
 			    op_format_list,
 			    op_msg_handler,
-			    adiosfile);
-	
-    EVassoc_terminal_action(fp_read_data->fp_cm,
-			    fp->data_stone,
-			    format_format_list,
-			    format_handler,
-			    adiosfile);
+			    adiosfile);       
 
     EVassoc_terminal_action(fp_read_data->fp_cm,
 			    fp->data_stone,
@@ -764,7 +730,6 @@ adios_read_flexpath_open(const char * fname,
 
     if(fp->rank == 0){	
 	// print our own contact information
-
 	FILE * fp_out = fopen(reader_info_filename, "w");
 	int i;
 	if(!fp_out){	    
