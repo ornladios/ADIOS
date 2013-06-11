@@ -19,7 +19,7 @@ int main (int argc, char ** argv)
 {
     char        filename [256];
     int         rank, size, i;
-    int         NX = 100; 
+    int         NX = 10000; 
     int         NY = 1;
     double      t[NX];
     MPI_Comm    comm = MPI_COMM_WORLD;
@@ -33,9 +33,9 @@ int main (int argc, char ** argv)
     strcpy (filename, "arrays");
     adios_init ("arrays.xml", comm);
     
-    
+    int test_scalar = rank * 1000;
     int ii;
-    for(ii = 0; ii<5; ii++){
+    for(ii = 0; ii<200; ii++){
       for (i = 0; i < NX; i++)
         t[i] = rank * NX + i*ii;
     
@@ -43,7 +43,7 @@ int main (int argc, char ** argv)
     
       adios_write (adios_handle, "NX", &NX);
       adios_write (adios_handle, "NY", &NY);
-    
+      adios_write (adios_handle, "test_scalar", &test_scalar);
       adios_write (adios_handle, "size", &size);
       adios_write (adios_handle, "rank", &rank);
       adios_write (adios_handle, "var_2d_array", t);

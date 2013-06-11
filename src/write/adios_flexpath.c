@@ -1542,38 +1542,8 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 		gbl_vars = realloc(gbl_vars, sizeof(global_var) * num_gbl_vars);
 		gbl_vars[num_gbl_vars - 1].name = strdup(list->name);
 		gbl_vars[num_gbl_vars - 1].noffset_structs = 1;
-		/* perr("\n\n\n\t\tnoffset_structs: %d\n",  */
-		/*      gbl_vars[num_gbl_vars - 1].noffset_structs); */
 		gbl_vars[num_gbl_vars - 1].offsets = ostruct;
-		/* int i;			    */
-		/* i = 0; */
-		/* perr("\t\t\tall offsets for var: %s\n", list->name); */
-		/* while(i<commsize * num_local_offsets){ */
-		/*     int j; */
-			
-		/*     for(j=0; j<num_local_offsets;j++){ */
-		/* 	perr("\t\t\t%d ", all_offsets[i]);   */
-		/* 	i++; */
-		/*     }			 */
-		/*     perr("\n");				 */
-			
-		/* } */
-		/* perr("\n"); */
-		/* perr("\t\t\tall local_dims for var: %s\n", list->name); */
-		/* i = 0; */
-		    
-		/* while(i<commsize * num_local_offsets){ */
-		/*     int j;				 */
-		/*     for(j=0; j<num_local_offsets;j++){ */
-		/* 	perr("\t\t\t%d ", all_local_dims[i]);   */
-		/* 	i++; */
-		/*     }			 */
-		/*     perr("\n"); */
-			
-		/* } */
-		/* perr("\n"); */
-		    
-				
+
 	    }
 	    list=list->next;
 	}
