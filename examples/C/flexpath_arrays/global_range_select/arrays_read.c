@@ -45,8 +45,13 @@ int main (int argc, char ** argv)
     (global_range_select.u.bb.start)[1] = 0;
     (global_range_select.u.bb.count)[1] = 40;
     global_range_select.u.bb.ndim = 2;
+
+    ADIOS_SELECTION scalar_block_select;
+    scalar_block_select.type = ADIOS_SELECTION_WRITEBLOCK;
+    scalar_block_select.u.block.index = rank;
     //fprintf(stderr, "app got here\n");
-    /* read the size of arrays using local inq_var */
+    /* schedule_read of a scalar. */    
+    int test_scalar = -1;
     ADIOS_FILE* afile = adios_read_open("arrays", 
                                          ADIOS_READ_METHOD_FLEXPATH, 
                                          comm,
@@ -81,12 +86,16 @@ int main (int argc, char ** argv)
                              &global_range_select, 
                              "var_2d_array", 
                              0, 1, t);
-        fprintf(stderr, "example is calling perform reads\n");
+	adios_schedule_read (afile,
+			     &scalar_block_select,
+			     "test_scalar",
+			     0, 1, &test_scalar);
+
         adios_perform_reads (afile, 1);                
     
         //sleep(20);
     
-        printf("Rank=%d: step: %d, t[0,5+x] = [%6.2f", rank, ii, t[0]);
+        printf("Rank=%d: test_scalar: %d step: %d, t[0,5+x] = [%6.2f", rank, test_scalar, ii, t[0]);
         for(j=0; j<nelem; j++) {
             printf(", %6.2f", t[j]);
         }

@@ -5,6 +5,7 @@
     <var name="NY" type="integer"/>
     <var name="size" type="integer"/>
     <var name="rank" type="integer"/>
+    <var name="test_scalar" type="integer"/>
     <global-bounds dimensions="size,NX" offsets="rank,0">
         <var name="var_2d_array" gwrite="t" type="double" dimensions="NY,NX"/>
     </global-bounds>

@@ -431,6 +431,8 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 	FMcopy_struct_list(format_list_of_FMFormat(format));
     FMField *f = struct_list[0].field_list;
 
+    // setting up initial vars from the format list that comes along with the
+    // message. Message contains both an FFS description and the data.
     if(fp->num_vars == 0){
 	int var_count = 0;
 	int i=0;       
@@ -441,7 +443,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 	    curr_var->num_chunks = 1;
 	    curr_var->chunks = malloc(sizeof(flexpath_var_chunk)*curr_var->num_chunks);
 	    memset(curr_var->chunks, 0, sizeof(flexpath_var_chunk)*curr_var->num_chunks);
-
+	    curr_var->sel = NULL;
 	    flexpath_var_info * temp = fp->var_list;	
 	    curr_var->next = temp;
 	    fp->var_list = curr_var;
@@ -458,7 +460,6 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 	    adiosfile->var_namelist[i++] = strdup(f->field_name);
 	    f++;
 	}
-	
 	adiosfile->nvars = var_count;
 	fp->num_vars = var_count;
     }
@@ -480,7 +481,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     	if(!var){
     	    adios_error(err_file_open_error,
     			"file not opened correctly.  var does not match format.\n");
-    	    return -1;
+    	    return err_file_open_error;
     	}
         strcat(atom_name, f->field_name);
         strcat(atom_name, "_");
@@ -498,7 +499,13 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     	    curr_chunk->local_bounds = NULL;
     	    //curr_chunk->data = malloc(var->data_size);
     	    //void *tmpdata = malloc(var->data_size);
-    	    var->chunks[0].data = get_FMfieldAddr_by_name(f, f->field_name, base_data);
+	    void *tmp_data = get_FMfieldAddr_by_name(f, f->field_name, base_data);
+	    if(var->sel){
+		memcpy(var->chunks[0].data, tmp_data, f->field_size);
+	    }
+	    else{
+		var->chunks[0].data = get_FMfieldAddr_by_name(f, f->field_name, base_data);
+	    }
     	    curr_chunk->has_data = 1;
     	    // else it's an array
     	}else{
@@ -557,35 +564,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 		
     		//void *aptr8 = (void*)(*((unsigned long*)curr_offset));		
 		void *aptr8 = get_FMPtrField_by_name(f, f->field_name, base_data, 1);
-    		//double * temp = (double*)curr_offset;
-		printf("first call to copyoffsets\n");
-		printf("dim: %d\n", 0);
-		printf("ndims: %d\n", disp->ndims);
-		printf("data_size: %d\n", f->field_size);
 
-		printf("disp_start[]: ");
-		int k;
-		for(k=0; k<disp->ndims; k++){
-		    printf("%d ", disp->start[k]);
-		}
-		printf("\n");
-
-		printf("disp_count[]: ");
-		for(k=0; k<disp->ndims; k++){
-		    printf("%d ", disp->count[k]);
-		}
-		printf("\n");
-
-		printf("writer_count[]: ");
-		for(k=0; k<disp->ndims; k++){
-		    printf("%d ", writer_count[k]);
-		}
-		printf("\n");
-		
-		printf("reader_count[]: ");
-		for(k=0; k<disp->ndims; k++){
-		    printf("%d ", (int)reader_count[k]);
-		}
                 copyoffsets(0,
     			    disp->ndims,
     			    f->field_size,
@@ -1104,7 +1083,6 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
 					   int nsteps,
 					   void * data)
 {   
-    log_debug("\t\tFLEXPATH READER CALLING SCHEDULE_READ\n");
     flexpath_file_data * fp = (flexpath_file_data*)adiosfile->fh;
     flexpath_var_info * v = fp->var_list;
     while(v){
@@ -1140,9 +1118,6 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
 			"No process exists on the writer side matching the index.\n");
 	}
 
-
-	//log_debug( "rank %d sending var message\n", fd->rank);
-	//send to what is specified in selector
         int i = 0;
         int found = 0;
         for(i=0; i<fp->num_sendees; i++) {
