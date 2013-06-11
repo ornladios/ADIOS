@@ -1112,6 +1112,7 @@ FlexpathWriteFileData* find_open_file(char* name) {
 // Initializes flexpath write local data structures
 extern void adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method) 
 {
+    setenv("CMSelfFormats", "1", 1);
     // global data structure creation
     flexpathWriteData.rank = -1;
     flexpathWriteData.openFiles = NULL;
