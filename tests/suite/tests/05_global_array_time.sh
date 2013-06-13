@@ -41,7 +41,7 @@ if [ $? != 0 ]; then
 fi
 
 echo "Run C adios_read_globaltime"
-$MPIRUN $NP_MPIRUN $PROCS ./adios_read_globaltime | sort > c_read.txt
+$MPIRUN $NP_MPIRUN $PROCS ./adios_read_globaltime > c_read.txt
 EX=$?
 if [ $? != 0 ]; then
     echo "ERROR: C version of adios_read_globaltime exited with $EX"

@@ -257,13 +257,13 @@
 #cmakedefine VERSION "${VERSION}"
 
 /* Major version number */
-#cmakedefine VERSION_MAJOR ${VERSION_MAJOR}
+#define VERSION_MAJOR ${VERSION_MAJOR}
 
 /* Micro version number */ 
-#cmakedefine VERSION_MICRO ${VERSION_MICRO}
+#define VERSION_MICRO ${VERSION_MICRO}
 
 /* Minor version number */
-#cmakedefine VERSION_MINOR ${VERSION_MINOR}
+#define VERSION_MINOR ${VERSION_MINOR}
 
 /* svn revision number */
 #cmakedefine VERSION_SVNREV ${VERSION_SVNREV}

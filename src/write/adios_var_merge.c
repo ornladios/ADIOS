@@ -20,6 +20,7 @@
 #include "core/adios_internals_mxml.h"
 #include "core/adios_logger.h"
 #include "core/common_adios.h"
+#include "core/util.h"
 
 #include "mpi.h"
 
@@ -33,19 +34,17 @@ static char io_method[16]; //the IO method for data output
 static char io_parameters[256]; //the IO method parameters 
 static uint64_t totalsize=0;
 static int grpflag=0; //if there's data left in buffer
-char *grp_name;
-int64_t grp;
+static char *grp_name;
+static int64_t grp;
 static int aggr_level; // currently fixed to 2 level of aggregation the most
-static int aggr_chunksize; //default aggregated chunk size = 2MB
+static int aggr_chunksize=1048576*2; //default aggregated chunk size = 2MB
 static int aggr_cnt[3][2]; //number of clients at each level for 1D, 2D and 3D variables
 static int my_aggregator[3][2]; //2 level of aggregators for three dimensions 
 static int layout;
 static int *proc_map;
 static int *sequence;
 
-enum ADIOS_IO_METHOD transport_method=ADIOS_METHOD_MPI;
-
-static void aggr_chunks(void **output, int *procs, int ndims, uint64_t *ldims_list, uint64_t *gdims, uint64_t *size_list, uint64_t totalsize, int nchunks, int rank, int level, int type_size);
+static void aggr_chunks(char **output, int *procs, int ndims, uint64_t *ldims_list, uint64_t *gdims, uint64_t *size_list, uint64_t totalsize, int nchunks, int rank, int level, int type_size);
 static uint64_t do_spatial_aggr(int level, int *procs, int ndims, uint64_t *ldims, uint64_t *offsets, char *new_ldims, int rank,  void *data, uint64_t varsize, void *output, int type_size, MPI_Comm comm);
 
 
@@ -77,10 +76,7 @@ struct adios_MPI_data_struct
 {
     int64_t fpr;
     MPI_File fh;
-    MPI_Request req;
-    MPI_Status status;
     MPI_Comm group_comm;
-    MPI_Info info;      // set with base
     int rank;
     int size;
 
@@ -248,23 +244,6 @@ static uint8_t count_dimensions (struct adios_dimension_struct * dimensions)
     return count;
 }       
 
-#if 0
-static uint8_t check_boundary(int rank, int step)
-{
-    int offx, offy, offz;
-
-    offx=rank%npx;
-    offy=rank/npx%npy;
-    offz=rank/(npx*npy);
-        
-    //it is an aggregator
-    if(offx%step==0 && offy%step ==0 && offz%step ==0) 
-        return 1;
-    else 
-        return 0;
-}
-#endif
-
 
 //prepare the number of processes on each dimension
 static int cal_layout(int *procs, int rank, int nprocs, int ndims, MPI_Comm comm, uint64_t *ldims, uint64_t *gdims, uint64_t *offsets) 
@@ -401,7 +380,7 @@ static int cal_layout(int *procs, int rank, int nprocs, int ndims, MPI_Comm comm
     return decomp;
 } 
 
-static void cal_offsets1(int *procs, int rank, int ndims, int decomp, int *offsets)
+static void cal_offsets(int *procs, int rank, int ndims, int decomp, int *offsets)
 { 
     int i;
 
@@ -413,77 +392,6 @@ static void cal_offsets1(int *procs, int rank, int ndims, int decomp, int *offse
     }
     if (decomp>=3) {
         offsets[sequence[2]]=rank/(procs[sequence[0]]*procs[sequence[1]]);
-    }
-}
-
-static void cal_offsets(int *procs, int rank, int ndims, int decomp, int *offsets)
-{
-    if(ndims==1) {
-        offsets[0]=rank%procs[0];
-        return;
-    }
-    else if(ndims==2) {
-        //k or j
-        if(decomp==1) {
-            if(procs[1]==1) 
-                offsets[0]=rank%procs[0];
-            else if(procs[0]==1) 
-                offsets[1]=rank%procs[1];
-        }
-        else if(decomp==2) {
-            if(layout==0) { //along the fast dimension
-                offsets[0]=rank%procs[0];
-                offsets[1]=rank/procs[0]%procs[1];
-            }
-            else if(layout==1) { //along the slow dimension
-                offsets[1]=rank%procs[1];
-                offsets[0]=rank/procs[1]%procs[0];
-            }
-        }
-    }
-    else {
-        if(decomp==1) {
-            //i, j, k
-            if(procs[0]==1 && procs[1]==1)
-                offsets[2]=rank%procs[2];
-            else if(procs[1]==1 && procs[2]==1)
-                offsets[0]=rank%procs[0];
-            else if(procs[0]==1 && procs[2]==1)
-                offsets[1]=rank%procs[1];
-        }
-        else if(decomp==2) {
-                offsets[sequence[0]]=rank%procs[sequence[0]];
-                offsets[sequence[1]]=rank/procs[sequence[1]]%sequence[1];
-        }
-        else {
-            if(layout==0) { 
-                offsets[0]=rank%procs[0];
-                offsets[1]=rank/procs[0]%procs[1];
-                offsets[2]=rank/(procs[0]*procs[1]);
-            }
-            else {
-                offsets[2]=rank%procs[2];
-                offsets[1]=rank/procs[2]%procs[1];
-                offsets[0]=rank/(procs[2]*procs[1]);
-            }
-        }
-    }
-
-}
-
-static void cal_process_map1(int rank, int *procs)
-{
-    int i,j,k;
-    int pos, cnt=0;
-
-    for(i=0;i<procs[sequence[2]];i++) {
-        for(j=0;j<procs[sequence[1]];j++) {
-            for(k=0;k<procs[sequence[0]];k++) {
-                pos=i*procs[sequence[0]]*procs[sequence[1]]+j*procs[sequence[0]]+k;
-                proc_map[pos]=cnt;
-                cnt++;
-            }
-        }
     }
 }
 
@@ -635,7 +543,7 @@ static void prep_aggr(int *procs, int ndims, int decomp, int rank, int size, int
     //get the process map
     cal_process_map(rank, procs);
 
-    cal_offsets1(procs, rank, ndims, decomp, offsets);
+    cal_offsets(procs, rank, ndims, decomp, offsets);
 
     aggr_cnt[ndims-1][0]=aggr_cnt[ndims-1][1]=1;
     prev_step=1;
@@ -759,7 +667,7 @@ static int do_write (int64_t fd_p, const char * name, void * var)
                        
 
 // temporary solution for compiling error
-int declare_group (int64_t * id, const char * name
+static int declare_group (int64_t * id, const char * name
                         ,const char * time_index
                         ,enum ADIOS_FLAG stats
                         )
@@ -779,7 +687,7 @@ int declare_group (int64_t * id, const char * name
 }
 
 // temporary solution for compiling error
-int select_method (int64_t group, const char * method
+static int select_method (int64_t group, const char * method
                         ,const char * parameters
                         ,const char * base_path
                         )
@@ -812,7 +720,7 @@ static int convert_file_mode(enum ADIOS_METHOD_MODE mode, char * file_mode)
 }
 
 //find the variable within the buffer link list
-int var_lookup(const char *varname, char *path, struct aggr_var_struct *list)
+static int var_lookup(const char *varname, char *path, struct aggr_var_struct *list)
 {
     int cnt=0;
 
@@ -833,11 +741,11 @@ int var_lookup(const char *varname, char *path, struct aggr_var_struct *list)
     return -1;
 }
 
-void output_vars(struct aggr_var_struct *vars, int varcnt, struct
+static void output_vars(struct aggr_var_struct *vars, int varcnt, struct
         adios_MPI_data_struct * md, struct adios_file_struct * fd) 
 {
     int i,j;
-    char file_mode[1];
+    char file_mode[2];
     char fname[256];
     uint64_t adios_size, datasize;
     int iocnt=0;
@@ -861,7 +769,7 @@ void output_vars(struct aggr_var_struct *vars, int varcnt, struct
 }
 
 
-void define_iogroup(char *group_name)
+static void define_iogroup(char *group_name)
 {
     int len;
 
@@ -876,7 +784,7 @@ void define_iogroup(char *group_name)
 }
 
 //initial variable structure
-void init_vars(struct aggr_var_struct *var, struct adios_var_struct * v, int ndims)
+static void init_vars(struct aggr_var_struct *var, struct adios_var_struct * v, int ndims)
 {
     int i;
 
@@ -906,7 +814,54 @@ static void init_layout_flag(struct adios_MPI_data_struct *md)
         md->layout[i]=-1;
 }
 
-void adios_chunk_init (const PairStruct * parameters, 
+void init_output_parameters(const PairStruct *params)
+{
+    int len;
+    const PairStruct *p = params;
+
+    while (p) {
+        if (!strcasecmp (p->name, "chunk_size")) {
+            errno = 0;
+            aggr_chunksize = strtol(p->value, NULL, 10);
+            if (aggr_chunksize > 0 && !errno) {
+                log_debug ("Chunk size set to %llu for VAR_MERGE method\n", aggr_chunksize);
+            } else {
+                log_error ("Invalid 'chunk_size' parameter given to the VAR_MERGE method"
+                           "method: '%s'\n", p->value);
+                aggr_chunksize=1048576*2;
+            }
+        } else if (!strcasecmp (p->name, "io_method")) {
+            errno = 0;
+            memset(io_method, 0x00, 16);
+            strcpy(io_method, p->value);
+            if (!errno) {
+                log_debug ("io_method set to %s for VAR_MERGE method\n", io_method);
+            } else {
+                log_error ("Invalid 'io_method' parameter given to the VAR_MERGE method: '%s'\n", p->value);
+                memset(io_method, 0x00, 16);
+                strcpy(io_method, "MPI");
+            }
+        } else if (!strcasecmp (p->name, "io_parameters")) {
+            errno = 0;
+            memset(io_parameters, 0x00, 256);
+            strcpy(io_parameters, p->value);
+            if (!errno) {
+                log_debug ("io_parameters set to %s for VAR_MERGE method\n", io_parameters);
+            } else {
+                log_error ("Invalid 'io_parameters' parameter given to the VAR_MERGE"
+                            "method: '%s'\n", p->value);
+                memset(io_parameters, 0x00, 256);
+            }
+        } else {
+            log_error ("Parameter name %s is not recognized by the VAR_MERGE "
+                        "method\n", p->name);
+        }
+        p = p->next;
+    }
+}
+
+
+void adios_var_merge_init(const PairStruct * parameters, 
                      struct adios_method_struct * method)
 {
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
@@ -916,6 +871,7 @@ void adios_chunk_init (const PairStruct * parameters,
     md = (struct adios_MPI_data_struct *) method->method_data;
 
     init_layout_flag(md);
+    init_output_parameters(parameters);
 }
 
 
@@ -1005,72 +961,6 @@ static void adios_var_to_comm (const char * comm_name
      }
 }
 
-void init_output_parameters(const char *parameters)
-{
-    int len;
-    char *temp_string, *p_size;
-
-    // parsing XML to get the number of timesteps 
-    temp_string = (char *) malloc (strlen(parameters) + 1);
-
-    strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
-  
-    //set the aggregated chunk size
-    strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
-    if (p_size = strstr (temp_string, "chunk_size"))
-    {
-        char * p = strchr (p_size, '=');
-        char * q = strtok (p, ",");
-        if (!q) 
-            aggr_chunksize= atoi(q+1);
-        else
-            aggr_chunksize= atoi(p+1); 
-    }
-    else
-    {
-        aggr_chunksize=1048576*4;
-    }
-
-    strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
-    if (p_size = strstr (temp_string, "io_method"))
-    {
-        char * p = strchr (p_size, '=');
-        char * q = strtok (p, ",");
-        memset(io_method, 16, 0x00);
-        if (!q) 
-            strcpy(io_method, q+1);
-        else
-            strcpy(io_method, p+1);
-    }
-    else
-    {
-        //without specifing in the XML, no time buffering
-        memset(io_method, 16, 0x00);
-        strcpy(io_method, "MPI"); 
-    }
-
-    strcpy(temp_string, parameters);
-    trim_spaces (temp_string);
-    if (p_size = strstr (temp_string, "parameters"))
-    {
-        char * p = strchr (p_size, '=');
-        char * q = strtok (p, "<");
-        memset(io_parameters, 256, 0x00);
-        if (!q) 
-            strcpy(io_parameters, q+1);
-        else
-            strcpy(io_parameters, p+1);
-    }
-    else
-    {
-        //without specifing in the XML, no time buffering
-        memset(io_parameters, 256, 0x00);
-    }
-}
-
 static void init_method_parameters()
 {
     varcnt=0;
@@ -1080,7 +970,7 @@ static void init_method_parameters()
     memset(my_aggregator, 0x00, 6*sizeof(int));
 }
 
-int adios_chunk_open (struct adios_file_struct * fd
+int adios_var_merge_open (struct adios_file_struct * fd
                    ,struct adios_method_struct * method, MPI_Comm comm)
 {
 
@@ -1091,9 +981,10 @@ int adios_chunk_open (struct adios_file_struct * fd
     {
         case adios_mode_read:
         {
-            adios_error (err_invalid_file_mode, "CHUNK method: Read mode is not supported.\n");
+            adios_error (err_invalid_file_mode, "VAR_MERGE method: Read mode is not supported.\n");
             return -1;
         }
+        case adios_mode_append:
         case adios_mode_write:
         {
             md->group_comm = comm;
@@ -1105,13 +996,13 @@ int adios_chunk_open (struct adios_file_struct * fd
             fd->group->process_id = md->rank;
 
             //need to get the parameters form XML
-             init_output_parameters(method->parameters);
+             //init_output_parameters(method->parameters);
              init_method_parameters();
              break;
         }
         default:
         {
-            adios_error (err_invalid_file_mode, "CHUNK method: Unknown file mode requested: %d\n", fd->mode);
+            adios_error (err_invalid_file_mode, "VAR_MERGE method: Unknown file mode requested: %d\n", fd->mode);
             return adios_flag_no;
         }
     }
@@ -1119,7 +1010,7 @@ int adios_chunk_open (struct adios_file_struct * fd
     return 1;
 }
 
-enum ADIOS_FLAG adios_chunk_should_buffer (struct adios_file_struct * fd
+enum ADIOS_FLAG adios_var_merge_should_buffer (struct adios_file_struct * fd
                                          ,struct adios_method_struct * method)
 {
 
@@ -1129,10 +1020,11 @@ enum ADIOS_FLAG adios_chunk_should_buffer (struct adios_file_struct * fd
     {
         case adios_mode_read:
         {
-            adios_error (err_invalid_file_mode, "MPI_CHUNK method: Read mode is not supported.\n");
+            adios_error (err_invalid_file_mode, "VAR_MERGE method: Read mode is not supported.\n");
             break;
         }
  
+        case adios_mode_append:
         case adios_mode_write:
         { 
             define_iogroup(method->group->name); 
@@ -1140,7 +1032,7 @@ enum ADIOS_FLAG adios_chunk_should_buffer (struct adios_file_struct * fd
         }
         default:
         {
-            adios_error (err_invalid_file_mode, "MPI_CHUNK method: Unknown file mode requested: %d\n", fd->mode);
+            adios_error (err_invalid_file_mode, "VAR_MERGE method: Unknown file mode requested: %d\n", fd->mode);
             return adios_flag_no;
         }
     }
@@ -1181,7 +1073,7 @@ static struct aggr_var_struct *allocate_vars(int varcnt, struct aggr_var_struct 
      return vars;
 }
 
-void adios_chunk_write (struct adios_file_struct * fd
+void adios_var_merge_write (struct adios_file_struct * fd
                      ,struct adios_var_struct * v
                      ,void * data
                      ,struct adios_method_struct * method
@@ -1268,6 +1160,7 @@ void adios_chunk_write (struct adios_file_struct * fd
         }
         else {
 
+
         //determine if we need to apply spatial aggregation
         //first find out the process layout and domain decomposition
         if(ndims<=3 && varsize<=aggr_chunksize && md->size>1 && vars->set_aggr==-1) {
@@ -1289,7 +1182,7 @@ void adios_chunk_write (struct adios_file_struct * fd
 
             if(decomp==0) {
                 //FIXME: need to fix the error message
-                adios_error(err_corrupted_variable, "Wrong decomposition.");
+                adios_error(err_corrupted_variable, "Unrecognizable decomposition.");
                 exit(-1);
             }
             else { 
@@ -1322,6 +1215,8 @@ void adios_chunk_write (struct adios_file_struct * fd
                 }
             }
         }
+        else 
+            log_error("Current VAR_MERGE only supports up to 3-D variables with minimum of 2 processes with 1D decomposition. No spatial merging will be performed.\n"); 
                     
         //no spatial aggregation, just copy data
         if(vars->set_aggr!=1) {
@@ -1374,7 +1269,7 @@ void adios_chunk_write (struct adios_file_struct * fd
     }
 }
 
-void adios_chunk_read (struct adios_file_struct * fd
+void adios_var_merge_read (struct adios_file_struct * fd
                     ,struct adios_var_struct * v, void * buffer
                     ,uint64_t buffer_size
                     ,struct adios_method_struct * method
@@ -1402,7 +1297,7 @@ void release_resource()
     }
 }
 
-void adios_chunk_close (struct adios_file_struct * fd
+void adios_var_merge_close (struct adios_file_struct * fd
                      ,struct adios_method_struct * method
                      )
 {
@@ -1413,9 +1308,10 @@ void adios_chunk_close (struct adios_file_struct * fd
     {
         case adios_mode_read:
         {
-            adios_error (err_invalid_file_mode, "CHUNK method: Read mode is not supported.\n");
+            adios_error (err_invalid_file_mode, "VAR_MERGE method: Read mode is not supported.\n");
             break;
         }
+        case adios_mode_append:
         case adios_mode_write:
         {
             //write out the varaibles
@@ -1428,7 +1324,7 @@ void adios_chunk_close (struct adios_file_struct * fd
         }
         default:
         {
-            adios_error (err_invalid_file_mode, "CHUNK method: Unknown file mode requested: %d\n", fd->mode);
+            adios_error (err_invalid_file_mode, "VAR_MERGE method: Unknown file mode requested: %d\n", fd->mode);
             break;
         }
     }
@@ -1436,7 +1332,7 @@ void adios_chunk_close (struct adios_file_struct * fd
     return;
 }
 
-void adios_chunk_get_write_buffer (struct adios_file_struct * fd
+void adios_var_merge_get_write_buffer (struct adios_file_struct * fd
                                 ,struct adios_var_struct * v
                                 ,uint64_t * size
                                 ,void ** buffer
@@ -1445,19 +1341,19 @@ void adios_chunk_get_write_buffer (struct adios_file_struct * fd
 {
 }
 
-void adios_chunk_finalize (int mype, struct adios_method_struct * method)
+void adios_var_merge_finalize (int mype, struct adios_method_struct * method)
 {
 }
 
-void adios_chunk_end_iteration (struct adios_method_struct * method)
+void adios_var_merge_end_iteration (struct adios_method_struct * method)
 {
 }
 
-void adios_chunk_start_calculation (struct adios_method_struct * method)
+void adios_var_merge_start_calculation (struct adios_method_struct * method)
 {
 }
 
-void adios_chunk_stop_calculation (struct adios_method_struct * method)
+void adios_var_merge_stop_calculation (struct adios_method_struct * method)
 {
 }
 
@@ -1693,7 +1589,7 @@ static uint64_t do_spatial_aggr(int level, int *procs, int ndims, uint64_t *ldim
 }
 
 
-static void aggr_chunks(void **output, int *procs, int ndims, uint64_t *ldims_list,
+static void aggr_chunks(char **output, int *procs, int ndims, uint64_t *ldims_list,
     uint64_t *gdims, uint64_t *size_list, uint64_t totalsize, int nchunks, int rank, int level, int type_size)
 {
     uint64_t count[3];

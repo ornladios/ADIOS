@@ -7,7 +7,7 @@ import java.nio.DoubleBuffer;
 public class Adios
 {
     // Declaration of the Native (C) function
-    private static native int adios_init (String xml_fname);
+    private static native int adios_init (String xml_fname, long comm);
 
     private static native long adios_open (String group_name, String file_name, String mode, long comm);
     private static native long adios_group_size (long fh, long group_size);
@@ -47,7 +47,7 @@ public class Adios
 
     private static native long adios_open_and_set_group_size (String group_name, String file_name, String mode, long group_size, long comm);
 
-    private static native int adios_init_noxml();
+    private static native int adios_init_noxml(long comm);
     private static native int adios_allocate_buffer(int when, long size);
     private static native long adios_declare_group(String name, String time_index, int stats);
     private static native int adios_define_var(long group_id, String name, String path, int type, String dimensions, String global_dimensions, String local_offsets);
@@ -62,9 +62,9 @@ public class Adios
     }
 
 	/* Call adios_init */
-    public static int Init(String xml_fname)
+    public static int Init(String xml_fname, long comm)
     {
-        return adios_init(xml_fname);
+        return adios_init(xml_fname, comm);
     }
     
 	/* Call adios_open. Return a group handler */
@@ -228,9 +228,9 @@ public class Adios
     }
 
 	/* Call adios_init_noxml */
-    public static int Init_Noxml()
+    public static int Init_Noxml(long comm)
     {
-        return adios_init_noxml();
+        return adios_init_noxml(comm);
     }
     
 	/* Call adios_allocate_buffer */

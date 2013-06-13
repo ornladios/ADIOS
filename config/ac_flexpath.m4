@@ -33,6 +33,9 @@ fi
 
 if test "x$ac_flexpath_ok" != "xno"; then
 
+    flexpath_dir=$withval
+    datatap_dir=$withval
+
     CERCS_REQUIRE_PACKAGE(evpath, evpath.h, libevpath.a)
     CERCS_REQUIRE_PACKAGE(ffs, ffs.h,libffs.a)
     CERCS_REQUIRE_PACKAGE(atl, atl.h,libatl.a)

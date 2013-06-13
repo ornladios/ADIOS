@@ -36,12 +36,13 @@ module adios_defs_mod
     !
     ! Read methods (used in init/finalize/open calls)
     !
-    integer, parameter :: ADIOS_READ_METHOD_BP         = 0
-    integer, parameter :: ADIOS_READ_METHOD_BP_STAGED  = 1
-    integer, parameter :: ADIOS_READ_METHOD_BP_STAGED1 = 2
-    integer, parameter :: ADIOS_READ_METHOD_DATASPACES = 3
-    integer, parameter :: ADIOS_READ_METHOD_DIMES      = 4
-    integer, parameter :: ADIOS_READ_METHOD_FLEXIO     = 5
+    integer, parameter :: ADIOS_READ_METHOD_BP           = 0
+    integer, parameter :: ADIOS_READ_METHOD_BP_AGGREGATE = 1
+    !integer, parameter :: ADIOS_READ_METHOD_BP_STAGED1   = 2
+    integer, parameter :: ADIOS_READ_METHOD_DATASPACES   = 3
+    integer, parameter :: ADIOS_READ_METHOD_DIMES        = 4
+    integer, parameter :: ADIOS_READ_METHOD_FLEXPATH     = 5
+    integer, parameter :: ADIOS_READ_METHOD_BP_STAGED  = ADIOS_READ_METHOD_BP_AGGREGATE
 
     ! 
     ! Stream Locking modes

@@ -10,9 +10,8 @@ the scalars.bp file if the MPI method is used.
 Only one of them can be seen with the generic read API and tools based on 
 this API like bpls. 
 
-However, you can read each scalar from the separate processes with the 
-specific API on the same number of processors you write them out 
-(see scalars_read.F90)
+However, you can read each scalar from the separate processes with the a selection 
+for a specific writer (see arrays/arrays_read.F90).
 
 How to build the code on your own:
 
@@ -20,6 +19,14 @@ How to build the code on your own:
     $ gpp.py scalars.xml
     $ ls *.fh
     gread_scalars.fh  gwrite_scalars.fh
+
+2. Compile and link the code, with environment variables ADIOS_DIR pointing
+   to the ADIOS installation directory (substitute mpif90 with your F90 compiler):
+   $ ADIOS_INC=`$ADIOS_DIR/bin/adios_config -fc`
+   $ ADIOS_FLIB=`$ADIOS_DIR/bin/adios_config -fl`
+   $ ADIOS_FREADLIB=`$ADIOS_DIR/bin/adios_config -flr`
+   $ mpif90 -o arrays_write ${ADIOS_INC} scalars_write.F90 ${ADIOS_FLIB}
+   $ mpif90 -o arrays_read ${ADIOS_INC} scalars_read.F90 ${ADIOS_FREADLIB}
 
 2. Compile and link the code, with environment variables ADIOS_DIR pointing
    to the ADIOS installation directory and MXML_DIR pointing to the MXML

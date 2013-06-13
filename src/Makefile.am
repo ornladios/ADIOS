@@ -71,7 +71,7 @@ libadios_a_SOURCES = core/adios.c \
                      write/adios_mpi_amr.c \
                      write/adios_posix.c \
                      write/adios_posix1.c \
-                     write/adios_chunk.c 
+                     write/adios_var_merge.c 
 
 
 libadios_nompi_a_SOURCES = core/adios.c \
@@ -132,7 +132,7 @@ FortranLibSources = core/adiosf.c \
 FortranLibMPISources =  write/adios_mpi.c \
                      write/adios_mpi_lustre.c \
                      write/adios_mpi_amr.c \
-                     write/adios_chunk.c
+                     write/adios_var_merge.c
 
 FortranLibSEQSources = core/mpidummy.c
 
@@ -546,6 +546,6 @@ EXTRA_DIST = core/adios_bp_v1.h core/adios_endianness.h \
              core/adios_transport_hooks.h \
              core/bp_types.h core/bp_utils.h core/buffer.h core/common_adios.h \
              core/common_read.h core/futils.h core/globals.h core/ds_metadata.h \
-             core/util.h \
+             core/util.h core/flexpath.h \
              nssi/adios_nssi_config.h nssi/aggregation.h nssi/io_timer.h
 

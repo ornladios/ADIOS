@@ -64,7 +64,7 @@
  */
 JNIEXPORT jint JNICALL 
 Java_gov_ornl_ccs_Adios_adios_1init 
-(JNIEnv *env, jclass cls, jstring xml_fname)
+(JNIEnv *env, jclass cls, jstring xml_fname, jlong comm)
 {
     //std::cout << __FUNCTION__ << "..." << std::endl;
     int result;
@@ -72,7 +72,7 @@ Java_gov_ornl_ccs_Adios_adios_1init
 
     STR_ALLOC(xml_fname);
 
-    result = adios_init(str_xml_fname);
+    result = adios_init(str_xml_fname, (MPI_Comm) comm);
     //std::cout << "result = " << result << std::endl;
     
     STR_FREE(xml_fname);
@@ -102,7 +102,7 @@ JNIEXPORT jlong JNICALL Java_gov_ornl_ccs_Adios_adios_1open
     //std::cout << "[IN] str_file_name = " << str_file_name << std::endl;
     //std::cout << "[IN] str_mode = " << str_mode << std::endl;
     //std::cout << "[IN] comm = " << (long) comm << std::endl;
-    result = adios_open(&fd_p, str_group_name, str_file_name, str_mode, comm);
+    result = adios_open(&fd_p, str_group_name, str_file_name, str_mode, (MPI_Comm) comm);
     //std::cout << "[OUT] fd_p = " << fd_p << std::endl;
     //std::cout << "[OUT] result = " << result << std::endl;
 
@@ -333,7 +333,7 @@ JNIEXPORT jlong JNICALL Java_gov_ornl_ccs_Adios_adios_1open_1and_1set_1group_1si
     //std::cout << "[IN] str_file_name = " << str_file_name << std::endl;
     //std::cout << "[IN] str_mode = " << str_mode << std::endl;
     //std::cout << "[IN] comm = " << (long) comm << std::endl;
-    result = adios_open(&fd_p, str_group_name, str_file_name, str_mode, comm);
+    result = adios_open(&fd_p, str_group_name, str_file_name, str_mode, (MPI_Comm) comm);
     //std::cout << "[OUT] fd_p = " << fd_p << std::endl;
     //std::cout << "[OUT] result = " << result << std::endl;
 
@@ -356,9 +356,9 @@ JNIEXPORT jlong JNICALL Java_gov_ornl_ccs_Adios_adios_1open_1and_1set_1group_1si
  */
 JNIEXPORT jint JNICALL 
 Java_gov_ornl_ccs_Adios_adios_1init_1noxml
-(JNIEnv *env, jclass cls)
+(JNIEnv *env, jclass cls, jlong comm)
 {
-    return adios_init_noxml();
+    return adios_init_noxml((MPI_Comm) comm);
 }
 
 /*

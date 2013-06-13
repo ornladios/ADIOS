@@ -41,7 +41,8 @@
 
   </adios-group>
 
-  <method group="genarray" method="CHUNK">io_method=MPI</method>
+  <method group="genarray" method="MPI"></method>
+  <!--method group="genarray" method="VAR_MERGE">chunk_size=1048576;io_method=MPI_LUSTRE;io_parameters=stripe_count=16,stripe_size=1048576</method-->
 
   <buffer size-MB="20" allocate-time="now"/>
 

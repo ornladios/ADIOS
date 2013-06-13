@@ -523,8 +523,12 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
         }
         else
         {
-            time = t + 1;
+            // Fix: the assumption that for streaming mode, the time in file
+            // always starts from 1 is not correct. So here we add fh->tidx_start to adjust
+            // Q. Liu, 06/2013
+            time = fh->tidx_start + t;
         }
+
 //printf ("t = %d(%d,%d), time = %d\n", t, fp->current_step, r->from_steps, time);
 //printf ("c = %d, f = %d, time = %d\n", fp->current_step, r->from_steps, time);
         start_idx = get_var_start_index (v, time);
@@ -877,7 +881,9 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                               ,var_offset
                               ,dset_offset
                               ,datasize
-                              ,size_of_type 
+                              ,size_of_type
+                              ,fh->mfooter.change_endianness
+                              ,v->type 
                               );
                 }
             }  // end for (idx ... loop over pgs
@@ -1887,26 +1893,27 @@ typedef struct {
             }
         }
 
-//TODO
-#if 0
-        if(ntimes > 0 && vs->min && (map[adios_statistic_sum] != -1) && (map[adios_statistic_sum_square] != -1))
+        if(nsteps > 0 && vs->min
+           && (map[adios_statistic_sum] != -1) 
+           && (map[adios_statistic_sum_square] != -1)
+          )
         {
             // min, max, summation exists only for arrays
             // Calculate average / timestep
-
-            for(timestep = 0; timestep < ntimes; timestep ++)
+            for(timestep = 0; timestep < nsteps; timestep ++)
             {
                 MALLOC(vs->steps->avgs[timestep], sum_size, "average per timestep")
                 *(vs->steps->avgs[timestep]) = *(sums[timestep]) / cnts[timestep];
 
                 MALLOC(vs->steps->std_devs[timestep], sum_size, "standard deviation per timestep")
-                *(vs->steps->std_devs[timestep]) = sqrt(*(sum_squares[timestep]) / cnts[timestep] - ((*(vs->steps->avgs[timestep]) * (*(vs->steps->avgs[timestep])))));
+                *(vs->steps->std_devs[timestep]) = sqrt(*(sum_squares[timestep]) / cnts[timestep] 
+                             - ((*(vs->steps->avgs[timestep]) * (*(vs->steps->avgs[timestep])))));
 
                 free (sums[timestep]);
                 free (sum_squares[timestep]);
             }
         }
-#endif
+
         // Calculate global average
         if(vs->min && gsum && (map[adios_statistic_sum] != -1) && (map[adios_statistic_sum_square] != -1))
         {

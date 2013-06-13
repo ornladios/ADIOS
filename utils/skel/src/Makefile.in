@@ -35,6 +35,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
+@BUILD_FORTRAN_TRUE@am__append_1 = skel_xml_output_f.c
 subdir = utils/skel/src
 DIST_COMMON = $(library_include_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in
@@ -93,7 +94,9 @@ LIBRARIES = $(lib_LIBRARIES)
 ARFLAGS = cru
 libskel_a_AR = $(AR) $(ARFLAGS)
 libskel_a_LIBADD =
-am_libskel_a_OBJECTS = skel_xml_output.$(OBJEXT)
+am__libskel_a_SOURCES_DIST = skel_xml_output.c skel_xml_output_f.c
+@BUILD_FORTRAN_TRUE@am__objects_1 = skel_xml_output_f.$(OBJEXT)
+am_libskel_a_OBJECTS = skel_xml_output.$(OBJEXT) $(am__objects_1)
 libskel_a_OBJECTS = $(am_libskel_a_OBJECTS)
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp = $(SHELL) $(top_srcdir)/config/depcomp
@@ -109,7 +112,7 @@ LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 SOURCES = $(libskel_a_SOURCES)
-DIST_SOURCES = $(libskel_a_SOURCES)
+DIST_SOURCES = $(am__libskel_a_SOURCES_DIST)
 HEADERS = $(library_include_HEADERS)
 ETAGS = etags
 CTAGS = ctags
@@ -333,7 +336,7 @@ top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 CLEANFILES = *.o
 lib_LIBRARIES = libskel.a
-libskel_a_SOURCES = skel_xml_output.c
+libskel_a_SOURCES = skel_xml_output.c $(am__append_1)
 library_includedir = $(includedir)/skel
 library_include_HEADERS = skel_xml_output.h
 all: all-am
@@ -414,6 +417,7 @@ distclean-compile:
 	-rm -f *.tab.c
 
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/skel_xml_output.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/skel_xml_output_f.Po@am__quote@
 
 .c.o:
 @am__fastdepCC_TRUE@	$(COMPILE) -MT $@ -MD -MP -MF $(DEPDIR)/$*.Tpo -c -o $@ $<

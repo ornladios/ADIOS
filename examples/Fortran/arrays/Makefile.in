@@ -69,7 +69,7 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_arrays_read_OBJECTS = arrays_read.$(OBJEXT)
 arrays_read_OBJECTS = $(am_arrays_read_OBJECTS)
 am__DEPENDENCIES_1 =
-arrays_read_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
+arrays_read_DEPENDENCIES = $(top_builddir)/src/libadiosreadf.a \
 	$(am__DEPENDENCIES_1)
 arrays_read_LINK = $(LIBTOOL) --tag=FC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(FCLD) $(AM_FCFLAGS) $(FCFLAGS) \
@@ -318,8 +318,9 @@ arrays_write_SOURCES = arrays_write.F90
 arrays_write_LDADD = $(top_builddir)/src/libadiosf.a $(ADIOSLIB_LDADD)
 arrays_write_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 arrays_read_SOURCES = arrays_read.F90
-arrays_read_LDADD = $(top_builddir)/src/libadiosf.a $(ADIOSLIB_LDADD)
-arrays_read_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+arrays_read_LDADD = $(top_builddir)/src/libadiosreadf.a \
+	$(ADIOSREADLIB_LDADD)
+arrays_read_LDFLAGS = $(ADIOSREADLIB_LDFLAGS)
 CLEANFILES = *.bp
 EXTRA_DIST = arrays.xml gwrite_arrays.fh gread_arrays.fh job.pbs
 FCLINK = \

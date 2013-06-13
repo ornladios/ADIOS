@@ -17,73 +17,85 @@
 int main (int argc, char ** argv) 
 {
     char        filename [256];
-    int         rank, size, i, j, k;
+    int         rank, size, i, j, k, token;
     MPI_Comm    comm = MPI_COMM_WORLD;
+    MPI_Status  status;
+    enum ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP;
+    ADIOS_SELECTION * sel;
     void * data = NULL;
-    uint64_t start[3], count[3], bytes_read = 0;
+    uint64_t start[3], count[3], step = 0;
 
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &size);
 
-    ADIOS_FILE * f = adios_fopen ("adios_globaltime.bp", comm);
+    adios_read_init_method (method, comm, "verbose=3");
+
+    /* adios_read_open_file() allows for seeing all timesteps in the file */
+    ADIOS_FILE * f = adios_read_open_file ("adios_globaltime.bp", method, comm);
     if (f == NULL)
     {
         printf ("%s\n", adios_errmsg());
         return -1;
     }
 
-    ADIOS_GROUP * g = adios_gopen (f, "restart");
-    if (g == NULL)
-    {
-        printf ("%s\n", adios_errmsg());
-        return -1;
-    }
-
-    ADIOS_VARINFO * v = adios_inq_var (g, "temperature");
+    ADIOS_VARINFO * v = adios_inq_var (f, "temperature");
 
     // read in two timesteps
-    data = malloc (2 * v->dims[1] * v->dims[2] * sizeof (double));
+    data = malloc (2 * v->dims[0] * v->dims[1] * sizeof (double));
     if (data == NULL)
     {
         fprintf (stderr, "malloc failed.\n");
         return -1;
     }
 
-    // read in timestep 'rank'
-    start[0] = rank % 13;
-    count[0] = 1;
+    // read in timestep 'rank' (up to 12)
+    step = rank % 13;
+
+    start[0] = 0;
+    count[0] = v->dims[0];
 
     start[1] = 0;
     count[1] = v->dims[1];
 
-    start[2] = 0;
-    count[2] = v->dims[2];
+    /* Read a subset of the temperature array */
+    sel = adios_selection_boundingbox (v->ndim, start, count);
+    /*    2 steps from 'step' */
+    adios_schedule_read (f, sel, "temperature", step, 2, data);
+    adios_perform_reads (f, 1);
 
-    bytes_read = adios_read_var (g, "temperature", start, count, data);
+    if (rank == 0) 
+        printf ("Array size of temperature [0:%lld,0:%lld]\n", v->dims[0], v->dims[1]);   
 
-    printf("rank=%d: ", rank);
-    for (i = 0; i < 1; i++) {
-        printf ("[%lld,0:%lld,0:%lld] = [", start[0]+i, v->dims[1], v->dims[2]);   
-        for (j = 0; j < v->dims[1]; j++) {
+    if (rank > 0) {
+        MPI_Recv (&token, 1, MPI_INT, rank-1, 0, comm, &status);
+    }
+
+    printf("------------------------------------------------\n", rank);
+    printf("rank=%d: \n", rank);
+    for (i = 0; i < 2; i++) {
+        printf ("step %lld = [\n", step+i);   
+        for (j = 0; j < v->dims[0]; j++) {
             printf (" [");
-            for (k = 0; k < v->dims[2]; k++) {
-                printf ("%g ", ((double *)data) [ i * v->dims[1] * v->dims[2] + j * v->dims[2] + k]);
+            for (k = 0; k < v->dims[1]; k++) {
+                printf ("%g ", ((double *)data) [ i * v->dims[0] * v->dims[1] + j * v->dims[1] + k]);
             }
-            printf ("]");
+            printf ("]\n");
         }
-        printf (" ]\t");
+        printf ("]\n");
     }
     printf ("\n");
+
+    if (rank < size-1) {
+        MPI_Send (&token, 1, MPI_INT, rank+1, 0, comm);
+    }
 
     free (data);
     adios_free_varinfo (v);
 
-    adios_gclose (g);
-    adios_fclose (f);
-
+    adios_read_close (f);
     MPI_Barrier (comm);
-
+    adios_read_finalize_method (method);
     MPI_Finalize ();
     return 0;
 }

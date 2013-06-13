@@ -1600,7 +1600,7 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
     int j, k, t, allstep;
     struct BP_PROC * p = (struct BP_PROC *) fp->fh;
     struct BP_FILE * fh = p->fh;
-    struct adios_index_var_struct_v1 * var_root;
+    struct adios_index_var_struct_v1 * var_root = fh->vars_root;
     struct adios_index_attribute_struct_v1 * attr_root;
     uint64_t i;
 
@@ -1615,12 +1615,12 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
     else
     {
         allstep = 0;
-        t = tostep + 1;
+        t = get_time (var_root, tostep);
     }
 
     /* Prepare vars */
     fp->nvars = 0;
-    var_root = fh->vars_root;
+//    var_root = fh->vars_root;
 
     while (var_root)
     {

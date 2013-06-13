@@ -139,7 +139,7 @@ int ncd_gen_name(
         char *name);
 int getNC4TypeId(
         enum ADIOS_DATATYPES type,
-        int *nc4_type_id,
+        nc_type *nc4_type_id,
         enum ADIOS_FLAG fortran_flag);
 
 
@@ -350,7 +350,7 @@ static int write_attribute(
     int i, rank = 0;
     int rc;
 
-    int nc4_type_id;
+    nc_type nc4_type_id;
     int varid;
     int attid;
 
@@ -767,7 +767,7 @@ static int read_var(
     deciphered_dims_t deciphered_dims;
     char fullname[255];
 
-    int nc4_type_id;
+    nc_type nc4_type_id;
     int nc4_varid;
 
     memset(&deciphered_dims, 0, sizeof(deciphered_dims_t));
@@ -924,7 +924,7 @@ static int write_header(
     int i;
     int rc;
     int return_code=0;
-    int nc4_type_id;
+    nc_type nc4_type_id;
     int nc4_varid;
     deciphered_dims_t deciphered_dims;
     char fullname[255];
@@ -950,7 +950,7 @@ static int write_header(
         Func_Timer("inqvar", rc = nc_inq_varid(ncid, fullname, &nc4_varid););
         if (rc == NC_ENOTVAR) {
             if (pvar->type == adios_string) {
-                size_t str_var_dimid=0;
+                int str_var_dimid=0;
                 char str_var_dimname[40];
                 sprintf(str_var_dimname, "%s_dim", fullname);
                 Func_Timer("defdim", rc = nc_def_dim(ncid, str_var_dimname, strlen((char *)pvar->data)+1, &str_var_dimid););
@@ -1140,7 +1140,7 @@ static int write_var(
     int i;
     int rc;
     int return_code=0;
-    int nc4_type_id;
+    nc_type nc4_type_id;
     int nc4_varid;
     deciphered_dims_t deciphered_dims;
     char fullname[255];
@@ -1599,10 +1599,13 @@ void adios_nc4_close(
     } else if (fd->mode == adios_mode_write || fd->mode == adios_mode_append) {
         if (DEBUG>3) fprintf(stderr, "entering nc4 write attribute mode!\n");
         while(a) {
-            Func_Timer("write_attribute", write_attribute(md->ncid, md->root_ncid, fd->group->vars, a,
-                    fd->group->adios_host_language_fortran,
-                    md->rank,
-                    md->size););
+            if (strcmp(a->path, "/__adios__")) {
+                Func_Timer("write_attribute", 
+                        write_attribute(md->ncid, md->root_ncid, fd->group->vars, a,
+                            fd->group->adios_host_language_fortran,
+                            md->rank,
+                            md->size););
+            }
             a = a->next;
         }
         if (md->rank==0) {
@@ -1647,7 +1650,7 @@ void adios_nc4_finalize(
  */
 int getNC4TypeId(
         enum ADIOS_DATATYPES type,
-        int *nc4_type_id,
+        nc_type *nc4_type_id,
         enum ADIOS_FLAG fortran_flag)
 {
     int size, status=0;

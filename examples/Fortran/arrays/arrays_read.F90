@@ -12,7 +12,7 @@
 !/*     Similar example is ../../C/manual/2_adios_read.c       */
 !/**************************************************************/
 program arrays
-    use adios_write_mod
+    use adios_read_mod
     implicit none
     include 'mpif.h'
 
@@ -21,9 +21,9 @@ program arrays
     integer             :: comm
 
     ! ADIOS variables declarations for matching gwrite_temperature.fh 
-    integer                 :: adios_err
-    integer*8               :: adios_groupsize, adios_totalsize
-    integer*8               :: adios_handle, adios_buf_size
+    integer*8               :: f
+    integer                 :: method = ADIOS_READ_METHOD_BP
+    integer*8               :: sel
 
     ! variables to read in 
     integer                 :: NX, NY
@@ -35,22 +35,20 @@ program arrays
     call MPI_Comm_rank (comm, rank, ierr)
     call MPI_Comm_size (comm, size, ierr)
 
-    call adios_init ("arrays.xml", comm, adios_err);
-    call adios_open (adios_handle, "arrays", filename, "r", comm, adios_err);
+    call adios_read_init_method (method, comm, "verbose=3", ierr);
 
-    adios_groupsize = 0
-    adios_totalsize = 0
-    call adios_group_size (adios_handle, adios_groupsize, adios_totalsize, adios_err)
+    call adios_read_open (f, filename, method, comm, ADIOS_LOCKMODE_NONE, 1.0, ierr);
 
-    ! First read in the scalars to calculate the size of the arrays
-    adios_buf_size = 4
-    call adios_read (adios_handle, "NX", NX, adios_buf_size, adios_err)
-    adios_buf_size = 4
-    call adios_read (adios_handle, "NY", NY, adios_buf_size, adios_err)
-    
-    call adios_close (adios_handle, adios_err)
-    ! Note, we have to close to perform the reading of the variables above
+    ! select specific writer's data (using rank since each rank of the writer
+    ! wrote one block of the data)
+    call adios_selection_writeblock (sel, rank)
 
+    ! First get the scalars to calculate the size of the arrays.
+    ! Note that we cannot use adios_get_scalar here because that
+    !   retrieves the same NX for everyone (from writer rank 0).
+    call adios_schedule_read (f, sel, "NX", 1, 1, NX, ierr)
+    call adios_schedule_read (f, sel, "NY", 1, 1, NY, ierr)
+    call adios_perform_reads (f, ierr)
     write (*,'("rank=",i0," NX=",i0," NY=",i0)') rank, NX, NY
 
     ! Allocate space for the arrays
@@ -58,13 +56,9 @@ program arrays
     allocate (p(NX))
 
     ! Read the arrays
-    call adios_open (adios_handle, "arrays", filename, "r", comm, adios_err);
-    call adios_group_size (adios_handle, adios_groupsize, adios_totalsize, adios_err)
-    adios_buf_size = 8 * (NX) * (NY)
-    call adios_read (adios_handle, "var_double_2Darray", t, adios_buf_size, adios_err)
-    adios_buf_size = 4 * (NX)
-    call adios_read (adios_handle, "var_int_1Darray", p, adios_buf_size, adios_err)
-    call adios_close (adios_handle, adios_err)
+    call adios_schedule_read (f, sel, "var_double_2Darray", 1, 1, t, ierr)
+    call adios_schedule_read (f, sel, "var_int_1Darray", 1, 1, p, ierr)
+    call adios_perform_reads (f, ierr)
 
 
     ! Print the results
@@ -81,10 +75,9 @@ program arrays
     write (*,'(")")')
 
 
+    call adios_read_close (f, ierr)
     call MPI_Barrier (comm, ierr);
-
-    call adios_finalize (rank, adios_err);
-
+    call adios_read_finalize_method (method, ierr);
     call MPI_Finalize (ierr);
 
 end program

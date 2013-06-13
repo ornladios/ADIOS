@@ -31,23 +31,32 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     module load python
     # Use both seq hdf5 (for utils) and 
     #   parallel hdf5 (for PHDF5 method)
+    module load hdf5/1.8.10
+    export SEQ_HDF5_DIR=$HDF5_DIR
+    module unload hdf5
+    module load szip
+    module load hdf5/1.8.10_par
+    export PAR_HDF5_DIR=$HDF5_DIR
+    module unload hdf5
+# start of  Seq. NetCDF 4 
+#    module load netcdf/4.1.3
+#    export SEQ_NC_DIR=$NETCDF_DIR
 #    module load hdf5/1.8.10
 #    export SEQ_HDF5_DIR=$HDF5_DIR
-#    export SEQ_HDF5_CLIB=$HDF5_CLIB
-#    module unload hdf5
+#    module unload hdf5/1.8.10
+#    module load szip/2.1
+#    export SZIP_DIR=$SZIP_DIR
+#    module unload netcdf
+# end of  Seq. NetCDF 4
+# start of Parallel NetCDF 4
+#    module load netcdf/4.1.3_par
+#    export PAR_NC_DIR=$NETCDF_DIR
 #    module load hdf5/1.8.10_par
 #    export PAR_HDF5_DIR=$HDF5_DIR
-#    export PAR_HDF5_CLIB=$HDF5_CLIB
-#    module unload hdf5
-    # Seq. and Parallel NetCDF 4 
-    module load netcdf/4.1.3
-    export SEQ_NC_DIR=$NETCDF_DIR
-    export SEQ_NC_CLIB=$NETCDF_CLIB 
-    module unload netcdf
-    module load netcdf/4.1.3_par
-    export PAR_NC_DIR=$NETCDF_DIR
-    export PAR_NC_CLIB=$NETCDF_CLIB
-    module unload netcdf
+#    module unload hdf5/1.8.10_par
+#    export SZIP_DIR="/sw/sith/szip/2.1/rhel6_pgi12.8"
+#    module unload netcdf
+# end of Parallel NetCDF 4 
     export BUILD_WRITE=ON
     export BUILD_FORTRAN=ON
     export skel_timing=ON
@@ -251,7 +260,7 @@ elif [ `hostname | cut -c 1-4` == "lens" ]; then
 
 elif [ `hostname | cut -c 1-5` == "titan" ]; then
 
-    BUILD_STAGING=false
+    BUILD_STAGING=true
     if [ $BUILD_STAGING == "false" ]; then
     
         ################
@@ -279,22 +288,33 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         module load mxml
 	module load hdf5/1.8.8
 	export SEQ_HDF5_DIR=$HDF5_DIR
-	export SEQ_HDF5_CLIB=$HDF5_CLIB
 	module unload hdf5/1.8.8
 	module load hdf5-parallel/1.8.8
 	export PAR_HDF5_DIR=$HDF5_DIR
-	export PAR_HDF5_CLIB=$HDF5_CLIB
 	module unload hdf5-parallel/1.8.8
-	# Seq. and Parallel NetCDF 4 
-#	module load netcdf/4.2.0
-#	export SEQ_NC_DIR=$NETCDF_DIR
-#	module unload netcdf
-#	module load netcdf-hdf5parallel/4.2.0
-#	export PAR_NC_DIR=$NETCDF_DIR
-#	module unload netcdf
+# start of Seq. NetCDF 4 
+	module load netcdf/4.2.0
+	export SEQ_NC_DIR=$NETCDF_DIR
+        module load hdf5/1.8.8
+        export SEQ_HDF5_DIR=$HDF5_DIR
+        module unload hdf5/1.8.8
+        module load szip/2.1
+        export SZIP_DIR=$SZIP_DIR
+	module unload netcdf
+#end of Seq. NetCDF 4 
+#start of Parallel NetCDF 4
+	module load netcdf-hdf5parallel/4.2.0
+	export PAR_NC_DIR=$NETCDF_DIR
+	module unload netcdf
+        module load hdf5-parallel/1.8.8
+        export PAR_HDF5_DIR=$HDF5_DIR
+        module unload hdf5-parallel/1.8.8
+#        module load szip/2.1
+#        export SZIP_DIR=$SZIP_DIR
+#endof Parallel NetCDF 4 
 	# use the two lines below for openmpi
-        export CRAY_UGNI_DIR=""
-        export CRAY_PMI_DIR=""
+        export CRAY_UGNI_DIR="/opt/cray/ugni/4.0-1.0401.5928.9.5.gem"
+        export CRAY_PMI_DIR="/opt/cray/pmi/4.0.1-1.0000.9421.73.3.gem"
 	export BUILD_WRITE=ON
 	export BUILD_FORTRAN=ON
 	export CC=cc
@@ -365,11 +385,38 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         fi
      
         # NOTE hdf5-parallel module does not work with C++ compiler
-        #module load hdf5-parallel
-        #module load netcdf-hdf5parallel
+#start of seq and parallel hdf5
+        module load hdf5/1.8.8
+        export SEQ_HDF5_DIR=$HDF5_DIR
+        module unload hdf5/1.8.8
         module load szip
+        module load hdf5-parallel/1.8.8
+        export PAR_HDF5_DIR=$HDF5_DIR
+        module unload hdf5-paralle/1.8.8
+#end of hdf5
         #module load papi
         module load mxml
+# start of Seq. NetCDF 4 
+#        module load netcdf/4.2.0
+#        export SEQ_NC_DIR=$NETCDF_DIR
+#        module load hdf5/1.8.8
+#        export SEQ_HDF5_DIR=$HDF5_DIR
+#        module unload hdf5/1.8.8
+#        module load szip/2.1
+#        export SZIP_DIR=$SZIP_DIR
+#        module unload netcdf
+#end of Seq. NetCDF 4 
+#start of Parallel NetCDF 4
+#        module load netcdf-hdf5parallel/4.2.0
+#        export PAR_NC_DIR=$NETCDF_DIR
+#        module unload netcdf-hdf5parallel/4.2.0
+#        module load hdf5-parallel/1.8.8
+#        export PAR_HDF5_DIR=$HDF5_DIR
+#        module unload hdf5-parallel/1.8.8
+#        module load szip/2.1
+#        export SZIP_DIR=$SZIP_DIR
+#endof Parallel NetCDF 4 
+
         # use the two lines below for openmpi
         #export CC=mpicc
         #export FC=mpif90
@@ -642,7 +689,7 @@ elif [ `hostname | cut -c 1-6` == "jaguar" ]; then
     
     fi
     
-elif [ `hostname -f | cut -c 8-15` == "intrepid" ]; then
+elif [ "x"`hostname -f | cut -c 8-15` == "xintrepid" ]; then
     #####################
     # Intrepid BlueGene #
     #####################
@@ -841,6 +888,10 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
     export FC=/opt/local/bin/openmpif90
     export CXX=/opt/local/bin/openmpicxx
     CFLAGS="-g -DO_LARGEFILE=0 -fno-common" 
+    export BUILD_WRITE=ON
+    export BUILD_FORTRAN=ON
+    export skel_timing=ON
+    export INSTALL_PREFIX="/opt/adios"
 #    ./configure --prefix=/opt/adios \
 #        --with-mxml=/opt/mxml \
 #        --with-netcdf=/opt/netcdf \
@@ -893,6 +944,26 @@ elif [ `hostname | cut -c 1-4` == "qliu" ]; then
         #--with-hdf5=/home/thkorde/local \
         #--with-netcdf=/home/thkorde/local
 
+elif [ `hostname | cut -c 1-7` == "esimmon" ]; then
+
+    #######################
+    # Esimmon Virtual Box #
+    #######################
+    echo "Configure on ESIMMON VirtualBox ."
+    export BUILD_WRITE=ON
+    export BUILD_FORTRAN=ON
+    export skel_timing=ON
+    export CC=mpicc
+    export CXX=mpicxx
+    export FC=mpif90
+    export INSTALL_PREFIX="/opt/adios/1.5.0"
+    export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
+    export CFLAGS="-g -fPIC"
+    export MXML_DIR=/opt/mxml
+    export SEQ_HDF5_DIR=/opt/hdf5
+    export PAR_HDF5_DIR=/opt/phdf5
+    export SEQ_NC_DIR=/opt/netcdf3
+    export PAR_NC_DIR=/opt/nc4par
 
 else
     echo "Could not determine what machine is this."

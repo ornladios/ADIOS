@@ -19,7 +19,7 @@ public class AdiosTest
         System.out.println("MPI rank/size = " + rank + " / " + size);
         System.out.println("MPI &comm     = " + comm);
 
-        Adios.Init("config.xml");
+        Adios.Init("config.xml", comm);
         long adios_handle = Adios.Open ("temperature", "adios_global.bp", "w", comm);
         
         int      NX = 10; 
