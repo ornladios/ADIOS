@@ -132,11 +132,6 @@ typedef struct _flexpath_file_data
     int valid_evgroup;
     evgroup * gp;
 
-    char *arr;
-    char *rep_id;
-    int rep_id_len;
-    int id_len;
-
     int* sendees;
     int num_sendees;
     int ackCondition;    
@@ -198,11 +193,6 @@ new_flexpath_file_data(const char * fname)
     fp->sendees = NULL;
     fp->num_sendees = 0;    
 
-    fp->arr = NULL;
-    fp->rep_id = NULL;
-    fp->rep_id_len = 0;
-    fp->id_len = 0;
-    int ackCondition = 0;
     return fp;        
 }
 
