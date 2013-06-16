@@ -31,7 +31,7 @@
 // evpath libraries
 #include <ffs.h>
 #include <atl.h>
-#include <gen_thread.h>
+//#include <gen_thread.h>
 #include <evpath.h>
 
 // local libraries
@@ -622,7 +622,7 @@ adios_read_flexpath_init_method (MPI_Comm comm, PairStruct* params)
     MPI_Comm_rank(fp_read_data->fp_comm, &(fp_read_data->fp_comm_rank));
 
     // setup connection manager
-    gen_pthread_init();
+    //gen_pthread_init();
     fp_read_data->fp_cm = CManager_create();
     if(transport == NULL){
 	if(CMlisten(fp_read_data->fp_cm) == 0) {
@@ -725,6 +725,9 @@ adios_read_flexpath_open(const char * fname,
 				raw_handler,
 				(void*)adiosfile);
 
+    /* Gather the contact info from the other readers
+       and write it to a file. Create a ready file so
+       that the writer knows it can parse this file. */
     char writer_ready_filename[200];
     char writer_info_filename[200];
     char reader_ready_filename[200];
@@ -761,9 +764,6 @@ adios_read_flexpath_open(const char * fname,
 	for(i=0; i<fp->size; i++) {
 	    fprintf(fp_out,"%s\n", &recvbuf[i*50]);
 	}
-	fclose(fp_out);
-	fp_out = fopen(reader_ready_filename, "w");
-	fprintf(fp_out, "ready");
 	fclose(fp_out);
 	free(recvbuf);
 
@@ -886,7 +886,7 @@ int adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float time
             EVsubmit(fp->bridges[i].op_source, &close, NULL);
 
             op_msg open;
-            open.step = adiosfile->current_step +1;
+            open.step = adiosfile->current_step+1;
             open.type = 1;
             open.process_id = fp->rank;
             open.file_name = "test";
