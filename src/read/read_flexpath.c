@@ -297,11 +297,11 @@ static int op_msg_handler(CManager cm, void *vevent, void *client_data, attr_lis
     op_msg* msg = (op_msg*)vevent;    
     ADIOS_FILE *adiosfile = (ADIOS_FILE*)client_data;
     flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
-    if(msg->type==2) {
+    if(msg->type==ACK_MSG) {
         CMCondition_signal(fp_read_data->fp_cm, msg->condition);
         //ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
     }
-    if(msg->type == 4){	
+    if(msg->type == EOS_MSG){	
 	adios_errno = err_end_of_stream;
 	CMCondition_signal(fp_read_data->fp_cm, msg->condition);
     }       
@@ -327,18 +327,6 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 
 }
 
-
-void 
-print_int_arr(char * tag, int * arr, int count)
-{
-    int i;
-    log_debug_cont("%s: ", tag);
-    for(i=0; i<count; i++){
-	log_debug_cont("%d ", arr[i]);
-    }
-    log_debug("\n");
-}
-
 array_displacements*
 find_displacement(array_displacements* list, int rank, int num_displ){
     int i;
@@ -352,8 +340,6 @@ find_displacement(array_displacements* list, int rank, int num_displ){
 int
 linearize_displ(int * offset, int * sizes, int ndim, int data_size)
 {
-    //print_int_arr("linearize_displ offsets", offset, ndim);
-    //print_int_arr("linearize_displ sizes", sizes, ndim);
     int i;
     int retval = 0;
     for(i = 0; i<ndim - 1; i++){
@@ -404,10 +390,6 @@ copyoffsets(int dim, // dimension index
     }
 }
 
-/*
- * Will replace data handler once everything is figured out and working wrt conditions and the fm
- * get/set api.
- */
 static int
 raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list attrs)
 {
@@ -421,8 +403,10 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 	FMcopy_struct_list(format_list_of_FMFormat(format));
     FMField *f = struct_list[0].field_list;
 
-    // setting up initial vars from the format list that comes along with the
-    // message. Message contains both an FFS description and the data.
+    /* setting up initial vars from the format list that comes along with the
+       message. Message contains both an FFS description and the data. This block
+       of code should only be executed once. It is in response to the reader's INIT
+       message sent to the writer in the open call. */
     if(fp->num_vars == 0){
 	int var_count = 0;
 	int i=0;       
@@ -477,10 +461,9 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
         int i;
         get_int_attr(attrs, attr_atom_from_string(strdup(atom_name)), &num_dims);
     	flexpath_var_chunk * curr_chunk = &var->chunks[0];
+
     	// scalar
-        fp_log("SEL","inquiring num_dims %d of var %s\n", num_dims, f->field_name);
-    	if(num_dims == 0){
-	    
+    	if(num_dims == 0){	   
     	    curr_chunk->global_offsets = NULL;
     	    curr_chunk->global_bounds = NULL;
     	    curr_chunk->local_bounds = NULL;
@@ -531,7 +514,6 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 		    void *arrays_data  = get_FMPtrField_by_name(f, f->field_name, base_data, 1);
 		    memcpy(var->chunks[0].data, arrays_data, var->array_size);
     		}
-
     	    }
     	    else if(var->sel->type == ADIOS_SELECTION_BOUNDINGBOX){
     		int i;
@@ -545,36 +527,6 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     							       var->num_displ);
 		
 		void *aptr8 = get_FMPtrField_by_name(f, f->field_name, base_data, 1);
-
-    		//double * temp = (double*)curr_offset;
-		log_debug("first call to copyoffsets\n");
-		log_debug("dim: %d\n", 0);
-		log_debug("ndims: %d\n", disp->ndims);
-		log_debug("data_size: %d\n", f->field_size);
-
-		log_debug_cont("disp_start[]: ");
-		int k;
-		for(k=0; k<disp->ndims; k++){
-		    log_debug_cont("%d ", disp->start[k]);
-		}
-		log_debug("\n");
-
-		log_debug("disp_count[]: ");
-		for(k=0; k<disp->ndims; k++){
-		    log_debug_cont("%d ", disp->count[k]);
-		}
-		log_debug("\n");
-
-		log_debug("writer_count[]: ");
-		for(k=0; k<disp->ndims; k++){
-		    log_debug_cont("%d ", writer_count[k]);
-		}
-		log_debug("\n");
-		
-		log_debug("reader_count[]: ");
-		for(k=0; k<disp->ndims; k++){
-		    log_debug_cont("%d ", (int)reader_count[k]);
-		}
 
                 copyoffsets(0,
     			    disp->ndims,
@@ -592,6 +544,11 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     }
     CMCondition_signal(fp_read_data->fp_cm, condition);
     return 0; 
+}
+
+char**
+get_var_namelist(){
+
 }
 
 /*
@@ -802,46 +759,48 @@ adios_read_flexpath_open(const char * fname,
 	num_bridges++;
     }
     fclose(fp_in);
-    //build_bridge(&fp->bridges[0]);
-
     fp->num_bridges = num_bridges;
     // clean up of writer's files
     MPI_Barrier(fp->comm);
     if(fp->rank == 0){
 	unlink(writer_info_filename);
 	unlink(writer_ready_filename);
-    }	
-    
+    }	    
     adiosfile->fh = (uint64_t)fp;
     adiosfile->current_step = 0;
     
-    // determining from which writer to read
-    // if there are less writers
+    /* Init with a writer to get initial scalar
+       data so we can handle inq_var calls and
+       also populate the ADIOS_FILE struct. */
     int writer_rank = fp->rank % num_bridges;
-    /* if(num_bridges < fp->size){ */
-    /* 	writer_rank = fp->size % num_bridges; */
-    /* 	// otherwise */
-    /* }else{ */
-    /* 	writer_rank = fp->rank; */
-    /* }     */
     build_bridge(&fp->bridges[writer_rank]);
     fp->writer_coordinator = writer_rank;
     op_msg init;
     init.step = 0;
-    init.type = 3;
+    init.type = INIT_MSG;
     init.process_id = fp->rank;
     init.file_name = "test";
     init.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
     EVsubmit(fp->bridges[writer_rank].op_source, &init, NULL);
     CMCondition_wait(fp_read_data->fp_cm, init.condition); 
-    /* Flush_msg msg; */
-    /* msg.type = DATA; */
-    /* msg.rank = fp->rank; */
-    /* msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL); */
-    /* EVsubmit(fp->bridges[0].flush_source, &msg, NULL); */
-    /* CMCondition_wait(fp_read_data->fp_cm, msg.condition); */
-    adios_errno == err_no_error;
-    log_debug("\t\tFLEXPATH READER LEAVING OPEN\n");
+
+    // this has to change. Writer needs to have some way of
+    // taking the attributes out of the xml document
+    // and sending them over ffs encoded. Not yet implemented.
+    // the rest of this info for adiosfile gets filled in raw_handler.
+    adiosfile->nattrs = 0;
+    adiosfile->attr_namelist = NULL;
+    // first step is at least one, otherwise raw_handler will not execute.
+    // in reality, writer might be further along, so we might have to make
+    // the writer explitly send across messages each time it calls close, to
+    // indicate which timesteps are available. 
+    adiosfile->last_step = 1;
+    adiosfile->path = fname;
+    // verifies these two fields. It's not BP, so no BP version.
+    // It's a stream, so how can the file size be known?
+    adiosfile->version = -1;
+    adiosfile->file_size = 0;
+    adios_errno == err_no_error;        
     return adiosfile;
 }
 
@@ -1060,7 +1019,6 @@ need_writer(flexpath_file_data *fp, int j, const ADIOS_SELECTION* sel, evgroup_p
     log_debug("overlap detected\n\n");
     return 1;
 }
-
 
 int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
 					   const ADIOS_SELECTION * sel,
