@@ -206,7 +206,7 @@ new_flexpath_file_data(const char * fname)
 }
 
 enum ADIOS_DATATYPES
-ffs_type_to_adios_type(char *ffs_type)
+ffs_type_to_adios_type(const char *ffs_type)
 {
     if(!strcmp("integer", ffs_type))
 	return adios_integer;
