@@ -139,7 +139,7 @@ def extract_R (skel_output, select, ranks, iteration):
             core = proc.getAttribute ('id')
             vals = proc.getAttribute ('vals').split(',')
             for field in selected_fields:
-                data = data + vals[keys.index(field)].strip(',')
+                data = data + vals[keys.index(field)].strip(',') + ' '
             data = str(iteration)+" "+ core +" "+ data.rstrip (' ') + '\n'
             outfile.write (data)
         if ranks == 'all':
