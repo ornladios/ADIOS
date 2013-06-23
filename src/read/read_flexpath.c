@@ -95,6 +95,7 @@ typedef struct _flexpath_var_info
     int num_displ;
     array_displacements * displ;
     const ADIOS_SELECTION * sel;
+    int startposition;
     struct _flexpath_var_info *next;
 } flexpath_var_info, *flexpath_var_info_p;
 
@@ -234,6 +235,7 @@ new_flexpath_var_info(const char * varname, int id, uint64_t data_size)
     var->was_scheduled = 0;    
     var->time_dim = 0;
     var->ndims = 0;
+    var->startposition = 0;
     var->next = NULL;
     return var;
 }
@@ -419,7 +421,7 @@ linearize_displ(int * offset, int * sizes, int ndim, int data_size)
 }
 
 
-void 
+int 
 copyoffsets(int dim, // dimension index
 	    int ndims, // number of dimensions
 	    int data_size, // data size
@@ -428,7 +430,9 @@ copyoffsets(int dim, // dimension index
 	    int* writer_count, // local dimensions from all writers; from offset_struct
 	    uint64_t* reader_count, // the count field from reader's selector
 	    char* from, 
-	    char* to) 
+	    char* to,
+	    int startposition
+    ) 
 {
     if(dim==ndims-1) {
         int* reader_count_copy = (int*)malloc(sizeof(int)*ndims);
@@ -439,22 +443,24 @@ copyoffsets(int dim, // dimension index
         int s = linearize_displ(disp_start, writer_count, ndims, data_size);
         int e = linearize_displ(disp_start, reader_count_copy, ndims, data_size);
 	free(reader_count_copy);
-        memcpy(to, from+s,  data_size*disp_count[ndims-1]);
+        memcpy(to+startposition, from+s,  data_size*disp_count[ndims-1]);
+	return data_size*disp_count[ndims-1];
     } else {
         int i;
         for(i=0; i<disp_count[dim]; i++) {
             int* disp_startcpy = malloc(sizeof(int)*ndims);
             memcpy(disp_startcpy, disp_start, sizeof(int)*ndims);
             disp_startcpy[dim] += i;
-            copyoffsets(dim+1, 
-			ndims, 
-			data_size, 
-			disp_start,
-			disp_count, 
-			writer_count, 
-			reader_count, 
-			from, 
-			to);
+            return copyoffsets(dim+1, 
+			       ndims, 
+			       data_size, 
+			       disp_start,
+			       disp_count, 
+			       writer_count, 
+			       reader_count, 
+			       from, 
+			       to,
+			       startposition);
         }
     }
 }
@@ -739,15 +745,16 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 		// but not from this writer. I'm only getting this data because I requested
 		// another variable from this writer."
 		if(disp){
-		    copyoffsets(0,
-				disp->ndims,
-				f->field_size,
-				disp->start,
-				disp->count,
-				writer_count,
-				reader_count,
-				(char*)aptr8,
-				(char*)var->chunks[0].data);
+		    var->startposition += copyoffsets(0,
+						     disp->ndims,
+						     f->field_size,
+						     disp->start,
+						     disp->count,
+						     writer_count,
+						     reader_count,
+						     (char*)aptr8,
+						     (char*)var->chunks[0].data,
+						     var->startposition);
 		}
     	    }
     	}
@@ -1154,6 +1161,7 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
     flexpath_var_chunk * chunk = &v->chunks[0];  
     chunk->data = data;
     v->was_scheduled = 1;
+    v->startposition = 0;
     if(nsteps != 1){
 	adios_error (err_invalid_timestep,
                      "Only one step can be read from a stream at a time. "

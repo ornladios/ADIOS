@@ -19,7 +19,7 @@ int main (int argc, char ** argv)
 {
     char        filename [256];
     int         rank, size, i;
-    int         NX = 10000; 
+    int         NX = 40; 
     int         NY = 1;
     double      t[NX];
     MPI_Comm    comm = MPI_COMM_WORLD;
@@ -37,7 +37,7 @@ int main (int argc, char ** argv)
     int ii;
     for(ii = 0; ii<20; ii++){
       for (i = 0; i < NX; i++)
-        t[i] = rank * NX + i*ii;
+        t[i] = rank * NX + i;
     
       adios_open (&adios_handle, "temperature", filename, "w", comm);
     

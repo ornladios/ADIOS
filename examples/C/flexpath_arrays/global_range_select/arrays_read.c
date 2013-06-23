@@ -40,8 +40,8 @@ int main (int argc, char ** argv)
     global_range_select.type=ADIOS_SELECTION_BOUNDINGBOX;
     global_range_select.u.bb.start = malloc(sizeof(uint64_t)*2);
     global_range_select.u.bb.count = malloc(sizeof(uint64_t)*2);
-    (global_range_select.u.bb.start)[0] = rank;
-    (global_range_select.u.bb.count)[0] = 1;
+    (global_range_select.u.bb.start)[0] = 0;
+    (global_range_select.u.bb.count)[0] = 4;
     (global_range_select.u.bb.start)[1] = 0;
     (global_range_select.u.bb.count)[1] = 40;
     global_range_select.u.bb.ndim = 2;
@@ -75,7 +75,7 @@ int main (int argc, char ** argv)
         //printf("\trank=%d: NY=%d\n", rank, NY);
     
         /* Allocate space for the arrays */
-        int nelem = 40;
+        int nelem = 160;
         int arr_size = sizeof(double) * nelem;
         t = (double *) malloc (arr_size);
         memset(t, 0, arr_size);
