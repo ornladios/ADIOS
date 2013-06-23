@@ -1064,7 +1064,9 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
 	    CMCondition_wait(fp_read_data->fp_cm, msg.condition);
 	}
     }
+   
     free(fp->sendees);
+    fp->sendees = NULL;    
     fp->num_sendees = 0;
     return 0;
 }
