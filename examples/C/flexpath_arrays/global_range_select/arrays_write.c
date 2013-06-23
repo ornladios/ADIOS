@@ -35,7 +35,7 @@ int main (int argc, char ** argv)
     
     int test_scalar = rank * 1000;
     int ii;
-    for(ii = 0; ii<200; ii++){
+    for(ii = 0; ii<20; ii++){
       for (i = 0; i < NX; i++)
         t[i] = rank * NX + i*ii;
     
