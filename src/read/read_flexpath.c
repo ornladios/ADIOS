@@ -335,8 +335,7 @@ convert_file_info(flexpath_var_info * current_var,
     return v;
 }
 
-// compare used-providd varname with the full path name of variable v
-// return zero if matches and non-zero otherwise
+// compare used-provided varname with the full path name of variable
 static int
 compare_var_name (const char *varname, const flexpath_var_info *v)
 {
@@ -598,7 +597,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 	int var_count = 0;
 	int i=0;       
 	while(f->field_name != NULL){           
-	    flexpath_var_info * curr_var = new_flexpath_var_info(f->field_name, 
+	    flexpath_var_info *curr_var = new_flexpath_var_info(f->field_name, 
 								 var_count, 
 								 f->field_size);
 	    curr_var->num_chunks = 1;
@@ -725,7 +724,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 			    fp->rank, writer_rank);
 		    
 		}
-		// this is a result of the fact that the writer code sends all data.
+		// this "if" is a result of the fact that the writer code sends all data.
 		// this is an ugly way of saying "i scheduled a read for this variable,
 		// but not from this writer. I'm only getting this data because I requested
 		// another variable from this writer."
@@ -745,7 +744,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
         j++;
         f++;
     }
-    fprintf(stderr, "signalling on condition: %d\n", condition);
+    fprintf(stderr, "signaling on condition: %d\n", condition);
     CMCondition_signal(fp_read_data->fp_cm, condition);
     return 0; 
 }
@@ -874,10 +873,8 @@ adios_read_flexpath_open(const char * fname,
 	recvbuf = (char*)malloc(sizeof(char)*50*(fp->size));
     }
 
-#ifndef _NOMPI
     MPI_Gather(data_contact_info, 50, MPI_CHAR, recvbuf,
 	       50, MPI_CHAR, 0, fp->comm);
-#endif
 
     if(fp->rank == 0){	
 	// print our own contact information
@@ -982,7 +979,6 @@ int adios_read_flexpath_finalize_method ()
 
 void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
     int i;
-    log_debug("\t\tFLEXPATH READER RELEASE_STEP\n");
     flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
     for(i=0; i<fp->num_bridges; i++) {
         if(fp->bridges[i].created && !fp->bridges[i].opened) {
@@ -1038,14 +1034,14 @@ int adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float time
 
 int adios_read_flexpath_close(ADIOS_FILE * fp)
 {
-    flexpath_file_data * file = (flexpath_file_data*)fp->fh;
-    int i;
+    flexpath_file_data *fp = (flexpath_file_data*)fp->fh;
     op_msg msg;
-    msg.type=0;
+    msg.type = CLOSE_MSG;
     msg.file_name = strdup(file->file_name);
     msg.process_id = file->rank;
     msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
     //send to each opened link
+    int i;
     for(i = 0; i<file->num_bridges; i++){
         if(file->bridges[i].created) {
             msg.step = file->bridges[i].step;
@@ -1194,6 +1190,7 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
 		need_count++;
                 destination = j;
 		global_var * gvar = find_gbl_var(fp->gp->vars, v->varname, fp->gp->num_vars);
+		// TODO: memory leak here. have to free these at some point.
 		array_displacements * displ = get_writer_displacements(j, sel, gvar);
 		all_disp = realloc(all_disp, sizeof(array_displacements)*need_count);
 		all_disp[need_count-1] = *displ;
