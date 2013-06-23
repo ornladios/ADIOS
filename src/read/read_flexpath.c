@@ -126,8 +126,8 @@ typedef struct _flexpath_file_data
     int valid_evgroup;
     evgroup * gp;
 
-    int* sendees;
     int num_sendees;
+    int* sendees;
     int ackCondition;    
 } flexpath_file_data;
 
@@ -333,6 +333,9 @@ static FMField
     return NULL;
 }
 
+/*
+ * Finds the array displacements for a writer identified by its rank.
+ */
 array_displacements*
 find_displacement(array_displacements* list, int rank, int num_displ){
     int i;
@@ -397,29 +400,37 @@ copyoffsets(int dim, // dimension index
 }
 
 array_displacements*
-get_writer_displacements(int rank, const ADIOS_SELECTION * sel, global_var* gvar)
+get_writer_displacements(
+    int writer_rank, 
+    const ADIOS_SELECTION * sel, 
+    global_var* gvar)
 {
     int ndims = sel->u.bb.ndim;
-    array_displacements * displ = (array_displacements*)malloc(sizeof(array_displacements));
-    displ->writer_rank = rank;
+    array_displacements * displ = malloc(sizeof(array_displacements));
+    displ->writer_rank = writer_rank;
 
-    displ->start = (int*)malloc(sizeof(int) * ndims);
-    displ->count = (int*)malloc(sizeof(int) * ndims);    
+    displ->start = malloc(sizeof(int) * ndims);
+    displ->count = malloc(sizeof(int) * ndims);  
+    memset(displ->start, 0, sizeof(int)*ndims);
+    memset(displ->count, 0, sizeof(int)*ndims);
+
     displ->ndims = ndims;
     int * offsets = gvar->offsets[0].local_offsets;
     int * local_dims = gvar->offsets[0].local_dimensions;
-    int pos = rank * gvar->offsets[0].offsets_per_rank;
-    // malloc of ndims size;
-    //for each dim
-    int i;
+    int pos = writer_rank * gvar->offsets[0].offsets_per_rank;
+
+    int i;   
     for(i=0; i<ndims; i++){	
 	if(sel->u.bb.start[i] >= offsets[pos+i]){
 	    int start = sel->u.bb.start[i] - offsets[pos+i];
 	    displ->start[i] = start;
 	}
-	if((sel->u.bb.start[i] + sel->u.bb.count[i] - 1) <= (offsets[pos+i] + local_dims[pos+i] - 1)){	   
-	    int count = ((sel->u.bb.start[i] + sel->u.bb.count[i] - 1) - offsets[pos+i]) - displ->start[i] + 1;
+	if((sel->u.bb.start[i] + sel->u.bb.count[i] - 1) <= 
+	   (offsets[pos+i] + local_dims[pos+i] - 1)){	   
+	    int count = ((sel->u.bb.start[i] + sel->u.bb.count[i] - 1) - 
+			 offsets[pos+i]) - displ->start[i] + 1;
 	    displ->count[i] = count;
+
 	    
 	}else{
 	    int count = (local_dims[pos+i] - 1) - displ->start[i] + 1;
@@ -430,11 +441,13 @@ get_writer_displacements(int rank, const ADIOS_SELECTION * sel, global_var* gvar
 }
 
 int
-need_writer(flexpath_file_data *fp, int j, const ADIOS_SELECTION* sel, evgroup_ptr gp, char* varname) {    
-    /* if(!file_data_list->gp){ */
-    /* 	CMCondition_wait(fp_read_data->fp_cm, ackCondition); */
-    /* } */
-
+need_writer(
+    flexpath_file_data *fp, 
+    int j, 
+    const ADIOS_SELECTION* sel, 
+    evgroup_ptr gp, 
+    char* varname) 
+{    
     while(!fp->gp)
 	CMsleep(fp_read_data->fp_cm, 1);
     //select var from group
@@ -551,13 +564,13 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     }
 
     int condition;
-    int rank;          
+    int writer_rank;          
     get_int_attr(attrs, attr_atom_from_string("fp_dst_condition"), &condition);   
-    get_int_attr(attrs, attr_atom_from_string(FP_RANK_ATTR_NAME), &rank); 
+    get_int_attr(attrs, attr_atom_from_string(FP_RANK_ATTR_NAME), &writer_rank); 
     fp->current_format = format;
     f = struct_list[0].field_list;
     char * curr_offset = NULL;
-    int i = 0, l = 0, j = 0;
+    int i = 0, j = 0;
 
     while(f->field_name){
         char atom_name[200] = "";
@@ -587,7 +600,8 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 		memcpy(var->chunks[0].data, tmp_data, f->field_size);
 	    }
 	    else{
-		var->chunks[0].data = get_FMfieldAddr_by_name(f, f->field_name, base_data);
+		//var->chunks[0].data = get_FMfieldAddr_by_name(f, f->field_name, base_data);
+		var->chunks[0].data = tmp_data;
 	    }
     	    curr_chunk->has_data = 1;
     	    // else it's an array
@@ -630,32 +644,41 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     		}
     	    }
     	    else if(var->sel->type == ADIOS_SELECTION_BOUNDINGBOX){
+		fprintf(stderr, "\t\t\tbounding box for writer_rank %d, varname: %s\n", writer_rank, var->varname);
     		int i;
                 global_var* gv = find_gbl_var(fp->gp->vars,
     					      var->varname,
     					      fp->gp->num_vars);
                 int * writer_count = gv->offsets[0].local_dimensions;
                 uint64_t * reader_count = var->sel->u.bb.count;
+		fprintf(stderr, "\t\tfinding displ for rank :%d\n", writer_rank);
     		array_displacements * disp = find_displacement(var->displ,
-    							       rank,
+    							       writer_rank,
     							       var->num_displ);
 		
 		void *aptr8 = get_FMPtrField_by_name(f, f->field_name, base_data, 1);
-
-                copyoffsets(0,
-    			    disp->ndims,
-    			    f->field_size,
-    			    disp->start,
-    			    disp->count,
-    			    writer_count,
-    			    reader_count,
-    			    (char*)aptr8,
-    			    (char*)var->chunks[0].data);
+		// statement only exists for debugging. Hack. Needs to go.
+		if(disp == NULL){
+		    fprintf(stderr, "\t\t\treader_rank: %d DISP IS NULL for writer_rank: %d\n", fp->rank, writer_rank);
+		    
+		}
+		if(disp){
+		    copyoffsets(0,
+				disp->ndims,
+				f->field_size,
+				disp->start,
+				disp->count,
+				writer_count,
+				reader_count,
+				(char*)aptr8,
+				(char*)var->chunks[0].data);
+		}
     	    }
     	}
         j++;
         f++;
     }
+    fprintf(stderr, "signalling on condition: %d\n", condition);
     CMCondition_signal(fp_read_data->fp_cm, condition);
     return 0; 
 }
@@ -964,7 +987,12 @@ int adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float time
         }
     }
     adiosfile->current_step++;
-    
+    // need to remove selectors from each var now.
+    flexpath_var_info *tmpvars = fp->var_list;
+    while(tmpvars){
+	tmpvars->sel = NULL;
+	tmpvars = tmpvars->next;
+    }
    return 0;
 }
 
@@ -1023,17 +1051,21 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
     Flush_msg msg;
     msg.rank = fp->rank;
     msg.type = DATA;
-    msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
     int i;
     int num_sendees = fp->num_sendees;
     for(i = 0; i<num_sendees; i++)
-    {
+    {	
 	int sendee = fp->sendees[i];
+	fprintf(stderr, "sending flush_data msg to: %d\n", sendee);
+	msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
+	fprintf(stderr, "waiting on condition: %d\n", msg.condition);
 	EVsubmit(fp->bridges[sendee].flush_source, &msg, NULL);
+	if(blocking){    
+	    CMCondition_wait(fp_read_data->fp_cm, msg.condition);
+	}
     }
-    if(blocking){    
-	CMCondition_wait(fp_read_data->fp_cm, msg.condition);
-    }
+    free(fp->sendees);
+    fp->num_sendees = 0;
     return 0;
 }
 int
@@ -1137,12 +1169,15 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
 	}
         int j=0;
 	int need_count = 0;
+	int sendees_start = fp->num_sendees;
 	array_displacements * all_disp = NULL;	
-        for(j=0; j<fp->size; j++) {
+        for(j=0; j<fp->num_bridges; j++) {
             fp_log("BOUNDING", "checking writer %d\n", j);
+	    fprintf(stderr, "\t\tdo we need writer %d?\n", j);
             int reader=0;	    	    
             if(need_writer(fp, j, sel, fp->gp, v->varname)==1){
                 fp_log("BOUNDING", "yes it's neededi\n");		
+		fprintf(stderr, "\t\t\tyes, we need writer %d\n", j);
 		need_count++;
                 reader = j;
 		global_var * gvar = find_gbl_var(fp->gp->vars, v->varname, fp->gp->num_vars);
@@ -1187,6 +1222,7 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
 	    var.var_name = strdup(v->varname);
 	    log_debug("1 sending %s from %d to %p aka %d\n", 
 		 var.var_name, var.rank, fp->bridges[reader].var_source, reader);
+	    fprintf(stderr, "\t\tin schedule read, sending var msg to: %d\n", reader);
 	    EVsubmit(fp->bridges[reader].var_source, &var, NULL);            
 	}
 	v->displ = all_disp;
