@@ -1034,7 +1034,7 @@ int adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float time
 
 int adios_read_flexpath_close(ADIOS_FILE * fp)
 {
-    flexpath_file_data *fp = (flexpath_file_data*)fp->fh;
+    flexpath_file_data *file = (flexpath_file_data*)fp->fh;
     op_msg msg;
     msg.type = CLOSE_MSG;
     msg.file_name = strdup(file->file_name);
