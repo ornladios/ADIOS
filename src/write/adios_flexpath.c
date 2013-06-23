@@ -1581,16 +1581,16 @@ extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method
     log_info("Flexpath method entered finalize: %d\n", fileData->rank);
     fp_write_log("FILE", "Entered finalize\n");
     while(fileData) {
-        fp_write_log("DATAMUTEX", "in use 4\n"); 
-        thr_mutex_lock(fileData->dataMutex2);
-        fp_write_log("MUTEX","lock 1\n");
+        //fp_write_log("DATAMUTEX", "in use 4\n"); 
+        //thr_mutex_lock(fileData->dataMutex2);
+        //fp_write_log("MUTEX","lock 1\n");
         while(fileData->dataQueue!=NULL) {
             fp_write_log("FILE", "waiting on %s to empty data\n", fileData->name);
             thr_condition_wait(fileData->dataCondition2, fileData->dataMutex2);
         }
-        fp_write_log("MUTEX","unlock 1\n");
-        thr_mutex_unlock(fileData->dataMutex2);
-        fp_write_log("DATAMUTEX", "no use 4\n"); 
+        //fp_write_log("MUTEX","unlock 1\n");
+        //thr_mutex_unlock(fileData->dataMutex2);
+        //fp_write_log("DATAMUTEX", "no use 4\n"); 
         fileData = fileData->next;
     }
     // all data has been read by all readers.

@@ -521,13 +521,21 @@ need_writer(
         int sel_offset = sel->u.bb.start[i];
         //grab sel dimensions(size)
         int sel_size = sel->u.bb.count[i];        
+        //perr("sel offset %d size %d\n", sel_offset, sel_size);
 
 
         //select rank offsets
         int rank_offset = var_offsets.local_offsets[j*var_offsets.offsets_per_rank+i];
         //grab rank dimencsions(size)
         int rank_size =var_offsets.local_dimensions[j*var_offsets.offsets_per_rank+i];        
-
+        /* perr("rank offset %d size %d\n", rank_offset, rank_size);
+        perr("overlap1\n");
+        perr("rank_off  %d <= sel_off %d\n", rank_offset, sel_offset);
+        perr("rank_off  + rank_size %d >= sel_offset%d\n", rank_offset + rank_size - 1, sel_offset);
+        perr("overlap2\n");
+        perr("rank_off  %d <= sel_offset + sel_size - 1 %d\n", rank_offset, sel_offset + sel_size - 1);
+        perr("rank_off + rank_size -1 %d >= sel_off + sel_size %d\n", rank_offset+rank_size-1, sel_offset+sel_size);
+        */
         //if rank offset < selector offset and rank offset +size-1 > selector offset
 	
         if((rank_offset <= sel_offset) && (rank_offset + rank_size - 1 >=sel_offset)) {
@@ -535,8 +543,10 @@ need_writer(
         }
         //if rank offset < selector offset + selector size -1 and rank offset+size-1 > selector offset +selector size -1
         else if((rank_offset <= sel_offset + sel_size - 1) && \
-		(rank_offset+rank_size-1>=sel_offset+sel_size-1)) {
+		(rank_offset+rank_size>=sel_offset+sel_size-1)) {
             log_debug("matched overlap type 2\n");
+        } else if((sel_offset <= rank_offset) && (rank_offset+rank_size<= sel_offset+sel_size-1)) {
+            log_debug("matched overlap type 3\n");
         } else {
             log_debug("overlap not present\n\n");
             return 0;
@@ -968,7 +978,7 @@ adios_read_flexpath_open(const char * fname,
     // It's a stream, so how can the file size be known?
     adiosfile->version = -1;
     adiosfile->file_size = 0;
-    adios_errno == err_no_error;        
+    adios_errno = err_no_error;        
     return adiosfile;
 }
 
