@@ -154,6 +154,67 @@ typedef struct _local_read_data
 flexpath_read_data* fp_read_data = NULL;
 
 /********** Helper functions. **********/
+void build_bridge(bridge_info* bridge) {
+    attr_list contact_list = attr_list_from_string(bridge->contact);
+
+    bridge->bridge_stone =
+        EVcreate_bridge_action(fp_read_data->fp_cm,
+            contact_list,
+            (EVstone)bridge->their_num);
+
+    bridge->flush_source =
+        EVcreate_submit_handle(fp_read_data->fp_cm,
+            bridge->bridge_stone,
+            flush_format_list);
+
+    bridge->var_source =
+	EVcreate_submit_handle(fp_read_data->fp_cm,
+	    bridge->bridge_stone,
+	    var_format_list);
+
+    bridge->op_source =
+	EVcreate_submit_handle(fp_read_data->fp_cm,
+	    bridge->bridge_stone,
+	    op_format_list);
+
+    bridge->created = 1;
+
+}
+
+void send_var_message(flexpath_file_data *fp, int destination, char *varname)
+{
+        int i = 0;
+        int found = 0;
+        for(i=0; i<fp->num_sendees; i++) {
+            if(fp->sendees[i]==destination) {
+                found=1;
+                break;
+            }
+        }
+        if(!found) {
+            fp->num_sendees+=1;
+            fp->sendees=realloc(fp->sendees, fp->num_sendees*sizeof(int));
+            fp->sendees[fp->num_sendees-1] = destination;
+        }
+        if(!fp->bridges[destination].created) {
+            build_bridge(&(fp->bridges[destination]));
+	}
+	if(!fp->bridges[destination].opened){
+	    fp->bridges[destination].opened = 1;
+            op_msg open_msg;
+            open_msg.process_id = fp->rank;
+            open_msg.file_name = fp->file_name;
+            open_msg.type = 1;
+            open_msg.step = 0;
+	    open_msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
+            EVsubmit(fp->bridges[destination].op_source, &open_msg, NULL);
+            CMCondition_wait(fp_read_data->fp_cm, open_msg.condition);
+	}
+	Var_msg var;
+	var.rank = fp->rank;
+	var.var_name = strdup(varname);
+	EVsubmit(fp->bridges[destination].var_source, &var, NULL);    
+}
 flexpath_var_info*
 new_flexpath_var_info(const char * varname, int id, uint64_t data_size)
 {
@@ -659,9 +720,15 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 		void *aptr8 = get_FMPtrField_by_name(f, f->field_name, base_data, 1);
 		// statement only exists for debugging. Hack. Needs to go.
 		if(disp == NULL){
-		    fprintf(stderr, "\t\t\treader_rank: %d DISP IS NULL for writer_rank: %d\n", fp->rank, writer_rank);
+		    fprintf(stderr, 
+			    "\t\t\treader_rank: %d DISP IS NULL for writer_rank: %d\n", 
+			    fp->rank, writer_rank);
 		    
 		}
+		// this is a result of the fact that the writer code sends all data.
+		// this is an ugly way of saying "i scheduled a read for this variable,
+		// but not from this writer. I'm only getting this data because I requested
+		// another variable from this writer."
 		if(disp){
 		    copyoffsets(0,
 				disp->ndims,
@@ -681,33 +748,6 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     fprintf(stderr, "signalling on condition: %d\n", condition);
     CMCondition_signal(fp_read_data->fp_cm, condition);
     return 0; 
-}
-
-void build_bridge(bridge_info* bridge) {
-    attr_list contact_list = attr_list_from_string(bridge->contact);
-
-    bridge->bridge_stone =
-        EVcreate_bridge_action(fp_read_data->fp_cm,
-            contact_list,
-            (EVstone)bridge->their_num);
-
-    bridge->flush_source =
-        EVcreate_submit_handle(fp_read_data->fp_cm,
-            bridge->bridge_stone,
-            flush_format_list);
-
-    bridge->var_source =
-	EVcreate_submit_handle(fp_read_data->fp_cm,
-	    bridge->bridge_stone,
-	    var_format_list);
-
-    bridge->op_source =
-	EVcreate_submit_handle(fp_read_data->fp_cm,
-	    bridge->bridge_stone,
-	    op_format_list);
-
-    bridge->created = 1;
-
 }
 
 /********** Core ADIOS Read functions. **********/
@@ -1080,6 +1120,7 @@ adios_read_flexpath_inq_var_stat(const ADIOS_FILE* fp,
 				 int per_step_stat,
 				 int per_block_stat)
 { /*log_debug( "flexpath:adios function inq var stat\n");*/ return 0; }
+
 void adiosread_flexpath_release_step (ADIOS_FILE *fp);
 
 int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
@@ -1124,37 +1165,7 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
 			"No process exists on the writer side matching the index.\n");
 	}
 
-        int i = 0;
-        int found = 0;
-        for(i=0; i<fp->num_sendees; i++) {
-            if(fp->sendees[i]==writer_index) {
-                found=1;
-                break;
-            }
-        }
-        if(!found) {
-            fp->num_sendees+=1;
-            fp->sendees=realloc(fp->sendees, fp->num_sendees*sizeof(int));
-            fp->sendees[fp->num_sendees-1] = writer_index;
-        }
-        if(!fp->bridges[writer_index].created) {
-            build_bridge(&(fp->bridges[writer_index]));
-	}
-	if(!fp->bridges[writer_index].opened){
-	    fp->bridges[writer_index].opened = 1;
-            op_msg open_msg;
-            open_msg.process_id = fp->rank;
-            open_msg.file_name = fp->file_name;
-            open_msg.type = 1;
-            open_msg.step = 0;
-	    open_msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
-            EVsubmit(fp->bridges[writer_index].op_source, &open_msg, NULL);
-            CMCondition_wait(fp_read_data->fp_cm, open_msg.condition);
-	}
-	Var_msg var;
-	var.rank = fp->rank;
-	var.var_name = strdup(v->varname);
-	EVsubmit(fp->bridges[writer_index].var_source, &var, NULL);    
+	send_var_message(fp, writer_index, v->varname);
 	break;
     }
     case ADIOS_SELECTION_BOUNDINGBOX:
@@ -1176,12 +1187,12 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
         for(j=0; j<fp->num_bridges; j++) {
             fp_log("BOUNDING", "checking writer %d\n", j);
 	    fprintf(stderr, "\t\tdo we need writer %d?\n", j);
-            int reader=0;	    	    
+            int destination=0;	    	    
             if(need_writer(fp, j, sel, fp->gp, v->varname)==1){
                 fp_log("BOUNDING", "yes it's neededi\n");		
 		fprintf(stderr, "\t\t\tyes, we need writer %d\n", j);
 		need_count++;
-                reader = j;
+                destination = j;
 		global_var * gvar = find_gbl_var(fp->gp->vars, v->varname, fp->gp->num_vars);
 		array_displacements * displ = get_writer_displacements(j, sel, gvar);
 		all_disp = realloc(all_disp, sizeof(array_displacements)*need_count);
@@ -1192,40 +1203,7 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
             }
             int i = 0;
             int found = 0;
-            fp_log("BOUNDING", "remember who to read from\n");
-            for(i=0; i<fp->num_sendees; i++) {
-                if(fp->sendees[i]==reader) {
-                    found=1;
-                    break;
-                }
-            }
-            if(!found) {
-                fp->num_sendees+=1;
-                fp->sendees=realloc(fp->sendees, fp->num_sendees*sizeof(int));
-                fp->sendees[fp->num_sendees-1] = reader;
-            }
-            if(!fp->bridges[reader].created) {
-                build_bridge(&(fp->bridges[reader]));
-	    }
-	    if(!fp->bridges[reader].opened){
-		op_msg open_msg;
-		open_msg.process_id = fp->rank;
-		open_msg.file_name = "hey";
-		open_msg.type = 1;
-		open_msg.step = adiosfile->current_step;
-		fp->bridges[reader].opened = 1;
-		open_msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
-		EVsubmit(fp->bridges[reader].op_source, &open_msg, NULL);
-		CMCondition_wait(fp_read_data->fp_cm, open_msg.condition);
-	    }
-	
-	    Var_msg var;
-	    var.rank = fp->rank;
-	    var.var_name = strdup(v->varname);
-	    log_debug("1 sending %s from %d to %p aka %d\n", 
-		 var.var_name, var.rank, fp->bridges[reader].var_source, reader);
-	    fprintf(stderr, "\t\tin schedule read, sending var msg to: %d\n", reader);
-	    EVsubmit(fp->bridges[reader].var_source, &var, NULL);            
+	    send_var_message(fp, destination, v->varname);
 	}
 	v->displ = all_disp;
 	v->num_displ = need_count;
@@ -1244,7 +1222,6 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
 	break;
     }
     }
-    log_debug("\t\tFLEXPATH READER LEAVING SCHEDULE_READ\n\n");
     return 0;
 }
 
