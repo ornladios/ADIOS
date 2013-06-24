@@ -987,6 +987,7 @@ ADIOS_VARINFO * adios_read_dimes_inq_var_byid (const ADIOS_FILE *fp, int varid)
     struct dimes_data_struct * ds = (struct dimes_data_struct *) fp->fh;
     struct dimes_var_struct * vars = ds->vars;
     ADIOS_VARINFO * vi;
+    int datasize;
 
     if (varid < 0 || varid > fp->nvars) {
         adios_error (err_invalid_varid, "Stream %s has %d variables. Invalid variable id %d\n",
@@ -1002,14 +1003,32 @@ ADIOS_VARINFO * adios_read_dimes_inq_var_byid (const ADIOS_FILE *fp, int varid)
 
     vi->varid = varid;
     vi->type = vars[varid].type;
-    vi->ndim = vars[varid].ndims;
-    vi->dims = vars[varid].dims;
     vi->nsteps = 1;
-    vi->value = vars[varid].value;
+
+    /* Copy the dimensions (adios_free_varinfo() will free the copy */
+    vi->ndim = vars[varid].ndims;
+    if (vi->ndim) {
+        vi->dims = (uint64_t *) malloc (vi->ndim*sizeof(uint64_t));
+        memcpy (vi->dims, vars[varid].dims, vi->ndim*sizeof(uint64_t));
+    } else {
+        vi->dims = NULL;
+    }
+
+    /* Copy the value */
+    if (vars[varid].value) {
+        datasize = common_read_type_size(vi->type, vars[varid].value);
+        vi->value = (void *) malloc (datasize);
+        memcpy (vi->value, vars[varid].value, datasize);
+    } else {
+        vi->value = NULL;
+    }
+
     vi->global = 1;
     vi->nblocks = (int *) malloc (sizeof(int));
     vi->nblocks[0] = 1;
     vi->sum_nblocks = vi->nblocks[0];
+    vi->statistics = NULL;
+    vi->blockinfo = NULL;
     
     return vi;
 }
