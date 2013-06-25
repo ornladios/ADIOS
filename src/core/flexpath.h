@@ -1,5 +1,5 @@
 #ifndef _FLEXPATH_H
-#define FLEXPATH_H
+#define _FLEXPATH_H
 
 
 #include "core/adios_logger.h"
