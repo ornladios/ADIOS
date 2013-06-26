@@ -1,46 +1,37 @@
 <?xml version="1.0"?>
 <adios-config host-language="C" schema-version="1.1">
-    <adios-group name="field3d" coordination-communicator="comm">
-    <var name="timestep" gwrite="sml_istep" type="integer"/>
-    <var name="nnodes" type="integer"/>
-    <var name="nphi" type="integer"/>
-    <var name="iphi" type="integer"/>
-    <var name="nspace" type="integer"/>
+    <adios-group name="channel" coordination-communicator="comm">
+    <attribute name="Reference" path="/" value="http://people.sc.fsu.edu/~jburkardt/m_src/twod_to_vtk/twod_to_vtk.html"/>
 
-    <global-bounds dimensions="nphi,nnodes" offsets="iphi,0">
-    <var name="dpot" type="real*8" dimensions="1,nnodes" mesh="xgc.mesh" hyperslab=": 0,: 1,: nphi"/>
-    </global-bounds>
-    <global-bounds dimensions="nphi,nnodes" offsets="iphi,0">
-    <var name="iden" type="real*8" dimensions="1,nnodes" mesh="xgc.mesh" hyperslab=": 0,: 1,: nphi"/>
-    </global-bounds>
-    <global-bounds dimensions="nphi,nnodes" offsets="iphi,0">
-    <var name="eden" type="real*8" dimensions="1,nnodes" mesh="xgc.mesh" hyperslab=": 0,: 1,: nphi"/>
-    </global-bounds>
-    <global-bounds dimensions="nphi,nnodes" offsets="iphi,0">
-    <var name="ddpotdt" type="real*8" dimensions="1,nnodes" mesh="xgc.mesh" hyperslab=": 0,: 1,: nphi"/>
-    </global-bounds>
-    <var name="pot0" type="real*8" dimensions="nnodes" />
-    <var name="n_n" type="integer"/>
-    <var name="n_t" type="integer"/>
-    <var name="values" gwrite="coord" path="/coordinates" type="real*8" dimensions="nspace,nnodes"/>
-    <var name="node_connect_list" gwrite="nodeid" path="/cell_set[0]" type="integer" dimensions="3"/>
+    <var name="npoints" type="integer"/>
+    <var name="num_cells" type="integer"/>
 
-    <var name="n_psi" type="integer"/>
-    <var name="itheta0" gwrite="n_itheta0" type="integer" dimensions="n_psi"/>
-    <var name="nextnode" gwrite="nextn" type="integer" dimensions="nnodes"/>
-    <var name="psi" gwrite="grid%psi" type="real*8" dimensions="nnodes"/>
-    <var name="node_vol" gwrite="grid%node_vol" type="real*8" dimensions="nnodes"/>
-    <var name="node_vol_ff0" type="real*8" dimensions="nnodes"/>
-    <var name="node_vol_ff1" type="real*8" dimensions="nnodes"/>
+    <var name="Nspace" type="integer"/>
+  
+    <var name="U" mesh="mesh1" center="point" time-steps="36,Nspace" type="double" time-series-format="xx" dimensions="npoints" hyperslab="0,32"/>
+    <var name="V" mesh="mesh1" center="point" time-scale="npoints,45,num_cells" type="double" dimensions="npoints" hyperslab="0,1,32"/>
+    <var name="T" mesh="mesh1" center="cell" type="double" dimensions="npoints"/>
 
-    <mesh name="xgc.mesh" type="unstructured" file="xgc.mesh.bp" group="xgc-mesh-group" time-varying="no" time-steps="timestep" time-series-format="xxxx">
-    <nspace value="nspace"/> 
-    <points-single-var value="values" />
-    <uniform-cells count="ncells" data="node_connect_list" type="triangle" />
+    <var name="cells" type="integer" dimensions="num_cells,3"/>
+    <var name="points" type="float" dimensions="npoints,2"/>
+
+    <var name="points_X" type="float" dimensions="npoints"/>
+    <var name="points_Y" type="float" dimensions="npoints"/>
+
+
+    <!-- Mesh1: 
+         - nspace
+         - points-multi-var
+         - uniform-cells
+    -->
+    <mesh name="mesh1" type="unstructured" file="xgc-mesh.bp" time-varying="no" time-steps="npoints,32,Nspace" time-scale="Nspace,45.6,num_cells" time-series-format="xxxx">
+        <nspace value="Nspace" /> 
+        <points-multi-var value="points_X,points_Y" />
+        <uniform-cells count="num_cells" data="cells" type="triangle" />
     </mesh>
 
-    </adios-group>
+</adios-group>
 
-    <method group="field3d" method="MPI"/>
-    <buffer size-MB="5" allocate-time="now"/>
-    </adios-config>
+<method group="channel" method="MPI"/>
+<buffer size-MB="5" allocate-time="now"/>
+</adios-config>
