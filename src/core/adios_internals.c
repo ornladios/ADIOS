@@ -5105,7 +5105,7 @@ int queue_dequeue (Queue * queue, void ** data)
 
 // Parse mesh time series (single file for multiple time steps or
 // multiple files for time steps, basename + timeformat + extension)
-static int defineMeshTimeSeriesFormat (const char * timeseries
+int defineMeshTimeSeriesFormat (const char * timeseries
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -5134,7 +5134,7 @@ static int defineMeshTimeSeriesFormat (const char * timeseries
 }
 
 // Parse mesh time scale (real time tracking, not integers)
-static int defineMeshTimeScale (const char * timescale
+int defineMeshTimeScale (const char * timescale
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -5300,7 +5300,7 @@ static int defineMeshTimeScale (const char * timescale
 }
 
 // Parse mesh time steps (integers = number of times vars are written)
-static int defineMeshTimeSteps (const char * timesteps
+int defineMeshTimeSteps (const char * timesteps
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -5467,7 +5467,7 @@ static int defineMeshTimeSteps (const char * timesteps
 }
 
 // defining a uniform mesh 
-static int defineMeshUniform1 (char * dimensions, char * origin, char * spacing, char * maximum, struct adios_group_struct * new_group ,const char * name)
+int defineMeshUniform1 (char * dimensions, char * origin, char * spacing, char * maximum, struct adios_group_struct * new_group ,const char * name)
 {
     if (dimensions)
     {
@@ -5519,7 +5519,7 @@ static int defineMeshUniform1 (char * dimensions, char * origin, char * spacing,
     return 1;
 }
 
-static int defineMeshRectilinear1 (char * dimensions, char * coordinates
+int defineMeshRectilinear1 (char * dimensions, char * coordinates
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -5558,7 +5558,7 @@ static int defineMeshRectilinear1 (char * dimensions, char * coordinates
     return 1;
 }
 
-static int defineMeshStructured1(char * dimensions, char * nspace
+int defineMeshStructured1(char * dimensions, char * nspace
         , char * points
         ,struct adios_group_struct * new_group
         , char * name){
@@ -5599,7 +5599,7 @@ static int defineMeshStructured1(char * dimensions, char * nspace
     return 1;
 }
 
-static int defineMeshUnstructured1(char *nspace
+int defineMeshUnstructured1(char *nspace
         , char *npoints, char *points
         , char * data, char * count, char * type
         , struct adios_group_struct * new_group
@@ -5800,5 +5800,1355 @@ struct adios_mesh_struct * adios_common_define_mesh (
     }
 
     return m;
+}
+
+// Define time steps, scale and formatting
+// Parse var time steps (integers = number of times vars are written)
+int defineVarTimeSteps (const char * timesteps
+        ,struct adios_group_struct * new_group
+        ,const char * name
+        )
+{
+    char * c;                      // comma location
+    char * d1;                     // save of strdup
+    int64_t      p_new_group = (int64_t) new_group;
+    char * gettstepsfrom0 = 0;     // tstep attribute xml value
+    char * gettstepsfrom1 = 0;     // tstep attribute xml value
+    char * gettstepsfrom2 = 0;     // tstep attribute xml value
+    char * time_var_att_nam = 0;   // tstep attribute name for var or num
+    char * time_start_att_nam = 0; // tstep attribute name for start
+    char * time_stride_att_nam = 0;// tstep attribute name for stride
+    char * time_count_att_nam = 0; // tstep attribute name for count
+    char * time_max_att_nam = 0;   // tstep attribute name for max
+    char * time_min_att_nam = 0;   // tstep attribute name for min
+    char * time_var_att_val = 0;   // tstep attribute value for var or num
+    char * time_start_att_val = 0; // tstep attribute value for start 
+    char * time_stride_att_val = 0;// tstep attribute value for stride
+    char * time_count_att_val = 0; // tstep attribute value for count
+    char * time_max_att_val = 0;   // tstep attribute value for max
+    char * time_min_att_val = 0;   // tstep attribute value for min
+    int counter = 0;               // used to get type of time steps bounds
+
+    // We are going to allow
+    // 1. a number =  just the number - a multiple of mesh time step 
+    // 2. start/stride/count 3 components - indices of the mesh time steps
+    // 3. min/max range of the mesh time step
+    // 4. An ADIOS var = time could be a list of int stored by user
+    char counterstr[5] = {0,0,0,0,0}; // used to create tsteps attributes
+
+    /* We do not fail if this is not given as variables all have nsteps
+       in ADIOS_inq_var = # of times the var was written
+       */
+    if (!timesteps){
+        return 1;
+    }
+
+    d1 = strdup (timesteps);
+
+    c = strtok (d1, ",");
+
+    while (c)
+    {
+        struct adios_var_struct * var = 0;
+        if (adios_int_is_var (c))
+        {
+            var =
+                adios_find_var_by_name (new_group->vars, c
+                        ,new_group->all_unique_var_names
+                        );
+            if (!var)
+            {
+                log_warn ("config.xml: invalid variable %s\n"
+                        "for time-steps of var: %s\n"
+                        ,c
+                        ,name
+                        );
+                free (d1);
+
+                return 0;
+
+            }else{
+                // Found variable ==> create a dims attribute for it.
+                if (counter == 0){
+                    gettstepsfrom0 = 0;
+                    gettstepsfrom0 = strdup(c);
+                }else if (counter == 1){
+                    gettstepsfrom1 = 0;
+                    gettstepsfrom1 = strdup(c);
+                }else if (counter == 2){
+                    gettstepsfrom2 = 0;
+                    gettstepsfrom2 = strdup(c);
+                }
+                counter++;
+            }
+        }
+        else
+        {
+            if (counter == 0){
+                gettstepsfrom0 = 0;
+                gettstepsfrom0 = strdup(c);
+            }else if (counter == 1){
+                gettstepsfrom1 = 0;
+                gettstepsfrom1 = strdup(c);
+            }else if (counter == 2){
+                gettstepsfrom2 = 0;
+                gettstepsfrom2 = strdup(c);
+            }
+            counter++;
+        }
+
+        c = strtok (NULL, ",");
+    }
+
+    if (counter == 3){
+        time_start_att_val = strdup(gettstepsfrom0);
+        conca_var_att_nam(&time_start_att_nam, name, "time-steps-start");
+        // if this is string
+        if (adios_int_is_var (time_start_att_val))
+            adios_common_define_attribute (p_new_group,time_start_att_nam,"/",adios_string,time_start_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,time_start_att_nam,"/",adios_double,time_start_att_val,"");
+        time_stride_att_val = strdup(gettstepsfrom1);
+        conca_var_att_nam(&time_stride_att_nam, name, "time-steps-stride");
+        // if this is string
+        if (adios_int_is_var (time_stride_att_val))
+            adios_common_define_attribute (p_new_group,time_stride_att_nam,"/",adios_string,time_stride_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,time_stride_att_nam,"/",adios_double,time_stride_att_val,"");
+        time_count_att_val = strdup(gettstepsfrom2);
+        conca_var_att_nam(&time_count_att_nam, name, "time-steps-count");
+        // if this is string
+        if (adios_int_is_var (time_count_att_val))
+            adios_common_define_attribute (p_new_group,time_count_att_nam,"/",adios_string,time_count_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,time_count_att_nam,"/",adios_double,time_count_att_val,"");
+        free(time_start_att_val);
+        free(time_stride_att_val);
+        free(time_count_att_val);
+        free(gettstepsfrom2);
+        free(gettstepsfrom1);
+        free(gettstepsfrom0);
+    }else if (counter == 2) {
+        time_min_att_val = strdup(gettstepsfrom0);
+        conca_var_att_nam(&time_min_att_nam, name, "time-steps-min");
+        // if this is string
+        if (adios_int_is_var (time_min_att_val))
+            adios_common_define_attribute (p_new_group,time_min_att_nam,"/",adios_string,time_min_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,time_min_att_nam,"/",adios_double,time_min_att_val,"");
+        time_max_att_val = strdup(gettstepsfrom1);
+        conca_var_att_nam(&time_max_att_nam, name, "time-steps-max");
+        // if this is string
+        if (adios_int_is_var (time_max_att_val))
+            adios_common_define_attribute (p_new_group,time_max_att_nam,"/",adios_string,time_max_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,time_max_att_nam,"/",adios_double,time_max_att_val,"");
+        free(time_min_att_val);
+        free(time_max_att_val);
+        free(gettstepsfrom1);
+        free(gettstepsfrom0);
+    } else if (counter == 1){
+        time_var_att_val = strdup(gettstepsfrom0);
+        if (adios_int_is_var (time_var_att_val)){
+            conca_var_att_nam(&time_var_att_nam, name, "time-steps-var");
+            adios_common_define_attribute (p_new_group,time_var_att_nam,"/",adios_string,time_var_att_val,"");
+        }else{
+            conca_var_att_nam(&time_var_att_nam, name, "time-steps-count");
+            adios_common_define_attribute (p_new_group,time_var_att_nam,"/",adios_double,time_var_att_val,"");
+        }
+        free(time_var_att_val);
+        free(gettstepsfrom0);
+    }else{
+        printf("Error: time format not recognized.\nPlease check documentation for time formatting.\n");
+        free(d1);
+        return 0;
+    }
+
+    free (d1);
+
+    return 1;
+}
+
+// Parse var time series format (real time tracking, not integers)
+int defineVarTimeSeriesFormat (const char * timeseries
+        ,struct adios_group_struct * new_group
+        ,const char * name
+        )
+{
+    char * d1;                     // save of strdup
+    int64_t      p_new_group = (int64_t) new_group;
+    char * format_att_nam = 0;     // extension format .xxxx att name
+    char * format_att_val = 0;     // extension format att value
+
+    // We expect a number from 1-10 (max 10?)
+    // The number indicates how to write the time steps. Ex: 4 ==>
+    // varname.XXXX.png where XXXX is the time step padded with 0s 
+    // We do not fail if this is not given as variables all have nsteps
+    if (!timeseries){
+        return 1;
+    }
+
+    char * ptr_end;
+    d1 = strdup (timeseries);
+    if (strtod(d1, &ptr_end)){
+        conca_mesh_att_nam(&format_att_nam, name, "time-series-format");
+        adios_common_define_attribute (p_new_group,format_att_nam,"/",adios_string,d1,"");
+        free(format_att_val);
+    }
+    free (d1);
+    return 1;
+}
+
+// Parse var time scale (real time tracking, not integers)
+int defineVarTimeScale (const char * timescale
+        ,struct adios_group_struct * new_group
+        ,const char * name
+        )
+{
+    char * c;                      // comma location
+    char * d1;                     // save of strdup
+    int64_t      p_new_group = (int64_t) new_group;
+    char * gettscalefrom0 = 0;     // scale attribute xml value
+    char * gettscalefrom1 = 0;     // scale attribute xml value
+    char * gettscalefrom2 = 0;     // scale attribute xml value
+    char * time_var_att_nam = 0;   // scale attribute name for var or num
+    char * time_start_att_nam = 0; // scale attribute name for start
+    char * time_stride_att_nam = 0;// scale attribute name for stride
+    char * time_count_att_nam = 0; // scale attribute name for count
+    char * time_max_att_nam = 0;   // scale attribute name for max
+    char * time_min_att_nam = 0;   // scale attribute name for min
+    char * time_var_att_val = 0;   // scale attribute value for var or num
+    char * time_start_att_val = 0; // scale attribute value for start 
+    char * time_stride_att_val = 0;// scale attribute value for stride
+    char * time_count_att_val = 0; // scale attribute value for count
+    char * time_max_att_val = 0;   // scale attribute value for max
+    char * time_min_att_val = 0;   // scale attribute value for min
+    int counter = 0;               // used to get type of time scale bounds
+
+    // We are going to allow
+    // 1. a number =  just the real time scale - note: not the number of time steps (this is already in adios inq var) but the correpdance between timesteps and real time scale 1 step = 15ms for example
+    // 2. start/stride/count 3 components - multiple of the mesh time steps
+    // 3. min/max range where this var is used - a range of the mesh time steps
+    // 4. An ADIOS var = time could be a list of int stored by user
+    char counterstr[5] = {0,0,0,0,0}; // used to create scale attributes
+
+
+    /* We do not fail if this is not given as variables all have nsteps
+       in ADIOS_inq_var = # of times the var was written
+       */
+    if (!timescale){
+        return 1;
+    }
+
+    d1 = strdup (timescale);
+    char * ptr_end;
+    c = strtok (d1, ",");
+
+    while (c)
+    {
+        struct adios_var_struct * var = 0;
+        //if (adios_int_is_num (c))
+        if (!strtod (c,&ptr_end))
+        {
+            var =
+                adios_find_var_by_name (new_group->vars, c
+                        ,new_group->all_unique_var_names
+                        );
+            if (!var)
+            {
+                log_warn ("config.xml: invalid variable %s\n"
+                        "for attribute of var: %s\n"
+                        ,c
+                        ,name
+                        );
+                free (d1);
+
+                return 0;
+
+            }else{
+                // Found variable ==> create a dims attribute for it.
+                if (counter == 0){
+                    gettscalefrom0 = 0;
+                    gettscalefrom0 = strdup(c);
+                }else if (counter == 1){
+                    gettscalefrom1 = 0;
+                    gettscalefrom1 = strdup(c);
+                }else if (counter == 2){
+                    gettscalefrom2 = 0;
+                    gettscalefrom2 = strdup(c);
+                }
+                counter++;
+            }
+        }
+        else
+        {
+            if (counter == 0){
+                gettscalefrom0 = 0;
+                gettscalefrom0 = strdup(c);
+            }else if (counter == 1){
+                gettscalefrom1 = 0;
+                gettscalefrom1 = strdup(c);
+            }else if (counter == 2){
+                gettscalefrom2 = 0;
+                gettscalefrom2 = strdup(c);
+            }
+            counter++;
+        }
+
+        c = strtok (NULL, ",");
+    }
+
+    if (counter == 3){
+        time_start_att_val = strdup(gettscalefrom0);
+        conca_var_att_nam(&time_start_att_nam, name, "time-scale-start");
+        // if this is string
+        if (!strtod (time_start_att_val, &ptr_end))
+            adios_common_define_attribute (p_new_group,time_start_att_nam,"/",adios_string,time_start_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,time_start_att_nam,"/",adios_double,time_start_att_val,"");
+        time_stride_att_val = strdup(gettscalefrom1);
+        conca_var_att_nam(&time_stride_att_nam, name, "time-scale-stride");
+        // if this is string
+        if (!strtod (time_stride_att_val, &ptr_end))
+            adios_common_define_attribute (p_new_group,time_stride_att_nam,"/",adios_string,time_stride_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,time_stride_att_nam,"/",adios_double,time_stride_att_val,"");
+        time_count_att_val = strdup(gettscalefrom2);
+        conca_var_att_nam(&time_count_att_nam, name, "time-scale-count");
+        // if this is string
+        if (!strtod (time_count_att_val, &ptr_end))
+            adios_common_define_attribute (p_new_group,time_count_att_nam,"/",adios_string,time_count_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,time_count_att_nam,"/",adios_double,time_count_att_val,"");
+        free(time_start_att_val);
+        free(time_stride_att_val);
+        free(time_count_att_val);
+        free(gettscalefrom2);
+        free(gettscalefrom1);
+        free(gettscalefrom0);
+    }else if (counter == 2) {
+        time_min_att_val = strdup(gettscalefrom0);
+        conca_var_att_nam(&time_min_att_nam, name, "time-scale-min");
+        // if this is string
+        if (!strtod (time_min_att_val, &ptr_end))
+            adios_common_define_attribute (p_new_group,time_min_att_nam,"/",adios_string,time_min_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,time_min_att_nam,"/",adios_double,time_min_att_val,"");
+        time_max_att_val = strdup(gettscalefrom1);
+        conca_var_att_nam(&time_max_att_nam, name, "time-scale-max");
+        // if this is string
+        if (!strtod (time_max_att_val, &ptr_end))
+            adios_common_define_attribute (p_new_group,time_max_att_nam,"/",adios_string,time_max_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,time_max_att_nam,"/",adios_double,time_max_att_val,"");
+        free(time_min_att_val);
+        free(time_max_att_val);
+        free(gettscalefrom1);
+        free(gettscalefrom0);
+    } else if (counter == 1){
+        time_var_att_val = strdup(gettscalefrom0);
+        if (!strtod (time_var_att_val, &ptr_end)){
+            conca_var_att_nam(&time_var_att_nam, name, "time-scale-var");
+            adios_common_define_attribute (p_new_group,time_var_att_nam,"/",adios_string,time_var_att_val,"");
+        }else{
+            conca_var_att_nam(&time_var_att_nam, name, "time-scale-count");
+            adios_common_define_attribute (p_new_group,time_var_att_nam,"/",adios_double,time_var_att_val,"");
+        }
+        free(gettscalefrom0);
+        free(time_var_att_val);
+    }else{
+        printf("Error: time format not recognized.\nPlease check documentation for time formatting.\n");
+        free(d1);
+        return 0;
+    }
+
+    free (d1);
+
+    return 1;
+}
+
+// Parse var hyper slab: lines or planes from a higher dimension mesh
+int defineVarHyperSlab ( const char * hyperslab,
+        struct adios_group_struct * new_group,
+        const char * name)
+{
+    char * c;                      // comma location
+    char * d1;                     // save of strdup
+    int64_t      p_new_group = (int64_t) new_group;
+    char * gethslabfrom0 = 0;     // hslab attribute xml value
+    char * gethslabfrom1 = 0;     // hslab attribute xml value
+    char * gethslabfrom2 = 0;     // hslab attribute xml value
+    char * hslab_var_att_nam = 0;   // hslab attribute name for var or num
+    char * hslab_start_att_nam = 0; // hslab attribute name for start
+    char * hslab_stride_att_nam = 0;// hslab attribute name for stride
+    char * hslab_count_att_nam = 0; // hslab attribute name for count
+    char * hslab_max_att_nam = 0;   // hslab attribute name for max
+    char * hslab_min_att_nam = 0;   // hslab attribute name for min
+    char * hslab_var_att_val = 0;   // hslab attribute value for var or num
+    char * hslab_start_att_val = 0; // hslab attribute value for start 
+    char * hslab_stride_att_val = 0;// hslab attribute value for stride
+    char * hslab_count_att_val = 0; // hslab attribute value for count
+    char * hslab_max_att_val = 0;   // hslab attribute value for max
+    char * hslab_min_att_val = 0;   // hslab attribute value for min
+    int counter = 0;               // used to get type of time hslab bounds
+    // We are going to allow
+    // 1. start/stride/count 3 components - indices of the mesh dimensions
+    // 2. min/max range of the mesh dimensions
+
+    char counterstr[5] = {0,0,0,0,0}; // used to create tsteps attributes
+
+    /* We do not fail if this is not given as variables all have nsteps
+       in ADIOS_inq_var = # of times the var was written
+       */
+    if (!hyperslab){
+        return 1;
+    }
+
+    d1 = strdup (hyperslab);
+
+    c = strtok (d1, ",");
+
+    while (c)
+    {
+        if (counter == 0){
+            gethslabfrom0 = 0;
+            gethslabfrom0 = strdup(c);
+        }else if (counter == 1){
+            gethslabfrom1 = 0;
+            gethslabfrom1 = strdup(c);
+        }else if (counter == 2){
+            gethslabfrom2 = 0;
+            gethslabfrom2 = strdup(c);
+        }
+        counter++;
+        c = strtok (NULL, ",");
+    }
+    // TODO: these should be ints only, no decimal for start, stride count, not any number should work
+    if (counter == 3){
+        hslab_start_att_val = strdup(gethslabfrom0);
+        conca_var_att_nam(&hslab_start_att_nam, name, "start");
+        adios_common_define_attribute (p_new_group,hslab_start_att_nam,"/",adios_string,hslab_start_att_val,"");
+        hslab_stride_att_val = strdup(gethslabfrom1);
+        conca_var_att_nam(&hslab_stride_att_nam, name, "stride");
+        adios_common_define_attribute (p_new_group,hslab_stride_att_nam,"/",adios_string,hslab_stride_att_val,"");
+        hslab_count_att_val = strdup(gethslabfrom2);
+        conca_var_att_nam(&hslab_count_att_nam, name, "count");
+        adios_common_define_attribute (p_new_group,hslab_count_att_nam,"/",adios_string,hslab_count_att_val,"");
+        free(hslab_start_att_val);
+        free(hslab_stride_att_val);
+        free(hslab_count_att_val);
+        free(gethslabfrom2);
+        free(gethslabfrom1);
+        free(gethslabfrom0);
+    }else if (counter == 2) {
+        hslab_min_att_val = strdup(gethslabfrom0);
+        conca_var_att_nam(&hslab_min_att_nam, name, "min");
+        adios_common_define_attribute (p_new_group,hslab_min_att_nam,"/",adios_string,hslab_min_att_val,"");
+        hslab_max_att_val = strdup(gethslabfrom1);
+        conca_var_att_nam(&hslab_max_att_nam, name, "max");
+        adios_common_define_attribute (p_new_group,hslab_max_att_nam,"/",adios_string,hslab_max_att_val,"");
+        free(hslab_min_att_val);
+        free(hslab_max_att_val);
+        free(gethslabfrom1);
+        free(gethslabfrom0);
+    }else{
+        printf("Error: time format not recognized.\nPlease check documentation for time formatting.\n");
+        free(d1);
+        return 0;
+    }
+
+    free (d1);
+
+    return 1;
+
+}
+
+int parseMeshUniformDimensions1 (const char * dimensions
+        ,struct adios_group_struct * new_group
+        ,const char * name
+        )
+{
+    char * c;  // comma location
+    char * d1; // save of strdup
+    int64_t      p_new_group = (int64_t) new_group;
+    char * dim_att_nam = 0; // dimensions attribute name
+    char * getdimsfrom = 0; // dimensions attribute that is a var
+    int counter = 0;        // used to create dimX attributes
+    char counterstr[5] = {0,0,0,0,0}; // used to create dimX attributes
+
+    if (!dimensions)
+    {
+        log_warn ("config.xml: dimensions value required for"
+                "uniform mesh: %s\n"
+                ,name
+                );
+
+        return 0;
+    }
+
+    d1 = strdup (dimensions);
+
+    c = strtok (d1, ",");
+
+    while (c)
+    {
+        counterstr[0] = '\0';
+        snprintf(counterstr, 5, "%d", counter);
+        dim_att_nam = 0;
+        conca_mesh_numb_att_nam(&dim_att_nam, name, "dimensions", counterstr);
+        adios_common_define_attribute (p_new_group,dim_att_nam,"/",adios_string,c,"");
+        free (dim_att_nam);
+        counter++;
+        c = strtok (NULL, ",");
+    }
+
+    char * dims = 0;
+    counterstr[0] = '\0';
+    snprintf(counterstr, 5, "%d", counter);
+    dims = 0;
+    conca_mesh_att_nam(&dims, name, "dimensions-num");
+
+    adios_common_define_attribute (p_new_group,dims,"/",adios_double,counterstr,"");
+
+    free (dims);
+
+    free (d1);
+
+    return 1;
+}
+
+int parseMeshUniformMaximums1 (const char * maximum
+        ,struct adios_group_struct * new_group
+        ,const char * name
+        )
+{
+    char * c;  // comma location
+    char * d1; // save of strdup
+    int64_t      p_new_group = (int64_t) new_group;
+    char * max_att_nam = 0; // maxima attribute name
+    char * getmaxafrom = 0; // maxima attribute name that is a var
+    int counter = 0;        // used to create maxX attributes
+    char counterstr[5] = {0,0,0,0,0}; // used to create maxX attributes
+
+    if (!maximum)
+    {
+        log_warn ("config.xml: maximum value required"
+                "for uniform mesh: %s\n"
+                ,name
+                );
+
+        return 0;
+    }
+
+    d1 = strdup (maximum);
+
+    c = strtok (d1, ",");
+
+    while (c)
+    {
+        counterstr[0] = '\0';
+        snprintf(counterstr, 5, "%d", counter);
+        max_att_nam = 0;
+        conca_mesh_numb_att_nam(&max_att_nam, name, "maximums", counterstr);
+        adios_common_define_attribute (p_new_group,max_att_nam,"/",adios_string,c,"");
+        free (max_att_nam);
+        counter++;
+        c = strtok (NULL, ",");
+    }
+
+    char * maxa = 0;
+    counterstr[0] = '\0';
+    snprintf(counterstr, 5, "%d", counter);
+    maxa = 0;
+    conca_mesh_att_nam(&maxa, name, "maximums-num");
+    adios_common_define_attribute (p_new_group,maxa,"/",adios_double,counterstr,"");
+    free (maxa);
+    free (d1);
+
+    return 1;
+}
+
+int parseMeshUniformOrigin1 (const char * origin
+        ,struct adios_group_struct * new_group
+        ,const char * name
+        )
+{
+    char * c;  // comma location
+    char * d1; // save of strdup
+    struct adios_mesh_item_list_struct * item = 0;
+    int64_t      p_new_group = (int64_t) new_group;
+    char * org_att_nam = 0; // origins attribute name
+    char * getorgsfrom = 0; // origins attribute name that is a var
+    int counter = 0;        // used to create orgX attributes
+    char counterstr[5] = {0,0,0,0,0}; // used to create orgX attributes
+
+    if (!origin)
+    {
+        log_warn ("config.xml: origin value required "
+                "for uniform mesh: %s\n"
+                ,name
+                );
+
+        return 0;
+    }
+
+    d1 = strdup (origin);
+
+    c = strtok (d1, ",");
+
+    while (c)
+    {
+        counterstr[0] = '\0';
+        snprintf(counterstr, 5, "%d", counter);
+        org_att_nam = 0;
+        conca_mesh_numb_att_nam(&org_att_nam, name, "origins", counterstr);
+        adios_common_define_attribute (p_new_group,org_att_nam,"/",adios_string,c,"");
+        free (org_att_nam);
+        counter++;
+        c = strtok (NULL, ",");
+    }
+
+    char * orgs = 0;
+    counterstr[0] = '\0';
+    snprintf(counterstr, 5, "%d", counter);
+    orgs = 0;
+    conca_mesh_att_nam(&orgs, name, "origins-num");
+    adios_common_define_attribute (p_new_group,orgs,"/",adios_double,counterstr,"");
+
+    free (orgs);
+    free (d1);
+    return 1;
+}
+
+int parseMeshUniformSpacings1 (const char * spacing
+        ,struct adios_group_struct * new_group
+        ,const char * name
+        )
+{
+    char * c;  // comma location
+    char * d1; // save of strdup
+    int64_t      p_new_group = (int64_t) new_group;
+    char * spa_att_nam = 0; // spacings attribute name
+    char * getspasfrom = 0; // spacings attribute name that is a var
+    int counter = 0;        // used to create spaX attributes
+    char counterstr[5] = {0,0,0,0,0}; // used to create spaX attributes if (!spacing)
+
+    if (!spacing)
+    {
+        log_warn ("config.xml: mesh uniform spacing value "
+                "required for mesh: %s\n"
+                ,name
+                );
+        return 0;
+    }
+
+    d1 = strdup (spacing);
+
+    c = strtok (d1, ",");
+
+    while (c)
+    {
+        counterstr[0] = '\0';
+        snprintf(counterstr, 5, "%d", counter);
+        spa_att_nam = 0;
+        conca_mesh_numb_att_nam(&spa_att_nam, name, "spacings", counterstr);
+        adios_common_define_attribute (p_new_group,spa_att_nam,"/",adios_string,c,"");
+        free (spa_att_nam);
+        counter++;
+        c = strtok (NULL, ",");
+    }
+
+    char * spas = 0;
+    counterstr[0] = '\0';
+    snprintf(counterstr, 5, "%d", counter);
+    spas = 0;
+    conca_mesh_att_nam(&spas, name, "spacings-num");
+    adios_common_define_attribute (p_new_group,spas,"/",adios_double,counterstr,"");
+    free (spas);
+
+    free (d1);
+
+    return 1;
+}
+
+int parseMeshRectilinearDimensions1 (const char * dimensions
+        ,struct adios_group_struct * new_group
+        ,const char * name
+        )
+{
+    char * c;  // comma location
+    char * d1; // save of strdup
+    struct adios_mesh_item_list_struct * item = 0;
+    int64_t      p_new_group = (int64_t) new_group;
+    char * dim_att_nam = 0; // dimensions attribute name
+    char * getdimsfrom = 0; // dimensions attribute name that is a var
+    int counter = 0;        // used to create dimX attributes
+    char counterstr[5] = {0,0,0,0,0}; // used to create dimX attributes
+
+    if (!dimensions)
+    {
+        log_warn ("config.xml: dimensions value required"
+                "for rectilinear mesh: %s\n"
+                ,name
+                );
+
+        return 0;
+    }
+
+    d1 = strdup (dimensions);
+
+    c = strtok (d1, ",");
+
+    while (c)
+    {
+        counterstr[0] = '\0';
+        snprintf(counterstr, 5, "%d", counter);
+        dim_att_nam = 0;
+        conca_mesh_numb_att_nam(&dim_att_nam, name, "dimensions", counterstr);
+        adios_common_define_attribute (p_new_group,dim_att_nam,"/",adios_string,c,"");
+        free (dim_att_nam);
+        counter++;
+        c = strtok (NULL, ",");
+    }
+
+    char * dims = 0;
+    counterstr[0] = '\0';    
+    snprintf(counterstr, 5, "%d", counter);
+    dims = 0;
+    conca_mesh_att_nam(&dims, name, "dimensions-num");
+    adios_common_define_attribute (p_new_group,dims,"/",adios_double,counterstr,"");
+
+    free (dims); 
+
+    free (d1);
+
+    return 1;
+}
+
+int parseMeshRectilinearCoordinatesMultiVar1 (const char * coordinates
+        ,struct adios_group_struct * new_group
+        ,const char * name
+        )
+{
+    char * c;  // comma location
+    char * d1; // save of strdup
+    struct adios_mesh_var_list_struct * var = 0;
+    int64_t      p_new_group = (int64_t) new_group;
+    char * coo_att_nam = 0; // coordinates attribute name
+    int counter = 0;        // used to create ptsX attributes
+    char counterstr[5] = {0,0,0,0,0}; // used to create ptsX attributes
+
+    if (!coordinates)
+    {
+        log_warn ("config.xml: coordinates-multi-var value required"
+                "for rectilinear mesh: %s\n"
+                ,name
+                );
+
+        return 0;
+    }
+
+    d1 = strdup (coordinates);
+
+    c = strtok (d1, ",");
+
+    while (c)
+    {
+        coo_att_nam = 0;
+        counterstr[0] = '\0';
+        snprintf(counterstr, 5, "%d", counter);
+        conca_mesh_numb_att_nam(&coo_att_nam, name, "coords-multi-var", counterstr);
+        adios_common_define_attribute (p_new_group,coo_att_nam,"/",adios_string,c,"");
+        free (coo_att_nam);
+        counter++;
+        c = strtok (NULL, ",");
+    }
+
+    // At this points, coordinates should point to at least 2 variables
+    // otherwise let the user know to use the coordinates-single-var tag
+    if (counter > 1) {
+        char * coords = 0;
+        counterstr[0] = '\0';
+        snprintf(counterstr, 5, "%d", counter);
+        conca_mesh_att_nam(&coords, name, "coords-multi-var-num");
+        adios_common_define_attribute (p_new_group,coords,"/",adios_double,counterstr,"");
+        free (coords);
+    } else
+    {
+        log_warn ("config.xml: coordinates-multi-var expects "
+                "at least 2 variables (%s)\n"
+                ,name
+                );
+        free (d1);
+        return 0;
+    }
+
+    free (d1);
+
+    return 1;
+}
+
+int parseMeshRectilinearCoordinatesSingleVar1 (const char * coordinates
+        ,struct adios_group_struct * new_group
+        ,const char * name
+        )
+{
+    char * d1; // save of strdup
+    struct adios_mesh_var_list_struct * var = 0;
+    int64_t      p_new_group = (int64_t) new_group;
+    char * coo_att_nam = 0; // coordinates attribute name
+
+    if (!coordinates)
+    {
+        log_warn ("config.xml: coordinates-single-var value required"
+                "for rectilinear mesh: %s\n"
+                ,name
+                );
+
+        return 0;
+    }
+
+    d1 = strdup (coordinates);
+    conca_mesh_att_nam(&coo_att_nam, name, "coords-single-var");
+    adios_common_define_attribute (p_new_group,coo_att_nam,"/",adios_string,d1,"");
+    free (coo_att_nam);
+    free (d1);
+    return 1;
+}
+
+int parseMeshStructuredNspace1 (const char * nspace
+        ,struct adios_group_struct * new_group
+        ,const char * name
+        )
+{
+    char * d1; // save of strdup
+    int64_t      p_new_group = (int64_t) new_group;
+    struct adios_mesh_item_struct * item = 0;
+    char * nsp_att_nam = 0; // nspace attribute name
+
+    if (!nspace)
+    {
+        log_warn ("config.xml: npsace value required "
+                "for structured mesh: %s\n"
+                ,name
+                );
+
+        return 0;
+    }
+
+    d1 = strdup (nspace);
+    conca_mesh_att_nam(&nsp_att_nam, name, "nspace");
+    adios_common_define_attribute (p_new_group,nsp_att_nam,"/",adios_double,nspace,"");
+    free (nsp_att_nam);
+    free (d1);
+
+    return 1;
+}
+
+int parseMeshStructuredDimensions1 (const char * dimensions
+        ,struct adios_group_struct * new_group
+        ,const char * name
+        )
+{
+    char * c;  // comma location
+    char * d1; // save of strdup
+    struct adios_mesh_item_list_struct * item = 0;
+    int64_t      p_new_group = (int64_t) new_group;
+    char * dim_att_nam = 0; // dimensions attribute name
+    char * getdimsfrom = 0; // dimensions attribute name that is a var
+    int counter = 0;        // used to create dimX attributes
+    char counterstr[5] = {0,0,0,0,0}; // used to create dimX attributes
+
+    if (!dimensions)
+    {
+        log_warn ("config.xml: dimensions value required"
+                "for structured mesh: %s\n"
+                ,name
+                );
+
+        return 0;
+    }
+
+    d1 = strdup (dimensions);
+    c = strtok (d1, ",");
+    while (c)
+    {
+        counterstr[0] = '\0';
+        snprintf(counterstr, 5, "%d", counter);
+        dim_att_nam = 0;
+        conca_mesh_numb_att_nam(&dim_att_nam, name, "dimensions", counterstr);
+        adios_common_define_attribute (p_new_group,dim_att_nam,"/",adios_string,c,"");
+        free (dim_att_nam);
+        counter++;
+        c = strtok (NULL, ",");
+    }
+
+    char * dims = 0;
+    counterstr[0] = '\0';
+    snprintf(counterstr, 5, "%d", counter);
+    dims = 0;
+    conca_mesh_att_nam(&dims, name, "dimensions-num");
+    adios_common_define_attribute (p_new_group,dims,"/",adios_double,counterstr,"");
+
+    free (dims);
+    free (d1);
+    return 1;
+}
+
+int parseMeshStructuredPointsSingleVar1 (const char * points
+        ,struct adios_group_struct * new_group
+        ,const char * name
+                                              )
+{
+    char * c;  // comma location
+    char * d1; // save of strdup
+    struct adios_mesh_var_list_struct * var = 0;
+    int64_t      p_new_group = (int64_t) new_group;
+    char * pts_att_nam = 0; // points attribute name
+
+    if (!points)
+    {
+        log_warn ("config.xml: points-single-var value required"
+                         "for structured mesh: %s\n"
+                         ,name
+                );
+
+        return 0;
+    }
+
+    d1 = strdup (points);
+        conca_mesh_att_nam(&pts_att_nam, name, "points-single-var");
+        adios_common_define_attribute (p_new_group,pts_att_nam,"/",adios_string,d1,"");
+        free (pts_att_nam);
+    free (d1);
+    return 1;
+}
+
+int parseMeshStructuredPointsMultiVar1 (const char * points
+        ,struct adios_group_struct * new_group
+        ,const char * name
+        )
+{
+    char * c;  // comma location
+    char * d1; // save of strdup
+    struct adios_mesh_var_list_struct * var = 0;
+    int64_t      p_new_group = (int64_t) new_group;
+    char * pts_att_nam = 0; // pointss attribute name
+    int counter = 0;        // used to create ptsX attributes
+    char counterstr[5] = {0,0,0,0,0}; // used to create ptsX attributes
+
+    if (!points)
+    {
+        log_warn ("config.xml: points-multi-var value required"
+                "for structured mesh: %s\n"
+                ,name
+                );
+
+        return 0;
+    }
+
+    d1 = strdup (points);
+
+    c = strtok (d1, ",");
+
+    while (c)
+    {
+        pts_att_nam = 0;
+        counterstr[0] = '\0';
+        snprintf(counterstr, 5, "%d", counter);
+        conca_mesh_numb_att_nam(&pts_att_nam, name, "points-multi-var", counterstr);
+        adios_common_define_attribute (p_new_group,pts_att_nam,"/",adios_string,c,"");
+        free (pts_att_nam);
+        counter++;
+        c = strtok (NULL, ",");
+    }
+
+    // Define an attribute showing the number of mesh_vars
+    // Should be more than one in this multi-var parsing
+    if (counter > 1){
+        char * pts = 0;
+        counterstr[0] = '\0';
+        snprintf(counterstr, 5, "%d", counter);
+        conca_mesh_att_nam(&pts, name, "points-multi-var-num");
+        adios_common_define_attribute (p_new_group,pts,"/",adios_double,counterstr,"");
+        free (pts);
+    } else
+    {
+        log_warn ("config.xml: points-multi-var tag for mesh: %s "
+                " expects at least 2 variables\n"
+                ,name
+                );
+        free (d1);
+
+        return 0;
+    }
+
+    free (d1);
+
+    return 1;
+}
+
+int parseMeshUnstructuredNspace1 (const char * nspace
+        ,struct adios_group_struct * new_group
+        ,const char * name
+        )
+{
+    char * d1; // save of strdup
+    int64_t      p_new_group = (int64_t) new_group;
+    struct adios_mesh_item_struct * item = 0;
+    char * nsp_att_nam = 0; // nspace attribute name
+
+    if (!nspace)
+    {
+        log_warn ("config.xml: nspace value required"
+                         "for unstructured mesh: %s\n"
+                         ,name
+                );
+
+        return 0;
+    }
+
+    d1 = strdup (nspace);
+    conca_mesh_att_nam(&nsp_att_nam, name, "nspace");
+    adios_common_define_attribute (p_new_group,nsp_att_nam,"/",adios_string,nspace,"");
+    free (nsp_att_nam);
+    free (d1);
+
+    return 1;
+}
+
+int parseMeshUnstructuredNpoints1 (const char * npoints
+        ,struct adios_group_struct * new_group
+        ,const char * name
+        )
+{
+    char * d1; // save of strdup
+    int64_t      p_new_group = (int64_t) new_group;
+    struct adios_mesh_item_struct * item = 0;
+    char * npts_att_nam = 0; // npoints attribute name
+
+    if (!npoints)
+    {
+        log_warn ("config.xml: npoints value required"
+                "for unstructured mesh\n"
+                ,name
+                );
+
+        return 0;
+    }
+
+    d1 = strdup (npoints);
+
+    conca_mesh_att_nam(&npts_att_nam, name, "npoints");
+    adios_common_define_attribute (p_new_group,npts_att_nam,"/",adios_string,npoints,"");
+    free (npts_att_nam);
+
+    free (d1);
+
+    return 1;
+}
+
+int parseMeshUnstructuredPointsMultiVar1 (const char * points
+        ,struct adios_group_struct * new_group
+        ,const char * name
+        )
+{
+    char * c;  // comma location
+    char * d1; // save of strdup
+    struct adios_mesh_var_list_struct * var = 0;
+    int64_t      p_new_group = (int64_t) new_group;
+    char * pts_att_nam = 0; // pointss attribute name
+    int counter = 0;        // used to create ptsX attributes
+    char counterstr[5] = {0,0,0,0,0}; // used to create ptsX attributes
+
+    if (!points)
+    {
+        log_warn ("config.xml: points-multi-var value required"
+                "for unstructured mesh: %s\n"
+                ,name
+                );
+
+        return 0;
+    }
+
+    d1 = strdup (points);
+
+    c = strtok (d1, ",");
+
+    while (c)
+    {
+        pts_att_nam = 0;
+        counterstr[0] = '\0';
+        snprintf(counterstr, 5, "%d", counter);
+        conca_mesh_numb_att_nam(&pts_att_nam, name, "points-multi-var", counterstr);
+        adios_common_define_attribute (p_new_group,pts_att_nam,"/",adios_string,c,"");
+        free (pts_att_nam);
+        counter++;
+        c = strtok (NULL, ",");
+    }
+
+    // At this point we expect at least 2 "points-multi-var values
+    if (counter > 1){
+        char * pts = 0;
+        counterstr[0] = '\0';
+        snprintf(counterstr, 5, "%d", counter);
+        conca_mesh_att_nam(&pts, name, "points-multi-var-num");
+        adios_common_define_attribute (p_new_group,pts,"/",adios_double,counterstr,"");
+        free (pts);
+        free (d1);
+    } else
+    {
+        log_warn ("config.xml: points-multi-var tag expects "
+                " at least two variabels. (%s)\n"
+                ,name
+                );
+        free (d1);
+        return 0;
+    }
+
+    return 1;
+}
+
+int parseMeshUnstructuredPointsSingleVar1 (const char * points
+        ,struct adios_group_struct * new_group
+        ,const char * name
+        )
+{
+    char * c;  // comma location
+    char * d1; // save of strdup
+    struct adios_mesh_var_list_struct * var = 0;
+    int64_t      p_new_group = (int64_t) new_group;
+    char * pts_att_nam = 0; // points attribute name
+
+    if (!points)
+    {
+        log_warn ("config.xml: points-single-var value required"
+                "for unstructured mesh: %s\n"
+                ,name
+                );
+
+        return 0;
+    }
+
+    d1 = strdup (points);
+    conca_mesh_att_nam(&pts_att_nam, name, "points-single-var");
+    adios_common_define_attribute (p_new_group,pts_att_nam,"/",adios_string,d1,"");
+    free (pts_att_nam);
+
+    free (d1);
+
+    return 1;
+}
+
+int parseMeshUnstructuredUniformCells1 (const char * count
+        ,const char * data
+        ,const char * type
+        ,struct adios_group_struct * new_group
+        ,const char * name
+        )
+{
+    char * c;  // comma location
+    char * d1; // save of strdup
+    struct adios_mesh_cell_list_list_struct * cell_list = 0;
+    struct adios_mesh_item_struct * item = 0;
+    int64_t      p_new_group = (int64_t) new_group;
+    char * ncellset_att_nam = 0;  // ncellset attribute
+    char * cellcount_att_nam = 0; // single cell count attribute
+    char * celldata_att_nam = 0;  // single cell data  attribute
+    char * celltype_att_nam = 0;  // single cell type attribute
+
+    conca_mesh_att_nam(&ncellset_att_nam,name,"ncsets");
+    adios_common_define_attribute (p_new_group,ncellset_att_nam,"/",adios_double,"1","");
+    free (ncellset_att_nam);
+
+    if (!count)
+    {
+        log_warn ("config.xml: uniform-cells count value required"
+                "for unstructured mesh: %s\n"
+                ,name
+                );
+
+        return 0;
+    }
+    if (!data)
+    {
+        log_warn ("config.xml: uniform-cells data value required"
+                "for unstructured mesh: %s\n"
+                ,name
+                );
+
+        return 0;
+    }
+    if (!type)
+    {
+        log_warn ("config.xml: uniform-cells type value required"
+                "for unstructured mesh: %s\n"
+                ,name
+                );
+
+        return 0;
+    }
+
+    d1 = strdup (count);
+    conca_mesh_att_nam(&cellcount_att_nam, name, "ccount");
+    adios_common_define_attribute (p_new_group,cellcount_att_nam,"/",adios_string,d1,"");
+    free (cellcount_att_nam);
+    free (d1);
+
+    d1 = strdup (data);
+    conca_mesh_att_nam(&celldata_att_nam, name, "cdata");
+    adios_common_define_attribute (p_new_group,celldata_att_nam,"/",adios_string,d1,"");
+    free (celldata_att_nam);
+    free (d1);
+
+    d1 = strdup (type);
+    conca_mesh_att_nam(&celltype_att_nam, name, "ctype");
+    adios_common_define_attribute (p_new_group,celltype_att_nam,"/",adios_string,d1,"");
+    free(celltype_att_nam);
+    free (d1);
+
+    return 1;
+}
+
+int parseMeshUnstructuredMixedCells1 (const char * count
+        ,const char * data
+        ,const char * types
+        ,struct adios_group_struct * new_group
+        ,const char * name
+        )
+{
+    char * c;  // comma location
+    char * d1; // save of strdup
+    struct adios_mesh_cell_list_list_struct * cell_list = 0;
+    struct adios_mesh_item_struct * item = 0;
+    int counter = 0;        // used to create countX, typeX, dataX? attributes
+    char counterstr[5] = {0,0,0,0,0}; // used to create countX, typeX, dataX? attributes
+    int64_t      p_new_group = (int64_t) new_group;
+    char * ncellset_att_nam = 0;  // ncellset attribute
+    char * ccounts_att_nam = 0;   // ccountX attributes
+    char * cdata_att_nam = 0;     // cdataX attributes
+    char * celltype_att_nam = 0;  // ctypeX attributes
+
+    if (!count)
+    {
+        log_warn ("config.xml: mixed-cells count value required"
+                "for unstructured mesh: %s\n"
+                ,name
+                );
+
+        return 0;
+    }
+    if (!data)
+    {
+        log_warn ("config.xml: mixed-cells data value required"
+                "for unstructured mesh: %s\n"
+                ,name
+                );
+
+        return 0;
+    }
+    if (!types)
+    {
+        log_warn ("config.xml: mixed-cells type value required "
+                "for unstructured mesh: %s\n"
+                ,name
+                );
+
+        return 0;
+    }
+
+    d1 = strdup (count);
+    c = strtok (d1, ",");
+
+    while (c)
+    {
+        cell_list->cell_list.count.var = 0;
+        cell_list->cell_list.count.rank = strtod (c, 0);
+        counterstr[0] = '\0';
+        snprintf(counterstr, 5, "%d", counter);
+        ccounts_att_nam = 0;
+        conca_mesh_numb_att_nam(&ccounts_att_nam, name, "ccount", counterstr);
+        adios_common_define_attribute (p_new_group,ccounts_att_nam,"/",adios_string,c,"");
+        free (ccounts_att_nam);
+        counter++;
+        c = strtok (NULL, ",");
+    }
+    free (d1);
+
+    // We should have at least 2 cell sets, otherwise the cells are uniform
+    if (counter <= 1){
+        log_warn ("config.xml: Please provide at least 2 cell counts of mesh: %s\n"
+                "or use the 'uniform-cells' tag.\n"
+                ,name
+                );
+        return 0;
+    }
+
+    conca_mesh_att_nam(&ncellset_att_nam, name, "ncsets");
+    adios_common_define_attribute (p_new_group,ncellset_att_nam,"/",adios_double,counterstr,"");
+    free (ncellset_att_nam);
+
+    // From the number of counts expect the same number of data and type items
+    int cell_set_count = counter;
+    // Reset counter
+    counter = 0;
+
+    d1 = strdup (data);
+    c = strtok (d1, ",");
+    while (c)
+    {
+        cdata_att_nam = 0;
+        counterstr[0] = '\0';
+        snprintf(counterstr, 5, "%d", counter);
+        conca_mesh_numb_att_nam(&cdata_att_nam, name, "cdata", counterstr);
+        adios_common_define_attribute (p_new_group,cdata_att_nam,"/",adios_string,c,"");
+        free (cdata_att_nam);
+        counter++;
+        c = strtok (NULL, ",");
+    }
+    free (d1);
+
+    // If the number of data variables does not match the number of counts
+    // Generate an error message
+    if (counter != cell_set_count){
+        log_warn ("config.xml: Please provide at least %d cell data of mesh: %s\n"
+                "or use the 'uniform-cells' tag\n"
+                ,cell_set_count
+                ,name
+                );
+        return 0;
+    }
+
+    // Reset counter
+    counter = 0;
+
+    d1 = strdup (types);
+    c = strtok (d1, ",");
+
+    while (c)
+    {
+        celltype_att_nam = 0;
+        counterstr[0] = '\0';
+        snprintf(counterstr, 5, "%d", counter);
+        conca_mesh_numb_att_nam(&celltype_att_nam, name, "ctype", counterstr);
+        adios_common_define_attribute (p_new_group,celltype_att_nam,"/",adios_string,c,"");
+        c = strtok (NULL, ",");
+        counter++;
+        free (celltype_att_nam);
+    }
+    free (d1);
+
+    // If the number of data variables does not match the number of counts
+    // Generate an error message
+    if (counter != cell_set_count){
+        log_warn ("config.xml: Please provide at least %d cell types of mesh: %s\n"
+                "or use the 'uniform-cells' tag\n"
+                ,cell_set_count
+                ,name
+                );
+        return 0;
+    }
+
+    return 1;
 }
 

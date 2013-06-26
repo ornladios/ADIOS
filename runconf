@@ -56,19 +56,16 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         export CXX=pgCC
         export FC=pgf90
         WITHDART="--with-dataspaces=/ccs/proj/e2e/dataspaces/sith/$TARGET"
-        WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/sith/$TARGET"
     elif [ "$TARGET" == "gnu" ]; then
         export CC=gcc
         export CXX=g++
         export FC=gfortran
         WITHDART="--with-dataspaces=/ccs/proj/e2e/dataspaces/sith/$TARGET"
-        WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/sith/$TARGET"
     elif [ "$TARGET" == "intel" ]; then
         export CC=icc
         export CXX=icpc
         export FC=ifort
         WITHDART=""
-        WITHFLEX=""
     else
         echo "TARGET must be pgi or gnu or intel"
         exit 1
@@ -82,7 +79,6 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         --enable-research-transports \
         --with-lustre=/usr/lib64 \
         $WITHDART \
-        $WITHFLEX \
         --with-hdf5=${SEQ_HDF5_DIR} \
         --with-hdf5-libs="${SEQ_HDF5_CLIB}" \
         --with-phdf5=${PAR_HDF5_DIR} \
@@ -858,28 +854,6 @@ elif [ `hostname | cut -c 1-4` == "qliu" ]; then
         #--with-hdf5=/home/thkorde/local \
         #--with-netcdf=/home/thkorde/local
 
-elif [ `hostname | cut -c 1-7` == "esimmon" ]; then
-
-    #######################
-    # Esimmon Virtual Box #
-    #######################
-    echo "Configure on ESIMMON VirtualBox."
-    export MPICC=mpicc
-    export MPICXX=mpicxx
-    export MPIFC=mpif90
-    export CC=gcc
-    export CXX=g++
-    export FC=gfortran
-
-    #export CFLAGS="-g -fPIC" 
-    ./configure --prefix=/opt/adios/1.5.0 \
-        --enable-dependency-tracking \
-        --with-mxml=/opt/mxml \
-        --with-hdf5=/opt/hdf5 \
-        --with-phdf5=/opt/phdf5 \
-        --with-netcdf=/opt/netcdf3 \
-        --with-nc4par=/opt/nc4par \
-        --with-flexpath=/opt/chaos
 
 else
     echo "Could not determine what machine is this."
