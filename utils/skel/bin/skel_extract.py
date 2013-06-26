@@ -77,7 +77,7 @@ def extract (skel_output, dest, select, ranks):
 
 
 # Hilde's function for extracting to a format understood by the R script
-def extract_R (skel_output, select, ranks):
+def extract_R (skel_output, select, ranks, iteration):
  
     doc = xml.dom.minidom.parse (skel_output)
     #if dest == None or dest == '':
@@ -125,6 +125,8 @@ def extract_R (skel_output, select, ranks):
     outfile.write (method + '\n')
     outfile.write (numcores +'\n')
     outfile.write (header + '\n')
+    
+    # Replacing iter with the iteration argument passed in
     iter = 0
 
     for st in doc.getElementsByTagName ('adios_timing'):
@@ -137,8 +139,8 @@ def extract_R (skel_output, select, ranks):
             core = proc.getAttribute ('id')
             vals = proc.getAttribute ('vals').split(',')
             for field in selected_fields:
-                data = data + vals[keys.index(field)].strip(',')
-            data = str(iter)+" "+ core +" "+ data.rstrip (' ') + '\n'
+                data = data + vals[keys.index(field)].strip(',') + ' '
+            data = str(iteration)+" "+ core +" "+ data.rstrip (' ') + '\n'
             outfile.write (data)
         if ranks == 'all':
 
@@ -148,14 +150,26 @@ def extract_R (skel_output, select, ranks):
     
     outfile.close ()
 
+def parse_iteration (filename):
+    #assume filename ends with .xml
+    if not filename.endswith (".xml"):
+        print "Warning: filename does not meet expectations, should end with .xml"
 
+    filename = filename [:-4]
+
+    iteration = filename.rsplit ("_", 1)[1]
+
+    print iteration
+
+    return iteration
 
 def main ():
 
 
     args = parse_command_line()
     if (args.generate_R):
-        extract_R (args.skel_output, args.select, args.ranks)
+        iteration = parse_iteration (args.skel_output)
+        extract_R (args.skel_output, args.select, args.ranks, iteration)
     else:    
         extract (args.skel_output, args.dest, args.select, args.ranks)
 

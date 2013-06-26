@@ -1,0 +1,9 @@
+Flexpath Testing
+================
+
+Possible Test Setups
+--------------------
+
+1. Program which directly calls adios_flexpath functions and checks returns.
+2. Program which forks readers and writers, which dump to file and checks file contents.
+

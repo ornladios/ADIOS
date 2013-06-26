@@ -1,5 +1,5 @@
 #ifndef _FLEXPATH_H
-#define FLEXPATH_H
+#define _FLEXPATH_H
 
 
 #include "core/adios_logger.h"
@@ -12,6 +12,12 @@
 #define FP_DST_ATTR_NAME "fp_dst_rank"
 #define FP_DIM_ATTR_NAME "fp_dim"
 #define FP_NDIMS_ATTR_NAME "fp_ndims"
+
+#define CLOSE_MSG 0
+#define OPEN_MSG 1
+#define ACK_MSG 2
+#define INIT_MSG 3
+#define EOS_MSG 4
 
 #define perr(...) if(getenv("FP_DEBUG")) fprintf(stderr, __VA_ARGS__);
 

@@ -43,11 +43,13 @@ int main (int argc, char ** argv)
     /* get everything from single process - rank 0 for now*/
     ADIOS_SELECTION process_select;
     process_select.type=ADIOS_SELECTION_WRITEBLOCK;
-    process_select.u.block.index = rank % 2;
+    process_select.u.block.index = rank;
 
     /* read the size of arrays using local inq_var */
 
-    ADIOS_FILE* afile = adios_read_open_file("arrays", ADIOS_READ_METHOD_FLEXPATH, comm);
+    /* Note: at this moment, timeout is not handled. It blocks until writer appears */
+    ADIOS_FILE* afile = adios_read_open("arrays", ADIOS_READ_METHOD_FLEXPATH, comm, 
+                                        ADIOS_LOCKMODE_NONE, 30.0);
     /* Read arrays for each time step */
     int ii=0;
     while(adios_errno != err_end_of_stream){
@@ -74,10 +76,11 @@ int main (int argc, char ** argv)
         adios_perform_reads (afile, 1);
 
         /* print result */
-        printf("Results Rank=%d Step=%d p[0] = %d t[0,0] = %f\n p[1] = %d t[0,1] = %f\n\n", 
-	       rank, ii, p[0], t[0], p[1], t[1]);
+        printf("Results Rank=%d Step=%d p[] = [%d, %d,...] t[][] = [%.2f, %.2f]\n", 
+                rank, afile->current_step, p[0], p[1], t[0], t[1]);
     
-        /* block until next step is available (30 sec timeout unsupported) */
+	/* block until next step is available (30 sec timeout unsupported) */
+	adios_release_step(afile);
         adios_advance_step(afile, 0, 30);
 	MPI_Barrier (comm);
 	

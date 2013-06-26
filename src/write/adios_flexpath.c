@@ -45,7 +45,7 @@
 // #include "core/adios_transport_hooks.h"
 // #include "core/util.h"
 // #include "public/adios.h"
-#include "public/flexpath.h"
+#include "core/flexpath.h"
 #include <sys/queue.h>
 
 /************************* Structure and Type Definitions ***********************/
@@ -113,7 +113,7 @@ typedef struct _flexpath_fm_structure {
 // information used per each flexpath file
 typedef struct _flexpath_write_file_data {
     // MPI stuff
-    MPI_Comm * mpiComm;
+    MPI_Comm mpiComm;
     int rank;
     int size;
 
@@ -173,57 +173,6 @@ static char *opRepList[OPLEN] = { "_plus_", "_minus_", "_mult_", "_div_", "_dot_
 FlexpathWriteData flexpathWriteData;
 
 /**************************** Function Definitions *********************************/
-
-// checks for a valid mpi communicator 
-static void adios_var_to_comm(const char* commName, enum ADIOS_FLAG hostLanguageFortran, void* data, MPI_Comm* comm) {
-    fp_write_log("SETUP", "running var to comm function\n");
-    if(data) {    
-        int t = *(int*)data;
-        if(!commName) {        
-            if(!t) {            
-                fprintf(stderr, "communicator not provided and none "
-			 "listed in XML.  Defaulting to MPI_COMM_SELF\n");
-                *comm = MPI_COMM_SELF;
-            } else {            
-                if(hostLanguageFortran == adios_flag_yes) {                
-                    *comm = MPI_Comm_f2c(t);
-                } else {                
-                    *comm = *(MPI_Comm*)data;
-                }
-            }
-        } else {        
-            if(!strcmp(commName, "")) {            
-                if(!t) {                
-                    fprintf(stderr, "communicator not provided and none "
-			     "listed in XML.  Defaulting to MPI_COMM_SELF\n");
-                    *comm = MPI_COMM_SELF;
-                } else {                
-                    if(hostLanguageFortran == adios_flag_yes) {                    
-                        *comm = MPI_Comm_f2c(t);
-                    } else {                    
-                        *comm = *(MPI_Comm*)data;
-                    }
-                }
-            } else {            
-                if(!t) {                
-                    fprintf(stderr, "communicator not provided but one "
-			     "listed in XML.  Defaulting to MPI_COMM_WORLD\n");
-                    *comm = MPI_COMM_WORLD;
-                } else {                
-		    if(hostLanguageFortran == adios_flag_yes){                    
-                        *comm = MPI_Comm_f2c(t);
-                    } else {                   
-                        *comm = *(MPI_Comm*)data;
-                    }
-                }
-            }
-        }
-    } else {
-        fprintf(stderr, "coordination-communication not provided. "
-		 "Using MPI_COMM_WORLD instead\n");
-        *comm = MPI_COMM_WORLD;
-    }
-}
 
 // add an attr for each dimension to an attr_list
 void set_attr_dimensions(char* varName, char* altName, int numDims, attr_list attrs) {
@@ -488,7 +437,6 @@ static FlexpathAltName *find_alt_name(FlexpathFMStructure *currentFm, char *dimN
 // populates offsets array
 int get_local_offsets(struct adios_var_struct * list, struct adios_group_struct * g, int** offsets, int** dimensions)
 {
-    //perr("\t\t\toffsets for var: %s\n", list->name);	    
     struct adios_dimension_struct * dim_list = list->dimensions;	    
     if(dim_list){		
 	// if this var has a global dimension, then by default, it has local_offset
@@ -558,7 +506,6 @@ char* multiqueue_action = "{\n\
     }\n\
     if(EVcount_flush()>0) {\n\
         flush* c = EVdata_flush(0);\n\
-        printf(\"writer recieved flush msg type: %d from reader %d\\n\", c->type, c->rank);\n\
         if(c->type == 0) {\n\
             if(EVcount_formatMsg()>0) {\n\
                 formatMsg* msg = EVdata_formatMsg(0);\n\
@@ -933,10 +880,10 @@ static int op_handler(CManager cm, void* vevent, void* client_data, attr_list at
     EVtake_event_buffer(cm, msg);
     fp_write_log("MSG", "recieved op_msg : rank %d type %d: condition: %d step: %d\n", 
 		 msg->process_id, msg->type, msg->condition, msg->step);
-    if(msg->type == 1) {
+    if(msg->type == OPEN_MSG) {
         threaded_enqueue(&fileData->controlQueue, msg, OPEN, 
             fileData->controlMutex, fileData->controlCondition);
-    } else if(msg->type == 0) {
+    } else if(msg->type == CLOSE_MSG) {
         threaded_enqueue(&fileData->controlQueue, msg, CLOSE, 
 			 fileData->controlMutex, fileData->controlCondition);
     } else if(msg->type == 3) {
@@ -1032,8 +979,9 @@ int control_thread(void* arg) {
 					open->process_id+1, 
 					fileData->bridges[open->process_id].myNum);				    
 		}		
-            if(open->step < fileData->currentStep) {
+		if(open->step < fileData->currentStep) {
                     perr("control_thread: Recieved Past Step Open\n");
+		    log_error("Flexpath method control_thread: Received Past Step Open\n");
                 } else if (open->step == fileData->currentStep){
                     fp_write_log("STEP", "recieved op with current step\n");
                     thr_mutex_lock(fileData->openMutex);
@@ -1050,7 +998,7 @@ int control_thread(void* arg) {
 		    ack->condition = open->condition;
                     fileData->attrs = set_dst_rank_atom(fileData->attrs, open->process_id+1);
 		    fp_write_log("MSG", " sending op_msg : dst %d step %d type ack\n",
-                        open->process_id, fileData->currentStep); 
+				 open->process_id, fileData->currentStep); 
                     EVsubmit_general(fileData->opSource, ack, op_free, fileData->attrs);
                 } else {
                     fp_write_log("STEP", "recieved op with future step\n");
@@ -1164,6 +1112,7 @@ FlexpathWriteFileData* find_open_file(char* name) {
 // Initializes flexpath write local data structures
 extern void adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method) 
 {
+    setenv("CMSelfFormats", "1", 1);
     // global data structure creation
     flexpathWriteData.rank = -1;
     flexpathWriteData.openFiles = NULL;
@@ -1256,10 +1205,10 @@ extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method
     fileData->sentGlobalOffsets = 0;
 
     // mpi setup
+    MPI_Comm_dup(comm, &fileData->mpiComm);
 
-    MPI_Comm_dup(comm, fileData->mpiComm);
-    MPI_Comm_rank(*(fileData->mpiComm), &fileData->rank);
-    MPI_Comm_size(*(fileData->mpiComm), &fileData->size);
+    MPI_Comm_rank((fileData->mpiComm), &fileData->rank);
+    MPI_Comm_size((fileData->mpiComm), &fileData->size);
     char *recv_buff = NULL;
     char sendmsg[CONTACT_STR_LEN];
     if(fileData->rank == 0) {
@@ -1272,7 +1221,7 @@ extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method
     fileData->sinkStone = EValloc_stone(flexpathWriteData.cm);
     sprintf(&sendmsg[0], "%d:%s", fileData->multiStone, contact);
     MPI_Gather(sendmsg, CONTACT_STR_LEN, MPI_CHAR, recv_buff, 
-        CONTACT_STR_LEN, MPI_CHAR, 0, *(fileData->mpiComm));
+        CONTACT_STR_LEN, MPI_CHAR, 0, (fileData->mpiComm));
 
     // rank 0 prints contact info to file
     if(fileData->rank == 0) {
@@ -1315,7 +1264,7 @@ extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method
     fileData->numBridges = numBridges;
     fclose(reader_info);
 
-    MPI_Barrier(*(fileData->mpiComm));
+    MPI_Barrier((fileData->mpiComm));
     
     // cleanup of reader files (writer is done with it).
     if(fileData->rank == 0){
@@ -1578,11 +1527,11 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 
 		MPI_Allgather(local_offsets, num_local_offsets, MPI_INT, 
 			      all_offsets, num_local_offsets, MPI_INT,
-			      *fileData->mpiComm);
+			      fileData->mpiComm);
 
 		MPI_Allgather(local_dimensions, num_local_offsets, MPI_INT, 
 			      all_local_dims, num_local_offsets, MPI_INT,
-			      *fileData->mpiComm);
+			      fileData->mpiComm);
 
 		
 		num_gbl_vars++;
@@ -1594,38 +1543,8 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 		gbl_vars = realloc(gbl_vars, sizeof(global_var) * num_gbl_vars);
 		gbl_vars[num_gbl_vars - 1].name = strdup(list->name);
 		gbl_vars[num_gbl_vars - 1].noffset_structs = 1;
-		/* perr("\n\n\n\t\tnoffset_structs: %d\n",  */
-		/*      gbl_vars[num_gbl_vars - 1].noffset_structs); */
 		gbl_vars[num_gbl_vars - 1].offsets = ostruct;
-		/* int i;			    */
-		/* i = 0; */
-		/* perr("\t\t\tall offsets for var: %s\n", list->name); */
-		/* while(i<commsize * num_local_offsets){ */
-		/*     int j; */
-			
-		/*     for(j=0; j<num_local_offsets;j++){ */
-		/* 	perr("\t\t\t%d ", all_offsets[i]);   */
-		/* 	i++; */
-		/*     }			 */
-		/*     perr("\n");				 */
-			
-		/* } */
-		/* perr("\n"); */
-		/* perr("\t\t\tall local_dims for var: %s\n", list->name); */
-		/* i = 0; */
-		    
-		/* while(i<commsize * num_local_offsets){ */
-		/*     int j;				 */
-		/*     for(j=0; j<num_local_offsets;j++){ */
-		/* 	perr("\t\t\t%d ", all_local_dims[i]);   */
-		/* 	i++; */
-		/*     }			 */
-		/*     perr("\n"); */
-			
-		/* } */
-		/* perr("\n"); */
-		    
-				
+
 	    }
 	    list=list->next;
 	}
@@ -1659,39 +1578,39 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 // wait until all open files have finished sending data to shutdown
 extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method) {
     FlexpathWriteFileData* fileData = flexpathWriteData.openFiles;
-    fprintf(stderr, "entered finalize: %d\n", fileData->rank);
+    log_info("Flexpath method entered finalize: %d\n", fileData->rank);
     fp_write_log("FILE", "Entered finalize\n");
     while(fileData) {
-        fp_write_log("DATAMUTEX", "in use 4\n"); 
-        thr_mutex_lock(fileData->dataMutex2);
-        fp_write_log("MUTEX","lock 1\n");
+        //fp_write_log("DATAMUTEX", "in use 4\n"); 
+        //thr_mutex_lock(fileData->dataMutex2);
+        //fp_write_log("MUTEX","lock 1\n");
         while(fileData->dataQueue!=NULL) {
             fp_write_log("FILE", "waiting on %s to empty data\n", fileData->name);
             thr_condition_wait(fileData->dataCondition2, fileData->dataMutex2);
         }
-        fp_write_log("MUTEX","unlock 1\n");
-        thr_mutex_unlock(fileData->dataMutex2);
-        fp_write_log("DATAMUTEX", "no use 4\n"); 
+        //fp_write_log("MUTEX","unlock 1\n");
+        //thr_mutex_unlock(fileData->dataMutex2);
+        //fp_write_log("DATAMUTEX", "no use 4\n"); 
         fileData = fileData->next;
     }
     // all data has been read by all readers.
     // we can send everyone end_of_stream messages.
     int i;
-    for(i=0; i<fileData->numBridges; i++) {
-	if(fileData->bridges[i].created) {
-	    op_msg* ack = (op_msg*) malloc(sizeof(op_msg));
-	    ack->file_name = strdup(fileData->name);
-	    ack->process_id = fileData->rank;
-	    ack->step = fileData->currentStep;
-	    ack->type = 4;
-	    ack->condition = fileData->bridges[i].condition;
-	    fileData->attrs = set_dst_rank_atom(fileData->attrs, i+1);
-	    fp_write_log("FINALIZE", " sending opfinalize _msg : dst %d step %d type ack\n",
-			 i, fileData->currentStep);
-	    fprintf(stderr, "\t\t\t sending finalize message to %d\n", i);
-	    EVsubmit_general(fileData->opSource, ack, op_free, fileData->attrs);
-	}
-    }
+    /* for(i=0; i<fileData->numBridges; i++) { */
+    /* 	if(fileData->bridges[i].created) { */
+    /* 	    op_msg* ack = (op_msg*) malloc(sizeof(op_msg)); */
+    /* 	    ack->file_name = strdup(fileData->name); */
+    /* 	    ack->process_id = fileData->rank; */
+    /* 	    ack->step = fileData->currentStep; */
+    /* 	    ack->type = 4; */
+    /* 	    ack->condition = fileData->bridges[i].condition; */
+    /* 	    fileData->attrs = set_dst_rank_atom(fileData->attrs, i+1); */
+    /* 	    fp_write_log("FINALIZE", " sending opfinalize _msg : dst %d step %d type ack\n", */
+    /* 			 i, fileData->currentStep); */
+    /* 	    fprintf(stderr, "\t\t\t sending finalize message to %d\n", i); */
+    /* 	    EVsubmit_general(fileData->opSource, ack, op_free, fileData->attrs); */
+    /* 	} */
+    /* } */
 }
 
 // provides unknown functionality

@@ -102,8 +102,8 @@ program coupling
 
     call adios_read_open (inh, infn, read_method, group_comm, ADIOS_LOCKMODE_CURRENT, 180.0, ierr)
     if (ierr .ne. 0) then
-        print '(" Failed to open stream: ",a0)', infn
-        print '(" open stream ierr=: ",i0)', ierr
+        print '(" Failed to open stream: ",a)', infn
+        print '(" open stream ierr=: ",i)', ierr
         call exit(1)
     endif
 
@@ -118,7 +118,7 @@ program coupling
         call MPI_Barrier (group_comm, ierr)
         t2=t2+(MPI_Wtime()-t1);
         call adios_release_step(inh, ierr)
-!        call printArrays()
+        call printArrays()
         call advanceArrays()
         call MPI_Barrier (group_comm, ierr)
         call adios_advance_step(inh, 0, 10.0, ierr)
@@ -155,16 +155,10 @@ subroutine readArrays()
     integer*8, dimension(3) :: offset, readsize
 
 
-    offset = 0
-    readsize = 1
-    call adios_selection_boundingbox (sel, 0, offset, readsize)
-
     ! read gdx and gdy
     print '("rank=",i0,": Read in gdx and gdy, step",i0," from ",a)', rank, wts, trim(infn)
-    call adios_schedule_read (inh, sel, "gdx", 1, 1, gdx, ierr)
-    call adios_schedule_read (inh, sel, "gdy", 1, 1, gdy, ierr)
-    call adios_perform_reads (inh, ierr)
-    call adios_selection_delete (sel)
+    call adios_get_scalar (inh,"gdx",gdx, ierr)
+    call adios_get_scalar (inh,"gdy",gdy, ierr)
 
     ! Calculate the local x,y offsets
     if (read_mode == 0) then
@@ -201,7 +195,7 @@ subroutine readArrays()
     print '("rank=",i0,": Read in xy(",i0,":",i0,",",i0,":",i0,") from ",a)', rank, &
             offset(1)+1, offset(1)+readsize(1), &
             offset(2)+1, offset(2)+readsize(2),trim(infn)
-    call adios_schedule_read (inh, sel, "xy", 1, 1, xy, ierr)
+    call adios_schedule_read (inh, sel, "xy", 0, 1, xy, ierr)
     call adios_perform_reads (inh, ierr)
     call adios_selection_delete (sel)
 
@@ -324,6 +318,8 @@ subroutine processArgs()
         read_method = ADIOS_READ_METHOD_DATASPACES 
     elseif (trim(method_str) .eq. "DIMES") then
         read_method = ADIOS_READ_METHOD_DIMES 
+    elseif (trim(method_str) .eq. "FLEXPATH") then
+        read_method = ADIOS_READ_METHOD_FLEXPATH 
     else
         read_method = ADIOS_READ_METHOD_BP
     endif
