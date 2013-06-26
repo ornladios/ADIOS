@@ -73,7 +73,8 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
     export CFLAGS="-g -fPIC" 
-    ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/sith.$TARGET \
+    #./configure --prefix=/ccs/proj/e2e/rbarreto/ADIOS/sith.gnu.1.4.1 \
+    ./configure --prefix=/ccs/proj/e2e/rbarreto/ADIOS/sith.gnu \
         --enable-dependency-tracking \
         --enable-research-transports \
         --with-lustre=/usr/lib64 \

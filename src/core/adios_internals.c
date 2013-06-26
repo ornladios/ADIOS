@@ -67,9 +67,9 @@ int adios_int_is_num (char * temp) // 1 == yes, 0 == no
 }
 
 struct adios_var_struct * adios_find_var_by_name (struct adios_var_struct * root
-                                                 ,const char * name
-                                                 ,enum ADIOS_FLAG unique_names
-                                                 )
+        ,const char * name
+        ,enum ADIOS_FLAG unique_names
+        )
 {
     int done = 0;
     struct adios_var_struct * var = 0;
@@ -87,9 +87,9 @@ struct adios_var_struct * adios_find_var_by_name (struct adios_var_struct * root
         if (unique_names == adios_flag_no)
         {
             compare_name_path = malloc (  strlen (root->name)
-                                        + strlen (root->path)
-                                        + 2 // null term and '/'
-                                       );
+                    + strlen (root->path)
+                    + 2 // null term and '/'
+                    );
             if (!strcmp (root->path, "/"))
                 sprintf (compare_name_path, "/%s", root->name);
             else
@@ -97,9 +97,9 @@ struct adios_var_struct * adios_find_var_by_name (struct adios_var_struct * root
         }
 
         if (   !strcasecmp (name, compare_name)
-            || (   unique_names == adios_flag_no
-                && !strcasecmp (name, compare_name_path)
-               )
+                || (   unique_names == adios_flag_no
+                    && !strcasecmp (name, compare_name_path)
+                   )
            )
         {
             done = 1;
@@ -120,10 +120,10 @@ struct adios_var_struct * adios_find_var_by_name (struct adios_var_struct * root
 }
 
 struct adios_attribute_struct * adios_find_attribute_by_name
-                                        (struct adios_attribute_struct * root
-                                        ,const char * name
-                                        ,enum ADIOS_FLAG unique_names
-                                        )
+(struct adios_attribute_struct * root
+ ,const char * name
+ ,enum ADIOS_FLAG unique_names
+ )
 {
     int done = 0;
     struct adios_attribute_struct * attr = 0;
@@ -141,9 +141,9 @@ struct adios_attribute_struct * adios_find_attribute_by_name
         if (unique_names == adios_flag_no)
         {
             compare_name_path = malloc (  strlen (root->name)
-                                        + strlen (root->path)
-                                        + 2 // null term and '/'
-                                       );
+                    + strlen (root->path)
+                    + 2 // null term and '/'
+                    );
             if (!strcmp (root->path, "/"))
                 sprintf (compare_name_path, "/%s", root->name);
             else
@@ -151,9 +151,9 @@ struct adios_attribute_struct * adios_find_attribute_by_name
         }
 
         if (   !strcasecmp (name, compare_name)
-            || (   unique_names == adios_flag_no
-                && !strcasecmp (name, compare_name_path)
-               )
+                || (   unique_names == adios_flag_no
+                    && !strcasecmp (name, compare_name_path)
+                   )
            )
         {
             done = 1;
@@ -174,8 +174,8 @@ struct adios_attribute_struct * adios_find_attribute_by_name
 }
 
 struct adios_var_struct * adios_find_var_by_id (struct adios_var_struct * root
-                                               ,uint16_t id
-                                               )
+        ,uint16_t id
+        )
 {
     while (root)
     {
@@ -189,9 +189,9 @@ struct adios_var_struct * adios_find_var_by_id (struct adios_var_struct * root
 }
 
 struct adios_attribute_struct * adios_find_attribute_by_id
-                                         (struct adios_attribute_struct * root
-                                         ,uint16_t id
-                                         )
+(struct adios_attribute_struct * root
+ ,uint16_t id
+ )
 {
     while (root)
     {
@@ -205,11 +205,11 @@ struct adios_attribute_struct * adios_find_attribute_by_id
 }
 
 int adios_parse_dimension (const char * dimension
-                          ,const char * global_dimension
-                          ,const char * local_offset
-                          ,struct adios_group_struct * g
-                          ,struct adios_dimension_struct * dim
-                          )
+        ,const char * global_dimension
+        ,const char * local_offset
+        ,struct adios_group_struct * g
+        ,struct adios_dimension_struct * dim
+        )
 {
     if (!dimension)
     {
@@ -226,19 +226,19 @@ int adios_parse_dimension (const char * dimension
         struct adios_var_struct * var = 0;
         dim->dimension.rank = 0;
         var = adios_find_var_by_name (g->vars, dimension
-                                     ,g->all_unique_var_names
-                                     );
+                ,g->all_unique_var_names
+                );
         if (!var)
         {
             struct adios_attribute_struct * attr = 0;
             attr = adios_find_attribute_by_name (g->attributes, dimension
-                                                ,g->all_unique_var_names
-                                                );
+                    ,g->all_unique_var_names
+                    );
 
             if (!attr)
             {
                 if (   g->time_index_name
-                    && !strcasecmp (g->time_index_name, dimension)
+                        && !strcasecmp (g->time_index_name, dimension)
                    )
                 {
                     dim->dimension.time_index = adios_flag_yes;
@@ -246,8 +246,8 @@ int adios_parse_dimension (const char * dimension
                 else
                 {
                     adios_error (err_invalid_dimension, 
-                                 "config.xml: invalid var dimension: %s\n", 
-                                 dimension);
+                            "config.xml: invalid var dimension: %s\n", 
+                            dimension);
 
                     return 0;
                 }
@@ -265,12 +265,12 @@ int adios_parse_dimension (const char * dimension
                         case adios_complex:
                         case adios_double_complex:
                             adios_error (err_invalid_var_as_dimension, 
-                                         "config.xml: dimension defining var %s "
-                                         "pointed by attribute %s "
-                                         "has an invalid type: %s\n",
-                                         attr->var->name,
-                                         attr->name,
-                                         adios_type_to_string_int (attr->var->type));
+                                    "config.xml: dimension defining var %s "
+                                    "pointed by attribute %s "
+                                    "has an invalid type: %s\n",
+                                    attr->var->name,
+                                    attr->name,
+                                    adios_type_to_string_int (attr->var->type));
                             return 0;
 
                         default: // the integral numeric types are all fine
@@ -289,12 +289,12 @@ int adios_parse_dimension (const char * dimension
                         case adios_complex:
                         case adios_double_complex:
                             adios_error (err_invalid_var_as_dimension, 
-                                         "config.xml: dimension defining var %s "
-                                         "pointed by attribute %s "
-                                         "has an invalid type: %s\n",
-                                         attr->var->name,
-                                         attr->name,
-                                         adios_type_to_string_int (attr->type));
+                                    "config.xml: dimension defining var %s "
+                                    "pointed by attribute %s "
+                                    "has an invalid type: %s\n",
+                                    attr->var->name,
+                                    attr->name,
+                                    adios_type_to_string_int (attr->type));
                             return 0;
 
                         default: // the integral numeric types are all fine
@@ -348,19 +348,19 @@ int adios_parse_dimension (const char * dimension
         struct adios_var_struct * var = 0;
         dim->global_dimension.rank = 0;
         var = adios_find_var_by_name (g->vars, global_dimension
-                                     ,g->all_unique_var_names
-                                     );
+                ,g->all_unique_var_names
+                );
         if (!var)
         {
             struct adios_attribute_struct * attr = 0;
             attr = adios_find_attribute_by_name (g->attributes, global_dimension
-                                                ,g->all_unique_var_names
-                                                );
+                    ,g->all_unique_var_names
+                    );
 
             if (!attr)
             {
                 if (   g->time_index_name
-                    && !strcasecmp (g->time_index_name, global_dimension)
+                        && !strcasecmp (g->time_index_name, global_dimension)
                    )
                 {
                     dim->global_dimension.time_index = adios_flag_yes;
@@ -387,12 +387,12 @@ int adios_parse_dimension (const char * dimension
                         case adios_complex:
                         case adios_double_complex:
                             adios_error (err_invalid_var_as_dimension, 
-                                         "config.xml: global dimension defining var %s "
-                                         "pointed by attribute %s "
-                                         "has an invalid type: %s\n",
-                                         attr->var->name,
-                                         attr->name,
-                                         adios_type_to_string_int (attr->var->type));
+                                    "config.xml: global dimension defining var %s "
+                                    "pointed by attribute %s "
+                                    "has an invalid type: %s\n",
+                                    attr->var->name,
+                                    attr->name,
+                                    adios_type_to_string_int (attr->var->type));
                             return 0;
 
                         default: // the integral numeric types are all fine
@@ -411,12 +411,12 @@ int adios_parse_dimension (const char * dimension
                         case adios_complex:
                         case adios_double_complex:
                             adios_error (err_invalid_var_as_dimension, 
-                                         "config.xml: global dimension defining var %s "
-                                         "pointed by attribute %s "
-                                         "has an invalid type: %s\n",
-                                         attr->var->name,
-                                         attr->name,
-                                         adios_type_to_string_int (attr->var->type));
+                                    "config.xml: global dimension defining var %s "
+                                    "pointed by attribute %s "
+                                    "has an invalid type: %s\n",
+                                    attr->var->name,
+                                    attr->name,
+                                    adios_type_to_string_int (attr->var->type));
                             return 0;
 
                         default: // the integral numeric types are all fine
@@ -468,19 +468,19 @@ int adios_parse_dimension (const char * dimension
         struct adios_var_struct * var = 0;
         dim->local_offset.rank = 0;
         var = adios_find_var_by_name (g->vars, local_offset
-                                     ,g->all_unique_var_names
-                                     );
+                ,g->all_unique_var_names
+                );
         if (!var)
         {
             struct adios_attribute_struct * attr = 0;
             attr = adios_find_attribute_by_name (g->attributes, local_offset
-                                                ,g->all_unique_var_names
-                                                );
+                    ,g->all_unique_var_names
+                    );
 
             if (!attr)
             {
                 if (   g->time_index_name
-                    && !strcasecmp (g->time_index_name, local_offset)
+                        && !strcasecmp (g->time_index_name, local_offset)
                    )
                 {
                     dim->local_offset.time_index = adios_flag_yes;
@@ -488,8 +488,8 @@ int adios_parse_dimension (const char * dimension
                 else
                 {
                     adios_error (err_invalid_offset, 
-                                 "config.xml: invalid var local_offset: %s\n",
-                                 local_offset);
+                            "config.xml: invalid var local_offset: %s\n",
+                            local_offset);
 
                     return 0;
                 }
@@ -507,12 +507,12 @@ int adios_parse_dimension (const char * dimension
                         case adios_complex:
                         case adios_double_complex:
                             adios_error (err_invalid_var_as_dimension, 
-                                         "config.xml: offset defining var %s "
-                                         "pointed by attribute %s "
-                                         "has an invalid type: %s\n",
-                                         attr->var->name,
-                                         attr->name,
-                                         adios_type_to_string_int (attr->var->type));
+                                    "config.xml: offset defining var %s "
+                                    "pointed by attribute %s "
+                                    "has an invalid type: %s\n",
+                                    attr->var->name,
+                                    attr->name,
+                                    adios_type_to_string_int (attr->var->type));
                             return 0;
 
                         default: // the integral numeric types are all fine
@@ -531,12 +531,12 @@ int adios_parse_dimension (const char * dimension
                         case adios_complex:
                         case adios_double_complex:
                             adios_error (err_invalid_var_as_dimension, 
-                                         "config.xml: offset defining var %s "
-                                         "pointed by attribute %s "
-                                         "has an invalid type: %s\n",
-                                         attr->var->name,
-                                         attr->name,
-                                         adios_type_to_string_int (attr->var->type));
+                                    "config.xml: offset defining var %s "
+                                    "pointed by attribute %s "
+                                    "has an invalid type: %s\n",
+                                    attr->var->name,
+                                    attr->name,
+                                    adios_type_to_string_int (attr->var->type));
                             return 0;
 
                         default: // the integral numeric types are all fine
@@ -599,271 +599,271 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value, void ** 
         case adios_byte:
         case adios_short:
         case adios_integer:
-        {
-            int errno_save = errno;
-            long t = strtol (value, &end, 10);
-            if (errno != errno_save || (end != 0 && *end != '\0'))
             {
-                adios_error (err_invalid_argument, 
-                             "value: '%s' not valid integer\n",value);
-                return 0;
-            }
-            else
-            {
-                switch (type)
+                int errno_save = errno;
+                long t = strtol (value, &end, 10);
+                if (errno != errno_save || (end != 0 && *end != '\0'))
                 {
-                    case adios_byte:
-                        if (t < SCHAR_MIN || t > SCHAR_MAX)
-                        {
-                            adios_error (err_out_of_bound, 
-                                         "type is %s, value "
-                                         "is out of range: '%s'\n",
-                                         adios_type_to_string_int (type), 
-                                         value);
-                            return 0;
-                        }
-                        else
-                        {
-                            *out = malloc (1);
-                            *((int8_t *) *out) = t;
+                    adios_error (err_invalid_argument, 
+                            "value: '%s' not valid integer\n",value);
+                    return 0;
+                }
+                else
+                {
+                    switch (type)
+                    {
+                        case adios_byte:
+                            if (t < SCHAR_MIN || t > SCHAR_MAX)
+                            {
+                                adios_error (err_out_of_bound, 
+                                        "type is %s, value "
+                                        "is out of range: '%s'\n",
+                                        adios_type_to_string_int (type), 
+                                        value);
+                                return 0;
+                            }
+                            else
+                            {
+                                *out = malloc (1);
+                                *((int8_t *) *out) = t;
 
-                            return 1;
-                        }
-                    case adios_short:
-                        if (t < SHRT_MIN || t > SHRT_MAX)
-                        {
-                            adios_error (err_out_of_bound, 
-                                         "type is %s, value "
-                                         "is out of range: '%s'\n",
-                                         adios_type_to_string_int (type), 
-                                         value);
-                            return 0;
-                        }
-                        else
-                        {
-                            *out = malloc (2);
-                            *((int16_t *) *out) = t;
+                                return 1;
+                            }
+                        case adios_short:
+                            if (t < SHRT_MIN || t > SHRT_MAX)
+                            {
+                                adios_error (err_out_of_bound, 
+                                        "type is %s, value "
+                                        "is out of range: '%s'\n",
+                                        adios_type_to_string_int (type), 
+                                        value);
+                                return 0;
+                            }
+                            else
+                            {
+                                *out = malloc (2);
+                                *((int16_t *) *out) = t;
 
-                            return 1;
-                        }
-                    case adios_integer:
-                        if (t < INT_MIN || t > INT_MAX)
-                        {
-                            adios_error (err_out_of_bound, 
-                                         "type is %s, value "
-                                         "is out of range: '%s'\n",
-                                         adios_type_to_string_int (type), 
-                                         value);
-                            return 0;
-                        }
-                        else
-                        {
-                            *out = malloc (4);
-                            *((int32_t *) *out) = t;
+                                return 1;
+                            }
+                        case adios_integer:
+                            if (t < INT_MIN || t > INT_MAX)
+                            {
+                                adios_error (err_out_of_bound, 
+                                        "type is %s, value "
+                                        "is out of range: '%s'\n",
+                                        adios_type_to_string_int (type), 
+                                        value);
+                                return 0;
+                            }
+                            else
+                            {
+                                *out = malloc (4);
+                                *((int32_t *) *out) = t;
 
-                            return 1;
-                        }
+                                return 1;
+                            }
+                    }
                 }
             }
-        }
         case adios_long:
-        {
-            int errno_save = errno;
-            int64_t t = strtoll (value, &end, 10);
-            if (errno != errno_save || (end != 0 && *end != '\0'))
             {
-                adios_error (err_out_of_bound, 
-                        "type is %s, value "
-                        "is out of range: '%s'\n",
-                        adios_type_to_string_int (type), 
-                        value);
-                return 0;
-            }
-            else
-            {
-                *out = malloc (8);
-                *((int64_t *) *out) = t;
+                int errno_save = errno;
+                int64_t t = strtoll (value, &end, 10);
+                if (errno != errno_save || (end != 0 && *end != '\0'))
+                {
+                    adios_error (err_out_of_bound, 
+                            "type is %s, value "
+                            "is out of range: '%s'\n",
+                            adios_type_to_string_int (type), 
+                            value);
+                    return 0;
+                }
+                else
+                {
+                    *out = malloc (8);
+                    *((int64_t *) *out) = t;
 
-                return 1;
+                    return 1;
+                }
             }
-        }
         case adios_unsigned_byte:
         case adios_unsigned_short:
         case adios_unsigned_integer:
-        {
-            int errno_save = errno;
-            unsigned long t = strtoul (value, &end, 10);
-            if (errno != errno_save || (end != 0 && *end != '\0'))
             {
-                adios_error (err_invalid_argument, 
-                             "value: '%s' not valid integer\n", value);
-                return 0;
-            }
-            else
-            {
-                switch (type)
+                int errno_save = errno;
+                unsigned long t = strtoul (value, &end, 10);
+                if (errno != errno_save || (end != 0 && *end != '\0'))
                 {
-                    case adios_unsigned_byte:
-                        if (t > UCHAR_MAX)
-                        {
-                            adios_error (err_out_of_bound, 
-                                    "type is %s, value "
-                                    "is out of range: '%s'\n",
-                                    adios_type_to_string_int (type), 
-                                    value);
-                            return 0;
-                        }
-                        else
-                        {
-                            *out = malloc (1);
-                            *((uint8_t *) *out) = t;
+                    adios_error (err_invalid_argument, 
+                            "value: '%s' not valid integer\n", value);
+                    return 0;
+                }
+                else
+                {
+                    switch (type)
+                    {
+                        case adios_unsigned_byte:
+                            if (t > UCHAR_MAX)
+                            {
+                                adios_error (err_out_of_bound, 
+                                        "type is %s, value "
+                                        "is out of range: '%s'\n",
+                                        adios_type_to_string_int (type), 
+                                        value);
+                                return 0;
+                            }
+                            else
+                            {
+                                *out = malloc (1);
+                                *((uint8_t *) *out) = t;
 
-                            return 1;
-                        }
-                    case adios_unsigned_short:
-                        if (t > USHRT_MAX)
-                        {
-                            adios_error (err_out_of_bound, 
-                                    "type is %s, value "
-                                    "is out of range: '%s'\n",
-                                    adios_type_to_string_int (type), 
-                                    value);
-                            return 0;
-                        }
-                        else
-                        {
-                            *out = malloc (2);
-                            *((uint16_t *) *out) = t;
+                                return 1;
+                            }
+                        case adios_unsigned_short:
+                            if (t > USHRT_MAX)
+                            {
+                                adios_error (err_out_of_bound, 
+                                        "type is %s, value "
+                                        "is out of range: '%s'\n",
+                                        adios_type_to_string_int (type), 
+                                        value);
+                                return 0;
+                            }
+                            else
+                            {
+                                *out = malloc (2);
+                                *((uint16_t *) *out) = t;
 
-                            return 1;
-                        }
-                    case adios_unsigned_integer:
-                        if (t > UINT_MAX)
-                        {
-                            adios_error (err_out_of_bound, 
-                                    "type is %s, value "
-                                    "is out of range: '%s'\n",
-                                    adios_type_to_string_int (type), 
-                                    value);
-                            return 0;
-                        }
-                        else
-                        {
-                            *out = malloc (4);
-                            *((uint32_t *) *out) = t;
+                                return 1;
+                            }
+                        case adios_unsigned_integer:
+                            if (t > UINT_MAX)
+                            {
+                                adios_error (err_out_of_bound, 
+                                        "type is %s, value "
+                                        "is out of range: '%s'\n",
+                                        adios_type_to_string_int (type), 
+                                        value);
+                                return 0;
+                            }
+                            else
+                            {
+                                *out = malloc (4);
+                                *((uint32_t *) *out) = t;
 
-                            return 1;
-                        }
+                                return 1;
+                            }
+                    }
                 }
             }
-        }
         case adios_unsigned_long:
-        {
-            int errno_save = errno;
-            uint64_t t = strtoull (value, &end, 10);
-            if (errno != errno_save || (end != 0 && *end != '\0'))
             {
-                adios_error (err_out_of_bound, 
-                        "type is %s, value "
-                        "is out of range: '%s'\n",
-                        adios_type_to_string_int (type), 
-                        value);
-                return 0;
-            }
-            else
-            {
-                *out = malloc (8);
-                *((uint64_t *) *out) = t;
+                int errno_save = errno;
+                uint64_t t = strtoull (value, &end, 10);
+                if (errno != errno_save || (end != 0 && *end != '\0'))
+                {
+                    adios_error (err_out_of_bound, 
+                            "type is %s, value "
+                            "is out of range: '%s'\n",
+                            adios_type_to_string_int (type), 
+                            value);
+                    return 0;
+                }
+                else
+                {
+                    *out = malloc (8);
+                    *((uint64_t *) *out) = t;
 
-                return 1;
+                    return 1;
+                }
             }
-        }
         case adios_real:
-        {
-            int errno_save = errno;
-            float t = strtof (value, &end);
-            if (errno != errno_save || (end != 0 && *end != '\0'))
             {
-                adios_error (err_out_of_bound, 
-                        "type is %s, value "
-                        "is out of range: '%s'\n",
-                        adios_type_to_string_int (type), 
-                        value);
-                return 0;
-            }
-            else
-            {
-                *out = malloc (4);
-                *((float *) *out) = t;
+                int errno_save = errno;
+                float t = strtof (value, &end);
+                if (errno != errno_save || (end != 0 && *end != '\0'))
+                {
+                    adios_error (err_out_of_bound, 
+                            "type is %s, value "
+                            "is out of range: '%s'\n",
+                            adios_type_to_string_int (type), 
+                            value);
+                    return 0;
+                }
+                else
+                {
+                    *out = malloc (4);
+                    *((float *) *out) = t;
 
-                return 1;
+                    return 1;
+                }
             }
-        }
         case adios_double:
-        {
-            int errno_save = errno;
-            double t = strtod (value, &end);
-            if (errno != errno_save || (end != 0 && *end != '\0'))
             {
-                adios_error (err_out_of_bound, 
-                        "type is %s, value "
-                        "is out of range: '%s'\n",
-                        adios_type_to_string_int (type), 
-                        value);
-                return 0;
+                int errno_save = errno;
+                double t = strtod (value, &end);
+                if (errno != errno_save || (end != 0 && *end != '\0'))
+                {
+                    adios_error (err_out_of_bound, 
+                            "type is %s, value "
+                            "is out of range: '%s'\n",
+                            adios_type_to_string_int (type), 
+                            value);
+                    return 0;
+                }
+                else
+                {
+                    *out = malloc (8);
+                    *((double *) *out) = t;
+
+                    return 1;
+                }
             }
-            else
+        case adios_long_double:
             {
-                *out = malloc (8);
-                *((double *) *out) = t;
+                int errno_save = errno;
+                long double t = strtold (value, &end);
+                if (errno != errno_save || (end != 0 && *end != '\0'))
+                {
+                    adios_error (err_out_of_bound, 
+                            "type is %s, value "
+                            "is out of range: '%s'\n",
+                            adios_type_to_string_int (type), 
+                            value);
+                    return 0;
+                }
+                else
+                {
+                    *out = malloc (16);
+                    *((long double *) *out) = t;
+                }
+            }
+        case adios_string:
+            {
+                *out = (void *) strdup (value);
 
                 return 1;
             }
-        }
-        case adios_long_double:
-        {
-            int errno_save = errno;
-            long double t = strtold (value, &end);
-            if (errno != errno_save || (end != 0 && *end != '\0'))
-            {
-                adios_error (err_out_of_bound, 
-                        "type is %s, value "
-                        "is out of range: '%s'\n",
-                        adios_type_to_string_int (type), 
-                        value);
-                return 0;
-            }
-            else
-            {
-                *out = malloc (16);
-                *((long double *) *out) = t;
-            }
-        }
-        case adios_string:
-        {
-            *out = (void *) strdup (value);
-
-            return 1;
-        }
         case adios_complex:
-        {
-            adios_error (err_unspecified, 
-                         "adios_parse_scalar_string: adios_complex type "
-                         "validation needs to be implemented\n");
-            return 1;
-        }
+            {
+                adios_error (err_unspecified, 
+                        "adios_parse_scalar_string: adios_complex type "
+                        "validation needs to be implemented\n");
+                return 1;
+            }
         case adios_double_complex:
-        {
-            adios_error (err_unspecified, 
-                         "adios_parse_scalar_string: adios_double_complex type "
-                         "validation needs to be implemented\n");
-            return 1;
-        }
+            {
+                adios_error (err_unspecified, 
+                        "adios_parse_scalar_string: adios_double_complex type "
+                        "validation needs to be implemented\n");
+                return 1;
+            }
 
         case adios_unknown:
         default:
             adios_error (err_unspecified, 
-                         "adios_parse_scalar_string: unknown type cannot be validated\n");
+                    "adios_parse_scalar_string: unknown type cannot be validated\n");
 
             return 0;
     }
@@ -872,15 +872,15 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value, void ** 
 }
 
 int adios_common_define_attribute (int64_t group, const char * name
-                                  ,const char * path
-                                  ,enum ADIOS_DATATYPES type
-                                  ,const char * value
-                                  ,const char * var
-                                  )
+        ,const char * path
+        ,enum ADIOS_DATATYPES type
+        ,const char * value
+        ,const char * var
+        )
 {
     struct adios_group_struct * g = (struct adios_group_struct *) group;
     struct adios_attribute_struct * attr = (struct adios_attribute_struct *)
-                              malloc (sizeof (struct adios_attribute_struct));
+        malloc (sizeof (struct adios_attribute_struct));
 
     attr->name = strdup (name);
     attr->path = strdup (path);
@@ -889,9 +889,9 @@ int adios_common_define_attribute (int64_t group, const char * name
         if (type == adios_unknown)
         {
             adios_error (err_invalid_type_attr, 
-                         "config.xml: attribute element %s has invalid "
-                         "type attribute\n",
-                         name);
+                    "config.xml: attribute element %s has invalid "
+                    "type attribute\n",
+                    name);
 
             free (attr->name);
             free (attr->path);
@@ -907,9 +907,9 @@ int adios_common_define_attribute (int64_t group, const char * name
         else
         {
             adios_error (err_invalid_value_attr, 
-                         "config.xml: attribute element %s has invalid "
-                         "value attribute: '%s'\n", 
-                         name, value);
+                    "config.xml: attribute element %s has invalid "
+                    "value attribute: '%s'\n", 
+                    name, value);
 
             free (attr->value);
             free (attr->name);
@@ -924,15 +924,15 @@ int adios_common_define_attribute (int64_t group, const char * name
         attr->value = 0;
         attr->type = adios_unknown;
         attr->var = adios_find_var_by_name (g->vars, var
-                                           ,g->all_unique_var_names
-                                           );
+                ,g->all_unique_var_names
+                );
 
         if (attr->var == 0)
         {
             adios_error (err_invalid_varname, 
-                         "config.xml: attribute element %s references "
-                         "var %s that has not been defined.\n",
-                         name, var);
+                    "config.xml: attribute element %s references "
+                    "var %s that has not been defined.\n",
+                    name, var);
 
             free (attr->name);
             free (attr->path);
@@ -952,14 +952,14 @@ int adios_common_define_attribute (int64_t group, const char * name
 
 /* define an attribute by passing the value directly, not by a string */
 int adios_common_define_attribute_byvalue (int64_t group, const char * name
-                                  ,const char * path
-                                  ,enum ADIOS_DATATYPES type
-                                  ,void * value
-                                  )
+        ,const char * path
+        ,enum ADIOS_DATATYPES type
+        ,void * value
+        )
 {
     struct adios_group_struct * g = (struct adios_group_struct *) group;
     struct adios_attribute_struct * attr = (struct adios_attribute_struct *)
-                              malloc (sizeof (struct adios_attribute_struct));
+        malloc (sizeof (struct adios_attribute_struct));
     uint64_t size;
 
     attr->name = strdup (name);
@@ -969,9 +969,9 @@ int adios_common_define_attribute_byvalue (int64_t group, const char * name
         if (type == adios_unknown)
         {
             adios_error (err_invalid_type_attr, 
-                         "config.xml: attribute element %s has invalid "
-                         "type attribute\n",
-                         name);
+                    "config.xml: attribute element %s has invalid "
+                    "type attribute\n",
+                    name);
 
             free (attr->name);
             free (attr->path);
@@ -990,8 +990,8 @@ int adios_common_define_attribute_byvalue (int64_t group, const char * name
         else
         {
             adios_error (err_invalid_value_attr, 
-                         "Attribute element %s has invalid "
-                         "value attribute\n", name);
+                    "Attribute element %s has invalid "
+                    "value attribute\n", name);
 
             free (attr->value);
             free (attr->name);
@@ -1004,8 +1004,8 @@ int adios_common_define_attribute_byvalue (int64_t group, const char * name
     else
     {
         adios_error (err_invalid_value_attr, 
-                     "Attribute element %s has invalid "
-                     "value attribute\n", name);
+                "Attribute element %s has invalid "
+                "value attribute\n", name);
 
         free (attr->name);
         free (attr->path);
@@ -1022,31 +1022,31 @@ int adios_common_define_attribute_byvalue (int64_t group, const char * name
 }
 
 /*void adios_extract_string (char ** out, const char * in, int size)
-{
-    if (in && out)
-    {
-        *out = malloc (strlen (in) + 1);
-        strcpy (*out, in);
-    }
+  {
+  if (in && out)
+  {
+ *out = malloc (strlen (in) + 1);
+ strcpy (*out, in);
+ }
 // for some Fortran implementations, we get a size for a string.
 // for others (like PGI), we don't and it isn't null terminated
 // unless we do it explicitly.  Assume that it is null terminated
 // for now.
 //
 #if 0
-    int i = 0;
-    memcpy (out, in, size);
-    while (i < size)
-    {
-        if (out [i] == ' ')
-        {
-            out [i] = 0;
-            return;
-        }
-        else
-            i++;
-    }
-    out [i] = 0;
+int i = 0;
+memcpy (out, in, size);
+while (i < size)
+{
+if (out [i] == ' ')
+{
+out [i] = 0;
+return;
+}
+else
+i++;
+}
+out [i] = 0;
 #endif
 }*/
 
@@ -1059,8 +1059,8 @@ void adios_append_method (struct adios_method_struct * method)
         if (!*root)
         {
             struct adios_method_list_struct * new_node =
-                 (struct adios_method_list_struct *)
-                   malloc (sizeof (struct adios_method_list_struct));
+                (struct adios_method_list_struct *)
+                malloc (sizeof (struct adios_method_list_struct));
 
             if (!new_node)
             {
@@ -1080,16 +1080,16 @@ void adios_append_method (struct adios_method_struct * method)
 }
 
 void adios_add_method_to_group (struct adios_method_list_struct ** root
-                               ,struct adios_method_struct * method
-                               )
+        ,struct adios_method_struct * method
+        )
 {
     while (root)
     {
         if (!*root)
         {
             struct adios_method_list_struct * new_node =
-                 (struct adios_method_list_struct *)
-                   malloc (sizeof (struct adios_method_list_struct));
+                (struct adios_method_list_struct *)
+                malloc (sizeof (struct adios_method_list_struct));
 
             if (!new_node)
             {
@@ -1118,8 +1118,8 @@ void adios_append_group (struct adios_group_struct * group)
         if (!*root)
         {
             struct adios_group_list_struct * new_node =
-                 (struct adios_group_list_struct *)
-                   malloc (sizeof (struct adios_group_list_struct));
+                (struct adios_group_list_struct *)
+                malloc (sizeof (struct adios_group_list_struct));
 
             if (!new_node)
             {
@@ -1142,17 +1142,17 @@ void adios_append_group (struct adios_group_struct * group)
 
 // return is whether or not the name is unique
 enum ADIOS_FLAG adios_append_var (struct adios_var_struct ** root
-                                 ,struct adios_var_struct * var
-                                 ,uint16_t id
-                                 )
+        ,struct adios_var_struct * var
+        ,uint16_t id
+        )
 {
     enum ADIOS_FLAG unique_names = adios_flag_yes;
 
     while (root)
     {
         if (   unique_names == adios_flag_yes
-            && *root
-            && !strcasecmp ((*root)->name, var->name)
+                && *root
+                && !strcasecmp ((*root)->name, var->name)
            )
         {
             unique_names = adios_flag_no;
@@ -1173,8 +1173,8 @@ enum ADIOS_FLAG adios_append_var (struct adios_var_struct ** root
 }
 
 void adios_append_dimension (struct adios_dimension_struct ** root
-                            ,struct adios_dimension_struct * dimension
-                            )
+        ,struct adios_dimension_struct * dimension
+        )
 {
     while (root)
     {
@@ -1191,9 +1191,9 @@ void adios_append_dimension (struct adios_dimension_struct ** root
 }
 
 void adios_append_attribute (struct adios_attribute_struct ** root
-                            ,struct adios_attribute_struct * attribute
-                            ,uint16_t id
-                            )
+        ,struct adios_attribute_struct * attribute
+        ,uint16_t id
+        )
 {
     while (root)
     {
@@ -1214,15 +1214,15 @@ void adios_append_attribute (struct adios_attribute_struct ** root
 // functions to support C & Fortran interface
 ///////////////////////////////////////////////////////////////////////////////
 int adios_common_declare_group (int64_t * id, const char * name
-                               ,enum ADIOS_FLAG host_language_fortran
-                               ,const char * coordination_comm
-                               ,const char * coordination_var
-                               ,const char * time_index_name
-                               ,enum ADIOS_FLAG stats
-                               )
+        ,enum ADIOS_FLAG host_language_fortran
+        ,const char * coordination_comm
+        ,const char * coordination_var
+        ,const char * time_index_name
+        ,enum ADIOS_FLAG stats
+        )
 {
     struct adios_group_struct * g = (struct adios_group_struct *)
-                             malloc (sizeof (struct adios_group_struct));
+        malloc (sizeof (struct adios_group_struct));
 
     g->name = strdup (name);
     g->adios_host_language_fortran = host_language_fortran;
@@ -1302,7 +1302,7 @@ int adios_common_free_group (int64_t id)
         while (g->vars->dimensions)
         {
             struct adios_dimension_struct * dimensions
-                            = g->vars->dimensions->next;
+                = g->vars->dimensions->next;
 
             free (g->vars->dimensions);
             g->vars->dimensions = dimensions;
@@ -1310,7 +1310,7 @@ int adios_common_free_group (int64_t id)
 
         // NCSU - Clear Stat
         if (g->vars->stats)
-		{
+        {
             uint8_t j = 0, idx = 0;
             uint8_t c = 0, count = adios_get_stat_set_count(g->vars->type);
 
@@ -1337,7 +1337,7 @@ int adios_common_free_group (int64_t id)
                 free (g->vars->stats[c]);
             }
             free (g->vars->stats);		
-		}
+        }
 
         if (g->vars->data)
             free (g->vars->data);
@@ -1424,12 +1424,12 @@ static void cleanup_dimensions (char *** tokens, int * count)
 }
 
 int adios_common_define_var_characteristics (struct adios_group_struct * g
-                                            , const char * var_name
-                                            , const char * bin_intervals
-                                            , const char * bin_min
-                                            , const char * bin_max
-                                            , const char * bin_count
-                                            )
+        , const char * var_name
+        , const char * bin_intervals
+        , const char * bin_min
+        , const char * bin_max
+        , const char * bin_count
+        )
 {
     struct adios_var_struct * root = g->vars, * var;
 
@@ -1453,8 +1453,8 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
     if (!var)
     {
         adios_error (err_invalid_varname, 
-                     "config.xml: Didn't find the variable %s for analysis\n",
-                     var_name);
+                "config.xml: Didn't find the variable %s for analysis\n",
+                var_name);
         return 0;
     }
     else
@@ -1470,7 +1470,7 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
             if (!count)
             {
                 adios_error (err_histogram_error, 
-                             "config.xml: unable to tokenize break points\n");
+                        "config.xml: unable to tokenize break points\n");
                 return 0;
             }
 
@@ -1520,7 +1520,7 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
             if (!count)
             {
                 adios_error (err_histogram_error, 
-                    "config.xml: bin count is undefined\n");
+                        "config.xml: bin count is undefined\n");
                 return 0;
             }
 
@@ -1540,7 +1540,7 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
             if (hist->min >= hist->max)
             {
                 adios_error (err_histogram_error, 
-                    "config.xml: minimum boundary value greater than maximum\n");
+                        "config.xml: minimum boundary value greater than maximum\n");
                 return 0;
             }
 
@@ -1556,15 +1556,15 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
 }
 
 int64_t adios_common_define_var (int64_t group_id, const char * name
-                                ,const char * path, enum ADIOS_DATATYPES type
-                                ,const char * dimensions
-                                ,const char * global_dimensions
-                                ,const char * local_offsets
-                                )
+        ,const char * path, enum ADIOS_DATATYPES type
+        ,const char * dimensions
+        ,const char * global_dimensions
+        ,const char * local_offsets
+        )
 {
     struct adios_group_struct * t = (struct adios_group_struct *) group_id;
     struct adios_var_struct * v = (struct adios_var_struct *)
-                               malloc (sizeof (struct adios_var_struct));
+        malloc (sizeof (struct adios_var_struct));
     char * dim_temp;
     char * g_dim_temp;
     char * lo_dim_temp;
@@ -1651,8 +1651,8 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
         {
             int ret;
             struct adios_dimension_struct * d =
-                     (struct adios_dimension_struct *)
-                         calloc (1, sizeof (struct adios_dimension_struct));
+                (struct adios_dimension_struct *)
+                calloc (1, sizeof (struct adios_dimension_struct));
 
             if (!d)
             {
@@ -1738,9 +1738,9 @@ void adios_common_get_group (int64_t * group_id, const char * name)
 
 // *****************************************************************************
 static void buffer_write (char ** buffer, uint64_t * buffer_size
-                         ,uint64_t * buffer_offset
-                         ,const void * data, uint64_t size
-                         )
+        ,uint64_t * buffer_offset
+        ,const void * data, uint64_t size
+        )
 {
     if (*buffer_offset + size > *buffer_size || *buffer == 0)
     {
@@ -1753,7 +1753,7 @@ static void buffer_write (char ** buffer, uint64_t * buffer_size
         else
         {
             adios_error (err_no_memory, "Cannot allocate memory in buffer_write.  "
-                             "Requested: %llu\n", *buffer_offset + size + 1000);
+                    "Requested: %llu\n", *buffer_offset + size + 1000);
             return;
         }
     }
@@ -1762,8 +1762,8 @@ static void buffer_write (char ** buffer, uint64_t * buffer_size
     *buffer_offset += size;
 }
 
-static uint16_t adios_calc_var_characteristics_dims_overhead
-                                                  (struct adios_var_struct * v)
+    static uint16_t adios_calc_var_characteristics_dims_overhead
+(struct adios_var_struct * v)
 {
     uint16_t overhead = 0;
     struct adios_dimension_struct * d = v->dimensions;
@@ -1799,8 +1799,8 @@ uint16_t adios_calc_var_characteristics_stat_overhead (struct adios_var_struct *
 }
 
 
-static uint16_t adios_calc_var_characteristics_overhead
-                                                  (struct adios_var_struct * v)
+    static uint16_t adios_calc_var_characteristics_overhead
+(struct adios_var_struct * v)
 {
     uint16_t overhead = 0;
 
@@ -1852,7 +1852,7 @@ uint16_t adios_calc_var_overhead_v1 (struct adios_var_struct * v)
     {
         overhead += 1; // var flag
         if (   d->dimension.id == 0
-            && d->dimension.time_index == adios_flag_no
+                && d->dimension.time_index == adios_flag_no
            )
         {
             overhead += 8; // value
@@ -1864,7 +1864,7 @@ uint16_t adios_calc_var_overhead_v1 (struct adios_var_struct * v)
 
         overhead += 1; // var flag
         if (   d->global_dimension.id == 0
-            && d->global_dimension.time_index == adios_flag_no
+                && d->global_dimension.time_index == adios_flag_no
            )
         {
             overhead += 8; // value
@@ -1876,7 +1876,7 @@ uint16_t adios_calc_var_overhead_v1 (struct adios_var_struct * v)
 
         overhead += 1; // var flag
         if (   d->local_offset.id == 0
-            && d->local_offset.time_index == adios_flag_no
+                && d->local_offset.time_index == adios_flag_no
            )
         {
             overhead += 8; // value
@@ -1930,9 +1930,9 @@ uint64_t adios_calc_overhead_v1 (struct adios_file_struct * fd)
     overhead += 2; // coordination var id
     overhead += 2; // length of time index name
     overhead += ((fd->group->time_index_name)
-                    ? strlen (fd->group->time_index_name)
-                    : 0
-                );  // time index name
+            ? strlen (fd->group->time_index_name)
+            : 0
+            );  // time index name
     overhead += 4; // time index
 
     overhead += 1; // count of methods employed
@@ -1970,8 +1970,8 @@ uint64_t adios_calc_overhead_v1 (struct adios_file_struct * fd)
 }
 
 int adios_write_process_group_header_v1 (struct adios_file_struct * fd
-                                        ,uint64_t total_size
-                                        )
+        ,uint64_t total_size
+        )
 {
     struct adios_group_struct * g = fd->group;
 
@@ -1991,8 +1991,8 @@ int adios_write_process_group_header_v1 (struct adios_file_struct * fd
     buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, g->name, len);
 
     var = adios_find_var_by_name (g->vars, g->group_by
-                                 ,g->all_unique_var_names
-                                 );
+            ,g->all_unique_var_names
+            );
     if (var)
     {
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &var->id, 2);
@@ -2009,12 +2009,12 @@ int adios_write_process_group_header_v1 (struct adios_file_struct * fd
     if (g->time_index_name)
     {
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                     ,g->time_index_name, len
-                     );
+                ,g->time_index_name, len
+                );
     }
     buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                 ,&g->time_index, 4
-                 );
+            ,&g->time_index, 4
+            );
 
     struct adios_method_list_struct * m = fd->group->methods;
     uint8_t methods_count = 0;
@@ -2027,11 +2027,11 @@ int adios_write_process_group_header_v1 (struct adios_file_struct * fd
         m = m->next;
     }
     buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                 ,&methods_count, 1
-                 );
+            ,&methods_count, 1
+            );
     buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                 ,&methods_length, 2
-                 );
+            ,&methods_length, 2
+            );
 
     m = fd->group->methods;
     while (m)
@@ -2044,8 +2044,8 @@ int adios_write_process_group_header_v1 (struct adios_file_struct * fd
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &len, 2);
 
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                     ,m->method->parameters, len
-                     );
+                ,m->method->parameters, len
+                );
 
         m = m->next;
     }
@@ -2057,9 +2057,9 @@ int adios_write_process_group_header_v1 (struct adios_file_struct * fd
 }
 
 static void index_append_process_group_v1 (
-                          struct adios_index_process_group_struct_v1 ** root
-                         ,struct adios_index_process_group_struct_v1 * item
-                         )
+        struct adios_index_process_group_struct_v1 ** root
+        ,struct adios_index_process_group_struct_v1 * item
+        )
 {
     while (root)
     {
@@ -2076,8 +2076,8 @@ static void index_append_process_group_v1 (
 }
 
 static void index_append_var_v1 (struct adios_index_var_struct_v1 ** root
-                                ,struct adios_index_var_struct_v1 * item
-                                )
+        ,struct adios_index_var_struct_v1 * item
+        )
 {
     while (root)
     {
@@ -2089,24 +2089,24 @@ static void index_append_var_v1 (struct adios_index_var_struct_v1 ** root
         else
         {
             if (   !strcasecmp (item->group_name, (*root)->group_name)
-                && !strcasecmp (item->var_name, (*root)->var_name)
-                && !strcasecmp (item->var_path, (*root)->var_path)
-                && item->type == (*root)->type
+                    && !strcasecmp (item->var_name, (*root)->var_name)
+                    && !strcasecmp (item->var_path, (*root)->var_path)
+                    && item->type == (*root)->type
                )
             {
                 if (    (*root)->characteristics_count
-                      + item->characteristics_count
-                    > (*root)->characteristics_allocated
+                        + item->characteristics_count
+                        > (*root)->characteristics_allocated
                    )
                 {
                     int new_items = (item->characteristics_count == 1)
-                                         ? 100 : item->characteristics_count;
+                        ? 100 : item->characteristics_count;
                     (*root)->characteristics_allocated =
-                            (*root)->characteristics_count + new_items;
+                        (*root)->characteristics_count + new_items;
                     void * ptr;
                     ptr = realloc ((*root)->characteristics
                             ,  (*root)->characteristics_allocated
-                        * sizeof (struct adios_index_characteristic_struct_v1)
+                            * sizeof (struct adios_index_characteristic_struct_v1)
                             );
 
                     if (ptr)
@@ -2116,14 +2116,14 @@ static void index_append_var_v1 (struct adios_index_var_struct_v1 ** root
                     else
                     {
                         adios_error (err_no_memory, "error allocating memory to build "
-                                     "var index.  Index aborted\n");
+                                "var index.  Index aborted\n");
                         return;
                     }
                 }
                 memcpy (&(*root)->characteristics
-                                             [(*root)->characteristics_count]
-                       ,item->characteristics
-                       ,  item->characteristics_count
+                        [(*root)->characteristics_count]
+                        ,item->characteristics
+                        ,  item->characteristics_count
                         * sizeof (struct adios_index_characteristic_struct_v1)
                        );
 
@@ -2146,9 +2146,9 @@ static void index_append_var_v1 (struct adios_index_var_struct_v1 ** root
 }
 
 static void index_append_attribute_v1
-                                (struct adios_index_attribute_struct_v1 ** root
-                                ,struct adios_index_attribute_struct_v1 * item
-                                )
+(struct adios_index_attribute_struct_v1 ** root
+ ,struct adios_index_attribute_struct_v1 * item
+ )
 {
     while (root)
     {
@@ -2160,23 +2160,23 @@ static void index_append_attribute_v1
         else
         {
             if (   !strcasecmp (item->group_name, (*root)->group_name)
-                && !strcasecmp (item->attr_name, (*root)->attr_name)
-                && !strcasecmp (item->attr_path, (*root)->attr_path)
+                    && !strcasecmp (item->attr_name, (*root)->attr_name)
+                    && !strcasecmp (item->attr_path, (*root)->attr_path)
                )
             {
                 if (    (*root)->characteristics_count
-                      + item->characteristics_count
-                    > (*root)->characteristics_allocated
+                        + item->characteristics_count
+                        > (*root)->characteristics_allocated
                    )
                 {
                     int new_items = (item->characteristics_count == 1)
-                                         ? 100 : item->characteristics_count;
+                        ? 100 : item->characteristics_count;
                     (*root)->characteristics_allocated =
-                                   (*root)->characteristics_count + new_items;
+                        (*root)->characteristics_count + new_items;
                     void * ptr;
                     ptr = realloc ((*root)->characteristics
                             ,  (*root)->characteristics_allocated
-                       * sizeof (struct adios_index_characteristic_struct_v1)
+                            * sizeof (struct adios_index_characteristic_struct_v1)
                             );
 
                     if (ptr)
@@ -2186,14 +2186,14 @@ static void index_append_attribute_v1
                     else
                     {
                         adios_error (err_no_memory, "error allocating memory to build "
-                                         "attribute index.  Index aborted\n");
+                                "attribute index.  Index aborted\n");
                         return;
                     }
                 }
                 memcpy (&(*root)->characteristics
-                                              [(*root)->characteristics_count]
-                       ,item->characteristics
-                       ,  item->characteristics_count
+                        [(*root)->characteristics_count]
+                        ,item->characteristics
+                        ,  item->characteristics_count
                         * sizeof (struct adios_index_characteristic_struct_v1)
                        );
 
@@ -2217,12 +2217,12 @@ static void index_append_attribute_v1
 
 // p2 and v2 will be destroyed as part of the merge operation...
 void adios_merge_index_v1 (struct adios_index_process_group_struct_v1 ** p1
-                          ,struct adios_index_var_struct_v1 ** v1
-                          ,struct adios_index_attribute_struct_v1 ** a1
-                          ,struct adios_index_process_group_struct_v1 * p2
-                          ,struct adios_index_var_struct_v1 * v2
-                          ,struct adios_index_attribute_struct_v1 * a2
-                          )
+        ,struct adios_index_var_struct_v1 ** v1
+        ,struct adios_index_attribute_struct_v1 ** a1
+        ,struct adios_index_process_group_struct_v1 * p2
+        ,struct adios_index_var_struct_v1 * v2
+        ,struct adios_index_attribute_struct_v1 * a2
+        )
 {
     // this will just add it on to the end and all should work fine
     index_append_process_group_v1 (p1, p2);
@@ -2250,9 +2250,9 @@ void adios_merge_index_v1 (struct adios_index_process_group_struct_v1 ** p1
 
 // sort pg/var indexes by time index
 void adios_sort_index_v1 (struct adios_index_process_group_struct_v1 ** p1
-                         ,struct adios_index_var_struct_v1 ** v1
-                         ,struct adios_index_attribute_struct_v1 ** a1
-                         )
+        ,struct adios_index_var_struct_v1 ** v1
+        ,struct adios_index_attribute_struct_v1 ** a1
+        )
 {
     struct adios_index_process_group_struct_v1 * p2 = 0, * p1_temp, * p2_temp, * p2_temp_prev;
     struct adios_index_var_struct_v1 * v2 = 0, * v1_temp, * v2_temp, * v2_temp_prev;
@@ -2331,7 +2331,7 @@ void adios_sort_index_v1 (struct adios_index_process_group_struct_v1 ** p1
                     t_time_index = v1_temp->characteristics[j].time_index;
                     t_bitmap = v1_temp->characteristics[j].bitmap;
                     t_stats = v1_temp->characteristics[j].stats;
-                    
+
                     v1_temp->characteristics[j].offset = v1_temp->characteristics[j + 1].offset;
                     v1_temp->characteristics[j].dims.count = v1_temp->characteristics[j + 1].dims.count;
                     v1_temp->characteristics[j].dims.dims = v1_temp->characteristics[j + 1].dims.dims;
@@ -2364,8 +2364,8 @@ void adios_sort_index_v1 (struct adios_index_process_group_struct_v1 ** p1
 }
 
 static void adios_clear_process_groups_index_v1 (
-                            struct adios_index_process_group_struct_v1 * root
-                           )
+        struct adios_index_process_group_struct_v1 * root
+        )
 {
     while (root)
     {
@@ -2413,14 +2413,14 @@ static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
                     {
                         if ((root->characteristics [i].bitmap >> j) & 1)
                         {
-							if (j == adios_statistic_hist)
-							{
-								struct adios_index_characteristics_hist_struct * hist = (struct adios_index_characteristics_hist_struct	*) root->characteristics [i].stats[c][idx].data;
-								free (hist->breaks);
-								free (hist->frequencies);
-							}	
-							else
-                           		free (root->characteristics [i].stats[c][idx].data);
+                            if (j == adios_statistic_hist)
+                            {
+                                struct adios_index_characteristics_hist_struct * hist = (struct adios_index_characteristics_hist_struct	*) root->characteristics [i].stats[c][idx].data;
+                                free (hist->breaks);
+                                free (hist->frequencies);
+                            }	
+                            else
+                                free (root->characteristics [i].stats[c][idx].data);
                             idx ++;
                         }
                         j ++;
@@ -2428,7 +2428,7 @@ static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
                     free (root->characteristics [i].stats [c]);
                 }
 
-				free (root->characteristics [i].stats);
+                free (root->characteristics [i].stats);
             }
         }
         if (root->characteristics)
@@ -2440,8 +2440,8 @@ static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
 }
 
 // NCSU - Clears up the statistical data, based on bitmap
-static void adios_clear_attributes_index_v1
-                                (struct adios_index_attribute_struct_v1 * root)
+    static void adios_clear_attributes_index_v1
+(struct adios_index_attribute_struct_v1 * root)
 {
     while (root)
     {
@@ -2470,15 +2470,15 @@ static void adios_clear_attributes_index_v1
                     {
                         if ((root->characteristics [i].bitmap >> j) & 1)
                         {
-							if (j == adios_statistic_hist)
-	                    	{
-								struct adios_index_characteristics_hist_struct * hist = (struct adios_index_characteristics_hist_struct *) root->characteristics [i].stats[c][idx].data;
-								free (hist->breaks);
-								free (hist->frequencies);
-								free (hist);
-	                     	}
-							else
-								free (root->characteristics [i].stats[c][idx].data);
+                            if (j == adios_statistic_hist)
+                            {
+                                struct adios_index_characteristics_hist_struct * hist = (struct adios_index_characteristics_hist_struct *) root->characteristics [i].stats[c][idx].data;
+                                free (hist->breaks);
+                                free (hist->frequencies);
+                                free (hist);
+                            }
+                            else
+                                free (root->characteristics [i].stats[c][idx].data);
 
                             idx ++;
                         }
@@ -2492,7 +2492,7 @@ static void adios_clear_attributes_index_v1
             if (root->characteristics [i].value)
                 free (root->characteristics [i].value);
         }
-    
+
         if (root->characteristics)
             free (root->characteristics);
 
@@ -2503,9 +2503,9 @@ static void adios_clear_attributes_index_v1
 
 
 void adios_clear_index_v1 (struct adios_index_process_group_struct_v1 * pg_root
-                          ,struct adios_index_var_struct_v1 * vars_root
-                          ,struct adios_index_attribute_struct_v1 * attrs_root
-                          )
+        ,struct adios_index_var_struct_v1 * vars_root
+        ,struct adios_index_attribute_struct_v1 * attrs_root
+        )
 {
     adios_clear_process_groups_index_v1 (pg_root);
     adios_clear_vars_index_v1 (vars_root);
@@ -2526,15 +2526,15 @@ static uint8_t count_dimensions (struct adios_dimension_struct * dimensions)
 }
 
 static uint64_t cast_var_data_as_uint64 (const char * parent_name
-                                        ,enum ADIOS_DATATYPES type
-                                        ,void * data
-                                        )
+        ,enum ADIOS_DATATYPES type
+        ,void * data
+        )
 {
     if (!data)
     {
         adios_error (err_unspecified, 
-                     "cannot write var since dim %s not provided\n",
-                     parent_name);
+                "cannot write var since dim %s not provided\n",
+                parent_name);
         return 0;
     }
 
@@ -2577,23 +2577,23 @@ static uint64_t cast_var_data_as_uint64 (const char * parent_name
         case adios_complex:
         case adios_double_complex:
             adios_error (err_unspecified, 
-                         "Cannot convert type %s to integer for var %s\n",
-                         adios_type_to_string_int (type), parent_name);
+                    "Cannot convert type %s to integer for var %s\n",
+                    adios_type_to_string_int (type), parent_name);
             return 0;
     }
     return 0;
 }
 
 static uint64_t get_value_for_dim (struct adios_file_struct * fd,
-                                   struct adios_dimension_item_struct * dimension)
+        struct adios_dimension_item_struct * dimension)
 {
     uint64_t dim = 0;
 
     if (dimension->id != 0)
     {
         struct adios_var_struct * var = adios_find_var_by_id (fd->group->vars
-                                                             ,dimension->id
-                                                             );
+                ,dimension->id
+                );
         if (var)
         {
             if (var->data)
@@ -2608,9 +2608,9 @@ static uint64_t get_value_for_dim (struct adios_file_struct * fd,
         else
         {
             struct adios_attribute_struct * attr = adios_find_attribute_by_id
-                                                        (fd->group->attributes
-                                                        ,dimension->id
-                                                        );
+                (fd->group->attributes
+                 ,dimension->id
+                );
             if (attr)
             {
                 if (attr->var)
@@ -2618,9 +2618,9 @@ static uint64_t get_value_for_dim (struct adios_file_struct * fd,
                     if (attr->var->data)
                     {
                         dim = cast_var_data_as_uint64 (attr->var->name
-                                                      ,attr->var->type
-                                                      ,attr->var->data
-                                                      );
+                                ,attr->var->type
+                                ,attr->var->data
+                                );
                     }
                     else
                     {
@@ -2630,15 +2630,15 @@ static uint64_t get_value_for_dim (struct adios_file_struct * fd,
                 else
                 {
                     dim = cast_var_data_as_uint64 (attr->name, attr->type
-                                                  ,attr->value
-                                                  );
+                            ,attr->value
+                            );
                 }
             }
             else
             {
                 adios_error (err_invalid_dimension, 
-                             "invalid dimension member id: %d\n",
-                             dimension->id);
+                        "invalid dimension member id: %d\n",
+                        dimension->id);
             }
         }
     }
@@ -2654,9 +2654,9 @@ static uint64_t get_value_for_dim (struct adios_file_struct * fd,
 }
 
 void adios_copy_var_written (struct adios_var_struct ** root
-                            ,struct adios_var_struct * var
-                            ,struct adios_file_struct * fd
-                            )
+        ,struct adios_var_struct * var
+        ,struct adios_file_struct * fd
+        )
 {
     struct adios_var_struct * var_new;
 
@@ -2665,7 +2665,7 @@ void adios_copy_var_written (struct adios_var_struct ** root
         if (!*root)
         {
             var_new = (struct adios_var_struct *) malloc
-                                                  (sizeof (struct adios_var_struct));
+                (sizeof (struct adios_var_struct));
             //var_new->id = ++fd->group->member_count;
             var_new->id = var->id;
             var_new->parent_id = var->id;
@@ -2708,7 +2708,7 @@ void adios_copy_var_written (struct adios_var_struct ** root
                          * NOT ALL METHODS TRACK MIN/MAX.  CHECK BEFORE TRYING TO COPY.
                          *
                          */
-                       // NCSU Statistics - copy stat to new var struct
+                        // NCSU Statistics - copy stat to new var struct
                         uint8_t count = adios_get_stat_set_count(var->type);
                         uint8_t idx = 0;
                         uint64_t characteristic_size;
@@ -2723,7 +2723,7 @@ void adios_copy_var_written (struct adios_var_struct ** root
 
                             j = idx = 0;
                             while (var->bitmap >> j)
-                             {
+                            {
                                 if ((var->bitmap >> j) & 1)
                                 {
                                     if (var->stats[c][idx].data != NULL)
@@ -2763,7 +2763,7 @@ void adios_copy_var_written (struct adios_var_struct ** root
                         for (j = 0; j < c; j++)
                         {
                             struct adios_dimension_struct * d_new = (struct adios_dimension_struct *)
-                                                            malloc (sizeof (struct adios_dimension_struct));
+                                malloc (sizeof (struct adios_dimension_struct));
                             // de-reference dimension id
                             d_new->dimension.id = 0;
                             d_new->dimension.rank = get_value_for_dim (fd, &d->dimension);
@@ -2791,13 +2791,13 @@ void adios_copy_var_written (struct adios_var_struct ** root
                     break;
 
                 case adios_string:
-                {
-                    var_new->data = malloc (size + 1);
-                    memcpy (var_new->data, var->data, size);
-                    ((char *) (var_new->data)) [size] = 0;
+                    {
+                        var_new->data = malloc (size + 1);
+                        memcpy (var_new->data, var->data, size);
+                        ((char *) (var_new->data)) [size] = 0;
 
-                    break;
-                }
+                        break;
+                    }
             }
 
             *root = var_new;
@@ -2811,10 +2811,10 @@ void adios_copy_var_written (struct adios_var_struct ** root
 }
 
 void adios_build_index_v1 (struct adios_file_struct * fd
-                          ,struct adios_index_process_group_struct_v1 ** pg_root
-                          ,struct adios_index_var_struct_v1 ** vars_root
-                          ,struct adios_index_attribute_struct_v1 ** attrs_root
-                          )
+        ,struct adios_index_process_group_struct_v1 ** pg_root
+        ,struct adios_index_var_struct_v1 ** vars_root
+        ,struct adios_index_attribute_struct_v1 ** attrs_root
+        )
 {
     struct adios_group_struct * g = fd->group;
     struct adios_var_struct * v = g->vars_written;
@@ -2825,7 +2825,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd
     uint16_t var_count = 0;
 
     g_item = (struct adios_index_process_group_struct_v1 *)
-                malloc (sizeof (struct adios_index_process_group_struct_v1));
+        malloc (sizeof (struct adios_index_process_group_struct_v1));
     g_item->group_name = (g->name ? strdup (g->name) : 0L);
     g_item->adios_host_language_fortran = g->adios_host_language_fortran;
     g_item->process_id = g->process_id;
@@ -2845,8 +2845,8 @@ void adios_build_index_v1 (struct adios_file_struct * fd
             struct adios_index_var_struct_v1 * v_index;
             v_index = malloc (sizeof (struct adios_index_var_struct_v1));
             v_index->characteristics = malloc (
-                           sizeof (struct adios_index_characteristic_struct_v1)
-                          );
+                    sizeof (struct adios_index_characteristic_struct_v1)
+                    );
 
             v_index->id = v->id;
             v_index->group_name = (g->name ? strdup (g->name) : 0L);
@@ -2862,9 +2862,9 @@ void adios_build_index_v1 (struct adios_file_struct * fd
             // only numerical values
             struct adios_var_struct * old_var = adios_find_var_by_id (g->vars, v->parent_id);
             v_index->characteristics [0].payload_offset = v->write_offset
-                            + adios_calc_var_overhead_v1 (old_var)
-                            - strlen (old_var->path)  // take out the length of path defined in XML
-                            + strlen (v->path); // add length of the actual, current path of this var
+                + adios_calc_var_overhead_v1 (old_var)
+                - strlen (old_var->path)  // take out the length of path defined in XML
+                + strlen (v->path); // add length of the actual, current path of this var
             v_index->characteristics [0].file_index = fd->subfile_index;
             v_index->characteristics [0].time_index = g_item->time_index;
 
@@ -2956,11 +2956,11 @@ void adios_build_index_v1 (struct adios_file_struct * fd
                         for (j = 0; j < c; j++)
                         {
                             v_index->characteristics [0].dims.dims [j * 3 + 0] =
-                                   get_value_for_dim (fd, &d->dimension);
+                                get_value_for_dim (fd, &d->dimension);
                             v_index->characteristics [0].dims.dims [j * 3 + 1] =
-                                   get_value_for_dim (fd, &d->global_dimension);
+                                get_value_for_dim (fd, &d->global_dimension);
                             v_index->characteristics [0].dims.dims [j * 3 + 2] =
-                                   get_value_for_dim (fd, &d->local_offset);
+                                get_value_for_dim (fd, &d->local_offset);
 
                             d = d->next;
                         }
@@ -2974,7 +2974,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd
 
                         v_index->characteristics [0].value = malloc (size);
                         memcpy (v_index->characteristics [0].value, v->data
-                               ,size
+                                ,size
                                );
                         v_index->characteristics [0].dims.count = 0;
                         v_index->characteristics [0].dims.dims = 0;
@@ -2983,13 +2983,13 @@ void adios_build_index_v1 (struct adios_file_struct * fd
                     break;
 
                 case adios_string:
-                {
-                    v_index->characteristics [0].value = malloc (size + 1);
-                    memcpy (v_index->characteristics [0].value, v->data, size);
-                    ((char *) (v_index->characteristics [0].value)) [size] = 0;
+                    {
+                        v_index->characteristics [0].value = malloc (size + 1);
+                        memcpy (v_index->characteristics [0].value, v->data, size);
+                        ((char *) (v_index->characteristics [0].value)) [size] = 0;
 
-                    break;
-                }
+                        break;
+                    }
             }
             v_index->next = 0;
 
@@ -3008,8 +3008,8 @@ void adios_build_index_v1 (struct adios_file_struct * fd
             struct adios_index_attribute_struct_v1 * a_index;
             a_index = malloc (sizeof (struct adios_index_attribute_struct_v1));
             a_index->characteristics = malloc (
-                           sizeof (struct adios_index_characteristic_struct_v1)
-                          );
+                    sizeof (struct adios_index_characteristic_struct_v1)
+                    );
 
             a_index->id = a->id;
             a_index->group_name = (g->name ? strdup (g->name) : 0L);
@@ -3057,13 +3057,13 @@ void adios_build_index_v1 (struct adios_file_struct * fd
 }
 
 int adios_write_index_v1 (char ** buffer
-                         ,uint64_t * buffer_size
-                         ,uint64_t * buffer_offset
-                         ,uint64_t index_start
-                         ,struct adios_index_process_group_struct_v1 * pg_root
-                         ,struct adios_index_var_struct_v1 * vars_root
-                         ,struct adios_index_attribute_struct_v1 * attrs_root
-                         )
+        ,uint64_t * buffer_size
+        ,uint64_t * buffer_offset
+        ,uint64_t index_start
+        ,struct adios_index_process_group_struct_v1 * pg_root
+        ,struct adios_index_var_struct_v1 * vars_root
+        ,struct adios_index_attribute_struct_v1 * attrs_root
+        )
 {
     uint64_t groups_count = 0;
     uint16_t vars_count = 0;
@@ -3098,21 +3098,21 @@ int adios_write_index_v1 (char ** buffer
         index_size += 2;
         group_size += 2;
         buffer_write (buffer, buffer_size, buffer_offset
-                     ,pg_root->group_name, len
-                     );
+                ,pg_root->group_name, len
+                );
         index_size += len;
         group_size += len;
 
         flag = (pg_root->adios_host_language_fortran == adios_flag_yes ? 'y'
-                                                                       : 'n'
+                : 'n'
                );
         buffer_write (buffer, buffer_size, buffer_offset, &flag, 1);
         index_size += 1;
         group_size += 1;
 
         buffer_write (buffer, buffer_size, buffer_offset
-                     ,&pg_root->process_id, 4
-                     );
+                ,&pg_root->process_id, 4
+                );
         index_size += 4;
         group_size += 4;
 
@@ -3130,20 +3130,20 @@ int adios_write_index_v1 (char ** buffer
         if (len)
         {
             buffer_write (buffer, buffer_size, buffer_offset
-                         ,pg_root->time_index_name, len
-                         );
+                    ,pg_root->time_index_name, len
+                    );
         }
         index_size += len;
         group_size += len;
 
         buffer_write (buffer, buffer_size, buffer_offset
-                     ,&pg_root->time_index, 4
-                     );
+                ,&pg_root->time_index, 4
+                );
         index_size += 4;
         group_size += 4;
         buffer_write (buffer, buffer_size, buffer_offset
-                     ,&pg_root->offset_in_file, 8
-                     );
+                ,&pg_root->offset_in_file, 8
+                );
         index_size += 8;
         group_size += 8;
 
@@ -3182,8 +3182,8 @@ int adios_write_index_v1 (char ** buffer
         index_size += 2;
         var_size += 2;
         buffer_write (buffer, buffer_size, buffer_offset
-                     ,vars_root->group_name, len
-                     );
+                ,vars_root->group_name, len
+                );
         index_size += len;
         var_size += len;
 
@@ -3192,8 +3192,8 @@ int adios_write_index_v1 (char ** buffer
         index_size += 2;
         var_size += 2;
         buffer_write (buffer, buffer_size, buffer_offset
-                     ,vars_root->var_name, len
-                     );
+                ,vars_root->var_name, len
+                );
         index_size += len;
         var_size += len;
 
@@ -3202,8 +3202,8 @@ int adios_write_index_v1 (char ** buffer
         index_size += 2;
         var_size += 2;
         buffer_write (buffer, buffer_size, buffer_offset
-                     ,vars_root->var_path, len
-                     );
+                ,vars_root->var_path, len
+                );
         index_size += len;
         var_size += len;
 
@@ -3213,8 +3213,8 @@ int adios_write_index_v1 (char ** buffer
         var_size += 1;
 
         buffer_write (buffer, buffer_size, buffer_offset
-                     ,&vars_root->characteristics_count, 8
-                     );
+                ,&vars_root->characteristics_count, 8
+                );
         index_size += 8;
         var_size += 8;
 
@@ -3238,8 +3238,8 @@ int adios_write_index_v1 (char ** buffer
             characteristic_set_length += 1;
 
             buffer_write (buffer, buffer_size, buffer_offset
-                         ,&vars_root->characteristics [i].offset, 8
-                         );
+                    ,&vars_root->characteristics [i].offset, 8
+                    );
             index_size += 8;
             var_size += 8;
             characteristic_set_length += 8;
@@ -3253,8 +3253,8 @@ int adios_write_index_v1 (char ** buffer
             characteristic_set_length += 1;
 
             buffer_write (buffer, buffer_size, buffer_offset
-                         ,&vars_root->characteristics [i].payload_offset, 8
-                         );
+                    ,&vars_root->characteristics [i].payload_offset, 8
+                    );
             index_size += 8;
             var_size += 8;
             characteristic_set_length += 8;
@@ -3268,8 +3268,8 @@ int adios_write_index_v1 (char ** buffer
             characteristic_set_length += 1;
 
             buffer_write (buffer, buffer_size, buffer_offset
-                         ,&vars_root->characteristics [i].file_index, 4
-                         );
+                    ,&vars_root->characteristics [i].file_index, 4
+                    );
             index_size += 4;
             var_size += 4;
             characteristic_set_length += 4;
@@ -3283,8 +3283,8 @@ int adios_write_index_v1 (char ** buffer
             characteristic_set_length += 1;
 
             buffer_write (buffer, buffer_size, buffer_offset
-                         ,&vars_root->characteristics [i].time_index, 4
-                         );
+                    ,&vars_root->characteristics [i].time_index, 4
+                    );
             index_size += 4;
             var_size += 4;
             characteristic_set_length += 4;
@@ -3292,8 +3292,8 @@ int adios_write_index_v1 (char ** buffer
             // depending on if it is an array or not, generate a different
             // additional set of characteristics
             size = adios_get_type_size (vars_root->type
-                                       ,vars_root->characteristics [i].value
-                                       );
+                    ,vars_root->characteristics [i].value
+                    );
 
             switch (vars_root->type)
             {
@@ -3316,31 +3316,31 @@ int adios_write_index_v1 (char ** buffer
                         characteristic_set_count++;
                         flag = (uint8_t) adios_characteristic_dimensions;
                         buffer_write (buffer, buffer_size, buffer_offset
-                                     ,&flag, 1
-                                     );
+                                ,&flag, 1
+                                );
                         index_size += 1;
                         var_size += 1;
                         characteristic_set_length += 1;
 
                         buffer_write (buffer, buffer_size, buffer_offset
-                                     ,&vars_root->characteristics [i].dims.count
-                                     ,1
-                                     );
+                                ,&vars_root->characteristics [i].dims.count
+                                ,1
+                                );
                         index_size += 1;
                         var_size += 1;
                         characteristic_set_length += 1;
 
                         len = 3 * 8 * vars_root->characteristics [i].dims.count;
                         buffer_write (buffer, buffer_size, buffer_offset
-                                     ,&len, 2
-                                     );
+                                ,&len, 2
+                                );
                         index_size += 2;
                         var_size += 2;
                         characteristic_set_length += 2;
                         buffer_write (buffer, buffer_size, buffer_offset
-                                     ,vars_root->characteristics [i].dims.dims
-                                     ,len
-                                     );
+                                ,vars_root->characteristics [i].dims.dims
+                                ,len
+                                );
                         index_size += len;
                         var_size += len;
                         characteristic_set_length += len;
@@ -3349,25 +3349,25 @@ int adios_write_index_v1 (char ** buffer
                         characteristic_set_count++;
                         flag = (uint8_t) adios_characteristic_bitmap;
                         buffer_write (buffer, buffer_size, buffer_offset
-                                     ,&flag, 1
-                                     );
+                                ,&flag, 1
+                                );
                         index_size += 1;
                         var_size += 1;
                         characteristic_set_length += 1;
 
                         buffer_write (buffer, buffer_size, buffer_offset
-                                     ,&vars_root->characteristics [i].bitmap, 4
-                                     );
+                                ,&vars_root->characteristics [i].bitmap, 4
+                                );
                         index_size += 4;
                         var_size += 4;
                         characteristic_set_length += 4;
 
                         // NCSU - Adding statistics
-                           characteristic_set_count++;
+                        characteristic_set_count++;
                         flag = (uint8_t) adios_characteristic_stat;
                         buffer_write (buffer, buffer_size, buffer_offset
-                                     ,&flag, 1
-                                     );
+                                ,&flag, 1
+                                );
                         index_size += 1;
                         var_size += 1;
                         characteristic_set_length += 1;
@@ -3389,28 +3389,28 @@ int adios_write_index_v1 (char ** buffer
                                         struct adios_hist_struct * hist = vars_root->characteristics [i].stats[c][idx].data;
 
                                         buffer_write (  buffer, buffer_size, buffer_offset
-                                                        , &hist->num_breaks, 4
-                                                     );
+                                                , &hist->num_breaks, 4
+                                                );
                                         characteristic_size = 4;
 
                                         buffer_write (  buffer, buffer_size, buffer_offset
-                                                        , &hist->min, 8
-                                                     );
+                                                , &hist->min, 8
+                                                );
                                         characteristic_size += 8;
 
                                         buffer_write (  buffer, buffer_size, buffer_offset
-                                                        , &hist->max, 8
-                                                     );
+                                                , &hist->max, 8
+                                                );
                                         characteristic_size += 8;
 
                                         buffer_write (  buffer, buffer_size, buffer_offset
-                                                        , hist->frequencies, (hist->num_breaks + 1) * 4
-                                                     );
+                                                , hist->frequencies, (hist->num_breaks + 1) * 4
+                                                );
                                         characteristic_size += (hist->num_breaks + 1) * 4;
 
                                         buffer_write (  buffer, buffer_size, buffer_offset
-                                                        , hist->breaks, hist->num_breaks * 8
-                                                     );
+                                                , hist->breaks, hist->num_breaks * 8
+                                                );
                                         characteristic_size += (hist->num_breaks) * 8;
                                     }
                                     else
@@ -3418,8 +3418,8 @@ int adios_write_index_v1 (char ** buffer
                                         characteristic_size = adios_get_stat_size(vars_root->characteristics [i].stats[c][idx].data, vars_root->type, j);
 
                                         buffer_write ( 	buffer, buffer_size, buffer_offset
-                                                         ,vars_root->characteristics [i].stats[c][idx].data, characteristic_size
-                                                      );
+                                                ,vars_root->characteristics [i].stats[c][idx].data, characteristic_size
+                                                );
 
                                     }
 
@@ -3441,14 +3441,14 @@ int adios_write_index_v1 (char ** buffer
                         characteristic_set_count++;
                         flag = (uint8_t) adios_characteristic_value;
                         buffer_write (buffer, buffer_size, buffer_offset
-                                     ,&flag, 1
-                                     );
+                                ,&flag, 1
+                                );
                         index_size += 1;
                         var_size += 1;
                         characteristic_set_length += 1;
                         buffer_write (buffer, buffer_size, buffer_offset
-                                     ,vars_root->characteristics [i].value, size
-                                     );
+                                ,vars_root->characteristics [i].value, size
+                                );
                         index_size += size;
                         var_size += size;
                         characteristic_set_length += size;
@@ -3461,8 +3461,8 @@ int adios_write_index_v1 (char ** buffer
                         characteristic_set_count++;
                         flag = (uint8_t) adios_characteristic_value;
                         buffer_write (buffer, buffer_size, buffer_offset
-                                     ,&flag, 1
-                                     );
+                                ,&flag, 1
+                                );
                         index_size += 1;
                         var_size += 1;
                         characteristic_set_length += 1;
@@ -3470,15 +3470,15 @@ int adios_write_index_v1 (char ** buffer
                         {
                             uint16_t len = (uint16_t) size;
                             buffer_write (buffer, buffer_size, buffer_offset
-                                         ,&len, 2
-                                         );
+                                    ,&len, 2
+                                    );
                             index_size += 2;
                             var_size += 2;
                             characteristic_set_length += 2;
                         }
                         buffer_write (buffer, buffer_size, buffer_offset
-                                     ,vars_root->characteristics [i].value, size
-                                     );
+                                ,vars_root->characteristics [i].value, size
+                                );
                         index_size += size;
                         var_size += size;
                         characteristic_set_length += size;
@@ -3487,11 +3487,11 @@ int adios_write_index_v1 (char ** buffer
             }
             // characteristics count/size prefix
             buffer_write (buffer, buffer_size, &characteristic_set_start
-                         ,&characteristic_set_count, 1
-                         );
+                    ,&characteristic_set_count, 1
+                    );
             buffer_write (buffer, buffer_size, &characteristic_set_start
-                         ,&characteristic_set_length, 4
-                         );
+                    ,&characteristic_set_length, 4
+                    );
         }
 
         buffer_write (buffer, buffer_size, &var_start, &var_size, 4);
@@ -3530,8 +3530,8 @@ int adios_write_index_v1 (char ** buffer
         index_size += 2;
         attr_size += 2;
         buffer_write (buffer, buffer_size, buffer_offset
-                     ,attrs_root->group_name, len
-                     );
+                ,attrs_root->group_name, len
+                );
         index_size += len;
         attr_size += len;
 
@@ -3540,8 +3540,8 @@ int adios_write_index_v1 (char ** buffer
         index_size += 2;
         attr_size += 2;
         buffer_write (buffer, buffer_size, buffer_offset
-                     ,attrs_root->attr_name, len
-                     );
+                ,attrs_root->attr_name, len
+                );
         index_size += len;
         attr_size += len;
 
@@ -3550,8 +3550,8 @@ int adios_write_index_v1 (char ** buffer
         index_size += 2;
         attr_size += 2;
         buffer_write (buffer, buffer_size, buffer_offset
-                     ,attrs_root->attr_path, len
-                     );
+                ,attrs_root->attr_path, len
+                );
         index_size += len;
         attr_size += len;
 
@@ -3561,8 +3561,8 @@ int adios_write_index_v1 (char ** buffer
         attr_size += 1;
 
         buffer_write (buffer, buffer_size, buffer_offset
-                     ,&attrs_root->characteristics_count, 8
-                     );
+                ,&attrs_root->characteristics_count, 8
+                );
         index_size += 8;
         attr_size += 8;
 
@@ -3586,8 +3586,8 @@ int adios_write_index_v1 (char ** buffer
             characteristic_set_length += 1;
 
             buffer_write (buffer, buffer_size, buffer_offset
-                         ,&attrs_root->characteristics [i].offset, 8
-                         );
+                    ,&attrs_root->characteristics [i].offset, 8
+                    );
             index_size += 8;
             attr_size += 8;
             characteristic_set_length += 8;
@@ -3601,8 +3601,8 @@ int adios_write_index_v1 (char ** buffer
             characteristic_set_length += 1;
 
             buffer_write (buffer, buffer_size, buffer_offset
-                         ,&attrs_root->characteristics [i].payload_offset, 8
-                         );
+                    ,&attrs_root->characteristics [i].payload_offset, 8
+                    );
             index_size += 8;
             attr_size += 8;
             characteristic_set_length += 8;
@@ -3616,8 +3616,8 @@ int adios_write_index_v1 (char ** buffer
             characteristic_set_length += 1;
 
             buffer_write (buffer, buffer_size, buffer_offset
-                         ,&attrs_root->characteristics [i].file_index, 4
-                         );
+                    ,&attrs_root->characteristics [i].file_index, 4
+                    );
             index_size += 4;
             attr_size += 4;
             characteristic_set_length += 4;
@@ -3631,15 +3631,15 @@ int adios_write_index_v1 (char ** buffer
             characteristic_set_length += 1;
 
             buffer_write (buffer, buffer_size, buffer_offset
-                         ,&attrs_root->characteristics [i].time_index, 4
-                         );
+                    ,&attrs_root->characteristics [i].time_index, 4
+                    );
             index_size += 4;
             attr_size += 4;
             characteristic_set_length += 4;
 
             size = adios_get_type_size (attrs_root->type
-                                       ,attrs_root->characteristics [i].value
-                                       );
+                    ,attrs_root->characteristics [i].value
+                    );
 
             if (attrs_root->characteristics [i].value != 0)
             {
@@ -3647,8 +3647,8 @@ int adios_write_index_v1 (char ** buffer
                 characteristic_set_count++;
                 flag = (uint8_t) adios_characteristic_value;
                 buffer_write (buffer, buffer_size, buffer_offset
-                             ,&flag, 1
-                             );
+                        ,&flag, 1
+                        );
                 index_size += 1;
                 attr_size += 1;
                 characteristic_set_length += 1;
@@ -3656,15 +3656,15 @@ int adios_write_index_v1 (char ** buffer
                 {
                     uint16_t len = (uint16_t) size;
                     buffer_write (buffer, buffer_size, buffer_offset
-                                 ,&len, 2
-                                 );
+                            ,&len, 2
+                            );
                     index_size += 2;
                     attr_size += 2;
                     characteristic_set_length += 2;
                 }
                 buffer_write (buffer, buffer_size, buffer_offset
-                             ,attrs_root->characteristics [i].value, size
-                             );
+                        ,attrs_root->characteristics [i].value, size
+                        );
                 index_size += size;
                 attr_size += size;
                 characteristic_set_length += size;
@@ -3675,14 +3675,14 @@ int adios_write_index_v1 (char ** buffer
                 characteristic_set_count++;
                 flag = (uint8_t) adios_characteristic_var_id;
                 buffer_write (buffer, buffer_size, buffer_offset
-                             ,&flag, 1
-                             );
+                        ,&flag, 1
+                        );
                 index_size += 1;
                 attr_size += 1;
                 characteristic_set_length += 1;
                 buffer_write (buffer, buffer_size, buffer_offset
-                             ,&attrs_root->characteristics [i].var_id, 2
-                             );
+                        ,&attrs_root->characteristics [i].var_id, 2
+                        );
                 index_size += 2;
                 attr_size += 2;
                 characteristic_set_length += 2;
@@ -3690,11 +3690,11 @@ int adios_write_index_v1 (char ** buffer
 
             // characteristics count/size prefix
             buffer_write (buffer, buffer_size, &characteristic_set_start
-                         ,&characteristic_set_count, 1
-                         );
+                    ,&characteristic_set_count, 1
+                    );
             buffer_write (buffer, buffer_size, &characteristic_set_start
-                         ,&characteristic_set_length, 4
-                         );
+                    ,&characteristic_set_length, 4
+                    );
         }
 
         buffer_write (buffer, buffer_size, &attr_start, &attr_size, 4);
@@ -3708,13 +3708,13 @@ int adios_write_index_v1 (char ** buffer
 
 
     /* Since ADIOS 1.4 Write new information before the last 24+4 bytes into the footer 
-        New information's format
-            24 characters: ADIOS-BP v<version>, padded with spaces up to 24
-            1 byte: major version
-            1 byte: minor version
-            1 byte: micro version
-            1 byte: 0
-    */
+       New information's format
+       24 characters: ADIOS-BP v<version>, padded with spaces up to 24
+       1 byte: major version
+       1 byte: minor version
+       1 byte: micro version
+       1 byte: 0
+       */
     {
         char verstr[25] = "                    ";
         unsigned char ver;
@@ -3739,9 +3739,9 @@ int adios_write_index_v1 (char ** buffer
 }
 
 int adios_write_version_v1 (char ** buffer
-                           ,uint64_t * buffer_size
-                           ,uint64_t * buffer_offset
-                           )
+        ,uint64_t * buffer_size
+        ,uint64_t * buffer_offset
+        )
 {
     uint32_t test = 1;
 
@@ -3763,10 +3763,10 @@ int adios_write_version_v1 (char ** buffer
 }
 
 int adios_write_version_flag_v1 (char ** buffer
-                                ,uint64_t * buffer_size
-                                ,uint64_t * buffer_offset
-                                ,uint32_t flag
-                                )
+        ,uint64_t * buffer_size
+        ,uint64_t * buffer_offset
+        ,uint32_t flag
+        )
 {
     uint32_t test = 1;
 
@@ -3796,7 +3796,7 @@ static uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
     size += 1; // var (y or n)
 
     if (   dimension->dimension.id == 0
-        && dimension->dimension.time_index == adios_flag_no
+            && dimension->dimension.time_index == adios_flag_no
        )  // it is a number
     {
         size += 8;  // size of value
@@ -3809,7 +3809,7 @@ static uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
     size += 1; // var (y or n)
 
     if (   dimension->global_dimension.id == 0
-        && dimension->global_dimension.time_index == adios_flag_no
+            && dimension->global_dimension.time_index == adios_flag_no
        )  // it is a number
     {
         size += 8; // default to a rank
@@ -3822,7 +3822,7 @@ static uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
     size += 1; // var (y or n)
 
     if (   dimension->local_offset.id == 0
-        && dimension->local_offset.time_index == adios_flag_no
+            && dimension->local_offset.time_index == adios_flag_no
        )  // it is a number
     {
         size += 8;  // default to a rank
@@ -3851,22 +3851,22 @@ static uint16_t calc_dimensions_size (struct adios_dimension_struct * dimension)
 
 static
 uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
-                                  ,struct adios_dimension_struct * dimension
-                                  )
+        ,struct adios_dimension_struct * dimension
+        )
 {
     uint64_t size = 0;
     uint8_t var;
 
     if (   dimension->dimension.id == 0
-        && dimension->dimension.time_index == adios_flag_no
+            && dimension->dimension.time_index == adios_flag_no
        )
     {
         var = 'n';
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &var, 1);
         size += 1;
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                     ,&dimension->dimension.rank, 8
-                     );
+                ,&dimension->dimension.rank, 8
+                );
         size += 8;
     }
     else
@@ -3875,21 +3875,21 @@ uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &var, 1);
         size += 1;
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                     ,&dimension->dimension.id, 2
-                     );
+                ,&dimension->dimension.id, 2
+                );
         size += 2;
     }
 
     if (   dimension->global_dimension.id == 0
-        && dimension->global_dimension.time_index == adios_flag_no
+            && dimension->global_dimension.time_index == adios_flag_no
        )
     {
         var = 'n';
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &var, 1);
         size += 1;
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                     ,&dimension->global_dimension.rank, 8
-                     );
+                ,&dimension->global_dimension.rank, 8
+                );
         size += 8;
     }
     else
@@ -3898,21 +3898,21 @@ uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &var, 1);
         size += 1;
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                     ,&dimension->global_dimension.id, 2
-                     );
+                ,&dimension->global_dimension.id, 2
+                );
         size += 2;
     }
 
     if (   dimension->local_offset.id == 0
-        && dimension->local_offset.time_index == adios_flag_no
+            && dimension->local_offset.time_index == adios_flag_no
        )
     {
         var = 'n';
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &var, 1);
         size += 1;
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                     ,&dimension->local_offset.rank, 8
-                     );
+                ,&dimension->local_offset.rank, 8
+                );
         size += 8;
     }
     else
@@ -3921,8 +3921,8 @@ uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &var, 1);
         size += 1;
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                     ,&dimension->local_offset.id, 2
-                     );
+                ,&dimension->local_offset.id, 2
+                );
         size += 2;
     }
 
@@ -3931,8 +3931,8 @@ uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
 
 static
 uint16_t adios_write_dimensions_v1 (struct adios_file_struct * fd
-                                   ,struct adios_dimension_struct * dimensions
-                                   )
+        ,struct adios_dimension_struct * dimensions
+        )
 {
     uint16_t size = 0;
     uint16_t dimensions_size = calc_dimensions_size (dimensions);
@@ -3954,8 +3954,8 @@ uint16_t adios_write_dimensions_v1 (struct adios_file_struct * fd
 }
 
 uint16_t adios_write_var_characteristics_dims_v1 (struct adios_file_struct * fd
-                                                 ,struct adios_var_struct * v
-                                                 )
+        ,struct adios_var_struct * v
+        )
 {
     uint16_t total_size = 0;
     uint8_t dims_count = 0;
@@ -4000,8 +4000,8 @@ uint16_t adios_write_var_characteristics_dims_v1 (struct adios_file_struct * fd
 }
 
 uint16_t adios_write_var_characteristics_v1 (struct adios_file_struct * fd
-                                            ,struct adios_var_struct * v
-                                            )
+        ,struct adios_var_struct * v
+        )
 {
     uint8_t flag;
     uint64_t size;
@@ -4039,8 +4039,8 @@ uint16_t adios_write_var_characteristics_v1 (struct adios_file_struct * fd
                 characteristic_set_count++;
                 flag = (uint8_t) adios_characteristic_dimensions;
                 buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                             ,&flag, 1
-                             );
+                        ,&flag, 1
+                        );
                 index_size += 1;
                 characteristic_set_length += 1;
 
@@ -4052,14 +4052,14 @@ uint16_t adios_write_var_characteristics_v1 (struct adios_file_struct * fd
                 characteristic_set_count++;
                 flag = (uint8_t) adios_characteristic_bitmap;
                 buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                             ,&flag, 1
-                             );
+                        ,&flag, 1
+                        );
                 index_size += 1;
                 characteristic_set_length += 1;
 
                 buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                             ,&v->bitmap, 4
-                             );
+                        ,&v->bitmap, 4
+                        );
                 index_size += 4;
                 characteristic_set_length += 4;
 
@@ -4067,8 +4067,8 @@ uint16_t adios_write_var_characteristics_v1 (struct adios_file_struct * fd
                 characteristic_set_count++;
                 flag = (uint8_t) adios_characteristic_stat;
                 buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                             ,&flag, 1
-                             );
+                        ,&flag, 1
+                        );
                 index_size += 1;
                 characteristic_set_length += 1;
 
@@ -4090,32 +4090,32 @@ uint16_t adios_write_var_characteristics_v1 (struct adios_file_struct * fd
                                 int32_t num_breaks = hist->num_breaks;
                                 // Adding number of bins
                                 buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                                             ,&hist->num_breaks, 4
-                                             );
+                                        ,&hist->num_breaks, 4
+                                        );
                                 characteristic_size = 4;
 
-                                 // Adding min bin
+                                // Adding min bin
                                 buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                                            ,&hist->min, 8
-                                             );
+                                        ,&hist->min, 8
+                                        );
                                 characteristic_size += 8;
 
-                                 // Adding max bin
+                                // Adding max bin
                                 buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                                             ,&hist->max, 8
-                                             );
+                                        ,&hist->max, 8
+                                        );
                                 characteristic_size += 8;
 
                                 // add a frequencies value characteristic
                                 buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                                             ,hist->frequencies, 4 * (num_breaks + 1)
-                                             );
+                                        ,hist->frequencies, 4 * (num_breaks + 1)
+                                        );
                                 characteristic_size += 4 * (num_breaks + 1);
 
                                 // add the breaks value characteristic
                                 buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                                             ,hist->breaks, 8 * num_breaks
-                                             );
+                                        ,hist->breaks, 8 * num_breaks
+                                        );
                                 characteristic_size += 8 * num_breaks;
                             }
                             else
@@ -4123,8 +4123,8 @@ uint16_t adios_write_var_characteristics_v1 (struct adios_file_struct * fd
                                 characteristic_size = adios_get_stat_size(v->stats[c][idx].data, v->type, j);
 
                                 buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                                         ,v->stats[c][idx].data, characteristic_size
-                                         );
+                                        ,v->stats[c][idx].data, characteristic_size
+                                        );
                             }
 
                             index_size += characteristic_size;
@@ -4142,19 +4142,19 @@ uint16_t adios_write_var_characteristics_v1 (struct adios_file_struct * fd
     }
     // characteristics count/size prefix
     buffer_write (&fd->buffer, &fd->buffer_size, &characteristic_set_start
-                 ,&characteristic_set_count, 1
-                 );
+            ,&characteristic_set_count, 1
+            );
     buffer_write (&fd->buffer, &fd->buffer_size, &characteristic_set_start
-                 ,&characteristic_set_length, 4
-                 );
+            ,&characteristic_set_length, 4
+            );
 
 
     return index_size;
 }
 
 int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd
-                                    ,struct adios_var_struct * var
-                                    )
+        ,struct adios_var_struct * var
+        )
 {
     uint64_t total_size = adios_get_var_size (var, fd->group, var->data);
     uint64_t size = 0;
@@ -4167,112 +4167,112 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd
 
 #if 1
 #define HIST(a) \
-{ \
-int j = 0, low, high, mid; \
-low=0; \
-high=hist->num_breaks - 1; \
-if (hist->breaks[low] > a) \
-    hist->frequencies[0] += 1; \
-else if (a >= hist->breaks[high]) \
-    hist->frequencies[high + 1] += 1; \
-else if (hist->breaks[low] <= a && a < hist->breaks[high]) \
-{ \
-    while(high-low>=2) \
     { \
-        mid=(high+low)/2; \
-        if(a >= hist->breaks[mid]) \
+        int j = 0, low, high, mid; \
+        low=0; \
+        high=hist->num_breaks - 1; \
+        if (hist->breaks[low] > a) \
+        hist->frequencies[0] += 1; \
+        else if (a >= hist->breaks[high]) \
+        hist->frequencies[high + 1] += 1; \
+        else if (hist->breaks[low] <= a && a < hist->breaks[high]) \
         { \
-            low=mid; \
+            while(high-low>=2) \
+            { \
+                mid=(high+low)/2; \
+                if(a >= hist->breaks[mid]) \
+                { \
+                    low=mid; \
+                } \
+                else \
+                { \
+                    high=mid; \
+                } \
+            } \
+            hist->frequencies[low + 1] += 1; \
         } \
-        else \
-        { \
-            high=mid; \
-        } \
-    } \
-    hist->frequencies[low + 1] += 1; \
-} \
-}
+    }
 #endif
 
 #if 1
 #define ADIOS_STATISTICS(a,b) \
-{\
-a * data = (a *) var->data; \
-int i, j; \
-struct adios_stat_struct * stats = var->stats[0]; \
-a * min, * max; \
-double * sum, * sum_square; \
-uint32_t * cnt; \
-struct adios_hist_struct * hist = 0; \
-i = j = 0; \
-while (var->bitmap >> j) { \
-    if ((var->bitmap >> j) & 1)	{\
-        map [j] = i; \
-        if (j == adios_statistic_hist) \
-            ;\
-        else \
-            stats[i].data = malloc(adios_get_stat_size(NULL, var->type, j)); \
-        i ++; \
-    } \
-    j ++; \
-} \
-min = (a *) stats[map[adios_statistic_min]].data; \
-max = (a *) stats[map[adios_statistic_max]].data; \
-sum = (double *) stats[map[adios_statistic_sum]].data; \
-sum_square = (double *) stats[map[adios_statistic_sum_square]].data; \
-cnt = (uint32_t *) stats[map[adios_statistic_cnt]].data; \
-*cnt = 0;\
-if (map[adios_statistic_hist] != -1) {\
-    hist = (struct adios_hist_struct *) stats[map[adios_statistic_hist]].data; \
-    hist->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, "")); \
-} \
-int finite = 0; \
-size = 0; \
-while ((size * b) < total_size) \
-{ \
-    if (isnan (data [size]) || !isfinite (data [size])) {\
-        size ++; \
-        continue; \
-    }\
-    if (!finite) { \
-        *min = data [size]; \
-        *max = data [size]; \
-        *sum = data [size]; \
-        *sum_square = (data [size] * data [size]) ; \
-        *cnt = *cnt + 1; \
-        if (map[adios_statistic_hist] != -1) \
+    {\
+        a * data = (a *) var->data; \
+        int i, j; \
+        struct adios_stat_struct * stats = var->stats[0]; \
+        a * min, * max; \
+        double * sum, * sum_square; \
+        uint32_t * cnt; \
+        struct adios_hist_struct * hist = 0; \
+        i = j = 0; \
+        while (var->bitmap >> j) { \
+            if ((var->bitmap >> j) & 1)	{\
+                map [j] = i; \
+                if (j == adios_statistic_hist) \
+                ;\
+                else \
+                stats[i].data = malloc(adios_get_stat_size(NULL, var->type, j)); \
+                i ++; \
+            } \
+            j ++; \
+        } \
+        min = (a *) stats[map[adios_statistic_min]].data; \
+        max = (a *) stats[map[adios_statistic_max]].data; \
+        sum = (double *) stats[map[adios_statistic_sum]].data; \
+        sum_square = (double *) stats[map[adios_statistic_sum_square]].data; \
+        cnt = (uint32_t *) stats[map[adios_statistic_cnt]].data; \
+        *cnt = 0;\
+        if (map[adios_statistic_hist] != -1) {\
+            hist = (struct adios_hist_struct *) stats[map[adios_statistic_hist]].data; \
+            hist->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, "")); \
+        } \
+        int finite = 0; \
+        size = 0; \
+        while ((size * b) < total_size) \
+        { \
+            if (isnan (data [size]) || !isfinite (data [size])) {\
+                size ++; \
+                continue; \
+            }\
+            if (!finite) { \
+                *min = data [size]; \
+                *max = data [size]; \
+                *sum = data [size]; \
+                *sum_square = (data [size] * data [size]) ; \
+                *cnt = *cnt + 1; \
+                if (map[adios_statistic_hist] != -1) \
+                HIST(data [size]); \
+                finite = 1; \
+                size ++; \
+                continue; \
+            } \
+            if (data [size] < *min) \
+            *min = data [size]; \
+            if (data [size] > *max) \
+            *max = data [size]; \
+            *sum += data [size]; \
+            *sum_square += (data [size] * data [size]) ; \
+            *cnt = *cnt + 1; \
+            if (map[adios_statistic_hist] != -1) \
             HIST(data [size]); \
-        finite = 1; \
-        size ++; \
-        continue; \
-    } \
-    if (data [size] < *min) \
-        *min = data [size]; \
-    if (data [size] > *max) \
-        *max = data [size]; \
-    *sum += data [size]; \
-    *sum_square += (data [size] * data [size]) ; \
-    *cnt = *cnt + 1; \
-    if (map[adios_statistic_hist] != -1) \
-        HIST(data [size]); \
-       size++; \
-} \
-if (map[adios_statistic_finite] != -1) \
-    * ((uint8_t * ) stats[map[adios_statistic_finite]].data) = finite; \
-return 0; \
-}
+            size++; \
+        } \
+        if (map[adios_statistic_finite] != -1) \
+        * ((uint8_t * ) stats[map[adios_statistic_finite]].data) = finite; \
+        return 0; \
+    }
 #else
 #define MIN_MAX(a,b)\
-{\
-a * data = (a *) var->data; \
-var->min = malloc (b); \
-var->max = malloc (b); \
-a * min = (a *) var->min; \
-a * max = (a *) var->max; \
-*min = data [0]; \
-*max = data [0]; \
-return 0; \
-}
+    {\
+        a * data = (a *) var->data; \
+        var->min = malloc (b); \
+        var->max = malloc (b); \
+        a * min = (a *) var->min; \
+        a * max = (a *) var->max; \
+        *min = data [0]; \
+        *max = data [0]; \
+        return 0; \
+    }
 #endif
 
     switch (var->type)
@@ -4281,315 +4281,315 @@ return 0; \
             ADIOS_STATISTICS(int8_t,1)
 
         case adios_unsigned_byte:
-            ADIOS_STATISTICS(uint8_t,1)
+                ADIOS_STATISTICS(uint8_t,1)
 
         case adios_short:
-            ADIOS_STATISTICS(int16_t,2)
+                    ADIOS_STATISTICS(int16_t,2)
 
         case adios_unsigned_short:
-            ADIOS_STATISTICS(uint16_t,2)
+                        ADIOS_STATISTICS(uint16_t,2)
 
         case adios_integer:
-            ADIOS_STATISTICS(int32_t,4)
+                            ADIOS_STATISTICS(int32_t,4)
 
         case adios_unsigned_integer:
-            ADIOS_STATISTICS(uint32_t,4)
+                                ADIOS_STATISTICS(uint32_t,4)
 
         case adios_long:
-            ADIOS_STATISTICS(int64_t,8)
+                                    ADIOS_STATISTICS(int64_t,8)
 
         case adios_unsigned_long:
-            ADIOS_STATISTICS(uint64_t,8)
+                                        ADIOS_STATISTICS(uint64_t,8)
 
         case adios_real:
-            ADIOS_STATISTICS(float,4)
+                                            ADIOS_STATISTICS(float,4)
 
         case adios_double:
-            ADIOS_STATISTICS(double,8)
+                                                ADIOS_STATISTICS(double,8)
 
         case adios_long_double:
-            ADIOS_STATISTICS(long double,16)
+                                                    ADIOS_STATISTICS(long double,16)
 
         case adios_complex:
-        {
-            int i, j, c, count = 3;
-            struct adios_stat_struct ** stats = var->stats;
-            float * data = var->data;
-            i = j = 0;
+                                                    {
+                                                        int i, j, c, count = 3;
+                                                        struct adios_stat_struct ** stats = var->stats;
+                                                        float * data = var->data;
+                                                        i = j = 0;
 
-            while (var->bitmap >> j) {
-                if ((var->bitmap >> j) & 1)	{
-                    map [j] = i;
-                    for (c = 0; c < count; c ++)
-                        if (j != adios_statistic_hist)
-                            stats[c][i].data = malloc(adios_get_stat_size(NULL, var->type, j));
-                    i ++;
-                }
-                j ++;
-            }
+                                                        while (var->bitmap >> j) {
+                                                            if ((var->bitmap >> j) & 1)	{
+                                                                map [j] = i;
+                                                                for (c = 0; c < count; c ++)
+                                                                    if (j != adios_statistic_hist)
+                                                                        stats[c][i].data = malloc(adios_get_stat_size(NULL, var->type, j));
+                                                                i ++;
+                                                            }
+                                                            j ++;
+                                                        }
 
-            double *min_i, *min_r, *min_m;
-            double *max_i, *max_r, *max_m;
-            double *sum_i, *sum_r, *sum_m;
-            double *sum_square_i, *sum_square_r, *sum_square_m;
-            //struct adios_hist_struct *hist, *hist_i, *hist_r, *hist_m;
-            uint32_t *cnt_i, *cnt_r, *cnt_m;
-            double magnitude;
-            uint8_t finite = 0;
+                                                        double *min_i, *min_r, *min_m;
+                                                        double *max_i, *max_r, *max_m;
+                                                        double *sum_i, *sum_r, *sum_m;
+                                                        double *sum_square_i, *sum_square_r, *sum_square_m;
+                                                        //struct adios_hist_struct *hist, *hist_i, *hist_r, *hist_m;
+                                                        uint32_t *cnt_i, *cnt_r, *cnt_m;
+                                                        double magnitude;
+                                                        uint8_t finite = 0;
 
-            min_m = (double *) stats[0][map[adios_statistic_min]].data;
-            min_r = (double *) stats[1][map[adios_statistic_min]].data;
-            min_i = (double *) stats[2][map[adios_statistic_min]].data;
+                                                        min_m = (double *) stats[0][map[adios_statistic_min]].data;
+                                                        min_r = (double *) stats[1][map[adios_statistic_min]].data;
+                                                        min_i = (double *) stats[2][map[adios_statistic_min]].data;
 
-            max_m = (double *) stats[0][map[adios_statistic_max]].data;
-            max_r = (double *) stats[1][map[adios_statistic_max]].data;
-            max_i = (double *) stats[2][map[adios_statistic_max]].data;
+                                                        max_m = (double *) stats[0][map[adios_statistic_max]].data;
+                                                        max_r = (double *) stats[1][map[adios_statistic_max]].data;
+                                                        max_i = (double *) stats[2][map[adios_statistic_max]].data;
 
-            sum_m = (double *) stats[0][map[adios_statistic_sum]].data;
-            sum_r = (double *) stats[1][map[adios_statistic_sum]].data;
-            sum_i = (double *) stats[2][map[adios_statistic_sum]].data;
+                                                        sum_m = (double *) stats[0][map[adios_statistic_sum]].data;
+                                                        sum_r = (double *) stats[1][map[adios_statistic_sum]].data;
+                                                        sum_i = (double *) stats[2][map[adios_statistic_sum]].data;
 
-            sum_square_m = (double *) stats[0][map[adios_statistic_sum_square]].data;
-            sum_square_r = (double *) stats[1][map[adios_statistic_sum_square]].data;
-            sum_square_i = (double *) stats[2][map[adios_statistic_sum_square]].data;
+                                                        sum_square_m = (double *) stats[0][map[adios_statistic_sum_square]].data;
+                                                        sum_square_r = (double *) stats[1][map[adios_statistic_sum_square]].data;
+                                                        sum_square_i = (double *) stats[2][map[adios_statistic_sum_square]].data;
 
-            cnt_m = (uint32_t *) stats[0][map[adios_statistic_cnt]].data;
-            cnt_r = (uint32_t *) stats[1][map[adios_statistic_cnt]].data;
-            cnt_i = (uint32_t *) stats[2][map[adios_statistic_cnt]].data;
+                                                        cnt_m = (uint32_t *) stats[0][map[adios_statistic_cnt]].data;
+                                                        cnt_r = (uint32_t *) stats[1][map[adios_statistic_cnt]].data;
+                                                        cnt_i = (uint32_t *) stats[2][map[adios_statistic_cnt]].data;
 
-            // Histogram is not available for complex numbers, yet.
-            /*
-            if (map[adios_statistic_hist] != -1) {
-                hist_r = (struct adios_hist_struct *) stat[0][map[adios_statistic_hist]].data;
-                hist_i = (struct adios_hist_struct *) stat[1][map[adios_statistic_hist]].data;
-                hist_m = (struct adios_hist_struct *) stat[2][map[adios_statistic_hist]].data;
+                                                        // Histogram is not available for complex numbers, yet.
+                                                        /*
+                                                           if (map[adios_statistic_hist] != -1) {
+                                                           hist_r = (struct adios_hist_struct *) stat[0][map[adios_statistic_hist]].data;
+                                                           hist_i = (struct adios_hist_struct *) stat[1][map[adios_statistic_hist]].data;
+                                                           hist_m = (struct adios_hist_struct *) stat[2][map[adios_statistic_hist]].data;
 
-                hist_r->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
-                hist_i->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
-                hist_m->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
-            }
-            */
+                                                           hist_r->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
+                                                           hist_i->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
+                                                           hist_m->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
+                                                           }
+                                                           */
 
-            *cnt_r = *cnt_i = *cnt_m = 0;
-            *min_r = *min_i = *min_m = INFINITY;
-            *max_r = *max_i = *max_m = -INFINITY;
-            *sum_r = *sum_i = *sum_m = 0;
-            *sum_square_r = *sum_square_i = *sum_square_m = 0;
+                                                        *cnt_r = *cnt_i = *cnt_m = 0;
+                                                        *min_r = *min_i = *min_m = INFINITY;
+                                                        *max_r = *max_i = *max_m = -INFINITY;
+                                                        *sum_r = *sum_i = *sum_m = 0;
+                                                        *sum_square_r = *sum_square_i = *sum_square_m = 0;
 
-            while ((size * sizeof(float)) < total_size) {
+                                                        while ((size * sizeof(float)) < total_size) {
 
-                magnitude = sqrt((double) data [size] * data [size] + (double) data[size + 1] * data[size + 1]);
+                                                            magnitude = sqrt((double) data [size] * data [size] + (double) data[size + 1] * data[size + 1]);
 
-                // Both real and imaginary parts have to be finite, else skip calculating the characteristic
-                if ( isnan(data [size]) || !isfinite(data [size]) || isnan(data[size + 1]) || !isfinite(data[size + 1]) ) {
-                    size += 2;
-                    continue;
-                }
+                                                            // Both real and imaginary parts have to be finite, else skip calculating the characteristic
+                                                            if ( isnan(data [size]) || !isfinite(data [size]) || isnan(data[size + 1]) || !isfinite(data[size + 1]) ) {
+                                                                size += 2;
+                                                                continue;
+                                                            }
 
-                finite = 1;
+                                                            finite = 1;
 
-                // Updating the characteristic values
-                if (data [size] < *min_r)
-                    *min_r = data [size];
-                if (data [size + 1] < *min_i)
-                    *min_i = data [size + 1];
-                if (magnitude < *min_m)
-                    *min_m = magnitude;
+                                                            // Updating the characteristic values
+                                                            if (data [size] < *min_r)
+                                                                *min_r = data [size];
+                                                            if (data [size + 1] < *min_i)
+                                                                *min_i = data [size + 1];
+                                                            if (magnitude < *min_m)
+                                                                *min_m = magnitude;
 
-                if (data [size] > *max_r)
-                    *max_r = data [size];
-                if (data [size + 1] > *max_i)
-                    *max_i = data [size + 1];
-                if (magnitude > *max_m)
-                    *max_m = magnitude;
+                                                            if (data [size] > *max_r)
+                                                                *max_r = data [size];
+                                                            if (data [size + 1] > *max_i)
+                                                                *max_i = data [size + 1];
+                                                            if (magnitude > *max_m)
+                                                                *max_m = magnitude;
 
-                *sum_r += data [size];
-                *sum_i += data [size + 1];
-                *sum_m += magnitude;
+                                                            *sum_r += data [size];
+                                                            *sum_i += data [size + 1];
+                                                            *sum_m += magnitude;
 
-                *sum_square_r += (double) data [size] * data [size];
-                *sum_square_i += (double) data [size + 1] * data [size + 1];
-                *sum_square_m += magnitude * magnitude;
+                                                            *sum_square_r += (double) data [size] * data [size];
+                                                            *sum_square_i += (double) data [size + 1] * data [size + 1];
+                                                            *sum_square_m += magnitude * magnitude;
 
-                *cnt_r = *cnt_r + 1;
-                *cnt_i = *cnt_i + 1;
-                *cnt_m = *cnt_m + 1;
-                // Histogram not available yet
-                /*
-                if (map[adios_statistic_hist] != -1)
-                {
-                    hist = hist_r;
-                    HIST (data[size]);
+                                                            *cnt_r = *cnt_r + 1;
+                                                            *cnt_i = *cnt_i + 1;
+                                                            *cnt_m = *cnt_m + 1;
+                                                            // Histogram not available yet
+                                                            /*
+                                                               if (map[adios_statistic_hist] != -1)
+                                                               {
+                                                               hist = hist_r;
+                                                               HIST (data[size]);
 
-                    hist = hist_i;
-                    HIST (data[size + 1]);
+                                                               hist = hist_i;
+                                                               HIST (data[size + 1]);
 
-                    hist = hist_m;
-                    HIST (magnitude);
-                }
-                */
+                                                               hist = hist_m;
+                                                               HIST (magnitude);
+                                                               }
+                                                               */
 
-                   size += 2;
-            }
+                                                            size += 2;
+                                                        }
 
-            if (map[adios_statistic_finite] != -1)
-                for (c = 0; c < count; c ++)
-                    * ((uint8_t * ) stats[c][map[adios_statistic_finite]].data) = finite;
+                                                        if (map[adios_statistic_finite] != -1)
+                                                            for (c = 0; c < count; c ++)
+                                                                * ((uint8_t * ) stats[c][map[adios_statistic_finite]].data) = finite;
 
-            return 0;
-        }
+                                                        return 0;
+                                                    }
 
         case adios_double_complex:
-        {
-            int i, j, c, count = 3;
-            struct adios_stat_struct ** stats = var->stats;
-            double * data = var->data;
-            i = j = 0;
+                                                    {
+                                                        int i, j, c, count = 3;
+                                                        struct adios_stat_struct ** stats = var->stats;
+                                                        double * data = var->data;
+                                                        i = j = 0;
 
-            while (var->bitmap >> j) {
-                if ((var->bitmap >> j) & 1)	{
-                    map [j] = i;
-                    for (c = 0; c < count; c ++)
-                        if (j != adios_statistic_hist)
-                            stats[c][i].data = malloc(adios_get_stat_size(NULL, var->type, j));
-                    i ++;
-                }
-                j ++;
-            }
+                                                        while (var->bitmap >> j) {
+                                                            if ((var->bitmap >> j) & 1)	{
+                                                                map [j] = i;
+                                                                for (c = 0; c < count; c ++)
+                                                                    if (j != adios_statistic_hist)
+                                                                        stats[c][i].data = malloc(adios_get_stat_size(NULL, var->type, j));
+                                                                i ++;
+                                                            }
+                                                            j ++;
+                                                        }
 
-            long double *min_i, *min_r, *min_m;
-            long double *max_i, *max_r, *max_m;
-            long double *sum_i, *sum_r, *sum_m;
-            long double *sum_square_i, *sum_square_r, *sum_square_m;
-            //struct adios_hist_struct *hist, *hist_i, *hist_r, *hist_m;
-            uint32_t *cnt_i, *cnt_r, *cnt_m;
-            long double magnitude;
-            uint8_t finite = 0;
+                                                        long double *min_i, *min_r, *min_m;
+                                                        long double *max_i, *max_r, *max_m;
+                                                        long double *sum_i, *sum_r, *sum_m;
+                                                        long double *sum_square_i, *sum_square_r, *sum_square_m;
+                                                        //struct adios_hist_struct *hist, *hist_i, *hist_r, *hist_m;
+                                                        uint32_t *cnt_i, *cnt_r, *cnt_m;
+                                                        long double magnitude;
+                                                        uint8_t finite = 0;
 
-            min_m = (long double *) stats[0][map[adios_statistic_min]].data;
-            min_r = (long double *) stats[1][map[adios_statistic_min]].data;
-            min_i = (long double *) stats[2][map[adios_statistic_min]].data;
+                                                        min_m = (long double *) stats[0][map[adios_statistic_min]].data;
+                                                        min_r = (long double *) stats[1][map[adios_statistic_min]].data;
+                                                        min_i = (long double *) stats[2][map[adios_statistic_min]].data;
 
-            max_m = (long double *) stats[0][map[adios_statistic_max]].data;
-            max_r = (long double *) stats[1][map[adios_statistic_max]].data;
-            max_i = (long double *) stats[2][map[adios_statistic_max]].data;
+                                                        max_m = (long double *) stats[0][map[adios_statistic_max]].data;
+                                                        max_r = (long double *) stats[1][map[adios_statistic_max]].data;
+                                                        max_i = (long double *) stats[2][map[adios_statistic_max]].data;
 
-            sum_m = (long double *) stats[0][map[adios_statistic_sum]].data;
-            sum_r = (long double *) stats[1][map[adios_statistic_sum]].data;
-            sum_i = (long double *) stats[2][map[adios_statistic_sum]].data;
+                                                        sum_m = (long double *) stats[0][map[adios_statistic_sum]].data;
+                                                        sum_r = (long double *) stats[1][map[adios_statistic_sum]].data;
+                                                        sum_i = (long double *) stats[2][map[adios_statistic_sum]].data;
 
-            sum_square_m = (long double *) stats[0][map[adios_statistic_sum_square]].data;
-            sum_square_r = (long double *) stats[1][map[adios_statistic_sum_square]].data;
-            sum_square_i = (long double *) stats[2][map[adios_statistic_sum_square]].data;
+                                                        sum_square_m = (long double *) stats[0][map[adios_statistic_sum_square]].data;
+                                                        sum_square_r = (long double *) stats[1][map[adios_statistic_sum_square]].data;
+                                                        sum_square_i = (long double *) stats[2][map[adios_statistic_sum_square]].data;
 
 
-            // Histogram not available for complex numbers yet
-            /*
-            if (map[adios_statistic_hist] != -1) {
-                hist_r = (struct adios_hist_struct *) stat[0][map[adios_statistic_hist]].data;
-                hist_i = (struct adios_hist_struct *) stat[1][map[adios_statistic_hist]].data;
-                hist_m = (struct adios_hist_struct *) stat[2][map[adios_statistic_hist]].data;
+                                                        // Histogram not available for complex numbers yet
+                                                        /*
+                                                           if (map[adios_statistic_hist] != -1) {
+                                                           hist_r = (struct adios_hist_struct *) stat[0][map[adios_statistic_hist]].data;
+                                                           hist_i = (struct adios_hist_struct *) stat[1][map[adios_statistic_hist]].data;
+                                                           hist_m = (struct adios_hist_struct *) stat[2][map[adios_statistic_hist]].data;
 
-                hist_r->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
-                hist_i->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
-                hist_m->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
-            }
-            */
+                                                           hist_r->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
+                                                           hist_i->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
+                                                           hist_m->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
+                                                           }
+                                                           */
 
-            cnt_m = (uint32_t *) stats[0][map[adios_statistic_cnt]].data;
-            cnt_r = (uint32_t *) stats[1][map[adios_statistic_cnt]].data;
-            cnt_i = (uint32_t *) stats[2][map[adios_statistic_cnt]].data;
+                                                        cnt_m = (uint32_t *) stats[0][map[adios_statistic_cnt]].data;
+                                                        cnt_r = (uint32_t *) stats[1][map[adios_statistic_cnt]].data;
+                                                        cnt_i = (uint32_t *) stats[2][map[adios_statistic_cnt]].data;
 
-            *cnt_r = *cnt_i = *cnt_m = 0;
-            *min_r = *min_i = *min_m = INFINITY;
-            *max_r = *max_i = *max_m = -INFINITY;
-            *sum_r = *sum_i = *sum_m = 0;
-            *sum_square_r = *sum_square_i = *sum_square_m = 0;
+                                                        *cnt_r = *cnt_i = *cnt_m = 0;
+                                                        *min_r = *min_i = *min_m = INFINITY;
+                                                        *max_r = *max_i = *max_m = -INFINITY;
+                                                        *sum_r = *sum_i = *sum_m = 0;
+                                                        *sum_square_r = *sum_square_i = *sum_square_m = 0;
 
-            while ((size * sizeof(double)) < total_size)
-            {
-                long double magnitude = sqrt((long double) data [size] * data [size] + (long double) data[size + 1] * data[size + 1]);
+                                                        while ((size * sizeof(double)) < total_size)
+                                                        {
+                                                            long double magnitude = sqrt((long double) data [size] * data [size] + (long double) data[size + 1] * data[size + 1]);
 
-                // Both real and imaginary parts have to be finite, else skip calculating the characteristic
-                if ( isnan(data [size]) || !isfinite(data [size]) || isnan(data[size + 1]) || !isfinite(data[size + 1]) ) {
-                    size += 2;
-                    continue;
-                }
+                                                            // Both real and imaginary parts have to be finite, else skip calculating the characteristic
+                                                            if ( isnan(data [size]) || !isfinite(data [size]) || isnan(data[size + 1]) || !isfinite(data[size + 1]) ) {
+                                                                size += 2;
+                                                                continue;
+                                                            }
 
-                finite = 1;
+                                                            finite = 1;
 
-                if (data [size] < *min_r)
-                    *min_r = data [size];
-                if (data [size + 1] < *min_i)
-                    *min_i = data [size + 1];
-                if (magnitude < *min_m)
-                    *min_m = magnitude;
+                                                            if (data [size] < *min_r)
+                                                                *min_r = data [size];
+                                                            if (data [size + 1] < *min_i)
+                                                                *min_i = data [size + 1];
+                                                            if (magnitude < *min_m)
+                                                                *min_m = magnitude;
 
-                if (data [size] > *max_r)
-                    *max_r = data [size];
-                if (data [size + 1] > *max_i)
-                    *max_i = data [size + 1];
-                if (magnitude > *max_m)
-                    *max_m = magnitude;
+                                                            if (data [size] > *max_r)
+                                                                *max_r = data [size];
+                                                            if (data [size + 1] > *max_i)
+                                                                *max_i = data [size + 1];
+                                                            if (magnitude > *max_m)
+                                                                *max_m = magnitude;
 
-                *sum_r += data [size];
-                *sum_i += data [size + 1];
-                *sum_m += magnitude;
+                                                            *sum_r += data [size];
+                                                            *sum_i += data [size + 1];
+                                                            *sum_m += magnitude;
 
-                *sum_square_r += (long double) data [size] * data [size];
-                *sum_square_i += (long double) data [size + 1] * data [size + 1];
-                *sum_square_m += magnitude * magnitude;
+                                                            *sum_square_r += (long double) data [size] * data [size];
+                                                            *sum_square_i += (long double) data [size + 1] * data [size + 1];
+                                                            *sum_square_m += magnitude * magnitude;
 
-                // Histgram has not available for complex yet
-                /*
-                if (map[adios_statistic_hist] != -1)
-                {
-                    hist = hist_r;
-                    HIST (data[size]);
+                                                            // Histgram has not available for complex yet
+                                                            /*
+                                                               if (map[adios_statistic_hist] != -1)
+                                                               {
+                                                               hist = hist_r;
+                                                               HIST (data[size]);
 
-                    hist = hist_i;
-                    HIST (data[size + 1]);
+                                                               hist = hist_i;
+                                                               HIST (data[size + 1]);
 
-                    hist = hist_m;
-                    HIST (magnitude);
-                }
-                */
+                                                               hist = hist_m;
+                                                               HIST (magnitude);
+                                                               }
+                                                               */
 
-                *cnt_r = *cnt_r + 1;
-                *cnt_i = *cnt_i + 1;
-                *cnt_m = *cnt_m + 1;
+                                                            *cnt_r = *cnt_r + 1;
+                                                            *cnt_i = *cnt_i + 1;
+                                                            *cnt_m = *cnt_m + 1;
 
-                   size += 2;
-            }
+                                                            size += 2;
+                                                        }
 
-            if (map[adios_statistic_finite] != -1)
-                for (c = 0; c < count; c ++)
-                    * ((uint8_t * ) stats[c][map[adios_statistic_finite]].data) = finite;
+                                                        if (map[adios_statistic_finite] != -1)
+                                                            for (c = 0; c < count; c ++)
+                                                                * ((uint8_t * ) stats[c][map[adios_statistic_finite]].data) = finite;
 
-            return 0;
-        }
+                                                        return 0;
+                                                    }
 
         case adios_string:
-        {
-            var->stats = 0;
+                                                    {
+                                                        var->stats = 0;
 
-            return 0;
-        }
+                                                        return 0;
+                                                    }
 
         default:
-        {
-            uint64_t data = adios_unknown;
-            var->stats = 0;
+                                                    {
+                                                        uint64_t data = adios_unknown;
+                                                        var->stats = 0;
 
-            return 0;
-        }
+                                                        return 0;
+                                                    }
     }
 }
 
 // data is only there for sizing
 uint64_t adios_write_var_header_v1 (struct adios_file_struct * fd
-                                   ,struct adios_var_struct * v
-                                   )
+        ,struct adios_var_struct * v
+        )
 {
     uint64_t total_size = 0;
     uint8_t flag;
@@ -4643,8 +4643,8 @@ uint64_t adios_write_var_header_v1 (struct adios_file_struct * fd
 }
 
 int adios_write_var_payload_v1 (struct adios_file_struct * fd
-                               ,struct adios_var_struct * var
-                               )
+        ,struct adios_var_struct * var
+        )
 {
     uint64_t size;
 
@@ -4659,8 +4659,8 @@ int adios_write_var_payload_v1 (struct adios_file_struct * fd
 }
 
 int adios_write_attribute_v1 (struct adios_file_struct * fd
-                             ,struct adios_attribute_struct * a
-                             )
+        ,struct adios_attribute_struct * a
+        )
 {
     uint64_t start;        // save the start to write the size
     uint32_t size = 0;
@@ -4696,8 +4696,8 @@ int adios_write_attribute_v1 (struct adios_file_struct * fd
     if (a->var)
     {
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                     ,&a->var->id, 2
-                     );
+                ,&a->var->id, 2
+                );
         size += 2;
     }
     else
@@ -4711,8 +4711,8 @@ int adios_write_attribute_v1 (struct adios_file_struct * fd
         size += 4;
 
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                     ,a->value, t
-                     );
+                ,a->value, t
+                );
         size += t;
     }
 
@@ -4779,10 +4779,10 @@ int adios_write_close_attributes_v1 (struct adios_file_struct * fd)
 // *****************************************************************************
 
 static int adios_multiply_dimensions (uint64_t * size
-                                     ,struct adios_var_struct * var
-                                     ,enum ADIOS_DATATYPES type
-                                     ,void * data
-                                     )
+        ,struct adios_var_struct * var
+        ,enum ADIOS_DATATYPES type
+        ,void * data
+        )
 {
     switch (type)
     {
@@ -4820,16 +4820,16 @@ static int adios_multiply_dimensions (uint64_t * size
 
         default:
             adios_error (err_invalid_var_as_dimension, 
-                         "Invalid datatype for array dimension on var %s: %s\n",
-                         var->name,
-                         adios_type_to_string_int (type));
+                    "Invalid datatype for array dimension on var %s: %s\n",
+                    var->name,
+                    adios_type_to_string_int (type));
             return 0;
     }
 }
 
 uint64_t adios_get_var_size (struct adios_var_struct * var
-                            ,struct adios_group_struct * group, void * data
-                            )
+        ,struct adios_group_struct * group, void * data
+        )
 {
     uint64_t size = 0;
 
@@ -4853,8 +4853,8 @@ uint64_t adios_get_var_size (struct adios_var_struct * var
                 {
                     struct adios_attribute_struct * attr = 0;
                     attr = adios_find_attribute_by_id (group->attributes
-                                                      ,d->dimension.id
-                                                      );
+                            ,d->dimension.id
+                            );
                     if (attr)
                     {
                         if (attr->var)
@@ -4862,19 +4862,19 @@ uint64_t adios_get_var_size (struct adios_var_struct * var
                             if (!attr->var->data)
                             {
                                 adios_error (err_invalid_var_as_dimension, 
-                                             "adios_get_var_size: "
-                                             "sizing of %s failed because "
-                                             "dimension component %s was "
-                                             "not provided\n",
-                                             var->name, attr->var->name);
+                                        "adios_get_var_size: "
+                                        "sizing of %s failed because "
+                                        "dimension component %s was "
+                                        "not provided\n",
+                                        var->name, attr->var->name);
                                 return 0;
                             }
                             else
                             {
                                 if (!adios_multiply_dimensions (&size, var
-                                                               ,attr->var->type
-                                                               ,attr->var->data
-                                                               )
+                                            ,attr->var->type
+                                            ,attr->var->data
+                                            )
                                    )
                                 {
                                     return 0;
@@ -4884,9 +4884,9 @@ uint64_t adios_get_var_size (struct adios_var_struct * var
                         else
                         {
                             if (!adios_multiply_dimensions (&size, var
-                                                           ,attr->type
-                                                           ,attr->value
-                                                           )
+                                        ,attr->type
+                                        ,attr->value
+                                        )
                                )
                             {
                                 return 0;
@@ -4919,9 +4919,9 @@ uint64_t adios_get_var_size (struct adios_var_struct * var
                     else
                     {
                         if (!adios_multiply_dimensions (&size, var
-                                                       ,dim_var->type
-                                                       ,dim_var->data
-                                                       )
+                                    ,dim_var->type
+                                    ,dim_var->data
+                                    )
                            )
                         {
                             return 0;
@@ -4968,11 +4968,11 @@ const char * adios_type_to_string_int (int type)
         case adios_double_complex:   return "double complex";
 
         default:
-        {
-            static char buf [50];
-            sprintf (buf, "(unknown: %d)", type);
-            return buf;
-        }
+                                     {
+                                         static char buf [50];
+                                         sprintf (buf, "(unknown: %d)", type);
+                                         return buf;
+                                     }
     }
 }
 
@@ -4988,7 +4988,7 @@ const char * adios_file_mode_to_string (int mode)
         case adios_mode_append: return "append";
 
         default:
-            sprintf (buf, "(unknown: %d)", mode);
+                                sprintf (buf, "(unknown: %d)", mode);
     }
 
     return buf;
@@ -5100,3 +5100,705 @@ int queue_dequeue (Queue * queue, void ** data)
 {
     return list_rem_next (queue, NULL, data);
 }
+
+// Functions for non-XML API fo ADIOS Schema
+
+// Parse mesh time series (single file for multiple time steps or
+// multiple files for time steps, basename + timeformat + extension)
+static int defineMeshTimeSeriesFormat (const char * timeseries
+        ,struct adios_group_struct * new_group
+        ,const char * name
+        )
+{
+    char * d1;                     // save of strdup
+    int64_t      p_new_group = (int64_t) new_group;
+    char * format_att_nam = 0;     // extension format .xxxx att name
+    char * format_att_val = 0;     // extension format att value
+
+    // We expect a number from 1-10 (max 10?)
+    // The number indicates how to write the time steps. Ex: 4 ==>
+    // varname.XXXX.png where XXXX is the time step padded with 0s 
+    // We do not fail if this is not given as variables all have nsteps
+    if (!timeseries){
+        return 1;
+    }
+
+    char * ptr_end;
+    d1 = strdup (timeseries);
+    if (strtod (d1, &ptr_end)){
+        conca_mesh_att_nam(&format_att_nam, name, "time-series-format");
+        adios_common_define_attribute (p_new_group,format_att_nam,"/",adios_double,d1,"");
+        free(format_att_val);    }
+        free (d1);
+        return 1;
+}
+
+// Parse mesh time scale (real time tracking, not integers)
+static int defineMeshTimeScale (const char * timescale
+        ,struct adios_group_struct * new_group
+        ,const char * name
+        )
+{
+    char * c;                      // comma location
+    char * d1;                     // save of strdup
+    int64_t      p_new_group = (int64_t) new_group;
+    char * gettscalefrom0 = 0;     // scale attribute xml value
+    char * gettscalefrom1 = 0;     // scale attribute xml value
+    char * gettscalefrom2 = 0;     // scale attribute xml value
+    char * time_var_att_nam = 0;   // scale attribute name for var or num
+    char * time_start_att_nam = 0; // scale attribute name for start
+    char * time_stride_att_nam = 0;// scale attribute name for stride
+    char * time_count_att_nam = 0; // scale attribute name for count
+    char * time_max_att_nam = 0;   // scale attribute name for max
+    char * time_min_att_nam = 0;   // scale attribute name for min
+    char * time_var_att_val = 0;   // scale attribute value for var or num
+    char * time_start_att_val = 0; // scale attribute value for start 
+    char * time_stride_att_val = 0;// scale attribute value for stride
+    char * time_count_att_val = 0; // scale attribute value for count
+    char * time_max_att_val = 0;   // scale attribute value for max
+    char * time_min_att_val = 0;   // scale attribute value for min
+    int counter = 0;               // used to get type of time scale bounds
+
+    // We are going to allow
+    // 1. a number =  just the number of time scale default start = 0
+    // 2. start/stride/count 3 components
+    // 3. min/max range where this mesh is used
+    // 4. An ADIOS var = time could be a list of int stored by user
+    char counterstr[5] = {0,0,0,0,0}; // used to create scale attributes
+
+    /* We do not fail if this is not given as variables all have nsteps
+       in ADIOS_inq_var = # of times the var was written
+       */
+    if (!timescale){
+        printf("time-scale attribute for mesh: %s not provided.\n", name);
+        return 1;
+    }
+
+    d1 = strdup (timescale);
+    char * ptr_end;
+    c = strtok (d1, ",");
+
+    while (c)
+    {
+        struct adios_var_struct * var = 0;
+        //if (adios_int_is_num (c))
+        if (!strtod (c,&ptr_end))
+        {
+            var =
+                adios_find_var_by_name (new_group->vars, c
+                        ,new_group->all_unique_var_names
+                        );
+            if (!var)
+            {
+                log_warn ("config.xml: invalid variable %s\n"
+                        "for time scale of mesh: %s\n"
+                        ,c
+                        ,name
+                        );
+                free (d1);
+
+                return 0;
+
+            }else{
+                // Found variable ==> create a dims attribute for it.
+                if (counter == 0){
+                    gettscalefrom0 = 0;
+                    gettscalefrom0 = strdup(c);
+                }else if (counter == 1){
+                    gettscalefrom1 = 0;
+                    gettscalefrom1 = strdup(c);
+                }else if (counter == 2){
+                    gettscalefrom2 = 0;
+                    gettscalefrom2 = strdup(c);
+                }
+                counter++;
+            }
+        }
+        else
+        {
+            if (counter == 0){
+                gettscalefrom0 = 0;
+                gettscalefrom0 = strdup(c);
+            }else if (counter == 1){
+                gettscalefrom1 = 0;
+                gettscalefrom1 = strdup(c);
+            }else if (counter == 2){
+                gettscalefrom2 = 0;
+                gettscalefrom2 = strdup(c);
+            }
+            counter++;
+        }
+
+        c = strtok (NULL, ",");
+    }
+    if (counter == 3){
+        time_start_att_val = strdup(gettscalefrom0);
+        conca_mesh_att_nam(&time_start_att_nam, name, "time-scale-start");
+        // if this is string
+        if (!strtod (time_start_att_val, &ptr_end))
+            adios_common_define_attribute (p_new_group,time_start_att_nam,"/",adios_string,time_start_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,time_start_att_nam,"/",adios_double,time_start_att_val,"");
+        time_stride_att_val = strdup(gettscalefrom1);
+        conca_mesh_att_nam(&time_stride_att_nam, name, "time-scale-stride");
+        // if this is string
+        if (!strtod (time_stride_att_val, &ptr_end))
+            adios_common_define_attribute (p_new_group,time_stride_att_nam,"/",adios_string,time_stride_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,time_stride_att_nam,"/",adios_double,time_stride_att_val,"");
+        time_count_att_val = strdup(gettscalefrom2);
+        conca_mesh_att_nam(&time_count_att_nam, name, "time-scale-count");
+        // if this is string
+        if (!strtod (time_count_att_val, &ptr_end))
+            adios_common_define_attribute (p_new_group,time_count_att_nam,"/",adios_string,time_count_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,time_count_att_nam,"/",adios_double,time_count_att_val,"");
+        free(time_start_att_val);
+        free(time_stride_att_val);
+        free(time_count_att_val);
+        free(gettscalefrom2);
+        free(gettscalefrom1);
+        free(gettscalefrom0);
+    }else if (counter == 2) {
+        conca_mesh_att_nam(&time_min_att_nam, name, "time-scale-min");
+        // if this is string
+        if (!strtod (time_min_att_val, &ptr_end))
+            adios_common_define_attribute (p_new_group,time_min_att_nam,"/",adios_string,time_min_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,time_min_att_nam,"/",adios_double,time_min_att_val,"");
+        time_max_att_val = strdup(gettscalefrom1);
+        conca_mesh_att_nam(&time_max_att_nam, name, "time-scale-max");
+        // if this is string
+        if (!strtod (time_max_att_val, &ptr_end))
+            adios_common_define_attribute (p_new_group,time_max_att_nam,"/",adios_string,time_max_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,time_max_att_nam,"/",adios_double,time_max_att_val,"");
+        free(time_min_att_val);
+        free(time_max_att_val);
+        free(gettscalefrom1);
+        free(gettscalefrom0);
+    } else if (counter == 1){
+        time_var_att_val = strdup(gettscalefrom0);
+        if (!strtod (time_var_att_val, &ptr_end)){
+            conca_mesh_att_nam(&time_var_att_nam, name, "time-scale-var");
+            adios_common_define_attribute (p_new_group,time_var_att_nam,"/",adios_string,time_var_att_val,"");
+        }else{
+            conca_mesh_att_nam(&time_var_att_nam, name, "time-scale-count");
+            adios_common_define_attribute (p_new_group,time_var_att_nam,"/",adios_double,time_var_att_val,"");
+        }
+        free(gettscalefrom0);
+        free(time_var_att_val);
+    }else{
+        printf("Error: time format not recognized.\nPlease check documentation for time formatting.\n");
+        free(d1);
+        return 0;
+    }
+
+    free (d1);
+
+    return 1;
+}
+
+// Parse mesh time steps (integers = number of times vars are written)
+static int defineMeshTimeSteps (const char * timesteps
+        ,struct adios_group_struct * new_group
+        ,const char * name
+        )
+{
+    char * c;                      // comma location
+    char * d1;                     // save of strdup
+    int64_t      p_new_group = (int64_t) new_group;
+    char * gettstepsfrom0 = 0;     // tstep attribute xml value
+    char * gettstepsfrom1 = 0;     // tstep attribute xml value
+    char * gettstepsfrom2 = 0;     // tstep attribute xml value
+    char * time_var_att_nam = 0;   // tstep attribute name for var or num
+    char * time_start_att_nam = 0; // tstep attribute name for start
+    char * time_stride_att_nam = 0;// tstep attribute name for stride
+    char * time_count_att_nam = 0; // tstep attribute name for count
+    char * time_max_att_nam = 0;   // tstep attribute name for max
+    char * time_min_att_nam = 0;   // tstep attribute name for min
+    char * time_var_att_val = 0;   // tstep attribute value for var or num
+    char * time_start_att_val = 0; // tstep attribute value for start 
+    char * time_stride_att_val = 0;// tstep attribute value for stride
+    char * time_count_att_val = 0; // tstep attribute value for count
+    char * time_max_att_val = 0;   // tstep attribute value for max
+    char * time_min_att_val = 0;   // tstep attribute value for min
+    int counter = 0;               // used to get type of time steps bounds
+
+    // We are going to allow
+    // 1. a number =  just the number of time steps default start = 0
+    // 2. start/stride/count 3 components
+    // 3. min/max range where this mesh is used
+    // 4. An ADIOS var = time could be a list of int stored by user
+    char counterstr[5] = {0,0,0,0,0}; // used to create tsteps attributes
+
+    /* We do not fail if this is not given as variables all have nsteps
+       in ADIOS_inq_var = # of times the var was written
+       */
+    if (!timesteps){
+        printf("time-steps for mesh %s attribute not provided.\n", name);
+        return 1;
+    }
+
+    d1 = strdup (timesteps);
+
+    c = strtok (d1, ",");
+
+    while (c)
+    {
+        struct adios_var_struct * var = 0;
+        if (adios_int_is_var (c))
+        {
+            var =
+                adios_find_var_by_name (new_group->vars, c
+                        ,new_group->all_unique_var_names
+                        );
+            if (!var)
+            {
+                log_warn ("config.xml: invalid variable %s\n"
+                        "for dimensions of mesh: %s\n"
+                        ,c
+                        ,name
+                        );
+                free (d1);
+
+                return 0;
+
+            }else{
+                // Found variable ==> create a dims attribute for it.
+                if (counter == 0){
+                    gettstepsfrom0 = 0;
+                    gettstepsfrom0 = strdup(c);
+                }else if (counter == 1){
+                    gettstepsfrom1 = 0;
+                    gettstepsfrom1 = strdup(c);
+                }else if (counter == 2){
+                    gettstepsfrom2 = 0;
+                    gettstepsfrom2 = strdup(c);
+                }
+                counter++;
+            }
+        }
+        else
+        {
+            if (counter == 0){
+                gettstepsfrom0 = 0;
+                gettstepsfrom0 = strdup(c);
+            }else if (counter == 1){
+                gettstepsfrom1 = 0;
+                gettstepsfrom1 = strdup(c);
+            }else if (counter == 2){
+                gettstepsfrom2 = 0;
+                gettstepsfrom2 = strdup(c);
+            }
+            counter++;
+        }
+
+        c = strtok (NULL, ",");
+    }
+
+    if (counter == 3){
+        time_start_att_val = strdup(gettstepsfrom0);
+        conca_mesh_att_nam(&time_start_att_nam, name, "time-steps-start");
+        // if this is string
+        if (adios_int_is_var (time_start_att_val))
+            adios_common_define_attribute (p_new_group,time_start_att_nam,"/",adios_string,time_start_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,time_start_att_nam,"/",adios_double,time_start_att_val,"");
+        time_stride_att_val = strdup(gettstepsfrom1);
+        conca_mesh_att_nam(&time_stride_att_nam, name, "time-steps-stride");
+        // if this is string
+        if (adios_int_is_var (time_stride_att_val))
+            adios_common_define_attribute (p_new_group,time_stride_att_nam,"/",adios_string,time_stride_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,time_stride_att_nam,"/",adios_double,time_stride_att_val,"");
+        time_count_att_val = strdup(gettstepsfrom2);
+        conca_mesh_att_nam(&time_count_att_nam, name, "time-steps-count");
+        // if this is string
+        if (adios_int_is_var (time_count_att_val))
+            adios_common_define_attribute (p_new_group,time_count_att_nam,"/",adios_string,time_count_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,time_count_att_nam,"/",adios_double,time_count_att_val,"");
+        free(time_start_att_val);
+        free(time_stride_att_val);
+        free(time_count_att_val);
+        free(gettstepsfrom2);
+        free(gettstepsfrom1);
+        free(gettstepsfrom0);
+    }else if (counter == 2) {
+        time_min_att_val = strdup(gettstepsfrom0);
+        conca_mesh_att_nam(&time_min_att_nam, name, "time-steps-min");
+        // if this is string
+        if (adios_int_is_var (time_min_att_val))
+            adios_common_define_attribute (p_new_group,time_min_att_nam,"/",adios_string,time_min_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,time_min_att_nam,"/",adios_double,time_min_att_val,"");
+        time_max_att_val = strdup(gettstepsfrom1);
+        conca_mesh_att_nam(&time_max_att_nam, name, "time-steps-max");
+        // if this is string
+        if (adios_int_is_var (time_max_att_val))
+            adios_common_define_attribute (p_new_group,time_max_att_nam,"/",adios_string,time_max_att_val,"");
+        else
+            adios_common_define_attribute (p_new_group,time_max_att_nam,"/",adios_double,time_max_att_val,"");
+        free(time_min_att_val);
+        free(time_max_att_val);
+        free(gettstepsfrom1);
+        free(gettstepsfrom0);
+    } else if (counter == 1){
+        time_var_att_val = strdup(gettstepsfrom0);
+        if (adios_int_is_var (time_var_att_val)){
+            conca_mesh_att_nam(&time_var_att_nam, name, "time-steps-var");
+            adios_common_define_attribute (p_new_group,time_var_att_nam,"/",adios_string,time_var_att_val,"");
+        }else{
+            conca_mesh_att_nam(&time_var_att_nam, name, "time-steps-count");
+            adios_common_define_attribute (p_new_group,time_var_att_nam,"/",adios_double,time_var_att_val,"");
+        }
+        free(time_var_att_val);
+        free(gettstepsfrom0);
+    }else{
+        printf("Error: time format not recognized.\nPlease check documentation for time formatting.\n");
+        free(d1);
+        return 0;
+    }
+
+    free (d1);
+
+    return 1;
+}
+
+// defining a uniform mesh 
+static int defineMeshUniform1 (char * dimensions, char * origin, char * spacing, char * maximum, struct adios_group_struct * new_group ,const char * name)
+{
+    if (dimensions)
+    {
+        if (!parseMeshUniformDimensions1 (dimensions, new_group, name))
+            return 0;
+    }else{
+        log_warn ("config.xml: value attribute on "
+                "dimensions required (%s)\n"
+                ,name
+                );
+        return 0;
+    }
+
+    if (origin)
+    {
+        if (!parseMeshUniformOrigin1 (origin, new_group, name))
+            return 0;
+    }else{
+        log_warn ("config.xml: value attribute on "
+                "origin required (%s)\n"
+                ,name
+                );
+        return 0;
+    }
+    if (spacing)
+    {
+        if (!parseMeshUniformSpacings1 (spacing, new_group, name))
+            return 0;
+    }else{
+        log_warn ("config.xml: value attribute on "
+                "spacing required (%s)\n"
+                ,name
+                );
+        return 0;
+    }
+
+    if (maximum)
+    {
+        if (!parseMeshUniformMaximums1 (maximum, new_group, name))
+            return 0;
+    }else{
+        log_warn ("config.xml: value attribute on "
+                "max required (%s)\n"
+                ,name
+                );
+        return 0;
+    }
+
+    return 1;
+}
+
+static int defineMeshRectilinear1 (char * dimensions, char * coordinates
+        ,struct adios_group_struct * new_group
+        ,const char * name
+        )
+{
+    if (dimensions)
+    {
+        if (!parseMeshRectilinearDimensions1 (dimensions, new_group, name))
+            return 0;
+    }else{
+        log_warn ("config.xml: value attribute on "
+                "dimensions required (%s)\n"
+                ,name
+                );
+        return 0;
+    }
+
+    // Determine if it is the multi-var or single-var case
+    if (coordinates)
+    {
+        char *p;
+        // If we do not find "," in the coordinates
+        if (!(p = strstr(coordinates, ","))){
+            if (!parseMeshRectilinearCoordinatesSingleVar1 (coordinates, new_group, name))
+                return 0;
+        }else{
+            if (!parseMeshRectilinearCoordinatesMultiVar1 (coordinates, new_group, name))
+                return 0;
+        }
+    }else{
+        log_warn ("config.xml: value attribute on "
+                "coordinates required for rectilinear mesh: (%s)\n"
+                ,name
+                );
+        return 0;
+    }
+    return 1;
+}
+
+static int defineMeshStructured1(char * dimensions, char * nspace
+        , char * points
+        ,struct adios_group_struct * new_group
+        , char * name){
+    if (dimensions){
+        if (!parseMeshStructuredDimensions1 (dimensions, new_group, name))
+            return 0;
+    }else{
+        log_warn ("config.xml: value attribute on "
+                "dimensions required (%s)\n"
+                ,name
+                );
+
+        return 0;
+    }
+
+    if (nspace){
+        if (!parseMeshStructuredNspace1 (nspace, new_group, name))
+            return 0;
+    }
+    if (points){
+        char *p;
+        // If we do find "," in points (single-var case)
+        if (!(p = strstr(points, ","))){
+            if (!parseMeshStructuredPointsSingleVar1 (points, new_group, name))
+                return 0;
+        }else{
+            if (!parseMeshStructuredPointsMultiVar1 (points, new_group, name))
+                return 0;
+        }
+    }else{
+        log_warn ("config.xml: value on"
+                "points required for mesh type=structured (%s)\n"
+                ,name
+                );
+        return 0;
+    }
+
+    return 1;
+}
+
+static int defineMeshUnstructured1(char *nspace
+        , char *npoints, char *points
+        , char * data, char * count, char * type
+        , struct adios_group_struct * new_group
+        , const char * name)
+{
+    int saw_cell_set = 0;
+    if (nspace)
+    {
+        if (!parseMeshUnstructuredNspace1 (nspace, new_group, name))
+            return 0;
+    }
+    if (npoints)
+    {
+        if (!parseMeshUnstructuredNpoints1 (npoints, new_group, name))
+            return 0;
+
+    }
+    if (points){
+        char *p;
+        // If we do find "," in points (single-var case)
+        if (!(p = strstr(points, ","))){
+            if (!parseMeshUnstructuredPointsSingleVar1 (points, new_group, name))
+                return 0;
+        }else{
+            if (!parseMeshUnstructuredPointsMultiVar1 (points, new_group, name))
+                return 0;
+        }
+    }else{
+        log_warn ("config.xml: value on"
+                "points required for mesh type=structured (%s)\n"
+                ,name
+                );
+        return 0;
+    }
+    if (!data){
+        log_warn ("config.xml: data attribute on "
+                "uniform-cells required (%s)\n"
+                ,name
+                );
+        return 0;
+    }
+    if (!count)
+    {
+        log_warn ("config.xml: count attribute on "
+                "uniform-cells required (%s)\n"
+                ,name
+                );
+        return 0;
+    }
+    if (!type)
+    {
+        log_warn ("config.xml: type attribute on "
+                "uniform-cells required (%s)\n"
+                ,name
+                );
+        return 0;
+    }
+    char *pt;
+    // If we do find "," in data (uniform cell case)
+    if (!(pt = strstr(data, ","))){
+        if (pt = strstr(count,",")){
+            log_warn ("count value on uniform-cells (check data value)"
+                    " should not contain ',' (%s)\n",name);
+            return 0;
+        }
+        if (pt = strstr(type,",")){
+            log_warn ("type value on uniform-cells (check data value)"
+                    " should not contain ',' (%s)\n", name);
+            return 0;
+        }
+        if (!parseMeshUnstructuredUniformCells1 (count, data, type
+                    , new_group
+                    ,name
+                    )
+           )
+            return 0;
+        // Mixed cells calse
+    }else{
+        if (!(pt = strstr(count,","))){
+            log_warn ("count value on mixed-cells (check data value)"
+                    " should contain ',' (%s)\n",name);
+            return 0;
+        }
+        if (!(pt = strstr(type,","))){
+            log_warn ("type value on mixed-cells (check data value)"
+                    " should contain ',' (%s)\n", name);
+            return 0;
+        }
+        if (!parseMeshUnstructuredMixedCells1 (count, data, type
+                    , new_group, name))
+            return 0;
+    }
+
+    return 1;
+}
+
+// Compose schema attributes for mesh and var
+// concat numbered mesh attribute name strings
+void conca_mesh_numb_att_nam(char ** returnstr, const char * meshname, char * att_nam, char counterstr[5]) {
+    *returnstr = malloc (strlen("adios_schema/") + strlen(meshname) + strlen(att_nam) + strlen(counterstr) + 3);
+    strcpy(*returnstr,"adios_schema");
+    strcat(*returnstr,"/");
+    strcat(*returnstr,meshname);
+    strcat(*returnstr,"/");
+    strcat(*returnstr,att_nam);
+    strcat(*returnstr,counterstr);
+}
+
+// concat mesh attribute name strings
+void conca_mesh_att_nam(char ** returnstr, const char * meshname, char * att_nam) {
+    int slength = 0;
+    slength = strlen("adios_schema/");
+    slength = slength + strlen(meshname);
+    slength = slength + 1;
+    slength = slength + 1;
+    slength = slength + strlen(att_nam);
+
+    *returnstr = malloc (slength);
+
+    strcpy(*returnstr,"adios_schema/");
+    strcat(*returnstr,meshname);
+    strcat(*returnstr,"/");
+    strcat(*returnstr,att_nam);
+}
+
+// concat var attribute name strings
+void conca_var_att_nam(char ** returnstr, const char * varname, char * att_nam) {
+    int slength = 0;
+    slength = strlen("adios_schema/");
+    slength = slength + strlen(varname);
+    slength = slength + 1;
+    slength = slength + 1;
+    slength = slength + strlen(att_nam);
+
+    *returnstr = malloc (slength);
+
+    strcpy(*returnstr,varname);
+    strcat(*returnstr,"/adios_schema/");
+    strcat(*returnstr,att_nam);
+}
+
+// At this point mesh structures are not really being used,
+// but this function still makes sure that we don't add a 
+// mesh twice (same name)
+// Append a mesh to a group
+enum ADIOS_FLAG adios_append_mesh (struct adios_mesh_struct ** root
+        ,struct adios_mesh_struct * mesh
+        ,uint16_t id
+        )
+{
+    while (root)
+    {
+        if (*root && !strcasecmp ((*root)->name, mesh->name))
+        {
+            return adios_flag_no;
+        }
+        if (!*root)
+        {
+            *root = mesh;
+            root = 0;
+        }
+        else
+        {
+            root = &(*root)->next;
+        }
+    }
+
+    return adios_flag_yes;
+}
+
+// Define a new mesh
+struct adios_mesh_struct * adios_common_define_mesh (
+        int64_t group_id, const char * name,
+        enum ADIOS_FLAG time_varying,
+        enum ADIOS_MESH_TYPE type)
+{
+    struct adios_group_struct * t = (struct adios_group_struct *) group_id;
+    struct adios_mesh_struct * m = (struct adios_mesh_struct *)
+        malloc (sizeof (struct adios_mesh_struct));
+    enum ADIOS_FLAG flag;
+
+    m->name = strdup (name);
+    m->type = type;
+    m->time_varying = time_varying;
+    m->next = 0;
+
+    flag = adios_append_mesh (&t->meshs, m, t->mesh_count);
+    if (flag == adios_flag_no)
+    {
+        log_warn ("config.xml: unique mesh names required; "
+                "second mesh: %s will be ignored.\n"
+                ,name
+                );
+        free(m);
+        m = 0;
+    } else {
+        t->mesh_count++;
+    }
+
+    return m;
+}
+

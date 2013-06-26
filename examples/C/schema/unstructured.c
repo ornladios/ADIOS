@@ -404,7 +404,7 @@ int main (int argc, char ** argv )
 
     adios_init (xmlfilename, comm);
 
-    adios_open (&adios_handle, "channel", filename, "w", comm);
+    adios_open (&adios_handle, "field3d", filename, "w", comm);
 
     adios_groupsize = 4 \
 	+ 4 \
