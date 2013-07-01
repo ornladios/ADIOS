@@ -221,7 +221,14 @@ int adios_parse_dimension (const char * dimension
     dim->dimension.rank = 0;
     dim->dimension.id = 0;
     dim->dimension.time_index = adios_flag_no;
-    if (adios_int_is_var (dimension))
+    if ( g->time_index_name &&
+         !strcasecmp (g->time_index_name, dimension)
+       )
+    {
+        /* this is time dimension */
+        dim->dimension.time_index = adios_flag_yes;
+    }
+    else if (adios_int_is_var (dimension))
     {
         struct adios_var_struct * var = 0;
         dim->dimension.rank = 0;
@@ -237,20 +244,11 @@ int adios_parse_dimension (const char * dimension
 
             if (!attr)
             {
-                if (   g->time_index_name
-                        && !strcasecmp (g->time_index_name, dimension)
-                   )
-                {
-                    dim->dimension.time_index = adios_flag_yes;
-                }
-                else
-                {
-                    adios_error (err_invalid_dimension, 
-                            "config.xml: invalid var dimension: %s\n", 
-                            dimension);
+                adios_error (err_invalid_dimension, 
+                        "config.xml: invalid var dimension: %s\n", 
+                        dimension);
 
-                    return 0;
-                }
+                return 0;
             }
             else
             {
@@ -359,6 +357,9 @@ int adios_parse_dimension (const char * dimension
 
             if (!attr)
             {
+                /* FIXME: Is time dimension allowed for global dim definition?
+                 * What is this code doing here? */
+                /*
                 if (   g->time_index_name
                         && !strcasecmp (g->time_index_name, global_dimension)
                    )
@@ -366,6 +367,7 @@ int adios_parse_dimension (const char * dimension
                     dim->global_dimension.time_index = adios_flag_yes;
                 }
                 else
+                */
                 {
                     adios_error (err_invalid_global_dimension, 
                             "config.xml: invalid global-bounds dimension: %s\n",
@@ -479,6 +481,9 @@ int adios_parse_dimension (const char * dimension
 
             if (!attr)
             {
+                /* FIXME: Is time dimension allowed for offset definition?
+                 * What is this code doing here? */
+                /*
                 if (   g->time_index_name
                         && !strcasecmp (g->time_index_name, local_offset)
                    )
@@ -486,6 +491,7 @@ int adios_parse_dimension (const char * dimension
                     dim->local_offset.time_index = adios_flag_yes;
                 }
                 else
+                */
                 {
                     adios_error (err_invalid_offset, 
                             "config.xml: invalid var local_offset: %s\n",
