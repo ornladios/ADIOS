@@ -56,16 +56,19 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         export CXX=pgCC
         export FC=pgf90
         WITHDART="--with-dataspaces=/ccs/proj/e2e/dataspaces/sith/$TARGET"
+        WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/sith/$TARGET"
     elif [ "$TARGET" == "gnu" ]; then
         export CC=gcc
         export CXX=g++
         export FC=gfortran
         WITHDART="--with-dataspaces=/ccs/proj/e2e/dataspaces/sith/$TARGET"
+        WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/sith/$TARGET"
     elif [ "$TARGET" == "intel" ]; then
         export CC=icc
         export CXX=icpc
         export FC=ifort
         WITHDART=""
+        WITHFLEX=""
     else
         echo "TARGET must be pgi or gnu or intel"
         exit 1
@@ -73,12 +76,12 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
     export CFLAGS="-g -fPIC" 
-    #./configure --prefix=/ccs/proj/e2e/rbarreto/ADIOS/sith.gnu.1.4.1 \
-    ./configure --prefix=/ccs/proj/e2e/rbarreto/ADIOS/sith.gnu \
+    ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/sith.$TARGET \
         --enable-dependency-tracking \
         --enable-research-transports \
         --with-lustre=/usr/lib64 \
         $WITHDART \
+        $WITHFLEX \
         --with-hdf5=${SEQ_HDF5_DIR} \
         --with-hdf5-libs="${SEQ_HDF5_CLIB}" \
         --with-phdf5=${PAR_HDF5_DIR} \
@@ -383,13 +386,14 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
       module unload papi
       module unload pmi
       module load PrgEnv-$TARGET
-      module load dataspaces/1.0.0
+      #module load dataspaces/1.0.0
       if [ "$TARGET" == "pgi" ]; then
           module swap pgi pgi/11.8.0
           # NSSI needs -pgcpplibs flag 
           export LDFLAGS="-pgcpplibs" 
           unset EXTRA_LIBS 
-          WITHDART="--with-dataspaces=$DATASPACES_DIR"
+          #WITHDART="--with-dataspaces=$DATASPACES_DIR"
+          WITHDART="--with-dataspaces=/ccs/proj/e2e/dataspaces/chester/pgi --with-dimes=/ccs/proj/e2e/dataspaces/chester/pgi"
       elif [ "$TARGET" == "gnu" ]; then
           # NSSI needs libstdc++
           unset LDFLAGS 
@@ -409,11 +413,11 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
       #export CC=mpicc
       #export FC=mpif90
       CFLAGS="-g -fPIC" ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/chester.$TARGET \
-          --enable-dependency-tracking 
-#          --with-cray-pmi=/opt/cray/pmi/default \
-#          --with-cray-ugni-incdir=/opt/cray/gni-headers/2.1-1.0400.4351.3.1.gem/include \
-#          --with-cray-ugni-libdir=/opt/cray/ugni/default/lib \
-#          $WITHDART
+          --enable-dependency-tracking \
+          --with-cray-pmi=/opt/cray/pmi/default \
+          --with-cray-ugni-incdir=/opt/cray/gni-headers/2.1-1.0400.4351.3.1.gem/include \
+          --with-cray-ugni-libdir=/opt/cray/ugni/default/lib \
+          $WITHDART
 #            --with-lustre=/opt/xt-lustre-ss/2.2_1.6.5/usr \
 #            --with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.$TARGET \
 #            --enable-research-transports \
@@ -808,6 +812,7 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
         --with-phdf5=/opt/hdf5 \
         --with-hdf5=/opt/hdf5.seq
 
+
 elif [ `hostname | cut -c 1-7` == "ubuntu" ]; then
 
     #########################
@@ -821,6 +826,7 @@ elif [ `hostname | cut -c 1-7` == "ubuntu" ]; then
         #--with-hdf5=/usr/local/hdf5-serial\
         #--with-phdf5=/usr/local \
         #--with-netcdf=/usr 
+
 
 elif [ `hostname | cut -c 1-7` == "nostril" ]; then
 
@@ -836,7 +842,6 @@ elif [ `hostname | cut -c 1-7` == "nostril" ]; then
         --without-netcdf --without-nc4par --without-hdf5 --without-phdf5
         #--with-hdf5=/usr/local/hdf5-serial\
         #--with-phdf5=/usr/local \
-
 
 
 elif [ `hostname | cut -c 1-6` == "tomato" ]; then
@@ -865,10 +870,32 @@ elif [ `hostname | cut -c 1-4` == "qliu" ]; then
     ./configure --prefix=/home/qliu/ADIOS \
         --enable-dependency-tracking \
         --with-mxml=/home/qliu/mxml \
-        #--with-phdf5=/home/thkorde/local \
+    --with-phdf5=/home/thkorde/local \
         #--with-hdf5=/home/thkorde/local \
         #--with-netcdf=/home/thkorde/local
 
+elif [ `hostname | cut -c 1-7` == "esimmon" ]; then
+
+    #######################
+    # Esimmon Virtual Box #
+    #######################
+    echo "Configure on ESIMMON VirtualBox."
+    export MPICC=mpicc
+    export MPICXX=mpicxx
+    export MPIFC=mpif90
+    export CC=gcc
+    export CXX=g++
+    export FC=gfortran
+
+    #export CFLAGS="-g -fPIC" 
+    ./configure --prefix=/opt/adios/1.5.0 \
+        --enable-dependency-tracking \
+        --with-mxml=/opt/mxml \
+        --with-hdf5=/opt/hdf5 \
+        --with-phdf5=/opt/phdf5 \
+        --with-netcdf=/opt/netcdf3 \
+        --with-nc4par=/opt/nc4par \
+        --with-flexpath=/opt/chaos
 
 else
     echo "Could not determine what machine is this."
