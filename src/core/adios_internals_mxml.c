@@ -1651,11 +1651,11 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                     char * meshfile = 0;
                     char * meshgroup = 0;
                     char * meshtimeformat = 0;
-                    conca_mesh_att_nam(&meshtype, name, "type");
-                    conca_mesh_att_nam(&meshtime, name, "time-varying");
-                    conca_mesh_att_nam(&meshfile, name, "mesh-file");
-                    conca_mesh_att_nam(&meshgroup, name, "mesh-group");
-                    conca_mesh_att_nam(&meshtimeformat, name, "time-series-format");
+                    adios_conca_mesh_att_nam(&meshtype, name, "type");
+                    adios_conca_mesh_att_nam(&meshtime, name, "time-varying");
+                    adios_conca_mesh_att_nam(&meshfile, name, "mesh-file");
+                    adios_conca_mesh_att_nam(&meshgroup, name, "mesh-group");
+                    adios_conca_mesh_att_nam(&meshtimeformat, name, "time-series-format");
 
                     // Define attribute for the type and time varying characteristics
                     adios_common_define_attribute (ptr_new_group,meshtype,"/",adios_string,type,"");

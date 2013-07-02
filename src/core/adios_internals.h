@@ -562,6 +562,8 @@ int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
 /* some internal functions that adios_internals.c and adios_internals_mxml.c share */
 int adios_int_is_var (const char * temp); // 1 == yes, 0 == no
 int adios_int_is_num (char * temp); // 1 == yes, 0 == no
+void adios_conca_mesh_numb_att_nam(char ** returnstr, const char * meshname, char * att_nam, char counterstr[5]);
+void adios_conca_mesh_att_nam(char ** returnstr, const char * meshname, char * att_nam);
 
 // queue code for adaptive message passing
 #ifdef __cplusplus

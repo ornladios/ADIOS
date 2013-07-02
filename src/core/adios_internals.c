@@ -5132,7 +5132,7 @@ int defineMeshTimeSeriesFormat (const char * timeseries
     char * ptr_end;
     d1 = strdup (timeseries);
     if (strtod (d1, &ptr_end)){
-        conca_mesh_att_nam(&format_att_nam, name, "time-series-format");
+        adios_conca_mesh_att_nam(&format_att_nam, name, "time-series-format");
         adios_common_define_attribute (p_new_group,format_att_nam,"/",adios_double,d1,"");
         free(format_att_val);    }
         free (d1);
@@ -5239,21 +5239,21 @@ int defineMeshTimeScale (const char * timescale
     }
     if (counter == 3){
         time_start_att_val = strdup(gettscalefrom0);
-        conca_mesh_att_nam(&time_start_att_nam, name, "time-scale-start");
+        adios_conca_mesh_att_nam(&time_start_att_nam, name, "time-scale-start");
         // if this is string
         if (!strtod (time_start_att_val, &ptr_end))
             adios_common_define_attribute (p_new_group,time_start_att_nam,"/",adios_string,time_start_att_val,"");
         else
             adios_common_define_attribute (p_new_group,time_start_att_nam,"/",adios_double,time_start_att_val,"");
         time_stride_att_val = strdup(gettscalefrom1);
-        conca_mesh_att_nam(&time_stride_att_nam, name, "time-scale-stride");
+        adios_conca_mesh_att_nam(&time_stride_att_nam, name, "time-scale-stride");
         // if this is string
         if (!strtod (time_stride_att_val, &ptr_end))
             adios_common_define_attribute (p_new_group,time_stride_att_nam,"/",adios_string,time_stride_att_val,"");
         else
             adios_common_define_attribute (p_new_group,time_stride_att_nam,"/",adios_double,time_stride_att_val,"");
         time_count_att_val = strdup(gettscalefrom2);
-        conca_mesh_att_nam(&time_count_att_nam, name, "time-scale-count");
+        adios_conca_mesh_att_nam(&time_count_att_nam, name, "time-scale-count");
         // if this is string
         if (!strtod (time_count_att_val, &ptr_end))
             adios_common_define_attribute (p_new_group,time_count_att_nam,"/",adios_string,time_count_att_val,"");
@@ -5266,14 +5266,14 @@ int defineMeshTimeScale (const char * timescale
         free(gettscalefrom1);
         free(gettscalefrom0);
     }else if (counter == 2) {
-        conca_mesh_att_nam(&time_min_att_nam, name, "time-scale-min");
+        adios_conca_mesh_att_nam(&time_min_att_nam, name, "time-scale-min");
         // if this is string
         if (!strtod (time_min_att_val, &ptr_end))
             adios_common_define_attribute (p_new_group,time_min_att_nam,"/",adios_string,time_min_att_val,"");
         else
             adios_common_define_attribute (p_new_group,time_min_att_nam,"/",adios_double,time_min_att_val,"");
         time_max_att_val = strdup(gettscalefrom1);
-        conca_mesh_att_nam(&time_max_att_nam, name, "time-scale-max");
+        adios_conca_mesh_att_nam(&time_max_att_nam, name, "time-scale-max");
         // if this is string
         if (!strtod (time_max_att_val, &ptr_end))
             adios_common_define_attribute (p_new_group,time_max_att_nam,"/",adios_string,time_max_att_val,"");
@@ -5286,10 +5286,10 @@ int defineMeshTimeScale (const char * timescale
     } else if (counter == 1){
         time_var_att_val = strdup(gettscalefrom0);
         if (!strtod (time_var_att_val, &ptr_end)){
-            conca_mesh_att_nam(&time_var_att_nam, name, "time-scale-var");
+            adios_conca_mesh_att_nam(&time_var_att_nam, name, "time-scale-var");
             adios_common_define_attribute (p_new_group,time_var_att_nam,"/",adios_string,time_var_att_val,"");
         }else{
-            conca_mesh_att_nam(&time_var_att_nam, name, "time-scale-count");
+            adios_conca_mesh_att_nam(&time_var_att_nam, name, "time-scale-count");
             adios_common_define_attribute (p_new_group,time_var_att_nam,"/",adios_double,time_var_att_val,"");
         }
         free(gettscalefrom0);
@@ -5405,21 +5405,21 @@ int defineMeshTimeSteps (const char * timesteps
 
     if (counter == 3){
         time_start_att_val = strdup(gettstepsfrom0);
-        conca_mesh_att_nam(&time_start_att_nam, name, "time-steps-start");
+        adios_conca_mesh_att_nam(&time_start_att_nam, name, "time-steps-start");
         // if this is string
         if (adios_int_is_var (time_start_att_val))
             adios_common_define_attribute (p_new_group,time_start_att_nam,"/",adios_string,time_start_att_val,"");
         else
             adios_common_define_attribute (p_new_group,time_start_att_nam,"/",adios_double,time_start_att_val,"");
         time_stride_att_val = strdup(gettstepsfrom1);
-        conca_mesh_att_nam(&time_stride_att_nam, name, "time-steps-stride");
+        adios_conca_mesh_att_nam(&time_stride_att_nam, name, "time-steps-stride");
         // if this is string
         if (adios_int_is_var (time_stride_att_val))
             adios_common_define_attribute (p_new_group,time_stride_att_nam,"/",adios_string,time_stride_att_val,"");
         else
             adios_common_define_attribute (p_new_group,time_stride_att_nam,"/",adios_double,time_stride_att_val,"");
         time_count_att_val = strdup(gettstepsfrom2);
-        conca_mesh_att_nam(&time_count_att_nam, name, "time-steps-count");
+        adios_conca_mesh_att_nam(&time_count_att_nam, name, "time-steps-count");
         // if this is string
         if (adios_int_is_var (time_count_att_val))
             adios_common_define_attribute (p_new_group,time_count_att_nam,"/",adios_string,time_count_att_val,"");
@@ -5433,14 +5433,14 @@ int defineMeshTimeSteps (const char * timesteps
         free(gettstepsfrom0);
     }else if (counter == 2) {
         time_min_att_val = strdup(gettstepsfrom0);
-        conca_mesh_att_nam(&time_min_att_nam, name, "time-steps-min");
+        adios_conca_mesh_att_nam(&time_min_att_nam, name, "time-steps-min");
         // if this is string
         if (adios_int_is_var (time_min_att_val))
             adios_common_define_attribute (p_new_group,time_min_att_nam,"/",adios_string,time_min_att_val,"");
         else
             adios_common_define_attribute (p_new_group,time_min_att_nam,"/",adios_double,time_min_att_val,"");
         time_max_att_val = strdup(gettstepsfrom1);
-        conca_mesh_att_nam(&time_max_att_nam, name, "time-steps-max");
+        adios_conca_mesh_att_nam(&time_max_att_nam, name, "time-steps-max");
         // if this is string
         if (adios_int_is_var (time_max_att_val))
             adios_common_define_attribute (p_new_group,time_max_att_nam,"/",adios_string,time_max_att_val,"");
@@ -5453,10 +5453,10 @@ int defineMeshTimeSteps (const char * timesteps
     } else if (counter == 1){
         time_var_att_val = strdup(gettstepsfrom0);
         if (adios_int_is_var (time_var_att_val)){
-            conca_mesh_att_nam(&time_var_att_nam, name, "time-steps-var");
+            adios_conca_mesh_att_nam(&time_var_att_nam, name, "time-steps-var");
             adios_common_define_attribute (p_new_group,time_var_att_nam,"/",adios_string,time_var_att_val,"");
         }else{
-            conca_mesh_att_nam(&time_var_att_nam, name, "time-steps-count");
+            adios_conca_mesh_att_nam(&time_var_att_nam, name, "time-steps-count");
             adios_common_define_attribute (p_new_group,time_var_att_nam,"/",adios_double,time_var_att_val,"");
         }
         free(time_var_att_val);
@@ -5715,7 +5715,7 @@ void conca_mesh_numb_att_nam(char ** returnstr, const char * meshname, char * at
 }
 
 // concat mesh attribute name strings
-void conca_mesh_att_nam(char ** returnstr, const char * meshname, char * att_nam) {
+void adios_conca_mesh_att_nam(char ** returnstr, const char * meshname, char * att_nam) {
     int slength = 0;
     slength = strlen("adios_schema/");
     slength = slength + strlen(meshname);
@@ -5997,7 +5997,7 @@ int defineVarTimeSeriesFormat (const char * timeseries
     char * ptr_end;
     d1 = strdup (timeseries);
     if (strtod(d1, &ptr_end)){
-        conca_mesh_att_nam(&format_att_nam, name, "time-series-format");
+        adios_conca_mesh_att_nam(&format_att_nam, name, "time-series-format");
         adios_common_define_attribute (p_new_group,format_att_nam,"/",adios_string,d1,"");
         free(format_att_val);
     }
@@ -6312,7 +6312,7 @@ int parseMeshUniformDimensions1 (const char * dimensions
     counterstr[0] = '\0';
     snprintf(counterstr, 5, "%d", counter);
     dims = 0;
-    conca_mesh_att_nam(&dims, name, "dimensions-num");
+    adios_conca_mesh_att_nam(&dims, name, "dimensions-num");
 
     adios_common_define_attribute (p_new_group,dims,"/",adios_double,counterstr,"");
 
@@ -6366,7 +6366,7 @@ int parseMeshUniformMaximums1 (const char * maximum
     counterstr[0] = '\0';
     snprintf(counterstr, 5, "%d", counter);
     maxa = 0;
-    conca_mesh_att_nam(&maxa, name, "maximums-num");
+    adios_conca_mesh_att_nam(&maxa, name, "maximums-num");
     adios_common_define_attribute (p_new_group,maxa,"/",adios_double,counterstr,"");
     free (maxa);
     free (d1);
@@ -6418,7 +6418,7 @@ int parseMeshUniformOrigin1 (const char * origin
     counterstr[0] = '\0';
     snprintf(counterstr, 5, "%d", counter);
     orgs = 0;
-    conca_mesh_att_nam(&orgs, name, "origins-num");
+    adios_conca_mesh_att_nam(&orgs, name, "origins-num");
     adios_common_define_attribute (p_new_group,orgs,"/",adios_double,counterstr,"");
 
     free (orgs);
@@ -6468,7 +6468,7 @@ int parseMeshUniformSpacings1 (const char * spacing
     counterstr[0] = '\0';
     snprintf(counterstr, 5, "%d", counter);
     spas = 0;
-    conca_mesh_att_nam(&spas, name, "spacings-num");
+    adios_conca_mesh_att_nam(&spas, name, "spacings-num");
     adios_common_define_attribute (p_new_group,spas,"/",adios_double,counterstr,"");
     free (spas);
 
@@ -6521,7 +6521,7 @@ int parseMeshRectilinearDimensions1 (const char * dimensions
     counterstr[0] = '\0';    
     snprintf(counterstr, 5, "%d", counter);
     dims = 0;
-    conca_mesh_att_nam(&dims, name, "dimensions-num");
+    adios_conca_mesh_att_nam(&dims, name, "dimensions-num");
     adios_common_define_attribute (p_new_group,dims,"/",adios_double,counterstr,"");
 
     free (dims); 
@@ -6576,7 +6576,7 @@ int parseMeshRectilinearCoordinatesMultiVar1 (const char * coordinates
         char * coords = 0;
         counterstr[0] = '\0';
         snprintf(counterstr, 5, "%d", counter);
-        conca_mesh_att_nam(&coords, name, "coords-multi-var-num");
+        adios_conca_mesh_att_nam(&coords, name, "coords-multi-var-num");
         adios_common_define_attribute (p_new_group,coords,"/",adios_double,counterstr,"");
         free (coords);
     } else
@@ -6615,7 +6615,7 @@ int parseMeshRectilinearCoordinatesSingleVar1 (const char * coordinates
     }
 
     d1 = strdup (coordinates);
-    conca_mesh_att_nam(&coo_att_nam, name, "coords-single-var");
+    adios_conca_mesh_att_nam(&coo_att_nam, name, "coords-single-var");
     adios_common_define_attribute (p_new_group,coo_att_nam,"/",adios_string,d1,"");
     free (coo_att_nam);
     free (d1);
@@ -6643,7 +6643,7 @@ int parseMeshStructuredNspace1 (const char * nspace
     }
 
     d1 = strdup (nspace);
-    conca_mesh_att_nam(&nsp_att_nam, name, "nspace");
+    adios_conca_mesh_att_nam(&nsp_att_nam, name, "nspace");
     adios_common_define_attribute (p_new_group,nsp_att_nam,"/",adios_double,nspace,"");
     free (nsp_att_nam);
     free (d1);
@@ -6693,7 +6693,7 @@ int parseMeshStructuredDimensions1 (const char * dimensions
     counterstr[0] = '\0';
     snprintf(counterstr, 5, "%d", counter);
     dims = 0;
-    conca_mesh_att_nam(&dims, name, "dimensions-num");
+    adios_conca_mesh_att_nam(&dims, name, "dimensions-num");
     adios_common_define_attribute (p_new_group,dims,"/",adios_double,counterstr,"");
 
     free (dims);
@@ -6723,7 +6723,7 @@ int parseMeshStructuredPointsSingleVar1 (const char * points
     }
 
     d1 = strdup (points);
-        conca_mesh_att_nam(&pts_att_nam, name, "points-single-var");
+        adios_conca_mesh_att_nam(&pts_att_nam, name, "points-single-var");
         adios_common_define_attribute (p_new_group,pts_att_nam,"/",adios_string,d1,"");
         free (pts_att_nam);
     free (d1);
@@ -6775,7 +6775,7 @@ int parseMeshStructuredPointsMultiVar1 (const char * points
         char * pts = 0;
         counterstr[0] = '\0';
         snprintf(counterstr, 5, "%d", counter);
-        conca_mesh_att_nam(&pts, name, "points-multi-var-num");
+        adios_conca_mesh_att_nam(&pts, name, "points-multi-var-num");
         adios_common_define_attribute (p_new_group,pts,"/",adios_double,counterstr,"");
         free (pts);
     } else
@@ -6815,7 +6815,7 @@ int parseMeshUnstructuredNspace1 (const char * nspace
     }
 
     d1 = strdup (nspace);
-    conca_mesh_att_nam(&nsp_att_nam, name, "nspace");
+    adios_conca_mesh_att_nam(&nsp_att_nam, name, "nspace");
     adios_common_define_attribute (p_new_group,nsp_att_nam,"/",adios_string,nspace,"");
     free (nsp_att_nam);
     free (d1);
@@ -6845,7 +6845,7 @@ int parseMeshUnstructuredNpoints1 (const char * npoints
 
     d1 = strdup (npoints);
 
-    conca_mesh_att_nam(&npts_att_nam, name, "npoints");
+    adios_conca_mesh_att_nam(&npts_att_nam, name, "npoints");
     adios_common_define_attribute (p_new_group,npts_att_nam,"/",adios_string,npoints,"");
     free (npts_att_nam);
 
@@ -6898,7 +6898,7 @@ int parseMeshUnstructuredPointsMultiVar1 (const char * points
         char * pts = 0;
         counterstr[0] = '\0';
         snprintf(counterstr, 5, "%d", counter);
-        conca_mesh_att_nam(&pts, name, "points-multi-var-num");
+        adios_conca_mesh_att_nam(&pts, name, "points-multi-var-num");
         adios_common_define_attribute (p_new_group,pts,"/",adios_double,counterstr,"");
         free (pts);
         free (d1);
@@ -6937,7 +6937,7 @@ int parseMeshUnstructuredPointsSingleVar1 (const char * points
     }
 
     d1 = strdup (points);
-    conca_mesh_att_nam(&pts_att_nam, name, "points-single-var");
+    adios_conca_mesh_att_nam(&pts_att_nam, name, "points-single-var");
     adios_common_define_attribute (p_new_group,pts_att_nam,"/",adios_string,d1,"");
     free (pts_att_nam);
 
@@ -6963,7 +6963,7 @@ int parseMeshUnstructuredUniformCells1 (const char * count
     char * celldata_att_nam = 0;  // single cell data  attribute
     char * celltype_att_nam = 0;  // single cell type attribute
 
-    conca_mesh_att_nam(&ncellset_att_nam,name,"ncsets");
+    adios_conca_mesh_att_nam(&ncellset_att_nam,name,"ncsets");
     adios_common_define_attribute (p_new_group,ncellset_att_nam,"/",adios_double,"1","");
     free (ncellset_att_nam);
 
@@ -6996,19 +6996,19 @@ int parseMeshUnstructuredUniformCells1 (const char * count
     }
 
     d1 = strdup (count);
-    conca_mesh_att_nam(&cellcount_att_nam, name, "ccount");
+    adios_conca_mesh_att_nam(&cellcount_att_nam, name, "ccount");
     adios_common_define_attribute (p_new_group,cellcount_att_nam,"/",adios_string,d1,"");
     free (cellcount_att_nam);
     free (d1);
 
     d1 = strdup (data);
-    conca_mesh_att_nam(&celldata_att_nam, name, "cdata");
+    adios_conca_mesh_att_nam(&celldata_att_nam, name, "cdata");
     adios_common_define_attribute (p_new_group,celldata_att_nam,"/",adios_string,d1,"");
     free (celldata_att_nam);
     free (d1);
 
     d1 = strdup (type);
-    conca_mesh_att_nam(&celltype_att_nam, name, "ctype");
+    adios_conca_mesh_att_nam(&celltype_att_nam, name, "ctype");
     adios_common_define_attribute (p_new_group,celltype_att_nam,"/",adios_string,d1,"");
     free(celltype_att_nam);
     free (d1);
@@ -7090,7 +7090,7 @@ int parseMeshUnstructuredMixedCells1 (const char * count
         return 0;
     }
 
-    conca_mesh_att_nam(&ncellset_att_nam, name, "ncsets");
+    adios_conca_mesh_att_nam(&ncellset_att_nam, name, "ncsets");
     adios_common_define_attribute (p_new_group,ncellset_att_nam,"/",adios_double,counterstr,"");
     free (ncellset_att_nam);
 
