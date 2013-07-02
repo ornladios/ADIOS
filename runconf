@@ -242,7 +242,7 @@ elif [ `hostname | cut -c 1-4` == "lens" ]; then
 
 elif [ `hostname | cut -c 1-5` == "titan" ]; then
 
-    BUILD_STAGING=true
+    BUILD_STAGING=false
     if [ $BUILD_STAGING == "false" ]; then
     
         ################
@@ -275,7 +275,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         #export CC=mpicc
         #export FC=mpif90
         CFLAGS="-g -fPIC" ./configure --prefix=/ccs/proj/e2e/qliu/ADIOS/test.$TARGET \
-            --host=titan --host_alias=titan  \
+            --host=titan \
             --enable-dependency-tracking \
             #--with-hdf5=/opt/cray/hdf5/1.8.7/pgi/109 \
             #--with-phdf5=/opt/cray/hdf5-parallel/1.8.7/pgi/109 \
@@ -622,6 +622,22 @@ elif [ "x"`hostname -f | cut -c 8-15` == "xintrepid" ]; then
     ./configure --prefix=/home/qliu/ADIOS \
             --enable-dependency-tracking \
             --with-mxml=/home/qliu/mxml
+
+elif [ `hostname -f | cut -c 1-4` == "mira" ]; then
+    #####################
+    #  MIRA   BlueGene  #
+    #####################
+    echo "Configure on Mira (BlueGene)"
+    export MPICC=mpixlc_r
+    export MPIFC=mpixlf90
+    export CFLAGS=""
+    export FC=xlf90
+    export CC=xlc_r
+
+    ./configure --prefix=/home/qliu/4se/ADIOS \
+            --enable-dependency-tracking \
+            --with-mxml=/home/qliu/mxml \
+            --without-datatap --without-infiniband
 
 elif [ `hostname | cut -c 1-4` == "euge" ]; then
     ###################
