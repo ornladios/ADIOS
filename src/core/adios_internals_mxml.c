@@ -1016,55 +1016,6 @@ static int validatePath (const struct adios_var_struct * vars
     return 0;
 }
 
-static int parseSchemaVersion(struct adios_group_struct * new_group, char * schema_version){
-    int64_t      p_new_group = (int64_t) new_group;
-
-    if (strcasecmp (schema_version,"")){
-        char * ver;// copy version
-        char * d;  // dot location
-        char * ptr_end;
-        ver = strdup (schema_version);
-        char * schema_version_major;
-        char * schema_version_minor;
-        char * schema_version_major_att_nam;
-        char * schema_version_minor_att_nam;
-        d = strtok (ver, ".");
-        int counter = 0; // counter
-        //int slength = 0;
-        while (d)
-        {
-            int slength = 0;
-            if (!strtod (d,&ptr_end)){
-                printf("Schema version invalid.\n");
-                counter = 0;
-                break;
-            }else{
-                slength = strlen("adios_schema/");
-                if (counter == 0 ){
-                    slength = slength + strlen("version_major") + 1;
-                    schema_version_major_att_nam = malloc (slength);
-                    strcpy(schema_version_major_att_nam,"adios_schema/version_major");
-                    //schema_version_major = strdup(d);
-                    adios_common_define_attribute (p_new_group,schema_version_major_att_nam,"/",adios_string,d,"");
-                }else if (counter == 1){
-                    slength = slength + strlen("version_minor") + 1;
-                    schema_version_minor_att_nam = malloc (slength);
-                    strcpy(schema_version_minor_att_nam,"adios_schema/version_minor");
-                    //schema_version_minor = strdup(d);
-                    adios_common_define_attribute (p_new_group,schema_version_minor_att_nam,"/",adios_string,d,"");
-                }
-            }
-            counter++;
-            d = strtok (NULL, ".");
-        }
-        if (counter == 0){
-            printf("Error: Could not detect valid schema version.\n");
-        }
-        free(ver);
-    }
-    return 0;
-}
-
 static int parseGroup (mxml_node_t * node, char * schema_version)
 {
     mxml_node_t * n;
@@ -1173,7 +1124,7 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
             );
     new_group = (struct adios_group_struct *)ptr_new_group;
 
-    parseSchemaVersion(new_group, schema_version);
+   adios_defineSchemaVersion(new_group, schema_version);
     for (n = mxmlWalkNext (node, node, MXML_DESCEND)
             ;n
             ;n = mxmlWalkNext (n, node, MXML_NO_DESCEND)
@@ -2182,46 +2133,6 @@ int adios_parse_config (const char * config, MPI_Comm comm)
 
         if (!schema_version)
             schema_version = "";
-
-        /*if (!strcasecmp (schema_version,"")){
-          char * ver;// copy version
-          char * d;  // dot location
-          char * ptr_end;
-          ver = strdup (schema_version);
-          char * schema_version_major;
-          char * schema_version_minor;
-          char * * schema_version_major_att_nam;
-          char * * schema_version_minor_att_nam;
-          d = strtok (ver, ".");
-          int counter = 0; // counter
-          int slength = 0;
-          while (d)
-          {
-          if (!strtod (d,&ptr_end)){
-          printf("Schema version invalid.\n");
-          counter = 0;
-          break;
-          }else{
-          slength = strlen("/adios_schema/");
-          if (counter == 0 ){
-          slength = slength + strlen("version_major");
-         * schema_version_major_att_nam = malloc (slength);
-         strcpy(*schema_version_major_att_nam,"/adios_schema/version_major");
-         schema_version_major = strdup(d);
-         }else if (counter == 1){
-         slength = slength + strlen("version_minor");
-         * schema_version_major_att_nam = malloc (slength);
-         strcpy(*schema_version_major_att_nam,"/adios_schema/version_minor");
-         schema_version_minor = strdup(d);
-         }
-         }
-         counter++;
-         d = strtok (NULL, ".");
-         }
-         if (counter == 0){
-         printf("Error: Could not detect valid schema version.\n");
-         }
-         }*/
 
         if (!host_language)
         {
