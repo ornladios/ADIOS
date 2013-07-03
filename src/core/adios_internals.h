@@ -565,6 +565,30 @@ int adios_int_is_num (char * temp); // 1 == yes, 0 == no
 void adios_conca_mesh_numb_att_nam(char ** returnstr, const char * meshname, char * att_nam, char counterstr[5]);
 void adios_conca_mesh_att_nam(char ** returnstr, const char * meshname, char * att_nam);
 
+
+// defineMesh functions (missing mesh structs for now dueto problems checking accross groups
+int defineMeshRectilinearDimensions1 (const char * dimensions,struct adios_group_struct * new_group,const char * name);
+int defineMeshRectilinearCoordinatesSingleVar1 (const char * coordinates,struct adios_group_struct * new_group,const char * name);
+int defineMeshRectilinearCoordinatesMultiVar1 (const char * coordinates,struct adios_group_struct * new_group,const char * name);
+        
+int defineMeshUniformDimensions1 (const char * dimensions, struct adios_group_struct * new_group, const char * name);
+int defineMeshUniformOrigin1 (const char * origin ,struct adios_group_struct * new_group,const char * name);
+int defineMeshUniformSpacings1 (const char * spacing,struct adios_group_struct * new_group,const char * name);
+int defineMeshUniformMaximums1 (const char * maximum,struct adios_group_struct * new_group,const char * name);
+
+int defineMeshStructuredDimensions1 (const char * dimensions,struct adios_group_struct * new_group,const char * name);
+int defineMeshStructuredNspace1 (const char * nspace,struct adios_group_struct * new_group,const char * name);
+int defineMeshStructuredPointsSingleVar1 (const char * points,struct adios_group_struct * new_group,const char * name);
+int defineMeshStructuredPointsMultiVar1 (const char * points,struct adios_group_struct * new_group,const char * name);
+
+int defineMeshUnstructuredNpoints1 (const char * npoints,struct adios_group_struct * new_group ,const char * name);
+int defineMeshUnstructuredNspace1 (const char * nspace,struct adios_group_struct * new_group,const char * name);
+int defineMeshUnstructuredPointsSingleVar1 (const char * points,struct adios_group_struct * new_group,const char * name);
+int defineMeshUnstructuredPointsMultiVar1 (const char * points,struct adios_group_struct * new_group ,const char * name);
+int parseMeshUnstructuredUniformCells1 (const char * count,const char * data,const char * type,struct adios_group_struct * new_group,const char * name);
+int parseMeshUnstructuredMixedCells1 (const char * count,const char * data,const char * types,struct adios_group_struct * new_group,const char * name);
+
+
 // queue code for adaptive message passing
 #ifdef __cplusplus
 extern "C" {

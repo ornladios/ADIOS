@@ -5477,7 +5477,7 @@ int defineMeshUniform1 (char * dimensions, char * origin, char * spacing, char *
 {
     if (dimensions)
     {
-        if (!parseMeshUniformDimensions1 (dimensions, new_group, name))
+        if (!defineMeshUniformDimensions1 (dimensions, new_group, name))
             return 0;
     }else{
         log_warn ("config.xml: value attribute on "
@@ -5489,7 +5489,7 @@ int defineMeshUniform1 (char * dimensions, char * origin, char * spacing, char *
 
     if (origin)
     {
-        if (!parseMeshUniformOrigin1 (origin, new_group, name))
+        if (!defineMeshUniformOrigin1 (origin, new_group, name))
             return 0;
     }else{
         log_warn ("config.xml: value attribute on "
@@ -5500,7 +5500,7 @@ int defineMeshUniform1 (char * dimensions, char * origin, char * spacing, char *
     }
     if (spacing)
     {
-        if (!parseMeshUniformSpacings1 (spacing, new_group, name))
+        if (!defineMeshUniformSpacings1 (spacing, new_group, name))
             return 0;
     }else{
         log_warn ("config.xml: value attribute on "
@@ -5512,7 +5512,7 @@ int defineMeshUniform1 (char * dimensions, char * origin, char * spacing, char *
 
     if (maximum)
     {
-        if (!parseMeshUniformMaximums1 (maximum, new_group, name))
+        if (!defineMeshUniformMaximums1 (maximum, new_group, name))
             return 0;
     }else{
         log_warn ("config.xml: value attribute on "
@@ -5532,7 +5532,7 @@ int defineMeshRectilinear1 (char * dimensions, char * coordinates
 {
     if (dimensions)
     {
-        if (!parseMeshRectilinearDimensions1 (dimensions, new_group, name))
+        if (!defineMeshRectilinearDimensions1 (dimensions, new_group, name))
             return 0;
     }else{
         log_warn ("config.xml: value attribute on "
@@ -5548,10 +5548,10 @@ int defineMeshRectilinear1 (char * dimensions, char * coordinates
         char *p;
         // If we do not find "," in the coordinates
         if (!(p = strstr(coordinates, ","))){
-            if (!parseMeshRectilinearCoordinatesSingleVar1 (coordinates, new_group, name))
+            if (!defineMeshRectilinearCoordinatesSingleVar1 (coordinates, new_group, name))
                 return 0;
         }else{
-            if (!parseMeshRectilinearCoordinatesMultiVar1 (coordinates, new_group, name))
+            if (!defineMeshRectilinearCoordinatesMultiVar1 (coordinates, new_group, name))
                 return 0;
         }
     }else{
@@ -5569,7 +5569,7 @@ int defineMeshStructured1(char * dimensions, char * nspace
         ,struct adios_group_struct * new_group
         , char * name){
     if (dimensions){
-        if (!parseMeshStructuredDimensions1 (dimensions, new_group, name))
+        if (!defineMeshStructuredDimensions1 (dimensions, new_group, name))
             return 0;
     }else{
         log_warn ("config.xml: value attribute on "
@@ -5581,17 +5581,17 @@ int defineMeshStructured1(char * dimensions, char * nspace
     }
 
     if (nspace){
-        if (!parseMeshStructuredNspace1 (nspace, new_group, name))
+        if (!defineMeshStructuredNspace1 (nspace, new_group, name))
             return 0;
     }
     if (points){
         char *p;
         // If we do find "," in points (single-var case)
         if (!(p = strstr(points, ","))){
-            if (!parseMeshStructuredPointsSingleVar1 (points, new_group, name))
+            if (!defineMeshStructuredPointsSingleVar1 (points, new_group, name))
                 return 0;
         }else{
-            if (!parseMeshStructuredPointsMultiVar1 (points, new_group, name))
+            if (!defineMeshStructuredPointsMultiVar1 (points, new_group, name))
                 return 0;
         }
     }else{
@@ -5614,12 +5614,12 @@ int defineMeshUnstructured1(char *nspace
     int saw_cell_set = 0;
     if (nspace)
     {
-        if (!parseMeshUnstructuredNspace1 (nspace, new_group, name))
+        if (!defineMeshUnstructuredNspace1 (nspace, new_group, name))
             return 0;
     }
     if (npoints)
     {
-        if (!parseMeshUnstructuredNpoints1 (npoints, new_group, name))
+        if (!defineMeshUnstructuredNpoints1 (npoints, new_group, name))
             return 0;
 
     }
@@ -5627,10 +5627,10 @@ int defineMeshUnstructured1(char *nspace
         char *p;
         // If we do find "," in points (single-var case)
         if (!(p = strstr(points, ","))){
-            if (!parseMeshUnstructuredPointsSingleVar1 (points, new_group, name))
+            if (!defineMeshUnstructuredPointsSingleVar1 (points, new_group, name))
                 return 0;
         }else{
-            if (!parseMeshUnstructuredPointsMultiVar1 (points, new_group, name))
+            if (!defineMeshUnstructuredPointsMultiVar1 (points, new_group, name))
                 return 0;
         }
     }else{
@@ -5676,7 +5676,7 @@ int defineMeshUnstructured1(char *nspace
                     " should not contain ',' (%s)\n", name);
             return 0;
         }
-        if (!parseMeshUnstructuredUniformCells1 (count, data, type
+        if (!defineMeshUnstructuredUniformCells1 (count, data, type
                     , new_group
                     ,name
                     )
@@ -5694,7 +5694,7 @@ int defineMeshUnstructured1(char *nspace
                     " should contain ',' (%s)\n", name);
             return 0;
         }
-        if (!parseMeshUnstructuredMixedCells1 (count, data, type
+        if (!defineMeshUnstructuredMixedCells1 (count, data, type
                     , new_group, name))
             return 0;
     }
@@ -6181,26 +6181,30 @@ int defineVarHyperSlab ( const char * hyperslab,
     char * c;                      // comma location
     char * d1;                     // save of strdup
     int64_t      p_new_group = (int64_t) new_group;
-    char * gethslabfrom0 = 0;     // hslab attribute xml value
-    char * gethslabfrom1 = 0;     // hslab attribute xml value
-    char * gethslabfrom2 = 0;     // hslab attribute xml value
+    char * gethslabfrom0 = 0;       // hslab attribute xml value
+    char * gethslabfrom1 = 0;       // hslab attribute xml value
+    char * gethslabfrom2 = 0;       // hslab attribute xml value
     char * hslab_var_att_nam = 0;   // hslab attribute name for var or num
     char * hslab_start_att_nam = 0; // hslab attribute name for start
     char * hslab_stride_att_nam = 0;// hslab attribute name for stride
     char * hslab_count_att_nam = 0; // hslab attribute name for count
     char * hslab_max_att_nam = 0;   // hslab attribute name for max
     char * hslab_min_att_nam = 0;   // hslab attribute name for min
+    char * hslab_single_att_nam = 0;// hslab attribute name for min
     char * hslab_var_att_val = 0;   // hslab attribute value for var or num
     char * hslab_start_att_val = 0; // hslab attribute value for start 
     char * hslab_stride_att_val = 0;// hslab attribute value for stride
     char * hslab_count_att_val = 0; // hslab attribute value for count
     char * hslab_max_att_val = 0;   // hslab attribute value for max
     char * hslab_min_att_val = 0;   // hslab attribute value for min
-    int counter = 0;               // used to get type of time hslab bounds
+    char * hslab_sngl_att_val = 0;  // hslab attribute value for single value  of an array ("25, 4, 50")
+                                    // use the ":" symble to indicate that there is an extra dimension to process (process all lines, all planes etc.)
+    int counter = 0;                // used to get type of time hslab bounds
     // We are going to allow
     // 1. start/stride/count 3 components - indices of the mesh dimensions
     // 2. min/max range of the mesh dimensions
-
+    // 3. single value 
+    //    single value of ":" means there is an extra dimension to process
     char counterstr[5] = {0,0,0,0,0}; // used to create tsteps attributes
 
     /* We do not fail if this is not given as variables all have nsteps
@@ -6257,8 +6261,14 @@ int defineVarHyperSlab ( const char * hyperslab,
         free(hslab_max_att_val);
         free(gethslabfrom1);
         free(gethslabfrom0);
+    } else if (counter == 1){
+        hslab_sngl_att_val = strdup(gethslabfrom0);
+        conca_var_att_nam(&hslab_single_att_nam, name, "singleton");
+        adios_common_define_attribute (p_new_group,hslab_single_att_nam,"/",adios_string,hslab_sngl_att_val,"");
+        free(hslab_sngl_att_val);
+        free(gethslabfrom0);
     }else{
-        printf("Error: time format not recognized.\nPlease check documentation for time formatting.\n");
+        printf("Error: hyperslab format not recognized.\nPlease check documentation for hyperslab formatting.\n");
         free(d1);
         return 0;
     }
@@ -6269,7 +6279,7 @@ int defineVarHyperSlab ( const char * hyperslab,
 
 }
 
-int parseMeshUniformDimensions1 (const char * dimensions
+int defineMeshUniformDimensions1 (const char * dimensions
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6323,7 +6333,7 @@ int parseMeshUniformDimensions1 (const char * dimensions
     return 1;
 }
 
-int parseMeshUniformMaximums1 (const char * maximum
+int defineMeshUniformMaximums1 (const char * maximum
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6374,7 +6384,7 @@ int parseMeshUniformMaximums1 (const char * maximum
     return 1;
 }
 
-int parseMeshUniformOrigin1 (const char * origin
+int defineMeshUniformOrigin1 (const char * origin
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6426,7 +6436,7 @@ int parseMeshUniformOrigin1 (const char * origin
     return 1;
 }
 
-int parseMeshUniformSpacings1 (const char * spacing
+int defineMeshUniformSpacings1 (const char * spacing
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6477,7 +6487,7 @@ int parseMeshUniformSpacings1 (const char * spacing
     return 1;
 }
 
-int parseMeshRectilinearDimensions1 (const char * dimensions
+int defineMeshRectilinearDimensions1 (const char * dimensions
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6531,7 +6541,7 @@ int parseMeshRectilinearDimensions1 (const char * dimensions
     return 1;
 }
 
-int parseMeshRectilinearCoordinatesMultiVar1 (const char * coordinates
+int defineMeshRectilinearCoordinatesMultiVar1 (const char * coordinates
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6594,7 +6604,7 @@ int parseMeshRectilinearCoordinatesMultiVar1 (const char * coordinates
     return 1;
 }
 
-int parseMeshRectilinearCoordinatesSingleVar1 (const char * coordinates
+int defineMeshRectilinearCoordinatesSingleVar1 (const char * coordinates
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6622,7 +6632,7 @@ int parseMeshRectilinearCoordinatesSingleVar1 (const char * coordinates
     return 1;
 }
 
-int parseMeshStructuredNspace1 (const char * nspace
+int defineMeshStructuredNspace1 (const char * nspace
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6651,7 +6661,7 @@ int parseMeshStructuredNspace1 (const char * nspace
     return 1;
 }
 
-int parseMeshStructuredDimensions1 (const char * dimensions
+int defineMeshStructuredDimensions1 (const char * dimensions
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6701,7 +6711,7 @@ int parseMeshStructuredDimensions1 (const char * dimensions
     return 1;
 }
 
-int parseMeshStructuredPointsSingleVar1 (const char * points
+int defineMeshStructuredPointsSingleVar1 (const char * points
         ,struct adios_group_struct * new_group
         ,const char * name
                                               )
@@ -6730,7 +6740,7 @@ int parseMeshStructuredPointsSingleVar1 (const char * points
     return 1;
 }
 
-int parseMeshStructuredPointsMultiVar1 (const char * points
+int defineMeshStructuredPointsMultiVar1 (const char * points
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6794,7 +6804,7 @@ int parseMeshStructuredPointsMultiVar1 (const char * points
     return 1;
 }
 
-int parseMeshUnstructuredNspace1 (const char * nspace
+int defineMeshUnstructuredNspace1 (const char * nspace
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6823,7 +6833,7 @@ int parseMeshUnstructuredNspace1 (const char * nspace
     return 1;
 }
 
-int parseMeshUnstructuredNpoints1 (const char * npoints
+int defineMeshUnstructuredNpoints1 (const char * npoints
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6854,7 +6864,7 @@ int parseMeshUnstructuredNpoints1 (const char * npoints
     return 1;
 }
 
-int parseMeshUnstructuredPointsMultiVar1 (const char * points
+int defineMeshUnstructuredPointsMultiVar1 (const char * points
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6915,7 +6925,7 @@ int parseMeshUnstructuredPointsMultiVar1 (const char * points
     return 1;
 }
 
-int parseMeshUnstructuredPointsSingleVar1 (const char * points
+int defineMeshUnstructuredPointsSingleVar1 (const char * points
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6946,7 +6956,7 @@ int parseMeshUnstructuredPointsSingleVar1 (const char * points
     return 1;
 }
 
-int parseMeshUnstructuredUniformCells1 (const char * count
+int defineMeshUnstructuredUniformCells1 (const char * count
         ,const char * data
         ,const char * type
         ,struct adios_group_struct * new_group
@@ -7016,7 +7026,7 @@ int parseMeshUnstructuredUniformCells1 (const char * count
     return 1;
 }
 
-int parseMeshUnstructuredMixedCells1 (const char * count
+int defineMeshUnstructuredMixedCells1 (const char * count
         ,const char * data
         ,const char * types
         ,struct adios_group_struct * new_group

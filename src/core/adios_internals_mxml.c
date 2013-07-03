@@ -256,7 +256,7 @@ int parseMeshUniform1 (mxml_node_t * node
                 return 0;
             }
 
-            if (!parseMeshUniformDimensions1 (dimensions, new_group, name))
+            if (!defineMeshUniformDimensions1 (dimensions, new_group, name))
                 return 0;
         } else
             if (!strcasecmp (n->value.element.name, "origin"))
@@ -286,7 +286,7 @@ int parseMeshUniform1 (mxml_node_t * node
                     return 0;
                 }
 
-                if (!parseMeshUniformOrigin1 (value, new_group, name))
+                if (!defineMeshUniformOrigin1 (value, new_group, name))
                     return 0;
             } else
                 if (!strcasecmp (n->value.element.name, "spacing"))
@@ -316,7 +316,7 @@ int parseMeshUniform1 (mxml_node_t * node
                         return 0;
                     }
 
-                    if (!parseMeshUniformSpacings1 (value, new_group, name))
+                    if (!defineMeshUniformSpacings1 (value, new_group, name))
                         return 0;
                 } else
                     if (!strcasecmp (n->value.element.name, "maximum"))
@@ -346,7 +346,7 @@ int parseMeshUniform1 (mxml_node_t * node
                             return 0;
                         }
 
-                        if (!parseMeshUniformMaximums1 (value, new_group, name))
+                        if (!defineMeshUniformMaximums1 (value, new_group, name))
                             return 0;
                     } else
                     {
@@ -407,7 +407,7 @@ int parseMeshRectilinear1 (mxml_node_t * node
                 return 0;
             }
 
-            if (!parseMeshRectilinearDimensions1 (value, new_group, name))
+            if (!defineMeshRectilinearDimensions1 (value, new_group, name))
                 return 0;
         } else
             if (!strcasecmp (n->value.element.name, "coordinates-multi-var"))
@@ -437,7 +437,7 @@ int parseMeshRectilinear1 (mxml_node_t * node
                     return 0;
                 }
 
-                if (!parseMeshRectilinearCoordinatesMultiVar1 (value, new_group, name))
+                if (!defineMeshRectilinearCoordinatesMultiVar1 (value, new_group, name))
                     return 0;
             } else
                 if (!strcasecmp (n->value.element.name, "coordinates-single-var"))
@@ -465,7 +465,7 @@ int parseMeshRectilinear1 (mxml_node_t * node
                         return 0;
                     }
 
-                    if (!parseMeshRectilinearCoordinatesSingleVar1 (value, new_group, name))
+                    if (!defineMeshRectilinearCoordinatesSingleVar1 (value, new_group, name))
                         return 0;
                 } else
                 {
@@ -546,7 +546,7 @@ int parseMeshStructured1 (mxml_node_t * node
                 return 0;
             }
 
-            if (!parseMeshStructuredNspace1 (value, new_group, name))
+            if (!defineMeshStructuredNspace1 (value, new_group, name))
                 return 0;
         } else
             if (!strcasecmp (n->value.element.name, "dimensions"))
@@ -576,7 +576,7 @@ int parseMeshStructured1 (mxml_node_t * node
                     return 0;
                 }
 
-                if (!parseMeshStructuredDimensions1 (value, new_group, name))
+                if (!defineMeshStructuredDimensions1 (value, new_group, name))
                     return 0;
             } else
                 if (!strcasecmp (n->value.element.name, "points-multi-var"))
@@ -606,7 +606,7 @@ int parseMeshStructured1 (mxml_node_t * node
                         return 0;
                     }
 
-                    if (!parseMeshStructuredPointsMultiVar1 (value, new_group, name))
+                    if (!defineMeshStructuredPointsMultiVar1 (value, new_group, name))
                         return 0;
                 } else
                     if (!strcasecmp (n->value.element.name, "points-single-var"))
@@ -636,7 +636,7 @@ int parseMeshStructured1 (mxml_node_t * node
                             return 0;
                         }
 
-                        if (!parseMeshStructuredPointsSingleVar1 (value, new_group, name))
+                        if (!defineMeshStructuredPointsSingleVar1 (value, new_group, name))
                             return 0;
                     } else
                     {
@@ -719,7 +719,7 @@ int parseMeshUnstructured1 (mxml_node_t * node
                 return 0;
             }
 
-            if (!parseMeshUnstructuredNspace1 (value, new_group, name))
+            if (!defineMeshUnstructuredNspace1 (value, new_group, name))
                 return 0;
         }else
             if (!strcasecmp (n->value.element.name, "number-of-points"))
@@ -749,7 +749,7 @@ int parseMeshUnstructured1 (mxml_node_t * node
                     return 0;
                 }
 
-                if (!parseMeshUnstructuredNpoints1 (value, new_group, name))
+                if (!defineMeshUnstructuredNpoints1 (value, new_group, name))
                     return 0;
             }else
                 if (!strcasecmp (n->value.element.name, "points-multi-var"))
@@ -779,7 +779,7 @@ int parseMeshUnstructured1 (mxml_node_t * node
                         return 0;
                     }
 
-                    if (!parseMeshUnstructuredPointsMultiVar1 (value, new_group, name))
+                    if (!defineMeshUnstructuredPointsMultiVar1 (value, new_group, name))
                         return 0;
                 } else
                     if (!strcasecmp (n->value.element.name, "points-single-var"))
@@ -809,7 +809,7 @@ int parseMeshUnstructured1 (mxml_node_t * node
                             return 0;
                         }
 
-                        if (!parseMeshUnstructuredPointsSingleVar1 (value, new_group, name))
+                        if (!defineMeshUnstructuredPointsSingleVar1 (value, new_group, name))
                             return 0;
                     } else
                         if (!strcasecmp (n->value.element.name, "uniform-cells"))
@@ -851,7 +851,7 @@ int parseMeshUnstructured1 (mxml_node_t * node
                                 return 0;
                             }
 
-                            if (!parseMeshUnstructuredUniformCells1 (count, data, type
+                            if (!defineMeshUnstructuredUniformCells1 (count, data, type
                                         , new_group
                                         ,name
                                         )
@@ -897,7 +897,7 @@ int parseMeshUnstructured1 (mxml_node_t * node
                                     return 0;
                                 }
 
-                                if (!parseMeshUnstructuredMixedCells1 (count, data, types
+                                if (!defineMeshUnstructuredMixedCells1 (count, data, types
                                             ,new_group
                                             ,name
                                             )
