@@ -5108,7 +5108,7 @@ int queue_dequeue (Queue * queue, void ** data)
 }
 
 // Functions for non-XML API fo ADIOS Schema some of which are also called from functions in adios_internals_mxml.c
-int adios_defineSchemaVersion(struct adios_group_struct * new_group, char * schema_version){
+int adios_define_schema_version(struct adios_group_struct * new_group, char * schema_version){
     int64_t      p_new_group = (int64_t) new_group;
 
     if (strcasecmp (schema_version,"")){
@@ -5522,11 +5522,11 @@ int defineMeshTimeSteps (const char * timesteps
 }
 
 // defining a uniform mesh 
-int defineMeshUniform1 (char * dimensions, char * origin, char * spacing, char * maximum, struct adios_group_struct * new_group ,const char * name)
+int adios_define_mesh_uniform (char * dimensions, char * origin, char * spacing, char * maximum, struct adios_group_struct * new_group ,const char * name)
 {
     if (dimensions)
     {
-        if (!defineMeshUniformDimensions1 (dimensions, new_group, name))
+        if (!adios_define_mesh_uniform_dimensions (dimensions, new_group, name))
             return 0;
     }else{
         log_warn ("config.xml: value attribute on "
@@ -5538,7 +5538,7 @@ int defineMeshUniform1 (char * dimensions, char * origin, char * spacing, char *
 
     if (origin)
     {
-        if (!defineMeshUniformOrigin1 (origin, new_group, name))
+        if (!adios_define_mesh_uniform_origins (origin, new_group, name))
             return 0;
     }else{
         log_warn ("config.xml: value attribute on "
@@ -5549,7 +5549,7 @@ int defineMeshUniform1 (char * dimensions, char * origin, char * spacing, char *
     }
     if (spacing)
     {
-        if (!defineMeshUniformSpacings1 (spacing, new_group, name))
+        if (!adios_define_mesh_uniform_spacings (spacing, new_group, name))
             return 0;
     }else{
         log_warn ("config.xml: value attribute on "
@@ -5561,7 +5561,7 @@ int defineMeshUniform1 (char * dimensions, char * origin, char * spacing, char *
 
     if (maximum)
     {
-        if (!defineMeshUniformMaximums1 (maximum, new_group, name))
+        if (!adios_define_mesh_uniform_maximums (maximum, new_group, name))
             return 0;
     }else{
         log_warn ("config.xml: value attribute on "
@@ -5574,14 +5574,14 @@ int defineMeshUniform1 (char * dimensions, char * origin, char * spacing, char *
     return 1;
 }
 
-int defineMeshRectilinear1 (char * dimensions, char * coordinates
+int adios_define_mesh_rectilinear (char * dimensions, char * coordinates
         ,struct adios_group_struct * new_group
         ,const char * name
         )
 {
     if (dimensions)
     {
-        if (!defineMeshRectilinearDimensions1 (dimensions, new_group, name))
+        if (!adios_define_mesh_rectilinear_dimensions (dimensions, new_group, name))
             return 0;
     }else{
         log_warn ("config.xml: value attribute on "
@@ -5597,10 +5597,10 @@ int defineMeshRectilinear1 (char * dimensions, char * coordinates
         char *p;
         // If we do not find "," in the coordinates
         if (!(p = strstr(coordinates, ","))){
-            if (!defineMeshRectilinearCoordinatesSingleVar1 (coordinates, new_group, name))
+            if (!adios_define_mesh_rectilinear_coordinatesSingleVar (coordinates, new_group, name))
                 return 0;
         }else{
-            if (!defineMeshRectilinearCoordinatesMultiVar1 (coordinates, new_group, name))
+            if (!adios_define_mesh_rectilinear_coordinatesMultiVar (coordinates, new_group, name))
                 return 0;
         }
     }else{
@@ -5613,12 +5613,12 @@ int defineMeshRectilinear1 (char * dimensions, char * coordinates
     return 1;
 }
 
-int defineMeshStructured1(char * dimensions, char * nspace
+int adios_define_mesh_structured(char * dimensions, char * nspace
         , char * points
         ,struct adios_group_struct * new_group
         , char * name){
     if (dimensions){
-        if (!defineMeshStructuredDimensions1 (dimensions, new_group, name))
+        if (!adios_define_mesh_structured_dimensions (dimensions, new_group, name))
             return 0;
     }else{
         log_warn ("config.xml: value attribute on "
@@ -5630,17 +5630,17 @@ int defineMeshStructured1(char * dimensions, char * nspace
     }
 
     if (nspace){
-        if (!defineMeshStructuredNspace1 (nspace, new_group, name))
+        if (!adios_define_mesh_structured_nspace (nspace, new_group, name))
             return 0;
     }
     if (points){
         char *p;
         // If we do find "," in points (single-var case)
         if (!(p = strstr(points, ","))){
-            if (!defineMeshStructuredPointsSingleVar1 (points, new_group, name))
+            if (!adios_define_mesh_structured_pointsSingleVar (points, new_group, name))
                 return 0;
         }else{
-            if (!defineMeshStructuredPointsMultiVar1 (points, new_group, name))
+            if (!adios_define_mesh_structured_pointsMultiVar (points, new_group, name))
                 return 0;
         }
     }else{
@@ -5654,7 +5654,7 @@ int defineMeshStructured1(char * dimensions, char * nspace
     return 1;
 }
 
-int defineMeshUnstructured1(char *nspace
+int adios_define_mesh_unstructured(char *nspace
         , char *npoints, char *points
         , char * data, char * count, char * type
         , struct adios_group_struct * new_group
@@ -5663,12 +5663,12 @@ int defineMeshUnstructured1(char *nspace
     int saw_cell_set = 0;
     if (nspace)
     {
-        if (!defineMeshUnstructuredNspace1 (nspace, new_group, name))
+        if (!adios_define_mesh_unstructured_nspace (nspace, new_group, name))
             return 0;
     }
     if (npoints)
     {
-        if (!defineMeshUnstructuredNpoints1 (npoints, new_group, name))
+        if (!adios_define_mesh_unstructured_npoints (npoints, new_group, name))
             return 0;
 
     }
@@ -5676,10 +5676,10 @@ int defineMeshUnstructured1(char *nspace
         char *p;
         // If we do find "," in points (single-var case)
         if (!(p = strstr(points, ","))){
-            if (!defineMeshUnstructuredPointsSingleVar1 (points, new_group, name))
+            if (!adios_define_mesh_unstructured_pointsSingleVar (points, new_group, name))
                 return 0;
         }else{
-            if (!defineMeshUnstructuredPointsMultiVar1 (points, new_group, name))
+            if (!adios_define_mesh_unstructured_pointsMultiVar (points, new_group, name))
                 return 0;
         }
     }else{
@@ -5725,7 +5725,7 @@ int defineMeshUnstructured1(char *nspace
                     " should not contain ',' (%s)\n", name);
             return 0;
         }
-        if (!defineMeshUnstructuredUniformCells1 (count, data, type
+        if (!adios_define_mesh_unstructured_uniformCells (count, data, type
                     , new_group
                     ,name
                     )
@@ -5743,7 +5743,7 @@ int defineMeshUnstructured1(char *nspace
                     " should contain ',' (%s)\n", name);
             return 0;
         }
-        if (!defineMeshUnstructuredMixedCells1 (count, data, type
+        if (!adios_define_mesh_unstructured_mixedCells (count, data, type
                     , new_group, name))
             return 0;
     }
@@ -5859,7 +5859,7 @@ struct adios_mesh_struct * adios_common_define_mesh (
 
 // Define time steps, scale and formatting
 // Parse var time steps (integers = number of times vars are written)
-int defineVarTimeSteps (const char * timesteps
+int adios_define_var_timesteps (const char * timesteps
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6025,7 +6025,7 @@ int defineVarTimeSteps (const char * timesteps
 }
 
 // Parse var time series format (real time tracking, not integers)
-int defineVarTimeSeriesFormat (const char * timeseries
+int adios_define_var_timeseriesformat (const char * timeseries
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6055,7 +6055,7 @@ int defineVarTimeSeriesFormat (const char * timeseries
 }
 
 // Parse var time scale (real time tracking, not integers)
-int defineVarTimeScale (const char * timescale
+int adios_define_var_timescale (const char * timescale
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6223,7 +6223,7 @@ int defineVarTimeScale (const char * timescale
 }
 
 // Parse var hyper slab: lines or planes from a higher dimension mesh
-int defineVarHyperSlab ( const char * hyperslab,
+int adios_define_var_hyperslab ( const char * hyperslab,
         struct adios_group_struct * new_group,
         const char * name)
 {
@@ -6328,7 +6328,7 @@ int defineVarHyperSlab ( const char * hyperslab,
 
 }
 
-int defineMeshUniformDimensions1 (const char * dimensions
+int adios_define_mesh_uniform_dimensions (const char * dimensions
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6382,7 +6382,7 @@ int defineMeshUniformDimensions1 (const char * dimensions
     return 1;
 }
 
-int defineMeshUniformMaximums1 (const char * maximum
+int adios_define_mesh_uniform_maximums (const char * maximum
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6433,7 +6433,7 @@ int defineMeshUniformMaximums1 (const char * maximum
     return 1;
 }
 
-int defineMeshUniformOrigin1 (const char * origin
+int adios_define_mesh_uniform_origins (const char * origin
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6485,7 +6485,7 @@ int defineMeshUniformOrigin1 (const char * origin
     return 1;
 }
 
-int defineMeshUniformSpacings1 (const char * spacing
+int adios_define_mesh_uniform_spacings (const char * spacing
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6536,7 +6536,7 @@ int defineMeshUniformSpacings1 (const char * spacing
     return 1;
 }
 
-int defineMeshRectilinearDimensions1 (const char * dimensions
+int adios_define_mesh_rectilinear_dimensions (const char * dimensions
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6590,7 +6590,7 @@ int defineMeshRectilinearDimensions1 (const char * dimensions
     return 1;
 }
 
-int defineMeshRectilinearCoordinatesMultiVar1 (const char * coordinates
+int adios_define_mesh_rectilinear_coordinatesMultiVar (const char * coordinates
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6653,7 +6653,7 @@ int defineMeshRectilinearCoordinatesMultiVar1 (const char * coordinates
     return 1;
 }
 
-int defineMeshRectilinearCoordinatesSingleVar1 (const char * coordinates
+int adios_define_mesh_rectilinear_coordinatesSingleVar (const char * coordinates
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6681,7 +6681,7 @@ int defineMeshRectilinearCoordinatesSingleVar1 (const char * coordinates
     return 1;
 }
 
-int defineMeshStructuredNspace1 (const char * nspace
+int adios_define_mesh_structured_nspace (const char * nspace
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6710,7 +6710,7 @@ int defineMeshStructuredNspace1 (const char * nspace
     return 1;
 }
 
-int defineMeshStructuredDimensions1 (const char * dimensions
+int adios_define_mesh_structured_dimensions (const char * dimensions
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6760,7 +6760,7 @@ int defineMeshStructuredDimensions1 (const char * dimensions
     return 1;
 }
 
-int defineMeshStructuredPointsSingleVar1 (const char * points
+int adios_define_mesh_structured_pointsSingleVar (const char * points
         ,struct adios_group_struct * new_group
         ,const char * name
                                               )
@@ -6789,7 +6789,7 @@ int defineMeshStructuredPointsSingleVar1 (const char * points
     return 1;
 }
 
-int defineMeshStructuredPointsMultiVar1 (const char * points
+int adios_define_mesh_structured_pointsMultiVar (const char * points
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6853,7 +6853,7 @@ int defineMeshStructuredPointsMultiVar1 (const char * points
     return 1;
 }
 
-int defineMeshUnstructuredNspace1 (const char * nspace
+int adios_define_mesh_unstructured_nspace (const char * nspace
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6882,7 +6882,7 @@ int defineMeshUnstructuredNspace1 (const char * nspace
     return 1;
 }
 
-int defineMeshUnstructuredNpoints1 (const char * npoints
+int adios_define_mesh_unstructured_npoints (const char * npoints
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6913,7 +6913,7 @@ int defineMeshUnstructuredNpoints1 (const char * npoints
     return 1;
 }
 
-int defineMeshUnstructuredPointsMultiVar1 (const char * points
+int adios_define_mesh_unstructured_pointsMultiVar (const char * points
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -6974,7 +6974,7 @@ int defineMeshUnstructuredPointsMultiVar1 (const char * points
     return 1;
 }
 
-int defineMeshUnstructuredPointsSingleVar1 (const char * points
+int adios_define_mesh_unstructured_pointsSingleVar (const char * points
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -7005,7 +7005,7 @@ int defineMeshUnstructuredPointsSingleVar1 (const char * points
     return 1;
 }
 
-int defineMeshUnstructuredUniformCells1 (const char * count
+int adios_define_mesh_unstructured_uniformCells (const char * count
         ,const char * data
         ,const char * type
         ,struct adios_group_struct * new_group
@@ -7075,7 +7075,7 @@ int defineMeshUnstructuredUniformCells1 (const char * count
     return 1;
 }
 
-int defineMeshUnstructuredMixedCells1 (const char * count
+int adios_define_mesh_unstructured_mixedCells (const char * count
         ,const char * data
         ,const char * types
         ,struct adios_group_struct * new_group
@@ -7217,3 +7217,23 @@ int defineMeshUnstructuredMixedCells1 (const char * count
     return 1;
 }
 
+// NO-XML API
+int adios_define_var_mesh(int64_t ptr_new_group, char * varname, char * varpath, char * meshname){
+    char *mpath = 0;
+    mpath = malloc(strlen("/adios_schema")+strlen(varname)+1);
+    strcpy(mpath,varname);
+    strcat(mpath,"/adios_schema");
+    adios_common_define_attribute (ptr_new_group,mpath,varpath,adios_string,meshname,"");
+    free (mpath);
+    return 0;
+}
+
+int adios_define_var_centering(int64_t ptr_new_group, char * varname, char * varpath, char * centering){
+    char *mpath = 0;
+    mpath = malloc(strlen("/adios_schema/centering")+strlen(varname)+1);
+    strcpy(mpath,varname);
+    strcat(mpath,"/adios_schema/centering");
+    adios_common_define_attribute (ptr_new_group,mpath,varpath,adios_string,centering,"");
+    free (mpath);
+    return 0;
+}

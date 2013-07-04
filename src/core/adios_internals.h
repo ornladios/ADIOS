@@ -564,29 +564,41 @@ int adios_int_is_var (const char * temp); // 1 == yes, 0 == no
 int adios_int_is_num (char * temp); // 1 == yes, 0 == no
 void adios_conca_mesh_numb_att_nam(char ** returnstr, const char * meshname, char * att_nam, char counterstr[5]);
 void adios_conca_mesh_att_nam(char ** returnstr, const char * meshname, char * att_nam);
-int adios_defineSchemaVersion(struct adios_group_struct * new_group, char * schema_version);
+int adios_define_schema_version(struct adios_group_struct * new_group, char * schema_version);
+
+// No-XML API
+int adios_define_var_mesh(int64_t ptr_new_group, char * varname, char * varpath, char * meshname);
+int adios_define_var_centering(int64_t ptr_new_group, char * varname, char * varpath, char * centering);
+int adios_define_var_timesteps (const char * timesteps,struct adios_group_struct * new_group,const char * name);
+int adios_define_var_timescale (const char * timescale,struct adios_group_struct * new_group,const char * name);
+int adios_define_var_timeseriesformat (const char * timeseries,struct adios_group_struct * new_group,const char * name);
+int adios_define_var_hyperslab ( const char * hyperslab,struct adios_group_struct * new_group,const char * name);
 
 // defineMesh functions (missing mesh structs for now dueto problems checking accross groups
-int defineMeshRectilinearDimensions1 (const char * dimensions,struct adios_group_struct * new_group,const char * name);
-int defineMeshRectilinearCoordinatesSingleVar1 (const char * coordinates,struct adios_group_struct * new_group,const char * name);
-int defineMeshRectilinearCoordinatesMultiVar1 (const char * coordinates,struct adios_group_struct * new_group,const char * name);
-        
-int defineMeshUniformDimensions1 (const char * dimensions, struct adios_group_struct * new_group, const char * name);
-int defineMeshUniformOrigin1 (const char * origin ,struct adios_group_struct * new_group,const char * name);
-int defineMeshUniformSpacings1 (const char * spacing,struct adios_group_struct * new_group,const char * name);
-int defineMeshUniformMaximums1 (const char * maximum,struct adios_group_struct * new_group,const char * name);
+int adios_define_mesh_rectilinear (char * dimensions, char * coordinates,struct adios_group_struct * new_group,const char * name);
+int adios_define_mesh_rectilinear_dimensions (const char * dimensions,struct adios_group_struct * new_group,const char * name);
+int adios_define_mesh_rectilinear_coordinatesSingleVar (const char * coordinates,struct adios_group_struct * new_group,const char * name);
+int adios_define_mesh_rectilinear_coordinatesMultiVar (const char * coordinates,struct adios_group_struct * new_group,const char * name);
 
-int defineMeshStructuredDimensions1 (const char * dimensions,struct adios_group_struct * new_group,const char * name);
-int defineMeshStructuredNspace1 (const char * nspace,struct adios_group_struct * new_group,const char * name);
-int defineMeshStructuredPointsSingleVar1 (const char * points,struct adios_group_struct * new_group,const char * name);
-int defineMeshStructuredPointsMultiVar1 (const char * points,struct adios_group_struct * new_group,const char * name);
+int adios_define_mesh_uniform (char * dimensions, char * origin, char * spacing, char * maximum, struct adios_group_struct * new_group ,const char * name);
+int adios_define_mesh_uniform_dimensions (const char * dimensions, struct adios_group_struct * new_group, const char * name);
+int adios_define_mesh_uniform_origins (const char * origin ,struct adios_group_struct * new_group,const char * name);
+int adios_define_mesh_uniform_spacings (const char * spacing,struct adios_group_struct * new_group,const char * name);
+int adios_define_mesh_uniform_maximums (const char * maximum,struct adios_group_struct * new_group,const char * name);
 
-int defineMeshUnstructuredNpoints1 (const char * npoints,struct adios_group_struct * new_group ,const char * name);
-int defineMeshUnstructuredNspace1 (const char * nspace,struct adios_group_struct * new_group,const char * name);
-int defineMeshUnstructuredPointsSingleVar1 (const char * points,struct adios_group_struct * new_group,const char * name);
-int defineMeshUnstructuredPointsMultiVar1 (const char * points,struct adios_group_struct * new_group ,const char * name);
-int parseMeshUnstructuredUniformCells1 (const char * count,const char * data,const char * type,struct adios_group_struct * new_group,const char * name);
-int parseMeshUnstructuredMixedCells1 (const char * count,const char * data,const char * types,struct adios_group_struct * new_group,const char * name);
+int adios_define_mesh_structured(char * dimensions, char * nspace, char * points,struct adios_group_struct * new_group, char * name);
+int adios_define_mesh_structured_dimensions (const char * dimensions,struct adios_group_struct * new_group,const char * name);
+int adios_define_mesh_structured_nspace (const char * nspace,struct adios_group_struct * new_group,const char * name);
+int adios_define_mesh_structured_pointsSingleVar (const char * points,struct adios_group_struct * new_group,const char * name);
+int adios_define_mesh_structured_pointsMultiVar (const char * points,struct adios_group_struct * new_group,const char * name);
+
+int adios_define_mesh_unstructured(char *nspace, char *npoints, char *points, char * data, char * count, char * type, struct adios_group_struct * new_group, const char * name);
+int adios_define_mesh_unstructurednpoints (const char * npoints,struct adios_group_struct * new_group ,const char * name);
+int adios_define_mesh_unstructured_nspace (const char * nspace,struct adios_group_struct * new_group,const char * name);
+int adios_define_mesh_unstructured_pointsSingleVar (const char * points,struct adios_group_struct * new_group,const char * name);
+int adios_define_mesh_unstructured_pointsMultiVar (const char * points,struct adios_group_struct * new_group ,const char * name);
+int adios_define_mesh_unstructured_uniformCells (const char * count,const char * data,const char * type,struct adios_group_struct * new_group,const char * name);
+int adios_define_mesh_unstructured_mixedCells (const char * count,const char * data,const char * types,struct adios_group_struct * new_group,const char * name);
 
 
 // queue code for adaptive message passing

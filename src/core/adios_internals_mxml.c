@@ -209,7 +209,7 @@ static void adios_append_mesh_cell_list
 }
 
 // primary mesh XML parsing
-int parseMeshUniform1 (mxml_node_t * node
+int parseMeshUniform (mxml_node_t * node
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -256,7 +256,7 @@ int parseMeshUniform1 (mxml_node_t * node
                 return 0;
             }
 
-            if (!defineMeshUniformDimensions1 (dimensions, new_group, name))
+            if (!adios_define_mesh_uniform_dimensions (dimensions, new_group, name))
                 return 0;
         } else
             if (!strcasecmp (n->value.element.name, "origin"))
@@ -286,7 +286,7 @@ int parseMeshUniform1 (mxml_node_t * node
                     return 0;
                 }
 
-                if (!defineMeshUniformOrigin1 (value, new_group, name))
+                if (!adios_define_mesh_uniform_origins (value, new_group, name))
                     return 0;
             } else
                 if (!strcasecmp (n->value.element.name, "spacing"))
@@ -316,7 +316,7 @@ int parseMeshUniform1 (mxml_node_t * node
                         return 0;
                     }
 
-                    if (!defineMeshUniformSpacings1 (value, new_group, name))
+                    if (!adios_define_mesh_uniform_spacings (value, new_group, name))
                         return 0;
                 } else
                     if (!strcasecmp (n->value.element.name, "maximum"))
@@ -346,7 +346,7 @@ int parseMeshUniform1 (mxml_node_t * node
                             return 0;
                         }
 
-                        if (!defineMeshUniformMaximums1 (value, new_group, name))
+                        if (!adios_define_mesh_uniform_maximums (value, new_group, name))
                             return 0;
                     } else
                     {
@@ -407,7 +407,7 @@ int parseMeshRectilinear1 (mxml_node_t * node
                 return 0;
             }
 
-            if (!defineMeshRectilinearDimensions1 (value, new_group, name))
+            if (!adios_define_mesh_rectilinear_dimensions (value, new_group, name))
                 return 0;
         } else
             if (!strcasecmp (n->value.element.name, "coordinates-multi-var"))
@@ -437,7 +437,7 @@ int parseMeshRectilinear1 (mxml_node_t * node
                     return 0;
                 }
 
-                if (!defineMeshRectilinearCoordinatesMultiVar1 (value, new_group, name))
+                if (!adios_define_mesh_rectilinear_coordinatesMultiVar (value, new_group, name))
                     return 0;
             } else
                 if (!strcasecmp (n->value.element.name, "coordinates-single-var"))
@@ -465,7 +465,7 @@ int parseMeshRectilinear1 (mxml_node_t * node
                         return 0;
                     }
 
-                    if (!defineMeshRectilinearCoordinatesSingleVar1 (value, new_group, name))
+                    if (!adios_define_mesh_rectilinear_coordinatesSingleVar(value, new_group, name))
                         return 0;
                 } else
                 {
@@ -546,7 +546,7 @@ int parseMeshStructured1 (mxml_node_t * node
                 return 0;
             }
 
-            if (!defineMeshStructuredNspace1 (value, new_group, name))
+            if (!adios_define_mesh_structured_nspace (value, new_group, name))
                 return 0;
         } else
             if (!strcasecmp (n->value.element.name, "dimensions"))
@@ -576,7 +576,7 @@ int parseMeshStructured1 (mxml_node_t * node
                     return 0;
                 }
 
-                if (!defineMeshStructuredDimensions1 (value, new_group, name))
+                if (!adios_define_mesh_structured_dimensions (value, new_group, name))
                     return 0;
             } else
                 if (!strcasecmp (n->value.element.name, "points-multi-var"))
@@ -606,7 +606,7 @@ int parseMeshStructured1 (mxml_node_t * node
                         return 0;
                     }
 
-                    if (!defineMeshStructuredPointsMultiVar1 (value, new_group, name))
+                    if (!adios_define_mesh_structured_pointsMultiVar (value, new_group, name))
                         return 0;
                 } else
                     if (!strcasecmp (n->value.element.name, "points-single-var"))
@@ -636,7 +636,7 @@ int parseMeshStructured1 (mxml_node_t * node
                             return 0;
                         }
 
-                        if (!defineMeshStructuredPointsSingleVar1 (value, new_group, name))
+                        if (!adios_define_mesh_structured_pointsSingleVar (value, new_group, name))
                             return 0;
                     } else
                     {
@@ -719,7 +719,7 @@ int parseMeshUnstructured1 (mxml_node_t * node
                 return 0;
             }
 
-            if (!defineMeshUnstructuredNspace1 (value, new_group, name))
+            if (!adios_define_mesh_unstructured_nspace (value, new_group, name))
                 return 0;
         }else
             if (!strcasecmp (n->value.element.name, "number-of-points"))
@@ -749,7 +749,7 @@ int parseMeshUnstructured1 (mxml_node_t * node
                     return 0;
                 }
 
-                if (!defineMeshUnstructuredNpoints1 (value, new_group, name))
+                if (!adios_define_mesh_unstructured_npoints (value, new_group, name))
                     return 0;
             }else
                 if (!strcasecmp (n->value.element.name, "points-multi-var"))
@@ -779,7 +779,7 @@ int parseMeshUnstructured1 (mxml_node_t * node
                         return 0;
                     }
 
-                    if (!defineMeshUnstructuredPointsMultiVar1 (value, new_group, name))
+                    if (!adios_define_mesh_unstructured_pointsMultiVar (value, new_group, name))
                         return 0;
                 } else
                     if (!strcasecmp (n->value.element.name, "points-single-var"))
@@ -809,7 +809,7 @@ int parseMeshUnstructured1 (mxml_node_t * node
                             return 0;
                         }
 
-                        if (!defineMeshUnstructuredPointsSingleVar1 (value, new_group, name))
+                        if (!adios_define_mesh_unstructured_pointsSingleVar (value, new_group, name))
                             return 0;
                     } else
                         if (!strcasecmp (n->value.element.name, "uniform-cells"))
@@ -851,7 +851,7 @@ int parseMeshUnstructured1 (mxml_node_t * node
                                 return 0;
                             }
 
-                            if (!defineMeshUnstructuredUniformCells1 (count, data, type
+                            if (!adios_define_mesh_unstructured_uniformCells (count, data, type
                                         , new_group
                                         ,name
                                         )
@@ -897,7 +897,7 @@ int parseMeshUnstructured1 (mxml_node_t * node
                                     return 0;
                                 }
 
-                                if (!defineMeshUnstructuredMixedCells1 (count, data, types
+                                if (!adios_define_mesh_unstructured_mixedCells (count, data, types
                                             ,new_group
                                             ,name
                                             )
@@ -1124,7 +1124,7 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
             );
     new_group = (struct adios_group_struct *)ptr_new_group;
 
-   adios_defineSchemaVersion(new_group, schema_version);
+   adios_define_schema_version(new_group, schema_version);
     for (n = mxmlWalkNext (node, node, MXML_DESCEND)
             ;n
             ;n = mxmlWalkNext (n, node, MXML_NO_DESCEND)
@@ -1242,22 +1242,22 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                 // if a time attribute exists
                 // parse it and define it
                 if (strcmp(tsteps,"")){
-                    defineVarTimeSteps(tsteps,new_group,name);
+                    adios_define_var_timesteps(tsteps,new_group,name);
                 }
                 // if a time scale attribute exists
                 // parse it and define it
                 if (strcmp(tscale,"")){
-                    defineVarTimeScale(tscale,new_group,name);
+                    adios_define_var_timescale(tscale,new_group,name);
                 }
                 // if a time series format attribute exists
                 // parse it and define it
                 if (strcmp(tformat,"")){
-                    defineVarTimeSeriesFormat(tformat,new_group,name);
+                    adios_define_var_timeseriesformat(tformat,new_group,name);
                 }
                 // if a hyperslab attribute exists
                 // parse it and define it
                 if (strcmp(hyperslab,"")){
-                    defineVarHyperSlab(hyperslab,new_group,name);
+                    adios_define_var_hyperslab(hyperslab,new_group,name);
                 }
             }
         } else
@@ -1434,22 +1434,22 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                             // if a time attribute exists
                             // parse it and define it
                             if (strcmp(tsteps,"")){
-                                defineVarTimeSteps(tsteps,new_group,name);
+                                adios_define_var_timesteps(tsteps,new_group,name);
                             }
                             // if a time scale attribute exists
                             // parse it and define it
                             if (strcmp(tscale,"")){
-                                defineVarTimeScale(tscale,new_group,name);
+                                adios_define_var_timescale(tscale,new_group,name);
                             }
                             // if a time series format attribute exists
                             // parse it and define it
                             if (strcmp(tformat,"")){
-                                defineVarTimeSeriesFormat(tformat,new_group,name);
+                                adios_define_var_timeseriesformat(tformat,new_group,name);
                             }
                             // if a hyperslab attribute exists
                             // parse it and define it
                             if (strcmp(hyperslab,"")){
-                                defineVarHyperSlab(hyperslab,new_group,name);
+                                adios_define_var_hyperslab(hyperslab,new_group,name);
                             }
                         }
                     } else
@@ -1631,7 +1631,7 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                         mes = adios_common_define_mesh(ptr_new_group, name,
                                 t_varying, ADIOS_MESH_UNIFORM);
                         if (mes) {
-                            parseMeshUniform1 (n, new_group, name);
+                            parseMeshUniform (n, new_group, name);
                         }
                     } else if (!strcasecmp (type, "structured"))
                     {
