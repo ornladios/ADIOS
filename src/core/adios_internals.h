@@ -569,12 +569,18 @@ int adios_define_schema_version(struct adios_group_struct * new_group, char * sc
 // No-XML API
 int adios_define_var_mesh(int64_t ptr_new_group, char * varname, char * varpath, char * meshname);
 int adios_define_var_centering(int64_t ptr_new_group, char * varname, char * varpath, char * centering);
-int adios_define_var_timesteps (const char * timesteps,struct adios_group_struct * new_group,const char * name);
-int adios_define_var_timescale (const char * timescale,struct adios_group_struct * new_group,const char * name);
-int adios_define_var_timeseriesformat (const char * timeseries,struct adios_group_struct * new_group,const char * name);
-int adios_define_var_hyperslab ( const char * hyperslab,struct adios_group_struct * new_group,const char * name);
+int adios_define_var_timesteps (const char * timesteps,struct adios_group_struct * new_group,const char * name, const char *path);
+int adios_define_var_timescale (const char * timescale,struct adios_group_struct * new_group,const char * name, const char *path);
+int adios_define_var_timeseriesformat (const char * timeseries,struct adios_group_struct * new_group,const char * name, const char *path);
+int adios_define_var_hyperslab ( const char * hyperslab,struct adios_group_struct * new_group,const char * name, const char *path);
 
 // defineMesh functions (missing mesh structs for now dueto problems checking accross groups
+int adios_define_mesh_group(int64_t ptr_new_group, char * name, char * group);
+int adios_define_mesh_file(int64_t ptr_new_group, char * name, char * file);
+int adios_define_mesh_timeSeriesFormat (const char * timeseries, struct adios_group_struct * new_group, const char * name);
+int adios_define_mesh_timeScale (const char * timescale, struct adios_group_struct * new_group, const char * name);
+int adios_define_mesh_timeSteps (const char * timesteps, struct adios_group_struct * new_group, const char * name);
+
 int adios_define_mesh_rectilinear (char * dimensions, char * coordinates,struct adios_group_struct * new_group,const char * name);
 int adios_define_mesh_rectilinear_dimensions (const char * dimensions,struct adios_group_struct * new_group,const char * name);
 int adios_define_mesh_rectilinear_coordinatesSingleVar (const char * coordinates,struct adios_group_struct * new_group,const char * name);

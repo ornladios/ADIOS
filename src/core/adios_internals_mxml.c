@@ -1242,22 +1242,22 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                 // if a time attribute exists
                 // parse it and define it
                 if (strcmp(tsteps,"")){
-                    adios_define_var_timesteps(tsteps,new_group,name);
+                    adios_define_var_timesteps(tsteps,new_group,name,path);
                 }
                 // if a time scale attribute exists
                 // parse it and define it
                 if (strcmp(tscale,"")){
-                    adios_define_var_timescale(tscale,new_group,name);
+                    adios_define_var_timescale(tscale,new_group,name,path);
                 }
                 // if a time series format attribute exists
                 // parse it and define it
                 if (strcmp(tformat,"")){
-                    adios_define_var_timeseriesformat(tformat,new_group,name);
+                    adios_define_var_timeseriesformat(tformat,new_group,name,path);
                 }
                 // if a hyperslab attribute exists
                 // parse it and define it
                 if (strcmp(hyperslab,"")){
-                    adios_define_var_hyperslab(hyperslab,new_group,name);
+                    adios_define_var_hyperslab(hyperslab,new_group,name,path);
                 }
             }
         } else
@@ -1434,22 +1434,22 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                             // if a time attribute exists
                             // parse it and define it
                             if (strcmp(tsteps,"")){
-                                adios_define_var_timesteps(tsteps,new_group,name);
+                                adios_define_var_timesteps(tsteps,new_group,name,path);
                             }
                             // if a time scale attribute exists
                             // parse it and define it
                             if (strcmp(tscale,"")){
-                                adios_define_var_timescale(tscale,new_group,name);
+                                adios_define_var_timescale(tscale,new_group,name,path);
                             }
                             // if a time series format attribute exists
                             // parse it and define it
                             if (strcmp(tformat,"")){
-                                adios_define_var_timeseriesformat(tformat,new_group,name);
+                                adios_define_var_timeseriesformat(tformat,new_group,name,path);
                             }
                             // if a hyperslab attribute exists
                             // parse it and define it
                             if (strcmp(hyperslab,"")){
-                                adios_define_var_hyperslab(hyperslab,new_group,name);
+                                adios_define_var_hyperslab(hyperslab,new_group,name,path);
                             }
                         }
                     } else
@@ -1611,9 +1611,9 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                     // Define attribute for the type and time varying characteristics
                     adios_common_define_attribute (ptr_new_group,meshtype,"/",adios_string,type,"");
                     adios_common_define_attribute (ptr_new_group,meshtime,"/",adios_string,time_varying,"");
-                    defineMeshTimeSteps(time_steps, new_group, name);
-                    defineMeshTimeScale(time_scale, new_group, name);
-                    defineMeshTimeSeriesFormat(time_format, new_group, name);
+                    adios_define_mesh_timeSteps(time_steps, new_group, name);
+                    adios_define_mesh_timeScale(time_scale, new_group, name);
+                    adios_define_mesh_timeSeriesFormat(time_format, new_group, name);
                     // Only parse mesh if the variables are in this file
                     // otherwise simply point the mesh file
                     mesh_file = mxmlElementGetAttr(n, "file");

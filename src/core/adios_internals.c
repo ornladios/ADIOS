@@ -5157,10 +5157,9 @@ int adios_define_schema_version(struct adios_group_struct * new_group, char * sc
     return 0;
 }
 
-
 // Parse mesh time series (single file for multiple time steps or
 // multiple files for time steps, basename + timeformat + extension)
-int defineMeshTimeSeriesFormat (const char * timeseries
+int adios_define_mesh_timeSeriesFormat (const char * timeseries
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -5189,7 +5188,7 @@ int defineMeshTimeSeriesFormat (const char * timeseries
 }
 
 // Parse mesh time scale (real time tracking, not integers)
-int defineMeshTimeScale (const char * timescale
+int adios_define_mesh_timeScale (const char * timescale
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -5355,7 +5354,7 @@ int defineMeshTimeScale (const char * timescale
 }
 
 // Parse mesh time steps (integers = number of times vars are written)
-int defineMeshTimeSteps (const char * timesteps
+int adios_define_mesh_timeSteps (const char * timesteps
         ,struct adios_group_struct * new_group
         ,const char * name
         )
@@ -5862,6 +5861,7 @@ struct adios_mesh_struct * adios_common_define_mesh (
 int adios_define_var_timesteps (const char * timesteps
         ,struct adios_group_struct * new_group
         ,const char * name
+        ,const char * path 
         )
 {
     char * c;                      // comma location
@@ -5960,23 +5960,23 @@ int adios_define_var_timesteps (const char * timesteps
         conca_var_att_nam(&time_start_att_nam, name, "time-steps-start");
         // if this is string
         if (adios_int_is_var (time_start_att_val))
-            adios_common_define_attribute (p_new_group,time_start_att_nam,"/",adios_string,time_start_att_val,"");
+            adios_common_define_attribute (p_new_group,time_start_att_nam,path,adios_string,time_start_att_val,"");
         else
-            adios_common_define_attribute (p_new_group,time_start_att_nam,"/",adios_double,time_start_att_val,"");
+            adios_common_define_attribute (p_new_group,time_start_att_nam,path,adios_double,time_start_att_val,"");
         time_stride_att_val = strdup(gettstepsfrom1);
         conca_var_att_nam(&time_stride_att_nam, name, "time-steps-stride");
         // if this is string
         if (adios_int_is_var (time_stride_att_val))
-            adios_common_define_attribute (p_new_group,time_stride_att_nam,"/",adios_string,time_stride_att_val,"");
+            adios_common_define_attribute (p_new_group,time_stride_att_nam,path,adios_string,time_stride_att_val,"");
         else
-            adios_common_define_attribute (p_new_group,time_stride_att_nam,"/",adios_double,time_stride_att_val,"");
+            adios_common_define_attribute (p_new_group,time_stride_att_nam,path,adios_double,time_stride_att_val,"");
         time_count_att_val = strdup(gettstepsfrom2);
         conca_var_att_nam(&time_count_att_nam, name, "time-steps-count");
         // if this is string
         if (adios_int_is_var (time_count_att_val))
-            adios_common_define_attribute (p_new_group,time_count_att_nam,"/",adios_string,time_count_att_val,"");
+            adios_common_define_attribute (p_new_group,time_count_att_nam,path,adios_string,time_count_att_val,"");
         else
-            adios_common_define_attribute (p_new_group,time_count_att_nam,"/",adios_double,time_count_att_val,"");
+            adios_common_define_attribute (p_new_group,time_count_att_nam,path,adios_double,time_count_att_val,"");
         free(time_start_att_val);
         free(time_stride_att_val);
         free(time_count_att_val);
@@ -5988,16 +5988,16 @@ int adios_define_var_timesteps (const char * timesteps
         conca_var_att_nam(&time_min_att_nam, name, "time-steps-min");
         // if this is string
         if (adios_int_is_var (time_min_att_val))
-            adios_common_define_attribute (p_new_group,time_min_att_nam,"/",adios_string,time_min_att_val,"");
+            adios_common_define_attribute (p_new_group,time_min_att_nam,path,adios_string,time_min_att_val,"");
         else
-            adios_common_define_attribute (p_new_group,time_min_att_nam,"/",adios_double,time_min_att_val,"");
+            adios_common_define_attribute (p_new_group,time_min_att_nam,path,adios_double,time_min_att_val,"");
         time_max_att_val = strdup(gettstepsfrom1);
         conca_var_att_nam(&time_max_att_nam, name, "time-steps-max");
         // if this is string
         if (adios_int_is_var (time_max_att_val))
             adios_common_define_attribute (p_new_group,time_max_att_nam,"/",adios_string,time_max_att_val,"");
         else
-            adios_common_define_attribute (p_new_group,time_max_att_nam,"/",adios_double,time_max_att_val,"");
+            adios_common_define_attribute (p_new_group,time_max_att_nam,path,adios_double,time_max_att_val,"");
         free(time_min_att_val);
         free(time_max_att_val);
         free(gettstepsfrom1);
@@ -6006,10 +6006,10 @@ int adios_define_var_timesteps (const char * timesteps
         time_var_att_val = strdup(gettstepsfrom0);
         if (adios_int_is_var (time_var_att_val)){
             conca_var_att_nam(&time_var_att_nam, name, "time-steps-var");
-            adios_common_define_attribute (p_new_group,time_var_att_nam,"/",adios_string,time_var_att_val,"");
+            adios_common_define_attribute (p_new_group,time_var_att_nam,path,adios_string,time_var_att_val,"");
         }else{
             conca_var_att_nam(&time_var_att_nam, name, "time-steps-count");
-            adios_common_define_attribute (p_new_group,time_var_att_nam,"/",adios_double,time_var_att_val,"");
+            adios_common_define_attribute (p_new_group,time_var_att_nam,path,adios_double,time_var_att_val,"");
         }
         free(time_var_att_val);
         free(gettstepsfrom0);
@@ -6028,6 +6028,7 @@ int adios_define_var_timesteps (const char * timesteps
 int adios_define_var_timeseriesformat (const char * timeseries
         ,struct adios_group_struct * new_group
         ,const char * name
+        ,const char * path 
         )
 {
     char * d1;                     // save of strdup
@@ -6047,7 +6048,7 @@ int adios_define_var_timeseriesformat (const char * timeseries
     d1 = strdup (timeseries);
     if (strtod(d1, &ptr_end)){
         adios_conca_mesh_att_nam(&format_att_nam, name, "time-series-format");
-        adios_common_define_attribute (p_new_group,format_att_nam,"/",adios_string,d1,"");
+        adios_common_define_attribute (p_new_group,format_att_nam,path,adios_string,d1,"");
         free(format_att_val);
     }
     free (d1);
@@ -6058,6 +6059,7 @@ int adios_define_var_timeseriesformat (const char * timeseries
 int adios_define_var_timescale (const char * timescale
         ,struct adios_group_struct * new_group
         ,const char * name
+        ,const char * path 
         )
 {
     char * c;                      // comma location
@@ -6158,23 +6160,23 @@ int adios_define_var_timescale (const char * timescale
         conca_var_att_nam(&time_start_att_nam, name, "time-scale-start");
         // if this is string
         if (!strtod (time_start_att_val, &ptr_end))
-            adios_common_define_attribute (p_new_group,time_start_att_nam,"/",adios_string,time_start_att_val,"");
+            adios_common_define_attribute (p_new_group,time_start_att_nam,path,adios_string,time_start_att_val,"");
         else
-            adios_common_define_attribute (p_new_group,time_start_att_nam,"/",adios_double,time_start_att_val,"");
+            adios_common_define_attribute (p_new_group,time_start_att_nam,path,adios_double,time_start_att_val,"");
         time_stride_att_val = strdup(gettscalefrom1);
         conca_var_att_nam(&time_stride_att_nam, name, "time-scale-stride");
         // if this is string
         if (!strtod (time_stride_att_val, &ptr_end))
-            adios_common_define_attribute (p_new_group,time_stride_att_nam,"/",adios_string,time_stride_att_val,"");
+            adios_common_define_attribute (p_new_group,time_stride_att_nam,path,adios_string,time_stride_att_val,"");
         else
-            adios_common_define_attribute (p_new_group,time_stride_att_nam,"/",adios_double,time_stride_att_val,"");
+            adios_common_define_attribute (p_new_group,time_stride_att_nam,path,adios_double,time_stride_att_val,"");
         time_count_att_val = strdup(gettscalefrom2);
         conca_var_att_nam(&time_count_att_nam, name, "time-scale-count");
         // if this is string
         if (!strtod (time_count_att_val, &ptr_end))
-            adios_common_define_attribute (p_new_group,time_count_att_nam,"/",adios_string,time_count_att_val,"");
+            adios_common_define_attribute (p_new_group,time_count_att_nam,path,adios_string,time_count_att_val,"");
         else
-            adios_common_define_attribute (p_new_group,time_count_att_nam,"/",adios_double,time_count_att_val,"");
+            adios_common_define_attribute (p_new_group,time_count_att_nam,path,adios_double,time_count_att_val,"");
         free(time_start_att_val);
         free(time_stride_att_val);
         free(time_count_att_val);
@@ -6186,16 +6188,16 @@ int adios_define_var_timescale (const char * timescale
         conca_var_att_nam(&time_min_att_nam, name, "time-scale-min");
         // if this is string
         if (!strtod (time_min_att_val, &ptr_end))
-            adios_common_define_attribute (p_new_group,time_min_att_nam,"/",adios_string,time_min_att_val,"");
+            adios_common_define_attribute (p_new_group,time_min_att_nam,path,adios_string,time_min_att_val,"");
         else
-            adios_common_define_attribute (p_new_group,time_min_att_nam,"/",adios_double,time_min_att_val,"");
+            adios_common_define_attribute (p_new_group,time_min_att_nam,path,adios_double,time_min_att_val,"");
         time_max_att_val = strdup(gettscalefrom1);
         conca_var_att_nam(&time_max_att_nam, name, "time-scale-max");
         // if this is string
         if (!strtod (time_max_att_val, &ptr_end))
-            adios_common_define_attribute (p_new_group,time_max_att_nam,"/",adios_string,time_max_att_val,"");
+            adios_common_define_attribute (p_new_group,time_max_att_nam,path,adios_string,time_max_att_val,"");
         else
-            adios_common_define_attribute (p_new_group,time_max_att_nam,"/",adios_double,time_max_att_val,"");
+            adios_common_define_attribute (p_new_group,time_max_att_nam,path,adios_double,time_max_att_val,"");
         free(time_min_att_val);
         free(time_max_att_val);
         free(gettscalefrom1);
@@ -6204,10 +6206,10 @@ int adios_define_var_timescale (const char * timescale
         time_var_att_val = strdup(gettscalefrom0);
         if (!strtod (time_var_att_val, &ptr_end)){
             conca_var_att_nam(&time_var_att_nam, name, "time-scale-var");
-            adios_common_define_attribute (p_new_group,time_var_att_nam,"/",adios_string,time_var_att_val,"");
+            adios_common_define_attribute (p_new_group,time_var_att_nam,path,adios_string,time_var_att_val,"");
         }else{
             conca_var_att_nam(&time_var_att_nam, name, "time-scale-count");
-            adios_common_define_attribute (p_new_group,time_var_att_nam,"/",adios_double,time_var_att_val,"");
+            adios_common_define_attribute (p_new_group,time_var_att_nam,path,adios_double,time_var_att_val,"");
         }
         free(gettscalefrom0);
         free(time_var_att_val);
@@ -6225,7 +6227,8 @@ int adios_define_var_timescale (const char * timescale
 // Parse var hyper slab: lines or planes from a higher dimension mesh
 int adios_define_var_hyperslab ( const char * hyperslab,
         struct adios_group_struct * new_group,
-        const char * name)
+        const char * name,
+        const char * path)
 {
     char * c;                      // comma location
     char * d1;                     // save of strdup
@@ -6286,13 +6289,13 @@ int adios_define_var_hyperslab ( const char * hyperslab,
     if (counter == 3){
         hslab_start_att_val = strdup(gethslabfrom0);
         conca_var_att_nam(&hslab_start_att_nam, name, "start");
-        adios_common_define_attribute (p_new_group,hslab_start_att_nam,"/",adios_string,hslab_start_att_val,"");
+        adios_common_define_attribute (p_new_group,hslab_start_att_nam,path,adios_string,hslab_start_att_val,"");
         hslab_stride_att_val = strdup(gethslabfrom1);
         conca_var_att_nam(&hslab_stride_att_nam, name, "stride");
-        adios_common_define_attribute (p_new_group,hslab_stride_att_nam,"/",adios_string,hslab_stride_att_val,"");
+        adios_common_define_attribute (p_new_group,hslab_stride_att_nam,path,adios_string,hslab_stride_att_val,"");
         hslab_count_att_val = strdup(gethslabfrom2);
         conca_var_att_nam(&hslab_count_att_nam, name, "count");
-        adios_common_define_attribute (p_new_group,hslab_count_att_nam,"/",adios_string,hslab_count_att_val,"");
+        adios_common_define_attribute (p_new_group,hslab_count_att_nam,path,adios_string,hslab_count_att_val,"");
         free(hslab_start_att_val);
         free(hslab_stride_att_val);
         free(hslab_count_att_val);
@@ -6302,10 +6305,10 @@ int adios_define_var_hyperslab ( const char * hyperslab,
     }else if (counter == 2) {
         hslab_min_att_val = strdup(gethslabfrom0);
         conca_var_att_nam(&hslab_min_att_nam, name, "min");
-        adios_common_define_attribute (p_new_group,hslab_min_att_nam,"/",adios_string,hslab_min_att_val,"");
+        adios_common_define_attribute (p_new_group,hslab_min_att_nam,path,adios_string,hslab_min_att_val,"");
         hslab_max_att_val = strdup(gethslabfrom1);
         conca_var_att_nam(&hslab_max_att_nam, name, "max");
-        adios_common_define_attribute (p_new_group,hslab_max_att_nam,"/",adios_string,hslab_max_att_val,"");
+        adios_common_define_attribute (p_new_group,hslab_max_att_nam,path,adios_string,hslab_max_att_val,"");
         free(hslab_min_att_val);
         free(hslab_max_att_val);
         free(gethslabfrom1);
@@ -6313,7 +6316,7 @@ int adios_define_var_hyperslab ( const char * hyperslab,
     } else if (counter == 1){
         hslab_sngl_att_val = strdup(gethslabfrom0);
         conca_var_att_nam(&hslab_single_att_nam, name, "singleton");
-        adios_common_define_attribute (p_new_group,hslab_single_att_nam,"/",adios_string,hslab_sngl_att_val,"");
+        adios_common_define_attribute (p_new_group,hslab_single_att_nam,path,adios_string,hslab_sngl_att_val,"");
         free(hslab_sngl_att_val);
         free(gethslabfrom0);
     }else{
@@ -7237,3 +7240,18 @@ int adios_define_var_centering(int64_t ptr_new_group, char * varname, char * var
     free (mpath);
     return 0;
 }
+
+int adios_define_mesh_group(int64_t ptr_new_group, char * name, char * group){
+    char * meshgroup = 0;
+    adios_conca_mesh_att_nam(&group, name, "mesh-group");
+    adios_common_define_attribute (ptr_new_group,meshgroup,"/",adios_string,group,"");
+    return 0;
+}
+
+int adios_define_mesh_file(int64_t ptr_new_group, char * name, char * file){
+    char * meshfile = 0;
+    adios_conca_mesh_att_nam(&meshfile, name, "mesh-file");
+    adios_common_define_attribute (ptr_new_group,file,"/",adios_string,file,"");
+    return 0;
+}
+
