@@ -32726,7 +32726,7 @@ fi
 # Check whether --with-alacrity was given.
 if test "${with_alacrity+set}" = set; then
   withval=$with_alacrity; ALACRITY_LDFLAGS="-L$withval/lib";
-         ALACRITY_LIBS="-lalacrity -lridcompress -lstdc++";
+         ALACRITY_LIBS="-lalacrity -lridcompress";
          ALACRITY_CPPFLAGS="-I$withval/include";
 else
   with_alacrity=no
