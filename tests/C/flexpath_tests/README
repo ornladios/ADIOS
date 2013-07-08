@@ -7,3 +7,9 @@ Possible Test Setups
 1. Program which directly calls adios_flexpath functions and checks returns.
 2. Program which forks readers and writers, which dump to file and checks file contents.
 
+Existing Directories
+--------------------
+
+1. global_range_select - runs tests using the global range selectors. Current tests are listed below:
+	- 1 to 1 all to all
+
