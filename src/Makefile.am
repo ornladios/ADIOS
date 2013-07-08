@@ -63,6 +63,17 @@ libadios_a_SOURCES = core/adios.c \
                      core/adios_socket.c \
                      core/adios_logger.c \
                      core/util.c \
+		     core/qinternal.c \
+		     core/qlibc.c \
+		     core/qhasharr.c \
+		     core/qhashtbl.c \
+		     core/qlist.c \
+		     core/qqueue.c \
+		     core/qstack.c \
+		     core/qvector.c \
+		     core/qhash.c \
+		     core/qlisttbl.c \
+		     core/md5/md5c.c \
                      read/read_bp.c \
                      read/read_bp_staged.c \
                      read/read_bp_staged1.c \
@@ -95,6 +106,17 @@ libadios_nompi_a_SOURCES = core/adios.c \
                      core/adios_socket.c \
                      core/adios_logger.c \
                      core/util.c \
+		     core/qinternal.c \
+		     core/qlibc.c \
+		     core/qhasharr.c \
+		     core/qhashtbl.c \
+		     core/qlist.c \
+		     core/qqueue.c \
+		     core/qstack.c \
+		     core/qvector.c \
+		     core/qhash.c \
+		     core/qlisttbl.c \
+		     core/md5/md5c.c \
                      read/read_bp.c \
                      read/read_bp_staged.c \
                      read/read_bp_staged1.c \
@@ -123,6 +145,17 @@ FortranLibSources = core/adiosf.c \
                      core/adios_socket.c \
                      core/adios_logger.c \
                      core/util.c \
+		     core/qinternal.c \
+		     core/qlibc.c \
+		     core/qhasharr.c \
+		     core/qhashtbl.c \
+		     core/qlist.c \
+		     core/qqueue.c \
+		     core/qstack.c \
+		     core/qvector.c \
+		     core/qhash.c \
+		     core/qlisttbl.c \
+		     core/md5/md5c.c \
                      read/read_bp.c \
                      read/read_bp_staged.c \
                      read/read_bp_staged1.c \
@@ -320,6 +353,17 @@ libadiosread_a_SOURCES = core/adios_bp_v1.c \
                       core/adios_read_hooks.c \
                       core/adios_logger.c \
                       core/util.c \
+		      core/qinternal.c \
+		      core/qlibc.c \
+		      core/qhasharr.c \
+		      core/qhashtbl.c \
+		      core/qlist.c \
+		      core/qqueue.c \
+		      core/qstack.c \
+		      core/qvector.c \
+		      core/qhash.c \
+		      core/qlisttbl.c \
+                      core/md5/md5c.c \
                       read/read_bp.c \
                       read/read_bp_staged.c \
                       read/read_bp_staged1.c 
@@ -358,6 +402,17 @@ FortranReadLibSource = core/adios_bp_v1.c \
                       core/adios_read_hooks.c \
                       core/adios_logger.c \
                       core/util.c \
+		      core/qinternal.c \
+		      core/qlibc.c \
+		      core/qhasharr.c \
+		      core/qhashtbl.c \
+		      core/qlist.c \
+		      core/qqueue.c \
+		      core/qstack.c \
+		      core/qvector.c \
+		      core/qhash.c \
+		      core/qlisttbl.c \
+		      core/md5/md5c.c \
                       read/read_bp.c \
                       read/read_bp_staged.c \
                       read/read_bp_staged1.c 
@@ -418,6 +473,17 @@ libadiosread_nompi_a_SOURCES = core/mpidummy.c\
                       core/globals.c \
                       core/adios_read_hooks.c \
                       core/util.c \
+		      core/qinternal.c \
+		      core/qlibc.c \
+		      core/qhasharr.c \
+		      core/qhashtbl.c \
+		      core/qlist.c \
+		      core/qqueue.c \
+		      core/qstack.c \
+		      core/qvector.c \
+		      core/qhash.c \
+		      core/qlisttbl.c \
+		      core/md5/md5c.c \
                       read/read_bp.c 
 
 if HAVE_DATASPACES
@@ -458,6 +524,17 @@ FortranReadSeqLibSource = core/mpidummy.c\
                           core/globals.c \
                           core/adios_read_hooks.c \
                           core/util.c \
+		          core/qinternal.c \
+		     	  core/qlibc.c \
+		          core/qhasharr.c \
+		          core/qhashtbl.c \
+		          core/qlist.c \
+		          core/qqueue.c \
+		          core/qstack.c \
+		          core/qvector.c \
+		          core/qhash.c \
+		          core/qlisttbl.c \
+		          core/md5/md5c.c \
                           read/read_bp.c 
 if HAVE_DATASPACES
 FortranReadSeqLibSource += read/read_dataspaces.c
@@ -501,6 +578,17 @@ libadios_internal_nompi_a_SOURCES = core/mpidummy.c \
                                     core/adios_timing.c \
                                     core/util.c \
                                     core/futils.c \
+				    core/qinternal.c \
+                                    core/qlibc.c \
+                                    core/qhasharr.c \
+		                    core/qhashtbl.c \
+		                    core/qlist.c \
+		                    core/qqueue.c \
+		                    core/qstack.c \
+		                    core/qvector.c \
+		                    core/qhash.c \
+		                    core/qlisttbl.c \
+		                    core/md5/md5c.c \
                                     core/adios_transport_hooks.c 
 
 
@@ -542,6 +630,7 @@ CXX=$(MPICXX)
 
 EXTRA_DIST = core/adios_bp_v1.h core/adios_endianness.h \
              core/adios_internals.h core/adios_internals_mxml.h core/adios_logger.h \
+	     core/qlist.h core/qinternals.h core/md5/md5.h \
              core/adios_read_hooks.h core/adios_socket.h core/adios_timing.h \
              core/adios_transport_hooks.h \
              core/bp_types.h core/bp_utils.h core/buffer.h core/common_adios.h \
