@@ -3,7 +3,6 @@ WRITE
 
 - bring back "write=no" into XML tag to skip some variables
 - time-reset function for appending data to the same timestep ("extend" mode)
-- adios_init() should have a communicator parameter
 - complete error logging
 
 READ
@@ -33,10 +32,10 @@ need to test adios_complex and adios_double_complex scalars.
 
 BUILD
 =====
-- shared libraries (request by Numeca)
+- shared libraries 
 - cross-compile support
 - separate source from build 
-- add version defines into adios public header (request by Michele Martone)
+- add version defines into adios public header 
 
 MANUAL
 =====
