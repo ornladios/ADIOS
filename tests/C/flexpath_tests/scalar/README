@@ -86,7 +86,12 @@ sources.
 
 TROUBLESHOOTING
 ================
-Nothing so far.
+
+* There might be text files left such as *reader_info.txt, *writer_info.txt; 
+they should be removed for the next run. In order to do this you can 
+use command:
+
+make clean_text
 
 
 NOTES
@@ -134,11 +139,5 @@ aprun -n 1 -N 1 ./arrays_write
 date
 
 # eof
-
-
-TROUBLESHOOTING
-===============
-
-There might be text files left; they should be removed for the next run.
 
 # EOF
