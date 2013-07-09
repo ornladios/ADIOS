@@ -1450,9 +1450,15 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
             int total_size = 1;
             //for each dimension
             while(dims) {    
-                struct adios_var_struct* temp = adios_find_var_by_id(g2->vars, dims->dimension.id);            
-                int size = *(int*)temp->data;
-                //perr( "dim %s size %d\n", temp->name, *(int*)temp->data);
+		int size = 1;
+		// if the value was passed in via variable
+		if(dims->dimension.id > 0){
+		    struct adios_var_struct* temp = adios_find_var_by_id(g2->vars, dims->dimension.id);            
+		    size = *(int*)temp->data;
+		}
+		else // else it was passed in via hard-coded value
+		    size = dims->dimension.rank;
+
                 total_size *= size;
                 dims = dims->next;
             }		
