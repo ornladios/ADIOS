@@ -120,6 +120,9 @@ int dotest ()
     tget = tget - tbegin;
     printf("Timing: put %d elements in %d seconds, got them back in %d seconds\n",
             npaths*nvars, tput, tget);
+
+    /* Free hashtable */
+    tbl->free(tbl);
     return 0;
 }
 
