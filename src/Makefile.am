@@ -63,6 +63,7 @@ libadios_a_SOURCES = core/adios.c \
                      core/adios_socket.c \
                      core/adios_logger.c \
                      core/util.c \
+                     core/qhashtbl.c \
                      read/read_bp.c \
                      read/read_bp_staged.c \
                      read/read_bp_staged1.c \
@@ -95,6 +96,7 @@ libadios_nompi_a_SOURCES = core/adios.c \
                      core/adios_socket.c \
                      core/adios_logger.c \
                      core/util.c \
+                     core/qhashtbl.c \
                      read/read_bp.c \
                      read/read_bp_staged.c \
                      read/read_bp_staged1.c \
@@ -123,6 +125,7 @@ FortranLibSources = core/adiosf.c \
                      core/adios_socket.c \
                      core/adios_logger.c \
                      core/util.c \
+                     core/qhashtbl.c \
                      read/read_bp.c \
                      read/read_bp_staged.c \
                      read/read_bp_staged1.c \
@@ -320,6 +323,7 @@ libadiosread_a_SOURCES = core/adios_bp_v1.c \
                       core/adios_read_hooks.c \
                       core/adios_logger.c \
                       core/util.c \
+                      core/qhashtbl.c \
                       read/read_bp.c \
                       read/read_bp_staged.c \
                       read/read_bp_staged1.c 
@@ -358,6 +362,7 @@ FortranReadLibSource = core/adios_bp_v1.c \
                       core/adios_read_hooks.c \
                       core/adios_logger.c \
                       core/util.c \
+                      core/qhashtbl.c \
                       read/read_bp.c \
                       read/read_bp_staged.c \
                       read/read_bp_staged1.c 
@@ -418,6 +423,7 @@ libadiosread_nompi_a_SOURCES = core/mpidummy.c\
                       core/globals.c \
                       core/adios_read_hooks.c \
                       core/util.c \
+                      core/qhashtbl.c \
                       read/read_bp.c 
 
 if HAVE_DATASPACES
@@ -458,6 +464,7 @@ FortranReadSeqLibSource = core/mpidummy.c\
                           core/globals.c \
                           core/adios_read_hooks.c \
                           core/util.c \
+                          core/qhashtbl.c \
                           read/read_bp.c 
 if HAVE_DATASPACES
 FortranReadSeqLibSource += read/read_dataspaces.c
