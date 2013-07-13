@@ -53,7 +53,7 @@ struct qhnobj_s {
 struct qhashtbl_s {
     /* capsulated member functions */
     bool  (*put)    (qhashtbl_t *tbl, const char *path,  const char *name, const void *data);
-    void *(*get)    (qhashtbl_t *tbl, const char *path, const char *name);
+    void *(*get)    (qhashtbl_t *tbl, const char *fullpath);
     bool  (*remove) (qhashtbl_t *tbl, const char *path, const char *name);
 
     int   (*size)   (qhashtbl_t *tbl);

@@ -96,11 +96,12 @@
 #include <string.h>
 #include <errno.h>
 #include "qhashtbl.h"
+#include "core/adios_logger.h"
 
 
 // member methods
 static bool put(qhashtbl_t *tbl, const char *path, const char *name, const void *data);
-static void *get(qhashtbl_t *tbl, const char *path, const char *name);
+static void *get(qhashtbl_t *tbl, const char *fullpath);
 static bool remove_(qhashtbl_t *tbl, const char *path, const char *name);
 static int size(qhashtbl_t *tbl);
 static void clear(qhashtbl_t *tbl);
@@ -180,12 +181,19 @@ qhashtbl_t *qhashtbl(int range)
 static void genkey(const char *path, const char *name, int *keylen, char **key)
 {
     // create key
-    *keylen = strlen (name) + strlen (path) + 2;
-    *key = malloc (*keylen);
-    if (!strcmp (path, "/"))
+    if (!strcmp (path, "")) {
+        *keylen = strlen (name);
+        *key = malloc (*keylen+1);
+        sprintf (*key, "%s", name);
+    } else if (!strcmp (path, "/")) {
+        *keylen = strlen (name) + 1;
+        *key = malloc (*keylen+1);
         sprintf (*key, "/%s", name);
-    else
+    } else {
+        *keylen = strlen (name) + strlen (path) + 1;
+        *key = malloc (*keylen+1);
         sprintf (*key, "%s/%s", path, name);
+    }
 }
 
 static bool put(qhashtbl_t *tbl, const char *path, const char *name, const void *data)
@@ -197,6 +205,8 @@ static bool put(qhashtbl_t *tbl, const char *path, const char *name, const void 
     // get hash integer
     uint32_t hash = qhashmurmur3_32(key, keylen);
     int idx = hash % tbl->range;
+
+    //log_error ("qhastbl:put: key=[%s], keylen=%d hash=%d, idx=%d, d=%x\n", key, keylen, hash, idx, data);
 
     // find existence key
     qhnobj_t *obj;
@@ -268,20 +278,18 @@ static bool put(qhashtbl_t *tbl, const char *path, const char *name, const void 
  * @endcode
  *
  */
-static void *get(qhashtbl_t *tbl, const char *path, const char *name)
+static void *get(qhashtbl_t *tbl, const char *fullpath)
 {
-    int keylen;
-    char *key;
-    genkey (path, name, &keylen, &key);
-
     // get hash integer
-    uint32_t hash = qhashmurmur3_32(key, keylen);
+    uint32_t hash = qhashmurmur3_32(fullpath, strlen(fullpath));
     int idx = hash % tbl->range;
+
+    //log_error ("qhastbl:get: key=[%s], keylen=%d, hash=%d, idx=%d\n", fullpath, strlen(fullpath), hash, idx);
 
     // find key
     qhnobj_t *obj;
     for (obj = tbl->slots[idx]; obj != NULL; obj = obj->next) {
-        if (obj->hash == hash && !strcmp(obj->key, key)) {
+        if (obj->hash == hash && !strcmp(obj->key, fullpath)) {
             break;
         }
     }
@@ -292,6 +300,7 @@ static void *get(qhashtbl_t *tbl, const char *path, const char *name)
     }
 
     if (data == NULL) errno = ENOENT;
+    //log_error ("qhastbl:get: data=%x\n", data);
     return data;
 }
 
@@ -316,6 +325,8 @@ static bool remove_(qhashtbl_t *tbl, const char *path, const char *name)
     // get hash integer
     uint32_t hash = qhashmurmur3_32(key, keylen);
     int idx = hash % tbl->range;
+
+    //log_error ("qhastbl:remove: key=%s, hash=%d, idx=%d\n", key, hash, idx);
 
     // find key
     bool found = false;
