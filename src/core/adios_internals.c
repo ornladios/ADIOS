@@ -2736,7 +2736,8 @@ void adios_copy_var_written (struct adios_var_struct ** root
                 (sizeof (struct adios_var_struct));
             //var_new->id = ++fd->group->member_count;
             var_new->id = var->id;
-            var_new->parent_id = var->id;
+            //var_new->parent_id = var->id;
+            var_new->parent_var = var;
             var_new->name = strdup (var->name);
             var_new->path = strdup (var->path);
             var_new->type = var->type;
@@ -2927,7 +2928,8 @@ void adios_build_index_v1 (struct adios_file_struct * fd
             // We need this to calculate the correct payload_offset, because that
             // holds the variable references in the dimensions, while v-> contains
             // only numerical values
-            struct adios_var_struct * old_var = adios_find_var_by_id (g->vars, v->parent_id);
+            //struct adios_var_struct * old_var = adios_find_var_by_id (g->vars, v->parent_id);
+            struct adios_var_struct * old_var = v->parent_var;
             v_index->characteristics [0].payload_offset = v->write_offset
                 + adios_calc_var_overhead_v1 (old_var)
                 - strlen (old_var->path)  // take out the length of path defined in XML

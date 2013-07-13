@@ -42,7 +42,8 @@ struct adios_stat_struct
 struct adios_var_struct
 {
     uint16_t id;
-    uint16_t parent_id;
+    //uint16_t parent_id;
+    struct adios_var_struct *parent_var; // copy_var_written links "written var" to "var definition"
 
     char * name;
     char * path;
