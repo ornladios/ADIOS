@@ -17,10 +17,12 @@
 #include <arpa/inet.h>
 #include <stdint.h>
 #include <sys/stat.h>
+#include <assert.h>
 
 #include "public/adios.h"
 #include "core/adios_internals.h"
 #include "core/adios_bp_v1.h"
+#include "core/qhashtbl.h"
 #include "core/adios_logger.h"
 
 #ifdef DMALLOC
@@ -66,6 +68,26 @@ int adios_int_is_num (char * temp) // 1 == yes, 0 == no
     return 0;
 }
 
+/** Find a variable in the hash table and return the pointer to the var struct.
+ *  A full path is required (to match var->path+"/"+var->name)
+ */
+struct adios_var_struct * adios_find_var_by_name (struct adios_group_struct * g,
+                                                  const char * fullpath)
+{
+    struct adios_var_struct * var = NULL;
+
+    if (!fullpath) {
+        return NULL;
+    }
+
+    // Find variable in the hash table
+    var = (struct adios_var_struct *)
+            g->hashtbl_vars->get (g->hashtbl_vars, fullpath);
+
+    return var;
+}
+
+/*
 struct adios_var_struct * adios_find_var_by_name (struct adios_var_struct * root
         ,const char * name
         ,enum ADIOS_FLAG unique_names
@@ -118,6 +140,7 @@ struct adios_var_struct * adios_find_var_by_name (struct adios_var_struct * root
 
     return var;
 }
+*/
 
 struct adios_attribute_struct * adios_find_attribute_by_name
 (struct adios_attribute_struct * root
@@ -232,9 +255,7 @@ int adios_parse_dimension (const char * dimension
     {
         struct adios_var_struct * var = 0;
         dim->dimension.rank = 0;
-        var = adios_find_var_by_name (g->vars, dimension
-                ,g->all_unique_var_names
-                );
+        var = adios_find_var_by_name (g, dimension);
         if (!var)
         {
             struct adios_attribute_struct * attr = 0;
@@ -345,9 +366,7 @@ int adios_parse_dimension (const char * dimension
     {
         struct adios_var_struct * var = 0;
         dim->global_dimension.rank = 0;
-        var = adios_find_var_by_name (g->vars, global_dimension
-                ,g->all_unique_var_names
-                );
+        var = adios_find_var_by_name (g, global_dimension);
         if (!var)
         {
             struct adios_attribute_struct * attr = 0;
@@ -469,9 +488,7 @@ int adios_parse_dimension (const char * dimension
     {
         struct adios_var_struct * var = 0;
         dim->local_offset.rank = 0;
-        var = adios_find_var_by_name (g->vars, local_offset
-                ,g->all_unique_var_names
-                );
+        var = adios_find_var_by_name (g, local_offset);
         if (!var)
         {
             struct adios_attribute_struct * attr = 0;
@@ -929,9 +946,7 @@ int adios_common_define_attribute (int64_t group, const char * name
     {
         attr->value = 0;
         attr->type = adios_unknown;
-        attr->var = adios_find_var_by_name (g->vars, var
-                ,g->all_unique_var_names
-                );
+        attr->var = adios_find_var_by_name (g, var);
 
         if (attr->var == 0)
         {
@@ -1146,7 +1161,34 @@ void adios_append_group (struct adios_group_struct * group)
     }
 }
 
+static void adios_append_var (struct adios_group_struct * g, struct adios_var_struct * var)
+{
+    assert(g);
+
+    /* Note: many routines parse the list of variables through the ->next pointer with
+     * "while (v) { ...; v=v->next }
+     * So we need have NULL as next in the last variable
+     */
+    if (!g->vars) {
+        // first variable: g->vars     : V => (null)
+        //                 g->vars_tail: V => (null)
+        var->next = NULL; 
+        g->vars = var;      // V => (null)
+        g->vars_tail = var; // V => (null)
+    } else {
+       var->next = NULL;        
+       // append var to tail  
+       g->vars_tail->next = var;  // g->vars => ... => tail => V => (null)
+       // new tail is var
+       g->vars_tail = var;
+    }
+
+    // Add variable to the hash table too
+    g->hashtbl_vars->put(g->hashtbl_vars, var->path, var->name, var);
+}
+
 // return is whether or not the name is unique
+/*
 enum ADIOS_FLAG adios_append_var (struct adios_var_struct ** root
         ,struct adios_var_struct * var
         ,uint16_t id
@@ -1177,6 +1219,7 @@ enum ADIOS_FLAG adios_append_var (struct adios_var_struct ** root
 
     return unique_names;
 }
+*/
 
 void adios_append_dimension (struct adios_dimension_struct ** root
         ,struct adios_dimension_struct * dimension
@@ -1232,14 +1275,15 @@ int adios_common_declare_group (int64_t * id, const char * name
 
     g->name = strdup (name);
     g->adios_host_language_fortran = host_language_fortran;
-    g->all_unique_var_names = adios_flag_yes;
+    g->all_unique_var_names = adios_flag_no;
     // ADIOS Schema: adding similar var for meshes
     g->all_unique_mesh_names = adios_flag_yes;
     g->id = 0; // will be set in adios_append_group
     g->member_count = 0; // will be set in adios_append_group
-    g->var_count = 0;
     g->vars = 0;
+    g->hashtbl_vars = qhashtbl(100);
     g->vars_written = 0;
+    g->hashtbl_vars_written = qhashtbl(100);
     g->attributes = 0;
     g->group_by = (coordination_var ? strdup (coordination_var) : 0L);
     g->group_comm = (coordination_comm ? strdup (coordination_comm) : 0L);
@@ -1296,6 +1340,9 @@ int adios_common_free_group (int64_t id)
     if (g->name)
         free (g->name);
 
+    // free the hashtables
+    g->hashtbl_vars->free(g->hashtbl_vars);
+    g->hashtbl_vars_written->free(g->hashtbl_vars_written);
     while (g->vars)
     {
         struct adios_var_struct * vars = g->vars->next;
@@ -1439,7 +1486,7 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
 {
     struct adios_var_struct * root = g->vars, * var;
 
-    var = adios_find_var_by_name (root, var_name, adios_flag_no);
+    var = adios_find_var_by_name (g, var_name);
 
     struct adios_hist_struct * hist;
 
@@ -1561,6 +1608,26 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
     return 1;
 }
 
+static char * dup_path (const char *path)
+{
+    char * p = NULL;
+    int len;
+    if (!path)
+        return NULL;
+    len = strlen (path);
+    /* remove trailing / characters */
+    while (len > 1 && path[len-1] == '/') {
+        /* ends with '/' and it is not a single '/' */
+        len--;
+    }
+    p = malloc (len+1);
+    if (!p)
+        return NULL;
+    strncpy (p, path, len);
+    p[len] = '\0';
+    return p;
+}
+
 int64_t adios_common_define_var (int64_t group_id, const char * name
         ,const char * path, enum ADIOS_DATATYPES type
         ,const char * dimensions
@@ -1590,7 +1657,8 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
         lo_dim_temp = 0;
 
     v->name = strdup (name);
-    v->path = strdup (path);
+    v->path = dup_path (path);  // copy but remove trailing / characters
+    //log_error ("define_var: name=%s, path=[%s], dup=[%s]\n", name, path, v->path);
     v->type = type;
     v->dimensions = 0;
     v->is_dim = adios_flag_no;
@@ -1709,12 +1777,8 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
     if (lo_dim_temp)
         free (lo_dim_temp);
 
-    flag = adios_append_var (&t->vars, v, ++t->member_count);
-    if (flag == adios_flag_no)
-    {
-        t->all_unique_var_names = adios_flag_no;
-    }
-    t->var_count++;
+    v->id = ++t->member_count;
+    adios_append_var (t, v);
 
     return (int64_t)v;
 }
@@ -1996,9 +2060,7 @@ int adios_write_process_group_header_v1 (struct adios_file_struct * fd
 
     buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, g->name, len);
 
-    var = adios_find_var_by_name (g->vars, g->group_by
-            ,g->all_unique_var_names
-            );
+    var = adios_find_var_by_name (g, g->group_by);
     if (var)
     {
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &var->id, 2);
@@ -2828,7 +2890,6 @@ void adios_build_index_v1 (struct adios_file_struct * fd
     struct adios_index_process_group_struct_v1 * g_item;
 
     uint64_t process_group_count = 0;
-    uint16_t var_count = 0;
 
     g_item = (struct adios_index_process_group_struct_v1 *)
         malloc (sizeof (struct adios_index_process_group_struct_v1));
@@ -5239,9 +5300,7 @@ int adios_define_mesh_timeScale (const char * timescale
         if (!strtod (c,&ptr_end))
         {
             var =
-                adios_find_var_by_name (new_group->vars, c
-                        ,new_group->all_unique_var_names
-                        );
+                adios_find_var_by_name (new_group, c);
             if (!var)
             {
                 log_warn ("config.xml: invalid variable %s\n"
@@ -5404,9 +5463,7 @@ int adios_define_mesh_timeSteps (const char * timesteps
         if (adios_int_is_var (c))
         {
             var =
-                adios_find_var_by_name (new_group->vars, c
-                        ,new_group->all_unique_var_names
-                        );
+                adios_find_var_by_name (new_group, c);
             if (!var)
             {
                 log_warn ("config.xml: invalid variable %s\n"
@@ -5908,9 +5965,7 @@ int adios_define_var_timesteps (const char * timesteps
         if (adios_int_is_var (c))
         {
             var =
-                adios_find_var_by_name (new_group->vars, c
-                        ,new_group->all_unique_var_names
-                        );
+                adios_find_var_by_name (new_group, c);
             if (!var)
             {
                 log_warn ("config.xml: invalid variable %s\n"
@@ -6108,9 +6163,7 @@ int adios_define_var_timescale (const char * timescale
         if (!strtod (c,&ptr_end))
         {
             var =
-                adios_find_var_by_name (new_group->vars, c
-                        ,new_group->all_unique_var_names
-                        );
+                adios_find_var_by_name (new_group, c);
             if (!var)
             {
                 log_warn ("config.xml: invalid variable %s\n"

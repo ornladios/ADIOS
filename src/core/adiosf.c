@@ -204,7 +204,7 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
         return;
     }
 
-    v = adios_find_var_by_name (v, buf1, fd->group->all_unique_var_names);
+    v = adios_find_var_by_name (fd->group, buf1);
 
     if (!v)
     {

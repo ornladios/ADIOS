@@ -112,7 +112,7 @@ int adios_write (int64_t fd_p, const char * name, void * var)
         return 0;
     }
 
-    v = adios_find_var_by_name (v, name, fd->group->all_unique_var_names);
+    v = adios_find_var_by_name (fd->group, name);
 
     if (!v)
     {

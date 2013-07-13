@@ -15,6 +15,7 @@
 #include "public/adios_mpi.h"
 #include "core/adios_transport_hooks.h"
 #include "core/adios_bp_v1.h"
+#include "core/qhashtbl.h"
 
 #ifdef SKEL_TIMING
 #include "core/adios_timing.h"
@@ -153,15 +154,18 @@ struct adios_mesh_struct
 struct adios_group_struct
 {
     uint16_t id;
-    uint16_t member_count;
+    uint16_t member_count; // count of variables + attributes
     uint64_t group_offset;
 
     char * name;
     int var_count;
     enum ADIOS_FLAG adios_host_language_fortran;
-    enum ADIOS_FLAG all_unique_var_names;
+    enum ADIOS_FLAG all_unique_var_names; // obsolete: remove
     struct adios_var_struct * vars;
+    struct adios_var_struct * vars_tail;  // last variable in the list 'vars'
+    qhashtbl_t *hashtbl_vars;
     struct adios_var_struct * vars_written;
+    qhashtbl_t *hashtbl_vars_written;
     struct adios_attribute_struct * attributes;
     char * group_comm;
     char * group_by;
@@ -385,10 +389,8 @@ uint64_t adios_data_size (struct adios_group_struct * g);
 struct adios_method_list_struct * adios_get_methods (void);
 struct adios_group_list_struct * adios_get_groups (void);
 
-struct adios_var_struct * adios_find_var_by_name (struct adios_var_struct * root
-                                                 ,const char * name
-                                                 ,enum ADIOS_FLAG unique_names
-                                                 );
+struct adios_var_struct * adios_find_var_by_name (struct adios_group_struct * g,
+                                                  const char * fullpath);
 struct adios_var_struct * adios_find_var_by_id (struct adios_var_struct * root
                                                ,uint16_t id
                                                );
@@ -441,11 +443,7 @@ void adios_add_method_to_group (struct adios_method_list_struct ** root
 
 void adios_append_group (struct adios_group_struct * group);
 
-// is the var name unique
-enum ADIOS_FLAG adios_append_var (struct adios_var_struct ** root
-                                 ,struct adios_var_struct * var
-                                 ,uint16_t id
-                                 );
+//void adios_append_var (struct adios_group_struct * g, struct adios_var_struct * var);
 
 void adios_append_dimension (struct adios_dimension_struct ** root
                             ,struct adios_dimension_struct * dimension
@@ -599,7 +597,7 @@ int adios_define_mesh_structured_pointsSingleVar (const char * points,struct adi
 int adios_define_mesh_structured_pointsMultiVar (const char * points,struct adios_group_struct * new_group,const char * name);
 
 int adios_define_mesh_unstructured(char *nspace, char *npoints, char *points, char * data, char * count, char * type, struct adios_group_struct * new_group, const char * name);
-int adios_define_mesh_unstructurednpoints (const char * npoints,struct adios_group_struct * new_group ,const char * name);
+int adios_define_mesh_unstructured_npoints (const char * npoints,struct adios_group_struct * new_group ,const char * name);
 int adios_define_mesh_unstructured_nspace (const char * nspace,struct adios_group_struct * new_group,const char * name);
 int adios_define_mesh_unstructured_pointsSingleVar (const char * points,struct adios_group_struct * new_group,const char * name);
 int adios_define_mesh_unstructured_pointsMultiVar (const char * points,struct adios_group_struct * new_group ,const char * name);

@@ -485,7 +485,7 @@ int common_adios_get_write_buffer (int64_t fd_p, const char * name
     struct adios_var_struct * v = fd->group->vars;
     struct adios_method_list_struct * m = fd->group->methods;
 
-    v = adios_find_var_by_name (v, name, fd->group->all_unique_var_names);
+    v = adios_find_var_by_name (fd->group, name);
 
     if (!v)
     {
@@ -554,9 +554,7 @@ int common_adios_read (int64_t fd_p, const char * name, void * buffer
         return 1;
     }
 
-    v = adios_find_var_by_name (fd->group->vars, name
-                               ,fd->group->all_unique_var_names
-                               );
+    v = adios_find_var_by_name (fd->group, name);
     if (v)
     {
         // since can only read from one place into the buffer,
@@ -644,7 +642,7 @@ int common_adios_set_path_var (int64_t fd_p, const char * path
     struct adios_var_struct * v = t->vars;
 
     // check for vars and then attributes
-    v = adios_find_var_by_name (t->vars, name, fd->group->all_unique_var_names);
+    v = adios_find_var_by_name (t, name);
 
     if (v)
     {
