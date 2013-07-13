@@ -3,15 +3,15 @@
 
     <adios-group name="abc" coordination-communicator="comm" time-index="tidx">
         <!-- dimension variables (scalars) -->
-        <var name="gdim1" path="/dimensions" type="integer"/>
-        <var name="gdim2" path="/dimensions" type="integer"/>
-        <var name="gdim3" path="/dimensions" type="integer"/>
-        <var name="ldim1" path="/dimensions" type="integer"/>
-        <var name="ldim2" path="/dimensions" type="integer"/>
-        <var name="ldim3" path="/dimensions" type="integer"/>
-        <var name="offs1" path="/dimensions" type="integer"/>
-        <var name="offs2" path="/dimensions" type="integer"/>
-        <var name="offs3" path="/dimensions" type="integer"/>
+        <var name="gdim1" type="integer"/>
+        <var name="gdim2" type="integer"/>
+        <var name="gdim3" type="integer"/>
+        <var name="ldim1" type="integer"/>
+        <var name="ldim2" type="integer"/>
+        <var name="ldim3" type="integer"/>
+        <var name="offs1" type="integer"/>
+        <var name="offs2" type="integer"/>
+        <var name="offs3" type="integer"/>
 
         <!-- Scalars -->
         <var name="a0"  type="integer"/>

@@ -162,32 +162,32 @@ int write_file (char *fname)
 
     adios_group_size (fh, groupsize, &totalsize);
 
-    adios_write (fh, "gdim1", &gdim1);
-    adios_write (fh, "gdim2", &gdim2);
-    adios_write (fh, "gdim3", &gdim3);
-    adios_write (fh, "gdim4", &gdim4);
-    adios_write (fh, "gdim5", &gdim5);
+    adios_write (fh, "dir1/gdim1", &gdim1);
+    adios_write (fh, "/dir1/gdim2", &gdim2);
+    adios_write (fh, "dir1/gdim3", &gdim3);
+    adios_write (fh, "/dir1/dir2/gdim4", &gdim4);
+    adios_write (fh, "/gdim5", &gdim5);
     adios_write (fh, "gdim6", &gdim6);
     adios_write (fh, "gdim7", &gdim7);
-    adios_write (fh, "ldim1", &ldim1);
-    adios_write (fh, "ldim2", &ldim2);
-    adios_write (fh, "ldim3", &ldim3);
-    adios_write (fh, "ldim4", &ldim4);
-    adios_write (fh, "ldim5", &ldim5);
+    adios_write (fh, "dir1/ldim1", &ldim1);
+    adios_write (fh, "/dir1/ldim2", &ldim2);
+    adios_write (fh, "dir1/ldim3", &ldim3);
+    adios_write (fh, "/dir1/dir2/ldim4", &ldim4);
+    adios_write (fh, "/ldim5", &ldim5);
     adios_write (fh, "ldim6", &ldim6);
     adios_write (fh, "ldim7", &ldim7);
-    adios_write (fh, "offs1", &offs1);
-    adios_write (fh, "offs2", &offs2);
-    adios_write (fh, "offs3", &offs3);
-    adios_write (fh, "offs4", &offs4);
-    adios_write (fh, "offs5", &offs5);
+    adios_write (fh, "dir1/offs1", &offs1);
+    adios_write (fh, "/dir1/offs2", &offs2);
+    adios_write (fh, "dir1/offs3", &offs3);
+    adios_write (fh, "/dir1/dir2/offs4", &offs4);
+    adios_write (fh, "/offs5", &offs5);
     adios_write (fh, "offs6", &offs6);
     adios_write (fh, "offs7", &offs7);
-    adios_write (fh, "a1", a1);
-    adios_write (fh, "a2", a2);
-    adios_write (fh, "a3", a3);
-    adios_write (fh, "a4", a4);
-    adios_write (fh, "a5", a5);
+    adios_write (fh, "dir1/a1", a1);
+    adios_write (fh, "/dir1/a2", a2);
+    adios_write (fh, "dir1/a3", a3);
+    adios_write (fh, "/dir1/dir2/a4", a4);
+    adios_write (fh, "/a5", a5);
     adios_write (fh, "a6", a6);
     adios_write (fh, "a7", a7);
 
@@ -255,7 +255,7 @@ int read_file (char *fname)
     log ("  Global dimensions... %s\n", fname);
     CHECK_SCALAR ("dir1/gdim1",  gdim1,  int)
     CHECK_SCALAR ("dir1/gdim2",  gdim2,  int)
-    CHECK_SCALAR ("dir1//gdim3",  gdim3,  int)
+    CHECK_SCALAR ("dir1/gdim3",  gdim3,  int)
     CHECK_SCALAR ("/dir1/dir2/gdim4",  gdim4,  int)
     CHECK_SCALAR ("gdim5",  gdim5,  int)
     CHECK_SCALAR ("gdim6",  gdim6,  int)
@@ -284,7 +284,7 @@ int read_file (char *fname)
     start[0] = offs3;
     count[0] = ldim3;
     sel = adios_selection_boundingbox (1, start, count); 
-    adios_schedule_read (f, sel, "dir1//a3", 0, 1, r3);
+    adios_schedule_read (f, sel, "dir1/a3", 0, 1, r3);
     adios_perform_reads (f, 1);
     adios_selection_delete (sel);
     CHECK_ARRAY (a3, r3, ldim3)

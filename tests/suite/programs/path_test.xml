@@ -29,24 +29,24 @@
         <var name="offs7" type="integer"/>
 
         <!-- 1D Arrays -->
-        <global-bounds dimensions="gdim1" offsets="offs1">
-            <var name="a1"  path="dir1" type="integer" dimensions="ldim1"/>
+        <global-bounds dimensions="dir1/gdim1" offsets="dir1/offs1">
+            <var name="a1"  path="dir1" type="integer" dimensions="dir1/ldim1"/>
         </global-bounds>
 
-        <global-bounds dimensions="gdim2" offsets="offs2">
-            <var name="a2"  path="/dir1" type="integer" dimensions="ldim2"/>
+        <global-bounds dimensions="/dir1/gdim2" offsets="/dir1/offs2">
+            <var name="a2"  path="/dir1" type="integer" dimensions="/dir1/ldim2"/>
         </global-bounds>
 
-        <global-bounds dimensions="gdim3" offsets="offs3">
-            <var name="a3"  path="dir1/" type="integer" dimensions="ldim3"/>
+        <global-bounds dimensions="dir1/gdim3" offsets="dir1/offs3">
+            <var name="a3"  path="dir1/" type="integer" dimensions="dir1/ldim3"/>
         </global-bounds>
 
-        <global-bounds dimensions="gdim4" offsets="offs4">
-            <var name="a4"  path="/dir1/dir2" type="integer" dimensions="ldim4"/>
+        <global-bounds dimensions="/dir1/dir2/gdim4" offsets="/dir1/dir2/offs4">
+            <var name="a4"  path="/dir1/dir2" type="integer" dimensions="/dir1/dir2/ldim4"/>
         </global-bounds>
 
-        <global-bounds dimensions="gdim5" offsets="offs5">
-            <var name="a5"  path="/" type="integer" dimensions="ldim5"/>
+        <global-bounds dimensions="/gdim5" offsets="/offs5">
+            <var name="a5"  path="/" type="integer" dimensions="/ldim5"/>
         </global-bounds>
 
         <global-bounds dimensions="gdim6" offsets="offs6">
@@ -59,7 +59,7 @@
 
     </adios-group>
 
-<method group="pathtest" method="MPI"/>
+<method group="pathtest" method="MPI">verbose=4</method>
 
 <buffer size-MB="20" allocate-time="now"/>
 
