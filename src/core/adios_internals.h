@@ -42,7 +42,7 @@ struct adios_stat_struct
 struct adios_var_struct
 {
     uint16_t id;
-    //uint16_t parent_id;
+    //uint16_t parent_id; // obsolete: remove
     struct adios_var_struct *parent_var; // copy_var_written links "written var" to "var definition"
 
     char * name;
@@ -222,8 +222,10 @@ struct adios_file_struct
 
 struct adios_dimension_item_struct
 {
-    uint64_t rank;
-    uint16_t id;
+    uint64_t rank;                 // for numerical value
+    //uint16_t id; //obsolete: remove
+    struct adios_var_struct * var; // for value stored in variable
+    struct adios_attribute_struct * attr; // for value stored in attribute
     enum ADIOS_FLAG time_index;
 };
 

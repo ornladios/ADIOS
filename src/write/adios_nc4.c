@@ -240,14 +240,17 @@ static void parse_dimension_size(
         struct adios_dimension_item_struct *dim,
         size_t *dimsize)
 {
-    struct adios_var_struct *var_linked = NULL;
     struct adios_attribute_struct *attr_linked;
-    if (dim->id) {
-        var_linked = adios_find_var_by_id (pvar_root , dim->id);
-        if (!var_linked) {
-            attr_linked = adios_find_attribute_by_id (patt_root, dim->id);
-            if (!attr_linked->var) {
-                switch (attr_linked->type) {
+    if (dim->var) {
+        if (dim->var->data) {
+            *dimsize = *(int *)dim->var->data;
+        }
+    }
+    else if (dim->attr) 
+    {
+        attr_linked = dim->attr;
+        if (!attr_linked->var) {
+            switch (attr_linked->type) {
                 case adios_unsigned_byte:
                     *dimsize = *(uint8_t *)attr_linked->value;
                     break;
@@ -276,16 +279,14 @@ static void parse_dimension_size(
                     fprintf (stderr, "Invalid datatype for array dimension on "
                             "var %s: %s\n"
                             ,attr_linked->name
-                            ,adios_type_to_string_int (var_linked->type)
-                    );
+                            ,adios_type_to_string_int (attr_linked->type)
+                            );
                     break;
-                }
-            } else {
-                var_linked = attr_linked->var;
             }
-        }
-        if (var_linked && var_linked->data) {
-            *dimsize = *(int *)var_linked->data;
+        } else {
+            if (attr_linked->var->data) {
+                *dimsize = *(int *)attr_linked->var->data;
+            }
         }
     } else {
         if (dim->time_index == adios_flag_yes) {
@@ -307,24 +308,16 @@ static void parse_dimension_name(
 {
     struct adios_var_struct *var_linked = NULL;
     struct adios_attribute_struct *attr_linked;
-    if (dim->id) {
-        var_linked = adios_find_var_by_id (pvar_root , dim->id);
-        if (!var_linked) {
-            attr_linked = adios_find_attribute_by_id (patt_root, dim->id);
-            if (!attr_linked->var) {
-//				strcpy(dimname, attr_linked->name);
-                sprintf(dimname, "%s_dim", attr_linked->name);
-            } else {
-                var_linked = attr_linked->var;
-            }
-        }
-        if (var_linked && var_linked->name) {
-//			strcpy(dimname, var_linked->name);
-            sprintf(dimname, "%s_dim", var_linked->name);
+    if (dim->var) {
+        sprintf(dimname, "%s_dim", dim->var->name);
+    } else if (dim->attr) {
+        if (!dim->attr->var) {
+            sprintf(dimname, "%s_dim", dim->attr->name);
+        } else {
+            sprintf(dimname, "%s_dim", dim->attr->var->name);
         }
     } else {
         if (dim->time_index == adios_flag_yes) {
-//			strcpy(dimname, group->time_index_name);
             sprintf(dimname, "%s_dim", group->time_index_name);
         } else {
             if (dim->rank > 0) {
@@ -526,34 +519,38 @@ static int decipher_dims(
     int local_offset_count=0;
 
     char dimname[255];
+    void * id;
 
     memset(deciphered_dims, 0, sizeof(deciphered_dims_t));
 
     dims=pvar->dimensions;
     while (dims) {
         if ((dims->dimension.time_index == adios_flag_yes) &&
-            (dims->dimension.id == 0)) {
+            (dims->dimension.var == NULL && dims->dimension.attr == NULL)) {
             has_timedim = adios_flag_yes;
             timedim_index = local_dim_count;
             local_dim_count++;
         } else if ((dims->dimension.rank != 0) ||
-            (dims->dimension.rank == 0) && (dims->dimension.id != 0)) {
+            (dims->dimension.rank == 0) && 
+            (dims->dimension.var != NULL || dims->dimension.attr != NULL)) {
             has_localdims=adios_flag_yes;
             local_dim_count++;
         }
         if ((dims->global_dimension.rank != 0) ||
-            (dims->global_dimension.rank == 0) && (dims->global_dimension.id != 0)) {
+            (dims->global_dimension.rank == 0) && 
+            (dims->global_dimension.var != NULL || dims->global_dimension.attr != NULL)) {
             has_globaldims=adios_flag_yes;
             global_dim_count++;
         }
         if ((dims->local_offset.rank != 0) ||
-            (dims->local_offset.rank == 0) && (dims->local_offset.id != 0)) {
+            (dims->local_offset.rank == 0) && 
+            (dims->local_offset.var != NULL || dims->local_offset.attr != NULL)) {
             has_localoffsets=adios_flag_yes;
             local_offset_count++;
         }
-        if (DEBUG>3) printf("gdims[%d].rank=%llu; id=%d, time_index=%d\n", i, dims->global_dimension.rank, dims->global_dimension.id, dims->global_dimension.time_index);
-        if (DEBUG>3) printf("ldims[%d].rank=%llu; id=%d, time_index=%d\n", i, dims->dimension.rank, dims->dimension.id, dims->dimension.time_index);
-        if (DEBUG>3) printf("loffs[%d].rank=%llu; id=%d, time_index=%d\n", i, dims->local_offset.rank, dims->local_offset.id, dims->local_offset.time_index);
+        if (DEBUG>3) printf("gdims[%d].rank=%llu; var=%d, attr=%d, time_index=%d\n", i, dims->global_dimension.rank, dims->global_dimension.var, dims->global_dimension.attr, dims->global_dimension.time_index);
+        if (DEBUG>3) printf("ldims[%d].rank=%llu; var=%d, attr=%d, time_index=%d\n", i, dims->dimension.rank, dims->dimension.var, dims->dimension.attr, dims->dimension.time_index);
+        if (DEBUG>3) printf("loffs[%d].rank=%llu; var=%d, attr=%d, time_index=%d\n", i, dims->local_offset.rank, dims->local_offset.var, dims->local_offset.attr, dims->local_offset.time_index);
         i++;
         dims = dims->next;
     }
@@ -583,8 +580,8 @@ static int decipher_dims(
         parse_dimension_name(group, pvar_root, patt_root, &dims->global_dimension, dimname);
         //ncd_gen_name(nc4_global_dimnames[i], pvar->path, dimname);
         ncd_gen_name(nc4_global_dimnames[i], "", dimname);
-        if (DEBUG>3) printf("global_dimension[%d]->name==%s, ->rank==%llu, ->id==%d, time_index==%d\n",
-                i, nc4_global_dimnames[i], dims->global_dimension.rank, dims->global_dimension.id, dims->global_dimension.time_index);
+        if (DEBUG>3) printf("global_dimension[%d]->name==%s, ->rank==%llu, ->var==%d, ->attr==%d, time_index==%d\n",
+                i, nc4_global_dimnames[i], dims->global_dimension.rank, dims->global_dimension.var, dims->global_dimension.attr, dims->global_dimension.time_index);
         if (dims) {
             dims = dims -> next;
         }
@@ -594,8 +591,8 @@ static int decipher_dims(
         parse_dimension_name(group, pvar_root, patt_root, &dims->dimension, dimname);
         //ncd_gen_name(nc4_local_dimnames[i], pvar->path, dimname);
         ncd_gen_name(nc4_local_dimnames[i], "", dimname);
-        if (DEBUG>3) printf("local_dimension[%d]->name ==%s, ->rank==%llu, ->id==%d, time_index==%d\n",
-                i, nc4_local_dimnames[i], dims->dimension.rank, dims->dimension.id, dims->dimension.time_index);
+        if (DEBUG>3) printf("local_dimension[%d]->name ==%s, ->rank==%llu, ->var==%d, ->attr==%d, time_index==%d\n",
+                i, nc4_local_dimnames[i], dims->dimension.rank, dims->dimension.var, dims->dimension.attr, dims->dimension.time_index);
         if (dims) {
             dims = dims -> next;
         }
@@ -605,8 +602,8 @@ static int decipher_dims(
         parse_dimension_name(group, pvar_root, patt_root, &dims->local_offset, dimname);
         //ncd_gen_name(nc4_local_offset_names[i], pvar->path, dimname);
         ncd_gen_name(nc4_local_offset_names[i], "", dimname);
-        if (DEBUG>3) printf("local_offset[%d]->name    ==%s, ->rank==%llu, ->id==%d, time_index==%d\n",
-                i, nc4_local_offset_names[i], dims->local_offset.rank, dims->local_offset.id, dims->local_offset.time_index);
+        if (DEBUG>3) printf("local_offset[%d]->name    ==%s, ->rank==%llu, ->var==%d, ->attr==%d, time_index==%d\n",
+                i, nc4_local_offset_names[i], dims->local_offset.rank, dims->local_offset.var, dims->local_offset.attr, dims->local_offset.time_index);
         if (dims) {
             dims = dims -> next;
         }

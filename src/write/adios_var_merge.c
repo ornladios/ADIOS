@@ -167,16 +167,29 @@ static uint64_t get_value_for_dim (struct adios_file_struct * fd,
 {
     uint64_t dim = 0;
 
-    if (dimension->id != 0)
+    if (dimension->var != NULL)
     {
-        struct adios_var_struct * var = adios_find_var_by_id (fd->group->vars
-                                                             ,dimension->id
-                                                             );
-        if (var)
+        struct adios_var_struct * var = dimension->var;
+        if (var->data)
         {
-            if (var->data)
+            dim = cast_var_data_as_uint64 (var->name, var->type, var->data);
+        }
+        else
+        {
+            adios_error (err_dimension_required, "array dimension data missing\n");
+        }
+    }
+    else if (dimension->attr != NULL)
+    {
+        struct adios_attribute_struct * attr = dimension->attr;
+        if (attr->var)
+        {
+            if (attr->var->data)
             {
-                dim = cast_var_data_as_uint64 (var->name, var->type, var->data);
+                dim = cast_var_data_as_uint64 (attr->var->name
+                        ,attr->var->type
+                        ,attr->var->data
+                        );
             }
             else
             {
@@ -185,39 +198,7 @@ static uint64_t get_value_for_dim (struct adios_file_struct * fd,
         }
         else
         {
-            struct adios_attribute_struct * attr = adios_find_attribute_by_id
-                                                        (fd->group->attributes
-                                                        ,dimension->id
-                                                        );
-            if (attr)
-            {
-                if (attr->var)
-                {
-                    if (attr->var->data)
-                    {
-                        dim = cast_var_data_as_uint64 (attr->var->name
-                                                      ,attr->var->type
-                                                      ,attr->var->data
-                                                      );
-                    }
-                    else
-                    {
-                        adios_error (err_dimension_required, "array dimension data missing\n");
-                    }
-                }
-                else
-                {
-                    dim = cast_var_data_as_uint64 (attr->name, attr->type
-                                                  ,attr->value
-                                                  );
-                }
-            }
-            else
-            {
-                adios_error (err_invalid_dimension,
-                             "invalid dimension member id: %d\n",
-                             dimension->id);
-            }
+            dim = cast_var_data_as_uint64 (attr->name, attr->type, attr->value);
         }
     }
     else

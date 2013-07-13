@@ -241,8 +241,12 @@ int adios_parse_dimension (const char * dimension
         return 0;
     }
 
+    /* Get the local dimension */
+    // one of the three fields below will be set, the other two remain 0
     dim->dimension.rank = 0;
-    dim->dimension.id = 0;
+    dim->dimension.var = NULL;
+    dim->dimension.attr = NULL;
+
     dim->dimension.time_index = adios_flag_no;
     if ( g->time_index_name &&
          !strcasecmp (g->time_index_name, dimension)
@@ -320,7 +324,7 @@ int adios_parse_dimension (const char * dimension
                             break;
                     }
                 }
-                dim->dimension.id = attr->id;
+                dim->dimension.attr = attr;
             }
         }
         else
@@ -344,13 +348,12 @@ int adios_parse_dimension (const char * dimension
                     break;
             }
 
-            dim->dimension.id = var->id;
+            dim->dimension.var = var;
             var->is_dim = adios_flag_yes;
         }
     }
     else
     {
-        dim->dimension.id = 0;
         dim->dimension.rank = atoi (dimension);
     }
 
@@ -362,10 +365,13 @@ int adios_parse_dimension (const char * dimension
         return 0;
     }
 
+    /* Get the global dimension */
+    dim->global_dimension.rank = 0;
+    dim->global_dimension.var  = NULL;
+    dim->global_dimension.attr = NULL;
     if (adios_int_is_var (global_dimension))
     {
         struct adios_var_struct * var = 0;
-        dim->global_dimension.rank = 0;
         var = adios_find_var_by_name (g, global_dimension);
         if (!var)
         {
@@ -378,7 +384,6 @@ int adios_parse_dimension (const char * dimension
             {
                 /* FIXME: Is time dimension allowed for global dim definition?
                  * What is this code doing here? */
-                /*
                 if (   g->time_index_name
                         && !strcasecmp (g->time_index_name, global_dimension)
                    )
@@ -386,7 +391,6 @@ int adios_parse_dimension (const char * dimension
                     dim->global_dimension.time_index = adios_flag_yes;
                 }
                 else
-                */
                 {
                     adios_error (err_invalid_global_dimension, 
                             "config.xml: invalid global-bounds dimension: %s\n",
@@ -444,7 +448,7 @@ int adios_parse_dimension (const char * dimension
                             break;
                     }
                 }
-                dim->global_dimension.id = attr->id;
+                dim->global_dimension.attr = attr;
             }
         }
         else
@@ -468,12 +472,11 @@ int adios_parse_dimension (const char * dimension
                     break;
             }
             var->is_dim = adios_flag_yes;
-            dim->global_dimension.id = var->id;
+            dim->global_dimension.var = var;
         }
     }
     else
     {
-        dim->global_dimension.id = 0;
         dim->global_dimension.rank = strtol (global_dimension, NULL, 10);
     }
 
@@ -484,10 +487,13 @@ int adios_parse_dimension (const char * dimension
         return 0;
     }
 
+    /* Get the local offset */
+    dim->local_offset.rank = 0;
+    dim->local_offset.var  = NULL;
+    dim->local_offset.attr = NULL;
     if (adios_int_is_var (local_offset))
     {
         struct adios_var_struct * var = 0;
-        dim->local_offset.rank = 0;
         var = adios_find_var_by_name (g, local_offset);
         if (!var)
         {
@@ -500,7 +506,7 @@ int adios_parse_dimension (const char * dimension
             {
                 /* FIXME: Is time dimension allowed for offset definition?
                  * What is this code doing here? */
-                /*
+                
                 if (   g->time_index_name
                         && !strcasecmp (g->time_index_name, local_offset)
                    )
@@ -508,7 +514,6 @@ int adios_parse_dimension (const char * dimension
                     dim->local_offset.time_index = adios_flag_yes;
                 }
                 else
-                */
                 {
                     adios_error (err_invalid_offset, 
                             "config.xml: invalid var local_offset: %s\n",
@@ -566,7 +571,7 @@ int adios_parse_dimension (const char * dimension
                             break;
                     }
                 }
-                dim->local_offset.id = attr->id;
+                dim->local_offset.attr = attr;
             }
         }
         else
@@ -590,12 +595,11 @@ int adios_parse_dimension (const char * dimension
                     break;
             }
             var->is_dim = adios_flag_yes;
-            dim->local_offset.id = var->id;
+            dim->local_offset.var = var;
         }
     }
     else
     {
-        dim->local_offset.id = 0;
         dim->local_offset.rank = strtol (local_offset, NULL, 10);
     }
 
@@ -1664,6 +1668,7 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
     v->is_dim = adios_flag_no;
     v->got_buffer = adios_flag_no;
     v->free_data = adios_flag_no;
+    v->parent_var = NULL;
 
     v->data = 0;
     v->write_offset = 0;
@@ -1921,8 +1926,9 @@ uint16_t adios_calc_var_overhead_v1 (struct adios_var_struct * v)
     while (d)
     {
         overhead += 1; // var flag
-        if (   d->dimension.id == 0
-                && d->dimension.time_index == adios_flag_no
+        if (    d->dimension.var == NULL
+             && d->dimension.attr == NULL
+             && d->dimension.time_index == adios_flag_no
            )
         {
             overhead += 8; // value
@@ -1933,8 +1939,9 @@ uint16_t adios_calc_var_overhead_v1 (struct adios_var_struct * v)
         }
 
         overhead += 1; // var flag
-        if (   d->global_dimension.id == 0
-                && d->global_dimension.time_index == adios_flag_no
+        if (    d->global_dimension.var == NULL
+             && d->global_dimension.attr == NULL
+             && d->global_dimension.time_index == adios_flag_no
            )
         {
             overhead += 8; // value
@@ -1945,8 +1952,9 @@ uint16_t adios_calc_var_overhead_v1 (struct adios_var_struct * v)
         }
 
         overhead += 1; // var flag
-        if (   d->local_offset.id == 0
-                && d->local_offset.time_index == adios_flag_no
+        if (    d->local_offset.var == NULL
+             && d->local_offset.attr == NULL
+             && d->local_offset.time_index == adios_flag_no
            )
         {
             overhead += 8; // value
@@ -2657,16 +2665,26 @@ static uint64_t get_value_for_dim (struct adios_file_struct * fd,
 {
     uint64_t dim = 0;
 
-    if (dimension->id != 0)
+    if (dimension->var != 0)
     {
-        struct adios_var_struct * var = adios_find_var_by_id (fd->group->vars
-                ,dimension->id
-                );
-        if (var)
+        struct adios_var_struct * var = dimension->var;
+        if (var->data)
         {
-            if (var->data)
+            dim = cast_var_data_as_uint64 (var->name, var->type, var->data);
+        }
+        else
+        {
+            adios_error (err_dimension_required, "array dimension data missing\n");
+        }
+    } 
+    else if (dimension->attr != 0)
+    {
+        struct adios_attribute_struct * attr = dimension->attr;
+        if (attr->var)
+        {
+            if (attr->var->data)
             {
-                dim = cast_var_data_as_uint64 (var->name, var->type, var->data);
+                dim = cast_var_data_as_uint64 (attr->var->name,attr->var->type,attr->var->data);
             }
             else
             {
@@ -2675,39 +2693,7 @@ static uint64_t get_value_for_dim (struct adios_file_struct * fd,
         }
         else
         {
-            struct adios_attribute_struct * attr = adios_find_attribute_by_id
-                (fd->group->attributes
-                 ,dimension->id
-                );
-            if (attr)
-            {
-                if (attr->var)
-                {
-                    if (attr->var->data)
-                    {
-                        dim = cast_var_data_as_uint64 (attr->var->name
-                                ,attr->var->type
-                                ,attr->var->data
-                                );
-                    }
-                    else
-                    {
-                        adios_error (err_dimension_required, "array dimension data missing\n");
-                    }
-                }
-                else
-                {
-                    dim = cast_var_data_as_uint64 (attr->name, attr->type
-                            ,attr->value
-                            );
-                }
-            }
-            else
-            {
-                adios_error (err_invalid_dimension, 
-                        "invalid dimension member id: %d\n",
-                        dimension->id);
-            }
+            dim = cast_var_data_as_uint64 (attr->name, attr->type ,attr->value);
         }
     }
     else
@@ -2736,7 +2722,6 @@ void adios_copy_var_written (struct adios_var_struct ** root
                 (sizeof (struct adios_var_struct));
             //var_new->id = ++fd->group->member_count;
             var_new->id = var->id;
-            //var_new->parent_id = var->id;
             var_new->parent_var = var;
             var_new->name = strdup (var->name);
             var_new->path = strdup (var->path);
@@ -2834,13 +2819,16 @@ void adios_copy_var_written (struct adios_var_struct ** root
                             struct adios_dimension_struct * d_new = (struct adios_dimension_struct *)
                                 malloc (sizeof (struct adios_dimension_struct));
                             // de-reference dimension id
-                            d_new->dimension.id = 0;
+                            d_new->dimension.var = NULL;
+                            d_new->dimension.attr = NULL;
                             d_new->dimension.rank = get_value_for_dim (fd, &d->dimension);
                             d_new->dimension.time_index = d->dimension.time_index;
-                            d_new->global_dimension.id = 0;
+                            d_new->global_dimension.var = NULL;
+                            d_new->global_dimension.attr = NULL;
                             d_new->global_dimension.rank = get_value_for_dim (fd, &d->global_dimension);
                             d_new->global_dimension.time_index = d->global_dimension.time_index;
-                            d_new->local_offset.id = 0;
+                            d_new->local_offset.var = NULL;
+                            d_new->local_offset.attr = NULL;
                             d_new->local_offset.rank = get_value_for_dim (fd, &d->local_offset);
                             d_new->local_offset.time_index = d->local_offset.time_index;
                             d_new->next = 0;
@@ -2928,7 +2916,6 @@ void adios_build_index_v1 (struct adios_file_struct * fd
             // We need this to calculate the correct payload_offset, because that
             // holds the variable references in the dimensions, while v-> contains
             // only numerical values
-            //struct adios_var_struct * old_var = adios_find_var_by_id (g->vars, v->parent_id);
             struct adios_var_struct * old_var = v->parent_var;
             v_index->characteristics [0].payload_offset = v->write_offset
                 + adios_calc_var_overhead_v1 (old_var)
@@ -3864,8 +3851,9 @@ static uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
 
     size += 1; // var (y or n)
 
-    if (   dimension->dimension.id == 0
-            && dimension->dimension.time_index == adios_flag_no
+    if (    dimension->dimension.var == NULL
+         && dimension->dimension.attr == NULL
+         && dimension->dimension.time_index == adios_flag_no
        )  // it is a number
     {
         size += 8;  // size of value
@@ -3877,8 +3865,9 @@ static uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
 
     size += 1; // var (y or n)
 
-    if (   dimension->global_dimension.id == 0
-            && dimension->global_dimension.time_index == adios_flag_no
+    if (    dimension->global_dimension.var == NULL
+         && dimension->global_dimension.attr == NULL
+         && dimension->global_dimension.time_index == adios_flag_no
        )  // it is a number
     {
         size += 8; // default to a rank
@@ -3890,8 +3879,9 @@ static uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
 
     size += 1; // var (y or n)
 
-    if (   dimension->local_offset.id == 0
-            && dimension->local_offset.time_index == adios_flag_no
+    if (    dimension->local_offset.var == NULL
+         && dimension->local_offset.var == NULL
+         && dimension->local_offset.time_index == adios_flag_no
        )  // it is a number
     {
         size += 8;  // default to a rank
@@ -3924,10 +3914,12 @@ uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
         )
 {
     uint64_t size = 0;
+    uint16_t id;
     uint8_t var;
 
-    if (   dimension->dimension.id == 0
-            && dimension->dimension.time_index == adios_flag_no
+    if (    dimension->dimension.var == NULL
+         && dimension->dimension.attr == NULL
+         && dimension->dimension.time_index == adios_flag_no
        )
     {
         var = 'n';
@@ -3940,17 +3932,22 @@ uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
     }
     else
     {
+        if (dimension->dimension.var != NULL)
+            id = dimension->dimension.var->id;
+        else if (dimension->dimension.attr != NULL)
+            id = dimension->dimension.attr->id;
+        else 
+            id = 0; // just write this garbage
         var = 'y';
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &var, 1);
         size += 1;
-        buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                ,&dimension->dimension.id, 2
-                );
+        buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &id, 2);
         size += 2;
     }
 
-    if (   dimension->global_dimension.id == 0
-            && dimension->global_dimension.time_index == adios_flag_no
+    if (    dimension->global_dimension.var == NULL 
+         && dimension->global_dimension.attr == NULL
+         && dimension->global_dimension.time_index == adios_flag_no
        )
     {
         var = 'n';
@@ -3963,17 +3960,22 @@ uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
     }
     else
     {
+        if (dimension->global_dimension.var != NULL)
+            id = dimension->global_dimension.var->id;
+        else if (dimension->global_dimension.attr != NULL)
+            id = dimension->global_dimension.attr->id;
+        else 
+            id = 0; // just write this garbage
         var = 'y';
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &var, 1);
         size += 1;
-        buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                ,&dimension->global_dimension.id, 2
-                );
+        buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &id, 2);
         size += 2;
     }
 
-    if (   dimension->local_offset.id == 0
-            && dimension->local_offset.time_index == adios_flag_no
+    if (    dimension->local_offset.var == NULL
+         && dimension->local_offset.attr == NULL
+         && dimension->local_offset.time_index == adios_flag_no
        )
     {
         var = 'n';
@@ -3986,12 +3988,16 @@ uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
     }
     else
     {
+        if (dimension->local_offset.var != NULL)
+            id = dimension->local_offset.var->id;
+        else if (dimension->local_offset.attr != NULL)
+            id = dimension->local_offset.attr->id;
+        else 
+            id = 0; // just write this garbage
         var = 'y';
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &var, 1);
         size += 1;
-        buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                ,&dimension->local_offset.id, 2
-                );
+        buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &id, 2);
         size += 2;
     }
 
@@ -4911,85 +4917,51 @@ uint64_t adios_get_var_size (struct adios_var_struct * var
         while (d)
         {
             // calculate the size for this dimension element
-            if (d->dimension.id != 0)
+            if (d->dimension.var != 0)
             {
-                struct adios_var_struct * dim_var = 0;
-
-                dim_var = adios_find_var_by_id (group->vars, d->dimension.id);
-
-                // first check to make sure all vars are provided
-                if (!dim_var)
+                struct adios_var_struct * dim_var = d->dimension.var;
+                if (!dim_var->data)
                 {
-                    struct adios_attribute_struct * attr = 0;
-                    attr = adios_find_attribute_by_id (group->attributes
-                            ,d->dimension.id
-                            );
-                    if (attr)
-                    {
-                        if (attr->var)
-                        {
-                            if (!attr->var->data)
-                            {
-                                adios_error (err_invalid_var_as_dimension, 
-                                        "adios_get_var_size: "
-                                        "sizing of %s failed because "
-                                        "dimension component %s was "
-                                        "not provided\n",
-                                        var->name, attr->var->name);
-                                return 0;
-                            }
-                            else
-                            {
-                                if (!adios_multiply_dimensions (&size, var
-                                            ,attr->var->type
-                                            ,attr->var->data
-                                            )
-                                   )
-                                {
-                                    return 0;
-                                }
-                            }
-                        }
-                        else
-                        {
-                            if (!adios_multiply_dimensions (&size, var
-                                        ,attr->type
-                                        ,attr->value
-                                        )
-                               )
-                            {
-                                return 0;
-                            }
-                        }
-                    }
-                    else
-                    {
-                        adios_error (err_invalid_var_as_dimension, 
-                                "adios_get_var_size: "
-                                "sizing of %s failed because "
-                                "dimension component %s was "
-                                "not provided\n",
-                                var->name);
-                        return 0;
-                    }
+                    adios_error (err_invalid_var_as_dimension, 
+                            "adios_get_var_size: "
+                            "sizing of %s failed because "
+                            "dimension component %s was "
+                            "not provided\n",
+                            var->name, dim_var->name);
+                    return 0;
                 }
                 else
                 {
-                    if (!dim_var->data)
+                    if (!adios_multiply_dimensions (&size, var
+                                ,dim_var->type
+                                ,dim_var->data
+                                )
+                       )
+                    {
+                        return 0;
+                    }
+                }
+            }
+            else if (d->dimension.attr != NULL)
+            {
+                struct adios_attribute_struct * attr = d->dimension.attr;
+                if (attr->var)
+                {
+                    if (!attr->var->data)
                     {
                         adios_error (err_invalid_var_as_dimension, 
                                 "adios_get_var_size: "
                                 "sizing of %s failed because "
                                 "dimension component %s was "
                                 "not provided\n",
-                                var->name, dim_var->name);
+                                var->name, attr->var->name);
                         return 0;
                     }
                     else
                     {
                         if (!adios_multiply_dimensions (&size, var
-                                    ,dim_var->type
-                                    ,dim_var->data
+                                    ,attr->var->type
+                                    ,attr->var->data
                                     )
                            )
                         {
@@ -4997,7 +4969,18 @@ uint64_t adios_get_var_size (struct adios_var_struct * var
                         }
                     }
                 }
-            }
+                else
+                {
+                    if (!adios_multiply_dimensions (&size, var
+                                ,attr->type
+                                ,attr->value
+                                )
+                       )
+                    {
+                        return 0;
+                    }
+                }
+            } 
             else
             {
                 if (d->dimension.time_index == adios_flag_no)
