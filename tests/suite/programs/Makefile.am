@@ -20,6 +20,7 @@ check_C=local_array_time \
         two_groups \
         many_vars \
         selections \
+        path_test \
         connect_to_space_subset
 endif
 
@@ -105,6 +106,11 @@ selections_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 selections_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 selections.o: selections.c
 
+path_test_SOURCES=path_test.c
+path_test_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+path_test_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+path_test.o: path_test.c
+
 connect_to_space_subset_SOURCES=connect_to_space_subset.c
 connect_to_space_subset_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 connect_to_space_subset_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
@@ -112,7 +118,8 @@ connect_to_space_subset.o: connect_to_space_subset.c
 
 EXTRA_DIST = adios_amr_write.xml adios_amr_write_2vars.xml \
              posix_method.xml local_array_time.xml  \
-             write_alternate.xml write_read.xml
+             write_alternate.xml write_read.xml \
+	     path_test.xml
 
 CLEANFILES = gwrite_posix_method.fh gread_posix_method.fh 
 
