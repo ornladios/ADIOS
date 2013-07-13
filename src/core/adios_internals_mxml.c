@@ -1186,7 +1186,7 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
             if (!name)
                 name = ""; // this will catch the error
             if (!path)
-                path = "/";
+                path = "";
             if (!type)
                 type = ""; // this will catch the error
             if (!mesh)
@@ -1383,7 +1383,7 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                         if (!name)
                             name = "";  // this will catch the error
                         if (!path)
-                            path = "/";
+                            path = "";
                         if (!type)
                             type = ""; // this will catch the error
                         if (!mesh)
@@ -2283,7 +2283,7 @@ static PairStruct * get_and_preprocess_params (const char * parameters)
     prev_p = NULL;
     p = params;
     while (p) {
-        /*fprintf(stderr, "Parameter    name = %s  value = %s\n", p->name, p->value);*/
+        //fprintf(stderr, "Parameter    name = %s  value = %s\n", p->name, p->value);
         removeit = 0;
         if (!strcasecmp (p->name, "verbose"))
         {
