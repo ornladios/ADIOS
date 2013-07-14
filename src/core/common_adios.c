@@ -424,7 +424,7 @@ int common_adios_write_byid (struct adios_file_struct * fd, struct adios_var_str
 
     if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
     {
-        adios_copy_var_written (&fd->group->vars_written, v, fd);
+        adios_copy_var_written (fd->group, v);
     }
 }
 

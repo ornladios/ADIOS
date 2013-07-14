@@ -1284,20 +1284,21 @@ int adios_common_declare_group (int64_t * id, const char * name
     g->all_unique_mesh_names = adios_flag_yes;
     g->id = 0; // will be set in adios_append_group
     g->member_count = 0; // will be set in adios_append_group
-    g->vars = 0;
+    g->vars = NULL;
+    g->vars_tail = NULL;
     g->hashtbl_vars = qhashtbl(100);
-    g->vars_written = 0;
-    g->hashtbl_vars_written = qhashtbl(100);
-    g->attributes = 0;
+    g->vars_written = NULL;
+    g->vars_written_tail = NULL;
+    g->attributes = NULL;
     g->group_by = (coordination_var ? strdup (coordination_var) : 0L);
     g->group_comm = (coordination_comm ? strdup (coordination_comm) : 0L);
     g->time_index_name = (time_index_name ? strdup (time_index_name) : 0L);
     g->time_index = 0;
     g->stats_on = stats;
     g->process_id = 0;
-    g->methods = 0;
+    g->methods = NULL;
     // ADIOS Schema
-    g->meshs = 0;
+    g->meshs = NULL;
     g->mesh_count = 0;
 
     *id = (int64_t) g;
@@ -1346,7 +1347,6 @@ int adios_common_free_group (int64_t id)
 
     // free the hashtables
     g->hashtbl_vars->free(g->hashtbl_vars);
-    g->hashtbl_vars_written->free(g->hashtbl_vars_written);
     while (g->vars)
     {
         struct adios_var_struct * vars = g->vars->next;
@@ -2660,8 +2660,7 @@ static uint64_t cast_var_data_as_uint64 (const char * parent_name
     return 0;
 }
 
-static uint64_t get_value_for_dim (struct adios_file_struct * fd,
-        struct adios_dimension_item_struct * dimension)
+static uint64_t get_value_for_dim (struct adios_dimension_item_struct * dimension)
 {
     uint64_t dim = 0;
 
@@ -2707,6 +2706,173 @@ static uint64_t get_value_for_dim (struct adios_file_struct * fd,
     return dim;
 }
 
+void adios_copy_var_written (struct adios_group_struct * g, struct adios_var_struct * var)
+{
+    assert(g);
+    struct adios_var_struct * var_new;
+
+    var_new = (struct adios_var_struct *) malloc
+        (sizeof (struct adios_var_struct));
+    var_new->id = var->id;
+    var_new->parent_var = var;
+    var_new->name = strdup (var->name);
+    var_new->path = strdup (var->path);
+    var_new->type = var->type;
+    var_new->dimensions = 0;
+    var_new->got_buffer = var->got_buffer;
+    var_new->is_dim = var->is_dim;
+    var_new->write_offset = var->write_offset;
+    var_new->stats = 0;
+    var_new->free_data = var->free_data;
+    var_new->data = 0;
+    var_new->data_size = var->data_size;
+    var_new->next = 0;
+
+    uint64_t size = adios_get_type_size (var->type, var->data);
+    switch (var->type)
+    {
+        case adios_byte:
+        case adios_unsigned_byte:
+        case adios_short:
+        case adios_unsigned_short:
+        case adios_integer:
+        case adios_unsigned_integer:
+        case adios_long:
+        case adios_unsigned_long:
+        case adios_real:
+        case adios_double:
+        case adios_long_double:
+        case adios_complex:
+        case adios_double_complex:
+            if (var->dimensions)
+            {
+                uint8_t c;
+                uint8_t j;
+                struct adios_dimension_struct * d = var->dimensions;
+                /*
+                 *
+                 * NOT ALL METHODS TRACK MIN/MAX.  CHECK BEFORE TRYING TO COPY.
+                 *
+                 */
+                // NCSU Statistics - copy stat to new var struct
+                uint8_t count = adios_get_stat_set_count(var->type);
+                uint8_t idx = 0;
+                uint64_t characteristic_size;
+
+                var_new->bitmap = var->bitmap;
+                var_new->stats = malloc (count * sizeof(struct adios_stat_struct *));
+
+                // Set of characteristics will be repeated thrice for complex numbers
+                for (c = 0; c < count; c ++)
+                {
+                    var_new->stats[c] = calloc(ADIOS_STAT_LENGTH, sizeof (struct adios_stat_struct));
+
+                    j = idx = 0;
+                    while (var->bitmap >> j)
+                    {
+                        if ((var->bitmap >> j) & 1)
+                        {
+                            if (var->stats[c][idx].data != NULL)
+                            {
+                                if (j == adios_statistic_hist)
+                                {
+                                    var_new->stats[c][idx].data = (struct adios_hist_struct *) malloc (sizeof(struct adios_hist_struct));
+
+                                    struct adios_hist_struct * var_hist = var->stats[c][idx].data;
+                                    struct adios_hist_struct * var_new_hist = var_new->stats[c][idx].data;
+
+                                    var_new_hist->min = var_hist->min;
+                                    var_new_hist->max = var_hist->max;
+                                    var_new_hist->num_breaks = var_hist->num_breaks;
+
+                                    var_new_hist->frequencies = malloc ((var_hist->num_breaks + 1) * adios_get_type_size(adios_unsigned_integer, ""));
+                                    memcpy (var_new_hist->frequencies, var_hist->frequencies, (var_hist->num_breaks + 1) * adios_get_type_size(adios_unsigned_integer, ""));
+                                    var_new_hist->breaks = malloc ((var_hist->num_breaks) * adios_get_type_size(adios_double, ""));
+                                    memcpy (var_new_hist->breaks, var_hist->breaks, (var_hist->num_breaks) * adios_get_type_size(adios_double, ""));
+                                }
+                                else
+                                {
+                                    characteristic_size = adios_get_stat_size(var->stats[c][idx].data, var->type, j);
+                                    var_new->stats[c][idx].data = malloc (characteristic_size);
+                                    memcpy (var_new->stats[c][idx].data, var->stats[c][idx].data, characteristic_size);
+                                }
+
+                                idx ++;
+                            }
+                        }
+                        j ++;
+                    }
+                }
+
+                c = count_dimensions (var->dimensions);
+
+                for (j = 0; j < c; j++)
+                {
+                    struct adios_dimension_struct * d_new = (struct adios_dimension_struct *)
+                        malloc (sizeof (struct adios_dimension_struct));
+                    // de-reference dimension id
+                    d_new->dimension.var = NULL;
+                    d_new->dimension.attr = NULL;
+                    d_new->dimension.rank = get_value_for_dim (&d->dimension);
+                    d_new->dimension.time_index = d->dimension.time_index;
+                    d_new->global_dimension.var = NULL;
+                    d_new->global_dimension.attr = NULL;
+                    d_new->global_dimension.rank = get_value_for_dim (&d->global_dimension);
+                    d_new->global_dimension.time_index = d->global_dimension.time_index;
+                    d_new->local_offset.var = NULL;
+                    d_new->local_offset.attr = NULL;
+                    d_new->local_offset.rank = get_value_for_dim (&d->local_offset);
+                    d_new->local_offset.time_index = d->local_offset.time_index;
+                    d_new->next = 0;
+
+                    adios_append_dimension (&var_new->dimensions, d_new);
+
+                    d = d->next;
+                }
+            }
+            else
+            {
+                var_new->stats = 0;
+                var_new->data = malloc (size);
+                memcpy (var_new->data, var->data, size);
+            }
+
+            break;
+
+        case adios_string:
+            {
+                var_new->data = malloc (size + 1);
+                memcpy (var_new->data, var->data, size);
+                ((char *) (var_new->data)) [size] = 0;
+
+                break;
+            }
+    }
+
+    /* Insert new variable into the copy list */
+
+    /* Note: many routines parse the list of variables through the ->next pointer with
+     * "while (v) { ...; v=v->next }
+     * So we don't make a double linked circular list, just a simple list, with 
+     * having an extra pointer to the tail
+     */
+    if (!g->vars_written) {
+        // first variable: g->vars_written     : V => (null)
+        //                 g->vars_written_tail: V => (null)
+        var_new->next = NULL; 
+        g->vars_written = var_new;      // V => (null)
+        g->vars_written_tail = var_new; // V => (null)
+    } else {
+       var_new->next = NULL;        
+       // append var to tail  
+       g->vars_written_tail->next = var_new;  // g->vars => ... => tail => V => (null)
+       // new tail is var
+       g->vars_written_tail = var_new;
+    }
+
+}
+
+#if 0
 void adios_copy_var_written (struct adios_var_struct ** root
         ,struct adios_var_struct * var
         ,struct adios_file_struct * fd
@@ -2821,15 +2987,15 @@ void adios_copy_var_written (struct adios_var_struct ** root
                             // de-reference dimension id
                             d_new->dimension.var = NULL;
                             d_new->dimension.attr = NULL;
-                            d_new->dimension.rank = get_value_for_dim (fd, &d->dimension);
+                            d_new->dimension.rank = get_value_for_dim (&d->dimension);
                             d_new->dimension.time_index = d->dimension.time_index;
                             d_new->global_dimension.var = NULL;
                             d_new->global_dimension.attr = NULL;
-                            d_new->global_dimension.rank = get_value_for_dim (fd, &d->global_dimension);
+                            d_new->global_dimension.rank = get_value_for_dim (&d->global_dimension);
                             d_new->global_dimension.time_index = d->global_dimension.time_index;
                             d_new->local_offset.var = NULL;
                             d_new->local_offset.attr = NULL;
-                            d_new->local_offset.rank = get_value_for_dim (fd, &d->local_offset);
+                            d_new->local_offset.rank = get_value_for_dim (&d->local_offset);
                             d_new->local_offset.time_index = d->local_offset.time_index;
                             d_new->next = 0;
 
@@ -2866,6 +3032,7 @@ void adios_copy_var_written (struct adios_var_struct ** root
         }
     }
 }
+#endif
 
 void adios_build_index_v1 (struct adios_file_struct * fd
         ,struct adios_index_process_group_struct_v1 ** pg_root
@@ -3012,11 +3179,11 @@ void adios_build_index_v1 (struct adios_file_struct * fd
                         for (j = 0; j < c; j++)
                         {
                             v_index->characteristics [0].dims.dims [j * 3 + 0] =
-                                get_value_for_dim (fd, &d->dimension);
+                                get_value_for_dim (&d->dimension);
                             v_index->characteristics [0].dims.dims [j * 3 + 1] =
-                                get_value_for_dim (fd, &d->global_dimension);
+                                get_value_for_dim (&d->global_dimension);
                             v_index->characteristics [0].dims.dims [j * 3 + 2] =
-                                get_value_for_dim (fd, &d->local_offset);
+                                get_value_for_dim (&d->local_offset);
 
                             d = d->next;
                         }
@@ -4050,17 +4217,17 @@ uint16_t adios_write_var_characteristics_dims_v1 (struct adios_file_struct * fd
 
         dims_count++;
 
-        dim = get_value_for_dim (fd, &d->dimension);
+        dim = get_value_for_dim (&d->dimension);
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &dim, 8);
         total_size += 8;
         dims_length += 8;
 
-        dim = get_value_for_dim (fd, &d->global_dimension);
+        dim = get_value_for_dim (&d->global_dimension);
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &dim, 8);
         total_size += 8;
         dims_length += 8;
 
-        dim = get_value_for_dim (fd, &d->local_offset);
+        dim = get_value_for_dim (&d->local_offset);
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &dim, 8);
         total_size += 8;
         dims_length += 8;

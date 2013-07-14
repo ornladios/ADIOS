@@ -208,7 +208,7 @@ int adios_write (int64_t fd_p, const char * name, void * var)
 
     if (fd->mode == adios_mode_write || fd->mode == adios_mode_append) 
     {
-        adios_copy_var_written (&fd->group->vars_written, v, fd);
+        adios_copy_var_written (fd->group, v);
     }
 #endif
     return 0;

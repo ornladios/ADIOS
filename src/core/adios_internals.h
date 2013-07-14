@@ -166,7 +166,7 @@ struct adios_group_struct
     struct adios_var_struct * vars_tail;  // last variable in the list 'vars'
     qhashtbl_t *hashtbl_vars;
     struct adios_var_struct * vars_written;
-    qhashtbl_t *hashtbl_vars_written;
+    struct adios_var_struct * vars_written_tail; // last variable in 'vars_written'
     struct adios_attribute_struct * attributes;
     char * group_comm;
     char * group_by;
@@ -495,6 +495,9 @@ int adios_write_version_v1 (char ** buffer
 int adios_write_process_group_header_v1 (struct adios_file_struct * fd
                                         ,uint64_t total_size
                                         );
+
+void adios_copy_var_written (struct adios_group_struct * g,
+                             struct adios_var_struct * var);
 
 // data is only there for sizing
 uint64_t adios_write_var_header_v1 (struct adios_file_struct * fd

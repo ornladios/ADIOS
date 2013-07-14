@@ -162,8 +162,7 @@ static uint64_t cast_var_data_as_uint64 (const char * parent_name
 }
 
 
-static uint64_t get_value_for_dim (struct adios_file_struct * fd,
-                                   struct adios_dimension_item_struct * dimension)
+static uint64_t get_value_for_dim (struct adios_dimension_item_struct * dimension)
 {
     uint64_t dim = 0;
 
@@ -1106,7 +1105,7 @@ void adios_var_merge_write (struct adios_file_struct * fd
         while (d) {
             uint64_t dim = 0;
             //local dimension
-            dim = get_value_for_dim (fd, &d->dimension);
+            dim = get_value_for_dim (&d->dimension);
             ldims[dims_count]=dim;
             if(dims_count==0)
                 sprintf(vars->dimensions,"%llu", dim);
@@ -1114,7 +1113,7 @@ void adios_var_merge_write (struct adios_file_struct * fd
                 sprintf(vars->dimensions,"%s,%llu",vars->dimensions, dim);
 
             //global dimension
-            dim = get_value_for_dim (fd, &d->global_dimension);
+            dim = get_value_for_dim (&d->global_dimension);
             gdims[dims_count]=dim;
             if(dims_count==0)
                 sprintf(vars->global_dimensions,"%llu", dim);
@@ -1122,7 +1121,7 @@ void adios_var_merge_write (struct adios_file_struct * fd
                 sprintf(vars->global_dimensions,"%s,%llu",vars->global_dimensions, dim);
 
             //local offsets
-            dim = get_value_for_dim (fd, &d->local_offset);
+            dim = get_value_for_dim (&d->local_offset);
             offsets[dims_count]=dim;
             if(dims_count==0)
                 sprintf(vars->local_offsets,"%llu", dim);
