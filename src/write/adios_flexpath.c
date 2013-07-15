@@ -1159,7 +1159,7 @@ extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method
     // setup step state
     fileData->attrs = create_attr_list();
     fileData->openCount = 0;
-    fileData->currentStep = 0;
+    //fileData->currentStep = 0;
 
     // setup mutexs
     fileData->controlMutex = thr_mutex_alloc();
