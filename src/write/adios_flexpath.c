@@ -961,8 +961,6 @@ int control_thread(void* arg) {
                   fileData->bridges[flushMsg->rank].opened=1;
                   fileData->openCount++;
                 }
-		fp_write_log("MSG", " sending data_msg : rank %d step %d\n", 
-                    flushMsg->rank, fileData->currentStep);
 		EVsubmit_general(fileData->dataSource, temp, data_free, fileData->attrs);
 	    } else if(controlMsg->type==OPEN) {
                 op_msg* open = (op_msg*) controlMsg->data;
@@ -981,15 +979,11 @@ int control_thread(void* arg) {
 					fileData->bridges[open->process_id].myNum);				    
 		}		
 		if(open->step < fileData->currentStep) {
-                    perr("control_thread: Recieved Past Step Open\n");
 		    log_error("Flexpath method control_thread: Received Past Step Open\n");
                 } else if (open->step == fileData->currentStep){
-                    fp_write_log("STEP", "recieved op with current step\n");
                     thr_mutex_lock(fileData->openMutex);
-                    fp_write_log("MUTEX","lock 6\n");
                     fileData->openCount++;  
                     fileData->bridges[open->process_id].opened = 1;
-                    fp_write_log("MUTEX","unlock 6\n");
 		    thr_mutex_unlock(fileData->openMutex);
                     op_msg* ack = (op_msg*) malloc(sizeof(op_msg));
                     ack->file_name = strdup(fileData->name);
@@ -998,8 +992,6 @@ int control_thread(void* arg) {
                     ack->type = 2;
 		    ack->condition = open->condition;
                     fileData->attrs = set_dst_rank_atom(fileData->attrs, open->process_id+1);
-		    fp_write_log("MSG", " sending op_msg : dst %d step %d type ack\n",
-				 open->process_id, fileData->currentStep); 
                     EVsubmit_general(fileData->opSource, ack, op_free, fileData->attrs);
                 } else {
                     fp_write_log("STEP", "recieved op with future step\n");
@@ -1029,7 +1021,7 @@ int control_thread(void* arg) {
                     int i;
                     //for all bridges if step == currentstep send ack
 		    // this block gets repeated in finalize.  gets repeated
-		    // only AFTER sending finalize messages.  cp and past into finalize
+		    // only AFTER sending finalize messages.  
 		    // do it for everyone that has opened.
 		    
                     for(i=0; i<fileData->numBridges; i++) {
@@ -1043,8 +1035,6 @@ int control_thread(void* arg) {
                         ack->type = 2;
 			ack->condition = fileData->bridges[i].condition;
                         fileData->attrs = set_dst_rank_atom(fileData->attrs, i+1);
-		        fp_write_log("MSG", " sending op_msg : dst %d step %d type ack\n",
-                            i, fileData->currentStep);
                         EVsubmit_general(fileData->opSource, ack, op_free, fileData->attrs);
                       }
                     }
@@ -1075,12 +1065,10 @@ int control_thread(void* arg) {
 		/* if(!fileData->bridges[initMsg->rank].opened) { */
                 /*   fileData->bridges[initMsg->rank].opened=1;                   */
                 /* } */
-		/* fp_write_log("MSG", " sending data_msg : rank %d step %d\n",  */
-                /*     flushMsg->rank, fileData->currentStep); */
 		EVsubmit_general(fileData->dataSource, temp, data_free, fileData->attrs);
 	    }
 	    else{
-		perr("control_thread: Unrecognized Control Message\n");
+		log_error("control_thread: Unrecognized Control Message\n");
 	    }
 	}
     }
@@ -1160,13 +1148,12 @@ extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method
         return 0;
     }
 
-    FlexpathWriteFileData* fileData = (FlexpathWriteFileData *) malloc(sizeof(FlexpathWriteFileData));
+    FlexpathWriteFileData* fileData = malloc(sizeof(FlexpathWriteFileData));
     mem_check(fileData, "fileData");
     memset(fileData, 0, sizeof(FlexpathWriteFileData));
     fileData->maxQueueSize=0;
     if(method->parameters) {
         sscanf(method->parameters,"QUEUE_SIZE=%d;",&fileData->maxQueueSize);
-        fp_write_log("SETUP", "setting max queue size to %d\n", fileData->maxQueueSize);
     }
     
     // setup step state
