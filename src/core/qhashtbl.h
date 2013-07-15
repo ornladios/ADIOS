@@ -54,6 +54,7 @@ struct qhashtbl_s {
     /* capsulated member functions */
     bool  (*put)    (qhashtbl_t *tbl, const char *path,  const char *name, const void *data);
     void *(*get)    (qhashtbl_t *tbl, const char *fullpath);
+    void *(*get2)   (qhashtbl_t *tbl, const char *path,  const char *name);
     bool  (*remove) (qhashtbl_t *tbl, const char *path, const char *name);
 
     int   (*size)   (qhashtbl_t *tbl);

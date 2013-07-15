@@ -292,6 +292,8 @@ int adios_parse_process_group_index_v1 (struct adios_bp_buffer_struct_v1 * b,
 
 int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
                               ,struct adios_index_var_struct_v1 ** vars_root
+                              ,qhashtbl_t *hashtbl_vars
+                              ,struct adios_index_var_struct_v1 ** vars_tail
                               )
 {
     struct adios_index_var_struct_v1 ** root;
@@ -305,6 +307,8 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
     }
 
     root = vars_root;
+    log_debug ("%s: hashtbl=%x size=%d\n", __func__,
+               hashtbl_vars, (hashtbl_vars ? hashtbl_vars->size(hashtbl_vars) : 0));
 
     uint16_t vars_count;
     uint64_t vars_length;
@@ -743,14 +747,29 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
             }
         }
 
+        // Add variable to the hash table too
+        log_debug ("  add variable to hash, path=%s, name=%s\n", 
+                  (*root)->var_path, (*root)->var_name);
+        if (hashtbl_vars) {
+            hashtbl_vars->put (hashtbl_vars, 
+                (*root)->var_path, (*root)->var_name, *root);
+        }
+
+        // record this as the tail
+        if (vars_tail)
+            *vars_tail = (*root);
+
         root = &(*root)->next;
     }
+
+    log_debug ("end of %s: hashtbl=%x size=%d\n", __func__,
+               hashtbl_vars, (hashtbl_vars ? hashtbl_vars->size(hashtbl_vars) : 0));
 
     return 0;
 }
 
 int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
-                          ,struct adios_index_attribute_struct_v1 ** attrs_root
+                                    ,struct adios_index_attribute_struct_v1 ** attrs_root
                           )
 {
     struct adios_index_attribute_struct_v1 ** root;

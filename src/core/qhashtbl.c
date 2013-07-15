@@ -102,6 +102,7 @@
 // member methods
 static bool put(qhashtbl_t *tbl, const char *path, const char *name, const void *data);
 static void *get(qhashtbl_t *tbl, const char *fullpath);
+static void *get2(qhashtbl_t *tbl, const char *path, const char *name);
 static bool remove_(qhashtbl_t *tbl, const char *path, const char *name);
 static int size(qhashtbl_t *tbl);
 static void clear(qhashtbl_t *tbl);
@@ -152,6 +153,7 @@ qhashtbl_t *qhashtbl(int range)
     // assign methods
     tbl->put        = put;
     tbl->get        = get;
+    tbl->get2       = get2;
     tbl->remove     = remove_;
     tbl->size       = size;
     tbl->clear      = clear;
@@ -290,6 +292,65 @@ static void *get(qhashtbl_t *tbl, const char *fullpath)
     qhnobj_t *obj;
     for (obj = tbl->slots[idx]; obj != NULL; obj = obj->next) {
         if (obj->hash == hash && !strcmp(obj->key, fullpath)) {
+            break;
+        }
+    }
+
+    void *data = NULL;
+    if (obj != NULL) {
+        data = obj->value;
+    }
+
+    if (data == NULL) errno = ENOENT;
+    //log_error ("qhastbl:get: data=%x\n", data);
+    return data;
+}
+
+/**
+ * qhashtbl->get2(): Get a object from this table.
+ *
+ * @param tbl       qhashtbl_t container pointer.
+ * @param name      key name.
+ * @param size      if not NULL, oject size will be stored.
+ * @param newmem    whether or not to allocate memory for the data.
+ *
+ * @return a pointer of data if the key is found, otherwise returns NULL.
+ * @retval errno will be set in error condition.
+ *  - ENOENT : No such key found.
+ *  - EINVAL : Invalid argument.
+ *  - ENOMEM : Memory allocation failure.
+ *
+ * @code
+ *  qhashtbl_t *tbl = qHashtbl(1000);
+ *  (...codes...)
+ *
+ *  // with newmem flag unset
+ *  int size;
+ *  struct myobj *obj = (struct myobj*)tbl->get(tbl, "key_name", &size, false);
+ *
+ *  // with newmem flag set
+ *  int size;
+ *  struct myobj *obj = (struct myobj*)tbl->get(tbl, "key_name", &size, true);
+ *  if(obj != NULL) free(obj);
+ * @endcode
+ *
+ */
+static void *get2(qhashtbl_t *tbl, const char *path, const char *name)
+{
+    int keylen;
+    char *key;
+    genkey (path, name, &keylen, &key);
+
+    // get hash integer
+    uint32_t hash = qhashmurmur3_32(key, keylen);
+    int idx = hash % tbl->range;
+
+    //log_error ("qhastbl:get: key=[%s], keylen=%d, hash=%d, idx=%d\n", key, keylen, hash, idx);
+
+    // find key
+    qhnobj_t *obj;
+    for (obj = tbl->slots[idx]; obj != NULL; obj = obj->next) {
+        if (obj->hash == hash && !strcmp(obj->key, key)) {
             break;
         }
     }

@@ -2151,73 +2151,102 @@ static void index_append_process_group_v1 (
     }
 }
 
-static void index_append_var_v1 (struct adios_index_var_struct_v1 ** root
+static void index_append_var_v1 (
+        struct adios_index_struct_v1 *index 
         ,struct adios_index_var_struct_v1 * item
         )
 {
-    while (root)
-    {
-        if (!*root)
-        {
-            *root = item;
-            root = 0;
+    struct adios_index_var_struct_v1 * root = index->vars_root;
+    struct adios_index_var_struct_v1 * olditem;
+
+    olditem = (struct adios_index_var_struct_v1 *)
+            index->hashtbl_vars->get2 (index->hashtbl_vars, 
+                                       item->var_path, item->var_name);
+
+    log_debug ("Hashtable size=%d\n", index->hashtbl_vars->size (index->hashtbl_vars));
+    log_debug ("var tail = %x, name=%s\n", index->vars_tail, 
+                (index->vars_tail ? index->vars_tail->var_name : ""));
+    if (!olditem) {
+        // new variable, insert into var list
+        if (!index->vars_root) {
+            log_debug ("   Very first variable\n");
+            // first variable: g->vars_written     : V => (null)
+            //                 g->vars_written_tail: V => (null)
+            item->next = NULL; 
+            index->vars_root = item;      // V => (null)
+            index->vars_tail = item;      // V => (null)
+        } else {
+            log_debug ("   Append as new variable\n");
+            item->next = NULL;        
+            // append var to tail  
+            index->vars_tail->next = item;  // index->vars_root => ... => tail => V => (null)
+            // new tail is var
+            index->vars_tail = item;
         }
-        else
+        // Add variable to the hash table too
+        index->hashtbl_vars->put(index->hashtbl_vars, 
+                item->var_path, item->var_name, item);
+
+    } else {
+        // existing variable, add this item to its characteristics
+        log_debug ("   Append to existing variable\n");
+
+        /* NOTE: old append made sure the variable mathes
+         *  name + path + group name + type
+         *  Here we just match name + path. We do not support same path
+         *  in two groups, not to mention with two types
+         */
+        if (strcmp (olditem->group_name, item->group_name))
         {
-            if (   !strcasecmp (item->group_name, (*root)->group_name)
-                    && !strcasecmp (item->var_name, (*root)->var_name)
-                    && !strcasecmp (item->var_path, (*root)->var_path)
-                    && item->type == (*root)->type
-               )
+
+            adios_error (err_unspecified, "Error when merging variable index lists. "
+                    "Variable in two different groups have the same path+name. "
+                    "Groups: %s and %s, variable: path=%s, name=%s. " 
+                    "Index aborted\n",
+                    olditem->group_name, item->group_name, 
+                    item->var_path, item->var_name);
+            return;
+        }
+
+        if (  olditem->characteristics_count
+              + item->characteristics_count
+              > olditem->characteristics_allocated
+           )
+        {
+            int new_items = (item->characteristics_count == 1)
+                ? 100 : item->characteristics_count;
+            olditem->characteristics_allocated =
+                olditem->characteristics_count + new_items;
+            void * ptr = realloc (
+                    olditem->characteristics,
+                    olditem->characteristics_allocated *
+                        sizeof (struct adios_index_characteristic_struct_v1)
+                    );
+
+            if (ptr)
             {
-                if (    (*root)->characteristics_count
-                        + item->characteristics_count
-                        > (*root)->characteristics_allocated
-                   )
-                {
-                    int new_items = (item->characteristics_count == 1)
-                        ? 100 : item->characteristics_count;
-                    (*root)->characteristics_allocated =
-                        (*root)->characteristics_count + new_items;
-                    void * ptr;
-                    ptr = realloc ((*root)->characteristics
-                            ,  (*root)->characteristics_allocated
-                            * sizeof (struct adios_index_characteristic_struct_v1)
-                            );
-
-                    if (ptr)
-                    {
-                        (*root)->characteristics = ptr;
-                    }
-                    else
-                    {
-                        adios_error (err_no_memory, "error allocating memory to build "
-                                "var index.  Index aborted\n");
-                        return;
-                    }
-                }
-                memcpy (&(*root)->characteristics
-                        [(*root)->characteristics_count]
-                        ,item->characteristics
-                        ,  item->characteristics_count
-                        * sizeof (struct adios_index_characteristic_struct_v1)
-                       );
-
-                (*root)->characteristics_count += item->characteristics_count;
-
-                free (item->characteristics);
-                free (item->group_name);
-                free (item->var_name);
-                free (item->var_path);
-                free (item);
-
-                root = 0;  // exit the loop
+                olditem->characteristics = ptr;
             }
             else
             {
-                root = &(*root)->next;
+                adios_error (err_no_memory, "error allocating memory to build "
+                        "var index.  Index aborted\n");
+                return;
             }
         }
+        memcpy (&olditem->characteristics [olditem->characteristics_count],
+                item->characteristics,
+                item->characteristics_count *
+                    sizeof (struct adios_index_characteristic_struct_v1)
+               );
+
+        olditem->characteristics_count += item->characteristics_count;
+
+        free (item->characteristics);
+        free (item->group_name);
+        free (item->var_name);
+        free (item->var_path);
+        free (item);
     }
 }
 
@@ -2291,36 +2320,38 @@ static void index_append_attribute_v1
     }
 }
 
-// p2 and v2 will be destroyed as part of the merge operation...
-void adios_merge_index_v1 (struct adios_index_process_group_struct_v1 ** p1
-        ,struct adios_index_var_struct_v1 ** v1
-        ,struct adios_index_attribute_struct_v1 ** a1
-        ,struct adios_index_process_group_struct_v1 * p2
-        ,struct adios_index_var_struct_v1 * v2
-        ,struct adios_index_attribute_struct_v1 * a2
-        )
+// lists in new_index will be destroyed as part of the merge operation...
+void adios_merge_index_v1 (
+                   struct adios_index_struct_v1 * main_index 
+                  ,struct adios_index_process_group_struct_v1 * new_pg_root
+                  ,struct adios_index_var_struct_v1 * new_vars_root
+                  ,struct adios_index_attribute_struct_v1 * new_attrs_root
+                  )
 {
     // this will just add it on to the end and all should work fine
-    index_append_process_group_v1 (p1, p2);
+    index_append_process_group_v1 (&main_index->pg_root, new_pg_root);
 
     // need to do vars attrs one at a time to merge them properly
+    struct adios_index_var_struct_v1 * v = new_vars_root;
     struct adios_index_var_struct_v1 * v_temp;
+    struct adios_index_attribute_struct_v1 * a = new_attrs_root;
     struct adios_index_attribute_struct_v1 * a_temp;
 
-    while (v2)
+    while (v)
     {
-        v_temp = v2->next;
-        v2->next = 0;
-        index_append_var_v1 (v1, v2);
-        v2 = v_temp;
+        v_temp = v->next;
+        v->next = 0;
+        log_debug ("merge index var %s/%s\n", v->var_path, v->var_name);
+        index_append_var_v1 (main_index, v);
+        v = v_temp;
     }
 
-    while (a2)
+    while (a)
     {
-        a_temp = a2->next;
-        a2->next = 0;
-        index_append_attribute_v1 (a1, a2);
-        a2 = a_temp;
+        a_temp = a->next;
+        a->next = 0;
+        index_append_attribute_v1 (&main_index->attrs_root, a);
+        a = a_temp;
     }
 }
 
@@ -2578,14 +2609,47 @@ static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
 }
 
 
-void adios_clear_index_v1 (struct adios_index_process_group_struct_v1 * pg_root
-        ,struct adios_index_var_struct_v1 * vars_root
-        ,struct adios_index_attribute_struct_v1 * attrs_root
-        )
+struct adios_index_struct_v1 * adios_alloc_index_v1 ()
 {
-    adios_clear_process_groups_index_v1 (pg_root);
-    adios_clear_vars_index_v1 (vars_root);
-    adios_clear_attributes_index_v1 (attrs_root);
+    struct adios_index_struct_v1 * index = (struct adios_index_struct_v1 *) 
+                malloc (sizeof(struct adios_index_struct_v1));
+    assert (index);
+    index->pg_root = NULL;
+    index->vars_root = NULL;
+    index->vars_tail = NULL;
+    index->attrs_root = NULL;
+    index->attrs_tail = NULL;
+    index->hashtbl_vars  = qhashtbl(100);
+    index->hashtbl_attrs = qhashtbl(100);
+    return index;
+}
+
+
+
+void adios_free_index_v1 (struct adios_index_struct_v1 * index)
+{
+    if (!index)
+        return;
+
+    index->hashtbl_vars->free  (index->hashtbl_vars);
+    index->hashtbl_attrs->free (index->hashtbl_attrs);
+}
+
+void adios_clear_index_v1 (struct adios_index_struct_v1 * index)
+{
+    if (!index)
+        return;
+
+    adios_clear_process_groups_index_v1 (index->pg_root);
+    adios_clear_vars_index_v1 (index->vars_root);
+    adios_clear_attributes_index_v1 (index->attrs_root);
+    index->pg_root = NULL;
+    index->vars_root = NULL;
+    index->vars_tail = NULL;
+    index->attrs_root = NULL;
+    index->attrs_tail = NULL;
+    index->hashtbl_vars->clear  (index->hashtbl_vars);
+    index->hashtbl_attrs->clear (index->hashtbl_attrs);
 }
 
 static uint8_t count_dimensions (struct adios_dimension_struct * dimensions)
@@ -3034,11 +3098,8 @@ void adios_copy_var_written (struct adios_var_struct ** root
 }
 #endif
 
-void adios_build_index_v1 (struct adios_file_struct * fd
-        ,struct adios_index_process_group_struct_v1 ** pg_root
-        ,struct adios_index_var_struct_v1 ** vars_root
-        ,struct adios_index_attribute_struct_v1 ** attrs_root
-        )
+void adios_build_index_v1 (struct adios_file_struct * fd,
+                           struct adios_index_struct_v1 * index)
 {
     struct adios_group_struct * g = fd->group;
     struct adios_var_struct * v = g->vars_written;
@@ -3058,7 +3119,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd
     g_item->next = 0;
 
     // build the groups and vars index
-    index_append_process_group_v1 (pg_root, g_item);
+    index_append_process_group_v1 (&index->pg_root, g_item);
 
     while (v)
     {
@@ -3217,7 +3278,8 @@ void adios_build_index_v1 (struct adios_file_struct * fd
             v_index->next = 0;
 
             // this fn will either take ownership for free
-            index_append_var_v1 (vars_root, v_index);
+            log_debug ("build index var %s/%s\n", v_index->var_path, v_index->var_name);
+            index_append_var_v1 (index, v_index);
         }
 
         v = v->next;
@@ -3272,7 +3334,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd
             a_index->next = 0;
 
             // this fn will either take ownership for free
-            index_append_attribute_v1 (attrs_root, a_index);
+            index_append_attribute_v1 (&index->attrs_root, a_index);
         }
 
         a = a->next;
@@ -3283,9 +3345,7 @@ int adios_write_index_v1 (char ** buffer
         ,uint64_t * buffer_size
         ,uint64_t * buffer_offset
         ,uint64_t index_start
-        ,struct adios_index_process_group_struct_v1 * pg_root
-        ,struct adios_index_var_struct_v1 * vars_root
-        ,struct adios_index_attribute_struct_v1 * attrs_root
+        ,struct adios_index_struct_v1 * index
         )
 {
     uint64_t groups_count = 0;
@@ -3299,6 +3359,10 @@ int adios_write_index_v1 (char ** buffer
 
     // we need to save the offset we will write the count and size
     uint64_t buffer_offset_start = 0; // since we realloc, we can't save a ptr
+
+    struct adios_index_process_group_struct_v1 * pg_root = index->pg_root;
+    struct adios_index_var_struct_v1 * vars_root = index->vars_root;
+    struct adios_index_attribute_struct_v1 * attrs_root = index->attrs_root;
 
     // save for the process group index
     buffer_offset_start = *buffer_offset;
@@ -3721,6 +3785,8 @@ int adios_write_index_v1 (char ** buffer
 
         vars_root = vars_root->next;
     }
+
+    log_debug ("%s: wrote %d variables into the var-index buffer\n", __func__, vars_count);
 
     // vars index count/size prefix
     buffer_write (buffer, buffer_size, &buffer_offset_start, &vars_count, 2);

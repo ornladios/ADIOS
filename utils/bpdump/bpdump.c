@@ -159,7 +159,7 @@ int main (int argc, char ** argv)
     printf (DIVIDER);
     printf ("Vars Index:\n");
     adios_posix_read_vars_index (b);
-    adios_parse_vars_index_v1 (b, &vars_root);
+    adios_parse_vars_index_v1 (b, &vars_root, NULL, NULL);
     print_vars_index (vars_root);
 
     printf (DIVIDER);

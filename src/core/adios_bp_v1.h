@@ -11,6 +11,7 @@
 #include "unistd.h"
 #include "public/adios_types.h"
 #include "core/adios_transport_hooks.h"
+#include "core/qhashtbl.h"
 
 #define ADIOS_VERSION_NUM_MASK                       0x00000011
 #define ADIOS_VERSION_HAVE_SUBFILE                   0x00000100
@@ -154,6 +155,20 @@ struct adios_index_attribute_struct_v1
     struct adios_index_attribute_struct_v1 * next;
 };
 
+/* Struct to hold the 3 main pointers of the index:
+ * group, variable and attribute indices
+ */
+struct adios_index_struct_v1
+{
+    struct adios_index_process_group_struct_v1 * pg_root;
+    struct adios_index_var_struct_v1           * vars_root;
+    struct adios_index_var_struct_v1           * vars_tail;
+    struct adios_index_attribute_struct_v1     * attrs_root;
+    struct adios_index_attribute_struct_v1     * attrs_tail;
+    qhashtbl_t *hashtbl_vars;  // to speed up merging lists
+    qhashtbl_t *hashtbl_attrs; // to speed up merging lists
+};
+
 struct adios_method_info_struct_v1
 {
     enum ADIOS_IO_METHOD id;
@@ -252,9 +267,11 @@ int adios_parse_process_group_index_v1 (struct adios_bp_buffer_struct_v1 * b
 
 int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
                               ,struct adios_index_var_struct_v1 ** vars_root
+                              ,qhashtbl_t *hashtbl_vars
+                              ,struct adios_index_var_struct_v1 ** vars_tail
                               );
 int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
-                          ,struct adios_index_attribute_struct_v1 ** attrs_root
+                                    ,struct adios_index_attribute_struct_v1 ** attrs_root
                           );
 
 int adios_parse_process_group_header_v1 (struct adios_bp_buffer_struct_v1 * b

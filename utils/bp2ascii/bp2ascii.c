@@ -106,7 +106,7 @@ int main (int argc, char ** argv)
     print_process_group_index (pg_root);
 
     adios_posix_read_vars_index (b);
-    adios_parse_vars_index_v1 (b, &vars_root);
+    adios_parse_vars_index_v1 (b, &vars_root, NULL, NULL);
 
     while (vars_root)
     {

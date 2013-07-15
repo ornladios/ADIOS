@@ -47,6 +47,7 @@ void adios_init_transports (struct adios_transport_struct ** t)
 
 #    if HAVE_MPI
     ASSIGN_FNS(mpi,ADIOS_METHOD_MPI)
+/*
     ASSIGN_FNS(mpi_lustre,ADIOS_METHOD_MPI_LUSTRE)
     ASSIGN_FNS(mpi_amr,ADIOS_METHOD_MPI_AMR)
     //Tian's method
@@ -59,8 +60,10 @@ void adios_init_transports (struct adios_transport_struct ** t)
     ASSIGN_FNS(mpi_amr1,ADIOS_METHOD_MPI_AMR1)
     ASSIGN_FNS(adaptive,ADIOS_METHOD_ADAPTIVE)
 #      endif
+*/
 #    endif
 
+/*
 #    if HAVE_PHDF5
     ASSIGN_FNS(phdf5,ADIOS_METHOD_PHDF5)
 #    endif
@@ -73,9 +76,9 @@ void adios_init_transports (struct adios_transport_struct ** t)
     ASSIGN_FNS(nssi,ADIOS_METHOD_NSSI_STAGING)
     ASSIGN_FNS(nssi_filter,ADIOS_METHOD_NSSI_FILTER)
 #    endif
-
+*/
 #  endif /* _NOMPI */
-
+/*
 #  if HAVE_DATATAP
     ASSIGN_FNS(datatap,ADIOS_METHOD_DATATAP)
 #  endif
@@ -98,7 +101,7 @@ void adios_init_transports (struct adios_transport_struct ** t)
 #  ifndef NO_RESEARCH_TRANSPORTS
     ASSIGN_FNS(provenance,ADIOS_METHOD_PROVENANCE)
 #  endif
-
+*/
 #endif /* ADIOS_EMPTY_TRANSPORTS */
 	}
 

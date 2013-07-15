@@ -135,6 +135,7 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
 // forward declare the functions (or dummies for internals use)
 #if !defined(_NOMPI) || !defined (ADIOS_EMPTY_TRANSPORTS)
      FORWARD_DECLARE(mpi)
+     /*
      FORWARD_DECLARE(mpi_lustre)
      FORWARD_DECLARE(mpi_cio)
      FORWARD_DECLARE(mpi_stripe)
@@ -148,8 +149,9 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
      FORWARD_DECLARE(nssi_filter)
      FORWARD_DECLARE(flexpath)
      FORWARD_DECLARE(var_merge)
+     */
 #endif
-
+/*
 #ifdef ADIOS_EMPTY_TRANSPORTS
      FORWARD_DECLARE_EMPTY(datatap)
      FORWARD_DECLARE_EMPTY(posix)
@@ -171,7 +173,7 @@ FORWARD_DECLARE(dataspaces)
 #if HAVE_DIMES
 FORWARD_DECLARE(dimes)
 #endif
-
+*/
 
 #undef FORWARD_DECLARE
 #endif
