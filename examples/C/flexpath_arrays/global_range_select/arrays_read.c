@@ -59,8 +59,7 @@ int main (int argc, char ** argv)
                                          ADIOS_LOCKMODE_NONE, 0.0);
     
     int ii = 0;
-    while(adios_errno != err_end_of_stream){
-        
+    while(adios_errno != err_end_of_stream){       
         /* get a bounding box - rank 0 for now*/
         ADIOS_VARINFO* nx_info = adios_inq_var( afile, "NX");
         ADIOS_VARINFO* ny_info = adios_inq_var( afile, "NY");

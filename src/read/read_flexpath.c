@@ -570,18 +570,21 @@ need_writer(
 /********** EVPath Handlers **********/
 static int                                                                                                                                                                      
 update_step_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)                                                                                              
-{                                                                                                                                                                               
-    ADIOS_FILE *adiosfile = client_data;                                                                                                                                        
-    flexpath_file_data *fp = adiosfile->fh;                                                                                                                                     
-    update_step_msg *msg = vevent;                                                                                                                                              
-    if(msg->finalized == 1){                                                                                                                                                    
-        fp->writer_finalized = 1;                                                                                                                                               
-    }                                                                                                                                                                           
-    else{                                                                                                                                                                       
-        adiosfile->last_step = msg->step;                                                                                                                                       
-        fp->last_step = msg->step;                                                                                                                                              
-    }                                                                                                                                                                           
-    return 0;                                                                                                                                                                   
+{
+
+    ADIOS_FILE *adiosfile = client_data;
+    flexpath_file_data *fp = adiosfile->fh;
+    update_step_msg *msg = vevent;
+    fprintf(stderr, "update_step_handler updated: step %d %d\n",
+	    msg->step, msg->finalized);
+    if(msg->finalized == 1){
+        fp->writer_finalized = 1;
+    }
+    else{
+        adiosfile->last_step = msg->step;
+        fp->last_step = msg->step;
+    }
+    return 0;
 }
 
 static int op_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
@@ -1031,11 +1034,22 @@ void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
     }
 }
 
-int adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_sec) {
+int 
+adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_sec) 
+{
     flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
-    log_debug("FLEXPATH ADVANCE_STEP CALLED!\n");
     MPI_Barrier(fp->comm);
     int i=0;
+    /* if(fp->writer_finalized == 1){ */
+    /* 	if(adiosfile->current_step == adiosfile->last_step){ */
+    /* 	    adios_errno = err_end_of_stream; */
+    /* 	    return 0; */
+    /* 	} */
+    /* } */
+    /* else if(adiosfile->current_step == adiosfile->last_step){ */
+    /* 	adios_errno = err_step_notready; */
+    /* 	return 0; */
+    /* } */
     for(i=0; i<fp->num_bridges; i++) {
         if(fp->bridges[i].created && fp->bridges[i].opened) {
             op_msg close;
