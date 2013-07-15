@@ -720,26 +720,18 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     		}
     	    }
     	    else if(var->sel->type == ADIOS_SELECTION_BOUNDINGBOX){
-		fprintf(stderr, "\t\t\tbounding box for writer_rank %d, varname: %s\n", writer_rank, var->varname);
     		int i;
                 global_var* gv = find_gbl_var(fp->gp->vars,
     					      var->varname,
     					      fp->gp->num_vars);
                 int * writer_count = gv->offsets[0].local_dimensions;
                 uint64_t * reader_count = var->sel->u.bb.count;
-		fprintf(stderr, "\t\tfinding displ for rank :%d\n", writer_rank);
     		array_displacements * disp = find_displacement(var->displ,
     							       writer_rank,
     							       var->num_displ);
 		
 		void *aptr8 = get_FMPtrField_by_name(f, f->field_name, base_data, 1);
-		// statement only exists for debugging. Hack. Needs to go.
-		if(disp == NULL){
-		    fprintf(stderr, 
-			    "\t\t\treader_rank: %d DISP IS NULL for writer_rank: %d\n", 
-			    fp->rank, writer_rank);
-		    
-		}
+
 		// this "if" is a result of the fact that the writer code sends all data.
 		// this is an ugly way of saying "i scheduled a read for this variable,
 		// but not from this writer. I'm only getting this data because I requested
@@ -761,7 +753,6 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
         j++;
         f++;
     }
-    fprintf(stderr, "signaling on condition: %d\n", condition);
     CMCondition_signal(fp_read_data->fp_cm, condition);
     return 0; 
 }
@@ -1109,9 +1100,7 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
     for(i = 0; i<num_sendees; i++)
     {	
 	int sendee = fp->sendees[i];
-	fprintf(stderr, "sending flush_data msg to: %d\n", sendee);
 	msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
-	fprintf(stderr, "waiting on condition: %d\n", msg.condition);
 	EVsubmit(fp->bridges[sendee].flush_source, &msg, NULL);
 	if(blocking){    
 	    CMCondition_wait(fp_read_data->fp_cm, msg.condition);
@@ -1200,11 +1189,9 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
 	array_displacements * all_disp = NULL;	
         for(j=0; j<fp->num_bridges; j++) {
             fp_log("BOUNDING", "checking writer %d\n", j);
-	    fprintf(stderr, "\t\tdo we need writer %d?\n", j);
             int destination=0;	    	    
             if(need_writer(fp, j, sel, fp->gp, v->varname)==1){
                 fp_log("BOUNDING", "yes it's neededi\n");		
-		fprintf(stderr, "\t\t\tyes, we need writer %d\n", j);
 		need_count++;
                 destination = j;
 		global_var * gvar = find_gbl_var(fp->gp->vars, v->varname, fp->gp->num_vars);

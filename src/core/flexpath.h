@@ -56,7 +56,6 @@
 
 typedef enum { FORMAT=0, DATA, EVGROUP } Flush_type;
 
-/********** offset_struct **********/
 /*
  * Contains the offset information for a variable for all writers.
  * offsets_per_rank is == ndims.
@@ -68,6 +67,47 @@ typedef struct _offset_struct{
     int * local_offsets;
 } offset_struct;
 
+typedef struct _var {
+    char * name;
+    int noffset_structs;
+    offset_struct * offsets;    
+} global_var, *global_var_ptr;
+
+typedef struct _evgroup {    
+    int condition;
+    int num_vars;
+    global_var* vars;
+} evgroup, *evgroup_ptr;
+
+typedef struct _op_msg
+{
+    int process_id;
+    char * file_name;
+    int type; //4 = end_of_stream, 3 = init, 2 = ack, 1 = open, 0 = close,
+    int step;
+    int condition;
+} op_msg, *op_msg_ptr;
+ 
+typedef struct flush_msg_ {
+    Flush_type type;
+    int rank;
+    int condition;
+} Flush_msg, *Flush_msg_ptr;
+ 
+typedef struct format_msg_ {
+    int id_len;
+    int rep_id_len;
+    char* format_id;
+    char* rep_id;
+    int condition;
+} Format_msg, *Format_msg_ptr;
+
+typedef struct var_msg_ {
+    char* var_name;
+    int rank;
+    int condition;
+} Var_msg, *Var_msg_ptr;
+
 static FMField offset_struct_field_list[]=
 {
     {"offsets_per_rank", "integer", sizeof(int), FMOffset(offset_struct*, offsets_per_rank)},
@@ -77,19 +117,6 @@ static FMField offset_struct_field_list[]=
     {NULL, NULL, 0, 0}
 };
 
-static FMStructDescRec offset_struct_format_list[] =
-{
-    {"offset_struct", offset_struct_field_list, sizeof(offset_struct), NULL},
-    {NULL, NULL, 0, 0}
-};
-
-/********** global_var **********/
-typedef struct _var {
-    char * name;
-    int noffset_structs;
-    offset_struct * offsets;    
-} global_var, *global_var_ptr;
-
 static FMField global_var_field_list[]=
 {
     {"name", "string", sizeof(char*), FMOffset(global_var_ptr, name)},
@@ -98,40 +125,39 @@ static FMField global_var_field_list[]=
     {NULL, NULL, 0, 0}
 };
 
-/********** evgroup **********/
-typedef struct _evgroup {    
-    int condition;
-    int step;
-    int num_vars;
-    global_var* vars;
-} evgroup, *evgroup_ptr;
-
 static FMField evgroup_field_list[]=
 {
     {"condition", "integer", sizeof(int), FMOffset(evgroup_ptr, condition)},
-    {"step", "integer", sizeof(int), FMOffset(evgroup_ptr, step)},
     {"num_vars", "integer", sizeof(int), FMOffset(evgroup_ptr, num_vars)},
     {"vars", "global_var[num_vars]", sizeof(global_var), FMOffset(evgroup_ptr, vars)},
     {NULL, NULL, 0, 0}
 };
 
-static FMStructDescRec evgroup_format_list[] =
+static FMField flush_field_list[] =
 {   
-    {"evgroup", evgroup_field_list, sizeof(evgroup), NULL},
-    {"offset_struct", offset_struct_field_list, sizeof(offset_struct), NULL},
-    {"global_var", global_var_field_list, sizeof(global_var), NULL},
-    {NULL,NULL,0,NULL}
+    {"type", "integer", sizeof(Flush_type), FMOffset(Flush_msg_ptr, type)},
+    {"rank", "integer", sizeof(int), FMOffset(Flush_msg_ptr, rank)},
+    {"condition", "integer", sizeof(int), FMOffset(Flush_msg_ptr, condition)},
+    {NULL, NULL, 0, 0}
 };
 
-/********** op_msg **********/
-typedef struct _op_msg
+static FMField format_field_list[] =
+{   
+    {"id_len", "integer", sizeof(int), FMOffset(Format_msg_ptr, id_len)},
+    {"rep_id_len", "integer", sizeof(int), FMOffset(Format_msg_ptr, rep_id_len)},
+    {"format_id", "char[id_len]", sizeof(char), FMOffset(Format_msg_ptr, format_id)},
+    {"rep_id", "char[rep_id_len]", sizeof(char), FMOffset(Format_msg_ptr, rep_id)},
+    {"condition", "integer", sizeof(int), FMOffset(Format_msg_ptr, condition)},
+    {NULL, NULL, 0, 0}
+};
+
+static FMField var_field_list[] =
 {
-    int process_id;
-    char * file_name;
-    int type; //4 = end_of_stream, 3 = init, 2 = ack, 1 = open, 0 = close,
-    int step;
-    int condition;
-} op_msg, *op_msg_ptr;
+    {"var_name", "string", sizeof(char*), FMOffset(Var_msg_ptr, var_name)},
+    {"rank", "integer", sizeof(int), FMOffset(Var_msg_ptr, rank)},
+    {NULL, NULL, 0, 0}
+};
+
 
 static FMField op_file_field_list[] =
 {
@@ -143,104 +169,48 @@ static FMField op_file_field_list[] =
     {NULL, NULL, 0, 0}
 };
 
-static FMStructDescRec op_format_list[] =
+static FMStructDescRec offset_struct_format_list[] =
 {
-    {"op_msg", op_file_field_list, sizeof(op_msg), NULL},
-    {NULL, NULL, 0, NULL}
-};
-
-/********** Update step msg **********/
-typedef struct _update_step_msg // one way message from writer to reader.
-{
-    int process_id; //mpi rank of the writer.
-    int step;
-    int finalized; // has the writer called finalize? 1 = yes.
-} update_step_msg, *update_step_msg_ptr;
-
-static FMField update_step_msg_field_list[] =
-{
-    {"process_id", "integer", sizeof(int), FMOffset(update_step_msg_ptr, process_id)},
-    {"step" "integer", sizeof(int), FMOffset(update_step_msg_ptr, step)},
-    {"finalized", "integer", sizeof(int), FMOffset(update_step_msg_ptr, finalized)},
+    {"offset_struct", offset_struct_field_list, sizeof(offset_struct), NULL},
     {NULL, NULL, 0, 0}
 };
 
-static FMStructDescRec update_step_msg_format_list[] =
-{
-    {"update_step_msg", update_step_msg_field_list, sizeof(update_step_msg), NULL},
-    {NULL, NULL, 0, NULL}
-};
 
-/********** flush_msg **********/
-typedef struct flush_msg_ {
-    Flush_type type;
-    int rank;
-    int condition;
-} Flush_msg, *Flush_msg_ptr;
-
-static FMField flush_field_list[] =
+static FMStructDescRec evgroup_format_list[] =
 {   
-    {"type", "integer", sizeof(Flush_type), FMOffset(Flush_msg_ptr, type)},
-    {"rank", "integer", sizeof(int), FMOffset(Flush_msg_ptr, rank)},
-    {"condition", "integer", sizeof(int), FMOffset(Flush_msg_ptr, condition)},
-    {NULL, NULL, 0, 0}
+    {"evgroup", evgroup_field_list, sizeof(evgroup), NULL},
+    {"offset_struct", offset_struct_field_list, sizeof(offset_struct), NULL},
+    {"global_var", global_var_field_list, sizeof(global_var), NULL},
+    {NULL,NULL,0,NULL}
 };
- 
+
 static FMStructDescRec flush_format_list[] =
 {   
     {"flush", flush_field_list, sizeof(Flush_msg), NULL},
     {NULL,NULL,0,NULL}
 };
-
-/********** format_msg **********/
-typedef struct format_msg_ {
-    int id_len;
-    int rep_id_len;
-    char* format_id;
-    char* rep_id;
-    int condition;
-} Format_msg, *Format_msg_ptr;
-
-static FMField format_field_list[] =
-{
-    {"id_len", "integer", sizeof(int), FMOffset(Format_msg_ptr, id_len)},
-    {"rep_id_len", "integer", sizeof(int), FMOffset(Format_msg_ptr, rep_id_len)},
-    {"format_id", "char[id_len]", sizeof(char), FMOffset(Format_msg_ptr, format_id)},
-    {"rep_id", "char[rep_id_len]", sizeof(char), FMOffset(Format_msg_ptr, rep_id)},
-    {"condition", "integer", sizeof(int), FMOffset(Format_msg_ptr, condition)},
-    {NULL, NULL, 0, 0}
-};
-
+ 
 static FMStructDescRec format_format_list[] =
-{
+{   
     {"formatMsg", format_field_list, sizeof(Format_msg), NULL},
     {NULL,NULL,0,NULL}
 };
-
-/********** var_msg **********/
-typedef struct var_msg_ {
-    char* var_name;
-    int rank;
-    int condition;
-} Var_msg, *Var_msg_ptr;
-
-static FMField var_field_list[] =
-{
-    {"var_name", "string", sizeof(char*), FMOffset(Var_msg_ptr, var_name)},
-    {"rank", "integer", sizeof(int), FMOffset(Var_msg_ptr, rank)},
-    {NULL, NULL, 0, 0}
-};
-
+ 
 static FMStructDescRec var_format_list[] =
 {
     {"varMsg", var_field_list, sizeof(Var_msg), NULL},
     {NULL, NULL, 0, NULL}
 };
 
-/********** data_format **********/
 static FMStructDescRec data_format_list[] =
 {
     {"anonymous", NULL, 0, NULL},
+    {NULL, NULL, 0, NULL}
+};
+
+static FMStructDescRec op_format_list[] =
+{
+    {"op_msg", op_file_field_list, sizeof(op_msg), NULL},
     {NULL, NULL, 0, NULL}
 };
 
