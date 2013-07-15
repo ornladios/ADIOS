@@ -124,6 +124,7 @@ typedef struct _flexpath_write_file_data {
     EVsource dataSource;
     EVsource offsetSource;
     EVsource opSource;
+    EVsource stepSource;
     EVaction multi_action;
     FlexpathStone* bridges;
     int numBridges;
@@ -1296,17 +1297,20 @@ extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method
 	var_format_list, op_format_list, evgroup_format_list, 
         data_format_list, NULL};
     char* q_action_spec = create_multityped_action_spec(queue_list, 
-        multiqueue_action); 
+							multiqueue_action); 
     fileData->multi_action = EVassoc_multi_action(flexpathWriteData.cm, 
-	fileData->multiStone, q_action_spec, NULL);
+						  fileData->multiStone, q_action_spec, NULL);
     fileData->formatSource = EVcreate_submit_handle(flexpathWriteData.cm, 
-        fileData->multiStone, format_format_list);
+						    fileData->multiStone, format_format_list);
     fileData->dataSource = EVcreate_submit_handle_free(flexpathWriteData.cm, 
-        fileData->multiStone, fileData->fm->format, data_free,  NULL); 
+						       fileData->multiStone, fileData->fm->format, data_free,  NULL); 
     fileData->opSource = EVcreate_submit_handle_free(flexpathWriteData.cm, 
-        fileData->multiStone, op_format_list, op_free,  NULL); 
+						     fileData->multiStone, op_format_list, op_free,  NULL); 
     fileData->offsetSource = EVcreate_submit_handle(flexpathWriteData.cm, 
-	fileData->multiStone, evgroup_format_list);
+						    fileData->multiStone, evgroup_format_list);
+    fileData->stepSource = EVcreate_submit_handle(flexpathWriteData.cm, 
+						    fileData->multiStone, update_step_msg_format_list);
+    
     
     fp_write_log("SETUP", "setup terminal actions\n");
     EVassoc_terminal_action(flexpathWriteData.cm, fileData->sinkStone, 

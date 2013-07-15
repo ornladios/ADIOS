@@ -127,6 +127,9 @@ typedef struct _flexpath_file_data
     int valid_evgroup;
     evgroup * gp;
 
+    int writer_finalized;
+    int last_step;
+
     int num_sendees;
     int* sendees;
     int ackCondition;    
@@ -264,7 +267,9 @@ new_flexpath_file_data(const char * fname)
     fp->num_vars = 0;
     fp->sendees = NULL;
     fp->num_sendees = 0;    
-
+    
+    fp->writer_finalized = 0;
+    fp->last_step = -1;
     return fp;        
 }
 
@@ -563,6 +568,22 @@ need_writer(
 }
 
 /********** EVPath Handlers **********/
+static int                                                                                                                                                                      
+update_step_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)                                                                                              
+{                                                                                                                                                                               
+    ADIOS_FILE *adiosfile = client_data;                                                                                                                                        
+    flexpath_file_data *fp = adiosfile->fh;                                                                                                                                     
+    update_step_msg *msg = vevent;                                                                                                                                              
+    if(msg->finalized == 1){                                                                                                                                                    
+        fp->writer_finalized = 1;                                                                                                                                               
+    }                                                                                                                                                                           
+    else{                                                                                                                                                                       
+        adiosfile->last_step = msg->step;                                                                                                                                       
+        fp->last_step = msg->step;                                                                                                                                              
+    }                                                                                                                                                                           
+    return 0;                                                                                                                                                                   
+}
+
 static int op_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
     op_msg* msg = (op_msg*)vevent;    
     ADIOS_FILE *adiosfile = (ADIOS_FILE*)client_data;
@@ -854,6 +875,13 @@ adios_read_flexpath_open(const char * fname,
 			    evgroup_format_list,
 			    group_msg_handler,
 			    adiosfile);
+
+    EVassoc_terminal_action(fp_read_data->fp_cm,
+			    fp->data_stone,
+			    update_step_msg_format_list,
+			    update_step_handler,
+			    adiosfile);
+
     EVassoc_raw_terminal_action(fp_read_data->fp_cm,
 				fp->data_stone,
 				raw_handler,
