@@ -10,6 +10,10 @@ Possible Test Setups
 Existing Directories
 --------------------
 
-1. global_range_select - runs tests using the global range selectors. Current tests are listed below:
+* global_range_select - runs tests using the global range selectors. Current tests are listed below:
 	- 1 to 1 all to all
+
+* scalar - read/write a scalar with (XML API)
+
+* 1D_arr_global - read/write a 1D array of doubles (XML API)
 
