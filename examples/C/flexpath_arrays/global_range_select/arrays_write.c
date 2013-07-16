@@ -52,7 +52,6 @@ int main (int argc, char ** argv)
       fprintf(stderr, "Rank=%d commited write %d\n", rank, ii);
     }
     adios_finalize (rank);
-
-    //MPI_Finalize ();
+    MPI_Finalize ();
     return 0;
 }

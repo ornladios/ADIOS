@@ -124,15 +124,22 @@ typedef struct _flexpath_write_file_data {
     EVsource dataSource;
     EVsource offsetSource;
     EVsource opSource;
+    EVsource stepSource;
     EVaction multi_action;
     FlexpathStone* bridges;
     int numBridges;
     attr_list attrs;
 
+    int num_reader_coordinators;
+    int *reader_coordinators;
+
     // server state
     int maxQueueSize;
     int openCount;
     int currentStep;
+    int writerStep; // how many times has the writer called closed?
+    int finalized; // have we finalized?
+
     thr_mutex_t openMutex;
     FlexpathFMStructure* fm;
     FlexpathVarNode* askedVars;
@@ -219,6 +226,12 @@ void op_free(void* eventData, void* clientData) {
     }
     free(op);
 }
+
+void step_free(void* eventData, void* clientData) {
+    fp_write_log("OP", "freeing an update_step message\n");
+    free(eventData);
+}
+
 
 // message queue add to head
 void threaded_enqueue(FlexpathQueueNode** queue, void* item, FlexpathMessageType type, thr_mutex_t mutex, thr_condition_t condition) {
@@ -886,7 +899,7 @@ static int op_handler(CManager cm, void* vevent, void* client_data, attr_list at
     } else if(msg->type == CLOSE_MSG) {
         threaded_enqueue(&fileData->controlQueue, msg, CLOSE, 
 			 fileData->controlMutex, fileData->controlCondition);
-    } else if(msg->type == 3) {
+    } else if(msg->type == INIT_MSG) {
 	threaded_enqueue(&fileData->controlQueue, msg, INIT,
 			 fileData->controlMutex, fileData->controlCondition);
 			
@@ -927,6 +940,21 @@ attr_list set_dst_condition_atom(attr_list attrs, int condition){
     return attrs;
 }
 
+void
+send_update_step_msgs(FlexpathWriteFileData *fileData)
+{
+    int i;
+    for(i = 0; i<fileData->num_reader_coordinators; i++){
+	/* update_step_msg *msg = malloc(sizeof(update_step_msg)); */
+	/* msg->process_id = fileData->rank; */
+	/* msg->step = fileData->writerStep; */
+	/* msg->finalized = fileData->finalized; */
+	/* int dest_rank = fileData->reader_coordinators[i]; */
+	/* fileData->attrs = set_dst_rank_atom(fileData->attrs, dest_rank+1); */
+	/* EVsubmit_general(fileData->stepSource, msg, step_free, fileData->attrs); */
+    }
+}
+
 // processes messages from control queue
 int control_thread(void* arg) {
     FlexpathWriteFileData* fileData = (FlexpathWriteFileData*)arg;
@@ -960,8 +988,6 @@ int control_thread(void* arg) {
                   fileData->bridges[flushMsg->rank].opened=1;
                   fileData->openCount++;
                 }
-		fp_write_log("MSG", " sending data_msg : rank %d step %d\n", 
-                    flushMsg->rank, fileData->currentStep);
 		EVsubmit_general(fileData->dataSource, temp, data_free, fileData->attrs);
 	    } else if(controlMsg->type==OPEN) {
                 op_msg* open = (op_msg*) controlMsg->data;
@@ -980,25 +1006,19 @@ int control_thread(void* arg) {
 					fileData->bridges[open->process_id].myNum);				    
 		}		
 		if(open->step < fileData->currentStep) {
-                    perr("control_thread: Recieved Past Step Open\n");
 		    log_error("Flexpath method control_thread: Received Past Step Open\n");
                 } else if (open->step == fileData->currentStep){
-                    fp_write_log("STEP", "recieved op with current step\n");
                     thr_mutex_lock(fileData->openMutex);
-                    fp_write_log("MUTEX","lock 6\n");
                     fileData->openCount++;  
                     fileData->bridges[open->process_id].opened = 1;
-                    fp_write_log("MUTEX","unlock 6\n");
 		    thr_mutex_unlock(fileData->openMutex);
-                    op_msg* ack = (op_msg*) malloc(sizeof(op_msg));
+                    op_msg* ack = malloc(sizeof(op_msg));
                     ack->file_name = strdup(fileData->name);
                     ack->process_id = fileData->rank;
                     ack->step = fileData->currentStep;
                     ack->type = 2;
 		    ack->condition = open->condition;
                     fileData->attrs = set_dst_rank_atom(fileData->attrs, open->process_id+1);
-		    fp_write_log("MSG", " sending op_msg : dst %d step %d type ack\n",
-				 open->process_id, fileData->currentStep); 
                     EVsubmit_general(fileData->opSource, ack, op_free, fileData->attrs);
                 } else {
                     fp_write_log("STEP", "recieved op with future step\n");
@@ -1028,23 +1048,24 @@ int control_thread(void* arg) {
                     int i;
                     //for all bridges if step == currentstep send ack
 		    // this block gets repeated in finalize.  gets repeated
-		    // only AFTER sending finalize messages.  cp and past into finalize
+		    // only AFTER sending finalize messages.  
 		    // do it for everyone that has opened.
 		    
                     for(i=0; i<fileData->numBridges; i++) {
                       if(fileData->bridges[i].step==fileData->currentStep) {
                         fileData->openCount++;
                         fileData->bridges[i].opened = 1;
-                        op_msg* ack = (op_msg*) malloc(sizeof(op_msg));
+                        op_msg* ack = malloc(sizeof(op_msg));
                         ack->file_name = strdup(fileData->name);
                         ack->process_id = fileData->rank;
                         ack->step = fileData->currentStep;
                         ack->type = 2;
 			ack->condition = fileData->bridges[i].condition;
                         fileData->attrs = set_dst_rank_atom(fileData->attrs, i+1);
-		        fp_write_log("MSG", " sending op_msg : dst %d step %d type ack\n",
-                            i, fileData->currentStep);
-                        EVsubmit_general(fileData->opSource, ack, op_free, fileData->attrs);
+                        EVsubmit_general(fileData->opSource, 
+					 ack, 
+					 op_free, 
+					 fileData->attrs);
                       }
                     }
 		}
@@ -1052,14 +1073,17 @@ int control_thread(void* arg) {
 		fp_write_log("DATAMUTEX", "in use 1\n"); 
 		dataNode = threaded_peek(&fileData->dataQueue, 
 		    fileData->dataMutex, &fileData->dataCondition);
-                fp_write_log("DATAMUTEX", "no use 1\n"); 
-                thr_mutex_lock(fileData->dataMutex);
-                thr_mutex_unlock(fileData->dataMutex);
-                fp_write_log("DATAMUTEX", "no use 1\n"); 
 		op_msg* initMsg = (op_msg*) controlMsg->data;
-		void* temp = copy_buffer(dataNode->data, initMsg->process_id, fileData);
-		fileData->attrs = set_dst_rank_atom(fileData->attrs, initMsg->process_id);
-		fileData->attrs = set_dst_condition_atom(fileData->attrs, initMsg->condition);
+		fileData->num_reader_coordinators++;
+		fileData->reader_coordinators = realloc(fileData->reader_coordinators,
+							sizeof(int)*fileData->num_reader_coordinators);
+		fileData->reader_coordinators[fileData->num_reader_coordinators -1] = initMsg->process_id;
+		void* temp = copy_buffer(dataNode->data, 
+					 initMsg->process_id, fileData);
+		fileData->attrs = set_dst_rank_atom(fileData->attrs, 
+						    initMsg->process_id);
+		fileData->attrs = set_dst_condition_atom(fileData->attrs, 
+							 initMsg->condition);	
 		fileData->bridges[initMsg->process_id].created = 1;
 		fileData->bridges[initMsg->process_id].myNum = 
 		    EVcreate_bridge_action(flexpathWriteData.cm, 
@@ -1070,16 +1094,13 @@ int control_thread(void* arg) {
 				    fileData->multiStone, 
 				    fileData->multi_action, 
 				    initMsg->process_id+1, 
-				    fileData->bridges[initMsg->process_id].myNum);		
-		/* if(!fileData->bridges[initMsg->rank].opened) { */
-                /*   fileData->bridges[initMsg->rank].opened=1;                   */
-                /* } */
-		/* fp_write_log("MSG", " sending data_msg : rank %d step %d\n",  */
-                /*     flushMsg->rank, fileData->currentStep); */
-		EVsubmit_general(fileData->dataSource, temp, data_free, fileData->attrs);
+				    fileData->bridges[initMsg->process_id].myNum);
+
+		EVsubmit_general(fileData->dataSource, 
+				 temp, data_free, fileData->attrs);
 	    }
 	    else{
-		perr("control_thread: Unrecognized Control Message\n");
+		log_error("control_thread: Unrecognized Control Message\n");
 	    }
 	}
     }
@@ -1159,19 +1180,18 @@ extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method
         return 0;
     }
 
-    FlexpathWriteFileData* fileData = (FlexpathWriteFileData *) malloc(sizeof(FlexpathWriteFileData));
+    FlexpathWriteFileData* fileData = malloc(sizeof(FlexpathWriteFileData));
     mem_check(fileData, "fileData");
     memset(fileData, 0, sizeof(FlexpathWriteFileData));
     fileData->maxQueueSize=0;
     if(method->parameters) {
         sscanf(method->parameters,"QUEUE_SIZE=%d;",&fileData->maxQueueSize);
-        fp_write_log("SETUP", "setting max queue size to %d\n", fileData->maxQueueSize);
     }
     
     // setup step state
     fileData->attrs = create_attr_list();
     fileData->openCount = 0;
-    fileData->currentStep = 0;
+    //fileData->currentStep = 0;
 
     // setup mutexs
     fileData->controlMutex = thr_mutex_alloc();
@@ -1292,21 +1312,29 @@ extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method
 
     //generate multiqueue function that sends formats or all data based on flush msg
     fp_write_log("SETUP", "setup graph\n");
-    FMStructDescList queue_list[] = {flush_format_list, format_format_list, 
-	var_format_list, op_format_list, evgroup_format_list, 
-        data_format_list, NULL};
+    FMStructDescList queue_list[] = {flush_format_list, 
+				     format_format_list, 
+				     var_format_list, 
+				     op_format_list, 
+				     evgroup_format_list, 
+				     data_format_list, 
+				     update_step_msg_format_list, 
+				     NULL};
     char* q_action_spec = create_multityped_action_spec(queue_list, 
-        multiqueue_action); 
+							multiqueue_action); 
     fileData->multi_action = EVassoc_multi_action(flexpathWriteData.cm, 
-	fileData->multiStone, q_action_spec, NULL);
+						  fileData->multiStone, q_action_spec, NULL);
     fileData->formatSource = EVcreate_submit_handle(flexpathWriteData.cm, 
-        fileData->multiStone, format_format_list);
+						    fileData->multiStone, format_format_list);
     fileData->dataSource = EVcreate_submit_handle_free(flexpathWriteData.cm, 
-        fileData->multiStone, fileData->fm->format, data_free,  NULL); 
+						       fileData->multiStone, fileData->fm->format, data_free,  NULL); 
     fileData->opSource = EVcreate_submit_handle_free(flexpathWriteData.cm, 
-        fileData->multiStone, op_format_list, op_free,  NULL); 
+						     fileData->multiStone, op_format_list, op_free,  NULL); 
     fileData->offsetSource = EVcreate_submit_handle(flexpathWriteData.cm, 
-	fileData->multiStone, evgroup_format_list);
+						    fileData->multiStone, evgroup_format_list);
+    fileData->stepSource = EVcreate_submit_handle(flexpathWriteData.cm, 
+						    fileData->multiStone, update_step_msg_format_list);
+    
     
     fp_write_log("SETUP", "setup terminal actions\n");
     EVassoc_terminal_action(flexpathWriteData.cm, fileData->sinkStone, 
@@ -1554,25 +1582,18 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 	    }
 	    list=list->next;
 	}
-
-	int i;
-	    
-	for(i=0; i<num_gbl_vars; i++){
-	    perr("global_var: %s has local offsets\n", gbl_vars[i].name);
-	}
 	    
 	evgroup * gp = (evgroup*)malloc(sizeof(evgroup));
 	gp->num_vars = num_gbl_vars;
-	perr("num global vars %d\n", num_gbl_vars);
 	gp->vars = gbl_vars;
 	fileData->gp = gp;
 	fileData->attrs = set_size_atom(fileData->attrs, fileData->size);
-	perr("size:%d\n\n\n", fileData->size);
 	EVsubmit(fileData->offsetSource, gp, fileData->attrs);
 	
 	fileData->sentGlobalOffsets = 1;
     }
-
+    fileData->writerStep++;
+    send_update_step_msgs(fileData);
     while((c=queue_count(&fileData->dataQueue, fileData->dataMutex))>fileData->maxQueueSize) {
         fp_write_log("QUEUE", "waiting for queue to be below max size\n");
         thr_condition_wait(fileData->dataCondition2, fileData->dataMutex2);

@@ -127,6 +127,9 @@ typedef struct _flexpath_file_data
     int valid_evgroup;
     evgroup * gp;
 
+    int writer_finalized;
+    int last_step;
+
     int num_sendees;
     int* sendees;
     int ackCondition;    
@@ -264,7 +267,9 @@ new_flexpath_file_data(const char * fname)
     fp->num_vars = 0;
     fp->sendees = NULL;
     fp->num_sendees = 0;    
-
+    
+    fp->writer_finalized = 0;
+    fp->last_step = -1;
     return fp;        
 }
 
@@ -563,6 +568,25 @@ need_writer(
 }
 
 /********** EVPath Handlers **********/
+static int                                                                                                                                                                      
+update_step_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)                                                                                              
+{
+
+    ADIOS_FILE *adiosfile = client_data;
+    flexpath_file_data *fp = adiosfile->fh;
+    update_step_msg *msg = vevent;
+    fprintf(stderr, "update_step_handler updated: step %d %d\n",
+	    msg->step, msg->finalized);
+    if(msg->finalized == 1){
+        fp->writer_finalized = 1;
+    }
+    else{
+        adiosfile->last_step = msg->step;
+        fp->last_step = msg->step;
+    }
+    return 0;
+}
+
 static int op_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
     op_msg* msg = (op_msg*)vevent;    
     ADIOS_FILE *adiosfile = (ADIOS_FILE*)client_data;
@@ -720,26 +744,18 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     		}
     	    }
     	    else if(var->sel->type == ADIOS_SELECTION_BOUNDINGBOX){
-		fprintf(stderr, "\t\t\tbounding box for writer_rank %d, varname: %s\n", writer_rank, var->varname);
     		int i;
                 global_var* gv = find_gbl_var(fp->gp->vars,
     					      var->varname,
     					      fp->gp->num_vars);
                 int * writer_count = gv->offsets[0].local_dimensions;
                 uint64_t * reader_count = var->sel->u.bb.count;
-		fprintf(stderr, "\t\tfinding displ for rank :%d\n", writer_rank);
     		array_displacements * disp = find_displacement(var->displ,
     							       writer_rank,
     							       var->num_displ);
 		
 		void *aptr8 = get_FMPtrField_by_name(f, f->field_name, base_data, 1);
-		// statement only exists for debugging. Hack. Needs to go.
-		if(disp == NULL){
-		    fprintf(stderr, 
-			    "\t\t\treader_rank: %d DISP IS NULL for writer_rank: %d\n", 
-			    fp->rank, writer_rank);
-		    
-		}
+
 		// this "if" is a result of the fact that the writer code sends all data.
 		// this is an ugly way of saying "i scheduled a read for this variable,
 		// but not from this writer. I'm only getting this data because I requested
@@ -761,7 +777,6 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
         j++;
         f++;
     }
-    fprintf(stderr, "signaling on condition: %d\n", condition);
     CMCondition_signal(fp_read_data->fp_cm, condition);
     return 0; 
 }
@@ -863,6 +878,13 @@ adios_read_flexpath_open(const char * fname,
 			    evgroup_format_list,
 			    group_msg_handler,
 			    adiosfile);
+
+    EVassoc_terminal_action(fp_read_data->fp_cm,
+			    fp->data_stone,
+			    update_step_msg_format_list,
+			    update_step_handler,
+			    adiosfile);
+
     EVassoc_raw_terminal_action(fp_read_data->fp_cm,
 				fp->data_stone,
 				raw_handler,
@@ -1012,11 +1034,22 @@ void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
     }
 }
 
-int adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_sec) {
+int 
+adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_sec) 
+{
     flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
-    log_debug("FLEXPATH ADVANCE_STEP CALLED!\n");
     MPI_Barrier(fp->comm);
     int i=0;
+    /* if(fp->writer_finalized == 1){ */
+    /* 	if(adiosfile->current_step == adiosfile->last_step){ */
+    /* 	    adios_errno = err_end_of_stream; */
+    /* 	    return 0; */
+    /* 	} */
+    /* } */
+    /* else if(adiosfile->current_step == adiosfile->last_step){ */
+    /* 	adios_errno = err_step_notready; */
+    /* 	return 0; */
+    /* } */
     for(i=0; i<fp->num_bridges; i++) {
         if(fp->bridges[i].created && fp->bridges[i].opened) {
             op_msg close;
@@ -1109,9 +1142,7 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
     for(i = 0; i<num_sendees; i++)
     {	
 	int sendee = fp->sendees[i];
-	fprintf(stderr, "sending flush_data msg to: %d\n", sendee);
 	msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
-	fprintf(stderr, "waiting on condition: %d\n", msg.condition);
 	EVsubmit(fp->bridges[sendee].flush_source, &msg, NULL);
 	if(blocking){    
 	    CMCondition_wait(fp_read_data->fp_cm, msg.condition);
@@ -1200,11 +1231,9 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
 	array_displacements * all_disp = NULL;	
         for(j=0; j<fp->num_bridges; j++) {
             fp_log("BOUNDING", "checking writer %d\n", j);
-	    fprintf(stderr, "\t\tdo we need writer %d?\n", j);
             int destination=0;	    	    
             if(need_writer(fp, j, sel, fp->gp, v->varname)==1){
                 fp_log("BOUNDING", "yes it's neededi\n");		
-		fprintf(stderr, "\t\t\tyes, we need writer %d\n", j);
 		need_count++;
                 destination = j;
 		global_var * gvar = find_gbl_var(fp->gp->vars, v->varname, fp->gp->num_vars);
