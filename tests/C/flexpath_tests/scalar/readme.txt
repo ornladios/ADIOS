@@ -17,7 +17,7 @@ It is, however, recommended to run as many readers as writers. Otherwise
 some processes are blocked.
 
 
-The test can work with two modes:
+The test can work in two modes:
 
 1. MPI/ADIOS_READ_METHOD_BP
 2. FLEXPATH/ADIOS_READ_METHOD_FLEXPATH
@@ -55,34 +55,26 @@ $ make clean
 # build the test case
 $ make
 
-# should remove Flexpath contact text file remnants  such as _read_ready.txt, 
-# _info_writer.txt, and test.bp
-
-$ make clean_text
-
 RUN
 =====
 The order of execution, i.e., first writer then reader, should not matter;
 however, I run first writer then the reader.
 
-$ mpirun -np 2 writer
-$ mpirun -np 2 reader
+# should remove Flexpath contact text file remnants  such as _read_ready.txt, 
+# _info_writer.txt, and test.bp
+$ make clean_test
 
-# run writer
-$ make run-w
+$ mpirun -np 2 ./writer
+$ mpirun -np 2 ./reader
 
-# run reader
-$ make run-r
-
-# to see help run
-./writer -h
-./reader -h
+See Makefile for other options or add '-h' option to the reader or writer
 
 CONTACT
 =========
 If you have questions or suggestions, please contact the author (see the 
 beginning of the file). And remember you are the master since you have the
 sources.
+
 
 TROUBLESHOOTING
 ================
@@ -91,7 +83,7 @@ TROUBLESHOOTING
 they should be removed for the next run. In order to do this you can 
 use command:
 
-make clean_text
+make clean_test
 
 
 NOTES
