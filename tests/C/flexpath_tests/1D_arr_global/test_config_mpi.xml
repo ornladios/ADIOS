@@ -10,8 +10,7 @@
 </adios-group>
 
 <!-- The queue size says how many timesteps the writer can buffer before it blocks -->
-<method group="temperature"  method="FLEXPATH">QUEUE_SIZE=4;</method>    
-<!-- <method group="temperature"  method="MPI">QUEUE_SIZE=4;</method> -->
+<method group="temperature"  method="MPI">QUEUE_SIZE=4;</method>
 
 <buffer size-MB="20" allocate-time="now"/>
 

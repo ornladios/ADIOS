@@ -28,22 +28,12 @@
 // for printing the values of the variable
 #define STR_BUFFER_SIZE 3000
 
-// sorry just to be sure that nothing bad is with macros in macros
-#ifdef FLEXPATH_METHOD
 #define CLOSE_ADIOS \
 	do { 														\
 		adios_read_close(adios_handler);  						\
-		adios_read_finalize_method(ADIOS_READ_METHOD_FLEXPATH);	\
+		adios_read_finalize_method(method);						\
 		MPI_Finalize(); \
 	} while (0)
-#else
-#define CLOSE_ADIOS \
-	do { 														\
-		adios_read_close(adios_handler);  						\
-		adios_read_finalize_method(ADIOS_READ_METHOD_BP);	\
-		MPI_Finalize(); \
-	} while (0)
-#endif
 
 #define JUST_CLEAN \
 	do {								\
@@ -70,6 +60,7 @@ int main (int argc, char **argv){
 	MPI_Comm comm = MPI_COMM_WORLD;
 	int diag = 0;  // to store the diagnostic information; 0 is OK, -1 error
 	int test_passed = TEST_PASSED;   // TEST_PASSED if test passed; TEST_FAILED if test failed
+	enum ADIOS_READ_METHOD method = METHOD;
 
 
 	if (1 < argc){
@@ -81,24 +72,14 @@ int main (int argc, char **argv){
 	MPI_Comm_rank (comm, &rank);
 
 	// depending on the method
-#ifdef FLEXPATH_METHOD
-	if( (diag = adios_read_init_method( ADIOS_READ_METHOD_FLEXPATH, comm, ADIOS_OPTIONS)) != 0){
-#else
-	if( (diag = adios_read_init_method( ADIOS_READ_METHOD_BP, comm, ADIOS_OPTIONS)) != 0){
-#endif
+	if( (diag = adios_read_init_method( method, comm, ADIOS_OPTIONS)) != 0){
 		printf("ERROR: Quitting ... Issues with initialization adios_read: (%d) %s\n", adios_errno, adios_errmsg());
 		return -1;
 	}
 
 	// I will be working with streams so the lock mode is necessary,
 	// return immediately if the stream unavailable
-	ADIOS_FILE *adios_handler = adios_read_open(FILE_NAME,
-#ifdef FLEXPATH_METHOD
-			ADIOS_READ_METHOD_FLEXPATH,
-#else
-			ADIOS_READ_METHOD_BP,
-#endif
-			comm, ADIOS_LOCKMODE_NONE, 0.0);
+	ADIOS_FILE *adios_handler = adios_read_open(FILE_NAME,method, comm, ADIOS_LOCKMODE_NONE, 0.0);
 	if ( !adios_handler){
 		printf("ERROR: Quitting ... (%d) %s\n", adios_errno, adios_errmsg());
 		return -1;

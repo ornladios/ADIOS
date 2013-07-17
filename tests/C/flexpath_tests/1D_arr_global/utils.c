@@ -19,9 +19,9 @@ int usage(char *program_name, char *program_desc){
 	printf("  %s\n", program_desc);
 	printf("  METHOD: ");
 #ifdef FLEXPATH_METHOD
-	printf("ADIOS_READ_METHOD_FLEXPATH" );
+	printf("FLEXPATH/ADIOS_READ_METHOD_FLEXPATH" );
 #else
-	printf("ADIOS_READ_METHOD_BP+MPI");
+	printf("MPI/ADIOS_READ_METHOD_BP");
 #endif
 	printf(" will be used.\n");
 	printf("Please check " XML_ADIOS_INIT_FILENAME "\n");

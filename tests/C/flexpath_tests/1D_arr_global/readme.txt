@@ -20,25 +20,17 @@ The test can work with two modes:
 1. MPI/ADIOS_READ_METHOD_BP
 2. FLEXPATH/ADIOS_READ_METHOD_FLEXPATH
 
-Unfortunately, to switch between those two modes, it is required to modify
-the source files and recompile. To switch to FLEXPATH mode:
-
-- uncomment FLEXPATH_METHOD macro in misc.h
-- uncomment in arrays.xml 
-    <method group="temperature"  method="FLEXPATH">QUEUE_SIZE=4;</method>
-  and comment
-    <!-- <method group="temperature"  method="MPI">QUEUE_SIZE=4;</method> -->
-    
- In order to switch to the MPI mode:
- - comment FLEXPATH_METHOD macro in misc.h
- - comment in arrays.xml
-    <method group="temperature"  method="FLEXPATH">QUEUE_SIZE=4;</method>
-   and uncomment 
-    <method group="temperature"  method="MPI">QUEUE_SIZE=4;</method>
+Two switch between those two modes you need to run the make without or
+with the CFLAGS set to -DFLEXPATH_MEDHO. See build.
 
 BUILD
 =======
+# build the MPI/ADIOS_READ_METHOD_BP
 $ make
+
+# build FLEXPATH/ADIOS_READ_METHOD_FLEXPATH
+$ make CFLAGS="-DFLEXPATH_METHOD"
+
 
 # should remove all unnecessary exec files 
 $ make clean
@@ -56,7 +48,7 @@ See Makefile for other options or add '-h' option to the reader or writer
 NOTES
 =======
 
-2013-07-15 - tested on my local laptop (MPI and FLEXPATH)
+2013-07-17 - tested on my local laptop (MPI and FLEXPATH)
 
 
 OUTDATED (2013-07-08)

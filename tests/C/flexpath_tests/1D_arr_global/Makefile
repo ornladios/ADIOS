@@ -23,13 +23,13 @@ INCLUDES=-I$(ADIOS_ROOT)/include -I$(MXML_ROOT)/include -I$(MPI_ROOT)/include -I
 all: reader writer
 
 reader: reader.o  utils.o
-	$(CC) -g -o $@ $^ $(INCLUDES) $(LIBS_PATHS) $(LIBS) 
+	$(CC) $(CFLAGS) -g -o $@ $^ $(INCLUDES) $(LIBS_PATHS) $(LIBS) 
 	 
 writer: writer.o  utils.o
-	$(CC) -g -o $@ $^ $(INCLUDES) $(LIBS_PATHS) $(LIBS) 
+	$(CC) $(CFLAGS) -g -o $@ $^ $(INCLUDES) $(LIBS_PATHS) $(LIBS) 
 
 .c.o: utils.h misc.h
-	$(CC) -g -c $< -o $@ $(INCLUDES) $(LIBS_PATHS) $(LIBS)
+	$(CC) $(CFLAGS) -g -c $< -o $@ $(INCLUDES) $(LIBS_PATHS) $(LIBS)
 	
 	
 run-w:
