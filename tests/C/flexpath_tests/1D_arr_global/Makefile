@@ -6,10 +6,10 @@ SHELL = /bin/sh
 .SUFFIXES: .c .o
 CC=gcc
 
-ADIOS_ROOT=/rock/opt/adios/git-dbg
-MXML_ROOT=/rock/opt/mxml/2.7
-MPI_ROOT=/rock/opt/openmpi/1.6.3
-EVPATH_ROOT=/rock/opt/evpath
+# ADIOS_ROOT=/rock/opt/adios/git-dbg
+# MXML_ROOT=/rock/opt/mxml/2.7
+# MPI_ROOT=/rock/opt/openmpi/1.6.3
+# EVPATH_ROOT=/rock/opt/evpath
 
 #LIBS=`/rock/opt/adios/1.5.0-dbg/bin/adios_config -l`
 LIBS_PATHS=-L$(ADIOS_ROOT)/lib -L$(MXML_ROOT)/lib -L$(MPI_ROOT)/lib -L$(EVPATH_ROOT)/lib

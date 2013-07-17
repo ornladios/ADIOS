@@ -12,13 +12,19 @@
 //! be used; otherwise the  ADIOS_READ_METHOD_BP and MPI
 //! if you are switching methods, make sure that test_config.xml
 //! contains the correct method
-#define FLEXPATH_METHOD 1
+//#define FLEXPATH_METHOD 1
 
 //! the name of the file to be written test values
 #define FILE_NAME "test.bp"
 
 //! the xml containing configuration of ADIOS
-#define XML_ADIOS_INIT_FILENAME "test_config.xml"
+#ifdef FLEXPATH_METHOD
+#define XML_ADIOS_INIT_FILENAME "test_config_flex.xml"
+#define METHOD ADIOS_READ_METHOD_FLEXPATH
+#else
+#define XML_ADIOS_INIT_FILENAME "test_config_mpi.xml"
+#define METHOD ADIOS_READ_METHOD_BP
+#endif
 
 //! options how verbose is ADIOS (see  adios_read_init_method)
 //! 0=quiet, ..., 4=debug

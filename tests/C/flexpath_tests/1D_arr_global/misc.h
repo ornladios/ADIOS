@@ -40,5 +40,7 @@
 //! defines if the test failed
 #define TEST_FAILED -1
 
+//! indicates that the program
+#define PROGRAM_ERROR -2
 
 #endif /* MISC_H_ */

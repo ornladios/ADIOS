@@ -22,21 +22,9 @@ The test can work in two modes:
 1. MPI/ADIOS_READ_METHOD_BP
 2. FLEXPATH/ADIOS_READ_METHOD_FLEXPATH
 
-Unfortunately, to switch between those two modes, it is required to modify
-the source files and recompile. To switch to FLEXPATH mode:
 
-- uncomment FLEXPATH_METHOD macro in misc.h
-- uncomment in test_config.xml 
-    <method group="scalar"  method="FLEXPATH">QUEUE_SIZE=4;</method>
-  and comment
-    <!-- <method group="scalar"  method="MPI">QUEUE_SIZE=4;</method> -->
-    
- In order to switch to the MPI mode:
- - comment FLEXPATH_METHOD macro in misc.h
- - comment in test_config.xml
-    <method group="scalar"  method="FLEXPATH">QUEUE_SIZE=4;</method>
-   and uncomment 
-    <method group="scalar"  method="MPI">QUEUE_SIZE=4;</method>
+To switch between those two modes you need to run the make without or
+with the CFLAGS set to -DFLEXPATH_METHOD. See build.
 
 NOTE:
 
@@ -46,14 +34,24 @@ that make. The Makefile is not perfect.
 BUILD
 =======
 
-# update locations of dependencies
-$ vi Makefile
+# you need to set the environment variables as Makefile uses those locations 
+# to locate libraries and headers
+
+export ADIOS_ROOT=/rock/opt/adios/git-dbg
+export MXML_ROOT=/rock/opt/mxml/2.7
+export MPI_ROOT=/rock/opt/openmpi/1.6.3
+export EVPATH_ROOT=/rock/opt/evpath
 
 # should remove all unnecessary exec and object files 
 $ make clean
 
-# build the test case
+# build the test case MPI/ADIOS_READ_METHOD_BP
 $ make
+
+or 
+
+# build FLEXPATH/ADIOS_READ_METHOD_FLEXPATH
+$ make CFLAGS="-DFLEXPATH_METHOD"
 
 RUN
 =====
