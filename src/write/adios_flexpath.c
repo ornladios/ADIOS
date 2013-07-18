@@ -495,13 +495,21 @@ int get_local_offsets(struct adios_var_struct * list, struct adios_group_struct 
 }
 
 // creates multiqueue function to handle ctrl messages for given bridge stones 
-char* multiqueue_action = "{\n\
+char *multiqueue_action = "{\n\
     int found = 0;\n\
     int flush_data_count = 0; \n\
     int my_rank = -1;\n\
     attr_list mine;\n\
     if(EVcount_varMsg()>0) {\n\
         EVdiscard_and_submit_varMsg(0, 0);\n\
+    }\n\
+    if(EVcount_update_step_msg()>0) {\n\
+        mine = EVget_attrs_update_step_msg(0);\n\
+        found = attr_ivalue(mine, \"fp_dst_rank\");\n\
+        if(found > 0) {\n\
+            printf(\"mq found: \%d\\n\", found);\n\
+            EVdiscard_and_submit_update_step_msg(found, 0);\n\
+        }\n\
     }\n\
     if(EVcount_op_msg()>0) {\n\
         mine = EVget_attrs_op_msg(0);\n\
@@ -941,17 +949,18 @@ attr_list set_dst_condition_atom(attr_list attrs, int condition){
 }
 
 void
-send_update_step_msgs(FlexpathWriteFileData *fileData)
+send_update_step_msgs(FlexpathWriteFileData *fileData, int step)
 {
     int i;
     for(i = 0; i<fileData->num_reader_coordinators; i++){
-	/* update_step_msg *msg = malloc(sizeof(update_step_msg)); */
-	/* msg->process_id = fileData->rank; */
-	/* msg->step = fileData->writerStep; */
-	/* msg->finalized = fileData->finalized; */
-	/* int dest_rank = fileData->reader_coordinators[i]; */
-	/* fileData->attrs = set_dst_rank_atom(fileData->attrs, dest_rank+1); */
-	/* EVsubmit_general(fileData->stepSource, msg, step_free, fileData->attrs); */
+	update_step_msg msg;
+	msg.process_id = fileData->rank;
+	msg.step = step;
+	msg.finalized = fileData->finalized;
+	printf("step: %d finalized: %d\n", msg.step, msg.finalized);
+	int dest_rank = fileData->reader_coordinators[i];
+	fileData->attrs = set_dst_rank_atom(fileData->attrs, dest_rank+1);
+	EVsubmit(fileData->stepSource, &msg, fileData->attrs);
     }
 }
 
@@ -1167,8 +1176,9 @@ extern void adios_flexpath_init(const PairStruct *params, struct adios_method_st
 }
 
 // opens a new adios file for writes
-extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *method, MPI_Comm comm) 
-{ 
+extern int 
+adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *method, MPI_Comm comm) 
+{    
     if( fd == NULL || method == NULL) {
         perr("open: Bad input parameters\n");
         return -1;
@@ -1180,7 +1190,7 @@ extern int adios_flexpath_open(struct adios_file_struct *fd, struct adios_method
         return 0;
     }
 
-    FlexpathWriteFileData* fileData = malloc(sizeof(FlexpathWriteFileData));
+    FlexpathWriteFileData *fileData = malloc(sizeof(FlexpathWriteFileData));
     mem_check(fileData, "fileData");
     memset(fileData, 0, sizeof(FlexpathWriteFileData));
     fileData->maxQueueSize=0;
@@ -1467,14 +1477,9 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 
     struct adios_group_struct * g2 = fd->group;
     struct adios_var_struct * fields = g2->vars;
-    while(fields) {
-        
-        //perr( "field name: %s\n", fields->name);
+    while(fields) {       
         if(fields->dimensions) {
-            //perr( "field is an array\n");
             struct adios_dimension_struct* dims = fields->dimensions;
-            //perr( "field dims: %p\n", dims);
-    
             int total_size = 1;
             //for each dimension
             while(dims) {    
@@ -1498,7 +1503,6 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 
             total_size*=field->field_size;
             // malloc size
-            //perr( "field %s field size %d\n", fields->name, total_size);
             void* pointer_data_copy = malloc(total_size);
             // while null
             while(pointer_data_copy==NULL) { 
@@ -1592,8 +1596,8 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 	
 	fileData->sentGlobalOffsets = 1;
     }
+    send_update_step_msgs(fileData, fileData->writerStep);
     fileData->writerStep++;
-    send_update_step_msgs(fileData);
     while((c=queue_count(&fileData->dataQueue, fileData->dataMutex))>fileData->maxQueueSize) {
         fp_write_log("QUEUE", "waiting for queue to be below max size\n");
         thr_condition_wait(fileData->dataCondition2, fileData->dataMutex2);
@@ -1603,7 +1607,8 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 }
 
 // wait until all open files have finished sending data to shutdown
-extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method) {
+extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method) 
+{
     FlexpathWriteFileData* fileData = flexpathWriteData.openFiles;
     log_info("Flexpath method entered finalize: %d\n", fileData->rank);
     fp_write_log("FILE", "Entered finalize\n");
@@ -1613,13 +1618,17 @@ extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method
         //fp_write_log("MUTEX","lock 1\n");
         while(fileData->dataQueue!=NULL) {
             fp_write_log("FILE", "waiting on %s to empty data\n", fileData->name);
-            thr_condition_wait(fileData->dataCondition2, fileData->dataMutex2);
-        }
-        //fp_write_log("MUTEX","unlock 1\n");
-        //thr_mutex_unlock(fileData->dataMutex2);
-        //fp_write_log("DATAMUTEX", "no use 4\n"); 
-        fileData = fileData->next;
+	    thr_condition_wait(fileData->dataCondition2, fileData->dataMutex2);
+	}
+	//fp_write_log("MUTEX","unlock 1\n");
+	//thr_mutex_unlock(fileData->dataMutex2);
+	//fp_write_log("DATAMUTEX", "no use 4\n"); 
+	fileData->finalized = 1;
+	send_update_step_msgs(fileData, fileData->writerStep);
+	fileData = fileData->next;
+	    
     }
+	
     // all data has been read by all readers.
     // we can send everyone end_of_stream messages.
     int i;

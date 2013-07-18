@@ -568,10 +568,9 @@ need_writer(
 }
 
 /********** EVPath Handlers **********/
-static int                                                                                                                                                                      
-update_step_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)                                                                                              
+static int
+update_step_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)                  
 {
-
     ADIOS_FILE *adiosfile = client_data;
     flexpath_file_data *fp = adiosfile->fh;
     update_step_msg *msg = vevent;
@@ -1040,16 +1039,6 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
     flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
     MPI_Barrier(fp->comm);
     int i=0;
-    /* if(fp->writer_finalized == 1){ */
-    /* 	if(adiosfile->current_step == adiosfile->last_step){ */
-    /* 	    adios_errno = err_end_of_stream; */
-    /* 	    return 0; */
-    /* 	} */
-    /* } */
-    /* else if(adiosfile->current_step == adiosfile->last_step){ */
-    /* 	adios_errno = err_step_notready; */
-    /* 	return 0; */
-    /* } */
     for(i=0; i<fp->num_bridges; i++) {
         if(fp->bridges[i].created && fp->bridges[i].opened) {
             op_msg close;
@@ -1071,6 +1060,16 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
             EVsubmit(fp->bridges[i].op_source, &open, NULL);
             CMCondition_wait(fp_read_data->fp_cm, open.condition);
         }
+    }   
+    if(fp->writer_finalized == 1){
+    	if(adiosfile->current_step == adiosfile->last_step){
+    	    adios_errno = err_end_of_stream;
+    	    return 0;
+    	}
+    }
+    else if(adiosfile->current_step == adiosfile->last_step){
+    	adios_errno = err_step_notready;
+    	return 0;
     }
     adiosfile->current_step++;
     // need to remove selectors from each var now.
