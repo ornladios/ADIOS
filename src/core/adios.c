@@ -111,7 +111,7 @@ int adios_write (int64_t fd_p, const char * name, void * var)
         // nothing to do so just return
         return 0;
     }
-
+    log_debug ("%s (%s)\n", __func__, name);
     v = adios_find_var_by_name (fd->group, name);
 
     if (!v)
