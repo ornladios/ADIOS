@@ -237,15 +237,28 @@ static bool put(qhashtbl_t *tbl, const char *path, const char *name, const void 
 
         // increase counter
         tbl->num++;
-    } else {
-        // replace (same as new key)
-        free(obj->key);
-    }
 
-    // set data
-    obj->hash  = hash;
-    obj->key   = key;
-    obj->value = (void *)data;
+        // set data
+        obj->hash  = hash;
+        obj->key   = key;
+        obj->value = (void *)data;
+
+    } else {
+        /* Do not do anything.
+         * Keep the first definition in place, because consider this example
+         * if we would replace the object here:
+         *  def NX
+         *  def A[NX] --> A's dimension is the first variable NX (a pointer to that)
+         *  def NX    --> hashtable stores this variable reference
+         *  def B[NX]
+         *  write NX  --> value is stored in the NX variable found in the hash table
+         *  write A   --> dimension found (valid first pointer) but value is not found
+         *                (stored in the second reference)
+         *  At this point, A's dimension variable is first NX, but the value of
+         *  write NX goes to the variable found here in the hash table.
+         */
+        free(key);
+    }
 
     return true;
 }
