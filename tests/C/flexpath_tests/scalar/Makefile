@@ -15,7 +15,7 @@ CC=gcc
 LIBS_PATHS=-L$(ADIOS_ROOT)/lib -L$(MXML_ROOT)/lib -L$(MPI_ROOT)/lib -L$(EVPATH_ROOT)/lib
 LIBS=-ladios -ladiosread -lm -lmpi -levpath -latl -lcercs_env -ldill -lffs -lgen_thread -lpthread -lmxml  
 #INCLUDES=`/rock/opt/adios/1.5.0-dbg/bin/adios_config -c`
-INCLUDES=-I. -I$(ADIOS_ROOT)/include -I$(MXML_ROOT)/include -I$(MPI_ROOT)/include -I$(EVPATH_ROOT)/include
+INCLUDES=-I../include -I. -I$(ADIOS_ROOT)/include -I$(MXML_ROOT)/include -I$(MPI_ROOT)/include -I$(EVPATH_ROOT)/include
 
 # $^ automatic var - source file whatever it is
 # $@ output automatic var

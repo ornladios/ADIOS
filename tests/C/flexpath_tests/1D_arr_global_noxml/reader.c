@@ -1,5 +1,5 @@
 /**
- * reader.c
+ * arrays_read.c
  *
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
@@ -26,6 +26,11 @@
 #include <string.h>
 
 
+// for printing the values of the variable
+#define STR_BUFFER_SIZE 3000
+
+
+
 int main (int argc, char **argv){
 	char filename[256];
 	int rank =0, size =0;
@@ -37,8 +42,7 @@ int main (int argc, char **argv){
 	int diag = 0;  // to store the diagnostic information; 0 is OK, -1 error
 	int test_passed = TEST_PASSED;   // TEST_PASSED if test passed; TEST_FAILED if test failed
 	enum ADIOS_READ_METHOD method = METHOD;
-	const char * TEST_NAME="1D_arr_global";
-
+	const char * TEST_NAME="1D_arr_global_noxml";
 
 	if (1 < argc){
 		usage(argv[0], "Runs readers. It is recommended to run as many readers as writers.");
@@ -50,15 +54,15 @@ int main (int argc, char **argv){
 
 	// depending on the method
 	if( (diag = adios_read_init_method( method, comm, ADIOS_OPTIONS)) != 0){
-		p_error("ERROR: Quitting ... Issues with initialization adios_read: (%d) %s\n", adios_errno, adios_errmsg());
+		p_error("Quitting ... Issues with initialization adios_read: (%d) %s\n", adios_errno, adios_errmsg());
 		return PROGRAM_ERROR;
 	}
 
 	// I will be working with streams so the lock mode is necessary,
 	// return immediately if the stream unavailable
-	ADIOS_FILE *adios_handle = adios_read_open(FILE_NAME,method, comm, ADIOS_LOCKMODE_NONE, 0.0);
+	ADIOS_FILE *adios_handle = adios_read_open(FILE_NAME, method, comm, ADIOS_LOCKMODE_NONE, 0.0);
 	if ( !adios_handle){
-		p_error("ERROR: Quitting ... (%d) %s\n", adios_errno, adios_errmsg());
+		p_error("Quitting ... (%d) %s\n", adios_errno, adios_errmsg());
 		return PROGRAM_ERROR;
 	}
 
@@ -68,6 +72,8 @@ int main (int argc, char **argv){
 
 
 	int64_t adios_buf_size;
+	// for storing the variables
+	char buf[STR_BUFFER_SIZE];
 
 	int step = 0;
 	int n = 0;
@@ -75,7 +81,7 @@ int main (int argc, char **argv){
 	// read how many processors wrote that array
 	avi = adios_inq_var (adios_handle, "size");
 	if (!avi){
-		printf("ERROR: rank %d: Quitting ... (%d) %s\n", rank, adios_errno, adios_errmsg());
+		p_error("rank %d: Quitting ... (%d) %s\n", rank, adios_errno, adios_errmsg());
 		CLOSE_ADIOS;
 		return -1;
 	}
@@ -86,7 +92,7 @@ int main (int argc, char **argv){
 	// if I run the more readers than writers; just release
 	// the excessive readers
 	if (rank >= size){
-		printf("INFO: rank %d: I am an excessive rank. Nothing to read ...\n", rank);
+		p_info("rank %d: I am an excessive rank. Nothing to read ...\n", rank);
 		CLOSE_ADIOS;
 		return 0;
 	}
@@ -94,7 +100,7 @@ int main (int argc, char **argv){
 	// read the size of the array
 	avi = adios_inq_var (adios_handle, "NX");
 	if (!avi){
-		printf("ERROR: rank %d: Quitting ... (%d) %s\n", rank, adios_errno, adios_errmsg());
+		p_error("rank %d: Quitting ... (%d) %s\n", rank, adios_errno, adios_errmsg());
 		CLOSE_ADIOS;
 		return -1;
 	}
@@ -111,18 +117,22 @@ int main (int argc, char **argv){
 
 	// this will define the slice that we want to read; each rank should
 	// read its own slice written by a corresponding writer rank
-	// the var_1d is a 2-dim ADIOS variable (because we decided to have
-	// it as a global array); that's why we need a 2-dim ADIOS variable
-	uint64_t count[2] = {1,0};
-	count[1] = NX;
-	uint64_t start[2] = {0,0};
-	start[0] = rank;
+	uint64_t count[1] = { NX };
+	uint64_t start[1] = { 0 };
+	start[0] = rank*NX;
 
-	sel = adios_selection_boundingbox(2,start, count);
+	sel = adios_selection_boundingbox(1,start, count);
 	if( !sel ){
 		p_error("rank %d: Quitting ... (%d) %s\n", rank, adios_errno, adios_errmsg());
 		CLOSE_ADIOS;
 		return -1;
+	}
+
+	// make the reference array with reference values I expect to get
+	t_ref = calloc(NX, sizeof(double));
+	if (gen_1D_array(t_ref, NX, rank) == -1){
+		p_error("Generating 1D array. Quitting ...\n");
+		return PROGRAM_ERROR;
 	}
 
 	// allocate the memory for the actual array to be read
@@ -141,16 +151,12 @@ int main (int argc, char **argv){
 		return -1;
 	}
 
-	// make the reference array with reference values I expect to get
-	t_ref = calloc(NX, sizeof(double));
-	gen_1D_array(t_ref, NX, rank);
+	n = sprintf(buf, "Rank %d: var_1d_array: step %d: t: ", rank, step);
 
-	// compare the values what you get with what you expect
 	int i = 0;
-	for (i = 0; i < NX; ++i) {
-		if (t[i] != t_ref[i]) {
-			p_test_failed("%s: rank %d: for t[%d] (expected %.1f, got %.1f)\n",
-					TEST_NAME, rank, i, t_ref[i], t[i]);
+	for(i=0; i < NX; ++i){
+		if( t[i] != t_ref[i] ){
+			p_test_failed("%s: rank %d: for t[%d] (expected %.1f, got %.1f)\n", TEST_NAME, rank,  i, t_ref[i], t[i] );
 			test_passed = TEST_FAILED;
 			break;
 		}
@@ -161,22 +167,10 @@ int main (int argc, char **argv){
 
 	// clean everything
 	JUST_CLEAN;
-
-/*#ifdef FLEXPATH_METHOD
-	adios_release_step(adios_handler);
-	// 0 - next available step, block for max 30 seconds until the next step
-	// is available
-	adios_advance_step(adios_handler, 0, 30);
-	if (0 == adios_errno){
-		printf("Rank %d: proceeding to the next step ...\n", rank);
-	} else {
-		printf("ERROR: adios_advance_step(); anyway Quitting ... Rank %d: (%d) %s\n", rank, adios_errno, adios_errmsg());
-	}
-#endif
-*/
 	CLOSE_ADIOS;
-	// to fix printing after adios finalize
-	printf("\n");
+
+	// fix printing output
+	printf("/n");
 
 	return test_passed;
 }
