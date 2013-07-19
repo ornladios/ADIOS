@@ -604,7 +604,7 @@ int bpsplit(char *filein, char *fileout, char *recordfile, int from_in, int to_i
     uint32_t maxtime = 1;   // at least there is time=1 (single group) in a bp file
     struct adios_bp_buffer_struct_v1 * b = 0;
 
-    idx = adios_alloc_index_v1();
+    idx = adios_alloc_index_v1(0);
 
     // open input file, read and parse indexes 
     excode = read_indexes( filein );

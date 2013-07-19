@@ -391,7 +391,7 @@ int recover(int f) {
         return 1;
     }
 
-    struct adios_index_struct_v1 * idx = adios_alloc_index_v1();
+    struct adios_index_struct_v1 * idx = adios_alloc_index_v1(0);
     idx->pg_root = out_pg_root;
     idx->vars_root = out_vars_root;
     idx->attrs_root = out_attrs_root;
@@ -504,7 +504,7 @@ int append_in_to_out( const char *fileout, const char *filein) {
     uint64_t buffer_offset = 0;
     uint64_t index_start =  in_bp->pg_index_offset + out_bp->pg_index_offset;
 
-    struct adios_index_struct_v1 * idx = adios_alloc_index_v1();
+    struct adios_index_struct_v1 * idx = adios_alloc_index_v1(0);
     idx->pg_root = out_pg_root;
     idx->vars_root = out_vars_root;
     idx->attrs_root = out_attrs_root;
