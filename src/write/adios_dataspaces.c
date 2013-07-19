@@ -748,7 +748,7 @@ void adios_dataspaces_close (struct adios_file_struct * fd
 {
     struct adios_ds_data_struct *p = (struct adios_ds_data_struct *)
                                                 method->method_data;
-    struct adios_index_struct_v1 * index = adios_alloc_index_v1(0);
+    struct adios_index_struct_v1 * index = adios_alloc_index_v1(1);
     struct adios_attribute_struct * a = fd->group->attributes;
     int lb[3], ub[3], didx[3]; // for reordering DS dimensions
     unsigned int version;
