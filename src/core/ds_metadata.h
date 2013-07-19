@@ -48,8 +48,7 @@ void dimes_pack_file_info (int time, int nvars, int nattrs, int group_index_len,
 
 void dimes_pack_group_info (struct adios_file_struct *fd
         ,struct adios_method_struct * method
-        ,struct adios_index_var_struct_v1 *vars_root
-        ,struct adios_index_attribute_struct_v1 * attrs_root
+        ,struct adios_index_struct_v1 *index
         ,char ** buffer, int *buffer_size, int *nvars, int *nattrs
         );
 
