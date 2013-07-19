@@ -438,7 +438,7 @@ static void adios_dataspaces_gather_indices (struct adios_file_struct * fd
                 adios_parse_process_group_index_v1 (&b
                         ,&new_pg_root
                         );
-                adios_parse_vars_index_v1 (&b, &new_vars_root);
+                adios_parse_vars_index_v1 (&b, &new_vars_root, NULL, NULL);
                 adios_parse_attributes_index_v1 (&b
                         ,&new_attrs_root
                         );
