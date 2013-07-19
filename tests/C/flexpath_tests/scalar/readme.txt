@@ -17,26 +17,14 @@ It is, however, recommended to run as many readers as writers. Otherwise
 some processes are blocked.
 
 
-The test can work with two modes:
+The test can work in two modes:
 
 1. MPI/ADIOS_READ_METHOD_BP
 2. FLEXPATH/ADIOS_READ_METHOD_FLEXPATH
 
-Unfortunately, to switch between those two modes, it is required to modify
-the source files and recompile. To switch to FLEXPATH mode:
 
-- uncomment FLEXPATH_METHOD macro in misc.h
-- uncomment in test_config.xml 
-    <method group="scalar"  method="FLEXPATH">QUEUE_SIZE=4;</method>
-  and comment
-    <!-- <method group="scalar"  method="MPI">QUEUE_SIZE=4;</method> -->
-    
- In order to switch to the MPI mode:
- - comment FLEXPATH_METHOD macro in misc.h
- - comment in test_config.xml
-    <method group="scalar"  method="FLEXPATH">QUEUE_SIZE=4;</method>
-   and uncomment 
-    <method group="scalar"  method="MPI">QUEUE_SIZE=4;</method>
+To switch between those two modes you need to run the make without or
+with the CFLAGS set to -DFLEXPATH_METHOD. See build.
 
 NOTE:
 
@@ -46,43 +34,45 @@ that make. The Makefile is not perfect.
 BUILD
 =======
 
-# update locations of dependencies
-$ vi Makefile
+# you need to set the environment variables as Makefile uses those locations 
+# to locate libraries and headers
+
+export ADIOS_ROOT=/rock/opt/adios/git-dbg
+export MXML_ROOT=/rock/opt/mxml/2.7
+export MPI_ROOT=/rock/opt/openmpi/1.6.3
+export EVPATH_ROOT=/rock/opt/evpath
 
 # should remove all unnecessary exec and object files 
 $ make clean
 
-# build the test case
+# build the test case MPI/ADIOS_READ_METHOD_BP
 $ make
 
-# should remove Flexpath contact text file remnants  such as _read_ready.txt, 
-# _info_writer.txt, and test.bp
+or 
 
-$ make clean_text
+# build FLEXPATH/ADIOS_READ_METHOD_FLEXPATH
+$ make CFLAGS="-DFLEXPATH_METHOD"
 
 RUN
 =====
 The order of execution, i.e., first writer then reader, should not matter;
 however, I run first writer then the reader.
 
-$ mpirun -np 2 writer
-$ mpirun -np 2 reader
+# should remove Flexpath contact text file remnants  such as _read_ready.txt, 
+# _info_writer.txt, and test.bp
+$ make clean_test
 
-# run writer
-$ make run-w
+$ mpirun -np 2 ./writer
+$ mpirun -np 2 ./reader
 
-# run reader
-$ make run-r
-
-# to see help run
-./writer -h
-./reader -h
+See Makefile for other options or add '-h' option to the reader or writer
 
 CONTACT
 =========
 If you have questions or suggestions, please contact the author (see the 
 beginning of the file). And remember you are the master since you have the
 sources.
+
 
 TROUBLESHOOTING
 ================
@@ -91,7 +81,7 @@ TROUBLESHOOTING
 they should be removed for the next run. In order to do this you can 
 use command:
 
-make clean_text
+make clean_test
 
 
 NOTES

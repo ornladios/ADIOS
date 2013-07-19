@@ -1,0 +1,28 @@
+MY_TARGETS=scalar 1D_arr_global 1D_arr_global_noxml
+
+.PHONY: all clean clean_test
+
+all: $(MY_TARGETS)
+	@$(MAKE) -C scalar $@;
+	@$(MAKE) -C 1D_arr_global $@;
+	@$(MAKE) -C 1D_arr_global_noxml $@;
+	
+	 
+clean_test: 
+	$(MAKE) -C 1D_arr_global $@
+	$(MAKE) -C 1D_arr_global_noxml $@
+	
+clean: $(MY_TARGETS)
+	$(MAKE) -C scalar $@
+	$(MAKE) -C 1D_arr_global $@
+	$(MAKE) -C 1D_arr_global_noxml $@
+
+run-r:
+	$(MAKE) -C scalar $@
+	$(MAKE) -C 1D_arr_global $@
+	$(MAKE) -C 1D_arr_global_noxml $@
+	
+run-w:
+	$(MAKE) -C scalar $@
+	$(MAKE) -C 1D_arr_global $@
+	$(MAKE) -C 1D_arr_global_noxml $@	

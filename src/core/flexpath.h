@@ -108,6 +108,20 @@ typedef struct var_msg_ {
     int condition;
 } Var_msg, *Var_msg_ptr;
 
+typedef struct _update_step_msg{
+    int process_id;
+    int step;
+    int finalized;
+} update_step_msg;
+
+static FMField update_step_msg_field_list[]=
+{
+    {"process_id", "integer", sizeof(int), FMOffset(update_step_msg*, process_id)},
+    {"steps", "integer", sizeof(int), FMOffset(update_step_msg*, step)},
+    {"finalized", "integer", sizeof(int), FMOffset(update_step_msg*, finalized)},
+    {NULL, NULL, 0, 0}
+};
+
 static FMField offset_struct_field_list[]=
 {
     {"offsets_per_rank", "integer", sizeof(int), FMOffset(offset_struct*, offsets_per_rank)},
@@ -212,6 +226,12 @@ static FMStructDescRec op_format_list[] =
 {
     {"op_msg", op_file_field_list, sizeof(op_msg), NULL},
     {NULL, NULL, 0, NULL}
+};
+
+static FMStructDescRec update_step_msg_format_list[] =
+{
+    {"update_step_msg", update_step_msg_field_list, sizeof(update_step_msg), NULL},
+    {NULL, NULL, 0, 0}
 };
 
 static char *getFixedName(char *name);

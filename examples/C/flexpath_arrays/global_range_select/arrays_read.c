@@ -40,15 +40,16 @@ int main (int argc, char ** argv)
     global_range_select.type=ADIOS_SELECTION_BOUNDINGBOX;
     global_range_select.u.bb.start = malloc(sizeof(uint64_t)*2);
     global_range_select.u.bb.count = malloc(sizeof(uint64_t)*2);
-    (global_range_select.u.bb.start)[0] = 0;
-    (global_range_select.u.bb.count)[0] = 4;
+    (global_range_select.u.bb.start)[0] = 2;
+    (global_range_select.u.bb.count)[0] = 2;
     (global_range_select.u.bb.start)[1] = 0;
     (global_range_select.u.bb.count)[1] = 40;
     global_range_select.u.bb.ndim = 2;
+    int nelem = 80;
 
     ADIOS_SELECTION scalar_block_select;
     scalar_block_select.type = ADIOS_SELECTION_WRITEBLOCK;
-    scalar_block_select.u.block.index = rank;
+    scalar_block_select.u.block.index = 0;
     //fprintf(stderr, "app got here\n");
     /* schedule_read of a scalar. */    
     int test_scalar = -1;
@@ -58,8 +59,7 @@ int main (int argc, char ** argv)
                                          ADIOS_LOCKMODE_NONE, 0.0);
     
     int ii = 0;
-    while(adios_errno != err_end_of_stream){
-        
+    while(adios_errno != err_end_of_stream){       
         /* get a bounding box - rank 0 for now*/
         ADIOS_VARINFO* nx_info = adios_inq_var( afile, "NX");
         ADIOS_VARINFO* ny_info = adios_inq_var( afile, "NY");
@@ -75,7 +75,6 @@ int main (int argc, char ** argv)
         //printf("\trank=%d: NY=%d\n", rank, NY);
     
         /* Allocate space for the arrays */
-        int nelem = 160;
         int arr_size = sizeof(double) * nelem;
         t = (double *) malloc (arr_size);
         memset(t, 0, arr_size);
@@ -95,7 +94,7 @@ int main (int argc, char ** argv)
     
         //sleep(20);
     
-        printf("Rank=%d: test_scalar: %d step: %d, t[0,5+x] = [%6.2f", rank, test_scalar, ii, t[0]);
+        printf("Rank=%d: test_scalar: %d step: %d, t[0,5+x] = [", rank, test_scalar, ii);
         for(j=0; j<nelem; j++) {
             printf(", %6.2f", t[j]);
         }
@@ -111,7 +110,7 @@ int main (int argc, char ** argv)
 
     adios_read_finalize_method(ADIOS_READ_METHOD_FLEXPATH);
 
-    //MPI_Finalize ();
+    MPI_Finalize ();
 
     return 0;
 }
