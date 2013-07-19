@@ -21,6 +21,7 @@ check_C=local_array_time \
         many_vars \
         selections \
         path_test \
+        reuse_dim \
         connect_to_space_subset
 endif
 
@@ -110,6 +111,11 @@ path_test_SOURCES=path_test.c
 path_test_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 path_test_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 path_test.o: path_test.c
+
+reuse_dim_SOURCES=reuse_dim.c
+reuse_dim_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+reuse_dim_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+reuse_dim.o: reuse_dim.c
 
 connect_to_space_subset_SOURCES=connect_to_space_subset.c
 connect_to_space_subset_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)

@@ -75,6 +75,7 @@ CONFIG_CLEAN_VPATH_FILES =
 @BUILD_WRITE_TRUE@	write_read$(EXEEXT) write_alternate$(EXEEXT) \
 @BUILD_WRITE_TRUE@	two_groups$(EXEEXT) many_vars$(EXEEXT) \
 @BUILD_WRITE_TRUE@	selections$(EXEEXT) path_test$(EXEEXT) \
+@BUILD_WRITE_TRUE@	reuse_dim$(EXEEXT) \
 @BUILD_WRITE_TRUE@	connect_to_space_subset$(EXEEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__EXEEXT_2 =  \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	posix_method$(EXEEXT)
@@ -154,6 +155,13 @@ posix_method_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
 posix_method_LINK = $(LIBTOOL) --tag=FC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(FCLD) $(AM_FCFLAGS) $(FCFLAGS) \
 	$(posix_method_LDFLAGS) $(LDFLAGS) -o $@
+am_reuse_dim_OBJECTS = reuse_dim.$(OBJEXT)
+reuse_dim_OBJECTS = $(am_reuse_dim_OBJECTS)
+reuse_dim_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+reuse_dim_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(reuse_dim_LDFLAGS) $(LDFLAGS) -o $@
 am_selections_OBJECTS = selections.$(OBJEXT)
 selections_OBJECTS = $(am_selections_OBJECTS)
 selections_DEPENDENCIES = $(top_builddir)/src/libadios.a \
@@ -207,18 +215,18 @@ SOURCES = $(adios_amr_write_SOURCES) $(adios_amr_write_2vars_SOURCES) \
 	$(adios_staged_read_v2_SOURCES) \
 	$(connect_to_space_subset_SOURCES) $(local_array_time_SOURCES) \
 	$(many_vars_SOURCES) $(path_test_SOURCES) \
-	$(posix_method_SOURCES) $(selections_SOURCES) \
-	$(two_groups_SOURCES) $(write_alternate_SOURCES) \
-	$(write_read_SOURCES)
+	$(posix_method_SOURCES) $(reuse_dim_SOURCES) \
+	$(selections_SOURCES) $(two_groups_SOURCES) \
+	$(write_alternate_SOURCES) $(write_read_SOURCES)
 DIST_SOURCES = $(adios_amr_write_SOURCES) \
 	$(adios_amr_write_2vars_SOURCES) $(adios_staged_read_SOURCES) \
 	$(adios_staged_read_2vars_SOURCES) \
 	$(adios_staged_read_v2_SOURCES) \
 	$(connect_to_space_subset_SOURCES) $(local_array_time_SOURCES) \
 	$(many_vars_SOURCES) $(path_test_SOURCES) \
-	$(posix_method_SOURCES) $(selections_SOURCES) \
-	$(two_groups_SOURCES) $(write_alternate_SOURCES) \
-	$(write_read_SOURCES)
+	$(posix_method_SOURCES) $(reuse_dim_SOURCES) \
+	$(selections_SOURCES) $(two_groups_SOURCES) \
+	$(write_alternate_SOURCES) $(write_read_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 am__tty_colors = \
@@ -464,6 +472,7 @@ check_readonly_C =
 @BUILD_WRITE_TRUE@        many_vars \
 @BUILD_WRITE_TRUE@        selections \
 @BUILD_WRITE_TRUE@        path_test \
+@BUILD_WRITE_TRUE@        reuse_dim \
 @BUILD_WRITE_TRUE@        connect_to_space_subset
 
 @BUILD_FORTRAN_TRUE@check_readonly_Fortran = 
@@ -514,6 +523,9 @@ selections_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 path_test_SOURCES = path_test.c
 path_test_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 path_test_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+reuse_dim_SOURCES = reuse_dim.c
+reuse_dim_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+reuse_dim_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 connect_to_space_subset_SOURCES = connect_to_space_subset.c
 connect_to_space_subset_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 connect_to_space_subset_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
@@ -600,6 +612,9 @@ path_test$(EXEEXT): $(path_test_OBJECTS) $(path_test_DEPENDENCIES)
 posix_method$(EXEEXT): $(posix_method_OBJECTS) $(posix_method_DEPENDENCIES) 
 	@rm -f posix_method$(EXEEXT)
 	$(posix_method_LINK) $(posix_method_OBJECTS) $(posix_method_LDADD) $(LIBS)
+reuse_dim$(EXEEXT): $(reuse_dim_OBJECTS) $(reuse_dim_DEPENDENCIES) 
+	@rm -f reuse_dim$(EXEEXT)
+	$(reuse_dim_LINK) $(reuse_dim_OBJECTS) $(reuse_dim_LDADD) $(LIBS)
 selections$(EXEEXT): $(selections_OBJECTS) $(selections_DEPENDENCIES) 
 	@rm -f selections$(EXEEXT)
 	$(selections_LINK) $(selections_OBJECTS) $(selections_LDADD) $(LIBS)
@@ -628,6 +643,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/local_array_time.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/many_vars.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/path_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reuse_dim.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/selections.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/two_groups.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/write_alternate.Po@am__quote@
@@ -976,6 +992,7 @@ two_groups.o: two_groups.c
 many_vars.o: many_vars.c
 selections.o: selections.c
 path_test.o: path_test.c
+reuse_dim.o: reuse_dim.c
 connect_to_space_subset.o: connect_to_space_subset.c
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
