@@ -3,24 +3,24 @@
 
     <adios-group name="alltypes" coordination-communicator="comm">
         <!-- dimension variables (scalars) -->
-        <var name="gdim1" path="/dimensions" type="integer"/>
-        <var name="gdim2" path="/dimensions" type="integer"/>
-        <var name="gdim3" path="/dimensions" type="integer"/>
-        <var name="gdim4" path="/dimensions" type="integer"/>
-        <var name="gdim5" path="/dimensions" type="integer"/>
-        <var name="gdim6" path="/dimensions" type="integer"/>
-        <var name="ldim1" path="/dimensions" type="integer"/>
-        <var name="ldim2" path="/dimensions" type="integer"/>
-        <var name="ldim3" path="/dimensions" type="integer"/>
-        <var name="ldim4" path="/dimensions" type="integer"/>
-        <var name="ldim5" path="/dimensions" type="integer"/>
-        <var name="ldim6" path="/dimensions" type="integer"/>
-        <var name="offs1" path="/dimensions" type="integer"/>
-        <var name="offs2" path="/dimensions" type="integer"/>
-        <var name="offs3" path="/dimensions" type="integer"/>
-        <var name="offs4" path="/dimensions" type="integer"/>
-        <var name="offs5" path="/dimensions" type="integer"/>
-        <var name="offs6" path="/dimensions" type="integer"/>
+        <var name="gdim1" type="integer"/>
+        <var name="gdim2" type="integer"/>
+        <var name="gdim3" type="integer"/>
+        <var name="gdim4" type="integer"/>
+        <var name="gdim5" type="integer"/>
+        <var name="gdim6" type="integer"/>
+        <var name="ldim1" type="integer"/>
+        <var name="ldim2" type="integer"/>
+        <var name="ldim3" type="integer"/>
+        <var name="ldim4" type="integer"/>
+        <var name="ldim5" type="integer"/>
+        <var name="ldim6" type="integer"/>
+        <var name="offs1" type="integer"/>
+        <var name="offs2" type="integer"/>
+        <var name="offs3" type="integer"/>
+        <var name="offs4" type="integer"/>
+        <var name="offs5" type="integer"/>
+        <var name="offs6" type="integer"/>
 
         <!-- Scalars -->
         <var name="scalar_byte"            path="/scalars" type="byte"/>
