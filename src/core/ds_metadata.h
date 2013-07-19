@@ -34,11 +34,10 @@ void ds_pack_file_info (int time, int nvars, int nattrs, int group_index_len, ch
 //                                  /* OUT */ struct adios_read_dart_data_struct * ds)
 
 void ds_pack_group_info (struct adios_file_struct *fd
-        ,struct adios_method_struct * method
-        ,struct adios_index_var_struct_v1 *vars_root
-        ,struct adios_index_attribute_struct_v1 * attrs_root
-        ,char ** buffer, int *buffer_size, int *nvars, int *nattrs
-        );
+                        ,struct adios_method_struct * method
+                        ,struct adios_index_struct_v1 *index
+                        ,char ** buffer, int *buffer_size, int *nvars, int *nattrs
+                        );
 
 //ADIOS_GROUP * ds_unpack_group_info (char * buf, struct adios_read_dart_group_struct * group);
 

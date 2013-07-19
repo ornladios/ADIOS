@@ -435,50 +435,34 @@ static FlexpathAltName *find_alt_name(FlexpathFMStructure *currentFm, char *dimN
 }
 
 // populates offsets array
-int get_local_offsets(struct adios_var_struct * list, struct adios_group_struct * g, int** offsets, int** dimensions)
+int get_local_offsets(struct adios_var_struct * v, struct adios_group_struct * g, int** offsets, int** dimensions)
 {
-    struct adios_dimension_struct * dim_list = list->dimensions;	    
-    if(dim_list){		
-	// if this var has a global dimension, then by default, it has local_offset
-	uint16_t gdim_id = dim_list->global_dimension.id;
-	uint16_t ldim_id = dim_list->dimension.id;
-	if(gdim_id > 0) {	   
-	    int num_local_offsets = 0;
-	    int * local_offsets = NULL;		
-	    int * local_dimensions = NULL;
-	    int curr_offset = 0;
-	    while(dim_list) {		
-		uint16_t offset_id = dim_list->local_offset.id;
-		uint16_t ldim_id = dim_list->dimension.id;
-		if(offset_id > 0) {							       
-		    struct adios_var_struct * tmp_var = adios_find_var_by_id(g->vars, 
-									     offset_id);
-		    local_offsets = realloc(local_offsets, sizeof(int) * (num_local_offsets+1));
-		    memcpy(&local_offsets[curr_offset], tmp_var->data, sizeof(int));
-		    // no id, so it must be a literal in the xml doc
-		} else {
-		    local_offsets = realloc(local_offsets, sizeof(int) * (num_local_offsets+1));
-		    local_offsets[curr_offset] = (int)dim_list->local_offset.rank;
-		}
-		if(ldim_id > 0) {
-		    struct adios_var_struct * tmp_var = adios_find_var_by_id(g->vars, ldim_id);
-		    local_dimensions = realloc(local_dimensions, sizeof(int) * (num_local_offsets+1));
-		    memcpy(&local_dimensions[curr_offset], tmp_var->data, sizeof(int));
-		} else {
-		    local_dimensions = realloc(local_dimensions, sizeof(int) * (num_local_offsets+1));
-		    local_dimensions[curr_offset] = (int)dim_list->dimension.rank;
-		}
-		dim_list=dim_list->next;
-		curr_offset++;
-		num_local_offsets++;
-	    }
-	    offsets[0] = local_offsets;	   
-	    dimensions[0] = local_dimensions;
-	    return num_local_offsets;
-	}	
+    struct adios_dimension_struct * dim_list = v->dimensions;	    
+
+    int ndims = 0;
+    while (dim_list) {
+        ndims++;
+        dim_list = dim_list->next;
     }
-    offsets = NULL;
-    return 0;
+    dim_list = v->dimensions;	    
+
+    if(ndims){		
+        int * local_offsets = (int*) malloc(sizeof(int) * (ndims));
+        int * local_dimensions = (int*) malloc(sizeof(int) * (ndims));
+        int n = 0; 
+        while(dim_list) {		
+            local_dimensions[n] = (int) adios_get_dim_value (&dim_list->dimension);
+            local_offsets[n] = (int) adios_get_dim_value (&dim_list->local_offset);
+            dim_list=dim_list->next;
+            n++;
+        }
+        *offsets = local_offsets;	   
+        *dimensions = local_dimensions;
+    } else {
+        *offsets = NULL;
+        *dimensions = NULL;
+    }
+    return ndims;
 }
 
 // creates multiqueue function to handle ctrl messages for given bridge stones 
@@ -598,6 +582,22 @@ void mem_check(void* ptr, const char* str) {
     }
 }
 
+
+static char * get_dim_name (struct adios_dimension_item_struct *d)
+{
+    char *vname = NULL;
+    if (d->var) {
+        vname = d->var->name;
+    } else if (d->attr) {
+        if (d->attr->var) 
+            vname = d->attr->var->name;
+        else
+            vname = d->attr->name;
+    }
+    // else it's a number value, so there is no name
+    return vname;
+}
+
 // construct an fm structure based off the group xml file
 FlexpathFMStructure* set_format(struct adios_group_struct* t,struct adios_var_struct* fields, FlexpathWriteFileData* fileData){
     FMStructDescRec *format = (FMStructDescRec*) malloc(sizeof(FMStructDescRec)*2);
@@ -650,23 +650,21 @@ FlexpathFMStructure* set_format(struct adios_group_struct* t,struct adios_var_st
                 // attach appropriate attrs for dimensions	
                 for(; adim != NULL; adim = adim->next) {
                     num_dims++;		    
-		    uint16_t dim_id = adim->dimension.id;
-		    uint16_t gdim_id = adim->global_dimension.id;
-		    uint16_t local_id = adim->local_offset.id;
-		    if(dim_id > 0) {		    
-			struct adios_var_struct *tmp_var = adios_find_var_by_id(t->vars, dim_id);
-			char *name = find_fixed_name(currentFm, tmp_var->name);
+                    
+                    char *vname = get_dim_name(&adim->dimension);
+                    if (vname) {
+			char *name = find_fixed_name(currentFm, vname);
 			char *aname = get_alt_name(tempName,  name);
 			dims=add_var(dims, strdup(aname), NULL, 0);
 			set_attr_dimensions(tempName, aname, num_dims, fileData->attrs);
 		    }
-		    if(gdim_id> 0) {
+                    char *gname = get_dim_name(&adim->global_dimension);
+		    if(gname) {
 			fileData->globalCount++;
-			struct adios_var_struct *tmp_var = adios_find_var_by_id(t->vars, gdim_id);
-			char *name = find_fixed_name(currentFm, tmp_var->name);
+			char *name = find_fixed_name(currentFm, gname);
 			char *aname = get_alt_name(tempName, name);
 			dims=add_var(dims, strdup(aname), NULL, 0);
-			set_attr_dimensions(tempName, aname, num_dims, fileData->attrs);			
+			set_attr_dimensions(tempName, aname, num_dims, fileData->attrs);
 		    }
                 }
             }
@@ -693,9 +691,9 @@ FlexpathFMStructure* set_format(struct adios_group_struct* t,struct adios_var_st
 		  
 	    //create the textual representation of the dimensions
 	    for (; d != NULL; d = d->next) {
-		if (d->dimension.id) {
-		    struct adios_var_struct *tmp_var = adios_find_var_by_id(t->vars, d->dimension.id);
-		    char *name = find_fixed_name(currentFm, tmp_var->name);
+                char *vname = get_dim_name(&d->dimension);
+                if (vname) {
+		    char *name = find_fixed_name(currentFm, vname);
 		    FlexpathAltName *a = find_alt_name(currentFm, name, (char*)field_list[fieldNo].field_name);
 		    altvarcount++;
 		    snprintf(el, ELSIZE, "[%s]", a->name);
@@ -1450,15 +1448,7 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
             int total_size = 1;
             //for each dimension
             while(dims) {    
-		int size = 1;
-		// if the value was passed in via variable
-		if(dims->dimension.id > 0){
-		    struct adios_var_struct* temp = adios_find_var_by_id(g2->vars, dims->dimension.id);            
-		    size = *(int*)temp->data;
-		}
-		else // else it was passed in via hard-coded value
-		    size = dims->dimension.rank;
-
+                int size = adios_get_dim_value (&dims->dimension);
                 total_size *= size;
                 dims = dims->next;
             }		
@@ -1553,6 +1543,8 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 
 	    }
 	    list=list->next;
+            free (local_offsets);
+            free (local_dimensions);
 	}
 
 	int i;
