@@ -521,7 +521,7 @@ int adios_write_open_attributes_v1 (struct adios_file_struct * fd);
 int adios_write_close_attributes_v1 (struct adios_file_struct * fd);
 
 // allocate the adios_index_struct, freed in adios_free_index_v1
-struct adios_index_struct_v1 * adios_alloc_index_v1 ();
+struct adios_index_struct_v1 * adios_alloc_index_v1 (int alloc_hashtables);
 
 int adios_write_index_v1 (char ** buffer
                          ,uint64_t * buffer_size

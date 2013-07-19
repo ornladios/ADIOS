@@ -2609,7 +2609,7 @@ static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
 }
 
 
-struct adios_index_struct_v1 * adios_alloc_index_v1 ()
+struct adios_index_struct_v1 * adios_alloc_index_v1 (int alloc_hashtables)
 {
     struct adios_index_struct_v1 * index = (struct adios_index_struct_v1 *) 
                 malloc (sizeof(struct adios_index_struct_v1));
@@ -2619,8 +2619,14 @@ struct adios_index_struct_v1 * adios_alloc_index_v1 ()
     index->vars_tail = NULL;
     index->attrs_root = NULL;
     index->attrs_tail = NULL;
-    index->hashtbl_vars  = qhashtbl(100);
-    index->hashtbl_attrs = qhashtbl(100);
+    if (alloc_hashtables) {
+        index->hashtbl_vars  = qhashtbl(100);
+        //index->hashtbl_attrs = qhashtbl(100);
+        index->hashtbl_attrs = NULL; // not used yet
+    } else {
+        index->hashtbl_vars = NULL; 
+        index->hashtbl_attrs = NULL; 
+    }
     return index;
 }
 
@@ -2631,8 +2637,10 @@ void adios_free_index_v1 (struct adios_index_struct_v1 * index)
     if (!index)
         return;
 
-    index->hashtbl_vars->free  (index->hashtbl_vars);
-    index->hashtbl_attrs->free (index->hashtbl_attrs);
+    if (index->hashtbl_vars)
+        index->hashtbl_vars->free  (index->hashtbl_vars);
+    if (index->hashtbl_attrs)
+        index->hashtbl_attrs->free (index->hashtbl_attrs);
 }
 
 void adios_clear_index_v1 (struct adios_index_struct_v1 * index)
@@ -2648,8 +2656,10 @@ void adios_clear_index_v1 (struct adios_index_struct_v1 * index)
     index->vars_tail = NULL;
     index->attrs_root = NULL;
     index->attrs_tail = NULL;
-    index->hashtbl_vars->clear  (index->hashtbl_vars);
-    index->hashtbl_attrs->clear (index->hashtbl_attrs);
+    if (index->hashtbl_vars)
+        index->hashtbl_vars->clear  (index->hashtbl_vars);
+    if (index->hashtbl_attrs)
+        index->hashtbl_attrs->clear (index->hashtbl_attrs);
 }
 
 static uint8_t count_dimensions (struct adios_dimension_struct * dimensions)

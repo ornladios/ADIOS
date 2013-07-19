@@ -48,9 +48,7 @@ struct adios_MPI_data_struct
 
     struct adios_bp_buffer_struct_v1 b;
 
-    struct adios_index_process_group_struct_v1 * old_pg_root;
-    struct adios_index_var_struct_v1 * old_vars_root;
-    struct adios_index_attribute_struct_v1 * old_attrs_root;
+    struct adios_index_struct_v1 * index;
 
     uint64_t vars_start;
     uint64_t vars_header_size;
@@ -527,9 +525,7 @@ void adios_mpi_lustre_init (const PairStruct * parameters
     md->rank = 0;
     md->size = 0;
     md->group_comm = method->init_comm;//unused, adios_open sets current comm
-    md->old_pg_root = 0;
-    md->old_vars_root = 0;
-    md->old_attrs_root = 0;
+    md->index = adios_alloc_index_v1(1); // with hashtables
     md->vars_start = 0;
     md->vars_header_size = 0;
     md->striping_unit = 0;
@@ -591,9 +587,10 @@ int adios_mpi_lustre_open (struct adios_file_struct * fd
 static
 void build_offsets (struct adios_bp_buffer_struct_v1 * b
                    ,MPI_Offset * offsets, uint64_t size, char * group_name
-                   ,struct adios_index_process_group_struct_v1 * pg_root
+                   ,struct adios_index_struct_v1 * index
                    )
 {
+    struct adios_index_process_group_struct_v1 * pg_root = index->pg_root;
     while (pg_root)
     {
         if (!strcasecmp (pg_root->group_name, group_name))
@@ -701,9 +698,7 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
                 MPI_File_read (md->fh, md->b.buff, md->b.pg_size, MPI_BYTE
                               ,&md->status
                               );
-                adios_parse_process_group_index_v1 (&md->b
-                                                   ,&md->old_pg_root
-                                                   );
+                adios_parse_process_group_index_v1 (&md->b, &md->index->pg_root);
 
 #if 1
                 adios_init_buffer_read_vars_index (&md->b);
@@ -713,7 +708,9 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
                 MPI_File_read (md->fh, md->b.buff, md->b.vars_size, MPI_BYTE
                               ,&md->status
                               );
-                adios_parse_vars_index_v1 (&md->b, &md->old_vars_root);
+                adios_parse_vars_index_v1 (&md->b, &md->index->vars_root, 
+                                           md->index->hashtbl_vars,
+                                           &md->index->vars_tail);
 
                 adios_init_buffer_read_attributes_index (&md->b);
                 MPI_File_seek (md->fh, md->b.attrs_index_offset
@@ -722,7 +719,7 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
                 MPI_File_read (md->fh, md->b.buff, md->b.attrs_size, MPI_BYTE
                               ,&md->status
                               );
-                adios_parse_attributes_index_v1 (&md->b, &md->old_attrs_root);
+                adios_parse_attributes_index_v1 (&md->b, &md->index->attrs_root);
 #endif
 
                 fd->base_offset = md->b.end_of_pgs;
@@ -741,7 +738,7 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
 
                     // go through the pg index to build the offsets array
                     build_offsets (&md->b, offsets, md->size
-                                  ,fd->group->name, md->old_pg_root
+                                  ,fd->group->name, md->index
                                   );
                     MPI_Scatter (offsets, 3, MPI_LONG_LONG
                                 ,MPI_IN_PLACE, 3, MPI_LONG_LONG
@@ -1032,9 +1029,7 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
                     MPI_File_read (md->fh, md->b.buff, md->b.pg_size, MPI_BYTE
                                   ,&md->status
                                   );
-                    adios_parse_process_group_index_v1 (&md->b
-                                                       ,&md->old_pg_root
-                                                       );
+                    adios_parse_process_group_index_v1 (&md->b ,&md->index->pg_root);
 
                     adios_init_buffer_read_vars_index (&md->b);
                     MPI_File_seek (md->fh, md->b.vars_index_offset
@@ -1043,7 +1038,10 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
                     MPI_File_read (md->fh, md->b.buff, md->b.vars_size, MPI_BYTE
                                   ,&md->status
                                   );
-                    adios_parse_vars_index_v1 (&md->b, &md->old_vars_root);
+                    adios_parse_vars_index_v1 (&md->b, &md->index->vars_root, 
+                                               md->index->hashtbl_vars,
+                                               &md->index->vars_tail);
+
 
                     adios_init_buffer_read_attributes_index (&md->b);
                     MPI_File_seek (md->fh, md->b.attrs_index_offset
@@ -1053,7 +1051,7 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
                                   ,MPI_BYTE, &md->status
                                   );
                     adios_parse_attributes_index_v1 (&md->b
-                                                    ,&md->old_attrs_root
+                                                    ,&md->index->attrs_root
                                                     );
 
                     fd->base_offset = md->b.end_of_pgs;
@@ -1723,9 +1721,7 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
             gettimeofday (&t12, NULL);
 #endif
             // build index appending to any existing index
-            adios_build_index_v1 (fd, &md->old_pg_root, &md->old_vars_root
-                                 ,&md->old_attrs_root
-                                 );
+            adios_build_index_v1 (fd, md->index);
             // if collective, gather the indexes from the rest and call
             if (md->group_comm != MPI_COMM_NULL)
             {
@@ -1773,19 +1769,15 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
                         adios_parse_process_group_index_v1 (&md->b
                                                            ,&new_pg_root
                                                            );
-                        adios_parse_vars_index_v1 (&md->b, &new_vars_root);
+                        adios_parse_vars_index_v1 (&md->b, &new_vars_root, NULL, NULL);
                         // do not merge attributes from other processes from 1.4
                         /*
                         adios_parse_attributes_index_v1 (&md->b
                                                         ,&new_attrs_root
                                                         );
                          */
-                        adios_merge_index_v1 (&md->old_pg_root
-                                             ,&md->old_vars_root
-                                             ,&md->old_attrs_root
-                                             ,new_pg_root, new_vars_root
-                                             ,new_attrs_root
-                                             );
+                        adios_merge_index_v1 (md->index, new_pg_root, 
+                                              new_vars_root, new_attrs_root);
                         new_pg_root = 0;
                         new_vars_root = 0;
                         new_attrs_root = 0;
@@ -1801,10 +1793,7 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
                 else
                 {
                     adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
-                                         ,0, md->old_pg_root
-                                         ,md->old_vars_root
-                                         ,md->old_attrs_root
-                                         );
+                                         ,0, md->index);
 
 					START_TIMER (ADIOS_TIMER_MPI_LUSTRE_COMM);
                     MPI_Gather (&buffer_size, 1, MPI_INT, 0, 0, MPI_INT
@@ -1841,10 +1830,7 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
             if (md->rank == 0)
             {
                 adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
-                                     ,index_start, md->old_pg_root
-                                     ,md->old_vars_root
-                                     ,md->old_attrs_root
-                                     );
+                                     ,index_start, md->index);
                 adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 
 				START_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
@@ -1874,16 +1860,6 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
                 buffer_offset = 0;
             }
 
-            adios_clear_index_v1 (new_pg_root, new_vars_root, new_attrs_root);
-            adios_clear_index_v1 (md->old_pg_root, md->old_vars_root
-                                 ,md->old_attrs_root
-                                 );
-            new_pg_root = 0;
-            new_vars_root = 0;
-            new_attrs_root = 0;
-            md->old_pg_root = 0;
-            md->old_vars_root = 0;
-            md->old_attrs_root = 0;
 #if COLLECT_METRICS
             gettimeofday (&t11, NULL);
             t15.tv_sec = t11.tv_sec;
@@ -1997,9 +1973,7 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
             }
 
             // build index appending to any existing index
-            adios_build_index_v1 (fd, &md->old_pg_root, &md->old_vars_root
-                                 ,&md->old_attrs_root
-                                 );
+            adios_build_index_v1 (fd, md->index);
             // if collective, gather the indexes from the rest and call
             if (md->group_comm != MPI_COMM_NULL)
             {
@@ -2047,19 +2021,15 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
                         adios_parse_process_group_index_v1 (&md->b
                                                            ,&new_pg_root
                                                            );
-                        adios_parse_vars_index_v1 (&md->b, &new_vars_root);
+                        adios_parse_vars_index_v1 (&md->b, &new_vars_root, NULL, NULL);
                         // do not merge attributes from other processes from 1.4
                         /*
                         adios_parse_attributes_index_v1 (&md->b
                                                         ,&new_attrs_root
                                                         );
                          */
-                        adios_merge_index_v1 (&md->old_pg_root
-                                             ,&md->old_vars_root
-                                             ,&md->old_attrs_root
-                                             ,new_pg_root, new_vars_root
-                                             ,new_attrs_root
-                                             );
+                        adios_merge_index_v1 (md->index, new_pg_root, 
+                                              new_vars_root, new_attrs_root);
                         new_pg_root = 0;
                         new_vars_root = 0;
                         new_attrs_root = 0;
@@ -2075,10 +2045,7 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
                 else
                 {
                     adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
-                                         ,0, md->old_pg_root
-                                         ,md->old_vars_root
-                                         ,md->old_attrs_root
-                                         );
+                                         ,0, md->index);
 
 					START_TIMER (ADIOS_TIMER_MPI_LUSTRE_COMM);
                     MPI_Gather (&buffer_size, 1, MPI_INT, 0, 0, MPI_INT
@@ -2108,10 +2075,7 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
             if (md->rank == 0)
             {
                 adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
-                                     ,index_start, md->old_pg_root
-                                     ,md->old_vars_root
-                                     ,md->old_attrs_root
-                                     );
+                                     ,index_start, md->index);
                 adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 
 				START_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
@@ -2125,17 +2089,6 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
             }
 
             free (buffer);
-
-            adios_clear_index_v1 (new_pg_root, new_vars_root, new_attrs_root);
-            adios_clear_index_v1 (md->old_pg_root, md->old_vars_root
-                                 ,md->old_attrs_root
-                                 );
-            new_pg_root = 0;
-            new_vars_root = 0;
-            new_attrs_root = 0;
-            md->old_pg_root = 0;
-            md->old_vars_root = 0;
-            md->old_attrs_root = 0;
 
             break;
         }
@@ -2162,14 +2115,9 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
     memset (&md->status, 0, sizeof (MPI_Status));
     md->group_comm = MPI_COMM_NULL;
 
-    adios_clear_index_v1 (md->old_pg_root, md->old_vars_root
-                         ,md->old_attrs_root
-                         );
-    md->old_pg_root = 0;
-    md->old_vars_root = 0;
-    md->old_attrs_root = 0;
+    adios_clear_index_v1 (md->index);
 
-	STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_AD_CLOSE);
+    STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_AD_CLOSE);
 
 #if COLLECT_METRICS
     print_metrics (md, iteration++);
@@ -2178,7 +2126,10 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
 
 void adios_mpi_lustre_finalize (int mype, struct adios_method_struct * method)
 {
-// nothing to do here
+    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
+                                                 method->method_data;
+    adios_free_index_v1 (md->index);
+
     if (adios_mpi_lustre_initialized)
         adios_mpi_lustre_initialized = 0;
 }

@@ -53,9 +53,7 @@ struct adios_POSIX_data_struct
     struct adios_bp_buffer_struct_v1 b;
 
     // old index structs we read in and have to be merged in
-    struct adios_index_process_group_struct_v1 * old_pg_root;
-    struct adios_index_var_struct_v1 * old_vars_root;
-    struct adios_index_attribute_struct_v1 * old_attrs_root;
+    struct adios_index_struct_v1 * index;
 
     uint64_t vars_start;
     uint64_t vars_header_size;
@@ -83,9 +81,7 @@ void adios_posix_init (const PairStruct * parameters
     method->method_data = malloc (sizeof (struct adios_POSIX_data_struct));
     p = (struct adios_POSIX_data_struct *) method->method_data;
     adios_buffer_struct_init (&p->b);
-    p->old_pg_root = 0;
-    p->old_vars_root = 0;
-    p->old_attrs_root = 0;
+    p->index = adios_alloc_index_v1(1); // with hashtables
     p->vars_start = 0;
     p->vars_header_size = 0;
 #ifdef HAVE_MPI
@@ -391,14 +387,12 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
                         adios_parse_index_offsets_v1 (&p->b);
 
                         adios_posix_read_process_group_index (&p->b);
-                        adios_parse_process_group_index_v1 (&p->b
-                                                           ,&p->old_pg_root
-                                                           );
+                        adios_parse_process_group_index_v1 (&p->b, &p->index->pg_root);
 
                         // find the largest time index so we can append properly
                         struct adios_index_process_group_struct_v1 * pg;
                         uint32_t max_time_index = 0;
-                        pg = p->old_pg_root;
+                        pg = p->index->pg_root;
                         while (pg)
                         {
                             if (pg->time_index > max_time_index)
@@ -408,12 +402,12 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
                         fd->group->time_index = ++max_time_index;
 
                         adios_posix_read_vars_index (&p->b);
-                        adios_parse_vars_index_v1 (&p->b, &p->old_vars_root);
+                        adios_parse_vars_index_v1 (&p->b, &p->index->vars_root, 
+                                                   p->index->hashtbl_vars,
+                                                   &p->index->vars_tail);
 
                         adios_posix_read_attributes_index (&p->b);
-                        adios_parse_attributes_index_v1 (&p->b
-                                                        ,&p->old_attrs_root
-                                                        );
+                        adios_parse_attributes_index_v1 (&p->b, &p->index->attrs_root);
 
                         fd->base_offset = p->b.end_of_pgs;
                         fd->pg_start_in_file = p->b.end_of_pgs;
@@ -754,10 +748,9 @@ static void adios_posix_do_read (struct adios_file_struct * fd
     {
         case 1:
         {
-            struct adios_index_process_group_struct_v1 * pg_root = 0;
+            struct adios_index_struct_v1 * index = adios_alloc_index_v1(0); // no hashtables
+            struct adios_index_process_group_struct_v1 * pg_root = index->pg_root;
             struct adios_index_process_group_struct_v1 * pg_root_temp = 0;
-            struct adios_index_var_struct_v1 * vars_root = 0;
-            struct adios_index_attribute_struct_v1 * attrs_root = 0;
 
             adios_posix_read_index_offsets (&p->b);
             adios_parse_index_offsets_v1 (&p->b);
@@ -766,10 +759,10 @@ static void adios_posix_do_read (struct adios_file_struct * fd
             adios_parse_process_group_index_v1 (&p->b, &pg_root);
 #if 1
             adios_posix_read_vars_index (&p->b);
-            adios_parse_vars_index_v1 (&p->b, &vars_root);
+            adios_parse_vars_index_v1 (&p->b, &index->vars_root, NULL, NULL);
 
             adios_posix_read_attributes_index (&p->b);
-            adios_parse_attributes_index_v1 (&p->b, &attrs_root);
+            adios_parse_attributes_index_v1 (&p->b, &index->attrs_root);
 #endif
 
             // the three section headers
@@ -852,7 +845,7 @@ static void adios_posix_do_read (struct adios_file_struct * fd
             }
 #endif
             adios_clear_process_group_header_v1 (&pg_header);
-            adios_clear_index_v1 (pg_root, vars_root, attrs_root);
+            adios_clear_index_v1 (index);
             break;
         }
 
@@ -975,15 +968,11 @@ void adios_posix_close (struct adios_file_struct * fd
             uint64_t index_start = fd->base_offset + fd->offset;
 
             // build index
-            adios_build_index_v1 (fd, &p->old_pg_root, &p->old_vars_root
-                                 ,&p->old_attrs_root
-                                 );
+            adios_build_index_v1 (fd, p->index);
             // if collective, gather the indexes from the rest and call
             // adios_merge_index_v1 (&new_pg_root, &new_vars_root, pg, vars);
             adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
-                                 ,index_start, p->old_pg_root, p->old_vars_root
-                                 ,p->old_attrs_root
-                                 );
+                                 ,index_start, p->index);
             adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 			START_TIMER (ADIOS_TIMER_POSIX_IO);
             adios_posix_do_write (fd, method, buffer, buffer_offset); // Buffered vars written here
@@ -1033,7 +1022,7 @@ void adios_posix_close (struct adios_file_struct * fd
                         adios_parse_process_group_index_v1 (&p->b
                                                            ,&new_pg_root
                                                            );
-                        adios_parse_vars_index_v1 (&p->b, &new_vars_root);
+                        adios_parse_vars_index_v1 (&p->b, &new_vars_root, NULL, NULL);
                         // do not merge attributes from other processes from 1.4
                         /*
                         adios_parse_attributes_index_v1 (&p->b
@@ -1041,15 +1030,8 @@ void adios_posix_close (struct adios_file_struct * fd
                                                         );
                         */
 
-                        adios_merge_index_v1 (&p->old_pg_root
-                                             ,&p->old_vars_root
-                                             ,&p->old_attrs_root
-                                             ,new_pg_root, new_vars_root
-                                             ,new_attrs_root
-                                             );
-                        new_pg_root = 0;
-                        new_vars_root = 0;
-                        new_attrs_root = 0;
+                        adios_merge_index_v1 (p->index, new_pg_root, 
+                                              new_vars_root, new_attrs_root);
                     }
 
                     p->b.buff = buffer_save;
@@ -1068,8 +1050,7 @@ void adios_posix_close (struct adios_file_struct * fd
 
                     adios_write_index_v1 (&global_index_buffer, &global_index_buffer_size
                                          ,&global_index_buffer_offset, global_index_start
-                                         ,p->old_pg_root, p->old_vars_root, p->old_attrs_root
-                                         );
+                                         ,p->index);
 
                     flag |= ADIOS_VERSION_HAVE_SUBFILE;
 
@@ -1111,8 +1092,6 @@ void adios_posix_close (struct adios_file_struct * fd
             }
 #endif
             free (buffer);
-
-            adios_clear_index_v1 (new_pg_root, new_vars_root, new_attrs_root);
 
             break;
         }
@@ -1207,13 +1186,9 @@ void adios_posix_close (struct adios_file_struct * fd
             uint64_t index_start = fd->base_offset + fd->offset;
 
             // build index
-            adios_build_index_v1 (fd, &p->old_pg_root, &p->old_vars_root
-                                 ,&p->old_attrs_root
-                                 );
+            adios_build_index_v1 (fd, p->index);
             adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
-                                 ,index_start, p->old_pg_root, p->old_vars_root
-                                 ,p->old_attrs_root
-                                 );
+                                 ,index_start, p->index);
 #ifdef HAVE_MPI
             if (p->group_comm != MPI_COMM_SELF)
             {
@@ -1260,7 +1235,7 @@ void adios_posix_close (struct adios_file_struct * fd
                         adios_parse_process_group_index_v1 (&p->b
                                                            ,&new_pg_root
                                                            );
-                        adios_parse_vars_index_v1 (&p->b, &new_vars_root);
+                        adios_parse_vars_index_v1 (&p->b, &new_vars_root, NULL, NULL);
                         // do not merge attributes from other processes from 1.4
                         /*
                         adios_parse_attributes_index_v1 (&p->b
@@ -1268,21 +1243,17 @@ void adios_posix_close (struct adios_file_struct * fd
                                                         );
                          */
 
-                        adios_merge_index_v1 (&p->old_pg_root
-                                             ,&p->old_vars_root
-                                             ,&p->old_attrs_root
-                                             ,new_pg_root, new_vars_root
-                                             ,new_attrs_root
-                                             );
+                        adios_merge_index_v1 (p->index,new_pg_root, 
+                                              new_vars_root, new_attrs_root);
                     
                         new_pg_root = 0;
                         new_vars_root = 0;
                         new_attrs_root = 0;
                     }
 
-                    adios_sort_index_v1 (&p->old_pg_root
-                                        ,&p->old_vars_root
-                                        ,&p->old_attrs_root
+                    adios_sort_index_v1 (&p->index->pg_root
+                                        ,&p->index->vars_root
+                                        ,&p->index->attrs_root
                                         );
 
                     p->b.buff = buffer_save;
@@ -1301,8 +1272,7 @@ void adios_posix_close (struct adios_file_struct * fd
 
                     adios_write_index_v1 (&global_index_buffer, &global_index_buffer_size
                                          ,&global_index_buffer_offset, global_index_start
-                                         ,p->old_pg_root, p->old_vars_root, p->old_attrs_root
-                                         );
+                                         ,p->index);
 
                     flag |= ADIOS_VERSION_HAVE_SUBFILE;
 
@@ -1377,18 +1347,17 @@ void adios_posix_close (struct adios_file_struct * fd
     }
 
     adios_posix_close_internal (&p->b);
-    adios_clear_index_v1 (p->old_pg_root, p->old_vars_root, p->old_attrs_root);
-    p->old_pg_root = 0;
-    p->old_vars_root = 0;
-    p->old_attrs_root = 0;
+    adios_clear_index_v1 (p->index);
 
-	STOP_TIMER (ADIOS_TIMER_POSIX_AD_CLOSE);
+    STOP_TIMER (ADIOS_TIMER_POSIX_AD_CLOSE);
 
 }
 
 void adios_posix_finalize (int mype, struct adios_method_struct * method)
 {
-// nothing to do here
+    struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
+                                                          method->method_data;
+    adios_free_index_v1 (p->index);
     if (adios_posix_initialized)
         adios_posix_initialized = 0;
 }

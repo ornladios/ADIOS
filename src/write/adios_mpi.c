@@ -290,7 +290,7 @@ void adios_mpi_init (const PairStruct * parameters
     md->rank = 0;
     md->size = 0;
     md->group_comm = method->init_comm; // unused here, adios_open will set the current comm
-    md->index = adios_alloc_index_v1();
+    md->index = adios_alloc_index_v1(1); // with hashtables
     md->vars_start = 0;
     md->vars_header_size = 0;
     md->storage_targets = 0;
