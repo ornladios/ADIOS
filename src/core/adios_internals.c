@@ -2734,7 +2734,7 @@ static uint64_t cast_var_data_as_uint64 (const char * parent_name
     return 0;
 }
 
-static uint64_t get_value_for_dim (struct adios_dimension_item_struct * dimension)
+uint64_t adios_get_dim_value (struct adios_dimension_item_struct * dimension)
 {
     uint64_t dim = 0;
 
@@ -2887,15 +2887,15 @@ void adios_copy_var_written (struct adios_group_struct * g, struct adios_var_str
                     // de-reference dimension id
                     d_new->dimension.var = NULL;
                     d_new->dimension.attr = NULL;
-                    d_new->dimension.rank = get_value_for_dim (&d->dimension);
+                    d_new->dimension.rank = adios_get_dim_value (&d->dimension);
                     d_new->dimension.time_index = d->dimension.time_index;
                     d_new->global_dimension.var = NULL;
                     d_new->global_dimension.attr = NULL;
-                    d_new->global_dimension.rank = get_value_for_dim (&d->global_dimension);
+                    d_new->global_dimension.rank = adios_get_dim_value (&d->global_dimension);
                     d_new->global_dimension.time_index = d->global_dimension.time_index;
                     d_new->local_offset.var = NULL;
                     d_new->local_offset.attr = NULL;
-                    d_new->local_offset.rank = get_value_for_dim (&d->local_offset);
+                    d_new->local_offset.rank = adios_get_dim_value (&d->local_offset);
                     d_new->local_offset.time_index = d->local_offset.time_index;
                     d_new->next = 0;
 
@@ -3061,15 +3061,15 @@ void adios_copy_var_written (struct adios_var_struct ** root
                             // de-reference dimension id
                             d_new->dimension.var = NULL;
                             d_new->dimension.attr = NULL;
-                            d_new->dimension.rank = get_value_for_dim (&d->dimension);
+                            d_new->dimension.rank = adios_get_dim_value (&d->dimension);
                             d_new->dimension.time_index = d->dimension.time_index;
                             d_new->global_dimension.var = NULL;
                             d_new->global_dimension.attr = NULL;
-                            d_new->global_dimension.rank = get_value_for_dim (&d->global_dimension);
+                            d_new->global_dimension.rank = adios_get_dim_value (&d->global_dimension);
                             d_new->global_dimension.time_index = d->global_dimension.time_index;
                             d_new->local_offset.var = NULL;
                             d_new->local_offset.attr = NULL;
-                            d_new->local_offset.rank = get_value_for_dim (&d->local_offset);
+                            d_new->local_offset.rank = adios_get_dim_value (&d->local_offset);
                             d_new->local_offset.time_index = d->local_offset.time_index;
                             d_new->next = 0;
 
@@ -3250,11 +3250,11 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
                         for (j = 0; j < c; j++)
                         {
                             v_index->characteristics [0].dims.dims [j * 3 + 0] =
-                                get_value_for_dim (&d->dimension);
+                                adios_get_dim_value (&d->dimension);
                             v_index->characteristics [0].dims.dims [j * 3 + 1] =
-                                get_value_for_dim (&d->global_dimension);
+                                adios_get_dim_value (&d->global_dimension);
                             v_index->characteristics [0].dims.dims [j * 3 + 2] =
-                                get_value_for_dim (&d->local_offset);
+                                adios_get_dim_value (&d->local_offset);
 
                             d = d->next;
                         }
@@ -4293,17 +4293,17 @@ uint16_t adios_write_var_characteristics_dims_v1 (struct adios_file_struct * fd
 
         dims_count++;
 
-        dim = get_value_for_dim (&d->dimension);
+        dim = adios_get_dim_value (&d->dimension);
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &dim, 8);
         total_size += 8;
         dims_length += 8;
 
-        dim = get_value_for_dim (&d->global_dimension);
+        dim = adios_get_dim_value (&d->global_dimension);
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &dim, 8);
         total_size += 8;
         dims_length += 8;
 
-        dim = get_value_for_dim (&d->local_offset);
+        dim = adios_get_dim_value (&d->local_offset);
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &dim, 8);
         total_size += 8;
         dims_length += 8;

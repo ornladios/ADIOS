@@ -546,7 +546,7 @@ uint64_t adios_get_type_size (enum ADIOS_DATATYPES type, void * var);
 uint64_t adios_get_var_size (struct adios_var_struct * var
                             ,struct adios_group_struct * group, void * data
                             );
-
+uint64_t adios_get_dim_value (struct adios_dimension_item_struct * dimension);
 uint64_t adios_get_stat_size (void * data, enum ADIOS_DATATYPES type, enum ADIOS_STAT stat_id);
 uint8_t adios_get_stat_set_count (enum ADIOS_DATATYPES type);
 
