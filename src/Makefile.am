@@ -554,6 +554,6 @@ EXTRA_DIST = core/adios_bp_v1.h core/adios_endianness.h \
              core/adios_transport_hooks.h \
              core/bp_types.h core/bp_utils.h core/buffer.h core/common_adios.h \
              core/common_read.h core/futils.h core/globals.h core/ds_metadata.h \
-             core/util.h core/flexpath.h \
+             core/util.h core/flexpath.h core/qhashtbl.h \
              nssi/adios_nssi_config.h nssi/aggregation.h nssi/io_timer.h
 
