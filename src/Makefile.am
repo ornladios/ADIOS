@@ -237,21 +237,21 @@ endif # HAVE_NSSI
 
 
 if RESEARCH_TRANSPORTS
-libadios_a_SOURCES += write/adios_mpi_stagger.c \
-                      write/adios_mpi_aggregate.c \
-                      write/adios_provenance.c \
-                      write/adios_mpi_cio.c \
-                      write/adios_mpi_stripe.c \
-                      write/adios_mpi_amr1.c \
-                      write/adios_adaptive.c 
+#libadios_a_SOURCES += write/adios_mpi_stagger.c \
+#                      write/adios_mpi_aggregate.c \
+#                      write/adios_provenance.c \
+#                      write/adios_mpi_cio.c \
+#                      write/adios_mpi_stripe.c \
+#                      write/adios_mpi_amr1.c \
+#                      write/adios_adaptive.c 
 if BUILD_FORTRAN
-FortranLibMPISources += write/adios_mpi_stagger.c \
-                       write/adios_mpi_aggregate.c \
-                       write/adios_provenance.c \
-                       write/adios_mpi_cio.c \
-                       write/adios_mpi_stripe.c \
-                       write/adios_mpi_amr1.c \
-                       write/adios_adaptive.c 
+#FortranLibMPISources += write/adios_mpi_stagger.c \
+#                       write/adios_mpi_aggregate.c \
+#                       write/adios_provenance.c \
+#                       write/adios_mpi_cio.c \
+#                       write/adios_mpi_stripe.c \
+#                       write/adios_mpi_amr1.c \
+#                       write/adios_adaptive.c 
 endif
 else
 libadios_a_CPPFLAGS += $(MACRODEFFLAG)NO_RESEARCH_TRANSPORTS
