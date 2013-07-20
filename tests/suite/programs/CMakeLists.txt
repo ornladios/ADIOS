@@ -32,6 +32,12 @@ if(BUILD_WRITE)
 
   add_executable(selections selections.c)
   target_link_libraries(selections adios ${ADIOSLIB_LDADD})
+
+  add_executable(path_test path_test.c)
+  target_link_libraries(path_test adios ${ADIOSLIB_LDADD})
+
+  add_executable(reuse_dim reuse_dim.c)
+  target_link_libraries(reuse_dim adios ${ADIOSLIB_LDADD})
 endif(BUILD_WRITE)
 
 if(BUILD_FORTRAN)
