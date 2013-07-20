@@ -25,9 +25,12 @@
 
     <!-- 2D array written by genarray2D with 1 timesteps OR 
          3D array written by genarray2D with multiple timesteps -->
-    <global-bounds dimensions="X,Y" offsets="offs_x,offs_y">
-        <var name="int_xy" path="/var" type="integer" dimensions="size_x,size_y"/>
-        <var name="int_xyt" path="/var" type="integer" dimensions="size_x,size_y,steps"/>
+    <global-bounds dimensions="/dimensions/X,/dimensions/Y" 
+                   offsets="/aux/offs_x,/aux/offs_y">
+        <var name="int_xy" path="/var" type="integer" 
+             dimensions="/aux/size_x,/aux/size_y"/>
+        <var name="int_xyt" path="/var" type="integer" 
+             dimensions="/aux/size_x,/aux/size_y,steps"/>
     </global-bounds>
     <attribute name="description" path="/var/int_xy" 
                value="2D array with 2D decomposition"/>
@@ -35,8 +38,10 @@
                value="3D array with 2D decomposition with time in 3rd dimension"/>
 
     <!-- 3D array written by genarray with 1 timesteps -->
-    <global-bounds dimensions="X,Y,Z" offsets="offs_x,offs_y,offs_z">
-        <var name="int_xyz" path="/var" type="integer" dimensions="size_x,size_y,size_z"/>
+    <global-bounds dimensions="/dimensions/X,/dimensions/Y,/dimensions/Z" 
+                   offsets="/aux/offs_x,/aux/offs_y,/aux/offs_z">
+        <var name="int_xyz" path="/var" type="integer" 
+             dimensions="/aux/size_x,/aux/size_y,/aux/size_z"/>
     </global-bounds>
     <attribute name="description" path="/var/int_xyz" 
                value="3D array with 3D decomposition"/>

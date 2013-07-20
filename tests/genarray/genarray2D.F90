@@ -213,21 +213,21 @@ subroutine writeArray()
         !print '("rank=",i0," total_size=",i0," err=",i0)', rank, total_size, err
 
         ! write dimensions and nproc
-        call adios_write (handle, "X", gndx, err)
-        call adios_write (handle, "Y", gndy, err)
-        call adios_write (handle, "npx", npx, err)
-        call adios_write (handle, "npy", npy, err)
-        call adios_write (handle, "nproc", nproc, err)
+        call adios_write (handle, "/dimensions/X", gndx, err)
+        call adios_write (handle, "/dimensions/Y", gndy, err)
+        call adios_write (handle, "/info/npx", npx, err)
+        call adios_write (handle, "/info/npy", npy, err)
+        call adios_write (handle, "/info/nproc", nproc, err)
 
-        call adios_write (handle, "size_x", ndx, err)
-        call adios_write (handle, "size_y", ndy, err)
-        call adios_write (handle, "offs_x", offx, err)
-        call adios_write (handle, "offs_y", offy, err)
+        call adios_write (handle, "/aux/size_x", ndx, err)
+        call adios_write (handle, "/aux/size_y", ndy, err)
+        call adios_write (handle, "/aux/offs_x", offx, err)
+        call adios_write (handle, "/aux/offs_y", offy, err)
 
         if (tstep == 1) then
-            call adios_write (handle, "int_xy", int_xy, err)
+            call adios_write (handle, "/var/int_xy", int_xy, err)
         endif
-        call adios_write (handle, "int_xyt", int_xy, err)
+        call adios_write (handle, "/var/int_xyt", int_xy, err)
 
     call MPI_BARRIER(MPI_COMM_WORLD,ierr)
     cache_end_time = MPI_WTIME()
