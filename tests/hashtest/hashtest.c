@@ -102,7 +102,7 @@ int dotest ()
     time (&tbegin);
     for (p=npaths-1; p>=0; p--) {
         for (v=nvars-1; v>=0; v--) {
-            d = tbl->get(tbl, varpaths[p], varnames[v]);
+            d = tbl->get2(tbl, varpaths[p], varnames[v]);
             if (d == NULL) {
                 printf ("ERROR: stored value for p=%d,v=%d not found in hash table\n",
                         p, v);
