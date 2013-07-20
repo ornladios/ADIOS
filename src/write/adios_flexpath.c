@@ -620,12 +620,13 @@ static char * get_dim_name (struct adios_dimension_item_struct *d)
 }
 
 // construct an fm structure based off the group xml file
-FlexpathFMStructure* set_format(struct adios_group_struct* t,struct adios_var_struct* fields, FlexpathWriteFileData* fileData){
-    FMStructDescRec *format = (FMStructDescRec*) malloc(sizeof(FMStructDescRec)*2);
+FlexpathFMStructure* set_format(struct adios_group_struct* t, struct adios_var_struct* fields, FlexpathWriteFileData* fileData)
+{
+    FMStructDescRec *format = malloc(sizeof(FMStructDescRec)*2);
     mem_check(format, "format");
     memset(format, 0, sizeof(FMStructDescRec)*2);
     
-    FlexpathFMStructure *currentFm = (FlexpathFMStructure *) malloc(sizeof(FlexpathFMStructure));
+    FlexpathFMStructure *currentFm = malloc(sizeof(FlexpathFMStructure));
     mem_check(currentFm, "currentFm");
     memset(currentFm, 0, sizeof(FlexpathFMStructure));
 
@@ -635,13 +636,17 @@ FlexpathFMStructure* set_format(struct adios_group_struct* t,struct adios_var_st
     format->format_name = strdup(t->name);
 
     if (t->var_count == 0) {
-	perr("set_format: No Variables In Group\n");
+	adios_error(err_invalid_group, "set_format: No Variables In Group\n");
+	fprintf(stderr, "set_format error1\n");
 	return NULL;
     }
 
-    FMFieldList field_list = (FMFieldList) malloc(sizeof(FMField) * (t->var_count + 1));
+    FMFieldList field_list = malloc(sizeof(FMField) * (t->var_count + 1));
     if (field_list == NULL) {
-	perr("set_format: Field List Memory Allocation Failed");
+	adios_error(err_invalid_group, 
+		    "set_format: Field List Memory Allocation Failed. t->var_count: %d\n", 
+		    t->var_count);
+	fprintf(stderr, "set_format error2\n");
 	return NULL;
     }
 
@@ -798,13 +803,18 @@ FlexpathFMStructure* set_format(struct adios_group_struct* t,struct adios_var_st
 		break;
 
 	    default:
-		perr("set_format: Unknown Type Error %d\n", f->type);
-		fieldNo--;
-		break;
+		adios_error(err_invalid_group, "set_format: Unknown Type Error %d\n", f->type);
+		fieldNo--;	      
+		return NULL;
+		//break;
 	    }
 	}
 
-	fp_write_log("FORMAT","field: %s, %s, %d, %d\n", field_list[fieldNo].field_name, field_list[fieldNo].field_type,field_list[fieldNo].field_size,field_list[fieldNo].field_offset); 
+	fp_write_log("FORMAT","field: %s, %s, %d, %d\n", 
+		     field_list[fieldNo].field_name, 
+		     field_list[fieldNo].field_type,
+		     field_list[fieldNo].field_size,
+		     field_list[fieldNo].field_offset); 
     }
 
     FlexpathDimNames *d = NULL;
@@ -830,7 +840,7 @@ FlexpathFMStructure* set_format(struct adios_group_struct* t,struct adios_var_st
     format->field_list = field_list;
     currentFm->format->struct_size = currentFm->size;
 
-    currentFm->buffer = (unsigned char *) malloc(currentFm->size);
+    currentFm->buffer = malloc(currentFm->size);
     memset(currentFm->buffer, 0, currentFm->size);
 
     return currentFm;
@@ -1302,11 +1312,18 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
 	
     //process group format
     struct adios_group_struct *t = method->group;
+    fprintf(stderr,"number of variables in group = %d\n", t->var_count);
+
+    if(t == NULL){
+	adios_error(err_invalid_group, "Invalid group.\n");
+	return err_invalid_group;
+    }
     struct adios_var_struct *fields = t->vars;
-    if(t == NULL)
-	perr("t is null\n");
-    if(fields == NULL)
-	perr("t is null\n");
+	
+    if(fields == NULL){
+	adios_error(err_invalid_group, "Group has no variables.\n");
+	return err_invalid_group;
+    }	
 
     fileData->fm = set_format(t, fields, fileData);
     fp_write_log("SETUP", "set format complete\n");
