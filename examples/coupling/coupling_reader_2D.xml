@@ -3,20 +3,20 @@
 
   <!-- Group to write the whole array from a single processor -->
   <adios-group name="reader2D" coordination-communicator="group_comm">
-    <var name="rank" type="integer"/>
-    <var name="gdx"  type="integer"/>
+    <var name="rank" path="/info" type="integer"/>
+    <var name="gdx"  path="" type="integer"/>
     <attribute name="description" path="/gdx" value="Global array size in x dimension"/>
-    <var name="gdy"  type="integer"/>
+    <var name="gdy"  path="" type="integer"/>
     <attribute name="description" path="/gdy" value="Global array size in y dimension"/>
-    <var name="ldx"  type="integer"/>
-    <var name="ldy"  type="integer"/>
-    <var name="ox"   type="integer"/>
-    <var name="oy"   type="integer"/>
+    <var name="ldx" path="/aux" type="integer"/>
+    <var name="ldy" path="/aux" type="integer"/>
+    <var name="ox" path="/aux" type="integer"/>
+    <var name="oy" path="/aux" type="integer"/>
 
     <!-- 2D array to write with block,block decomposition -->
-    <global-bounds dimensions="gdx,gdy" offsets="ox,oy">
-        <var name="xy"  path="" type="double" dimensions="ldx,ldy"/>
-        <var name="xy2" path="" type="double" dimensions="ldx,ldy"/>
+    <global-bounds dimensions="gdx,gdy" offsets="/aux/ox,/aux/oy">
+        <var name="xy"  path="" type="double" dimensions="/aux/ldx,/aux/ldy"/>
+        <var name="xy2" path="" type="double" dimensions="/aux/ldx,/aux/ldy"/>
     </global-bounds>
   </adios-group>
 

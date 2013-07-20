@@ -2,27 +2,27 @@
 <adios-config host-language="Fortran">
   <adios-group name="writer2D">
 
-    <var name="nproc" type="integer"/>
-    <attribute name="description" path="/nproc" value="Number of writers"/>
-    <var name="npx"  type="integer"/>
-    <attribute name="description" path="/npx" value="Number of processors in x dimension"/>
-    <var name="npy"  type="integer"/>
-    <attribute name="description" path="/npy" value="Number of processors in y dimension"/>
+    <var name="nproc" path="/info" type="integer"/>
+    <attribute name="description" path="/info/nproc" value="Number of writers"/>
+    <var name="npx"   path="/info" type="integer"/>
+    <attribute name="description" path="/info/npx" value="Number of processors in x dimension"/>
+    <var name="npy"   path="/info" type="integer"/>
+    <attribute name="description" path="/info/npy" value="Number of processors in y dimension"/>
 
-    <var name="gdx"  type="integer"/>
+    <var name="gdx"  path="" type="integer"/>
     <attribute name="description" path="/gdx" value="Global array size in x dimension"/>
-    <var name="gdy"  type="integer"/>
+    <var name="gdy"  path="" type="integer"/>
     <attribute name="description" path="/gdy" value="Global array size in y dimension"/>
 
     <!-- Auxiliary variables for global array indexing written (overwritten) by each process -->
-    <var name="ox"   type="integer"/>
-    <var name="oy"   type="integer"/>
-    <var name="ldx"  type="integer"/>
-    <var name="ldy"  type="integer"/>
+    <var name="ox"   path="/aux" type="integer"/>
+    <var name="oy"   path="/aux" type="integer"/>
+    <var name="ldx"  path="/aux" type="integer"/>
+    <var name="ldy"  path="/aux" type="integer"/>
 
     <!-- 2D array to write with block,block decomposition -->
-    <global-bounds dimensions="gdx,gdy" offsets="ox,oy">
-        <var name="xy" path="" type="double" dimensions="ldx,ldy"/>
+    <global-bounds dimensions="gdx,gdy" offsets="/aux/ox,/aux/oy">
+        <var name="xy" path="" type="double" dimensions="/aux/ldx,/aux/ldy"/>
     </global-bounds>
     <attribute name="description" path="/xy" 
                value="2D array with 2D decomposition"/>
