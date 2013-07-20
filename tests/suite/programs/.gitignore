@@ -11,3 +11,6 @@ selections
 two_groups
 write_alternate
 write_read
+path_test
+reuse_dim
+hashtest
