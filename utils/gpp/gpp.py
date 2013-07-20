@@ -11,8 +11,13 @@ import type_mapper
 def checkXML (config_file, path):
     if path == '':
         adios_lint = 'adios_lint '
-    else:
+    elif os.path.exists (path+'/adios_lint'):
         adios_lint = path + '/adios_lint '
+    elif os.path.exists (path+'/../adios_lint/adios_lint'):
+        adios_lint = path+'/../adios_lint/adios_lint '
+    else:
+        adios_lint = 'adios_lint '
+
     rv = os.system (adios_lint + config_file)
     if rv == 0:
         return 'success'
