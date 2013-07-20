@@ -9,6 +9,18 @@
 #include <time.h>
 #include "qhashtbl.h"
 
+/* Test the hashtable in ADIOS. 
+ * Create a hashtable of size HASHTABLE_SIZE 
+ * Generate variable paths of NPATHS*NVARS times as P<nnn>/v<mmm>
+ * Generate double type scalars for each path/var 
+ * Add them to the table
+ * Retrieve each of them and check that the value retrieved is the expected one
+ */
+
+const int HASHTABLE_SIZE = 100; // how many rows in hash table
+const int NPATHS = 650; // number of different paths tried
+const int NVARS = 100;  // number of vars per path
+
 char ** varpaths;
 char ** varnames;
 double  *  data; // npaths * nvars doubles,   pathid.nameid
@@ -129,9 +141,9 @@ int dotest ()
 int main (int argc, char ** argv)
 {
     int retval;
-    range = 100;
-    npaths = 650;
-    nvars = 100;
+    range = HASHTABLE_SIZE;
+    npaths = NPATHS;
+    nvars = NVARS;
 
     retval = dotest();
 

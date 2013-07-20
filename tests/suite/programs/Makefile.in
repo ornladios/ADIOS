@@ -34,8 +34,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
-	$(am__EXEEXT_3)
-TESTS =
+	$(am__EXEEXT_3) $(am__EXEEXT_4)
+TESTS = $(am__EXEEXT_4)
 subdir = tests/suite/programs
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -80,6 +80,7 @@ CONFIG_CLEAN_VPATH_FILES =
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__EXEEXT_2 =  \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	posix_method$(EXEEXT)
 am__EXEEXT_3 =
+@BUILD_WRITE_TRUE@am__EXEEXT_4 = hashtest$(EXEEXT)
 am_adios_amr_write_OBJECTS = adios_amr_write.$(OBJEXT)
 adios_amr_write_OBJECTS = $(am_adios_amr_write_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -127,6 +128,12 @@ connect_to_space_subset_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 connect_to_space_subset_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(connect_to_space_subset_LDFLAGS) $(LDFLAGS) -o $@
+am_hashtest_OBJECTS = hashtest-hashtest.$(OBJEXT)
+hashtest_OBJECTS = $(am_hashtest_OBJECTS)
+hashtest_DEPENDENCIES = $(top_builddir)/src/libadios_a-qhashtbl.o
+hashtest_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(hashtest_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_local_array_time_OBJECTS = local_array_time.$(OBJEXT)
 local_array_time_OBJECTS = $(am_local_array_time_OBJECTS)
 local_array_time_DEPENDENCIES = $(top_builddir)/src/libadios.a \
@@ -213,20 +220,22 @@ SOURCES = $(adios_amr_write_SOURCES) $(adios_amr_write_2vars_SOURCES) \
 	$(adios_staged_read_SOURCES) \
 	$(adios_staged_read_2vars_SOURCES) \
 	$(adios_staged_read_v2_SOURCES) \
-	$(connect_to_space_subset_SOURCES) $(local_array_time_SOURCES) \
-	$(many_vars_SOURCES) $(path_test_SOURCES) \
-	$(posix_method_SOURCES) $(reuse_dim_SOURCES) \
-	$(selections_SOURCES) $(two_groups_SOURCES) \
-	$(write_alternate_SOURCES) $(write_read_SOURCES)
+	$(connect_to_space_subset_SOURCES) $(hashtest_SOURCES) \
+	$(local_array_time_SOURCES) $(many_vars_SOURCES) \
+	$(path_test_SOURCES) $(posix_method_SOURCES) \
+	$(reuse_dim_SOURCES) $(selections_SOURCES) \
+	$(two_groups_SOURCES) $(write_alternate_SOURCES) \
+	$(write_read_SOURCES)
 DIST_SOURCES = $(adios_amr_write_SOURCES) \
 	$(adios_amr_write_2vars_SOURCES) $(adios_staged_read_SOURCES) \
 	$(adios_staged_read_2vars_SOURCES) \
 	$(adios_staged_read_v2_SOURCES) \
-	$(connect_to_space_subset_SOURCES) $(local_array_time_SOURCES) \
-	$(many_vars_SOURCES) $(path_test_SOURCES) \
-	$(posix_method_SOURCES) $(reuse_dim_SOURCES) \
-	$(selections_SOURCES) $(two_groups_SOURCES) \
-	$(write_alternate_SOURCES) $(write_read_SOURCES)
+	$(connect_to_space_subset_SOURCES) $(hashtest_SOURCES) \
+	$(local_array_time_SOURCES) $(many_vars_SOURCES) \
+	$(path_test_SOURCES) $(posix_method_SOURCES) \
+	$(reuse_dim_SOURCES) $(selections_SOURCES) \
+	$(two_groups_SOURCES) $(write_alternate_SOURCES) \
+	$(write_read_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 am__tty_colors = \
@@ -475,6 +484,7 @@ check_readonly_C =
 @BUILD_WRITE_TRUE@        reuse_dim \
 @BUILD_WRITE_TRUE@        connect_to_space_subset
 
+@BUILD_WRITE_TRUE@test_C = hashtest
 @BUILD_FORTRAN_TRUE@check_readonly_Fortran = 
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@check_Fortran = posix_method
 INCLUDES = $(all_includes) -I$(top_builddir)/src
@@ -529,6 +539,10 @@ reuse_dim_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 connect_to_space_subset_SOURCES = connect_to_space_subset.c
 connect_to_space_subset_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 connect_to_space_subset_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+hashtest_SOURCES = hashtest.c
+hashtest_LDADD = $(top_builddir)/src/libadios_a-qhashtbl.o
+hashtest_LDFLAGS = $(AM_LDFLAGS) 
+hashtest_CPPFLAGS = -I$(top_builddir)/src/core
 EXTRA_DIST = adios_amr_write.xml adios_amr_write_2vars.xml \
              posix_method.xml local_array_time.xml  \
              write_alternate.xml write_read.xml \
@@ -600,6 +614,9 @@ adios_staged_read_v2$(EXEEXT): $(adios_staged_read_v2_OBJECTS) $(adios_staged_re
 connect_to_space_subset$(EXEEXT): $(connect_to_space_subset_OBJECTS) $(connect_to_space_subset_DEPENDENCIES) 
 	@rm -f connect_to_space_subset$(EXEEXT)
 	$(connect_to_space_subset_LINK) $(connect_to_space_subset_OBJECTS) $(connect_to_space_subset_LDADD) $(LIBS)
+hashtest$(EXEEXT): $(hashtest_OBJECTS) $(hashtest_DEPENDENCIES) 
+	@rm -f hashtest$(EXEEXT)
+	$(hashtest_LINK) $(hashtest_OBJECTS) $(hashtest_LDADD) $(LIBS)
 local_array_time$(EXEEXT): $(local_array_time_OBJECTS) $(local_array_time_DEPENDENCIES) 
 	@rm -f local_array_time$(EXEEXT)
 	$(local_array_time_LINK) $(local_array_time_OBJECTS) $(local_array_time_LDADD) $(LIBS)
@@ -640,6 +657,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_staged_read_2vars.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_staged_read_v2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/connect_to_space_subset.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hashtest-hashtest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/local_array_time.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/many_vars.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/path_test.Po@am__quote@
@@ -678,6 +696,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
+
+hashtest-hashtest.o: hashtest.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hashtest_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT hashtest-hashtest.o -MD -MP -MF $(DEPDIR)/hashtest-hashtest.Tpo -c -o hashtest-hashtest.o `test -f 'hashtest.c' || echo '$(srcdir)/'`hashtest.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/hashtest-hashtest.Tpo $(DEPDIR)/hashtest-hashtest.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='hashtest.c' object='hashtest-hashtest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hashtest_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o hashtest-hashtest.o `test -f 'hashtest.c' || echo '$(srcdir)/'`hashtest.c
+
+hashtest-hashtest.obj: hashtest.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hashtest_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT hashtest-hashtest.obj -MD -MP -MF $(DEPDIR)/hashtest-hashtest.Tpo -c -o hashtest-hashtest.obj `if test -f 'hashtest.c'; then $(CYGPATH_W) 'hashtest.c'; else $(CYGPATH_W) '$(srcdir)/hashtest.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/hashtest-hashtest.Tpo $(DEPDIR)/hashtest-hashtest.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='hashtest.c' object='hashtest-hashtest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hashtest_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o hashtest-hashtest.obj `if test -f 'hashtest.c'; then $(CYGPATH_W) 'hashtest.c'; else $(CYGPATH_W) '$(srcdir)/hashtest.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -994,6 +1026,7 @@ selections.o: selections.c
 path_test.o: path_test.c
 reuse_dim.o: reuse_dim.c
 connect_to_space_subset.o: connect_to_space_subset.c
+hashtest.o: hashtest.c
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

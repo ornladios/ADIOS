@@ -23,6 +23,8 @@ check_C=local_array_time \
         path_test \
         reuse_dim \
         connect_to_space_subset
+
+test_C=hashtest
 endif
 
 if BUILD_FORTRAN
@@ -32,11 +34,11 @@ check_Fortran=posix_method
 endif
 endif
 
-check_PROGRAMS=$(check_C) $(check_Fortran) $(check_readonly_C) $(check_readonly_Fortran)
+check_PROGRAMS=$(check_C) $(check_Fortran) $(check_readonly_C) $(check_readonly_Fortran) $(test_C)
 
 # Sequential tests to be executed by "make check" can be defined right here in TESTS
 # Parallel tests should be defined in ../tests/*.sh and executed by ../test.sh
-TESTS= 
+TESTS=$(test_C)
 
 INCLUDES = $(all_includes)
 INCLUDES += -I$(top_builddir)/src
@@ -121,6 +123,12 @@ connect_to_space_subset_SOURCES=connect_to_space_subset.c
 connect_to_space_subset_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 connect_to_space_subset_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 connect_to_space_subset.o: connect_to_space_subset.c
+
+hashtest_SOURCES=hashtest.c
+hashtest_LDADD = $(top_builddir)/src/libadios_a-qhashtbl.o
+hashtest_LDFLAGS = $(AM_LDFLAGS) 
+hashtest_CPPFLAGS = -I$(top_builddir)/src/core
+hashtest.o: hashtest.c
 
 EXTRA_DIST = adios_amr_write.xml adios_amr_write_2vars.xml \
              posix_method.xml local_array_time.xml  \
