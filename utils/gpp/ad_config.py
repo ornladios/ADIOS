@@ -65,7 +65,8 @@ class adiosGroup:
             if node.localName == 'var':
                 newvar = var (node, self, self.time_index)
                 self.vars.append (newvar)
-                self.vardict [newvar.get_name()] = newvar
+                #print 'Add to dict local var ['+newvar.get_fullpath()+']'
+                self.vardict [newvar.get_fullpath()] = newvar
                 self.vars_and_gwrites_and_attrs.append (newvar)
             #elif node.localName == 'attribute':
                 #handle attribute
@@ -78,7 +79,8 @@ class adiosGroup:
                     if gb_node.localName == 'var':
                         newvar = var (gb_node, self, self.time_index)
                         self.vars.append (newvar)
-                        self.vardict [newvar.get_name()] = newvar
+                        #print 'Add to dict global var ['+newvar.get_fullpath()+']'
+                        self.vardict [newvar.get_fullpath()] = newvar
                         self.vars_and_gwrites_and_attrs.append (newvar)
                     elif gb_node.localName == 'gwrite':
                         self.vars_and_gwrites_and_attrs.append (gwrite (node) )
@@ -99,9 +101,10 @@ class adiosGroup:
         return self.vars
 
     # Returns the variable from this group with the specified name, or None
-    def get_var (self, varname):
-        if self.vardict.has_key (varname):
-            return self.vardict [varname]
+    def get_var (self, varfullpath):
+        #print '          get_var('+varfullpath+')'
+        if self.vardict.has_key (varfullpath):
+            return self.vardict [varfullpath]
 
         return None
 
@@ -138,9 +141,24 @@ class var:
         self.time_index = time_index
         self.global_bounds_node = global_bounds_node
 
+    def get_path (self):
+        path = self.var_node.getAttribute ('path')
+        return path
+
     def get_name (self):
         name = self.var_node.getAttribute ('name')
         return name
+
+    def get_fullpath (self):
+        path = self.get_path()
+        name = self.get_name()
+        if (path == ''):
+            fullpath = name
+        elif (path == '/'):
+            fullpath = '/'+name
+        else:
+            fullpath = path + '/' + name
+        return fullpath
 
     def get_gwrite (self):
         gw = self.var_node.getAttribute ('gwrite')
@@ -166,8 +184,10 @@ class var:
             # place the dimensions in a list and remove the time-index if it is there.
             dims = filter (lambda x : x != self.time_index, self.var_node.getAttribute ('dimensions').split(',') )
             cleandims = []
+            #print '       get_dimensions of var '+self.get_fullpath()
             for d in dims:
 
+                #print '          dim "'+str(d)+'"'
                 if d.isdigit():
                     cleandims.append (d)
                     continue
@@ -176,7 +196,11 @@ class var:
                 # for that variable
                 dim_var = self.get_group().get_var (d)				
                 if dim_var != None:
+                    #print '            dim var found, get name...'
                     d = dim_var.get_gwrite()
+                #else:
+                    #print '            dim var NOT found'
+                    
 
                 cleandims.append (d)
             return cleandims
