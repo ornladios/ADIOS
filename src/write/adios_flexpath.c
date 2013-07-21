@@ -635,17 +635,17 @@ FlexpathFMStructure* set_format(struct adios_group_struct* t, struct adios_var_s
     currentFm->format = format;
     format->format_name = strdup(t->name);
 
-    if (t->var_count == 0) {
+    if (t->hashtbl_vars->size(t->hashtbl_vars) == 0) {
 	adios_error(err_invalid_group, "set_format: No Variables In Group\n");
 	fprintf(stderr, "set_format error1\n");
 	return NULL;
     }
 
-    FMFieldList field_list = malloc(sizeof(FMField) * (t->var_count + 1));
+    FMFieldList field_list = malloc(sizeof(FMField) * ((int)t->hashtbl_vars->size(t->hashtbl_vars) + 1));
     if (field_list == NULL) {
 	adios_error(err_invalid_group, 
-		    "set_format: Field List Memory Allocation Failed. t->var_count: %d\n", 
-		    t->var_count);
+		    "set_format: Field List Memory Allocation Failed. t->hashtbl_vars->size: %d\n", 
+		    t->hashtbl_vars->size(t->hashtbl_vars));
 	fprintf(stderr, "set_format error2\n");
 	return NULL;
     }
@@ -818,7 +818,7 @@ FlexpathFMStructure* set_format(struct adios_group_struct* t, struct adios_var_s
     }
 
     FlexpathDimNames *d = NULL;
-    field_list = (FMFieldList) realloc(field_list, sizeof(FMField) * (altvarcount + t->var_count + 1));
+    field_list = (FMFieldList) realloc(field_list, sizeof(FMField) * (altvarcount + (int)t->hashtbl_vars->size(t->hashtbl_vars) + 1));
 
     for (d = currentFm->dimList.lh_first; d != NULL; d = d->entries.le_next) {
 	FlexpathAltName *a = NULL;
@@ -830,7 +830,7 @@ FlexpathFMStructure* set_format(struct adios_group_struct* t, struct adios_var_s
 	}
     }
 
-    for (; fieldNo < (t->var_count + 1+altvarcount); fieldNo++) {
+    for (; fieldNo < (t->hashtbl_vars->size(t->hashtbl_vars) + 1+altvarcount); fieldNo++) {
 	field_list[fieldNo].field_type = NULL;
 	field_list[fieldNo].field_name = NULL;
 	field_list[fieldNo].field_offset = 0;
@@ -1312,7 +1312,7 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
 	
     //process group format
     struct adios_group_struct *t = method->group;
-    fprintf(stderr,"number of variables in group = %d\n", t->var_count);
+    fprintf(stderr,"number of variables in group = %d\n", t->hashtbl_vars->size(t->hashtbl_vars));
 
     if(t == NULL){
 	adios_error(err_invalid_group, "Invalid group.\n");
