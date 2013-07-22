@@ -591,7 +591,9 @@ static int op_msg_handler(CManager cm, void *vevent, void *client_data, attr_lis
     ADIOS_FILE *adiosfile = (ADIOS_FILE*)client_data;
     flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
     if(msg->type==ACK_MSG) {
-        CMCondition_signal(fp_read_data->fp_cm, msg->condition);
+	if(msg->condition != -1){
+	    CMCondition_signal(fp_read_data->fp_cm, msg->condition);
+	}
         //ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
     }
     if(msg->type == EOS_MSG){	
@@ -1045,7 +1047,8 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
             close.step = adiosfile->current_step;
             close.type = 0;
             close.process_id = fp->rank;
-	    close.condition = -1;
+	    //close.condition = -1;
+	    close.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
             close.file_name = "test";
 	    fp->bridges[i].opened = 0;
             EVsubmit(fp->bridges[i].op_source, &close, NULL);
@@ -1061,16 +1064,16 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
             CMCondition_wait(fp_read_data->fp_cm, open.condition);
         }
     }   
-    if(fp->writer_finalized == 1){
-    	if(adiosfile->current_step == adiosfile->last_step){
-    	    adios_errno = err_end_of_stream;
-    	    return 0;
-    	}
-    }
-    else if(adiosfile->current_step == adiosfile->last_step){
-    	adios_errno = err_step_notready;
-    	return 0;
-    }
+    /* if(fp->writer_finalized == 1){ */
+    /* 	if(adiosfile->current_step == adiosfile->last_step){ */
+    /* 	    adios_errno = err_end_of_stream; */
+    /* 	    return 0; */
+    /* 	} */
+    /* } */
+    /* else if(adiosfile->current_step == adiosfile->last_step){ */
+    /* 	adios_errno = err_step_notready; */
+    /* 	return 0; */
+    /* } */
     adiosfile->current_step++;
     // need to remove selectors from each var now.
     flexpath_var_info *tmpvars = fp->var_list;
