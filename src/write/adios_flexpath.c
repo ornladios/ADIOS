@@ -37,7 +37,7 @@
 
 // // evpath libraries
 #include <evpath.h>
-#include <gen_thread.h>
+//#include <gen_thread.h>
 
 // // local libraries
 // #include "config.h"
@@ -140,19 +140,21 @@ typedef struct _flexpath_write_file_data {
     int writerStep; // how many times has the writer called closed?
     int finalized; // have we finalized?
 
-    thr_mutex_t openMutex;
+    pthread_mutex_t openMutex;
     FlexpathFMStructure* fm;
     FlexpathVarNode* askedVars;
     FlexpathVarNode* writtenVars;
     FlexpathVarNode* formatVars;
     FlexpathQueueNode* controlQueue;
     FlexpathQueueNode* dataQueue;    
-    thr_mutex_t controlMutex;
-    thr_mutex_t dataMutex;
-    thr_mutex_t dataMutex2;
-    thr_condition_t controlCondition;
-    thr_condition_t dataCondition; //fill
-    thr_condition_t dataCondition2; //empty
+    pthread_mutex_t controlMutex;
+    pthread_mutex_t dataMutex;
+    pthread_mutex_t dataMutex2;
+    pthread_cond_t controlCondition;
+    pthread_cond_t dataCondition; //fill
+    pthread_cond_t dataCondition2; //empty
+
+    pthread_t ctrl_thr_id;    
 
     // global array distribution data
     int globalCount;
@@ -234,22 +236,22 @@ void step_free(void* eventData, void* clientData) {
 
 
 // message queue add to head
-void threaded_enqueue(FlexpathQueueNode** queue, void* item, FlexpathMessageType type, thr_mutex_t mutex, thr_condition_t condition) {
+void threaded_enqueue(FlexpathQueueNode** queue, void* item, FlexpathMessageType type, pthread_mutex_t *mutex, pthread_cond_t *condition) {
     fp_write_log("QUEUE", "enqueing a message\n");
-    thr_mutex_lock(mutex);
+    pthread_mutex_lock(mutex);
     fp_write_log("MUTEX","lock 2\n");
     FlexpathQueueNode* newNode = (FlexpathQueueNode*) malloc(sizeof(FlexpathQueueNode));
     newNode->data = item;
     newNode->type = type;
     newNode->next = *queue;
     *queue = newNode;
-    thr_condition_broadcast(condition);
+    pthread_cond_broadcast(condition);
     fp_write_log("MUTEX","unlock 2\n");
-    thr_mutex_unlock(mutex);
+    pthread_mutex_unlock(mutex);
 }
 
 // message queue count
-int queue_count(FlexpathQueueNode** queue, thr_mutex_t mutex) {
+int queue_count(FlexpathQueueNode** queue) {
     fp_write_log("QUEUE", "counting a queue\n");
     if(*queue==NULL) {
         return 0;
@@ -265,13 +267,17 @@ int queue_count(FlexpathQueueNode** queue, thr_mutex_t mutex) {
 }
 
 // remove from tail of a message queue
-FlexpathQueueNode* threaded_dequeue(FlexpathQueueNode** queue, thr_mutex_t mutex, thr_condition_t condition, thr_condition_t condition2, int signal_dequeue) {
+FlexpathQueueNode* threaded_dequeue(FlexpathQueueNode** queue, 
+				    pthread_mutex_t *mutex, 
+				    pthread_cond_t *condition, 
+				    pthread_cond_t *condition2, 
+				    int signal_dequeue) {
     fp_write_log("QUEUE", "dequeue\n");
-    thr_mutex_lock(mutex);
+    pthread_mutex_lock(mutex);
     fp_write_log("MUTEX","lock 4\n");
     while(*queue==NULL) {
         fp_write_log("QUEUE", "queue is null\n");
-        thr_condition_wait(condition, mutex);
+        pthread_cond_wait(condition, mutex);
     }
     FlexpathQueueNode* tail;
     FlexpathQueueNode* prev = NULL;
@@ -286,25 +292,25 @@ FlexpathQueueNode* threaded_dequeue(FlexpathQueueNode** queue, thr_mutex_t mutex
         *queue = NULL;
     }
     fp_write_log("MUTEX","unlock 4\n");
-    thr_mutex_unlock(mutex);
+    pthread_mutex_unlock(mutex);
     fp_write_log("QUEUE", "exiting dequeue queue:%p ret:%p\n", *queue, tail);
     if(signal_dequeue==1) {
-        thr_condition_broadcast(condition2);
+        pthread_cond_broadcast(condition2);
     }
     return tail;
 }
 
 // peek at tail of message queue
-FlexpathQueueNode* threaded_peek(FlexpathQueueNode** queue, thr_mutex_t mutex, thr_condition_t condition) {
-    int q = queue_count(queue, mutex);
+FlexpathQueueNode* threaded_peek(FlexpathQueueNode** queue, pthread_mutex_t *mutex, pthread_cond_t *condition) {
+    int q = queue_count(queue);
     fp_write_log("QUEUE", "peeking at a queue\n");
     fp_write_log("QUEUE", "queue count %d\n", q);
-    thr_mutex_lock(mutex);
+    pthread_mutex_lock(mutex);
     fp_write_log("QUEUE", "recieved lock\n");
     fp_write_log("MUTEX","lock 5\n");
     if(*queue==NULL) {
         fp_write_log("QUEUE", "null about to wait\n");
-        thr_condition_wait(condition, mutex);
+        pthread_cond_wait(condition, mutex);
         fp_write_log("QUEUE", "signaled with queue %p\n", *queue);
     }
     FlexpathQueueNode* tail;
@@ -313,7 +319,7 @@ FlexpathQueueNode* threaded_peek(FlexpathQueueNode** queue, thr_mutex_t mutex, t
         tail=tail->next;
     }
     fp_write_log("MUTEX","unlock 5\n");
-    thr_mutex_unlock(mutex);
+    pthread_mutex_unlock(mutex);
     fp_write_log("QUEUE", "returning %p\n", tail);
     return tail;
 }
@@ -519,7 +525,9 @@ char *multiqueue_action = "{\n\
                 EVsubmit(c->rank+1, msg);\n\
             }\n\
        }else if(c->type == 2){ \n\
+               printf(\"\\treceived flush msg\\n\"); \n\
              if(EVcount_evgroup()>0){\n\
+               printf(\"\\treceived flush msg for evgroup\\n\");\n\
                evgroup *g = EVdata_evgroup(0); \n\
                g->condition = c->condition;\n\
                EVsubmit(c->rank+1, g);\n\
@@ -887,7 +895,7 @@ static int var_handler(CManager cm, void *vevent, void *client_data, attr_list a
     EVtake_event_buffer(cm, msg);
     fp_write_log("MSG", "recieved var_msg : rank %d\n", msg->rank);
     threaded_enqueue(&fileData->controlQueue, msg, VAR, 
-        fileData->controlMutex, fileData->controlCondition);
+        &fileData->controlMutex, &fileData->controlCondition);
     return 0;
 }
 
@@ -898,7 +906,7 @@ static int flush_handler(CManager cm, void* vevent, void* client_data, attr_list
     EVtake_event_buffer(cm, msg);
     fp_write_log("MSG", "recieved flush : rank %d type data\n", msg->rank);
     threaded_enqueue(&fileData->controlQueue, msg, DATA_FLUSH, 
-        fileData->controlMutex, fileData->controlCondition);
+        &fileData->controlMutex, &fileData->controlCondition);
     return 0;
 }
 
@@ -911,13 +919,13 @@ static int op_handler(CManager cm, void* vevent, void* client_data, attr_list at
 		 msg->process_id, msg->type, msg->condition, msg->step);
     if(msg->type == OPEN_MSG) {
         threaded_enqueue(&fileData->controlQueue, msg, OPEN, 
-            fileData->controlMutex, fileData->controlCondition);
+            &fileData->controlMutex, &fileData->controlCondition);
     } else if(msg->type == CLOSE_MSG) {
         threaded_enqueue(&fileData->controlQueue, msg, CLOSE, 
-			 fileData->controlMutex, fileData->controlCondition);
+			 &fileData->controlMutex, &fileData->controlCondition);
     } else if(msg->type == INIT_MSG) {
 	threaded_enqueue(&fileData->controlQueue, msg, INIT,
-			 fileData->controlMutex, fileData->controlCondition);
+			 &fileData->controlMutex, &fileData->controlCondition);
 			
     }
     return 0;
@@ -981,7 +989,7 @@ int control_thread(void* arg) {
     while(1) {
         fp_write_log("CONTROL", "control message attempts dequeue\n");
 	if((controlMsg = threaded_dequeue(&fileData->controlQueue, 
-	    fileData->controlMutex, fileData->controlCondition, NULL, 0))) {
+	    &fileData->controlMutex, &fileData->controlCondition, NULL, 0))) {
             fp_write_log("CONTROL", "control message dequeued\n");
 	    if(controlMsg->type==VAR) {
 		Var_msg* varMsg = (Var_msg*) controlMsg->data;
@@ -991,10 +999,7 @@ int control_thread(void* arg) {
 	    } else if(controlMsg->type==DATA_FLUSH) {
                 fp_write_log("DATAMUTEX", "in use 1\n"); 
 		dataNode = threaded_peek(&fileData->dataQueue, 
-		    fileData->dataMutex, &fileData->dataCondition);
-                fp_write_log("DATAMUTEX", "no use 1\n"); 
-                thr_mutex_lock(fileData->dataMutex);
-                thr_mutex_unlock(fileData->dataMutex);
+		    &fileData->dataMutex, &fileData->dataCondition);
                 fp_write_log("DATAMUTEX", "no use 1\n"); 
 		Flush_msg* flushMsg = (Flush_msg*) controlMsg->data;
 		fp_write_log("QUEUE", "dataNode:%p, flushMsg:%p\n", dataNode, flushMsg);
@@ -1025,10 +1030,10 @@ int control_thread(void* arg) {
 		if(open->step < fileData->currentStep) {
 		    log_error("Flexpath method control_thread: Received Past Step Open\n");
                 } else if (open->step == fileData->currentStep){
-                    thr_mutex_lock(fileData->openMutex);
+                    pthread_mutex_lock(&fileData->openMutex);
                     fileData->openCount++;  
                     fileData->bridges[open->process_id].opened = 1;
-		    thr_mutex_unlock(fileData->openMutex);
+		    pthread_mutex_unlock(&fileData->openMutex);
                     op_msg* ack = malloc(sizeof(op_msg));
                     ack->file_name = strdup(fileData->name);
                     ack->process_id = fileData->rank;
@@ -1042,22 +1047,19 @@ int control_thread(void* arg) {
                 }
             } else if(controlMsg->type==CLOSE) {
                 op_msg* close = (op_msg*) controlMsg->data;
-		thr_mutex_lock(fileData->openMutex);
+		pthread_mutex_lock(&fileData->openMutex);
                 fp_write_log("MUTEX","lock 7\n");
 		fileData->openCount--;
                 fileData->bridges[close->process_id].opened=0;
                 fp_write_log("MUTEX","unlock 7\n");
-		thr_mutex_unlock(fileData->openMutex);
+		pthread_mutex_unlock(&fileData->openMutex);
                  if(fileData->openCount==0) {
                     fp_write_log("STEP", "advancing\n");
                     fp_write_log("DATAMUTEX", "in use 2\n"); 
 		    FlexpathQueueNode* node = threaded_dequeue(&fileData->dataQueue, 
-		        fileData->dataMutex, fileData->dataCondition, fileData->dataCondition2, 1);
+		        &fileData->dataMutex, &fileData->dataCondition, &fileData->dataCondition2, 1);
                     fp_write_log("DATAMUTEX", "no use 2\n"); 
-                    thr_mutex_lock(fileData->dataMutex);
-                    thr_mutex_unlock(fileData->dataMutex);
-                    fp_write_log("DATAMUTEX", "no use 2\n"); 
-                    int q = queue_count(&fileData->dataQueue, fileData->dataMutex);
+                    int q = queue_count(&fileData->dataQueue);
                     fp_write_log("QUEUE", "after step queue count now %d\n", q);
                     FMfree_var_rec_elements(fileData->fm->ioFormat, node->data);
                     fileData->currentStep++;
@@ -1089,7 +1091,7 @@ int control_thread(void* arg) {
 	    }else if(controlMsg->type == INIT){ 
 		fp_write_log("DATAMUTEX", "in use 1\n"); 
 		dataNode = threaded_peek(&fileData->dataQueue, 
-		    fileData->dataMutex, &fileData->dataCondition);
+		    &fileData->dataMutex, &fileData->dataCondition);
 		op_msg* initMsg = (op_msg*) controlMsg->data;
 		fileData->num_reader_coordinators++;
 		fileData->reader_coordinators = realloc(fileData->reader_coordinators,
@@ -1141,6 +1143,7 @@ void add_open_file(FlexpathWriteFileData* newFile) {
 FlexpathWriteFileData* find_open_file(char* name) {
     FlexpathWriteFileData* file = flexpathWriteData.openFiles;
     while(file && strcmp(file->name, name)) {
+	fprintf(stderr, "file->name: %s, name: %s\n", file->name, name);
         file = file->next;
     }
     return file;
@@ -1173,7 +1176,7 @@ extern void adios_flexpath_init(const PairStruct *params, struct adios_method_st
     }
     
     // configuration setup
-    gen_pthread_init();
+    //gen_pthread_init();
     setenv("CMSelfFormats", "1", 1);
     
     // fork communications thread
@@ -1187,6 +1190,7 @@ extern void adios_flexpath_init(const PairStruct *params, struct adios_method_st
 extern int 
 adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *method, MPI_Comm comm) 
 {    
+    fprintf(stderr, "\t\tWRITER OPENING!!\n");
     if( fd == NULL || method == NULL) {
         perr("open: Bad input parameters\n");
         return -1;
@@ -1201,6 +1205,7 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
     FlexpathWriteFileData *fileData = malloc(sizeof(FlexpathWriteFileData));
     mem_check(fileData, "fileData");
     memset(fileData, 0, sizeof(FlexpathWriteFileData));
+    
     fileData->maxQueueSize=0;
     if(method->parameters) {
         sscanf(method->parameters,"QUEUE_SIZE=%d;",&fileData->maxQueueSize);
@@ -1212,15 +1217,23 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
     //fileData->currentStep = 0;
 
     // setup mutexs
-    fileData->controlMutex = thr_mutex_alloc();
-    fileData->dataMutex = thr_mutex_alloc();
-    fileData->dataMutex2 = thr_mutex_alloc();
-    fileData->openMutex = thr_mutex_alloc();
+    pthread_mutex_t ctrlm = PTHREAD_MUTEX_INITIALIZER;
+    pthread_mutex_t dm =  PTHREAD_MUTEX_INITIALIZER;
+    pthread_mutex_t dm2 =  PTHREAD_MUTEX_INITIALIZER;
+    pthread_mutex_t om =  PTHREAD_MUTEX_INITIALIZER;
+    pthread_cond_t cc =  PTHREAD_COND_INITIALIZER;
+    pthread_cond_t dc =  PTHREAD_COND_INITIALIZER;
+    pthread_cond_t dc2 =  PTHREAD_COND_INITIALIZER;
+    
+    fileData->controlMutex = ctrlm;
+    fileData->dataMutex = dm;
+    fileData->dataMutex2 = dm2;
+    fileData->openMutex = om;
     
     // setup conditions
-    fileData->controlCondition = thr_condition_alloc();
-    fileData->dataCondition = thr_condition_alloc();
-    fileData->dataCondition2 = thr_condition_alloc();
+    fileData->controlCondition = cc;
+    fileData->dataCondition = dc;
+    fileData->dataCondition2 = dc2;
 
     // communication channel setup
     char writer_info_filename[200];
@@ -1407,10 +1420,12 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
     }
         
     fp_write_log("SETUP", "fork control thread\n");
-    thr_thread_t forked_thread = thr_fork(control_thread, fileData);
-    if(!forked_thread) {
-        perr("on open ERROR forking control thread");
-    }
+    
+    pthread_create(fileData->ctrl_thr_id, NULL, control_thread, fileData);
+    //thr_thread_t forked_thread = thr_fork(control_thread, fileData);
+    /* if(!forked_thread) { */
+    /*     perr("on open ERROR forking control thread"); */
+    /* } */
    
     return 0;	
 }
@@ -1534,11 +1549,9 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 
     fp_write_log("DATAMUTEX", "in use 3\n"); 
     threaded_enqueue(&fileData->dataQueue, buffer, 
-        DATA_BUFFER, fileData->dataMutex, fileData->dataCondition);
-    fp_write_log("DATAMUTEX", "no use 3\n"); 
-    thr_mutex_lock(fileData->dataMutex);
-    thr_mutex_unlock(fileData->dataMutex);
-    fp_write_log("DATAMUTEX", "no use 3\n"); 
+		     DATA_BUFFER,
+		     &fileData->dataMutex, 
+		     &fileData->dataCondition);
     
     int c = 0;
  
@@ -1607,9 +1620,9 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
     }
     send_update_step_msgs(fileData, fileData->writerStep);
     fileData->writerStep++;
-    while((c=queue_count(&fileData->dataQueue, fileData->dataMutex))>fileData->maxQueueSize) {
+    while((c=queue_count(&fileData->dataQueue))>fileData->maxQueueSize) {
         fp_write_log("QUEUE", "waiting for queue to be below max size\n");
-        thr_condition_wait(fileData->dataCondition2, fileData->dataMutex2);
+        pthread_cond_wait(&fileData->dataCondition2, &fileData->dataMutex2);
         fp_write_log("QUEUE", "wakeup on queue size\n");
     }
     fp_write_log("FILE", "file close %s exiting\n", method->group->name);
@@ -1623,14 +1636,14 @@ extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method
     fp_write_log("FILE", "Entered finalize\n");
     while(fileData) {
         //fp_write_log("DATAMUTEX", "in use 4\n"); 
-        //thr_mutex_lock(fileData->dataMutex2);
+        //pthread_mutex_lock(fileData->dataMutex2);
         //fp_write_log("MUTEX","lock 1\n");
         while(fileData->dataQueue!=NULL) {
             fp_write_log("FILE", "waiting on %s to empty data\n", fileData->name);
-	    thr_condition_wait(fileData->dataCondition2, fileData->dataMutex2);
+	    pthread_cond_wait(&fileData->dataCondition2, &fileData->dataMutex2);
 	}
 	//fp_write_log("MUTEX","unlock 1\n");
-	//thr_mutex_unlock(fileData->dataMutex2);
+	//pthread_mutex_unlock(fileData->dataMutex2);
 	//fp_write_log("DATAMUTEX", "no use 4\n"); 
 	fileData->finalized = 1;
 	send_update_step_msgs(fileData, fileData->writerStep);
