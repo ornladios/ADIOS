@@ -981,7 +981,8 @@ send_update_step_msgs(FlexpathWriteFileData *fileData, int step)
 }
 
 // processes messages from control queue
-int control_thread(void* arg) {
+void control_thread(void* arg) 
+{
     FlexpathWriteFileData* fileData = (FlexpathWriteFileData*)arg;
     int rank = fileData->rank;
     FlexpathQueueNode* controlMsg;
@@ -1123,7 +1124,7 @@ int control_thread(void* arg) {
 	    }
 	}
     }
-    return 0;
+    return;
 }
 
 // adds an open file handle to global open file list
