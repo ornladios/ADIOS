@@ -497,7 +497,6 @@ char *multiqueue_action = "{\n\
         mine = EVget_attrs_update_step_msg(0);\n\
         found = attr_ivalue(mine, \"fp_dst_rank\");\n\
         if(found > 0) {\n\
-            printf(\"mq found: \%d\\n\", found);\n\
             EVdiscard_and_submit_update_step_msg(found, 0);\n\
         }\n\
     }\n\
