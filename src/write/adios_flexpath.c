@@ -1421,7 +1421,7 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
         
     fp_write_log("SETUP", "fork control thread\n");
     
-    pthread_create(fileData->ctrl_thr_id, NULL, control_thread, fileData);
+    pthread_create(&fileData->ctrl_thr_id, NULL, control_thread, fileData);
     //thr_thread_t forked_thread = thr_fork(control_thread, fileData);
     /* if(!forked_thread) { */
     /*     perr("on open ERROR forking control thread"); */
