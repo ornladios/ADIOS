@@ -1618,7 +1618,7 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 	
 	fileData->sentGlobalOffsets = 1;
     }
-    send_update_step_msgs(fileData, fileData->writerStep);
+    //send_update_step_msgs(fileData, fileData->writerStep);
     fileData->writerStep++;
     while((c=queue_count(&fileData->dataQueue))>fileData->maxQueueSize) {
         fp_write_log("QUEUE", "waiting for queue to be below max size\n");
@@ -1646,7 +1646,7 @@ extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method
 	//pthread_mutex_unlock(fileData->dataMutex2);
 	//fp_write_log("DATAMUTEX", "no use 4\n"); 
 	fileData->finalized = 1;
-	send_update_step_msgs(fileData, fileData->writerStep);
+	//send_update_step_msgs(fileData, fileData->writerStep);
 	fileData = fileData->next;
 	    
     }
