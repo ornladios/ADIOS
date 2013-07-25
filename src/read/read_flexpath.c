@@ -43,7 +43,7 @@
 #endif
 
 /*
- * Contains start & counts for each dimension for each writer.
+ * Contains start & counts for each dimension for a writer_rank.
  */
 typedef struct _array_displ
 {
@@ -160,29 +160,29 @@ flexpath_read_data* fp_read_data = NULL;
 /********** Helper functions. **********/
 void build_bridge(bridge_info* bridge) {
     attr_list contact_list = attr_list_from_string(bridge->contact);
+    if(bridge->created == 0){
+	bridge->bridge_stone =
+	    EVcreate_bridge_action(fp_read_data->fp_cm,
+				   contact_list,
+				   (EVstone)bridge->their_num);
 
-    bridge->bridge_stone =
-        EVcreate_bridge_action(fp_read_data->fp_cm,
-            contact_list,
-            (EVstone)bridge->their_num);
+	bridge->flush_source =
+	    EVcreate_submit_handle(fp_read_data->fp_cm,
+				   bridge->bridge_stone,
+				   flush_format_list);
 
-    bridge->flush_source =
-        EVcreate_submit_handle(fp_read_data->fp_cm,
-            bridge->bridge_stone,
-            flush_format_list);
+	bridge->var_source =
+	    EVcreate_submit_handle(fp_read_data->fp_cm,
+				   bridge->bridge_stone,
+				   var_format_list);
 
-    bridge->var_source =
-	EVcreate_submit_handle(fp_read_data->fp_cm,
-	    bridge->bridge_stone,
-	    var_format_list);
+	bridge->op_source =
+	    EVcreate_submit_handle(fp_read_data->fp_cm,
+				   bridge->bridge_stone,
+				   op_format_list);
 
-    bridge->op_source =
-	EVcreate_submit_handle(fp_read_data->fp_cm,
-	    bridge->bridge_stone,
-	    op_format_list);
-
-    bridge->created = 1;
-
+	bridge->created = 1;
+    }
 }
 
 void send_var_message(flexpath_file_data *fp, int destination, char *varname)
@@ -494,17 +494,25 @@ get_writer_displacements(
     for(i=0; i<ndims; i++){	
 	if(sel->u.bb.start[i] >= offsets[pos+i]){
 	    int start = sel->u.bb.start[i] - offsets[pos+i];
+	    /* fprintf(stderr,  */
+	    /* 	    "sel->u.bb.start[%d]: %d >= offsets[%d]: %d :: disp->start[%d]: %d\n",  */
+	    /* 	    i, sel->u.bb.start[i], i, offsets[pos+i], i, start); */
 	    displ->start[i] = start;
 	}
 	if((sel->u.bb.start[i] + sel->u.bb.count[i] - 1) <= 
-	   (offsets[pos+i] + local_dims[pos+i] - 1)){	   
+	   (offsets[pos+i] + local_dims[pos+i] - 1)){
 	    int count = ((sel->u.bb.start[i] + sel->u.bb.count[i] - 1) - 
 			 offsets[pos+i]) - displ->start[i] + 1;
+	    /* fprintf(stderr, */
+	    /* 	    "(sel->u.bb.start[%d]: %d + sel->u.bb.count[%d] - 1: %d) <= (offsets[%d]: %d + local_dims[%d] - 1: %d)::disp->count[%d]: %d\n", */
+	    /* 	    i, sel->u.bb.start[i], i, sel->u.bb.count[i]-1, i, offsets[pos+i], pos+i, local_dims[pos+i] - 1, i, count); */
 	    displ->count[i] = count;
 
 	    
 	}else{
 	    int count = (local_dims[pos+i] - 1) - displ->start[i] + 1;
+	    /* fprintf(stderr, "else: local_dims[%d]-1: %d - displ->start[%d]+1: %d :: count: %d\n", */
+	    /* 	    pos+i, local_dims[pos+i]-1, i, displ->start[i]+1, count); */
 	    displ->count[i] = count;
 	}	
     }
@@ -591,7 +599,9 @@ static int op_msg_handler(CManager cm, void *vevent, void *client_data, attr_lis
     ADIOS_FILE *adiosfile = (ADIOS_FILE*)client_data;
     flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
     if(msg->type==ACK_MSG) {
-        CMCondition_signal(fp_read_data->fp_cm, msg->condition);
+	if(msg->condition != -1){
+	    CMCondition_signal(fp_read_data->fp_cm, msg->condition);
+	}
         //ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
     }
     if(msg->type == EOS_MSG){	
@@ -977,9 +987,20 @@ adios_read_flexpath_open(const char * fname,
     /* Init with a writer to get initial scalar
        data so we can handle inq_var calls and
        also populate the ADIOS_FILE struct. */
-    int writer_rank = fp->rank % num_bridges;
-    build_bridge(&fp->bridges[writer_rank]);
-    fp->writer_coordinator = writer_rank;
+    if(fp->size < num_bridges){
+    	int mystart = (num_bridges/fp->size) * fp->rank;
+    	int myend = (num_bridges/fp->size) * (fp->rank+1);
+    	fp->writer_coordinator = mystart;
+    	int z;
+    	for(z=mystart; z<myend; z++){
+    	    build_bridge(&fp->bridges[z]);
+    	}
+    }
+    else{
+	int writer_rank = fp->rank % num_bridges;
+	build_bridge(&fp->bridges[writer_rank]);
+	fp->writer_coordinator = writer_rank;
+    }
 
     op_msg init;
     init.step = 0;
@@ -987,7 +1008,7 @@ adios_read_flexpath_open(const char * fname,
     init.process_id = fp->rank;
     init.file_name = "test";
     init.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
-    EVsubmit(fp->bridges[writer_rank].op_source, &init, NULL);
+    EVsubmit(fp->bridges[fp->writer_coordinator].op_source, &init, NULL);
     CMCondition_wait(fp_read_data->fp_cm, init.condition); 
 
     // this has to change. Writer needs to have some way of
@@ -1045,7 +1066,8 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
             close.step = adiosfile->current_step;
             close.type = 0;
             close.process_id = fp->rank;
-	    close.condition = -1;
+	    //close.condition = -1;
+	    close.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
             close.file_name = "test";
 	    fp->bridges[i].opened = 0;
             EVsubmit(fp->bridges[i].op_source, &close, NULL);
@@ -1061,16 +1083,16 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
             CMCondition_wait(fp_read_data->fp_cm, open.condition);
         }
     }   
-    if(fp->writer_finalized == 1){
-    	if(adiosfile->current_step == adiosfile->last_step){
-    	    adios_errno = err_end_of_stream;
-    	    return 0;
-    	}
-    }
-    else if(adiosfile->current_step == adiosfile->last_step){
-    	adios_errno = err_step_notready;
-    	return 0;
-    }
+    /* if(fp->writer_finalized == 1){ */
+    /* 	if(adiosfile->current_step == adiosfile->last_step){ */
+    /* 	    adios_errno = err_end_of_stream; */
+    /* 	    return 0; */
+    /* 	} */
+    /* } */
+    /* else if(adiosfile->current_step == adiosfile->last_step){ */
+    /* 	adios_errno = err_step_notready; */
+    /* 	return 0; */
+    /* } */
     adiosfile->current_step++;
     // need to remove selectors from each var now.
     flexpath_var_info *tmpvars = fp->var_list;
