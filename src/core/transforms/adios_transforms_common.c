@@ -219,33 +219,7 @@ uint64_t adios_transform_var_get_transformed_size(const struct adios_index_var_s
 // Transform characteristic management functions
 //////////////////////////////////////////////////
 
-// Utility functions
-
-// TODO: These are defined local bp_utils.c. Maybe should put them in a header?
-#define BUFREAD8(b,var)  var = (uint8_t) *(b->buff + b->offset); \
-                         b->offset += 1;
-
-#define BUFREAD16(b,var) var = *(uint16_t *) (b->buff + b->offset); \
-                         if (b->change_endianness == adios_flag_yes) \
-                             swap_16(var); \
-                         b->offset += 2;
-
-#define BUFREAD32(b,var) var = *(uint32_t *) (b->buff + b->offset); \
-                         if (b->change_endianness == adios_flag_yes) \
-                             swap_32(var); \
-                         b->offset += 4;
-
-#define BUFREAD64(b,var) var = *(uint64_t *) (b->buff + b->offset); \
-                         if (b->change_endianness == adios_flag_yes) \
-                             swap_64(var); \
-                         b->offset += 8;
-
-#define BUFREAD(b,dst,len) memcpy((dst), (b->buff + b->offset), (len)); \
-                           b->offset += (len);
-
-
-// Actual functions
-
+// Init
 int adios_transform_init_transform_characteristic(struct adios_index_characteristic_transform_struct *transform) {
     transform->transform_type = adios_transform_none;
     transform->pre_transform_dimensions.count = 0;
@@ -254,57 +228,6 @@ int adios_transform_init_transform_characteristic(struct adios_index_characteris
     transform->transform_metadata_len = 0;
     transform->transform_metadata = 0;
     return 1;
-}
-
-int adios_transform_init_transform_var(struct adios_var_struct *var) {
-    var->transform_type = adios_transform_none;
-    var->transform_spec = 0;
-    var->pre_transform_dimensions = 0;
-    var->pre_transform_type = adios_unknown;
-    //var->transform_type_param_len = 0;
-    //var->transform_type_param = 0;
-    var->transform_metadata_len = 0;
-    var->transform_metadata = 0;
-    return 1;
-}
-
-int adios_transform_deserialize_transform_characteristic(struct adios_index_characteristic_transform_struct *transform, struct adios_bp_buffer_struct_v1 *b) {
-    // The adios_characterstic_transform flag has already been read
-
-    uint8_t i;
-    uint16_t len, meta_len;
-
-    BUFREAD8(b, transform->transform_type);
-    assert(transform->transform_type >= adios_transform_none &&
-           transform->transform_type < num_adios_transform_types);
-
-    BUFREAD8(b, transform->pre_transform_type);
-    BUFREAD8(b, transform->pre_transform_dimensions.count);
-
-    BUFREAD16(b, len);
-    transform->pre_transform_dimensions.dims = (uint64_t*)malloc(len);
-
-    // Make sure length and count match up
-    assert(len == 3 * 8 * transform->pre_transform_dimensions.count);
-
-    // Read each set of 3 dimension components (dim, global dim, local offset)
-    for (i = 0; i < 3 * transform->pre_transform_dimensions.count; i++) {
-        BUFREAD64(b, transform->pre_transform_dimensions.dims[i]);
-    }
-
-    BUFREAD16(b, meta_len);
-
-    if (meta_len) {
-        transform->transform_metadata_len = meta_len;
-        transform->transform_metadata = malloc(meta_len);
-        assert(transform->transform_metadata);
-
-        BUFREAD(b, transform->transform_metadata, meta_len);
-    } else {
-        transform->transform_metadata = 0;
-    }
-
-    return 1; // Return success
 }
 
 int adios_transform_clear_transform_characteristic(struct adios_index_characteristic_transform_struct *transform) {
@@ -320,30 +243,6 @@ int adios_transform_clear_transform_characteristic(struct adios_index_characteri
     if (transform->transform_metadata)
         free(transform->transform_metadata);
     transform->transform_metadata = 0;
-
-    return 1; // Return success
-}
-
-int adios_transform_clear_transform_var(struct adios_var_struct *var) {
-    var->transform_type = adios_transform_none;
-    if (var->transform_spec)
-        adios_transform_free_spec(&var->transform_spec); // Also clears to 0
-
-    var->pre_transform_type = 0;
-
-    // Frees and zeros-out pre_transform_dimensions (since last ->next is 0)
-    while (var->pre_transform_dimensions)
-    {
-        struct adios_dimension_struct * dimensions = var->pre_transform_dimensions->next;
-        free(var->pre_transform_dimensions);
-        var->pre_transform_dimensions = dimensions;
-    }
-
-    // Free/clear transform-specific metadata
-    var->transform_metadata_len = 0;
-    if (var->transform_metadata)
-        free(var->transform_metadata);
-    var->transform_metadata = 0;
 
     return 1; // Return success
 }

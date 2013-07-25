@@ -46,14 +46,9 @@ uint64_t adios_transform_var_get_transformed_size(const struct adios_index_var_s
 
 // Init
 int adios_transform_init_transform_characteristic(struct adios_index_characteristic_transform_struct *transform);
-int adios_transform_init_transform_var(struct adios_var_struct *var);
-
-// Deserialize
-int adios_transform_deserialize_transform_characteristic(struct adios_index_characteristic_transform_struct *transform, struct adios_bp_buffer_struct_v1 *b);
 
 // Clear (i.e. free/wipe)
 int adios_transform_clear_transform_characteristic(struct adios_index_characteristic_transform_struct *transform);
-int adios_transform_clear_transform_var(struct adios_var_struct *var);
 
 // Swap
 int adios_transform_swap_transform_characteristics(struct adios_index_characteristic_transform_struct *c1, struct adios_index_characteristic_transform_struct *c2);

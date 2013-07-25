@@ -372,6 +372,20 @@ static void buffer_write (char ** buffer, uint64_t * buffer_size
     *buffer_offset += size;
 }
 
+// Init
+int adios_transform_init_transform_var(struct adios_var_struct *var) {
+    var->transform_type = adios_transform_none;
+    var->transform_spec = 0;
+    var->pre_transform_dimensions = 0;
+    var->pre_transform_type = adios_unknown;
+    //var->transform_type_param_len = 0;
+    //var->transform_type_param = 0;
+    var->transform_metadata_len = 0;
+    var->transform_metadata = 0;
+    return 1;
+}
+
+// Serialize
 static void adios_transform_dereference_dimensions_characteristic(struct adios_file_struct *fd, struct adios_index_characteristic_dims_struct_v1 *dst_char_dims, const struct adios_dimension_struct *src_var_dims) {
     uint8_t i;
     uint8_t c = count_dimensions(src_var_dims);
@@ -512,6 +526,32 @@ uint8_t adios_transform_serialize_transform_var(struct adios_file_struct *fd, co
     return char_write_count;
 }
 
+// Clear
+int adios_transform_clear_transform_var(struct adios_var_struct *var) {
+    var->transform_type = adios_transform_none;
+    if (var->transform_spec)
+        adios_transform_free_spec(&var->transform_spec); // Also clears to 0
+
+    var->pre_transform_type = 0;
+
+    // Frees and zeros-out pre_transform_dimensions (since last ->next is 0)
+    while (var->pre_transform_dimensions)
+    {
+        struct adios_dimension_struct * dimensions = var->pre_transform_dimensions->next;
+        free(var->pre_transform_dimensions);
+        var->pre_transform_dimensions = dimensions;
+    }
+
+    // Free/clear transform-specific metadata
+    var->transform_metadata_len = 0;
+    if (var->transform_metadata)
+        free(var->transform_metadata);
+    var->transform_metadata = 0;
+
+    return 1; // Return success
+}
+
+// Copy
 int adios_transform_copy_transform_characteristic(struct adios_file_struct *fd, struct adios_index_characteristic_transform_struct *dst_transform, const struct adios_var_struct *src_var) {
     adios_transform_init_transform_characteristic(dst_transform);
 
@@ -553,6 +593,7 @@ int adios_transform_copy_var_transform(struct adios_file_struct *fd, struct adio
     return 1;
 }
 
+// Calculate overhead
 uint64_t adios_transform_calc_transform_characteristic_overhead(struct adios_var_struct *var) {
     if (var->transform_type == adios_transform_none) {
         return 0; // No overhead needed, since characteristic won't be written
