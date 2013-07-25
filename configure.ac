@@ -5,7 +5,7 @@ AC_CONFIG_MACRO_DIR(config)
 AC_REVISION($Revision$)
 
 AC_CONFIG_HEADERS(config.h)
-AM_INIT_AUTOMAKE(adios,1.5.0)
+AM_INIT_AUTOMAKE(adios,1.5.1)
 
 AM_MAINTAINER_MODE([enable])
 
@@ -18,10 +18,10 @@ AM_PROG_CC_C_O
 AC_PROG_CXX
 
 AC_LANG(C)
-ACX_MPI([], [AC_MSG_ERROR([couldn't find mpi library for C])])
+ACX_MPI([], [AC_MSG_ERROR([could not find mpi library for C])])
 
 AC_LANG(C++)
-ACX_MPI([], [AC_MSG_ERROR([couldn't find mpi library for C++])])
+ACX_MPI([], [AC_MSG_ERROR([could not find mpi library for C++])])
 
 AC_ARG_ENABLE(fortran,
     [AS_HELP_STRING([--disable-fortran],[disable Fortran test programs in ADIOS.])])
@@ -35,7 +35,7 @@ if test "x$enable_fortran" != "xno"; then
     dnl AC_PROG_F77
     dnl AC_PROG_F77_C_O
     AC_LANG(Fortran)
-    ACX_MPI([], [AC_MSG_ERROR([couldn't find mpi library for Fortran])])
+    ACX_MPI([], [AC_MSG_ERROR([could not find mpi library for Fortran])])
 fi
 
 AC_LANG(C)
@@ -59,7 +59,18 @@ dnl g/^hardcode_libdir_flag_spec_ld=".*"/s//hardcode_libdir_flag_spec_ld=""/
 
 AC_SEARCH_LIBS([nanosleep], [rt])
 AC_CHECK_FUNCS([nanosleep strncpy strerror gettimeofday])
-AC_PROG_MXML
+
+AC_ARG_ENABLE(write,
+    [AS_HELP_STRING([--disable-write],[disable building the write methods in ADIOS.])])
+AM_CONDITIONAL([BUILD_WRITE], [test "x$enable_write" != "xno"])
+
+AC_MXML
+dnl MXML is required for Write API, turn off Write if MXML is not present
+if test -z "${HAVE_MXML_FALSE}" -a -z "${BUILD_WRITE_TRUE}"; then
+    AC_MSG_ERROR([The ADIOS libraries for writing cannot be built without the MXML library. Either specify where the MXML library is found, or use --disable-write to build ADIOS for reading only.])
+    dnl AM_CONDITIONAL([BUILD_WRITE], false)
+fi
+
 dnl AC_PROG_GENGETOPT
 AC_DCMF
 AC_INFINIBAND
@@ -111,9 +122,6 @@ AC_LANG(C)
 
 AM_CONDITIONAL([HAVE_DATATAP], [test x$datatap != xdisable])
 
-AC_ARG_ENABLE(write,
-    [AS_HELP_STRING([--disable-write],[disable building the write methods in ADIOS.])])
-AM_CONDITIONAL([BUILD_WRITE], [test "x$enable_write" != "xno"])
 
 dnl CC="$MPICC"
 dnl CXX="$MPICXX"
@@ -458,12 +466,12 @@ AC_DEFINE_UNQUOTED(VERSION_MICRO, ${VERSION_MICRO}, [Micro version number])
 # Get the version of the source we are configuring here
 # Just to print it out at the end of configure
 # see also Makefile.am:install-data-hook
-if type svnversion &>/dev/null; then
-    SVNVERSION=`svnversion`
-else
-    SVNVERSION="unknown"
-fi
-AC_DEFINE_UNQUOTED(VERSION_SVNREV, "${SVNVERSION}", [svn revision number])
+#if type svnversion &>/dev/null; then
+#    SVNVERSION=`svnversion`
+#else
+#    SVNVERSION="unknown"
+#fi
+#AC_DEFINE_UNQUOTED(VERSION_SVNREV, "${SVNVERSION}", [svn revision number])
 
 
 
@@ -519,6 +527,17 @@ echo
 echo "*********************************"
 echo $PACKAGE configured as follows:
 echo "*********************************"
+echo
+if test -z "${BUILD_WRITE_TRUE}"; then
+    echo "  - Build both the Write and Read libraries";
+else
+    echo "  - Build only the Read libraries";
+fi
+if test -z "${BUILD_FORTRAN_TRUE}"; then
+    echo "  - Build both the C and Fortran libraries";
+else
+    echo "  - Build only the C libraries (no Fortran)";
+fi
 echo
 echo "  - General Compile FLAGS";
 echo "      - CC  = $CC";
@@ -727,5 +746,5 @@ else
     echo "  - No FLEXPATH to build FLEXPATH transport method"
 fi
 
-echo "  - SVN version = ${SVNVERSION}"
+#echo "  - SVN version = ${SVNVERSION}"
 echo "  - Install path = ${prefix}"
