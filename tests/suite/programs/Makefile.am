@@ -36,7 +36,7 @@ check_PROGRAMS=$(check_C) $(check_Fortran) $(check_readonly_C) $(check_readonly_
 
 # Sequential tests to be executed by "make check" can be defined right here in TESTS
 # Parallel tests should be defined in ../tests/*.sh and executed by ../test.sh
-TESTS= transforms copy_subvolume
+TESTS = transforms copy_subvolume transforms_specparse
 
 INCLUDES = $(all_includes)
 INCLUDES += -I$(top_builddir)/src
@@ -117,6 +117,11 @@ copy_subvolume_SOURCES=copy_subvolume.c
 copy_subvolume_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 copy_subvolume_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 copy_subvolume.o: copy_subvolume.c
+
+transforms_specparse_SOURCES=transforms_specparse.c
+transforms_specparse_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+transforms_specparse_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+transforms_specparse.o: transforms_specparse.c
 
 connect_to_space_subset_SOURCES=connect_to_space_subset.c
 connect_to_space_subset_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
