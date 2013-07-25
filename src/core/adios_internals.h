@@ -68,6 +68,7 @@ struct adios_var_struct
 
     // NCSU ALACRITY-ADIOS - Adding transform-related fields
     uint8_t transform_type;
+    char *transform_type_param; // TODO: REMOVE ONCE SPECPARSE IS TESTED AND INTEGRATED
     struct adios_transform_spec *transform_spec;
 
     enum ADIOS_DATATYPES pre_transform_type;
