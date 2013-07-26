@@ -15,10 +15,11 @@
 
 void test1() {
     struct adios_transform_spec *origspec = adios_transform_parse_spec("identity:a=123,b,c=321,,,f=12321");
+    struct adios_transform_spec *origspecToClear = origspec;
 
     struct adios_transform_spec *spec = adios_transform_spec_copy(origspec);
     adios_transform_free_spec(&origspec);
-    memset(origspec, 0, sizeof(*origspec));
+    memset(origspecToClear, 0, sizeof(*origspecToClear));
 
     assert(spec->transform_type == adios_transform_identity);
     assert(strcmp(spec->transform_type_str, "identity") == 0);
