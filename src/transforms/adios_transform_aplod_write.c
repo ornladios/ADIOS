@@ -40,6 +40,7 @@ int adios_transform_aplod_apply(struct adios_file_struct *fd,
 
     // printf ("[%s] byte = %d, real = %d, double = %d, this = %d\n", var->name, adios_byte, adios_real, adios_double, var->pre_transform_type);
     // parse the aplod component vector parameters
+    /* Old, pre-specparse parameter parsing
     if(var->transform_type_param)
     {
         char transform_param [1024];
@@ -75,8 +76,30 @@ int adios_transform_aplod_apply(struct adios_file_struct *fd,
             }
         }
     }
+    */
+    int i;
+    for (i = 0; i < var->transform_spec->param_count; i++) {
+        struct adios_transform_spec_kv_pair * const param = &var->transform_spec->params[i];
+        if (strcmp(param->key, "CV") == 0) {
+            char *comp = strtok(param->value, ":");
+            int componentID = 0;
+
+            while (comp) {
+                int compInt = atoi(comp);
+                if (compInt <= 0) {
+                    numComponents = 0;
+                    break;
+                }
+
+                componentVector[componentID++] = compInt;
+                componentTotals += compInt;
+            }
+        }
+    }
 
     if ((numComponents == 0) || (componentTotals != bp_get_type_size (var->pre_transform_type, ""))) {
+        fprintf(stderr, "Warning: at least one APLOD byte component is a non-positive integer, or all components do not sum to the type size (%d) for variable %s/%s\n",
+                bp_get_type_size (var->pre_transform_type, ""), var->path, var->name);
         if (var->pre_transform_type == adios_double) {
             componentVector [0] = 2;
             componentVector [1] = 2;

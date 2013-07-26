@@ -51,6 +51,7 @@ int adios_transform_alacrity_apply(struct adios_file_struct *fd,
     // Longest parameter-parsing code ever.
     // parse the parameter relating to sigbits, with index compression
     // Read all ALACRITY parameters here
+    /*// Old, pre-specparse parameter parsing
     if(var->transform_type_param) {
         char transform_param [1024];
         char *transform_param_ptr       = 0;
@@ -102,6 +103,19 @@ int adios_transform_alacrity_apply(struct adios_file_struct *fd,
             } else {
                 printf ("Option %s not found. \n", key);
             }
+        }
+    }
+    */
+    int i;
+    for (i = 0; i < var->transform_spec->param_count; i++) {
+        const struct adios_transform_spec_kv_pair * const param = &var->transform_spec->params[i];
+        if (strcmp(param->key, "indexForm") == 0) {
+            if (strcmp(param->value, "ALCompressedInvertedIndex") == 0)
+                config.indexForm = ALCompressedInvertedIndex;
+            else if (strcmp (param->value, "ALInvertedIndex") == 0)
+                config.indexForm = ALInvertedIndex;
+        } else if (strcmp(param->key, "sigBits") == 0) {
+            config.significantBits = atoi(param->value);
         }
     }
 
