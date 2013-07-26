@@ -25,6 +25,6 @@ typedef struct {
     int orig_global;
 
     ADIOS_VARBLOCK *orig_blockinfo;
-} ADIOS_TRANSNFO;
+} ADIOS_TRANSINFO;
 
 #endif /* ADIOS_TRANSFORMS_TRANSINFO_H_ */
