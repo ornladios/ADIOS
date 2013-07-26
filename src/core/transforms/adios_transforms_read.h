@@ -37,12 +37,4 @@ void adios_transform_process_read_chunk(adios_transform_read_request **reqgroups
  */
 void adios_transform_process_all_reads(adios_transform_read_request **reqgroups_head);
 
-//////////////////////////////////////////////////
-// Transform characteristic management functions
-//////////////////////////////////////////////////
-
-// Deserialize
-int adios_transform_deserialize_transform_characteristic(struct adios_index_characteristic_transform_struct *transform, struct adios_bp_buffer_struct_v1 *b);
-
-
 #endif /* ADIOS_TRANSFORMS_READ_H_ */
