@@ -22,7 +22,7 @@
 #include "core/bp_utils.h"
 #include "core/bp_types.h"
 #include "core/adios_read_hooks.h"
-#include "core/adios_read_transformed.h"
+#include "core/transforms/adios_transforms_transinfo.h"
 #include "core/futils.h"
 #include "core/common_read.h"
 #include "core/adios_logger.h"

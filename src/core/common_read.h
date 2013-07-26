@@ -13,7 +13,7 @@
 
 #include "public/adios_types.h"
 #include "public/adios_read_v2.h"  /* C API's struct's are used here */
-#include "adios_read_transformed.h" // NCSU ALACRITY-ADIOS
+#include "core/transforms/adios_transforms_transinfo.h" // NCSU ALACRITY-ADIOS
 
 #ifdef _NOMPI
     /* Sequential processes can use the library compiled with -D_NOMPI */

@@ -10,7 +10,7 @@
 
 #include <stdint.h>
 #include "core/transforms/adios_transforms_common.h"
-#include "core/adios_read_transformed.h"
+#include "core/transforms/adios_transforms_transinfo.h"
 #include "public/adios_read.h"
 #include "public/adios_types.h"
 

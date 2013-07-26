@@ -1,12 +1,10 @@
 /*
- * adios_transform_read.h
- *
  *  Created on: Jul 23, 2012
  *      Author: David A. Boyuka II
  */
 
-#ifndef ADIOS_READ_TRANSFORMED_H_
-#define ADIOS_READ_TRANSFORMED_H_
+#ifndef ADIOS_TRANSFORMS_TRANSINFO_H_
+#define ADIOS_TRANSFORMS_TRANSINFO_H_
 
 #include "adios_transforms_common.h"
 #include "public/adios_read.h"
@@ -27,8 +25,6 @@ typedef struct {
     int orig_global;
 
     ADIOS_VARBLOCK *orig_blockinfo;
-} ADIOS_TRANSINFO;
+} ADIOS_TRANSNFO;
 
-void adios_free_transinfo (ADIOS_TRANSINFO *ti);
-
-#endif /* ADIOS_READ_TRANSFORMED_H_ */
+#endif /* ADIOS_TRANSFORMS_TRANSINFO_H_ */
