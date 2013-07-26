@@ -10,6 +10,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <assert.h>
 #include "core/transforms/adios_transforms_specparse.h"
 
 void test1() {
