@@ -22,7 +22,8 @@ check_C=local_array_time \
         selections \
         connect_to_space_subset \
         copy_subvolume \
-	transforms
+	    transforms \
+	    transforms_specparse
 endif
 
 if BUILD_FORTRAN
@@ -121,7 +122,7 @@ copy_subvolume.o: copy_subvolume.c
 transforms_specparse_SOURCES=transforms_specparse.c
 transforms_specparse_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 transforms_specparse_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
-transforms_specparse.o: transforms_specparse.c
+#transforms_specparse.o: transforms_specparse.c
 
 connect_to_space_subset_SOURCES=connect_to_space_subset.c
 connect_to_space_subset_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
