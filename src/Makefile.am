@@ -51,26 +51,26 @@ include transforms/Makefile.plugins
 ##
 ## Core transform framework source files
 ##
-transforms_common_HEADERS = core/adios_copyspec.h \
-                            core/adios_subvolume.h \
-                            core/adios_selection_util.h \
-                            core/transforms/adios_transforms_common.h \
-                            core/transforms/adios_transforms_hooks.h \
-                            core/transforms/adios_transforms_util.h \
-                            core/transforms/adios_subvolume.h \
+transforms_common_HDRS = core/adios_copyspec.h \
+                         core/adios_subvolume.h \
+                         core/adios_selection_util.h \
+                         core/transforms/adios_transforms_common.h \
+                         core/transforms/adios_transforms_hooks.h \
+                         core/transforms/adios_transforms_util.h \
+                         core/transforms/adios_subvolume.h
 
-transforms_read_HEADERS = core/transforms/adios_transforms_transinfo.h \
-                          core/transforms/adios_transforms_read.h \
-                          core/transforms/adios_transforms_hooks_read.h \
-                          core/transforms/adios_transforms_reqgroup.h \
-                          core/transforms/adios_transforms_datablock.h \
-                          core/transforms/adios_transforms_patchdata.h
+transforms_read_HDRS = core/transforms/adios_transforms_transinfo.h \
+                       core/transforms/adios_transforms_read.h \
+                       core/transforms/adios_transforms_hooks_read.h \
+                       core/transforms/adios_transforms_reqgroup.h \
+                       core/transforms/adios_transforms_datablock.h \
+                       core/transforms/adios_transforms_patchdata.h
 
-transforms_write_HEADERS = core/transforms/adios_transforms_write.h \
-                           core/transforms/adios_transforms_hooks_write.h \
-                           core/transforms/adios_transforms_specparse.h
+transforms_write_HDRS = core/transforms/adios_transforms_write.h \
+                        core/transforms/adios_transforms_hooks_write.h \
+                        core/transforms/adios_transforms_specparse.h
 
-transforms_common_SOURCES = $(transforms_common_HEADERS) \
+transforms_common_SOURCES = $(transforms_common_HDRS) \
                             core/transforms/adios_transforms_common.c \
                             core/transforms/adios_transforms_hooks.c \
                             core/adios_copyspec.c \
@@ -79,7 +79,7 @@ transforms_common_SOURCES = $(transforms_common_HEADERS) \
                             core/transforms/plugindetect/detect_plugin_types.h \
                             core/transforms/plugindetect/plugin_info_types.h
 
-transforms_read_SOURCES = $(transforms_read_HEADERS) \
+transforms_read_SOURCES = $(transforms_read_HDRS) \
                           core/transforms/adios_transforms_read.c \
                           core/transforms/adios_transforms_hooks_read.c \
                           core/transforms/adios_transforms_reqgroup.c \
@@ -88,7 +88,7 @@ transforms_read_SOURCES = $(transforms_read_HEADERS) \
                           core/adios_selection_util.c \
                           $(transforms_read_method_SOURCES)
 
-transforms_write_SOURCES = $(transforms_write_HEADERS) \
+transforms_write_SOURCES = $(transforms_write_HDRS) \
                            core/transforms/adios_transforms_write.c \
                            core/transforms/adios_transforms_hooks_write.c \
                            core/transforms/adios_transforms_util.c \
@@ -579,7 +579,7 @@ CXX=$(MPICXX)
 EXTRA_DIST = core/adios_bp_v1.h core/adios_endianness.h \
              core/adios_internals.h core/adios_internals_mxml.h core/adios_logger.h \
              core/adios_read_hooks.h core/adios_socket.h core/adios_timing.h \
-             $(transforms_common_HEADERS) $(transforms_read_HEADERS) $(transforms_write_HEADERS) \
+             $(transforms_common_HDRS) $(transforms_read_HDRS) $(transforms_write_HDRS) \
              core/adios_socket.h \
              core/bp_types.h core/bp_utils.h core/buffer.h core/common_adios.h \
              core/common_read.h core/futils.h core/globals.h core/ds_metadata.h \
