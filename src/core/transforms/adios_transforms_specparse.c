@@ -107,7 +107,7 @@ struct adios_transform_spec * adios_transform_spec_copy(struct adios_transform_s
         // Duplicate the backing string
         dst->backing_str_len = src->backing_str_len;
         dst->backing_str = (char *)malloc(dst->backing_str_len + 1);
-        strncpy(dst->backing_str, src->backing_str, src->backing_str_len + 1); // strncpy because it may have several \0's in it
+        memcpy(dst->backing_str, src->backing_str, src->backing_str_len + 1); // memcpy because it may have several \0's in it
 
         // Rebase the transform type string
         if (src->transform_type_str)
