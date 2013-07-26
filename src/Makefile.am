@@ -68,7 +68,7 @@ transforms_read_SOURCES = $(transforms_common_SOURCES) \
                           core/adios_selection_util.c \
                           $(transforms_read_method_SOURCES)
 
-transforms_write_SOURCES = $(transforms_read_SOURCES) \
+transforms_write_SOURCES = $(transforms_common_SOURCES) \
                            core/transforms/adios_transforms_write.c \
                            core/transforms/adios_transforms_hooks_write.c \
                            core/transforms/adios_transforms_util.c \
