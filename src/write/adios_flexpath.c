@@ -524,9 +524,7 @@ char *multiqueue_action = "{\n\
                 EVsubmit(c->rank+1, msg);\n\
             }\n\
        }else if(c->type == 2){ \n\
-               printf(\"\\treceived flush msg\\n\"); \n\
              if(EVcount_evgroup()>0){\n\
-               printf(\"\\treceived flush msg for evgroup\\n\");\n\
                evgroup *g = EVdata_evgroup(0); \n\
                g->condition = c->condition;\n\
                EVsubmit(c->rank+1, g);\n\
@@ -644,7 +642,6 @@ FlexpathFMStructure* set_format(struct adios_group_struct* t, struct adios_var_s
 
     if (t->hashtbl_vars->size(t->hashtbl_vars) == 0) {
 	adios_error(err_invalid_group, "set_format: No Variables In Group\n");
-	fprintf(stderr, "set_format error1\n");
 	return NULL;
     }
 
@@ -653,7 +650,6 @@ FlexpathFMStructure* set_format(struct adios_group_struct* t, struct adios_var_s
 	adios_error(err_invalid_group, 
 		    "set_format: Field List Memory Allocation Failed. t->hashtbl_vars->size: %d\n", 
 		    t->hashtbl_vars->size(t->hashtbl_vars));
-	fprintf(stderr, "set_format error2\n");
 	return NULL;
     }
 
@@ -972,7 +968,6 @@ send_update_step_msgs(FlexpathWriteFileData *fileData, int step)
 	msg.process_id = fileData->rank;
 	msg.step = step;
 	msg.finalized = fileData->finalized;
-	printf("step: %d finalized: %d\n", msg.step, msg.finalized);
 	int dest_rank = fileData->reader_coordinators[i];
 	fileData->attrs = set_dst_rank_atom(fileData->attrs, dest_rank+1);
 	EVsubmit(fileData->stepSource, &msg, fileData->attrs);
@@ -1143,7 +1138,6 @@ void add_open_file(FlexpathWriteFileData* newFile) {
 FlexpathWriteFileData* find_open_file(char* name) {
     FlexpathWriteFileData* file = flexpathWriteData.openFiles;
     while(file && strcmp(file->name, name)) {
-	fprintf(stderr, "file->name: %s, name: %s\n", file->name, name);
         file = file->next;
     }
     return file;
@@ -1190,7 +1184,6 @@ extern void adios_flexpath_init(const PairStruct *params, struct adios_method_st
 extern int 
 adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *method, MPI_Comm comm) 
 {    
-    fprintf(stderr, "\t\tWRITER OPENING!!\n");
     if( fd == NULL || method == NULL) {
         perr("open: Bad input parameters\n");
         return -1;
@@ -1325,7 +1318,6 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
 	
     //process group format
     struct adios_group_struct *t = method->group;
-    fprintf(stderr,"number of variables in group = %d\n", t->hashtbl_vars->size(t->hashtbl_vars));
 
     if(t == NULL){
 	adios_error(err_invalid_group, "Invalid group.\n");
@@ -1421,7 +1413,7 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
         
     fp_write_log("SETUP", "fork control thread\n");
     
-    pthread_create(&fileData->ctrl_thr_id, NULL, control_thread, fileData);
+    pthread_create(&fileData->ctrl_thr_id, NULL, (void*)&control_thread, fileData);
     //thr_thread_t forked_thread = thr_fork(control_thread, fileData);
     /* if(!forked_thread) { */
     /*     perr("on open ERROR forking control thread"); */

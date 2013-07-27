@@ -494,25 +494,17 @@ get_writer_displacements(
     for(i=0; i<ndims; i++){	
 	if(sel->u.bb.start[i] >= offsets[pos+i]){
 	    int start = sel->u.bb.start[i] - offsets[pos+i];
-	    /* fprintf(stderr,  */
-	    /* 	    "sel->u.bb.start[%d]: %d >= offsets[%d]: %d :: disp->start[%d]: %d\n",  */
-	    /* 	    i, sel->u.bb.start[i], i, offsets[pos+i], i, start); */
 	    displ->start[i] = start;
 	}
 	if((sel->u.bb.start[i] + sel->u.bb.count[i] - 1) <= 
 	   (offsets[pos+i] + local_dims[pos+i] - 1)){
 	    int count = ((sel->u.bb.start[i] + sel->u.bb.count[i] - 1) - 
 			 offsets[pos+i]) - displ->start[i] + 1;
-	    /* fprintf(stderr, */
-	    /* 	    "(sel->u.bb.start[%d]: %d + sel->u.bb.count[%d] - 1: %d) <= (offsets[%d]: %d + local_dims[%d] - 1: %d)::disp->count[%d]: %d\n", */
-	    /* 	    i, sel->u.bb.start[i], i, sel->u.bb.count[i]-1, i, offsets[pos+i], pos+i, local_dims[pos+i] - 1, i, count); */
 	    displ->count[i] = count;
 
 	    
 	}else{
 	    int count = (local_dims[pos+i] - 1) - displ->start[i] + 1;
-	    /* fprintf(stderr, "else: local_dims[%d]-1: %d - displ->start[%d]+1: %d :: count: %d\n", */
-	    /* 	    pos+i, local_dims[pos+i]-1, i, displ->start[i]+1, count); */
 	    displ->count[i] = count;
 	}	
     }
@@ -563,15 +555,11 @@ need_writer(
         //if rank offset < selector offset + selector size -1 and rank offset+size-1 > selector offset +selector size -1
         else if((rank_offset <= sel_offset + sel_size - 1) && \
 		(rank_offset+rank_size>=sel_offset+sel_size-1)) {
-            log_debug("matched overlap type 2\n");
         } else if((sel_offset <= rank_offset) && (rank_offset+rank_size<= sel_offset+sel_size-1)) {
-            log_debug("matched overlap type 3\n");
         } else {
-            log_debug("overlap not present\n\n");
             return 0;
         }
     }
-    log_debug("overlap detected\n\n");
     return 1;
 }
 
