@@ -149,6 +149,7 @@ void run_tests() {
 
 int main(int argc, char **argv) {
     test1();
+    run_tests();
 }
 
 
