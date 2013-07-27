@@ -14,7 +14,7 @@
 
 static int is_digit_str(char* input_str)
 {
-    if(strlen(input_str) > 2)	// at most 2 digits for zlib
+    if(strlen(input_str) > 2)    // at most 2 digits for zlib
     {
         return 0;
     }
@@ -57,7 +57,7 @@ int compress_zlib_pre_allocated(const void* input_data,
 
 uint16_t adios_transform_zlib_get_metadata_size(struct adios_transform_spec *transform_spec)
 {
-    return (sizeof(uint64_t) + sizeof(char));	// metadata: original data size (uint64_t) + compression succ flag (char)
+    return (sizeof(uint64_t) + sizeof(char));    // metadata: original data size (uint64_t) + compression succ flag (char)
 }
 
 uint64_t adios_transform_zlib_calc_vars_transformed_size(struct adios_transform_spec *transform_spec, uint64_t orig_size, int num_vars)
@@ -79,10 +79,11 @@ int adios_transform_zlib_apply(struct adios_file_struct *fd,
     const void *input_buff= var->data;
 
     // parse the compressiong parameter
+    /* pre-specparse code
     int compress_level = Z_DEFAULT_COMPRESSION;
     if(var->transform_type_param
         && strlen(var->transform_type_param) > 0
-        && is_digit_str(var->transform_type_param))	// all conditions should satisfy, or just use default compression level
+        && is_digit_str(var->transform_type_param))    // all conditions should satisfy, or just use default compression level
     {
         compress_level = atoi(var->transform_type_param);
         if(compress_level > 9 || compress_level < 1) // out of range, use default
@@ -90,13 +91,21 @@ int adios_transform_zlib_apply(struct adios_file_struct *fd,
             compress_level = Z_DEFAULT_COMPRESSION;
         }
     }
+    */
+    int compress_level = Z_DEFAULT_COMPRESSION;
+    if (var->transform_spec->param_count > 0) {
+        compress_level = atoi(var->transform_spec->params[0].key);
+        if (compress_level < 1 || compress_level > 9)
+            compress_level = Z_DEFAULT_COMPRESSION;
+    }
+
 
     // decide the output buffer
     uint64_t output_size = input_size; // for compression, at most the original data size
     void* output_buff = NULL;
 
     uint64_t mem_allowed = 0;
-    if (use_shared_buffer)	// If shared buffer is permitted, serialize to there
+    if (use_shared_buffer)    // If shared buffer is permitted, serialize to there
     {
         *wrote_to_shared_buffer = 1;
         if (!shared_buffer_reserve(fd, output_size))
@@ -108,7 +117,7 @@ int adios_transform_zlib_apply(struct adios_file_struct *fd,
         // Write directly to the shared buffer
         output_buff = fd->buffer + fd->offset;
     }
-    else	// Else, fall back to var->data memory allocation
+    else    // Else, fall back to var->data memory allocation
     {
         *wrote_to_shared_buffer = 0;
         output_buff = malloc(output_size);
@@ -125,13 +134,13 @@ int adios_transform_zlib_apply(struct adios_file_struct *fd,
 
     int rtn = compress_zlib_pre_allocated(input_buff, input_size, output_buff, &actual_output_size, compress_level);
 
-    if(0 != rtn 					// compression failed for some reason, then just copy the buffer
+    if(0 != rtn                     // compression failed for some reason, then just copy the buffer
         || actual_output_size > input_size)  // or size after compression is even larger (not likely to happen since compression lib will return non-zero in this case)
     {
         // printf("compression failed, fall back to memory copy\n");
         memcpy(output_buff, input_buff, input_size);
         actual_output_size = input_size;
-        compress_ok = 0;	// succ sign set to 0
+        compress_ok = 0;    // succ sign set to 0
     }
 
     // Wrap up, depending on buffer mode

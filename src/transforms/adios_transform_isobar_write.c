@@ -12,11 +12,11 @@
 
 #include "isobar.h"
 
-#define ELEMENT_BYTES	8
+#define ELEMENT_BYTES    8
 
 static int is_digit_str(char* input_str)
 {
-    if(strlen(input_str) > 2)	// at most 2 digits for isobar
+    if(strlen(input_str) > 2)    // at most 2 digits for isobar
     {
         return 0;
     }
@@ -76,7 +76,7 @@ int compress_isobar_pre_allocated(const void* input_data, const uint64_t input_l
 
 uint16_t adios_transform_isobar_get_metadata_size(struct adios_transform_spec *transform_spec)
 {
-    return (sizeof(uint64_t) + sizeof(char));	// metadata: original data size (uint64_t) + compression succ flag (char)
+    return (sizeof(uint64_t) + sizeof(char));    // metadata: original data size (uint64_t) + compression succ flag (char)
 }
 
 uint64_t adios_transform_isobar_calc_vars_transformed_size(struct adios_transform_spec *transform_spec, uint64_t orig_size, int num_vars)
@@ -95,6 +95,7 @@ int adios_transform_isobar_apply(struct adios_file_struct *fd,
     const void *input_buff = var->data;
 
     // parse the compressiong parameter
+    /* pre-specparse code
     int compress_level = ISOBAR_SPEED;
     if(var->transform_type_param
         && strlen(var->transform_type_param) > 0
@@ -106,12 +107,19 @@ int adios_transform_isobar_apply(struct adios_file_struct *fd,
             compress_level = ISOBAR_SPEED;
         }
     }
+    */
+    int compress_level = ISOBAR_SPEED;
+    if (var->transform_spec->param_count > 0) {
+        compress_level = atoi(var->transform_spec->params[0].key);
+        if (compress_level < 1 || compress_level > 9)
+            compress_level = ISOBAR_SPEED;
+    }
 
     // decide the output buffer
     uint64_t output_size = adios_transform_isobar_calc_vars_transformed_size(input_size, 1);
     void* output_buff = NULL;
 
-    if (use_shared_buffer)	// If shared buffer is permitted, serialize to there
+    if (use_shared_buffer)    // If shared buffer is permitted, serialize to there
     {
         *wrote_to_shared_buffer = 1;
         if (!shared_buffer_reserve(fd, output_size))
@@ -123,7 +131,7 @@ int adios_transform_isobar_apply(struct adios_file_struct *fd,
         // Write directly to the shared buffer
         output_buff = fd->buffer + fd->offset;
     }
-    else	// Else, fall back to var->data memory allocation
+    else    // Else, fall back to var->data memory allocation
     {
         *wrote_to_shared_buffer = 0;
         output_buff = malloc(output_size);
@@ -140,13 +148,13 @@ int adios_transform_isobar_apply(struct adios_file_struct *fd,
     // compress it
     int rtn = compress_isobar_pre_allocated(input_buff, input_size, output_buff, &actual_output_size, compress_level);
 
-    if(0 != rtn 					// compression failed for some reason, then just copy the buffer
+    if(0 != rtn                     // compression failed for some reason, then just copy the buffer
         || actual_output_size > input_size)  // or size after compression is even larger (not likely to happen since compression lib will return non-zero in this case)
     {
         // printf("compression failed, fall back to memory copy\n");
         memcpy(output_buff, input_buff, input_size);
         actual_output_size = input_size;
-        compress_ok = 0;	// succ sign set to 0
+        compress_ok = 0;    // succ sign set to 0
     }
 
     // Wrap up, depending on buffer mode

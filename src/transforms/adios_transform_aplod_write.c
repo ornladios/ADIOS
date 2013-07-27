@@ -11,6 +11,8 @@
 
 #include "aplod.h"
 
+const int MAX_COMPONENTS = 8;
+
 uint16_t adios_transform_aplod_get_metadata_size(struct adios_transform_spec *transform_spec)
 {
     // Write the component vector here
@@ -34,7 +36,7 @@ int adios_transform_aplod_apply(struct adios_file_struct *fd,
     const void *input_buff = var->data;
 
     // max size supported is long double
-    int32_t componentVector [4];
+    int32_t componentVector[MAX_COMPONENTS];
     int8_t numComponents = 0;
     int32_t componentTotals = 0;
 
@@ -78,23 +80,17 @@ int adios_transform_aplod_apply(struct adios_file_struct *fd,
     }
     */
     int i;
+    int componentID = 0;
     for (i = 0; i < var->transform_spec->param_count; i++) {
-        struct adios_transform_spec_kv_pair * const param = &var->transform_spec->params[i];
-        if (strcmp(param->key, "CV") == 0) {
-            char *comp = strtok(param->value, ":");
-            int componentID = 0;
+        const char *comp = var->transform_spec->params[i].key;
 
-            while (comp) {
-                int compInt = atoi(comp);
-                if (compInt <= 0) {
-                    numComponents = 0;
-                    break;
-                }
-
-                componentVector[componentID++] = compInt;
-                componentTotals += compInt;
-            }
+        int compInt = atoi(comp);
+        if (compInt <= 0 || componentID >= MAX_COMPONENTS) {
+            numComponents = 0;
+            break;
         }
+        componentVector[componentID++] = compInt;
+        componentTotals += compInt;
     }
 
     if ((numComponents == 0) || (componentTotals != bp_get_type_size (var->pre_transform_type, ""))) {
