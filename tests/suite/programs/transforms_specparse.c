@@ -137,7 +137,7 @@ void run_test(struct specparse_test *test) {
         }
     }
 
-    adios_transform_free_spec(actual);
+    adios_transform_free_spec(&actual);
 }
 
 void run_tests() {
