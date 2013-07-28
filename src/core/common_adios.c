@@ -543,7 +543,6 @@ static int common_adios_write_transform_helper(struct adios_file_struct * fd, st
         // Success!
         return 1;
     } else {
-        // Else, transform the data into v->data and leave it at that
         int ret = adios_transform_variable_data(fd, v, use_shared_buffer, &wrote_to_shared_buffer);
 
         assert(!wrote_to_shared_buffer);
@@ -568,18 +567,22 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
     // NCSU ALACRITY-ADIOS - Do some processing here depending on the transform
     //   type specified (if any)
 
+    // First, before doing any transform (or none), compute variable statistics,
+    // as we can't do this after the data is transformed
+    adios_generate_var_characteristics_v1 (fd, v);
+
     // If no transform is specified, do the normal thing (write to shared
     // buffer immediately, if one exists)
     if (v->transform_type == adios_transform_none)
     {
-    if (fd->shared_buffer == adios_flag_yes)
-    {
-        // var payload sent for sizing information
-        adios_write_var_header_v1 (fd, v);
+        if (fd->shared_buffer == adios_flag_yes)
+        {
+            // var payload sent for sizing information
+            adios_write_var_header_v1 (fd, v);
 
-        // write payload
-        adios_write_var_payload_v1 (fd, v);
-    }
+            // write payload
+            adios_write_var_payload_v1 (fd, v);
+        }
     }
     // Else, do a transform
     else

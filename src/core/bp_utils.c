@@ -11,6 +11,7 @@
 #include <stdarg.h>
 #include <sys/types.h>
 #include <string.h>
+#include <math.h>
 #include "public/adios.h"
 #include "public/adios_read.h"
 #include "public/adios_error.h"
@@ -1214,11 +1215,13 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
 
     BUFREAD8(b, flag)
     c = (enum ADIOS_CHARACTERISTICS) flag;
+    enum ADIOS_DATATYPES original_var_type = adios_transform_get_var_original_type_index (*root);
 
     switch (c) {
 
         case adios_characteristic_value:
-            (*root)->characteristics [j].value = bp_read_data_from_buffer(b, (*root)->type);
+        {
+            (*root)->characteristics [j].value = bp_read_data_from_buffer(b, original_var_type);
             if (!((*root)->characteristics [j].stats))
             {
                 (*root)->characteristics [j].stats = malloc (sizeof(struct adios_index_characteristics_stat_struct *));
@@ -1232,7 +1235,8 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
             (*root)->characteristics [j].bitmap |= (1 << adios_statistic_sum_square);
 
             uint8_t i, c, idx;
-            uint8_t count = adios_get_stat_set_count ((*root)->type);
+            // uint8_t count = adios_get_stat_set_count ((*root)->type);
+            uint8_t count = adios_get_stat_set_count (original_var_type);
             uint16_t characteristic_size;
 
             for (c = 0; c < count; c ++)
@@ -1248,7 +1252,7 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
                     {
                         characteristic_size = adios_get_stat_size(
                                 (*root)->characteristics [j].stats[c][idx].data
-                               ,(*root)->type
+                               ,original_var_type
                                ,(enum ADIOS_STAT)i
                                );
                         (*root)->characteristics [j].stats[c][idx].data = malloc (characteristic_size);
@@ -1289,7 +1293,8 @@ else IS_SUM2 \
 { \
 SET_DATA_3(t) \
 }
-                        switch ((*root)->type)
+                        // switch ((*root)->type)
+                        switch (original_var_type)
                         {
                             case adios_byte:
                                 SET_DATA(int8_t)
@@ -1421,6 +1426,7 @@ SET_DATA_3(t) \
             }
 
             break;
+        }
 
         // NCSU - Adding in backward compatibility
         case adios_characteristic_max:
@@ -1433,7 +1439,8 @@ SET_DATA_3(t) \
             }
 
             (*root)->characteristics [j].bitmap |= (1 << adios_statistic_max);
-            (*root)->characteristics [j].stats[0][adios_statistic_max].data = bp_read_data_from_buffer(b, (*root)->type);
+            // (*root)->characteristics [j].stats[0][adios_statistic_max].data = bp_read_data_from_buffer(b, (*root)->type);
+            (*root)->characteristics [j].stats[0][adios_statistic_max].data = bp_read_data_from_buffer(b, original_var_type);
             break;
         }
 
@@ -1447,7 +1454,8 @@ SET_DATA_3(t) \
                 (*root)->characteristics [j].bitmap = 0;
             }
             (*root)->characteristics [j].bitmap |= (1 << adios_statistic_min);
-            (*root)->characteristics [j].stats[0][adios_statistic_min].data = bp_read_data_from_buffer(b, (*root)->type);
+            // (*root)->characteristics [j].stats[0][adios_statistic_min].data = bp_read_data_from_buffer(b, (*root)->type);
+            (*root)->characteristics [j].stats[0][adios_statistic_min].data = bp_read_data_from_buffer(b, original_var_type);
             break;
         }
 
@@ -1455,7 +1463,7 @@ SET_DATA_3(t) \
         case adios_characteristic_stat:
         {
             uint8_t i, c, idx;
-            uint8_t count = adios_get_stat_set_count ((*root)->type);
+            uint8_t count = adios_get_stat_set_count (original_var_type);
             uint16_t characteristic_size;
 
             (*root)->characteristics [j].stats = malloc (count * sizeof(struct adios_index_characteristics_stat_struct *));
@@ -1497,9 +1505,9 @@ SET_DATA_3(t) \
                         {
                             characteristic_size = adios_get_stat_size(
                                 (*root)->characteristics [j].stats[c][idx].data
-                               ,(*root)->type
-                               ,(enum ADIOS_STAT)i
-                               );
+                                ,original_var_type
+                                ,(enum ADIOS_STAT)i
+                            );
                             (*root)->characteristics [j].stats[c][idx].data = malloc (characteristic_size);
 
                             void * data = (*root)->characteristics [j].stats[c][idx].data;

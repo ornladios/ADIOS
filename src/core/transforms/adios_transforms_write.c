@@ -220,8 +220,6 @@ struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *
     if (orig_var->transform_metadata_len)
         orig_var->transform_metadata = malloc(orig_var->transform_metadata_len);
 
-    orig_var->bitmap = 0; // Disable statistics
-
     // Return the modified variable
     return orig_var;
 }

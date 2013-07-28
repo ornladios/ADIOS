@@ -151,7 +151,23 @@
 // Variable introspection
 ////////////////////////////////////////
 
-enum ADIOS_DATATYPES adios_transform_get_var_original_type(struct adios_index_var_struct_v1 *var) {
+enum ADIOS_DATATYPES adios_transform_get_var_original_type_var(struct adios_var_struct *var)
+{
+    if (var->transform_type != adios_transform_none)
+        return var->pre_transform_type;
+    else
+        return var->type;
+}
+
+enum ADIOS_DATATYPES adios_transform_get_var_original_type_var_header(struct adios_var_header_struct_v1 *var_header)
+{
+    if (var_header->characteristics.transform.transform_type != adios_transform_none)
+        return var_header->characteristics.transform.pre_transform_type;
+    else
+        return var_header->type;
+}
+
+enum ADIOS_DATATYPES adios_transform_get_var_original_type_index(struct adios_index_var_struct_v1 *var) {
     if (var->characteristics[0].transform.transform_type != adios_transform_none)
         return var->characteristics[0].transform.pre_transform_type;
     else

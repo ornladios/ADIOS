@@ -566,7 +566,8 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
                     case adios_characteristic_stat:
                     {
                         uint8_t k, c, idx;
-                        uint64_t count = adios_get_stat_set_count((*root)->type);
+                        enum ADIOS_DATATYPES original_var_type = adios_transform_get_var_original_type_index (*root);
+                        uint64_t count = adios_get_stat_set_count(original_var_type);
                         uint16_t characteristic_size;
 
                         (*root)->characteristics [j].stats = malloc (count * sizeof(struct adios_index_characteristics_stat_struct *));
@@ -635,7 +636,7 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
                                     else
                                     {
                                         // NCSU - Generic for non-histogram data
-                                        characteristic_size = adios_get_stat_size((*root)->characteristics [j].stats[c][idx].data, (*root)->type, k);
+                                        characteristic_size = adios_get_stat_size((*root)->characteristics [j].stats[c][idx].data, original_var_type, k);
                                         (*root)->characteristics [j].stats[c][idx].data = malloc (characteristic_size);
 
                                         void * data = (*root)->characteristics [j].stats[c][idx].data;
@@ -661,6 +662,7 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
                         if(b->change_endianness == adios_flag_yes) {
                             swap_32((*root)->characteristics [j].bitmap);
                         }
+                        // printf ("[%s:%d] Bitmap: %lu\n", __FUNCTION__, __LINE__, (*root)->characteristics [j].bitmap);
                         b->offset += 4;
                         break;
                     }
@@ -1487,8 +1489,10 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
             case adios_characteristic_stat:
             {
                 uint8_t j = 0, idx = 0;
-                uint8_t c = 0, count = adios_get_stat_set_count (var_header->type);
+                uint8_t c = 0;
+                enum ADIOS_DATATYPES original_var_type = adios_transform_get_var_original_type_var_header (var_header);
                 uint64_t characteristic_size;
+                uint8_t count = adios_get_stat_set_count (original_var_type);
 
                 var_header->characteristics.stats = malloc(count * sizeof(struct adios_index_characteristics_stat_struct *));
 
@@ -1557,7 +1561,7 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
                             }
                             else
                             {
-                                characteristic_size = adios_get_stat_size(var_header->characteristics.stats[c][idx].data, var_header->type, j);
+                                characteristic_size = adios_get_stat_size(var_header->characteristics.stats[c][idx].data, original_var_type, j);
 
                                 var_header->characteristics.stats[c][idx].data = malloc(characteristic_size);
                                 memcpy (var_header->characteristics.stats[c][idx].data, (b->buff + b->offset)
@@ -1565,7 +1569,7 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
                                    );
 
                                 if(b->change_endianness == adios_flag_yes) {
-                                    swap_adios_type(var_header->characteristics.stats[c][idx].data, var_header->type);
+                                    swap_adios_type(var_header->characteristics.stats[c][idx].data, original_var_type);
                                 }
 
                                 b->offset += characteristic_size;
@@ -1733,7 +1737,8 @@ int adios_clear_var_header_v1 (struct adios_var_header_struct_v1 * var_header)
     if (c->stats)
     {
         uint8_t j = 0, idx = 0;
-        uint8_t i = 0, count = adios_get_stat_set_count(var_header->type);
+        enum ADIOS_DATATYPES original_var_type = adios_transform_get_var_original_type_var_header (var_header);
+        uint8_t i = 0, count = adios_get_stat_set_count(original_var_type);
 
         while (c->bitmap >> j)
         {

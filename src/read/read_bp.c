@@ -1628,17 +1628,23 @@ typedef struct {
         }
     }
 */
-    size = bp_get_type_size (var_root->type, "");
+    enum ADIOS_DATATYPES original_var_type = var_root->type;
+    
+    if (var_root->characteristics[0].transform.transform_type != adios_transform_none) {
+        original_var_type = var_root->characteristics[0].transform.pre_transform_type;
+    }
+    
+    size = bp_get_type_size (original_var_type, "");
     sum_size = bp_get_type_size (adios_double, "");
 
-    if (var_root->type == adios_complex || var_root->type == adios_double_complex)
+    if (original_var_type == adios_complex || original_var_type == adios_double_complex)
     {
         int type;
         count = 3;
         timestep = -1;
         prev_timestep = 0;
 
-        if (var_root->type == adios_complex)
+        if (original_var_type == adios_complex)
         {
             type = adios_double;
         }
@@ -1872,7 +1878,7 @@ typedef struct {
                     memcpy(vs->min, stats[map[adios_statistic_min]].data, size);
 
                 }
-                else if (adios_lt(var_root->type, stats[map[adios_statistic_min]].data, vs->min))
+                else if (adios_lt(original_var_type, stats[map[adios_statistic_min]].data, vs->min))
                 {
                     memcpy(vs->min, stats[map[adios_statistic_min]].data, size);
                 }
@@ -1882,7 +1888,7 @@ typedef struct {
                     MALLOC (vs->steps->mins[timestep], size, "minimum per timestep")
                     memcpy(vs->steps->mins[timestep], stats[map[adios_statistic_min]].data, size);
                 }
-                else if (adios_lt(var_root->type, stats[map[adios_statistic_min]].data, vs->steps->mins[timestep]))
+                else if (adios_lt(original_var_type, stats[map[adios_statistic_min]].data, vs->steps->mins[timestep]))
                 {
                     memcpy(vs->steps->mins[timestep], stats[map[adios_statistic_min]].data, size);
                 }
@@ -1896,7 +1902,7 @@ typedef struct {
                     memcpy(vs->max, stats[map[adios_statistic_max]].data, size);
 
                 }
-                else if (adios_lt(var_root->type, vs->max, stats[map[adios_statistic_max]].data))
+                else if (adios_lt(original_var_type, vs->max, stats[map[adios_statistic_max]].data))
                 {
                     memcpy(vs->max, stats[map[adios_statistic_max]].data, size);
                 }
@@ -1906,7 +1912,7 @@ typedef struct {
                     MALLOC (vs->steps->maxs[timestep], size, "maximum per timestep")
                     memcpy(vs->steps->maxs[timestep], stats[map[adios_statistic_max]].data, size);
                 }
-                else if (adios_lt(var_root->type, vs->steps->maxs[timestep], stats[map[adios_statistic_max]].data))
+                else if (adios_lt(original_var_type, vs->steps->maxs[timestep], stats[map[adios_statistic_max]].data))
                 {
                     memcpy(vs->steps->maxs[timestep], stats[map[adios_statistic_max]].data, size);
                 }

@@ -18,8 +18,11 @@
 // Variable introspection
 /////////////////////////////////////
 
-enum ADIOS_DATATYPES adios_transform_get_var_original_type(struct adios_index_var_struct_v1 *var);
+enum ADIOS_DATATYPES adios_transform_get_var_original_type_var(struct adios_var_struct *var);
+enum ADIOS_DATATYPES adios_transform_get_var_original_type_var_header(struct adios_var_header_struct_v1 *var_header);
+enum ADIOS_DATATYPES adios_transform_get_var_original_type_index(struct adios_index_var_struct_v1 *var);
 int adios_transform_get_characteristic_original_num_dims(struct adios_index_characteristic_struct_v1 *ch);
+
 struct adios_index_characteristic_dims_struct_v1 * adios_transform_get_characteristic_original_dims(struct adios_index_characteristic_struct_v1 *ch);
 int adios_transform_get_var_original_num_dims(struct adios_index_var_struct_v1 *var);
 
