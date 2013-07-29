@@ -77,4 +77,6 @@ void adios_nanosleep (int sec, int nanosec);
 /* get current time as double (in seconds) */
 double adios_gettime();
 
+void * bufdup(const void *buf, uint64_t elem_size, uint64_t count);
+
 #endif

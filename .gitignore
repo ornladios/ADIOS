@@ -131,3 +131,7 @@ utils/bpsplit/bpsplit
 utils/skel/etc/compiler_fragment.mk
 utils/skel/lib/skel_have_adios_timing.py
 
+# NCSU ALACRITY-ADIOS - Some extra files we added
+/myrunconf
+/.cproject
+/.project

@@ -1,20 +1,20 @@
-!  
+!
 !  ADIOS is freely available under the terms of the BSD license described
 !  in the COPYING file in the top level directory of this source distribution.
 !
 !  Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
 !
 
-! 
-! Read Fortran 90 API for ADIOS BP format files 
-!    
+!
+! Read Fortran 90 API for ADIOS BP format files
+!
 ! Use this module in your source code to ensure that
 ! you are calling the adios_* reading functions with
 ! the correct arguments
 !
 module adios_read_mod
 
-    use adios_defs_mod 
+    use adios_defs_mod
 
     interface
 
@@ -47,7 +47,7 @@ module adios_read_mod
             real,           intent(in)  :: timeout_sec
             integer,        intent(out) :: err
         end subroutine
-        
+
         subroutine adios_read_open_file (fp, fname, method, comm, err)
             implicit none
             integer*8,      intent(out) :: fp
@@ -64,13 +64,13 @@ module adios_read_mod
             real,           intent(in)  :: timeout_sec
             integer,        intent(out) :: err
         end subroutine
-        
+
         subroutine adios_release_step (fp, err)
             implicit none
             integer*8,      intent(in)  :: fp
             integer,        intent(out) :: err
         end subroutine
-        
+
         subroutine adios_reset_dimension_order (fp, flag)
             implicit none
             integer*8,      intent(in)  :: fp
@@ -132,8 +132,8 @@ module adios_read_mod
             implicit none
             integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: varname
-            integer,        intent(out) :: vartype 
-            integer,        intent(out) :: nsteps 
+            integer,        intent(out) :: vartype
+            integer,        intent(out) :: nsteps
             integer,        intent(out) :: ndim
             integer*8, dimension(*), intent(out) :: dims
             integer,        intent(out) :: err
@@ -143,9 +143,9 @@ module adios_read_mod
             implicit none
             integer*8,      intent(in) :: fp
             character(*),   intent(in)  :: attrname
-            integer,        intent(out) :: attrtype 
-            integer,        intent(out) :: attrsize 
-            integer,        intent(out) :: err 
+            integer,        intent(out) :: attrtype
+            integer,        intent(out) :: attrsize
+            integer,        intent(out) :: err
         end subroutine
 
         subroutine adios_perform_reads (fp, err)
@@ -190,7 +190,7 @@ module adios_read_mod
     end interface
 
     !
-    ! ADIOS_GET_SCALAR generic interface 
+    ! ADIOS_GET_SCALAR generic interface
     !
     ! Usage: call adios_get_scalar (gp, varname, data, err)
     !
@@ -316,7 +316,7 @@ module adios_read_mod
     end interface
 
     !
-    ! ADIOS_GET_ATTR generic interface 
+    ! ADIOS_GET_ATTR generic interface
     !
     ! Usage: call adios_get_attr (fp, varname, attr, err)
     !
@@ -328,7 +328,7 @@ module adios_read_mod
             integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: attrname
             integer*1,      intent(out) :: attr
-            integer,        intent(out) :: err 
+            integer,        intent(out) :: err
         end subroutine
 
         ! INTEGER*2
@@ -337,7 +337,7 @@ module adios_read_mod
             integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: attrname
             integer*2,      intent(out) :: attr
-            integer,        intent(out) :: err 
+            integer,        intent(out) :: err
         end subroutine
 
         ! INTEGER*4
@@ -346,7 +346,7 @@ module adios_read_mod
             integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: attrname
             integer*4,      intent(out) :: attr
-            integer,        intent(out) :: err 
+            integer,        intent(out) :: err
         end subroutine
 
         ! INTEGER*8
@@ -355,7 +355,7 @@ module adios_read_mod
             integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: attrname
             integer*8,      intent(out) :: attr
-            integer,        intent(out) :: err 
+            integer,        intent(out) :: err
         end subroutine
 
         ! REAL*4
@@ -364,7 +364,7 @@ module adios_read_mod
             integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: attrname
             real*4,         intent(out) :: attr
-            integer,        intent(out) :: err 
+            integer,        intent(out) :: err
         end subroutine
 
         ! REAL*8
@@ -373,7 +373,7 @@ module adios_read_mod
             integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: attrname
             real*8,         intent(out) :: attr
-            integer,        intent(out) :: err 
+            integer,        intent(out) :: err
         end subroutine
 
         ! COMPLEX*8
@@ -382,7 +382,7 @@ module adios_read_mod
             integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: attrname
             complex,        intent(out) :: attr
-            integer,        intent(out) :: err 
+            integer,        intent(out) :: err
         end subroutine
 
         ! COMPLEX*16
@@ -391,7 +391,7 @@ module adios_read_mod
             integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: attrname
             complex*16,     intent(out) :: attr
-            integer,        intent(out) :: err 
+            integer,        intent(out) :: err
         end subroutine
 
         ! CHARACTER(*)
@@ -400,7 +400,7 @@ module adios_read_mod
             integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: attrname
             character(*),   intent(out) :: attr
-            integer,        intent(out) :: err 
+            integer,        intent(out) :: err
         end subroutine
 
         ! LOGICAL*1
@@ -409,7 +409,7 @@ module adios_read_mod
             integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: attrname
             logical*1,      intent(out) :: attr
-            integer,        intent(out) :: err 
+            integer,        intent(out) :: err
         end subroutine
 
         ! LOGICAL*2
@@ -418,7 +418,7 @@ module adios_read_mod
             integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: attrname
             logical*2,      intent(out) :: attr
-            integer,        intent(out) :: err 
+            integer,        intent(out) :: err
         end subroutine
 
         ! LOGICAL*4
@@ -427,7 +427,7 @@ module adios_read_mod
             integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: attrname
             logical*4,      intent(out) :: attr
-            integer,        intent(out) :: err 
+            integer,        intent(out) :: err
         end subroutine
 
         ! LOGICAL*8
@@ -436,13 +436,13 @@ module adios_read_mod
             integer*8,      intent(in)  :: fp
             character(*),   intent(in)  :: attrname
             logical*8,      intent(out) :: attr
-            integer,        intent(out) :: err 
+            integer,        intent(out) :: err
         end subroutine
 
     end interface
 
     !
-    ! ADIOS_SCHEDULE_READ generic interface 
+    ! ADIOS_SCHEDULE_READ generic interface
     !
     ! Usage: call adios_schedule_read (fp, sel, varname, from_step, nsteps,  data, err)
     !
@@ -542,7 +542,7 @@ module adios_read_mod
     end interface
 
     !
-    ! adios_GET_STATISTICS generic interface 
+    ! adios_GET_STATISTICS generic interface
     !
     ! Usage: call adios_get_statistics (fp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err)
     !
@@ -562,7 +562,7 @@ module adios_read_mod
             integer*1, dimension(*), intent(out) :: maxs
             real*8, dimension(*), intent(out) :: avgs
             real*8, dimension(*), intent(out) :: std_devs
-            integer,dimension(*), intent(out) :: err 
+            integer,dimension(*), intent(out) :: err
         end subroutine
 
         ! INTEGER*2 arrays
@@ -579,7 +579,7 @@ module adios_read_mod
             integer*2, dimension(*), intent(out) :: maxs
             real*8, dimension(*), intent(out) :: avgs
             real*8, dimension(*), intent(out) :: std_devs
-            integer,        intent(out) :: err 
+            integer,        intent(out) :: err
         end subroutine
 
         ! INTEGER*4 arrays
@@ -596,7 +596,7 @@ module adios_read_mod
             integer*1, dimension(*), intent(out) :: maxs
             real*8, dimension(*), intent(out) :: avgs
             real*8, dimension(*), intent(out) :: std_devs
-            integer,        intent(out) :: err 
+            integer,        intent(out) :: err
         end subroutine
 
         ! INTEGER*8 arrays
@@ -613,7 +613,7 @@ module adios_read_mod
             integer*8, dimension(*), intent(out) :: maxs
             real*8, dimension(*), intent(out) :: avgs
             real*8, dimension(*), intent(out) :: std_devs
-            integer,        intent(out) :: err 
+            integer,        intent(out) :: err
         end subroutine
 
         ! REAL*4 arrays
@@ -630,7 +630,7 @@ module adios_read_mod
             real*4, dimension(*), intent(out) :: maxs
             real*8,         intent(out) :: gavg
             real*8,         intent(out) :: gstd_dev
-            integer,        intent(out) :: err 
+            integer,        intent(out) :: err
         end subroutine
 
         ! REAL*8 arrays
@@ -647,7 +647,7 @@ module adios_read_mod
             real*8, dimension(*), intent(out) :: maxs
             real*8, dimension(*), intent(out) :: avgs
             real*8, dimension(*), intent(out) :: std_devs
-            integer,        intent(out) :: err 
+            integer,        intent(out) :: err
         end subroutine
 
         ! COMPLEX*8 arrays
@@ -664,7 +664,7 @@ module adios_read_mod
             complex, dimension(*), intent(out) :: maxs
             real*8, dimension(*), intent(out) :: avgs
             real*8, dimension(*), intent(out) :: std_devs
-            integer,        intent(out) :: err 
+            integer,        intent(out) :: err
         end subroutine
 
         ! COMPLEX*16 arrays
@@ -681,7 +681,7 @@ module adios_read_mod
             complex*16, dimension(*), intent(out) :: maxs
             real*8, dimension(*), intent(out) :: avgs
             real*8, dimension(*), intent(out) :: std_devs
-            integer,        intent(out) :: err 
+            integer,        intent(out) :: err
         end subroutine
 
         ! CHARACTER(*) arrays
@@ -698,7 +698,7 @@ module adios_read_mod
             character(*), dimension(*), intent(out) :: maxs
             real*8, dimension(*), intent(out) :: avgs
             real*8, dimension(*), intent(out) :: std_devs
-            integer,        intent(out) :: err 
+            integer,        intent(out) :: err
         end subroutine
 
         ! LOFICAL*1 arrays
@@ -715,7 +715,7 @@ module adios_read_mod
             logical*1, dimension(*), intent(out) :: maxs
             real*8, dimension(*), intent(out) :: avgs
             real*8, dimension(*), intent(out) :: std_devs
-            integer,        intent(out) :: err 
+            integer,        intent(out) :: err
         end subroutine
 
         ! LOGICAL*2 arrays
@@ -732,7 +732,7 @@ module adios_read_mod
             logical*2, dimension(*), intent(out) :: maxs
             real*8, dimension(*), intent(out) :: avgs
             real*8, dimension(*), intent(out) :: std_devs
-            integer,        intent(out) :: err 
+            integer,        intent(out) :: err
         end subroutine
 
         ! LOGICAL*4 arrays
@@ -749,7 +749,7 @@ module adios_read_mod
             logical*4, dimension(*), intent(out) :: maxs
             real*8, dimension(*), intent(out) :: avgs
             real*8, dimension(*), intent(out) :: std_devs
-            integer,        intent(out) :: err 
+            integer,        intent(out) :: err
         end subroutine
 
         ! LOGICAL*8 arrays
@@ -766,13 +766,13 @@ module adios_read_mod
             logical*8, dimension(*), intent(out) :: maxs
             real*8, dimension(*), intent(out) :: avgs
             real*8, dimension(*), intent(out) :: std_devs
-            integer,        intent(out) :: err 
+            integer,        intent(out) :: err
         end subroutine
 
     end interface
 
 
-    contains 
+    contains
 
     !
     ! ADIOS_SCHEDULE_READ procedures
@@ -792,7 +792,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*1,      intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -806,7 +806,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*2,      intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -820,7 +820,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*4,      intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -834,7 +834,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*8,      intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -848,7 +848,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             real*4,         intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -862,7 +862,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             real*8,        intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -876,7 +876,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             complex,        intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -890,7 +890,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             complex*16,     intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -904,7 +904,7 @@ module adios_read_mod
         !    integer,        intent(in)  :: from_step
         !    integer,        intent(in)  :: nsteps
         !    character(*),   intent(out) :: data
-        !    integer,        intent(in)  :: err 
+        !    integer,        intent(in)  :: err
         !
         !    call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         !end subroutine
@@ -918,7 +918,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*1,      intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -932,7 +932,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*2,      intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -946,7 +946,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*4,      intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -960,7 +960,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*8,      intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -978,7 +978,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*1, dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -992,7 +992,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*2, dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1006,7 +1006,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*4, dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1020,7 +1020,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*8, dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1034,7 +1034,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             real*4,    dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1048,7 +1048,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             real*8,   dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1062,7 +1062,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             complex,   dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1076,7 +1076,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             complex*16,dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1090,7 +1090,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             character(*),   intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1104,7 +1104,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*1, dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1118,7 +1118,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*2, dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1132,7 +1132,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*4, dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1146,7 +1146,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*8, dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1164,7 +1164,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*1, dimension(:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1178,7 +1178,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*2, dimension(:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1192,7 +1192,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*4, dimension(:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1206,7 +1206,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*8, dimension(:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1220,7 +1220,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             real*4,    dimension(:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1234,7 +1234,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             real*8,   dimension(:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1248,7 +1248,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             complex,   dimension(:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1262,7 +1262,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             complex*16,dimension(:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1276,7 +1276,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             character(*),dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1290,7 +1290,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*1, dimension(:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1304,7 +1304,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*2, dimension(:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1318,7 +1318,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*4, dimension(:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1332,7 +1332,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*8, dimension(:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1350,7 +1350,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*1, dimension(:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1364,7 +1364,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*2, dimension(:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1378,7 +1378,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*4, dimension(:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1392,7 +1392,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*8, dimension(:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1406,7 +1406,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             real*4,    dimension(:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1420,7 +1420,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             real*8,   dimension(:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1434,7 +1434,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             complex,   dimension(:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1448,7 +1448,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             complex*16,dimension(:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1462,7 +1462,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             character(*),dimension(:,:),  intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1476,7 +1476,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*1, dimension(:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1490,7 +1490,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*2, dimension(:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1504,7 +1504,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*4, dimension(:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1518,7 +1518,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*8, dimension(:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1536,7 +1536,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*1, dimension(:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1550,7 +1550,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*2, dimension(:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1564,7 +1564,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*4, dimension(:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1578,7 +1578,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*8, dimension(:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1592,7 +1592,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             real*4,    dimension(:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1606,7 +1606,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             real*8,   dimension(:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1620,7 +1620,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             complex,   dimension(:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1634,7 +1634,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             complex*16,dimension(:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1648,7 +1648,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             character(*),dimension(:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1662,7 +1662,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*1, dimension(:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1676,7 +1676,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*2, dimension(:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1690,7 +1690,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*4, dimension(:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1704,7 +1704,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*8, dimension(:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1722,7 +1722,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*1, dimension(:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1736,7 +1736,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*2, dimension(:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1750,7 +1750,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*4, dimension(:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1764,7 +1764,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*8, dimension(:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1778,7 +1778,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             real*4,    dimension(:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1792,7 +1792,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             real*8,   dimension(:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1806,7 +1806,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             complex,   dimension(:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1820,7 +1820,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             complex*16,dimension(:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1834,7 +1834,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             character(*),dimension(:,:,:,:),intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1848,7 +1848,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*1, dimension(:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1862,7 +1862,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*2, dimension(:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1876,7 +1876,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*4, dimension(:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1890,7 +1890,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*8, dimension(:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1908,7 +1908,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*1, dimension(:,:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1922,7 +1922,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*2, dimension(:,:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1936,7 +1936,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*4, dimension(:,:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1950,7 +1950,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             integer*8, dimension(:,:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1964,7 +1964,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             real*4,    dimension(:,:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1978,7 +1978,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             real*8,   dimension(:,:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -1992,7 +1992,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             complex,   dimension(:,:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -2006,7 +2006,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             complex*16,dimension(:,:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -2020,7 +2020,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             character(*),dimension(:,:,:,:,:),intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -2034,7 +2034,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*1, dimension(:,:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -2048,7 +2048,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*2, dimension(:,:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -2062,7 +2062,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*4, dimension(:,:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine
@@ -2076,7 +2076,7 @@ module adios_read_mod
             integer,        intent(in)  :: from_step
             integer,        intent(in)  :: nsteps
             logical*8, dimension(:,:,:,:,:,:), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_schedule_read_f2c(fp, sel, varname, from_step, nsteps, data, err)
         end subroutine

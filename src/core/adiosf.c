@@ -242,6 +242,7 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
     }
 
     // Q.L. 10-2010. To fix a memory leak problem.
+    // NCSU - Clear stats
     if (v->stats)
     {   
         int j, idx;
@@ -533,7 +534,7 @@ void FC_FUNC_(adios_define_var, ADIOS_DEFINE_VAR)
         *id = adios_common_define_var (*group_id, buf1, buf2
                                        ,(enum ADIOS_DATATYPES) *type
                                        ,buf3, buf4, buf5
-                                       );
+                                       ,NULL); // NCSU ALACRITY-ADIOS
 
         free (buf1);
         free (buf2);

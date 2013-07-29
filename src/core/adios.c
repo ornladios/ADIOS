@@ -278,6 +278,7 @@ int adios_close (int64_t fd_p)
     while (v) {
         int j, idx;
         int c, count = 1;
+        // NCSU - Clear stats
         if (v->stats) {   
     
             if (v->type == adios_complex || v->type == adios_double_complex)
@@ -311,6 +312,10 @@ int adios_close (int64_t fd_p)
                 }
             }
         }
+
+        // NCSU ALACRITY-ADIOS - Clear transform metadata
+        // adios_transform_clear_transform_var(v); // Actually, no, we shouldn't free the metadata here, because this happens once a timestep,
+                                                   // and this shouldn't be free'd until finalize (it is just overwritten each timestep)
 
         v = v->next;
     }
@@ -366,6 +371,7 @@ int64_t adios_define_var (int64_t group_id, const char * name
                                    ,type
                                    ,dimensions
                                    ,global_dimensions, local_offsets
+                                   ,NULL // NCSU ALACRITY-ADIOS
                                    );
 }
 

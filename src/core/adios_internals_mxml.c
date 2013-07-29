@@ -1,4 +1,4 @@
-/* 
+/*
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
@@ -28,6 +28,9 @@
 #endif
 
 static enum ADIOS_FLAG adios_host_language_fortran = adios_flag_yes;
+// NCSU ALACRITY-ADIOS: Might need these to be extern for library linking reasons, we shall see...
+//extern struct adios_method_list_struct * adios_methods;
+//extern struct adios_group_list_struct * adios_groups;
 struct adios_method_list_struct * adios_methods = 0;
 struct adios_group_list_struct * adios_groups = 0;
 
@@ -1110,7 +1113,7 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
         }
     }
 
-    // fix the bgp bugs 
+    // fix the bgp bugs
     /*
        adios_common_declare_group ((int64_t *) &new_group, datagroup_name
        ,host_language_fortran, coordination_comm
@@ -1154,6 +1157,7 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
             const char * gread = 0;
             const char * gwrite = 0;
             const char * read_flag = 0;
+            const char * transform_type = 0; // NCSU ALACRITY-ADIOS
             enum ADIOS_DATATYPES t1;
             char  * mpath1 = 0;
             char  * mpath2 = 0;
@@ -1176,6 +1180,7 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                     GET_ATTR("gwrite",attr,gwrite,"var")
                     GET_ATTR("gread",attr,gread,"var")
                     GET_ATTR("read",attr,read_flag,"var")
+                GET_ATTR("transform",attr,transform_type,"var") // NCSU ALACRITY-ADIOS
                     log_warn ("config.xml: unknown attribute '%s' on %s "
                             "(ignored)\n"
                             ,attr->name
@@ -1190,17 +1195,17 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
             if (!type)
                 type = ""; // this will catch the error
             if (!mesh)
-                mesh = "";  
+                mesh = "";
             if (!center)
-                center = "";  
+                center = "";
             if (!tsteps)
-                tsteps = "";  
+                tsteps = "";
             if (!tscale)
-                tscale = "";  
+                tscale = "";
             if (!tformat)
-                tformat = "";  
+                tformat = "";
             if (!hyperslab)
-                hyperslab = "";  
+                hyperslab = "";
             t1 = parseType (type, name);
 
             if (!dimensions)
@@ -1219,12 +1224,13 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                         ,path, t1, dimensions
                         ,gb_global_dimensions
                         ,gb_local_offsets
+                                         ,transform_type // NCSU ALACRITY-ADIOS
                         )
                )
             {
                 return 0;
             }else{
-                // Successfully define a variable, so now 
+                // Successfully define a variable, so now
                 // an attribute for the mesh if it exists.
                 if (strcmp(mesh,"")){
                     mpath1 = malloc(strlen("/adios_schema")+strlen(name)+1);
@@ -1351,6 +1357,7 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                         const char * gwrite = 0;
                         const char * gread = 0;
                         const char * read_flag = 0;
+                    const char * transform_type = 0; // NCSU ALACRITY-ADIOS
                         enum ADIOS_DATATYPES t1;
                         char * mpath1 = 0;
                         char * mpath2 = 0;
@@ -1373,6 +1380,7 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                                 GET_ATTR("gwrite",attr,gwrite,"var")
                                 GET_ATTR("gread",attr,gread,"var")
                                 GET_ATTR("read",attr,read_flag,"var")
+                        GET_ATTR("transform",attr,transform_type,"var") // NCSU ALACRITY-ADIOS
                                 log_warn ("config.xml: unknown attribute '%s' "
                                         "on %s (ignored)\n"
                                         ,attr->name
@@ -1387,17 +1395,17 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                         if (!type)
                             type = ""; // this will catch the error
                         if (!mesh)
-                            mesh = ""; 
+                            mesh = "";
                         if (!center)
-                            center = ""; 
+                            center = "";
                         if (!tsteps)
-                            tsteps = ""; 
+                            tsteps = "";
                         if (!tscale)
-                            tscale = ""; 
+                            tscale = "";
                         if (!tformat)
-                            tformat = ""; 
+                            tformat = "";
                         if (!hyperslab)
-                            hyperslab = ""; 
+                            hyperslab = "";
                         t1 = parseType (type, name);
                         if (!dimensions)
                             dimensions = dimension;
@@ -1411,12 +1419,13 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                                     ,path, t1, dimensions
                                     ,gb_global_dimensions
                                     ,gb_local_offsets
+                                                 ,transform_type // NCSU ALACRITY-ADIOS
                                     )
                            )
                         {
                             return 0;
                         }else{
-                            // Successfully define a variable, so now 
+                            // Successfully define a variable, so now
                             // an attribute for the mesh if it exists.
                             if (strcmp(mesh,"")){
                                 mpath1 = malloc(strlen("/adios_schema")+strlen(name)+1);
@@ -1585,9 +1594,9 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                         t_varying = adios_flag_no;
                     }else{
                         t_varying = adios_flag_no;
-                        // If the user enters anything else than "yes" or "no" 
+                        // If the user enters anything else than "yes" or "no"
                         // Output a warning letting them no that the default ("no"
-                        // will be use give instead of their value 
+                        // will be use give instead of their value
                         log_warn ("config.xml: the value of the time varying "
                                 "attribute can only be 'yes' or 'no'. The "
                                 "unrecognize value of '%s' is ignored and "
@@ -1976,6 +1985,8 @@ int adios_parse_config (const char * config, MPI_Comm comm)
         adios_transports_initialized = 1;
         adios_init_transports (&adios_transports);
     }
+    // NCSU ALACRITY-ADIOS - Initialize transform methods
+    adios_transform_init();
 
     char * buffer = NULL;
     //#if HAVE_MPI
@@ -2260,6 +2271,8 @@ int adios_local_config (MPI_Comm comm)
         adios_transports_initialized = 1;
         adios_init_transports (&adios_transports);
     }
+    // NCSU ALACRITY-ADIOS - Initialize transform methods
+    adios_transform_init();
 
     init_comm = comm;
     return 1;
@@ -2305,7 +2318,7 @@ static PairStruct * get_and_preprocess_params (const char * parameters)
             adios_verbose_level = 0; //don't print errors
             removeit = 1;
         }
-        else if (!strcasecmp (p->name, "logfile")) 
+        else if (!strcasecmp (p->name, "logfile"))
         {
             /*fprintf (stderr,"****************** logfile = %s\n", p->value);*/
             if (p->value) {
@@ -2326,7 +2339,7 @@ static PairStruct * get_and_preprocess_params (const char * parameters)
             if (p == params) {
                 // remove head
                 //fprintf(stderr, "  Remove HEAD  p = %x p->next = %x\n", p, p->next);
-                p = p->next; 
+                p = p->next;
                 params->next = NULL;
                 free_name_value_pairs (params);
                 params = p;
@@ -2550,7 +2563,7 @@ void adios_cleanup ()
                 free (adios_groups->group->vars->name);
             if (adios_groups->group->vars->path)
                 free (adios_groups->group->vars->path);
-            // ADIOS Schema 
+            // ADIOS Schema
             // if (adios_groups->group->vars->mesh)
             // free (adios_groups->group->vars->mesh);
 
@@ -2598,6 +2611,10 @@ void adios_cleanup ()
 
                 free (adios_groups->group->vars->stats);
             }
+
+            // NCSU ALACRITY-ADIOS - Clean transform metadata
+            adios_transform_clear_transform_var(adios_groups->group->vars);
+
             if (adios_groups->group->vars->data)
                 free (adios_groups->group->vars->data);
 
@@ -2707,7 +2724,7 @@ void adios_cleanup ()
           }
           while (adios_groups->group->meshs->rectilinear->coordinates)
           {
-        v = adios_groups->group->meshs->rectilinear->coordinates->next;                        
+        v = adios_groups->group->meshs->rectilinear->coordinates->next;
         free (adios_groups->group->meshs->rectilinear->coordinates);
         adios_groups->group->meshs->rectilinear->coordinates = v;
     }

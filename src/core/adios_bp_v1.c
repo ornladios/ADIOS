@@ -410,7 +410,9 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
             uint32_t characteristic_set_length;
             uint8_t item = 0;
 
+            // NCSU - Clear stats structure (Drew: probably redundant with memset above, but leave it to be safe)
             (*root)->characteristics [j].stats = 0;
+
             characteristic_set_count = (uint8_t) *(b->buff + b->offset);
             b->offset += 1;
 
@@ -741,6 +743,14 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
                             }
                         }
                         b->offset += dims_length;
+                        break;
+                    }
+
+                    // NCSU ALACRITY-ADIOS - Reading variable transformation type
+                    case adios_characteristic_transform_type:
+                    {
+                        adios_transform_deserialize_transform_characteristic(&(*root)->characteristics[j].transform, b);
+                        break;
                     }
                 }
                 item++;
@@ -1069,6 +1079,18 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
                         }
                         b->offset += 2;
 
+                        break;
+                    }
+
+                    // NCSU ALACRITY-ADIOS - Deserialize transform characteristic
+                    case adios_characteristic_transform_type:
+                    {
+                        adios_transform_deserialize_transform_characteristic(&(*root)->characteristics[j].transform, b);
+                        /*
+                        (*root)->characteristics [j].transform_type =
+                                            *(uint8_t *) (b->buff + b->offset);
+                        b->offset += 1;
+                        */
                         break;
                     }
                 }
@@ -1409,6 +1431,14 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
     var_header->characteristics.value = 0;
     var_header->characteristics.dims.count = 0;
     var_header->characteristics.dims.dims = 0;
+    // NCSU - Initialize statistics fields
+    var_header->characteristics.bitmap = 0;
+    var_header->characteristics.stats = 0;
+    // NCSU ALACRITY-ADIOS - Initialize transform field
+    adios_transform_init_transform_characteristic(&var_header->characteristics.transform);
+    //var_header->characteristics.transform_type = adios_transform_none;
+    //var_header->characteristics.pre_transform_type = adios_unknown;
+    //var_header->characteristics.pre_transform_dimensions = 0;
     for (i = 0; i < characteristics_count; i++)
     {
         uint8_t flag;
@@ -1436,6 +1466,11 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
                     swap_64(var_header->characteristics.payload_offset);
                 }
                 b->offset += 8;
+                break;
+
+            // NCSU ALACRITY-ADIOS - Read in transform type field
+            case adios_characteristic_transform_type:
+                adios_transform_deserialize_transform_characteristic(&var_header->characteristics.transform, b);
                 break;
 
             //NCSU - Read in bitmap
@@ -1726,7 +1761,9 @@ int adios_clear_var_header_v1 (struct adios_var_header_struct_v1 * var_header)
 
         free (c->stats);
         c->stats = 0;
+        c->bitmap = 0; // NCSU - Added by Drew Boyuka
     }
+
     if (c->dims.dims)
     {
         free (c->dims.dims);
@@ -1739,6 +1776,9 @@ int adios_clear_var_header_v1 (struct adios_var_header_struct_v1 * var_header)
         c->value = 0;
     }
     c->var_id = 0;
+
+    // NCSU ALACRITY-ADIOS - Clear transform metadata
+    adios_transform_clear_transform_characteristic(&c->transform);
 
     return 0;
 }
