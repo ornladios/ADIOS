@@ -33,8 +33,18 @@ if test "x$with_mxml" == "xno"; then
 elif test "x$with_mxml" == "xyes" -o "x$with_mxml" == "x"; then
 
     dnl If nothing was given, then look in the system libs
-    MXML_CPPFLAGS=""
+    if test -n "$MXML_LIB"; then
+         MXML_LDFLAGS="$MXML_LIB"
+    else
+       dnl If not in the environment, then look in the system libs
     MXML_LDFLAGS=""
+    fi
+
+    if test -n "$MXML_INC"; then
+        MXML_CPPFLAGS="$MXML_INC"
+    else
+        MXML_CPPFLAGS=""
+    fi
     ac_with_mxml=yes
 
 else
