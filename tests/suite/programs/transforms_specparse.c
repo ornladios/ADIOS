@@ -68,42 +68,6 @@ struct specparse_test {
 
 const int NUM_TESTS = sizeof(TESTS)/sizeof(TESTS[0]);
 
-void test1() {
-    // Parse a spec string
-    struct adios_transform_spec *origspec = adios_transform_parse_spec("identity:a=123,b,c=321,,,f=12321");
-    struct adios_transform_spec *origspecToClear = origspec;
-
-    // Duplicate then delete the original, thus testing both copy() and free()
-    struct adios_transform_spec *spec = adios_transform_spec_copy(origspec);
-    adios_transform_free_spec(&origspec);
-    memset(origspecToClear, 0, sizeof(*origspecToClear));
-
-    // Ensure the content of the parsed spec is as expected
-    assert(spec->transform_type == adios_transform_identity);
-    assert(strcmp(spec->transform_type_str, "identity") == 0);
-
-    assert(spec->param_count == 6);
-    assert(spec->params);
-
-    assert(strcmp(spec->params[0].key, "a") == 0);
-    assert(strcmp(spec->params[0].value, "123") == 0);
-
-    assert(strcmp(spec->params[1].key, "b") == 0);
-    assert(spec->params[1].value == NULL);
-
-    assert(strcmp(spec->params[2].key, "c") == 0);
-    assert(strcmp(spec->params[2].value, "321") == 0);
-
-    assert(strcmp(spec->params[3].key, "") == 0);
-    assert(spec->params[3].value == NULL);
-
-    assert(strcmp(spec->params[4].key, "") == 0);
-    assert(spec->params[4].value == NULL);
-
-    assert(strcmp(spec->params[5].key, "f") == 0);
-    assert(strcmp(spec->params[5].value, "12321") == 0);
-}
-
 void run_test(struct specparse_test *test) {
     const struct adios_transform_spec *actual = adios_transform_parse_spec(test->specstr);
     const struct adios_transform_spec *expected = &test->expected;
@@ -148,10 +112,7 @@ void run_tests() {
 }
 
 int main(int argc, char **argv) {
-    test1();
     run_tests();
 
     return 0;
 }
-
-
