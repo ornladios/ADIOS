@@ -90,7 +90,7 @@ static void read_test_file(double *arr) {
 
 int main(int argc, char **argv) {
     MPI_Init(&argc, &argv);
-    adios_init("transforms.xml");
+    adios_init("transforms.xml", comm);
 
     double *arr = malloc(N * sizeof(double));
     memset(arr, 123, N * sizeof(double));

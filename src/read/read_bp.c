@@ -174,8 +174,7 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r);
                       ,slice_size                   \
                       ,MPI_BYTE                     \
                       ,&status                      \
-                      );                            \
-        totalSeekCount++; totalReadLength += slice_size; /*READ TIMER*/\
+                      );
 
 // To read subfiles
 #define MPI_FILE_READ_OPS2_BUF(buf)                                                         \
@@ -235,8 +234,7 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r);
                       ,slice_size                                                           \
                       ,MPI_BYTE                                                             \
                       ,&status                                                              \
-                      );                                                                    \
-        totalSeekCount++; totalReadLength += slice_size; /*READ TIMER*/\
+                      );
 
 
 /* This routine release one step. It only frees the var/attr namelist. */

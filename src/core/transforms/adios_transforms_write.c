@@ -16,8 +16,6 @@
 #include "adios_transforms_write.h"
 #include "adios_transforms_specparse.h"
 
-typedef char bool;
-
 ////////////////////////////////////////
 // adios_group_size support
 ////////////////////////////////////////
@@ -33,8 +31,8 @@ uint64_t adios_transform_worst_case_transformed_group_size(uint64_t group_size, 
 
     // Table of what transform types have been seen so far.
     // Allocated on stack; no dynamic memory to clean up.
-    bool transform_type_seen[num_adios_transform_types];
-    memset(transform_type_seen, 0, num_adios_transform_types * sizeof(bool));
+    int transform_type_seen[num_adios_transform_types];
+    memset(transform_type_seen, 0, num_adios_transform_types * sizeof(int));
 
     // Identify all transform methods used, and count the number of non-scalar
     // variables
@@ -76,13 +74,13 @@ uint64_t adios_transform_worst_case_transformed_group_size(uint64_t group_size, 
 static struct adios_dimension_struct * new_dimension() {
     struct adios_dimension_struct *dim = (struct adios_dimension_struct *)malloc(sizeof(struct adios_dimension_struct));
     dim->dimension.rank = 0;
-    dim->dimension.id = 0;
+    dim->dimension.var = NULL;
     dim->dimension.time_index = adios_flag_no;
     dim->global_dimension.rank = 0;
-    dim->global_dimension.id = 0;
+    dim->global_dimension.var = NULL;
     dim->global_dimension.time_index = adios_flag_unknown;
     dim->local_offset.rank = 0;
-    dim->local_offset.id = 0;
+    dim->local_offset.var = NULL;
     dim->local_offset.time_index = adios_flag_unknown;
     dim->next = 0;
     return dim;
@@ -102,7 +100,7 @@ static int find_time_dimension(struct adios_dimension_struct *dim, struct adios_
         // have a time dimension, and must infer the location based on whether
         // this is FORTRAN or not
         if (!cur_dim->next) {
-            if (cur_dim->global_dimension.id == 0 && cur_dim->global_dimension.rank == 0) {
+            if (cur_dim->global_dimension.var == NULL && cur_dim->global_dimension.rank == 0) {
                 if (fortran_order_flag == adios_flag_yes) {
                     if (time_dim) *time_dim = cur_dim;
                     return i;
@@ -237,15 +235,14 @@ struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *
 uint64_t adios_transform_get_pre_transform_var_size(struct adios_group_struct *group, struct adios_var_struct *var) {
     assert(var->dimensions);
     assert(var->type != adios_string);
-    return adios_get_dimension_space_size(var,
-                                          var->pre_transform_type,
+    return adios_get_type_size(var->pre_transform_type, NULL) *
+           adios_get_dimension_space_size(var,
                                           var->pre_transform_dimensions,
-                                          group,
-                                          NULL); // NULL because it's not a string, so unneeded
+                                          group);
 }
 
 static inline uint64_t generate_unique_block_id(const struct adios_file_struct * fd, const struct adios_var_struct *var) {
-    return (fd->group->process_id << 32) + var->write_count;
+    return ((uint64_t)fd->group->process_id << 32) + (uint64_t)var->write_count;
 }
 
 static int adios_transform_store_transformed_length(struct adios_file_struct * fd, struct adios_var_struct *var, uint64_t transformed_len) {
@@ -383,7 +380,7 @@ int adios_transform_init_transform_var(struct adios_var_struct *var) {
 }
 
 // Serialize
-static void adios_transform_dereference_dimensions_characteristic(struct adios_file_struct *fd, struct adios_index_characteristic_dims_struct_v1 *dst_char_dims, const struct adios_dimension_struct *src_var_dims) {
+static void adios_transform_dereference_dimensions_characteristic(struct adios_index_characteristic_dims_struct_v1 *dst_char_dims, const struct adios_dimension_struct *src_var_dims) {
     uint8_t i;
     uint8_t c = count_dimensions(src_var_dims);
 
@@ -393,9 +390,10 @@ static void adios_transform_dereference_dimensions_characteristic(struct adios_f
     uint64_t *ptr = dst_char_dims->dims;
     for (i = 0; i < c; i++)
     {
-        ptr[0] = get_value_for_dim(fd, &src_var_dims->dimension);
-        ptr[1] = get_value_for_dim(fd, &src_var_dims->global_dimension);
-        ptr[2] = get_value_for_dim(fd, &src_var_dims->local_offset);
+        //  Casts to eliminate const-ness problems
+        ptr[0] = adios_get_dim_value((struct adios_dimension_item_struct *)&src_var_dims->dimension);
+        ptr[1] = adios_get_dim_value((struct adios_dimension_item_struct *)&src_var_dims->global_dimension);
+        ptr[2] = adios_get_dim_value((struct adios_dimension_item_struct *)&src_var_dims->local_offset);
         src_var_dims = src_var_dims->next;
         ptr += 3; // Go to the next set of 3
     }
@@ -410,13 +408,13 @@ static void adios_transform_dereference_dimensions_var(struct adios_dimension_st
             (struct adios_dimension_struct *)malloc(sizeof (struct adios_dimension_struct));
 
         // de-reference dimension id
-        d_new->dimension.id = 0;
+        d_new->dimension.var = NULL;
         d_new->dimension.rank = adios_get_dim_value(&src_var_dims->dimension);
         d_new->dimension.time_index = src_var_dims->dimension.time_index;
-        d_new->global_dimension.id = 0;
+        d_new->global_dimension.var = NULL;
         d_new->global_dimension.rank = adios_get_dim_value(&src_var_dims->global_dimension);
         d_new->global_dimension.time_index = src_var_dims->global_dimension.time_index;
-        d_new->local_offset.id = 0;
+        d_new->local_offset.var = NULL;
         d_new->local_offset.rank = adios_get_dim_value(&src_var_dims->local_offset);
         d_new->local_offset.time_index = src_var_dims->local_offset.time_index;
         d_new->next = 0;
@@ -498,7 +496,7 @@ uint8_t adios_transform_serialize_transform_characteristic(const struct adios_in
            );
 }
 
-uint8_t adios_transform_serialize_transform_var(struct adios_file_struct *fd, const struct adios_var_struct *var, uint64_t *write_length,
+uint8_t adios_transform_serialize_transform_var(const struct adios_var_struct *var, uint64_t *write_length,
                                                 char **buffer, uint64_t *buffer_size, uint64_t *buffer_offset) {
 
     // In this case, we are going to actually serialize the dimensions as a
@@ -507,7 +505,7 @@ uint8_t adios_transform_serialize_transform_var(struct adios_file_struct *fd, co
     // to the common serialization routine.
 
     struct adios_index_characteristic_dims_struct_v1 tmp_dims;
-    adios_transform_dereference_dimensions_characteristic(fd, &tmp_dims, var->pre_transform_dimensions);
+    adios_transform_dereference_dimensions_characteristic(&tmp_dims, var->pre_transform_dimensions);
 
     // Perform the serialization using the common function with the temp dimension structure
     uint8_t char_write_count =
@@ -549,13 +547,13 @@ int adios_transform_clear_transform_var(struct adios_var_struct *var) {
 }
 
 // Copy
-int adios_transform_copy_transform_characteristic(struct adios_file_struct *fd, struct adios_index_characteristic_transform_struct *dst_transform, const struct adios_var_struct *src_var) {
+int adios_transform_copy_transform_characteristic(struct adios_index_characteristic_transform_struct *dst_transform, const struct adios_var_struct *src_var) {
     adios_transform_init_transform_characteristic(dst_transform);
 
     dst_transform->transform_type = src_var->transform_type;
     dst_transform->pre_transform_type = src_var->pre_transform_type;
 
-    adios_transform_dereference_dimensions_characteristic(fd, &dst_transform->pre_transform_dimensions, src_var->pre_transform_dimensions);
+    adios_transform_dereference_dimensions_characteristic(&dst_transform->pre_transform_dimensions, src_var->pre_transform_dimensions);
 
     dst_transform->transform_metadata_len = src_var->transform_metadata_len;
     if (src_var->transform_metadata_len) {

@@ -22,7 +22,7 @@ check_C=local_array_time \
         selections \
         path_test \
         reuse_dim \
-        connect_to_space_subset \
+        connect_to_space_subset
 
 test_C=hashtest transforms copy_subvolume transforms_specparse
 

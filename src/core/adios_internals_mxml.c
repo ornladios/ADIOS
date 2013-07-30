@@ -28,14 +28,11 @@
 #endif
 
 static enum ADIOS_FLAG adios_host_language_fortran = adios_flag_yes;
-// NCSU ALACRITY-ADIOS: Might need these to be extern for library linking reasons, we shall see...
-//extern struct adios_method_list_struct * adios_methods;
-//extern struct adios_group_list_struct * adios_groups;
-struct adios_method_list_struct * adios_methods = 0;
-struct adios_group_list_struct * adios_groups = 0;
-
-//extern struct adios_method_list_struct * adios_methods;
-//extern struct adios_group_list_struct * adios_groups;
+// NCSU ALACRITY-ADIOS: Need these to be extern so they can be accessed by both adios_internals.c and here
+extern struct adios_method_list_struct * adios_methods;
+extern struct adios_group_list_struct * adios_groups;
+//struct adios_method_list_struct * adios_methods = 0;
+//struct adios_group_list_struct * adios_groups = 0;
 
 struct adios_transport_struct * adios_transports = 0;
 static int adios_transports_initialized = 0;

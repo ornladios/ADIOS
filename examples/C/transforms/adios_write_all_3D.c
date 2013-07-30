@@ -72,7 +72,7 @@ void adios_write_pg (char transform [], char input_dir [], uint8_t nvars, char *
 
     // Read the XML file specific to this transform and PG size
     sprintf (input_xml, "%s/%s.xml", input_dir, transform);
-    adios_init (input_xml);
+    adios_init (input_xml, comm);
 
     // Name the output bp file based on the name of the transform
     sprintf (output_bp_file, "%s/%s_%d.bp", input_dir, transform, pg_var_size);
@@ -122,9 +122,9 @@ void adios_write_pg (char transform [], char input_dir [], uint8_t nvars, char *
 
         adios_pin_timestep(1);
         if (t == 0) {
-            adios_open (&adios_handle, "S3D", output_bp_file, "w", &comm);
+            adios_open (&adios_handle, "S3D", output_bp_file, "w", comm);
         } else {
-            adios_open (&adios_handle, "S3D", output_bp_file, "a", &comm);
+            adios_open (&adios_handle, "S3D", output_bp_file, "a", comm);
         }
 
         // OX = OY = OZ = 0;
@@ -179,7 +179,7 @@ int main (int argc, char ** argv)
     data_dim.element_size = 8;
 
     pg_dim.ndims = 3;
-    
+
     pg_dim.dims [0] = 128;
     pg_dim.dims [1] = 128;
     pg_dim.dims [2] = 128;

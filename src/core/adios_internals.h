@@ -563,12 +563,10 @@ void adios_free_index_v1 (struct adios_index_struct_v1 * index);  // in adios_<m
 uint8_t count_dimensions (const struct adios_dimension_struct * dimensions);
 
 uint64_t adios_get_type_size (enum ADIOS_DATATYPES type, void * var);
-// NCSU ALACRITY-ADIOS - added this for the sake of transform functions
+// NCSU ALACRITY-ADIOS - added this for use in the transform layer
 uint64_t adios_get_dimension_space_size (struct adios_var_struct * var
-                                        ,enum ADIOS_DATATYPES type
                                         ,struct adios_dimension_struct * d
-                                        ,struct adios_group_struct * group, void * data
-                                        );
+                                        ,struct adios_group_struct * group);
 uint64_t adios_get_var_size (struct adios_var_struct * var
                             ,struct adios_group_struct * group, void * data
                             );

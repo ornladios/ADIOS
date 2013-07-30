@@ -81,14 +81,14 @@ int adios_transform_init_transform_var(struct adios_var_struct *var);
 // Returns number of characteristic flags written, outputs write_length, writes to buffer
 uint8_t adios_transform_serialize_transform_characteristic(const struct adios_index_characteristic_transform_struct *transform, uint64_t *write_length,
                                                            char **buffer, uint64_t *buffer_size, uint64_t *buffer_offset);
-uint8_t adios_transform_serialize_transform_var(struct adios_file_struct *fd, const struct adios_var_struct *var, uint64_t *write_length,
+uint8_t adios_transform_serialize_transform_var(const struct adios_var_struct *var, uint64_t *write_length,
                                                 char **buffer, uint64_t *buffer_size, uint64_t *buffer_offset);
 
 // Clear
 int adios_transform_clear_transform_var(struct adios_var_struct *var);
 
 // Copy
-int adios_transform_copy_transform_characteristic(struct adios_file_struct *fd, struct adios_index_characteristic_transform_struct *dst_transform, const struct adios_var_struct *src_var);
+int adios_transform_copy_transform_characteristic(struct adios_index_characteristic_transform_struct *dst_transform, const struct adios_var_struct *src_var);
 int adios_transform_copy_var_transform(struct adios_var_struct *dst_var, const struct adios_var_struct *src_var);
 
 // Calculate overhead

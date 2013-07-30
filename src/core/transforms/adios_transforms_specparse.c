@@ -31,6 +31,8 @@ inline static int strcount(char *input, char chr) {
 // var is a pointer type
 #define MALLOC_ARRAY(var, count) ((var) = (typeof(var))malloc(sizeof(*var) * (count)))
 #define MALLOC_VAR(var) MALLOC_ARRAY(var, 1)
+#define CALLOC_ARRAY(var, count) ((var) = (typeof(var))calloc((count), sizeof(*var)))
+#define CALLOC_VAR(var) CALLOC_ARRAY(var, 1)
 
 struct adios_transform_spec * adios_transform_parse_spec(const char *spec_str) {
     //struct adios_transform_spec *spec = (struct adios_transform_spec *)malloc(sizeof(struct adios_transform_spec));
@@ -98,7 +100,7 @@ struct adios_transform_spec * adios_transform_parse_spec(const char *spec_str) {
 
 struct adios_transform_spec * adios_transform_spec_copy(struct adios_transform_spec *src) {
     struct adios_transform_spec *dst;
-    MALLOC_VAR(dst);
+    CALLOC_VAR(dst);
 
     dst->transform_type = src->transform_type;
 
@@ -135,6 +137,8 @@ struct adios_transform_spec * adios_transform_spec_copy(struct adios_transform_s
                 else
                     dst_kv->value = NULL;
             }
+        } else {
+            dst->params = NULL;
         }
     } else {
         dst->backing_str = NULL;
