@@ -123,6 +123,7 @@ typedef struct _flexpath_write_file_data {
     EVsource formatSource;
     EVsource dataSource;
     EVsource offsetSource;
+    EVsource dropSource;
     EVsource opSource;
     EVsource stepSource;
     EVaction multi_action;
@@ -494,6 +495,11 @@ char *multiqueue_action = "{\n\
     attr_list mine;\n\
     if(EVcount_varMsg()>0) {\n\
         EVdiscard_and_submit_varMsg(0, 0);\n\
+    }\n\
+    if(EVcount_drop_evgroup_msg()>0) {\n\
+       if(EVcount_evgroup()>0){\n\
+          EVdiscard_evgroup(0);\n\
+       }\n\
     }\n\
     if(EVcount_update_step_msg()>0) {\n\
         mine = EVget_attrs_update_step_msg(0);\n\
@@ -896,6 +902,12 @@ static int flush_handler(CManager cm, void* vevent, void* client_data, attr_list
         &fileData->controlMutex, &fileData->controlCondition);
     return 0;
 }
+static int
+drop_evgroup_handler(CManager cm, void *vevent, void *client_data, attr_list attrs){
+    drop_evgroup_msg *msg = vevent;
+    CMCondition_signal(cm, msg->condition);    
+    return 0;
+}
 
 // terminal action for op messages: enqueues
 static int op_handler(CManager cm, void* vevent, void* client_data, attr_list attrs) {
@@ -1049,8 +1061,12 @@ void control_thread(void* arg)
                     int q = queue_count(&fileData->dataQueue);
                     fp_write_log("QUEUE", "after step queue count now %d\n", q);
                     FMfree_var_rec_elements(fileData->fm->ioFormat, node->data);
-                    fileData->currentStep++;
-                    
+
+		    drop_evgroup_msg dropMsg;
+		    dropMsg.step = fileData->currentStep;
+		    dropMsg.condition = CMCondition_get(flexpathWriteData.cm, NULL);
+		    EVsubmit(fileData->dropSource, &dropMsg, fileData->attrs);
+                    fileData->currentStep++;                    
                     int i;
                     //for all bridges if step == currentstep send ack
 		    // this block gets repeated in finalize.  gets repeated
@@ -1341,7 +1357,8 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
 				     format_format_list, 
 				     var_format_list, 
 				     op_format_list, 
-				     evgroup_format_list, 
+				     evgroup_format_list,
+				     drop_evgroup_msg_format_list,
 				     data_format_list, 
 				     update_step_msg_format_list, 
 				     NULL};
@@ -1357,15 +1374,19 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
 						     fileData->multiStone, op_format_list, op_free,  NULL); 
     fileData->offsetSource = EVcreate_submit_handle(flexpathWriteData.cm, 
 						    fileData->multiStone, evgroup_format_list);
+    fileData->dropSource = EVcreate_submit_handle(flexpathWriteData.cm, 
+						  fileData->multiStone, drop_evgroup_msg_format_list);
     fileData->stepSource = EVcreate_submit_handle(flexpathWriteData.cm, 
 						    fileData->multiStone, update_step_msg_format_list);
     
     
     fp_write_log("SETUP", "setup terminal actions\n");
     EVassoc_terminal_action(flexpathWriteData.cm, fileData->sinkStone, 
-	var_format_list, var_handler, fileData);
+			    var_format_list, var_handler, fileData);
     EVassoc_terminal_action(flexpathWriteData.cm, fileData->sinkStone, 
-	op_format_list, op_handler, fileData);
+			    op_format_list, op_handler, fileData);
+    EVassoc_terminal_action(flexpathWriteData.cm, fileData->sinkStone, 
+			    drop_evgroup_msg_format_list, drop_evgroup_handler, fileData);
     EVassoc_terminal_action(flexpathWriteData.cm, fileData->sinkStone, 
 	flush_format_list, flush_handler, fileData);
 

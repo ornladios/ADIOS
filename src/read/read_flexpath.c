@@ -582,7 +582,8 @@ update_step_handler(CManager cm, void *vevent, void *client_data, attr_list attr
     return 0;
 }
 
-static int op_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
+static int 
+op_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
     op_msg* msg = (op_msg*)vevent;    
     ADIOS_FILE *adiosfile = (ADIOS_FILE*)client_data;
     flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
@@ -602,6 +603,7 @@ static int op_msg_handler(CManager cm, void *vevent, void *client_data, attr_lis
 static int
 group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 {
+    fprintf(stderr, "group handler called\n");
     evgroup * msg = (evgroup*)vevent;
     ADIOS_FILE *adiosfile = client_data;
     flexpath_file_data * fp = (flexpath_file_data*)adiosfile->fh;

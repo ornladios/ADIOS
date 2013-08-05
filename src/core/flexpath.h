@@ -54,8 +54,12 @@
 
 #define CONTACT_STR_LEN 50
 
-typedef enum { FORMAT=0, DATA, EVGROUP } Flush_type;
+typedef enum {FORMAT, DATA, EVGROUP } Flush_type;
 
+typedef struct _drop_evgroup{
+    int step;
+    int condition;
+}drop_evgroup_msg;
 /*
  * Contains the offset information for a variable for all writers.
  * offsets_per_rank is == ndims.
@@ -113,6 +117,13 @@ typedef struct _update_step_msg{
     int step;
     int finalized;
 } update_step_msg;
+
+static FMField drop_evgroup_msg_field_list[]=
+{
+    {"step", "integer", sizeof(int), FMOffset(drop_evgroup_msg*, step)},
+    {"condition", "integer", sizeof(int), FMOffset(drop_evgroup_msg*, condition)},
+    {NULL, NULL, 0, 0}
+};
 
 static FMField update_step_msg_field_list[]=
 {
@@ -180,6 +191,12 @@ static FMField op_file_field_list[] =
     {"type", "integer", sizeof(int), FMOffset(op_msg_ptr, type)},
     {"step", "integer", sizeof(int), FMOffset(op_msg_ptr, step)},
     {"condition", "integer", sizeof(int), FMOffset(op_msg_ptr, condition)},
+    {NULL, NULL, 0, 0}
+};
+
+static FMStructDescRec drop_evgroup_msg_format_list[]=
+{
+    {"drop_evgroup_msg", drop_evgroup_msg_field_list, sizeof(drop_evgroup_msg), NULL},
     {NULL, NULL, 0, 0}
 };
 
