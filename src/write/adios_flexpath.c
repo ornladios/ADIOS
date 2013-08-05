@@ -50,7 +50,7 @@
 
 /************************* Structure and Type Definitions ***********************/
 // used for messages in the control queue
-typedef enum {VAR=0, DATA_FLUSH, OPEN, CLOSE, INIT, EVGROUP_FLUSH, DATA_BUFFER, OFFSET_MSG} FlexpathMessageType;
+typedef enum {VAR=0, DATA_FLUSH, OPEN, CLOSE, INIT, EVGROUP_FLUSH, DATA_BUFFER} FlexpathMessageType;
 
 // maintains connection information
 typedef struct _flexpath_stone {
@@ -146,14 +146,16 @@ typedef struct _flexpath_write_file_data {
     FlexpathVarNode* writtenVars;
     FlexpathVarNode* formatVars;
     FlexpathQueueNode* controlQueue;
-    FlexpathQueueNode* dataQueue;    
+    FlexpathQueueNode* dataQueue;   
+    FlexpathQueueNode* evgroupQueue;
     pthread_mutex_t controlMutex;
     pthread_mutex_t dataMutex;
     pthread_mutex_t dataMutex2;
+    pthread_mutex_t evgroupMutex;
     pthread_cond_t controlCondition;
     pthread_cond_t dataCondition; //fill
     pthread_cond_t dataCondition2; //empty
-
+    pthread_cond_t evgroupCondition;
     pthread_t ctrl_thr_id;    
 
     // global array distribution data
@@ -888,7 +890,9 @@ static int flush_handler(CManager cm, void* vevent, void* client_data, attr_list
     Flush_msg* msg = (Flush_msg*) vevent;
     EVtake_event_buffer(cm, msg);
     fp_write_log("MSG", "recieved flush : rank %d type data\n", msg->rank);
-    threaded_enqueue(&fileData->controlQueue, msg, DATA_FLUSH, 
+    FlexpathMessageType type;
+    type = (msg->type == DATA) ? DATA_FLUSH : EVGROUP_FLUSH;
+    threaded_enqueue(&fileData->controlQueue, msg, type, 
         &fileData->controlMutex, &fileData->controlCondition);
     return 0;
 }
@@ -1202,20 +1206,23 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
     pthread_mutex_t dm =  PTHREAD_MUTEX_INITIALIZER;
     pthread_mutex_t dm2 =  PTHREAD_MUTEX_INITIALIZER;
     pthread_mutex_t om =  PTHREAD_MUTEX_INITIALIZER;
+    pthread_mutex_t evm = PTHREAD_MUTEX_INITIALIZER;
     pthread_cond_t cc =  PTHREAD_COND_INITIALIZER;
     pthread_cond_t dc =  PTHREAD_COND_INITIALIZER;
     pthread_cond_t dc2 =  PTHREAD_COND_INITIALIZER;
-    
+    pthread_cond_t evc = PTHREAD_COND_INITIALIZER;
+
     fileData->controlMutex = ctrlm;
     fileData->dataMutex = dm;
     fileData->dataMutex2 = dm2;
     fileData->openMutex = om;
-    
+    fileData->evgroupMutex = evm;
+     
     // setup conditions
     fileData->controlCondition = cc;
     fileData->dataCondition = dc;
     fileData->dataCondition2 = dc2;
-
+    fileData->evgroupCondition = evc;
     // communication channel setup
     char writer_info_filename[200];
     char writer_ready_filename[200];
@@ -1366,13 +1373,7 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
     fp_write_log("SETUP", "linking stones\n");
     EVaction_set_output(flexpathWriteData.cm, fileData->multiStone, 
         fileData->multi_action, 0, fileData->sinkStone);
-
-    //link up multiqueue ports to bridge stones
-    /* for(i=0; i<numBridges; i++) { */
-    /*     EVaction_set_output(flexpathWriteData.cm,  */
-    /*         fileData->multiStone, multi_action, i+1, fileData->bridges[i].myNum); */
-    /* } */
-    
+   
     fp_write_log("SETUP", "arranged evpath graph\n");
 	
     FMContext my_context = create_local_FMcontext();
@@ -1388,12 +1389,7 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
         
     fp_write_log("SETUP", "fork control thread\n");
     
-    pthread_create(&fileData->ctrl_thr_id, NULL, (void*)&control_thread, fileData);
-    //thr_thread_t forked_thread = thr_fork(control_thread, fileData);
-    /* if(!forked_thread) { */
-    /*     perr("on open ERROR forking control thread"); */
-    /* } */
-   
+    pthread_create(&fileData->ctrl_thr_id, NULL, (void*)&control_thread, fileData);   
     return 0;	
 }
 
