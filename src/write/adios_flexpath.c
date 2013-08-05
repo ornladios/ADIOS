@@ -500,6 +500,7 @@ char *multiqueue_action = "{\n\
        if(EVcount_evgroup()>0){\n\
           EVdiscard_evgroup(0);\n\
        }\n\
+       EVdiscard_and_submit_drop_evgroup_msg(0,0);\n\
     }\n\
     if(EVcount_update_step_msg()>0) {\n\
         mine = EVget_attrs_update_step_msg(0);\n\
@@ -1066,6 +1067,7 @@ void control_thread(void* arg)
 		    dropMsg.step = fileData->currentStep;
 		    dropMsg.condition = CMCondition_get(flexpathWriteData.cm, NULL);
 		    EVsubmit(fileData->dropSource, &dropMsg, fileData->attrs);
+		    CMCondition_wait(flexpathWriteData.cm,  dropMsg.condition); 
                     fileData->currentStep++;                    
                     int i;
                     //for all bridges if step == currentstep send ack
