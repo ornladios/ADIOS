@@ -509,21 +509,9 @@ char *multiqueue_action = "{\n\
             EVdiscard_and_submit_op_msg(0,0);\n\
         }\n\
     }\n\
-    if(EVcount_formatMsg()>0) {\n\
-        formatMsg* msg = EVdata_formatMsg(0);\n\
-        mine=EVget_attrs_formatMsg(0);\n\
-        my_rank= attr_ivalue(mine, \"fp_rank_num\");\n\
-    }\n\
     if(EVcount_flush()>0) {\n\
         flush* c = EVdata_flush(0);\n\
-        if(c->type == 0) {\n\
-            if(EVcount_formatMsg()>0) {\n\
-                formatMsg* msg = EVdata_formatMsg(0);\n\
-                msg->condition = c->condition;\n\
-                EVdiscard_flush(0);\n\
-                EVsubmit(c->rank+1, msg);\n\
-            }\n\
-       }else if(c->type == 2){ \n\
+         if(c->type == 2){ \n\
              if(EVcount_evgroup()>0){\n\
                evgroup *g = EVdata_evgroup(0); \n\
                g->condition = c->condition;\n\
@@ -1387,21 +1375,8 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
     
     fp_write_log("SETUP", "arranged evpath graph\n");
 	
-    //store format id in multiqueue
-    Format_msg *initial_format_msg = malloc(sizeof(Format_msg));
-    FMContext my_context = create_local_FMcontext();	
+    FMContext my_context = create_local_FMcontext();
     fileData->fm->ioFormat = register_data_format(my_context, fileData->fm->format);
-    int id_len;
-    char* temp = get_server_ID_FMformat(fileData->fm->ioFormat, &id_len);
-    initial_format_msg->format_id = temp;
-    initial_format_msg->id_len = id_len;
-    int rep_len;
-    char *temp2 = get_server_rep_FMformat(fileData->fm->ioFormat, &rep_len);
-    initial_format_msg->rep_id = temp2;
-    initial_format_msg->rep_id_len = rep_len;
-    
-    fp_write_log("SETUP", "submitting format stuff\n");
-    EVsubmit_general(fileData->formatSource, initial_format_msg, format_free, fileData->attrs);
     
     fp_write_log("SETUP", "indicating to reader that ready\n");
     sprintf(writer_ready_filename, "%s_%s", fd->name, "writer_ready.txt");
