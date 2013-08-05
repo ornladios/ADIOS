@@ -80,6 +80,7 @@ typedef struct _var {
 typedef struct _evgroup {    
     int condition;
     int num_vars;
+    int step;
     global_var* vars;
 } evgroup, *evgroup_ptr;
 
@@ -154,6 +155,7 @@ static FMField evgroup_field_list[]=
 {
     {"condition", "integer", sizeof(int), FMOffset(evgroup_ptr, condition)},
     {"num_vars", "integer", sizeof(int), FMOffset(evgroup_ptr, num_vars)},
+    {"step", "integer", sizeof(int), FMOffset(evgroup_ptr, step)},
     {"vars", "global_var[num_vars]", sizeof(global_var), FMOffset(evgroup_ptr, vars)},
     {NULL, NULL, 0, 0}
 };

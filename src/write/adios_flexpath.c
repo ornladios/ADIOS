@@ -892,17 +892,17 @@ static int var_handler(CManager cm, void *vevent, void *client_data, attr_list a
 }
 
 // terminal action for flush messages: enqueues
-static int flush_handler(CManager cm, void* vevent, void* client_data, attr_list attrs) {
+static int 
+flush_handler(CManager cm, void* vevent, void* client_data, attr_list attrs) {
     FlexpathWriteFileData* fileData = (FlexpathWriteFileData*) client_data;
     Flush_msg* msg = (Flush_msg*) vevent;
     EVtake_event_buffer(cm, msg);
     fp_write_log("MSG", "recieved flush : rank %d type data\n", msg->rank);
-    FlexpathMessageType type;
-    type = (msg->type == DATA) ? DATA_FLUSH : EVGROUP_FLUSH;
-    threaded_enqueue(&fileData->controlQueue, msg, type, 
+    threaded_enqueue(&fileData->controlQueue, msg, DATA_FLUSH, 
         &fileData->controlMutex, &fileData->controlCondition);
     return 0;
 }
+
 static int
 drop_evgroup_handler(CManager cm, void *vevent, void *client_data, attr_list attrs){
     drop_evgroup_msg *msg = vevent;
@@ -911,7 +911,8 @@ drop_evgroup_handler(CManager cm, void *vevent, void *client_data, attr_list att
 }
 
 // terminal action for op messages: enqueues
-static int op_handler(CManager cm, void* vevent, void* client_data, attr_list attrs) {
+static int 
+op_handler(CManager cm, void* vevent, void* client_data, attr_list attrs) {
     FlexpathWriteFileData* fileData = (FlexpathWriteFileData*) client_data;
     op_msg* msg = (op_msg*) vevent;
     EVtake_event_buffer(cm, msg);
@@ -943,7 +944,8 @@ attr_list set_size_atom(attr_list attrs, int value) {
 }
 
 // sets a dst rank atom
-attr_list set_dst_rank_atom(attr_list attrs, int value) {
+attr_list 
+set_dst_rank_atom(attr_list attrs, int value) {
     atom_t dst_atom = attr_atom_from_string("fp_dst_rank");
     int dst;
     if(!get_int_attr(attrs, dst_atom, &dst)) {
@@ -954,7 +956,8 @@ attr_list set_dst_rank_atom(attr_list attrs, int value) {
 }
 
 // sets a dst condition atom
-attr_list set_dst_condition_atom(attr_list attrs, int condition){
+attr_list 
+set_dst_condition_atom(attr_list attrs, int condition){
     atom_t dst_atom = attr_atom_from_string("fp_dst_condition");
     int dst;
     if(!get_int_attr(attrs, dst_atom, &dst)){
@@ -980,7 +983,8 @@ send_update_step_msgs(FlexpathWriteFileData *fileData, int step)
 }
 
 // processes messages from control queue
-void control_thread(void* arg) 
+void 
+control_thread(void* arg) 
 {
     FlexpathWriteFileData* fileData = (FlexpathWriteFileData*)arg;
     int rank = fileData->rank;
@@ -1020,7 +1024,7 @@ void control_thread(void* arg)
 			EVcreate_bridge_action(flexpathWriteData.cm, 
 					       attr_list_from_string(fileData->bridges[open->process_id].contact), 
 					       fileData->bridges[open->process_id].theirNum);
-		
+		    
 		    EVaction_set_output(flexpathWriteData.cm, 
 					fileData->multiStone, 
 					fileData->multi_action, 
@@ -1045,6 +1049,7 @@ void control_thread(void* arg)
                 } else {
                     fp_write_log("STEP", "recieved op with future step\n");
                 }
+		EVreturn_event_buffer(flexpathWriteData.cm, open);
             } else if(controlMsg->type==CLOSE) {
                 op_msg* close = (op_msg*) controlMsg->data;
 		pthread_mutex_lock(&fileData->openMutex);
@@ -1092,7 +1097,8 @@ void control_thread(void* arg)
 					 fileData->attrs);
                       }
                     }
-		}
+		 }
+		 EVreturn_event_buffer(flexpathWriteData.cm, close);
 	    }else if(controlMsg->type == INIT){ 
 		fp_write_log("DATAMUTEX", "in use 1\n"); 
 		dataNode = threaded_peek(&fileData->dataQueue, 
@@ -1122,6 +1128,7 @@ void control_thread(void* arg)
 
 		EVsubmit_general(fileData->dataSource, 
 				 temp, data_free, fileData->attrs);
+		EVreturn_event_buffer(flexpathWriteData.cm, initMsg);
 	    }
 	    else{
 		log_error("control_thread: Unrecognized Control Message\n");
@@ -1545,7 +1552,7 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
     struct adios_group_struct * g = fd->group;
     struct adios_var_struct * list = g->vars;
 
-    if(fileData->globalCount > 0 && !fileData->sentGlobalOffsets){	
+    if(fileData->globalCount > 0){	
 	fp_write_log("BOUNDING", "check offsets\n");
         // process local offsets here	
 	int num_gbl_vars = 0;
@@ -1595,13 +1602,13 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
             free (local_dimensions);
 	}
 	    
-	evgroup * gp = (evgroup*)malloc(sizeof(evgroup));
+	evgroup * gp = malloc(sizeof(evgroup));
 	gp->num_vars = num_gbl_vars;
+	gp->step = fileData->writerStep;
 	gp->vars = gbl_vars;
-	fileData->gp = gp;
+	fileData->gp = gp;       
 	fileData->attrs = set_size_atom(fileData->attrs, fileData->size);
 	EVsubmit(fileData->offsetSource, gp, fileData->attrs);
-	
 	fileData->sentGlobalOffsets = 1;
     }
     //send_update_step_msgs(fileData, fileData->writerStep);
@@ -1636,25 +1643,6 @@ extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method
 	fileData = fileData->next;
 	    
     }
-	
-    // all data has been read by all readers.
-    // we can send everyone end_of_stream messages.
-    int i;
-    /* for(i=0; i<fileData->numBridges; i++) { */
-    /* 	if(fileData->bridges[i].created) { */
-    /* 	    op_msg* ack = (op_msg*) malloc(sizeof(op_msg)); */
-    /* 	    ack->file_name = strdup(fileData->name); */
-    /* 	    ack->process_id = fileData->rank; */
-    /* 	    ack->step = fileData->currentStep; */
-    /* 	    ack->type = 4; */
-    /* 	    ack->condition = fileData->bridges[i].condition; */
-    /* 	    fileData->attrs = set_dst_rank_atom(fileData->attrs, i+1); */
-    /* 	    fp_write_log("FINALIZE", " sending opfinalize _msg : dst %d step %d type ack\n", */
-    /* 			 i, fileData->currentStep); */
-    /* 	    fprintf(stderr, "\t\t\t sending finalize message to %d\n", i); */
-    /* 	    EVsubmit_general(fileData->opSource, ack, op_free, fileData->attrs); */
-    /* 	} */
-    /* } */
 }
 
 // provides unknown functionality
