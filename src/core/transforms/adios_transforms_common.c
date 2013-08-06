@@ -147,6 +147,13 @@
 #include <assert.h>
 #include <stdint.h>
 
+
+// Returns true for big endian, false for little endian
+int get_system_endianness() {
+    uint16_t word = 0x1234;
+    return *(uint8_t*)(&word) == 0x12; // Returns 1 (big endian) iff the high byte comes first
+}
+
 ////////////////////////////////////////
 // Variable introspection
 ////////////////////////////////////////

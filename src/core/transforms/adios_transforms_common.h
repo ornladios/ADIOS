@@ -14,6 +14,8 @@
 #include "core/transforms/adios_transforms_hooks.h" // Includes the hooks header to load and access the ADIOS_TRANSFORM_TYPE enum
 //#include "adios_internals.h"
 
+int get_system_endianness();
+
 /////////////////////////////////////
 // Variable introspection
 /////////////////////////////////////

@@ -23,12 +23,6 @@ enum ADIOS_TRANSFORM_REQGROUP_RESULT_MODE adios_transform_read_request_get_mode(
 
 // Delegate functions
 
-// Returns true for big endian, false for little endian
-static int get_system_endianness() {
-    uint16_t word = 0x1234;
-    return *(uint8_t*)(&word) == 0x12; // Returns 1 (big endian) iff the high byte comes first
-}
-
 /*
  * Determines the block indices corresponding to a start and end timestep.
  * Both the input start/end timesteps and the output start/end blockidx are lower bound inclusive, upper bound exclusive: [start, end)
