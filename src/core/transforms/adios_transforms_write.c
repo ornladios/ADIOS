@@ -89,7 +89,8 @@ static struct adios_dimension_struct * new_dimension() {
     return dim;
 }
 
-static int find_time_dimension(struct adios_dimension_struct *dim, struct adios_dimension_struct **time_dim, enum ADIOS_FLAG fortran_order_flag) {
+// TODO: Delete this function when the new version is confirmed working (i.e., tests with FORTRAN writes and C reads, and vice versa, all work)
+static int find_time_dimension_old(struct adios_dimension_struct *dim, struct adios_dimension_struct **time_dim, enum ADIOS_FLAG fortran_order_flag) {
     struct adios_dimension_struct *cur_dim;
     int i;
     for (i = 0, cur_dim = dim; cur_dim; cur_dim = cur_dim->next, i++ ) {
@@ -119,18 +120,51 @@ static int find_time_dimension(struct adios_dimension_struct *dim, struct adios_
     return -1;
 }
 
+static int is_dimension_item_zero(struct adios_dimension_item_struct *dim_item) {
+    return dim_item->rank == 0 && dim_item->var == NULL && dim_item->attr == NULL;
+}
+
+static int is_time_dimension(struct adios_dimension_struct *dim) {
+    return dim->dimension.time_index == adios_flag_yes ||
+            dim->global_dimension.time_index == adios_flag_yes ||
+            dim->local_offset.time_index == adios_flag_yes;
+}
+
+static int has_time_dimension(struct adios_dimension_struct *dim) {
+    int has_time = 0;
+    struct adios_dimension_struct *last_dim = NULL;
+    for (; dim != NULL; dim = dim->next) {
+        last_dim = dim; // This will hold the last non-NULL value of dim
+
+        // If this dimension is explicitly marked as time, then there is a time dimension
+        if (is_time_dimension(dim))
+            has_time = 1;
+    }
+
+    // If the last dimension has local dimension != 0 and global dimension == 0, there is a time dimension
+    // FIXME: This may be affected by the same bug as mentioned near the end of adios_read_bp_is_var_timed
+    //        in read_bp.c, in that this condition is ambiguous for 1D local arrays (if the comment in read_bp.c
+    //        has been addressed, remove this one as well).
+    if (!is_dimension_item_zero(last_dim->dimension) &&
+        is_dimension_item_zero(last_dim->global_dimension))
+        has_time = 1;
+
+    return has_time;
+}
+
+// TODO: Delete this once the replacement is working correctly
 // If there is a time dimension the final dimensions will look like this:
 //   local:  t  l1 l2 l3 (or l1 l2 l3 t if fortran order)
 //   global: g1 g2 g3 0
 //   offset: o1 o2 o3 0
-static void adios_transform_attach_byte_array_dimensions(struct adios_group_struct *grp, struct adios_var_struct *var) {
+static void adios_transform_attach_byte_array_dimensions_old(struct adios_group_struct *grp, struct adios_var_struct *var) {
     int i, new_ndim, new_time_dim_pos;
     uint64_t ldims[3];
     uint64_t gdims[3];
     uint64_t odims[3];
 
     int orig_ndim = count_dimensions(var->pre_transform_dimensions);
-    int orig_time_dim_pos = find_time_dimension(var->pre_transform_dimensions, NULL, grp->adios_host_language_fortran);
+    int orig_time_dim_pos = find_time_dimension_old(var->pre_transform_dimensions, NULL, grp->adios_host_language_fortran);
 
     assert(orig_time_dim_pos == -1 || orig_time_dim_pos == 0 || orig_time_dim_pos == orig_ndim - 1); // Time dimension is either first, last, or non-existant
 
@@ -178,6 +212,33 @@ static void adios_transform_attach_byte_array_dimensions(struct adios_group_stru
     }
 }
 
+// Attaches to the given variable new metadata defining a 1D local array of bytes.
+static void adios_transform_attach_byte_array_dimensions(struct adios_group_struct *grp, struct adios_var_struct *var) {
+    int i;
+
+    const int orig_ndim = count_dimensions(var->pre_transform_dimensions);
+    const int orig_has_time = has_time_dimension(var->pre_transform_dimensions);
+    const int fortran_dim_order = (grp->adios_host_language_fortran == adios_flag_yes);
+
+    const int new_ndim = (orig_has_time ? 2 : 1); // 1D byte array, plus a time dimension if the original had one
+    const int new_time_dim_pos = (fortran_dim_order ? new_ndim - 1 : 0); // Place the time dimension last for FORTRAN order, first for C order
+
+    // Construct the dimension linked list
+    for (i = 0; i < new_ndim; i++) {
+        struct adios_dimension_struct *new_dim = new_dimension();
+
+        new_dim->dimension.time_index = (i == new_time_dim_pos) ? adios_flag_yes : adios_flag_no;
+
+        // Clear global dimension/local offset arrays to all 0 to indicate a local array
+        // For local dimensions, set the time dimension to 1, and the non-time dimension to 0 as a placeholder
+        new_dim->dimension.rank = (i == new_time_dim_pos) ? 1 : 0;
+        new_dim->global_dimension.rank = 0;
+        new_dim->local_offset.rank = 0;
+
+        adios_append_dimension(&var->dimensions, new_dim);
+    }
+}
+
 static void adios_transform_convert_var_to_byte_array(struct adios_group_struct *grp, struct adios_var_struct *var) {
     // Save old metadata
     var->pre_transform_type = var->type;
@@ -216,7 +277,7 @@ struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *
 
     // Convert variable to 1D byte array
     adios_transform_convert_var_to_byte_array(orig_var_grp, orig_var);
-    log_debug("Converted variable %s into byte array\n", orig_var->name);
+    log_debug("Data Transforms layer: Converted variable %s into byte array internally\n", orig_var->name);
 
     // Allocate the transform-specific metadata buffer
     orig_var->transform_metadata_len = adios_transform_get_metadata_size(transform_spec);
@@ -232,10 +293,11 @@ struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *
 ////////////////////////////////////////
 
 // NCSU ALACRITY-ADIOS - Compute the pre-transform size of a variable, in bytes
-// Precondition: var is a "dimensioned" variable; that is, not a scalar, and not a string
+// Precondition: var is a non-scalar that has been transformed (transform_type != none)
 uint64_t adios_transform_get_pre_transform_var_size(struct adios_group_struct *group, struct adios_var_struct *var) {
     assert(var->dimensions);
     assert(var->type != adios_string);
+    assert(var->transform_type != adios_transform_none);
     return adios_get_type_size(var->pre_transform_type, NULL) *
            adios_get_dimension_space_size(var,
                                           var->pre_transform_dimensions,
@@ -246,7 +308,8 @@ static inline uint64_t generate_unique_block_id(const struct adios_file_struct *
     return ((uint64_t)fd->group->process_id << 32) + (uint64_t)var->write_count;
 }
 
-static int adios_transform_store_transformed_length(struct adios_file_struct * fd, struct adios_var_struct *var, uint64_t transformed_len) {
+// TODO: Delete this once the new implementation is known to work
+static int adios_transform_store_transformed_length_old(struct adios_file_struct * fd, struct adios_var_struct *var, uint64_t transformed_len) {
     struct adios_dimension_struct *dim1, *dim2, *dim3;
     struct adios_dimension_item_struct *pg_id_offset, *byte_length_ldim;
 
@@ -285,6 +348,36 @@ static int adios_transform_store_transformed_length(struct adios_file_struct * f
     byte_length_ldim->rank = transformed_len;
 
     //printf(">>> Statistics bitmap at store-time: %08lx\n", var->bitmap);
+
+    return 1;
+}
+
+/*
+ * Stores the given transformed data length (number of bytes) into the appropriate place
+ * in the dimensions array (the non-time local dimension).
+ */
+static int adios_transform_store_transformed_length(struct adios_file_struct * fd, struct adios_var_struct *var, uint64_t transformed_len) {
+    struct adios_dimension_struct *dim1, *dim2;
+    struct adios_dimension_item_struct *byte_length_ldim;
+
+    // Get the first two dimensions (only the first must always exist)
+    dim1 = var->dimensions;
+    assert(dim1);
+    dim2 = dim1->next;
+
+    if (dim1->dimension.time_index == adios_flag_yes) {
+        // If the first dimension is a time dimension, then the byte array dimension must be the second one
+        assert(dim2);
+        byte_length_ldim = &dim2->dimension;
+    } else {
+        // Otherwise, either the second dimension is the time dimension, or there is no time dimension
+        // Either way, the first dimension is the byte array dimension
+        byte_length_ldim = &dim1->dimension;
+    }
+
+    // Finally, insert the byte length into the appropriate local dimension "rank" (i.e., as a literal value,
+    // as opposed to a reference to a scalar/attribute).
+    byte_length_ldim->rank = transformed_len;
 
     return 1;
 }
@@ -400,6 +493,12 @@ static void adios_transform_dereference_dimensions_characteristic(struct adios_i
     }
 }
 
+/*
+ * Takes a given dimension struct (src_var_dims), converts all dimension items to literal
+ * values by reading the value of any reference scalars/attributes. These literal values
+ * are stored to a new dimension struct (dst_var_dims) in the "rank" fields. The original
+ * struct is unchanged.
+ */
 static void adios_transform_dereference_dimensions_var(struct adios_dimension_struct **dst_var_dims, const struct adios_dimension_struct *src_var_dims) {
     uint8_t i;
     uint8_t c = count_dimensions(src_var_dims);
@@ -573,6 +672,8 @@ int adios_transform_copy_var_transform(struct adios_var_struct *dst_var, const s
     dst_var->transform_type = src_var->transform_type;
     dst_var->pre_transform_type = src_var->pre_transform_type;
 
+    // Dereferemce all dimensions, forcing them to be literal values ("rank" fields), as
+    // required by the function that calls this, adios_copy_var_written().
     adios_transform_dereference_dimensions_var(&dst_var->pre_transform_dimensions, src_var->pre_transform_dimensions);
 
     // for parameter
@@ -592,13 +693,13 @@ int adios_transform_copy_var_transform(struct adios_var_struct *dst_var, const s
 // Calculate overhead
 uint64_t adios_transform_calc_transform_characteristic_overhead(struct adios_var_struct *var) {
     if (var->transform_type == adios_transform_none) {
-        return 0; // No overhead needed, since characteristic won't be written
+        return 0; // No overhead needed, since the characteristic won't be written at all
     } else {
         return 1 +    // For characterstic flag
                1 +    // For transform_type field
-               1 +  // For pre_transform_type field
+               1 +    // For pre_transform_type field
                adios_calc_var_characteristics_dims_overhead(var->pre_transform_dimensions) + // For pre-transform dimensions field
                2 +    // For transform_metadata_len
-               var->transform_metadata_len;    // For transform_metadata
+               var->transform_metadata_len; // For transform_metadata
     }
 }
