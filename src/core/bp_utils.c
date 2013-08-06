@@ -1901,7 +1901,10 @@ int bp_get_dimension_generic_notime (const struct adios_index_characteristic_dim
                     offsets[k] = offsets[k + 1];
                 }
 
-                // NCSU ALACRITY-ADIOS - Bugfix, I think
+                // NCSU ALACRITY-ADIOS - Bugfix, since we have just shifted down all
+                //   dimensions, but some code relies on unused dimensions being 0
+                //   (this function has no other way to indicate to the called that
+                //   the returned dimensions may be less numerous than the input).
                 gdims[ndim-1] = 0;
                 ldims[ndim-1] = 0;
                 offsets[ndim-1] = 0;
