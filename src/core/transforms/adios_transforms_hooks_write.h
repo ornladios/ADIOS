@@ -52,10 +52,10 @@ typedef struct {
 // Transform method function declarations
 #define DECLARE_TRANSFORM_WRITE_METHOD(tmethod) \
     uint16_t adios_transform_##tmethod##_get_metadata_size(struct adios_transform_spec *transform_spec); \
-    uint64_t adios_transform_##tmethod##_calc_vars_transformed_size(struct adios_transform_spec *transform_spec, \
-                                                                    uint64_t orig_size, int num_vars);	\
-    int adios_transform_##tmethod##_apply(struct adios_file_struct *fd, struct adios_var_struct *var,	\
-                                          uint64_t *transformed_len,									\
+    uint64_t adios_transform_##tmethod##_calc_vars_transformed_size(enum ADIOS_TRANSFORM_TYPE type,      \
+                                                                    uint64_t orig_size, int num_vars);	 \
+    int adios_transform_##tmethod##_apply(struct adios_file_struct *fd, struct adios_var_struct *var,	 \
+                                          uint64_t *transformed_len,									 \
                                           int use_shared_buffer, int *wrote_to_shared_buffer);
 
 // Transform method function registration
@@ -81,7 +81,7 @@ typedef struct {
             UNIMPL_TRANSFORM_WRITE_FN(tmethod, __FUNCTION__);								\
             return 0;																		\
         }																					\
-        uint64_t adios_transform_##tmethod##_calc_vars_transformed_size(struct adios_transform_spec *transform_spec, \
+        uint64_t adios_transform_##tmethod##_calc_vars_transformed_size(enum ADIOS_TRANSFORM_TYPE type,     \
                                                                         uint64_t orig_size, int num_vars) {	\
             UNIMPL_TRANSFORM_WRITE_FN(tmethod, __FUNCTION__);								\
             return 0;																		\
