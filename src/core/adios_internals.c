@@ -5295,7 +5295,8 @@ int adios_multiply_dimensions (uint64_t * size
 // NCSU ALACRITY-ADIOS - generalizes the dimension multiplication in adios_get_var_size
 //                       to work on a dimension struct, rather than a var struct, so it
 //                       can be reused to compute the size from pre_transform_dimensions
-// TODO: Factor out "var", since needed because of multiple_dimensions, which needs it only for debugging output
+// TODO: Factor out "var", since needed because of adios_multiply_dimensions, which needs
+//       it only for debugging output.
 uint64_t adios_get_dimension_space_size (struct adios_var_struct *var
                                         ,struct adios_dimension_struct * d
                                         ,struct adios_group_struct * group) {
