@@ -46,7 +46,7 @@ uint16_t adios_transform_bzip2_get_metadata_size(struct adios_transform_spec *tr
     return (sizeof(uint64_t) + sizeof(char));    // metadata: original data size (uint64_t) + compression succ flag (char)
 }
 
-uint64_t adios_transform_bzip2_calc_vars_transformed_size(struct adios_transform_spec *transform_spec, uint64_t orig_size, int num_vars)
+uint64_t adios_transform_bzip2_calc_vars_transformed_size(enum ADIOS_TRANSFORM_TYPE type, uint64_t orig_size, int num_vars)
 {
     return (orig_size);
 }
