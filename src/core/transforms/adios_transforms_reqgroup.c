@@ -150,6 +150,10 @@ adios_transform_raw_read_request * adios_transform_raw_read_request_new(ADIOS_SE
 }
 
 // Define to use the new writeblock-based raw read interface to the I/O transport layer
+// NOTE: Support for NOT using this option (i.e., non-WRITEBLOCK reads) is discontinued, and
+// disabling this option will certainly lead to errors!
+// TODO: Totally remove this option, leaving only the WRITEBLOCK method, once it has been tested
+// and confirmed working/viable
 #define RAW_READS_USE_WRITEBLOCK
 
 adios_transform_raw_read_request * adios_transform_raw_read_request_new_byte_segment(const adios_transform_pg_read_request *pg_reqgroup, uint64_t start, uint64_t count, void *data) {
@@ -167,10 +171,10 @@ adios_transform_raw_read_request * adios_transform_raw_read_request_new_byte_seg
     wb->element_offset = start; // Assume element type of the raw variable is byte
     wb->nelements = count;
 
-    // Check separately to avoid wrap-around error from masking a problem
-    assert(start <= pg_reqgroup->raw_varblock->count[1]);
-    assert(count <= pg_reqgroup->raw_varblock->count[1]);
-    assert(start + count <= pg_reqgroup->raw_varblock->count[1]);
+    // Catch any bugs that cause wrap-around early:
+    assert(start <= pg_reqgroup->raw_var_length);
+    assert(count <= pg_reqgroup->raw_var_length);
+    assert(start + count <= pg_reqgroup->raw_var_length);
 #else
     const ADIOS_VARBLOCK *raw_varblock = pg_reqgroup->raw_varblock;
     uint64_t *start_sel, *count_sel;
@@ -194,13 +198,14 @@ adios_transform_raw_read_request * adios_transform_raw_read_request_new_byte_seg
 }
 
 adios_transform_raw_read_request * adios_transform_raw_read_request_new_whole_pg(const adios_transform_pg_read_request *pg_reqgroup, void *data) {
-    // raw_varblock has two dimensions: PG ID and byte offset. Thus, the length of this (raw) PG is the length of the 2nd dimension.
 #ifdef RAW_READS_USE_WRITEBLOCK
     // Use absolute time index, but not sub-PG read
     ADIOS_SELECTION *sel = common_read_selection_writeblock(pg_reqgroup->blockidx_in_pg);
     sel->u.block.is_absolute_index = 1;
     return adios_transform_raw_read_request_new(sel, data);
 #else
+    // NEW: raw_varblock is always 1D, with that dimension being byte length
+    // OLD, NO LONGER APPLICABLE: raw_varblock has two dimensions: PG ID and byte offset. Thus, the length of this (raw) PG is the length of the 2nd dimension.
     const ADIOS_VARBLOCK *raw_varblock = pg_reqgroup->raw_varblock;
     return adios_transform_raw_read_request_new_byte_segment(pg_reqgroup, 0, raw_varblock->count[1], data);
 #endif
@@ -247,6 +252,7 @@ void adios_transform_raw_read_request_free(adios_transform_raw_read_request **su
 
 adios_transform_pg_read_request * adios_transform_pg_read_request_new(
         int timestep, int timestep_blockidx, int blockidx,
+        int orig_ndim, int raw_ndim,
         const ADIOS_VARBLOCK *orig_varblock,
         const ADIOS_VARBLOCK *raw_varblock,
         const ADIOS_SELECTION *pg_intersection_sel,
@@ -261,7 +267,9 @@ adios_transform_pg_read_request * adios_transform_pg_read_request_new(
     new_pg_reqgroup->timestep = timestep;
     new_pg_reqgroup->blockidx_in_timestep = timestep_blockidx;
     new_pg_reqgroup->blockidx_in_pg = blockidx;
-    new_pg_reqgroup->raw_var_length = raw_varblock->count[1]; // TODO: Break out into helper function in transforms_common
+    new_pg_reqgroup->raw_var_length = adios_transform_get_transformed_var_size_from_blockinfo(raw_ndim, raw_varblock); //raw_varblock->count[0];
+    new_pg_reqgroup->raw_ndim = raw_ndim;
+    new_pg_reqgroup->orig_ndim = orig_ndim;
     new_pg_reqgroup->raw_varblock = raw_varblock;
     new_pg_reqgroup->orig_varblock = orig_varblock;
     new_pg_reqgroup->pg_intersection_sel = pg_intersection_sel;

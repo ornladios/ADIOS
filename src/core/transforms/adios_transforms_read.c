@@ -17,11 +17,22 @@
 
 #define MYFREE(p) {free(p); (p)=NULL;}
 
-enum ADIOS_TRANSFORM_REQGROUP_RESULT_MODE adios_transform_read_request_get_mode(adios_transform_read_request *req) {
+// Read request inspection
+enum ADIOS_TRANSFORM_REQGROUP_RESULT_MODE adios_transform_read_request_get_mode(const adios_transform_read_request *req) {
     return req->orig_data != NULL ? FULL_RESULT_MODE : PARTIAL_RESULT_MODE;
 }
 
-// Delegate functions
+// BLOCKINFO inspection
+uint64_t adios_transform_get_transformed_var_size_from_blockinfo(int raw_ndim, const struct ADIOS_VARBLOCK *raw_block) {
+    assert(raw_ndim == 1); // Any time dimension should have been stripped from BLOCKINFO
+
+    // Since we swtiched to 1D local byte arrays, the first (and only) dimension contains what we want
+    return raw_block->count[0];
+}
+
+//
+// Read request management (rest of the file)
+//
 
 /*
  * Determines the block indices corresponding to a start and end timestep.
@@ -47,6 +58,7 @@ static void compute_blockidx_range(const ADIOS_VARINFO *raw_varinfo, int from_st
 }
 
 inline static const ADIOS_SELECTION * create_pg_bounds(int ndim, ADIOS_VARBLOCK *orig_vb) {
+    // Commented out for performance
     //const uint64_t *new_start = (uint64_t*)bufdup(orig_vb->start, sizeof(uint64_t), ndim);
     //const uint64_t *new_count = (uint64_t*)bufdup(orig_vb->count, sizeof(uint64_t), ndim);
 
@@ -133,6 +145,7 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
             adios_transform_pg_read_request *new_pg_reqgroup;
             new_pg_reqgroup = adios_transform_pg_read_request_new(timestep, timestep_blockidx,
                                                                   blockidx,
+                                                                  transinfo->orig_ndim, raw_varinfo->ndim,
                                                                   orig_vb, raw_vb,
                                                                   pg_intersection_sel,
                                                                   pg_bounds_sel);
@@ -172,7 +185,7 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
         }
     }
 
-    // If this read request does not intersect any PGs, then clear the new read request
+    // If this read request does not intersect any PGs, then clear the new read request and return NULL
     if (new_reqgroup->num_pg_reqgroups == 0) {
         adios_transform_read_request_free(&new_reqgroup);
         new_reqgroup = NULL;
@@ -333,10 +346,6 @@ static uint64_t compute_selection_size_in_bytes(const ADIOS_SELECTION *sel,
  * Takes a datablock containing data potentially applicable to the given read
  * request group, identifies that data (if any), and returns it as an
  * ADIOS_VARCHUNK. Additionally, free the datablock.
- *
- * NOTE: This function transfers ownership of the ->data field of the datablock
- * and places it in the returned ADIOS_VARCHUNK (if an ADIOS_VARCHUNK is
- * returned).
  */
 static ADIOS_VARCHUNK * apply_datablock_to_chunk_and_free(adios_datablock *result, adios_transform_read_request *reqgroup) {
     ADIOS_VARCHUNK *chunk;
@@ -403,8 +412,8 @@ static ADIOS_VARCHUNK * extract_chunk_from_finished_read_reqgroup(adios_transfor
 
 // Take an ADIOS_VARCHUNK that was just read and process it with the transform
 // system. If it was part of a read request corresponding to a transformed
-// variable, consume it, and possibly replacing it with a detransformed chunk.
-// Otherwise, do nothing.
+// variable, consume it, and (optionally) replace it with a detransformed chunk.
+// Otherwise, do nothing, allowing the calling function to manage it as usual.
 void adios_transform_process_read_chunk(adios_transform_read_request **reqgroups_head, ADIOS_VARCHUNK ** chunk) {
 #if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_start ("adios_transform_handle_data");

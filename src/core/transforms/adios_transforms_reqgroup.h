@@ -42,6 +42,8 @@ typedef struct _adios_transform_pg_read_request {
     int blockidx_in_timestep;            // The block ID of this PG within the timestep
     int blockidx_in_pg;                  // The block ID of this PG within the variable
     uint64_t raw_var_length;             // Transformed variable data length, in bytes
+    int raw_ndim;                        // Number of dimensions in the raw (byte array) dimensions (should always be 1)
+    int orig_ndim;                       // Number of dimensions in the original (user-view) dimensions
     const ADIOS_VARBLOCK *raw_varblock;  // Points into adios_transform_read_reqgroup->varinfo->blockinfo; do not free here
     const ADIOS_VARBLOCK *orig_varblock; // Points into adios_transform_read_reqgroup->transinfo->orig_blockinfo; do not free here
 
@@ -113,6 +115,7 @@ adios_transform_raw_read_request * adios_transform_raw_read_request_pop(adios_tr
 // adios_transform_pg_read_request manipulation
 //
 adios_transform_pg_read_request * adios_transform_pg_read_request_new(int timestep, int timestep_blockidx, int blockidx,
+                                                                      int orig_ndim, int raw_ndim,
                                                                       const ADIOS_VARBLOCK *orig_varblock,
                                                                       const ADIOS_VARBLOCK *raw_varblock,
                                                                       const ADIOS_SELECTION *pg_intersection_sel,
