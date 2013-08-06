@@ -548,7 +548,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     /* Get dimensions and flip if caller != writer language */
     /* Note: ndim below doesn't include time if there is any */
     // NCSU ALACRITY-ADIOS - Note: this function has been modified to return
-    //   the "original" dimensions of the variable (i.e., not 1D byte array)
+    //   the "raw" dimensions (i.e., 1D byte array)
     bp_get_and_swap_dimensions (fh, v, file_is_fortran, &ndim, &dims, &nsteps, file_is_fortran);
 
     assert (ndim == sel->u.bb.ndim);
