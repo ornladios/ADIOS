@@ -21,17 +21,17 @@
 enum ADIOS_DATATYPES adios_transform_get_var_original_type_var(struct adios_var_struct *var);
 enum ADIOS_DATATYPES adios_transform_get_var_original_type_var_header(struct adios_var_header_struct_v1 *var_header);
 enum ADIOS_DATATYPES adios_transform_get_var_original_type_index(struct adios_index_var_struct_v1 *var);
-int adios_transform_get_characteristic_original_num_dims(struct adios_index_characteristic_struct_v1 *ch);
+int adios_transform_get_var_original_ndims_characteristic(struct adios_index_characteristic_struct_v1 *ch);
 
-struct adios_index_characteristic_dims_struct_v1 * adios_transform_get_characteristic_original_dims(struct adios_index_characteristic_struct_v1 *ch);
-int adios_transform_get_var_original_num_dims(struct adios_index_var_struct_v1 *var);
+struct adios_index_characteristic_dims_struct_v1 * adios_transform_get_var_original_dims_characteristic(struct adios_index_characteristic_struct_v1 *ch);
+int adios_transform_get_var_original_ndims_index(struct adios_index_var_struct_v1 *var);
 
 /*
  * Returns whether the given variable is transformed
  * @param var the variable to check
  * @return whether the variable is transformed
  */
-int adios_transform_var_is_transformed(const struct adios_index_var_struct_v1 *var);
+int adios_transform_is_var_transformed(const struct adios_index_var_struct_v1 *var);
 
 /*
  * Returns the number of bytes in the transformed form of the variable.
@@ -41,7 +41,7 @@ int adios_transform_var_is_transformed(const struct adios_index_var_struct_v1 *v
  * @param var the variable
  * @return the number of bytes in the transformed form of 'var'
  */
-uint64_t adios_transform_var_get_transformed_size(const struct adios_index_var_struct_v1 *var, int time_index);
+uint64_t adios_transform_get_var_transformed_size(const struct adios_index_var_struct_v1 *var, int time_index);
 
 //////////////////////////////////////////////////
 // Transform characteristic management functions

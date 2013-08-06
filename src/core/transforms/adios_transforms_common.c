@@ -174,25 +174,25 @@ enum ADIOS_DATATYPES adios_transform_get_var_original_type_index(struct adios_in
         return var->type;
 }
 
-int adios_transform_get_characteristic_original_num_dims(struct adios_index_characteristic_struct_v1 *ch) {
+int adios_transform_get_var_original_ndims_characteristic(struct adios_index_characteristic_struct_v1 *ch) {
     if (ch->transform.transform_type != adios_transform_none)
         return ch->transform.pre_transform_dimensions.count;
     else
         return ch->dims.count;
 }
 
-struct adios_index_characteristic_dims_struct_v1 * adios_transform_get_characteristic_original_dims(struct adios_index_characteristic_struct_v1 *ch) {
+struct adios_index_characteristic_dims_struct_v1 * adios_transform_get_var_original_dims_characteristic(struct adios_index_characteristic_struct_v1 *ch) {
     if (ch->transform.transform_type != adios_transform_none)
         return &ch->transform.pre_transform_dimensions;
     else
         return &ch->dims;
 }
 
-int adios_transform_get_var_original_num_dims(struct adios_index_var_struct_v1 *var) {
-    return adios_transform_get_characteristic_original_num_dims(&var->characteristics[0]);
+int adios_transform_get_var_original_ndims_index(struct adios_index_var_struct_v1 *var) {
+    return adios_transform_get_var_original_ndims_characteristic(&var->characteristics[0]);
 }
 
-int adios_transform_var_is_transformed(const struct adios_index_var_struct_v1 *var) {
+int adios_transform_is_var_transformed(const struct adios_index_var_struct_v1 *var) {
     assert(var);
     if (var->characteristics_count < 1)
         return 0;
@@ -200,7 +200,7 @@ int adios_transform_var_is_transformed(const struct adios_index_var_struct_v1 *v
     return var->characteristics[0].transform.transform_type != adios_transform_none;
 }
 
-uint64_t adios_transform_var_get_transformed_size(const struct adios_index_var_struct_v1 *var, int time_index) {
+uint64_t adios_transform_get_var_transformed_size(const struct adios_index_var_struct_v1 *var, int time_index) {
     struct adios_index_characteristic_dims_struct_v1 *dims;
     int dim;
     uint64_t size = 1;
@@ -209,7 +209,7 @@ uint64_t adios_transform_var_get_transformed_size(const struct adios_index_var_s
     uint64_t *ldims, *gdims, *offsets;
 
     assert(var);
-    assert(adios_transform_var_is_transformed(var));
+    assert(adios_transform_is_var_transformed(var));
     assert(time_index < var->characteristics_count);
 
     dims = &var->characteristics[time_index].dims;
