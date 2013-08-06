@@ -32,7 +32,9 @@
 #include "adios_transforms_read.h"
 #include "adios_transforms_write.h"
 
+#ifdef WITH_TIMER
 #include "timer.h"
+#endif
 
 #ifdef DMALLOC
 #include "dmalloc.h"

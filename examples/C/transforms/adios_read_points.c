@@ -1,4 +1,4 @@
-/* 
+/*
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
@@ -16,9 +16,11 @@
 #include "mpi.h"
 #include "adios_read.h"
 
+#ifdef WITH_TIMER
 #include <timer.h>
+#endif
 
-int main (int argc, char ** argv) 
+int main (int argc, char ** argv)
 {
     char        filename [256];
     int         i, j, datasize, if_any, ndim;
@@ -28,34 +30,36 @@ int main (int argc, char ** argv)
     ADIOS_VARCHUNK * chunk = 0;
     double * data = NULL;
     uint64_t start[2], count[2], npoints, * points;
-   
+
     MPI_Init (&argc, &argv);
+#ifdef WITH_TIMER
     timer_init();
+#endif
     adios_read_init_method (method, comm, NULL);
 
     ADIOS_FILE * f = adios_read_open_file ("adios_global.bp", method, comm);
     ADIOS_VARINFO * varinfo = adios_inq_var (f, "temperature");
     if (varinfo)
     {
-    	int nranks;
+        int nranks;
 
-    	ndim = varinfo->ndim;
-    	assert(ndim == 2);
+        ndim = varinfo->ndim;
+        assert(ndim == 2);
 
-    	nranks = varinfo->dims[0];
-    	assert(varinfo->dims[1] == 10);
+        nranks = varinfo->dims[0];
+        assert(varinfo->dims[1] == 10);
 
-    	datasize = (nranks / 2) * varinfo->dims[1] * sizeof(double);
-    	data = malloc (datasize);
+        datasize = (nranks / 2) * varinfo->dims[1] * sizeof(double);
+        data = malloc (datasize);
 
-    	npoints = 2 * nranks;
-    	points = malloc(npoints * ndim * sizeof(uint64_t));
-    	for (i = 0; i < npoints; i += 2) {
-    		points[i * ndim + 0] = i/2; // rank/row
-    		points[i * ndim + 1] = 2; // col
-    		points[(i+1) * ndim + 0] = i/2; // rank/row
-    		points[(i+1) * ndim + 1] = 6; // col
-    	}
+        npoints = 2 * nranks;
+        points = malloc(npoints * ndim * sizeof(uint64_t));
+        for (i = 0; i < npoints; i += 2) {
+            points[i * ndim + 0] = i/2; // rank/row
+            points[i * ndim + 1] = 2; // col
+            points[(i+1) * ndim + 0] = i/2; // rank/row
+            points[(i+1) * ndim + 1] = 6; // col
+        }
 
         sel1 = adios_selection_points(ndim, npoints, points);
 
@@ -64,7 +68,7 @@ int main (int argc, char ** argv)
 
         printf("Points read (columns 2 and 6 in all rows):\n");
         for (i = 0; i < npoints; i++) {
-        	printf("(%llu,%llu) = %.0lf\n", points[i*ndim+0], points[i*ndim+1], data[i]);
+            printf("(%llu,%llu) = %.0lf\n", points[i*ndim+0], points[i*ndim+1], data[i]);
         }
 
         adios_selection_delete (sel1);
@@ -74,7 +78,9 @@ int main (int argc, char ** argv)
     adios_read_close (f);
 
     adios_read_finalize_method (ADIOS_READ_METHOD_BP);
+#ifdef WITH_TIMER
     timer_finalize();
+#endif
     MPI_Finalize ();
     return 0;
 }

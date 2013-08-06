@@ -14,7 +14,9 @@
 #include <string.h>
 #include <assert.h>
 
+#ifdef WITH_TIMER
 #include <timer.h>
+#endif
 #include "mpi.h"
 #include "adios_read.h"
 
@@ -30,7 +32,9 @@ int main (int argc, char ** argv)
     uint64_t start[2], count[2], npoints, * points;
 
     MPI_Init (&argc, &argv);
+#ifdef WITH_TIMER
     timer_init();
+#endif
 
     adios_read_init_method (method, comm, NULL);
 
@@ -77,6 +81,7 @@ int main (int argc, char ** argv)
     adios_read_finalize_method (ADIOS_READ_METHOD_BP);
 
 
+#ifdef WITH_TIMER
     printf("[TIMERS] ");
     timer_result_t *results = timer_get_results_sorted();
     for (i = 0; i < timer_get_num_timers(); i++) {
@@ -84,9 +89,11 @@ int main (int argc, char ** argv)
     }
     printf("\n");
     free(results);
+#endif
 
-
+#ifdef WITH_TIMER
     timer_finalize();
+#endif
     MPI_Finalize ();
     return 0;
 }
