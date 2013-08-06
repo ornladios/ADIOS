@@ -129,7 +129,7 @@ typedef struct _flexpath_file_data
 
     int writer_finalized;
     int last_step;
-
+    int mystep;
     int num_sendees;
     int* sendees;
     int ackCondition;    
@@ -251,24 +251,9 @@ new_flexpath_file_data(const char * fname)
 	log_error("Cannot create data for new file.\n");
 	exit(1);
     }
+    memset(fp, 0, sizeof(flexpath_file_data));
     fp->file_name = strdup(fname);
-    fp->group_name = NULL;    
-    fp->var_list = NULL;
-    fp->gp = NULL;
-    fp->bridges = NULL;
-    fp->current_format = NULL;
-    fp->context = NULL;
-    
     fp->writer_coordinator = -1;
-    fp->valid = 0;
-    fp->num_bridges = 0;
-    fp->num_gp = 0;
-    fp->valid_evgroup = 0;
-    fp->num_vars = 0;
-    fp->sendees = NULL;
-    fp->num_sendees = 0;    
-    
-    fp->writer_finalized = 0;
     fp->last_step = -1;
     return fp;        
 }
@@ -582,7 +567,8 @@ update_step_handler(CManager cm, void *vevent, void *client_data, attr_list attr
     return 0;
 }
 
-static int op_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
+static int 
+op_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
     op_msg* msg = (op_msg*)vevent;    
     ADIOS_FILE *adiosfile = (ADIOS_FILE*)client_data;
     flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
@@ -1060,6 +1046,8 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
 	    fp->bridges[i].opened = 0;
             EVsubmit(fp->bridges[i].op_source, &close, NULL);
 
+	    //MPI_Barrier(fp->comm);
+
             op_msg open;
             open.step = adiosfile->current_step+1;
             open.type = 1;
@@ -1082,6 +1070,7 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
     /* 	return 0; */
     /* } */
     adiosfile->current_step++;
+    fp->mystep = adiosfile->current_step;
     // need to remove selectors from each var now.
     flexpath_var_info *tmpvars = fp->var_list;
     while(tmpvars){
@@ -1225,15 +1214,15 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
     case ADIOS_SELECTION_BOUNDINGBOX:
     {
         fp_log("BOUNDING", "bounding box scheduled read\n");
-	if(!fp->gp){
-	    Flush_msg msg;
-	    msg.type = EVGROUP;
-	    msg.rank = fp->rank;
-	    msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
-	    // maybe check to see if the bridge is create first.
-	    EVsubmit(fp->bridges[fp->writer_coordinator].flush_source, &msg, NULL);
-	    CMCondition_wait(fp_read_data->fp_cm, msg.condition);
-	}
+	//if(!fp->gp){
+	Flush_msg msg;
+	msg.type = EVGROUP;
+	msg.rank = fp->rank;
+	msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
+	// maybe check to see if the bridge is create first.
+	EVsubmit(fp->bridges[fp->writer_coordinator].flush_source, &msg, NULL);
+	CMCondition_wait(fp_read_data->fp_cm, msg.condition);
+	    //}
         int j=0;
 	int need_count = 0;
 	int sendees_start = fp->num_sendees;
