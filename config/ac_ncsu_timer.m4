@@ -6,7 +6,8 @@ AC_ARG_WITH(
   [AS_HELP_STRING(
     [--with-timer=DIR],
     [Location of the timer library]
-  )]dnl
+  ),[],
+  [with_timer=no]]dnl
 )
 
 dnl If the timer lib was specified, verify that it exists and can compile

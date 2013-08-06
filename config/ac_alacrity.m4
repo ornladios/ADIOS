@@ -21,7 +21,7 @@ AC_MSG_NOTICE([=== checking for ALACRITY ===])
 
 AM_CONDITIONAL(HAVE_ALACRITY,true)
 
-AC_ARG_WITH(alacrity,
+AC_ARG_WITH([alacrity],
         [  --with-alacrity=DIR      Location of ALACRITY library],
         [ALACRITY_LDFLAGS="-L$withval/lib";
          ALACRITY_LIBS="-lalacrity -lridcompress";
