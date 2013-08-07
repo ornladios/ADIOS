@@ -1693,7 +1693,7 @@ extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method
 // provides unknown functionality
 extern enum ADIOS_FLAG adios_flexpath_should_buffer (struct adios_file_struct * fd,struct adios_method_struct * method) {
     fp_write_log("UNIMPLEMENTED", "adios_flexpath_should_buffer\n");
-    return adios_flag_unknown;
+    return adios_flag_no;
 }
 
 // provides unknown functionality
