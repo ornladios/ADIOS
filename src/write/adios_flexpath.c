@@ -782,6 +782,7 @@ FlexpathFMStructure* set_format(struct adios_group_struct* t, struct adios_var_s
 		else // statically sized array allocated inline
 		{  currentFm->size += (v_offset * sizeof(unsigned int));  } 
 		break;
+
 	    case adios_unsigned_long:
 		field_list[fieldNo].field_type =
 		    (char *) malloc(sizeof(char) * 255);
@@ -795,6 +796,7 @@ FlexpathFMStructure* set_format(struct adios_group_struct* t, struct adios_var_s
 		else // statically sized array allocated inline
 		{  currentFm->size += (v_offset * sizeof(unsigned long));  } 
 		break;
+
 	    case adios_real:
 		field_list[fieldNo].field_type =
 		    (char *) malloc(sizeof(char) * 255);
