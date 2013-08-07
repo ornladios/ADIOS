@@ -91,7 +91,7 @@ TROUBLESHOOTING
 
 ERROR: adios_allocate_buffer (): insufficient memory: 5242880000 requested, 860221440 available.  Using available.
 
-$ grep ADS_BUFFER_SIZE config.h
+$ grep ADS_BUFFER_SIZE cfg.h
 #define ADS_BUFFER_SIZE 50
 
 Try changing the ADS_BUFFER_SIZE in cfg.h to a smaller value.
