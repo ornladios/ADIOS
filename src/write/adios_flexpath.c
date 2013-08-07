@@ -1468,26 +1468,29 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
 
 
 //  writes data to multiqueue
-extern void adios_flexpath_write(struct adios_file_struct *fd, struct adios_var_struct *f, void *data, struct adios_method_struct *method) {
+extern void adios_flexpath_write(
+    struct adios_file_struct *fd, 
+    struct adios_var_struct *f, 
+    void *data, 
+    struct adios_method_struct *method) 
+{
     fp_write_log("FILE", "entering flexpath file %s write\n", method->group->name);
     FlexpathWriteFileData* fileData = find_open_file(method->group->name);
     FlexpathFMStructure* fm = fileData->fm;
 
     if (fm == NULL)
     {
+	log_error("adios_flexpath_write: something has gone wrong with format registration: %s\n", f->name);
 	return;
-
     }
     
     FMFieldList flist = fm->format->field_list;
     FMField *field = NULL;
     char *fixedname = find_fixed_name(fm, f->name);
     field = internal_find_field(fixedname, flist);
-    //perr( "found field %s\n", field->field_name);
     if (field != NULL) {
+	//scalar quantity
 	if (!f->dimensions) {
-	    //scalar quantity
-            //perr( "copying scalar value\n");
 	    if (data) {
 		//why wouldn't it have data?
 		memcpy(&fm->buffer[field->field_offset], data, field->field_size);
@@ -1513,7 +1516,7 @@ extern void adios_flexpath_write(struct adios_file_struct *fd, struct adios_var_
 		    }
 		}
 	    } else {
-		//perr( "no data for  scalar %s\n", f->name);
+		log_error("adios_flexpath_write: something has gone wrong with variable creation: %s\n", f->name);
 	    }
 	} else {
 	    //vector quantity
@@ -1525,6 +1528,7 @@ extern void adios_flexpath_write(struct adios_file_struct *fd, struct adios_var_
                 memcpy(&fm->buffer[field->field_offset], &data, sizeof(void *));
 
 	    } else {
+		log_error("adios_flexpath_write: no array data found for var: %s. Bad.\n", f->name);
 		//perr( "no data for vector %s\n", f->name);
 	    }
 	}
