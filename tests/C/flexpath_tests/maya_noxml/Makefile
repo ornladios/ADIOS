@@ -28,7 +28,7 @@ reader: reader.o  utils.o
 writer: writer.o  utils.o
 	$(CC) $(CFLAGS) -g -o $@ $^ $(INCLUDES) $(LIBS_PATHS) $(LIBS) 
 
-.c.o: utils.h misc.h
+.c.o: utils.h misc.h cfg.h
 	$(CC) $(CFLAGS) -g -c $< -o $@ $(INCLUDES) $(LIBS_PATHS) $(LIBS)
 	
 	

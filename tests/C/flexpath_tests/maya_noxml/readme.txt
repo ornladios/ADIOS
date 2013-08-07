@@ -22,9 +22,6 @@ same variables a few times, and ADIOS at that time couldn't handle that.
 To switch between those two modes you need to run the make without or
 with the CFLAGS set to -DFLEXPATH_METHOD. See the build section.
 
-
-
-
 BUILD
 =======
 # you need to set the environment variables as Makefile uses those locations 
@@ -58,6 +55,13 @@ $ ./reader
 
 See Makefile for other options of running the test.
 
+PLAYING WITH TEST CONFIGURATION
+===============================
+To play with the test configuration, you can modify macros in the config.h file
+
+- MAYA_GRID_FUNC_COUNT this will increase the number of variables output
+  (you might need to increase/decrease the ADS_BUFFER_SIZE see troubleshooting)
+
 NOTES
 ======
 2013-08-05 Test passes with the MPI method on my laptop; it fails with the FLEXPATH method
@@ -78,6 +82,19 @@ ERROR: set_format: Unknown Type Error 54
 [heffalin:10320] [ 6] ./writer() [0x406e19]
 [heffalin:10320] *** End of error message ***
 Segmentation fault
+
+
+TROUBLESHOOTING
+================
+
+2013-08-06, ERROR adios_allocate_buffer(): insufficient memory
+
+ERROR: adios_allocate_buffer (): insufficient memory: 5242880000 requested, 860221440 available.  Using available.
+
+$ grep ADS_BUFFER_SIZE config.h
+#define ADS_BUFFER_SIZE 50
+
+Try change the ADS_BUFFER_SIZE in config.h to a smaller value.
 
 OUTDATED (2013-07-08)
 ======================

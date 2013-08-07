@@ -23,7 +23,7 @@
 #define TRANSPORT_PARAMS ""
 
 //! adios buffer size in MB
-#define ADS_BUFFER_SIZE 5000
+#define ADS_BUFFER_SIZE 50
 
 //! the number of patches I want to write (this is what I got from Maya)
 #define GLOBAL_PATCH_COUNT 27
