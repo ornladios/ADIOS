@@ -57,7 +57,7 @@ See Makefile for other options of running the test.
 
 PLAYING WITH TEST CONFIGURATION
 ===============================
-To play with the test configuration, you can modify macros in the config.h file
+To play with the test configuration, you can modify macros in the cfg.h file
 
 - MAYA_GRID_FUNC_COUNT this will increase the number of variables output
   (you might need to increase/decrease the ADS_BUFFER_SIZE see troubleshooting)
@@ -91,10 +91,10 @@ TROUBLESHOOTING
 
 ERROR: adios_allocate_buffer (): insufficient memory: 5242880000 requested, 860221440 available.  Using available.
 
-$ grep ADS_BUFFER_SIZE config.h
+$ grep ADS_BUFFER_SIZE cfg.h
 #define ADS_BUFFER_SIZE 50
 
-Try change the ADS_BUFFER_SIZE in config.h to a smaller value.
+Try changing the ADS_BUFFER_SIZE in cfg.h to a smaller value.
 
 OUTDATED (2013-07-08)
 ======================
