@@ -9,7 +9,7 @@
 #include <stdio.h>
 #include "misc.h"
 #include "test_common.h"
-#include "config.h"
+#include "cfg.h"
 
 /**
  * @param program_name The name of the program
