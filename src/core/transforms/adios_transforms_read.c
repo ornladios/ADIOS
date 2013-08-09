@@ -2,6 +2,7 @@
 
 #include "adios_bp_v1.h"
 #include "adios_internals.h"
+#include "adios_selection.h"
 #include "public/adios_error.h"
 #include "public/adios_types.h"
 #include "public/adios_read_v2.h"
