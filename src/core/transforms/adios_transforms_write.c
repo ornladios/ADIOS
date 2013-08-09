@@ -71,17 +71,20 @@ uint64_t adios_transform_worst_case_transformed_group_size(uint64_t group_size, 
 ////////////////////////////////////////
 // Variable conversion to byte array (preparation for transform)
 ////////////////////////////////////////
+
+static void init_dimension_item(struct adios_dimension_item_struct *dimitem) {
+    dimitem->rank = 0;
+    dimitem->var = NULL;
+    dimitem->attr = NULL;
+    dimitem->time_index = adios_flag_no;
+}
+
 static struct adios_dimension_struct * new_dimension() {
     struct adios_dimension_struct *dim = (struct adios_dimension_struct *)malloc(sizeof(struct adios_dimension_struct));
-    dim->dimension.rank = 0;
-    dim->dimension.var = NULL;
-    dim->dimension.time_index = adios_flag_no;
-    dim->global_dimension.rank = 0;
-    dim->global_dimension.var = NULL;
-    dim->global_dimension.time_index = adios_flag_unknown;
-    dim->local_offset.rank = 0;
-    dim->local_offset.var = NULL;
-    dim->local_offset.time_index = adios_flag_unknown;
+
+    init_dimension_item(&dim->dimension);
+    init_dimension_item(&dim->global_dimension);
+    init_dimension_item(&dim->local_offset);
     dim->next = 0;
     return dim;
 }
