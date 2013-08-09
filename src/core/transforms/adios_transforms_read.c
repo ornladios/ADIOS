@@ -4,6 +4,7 @@
 #include "adios_internals.h"
 #include "public/adios_error.h"
 #include "public/adios_types.h"
+#include "public/adios_read_v2.h"
 #include "util.h"
 
 #include "adios_selection_util.h"

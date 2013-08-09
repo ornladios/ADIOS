@@ -10,6 +10,7 @@
 
 #include "public/adios_error.h"
 #include "public/adios_types.h"
+#include "public/adios_read_v2.h"
 #include "adios_subvolume.h"
 #include "transforms/adios_transforms_common.h"
 #include "transforms/adios_transforms_reqgroup.h"
