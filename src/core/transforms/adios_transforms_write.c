@@ -145,8 +145,8 @@ static int has_time_dimension(struct adios_dimension_struct *dim) {
     // FIXME: This may be affected by the same bug as mentioned near the end of adios_read_bp_is_var_timed
     //        in read_bp.c, in that this condition is ambiguous for 1D local arrays (if the comment in read_bp.c
     //        has been addressed, remove this one as well).
-    if (!is_dimension_item_zero(last_dim->dimension) &&
-        is_dimension_item_zero(last_dim->global_dimension))
+    if (!is_dimension_item_zero(&last_dim->dimension) &&
+        is_dimension_item_zero(&last_dim->global_dimension))
         has_time = 1;
 
     return has_time;
@@ -509,13 +509,13 @@ static void adios_transform_dereference_dimensions_var(struct adios_dimension_st
 
         // de-reference dimension id
         d_new->dimension.var = NULL;
-        d_new->dimension.rank = adios_get_dim_value(&src_var_dims->dimension);
+        d_new->dimension.rank = adios_get_dim_value((struct adios_dimension_item *)&src_var_dims->dimension);
         d_new->dimension.time_index = src_var_dims->dimension.time_index;
         d_new->global_dimension.var = NULL;
-        d_new->global_dimension.rank = adios_get_dim_value(&src_var_dims->global_dimension);
+        d_new->global_dimension.rank = adios_get_dim_value((struct adios_dimension_item *)&src_var_dims->global_dimension);
         d_new->global_dimension.time_index = src_var_dims->global_dimension.time_index;
         d_new->local_offset.var = NULL;
-        d_new->local_offset.rank = adios_get_dim_value(&src_var_dims->local_offset);
+        d_new->local_offset.rank = adios_get_dim_value((struct adios_dimension_item *)&src_var_dims->local_offset);
         d_new->local_offset.time_index = src_var_dims->local_offset.time_index;
         d_new->next = 0;
 
