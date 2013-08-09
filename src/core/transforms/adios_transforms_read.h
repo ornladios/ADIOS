@@ -49,7 +49,7 @@ enum ADIOS_TRANSFORM_REQGROUP_RESULT_MODE adios_transform_read_request_get_mode(
  * Examines the "raw" BLOCKINFO from some transformed PG, and returns the size (in bytes)
  * of the transformed data contained within that PG.
  */
-uint64_t adios_transform_get_transformed_var_size_from_blockinfo(int raw_ndim, const struct ADIOS_VARBLOCK *raw_block);
+uint64_t adios_transform_get_transformed_var_size_from_blockinfo(int raw_ndim, const ADIOS_VARBLOCK *raw_block);
 
 //
 // Read request handling
