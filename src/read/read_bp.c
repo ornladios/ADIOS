@@ -2087,8 +2087,8 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
 
     for (i = 0; i < varinfo->sum_nblocks; i++)
     {
-        blockinfo[i].start = (uint64_t *) malloc (varinfo->ndim * 8);
-        blockinfo[i].count = (uint64_t *) malloc (varinfo->ndim * 8);
+        blockinfo[i].start = (uint64_t *) malloc (dimcount * 8);
+        blockinfo[i].count = (uint64_t *) malloc (dimcount * 8);
         assert (blockinfo[i].start && blockinfo[i].count);
 
         bp_get_dimension_generic_notime (use_pretransform_dimensions ?
@@ -2102,8 +2102,8 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
         if (ldims[dimcount - 1] == 0)
             dimcount--;
 
-        memcpy (blockinfo[i].start, offsets, varinfo->ndim * 8);
-        memcpy (blockinfo[i].count, ldims, varinfo->ndim * 8);
+        memcpy (blockinfo[i].start, offsets, dimcount * 8);
+        memcpy (blockinfo[i].count, ldims, dimcount * 8);
 
         // NCSU ALACRITY-ADIOS - This code was left over in the Transforms branch after the merge. Not sure if it's needed; preserved in case it represented a valid bugfix
 //        if (file_is_fortran != futils_is_called_from_fortran())
