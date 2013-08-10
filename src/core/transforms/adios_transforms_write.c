@@ -126,8 +126,8 @@ static int is_dimension_item_zero(struct adios_dimension_item_struct *dim_item) 
 
 static int is_time_dimension(struct adios_dimension_struct *dim) {
     return dim->dimension.time_index == adios_flag_yes ||
-            dim->global_dimension.time_index == adios_flag_yes ||
-            dim->local_offset.time_index == adios_flag_yes;
+           dim->global_dimension.time_index == adios_flag_yes ||
+           dim->local_offset.time_index == adios_flag_yes;
 }
 
 static int has_time_dimension(struct adios_dimension_struct *dim) {
@@ -653,6 +653,7 @@ int adios_transform_copy_transform_characteristic(struct adios_index_characteris
     dst_transform->transform_type = src_var->transform_type;
     dst_transform->pre_transform_type = src_var->pre_transform_type;
 
+    // Note: the & on the first arg and not the second is intentional (the first isn't a pointer by itself, the second is)
     adios_transform_dereference_dimensions_characteristic(&dst_transform->pre_transform_dimensions, src_var->pre_transform_dimensions);
 
     dst_transform->transform_metadata_len = src_var->transform_metadata_len;
