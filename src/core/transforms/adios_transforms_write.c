@@ -151,7 +151,7 @@ static int has_time_dimension(struct adios_dimension_struct *dim, int fortran_di
     const struct adios_dimension_struct *candidate_time_dim = (fortran_dim_order ? last_dim : first_dim);
     if (!is_dimension_item_zero(&last_dim->dimension) &&
         is_dimension_item_zero(&last_dim->global_dimension) &&
-        candidate_time_dim->dimension->rank == 1) {
+        candidate_time_dim->dimension.rank == 1) {
         has_time = 1;
     }
 
