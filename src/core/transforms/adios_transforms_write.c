@@ -130,8 +130,9 @@ static int is_time_dimension(struct adios_dimension_struct *dim) {
            dim->local_offset.time_index == adios_flag_yes;
 }
 
-static int has_time_dimension(struct adios_dimension_struct *dim) {
+static int has_time_dimension(struct adios_dimension_struct *dim, int fortran_dim_order) {
     int has_time = 0;
+    struct adios_dimension_struct *first_dim = dim;
     struct adios_dimension_struct *last_dim = NULL;
     for (; dim != NULL; dim = dim->next) {
         last_dim = dim; // This will hold the last non-NULL value of dim
@@ -141,13 +142,18 @@ static int has_time_dimension(struct adios_dimension_struct *dim) {
             has_time = 1;
     }
 
-    // If the last dimension has local dimension != 0 and global dimension == 0, there is a time dimension
+    // If the last dimension has local dimension != 0 and global dimension == 0 (which we infer means there
+    // is one less global dim than local), and the dimension at the expected time dimension position (first for C,
+    // last for FORTRAN) has length 1, then we determine there is a time dimension.
     // FIXME: This may be affected by the same bug as mentioned near the end of adios_read_bp_is_var_timed
-    //        in read_bp.c, in that this condition is ambiguous for 1D local arrays (if the comment in read_bp.c
-    //        has been addressed, remove this one as well).
+    //        in read_bp.c, in that this condition is ambiguous for 1D, non-timed, local arrays (if the comment
+    //        in read_bp.c is addressed in the future, remove this one as well).
+    const struct adios_dimension_struct *candidate_time_dim = (fortran_dim_order ? last_dim : first_dim);
     if (!is_dimension_item_zero(&last_dim->dimension) &&
-        is_dimension_item_zero(&last_dim->global_dimension))
+        is_dimension_item_zero(&last_dim->global_dimension) &&
+        candidate_time_dim->dimension->rank == 1) {
         has_time = 1;
+    }
 
     return has_time;
 }
@@ -216,22 +222,23 @@ static void adios_transform_attach_byte_array_dimensions_old(struct adios_group_
 static void adios_transform_attach_byte_array_dimensions(struct adios_group_struct *grp, struct adios_var_struct *var) {
     int i;
 
-    const int orig_ndim = count_dimensions(var->pre_transform_dimensions);
-    const int orig_has_time = has_time_dimension(var->pre_transform_dimensions);
     const int fortran_dim_order = (grp->adios_host_language_fortran == adios_flag_yes);
+    const int orig_ndim = count_dimensions(var->pre_transform_dimensions);
+    const int orig_has_time = has_time_dimension(var->pre_transform_dimensions, fortran_dim_order);
 
     const int new_ndim = (orig_has_time ? 2 : 1); // 1D byte array, plus a time dimension if the original had one
+    const int new_has_time = orig_has_time;
     const int new_time_dim_pos = (fortran_dim_order ? new_ndim - 1 : 0); // Place the time dimension last for FORTRAN order, first for C order
 
     // Construct the dimension linked list
     for (i = 0; i < new_ndim; i++) {
         struct adios_dimension_struct *new_dim = new_dimension();
 
-        new_dim->dimension.time_index = (i == new_time_dim_pos) ? adios_flag_yes : adios_flag_no;
+        new_dim->dimension.time_index = (new_has_time && i == new_time_dim_pos) ? adios_flag_yes : adios_flag_no;
 
         // Clear global dimension/local offset arrays to all 0 to indicate a local array
         // For local dimensions, set the time dimension to 1, and the non-time dimension to 0 as a placeholder
-        new_dim->dimension.rank = (i == new_time_dim_pos) ? 1 : 0;
+        new_dim->dimension.rank = (new_has_time && i == new_time_dim_pos) ? 1 : 0;
         new_dim->global_dimension.rank = 0;
         new_dim->local_offset.rank = 0;
 
