@@ -94,7 +94,7 @@ typedef struct {
 // Transform method function helper definitions for unimplemented methods
 #define UNIMPL_TRANSFORM_READ_FN(tmethod, func) \
     adios_error(err_operation_not_supported,                                \
-                "Transport method %s is not supported for read in this "    \
+                "Transform method %s is not supported for read in this "    \
                 "configuration of ADIOS (function missing: %s)\n",            \
                 #tmethod, func);
 
