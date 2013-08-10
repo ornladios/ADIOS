@@ -1629,11 +1629,11 @@ typedef struct {
     }
 */
     enum ADIOS_DATATYPES original_var_type = var_root->type;
-    
+
     if (var_root->characteristics[0].transform.transform_type != adios_transform_none) {
         original_var_type = var_root->characteristics[0].transform.pre_transform_type;
     }
-    
+
     size = bp_get_type_size (original_var_type, "");
     sum_size = bp_get_type_size (adios_double, "");
 
@@ -2067,7 +2067,7 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
     file_is_fortran = is_fortran_file (fh);
     var_root = bp_find_var_byid (fh, varinfo->varid);
     blockinfo = (ADIOS_VARBLOCK *) malloc (varinfo->sum_nblocks * sizeof (ADIOS_VARBLOCK));
-    assert (varinfo->blockinfo);
+    assert (blockinfo);
 
     if (use_pretransform_dimensions)
         assert(var_root->characteristics[0].transform.transform_type != adios_transform_none);
@@ -2087,9 +2087,9 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
 
     for (i = 0; i < varinfo->sum_nblocks; i++)
     {
-        varinfo->blockinfo[i].start = (uint64_t *) malloc (varinfo->ndim * 8);
-        varinfo->blockinfo[i].count = (uint64_t *) malloc (varinfo->ndim * 8);
-        assert (varinfo->blockinfo[i].start && varinfo->blockinfo[i].count);
+        blockinfo[i].start = (uint64_t *) malloc (varinfo->ndim * 8);
+        blockinfo[i].count = (uint64_t *) malloc (varinfo->ndim * 8);
+        assert (blockinfo[i].start && blockinfo[i].count);
 
         bp_get_dimension_generic_notime (use_pretransform_dimensions ?
                                             &var_root->characteristics[i].transform.pre_transform_dimensions :
@@ -2102,8 +2102,8 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
         if (ldims[dimcount - 1] == 0)
             dimcount--;
 
-        memcpy (varinfo->blockinfo[i].start, offsets, varinfo->ndim * 8);
-        memcpy (varinfo->blockinfo[i].count, ldims, varinfo->ndim * 8);
+        memcpy (blockinfo[i].start, offsets, varinfo->ndim * 8);
+        memcpy (blockinfo[i].count, ldims, varinfo->ndim * 8);
 
         // NCSU ALACRITY-ADIOS - This code was left over in the Transforms branch after the merge. Not sure if it's needed; preserved in case it represented a valid bugfix
 //        if (file_is_fortran != futils_is_called_from_fortran())
