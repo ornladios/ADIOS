@@ -493,13 +493,20 @@ static void adios_transform_dereference_dimensions_characteristic(struct adios_i
     }
 }
 
+static void dereference_dimension_item(struct adios_dimension_item_struct *dst_dim_item, const struct adios_dimension_item_struct *src_dim_item) {
+    dst_dim_item->var = NULL;
+    dst_dim_item->attr = NULL;
+    dst_dim_item->rank = adios_get_dim_value((struct adios_dimension_item *)src_dim_item);
+    dst_dim_item->time_index = src_dim_item->time_index;
+}
+
 /*
  * Takes a given dimension struct (src_var_dims), converts all dimension items to literal
  * values by reading the value of any reference scalars/attributes. These literal values
  * are stored to a new dimension struct (dst_var_dims) in the "rank" fields. The original
  * struct is unchanged.
  */
-static void adios_transform_dereference_dimensions_var(struct adios_dimension_struct **dst_var_dims, const struct adios_dimension_struct *src_var_dims) {
+static void dereference_dimensions_var(struct adios_dimension_struct **dst_var_dims, const struct adios_dimension_struct *src_var_dims) {
     uint8_t i;
     uint8_t c = count_dimensions(src_var_dims);
 
@@ -508,15 +515,9 @@ static void adios_transform_dereference_dimensions_var(struct adios_dimension_st
             (struct adios_dimension_struct *)malloc(sizeof (struct adios_dimension_struct));
 
         // de-reference dimension id
-        d_new->dimension.var = NULL;
-        d_new->dimension.rank = adios_get_dim_value((struct adios_dimension_item *)&src_var_dims->dimension);
-        d_new->dimension.time_index = src_var_dims->dimension.time_index;
-        d_new->global_dimension.var = NULL;
-        d_new->global_dimension.rank = adios_get_dim_value((struct adios_dimension_item *)&src_var_dims->global_dimension);
-        d_new->global_dimension.time_index = src_var_dims->global_dimension.time_index;
-        d_new->local_offset.var = NULL;
-        d_new->local_offset.rank = adios_get_dim_value((struct adios_dimension_item *)&src_var_dims->local_offset);
-        d_new->local_offset.time_index = src_var_dims->local_offset.time_index;
+        dereference_dimension_item(&d_new->dimension, &src_var_dims->dimension);
+        dereference_dimension_item(&d_new->global_dimension, &src_var_dims->global_dimension);
+        dereference_dimension_item(&d_new->local_offset, &src_var_dims->local_offset);
         d_new->next = 0;
 
         adios_append_dimension(dst_var_dims, d_new);
@@ -675,7 +676,7 @@ int adios_transform_copy_var_transform(struct adios_var_struct *dst_var, const s
 
     // Dereferemce all dimensions, forcing them to be literal values ("rank" fields), as
     // required by the function that calls this, adios_copy_var_written().
-    adios_transform_dereference_dimensions_var(&dst_var->pre_transform_dimensions, src_var->pre_transform_dimensions);
+    dereference_dimensions_var(&dst_var->pre_transform_dimensions, src_var->pre_transform_dimensions);
 
     // for parameter
     dst_var->transform_spec = adios_transform_spec_copy(src_var->transform_spec);
