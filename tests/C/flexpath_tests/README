@@ -36,13 +36,21 @@ To build most of tests run:
 make -f Makefile.master 
 
 # to use FLEXPATH method
-make -f Makefile CFLAGS="-DFLEXPATH_METHOD"
+make -f Makefile.master CFLAGS="-DFLEXPATH_METHOD"
 
 # to clean the build
 make -f Makefile.master clean
 
 How to run regression tests
 ----------------------------
+# be sure that appropriate paths for openmpi, mxml, and evpath are
+# set appropriately
+ 
+module list
+Currently Loaded Modules:
+  1) openmpi/1.6.3    2) mxml/2.7    3) evpath
+
+
 # to clean the data generated during the test
 make -f Makefile.master clean_test
 

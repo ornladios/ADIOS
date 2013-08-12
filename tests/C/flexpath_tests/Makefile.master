@@ -1,28 +1,33 @@
-MY_TARGETS=scalar 1D_arr_global 1D_arr_global_noxml
+MY_TARGETS=scalar 1D_arr_global 1D_arr_global_noxml maya_noxml
 
-.PHONY: all clean clean_test
+.PHONY: all clean clean_test run-r run-w
 
 all: $(MY_TARGETS)
 	@$(MAKE) -C scalar $@;
 	@$(MAKE) -C 1D_arr_global $@;
 	@$(MAKE) -C 1D_arr_global_noxml $@;
+	@$(MAKE) -C maya_noxml $@;
 	
 	 
 clean_test: 
 	$(MAKE) -C 1D_arr_global $@
 	$(MAKE) -C 1D_arr_global_noxml $@
+	$(MAKE) -C maya_noxml $@
 	
 clean: $(MY_TARGETS)
 	$(MAKE) -C scalar $@
 	$(MAKE) -C 1D_arr_global $@
 	$(MAKE) -C 1D_arr_global_noxml $@
+	$(MAKE) -C maya_noxml $@
 
 run-r:
 	$(MAKE) -C scalar $@
 	$(MAKE) -C 1D_arr_global $@
 	$(MAKE) -C 1D_arr_global_noxml $@
+	$(MAKE) -C maya_noxml $@
 	
 run-w:
 	$(MAKE) -C scalar $@
 	$(MAKE) -C 1D_arr_global $@
-	$(MAKE) -C 1D_arr_global_noxml $@	
+	$(MAKE) -C 1D_arr_global_noxml $@
+	$(MAKE) -C maya_noxml $@	

@@ -54,8 +54,12 @@
 
 #define CONTACT_STR_LEN 50
 
-typedef enum { FORMAT=0, DATA, EVGROUP } Flush_type;
+typedef enum {FORMAT, DATA, EVGROUP } Flush_type;
 
+typedef struct _drop_evgroup{
+    int step;
+    int condition;
+}drop_evgroup_msg;
 /*
  * Contains the offset information for a variable for all writers.
  * offsets_per_rank is == ndims.
@@ -76,6 +80,7 @@ typedef struct _var {
 typedef struct _evgroup {    
     int condition;
     int num_vars;
+    int step;
     global_var* vars;
 } evgroup, *evgroup_ptr;
 
@@ -114,6 +119,13 @@ typedef struct _update_step_msg{
     int finalized;
 } update_step_msg;
 
+static FMField drop_evgroup_msg_field_list[]=
+{
+    {"step", "integer", sizeof(int), FMOffset(drop_evgroup_msg*, step)},
+    {"condition", "integer", sizeof(int), FMOffset(drop_evgroup_msg*, condition)},
+    {NULL, NULL, 0, 0}
+};
+
 static FMField update_step_msg_field_list[]=
 {
     {"process_id", "integer", sizeof(int), FMOffset(update_step_msg*, process_id)},
@@ -143,6 +155,7 @@ static FMField evgroup_field_list[]=
 {
     {"condition", "integer", sizeof(int), FMOffset(evgroup_ptr, condition)},
     {"num_vars", "integer", sizeof(int), FMOffset(evgroup_ptr, num_vars)},
+    {"step", "integer", sizeof(int), FMOffset(evgroup_ptr, step)},
     {"vars", "global_var[num_vars]", sizeof(global_var), FMOffset(evgroup_ptr, vars)},
     {NULL, NULL, 0, 0}
 };
@@ -180,6 +193,12 @@ static FMField op_file_field_list[] =
     {"type", "integer", sizeof(int), FMOffset(op_msg_ptr, type)},
     {"step", "integer", sizeof(int), FMOffset(op_msg_ptr, step)},
     {"condition", "integer", sizeof(int), FMOffset(op_msg_ptr, condition)},
+    {NULL, NULL, 0, 0}
+};
+
+static FMStructDescRec drop_evgroup_msg_format_list[]=
+{
+    {"drop_evgroup_msg", drop_evgroup_msg_field_list, sizeof(drop_evgroup_msg), NULL},
     {NULL, NULL, 0, 0}
 };
 
