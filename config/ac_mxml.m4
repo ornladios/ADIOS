@@ -37,7 +37,7 @@ elif test "x$with_mxml" == "xyes" -o "x$with_mxml" == "x"; then
          MXML_LDFLAGS="$MXML_LIB"
     else
        dnl If not in the environment, then look in the system libs
-    MXML_LDFLAGS=""
+         MXML_LDFLAGS=""
     fi
 
     if test -n "$MXML_INC"; then
@@ -109,7 +109,8 @@ if test "x$ac_with_mxml" == "xyes"; then
         if test -z "${HAVE_MXML_FALSE}"; then
             dnl Check for the Mini-XML library and headers
             AC_REQUIRE([ACX_PTHREAD])
-            LDFLAGS="$LDFLAGS $PTHREAD_LDFLAGS $PTHREAD_LIBS"
+            LDFLAGS="$LDFLAGS $PTHREAD_LDFLAGS"
+            LIBS="$LIBS $PTHREAD_LIBS"
             AC_MSG_CHECKING([if mxml code can be linked using pthreads])
             AC_TRY_LINK([#include "mxml.h"],
             [mxml_node_t * n; 
