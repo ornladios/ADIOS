@@ -543,6 +543,20 @@ static void adios_transform_clean_dimensions(struct adios_index_characteristic_d
     dst_char_dims->dims = 0;
 }
 
+static void serialize_transform_type(enum ADIOS_TRANSFORM_TYPE transform_type,
+                                     uint64_t *write_length, char **buffer, uint64_t *buffer_size, uint64_t *buffer_offset) {
+    const char *transform_uid = adios_transform_plugin_uid(transform_type);
+    const uint8_t transform_uid_len = (uint8_t)strlen(transform_uid);
+
+    // Write the pre-transform datatype
+    buffer_write(buffer, buffer_size, buffer_offset, &transform_uid_len, 1);
+    *write_length += 1;
+
+    // Write the number of pre-transform dimensions
+    buffer_write (buffer, buffer_size, buffer_offset, &transform_uid, transform_uid_len);
+    *write_length += transform_uid_len;
+}
+
 static uint8_t adios_transform_serialize_transform(enum ADIOS_TRANSFORM_TYPE transform_type,
                                                    enum ADIOS_DATATYPES pre_transform_type,
                                                    const struct adios_index_characteristic_dims_struct_v1 *pre_transform_dimensions,
@@ -567,8 +581,9 @@ static uint8_t adios_transform_serialize_transform(enum ADIOS_TRANSFORM_TYPE tra
     *write_length += 1;
 
     // Write transform type
-    buffer_write(buffer, buffer_size, buffer_offset, &transform_type, 1);
-    *write_length += 1;
+    //buffer_write(buffer, buffer_size, buffer_offset, &transform_type, 1);
+    //*write_length += 1;
+    serialize_transform_type(transform_type, write_length, buffer, buffer_size, buffer_offset);
 
     // Write the pre-transform datatype
     buffer_write(buffer, buffer_size, buffer_offset, &pre_transform_type, 1);
@@ -702,13 +717,23 @@ int adios_transform_copy_var_transform(struct adios_var_struct *dst_var, const s
     return 1;
 }
 
+
+static uint64_t calc_transform_uid_overhead(struct adios_var_struct *var) {
+    assert(var->transform_type != adios_transform_none && var->transform_type != adios_transform_unknown);
+
+    const char *transform_uid = adios_transform_plugin_uid(var->transform_type);
+    return 1 +                    // For the length of the UID string
+           strlen(transform_uid); // The UID string itself
+}
+
 // Calculate overhead
 uint64_t adios_transform_calc_transform_characteristic_overhead(struct adios_var_struct *var) {
     if (var->transform_type == adios_transform_none) {
         return 0; // No overhead needed, since the characteristic won't be written at all
     } else {
         return 1 +    // For characterstic flag
-               1 +    // For transform_type field
+               //1 +    // For transform_type field // no longer used, replaced by transform UID
+               calc_transform_uid_overhead(var) + // For the transform UID (serialized form of transform type)
                1 +    // For pre_transform_type field
                adios_calc_var_characteristics_dims_overhead(var->pre_transform_dimensions) + // For pre-transform dimensions field
                2 +    // For transform_metadata_len

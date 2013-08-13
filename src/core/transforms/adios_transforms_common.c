@@ -140,9 +140,11 @@
 #include "core/adios_bp_v1.h"
 #include "adios_internals.h"
 #include "adios_endianness.h"
-#include "adios_transforms_common.h"
 #include "adios_logger.h"
 #include "core/common_adios.h"
+
+#include "adios_transforms_common.h"
+#include "adios_transforms_hooks.h"
 
 #include <assert.h>
 #include <stdint.h>
@@ -267,15 +269,16 @@ int adios_transform_init_transform_characteristic(struct adios_index_characteris
                            b->offset += (len);
 
 static enum ADIOS_TRANSFORM_TYPE deserialize_transform_type(struct adios_bp_buffer_struct_v1 *b) {
-    // Read the length of the transform type ID
-    uint8_t transform_type_name_len;
-    BUFREAD8(b, transform_type_name_len);
+    // Read the length of the transform UID
+    uint8_t transform_uid_len;
+    BUFREAD8(b, transform_uid_len);
 
-    // Read the transform type ID itself (e.g., "zlib" or "ncsu-isobar")
-    char *transform_type_name = calloc(1, transform_type_name_len + 1);
-    BUFREAD(b, transform_type_name, transform_type_name_len);
+    // Read the transform UID itself (e.g., "zlib" or "ncsu-isobar")
+    char *transform_uid = calloc(1, transform_uid_len + 1);
+    BUFREAD(b, transform_uid, transform_uid_len);
 
-
+    enum ADIOS_TRANSFORM_TYPE transform_type = adios_transform_find_type_by_uid(transform_uid);
+    return transform_type;
 }
 
 // Deserialize
@@ -285,7 +288,8 @@ int adios_transform_deserialize_transform_characteristic(struct adios_index_char
     uint8_t i;
     uint16_t len, meta_len;
 
-    BUFREAD8(b, transform->transform_type);
+    //BUFREAD8(b, transform->transform_type);
+    transform->transform_type = deserialize_transform_type();
 
     BUFREAD8(b, transform->pre_transform_type);
     BUFREAD8(b, transform->pre_transform_dimensions.count);
@@ -313,7 +317,7 @@ int adios_transform_deserialize_transform_characteristic(struct adios_index_char
         transform->transform_metadata = 0;
     }
 
-    return 1; // Return success
+    return is_transform_type_valid(transform->transform_type);
 }
 
 // Clear

@@ -142,6 +142,10 @@ const char * adios_transform_xml_alias_by_type(enum ADIOS_TRANSFORM_TYPE transfo
 // Other transform inspection functions
 /////////////////////////////////////////
 
+/*
+ * @return non-zero if transform_type is a valid transform type (including "none"), else
+ *         return zero (when transform_type is out of range, or is equal to adios_transform_unknown).
+ */
 int is_transform_type_valid(enum ADIOS_TRANSFORM_TYPE transform_type) {
     return transform_type >= adios_transform_none &&
            transform_type < num_adios_transform_types;
