@@ -543,48 +543,61 @@ char *multiqueue_action = "{\n\
 void set_field(int type, FMFieldList* field_list_ptr, int fieldNo, int* size){
     FMFieldList field_list = *field_list_ptr;
     switch (type) {
-	case adios_unknown:
-	  perr("set_field: Bad Type Error\n");
-	  break;
+    case adios_unknown:
+	perr("set_field: Bad Type Error\n");
+	break;
 
-	case adios_integer:
-	  field_list[fieldNo].field_type = strdup("integer");
-	  field_list[fieldNo].field_size = sizeof(int);
-	  field_list[fieldNo].field_offset = *size;
-	  *size += sizeof(int);
-	  break;
+    case adios_unsigned_integer:
+	field_list[fieldNo].field_type = strdup("unsigned integer");
+	field_list[fieldNo].field_size = sizeof(unsigned int);
+	field_list[fieldNo].field_offset = *size;
+	*size += sizeof(unsigned int);
+	break;
 
-	case adios_real:
-	  field_list[fieldNo].field_type = strdup("float");
-	  field_list[fieldNo].field_size = sizeof(float);
-	  field_list[fieldNo].field_offset = *size;
-	  *size += sizeof(float);
-	  break;
+    case adios_unsigned_long:
+	field_list[fieldNo].field_type = strdup("unsigned long");
+	field_list[fieldNo].field_size = sizeof(unsigned long);
+	field_list[fieldNo].field_offset = *size;
+	*size += sizeof(unsigned long);
 
-	case adios_string:
-	  field_list[fieldNo].field_type = strdup("string");
-	  field_list[fieldNo].field_size = sizeof(char *);
-	  field_list[fieldNo].field_offset = *size;
-	  *size += sizeof(unsigned char *);
-	  break;
+    case adios_integer:
+	field_list[fieldNo].field_type = strdup("integer");
+	field_list[fieldNo].field_size = sizeof(int);
+	field_list[fieldNo].field_offset = *size;
+	*size += sizeof(int);
+	break;
 
-	case adios_double:
-	  field_list[fieldNo].field_type = strdup("float");
-	  field_list[fieldNo].field_size = sizeof(double);
-	  field_list[fieldNo].field_offset = *size;
-	  *size += sizeof(double);
-	  break;
+    case adios_real:
+	field_list[fieldNo].field_type = strdup("float");
+	field_list[fieldNo].field_size = sizeof(float);
+	field_list[fieldNo].field_offset = *size;
+	*size += sizeof(float);
+	break;
 
-	case adios_byte:
-	  field_list[fieldNo].field_type = strdup("char");
-	  field_list[fieldNo].field_size = sizeof(char);
-	  field_list[fieldNo].field_offset = *size;
-	  *size += sizeof(char);
-	  break;
+    case adios_string:
+	field_list[fieldNo].field_type = strdup("string");
+	field_list[fieldNo].field_size = sizeof(char *);
+	field_list[fieldNo].field_offset = *size;
+	*size += sizeof(unsigned char *);
+	break;
 
-	default:
-	  perr("set_field: Unknown Type Error\n");
-	  break;
+    case adios_double:
+	field_list[fieldNo].field_type = strdup("float");
+	field_list[fieldNo].field_size = sizeof(double);
+	field_list[fieldNo].field_offset = *size;
+	*size += sizeof(double);
+	break;
+
+    case adios_byte:
+	field_list[fieldNo].field_type = strdup("char");
+	field_list[fieldNo].field_size = sizeof(char);
+	field_list[fieldNo].field_offset = *size;
+	*size += sizeof(char);
+	break;
+
+    default:
+	perr("set_field: Unknown Type Error\n");
+	break;
     }
     *field_list_ptr = field_list;
 }
@@ -738,7 +751,7 @@ FlexpathFMStructure* set_format(struct adios_group_struct* t, struct adios_var_s
 		  
 	    switch (f->type) {
 	    case adios_unknown:
-		perr( "set_format: Bad Type Error\n");
+		fprintf(stderr, "set_format: Bad Type Error\n");
 		fieldNo--;
 		break;
 		      
@@ -756,6 +769,34 @@ FlexpathFMStructure* set_format(struct adios_group_struct* t, struct adios_var_s
 		{  currentFm->size += (v_offset * sizeof(int));  } 
 		break;
 		      
+	    case adios_unsigned_integer:
+		field_list[fieldNo].field_type =
+		    (char *) malloc(sizeof(char) * 255);
+		snprintf((char *) field_list[fieldNo].field_type, 255,
+			 "unsigned integer%s", dims);
+		field_list[fieldNo].field_size = sizeof(unsigned int);
+		      
+		field_list[fieldNo].field_offset = currentFm->size;
+		if (v_offset == 0 ) // pointer to variably sized array
+		{ currentFm->size += sizeof(void *);  } 
+		else // statically sized array allocated inline
+		{  currentFm->size += (v_offset * sizeof(unsigned int));  } 
+		break;
+
+	    case adios_unsigned_long:
+		field_list[fieldNo].field_type =
+		    (char *) malloc(sizeof(char) * 255);
+		snprintf((char *) field_list[fieldNo].field_type, 255,
+			 "unsigned long%s", dims);
+		field_list[fieldNo].field_size = sizeof(unsigned long);
+		      
+		field_list[fieldNo].field_offset = currentFm->size;
+		if (v_offset == 0 ) // pointer to variably sized array
+		{ currentFm->size += sizeof(void *);  } 
+		else // statically sized array allocated inline
+		{  currentFm->size += (v_offset * sizeof(unsigned long));  } 
+		break;
+
 	    case adios_real:
 		field_list[fieldNo].field_type =
 		    (char *) malloc(sizeof(char) * 255);
@@ -803,7 +844,7 @@ FlexpathFMStructure* set_format(struct adios_group_struct* t, struct adios_var_s
 		break;
 
 	    default:
-		adios_error(err_invalid_group, "set_format: Unknown Type Error %d\n", f->type);
+		adios_error(err_invalid_group, "set_format: Unknown Type Error %d: name: %s\n", f->type, field_list[fieldNo].field_name);
 		fieldNo--;	      
 		return NULL;
 		//break;
@@ -1427,26 +1468,29 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
 
 
 //  writes data to multiqueue
-extern void adios_flexpath_write(struct adios_file_struct *fd, struct adios_var_struct *f, void *data, struct adios_method_struct *method) {
+extern void adios_flexpath_write(
+    struct adios_file_struct *fd, 
+    struct adios_var_struct *f, 
+    void *data, 
+    struct adios_method_struct *method) 
+{
     fp_write_log("FILE", "entering flexpath file %s write\n", method->group->name);
     FlexpathWriteFileData* fileData = find_open_file(method->group->name);
     FlexpathFMStructure* fm = fileData->fm;
 
     if (fm == NULL)
     {
+	log_error("adios_flexpath_write: something has gone wrong with format registration: %s\n", f->name);
 	return;
-
     }
     
     FMFieldList flist = fm->format->field_list;
     FMField *field = NULL;
     char *fixedname = find_fixed_name(fm, f->name);
     field = internal_find_field(fixedname, flist);
-    //perr( "found field %s\n", field->field_name);
     if (field != NULL) {
+	//scalar quantity
 	if (!f->dimensions) {
-	    //scalar quantity
-            //perr( "copying scalar value\n");
 	    if (data) {
 		//why wouldn't it have data?
 		memcpy(&fm->buffer[field->field_offset], data, field->field_size);
@@ -1472,7 +1516,7 @@ extern void adios_flexpath_write(struct adios_file_struct *fd, struct adios_var_
 		    }
 		}
 	    } else {
-		//perr( "no data for  scalar %s\n", f->name);
+		log_error("adios_flexpath_write: something has gone wrong with variable creation: %s\n", f->name);
 	    }
 	} else {
 	    //vector quantity
@@ -1484,6 +1528,7 @@ extern void adios_flexpath_write(struct adios_file_struct *fd, struct adios_var_
                 memcpy(&fm->buffer[field->field_offset], &data, sizeof(void *));
 
 	    } else {
+		log_error("adios_flexpath_write: no array data found for var: %s. Bad.\n", f->name);
 		//perr( "no data for vector %s\n", f->name);
 	    }
 	}
@@ -1648,7 +1693,7 @@ extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method
 // provides unknown functionality
 extern enum ADIOS_FLAG adios_flexpath_should_buffer (struct adios_file_struct * fd,struct adios_method_struct * method) {
     fp_write_log("UNIMPLEMENTED", "adios_flexpath_should_buffer\n");
-    return adios_flag_unknown;
+    return adios_flag_no;
 }
 
 // provides unknown functionality
