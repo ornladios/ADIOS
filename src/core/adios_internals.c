@@ -2879,7 +2879,8 @@ void adios_copy_var_written (struct adios_group_struct * g, struct adios_var_str
                  *
                  */
                 // NCSU Statistics - copy stat to new var struct
-                uint8_t count = adios_get_stat_set_count(var->type);
+                enum ADIOS_DATATYPES original_var_type = adios_transform_get_var_original_type_var (var);
+                uint8_t count = adios_get_stat_set_count(original_var_type);
                 uint8_t idx = 0;
                 uint64_t characteristic_size;
 
@@ -2916,7 +2917,7 @@ void adios_copy_var_written (struct adios_group_struct * g, struct adios_var_str
                                 }
                                 else
                                 {
-                                    characteristic_size = adios_get_stat_size(var->stats[c][idx].data, var->type, j);
+                                    characteristic_size = adios_get_stat_size(var->stats[c][idx].data, original_var_type, j);
                                     var_new->stats[c][idx].data = malloc (characteristic_size);
                                     memcpy (var_new->stats[c][idx].data, var->stats[c][idx].data, characteristic_size);
                                 }
@@ -4726,7 +4727,6 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
         return 0; \
     }
 #else
-printf ("var_name = %s min = %lf max = %lf sum = %lf\n", var->name, *min, *max, *sum); \
 #define MIN_MAX(a,b)\
     {\
         a * data = (a *) var->data; \
