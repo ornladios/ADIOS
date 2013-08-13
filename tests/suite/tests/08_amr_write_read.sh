@@ -24,6 +24,9 @@ cp $SRCDIR/programs/adios_amr_write.xml .
 cp $SRCDIR/programs/adios_staged_read .
 cp $SRCDIR/programs/adios_staged_read_v2 .
 
+# Insert transform=X if requested by user
+add-transform-to-xmls
+
 for ((m=1; m <= 2 ; m++))
 do
     echo "Run C adios_amr_write"

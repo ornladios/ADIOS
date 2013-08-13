@@ -23,6 +23,9 @@ cp $TRUNKDIR/examples/C/global-array-time/adios_globaltime .
 cp $TRUNKDIR/examples/C/global-array-time/adios_read_globaltime .
 cp $TRUNKDIR/examples/C/global-array-time/adios_globaltime.xml .
 
+# Insert transform=X if requested by user
+add-transform-to-xmls
+
 echo "Run C adios_globaltime"
 $MPIRUN $NP_MPIRUN $PROCS ./adios_globaltime
 EX=$?
@@ -67,6 +70,9 @@ mv adios_globaltime.xml adios_globaltime_c.xml
 mv adios_globaltime.bp adios_globaltime_c.bp
 cp $TRUNKDIR/examples/Fortran/global-array-time/adios_globaltime adios_globaltime_f
 cp $TRUNKDIR/examples/Fortran/global-array-time/adios_globaltime.xml .
+
+# Insert transform=X if requested by user
+add-transform-to-xmls
 
 echo "Run Fortran adios_globaltime_f"
 $MPIRUN $NP_MPIRUN $PROCS ./adios_globaltime_f

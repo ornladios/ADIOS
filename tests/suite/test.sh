@@ -21,6 +21,14 @@ fi
 KEEPOUTPUT=no
 MAXPROCS=128
 
+function add-transform-to-xmls() {
+  if [[ $TRANSFORM ]]; then
+    sed -ie '/transform=/!s|\(<var .*dimensions=.*\)/>|\1 transform="'$TRANSFORM'" />|' ./*.xml
+  fi
+}
+# Make this function accessible to child processes (i.e., the actual tests)
+export -f add-transform-to-xmls    
+
 function Usage() {
     echo "
 Usage:  <path>/`basename $0` [-m runcmd] [-n "-np"] [-p procs] [-h] [-k]
@@ -38,6 +46,7 @@ Usage:  <path>/`basename $0` [-m runcmd] [-n "-np"] [-p procs] [-h] [-k]
      -p procs   Run only those tests that use less up to 'procs' processes. 
                 Default: $MAXPROCS
      -k         Do not remove logs and work dir of successful tests.
+     -t xform   Run tests with transform 'xform' applied to all non-scalar variables
      -h         Print this help.
 "
 }
@@ -47,13 +56,14 @@ Usage:  <path>/`basename $0` [-m runcmd] [-n "-np"] [-p procs] [-h] [-k]
 #####################
     
 # process option arguments
-while getopts ":m:n:p:kh" Option
+while getopts ":m:n:p:t:kh" Option
 do  
   case $Option in
         m) MPIRUN=$OPTARG;;
         n) NP_MPIRUN=$OPTARG;;
         p) MAXPROCS=$OPTARG;;
         k) KEEPOUTPUT=yes;;
+        t) TRANSFORM=$OPTARG;;
         h) Usage; exit 0;;
         *) echo "Invalid option $Option"; Usage; exit 255;;   # DEFAULT
   esac
@@ -136,6 +146,7 @@ for TESTSCRIPT in $TESTS; do
     # Run the test script with setting the environment for it
     MPIRUN="$MPIRUN" NP_MPIRUN="$NP_MPIRUN" HAVE_FORTRAN="$HAVE_FORTRAN" SRCDIR="$TESTSRCDIR" \
         TRUNKDIR="$TRUNKDIR" MAXPROCS="$MAXPROCS" \
+        TRANSFORM="$TRANSFORM" \
         $TESTSCRIPT &> ../log.$TEST
     EX=$?
     popd >/dev/null

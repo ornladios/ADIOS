@@ -69,6 +69,9 @@ mv adios_global_no_xml.bp adios_global_no_xml_c.bp
 cp $TRUNKDIR/examples/Fortran/global-array/adios_global_no_xml adios_global_f
 cp $TRUNKDIR/examples/Fortran/global-array/adios_global.xml .
 
+# Insert transform=X if requested by user
+add-transform-to-xmls
+
 echo "Run Fortran adios_global_f"
 $MPIRUN $NP_MPIRUN $PROCS ./adios_global_f
 EX=$?

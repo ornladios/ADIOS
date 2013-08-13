@@ -24,6 +24,9 @@ cp $TRUNKDIR/examples/C/attributes/attributes_read .
 cp $TRUNKDIR/examples/C/attributes/attributes_write .
 cp $TRUNKDIR/examples/C/attributes/attributes.xml .
 
+# Insert transform=X if requested by user
+add-transform-to-xmls
+
 echo "Run C attributes_write"
 $MPIRUN $NP_MPIRUN $PROCS ./attributes_write
 EX=$?

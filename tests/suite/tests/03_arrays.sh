@@ -23,6 +23,9 @@ cp $TRUNKDIR/examples/C/arrays/arrays_read .
 cp $TRUNKDIR/examples/C/arrays/arrays_write .
 cp $TRUNKDIR/examples/C/arrays/arrays.xml .
 
+# Insert transform=X if requested by user
+add-transform-to-xmls
+
 echo "Run C arrays_write"
 $MPIRUN $NP_MPIRUN $PROCS ./arrays_write
 EX=$?

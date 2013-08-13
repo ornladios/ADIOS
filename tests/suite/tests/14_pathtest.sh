@@ -22,6 +22,9 @@ fi
 cp $SRCDIR/programs/path_test .
 cp $SRCDIR/programs/path_test.xml .
 
+# Insert transform=X if requested by user
+add-transform-to-xmls
+
 echo "Run path_test"
 $MPIRUN $NP_MPIRUN $PROCS ./path_test
 EX=$?

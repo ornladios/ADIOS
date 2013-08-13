@@ -24,6 +24,9 @@ cp $TRUNKDIR/examples/C/global-array/adios_global .
 cp $TRUNKDIR/examples/C/global-array/adios_read_global .
 cp $TRUNKDIR/examples/C/global-array/adios_global.xml .
 
+# Insert transform=X if requested by user
+add-transform-to-xmls
+
 echo "Run C adios_global"
 $MPIRUN $NP_MPIRUN $PROCS ./adios_global
 EX=$?
@@ -68,6 +71,9 @@ mv adios_global.xml adios_global_c.xml
 mv adios_global.bp adios_global_c.bp
 cp $TRUNKDIR/examples/Fortran/global-array/adios_global adios_global_f
 cp $TRUNKDIR/examples/Fortran/global-array/adios_global.xml .
+
+# Insert transform=X if requested by user
+add-transform-to-xmls
 
 echo "Run Fortran adios_global_f"
 $MPIRUN $NP_MPIRUN $PROCS ./adios_global_f
