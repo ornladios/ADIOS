@@ -16,7 +16,7 @@
 #include "src/core/transforms/adios_transforms_hooks_write.h"
 
 // SETUP - Set up detection macro
-#define REGISTER_TRANSFORM_PLUGIN(TYPEID, XMLALIAS, UUID, DESC) \
+#define REGISTER_TRANSFORM_PLUGIN(TYPEID, XMLALIAS, UID, DESC) \
     DECLARE_TRANSFORM_WRITE_METHOD(TYPEID) // From adios_transforms_hooks_write.h
 
 // DETECT

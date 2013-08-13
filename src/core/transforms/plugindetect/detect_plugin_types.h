@@ -13,7 +13,7 @@
 #define DETECT_PLUGIN_TYPES_H_
 
 // Set up detection macro
-#define REGISTER_TRANSFORM_PLUGIN(TYPEID, XMLALIAS, UUID, DESC) \
+#define REGISTER_TRANSFORM_PLUGIN(TYPEID, XMLALIAS, UID, DESC) \
     adios_transform_##TYPEID,
 
 // Build the enum table

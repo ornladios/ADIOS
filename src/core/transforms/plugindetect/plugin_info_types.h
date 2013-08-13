@@ -10,7 +10,7 @@
 
 typedef struct {
     enum ADIOS_TRANSFORM_TYPE type;
-    const char *uuid;
+    const char *uid;
     const char *description;
 } adios_transform_plugin_info_t;
 

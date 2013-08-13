@@ -13,11 +13,15 @@
 
 // Transform info functions
 
-const char * adios_transform_plugin_uuid(enum ADIOS_TRANSFORM_TYPE transform_type);
+const char * adios_transform_plugin_uid(enum ADIOS_TRANSFORM_TYPE transform_type);
 const char * adios_transform_plugin_desc(enum ADIOS_TRANSFORM_TYPE transform_type);
 int adios_transform_plugin_num_xml_aliases(enum ADIOS_TRANSFORM_TYPE transform_type);
 const char ** adios_transform_plugin_xml_aliases(enum ADIOS_TRANSFORM_TYPE transform_type);
 const char * adios_transform_plugin_primary_xml_alias(enum ADIOS_TRANSFORM_TYPE transform_type);
+
+// Transform UID -> ID
+
+enum ADIOS_TRANSFORM_TYPE adios_transform_find_type_by_uid(const char *uid);
 
 // Transform XML alias <-> ID conversion
 

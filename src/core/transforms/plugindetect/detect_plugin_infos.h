@@ -26,8 +26,8 @@
 
 // Define some helper macros that define the record format for the
 // info and aliases tables
-#define _PLUGIN_INFO_RECORD(TYPEID, UUID, DESC) \
-    { adios_transform_##TYPEID, UUID, DESC },
+#define _PLUGIN_INFO_RECORD(TYPEID, UID, DESC) \
+    { adios_transform_##TYPEID, UID, DESC },
 
 #define _ARRAYLEN(arr) (sizeof(arr)/sizeof(arr[0]))
 #define _PLUGIN_ALIASES_RECORD(TYPEID, XMLALIAS) \
@@ -40,8 +40,8 @@
 // Build the info table
 
 // Define the registration macro
-#define REGISTER_TRANSFORM_PLUGIN(TYPEID, XMLALIAS, UUID, DESC) \
-        _PLUGIN_INFO_RECORD(TYPEID, UUID, DESC)
+#define REGISTER_TRANSFORM_PLUGIN(TYPEID, XMLALIAS, UID, DESC) \
+        _PLUGIN_INFO_RECORD(TYPEID, UID, DESC)
 
 adios_transform_plugin_info_t ADIOS_TRANSFORM_METHOD_INFOS[] = {
     { adios_transform_none, "none", "No data transform"},
@@ -55,7 +55,7 @@ adios_transform_plugin_info_t ADIOS_TRANSFORM_METHOD_INFOS[] = {
 // Build the XML alias table
 
 // Define the registration macro
-#define REGISTER_TRANSFORM_PLUGIN(TYPEID, XMLALIAS, UUID, DESC) \
+#define REGISTER_TRANSFORM_PLUGIN(TYPEID, XMLALIAS, UID, DESC) \
         _PLUGIN_ALIASES_RECORD(TYPEID, XMLALIAS)
 
 adios_transform_method_xml_aliases_t ADIOS_TRANSFORM_METHOD_ALIASES[] = {

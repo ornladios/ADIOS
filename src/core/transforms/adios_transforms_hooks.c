@@ -4,8 +4,8 @@
  * Includes functions common to both read and write interaction with transform plugins.
  * Primarily, maintains a basic info table for each transform method, including:
  *   type: the integer ID of the transform method (i.e., enum ADIOS_TRANSFORM_TYPE)
- *   uuid: the short string UUID identifying each transform method for
- *         portability between systems within BP files, etc.
+ *   uid: the short string unique ID (UID) identifying each transform method for
+ *         portability between systems, etc.
  *   description: a human-readable description of the transform method
  *
  *  Created on: Feb 14, 2013
@@ -44,9 +44,9 @@ static adios_transform_method_xml_aliases_t * find_plugin_xml_aliases(enum ADIOS
     return NULL;
 }
 
-const char * adios_transform_plugin_uuid(enum ADIOS_TRANSFORM_TYPE transform_type) {
+const char * adios_transform_plugin_uid(enum ADIOS_TRANSFORM_TYPE transform_type) {
     adios_transform_plugin_info_t *info = find_plugin_info(transform_type);
-    if (info) return info->uuid;
+    if (info) return info->uid;
     else      return NULL;
 }
 

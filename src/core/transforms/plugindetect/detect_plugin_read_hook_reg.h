@@ -19,7 +19,7 @@
 #include "src/core/transforms/adios_transforms_hooks_read.h"
 
 // SETUP - Set up detection macro
-#define REGISTER_TRANSFORM_PLUGIN(TYPEID, XMLALIAS, UUID, DESC) \
+#define REGISTER_TRANSFORM_PLUGIN(TYPEID, XMLALIAS, UID, DESC) \
     REGISTER_TRANSFORM_READ_METHOD_HOOKS(TRANSFORM_READ_METHODS, TYPEID, adios_transform_##TYPEID) // From adios_transforms_hooks_read.h
 
 // DETECT
