@@ -266,6 +266,18 @@ int adios_transform_init_transform_characteristic(struct adios_index_characteris
 #define BUFREAD(b,dst,len) memcpy((dst), (b->buff + b->offset), (len)); \
                            b->offset += (len);
 
+static enum ADIOS_TRANSFORM_TYPE deserialize_transform_type(struct adios_bp_buffer_struct_v1 *b) {
+    // Read the length of the transform type ID
+    uint8_t transform_type_name_len;
+    BUFREAD8(b, transform_type_name_len);
+
+    // Read the transform type ID itself (e.g., "zlib" or "ncsu-isobar")
+    char *transform_type_name = calloc(1, transform_type_name_len + 1);
+    BUFREAD(b, transform_type_name, transform_type_name_len);
+
+
+}
+
 // Deserialize
 int adios_transform_deserialize_transform_characteristic(struct adios_index_characteristic_transform_struct *transform, struct adios_bp_buffer_struct_v1 *b) {
     // The adios_characterstic_transform flag has already been read
@@ -274,8 +286,6 @@ int adios_transform_deserialize_transform_characteristic(struct adios_index_char
     uint16_t len, meta_len;
 
     BUFREAD8(b, transform->transform_type);
-    assert(transform->transform_type >= adios_transform_none &&
-           transform->transform_type < num_adios_transform_types);
 
     BUFREAD8(b, transform->pre_transform_type);
     BUFREAD8(b, transform->pre_transform_dimensions.count);

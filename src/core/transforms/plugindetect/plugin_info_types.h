@@ -19,6 +19,6 @@ typedef struct {
 
     int xmlAliasCount;
     const char **xmlAliases;
-} adios_transform_method_xml_aliases_t;
+} adios_transform_plugin_xml_aliases_t;
 
 #endif /* PLUGIN_INFO_TYPES_H_ */
