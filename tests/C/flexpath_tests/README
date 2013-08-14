@@ -30,6 +30,10 @@ export MXML_ROOT=/rock/opt/mxml/2.7
 export MPI_ROOT=/rock/opt/openmpi/1.6.3
 export EVPATH_ROOT=/rock/opt/evpath
 
+# in certain cases you might need the lustre directory (e.g., on flexpath on kraken)
+# depending how do you compiled your adios
+export LUSTRE_ROOT=/opt/cray/lustre-cray_ss_s/default
+
 To build most of tests run:
 
 # to use MPI method
@@ -40,6 +44,10 @@ make -f Makefile.master CFLAGS="-DFLEXPATH_METHOD"
 
 # to clean the build
 make -f Makefile.master clean
+
+There are a few Makefiles for particular machines such as Makefile.kraken.
+If you are building on such a machine you might take a look at the file
+and try to run it instead of Makefile.master.
 
 How to run regression tests
 ----------------------------

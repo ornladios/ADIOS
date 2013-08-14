@@ -1,3 +1,4 @@
+#!/bin/sh
 MACHINE=kraken
 export ADIOS_ROOT=$HOME/opt/adios/$MACHINE/gnu/git-v1.5.1
 export MXML_ROOT=$HOME/opt/mxml-2.7/$MACHINE/gnu

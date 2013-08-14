@@ -36,22 +36,25 @@ export MXML_ROOT=/rock/opt/mxml/2.7
 export MPI_ROOT=/rock/opt/openmpi/1.6.3
 export EVPATH_ROOT=/rock/opt/evpath
 
+# in certain cases you might need the lustre directory (e.g., on kraken)
+export LUSTRE_ROOT=/opt/cray/lustre-cray_ss_s/default
+
 # build the MPI/ADIOS_READ_METHOD_BP
-$ make
+$ make -f Makefile.generic
 
 # build FLEXPATH/ADIOS_READ_METHOD_FLEXPATH
-$ make CFLAGS="-DFLEXPATH_METHOD"
+$ make -f Makefile.generic CFLAGS="-DFLEXPATH_METHOD"
 
 # should remove all unnecessary exec files 
-$ make clean
+$ make -f Makefile.generic clean
 
 # cleans files hanging around after previous runs
-$ make clean_test
+$ make -f Makefile.generic clean_test
 
 RUN
 ===== 
 # to clean files hanging around after previous runs
-$ make clean_test
+$ make -f Makefile.generic clean_test
 
 $ mpirun -np 2 writer
 $ mpirun -np 2 reader 
