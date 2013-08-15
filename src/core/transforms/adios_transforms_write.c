@@ -226,9 +226,12 @@ static void adios_transform_attach_byte_array_dimensions(struct adios_group_stru
     const int orig_ndim = count_dimensions(var->pre_transform_dimensions);
     const int orig_has_time = has_time_dimension(var->pre_transform_dimensions, fortran_dim_order);
 
-    const int new_ndim = (orig_has_time ? 2 : 1); // 1D byte array, plus a time dimension if the original had one
-    const int new_has_time = orig_has_time;
-    const int new_time_dim_pos = (fortran_dim_order ? new_ndim - 1 : 0); // Place the time dimension last for FORTRAN order, first for C order
+    //const int new_ndim = (orig_has_time ? 2 : 1); // 1D byte array, plus a time dimension if the original had one
+    //const int new_has_time = orig_has_time;
+    //const int new_time_dim_pos = (fortran_dim_order ? new_ndim - 1 : 0); // Place the time dimension last for FORTRAN order, first for C order
+    const int new_ndim = 1;
+    const int new_has_time = 0;
+    const int new_time_dim_pos = 0;
 
     // Construct the dimension linked list
     for (i = 0; i < new_ndim; i++) {
