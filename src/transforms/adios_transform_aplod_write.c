@@ -80,7 +80,6 @@ int adios_transform_aplod_apply(struct adios_file_struct *fd,
     }
     */
     int i;
-    int componentID = 0;
     int paramError = 0;
     for (i = 0; i < var->transform_spec->param_count; i++) {
         const char *comp = var->transform_spec->params[i].key;
@@ -88,12 +87,12 @@ int adios_transform_aplod_apply(struct adios_file_struct *fd,
         int compInt = atoi(comp);
 
         // Error if any component is non-positive
-        if (compInt <= 0 || componentID >= MAX_COMPONENTS) {
+        if (compInt <= 0 || numComponents >= MAX_COMPONENTS) {
             numComponents = 0;
             paramError = 1;
             break;
         }
-        componentVector[componentID++] = compInt;
+        componentVector[numComponents++] = compInt;
         componentTotals += compInt;
     }
 
