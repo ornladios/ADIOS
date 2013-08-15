@@ -36,6 +36,65 @@ uint64_t adios_transform_get_transformed_var_size_from_blockinfo(int raw_ndim, c
 // Read request management (rest of the file)
 //
 
+static uint64_t compute_selection_size_in_bytes(const ADIOS_SELECTION *sel,
+                                                enum ADIOS_DATATYPES datum_type,
+                                                int timestep,
+                                                const ADIOS_VARINFO *raw_varinfo,
+                                                const ADIOS_TRANSINFO *transinfo) {
+    int typesize = adios_get_type_size(datum_type, NULL);
+    int i;
+    switch (sel->type) {
+    case ADIOS_SELECTION_BOUNDINGBOX:
+    {
+        const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &sel->u.bb;
+        const int ndim = bb->ndim;
+
+        uint64_t size = typesize;
+        for (i = 0; i < ndim; i++)
+            size *= bb->count[i];
+
+        return size;
+    }
+    case ADIOS_SELECTION_POINTS:
+    {
+        const ADIOS_SELECTION_POINTS_STRUCT *pts = &sel->u.points;
+        return pts->ndim * pts->npoints * typesize;
+    }
+    case ADIOS_SELECTION_WRITEBLOCK:
+    {
+        const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb = &sel->u.block;
+
+        if (wb->is_sub_pg_selection) {
+            return wb->nelements * typesize;
+        } else {
+            const ADIOS_VARBLOCK *theblock;
+            uint64_t size = typesize;
+            int absolute_idx;
+
+            if (wb->is_absolute_index) {
+                absolute_idx = wb->index;
+            } else {
+                int timestep_start_idx = 0;
+                for (i = 0; i < timestep; i++)
+                    timestep_start_idx += raw_varinfo->nblocks[i];
+
+                absolute_idx = timestep_start_idx + wb->index;
+            }
+
+            theblock = &transinfo->orig_blockinfo[absolute_idx];
+            for (i = 0; i < transinfo->orig_ndim; i++)
+                size *= theblock->count[i];
+
+            return size;
+        }
+    }
+    case ADIOS_SELECTION_AUTO:
+    default:
+        adios_error_at_line(err_invalid_argument, __FILE__, __LINE__, "Unsupported selection type %d in data transform read layer", sel->type);
+        return 0;
+    }
+}
+
 /*
  * Determines the block indices corresponding to a start and end timestep.
  * Both the input start/end timesteps and the output start/end blockidx are lower bound inclusive, upper bound exclusive: [start, end)
@@ -90,7 +149,6 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
     if (sel->type != ADIOS_SELECTION_BOUNDINGBOX &&
         sel->type != ADIOS_SELECTION_POINTS) {
         adios_error(err_operation_not_supported, "Only bounding box and point selections are currently supported during read on transformed variables.");
-        assert(0);
     }
 
     // Compute the blockidx range, given the timesteps
@@ -267,11 +325,14 @@ static int apply_datablock_to_result_and_free(adios_datablock *datablock,
         assert(0);
     }
 
+    const int timestep_within_request = datablock->timestep - reqgroup->from_steps;
+    void * const output_ptr = (char*)reqgroup->orig_data + timestep_within_request * reqgroup->orig_sel_timestep_size;
+
 #if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
     timer_start ("adios_transform_patch_data");
 #endif
     uint64_t used_count =
-            adios_patch_data(reqgroup->orig_data, 0, reqgroup->orig_sel,
+            adios_patch_data(output_ptr, 0, reqgroup->orig_sel,
                              datablock->data, datablock->ragged_offset, datablock->bounds,
                              datablock->elem_type, reqgroup->swap_endianness);
 #if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
@@ -281,67 +342,6 @@ static int apply_datablock_to_result_and_free(adios_datablock *datablock,
     adios_datablock_free(&datablock, 1);
     //return intersects;
     return used_count != 0;
-}
-
-static uint64_t compute_selection_size_in_bytes(const ADIOS_SELECTION *sel,
-                                                enum ADIOS_DATATYPES datum_type,
-                                                int timestep,
-                                                const ADIOS_VARINFO *raw_varinfo,
-                                                const ADIOS_TRANSINFO *transinfo) {
-    int typesize = adios_get_type_size(datum_type, NULL);
-    switch (sel->type) {
-    case ADIOS_SELECTION_BOUNDINGBOX:
-    {
-        const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &sel->u.bb;
-        const int ndim = bb->ndim;
-        int i;
-
-        uint64_t size = typesize;
-        for (i = 0; i < ndim; i++)
-            size *= bb->count[i];
-
-        return size;
-    }
-    case ADIOS_SELECTION_POINTS:
-    {
-        const ADIOS_SELECTION_POINTS_STRUCT *pts = &sel->u.points;
-        return pts->ndim * pts->npoints * typesize;
-    }
-    case ADIOS_SELECTION_WRITEBLOCK:
-    {
-        const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb = &sel->u.block;
-
-        if (wb->is_sub_pg_selection) {
-            return wb->nelements * typesize;
-        } else {
-            const ADIOS_VARBLOCK *theblock;
-            uint64_t size = typesize;
-            int absolute_idx;
-            int i;
-
-            if (wb->is_absolute_index) {
-                absolute_idx = wb->index;
-            } else {
-                int timestep_start_idx = 0;
-                for (i = 0; i < timestep; i++)
-                    timestep_start_idx += raw_varinfo->nblocks[i];
-
-                absolute_idx = timestep_start_idx + wb->index;
-            }
-
-            theblock = &transinfo->orig_blockinfo[absolute_idx];
-
-            for (i = 0; i < transinfo->orig_ndim; i++)
-                size *= theblock->count[i];
-
-            return size;
-        }
-    }
-    case ADIOS_SELECTION_AUTO:
-    default:
-        adios_error_at_line(err_invalid_argument, __FILE__, __LINE__, "Unsupported selection type %d", sel->type);
-        return 0;
-    }
 }
 
 /*
