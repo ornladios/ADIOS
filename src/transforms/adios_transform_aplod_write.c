@@ -97,15 +97,15 @@ int adios_transform_aplod_apply(struct adios_file_struct *fd,
         componentTotals += compInt;
     }
 
-    // Error if the components don't sum to the type size
-    paramError |= (componentTotals != bp_get_type_size (var->pre_transform_type, ""));
+    // Error if components were specified, and the components don't sum to the type size
+    paramError |= (numComponents > 0 && componentTotals != bp_get_type_size (var->pre_transform_type, ""));
 
     if (paramError) {
         fprintf(stderr, "Warning: at least one APLOD byte component is a non-positive integer, or all components do not sum to the type size (%d) for variable %s/%s. Using default APLOD configuration instead.\n",
                 bp_get_type_size (var->pre_transform_type, ""), var->path, var->name);
     }
 
-    if ((numComponents == 0) || paramError) {
+    if ((numComponents == 0) || (componentTotals != bp_get_type_size (var->pre_transform_type, ""))) {
         if (var->pre_transform_type == adios_double) {
             componentVector [0] = 2;
             componentVector [1] = 2;
