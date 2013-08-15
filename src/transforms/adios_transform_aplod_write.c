@@ -81,12 +81,14 @@ int adios_transform_aplod_apply(struct adios_file_struct *fd,
     */
     int i;
     int componentID = 0;
+    int paramError = 0;
     for (i = 0; i < var->transform_spec->param_count; i++) {
         const char *comp = var->transform_spec->params[i].key;
 
         int compInt = atoi(comp);
         if (compInt <= 0 || componentID >= MAX_COMPONENTS) {
             numComponents = 0;
+            paramError = 1;
             break;
         }
         componentVector[componentID++] = compInt;
@@ -94,8 +96,10 @@ int adios_transform_aplod_apply(struct adios_file_struct *fd,
     }
 
     if ((numComponents == 0) || (componentTotals != bp_get_type_size (var->pre_transform_type, ""))) {
-        fprintf(stderr, "Warning: at least one APLOD byte component is a non-positive integer, or all components do not sum to the type size (%d) for variable %s/%s\n",
-                bp_get_type_size (var->pre_transform_type, ""), var->path, var->name);
+        if (paramError)
+            fprintf(stderr, "Warning: at least one APLOD byte component is a non-positive integer, or all components do not sum to the type size (%d) for variable %s/%s\n",
+                    bp_get_type_size (var->pre_transform_type, ""), var->path, var->name);
+
         if (var->pre_transform_type == adios_double) {
             componentVector [0] = 2;
             componentVector [1] = 2;
