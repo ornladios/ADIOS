@@ -23,11 +23,11 @@
        VAR_MERGE: limit the aggregation level by decreasing the aggregation buffer
                   size to 300k
   -->
-  <transport group="writer" method="PHDF5"/>
-  <!--
   <transport group="writer" method="MPI"/>
+  <!--
   <transport group="writer" method="POSIX"/>
   <transport group="writer" method="MPI_AGGREGATE">num_aggregators=4;num_ost=2</transport>
+  <transport group="writer" method="PHDF5"/>
   <transport group="writer" method="VAR_MERGE">io_method=MPI</transport>
   <transport group="writer" method="VAR_MERGE">chunk_size=300000;io_method=MPI</transport>
   -->
