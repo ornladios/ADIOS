@@ -3279,7 +3279,7 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
     file_is_fortran = is_fortran_file (fh);
     has_subfile = has_subfiles (fh);
     data = r->data;
-    varid = map_req_varid (fp, r->varid);
+    varid = r->varid; //varid = map_req_varid (fp, r->varid); // NCSU ALACRITY-ADIOS: Bugfix: r->varid has already been mapped
     v = bp_find_var_byid (fh, varid);
 
     // NCSU ALACRITY-ADIOS: Add support for absolute PG index for efficiency
