@@ -289,7 +289,7 @@ int adios_transform_deserialize_transform_characteristic(struct adios_index_char
     uint16_t len, meta_len;
 
     //BUFREAD8(b, transform->transform_type);
-    transform->transform_type = deserialize_transform_type();
+    transform->transform_type = deserialize_transform_type(b);
 
     BUFREAD8(b, transform->pre_transform_type);
     BUFREAD8(b, transform->pre_transform_dimensions.count);
