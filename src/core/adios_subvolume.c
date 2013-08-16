@@ -277,7 +277,7 @@ void copy_subvolume_ragged_offset(void *dst, const void *src, int ndim, const ui
 
     int i;
     int last_noncovering_dim = 0; // Index of dimension that starts a contiguous block
-    int buffers_intersect; // Whether the source and destination memory copy regions may intersect
+    int buffers_intersect = 0; // Whether the source and destination memory copy regions may intersect
     uint64_t src_strides[32];
     uint64_t dst_strides[32];
     const int type_size = adios_get_type_size(datum_type, NULL);
