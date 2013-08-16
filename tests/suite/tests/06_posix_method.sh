@@ -28,7 +28,7 @@ cp $SRCDIR/programs/posix_method .
 cp $SRCDIR/programs/posix_method.xml .
 
 # Insert transform=X if requested by user
-add-transform-to-xmls
+add_transform_to_xmls
 
 echo "Run posix_method"
 $MPIRUN $NP_MPIRUN $PROCS ./posix_method

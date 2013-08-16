@@ -24,7 +24,7 @@ cp $SRCDIR/programs/write_alternate .
 cp $SRCDIR/programs/write_alternate.xml .
 
 # Insert transform=X if requested by user
-add-transform-to-xmls
+add_transform_to_xmls
 
 echo "Run write_alternate"
 $MPIRUN $NP_MPIRUN $PROCS ./write_alternate

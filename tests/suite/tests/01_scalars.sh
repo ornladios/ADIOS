@@ -24,7 +24,7 @@ cp $TRUNKDIR/examples/C/scalars/scalars_write .
 cp $TRUNKDIR/examples/C/scalars/scalars.xml .
 
 # Insert transform=X if requested by user
-add-transform-to-xmls
+add_transform_to_xmls
 
 echo "Run C scalars_write"
 echo $MPIRUN $NP_MPIRUN $PROCS ./scalars_write
@@ -71,7 +71,7 @@ cp $TRUNKDIR/examples/Fortran/scalars/scalars_write fortran_write
 cp $TRUNKDIR/examples/Fortran/scalars/scalars.xml .
 
 # Insert transform=X if requested by user
-add-transform-to-xmls
+add_transform_to_xmls
 
 echo "Run Fortran scalar_write"
 $MPIRUN $NP_MPIRUN $PROCS ./fortran_write

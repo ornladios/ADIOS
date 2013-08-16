@@ -25,7 +25,7 @@ cp $SRCDIR/programs/adios_staged_read .
 cp $SRCDIR/programs/adios_staged_read_v2 .
 
 # Insert transform=X if requested by user
-add-transform-to-xmls
+add_transform_to_xmls
 
 for ((m=1; m <= 2 ; m++))
 do

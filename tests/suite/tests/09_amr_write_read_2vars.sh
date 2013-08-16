@@ -24,7 +24,7 @@ cp $SRCDIR/programs/adios_amr_write_2vars.xml .
 cp $SRCDIR/programs/adios_staged_read_2vars .
 
 # Insert transform=X if requested by user
-add-transform-to-xmls
+add_transform_to_xmls
 
 for ((m=1; m <= 2 ; m++))
 do
