@@ -2065,7 +2065,11 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
 
     fh = (BP_FILE *) p->fh;
     file_is_fortran = is_fortran_file (fh);
-    var_root = bp_find_var_byid (fh, varinfo->varid);
+
+    // Perform variable ID mapping, since the input to this function is user-perceived
+    int mapped_id = map_req_varid (fp, varinfo->varid);
+    var_root = bp_find_var_byid (fh, mapped_id);
+
     blockinfo = (ADIOS_VARBLOCK *) malloc (varinfo->sum_nblocks * sizeof (ADIOS_VARBLOCK));
     assert (blockinfo);
 
@@ -2139,7 +2143,10 @@ ADIOS_TRANSINFO * adios_read_bp_inq_var_transinfo(const ADIOS_FILE *fp, const AD
     assert(vi);
     fh = (BP_FILE *) p->fh;
     file_is_fortran = is_fortran_file (fh);
-    var_root = bp_find_var_byid(fh, vi->varid);
+
+    // Perform variable ID mapping, since the input to this function is user-perceived
+    int mapped_id = map_req_varid (fp, vi->varid);
+    var_root = bp_find_var_byid(fh, mapped_id);
     assert(var_root);
 
     transinfo = malloc(sizeof(ADIOS_TRANSINFO));
@@ -2181,11 +2188,6 @@ int adios_read_bp_inq_var_trans_blockinfo(const ADIOS_FILE *fp, const ADIOS_VARI
     struct BP_PROC * p = (struct BP_PROC *) fp->fh;
     BP_FILE * fh = (BP_FILE *) p->fh;
     struct adios_index_var_struct_v1 * var_root;
-
-    assert(vi);
-    assert(ti);
-    var_root = bp_find_var_byid(fh, vi->varid);
-    assert(var_root);
 
     ti->orig_blockinfo = inq_var_blockinfo(fp, vi, 1); // 1 -> use original, pretransform dimensions
     return 0;
