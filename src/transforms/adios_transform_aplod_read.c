@@ -138,8 +138,16 @@ adios_datablock * adios_transform_aplod_pg_reqgroup_completed(adios_transform_re
     aplod_meta_t aplodmeta;
     parse_aplod_meta(reqgroup->transinfo->transform_metadata, &aplodmeta);
 
-    APLODConfig_t *config = APLODConfigure (aplodmeta.components, aplodmeta.numComponents);
-    config->blockLengthElts = numElements; // Bug workaround, disable chunking
+    APLODConfig_t *config;
+                                                                                                                                                                                                                                            
+    if (reqgroup->transinfo->orig_type == adios_double) {
+        config = APLODConfigure (aplodmeta.components, aplodmeta.numComponents, APLOD_DOUBLE, APLOD_LITTLE_E);                                                                                                                              
+    } else if (reqgroup->transinfo->orig_type == adios_real){
+        config = APLODConfigure (aplodmeta.components, aplodmeta.numComponents, APLOD_FLOAT, APLOD_LITTLE_E);                                                                                                                               
+    }
+
+    // config->blockLengthElts = numElements; // Bug workaround, disable chunking
+    config->blockLengthElts = (numElements >= 65536 ? 65536: numElements); 
 
     APLODReconstructComponents  (config,
                                     numElements,

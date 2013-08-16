@@ -116,7 +116,8 @@ int adios_transform_isobar_apply(struct adios_file_struct *fd,
     }
 
     // decide the output buffer
-    uint64_t output_size = adios_transform_isobar_calc_vars_transformed_size(input_size, 1);
+    uint64_t output_size = adios_transform_isobar_calc_vars_transformed_size(adios_transform_isobar, input_size, 1); 
+
     void* output_buff = NULL;
 
     if (use_shared_buffer)    // If shared buffer is permitted, serialize to there

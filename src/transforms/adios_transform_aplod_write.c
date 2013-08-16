@@ -96,15 +96,19 @@ int adios_transform_aplod_apply(struct adios_file_struct *fd,
         componentTotals += compInt;
     }
 
+    uint32_t pre_transform_type_size = bp_get_type_size (var->pre_transform_type, "");
+
     // Error if components were specified, and the components don't sum to the type size
-    paramError |= (numComponents > 0 && componentTotals != bp_get_type_size (var->pre_transform_type, ""));
+    if ((numComponents > 0) && (componentTotals != pre_transform_type_size)) {
+        paramError = 1;
+    }
 
     if (paramError) {
         fprintf(stderr, "Warning: at least one APLOD byte component is a non-positive integer, or all components do not sum to the type size (%d) for variable %s/%s. Using default APLOD configuration instead.\n",
                 bp_get_type_size (var->pre_transform_type, ""), var->path, var->name);
     }
 
-    if ((numComponents == 0) || (componentTotals != bp_get_type_size (var->pre_transform_type, ""))) {
+    if ((numComponents == 0) || (componentTotals != pre_transform_type_size)) {
         if (var->pre_transform_type == adios_double) {
             componentVector [0] = 2;
             componentVector [1] = 2;
@@ -115,6 +119,15 @@ int adios_transform_aplod_apply(struct adios_file_struct *fd,
             componentVector [0] = 2;
             componentVector [1] = 2;
             numComponents = 2;
+        } else {
+            numComponents = 0;
+
+            while (componentTotals < pre_transform_type_size - 2) {
+                componentVector [numComponents ++] = 2;
+                componentTotals += 2;
+            }
+
+            componentVector [numComponents ++] = pre_transform_type_size - componentTotals;
         }
     }
 
@@ -137,8 +150,15 @@ int adios_transform_aplod_apply(struct adios_file_struct *fd,
     // APLOD specific code - Start
     uint32_t numElements = input_size / bp_get_type_size (var->pre_transform_type, "");
 
-    APLODConfig_t *config = APLODConfigure (componentVector, numComponents);
-    config->blockLengthElts = numElements; // Bug workaround, disable chunking
+    APLODConfig_t *config;
+
+    if (var->pre_transform_type == adios_double) {                                                                                                                                                                                          
+        config = APLODConfigure (componentVector, numComponents, APLOD_DOUBLE, APLOD_LITTLE_E);
+    } else if (var->pre_transform_type == adios_real) {                                                                                                                                                                                     
+        config = APLODConfigure (componentVector, numComponents, APLOD_FLOAT, APLOD_LITTLE_E);
+    }                                                                                                                                                                                                                                                             
+    // config->blockLengthElts = numElements; // Bug workaround, disable chunking
+    config->blockLengthElts = (numElements >= 65536 ? 65536: numElements);
 
     APLODShuffleComponents (config, numElements, 0, numComponents, input_buff, output_buff);
     // APLOD specific code - End
