@@ -22,10 +22,10 @@ check_C=local_array_time \
         selections \
         path_test \
         reuse_dim \
-        transforms_read_write \
+        adios_transforms_read_write \
         connect_to_space_subset
 
-test_C=hashtest transforms copy_subvolume transforms_specparse transforms_read_write
+test_C=hashtest transforms copy_subvolume transforms_specparse adios_transforms_read_write
 
 endif
 
@@ -88,7 +88,7 @@ adios_staged_read_2vars.o: adios_staged_read_2vars.c
 
 adios_transforms_read_write_SOURCES=adios_transforms_read_write.c
 adios_transforms_read_write_LDADD = $(top_builddir)/src/libadios.a $(top_builddir)/src/libadiosread.a $(ADIOSLIB_LDADD)
-adios_transforms_read_write_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+adios_transforms_read_write_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
 adios_transforms_read_write.o: adios_transforms_read_write.c 
 
 write_read_SOURCES=write_read.c

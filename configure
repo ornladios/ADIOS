@@ -34249,7 +34249,7 @@ fi
 
 # Check whether --with-zlib was given.
 if test "${with_zlib+set}" = set; then
-  withval=$with_zlib; ZLIB_LDFLAGS="-L$withval/lib";
+  withval=$with_zlib; ZLIB_LDFLAGS="-L$withval/lib -L$withval/lib64";
          ZLIB_LIBS="-lz";
          ZLIB_CPPFLAGS="-I$withval/include";
 else
