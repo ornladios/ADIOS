@@ -30,6 +30,7 @@
 
 //static enum ADIOS_READ_METHOD read_method = ADIOS_READ_METHOD_BP;
 static enum ADIOS_READ_METHOD read_method = ADIOS_READ_METHOD_DATASPACES;
+//static enum ADIOS_READ_METHOD read_method = ADIOS_READ_METHOD_DIMES;
 
 // Input arguments
 char   infilename[256];    // File/stream to read 
@@ -384,9 +385,18 @@ int process_metadata(int step)
         {
             adios_get_attr_byid (f, i, &attr_type, &attr_size, &attr_value);
             attr_value_str = (char *)value_to_string (attr_type, attr_value, 0);
-            adios_define_attribute (gh, f->attr_namelist[i], "",
-                                    attr_type, attr_value_str, "");
-            free (attr_value);
+            getbasename (f->attr_namelist[i], &vpath, &vname);
+            if (!strcmp(vpath,"/__adios__")) { 
+                // skip on /__adios/... attributes 
+                print ("rank %d: Ignore this attribute path=\"%s\" name=\"%s\" value=\"%s\"\n",
+                        rank, vpath, vname, attr_value_str);
+            } else {
+                adios_define_attribute (gh, vname, vpath,
+                        attr_type, attr_value_str, "");
+                print ("rank %d: Define attribute path=\"%s\" name=\"%s\" value=\"%s\"\n",
+                        rank, vpath, vname, attr_value_str);
+                free (attr_value);
+            }
         }
     }
 
