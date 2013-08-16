@@ -35,11 +35,11 @@ if [ ! -f arrays.bp ]; then
 fi
 
 echo "Check output with bpls"
-$TRUNKDIR/utils/bpls/bpls -lav arrays.bp | grep -v endianness > c_bpls.txt
+$TRUNKDIR/utils/bpls/bpls -lav arrays.bp | grep -v -e endianness -e 'file size' > c_bpls.txt
 diff -q c_bpls.txt $SRCDIR/reference/arrays_bpls.txt
 if [ $? != 0 ]; then
     echo "ERROR: C version of arrays_write produced a file different from the reference."
-    echo "Compare \"bpls -lav $PWD/arrays.bp | grep -v endianness\" to reference $SRCDIR/reference/arrays_bpls.txt"
+    echo "Compare \"bpls -lav $PWD/arrays.bp | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/arrays_bpls.txt"
     exit 1
 fi
 

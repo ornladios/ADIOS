@@ -36,11 +36,11 @@ if [ ! -f scalars.bp ]; then
 fi
 
 echo "Check output with bpls"
-$TRUNKDIR/utils/bpls/bpls -lav scalars.bp | grep -v endianness > c_bpls.txt
+$TRUNKDIR/utils/bpls/bpls -lav scalars.bp | grep -v -e endianness -e 'file size' > c_bpls.txt
 diff -q c_bpls.txt $SRCDIR/reference/scalars_write_bpls.txt
 if [ $? != 0 ]; then
     echo "ERROR: C version of scalars_write produced a file different from the reference."
-    echo "Compare \"bpls -lav $PWD/scalars.bp | grep -v endianness\" to reference $SRCDIR/reference/scalars_write_bpls.txt"
+    echo "Compare \"bpls -lav $PWD/scalars.bp | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/scalars_write_bpls.txt"
     exit 1
 fi
 
@@ -82,11 +82,11 @@ if [ ! -f scalars.bp ]; then
 fi
 
 echo "Check output with bpls"
-$TRUNKDIR/utils/bpls/bpls -lav scalars.bp | grep -v endianness > f_bpls.txt
+$TRUNKDIR/utils/bpls/bpls -lav scalars.bp | grep -v -e endianness -e 'file size' > f_bpls.txt
 diff -q f_bpls.txt $SRCDIR/reference/scalars_write_bpls.txt
 if [ $? != 0 ]; then
     echo "ERROR: Fortran version of scalars_write produced a file different from the reference"
-    echo "Compare \"bpls -lav scalars.bp | grep -v endianness\" to reference $SRCDIR/reference/scalars_write_bpls.txt"
+    echo "Compare \"bpls -lav scalars.bp | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/scalars_write_bpls.txt"
     exit 1
 fi
 

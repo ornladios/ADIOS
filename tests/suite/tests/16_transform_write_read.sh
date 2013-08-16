@@ -17,12 +17,12 @@ if [ ! -f ${OUTPUT_FILENAME} ]; then
 fi
 
 echo "Check output with bpls"
-$TRUNKDIR/utils/bpls/bpls -la ${OUTPUT_FILENAME} | grep -v endianness > ${TEST_NAME}_bpls.txt
+$TRUNKDIR/utils/bpls/bpls -la ${OUTPUT_FILENAME} | grep -v -e endianness -e 'file size' > ${TEST_NAME}_bpls.txt
 diff -q ${TEST_NAME}_bpls.txt $SRCDIR/reference/${TEST_NAME}_bpls.txt
 
 if [ $? != 0 ]; then
     echo "ERROR: C version of ${PROGRAM_NAME} produced a file different from the reference."
-    echo "Compare \"bpls -la $PWD/${OUTPUT_FILENAME} | grep -v endianness\" to reference $SRCDIR/reference/${TEST_NAME}_bpls.txt"
+    echo "Compare \"bpls -la $PWD/${OUTPUT_FILENAME} | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/${TEST_NAME}_bpls.txt"
     exit 1
 fi
 
