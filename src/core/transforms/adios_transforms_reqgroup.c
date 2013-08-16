@@ -163,10 +163,10 @@ adios_transform_raw_read_request * adios_transform_raw_read_request_new_byte_seg
     ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb;
 
     // NOTE: We use the absolute PG index, along with the is_absolute_index flag below
-    sel = common_read_selection_writeblock(pg_reqgroup->blockidx_in_pg);
+    sel = common_read_selection_writeblock(pg_reqgroup->blockidx_in_timestep);
 
     wb = &sel->u.block;
-    wb->is_absolute_index = 1;
+    wb->is_absolute_index = 0;
     wb->is_sub_pg_selection = 1;
     wb->element_offset = start; // Assume element type of the raw variable is byte
     wb->nelements = count;

@@ -23,7 +23,7 @@ MAXPROCS=128
 
 function add_transform_to_xmls() {
   if [[ $TRANSFORM ]]; then
-    sed -ie '/transform=/!s|\(<var .*dimensions=.*\)/>|\1 transform="'$TRANSFORM'" />|' ./*.xml
+    sed -i -e '/transform=/!s|\(<var .*dimensions=.*\)/>|\1 transform="'$TRANSFORM'" />|' ./*.xml
   fi
 }
 # Make this function accessible to child processes (i.e., the actual tests)
