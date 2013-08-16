@@ -6,7 +6,7 @@
     <var name="size" type="integer"/>
     <var name="rank" type="integer"/>
     <global-bounds dimensions="size,NX" offsets="rank,0">
-       <var name="temperature" gwrite="t" type="double" dimensions="iter,1,NX" transform="aplod"/>
+       <var name="temperature" gwrite="t" type="double" dimensions="iter,1,NX"/>
     </global-bounds>
     <global-bounds dimensions="size,NY" offsets="rank,0">
        <var name="pressure" gwrite="p" type="double" dimensions="iter,1,NY"/>
