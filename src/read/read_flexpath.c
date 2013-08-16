@@ -564,7 +564,7 @@ static int
 update_step_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)                  
 {
     ADIOS_FILE *adiosfile = client_data;
-    flexpath_file_data *fp = adiosfile->fh;
+    flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
     update_step_msg *msg = vevent;
     fprintf(stderr, "update_step_handler updated: step %d %d\n",
 	    msg->step, msg->finalized);
