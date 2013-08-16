@@ -553,7 +553,7 @@ static void serialize_transform_type(enum ADIOS_TRANSFORM_TYPE transform_type,
     *write_length += 1;
 
     // Write the number of pre-transform dimensions
-    buffer_write (buffer, buffer_size, buffer_offset, &transform_uid, transform_uid_len);
+    buffer_write (buffer, buffer_size, buffer_offset, transform_uid, transform_uid_len);
     *write_length += transform_uid_len;
 }
 
