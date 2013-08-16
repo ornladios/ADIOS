@@ -21,13 +21,13 @@ fi
 KEEPOUTPUT=no
 MAXPROCS=128
 
-function add-transform-to-xmls() {
+function add_transform_to_xmls() {
   if [[ $TRANSFORM ]]; then
     sed -ie '/transform=/!s|\(<var .*dimensions=.*\)/>|\1 transform="'$TRANSFORM'" />|' ./*.xml
   fi
 }
 # Make this function accessible to child processes (i.e., the actual tests)
-export -f add-transform-to-xmls    
+export -f add_transform_to_xmls    
 
 function Usage() {
     echo "

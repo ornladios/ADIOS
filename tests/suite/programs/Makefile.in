@@ -83,13 +83,15 @@ CONFIG_CLEAN_VPATH_FILES =
 @BUILD_WRITE_TRUE@	two_groups$(EXEEXT) many_vars$(EXEEXT) \
 @BUILD_WRITE_TRUE@	selections$(EXEEXT) path_test$(EXEEXT) \
 @BUILD_WRITE_TRUE@	reuse_dim$(EXEEXT) \
+@BUILD_WRITE_TRUE@	transforms_read_write$(EXEEXT) \
 @BUILD_WRITE_TRUE@	connect_to_space_subset$(EXEEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__EXEEXT_2 =  \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	posix_method$(EXEEXT)
 am__EXEEXT_3 =
 @BUILD_WRITE_TRUE@am__EXEEXT_4 = hashtest$(EXEEXT) transforms$(EXEEXT) \
 @BUILD_WRITE_TRUE@	copy_subvolume$(EXEEXT) \
-@BUILD_WRITE_TRUE@	transforms_specparse$(EXEEXT)
+@BUILD_WRITE_TRUE@	transforms_specparse$(EXEEXT) \
+@BUILD_WRITE_TRUE@	transforms_read_write$(EXEEXT)
 am_adios_amr_write_OBJECTS = adios_amr_write.$(OBJEXT)
 adios_amr_write_OBJECTS = $(am_adios_amr_write_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -199,6 +201,9 @@ transforms_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 transforms_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(transforms_LDFLAGS) $(LDFLAGS) -o $@
+transforms_read_write_SOURCES = transforms_read_write.c
+transforms_read_write_OBJECTS = transforms_read_write.$(OBJEXT)
+transforms_read_write_LDADD = $(LDADD)
 am_transforms_specparse_OBJECTS = transforms_specparse.$(OBJEXT)
 transforms_specparse_OBJECTS = $(am_transforms_specparse_OBJECTS)
 transforms_specparse_DEPENDENCIES = $(top_builddir)/src/libadios.a \
@@ -255,8 +260,9 @@ SOURCES = $(adios_amr_write_SOURCES) $(adios_amr_write_2vars_SOURCES) \
 	$(many_vars_SOURCES) $(path_test_SOURCES) \
 	$(posix_method_SOURCES) $(reuse_dim_SOURCES) \
 	$(selections_SOURCES) $(transforms_SOURCES) \
-	$(transforms_specparse_SOURCES) $(two_groups_SOURCES) \
-	$(write_alternate_SOURCES) $(write_read_SOURCES)
+	transforms_read_write.c $(transforms_specparse_SOURCES) \
+	$(two_groups_SOURCES) $(write_alternate_SOURCES) \
+	$(write_read_SOURCES)
 DIST_SOURCES = $(adios_amr_write_SOURCES) \
 	$(adios_amr_write_2vars_SOURCES) $(adios_staged_read_SOURCES) \
 	$(adios_staged_read_2vars_SOURCES) \
@@ -266,8 +272,9 @@ DIST_SOURCES = $(adios_amr_write_SOURCES) \
 	$(many_vars_SOURCES) $(path_test_SOURCES) \
 	$(posix_method_SOURCES) $(reuse_dim_SOURCES) \
 	$(selections_SOURCES) $(transforms_SOURCES) \
-	$(transforms_specparse_SOURCES) $(two_groups_SOURCES) \
-	$(write_alternate_SOURCES) $(write_read_SOURCES)
+	transforms_read_write.c $(transforms_specparse_SOURCES) \
+	$(two_groups_SOURCES) $(write_alternate_SOURCES) \
+	$(write_read_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 am__tty_colors = \
@@ -535,9 +542,10 @@ check_readonly_C =
 @BUILD_WRITE_TRUE@        selections \
 @BUILD_WRITE_TRUE@        path_test \
 @BUILD_WRITE_TRUE@        reuse_dim \
+@BUILD_WRITE_TRUE@        transforms_read_write \
 @BUILD_WRITE_TRUE@        connect_to_space_subset
 
-@BUILD_WRITE_TRUE@test_C = hashtest transforms copy_subvolume transforms_specparse
+@BUILD_WRITE_TRUE@test_C = hashtest transforms copy_subvolume transforms_specparse transforms_read_write
 @BUILD_FORTRAN_TRUE@check_readonly_Fortran = 
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@check_Fortran = posix_method
 INCLUDES = $(all_includes) -I$(top_builddir)/src
@@ -568,6 +576,9 @@ adios_staged_read_v2_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
 adios_staged_read_2vars_SOURCES = adios_staged_read_2vars.c
 adios_staged_read_2vars_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSLIB_LDADD)
 adios_staged_read_2vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+adios_transforms_read_write_SOURCES = adios_transforms_read_write.c
+adios_transforms_read_write_LDADD = $(top_builddir)/src/libadios.a $(top_builddir)/src/libadiosread.a $(ADIOSLIB_LDADD)
+adios_transforms_read_write_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 write_read_SOURCES = write_read.c
 write_read_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 write_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
@@ -612,7 +623,7 @@ hashtest_CPPFLAGS = -I$(top_builddir)/src/core
 EXTRA_DIST = adios_amr_write.xml adios_amr_write_2vars.xml \
              posix_method.xml local_array_time.xml  \
              write_alternate.xml write_read.xml transforms.xml \
-             path_test.xml
+             path_test.xml adios_transforms.xml
 
 CLEANFILES = gwrite_posix_method.fh gread_posix_method.fh 
 FCLINK = \
@@ -707,6 +718,9 @@ selections$(EXEEXT): $(selections_OBJECTS) $(selections_DEPENDENCIES)
 transforms$(EXEEXT): $(transforms_OBJECTS) $(transforms_DEPENDENCIES) 
 	@rm -f transforms$(EXEEXT)
 	$(transforms_LINK) $(transforms_OBJECTS) $(transforms_LDADD) $(LIBS)
+transforms_read_write$(EXEEXT): $(transforms_read_write_OBJECTS) $(transforms_read_write_DEPENDENCIES) 
+	@rm -f transforms_read_write$(EXEEXT)
+	$(LINK) $(transforms_read_write_OBJECTS) $(transforms_read_write_LDADD) $(LIBS)
 transforms_specparse$(EXEEXT): $(transforms_specparse_OBJECTS) $(transforms_specparse_DEPENDENCIES) 
 	@rm -f transforms_specparse$(EXEEXT)
 	$(transforms_specparse_LINK) $(transforms_specparse_OBJECTS) $(transforms_specparse_LDADD) $(LIBS)
@@ -740,6 +754,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reuse_dim.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/selections.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transforms-transforms.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transforms_read_write.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transforms_specparse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/two_groups.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/write_alternate.Po@am__quote@
@@ -1110,6 +1125,7 @@ adios_amr_write_2vars.o: adios_amr_write_2vars.c
 adios_staged_read.o: adios_staged_read.c
 adios_staged_read_v2.o: adios_staged_read_v2.c
 adios_staged_read_2vars.o: adios_staged_read_2vars.c
+adios_transforms_read_write.o: adios_transforms_read_write.c 
 write_read.o: write_read.c
 write_alternate.o: write_alternate.c
 two_groups.o: two_groups.c
