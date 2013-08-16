@@ -23,7 +23,7 @@ AM_CONDITIONAL(HAVE_ZLIB,true)
 
 AC_ARG_WITH(zlib,
         [  --with-zlib=DIR      Location of ZLIB library],
-        [ZLIB_LDFLAGS="-L$withval/lib";
+        [ZLIB_LDFLAGS="-L$withval/lib -L$withval/lib64";
          ZLIB_LIBS="-lz";
          ZLIB_CPPFLAGS="-I$withval/include";],
         [with_zlib=no])

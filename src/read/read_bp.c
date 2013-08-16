@@ -2415,7 +2415,7 @@ static read_request * split_req (const ADIOS_FILE * fp, const read_request * r, 
     uint64_t pos[32], subbb[32], start[32], count[32];
 
     log_debug ("split_req()\n");
-    varid = map_req_varid (fp, r->varid);
+    varid = r->varid; //map_req_varid (fp, r->varid); // NCSU ALACRITY-ADIOS: Bugfix: r->varid has already been mapped
     v = bp_find_var_byid (fh, varid);
     type_size = bp_get_type_size (v->type, "");
     assert (type_size);
@@ -3214,7 +3214,7 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r)
     }
 
     time = adios_step_to_time (fp, r->varid, r->from_steps);
-    mapped_varid = map_req_varid (fp, r->varid);
+    mapped_varid = r->varid; //map_req_varid (fp, r->varid); // NCSU ALACRITY-ADIOS: Bugfix: r->varid has already been mapped
     v = bp_find_var_byid (fh, mapped_varid);
 
     start_idx = get_var_start_index (v, time);
@@ -3279,7 +3279,7 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
     file_is_fortran = is_fortran_file (fh);
     has_subfile = has_subfiles (fh);
     data = r->data;
-    varid = map_req_varid (fp, r->varid);
+    varid = r->varid; //varid = map_req_varid (fp, r->varid); // NCSU ALACRITY-ADIOS: Bugfix: r->varid has already been mapped
     v = bp_find_var_byid (fh, varid);
 
     // NCSU ALACRITY-ADIOS: Add support for absolute PG index for efficiency
