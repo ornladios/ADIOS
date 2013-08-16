@@ -401,13 +401,16 @@ find_displacement(array_displacements* list, int rank, int num_displ){
 int
 linearize_displ(int * offset, int * sizes, int ndim, int data_size)
 {
-    int i;
-    int retval = 0;
-    for(i = 0; i<ndim - 1; i++){
-	retval += (offset[i] * sizes[i+1])*data_size;       
-    }
-    retval+=offset[ndim-1]*data_size;
-    return retval;
+  int prev = data_size;
+  int cur = 0;
+  int i =0;
+  for(i=0; i<ndim; i++) {
+    fp_log("DISP","before i:%d cur:%d prev:%d off[i]:%d size[i]:%d\n", i, cur,prev, offset[i], sizes[i]);
+    cur+=prev*offset[i];
+    prev = prev*sizes[i];
+    fp_log("DISP","after i:%d cur:%d prev:%d\n", i, cur,prev);
+  }
+  return cur;
 }
 
 
@@ -424,24 +427,25 @@ copyoffsets(int dim, // dimension index
 	    int startposition
     ) 
 {
+    fp_log("DISP", "Call to copyoffsets\n");
+    fp_log("DISP", "dim = %d, ndims = %d, data_size = %d\n", dim, ndims, data_size);
+    int j=0;
+    for(j=0; j<ndims; j++) {
+      fp_log("DISP", "disp_start[%d]=%d\n", j, disp_start[j]);
+      fp_log("DISP", "disp_count[%d]=%d\n", j, disp_count[j]);
+      fp_log("DISP", "writer_count[%d]=%d\n", j, writer_count[j]);
+    }
     if(dim==ndims-1) {
-        int* reader_count_copy = (int*)malloc(sizeof(int)*ndims);
-        int i=0;
-        for(i=0; i<ndims; i++){
-            reader_count_copy[i]=reader_count[i];
-        }
         int s = linearize_displ(disp_start, writer_count, ndims, data_size);
-        int e = linearize_displ(disp_start, reader_count_copy, ndims, data_size);
-	free(reader_count_copy);
-        memcpy(to+startposition, from+s,  data_size*disp_count[ndims-1]);
+        int size = data_size*disp_count[ndims-1];
+        fp_log("DISP", "S=%d size=%d\n\n", s, size);
+        memcpy(to+startposition, from+s,  size);
 	return data_size*disp_count[ndims-1];
     } else {
         int i;
+	int ret = 0;
         for(i=0; i<disp_count[dim]; i++) {
-            int* disp_startcpy = malloc(sizeof(int)*ndims);
-            memcpy(disp_startcpy, disp_start, sizeof(int)*ndims);
-            disp_startcpy[dim] += i;
-            return copyoffsets(dim+1, 
+            int result = copyoffsets(dim+1, 
 			       ndims, 
 			       data_size, 
 			       disp_start,
@@ -451,7 +455,11 @@ copyoffsets(int dim, // dimension index
 			       from, 
 			       to,
 			       startposition);
+            startposition += result;
+            ret += result;
+            disp_start[dim]+=1;
         }
+	return ret;
     }
 }
 
@@ -491,8 +499,11 @@ get_writer_displacements(
 	}else{
 	    int count = (local_dims[pos+i] - 1) - displ->start[i] + 1;
 	    displ->count[i] = count;
-	}	
+	}
+      fp_log("DISP","start:%d\n", displ->start[i]);	
+      fp_log("DISP","count %d\n",displ->count[i]);
     }
+    fp_log("DISP","\n");
     return displ;
 }
 
@@ -518,20 +529,20 @@ need_writer(
         //grab sel dimensions(size)
         int sel_size = sel->u.bb.count[i];        
         //perr("sel offset %d size %d\n", sel_offset, sel_size);
-
+	
 
         //select rank offsets
-        int rank_offset = var_offsets.local_offsets[j*var_offsets.offsets_per_rank+i];
+        int rank_offset = var_offsets.local_offsets[j*(var_offsets.offsets_per_rank)+i];
         //grab rank dimencsions(size)
-        int rank_size =var_offsets.local_dimensions[j*var_offsets.offsets_per_rank+i];        
-        /* perr("rank offset %d size %d\n", rank_offset, rank_size);
-        perr("overlap1\n");
-        perr("rank_off  %d <= sel_off %d\n", rank_offset, sel_offset);
-        perr("rank_off  + rank_size %d >= sel_offset%d\n", rank_offset + rank_size - 1, sel_offset);
-        perr("overlap2\n");
-        perr("rank_off  %d <= sel_offset + sel_size - 1 %d\n", rank_offset, sel_offset + sel_size - 1);
-        perr("rank_off + rank_size -1 %d >= sel_off + sel_size %d\n", rank_offset+rank_size-1, sel_offset+sel_size);
-        */
+        int rank_size =var_offsets.local_dimensions[j*(var_offsets.offsets_per_rank)+i];        
+/*          perr("rank offset %d size %d\n", rank_offset, rank_size); */
+/*         perr("overlap1\n"); */
+/*         perr("rank_off  %d <= sel_off %d\n", rank_offset, sel_offset); */
+/*         perr("rank_off  + rank_size %d >= sel_offset%d\n", rank_offset + rank_size - 1, sel_offset); */
+/*         perr("overlap2\n"); */
+/*         perr("rank_off  %d <= sel_offset + sel_size - 1 %d\n", rank_offset, sel_offset + sel_size - 1); */
+/*         perr("rank_off + rank_size -1 %d >= sel_off + sel_size %d\n", rank_offset+rank_size-1, sel_offset+sel_size); */
+        
         //if rank offset < selector offset and rank offset +size-1 > selector offset
 	
         if((rank_offset <= sel_offset) && (rank_offset + rank_size - 1 >=sel_offset)) {
@@ -595,6 +606,23 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
     fp->valid_evgroup = 1;
     global_var * vars = msg->vars;
     int num_vars = msg->num_vars;
+    int i;
+    for(i=0; i<num_vars; i++){
+      offset_struct *off = vars[i].offsets;
+      int j;
+      for(j=0; j<vars[i].noffset_structs; j++){
+	int k;
+	/*fprintf(stderr, "offsets:\n");
+	for(k=0; k<off->total_offsets; k++){
+	  fprintf(stderr, "%d: ", off->local_offsets[k]);
+	}
+	fprintf(stderr, "\ndimensions:\n");
+	for(k=0; k<off->total_offsets; k++){
+	  fprintf(stderr, "%d: ", off->local_dimensions[k]);
+	}
+	fprintf(stderr, "\n");*/
+      }
+    }
     CMCondition_signal(fp_read_data->fp_cm, msg->condition);    
     return 0;
 }

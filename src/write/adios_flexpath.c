@@ -148,7 +148,6 @@ typedef struct _flexpath_write_file_data {
     FlexpathVarNode* formatVars;
     FlexpathQueueNode* controlQueue;
     FlexpathQueueNode* dataQueue;   
-    FlexpathQueueNode* evgroupQueue;
     pthread_mutex_t controlMutex;
     pthread_mutex_t dataMutex;
     pthread_mutex_t dataMutex2;
