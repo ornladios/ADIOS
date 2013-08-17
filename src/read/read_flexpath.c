@@ -727,7 +727,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     	    else if(var->sel->type == ADIOS_SELECTION_WRITEBLOCK){
     		var->ndims = num_dims;
     		var->dims = malloc(sizeof(int)*num_dims);
-    		if(var->was_scheduled == 1){
+    		if(var->was_scheduled == writer_rank){
     		    var->array_size = var->data_size;
     		    for(i=0; i<num_dims; i++){
     			char *dim;
