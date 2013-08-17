@@ -40,11 +40,13 @@ int main (int argc, char ** argv)
     for(j=0; j<NY*NX; j++){       
 	t[j] = (offset * NX) + j;			
     }
-    printf("rank %d: [", rank);
-    for(i=0; i<NX*NY;i++){
-	printf("%lf, ", t[i]);
-    }
-    printf("]\n");
+
+    //prints the array.
+    /* printf("rank %d: [", rank); */
+    /* for(i=0; i<NX*NY;i++){ */
+    /* 	printf("%lf, ", t[i]); */
+    /* } */
+    /* printf("]\n"); */
     for(ii = 0; ii<20; ii++){       
 	
       adios_open (&adios_handle, "temperature", filename, "w", comm);
