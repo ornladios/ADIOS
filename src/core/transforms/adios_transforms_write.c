@@ -267,10 +267,30 @@ static void adios_transform_convert_var_to_byte_array(struct adios_group_struct 
 // Definition phase - set up transform parameters
 ////////////////////////////////////////
 
+static int is_scalar(const struct adios_var_struct *var) {
+    return var->dimensions == NULL;
+}
+
+static int is_timed_scalar(const struct adios_var_struct *var) {
+    return var->dimensions &&                                          // Has first dimension
+           var->dimensions->next == NULL &&                            // Does not have second dimension
+           is_time_dimension(var->dimensions) &&                       // The first dimension is a time dimension
+           is_dimension_item_zero(&var->dimensions->global_dimension); // It's not a global array
+}
+
 struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *orig_var_grp,
                                                      struct adios_var_struct *orig_var,
                                                      struct adios_transform_spec *transform_spec) {
-    log_debug("Transforming variable %s with type %d\n", orig_var->name, transform_spec->transform_type);
+    // First detect error conditions that prevent the transform from being applied
+    if (is_scalar(orig_var) || is_timed_scalar(orig_var)) {
+        log_warn("Data transforms not allowed on scalars, yet variable %s/%s is marked for transform \"%s\"; not applying data transform.\n",
+                 orig_var->path, orig_var->name, transform_spec->transform_type_str);
+        orig_var->transform_type = adios_transform_none;
+        orig_var->transform_spec->transform_type = adios_transform_none;
+        return orig_var;
+    }
+
+    log_debug("Transforming variable %s/%s with type %d\n", orig_var->path, orig_var->name, transform_spec->transform_type);
 
     // Set transform type and spec
     orig_var->transform_type = transform_spec->transform_type;
