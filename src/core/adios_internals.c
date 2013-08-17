@@ -1807,6 +1807,7 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
     }
 
     // This function sets the transform_type field. It does nothing if transform_type is none.
+    // Note: ownership of the transform_spec struct is given to this function
     v = adios_transform_define_var(t, v, transform_spec);
 
     v->id = ++t->member_count;
