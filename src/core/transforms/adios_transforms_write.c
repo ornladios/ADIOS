@@ -287,7 +287,10 @@ struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *
                                                      struct adios_var_struct *orig_var,
                                                      struct adios_transform_spec *transform_spec) {
     // First detect error conditions that prevent the transform from being applied
-    if (is_scalar(orig_var) || is_timed_scalar(orig_var)) {
+
+    // If the variable has a transform, but is a scalar: remove the transform, warn the user, and continue as usual
+    if (transform_spec->transform_type != adios_transform_none &&
+        (is_scalar(orig_var) || is_timed_scalar(orig_var))) {
         log_warn("Data transforms not allowed on scalars, yet variable %s/%s is marked for transform \"%s\"; not applying data transform.\n",
                  orig_var->path, orig_var->name, transform_spec->transform_type_str);
 
@@ -296,6 +299,8 @@ struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *
         orig_var->transform_spec->transform_type = adios_transform_none;
         return orig_var;
     }
+
+    // The variable has none of the above errors; apply the transform metadata
 
     log_debug("Transforming variable %s/%s with type %d\n", orig_var->path, orig_var->name, transform_spec->transform_type);
 
