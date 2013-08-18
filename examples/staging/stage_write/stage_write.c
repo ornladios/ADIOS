@@ -28,20 +28,19 @@
 #include "adios_read.h"
 #include "adios_error.h"
 
-//static enum ADIOS_READ_METHOD read_method = ADIOS_READ_METHOD_BP;
-static enum ADIOS_READ_METHOD read_method = ADIOS_READ_METHOD_DATASPACES;
-//static enum ADIOS_READ_METHOD read_method = ADIOS_READ_METHOD_DIMES;
-
 // Input arguments
 char   infilename[256];    // File/stream to read 
 char   outfilename[256];   // File to write
-char   methodname[16];     // ADIOS write method
-char   methodparams[256];  // ADIOS write method
+char   wmethodname[16];     // ADIOS write method
+char   wmethodparams[256];  // ADIOS write method
+char   rmethodname[16];     // ADIOS read method
+char   rmethodparams[256];  // ADIOS read method
+enum ADIOS_READ_METHOD read_method;
 
 static const int max_read_buffer_size  = 1024*1024*1024;
 static const int max_write_buffer_size = 1024*1024*1024;
 
-static int timeout_sec = 600; // will stop if no data found for this time (-1: never stop)
+static int timeout_sec = 30; // will stop if no data found for this time (-1: never stop)
 
 
 // Global variables
@@ -62,10 +61,13 @@ int read_write(int step);
 
 void printUsage(char *prgname)
 {
-    print0("Usage: %s input output method \"params\" <decomposition>\n"
+    print0("Usage: %s input output rmethod \"params\" wmethod \"params\" <decomposition>\n"
            "    input   Input stream path\n"
            "    output  Output file path\n"
-           "    method  ADIOS method to write with\n"
+           "    rmethod ADIOS method to read with\n"
+           "            Supported read methods: BP, DATASPACES, DIMES, FLEXPATH\n"
+           "    params  Read method parameters (in quotes; comma-separated list)\n"
+           "    wmethod ADIOS method to write with\n"
            "    params  Write method parameters (in quotes; comma-separated list)\n"
            "    <decomposition>    list of numbers e.g. 32 8 4\n"
            "            Decomposition values in each dimension of an array\n"
@@ -89,12 +91,14 @@ int processArgs(int argc, char ** argv)
     }
     strncpy(infilename,     argv[1], sizeof(infilename));
     strncpy(outfilename,    argv[2], sizeof(outfilename));
-    strncpy(methodname,     argv[3], sizeof(methodname));
-    strncpy(methodparams,   argv[4], sizeof(methodparams));
+    strncpy(rmethodname,    argv[3], sizeof(rmethodname));
+    strncpy(rmethodparams,  argv[4], sizeof(rmethodparams));
+    strncpy(wmethodname,    argv[5], sizeof(wmethodname));
+    strncpy(wmethodparams,  argv[6], sizeof(wmethodparams));
     
     nd = 0;
-    j = 5;
-    while (argc > j && j<11) { // get max 6 dimensions
+    j = 7;
+    while (argc > j && j<13) { // get max 6 dimensions
         errno = 0; 
         decomp_values[nd] = strtol(argv[j], &end, 10); 
         if (errno || (end != 0 && *end != '\0')) { 
@@ -128,6 +132,25 @@ int processArgs(int argc, char ** argv)
         return 1; 
     }
 
+    if (!strcmp(rmethodname,"BP")) {
+        read_method = ADIOS_READ_METHOD_BP;
+    } else if (!strcmp(rmethodname,"DATASPACES")) {
+        read_method = ADIOS_READ_METHOD_DATASPACES;
+    } else if (!strcmp(rmethodname,"DIMES")) {
+        read_method = ADIOS_READ_METHOD_DIMES;
+    } else if (!strcmp(rmethodname,"FLEXPATH")) {
+        read_method = ADIOS_READ_METHOD_FLEXPATH;
+    } else {
+        print0 ("ERROR: Supported read methods are: BP, DATASPACES, DIMES, FLEXPATH. You selected %s\n", rmethodname);
+    }
+    
+    if (!strcmp(rmethodparams,"")) {
+        strcpy (rmethodparams, "max_chunk_size=100; "
+                               "app_id =32767; \n"
+                               "verbose= 3;"
+                               "poll_interval  =  100;");
+    }
+
     return 0;
 }
 
@@ -147,10 +170,12 @@ int main (int argc, char ** argv)
         return 1;
     }
     
-    print0("Input stream      = %s\n", infilename);
-    print0("Output stream     = %s\n", outfilename);
-    print0("Method            = %s\n", methodname);
-    print0("Method parameters = %s\n", methodparams);
+    print0("Input stream            = %s\n", infilename);
+    print0("Output stream           = %s\n", outfilename);
+    print0("Read method             = %s (id=%d)\n", rmethodname, read_method);
+    print0("Read method parameters  = \"%s\"\n", rmethodparams);
+    print0("Write method            = %s\n", wmethodname);
+    print0("Write method parameters = \"%s\"\n", wmethodparams);
     
 
     err = adios_read_init_method(read_method, comm, 
@@ -345,7 +370,7 @@ int process_metadata(int step)
     }
 
     // Select output method
-    adios_select_method (gh, methodname, methodparams, "");
+    adios_select_method (gh, wmethodname, wmethodparams, "");
 
     // Define variables for output based on decomposition
     char *vpath, *vname;
