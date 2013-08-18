@@ -192,7 +192,8 @@ int main (int argc, char ** argv)
                    rank, f->current_step);
         }
 
-        while (adios_errno != err_end_of_stream) {
+        while (1)
+        {
             steps++; // start counting from 1
 
             print0 ("File info:\n");
@@ -210,14 +211,19 @@ int main (int argc, char ** argv)
             curr_step = f->current_step; // save for final bye print
             adios_advance_step (f, 0, timeout_sec);
 
-            if (adios_errno == err_step_notready) 
+            if (adios_errno == err_end_of_stream) 
+            {
+                break; // quit while loop
+            }
+            else if (adios_errno == err_step_notready) 
             {
                 print ("rank %d: No new step arrived within the timeout. Quit. %s\n", 
-                       rank, adios_errmsg());
+                        rank, adios_errmsg());
                 break; // quit while loop
             } 
             else if (f->current_step != curr_step+1) 
             {
+                // we missed some steps
                 print ("rank %d: WARNING: steps %d..%d were missed when advancing.\n", 
                         rank, curr_step+1, f->current_step-1);
             }
