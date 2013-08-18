@@ -235,7 +235,7 @@ new_flexpath_var_info(const char * varname, int id, uint64_t data_size)
     var->sel = NULL;
     var->dims = NULL;
     var->displ = NULL;
-    var->was_scheduled = 0;    
+    var->was_scheduled = -1;    
     var->time_dim = 0;
     var->ndims = 0;
     var->startposition = 0;
@@ -446,15 +446,15 @@ copyoffsets(int dim, // dimension index
 	int ret = 0;
         for(i=0; i<disp_count[dim]; i++) {
             int result = copyoffsets(dim+1, 
-			       ndims, 
-			       data_size, 
-			       disp_start,
-			       disp_count, 
-			       writer_count, 
-			       reader_count, 
-			       from, 
-			       to,
-			       startposition);
+				     ndims, 
+				     data_size, 
+				     disp_start,
+				     disp_count, 
+				     writer_count, 
+				     reader_count, 
+				     from, 
+				     to,
+				     startposition);
             startposition += result;
             ret += result;
             disp_start[dim]+=1;
@@ -564,7 +564,7 @@ static int
 update_step_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)                  
 {
     ADIOS_FILE *adiosfile = client_data;
-    flexpath_file_data *fp = adiosfile->fh;
+    flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
     update_step_msg *msg = vevent;
     fprintf(stderr, "update_step_handler updated: step %d %d\n",
 	    msg->step, msg->finalized);
@@ -702,19 +702,23 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 
     	// scalar
     	if(num_dims == 0){	   
-    	    curr_chunk->global_offsets = NULL;
-    	    curr_chunk->global_bounds = NULL;
-    	    curr_chunk->local_bounds = NULL;
+
+	    curr_chunk->global_offsets = NULL;
+	    curr_chunk->global_bounds = NULL;
+	    curr_chunk->local_bounds = NULL;
 
 	    void *tmp_data = get_FMfieldAddr_by_name(f, f->field_name, base_data);
 	    if(var->sel){
-		memcpy(var->chunks[0].data, tmp_data, f->field_size);
+		if(var->was_scheduled == writer_rank){
+		    memcpy(var->chunks[0].data, tmp_data, f->field_size);
+		}
 	    }
 	    else{
 		//var->chunks[0].data = get_FMfieldAddr_by_name(f, f->field_name, base_data);
 		var->chunks[0].data = tmp_data;
 	    }
-    	    curr_chunk->has_data = 1;
+	    curr_chunk->has_data = 1;
+	    
     	    // else it's an array
     	}else{
             if(!var->sel){// var hasn't been scheduled yet.       
@@ -723,7 +727,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     	    else if(var->sel->type == ADIOS_SELECTION_WRITEBLOCK){
     		var->ndims = num_dims;
     		var->dims = malloc(sizeof(int)*num_dims);
-    		if(var->was_scheduled == 1){
+    		if(var->was_scheduled == writer_rank){
     		    var->array_size = var->data_size;
     		    for(i=0; i<num_dims; i++){
     			char *dim;
@@ -1103,6 +1107,7 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
     flexpath_var_info *tmpvars = fp->var_list;
     while(tmpvars){
 	tmpvars->sel = NULL;
+	tmpvars->was_scheduled = -1;
 	tmpvars = tmpvars->next;
     }
    return 0;
@@ -1217,7 +1222,6 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
     //store the user allocated buffer.
     flexpath_var_chunk * chunk = &v->chunks[0];  
     chunk->data = data;
-    v->was_scheduled = 1;
     v->startposition = 0;
     if(nsteps != 1){
 	adios_error (err_invalid_timestep,
@@ -1234,8 +1238,9 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
 	if(writer_index > fp->num_bridges){
 	    adios_error(err_out_of_bound,
 			"No process exists on the writer side matching the index.\n");
+	    return err_out_of_bound;
 	}
-
+	v->was_scheduled = writer_index;
 	send_var_message(fp, writer_index, v->varname);
 	break;
     }
@@ -1273,6 +1278,7 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE * adiosfile,
             }
             int i = 0;
             int found = 0;
+	    v->was_scheduled = 1;
 	    send_var_message(fp, destination, v->varname);
 	}
 	v->displ = all_disp;
