@@ -41,7 +41,7 @@ int main (int argc, char ** argv)
     global_range_select.u.bb.start = malloc(sizeof(uint64_t)*2);
     global_range_select.u.bb.count = malloc(sizeof(uint64_t)*2);
     int xcount = 40;
-    int ycount = 2;
+    int ycount = 4;
     (global_range_select.u.bb.start)[0] = 0;
     (global_range_select.u.bb.count)[0] = xcount;
     (global_range_select.u.bb.start)[1] = 0;
