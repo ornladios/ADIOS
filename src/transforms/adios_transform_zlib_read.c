@@ -4,6 +4,7 @@
 #include <assert.h>
 
 #include "util.h"
+#include "adios_logger.h"
 #include "adios_transforms_hooks_read.h"
 #include "adios_transforms_reqgroup.h"
 
