@@ -12,18 +12,35 @@
 
 #include "zlib.h"
 
+int decompress_zlib_pre_allocated(const void* input_data, 
+									const uint64_t input_len,
+                                    void* output_data, 
+									uint64_t* output_len)
+{
+    assert(input_data != NULL && input_len > 0 && output_data != NULL && output_len != NULL && *output_len > 0);
+
+    uLongf dest_temp = *output_len;
+
+    int z_rtn = uncompress((Bytef*)output_data, &dest_temp, (Bytef*)input_data, input_len);
+    if(z_rtn != Z_OK)
+    {
+        // printf("zlib uncompress error %d\n", z_rtn);
+        return -1;
+    }
+
+    *output_len = (uint64_t)dest_temp;
+
+    return 0;
+}
+
 int adios_transform_zlib_generate_read_subrequests(adios_transform_read_request *reqgroup,
                                                     adios_transform_pg_read_request *pg_reqgroup)
 {
     void *buf = malloc(pg_reqgroup->raw_var_length);
-    if (!buf) {
-        log_error("Out of memory during read allocating %llu bytes for variable ID %d under zlib transform\n", pg_reqgroup->raw_var_length, reqgroup->raw_varinfo->varid);
-        return 0;
-    }
-
+	assert(buf);
     adios_transform_raw_read_request *subreq = adios_transform_raw_read_request_new_whole_pg(pg_reqgroup, buf);
     adios_transform_raw_read_request_append(pg_reqgroup, subreq);
-    return 1;
+    return 0;
 }
 
 // Do nothing for individual subrequest
@@ -40,35 +57,43 @@ adios_datablock * adios_transform_zlib_pg_reqgroup_completed(adios_transform_rea
                                                              adios_transform_pg_read_request *completed_pg_reqgroup)
 {
     uint64_t compressed_size = (uint64_t)completed_pg_reqgroup->raw_var_length;
-    void *compressed_data = completed_pg_reqgroup->subreqs->data;
+    void* compressed_data = completed_pg_reqgroup->subreqs->data;
+	
+	uint64_t uncompressed_size_meta = *((uint64_t*)reqgroup->transinfo->transform_metadata);
+	char compress_ok = *((char*)(reqgroup->transinfo->transform_metadata + sizeof(uint64_t)));
 
-    // Read whether it was compressed
-    char is_compressed = *(char*)reqgroup->transinfo->transform_metadata;
+    uint64_t uncompressed_size = adios_get_type_size(reqgroup->transinfo->orig_type, "");
+    int d = 0;
+    for(d = 0; d < reqgroup->transinfo->orig_ndim; d++)
+	{
+        uncompressed_size *= (uint64_t)(completed_pg_reqgroup->orig_varblock->count[d]);
+	}
+	
+	if(uncompressed_size_meta != uncompressed_size)
+	{
+		printf("WARNING: possible wrong data size or corrupted metadata\n");
+	}
 
-    // Compute original variable size
-    uint64_t uncompressed_size = 1;
-    int i;
-    for(i = 0; i < reqgroup->transinfo->orig_ndim; i++)
-        uncompressed_size *= completed_pg_reqgroup->orig_varblock->count[i];
-
-    void *uncompressed_data = NULL;
-    if (is_compressed) { // Data is compressed
-        // Allocate the output buffer
-        uncompressed_data = malloc(uncompressed_size);
-        if (!uncompressed_data) {
-            log_warn("Out of memory allocating read buffer of %llu bytes for zlib transform\n", uncompressed_size);
-            return NULL;
-        }
-
-        int rtn = uncompress(uncompressed_data, &uncompressed_size, compressed_data, compressed_size);
-        if (rtn != Z_OK)
-            return NULL;
-    } else { // Data is not compressed, so just copy it
-        uncompressed_data = compressed_data;
-        completed_pg_reqgroup->subreqs->data = NULL; // Give up ownership of the buffer
-    }
-
-    // Return the buffer as a datablock
+	void* uncompressed_data = malloc(uncompressed_size);
+	if(!uncompressed_data)
+	{
+		return NULL;
+	}
+	
+	if(compress_ok == 1)	// compression is successful
+	{
+		int rtn = decompress_zlib_pre_allocated(compressed_data, compressed_size, uncompressed_data, &uncompressed_size);
+		if(0 != rtn)
+		{
+			return NULL;
+		}
+	}
+	else	// just copy the buffer since data is not compressed
+	{
+		// printf("compression failed before, fall back to memory copy\n");
+		memcpy(uncompressed_data, compressed_data, compressed_size);
+	}
+	
     return adios_datablock_new(reqgroup->transinfo->orig_type,
                                completed_pg_reqgroup->timestep,
                                completed_pg_reqgroup->pg_bounds_sel,

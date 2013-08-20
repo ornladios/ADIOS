@@ -40,12 +40,11 @@ int adios_transform_template_apply(struct adios_file_struct *fd,
 
         // Write directly to the shared buffer
         output_buff = fd->buffer + fd->offset;
-        *wrote_to_shared_buffer = 1;
     } else { // Else, fall back to var->data memory allocation
         output_buff = malloc(output_size);
         assert(output_buff);
-        *wrote_to_shared_buffer = 0;
     }
+    *wrote_to_shared_buffer = use_shared_buffer;
 
     // Do transform from input_buff into output_buff, and update output_size to the true output size
 
