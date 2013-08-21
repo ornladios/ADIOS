@@ -98,14 +98,6 @@ typedef struct flush_msg_ {
     int rank;
     int condition;
 } Flush_msg, *Flush_msg_ptr;
- 
-typedef struct format_msg_ {
-    int id_len;
-    int rep_id_len;
-    char* format_id;
-    char* rep_id;
-    int condition;
-} Format_msg, *Format_msg_ptr;
 
 typedef struct var_msg_ {
     char* var_name;
@@ -168,16 +160,6 @@ static FMField flush_field_list[] =
     {NULL, NULL, 0, 0}
 };
 
-static FMField format_field_list[] =
-{   
-    {"id_len", "integer", sizeof(int), FMOffset(Format_msg_ptr, id_len)},
-    {"rep_id_len", "integer", sizeof(int), FMOffset(Format_msg_ptr, rep_id_len)},
-    {"format_id", "char[id_len]", sizeof(char), FMOffset(Format_msg_ptr, format_id)},
-    {"rep_id", "char[rep_id_len]", sizeof(char), FMOffset(Format_msg_ptr, rep_id)},
-    {"condition", "integer", sizeof(int), FMOffset(Format_msg_ptr, condition)},
-    {NULL, NULL, 0, 0}
-};
-
 static FMField var_field_list[] =
 {
     {"var_name", "string", sizeof(char*), FMOffset(Var_msg_ptr, var_name)},
@@ -220,12 +202,6 @@ static FMStructDescRec evgroup_format_list[] =
 static FMStructDescRec flush_format_list[] =
 {   
     {"flush", flush_field_list, sizeof(Flush_msg), NULL},
-    {NULL,NULL,0,NULL}
-};
- 
-static FMStructDescRec format_format_list[] =
-{   
-    {"formatMsg", format_field_list, sizeof(Format_msg), NULL},
     {NULL,NULL,0,NULL}
 };
  

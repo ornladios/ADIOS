@@ -33,21 +33,24 @@ export MXML_ROOT=/rock/opt/mxml/2.7
 export MPI_ROOT=/rock/opt/openmpi/1.6.3
 export EVPATH_ROOT=/rock/opt/evpath
 
+# in certain cases you might need the lustre directory (e.g., on kraken)
+export LUSTRE_ROOT=/opt/cray/lustre-cray_ss_s/default
+
 
 # build the MPI/ADIOS_READ_METHOD_BP
-$ make
+$ make -f Makefile.generic
 
 # build FLEXPATH/ADIOS_READ_METHOD_FLEXPATH
-$ make CFLAGS="-DFLEXPATH_METHOD"
+$ make -f Makefile.generic CFLAGS="-DFLEXPATH_METHOD"
 
 
 # should remove all unnecessary exec files 
-$ make clean
+$ make -f Makefile.generic clean
 
 RUN
 =====
 # should remove text file remnants from Flexpath _read_ready.txt, _info_writer.txt
-$ make clean_test
+$ make -f Makefile.generic clean_test
 
 $ mpirun -np 2 ./writer
 $ mpirun -np 2 ./reader
@@ -75,7 +78,7 @@ You should be able to run the example with as many readers and writers as you wi
 
 Example PBS script
 ------------------
-#!/bash/bin
+#!/bin/bash
 #PBS -l walltime=00:05:00,size=24
 #PBS -A UT-TENN0033
 
@@ -92,8 +95,11 @@ module list
 
 cd $PBS_O_WORKDIR
 
-aprun -n 1 -N 1 ./arrays_read &
-aprun -n 1 -N 1 ./arrays_write
+# on Kraken the path needs to be specified precisely 
+# ./writer might cause a strange error
+aprun -n 24 -N 12 /lustre/scratch/smagg/writer &
+sleep 20
+aprun -n 24 -N 12 /lustre/scratch/smagg/reader 
 
 date
 

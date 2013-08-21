@@ -120,7 +120,6 @@ typedef struct _flexpath_write_file_data {
     // EVPath stuff
     EVstone multiStone;
     EVstone sinkStone;
-    EVsource formatSource;
     EVsource dataSource;
     EVsource offsetSource;
     EVsource dropSource;
@@ -148,7 +147,6 @@ typedef struct _flexpath_write_file_data {
     FlexpathVarNode* formatVars;
     FlexpathQueueNode* controlQueue;
     FlexpathQueueNode* dataQueue;   
-    FlexpathQueueNode* evgroupQueue;
     pthread_mutex_t controlMutex;
     pthread_mutex_t dataMutex;
     pthread_mutex_t dataMutex2;
@@ -1404,7 +1402,6 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
     //generate multiqueue function that sends formats or all data based on flush msg
     fp_write_log("SETUP", "setup graph\n");
     FMStructDescList queue_list[] = {flush_format_list, 
-				     format_format_list, 
 				     var_format_list, 
 				     op_format_list, 
 				     evgroup_format_list,
@@ -1416,8 +1413,6 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
 							multiqueue_action); 
     fileData->multi_action = EVassoc_multi_action(flexpathWriteData.cm, 
 						  fileData->multiStone, q_action_spec, NULL);
-    fileData->formatSource = EVcreate_submit_handle(flexpathWriteData.cm, 
-						    fileData->multiStone, format_format_list);
     fileData->dataSource = EVcreate_submit_handle_free(flexpathWriteData.cm, 
 						       fileData->multiStone, fileData->fm->format, data_free,  NULL); 
     fileData->opSource = EVcreate_submit_handle_free(flexpathWriteData.cm, 
