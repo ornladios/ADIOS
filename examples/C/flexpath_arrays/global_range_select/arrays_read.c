@@ -40,12 +40,14 @@ int main (int argc, char ** argv)
     global_range_select.type=ADIOS_SELECTION_BOUNDINGBOX;
     global_range_select.u.bb.start = malloc(sizeof(uint64_t)*2);
     global_range_select.u.bb.count = malloc(sizeof(uint64_t)*2);
-    (global_range_select.u.bb.start)[0] = 2;
-    (global_range_select.u.bb.count)[0] = 2;
+    int xcount = 40;
+    int ycount = 4;
+    (global_range_select.u.bb.start)[0] = 0;
+    (global_range_select.u.bb.count)[0] = xcount;
     (global_range_select.u.bb.start)[1] = 0;
-    (global_range_select.u.bb.count)[1] = 40;
+    (global_range_select.u.bb.count)[1] = ycount;
     global_range_select.u.bb.ndim = 2;
-    int nelem = 80;
+    int nelem = xcount*ycount;
 
     ADIOS_SELECTION scalar_block_select;
     scalar_block_select.type = ADIOS_SELECTION_WRITEBLOCK;
