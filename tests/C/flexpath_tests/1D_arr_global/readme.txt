@@ -78,7 +78,7 @@ You should be able to run the example with as many readers and writers as you wi
 
 Example PBS script
 ------------------
-#!/bash/bin
+#!/bin/bash
 #PBS -l walltime=00:05:00,size=24
 #PBS -A UT-TENN0033
 
@@ -95,8 +95,11 @@ module list
 
 cd $PBS_O_WORKDIR
 
-aprun -n 1 -N 1 ./arrays_read &
-aprun -n 1 -N 1 ./arrays_write
+# on Kraken the path needs to be specified precisely 
+# ./writer might cause a strange error
+aprun -n 24 -N 12 /lustre/scratch/smagg/writer &
+sleep 20
+aprun -n 24 -N 12 /lustre/scratch/smagg/reader 
 
 date
 
