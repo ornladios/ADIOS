@@ -206,11 +206,6 @@ void set_attr_dimensions(char* varName, char* altName, int numDims, attr_list at
 }
 
 // free format packets once EVPath is finished with them
-void format_free(void* eventData, void* clientData) {
-    fp_write_log("FORMAT", "freeing a format message\n");
-    Format_msg* format = (Format_msg*) eventData;
-    free(format);
-}
 
 // free data packets once EVPath is finished with them
 void data_free(void* eventData, void* clientData) {
