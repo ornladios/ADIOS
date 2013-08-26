@@ -37,9 +37,6 @@ int main (int argc, char ** argv)
     offset = rank*NY;
     size_y = size*NY;
     int ii;
-    for(j=0; j<NY*NX; j++){       
-	t[j] = (offset * NX) + j;			
-    }
 
     //prints the array.
     /* printf("rank %d: [", rank); */
@@ -48,20 +45,22 @@ int main (int argc, char ** argv)
     /* } */
     /* printf("]\n"); */
     for(ii = 0; ii<20; ii++){       
+	for(j=0; j<NY*NX; j++){       
+	    t[j] = (offset * NX) + j + NY*NX*ii;	    
+	}
+	adios_open (&adios_handle, "temperature", filename, "w", comm);
 	
-      adios_open (&adios_handle, "temperature", filename, "w", comm);
+	adios_write (adios_handle, "NX", &NX);
+	adios_write (adios_handle, "NY", &NY);
+	adios_write (adios_handle, "test_scalar", &test_scalar);
+	adios_write (adios_handle, "size", &size);
+	adios_write (adios_handle, "rank", &rank);
+	adios_write (adios_handle, "offset", &offset);
+	adios_write (adios_handle, "size_y", &size_y);
+	adios_write (adios_handle, "var_2d_array", t);
     
-      adios_write (adios_handle, "NX", &NX);
-      adios_write (adios_handle, "NY", &NY);
-      adios_write (adios_handle, "test_scalar", &test_scalar);
-      adios_write (adios_handle, "size", &size);
-      adios_write (adios_handle, "rank", &rank);
-      adios_write (adios_handle, "offset", &offset);
-      adios_write (adios_handle, "size_y", &size_y);
-      adios_write (adios_handle, "var_2d_array", t);
-    
-      adios_close (adios_handle);
-      fprintf(stderr, "Rank=%d commited write %d\n", rank, ii);
+	adios_close (adios_handle);
+	fprintf(stderr, "Rank=%d commited write %d\n", rank, ii);
     }
     adios_finalize (rank);
     MPI_Finalize ();

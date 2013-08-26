@@ -41,7 +41,7 @@ int main (int argc, char ** argv)
     global_range_select.u.bb.start = malloc(sizeof(uint64_t)*2);
     global_range_select.u.bb.count = malloc(sizeof(uint64_t)*2);
     int xcount = 40;
-    int ycount = 4;
+    int ycount = 1;
     (global_range_select.u.bb.start)[0] = 0;
     (global_range_select.u.bb.count)[0] = xcount;
     (global_range_select.u.bb.start)[1] = 0;
@@ -51,7 +51,7 @@ int main (int argc, char ** argv)
 
     ADIOS_SELECTION scalar_block_select;
     scalar_block_select.type = ADIOS_SELECTION_WRITEBLOCK;
-    scalar_block_select.u.block.index = 0;
+    scalar_block_select.u.block.index = rank;
     //fprintf(stderr, "app got here\n");
     /* schedule_read of a scalar. */    
     int test_scalar = -1;
@@ -59,6 +59,10 @@ int main (int argc, char ** argv)
                                          ADIOS_READ_METHOD_FLEXPATH, 
                                          comm,
                                          ADIOS_LOCKMODE_NONE, 0.0);
+
+    /* for(i=0; i<afile->nvars; i++){ */
+    /* 	printf("var: %s\n", afile->var_namelist[i]); */
+    /* } */
     
     int ii = 0;
     while(adios_errno != err_end_of_stream){       
@@ -100,7 +104,7 @@ int main (int argc, char ** argv)
         for(j=0; j<nelem; j++) {
             printf(", %6.2f", t[j]);
         }
-        printf("]\n");
+        printf("]\n\n");
         adios_release_step(afile);
         adios_advance_step(afile, 0, 30);
         ii++;
