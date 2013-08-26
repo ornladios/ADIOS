@@ -159,7 +159,6 @@ typedef struct _flexpath_write_file_data {
 
     // global array distribution data
     int globalCount;
-    int sentGlobalOffsets;
     evgroup *gp;
 
     // for maintaining open file list
@@ -416,7 +415,8 @@ static char *get_alt_name(char *name, char *dimName) {
 }
 
 // lookup a dimensions real name
-static FlexpathAltName *find_alt_name(FlexpathFMStructure *currentFm, char *dimName, char *varName) {
+static FlexpathAltName *find_alt_name(FlexpathFMStructure *currentFm, char *dimName, char *varName) 
+{
     char *altName = get_alt_name(varName, dimName);
     FlexpathDimNames *d = NULL;
 
@@ -450,7 +450,11 @@ static FlexpathAltName *find_alt_name(FlexpathFMStructure *currentFm, char *dimN
 }
 
 // populates offsets array
-int get_local_offsets(struct adios_var_struct * v, struct adios_group_struct * g, int** offsets, int** dimensions)
+int get_var_offsets(struct adios_var_struct *v, 
+		      struct adios_group_struct *g, 
+		      int **offsets, 
+		      int **local_dimensions,
+		      int **global_dimensions)
 {
     struct adios_dimension_struct * dim_list = v->dimensions;	    
 
@@ -462,20 +466,22 @@ int get_local_offsets(struct adios_var_struct * v, struct adios_group_struct * g
     dim_list = v->dimensions;	    
 
     if(ndims){		
-        int * local_offsets = (int*) malloc(sizeof(int) * (ndims));
-        int * local_dimensions = (int*) malloc(sizeof(int) * (ndims));
+        int *local_offsets = (int*) malloc(sizeof(int) * ndims);
+        int *local_sizes = (int*) malloc(sizeof(int) * ndims);
+	int *global_sizes = (int*)malloc(sizeof(int) * ndims);
         int n = 0; 
         while(dim_list) {		
-            local_dimensions[n] = (int) adios_get_dim_value (&dim_list->dimension);
-            local_offsets[n] = (int) adios_get_dim_value (&dim_list->local_offset);
+            local_sizes[n] = (int) adios_get_dim_value(&dim_list->dimension);
+            local_offsets[n] = (int) adios_get_dim_value(&dim_list->local_offset);
+	    global_sizes[n] = (int) adios_get_dim_value(&dim_list->global_dimension);
             dim_list=dim_list->next;
             n++;
         }
         *offsets = local_offsets;	   
-        *dimensions = local_dimensions;
+        *local_dimensions = local_sizes;
     } else {
         *offsets = NULL;
-        *dimensions = NULL;
+        *local_dimensions = NULL;
     }
     return ndims;
 }
@@ -533,7 +539,8 @@ char *multiqueue_action = "{\n\
  }";
 
 // sets a field based on data type
-void set_field(int type, FMFieldList* field_list_ptr, int fieldNo, int* size){
+void set_field(int type, FMFieldList* field_list_ptr, int fieldNo, int* size)
+{
     FMFieldList field_list = *field_list_ptr;
     switch (type) {
     case adios_unknown:
@@ -596,7 +603,8 @@ void set_field(int type, FMFieldList* field_list_ptr, int fieldNo, int* size){
 }
 
 // find a field in a given field list
-static FMField *internal_find_field(char *name, FMFieldList flist) {
+static FMField *internal_find_field(char *name, FMFieldList flist) 
+{
     FMField *f = flist;
     while (f->field_name != NULL && strcmp(f->field_name, name)) {
 	f++;
@@ -605,7 +613,8 @@ static FMField *internal_find_field(char *name, FMFieldList flist) {
 }
 
 // generic memory check for after mallocs
-void mem_check(void* ptr, const char* str) {
+void mem_check(void* ptr, const char* str) 
+{
     if(!ptr) {
         adios_error(err_no_memory, "Cannot allocate memory for flexpath %s.", str);
     }
@@ -628,7 +637,9 @@ static char * get_dim_name (struct adios_dimension_item_struct *d)
 }
 
 // construct an fm structure based off the group xml file
-FlexpathFMStructure* set_format(struct adios_group_struct* t, struct adios_var_struct* fields, FlexpathWriteFileData* fileData)
+FlexpathFMStructure* set_format(struct adios_group_struct* t, 
+				struct adios_var_struct* fields, 
+				FlexpathWriteFileData* fileData)
 {
     FMStructDescRec *format = malloc(sizeof(FMStructDescRec)*2);
     mem_check(format, "format");
@@ -1054,6 +1065,7 @@ control_thread(void* arg)
                 fileData->bridges[open->process_id].step = open->step;
                 fileData->bridges[open->process_id].condition = open->condition;
 		if(!fileData->bridges[open->process_id].created){
+		    fileData->bridges[open->process_id].created = 1;
 		    fileData->bridges[open->process_id].myNum = 
 			EVcreate_bridge_action(flexpathWriteData.cm, 
 					       attr_list_from_string(fileData->bridges[open->process_id].contact), 
@@ -1063,7 +1075,7 @@ control_thread(void* arg)
 					fileData->multiStone, 
 					fileData->multi_action, 
 					open->process_id+1, 
-					fileData->bridges[open->process_id].myNum);				    
+					fileData->bridges[open->process_id].myNum);
 		}		
 		if(open->step < fileData->currentStep) {
 		    log_error("Flexpath method control_thread: Received Past Step Open\n");
@@ -1079,6 +1091,7 @@ control_thread(void* arg)
                     ack->type = 2;
 		    ack->condition = open->condition;
                     fileData->attrs = set_dst_rank_atom(fileData->attrs, open->process_id+1);
+		    
                     EVsubmit_general(fileData->opSource, ack, op_free, fileData->attrs);
                 } else {
                     fp_write_log("STEP", "recieved op with future step\n");
@@ -1107,13 +1120,10 @@ control_thread(void* arg)
 		    dropMsg.condition = CMCondition_get(flexpathWriteData.cm, NULL);
 		    EVsubmit(fileData->dropSource, &dropMsg, fileData->attrs);
 		    CMCondition_wait(flexpathWriteData.cm,  dropMsg.condition); 
-                    fileData->currentStep++;                    
+                    fileData->currentStep++;
+
+		    //for all bridges if step == currentstep send ack       		    
                     int i;
-                    //for all bridges if step == currentstep send ack
-		    // this block gets repeated in finalize.  gets repeated
-		    // only AFTER sending finalize messages.  
-		    // do it for everyone that has opened.
-		    
                     for(i=0; i<fileData->numBridges; i++) {
                       if(fileData->bridges[i].step==fileData->currentStep) {
                         fileData->openCount++;
@@ -1138,27 +1148,29 @@ control_thread(void* arg)
 		dataNode = threaded_peek(&fileData->dataQueue, 
 		    &fileData->dataMutex, &fileData->dataCondition);
 		op_msg* initMsg = (op_msg*) controlMsg->data;
-		fileData->num_reader_coordinators++;
-		fileData->reader_coordinators = realloc(fileData->reader_coordinators,
-							sizeof(int)*fileData->num_reader_coordinators);
-		fileData->reader_coordinators[fileData->num_reader_coordinators -1] = initMsg->process_id;
 		void* temp = copy_buffer(dataNode->data, 
 					 initMsg->process_id, fileData);
 		fileData->attrs = set_dst_rank_atom(fileData->attrs, 
 						    initMsg->process_id);
 		fileData->attrs = set_dst_condition_atom(fileData->attrs, 
 							 initMsg->condition);	
-		fileData->bridges[initMsg->process_id].created = 1;
-		fileData->bridges[initMsg->process_id].myNum = 
-		    EVcreate_bridge_action(flexpathWriteData.cm, 
-					   attr_list_from_string(fileData->bridges[initMsg->process_id].contact), 
-					   fileData->bridges[initMsg->process_id].theirNum);
+		if(!fileData->bridges[initMsg->process_id].created){
+		    fileData->num_reader_coordinators++;
+		    fileData->reader_coordinators = realloc(fileData->reader_coordinators,
+							    sizeof(int)*fileData->num_reader_coordinators);
+		    fileData->reader_coordinators[fileData->num_reader_coordinators -1] = initMsg->process_id;
+		    fileData->bridges[initMsg->process_id].created = 1;
+		    fileData->bridges[initMsg->process_id].myNum = 
+			EVcreate_bridge_action(flexpathWriteData.cm, 
+					       attr_list_from_string(fileData->bridges[initMsg->process_id].contact),
+					       fileData->bridges[initMsg->process_id].theirNum);
 		    
-		EVaction_set_output(flexpathWriteData.cm, 
-				    fileData->multiStone, 
-				    fileData->multi_action, 
-				    initMsg->process_id+1, 
-				    fileData->bridges[initMsg->process_id].myNum);
+		    EVaction_set_output(flexpathWriteData.cm, 
+					fileData->multiStone, 
+					fileData->multi_action, 
+					initMsg->process_id+1, 
+					fileData->bridges[initMsg->process_id].myNum);
+		}
 
 		EVsubmit_general(fileData->dataSource, 
 				 temp, data_free, fileData->attrs);
@@ -1300,7 +1312,6 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
     int i=0;
     flexpathWriteData.rank = fileData->rank;
     fileData->globalCount = 0;
-    fileData->sentGlobalOffsets = 0;
 
     // mpi setup
     MPI_Comm_dup(comm, &fileData->mpiComm);
@@ -1556,7 +1567,6 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
             void* pointer_data_copy = malloc(total_size);
             // while null
             while(pointer_data_copy==NULL) { 
-                perr("mallocing space for user buffer failed, trying again soon\n");
                 sleep(1);
                 void* pointer_data_copy = malloc(total_size);
                 //block
@@ -1598,13 +1608,16 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 
 	while(list){
 	    //int num_local_offsets = 0;
-	    int * local_offsets = NULL;
-	    int * local_dimensions = NULL;
-	    int num_local_offsets = get_local_offsets(list, g, &local_offsets, &local_dimensions);
+	    int *local_offsets = NULL;
+	    int *local_dimensions = NULL;
+	    int *global_dimensions = NULL; // same at each rank.
+	    int num_local_offsets = get_var_offsets(list, g, 
+						    &local_offsets, 
+						    &local_dimensions, &global_dimensions);
 	    
 	    if(num_local_offsets > 0){
-		int * all_offsets = NULL;
-		int * all_local_dims = NULL;
+		int *all_offsets = NULL;
+		int *all_local_dims = NULL;
 		
 		int buf_size = num_local_offsets * commsize * sizeof(int);		    
 		all_offsets = (int*)malloc(buf_size);		
@@ -1621,7 +1634,7 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 
 		
 		num_gbl_vars++;
-		offset_struct * ostruct = (offset_struct*)malloc(sizeof(offset_struct));
+		offset_struct *ostruct = (offset_struct*)malloc(sizeof(offset_struct));
 		ostruct->offsets_per_rank = num_local_offsets;
 		ostruct->total_offsets = num_local_offsets * commsize;
 		ostruct->local_offsets = all_offsets;
@@ -1637,14 +1650,13 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
             free (local_dimensions);
 	}
 	    
-	evgroup * gp = malloc(sizeof(evgroup));
+	evgroup *gp = malloc(sizeof(evgroup));
 	gp->num_vars = num_gbl_vars;
 	gp->step = fileData->writerStep;
 	gp->vars = gbl_vars;
 	fileData->gp = gp;       
 	fileData->attrs = set_size_atom(fileData->attrs, fileData->size);
 	EVsubmit(fileData->offsetSource, gp, fileData->attrs);
-	fileData->sentGlobalOffsets = 1;
     }
     //send_update_step_msgs(fileData, fileData->writerStep);
     fileData->writerStep++;
