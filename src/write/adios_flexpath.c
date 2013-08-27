@@ -30,21 +30,11 @@
 #include "core/util.h"
 #include "core/adios_logger.h"
 
-// // system libraries
-// #include <stdio.h>
-// #include <stdlib.h>
 #if HAVE_FLEXPATH==1
 
 // // evpath libraries
 #include <evpath.h>
-//#include <gen_thread.h>
 
-// // local libraries
-// #include "config.h"
-// #include "core/adios_internals.h"
-// #include "core/adios_transport_hooks.h"
-// #include "core/util.h"
-// #include "public/adios.h"
 #include "core/flexpath.h"
 #include <sys/queue.h>
 
@@ -479,9 +469,11 @@ int get_var_offsets(struct adios_var_struct *v,
         }
         *offsets = local_offsets;	   
         *local_dimensions = local_sizes;
+	*global_dimensions = global_sizes;
     } else {
         *offsets = NULL;
         *local_dimensions = NULL;
+	*global_dimensions = NULL;
     }
     return ndims;
 }
@@ -1298,16 +1290,7 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
     char writer_info_filename[200];
     char writer_ready_filename[200];
     char reader_info_filename[200];
-    char reader_ready_filename[200];
-    
-    /*
-    // Titan filesystem specific
-    char * filebase = "/tmp/work/jdayal3/titan/";
-    sprintf(writer_info_filename, "%s", filebase);
-    sprintf(writer_ready_filename, "%s", filebase);
-    sprintf(reader_info_filename, "%s", filebase);
-    sprintf(reader_ready_filename, "%s", filebase);
-    */
+    char reader_ready_filename[200];   
 
     int i=0;
     flexpathWriteData.rank = fileData->rank;
@@ -1506,12 +1489,9 @@ extern void adios_flexpath_write(
 			    //check if there are FlexpathAltNames
 			    FlexpathAltName *a = NULL;
 			    for (a = d->altList.lh_first; a != NULL; a = a->entries.le_next) {
-				//use the FlexpathAltName field to get the data into the buffer
 				memcpy(&fm->buffer[a->field->field_offset], 
 				       data, 
 				       a->field->field_size);
-                		//int *testingint = (int*)&fm->buffer[a->field->field_offset];
-		        	//perr( "writing %s to %s at %d %d\n", f->name, a->name, a->field->field_offset, (int)*testingint);
 			    }
 			}
 		    }
@@ -1523,18 +1503,15 @@ extern void adios_flexpath_write(
 	    //vector quantity
 	    if (data)
 	    {
-                //perr( "copying vector pointer\n");
 		//we just need to copy the pointer stored in f->data
                 // calculate size
                 memcpy(&fm->buffer[field->field_offset], &data, sizeof(void *));
 
 	    } else {
-		log_error("adios_flexpath_write: no array data found for var: %s. Bad.\n", f->name);
-		//perr( "no data for vector %s\n", f->name);
+		log_error("adios_flexpath_write: no array data found for var: %s. Bad.\n", f->name);	
 	    }
 	}
     }
-    //perr( "successfully copied data to buffer\n");
 }
 
 extern void 

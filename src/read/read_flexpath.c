@@ -401,67 +401,46 @@ find_displacement(array_displacements* list, int rank, int num_displ){
 }
 
 int
-linearize_displ(int * offset, int * sizes, int ndim, int data_size)
+linearize(int *sizes, int ndim)
 {
-  int prev = data_size;
-  int cur = 0;
-  int i =0;
-  for(i=0; i<ndim; i++) {
-    fp_log("DISP","before i:%d cur:%d prev:%d off[i]:%d size[i]:%d\n", i, cur,prev, offset[i], sizes[i]);
-    cur+=prev*offset[i];
-    prev = prev*sizes[i];
-    fp_log("DISP","after i:%d cur:%d prev:%d\n", i, cur,prev);
-  }
-  return cur;
+    int size = 1;
+    int i;
+    for(i = 0; i<ndim - 1; i++){
+	size *= sizes[i];
+    }   
+    return size;
 }
 
 
-int 
-copyoffsets(int dim, // dimension index
-	    int ndims, // number of dimensions
-	    int data_size, // data size
-	    int* disp_start, // start array from array_displacements struct
-	    int* disp_count, // count array from array_displacements struct
-	    int* writer_count, // local dimensions from all writers; from offset_struct
-	    uint64_t* reader_count, // the count field from reader's selector
-	    char* from, 
-	    char* to,
-	    int start_position
-    ) 
+int
+copyarray(
+    int *sizes, 
+    int *sel_start, 
+    int *sel_count, 
+    int ndim,
+    int elem_size,
+    int writer_pos,
+    char *writer_array,
+    char *reader_array)
 {
-    fp_log("DISP", "Call to copyoffsets\n");
-    fp_log("DISP", "dim = %d, ndims = %d, data_size = %d\n", dim, ndims, data_size);
-    int j=0;
-    for(j=0; j<ndims; j++) {
-      fp_log("DISP", "disp_start[%d]=%d\n", j, disp_start[j]);
-      fp_log("DISP", "disp_count[%d]=%d\n", j, disp_count[j]);
-      fp_log("DISP", "writer_count[%d]=%d\n", j, writer_count[j]);
+    if(ndim == 1){
+	int start = elem_size * (writer_pos + sel_start[ndim-1]);
+	int end = (start + (elem_size)*(sel_count[ndim-1]));
+	memcpy(reader_array, writer_array + start, end-start);
+	return end-start;
     }
-    if(dim==ndims-1) {
-        int s = linearize_displ(disp_start, writer_count, ndims, data_size);
-        int size = data_size*disp_count[ndims-1];
-        fp_log("DISP", "S=%d size=%d\n\n", s, size);
-        memcpy(to+start_position, from+s,  size);
-	return data_size*disp_count[ndims-1];
-    } else {
-        int i;
-	int ret = 0;
-        for(i=0; i<disp_count[dim]; i++) {
-            int result = copyoffsets(dim+1, 
-				     ndims, 
-				     data_size, 
-				     disp_start,
-				     disp_count, 
-				     writer_count, 
-				     reader_count, 
-				     from, 
-				     to,
-				     start_position);
-            start_position += result;
-            ret += result;
-            disp_start[dim]+=1;
-        }
-	return ret;
+    else{
+	int end = sel_start[ndim-1] + sel_count[ndim-1];
+	int i;
+	int amt_copied = 0;
+	for(i = sel_start[ndim-1]; i<end; i++){
+	    int pos = linearize(sizes, ndim);    
+	    pos *=i;    
+	    amt_copied += copyarray(sizes, sel_start, sel_count, ndim-1,
+				    elem_size, writer_pos+pos, writer_array, 
+				    reader_array+amt_copied);
+	}
+	return amt_copied;
     }
 }
 
@@ -604,25 +583,6 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
     ADIOS_FILE *adiosfile = client_data;
     flexpath_file_data * fp = (flexpath_file_data*)adiosfile->fh;
     fp->gp = msg;
-    /*global_var * vars = msg->vars;
-    int num_vars = msg->num_vars;
-    int i;
-    for(i=0; i<num_vars; i++){
-      offset_struct *off = vars[i].offsets;
-      int j;
-      for(j=0; j<vars[i].noffset_structs; j++){
-	int k;
-	fprintf(stderr, "offsets:\n");
-	for(k=0; k<off->total_offsets; k++){
-	  fprintf(stderr, "%d: ", off->local_offsets[k]);
-	}
-	fprintf(stderr, "\ndimensions:\n");
-	for(k=0; k<off->total_offsets; k++){
-	  fprintf(stderr, "%d: ", off->local_dimensions[k]);
-	}
-	fprintf(stderr, "\n");
-      }
-      }*/
     CMCondition_signal(fp_read_data->fp_cm, msg->condition);    
     return 0;
 }
@@ -762,32 +722,29 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     	    }
     	    else if(var->sel->type == ADIOS_SELECTION_BOUNDINGBOX){
     		int i;
-                global_var* gv = find_gbl_var(fp->gp->vars,
+                global_var *gv = find_gbl_var(fp->gp->vars,
     					      var->varname,
-    					      fp->gp->num_vars);
-                int * writer_count = gv->offsets[0].local_dimensions;
-                uint64_t * reader_count = var->sel->u.bb.count;
+    					      fp->gp->num_vars);                
     		array_displacements * disp = find_displacement(var->displ,
     							       writer_rank,
     							       var->num_displ);
-		
-		void *aptr8 = get_FMPtrField_by_name(f, f->field_name, base_data, 1);
-
-		// this "if" is a result of the fact that the writer code sends all data.
-		// this is an ugly way of saying "i scheduled a read for this variable,
-		// but not from this writer. I'm only getting this data because I requested
-		// another variable from this writer."
 		if(disp){
-		    var->start_position += copyoffsets(0,
+		    int *temp = gv->offsets[0].local_dimensions;
+		    int offsets_per_rank = gv->offsets[0].offsets_per_rank;
+		    int *writer_sizes = &temp[offsets_per_rank * writer_rank];
+		    int *sel_start = disp->start;
+		    int *sel_count = disp->count;
+		    char *writer_array = (char*)get_FMPtrField_by_name(f, f->field_name, base_data, 1);
+		    char *reader_array = (char*)var->chunks[0].user_buf;
+		    int reader_start_pos = var->start_position;
+		    var->start_position += copyarray(writer_sizes,
+						     sel_start,
+						     sel_count,
 						     disp->ndims,
 						     f->field_size,
-						     disp->start,
-						     disp->count,
-						     writer_count,
-						     reader_count,
-						     (char*)aptr8,
-						     (char*)var->chunks[0].user_buf,
-						     var->start_position);
+						     0,
+						     writer_array,
+						     reader_array+reader_start_pos);		    
 		}
     	    }
     	}
