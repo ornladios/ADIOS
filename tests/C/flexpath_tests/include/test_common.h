@@ -106,13 +106,22 @@
 		p_warn( "The pointer is NULL. %s\n", mesg);
 
 // ADIOS UTILS
-#define CLOSE_ADIOS \
+#define CLOSE_ADIOS(handle, method) \
+	do { 														\
+		adios_read_close(handle); 		 						\
+		adios_read_finalize_method(method);						\
+		MPI_Finalize(); \
+	} while (0)
+
+// ADIOS UTILS -
+// TODO this should be removed and changed to CLOSE_ADIOS(handle, method)
+/*#define CLOSE_ADIOS \
 	do { 														\
 		adios_read_close(adios_handle);  						\
 		adios_read_finalize_method(method);						\
 		MPI_Finalize(); \
 	} while (0)
-
+*/
 #define JUST_CLEAN \
 	do {								\
 		adios_selection_delete(sel);	\
@@ -121,10 +130,10 @@
 		t = NULL;						\
 	} while (0)
 
-#define CLEAN_ON_ERROR_AND_CLOSE_ADIOS 	\
+#define CLEAN_ON_ERROR_AND_CLOSE_ADIOS(handle, method) 	\
 	do {								\
 		JUST_CLEAN;						\
-		CLOSE_ADIOS;					\
+		CLOSE_ADIOS(handle, method);					\
 	} while (0)
 
 
