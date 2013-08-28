@@ -20,6 +20,10 @@ Existing Directories
 * 1D_arr_global_noxml - read/write a 1D array of doubles but no XML API (analogous
   to 1D_arr_global)
   
+* maya_noxml - inspired by maya; same variables written multiple times (doesn't work with Flexpath)
+
+* maya_append - inspired by maya; testing the append mode (doesn't work with Flexpath)
+  
 How to build and clean the build 
 --------------------------------
 # you need to set the environment variables as Makefile uses those locations 
@@ -82,5 +86,27 @@ cp -R scalar ~/my_reg_test
 cd ~/my_reg_test
 And proceed with the build
 
+Recent tests
+------------
 
+MPI transport (2013-08-28) - my laptop
 
+TEST_PASSED reader.c:main:124: scalar: rank 0
+TEST_PASSED reader.c:main:124: scalar: rank 1
+TEST_PASSED reader.c:main:160: 1D_arr_global: rank 0
+TEST_PASSED reader.c:main:160: 1D_arr_global: rank 1
+TEST_PASSED reader.c:main:166: 1D_arr_global_noxml: rank 0
+TEST_PASSED reader.c:main:166: 1D_arr_global_noxml: rank 1
+TEST_PASSED reader.c:main:205: maya_append: rank 0
+TEST_PASSED reader.c:main:474: maya_noxml: rank 0
+
+FLEXPATH transport (2013-08-28) - my laptop
+
+TEST_PASSED reader.c:main:124: scalar: rank 0
+TEST_PASSED reader.c:main:124: scalar: rank 1
+TEST_PASSED reader.c:main:160: 1D_arr_global: rank 0
+TEST_PASSED reader.c:main:160: 1D_arr_global: rank 1
+TEST_PASSED reader.c:main:166: 1D_arr_global_noxml: rank 0
+TEST_PASSED reader.c:main:166: 1D_arr_global_noxml: rank 1
+
+maya_append and maya_noxml tests failed

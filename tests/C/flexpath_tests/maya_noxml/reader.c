@@ -75,13 +75,11 @@
  * @param err_count The variable that positive value indicates that there is an error
  */
 #define RET_IF_ERROR(err_count) \
-	do { \
-		if ( err_count > 0) { \
-			p_error("rank %d: Quitting ...\n", rank); \
-			CLOSE_ADIOS;                              \
-			return PROGRAM_ERROR;                     \
-		} \
-	} while(0)
+	if ( err_count > 0) { \
+		p_error("rank %d: Quitting ...\n", rank); \
+		CLOSE_ADIOS(adios_handle, method);                              \
+		return PROGRAM_ERROR;                     \
+	}
 
 /**
  * breaks the loop if error count is positive
@@ -89,11 +87,9 @@
  * @param err_count The variable that positive value indicates that ther is an error
  */
 #define BREAK_IF_ERROR(err_count) \
-	do { \
-		if ( err_count > 0) { \
-			break; \
-		} \
-	} while(0)
+	if ( err_count > 0) { \
+		break; \
+	}
 
 /**
  * assumes that err_count is defined
@@ -152,11 +148,9 @@
  * @param out_buf  The output buffer
  */
 #define READ_FULLPATH(path_str, out_buf) \
-	do { \
-		sprintf(fullpath, "%s%s", path_str, fullname);  \
-		TEST_ADIOS_ERROR__RET_IF_NOT_ZERO(adios_schedule_read(adios_handle, sel, fullpath,0,1, out_buf), error_counts.adios); \
-		BREAK_IF_ERROR(error_counts.adios); \
-	} while (0)
+	sprintf(fullpath, "%s%s", path_str, fullname);  \
+	TEST_ADIOS_ERROR__RET_IF_NOT_ZERO(adios_schedule_read(adios_handle, sel, fullpath,0,1, out_buf), error_counts.adios); \
+	BREAK_IF_ERROR(error_counts.adios);
 
 
 
@@ -212,7 +206,7 @@ int main (int argc, char **argv){
 	avi = adios_inq_var(adios_handle, "P");
 	if (!avi){
 		p_error("rank %d: Quitting ... (%d) %s\n", rank, adios_errno, adios_errmsg());
-		CLOSE_ADIOS;
+		CLOSE_ADIOS(adios_handle, method);
 		return PROGRAM_ERROR;
 	}
 
@@ -222,7 +216,7 @@ int main (int argc, char **argv){
 		// clean everything
 		adios_free_varinfo(avi);
 		avi = NULL;
-		CLOSE_ADIOS;
+		CLOSE_ADIOS(adios_handle, method);
 		return test_passed;
 	}
 
@@ -479,7 +473,7 @@ int main (int argc, char **argv){
 	if (TEST_PASSED == test_passed)
 		p_test_passed("%s: rank %d\n", TEST_NAME, rank);
 
-	CLOSE_ADIOS;
+	CLOSE_ADIOS(adios_handle, method);
 
 	return test_passed;
 }
