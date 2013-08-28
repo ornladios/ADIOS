@@ -496,8 +496,6 @@ need_writer(
     evgroup_ptr gp, 
     char* varname) 
 {    
-    while(!fp->gp)
-	CMsleep(fp_read_data->fp_cm, 1);
     //select var from group
     global_var * gvar = find_gbl_var(gp->vars, varname, gp->num_vars);
 
@@ -507,24 +505,10 @@ need_writer(
     for(i=0; i< var_offsets.offsets_per_rank; i++){
         //select sel offsets
         int sel_offset = sel->u.bb.start[i];
-        //grab sel dimensions(size)
         int sel_size = sel->u.bb.count[i];        
-        //perr("sel offset %d size %d\n", sel_offset, sel_size);
 	
-
-        //select rank offsets
         int rank_offset = var_offsets.local_offsets[j*(var_offsets.offsets_per_rank)+i];
-        //grab rank dimencsions(size)
         int rank_size =var_offsets.local_dimensions[j*(var_offsets.offsets_per_rank)+i];        
-/*          perr("rank offset %d size %d\n", rank_offset, rank_size); */
-/*         perr("overlap1\n"); */
-/*         perr("rank_off  %d <= sel_off %d\n", rank_offset, sel_offset); */
-/*         perr("rank_off  + rank_size %d >= sel_offset%d\n", rank_offset + rank_size - 1, sel_offset); */
-/*         perr("overlap2\n"); */
-/*         perr("rank_off  %d <= sel_offset + sel_size - 1 %d\n", rank_offset, sel_offset + sel_size - 1); */
-/*         perr("rank_off + rank_size -1 %d >= sel_off + sel_size %d\n", rank_offset+rank_size-1, sel_offset+sel_size); */
-        
-        //if rank offset < selector offset and rank offset +size-1 > selector offset
 	
         if((rank_offset <= sel_offset) && (rank_offset + rank_size - 1 >=sel_offset)) {
 	     log_debug("matched overlap type 1\n");
@@ -1379,9 +1363,9 @@ adios_read_flexpath_inq_var(const ADIOS_FILE * adiosfile, const char* varname)
     }
     memset(v, 0, sizeof(ADIOS_VARINFO));
     
-    flexpath_var *current_var = find_fp_var(fp->var_list, varname);
-    if(current_var) {
-	v = convert_var_info(current_var, v, varname, adiosfile);
+    flexpath_var *fpvar = find_fp_var(fp->var_list, varname);
+    if(fpvar) {
+	v = convert_var_info(fpvar, v, varname, adiosfile);
 	return v;
     }
     else {

@@ -67,8 +67,9 @@ typedef struct _drop_evgroup{
 typedef struct _offset_struct{
     int offsets_per_rank;
     int total_offsets;
-    int * local_dimensions;
-    int * local_offsets;
+    int *local_dimensions;
+    int *local_offsets;
+    int *global_dimensions;
 } offset_struct;
 
 typedef struct _var {
@@ -132,6 +133,7 @@ static FMField offset_struct_field_list[]=
     {"total_offsets", "integer", sizeof(int), FMOffset(offset_struct*, total_offsets)},
     {"local_dimensions", "integer[total_offsets]", sizeof(int), FMOffset(offset_struct*, local_dimensions)},
     {"local_offsets", "integer[total_offsets]", sizeof(int), FMOffset(offset_struct*, local_offsets)},
+    {"global_dimensions", "integer[offsets_per_rank]", sizeof(int), FMOffset(offset_struct*, global_dimensions)},
     {NULL, NULL, 0, 0}
 };
 
