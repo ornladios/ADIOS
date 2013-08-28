@@ -82,7 +82,7 @@ int main (int argc, char **argv){
 	avi = adios_inq_var (adios_handle, "size");
 	if (!avi){
 		p_error("rank %d: Quitting ... (%d) %s\n", rank, adios_errno, adios_errmsg());
-		CLOSE_ADIOS;
+		CLOSE_ADIOS(adios_handle, method);
 		return -1;
 	}
 	size = *((int*)avi->value);
@@ -93,7 +93,7 @@ int main (int argc, char **argv){
 	// the excessive readers
 	if (rank >= size){
 		p_info("rank %d: I am an excessive rank. Nothing to read ...\n", rank);
-		CLOSE_ADIOS;
+		CLOSE_ADIOS(adios_handle, method);
 		return 0;
 	}
 
@@ -101,7 +101,7 @@ int main (int argc, char **argv){
 	avi = adios_inq_var (adios_handle, "NX");
 	if (!avi){
 		p_error("rank %d: Quitting ... (%d) %s\n", rank, adios_errno, adios_errmsg());
-		CLOSE_ADIOS;
+		CLOSE_ADIOS(adios_handle, method);
 		return -1;
 	}
 
@@ -124,7 +124,7 @@ int main (int argc, char **argv){
 	sel = adios_selection_boundingbox(1,start, count);
 	if( !sel ){
 		p_error("rank %d: Quitting ... (%d) %s\n", rank, adios_errno, adios_errmsg());
-		CLOSE_ADIOS;
+		CLOSE_ADIOS(adios_handle, method);
 		return -1;
 	}
 
@@ -140,14 +140,14 @@ int main (int argc, char **argv){
 
 	if (adios_schedule_read(adios_handle, sel, "var_1d_array",0,1,t) != 0){
 		p_error("rank %d: Quitting ...(%d) %s\n", rank, adios_errno, adios_errmsg());
-		CLEAN_ON_ERROR_AND_CLOSE_ADIOS;
+		CLEAN_ON_ERROR_AND_CLOSE_ADIOS(adios_handle, method);
 		return -1;
 	}
 
 	// not sure if this assumption is correct; difficult to find in the ADIOS sources
 	if (adios_perform_reads(adios_handle, 1) != 0){
 		p_error("rank %d: Quitting ...(%d) %s\n", rank, adios_errno, adios_errmsg());
-		CLEAN_ON_ERROR_AND_CLOSE_ADIOS;
+		CLEAN_ON_ERROR_AND_CLOSE_ADIOS(adios_handle, method);
 		return -1;
 	}
 
@@ -167,7 +167,7 @@ int main (int argc, char **argv){
 
 	// clean everything
 	JUST_CLEAN;
-	CLOSE_ADIOS;
+	CLOSE_ADIOS(adios_handle, method);
 
 	// fix printing output
 	printf("/n");
