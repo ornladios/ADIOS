@@ -1,0 +1,40 @@
+## mpicc SETTINGS
+#CC=mpicc
+#CFLAGS=-g 
+#LDFLAGS=-g
+
+## cc SETTINGS
+CC=cc
+CFLAGS = -g -O0
+LDFLAGS =
+
+#TARGET=gnu
+TARGET=pgi
+
+## Set ADIOS_DIR here or before doing make
+override ADIOS_DIR=/sw/xk6/adios/1.5.0/chester_pgi13.6.0
+#override ADIOS_DIR=/sw/xk6/adios/1.5.0/cle4.0_pgi12.10.0
+#override ADIOS_DIR=/ccs/proj/e2e/pnorbert/ADIOS/sith.${TARGET}
+override ADIOS_INC=`${ADIOS_DIR}/bin/adios_config -c`
+override ADIOS_CLIB=`${ADIOS_DIR}/bin/adios_config -l`
+
+
+default: stage_write 
+all: default
+
+OBJS = utils.o decompose_block.o 
+
+%.o: %.c
+	${CC} ${CFLAGS} -c ${ADIOS_INC} $<
+
+stage_write: ${OBJS} stage_write.o
+	${CC} ${LDFLAGS} -o stage_write ${OBJS} stage_write.o ${ADIOS_CLIB}
+
+test_decompose: ${OBJS} test_decompose.o 
+	${CC} ${LDFLAGS} -o test_decompose ${OBJS} test_decompose.o ${ADIOS_CLIB}
+
+clean:
+	rm -f *.o *.mod *.fh core.*
+	rm -f log.stage_write dataspaces.conf conf srv.lck staged.bp
+	rm -f stage_write
+

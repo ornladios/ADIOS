@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<adios-config host-language="Fortran">
+
+  <!-- Group to write the whole array from a single processor -->
+  <adios-group name="reader2D" coordination-communicator="group_comm">
+    <var name="rank" path="/info" type="integer"/>
+    <var name="gdx"  type="integer"/>
+    <attribute name="description" path="/gdx" value="Global array size in x dimension"/>
+    <var name="gdy"  type="integer"/>
+    <attribute name="description" path="/gdy" value="Global array size in y dimension"/>
+    <var name="ldx"  type="integer"/>
+    <var name="ldy"  type="integer"/>
+    <var name="ox"   type="integer"/>
+    <var name="oy"   type="integer"/>
+
+    <!-- 2D array to write with block,block decomposition -->
+    <global-bounds dimensions="gdx,gdy" offsets="ox,oy">
+        <var name="xy"  type="double" dimensions="ldx,ldy"/>
+        <var name="xy2" type="double" dimensions="ldx,ldy"/>
+    </global-bounds>
+    <attribute name="description" path="/xy" 
+               value="2D array with 2D decomposition"/>
+    <attribute name="description" path="/xy2" 
+               value="2D array with 1D decomposition"/>
+  </adios-group>
+
+  <transport group="reader2D" method="MPI"/>
+
+  <buffer size-MB="400" allocate-time="now"/>
+
+</adios-config>

@@ -1,0 +1,41 @@
+<?xml version="1.0"?>
+<skel-config application="grapes">
+
+<!--
+  Within each group, use the scalar elements to control things like array sizes and offsets.
+  Simply adjust the value attribute as needed. The type is provided for convenience.
+  Note that there are 2 special values that you can use:
+    skel_mpi_size refers to the number of processes participating in this run, and
+    skel_mpi_rank is used to indicate the rank of the local process
+  -->
+
+
+  <adios-group name="post_process">
+    <scalar name="ndx" type="integer" value="45" />
+    <scalar name="offy" type="integer" value="skel_mpi_rank/(gndx/ndx)*ndy+1" />
+    <scalar name="ndy" type="integer" value="24" />
+    <scalar name="offx" type="integer" value="MOD(skel_mpi_rank*ndx,gndx)+1" />
+    <scalar name="npy" type="integer" value="30" />
+    <scalar name="gndx" type="integer" value="1440" />
+    <scalar name="ndz" type="integer" value="17" />
+    <scalar name="npz" type="integer" value="1" />
+    <scalar name="npx" type="integer" value="32" />
+    <scalar name="gndz" type="integer" value="17" />
+    <scalar name="offz" type="integer" value="0" />
+    <scalar name="nproc" type="integer" value="128" />
+    <scalar name="gndy" type="integer" value="720" />
+    <array name="tp" type="real" dims="ndx,ndz,ndy" fill-method="rank"></array>
+    <array name="zp" type="real" dims="ndx,ndz,ndy" fill-method="rank"></array>
+    <array name="up" type="real" dims="ndx,ndz,ndy" fill-method="rank"></array>
+    <array name="rainnc" type="real" dims="ndx,ndy" fill-method="rank"></array>
+    <array name="vp" type="real" dims="ndx,ndz,ndy" fill-method="rank"></array>
+    <array name="wp" type="real" dims="ndx,ndz,ndy" fill-method="rank"></array>
+    <array name="rainc" type="real" dims="ndx,ndy" fill-method="rank"></array>
+  </adios-group>
+
+
+  <batch name="writes" cores="128" walltime="0:30:00">
+    <test type="write" group="post_process" method="POSIX" iterations="1" rm="pre" tags="name1:val1,name2:val2" />
+  </batch>
+
+</skel-config>

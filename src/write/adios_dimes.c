@@ -82,8 +82,9 @@ static int connect_to_dimes (struct adios_dimes_data_struct * p, MPI_Comm comm)
 #endif
 
         log_debug ("adios_dimes: rank=%d connected to DATASPACES: peers=%d\n", p->rank, p->peers);        
-        globals_adios_set_dimes_connected_from_writer();
     }
+
+	globals_adios_set_dimes_connected_from_writer();
     return ret;
 }
 

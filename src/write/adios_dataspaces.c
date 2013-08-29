@@ -82,8 +82,9 @@ static int connect_to_dspaces (struct adios_ds_data_struct * p, MPI_Comm comm)
 #endif
 
         log_debug ("adios_dataspaces: rank=%d connected to DATASPACES: peers=%d\n", p->rank, p->peers);        
-        globals_adios_set_dataspaces_connected_from_writer();
     }
+
+	globals_adios_set_dataspaces_connected_from_writer();
     return ret;
 }
 

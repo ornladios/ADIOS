@@ -1,0 +1,99 @@
+#!/bin/bash
+#PBS -A STF006
+#PBS -N coupling
+#PBS -j oe
+#PBS -l walltime=1:00:00,nodes=1:ppn=32
+## On Cray, you need -lnodes=3 (3 nodes for 3 separate apruns)
+## On a cluster, you need WRITEPROC+STAGINGPROC+READPROC cores
+
+#cd $PBS_O_WORKDIR
+
+## Sith cluster
+RUNCMD="mpirun -np"
+SERVER=/ccs/proj/e2e/dataspaces/sith/pgi/bin/dataspaces_server
+#
+## Chester
+#RUNCMD="aprun -n"
+#SERVER=/sw/xk6/dataspaces/1.2.0/cle4.0_pgi12.10.0/bin/dataspaces_server
+
+# Number of writers (WPX*WPY = WRITEPROC)
+WRITEPROC=4
+WPX=2
+WPY=2
+# Number of staging processes, if staging is used
+# DIMES needs only 1 (more is useless)
+# DATASPACES may need many to store multiple steps of data in memory
+STAGINGPROC=2
+# Number of readers (RPX*RPY = READPROC)
+READPROC=3
+RPX=1
+RPY=3
+
+
+let "WP=WPX*WPY"
+if [ $WP -ne $WRITEPROC ]; then
+    echo "WPX*WPY != WRITEPROC: " $WP and $WRITEPROC
+    exit 1
+fi
+
+let "RP=RPX*RPY"
+if [ $RP -ne $READPROC ]; then
+    echo "RPX*RPY != READPROC: " $RP and $READPROC
+    exit 1
+fi
+
+
+# clean-up
+rm -f log.* draw* core* conf dataspaces.conf srv.lck
+rm -f writer.bp reader_0*.bp
+
+METHOD=`grep "<transport .*method=" coupling_writer_2D.xml | sed -e "s/^.*method=\"\([A-Z]*\).*/\1/"`
+echo "The selected coupling method in coupling_writer_2D.xml is: $METHOD"
+
+if [ "x$METHOD" == "xDATASPACES" -o "x$METHOD" == "xDIMES" ]; then
+    READMETHOD="$METHOD"
+    let "PROCALL=WRITEPROC+READPROC"
+
+    # Prepare config file for DataSpaces
+    echo "## Config file for DataSpaces
+ndim = 3
+dimx = 1000
+dimy = 1000
+dimz = 1000
+max_versions = 10
+" > dataspaces.conf
+
+    # Run DataSpaces
+    echo "-- Start DataSpaces server "$SERVER" on $STAGINGPROC PEs, -s$STAGINGPROC -c$PROCALL"
+    $RUNCMD $STAGINGPROC $SERVER -s$STAGINGPROC -c$PROCALL &> log.server &
+
+    ## Give some time for the servers to load and startup
+    sleep 1s
+    while [ ! -f conf ]; do
+        echo "-- File conf is not yet available from server. Sleep more"
+        sleep 1s
+    done
+    sleep 10s  # wait server to fill up the conf file
+
+    ## Export the main server config to the environment
+    while read line; do
+        export set "${line}"
+    done < conf
+
+    echo "-- DataSpaces Portals IDs: P2TNID = $P2TNID   P2TPID = $P2TPID"
+else
+    READMETHOD="FILE"
+fi
+
+# Start WRITER
+echo "-- Start WRITER on $WRITEPROC PEs"
+$RUNCMD $WRITEPROC ./coupling_writer_2D $WPX $WPY 10 10 5  >& log.writer &
+
+# Start READER
+echo "-- Start READER on $READPROC PEs."
+$RUNCMD $READPROC ./coupling_reader_2D $RPX $RPY $READMETHOD 1 >& log.reader &
+
+echo "-- Wait until all applications exit. Run ./check.sh to see status"
+wait
+rm -f conf
+

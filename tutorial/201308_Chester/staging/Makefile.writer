@@ -1,0 +1,36 @@
+## MPIF90 SETTINGS
+#FC=mpif90
+#FFLAGS=-g
+
+## FTN SETTINGS
+FC=ftn
+FFLAGS = -O3
+
+## Set ADIOS_DIR here or before doing make
+#override ADIOS_DIR=/opt/adios/1.5.0
+#override ADIOS_DIR=/sw/xk6/adios/1.5.0/cle4.0_pgi12.10.0
+override ADIOS_DIR=/sw/xk6/adios/1.5.0/chester_pgi13.6.0
+override ADIOS_INC=`${ADIOS_DIR}/bin/adios_config -c -f`
+override ADIOS_FLIB=`${ADIOS_DIR}/bin/adios_config -l -f`
+override GPP = ${ADIOS_DIR}/bin/gpp.py
+
+default: writer 
+all: default
+
+writer.o : writer.F90 gwrite_writer2D.fh
+	${FC} -g -c ${ADIOS_INC} writer.F90  $<
+
+writer:  writer.o gwrite_writer2D.fh
+	${FC} -g -o writer writer.o ${ADIOS_FLIB} 
+
+gwrite_writer2D.fh: writer.xml
+	${GPP} writer.xml
+
+clean:
+	rm -f *.o *.mod *.fh core.*a 
+	rm -f xy.*.png xy2.*.png writer.bp reader_0*.bp 
+	rm -f log.writer log.reader log.server
+	rm -f writer 
+	rm -f writer.bp_reader*.txt
+	rm -f conf dataspaces.conf srv.lck 
+        
