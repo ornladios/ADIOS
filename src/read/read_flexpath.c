@@ -76,7 +76,6 @@ typedef struct _flexpath_var_chunk
     uint64_t *local_bounds; // nodims
     uint64_t *global_bounds; // ndims
     uint64_t *global_offsets; // ndims
-    struct _flexpath_var_chunk *next;
 } flexpath_var_chunk, *flexpath_var_chunk_p;
 
 typedef struct _flexpath_var
@@ -299,7 +298,7 @@ convert_var_info(flexpath_var * current_var,
     flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;    
     v->type = current_var->type;
     v->ndim = current_var->ndims;
-    // needs to change. Has to get information from writer somehow.
+    // needs to change. Has to get information from write.
     v->nsteps = 1;
     v->nblocks = malloc(sizeof(int)*v->nsteps);
     v->sum_nblocks = 1;    
