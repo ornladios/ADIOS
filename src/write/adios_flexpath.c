@@ -114,7 +114,6 @@ typedef struct _flexpath_write_file_data {
     EVsource offsetSource;
     EVsource dropSource;
     EVsource opSource;
-    EVsource stepSource;
     EVaction multi_action;
     FlexpathStone* bridges;
     int numBridges;
@@ -130,21 +129,17 @@ typedef struct _flexpath_write_file_data {
     int writerStep; // how many times has the writer called closed?
     int finalized; // have we finalized?
 
-    pthread_mutex_t openMutex;
     FlexpathFMStructure* fm;
     FlexpathVarNode* askedVars;
     FlexpathVarNode* writtenVars;
     FlexpathVarNode* formatVars;
     FlexpathQueueNode* controlQueue;
     FlexpathQueueNode* dataQueue;   
+    pthread_mutex_t openMutex;
     pthread_mutex_t controlMutex;
     pthread_mutex_t dataMutex;
-    pthread_mutex_t dataMutex2;
-    pthread_mutex_t evgroupMutex;
     pthread_cond_t controlCondition;
     pthread_cond_t dataCondition; //fill
-    pthread_cond_t dataCondition2; //empty
-    pthread_cond_t evgroupCondition;
     pthread_t ctrl_thr_id;    
 
     // global array distribution data
@@ -214,12 +209,6 @@ void op_free(void* eventData, void* clientData) {
     free(op);
 }
 
-void step_free(void* eventData, void* clientData) {
-    fp_write_log("OP", "freeing an update_step message\n");
-    free(eventData);
-}
-
-
 // message queue count
 int 
 queue_count(FlexpathQueueNode** queue) 
@@ -272,7 +261,6 @@ threaded_dequeue(
     FlexpathQueueNode** queue, 
     pthread_mutex_t *mutex, 
     pthread_cond_t *condition, 
-    pthread_cond_t *condition2, 
     int signal_dequeue) 
 {
     fp_write_log("QUEUE", "dequeue\n");
@@ -314,14 +302,10 @@ threaded_peek(FlexpathQueueNode** queue,
     int q = queue_count(queue);
     fp_write_log("QUEUE", "peeking at a queue\n");
     fp_write_log("QUEUE", "queue count %d\n", q);
-    if(q == 0) {
-	if(condition){
-	    fp_write_log("QUEUE", "null about to wait\n");
-	    pthread_cond_wait(condition, mutex);
-	    fp_write_log("QUEUE", "signaled with queue %p\n", *queue);
-	}else{
-	    return NULL;
-	}
+    if(q == 0) {	
+	fp_write_log("QUEUE", "null about to wait\n");
+	pthread_cond_wait(condition, mutex);
+	fp_write_log("QUEUE", "signaled with queue %p\n", *queue);	
     }
     FlexpathQueueNode* tail;
     tail = *queue;
@@ -517,13 +501,6 @@ char *multiqueue_action = "{\n\
           EVdiscard_evgroup(0);\n\
        }\n\
        EVdiscard_and_submit_drop_evgroup_msg(0,0);\n\
-    }\n\
-    if(EVcount_update_step_msg()>0) {\n\
-        mine = EVget_attrs_update_step_msg(0);\n\
-        found = attr_ivalue(mine, \"fp_dst_rank\");\n\
-        if(found > 0) {\n\
-            EVdiscard_and_submit_update_step_msg(found, 0);\n\
-        }\n\
     }\n\
     if(EVcount_op_msg()>0) {\n\
         mine = EVget_attrs_op_msg(0);\n\
@@ -1030,21 +1007,6 @@ set_dst_condition_atom(attr_list attrs, int condition){
     return attrs;
 }
 
-void
-send_update_step_msgs(FlexpathWriteFileData *fileData, int step)
-{
-    int i;
-    for(i = 0; i<fileData->num_reader_coordinators; i++){
-	update_step_msg msg;
-	msg.process_id = fileData->rank;
-	msg.step = step;
-	msg.finalized = fileData->finalized;
-	int dest_rank = fileData->reader_coordinators[i];
-	fileData->attrs = set_dst_rank_atom(fileData->attrs, dest_rank+1);
-	EVsubmit(fileData->stepSource, &msg, fileData->attrs);
-    }
-}
-
 // processes messages from control queue
 void 
 control_thread(void* arg) 
@@ -1056,7 +1018,7 @@ control_thread(void* arg)
     while(1) {
         fp_write_log("CONTROL", "control message attempts dequeue\n");
 	if((controlMsg = threaded_dequeue(&fileData->controlQueue, 
-	    &fileData->controlMutex, &fileData->controlCondition, NULL, 0))) {
+	    &fileData->controlMutex, &fileData->controlCondition, 0))) {
             fp_write_log("CONTROL", "control message dequeued\n");
 	    if(controlMsg->type==VAR) {
 		Var_msg* varMsg = (Var_msg*) controlMsg->data;
@@ -1127,7 +1089,7 @@ control_thread(void* arg)
                     fp_write_log("STEP", "advancing\n");
                     fp_write_log("DATAMUTEX", "in use 2\n"); 
 		    FlexpathQueueNode* node = threaded_dequeue(&fileData->dataQueue, 
-		        &fileData->dataMutex, &fileData->dataCondition, &fileData->dataCondition2, 1);
+							       &fileData->dataMutex, &fileData->dataCondition, 1);
                     fp_write_log("DATAMUTEX", "no use 2\n"); 
                     //int q = queue_count(&fileData->dataQueue);
                     //fp_write_log("QUEUE", "after step queue count now %d\n", q);
@@ -1292,14 +1254,11 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
 
     pthread_mutex_init(&fileData->controlMutex, NULL);
     pthread_mutex_init(&fileData->dataMutex, NULL);
-    pthread_mutex_init(&fileData->dataMutex2, NULL);
     pthread_mutex_init(&fileData->openMutex, NULL);
-    pthread_mutex_init(&fileData->evgroupMutex, NULL);
      
     pthread_cond_init(&fileData->controlCondition, NULL);
     pthread_cond_init(&fileData->dataCondition, NULL);
-    pthread_cond_init(&fileData->dataCondition2, NULL);
-    pthread_cond_init(&fileData->evgroupCondition, NULL);
+
     // communication channel setup
     char writer_info_filename[200];
     char writer_ready_filename[200];
@@ -1410,7 +1369,6 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
 				     evgroup_format_list,
 				     drop_evgroup_msg_format_list,
 				     data_format_list, 
-				     update_step_msg_format_list, 
 				     NULL};
     char* q_action_spec = create_multityped_action_spec(queue_list, 
 							multiqueue_action); 
@@ -1424,8 +1382,6 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
 						    fileData->multiStone, evgroup_format_list);
     fileData->dropSource = EVcreate_submit_handle(flexpathWriteData.cm, 
 						  fileData->multiStone, drop_evgroup_msg_format_list);
-    fileData->stepSource = EVcreate_submit_handle(flexpathWriteData.cm, 
-						    fileData->multiStone, update_step_msg_format_list);
     
     
     fp_write_log("SETUP", "setup terminal actions\n");
@@ -1612,8 +1568,8 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 		int *all_local_dims = NULL;
 		
 		int buf_size = num_local_offsets * commsize * sizeof(int);		    
-		all_offsets = (int*)malloc(buf_size);		
-		all_local_dims = (int*)malloc(buf_size);
+		all_offsets = malloc(buf_size);		
+		all_local_dims = malloc(buf_size);
 		
 		MPI_Allgather(local_offsets, num_local_offsets, MPI_INT, 
 			      all_offsets, num_local_offsets, MPI_INT,
@@ -1624,7 +1580,7 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 			      fileData->mpiComm);
 		
 		num_gbl_vars++;
-		offset_struct *ostruct = (offset_struct*)malloc(sizeof(offset_struct));
+		offset_struct *ostruct = malloc(sizeof(offset_struct));
 		ostruct->offsets_per_rank = num_local_offsets;
 		ostruct->total_offsets = num_local_offsets * commsize;
 		ostruct->local_offsets = all_offsets;
@@ -1638,9 +1594,6 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 
 	    }
 	    list=list->next;
-            free (local_offsets);
-            free (local_dimensions);
-	    free (global_dimensions);
 	}
 	    
 	evgroup *gp = malloc(sizeof(evgroup));
@@ -1651,7 +1604,6 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 	fileData->attrs = set_size_atom(fileData->attrs, fileData->size);
 	EVsubmit(fileData->offsetSource, gp, fileData->attrs);
     }
-    //send_update_step_msgs(fileData, fileData->writerStep);
     fileData->writerStep++;
     /* while((c=queue_count(&fileData->dataQueue))>fileData->maxQueueSize) { */
     /*     fp_write_log("QUEUE", "waiting for queue to be below max size\n"); */
@@ -1679,7 +1631,6 @@ extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method
 	//pthread_mutex_unlock(fileData->dataMutex2);
 	//fp_write_log("DATAMUTEX", "no use 4\n"); 
 	fileData->finalized = 1;
-	//send_update_step_msgs(fileData, fileData->writerStep);
 	fileData = fileData->next;
 	    
     }

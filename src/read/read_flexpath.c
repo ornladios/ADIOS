@@ -323,6 +323,7 @@ convert_var_info(flexpath_var * current_var,
 	    adios_error(err_no_memory, "Cannot allocate buffer in adios_read_datatap_inq_var()");
 	    return NULL;
 	}
+	// broken.  fix.
 	int k;
 	for(k = 0; k < v->ndim; k ++) {
 	    v->dims[k] = current_var->chunks->global_bounds[k];
@@ -525,21 +526,6 @@ need_writer(
 }
 
 /********** EVPath Handlers **********/
-static int
-update_step_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)                  
-{
-    ADIOS_FILE *adiosfile = client_data;
-    flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
-    update_step_msg *msg = vevent;
-    if(msg->finalized == 1){
-        fp->writer_finalized = 1;
-    }
-    else{
-        adiosfile->last_step = msg->step;
-        fp->last_step = msg->step;
-    }
-    return 0;
-}
 
 static int 
 op_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
@@ -831,12 +817,6 @@ adios_read_flexpath_open(const char * fname,
 			    fp->stone,
 			    evgroup_format_list,
 			    group_msg_handler,
-			    adiosfile);
-
-    EVassoc_terminal_action(fp_read_data->fp_cm,
-			    fp->stone,
-			    update_step_msg_format_list,
-			    update_step_handler,
 			    adiosfile);
 
     EVassoc_raw_terminal_action(fp_read_data->fp_cm,
