@@ -35,7 +35,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = uniform$(EXEEXT) rectilinear$(EXEEXT) \
-	structured$(EXEEXT) unstructured$(EXEEXT)
+	structured$(EXEEXT) unstructured$(EXEEXT) triangle2d$(EXEEXT)
 subdir = examples/C/schema
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -82,6 +82,13 @@ structured_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 structured_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(structured_LDFLAGS) $(LDFLAGS) -o $@
+am_triangle2d_OBJECTS = triangle2d.$(OBJEXT)
+triangle2d_OBJECTS = $(am_triangle2d_OBJECTS)
+triangle2d_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+triangle2d_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(triangle2d_LDFLAGS) $(LDFLAGS) -o $@
 am_uniform_OBJECTS = uniform.$(OBJEXT)
 uniform_OBJECTS = $(am_uniform_OBJECTS)
 uniform_DEPENDENCIES = $(top_builddir)/src/libadios.a \
@@ -109,9 +116,11 @@ LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 SOURCES = $(rectilinear_SOURCES) $(structured_SOURCES) \
-	$(uniform_SOURCES) $(unstructured_SOURCES)
+	$(triangle2d_SOURCES) $(uniform_SOURCES) \
+	$(unstructured_SOURCES)
 DIST_SOURCES = $(rectilinear_SOURCES) $(structured_SOURCES) \
-	$(uniform_SOURCES) $(unstructured_SOURCES)
+	$(triangle2d_SOURCES) $(uniform_SOURCES) \
+	$(unstructured_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -347,8 +356,13 @@ structured_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 unstructured_SOURCES = unstructured.c
 unstructured_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 unstructured_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+triangle2d_SOURCES = triangle2d.c
+triangle2d_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+triangle2d_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 CLEANFILES = *.bp
-EXTRA_DIST = uniform.xml structured.xml rectilinear.xml unstructured.xml 
+EXTRA_DIST = uniform.xml structured.xml rectilinear.xml unstructured.xml \
+             triangle2d.xml triangle2d.readme triangle2d.n4.png
+
 all: all-am
 
 .SUFFIXES:
@@ -398,6 +412,9 @@ rectilinear$(EXEEXT): $(rectilinear_OBJECTS) $(rectilinear_DEPENDENCIES)
 structured$(EXEEXT): $(structured_OBJECTS) $(structured_DEPENDENCIES) 
 	@rm -f structured$(EXEEXT)
 	$(structured_LINK) $(structured_OBJECTS) $(structured_LDADD) $(LIBS)
+triangle2d$(EXEEXT): $(triangle2d_OBJECTS) $(triangle2d_DEPENDENCIES) 
+	@rm -f triangle2d$(EXEEXT)
+	$(triangle2d_LINK) $(triangle2d_OBJECTS) $(triangle2d_LDADD) $(LIBS)
 uniform$(EXEEXT): $(uniform_OBJECTS) $(uniform_DEPENDENCIES) 
 	@rm -f uniform$(EXEEXT)
 	$(uniform_LINK) $(uniform_OBJECTS) $(uniform_LDADD) $(LIBS)

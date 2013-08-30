@@ -1,0 +1,58 @@
+<?xml version="1.0"?>
+<adios-config host-language="C">
+  <adios-group name="tri">
+
+    <var name="nproc" type="integer"/>
+    <attribute name="description" path="/nproc" value="Number of writers"/>
+
+    <!-- Triangular unstructured mesh -->
+    <var name="npoints" type="integer"/>
+    <attribute name="description" path="/npoints" value="Number of points"/>
+
+    <var name="num_cells" type="integer"/>
+    <attribute name="description" path="/num_cells" value="Number of triangles"/>
+
+    <var name="op" type="integer"/>
+    <var name="lp" type="integer"/>
+    <var name="oc" type="integer"/>
+    <var name="lc" type="integer"/>
+
+    <global-bounds dimensions="npoints,2" offsets="op,0">
+        <var name="points" type="float" dimensions="lp,2"/>
+    </global-bounds>
+
+    <global-bounds dimensions="num_cells,3" offsets="oc,0">
+        <var name="cells" type="integer" dimensions="lc,3"/>
+    </global-bounds>
+
+    <!-- Mesh definition -->
+    <mesh name="trimesh" type="unstructured" time-varying="no">
+         <nspace value="2" />
+         <points-single-var value="points" />
+         <uniform-cells count="num_cells" data="cells" type="triangle" />
+    </mesh>
+
+    <!-- Data -->
+    <global-bounds dimensions="npoints" offsets="op">
+        <var name="N" type="double" dimensions="lp"
+             mesh="trimesh" center="point"/>
+    </global-bounds>
+    <attribute name="description" path="/N" value="Node centered data"/>
+
+    <global-bounds dimensions="num_cells" offsets="oc">
+        <var name="C" type="double" dimensions="lc"
+             mesh="trimesh" center="cell"/>
+    </global-bounds>
+    <attribute name="description" path="/C" value="Cell centered data"/>
+
+
+  </adios-group>
+
+  <transport group="tri" method="MPI">verbose=2</transport>
+  <!--transport group="writer2D" method="DATASPACES">verbose=3</transport-->
+  <!--transport group="writer2D" method="DIMES">verbose=3</transport-->
+  <!--transport group="writer2D" method="FLEXPATH">QUEUE_SIZE=10;verbose=3</transport-->
+
+  <buffer size-MB="40" allocate-time="now"/>
+
+</adios-config>

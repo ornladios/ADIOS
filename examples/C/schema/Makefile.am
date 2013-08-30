@@ -3,7 +3,7 @@ INCLUDES += -I$(top_builddir)/src -I$(top_builddir)/src/public
 
 AUTOMAKE_OPTIONS = no-dependencies
 
-noinst_PROGRAMS = uniform rectilinear structured unstructured
+noinst_PROGRAMS = uniform rectilinear structured unstructured triangle2d
 
 uniform_SOURCES = uniform.c
 uniform_LDADD = $(top_builddir)/src/libadios.a 
@@ -25,7 +25,13 @@ unstructured_LDADD = $(top_builddir)/src/libadios.a
 unstructured_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 unstructured_LDADD += $(ADIOSLIB_LDADD)
 
+triangle2d_SOURCES = triangle2d.c
+triangle2d_LDADD = $(top_builddir)/src/libadios.a 
+triangle2d_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+triangle2d_LDADD += $(ADIOSLIB_LDADD)
+
 CLEANFILES = *.bp
 CC=$(MPICC)
-EXTRA_DIST = uniform.xml structured.xml rectilinear.xml unstructured.xml 
+EXTRA_DIST = uniform.xml structured.xml rectilinear.xml unstructured.xml \
+             triangle2d.xml triangle2d.readme triangle2d.n4.png
 
