@@ -49,8 +49,8 @@ typedef struct _array_displ
 {
     int writer_rank;
     int ndims;
-    int *start;
-    int *count;    
+    uint64_t *start;
+    uint64_t *count;    
 }array_displacements;
 
 typedef struct _bridge_info
@@ -87,14 +87,14 @@ typedef struct _flexpath_var
     uint64_t type_size; // type size, not arrays size
     int time_dim; // -1 means no time dimension
     int ndims;
-    int * dims; // ndims size (if ndims>0)
+    uint64_t *dims; // ndims size (if ndims>0)
     uint64_t array_size; // not relevant for scalars
     int num_chunks;
     flexpath_var_chunk *chunks;
     int num_displ;
     array_displacements *displ;
     ADIOS_SELECTION *sel;
-    int start_position;
+    uint64_t start_position;
     struct _flexpath_var *next;
 } flexpath_var;
 
@@ -239,13 +239,14 @@ void send_var_message(flexpath_file_data *fp, int destination, char *varname)
 	var.var_name = strdup(varname);
 	EVsubmit(fp->bridges[destination].var_source, &var, NULL);    
 }
+
 flexpath_var*
 new_flexpath_var(const char * varname, int id, uint64_t type_size)
 {
     flexpath_var* var = malloc(sizeof(flexpath_var));
     if(var == NULL){
 	log_error("Error creating new var: %s\n", varname);
-	exit(1);
+	return NULL;
     }
     
     memset(var, 0, sizeof(flexpath_var));
@@ -290,14 +291,15 @@ ffs_type_to_adios_type(const char *ffs_type)
 }
 
 ADIOS_VARINFO* 
-convert_var_info(flexpath_var * current_var,
-		  ADIOS_VARINFO * v, const char* varname,
-		  const ADIOS_FILE *adiosfile)
+convert_var_info(flexpath_var * fpvar,
+		 ADIOS_VARINFO * v, 
+		 const char* varname,
+		 const ADIOS_FILE *adiosfile)
 {
     int i;
     flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;    
-    v->type = current_var->type;
-    v->ndim = current_var->ndims;
+    v->type = fpvar->type;
+    v->ndim = fpvar->ndims;
     // needs to change. Has to get information from write.
     v->nsteps = 1;
     v->nblocks = malloc(sizeof(int)*v->nsteps);
@@ -307,26 +309,24 @@ convert_var_info(flexpath_var * current_var,
     v->blockinfo = NULL;
 
     if(v->ndim == 0){    
-	int value_size = current_var->type_size;
+	int value_size = fpvar->type_size;
 	v->value = malloc(value_size);
 	if(!v->value) {
 	    adios_error(err_no_memory, "Cannot allocate buffer in adios_read_datatap_inq_var()");
 	    return NULL;
 	}
-	flexpath_var_chunk * chunk = &current_var->chunks[0];
+	flexpath_var_chunk * chunk = &fpvar->chunks[0];
 	memcpy(v->value, chunk->data, value_size);
 	v->global = 0;	
     }else{ // arrays
-	v->dims = (uint64_t *) malloc(v->ndim * sizeof(uint64_t));
+	v->dims = (uint64_t*)malloc(v->ndim * sizeof(uint64_t));
 	if(!v->dims) {
 	    adios_error(err_no_memory, "Cannot allocate buffer in adios_read_datatap_inq_var()");
 	    return NULL;
 	}
 	// broken.  fix.
-	int k;
-	for(k = 0; k < v->ndim; k ++) {
-	    v->dims[k] = current_var->chunks->global_bounds[k];
-	}
+	int cpysize = fpvar->ndims*sizeof(uint64_t);
+	memcpy(v->dims, fpvar->dims, cpysize);
     }
     return v;
 }
@@ -373,8 +373,8 @@ find_gbl_var(global_var *vars, const char *name, int num_vars)
     return NULL;
 }
 
-static FMField
-*find_field_by_name (const char *name, const FMFieldList flist)
+static FMField*
+find_field_by_name (const char *name, const FMFieldList flist)
 {
     FMField *f = flist;
     while (f->field_name != NULL)
@@ -400,8 +400,8 @@ find_displacement(array_displacements* list, int rank, int num_displ){
     return NULL;
 }
 
-int
-linearize(int *sizes, int ndim)
+uint64_t
+linearize(uint64_t *sizes, int ndim)
 {
     int size = 1;
     int i;
@@ -412,11 +412,11 @@ linearize(int *sizes, int ndim)
 }
 
 
-int
+uint64_t
 copyarray(
-    int *sizes, 
-    int *sel_start, 
-    int *sel_count, 
+    uint64_t *sizes, 
+    uint64_t *sel_start, 
+    uint64_t *sel_count, 
     int ndim,
     int elem_size,
     int writer_pos,
@@ -454,15 +454,15 @@ get_writer_displacements(
     array_displacements * displ = malloc(sizeof(array_displacements));
     displ->writer_rank = writer_rank;
 
-    displ->start = malloc(sizeof(int) * ndims);
-    displ->count = malloc(sizeof(int) * ndims);  
-    memset(displ->start, 0, sizeof(int)*ndims);
-    memset(displ->count, 0, sizeof(int)*ndims);
+    displ->start = malloc(sizeof(uint64_t) * ndims);
+    displ->count = malloc(sizeof(uint64_t) * ndims);  
+    memset(displ->start, 0, sizeof(uint64_t) * ndims);
+    memset(displ->count, 0, sizeof(uint64_t) * ndims);
 
     displ->ndims = ndims;
-    int * offsets = gvar->offsets[0].local_offsets;
-    int * local_dims = gvar->offsets[0].local_dimensions;
-    int pos = writer_rank * gvar->offsets[0].offsets_per_rank;
+    uint64_t *offsets = gvar->offsets[0].local_offsets;
+    uint64_t *local_dims = gvar->offsets[0].local_dimensions;
+    uint64_t pos = writer_rank * gvar->offsets[0].offsets_per_rank;
 
     int i;   
     for(i=0; i<ndims; i++){	
@@ -481,8 +481,8 @@ get_writer_displacements(
 	    int count = (local_dims[pos+i] - 1) - displ->start[i] + 1;
 	    displ->count[i] = count;
 	}
-      fp_log("DISP","start:%d\n", displ->start[i]);	
-      fp_log("DISP","count %d\n",displ->count[i]);
+      /* fp_log("DISP","start:%d\n", displ->start[i]);	 */
+      /* fp_log("DISP","count %d\n",displ->count[i]); */
     }
     fp_log("DISP","\n");
     return displ;
@@ -491,7 +491,7 @@ get_writer_displacements(
 int
 need_writer(
     flexpath_file_data *fp, 
-    int j, 
+    int writer, 
     const ADIOS_SELECTION* sel, 
     evgroup_ptr gp, 
     char* varname) 
@@ -502,22 +502,23 @@ need_writer(
     //for each dimension
     int i=0;
     offset_struct var_offsets = gvar->offsets[0];
-    for(i=0; i< var_offsets.offsets_per_rank; i++){
-        //select sel offsets
-        int sel_offset = sel->u.bb.start[i];
-        int sel_size = sel->u.bb.count[i];        
+    for(i=0; i< var_offsets.offsets_per_rank; i++){      
+	int pos = writer*(var_offsets.offsets_per_rank) + i;
+
+        uint64_t sel_offset = sel->u.bb.start[i];
+        uint64_t sel_size = sel->u.bb.count[i];        
 	
-        int rank_offset = var_offsets.local_offsets[j*(var_offsets.offsets_per_rank)+i];
-        int rank_size =var_offsets.local_dimensions[j*(var_offsets.offsets_per_rank)+i];        
+        uint64_t rank_offset = var_offsets.local_offsets[pos];
+        uint64_t rank_size = var_offsets.local_dimensions[pos];        
 	
         if((rank_offset <= sel_offset) && (rank_offset + rank_size - 1 >=sel_offset)) {
 	     log_debug("matched overlap type 1\n");
         }
-        //if rank offset < selector offset + selector size -1 and rank offset+size-1 > selector offset +selector size -1
+
         else if((rank_offset <= sel_offset + sel_size - 1) && \
 		(rank_offset+rank_size>=sel_offset+sel_size-1)) {
-        } else if((sel_offset <= rank_offset) && (rank_offset+rank_size<= sel_offset+sel_size-1)) {
-        } else {
+        }else if((sel_offset <= rank_offset) && (rank_offset+rank_size<= sel_offset+sel_size-1)) {
+        }else {
             return 0;
         }
     }
@@ -547,11 +548,33 @@ op_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
 static int
 group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 {
+    EVtake_event_buffer(fp_read_data->fp_cm, vevent);
     evgroup * msg = (evgroup*)vevent;
-    EVtake_event_buffer(fp_read_data->fp_cm, msg);
     ADIOS_FILE *adiosfile = client_data;
     flexpath_file_data * fp = (flexpath_file_data*)adiosfile->fh;
     fp->gp = msg;
+    int i;
+    for(i = 0; i<msg->num_vars; i++){
+	global_var *gblvar = &msg->vars[i];
+	flexpath_var *fpvar = find_fp_var(fp->var_list, gblvar->name);
+	if(fpvar){
+	    offset_struct *offset = &gblvar->offsets[0];
+	    uint64_t *local_dimensions = offset->local_dimensions;
+	    uint64_t *local_offsets = offset->local_offsets;
+	    uint64_t *global_dimensions = offset->global_dimensions;
+	    fpvar->ndims = offset->offsets_per_rank;
+	    fpvar->dims = malloc(sizeof(uint64_t)*fpvar->ndims);
+	    int j;
+	    for(j=0; j<fpvar->ndims; j++){
+		fpvar->dims[j] = global_dimensions[j];
+	    }
+	}else{
+	    adios_error(err_corrupted_variable, 
+			"Mismatch between global variables and variables specified %s.",
+			gblvar->name);
+	}
+    }
+
     CMCondition_signal(fp_read_data->fp_cm, msg->condition);    
     return 0;
 }
@@ -657,7 +680,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     	    }
     	    else if(var->sel->type == ADIOS_SELECTION_WRITEBLOCK){
     		var->ndims = num_dims;
-    		var->dims = malloc(sizeof(int)*num_dims);
+    		var->dims = malloc(sizeof(uint64_t)*num_dims);
     		if(var->sel->u.block.index == writer_rank){
     		    var->array_size = var->type_size;
     		    for(i=0; i<num_dims; i++){
@@ -681,7 +704,8 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     			    int *temp_data = get_FMfieldAddr_by_name(temp_field,
     								     temp_field->field_name,
     								     base_data);			    
-			    var->dims[i] = *temp_data;
+			    uint64_t dim = (uint64_t)(*temp_data);
+			    var->dims[i] = dim;
     			    var->array_size = var->array_size * var->dims[i];
     			}
     		    }    	       
@@ -698,14 +722,14 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     							       writer_rank,
     							       var->num_displ);
 		if(disp){
-		    int *temp = gv->offsets[0].local_dimensions;
+		    uint64_t *temp = gv->offsets[0].local_dimensions;
 		    int offsets_per_rank = gv->offsets[0].offsets_per_rank;
-		    int *writer_sizes = &temp[offsets_per_rank * writer_rank];
-		    int *sel_start = disp->start;
-		    int *sel_count = disp->count;
+		    uint64_t *writer_sizes = &temp[offsets_per_rank * writer_rank];
+		    uint64_t *sel_start = disp->start;
+		    uint64_t *sel_count = disp->count;
 		    char *writer_array = (char*)get_FMPtrField_by_name(f, f->field_name, base_data, 1);
 		    char *reader_array = (char*)var->chunks[0].user_buf;
-		    int reader_start_pos = var->start_position;
+		    uint64_t reader_start_pos = var->start_position;
 		    var->start_position += copyarray(writer_sizes,
 						     sel_start,
 						     sel_count,

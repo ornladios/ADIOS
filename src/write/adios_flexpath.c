@@ -451,9 +451,9 @@ static FlexpathAltName *find_alt_name(FlexpathFMStructure *currentFm, char *dimN
 // populates offsets array
 int get_var_offsets(struct adios_var_struct *v, 
 		      struct adios_group_struct *g, 
-		      int **offsets, 
-		      int **local_dimensions,
-		      int **global_dimensions)
+		      uint64_t **offsets, 
+		      uint64_t **local_dimensions,
+		      uint64_t **global_dimensions)
 {
     struct adios_dimension_struct * dim_list = v->dimensions;	    
 
@@ -465,14 +465,14 @@ int get_var_offsets(struct adios_var_struct *v,
     dim_list = v->dimensions;	    
 
     if(ndims){		
-        int *local_offsets = (int*) malloc(sizeof(int) * ndims);
-        int *local_sizes = (int*) malloc(sizeof(int) * ndims);
-	int *global_sizes = (int*)malloc(sizeof(int) * ndims);
+        uint64_t *local_offsets = (uint64_t*)malloc(sizeof(uint64_t) * ndims);
+        uint64_t *local_sizes = (uint64_t*)malloc(sizeof(uint64_t) * ndims);
+	uint64_t *global_sizes = (uint64_t*)malloc(sizeof(uint64_t) * ndims);
         int n = 0; 
         while(dim_list) {		
-            local_sizes[n] = (int) adios_get_dim_value(&dim_list->dimension);
-            local_offsets[n] = (int) adios_get_dim_value(&dim_list->local_offset);
-	    global_sizes[n] = (int) adios_get_dim_value(&dim_list->global_dimension);
+            local_sizes[n] = (uint64_t)adios_get_dim_value(&dim_list->dimension);
+            local_offsets[n] = (uint64_t)adios_get_dim_value(&dim_list->local_offset);
+	    global_sizes[n] = (uint64_t)adios_get_dim_value(&dim_list->global_dimension);
             dim_list=dim_list->next;
             n++;
         }
@@ -1528,7 +1528,6 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
         }    
         fields = fields->next;
     }
-
     
     memcpy(buffer, fileData->fm->buffer, fileData->fm->size);
 
@@ -1556,27 +1555,28 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 
 	while(list){
 	    //int num_local_offsets = 0;
-	    int *local_offsets = NULL;
-	    int *local_dimensions = NULL;
-	    int *global_dimensions = NULL; // same at each rank.
+	    uint64_t *local_offsets = NULL;
+	    uint64_t *local_dimensions = NULL;
+	    uint64_t *global_dimensions = NULL; // same at each rank.
 	    int num_local_offsets = get_var_offsets(list, g, 
 						    &local_offsets, 
 						    &local_dimensions, &global_dimensions);
 	    
 	    if(num_local_offsets > 0){
-		int *all_offsets = NULL;
-		int *all_local_dims = NULL;
+		uint64_t *all_offsets = NULL;
+		uint64_t *all_local_dims = NULL;
 		
-		int buf_size = num_local_offsets * commsize * sizeof(int);		    
+		int buf_size = num_local_offsets * commsize * sizeof(uint64_t);		    
 		all_offsets = malloc(buf_size);		
 		all_local_dims = malloc(buf_size);
-		
-		MPI_Allgather(local_offsets, num_local_offsets, MPI_INT, 
-			      all_offsets, num_local_offsets, MPI_INT,
+
+		int arr_size = num_local_offsets * sizeof(uint64_t);
+		MPI_Allgather(local_offsets, arr_size, MPI_BYTE, 
+			      all_offsets, arr_size, MPI_BYTE,
 			      fileData->mpiComm);
 
-		MPI_Allgather(local_dimensions, num_local_offsets, MPI_INT, 
-			      all_local_dims, num_local_offsets, MPI_INT,
+		MPI_Allgather(local_dimensions, arr_size, MPI_BYTE, 
+			      all_local_dims, arr_size, MPI_BYTE,
 			      fileData->mpiComm);
 		
 		num_gbl_vars++;
