@@ -54,7 +54,13 @@
 
 #define CONTACT_STR_LEN 50
 
-typedef enum {FORMAT, DATA, EVGROUP } Flush_type;
+typedef enum {FORMAT, DATA, EVGROUP, STEP } Flush_type;
+
+typedef struct _update_step_msg{
+    int step;
+    int finalized;
+    int condition;
+}update_step_msg;
 
 typedef struct _drop_evgroup{
     int step;
@@ -106,6 +112,13 @@ typedef struct var_msg_ {
     int condition;
 } Var_msg, *Var_msg_ptr;
 
+static FMField update_step_msg_field_list[]=
+{
+    {"step", "integer", sizeof(int), FMOffset(update_step_msg*, step)},
+    {"finalized", "integer", sizeof(int), FMOffset(update_step_msg*, finalized)},
+    {"condition", "integer", sizeof(int), FMOffset(update_step_msg*, condition)},
+    {NULL, NULL, 0, 0}
+};
 
 static FMField drop_evgroup_msg_field_list[]=
 {
@@ -164,6 +177,12 @@ static FMField op_file_field_list[] =
     {"type", "integer", sizeof(int), FMOffset(op_msg_ptr, type)},
     {"step", "integer", sizeof(int), FMOffset(op_msg_ptr, step)},
     {"condition", "integer", sizeof(int), FMOffset(op_msg_ptr, condition)},
+    {NULL, NULL, 0, 0}
+};
+
+static FMStructDescRec update_step_msg_format_list[]=
+{
+    {"update_step_msg", update_step_msg_field_list, sizeof(update_step_msg), NULL},
     {NULL, NULL, 0, 0}
 };
 

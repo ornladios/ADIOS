@@ -110,10 +110,13 @@ typedef struct _flexpath_write_file_data {
     // EVPath stuff
     EVstone multiStone;
     EVstone sinkStone;
+
     EVsource dataSource;
     EVsource offsetSource;
     EVsource dropSource;
     EVsource opSource;
+    EVsource stepSource;
+
     EVaction multi_action;
     FlexpathStone* bridges;
     int numBridges;
@@ -496,8 +499,11 @@ char *multiqueue_action = "{\n\
     if(EVcount_varMsg()>0) {\n\
         EVdiscard_and_submit_varMsg(0, 0);\n\
     }\n\
+    if(EVcount_update_step_msg() > 1) {\n\
+        EVdiscard_update_step_msg(0);\n\        
+    }\n\
     if(EVcount_drop_evgroup_msg()>0) {\n\
-       if(EVcount_evgroup()>0){\n\
+       if(EVcount_evgroup()>0) {\n\
           EVdiscard_evgroup(0);\n\
        }\n\
        EVdiscard_and_submit_drop_evgroup_msg(0,0);\n\
@@ -513,17 +519,29 @@ char *multiqueue_action = "{\n\
     }\n\
     if(EVcount_flush()>0) {\n\
         flush* c = EVdata_flush(0);\n\
-         if(c->type == 2){ \n\
-             if(EVcount_evgroup()>0){\n\
+         if(c->type == 2) { \n\
+             if(EVcount_evgroup()>0){\n\               
                evgroup *g = EVdata_evgroup(0); \n\
                g->condition = c->condition;\n\
                EVsubmit(c->rank+1, g);\n\
                EVdiscard_flush(0);\n\
              }\n\
-        } else {\n\
+         }\n\
+         if(c->type == 3) {\n\
+            int z = EVcount_update_step_msg();\n\
+            printf(\"count: %d\\n\", z);\n\
+            if(EVcount_update_step_msg()>0) {\n\
+               printf(\"here\\n\");\n\
+               update_step_msg *stepmsg = EVdata_update_step_msg(0);\n\
+               stepmsg->condition = c->condition;\n\
+               EVsubmit(c->rank+1, stepmsg);\n\
+               EVdiscard_flush(0);\n\
+            }\n\         
+          }\n\ 
+          else {\n\
             EVdiscard_and_submit_flush(0,0);\n\
             flush_data_count++;\n\
-        }\n\
+          }\n\
     }\n\
     if(EVcount_anonymous()>0){\n\
         mine = EVget_attrs_anonymous(0);\n\
@@ -1242,7 +1260,7 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
     mem_check(fileData, "fileData");
     memset(fileData, 0, sizeof(FlexpathWriteFileData));
     
-    fileData->maxQueueSize=0;
+    fileData->maxQueueSize=1;
     if(method->parameters) {
         sscanf(method->parameters,"QUEUE_SIZE=%d;",&fileData->maxQueueSize);
     }
@@ -1368,22 +1386,36 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
 				     op_format_list, 
 				     evgroup_format_list,
 				     drop_evgroup_msg_format_list,
-				     data_format_list, 
+				     data_format_list,
+				     update_step_msg_format_list,
 				     NULL};
     char* q_action_spec = create_multityped_action_spec(queue_list, 
 							multiqueue_action); 
     fileData->multi_action = EVassoc_multi_action(flexpathWriteData.cm, 
-						  fileData->multiStone, q_action_spec, NULL);
+						  fileData->multiStone, 
+						  q_action_spec, 
+						  NULL);
     fileData->dataSource = EVcreate_submit_handle_free(flexpathWriteData.cm, 
-						       fileData->multiStone, fileData->fm->format, data_free,  NULL); 
+						       fileData->multiStone, 
+						       fileData->fm->format, 
+						       data_free,  
+						       NULL); 
     fileData->opSource = EVcreate_submit_handle_free(flexpathWriteData.cm, 
-						     fileData->multiStone, op_format_list, op_free,  NULL); 
+						     fileData->multiStone, 
+						     op_format_list, 
+						     op_free, 
+						     NULL); 
     fileData->offsetSource = EVcreate_submit_handle(flexpathWriteData.cm, 
-						    fileData->multiStone, evgroup_format_list);
+						    fileData->multiStone, 
+						    evgroup_format_list);
     fileData->dropSource = EVcreate_submit_handle(flexpathWriteData.cm, 
-						  fileData->multiStone, drop_evgroup_msg_format_list);
+						  fileData->multiStone, 
+						  drop_evgroup_msg_format_list);
     
-    
+    fileData->stepSource = EVcreate_submit_handle(flexpathWriteData.cm,
+						  fileData->multiStone, 
+						  update_step_msg_format_list);
+
     fp_write_log("SETUP", "setup terminal actions\n");
     EVassoc_terminal_action(flexpathWriteData.cm, fileData->sinkStone, 
 			    var_format_list, var_handler, fileData);
@@ -1560,7 +1592,8 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 	    uint64_t *global_dimensions = NULL; // same at each rank.
 	    int num_local_offsets = get_var_offsets(list, g, 
 						    &local_offsets, 
-						    &local_dimensions, &global_dimensions);
+						    &local_dimensions, 
+						    &global_dimensions);
 	    
 	    if(num_local_offsets > 0){
 		uint64_t *all_offsets = NULL;
@@ -1595,14 +1628,19 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 	    }
 	    list=list->next;
 	}
-	    
-	evgroup *gp = malloc(sizeof(evgroup));
-	gp->num_vars = num_gbl_vars;
-	gp->step = fileData->writerStep;
-	gp->vars = gbl_vars;
-	fileData->gp = gp;       
+	update_step_msg stepmsg;
+	stepmsg.finalized = 0;
+	stepmsg.step = fileData->writerStep;
+	stepmsg.condition = -1;
+	EVsubmit(fileData->stepSource, &stepmsg, fileData->attrs);
+
+	evgroup gp;
+	gp.num_vars = num_gbl_vars;
+	gp.step = fileData->writerStep;
+	gp.vars = gbl_vars;
+	//fileData->gp = gp;       
 	fileData->attrs = set_size_atom(fileData->attrs, fileData->size);
-	EVsubmit(fileData->offsetSource, gp, fileData->attrs);
+	EVsubmit(fileData->offsetSource, &gp, fileData->attrs);
     }
     fileData->writerStep++;
     /* while((c=queue_count(&fileData->dataQueue))>fileData->maxQueueSize) { */
@@ -1620,6 +1658,11 @@ extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method
     log_info("Flexpath method entered finalize: %d\n", fileData->rank);
     fp_write_log("FILE", "Entered finalize\n");
     while(fileData) {
+	update_step_msg stepmsg;
+	stepmsg.finalized = 1;
+	stepmsg.step = fileData->writerStep;
+	stepmsg.condition = -1;
+	EVsubmit(fileData->stepSource, &stepmsg, fileData->attrs);
         //fp_write_log("DATAMUTEX", "in use 4\n"); 
         pthread_mutex_lock(&fileData->dataMutex);
         while(fileData->dataQueue != NULL) {
@@ -1627,12 +1670,13 @@ extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method
 	    pthread_cond_wait(&fileData->dataCondition, &fileData->dataMutex);
 	}
 	pthread_mutex_unlock(&fileData->dataMutex);
+
+	fileData->finalized = 1;
+
 	//fp_write_log("MUTEX","unlock 1\n");
 	//pthread_mutex_unlock(fileData->dataMutex2);
 	//fp_write_log("DATAMUTEX", "no use 4\n"); 
-	fileData->finalized = 1;
-	fileData = fileData->next;
-	    
+	fileData = fileData->next;	    
     }
 }
 

@@ -98,7 +98,7 @@ typedef struct _flexpath_var
     struct _flexpath_var *next;
 } flexpath_var;
 
-typedef struct _flexpath_file_data
+typedef struct _flexpath_reader_file
 {
     char * file_name;
     char * group_name; // assuming one group per file right now.
@@ -120,12 +120,12 @@ typedef struct _flexpath_file_data
     evgroup * gp;
 
     int writer_finalized;
-    int last_step;
+    int last_writer_step;
     int mystep;
     int num_sendees;
     int *sendees;
     int ackCondition;    
-} flexpath_file_data;
+} flexpath_reader_file;
 
 typedef struct _local_read_data
 {
@@ -205,7 +205,7 @@ free_evgroup(evgroup *gp)
     /* free(gp); */
 }
 
-void send_var_message(flexpath_file_data *fp, int destination, char *varname)
+void send_var_message(flexpath_reader_file *fp, int destination, char *varname)
 {
         int i = 0;
         int found = 0;
@@ -258,18 +258,18 @@ new_flexpath_var(const char * varname, int id, uint64_t type_size)
     return var;
 }
 
-flexpath_file_data*
-new_flexpath_file_data(const char * fname)
+flexpath_reader_file*
+new_flexpath_reader_file(const char * fname)
 {
-    flexpath_file_data * fp = malloc(sizeof(flexpath_file_data));
+    flexpath_reader_file * fp = malloc(sizeof(flexpath_reader_file));
     if(fp == NULL){
 	log_error("Cannot create data for new file.\n");
 	exit(1);
     }
-    memset(fp, 0, sizeof(flexpath_file_data));
+    memset(fp, 0, sizeof(flexpath_reader_file));
     fp->file_name = strdup(fname);
     fp->writer_coordinator = -1;
-    fp->last_step = -1;
+    fp->last_writer_step = -1;
     return fp;        
 }
 
@@ -297,7 +297,7 @@ convert_var_info(flexpath_var * fpvar,
 		 const ADIOS_FILE *adiosfile)
 {
     int i;
-    flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;    
+    flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;    
     v->type = fpvar->type;
     v->ndim = fpvar->ndims;
     // needs to change. Has to get information from write.
@@ -490,7 +490,7 @@ get_writer_displacements(
 
 int
 need_writer(
-    flexpath_file_data *fp, 
+    flexpath_reader_file *fp, 
     int writer, 
     const ADIOS_SELECTION* sel, 
     evgroup_ptr gp, 
@@ -527,11 +527,31 @@ need_writer(
 
 /********** EVPath Handlers **********/
 
+static int
+update_step_msg_handler(
+    CManager cm,
+    void *vevent,
+    void *client_data,
+    attr_list attrs)
+{
+    update_step_msg *msg = (update_step_msg*)vevent;
+    fprintf(stderr, "got update_step msg: %d\n", msg->step);
+    ADIOS_FILE *adiosfile = (ADIOS_FILE*)client_data;
+    flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;    
+    fprintf(stderr, "mystep: %d, last_writer_step: %d\n", 
+	    fp->mystep, msg->step);
+    fp->last_writer_step = msg->step;
+    fp->writer_finalized = msg->finalized;
+    adiosfile->last_step = msg->step;
+    CMCondition_signal(fp_read_data->fp_cm, msg->condition);
+    return 0;
+}
+
 static int 
 op_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
     op_msg* msg = (op_msg*)vevent;    
     ADIOS_FILE *adiosfile = (ADIOS_FILE*)client_data;
-    flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
+    flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     if(msg->type==ACK_MSG) {
 	if(msg->condition != -1){
 	    CMCondition_signal(fp_read_data->fp_cm, msg->condition);
@@ -551,7 +571,7 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
     EVtake_event_buffer(fp_read_data->fp_cm, vevent);
     evgroup * msg = (evgroup*)vevent;
     ADIOS_FILE *adiosfile = client_data;
-    flexpath_file_data * fp = (flexpath_file_data*)adiosfile->fh;
+    flexpath_reader_file * fp = (flexpath_reader_file*)adiosfile->fh;
     fp->gp = msg;
     int i;
     for(i = 0; i<msg->num_vars; i++){
@@ -583,7 +603,7 @@ static int
 raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list attrs)
 {
     ADIOS_FILE *adiosfile = client_data;
-    flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
+    flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     FMContext context = CMget_FMcontext(cm);
     void *base_data = FMheader_skip(context, vevent);
     FMFormat format = FMformat_from_ID(context, vevent);  
@@ -818,11 +838,12 @@ adios_read_flexpath_open(const char * fname,
 {
     ADIOS_FILE *adiosfile = malloc(sizeof(ADIOS_FILE));        
     if(!adiosfile){
-	adios_error (err_no_memory, "Cannot allocate memory for file info.\n");
+	adios_error (err_no_memory, 
+		     "Cannot allocate memory for file info.\n");
 	return NULL;
     }    
     
-    flexpath_file_data *fp = new_flexpath_file_data(fname);
+    flexpath_reader_file *fp = new_flexpath_reader_file(fname);
 	
     adios_errno = 0;
     fp->stone = EValloc_stone(fp_read_data->fp_cm);	
@@ -830,11 +851,19 @@ adios_read_flexpath_open(const char * fname,
 
     MPI_Comm_size(fp->comm, &(fp->size));
     MPI_Comm_rank(fp->comm, &(fp->rank));
+
     EVassoc_terminal_action(fp_read_data->fp_cm,
 			    fp->stone,
 			    op_format_list,
 			    op_msg_handler,
 			    adiosfile);       
+
+    EVassoc_terminal_action(fp_read_data->fp_cm,
+			    fp->stone,
+			    update_step_msg_format_list,
+			    update_step_msg_handler,
+			    adiosfile);       
+
 
     EVassoc_terminal_action(fp_read_data->fp_cm,
 			    fp->stone,
@@ -845,7 +874,7 @@ adios_read_flexpath_open(const char * fname,
     EVassoc_raw_terminal_action(fp_read_data->fp_cm,
 				fp->stone,
 				raw_handler,
-				(void*)adiosfile);
+				adiosfile);
 
     /* Gather the contact info from the other readers
        and write it to a file. Create a ready file so
@@ -1006,7 +1035,7 @@ int adios_read_flexpath_finalize_method ()
 
 void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
     int i;
-    flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
+    flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     for(i=0; i<fp->num_bridges; i++) {
         if(fp->bridges[i].created && !fp->bridges[i].opened) {
             op_msg open;
@@ -1049,7 +1078,7 @@ void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
 int 
 adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_sec) 
 {
-    flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
+    flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     MPI_Barrier(fp->comm);
     int i=0;
     for(i=0; i<fp->num_bridges; i++) {
@@ -1080,26 +1109,42 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
             CMCondition_wait(fp_read_data->fp_cm, open.condition);
         }
     }   
-    /* if(fp->writer_finalized == 1){ */
-    /* 	if(adiosfile->current_step == adiosfile->last_step){ */
-    /* 	    adios_errno = err_end_of_stream; */
-    /* 	    return 0; */
-    /* 	} */
-    /* } */
-    /* else if(adiosfile->current_step == adiosfile->last_step){ */
-    /* 	adios_errno = err_step_notready; */
-    /* 	return 0; */
-    /* } */
+    fprintf(stderr, "old step: %d new step: %d\n", fp->mystep, fp->mystep+1);
     adiosfile->current_step++;
     fp->mystep = adiosfile->current_step;
+
+    Flush_msg step;
+    step.type = STEP;
+    step.rank = fp->rank;
+    step.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
+    EVsubmit(fp->bridges[fp->writer_coordinator].flush_source, &step, NULL);
+    CMCondition_wait(fp_read_data->fp_cm, step.condition);
+    
+    //put this on a timer, so to speak, for timeout_sec
+    while(fp->mystep == fp->last_writer_step){
+	if(fp->writer_finalized){
+	    adios_errno = err_end_of_stream;
+	    return err_end_of_stream;
+	}
+	CMsleep(fp_read_data->fp_cm, 1);
+	Flush_msg step;
+	step.type = STEP;
+	step.rank = fp->rank;
+	step.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
+	EVsubmit(fp->bridges[fp->writer_coordinator].flush_source, &step, NULL);
+	CMCondition_wait(fp_read_data->fp_cm, step.condition);
+    }
+	
     // need to remove selectors from each var now.
 
+    fprintf(stderr, "sending flush step\n");
     Flush_msg data;
     data.type = DATA;
     data.rank = fp->rank;
     data.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
     EVsubmit(fp->bridges[fp->writer_coordinator].flush_source, &data, NULL);
     CMCondition_wait(fp_read_data->fp_cm, data.condition);
+      
     // should only happen if there are more steps available.
     // writer should have advanced.
     Flush_msg msg;
@@ -1114,7 +1159,7 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
 
 int adios_read_flexpath_close(ADIOS_FILE * fp)
 {
-    flexpath_file_data *file = (flexpath_file_data*)fp->fh;
+    flexpath_reader_file *file = (flexpath_reader_file*)fp->fh;
     op_msg msg;
     msg.type = CLOSE_MSG;
     msg.file_name = strdup(file->file_name);
@@ -1162,7 +1207,7 @@ int adios_read_flexpath_check_reads(const ADIOS_FILE* fp, ADIOS_VARCHUNK** chunk
 
 int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
 {
-    flexpath_file_data * fp = (flexpath_file_data*)adiosfile->fh;
+    flexpath_reader_file * fp = (flexpath_reader_file*)adiosfile->fh;
     Flush_msg msg;
     msg.rank = fp->rank;
     msg.type = DATA;
@@ -1203,7 +1248,7 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 					   int nsteps,
 					   void *data)
 {   
-    flexpath_file_data * fp = (flexpath_file_data*)adiosfile->fh;
+    flexpath_reader_file * fp = (flexpath_reader_file*)adiosfile->fh;
     flexpath_var * var = fp->var_list;
     while(var){
         if(var->id == varid)
@@ -1358,7 +1403,7 @@ adios_read_flexpath_get_attr_byid (const ADIOS_FILE *adiosfile, int attrid,
 ADIOS_VARINFO* 
 adios_read_flexpath_inq_var(const ADIOS_FILE * adiosfile, const char* varname)
 {
-    flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
+    flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     ADIOS_VARINFO* v = malloc(sizeof(ADIOS_VARINFO));
     if(!v) {
         adios_error(err_no_memory, "Cannot allocate buffer in adios_read_datatap_inq_var()");
@@ -1380,7 +1425,7 @@ adios_read_flexpath_inq_var(const ADIOS_FILE * adiosfile, const char* varname)
 ADIOS_VARINFO* 
 adios_read_flexpath_inq_var_byid (const ADIOS_FILE * adiosfile, int varid)
 {
-    flexpath_file_data *fp = (flexpath_file_data*)adiosfile->fh;
+    flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     if(varid >= 0 && varid < adiosfile->nvars) {
         return adios_read_flexpath_inq_var(adiosfile, adiosfile->var_namelist[varid]);
     }

@@ -20,7 +20,7 @@ int main (int argc, char ** argv)
     char        filename [256];
     int         rank, size, i, j, offset, size_y;
     int         NX = 40; 
-    int         NY = 1;
+    int         NY = 2;
     double      t[NX*NY];
     MPI_Comm    comm = MPI_COMM_WORLD;
 
@@ -37,17 +37,13 @@ int main (int argc, char ** argv)
     offset = rank*NY;
     size_y = size*NY;
     int ii;
-
-    //prints the array.
-    /* printf("rank %d: [", rank); */
-    /* for(i=0; i<NX*NY;i++){ */
-    /* 	printf("%lf, ", t[i]); */
-    /* } */
-    /* printf("]\n"); */
+   
     for(ii = 0; ii<20; ii++){       
 	for(j=0; j<NY*NX; j++){       
 	    t[j] = (offset * NX) + j + NY*NX*ii;	    
 	}
+
+        //prints the array.
 	adios_open (&adios_handle, "temperature", filename, "w", comm);
 	
 	adios_write (adios_handle, "NX", &NX);
@@ -61,6 +57,11 @@ int main (int argc, char ** argv)
     
 	adios_close (adios_handle);
 	fprintf(stderr, "Rank=%d commited write %d\n", rank, ii);
+	printf("rank %d: [", rank);
+	//for(i=0; i<NX*NY;i++){
+	printf("%lf, ", t[0]);
+		//}
+	printf("]\n");
     }
     adios_finalize (rank);
     MPI_Finalize ();

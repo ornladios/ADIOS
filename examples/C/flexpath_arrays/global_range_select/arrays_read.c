@@ -41,7 +41,7 @@ int main (int argc, char ** argv)
     global_range_select.u.bb.start = malloc(sizeof(uint64_t)*2);
     global_range_select.u.bb.count = malloc(sizeof(uint64_t)*2);
     int xcount = 40;
-    int ycount = 1;
+    int ycount = 2;
     (global_range_select.u.bb.start)[0] = 0;
     (global_range_select.u.bb.count)[0] = xcount;
     (global_range_select.u.bb.start)[1] = 0;
@@ -67,9 +67,9 @@ int main (int argc, char ** argv)
     int ii = 0;
     while(adios_errno != err_end_of_stream){       
         /* get a bounding box - rank 0 for now*/
-        ADIOS_VARINFO* nx_info = adios_inq_var( afile, "NX");
-        ADIOS_VARINFO* ny_info = adios_inq_var( afile, "NY");
-
+        ADIOS_VARINFO *nx_info = adios_inq_var( afile, "NX");
+        ADIOS_VARINFO *ny_info = adios_inq_var( afile, "NY");
+	ADIOS_VARINFO *arry = adios_inq_var( afile, "var_2d_array");
         if(nx_info->value) {
             NX = *((int *)nx_info->value);
         }
@@ -77,6 +77,14 @@ int main (int argc, char ** argv)
             NY= *((int*)ny_info->value);
         }
     
+	if(rank == 0){
+	  int n;
+	  printf("dims: [ ");
+	  for(n=0; n<arry->ndim; n++){
+	    printf("%d ", (int)arry->dims[n]);
+	  }
+	  printf("]\n");
+	}
         //printf("\trank=%d: NX=%d\n", rank, NX);
         //printf("\trank=%d: NY=%d\n", rank, NY);
     
