@@ -17,8 +17,23 @@
 /* Define to 1 if your Fortran compiler doesn't accept -c and -o together. */
 #undef FC_NO_MINUS_C_MINUS_O
 
+/* Define if you have ALACRITY. */
+#undef HAVE_ALACRITY
+
+/* Define if you have APLOD. */
+#undef HAVE_APLOD
+
+/* Define to 1 if you have the <aplod.h> header file. */
+#undef HAVE_APLOD_H
+
 /* Define to 1 if you have the <Attributes.h> header file. */
 #undef HAVE_ATTRIBUTES_H
+
+/* Define if you have BZIP2. */
+#undef HAVE_BZIP2
+
+/* Define to 1 if you have the <bzlib.h> header file. */
+#undef HAVE_BZLIB_H
 
 /* Define to 1 if you have the `clock_gettime' function. */
 #undef HAVE_CLOCK_GETTIME
@@ -83,8 +98,17 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #undef HAVE_INTTYPES_H
 
+/* Define if you have ISOBAR. */
+#undef HAVE_ISOBAR
+
+/* Define to 1 if you have the <isobar.h> header file. */
+#undef HAVE_ISOBAR_H
+
 /* Define to 1 if you have the `rt' library (-lrt). */
 #undef HAVE_LIBRT
+
+/* Define if you have libtimer */
+#undef HAVE_LIBTIMER
 
 /* Define if you have LUSTRE. */
 #undef HAVE_LUSTRE
@@ -200,8 +224,23 @@
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
 
+/* Define if you have SZIP. */
+#undef HAVE_SZIP
+
+/* Define to 1 if you have the <szlib.h> header file. */
+#undef HAVE_SZLIB_H
+
+/* Define to 1 if you have the <timer.h> header file. */
+#undef HAVE_TIMER_H
+
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
+
+/* Define if you have ZLIB. */
+#undef HAVE_ZLIB
+
+/* Define to 1 if you have the <zlib.h> header file. */
+#undef HAVE_ZLIB_H
 
 /* Define to the sub-directory in which libtool stores uninstalled libraries.
    */

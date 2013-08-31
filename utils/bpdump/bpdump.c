@@ -13,6 +13,8 @@
 #include "adios_transport_hooks.h"
 #include "adios_bp_v1.h"
 #include "bp_utils.h"
+#include "adios_transforms_common.h" // NCSU ALACRITY-ADIOS
+#include "adios_transforms_read.h" // NCSU ALACRITY-ADIOS
 //#include "adios_internals.h"
 
 #define DIVIDER "========================================================\n"
@@ -509,6 +511,30 @@ void print_vars_header (struct adios_vars_header_struct_v1 * vars_header)
     printf ("\tVars Count: %u\n", vars_header->count);
 }
 
+void print_characteristic_dims(struct adios_index_characteristic_dims_struct_v1 *dims) {
+    int j;
+
+    for (j = 0; j < dims->count; j++)
+    {
+        if (j != 0)
+            printf (",");
+        if (dims->dims [j * 3 + 1] != 0)
+        {
+            printf ("%llu:%llu:%llu"
+                   ,dims->dims [j * 3 + 0]
+                   ,dims->dims [j * 3 + 1]
+                   ,dims->dims [j * 3 + 2]
+                   );
+        }
+        else
+        {
+            printf ("%llu"
+                   ,dims->dims [j * 3 + 0]
+                   );
+        }
+    }
+}
+
 void print_var_header (struct adios_var_header_struct_v1 * var_header)
 {
     int i = 0;
@@ -641,30 +667,23 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
     }
     if (var_header->characteristics.dims.count != 0)
     {
-        int j;
-
         printf ("\t\t\tDims (l:g:o): (");
-        for (j = 0; j < var_header->characteristics.dims.count; j++)
-        {
-            if (j != 0)
-                printf (",");
-            if (var_header->characteristics.dims.dims [j * 3 + 1] != 0)
-            {
-                printf ("%llu:%llu:%llu"
-                       ,var_header->characteristics.dims.dims [j * 3 + 0]
-                       ,var_header->characteristics.dims.dims [j * 3 + 1]
-                       ,var_header->characteristics.dims.dims [j * 3 + 2]
-                       );
-            }
-            else
-            {
-                printf ("%llu"
-                       ,var_header->characteristics.dims.dims [j * 3 + 0]
-                       );
-            }
+        print_characteristic_dims(&var_header->characteristics.dims);
+        printf(")");
         }
+
+    // NCSU ALACRITY-ADIOS - Adding printing of transform type
+    printf ("\t\t\tTransform-type(%hhu = %s)",
+            var_header->characteristics.transform.transform_type,
+            adios_transform_plugin_primary_xml_alias(var_header->characteristics.transform.transform_type));
+    if (var_header->characteristics.transform.transform_type != adios_transform_none) {
+        printf ("\t\t\tPre-transform-datatype(%s)", adios_type_to_string_int(var_header->characteristics.transform.pre_transform_type));
+        printf ("\t\t\tPre-transform-dims(l:g:o = ");
+        print_characteristic_dims(&var_header->characteristics.transform.pre_transform_dimensions);
         printf (")");
+        printf ("\t\t\tTransform-metadata-length(%hu)", var_header->characteristics.transform.transform_metadata_len);
     }
+
     printf ("\n");
 }
 
@@ -1090,6 +1109,40 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
                 }
                 printf (")");
             }
+
+            // NCSU ALACRITY-ADIOS - Print transform info
+            if (vars_root->characteristics[i].transform.transform_type != adios_transform_none) {
+                struct adios_index_characteristic_transform_struct *transform = &vars_root->characteristics[i].transform;
+                struct adios_index_characteristic_dims_struct_v1 *dims = &transform->pre_transform_dimensions;
+                int j;
+
+                printf ("\tTransform type: %s (ID = %hhu)", adios_transform_plugin_desc(transform->transform_type), transform->transform_type);
+                printf ("\tPre-transform datatype: %s", adios_type_to_string_int(transform->pre_transform_type));
+                printf ("\tPre-transform dims (l:g:o): (");
+                for (j = 0; j < dims->count; j++)
+                {
+                    if (j != 0)
+                        printf (",");
+                    if (  dims->dims [j * 3 + 1]
+                        != 0
+                       )
+                    {
+                        printf ("%llu:%llu:%llu"
+                         ,dims->dims [j * 3 + 0]
+                         ,dims->dims [j * 3 + 1]
+                         ,dims->dims [j * 3 + 2]
+                               );
+                    }
+                    else
+                    {
+                        printf ("%llu"
+                         ,dims->dims [j * 3 + 0]
+                               );
+                    }
+                }
+                printf (")");
+            }
+
             printf ("\n");
         }
 

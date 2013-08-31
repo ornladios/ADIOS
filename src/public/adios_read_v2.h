@@ -87,7 +87,6 @@ typedef struct {
     uint64_t * count;      /* local sizes in global array ('ndim' elements)                */
 } ADIOS_VARBLOCK;
 
-
 typedef struct {
         int        varid;           /* variable index (0..ADIOS_FILE.nvars-1)                         */
         enum ADIOS_DATATYPES type;  /* type of variable                                               */
@@ -115,6 +114,9 @@ typedef struct {
 typedef struct {
         int                   varid;    /* variable index (0..ADIOS_FILE.nvars-1)              */
         enum ADIOS_DATATYPES  type;     /* type of variable                                    */
+        // NCSU ALACRITY-ADIOS - Added timestep information into varchunks
+        int 				  from_steps; /* the first timestep in the returned data             */
+        int 				  nsteps;     /* the number of timesteps in the returned data        */
         ADIOS_SELECTION     * sel;      /* sub-selection of requested selection                */
         void                * data;     /* pointer to data, at next adios_read_check() memory 
                                            will likely be overwritten                          */
@@ -394,6 +396,23 @@ int adios_schedule_read_byid (const ADIOS_FILE * fp,
                               int                     from_steps,
                               int                     nsteps,
                               void                  * data);
+
+// NCSU ALACRITY-ADIOS: Support for those transforms that can change reading behavior (e.g., level-of-detail)
+int adios_schedule_read_param (const ADIOS_FILE * fp,
+                               const ADIOS_SELECTION * sel,
+                               const char            * varname,
+                               int                     from_steps,
+                               int                     nsteps,
+                               const char            * param,
+                               void                  * data);
+
+int adios_schedule_read_byid_param (const ADIOS_FILE * fp,
+                                    const ADIOS_SELECTION * sel,
+                                    int                     varid,
+                                    int                     from_steps,
+                                    int                     nsteps,
+                                    const char            * param,
+                                    void                  * data);
 
 
 /** Let ADIOS perform the scheduled reads 

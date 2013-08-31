@@ -31,7 +31,7 @@
 extern struct adios_transport_struct * adios_transports;
 static int varcnt=0;
 static char io_method[16]; //the IO method for data output
-static char io_parameters[256]; //the IO method parameters 
+static char io_parameters[256]; //the IO method parameters
 static uint64_t totalsize=0;
 static int grpflag=0; //if there's data left in buffer
 static char *grp_name;
@@ -39,7 +39,7 @@ static int64_t grp;
 static int aggr_level; // currently fixed to 2 level of aggregation the most
 static int aggr_chunksize=1048576*2; //default aggregated chunk size = 2MB
 static int aggr_cnt[3][2]; //number of clients at each level for 1D, 2D and 3D variables
-static int my_aggregator[3][2]; //2 level of aggregators for three dimensions 
+static int my_aggregator[3][2]; //2 level of aggregators for three dimensions
 static int layout;
 static int *proc_map;
 static int *sequence;
@@ -58,7 +58,7 @@ struct aggr_client
 struct aggr_var_struct
 {
     char * name;
-    char * path; 
+    char * path;
     enum ADIOS_DATATYPES type;
     enum ADIOS_FLAG multidim;
     char * dimensions;
@@ -66,7 +66,7 @@ struct aggr_var_struct
     char * local_offsets;
     void * data;
     int set_aggr; //1D - 3D aggregation flags; 0:1D; 1:2D; 2:3D
-//    int decomp[3]; //1D -3D decomposition 0:1D; 1:2D; 2:3D 
+//    int decomp[3]; //1D -3D decomposition 0:1D; 1:2D; 2:3D
 
     struct aggr_var_struct *prev;
     struct aggr_var_struct *next;
@@ -86,10 +86,10 @@ struct adios_MPI_data_struct
     char * file_mode;
 
     int vid;
-    int64_t group_id; 
+    int64_t group_id;
  //   int set_aggr; //1D - 3D aggregation flags; 0:1D; 1:2D; 2:3D
-    int layout[3]; //1D -3D if the process layout has been determined; 
-                   //XXX: we have the assumption here that all the variables with same number of dimensions have the same processes layout 
+    int layout[3]; //1D -3D if the process layout has been determined;
+                   //XXX: we have the assumption here that all the variables with same number of dimensions have the same processes layout
     int *procs[3]; //the proceess layout, supporting up to 3D right now
                       //e.g. nprocs[0][3]: process layout for 1D variable
     int decomp[3];
@@ -211,22 +211,24 @@ static uint64_t get_value_for_dim (struct adios_dimension_item_struct * dimensio
     return dim;
 }
 
-static uint8_t count_dimensions (struct adios_dimension_struct * dimensions)
-{   
-    uint8_t count = 0;
-
-    while (dimensions)
-    {
-        count++;
-        dimensions = dimensions->next;
-    }
-    
-    return count;
-}       
+// NCSU ALACRITY-ADIOS: This function was shared from adios_internals.c,
+//   since it's also needed in the transform layer
+//static uint8_t count_dimensions (struct adios_dimension_struct * dimensions)
+//{
+//    uint8_t count = 0;
+//
+//    while (dimensions)
+//    {
+//        count++;
+//        dimensions = dimensions->next;
+//    }
+//
+//    return count;
+//}
 
 
 //prepare the number of processes on each dimension
-static int cal_layout(int *procs, int rank, int nprocs, int ndims, MPI_Comm comm, uint64_t *ldims, uint64_t *gdims, uint64_t *offsets) 
+static int cal_layout(int *procs, int rank, int nprocs, int ndims, MPI_Comm comm, uint64_t *ldims, uint64_t *gdims, uint64_t *offsets)
 {
     char *sbuf, *recvbuf;
     int slen, recvlen, blen;
@@ -235,7 +237,7 @@ static int cal_layout(int *procs, int rank, int nprocs, int ndims, MPI_Comm comm
     int decomp=0;
 
 
-    for(i=0;i<3;i++){ 
+    for(i=0;i<3;i++){
         procs[i]=-1;
         sequence[i]=-1;
     }
@@ -247,10 +249,10 @@ static int cal_layout(int *procs, int rank, int nprocs, int ndims, MPI_Comm comm
     slen+=ndims*sizeof(uint64_t);
     memcpy(sbuf+slen, offsets, ndims*sizeof(uint64_t));
     slen+=ndims*sizeof(uint64_t);
-            
+
     recvbuf=(char *)malloc(nprocs*ndims*2*sizeof(uint64_t));
     recvlen=0;
-    //rank 0 calculate the info then send to the rest 
+    //rank 0 calculate the info then send to the rest
     if(rank==0) {
         //gather all the info to rank 0
         MPI_Gather(MPI_IN_PLACE, slen, MPI_BYTE, recvbuf, slen, MPI_BYTE, 0, comm);
@@ -273,7 +275,7 @@ static int cal_layout(int *procs, int rank, int nprocs, int ndims, MPI_Comm comm
             //keep the process count on each dimension
             //the last process on the (0,0,k) dimension will be the first
             //edge process on k
-            //FIXME: hard coded for 3-D 
+            //FIXME: hard coded for 3-D
             for(j=0;j<ndims;j++) {
                 if(t_offsets[j]!=0 && t_ldims[j]+t_offsets[j]==gdims[j]) {
                     if(procs[j]==-1) {
@@ -306,7 +308,7 @@ static int cal_layout(int *procs, int rank, int nprocs, int ndims, MPI_Comm comm
 
         //see if the processes are laid out along the fast dimension or
         //slow dimension
-        if(ndims==1 || (ndims>1 && sequence[0]<sequence[1])) 
+        if(ndims==1 || (ndims>1 && sequence[0]<sequence[1]))
             layout=FORWARD; //along the fast dimension
         else
             layout=REVERSE; //along the slow dimension
@@ -358,10 +360,10 @@ static int cal_layout(int *procs, int rank, int nprocs, int ndims, MPI_Comm comm
     free(recvbuf);
 
     return decomp;
-} 
+}
 
 static void cal_offsets(int *procs, int rank, int ndims, int decomp, int *offsets)
-{ 
+{
     int i;
 
     if(decomp>=1) {
@@ -379,7 +381,7 @@ static void cal_offsets(int *procs, int rank, int ndims, int decomp, int *offset
 static void cal_process_map(int rank, int *procs)
 {
     int i,j,k;
-    int pos, cnt=0; 
+    int pos, cnt=0;
 
     if(layout==0) {
         for(i=0;i<procs[2];i++) {
@@ -402,7 +404,7 @@ static void cal_process_map(int rank, int *procs)
                 }
             }
         }
-    
+
     }
 }
 
@@ -530,8 +532,8 @@ static void prep_aggr(int *procs, int ndims, int decomp, int rank, int size, int
     for(i=1; i<=level; i++) {
         scale=(int)pow(2, (i-1));
         step=(int)pow(2, i);
-        
-        //detemine the aggregators and clients 
+
+        //detemine the aggregators and clients
         hole=0;
         for(j=0;j<ndims;j++) {
             if(offsets[j]%step!=0){
@@ -545,16 +547,16 @@ static void prep_aggr(int *procs, int ndims, int decomp, int rank, int size, int
             //allocate the space for the list of clients
             int mal_size=(int)pow(2, decomp)-1;
             if(ndims==3){
-                //aggr_clients[i-1] = malloc(mal_size*sizeof(int)); 
-                aggr3d_clients[i-1] = malloc(mal_size*sizeof(struct aggr_client)); 
+                //aggr_clients[i-1] = malloc(mal_size*sizeof(int));
+                aggr3d_clients[i-1] = malloc(mal_size*sizeof(struct aggr_client));
                 memset(aggr3d_clients[i-1], 0x00, mal_size*sizeof(struct aggr_client));
             }
             else if (ndims==2) {
-                aggr2d_clients[i-1] = malloc(mal_size*sizeof(struct aggr_client)); 
+                aggr2d_clients[i-1] = malloc(mal_size*sizeof(struct aggr_client));
                 memset(aggr2d_clients[i-1], 0x00, mal_size*sizeof(struct aggr_client));
             }
             else if(ndims==1){
-                aggr1d_clients[i-1] = malloc(mal_size*sizeof(struct aggr_client)); 
+                aggr1d_clients[i-1] = malloc(mal_size*sizeof(struct aggr_client));
                 memset(aggr1d_clients[i-1], 0x00, mal_size*sizeof(struct aggr_client));
             }
 
@@ -584,15 +586,15 @@ static void prep_aggr(int *procs, int ndims, int decomp, int rank, int size, int
          else { //I am the clients
              aggrx=aggry=aggrz=0;
              aggrx=offsets[0]-offsets[0]%step;
-             if(ndims>=2) 
+             if(ndims>=2)
                 aggry=offsets[1]-offsets[1]%step;
-             if(ndims>=3) 
+             if(ndims>=3)
                  aggrz=offsets[2]-offsets[2]%step;
 
              my_aggregator[ndims-1][i-1] = proc_map[aggrz*procs[0]*procs[1]+aggry*procs[0]+aggrx];
-                 
- 
-             //check if this process needs to be included within the  
+
+
+             //check if this process needs to be included within the
              //communication of this level
              if(i>1) {
                  hole=0;
@@ -606,11 +608,11 @@ static void prep_aggr(int *procs, int ndims, int decomp, int rank, int size, int
                      my_aggregator[ndims-1][i-1]=-1;
              }
          } //end of if(hole==0)
-         prev_step=step; 
+         prev_step=step;
     }//end of for()
 }
- 
- 
+
+
 
 static int do_write (int64_t fd_p, const char * name, void * var)
 {
@@ -644,7 +646,7 @@ static int do_write (int64_t fd_p, const char * name, void * var)
 
     return 0;
 }
-                       
+
 
 // temporary solution for compiling error
 static int declare_group (int64_t * id, const char * name
@@ -686,7 +688,7 @@ static int convert_file_mode(enum ADIOS_METHOD_MODE mode, char * file_mode)
            if (mode == adios_mode_append)
        strcpy(file_mode,"a");
            else
-               if (mode == adios_mode_update) 
+               if (mode == adios_mode_update)
        strcpy(file_mode,"u");
                else
                {
@@ -704,7 +706,7 @@ static int var_lookup(const char *varname, char *path, struct aggr_var_struct *l
 {
     int cnt=0;
 
-    for(cnt=0;cnt<varcnt;cnt++) 
+    for(cnt=0;cnt<varcnt;cnt++)
     {
         //compare both the variable name and path
         if(strcmp(varname, list->name)==0 && strcmp(path, list->path)==0) {
@@ -722,7 +724,7 @@ static int var_lookup(const char *varname, char *path, struct aggr_var_struct *l
 }
 
 static void output_vars(struct aggr_var_struct *vars, int varcnt, struct
-        adios_MPI_data_struct * md, struct adios_file_struct * fd) 
+        adios_MPI_data_struct * md, struct adios_file_struct * fd)
 {
     int i,j;
     char file_mode[2];
@@ -738,7 +740,7 @@ static void output_vars(struct aggr_var_struct *vars, int varcnt, struct
     common_adios_group_size (md->fpr, totalsize, &adios_size);
 
     //move pointer to the first variable in the list
-    vars=header; 
+    vars=header;
     //write it out
     for(i=0;i<varcnt;i++) {
         do_write(md->fpr, vars->name, vars->data);
@@ -753,7 +755,7 @@ static void define_iogroup(char *group_name)
 {
     int len;
 
-    // is it necessary to have different group name? XXX:FIXME 
+    // is it necessary to have different group name? XXX:FIXME
     len=5+strlen(group_name); //new groupname= tg_groupname
     grp_name=(char *)malloc(len);
     memset(grp_name, 0x00, len);
@@ -769,7 +771,7 @@ static void init_vars(struct aggr_var_struct *var, struct adios_var_struct * v, 
     int i;
 
     vars->name=(char *)malloc(strlen(v->name)+1);
-    strcpy(vars->name, v->name); 
+    strcpy(vars->name, v->name);
     vars->type=v->type;
     vars->path=(char *)malloc(strlen(v->path)+1);
     strcpy(vars->path, v->path);
@@ -841,7 +843,7 @@ void init_output_parameters(const PairStruct *params)
 }
 
 
-void adios_var_merge_init(const PairStruct * parameters, 
+void adios_var_merge_init(const PairStruct * parameters,
                      struct adios_method_struct * method)
 {
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
@@ -915,7 +917,7 @@ static void adios_var_to_comm (const char * comm_name
                  {
                      log_warn ("TIAN method: communicator not provided but one "
                                "listed in XML.  Defaulting to MPI_COMM_WORLD\n");
- 
+
                      *comm = MPI_COMM_WORLD;
                  }
                  else
@@ -936,7 +938,7 @@ static void adios_var_to_comm (const char * comm_name
      {
          log_warn ("TIAN method: coordination-communication not provided. "
                    "Using MPI_COMM_WORLD instead\n");
- 
+
          *comm = MPI_COMM_WORLD;
      }
 }
@@ -956,7 +958,7 @@ int adios_var_merge_open (struct adios_file_struct * fd
 
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                     method->method_data;
- 
+
     switch (fd->mode)
     {
         case adios_mode_read:
@@ -1003,11 +1005,11 @@ enum ADIOS_FLAG adios_var_merge_should_buffer (struct adios_file_struct * fd
             adios_error (err_invalid_file_mode, "VAR_MERGE method: Read mode is not supported.\n");
             break;
         }
- 
+
         case adios_mode_append:
         case adios_mode_write:
-        { 
-            define_iogroup(method->group->name); 
+        {
+            define_iogroup(method->group->name);
             break;
         }
         default:
@@ -1020,12 +1022,12 @@ enum ADIOS_FLAG adios_var_merge_should_buffer (struct adios_file_struct * fd
     //this method handles its own buffering
     return adios_flag_no;
 }
-                                         
+
 static void prepare_data(void **data, uint64_t varsize, int dims)
 {
     int i,j,k,l;
     double val;
-    
+
     l=0;
     for(val=0;val<8;val++) {
         for(i=0;i<dims;i++) {
@@ -1090,7 +1092,7 @@ void adios_var_merge_write (struct adios_file_struct * fd
     init_vars(vars, v, ndims);
 
     //retrieve the chunk size
-    varsize=adios_get_var_size(v, method->group, data); 
+    varsize=adios_get_var_size(v, method->group, data);
 
     //number of the dimensions of this variable
     ndims=count_dimensions(v->dimensions);
@@ -1098,7 +1100,7 @@ void adios_var_merge_write (struct adios_file_struct * fd
     if(ndims) //multidimensional data
     {
         vars->multidim=adios_flag_yes;
-           
+
         ldims=(uint64_t *)malloc(ndims*sizeof(uint64_t));
         offsets=(uint64_t *)malloc(ndims*sizeof(uint64_t));
         gdims=(uint64_t *)malloc(ndims*sizeof(uint64_t));
@@ -1127,16 +1129,16 @@ void adios_var_merge_write (struct adios_file_struct * fd
                 sprintf(vars->local_offsets,"%llu", dim);
             else
                 sprintf(vars->local_offsets,"%s,%llu",vars->local_offsets, dim);
-            
+
             dims_count++;
             d=d->next;
-        } //end of while (d) 
+        } //end of while (d)
 
         if(type_size==1) {
-            vars->multidim=adios_flag_yes; 
-            varsize=adios_get_var_size(v, method->group, data); 
+            vars->multidim=adios_flag_yes;
+            varsize=adios_get_var_size(v, method->group, data);
             vars->data=malloc(varsize);
-            memcpy(vars->data, data, varsize); 
+            memcpy(vars->data, data, varsize);
         }
         else {
 
@@ -1149,7 +1151,7 @@ void adios_var_merge_write (struct adios_file_struct * fd
             if(md->layout[ndims-1]==-1) {
                 //process layout
                 md->procs[ndims-1]=(int *)malloc(3*sizeof(int)); //FIXME
-                //prepare the process map space 
+                //prepare the process map space
                 proc_map=(int *)malloc(md->size*sizeof(int));
                 sequence=(int *)malloc(3*sizeof(int));
                 memset(sequence,0x00,3*sizeof(int));
@@ -1165,14 +1167,14 @@ void adios_var_merge_write (struct adios_file_struct * fd
                 adios_error(err_corrupted_variable, "Unrecognizable decomposition.");
                 exit(-1);
             }
-            else { 
-                //the number of chunks to aggregate in one level of spatial aggregation 
+            else {
+                //the number of chunks to aggregate in one level of spatial aggregation
                 //is decided by the domain decomposition
                 chunk_cnt=(int)pow(2, decomp);
 
                 //too few process or chunk size is large enough, we do not need to aggregate
                 //XXX: default the aggregated chunksize=2MB
-                if (md->size < chunk_cnt || varsize > aggr_chunksize/chunk_cnt)  
+                if (md->size < chunk_cnt || varsize > aggr_chunksize/chunk_cnt)
                     vars->set_aggr=0;
                 else {
                     vars->set_aggr=1;
@@ -1184,35 +1186,35 @@ void adios_var_merge_write (struct adios_file_struct * fd
                         // we need at least twice the number of chunks for
                         // the first level aggregation in order to do higher
                         // level aggregation
-                        if(md->size<chunk_cnt*2) 
+                        if(md->size<chunk_cnt*2)
                             aggr_level=1;
                         else
-                            aggr_level=2; 
+                            aggr_level=2;
                     }
-                    
+
                     //calculating the aggregator and client processes
                     prep_aggr(md->procs[ndims-1], ndims, decomp, md->rank, md->size, aggr_level);
                 }
             }
         }
-        else 
-            log_error("Current VAR_MERGE only supports up to 3-D variables with minimum of 2 processes with 1D decomposition. No spatial merging will be performed.\n"); 
-                    
+        else
+            log_error("Current VAR_MERGE only supports up to 3-D variables with minimum of 2 processes with 1D decomposition. No spatial merging will be performed.\n");
+
         //no spatial aggregation, just copy data
         if(vars->set_aggr!=1) {
             vars->data=malloc(varsize);
             memcpy(vars->data, data, varsize);
             //varcnt++;
         }
-        else { //if we need to do spatial aggregation 
-            //only the highest level aggregators need to allocate space for output 
+        else { //if we need to do spatial aggregation
+            //only the highest level aggregators need to allocate space for output
             if(my_aggregator[ndims-1][aggr_level-1]==md->rank) {
                 //allocate the total buffer for the output data
                 alloc_size=varsize;
                 for(i=0;i<aggr_level;i++)
                     alloc_size*=(aggr_cnt[ndims-1][i]+1);
                 vars->data=malloc(alloc_size);
-            } 
+            }
 
             new_ldims=(char *)malloc(128*sizeof(char));
             memset(new_ldims, 0x00, 128);
@@ -1229,18 +1231,19 @@ void adios_var_merge_write (struct adios_file_struct * fd
         } //end of if(do_spatial_aggr)
         }
     } //end of if(ndims)
-    else //scalar 
+    else //scalar
     {
         vars->multidim=adios_flag_no;
 
-        varsize=adios_get_var_size(v, method->group, data); 
+        varsize=adios_get_var_size(v, method->group, data);
         vars->data=malloc(varsize);
-        memcpy(vars->data, data, varsize); 
+        memcpy(vars->data, data, varsize);
     }
 
     totalsize+=varsize;
     if(varsize>0) {
-        adios_common_define_var(grp, vars->name, vars->path, vars->type, vars->dimensions, vars->global_dimensions, vars->local_offsets);
+        // NCSU ALACRITY-ADIOS: In the future, the transform type string here needs to be reconsidered, to possibly allow transforms after aggregation...
+        adios_common_define_var(grp, vars->name, vars->path, vars->type, vars->dimensions, vars->global_dimensions, vars->local_offsets, "");
         varcnt++;
     }
     else { //move back the pointer, and release the memory
@@ -1259,20 +1262,20 @@ void adios_var_merge_read (struct adios_file_struct * fd
 }
 
 void release_resource()
-{ 
+{
     int cnt;
     struct aggr_var_struct *next;
 
     vars=header;
     for(cnt=0;cnt<varcnt;cnt++)
     {
-        if(cnt!=(varcnt-1)) 
+        if(cnt!=(varcnt-1))
             next=vars->next;
         free(vars->data);
         free(vars->dimensions);
         free(vars->global_dimensions);
         free(vars->local_offsets);
-        free(vars); 
+        free(vars);
         vars=next;
     }
 }
@@ -1343,7 +1346,7 @@ void copy_aggr_data (void *dst, void *src,
         uint64_t* size_in_dset,
         uint64_t* ldims,
         const uint64_t * readsize,
-        uint64_t dst_stride, //8 
+        uint64_t dst_stride, //8
         uint64_t src_stride, //9
         uint64_t dst_offset,
         uint64_t src_offset,
@@ -1368,7 +1371,7 @@ void copy_aggr_data (void *dst, void *src,
     }
 
     for (i = 0; i<size_in_dset[idim];i++) {
-        // get the different step granularity 
+        // get the different step granularity
         // for each different reading pattern broke
         src_step = 1;
         dst_step = 1;
@@ -1389,13 +1392,13 @@ static void cal_gdims(int ndims, uint64_t *p_offsets, uint64_t *offsets, uint64_
         gdims[0]=ldims[0]+p_dims[0];
     }
     else if(ndims==2) {
-        if(p_offsets[0]!=offsets[0] && p_offsets[1]==offsets[1]) 
+        if(p_offsets[0]!=offsets[0] && p_offsets[1]==offsets[1])
                gdims[0]=ldims[0]+p_dims[0];
-        else if(p_offsets[1]!=offsets[1] && p_offsets[0]==offsets[0]) 
+        else if(p_offsets[1]!=offsets[1] && p_offsets[0]==offsets[0])
             gdims[1]=ldims[1]+p_dims[1];
     }
     else if(ndims==3) {
-        if(p_offsets[0]!=offsets[0] && p_offsets[1]==offsets[1] && p_offsets[2]==offsets[2]) 
+        if(p_offsets[0]!=offsets[0] && p_offsets[1]==offsets[1] && p_offsets[2]==offsets[2])
                gdims[0]=ldims[0]+p_dims[0];
         else if(p_offsets[1]!=offsets[1] && p_offsets[0]==offsets[0] && p_offsets[2]==offsets[2])
             gdims[1]=ldims[1]+p_dims[1];
@@ -1404,7 +1407,7 @@ static void cal_gdims(int ndims, uint64_t *p_offsets, uint64_t *offsets, uint64_
     }
 }
 
-static uint64_t do_spatial_aggr(int level, int *procs, int ndims, uint64_t *ldims, uint64_t *offsets, char *new_ldims, int rank,  void *data, uint64_t varsize, void *output, int type_size, MPI_Comm comm) 
+static uint64_t do_spatial_aggr(int level, int *procs, int ndims, uint64_t *ldims, uint64_t *offsets, char *new_ldims, int rank,  void *data, uint64_t varsize, void *output, int type_size, MPI_Comm comm)
 {
     //struct adios_var_struct * v = g->vars;
     int i, j, k, client_cnt, lev;
@@ -1434,7 +1437,7 @@ static uint64_t do_spatial_aggr(int level, int *procs, int ndims, uint64_t *ldim
                 tmp_dims=(uint64_t *)malloc(ndims*sizeof(uint64_t));
                 tmp_offsets=(uint64_t *)malloc(ndims*sizeof(uint64_t));
             }
-            
+
             else{
                 tmpbuf=(char *)realloc(tmpbuf, (aggr_cnt[ndims-1][lev]+1)*varsize);
                 buff_offset=varsize;
@@ -1456,16 +1459,16 @@ static uint64_t do_spatial_aggr(int level, int *procs, int ndims, uint64_t *ldim
             //gather data from clients
             for(i=0;i<aggr_cnt[ndims-1][lev];i++) {
                 //receive the ldims of the client process
-                if(ndims==1) { 
-                    MPI_Recv (recvbuf, 2*ndims*sizeof(uint64_t), MPI_BYTE, aggr1d_clients[lev][i].rank, 
+                if(ndims==1) {
+                    MPI_Recv (recvbuf, 2*ndims*sizeof(uint64_t), MPI_BYTE, aggr1d_clients[lev][i].rank,
                         aggr1d_clients[lev][i].rank, comm, &status);
                 }
-                else if(ndims==2) { 
-                    MPI_Recv (recvbuf, 2*ndims*sizeof(uint64_t), MPI_BYTE, aggr2d_clients[lev][i].rank, 
+                else if(ndims==2) {
+                    MPI_Recv (recvbuf, 2*ndims*sizeof(uint64_t), MPI_BYTE, aggr2d_clients[lev][i].rank,
                         aggr2d_clients[lev][i].rank, comm, &status);
                 }
-                else if(ndims==3) { 
-                    MPI_Recv (recvbuf, 2*ndims*sizeof(uint64_t), MPI_BYTE, aggr3d_clients[lev][i].rank, 
+                else if(ndims==3) {
+                    MPI_Recv (recvbuf, 2*ndims*sizeof(uint64_t), MPI_BYTE, aggr3d_clients[lev][i].rank,
                         aggr3d_clients[lev][i].rank, comm, &status);
                 }
 
@@ -1486,7 +1489,7 @@ static uint64_t do_spatial_aggr(int level, int *procs, int ndims, uint64_t *ldim
                 //XXX: FIXME harded for now
                 //FIXME: incorrent algorithm, it only works for 3D domain
                 //decomposition, probably we need a map
-                
+
                 //get the offsets
                 memcpy(tmp_offsets, recvbuf+ndims*sizeof(uint64_t), ndims*sizeof(uint64_t));
 
@@ -1495,16 +1498,16 @@ static uint64_t do_spatial_aggr(int level, int *procs, int ndims, uint64_t *ldim
                 cal_gdims(ndims, tmp_offsets, offsets, tmp_dims, ldims, gdims);
 
                 //receive the data from the client process
-                if(ndims==1) { 
-                    MPI_Recv (tmpbuf+buff_offset, tmpsize, MPI_BYTE, 
+                if(ndims==1) {
+                    MPI_Recv (tmpbuf+buff_offset, tmpsize, MPI_BYTE,
                             aggr1d_clients[lev][i].rank, aggr1d_clients[lev][i].rank, comm, &status);
                 }
-                else if(ndims==2) { 
-                    MPI_Recv (tmpbuf+buff_offset, tmpsize, MPI_BYTE, 
+                else if(ndims==2) {
+                    MPI_Recv (tmpbuf+buff_offset, tmpsize, MPI_BYTE,
                             aggr2d_clients[lev][i].rank, aggr2d_clients[lev][i].rank, comm, &status);
                 }
-                if(ndims==3) { 
-                    MPI_Recv (tmpbuf+buff_offset, tmpsize, MPI_BYTE, 
+                if(ndims==3) {
+                    MPI_Recv (tmpbuf+buff_offset, tmpsize, MPI_BYTE,
                             aggr3d_clients[lev][i].rank, aggr3d_clients[lev][i].rank, comm, &status);
                 }
 
@@ -1518,31 +1521,31 @@ static uint64_t do_spatial_aggr(int level, int *procs, int ndims, uint64_t *ldim
                 else
                     sprintf(new_ldims, "%s,%llu", new_ldims, gdims[i]);
             }
-                
+
             //aggregate the chunks
             //1D variable doesn't need to do this since the data is already
             //aligned in the buffer
-            if(ndims>1) 
+            if(ndims>1)
                 aggr_chunks(&tmpbuf, procs, ndims, ldims_list, gdims, size_list, buff_offset, aggr_cnt[ndims-1][lev]+1, rank, lev, type_size);
 
-            //update the local dimensions at the aggregators 
+            //update the local dimensions at the aggregators
             memcpy(ldims, gdims, ndims*sizeof(uint64_t));
             //the buffer offset marks the current variable size
             varsize=buff_offset;
         }
         else{
 
-            //the previous level clients don't need to do anything 
+            //the previous level clients don't need to do anything
             if(lev>0 && my_aggregator[ndims-1][lev-1]!=rank)
                 continue;
-            else 
+            else
                 sendbuf=(char *)malloc(2*ndims*sizeof(uint64_t));
-                
+
             //put in local dimensions
             memcpy(sendbuf, ldims, ndims*sizeof(uint64_t));
             //put in offsets
             memcpy(sendbuf+ndims*sizeof(uint64_t), offsets, ndims*sizeof(uint64_t));
-            
+
             //clients send out the local dimension of data chunks
             MPI_Send(sendbuf, 2*ndims*sizeof(uint64_t), MPI_BYTE, my_aggregator[ndims-1][lev], rank, comm);
 
@@ -1588,7 +1591,7 @@ static void aggr_chunks(char **output, int *procs, int ndims, uint64_t *ldims_li
 
     chunk_cnt=(int)pow(2, ndims);
     input=(char *)malloc(totalsize);
-    memcpy(input, *output, totalsize); 
+    memcpy(input, *output, totalsize);
 
     dst_stride=1;
     src_stride=1;
@@ -1612,7 +1615,7 @@ static void aggr_chunks(char **output, int *procs, int ndims, uint64_t *ldims_li
     //determine the number of chunks on each dimension
     for(i=0;i<aggr_cnt[ndims-1][level];i++) {
         offx=offy=offz=0;
-        if(ndims==1) { 
+        if(ndims==1) {
             offx=aggr1d_clients[level][i].rank%procs[sequence[0]];
         }
         if(ndims==2) {
@@ -1648,15 +1651,15 @@ static void aggr_chunks(char **output, int *procs, int ndims, uint64_t *ldims_li
                nk++;
         }
         else if(offy!=m_offy && offx==m_offx) {
-           if(ndims==2 ||(ndims==3 && offz==m_offz)) 
-               nj++; 
+           if(ndims==2 ||(ndims==3 && offz==m_offz))
+               nj++;
         }
-        
+
         //only applies for 3D
         if(ndims==3 && offz!=m_offz && offx==m_offx && offy==m_offy)
             ni++;
     }
-    
+
     cnt=0;
     prev_x=prev_y=prev_z=0;
     for(i=0;i<ni;i++) {
@@ -1666,11 +1669,11 @@ static void aggr_chunks(char **output, int *procs, int ndims, uint64_t *ldims_li
                     size_in_dset[0]=1;
                     size_in_dset[1]=ldims_list[ndims*cnt+0];
                 }
-                if(ndims==2) { 
+                if(ndims==2) {
                     size_in_dset[0]=ldims_list[ndims*cnt+1];
                     size_in_dset[1]=ldims_list[ndims*cnt+0];
                 }
-                else if(ndims==3) { 
+                else if(ndims==3) {
                     size_in_dset[0]=ldims_list[ndims*cnt+2];
                     size_in_dset[1]=ldims_list[ndims*cnt+1];
                 }
@@ -1680,10 +1683,10 @@ static void aggr_chunks(char **output, int *procs, int ndims, uint64_t *ldims_li
                 dst_stride=gdims[0];
                 var_offset=0;
 
-                if(cnt!=0) { 
-                    //start offset in the aggregated chunk 
+                if(cnt!=0) {
+                    //start offset in the aggregated chunk
                     dset_offset=i*prev_z*gdims[0]*gdims[1]+j*prev_y*gdims[0]+k*prev_x;
-                    //start offset in the input buffer 
+                    //start offset in the input buffer
                     buff_offset+=size_list[cnt-1];
                 }
                 else {
@@ -1711,7 +1714,7 @@ static void aggr_chunks(char **output, int *procs, int ndims, uint64_t *ldims_li
             }
             prev_y=ldims_list[ndims*(cnt-1)+1];
         }//end of j
-        if(ndims==3) { 
+        if(ndims==3) {
             prev_z=ldims_list[ndims*(cnt-1)+2];
         }
     } //end of i

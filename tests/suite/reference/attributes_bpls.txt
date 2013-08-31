@@ -3,7 +3,6 @@ File info:
   of variables:  6
   of attributes: 4
   time steps:    0 - 0
-  file size:     6 KB
   bp version:    513
   statistics:    Min / Max / Avg / Std_dev
 

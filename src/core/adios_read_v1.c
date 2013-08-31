@@ -348,7 +348,7 @@ int64_t adios_read_var_byid_v1 (ADIOS_GROUP_V1 * gp,
 
     ADIOS_SELECTION * sel = adios_selection_boundingbox (ndim, start+tidx, count+tidx);
 
-    common_read_schedule_read_byid (f, sel, varid, from_step, nsteps, data);
+    common_read_schedule_read_byid (f, sel, varid, from_step, nsteps, NULL, data); // NCSU ALACRITY-ADIOS
     int ret = common_read_perform_reads (f, 1);
     int64_t rbytes;
     if (ret == err_no_error) {
@@ -425,7 +425,7 @@ int64_t adios_read_local_var_v1 (ADIOS_GROUP_V1 * gp,
 
     ADIOS_SELECTION * sel = adios_selection_writeblock (idx_in_step);
 
-    common_read_schedule_read_byid (f, sel, vi->varid, step, 1, data);
+    common_read_schedule_read_byid (f, sel, vi->varid, step, 1, NULL, data); // NCSU ALACRITY-ADIOS
     int ret = common_read_perform_reads (f, 1);
     int64_t rbytes;
     if (ret == err_no_error) {

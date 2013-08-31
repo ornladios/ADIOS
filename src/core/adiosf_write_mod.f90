@@ -1,13 +1,13 @@
-!  
+!
 !  ADIOS is freely available under the terms of the BSD license described
 !  in the COPYING file in the top level directory of this source distribution.
 !
 !  Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
 !
 
-! 
-! Fortran 90 API for writing ADIOS files 
-!    
+!
+! Fortran 90 API for writing ADIOS files
+!
 ! Use this module in your source code to ensure that
 ! you are calling the adios_* writing functions with
 ! the correct arguments
@@ -46,7 +46,7 @@ module adios_write_mod
             integer,        intent(in)  :: comm
             integer,        intent(out) :: err
         end subroutine
-        
+
         subroutine adios_group_size (fd, data_size, total_size, err)
             implicit none
             integer*8,      intent(out) :: fd
@@ -54,7 +54,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: total_size
             integer,        intent(out) :: err
         end subroutine
-        
+
         subroutine adios_set_path (fd, path, err)
             implicit none
             integer*8,      intent(in)  :: fd
@@ -110,7 +110,7 @@ module adios_write_mod
             integer,        intent(out) :: err
         end subroutine
 
-        subroutine adios_define_var (group_id, varname, path, vartype, dimensions, global_dimensions, local_offsets, id) 
+        subroutine adios_define_var (group_id, varname, path, vartype, dimensions, global_dimensions, local_offsets, id)
             implicit none
             integer*8,      intent(in)  :: group_id
             character(*),   intent(in)  :: varname
@@ -142,7 +142,7 @@ module adios_write_mod
             integer,        intent(out) :: err
         end subroutine
 
-        
+
         subroutine adios_allocate_buffer (sizeMB, err)
             implicit none
             integer,        intent(in)  :: sizeMB
@@ -154,7 +154,7 @@ module adios_write_mod
 
     !
     !
-    ! ADIOS_WRITE generic interface 
+    ! ADIOS_WRITE generic interface
     !
     ! Usage: call adios_write (fd, varname, data, err)
     !
@@ -256,7 +256,7 @@ module adios_write_mod
 
     !
     !
-    ! ADIOS_WRITE_BYID generic interface 
+    ! ADIOS_WRITE_BYID generic interface
     !
     ! Usage: call adios_write_byid (fd, varid, data, err)
     !
@@ -358,7 +358,7 @@ module adios_write_mod
 
     !
     !
-    ! ADIOS_READ generic interface 
+    ! ADIOS_READ generic interface
     !
     ! Usage: call adios_read
     !
@@ -456,13 +456,18 @@ module adios_write_mod
         module procedure adios_read_logical4_d6
         module procedure adios_read_logical8_d6
     end interface
-
-
     contains
 
     !
     !
-    ! ADIOS_WRITE generic interface 
+    ! ADIOS_WRITE generic interface
+    !
+    ! Usage: call adios_write (fd, varname, data, err)
+    !
+    !
+        !
+    !
+    ! ADIOS_WRITE generic interface
     !
     ! Usage: call adios_write (fd, varname, data, err)
     !
@@ -477,7 +482,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*1,      intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -488,7 +493,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*2,      intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -499,7 +504,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*4,      intent(in) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -510,7 +515,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*8,      intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -521,7 +526,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*4,         intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -532,7 +537,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*8,         intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -543,7 +548,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex,        intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -554,7 +559,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex*16,     intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -565,7 +570,7 @@ module adios_write_mod
         !    integer*8,      intent(in)  :: fd
         !    character(*),   intent(in)  :: varname
         !    character(*),   intent(inout) :: data
-        !    integer,        intent(in)  :: err 
+        !    integer,        intent(in)  :: err
         !
         !    call adios_write_f2c (fd, varname, data, err)
         !end subroutine
@@ -576,7 +581,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*1,      intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -587,7 +592,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*2,      intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -598,7 +603,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*4,      intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -609,7 +614,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*8,      intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -625,7 +630,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*1, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -636,7 +641,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*2, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -647,7 +652,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*4, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -658,7 +663,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*8, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -669,7 +674,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*4,    dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -680,7 +685,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*8,   dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -691,7 +696,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex,   dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -702,7 +707,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex*16,dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -713,7 +718,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             character(*),   intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -724,7 +729,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*1, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -735,7 +740,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*2, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -746,7 +751,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*4, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -757,7 +762,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*8, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -772,7 +777,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*1, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -783,7 +788,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*2, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -794,7 +799,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*4, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -805,7 +810,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*8, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -816,7 +821,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*4,    dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -827,7 +832,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*8,   dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -838,7 +843,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex,   dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -849,7 +854,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex*16,dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -860,7 +865,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             character(*),dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -871,7 +876,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*1, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -882,7 +887,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*2, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -893,7 +898,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*4, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -904,7 +909,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*8, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -919,7 +924,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*1, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -930,7 +935,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*2, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -941,7 +946,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*4, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -952,7 +957,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*8, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -963,7 +968,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*4,    dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -974,7 +979,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*8,   dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -985,7 +990,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex,   dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -996,7 +1001,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex*16,dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1007,7 +1012,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             character(*),dimension(:,:),  intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1018,7 +1023,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*1, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1029,7 +1034,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*2, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1040,7 +1045,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*4, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1051,7 +1056,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*8, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1066,7 +1071,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*1, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1077,7 +1082,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*2, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1088,7 +1093,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*4, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1099,7 +1104,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*8, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1110,7 +1115,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*4,    dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1121,7 +1126,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*8,   dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1132,7 +1137,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex,   dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1143,7 +1148,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex*16,dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1154,7 +1159,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             character(*),dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1165,7 +1170,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*1, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1176,7 +1181,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*2, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1187,7 +1192,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*4, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1198,7 +1203,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*8, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1213,7 +1218,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*1, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1224,7 +1229,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*2, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1235,7 +1240,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*4, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1246,7 +1251,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*8, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1257,7 +1262,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*4,    dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1268,7 +1273,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*8,   dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1279,7 +1284,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex,   dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1290,7 +1295,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex*16,dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1301,7 +1306,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             character(*),dimension(:,:,:,:),intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1312,7 +1317,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*1, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1323,7 +1328,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*2, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1334,7 +1339,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*4, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1345,7 +1350,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*8, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1360,7 +1365,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*1, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1371,7 +1376,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*2, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1382,7 +1387,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*4, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1393,7 +1398,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*8, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1404,7 +1409,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*4,    dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1415,7 +1420,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*8,   dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1426,7 +1431,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex,   dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1437,7 +1442,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex*16,dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1448,7 +1453,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             character(*),dimension(:,:,:,:,:),intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1459,7 +1464,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*1, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1470,7 +1475,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*2, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1481,7 +1486,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*4, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1492,7 +1497,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*8, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_f2c (fd, varname, data, err)
         end subroutine
@@ -1502,7 +1507,7 @@ module adios_write_mod
 
     !
     !
-    ! ADIOS_WRITE_BYID generic interface 
+    ! ADIOS_WRITE_BYID generic interface
     !
     ! Usage: call adios_write_byid (fd, varid, data, err)
     !
@@ -1517,7 +1522,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*1,      intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1528,7 +1533,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*2,      intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1539,7 +1544,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*4,      intent(in) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1550,7 +1555,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*8,      intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1561,7 +1566,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             real*4,         intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1572,7 +1577,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             real*8,         intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1583,7 +1588,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             complex,        intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1594,7 +1599,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             complex*16,     intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1605,7 +1610,7 @@ module adios_write_mod
         !    integer*8,      intent(in)  :: fd
         !    integer*8,      intent(in)  :: varid
         !    character(*),   intent(inout) :: data
-        !    integer,        intent(in)  :: err 
+        !    integer,        intent(in)  :: err
         !
         !    call adios_write_byid_f2c (fd, varid, data, err)
         !end subroutine
@@ -1616,7 +1621,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*1,      intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1627,7 +1632,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*2,      intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1638,7 +1643,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*4,      intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1649,7 +1654,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*8,      intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1665,7 +1670,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*1, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1676,7 +1681,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*2, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1687,7 +1692,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*4, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1698,7 +1703,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*8, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1709,7 +1714,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             real*4,    dimension(*), intent(out) :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1720,7 +1725,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             real*8,   dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1731,7 +1736,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             complex,   dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1742,7 +1747,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             complex*16,dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1753,7 +1758,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             character(*),   intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1764,7 +1769,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*1, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1775,7 +1780,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*2, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1786,7 +1791,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*4, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1797,7 +1802,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*8, dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1812,7 +1817,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*1, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1823,7 +1828,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*2, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1834,7 +1839,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*4, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1845,7 +1850,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*8, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1856,7 +1861,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             real*4,    dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1867,7 +1872,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             real*8,   dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1878,7 +1883,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             complex,   dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1889,7 +1894,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             complex*16,dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1900,7 +1905,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             character(*),dimension(*), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1911,7 +1916,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*1, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1922,7 +1927,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*2, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1933,7 +1938,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*4, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1944,7 +1949,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*8, dimension(:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1959,7 +1964,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*1, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1970,7 +1975,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*2, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1981,7 +1986,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*4, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -1992,7 +1997,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*8, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2003,7 +2008,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             real*4,    dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2014,7 +2019,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             real*8,   dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2025,7 +2030,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             complex,   dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2036,7 +2041,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             complex*16,dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2047,7 +2052,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             character(*),dimension(:,:),  intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2058,7 +2063,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*1, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2069,7 +2074,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*2, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2080,7 +2085,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*4, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2091,7 +2096,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*8, dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2106,7 +2111,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*1, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2117,7 +2122,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*2, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2128,7 +2133,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*4, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2139,7 +2144,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*8, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2150,7 +2155,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             real*4,    dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2161,7 +2166,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             real*8,   dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2172,7 +2177,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             complex,   dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2183,7 +2188,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             complex*16,dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2194,7 +2199,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             character(*),dimension(:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2205,7 +2210,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*1, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2216,7 +2221,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*2, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2227,7 +2232,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*4, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2238,7 +2243,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*8, dimension(:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2253,7 +2258,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*1, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2264,7 +2269,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*2, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2275,7 +2280,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*4, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2286,7 +2291,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*8, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2297,7 +2302,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             real*4,    dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2308,7 +2313,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             real*8,   dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2319,7 +2324,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             complex,   dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2330,7 +2335,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             complex*16,dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2341,7 +2346,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             character(*),dimension(:,:,:,:),intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2352,7 +2357,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*1, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2363,7 +2368,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*2, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2374,7 +2379,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*4, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2385,7 +2390,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*8, dimension(:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2400,7 +2405,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*1, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2411,7 +2416,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*2, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2422,7 +2427,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*4, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2433,7 +2438,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             integer*8, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2444,7 +2449,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             real*4,    dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2455,7 +2460,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             real*8,   dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2466,7 +2471,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             complex,   dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2477,7 +2482,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             complex*16,dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2488,7 +2493,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             character(*),dimension(:,:,:,:,:),intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2499,7 +2504,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*1, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2510,7 +2515,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*2, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2521,7 +2526,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*4, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2532,7 +2537,7 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             integer*8,      intent(in)  :: varid
             logical*8, dimension(:,:,:,:,:,:), intent(in)  :: data
-            integer,        intent(in)  :: err 
+            integer,        intent(in)  :: err
 
             call adios_write_byid_f2c (fd, varid, data, err)
         end subroutine
@@ -2544,7 +2549,7 @@ module adios_write_mod
 
     !
     !
-    ! ADIOS_READ generic interface 
+    ! ADIOS_READ generic interface
     !
     ! Usage: call adios_read (fd, varname, buffer, buffer_size, err)
     !
@@ -2559,8 +2564,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*1,      intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2571,8 +2576,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*2,      intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2583,8 +2588,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*4,      intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2595,8 +2600,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*8,      intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2607,8 +2612,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*4,         intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2619,8 +2624,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*8,         intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2631,8 +2636,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex,        intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2643,8 +2648,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex*16,     intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2655,8 +2660,8 @@ module adios_write_mod
         !    integer*8,      intent(in)  :: fd
         !    character(*),   intent(in)  :: varname
         !    character(*),   intent(out) :: buffer
-        !    integer*8,      intent(in)  :: buffer_size 
-        !    integer,        intent(in)  :: err 
+        !    integer*8,      intent(in)  :: buffer_size
+        !    integer,        intent(in)  :: err
         !
         !    call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         !end subroutine
@@ -2667,8 +2672,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*1,      intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2679,8 +2684,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*2,      intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2691,8 +2696,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*4,      intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2703,8 +2708,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*8,      intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2720,8 +2725,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*1, dimension(*), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2732,8 +2737,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*2, dimension(*), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2744,8 +2749,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*4, dimension(*), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2756,8 +2761,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*8, dimension(*), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2768,8 +2773,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*4,    dimension(*), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2780,8 +2785,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*8,   dimension(*), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2792,8 +2797,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex,   dimension(*), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2804,8 +2809,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex*16,dimension(*), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2816,8 +2821,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             character(*),   intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2828,8 +2833,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*1, dimension(*), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2840,8 +2845,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*2, dimension(*), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2852,8 +2857,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*4, dimension(*), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2864,8 +2869,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*8, dimension(*), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2880,8 +2885,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*1, dimension(:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2892,8 +2897,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*2, dimension(:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2904,8 +2909,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*4, dimension(:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2916,8 +2921,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*8, dimension(:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2928,8 +2933,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*4,    dimension(:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2940,8 +2945,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*8,   dimension(:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2952,8 +2957,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex,   dimension(:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2964,8 +2969,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex*16,dimension(:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2976,8 +2981,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             character(*),dimension(*), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -2988,8 +2993,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*1, dimension(:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3000,8 +3005,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*2, dimension(:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3012,8 +3017,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*4, dimension(:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3024,8 +3029,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*8, dimension(:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3040,8 +3045,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*1, dimension(:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3052,8 +3057,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*2, dimension(:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3064,8 +3069,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*4, dimension(:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3076,8 +3081,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*8, dimension(:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3088,8 +3093,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*4,    dimension(:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3100,8 +3105,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*8,   dimension(:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3112,8 +3117,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex,   dimension(:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3124,8 +3129,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex*16,dimension(:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3136,8 +3141,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             character(*),dimension(:,:),  intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3148,8 +3153,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*1, dimension(:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3160,8 +3165,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*2, dimension(:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3172,8 +3177,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*4, dimension(:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3184,8 +3189,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*8, dimension(:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3200,8 +3205,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*1, dimension(:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3212,8 +3217,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*2, dimension(:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3224,8 +3229,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*4, dimension(:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3236,8 +3241,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*8, dimension(:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3248,8 +3253,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*4,    dimension(:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3260,8 +3265,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*8,   dimension(:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3272,8 +3277,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex,   dimension(:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3284,8 +3289,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex*16,dimension(:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3296,8 +3301,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             character(*),dimension(:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3308,8 +3313,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*1, dimension(:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3320,8 +3325,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*2, dimension(:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3332,8 +3337,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*4, dimension(:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3344,8 +3349,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*8, dimension(:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3360,8 +3365,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*1, dimension(:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3372,8 +3377,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*2, dimension(:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3384,8 +3389,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*4, dimension(:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3396,8 +3401,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*8, dimension(:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3408,8 +3413,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*4,    dimension(:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3420,8 +3425,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*8,   dimension(:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3432,8 +3437,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex,   dimension(:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3444,8 +3449,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex*16,dimension(:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3456,8 +3461,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             character(*),dimension(:,:,:,:),intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3468,8 +3473,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*1, dimension(:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3480,8 +3485,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*2, dimension(:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3492,8 +3497,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*4, dimension(:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3504,8 +3509,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*8, dimension(:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3520,8 +3525,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*1, dimension(:,:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3532,8 +3537,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*2, dimension(:,:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3544,8 +3549,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*4, dimension(:,:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3556,8 +3561,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             integer*8, dimension(:,:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3568,8 +3573,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*4,    dimension(:,:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3580,8 +3585,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             real*8,   dimension(:,:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3592,8 +3597,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex,   dimension(:,:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3604,8 +3609,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             complex*16,dimension(:,:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3616,8 +3621,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             character(*),dimension(:,:,:,:,:),intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3628,8 +3633,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*1, dimension(:,:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3640,8 +3645,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*2, dimension(:,:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3652,8 +3657,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*4, dimension(:,:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine
@@ -3664,8 +3669,8 @@ module adios_write_mod
             integer*8,      intent(in)  :: fd
             character(*),   intent(in)  :: varname
             logical*8, dimension(:,:,:,:,:,:), intent(out) :: buffer
-            integer*8,      intent(in)  :: buffer_size 
-            integer,        intent(in)  :: err 
+            integer*8,      intent(in)  :: buffer_size
+            integer,        intent(in)  :: err
 
             call adios_read_f2c (fd, varname, buffer, buffer_size, err)
         end subroutine

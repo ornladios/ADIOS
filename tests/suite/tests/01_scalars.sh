@@ -23,6 +23,9 @@ cp $TRUNKDIR/examples/C/scalars/scalars_read .
 cp $TRUNKDIR/examples/C/scalars/scalars_write .
 cp $TRUNKDIR/examples/C/scalars/scalars.xml .
 
+# Insert transform=X if requested by user
+add_transform_to_xmls
+
 echo "Run C scalars_write"
 echo $MPIRUN $NP_MPIRUN $PROCS ./scalars_write
 $MPIRUN $NP_MPIRUN $PROCS ./scalars_write
@@ -33,11 +36,11 @@ if [ ! -f scalars.bp ]; then
 fi
 
 echo "Check output with bpls"
-$TRUNKDIR/utils/bpls/bpls -lav scalars.bp | grep -v endianness > c_bpls.txt
+$TRUNKDIR/utils/bpls/bpls -lav scalars.bp | grep -v -e endianness -e 'file size' > c_bpls.txt
 diff -q c_bpls.txt $SRCDIR/reference/scalars_write_bpls.txt
 if [ $? != 0 ]; then
     echo "ERROR: C version of scalars_write produced a file different from the reference."
-    echo "Compare \"bpls -lav $PWD/scalars.bp | grep -v endianness\" to reference $SRCDIR/reference/scalars_write_bpls.txt"
+    echo "Compare \"bpls -lav $PWD/scalars.bp | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/scalars_write_bpls.txt"
     exit 1
 fi
 
@@ -67,6 +70,9 @@ cp $TRUNKDIR/examples/Fortran/scalars/scalars_read fortran_read
 cp $TRUNKDIR/examples/Fortran/scalars/scalars_write fortran_write
 cp $TRUNKDIR/examples/Fortran/scalars/scalars.xml .
 
+# Insert transform=X if requested by user
+add_transform_to_xmls
+
 echo "Run Fortran scalar_write"
 $MPIRUN $NP_MPIRUN $PROCS ./fortran_write
 EX=$?
@@ -76,11 +82,11 @@ if [ ! -f scalars.bp ]; then
 fi
 
 echo "Check output with bpls"
-$TRUNKDIR/utils/bpls/bpls -lav scalars.bp | grep -v endianness > f_bpls.txt
+$TRUNKDIR/utils/bpls/bpls -lav scalars.bp | grep -v -e endianness -e 'file size' > f_bpls.txt
 diff -q f_bpls.txt $SRCDIR/reference/scalars_write_bpls.txt
 if [ $? != 0 ]; then
     echo "ERROR: Fortran version of scalars_write produced a file different from the reference"
-    echo "Compare \"bpls -lav scalars.bp | grep -v endianness\" to reference $SRCDIR/reference/scalars_write_bpls.txt"
+    echo "Compare \"bpls -lav scalars.bp | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/scalars_write_bpls.txt"
     exit 1
 fi
 

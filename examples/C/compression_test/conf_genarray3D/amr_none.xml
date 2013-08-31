@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<adios-config host-language="C">
+  <adios-group name="genarray3D" coordination-communicator="group_comm" time-index="steps">
+    <var name="gndx" path="/dimensions" type="integer"/>
+    <var name="gndy" path="/dimensions" type="integer"/>
+    <var name="gndz" path="/dimensions" type="integer"/>
+
+    <var name="nproc" path="/info" type="integer"/>
+    <attribute name="description" path="/info/nproc" value="Number of writers"/>
+    <var name="npx" path="/info" type="integer"/>
+    <attribute name="description" path="/info/npx" value="Number of processors in x dimension"/>
+    <var name="npy" path="/info" type="integer"/>
+    <attribute name="description" path="/info/npy" value="Number of processors in y dimension"/>
+    <var name="npz" path="/info" type="integer"/>
+    <attribute name="description" path="/info/npz" value="Number of processors in z dimension"/>
+
+
+    <!-- Auxiliary variables for global array indexing -->
+    <var name="offx" path="/aux" type="integer"/>
+    <var name="offy" path="/aux" type="integer"/>
+    <var name="offz" path="/aux" type="integer"/>
+    <var name="ndx" path="/aux" type="integer"/>
+    <var name="ndy" path="/aux" type="integer"/>
+    <var name="ndz" path="/aux" type="integer"/>
+
+    <!-- 3D array written by genarray with 1 timesteps -->
+    <global-bounds dimensions="gndx,gndy,gndz" offsets="offx,offy,offz">
+        <var name="temperature" gwrite="double_xyz" gread="double_xyz" path="/var" type="double" dimensions="steps,ndx,ndy,ndz" />
+        <var name="preasure" gwrite="double_xyz" gread="double_xyz" path="/var" type="double" dimensions="steps,ndx,ndy,ndz" />
+    </global-bounds>
+	
+	
+    <attribute name="description" path="/" value="3D array with 3D decomposition"/>
+
+
+  </adios-group>
+
+  <method group="genarray3D" method="MPI_AMR">stripe_count=1;stripe_size=10485760;num_aggregators=2;merging_pgs=0;num_ost=1</method>
+
+  <buffer size-MB="1024" allocate-time="now"/>
+
+</adios-config>

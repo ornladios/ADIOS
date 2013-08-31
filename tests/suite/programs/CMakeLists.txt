@@ -38,6 +38,9 @@ if(BUILD_WRITE)
 
   add_executable(reuse_dim reuse_dim.c)
   target_link_libraries(reuse_dim adios ${ADIOSLIB_LDADD})
+
+  add_executable(adios_transforms_read_write.c)
+  target_link_libraries(adios_transforms_read_write adios ${ADIOSLIB_LDADD})
 endif(BUILD_WRITE)
 
 if(BUILD_FORTRAN)

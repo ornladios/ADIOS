@@ -39,7 +39,10 @@ TESTS = $(am__EXEEXT_4)
 subdir = tests/suite/programs
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/ac_cray_pmi.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/ac_alacrity.m4 \
+	$(top_srcdir)/config/ac_aplod.m4 \
+	$(top_srcdir)/config/ac_bzip2.m4 \
+	$(top_srcdir)/config/ac_cray_pmi.m4 \
 	$(top_srcdir)/config/ac_cray_ugni.m4 \
 	$(top_srcdir)/config/ac_dataspaces.m4 \
 	$(top_srcdir)/config/ac_datatap.m4 \
@@ -49,14 +52,18 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cray_pmi.m4 \
 	$(top_srcdir)/config/ac_flexpath.m4 \
 	$(top_srcdir)/config/ac_hdf5.m4 \
 	$(top_srcdir)/config/ac_infiniband.m4 \
+	$(top_srcdir)/config/ac_isobar.m4 \
 	$(top_srcdir)/config/ac_lustre.m4 \
 	$(top_srcdir)/config/ac_mxml.m4 \
 	$(top_srcdir)/config/ac_nc4par.m4 \
+	$(top_srcdir)/config/ac_ncsu_timer.m4 \
 	$(top_srcdir)/config/ac_netcdf.m4 \
 	$(top_srcdir)/config/ac_nssi.m4 \
 	$(top_srcdir)/config/ac_pablo.m4 \
 	$(top_srcdir)/config/ac_phdf5.m4 \
 	$(top_srcdir)/config/ac_portals.m4 \
+	$(top_srcdir)/config/ac_szip.m4 \
+	$(top_srcdir)/config/ac_zlib.m4 \
 	$(top_srcdir)/config/acx_mpi.m4 \
 	$(top_srcdir)/config/acx_pthread.m4 \
 	$(top_srcdir)/config/cercs.m4 $(top_srcdir)/configure.ac
@@ -76,11 +83,15 @@ CONFIG_CLEAN_VPATH_FILES =
 @BUILD_WRITE_TRUE@	two_groups$(EXEEXT) many_vars$(EXEEXT) \
 @BUILD_WRITE_TRUE@	selections$(EXEEXT) path_test$(EXEEXT) \
 @BUILD_WRITE_TRUE@	reuse_dim$(EXEEXT) \
+@BUILD_WRITE_TRUE@	adios_transforms_read_write$(EXEEXT) \
 @BUILD_WRITE_TRUE@	connect_to_space_subset$(EXEEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__EXEEXT_2 =  \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	posix_method$(EXEEXT)
 am__EXEEXT_3 =
-@BUILD_WRITE_TRUE@am__EXEEXT_4 = hashtest$(EXEEXT)
+@BUILD_WRITE_TRUE@am__EXEEXT_4 = hashtest$(EXEEXT) transforms$(EXEEXT) \
+@BUILD_WRITE_TRUE@	copy_subvolume$(EXEEXT) \
+@BUILD_WRITE_TRUE@	transforms_specparse$(EXEEXT) \
+@BUILD_WRITE_TRUE@	adios_transforms_read_write$(EXEEXT)
 am_adios_amr_write_OBJECTS = adios_amr_write.$(OBJEXT)
 adios_amr_write_OBJECTS = $(am_adios_amr_write_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -119,6 +130,17 @@ adios_staged_read_v2_DEPENDENCIES =  \
 adios_staged_read_v2_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(adios_staged_read_v2_LDFLAGS) $(LDFLAGS) -o $@
+am_adios_transforms_read_write_OBJECTS =  \
+	adios_transforms_read_write.$(OBJEXT)
+adios_transforms_read_write_OBJECTS =  \
+	$(am_adios_transforms_read_write_OBJECTS)
+adios_transforms_read_write_DEPENDENCIES =  \
+	$(top_builddir)/src/libadios.a \
+	$(top_builddir)/src/libadiosread.a $(am__DEPENDENCIES_1)
+adios_transforms_read_write_LINK = $(LIBTOOL) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(AM_CFLAGS) $(CFLAGS) $(adios_transforms_read_write_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_connect_to_space_subset_OBJECTS =  \
 	connect_to_space_subset.$(OBJEXT)
 connect_to_space_subset_OBJECTS =  \
@@ -128,6 +150,13 @@ connect_to_space_subset_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 connect_to_space_subset_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(connect_to_space_subset_LDFLAGS) $(LDFLAGS) -o $@
+am_copy_subvolume_OBJECTS = copy_subvolume.$(OBJEXT)
+copy_subvolume_OBJECTS = $(am_copy_subvolume_OBJECTS)
+copy_subvolume_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+copy_subvolume_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(copy_subvolume_LDFLAGS) $(LDFLAGS) -o $@
 am_hashtest_OBJECTS = hashtest-hashtest.$(OBJEXT)
 hashtest_OBJECTS = $(am_hashtest_OBJECTS)
 hashtest_DEPENDENCIES = $(top_builddir)/src/libadios_a-qhashtbl.o
@@ -176,6 +205,20 @@ selections_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 selections_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(selections_LDFLAGS) $(LDFLAGS) -o $@
+am_transforms_OBJECTS = transforms-transforms.$(OBJEXT)
+transforms_OBJECTS = $(am_transforms_OBJECTS)
+transforms_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+transforms_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(transforms_LDFLAGS) $(LDFLAGS) -o $@
+am_transforms_specparse_OBJECTS = transforms_specparse.$(OBJEXT)
+transforms_specparse_OBJECTS = $(am_transforms_specparse_OBJECTS)
+transforms_specparse_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+transforms_specparse_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(transforms_specparse_LDFLAGS) $(LDFLAGS) -o $@
 am_two_groups_OBJECTS = two_groups.$(OBJEXT)
 two_groups_OBJECTS = $(am_two_groups_OBJECTS)
 two_groups_DEPENDENCIES = $(top_builddir)/src/libadios.a \
@@ -220,22 +263,26 @@ SOURCES = $(adios_amr_write_SOURCES) $(adios_amr_write_2vars_SOURCES) \
 	$(adios_staged_read_SOURCES) \
 	$(adios_staged_read_2vars_SOURCES) \
 	$(adios_staged_read_v2_SOURCES) \
-	$(connect_to_space_subset_SOURCES) $(hashtest_SOURCES) \
-	$(local_array_time_SOURCES) $(many_vars_SOURCES) \
-	$(path_test_SOURCES) $(posix_method_SOURCES) \
-	$(reuse_dim_SOURCES) $(selections_SOURCES) \
-	$(two_groups_SOURCES) $(write_alternate_SOURCES) \
-	$(write_read_SOURCES)
+	$(adios_transforms_read_write_SOURCES) \
+	$(connect_to_space_subset_SOURCES) $(copy_subvolume_SOURCES) \
+	$(hashtest_SOURCES) $(local_array_time_SOURCES) \
+	$(many_vars_SOURCES) $(path_test_SOURCES) \
+	$(posix_method_SOURCES) $(reuse_dim_SOURCES) \
+	$(selections_SOURCES) $(transforms_SOURCES) \
+	$(transforms_specparse_SOURCES) $(two_groups_SOURCES) \
+	$(write_alternate_SOURCES) $(write_read_SOURCES)
 DIST_SOURCES = $(adios_amr_write_SOURCES) \
 	$(adios_amr_write_2vars_SOURCES) $(adios_staged_read_SOURCES) \
 	$(adios_staged_read_2vars_SOURCES) \
 	$(adios_staged_read_v2_SOURCES) \
-	$(connect_to_space_subset_SOURCES) $(hashtest_SOURCES) \
-	$(local_array_time_SOURCES) $(many_vars_SOURCES) \
-	$(path_test_SOURCES) $(posix_method_SOURCES) \
-	$(reuse_dim_SOURCES) $(selections_SOURCES) \
-	$(two_groups_SOURCES) $(write_alternate_SOURCES) \
-	$(write_read_SOURCES)
+	$(adios_transforms_read_write_SOURCES) \
+	$(connect_to_space_subset_SOURCES) $(copy_subvolume_SOURCES) \
+	$(hashtest_SOURCES) $(local_array_time_SOURCES) \
+	$(many_vars_SOURCES) $(path_test_SOURCES) \
+	$(posix_method_SOURCES) $(reuse_dim_SOURCES) \
+	$(selections_SOURCES) $(transforms_SOURCES) \
+	$(transforms_specparse_SOURCES) $(two_groups_SOURCES) \
+	$(write_alternate_SOURCES) $(write_read_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 am__tty_colors = \
@@ -263,12 +310,21 @@ ADIOSREADLIB_SEQ_CFLAGS = @ADIOSREADLIB_SEQ_CFLAGS@
 ADIOSREADLIB_SEQ_CPPFLAGS = @ADIOSREADLIB_SEQ_CPPFLAGS@
 ADIOSREADLIB_SEQ_LDADD = @ADIOSREADLIB_SEQ_LDADD@
 ADIOSREADLIB_SEQ_LDFLAGS = @ADIOSREADLIB_SEQ_LDFLAGS@
+ALACRITY_CPPFLAGS = @ALACRITY_CPPFLAGS@
+ALACRITY_LDFLAGS = @ALACRITY_LDFLAGS@
+ALACRITY_LIBS = @ALACRITY_LIBS@
 AMTAR = @AMTAR@
+APLOD_CPPFLAGS = @APLOD_CPPFLAGS@
+APLOD_LDFLAGS = @APLOD_LDFLAGS@
+APLOD_LIBS = @APLOD_LIBS@
 AR = @AR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BZIP2_CPPFLAGS = @BZIP2_CPPFLAGS@
+BZIP2_LDFLAGS = @BZIP2_LDFLAGS@
+BZIP2_LIBS = @BZIP2_LIBS@
 CC = $(MPICC)
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -331,6 +387,9 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ISOBAR_CPPFLAGS = @ISOBAR_CPPFLAGS@
+ISOBAR_LDFLAGS = @ISOBAR_LDFLAGS@
+ISOBAR_LIBS = @ISOBAR_LIBS@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
@@ -403,7 +462,16 @@ SHELL = @SHELL@
 SKEL_HAVE_ADIOS_TIMING = @SKEL_HAVE_ADIOS_TIMING@
 SKEL_TIMING = @SKEL_TIMING@
 STRIP = @STRIP@
+SZIP_CPPFLAGS = @SZIP_CPPFLAGS@
+SZIP_LDFLAGS = @SZIP_LDFLAGS@
+SZIP_LIBS = @SZIP_LIBS@
+TIMER_CPPFLAGS = @TIMER_CPPFLAGS@
+TIMER_LDFLAGS = @TIMER_LDFLAGS@
+TIMER_LIBS = @TIMER_LIBS@
 VERSION = @VERSION@
+ZLIB_CPPFLAGS = @ZLIB_CPPFLAGS@
+ZLIB_LDFLAGS = @ZLIB_LDFLAGS@
+ZLIB_LIBS = @ZLIB_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -482,9 +550,10 @@ check_readonly_C =
 @BUILD_WRITE_TRUE@        selections \
 @BUILD_WRITE_TRUE@        path_test \
 @BUILD_WRITE_TRUE@        reuse_dim \
+@BUILD_WRITE_TRUE@        adios_transforms_read_write \
 @BUILD_WRITE_TRUE@        connect_to_space_subset
 
-@BUILD_WRITE_TRUE@test_C = hashtest
+@BUILD_WRITE_TRUE@test_C = hashtest transforms copy_subvolume transforms_specparse adios_transforms_read_write
 @BUILD_FORTRAN_TRUE@check_readonly_Fortran = 
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@check_Fortran = posix_method
 INCLUDES = $(all_includes) -I$(top_builddir)/src
@@ -507,14 +576,17 @@ adios_amr_write_2vars_SOURCES = adios_amr_write_2vars.c
 adios_amr_write_2vars_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 adios_amr_write_2vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 adios_staged_read_SOURCES = adios_staged_read.c
-adios_staged_read_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSREADLIB_LDADD)
-adios_staged_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
+adios_staged_read_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSLIB_LDADD)
+adios_staged_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 adios_staged_read_v2_SOURCES = adios_staged_read_v2.c
 adios_staged_read_v2_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSREADLIB_LDADD)
 adios_staged_read_v2_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
 adios_staged_read_2vars_SOURCES = adios_staged_read_2vars.c
-adios_staged_read_2vars_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSREADLIB_LDADD)
-adios_staged_read_2vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
+adios_staged_read_2vars_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSLIB_LDADD)
+adios_staged_read_2vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+adios_transforms_read_write_SOURCES = adios_transforms_read_write.c
+adios_transforms_read_write_LDADD = $(top_builddir)/src/libadios.a $(top_builddir)/src/libadiosread.a $(ADIOSLIB_LDADD)
+adios_transforms_read_write_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
 write_read_SOURCES = write_read.c
 write_read_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 write_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
@@ -539,14 +611,27 @@ reuse_dim_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 connect_to_space_subset_SOURCES = connect_to_space_subset.c
 connect_to_space_subset_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 connect_to_space_subset_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+transforms_SOURCES = transforms.c
+transforms_CPPFLAGS = -DADIOS_USE_READ_API_1
+transforms_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+transforms_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+#transforms.o: transforms.c
+copy_subvolume_SOURCES = copy_subvolume.c
+copy_subvolume_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+copy_subvolume_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+#copy_subvolume.o: copy_subvolume.c
+transforms_specparse_SOURCES = transforms_specparse.c
+transforms_specparse_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+transforms_specparse_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+#transforms_specparse.o: transforms_specparse.c
 hashtest_SOURCES = hashtest.c
 hashtest_LDADD = $(top_builddir)/src/libadios_a-qhashtbl.o
 hashtest_LDFLAGS = $(AM_LDFLAGS) 
 hashtest_CPPFLAGS = -I$(top_builddir)/src/core
 EXTRA_DIST = adios_amr_write.xml adios_amr_write_2vars.xml \
              posix_method.xml local_array_time.xml  \
-             write_alternate.xml write_read.xml \
-	     path_test.xml
+             write_alternate.xml write_read.xml transforms.xml \
+             path_test.xml adios_transforms.xml
 
 CLEANFILES = gwrite_posix_method.fh gread_posix_method.fh 
 FCLINK = \
@@ -611,9 +696,15 @@ adios_staged_read_2vars$(EXEEXT): $(adios_staged_read_2vars_OBJECTS) $(adios_sta
 adios_staged_read_v2$(EXEEXT): $(adios_staged_read_v2_OBJECTS) $(adios_staged_read_v2_DEPENDENCIES) 
 	@rm -f adios_staged_read_v2$(EXEEXT)
 	$(adios_staged_read_v2_LINK) $(adios_staged_read_v2_OBJECTS) $(adios_staged_read_v2_LDADD) $(LIBS)
+adios_transforms_read_write$(EXEEXT): $(adios_transforms_read_write_OBJECTS) $(adios_transforms_read_write_DEPENDENCIES) 
+	@rm -f adios_transforms_read_write$(EXEEXT)
+	$(adios_transforms_read_write_LINK) $(adios_transforms_read_write_OBJECTS) $(adios_transforms_read_write_LDADD) $(LIBS)
 connect_to_space_subset$(EXEEXT): $(connect_to_space_subset_OBJECTS) $(connect_to_space_subset_DEPENDENCIES) 
 	@rm -f connect_to_space_subset$(EXEEXT)
 	$(connect_to_space_subset_LINK) $(connect_to_space_subset_OBJECTS) $(connect_to_space_subset_LDADD) $(LIBS)
+copy_subvolume$(EXEEXT): $(copy_subvolume_OBJECTS) $(copy_subvolume_DEPENDENCIES) 
+	@rm -f copy_subvolume$(EXEEXT)
+	$(copy_subvolume_LINK) $(copy_subvolume_OBJECTS) $(copy_subvolume_LDADD) $(LIBS)
 hashtest$(EXEEXT): $(hashtest_OBJECTS) $(hashtest_DEPENDENCIES) 
 	@rm -f hashtest$(EXEEXT)
 	$(hashtest_LINK) $(hashtest_OBJECTS) $(hashtest_LDADD) $(LIBS)
@@ -635,6 +726,12 @@ reuse_dim$(EXEEXT): $(reuse_dim_OBJECTS) $(reuse_dim_DEPENDENCIES)
 selections$(EXEEXT): $(selections_OBJECTS) $(selections_DEPENDENCIES) 
 	@rm -f selections$(EXEEXT)
 	$(selections_LINK) $(selections_OBJECTS) $(selections_LDADD) $(LIBS)
+transforms$(EXEEXT): $(transforms_OBJECTS) $(transforms_DEPENDENCIES) 
+	@rm -f transforms$(EXEEXT)
+	$(transforms_LINK) $(transforms_OBJECTS) $(transforms_LDADD) $(LIBS)
+transforms_specparse$(EXEEXT): $(transforms_specparse_OBJECTS) $(transforms_specparse_DEPENDENCIES) 
+	@rm -f transforms_specparse$(EXEEXT)
+	$(transforms_specparse_LINK) $(transforms_specparse_OBJECTS) $(transforms_specparse_LDADD) $(LIBS)
 two_groups$(EXEEXT): $(two_groups_OBJECTS) $(two_groups_DEPENDENCIES) 
 	@rm -f two_groups$(EXEEXT)
 	$(two_groups_LINK) $(two_groups_OBJECTS) $(two_groups_LDADD) $(LIBS)
@@ -656,13 +753,17 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_staged_read.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_staged_read_2vars.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_staged_read_v2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_transforms_read_write.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/connect_to_space_subset.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/copy_subvolume.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hashtest-hashtest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/local_array_time.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/many_vars.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/path_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reuse_dim.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/selections.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transforms-transforms.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transforms_specparse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/two_groups.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/write_alternate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/write_read.Po@am__quote@
@@ -710,6 +811,20 @@ hashtest-hashtest.obj: hashtest.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='hashtest.c' object='hashtest-hashtest.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hashtest_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o hashtest-hashtest.obj `if test -f 'hashtest.c'; then $(CYGPATH_W) 'hashtest.c'; else $(CYGPATH_W) '$(srcdir)/hashtest.c'; fi`
+
+transforms-transforms.o: transforms.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(transforms_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT transforms-transforms.o -MD -MP -MF $(DEPDIR)/transforms-transforms.Tpo -c -o transforms-transforms.o `test -f 'transforms.c' || echo '$(srcdir)/'`transforms.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/transforms-transforms.Tpo $(DEPDIR)/transforms-transforms.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='transforms.c' object='transforms-transforms.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(transforms_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o transforms-transforms.o `test -f 'transforms.c' || echo '$(srcdir)/'`transforms.c
+
+transforms-transforms.obj: transforms.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(transforms_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT transforms-transforms.obj -MD -MP -MF $(DEPDIR)/transforms-transforms.Tpo -c -o transforms-transforms.obj `if test -f 'transforms.c'; then $(CYGPATH_W) 'transforms.c'; else $(CYGPATH_W) '$(srcdir)/transforms.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/transforms-transforms.Tpo $(DEPDIR)/transforms-transforms.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='transforms.c' object='transforms-transforms.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(transforms_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o transforms-transforms.obj `if test -f 'transforms.c'; then $(CYGPATH_W) 'transforms.c'; else $(CYGPATH_W) '$(srcdir)/transforms.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -1018,6 +1133,7 @@ adios_amr_write_2vars.o: adios_amr_write_2vars.c
 adios_staged_read.o: adios_staged_read.c
 adios_staged_read_v2.o: adios_staged_read_v2.c
 adios_staged_read_2vars.o: adios_staged_read_2vars.c
+adios_transforms_read_write.o: adios_transforms_read_write.c 
 write_read.o: write_read.c
 write_alternate.o: write_alternate.c
 two_groups.o: two_groups.c

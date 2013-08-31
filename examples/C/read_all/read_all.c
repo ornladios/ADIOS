@@ -108,7 +108,8 @@ int main (int argc, char ** argv)
                             for (k = 0; k < v->dims[1]; k++) {
                                 printf ("        row %d: [", k);
                                 for (l = 0; l < v->dims[2]; l++) {
-                                    printf("%s ", value_to_string(v->type, data, j*v->dims[1]*v->dims[2] + k*v->dims[1] + l));
+                                    // NCSU ALACRITY-ADIOS - Fixed bug, k*v->dims[1] changed to  k*v->dims[2]
+                                    printf("%s ", value_to_string(v->type, data, j*v->dims[1]*v->dims[2] + k*v->dims[2] + l));
                                 }
                                 printf ("]\n");
                             }

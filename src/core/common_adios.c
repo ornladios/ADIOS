@@ -1,4 +1,4 @@
-/* 
+/*
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
@@ -13,6 +13,7 @@
 #include <unistd.h>
 #include <stdint.h>
 #include <sys/time.h> // gettimeofday
+#include <assert.h>
 
 // xml parser
 #include <mxml.h>
@@ -25,6 +26,15 @@
 #include "core/adios_transport_hooks.h"
 #include "core/adios_logger.h"
 #include "public/adios_error.h"
+
+// NCSU ALACRITY-ADIOS
+#include "adios_transforms_common.h"
+#include "adios_transforms_read.h"
+#include "adios_transforms_write.h"
+
+#ifdef WITH_TIMER
+#include "timer.h"
+#endif
 
 #ifdef DMALLOC
 #include "dmalloc.h"
@@ -64,6 +74,10 @@ int common_adios_finalize (int mype)
 
     adios_cleanup ();
 
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+    timer_finalize ();
+#endif
+
     return 0;
 }
 
@@ -82,6 +96,11 @@ int common_adios_open (int64_t * fd, const char * group_name
                 ,const char * name, const char * file_mode, MPI_Comm comm
                )
 {
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+    timer_start ("adios_open_to_close");
+    timer_start ("adios_open");
+#endif
+
     int64_t group_id = 0;
     struct adios_file_struct * fd_p = (struct adios_file_struct *)
                                   malloc (sizeof (struct adios_file_struct));
@@ -106,7 +125,7 @@ int common_adios_open (int64_t * fd, const char * group_name
                     mode = adios_mode_update;
                 else
                 {
-                    adios_error(err_invalid_file_mode, 
+                    adios_error(err_invalid_file_mode,
                         "adios_open: unknown file mode: %s, supported r,w,a,u\n",
                         file_mode);
 
@@ -131,19 +150,19 @@ int common_adios_open (int64_t * fd, const char * group_name
     fd_p->pg_start_in_file = 0;
 
 #ifdef SKEL_TIMING
-	fd_p->timing_obj = 0;
+    fd_p->timing_obj = 0;
 #endif
 
 #if 1
     /* Time index magic done here */
-    if (mode == adios_mode_write) 
+    if (mode == adios_mode_write)
     {
-        /* Traditionally, time=1 at the first step, and for subsequent file 
+        /* Traditionally, time=1 at the first step, and for subsequent file
            creations, time increases. Although, each file contains one step,
            the time index indicates that they are in a series.
         */
         g->time_index++;
-    } 
+    }
     else if (mode == adios_mode_append)
     {
         g->time_index++;
@@ -161,7 +180,7 @@ int common_adios_open (int64_t * fd, const char * group_name
         g->time_index = 1;
 #else
     /* old way pre-1.4*/
-    if (mode != adios_mode_read) 
+    if (mode != adios_mode_read)
         g->time_index++;
 #endif
 
@@ -181,17 +200,29 @@ int common_adios_open (int64_t * fd, const char * group_name
 
     *fd = (int64_t) fd_p;
 
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+    timer_stop ("adios_open");
+#endif
     return 0;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 static const char ADIOS_ATTR_PATH[] = "/__adios__";
 
+uint32_t pinned_timestep = 0;
+void adios_pin_timestep(uint32_t ts) {
+  pinned_timestep = ts;
+}
+
 int common_adios_group_size (int64_t fd_p
                      ,uint64_t data_size
                      ,uint64_t * total_size
                      )
 {
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+    timer_start ("adios_group_size");
+#endif
+
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     if (!fd)
     {
@@ -207,17 +238,20 @@ int common_adios_group_size (int64_t fd_p
         fd->write_size_bytes = 0;
         fd->buffer = 0;
         *total_size = 0;
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+    timer_stop ("adios_group_size");
+#endif
         return 0;
     }
 
     /* Add ADIOS internal attributes now (should be before calculating the overhead) */
-    if (fd->mode != adios_mode_read && 
+    if (fd->mode != adios_mode_read &&
          (fd->group->process_id == 0 || fd->subfile_index != -1)
-       ) 
+       )
     {
         struct timeval tp;
         char epoch[16];
-        gettimeofday(&tp, NULL); 
+        gettimeofday(&tp, NULL);
         sprintf(epoch, "%d", (int) tp.tv_sec);
 
         int def_adios_init_attrs = 1;
@@ -227,10 +261,10 @@ int common_adios_group_size (int64_t fd_p
 
         if (def_adios_init_attrs) {
             log_debug ("Define ADIOS extra attributes, "
-                       "time = %d, rank = %d, epoch = %s subfile=%d\n", 
+                       "time = %d, rank = %d, epoch = %s subfile=%d\n",
                        fd->group->time_index, fd->group->process_id, epoch, fd->subfile_index);
 
-            adios_common_define_attribute ((int64_t)fd->group, "version", ADIOS_ATTR_PATH, 
+            adios_common_define_attribute ((int64_t)fd->group, "version", ADIOS_ATTR_PATH,
                     adios_string, VERSION, NULL);
 
             adios_common_define_attribute ((int64_t)fd->group, "create_time_epoch", ADIOS_ATTR_PATH,
@@ -239,22 +273,22 @@ int common_adios_group_size (int64_t fd_p
                     adios_integer, epoch, NULL);
             // id of last attribute is fd->group->member_count
             fd->group->attrid_update_epoch = fd->group->member_count;
-            
+
         }
-        /* FIXME: this code works fine, it does not duplicate the attribute, 
-           but the index will still contain all copies and the read will see 
-           only the first one. Thus updating an attribute does not work 
+        /* FIXME: this code works fine, it does not duplicate the attribute,
+           but the index will still contain all copies and the read will see
+           only the first one. Thus updating an attribute does not work
            in practice.
          */
-        else 
+        else
         {
-            // update attribute of update time (define would duplicate it) 
+            // update attribute of update time (define would duplicate it)
             struct adios_attribute_struct * attr = adios_find_attribute_by_id
-                   (fd->group->attributes, fd->group->attrid_update_epoch); 
+                   (fd->group->attributes, fd->group->attrid_update_epoch);
             if (attr) {
                 log_debug ("Update ADIOS extra attribute name=%s, "
-                           "time = %d, rank = %d, epoch = %s, subfile=%d\n", 
-                           attr->name, fd->group->time_index, fd->group->process_id, 
+                           "time = %d, rank = %d, epoch = %s, subfile=%d\n",
+                           attr->name, fd->group->time_index, fd->group->process_id,
                            epoch, fd->subfile_index);
 
                 free(attr->value);
@@ -275,13 +309,28 @@ int common_adios_group_size (int64_t fd_p
 
     fd->write_size_bytes += overhead;
 
+    // NCSU ALACRITY-ADIOS - Current solution to group_size problem: find
+    // the most "expansive" transform method used in the file, and assume
+    // all of the data uses that method, for a very rough but safe upper bound.
+    //
+    // (see the comment in the top of adios_transforms.c, under section
+    // 'The "group size" problem,' for more details)
+    uint64_t wc_transformed_size = adios_transform_worst_case_transformed_group_size(data_size, fd);
+    if (wc_transformed_size > data_size) {
+        log_debug("Computed worst-case bound on transformed data for a group size of %llu is %llu; increasing group size to match.\n",
+                  data_size, wc_transformed_size);
+
+        fd->write_size_bytes += (wc_transformed_size - data_size);
+        *total_size += (wc_transformed_size - data_size);
+    }
+
     uint64_t allocated = adios_method_buffer_alloc (fd->write_size_bytes);
     if (allocated != fd->write_size_bytes)
     {
         fd->shared_buffer = adios_flag_no;
 
         log_warn ("adios_group_size (%s): Not buffering. "
-                  "needs: %llu available: %llu.\n", 
+                  "needs: %llu available: %llu.\n",
                   fd->group->name, fd->write_size_bytes, allocated);
     }
     else
@@ -311,6 +360,9 @@ int common_adios_group_size (int64_t fd_p
 
         m = m->next;
     }
+
+    if (pinned_timestep != 0)
+        fd->group->time_index = pinned_timestep;
 
     if (fd->shared_buffer == adios_flag_no)
     {
@@ -342,6 +394,9 @@ int common_adios_group_size (int64_t fd_p
         }
     }
 
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+    timer_stop ("adios_group_size");
+#endif
     // each var will be added to the buffer by the adios_write calls
     // attributes will be added by adios_close
 
@@ -428,22 +483,126 @@ int common_adios_write_byid (struct adios_file_struct * fd, struct adios_var_str
     }
 }
 
+static int common_adios_write_transform_helper(struct adios_file_struct * fd, struct adios_var_struct * v) {
+    int use_shared_buffer = (fd->shared_buffer == adios_flag_yes);
+    int wrote_to_shared_buffer = 0;
+
+    // If we are using the shared buffer, transform the data directly into it
+    if (use_shared_buffer) {
+        uint16_t header_size = adios_calc_var_overhead_v1(v);
+        uint64_t header_offset;
+        uint64_t payload_offset;
+        uint64_t end_offset;
+
+        // Reserve space for the variable header (it will need to be written after
+        // the transform to capture updated metadata)
+        header_offset = fd->offset;
+        fd->offset += header_size;
+        payload_offset = fd->offset;
+
+        // This function will either:
+        // a) write to the shared buffer, leave v->data, v->data_size and
+        //    v->free_data untouched, and return 1, OR
+        // b) write to v->data, set v->data_size and v->free_data, and return 0
+        //
+        int success = adios_transform_variable_data(fd, v, use_shared_buffer, &wrote_to_shared_buffer);
+        if (!success) {
+            fd->offset = header_offset;
+            return 0;
+        }
+
+        // Assumption: we don't change the header size, just contents, in
+        // adios_transform_variable_data
+        assert(adios_calc_var_overhead_v1(v) == header_size);
+
+        // Store the ending offset of the payload write (if any)
+        end_offset = fd->offset;
+
+        // Rewind and write the header back where it should be
+        fd->offset = header_offset;
+        // var payload sent for sizing information
+        adios_write_var_header_v1(fd, v);
+
+        assert(fd->offset == payload_offset);
+
+        // If the data was stored to the shared buffer, update v->data,
+        // v->data_size and v->free_data. Else, write the payload to the shared
+        // buffer (the other v->* fields have already been updated)
+        if (wrote_to_shared_buffer) {
+            v->data = fd->buffer + payload_offset;
+            v->data_size = end_offset - payload_offset;
+            v->free_data = adios_flag_no;
+
+            // Update the buffer back to the end of the header+payload
+            fd->offset = end_offset;
+        } else {
+            // write payload
+            adios_write_var_payload_v1 (fd, v);
+
+            // fd->offset now points to the end of the header+payload
+        }
+
+        // Success!
+        return 1;
+    } else {
+        int ret = adios_transform_variable_data(fd, v, use_shared_buffer, &wrote_to_shared_buffer);
+
+        assert(!wrote_to_shared_buffer);
+        assert(v->data);
+
+        return ret;
+    }
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 /* common_adios_write is just a partial implementation. It expects filled out
- * structures. This is because C and Fortran implementations of adios_write are 
+ * structures. This is because C and Fortran implementations of adios_write are
  * different for some part and this is the common part.
  */
 int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct * v, void * var)
 {
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+    timer_start ("adios_write");
+#endif
     struct adios_method_list_struct * m = fd->group->methods;
 
-    if (fd->shared_buffer == adios_flag_yes)
-    {
-        // var payload sent for sizing information
-        adios_write_var_header_v1 (fd, v);
+    // NCSU ALACRITY-ADIOS - Do some processing here depending on the transform
+    //   type specified (if any)
 
-        // write payload
-        adios_write_var_payload_v1 (fd, v);
+    // First, before doing any transform (or none), compute variable statistics,
+    // as we can't do this after the data is transformed
+    adios_generate_var_characteristics_v1 (fd, v);
+
+    // If no transform is specified, do the normal thing (write to shared
+    // buffer immediately, if one exists)
+    if (v->transform_type == adios_transform_none)
+    {
+        if (fd->shared_buffer == adios_flag_yes)
+        {
+            // var payload sent for sizing information
+            adios_write_var_header_v1 (fd, v);
+
+            // write payload
+            adios_write_var_payload_v1 (fd, v);
+        }
+    }
+    // Else, do a transform
+    else
+    {
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+    timer_start ("adios_transform");
+#endif
+        int success = common_adios_write_transform_helper(fd, v);
+        if (success) {
+            // Make it appear as if the user had supplied the transformed data
+            var = v->data;
+        } else {
+            log_error("Error: unable to apply transform %s to variable %s; likely ran out of memory, check previous error messages\n", adios_transform_plugin_primary_xml_alias(v->transform_type), v->name);
+            // FIXME: Reverse the transform metadata and write raw data as usual
+        }
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+    timer_stop ("adios_transform");
+#endif
     }
 
     // now tell each transport attached that it is being written
@@ -461,11 +620,25 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
         m = m->next;
     }
 
+    // NCSU ALACRITY-ADIOS - Free transform-method-allocated data buffers
     if (v->dimensions)
     {
+        // TODO: Is this correct? Normally v->data is a user buffer, so we
+        //   can't free it. However, after a transform, we probably do need
+        //   to free it. We mark this by setting the free_data flag. However,
+        //   as this flag is hardly ever used, I don't know whether this is
+        //   using the flag correctly or not. Need verification with
+        //   Gary/Norbert/someone knowledgable about ADIOS internals.
+        if (v->transform_type != adios_transform_none && v->free_data == adios_flag_yes && v->data)
+            free(v->data);
         v->data = 0;
     }
 
+    v->write_count++;
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+    timer_stop ("adios_write");
+#endif
+    // printf ("var: %s written %d\n", v->name, v->write_count);
     return 0;
 }
 
@@ -497,7 +670,7 @@ int common_adios_get_write_buffer (int64_t fd_p, const char * name
 
     if (fd->mode == adios_mode_read)
     {
-        adios_error (err_invalid_file_mode, 
+        adios_error (err_invalid_file_mode,
                      "write attempted on %s in %s. This was opened for read\n",
                      name , fd->name);
 
@@ -525,6 +698,7 @@ int common_adios_get_write_buffer (int64_t fd_p, const char * name
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+
 int common_adios_read (int64_t fd_p, const char * name, void * buffer
                ,uint64_t buffer_size
                )
@@ -547,7 +721,7 @@ int common_adios_read (int64_t fd_p, const char * name, void * buffer
 
     if (!(fd->mode == adios_mode_read))
     {
-        adios_error (err_invalid_file_mode, 
+        adios_error (err_invalid_file_mode,
                      "read attempted on %s which was opened for write\n",
                      fd->name);
 
@@ -572,7 +746,7 @@ int common_adios_read (int64_t fd_p, const char * name, void * buffer
             }
             else
                 m = m->next;
-	}
+    }
     }
     else
     {
@@ -655,7 +829,7 @@ int common_adios_set_path_var (int64_t fd_p, const char * path
     }
     else
     {
-        adios_error (err_invalid_varname, 
+        adios_error (err_invalid_varname,
                      "adios_set_path_var (path=%s, var=%s): var not found\n",
                      path, name);
 
@@ -731,6 +905,10 @@ int common_adios_stop_calculation ()
 ///////////////////////////////////////////////////////////////////////////////
 int common_adios_close (int64_t fd_p)
 {
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+    timer_start ("adios_close");
+#endif
+
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     if (!fd)
     {
@@ -742,6 +920,10 @@ int common_adios_close (int64_t fd_p)
     if (m && m->next == NULL && m->method->m == ADIOS_METHOD_NULL)
     {
         // nothing to do so just return
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+    timer_stop ("adios_close");
+    timer_stop ("adios_open_to_close");
+#endif
         return 0;
     }
 
@@ -825,9 +1007,9 @@ int common_adios_close (int64_t fd_p)
             fd->group->vars_written->dimensions = dimensions;
         }
 
-		// NCSU - Clear stat
+        // NCSU - Clear stat
         if (fd->group->vars_written->stats)
-		{
+        {
             uint8_t j = 0, idx = 0;
             uint8_t c = 0, count = adios_get_stat_set_count(fd->group->vars_written->type);
 
@@ -854,7 +1036,11 @@ int common_adios_close (int64_t fd_p)
                 free (fd->group->vars_written->stats[c]);
             }
             free (fd->group->vars_written->stats);
-		}
+        }
+
+        // NCSU ALACRITY-ADIOS - Clear transform metadata
+        adios_transform_clear_transform_var(fd->group->vars_written);
+
         if (fd->group->vars_written->data)
             free (fd->group->vars_written->data);
 
@@ -870,6 +1056,30 @@ int common_adios_close (int64_t fd_p)
     }
 
     free ((void *) fd_p);
+#if defined(WITH_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+    timer_stop ("adios_close");
+    timer_stop ("adios_open_to_close");
+//    printf ("Timers, ");
+//    printf ("%d, ", fd->group->process_id);
+//    printf ("%d, ", fd->group->time_index);
+//    printf ("%lf, ", timer_get_total_interval ("adios_open" ));
+//    printf ("%lf, ", timer_get_total_interval ("adios_group_size"));
+//    printf ("%lf, ", timer_get_total_interval ("adios_transform" ));
+//    printf ("%lf, ", timer_get_total_interval ("adios_write" ));
+//    printf ("%lf\n", timer_get_total_interval ("adios_close"     ));
+//    timer_reset_timers ();
+
+    printf("[TIMERS] Proc: %d Time: %d ", fd->group->process_id, fd->group->time_index);
+    int i;
+    timer_result_t *results = timer_get_results_sorted();
+    for (i = 0; i < timer_get_num_timers(); i++) {
+        printf("%s: %0.4lf ", results[i].name, results[i].time);
+    }
+    printf("\n");
+    free(results);
+
+    //timer_reset_timers ();
+#endif
 
     return 0;
 }
