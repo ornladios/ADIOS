@@ -187,57 +187,6 @@ void
 free_evgroup(evgroup *gp)
 {
     EVreturn_event_buffer(fp_read_data->fp_cm, gp);
-    /* int i; */
-    /* fprintf(stderr, "num_vars: %d\n", gp->num_vars); */
-    /* for(i=0; i<gp->num_vars; i++){ */
-    /* 	int j; */
-    /* 	global_var var = gp->vars[i]; */
-    /* 	//fprintf(stderr, "evgroup varname: %s\n", var.name); */
-    /* 	free(var.name);	 */
-    /* 	for(j=0; j<var.noffset_structs; j++){ */
-    /* 	    offset_struct off = var.offsets[j]; */
-    /* 	    free(off.local_dimensions); */
-    /* 	    free(off.local_offsets); */
-    /* 	} */
-    /* 	free(var.offsets); */
-    /* } */
-    /* free(gp->vars); */
-    /* free(gp); */
-}
-
-void send_var_message(flexpath_reader_file *fp, int destination, char *varname)
-{
-        int i = 0;
-        int found = 0;
-        for(i=0; i<fp->num_sendees; i++) {
-            if(fp->sendees[i]==destination) {
-                found=1;
-                break;
-            }
-        }
-        if(!found) {
-            fp->num_sendees+=1;
-            fp->sendees=realloc(fp->sendees, fp->num_sendees*sizeof(int));
-            fp->sendees[fp->num_sendees-1] = destination;
-        }
-        if(!fp->bridges[destination].created) {
-            build_bridge(&(fp->bridges[destination]));
-	}
-	if(!fp->bridges[destination].opened){
-	    fp->bridges[destination].opened = 1;
-            op_msg open_msg;
-            open_msg.process_id = fp->rank;
-            open_msg.file_name = fp->file_name;
-            open_msg.type = 1;
-            open_msg.step = 0;
-	    open_msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
-            EVsubmit(fp->bridges[destination].op_source, &open_msg, NULL);
-            CMCondition_wait(fp_read_data->fp_cm, open_msg.condition);
-	}
-	Var_msg var;
-	var.rank = fp->rank;
-	var.var_name = strdup(varname);
-	EVsubmit(fp->bridges[destination].var_source, &var, NULL);    
 }
 
 flexpath_var*
@@ -523,6 +472,84 @@ need_writer(
         }
     }
     return 1;
+}
+
+/*****************Messages to writer procs**********************/
+
+void
+send_open_msg(flexpath_reader_file *fp, int destination)
+{
+    if(!fp->bridges[destination].created){
+	build_bridge(&(fp->bridges[destination]));
+    }
+    op_msg msg;
+    msg.process_id = fp->rank;
+    msg.file_name = strdup(fp->file_name);
+    msg.step = fp->mystep;
+    msg.type = OPEN_MSG;
+    msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
+
+    EVsubmit(fp->bridges[destination].op_source, &msg, NULL);    
+    CMCondition_wait(fp_read_data->fp_cm, msg.condition);
+    fp->bridges[destination].opened = 1;
+}
+
+void
+send_close_msg(flexpath_reader_file *fp, int destination)
+{
+    if(!fp->bridges[destination].created){
+	build_bridge(&(fp->bridges[destination]));
+    }
+    op_msg msg;
+    msg.process_id = fp->rank;
+    msg.file_name = strdup(fp->file_name);
+    msg.step = fp->mystep;
+    msg.type = CLOSE_MSG;
+    msg.condition = -1;
+
+    EVsubmit(fp->bridges[destination].op_source, &msg, NULL);    
+    fp->bridges[destination].opened = 0;
+}
+
+void
+send_flush_msg(flexpath_reader_file *fp, int destination, Flush_type type)
+{
+    Flush_msg msg;
+    msg.type = type;
+    msg.rank = fp->rank;
+    msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
+    // maybe check to see if the bridge is create first.
+    EVsubmit(fp->bridges[destination].flush_source, &msg, NULL);
+    CMCondition_wait(fp_read_data->fp_cm, msg.condition);
+}
+
+void 
+send_var_message(flexpath_reader_file *fp, int destination, char *varname)
+{
+        int i = 0;
+        int found = 0;
+        for(i=0; i<fp->num_sendees; i++) {
+            if(fp->sendees[i]==destination) {
+                found=1;
+                break;
+            }
+        }
+        if(!found) {
+            fp->num_sendees+=1;
+            fp->sendees=realloc(fp->sendees, fp->num_sendees*sizeof(int));
+            fp->sendees[fp->num_sendees-1] = destination;
+        }
+        if(!fp->bridges[destination].created) {
+            build_bridge(&(fp->bridges[destination]));
+	}
+	if(!fp->bridges[destination].opened){
+	    fp->bridges[destination].opened = 1;
+	    send_open_msg(fp, destination);
+	}
+	Var_msg var;
+	var.rank = fp->rank;
+	var.var_name = strdup(varname);
+	EVsubmit(fp->bridges[destination].var_source, &var, NULL);    
 }
 
 /********** EVPath Handlers **********/
@@ -982,31 +1009,9 @@ adios_read_flexpath_open(const char * fname,
     }
 
     // requesting initial data.
-    op_msg init;
-    init.step = 0;
-    init.type = OPEN_MSG;
-    init.process_id = fp->rank;
-    init.file_name = "test";
-    init.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
-    fp->bridges[fp->writer_coordinator].opened = 1;
-    EVsubmit(fp->bridges[fp->writer_coordinator].op_source, &init, NULL);
-    CMCondition_wait(fp_read_data->fp_cm, init.condition); 
-
-    Flush_msg dataflush;
-    dataflush.type = DATA;
-    dataflush.rank = fp->rank;
-    dataflush.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
-    // maybe check to see if the bridge is create first.
-    EVsubmit(fp->bridges[fp->writer_coordinator].flush_source, &dataflush, NULL);
-    CMCondition_wait(fp_read_data->fp_cm, dataflush.condition);
-
-    Flush_msg evgp;
-    evgp.type = EVGROUP;
-    evgp.rank = fp->rank;
-    evgp.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
-    // maybe check to see if the bridge is create first.
-    EVsubmit(fp->bridges[fp->writer_coordinator].flush_source, &evgp, NULL);
-    CMCondition_wait(fp_read_data->fp_cm, evgp.condition);
+    send_open_msg(fp, fp->writer_coordinator);
+    send_flush_msg(fp, fp->writer_coordinator, DATA);
+    send_flush_msg(fp, fp->writer_coordinator, EVGROUP);
 
     // this has to change. Writer needs to have some way of
     // taking the attributes out of the xml document
@@ -1038,15 +1043,7 @@ void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     for(i=0; i<fp->num_bridges; i++) {
         if(fp->bridges[i].created && !fp->bridges[i].opened) {
-            op_msg open;
-            open.step = adiosfile->current_step;
-            open.type = OPEN_MSG;
-            open.process_id = fp->rank;
-            open.file_name = "test";
-	    open.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
-            EVsubmit(fp->bridges[i].op_source, &open, NULL);
-            CMCondition_wait(fp_read_data->fp_cm, open.condition);
-	    fp->bridges[i].opened = 1;
+	    send_open_msg(fp, i);
         }
     }
     free_evgroup(fp->gp);
@@ -1083,42 +1080,23 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
     int i=0;
     for(i=0; i<fp->num_bridges; i++) {
         if(fp->bridges[i].created && fp->bridges[i].opened) {
+	    send_close_msg(fp, i);
             op_msg close;
-            close.step = adiosfile->current_step;
-            close.type = 0;
-            close.process_id = fp->rank;
-	    //close.condition = -1;
-	    close.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
-            close.file_name = "test";
-	    fp->bridges[i].opened = 0;	   
-            EVsubmit(fp->bridges[i].op_source, &close, NULL);	
 	}
     }
     MPI_Barrier(fp->comm);
 
-    for(i=0; i<fp->num_bridges; i++){
-	if(fp->bridges[i].created && !fp->bridges[i].opened){	    
-            op_msg open;
-            open.step = adiosfile->current_step+1;
-            open.type = 1;
-            open.process_id = fp->rank;
-            open.file_name = "test";
-	    open.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
-	    fp->bridges[i].opened = 1;
-            EVsubmit(fp->bridges[i].op_source, &open, NULL);
-            CMCondition_wait(fp_read_data->fp_cm, open.condition);
-        }
-    }   
     fprintf(stderr, "old step: %d new step: %d\n", fp->mystep, fp->mystep+1);
     adiosfile->current_step++;
     fp->mystep = adiosfile->current_step;
 
-    Flush_msg step;
-    step.type = STEP;
-    step.rank = fp->rank;
-    step.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
-    EVsubmit(fp->bridges[fp->writer_coordinator].flush_source, &step, NULL);
-    CMCondition_wait(fp_read_data->fp_cm, step.condition);
+    for(i=0; i<fp->num_bridges; i++){
+	if(fp->bridges[i].created && !fp->bridges[i].opened){	    
+	    send_open_msg(fp, i);
+        }
+    }   
+
+    send_flush_msg(fp, fp->writer_coordinator, STEP);
     
     //put this on a timer, so to speak, for timeout_sec
     while(fp->mystep == fp->last_writer_step){
@@ -1127,50 +1105,28 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
 	    return err_end_of_stream;
 	}
 	CMsleep(fp_read_data->fp_cm, 1);
-	Flush_msg step;
-	step.type = STEP;
-	step.rank = fp->rank;
-	step.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
-	EVsubmit(fp->bridges[fp->writer_coordinator].flush_source, &step, NULL);
-	CMCondition_wait(fp_read_data->fp_cm, step.condition);
+	send_flush_msg(fp, fp->writer_coordinator, STEP);
     }
 	
     // need to remove selectors from each var now.
 
     fprintf(stderr, "sending flush step\n");
-    Flush_msg data;
-    data.type = DATA;
-    data.rank = fp->rank;
-    data.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
-    EVsubmit(fp->bridges[fp->writer_coordinator].flush_source, &data, NULL);
-    CMCondition_wait(fp_read_data->fp_cm, data.condition);
+    send_flush_msg(fp, fp->writer_coordinator, DATA);
       
     // should only happen if there are more steps available.
     // writer should have advanced.
-    Flush_msg msg;
-    msg.type = EVGROUP;
-    msg.rank = fp->rank;   
-    msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
-    // maybe check to see if the bridge is create first.
-    EVsubmit(fp->bridges[fp->writer_coordinator].flush_source, &msg, NULL);
-    CMCondition_wait(fp_read_data->fp_cm, msg.condition);    
-   return 0;
+    send_flush_msg(fp, fp->writer_coordinator, EVGROUP);
+    return 0;
 }
 
 int adios_read_flexpath_close(ADIOS_FILE * fp)
 {
     flexpath_reader_file *file = (flexpath_reader_file*)fp->fh;
-    op_msg msg;
-    msg.type = CLOSE_MSG;
-    msg.file_name = strdup(file->file_name);
-    msg.process_id = file->rank;
-    msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
     //send to each opened link
     int i;
     for(i = 0; i<file->num_bridges; i++){
-        if(file->bridges[i].created) {
-            msg.step = file->bridges[i].step;
-	    EVsubmit(file->bridges[i].op_source, &msg, NULL);
+        if(file->bridges[i].created && file->bridges[i].opened) {
+	    send_close_msg(file, i);
         }
     }
     /*
@@ -1208,19 +1164,13 @@ int adios_read_flexpath_check_reads(const ADIOS_FILE* fp, ADIOS_VARCHUNK** chunk
 int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
 {
     flexpath_reader_file * fp = (flexpath_reader_file*)adiosfile->fh;
-    Flush_msg msg;
-    msg.rank = fp->rank;
-    msg.type = DATA;
     int i;
     int num_sendees = fp->num_sendees;
     for(i = 0; i<num_sendees; i++)
-    {	
-	int sendee = fp->sendees[i];
-	msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
-	EVsubmit(fp->bridges[sendee].flush_source, &msg, NULL);
-	if(blocking){    
-	    CMCondition_wait(fp_read_data->fp_cm, msg.condition);
-	}
+    {
+	int sendee = fp->sendees[i];	
+	// need solution for blocking vs. non
+	send_flush_msg(fp, sendee, DATA);
     }
    
     free(fp->sendees);
@@ -1379,7 +1329,8 @@ int adios_read_flexpath_get_attr (int *gp, const char *attrname,
 {
     //log_debug( "debug: adios_read_flexpath_get_attr\n");
     // TODO: borrowed from dimes
-    adios_error(err_invalid_read_method, "adios_read_flexpath_get_attr is not implemented.");
+    adios_error(err_invalid_read_method, 
+		"adios_read_flexpath_get_attr is not implemented.");
     *size = 0;
     *type = adios_unknown;
     *data = 0;
@@ -1393,7 +1344,8 @@ adios_read_flexpath_get_attr_byid (const ADIOS_FILE *adiosfile, int attrid,
 {
 //    log_debug( "debug: adios_read_flexpath_get_attr_byid\n");
     // TODO: borrowed from dimes
-    adios_error(err_invalid_read_method, "adios_read_flexpath_get_attr_byid is not implemented.");
+    adios_error(err_invalid_read_method, 
+		"adios_read_flexpath_get_attr_byid is not implemented.");
     *size = 0;
     *type = adios_unknown;
     *data = 0;
@@ -1406,7 +1358,8 @@ adios_read_flexpath_inq_var(const ADIOS_FILE * adiosfile, const char* varname)
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     ADIOS_VARINFO* v = malloc(sizeof(ADIOS_VARINFO));
     if(!v) {
-        adios_error(err_no_memory, "Cannot allocate buffer in adios_read_datatap_inq_var()");
+        adios_error(err_no_memory, 
+		    "Cannot allocate buffer in adios_read_datatap_inq_var()");
         return NULL;
     }
     memset(v, 0, sizeof(ADIOS_VARINFO));
