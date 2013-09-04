@@ -485,6 +485,7 @@ AC_CONFIG_FILES([Makefile
                  tests/C/flexpath_tests/1D_arr_global_noxml/Makefile
                  tests/C/flexpath_tests/global_range_select/Makefile
                  tests/C/flexpath_tests/maya_noxml/Makefile
+                 tests/C/flexpath_tests/maya_append/Makefile
                  tests/C/flexpath_tests/scalar/Makefile
                  tests/Fortran/Makefile
                  tests/genarray/Makefile

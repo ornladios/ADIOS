@@ -1,3 +1,3 @@
-SUBDIRS=1D_arr_global 1D_arr_global_noxml maya_noxml scalar
+SUBDIRS=1D_arr_global 1D_arr_global_noxml global_range_select maya_noxml maya_append scalar
 
 

@@ -122,8 +122,12 @@ tests/C/flexpath_tests/1D_arr_global/reader
 tests/C/flexpath_tests/1D_arr_global/writer
 tests/C/flexpath_tests/1D_arr_global_noxml/reader
 tests/C/flexpath_tests/1D_arr_global_noxml/writer
+tests/C/flexpath_tests/global_range_select/arrays_read
+tests/C/flexpath_tests/global_range_select/arrays_write
 tests/C/flexpath_tests/maya_noxml/reader
 tests/C/flexpath_tests/maya_noxml/writer
+tests/C/flexpath_tests/maya_append/reader
+tests/C/flexpath_tests/maya_append/writer
 tests/C/flexpath_tests/scalar/reader
 tests/C/flexpath_tests/scalar/writer
 utils/adios_lint/adios_lint
