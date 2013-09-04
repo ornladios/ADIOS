@@ -88,7 +88,7 @@ CONFIG_CLEAN_VPATH_FILES =
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__EXEEXT_2 =  \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	posix_method$(EXEEXT)
 am__EXEEXT_3 =
-@BUILD_WRITE_TRUE@am__EXEEXT_4 = hashtest$(EXEEXT) transforms$(EXEEXT) \
+@BUILD_WRITE_TRUE@am__EXEEXT_4 = hashtest$(EXEEXT) \
 @BUILD_WRITE_TRUE@	copy_subvolume$(EXEEXT) \
 @BUILD_WRITE_TRUE@	transforms_specparse$(EXEEXT) \
 @BUILD_WRITE_TRUE@	adios_transforms_read_write$(EXEEXT)
@@ -205,13 +205,6 @@ selections_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 selections_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(selections_LDFLAGS) $(LDFLAGS) -o $@
-am_transforms_OBJECTS = transforms-transforms.$(OBJEXT)
-transforms_OBJECTS = $(am_transforms_OBJECTS)
-transforms_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1)
-transforms_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(transforms_LDFLAGS) $(LDFLAGS) -o $@
 am_transforms_specparse_OBJECTS = transforms_specparse.$(OBJEXT)
 transforms_specparse_OBJECTS = $(am_transforms_specparse_OBJECTS)
 transforms_specparse_DEPENDENCIES = $(top_builddir)/src/libadios.a \
@@ -268,9 +261,9 @@ SOURCES = $(adios_amr_write_SOURCES) $(adios_amr_write_2vars_SOURCES) \
 	$(hashtest_SOURCES) $(local_array_time_SOURCES) \
 	$(many_vars_SOURCES) $(path_test_SOURCES) \
 	$(posix_method_SOURCES) $(reuse_dim_SOURCES) \
-	$(selections_SOURCES) $(transforms_SOURCES) \
-	$(transforms_specparse_SOURCES) $(two_groups_SOURCES) \
-	$(write_alternate_SOURCES) $(write_read_SOURCES)
+	$(selections_SOURCES) $(transforms_specparse_SOURCES) \
+	$(two_groups_SOURCES) $(write_alternate_SOURCES) \
+	$(write_read_SOURCES)
 DIST_SOURCES = $(adios_amr_write_SOURCES) \
 	$(adios_amr_write_2vars_SOURCES) $(adios_staged_read_SOURCES) \
 	$(adios_staged_read_2vars_SOURCES) \
@@ -280,9 +273,9 @@ DIST_SOURCES = $(adios_amr_write_SOURCES) \
 	$(hashtest_SOURCES) $(local_array_time_SOURCES) \
 	$(many_vars_SOURCES) $(path_test_SOURCES) \
 	$(posix_method_SOURCES) $(reuse_dim_SOURCES) \
-	$(selections_SOURCES) $(transforms_SOURCES) \
-	$(transforms_specparse_SOURCES) $(two_groups_SOURCES) \
-	$(write_alternate_SOURCES) $(write_read_SOURCES)
+	$(selections_SOURCES) $(transforms_specparse_SOURCES) \
+	$(two_groups_SOURCES) $(write_alternate_SOURCES) \
+	$(write_read_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 am__tty_colors = \
@@ -553,7 +546,7 @@ check_readonly_C =
 @BUILD_WRITE_TRUE@        adios_transforms_read_write \
 @BUILD_WRITE_TRUE@        connect_to_space_subset
 
-@BUILD_WRITE_TRUE@test_C = hashtest transforms copy_subvolume transforms_specparse adios_transforms_read_write
+@BUILD_WRITE_TRUE@test_C = hashtest copy_subvolume transforms_specparse adios_transforms_read_write   # transforms   # this test is obsolete
 @BUILD_FORTRAN_TRUE@check_readonly_Fortran = 
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@check_Fortran = posix_method
 INCLUDES = $(all_includes) -I$(top_builddir)/src
@@ -726,9 +719,6 @@ reuse_dim$(EXEEXT): $(reuse_dim_OBJECTS) $(reuse_dim_DEPENDENCIES)
 selections$(EXEEXT): $(selections_OBJECTS) $(selections_DEPENDENCIES) 
 	@rm -f selections$(EXEEXT)
 	$(selections_LINK) $(selections_OBJECTS) $(selections_LDADD) $(LIBS)
-transforms$(EXEEXT): $(transforms_OBJECTS) $(transforms_DEPENDENCIES) 
-	@rm -f transforms$(EXEEXT)
-	$(transforms_LINK) $(transforms_OBJECTS) $(transforms_LDADD) $(LIBS)
 transforms_specparse$(EXEEXT): $(transforms_specparse_OBJECTS) $(transforms_specparse_DEPENDENCIES) 
 	@rm -f transforms_specparse$(EXEEXT)
 	$(transforms_specparse_LINK) $(transforms_specparse_OBJECTS) $(transforms_specparse_LDADD) $(LIBS)
@@ -762,7 +752,6 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/path_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reuse_dim.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/selections.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transforms-transforms.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transforms_specparse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/two_groups.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/write_alternate.Po@am__quote@
@@ -811,20 +800,6 @@ hashtest-hashtest.obj: hashtest.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='hashtest.c' object='hashtest-hashtest.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hashtest_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o hashtest-hashtest.obj `if test -f 'hashtest.c'; then $(CYGPATH_W) 'hashtest.c'; else $(CYGPATH_W) '$(srcdir)/hashtest.c'; fi`
-
-transforms-transforms.o: transforms.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(transforms_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT transforms-transforms.o -MD -MP -MF $(DEPDIR)/transforms-transforms.Tpo -c -o transforms-transforms.o `test -f 'transforms.c' || echo '$(srcdir)/'`transforms.c
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/transforms-transforms.Tpo $(DEPDIR)/transforms-transforms.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='transforms.c' object='transforms-transforms.o' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(transforms_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o transforms-transforms.o `test -f 'transforms.c' || echo '$(srcdir)/'`transforms.c
-
-transforms-transforms.obj: transforms.c
-@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(transforms_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT transforms-transforms.obj -MD -MP -MF $(DEPDIR)/transforms-transforms.Tpo -c -o transforms-transforms.obj `if test -f 'transforms.c'; then $(CYGPATH_W) 'transforms.c'; else $(CYGPATH_W) '$(srcdir)/transforms.c'; fi`
-@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/transforms-transforms.Tpo $(DEPDIR)/transforms-transforms.Po
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='transforms.c' object='transforms-transforms.obj' libtool=no @AMDEPBACKSLASH@
-@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
-@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(transforms_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o transforms-transforms.obj `if test -f 'transforms.c'; then $(CYGPATH_W) 'transforms.c'; else $(CYGPATH_W) '$(srcdir)/transforms.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
