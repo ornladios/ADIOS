@@ -25,7 +25,7 @@ check_C=local_array_time \
         adios_transforms_read_write \
         connect_to_space_subset
 
-test_C=hashtest transforms copy_subvolume transforms_specparse adios_transforms_read_write
+test_C=hashtest copy_subvolume transforms_specparse adios_transforms_read_write   # transforms   # this test is obsolete
 
 endif
 
