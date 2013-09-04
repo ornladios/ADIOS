@@ -1,5 +1,7 @@
 AC_DEFUN([AX_NCSU_LIBTIMER], [
 
+AM_CONDITIONAL(HAVE_NCSU_TIMER,false)
+
 dnl Enable the --with-timer=path configure argument
 AC_ARG_WITH(
   [timer],
@@ -12,6 +14,8 @@ AC_ARG_WITH(
 
 dnl If the timer lib was specified, verify that it exists and can compile
 if test "x$with_timer" != xno -a "x$with_timer" != x; then
+    AM_CONDITIONAL(HAVE_NCSU_TIMER,true)
+
     TIMER_CPPFLAGS="-I$with_timer/include"
     TIMER_LDFLAGS="-L$with_timer/lib"
     TIMER_LIBS="-ltimer"
@@ -35,7 +39,7 @@ if test "x$with_timer" != xno -a "x$with_timer" != x; then
       [timer],
       [timer_init],
       [AC_DEFINE(
-        [HAVE_LIBTIMER],
+        [HAVE_NCSU_TIMER],
         [1],
         [Define if you have libtimer]
       )],

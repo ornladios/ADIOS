@@ -107,9 +107,6 @@
 /* Define to 1 if you have the `rt' library (-lrt). */
 #undef HAVE_LIBRT
 
-/* Define if you have libtimer */
-#undef HAVE_LIBTIMER
-
 /* Define if you have LUSTRE. */
 #undef HAVE_LUSTRE
 
@@ -130,6 +127,9 @@
 
 /* Define if you have NC4PAR. */
 #undef HAVE_NC4PAR
+
+/* Define if you have libtimer */
+#undef HAVE_NCSU_TIMER
 
 /* Define if you have NETCDF. */
 #undef HAVE_NETCDF
