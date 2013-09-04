@@ -128,7 +128,7 @@ typedef struct _flexpath_write_file_data {
     // server state
     int maxQueueSize;
     int openCount;
-    int currentStep;
+    int readerStep;
     int writerStep; // how many times has the writer called closed?
     int finalized; // have we finalized?
 
@@ -192,10 +192,28 @@ void set_attr_dimensions(char* varName, char* altName, int numDims, attr_list at
     add_int_attr(attrs, ndimsAtom, 0);
 }
 
-// free format packets once EVPath is finished with them
 
+void
+evgroup_msg_free(void *eventData, void *clientData)
+{
+    evgroup *msg = (evgroup*)eventData;
+    int num_vars = msg->num_vars;
+    int i;
+    for(i=0; i<num_vars; i++){
+	free(msg->vars[i].offsets);
+    }
+    free(msg);
+}
+
+void
+step_msg_free(void *eventData, void *clientData)
+{
+    update_step_msg *msg = (update_step_msg*)eventData;
+    free(msg);
+}
 // free data packets once EVPath is finished with them
-void data_free(void* eventData, void* clientData) {
+void data_free(void* eventData, void* clientData) 
+{
     fp_write_log("DATA", "freeing a data message\n");
     FlexpathWriteFileData* fileData = (FlexpathWriteFileData*)clientData;
     FMfree_var_rec_elements(fileData->fm->ioFormat, eventData);
@@ -493,8 +511,6 @@ int get_var_offsets(struct adios_var_struct *v,
 // creates multiqueue function to handle ctrl messages for given bridge stones 
 char *multiqueue_action = "{\n\
     int found = 0;\n\
-    int flush_data_count = 0; \n\
-    int my_rank = -1;\n\
     attr_list mine;\n\
     if(EVcount_varMsg()>0) {\n\
         EVdiscard_and_submit_varMsg(0, 0);\n\
@@ -505,10 +521,11 @@ char *multiqueue_action = "{\n\
     if(EVcount_drop_evgroup_msg()>0) {\n\
        if(EVcount_evgroup()>0) {\n\
           EVdiscard_evgroup(0);\n\
+          EVdiscard_drop_evgroup_msg(0);\n\
        }\n\
-       EVdiscard_and_submit_drop_evgroup_msg(0,0);\n\
     }\n\
     if(EVcount_op_msg()>0) {\n\
+        op_msg *op = EVdata_op_msg(0);\n\
         mine = EVget_attrs_op_msg(0);\n\
         found = attr_ivalue(mine, \"fp_dst_rank\");\n\
         if(found > 0) {\n\
@@ -518,7 +535,7 @@ char *multiqueue_action = "{\n\
         }\n\
     }\n\
     if(EVcount_flush()>0) {\n\
-        flush* c = EVdata_flush(0);\n\
+         flush* c = EVdata_flush(0);\n\
          if(c->type == 2) { \n\
              if(EVcount_evgroup()>0){\n\               
                evgroup *g = EVdata_evgroup(0); \n\
@@ -527,11 +544,9 @@ char *multiqueue_action = "{\n\
                EVdiscard_flush(0);\n\
              }\n\
          }\n\
-         if(c->type == 3) {\n\
+         else if(c->type == 3) {\n\
             int z = EVcount_update_step_msg();\n\
-            printf(\"count: %d\\n\", z);\n\
             if(EVcount_update_step_msg()>0) {\n\
-               printf(\"here\\n\");\n\
                update_step_msg *stepmsg = EVdata_update_step_msg(0);\n\
                stepmsg->condition = c->condition;\n\
                EVsubmit(c->rank+1, stepmsg);\n\
@@ -540,7 +555,6 @@ char *multiqueue_action = "{\n\
           }\n\ 
           else {\n\
             EVdiscard_and_submit_flush(0,0);\n\
-            flush_data_count++;\n\
           }\n\
     }\n\
     if(EVcount_anonymous()>0){\n\
@@ -964,7 +978,7 @@ flush_handler(CManager cm, void* vevent, void* client_data, attr_list attrs) {
 static int
 drop_evgroup_handler(CManager cm, void *vevent, void *client_data, attr_list attrs){
     drop_evgroup_msg *msg = vevent;
-    CMCondition_signal(cm, msg->condition);    
+    //CMCondition_signal(cm, msg->condition);    
     return 0;
 }
 
@@ -1075,9 +1089,9 @@ control_thread(void* arg)
 					open->process_id+1, 
 					fileData->bridges[open->process_id].myNum);
 		}		
-		if(open->step < fileData->currentStep) {
+		if(open->step < fileData->readerStep) {
 		    log_error("Flexpath method control_thread: Received Past Step Open\n");
-                } else if (open->step == fileData->currentStep){
+                } else if (open->step == fileData->readerStep){
                     pthread_mutex_lock(&fileData->openMutex);
                     fileData->openCount++;  
                     fileData->bridges[open->process_id].opened = 1;
@@ -1085,12 +1099,13 @@ control_thread(void* arg)
                     op_msg* ack = malloc(sizeof(op_msg));
                     ack->file_name = strdup(fileData->name);
                     ack->process_id = fileData->rank;
-                    ack->step = fileData->currentStep;
+                    ack->step = fileData->readerStep;
                     ack->type = 2;
 		    ack->condition = open->condition;
                     fileData->attrs = set_dst_rank_atom(fileData->attrs, open->process_id+1);
 		    
                     EVsubmit_general(fileData->opSource, ack, op_free, fileData->attrs);
+		    //EVreturn_event_buffer(flexpathWriteData.cm, open)
                 } else {
                     fp_write_log("STEP", "recieved op with future step\n");
                 }
@@ -1103,7 +1118,7 @@ control_thread(void* arg)
                 fileData->bridges[close->process_id].opened=0;
                 fp_write_log("MUTEX","unlock 7\n");
 		pthread_mutex_unlock(&fileData->openMutex);
-                 if(fileData->openCount==0) {
+		if(fileData->openCount==0) { // al writers have closed.. can discard data for this step
                     fp_write_log("STEP", "advancing\n");
                     fp_write_log("DATAMUTEX", "in use 2\n"); 
 		    FlexpathQueueNode* node = threaded_dequeue(&fileData->dataQueue, 
@@ -1114,33 +1129,34 @@ control_thread(void* arg)
                     FMfree_var_rec_elements(fileData->fm->ioFormat, node->data);
 
 		    drop_evgroup_msg dropMsg;
-		    dropMsg.step = fileData->currentStep;
+		    dropMsg.step = fileData->readerStep;
 		    dropMsg.condition = CMCondition_get(flexpathWriteData.cm, NULL);
 		    EVsubmit(fileData->dropSource, &dropMsg, fileData->attrs);
-		    CMCondition_wait(flexpathWriteData.cm,  dropMsg.condition); 
-                    fileData->currentStep++;
+		    //CMCondition_wait(flexpathWriteData.cm,  dropMsg.condition); 
+
+                    fileData->readerStep++;
 
 		    //for all bridges if step == currentstep send ack       		    
                     int i;
-                    for(i=0; i<fileData->numBridges; i++) {
-                      if(fileData->bridges[i].step==fileData->currentStep) {
-                        fileData->openCount++;
-                        fileData->bridges[i].opened = 1;
-                        op_msg* ack = malloc(sizeof(op_msg));
-                        ack->file_name = strdup(fileData->name);
-                        ack->process_id = fileData->rank;
-                        ack->step = fileData->currentStep;
-                        ack->type = 2;
-			ack->condition = fileData->bridges[i].condition;
-                        fileData->attrs = set_dst_rank_atom(fileData->attrs, i+1);
-                        EVsubmit_general(fileData->opSource, 
-					 ack, 
-					 op_free, 
-					 fileData->attrs);
-                      }
-                    }
+                    //for(i=0; i<fileData->numBridges; i++) {
+			//if(fileData->bridges[i].step==fileData->readerStep) {
+			  //fileData->openCount++;
+			  //fileData->bridges[i].opened = 1;
+			  op_msg* ack = malloc(sizeof(op_msg));
+			  ack->file_name = strdup(fileData->name);
+			  ack->process_id = fileData->rank;
+			  ack->step = fileData->readerStep;
+			  ack->type = 2;
+			  ack->condition = close->condition;
+			  fileData->attrs = set_dst_rank_atom(fileData->attrs, close->process_id+1);
+			  EVsubmit_general(fileData->opSource, 
+					   ack, 
+					   op_free, 
+					   fileData->attrs);
+			  // }
+		      //}
 		 }
-		 EVreturn_event_buffer(flexpathWriteData.cm, close);
+		//EVreturn_event_buffer(flexpathWriteData.cm, close);
 	    }else if(controlMsg->type == INIT){ 
 		fp_write_log("DATAMUTEX", "in use 1\n"); 
 		dataNode = threaded_peek(&fileData->dataQueue, 
@@ -1172,7 +1188,7 @@ control_thread(void* arg)
 
 		EVsubmit_general(fileData->dataSource, 
 				 temp, data_free, fileData->attrs);
-		EVreturn_event_buffer(flexpathWriteData.cm, initMsg);
+		//EVreturn_event_buffer(flexpathWriteData.cm, initMsg);
 	    }
 	    else{
 		log_error("control_thread: Unrecognized Control Message\n");
@@ -1268,7 +1284,7 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
     // setup step state
     fileData->attrs = create_attr_list();
     fileData->openCount = 0;
-    //fileData->currentStep = 0;
+    //fileData->readerStep = 0;
 
     pthread_mutex_init(&fileData->controlMutex, NULL);
     pthread_mutex_init(&fileData->dataMutex, NULL);
@@ -1405,16 +1421,21 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
 						     op_format_list, 
 						     op_free, 
 						     NULL); 
-    fileData->offsetSource = EVcreate_submit_handle(flexpathWriteData.cm, 
-						    fileData->multiStone, 
-						    evgroup_format_list);
+    fileData->offsetSource = EVcreate_submit_handle_free(flexpathWriteData.cm, 
+							 fileData->multiStone, 
+							 evgroup_format_list,
+							 evgroup_msg_free, 
+							 NULL);
+
     fileData->dropSource = EVcreate_submit_handle(flexpathWriteData.cm, 
 						  fileData->multiStone, 
 						  drop_evgroup_msg_format_list);
     
-    fileData->stepSource = EVcreate_submit_handle(flexpathWriteData.cm,
-						  fileData->multiStone, 
-						  update_step_msg_format_list);
+    fileData->stepSource = EVcreate_submit_handle_free(flexpathWriteData.cm,
+						       fileData->multiStone, 
+						       update_step_msg_format_list,
+						       step_msg_free,
+						       NULL);
 
     fp_write_log("SETUP", "setup terminal actions\n");
     EVassoc_terminal_action(flexpathWriteData.cm, fileData->sinkStone, 
@@ -1628,19 +1649,19 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 	    }
 	    list=list->next;
 	}
-	update_step_msg stepmsg;
-	stepmsg.finalized = 0;
-	stepmsg.step = fileData->writerStep;
-	stepmsg.condition = -1;
-	EVsubmit(fileData->stepSource, &stepmsg, fileData->attrs);
+	update_step_msg *stepmsg = malloc(sizeof(update_step_msg));
+	stepmsg->finalized = 0;
+	stepmsg->step = fileData->writerStep;
+	stepmsg->condition = -1;
+	EVsubmit_general(fileData->stepSource, stepmsg, step_msg_free, fileData->attrs);
 
-	evgroup gp;
-	gp.num_vars = num_gbl_vars;
-	gp.step = fileData->writerStep;
-	gp.vars = gbl_vars;
+	evgroup *gp = malloc(sizeof(evgroup));
+	gp->num_vars = num_gbl_vars;
+	gp->step = fileData->writerStep;
+	gp->vars = gbl_vars;
 	//fileData->gp = gp;       
 	fileData->attrs = set_size_atom(fileData->attrs, fileData->size);
-	EVsubmit(fileData->offsetSource, &gp, fileData->attrs);
+	EVsubmit_general(fileData->offsetSource, gp, evgroup_msg_free, fileData->attrs);
     }
     fileData->writerStep++;
     /* while((c=queue_count(&fileData->dataQueue))>fileData->maxQueueSize) { */
