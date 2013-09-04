@@ -479,6 +479,7 @@ need_writer(
 void
 send_open_msg(flexpath_reader_file *fp, int destination)
 {
+
     if(!fp->bridges[destination].created){
 	build_bridge(&(fp->bridges[destination]));
     }
@@ -505,9 +506,10 @@ send_close_msg(flexpath_reader_file *fp, int destination)
     msg.file_name = strdup(fp->file_name);
     msg.step = fp->mystep;
     msg.type = CLOSE_MSG;
-    msg.condition = -1;
+    msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
 
-    EVsubmit(fp->bridges[destination].op_source, &msg, NULL);    
+    EVsubmit(fp->bridges[destination].op_source, &msg, NULL);  
+    CMCondition_wait(fp_read_data->fp_cm, msg.condition);
     fp->bridges[destination].opened = 0;
 }
 
@@ -561,6 +563,7 @@ update_step_msg_handler(
     void *client_data,
     attr_list attrs)
 {
+    fp_log("HANDLER", "update_step_msg_handler enter\n");
     update_step_msg *msg = (update_step_msg*)vevent;
     fprintf(stderr, "got update_step msg: %d\n", msg->step);
     ADIOS_FILE *adiosfile = (ADIOS_FILE*)client_data;
@@ -570,17 +573,21 @@ update_step_msg_handler(
     fp->last_writer_step = msg->step;
     fp->writer_finalized = msg->finalized;
     adiosfile->last_step = msg->step;
+    fprintf(stderr, "update_step_msg_handler, waiting on condition: %d\n", msg->condition);
     CMCondition_signal(fp_read_data->fp_cm, msg->condition);
+    fp_log("HANDLER", "update_step_msg_handler depart\n");
     return 0;
 }
 
 static int 
 op_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
+    fp_log("HANDLER", "op_msg_handler enter\n");
     op_msg* msg = (op_msg*)vevent;    
     ADIOS_FILE *adiosfile = (ADIOS_FILE*)client_data;
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     if(msg->type==ACK_MSG) {
 	if(msg->condition != -1){
+	    fp_log("HANDLER", "op_msg_handler signaling on condition: %d\n", msg->condition);
 	    CMCondition_signal(fp_read_data->fp_cm, msg->condition);
 	}
         //ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
@@ -589,12 +596,14 @@ op_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
 	adios_errno = err_end_of_stream;
 	CMCondition_signal(fp_read_data->fp_cm, msg->condition);
     }       
+    fp_log("HANDLER", "op_msg_handler depart\n");
     return 0;
 }
 
 static int
 group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 {
+    fp_log("HANDLER", "\tgroup_msg_handler enter\n");
     EVtake_event_buffer(fp_read_data->fp_cm, vevent);
     evgroup * msg = (evgroup*)vevent;
     ADIOS_FILE *adiosfile = client_data;
@@ -623,12 +632,14 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
     }
 
     CMCondition_signal(fp_read_data->fp_cm, msg->condition);    
+    fp_log("HANDLER", "\tgroup_msg_handler depart\n");
     return 0;
 }
 
 static int
 raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list attrs)
 {
+    fp_log("HANDLER", "raw_handler enter\n");
     ADIOS_FILE *adiosfile = client_data;
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     FMContext context = CMget_FMcontext(cm);
@@ -791,7 +802,9 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
         j++;
         f++;
     }
+
     CMCondition_signal(fp_read_data->fp_cm, condition);
+    fp_log("HANDLER", "raw_handler depart\n");
     return 0; 
 }
 
@@ -1080,8 +1093,7 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
     int i=0;
     for(i=0; i<fp->num_bridges; i++) {
         if(fp->bridges[i].created && fp->bridges[i].opened) {
-	    send_close_msg(fp, i);
-            op_msg close;
+	    send_close_msg(fp, i);           
 	}
     }
     MPI_Barrier(fp->comm);
@@ -1096,26 +1108,27 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
         }
     }   
 
-    send_flush_msg(fp, fp->writer_coordinator, STEP);
+    /* fprintf(stderr, "sending flush step\n"); */
+    /* send_flush_msg(fp, fp->writer_coordinator, STEP); */
     
-    //put this on a timer, so to speak, for timeout_sec
-    while(fp->mystep == fp->last_writer_step){
-	if(fp->writer_finalized){
-	    adios_errno = err_end_of_stream;
-	    return err_end_of_stream;
-	}
-	CMsleep(fp_read_data->fp_cm, 1);
-	send_flush_msg(fp, fp->writer_coordinator, STEP);
-    }
+    /* //put this on a timer, so to speak, for timeout_sec */
+    /* while(fp->mystep == fp->last_writer_step){ */
+    /* 	if(fp->writer_finalized){ */
+    /* 	    adios_errno = err_end_of_stream; */
+    /* 	    return err_end_of_stream; */
+    /* 	} */
+    /* 	CMsleep(fp_read_data->fp_cm, 1); */
+    /* 	fprintf(stderr, "sending flush step 123123123\n"); */
+    /* 	send_flush_msg(fp, fp->writer_coordinator, STEP); */
+    /* } */
 	
     // need to remove selectors from each var now.
 
-    fprintf(stderr, "sending flush step\n");
-    send_flush_msg(fp, fp->writer_coordinator, DATA);
-      
-    // should only happen if there are more steps available.
+// should only happen if there are more steps available.
     // writer should have advanced.
     send_flush_msg(fp, fp->writer_coordinator, EVGROUP);
+    send_flush_msg(fp, fp->writer_coordinator, DATA);
+         
     return 0;
 }
 
