@@ -1680,7 +1680,7 @@ extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method
     while(fileData) {
 	update_step_msg *stepmsg = malloc(sizeof(update_step_msg));
 	stepmsg->finalized = 1;
-	stepmsg->step = fileData->writerStep;
+	stepmsg->step = fileData->writerStep - 1;
 	stepmsg->condition = -1;
 	EVsubmit_general(fileData->stepSource, stepmsg, update_step_msg_free, fileData->attrs);
         //fp_write_log("DATAMUTEX", "in use 4\n"); 
