@@ -24,42 +24,12 @@ Existing Directories
 
 * maya_append - inspired by maya; testing the append mode (doesn't work with Flexpath)
   
-How to build and clean the build (might be outdated 2013-09-04)
+How to build and clean the build 
 --------------------------------
-# you need to set the environment variables as Makefile uses those locations 
-# to locate libraries and headers
-
-export ADIOS_ROOT=/rock/opt/adios/git-dbg
-export MXML_ROOT=/rock/opt/mxml/2.7
-export MPI_ROOT=/rock/opt/openmpi/1.6.3
-export EVPATH_ROOT=/rock/opt/evpath
-
-# in certain cases you might need the lustre directory (e.g., on flexpath on kraken)
-# depending how do you compiled your adios
-export LUSTRE_ROOT=/opt/cray/lustre-cray_ss_s/default
-
-To build most of tests run:
-
-# to use MPI method
-make -f Makefile.master 
-
-# to use FLEXPATH method
-make -f Makefile.master CFLAGS="-DFLEXPATH_METHOD"
-
-# to clean the build
-make -f Makefile.master clean
-
-There are a few Makefiles for particular machines such as Makefile.kraken.
-If you are building on such a machine you might take a look at the file
-and try to run it instead of Makefile.master.
-
-Individual tests may be build with
-
-$ make -f Makefile.generic
-
-# should remove all unnecessary exec files 
-$ make -f Makefile.generic clean
-
+# build
+$ make 
+# clean
+$ make clean
 
 How to run regression tests (might be outdated 2013-09-04)
 ----------------------------
@@ -70,18 +40,17 @@ module list
 Currently Loaded Modules:
   1) openmpi/1.6.3    2) mxml/2.7    3) evpath
 
+There is a convenience bash script 
 
-# to clean the data generated during the test
-make -f Makefile.master clean_test
+./run_tests.sh
+
+Run it without options to see how to run all tests.
 
 # to run test
 # in one terminal run writers
-make -f Makefile.master run-w
+./run_tests.sh -flx-w
 # in the second terminal run readers
-make -f Makefile.master run-r
-
-Otherwise see Makefile.master for additional options.
-
+./run_tests.sh -flx-r
 
 Notes
 ------

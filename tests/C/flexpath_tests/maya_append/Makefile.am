@@ -5,10 +5,10 @@ AUTOMAKE_OPTIONS = no-dependencies
 
 noinst_PROGRAMS = writer reader
 
-writer_SOURCES = writer.c utils.c
+writer_SOURCES = writer.c ../common/utils.c
 writer_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 writer_LDFLAGS = $(ADIOSLIB_LDFLAGS)
-reader_SOURCES = reader.c utils.c
+reader_SOURCES = reader.c ../common/utils.c
 reader_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 reader_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 
