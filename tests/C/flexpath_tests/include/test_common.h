@@ -106,24 +106,25 @@
  * It assumes presence and visibility of a few variables such as argc, argv
  *
  * @param adios_opts The structure where adios related command line options will be stored
- * @param show_help  The variable where information if the help needs to be presented
- * @param help_string The string passed to the usage function
  *
  * The macro causes to return DIAG_ERR if getting options returned errors
  */
-#define GET_ENTRY_OPTIONS(adios_opts, show_help, help_string) \
+#define GET_ENTRY_OPTIONS(adios_opts, help_string) \
 	if (1 == argc){ \
 		p_error("See '-h' for options. At least transport param needs to be specified. Quitting ...\n"); \
 		return DIAG_ERR; \
 	} \
-	if( DIAG_OK != get_options(&adios_opts, argc, argv, &show_help) ){ \
-		p_error("Got from get_options(). Quitting ...\n."); \
-		return DIAG_ERR; \
-	} \
-	if (show_help){ \
-		usage(argv[0], help_string); \
-		return DIAG_OK; \
-	}
+	do { \
+		int show_help = 0; \
+		if( DIAG_OK != get_options(&adios_opts, argc, argv, &show_help) ){ \
+			p_error("Got from get_options(). Quitting ...\n."); \
+			return DIAG_ERR; \
+		} \
+		if (show_help){ \
+			usage(argv[0], help_string); \
+			return DIAG_OK; \
+		} \
+	} while(0)
 
 /**
  * checks if the adios call returned not zero and sets the error

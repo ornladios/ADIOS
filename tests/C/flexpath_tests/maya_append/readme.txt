@@ -7,38 +7,11 @@ DESCRIPTION
 The idea is to test how to write in an appended mode and read from
 that mode. This test is based on the Maya project.
 
-It is designed for two methods:
+It is designed for two methods (use -t flx or -t mpi)
 
 1. MPI/ADIOS_READ_METHOD_BP
 2. FLEXPATH/ADIOS_READ_METHOD_FLEXPATH
 
-To switch between those two modes you need to run the make without or
-with the CFLAGS set to -DFLEXPATH_METHOD. See the build section.
-
-BUILD
-=======
-# you need to set the environment variables as Makefile uses those locations 
-# to locate libraries and headers
-
-export ADIOS_ROOT=/rock/opt/adios/git-dbg
-export MXML_ROOT=/rock/opt/mxml/2.7
-export MPI_ROOT=/rock/opt/openmpi/1.6.3
-export EVPATH_ROOT=/rock/opt/evpath
-
-# in certain cases you might need the lustre directory (e.g., on kraken)
-export LUSTRE_ROOT=/opt/cray/lustre-cray_ss_s/default
-
-# build the MPI/ADIOS_READ_METHOD_BP
-$ make -f Makefile.generic
-
-# build FLEXPATH/ADIOS_READ_METHOD_FLEXPATH
-$ make -f Makefile.generic CFLAGS="-DFLEXPATH_METHOD"
-
-# should remove all unnecessary exec files 
-$ make -f Makefile.generic clean
-
-# cleans files hanging around after previous runs
-$ make -f Makefile.generic clean_test
 
 RUN
 ===== 
@@ -48,8 +21,8 @@ $ make -f Makefile.generic clean_test
 # you can run as many writers as you want and as many readers as you want
 # they write and read independently; the default is to run one writer
 # and one reader
-$ ./writer
-$ ./reader 
+$ ./writer -f mpi
+$ ./reader -f mpi
 
 See Makefile for other options of running the test.
 

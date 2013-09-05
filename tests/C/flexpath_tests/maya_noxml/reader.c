@@ -68,24 +68,18 @@
 
 
 int main (int argc, char **argv){
-	char filename[256];
 	int rank =0, size =0;
 	MPI_Comm comm = MPI_COMM_WORLD;
 	diag_t diag = DIAG_OK;  // to store the diagnostic information
 	struct test_info test_result = { TEST_PASSED, "maya_noxml" };
 	struct err_counts error_counts = {0, 0};
 	struct adios_tsprt_opts adios_opts;
-	int show_help = 0;
 
-	GET_ENTRY_OPTIONS(adios_opts, show_help, "Runs readers.");
+	GET_ENTRY_OPTIONS(adios_opts, "Runs readers.");
 
 	// adios read initialization
 	MPI_Init( &argc, &argv);
 	MPI_Comm_rank (comm, &rank);
-
-	// get the name of the file
-	strcpy(filename, FILE_NAME);
-	//sprintf(filename, "%s_%d.bp", filename,  rank);
 
 	// depending on the method
 	SET_ERROR_IF_NOT_ZERO(adios_read_init_method(adios_opts.method, comm, adios_opts.adios_options), error_counts.adios);
@@ -93,7 +87,7 @@ int main (int argc, char **argv){
 
 	// I will be working with streams so the lock mode is necessary,
 	// return immediately if the stream unavailable
-	ADIOS_FILE *adios_handle = adios_read_open(filename, adios_opts.method, comm, ADIOS_LOCKMODE_NONE, 0.0);
+	ADIOS_FILE *adios_handle = adios_read_open(FILE_NAME, adios_opts.method, comm, ADIOS_LOCKMODE_NONE, 0.0);
 	if ( !adios_handle){
 		p_error("Quitting ... (%d) %s\n", adios_errno, adios_errmsg());
 		return DIAG_ERR;

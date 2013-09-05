@@ -42,25 +42,19 @@
 
 
 int main(int argc, char ** argv){
-	char filename[256];              // the name of the file to write data and compare with flexpath
 	int  rank=0, size=0;
 	MPI_Comm  comm = MPI_COMM_WORLD; // required for ADIOS
 	int64_t 	adios_handle;   // the ADIOS file handler
 	int retval;
 	struct adios_tsprt_opts adios_opts;
 	int err_count = 0;
-	int show_help = 0;
 
-	GET_ENTRY_OPTIONS(adios_opts, show_help, "Runs writers.");
+	GET_ENTRY_OPTIONS(adios_opts, "Runs writers.");
 
 	// ADIOS initialization
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank (comm, &rank);
 	MPI_Comm_size (comm, &size);
-
-	// where I will write the data
-	strcpy(filename, FILE_NAME);
-	//sprintf(filename, "%s_%d.bp", filename,  rank);
 
 	// From sources it just returns 1 (2013-07-16, whatever)
 	adios_init_noxml(comm);
@@ -107,7 +101,6 @@ int main(int argc, char ** argv){
 
     // first define variable, since I am using no XML api
     for(i = 0; i < MAYA_GRID_FUNC_COUNT; ++i ){
-
     	// this is common for grid functions and scalars
         adios_define_var (adios_grp, "patch_id", "", adios_unsigned_integer, "", "", "");
         adios_groupsize += sizeof (uint64_t);
@@ -172,14 +165,14 @@ int main(int argc, char ** argv){
     RET_IF_ERROR(err_count, rank);
 
 	// open our group and transport method associated with it
-	adios_open (&adios_handle, "carpet_checkpoint", filename, "w", comm);
+	adios_open (&adios_handle, "carpet_checkpoint", FILE_NAME, "w", comm);
 	uint64_t adios_totalsize = 0;
 
 	retval=adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
 	fprintf(stderr, "Rank=%d adios_group_size(): adios_groupsize=%ld, adios_totalsize=%ld, retval=%d\n",
 				rank, adios_groupsize, adios_totalsize, retval);
 
-	printf("Writing checkpoint to file %s using the %s method: group size is %lu, total size is %lu. ", filename, adios_opts.transport, adios_groupsize, adios_totalsize);
+	printf("Writing checkpoint to file %s using the %s method: group size is %lu, total size is %lu. ", FILE_NAME, adios_opts.transport, adios_groupsize, adios_totalsize);
 
 
     // arbitrary, but this is what I am getting from Maya

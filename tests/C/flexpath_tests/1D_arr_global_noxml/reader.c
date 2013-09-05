@@ -44,9 +44,8 @@ int main (int argc, char **argv){
 	struct test_info test_result = {TEST_PASSED, "1D_arr_global_noxml"};
 	struct err_counts err = { 0, 0};
 	struct adios_tsprt_opts adios_opts;
-	int show_help = 0;
 
-	GET_ENTRY_OPTIONS(adios_opts, show_help, "Runs readers. It is recommended to run as many readers as writers.");
+	GET_ENTRY_OPTIONS(adios_opts,  "Runs readers. It is recommended to run as many readers as writers.");
 
 	// adios read initialization
 	MPI_Init( &argc, &argv);

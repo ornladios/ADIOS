@@ -21,21 +21,13 @@
 /**
  * @param program_name The name of the program
  * @param program_desc The description of the program
- * @return 0 Returns always 0
+ * @return DIAG_OK Returns always DIAG_OK
  */
-int usage(char *program_name, char *program_desc){
+diag_t usage(char *program_name, char *program_desc){
 	printf("USAGE\n");
 	printf("  mpirun -np nprocs %s [-h] -t method\n", program_name);
 	printf("\nDESCRIPTION\n");
 	printf("  %s\n", program_desc);
-//	printf("  METHOD: ");
-//#ifdef FLEXPATH_METHOD
-//	printf("FLEXPATH/ADIOS_READ_METHOD_FLEXPATH" );
-//#else
-//	printf("MPI/ADIOS_READ_METHOD_BP");
-//#endif
-//	printf(" will be used.\n");
-//	printf("Please check " XML_ADIOS_INIT_FILENAME "\n");
 	printf("\n nprocs Number of processors you want to use\n");
 	printf(" -t method\n");
 	printf("     The transport/read method. Currently supported flx and mpi.\n");
@@ -47,7 +39,7 @@ int usage(char *program_name, char *program_desc){
 	printf("mpirun -np 2 %s -t flx\n", program_name);
 	printf("mpirun -np 2 %s -t mpi\n", program_name);
 
-	return 0;
+	return DIAG_OK;
 }
 
 /**
@@ -76,6 +68,80 @@ diag_t gen_1D_array(double *p_arr, int arr_len, int rank){
 	int i = 0;
 	for( i = 0; i < arr_len; i++){
 		p_arr[i] = rank * 10 + i;
+	}
+
+	return DIAG_OK;
+}
+
+/**
+ * TODO each rank generates the same sequence of numbers
+ * Generates the 1D array of length arr_len, based on the provided rank
+ * It assumes that the memory is allocated for p_arr
+ *
+ * 	 p_arr : rank 0: 1, 2, 3, 4, 5, ....
+ *           rank 1: 10, 11, 12, 13, ...
+ *           rank 2: 20, 21, 22, 23, ...
+ *
+ * The function does not check if the memory is overwritten
+ *
+ * @param p_arr The pointer to the array that will hold the values
+ * @param arr_len The number of elements in the array
+ * @param rank The rank for which I want to have the number generated
+ *
+ * @return DIAG_ERR if the p_arr is NULL
+ *         DIAG_OK otherwise
+ *          p_arr (with generated numbers)
+ */
+diag_t gen_1D_array2(double *p_arr, int arr_len, int rank){
+
+	if (!p_arr){
+		fprintf(stderr, "ERROR: p_arr is NULL\n.");
+		return DIAG_ERR;
+	}
+	int i = 0;
+	for( i = 0; i < arr_len; i++){
+		// see comment in @gen_1D_array
+		//p_arr[i] = rank * 10.0 + i;
+		p_arr[i] = i * 1.0;
+	}
+
+	return DIAG_OK;
+}
+
+/**
+ * TODO this is not true; each rank generates the same sequence of numbers
+ * Generates the 1D array of length arr_len, based on the provided rank
+ * It assumes that the memory is allocated for p_arr
+ *
+ * 	 p_arr : rank 0: 1, 2, 3, 4, 5, ....
+ *           rank 1: 10, 11, 12, 13, ...
+ *           rank 2: 20, 21, 22, 23, ...
+ *
+ * The function does not check if the memory is overwritten
+ *
+ * @param p_arr The pointer to the array that will hold the values
+ * @param arr_len The number of elements in the array
+ * @param rank The rank for which I want to have the number generated
+ *
+ * @return DIAG_ERR if the p_arr is NULL
+ *         DIAG_OK otherwise
+ *          p_arr (with generated numbers)
+ */
+diag_t gen_1D_array_int(int *p_arr, int arr_len, int rank){
+
+	if (!p_arr){
+		fprintf(stderr, "ERROR: p_arr is NULL\n.");
+		return DIAG_ERR;
+	}
+	int i = 0;
+	for( i = 0; i < arr_len; i++){
+		// the diversification with rank will not work for as the last one will be used
+		// if more than 1 ranks will be used and the reader will signal the error
+		// that's why I decided to go with the same value independent on
+		// the rank
+		// TODO but the above and below is something to explore
+		//p_arr[i] = rank * 10 + i;
+		p_arr[i] = i;
 	}
 
 	return DIAG_OK;

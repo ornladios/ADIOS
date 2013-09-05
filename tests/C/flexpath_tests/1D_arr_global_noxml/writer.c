@@ -40,9 +40,8 @@ int main(int argc, char ** argv){
 
 	struct adios_tsprt_opts adios_opts;
 	int err_count = 0;
-	int show_help = 0;
 
-	GET_ENTRY_OPTIONS(adios_opts, show_help, "Runs writers. It is recommended to run as many writers as readers.");
+	GET_ENTRY_OPTIONS(adios_opts, "Runs writers. It is recommended to run as many writers as readers.");
 
 
 	// sanity check

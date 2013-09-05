@@ -14,25 +14,6 @@
 #include "test_common.h"
 #include "cfg.h"
 
-/**
- * For storing errors
- */
-struct err_counts {
-	int adios;        // counter for adios calls errors
-	int test;		  // counter for comparisons errors
-};
-
-
-/**
- * breaks the loop if error count is positive
- *
- * @param err_count The variable that positive value indicates that ther is an error
- */
-#define BREAK_IF_ERROR(err_count) \
-	if ( err_count > 0) { \
-		break; \
-	}
-
 
 /**
  * wrapper for scheduling adios reads; this macro assumes existence of
@@ -44,91 +25,37 @@ struct err_counts {
  */
 #define READ_FULLPATH(attribute, grid_func_name, out_buf) \
 	sprintf(fullpath, "%s%s", attribute, grid_func_name);  \
-	TEST_ADIOS_ERROR__IF_NOT_ZERO(adios_schedule_read(adios_handle, sel, fullpath,0,10, out_buf), error_counts.adios);
-
-
-/**
- * checks if the adios call returned not zero; requires declaration of error_count
- * int adios_err_count++
- * @param fn_call adios function call
- * @param (in/out) err_count incremented if the error observed
- */
-#define TEST_ADIOS_ERROR__IF_NOT_ZERO(fn_call, err_count)             \
-  do {                                                                  \
-	 int _error_code = fn_call;                                         \
-     if (_error_code != 0){                                             \
-       p_error("rank %d: %s: (%d) %s\n", rank, #fn_call, adios_errno, adios_errmsg()) ;\
-       err_count++;                                                   \
-     }                                                                  \
-  } while (0)
-
-/**
- * assumes that err_count is defined
- * @param value_ref The reference value
- * @param value     The actual value
- * @param err_count The value of the error counter; if the error increases
- *                  the value will be increased
- */
-#define TEST_INT_EQUAL(value_ref, value, err_count) \
-	if (value != value_ref ){ \
-		test_passed = TEST_FAILED; \
-		p_test_failed("(expected=%d, got=%d)\n", value_ref, value); \
-		err_count++; \
-	}
-
-/**
- * assumes that err_count is defined
- * @param value_ref The reference value
- * @param value     The actual value
- * @param err_count The value of the error counter; if the error increases
- *                  the value will be increased
- */
-#define TEST_DOUBLE_EQUAL(value_ref, value, err_count) \
-	if (value != value_ref ){ \
-		test_passed = TEST_FAILED; \
-		p_test_failed("(expected=%f, got=%f)\n", value_ref, value); \
-		err_count++; \
-	}
+	SET_ERROR_IF_NOT_ZERO(adios_schedule_read(adios_handle, sel, fullpath,0,10, out_buf), error_counts.adios);
 
 
 // for printing the values of the variable
 #define STR_BUFFER_SIZE 100
 
 int main (int argc, char **argv){
-	char filename[256];
 	int rank =0, size =0;
 	MPI_Comm comm = MPI_COMM_WORLD;
-	int test_passed = TEST_PASSED;   // TEST_PASSED if test passed; TEST_FAILED if test failed
-	enum ADIOS_READ_METHOD method = METHOD;
-	const char * TEST_NAME="maya_append";
-	struct err_counts error_counts = {0, 0};
+	struct err_counts err = {0, 0};
+	struct test_info test_result = {TEST_PASSED, "maya_append"};
+	struct adios_tsprt_opts adios_opts;
 
-	if (1 < argc){
-		usage(argv[0], "Runs readers as many as you want.");
-		return 0;
-	}
+	GET_ENTRY_OPTIONS(adios_opts, "Runs readers. As many as you want to.");
 
 	// adios read initialization
 	MPI_Init( &argc, &argv);
 	MPI_Comm_rank (comm, &rank);
 
-	// get the name of the file
-	strcpy(filename, FILE_NAME);
-
 	// depending on the method
-	if( adios_read_init_method( method, comm, ADIOS_OPTIONS) != 0){
-		p_error("Quitting ... Issues with initialization adios_read: (%d) %s\n", adios_errno, adios_errmsg());
-		return PROGRAM_ERROR;
-	}
+	SET_ERROR_IF_NOT_ZERO(adios_read_init_method(adios_opts.method, comm, adios_opts.adios_options), err.adios);
+	RET_IF_ERROR(err.adios, rank);
+
 
 	// I will be working with streams so the lock mode is necessary,
 	// return immediately if the stream unavailable
-	ADIOS_FILE *adios_handle = adios_read_open_file(filename, method, comm);
+	ADIOS_FILE *adios_handle = adios_read_open_file(FILE_NAME, adios_opts.method, comm);
 	if ( !adios_handle){
 		p_error("Quitting ... (%d) %s\n", adios_errno, adios_errmsg());
-		return PROGRAM_ERROR;
+		return DIAG_ERR;
 	}
-
 
 	int i = 0;
 	// I will only support reading TIMESTEP_COUNT integers for the level value
@@ -140,8 +67,6 @@ int main (int argc, char **argv){
 	memset(level, 0, sizeof(int) * TIMESTEP_COUNT);
 	memset(cctk_bbox, 0, sizeof(int) * TIMESTEP_COUNT*6);
 	memset(data, 0, sizeof(double) * 11* 12*13 * TIMESTEP_COUNT);
-
-
 
 	char fullpath[STR_BUFFER_SIZE];
 
@@ -160,53 +85,53 @@ int main (int argc, char **argv){
 	adios_selection_delete(sel);
 	sel = NULL;
 
-
-	TEST_ADIOS_ERROR__IF_NOT_ZERO(adios_perform_reads(adios_handle, 1), error_counts.adios);
+	SET_ERROR_IF_NOT_ZERO(adios_perform_reads(adios_handle, 1), err.adios);
 
 	int j = 0;
-	if (error_counts.adios){
-		test_passed = TEST_FAILED;
+	if (err.adios){
+		test_result.result = TEST_FAILED;
 	} else {
 		// reference data
 		int level_ref[TIMESTEP_COUNT];
-		gen_1D_array(level_ref, TIMESTEP_COUNT, rank);
+		gen_1D_array_int(level_ref, TIMESTEP_COUNT, rank);
 
 		int cctk_bbox_ref[6];
-		gen_1D_array(cctk_bbox_ref, 6, rank);
+		gen_1D_array_int(cctk_bbox_ref, 6, rank);
 
 		double * data_ref =  (double *)malloc(11*12*13*sizeof(double));
-		gen_1D_array_double(data_ref, 11*12*13, rank);
+		gen_1D_array2(data_ref, 11*12*13, rank);
 
 		// compare with reference values
 		for( i = 0; i < TIMESTEP_COUNT; ++i){
-			TEST_INT_EQUAL(level_ref[i], level[i], error_counts.test);
-			BREAK_IF_ERROR(error_counts.test);
-			TEST_INT_EQUAL(level_ref[i], level_scalar[i], error_counts.test);
-			BREAK_IF_ERROR(error_counts.test);
+			TEST_INT_EQUAL(level_ref[i], level[i], err.test, test_result.result);
+			BREAK_IF_ERROR(err.test);
+			TEST_INT_EQUAL(level_ref[i], level_scalar[i], err.test, test_result.result);
+			BREAK_IF_ERROR(err.test);
 
 			for( j = 0; j < 6; ++j){
-				TEST_INT_EQUAL(cctk_bbox_ref[j], cctk_bbox[i*6 + j], error_counts.test);
-				BREAK_IF_ERROR(error_counts.test);
+				TEST_INT_EQUAL(cctk_bbox_ref[j], cctk_bbox[i*6 + j], err.test, test_result.result);
+				BREAK_IF_ERROR(err.test);
 			}
-			BREAK_IF_ERROR(error_counts.test);
+			BREAK_IF_ERROR(err.test);
 
 			for( j = 0; j < 11 * 12 * 13; ++j){
-				TEST_DOUBLE_EQUAL(data_ref[j], data[i * 11 * 12 * 13 +j], error_counts.test);
-				BREAK_IF_ERROR(error_counts.test);
+				TEST_DOUBLE_EQUAL(data_ref[j], data[i * 11 * 12 * 13 +j], err.test, test_result.result);
+				BREAK_IF_ERROR(err.test);
 			}
-			BREAK_IF_ERROR(error_counts.test);
+			BREAK_IF_ERROR(err.test);
 		}
 
 		free(data_ref);
 		data_ref = NULL;
 	}
 
-	if (TEST_PASSED == test_passed)
-		p_test_passed("%s: rank %d\n", TEST_NAME, rank);
+	if (TEST_PASSED == test_result.result){
+		p_test_passed("%s: rank %d\n", test_result.name, rank);
+	}
 
 	free(data);
 	data = NULL;
-	CLOSE_ADIOS(adios_handle, method);
+	CLOSE_ADIOS_READER(adios_handle, adios_opts.method);
 
-	return test_passed;
+	return DIAG_OK;
 }

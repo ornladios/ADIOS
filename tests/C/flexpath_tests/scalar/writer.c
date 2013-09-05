@@ -29,7 +29,6 @@
 
 
 int main(int argc, char ** argv){
-	char filename[256];         		// the name of the file to write data and compare with flexpath
 	int  rank=0, size=0;
 	MPI_Comm  comm = MPI_COMM_WORLD; 	// required for ADIOS
 
@@ -37,12 +36,8 @@ int main(int argc, char ** argv){
 	int retval;
 	struct adios_tsprt_opts adios_opts;
 	int err_count = 0;
-	int show_help = 0;
 
-	GET_ENTRY_OPTIONS(adios_opts, show_help, "Runs writers. It is recommended to run as many writers as readers.");
-
-	// where I will write the data
-	strcpy(filename, FILE_NAME);
+	GET_ENTRY_OPTIONS(adios_opts, "Runs writers. It is recommended to run as many writers as readers.");
 
 	// ADIOS initialization
 	MPI_Init(&argc, &argv);
@@ -55,7 +50,7 @@ int main(int argc, char ** argv){
 	uint64_t adios_groupsize, adios_totalsize;
 
 	// open with the group name as specified in the xml file
-	adios_open( &adios_handle, "scalar", filename, "w", comm);
+	adios_open( &adios_handle, "scalar", FILE_NAME, "w", comm);
 	adios_groupsize = 4 + 4 + 4;
 	retval=adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
 	fprintf(stderr, "Rank=%d adios_group_size(): adios_groupsize=%ld, adios_totalsize=%ld, retval=%d\n",
