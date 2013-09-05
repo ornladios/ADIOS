@@ -1146,7 +1146,7 @@ control_thread(void* arg)
 		     int i;
 		     for(i=0; i<fileData->numBridges; i++) {
 			 if(fileData->bridges[i].step==fileData->readerStep) {
-			     //fileData->openCount++;
+			     fileData->openCount++;
 			     fileData->bridges[i].opened = 1;
 			     op_msg* ack = malloc(sizeof(op_msg));
 			     ack->file_name = strdup(fileData->name);
