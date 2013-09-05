@@ -176,18 +176,19 @@ void set_attr_dimensions(char* varName, char* altName, int numDims, attr_list at
     fp_write_log("ATTR", "adding dim attr %s and ndim attr %d\n", varName, numDims);
     char atomName[200] = "";
     char dimNum[10];
-    strcat(atomName, varName);
-    strcat(atomName, "_");
     strcat(atomName, FP_DIM_ATTR_NAME);
+    strcat(atomName, "_");
+    strcat(atomName, varName);
     strcat(atomName, "_");
     sprintf(dimNum, "%d", numDims);
     strcat(atomName, dimNum);
     atom_t dimAtom = attr_atom_from_string(atomName);
     add_string_attr(attrs, dimAtom, altName);
     atomName[0] = '\0';
-    strcat(atomName, altName);
-    strcat(atomName, "_");
     strcat(atomName, FP_NDIMS_ATTR_NAME);
+    strcat(atomName, "_");
+    strcat(atomName, altName);
+
     atom_t ndimsAtom = attr_atom_from_string(atomName);
     add_int_attr(attrs, ndimsAtom, 0);
 }
@@ -746,9 +747,9 @@ FlexpathFMStructure* set_format(struct adios_group_struct* t,
                 }
             }
             // attach ndims attr
-            strcat(atom_name, tempName);
-            strcat(atom_name, "_");
             strcat(atom_name, FP_NDIMS_ATTR_NAME);
+            strcat(atom_name, "_");
+            strcat(atom_name, tempName);
             atom_t ndims_atom = attr_atom_from_string(strdup(atom_name));
             add_int_attr(fileData->attrs, ndims_atom, num_dims);
             fileData->formatVars = add_var(fileData->formatVars, tempName, dims, 0);
@@ -963,7 +964,7 @@ void* copy_buffer(void* buffer, int rank, FlexpathWriteFileData* fileData){
 static int var_handler(CManager cm, void *vevent, void *client_data, attr_list attrs){
     FlexpathWriteFileData* fileData = (FlexpathWriteFileData*) client_data;
     Var_msg* msg = (Var_msg*) vevent;
-    EVtake_event_buffer(cm, msg);
+    //EVtake_event_buffer(cm, vevent);
     fp_write_log("MSG", "recieved var_msg : rank %d\n", msg->rank);
     threaded_enqueue(&fileData->controlQueue, msg, VAR, 
 		     &fileData->controlMutex, &fileData->controlCondition, -1);
@@ -975,8 +976,7 @@ static int
 flush_handler(CManager cm, void* vevent, void* client_data, attr_list attrs) {
     FlexpathWriteFileData* fileData = (FlexpathWriteFileData*) client_data;
     Flush_msg* msg = (Flush_msg*) vevent;
-    EVtake_event_buffer(cm, msg);
-    fp_write_log("MSG", "recieved flush : rank %d type data\n", msg->rank);
+    int err = EVtake_event_buffer(cm, vevent);
     threaded_enqueue(&fileData->controlQueue, msg, DATA_FLUSH, 
 		     &fileData->controlMutex, &fileData->controlCondition,
 		     -1);
@@ -995,7 +995,7 @@ static int
 op_handler(CManager cm, void* vevent, void* client_data, attr_list attrs) {
     FlexpathWriteFileData* fileData = (FlexpathWriteFileData*) client_data;
     op_msg* msg = (op_msg*) vevent;
-    EVtake_event_buffer(cm, msg);
+    //EVtake_event_buffer(cm, vevent);
     fp_write_log("MSG", "recieved op_msg : rank %d type %d: condition: %d step: %d\n", 
 		 msg->process_id, msg->type, msg->condition, msg->step);
     if(msg->type == OPEN_MSG) {
@@ -1064,7 +1064,7 @@ control_thread(void* arg)
 		Var_msg* varMsg = (Var_msg*) controlMsg->data;
 		fileData->askedVars = add_var(fileData->askedVars, 
 		    strdup(varMsg->var_name), NULL, varMsg->rank);
-		EVreturn_event_buffer(flexpathWriteData.cm,controlMsg->data);
+		//EVreturn_event_buffer(flexpathWriteData.cm,controlMsg->data);
 	    } else if(controlMsg->type==DATA_FLUSH) {
                 fp_write_log("DATAMUTEX", "in use 1\n"); 
 		dataNode = threaded_peek(&fileData->dataQueue, 
@@ -1116,7 +1116,7 @@ control_thread(void* arg)
                 } else {
                     fp_write_log("STEP", "recieved op with future step\n");
                 }
-		EVreturn_event_buffer(flexpathWriteData.cm, open);
+		//EVreturn_event_buffer(flexpathWriteData.cm, open);
             } else if(controlMsg->type==CLOSE) {
                 op_msg* close = (op_msg*) controlMsg->data;
 		pthread_mutex_lock(&fileData->openMutex);
@@ -1162,7 +1162,7 @@ control_thread(void* arg)
 			 }
 		     }
 		 }
-		 EVreturn_event_buffer(flexpathWriteData.cm, close);
+		 //EVreturn_event_buffer(flexpathWriteData.cm, close);
 	    }else if(controlMsg->type == INIT){ 
 		fp_write_log("DATAMUTEX", "in use 1\n"); 
 		dataNode = threaded_peek(&fileData->dataQueue, 
@@ -1194,7 +1194,7 @@ control_thread(void* arg)
 
 		EVsubmit_general(fileData->dataSource, 
 				 temp, data_free, fileData->attrs);
-		EVreturn_event_buffer(flexpathWriteData.cm, initMsg);
+		//EVreturn_event_buffer(flexpathWriteData.cm, initMsg);
 	    }
 	    else{
 		log_error("control_thread: Unrecognized Control Message\n");
