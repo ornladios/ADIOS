@@ -13,14 +13,8 @@
 #include "test_common.h"
 #include "utils.h"
 #include "cfg.h"
-#include <string.h>
 
-/*
-#include <stdio.h>
-#include <assert.h>
-#include <stdlib.h>
 #include <string.h>
-*/
 
 // for printing the values of the variable
 #define STR_BUFFER_SIZE 100
@@ -46,26 +40,20 @@
 
 
 int main(int argc, char ** argv){
-
-	char filename[256]; 			// the name of the file to write data and compare with flexpath
 	int rank = 0, size = 0;
 	MPI_Comm comm = MPI_COMM_WORLD; // required for ADIOS
 	int64_t adios_handle;   		// the ADIOS file handler
 	int retval;
 
-	if (1 < argc) {
-		usage(argv[0], "Runs writers as many as you want.");
-		return 0;
-	}
+	struct adios_tsprt_opts adios_opts;
+	int err_count = 0;
+
+	GET_ENTRY_OPTIONS(adios_opts, "Runs writers. As many as you want to.");
 
 	// ADIOS initialization
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank(comm, &rank);
 	MPI_Comm_size(comm, &size);
-
-	// where I will write the data
-	strcpy(filename, FILE_NAME);
-	//sprintf(filename, "%s_%d.bp", filename,  rank);
 
 	// From sources it just returns 1 (2013-07-16, whatever)
 	adios_init_noxml(comm);
@@ -95,22 +83,21 @@ int main(int argc, char ** argv){
     adios_groupsize += (8 * 11 * 12 *13);
 
 
-    if( adios_select_method(adios_grp, TRANSPORT, TRANSPORT_PARAMS, "") == 0 ){
-    	p_error("adios_select_method: (%d), %s. Quitting ...\n", adios_errno, adios_errmsg());
-    	return PROGRAM_ERROR;
-    }
+	SET_ERROR_IF_ZERO(adios_select_method(adios_grp, adios_opts.transport, "", ""), err_count);
+	RET_IF_ERROR(err_count, rank);
+
 
     int i = 0;
 
     // these are values that will be written
     int level[TIMESTEP_COUNT];
-    gen_1D_array(level, TIMESTEP_COUNT, rank);
+    gen_1D_array_int(level, TIMESTEP_COUNT, rank);
 
     int cctk_bbox[6];
-    gen_1D_array(cctk_bbox, 6, rank);
+    gen_1D_array_int(cctk_bbox, 6, rank);
 
     double * data =  (double *)malloc(11*12*13*sizeof(double));
-    gen_1D_array_double(data, 11*12*13, rank);
+    gen_1D_array2(data, 11*12*13, rank);
 
 
     // required by WRITE_VAR macro (see the macro)
@@ -122,7 +109,7 @@ int main(int argc, char ** argv){
     // the desired effect i.e., appending to values
     for(i = 0; i < TIMESTEP_COUNT; ++i){
     	// open our group and transport method associated with it
-    	adios_open (&adios_handle, GRP_NAME, filename, "a", comm);
+    	adios_open (&adios_handle, GRP_NAME, FILE_NAME, "a", comm);
 
     	uint64_t adios_totalsize = 0;
     	retval=adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);

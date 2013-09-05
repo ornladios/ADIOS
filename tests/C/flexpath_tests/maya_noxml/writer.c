@@ -37,33 +37,24 @@
  * @param variable  The var to be written out
  */
 #define WRITE_FULLPATH(path_str, var) \
-	do { \
-		sprintf(fullpath, "%s%s", path_str, fullname); \
-    	adios_write(adios_handle, fullpath, var); \
-	} while (0)
+	sprintf(fullpath, "%s%s", path_str, fullname); \
+	adios_write(adios_handle, fullpath, var);
 
 
 int main(int argc, char ** argv){
-	char filename[256];              // the name of the file to write data and compare with flexpath
 	int  rank=0, size=0;
 	MPI_Comm  comm = MPI_COMM_WORLD; // required for ADIOS
 	int64_t 	adios_handle;   // the ADIOS file handler
 	int retval;
+	struct adios_tsprt_opts adios_opts;
+	int err_count = 0;
 
-	if (1 < argc){
-		usage(argv[0], "Runs writers.");
-		return 0;
-	}
-
+	GET_ENTRY_OPTIONS(adios_opts, "Runs writers.");
 
 	// ADIOS initialization
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank (comm, &rank);
 	MPI_Comm_size (comm, &size);
-
-	// where I will write the data
-	strcpy(filename, FILE_NAME);
-	//sprintf(filename, "%s_%d.bp", filename,  rank);
 
 	// From sources it just returns 1 (2013-07-16, whatever)
 	adios_init_noxml(comm);
@@ -95,22 +86,21 @@ int main(int argc, char ** argv){
     int shape[3] = {MAYA_SHAPE_X, MAYA_SHAPE_Y, MAYA_SHAPE_Z};
     // the size of the data I intend to write as a meat for the checkpoint
     int data_size = 0;
-    if (get_data_size(shape, 3, &data_size) != 0){
+    if (get_data_size(shape, 3, &data_size) != DIAG_OK){
     	p_error("Quitting ...\n");
-    	return PROGRAM_ERROR;
+    	return DIAG_ERR;
     }
     // you need to provide it for the defining the ADIOS group
     int max_data_size = 0;
-    if (get_data_size(max_shape, 3, &max_data_size) != 0){
+    if (get_data_size(max_shape, 3, &max_data_size) != DIAG_OK){
     	p_error("Quitting ...\n");
-    	return PROGRAM_ERROR;
+    	return DIAG_ERR;
     }
 
     dim = 3;
 
     // first define variable, since I am using no XML api
     for(i = 0; i < MAYA_GRID_FUNC_COUNT; ++i ){
-
     	// this is common for grid functions and scalars
         adios_define_var (adios_grp, "patch_id", "", adios_unsigned_integer, "", "", "");
         adios_groupsize += sizeof (uint64_t);
@@ -171,20 +161,18 @@ int main(int argc, char ** argv){
         adios_define_var(adios_grp, fullname, "/shape", adios_unsigned_long,ndim, global_dims, local_offsets);
     }
 
-	if( adios_select_method(adios_grp, TRANSPORT, TRANSPORT_PARAMS, "") == 0 ){
-		p_error("adios_select_method: (%d), %s. Quitting ...\n", adios_errno, adios_errmsg());
-		return PROGRAM_ERROR;
-	}
+    SET_ERROR_IF_ZERO(adios_select_method(adios_grp, adios_opts.transport, "", ""), err_count);
+    RET_IF_ERROR(err_count, rank);
 
 	// open our group and transport method associated with it
-	adios_open (&adios_handle, "carpet_checkpoint", filename, "w", comm);
+	adios_open (&adios_handle, "carpet_checkpoint", FILE_NAME, "w", comm);
 	uint64_t adios_totalsize = 0;
 
 	retval=adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
 	fprintf(stderr, "Rank=%d adios_group_size(): adios_groupsize=%ld, adios_totalsize=%ld, retval=%d\n",
 				rank, adios_groupsize, adios_totalsize, retval);
 
-	printf("Writing checkpoint to file %s using the " TRANSPORT " method: group size is %lu, total size is %lu. ", filename, adios_groupsize, adios_totalsize);
+	printf("Writing checkpoint to file %s using the %s method: group size is %lu, total size is %lu. ", FILE_NAME, adios_opts.transport, adios_groupsize, adios_totalsize);
 
 
     // arbitrary, but this is what I am getting from Maya
@@ -217,9 +205,9 @@ int main(int argc, char ** argv){
     // the definition of the ADIOS /data var requires the all bytes;
     // otherwise it tries to copy some other data
     double * my_data = (double *) malloc(max_data_size);
-    if( set_value(my_data, max_shape[0] * max_shape[1] *max_shape[2], (double) rank) != 0 ){
+    if( set_value(my_data, max_shape[0] * max_shape[1] *max_shape[2], (double) rank) != DIAG_OK ){
     	p_error("with generating data. Quitting\n");
-    	return PROGRAM_ERROR;
+    	return DIAG_ERR;
     }
 
     int my_patch_index = 0;
@@ -228,7 +216,7 @@ int main(int argc, char ** argv){
     for(i = 0; i < MAYA_GRID_FUNC_COUNT; ++i){
 
     	// generate the name of maya variable
-    	gen_maya_var_name(fullname, MAYA_VAR_BUF_SIZE, i);
+    	gen_maya_var_name(fullname, MAYA_VAR_BUF_SIZE, MAYA_GF_VAR_PFX, i);
 
     	// the purpose of writing this variable is to enable
     	// ADIOS to output the rest of variables in the correct place
@@ -287,6 +275,9 @@ int main(int argc, char ** argv){
     }
 
 	fprintf(stderr, "Rank=%d committed write\n", rank);
+
+	free(my_data);
+	my_data = NULL;
 
 	adios_close(adios_handle);
 

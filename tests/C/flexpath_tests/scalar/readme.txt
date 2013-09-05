@@ -17,42 +17,16 @@ It is, however, recommended to run as many readers as writers. Otherwise
 some processes are blocked.
 
 
-The test can work in two modes:
+The test can work in two modes (use switch '-t flx' or '-t mpi'):
 
 1. MPI/ADIOS_READ_METHOD_BP
 2. FLEXPATH/ADIOS_READ_METHOD_FLEXPATH
 
 
-To switch between those two modes you need to run the make without or
-with the CFLAGS set to -DFLEXPATH_METHOD. See build.
-
 NOTE:
 
 If you are switching please be sure that first you run make clean, and after
 that make. The Makefile is not perfect. 
-
-BUILD
-=======
-
-# you need to set the environment variables as Makefile uses those locations 
-# to locate libraries and headers
-
-export ADIOS_ROOT=/rock/opt/adios/git-dbg
-export MXML_ROOT=/rock/opt/mxml/2.7
-export MPI_ROOT=/rock/opt/openmpi/1.6.3
-export EVPATH_ROOT=/rock/opt/evpath
-
-# in certain cases you might need the lustre directory (e.g., on kraken)
-export LUSTRE_ROOT=/opt/cray/lustre-cray_ss_s/default
-
-# should remove all unnecessary exec and object files 
-$ make -f Makefile.generic clean
-
-# build the test case MPI/ADIOS_READ_METHOD_BP
-$ make -f Makefile.generic
-
-# build FLEXPATH/ADIOS_READ_METHOD_FLEXPATH
-$ make -f Makefile.generic CFLAGS="-DFLEXPATH_METHOD"
 
 RUN
 =====
@@ -63,8 +37,8 @@ however, I run first writer then the reader.
 # _info_writer.txt, and test.bp
 $ make -f Makefile.generic clean_test
 
-$ mpirun -np 2 ./writer
-$ mpirun -np 2 ./reader
+$ mpirun -np 2 ./writer -t flx
+$ mpirun -np 2 ./reader -t flx
 
 See Makefile for other options or add '-h' option to the reader or writer
 

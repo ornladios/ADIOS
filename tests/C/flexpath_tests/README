@@ -26,34 +26,12 @@ Existing Directories
   
 How to build and clean the build 
 --------------------------------
-# you need to set the environment variables as Makefile uses those locations 
-# to locate libraries and headers
+# build
+$ make 
+# clean
+$ make clean
 
-export ADIOS_ROOT=/rock/opt/adios/git-dbg
-export MXML_ROOT=/rock/opt/mxml/2.7
-export MPI_ROOT=/rock/opt/openmpi/1.6.3
-export EVPATH_ROOT=/rock/opt/evpath
-
-# in certain cases you might need the lustre directory (e.g., on flexpath on kraken)
-# depending how do you compiled your adios
-export LUSTRE_ROOT=/opt/cray/lustre-cray_ss_s/default
-
-To build most of tests run:
-
-# to use MPI method
-make -f Makefile.master 
-
-# to use FLEXPATH method
-make -f Makefile.master CFLAGS="-DFLEXPATH_METHOD"
-
-# to clean the build
-make -f Makefile.master clean
-
-There are a few Makefiles for particular machines such as Makefile.kraken.
-If you are building on such a machine you might take a look at the file
-and try to run it instead of Makefile.master.
-
-How to run regression tests
+How to run regression tests (might be outdated 2013-09-04)
 ----------------------------
 # be sure that appropriate paths for openmpi, mxml, and evpath are
 # set appropriately
@@ -62,51 +40,89 @@ module list
 Currently Loaded Modules:
   1) openmpi/1.6.3    2) mxml/2.7    3) evpath
 
+There is a convenience bash script 
 
-# to clean the data generated during the test
-make -f Makefile.master clean_test
+./run_tests.sh
+
+Run it without options to see how to run all tests.
 
 # to run test
 # in one terminal run writers
-make -f Makefile.master run-w
+./run_tests.sh -flx-w
 # in the second terminal run readers
-make -f Makefile.master run-r
-
-Otherwise see Makefile.master for additional options.
+./run_tests.sh -flx-r
 
 Notes
 ------
-If you want to copy the individual regression test, then
-copy the include directory and the test directory as well.
+There are directories that are used to most of the tests (2013-09-04)
 
-E.g. if you want to copy the scalar test to your home dir
-mkdir ~/my_reg_test
-cp -R include ~/my_reg_test
-cp -R scalar ~/my_reg_test
-cd ~/my_reg_test
-And proceed with the build
+include
+common
+
+If you want to copy the individual regression test, then
+copy the include and common directory and the test directory as well.
+
 
 Recent tests
 ------------
 
-MPI transport (2013-08-28) - my laptop
+MPI transport (2013-09-04) - my laptop
 
-TEST_PASSED reader.c:main:124: scalar: rank 0
-TEST_PASSED reader.c:main:124: scalar: rank 1
-TEST_PASSED reader.c:main:160: 1D_arr_global: rank 0
-TEST_PASSED reader.c:main:160: 1D_arr_global: rank 1
-TEST_PASSED reader.c:main:166: 1D_arr_global_noxml: rank 0
-TEST_PASSED reader.c:main:166: 1D_arr_global_noxml: rank 1
-TEST_PASSED reader.c:main:205: maya_append: rank 0
-TEST_PASSED reader.c:main:474: maya_noxml: rank 0
+TEST_PASSED scalar: rank 0
+TEST_PASSED scalar: rank 1
+TEST_PASSED 1D_arr_global: rank 0
+TEST_PASSED 1D_arr_global: rank 1
+TEST_PASSED 1D_arr_global_noxml: rank 0
+TEST_PASSED 1D_arr_global_noxml: rank 1
+TEST_PASSED maya_append: rank 0
+TEST_PASSED maya_noxml: rank 0
 
-FLEXPATH transport (2013-08-28) - my laptop
+FLEXPATH transport (2013-09-04) - my laptop
 
-TEST_PASSED reader.c:main:124: scalar: rank 0
-TEST_PASSED reader.c:main:124: scalar: rank 1
-TEST_PASSED reader.c:main:160: 1D_arr_global: rank 0
-TEST_PASSED reader.c:main:160: 1D_arr_global: rank 1
-TEST_PASSED reader.c:main:166: 1D_arr_global_noxml: rank 0
-TEST_PASSED reader.c:main:166: 1D_arr_global_noxml: rank 1
+TEST_PASSED scalar: rank 0
+TEST_PASSED scalar: rank 1
+TEST_PASSED 1D_arr_global: rank 0
+TEST_PASSED 1D_arr_global: rank 1
+TEST_PASSED 1D_arr_global_noxml: rank 0
+TEST_PASSED 1D_arr_global_noxml: rank 1
 
 maya_append and maya_noxml tests failed
+
+Some tests produced message
+
+1D_arr_global_noxml
+
+mpirun -np 2 ./writer -t flx
+Rank=1 adios_group_size(): adios_groupsize=100, adios_totalsize=558, retval=0
+Rank=1 committed write
+Rank=0 adios_group_size(): adios_groupsize=100, adios_totalsize=558, retval=0
+Rank=0 committed write
+No event handler with takeable buffer executing on this CM.
+No event handler with takeable buffer executing on this CM.
+Event 2ad30c000b60 not found in taken events list
+Event 2b3260000b60 not found in taken events list
+No event handler with takeable buffer executing on this CM.
+No event handler with takeable buffer executing on this CM.
+Event 2b3260001b90 not found in taken events list
+Event 2ad30c001b90 not found in taken events list
+No event handler with takeable buffer executing on this CM.
+No event handler with takeable buffer executing on this CM.
+No event handler with takeable buffer executing on this CM.
+Event 2ad30c03f200 not found in taken events list
+No event handler with takeable buffer executing on this CM.
+Event 2b326003f200 not found in taken events list
+No event handler with takeable buffer executing on this CM.
+Event 2ad30c03fad0 not found in taken events list
+No event handler with takeable buffer executing on this CM.
+Event 2b326003fad0 not found in taken events list
+make[1]: Leaving directory `/rock/synchrobox/proj/w-ecl/2013-06-17-adios/tests/C/flexpath_tests/1D_arr_global_noxml'
+
+1D_arr_global_noxml'
+mpirun -np 2 ./reader -t flx
+DEBUG: DEBUG: matched overlap type 1
+matched overlap type 1
+TEST_PASSED 1D_arr_global_noxml: rank 1
+TEST_PASSED 1D_arr_global_noxml: rank 0
+DEBUG: adios_read_finalize_method completed
+DEBUG: adios_read_finalize_method completed
+make[1]: Leaving directory `/rock/synchrobox/proj/w-ecl/2013-06-17-adios/tests/C/flexpath_tests/1D_arr_global_noxml'

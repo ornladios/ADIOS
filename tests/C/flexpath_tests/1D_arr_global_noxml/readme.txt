@@ -17,13 +17,10 @@ There might be as many writers as you wish, and there might be as many readers
 as you wish. However, each rank reads its own rank. The reader knows how many 
 writers were there so if its rank is higher then it quits.
 
-The test uses
+The test uses might be run in two modes (use '-t' option with the appropriate mode).
 
 1. MPI/ADIOS_READ_METHOD_BP
 2. FLEXPATH/ADIOS_READ_METHOD_FLEXPATH
-
-To switch between those two modes you need to run the make without or
-with the CFLAGS set to -DFLEXPATH_METHOD. See build.
 
 
 BUILD
@@ -42,9 +39,6 @@ export LUSTRE_ROOT=/opt/cray/lustre-cray_ss_s/default
 # build the MPI/ADIOS_READ_METHOD_BP
 $ make -f Makefile.generic
 
-# build FLEXPATH/ADIOS_READ_METHOD_FLEXPATH
-$ make -f Makefile.generic CFLAGS="-DFLEXPATH_METHOD"
-
 # should remove all unnecessary exec files 
 $ make -f Makefile.generic clean
 
@@ -56,10 +50,10 @@ RUN
 # to clean files hanging around after previous runs
 $ make -f Makefile.generic clean_test
 
-$ mpirun -np 2 writer
-$ mpirun -np 2 reader 
+$ mpirun -np 2 writer -t flx
+$ mpirun -np 2 reader -t flx
 
-See Makefile for other options of running the test.
+See Makefile for other options of running the test or use '-h'.
 
 
 OUTDATED (2013-07-08)
