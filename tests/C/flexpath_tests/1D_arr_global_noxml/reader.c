@@ -176,5 +176,9 @@ just_clean:
 close_adios:
 	CLOSE_ADIOS_READER(adios_handle, adios_opts.method);
 
-	return diag;
+	if ((DIAG_OK == diag) && (TEST_PASSED == test_result.result)) {
+		return 0;
+	} else {
+		return 1;
+	}
 }
