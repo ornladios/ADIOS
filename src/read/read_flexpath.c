@@ -562,14 +562,16 @@ update_step_msg_handler(
     attr_list attrs)
 {
     update_step_msg *msg = (update_step_msg*)vevent;
-    fprintf(stderr, "got update_step msg: %d\n", msg->step);
+    fp_log("STEP", "got update_step_msg with step: %d, finalized: %d\n",
+	   msg->step, msg->finalized);
     ADIOS_FILE *adiosfile = (ADIOS_FILE*)client_data;
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;    
-    fprintf(stderr, "mystep: %d, last_writer_step: %d\n", 
-	    fp->mystep, msg->step);
+
     fp->last_writer_step = msg->step;
     fp->writer_finalized = msg->finalized;
     adiosfile->last_step = msg->step;
+    fp_log("STEP", "mystep: %d, last_writer_step: %d\n", 
+	   fp->mystep, msg->step);
     CMCondition_signal(fp_read_data->fp_cm, msg->condition);
     return 0;
 }
@@ -619,6 +621,7 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 	    adios_error(err_corrupted_variable, 
 			"Mismatch between global variables and variables specified %s.",
 			gblvar->name);
+	    return err_corrupted_variable;
 	}
     }
 
@@ -689,9 +692,9 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     	    return err_file_open_error;
     	}
 
-        strcat(atom_name, f->field_name);
-        strcat(atom_name, "_");
         strcat(atom_name, FP_NDIMS_ATTR_NAME);
+        strcat(atom_name, "_");
+        strcat(atom_name, f->field_name);
         int num_dims;
         int i;
         get_int_attr(attrs, attr_atom_from_string(strdup(atom_name)), &num_dims);
@@ -1086,7 +1089,6 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
     }
     MPI_Barrier(fp->comm);
 
-    fprintf(stderr, "old step: %d new step: %d\n", fp->mystep, fp->mystep+1);
     adiosfile->current_step++;
     fp->mystep = adiosfile->current_step;
 
@@ -1096,8 +1098,8 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
         }
     }   
 
+
     send_flush_msg(fp, fp->writer_coordinator, STEP);
-    
     //put this on a timer, so to speak, for timeout_sec
     while(fp->mystep == fp->last_writer_step){
 	if(fp->writer_finalized){
@@ -1107,10 +1109,8 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
 	CMsleep(fp_read_data->fp_cm, 1);
 	send_flush_msg(fp, fp->writer_coordinator, STEP);
     }
-	
+    
     // need to remove selectors from each var now.
-
-    fprintf(stderr, "sending flush step\n");
     send_flush_msg(fp, fp->writer_coordinator, DATA);
       
     // should only happen if there are more steps available.
