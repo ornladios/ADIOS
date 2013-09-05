@@ -30,12 +30,21 @@ writer: writer.o utils.o
 
 .c.o: misc.h utils.h
 	$(CC) $(CFLAGS) -g -c $< -o $@ $(INCLUDES) $(LIBS_PATHS) $(LIBS)
+
+utils.o: ../common/utils.c 
+	$(CC) $(CFLAGS) -g -c ../common/utils.c $(INCLUDES) $(LIBS_PATHS) $(LIBS)
+		
+run-w-flx:
+	mpirun -np 2 ./writer -t flx
 	
-run-w:
-	mpirun -np 2 ./writer
+run-r-flx:
+	mpirun -np 2 ./reader -t flx
+
+run-w-mpi:
+	mpirun -np 2 ./writer -t mpi
 	
-run-r:
-	mpirun -np 2 ./reader
+run-r-mpi:
+	mpirun -np 2 ./reader -t mpi
 	
 # run 
 # mpirun -np 2 ./writer 

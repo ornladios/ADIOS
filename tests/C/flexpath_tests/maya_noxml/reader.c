@@ -52,93 +52,6 @@
 // for printing the values of the variable
 #define STR_BUFFER_SIZE 100
 
-
-/**
- * checks if the adios call returned not zero; requires declaration of error_count
- * int adios_err_count++
- * @param fn_call adios function call
- * @param (in/out) err_count incremented if the error observed
- */
-#define TEST_ADIOS_ERROR__RET_IF_NOT_ZERO(fn_call, err_count)             \
-  do {                                                                  \
-	 int _error_code = fn_call;                                         \
-     if (_error_code != 0){                                             \
-       p_error("rank %d: %s: (%d) %s\n", rank, #fn_call, adios_errno, adios_errmsg()) ;\
-       err_count++;                                                   \
-     }                                                                  \
-  } while (0)
-
-/**
- * prints the info; closes adios and returns the error code
- * if the err_count is set to a positive number
- *
- * @param err_count The variable that positive value indicates that there is an error
- */
-#define RET_IF_ERROR(err_count) \
-	if ( err_count > 0) { \
-		p_error("rank %d: Quitting ...\n", rank); \
-		CLOSE_ADIOS(adios_handle, method);                              \
-		return PROGRAM_ERROR;                     \
-	}
-
-/**
- * breaks the loop if error count is positive
- *
- * @param err_count The variable that positive value indicates that ther is an error
- */
-#define BREAK_IF_ERROR(err_count) \
-	if ( err_count > 0) { \
-		break; \
-	}
-
-/**
- * assumes that err_count is defined
- * @param value_ref The reference value
- * @param value     The actual value
- * @param err_count The value of the error counter; if the error increases
- *                  the value will be increased
- */
-#define TEST_INT_EQUAL(value_ref, value, err_count) \
-	do { \
-		if (value != value_ref ){ \
-			test_passed = TEST_FAILED; \
-			p_test_failed("(expected=%d, got=%d)\n", value_ref, value); \
-			err_count++; \
-		} \
-	} while (0)
-
-/**
- * assumes that err_count is defined
- * @param value_ref The reference value
- * @param value     The actual value
- * @param err_count The value of the error counter; if the error increases
- *                  the value will be increased
- */
-#define TEST_LONG_EQUAL(value_ref, value, err_count) \
-	do { \
-		if (value != value_ref ){ \
-			test_passed = TEST_FAILED; \
-			p_test_failed("(expected=%ld, got=%ld)\n", value_ref, value); \
-			err_count++; \
-		} \
-	} while (0)
-
-/**
- * assumes that err_count is defined
- * @param value_ref The reference value
- * @param value     The actual value
- * @param err_count The value of the error counter; if the error increases
- *                  the value will be increased
- */
-#define TEST_DOUBLE_EQUAL(value_ref, value, err_count) \
-	do { \
-		if (value != value_ref ){ \
-			test_passed = TEST_FAILED; \
-			p_test_failed("(expected=%0.2f, got=%0.2f)\n", value_ref, value); \
-			err_count++; \
-		} \
-	} while (0)
-
 /**
  * wrapper for scheduling adios reads; this macro assumes existence
  * quite a few important variables; please take a look and be careful
@@ -149,32 +62,22 @@
  */
 #define READ_FULLPATH(path_str, out_buf) \
 	sprintf(fullpath, "%s%s", path_str, fullname);  \
-	TEST_ADIOS_ERROR__RET_IF_NOT_ZERO(adios_schedule_read(adios_handle, sel, fullpath,0,1, out_buf), error_counts.adios); \
+	SET_ERROR_IF_NOT_ZERO(adios_schedule_read(adios_handle, sel, fullpath,0,1, out_buf), error_counts.adios); \
 	BREAK_IF_ERROR(error_counts.adios);
 
 
-
-/**
- * For storing errors
- */
-struct err_counts {
-	int adios;        // counter for adios calls errors
-	int test;		  // counter for comparisons errors
-};
 
 int main (int argc, char **argv){
 	char filename[256];
 	int rank =0, size =0;
 	MPI_Comm comm = MPI_COMM_WORLD;
-	int test_passed = TEST_PASSED;   // TEST_PASSED if test passed; TEST_FAILED if test failed
-	enum ADIOS_READ_METHOD method = METHOD;
-	const char * TEST_NAME="maya_noxml";
+	diag_t diag = DIAG_OK;  // to store the diagnostic information
+	struct test_info test_result = { TEST_PASSED, "maya_noxml" };
 	struct err_counts error_counts = {0, 0};
+	struct adios_tsprt_opts adios_opts;
+	int show_help = 0;
 
-	if (1 < argc){
-		usage(argv[0], "Runs readers.");
-		return 0;
-	}
+	GET_ENTRY_OPTIONS(adios_opts, show_help, "Runs readers.");
 
 	// adios read initialization
 	MPI_Init( &argc, &argv);
@@ -185,17 +88,15 @@ int main (int argc, char **argv){
 	//sprintf(filename, "%s_%d.bp", filename,  rank);
 
 	// depending on the method
-	if( adios_read_init_method( method, comm, ADIOS_OPTIONS) != 0){
-		p_error("Quitting ... Issues with initialization adios_read: (%d) %s\n", adios_errno, adios_errmsg());
-		return PROGRAM_ERROR;
-	}
+	SET_ERROR_IF_NOT_ZERO(adios_read_init_method(adios_opts.method, comm, adios_opts.adios_options), error_counts.adios);
+	RET_IF_ERROR(error_counts.adios, rank);
 
 	// I will be working with streams so the lock mode is necessary,
 	// return immediately if the stream unavailable
-	ADIOS_FILE *adios_handle = adios_read_open(filename, method, comm, ADIOS_LOCKMODE_NONE, 0.0);
+	ADIOS_FILE *adios_handle = adios_read_open(filename, adios_opts.method, comm, ADIOS_LOCKMODE_NONE, 0.0);
 	if ( !adios_handle){
 		p_error("Quitting ... (%d) %s\n", adios_errno, adios_errmsg());
-		return PROGRAM_ERROR;
+		return DIAG_ERR;
 	}
 
 	// now I will try to read what I got from the checkpoint
@@ -206,18 +107,18 @@ int main (int argc, char **argv){
 	avi = adios_inq_var(adios_handle, "P");
 	if (!avi){
 		p_error("rank %d: Quitting ... (%d) %s\n", rank, adios_errno, adios_errmsg());
-		CLOSE_ADIOS(adios_handle, method);
-		return PROGRAM_ERROR;
+		CLOSE_ADIOS_READER(adios_handle, adios_opts.method);
+		return DIAG_ERR;
 	}
 
 	if( GLOBAL_PATCH_COUNT != *(int*)avi->value){
-		p_test_failed("%s: rank %d: global_patch_count (got %d)\n", TEST_NAME, rank,  *(int*)avi->value );
-		test_passed = TEST_FAILED;
+		p_test_failed("%s: rank %d: global_patch_count (got %d)\n", test_result.name, rank,  *(int*)avi->value );
+		test_result.result = TEST_FAILED;
 		// clean everything
 		adios_free_varinfo(avi);
 		avi = NULL;
-		CLOSE_ADIOS(adios_handle, method);
-		return test_passed;
+		CLOSE_ADIOS_READER(adios_handle, adios_opts.method);
+		return DIAG_ERR;
 	}
 
 	// for holding the name of the maya variable
@@ -246,35 +147,35 @@ int main (int argc, char **argv){
 	// first schedule reading of the entire variables (so NULL selection)
 	// reading the patch_id doesn't make much sense as it seems that only the
 	// very first value is written out so we will get 0
-	TEST_ADIOS_ERROR__RET_IF_NOT_ZERO(adios_schedule_read(adios_handle, NULL, "patch_id",0,1, &patch_id), error_counts.adios);
-	RET_IF_ERROR(error_counts.adios);
+	SET_ERROR_IF_NOT_ZERO(adios_schedule_read(adios_handle, NULL, "patch_id",0,1, &patch_id), error_counts.adios);
+	RET_AND_CLOSE_ADIOS_READER_IF_ERROR(error_counts.adios, rank, adios_handle, adios_opts.method);
 
-	TEST_ADIOS_ERROR__RET_IF_NOT_ZERO(adios_schedule_read(adios_handle, NULL, "shape_dim_x",0,1, &shape_max_dims[0]), error_counts.adios);
-	RET_IF_ERROR(error_counts.adios);
+	SET_ERROR_IF_NOT_ZERO(adios_schedule_read(adios_handle, NULL, "shape_dim_x",0,1, &shape_max_dims[0]), error_counts.adios);
+	RET_AND_CLOSE_ADIOS_READER_IF_ERROR(error_counts.adios, rank, adios_handle, adios_opts.method);
 
-	TEST_ADIOS_ERROR__RET_IF_NOT_ZERO(adios_schedule_read(adios_handle, NULL, "shape_dim_y",0,1, &shape_max_dims[1]), error_counts.adios);
-	RET_IF_ERROR(error_counts.adios);
+	SET_ERROR_IF_NOT_ZERO(adios_schedule_read(adios_handle, NULL, "shape_dim_y",0,1, &shape_max_dims[1]), error_counts.adios);
+	RET_AND_CLOSE_ADIOS_READER_IF_ERROR(error_counts.adios, rank, adios_handle, adios_opts.method);
 
-	TEST_ADIOS_ERROR__RET_IF_NOT_ZERO(adios_schedule_read(adios_handle, NULL, "shape_dim_z",0,1, &shape_max_dims[2]), error_counts.adios);
-	RET_IF_ERROR(error_counts.adios);
+	SET_ERROR_IF_NOT_ZERO(adios_schedule_read(adios_handle, NULL, "shape_dim_z",0,1, &shape_max_dims[2]), error_counts.adios);
+	RET_AND_CLOSE_ADIOS_READER_IF_ERROR(error_counts.adios, rank, adios_handle, adios_opts.method);
 
 	// not sure if this assumption is correct; difficult to find in the ADIOS sources
-	TEST_ADIOS_ERROR__RET_IF_NOT_ZERO(adios_perform_reads(adios_handle, 1), error_counts.adios);
-	RET_IF_ERROR(error_counts.adios);
+	SET_ERROR_IF_NOT_ZERO(adios_perform_reads(adios_handle, 1), error_counts.adios);
+	RET_AND_CLOSE_ADIOS_READER_IF_ERROR(error_counts.adios, rank, adios_handle, adios_opts.method);
 
 	// now test if what I read is what I supposed to get; see comment with
 	// adios_schedule_read(patch_id)
-	TEST_INT_EQUAL(0, patch_id, error_counts.test);
-	RET_IF_ERROR(error_counts.test);
+	TEST_INT_EQUAL(0, patch_id, error_counts.test, test_result.result);
+	RET_AND_CLOSE_ADIOS_READER_IF_TEST_FAILED(test_result, rank, adios_handle, adios_opts.method);
 
-	TEST_INT_EQUAL(MAYA_SHAPE_MAX_X, shape_max_dims[0], error_counts.test);
-	RET_IF_ERROR(error_counts.test);
+	TEST_INT_EQUAL(MAYA_SHAPE_MAX_X, shape_max_dims[0], error_counts.test, test_result.result);
+	RET_AND_CLOSE_ADIOS_READER_IF_TEST_FAILED(test_result, rank, adios_handle, adios_opts.method);
 
-	TEST_INT_EQUAL(MAYA_SHAPE_MAX_Y, shape_max_dims[1], error_counts.test);
-	RET_IF_ERROR(error_counts.test);
+	TEST_INT_EQUAL(MAYA_SHAPE_MAX_Y, shape_max_dims[1], error_counts.test, test_result.result);
+	RET_AND_CLOSE_ADIOS_READER_IF_TEST_FAILED(test_result, rank, adios_handle, adios_opts.method);
 
-	TEST_INT_EQUAL(MAYA_SHAPE_MAX_Z, shape_max_dims[2], error_counts.test);
-	RET_IF_ERROR(error_counts.test);
+	TEST_INT_EQUAL(MAYA_SHAPE_MAX_Z, shape_max_dims[2], error_counts.test, test_result.result);
+	RET_AND_CLOSE_ADIOS_READER_IF_TEST_FAILED(test_result, rank, adios_handle, adios_opts.method);
 
 	// so here I assume that our data buffer is fixed, and I allocate
 	// space for that buffer, and consult the reader but the
@@ -282,21 +183,21 @@ int main (int argc, char **argv){
 	// already tested that I read as expected
 	int data_size = 0;
 
-	if (get_data_size(shape_max_dims, 3, &data_size) != 0){
-		RET_IF_ERROR(1);
+	if (get_data_size(shape_max_dims, 3, &data_size) != DIAG_OK){
+		RET_IF_ERROR(1, rank);
 	}
 	// just in case
 	assert(shape_max_dims[0] * shape_max_dims[1] *shape_max_dims[2] * 8 == data_size);
 	data = (double *) malloc(data_size);
 	if( !data ){
-		RET_IF_ERROR(1);
+		RET_IF_ERROR(1, rank);
 	}
 
 	// the data are the same for all variables so fill the reference data
 	double * ref_data = (double *) malloc(data_size);
-	if( !(ref_data) || (set_value(ref_data, shape_max_dims[0] * shape_max_dims[1] *shape_max_dims[2], (double) rank) != 0) ){
+	if( !(ref_data) || (set_value(ref_data, shape_max_dims[0] * shape_max_dims[1] *shape_max_dims[2], (double) rank) != DIAG_OK) ){
 		free(data);
-		RET_IF_ERROR(1);
+		RET_IF_ERROR(1, rank);
 	}
 
 
@@ -339,7 +240,7 @@ int main (int argc, char **argv){
 
 		memset(data, 0, data_size);
 		// generate the name of maya variable
-		gen_maya_var_name(fullname, MAYA_VAR_BUF_SIZE, i);
+		gen_maya_var_name(fullname, MAYA_VAR_BUF_SIZE, MAYA_GF_VAR_PFX, i);
 
 		// now I need to play carefully with the selections, as ADIOS
 		// does not provide any help if you messed up with selections
@@ -387,27 +288,27 @@ int main (int argc, char **argv){
 		adios_selection_delete(sel);
 		sel = NULL;
 
-		TEST_ADIOS_ERROR__RET_IF_NOT_ZERO(adios_perform_reads(adios_handle, 1), error_counts.adios);
-		RET_IF_ERROR(error_counts.adios);
+		SET_ERROR_IF_NOT_ZERO(adios_perform_reads(adios_handle, 1), error_counts.adios);
+		RET_AND_CLOSE_ADIOS_READER_IF_ERROR(error_counts.adios, rank, adios_handle, adios_opts.method);
 
 		// now tests if I get what I expected to get
-		TEST_INT_EQUAL(i, level, error_counts.test);
+		TEST_INT_EQUAL(i, level, error_counts.test, test_result.result);
 		BREAK_IF_ERROR(error_counts.test);
 
-		TEST_INT_EQUAL(i%2, carpet_mglevel, error_counts.test);
+		TEST_INT_EQUAL(i%2, carpet_mglevel, error_counts.test, test_result.result);
 		BREAK_IF_ERROR(error_counts.test);
 
-		TEST_INT_EQUAL(26, timestep, error_counts.test);
+		TEST_INT_EQUAL(26, timestep, error_counts.test, test_result.result);
 		BREAK_IF_ERROR(error_counts.test);
 
-		TEST_INT_EQUAL(i%3, grp_tl, error_counts.test);
+		TEST_INT_EQUAL(i%3, grp_tl, error_counts.test, test_result.result);
 		BREAK_IF_ERROR(error_counts.test);
 
-		TEST_DOUBLE_EQUAL(13.0, time_attr, error_counts.test);
+		TEST_DOUBLE_EQUAL(13.0, time_attr, error_counts.test, test_result.result);
 		BREAK_IF_ERROR(error_counts.test);
 
 		for(k = 0; k < 6 ; ++k ){
-			TEST_INT_EQUAL(13, cctk_bbox[k], error_counts.test);
+			TEST_INT_EQUAL(13, cctk_bbox[k], error_counts.test, test_result.result);
 			BREAK_IF_ERROR(error_counts.test);
 		}
 		BREAK_IF_ERROR(error_counts.test);
@@ -415,19 +316,19 @@ int main (int argc, char **argv){
 		uint64_t shape_ref[] = {MAYA_SHAPE_X, MAYA_SHAPE_Y, MAYA_SHAPE_Z};
 
 		for(k = 0; k < 3; ++k){
-			TEST_INT_EQUAL(14, cctk_nghostzones[k], error_counts.test);
+			TEST_INT_EQUAL(14, cctk_nghostzones[k], error_counts.test, test_result.result);
 			BREAK_IF_ERROR(error_counts.test);
 
-			TEST_DOUBLE_EQUAL(15.0, origin[k], error_counts.test );
+			TEST_DOUBLE_EQUAL(15.0, origin[k], error_counts.test, test_result.result );
 			BREAK_IF_ERROR(error_counts.test);
 
-			TEST_DOUBLE_EQUAL(15.0, delta[k], error_counts.test );
+			TEST_DOUBLE_EQUAL(15.0, delta[k], error_counts.test, test_result.result );
 			BREAK_IF_ERROR(error_counts.test);
 
-			TEST_INT_EQUAL(14, iorigin[k], error_counts.test);
+			TEST_INT_EQUAL(14, iorigin[k], error_counts.test, test_result.result);
 			BREAK_IF_ERROR(error_counts.test);
 
-			TEST_LONG_EQUAL(shape_ref[k], shape[k], error_counts.test);
+			TEST_LONG_EQUAL(shape_ref[k], shape[k], error_counts.test, test_result.result);
 			BREAK_IF_ERROR(error_counts.test);
 		}
 		BREAK_IF_ERROR(error_counts.test);
@@ -456,12 +357,12 @@ int main (int argc, char **argv){
 		adios_selection_delete(sel);
 		sel = NULL;
 
-		TEST_ADIOS_ERROR__RET_IF_NOT_ZERO(adios_perform_reads(adios_handle, 1), error_counts.adios);
-		RET_IF_ERROR(error_counts.adios);
+		SET_ERROR_IF_NOT_ZERO(adios_perform_reads(adios_handle, 1), error_counts.adios);
+		RET_AND_CLOSE_ADIOS_READER_IF_ERROR(error_counts.adios, rank, adios_handle, adios_opts.method);
 
 		// now compare what I got
 		for(k = 0 ; k < shape[0] *shape[1] *shape[2]; ++k){
-			TEST_DOUBLE_EQUAL(ref_data[k], data[k], error_counts.test);
+			TEST_DOUBLE_EQUAL(ref_data[k], data[k], error_counts.test, test_result.result);
 			BREAK_IF_ERROR(error_counts.test);
 		}
 		BREAK_IF_ERROR(error_counts.test);
@@ -470,10 +371,10 @@ int main (int argc, char **argv){
 	adios_free_varinfo(avi);
 	avi = NULL;
 
-	if (TEST_PASSED == test_passed)
-		p_test_passed("%s: rank %d\n", TEST_NAME, rank);
+	if (TEST_PASSED == test_result.result)
+		p_test_passed("%s: rank %d\n", test_result.name, rank);
 
-	CLOSE_ADIOS(adios_handle, method);
+	CLOSE_ADIOS_READER(adios_handle, adios_opts.method);
 
-	return test_passed;
+	return diag;
 }

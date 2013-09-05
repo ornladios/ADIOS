@@ -8,6 +8,8 @@
 #ifndef MISC_H_
 #define MISC_H_
 
+#include <adios_read.h>
+
 //! if defined (not commented) the flexpath method will
 //! be used; otherwise the  ADIOS_READ_METHOD_BP and MPI
 //! if you are switching methods, make sure that arrays.xml
@@ -19,6 +21,7 @@
 //! the name of the file to be written test values
 #define FILE_NAME "test.bp"
 
+/*
 //! size of the X dimension
 #define NX_DIM 10
 
@@ -44,5 +47,72 @@
 
 //! indicates that the program
 #define PROGRAM_ERROR -2
+
+*/
+
+/**
+ * Describes the status of a test
+ */
+enum test_status {
+	TEST_UNKNOWN = -2,
+
+	TEST_FAILED = -1,
+	TEST_PASSED = 0,
+};
+
+/**
+ * Store the information about the tests
+ */
+struct test_info {
+	//! the result of the status
+	enum test_status result;
+	//! test name
+	char *name;
+};
+
+//! diagnostic information
+typedef enum {
+	DIAG_ERR = -1,
+	DIAG_OK = 0,
+} diag_t;
+
+/**
+ * This describes the input parameters for the test
+ * TODO probably not used - to be removed
+ */
+struct test_input_params {
+	//! the transport e.g., "flx", "mpi"
+	char tsprt[256];
+	//! 0 - don't show the help
+	//! 1 - help requested
+	int help;
+};
+
+/**
+ * The structure that describes the
+ * ADIOS options, transport and a reading method
+ */
+struct adios_tsprt_opts {
+	//! the name of the xml file if xml method is chosen
+	char xml_adios_init_filename[256];
+	//! the  read method e.g. ADIOS_READ_METHOD_FLEXPATH or ADIOD_READ_METHOD_BP
+	enum ADIOS_READ_METHOD method;
+	//! the transport e.g., "FLEXPATH", "MPI"
+	char transport[256];
+	//! can be used to store adios options as used by adios_read_init_method
+	//! 0=quieet, ..., 4=debug
+	char adios_options[256];
+};
+
+/**
+ * For storing errors
+ */
+struct err_counts {
+	int adios;        // counter for adios calls errors
+	int test;		  // counter for comparisons errors
+};
+
+
+
 
 #endif /* MISC_H_ */

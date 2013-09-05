@@ -28,18 +28,26 @@ reader: reader.o  utils.o
 writer: writer.o  utils.o
 	$(CC) $(CFLAGS) -g -o $@ $^ $(INCLUDES) $(LIBS_PATHS) $(LIBS) 
 
-.c.o: utils.h misc.h
+.c.o: utils.h misc.h cfg.h
 	$(CC) $(CFLAGS) -g -c $< -o $@ $(INCLUDES) $(LIBS_PATHS) $(LIBS)
+
+utils.o: ../common/utils.c 
+	$(CC) $(CFLAGS) -g -c ../common/utils.c $(INCLUDES) $(LIBS_PATHS) $(LIBS)
 	
+run-w-flx:
+	mpirun -np 2 ./writer -t flx
 	
-run-w:
-	mpirun -np 2 ./writer
+run-r-flx:
+	mpirun -np 2 ./reader -t flx
+
+run-w-mpi:
+	mpirun -np 2 ./writer -t mpi
 	
-run-r:
-	mpirun -np 2 ./reader
+run-r-mpi:
+	mpirun -np 2 ./reader -t mpi
 	
 clean_test:
 	rm 	-rf *_writer_info.txt *_reader_info.txt test.bp *_reader_ready.txt *_writer_ready.txt
 	
 clean:
-	rm -rf reader writer  *.o 
+	rm -rf reader writer  *.o

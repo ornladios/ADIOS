@@ -24,7 +24,7 @@ Existing Directories
 
 * maya_append - inspired by maya; testing the append mode (doesn't work with Flexpath)
   
-How to build and clean the build 
+How to build and clean the build (might be outdated 2013-09-04)
 --------------------------------
 # you need to set the environment variables as Makefile uses those locations 
 # to locate libraries and headers
@@ -53,7 +53,15 @@ There are a few Makefiles for particular machines such as Makefile.kraken.
 If you are building on such a machine you might take a look at the file
 and try to run it instead of Makefile.master.
 
-How to run regression tests
+Individual tests may be build with
+
+$ make -f Makefile.generic
+
+# should remove all unnecessary exec files 
+$ make -f Makefile.generic clean
+
+
+How to run regression tests (might be outdated 2013-09-04)
 ----------------------------
 # be sure that appropriate paths for openmpi, mxml, and evpath are
 # set appropriately
@@ -74,17 +82,17 @@ make -f Makefile.master run-r
 
 Otherwise see Makefile.master for additional options.
 
+
 Notes
 ------
-If you want to copy the individual regression test, then
-copy the include directory and the test directory as well.
+There are directories that are used to most of the tests (2013-09-04)
 
-E.g. if you want to copy the scalar test to your home dir
-mkdir ~/my_reg_test
-cp -R include ~/my_reg_test
-cp -R scalar ~/my_reg_test
-cd ~/my_reg_test
-And proceed with the build
+include
+common
+
+If you want to copy the individual regression test, then
+copy the include and common directory and the test directory as well.
+
 
 Recent tests
 ------------

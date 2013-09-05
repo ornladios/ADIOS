@@ -21,6 +21,7 @@
 #include "misc.h"
 #include "utils.h"
 #include "test_common.h"
+#include "cfg.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -28,48 +29,35 @@
 #include <string.h>
 
 
-#ifdef JUST_CLEAN
-#undef JUST_CLEAN
-#endif
-
-#define JUST_CLEAN \
-	do {								\
-		adios_selection_delete(sel);	\
-		sel = NULL;						\
-	} while (0)
-
 
 int main (int argc, char **argv){
 	char filename[256];
 	int rank =0, size =0;
 	int my_scalar = -1;         // this will hold what I got from the writer
 	MPI_Comm comm = MPI_COMM_WORLD;
-	int diag = 0;  // to store the diagnostic information; 0 is OK, -1 error
-	int test_passed = TEST_PASSED;   // TEST_PASSED if test passed; TEST_FAILED if test failed
-	// what method I will use
-	enum ADIOS_READ_METHOD method = METHOD;
-	const char * TEST_NAME="scalar";
+	diag_t diag = DIAG_OK;  // to store the diagnostic information
+	struct test_info test_result = { TEST_PASSED, "scalar" };
+	struct err_counts err = { 0, 0};
+	struct adios_tsprt_opts adios_opts;
+	int show_help = 0;
 
-	if (1 < argc){
-		usage(argv[0], "Runs readers. It is recommended to run as many readers as writers.");
-		return 0;
-	}
+	GET_ENTRY_OPTIONS(adios_opts, show_help, "Runs readers. It is recommended to run as many readers as writers.");
+
 	// adios read initialization
 	MPI_Init( &argc, &argv);
 	MPI_Comm_rank (comm, &rank);
 
 	// choose the right method depending on the method
-	if( (diag = adios_read_init_method( method, comm, ADIOS_OPTIONS)) != 0){
-		p_error("Quitting ... Issues with initialization adios_read: (%d) %s\n", adios_errno, adios_errmsg());
-		return PROGRAM_ERROR;
-	}
+	SET_ERROR_IF_NOT_ZERO(adios_read_init_method(adios_opts.method, comm, adios_opts.adios_options), err.adios);
+	RET_IF_ERROR(err.adios, rank);
+
 
 	// I will be working with streams so the lock mode is necessary,
 	// return immediately if the stream unavailable
-	ADIOS_FILE *adios_handle = adios_read_open(FILE_NAME, method, comm, ADIOS_LOCKMODE_NONE, 0.0);
+	ADIOS_FILE *adios_handle = adios_read_open(FILE_NAME, adios_opts.method, comm, ADIOS_LOCKMODE_NONE, 0.0);
 	if ( !adios_handle){
 		p_error("Quitting ... (%d) %s\n", adios_errno, adios_errmsg());
-		return PROGRAM_ERROR;
+		return DIAG_ERR;
 	}
 
 	// define portions of data how they will be read
@@ -80,8 +68,8 @@ int main (int argc, char **argv){
 	avi = adios_inq_var (adios_handle, "size");
 	if (!avi){
 		p_error("rank %d: Quitting ... (%d) %s\n", rank, adios_errno, adios_errmsg());
-		CLOSE_ADIOS(adios_handle, method);
-		return PROGRAM_ERROR;
+		diag = DIAG_ERR;
+		goto close_adios;
 	}
 	size = *((int*)avi->value);
 	adios_free_varinfo(avi);
@@ -91,16 +79,16 @@ int main (int argc, char **argv){
 	// the excessive readers
 	if (rank >= size){
 		p_info("rank %d: I am an excessive rank. Nothing to read ...\n", rank);
-		CLOSE_ADIOS(adios_handle, method);
-		return 0;
+		// diag should be DIAG_OK
+		goto close_adios;
 	}
 
 	// this is the index of the written block
 	sel = adios_selection_writeblock(rank);
 	if( !sel ){
 		p_error("rank %d: Quitting ... (%d) %s\n", rank, adios_errno, adios_errmsg());
-		CLEAN_ON_ERROR_AND_CLOSE_ADIOS(adios_handle, method);
-		return PROGRAM_ERROR;
+		diag = DIAG_ERR;
+		goto close_adios;
 	}
 
 	// TODO as of 2013-07-08, I was told that err_end_of_stream doesn't work
@@ -109,30 +97,36 @@ int main (int argc, char **argv){
 
 		if (adios_schedule_read(adios_handle, sel, "lucky_scalar",0,1,&my_scalar) != 0){
 			p_error("rank %d: Quitting ...(%d) %s\n", rank, adios_errno, adios_errmsg());
-			CLEAN_ON_ERROR_AND_CLOSE_ADIOS(adios_handle, method);
-			return -1;
+			adios_selection_delete(sel);
+			sel = NULL;
+			CLOSE_ADIOS_READER(adios_handle, adios_opts.method);
+			return DIAG_ERR;
 		}
 
 		// not sure if this assumption is correct; difficult to find in the ADIOS sources
 		if (adios_perform_reads(adios_handle, 1) != 0){
 			p_error("rank %d: Quitting ...(%d) %s\n", rank, adios_errno, adios_errmsg());
-			CLEAN_ON_ERROR_AND_CLOSE_ADIOS(adios_handle, method);
-			return -1;
+			adios_selection_delete(sel);
+			sel = NULL;
+			CLOSE_ADIOS_READER(adios_handle, adios_opts.method);
+			return DIAG_ERR;
 		}
 
 		if( rank == my_scalar){
-			p_test_passed("%s: rank %d\n", TEST_NAME, rank);
-			test_passed = TEST_PASSED;
+			p_test_passed("%s: rank %d\n", test_result.name, rank);
+			test_result.result = TEST_PASSED;
 		} else {
-			p_test_failed("%s: rank %d: my_scalar=%d. (rank != my_scalar)\n", TEST_NAME, rank,  my_scalar);
-			test_passed = TEST_FAILED;
+			p_test_failed("%s: rank %d: my_scalar=%d. (rank != my_scalar)\n", test_result.name, rank,  my_scalar);
+			test_result.result = TEST_FAILED;
 		}
 	//}
 
-	// clean everything
-	JUST_CLEAN;
-	CLOSE_ADIOS(adios_handle, method);
+just_clean:
+		// clean everything
+		adios_selection_delete(sel);
+		sel = NULL;
+close_adios:
+		CLOSE_ADIOS_READER(adios_handle, adios_opts.method);
 
-	printf("\n");
-	return test_passed;
+	return diag;
 }

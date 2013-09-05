@@ -19,6 +19,8 @@
 
 #include "misc.h"
 #include "utils.h"
+#include "cfg.h"
+#include "test_common.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -36,10 +38,12 @@ int main(int argc, char ** argv){
 	int64_t 	adios_handle;   // the ADIOS file handler
 	int retval;
 
-	if (1 < argc){
-		usage(argv[0], "Runs writers. It is recommended to run as many writers as readers.");
-		return 0;
-	}
+	struct adios_tsprt_opts adios_opts;
+	int err_count = 0;
+	int show_help = 0;
+
+	GET_ENTRY_OPTIONS(adios_opts, show_help, "Runs writers. It is recommended to run as many writers as readers.");
+
 
 	// sanity check
 	assert(NX==NX_DIM);
@@ -65,10 +69,9 @@ int main(int argc, char ** argv){
 	// now declare a group
 	adios_declare_group(&adios_grp, "temperature", "iter", adios_flag_yes);
 
-	if( adios_select_method(adios_grp, TRANSPORT, "", "") == 0 ){
-		printf("ERROR: adios_select_method: (%d), %s. Quitting ...\n", adios_errno, adios_errmsg());
-		return PROGRAM_ERROR;
-	}
+	SET_ERROR_IF_ZERO(adios_select_method(adios_grp, adios_opts.transport, "", ""), err_count);
+	RET_IF_ERROR(err_count, rank);
+
 
 	// I am defining here a global array - global bounds is the size
 	// of global array for all writers; within that array there is
@@ -96,9 +99,9 @@ int main(int argc, char ** argv){
 				rank, adios_groupsize, adios_totalsize, retval);
 
 	// init the array that I will transport over the sea
-	if (gen_1D_array(t, NX, rank) == -1){
+	if (gen_1D_array(t, NX, rank) == DIAG_ERR){
 		printf("ERROR: Generating 1D array. Quitting ...\n");
-		return PROGRAM_ERROR;
+		return DIAG_ERR;
 	}
 
 	// write; don't check errors for simplicity reasons

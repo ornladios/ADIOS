@@ -19,6 +19,8 @@
 
 #include "misc.h"
 #include "utils.h"
+#include "cfg.h"
+#include "test_common.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -33,11 +35,11 @@ int main(int argc, char ** argv){
 
 	int64_t 	adios_handle;   		// the ADIOS file handle
 	int retval;
+	struct adios_tsprt_opts adios_opts;
+	int err_count = 0;
+	int show_help = 0;
 
-	if (1 < argc){
-		usage(argv[0], "Runs writers. It is recommended to run as many writers as readers.");
-		return 0;
-	}
+	GET_ENTRY_OPTIONS(adios_opts, show_help, "Runs writers. It is recommended to run as many writers as readers.");
 
 	// where I will write the data
 	strcpy(filename, FILE_NAME);
@@ -47,10 +49,8 @@ int main(int argc, char ** argv){
 	MPI_Comm_rank (comm, &rank);
 	MPI_Comm_size (comm, &size);
 
-	if (adios_init(XML_ADIOS_INIT_FILENAME, comm) == 0){
-		printf("ERROR: (%d) %s\n", adios_errno, adios_errmsg());
-		return -1;
-	}
+	SET_ERROR_IF_ZERO(adios_init(adios_opts.xml_adios_init_filename, comm), err_count);
+	RET_IF_ERROR(err_count, rank);
 
 	uint64_t adios_groupsize, adios_totalsize;
 
@@ -73,6 +73,6 @@ int main(int argc, char ** argv){
 	adios_finalize(rank);
 	MPI_Finalize();
 
-	return 0;
+	return DIAG_OK;
 }
 

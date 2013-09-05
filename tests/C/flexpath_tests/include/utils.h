@@ -10,9 +10,12 @@
 
 extern int usage(char *program_name, char *program_desc);
 extern int gen_1D_array(double *p_arr, int arr_len, int rank);
-extern int set_value(double *p_arr, int arr_len, double value);
+extern int get_options(struct adios_tsprt_opts * p_tsprt_opts, int argc, char ** argv, int *p_show_help);
 
+extern int set_value(double *p_arr, int arr_len, double value);
 extern int get_data_size(int *shape, int shape_elem_count, int* data_size);
 extern int get_maya_var_name(char *prefix, int number);
+
+
 
 #endif /* UTILS_H_ */
