@@ -1080,6 +1080,18 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
 {
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     MPI_Barrier(fp->comm);
+
+    send_flush_msg(fp, fp->writer_coordinator, STEP);
+    //put this on a timer, so to speak, for timeout_sec
+    while(fp->mystep == fp->last_writer_step){
+	if(fp->writer_finalized){
+	    adios_errno = err_end_of_stream;
+	    return err_end_of_stream;
+	}
+	CMsleep(fp_read_data->fp_cm, 1);
+	send_flush_msg(fp, fp->writer_coordinator, STEP);
+    }
+
     int i=0;
     for(i=0; i<fp->num_bridges; i++) {
         if(fp->bridges[i].created && fp->bridges[i].opened) {
@@ -1097,18 +1109,6 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
 	    send_open_msg(fp, i);
         }
     }   
-
-
-    send_flush_msg(fp, fp->writer_coordinator, STEP);
-    //put this on a timer, so to speak, for timeout_sec
-    //while(fp->mystep == fp->last_writer_step){
-	if(fp->writer_finalized){
-	    adios_errno = err_end_of_stream;
-	    return err_end_of_stream;
-	}
-	CMsleep(fp_read_data->fp_cm, 1);
-	send_flush_msg(fp, fp->writer_coordinator, STEP);
-	//}
     
     // need to remove selectors from each var now.
     send_flush_msg(fp, fp->writer_coordinator, DATA);

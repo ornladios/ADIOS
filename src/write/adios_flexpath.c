@@ -1678,6 +1678,7 @@ extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method
     log_info("Flexpath method entered finalize: %d\n", fileData->rank);
     fp_write_log("FILE", "Entered finalize\n");
     while(fileData) {
+
 	update_step_msg *stepmsg = malloc(sizeof(update_step_msg));
 	stepmsg->finalized = 1;
 	stepmsg->step = fileData->writerStep - 1;
