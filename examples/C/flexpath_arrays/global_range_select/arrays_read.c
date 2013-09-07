@@ -40,14 +40,6 @@ int main (int argc, char ** argv)
     global_range_select.type=ADIOS_SELECTION_BOUNDINGBOX;
     global_range_select.u.bb.start = malloc(sizeof(uint64_t)*2);
     global_range_select.u.bb.count = malloc(sizeof(uint64_t)*2);
-    int xcount = 40;
-    int ycount = 2;
-    (global_range_select.u.bb.start)[0] = 0;
-    (global_range_select.u.bb.count)[0] = xcount;
-    (global_range_select.u.bb.start)[1] = 0;
-    (global_range_select.u.bb.count)[1] = ycount;
-    global_range_select.u.bb.ndim = 2;
-    int nelem = xcount*ycount;
 
     ADIOS_SELECTION scalar_block_select;
     scalar_block_select.type = ADIOS_SELECTION_WRITEBLOCK;
@@ -70,6 +62,18 @@ int main (int argc, char ** argv)
         ADIOS_VARINFO *nx_info = adios_inq_var( afile, "NX");
         ADIOS_VARINFO *ny_info = adios_inq_var( afile, "NY");
 	ADIOS_VARINFO *arry = adios_inq_var( afile, "var_2d_array");
+
+	uint64_t xcount = arry->dims[0];
+	uint64_t ycount = arry->dims[1];
+
+	(global_range_select.u.bb.start)[0] = 0;
+	(global_range_select.u.bb.count)[0] = xcount;
+	(global_range_select.u.bb.start)[1] = 0;
+	(global_range_select.u.bb.count)[1] = ycount;
+	global_range_select.u.bb.ndim = 2;
+
+	int nelem = xcount*ycount;
+
         if(nx_info->value) {
             NX = *((int *)nx_info->value);
         }
