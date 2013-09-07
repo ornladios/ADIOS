@@ -269,7 +269,7 @@ threaded_enqueue(
     fp_write_log("QUEUE", "enqueing a message\n");
     pthread_mutex_lock(mutex);
     if(max_size > 0){
-	while(queue_count(queue) >= max_size){
+	while(queue_count(queue) > max_size){
 	    pthread_cond_wait(condition, mutex);
 	}
     }
