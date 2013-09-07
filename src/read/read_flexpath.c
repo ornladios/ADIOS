@@ -736,9 +736,9 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     		    for(i=0; i<num_dims; i++){
     			char *dim;
     			atom_name[0] ='\0';
-    			strcat(atom_name, f->field_name);
-    			strcat(atom_name, "_");
     			strcat(atom_name, FP_DIM_ATTR_NAME);
+    			strcat(atom_name, "_");
+    			strcat(atom_name, f->field_name);
     			strcat(atom_name, "_");
     			char dim_num[10] = "";
     			sprintf(dim_num, "%d", i+1);
@@ -866,6 +866,7 @@ adios_read_flexpath_open(const char * fname,
 			 enum ADIOS_LOCKMODE lock_mode,
 			 float timeout_sec)
 {
+    fp_log("FUNC", "entering flexpath_open\n");
     ADIOS_FILE *adiosfile = malloc(sizeof(ADIOS_FILE));        
     if(!adiosfile){
 	adios_error (err_no_memory, 
@@ -1010,12 +1011,10 @@ adios_read_flexpath_open(const char * fname,
 	build_bridge(&fp->bridges[writer_rank]);
 	fp->writer_coordinator = writer_rank;
     }
-
     // requesting initial data.
     send_open_msg(fp, fp->writer_coordinator);
     send_flush_msg(fp, fp->writer_coordinator, DATA);
     send_flush_msg(fp, fp->writer_coordinator, EVGROUP);
-
     // this has to change. Writer needs to have some way of
     // taking the attributes out of the xml document
     // and sending them over ffs encoded. Not yet implemented.
@@ -1033,6 +1032,7 @@ adios_read_flexpath_open(const char * fname,
     adiosfile->version = -1;
     adiosfile->file_size = 0;
     adios_errno = err_no_error;        
+    fp_log("FUNC", "entering flexpath_open\n");
     return adiosfile;
 }
 
@@ -1198,6 +1198,7 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 					   int nsteps,
 					   void *data)
 {   
+    fp_log("FUNC", "entering schedule_read_byid\n");
     flexpath_reader_file * fp = (flexpath_reader_file*)adiosfile->fh;
     flexpath_var * var = fp->var_list;
     while(var){
@@ -1280,6 +1281,7 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 	break;
     }
     }
+    fp_log("FUNC", "entering schedule_read_byid\n");
     return 0;
 }
 
@@ -1355,6 +1357,7 @@ adios_read_flexpath_get_attr_byid (const ADIOS_FILE *adiosfile, int attrid,
 ADIOS_VARINFO* 
 adios_read_flexpath_inq_var(const ADIOS_FILE * adiosfile, const char* varname)
 {
+    fp_log("FUNC", "entering flexpath_inq_var\n");
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     ADIOS_VARINFO* v = malloc(sizeof(ADIOS_VARINFO));
     if(!v) {
@@ -1367,6 +1370,7 @@ adios_read_flexpath_inq_var(const ADIOS_FILE * adiosfile, const char* varname)
     flexpath_var *fpvar = find_fp_var(fp->var_list, varname);
     if(fpvar) {
 	v = convert_var_info(fpvar, v, varname, adiosfile);
+	fp_log("FUNC", "leaving flexpath_inq_var\n");
 	return v;
     }
     else {
@@ -1378,9 +1382,12 @@ adios_read_flexpath_inq_var(const ADIOS_FILE * adiosfile, const char* varname)
 ADIOS_VARINFO* 
 adios_read_flexpath_inq_var_byid (const ADIOS_FILE * adiosfile, int varid)
 {
+    fp_log("FUNC", "entering flexpath_inq_var_byid\n");
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
-    if(varid >= 0 && varid < adiosfile->nvars) {
-        return adios_read_flexpath_inq_var(adiosfile, adiosfile->var_namelist[varid]);
+    if(varid >= 0 && varid < adiosfile->nvars) {	
+	ADIOS_VARINFO *v = adios_read_flexpath_inq_var(adiosfile, adiosfile->var_namelist[varid]);
+	fp_log("FUNC", "leaving flexpath_inq_var_byid\n");
+	return v;
     }
     else {
         adios_error(err_invalid_varid, "FLEXPATH method: Cannot find var %d\n", varid);
