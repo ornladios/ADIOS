@@ -268,11 +268,12 @@ void build_ADIOS_FILE_struct (ADIOS_FILE * fp, BP_FILE * fh)
     return;
 }
 
-static int get_new_step (ADIOS_FILE * fp, const char * fname, MPI_Comm comm, int last_step, float timeout_sec)
+static int get_new_step (ADIOS_FILE * fp, const char * fname, MPI_Comm comm, int last_tidx, float timeout_sec)
 {
     BP_PROC * p = (BP_PROC *) fp->fh;
+    BP_FILE * fh = (BP_FILE *) p->fh;
+    BP_FILE * new_fh;
     int err, i;
-    BP_FILE * fh;
     double t1 = adios_gettime();
 
     log_debug ("enter get_new_step\n");
@@ -288,22 +289,22 @@ static int get_new_step (ADIOS_FILE * fp, const char * fname, MPI_Comm comm, int
     while (stay_in_poll_loop)
     {
         /* Re-open the file */
-        fh = open_file (fname, comm);
-        if (!fh)
+        new_fh = open_file (fname, comm);
+        if (!new_fh)
         {
             // file is bad so keeps polling.
             stay_in_poll_loop = 1;
         }
-        else if (fh && (fh->tidx_stop - 1 == last_step))
+        else if (new_fh && new_fh->tidx_stop == last_tidx)
         {
             // file is good but no new steps in it. Continue polling.
-            bp_close (fh);
+            bp_close (new_fh);
             stay_in_poll_loop = 1;
         }
         else
         {
             // the file looks good and there are new steps written.
-            build_ADIOS_FILE_struct (fp, fh);
+            build_ADIOS_FILE_struct (fp, new_fh);
             stay_in_poll_loop = 0;
             found_stream = 1;
         }
@@ -1091,7 +1092,7 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
 
     fp->current_step = 0;
     /* For file, the last step is tidx_stop */
-    fp->last_step = fh->tidx_stop - 1;
+    fp->last_step = fh->tidx_stop - fh->tidx_start;
 
     return 0;
 }
@@ -1284,7 +1285,7 @@ int adios_read_bp_advance_step (ADIOS_FILE * fp, int last, float timeout_sec)
 {
     BP_PROC * p = (BP_PROC *) fp->fh;
     BP_FILE * fh = (BP_FILE *) p->fh;
-    int last_step;
+    int last_tidx;
     MPI_Comm comm;
     char * fname;
 
@@ -1302,7 +1303,7 @@ int adios_read_bp_advance_step (ADIOS_FILE * fp, int last, float timeout_sec)
         else // re-open to read in footer again. We should keep polling until there are new steps in OR 
              // time out.
         {
-            last_step = fp->last_step;
+            last_tidx = fh->tidx_stop;
             fname = strdup (fh->fname);
             comm = fh->comm;
 
@@ -1312,7 +1313,7 @@ int adios_read_bp_advance_step (ADIOS_FILE * fp, int last, float timeout_sec)
                 p->fh = 0;
             }
 
-            if (!get_new_step (fp, fname, comm, last_step, timeout_sec))
+            if (!get_new_step (fp, fname, comm, last_tidx, timeout_sec))
             {
                 // With file reading, how can we tell it is the end of the streams?
                 adios_errno = err_step_notready;
@@ -1320,19 +1321,17 @@ int adios_read_bp_advance_step (ADIOS_FILE * fp, int last, float timeout_sec)
 
             free (fname); 
 
-            log_debug ("Seek from step %d to step %d\n", last_step, last_step + 1);
-
             if (adios_errno == 0)
             {
                 release_step (fp);
-                bp_seek_to_step (fp, last_step + 1, show_hidden_attrs);
-                fp->current_step = last_step + 1;
+                bp_seek_to_step (fp, fp->last_step + 1, show_hidden_attrs);
+                fp->current_step = fp->last_step + 1;
             }
         }
     }
     else // read in newest step. Re-open no matter whether current_step < last_step
     {
-        last_step = fp->last_step;
+        last_tidx = fh->tidx_stop;
         fname = strdup (fh->fname);
         comm = fh->comm;
 
@@ -1343,7 +1342,7 @@ int adios_read_bp_advance_step (ADIOS_FILE * fp, int last, float timeout_sec)
         }
 
         // lockmode is currently not supported.
-        if (!get_new_step (fp, fh->fname, fh->comm, last_step, timeout_sec))
+        if (!get_new_step (fp, fh->fname, fh->comm, last_tidx, timeout_sec))
         {
             adios_errno = err_step_notready;
         }
