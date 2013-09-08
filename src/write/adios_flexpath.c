@@ -269,7 +269,7 @@ threaded_enqueue(
     fp_write_log("QUEUE", "enqueing a message\n");
     pthread_mutex_lock(mutex);
     if(max_size > 0){
-	while(queue_count(queue) >= max_size){
+	while(queue_count(queue) > max_size){
 	    pthread_cond_wait(condition, mutex);
 	}
     }
@@ -526,7 +526,7 @@ char *multiqueue_action = "{\n\
         EVdiscard_and_submit_varMsg(0, 0);\n\
     }\n\
     if(EVcount_update_step_msg() > 1) {\n\
-        EVdiscard_update_step_msg(0);\n\        
+        EVdiscard_update_step_msg(0);\n\
     }\n\
     if(EVcount_drop_evgroup_msg()>0) {\n\
        if(EVcount_evgroup()>0) {\n\
@@ -546,7 +546,7 @@ char *multiqueue_action = "{\n\
     if(EVcount_flush()>0) {\n\
         flush* c = EVdata_flush(0);\n\
          if(c->type == 2) { \n\
-             if(EVcount_evgroup()>0){\n\               
+             if(EVcount_evgroup()>0){\n\
                evgroup *g = EVdata_evgroup(0); \n\
                g->condition = c->condition;\n\
                EVsubmit(c->rank+1, g);\n\
@@ -559,8 +559,8 @@ char *multiqueue_action = "{\n\
                stepmsg->condition = c->condition;\n\
                EVsubmit(c->rank+1, stepmsg);\n\
                EVdiscard_flush(0);\n\
-            }\n\         
-          }\n\ 
+            }\n\
+          }\n\
          else {\n\
             EVdiscard_and_submit_flush(0,0);\n\
             flush_data_count++;\n\
@@ -1595,8 +1595,19 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
     // now gather offsets and send them via MPI to root
     struct adios_group_struct * g = fd->group;
     struct adios_var_struct * list = g->vars;
+    evgroup *gp = malloc(sizeof(evgroup));    
 
-    if(fileData->globalCount > 0){	
+    if(fileData->globalCount == 0){
+
+	gp->num_vars = 0;
+	gp->step = fileData->writerStep;
+	gp->vars = NULL;
+	//fileData->gp = gp;       
+	fileData->attrs = set_size_atom(fileData->attrs, fileData->size);
+	EVsubmit_general(fileData->offsetSource, gp, evgroup_msg_free, fileData->attrs);
+    }
+
+    else{	
 	fp_write_log("BOUNDING", "check offsets\n");
         // process local offsets here	
 	int num_gbl_vars = 0;
@@ -1648,20 +1659,22 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 	    }
 	    list=list->next;
 	}
-	update_step_msg *stepmsg = malloc(sizeof(update_step_msg));
-	stepmsg->finalized = 0;
-	stepmsg->step = fileData->writerStep;
-	stepmsg->condition = -1;
-	EVsubmit_general(fileData->stepSource, stepmsg, update_step_msg_free, fileData->attrs);
 
-	evgroup *gp = malloc(sizeof(evgroup));
 	gp->num_vars = num_gbl_vars;
 	gp->step = fileData->writerStep;
 	gp->vars = gbl_vars;
 	//fileData->gp = gp;       
-	fileData->attrs = set_size_atom(fileData->attrs, fileData->size);
-	EVsubmit_general(fileData->offsetSource, gp, evgroup_msg_free, fileData->attrs);
     }
+    
+    update_step_msg *stepmsg = malloc(sizeof(update_step_msg));
+    stepmsg->finalized = 0;
+    stepmsg->step = fileData->writerStep;
+    stepmsg->condition = -1;
+    EVsubmit_general(fileData->stepSource, stepmsg, update_step_msg_free, fileData->attrs);
+    
+    fileData->attrs = set_size_atom(fileData->attrs, fileData->size);
+    EVsubmit_general(fileData->offsetSource, gp, evgroup_msg_free, fileData->attrs);
+
     fileData->writerStep++;
     /* while((c=queue_count(&fileData->dataQueue))>fileData->maxQueueSize) { */
     /*     fp_write_log("QUEUE", "waiting for queue to be below max size\n"); */
