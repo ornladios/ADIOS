@@ -1411,8 +1411,11 @@ int64_t adios_read_flexpath_read_var (int *gp, const char *varname,
 
 ADIOS_TRANSINFO * adios_read_flexpath_inq_var_transinfo(const ADIOS_FILE *gp, const ADIOS_VARINFO *vi)
 {    
-    adios_error(err_operation_not_supported, "Flexpath does not yet support transforms: var_transinfo.\n");
-    return (int64_t)0;
+    //adios_error(err_operation_not_supported, "Flexpath does not yet support transforms: var_transinfo.\n");
+    ADIOS_TRANSINFO *trans = malloc(sizeof(ADIOS_TRANSINFO));
+    memset(trans, 0, sizeof(ADIOS_TRANSINFO));
+    trans->transform_type = adios_transform_none;
+    return trans;
 }
 
 
