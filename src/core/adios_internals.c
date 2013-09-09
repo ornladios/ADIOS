@@ -2202,7 +2202,7 @@ static void index_append_var_v1 (
                                        item->var_path, item->var_name);
 
     log_debug ("Hashtable size=%d\n", index->hashtbl_vars->size (index->hashtbl_vars));
-    log_debug ("var tail = %x, name=%s\n", index->vars_tail,
+    log_debug ("var tail = %p, name=%s\n", index->vars_tail,
                 (index->vars_tail ? index->vars_tail->var_name : ""));
     if (!olditem) {
         // new variable, insert into var list

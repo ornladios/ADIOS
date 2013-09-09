@@ -307,7 +307,7 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
     }
 
     root = vars_root;
-    log_debug ("%s: hashtbl=%x size=%d\n", __func__,
+    log_debug ("%s: hashtbl=%p size=%d\n", __func__,
                hashtbl_vars, (hashtbl_vars ? hashtbl_vars->size(hashtbl_vars) : 0));
 
     uint16_t vars_count;
@@ -774,7 +774,7 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
         root = &(*root)->next;
     }
 
-    log_debug ("end of %s: hashtbl=%x size=%d\n", __func__,
+    log_debug ("end of %s: hashtbl=%p size=%d\n", __func__,
                hashtbl_vars, (hashtbl_vars ? hashtbl_vars->size(hashtbl_vars) : 0));
 
     return 0;
