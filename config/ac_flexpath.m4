@@ -39,7 +39,6 @@ if test "x$ac_flexpath_ok" != "xno"; then
     CERCS_REQUIRE_PACKAGE(evpath, evpath.h, libevpath.a)
     CERCS_REQUIRE_PACKAGE(ffs, ffs.h,libffs.a)
     CERCS_REQUIRE_PACKAGE(atl, atl.h,libatl.a)
-    CERCS_REQUIRE_PACKAGE(gen_thread, gen_thread.h,libgen_thread.a)
     CERCS_REQUIRE_PACKAGE(dill, dill.h, libdill.a)
     CERCS_REQUIRE_PACKAGE(cercs_env, cercs_env.h, libcercs_env.a)
 
@@ -79,15 +78,6 @@ if test "x$ac_flexpath_ok" != "xno"; then
     else 
 	ac_flexpath_ok=no
 	echo "FLEXPATH couldn't find dill -  Not building flexpath"
-    fi
-    if test -n "$cercs_cv_gen_thread_link_dir" -a -n "$cercs_cv_gen_thread_include_arg"; then
-	FP_LDFLAGS="$FP_LDFLAGS -L$cercs_cv_gen_thread_link_dir"
-	FP_LIBS="$FP_LIBS -lgen_thread"
-	FP_CFLAGS="$FP_CFLAGS $cercs_cv_gen_thread_include_arg"
-	FP_CPPFLAGS="$FP_CPPFLAGS $cercs_cv_gen_thread_include_arg"
-    else 
-	ac_flexpath_ok=no
-	echo "FLEXPATH couldn't find gen_thread -  Not building flexpath"
     fi
     if test -n "$cercs_cv_cercs_env_link_dir" -a -n "$cercs_cv_cercs_env_include_arg"; then
 	FP_LDFLAGS="$FP_LDFLAGS -L$cercs_cv_cercs_env_link_dir"

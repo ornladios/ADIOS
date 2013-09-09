@@ -35,34 +35,39 @@ int main (int argc, char ** argv)
 
     adios_read_init_method(ADIOS_READ_METHOD_FLEXPATH, comm, "");
 
-    ADIOS_SELECTION global_range_select;
-    //if(rank == 0){
-    global_range_select.type=ADIOS_SELECTION_BOUNDINGBOX;
-    global_range_select.u.bb.start = malloc(sizeof(uint64_t)*2);
-    global_range_select.u.bb.count = malloc(sizeof(uint64_t)*2);
-    (global_range_select.u.bb.start)[0] = 2;
-    (global_range_select.u.bb.count)[0] = 2;
-    (global_range_select.u.bb.start)[1] = 0;
-    (global_range_select.u.bb.count)[1] = 40;
-    global_range_select.u.bb.ndim = 2;
-    int nelem = 80;
+    ADIOS_SELECTION *global_range_select;
 
     ADIOS_SELECTION scalar_block_select;
     scalar_block_select.type = ADIOS_SELECTION_WRITEBLOCK;
-    scalar_block_select.u.block.index = 0;
-    //fprintf(stderr, "app got here\n");
+    scalar_block_select.u.block.index = rank;
+
     /* schedule_read of a scalar. */    
     int test_scalar = -1;
     ADIOS_FILE* afile = adios_read_open("arrays", 
-                                         ADIOS_READ_METHOD_FLEXPATH, 
-                                         comm,
-                                         ADIOS_LOCKMODE_NONE, 0.0);
+					ADIOS_READ_METHOD_FLEXPATH, 
+					comm,
+					ADIOS_LOCKMODE_NONE, 0.0);
+
+    /* for(i=0; i<afile->nvars; i++){ */
+    /* 	printf("var: %s\n", afile->var_namelist[i]); */
+    /* } */
     
     int ii = 0;
     while(adios_errno != err_end_of_stream){       
         /* get a bounding box - rank 0 for now*/
-        ADIOS_VARINFO* nx_info = adios_inq_var( afile, "NX");
-        ADIOS_VARINFO* ny_info = adios_inq_var( afile, "NY");
+        ADIOS_VARINFO *nx_info = adios_inq_var( afile, "NX");
+        ADIOS_VARINFO *ny_info = adios_inq_var( afile, "NY");
+	ADIOS_VARINFO *arry = adios_inq_var( afile, "var_2d_array");
+	
+	uint64_t xcount = arry->dims[0];
+	uint64_t ycount = arry->dims[1];
+
+	uint64_t starts[] = {0,0};
+	uint64_t counts[] = {xcount, ycount};
+
+	global_range_select = adios_selection_boundingbox(2, starts, counts);
+
+	int nelem = xcount*ycount;
 
         if(nx_info->value) {
             NX = *((int *)nx_info->value);
@@ -71,8 +76,14 @@ int main (int argc, char ** argv)
             NY= *((int*)ny_info->value);
         }
     
-        //printf("\trank=%d: NX=%d\n", rank, NX);
-        //printf("\trank=%d: NY=%d\n", rank, NY);
+	if(rank == 0){
+	    int n;
+	    printf("dims: [ ");
+	    for(n=0; n<arry->ndim; n++){
+		printf("%d ", (int)arry->dims[n]);
+	    }
+	    printf("]\n");
+	}
     
         /* Allocate space for the arrays */
         int arr_size = sizeof(double) * nelem;
@@ -82,7 +93,7 @@ int main (int argc, char ** argv)
       
         /* Read the arrays */        
         adios_schedule_read (afile, 
-                             &global_range_select, 
+                             global_range_select, 
                              "var_2d_array", 
                              0, 1, t);
 	adios_schedule_read (afile,
@@ -98,7 +109,7 @@ int main (int argc, char ** argv)
         for(j=0; j<nelem; j++) {
             printf(", %6.2f", t[j]);
         }
-        printf("]\n");
+        printf("]\n\n");
         adios_release_step(afile);
         adios_advance_step(afile, 0, 30);
         ii++;

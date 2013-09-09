@@ -1,6 +1,8 @@
 INCLUDES = $(all_includes)
 INCLUDES += -I$(top_builddir)/src -I$(top_builddir)/src/public
 
+SUBDIRS=flexpath_tests
+
 AUTOMAKE_OPTIONS = no-dependencies
 
 noinst_PROGRAMS=adios_test_c

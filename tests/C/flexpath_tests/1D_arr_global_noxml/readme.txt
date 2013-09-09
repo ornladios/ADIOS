@@ -17,13 +17,10 @@ There might be as many writers as you wish, and there might be as many readers
 as you wish. However, each rank reads its own rank. The reader knows how many 
 writers were there so if its rank is higher then it quits.
 
-The test uses
+The test uses might be run in two modes (use '-t' option with the appropriate mode).
 
 1. MPI/ADIOS_READ_METHOD_BP
 2. FLEXPATH/ADIOS_READ_METHOD_FLEXPATH
-
-To switch between those two modes you need to run the make without or
-with the CFLAGS set to -DFLEXPATH_METHOD. See build.
 
 
 BUILD
@@ -36,27 +33,27 @@ export MXML_ROOT=/rock/opt/mxml/2.7
 export MPI_ROOT=/rock/opt/openmpi/1.6.3
 export EVPATH_ROOT=/rock/opt/evpath
 
-# build the MPI/ADIOS_READ_METHOD_BP
-$ make
+# in certain cases you might need the lustre directory (e.g., on kraken)
+export LUSTRE_ROOT=/opt/cray/lustre-cray_ss_s/default
 
-# build FLEXPATH/ADIOS_READ_METHOD_FLEXPATH
-$ make CFLAGS="-DFLEXPATH_METHOD"
+# build the MPI/ADIOS_READ_METHOD_BP
+$ make -f Makefile.generic
 
 # should remove all unnecessary exec files 
-$ make clean
+$ make -f Makefile.generic clean
 
 # cleans files hanging around after previous runs
-$ make clean_test
+$ make -f Makefile.generic clean_test
 
 RUN
 ===== 
 # to clean files hanging around after previous runs
-$ make clean_test
+$ make -f Makefile.generic clean_test
 
-$ mpirun -np 2 writer
-$ mpirun -np 2 reader 
+$ mpirun -np 2 writer -t flx
+$ mpirun -np 2 reader -t flx
 
-See Makefile for other options of running the test.
+See Makefile for other options of running the test or use '-h'.
 
 
 OUTDATED (2013-07-08)

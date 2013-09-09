@@ -19,6 +19,7 @@
 #include "misc.h"
 #include "utils.h"
 #include "test_common.h"
+#include "cfg.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -27,39 +28,33 @@
 
 
 int main (int argc, char **argv){
-	char filename[256];
 	int rank =0, size =0;
 	int NX = 0;
 	double *t = NULL;
 	// this is an array we expect as a reference array
 	double *t_ref = NULL;
 	MPI_Comm comm = MPI_COMM_WORLD;
-	int diag = 0;  // to store the diagnostic information; 0 is OK, -1 error
-	int test_passed = TEST_PASSED;   // TEST_PASSED if test passed; TEST_FAILED if test failed
-	enum ADIOS_READ_METHOD method = METHOD;
-	const char * TEST_NAME="1D_arr_global";
+	diag_t diag = DIAG_OK;  // to store the diagnostic information
+	struct test_info test_result = { TEST_PASSED, "1D_arr_global" };
+	struct err_counts err = { 0, 0};
+	struct adios_tsprt_opts adios_opts;
 
+	GET_ENTRY_OPTIONS(adios_opts, "Runs readers. It is recommended to run as many readers as writers.");
 
-	if (1 < argc){
-		usage(argv[0], "Runs readers. It is recommended to run as many readers as writers.");
-		return 0;
-	}
 	// adios read initialization
 	MPI_Init( &argc, &argv);
 	MPI_Comm_rank (comm, &rank);
 
 	// depending on the method
-	if( (diag = adios_read_init_method( method, comm, ADIOS_OPTIONS)) != 0){
-		p_error("ERROR: Quitting ... Issues with initialization adios_read: (%d) %s\n", adios_errno, adios_errmsg());
-		return PROGRAM_ERROR;
-	}
+	SET_ERROR_IF_NOT_ZERO(adios_read_init_method(adios_opts.method, comm, adios_opts.adios_options), err.adios);
+	RET_IF_ERROR(err.adios, rank);
 
 	// I will be working with streams so the lock mode is necessary,
 	// return immediately if the stream unavailable
-	ADIOS_FILE *adios_handle = adios_read_open(FILE_NAME,method, comm, ADIOS_LOCKMODE_NONE, 0.0);
+	ADIOS_FILE *adios_handle = adios_read_open(FILE_NAME,adios_opts.method, comm, ADIOS_LOCKMODE_NONE, 0.0);
 	if ( !adios_handle){
-		p_error("ERROR: Quitting ... (%d) %s\n", adios_errno, adios_errmsg());
-		return PROGRAM_ERROR;
+		p_error("Quitting ... (%d) %s\n", adios_errno, adios_errmsg());
+		return DIAG_ERR;
 	}
 
 	// define portions of data how they will be read
@@ -75,9 +70,9 @@ int main (int argc, char **argv){
 	// read how many processors wrote that array
 	avi = adios_inq_var (adios_handle, "size");
 	if (!avi){
-		printf("ERROR: rank %d: Quitting ... (%d) %s\n", rank, adios_errno, adios_errmsg());
-		CLOSE_ADIOS;
-		return -1;
+		p_error("rank %d: Quitting ... (%d) %s\n", rank, adios_errno, adios_errmsg());
+		CLOSE_ADIOS_READER(adios_handle, adios_opts.method);
+		return DIAG_ERR;
 	}
 	size = *((int*)avi->value);
 	adios_free_varinfo(avi);
@@ -86,17 +81,17 @@ int main (int argc, char **argv){
 	// if I run the more readers than writers; just release
 	// the excessive readers
 	if (rank >= size){
-		printf("INFO: rank %d: I am an excessive rank. Nothing to read ...\n", rank);
-		CLOSE_ADIOS;
-		return 0;
+		p_info("rank %d: I am an excessive rank. Nothing to read ...\n", rank);
+		CLOSE_ADIOS_READER(adios_handle, adios_opts.method);
+		return DIAG_OK;
 	}
 
 	// read the size of the array
 	avi = adios_inq_var (adios_handle, "NX");
 	if (!avi){
-		printf("ERROR: rank %d: Quitting ... (%d) %s\n", rank, adios_errno, adios_errmsg());
-		CLOSE_ADIOS;
-		return -1;
+		p_error("rank %d: Quitting ... (%d) %s\n", rank, adios_errno, adios_errmsg());
+		CLOSE_ADIOS_READER(adios_handle, adios_opts.method);
+		return DIAG_ERR;
 	}
 
 	// I expect a scalar that will tell me the size of an array
@@ -121,8 +116,8 @@ int main (int argc, char **argv){
 	sel = adios_selection_boundingbox(2,start, count);
 	if( !sel ){
 		p_error("rank %d: Quitting ... (%d) %s\n", rank, adios_errno, adios_errmsg());
-		CLOSE_ADIOS;
-		return -1;
+		diag = DIAG_ERR;
+		goto close_adios;
 	}
 
 	// allocate the memory for the actual array to be read
@@ -130,15 +125,15 @@ int main (int argc, char **argv){
 
 	if (adios_schedule_read(adios_handle, sel, "var_1d_array",0,1,t) != 0){
 		p_error("rank %d: Quitting ...(%d) %s\n", rank, adios_errno, adios_errmsg());
-		CLEAN_ON_ERROR_AND_CLOSE_ADIOS;
-		return -1;
+		diag = DIAG_ERR;
+		goto just_clean;
 	}
 
 	// not sure if this assumption is correct; difficult to find in the ADIOS sources
 	if (adios_perform_reads(adios_handle, 1) != 0){
 		p_error("rank %d: Quitting ...(%d) %s\n", rank, adios_errno, adios_errmsg());
-		CLEAN_ON_ERROR_AND_CLOSE_ADIOS;
-		return -1;
+		diag = DIAG_ERR;
+		goto just_clean;
 	}
 
 	// make the reference array with reference values I expect to get
@@ -150,17 +145,15 @@ int main (int argc, char **argv){
 	for (i = 0; i < NX; ++i) {
 		if (t[i] != t_ref[i]) {
 			p_test_failed("%s: rank %d: for t[%d] (expected %.1f, got %.1f)\n",
-					TEST_NAME, rank, i, t_ref[i], t[i]);
-			test_passed = TEST_FAILED;
+					test_result.name, rank, i, t_ref[i], t[i]);
+			test_result.result = TEST_FAILED;
 			break;
 		}
 	}
 
-	if (TEST_PASSED == test_passed)
-		p_test_passed("%s: rank %d\n", TEST_NAME, rank);
+	if (TEST_PASSED == test_result.result)
+		p_test_passed("%s: rank %d\n", test_result.name, rank);
 
-	// clean everything
-	JUST_CLEAN;
 
 /*#ifdef FLEXPATH_METHOD
 	adios_release_step(adios_handler);
@@ -174,9 +167,22 @@ int main (int argc, char **argv){
 	}
 #endif
 */
-	CLOSE_ADIOS;
-	// to fix printing after adios finalize
-	printf("\n");
 
-	return test_passed;
+just_clean:
+	// clean everything
+	adios_selection_delete(sel);
+	sel = NULL;
+	free(t);
+	t = NULL;
+	free(t_ref);
+	t_ref = NULL;
+
+close_adios:
+	CLOSE_ADIOS_READER(adios_handle, adios_opts.method);
+
+	if ((DIAG_OK == diag) && (TEST_PASSED == test_result.result)) {
+		return 0;
+	} else {
+		return 1;
+	}
 }

@@ -297,6 +297,3 @@
 
 /* Minor version number */
 #undef VERSION_MINOR
-
-/* svn revision number */
-#undef VERSION_SVNREV

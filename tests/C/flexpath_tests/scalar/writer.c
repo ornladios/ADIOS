@@ -19,6 +19,8 @@
 
 #include "misc.h"
 #include "utils.h"
+#include "cfg.h"
+#include "test_common.h"
 
 #include <stdio.h>
 #include <assert.h>
@@ -27,35 +29,28 @@
 
 
 int main(int argc, char ** argv){
-	char filename[256];         		// the name of the file to write data and compare with flexpath
 	int  rank=0, size=0;
 	MPI_Comm  comm = MPI_COMM_WORLD; 	// required for ADIOS
 
 	int64_t 	adios_handle;   		// the ADIOS file handle
 	int retval;
+	struct adios_tsprt_opts adios_opts;
+	int err_count = 0;
 
-	if (1 < argc){
-		usage(argv[0], "Runs writers. It is recommended to run as many writers as readers.");
-		return 0;
-	}
-
-	// where I will write the data
-	strcpy(filename, FILE_NAME);
+	GET_ENTRY_OPTIONS(adios_opts, "Runs writers. It is recommended to run as many writers as readers.");
 
 	// ADIOS initialization
 	MPI_Init(&argc, &argv);
 	MPI_Comm_rank (comm, &rank);
 	MPI_Comm_size (comm, &size);
 
-	if (adios_init(XML_ADIOS_INIT_FILENAME, comm) == 0){
-		printf("ERROR: (%d) %s\n", adios_errno, adios_errmsg());
-		return -1;
-	}
+	SET_ERROR_IF_ZERO(adios_init(adios_opts.xml_adios_init_filename, comm), err_count);
+	RET_IF_ERROR(err_count, rank);
 
 	uint64_t adios_groupsize, adios_totalsize;
 
 	// open with the group name as specified in the xml file
-	adios_open( &adios_handle, "scalar", filename, "w", comm);
+	adios_open( &adios_handle, "scalar", FILE_NAME, "w", comm);
 	adios_groupsize = 4 + 4 + 4;
 	retval=adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
 	fprintf(stderr, "Rank=%d adios_group_size(): adios_groupsize=%ld, adios_totalsize=%ld, retval=%d\n",
@@ -73,6 +68,6 @@ int main(int argc, char ** argv){
 	adios_finalize(rank);
 	MPI_Finalize();
 
-	return 0;
+	return DIAG_OK;
 }
 

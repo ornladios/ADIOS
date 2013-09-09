@@ -14,7 +14,6 @@
 # PARTICULAR PURPOSE.
 
 @SET_MAKE@
-
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
@@ -34,9 +33,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = adios_test_c$(EXEEXT)
-subdir = tests/C
-DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+subdir = tests/C/flexpath_tests
+DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_alacrity.m4 \
 	$(top_srcdir)/config/ac_aplod.m4 \
@@ -72,29 +70,8 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-PROGRAMS = $(noinst_PROGRAMS)
-am_adios_test_c_OBJECTS = adios_test_c-adios_test_c.$(OBJEXT)
-adios_test_c_OBJECTS = $(am_adios_test_c_OBJECTS)
-am__DEPENDENCIES_1 =
-adios_test_c_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1)
-adios_test_c_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(adios_test_c_CFLAGS) \
-	$(CFLAGS) $(adios_test_c_LDFLAGS) $(LDFLAGS) -o $@
-DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
-depcomp =
-am__depfiles_maybe =
-COMPILE = $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(AM_CPPFLAGS) \
-	$(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-LTCOMPILE = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=compile $(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) \
-	$(AM_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS)
-CCLD = $(CC)
-LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
-	$(LDFLAGS) -o $@
-SOURCES = $(adios_test_c_SOURCES)
-DIST_SOURCES = $(adios_test_c_SOURCES)
+SOURCES =
+DIST_SOURCES =
 RECURSIVE_TARGETS = all-recursive check-recursive dvi-recursive \
 	html-recursive info-recursive install-data-recursive \
 	install-dvi-recursive install-exec-recursive \
@@ -173,7 +150,7 @@ AWK = @AWK@
 BZIP2_CPPFLAGS = @BZIP2_CPPFLAGS@
 BZIP2_LDFLAGS = @BZIP2_LDFLAGS@
 BZIP2_LIBS = @BZIP2_LIBS@
-CC = $(MPICC)
+CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
@@ -374,21 +351,10 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-INCLUDES = $(all_includes) -I$(top_builddir)/src \
-	-I$(top_builddir)/src/public
-SUBDIRS = flexpath_tests
-AUTOMAKE_OPTIONS = no-dependencies
-adios_test_c_SOURCES = adios_test_c.c
-adios_test_c_CPPFLAGS = $(ADIOSLIB_CPPFLAGS)
-adios_test_c_CFLAGS = $(ADIOSLIB_CFLAGS)
-adios_test_c_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-adios_test_c_LDFLAGS = $(ADIOSLIB_LDFLAGS) 
-CLEANFILES = restart.bp
-EXTRA_DIST = config_c.xml
+SUBDIRS = 1D_arr_global 1D_arr_global_noxml global_range_select maya_noxml maya_append scalar
 all: all-recursive
 
 .SUFFIXES:
-.SUFFIXES: .c .lo .o .obj
 $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__configure_deps)
 	@for dep in $?; do \
 	  case '$(am__configure_deps)' in \
@@ -398,9 +364,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu tests/C/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu tests/C/flexpath_tests/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu tests/C/Makefile
+	  $(AUTOMAKE) --gnu tests/C/flexpath_tests/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -419,39 +385,6 @@ $(top_srcdir)/configure: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
-
-clean-noinstPROGRAMS:
-	@list='$(noinst_PROGRAMS)'; test -n "$$list" || exit 0; \
-	echo " rm -f" $$list; \
-	rm -f $$list || exit $$?; \
-	test -n "$(EXEEXT)" || exit 0; \
-	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
-	echo " rm -f" $$list; \
-	rm -f $$list
-adios_test_c$(EXEEXT): $(adios_test_c_OBJECTS) $(adios_test_c_DEPENDENCIES) 
-	@rm -f adios_test_c$(EXEEXT)
-	$(adios_test_c_LINK) $(adios_test_c_OBJECTS) $(adios_test_c_LDADD) $(LIBS)
-
-mostlyclean-compile:
-	-rm -f *.$(OBJEXT)
-
-distclean-compile:
-	-rm -f *.tab.c
-
-.c.o:
-	$(COMPILE) -c $<
-
-.c.obj:
-	$(COMPILE) -c `$(CYGPATH_W) '$<'`
-
-.c.lo:
-	$(LTCOMPILE) -c -o $@ $<
-
-adios_test_c-adios_test_c.o: adios_test_c.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_test_c_CPPFLAGS) $(CPPFLAGS) $(adios_test_c_CFLAGS) $(CFLAGS) -c -o adios_test_c-adios_test_c.o `test -f 'adios_test_c.c' || echo '$(srcdir)/'`adios_test_c.c
-
-adios_test_c-adios_test_c.obj: adios_test_c.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_test_c_CPPFLAGS) $(CPPFLAGS) $(adios_test_c_CFLAGS) $(CFLAGS) -c -o adios_test_c-adios_test_c.obj `if test -f 'adios_test_c.c'; then $(CYGPATH_W) 'adios_test_c.c'; else $(CYGPATH_W) '$(srcdir)/adios_test_c.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -654,7 +587,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-recursive
-all-am: Makefile $(PROGRAMS)
+all-am: Makefile
 installdirs: installdirs-recursive
 installdirs-am:
 install: install-recursive
@@ -674,7 +607,6 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
-	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -685,13 +617,11 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-recursive
 
-clean-am: clean-generic clean-libtool clean-noinstPROGRAMS \
-	mostlyclean-am
+clean-am: clean-generic clean-libtool mostlyclean-am
 
 distclean: distclean-recursive
 	-rm -f Makefile
-distclean-am: clean-am distclean-compile distclean-generic \
-	distclean-tags
+distclean-am: clean-am distclean-generic distclean-tags
 
 dvi: dvi-recursive
 
@@ -739,8 +669,7 @@ maintainer-clean-am: distclean-am maintainer-clean-generic
 
 mostlyclean: mostlyclean-recursive
 
-mostlyclean-am: mostlyclean-compile mostlyclean-generic \
-	mostlyclean-libtool
+mostlyclean-am: mostlyclean-generic mostlyclean-libtool
 
 pdf: pdf-recursive
 
@@ -757,16 +686,15 @@ uninstall-am:
 
 .PHONY: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) CTAGS GTAGS \
 	all all-am check check-am clean clean-generic clean-libtool \
-	clean-noinstPROGRAMS ctags ctags-recursive distclean \
-	distclean-compile distclean-generic distclean-libtool \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-compile mostlyclean-generic \
+	ctags ctags-recursive distclean distclean-generic \
+	distclean-libtool distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-man install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-generic \
 	mostlyclean-libtool pdf pdf-am ps ps-am tags tags-recursive \
 	uninstall uninstall-am
 
