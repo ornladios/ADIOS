@@ -1409,6 +1409,19 @@ int64_t adios_read_flexpath_read_var (int *gp, const char *varname,
     return (int64_t)0;
 }
 
+ADIOS_TRANSINFO * adios_read_flexpath_inq_var_transinfo(const ADIOS_FILE *gp, const ADIOS_VARINFO *vi)
+{    
+    adios_error(err_operation_not_supported, "Flexpath does not yet support transforms: var_transinfo.\n");
+    return (int64_t)0;
+}
+
+
+int adios_read_flexpath_inq_var_trans_blockinfo(const ADIOS_FILE *gp, const ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti)
+{
+    adios_error(err_operation_not_supported, "Flexpath does not yet support transforms: trans_blockinfo.\n");
+    return (int64_t)0;
+}
+
 int64_t adios_read_flexpath_read_var_byid (int *gp, int varid,
                                           const uint64_t *start,
                                           const uint64_t *count,
