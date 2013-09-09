@@ -50,3 +50,4 @@ foreach (PROG ${PROGS} )
 endforeach()
 
 #install(FILES adios_global.xml gread_temperature.ch gwrite_temperature.ch job.pbs DESTINATION ${PROJECT_BINARY_DIR}/examples/C/global-array)
+

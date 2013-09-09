@@ -343,8 +343,8 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-INCLUDES = $(all_includes) -I$(top_builddir)/src \
-	-I$(top_builddir)/src/public -I$(srcdir)/../include
+INCLUDES = $(all_includes) -I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/public -I$(srcdir)/../include
 AUTOMAKE_OPTIONS = no-dependencies
 writer_SOURCES = writer.c ../common/utils.c
 writer_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)

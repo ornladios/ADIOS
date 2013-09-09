@@ -360,8 +360,8 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-INCLUDES = $(all_includes) -I$(top_builddir)/src \
-	-I$(top_builddir)/src/public
+INCLUDES = $(all_includes) -I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/public
 AUTOMAKE_OPTIONS = no-dependencies
 adios_global_SOURCES = adios_global.c
 adios_global_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
