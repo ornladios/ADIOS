@@ -1182,6 +1182,7 @@ int
 adios_read_flexpath_inq_var_blockinfo(const ADIOS_FILE* fp,
 				      ADIOS_VARINFO* varinfo)
 { /*log_debug( "flexpath:adios function inq var block info\n");*/ return 0; }
+
 int
 adios_read_flexpath_inq_var_stat(const ADIOS_FILE* fp,
 				 ADIOS_VARINFO* varinfo,
@@ -1189,9 +1190,9 @@ adios_read_flexpath_inq_var_stat(const ADIOS_FILE* fp,
 				 int per_block_stat)
 { /*log_debug( "flexpath:adios function inq var stat\n");*/ return 0; }
 
-//void adiosread_flexpath_release_step (ADIOS_FILE *fp);
 
-int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
+int 
+adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 					   const ADIOS_SELECTION *sel,
 					   int varid,
 					   int from_steps,
@@ -1285,7 +1286,8 @@ int adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
     return 0;
 }
 
-int adios_read_flexpath_schedule_read(const ADIOS_FILE *adiosfile,
+int 
+adios_read_flexpath_schedule_read(const ADIOS_FILE *adiosfile,
 			const ADIOS_SELECTION * sel,
 			const char * varname,
 			int from_steps,
@@ -1296,36 +1298,8 @@ int adios_read_flexpath_schedule_read(const ADIOS_FILE *adiosfile,
     return 0;
 }
 
-int adios_read_flexpath_fclose(ADIOS_FILE *adiosfile)
-{
-    //log_debug( "debug: adios_read_flexpath_fclose\n");
-    return 0;
-}
-
-int * adios_read_flexpath_gopen (ADIOS_FILE *adiosfile, const char *grpname)
-{
-    //log_debug( "debug: adios_read_flexpath_gopen\n");
-    return NULL;
-}
-
-int * adios_read_flexpath_gopen_byid (ADIOS_FILE *adiosfile, int grpid)
-{
-    //log_debug( "debug: adios_read_flexpath_gopen_byid\n");
-    return NULL;
-}
-
-int adios_read_flexpath_gclose (int *gp)
-{
-    log_debug( "adios_read_flexpath_gclose\n");
-    adios_errno = 0;
-    int i;
-//    free_namelist ((gp->var_namelist),gp->vars_count);
-    free(gp);
-    return 0;
-
-}
-
-int adios_read_flexpath_get_attr (int *gp, const char *attrname,
+int 
+adios_read_flexpath_get_attr (int *gp, const char *attrname,
                                  enum ADIOS_DATATYPES *type,
                                  int *size, void **data)
 {
@@ -1395,21 +1369,16 @@ adios_read_flexpath_inq_var_byid (const ADIOS_FILE * adiosfile, int varid)
     }
 }
 
-void adios_read_flexpath_free_varinfo (ADIOS_VARINFO *adiosvar)
+void 
+adios_read_flexpath_free_varinfo (ADIOS_VARINFO *adiosvar)
 {
     //log_debug( "debug: adios_read_flexpath_free_varinfo\n");
     return;
 }
 
-int64_t adios_read_flexpath_read_var (int *gp, const char *varname,
-                                     const uint64_t *start, const uint64_t *count,
-                                     void *data)
-{
-    //log_debug( "debug: adios_read_flexpath_read_var\n");
-    return (int64_t)0;
-}
 
-ADIOS_TRANSINFO * adios_read_flexpath_inq_var_transinfo(const ADIOS_FILE *gp, const ADIOS_VARINFO *vi)
+ADIOS_TRANSINFO* 
+adios_read_flexpath_inq_var_transinfo(const ADIOS_FILE *gp, const ADIOS_VARINFO *vi)
 {    
     //adios_error(err_operation_not_supported, "Flexpath does not yet support transforms: var_transinfo.\n");
     ADIOS_TRANSINFO *trans = malloc(sizeof(ADIOS_TRANSINFO));
@@ -1419,22 +1388,15 @@ ADIOS_TRANSINFO * adios_read_flexpath_inq_var_transinfo(const ADIOS_FILE *gp, co
 }
 
 
-int adios_read_flexpath_inq_var_trans_blockinfo(const ADIOS_FILE *gp, const ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti)
+int 
+adios_read_flexpath_inq_var_trans_blockinfo(const ADIOS_FILE *gp, const ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti)
 {
     adios_error(err_operation_not_supported, "Flexpath does not yet support transforms: trans_blockinfo.\n");
     return (int64_t)0;
 }
 
-int64_t adios_read_flexpath_read_var_byid (int *gp, int varid,
-                                          const uint64_t *start,
-                                          const uint64_t *count,
-                                          void *data)
-{
-    //log_debug( "debug: adios_read_flexpath_read_var_byid\n");
-    return (int64_t)0;
-}
-
-void adios_read_flexpath_reset_dimension_order (const ADIOS_FILE *adiosfile, int is_fortran)
+void 
+adios_read_flexpath_reset_dimension_order (const ADIOS_FILE *adiosfile, int is_fortran)
 {
     //log_debug( "debug: adios_read_flexpath_reset_dimension_order\n");
     adios_error(err_invalid_read_method, "adios_read_flexpath_reset_dimension_order is not implemented.");
