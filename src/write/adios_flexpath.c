@@ -1315,9 +1315,9 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
     MPI_Comm_rank((fileData->mpiComm), &fileData->rank);
     MPI_Comm_size((fileData->mpiComm), &fileData->size);
     char *recv_buff = NULL;
-    char sendmsg[CONTACT_STR_LEN];
+    char sendmsg[CONTACT_LENGTH];
     if(fileData->rank == 0) {
-        recv_buff = (char *) malloc(fileData->size*CONTACT_STR_LEN*sizeof(char));
+        recv_buff = (char *) malloc(fileData->size*CONTACT_LENGTH*sizeof(char));
     }
         
     // send out contact string
@@ -1325,15 +1325,15 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
     fileData->multiStone = EValloc_stone(flexpathWriteData.cm);
     fileData->sinkStone = EValloc_stone(flexpathWriteData.cm);
     sprintf(&sendmsg[0], "%d:%s", fileData->multiStone, contact);
-    MPI_Gather(sendmsg, CONTACT_STR_LEN, MPI_CHAR, recv_buff, 
-        CONTACT_STR_LEN, MPI_CHAR, 0, (fileData->mpiComm));
+    MPI_Gather(sendmsg, CONTACT_LENGTH, MPI_CHAR, recv_buff, 
+        CONTACT_LENGTH, MPI_CHAR, 0, (fileData->mpiComm));
 
     // rank 0 prints contact info to file
     if(fileData->rank == 0) {
         sprintf(writer_info_filename, "%s_%s", fd->name, "writer_info.txt");
         FILE* writer_info = fopen(writer_info_filename,"w");
         for(i=0; i<fileData->size; i++) {
-            fprintf(writer_info, "%s\n",&recv_buff[i*CONTACT_STR_LEN]); 
+            fprintf(writer_info, "%s\n",&recv_buff[i*CONTACT_LENGTH]); 
         }
         fclose(writer_info);
     }
@@ -1352,11 +1352,12 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
     if(!reader_info){
 	reader_info = fopen(reader_info_filename, "r");
     }
-    char in_contact[CONTACT_STR_LEN] = "";
+    char in_contact[CONTACT_LENGTH] = "";
     int numBridges = 0;
     int stone_num;
     // build a bridge per line
     while(fscanf(reader_info, "%d:%s",&stone_num, in_contact)!=EOF){
+	//fprintf(stderr, "reader contact: %d:%s\n", stone_num, in_contact);
         fileData->bridges = realloc(fileData->bridges, sizeof(FlexpathStone) * (numBridges + 1));
         attr_list contact_list = attr_list_from_string(in_contact);
         fileData->bridges[numBridges].opened = 0;

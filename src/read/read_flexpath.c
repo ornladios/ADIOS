@@ -921,16 +921,16 @@ adios_read_flexpath_open(const char * fname,
     sprintf(writer_info_filename, "%s_%s", fname, WRITER_CONTACT_FILE);
 	
     char * string_list;
-    char data_contact_info[50];
+    char data_contact_info[CONTACT_LENGTH];
     string_list = attr_list_to_string(CMget_contact_list(fp_read_data->fp_cm));
     sprintf(&data_contact_info[0], "%d:%s", fp->stone, string_list);
     char * recvbuf;
     if(fp->rank == 0){	
-	recvbuf = (char*)malloc(sizeof(char)*50*(fp->size));
+	recvbuf = (char*)malloc(sizeof(char)*CONTACT_LENGTH*(fp->size));
     }
 
-    MPI_Gather(data_contact_info, 50, MPI_CHAR, recvbuf,
-	       50, MPI_CHAR, 0, fp->comm);
+    MPI_Gather(data_contact_info, CONTACT_LENGTH, MPI_CHAR, recvbuf,
+	       CONTACT_LENGTH, MPI_CHAR, 0, fp->comm);
 
     if(fp->rank == 0){	
 	// print our own contact information
@@ -942,7 +942,7 @@ adios_read_flexpath_open(const char * fname,
 	    exit(1);
 	}
 	for(i=0; i<fp->size; i++) {
-	    fprintf(fp_out,"%s\n", &recvbuf[i*50]);
+	    fprintf(fp_out,"%s\n", &recvbuf[i*CONTACT_LENGTH]);
 	}
 	fclose(fp_out);
 	free(recvbuf);
@@ -966,13 +966,14 @@ adios_read_flexpath_open(const char * fname,
 	fp_in = fopen(writer_info_filename, "r");
     }
 
-    char in_contact[50] = "";
+    char in_contact[CONTACT_LENGTH] = "";
     //fp->bridges = malloc(sizeof(bridge_info));
     int num_bridges = 0;
     int their_stone;
 
     // change to read all numbers, dont create stones, turn bridge array into linked list
     while(fscanf(fp_in, "%d:%s", &their_stone, in_contact) != EOF){	
+	//fprintf(stderr, "writer contact: %d:%s\n", their_stone, in_contact);
 	fp->bridges = realloc(fp->bridges,
 					  sizeof(bridge_info) * (num_bridges+1));
 	fp->bridges[num_bridges].their_num = their_stone;

@@ -4,6 +4,8 @@
 
 #include "core/adios_logger.h"
 
+#define CONTACT_LENGTH 200
+
 #define READER_CONTACT_FILE "reader_info.txt"
 #define WRITER_CONTACT_FILE "writer_info.txt"
 #define READER_READY_FILE "reader_ready.txt"
