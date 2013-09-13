@@ -66,6 +66,7 @@ bool noindex;              // do no print array indices with data
 bool printByteAsChar;      // print 8 bit integer arrays as string
 bool plot;                 // dump histogram related information
 bool hidden_attrs;         // show hidden attrs in BP file
+bool show_decomp;          // show decomposition of arrays
 
 // other global variables
 char *prgname; /* argv[0] */
@@ -99,12 +100,13 @@ struct option options[] = {
     {"columns",              required_argument,    NULL,    'n'}, 
     {"format",               required_argument,    NULL,    'f'}, 
     {"hidden_attrs",         no_argument,          &hidden_attrs,    true}, 
+    {"decomp",               no_argument,          NULL,    'D'},
     //    {"time",                 required_argument,    NULL,    't'}, 
     {NULL,                   0,                    NULL,    0}
 };
 
 
-static const char *optstring = "hvepyrtaAldSg:o:x:s:c:n:f:";
+static const char *optstring = "hvepyrtaAldSDg:o:x:s:c:n:f:";
 
 // help function
 void display_help() {
@@ -144,6 +146,7 @@ void display_help() {
             "  --format    | -f \"str\"     Format string to use for one data item in print\n"
             "                               instead of the default. E.g. \"%%6.3f\"\n"
             "  --hidden_attrs             Show hidden ADIOS attributes in the file\n"
+            "  --decomp    | -D           Show decomposition of variables as layed out in file\n"
             /*
                "  --time    | -t N [M]      # print data for timesteps N..M only (or only N)\n"
                "                              default is to print all available timesteps\n"
@@ -243,6 +246,9 @@ int main( int argc, char *argv[] ) {
                 break;
             case 'v':
                 verbose++;
+                break;
+            case 'D':
+                show_decomp = true;
                 break;
                 /*
                    case 't':
@@ -365,6 +371,7 @@ void init_globals(void) {
     hidden_attrs         = false;
     formatgiven          = false;
     printByteAsChar      = false;
+    show_decomp          = false;
     for (i=0; i<MAX_DIMS; i++) {
         istart[i]  = 0;
         icount[i]  = -1;  // read full var by default
@@ -399,7 +406,7 @@ void printSettings(void) {
     if (longopt)
         printf("      -l : show scalar values and min/max/avg of arrays\n");
     if (sortnames)
-        printf("      -t : sort names before listing\n");
+        printf("      -r : sort names before listing\n");
     if (attrsonly)
         printf("      -A : list attributes only\n");
     else if (listattrs)
@@ -412,6 +419,8 @@ void printSettings(void) {
         printf("      -f : dump using printf format \"%s\"\n", format);
     if (output_xml)
         printf("      -x : output data in XML format\n");
+    if (show_decomp)
+        printf("      -D : show decomposition of variables in the file\n");
     if (hidden_attrs)
         printf("         : show hidden attributes in the file\n");
 }
@@ -439,9 +448,13 @@ void print_file_size(uint64_t size)
 
 }
 
-// prototypes
-int print_data_hist(ADIOS_VARINFO * vi, char * varname);
-int print_data_characteristics(void * min, void * max, double * avg, double * std_dev, enum ADIOS_DATATYPES adiosvartype, bool allowformat);
+
+static inline int ndigits (int n) 
+{
+    static char digitstr[32];
+    return snprintf (digitstr, 32, "%d", n);
+}
+
 
 int     nVarsMatched=0;
 
@@ -675,6 +688,12 @@ int doList_group (ADIOS_FILE *fp)
                     }
                 } // longopt && vi->statistics 
                 fprintf(outf,"\n");
+
+                if (show_decomp) {
+                    adios_inq_var_blockinfo (fp, vi);
+                    print_decomp(vi);
+                }
+
             } else {
                 // scalar
                 fprintf(outf,"  scalar");
@@ -984,6 +1003,7 @@ int readVar(ADIOS_FILE *fp, ADIOS_VARINFO *vi, const char * name, bool timed)
     int  status;            
     bool incdim;            // used in incremental reading in
     ADIOS_SELECTION * sel;  // boundnig box to read
+    int ndigits_dims[32];        // # of digits (to print) of each dimension 
 
     if (getTypeInfo(vi->type, &elemsize)) {
         fprintf(stderr, "Adios type %d (%s) not supported in bpls. var=%s\n", 
@@ -1087,9 +1107,12 @@ int readVar(ADIOS_FILE *fp, ADIOS_VARINFO *vi, const char * name, bool timed)
 
 
     // init s and c
+    // and calculate ndigits_dims
     for (j=0; j<tdims; j++) {
         s[j]=start_t[j];
         c[j]=readn[j];
+
+        ndigits_dims[j] = ndigits (start_t[j]+count_t[j]-1); // -1: dim=100 results in 2 digits (0..99)
     }
 
     // read until read all 'nelems' elements
@@ -1132,7 +1155,7 @@ int readVar(ADIOS_FILE *fp, ADIOS_VARINFO *vi, const char * name, bool timed)
         //if (verbose>2) printf("  read %lld bytes\n", bytes_read);
 
         // print slice
-        print_dataset(data, vi->type, s, c, tdims); 
+        print_dataset(data, vi->type, s, c, tdims, ndigits_dims); 
 
         // prepare for next read
         sum += actualreadn;
@@ -1509,7 +1532,7 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype, bool all
 }
 
 int print_dataset(void *data, enum ADIOS_DATATYPES adiosvartype, 
-        uint64_t *s, uint64_t *c, int tdims)
+        uint64_t *s, uint64_t *c, int tdims, int *ndigits)
 {
     int i,item, steps;
     char idxstr[128], vstr[128], buf[16];
@@ -1531,9 +1554,9 @@ int print_dataset(void *data, enum ADIOS_DATATYPES adiosvartype,
         idxstr[0] = '\0'; // empty idx string
         if (nextcol == 0) {
             if (!noindex && tdims > 0) {
-                sprintf(idxstr,"    (%lld",ids[0]);
+                sprintf(idxstr,"    (%*lld",ndigits[0], ids[0]);
                 for (i=1; i<tdims; i++) {
-                    sprintf(buf,",%lld",ids[i]);
+                    sprintf(buf,",%*lld",ndigits[i],ids[i]);
                     strcat(idxstr, buf);
                 }
                 strcat(idxstr,")    ");
@@ -1589,6 +1612,50 @@ void print_endline(void)
 }
 
 
+int print_decomp(ADIOS_VARINFO *vi)
+{
+    /* Print block info */
+    int i,j,k;
+    int ndigits_nsteps = ndigits (vi->nsteps-1);
+    if (vi->ndim == 0) 
+    {
+        // scalars
+        for (i=0; i < vi->nsteps; i++) {
+            fprintf(outf, "        step %*d: ", ndigits_nsteps, i);
+            fprintf(outf, "%d instances available\n", vi->nblocks[i]);
+        }
+        return 0;
+    } 
+    else 
+    {
+        // arrays
+        int ndigits_nblocks;
+        int ndigits_dims[32];
+        for (k=0; k < vi->ndim; k++) {
+            // get digit lengths for each dimension
+            ndigits_dims[k] = ndigits (vi->dims[k]-1);
+        }
+
+        for (i=0; i < vi->nsteps; i++) {
+            fprintf(outf, "        step %*d: ", ndigits_nsteps, i);
+            fprintf(outf,"\n");
+            ndigits_nblocks = ndigits (vi->nblocks[i]-1);
+            for (j=0; j < vi->nblocks[i]; j++) {
+                fprintf(outf,"          block %*d: [", ndigits_nblocks, j);
+                for (k=0; k < vi->ndim; k++) {
+                    fprintf(outf, "%*lld:%*lld", 
+                            ndigits_dims[k],
+                            vi->blockinfo[j].start[k],
+                            ndigits_dims[k],
+                            vi->blockinfo[j].start[k] + vi->blockinfo[j].count[k]-1);
+                    if (k < vi->ndim-1)
+                        fprintf(outf, ", ");
+                }
+                fprintf(outf, "]\n");
+            }
+        }
+    }
+}
 
 // parse a string "0, 3; 027" into an integer array
 // of [0,3,27] 

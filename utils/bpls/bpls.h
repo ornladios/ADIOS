@@ -44,6 +44,9 @@ int  print_start(const char *fname);
 void print_slice_info(int ndim, uint64_t *dims, int timed, int nsteps, uint64_t *s, uint64_t *c);
 int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype, bool allowformat);
 int print_dataset(void *data, enum ADIOS_DATATYPES adiosvartype, 
-               uint64_t *s, uint64_t *c, int tdims);  
+               uint64_t *s, uint64_t *c, int tdims, int* ndigits);  
 void print_endline(void);
 void print_stop(void);
+int print_data_hist(ADIOS_VARINFO * vi, char * varname);
+int print_data_characteristics(void * min, void * max, double * avg, double * std_dev, enum ADIOS_DATATYPES adiosvartype, bool allowformat);
+int print_decomp(ADIOS_VARINFO *vi);
