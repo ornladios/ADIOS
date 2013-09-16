@@ -1046,6 +1046,17 @@ int adios_read_dataspaces_inq_var_stat (const ADIOS_FILE *fp, ADIOS_VARINFO * va
     return 0;
 }
 
+ADIOS_TRANSINFO* adios_read_dataspaces_inq_var_transinfo(const ADIOS_FILE *gp, const ADIOS_VARINFO *vi)
+{
+    adios_error(err_operation_not_supported, "DataSpaces does not yet support transforms: var_transinfo.\n");
+    ADIOS_TRANSINFO *trans = malloc(sizeof(ADIOS_TRANSINFO));
+    memset(trans, 0, sizeof(ADIOS_TRANSINFO));
+    trans->transform_type = adios_transform_none;
+    return trans;
+}
+
+
+
 int adios_read_dataspaces_inq_var_blockinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
 {
     /* FIXME: return the actual block decomposition by the writers
@@ -1061,6 +1072,12 @@ int adios_read_dataspaces_inq_var_blockinfo (const ADIOS_FILE *fp, ADIOS_VARINFO
         varinfo->blockinfo->count[i] = ds->vars[varinfo->varid].dims[i];
     }
     return 0;
+}
+
+int adios_read_dataspaces_inq_var_trans_blockinfo(const ADIOS_FILE *gp, const ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti)
+{
+    adios_error(err_operation_not_supported, "DataSpaces does not yet support transforms: trans_blockinfo.\n");
+    return (int64_t)0;
 }
 
 
