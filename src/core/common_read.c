@@ -438,7 +438,7 @@ ADIOS_VARINFO * common_read_inq_var_byid (const ADIOS_FILE *fp, int varid)
 
     // NCSU ALACRITY-ADIOS - translate between original and transformed metadata if necessary
     ti = common_read_inq_transinfo(fp, vi); // No orig_blockinfo
-    if (ti->transform_type != adios_transform_none) {
+    if (ti && ti->transform_type != adios_transform_none) {
         patch_varinfo_with_transinfo(vi, ti);
     }
     common_read_free_transinfo(vi, ti);
@@ -564,7 +564,7 @@ int common_read_inq_var_blockinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo
 
     // NCSU ALACRITY-ADIOS - translate between original and transformed metadata if necessary
     ti = common_read_inq_transinfo(fp, varinfo);
-    if (ti->transform_type != adios_transform_none) {
+    if (ti && ti->transform_type != adios_transform_none) {
         retval = common_read_inq_trans_blockinfo(fp, varinfo, ti);
         if (retval != err_no_error)
             return retval;
@@ -736,7 +736,7 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
             // If this variable is transformed, delegate to the transform
             // method to generate subrequests
             // Else, do the normal thing
-            if (transinfo->transform_type != adios_transform_none) {
+            if (transinfo && transinfo->transform_type != adios_transform_none) {
                 adios_transform_raw_read_request *subreq;
                 adios_transform_pg_read_request *pg_reqgroup;
                 adios_transform_read_request *new_reqgroup;
