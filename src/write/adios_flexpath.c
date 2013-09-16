@@ -171,8 +171,27 @@ FlexpathWriteData flexpathWriteData;
 
 /**************************** Function Definitions *********************************/
 
+static uint64_t
+get_timestamp_mili()
+{
+    struct timespec stamp;
+#ifdef __MACH__
+    clock_serv_t cclock;
+    mach_timespec_t mts;
+    host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
+    clock_get_time(cclock, &mts);
+    mach_port_deallocate(mach_task_self(), cclock);
+    stamp.tv_sec = mts.tv_sec;
+    stamp.tv_nsec = mts.tv_nsec;
+#else
+    clock_gettime(CLOCK_MONOTONIC, &stamp);
+#endif
+    return ((stamp.tv_sec * 1000000000) + stamp.tv_nsec)/1000000;
+}
+
 // add an attr for each dimension to an attr_list
-void set_attr_dimensions(char* varName, char* altName, int numDims, attr_list attrs) {
+void set_attr_dimensions(char* varName, char* altName, int numDims, attr_list attrs) 
+{
     fp_write_log("ATTR", "adding dim attr %s and ndim attr %d\n", varName, numDims);
     char atomName[200] = "";
     char dimNum[10];
@@ -221,7 +240,8 @@ update_step_msg_free(void *eventData, void *clientData)
 } 
 
 // free data packets once EVPath is finished with them
-void data_free(void* eventData, void* clientData) {
+void data_free(void* eventData, void* clientData) 
+{
     fp_write_log("DATA", "freeing a data message\n");
     FlexpathWriteFileData* fileData = (FlexpathWriteFileData*)clientData;
     FMfree_var_rec_elements(fileData->fm->ioFormat, eventData);
@@ -229,7 +249,8 @@ void data_free(void* eventData, void* clientData) {
 }
 
 // free op packets once EVPath is finished with them
-void op_free(void* eventData, void* clientData) {
+void op_free(void* eventData, void* clientData) 
+{
     fp_write_log("OP", "freeing an op message\n");
     op_msg* op = (op_msg*) eventData;
     if(op->file_name) {
@@ -348,7 +369,8 @@ threaded_peek(FlexpathQueueNode** queue,
 }
 
 // add new var to a var list
-FlexpathVarNode* add_var(FlexpathVarNode* queue, char* varName, FlexpathVarNode* dims, int rank){
+FlexpathVarNode* add_var(FlexpathVarNode* queue, char* varName, FlexpathVarNode* dims, int rank)
+{
     if(queue) {
         queue->next=add_var(queue->next, varName, dims, rank);
         return queue;
@@ -363,7 +385,8 @@ FlexpathVarNode* add_var(FlexpathVarNode* queue, char* varName, FlexpathVarNode*
 }
 
 // free a var list
-void free_vars(FlexpathVarNode* queue){
+void free_vars(FlexpathVarNode* queue)
+{
     if(queue) {
         free_vars(queue->next);
         free(queue->varName);
@@ -372,7 +395,8 @@ void free_vars(FlexpathVarNode* queue){
 }
 
 // search a var list
-FlexpathVarNode* queue_contains(FlexpathVarNode* queue, const char* name, int rank) {
+FlexpathVarNode* queue_contains(FlexpathVarNode* queue, const char* name, int rank) 
+{
     int compare_rank = 0;
     if(rank >= 0 ) {
         compare_rank = 1;
@@ -394,7 +418,8 @@ FlexpathVarNode* queue_contains(FlexpathVarNode* queue, const char* name, int ra
 }
 
 // sanitize a name
-char* get_fixed_name(char* name) {
+char* get_fixed_name(char* name) 
+{
     char* oldName = strdup(name);
     char* newName = (char*) malloc(sizeof(char) * 255);
     int i;
@@ -422,7 +447,8 @@ char* get_fixed_name(char* name) {
 }
 
 // return name with operators removed by using the lookup list
-static char* find_fixed_name(FlexpathFMStructure *fm, char *name) {
+static char* find_fixed_name(FlexpathFMStructure *fm, char *name) 
+{
     FlexpathNameTable *node;
     for (node = fm->nameList.lh_first; node != NULL; node = node->entries.le_next) {
         if (!strcmp(node->originalName, name)) {
@@ -433,7 +459,8 @@ static char* find_fixed_name(FlexpathFMStructure *fm, char *name) {
 }
 
 // returns a name with the dimension prepended
-static char *get_alt_name(char *name, char *dimName) {
+static char *get_alt_name(char *name, char *dimName) 
+{
     int len = strlen(name) + strlen(dimName) + 2;
     char *newName = (char *) malloc(sizeof(char) * len);
     strcpy(newName, dimName);
@@ -927,7 +954,8 @@ FlexpathFMStructure* set_format(struct adios_group_struct* t,
 }
 
 // copies buffer zeroing out arrays that havent been asked for
-void* copy_buffer(void* buffer, int rank, FlexpathWriteFileData* fileData){
+void* copy_buffer(void* buffer, int rank, FlexpathWriteFileData* fileData)
+{
     char* temp = (char*)malloc(fileData->fm->size);
     memcpy(temp, buffer, fileData->fm->size);
     FMField *f = fileData->fm->format->field_list;
@@ -961,7 +989,8 @@ void* copy_buffer(void* buffer, int rank, FlexpathWriteFileData* fileData){
 }
 
 // terminal action for var messages: enqueues
-static int var_handler(CManager cm, void *vevent, void *client_data, attr_list attrs){
+static int var_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
+{
     FlexpathWriteFileData* fileData = (FlexpathWriteFileData*) client_data;
     Var_msg* msg = (Var_msg*) vevent;
     //EVtake_event_buffer(cm, vevent);
@@ -973,7 +1002,8 @@ static int var_handler(CManager cm, void *vevent, void *client_data, attr_list a
 
 // terminal action for flush messages: enqueues
 static int 
-flush_handler(CManager cm, void* vevent, void* client_data, attr_list attrs) {
+flush_handler(CManager cm, void* vevent, void* client_data, attr_list attrs) 
+{
     FlexpathWriteFileData* fileData = (FlexpathWriteFileData*) client_data;
     Flush_msg* msg = (Flush_msg*) vevent;
     int err = EVtake_event_buffer(cm, vevent);
@@ -992,7 +1022,8 @@ drop_evgroup_handler(CManager cm, void *vevent, void *client_data, attr_list att
 
 // terminal action for op messages: enqueues
 static int 
-op_handler(CManager cm, void* vevent, void* client_data, attr_list attrs) {
+op_handler(CManager cm, void* vevent, void* client_data, attr_list attrs) 
+{
     FlexpathWriteFileData* fileData = (FlexpathWriteFileData*) client_data;
     op_msg* msg = (op_msg*) vevent;
     //EVtake_event_buffer(cm, vevent);
@@ -1013,7 +1044,8 @@ op_handler(CManager cm, void* vevent, void* client_data, attr_list attrs) {
 }
 
 // sets a size atom
-attr_list set_size_atom(attr_list attrs, int value) {
+attr_list set_size_atom(attr_list attrs, int value) 
+{
     atom_t dst_atom = attr_atom_from_string("fp_size");
     int size;
     if(!get_int_attr(attrs, dst_atom, &size)) {
@@ -1025,7 +1057,8 @@ attr_list set_size_atom(attr_list attrs, int value) {
 
 // sets a dst rank atom
 attr_list 
-set_dst_rank_atom(attr_list attrs, int value) {
+set_dst_rank_atom(attr_list attrs, int value) 
+{
     atom_t dst_atom = attr_atom_from_string("fp_dst_rank");
     int dst;
     if(!get_int_attr(attrs, dst_atom, &dst)) {
@@ -1037,7 +1070,8 @@ set_dst_rank_atom(attr_list attrs, int value) {
 
 // sets a dst condition atom
 attr_list 
-set_dst_condition_atom(attr_list attrs, int condition){
+set_dst_condition_atom(attr_list attrs, int condition)
+{
     atom_t dst_atom = attr_atom_from_string("fp_dst_condition");
     int dst;
     if(!get_int_attr(attrs, dst_atom, &dst)){
@@ -1205,7 +1239,8 @@ control_thread(void* arg)
 }
 
 // adds an open file handle to global open file list
-void add_open_file(FlexpathWriteFileData* newFile) {
+void add_open_file(FlexpathWriteFileData* newFile) 
+{
     FlexpathWriteFileData* last = flexpathWriteData.openFiles;
     while(last && last->next) {
         last = last->next;
@@ -1218,7 +1253,8 @@ void add_open_file(FlexpathWriteFileData* newFile) {
 }
 
 // searches for an open file handle
-FlexpathWriteFileData* find_open_file(char* name) {
+FlexpathWriteFileData* find_open_file(char* name) 
+{
     FlexpathWriteFileData* file = flexpathWriteData.openFiles;
     while(file && strcmp(file->name, name)) {
         file = file->next;
@@ -1487,7 +1523,8 @@ extern void adios_flexpath_write(
 
     if (fm == NULL)
     {
-	log_error("adios_flexpath_write: something has gone wrong with format registration: %s\n", f->name);
+	log_error("adios_flexpath_write: something has gone wrong with format registration: %s\n", 
+		  f->name);
 	return;
     }
     
@@ -1716,33 +1753,39 @@ extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method
 }
 
 // provides unknown functionality
-extern enum ADIOS_FLAG adios_flexpath_should_buffer (struct adios_file_struct * fd,struct adios_method_struct * method) {
+extern enum ADIOS_FLAG adios_flexpath_should_buffer (struct adios_file_struct * fd,struct adios_method_struct * method) 
+{
     fp_write_log("UNIMPLEMENTED", "adios_flexpath_should_buffer\n");
     return adios_flag_no;
 }
 
 // provides unknown functionality
-extern void adios_flexpath_end_iteration(struct adios_method_struct *method) {
+extern void adios_flexpath_end_iteration(struct adios_method_struct *method) 
+{
     fp_write_log("UNIMPLEMENTED", "adios_flexpath_end_iteration\n");
 }
 
 // provides unknown functionality
-extern void adios_flexpath_start_calculation(struct adios_method_struct *method) {
+extern void adios_flexpath_start_calculation(struct adios_method_struct *method) 
+{
     fp_write_log("UNIMPLEMENTED", "adios_flexpath_start_calculation\n");
 }
 
 // provides unknown functionality
-extern void adios_flexpath_stop_calculation(struct adios_method_struct *method) {
+extern void adios_flexpath_stop_calculation(struct adios_method_struct *method) 
+{
     fp_write_log("UNIMPLEMENTED", "adios_flexpath_stop_calculation\n");
 }
 
 // provides unknown functionality
-extern void adios_flexpath_get_write_buffer(struct adios_file_struct *fd,struct adios_var_struct *f, uint64_t *size, void **buffer, struct adios_method_struct *method) {
+extern void adios_flexpath_get_write_buffer(struct adios_file_struct *fd,struct adios_var_struct *f, uint64_t *size, void **buffer, struct adios_method_struct *method) 
+{
     fp_write_log("UNIMPLEMENTED", "adios_flexpath_get_write_buffer\n");
 }
 
 // should not be called from write, reason for inclusion here unknown
-void adios_flexpath_read(struct adios_file_struct *fd, struct adios_var_struct *f, void *buffer, uint64_t buffer_size, struct adios_method_struct *method) {
+void adios_flexpath_read(struct adios_file_struct *fd, struct adios_var_struct *f, void *buffer, uint64_t buffer_size, struct adios_method_struct *method) 
+{
     fp_write_log("UNIMPLEMENTED", "adios_flexpath_read\n");
 }
 
@@ -1754,31 +1797,31 @@ void adios_flexpath_read(struct adios_file_struct *fd, struct adios_var_struct *
 extern void adios_flexpath_get_write_buffer(struct adios_file_struct *fd, struct adios_var_struct *f, unsigned long long *size, void **buffer, struct adios_method_struct *method) {
 }
 
-extern void adios_flexpath_stop_calculation(struct adios_method_struct *method) {
-}
+/* extern void adios_flexpath_stop_calculation(struct adios_method_struct *method) { */
+/* } */
 
-extern void adios_flexpath_start_calculation(struct adios_method_struct *method) {
-}
+/* extern void adios_flexpath_start_calculation(struct adios_method_struct *method) { */
+/* } */
 
-extern void adios_flexpath_end_iteration(struct adios_method_struct *method) {
-}
+/* extern void adios_flexpath_end_iteration(struct adios_method_struct *method) { */
+/* } */
 
-extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method) {
-}
+/* extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method) { */
+/* } */
 
-extern void adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *method) {
-}
+/* extern void adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *method) { */
+/* } */
 
-extern void adios_flexpath_write(struct adios_file_struct *fd, struct adios_var_struct *f, void *data, struct adios_method_struct *method) {
-}
+/* extern void adios_flexpath_write(struct adios_file_struct *fd, struct adios_var_struct *f, void *data, struct adios_method_struct *method) { */
+/* } */
 
-extern void adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *method) {
-}
+/* extern void adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *method) { */
+/* } */
 
-extern void adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method) {
-}
+/* extern void adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method) { */
+/* } */
 
-enum ADIOS_FLAG adios_flexpath_should_buffer (struct adios_file_struct * fd, struct adios_method_struct * method) {
-}
+/* enum ADIOS_FLAG adios_flexpath_should_buffer (struct adios_file_struct * fd, struct adios_method_struct * method) { */
+/* } */
 
 #endif

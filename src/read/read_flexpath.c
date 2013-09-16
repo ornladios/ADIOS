@@ -143,6 +143,25 @@ typedef struct _local_read_data
 flexpath_read_data* fp_read_data = NULL;
 
 /********** Helper functions. **********/
+
+static uint64_t 
+get_timestamp_mili()
+{
+    struct timespec stamp;
+#ifdef __MACH__
+    clock_serv_t cclock;
+    mach_timespec_t mts;
+    host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
+    clock_get_time(cclock, &mts);
+    mach_port_deallocate(mach_task_self(), cclock);
+    stamp.tv_sec = mts.tv_sec;
+    stamp.tv_nsec = mts.tv_nsec;
+#else
+    clock_gettime(CLOCK_MONOTONIC, &stamp);
+#endif
+    return ((stamp.tv_sec * 1000000000) + stamp.tv_nsec)/1000000;
+}
+
 void build_bridge(bridge_info* bridge) {
     attr_list contact_list = attr_list_from_string(bridge->contact);
     if(bridge->created == 0){
@@ -910,6 +929,7 @@ adios_read_flexpath_open(const char * fname,
     /* Gather the contact info from the other readers
        and write it to a file. Create a ready file so
        that the writer knows it can parse this file. */
+    uint64_t setup_start = get_timestamp_mili();
     char writer_ready_filename[200];
     char writer_info_filename[200];
     char reader_ready_filename[200];
@@ -992,6 +1012,12 @@ adios_read_flexpath_open(const char * fname,
 	unlink(writer_info_filename);
 	unlink(writer_ready_filename);
     }	    
+
+    uint64_t setup_end = get_timestamp_mili();
+
+    fprintf(stderr, "PERF %d,startup,time:%d,num_sendees:%d\n", 
+	    fp->rank, (int)(setup_end - setup_start), 1);
+
     adiosfile->fh = (uint64_t)fp;
     adiosfile->current_step = 0;
     
@@ -1012,10 +1038,26 @@ adios_read_flexpath_open(const char * fname,
 	build_bridge(&fp->bridges[writer_rank]);
 	fp->writer_coordinator = writer_rank;
     }
+    
     // requesting initial data.
+    uint64_t open_start = get_timestamp_mili();
     send_open_msg(fp, fp->writer_coordinator);
+    uint64_t open_end = get_timestamp_mili();
+
+    uint64_t data_start = get_timestamp_mili();
     send_flush_msg(fp, fp->writer_coordinator, DATA);
+    uint64_t data_end = get_timestamp_mili();
+
+    uint64_t offset_start = get_timestamp_mili();
     send_flush_msg(fp, fp->writer_coordinator, EVGROUP);
+    uint64_t offset_end = get_timestamp_mili();
+
+    fp_log("PERF", "PERF %d,open,time:%d,num_sendees:%d\n",
+	   fp->rank, (int)(open_end - open_start), 1);
+    fp_log("PERF", "PERF %d,data,time:%d,num_sendees:%d\n",
+	   fp->rank, (int)(data_end - data_start),1);
+    fp_log("PERF", "PERF %d,evgroup,time:%d,num_sendees:%d\n",
+	   fp->rank, (int)(offset_end - offset_start),1);
     // this has to change. Writer needs to have some way of
     // taking the attributes out of the xml document
     // and sending them over ffs encoded. Not yet implemented.
@@ -1033,7 +1075,7 @@ adios_read_flexpath_open(const char * fname,
     adiosfile->version = -1;
     adiosfile->file_size = 0;
     adios_errno = err_no_error;        
-    fp_log("FUNC", "entering flexpath_open\n");
+    fp_log("FUNC", "leaving flexpath_open\n");
     return adiosfile;
 }
 
@@ -1093,6 +1135,7 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
 	send_flush_msg(fp, fp->writer_coordinator, STEP);
     }
 
+    uint64_t advclose_start = get_timestamp_mili();
     int i=0;
     for(i=0; i<fp->num_bridges; i++) {
         if(fp->bridges[i].created && fp->bridges[i].opened) {
@@ -1101,16 +1144,23 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
 	}
     }
     MPI_Barrier(fp->comm);
-
+    uint64_t advclose_end = get_timestamp_mili();
+    fp_log("PERF", "PERF %d,advance_close,time:%d, num_sendees:%d\n",
+	   fp->rank, (int)(advclose_end - advclose_start), fp->num_bridges);
+    
     adiosfile->current_step++;
     fp->mystep = adiosfile->current_step;
 
+    
+    uint64_t advopen_start = get_timestamp_mili();
     for(i=0; i<fp->num_bridges; i++){
 	if(fp->bridges[i].created && !fp->bridges[i].opened){	    
 	    send_open_msg(fp, i);
         }
     }   
-    
+    uint64_t advopen_end = get_timestamp_mili();
+    fp_log("PERF", "PERF %d,advance_open,time:%d, num_sendees:%d\n",
+	   fp->rank, (int)(advopen_end - advopen_start), fp->num_bridges);
     // need to remove selectors from each var now.
     send_flush_msg(fp, fp->writer_coordinator, DATA);
       
@@ -1135,12 +1185,12 @@ int adios_read_flexpath_close(ADIOS_FILE * fp)
     data has already been copied over to ADIOS_VARINFO structs
     that the user maintains a copy of. 
     */
-    flexpath_var * v = file->var_list;
+    flexpath_var *v = file->var_list;
     while(v){        	
     	// free chunks; data has already been copied to user
     	int i;	
     	for(i = 0; i<v->num_chunks; i++){    		    
-    	    flexpath_var_chunk * c = &v->chunks[i];	    
+    	    flexpath_var_chunk *c = &v->chunks[i];	    
 	    if(!c)
 		log_error("FLEXPATH: %s This should not happen! line %d\n",__func__,__LINE__);
 	    free(c->global_bounds);		
