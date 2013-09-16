@@ -1015,9 +1015,9 @@ adios_read_flexpath_open(const char * fname,
 
     uint64_t setup_end = get_timestamp_mili();
 
-    fprintf(stderr, "PERF %d,startup,time:%d,num_sendees:%d\n", 
-	    fp->rank, (int)(setup_end - setup_start), 1);
-
+    fp_log("PERF", "READER_PERF,%d,%d,startup,time:%d,num_sendees:%d\n", 
+	   fp->rank, fp->mystep, (int)(setup_end - setup_start), 1);
+    
     adiosfile->fh = (uint64_t)fp;
     adiosfile->current_step = 0;
     
@@ -1052,12 +1052,12 @@ adios_read_flexpath_open(const char * fname,
     send_flush_msg(fp, fp->writer_coordinator, EVGROUP);
     uint64_t offset_end = get_timestamp_mili();
 
-    fp_log("PERF", "PERF %d,open,time:%d,num_sendees:%d\n",
-	   fp->rank, (int)(open_end - open_start), 1);
-    fp_log("PERF", "PERF %d,data,time:%d,num_sendees:%d\n",
-	   fp->rank, (int)(data_end - data_start),1);
-    fp_log("PERF", "PERF %d,evgroup,time:%d,num_sendees:%d\n",
-	   fp->rank, (int)(offset_end - offset_start),1);
+    fp_log("PERF", "READER_PERF,%d,%d,open,time:%d,num_sendees:%d\n",
+	   fp->rank, fp->mystep, (int)(open_end - open_start), 1);
+    fp_log("PERF", "READER_PERF,%d,%d,data,time:%d,num_sendees:%d\n",
+	   fp->rank, fp->mystep, (int)(data_end - data_start),1);
+    fp_log("PERF", "READER_PERF,%d,%d,evgroup,time:%d,num_sendees:%d\n",
+	   fp->rank, fp->mystep, (int)(offset_end - offset_start),1);
     // this has to change. Writer needs to have some way of
     // taking the attributes out of the xml document
     // and sending them over ffs encoded. Not yet implemented.
@@ -1123,7 +1123,7 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
 {
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     MPI_Barrier(fp->comm);
-
+    int count = 0; // for perf measurements
     send_flush_msg(fp, fp->writer_coordinator, STEP);
     //put this on a timer, so to speak, for timeout_sec
     while(fp->mystep == fp->last_writer_step){
@@ -1136,18 +1136,19 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
     }
 
     uint64_t advclose_start = get_timestamp_mili();
-    int i=0;
+    int i=0;    
     for(i=0; i<fp->num_bridges; i++) {
         if(fp->bridges[i].created && fp->bridges[i].opened) {
+	    count++;
 	    send_close_msg(fp, i);
             op_msg close;
 	}
     }
     MPI_Barrier(fp->comm);
     uint64_t advclose_end = get_timestamp_mili();
-    fp_log("PERF", "PERF %d,advance_close,time:%d, num_sendees:%d\n",
-	   fp->rank, (int)(advclose_end - advclose_start), fp->num_bridges);
-    
+    fp_log("PERF", "READER_PERF,%d,%d,advance_close,time:%d, num_sendees:%d\n",
+	   fp->rank, fp->mystep, (int)(advclose_end - advclose_start), count);
+    count = 0;
     adiosfile->current_step++;
     fp->mystep = adiosfile->current_step;
 
@@ -1156,11 +1157,12 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
     for(i=0; i<fp->num_bridges; i++){
 	if(fp->bridges[i].created && !fp->bridges[i].opened){	    
 	    send_open_msg(fp, i);
+	    count++;
         }
     }   
     uint64_t advopen_end = get_timestamp_mili();
-    fp_log("PERF", "PERF %d,advance_open,time:%d, num_sendees:%d\n",
-	   fp->rank, (int)(advopen_end - advopen_start), fp->num_bridges);
+    fp_log("PERF", "READER_PERF,%d,%d,advance_open,time:%d, num_sendees:%d\n",
+	   fp->rank, fp->mystep, (int)(advopen_end - advopen_start), count);
     // need to remove selectors from each var now.
     send_flush_msg(fp, fp->writer_coordinator, DATA);
       
@@ -1217,13 +1219,16 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
     flexpath_reader_file * fp = (flexpath_reader_file*)adiosfile->fh;
     int i;
     int num_sendees = fp->num_sendees;
+    uint64_t data_start = get_timestamp_mili();
     for(i = 0; i<num_sendees; i++)
     {
 	int sendee = fp->sendees[i];	
 	// need solution for blocking vs. non
 	send_flush_msg(fp, sendee, DATA);
     }
-   
+    uint64_t data_end = get_timestamp_mili();
+    fp_log("PERF", "READER_PERF,%d,%d,data,time:%d,num_sendees:%d\n",
+	   fp->rank, fp->mystep, (int)(data_end - data_start), fp->num_sendees);
     free(fp->sendees);
     fp->sendees = NULL;    
     fp->num_sendees = 0;
