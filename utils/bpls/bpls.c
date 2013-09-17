@@ -703,6 +703,11 @@ int doList_group (ADIOS_FILE *fp)
                     matches = false; // already printed
                 }
                 fprintf(outf,"\n");
+
+                if (show_decomp) {
+                    adios_inq_var_blockinfo (fp, vi);
+                    print_decomp(vi);
+                }
             }
         }
 
