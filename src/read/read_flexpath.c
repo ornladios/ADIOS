@@ -1260,7 +1260,7 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
 	total_sent++;
 	send_flush_msg(fp, sendee, DATA, 0);
 
-	if((total_sent % FP_BATCH_SIZE == 0) || (total_sent = num_sendees - 1)){
+	if((total_sent % FP_BATCH_SIZE == 0) || (total_sent = num_sendees)){
 	    pthread_cond_wait(&fp->data_condition, &fp->data_mutex);
 	    pthread_mutex_unlock(&fp->data_mutex);
 	    fp->completed_requests = 0;
@@ -1278,6 +1278,7 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
     fp_log("FUNC", "leaving perform_reads.\n");
     return 0;
 }
+
 int
 adios_read_flexpath_inq_var_blockinfo(const ADIOS_FILE* fp,
 				      ADIOS_VARINFO* varinfo)
@@ -1293,11 +1294,11 @@ adios_read_flexpath_inq_var_stat(const ADIOS_FILE* fp,
 
 int 
 adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
-					   const ADIOS_SELECTION *sel,
-					   int varid,
-					   int from_steps,
-					   int nsteps,
-					   void *data)
+				       const ADIOS_SELECTION *sel,
+				       int varid,
+				       int from_steps,
+				       int nsteps,
+				       void *data)
 {   
     fp_log("FUNC", "entering schedule_read_byid\n");
     flexpath_reader_file * fp = (flexpath_reader_file*)adiosfile->fh;
