@@ -27,6 +27,11 @@
 //#include <gen_thread.h>
 #include <evpath.h>
 
+#ifdef __MACH__
+#include <mach/clock.h>
+#include <mach/mach.h>
+#endif
+
 // local libraries
 #include "config.h"
 #include "public/adios.h"

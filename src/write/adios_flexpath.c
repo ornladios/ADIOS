@@ -21,6 +21,11 @@
 #include <sys/stat.h>
 // end of change
 
+#ifdef __MACH__
+#include <mach/clock.h>
+#include <mach/mach.h>
+#endif
+
 #include "public/adios_mpi.h"
 #include "public/adios_error.h"
 #include "core/adios_transport_hooks.h"
@@ -993,7 +998,7 @@ static int var_handler(CManager cm, void *vevent, void *client_data, attr_list a
 {
     FlexpathWriteFileData* fileData = (FlexpathWriteFileData*) client_data;
     Var_msg* msg = (Var_msg*) vevent;
-    //EVtake_event_buffer(cm, vevent);
+    EVtake_event_buffer(cm, vevent);
     fp_write_log("MSG", "recieved var_msg : rank %d\n", msg->rank);
     threaded_enqueue(&fileData->controlQueue, msg, VAR, 
 		     &fileData->controlMutex, &fileData->controlCondition, -1);
@@ -1026,7 +1031,7 @@ op_handler(CManager cm, void* vevent, void* client_data, attr_list attrs)
 {
     FlexpathWriteFileData* fileData = (FlexpathWriteFileData*) client_data;
     op_msg* msg = (op_msg*) vevent;
-    //EVtake_event_buffer(cm, vevent);
+    EVtake_event_buffer(cm, vevent);
     fp_write_log("MSG", "recieved op_msg : rank %d type %d: condition: %d step: %d\n", 
 		 msg->process_id, msg->type, msg->condition, msg->step);
     if(msg->type == OPEN_MSG) {
@@ -1098,7 +1103,7 @@ control_thread(void* arg)
 		Var_msg* varMsg = (Var_msg*) controlMsg->data;
 		fileData->askedVars = add_var(fileData->askedVars, 
 		    strdup(varMsg->var_name), NULL, varMsg->rank);
-		//EVreturn_event_buffer(flexpathWriteData.cm,controlMsg->data);
+		EVreturn_event_buffer(flexpathWriteData.cm,controlMsg->data);
 	    } else if(controlMsg->type==DATA_FLUSH) {
                 fp_write_log("DATAMUTEX", "in use 1\n"); 
 		dataNode = threaded_peek(&fileData->dataQueue, 
@@ -1150,7 +1155,7 @@ control_thread(void* arg)
                 } else {
                     fp_write_log("STEP", "recieved op with future step\n");
                 }
-		//EVreturn_event_buffer(flexpathWriteData.cm, open);
+		EVreturn_event_buffer(flexpathWriteData.cm, open);
             } else if(controlMsg->type==CLOSE) {
                 op_msg* close = (op_msg*) controlMsg->data;
 		pthread_mutex_lock(&fileData->openMutex);
@@ -1196,7 +1201,7 @@ control_thread(void* arg)
 			 }
 		     }
 		 }
-		 //EVreturn_event_buffer(flexpathWriteData.cm, close);
+		 EVreturn_event_buffer(flexpathWriteData.cm, close);
 	    }else if(controlMsg->type == INIT){ 
 		fp_write_log("DATAMUTEX", "in use 1\n"); 
 		dataNode = threaded_peek(&fileData->dataQueue, 
@@ -1228,7 +1233,7 @@ control_thread(void* arg)
 
 		EVsubmit_general(fileData->dataSource, 
 				 temp, data_free, fileData->attrs);
-		//EVreturn_event_buffer(flexpathWriteData.cm, initMsg);
+		EVreturn_event_buffer(flexpathWriteData.cm, initMsg);
 	    }
 	    else{
 		log_error("control_thread: Unrecognized Control Message\n");
