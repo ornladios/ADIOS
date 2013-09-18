@@ -42,6 +42,7 @@
 #include "dmalloc.h"
 #endif
 
+#define FP_BATCH_SIZE 4
 /*
  * Contains start & counts for each dimension for a writer_rank.
  */
@@ -49,6 +50,7 @@ typedef struct _array_displ
 {
     int writer_rank;
     int ndims;
+    uint64_t pos;
     uint64_t *start;
     uint64_t *count;    
 }array_displacements;
@@ -125,6 +127,11 @@ typedef struct _flexpath_reader_file
     int num_sendees;
     int *sendees;
     int ackCondition;    
+
+    int pending_requests;
+    int completed_requests;
+    pthread_mutex_t data_mutex;
+    pthread_cond_t data_condition;
 } flexpath_reader_file;
 
 typedef struct _local_read_data
@@ -238,6 +245,9 @@ new_flexpath_reader_file(const char * fname)
     fp->file_name = strdup(fname);
     fp->writer_coordinator = -1;
     fp->last_writer_step = -1;
+
+    pthread_mutex_init(&fp->data_mutex, NULL);
+    pthread_cond_init(&fp->data_condition, NULL);
     return fp;        
 }
 
@@ -416,7 +426,8 @@ array_displacements*
 get_writer_displacements(
     int writer_rank, 
     const ADIOS_SELECTION * sel, 
-    global_var* gvar)
+    global_var* gvar,
+    uint64_t *size)
 {
     int ndims = sel->u.bb.ndim;
     array_displacements * displ = malloc(sizeof(array_displacements));
@@ -432,7 +443,8 @@ get_writer_displacements(
     uint64_t *local_dims = gvar->offsets[0].local_dimensions;
     uint64_t pos = writer_rank * gvar->offsets[0].offsets_per_rank;
 
-    int i;   
+    int i;
+    int _size = 1;
     for(i=0; i<ndims; i++){	
 	if(sel->u.bb.start[i] >= offsets[pos+i]){
 	    int start = sel->u.bb.start[i] - offsets[pos+i];
@@ -449,10 +461,10 @@ get_writer_displacements(
 	    int count = (local_dims[pos+i] - 1) - displ->start[i] + 1;
 	    displ->count[i] = count;
 	}
-      /* fp_log("DISP","start:%d\n", displ->start[i]);	 */
-      /* fp_log("DISP","count %d\n",displ->count[i]); */
+	_size *= displ->count[i];
     }
     fp_log("DISP","\n");
+    *size = _size;
     return displ;
 }
 
@@ -531,15 +543,19 @@ send_close_msg(flexpath_reader_file *fp, int destination)
 }
 
 void
-send_flush_msg(flexpath_reader_file *fp, int destination, Flush_type type)
+send_flush_msg(flexpath_reader_file *fp, int destination, Flush_type type, int use_condition)
 {
     Flush_msg msg;
     msg.type = type;
     msg.rank = fp->rank;
-    msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
+    if(use_condition)
+	msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
+    else
+	msg.condition = -1;
     // maybe check to see if the bridge is create first.
     EVsubmit(fp->bridges[destination].flush_source, &msg, NULL);
-    CMCondition_wait(fp_read_data->fp_cm, msg.condition);
+    if(use_condition)
+	CMCondition_wait(fp_read_data->fp_cm, msg.condition);
 }
 
 void 
@@ -798,7 +814,11 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 		    uint64_t *sel_count = disp->count;
 		    char *writer_array = (char*)get_FMPtrField_by_name(f, f->field_name, base_data, 1);
 		    char *reader_array = (char*)var->chunks[0].user_buf;
-		    uint64_t reader_start_pos = var->start_position;
+		    //uint64_t reader_start_pos = var->start_position;
+		    uint64_t reader_start_pos = disp->pos;
+		    fp_log("DISP", "disp->pos: %d start_position: %d\n", 
+			     (int)disp->pos, (int)var->start_position);
+
 		    var->start_position += copyarray(writer_sizes,
 						     sel_start,
 						     sel_count,
@@ -813,7 +833,18 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
         j++;
         f++;
     }
-    CMCondition_signal(fp_read_data->fp_cm, condition);
+ 
+    if(condition == -1){
+	fp->completed_requests++;
+	if(fp->completed_requests == fp->pending_requests){
+	    pthread_mutex_lock(&fp->data_mutex);
+	    pthread_cond_signal(&fp->data_condition);
+	    pthread_mutex_unlock(&fp->data_mutex);
+	}
+    }
+    else{
+	CMCondition_signal(fp_read_data->fp_cm, condition);
+    }
     return 0; 
 }
 
@@ -1045,11 +1076,11 @@ adios_read_flexpath_open(const char * fname,
     uint64_t open_end = get_timestamp_mili();
 
     uint64_t data_start = get_timestamp_mili();
-    send_flush_msg(fp, fp->writer_coordinator, DATA);
+    send_flush_msg(fp, fp->writer_coordinator, DATA, 1);
     uint64_t data_end = get_timestamp_mili();
 
     uint64_t offset_start = get_timestamp_mili();
-    send_flush_msg(fp, fp->writer_coordinator, EVGROUP);
+    send_flush_msg(fp, fp->writer_coordinator, EVGROUP, 1);
     uint64_t offset_end = get_timestamp_mili();
 
     fp_log("PERF", "READER_PERF,%d,%d,open,time:%d,num_sendees:%d\n",
@@ -1124,7 +1155,7 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     MPI_Barrier(fp->comm);
     int count = 0; // for perf measurements
-    send_flush_msg(fp, fp->writer_coordinator, STEP);
+    send_flush_msg(fp, fp->writer_coordinator, STEP, 1);
     //put this on a timer, so to speak, for timeout_sec
     while(fp->mystep == fp->last_writer_step){
 	if(fp->writer_finalized){
@@ -1132,7 +1163,7 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
 	    return err_end_of_stream;
 	}
 	CMsleep(fp_read_data->fp_cm, 1);
-	send_flush_msg(fp, fp->writer_coordinator, STEP);
+	send_flush_msg(fp, fp->writer_coordinator, STEP, 1);
     }
 
     uint64_t advclose_start = get_timestamp_mili();
@@ -1164,11 +1195,11 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
     fp_log("PERF", "READER_PERF,%d,%d,advance_open,time:%d, num_sendees:%d\n",
 	   fp->rank, fp->mystep, (int)(advopen_end - advopen_start), count);
     // need to remove selectors from each var now.
-    send_flush_msg(fp, fp->writer_coordinator, DATA);
+    send_flush_msg(fp, fp->writer_coordinator, DATA, 1);
       
     // should only happen if there are more steps available.
     // writer should have advanced.
-    send_flush_msg(fp, fp->writer_coordinator, EVGROUP);
+    send_flush_msg(fp, fp->writer_coordinator, EVGROUP, 1);
     return 0;
 }
 
@@ -1216,15 +1247,27 @@ int adios_read_flexpath_check_reads(const ADIOS_FILE* fp, ADIOS_VARCHUNK** chunk
 
 int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
 {
+    fp_log("FUNC", "entering perform_reads.\n");
     flexpath_reader_file * fp = (flexpath_reader_file*)adiosfile->fh;
-    int i;
+    int i,j;
     int num_sendees = fp->num_sendees;
+    int total_sent = 0;
     uint64_t data_start = get_timestamp_mili();
-    for(i = 0; i<num_sendees; i++)
-    {
+    for(i = 0; i<num_sendees; i++){
+	pthread_mutex_lock(&fp->data_mutex);
 	int sendee = fp->sendees[i];	
-	// need solution for blocking vs. non
-	send_flush_msg(fp, sendee, DATA);
+	fp->pending_requests++;
+	total_sent++;
+	send_flush_msg(fp, sendee, DATA, 0);
+
+	if((total_sent % FP_BATCH_SIZE == 0) || (total_sent = num_sendees - 1)){
+	    pthread_cond_wait(&fp->data_condition, &fp->data_mutex);
+	    pthread_mutex_unlock(&fp->data_mutex);
+	    fp->completed_requests = 0;
+	    fp->pending_requests = 0;
+	    total_sent = 0;
+	}
+
     }
     uint64_t data_end = get_timestamp_mili();
     fp_log("PERF", "READER_PERF,%d,%d,data,time:%d,num_sendees:%d\n",
@@ -1232,6 +1275,7 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
     free(fp->sendees);
     fp->sendees = NULL;    
     fp->num_sendees = 0;
+    fp_log("FUNC", "leaving perform_reads.\n");
     return 0;
 }
 int
@@ -1307,18 +1351,24 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 	var->displ = NULL;
         int j=0;
 	int need_count = 0;
-	array_displacements * all_disp = NULL;	
+	array_displacements * all_disp = NULL;
+	uint64_t pos = 0;
         for(j=0; j<fp->num_bridges; j++) {
             int destination=0;	    	    
             if(need_writer(fp, j, var->sel, fp->gp, var->varname)==1){           
+		uint64_t _pos = 0;
 		need_count++;
                 destination = j;
 		global_var *gvar = find_gbl_var(fp->gp->vars, var->varname, fp->gp->num_vars);
 		// TODO: memory leak here. have to free these at some point.
-		array_displacements * displ = get_writer_displacements(j, var->sel, gvar);
+		array_displacements *displ = get_writer_displacements(j, var->sel, gvar, &_pos);
+		displ->pos = pos;
+		_pos *= (uint64_t)var->type_size; 
+		pos += _pos;
+		
 		all_disp = realloc(all_disp, sizeof(array_displacements)*need_count);
 		all_disp[need_count-1] = *displ;
-		send_var_message(fp, j, var->varname);
+		send_var_message(fp, j, var->varname);				
             }
 	}
 	var->displ = all_disp;
