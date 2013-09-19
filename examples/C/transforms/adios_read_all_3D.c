@@ -37,7 +37,7 @@ double drand (void)
     return d;
 }  
 
-uint32_t irand (uint x) 
+uint64_t irand (uint64_t x) 
 {
     return ((x) * drand ());
 }
