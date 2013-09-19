@@ -649,5 +649,5 @@ int64_t adios_read_nssi_read_local_var (ADIOS_GROUP * gp, const char * varname,
                                       const uint64_t * count, void * data)
 {  
     adios_error (err_operation_not_supported, "adios_read_local_var() is not supported with NSSI method.");
-    return -adios_errno;
+    return adios_errno;
 }
