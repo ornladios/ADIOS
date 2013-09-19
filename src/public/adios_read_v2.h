@@ -169,7 +169,7 @@ const char *adios_errmsg();
  *                  List of parameters is documented for each method 
  *                  separately. 
  *                  
- *  RETURN:       0 if accepted, <0 on error
+ *  RETURN:       0 if accepted, !=0 on error (adios_errno value)
  *  Initialization is required for the staging methods, where init/finalize 
  *  perform the connection/disconnection to the staging server once.
  *  The ADIOS_READ_METHOD_BP does not need to be initialized/finalized.
@@ -254,7 +254,7 @@ ADIOS_FILE * adios_read_open_file (const char * fname,
 /** Close an adios file.
  *  It will free the content of the underlying data structures and the fp pointer itself.
  *  IN:   fp       pointer to an ADIOS_FILE struct
- *  RETURN: 0 OK, !=0 on error (also sets adios_errno)
+ *  RETURN: 0 OK, !=0 on error (adios_errno value)
  */
 int adios_read_close (ADIOS_FILE *fp);
 
@@ -274,7 +274,7 @@ int adios_read_close (ADIOS_FILE *fp);
  *                            for max 'timeout_sec' seconds.
  *                            0.0 means return immediately if step is not available
  *                 <0.0: block forever if necessary
- *  RETURN: 0 OK, !=0 on error (also sets adios_errno)
+ *  RETURN: 0 OK, !=0 on error (adios_errno value)
  *      
  *  Possible errors (adios_errno values):
  *       err_end_of_stream    Stream has ended, no more steps should be expected
@@ -336,7 +336,7 @@ void adios_free_varinfo (ADIOS_VARINFO *cp);
  *       varinfo        result of adios_inq_var() 
  *       per_step_stat  !=0: return statistics also per step
  *       per_block_stat !=0: return statistics also per writer block 
- *  RETURN: 0 OK, !=0 on error (also sets adios_errno)
+ *  RETURN: 0 OK, !=0 on error (adios_errno value)
  */
 int adios_inq_var_stat (ADIOS_FILE *fp, ADIOS_VARINFO * varinfo,
                         int per_step_stat, int per_block_stat);
@@ -351,7 +351,7 @@ int adios_inq_var_stat (ADIOS_FILE *fp, ADIOS_VARINFO * varinfo,
  *
  *  IN:  fp       pointer to an (opened) ADIOS_FILE struct
  *       varinfo  result of adios_inq_var() 
- *  RETURN: 0 OK, !=0 on error (also sets adios_errno)
+ *  RETURN: 0 OK, !=0 on error (adios_errno value)
  */
 int adios_inq_var_blockinfo (ADIOS_FILE *fp, ADIOS_VARINFO * varinfo);
 
@@ -377,7 +377,7 @@ int adios_inq_var_blockinfo (ADIOS_FILE *fp, ADIOS_VARINFO * varinfo);
  *                  already available of a variable (in ADIOS own memory)
  *                  and the application has to rearrange the data. The user
  *                  has to process/copy the data before getting new chunks.
- *  RETURN: 0 OK, !=0 on error, sets adios_errno too
+ *  RETURN: 0 OK, !=0 on error (adios_errno value)
  */
 int adios_schedule_read (const ADIOS_FILE * fp,
                          const ADIOS_SELECTION * sel,
@@ -436,7 +436,7 @@ int adios_perform_reads (const ADIOS_FILE *fp, int blocking);
  *  RETURN:         0: all chunks have been returned previously, 
  *                     no need to call again (chunk is NULL, too)
  *                  1: some chunks are/will be available, call again
- *                  <0 on error, sets adios_errno too
+ *                  <0 on error (adios_errno value)
  */
 int adios_check_reads (const ADIOS_FILE  * fp, 
                        ADIOS_VARCHUNK   ** chunk);
@@ -460,7 +460,7 @@ void adios_free_chunk (ADIOS_VARCHUNK *chunk);
  *  OUT: type     adios type of attribute (see enum ADIOS_DATATYPES in adios_types.h)
  *       size     memory size of value (n+1 for a string of n characters)
  *       data     pointer to the value. You need to cast it afterward according to the type.
- *  RETURN: 0 OK, error: set and return adios_errno
+ *  RETURN: 0 OK, !=0 on error (adios_errno value)
  */
 int adios_get_attr (ADIOS_FILE            * fp,
                     const char            * attrname,
@@ -497,8 +497,7 @@ int adios_type_size(enum ADIOS_DATATYPES type, void *data);
  *  IN:   fp              pointer to an (opened) ADIOS_FILE struct
  *  OUT:  group_namelist  list of strings,
  *                        Note: one should pass a pointer to char** list
- *  RETURN:               number of groups, <0 on error 
- *                        (sets adios_errno too)
+ *  RETURN:               number of groups, <0 on error (adios_errno value)
  *  
  */
 int adios_get_grouplist (ADIOS_FILE  *fp, char ***group_namelist);
@@ -513,8 +512,7 @@ int adios_get_grouplist (ADIOS_FILE  *fp, char ***group_namelist);
  *  IN/OUT:   fp         pointer to an (opened) ADIOS_FILE struct
  *                       nvars, var_namelist, nattrs, and
  *                       attr_namelist will be modified.
- *  RETURN:              0 on success, adios_errno otherwise
- *                        (sets adios_errno too)
+ *  RETURN:   0 OK, !=0 on error (adios_errno value)
  *  Note: a stream does not have groups. Only a file can have
  *  multiple groups (from separate adios_open/adios_close operations)
  */

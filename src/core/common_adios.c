@@ -41,19 +41,24 @@
 #endif
 
 extern struct adios_transport_struct * adios_transports;
+extern int adios_errno;
 
 ///////////////////////////////////////////////////////////////////////////////
 int common_adios_init (const char * config, MPI_Comm comm)
 {
     // parse the config file
-    return adios_parse_config (config, comm);
+    adios_errno = err_no_error;
+    adios_parse_config (config, comm);
+    return adios_errno;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // all XML file pieces will be provided by another series of calls
 int common_adios_init_noxml (MPI_Comm comm)
 {
-    return adios_local_config (comm);
+    adios_errno = err_no_error;
+    adios_local_config (comm);
+    return adios_errno;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -61,6 +66,7 @@ int common_adios_finalize (int mype)
 {
     struct adios_method_list_struct * m;
 
+    adios_errno = err_no_error;
     for (m = adios_get_methods (); m; m = m->next)
     {
         if (   m->method->m != ADIOS_METHOD_UNKNOWN
@@ -78,17 +84,18 @@ int common_adios_finalize (int mype)
     timer_finalize ();
 #endif
 
-    return 0;
+    return adios_errno;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 int common_adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when
                                  ,uint64_t buffer_size)
 {
+    adios_errno = err_no_error;
     adios_buffer_size_requested_set (buffer_size * 1024 * 1024);
     adios_buffer_alloc_when_set (adios_buffer_alloc_when);
-
-    return adios_set_buffer_size ();
+    adios_set_buffer_size ();
+    return adios_errno;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -108,6 +115,7 @@ int common_adios_open (int64_t * fd, const char * group_name
     struct adios_method_list_struct * methods = 0;
     enum ADIOS_METHOD_MODE mode;
 
+    adios_errno = err_no_error;
     adios_common_get_group (&group_id, group_name);
     g = (struct adios_group_struct *) group_id;
     methods = g->methods;
@@ -131,7 +139,7 @@ int common_adios_open (int64_t * fd, const char * group_name
 
                     *fd = 0;
 
-                    return 1;
+                    return adios_errno;
                 }
 
     fd_p->name = strdup (name);
@@ -203,7 +211,7 @@ int common_adios_open (int64_t * fd, const char * group_name
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop ("adios_open");
 #endif
-    return 0;
+    return adios_errno;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -222,13 +230,12 @@ int common_adios_group_size (int64_t fd_p
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_start ("adios_group_size");
 #endif
-
+    adios_errno = err_no_error;
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     if (!fd)
     {
         adios_error (err_invalid_file_pointer, "Invalid handle passed to adios_group_size\n");
-
-        return 1;
+        return adios_errno;
     }
     struct adios_method_list_struct * m = fd->group->methods;
     if (m && m->next == NULL && m->method->m == ADIOS_METHOD_NULL)
@@ -241,7 +248,7 @@ int common_adios_group_size (int64_t fd_p
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop ("adios_group_size");
 #endif
-        return 0;
+        return err_no_error;
     }
 
     /* Add ADIOS internal attributes now (should be before calculating the overhead) */
@@ -382,7 +389,7 @@ int common_adios_group_size (int64_t fd_p
             adios_error (err_no_memory, "Cannot allocate %llu bytes for buffered output.\n",
                     fd->write_size_bytes);
 
-            return 1;
+            return adios_errno;
         }
         else
         {
@@ -400,16 +407,17 @@ int common_adios_group_size (int64_t fd_p
     // each var will be added to the buffer by the adios_write calls
     // attributes will be added by adios_close
 
-    return 0;
+    return adios_errno;
 }
 
 int common_adios_write_byid (struct adios_file_struct * fd, struct adios_var_struct * v, void * var)
 {
     struct adios_method_list_struct * m = fd->group->methods;
 
+    adios_errno = err_no_error;
     if (m && m->next == NULL && m->method->m == ADIOS_METHOD_NULL)
     {
-        return 0;
+        return adios_errno;
     }
 
     if (v->data)
@@ -447,8 +455,7 @@ int common_adios_write_byid (struct adios_file_struct * fd, struct adios_var_str
                     adios_error (err_no_memory,
                                  "In adios_write, cannot allocate %lld bytes to copy scalar %s\n",
                                  element_size, v->name);
-
-                    return 0;
+                    return adios_errno;
                 }
 
                 memcpy ((char *) v->data, var, element_size);
@@ -461,8 +468,7 @@ int common_adios_write_byid (struct adios_file_struct * fd, struct adios_var_str
                     adios_error (err_no_memory,
                                  "In adios_write, cannot allocate %lld bytes to copy string %s\n",
                                  element_size, v->name);
-
-                    return 0;
+                    return adios_errno;
                 }
                 ((char *) v->data) [element_size] = 0;
                 memcpy ((char *) v->data, var, element_size);
@@ -477,10 +483,14 @@ int common_adios_write_byid (struct adios_file_struct * fd, struct adios_var_str
     common_adios_write (fd, v, var);
     // v->data is set to NULL in the above call
 
-    if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
-    {
-        adios_copy_var_written (fd->group, v);
+    if (!adios_errno) {
+        if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
+        {
+            adios_copy_var_written (fd->group, v);
+        }
     }
+
+    return adios_errno;
 }
 
 static int common_adios_write_transform_helper(struct adios_file_struct * fd, struct adios_var_struct * v) {
@@ -564,6 +574,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_start ("adios_write");
 #endif
+    adios_errno = err_no_error;
     struct adios_method_list_struct * m = fd->group->methods;
 
     // NCSU ALACRITY-ADIOS - Do some processing here depending on the transform
@@ -639,7 +650,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
     timer_stop ("adios_write");
 #endif
     // printf ("var: %s written %d\n", v->name, v->write_count);
-    return 0;
+    return adios_errno;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -649,11 +660,11 @@ int common_adios_get_write_buffer (int64_t fd_p, const char * name
                            )
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
+    adios_errno = err_no_error;
     if (!fd)
     {
         adios_error (err_invalid_file_pointer, "Invalid handle passed to adios_group_size\n");
-
-        return 1;
+        return adios_errno;
     }
     struct adios_var_struct * v = fd->group->vars;
     struct adios_method_list_struct * m = fd->group->methods;
@@ -664,8 +675,7 @@ int common_adios_get_write_buffer (int64_t fd_p, const char * name
     {
         adios_error (err_invalid_varname, "Bad var name (ignored): '%s' (%c%c%c)\n",
                      name, name[0], name[1], name[2]);
-
-        return 1;
+        return adios_errno;
     }
 
     if (fd->mode == adios_mode_read)
@@ -673,8 +683,7 @@ int common_adios_get_write_buffer (int64_t fd_p, const char * name
         adios_error (err_invalid_file_mode,
                      "write attempted on %s in %s. This was opened for read\n",
                      name , fd->name);
-
-        return 1;
+        return adios_errno;
     }
 
     // since we are only getting one buffer, get it from the first
@@ -694,7 +703,7 @@ int common_adios_get_write_buffer (int64_t fd_p, const char * name
             m = m->next;
     }
 
-    return 0;
+    return adios_errno;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -704,11 +713,12 @@ int common_adios_read (int64_t fd_p, const char * name, void * buffer
                )
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
+    adios_errno = err_no_error;
     if (!fd)
     {
         adios_error (err_invalid_file_pointer, "Invalid handle passed to adios_group_size\n");
 
-        return 1;
+        return adios_errno;
     }
     struct adios_var_struct * v;
     struct adios_method_list_struct * m = fd->group->methods;
@@ -716,7 +726,7 @@ int common_adios_read (int64_t fd_p, const char * name, void * buffer
     if (m && m->next == NULL && m->method->m == ADIOS_METHOD_NULL)
     {
         // nothing to do so just return
-        return 0;
+        return err_no_error;
     }
 
     if (!(fd->mode == adios_mode_read))
@@ -725,7 +735,7 @@ int common_adios_read (int64_t fd_p, const char * name, void * buffer
                      "read attempted on %s which was opened for write\n",
                      fd->name);
 
-        return 1;
+        return adios_errno;
     }
 
     v = adios_find_var_by_name (fd->group, name);
@@ -753,21 +763,22 @@ int common_adios_read (int64_t fd_p, const char * name, void * buffer
         adios_error (err_invalid_varname, "var %s in file %s not found on read\n",
                      name, fd->name);
 
-        return 1;
+        return adios_errno;
     }
 
-    return 0;
+    return adios_errno;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 int common_adios_set_path (int64_t fd_p, const char * path)
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
+    adios_errno = err_no_error;
     if (!fd)
     {
         adios_error (err_invalid_file_pointer, "Invalid handle passed to adios_set_path\n");
 
-        return 1;
+        return adios_errno;
     }
     struct adios_group_struct * t = fd->group;
     struct adios_var_struct * v = t->vars;
@@ -797,7 +808,7 @@ int common_adios_set_path (int64_t fd_p, const char * path)
         a = a->next;
     }
 
-    return 0;
+    return adios_errno;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -806,11 +817,12 @@ int common_adios_set_path_var (int64_t fd_p, const char * path
                        )
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
+    adios_errno = err_no_error;
     if (!fd)
     {
         adios_error (err_invalid_file_pointer, "Invalid handle passed to adios_set_path_var\n");
 
-        return 1;
+        return adios_errno;
     }
     struct adios_group_struct * t = fd->group;
     struct adios_var_struct * v = t->vars;
@@ -833,10 +845,10 @@ int common_adios_set_path_var (int64_t fd_p, const char * path
                      "adios_set_path_var (path=%s, var=%s): var not found\n",
                      path, name);
 
-        return 1;
+        return adios_errno;
     }
 
-    return 0;
+    return adios_errno;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -845,6 +857,7 @@ int common_adios_end_iteration ()
 {
     struct adios_method_list_struct * m;
 
+    adios_errno = err_no_error;
     for (m = adios_get_methods (); m; m = m->next)
     {
         if (   m->method->m != ADIOS_METHOD_UNKNOWN
@@ -857,7 +870,7 @@ int common_adios_end_iteration ()
         }
     }
 
-    return 0;
+    return adios_errno;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -866,6 +879,7 @@ int common_adios_start_calculation ()
 {
     struct adios_method_list_struct * m;
 
+    adios_errno = err_no_error;
     for (m = adios_get_methods (); m; m = m->next)
     {
         if (   m->method->m != ADIOS_METHOD_UNKNOWN
@@ -878,7 +892,7 @@ int common_adios_start_calculation ()
         }
     }
 
-    return 0;
+    return adios_errno;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -887,6 +901,7 @@ int common_adios_stop_calculation ()
 {
     struct adios_method_list_struct * m;
 
+    adios_errno = err_no_error;
     for (m = adios_get_methods (); m; m = m->next)
     {
         if (   m->method->m != ADIOS_METHOD_UNKNOWN
@@ -899,7 +914,7 @@ int common_adios_stop_calculation ()
         }
     }
 
-    return 0;
+    return adios_errno;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -908,13 +923,14 @@ int common_adios_close (int64_t fd_p)
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_start ("adios_close");
 #endif
+    adios_errno = err_no_error;
 
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     if (!fd)
     {
         adios_error (err_invalid_file_pointer, "Invalid handle passed to adios_close\n");
 
-        return 1;
+        return adios_errno;
     }
     struct adios_method_list_struct * m = fd->group->methods;
     if (m && m->next == NULL && m->method->m == ADIOS_METHOD_NULL)
@@ -1081,7 +1097,7 @@ int common_adios_close (int64_t fd_p)
     //timer_reset_timers ();
 #endif
 
-    return 0;
+    return adios_errno;
 }
 
 //////////////////////////////////////////////////////////////////////////////
