@@ -176,7 +176,7 @@ FlexpathWriteData flexpathWriteData;
 
 /**************************** Function Definitions *********************************/
 
-double dgettimeofday( void )
+static double dgettimeofday( void )
 {
 #ifdef HAVE_GETTIMEOFDAY
     double timestamp;
@@ -195,7 +195,7 @@ cod_extern_entry externs[] = {
     {(void *) 0, (void *) 0}
 };
 
-static double
+static uint64_t
 get_timestamp_mili()
 {
     struct timespec stamp;
@@ -210,7 +210,7 @@ get_timestamp_mili()
 #else
     clock_gettime(CLOCK_MONOTONIC, &stamp);
 #endif
-    return (double)(((stamp.tv_sec * 1000000000) + stamp.tv_nsec)/1000000);
+    return ((stamp.tv_sec * 1000000000) + stamp.tv_nsec)/1000000;
 }
 
 // add an attr for each dimension to an attr_list
@@ -620,6 +620,8 @@ char *multiqueue_action = "{\n\
     if(EVcount_anonymous()>0){\n\
         mine = EVget_attrs_anonymous(0);\n\
         found = attr_ivalue(mine, \"fp_dst_rank\");\n\
+        double start = dgettimeofday(); \n\
+        set_double_attr(mine, \"fp_starttime\", start);\n\
         EVdiscard_and_submit_anonymous(found+1,0);\n\
     }\n\
  }";

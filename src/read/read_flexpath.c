@@ -156,6 +156,19 @@ flexpath_read_data* fp_read_data = NULL;
 
 /********** Helper functions. **********/
 
+static double dgettimeofday( void )
+{
+#ifdef HAVE_GETTIMEOFDAY
+    double timestamp;
+    struct timeval now;
+    gettimeofday(&now, NULL);
+    timestamp = now.tv_sec + now.tv_usec* 1.0e-6 ;
+    return timestamp;
+#else
+    return -1;
+#endif
+}
+
 static uint64_t 
 get_timestamp_mili()
 {
@@ -672,6 +685,10 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 static int
 raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list attrs)
 {
+    double end = dgettimeofday();
+    double start;
+    get_double_attr(attrs, attr_atom_from_string("fp_starttime"), &start);
+   
     ADIOS_FILE *adiosfile = client_data;
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     FMContext context = CMget_FMcontext(cm);
