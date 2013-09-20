@@ -39,7 +39,7 @@
 
 // // evpath libraries
 #include <evpath.h>
-
+#include <cod.h>
 #include "core/flexpath.h"
 #include <sys/queue.h>
 
@@ -176,7 +176,26 @@ FlexpathWriteData flexpathWriteData;
 
 /**************************** Function Definitions *********************************/
 
-static uint64_t
+double dgettimeofday( void )
+{
+#ifdef HAVE_GETTIMEOFDAY
+    double timestamp;
+    struct timeval now;
+    gettimeofday(&now, NULL);
+    timestamp = now.tv_sec + now.tv_usec* 1.0e-6 ;
+    return timestamp;
+#else
+    return -1;
+#endif
+}
+
+char extern_string[] = "double dgettimeofday(); \n";
+cod_extern_entry externs[] = {
+    {"dgettimeofday", (void *) dgettimeofday},	        // 0
+    {(void *) 0, (void *) 0}
+};
+
+static double
 get_timestamp_mili()
 {
     struct timespec stamp;
@@ -191,7 +210,7 @@ get_timestamp_mili()
 #else
     clock_gettime(CLOCK_MONOTONIC, &stamp);
 #endif
-    return ((stamp.tv_sec * 1000000000) + stamp.tv_nsec)/1000000;
+    return (double)(((stamp.tv_sec * 1000000000) + stamp.tv_nsec)/1000000);
 }
 
 // add an attr for each dimension to an attr_list
@@ -1442,6 +1461,9 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
     add_open_file(fileData);
     atom_t rank_atom = attr_atom_from_string(FP_RANK_ATTR_NAME);
     add_int_attr(fileData->attrs, rank_atom, fileData->rank);
+    
+    //externs[0].extern_value = (void *) (long) get_timestamp_mili;
+    EVadd_standard_routines(flexpathWriteData.cm, extern_string, externs);
 
     //generate multiqueue function that sends formats or all data based on flush msg
     fp_write_log("SETUP", "setup graph\n");
