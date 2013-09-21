@@ -1743,12 +1743,6 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
     EVsubmit_general(fileData->offsetSource, gp, evgroup_msg_free, fileData->attrs);
 
     fileData->writerStep++;
-    /* while((c=queue_count(&fileData->dataQueue))>fileData->maxQueueSize) { */
-    /*     fp_write_log("QUEUE", "waiting for queue to be below max size\n"); */
-    /*     pthread_cond_wait(&fileData->dataCondition2, &fileData->dataMutex2); */
-    /*     fp_write_log("QUEUE", "wakeup on queue size\n"); */
-    /* } */
-    /* fp_write_log("FILE", "file close %s exiting\n", method->group->name); */
 }
 
 // wait until all open files have finished sending data to shutdown
@@ -1773,43 +1767,93 @@ extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method
 	pthread_mutex_unlock(&fileData->dataMutex);
 
 	fileData->finalized = 1;
-
-	//fp_write_log("MUTEX","unlock 1\n");
-	//pthread_mutex_unlock(fileData->dataMutex2);
-	//fp_write_log("DATAMUTEX", "no use 4\n"); 
 	fileData = fileData->next;	    
     }
 }
 
 // provides unknown functionality
-extern enum ADIOS_FLAG adios_flexpath_should_buffer (struct adios_file_struct * fd,struct adios_method_struct * method) 
+extern enum ADIOS_FLAG 
+adios_flexpath_should_buffer (struct adios_file_struct * fd,struct adios_method_struct * method) 
 {
     fp_write_log("UNIMPLEMENTED", "adios_flexpath_should_buffer\n");
     return adios_flag_no;
 }
 
 // provides unknown functionality
-extern void adios_flexpath_end_iteration(struct adios_method_struct *method) 
+extern void 
+adios_flexpath_end_iteration(struct adios_method_struct *method) 
 {
     fp_write_log("UNIMPLEMENTED", "adios_flexpath_end_iteration\n");
 }
 
 // provides unknown functionality
-extern void adios_flexpath_start_calculation(struct adios_method_struct *method) 
+extern void 
+adios_flexpath_start_calculation(struct adios_method_struct *method) 
 {
     fp_write_log("UNIMPLEMENTED", "adios_flexpath_start_calculation\n");
 }
 
 // provides unknown functionality
-extern void adios_flexpath_stop_calculation(struct adios_method_struct *method) 
+extern void 
+adios_flexpath_stop_calculation(struct adios_method_struct *method) 
 {
     fp_write_log("UNIMPLEMENTED", "adios_flexpath_stop_calculation\n");
 }
 
 // provides unknown functionality
-extern void adios_flexpath_get_write_buffer(struct adios_file_struct *fd,struct adios_var_struct *f, uint64_t *size, void **buffer, struct adios_method_struct *method) 
+extern void 
+adios_flexpath_get_write_buffer(struct adios_file_struct *fd, 
+				struct adios_var_struct *v, 
+				uint64_t *size, 
+				void **buffer, 
+				struct adios_method_struct *method) 
 {
-    fp_write_log("UNIMPLEMENTED", "adios_flexpath_get_write_buffer\n");
+    uint64_t mem_allowed;
+
+    if (*size == 0){    
+        *buffer = 0;
+        return;
+    }
+
+    if (v->data && v->free_data == adios_flag_yes){   
+        adios_method_buffer_free (v->data_size);
+        free (v->data);
+        v->data = NULL;
+    }
+
+    mem_allowed = adios_method_buffer_alloc (*size);
+    if (mem_allowed == *size){   
+        *buffer = malloc (*size);
+        if (!*buffer){        
+            adios_method_buffer_free (mem_allowed);
+            log_error ("ERROR: Out of memory allocating %llu bytes for %s in %s:%s()\n"
+                    ,*size, v->name, __FILE__, __func__
+                    );
+            v->got_buffer = adios_flag_no;
+            v->free_data = adios_flag_no;
+            v->data_size = 0;
+            v->data = 0;
+            *size = 0;
+            *buffer = 0;
+        }
+        else{        
+            v->got_buffer = adios_flag_yes;
+            v->free_data = adios_flag_yes;
+            v->data_size = mem_allowed;
+            v->data = *buffer;
+        }
+    }
+    else{    
+        adios_method_buffer_free (mem_allowed);
+        log_error ("OVERFLOW: Cannot allocate requested buffer of %llu "
+                         "bytes for %s in %s:%s()\n"
+                ,*size
+                ,v->name
+                ,__FILE__, __func__
+                );
+        *size = 0;
+        *buffer = 0;
+    }
 }
 
 // should not be called from write, reason for inclusion here unknown
