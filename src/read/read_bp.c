@@ -1,4 +1,4 @@
-/* 
+/*
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
@@ -26,6 +26,8 @@
 #include "core/common_read.h"
 #include "core/adios_logger.h"
 
+#include "core/transforms/adios_transforms_transinfo.h"
+
 #ifdef DMALLOC
 #include "dmalloc.h"
 #endif
@@ -41,7 +43,7 @@ static int adios_step_to_time (const ADIOS_FILE * fp, int varid, int from_steps)
 static int map_req_varid (const ADIOS_FILE * fp, int varid);
 static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r);
 
-// NCSU - For custom memory allocation 
+// NCSU - For custom memory allocation
 #define CALLOC(var, num, sz, comment)\
 {\
     var = calloc (num, sz); \
@@ -159,12 +161,87 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r);
         fh->b->offset = 0;                                                                  \
         adios_parse_var_data_header_v1 (fh->b, &var_header);                                \
 
+// NCSU ALACRITY-ADIOS: After much pain and consideration, I've decided to implement a
+//     2nd version of this function to avoid substantial wasted time in the writeblock method
+#define MPI_FILE_READ_OPS1_BUF(buf)                 \
+        MPI_File_seek (fh->mpi_fh                   \
+                      ,(MPI_Offset)slice_offset     \
+                      ,MPI_SEEK_SET                 \
+                      );                            \
+                                                    \
+        MPI_File_read (fh->mpi_fh                   \
+                      ,(buf)                        \
+                      ,slice_size                   \
+                      ,MPI_BYTE                     \
+                      ,&status                      \
+                      );
+
+// To read subfiles
+#define MPI_FILE_READ_OPS2_BUF(buf)                                                         \
+        MPI_File * sfh;                                                                     \
+        sfh = get_BP_file_handle (fh->sfh                                                   \
+                                 ,v->characteristics[start_idx + idx].file_index            \
+                                 );                                                         \
+        if (!sfh)                                                                           \
+        {                                                                                   \
+            int err;                                                                        \
+            char * ch, * name_no_path, * name;                                              \
+            MPI_Info info = MPI_INFO_NULL;                                                  \
+            struct BP_file_handle * new_h =                                                 \
+                  (struct BP_file_handle *) malloc (sizeof (struct BP_file_handle));        \
+            new_h->file_index = v->characteristics[start_idx + idx].file_index;             \
+            new_h->next = 0;                                                                \
+            if (ch = strrchr (fh->fname, '/'))                                              \
+            {                                                                               \
+                name_no_path = (char *) malloc (strlen (ch + 1) + 1);                       \
+                strcpy (name_no_path, ch + 1);                                              \
+            }                                                                               \
+            else                                                                            \
+            {                                                                               \
+                name_no_path = (char *) malloc (strlen (fh->fname) + 1);                    \
+                strcpy (name_no_path, fh->fname);                                           \
+            }                                                                               \
+                                                                                            \
+            name = (char *) malloc (strlen (fh->fname) + 5 + strlen (name_no_path) + 1 + 10 + 1); \
+            sprintf (name, "%s.dir/%s.%d", fh->fname, name_no_path, new_h->file_index);     \
+            err = MPI_File_open (MPI_COMM_SELF                                                   \
+                                ,name                                                       \
+                                ,MPI_MODE_RDONLY                                            \
+                                ,info                                                       \
+                                ,&new_h->fh                                                 \
+                                );                                                          \
+                                                                                            \
+           if (err)                                                                         \
+           {                                                                                \
+               fprintf (stderr, "can not open file %s\n", name);                            \
+               return 0;                                                                    \
+           }                                                                                \
+           add_BP_file_handle (&fh->sfh                                                     \
+                              ,new_h                                                        \
+                              );                                                            \
+           sfh = &new_h->fh;                                                                \
+                                                                                            \
+           free (name_no_path);                                                             \
+           free (name);                                                                     \
+        }                                                                                   \
+                                                                                            \
+        MPI_File_seek (*sfh                                                                 \
+                      ,(MPI_Offset)slice_offset                                             \
+                      ,MPI_SEEK_SET                                                         \
+                      );                                                                    \
+        MPI_File_read (*sfh                                                                 \
+                      ,(buf)                                                                \
+                      ,slice_size                                                           \
+                      ,MPI_BYTE                                                             \
+                      ,&status                                                              \
+                      );
+
 
 /* This routine release one step. It only frees the var/attr namelist. */
 static void release_step (ADIOS_FILE *fp)
 {
     BP_PROC * p = (BP_PROC *) fp->fh;
-    
+
     if (p->varid_mapping)
     {
         free (p->varid_mapping);
@@ -268,11 +345,12 @@ void build_ADIOS_FILE_struct (ADIOS_FILE * fp, BP_FILE * fh)
     return;
 }
 
-static int get_new_step (ADIOS_FILE * fp, const char * fname, MPI_Comm comm, int last_step, float timeout_sec)
+static int get_new_step (ADIOS_FILE * fp, const char * fname, MPI_Comm comm, int last_tidx, float timeout_sec)
 {
     BP_PROC * p = (BP_PROC *) fp->fh;
+    BP_FILE * fh = (BP_FILE *) p->fh;
+    BP_FILE * new_fh;
     int err, i;
-    BP_FILE * fh;
     double t1 = adios_gettime();
 
     log_debug ("enter get_new_step\n");
@@ -288,26 +366,26 @@ static int get_new_step (ADIOS_FILE * fp, const char * fname, MPI_Comm comm, int
     while (stay_in_poll_loop)
     {
         /* Re-open the file */
-        fh = open_file (fname, comm);
-        if (!fh)
+        new_fh = open_file (fname, comm);
+        if (!new_fh)
         {
             // file is bad so keeps polling.
             stay_in_poll_loop = 1;
         }
-        else if (fh && (fh->tidx_stop - 1 == last_step))
+        else if (new_fh && new_fh->tidx_stop == last_tidx)
         {
             // file is good but no new steps in it. Continue polling.
-            bp_close (fh);
+            bp_close (new_fh);
             stay_in_poll_loop = 1;
         }
         else
         {
             // the file looks good and there are new steps written.
-            build_ADIOS_FILE_struct (fp, fh);
+            build_ADIOS_FILE_struct (fp, new_fh);
             stay_in_poll_loop = 0;
             found_stream = 1;
         }
-        // check if we need to stay in loop 
+        // check if we need to stay in loop
         if (stay_in_poll_loop)
         {
             if (timeout_sec == 0.0)
@@ -355,7 +433,7 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
     log_debug ("read_var()\n");
     sel = r->sel;
     p = (BP_PROC *) fp->fh;
-    fh = (BP_FILE *) p->fh; 
+    fh = (BP_FILE *) p->fh;
 
     v = bp_find_var_byid (fh, r->varid);
 
@@ -386,10 +464,10 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
             nsel->u.bb.start = (uint64_t *) malloc (nsel->u.bb.ndim * 8);
             nsel->u.bb.count = (uint64_t *) malloc (nsel->u.bb.ndim * 8);
             assert (nsel->u.bb.start && nsel->u.bb.count);
-            
+
             for (i = 0; i < nsel->u.bb.ndim; i++)
             {
-                nsel->u.bb.count[i] = 1; 
+                nsel->u.bb.count[i] = 1;
             }
 
             for (i = 0; i < sel->u.points.npoints; i++)
@@ -397,7 +475,7 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
                 memcpy (nsel->u.bb.start, sel->u.points.points + i * sel->u.points.ndim, sel->u.points.ndim * 8);
 
                 chunk = read_var_bb (fp, nr);
-                nr->data = (char *) nr->data + size_of_type;
+                nr->data = (char *) nr->data + size_of_type; // NCSU ALACRITY-ADIOS - Potential bug here; what if nsteps > 1? Shouldn't the buffer advance by size_of_type * nsteps?
 
                 common_read_free_chunk (chunk);
             }
@@ -410,6 +488,9 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
 
             chunk->varid = r->varid;
             chunk->type = v->type;
+            // NCSU ALACRITY-ADIOS - Added timestep information into varchunks
+            chunk->from_steps = r->from_steps;
+            chunk->nsteps = r->nsteps;
             chunk->sel = copy_selection (r->sel);
             chunk->data = r->data;
 
@@ -467,8 +548,10 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
 
     /* Get dimensions and flip if caller != writer language */
     /* Note: ndim below doesn't include time if there is any */
+    // NCSU ALACRITY-ADIOS - Note: this function has been modified to return
+    //   the "raw" dimensions (i.e., 1D byte array)
     bp_get_and_swap_dimensions (fh, v, file_is_fortran, &ndim, &dims, &nsteps, file_is_fortran);
- 
+
     assert (ndim == sel->u.bb.ndim);
     ndim = sel->u.bb.ndim;
 
@@ -518,7 +601,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     {
 
         if (!p->streaming)
-        { 
+        {
             time = get_time (v, t);
         }
         else
@@ -545,7 +628,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
         {
             /* READ A SCALAR VARIABLE */
             /* Prepare slice_offset, slice_size and idx for the later macro:
-               MPI_FILE_READ_OPS1 and MPI_FILE_READ_OPS2 
+               MPI_FILE_READ_OPS1 and MPI_FILE_READ_OPS2
             */
             idx = 0;
             slice_offset = v->characteristics[start_idx + idx].payload_offset;
@@ -597,7 +680,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
             /* READ AN ARRAY VARIABLE */
             int * idx_table = (int *) malloc (sizeof (int) * (stop_idx - start_idx + 1));
             uint64_t write_offset = 0;
-/* 
+/*
                 printf ("count   = "); for (j = 0; j<ndim; j++) printf ("%d ",count[j]); printf ("\n");
                 printf ("start   = "); for (j = 0; j<ndim; j++) printf ("%d ",start[j]); printf ("\n");
 */
@@ -610,7 +693,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                 dset_stride = 1;
                 idx_table[idx] = 1;
                 uint64_t payload_size = size_of_type;
-    
+
                 is_global = bp_get_dimension_characteristics_notime (&(v->characteristics[start_idx + idx]),
                                                                     ldims, gdims, offsets, file_is_fortran);
                 if (!is_global)
@@ -627,13 +710,13 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                 printf ("ldims   = "); for (j = 0; j<ndim; j++) printf ("%d ",ldims[j]); printf ("\n");
                 printf ("gdims   = "); for (j = 0; j<ndim; j++) printf ("%d ",gdims[j]); printf ("\n");
                 printf ("offsets = "); for (j = 0; j<ndim; j++) printf ("%d ",offsets[j]); printf ("\n");
-*/             
+*/
                 for (j = 0; j < ndim; j++)
                 {
                     payload_size *= ldims [j];
-    
-                    if ( (count[j] > gdims[j]) 
-                      || (start[j] > gdims[j]) 
+
+                    if ( (count[j] > gdims[j])
+                      || (start[j] > gdims[j])
                       || (start[j] + count[j] > gdims[j]))
                     {
                         adios_error ( err_out_of_bound, "Error: Variable (id=%d) out of bound 1("
@@ -642,13 +725,13 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                             r->varid, j + 1, count[j], start[j], gdims[j] - 1);
                         return 0;
                     }
-    
+
                     /* check if there is any data in this pg and this dimension to read in */
-                    flag = (offsets[j] >= start[j] 
+                    flag = (offsets[j] >= start[j]
                             && offsets[j] < start[j] + count[j])
                         || (offsets[j] < start[j]
-                            && offsets[j] + ldims[j] > start[j] + count[j]) 
-                        || (offsets[j] + ldims[j] > start[j] 
+                            && offsets[j] + ldims[j] > start[j] + count[j])
+                        || (offsets[j] + ldims[j] > start[j]
                             && offsets[j] + ldims[j] <= start[j] + count[j]);
                     idx_table [idx] = idx_table[idx] && flag;
                 }
@@ -657,9 +740,9 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                 {
                     continue;
                 }
-    
+
                 /* determined how many (fastest changing) dimensions can we read in in one read */
-                int hole_break; 
+                int hole_break;
                 for (i = ndim - 1; i > -1; i--)
                 {
                     if (offsets[i] == start[i] && ldims[i] == count[i])
@@ -669,7 +752,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                     else
                         break;
                 }
-    
+
                 hole_break = i;
                 slice_offset = 0;
                 slice_size = 0;
@@ -680,7 +763,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                     /* This means we enter this only once, and npg=1 at the end */
                     /* This is a rare case. FIXME: cannot eliminate this? */
                     slice_size = payload_size;
-    
+
                     slice_offset = v->characteristics[start_idx + idx].payload_offset;
                     if (v->characteristics[start_idx + idx].payload_offset > 0)
                     {
@@ -705,7 +788,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                         change_endianness (data, slice_size, v->type);
                     }
                 }
-                else if (hole_break == 0) 
+                else if (hole_break == 0)
                 {
                     /* The slowest changing dimensions should not be read completely but
                        we still need to read only one block */
@@ -713,7 +796,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                     uint64_t size_in_dset = 0;
                     uint64_t offset_in_dset = 0;
                     uint64_t offset_in_var = 0;
-    
+
                     isize = offsets[0] + ldims[0];
                     if (start[0] >= offsets[0])
                     {
@@ -739,13 +822,13 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                         offset_in_dset = 0;
                         offset_in_var = offsets[0] - start[0];
                     }
-    
+
                     slice_size = size_in_dset * datasize * size_of_type;
                     write_offset = offset_in_var * datasize * size_of_type;
- 
+
                     if (v->characteristics[start_idx + idx].payload_offset > 0)
                     {
-                        slice_offset = v->characteristics[start_idx + idx].payload_offset 
+                        slice_offset = v->characteristics[start_idx + idx].payload_offset
                                      + offset_in_dset * datasize * size_of_type;
                         if (!has_subfile)
                         {
@@ -761,16 +844,16 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                         slice_offset = 0;
                         MPI_FILE_READ_OPS3
                     }
-    
+
                     memcpy ((char *)data + write_offset, fh->b->buff + fh->b->offset, slice_size);
                     if (fh->mfooter.change_endianness == adios_flag_yes)
                     {
                         change_endianness((char *)data + write_offset, slice_size, v->type);
                     }
-    
+
                     //write_offset +=  slice_size;
                 }
-                else 
+                else
                 {
                     uint64_t stride_offset = 0;
                     int isize;
@@ -819,14 +902,14 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                     }
                     datasize = 1;
                     var_stride = 1;
-    
+
                     for (i = ndim - 1; i >= hole_break; i--)
                     {
                         datasize *= size_in_dset[i];
                         dset_stride *= ldims[i];
                         var_stride *= count[i];
                     }
-    
+
                     uint64_t start_in_payload = 0, end_in_payload = 0, s = 1;
                     for (i = ndim - 1; i > -1; i--)
                     {
@@ -834,7 +917,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                         end_in_payload += s * (offset_in_dset[i] + size_in_dset[i] - 1) * size_of_type;
                         s *= ldims[i];
                     }
-    
+
                     slice_size = end_in_payload - start_in_payload + 1 * size_of_type;
                     if (v->characteristics[start_idx + idx].payload_offset > 0)
                     {
@@ -854,7 +937,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                         slice_offset =  start_in_payload;
                         MPI_FILE_READ_OPS3
                     }
- 
+
                     for (i = 0; i < ndim; i++)
                     {
                         offset_in_dset[i] = 0;
@@ -862,13 +945,13 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
 
                     uint64_t var_offset = 0;
                     uint64_t dset_offset = 0;
-    
+
                     for (i = 0; i < ndim; i++)
                     {
                         var_offset = offset_in_var[i] + var_offset * count[i];
                         dset_offset = offset_in_dset[i] + dset_offset * ldims[i];
                     }
-    
+
                     copy_data (data
                               ,fh->b->buff + fh->b->offset
                               ,0
@@ -883,13 +966,13 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                               ,datasize
                               ,size_of_type
                               ,fh->mfooter.change_endianness
-                              ,v->type 
+                              ,v->type
                               );
                 }
             }  // end for (idx ... loop over pgs
-    
+
             free (idx_table);
-    
+
             total_size += items_read * size_of_type;
             // shift target pointer for next read in
             data = (char *)data + (items_read * size_of_type);
@@ -910,6 +993,9 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
 
     chunk->varid = r->varid;
     chunk->type = v->type;
+    // NCSU ALACRITY-ADIOS - Added timestep information into varchunks
+    chunk->from_steps = r->from_steps;
+    chunk->nsteps = r->nsteps;
     chunk->sel = copy_selection (r->sel);
     chunk->data = r->data;
     return chunk;
@@ -931,7 +1017,7 @@ int adios_read_bp_init_method (MPI_Comm comm, PairStruct * params)
                 chunk_buffer_size = max_chunk_size * 1024 * 1024;
             }
             else
-            { 
+            {
                 log_error ("Invalid 'max_chunk_size' parameter given to the read method: '%s'\n", p->value);
             }
         }
@@ -974,7 +1060,7 @@ int adios_read_bp_finalize_method ()
     return 0;
 }
 
-static int open_stream (ADIOS_FILE * fp, const char * fname, 
+static int open_stream (ADIOS_FILE * fp, const char * fname,
                         MPI_Comm comm, float timeout_sec)
 {
     int i, rank, ret;
@@ -986,7 +1072,7 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
 
     MPI_Comm_rank (comm, &rank);
     // We need to first check if this is a valid ADIOS-BP file. This is done by
-    // check whether there is 'ADIOS-BP' string written before the 28-bytes minifooter. 
+    // check whether there is 'ADIOS-BP' string written before the 28-bytes minifooter.
     // If it is valid, we will proceed with bp_open(). The potential issue is that before
     // calling bp_open, the next step could start writing and the footer will be corrupted.
     // This needs to be fixed later. Q. Liu, 06/2012
@@ -1007,10 +1093,10 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
             {
                 // This stream does not exist yet
                 log_debug ("file %s found!\n", fname);
-            
+
                 if (stay_in_poll_loop)
                 {
-                    // check if we need to stay in loop 
+                    // check if we need to stay in loop
                     if (timeout_sec == 0.0)  //return immediately, which means check file once
                     {
                         stay_in_poll_loop = 0;
@@ -1091,7 +1177,7 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
 
     fp->current_step = 0;
     /* For file, the last step is tidx_stop */
-    fp->last_step = fh->tidx_stop - 1;
+    fp->last_step = fh->tidx_stop - fh->tidx_start;
 
     return 0;
 }
@@ -1184,7 +1270,7 @@ typedef struct {
     /* fill out ADIOS_FILE struct */
     fp->fh = (uint64_t) p;
 
-    /* '-1' means that we want all steps. 
+    /* '-1' means that we want all steps.
      * This will seek to the last step. So we need to set current_step back properly.
      * Usually bp_seek_to_step comes after release_step call, to first free up some
      * memory allocated by the previous step. This is the first seek call and, therefore,
@@ -1253,7 +1339,7 @@ int adios_read_bp_close (ADIOS_FILE * fp)
         free_namelist (fp->attr_namelist, fp->nattrs);
         fp->attr_namelist = 0;
     }
-  
+
     if (fp->path)
     {
         free (fp->path);
@@ -1269,11 +1355,11 @@ int adios_read_bp_close (ADIOS_FILE * fp)
  * block the call and expect new step will arrive. Therefore, if last == 0, we simply sleep
  * for a specified period of time and re-open the file to see if there is any new steps came in.
  * The trick is that when step is being advanced, it is likely that file has
- * already being appended with new steps. Therefore, we have to close and reopen 
+ * already being appended with new steps. Therefore, we have to close and reopen
  * the file if the expected step is not found.
- * last - 0: next available step, !=0: newest available step 
+ * last - 0: next available step, !=0: newest available step
  *  RETURN: 0 OK, !=0 on error (also sets adios_errno)
- *      
+ *
  *  Possible errors (adios_errno values):
  *       err_end_of_stream    Stream has ended, no more steps should be expected
  *       err_step_notready    The requested step is not yet available
@@ -1284,7 +1370,7 @@ int adios_read_bp_advance_step (ADIOS_FILE * fp, int last, float timeout_sec)
 {
     BP_PROC * p = (BP_PROC *) fp->fh;
     BP_FILE * fh = (BP_FILE *) p->fh;
-    int last_step;
+    int last_tidx;
     MPI_Comm comm;
     char * fname;
 
@@ -1299,10 +1385,10 @@ int adios_read_bp_advance_step (ADIOS_FILE * fp, int last, float timeout_sec)
             release_step (fp);
             bp_seek_to_step (fp, ++fp->current_step, show_hidden_attrs);
         }
-        else // re-open to read in footer again. We should keep polling until there are new steps in OR 
+        else // re-open to read in footer again. We should keep polling until there are new steps in OR
              // time out.
         {
-            last_step = fp->last_step;
+            last_tidx = fh->tidx_stop;
             fname = strdup (fh->fname);
             comm = fh->comm;
 
@@ -1312,27 +1398,25 @@ int adios_read_bp_advance_step (ADIOS_FILE * fp, int last, float timeout_sec)
                 p->fh = 0;
             }
 
-            if (!get_new_step (fp, fname, comm, last_step, timeout_sec))
+            if (!get_new_step (fp, fname, comm, last_tidx, timeout_sec))
             {
                 // With file reading, how can we tell it is the end of the streams?
                 adios_errno = err_step_notready;
             }
 
-            free (fname); 
-
-            log_debug ("Seek from step %d to step %d\n", last_step, last_step + 1);
+            free (fname);
 
             if (adios_errno == 0)
             {
                 release_step (fp);
-                bp_seek_to_step (fp, last_step + 1, show_hidden_attrs);
-                fp->current_step = last_step + 1;
+                bp_seek_to_step (fp, fp->last_step + 1, show_hidden_attrs);
+                fp->current_step = fp->last_step + 1;
             }
         }
     }
     else // read in newest step. Re-open no matter whether current_step < last_step
     {
-        last_step = fp->last_step;
+        last_tidx = fh->tidx_stop;
         fname = strdup (fh->fname);
         comm = fh->comm;
 
@@ -1343,7 +1427,7 @@ int adios_read_bp_advance_step (ADIOS_FILE * fp, int last, float timeout_sec)
         }
 
         // lockmode is currently not supported.
-        if (!get_new_step (fp, fh->fname, fh->comm, last_step, timeout_sec))
+        if (!get_new_step (fp, fh->fname, fh->comm, last_tidx, timeout_sec))
         {
             adios_errno = err_step_notready;
         }
@@ -1431,7 +1515,7 @@ typedef struct {
     BP_FILE * fh = (BP_FILE *) p->fh;
     ADIOS_VARSTAT * vs;
     struct adios_index_var_struct_v1 * var_root;
- 
+
     assert (varinfo);
 
     varinfo->statistics = vs = (ADIOS_VARSTAT *) malloc (sizeof (ADIOS_VARSTAT));
@@ -1543,17 +1627,23 @@ typedef struct {
         }
     }
 */
-    size = bp_get_type_size (var_root->type, "");
+    enum ADIOS_DATATYPES original_var_type = var_root->type;
+
+    if (var_root->characteristics[0].transform.transform_type != adios_transform_none) {
+        original_var_type = var_root->characteristics[0].transform.pre_transform_type;
+    }
+
+    size = bp_get_type_size (original_var_type, "");
     sum_size = bp_get_type_size (adios_double, "");
 
-    if (var_root->type == adios_complex || var_root->type == adios_double_complex)
+    if (original_var_type == adios_complex || original_var_type == adios_double_complex)
     {
         int type;
         count = 3;
         timestep = -1;
         prev_timestep = 0;
 
-        if (var_root->type == adios_complex)
+        if (original_var_type == adios_complex)
         {
             type = adios_double;
         }
@@ -1787,7 +1877,7 @@ typedef struct {
                     memcpy(vs->min, stats[map[adios_statistic_min]].data, size);
 
                 }
-                else if (adios_lt(var_root->type, stats[map[adios_statistic_min]].data, vs->min))
+                else if (adios_lt(original_var_type, stats[map[adios_statistic_min]].data, vs->min))
                 {
                     memcpy(vs->min, stats[map[adios_statistic_min]].data, size);
                 }
@@ -1797,7 +1887,7 @@ typedef struct {
                     MALLOC (vs->steps->mins[timestep], size, "minimum per timestep")
                     memcpy(vs->steps->mins[timestep], stats[map[adios_statistic_min]].data, size);
                 }
-                else if (adios_lt(var_root->type, stats[map[adios_statistic_min]].data, vs->steps->mins[timestep]))
+                else if (adios_lt(original_var_type, stats[map[adios_statistic_min]].data, vs->steps->mins[timestep]))
                 {
                     memcpy(vs->steps->mins[timestep], stats[map[adios_statistic_min]].data, size);
                 }
@@ -1811,7 +1901,7 @@ typedef struct {
                     memcpy(vs->max, stats[map[adios_statistic_max]].data, size);
 
                 }
-                else if (adios_lt(var_root->type, vs->max, stats[map[adios_statistic_max]].data))
+                else if (adios_lt(original_var_type, vs->max, stats[map[adios_statistic_max]].data))
                 {
                     memcpy(vs->max, stats[map[adios_statistic_max]].data, size);
                 }
@@ -1821,7 +1911,7 @@ typedef struct {
                     MALLOC (vs->steps->maxs[timestep], size, "maximum per timestep")
                     memcpy(vs->steps->maxs[timestep], stats[map[adios_statistic_max]].data, size);
                 }
-                else if (adios_lt(var_root->type, vs->steps->maxs[timestep], stats[map[adios_statistic_max]].data))
+                else if (adios_lt(original_var_type, vs->steps->maxs[timestep], stats[map[adios_statistic_max]].data))
                 {
                     memcpy(vs->steps->maxs[timestep], stats[map[adios_statistic_max]].data, size);
                 }
@@ -1894,7 +1984,7 @@ typedef struct {
         }
 
         if(nsteps > 0 && vs->min
-           && (map[adios_statistic_sum] != -1) 
+           && (map[adios_statistic_sum] != -1)
            && (map[adios_statistic_sum_square] != -1)
           )
         {
@@ -1906,7 +1996,7 @@ typedef struct {
                 *(vs->steps->avgs[timestep]) = *(sums[timestep]) / cnts[timestep];
 
                 MALLOC(vs->steps->std_devs[timestep], sum_size, "standard deviation per timestep")
-                *(vs->steps->std_devs[timestep]) = sqrt(*(sum_squares[timestep]) / cnts[timestep] 
+                *(vs->steps->std_devs[timestep]) = sqrt(*(sum_squares[timestep]) / cnts[timestep]
                              - ((*(vs->steps->avgs[timestep]) * (*(vs->steps->avgs[timestep])))));
 
                 free (sums[timestep]);
@@ -1961,48 +2051,162 @@ typedef struct {
     return 0;
 }
 
-int adios_read_bp_inq_var_blockinfo (const ADIOS_FILE * fp, ADIOS_VARINFO * varinfo)
-{
+// NCSU ALACRITY-ADIOS - Factored out VARBLOCK inquiry function to permit sourcing
+static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VARINFO * varinfo, int use_pretransform_dimensions) {
     struct BP_PROC * p = (struct BP_PROC *) fp->fh;
     int i, file_is_fortran, timedim;
     uint64_t * ldims, * gdims, * offsets;
     BP_FILE * fh;
     struct adios_index_var_struct_v1 * var_root;
+    ADIOS_VARBLOCK *blockinfo;
 
     assert (varinfo);
 
     fh = (BP_FILE *) p->fh;
     file_is_fortran = is_fortran_file (fh);
-    var_root = bp_find_var_byid (fh, varinfo->varid);
-    varinfo->blockinfo = (ADIOS_VARBLOCK *) malloc (varinfo->sum_nblocks * sizeof (ADIOS_VARBLOCK));
-    assert (varinfo->blockinfo);
 
+    // Perform variable ID mapping, since the input to this function is user-perceived
+    int mapped_id = map_req_varid (fp, varinfo->varid);
+    var_root = bp_find_var_byid (fh, mapped_id);
+
+    blockinfo = (ADIOS_VARBLOCK *) malloc (varinfo->sum_nblocks * sizeof (ADIOS_VARBLOCK));
+    assert (blockinfo);
+
+    if (use_pretransform_dimensions)
+        assert(var_root->characteristics[0].transform.transform_type != adios_transform_none);
+
+    // NCSU ALACRITY-ADIOS - Use pre-transform dimensions if instructed to do so
+    int dimcount;
+    if (use_pretransform_dimensions) {
+        dimcount = var_root->characteristics[0].transform.pre_transform_dimensions.count;
+    } else {
+        dimcount = var_root->characteristics[0].dims.count;
+    }
     /* dim.count possibily include 'time' dim in it. */
-    ldims = (uint64_t *) malloc (var_root->characteristics[0].dims.count * 8);
-    gdims = (uint64_t *) malloc (var_root->characteristics[0].dims.count * 8);
-    offsets = (uint64_t *) malloc (var_root->characteristics[0].dims.count * 8);
-    assert (ldims && gdims && offsets); 
+    ldims = (uint64_t *) malloc (dimcount * 8);
+    gdims = (uint64_t *) malloc (dimcount * 8);
+    offsets = (uint64_t *) malloc (dimcount * 8);
+    assert (ldims && gdims && offsets);
 
     for (i = 0; i < varinfo->sum_nblocks; i++)
     {
-        varinfo->blockinfo[i].start = (uint64_t *) malloc (varinfo->ndim * 8);
-        varinfo->blockinfo[i].count = (uint64_t *) malloc (varinfo->ndim * 8);
-        assert (varinfo->blockinfo[i].start && varinfo->blockinfo[i].count);
+        blockinfo[i].start = (uint64_t *) malloc (dimcount * 8);
+        blockinfo[i].count = (uint64_t *) malloc (dimcount * 8);
+        assert (blockinfo[i].start && blockinfo[i].count);
 
-        bp_get_dimension_characteristics_notime (&(var_root->characteristics[i]),
-                                                 ldims, gdims, offsets, file_is_fortran
-                                                );
+        bp_get_dimension_generic_notime (use_pretransform_dimensions ?
+                                            &var_root->characteristics[i].transform.pre_transform_dimensions :
+                                            &var_root->characteristics[i].dims,
+                                         ldims, gdims, offsets, file_is_fortran
+                                         );
 
-        memcpy (varinfo->blockinfo[i].start, offsets, varinfo->ndim * 8);
-        memcpy (varinfo->blockinfo[i].count, ldims, varinfo->ndim * 8);
+        // NCSU ALACRITY-ADIOS - If a time dimension was removed above, update
+        // dimcount so that dimension copy/swapping works below
+        if (ldims[dimcount - 1] == 0)
+            dimcount--;
+
+        memcpy (blockinfo[i].start, offsets, dimcount * 8);
+        memcpy (blockinfo[i].count, ldims, dimcount * 8);
+
+        // NCSU ALACRITY-ADIOS - This code was left over in the Transforms branch after the merge. Not sure if it's needed; preserved in case it represented a valid bugfix
+//        if (file_is_fortran != futils_is_called_from_fortran())
+//        {
+//            swap_order (dimcount, blockinfo[i].start, &timedim);
+//            swap_order (dimcount, blockinfo[i].count, &timedim);
+//        }
     }
-    
+
     free (ldims);
     free (gdims);
     free (offsets);
+    return blockinfo;
+}
 
+// NCSU ALACRITY-ADIOS - Delegate to shared VARBLOCK loader
+int adios_read_bp_inq_var_blockinfo (const ADIOS_FILE * fp, ADIOS_VARINFO * varinfo)
+{
+    varinfo->blockinfo = inq_var_blockinfo(fp, varinfo, 0); // 0 -> use true dimensions, not original dimensions
+    assert(varinfo->blockinfo);
+    return 0;
+
+}
+
+// NCSU ALACRITY-ADIOS - Adding an inq function to get the new transform metadata from storage
+ADIOS_TRANSINFO * adios_read_bp_inq_var_transinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi) {
+    struct BP_PROC * p = (struct BP_PROC *) fp->fh;
+    BP_FILE * fh;
+    struct adios_index_var_struct_v1 * var_root;
+    int file_is_fortran;
+    int dummy;
+    ADIOS_TRANSINFO *transinfo;
+    assert(vi);
+    fh = (BP_FILE *) p->fh;
+    file_is_fortran = is_fortran_file (fh);
+
+    // Perform variable ID mapping, since the input to this function is user-perceived
+    int mapped_id = map_req_varid (fp, vi->varid);
+    var_root = bp_find_var_byid(fh, mapped_id);
+    assert(var_root);
+
+    transinfo = malloc(sizeof(ADIOS_TRANSINFO));
+
+    const struct adios_index_characteristic_transform_struct *transform = &var_root->characteristics[0].transform;
+
+    transinfo->transform_type = transform->transform_type;
+    if (transform->transform_type != adios_transform_none) {
+        transinfo->orig_type = transform->pre_transform_type;
+
+        // Load orig_ndims/orig_dims using the utility function
+        bp_get_and_swap_dimensions_generic (fh, var_root, file_is_fortran,
+                                            &transinfo->orig_ndim, &transinfo->orig_dims,
+                                            &dummy,
+                                            file_is_fortran != futils_is_called_from_fortran(),
+                                            1); // 1 -> get based on pre-transform dimensions
+
+        transinfo->orig_global = is_global_array_generic(&var_root->characteristics[0].transform.pre_transform_dimensions);
+
+        transinfo->transform_metadata_len = transform->transform_metadata_len;
+        transinfo->transform_metadata = transform->transform_metadata;
+        transinfo->should_free_transform_metadata = 0;
+    } else {
+        transinfo->orig_type = adios_unknown;
+        transinfo->orig_ndim = 0;
+        transinfo->orig_dims = 0;
+        transinfo->orig_global = 0;
+        transinfo->transform_metadata_len = 0;
+        transinfo->transform_metadata = 0;
+        transinfo->should_free_transform_metadata = 0;
+    }
+    transinfo->orig_blockinfo = 0;
+
+    return transinfo;
+}
+
+// NCSU ALACRITY-ADIOS - Adding an inq function to get original (pre-transform) blockinfo for variables from storage
+int adios_read_bp_inq_var_trans_blockinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti) {
+    struct BP_PROC * p = (struct BP_PROC *) fp->fh;
+    BP_FILE * fh = (BP_FILE *) p->fh;
+    struct adios_index_var_struct_v1 * var_root;
+
+    ti->orig_blockinfo = inq_var_blockinfo(fp, vi, 1); // 1 -> use original, pretransform dimensions
     return 0;
 }
+
+// NCSU ALACRITY-ADIOS - Dummy function stubs for the staged and staged1 read transports; move to those files at some point
+ADIOS_TRANSINFO * adios_read_bp_staged_inq_var_transinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi) {
+    return NULL;
+}
+ADIOS_TRANSINFO * adios_read_bp_staged1_inq_var_transinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi) {
+    return NULL;
+}
+int adios_read_bp_staged_inq_var_trans_blockinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti) {
+    return 1;
+}
+int adios_read_bp_staged1_inq_var_trans_blockinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti) {
+    return 1;
+}
+
+
 
 uint64_t get_req_datasize (const ADIOS_FILE * fp, read_request * r, struct adios_index_var_struct_v1 * v)
 {
@@ -2025,16 +2229,25 @@ uint64_t get_req_datasize (const ADIOS_FILE * fp, read_request * r, struct adios
     }
     else if (sel->type == ADIOS_SELECTION_WRITEBLOCK)
     {
-        pgidx = adios_wbidx_to_pgidx (fp, r);
-
-        ndims = v->characteristics[pgidx].dims.count;
-        for (i = 0; i < ndims; i++)
-        {
-            datasize *= v->characteristics[pgidx].dims.dims[i * 3];
+        //pgidx = adios_wbidx_to_pgidx (fp, r);
+        // NCSU ALACRITY-ADIOS: Adding absoluet PG indexing
+        pgidx = sel->u.block.is_absolute_index ?
+                    sel->u.block.index :
+                adios_wbidx_to_pgidx (fp, r);
+        // NCSU ALACRITY-ADIOS: Adding sub-PG writeblock read support
+        if (sel->u.block.is_sub_pg_selection) {
+            datasize = sel->u.block.nelements;
+        } else {
+            // NCSU ALACRITY-ADIOS: This used to not be in this else block
+            ndims = v->characteristics[pgidx].dims.count;
+            for (i = 0; i < ndims; i++)
+            {
+                datasize *= v->characteristics[pgidx].dims.dims[i * 3];
+            }
         }
     }
 
-    return datasize;   
+    return datasize;
 }
 
 /* Note: the varid isn't the perceived varid from the user */
@@ -2050,12 +2263,12 @@ uint64_t get_req_datasize (const ADIOS_FILE * fp, read_request * r, struct adios
  *                  step of a file variable.
                     It is not used in case of a stream.
  *       nsteps     Read 'nsteps' consecutive steps from current step.
- *                  Must be 1 for a stream. 
+ *                  Must be 1 for a stream.
  *  OUT: data       pointer to the memory to hold data of the variable
- *                  In blocking read mode, the memory should be 
+ *                  In blocking read mode, the memory should be
  *                  pre-allocated. In non-blocking mode, memory can be
  *                  allocated or not, and that changes the behavior of
- *                  the chunked read. If memory is allocated, 
+ *                  the chunked read. If memory is allocated,
  *                  adios_check_read() returns a variable if it is completed.
  *                  If memory is not allocated, the check returns any chunk
  *                  already available of a variable (in ADIOS own memory)
@@ -2201,15 +2414,15 @@ static read_request * split_req (const ADIOS_FILE * fp, const read_request * r, 
     uint64_t pos[32], subbb[32], start[32], count[32];
 
     log_debug ("split_req()\n");
-    varid = map_req_varid (fp, r->varid);
+    varid = r->varid; //map_req_varid (fp, r->varid); // NCSU ALACRITY-ADIOS: Bugfix: r->varid has already been mapped
     v = bp_find_var_byid (fh, varid);
     type_size = bp_get_type_size (v->type, "");
     assert (type_size);
 
     n_elements = buffer_size / type_size;
-    
+
     printf ("n_elements = %d\n", n_elements);
-    //TODO: handle string 
+    //TODO: handle string
     if (sel->type == ADIOS_SELECTION_BOUNDINGBOX)
     {
         ndim = sel->u.bb.ndim;
@@ -2284,7 +2497,7 @@ static read_request * split_req (const ADIOS_FILE * fp, const read_request * r, 
 
             memcpy (newreq->sel->u.bb.start,
                     start,
-                    ndim * 8 
+                    ndim * 8
                    );
 
             // check whether the start + count will be out of bound
@@ -2302,7 +2515,7 @@ static read_request * split_req (const ADIOS_FILE * fp, const read_request * r, 
 
             memcpy (newreq->sel->u.bb.count,
                     count,
-                    ndim * 8 
+                    ndim * 8
                    );
 
             log_debug ("bb: (");
@@ -2382,11 +2595,11 @@ static read_request * split_req (const ADIOS_FILE * fp, const read_request * r, 
             newreq->sel->u.points.npoints = (remain > n_elements ? n_elements : remain);
             newreq->sel->u.points.points = malloc (newreq->sel->u.points.npoints * newreq->sel->u.points.ndim * 8);
             assert (newreq->sel->u.points.points);
-            memcpy (newreq->sel->u.points.points, 
+            memcpy (newreq->sel->u.points.points,
                     sel->u.points.points + (sel->u.points.npoints - remain) * sel->u.points.ndim,
                     newreq->sel->u.points.npoints * sel->u.points.ndim * 8
                    );
-  
+
             newreq->varid = r->varid;
             newreq->from_steps = r->from_steps;
             newreq->nsteps = r->nsteps;
@@ -2415,7 +2628,7 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
     ADIOS_VARCHUNK * varchunk;
     int type_size;
 /*
- *  RETURN:         0: all chunks have been returned previously, 
+ *  RETURN:         0: all chunks have been returned previously,
  *                     no need to call again (chunk is NULL, too)
  *                  1: some chunks are/will be available, call again
  *                  <0 on error, sets adios_errno too
@@ -2518,7 +2731,7 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
             {
                 return adios_errno;
             }
-        } 
+        }
     }
 
     return 0;
@@ -2598,7 +2811,7 @@ int adios_read_bp_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_D
         {
             attr_c_index = k;
             break;
-        } 
+        }
     }
 
     if (attr_c_index == -1)
@@ -2617,7 +2830,7 @@ int adios_read_bp_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_D
         *type = attr_root->type;
         *data = (void *) malloc (*size);
         assert (*data);
-       
+
         memcpy(*data, attr_root->characteristics[attr_c_index].value, *size);
     }
     else if (attr_root->characteristics[attr_c_index].var_id)
@@ -2663,7 +2876,7 @@ int adios_read_bp_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_D
         }
 
         if (!var_root)
-        { 
+        {
             adios_error (err_invalid_attribute_reference,
                    "Attribute %s/%s in group %s is a reference to variable ID %d, which is not found\n",
                    attr_root->attr_path, attr_root->attr_name, attr_root->group_name,
@@ -2696,8 +2909,8 @@ int adios_read_bp_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_D
                 1. attr has no type, var is byte array     ==> string
                 2. attr has no type, var is not byte array ==> var type
                 3. attr is string, var is byte array       ==> string
-                4. attr type == var type                   ==> var type 
-                5. attr type != var type                   ==> attr type and conversion needed 
+                4. attr type == var type                   ==> var type
+                5. attr type != var type                   ==> attr type and conversion needed
         */
         /* Error check: attr cannot reference an array in general */
         if (var_root->characteristics[var_c_index].dims.count > 0)
@@ -2765,7 +2978,7 @@ int adios_read_bp_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_D
 
             free (r->sel);
             free (r);
-      
+
             if (vc == 0)
             {
                 char *msg = strdup(adios_get_last_errmsg());
@@ -2794,7 +3007,7 @@ int adios_read_bp_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_D
                 *size = count+1;
                 *data = tmpdata;
             }
- 
+
             free (vc->sel);
             free (vc);
         }
@@ -2821,7 +3034,7 @@ void adios_read_bp_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
     uint64_t i;
 
     for (i = 0; i < mh->pgs_count; i++) {
-        is_fortran ? ((*root)->adios_host_language_fortran = adios_flag_yes) 
+        is_fortran ? ((*root)->adios_host_language_fortran = adios_flag_yes)
                : ((*root)->adios_host_language_fortran = adios_flag_no);
         root = &(*root)->next;
     }
@@ -2890,7 +3103,7 @@ int adios_read_bp_is_var_timed (const ADIOS_FILE *fp, int varid)
     BP_PROC * p;
     BP_FILE * fh;
     struct adios_index_var_struct_v1 * v;
-    struct adios_index_characteristic_struct_v1 ch;
+    //struct adios_index_characteristic_struct_v1 ch;
     int retval = 0, ndim, k, dummy, file_is_fortran;
     uint64_t gdims[32];
 
@@ -2898,8 +3111,11 @@ int adios_read_bp_is_var_timed (const ADIOS_FILE *fp, int varid)
     fh = (BP_FILE *) p->fh;
 
     v = bp_find_var_byid (fh, varid);
-    ch = v->characteristics[0];
-    ndim = ch.dims.count; //ndim possibly has 'time' dimension
+    //ch = v->characteristics[0];
+    //ndim = ch.dims.count; //ndim possibly has 'time' dimension
+    // NCSU ALACRITY-ADIOS - An optimization. Not sure why it was originally added, but it works
+    struct adios_index_characteristic_dims_struct_v1 *dims = &v->characteristics[0].dims;
+    ndim = dims->count; //ndim possibly has 'time' dimension
 
     log_debug ("adios_read_bp_is_var_timed: varid = %d, ndim = %d\n", varid, ndim);
 
@@ -2910,7 +3126,8 @@ int adios_read_bp_is_var_timed (const ADIOS_FILE *fp, int varid)
 
     for (k = 0; k < ndim; k++)
     {
-        gdims[k] = ch.dims.dims[k * 3 + 1];
+        // NCSU ALACRITY-ADIOS - An optimization
+        gdims[k] = dims->dims[k * 3 + 1]; //ch.dims.dims[k * 3 + 1];
     }
 /*
     if (is_fortran_file (fh))
@@ -2927,7 +3144,7 @@ int adios_read_bp_is_var_timed (const ADIOS_FILE *fp, int varid)
             retval = 1;
         }
         /* FIXME: This last test tests if the last l:g:o is only an 'l'.
-           This is true for a variable over time but also 
+           This is true for a variable over time but also
            true for a 1D local array (which has no global dimension)
            The characteristics_count is 1 only if the local array is written
            from one process and only at one timestep.
@@ -2980,7 +3197,7 @@ static int map_req_varid (const ADIOS_FILE * fp, int varid)
 }
 
 /* This routine converts the write block index, which is of a particular step,
- * to the adios internal PG index. 
+ * to the adios internal PG index.
  */
 static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r)
 {
@@ -2996,7 +3213,7 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r)
     }
 
     time = adios_step_to_time (fp, r->varid, r->from_steps);
-    mapped_varid = map_req_varid (fp, r->varid); 
+    mapped_varid = r->varid; //map_req_varid (fp, r->varid); // NCSU ALACRITY-ADIOS: Bugfix: r->varid has already been mapped
     v = bp_find_var_byid (fh, mapped_varid);
 
     start_idx = get_var_start_index (v, time);
@@ -3054,16 +3271,24 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
     void * data;
     ADIOS_VARCHUNK * chunk;
     MPI_Status status;
+    const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb;// NCSU ALACRITY-ADIOS
 
     adios_errno = 0;
 
     file_is_fortran = is_fortran_file (fh);
     has_subfile = has_subfiles (fh);
     data = r->data;
-    varid = map_req_varid (fp, r->varid);
+    varid = r->varid; //varid = map_req_varid (fp, r->varid); // NCSU ALACRITY-ADIOS: Bugfix: r->varid has already been mapped
     v = bp_find_var_byid (fh, varid);
-    time = adios_step_to_time (fp, r->varid, r->from_steps);
-    idx = adios_wbidx_to_pgidx (fp, r);
+
+    // NCSU ALACRITY-ADIOS: Add support for absolute PG index for efficiency
+    //time = adios_step_to_time (fp, r->varid, r->from_steps);
+    //idx = adios_wbidx_to_pgidx (fp, r);
+    assert(r->sel->type == ADIOS_SELECTION_WRITEBLOCK);
+    wb = &r->sel->u.block;
+
+    idx = wb->is_absolute_index ? wb->index : adios_wbidx_to_pgidx (fp, r);
+    //if (!wb->is_absolute_index) printf("Timestep-relative writeblock index used!\n");
     assert (idx >= 0);
 
     ndim = v->characteristics [idx].dims.count;
@@ -3108,15 +3333,25 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
     }
     else
     {
-        slice_size = size_of_type;
+        // NCSU ALACRITY-ADIOS: Added sub-PG writeblock selection support
+        // If this is a sub-PG selection, use nelements to compute slice_size
+        // instead
+        if (wb->is_sub_pg_selection) {
+            // The start and end of the sub-PG selection must fall within the PG
+            slice_size = wb->nelements * size_of_type;
+        } else {
+            // NCSU ALACRITY-ADIOS: This used to not be inside an else block
+            // Else, do the old method of computing PG size from bounds
+            slice_size = size_of_type;
 
-        /* To get ldims for the chunk and then calculate payload size */
-        bp_get_dimension_characteristics (&(v->characteristics[idx]),
-                                         ldims, gdims, offsets);
+            /* To get ldims for the chunk and then calculate payload size */
+            bp_get_dimension_characteristics(&(v->characteristics[idx]),
+                                             ldims, gdims, offsets);
 
-        for (j = 0; j < ndim; j++)
-        {
-            slice_size *= ldims [j];
+            for (j = 0; j < ndim; j++)
+            {
+                slice_size *= ldims [j];
+            }
         }
 
         r->datasize = slice_size;
@@ -3128,16 +3363,23 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
         start_idx = 0;
         slice_offset = v->characteristics[idx].payload_offset;
 
+        // NCSU ALACRITY-ADIOS: Added sub-PG writeblock selection support
+        // If this is a sub-PG read, add the element_offset within the PG to the base offset in the file
+        if (wb->is_sub_pg_selection) {
+            slice_offset += wb->element_offset * size_of_type;
+        }
+
         if (!has_subfile)
         {
-            MPI_FILE_READ_OPS1
+            MPI_FILE_READ_OPS1_BUF(data) // NCSU ALACRITY-ADIOS: Read data directly to user buffer
         }
         else
         {
-            MPI_FILE_READ_OPS2
+            MPI_FILE_READ_OPS2_BUF(data) // NCSU ALACRITY-ADIOS: Read data directly to user buffer
         }
 
-        memcpy ((char *)data, fh->b->buff + fh->b->offset, slice_size);
+        // NCSU ALACRITY-ADIOS: Reading directly to user buffer eliminates the need for this memcpy (profiling revealed it was hurting performance for transformed data)
+        //memcpy ((char *)data, fh->b->buff + fh->b->offset, slice_size);
         if (fh->mfooter.change_endianness == adios_flag_yes)
         {
             change_endianness ((char *)data, slice_size, v->type);
@@ -3149,6 +3391,9 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
 
     chunk->varid = r->varid;
     chunk->type = v->type;
+    // NCSU ALACRITY-ADIOS - Added timestep information into varchunks
+    chunk->from_steps = r->from_steps;
+    chunk->nsteps = r->nsteps;
     chunk->sel = copy_selection (r->sel);
     chunk->data = data;
 
@@ -3173,21 +3418,21 @@ double adios_stat_cor (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characte
 
     // If the vix and viy are not time series objects, return.
     if ((vix->timedim < 0) && (viy->timedim < 0))
-    {             
+    {
         fprintf(stderr, "Covariance must involve timeseries data\n");
         return 0;
-    }                                                                    
+    }
 
     uint32_t min = vix->dims[0] - 1;
     if (viy && (min > viy->dims[0] - 1))
-        min = viy->dims[0] - 1;         
-    
-    if(time_start == 0 && time_end == 0) 
+        min = viy->dims[0] - 1;
+
+    if(time_start == 0 && time_end == 0)
     { //global covariance
         if(viy == NULL) {
             fprintf(stderr, "Must have two variables for global covariance\n");
             return 0;
-        }                                                                          
+        }
 
         // Assign vix to viy, and calculate covariance
         viy = vix;
@@ -3202,7 +3447,7 @@ double adios_stat_cor (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characte
         if(viy == NULL) //user must want to run covariance against itself
         {
             if(! (time_end+lag) > min)
-            {                                                                        
+            {
                 fprintf(stderr, "Must leave enough timesteps for lag\n");
                 return 0;
             }
@@ -3217,9 +3462,9 @@ double adios_stat_cor (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characte
 
                 for (i = time_start; i <= time_end; i ++)
                 {
-                    double val_x = bp_value_to_double (adios_double, vix->avgs[i]); 
-                    double val_lag = bp_value_to_double (adios_double, vix->avgs[i + lag]); 
-                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1); 
+                    double val_x = bp_value_to_double (adios_double, vix->avgs[i]);
+                    double val_lag = bp_value_to_double (adios_double, vix->avgs[i + lag]);
+                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1);
                     var_lag += (val_lag - avg_lag) * (val_lag - avg_lag) / (time_end - time_start + 1);
                     cov += (val_x - avg_x) * (val_lag - avg_lag) / (time_end - time_start + 1);
                 }
@@ -3251,9 +3496,9 @@ double adios_stat_cor (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characte
 
                 for (i = time_start; i <= time_end; i ++)
                 {
-                    double val_x = bp_value_to_double (vix->type, vix->mins[i]); 
-                    double val_lag = bp_value_to_double (vix->type, vix->mins[i + lag]); 
-                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1); 
+                    double val_x = bp_value_to_double (vix->type, vix->mins[i]);
+                    double val_lag = bp_value_to_double (vix->type, vix->mins[i + lag]);
+                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1);
                     var_lag += (val_lag - avg_lag) * (val_lag - avg_lag) / (time_end - time_start + 1);
                     cov += (val_x - avg_x) * (val_lag - avg_lag) / (time_end - time_start + 1);
                 }
@@ -3268,9 +3513,9 @@ double adios_stat_cor (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characte
 
                 for (i = time_start; i <= time_end; i ++)
                 {
-                    double val_x = bp_value_to_double (vix->type, vix->maxs[i]); 
-                    double val_lag = bp_value_to_double (vix->type, vix->maxs[i + lag]); 
-                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1); 
+                    double val_x = bp_value_to_double (vix->type, vix->maxs[i]);
+                    double val_lag = bp_value_to_double (vix->type, vix->maxs[i + lag]);
+                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1);
                     var_lag += (val_lag - avg_lag) * (val_lag - avg_lag) / (time_end - time_start + 1);
                     cov += (val_x - avg_x) * (val_lag - avg_lag) / (time_end - time_start + 1);
                 }
@@ -3293,9 +3538,9 @@ double adios_stat_cor (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characte
                 }
                 for (i = time_start; i <= time_end; i ++)
                 {
-                    double val_x = bp_value_to_double (adios_double, vix->avgs[i]); 
-                    double val_y = bp_value_to_double (adios_double, viy->avgs[i]); 
-                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1); 
+                    double val_x = bp_value_to_double (adios_double, vix->avgs[i]);
+                    double val_y = bp_value_to_double (adios_double, viy->avgs[i]);
+                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1);
                     var_y += (val_y - avg_y) * (val_y - avg_y) / (time_end - time_start + 1);
                     cov += (val_x - avg_x) * (val_y - avg_y) / (time_end - time_start + 1);
                 }
@@ -3325,9 +3570,9 @@ double adios_stat_cor (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characte
                 }
                 for (i = time_start; i <= time_end; i ++)
                 {
-                    double val_x = bp_value_to_double (vix->type, vix->mins[i]); 
-                    double val_y = bp_value_to_double (viy->type, viy->mins[i]); 
-                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1); 
+                    double val_x = bp_value_to_double (vix->type, vix->mins[i]);
+                    double val_y = bp_value_to_double (viy->type, viy->mins[i]);
+                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1);
                     var_y += (val_y - avg_y) * (val_y - avg_y) / (time_end - time_start + 1);
                     cov += (val_x - avg_x) * (val_y - avg_y) / (time_end - time_start + 1);
                 }
@@ -3341,9 +3586,9 @@ double adios_stat_cor (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characte
                 }
                 for (i = time_start; i <= time_end; i ++)
                 {
-                    double val_x = bp_value_to_double (vix->type, vix->maxs[i]); 
-                    double val_y = bp_value_to_double (viy->type, viy->maxs[i]); 
-                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1); 
+                    double val_x = bp_value_to_double (vix->type, vix->maxs[i]);
+                    double val_y = bp_value_to_double (viy->type, viy->maxs[i]);
+                    var_x += (val_x - avg_x) * (val_x - avg_x) / (time_end - time_start + 1);
                     var_y += (val_y - avg_y) * (val_y - avg_y) / (time_end - time_start + 1);
                     cov += (val_x - avg_x) * (val_y - avg_y) / (time_end - time_start + 1);
                 }
@@ -3380,21 +3625,21 @@ double adios_stat_cov (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characte
 
     // If the vix and viy are not time series objects, return.
     if ((vix->timedim < 0) && (viy->timedim < 0))
-    {             
+    {
         fprintf(stderr, "Covariance must involve timeseries data\n");
         return 0;
-    }                                                                    
+    }
 
     uint32_t min = vix->dims[0] - 1;
     if (viy && (min > viy->dims[0] - 1))
-        min = viy->dims[0] - 1;         
-    
-    if(time_start == 0 && time_end == 0) 
+        min = viy->dims[0] - 1;
+
+    if(time_start == 0 && time_end == 0)
     { //global covariance
         if(viy == NULL) {
             fprintf(stderr, "Must have two variables for global covariance\n");
             return 0;
-        }                                                                          
+        }
 
         // Assign vix to viy, and calculate covariance
         viy = vix;
@@ -3409,7 +3654,7 @@ double adios_stat_cov (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characte
         if(viy == NULL) //user must want to run covariance against itself
         {
             if(! (time_end+lag) > min)
-            {                                                                        
+            {
                 fprintf(stderr, "Must leave enough timesteps for lag\n");
                 return 0;
             }

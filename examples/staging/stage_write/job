@@ -54,7 +54,7 @@ mpirun -np $WRITEPROC ./genarray_stream genarray.bp $WRITEPROC 1 1 16 32 64 5 10
 
 # Start STAGE_WRITE
 echo "-- Start STAGE_WRITE on $READPROC PEs"
-mpirun -np $READPROC ./stage_write genarray.bp staged.bp MPI \"\" $READPROC 1 1 >& log.stage_write &
+mpirun -np $READPROC ./stage_write genarray.bp staged.bp DATASPACES \"\" MPI \"\" $READPROC 1 1 >& log.stage_write &
 
 echo "-- Wait until all applications exit. Run ./check.sh to see status"
 wait

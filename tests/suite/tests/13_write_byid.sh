@@ -34,11 +34,11 @@ if [ ! -f no_xml_write_byid.bp ]; then
 fi
 
 echo "Check output with bpls"
-$TRUNKDIR/utils/bpls/bpls -lav no_xml_write_byid.bp -d -n 10 | grep -v endianness > c_bpls.txt
+$TRUNKDIR/utils/bpls/bpls -lav no_xml_write_byid.bp -d -n 10 | grep -v -e endianness -e 'file size' > c_bpls.txt
 diff -q c_bpls.txt $SRCDIR/reference/no_xml_write_byid_bpls.txt
 if [ $? != 0 ]; then
     echo "ERROR: C version of no_xml_write_byid produced a file different from the reference."
-    echo "Compare \"bpls -lav $PWD/no_xml_write_byid.bp -d -n 10 | grep -v endianness\" to reference $SRCDIR/reference/no_xml_write_byid_bpls.txt"
+    echo "Compare \"bpls -lav $PWD/no_xml_write_byid.bp -d -n 10 | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/no_xml_write_byid_bpls.txt"
     exit 1
 fi
 
@@ -77,11 +77,11 @@ if [ ! -f no_xml_write_byid.bp ]; then
 fi
 
 echo "Check output with bpls"
-$TRUNKDIR/utils/bpls/bpls -lav no_xml_write_byid.bp -d -n 10 | grep -v endianness > f_bpls.txt
+$TRUNKDIR/utils/bpls/bpls -lav no_xml_write_byid.bp -d -n 10 | grep -v -e endianness -e 'file size' > f_bpls.txt
 diff -q f_bpls.txt $SRCDIR/reference/no_xml_write_byid_f_bpls.txt
 if [ $? != 0 ]; then
     echo "ERROR: Fortran version of no_xml_write_byid produced a file different from the reference."
-    echo "Compare \"bpls -lav $PWD/no_xml_write_byid.bp -d -n 10 | grep -v endianness\" to reference $SRCDIR/reference/no_xml_write_byid_f_bpls.txt"
+    echo "Compare \"bpls -lav $PWD/no_xml_write_byid.bp -d -n 10 | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/no_xml_write_byid_f_bpls.txt"
     exit 1
 fi
 

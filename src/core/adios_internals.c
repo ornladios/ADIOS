@@ -29,8 +29,14 @@
 #include "dmalloc.h"
 #endif
 
-extern struct adios_method_list_struct * adios_methods;
-extern struct adios_group_list_struct * adios_groups;
+// NCSU ALACRITY-ADIOS - Added header file
+#include "adios_transforms_common.h"
+#include "adios_transforms_hooks.h"
+#include "adios_transforms_read.h"
+#include "adios_transforms_write.h"
+
+struct adios_method_list_struct * adios_methods = 0;
+struct adios_group_list_struct * adios_groups = 0;
 
 int adios_int_is_var (const char * temp) // 1 == yes, 0 == no
 {
@@ -269,8 +275,8 @@ int adios_parse_dimension (const char * dimension
 
             if (!attr)
             {
-                adios_error (err_invalid_dimension, 
-                        "config.xml: invalid var dimension: %s\n", 
+                adios_error (err_invalid_dimension,
+                        "config.xml: invalid var dimension: %s\n",
                         dimension);
 
                 return 0;
@@ -287,7 +293,7 @@ int adios_parse_dimension (const char * dimension
                         case adios_long_double:
                         case adios_complex:
                         case adios_double_complex:
-                            adios_error (err_invalid_var_as_dimension, 
+                            adios_error (err_invalid_var_as_dimension,
                                     "config.xml: dimension defining var %s "
                                     "pointed by attribute %s "
                                     "has an invalid type: %s\n",
@@ -311,7 +317,7 @@ int adios_parse_dimension (const char * dimension
                         case adios_long_double:
                         case adios_complex:
                         case adios_double_complex:
-                            adios_error (err_invalid_var_as_dimension, 
+                            adios_error (err_invalid_var_as_dimension,
                                     "config.xml: dimension defining var %s "
                                     "pointed by attribute %s "
                                     "has an invalid type: %s\n",
@@ -337,7 +343,7 @@ int adios_parse_dimension (const char * dimension
                 case adios_long_double:
                 case adios_complex:
                 case adios_double_complex:
-                    adios_error (err_invalid_var_as_dimension, 
+                    adios_error (err_invalid_var_as_dimension,
                             "config.xml: dimension defining var %s "
                             "has an invalid type: %s\n",
                             var->name,
@@ -359,7 +365,7 @@ int adios_parse_dimension (const char * dimension
 
     if (!global_dimension)
     {
-        adios_error (err_global_dim_required, 
+        adios_error (err_global_dim_required,
                 "adios_parse_dimension: global_dimension not provided\n");
 
         return 0;
@@ -392,7 +398,7 @@ int adios_parse_dimension (const char * dimension
                 }
                 else
                 {
-                    adios_error (err_invalid_global_dimension, 
+                    adios_error (err_invalid_global_dimension,
                             "config.xml: invalid global-bounds dimension: %s\n",
                             global_dimension);
 
@@ -411,7 +417,7 @@ int adios_parse_dimension (const char * dimension
                         case adios_long_double:
                         case adios_complex:
                         case adios_double_complex:
-                            adios_error (err_invalid_var_as_dimension, 
+                            adios_error (err_invalid_var_as_dimension,
                                     "config.xml: global dimension defining var %s "
                                     "pointed by attribute %s "
                                     "has an invalid type: %s\n",
@@ -435,7 +441,7 @@ int adios_parse_dimension (const char * dimension
                         case adios_long_double:
                         case adios_complex:
                         case adios_double_complex:
-                            adios_error (err_invalid_var_as_dimension, 
+                            adios_error (err_invalid_var_as_dimension,
                                     "config.xml: global dimension defining var %s "
                                     "pointed by attribute %s "
                                     "has an invalid type: %s\n",
@@ -461,7 +467,7 @@ int adios_parse_dimension (const char * dimension
                 case adios_long_double:
                 case adios_complex:
                 case adios_double_complex:
-                    adios_error (err_invalid_var_as_dimension, 
+                    adios_error (err_invalid_var_as_dimension,
                             "config.xml: global dimension defining var %s "
                             "has an invalid type: %s\n",
                             var->name,
@@ -506,7 +512,7 @@ int adios_parse_dimension (const char * dimension
             {
                 /* FIXME: Is time dimension allowed for offset definition?
                  * What is this code doing here? */
-                
+
                 if (   g->time_index_name
                         && !strcasecmp (g->time_index_name, local_offset)
                    )
@@ -515,7 +521,7 @@ int adios_parse_dimension (const char * dimension
                 }
                 else
                 {
-                    adios_error (err_invalid_offset, 
+                    adios_error (err_invalid_offset,
                             "config.xml: invalid var local_offset: %s\n",
                             local_offset);
 
@@ -534,7 +540,7 @@ int adios_parse_dimension (const char * dimension
                         case adios_long_double:
                         case adios_complex:
                         case adios_double_complex:
-                            adios_error (err_invalid_var_as_dimension, 
+                            adios_error (err_invalid_var_as_dimension,
                                     "config.xml: offset defining var %s "
                                     "pointed by attribute %s "
                                     "has an invalid type: %s\n",
@@ -558,7 +564,7 @@ int adios_parse_dimension (const char * dimension
                         case adios_long_double:
                         case adios_complex:
                         case adios_double_complex:
-                            adios_error (err_invalid_var_as_dimension, 
+                            adios_error (err_invalid_var_as_dimension,
                                     "config.xml: offset defining var %s "
                                     "pointed by attribute %s "
                                     "has an invalid type: %s\n",
@@ -584,7 +590,7 @@ int adios_parse_dimension (const char * dimension
                 case adios_long_double:
                 case adios_complex:
                 case adios_double_complex:
-                    adios_error (err_invalid_var_as_dimension, 
+                    adios_error (err_invalid_var_as_dimension,
                             "config.xml: offset defining var %s "
                             "has an invalid type: %s\n",
                             var->name,
@@ -631,7 +637,7 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value, void ** 
                 long t = strtol (value, &end, 10);
                 if (errno != errno_save || (end != 0 && *end != '\0'))
                 {
-                    adios_error (err_invalid_argument, 
+                    adios_error (err_invalid_argument,
                             "value: '%s' not valid integer\n",value);
                     return 0;
                 }
@@ -642,10 +648,10 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value, void ** 
                         case adios_byte:
                             if (t < SCHAR_MIN || t > SCHAR_MAX)
                             {
-                                adios_error (err_out_of_bound, 
+                                adios_error (err_out_of_bound,
                                         "type is %s, value "
                                         "is out of range: '%s'\n",
-                                        adios_type_to_string_int (type), 
+                                        adios_type_to_string_int (type),
                                         value);
                                 return 0;
                             }
@@ -659,10 +665,10 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value, void ** 
                         case adios_short:
                             if (t < SHRT_MIN || t > SHRT_MAX)
                             {
-                                adios_error (err_out_of_bound, 
+                                adios_error (err_out_of_bound,
                                         "type is %s, value "
                                         "is out of range: '%s'\n",
-                                        adios_type_to_string_int (type), 
+                                        adios_type_to_string_int (type),
                                         value);
                                 return 0;
                             }
@@ -676,10 +682,10 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value, void ** 
                         case adios_integer:
                             if (t < INT_MIN || t > INT_MAX)
                             {
-                                adios_error (err_out_of_bound, 
+                                adios_error (err_out_of_bound,
                                         "type is %s, value "
                                         "is out of range: '%s'\n",
-                                        adios_type_to_string_int (type), 
+                                        adios_type_to_string_int (type),
                                         value);
                                 return 0;
                             }
@@ -699,10 +705,10 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value, void ** 
                 int64_t t = strtoll (value, &end, 10);
                 if (errno != errno_save || (end != 0 && *end != '\0'))
                 {
-                    adios_error (err_out_of_bound, 
+                    adios_error (err_out_of_bound,
                             "type is %s, value "
                             "is out of range: '%s'\n",
-                            adios_type_to_string_int (type), 
+                            adios_type_to_string_int (type),
                             value);
                     return 0;
                 }
@@ -722,7 +728,7 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value, void ** 
                 unsigned long t = strtoul (value, &end, 10);
                 if (errno != errno_save || (end != 0 && *end != '\0'))
                 {
-                    adios_error (err_invalid_argument, 
+                    adios_error (err_invalid_argument,
                             "value: '%s' not valid integer\n", value);
                     return 0;
                 }
@@ -733,10 +739,10 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value, void ** 
                         case adios_unsigned_byte:
                             if (t > UCHAR_MAX)
                             {
-                                adios_error (err_out_of_bound, 
+                                adios_error (err_out_of_bound,
                                         "type is %s, value "
                                         "is out of range: '%s'\n",
-                                        adios_type_to_string_int (type), 
+                                        adios_type_to_string_int (type),
                                         value);
                                 return 0;
                             }
@@ -750,10 +756,10 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value, void ** 
                         case adios_unsigned_short:
                             if (t > USHRT_MAX)
                             {
-                                adios_error (err_out_of_bound, 
+                                adios_error (err_out_of_bound,
                                         "type is %s, value "
                                         "is out of range: '%s'\n",
-                                        adios_type_to_string_int (type), 
+                                        adios_type_to_string_int (type),
                                         value);
                                 return 0;
                             }
@@ -767,10 +773,10 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value, void ** 
                         case adios_unsigned_integer:
                             if (t > UINT_MAX)
                             {
-                                adios_error (err_out_of_bound, 
+                                adios_error (err_out_of_bound,
                                         "type is %s, value "
                                         "is out of range: '%s'\n",
-                                        adios_type_to_string_int (type), 
+                                        adios_type_to_string_int (type),
                                         value);
                                 return 0;
                             }
@@ -790,10 +796,10 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value, void ** 
                 uint64_t t = strtoull (value, &end, 10);
                 if (errno != errno_save || (end != 0 && *end != '\0'))
                 {
-                    adios_error (err_out_of_bound, 
+                    adios_error (err_out_of_bound,
                             "type is %s, value "
                             "is out of range: '%s'\n",
-                            adios_type_to_string_int (type), 
+                            adios_type_to_string_int (type),
                             value);
                     return 0;
                 }
@@ -811,10 +817,10 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value, void ** 
                 float t = strtof (value, &end);
                 if (errno != errno_save || (end != 0 && *end != '\0'))
                 {
-                    adios_error (err_out_of_bound, 
+                    adios_error (err_out_of_bound,
                             "type is %s, value "
                             "is out of range: '%s'\n",
-                            adios_type_to_string_int (type), 
+                            adios_type_to_string_int (type),
                             value);
                     return 0;
                 }
@@ -832,10 +838,10 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value, void ** 
                 double t = strtod (value, &end);
                 if (errno != errno_save || (end != 0 && *end != '\0'))
                 {
-                    adios_error (err_out_of_bound, 
+                    adios_error (err_out_of_bound,
                             "type is %s, value "
                             "is out of range: '%s'\n",
-                            adios_type_to_string_int (type), 
+                            adios_type_to_string_int (type),
                             value);
                     return 0;
                 }
@@ -853,10 +859,10 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value, void ** 
                 long double t = strtold (value, &end);
                 if (errno != errno_save || (end != 0 && *end != '\0'))
                 {
-                    adios_error (err_out_of_bound, 
+                    adios_error (err_out_of_bound,
                             "type is %s, value "
                             "is out of range: '%s'\n",
-                            adios_type_to_string_int (type), 
+                            adios_type_to_string_int (type),
                             value);
                     return 0;
                 }
@@ -874,14 +880,14 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value, void ** 
             }
         case adios_complex:
             {
-                adios_error (err_unspecified, 
+                adios_error (err_unspecified,
                         "adios_parse_scalar_string: adios_complex type "
                         "validation needs to be implemented\n");
                 return 1;
             }
         case adios_double_complex:
             {
-                adios_error (err_unspecified, 
+                adios_error (err_unspecified,
                         "adios_parse_scalar_string: adios_double_complex type "
                         "validation needs to be implemented\n");
                 return 1;
@@ -889,7 +895,7 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value, void ** 
 
         case adios_unknown:
         default:
-            adios_error (err_unspecified, 
+            adios_error (err_unspecified,
                     "adios_parse_scalar_string: unknown type cannot be validated\n");
 
             return 0;
@@ -915,7 +921,7 @@ int adios_common_define_attribute (int64_t group, const char * name
     {
         if (type == adios_unknown)
         {
-            adios_error (err_invalid_type_attr, 
+            adios_error (err_invalid_type_attr,
                     "config.xml: attribute element %s has invalid "
                     "type attribute\n",
                     name);
@@ -933,9 +939,9 @@ int adios_common_define_attribute (int64_t group, const char * name
         }
         else
         {
-            adios_error (err_invalid_value_attr, 
+            adios_error (err_invalid_value_attr,
                     "config.xml: attribute element %s has invalid "
-                    "value attribute: '%s'\n", 
+                    "value attribute: '%s'\n",
                     name, value);
 
             free (attr->value);
@@ -954,7 +960,7 @@ int adios_common_define_attribute (int64_t group, const char * name
 
         if (attr->var == 0)
         {
-            adios_error (err_invalid_varname, 
+            adios_error (err_invalid_varname,
                     "config.xml: attribute element %s references "
                     "var %s that has not been defined.\n",
                     name, var);
@@ -993,7 +999,7 @@ int adios_common_define_attribute_byvalue (int64_t group, const char * name
     {
         if (type == adios_unknown)
         {
-            adios_error (err_invalid_type_attr, 
+            adios_error (err_invalid_type_attr,
                     "config.xml: attribute element %s has invalid "
                     "type attribute\n",
                     name);
@@ -1014,7 +1020,7 @@ int adios_common_define_attribute_byvalue (int64_t group, const char * name
         }
         else
         {
-            adios_error (err_invalid_value_attr, 
+            adios_error (err_invalid_value_attr,
                     "Attribute element %s has invalid "
                     "value attribute\n", name);
 
@@ -1028,7 +1034,7 @@ int adios_common_define_attribute_byvalue (int64_t group, const char * name
     }
     else
     {
-        adios_error (err_invalid_value_attr, 
+        adios_error (err_invalid_value_attr,
                 "Attribute element %s has invalid "
                 "value attribute\n", name);
 
@@ -1176,12 +1182,12 @@ static void adios_append_var (struct adios_group_struct * g, struct adios_var_st
     if (!g->vars) {
         // first variable: g->vars     : V => (null)
         //                 g->vars_tail: V => (null)
-        var->next = NULL; 
+        var->next = NULL;
         g->vars = var;      // V => (null)
         g->vars_tail = var; // V => (null)
     } else {
-       var->next = NULL;        
-       // append var to tail  
+       var->next = NULL;
+       // append var to tail
        g->vars_tail->next = var;  // g->vars => ... => tail => V => (null)
        // new tail is var
        g->vars_tail = var;
@@ -1369,7 +1375,8 @@ int adios_common_free_group (int64_t id)
         if (g->vars->stats)
         {
             uint8_t j = 0, idx = 0;
-            uint8_t c = 0, count = adios_get_stat_set_count(g->vars->type);
+            enum ADIOS_DATATYPES original_var_type = adios_transform_get_var_original_type_var(g->vars);
+            uint8_t c = 0, count = adios_get_stat_set_count(original_var_type);
 
             for (c = 0; c < count; c ++)
             {
@@ -1393,8 +1400,11 @@ int adios_common_free_group (int64_t id)
                 }
                 free (g->vars->stats[c]);
             }
-            free (g->vars->stats);		
+            free (g->vars->stats);
         }
+
+        // NCSU ALACRITY-ADIOS - Clean transform metadata
+        adios_transform_clear_transform_var(g->vars);
 
         if (g->vars->data)
             free (g->vars->data);
@@ -1509,7 +1519,7 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
 
     if (!var)
     {
-        adios_error (err_invalid_varname, 
+        adios_error (err_invalid_varname,
                 "config.xml: Didn't find the variable %s for analysis\n",
                 var_name);
         return 0;
@@ -1526,7 +1536,7 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
 
             if (!count)
             {
-                adios_error (err_histogram_error, 
+                adios_error (err_histogram_error,
                         "config.xml: unable to tokenize break points\n");
                 return 0;
             }
@@ -1535,7 +1545,7 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
 
             if(!hist || !hist->breaks)
             {
-                adios_error (err_histogram_error, 
+                adios_error (err_histogram_error,
                         "config.xml: unable to allocate memory for histogram break points in "
                         "adios_common_define_var_characteristics\n");
                 return 0;
@@ -1546,7 +1556,7 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
                 hist->breaks[i] = atof(bin_tokens[i]);
                 if(i > 0 && (hist->breaks[i] <= hist->breaks[i-1]))
                 {
-                    adios_error (err_histogram_error, 
+                    adios_error (err_histogram_error,
                             "config.xml: break points should be in increasing order in "
                             "adios_common_define_var_characteristics\n");
                     return 0;
@@ -1567,7 +1577,7 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
         {
             if(!bin_max || !bin_min || !bin_count)
             {
-                adios_error (err_histogram_error, 
+                adios_error (err_histogram_error,
                         "config.xml: unable to generate break points\n");
                 return 0;
             }
@@ -1576,7 +1586,7 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
 
             if (!count)
             {
-                adios_error (err_histogram_error, 
+                adios_error (err_histogram_error,
                         "config.xml: bin count is undefined\n");
                 return 0;
             }
@@ -1588,7 +1598,7 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
 
             if(!hist || !hist->breaks)
             {
-                adios_error (err_no_memory, 
+                adios_error (err_no_memory,
                         "config.xml: unable to allocate memory for histogram break points in "
                         "adios_common_define_var_characteristics\n");
                 return 0;
@@ -1596,7 +1606,7 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
 
             if (hist->min >= hist->max)
             {
-                adios_error (err_histogram_error, 
+                adios_error (err_histogram_error,
                         "config.xml: minimum boundary value greater than maximum\n");
                 return 0;
             }
@@ -1637,6 +1647,7 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
         ,const char * dimensions
         ,const char * global_dimensions
         ,const char * local_offsets
+        ,char *transform_type_str // NCSU ALACRITY-ADIOS
         )
 {
     struct adios_group_struct * t = (struct adios_group_struct *) group_id;
@@ -1674,12 +1685,16 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
     v->write_offset = 0;
 
     v->data_size = 0;
+    v->write_count = 0;
 
     v->next = 0;
 
     // NCSU - Initializing stat related info
     v->stats = 0;
     v->bitmap = 0;
+
+    // NCSU ALACRITY-ADIOS - Initialize transform metadata
+    adios_transform_init_transform_var(v);
 
     // Q.L. - Check whether stats are disabled or not
     if (t->stats_on == adios_flag_yes)
@@ -1735,7 +1750,7 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
 
             if (!d)
             {
-                adios_error (err_no_memory, 
+                adios_error (err_no_memory,
                         "config.xml: out of memory in adios_common_define_var\n");
 
                 return 0;
@@ -1782,6 +1797,19 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
     if (lo_dim_temp)
         free (lo_dim_temp);
 
+    // NCSU ALACRITY-ADIOS - parse transform type string, and call the transform layer to
+    //   set up the variable as needed
+    struct adios_transform_spec *transform_spec = adios_transform_parse_spec(transform_type_str);
+    if (transform_spec->transform_type == adios_transform_unknown) {
+        log_error("Unknown transform type \"%s\" specified for variable \"%s\", ignoring it...\n",
+                  transform_spec->transform_type_str, v->name);
+        transform_spec->transform_type = adios_transform_none;
+    }
+
+    // This function sets the transform_type field. It does nothing if transform_type is none.
+    // Note: ownership of the transform_spec struct is given to this function
+    v = adios_transform_define_var(t, v, transform_spec);
+
     v->id = ++t->member_count;
     adios_append_var (t, v);
 
@@ -1806,7 +1834,7 @@ void adios_common_get_group (int64_t * group_id, const char * name)
         g = g->next;
     }
 
-    adios_error (err_invalid_group, 
+    adios_error (err_invalid_group,
             "adios-group '%s' not found in configuration file\n",
             name);
 }
@@ -1837,11 +1865,14 @@ static void buffer_write (char ** buffer, uint64_t * buffer_size
     *buffer_offset += size;
 }
 
-    static uint16_t adios_calc_var_characteristics_dims_overhead
-(struct adios_var_struct * v)
+// NCSU ALACRITY-ADIOS - Genericized this to take a dimension struct, rather
+//                       than the entire variable, so it can be used on the
+//                       pre-transform dimension struct as well.
+uint16_t adios_calc_var_characteristics_dims_overhead
+                                                  (struct adios_dimension_struct * d)
 {
     uint16_t overhead = 0;
-    struct adios_dimension_struct * d = v->dimensions;
+    //struct adios_dimension_struct * d = v->dimensions;
 
     overhead += 1; // count
     overhead += 2; // length
@@ -1860,28 +1891,31 @@ static void buffer_write (char ** buffer, uint64_t * buffer_size
 uint16_t adios_calc_var_characteristics_stat_overhead (struct adios_var_struct * var)
 {
     uint16_t i, j, overhead;
+
+    enum ADIOS_DATATYPES original_var_type = adios_transform_get_var_original_type_var (var);
     overhead = j = i = 0;
 
     while (var->bitmap >> j)
     {
         // NCSU - This characteristic is present. It adds to the overhead
         if ((var->bitmap >> j) & 1)
-            overhead += adios_get_stat_size(var->stats[0][i ++].data, var->type, j);
+            overhead += adios_get_stat_size(var->stats[0][i ++].data, original_var_type, j);
         j ++;
     }
 
     return overhead;
 }
 
-
-    static uint16_t adios_calc_var_characteristics_overhead
-(struct adios_var_struct * v)
+static uint16_t adios_calc_var_characteristics_overhead(struct adios_var_struct * v)
 {
     uint16_t overhead = 0;
 
     overhead += 1 + 4; // count + length
 
-    switch (v->type)
+    enum ADIOS_DATATYPES original_var_type = adios_transform_get_var_original_type_var (v);
+    // struct adios_dimension_struct *original_dimensions = adios_transform_get_characteristic_original_dims_from_var (v);
+
+    switch (original_var_type)
     {
         case adios_string:   // nothing for strings
             //overhead += 1; // id
@@ -1896,11 +1930,15 @@ uint16_t adios_calc_var_characteristics_stat_overhead (struct adios_var_struct *
 
                 overhead += 1;  // id for statistics
                 // For complex numbers - min, max, avg repeated thrice
-                overhead += adios_get_stat_set_count(v->type) * adios_calc_var_characteristics_stat_overhead (v);
+                overhead += adios_get_stat_set_count(original_var_type) * adios_calc_var_characteristics_stat_overhead (v);
+
+                // NCSU ALACRITY-ADIOS - Adding transform type field overhead calc
+                overhead += adios_transform_calc_transform_characteristic_overhead(v);
 
                 overhead += 1;  // id
-                overhead += adios_calc_var_characteristics_dims_overhead (v);
+                overhead += adios_calc_var_characteristics_dims_overhead (v->dimensions);
             }
+            break;
     }
 
     return overhead;
@@ -2152,7 +2190,7 @@ static void index_append_process_group_v1 (
 }
 
 static void index_append_var_v1 (
-        struct adios_index_struct_v1 *index 
+        struct adios_index_struct_v1 *index
         ,struct adios_index_var_struct_v1 * item
         )
 {
@@ -2160,11 +2198,11 @@ static void index_append_var_v1 (
     struct adios_index_var_struct_v1 * olditem;
 
     olditem = (struct adios_index_var_struct_v1 *)
-            index->hashtbl_vars->get2 (index->hashtbl_vars, 
+            index->hashtbl_vars->get2 (index->hashtbl_vars,
                                        item->var_path, item->var_name);
 
     log_debug ("Hashtable size=%d\n", index->hashtbl_vars->size (index->hashtbl_vars));
-    log_debug ("var tail = %x, name=%s\n", index->vars_tail, 
+    log_debug ("var tail = %p, name=%s\n", index->vars_tail,
                 (index->vars_tail ? index->vars_tail->var_name : ""));
     if (!olditem) {
         // new variable, insert into var list
@@ -2172,19 +2210,19 @@ static void index_append_var_v1 (
             log_debug ("   Very first variable\n");
             // first variable: g->vars_written     : V => (null)
             //                 g->vars_written_tail: V => (null)
-            item->next = NULL; 
+            item->next = NULL;
             index->vars_root = item;      // V => (null)
             index->vars_tail = item;      // V => (null)
         } else {
             log_debug ("   Append as new variable\n");
-            item->next = NULL;        
-            // append var to tail  
+            item->next = NULL;
+            // append var to tail
             index->vars_tail->next = item;  // index->vars_root => ... => tail => V => (null)
             // new tail is var
             index->vars_tail = item;
         }
         // Add variable to the hash table too
-        index->hashtbl_vars->put(index->hashtbl_vars, 
+        index->hashtbl_vars->put(index->hashtbl_vars,
                 item->var_path, item->var_name, item);
 
     } else {
@@ -2201,9 +2239,9 @@ static void index_append_var_v1 (
 
             adios_error (err_unspecified, "Error when merging variable index lists. "
                     "Variable in two different groups have the same path+name. "
-                    "Groups: %s and %s, variable: path=%s, name=%s. " 
+                    "Groups: %s and %s, variable: path=%s, name=%s. "
                     "Index aborted\n",
-                    olditem->group_name, item->group_name, 
+                    olditem->group_name, item->group_name,
                     item->var_path, item->var_name);
             return;
         }
@@ -2322,7 +2360,7 @@ static void index_append_attribute_v1
 
 // lists in new_index will be destroyed as part of the merge operation...
 void adios_merge_index_v1 (
-                   struct adios_index_struct_v1 * main_index 
+                   struct adios_index_struct_v1 * main_index
                   ,struct adios_index_process_group_struct_v1 * new_pg_root
                   ,struct adios_index_var_struct_v1 * new_vars_root
                   ,struct adios_index_attribute_struct_v1 * new_attrs_root
@@ -2424,8 +2462,8 @@ void adios_sort_index_v1 (struct adios_index_process_group_struct_v1 ** p1
                     uint32_t t_file_index;
                     uint32_t t_time_index;
 
+                    // NCSU - Statistics
                     uint32_t t_bitmap;
-
                     struct adios_index_characteristics_stat_struct ** t_stats;
 
                     t_offset = v1_temp->characteristics[j].offset;
@@ -2460,6 +2498,9 @@ void adios_sort_index_v1 (struct adios_index_process_group_struct_v1 ** p1
                     v1_temp->characteristics[j + 1].time_index = t_time_index;
                     v1_temp->characteristics[j + 1].bitmap = t_bitmap;
                     v1_temp->characteristics[j + 1].stats = t_stats;
+
+                    // NCSU ALACRITY-ADIOS - Swap transform metadata
+                    adios_transform_swap_transform_characteristics(&v1_temp->characteristics[j].transform, &v1_temp->characteristics[j + 1].transform);
                 }
             }
         }
@@ -2493,6 +2534,7 @@ static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
     {
         int i;
         struct adios_index_var_struct_v1 * temp = root->next;
+        enum ADIOS_DATATYPES original_var_type = adios_transform_get_var_original_type_index (root);
 
         if (root->group_name)
             free (root->group_name);
@@ -2512,7 +2554,7 @@ static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
             if (root->characteristics [i].stats != 0)
             {
                 uint8_t j = 0, idx = 0;
-                uint8_t c = 0, count = adios_get_stat_set_count(root->type);
+                uint8_t c = 0, count = adios_get_stat_set_count(original_var_type);
 
                 for (c = 0; c < count; c ++)
                 {
@@ -2522,10 +2564,10 @@ static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
                         {
                             if (j == adios_statistic_hist)
                             {
-                                struct adios_index_characteristics_hist_struct * hist = (struct adios_index_characteristics_hist_struct	*) root->characteristics [i].stats[c][idx].data;
+                                struct adios_index_characteristics_hist_struct * hist = (struct adios_index_characteristics_hist_struct    *) root->characteristics [i].stats[c][idx].data;
                                 free (hist->breaks);
                                 free (hist->frequencies);
-                            }	
+                            }
                             else
                                 free (root->characteristics [i].stats[c][idx].data);
                             idx ++;
@@ -2537,6 +2579,9 @@ static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
 
                 free (root->characteristics [i].stats);
             }
+
+            // NCSU ALACRITY-ADIOS - Clear the transform metadata
+            adios_transform_clear_transform_characteristic(&root->characteristics[i].transform);
         }
         if (root->characteristics)
             free (root->characteristics);
@@ -2554,6 +2599,7 @@ static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
     {
         int i;
         struct adios_index_attribute_struct_v1 * temp = root->next;
+        enum ADIOS_DATATYPES var_type = root->type;
 
         if (root->group_name)
             free (root->group_name);
@@ -2570,7 +2616,7 @@ static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
             if (root->characteristics [i].stats != 0)
             {
                 uint8_t j = 0, idx = 0;
-                uint8_t c = 0, count = adios_get_stat_set_count(root->type);
+                uint8_t c = 0, count = adios_get_stat_set_count(var_type);
                 for (c = 0; c < count; c ++)
                 {
                     while (root->characteristics [i].bitmap >> j)
@@ -2596,6 +2642,9 @@ static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
                 free (root->characteristics [i].stats);
             }
 
+            // NCSU ALACRITY-ADIOS - Clear the transform metadata
+            adios_transform_clear_transform_characteristic(&root->characteristics[i].transform);
+
             if (root->characteristics [i].value)
                 free (root->characteristics [i].value);
         }
@@ -2611,7 +2660,7 @@ static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
 
 struct adios_index_struct_v1 * adios_alloc_index_v1 (int alloc_hashtables)
 {
-    struct adios_index_struct_v1 * index = (struct adios_index_struct_v1 *) 
+    struct adios_index_struct_v1 * index = (struct adios_index_struct_v1 *)
                 malloc (sizeof(struct adios_index_struct_v1));
     assert (index);
     index->pg_root = NULL;
@@ -2624,8 +2673,8 @@ struct adios_index_struct_v1 * adios_alloc_index_v1 (int alloc_hashtables)
         //index->hashtbl_attrs = qhashtbl(100);
         index->hashtbl_attrs = NULL; // not used yet
     } else {
-        index->hashtbl_vars = NULL; 
-        index->hashtbl_attrs = NULL; 
+        index->hashtbl_vars = NULL;
+        index->hashtbl_attrs = NULL;
     }
     return index;
 }
@@ -2662,7 +2711,7 @@ void adios_clear_index_v1 (struct adios_index_struct_v1 * index)
         index->hashtbl_attrs->clear (index->hashtbl_attrs);
 }
 
-static uint8_t count_dimensions (struct adios_dimension_struct * dimensions)
+uint8_t count_dimensions (const struct adios_dimension_struct * dimensions)
 {
     uint8_t count = 0;
 
@@ -2682,7 +2731,7 @@ static uint64_t cast_var_data_as_uint64 (const char * parent_name
 {
     if (!data)
     {
-        adios_error (err_unspecified, 
+        adios_error (err_unspecified,
                 "cannot write var since dim %s not provided\n",
                 parent_name);
         return 0;
@@ -2726,7 +2775,7 @@ static uint64_t cast_var_data_as_uint64 (const char * parent_name
         case adios_string:
         case adios_complex:
         case adios_double_complex:
-            adios_error (err_unspecified, 
+            adios_error (err_unspecified,
                     "Cannot convert type %s to integer for var %s\n",
                     adios_type_to_string_int (type), parent_name);
             return 0;
@@ -2749,7 +2798,7 @@ uint64_t adios_get_dim_value (struct adios_dimension_item_struct * dimension)
         {
             adios_error (err_dimension_required, "array dimension data missing\n");
         }
-    } 
+    }
     else if (dimension->attr != 0)
     {
         struct adios_attribute_struct * attr = dimension->attr;
@@ -2800,7 +2849,9 @@ void adios_copy_var_written (struct adios_group_struct * g, struct adios_var_str
     var_new->free_data = var->free_data;
     var_new->data = 0;
     var_new->data_size = var->data_size;
+            var_new->write_count = var->write_count;
     var_new->next = 0;
+            adios_transform_init_transform_var(var_new);
 
     uint64_t size = adios_get_type_size (var->type, var->data);
     switch (var->type)
@@ -2829,7 +2880,8 @@ void adios_copy_var_written (struct adios_group_struct * g, struct adios_var_str
                  *
                  */
                 // NCSU Statistics - copy stat to new var struct
-                uint8_t count = adios_get_stat_set_count(var->type);
+                enum ADIOS_DATATYPES original_var_type = adios_transform_get_var_original_type_var (var);
+                uint8_t count = adios_get_stat_set_count(original_var_type);
                 uint8_t idx = 0;
                 uint64_t characteristic_size;
 
@@ -2866,7 +2918,7 @@ void adios_copy_var_written (struct adios_group_struct * g, struct adios_var_str
                                 }
                                 else
                                 {
-                                    characteristic_size = adios_get_stat_size(var->stats[c][idx].data, var->type, j);
+                                    characteristic_size = adios_get_stat_size(var->stats[c][idx].data, original_var_type, j);
                                     var_new->stats[c][idx].data = malloc (characteristic_size);
                                     memcpy (var_new->stats[c][idx].data, var->stats[c][idx].data, characteristic_size);
                                 }
@@ -2877,6 +2929,9 @@ void adios_copy_var_written (struct adios_group_struct * g, struct adios_var_str
                         j ++;
                     }
                 }
+
+                // NCSU ALACRITY-ADIOS - Copy transform metadata
+                adios_transform_copy_var_transform(var_new, var);
 
                 c = count_dimensions (var->dimensions);
 
@@ -2927,18 +2982,18 @@ void adios_copy_var_written (struct adios_group_struct * g, struct adios_var_str
 
     /* Note: many routines parse the list of variables through the ->next pointer with
      * "while (v) { ...; v=v->next }
-     * So we don't make a double linked circular list, just a simple list, with 
+     * So we don't make a double linked circular list, just a simple list, with
      * having an extra pointer to the tail
      */
     if (!g->vars_written) {
         // first variable: g->vars_written     : V => (null)
         //                 g->vars_written_tail: V => (null)
-        var_new->next = NULL; 
+        var_new->next = NULL;
         g->vars_written = var_new;      // V => (null)
         g->vars_written_tail = var_new; // V => (null)
     } else {
-       var_new->next = NULL;        
-       // append var to tail  
+       var_new->next = NULL;
+       // append var to tail
        g->vars_written_tail->next = var_new;  // g->vars => ... => tail => V => (null)
        // new tail is var
        g->vars_written_tail = var_new;
@@ -2997,13 +3052,19 @@ void adios_copy_var_written (struct adios_var_struct ** root
                         uint8_t c;
                         uint8_t j;
                         struct adios_dimension_struct * d = var->dimensions;
+
+                        // NCSU ALACRITY-ADIOS - Copy transform metadata
+                        adios_transform_copy_var_transform(fd, var_new, var);
+
                         /*
                          *
                          * NOT ALL METHODS TRACK MIN/MAX.  CHECK BEFORE TRYING TO COPY.
                          *
                          */
+
                         // NCSU Statistics - copy stat to new var struct
-                        uint8_t count = adios_get_stat_set_count(var->type);
+                        enum ADIOS_DATATYPES original_var_type = adios_transform_get_var_original_type_var (var);
+                        uint8_t count = adios_get_stat_set_count(original_var_type);
                         uint8_t idx = 0;
                         uint64_t characteristic_size;
 
@@ -3040,7 +3101,7 @@ void adios_copy_var_written (struct adios_var_struct ** root
                                         }
                                         else
                                         {
-                                            characteristic_size = adios_get_stat_size(var->stats[c][idx].data, var->type, j);
+                                            characteristic_size = adios_get_stat_size(var->stats[c][idx].data, original_var_type, j);
                                             var_new->stats[c][idx].data = malloc (characteristic_size);
                                             memcpy (var_new->stats[c][idx].data, var->stats[c][idx].data, characteristic_size);
                                         }
@@ -3168,6 +3229,9 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
             // NCSU - Initializing stat related info in index
             v_index->characteristics [0].bitmap = 0;
             v_index->characteristics [0].stats = 0;
+            // NCSU ALACRITY-ADIOS - Initialize the transform metadata
+            adios_transform_init_transform_characteristic(&v_index->characteristics[0].transform);
+            //v_index->characteristics [0].transform_type = adios_transform_none;
 
             uint64_t size = adios_get_type_size (v->type, v->data);
             switch (v->type)
@@ -3192,7 +3256,9 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
                         struct adios_dimension_struct * d = v->dimensions;
 
                         // NCSU - Copy statistics from var struct to index
-                        uint8_t count = adios_get_stat_set_count(v->type);
+                        enum ADIOS_DATATYPES original_var_type = adios_transform_get_var_original_type_var (v);
+
+                        uint8_t count = adios_get_stat_set_count(original_var_type);
                         uint8_t idx = 0;
                         uint64_t characteristic_size;
 
@@ -3229,7 +3295,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
                                         }
                                         else
                                         {
-                                            characteristic_size = adios_get_stat_size(v->stats[c][idx].data, v->type, j);
+                                            characteristic_size = adios_get_stat_size(v->stats[c][idx].data, original_var_type, j);
                                             v_index->characteristics [0].stats[c][idx].data = malloc (characteristic_size);
                                             memcpy (v_index->characteristics [0].stats[c][idx].data, v->stats[c][idx].data, characteristic_size);
                                         }
@@ -3241,6 +3307,9 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
                             }
                         }
                         // NCSU - End of copy, for statistics
+
+                        // NCSU ALACRITY-ADIOS - copy transform type field
+                        adios_transform_copy_transform_characteristic(&v_index->characteristics[0].transform, v);
 
                         c = count_dimensions (v->dimensions);
                         v_index->characteristics [0].dims.count = c;
@@ -3263,8 +3332,12 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
 
                     if (v->data)
                     {
+                        // NCSU - Copy statistics from var struct to index
                         v_index->characteristics [0].bitmap = 0;
                         v_index->characteristics [0].stats = 0;
+                        // NCSU ALACRITY-ADIOS - Clear the transform metadata
+                        // This is probably redundant with above code, but do it anyway to be safe
+                        adios_transform_clear_transform_characteristic(&v_index->characteristics[0].transform);
 
                         v_index->characteristics [0].value = malloc (size);
                         memcpy (v_index->characteristics [0].value, v->data
@@ -3320,9 +3393,12 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
             a_index->characteristics [0].file_index = fd->subfile_index;
             a_index->characteristics [0].time_index = 0;
 
-            // NCSU -,Initializing stat related info in attribute index
+            // NCSU - Initializing stat related info in attribute index
             a_index->characteristics [0].bitmap = 0;
             a_index->characteristics [0].stats = 0;
+            // NCSU ALACRITY-ADIOS - Initialize transform metadata
+            adios_transform_init_transform_characteristic(&a_index->characteristics[0].transform);
+            //a_index->characteristics[0].transform_type = adios_transform_none;
 
             if (a->value)
             {
@@ -3520,6 +3596,10 @@ int adios_write_index_v1 (char ** buffer
             uint64_t size;
             uint8_t characteristic_set_count = 0;
             uint32_t characteristic_set_length = 0;
+            // NCSU ALACRITY-ADIOS - Temp vars to store bytes/num
+            //   characteristics written by a delegate write function.
+            uint64_t characteristic_write_length;
+            uint8_t characteristic_write_count;
 
             uint64_t characteristic_set_start = *buffer_offset;
             *buffer_offset += 1 + 4; // save space for characteristic count/len
@@ -3642,6 +3722,20 @@ int adios_write_index_v1 (char ** buffer
                         var_size += len;
                         characteristic_set_length += len;
 
+                        // NCSU ALACRITY-ADIOS - Adding transform type field
+                        characteristic_write_length = 0;
+                        characteristic_write_count =
+                                adios_transform_serialize_transform_characteristic(
+                                    &vars_root->characteristics[i].transform,
+                                    &characteristic_write_length,
+                                    buffer, buffer_size, buffer_offset
+                                );
+
+                        characteristic_set_count += characteristic_write_count;
+                        index_size += characteristic_write_length;
+                        var_size += characteristic_write_length;
+                        characteristic_set_length += characteristic_write_length;
+
                         // NCSU - Adding bitmap
                         characteristic_set_count++;
                         flag = (uint8_t) adios_characteristic_bitmap;
@@ -3669,7 +3763,9 @@ int adios_write_index_v1 (char ** buffer
                         var_size += 1;
                         characteristic_set_length += 1;
 
-                        uint8_t count = adios_get_stat_set_count(vars_root->type);
+                        enum ADIOS_DATATYPES original_var_type = adios_transform_get_var_original_type_index (vars_root);
+                        uint8_t count = adios_get_stat_set_count(original_var_type);
+
                         uint8_t idx = 0, c, j;
                         uint64_t characteristic_size;
 
@@ -3712,9 +3808,9 @@ int adios_write_index_v1 (char ** buffer
                                     }
                                     else
                                     {
-                                        characteristic_size = adios_get_stat_size(vars_root->characteristics [i].stats[c][idx].data, vars_root->type, j);
+                                        characteristic_size = adios_get_stat_size(vars_root->characteristics [i].stats[c][idx].data, original_var_type, j);
 
-                                        buffer_write ( 	buffer, buffer_size, buffer_offset
+                                        buffer_write (     buffer, buffer_size, buffer_offset
                                                 ,vars_root->characteristics [i].stats[c][idx].data, characteristic_size
                                                 );
 
@@ -3730,6 +3826,20 @@ int adios_write_index_v1 (char ** buffer
                             }
                         }
                         // NCSU - End of addition statistic to buffer
+
+                        /*
+                        characteristic_set_count++;
+                        flag = (uint8_t) adios_characteristic_transform_type;
+                        buffer_write (buffer, buffer_size, buffer_offset, &flag, 1);
+                        index_size += 1;
+                        var_size += 1;
+                        characteristic_set_length += 1;
+
+                        buffer_write (buffer, buffer_size, buffer_offset, &vars_root->characteristics[i].transform_type, 1);
+                        index_size += 1;
+                        var_size += 1;
+                        characteristic_set_length += 1;
+                        */
                     }
 
                     if (vars_root->characteristics [i].value)
@@ -4006,7 +4116,7 @@ int adios_write_index_v1 (char ** buffer
     buffer_write (buffer, buffer_size, &buffer_offset_start, &index_size, 8);
 
 
-    /* Since ADIOS 1.4 Write new information before the last 24+4 bytes into the footer 
+    /* Since ADIOS 1.4 Write new information before the last 24+4 bytes into the footer
        New information's format
        24 characters: ADIOS-BP v<version>, padded with spaces up to 24
        1 byte: major version
@@ -4017,7 +4127,7 @@ int adios_write_index_v1 (char ** buffer
     {
         char verstr[25] = "                    ";
         unsigned char ver;
-        snprintf (verstr, 25, "ADIOS-BP v%-14.14s", VERSION); 
+        snprintf (verstr, 25, "ADIOS-BP v%-14.14s", VERSION);
         buffer_write (buffer, buffer_size, buffer_offset, verstr, 24);
         ver = VERSION_MAJOR;
         buffer_write (buffer, buffer_size, buffer_offset, &ver, 1);
@@ -4179,7 +4289,7 @@ uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
             id = dimension->dimension.var->id;
         else if (dimension->dimension.attr != NULL)
             id = dimension->dimension.attr->id;
-        else 
+        else
             id = 0; // just write this garbage
         var = 'y';
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &var, 1);
@@ -4188,7 +4298,7 @@ uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
         size += 2;
     }
 
-    if (    dimension->global_dimension.var == NULL 
+    if (    dimension->global_dimension.var == NULL
          && dimension->global_dimension.attr == NULL
          && dimension->global_dimension.time_index == adios_flag_no
        )
@@ -4207,7 +4317,7 @@ uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
             id = dimension->global_dimension.var->id;
         else if (dimension->global_dimension.attr != NULL)
             id = dimension->global_dimension.attr->id;
-        else 
+        else
             id = 0; // just write this garbage
         var = 'y';
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &var, 1);
@@ -4235,7 +4345,7 @@ uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
             id = dimension->local_offset.var->id;
         else if (dimension->local_offset.attr != NULL)
             id = dimension->local_offset.attr->id;
-        else 
+        else
             id = 0; // just write this garbage
         var = 'y';
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &var, 1);
@@ -4366,7 +4476,22 @@ uint16_t adios_write_var_characteristics_v1 (struct adios_file_struct * fd
                 index_size += len;
                 characteristic_set_length += len;
 
-                // add the bitmap of characteristics
+                // NCSU ALACRITY-ADIOS - Write transform metadata
+                // Transform has to be written before stats, because the
+                // original datatype is needed to determine the amount of data
+                // that needs to be read. This is not a problem during writes,
+                // but during reads.
+                uint64_t char_write_length = 0;
+                uint8_t char_write_count = 0;
+
+                char_write_count = adios_transform_serialize_transform_var(
+                    v, &char_write_length, &fd->buffer, &fd->buffer_size, &fd->offset);
+
+                characteristic_set_count += char_write_count;
+                index_size += char_write_length;
+                characteristic_set_length += char_write_length;
+
+                // NCSU - add the bitmap of characteristics
                 characteristic_set_count++;
                 flag = (uint8_t) adios_characteristic_bitmap;
                 buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
@@ -4381,7 +4506,7 @@ uint16_t adios_write_var_characteristics_v1 (struct adios_file_struct * fd
                 index_size += 4;
                 characteristic_set_length += 4;
 
-                // add a stat value characteristic
+                // NCSU - add a stat value characteristic
                 characteristic_set_count++;
                 flag = (uint8_t) adios_characteristic_stat;
                 buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
@@ -4391,7 +4516,8 @@ uint16_t adios_write_var_characteristics_v1 (struct adios_file_struct * fd
                 characteristic_set_length += 1;
 
                 uint8_t j, c;
-                uint8_t count = adios_get_stat_set_count(v->type);
+                enum ADIOS_DATATYPES original_var_type = adios_transform_get_var_original_type_var(v);
+                uint8_t count = adios_get_stat_set_count(original_var_type);
                 uint8_t idx = 0;
                 uint64_t characteristic_size;
 
@@ -4438,7 +4564,7 @@ uint16_t adios_write_var_characteristics_v1 (struct adios_file_struct * fd
                             }
                             else
                             {
-                                characteristic_size = adios_get_stat_size(v->stats[c][idx].data, v->type, j);
+                                characteristic_size = adios_get_stat_size(v->stats[c][idx].data, original_var_type, j);
 
                                 buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
                                         ,v->stats[c][idx].data, characteristic_size
@@ -4452,6 +4578,23 @@ uint16_t adios_write_var_characteristics_v1 (struct adios_file_struct * fd
                         j ++;
                     }
                 }
+
+
+                /*
+                characteristic_set_count++;
+                flag = (uint8_t) adios_characteristic_transform_type;
+                buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
+                             ,&flag, 1
+                             );
+                index_size += 1;
+                characteristic_set_length += 1;
+
+                buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
+                             ,&v->transform_type, 1
+                             );
+                index_size += 1;
+                characteristic_set_length += 1;
+                */
             }
             break;
 
@@ -4470,12 +4613,17 @@ uint16_t adios_write_var_characteristics_v1 (struct adios_file_struct * fd
     return index_size;
 }
 
-int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd
-        ,struct adios_var_struct * var
-        )
+int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct adios_var_struct * var)
 {
-    uint64_t total_size = adios_get_var_size (var, fd->group, var->data);
+    uint64_t total_size = 0;
     uint64_t size = 0;
+    enum ADIOS_DATATYPES original_var_type = adios_transform_get_var_original_type_var(var);
+
+    if (var->transform_type != adios_transform_none) {
+        total_size = adios_transform_get_pre_transform_var_size (fd->group, var);
+    } else {
+        total_size = adios_get_var_size (var, fd->group, var->data);
+    }
 
     if (var->bitmap == 0)
         return 0;
@@ -4514,26 +4662,26 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd
 
 #if 1
 #define ADIOS_STATISTICS(a,b) \
-    {\
-        a * data = (a *) var->data; \
-        int i, j; \
-        struct adios_stat_struct * stats = var->stats[0]; \
-        a * min, * max; \
-        double * sum, * sum_square; \
-        uint32_t * cnt; \
-        struct adios_hist_struct * hist = 0; \
-        i = j = 0; \
-        while (var->bitmap >> j) { \
-            if ((var->bitmap >> j) & 1)	{\
-                map [j] = i; \
-                if (j == adios_statistic_hist) \
-                ;\
-                else \
-                stats[i].data = malloc(adios_get_stat_size(NULL, var->type, j)); \
-                i ++; \
-            } \
-            j ++; \
+{\
+    a * data = (a *) var->data; \
+    int i, j; \
+    struct adios_stat_struct * stats = var->stats[0]; \
+    a * min, * max; \
+    double * sum, * sum_square; \
+    uint32_t * cnt; \
+    struct adios_hist_struct * hist = 0; \
+    i = j = 0; \
+    while (var->bitmap >> j) { \
+        if ((var->bitmap >> j) & 1)    {\
+            map [j] = i; \
+            if (j == adios_statistic_hist) \
+            ;\
+            else \
+            stats[i].data = malloc(adios_get_stat_size(NULL, original_var_type, j)); \
+            i ++; \
         } \
+        j ++; \
+    } \
         min = (a *) stats[map[adios_statistic_min]].data; \
         max = (a *) stats[map[adios_statistic_max]].data; \
         sum = (double *) stats[map[adios_statistic_sum]].data; \
@@ -4593,7 +4741,7 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd
     }
 #endif
 
-    switch (var->type)
+    switch (original_var_type)
     {
         case adios_byte:
             ADIOS_STATISTICS(int8_t,1)
@@ -4629,278 +4777,277 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd
                                                     ADIOS_STATISTICS(long double,16)
 
         case adios_complex:
-                                                    {
-                                                        int i, j, c, count = 3;
-                                                        struct adios_stat_struct ** stats = var->stats;
-                                                        float * data = var->data;
-                                                        i = j = 0;
+        {
+            int i, j, c, count = 3;
+            struct adios_stat_struct ** stats = var->stats;
+            float * data = var->data;
+            i = j = 0;
 
-                                                        while (var->bitmap >> j) {
-                                                            if ((var->bitmap >> j) & 1)	{
-                                                                map [j] = i;
-                                                                for (c = 0; c < count; c ++)
-                                                                    if (j != adios_statistic_hist)
-                                                                        stats[c][i].data = malloc(adios_get_stat_size(NULL, var->type, j));
-                                                                i ++;
-                                                            }
-                                                            j ++;
-                                                        }
+            while (var->bitmap >> j) {
+                if ((var->bitmap >> j) & 1)    {
+                    map [j] = i;
+                    for (c = 0; c < count; c ++)
+                        if (j != adios_statistic_hist)
+                            stats[c][i].data = malloc(adios_get_stat_size(NULL, original_var_type, j));
+                    i ++;
+                }
+                j ++;
+            }
 
-                                                        double *min_i, *min_r, *min_m;
-                                                        double *max_i, *max_r, *max_m;
-                                                        double *sum_i, *sum_r, *sum_m;
-                                                        double *sum_square_i, *sum_square_r, *sum_square_m;
-                                                        //struct adios_hist_struct *hist, *hist_i, *hist_r, *hist_m;
-                                                        uint32_t *cnt_i, *cnt_r, *cnt_m;
-                                                        double magnitude;
-                                                        uint8_t finite = 0;
+            double *min_i, *min_r, *min_m;
+            double *max_i, *max_r, *max_m;
+            double *sum_i, *sum_r, *sum_m;
+            double *sum_square_i, *sum_square_r, *sum_square_m;
+            //struct adios_hist_struct *hist, *hist_i, *hist_r, *hist_m;
+            uint32_t *cnt_i, *cnt_r, *cnt_m;
+            double magnitude;
+            uint8_t finite = 0;
 
-                                                        min_m = (double *) stats[0][map[adios_statistic_min]].data;
-                                                        min_r = (double *) stats[1][map[adios_statistic_min]].data;
-                                                        min_i = (double *) stats[2][map[adios_statistic_min]].data;
+            min_m = (double *) stats[0][map[adios_statistic_min]].data;
+            min_r = (double *) stats[1][map[adios_statistic_min]].data;
+            min_i = (double *) stats[2][map[adios_statistic_min]].data;
 
-                                                        max_m = (double *) stats[0][map[adios_statistic_max]].data;
-                                                        max_r = (double *) stats[1][map[adios_statistic_max]].data;
-                                                        max_i = (double *) stats[2][map[adios_statistic_max]].data;
+            max_m = (double *) stats[0][map[adios_statistic_max]].data;
+            max_r = (double *) stats[1][map[adios_statistic_max]].data;
+            max_i = (double *) stats[2][map[adios_statistic_max]].data;
 
-                                                        sum_m = (double *) stats[0][map[adios_statistic_sum]].data;
-                                                        sum_r = (double *) stats[1][map[adios_statistic_sum]].data;
-                                                        sum_i = (double *) stats[2][map[adios_statistic_sum]].data;
+            sum_m = (double *) stats[0][map[adios_statistic_sum]].data;
+            sum_r = (double *) stats[1][map[adios_statistic_sum]].data;
+            sum_i = (double *) stats[2][map[adios_statistic_sum]].data;
 
-                                                        sum_square_m = (double *) stats[0][map[adios_statistic_sum_square]].data;
-                                                        sum_square_r = (double *) stats[1][map[adios_statistic_sum_square]].data;
-                                                        sum_square_i = (double *) stats[2][map[adios_statistic_sum_square]].data;
+            sum_square_m = (double *) stats[0][map[adios_statistic_sum_square]].data;
+            sum_square_r = (double *) stats[1][map[adios_statistic_sum_square]].data;
+            sum_square_i = (double *) stats[2][map[adios_statistic_sum_square]].data;
 
-                                                        cnt_m = (uint32_t *) stats[0][map[adios_statistic_cnt]].data;
-                                                        cnt_r = (uint32_t *) stats[1][map[adios_statistic_cnt]].data;
-                                                        cnt_i = (uint32_t *) stats[2][map[adios_statistic_cnt]].data;
+            cnt_m = (uint32_t *) stats[0][map[adios_statistic_cnt]].data;
+            cnt_r = (uint32_t *) stats[1][map[adios_statistic_cnt]].data;
+            cnt_i = (uint32_t *) stats[2][map[adios_statistic_cnt]].data;
 
-                                                        // Histogram is not available for complex numbers, yet.
-                                                        /*
-                                                           if (map[adios_statistic_hist] != -1) {
-                                                           hist_r = (struct adios_hist_struct *) stat[0][map[adios_statistic_hist]].data;
-                                                           hist_i = (struct adios_hist_struct *) stat[1][map[adios_statistic_hist]].data;
-                                                           hist_m = (struct adios_hist_struct *) stat[2][map[adios_statistic_hist]].data;
+            // Histogram is not available for complex numbers, yet.
+            /*
+            if (map[adios_statistic_hist] != -1) {
+                hist_r = (struct adios_hist_struct *) stat[0][map[adios_statistic_hist]].data;
+                hist_i = (struct adios_hist_struct *) stat[1][map[adios_statistic_hist]].data;
+                hist_m = (struct adios_hist_struct *) stat[2][map[adios_statistic_hist]].data;
 
-                                                           hist_r->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
-                                                           hist_i->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
-                                                           hist_m->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
-                                                           }
-                                                           */
+                hist_r->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
+                hist_i->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
+                hist_m->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
+            }
+            */
 
-                                                        *cnt_r = *cnt_i = *cnt_m = 0;
-                                                        *min_r = *min_i = *min_m = INFINITY;
-                                                        *max_r = *max_i = *max_m = -INFINITY;
-                                                        *sum_r = *sum_i = *sum_m = 0;
-                                                        *sum_square_r = *sum_square_i = *sum_square_m = 0;
+            *cnt_r = *cnt_i = *cnt_m = 0;
+            *min_r = *min_i = *min_m = INFINITY;
+            *max_r = *max_i = *max_m = -INFINITY;
+            *sum_r = *sum_i = *sum_m = 0;
+            *sum_square_r = *sum_square_i = *sum_square_m = 0;
 
-                                                        while ((size * sizeof(float)) < total_size) {
+            while ((size * sizeof(float)) < total_size) {
 
-                                                            magnitude = sqrt((double) data [size] * data [size] + (double) data[size + 1] * data[size + 1]);
+                magnitude = sqrt((double) data [size] * data [size] + (double) data[size + 1] * data[size + 1]);
 
-                                                            // Both real and imaginary parts have to be finite, else skip calculating the characteristic
-                                                            if ( isnan(data [size]) || !isfinite(data [size]) || isnan(data[size + 1]) || !isfinite(data[size + 1]) ) {
-                                                                size += 2;
-                                                                continue;
-                                                            }
+                // Both real and imaginary parts have to be finite, else skip calculating the characteristic
+                if ( isnan(data [size]) || !isfinite(data [size]) || isnan(data[size + 1]) || !isfinite(data[size + 1]) ) {
+                    size += 2;
+                    continue;
+                }
 
-                                                            finite = 1;
+                finite = 1;
 
-                                                            // Updating the characteristic values
-                                                            if (data [size] < *min_r)
-                                                                *min_r = data [size];
-                                                            if (data [size + 1] < *min_i)
-                                                                *min_i = data [size + 1];
-                                                            if (magnitude < *min_m)
-                                                                *min_m = magnitude;
+                // Updating the characteristic values
+                if (data [size] < *min_r)
+                    *min_r = data [size];
+                if (data [size + 1] < *min_i)
+                    *min_i = data [size + 1];
+                if (magnitude < *min_m)
+                    *min_m = magnitude;
 
-                                                            if (data [size] > *max_r)
-                                                                *max_r = data [size];
-                                                            if (data [size + 1] > *max_i)
-                                                                *max_i = data [size + 1];
-                                                            if (magnitude > *max_m)
-                                                                *max_m = magnitude;
+                if (data [size] > *max_r)
+                    *max_r = data [size];
+                if (data [size + 1] > *max_i)
+                    *max_i = data [size + 1];
+                if (magnitude > *max_m)
+                    *max_m = magnitude;
 
-                                                            *sum_r += data [size];
-                                                            *sum_i += data [size + 1];
-                                                            *sum_m += magnitude;
+                *sum_r += data [size];
+                *sum_i += data [size + 1];
+                *sum_m += magnitude;
 
-                                                            *sum_square_r += (double) data [size] * data [size];
-                                                            *sum_square_i += (double) data [size + 1] * data [size + 1];
-                                                            *sum_square_m += magnitude * magnitude;
+                *sum_square_r += (double) data [size] * data [size];
+                *sum_square_i += (double) data [size + 1] * data [size + 1];
+                *sum_square_m += magnitude * magnitude;
 
-                                                            *cnt_r = *cnt_r + 1;
-                                                            *cnt_i = *cnt_i + 1;
-                                                            *cnt_m = *cnt_m + 1;
-                                                            // Histogram not available yet
-                                                            /*
-                                                               if (map[adios_statistic_hist] != -1)
-                                                               {
-                                                               hist = hist_r;
-                                                               HIST (data[size]);
+                *cnt_r = *cnt_r + 1;
+                *cnt_i = *cnt_i + 1;
+                *cnt_m = *cnt_m + 1;
+                // Histogram not available yet
+                /*
+                if (map[adios_statistic_hist] != -1)
+                {
+                    hist = hist_r;
+                    HIST (data[size]);
 
-                                                               hist = hist_i;
-                                                               HIST (data[size + 1]);
+                    hist = hist_i;
+                    HIST (data[size + 1]);
 
-                                                               hist = hist_m;
-                                                               HIST (magnitude);
-                                                               }
-                                                               */
+                    hist = hist_m;
+                    HIST (magnitude);
+                }
+                */
 
-                                                            size += 2;
-                                                        }
+                   size += 2;
+            }
 
-                                                        if (map[adios_statistic_finite] != -1)
-                                                            for (c = 0; c < count; c ++)
-                                                                * ((uint8_t * ) stats[c][map[adios_statistic_finite]].data) = finite;
+            if (map[adios_statistic_finite] != -1)
+                for (c = 0; c < count; c ++)
+                    * ((uint8_t * ) stats[c][map[adios_statistic_finite]].data) = finite;
 
-                                                        return 0;
-                                                    }
+            return 0;
+        }
 
         case adios_double_complex:
-                                                    {
-                                                        int i, j, c, count = 3;
-                                                        struct adios_stat_struct ** stats = var->stats;
-                                                        double * data = var->data;
-                                                        i = j = 0;
+        {
+            int i, j, c, count = 3;
+            struct adios_stat_struct ** stats = var->stats;
+            double * data = var->data;
+            i = j = 0;
 
-                                                        while (var->bitmap >> j) {
-                                                            if ((var->bitmap >> j) & 1)	{
-                                                                map [j] = i;
-                                                                for (c = 0; c < count; c ++)
-                                                                    if (j != adios_statistic_hist)
-                                                                        stats[c][i].data = malloc(adios_get_stat_size(NULL, var->type, j));
-                                                                i ++;
-                                                            }
-                                                            j ++;
-                                                        }
+            while (var->bitmap >> j) {
+                if ((var->bitmap >> j) & 1)    {
+                    map [j] = i;
+                    for (c = 0; c < count; c ++)
+                        if (j != adios_statistic_hist)
+                            stats[c][i].data = malloc(adios_get_stat_size(NULL, original_var_type, j));
+                    i ++;
+                }
+                j ++;
+            }
 
-                                                        long double *min_i, *min_r, *min_m;
-                                                        long double *max_i, *max_r, *max_m;
-                                                        long double *sum_i, *sum_r, *sum_m;
-                                                        long double *sum_square_i, *sum_square_r, *sum_square_m;
-                                                        //struct adios_hist_struct *hist, *hist_i, *hist_r, *hist_m;
-                                                        uint32_t *cnt_i, *cnt_r, *cnt_m;
-                                                        long double magnitude;
-                                                        uint8_t finite = 0;
+            long double *min_i, *min_r, *min_m;
+            long double *max_i, *max_r, *max_m;
+            long double *sum_i, *sum_r, *sum_m;
+            long double *sum_square_i, *sum_square_r, *sum_square_m;
+            //struct adios_hist_struct *hist, *hist_i, *hist_r, *hist_m;
+            uint32_t *cnt_i, *cnt_r, *cnt_m;
+            long double magnitude;
+            uint8_t finite = 0;
 
-                                                        min_m = (long double *) stats[0][map[adios_statistic_min]].data;
-                                                        min_r = (long double *) stats[1][map[adios_statistic_min]].data;
-                                                        min_i = (long double *) stats[2][map[adios_statistic_min]].data;
+            min_m = (long double *) stats[0][map[adios_statistic_min]].data;
+            min_r = (long double *) stats[1][map[adios_statistic_min]].data;
+            min_i = (long double *) stats[2][map[adios_statistic_min]].data;
 
-                                                        max_m = (long double *) stats[0][map[adios_statistic_max]].data;
-                                                        max_r = (long double *) stats[1][map[adios_statistic_max]].data;
-                                                        max_i = (long double *) stats[2][map[adios_statistic_max]].data;
+            max_m = (long double *) stats[0][map[adios_statistic_max]].data;
+            max_r = (long double *) stats[1][map[adios_statistic_max]].data;
+            max_i = (long double *) stats[2][map[adios_statistic_max]].data;
 
-                                                        sum_m = (long double *) stats[0][map[adios_statistic_sum]].data;
-                                                        sum_r = (long double *) stats[1][map[adios_statistic_sum]].data;
-                                                        sum_i = (long double *) stats[2][map[adios_statistic_sum]].data;
+            sum_m = (long double *) stats[0][map[adios_statistic_sum]].data;
+            sum_r = (long double *) stats[1][map[adios_statistic_sum]].data;
+            sum_i = (long double *) stats[2][map[adios_statistic_sum]].data;
 
-                                                        sum_square_m = (long double *) stats[0][map[adios_statistic_sum_square]].data;
-                                                        sum_square_r = (long double *) stats[1][map[adios_statistic_sum_square]].data;
-                                                        sum_square_i = (long double *) stats[2][map[adios_statistic_sum_square]].data;
+            sum_square_m = (long double *) stats[0][map[adios_statistic_sum_square]].data;
+            sum_square_r = (long double *) stats[1][map[adios_statistic_sum_square]].data;
+            sum_square_i = (long double *) stats[2][map[adios_statistic_sum_square]].data;
 
 
-                                                        // Histogram not available for complex numbers yet
-                                                        /*
-                                                           if (map[adios_statistic_hist] != -1) {
-                                                           hist_r = (struct adios_hist_struct *) stat[0][map[adios_statistic_hist]].data;
-                                                           hist_i = (struct adios_hist_struct *) stat[1][map[adios_statistic_hist]].data;
-                                                           hist_m = (struct adios_hist_struct *) stat[2][map[adios_statistic_hist]].data;
+            // Histogram not available for complex numbers yet
+            /*
+            if (map[adios_statistic_hist] != -1) {
+                hist_r = (struct adios_hist_struct *) stat[0][map[adios_statistic_hist]].data;
+                hist_i = (struct adios_hist_struct *) stat[1][map[adios_statistic_hist]].data;
+                hist_m = (struct adios_hist_struct *) stat[2][map[adios_statistic_hist]].data;
 
-                                                           hist_r->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
-                                                           hist_i->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
-                                                           hist_m->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
-                                                           }
-                                                           */
+                hist_r->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
+                hist_i->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
+                hist_m->frequencies = calloc ((hist->num_breaks + 1), adios_get_type_size(adios_unsigned_integer, ""));
+            }
+            */
 
-                                                        cnt_m = (uint32_t *) stats[0][map[adios_statistic_cnt]].data;
-                                                        cnt_r = (uint32_t *) stats[1][map[adios_statistic_cnt]].data;
-                                                        cnt_i = (uint32_t *) stats[2][map[adios_statistic_cnt]].data;
+            cnt_m = (uint32_t *) stats[0][map[adios_statistic_cnt]].data;
+            cnt_r = (uint32_t *) stats[1][map[adios_statistic_cnt]].data;
+            cnt_i = (uint32_t *) stats[2][map[adios_statistic_cnt]].data;
 
-                                                        *cnt_r = *cnt_i = *cnt_m = 0;
-                                                        *min_r = *min_i = *min_m = INFINITY;
-                                                        *max_r = *max_i = *max_m = -INFINITY;
-                                                        *sum_r = *sum_i = *sum_m = 0;
-                                                        *sum_square_r = *sum_square_i = *sum_square_m = 0;
+            *cnt_r = *cnt_i = *cnt_m = 0;
+            *min_r = *min_i = *min_m = INFINITY;
+            *max_r = *max_i = *max_m = -INFINITY;
+            *sum_r = *sum_i = *sum_m = 0;
+            *sum_square_r = *sum_square_i = *sum_square_m = 0;
 
-                                                        while ((size * sizeof(double)) < total_size)
-                                                        {
-                                                            long double magnitude = sqrt((long double) data [size] * data [size] + (long double) data[size + 1] * data[size + 1]);
+            while ((size * sizeof(double)) < total_size)
+            {
+                long double magnitude = sqrt((long double) data [size] * data [size] + (long double) data[size + 1] * data[size + 1]);
 
-                                                            // Both real and imaginary parts have to be finite, else skip calculating the characteristic
-                                                            if ( isnan(data [size]) || !isfinite(data [size]) || isnan(data[size + 1]) || !isfinite(data[size + 1]) ) {
-                                                                size += 2;
-                                                                continue;
-                                                            }
+                // Both real and imaginary parts have to be finite, else skip calculating the characteristic
+                if ( isnan(data [size]) || !isfinite(data [size]) || isnan(data[size + 1]) || !isfinite(data[size + 1]) ) {
+                    size += 2;
+                    continue;
+                }
 
-                                                            finite = 1;
+                finite = 1;
 
-                                                            if (data [size] < *min_r)
-                                                                *min_r = data [size];
-                                                            if (data [size + 1] < *min_i)
-                                                                *min_i = data [size + 1];
-                                                            if (magnitude < *min_m)
-                                                                *min_m = magnitude;
+                if (data [size] < *min_r)
+                    *min_r = data [size];
+                if (data [size + 1] < *min_i)
+                    *min_i = data [size + 1];
+                if (magnitude < *min_m)
+                    *min_m = magnitude;
 
-                                                            if (data [size] > *max_r)
-                                                                *max_r = data [size];
-                                                            if (data [size + 1] > *max_i)
-                                                                *max_i = data [size + 1];
-                                                            if (magnitude > *max_m)
-                                                                *max_m = magnitude;
+                if (data [size] > *max_r)
+                    *max_r = data [size];
+                if (data [size + 1] > *max_i)
+                    *max_i = data [size + 1];
+                if (magnitude > *max_m)
+                    *max_m = magnitude;
 
-                                                            *sum_r += data [size];
-                                                            *sum_i += data [size + 1];
-                                                            *sum_m += magnitude;
+                *sum_r += data [size];
+                *sum_i += data [size + 1];
+                *sum_m += magnitude;
 
-                                                            *sum_square_r += (long double) data [size] * data [size];
-                                                            *sum_square_i += (long double) data [size + 1] * data [size + 1];
-                                                            *sum_square_m += magnitude * magnitude;
+                *sum_square_r += (long double) data [size] * data [size];
+                *sum_square_i += (long double) data [size + 1] * data [size + 1];
+                *sum_square_m += magnitude * magnitude;
 
-                                                            // Histgram has not available for complex yet
-                                                            /*
-                                                               if (map[adios_statistic_hist] != -1)
-                                                               {
-                                                               hist = hist_r;
-                                                               HIST (data[size]);
+                // Histgram has not available for complex yet
+                /*
+                if (map[adios_statistic_hist] != -1)
+                {
+                    hist = hist_r;
+                    HIST (data[size]);
 
-                                                               hist = hist_i;
-                                                               HIST (data[size + 1]);
+                    hist = hist_i;
+                    HIST (data[size + 1]);
 
-                                                               hist = hist_m;
-                                                               HIST (magnitude);
-                                                               }
-                                                               */
+                    hist = hist_m;
+                    HIST (magnitude);
+                }
+                */
 
-                                                            *cnt_r = *cnt_r + 1;
-                                                            *cnt_i = *cnt_i + 1;
-                                                            *cnt_m = *cnt_m + 1;
+                *cnt_r = *cnt_r + 1;
+                *cnt_i = *cnt_i + 1;
+                *cnt_m = *cnt_m + 1;
 
-                                                            size += 2;
-                                                        }
+                   size += 2;
+            }
 
-                                                        if (map[adios_statistic_finite] != -1)
-                                                            for (c = 0; c < count; c ++)
-                                                                * ((uint8_t * ) stats[c][map[adios_statistic_finite]].data) = finite;
+            if (map[adios_statistic_finite] != -1)
+                for (c = 0; c < count; c ++)
+                    * ((uint8_t * ) stats[c][map[adios_statistic_finite]].data) = finite;
 
-                                                        return 0;
-                                                    }
-
+            return 0;
+        }
         case adios_string:
-                                                    {
-                                                        var->stats = 0;
+        {
+            var->stats = 0;
 
-                                                        return 0;
-                                                    }
+            return 0;
+        }
 
         default:
-                                                    {
-                                                        uint64_t data = adios_unknown;
-                                                        var->stats = 0;
+        {
+            uint64_t data = adios_unknown;
+            var->stats = 0;
 
-                                                        return 0;
-                                                    }
+            return 0;
+        }
     }
 }
 
@@ -4945,7 +5092,8 @@ uint64_t adios_write_var_header_v1 (struct adios_file_struct * fd
 
     total_size += adios_write_dimensions_v1 (fd, v->dimensions);
 
-    adios_generate_var_characteristics_v1 (fd, v);
+    // Generate characteristics has been moved up, before transforms are applied
+    // adios_generate_var_characteristics_v1 (fd, v);
     total_size += adios_write_var_characteristics_v1 (fd, v);
 
     total_size += adios_get_var_size (v, fd->group, v->data); // payload
@@ -5096,7 +5244,7 @@ int adios_write_close_attributes_v1 (struct adios_file_struct * fd)
 
 // *****************************************************************************
 
-static int adios_multiply_dimensions (uint64_t * size
+int adios_multiply_dimensions (uint64_t * size
         ,struct adios_var_struct * var
         ,enum ADIOS_DATATYPES type
         ,void * data
@@ -5137,7 +5285,7 @@ static int adios_multiply_dimensions (uint64_t * size
             return 1;
 
         default:
-            adios_error (err_invalid_var_as_dimension, 
+            adios_error (err_invalid_var_as_dimension,
                     "Invalid datatype for array dimension on var %s: %s\n",
                     var->name,
                     adios_type_to_string_int (type));
@@ -5145,39 +5293,63 @@ static int adios_multiply_dimensions (uint64_t * size
     }
 }
 
-uint64_t adios_get_var_size (struct adios_var_struct * var
-        ,struct adios_group_struct * group, void * data
-        )
-{
-    uint64_t size = 0;
-
-    size = adios_get_type_size (var->type, data);
-
-    if (var->dimensions)
+// NCSU ALACRITY-ADIOS - generalizes the dimension multiplication in adios_get_var_size
+//                       to work on a dimension struct, rather than a var struct, so it
+//                       can be reused to compute the size from pre_transform_dimensions
+// TODO: Factor out "var", since needed because of adios_multiply_dimensions, which needs
+//       it only for debugging output.
+uint64_t adios_get_dimension_space_size (struct adios_var_struct *var
+                                        ,struct adios_dimension_struct * d
+                                        ,struct adios_group_struct * group) {
+    uint64_t size = 1;
+    while (d)
     {
-        struct adios_dimension_struct * d = var->dimensions;
-
-        while (d)
+        // calculate the size for this dimension element
+        if (d->dimension.var != 0)
         {
-            // calculate the size for this dimension element
-            if (d->dimension.var != 0)
+            struct adios_var_struct * dim_var = d->dimension.var;
+            if (!dim_var->data)
             {
-                struct adios_var_struct * dim_var = d->dimension.var;
-                if (!dim_var->data)
+                adios_error (err_invalid_var_as_dimension,
+                        "adios_get_var_size: "
+                        "sizing of %s failed because "
+                        "dimension component %s was "
+                        "not provided\n",
+                        var->name, dim_var->name);
+                return 0;
+            }
+            else
+            {
+                if (!adios_multiply_dimensions (&size, var
+                            ,dim_var->type
+                            ,dim_var->data
+                            )
+                   )
                 {
-                    adios_error (err_invalid_var_as_dimension, 
+                    return 0;
+                }
+            }
+        }
+        else if (d->dimension.attr != NULL)
+        {
+            struct adios_attribute_struct * attr = d->dimension.attr;
+            if (attr->var)
+            {
+                if (!attr->var->data)
+                {
+                    adios_error (err_invalid_var_as_dimension,
                             "adios_get_var_size: "
                             "sizing of %s failed because "
                             "dimension component %s was "
                             "not provided\n",
-                            var->name, dim_var->name);
+                            var->name, attr->var->name);
                     return 0;
                 }
                 else
                 {
                     if (!adios_multiply_dimensions (&size, var
-                                ,dim_var->type
-                                ,dim_var->data
+                                ,attr->var->type
+                                ,attr->var->data
                                 )
                        )
                     {
@@ -5185,57 +5357,41 @@ uint64_t adios_get_var_size (struct adios_var_struct * var
                     }
                 }
             }
-            else if (d->dimension.attr != NULL)
-            {
-                struct adios_attribute_struct * attr = d->dimension.attr;
-                if (attr->var)
-                {
-                    if (!attr->var->data)
-                    {
-                        adios_error (err_invalid_var_as_dimension, 
-                                "adios_get_var_size: "
-                                "sizing of %s failed because "
-                                "dimension component %s was "
-                                "not provided\n",
-                                var->name, attr->var->name);
-                        return 0;
-                    }
-                    else
-                    {
-                        if (!adios_multiply_dimensions (&size, var
-                                    ,attr->var->type
-                                    ,attr->var->data
-                                    )
-                           )
-                        {
-                            return 0;
-                        }
-                    }
-                }
-                else
-                {
-                    if (!adios_multiply_dimensions (&size, var
-                                ,attr->type
-                                ,attr->value
-                                )
-                       )
-                    {
-                        return 0;
-                    }
-                }
-            } 
             else
             {
-                if (d->dimension.time_index == adios_flag_no)
+                if (!adios_multiply_dimensions (&size, var
+                            ,attr->type
+                            ,attr->value
+                            )
+                   )
                 {
-                    size *= d->dimension.rank;
+                    return 0;
                 }
-                // the time index doesn't take up space...
             }
-
-            d = d->next;
         }
+        else
+        {
+            if (d->dimension.time_index == adios_flag_no)
+            {
+                size *= d->dimension.rank;
+            }
+            // the time index doesn't take up space...
+        }
+
+        d = d->next;
     }
+
+    return size;
+}
+
+// NCSU ALACRITY-ADIOS: Refactored to call the above dimension space compute code
+uint64_t adios_get_var_size (struct adios_var_struct * var
+        ,struct adios_group_struct * group, void * data
+        )
+{
+    uint64_t size = adios_get_type_size (var->type, data);
+    if (var->dimensions)
+        size *= adios_get_dimension_space_size(var, var->dimensions, group);
 
     return size;
 }
@@ -5460,7 +5616,7 @@ int adios_define_mesh_timeSeriesFormat (const char * timeseries
 
     // We expect a number from 1-10 (max 10?)
     // The number indicates how to write the time steps. Ex: 4 ==>
-    // varname.XXXX.png where XXXX is the time step padded with 0s 
+    // varname.XXXX.png where XXXX is the time step padded with 0s
     // We do not fail if this is not given as variables all have nsteps
     if (!timeseries){
         return 1;
@@ -5495,7 +5651,7 @@ int adios_define_mesh_timeScale (const char * timescale
     char * time_max_att_nam = 0;   // scale attribute name for max
     char * time_min_att_nam = 0;   // scale attribute name for min
     char * time_var_att_val = 0;   // scale attribute value for var or num
-    char * time_start_att_val = 0; // scale attribute value for start 
+    char * time_start_att_val = 0; // scale attribute value for start
     char * time_stride_att_val = 0;// scale attribute value for stride
     char * time_count_att_val = 0; // scale attribute value for count
     char * time_max_att_val = 0;   // scale attribute value for max
@@ -5659,7 +5815,7 @@ int adios_define_mesh_timeSteps (const char * timesteps
     char * time_max_att_nam = 0;   // tstep attribute name for max
     char * time_min_att_nam = 0;   // tstep attribute name for min
     char * time_var_att_val = 0;   // tstep attribute value for var or num
-    char * time_start_att_val = 0; // tstep attribute value for start 
+    char * time_start_att_val = 0; // tstep attribute value for start
     char * time_stride_att_val = 0;// tstep attribute value for stride
     char * time_count_att_val = 0; // tstep attribute value for count
     char * time_max_att_val = 0;   // tstep attribute value for max
@@ -5805,7 +5961,7 @@ int adios_define_mesh_timeSteps (const char * timesteps
     return 1;
 }
 
-// defining a uniform mesh 
+// defining a uniform mesh
 int adios_define_mesh_uniform (char * dimensions, char * origin, char * spacing, char * maximum, struct adios_group_struct * new_group ,const char * name)
 {
     if (dimensions)
@@ -6081,7 +6237,7 @@ void conca_var_att_nam(char ** returnstr, const char * varname, char * att_nam) 
 }
 
 // At this point mesh structures are not really being used,
-// but this function still makes sure that we don't add a 
+// but this function still makes sure that we don't add a
 // mesh twice (same name)
 // Append a mesh to a group
 enum ADIOS_FLAG adios_append_mesh (struct adios_mesh_struct ** root
@@ -6146,7 +6302,7 @@ struct adios_mesh_struct * adios_common_define_mesh (
 int adios_define_var_timesteps (const char * timesteps
         ,struct adios_group_struct * new_group
         ,const char * name
-        ,const char * path 
+        ,const char * path
         )
 {
     char * c;                      // comma location
@@ -6162,7 +6318,7 @@ int adios_define_var_timesteps (const char * timesteps
     char * time_max_att_nam = 0;   // tstep attribute name for max
     char * time_min_att_nam = 0;   // tstep attribute name for min
     char * time_var_att_val = 0;   // tstep attribute value for var or num
-    char * time_start_att_val = 0; // tstep attribute value for start 
+    char * time_start_att_val = 0; // tstep attribute value for start
     char * time_stride_att_val = 0;// tstep attribute value for stride
     char * time_count_att_val = 0; // tstep attribute value for count
     char * time_max_att_val = 0;   // tstep attribute value for max
@@ -6170,7 +6326,7 @@ int adios_define_var_timesteps (const char * timesteps
     int counter = 0;               // used to get type of time steps bounds
 
     // We are going to allow
-    // 1. a number =  just the number - a multiple of mesh time step 
+    // 1. a number =  just the number - a multiple of mesh time step
     // 2. start/stride/count 3 components - indices of the mesh time steps
     // 3. min/max range of the mesh time step
     // 4. An ADIOS var = time could be a list of int stored by user
@@ -6311,7 +6467,7 @@ int adios_define_var_timesteps (const char * timesteps
 int adios_define_var_timeseriesformat (const char * timeseries
         ,struct adios_group_struct * new_group
         ,const char * name
-        ,const char * path 
+        ,const char * path
         )
 {
     char * d1;                     // save of strdup
@@ -6321,7 +6477,7 @@ int adios_define_var_timeseriesformat (const char * timeseries
 
     // We expect a number from 1-10 (max 10?)
     // The number indicates how to write the time steps. Ex: 4 ==>
-    // varname.XXXX.png where XXXX is the time step padded with 0s 
+    // varname.XXXX.png where XXXX is the time step padded with 0s
     // We do not fail if this is not given as variables all have nsteps
     if (!timeseries){
         return 1;
@@ -6342,7 +6498,7 @@ int adios_define_var_timeseriesformat (const char * timeseries
 int adios_define_var_timescale (const char * timescale
         ,struct adios_group_struct * new_group
         ,const char * name
-        ,const char * path 
+        ,const char * path
         )
 {
     char * c;                      // comma location
@@ -6358,7 +6514,7 @@ int adios_define_var_timescale (const char * timescale
     char * time_max_att_nam = 0;   // scale attribute name for max
     char * time_min_att_nam = 0;   // scale attribute name for min
     char * time_var_att_val = 0;   // scale attribute value for var or num
-    char * time_start_att_val = 0; // scale attribute value for start 
+    char * time_start_att_val = 0; // scale attribute value for start
     char * time_stride_att_val = 0;// scale attribute value for stride
     char * time_count_att_val = 0; // scale attribute value for count
     char * time_max_att_val = 0;   // scale attribute value for max
@@ -6525,7 +6681,7 @@ int adios_define_var_hyperslab ( const char * hyperslab,
     char * hslab_min_att_nam = 0;   // hslab attribute name for min
     char * hslab_single_att_nam = 0;// hslab attribute name for min
     char * hslab_var_att_val = 0;   // hslab attribute value for var or num
-    char * hslab_start_att_val = 0; // hslab attribute value for start 
+    char * hslab_start_att_val = 0; // hslab attribute value for start
     char * hslab_stride_att_val = 0;// hslab attribute value for stride
     char * hslab_count_att_val = 0; // hslab attribute value for count
     char * hslab_max_att_val = 0;   // hslab attribute value for max
@@ -6536,7 +6692,7 @@ int adios_define_var_hyperslab ( const char * hyperslab,
     // We are going to allow
     // 1. start/stride/count 3 components - indices of the mesh dimensions
     // 2. min/max range of the mesh dimensions
-    // 3. single value 
+    // 3. single value
     //    single value of ":" means there is an extra dimension to process
     char counterstr[5] = {0,0,0,0,0}; // used to create tsteps attributes
 
@@ -6861,13 +7017,13 @@ int adios_define_mesh_rectilinear_dimensions (const char * dimensions
     }
 
     char * dims = 0;
-    counterstr[0] = '\0';    
+    counterstr[0] = '\0';
     snprintf(counterstr, 5, "%d", counter);
     dims = 0;
     adios_conca_mesh_att_nam(&dims, name, "dimensions-num");
     adios_common_define_attribute (p_new_group,dims,"/",adios_double,counterstr,"");
 
-    free (dims); 
+    free (dims);
 
     free (d1);
 

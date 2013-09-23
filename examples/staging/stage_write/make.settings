@@ -1,0 +1,17 @@
+TARGET=pgi
+
+## Set ADIOS_DIR here or before doing make
+override ADIOS_DIR=/ccs/proj/e2e/pnorbert/ADIOS/sith.${TARGET}
+
+## mpicc and mpif90 SETTINGS
+CC=mpicc
+FC=mpif90
+CFLAGS=-g
+LDFLAGS=-g
+
+## cc/ftn SETTINGS
+#CC=cc
+#FC=ftn
+#CFLAGS = -O3
+#LDFLAGS =
+

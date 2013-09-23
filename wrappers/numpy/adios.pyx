@@ -577,18 +577,17 @@ cdef class AdiosVariable:
             npoffset.fill(0)
         else:
             npoffset = np.array(offset, dtype=np.int64)
-            assert npshape.ndim == npoffset.ndim, 'Offset dimension mismatch'
         
         cdef np.ndarray npcount
         if len(count) == 0:
             npcount = npshape - npoffset
         else:
             npcount = np.array(count, dtype=np.int64)
-            npcount = npcount - npoffset
 
-        assert npshape.ndim == npcount.ndim, 'Shape dimension mismatch.'
-        assert (npshape - npoffset >= npcount).all(), 'Count is larger than shape.'
-            
+        assert npshape.ndim == npoffset.ndim, 'Offset dimension mismatch'
+        assert npshape.ndim == npcount.ndim, 'Count dimension mismatch.'
+        assert (npshape - npoffset > npcount).all(), 'Count is larger than shape.'
+
         cdef np.ndarray var = np.zeros(npcount, dtype=ntype)
         cdef int64_t nbytes = adios_read_var_byid(
             self.group.gp, 

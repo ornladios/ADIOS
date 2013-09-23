@@ -23,6 +23,9 @@ cp $TRUNKDIR/examples/C/global-array-time/adios_globaltime .
 cp $TRUNKDIR/examples/C/global-array-time/adios_read_globaltime .
 cp $TRUNKDIR/examples/C/global-array-time/adios_globaltime.xml .
 
+# Insert transform=X if requested by user
+add_transform_to_xmls
+
 echo "Run C adios_globaltime"
 $MPIRUN $NP_MPIRUN $PROCS ./adios_globaltime
 EX=$?
@@ -32,11 +35,11 @@ if [ ! -f adios_globaltime.bp ]; then
 fi
 
 echo "Check output with bpls"
-$TRUNKDIR/utils/bpls/bpls -la adios_globaltime.bp | grep -v endianness > c_bpls.txt
+$TRUNKDIR/utils/bpls/bpls -la adios_globaltime.bp | grep -v -e endianness -e 'file size' > c_bpls.txt
 diff -q c_bpls.txt $SRCDIR/reference/global_array_time_bpls.txt
 if [ $? != 0 ]; then
     echo "ERROR: C version of adios_globaltime produced a file different from the reference."
-    echo "Compare \"bpls -la $PWD/adios_globaltime.bp | grep -v endianness\" to reference $SRCDIR/reference/global_array_time_bpls.txt"
+    echo "Compare \"bpls -la $PWD/adios_globaltime.bp | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/global_array_time_bpls.txt"
     exit 1
 fi
 
@@ -68,6 +71,9 @@ mv adios_globaltime.bp adios_globaltime_c.bp
 cp $TRUNKDIR/examples/Fortran/global-array-time/adios_globaltime adios_globaltime_f
 cp $TRUNKDIR/examples/Fortran/global-array-time/adios_globaltime.xml .
 
+# Insert transform=X if requested by user
+add_transform_to_xmls
+
 echo "Run Fortran adios_globaltime_f"
 $MPIRUN $NP_MPIRUN $PROCS ./adios_globaltime_f
 EX=$?
@@ -77,11 +83,11 @@ if [ ! -f adios_globaltime.bp ]; then
 fi
 
 echo "Check output with bpls"
-$TRUNKDIR/utils/bpls/bpls -la adios_globaltime.bp | grep -v endianness > f_bpls.txt
+$TRUNKDIR/utils/bpls/bpls -la adios_globaltime.bp | grep -v -e endianness -e 'file size' > f_bpls.txt
 diff -q f_bpls.txt $SRCDIR/reference/global_array_time_bpls.txt
 if [ $? != 0 ]; then
     echo "ERROR: Fortran version of adios_globaltime produced a file different from the reference."
-    echo "Compare \"bpls -la $PWD/adios_globaltime.bp | grep -v endianness\" to reference $SRCDIR/reference/global_array_time_bpls.txt"
+    echo "Compare \"bpls -la $PWD/adios_globaltime.bp | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/global_array_time_bpls.txt"
     exit 1
 fi
 

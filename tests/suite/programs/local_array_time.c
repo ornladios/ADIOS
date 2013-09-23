@@ -15,6 +15,8 @@
 #include <errno.h>
 #include <time.h>
 #include <fcntl.h>
+#include <stdint.h>
+#include <mpi.h>
 
 /* ADIOS include files */
 //#include "mpi.h"

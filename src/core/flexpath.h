@@ -4,6 +4,8 @@
 
 #include "core/adios_logger.h"
 
+#define CONTACT_LENGTH 1024
+
 #define READER_CONTACT_FILE "reader_info.txt"
 #define WRITER_CONTACT_FILE "writer_info.txt"
 #define READER_READY_FILE "reader_ready.txt"
@@ -54,8 +56,18 @@
 
 #define CONTACT_STR_LEN 50
 
-typedef enum { FORMAT=0, DATA, EVGROUP } Flush_type;
+typedef enum {FORMAT, DATA, EVGROUP, STEP } Flush_type;
 
+typedef struct _update_step_msg{
+    int step;
+    int finalized;
+    int condition;
+}update_step_msg;
+
+typedef struct _drop_evgroup{
+    int step;
+    int condition;
+}drop_evgroup_msg;
 /*
  * Contains the offset information for a variable for all writers.
  * offsets_per_rank is == ndims.
@@ -63,8 +75,9 @@ typedef enum { FORMAT=0, DATA, EVGROUP } Flush_type;
 typedef struct _offset_struct{
     int offsets_per_rank;
     int total_offsets;
-    int * local_dimensions;
-    int * local_offsets;
+    uint64_t *local_dimensions;
+    uint64_t *local_offsets;
+    uint64_t *global_dimensions;
 } offset_struct;
 
 typedef struct _var {
@@ -76,6 +89,7 @@ typedef struct _var {
 typedef struct _evgroup {    
     int condition;
     int num_vars;
+    int step;
     global_var* vars;
 } evgroup, *evgroup_ptr;
 
@@ -92,15 +106,8 @@ typedef struct flush_msg_ {
     Flush_type type;
     int rank;
     int condition;
+    int id;
 } Flush_msg, *Flush_msg_ptr;
- 
-typedef struct format_msg_ {
-    int id_len;
-    int rep_id_len;
-    char* format_id;
-    char* rep_id;
-    int condition;
-} Format_msg, *Format_msg_ptr;
 
 typedef struct var_msg_ {
     char* var_name;
@@ -108,17 +115,18 @@ typedef struct var_msg_ {
     int condition;
 } Var_msg, *Var_msg_ptr;
 
-typedef struct _update_step_msg{
-    int process_id;
-    int step;
-    int finalized;
-} update_step_msg;
-
 static FMField update_step_msg_field_list[]=
 {
-    {"process_id", "integer", sizeof(int), FMOffset(update_step_msg*, process_id)},
-    {"steps", "integer", sizeof(int), FMOffset(update_step_msg*, step)},
+    {"step", "integer", sizeof(int), FMOffset(update_step_msg*, step)},
     {"finalized", "integer", sizeof(int), FMOffset(update_step_msg*, finalized)},
+    {"condition", "integer", sizeof(int), FMOffset(update_step_msg*, condition)},
+    {NULL, NULL, 0, 0}
+};
+
+static FMField drop_evgroup_msg_field_list[]=
+{
+    {"step", "integer", sizeof(int), FMOffset(drop_evgroup_msg*, step)},
+    {"condition", "integer", sizeof(int), FMOffset(drop_evgroup_msg*, condition)},
     {NULL, NULL, 0, 0}
 };
 
@@ -126,8 +134,9 @@ static FMField offset_struct_field_list[]=
 {
     {"offsets_per_rank", "integer", sizeof(int), FMOffset(offset_struct*, offsets_per_rank)},
     {"total_offsets", "integer", sizeof(int), FMOffset(offset_struct*, total_offsets)},
-    {"local_dimensions", "integer[total_offsets]", sizeof(int), FMOffset(offset_struct*, local_dimensions)},
-    {"local_offsets", "integer[total_offsets]", sizeof(int), FMOffset(offset_struct*, local_offsets)},
+    {"local_dimensions", "integer[total_offsets]", sizeof(uint64_t), FMOffset(offset_struct*, local_dimensions)},
+    {"local_offsets", "integer[total_offsets]", sizeof(uint64_t), FMOffset(offset_struct*, local_offsets)},
+    {"global_dimensions", "integer[offsets_per_rank]", sizeof(uint64_t), FMOffset(offset_struct*, global_dimensions)},
     {NULL, NULL, 0, 0}
 };
 
@@ -143,6 +152,7 @@ static FMField evgroup_field_list[]=
 {
     {"condition", "integer", sizeof(int), FMOffset(evgroup_ptr, condition)},
     {"num_vars", "integer", sizeof(int), FMOffset(evgroup_ptr, num_vars)},
+    {"step", "integer", sizeof(int), FMOffset(evgroup_ptr, step)},
     {"vars", "global_var[num_vars]", sizeof(global_var), FMOffset(evgroup_ptr, vars)},
     {NULL, NULL, 0, 0}
 };
@@ -152,16 +162,7 @@ static FMField flush_field_list[] =
     {"type", "integer", sizeof(Flush_type), FMOffset(Flush_msg_ptr, type)},
     {"rank", "integer", sizeof(int), FMOffset(Flush_msg_ptr, rank)},
     {"condition", "integer", sizeof(int), FMOffset(Flush_msg_ptr, condition)},
-    {NULL, NULL, 0, 0}
-};
-
-static FMField format_field_list[] =
-{   
-    {"id_len", "integer", sizeof(int), FMOffset(Format_msg_ptr, id_len)},
-    {"rep_id_len", "integer", sizeof(int), FMOffset(Format_msg_ptr, rep_id_len)},
-    {"format_id", "char[id_len]", sizeof(char), FMOffset(Format_msg_ptr, format_id)},
-    {"rep_id", "char[rep_id_len]", sizeof(char), FMOffset(Format_msg_ptr, rep_id)},
-    {"condition", "integer", sizeof(int), FMOffset(Format_msg_ptr, condition)},
+    {"id", "integer", sizeof(int), FMOffset(Flush_msg_ptr, id)},
     {NULL, NULL, 0, 0}
 };
 
@@ -180,6 +181,18 @@ static FMField op_file_field_list[] =
     {"type", "integer", sizeof(int), FMOffset(op_msg_ptr, type)},
     {"step", "integer", sizeof(int), FMOffset(op_msg_ptr, step)},
     {"condition", "integer", sizeof(int), FMOffset(op_msg_ptr, condition)},
+    {NULL, NULL, 0, 0}
+};
+
+static FMStructDescRec update_step_msg_format_list[]=
+{
+    {"update_step_msg", update_step_msg_field_list, sizeof(update_step_msg), NULL},
+    {NULL, NULL, 0, 0}
+};
+
+static FMStructDescRec drop_evgroup_msg_format_list[]=
+{
+    {"drop_evgroup_msg", drop_evgroup_msg_field_list, sizeof(drop_evgroup_msg), NULL},
     {NULL, NULL, 0, 0}
 };
 
@@ -204,12 +217,6 @@ static FMStructDescRec flush_format_list[] =
     {NULL,NULL,0,NULL}
 };
  
-static FMStructDescRec format_format_list[] =
-{   
-    {"formatMsg", format_field_list, sizeof(Format_msg), NULL},
-    {NULL,NULL,0,NULL}
-};
- 
 static FMStructDescRec var_format_list[] =
 {
     {"varMsg", var_field_list, sizeof(Var_msg), NULL},
@@ -226,12 +233,6 @@ static FMStructDescRec op_format_list[] =
 {
     {"op_msg", op_file_field_list, sizeof(op_msg), NULL},
     {NULL, NULL, 0, NULL}
-};
-
-static FMStructDescRec update_step_msg_format_list[] =
-{
-    {"update_step_msg", update_step_msg_field_list, sizeof(update_step_msg), NULL},
-    {NULL, NULL, 0, 0}
 };
 
 static char *getFixedName(char *name);

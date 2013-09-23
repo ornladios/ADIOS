@@ -15,13 +15,10 @@ There might be as many writers as you wish, and there might be as many readers
 as you wish. However, each rank reads its own rank. The reader knows how many 
 writers were there so if its rank is higher then it quits.
 
-The test can work with two modes:
+The test can work with two modes (use '-t' option with the appropriate mode):
 
 1. MPI/ADIOS_READ_METHOD_BP
 2. FLEXPATH/ADIOS_READ_METHOD_FLEXPATH
-
-To switch between those two modes you need to run the make without or
-with the CFLAGS set to -DFLEXPATH_METHOD. See build.
 
 BUILD
 =======
@@ -33,29 +30,29 @@ export MXML_ROOT=/rock/opt/mxml/2.7
 export MPI_ROOT=/rock/opt/openmpi/1.6.3
 export EVPATH_ROOT=/rock/opt/evpath
 
+# in certain cases you might need the lustre directory (e.g., on kraken)
+export LUSTRE_ROOT=/opt/cray/lustre-cray_ss_s/default
 
-# build the MPI/ADIOS_READ_METHOD_BP
-$ make
 
-# build FLEXPATH/ADIOS_READ_METHOD_FLEXPATH
-$ make CFLAGS="-DFLEXPATH_METHOD"
-
+# build 
+$ make -f Makefile.generic
 
 # should remove all unnecessary exec files 
-$ make clean
+$ make -f Makefile.generic clean
 
 RUN
 =====
-# should remove text file remnants from Flexpath _read_ready.txt, _info_writer.txt
-$ make clean_test
+# you should remove text file remnants from Flexpath _read_ready.txt, _info_writer.txt
+$ make -f Makefile.generic clean_test
 
-$ mpirun -np 2 ./writer
-$ mpirun -np 2 ./reader
+$ mpirun -np 2 ./writer -t flx
+$ mpirun -np 2 ./reader -t flx
 
 See Makefile for other options or add '-h' option to the reader or writer
 
 NOTES
 =======
+2013-09-04 - readme might be outdated
 
 2013-07-17 - tested on my local laptop (MPI and FLEXPATH)
 
@@ -75,7 +72,7 @@ You should be able to run the example with as many readers and writers as you wi
 
 Example PBS script
 ------------------
-#!/bash/bin
+#!/bin/bash
 #PBS -l walltime=00:05:00,size=24
 #PBS -A UT-TENN0033
 
@@ -92,8 +89,11 @@ module list
 
 cd $PBS_O_WORKDIR
 
-aprun -n 1 -N 1 ./arrays_read &
-aprun -n 1 -N 1 ./arrays_write
+# on Kraken the path needs to be specified precisely 
+# ./writer might cause a strange error
+aprun -n 24 -N 12 /lustre/scratch/smagg/writer &
+sleep 20
+aprun -n 24 -N 12 /lustre/scratch/smagg/reader 
 
 date
 

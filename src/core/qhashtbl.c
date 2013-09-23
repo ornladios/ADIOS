@@ -485,7 +485,7 @@ void debug(qhashtbl_t *tbl, FILE *out, bool detailed)
         qhnobj_t *obj = tbl->slots[idx];
         while (obj != NULL) {
             qhnobj_t *next = obj->next;
-            if (detailed) fprintf(out, "(%s,%x)" , obj->key, obj->value);
+            if (detailed) fprintf(out, "(%s,%p)" , obj->key, obj->value);
             obj = next;
             len++;
         }

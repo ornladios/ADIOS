@@ -29,6 +29,7 @@ enum ADIOS_CHARACTERISTICS
     ,adios_characteristic_time_index     = 8
     ,adios_characteristic_bitmap         = 9
     ,adios_characteristic_stat           = 10
+    ,adios_characteristic_transform_type = 11
 };
 
 #ifndef ADIOS_STAT_LENGTH
@@ -108,6 +109,17 @@ struct adios_index_characteristics_hist_struct
     double * breaks; //breaks array for the histogram, output this to gnuplot
 };
 
+
+struct adios_index_characteristic_transform_struct {
+    uint8_t transform_type;
+
+    enum ADIOS_DATATYPES pre_transform_type;
+    struct adios_index_characteristic_dims_struct_v1 pre_transform_dimensions;
+
+    uint16_t transform_metadata_len;
+    void *transform_metadata;
+};
+
 struct adios_index_characteristic_struct_v1
 {
     uint64_t offset;  // beginning of the var or attr entry
@@ -121,6 +133,16 @@ struct adios_index_characteristic_struct_v1
     uint32_t bitmap;
 
     struct adios_index_characteristics_stat_struct ** stats;
+
+    // NCSU ALACRITY-ADIOS - Adding transform-related fields
+    /*
+    uint8_t transform_type;
+    enum ADIOS_DATATYPES pre_transform_type;
+    struct adios_index_characteristic_dims_struct_v1 pre_transform_dimensions;
+    uint16_t transform_metadata_len;
+    void *transform_metadata;
+    */
+    struct adios_index_characteristic_transform_struct transform;
 };
 
 struct adios_index_var_struct_v1

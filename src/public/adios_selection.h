@@ -69,6 +69,19 @@ typedef struct {
  */
 typedef struct { 
     int index;
+
+    // NCSU ALACRITY-ADIOS:
+    //     Adding timestep-relative vs. absolute writeblock selections, as
+    //     well as sub-PG selection support. Both of these are currently only
+    //     used by the transform layer
+    int is_absolute_index;   // 0 if 'index' is relative to the current timestep, != 0
+                             // otherwie (i.e., absolute index)
+    int is_sub_pg_selection; // Whether this writeblock selection contains sub-PG bounds.
+                             // The following fields only matter if this is != 0
+
+    // Reads the linear range of elements in [element_offset, element_offset + nelements)
+    uint64_t element_offset;
+    uint64_t nelements;
 } ADIOS_SELECTION_WRITEBLOCK_STRUCT;
 
 /* Let the read method decide what to return to each reading client. 

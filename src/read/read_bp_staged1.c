@@ -4267,6 +4267,9 @@ int adios_read_bp_staged1_fclose (ADIOS_FILE *fp)
 
         }
 
+        // NCSU ALACRITY-ADIOS - Clear transform metadata
+        adios_transform_clear_transform_characteristic(&vr->characteristics[j]);
+
         if (vr->characteristics) 
             free (vr->characteristics);
         if (vr->group_name) 
@@ -6229,7 +6232,7 @@ int64_t adios_read_bp_staged1_read_var (ADIOS_GROUP * gp
     if (varid < 0 || varid >= gh->vars_count)
     {
         adios_error (err_invalid_varid, "Invalid variable id %d (allowed 0..%d)", varid, gh->vars_count);
-        return -adios_errno;
+        return adios_errno;
     }
 
     p = (struct proc_struct *) fh->priv;
@@ -6305,28 +6308,28 @@ int64_t adios_read_bp_staged1_read_local_var (ADIOS_GROUP * gp, const char * var
     if (!gp)
     {
         adios_error (err_invalid_group_struct, "Null pointer passed as group to adios_read_var()");
-        return -adios_errno;
+        return adios_errno;
     }
 
     gh = (struct BP_GROUP *) gp->gh;
     if (!gh)
     {
         adios_error (err_invalid_group_struct, "Invalid ADIOS_GROUP struct: .gh group handle is NULL!");
-        return -adios_errno;
+        return adios_errno;
     }
 
     fh = gh->fh;
     if (!fh)
     {
         adios_error (err_invalid_group_struct, "Invalid ADIOS_GROUP struct: .gh->fh file handle is NULL!");
-        return -adios_errno;
+        return adios_errno;
     }
 
     varid = adios_read_bp_staged1_find_var(gp, varname);
     if (varid < 0 || varid >= gh->vars_count)
     {
         adios_error (err_invalid_varid, "Invalid variable id %d (allowed 0..%d)", varid, gh->vars_count);
-        return -adios_errno;
+        return adios_errno;
     }
 
     /* Check if file is written out by Fortran or C */
@@ -6346,7 +6349,7 @@ int64_t adios_read_bp_staged1_read_local_var (ADIOS_GROUP * gp, const char * var
         adios_error (err_corrupted_variable, 
                      "Variable id=%d is valid but was not found in internal data structures!",
                      varid);
-        return -adios_errno; 
+        return adios_errno; 
     }
 
     if (vidx < 0 || vidx >= var_root->characteristics_count)
@@ -6476,7 +6479,7 @@ int64_t adios_read_bp_staged1_read_local_var (ADIOS_GROUP * gp, const char * var
                         "the data in dimension %d to read is %llu elements from index %llu"
                         " but the actual data is [0,%llu])",
                         varid, j+1, count_notime[j], start_notime[j], ldims[j] - 1);
-                    return -adios_errno;
+                    return adios_errno;
         }
     }
 
@@ -6560,7 +6563,7 @@ int64_t adios_read_bp_staged1_read_local_var (ADIOS_GROUP * gp, const char * var
              adios_error (err_no_memory, "Malloc failed in %s at %d\n"
                          , __FILE__, __LINE__
                          );
-             return -adios_errno;
+             return adios_errno;
         }
 
         for (i = 0; i < ndim_notime ; i++)
@@ -6686,21 +6689,21 @@ int64_t adios_read_bp_staged1_read_var_byid1 (ADIOS_GROUP    * gp,
     adios_errno = 0;
     if (!gp) {
         adios_error (err_invalid_group_struct, "Null pointer passed as group to adios_read_var()");
-        return -adios_errno;
+        return adios_errno;
     }
     gh = (struct BP_GROUP *) gp->gh;
     if (!gh) {
         adios_error (err_invalid_group_struct, "Invalid ADIOS_GROUP struct: .gh group handle is NULL!");
-        return -adios_errno;
+        return adios_errno;
     }
     fh = gh->fh;
     if (!fh) {
         adios_error (err_invalid_group_struct, "Invalid ADIOS_GROUP struct: .gh->fh file handle is NULL!");
-        return -adios_errno;
+        return adios_errno;
     }
     if (varid < 0 || varid >= gh->vars_count) {
         adios_error (err_invalid_varid, "Invalid variable id %d (allowed 0..%d)", varid, gh->vars_count);
-        return -adios_errno;
+        return adios_errno;
     }
     
     file_is_fortran = (fh->pgs_root->adios_host_language_fortran == adios_flag_yes);
@@ -6712,7 +6715,7 @@ int64_t adios_read_bp_staged1_read_var_byid1 (ADIOS_GROUP    * gp,
 
     if (i!=varid) {
         adios_error (err_corrupted_variable, "Variable id=%d is valid but was not found in internal data structures!",varid);
-        return -adios_errno; 
+        return adios_errno; 
     }
 
     /* Get dimensions and flip if caller != writer language */
@@ -6730,7 +6733,7 @@ int64_t adios_read_bp_staged1_read_var_byid1 (ADIOS_GROUP    * gp,
             {
                 adios_error (err_no_data_at_timestep,"Variable (id=%d) has wrong time dimension index",
                       varid);
-                return -adios_errno;
+                return adios_errno;
             }
             if (futils_is_called_from_fortran())
             {
@@ -6819,7 +6822,7 @@ int64_t adios_read_bp_staged1_read_var_byid1 (ADIOS_GROUP    * gp,
             {
                 adios_error (err_no_data_at_timestep,"Variable (id=%d) has wrong time dimension",
                       varid);
-                return -adios_errno;
+                return adios_errno;
             }
 
             if (futils_is_called_from_fortran())
@@ -6940,7 +6943,7 @@ printf ("pgcount = %lld\n", pgcount);
         if (start_idx<0) {
             adios_error (err_no_data_at_timestep,"Variable (id=%d) has no data at %d time step",
                 varid, timestep);
-            return -adios_errno;
+            return adios_errno;
         }
 
         if (ndim_notime == 0) {
@@ -7050,7 +7053,7 @@ printf ("pgcount = %lld\n", pgcount);
                         "the data in dimension %d to read is %llu elements from index %llu"
                         " but the actual data is [0,%llu])",
                         varid, j+1, count_notime[j], start_notime[j], gdims[j] - 1);
-                    return -adios_errno;
+                    return adios_errno;
                 }
     
                 /* check if there is any data in this pg and this dimension to read in */
@@ -7308,7 +7311,7 @@ int64_t adios_read_bp_staged1_read_var_byid2 (ADIOS_GROUP    * gp,
         adios_error (err_corrupted_variable, 
                "Variable id=%d is valid but was not found in internal data structures!",
                varid);
-        return -adios_errno; 
+        return adios_errno; 
     }
 
     /* Get dimensions and flip if caller != writer language */
@@ -7379,7 +7382,7 @@ int64_t adios_read_bp_staged1_read_var_byid2 (ADIOS_GROUP    * gp,
         if (start_idx < 0 || stop_idx < 0) {
             adios_error (err_no_data_at_timestep,"Variable (id=%d) has no data at %d time step",
                 varid, t);
-//            return -adios_errno;
+//            return adios_errno;
             continue;
         }
 
@@ -7496,7 +7499,7 @@ int64_t adios_read_bp_staged1_read_var_byid2 (ADIOS_GROUP    * gp,
                         "the data in dimension %d to read is %llu elements from index %llu"
                         " but the actual data is [0,%llu])",
                         varid, j+1, count_notime[j], start_notime[j], gdims[j] - 1);
-                    return -adios_errno;
+                    return adios_errno;
                 }
     
                 /* check if there is any data in this pg and this dimension to read in */
@@ -7738,19 +7741,19 @@ int64_t adios_read_bp_staged1_read_var_byid (ADIOS_GROUP    * gp,
     adios_errno = 0;
     if (!gp) {
         adios_error (err_invalid_group_struct, "Null pointer passed as group to adios_read_var()");
-        return -adios_errno;
+        return adios_errno;
     }
 
     gh = (struct BP_GROUP *) gp->gh;
     if (!gh) {
         adios_error (err_invalid_group_struct, "Invalid ADIOS_GROUP struct: .gh group handle is NULL!");
-        return -adios_errno;
+        return adios_errno;
     }
 
     fh = gh->fh;
     if (!fh) {
         adios_error (err_invalid_group_struct, "Invalid ADIOS_GROUP struct: .gh->fh file handle is NULL!");
-        return -adios_errno;
+        return adios_errno;
     }
 
     has_time_index_characteristic = fh->mfooter.version & ADIOS_VERSION_HAVE_TIME_INDEX_CHARACTERISTIC;

@@ -24,6 +24,9 @@ cp $TRUNKDIR/examples/C/global-array/adios_global .
 cp $TRUNKDIR/examples/C/global-array/adios_read_global .
 cp $TRUNKDIR/examples/C/global-array/adios_global.xml .
 
+# Insert transform=X if requested by user
+add_transform_to_xmls
+
 echo "Run C adios_global"
 $MPIRUN $NP_MPIRUN $PROCS ./adios_global
 EX=$?
@@ -33,11 +36,11 @@ if [ ! -f adios_global.bp ]; then
 fi
 
 echo "Check output with bpls"
-$TRUNKDIR/utils/bpls/bpls -la adios_global.bp -d -n 10  | grep -v endianness > c_bpls.txt
+$TRUNKDIR/utils/bpls/bpls -la adios_global.bp -d -n 10  | grep -v -e endianness -e 'file size' > c_bpls.txt
 diff -q c_bpls.txt $SRCDIR/reference/global_array_bpls.txt
 if [ $? != 0 ]; then
     echo "ERROR: C version of adios_global produced a file different from the reference."
-    echo "Compare \"bpls -la $PWD/adios_global.bp -d -n 10 | grep -v endianness\" to reference $SRCDIR/reference/global_array_bpls.txt"
+    echo "Compare \"bpls -la $PWD/adios_global.bp -d -n 10 | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/global_array_bpls.txt"
     exit 1
 fi
 
@@ -69,6 +72,9 @@ mv adios_global.bp adios_global_c.bp
 cp $TRUNKDIR/examples/Fortran/global-array/adios_global adios_global_f
 cp $TRUNKDIR/examples/Fortran/global-array/adios_global.xml .
 
+# Insert transform=X if requested by user
+add_transform_to_xmls
+
 echo "Run Fortran adios_global_f"
 $MPIRUN $NP_MPIRUN $PROCS ./adios_global_f
 EX=$?
@@ -78,11 +84,11 @@ if [ ! -f adios_global.bp ]; then
 fi
 
 echo "Check output with bpls"
-$TRUNKDIR/utils/bpls/bpls -la adios_global.bp -d -n 10 | grep -v endianness > f_bpls.txt
+$TRUNKDIR/utils/bpls/bpls -la adios_global.bp -d -n 10 | grep -v -e endianness -e 'file size' > f_bpls.txt
 diff -q f_bpls.txt $SRCDIR/reference/global_array_bpls.txt
 if [ $? != 0 ]; then
     echo "ERROR: Fortran version of adios_global produced a file different from the reference."
-    echo "Compare \"bpls -lav $PWD/adios_global.bp -d -n 10 | grep -v endianness\" to reference $SRCDIR/reference/global_array_bpls.txt"
+    echo "Compare \"bpls -lav $PWD/adios_global.bp -d -n 10 | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/global_array_bpls.txt"
     exit 1
 fi
 
