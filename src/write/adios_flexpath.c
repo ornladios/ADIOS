@@ -1069,8 +1069,21 @@ op_handler(CManager cm, void* vevent, void* client_data, attr_list attrs)
     return 0;
 }
 
+attr_list 
+set_flush_id_atom(attr_list attrs, int value) 
+{
+    atom_t dst_atom = attr_atom_from_string("fp_flush_id");
+    int dst;
+    if(!get_int_attr(attrs, dst_atom, &dst)) {
+        add_int_attr(attrs, dst_atom, value);
+    }
+    set_int_attr(attrs, dst_atom, value);
+    return attrs;
+}
+
 // sets a size atom
-attr_list set_size_atom(attr_list attrs, int value) 
+attr_list 
+set_size_atom(attr_list attrs, int value) 
 {
     atom_t dst_atom = attr_atom_from_string("fp_size");
     int size;
@@ -1126,20 +1139,23 @@ control_thread(void* arg)
 		    strdup(varMsg->var_name), NULL, varMsg->rank);
 		EVreturn_event_buffer(flexpathWriteData.cm,controlMsg->data);
 	    } else if(controlMsg->type==DATA_FLUSH) {
-                fp_write_log("DATAMUTEX", "in use 1\n"); 
 		dataNode = threaded_peek(&fileData->dataQueue, 
-		    &fileData->dataMutex, &fileData->dataCondition);
-                fp_write_log("DATAMUTEX", "no use 1\n"); 
+					 &fileData->dataMutex, 
+					 &fileData->dataCondition);
+		
 		Flush_msg* flushMsg = (Flush_msg*) controlMsg->data;
-		fp_write_log("QUEUE", "dataNode:%p, flushMsg:%p\n", dataNode, flushMsg);
                 void* temp = copy_buffer(dataNode->data, flushMsg->rank, fileData);
+
 		fileData->attrs = set_dst_rank_atom(fileData->attrs, flushMsg->rank);
 		fileData->attrs = set_dst_condition_atom(fileData->attrs, flushMsg->condition);
+		fileData->attrs = set_flush_id_atom(fileData->attrs, flushMsg->id);
+
 		if(!fileData->bridges[flushMsg->rank].opened) {
                   fileData->bridges[flushMsg->rank].opened=1;
                   fileData->openCount++;
                 }
 		EVsubmit_general(fileData->dataSource, temp, data_free, fileData->attrs);
+
 	    } else if(controlMsg->type==OPEN) {
                 op_msg* open = (op_msg*) controlMsg->data;
                 fileData->bridges[open->process_id].step = open->step;
@@ -1147,10 +1163,10 @@ control_thread(void* arg)
 		if(!fileData->bridges[open->process_id].created){
 		    fileData->bridges[open->process_id].created = 1;
 		    fileData->bridges[open->process_id].myNum = 
-			EVcreate_bridge_action(flexpathWriteData.cm, 
-					       attr_list_from_string(fileData->bridges[open->process_id].contact), 
-					       fileData->bridges[open->process_id].theirNum);
-		    
+			EVcreate_bridge_action(
+			    flexpathWriteData.cm, 
+			    attr_list_from_string(fileData->bridges[open->process_id].contact), 
+			    fileData->bridges[open->process_id].theirNum);		    
 		    EVaction_set_output(flexpathWriteData.cm, 
 					fileData->multiStone, 
 					fileData->multi_action, 

@@ -106,6 +106,7 @@ typedef struct flush_msg_ {
     Flush_type type;
     int rank;
     int condition;
+    int id;
 } Flush_msg, *Flush_msg_ptr;
 
 typedef struct var_msg_ {
@@ -161,6 +162,7 @@ static FMField flush_field_list[] =
     {"type", "integer", sizeof(Flush_type), FMOffset(Flush_msg_ptr, type)},
     {"rank", "integer", sizeof(int), FMOffset(Flush_msg_ptr, rank)},
     {"condition", "integer", sizeof(int), FMOffset(Flush_msg_ptr, condition)},
+    {"id", "integer", sizeof(int), FMOffset(Flush_msg_ptr, id)},
     {NULL, NULL, 0, 0}
 };
 

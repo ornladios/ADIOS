@@ -566,6 +566,8 @@ send_flush_msg(flexpath_reader_file *fp, int destination, Flush_type type, int u
     Flush_msg msg;
     msg.type = type;
     msg.rank = fp->rank;
+    msg.id = fp->mystep;
+
     if(use_condition)
 	msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
     else
@@ -685,10 +687,14 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 static int
 raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list attrs)
 {
-    double end = dgettimeofday();
-    double start;
-    get_double_attr(attrs, attr_atom_from_string("fp_starttime"), &start);
-   
+    int condition;
+    int writer_rank;          
+    int flush_id;
+
+    double data_end = dgettimeofday();
+    double data_start;
+    get_double_attr(attrs, attr_atom_from_string("fp_starttime"), &data_start);
+ 
     ADIOS_FILE *adiosfile = client_data;
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     FMContext context = CMget_FMcontext(cm);
@@ -731,10 +737,10 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 	fp->num_vars = var_count;       
     }
 
-    int condition;
-    int writer_rank;          
     get_int_attr(attrs, attr_atom_from_string("fp_dst_condition"), &condition);   
     get_int_attr(attrs, attr_atom_from_string(FP_RANK_ATTR_NAME), &writer_rank); 
+    get_int_attr(attrs, attr_atom_from_string("fp_flush_id"), &flush_id);
+
     f = struct_list[0].field_list;
     char *curr_offset = NULL;
     int i = 0, j = 0;
@@ -867,6 +873,8 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     else{
 	CMCondition_signal(fp_read_data->fp_cm, condition);
     }
+    fp_log("PERF", "READER_PERF:%d:%d:raw_handler_data:time:%lf:num_sendees:%d:flush_id:%d\n", 
+	   fp->rank, fp->mystep, (data_end - data_start), 1, flush_id);
     return 0; 
 }
 
@@ -982,7 +990,7 @@ adios_read_flexpath_open(const char * fname,
     /* Gather the contact info from the other readers
        and write it to a file. Create a ready file so
        that the writer knows it can parse this file. */
-    uint64_t setup_start = get_timestamp_mili();
+    double setup_start = dgettimeofday();
     char writer_ready_filename[200];
     char writer_info_filename[200];
     char reader_ready_filename[200];
@@ -1066,10 +1074,10 @@ adios_read_flexpath_open(const char * fname,
 	unlink(writer_ready_filename);
     }	    
 
-    uint64_t setup_end = get_timestamp_mili();
+    double setup_end = dgettimeofday();
 
-    fp_log("PERF", "READER_PERF,%d,%d,startup,time:%d,num_sendees:%d\n", 
-	   fp->rank, fp->mystep, (int)(setup_end - setup_start), 1);
+    fp_log("PERF", "READER_PERF:%d:%d:startup:time:%lf:num_sendees:%d\n", 
+	   fp->rank, fp->mystep, (setup_end - setup_start), 1);
     
     adiosfile->fh = (uint64_t)fp;
     adiosfile->current_step = 0;
@@ -1093,24 +1101,24 @@ adios_read_flexpath_open(const char * fname,
     }
     
     // requesting initial data.
-    uint64_t open_start = get_timestamp_mili();
+    double open_start = dgettimeofday();
     send_open_msg(fp, fp->writer_coordinator);
-    uint64_t open_end = get_timestamp_mili();
+    double open_end = dgettimeofday();
 
-    uint64_t data_start = get_timestamp_mili();
+    double data_start = dgettimeofday();
     send_flush_msg(fp, fp->writer_coordinator, DATA, 1);
-    uint64_t data_end = get_timestamp_mili();
+    double data_end = dgettimeofday();
 
-    uint64_t offset_start = get_timestamp_mili();
+    double offset_start = dgettimeofday();
     send_flush_msg(fp, fp->writer_coordinator, EVGROUP, 1);
-    uint64_t offset_end = get_timestamp_mili();
+    double offset_end = dgettimeofday();
 
-    fp_log("PERF", "READER_PERF,%d,%d,open,time:%d,num_sendees:%d\n",
-	   fp->rank, fp->mystep, (int)(open_end - open_start), 1);
-    fp_log("PERF", "READER_PERF,%d,%d,data,time:%d,num_sendees:%d\n",
-	   fp->rank, fp->mystep, (int)(data_end - data_start),1);
-    fp_log("PERF", "READER_PERF,%d,%d,evgroup,time:%d,num_sendees:%d\n",
-	   fp->rank, fp->mystep, (int)(offset_end - offset_start),1);
+    fp_log("PERF", "READER_PERF:%d:%d:open:time:%lf:num_sendees:%d\n",
+	   fp->rank, fp->mystep, (open_end - open_start), 1);
+    fp_log("PERF", "READER_PERF:%d:%d:data:time:%lf:num_sendees:%d\n",
+	   fp->rank, fp->mystep, (data_end - data_start),1);
+    fp_log("PERF", "READER_PERF:%d:%d:evgroup:time:%lf:num_sendees:%d\n",
+	   fp->rank, fp->mystep, (offset_end - offset_start),1);
     // this has to change. Writer needs to have some way of
     // taking the attributes out of the xml document
     // and sending them over ffs encoded. Not yet implemented.
@@ -1188,7 +1196,7 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
 	send_flush_msg(fp, fp->writer_coordinator, STEP, 1);
     }
 
-    uint64_t advclose_start = get_timestamp_mili();
+    double advclose_start = dgettimeofday();
     int i=0;    
     for(i=0; i<fp->num_bridges; i++) {
         if(fp->bridges[i].created && fp->bridges[i].opened) {
@@ -1198,24 +1206,25 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
 	}
     }
     MPI_Barrier(fp->comm);
-    uint64_t advclose_end = get_timestamp_mili();
-    fp_log("PERF", "READER_PERF,%d,%d,advance_close,time:%d, num_sendees:%d\n",
-	   fp->rank, fp->mystep, (int)(advclose_end - advclose_start), count);
+
+    double advclose_end = dgettimeofday();
+    fp_log("PERF", "READER_PERF:%d:%d:advance_close:time:%lf:num_sendees:%d\n",
+	   fp->rank, fp->mystep, (advclose_end - advclose_start), count);
     count = 0;
     adiosfile->current_step++;
     fp->mystep = adiosfile->current_step;
 
     
-    uint64_t advopen_start = get_timestamp_mili();
+    double advopen_start = dgettimeofday();
     for(i=0; i<fp->num_bridges; i++){
 	if(fp->bridges[i].created && !fp->bridges[i].opened){	    
 	    send_open_msg(fp, i);
 	    count++;
         }
     }   
-    uint64_t advopen_end = get_timestamp_mili();
-    fp_log("PERF", "READER_PERF,%d,%d,advance_open,time:%d, num_sendees:%d\n",
-	   fp->rank, fp->mystep, (int)(advopen_end - advopen_start), count);
+    double advopen_end = dgettimeofday();
+    fp_log("PERF", "READER_PERF:%d:%d:advance_open:time:%lf:num_sendees:%d\n",
+	   fp->rank, fp->mystep, (advopen_end - advopen_start), count);
     // need to remove selectors from each var now.
     send_flush_msg(fp, fp->writer_coordinator, DATA, 1);
       
@@ -1274,7 +1283,7 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
     int i,j;
     int num_sendees = fp->num_sendees;
     int total_sent = 0;
-    uint64_t data_start = get_timestamp_mili();
+    double data_start = dgettimeofday();
     for(i = 0; i<num_sendees; i++){
 	pthread_mutex_lock(&fp->data_mutex);
 	int sendee = fp->sendees[i];	
@@ -1291,9 +1300,9 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
 	}
 
     }
-    uint64_t data_end = get_timestamp_mili();
-    fp_log("PERF", "READER_PERF,%d,%d,data,time:%d,num_sendees:%d\n",
-	   fp->rank, fp->mystep, (int)(data_end - data_start), fp->num_sendees);
+    double data_end = dgettimeofday();
+    fp_log("PERF", "READER_PERF:%d:%d:data:time:%lf:num_sendees:%d\n",
+	   fp->rank, fp->mystep, (data_end - data_start), fp->num_sendees);
     free(fp->sendees);
     fp->sendees = NULL;    
     fp->num_sendees = 0;
