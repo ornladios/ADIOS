@@ -15,15 +15,15 @@
         <var name="offset_y" type="integer"/>
         <var name="offset_z" type="integer"/>
         <global-bounds dimensions="total_size_x,total_size_y,total_size_z" offsets="offset_x,offset_y,offset_z">
-           <var dimensions="size_x,size_y,size_z" name="fields_FieldE_x" path="/data" type="float"/>
-           <var dimensions="size_x,size_y,size_z" name="fields_FieldE_y" path="/data" type="float"/>
-           <var dimensions="size_x,size_y,size_z" name="fields_FieldE_z" path="/data" type="float"/>
+           <var dimensions="size_x,size_y,size_z" name="fields_FieldE_x" type="float"/>
+           <var dimensions="size_x,size_y,size_z" name="fields_FieldE_y" type="float"/>
+           <var dimensions="size_x,size_y,size_z" name="fields_FieldE_z" type="float"/>
            
-           <var dimensions="size_x,size_y,size_z" name="fields_FieldB_x" path="/data" type="float"/>
-           <var dimensions="size_x,size_y,size_z" name="fields_FieldB_y" path="/data" type="float"/>
-           <var dimensions="size_x,size_y,size_z" name="fields_FieldB_z" path="/data" type="float"/>
+           <var dimensions="size_x,size_y,size_z" name="fields_FieldB_x" type="float"/>
+           <var dimensions="size_x,size_y,size_z" name="fields_FieldB_y" type="float"/>
+           <var dimensions="size_x,size_y,size_z" name="fields_FieldB_z" type="float"/>
            
-           <var dimensions="size_x,size_y,size_z" name="fields_Density_e" path="/data" type="float"/>
+           <var dimensions="size_x,size_y,size_z" name="fields_Density_e" type="float"/>
         </global-bounds>
     </adios-group>
 
