@@ -24,10 +24,16 @@
     <scalar name="offset_z" type="integer" value="size_x*(skel_mpi_rank%npx)" />
     <scalar name="offset_y" type="integer" value="size_y*((skel_mpi_rank/npx)%npy)" />
     <scalar name="offset_x" type="integer" value="size_z*(skel_mpi_rank/(npx*npy))" />
-    <array name="t" type="float" dims="size_x,size_y,size_z" fill-method="rank"></array>
+    <array name="fields_FieldE_x" type="float" dims="size_x,size_y,size_z" fill-method="rank"></array>
+    <array name="fields_FieldE_z" type="float" dims="size_x,size_y,size_z" fill-method="rank"></array>
+    <array name="fields_Density_e" type="float" dims="size_x,size_y,size_z" fill-method="rank"></array>
+    <array name="fields_FieldB_z" type="float" dims="size_x,size_y,size_z" fill-method="rank"></array>
+    <array name="fields_FieldB_x" type="float" dims="size_x,size_y,size_z" fill-method="rank"></array>
+    <array name="fields_FieldE_y" type="float" dims="size_x,size_y,size_z" fill-method="rank"></array>
+    <array name="fields_FieldB_y" type="float" dims="size_x,size_y,size_z" fill-method="rank"></array>
   </adios-group>
 
-  <batch name="writes" cores="128" walltime="0:30:00">
+  <batch name="writes" cores="16" walltime="0:30:00">
     <test type="write" group="fields" method="POSIX" iterations="10" rm="pre" tags="name1:val1,name2:val2" />
   </batch>
 

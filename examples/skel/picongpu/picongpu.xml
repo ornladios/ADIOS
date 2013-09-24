@@ -15,15 +15,15 @@
         <var name="offset_y" type="integer" />
         <var name="offset_z" type="integer" />
         <global-bounds dimensions="total_size_x,total_size_y,total_size_z" offsets="offset_x,offset_y,offset_z">
-           <var path="/data" name="fields_FieldE_x" gwrite="t" type="float" dimensions="size_x,size_y,size_z"/>
-           <var path="/data" name="fields_FieldE_y" gwrite="t" type="float" dimensions="size_x,size_y,size_z"/>
-           <var path="/data" name="fields_FieldE_z" gwrite="t" type="float" dimensions="size_x,size_y,size_z"/>
+           <var path="/data" name="fields_FieldE_x" type="float" dimensions="size_x,size_y,size_z"/>
+           <var path="/data" name="fields_FieldE_y" type="float" dimensions="size_x,size_y,size_z"/>
+           <var path="/data" name="fields_FieldE_z" type="float" dimensions="size_x,size_y,size_z"/>
            
-           <var path="/data" name="fields_FieldB_x" gwrite="t" type="float" dimensions="size_x,size_y,size_z"/>
-           <var path="/data" name="fields_FieldB_y" gwrite="t" type="float" dimensions="size_x,size_y,size_z"/>
-           <var path="/data" name="fields_FieldB_z" gwrite="t" type="float" dimensions="size_x,size_y,size_z"/>
+           <var path="/data" name="fields_FieldB_x" type="float" dimensions="size_x,size_y,size_z"/>
+           <var path="/data" name="fields_FieldB_y" type="float" dimensions="size_x,size_y,size_z"/>
+           <var path="/data" name="fields_FieldB_z" type="float" dimensions="size_x,size_y,size_z"/>
            
-           <var path="/data" name="fields_Density_e" gwrite="t" type="float" dimensions="size_x,size_y,size_z"/>
+           <var path="/data" name="fields_Density_e" type="float" dimensions="size_x,size_y,size_z"/>
         </global-bounds>
     </adios-group>
 
