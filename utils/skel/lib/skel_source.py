@@ -171,7 +171,7 @@ def generate_c_write (outfile, config, params, test):
             c_file.write ('\n\n adios_timing_write_xml (adios_handle, "' + params.get_application() + '_skel_time.xml");')
 
         else:
-            c_file.write ('\n\n skel_write_coarse_xml_data ();')
+            c_file.write ('\n\n skel_write_coarse_xml_data (skel_open_timer, skel_access_timer, skel_close_timer, skel_total_timer);')
 
 
         c_file.write ('\ndouble skel_total_init, skel_total_open, skel_total_access, skel_total_close, skel_total_total;')

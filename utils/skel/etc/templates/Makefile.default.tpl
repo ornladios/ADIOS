@@ -5,7 +5,7 @@
 include $$INCLUDE$$
 
 ADIOS_DIR=`adios_config -d`
-LDFLAGS += `adios_config -l`
+LDFLAGS += `adios_config -l` -L${ADIOS_DIR}/lib/skel -lskel 
 CFLAGS += `adios_config -c`
 FCFLAGS += `adios_config -fc`          
 FCLIBS += `adios_config -fl` -L${ADIOS_DIR}/lib/skel -lskel
