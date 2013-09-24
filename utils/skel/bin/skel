@@ -51,6 +51,10 @@ def main(argv=None):
 
     args = parse_command_line()
 
+    # ignore .xml suffix if used (tab completion)
+    if args.project and args.project.endswith (".xml"):
+        args.project = args.project[:-4]
+
     if args.subcommand == 'install':
         return 0
 
