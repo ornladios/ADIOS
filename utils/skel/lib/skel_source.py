@@ -63,7 +63,7 @@ def generate_c_write (outfile, config, params, test):
         c_file.write ('\nMPI_Barrier (MPI_COMM_WORLD);')
         c_file.write ('\nskel_init_timer -= MPI_Wtime();')
 
-        c_file.write ('\n\nadios_init ("' + config.get_filename() + '");')
+        c_file.write ('\n\nadios_init ("' + config.get_filename() + '", MPI_COMM_WORLD);')
 
         c_file.write ('\nskel_init_timer += MPI_Wtime();')
 
