@@ -55,7 +55,7 @@ struct qhashtbl_s {
     bool  (*put)    (qhashtbl_t *tbl, const char *path,  const char *name, const void *data);
     void *(*get)    (qhashtbl_t *tbl, const char *fullpath);
     void *(*get2)   (qhashtbl_t *tbl, const char *path,  const char *name);
-    bool  (*remove) (qhashtbl_t *tbl, const char *path, const char *name);
+    bool  (*remove) (qhashtbl_t *tbl, const char *fullpath);
 
     int   (*size)   (qhashtbl_t *tbl);
     void  (*clear)  (qhashtbl_t *tbl);
