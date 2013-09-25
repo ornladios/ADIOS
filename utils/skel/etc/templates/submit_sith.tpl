@@ -19,7 +19,7 @@ echo $$METHOD$$
 $$PRE_RM$$
 ./set_method.sh $$METHOD$$ $$APP$$_skel.xml.in $$APP$$_skel.xml 
 mpirun -n $$CORES_USED$$ ./$$EXEC$$
-mv $$APP$$_skel_time.xml $$APP$$_skel_time_${PBS_JOBID}_${i}.xml
+mv skel_time.xml $$APP$$_skel_time_${PBS_JOBID}_${i}.xml
 $$POST_RM$$
 done
 

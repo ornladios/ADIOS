@@ -111,6 +111,21 @@ class var:
         name = name.split ('(')[0]
         return name
 
+    def get_path (self):
+        path = self.var_node.getAttribute ('path')
+        return path
+
+    def get_fullpath (self):
+        path = self.get_path()
+        name = self.get_name()
+        if (path == ''):
+            fullpath = name
+        elif (path == '/'):
+            fullpath = '/'+name
+        else:
+            fullpath = path + '/' + name
+        return fullpath
+
     def get_gwrite (self):
         gw = self.var_node.getAttribute ('gwrite')
 
@@ -167,7 +182,9 @@ class var:
 class fortranFormatter:
     @staticmethod
     def get_write_line (var):
-        return '\n  call adios_write (adios_handle, "' + var.get_name() + '", ' + var.get_gwrite() + ', adios_error)'  
+        retval = '\n  call adios_write (adios_handle, "' + var.get_fullpath() + '", ' + var.get_gwrite() + ', adios_error)'  
+        #print retval
+        return retval
 
     @staticmethod
     def get_declaration (var, group_params):
@@ -246,7 +263,9 @@ class cFormatter:
         else:
             var_prefix = '&'
 
-        return '\nadios_write (adios_handle, "' + var.get_name() + '", ' + var_prefix + var.get_gwrite() + ');'  
+        retval = '\nadios_write (adios_handle, "' + var.get_fullpath() + '", ' + var_prefix + var.get_gwrite() + ');'  
+        #print retval
+        return retval
 
     @staticmethod
     def get_read_all_line (var):
