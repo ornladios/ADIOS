@@ -28,6 +28,8 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     module unload python
     module load PE-$TARGET
     module load mxml
+    MXMLDIR=$MXML_DIR
+    module unload mxml
     module load python
     # Use both seq hdf5 (for utils) and 
     #   parallel hdf5 (for PHDF5 method)
@@ -80,8 +82,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         --enable-dependency-tracking \
         --enable-research-transports \
         --with-lustre=/usr/lib64 \
-        $WITHDART \
-        $WITHFLEX \
+        --with-mxml=$MXMLDIR \
         --with-hdf5=${SEQ_HDF5_DIR} \
         --with-hdf5-libs="${SEQ_HDF5_CLIB}" \
         --with-phdf5=${PAR_HDF5_DIR} \
@@ -89,7 +90,9 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         --with-netcdf=${SEQ_NC_DIR} \
         --with-netcdf-libs="${SEQ_NC_CLIB}" \
         --with-nc4par=${PAR_NC_DIR} \
-        --with-nc4par-libs="${PAR_NC_CLIB}" 
+        --with-nc4par-libs="${PAR_NC_CLIB}" \
+        $WITHDART \
+        $WITHFLEX \
         #--with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.sith.$TARGET 
         #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
         #--enable-shared --disable-static

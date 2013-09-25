@@ -91,7 +91,8 @@ am__EXEEXT_3 =
 @BUILD_WRITE_TRUE@am__EXEEXT_4 = hashtest$(EXEEXT) \
 @BUILD_WRITE_TRUE@	copy_subvolume$(EXEEXT) \
 @BUILD_WRITE_TRUE@	transforms_specparse$(EXEEXT) \
-@BUILD_WRITE_TRUE@	adios_transforms_read_write$(EXEEXT)
+@BUILD_WRITE_TRUE@	adios_transforms_read_write$(EXEEXT) \
+@BUILD_WRITE_TRUE@	set_path$(EXEEXT) set_path_var$(EXEEXT)
 am_adios_amr_write_OBJECTS = adios_amr_write.$(OBJEXT)
 adios_amr_write_OBJECTS = $(am_adios_amr_write_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -205,6 +206,20 @@ selections_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 selections_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(selections_LDFLAGS) $(LDFLAGS) -o $@
+am_set_path_OBJECTS = set_path.$(OBJEXT)
+set_path_OBJECTS = $(am_set_path_OBJECTS)
+set_path_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+set_path_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(set_path_LDFLAGS) \
+	$(LDFLAGS) -o $@
+am_set_path_var_OBJECTS = set_path_var.$(OBJEXT)
+set_path_var_OBJECTS = $(am_set_path_var_OBJECTS)
+set_path_var_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+set_path_var_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(set_path_var_LDFLAGS) $(LDFLAGS) -o $@
 am_transforms_specparse_OBJECTS = transforms_specparse.$(OBJEXT)
 transforms_specparse_OBJECTS = $(am_transforms_specparse_OBJECTS)
 transforms_specparse_DEPENDENCIES = $(top_builddir)/src/libadios.a \
@@ -261,7 +276,8 @@ SOURCES = $(adios_amr_write_SOURCES) $(adios_amr_write_2vars_SOURCES) \
 	$(hashtest_SOURCES) $(local_array_time_SOURCES) \
 	$(many_vars_SOURCES) $(path_test_SOURCES) \
 	$(posix_method_SOURCES) $(reuse_dim_SOURCES) \
-	$(selections_SOURCES) $(transforms_specparse_SOURCES) \
+	$(selections_SOURCES) $(set_path_SOURCES) \
+	$(set_path_var_SOURCES) $(transforms_specparse_SOURCES) \
 	$(two_groups_SOURCES) $(write_alternate_SOURCES) \
 	$(write_read_SOURCES)
 DIST_SOURCES = $(adios_amr_write_SOURCES) \
@@ -273,7 +289,8 @@ DIST_SOURCES = $(adios_amr_write_SOURCES) \
 	$(hashtest_SOURCES) $(local_array_time_SOURCES) \
 	$(many_vars_SOURCES) $(path_test_SOURCES) \
 	$(posix_method_SOURCES) $(reuse_dim_SOURCES) \
-	$(selections_SOURCES) $(transforms_specparse_SOURCES) \
+	$(selections_SOURCES) $(set_path_SOURCES) \
+	$(set_path_var_SOURCES) $(transforms_specparse_SOURCES) \
 	$(two_groups_SOURCES) $(write_alternate_SOURCES) \
 	$(write_read_SOURCES)
 ETAGS = etags
@@ -546,10 +563,13 @@ check_readonly_C =
 @BUILD_WRITE_TRUE@        adios_transforms_read_write \
 @BUILD_WRITE_TRUE@        connect_to_space_subset
 
-@BUILD_WRITE_TRUE@test_C = hashtest copy_subvolume transforms_specparse adios_transforms_read_write   # transforms   # this test is obsolete
+@BUILD_WRITE_TRUE@test_C = hashtest copy_subvolume transforms_specparse adios_transforms_read_write \
+@BUILD_WRITE_TRUE@       set_path set_path_var
+
 @BUILD_FORTRAN_TRUE@check_readonly_Fortran = 
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@check_Fortran = posix_method
-INCLUDES = $(all_includes) -I$(top_builddir)/src
+INCLUDES = $(all_includes) -I$(top_builddir)/src \
+	-I$(top_builddir)/src/public
 
 #############################
 # Build rules for each test #
@@ -586,6 +606,12 @@ write_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 write_alternate_SOURCES = write_alternate.c
 write_alternate_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 write_alternate_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+set_path_SOURCES = set_path.c
+set_path_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+set_path_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+set_path_var_SOURCES = set_path_var.c
+set_path_var_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+set_path_var_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 two_groups_SOURCES = two_groups.c
 two_groups_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 two_groups_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
@@ -719,6 +745,12 @@ reuse_dim$(EXEEXT): $(reuse_dim_OBJECTS) $(reuse_dim_DEPENDENCIES)
 selections$(EXEEXT): $(selections_OBJECTS) $(selections_DEPENDENCIES) 
 	@rm -f selections$(EXEEXT)
 	$(selections_LINK) $(selections_OBJECTS) $(selections_LDADD) $(LIBS)
+set_path$(EXEEXT): $(set_path_OBJECTS) $(set_path_DEPENDENCIES) 
+	@rm -f set_path$(EXEEXT)
+	$(set_path_LINK) $(set_path_OBJECTS) $(set_path_LDADD) $(LIBS)
+set_path_var$(EXEEXT): $(set_path_var_OBJECTS) $(set_path_var_DEPENDENCIES) 
+	@rm -f set_path_var$(EXEEXT)
+	$(set_path_var_LINK) $(set_path_var_OBJECTS) $(set_path_var_LDADD) $(LIBS)
 transforms_specparse$(EXEEXT): $(transforms_specparse_OBJECTS) $(transforms_specparse_DEPENDENCIES) 
 	@rm -f transforms_specparse$(EXEEXT)
 	$(transforms_specparse_LINK) $(transforms_specparse_OBJECTS) $(transforms_specparse_LDADD) $(LIBS)
@@ -752,6 +784,8 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/path_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reuse_dim.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/selections.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/set_path.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/set_path_var.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transforms_specparse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/two_groups.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/write_alternate.Po@am__quote@
@@ -1111,6 +1145,8 @@ adios_staged_read_2vars.o: adios_staged_read_2vars.c
 adios_transforms_read_write.o: adios_transforms_read_write.c 
 write_read.o: write_read.c
 write_alternate.o: write_alternate.c
+set_path.o: set_path.c
+set_path_var.o: set_path_var.c
 two_groups.o: two_groups.c
 many_vars.o: many_vars.c
 selections.o: selections.c

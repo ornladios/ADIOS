@@ -25,7 +25,8 @@ check_C=local_array_time \
         adios_transforms_read_write \
         connect_to_space_subset
 
-test_C=hashtest copy_subvolume transforms_specparse adios_transforms_read_write   # transforms   # this test is obsolete
+test_C=hashtest copy_subvolume transforms_specparse adios_transforms_read_write \
+       set_path set_path_var
 
 endif
 
@@ -43,7 +44,7 @@ check_PROGRAMS=$(check_C) $(check_Fortran) $(check_readonly_C) $(check_readonly_
 TESTS=$(test_C)
 
 INCLUDES = $(all_includes)
-INCLUDES += -I$(top_builddir)/src
+INCLUDES += -I$(top_builddir)/src -I$(top_builddir)/src/public
 
 #############################
 # Build rules for each test #
@@ -100,6 +101,16 @@ write_alternate_SOURCES=write_alternate.c
 write_alternate_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 write_alternate_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 write_alternate.o: write_alternate.c
+
+set_path_SOURCES=set_path.c
+set_path_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+set_path_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+set_path.o: set_path.c
+
+set_path_var_SOURCES=set_path_var.c
+set_path_var_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+set_path_var_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+set_path_var.o: set_path_var.c
 
 two_groups_SOURCES=two_groups.c
 two_groups_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
