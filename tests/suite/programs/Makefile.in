@@ -151,7 +151,7 @@ connect_to_space_subset_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 connect_to_space_subset_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(connect_to_space_subset_LDFLAGS) $(LDFLAGS) -o $@
-am_copy_subvolume_OBJECTS = copy_subvolume.$(OBJEXT)
+am_copy_subvolume_OBJECTS = copy_subvolume-copy_subvolume.$(OBJEXT)
 copy_subvolume_OBJECTS = $(am_copy_subvolume_OBJECTS)
 copy_subvolume_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1)
@@ -220,7 +220,8 @@ set_path_var_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 set_path_var_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(set_path_var_LDFLAGS) $(LDFLAGS) -o $@
-am_transforms_specparse_OBJECTS = transforms_specparse.$(OBJEXT)
+am_transforms_specparse_OBJECTS =  \
+	transforms_specparse-transforms_specparse.$(OBJEXT)
 transforms_specparse_OBJECTS = $(am_transforms_specparse_OBJECTS)
 transforms_specparse_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1)
@@ -569,7 +570,7 @@ check_readonly_C =
 @BUILD_FORTRAN_TRUE@check_readonly_Fortran = 
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@check_Fortran = posix_method
 INCLUDES = $(all_includes) -I$(top_builddir)/src \
-	-I$(top_builddir)/src/public
+	-I$(top_srcdir)/src/public
 
 #############################
 # Build rules for each test #
@@ -638,15 +639,17 @@ transforms_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 copy_subvolume_SOURCES = copy_subvolume.c
 copy_subvolume_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 copy_subvolume_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+copy_subvolume_CPPFLAGS = -I$(top_srcdir)/src
 #copy_subvolume.o: copy_subvolume.c
 transforms_specparse_SOURCES = transforms_specparse.c
 transforms_specparse_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 transforms_specparse_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+transforms_specparse_CPPFLAGS = -I$(top_srcdir)/src
 #transforms_specparse.o: transforms_specparse.c
 hashtest_SOURCES = hashtest.c
 hashtest_LDADD = $(top_builddir)/src/libadios_a-qhashtbl.o
 hashtest_LDFLAGS = $(AM_LDFLAGS) 
-hashtest_CPPFLAGS = -I$(top_builddir)/src/core
+hashtest_CPPFLAGS = -I$(top_srcdir)/src
 EXTRA_DIST = adios_amr_write.xml adios_amr_write_2vars.xml \
              posix_method.xml local_array_time.xml  \
              write_alternate.xml write_read.xml transforms.xml \
@@ -777,7 +780,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_staged_read_v2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_transforms_read_write.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/connect_to_space_subset.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/copy_subvolume.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/copy_subvolume-copy_subvolume.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hashtest-hashtest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/local_array_time.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/many_vars.Po@am__quote@
@@ -786,7 +789,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/selections.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/set_path.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/set_path_var.Po@am__quote@
-@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transforms_specparse.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transforms_specparse-transforms_specparse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/two_groups.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/write_alternate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/write_read.Po@am__quote@
@@ -821,6 +824,20 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
 
+copy_subvolume-copy_subvolume.o: copy_subvolume.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(copy_subvolume_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT copy_subvolume-copy_subvolume.o -MD -MP -MF $(DEPDIR)/copy_subvolume-copy_subvolume.Tpo -c -o copy_subvolume-copy_subvolume.o `test -f 'copy_subvolume.c' || echo '$(srcdir)/'`copy_subvolume.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/copy_subvolume-copy_subvolume.Tpo $(DEPDIR)/copy_subvolume-copy_subvolume.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='copy_subvolume.c' object='copy_subvolume-copy_subvolume.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(copy_subvolume_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o copy_subvolume-copy_subvolume.o `test -f 'copy_subvolume.c' || echo '$(srcdir)/'`copy_subvolume.c
+
+copy_subvolume-copy_subvolume.obj: copy_subvolume.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(copy_subvolume_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT copy_subvolume-copy_subvolume.obj -MD -MP -MF $(DEPDIR)/copy_subvolume-copy_subvolume.Tpo -c -o copy_subvolume-copy_subvolume.obj `if test -f 'copy_subvolume.c'; then $(CYGPATH_W) 'copy_subvolume.c'; else $(CYGPATH_W) '$(srcdir)/copy_subvolume.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/copy_subvolume-copy_subvolume.Tpo $(DEPDIR)/copy_subvolume-copy_subvolume.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='copy_subvolume.c' object='copy_subvolume-copy_subvolume.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(copy_subvolume_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o copy_subvolume-copy_subvolume.obj `if test -f 'copy_subvolume.c'; then $(CYGPATH_W) 'copy_subvolume.c'; else $(CYGPATH_W) '$(srcdir)/copy_subvolume.c'; fi`
+
 hashtest-hashtest.o: hashtest.c
 @am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hashtest_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT hashtest-hashtest.o -MD -MP -MF $(DEPDIR)/hashtest-hashtest.Tpo -c -o hashtest-hashtest.o `test -f 'hashtest.c' || echo '$(srcdir)/'`hashtest.c
 @am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/hashtest-hashtest.Tpo $(DEPDIR)/hashtest-hashtest.Po
@@ -834,6 +851,20 @@ hashtest-hashtest.obj: hashtest.c
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='hashtest.c' object='hashtest-hashtest.obj' libtool=no @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hashtest_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o hashtest-hashtest.obj `if test -f 'hashtest.c'; then $(CYGPATH_W) 'hashtest.c'; else $(CYGPATH_W) '$(srcdir)/hashtest.c'; fi`
+
+transforms_specparse-transforms_specparse.o: transforms_specparse.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(transforms_specparse_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT transforms_specparse-transforms_specparse.o -MD -MP -MF $(DEPDIR)/transforms_specparse-transforms_specparse.Tpo -c -o transforms_specparse-transforms_specparse.o `test -f 'transforms_specparse.c' || echo '$(srcdir)/'`transforms_specparse.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/transforms_specparse-transforms_specparse.Tpo $(DEPDIR)/transforms_specparse-transforms_specparse.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='transforms_specparse.c' object='transforms_specparse-transforms_specparse.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(transforms_specparse_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o transforms_specparse-transforms_specparse.o `test -f 'transforms_specparse.c' || echo '$(srcdir)/'`transforms_specparse.c
+
+transforms_specparse-transforms_specparse.obj: transforms_specparse.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(transforms_specparse_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT transforms_specparse-transforms_specparse.obj -MD -MP -MF $(DEPDIR)/transforms_specparse-transforms_specparse.Tpo -c -o transforms_specparse-transforms_specparse.obj `if test -f 'transforms_specparse.c'; then $(CYGPATH_W) 'transforms_specparse.c'; else $(CYGPATH_W) '$(srcdir)/transforms_specparse.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/transforms_specparse-transforms_specparse.Tpo $(DEPDIR)/transforms_specparse-transforms_specparse.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='transforms_specparse.c' object='transforms_specparse-transforms_specparse.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(transforms_specparse_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o transforms_specparse-transforms_specparse.obj `if test -f 'transforms_specparse.c'; then $(CYGPATH_W) 'transforms_specparse.c'; else $(CYGPATH_W) '$(srcdir)/transforms_specparse.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -1019,7 +1050,7 @@ check-am: all-am
 	$(MAKE) $(AM_MAKEFLAGS) $(check_PROGRAMS)
 	$(MAKE) $(AM_MAKEFLAGS) check-TESTS
 check: check-am
-all-am: Makefile
+all-am: Makefile all-local
 installdirs:
 install: install-am
 install-exec: install-exec-am
@@ -1120,8 +1151,8 @@ uninstall-am:
 
 .MAKE: check-am install-am install-strip
 
-.PHONY: CTAGS GTAGS all all-am check check-TESTS check-am clean \
-	clean-checkPROGRAMS clean-generic clean-libtool ctags \
+.PHONY: CTAGS GTAGS all all-am all-local check check-TESTS check-am \
+	clean clean-checkPROGRAMS clean-generic clean-libtool ctags \
 	distclean distclean-compile distclean-generic \
 	distclean-libtool distclean-tags distdir dvi dvi-am html \
 	html-am info info-am install install-am install-data \
@@ -1134,9 +1165,12 @@ uninstall-am:
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am
 
+
+all-local:
+	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
 posix_method.o: gwrite_posix_method.fh 
 gwrite_posix_method.fh: posix_method.xml
-	$(top_srcdir)/utils/gpp/gpp.py posix_method.xml
+	$(top_builddir)/utils/gpp/gpp.py $(srcdir)/posix_method.xml
 adios_amr_write.o: adios_amr_write.c
 adios_amr_write_2vars.o: adios_amr_write_2vars.c
 adios_staged_read.o: adios_staged_read.c

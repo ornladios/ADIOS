@@ -35,7 +35,9 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = uniform$(EXEEXT) rectilinear$(EXEEXT) \
-	structured$(EXEEXT) unstructured$(EXEEXT) triangle2d$(EXEEXT)
+	structured$(EXEEXT) unstructured$(EXEEXT) uniform2d$(EXEEXT) \
+	rectilinear2d$(EXEEXT) structured2d$(EXEEXT) tri2d$(EXEEXT) \
+	triangle2d$(EXEEXT)
 subdir = examples/C/schema
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -82,6 +84,13 @@ rectilinear_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 rectilinear_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(rectilinear_LDFLAGS) $(LDFLAGS) -o $@
+am_rectilinear2d_OBJECTS = rectilinear2d.$(OBJEXT)
+rectilinear2d_OBJECTS = $(am_rectilinear2d_OBJECTS)
+rectilinear2d_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+rectilinear2d_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(rectilinear2d_LDFLAGS) $(LDFLAGS) -o $@
 am_structured_OBJECTS = structured.$(OBJEXT)
 structured_OBJECTS = $(am_structured_OBJECTS)
 structured_DEPENDENCIES = $(top_builddir)/src/libadios.a \
@@ -89,6 +98,20 @@ structured_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 structured_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(structured_LDFLAGS) $(LDFLAGS) -o $@
+am_structured2d_OBJECTS = structured2d.$(OBJEXT)
+structured2d_OBJECTS = $(am_structured2d_OBJECTS)
+structured2d_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+structured2d_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(structured2d_LDFLAGS) $(LDFLAGS) -o $@
+am_tri2d_OBJECTS = tri2d.$(OBJEXT)
+tri2d_OBJECTS = $(am_tri2d_OBJECTS)
+tri2d_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+tri2d_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(tri2d_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_triangle2d_OBJECTS = triangle2d.$(OBJEXT)
 triangle2d_OBJECTS = $(am_triangle2d_OBJECTS)
 triangle2d_DEPENDENCIES = $(top_builddir)/src/libadios.a \
@@ -103,6 +126,13 @@ uniform_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 uniform_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(uniform_LDFLAGS) \
 	$(LDFLAGS) -o $@
+am_uniform2d_OBJECTS = uniform2d.$(OBJEXT)
+uniform2d_OBJECTS = $(am_uniform2d_OBJECTS)
+uniform2d_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+uniform2d_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(uniform2d_LDFLAGS) $(LDFLAGS) -o $@
 am_unstructured_OBJECTS = unstructured.$(OBJEXT)
 unstructured_OBJECTS = $(am_unstructured_OBJECTS)
 unstructured_DEPENDENCIES = $(top_builddir)/src/libadios.a \
@@ -122,11 +152,13 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(rectilinear_SOURCES) $(structured_SOURCES) \
-	$(triangle2d_SOURCES) $(uniform_SOURCES) \
+SOURCES = $(rectilinear_SOURCES) $(rectilinear2d_SOURCES) \
+	$(structured_SOURCES) $(structured2d_SOURCES) $(tri2d_SOURCES) \
+	$(triangle2d_SOURCES) $(uniform_SOURCES) $(uniform2d_SOURCES) \
 	$(unstructured_SOURCES)
-DIST_SOURCES = $(rectilinear_SOURCES) $(structured_SOURCES) \
-	$(triangle2d_SOURCES) $(uniform_SOURCES) \
+DIST_SOURCES = $(rectilinear_SOURCES) $(rectilinear2d_SOURCES) \
+	$(structured_SOURCES) $(structured2d_SOURCES) $(tri2d_SOURCES) \
+	$(triangle2d_SOURCES) $(uniform_SOURCES) $(uniform2d_SOURCES) \
 	$(unstructured_SOURCES)
 ETAGS = etags
 CTAGS = ctags
@@ -384,11 +416,27 @@ structured_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 unstructured_SOURCES = unstructured.c
 unstructured_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 unstructured_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+uniform2d_SOURCES = uniform2d.c
+uniform2d_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+uniform2d_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+rectilinear2d_SOURCES = rectilinear2d.c
+rectilinear2d_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+rectilinear2d_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+structured2d_SOURCES = structured2d.c
+structured2d_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+structured2d_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+tri2d_SOURCES = tri2d.c
+tri2d_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+tri2d_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 triangle2d_SOURCES = triangle2d.c
 triangle2d_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 triangle2d_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 CLEANFILES = *.bp
 EXTRA_DIST = uniform.xml structured.xml rectilinear.xml unstructured.xml \
+			 unifrom2d.xml unifrom2d.readme unifrom2d.n4.png \
+			 rectilinear2d.xml rectilinear2d.readme rectilinear2d.png \
+			 structured2d.xml structured2d.readme \
+			 tri2d.xml tri2d.readme tri2d.n.png \
              triangle2d.xml triangle2d.readme triangle2d.n4.png
 
 all: all-am
@@ -437,15 +485,27 @@ clean-noinstPROGRAMS:
 rectilinear$(EXEEXT): $(rectilinear_OBJECTS) $(rectilinear_DEPENDENCIES) 
 	@rm -f rectilinear$(EXEEXT)
 	$(rectilinear_LINK) $(rectilinear_OBJECTS) $(rectilinear_LDADD) $(LIBS)
+rectilinear2d$(EXEEXT): $(rectilinear2d_OBJECTS) $(rectilinear2d_DEPENDENCIES) 
+	@rm -f rectilinear2d$(EXEEXT)
+	$(rectilinear2d_LINK) $(rectilinear2d_OBJECTS) $(rectilinear2d_LDADD) $(LIBS)
 structured$(EXEEXT): $(structured_OBJECTS) $(structured_DEPENDENCIES) 
 	@rm -f structured$(EXEEXT)
 	$(structured_LINK) $(structured_OBJECTS) $(structured_LDADD) $(LIBS)
+structured2d$(EXEEXT): $(structured2d_OBJECTS) $(structured2d_DEPENDENCIES) 
+	@rm -f structured2d$(EXEEXT)
+	$(structured2d_LINK) $(structured2d_OBJECTS) $(structured2d_LDADD) $(LIBS)
+tri2d$(EXEEXT): $(tri2d_OBJECTS) $(tri2d_DEPENDENCIES) 
+	@rm -f tri2d$(EXEEXT)
+	$(tri2d_LINK) $(tri2d_OBJECTS) $(tri2d_LDADD) $(LIBS)
 triangle2d$(EXEEXT): $(triangle2d_OBJECTS) $(triangle2d_DEPENDENCIES) 
 	@rm -f triangle2d$(EXEEXT)
 	$(triangle2d_LINK) $(triangle2d_OBJECTS) $(triangle2d_LDADD) $(LIBS)
 uniform$(EXEEXT): $(uniform_OBJECTS) $(uniform_DEPENDENCIES) 
 	@rm -f uniform$(EXEEXT)
 	$(uniform_LINK) $(uniform_OBJECTS) $(uniform_LDADD) $(LIBS)
+uniform2d$(EXEEXT): $(uniform2d_OBJECTS) $(uniform2d_DEPENDENCIES) 
+	@rm -f uniform2d$(EXEEXT)
+	$(uniform2d_LINK) $(uniform2d_OBJECTS) $(uniform2d_LDADD) $(LIBS)
 unstructured$(EXEEXT): $(unstructured_OBJECTS) $(unstructured_DEPENDENCIES) 
 	@rm -f unstructured$(EXEEXT)
 	$(unstructured_LINK) $(unstructured_OBJECTS) $(unstructured_LDADD) $(LIBS)
@@ -555,7 +615,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS)
+all-am: Makefile $(PROGRAMS) all-local
 installdirs:
 install: install-am
 install-exec: install-exec-am
@@ -654,19 +714,23 @@ uninstall-am:
 
 .MAKE: install-am install-strip
 
-.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libtool clean-noinstPROGRAMS ctags distclean \
-	distclean-compile distclean-generic distclean-libtool \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
-	pdf pdf-am ps ps-am tags uninstall uninstall-am
+.PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
+	clean-generic clean-libtool clean-noinstPROGRAMS ctags \
+	distclean distclean-compile distclean-generic \
+	distclean-libtool distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-man install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	tags uninstall uninstall-am
 
+
+all-local:
+	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

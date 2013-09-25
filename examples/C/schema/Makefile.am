@@ -3,6 +3,9 @@ INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public
 
 AUTOMAKE_OPTIONS = no-dependencies
 
+all-local:
+	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
+
 noinst_PROGRAMS = uniform rectilinear structured unstructured uniform2d rectilinear2d structured2d tri2d triangle2d
 
 uniform_SOURCES = uniform.c

@@ -3,6 +3,10 @@ INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public $(TIMER_CPPFLAGS)
 
 AUTOMAKE_OPTIONS = no-dependencies
 
+all-local:
+	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
+	test "$(srcdir)" = "$(builddir)" || cp -r $(srcdir)/S3D $(builddir)
+
 noinst_PROGRAMS = adios_global adios_read_subv adios_read_points adios_read_wb_subpg adios_read_all_3D adios_write_all_3D
 
 adios_global_SOURCES = adios_global.c

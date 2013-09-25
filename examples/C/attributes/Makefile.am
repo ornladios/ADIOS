@@ -3,6 +3,9 @@ INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public
 
 AUTOMAKE_OPTIONS = no-dependencies
 
+all-local:
+	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
+
 noinst_PROGRAMS = attributes_write attributes_read
 
 attributes_write_SOURCES = attributes_write.c

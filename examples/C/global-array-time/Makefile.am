@@ -3,6 +3,9 @@ INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public
 
 AUTOMAKE_OPTIONS = no-dependencies
 
+all-local:
+	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
+
 noinst_PROGRAMS = adios_globaltime adios_globaltime_no_xml adios_read_globaltime adios_read_globaltime_streaming
 
 adios_globaltime_SOURCES = adios_globaltime.c

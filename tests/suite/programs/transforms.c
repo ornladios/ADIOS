@@ -3,8 +3,8 @@
 #include <stdint.h>
 #include <string.h>
 #include <assert.h>
-#include "public/adios.h"
-#include "public/adios_read.h"
+#include "adios.h"
+#include "adios_read.h"
 
 #define ADIOS_USE_READ_API_V1
 
