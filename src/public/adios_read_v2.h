@@ -115,8 +115,8 @@ typedef struct {
         int                   varid;    /* variable index (0..ADIOS_FILE.nvars-1)              */
         enum ADIOS_DATATYPES  type;     /* type of variable                                    */
         // NCSU ALACRITY-ADIOS - Added timestep information into varchunks
-        int 				  from_steps; /* the first timestep in the returned data             */
-        int 				  nsteps;     /* the number of timesteps in the returned data        */
+        int                   from_steps; /* the first timestep in the returned data             */
+        int                   nsteps;     /* the number of timesteps in the returned data        */
         ADIOS_SELECTION     * sel;      /* sub-selection of requested selection                */
         void                * data;     /* pointer to data, at next adios_read_check() memory 
                                            will likely be overwritten                          */

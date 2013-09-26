@@ -11,7 +11,7 @@
 #include <unistd.h>   /* _SC_PAGE_SIZE, _SC_AVPHYS_PAGES */
 
 #if defined(__APPLE__)
-#	include <mach/mach.h>
+#    include <mach/mach.h>
 #endif
 
 #include "core/buffer.h"
@@ -85,7 +85,7 @@ int adios_set_buffer_size ()
 
         pagesize = sysconf (_SC_PAGE_SIZE);
         pages =  adios_get_avphys_pages ();
-	
+    
         if (adios_buffer_alloc_percentage)
         {
             adios_buffer_size_max =   (pages * pagesize / 100.0)

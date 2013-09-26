@@ -495,7 +495,7 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
                 }
                 int rank_in_group;
                 if (group_size < md->split_size)
-		{
+                {
                     rank_in_group = i - (md->size - group_size);
                 }
                 else
@@ -903,7 +903,7 @@ static void set_stripe_size (struct adios_file_struct * fd
             else
                 targets_per_file = md->storage_targets;
             // assuming our max targets per file, see if we have to split
-	    md->split_groups =   (md->max_storage_targets / md->files_number)
+            md->split_groups =   (md->max_storage_targets / md->files_number)
                                / targets_per_file;
             if ((md->max_storage_targets / md->files_number) % targets_per_file)
                 md->split_groups++;

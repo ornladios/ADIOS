@@ -53,9 +53,9 @@ typedef struct {
 #define DECLARE_TRANSFORM_WRITE_METHOD(tmethod) \
     uint16_t adios_transform_##tmethod##_get_metadata_size(struct adios_transform_spec *transform_spec); \
     uint64_t adios_transform_##tmethod##_calc_vars_transformed_size(enum ADIOS_TRANSFORM_TYPE type,      \
-                                                                    uint64_t orig_size, int num_vars);	 \
-    int adios_transform_##tmethod##_apply(struct adios_file_struct *fd, struct adios_var_struct *var,	 \
-                                          uint64_t *transformed_len,									 \
+                                                                    uint64_t orig_size, int num_vars);   \
+    int adios_transform_##tmethod##_apply(struct adios_file_struct *fd, struct adios_var_struct *var,    \
+                                          uint64_t *transformed_len,                                     \
                                           int use_shared_buffer, int *wrote_to_shared_buffer);
 
 // Transform method function registration
@@ -69,29 +69,29 @@ typedef struct {
 
 // Transform method function helper definitions for unimplemented methods
 #define UNIMPL_TRANSFORM_WRITE_FN(tmethod, func) \
-    adios_error(err_operation_not_supported,								\
-                "Transform method %s is not supported for write in this "	\
-                "configuration of ADIOS (function missing: %s)\n",			\
+    adios_error(err_operation_not_supported,                                \
+                "Transform method %s is not supported for write in this "   \
+                "configuration of ADIOS (function missing: %s)\n",          \
                 #tmethod, func);
 
 // Note: this is actually a "definition" in the language-semantic sense, but this detail is
 //  irrelevant to users, so we name it similarly to DECLARE_TRANSFORM_WRITE_METHOD
-#define DECLARE_TRANSFORM_WRITE_METHOD_UNIMPL(tmethod) 										\
+#define DECLARE_TRANSFORM_WRITE_METHOD_UNIMPL(tmethod)                                       \
         uint16_t adios_transform_##tmethod##_get_metadata_size(struct adios_transform_spec *transform_spec) { \
-            UNIMPL_TRANSFORM_WRITE_FN(tmethod, __FUNCTION__);								\
-            return 0;																		\
-        }																					\
+            UNIMPL_TRANSFORM_WRITE_FN(tmethod, __FUNCTION__);                                \
+            return 0;                                                                        \
+        }                                                                                    \
         uint64_t adios_transform_##tmethod##_calc_vars_transformed_size(enum ADIOS_TRANSFORM_TYPE type,     \
-                                                                        uint64_t orig_size, int num_vars) {	\
-            UNIMPL_TRANSFORM_WRITE_FN(tmethod, __FUNCTION__);								\
-            return 0;																		\
-        }																					\
-        int adios_transform_##tmethod##_apply(struct adios_file_struct *fd,							\
-                                              struct adios_var_struct *var,							\
-                                              uint64_t *transformed_len,							\
-                                              int use_shared_buffer, int *wrote_to_shared_buffer) {	\
-            UNIMPL_TRANSFORM_WRITE_FN(tmethod, __FUNCTION__);										\
-            return 0;																				\
+                                                                        uint64_t orig_size, int num_vars) { \
+            UNIMPL_TRANSFORM_WRITE_FN(tmethod, __FUNCTION__);                                \
+            return 0;                                                                        \
+        }                                                                                    \
+        int adios_transform_##tmethod##_apply(struct adios_file_struct *fd,                  \
+                                              struct adios_var_struct *var,                  \
+                                              uint64_t *transformed_len,                     \
+                                              int use_shared_buffer, int *wrote_to_shared_buffer) {  \
+            UNIMPL_TRANSFORM_WRITE_FN(tmethod, __FUNCTION__);                                \
+            return 0;                                                                        \
         }
 
 #endif /* ADIOS_TRANSFORMS_HOOKS_WRITE_H_ */

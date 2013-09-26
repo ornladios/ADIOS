@@ -339,10 +339,10 @@ void adios_phdf5_finalize (int mype, struct adios_method_struct * method)
 }
 
 int hw_attribute ( hid_t root_id
-		,struct adios_var_struct *pvar_root
-		,struct adios_attribute_struct *patt
-		,enum ADIOS_FLAG fortran_flag
-		,int myrank
+                ,struct adios_var_struct *pvar_root
+                ,struct adios_attribute_struct *patt
+                ,enum ADIOS_FLAG fortran_flag
+                ,int myrank
                 ,int nproc) {
 
     H5Eset_auto ( NULL, NULL);
@@ -393,7 +393,7 @@ int hw_attribute ( hid_t root_id
                                           ,h5_type_id,h5_dataspace_id,0);
                 }
                 if (h5_attribute_id > 0) {
-                        if (myrank == 0)	
+                        if (myrank == 0)        
                             H5Awrite ( h5_attribute_id, h5_type_id, var_linked->data);
                 }
                 H5Aclose (h5_attribute_id);
@@ -458,7 +458,7 @@ int hw_attribute ( hid_t root_id
                     h5_attribute_id = H5Acreate ( grp_ids[level], patt->name 
                                         ,h5_type_id, h5_dataspace_id, 0);
                     if (h5_attribute_id > 0) { 
-                       if (myrank == 0)	
+                       if (myrank == 0)        
                           H5Awrite(h5_attribute_id, h5_type_id, patt->value);
                      }
                 }
@@ -999,10 +999,10 @@ int getH5TypeId(enum ADIOS_DATATYPES type, hid_t* h5_type_id \
             break;
         case adios_unsigned_integer:
             *h5_type_id = H5Tcopy(H5T_NATIVE_UINT32);
-	    break;
+            break;
         case adios_unsigned_long:
             *h5_type_id = H5Tcopy(H5T_NATIVE_UINT64);
-	    break;
+            break;
         default:
             status = -1;
             break;
@@ -1087,12 +1087,12 @@ void hw_gopen (hid_t root_id, char * path, hid_t * grp_id, int * level, enum ADI
     pch = strtok(tmpstr,"/");
     grp_name = (char **) malloc(NUM_GP);
     while ( pch!=NULL && *pch!=' ') {
-	len = strlen(pch);
-	grp_name[idx]  = (char *)malloc(len+1);
-	grp_name[idx][0]='\0';
-	strcat(grp_name[idx],pch);
-	pch=strtok(NULL,"/");
-	idx=idx+1;
+        len = strlen(pch);
+        grp_name[idx]  = (char *)malloc(len+1);
+        grp_name[idx][0]='\0';
+        strcat(grp_name[idx],pch);
+        pch=strtok(NULL,"/");
+        idx=idx+1;
     }
     *level = idx;
     grp_id [0] = root_id; 

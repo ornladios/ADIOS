@@ -480,7 +480,7 @@ double adios_stat_cor_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char *
 
     if (vix == NULL)
     {
-	adios_error(err_invalid_argument, "Variable not defined\n");
+        adios_error(err_invalid_argument, "Variable not defined\n");
         return 0;
     }
 

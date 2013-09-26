@@ -1382,7 +1382,7 @@ fprintf(stderr, "im here %s:%d\n", __FILE__,__LINE__);
     // we also need a value telling that writer is finishing so don't
     // read this file any more
 
-    return fp;	
+    return fp; 
 }
 
 int adios_read_datatap_fclose(ADIOS_FILE *fp)
@@ -1416,8 +1416,8 @@ fprintf(stderr, "im here rank %d %s:%d\n",dt_read_data->dt_comm_rank,__FILE__,__
 
     while(1) {
         pthread_mutex_lock(&(ds->f_info->mutex));
-		while(queue_size(ds->f_info->dt_queue) == 0) {
-	fprintf(stderr, "im here num_chunks_processed %d %d %s:%d\n",num_chunks_processed, ds->num_pgs,__FILE__,__LINE__);
+                while(queue_size(ds->f_info->dt_queue) == 0) {
+        fprintf(stderr, "im here num_chunks_processed %d %d %s:%d\n",num_chunks_processed, ds->num_pgs,__FILE__,__LINE__);
             // check if it's time to finish this file
             if(num_chunks_processed == ds->num_pgs) { // TODO
 fprintf(stderr, "im here %s:%d\n",__FILE__,__LINE__);

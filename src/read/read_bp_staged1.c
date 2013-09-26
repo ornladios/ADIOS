@@ -1066,7 +1066,7 @@ printf ("\n");
             g = fidx_to_group_mapping (p, fidx_vector[i]);
             g_prev = (i == 0 ? -1 : fidx_to_group_mapping (p, fidx_vector[i - 1]));
 
-	    if (i != 0 && g == g_prev)
+            if (i != 0 && g == g_prev)
             {
                 continue;
             }

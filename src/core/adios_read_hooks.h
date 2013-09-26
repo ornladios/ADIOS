@@ -113,8 +113,8 @@ struct adios_read_hooks_struct
     ADIOS_RESET_DIMENSION_ORDER_FN  adios_reset_dimension_order_fn;
     ADIOS_GET_GROUPINFO_FN          adios_get_groupinfo_fn;
     ADIOS_IS_VAR_TIMED_FN           adios_is_var_timed_fn;
-    ADIOS_READ_INQ_VAR_TRANSINFO	adios_inq_var_transinfo_fn;
-    ADIOS_READ_INQ_VAR_TRANS_BLOCKINFO	adios_inq_var_trans_blockinfo_fn;
+    ADIOS_READ_INQ_VAR_TRANSINFO    adios_inq_var_transinfo_fn;
+    ADIOS_READ_INQ_VAR_TRANS_BLOCKINFO    adios_inq_var_trans_blockinfo_fn;
 };
 
 #undef FORWARD_DECLARE

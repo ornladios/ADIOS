@@ -11,7 +11,7 @@
 
 #include "isobar.h"
 
-#define ELEMENT_BYTES	8
+#define ELEMENT_BYTES    8
 
 int decompress_isobar_pre_allocated(const void* input_data, const uint64_t input_len,
                                     void* output_data, uint64_t* output_len)
@@ -54,7 +54,7 @@ int adios_transform_isobar_generate_read_subrequests(adios_transform_read_reques
                                                     adios_transform_pg_read_request *pg_reqgroup)
 {
     void *buf = malloc(pg_reqgroup->raw_var_length);
-	assert(buf);
+    assert(buf);
     adios_transform_raw_read_request *subreq = adios_transform_raw_read_request_new_whole_pg(pg_reqgroup, buf);
     adios_transform_raw_read_request_append(pg_reqgroup, subreq);
     return 0;
@@ -75,41 +75,41 @@ adios_datablock * adios_transform_isobar_pg_reqgroup_completed(adios_transform_r
 {
     uint64_t compressed_size = (uint64_t)completed_pg_reqgroup->raw_var_length;
     void* compressed_data = completed_pg_reqgroup->subreqs->data;
-	
-	uint64_t uncompressed_size_meta = *((uint64_t*)reqgroup->transinfo->transform_metadata);
-	char compress_ok = *((char*)(reqgroup->transinfo->transform_metadata + sizeof(uint64_t)));
+    
+    uint64_t uncompressed_size_meta = *((uint64_t*)reqgroup->transinfo->transform_metadata);
+    char compress_ok = *((char*)(reqgroup->transinfo->transform_metadata + sizeof(uint64_t)));
 
     uint64_t uncompressed_size = adios_get_type_size(reqgroup->transinfo->orig_type, "");
     int d = 0;
     for(d = 0; d < reqgroup->transinfo->orig_ndim; d++)
-	{
-		uncompressed_size *= (uint64_t)(completed_pg_reqgroup->orig_varblock->count[d]);
-	}
+    {
+        uncompressed_size *= (uint64_t)(completed_pg_reqgroup->orig_varblock->count[d]);
+    }
 
-	if(uncompressed_size_meta != uncompressed_size)
-	{
-		printf("WARNING: possible wrong data size or corrupted metadata\n");
-	}
-	
-	void* uncompressed_data = malloc(uncompressed_size);
-	if(!uncompressed_data)
-	{
-		return NULL;
-	}
+    if(uncompressed_size_meta != uncompressed_size)
+    {
+        printf("WARNING: possible wrong data size or corrupted metadata\n");
+    }
+    
+    void* uncompressed_data = malloc(uncompressed_size);
+    if(!uncompressed_data)
+    {
+        return NULL;
+    }
 
-	if(compress_ok == 1)	// compression is successful
-	{
-		int rtn = decompress_isobar_pre_allocated(compressed_data, compressed_size, uncompressed_data, &uncompressed_size);
-		if(0 != rtn)
-		{
-			return NULL;
-		}
-	}
-	else	// just copy the buffer since data is not compressed
-	{
-		// printf("compression failed before, fall back to memory copy\n");
-		memcpy(uncompressed_data, compressed_data, compressed_size);
-	}
+    if(compress_ok == 1)    // compression is successful
+    {
+        int rtn = decompress_isobar_pre_allocated(compressed_data, compressed_size, uncompressed_data, &uncompressed_size);
+        if(0 != rtn)
+        {
+            return NULL;
+        }
+    }
+    else    // just copy the buffer since data is not compressed
+    {
+        // printf("compression failed before, fall back to memory copy\n");
+        memcpy(uncompressed_data, compressed_data, compressed_size);
+    }
 
     return adios_datablock_new(reqgroup->transinfo->orig_type,
                                completed_pg_reqgroup->timestep,
