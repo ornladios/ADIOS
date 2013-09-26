@@ -90,13 +90,14 @@ typedef struct _evgroup {
     int condition;
     int num_vars;
     int step;
+    int process_id;
     global_var* vars;
 } evgroup, *evgroup_ptr;
 
 typedef struct _op_msg
 {
     int process_id;
-    char * file_name;
+    char *file_name;
     int type; //4 = end_of_stream, 3 = init, 2 = ack, 1 = open, 0 = close,
     int step;
     int condition;
@@ -153,6 +154,7 @@ static FMField evgroup_field_list[]=
     {"condition", "integer", sizeof(int), FMOffset(evgroup_ptr, condition)},
     {"num_vars", "integer", sizeof(int), FMOffset(evgroup_ptr, num_vars)},
     {"step", "integer", sizeof(int), FMOffset(evgroup_ptr, step)},
+    {"process_id", "integer", sizeof(int), FMOffset(evgroup_ptr, process_id)},
     {"vars", "global_var[num_vars]", sizeof(global_var), FMOffset(evgroup_ptr, vars)},
     {NULL, NULL, 0, 0}
 };

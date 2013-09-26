@@ -539,6 +539,8 @@ send_open_msg(flexpath_reader_file *fp, int destination)
     msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
 
     EVsubmit(fp->bridges[destination].op_source, &msg, NULL);    
+    fp_log("COND", "reader rank: %d waiting on condition: %d in send_open_msg to writer: %d\n",
+	   fp->rank, msg.condition, destination);
     CMCondition_wait(fp_read_data->fp_cm, msg.condition);
     fp->bridges[destination].opened = 1;
 }
@@ -574,8 +576,11 @@ send_flush_msg(flexpath_reader_file *fp, int destination, Flush_type type, int u
 	msg.condition = -1;
     // maybe check to see if the bridge is create first.
     EVsubmit(fp->bridges[destination].flush_source, &msg, NULL);
-    if(use_condition)
+    if(use_condition){
+	fp_log("COND", "reader rank: %d waiting on condition: %d in send_flush_msg\n",
+	       fp->rank, msg.condition);
 	CMCondition_wait(fp_read_data->fp_cm, msg.condition);
+    }
 }
 
 void 
@@ -627,6 +632,8 @@ update_step_msg_handler(
     adiosfile->last_step = msg->step;
     fp_log("STEP", "mystep: %d, last_writer_step: %d\n", 
 	   fp->mystep, msg->step);
+    fp_log("COND", "reader rank: %d signaling condition: %d in update_step_msg_handler\n",
+	   fp->rank, msg->condition);
     CMCondition_signal(fp_read_data->fp_cm, msg->condition);
     return 0;
 }
@@ -638,12 +645,16 @@ op_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     if(msg->type==ACK_MSG) {
 	if(msg->condition != -1){
+	    fp_log("COND", "reader rank: %d signaling on condition: %d in op_msg_handler from writer: %d\n",
+		   fp->rank, msg->condition, msg->process_id);
 	    CMCondition_signal(fp_read_data->fp_cm, msg->condition);
 	}
         //ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
     }
     if(msg->type == EOS_MSG){	
 	adios_errno = err_end_of_stream;
+	fp_log("COND", "reader rank: %d signaling on condition: %d in op_msg_handler\n",
+	       fp->rank, msg->condition);
 	CMCondition_signal(fp_read_data->fp_cm, msg->condition);
     }       
     return 0;
@@ -680,6 +691,8 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 	}
     }
 
+    fp_log("COND", "reader rank: %d signaling on condition: %d in group_msg_handler from writer: %d.\n",
+	   fp->rank, msg->condition, msg->process_id);
     CMCondition_signal(fp_read_data->fp_cm, msg->condition);    
     return 0;
 }
@@ -871,6 +884,8 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 	}
     }
     else{
+	fp_log("COND", "reader rank: %d signaling on condition: %d in raw_handler from writer: %d\n",
+	       fp->rank, condition, writer_rank);
 	CMCondition_signal(fp_read_data->fp_cm, condition);
     }
     fp_log("PERF", "READER_PERF:%d:%d:raw_handler_data:time:%lf:num_sendees:%d:flush_id:%d\n", 
@@ -907,7 +922,8 @@ adios_read_flexpath_init_method (MPI_Comm comm, PairStruct* params)
     fp_read_data->fp_cm = CManager_create();
     if(transport == NULL){
 	if(CMlisten(fp_read_data->fp_cm) == 0) {
-	    log_error( "Flexpath ERROR: unable to initialize connection manager.\n");
+	    fprintf(stderr, "Flexpath ERROR: reader %d unable to initialize connection manager.\n",
+		fp_read_data->fp_comm_rank);
 	}
     }else{
 	listen_list = create_attr_list();
@@ -915,7 +931,11 @@ adios_read_flexpath_init_method (MPI_Comm comm, PairStruct* params)
 		 (attr_value)strdup(transport));
 	CMlisten_specific(fp_read_data->fp_cm, listen_list);
     }
-    if(CMfork_comm_thread(fp_read_data->fp_cm)) {/*log_debug( "forked\n");*/}
+    int forked = CMfork_comm_thread(fp_read_data->fp_cm);
+    if(!forked) {
+	fprintf(stderr, "reader %d failed to fork comm_thread.\n", fp_read_data->fp_comm_rank);
+	/*log_debug( "forked\n");*/
+    }
     return 0;
 }
 

@@ -586,9 +586,11 @@ char *multiqueue_action = "{\n\
        EVdiscard_and_submit_drop_evgroup_msg(0,0);\n\
     }\n\
     if(EVcount_op_msg()>0) {\n\
+        op_msg *msg = EVdata_op_msg(0);\n\
         mine = EVget_attrs_op_msg(0);\n\
         found = attr_ivalue(mine, \"fp_dst_rank\");\n\
         if(found > 0) {\n\
+            printf(\"writer rank: %d sending op_msg of type: %d to reader rank: %d on port %d with condition: %d\\n\", msg->process_id, msg->type, found-1, found, msg->condition);\n\
             EVdiscard_and_submit_op_msg(found, 0);\n\
         } else {\n\
             EVdiscard_and_submit_op_msg(0,0);\n\
@@ -1167,6 +1169,7 @@ control_thread(void* arg)
 			    flexpathWriteData.cm, 
 			    attr_list_from_string(fileData->bridges[open->process_id].contact), 
 			    fileData->bridges[open->process_id].theirNum);		    
+
 		    EVaction_set_output(flexpathWriteData.cm, 
 					fileData->multiStone, 
 					fileData->multi_action, 
@@ -1180,14 +1183,18 @@ control_thread(void* arg)
                     fileData->openCount++;  
                     fileData->bridges[open->process_id].opened = 1;
 		    pthread_mutex_unlock(&fileData->openMutex);
-                    op_msg* ack = malloc(sizeof(op_msg));
+
+                    op_msg *ack = malloc(sizeof(op_msg));
                     ack->file_name = strdup(fileData->name);
                     ack->process_id = fileData->rank;
                     ack->step = fileData->readerStep;
                     ack->type = 2;
 		    ack->condition = open->condition;
                     fileData->attrs = set_dst_rank_atom(fileData->attrs, open->process_id+1);
-		    
+
+		    fp_log("COND", "writer rank: %d, sending ack (open) to reader rank: %d on port: %d with condition: %d\n",
+			    ack->process_id, open->process_id, open->process_id+1, ack->condition);
+
                     EVsubmit_general(fileData->opSource, ack, op_free, fileData->attrs);
                 } else {
                     fp_write_log("STEP", "recieved op with future step\n");
@@ -1199,16 +1206,13 @@ control_thread(void* arg)
                 fp_write_log("MUTEX","lock 7\n");
 		fileData->openCount--;
                 fileData->bridges[close->process_id].opened=0;
+		fileData->bridges[close->process_id].condition = close->condition;
                 fp_write_log("MUTEX","unlock 7\n");
 		pthread_mutex_unlock(&fileData->openMutex);
-                 if(fileData->openCount==0) {
-		     fp_write_log("STEP", "advancing\n");
-		     fp_write_log("DATAMUTEX", "in use 2\n"); 
+
+		if(fileData->openCount==0) {
 		     FlexpathQueueNode* node = threaded_dequeue(&fileData->dataQueue, 
 								&fileData->dataMutex, &fileData->dataCondition, 1);
-		     fp_write_log("DATAMUTEX", "no use 2\n"); 
-		     //int q = queue_count(&fileData->dataQueue);
-		     //fp_write_log("QUEUE", "after step queue count now %d\n", q);
 		     FMfree_var_rec_elements(fileData->fm->ioFormat, node->data);
 
 		     drop_evgroup_msg *dropMsg = malloc(sizeof(drop_evgroup_msg));
@@ -1216,6 +1220,7 @@ control_thread(void* arg)
 		     dropMsg->condition = CMCondition_get(flexpathWriteData.cm, NULL);
 		     EVsubmit_general(fileData->dropSource, dropMsg, drop_evgroup_msg_free, fileData->attrs);
 		     CMCondition_wait(flexpathWriteData.cm,  dropMsg->condition); 
+
 		     fileData->readerStep++;
 
 		     //for all bridges if step == currentstep send ack       		    
@@ -1320,7 +1325,7 @@ extern void adios_flexpath_init(const PairStruct *params, struct adios_method_st
     if(transport == NULL){
 	fp_write_log("SETUP","transport is null\n");
 	if(CMlisten(flexpathWriteData.cm) == 0) {
-	    perr( "error: unable to initialize connection manager.\n");
+	    fprintf(stderr, "error: unable to initialize connection manager.\n");
 	    exit(1);
 	}
     } else {
@@ -1337,7 +1342,7 @@ extern void adios_flexpath_init(const PairStruct *params, struct adios_method_st
     // fork communications thread
     int forked = CMfork_comm_thread(flexpathWriteData.cm);   
     if(!forked) {
-         perr( "error forking comm thread\n");
+	fprintf(stderr, "Wrtier error forking comm thread\n");
     }
 }
 
@@ -1679,7 +1684,7 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
     struct adios_group_struct * g = fd->group;
     struct adios_var_struct * list = g->vars;
     evgroup *gp = malloc(sizeof(evgroup));    
-
+    gp->process_id = fileData->rank;
     if(fileData->globalCount == 0){
 
 	gp->num_vars = 0;
