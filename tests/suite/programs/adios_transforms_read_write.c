@@ -21,12 +21,32 @@
 #include <stdint.h>
 #include <assert.h>
 
-const int ntransforms = 4;
+const int ntransforms = 7;
+const char varname_xform [][256] = { "t_none", 
+                                     "t_identity", 
+                                     "t_zlib",
+                                     "t_szip",
+                                     "t_bzip2",
+                                     "t_aplod", 
+                                     "t_isobar"
+};
+
+int find_var (ADIOS_FILE *f, char *name)
+{
+    int i;
+    for (i=0; i<f->nvars; i++)
+    {
+        // skip the leading / in the file's varname list in the comparison
+        if (!strcmp(name, f->var_namelist[i]+1))
+            return 1;
+    }
+    return 0;
+}
+
 
 int read_box (char *filename)
 {
 
-    char                    varname_xform [][256] = {"t_none", "t_identity", "t_aplod", "t_isobar"};
     double                  *data_xform [ntransforms];
     MPI_Comm                comm                = MPI_COMM_WORLD;
 
@@ -49,6 +69,7 @@ int read_box (char *filename)
     uint64_t data_size = 0;
     int rank;
     int i = 0;
+    int retval = 0;
 
     MPI_Comm_rank (comm, &rank);
     srand (rank);
@@ -75,9 +96,16 @@ int read_box (char *filename)
     // Allocate memory for reading in the transformed data and schedule reads
     // into the buffer
     for (i = 0; i < ntransforms; i ++) {
-        data_xform [i]    = malloc (npoints * sizeof (double));
-        adios_schedule_read (f, sel1, varname_xform [i], 0, 1, data_xform [i]);
+        if (find_var (f, varname_xform [i])) {
+            printf ("\n\t %s variable exists, schedule to read...", varname_xform [i]);
+            data_xform [i]    = malloc (npoints * sizeof (double));
+            adios_schedule_read (f, sel1, varname_xform [i], 0, 1, data_xform [i]);
+        } else {
+            printf ("\n\t %s variable is not in the file, skip.", varname_xform [i]);
+            data_xform [i] = NULL;
+        }
     }
+    printf ("\n");
 
     // Read them all at once
     adios_perform_reads (f, 1);
@@ -86,12 +114,15 @@ int read_box (char *filename)
 
     // Output for each transform must match that of no transform 
     for (i = 1; i < ntransforms; i ++) {
-        if (memcmp (data_xform [0], data_xform [i], data_size) != 0) {
-            printf ("\n\t %s --- Failed", varname_xform [i]);
-        } else {          
-            printf ("\n\t %s --- OK", varname_xform [i]);
+        if (data_xform [i]) {
+            if (memcmp (data_xform [0], data_xform [i], data_size) != 0) {
+                printf ("\n\t %s --- Failed", varname_xform [i]);
+                retval = 1;
+            } else {          
+                printf ("\n\t %s --- OK", varname_xform [i]);
+            }
+            free (data_xform [i]);
         }
-        free (data_xform [i]);
     }
 
     printf ("\n");
@@ -106,13 +137,13 @@ int read_box (char *filename)
     adios_read_close (f);
     adios_read_finalize_method (ADIOS_READ_METHOD_BP);
 
-    return 0;
+    return retval;
 }
 
 int main (int argc, char *argv [])
 {
     char        filename [256];
-    int         rank, size, i;
+    int         rank, size, i, retval;
     int         l1, l2, o1, o2, g1, g2;
     MPI_Comm    comm = MPI_COMM_WORLD;
 
@@ -120,14 +151,16 @@ int main (int argc, char *argv [])
     int         adios_err;
     uint64_t    adios_groupsize, adios_totalsize;
     int64_t     adios_handle;
-    char                    varname_xform [][256] = {"t_none", "t_identity", "t_aplod", "t_isobar"};
-    double t [16];
+    double *t;
 
     uint32_t timestep = 0;
 
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &size);
+
+
+
 
     strcpy (filename, "adios_transforms_read_write.bp");
 
@@ -136,10 +169,12 @@ int main (int argc, char *argv [])
     o1 = rank;
     o2 = 0;
     l1 = 1;
-    l2 = 16;
+    l2 = 64;
 
     g1 = size;
-    g2 = 16;
+    g2 = 64;
+
+    t = (double *) malloc (l1*l2*sizeof(double));
 
     // Write out 'size' timesteps. During the reads each rank would read in its
     // own timestep
@@ -152,7 +187,7 @@ int main (int argc, char *argv [])
         }
 
         adios_groupsize = 6 * sizeof (int) \
-                        + 4 * sizeof (double) * l1 * l2;
+                        + ntransforms * sizeof (double) * l1 * l2;
 
         // Taken from adios_amr_write
         for (i = 0; i < l1 * l2; i++) {
@@ -160,6 +195,8 @@ int main (int argc, char *argv [])
         }
 
         adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
+        //printf ("\t Per process group size = %lld, with metadata = %lld\n", 
+        //        adios_groupsize, adios_totalsize);
         adios_write (adios_handle, "l1", &l1);
         adios_write (adios_handle, "l2", &l2);
         adios_write (adios_handle, "o1", &o1);
@@ -178,10 +215,10 @@ int main (int argc, char *argv [])
 
     adios_finalize (rank);
 
-    read_box (filename);
+    retval = read_box (filename);
 
     MPI_Finalize ();
 
-    return 0;
+    return retval;
 }
 
