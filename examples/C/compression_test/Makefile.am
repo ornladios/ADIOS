@@ -3,6 +3,11 @@ INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public
 
 AUTOMAKE_OPTIONS = no-dependencies
 
+all-local:
+	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.sh $(builddir)
+	test "$(srcdir)" = "$(builddir)" || cp -r $(srcdir)/conf_genarray3D $(builddir)
+	test "$(srcdir)" = "$(builddir)" || cp -r $(srcdir)/conf_simple $(builddir)
+
 noinst_PROGRAMS = adios_global adios_read_box adios_read_points genarray3D 
 
 adios_global_SOURCES = adios_global.c

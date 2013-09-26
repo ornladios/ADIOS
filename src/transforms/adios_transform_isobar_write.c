@@ -7,6 +7,7 @@
 #include "adios_transforms_common.h"
 #include "adios_transforms_write.h"
 #include "adios_transforms_hooks_write.h"
+#include "adios_transforms_util.h"
 
 #ifdef ISOBAR
 

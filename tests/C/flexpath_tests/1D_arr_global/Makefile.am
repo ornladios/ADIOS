@@ -3,6 +3,10 @@ INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public -I$(srcdir)/../includ
 
 AUTOMAKE_OPTIONS = no-dependencies
 
+all-local:
+	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
+	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/readme.txt $(builddir)
+
 noinst_PROGRAMS = writer reader
 
 writer_SOURCES = writer.c ../common/utils.c

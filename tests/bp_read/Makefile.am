@@ -1,7 +1,10 @@
 INCLUDES = $(all_includes)
-INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public
+INCLUDES += -I$(top_builddir)/src -I$(top_srcdir)/src/public
 
 AUTOMAKE_OPTIONS = no-dependencies
+
+all-local:
+	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
 
 if BUILD_FORTRAN
 noinst_PROGRAMS=genbp bp_read_f bp_read_f_v1 bp_read_c

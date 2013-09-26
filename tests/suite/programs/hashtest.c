@@ -7,7 +7,7 @@
 #include <string.h>
 #include <errno.h>
 #include <time.h>
-#include "qhashtbl.h"
+#include "core/qhashtbl.h"
 
 /* Test the hashtable in ADIOS. 
  * Create a hashtable of size HASHTABLE_SIZE 

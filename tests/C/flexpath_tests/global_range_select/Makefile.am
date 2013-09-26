@@ -3,6 +3,10 @@ INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public -I$(srcdir)/../includ
 
 AUTOMAKE_OPTIONS = no-dependencies
 
+all-local:
+	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
+	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/run_tests.pl $(builddir)
+
 noinst_PROGRAMS = arrays_write arrays_read
 
 arrays_write_SOURCES = arrays_write.c

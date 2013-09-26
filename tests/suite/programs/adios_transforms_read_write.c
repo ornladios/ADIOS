@@ -16,8 +16,8 @@
 #include <stdio.h>
 #include <string.h>
 #include "mpi.h"
-#include "public/adios.h"
-#include "public/adios_read.h"
+#include "adios.h"
+#include "adios_read.h"
 #include <stdint.h>
 #include <assert.h>
 

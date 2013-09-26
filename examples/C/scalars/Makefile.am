@@ -3,6 +3,9 @@ INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public
 
 AUTOMAKE_OPTIONS = no-dependencies
 
+all-local:
+	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
+	
 noinst_PROGRAMS = scalars_write scalars_read scalars_write_step
 
 scalars_write_SOURCES = scalars_write.c
