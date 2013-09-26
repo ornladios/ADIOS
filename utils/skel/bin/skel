@@ -6,6 +6,7 @@ import os.path
 # Make sure that the skel modules are available
 os.path.dirname(sys.argv[0])
 sys.path.insert (0, os.path.dirname(sys.argv[0]) + '/../lib/python')
+sys.path.insert (0, os.path.dirname(sys.argv[0]) + '/../lib')
 
 import argparse
 
