@@ -4,11 +4,16 @@
 
 include $$INCLUDE$$
 
-ADIOS_DIR=`adios_config -d`
-LDFLAGS += `adios_config -l` -L${ADIOS_DIR}/lib/skel -lskel 
-CFLAGS += `adios_config -c`
-FCFLAGS += `adios_config -fc`          
-FCLIBS += `adios_config -fl` -L${ADIOS_DIR}/lib/skel -lskel
+#Use adios attached to skel, rather than adios in $PATH
+#ADIOS_DIR=`adios_config -d`
+ADIOS_DIR=$$ADIOS_BIN_DIR$$/..
+
+ADIOS_CONFIG=${ADIOS_DIR}/bin/adios_config
+
+LDFLAGS += `${ADIOS_CONFIG} -l` -L${ADIOS_DIR}/lib/skel -lskel 
+CFLAGS += `${ADIOS_CONFIG} -c`
+FCFLAGS += `${ADIOS_CONFIG} -fc`          
+FCLIBS += `${ADIOS_CONFIG} -fl` -L${ADIOS_DIR}/lib/skel -lskel
                
 APP=$$APP$$
 CTESTS=$$CTESTS$$
