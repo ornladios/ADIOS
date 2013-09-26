@@ -7,6 +7,7 @@
 #include "adios_transforms_common.h"
 #include "adios_transforms_write.h"
 #include "adios_transforms_hooks_write.h"
+#include "adios_transforms_util.h"
 
 #ifdef SZIP
 
@@ -63,7 +64,7 @@ int adios_transform_szip_apply(struct adios_file_struct *fd,
     const void *input_buff = var->data;
 
     // decide the output buffer
-    uint64_t output_size = adios_transform_szip_calc_vars_transformed_size(input_size, 1);
+    uint64_t output_size = adios_transform_szip_calc_vars_transformed_size(adios_transform_szip, input_size, 1);
     void* output_buff = NULL;
 
     if (use_shared_buffer) {
