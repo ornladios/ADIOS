@@ -105,14 +105,14 @@ typedef struct _op_msg
  
 typedef struct flush_msg_ {
     Flush_type type;
-    int rank;
+    int process_id;
     int condition;
     int id;
 } Flush_msg, *Flush_msg_ptr;
 
 typedef struct var_msg_ {
     char* var_name;
-    int rank;
+    int process_id;
     int condition;
 } Var_msg, *Var_msg_ptr;
 
@@ -162,7 +162,7 @@ static FMField evgroup_field_list[]=
 static FMField flush_field_list[] =
 {   
     {"type", "integer", sizeof(Flush_type), FMOffset(Flush_msg_ptr, type)},
-    {"rank", "integer", sizeof(int), FMOffset(Flush_msg_ptr, rank)},
+    {"process_id", "integer", sizeof(int), FMOffset(Flush_msg_ptr, process_id)},
     {"condition", "integer", sizeof(int), FMOffset(Flush_msg_ptr, condition)},
     {"id", "integer", sizeof(int), FMOffset(Flush_msg_ptr, id)},
     {NULL, NULL, 0, 0}
@@ -171,7 +171,7 @@ static FMField flush_field_list[] =
 static FMField var_field_list[] =
 {
     {"var_name", "string", sizeof(char*), FMOffset(Var_msg_ptr, var_name)},
-    {"rank", "integer", sizeof(int), FMOffset(Var_msg_ptr, rank)},
+    {"process_id", "integer", sizeof(int), FMOffset(Var_msg_ptr, process_id)},
     {NULL, NULL, 0, 0}
 };
 

@@ -556,9 +556,12 @@ send_close_msg(flexpath_reader_file *fp, int destination)
     msg.file_name = strdup(fp->file_name);
     msg.step = fp->mystep;
     msg.type = CLOSE_MSG;
-    msg.condition = -1;
-
-    EVsubmit(fp->bridges[destination].op_source, &msg, NULL);    
+    //msg.condition = -1;
+    msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
+    fp_log("COND", "reader rank: %d waiting on a condition: %d in send_close_msg to writer: %d\n",
+	   fp->rank, msg.condition, destination);
+    EVsubmit(fp->bridges[destination].op_source, &msg, NULL);  
+    CMCondition_wait(fp_read_data->fp_cm, msg.condition);  
     fp->bridges[destination].opened = 0;
 }
 
@@ -567,7 +570,7 @@ send_flush_msg(flexpath_reader_file *fp, int destination, Flush_type type, int u
 {
     Flush_msg msg;
     msg.type = type;
-    msg.rank = fp->rank;
+    msg.process_id = fp->rank;
     msg.id = fp->mystep;
 
     if(use_condition)
@@ -607,7 +610,7 @@ send_var_message(flexpath_reader_file *fp, int destination, char *varname)
 	    send_open_msg(fp, destination);
 	}
 	Var_msg var;
-	var.rank = fp->rank;
+	var.process_id = fp->rank;
 	var.var_name = strdup(varname);
 	EVsubmit(fp->bridges[destination].var_source, &var, NULL);    
 }
