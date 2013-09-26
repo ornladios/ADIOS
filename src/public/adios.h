@@ -62,8 +62,13 @@ int adios_read (int64_t fd_p,
                 uint64_t buffer_size
                );
 
+// OBSOLETE, kept only for backward compatibility of old codes
+// Inconsistent behavior with new ADIOS variable naming
 int adios_set_path (int64_t fd_p, const char * path);
-
+// OBSOLETE, kept only for backward compatibility of old codes
+// name should be the full path of the variable (as it was defined)
+// in adios_write(), still the OLD full path should be used otherwise
+// the variable is not found in the hash table
 int adios_set_path_var (int64_t fd_p, const char * path, const char * name);
 
 int adios_end_iteration (void);

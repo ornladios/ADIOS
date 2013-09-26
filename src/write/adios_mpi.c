@@ -11,10 +11,10 @@
 #include <math.h>
 #include <string.h>
 #if defined(__APPLE__)
-#	include <sys/param.h>
-#	include <sys/mount.h>
+#    include <sys/param.h>
+#    include <sys/mount.h>
 #else
-#	include <sys/vfs.h>
+#    include <sys/vfs.h>
 #endif
 #include <sys/ioctl.h>
 #include <assert.h>

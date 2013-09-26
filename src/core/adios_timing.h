@@ -18,10 +18,10 @@
 struct adios_timing_struct
 {
 
-	int64_t internal_count;
-	int64_t user_count;
-	char ** names;
-	double *times;
+    int64_t internal_count;
+    int64_t user_count;
+    char ** names;
+    double *times;
 
 };
 

@@ -191,17 +191,6 @@ def generate_c_write (outfile, config, params, test):
 
 
 
-# Need to check whether A, compiled with timing support, and B, timing enabled.
-# If A and B, skip other reporting and use adios_timing, otherwise produce xml here.
-
-
-
-        if measure.use_adios_timing():
-            print "Use adios timing"
-        else:
-            print "Don't use adios timing"
-
-
             # Detailed reporting disabled, use adios timing instead.
 
             #c_file.write ('\n    fprintf (stdout, "rank, %i, open: %f, access %f, close %f, total %f\\n", skel_mpi_rank, skel_open_timer, skel_access_timer, skel_close_timer, skel_total_timer);')

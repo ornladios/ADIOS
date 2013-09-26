@@ -13,7 +13,7 @@
 #include <assert.h>
 #include "mpi.h"
 
-#include "public/adios_read.h"
+#include "adios_read.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"

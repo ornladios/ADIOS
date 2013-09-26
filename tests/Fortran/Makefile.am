@@ -3,6 +3,9 @@ INCLUDES += -I$(top_builddir)/src
 
 AUTOMAKE_OPTIONS = no-dependencies
 
+all-local:
+	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
+
 noinst_PROGRAMS=adios_test_f
 
 #adios_test_f_SOURCES = adios_test_f.F90 adios_module.F90

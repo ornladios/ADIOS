@@ -445,19 +445,19 @@ static void parse_dimension_name(
         if (!var_linked) {
             attr_linked = adios_find_attribute_by_id (patt_root, dim->id);
             if (!attr_linked->var) {
-//				strcpy(dimname, attr_linked->name);
+//                strcpy(dimname, attr_linked->name);
                 sprintf(dimname, "%s", attr_linked->name);
             } else {
                 var_linked = attr_linked->var;
             }
         }
         if (var_linked && var_linked->name) {
-//			strcpy(dimname, var_linked->name);
+//            strcpy(dimname, var_linked->name);
             sprintf(dimname, "%s", var_linked->name);
         }
     } else {
         if (dim->time_index == adios_flag_yes) {
-//			strcpy(dimname, group->time_index_name);
+//            strcpy(dimname, group->time_index_name);
             sprintf(dimname, "%s", group->time_index_name);
         } else {
             dimname[0] = '\0';

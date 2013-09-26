@@ -3,6 +3,10 @@ INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public
 
 AUTOMAKE_OPTIONS = no-dependencies
 
+all-local:
+	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
+	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/job.pbs $(builddir)
+
 noinst_PROGRAMS = stat_write stat_read
 
 stat_write_SOURCES = stat_write.c

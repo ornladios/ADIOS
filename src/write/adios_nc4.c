@@ -365,7 +365,7 @@ static int write_attribute(
         ncd_gen_name(varname, patt->path, "");
         rc = nc_inq_varid(ncid, varname, &varid);
         if (rc == NC_NOERR) {
-//    		if (myrank==0) fprintf (stderr, "NC4 ERROR variable(%s) exists in write_attribute, rc=%d\n", varname, rc);
+//            if (myrank==0) fprintf (stderr, "NC4 ERROR variable(%s) exists in write_attribute, rc=%d\n", varname, rc);
         } else if (rc == NC_ENOTVAR) {
             if (myrank==0) fprintf (stderr, "NC4 ERROR variable(%s) does not exist in write_attribute, rc=%d\n", varname, rc);
             err_code = -2;
@@ -377,22 +377,22 @@ static int write_attribute(
         }
     }
 
-//	printf("looking for var(%s)\n", last);
-//	printf("got varid(%d) for grp_id(%d).variable(%s) in write_attribute\n", varid, ncid, last);
+//    printf("looking for var(%s)\n", last);
+//    printf("got varid(%d) for grp_id(%d).variable(%s) in write_attribute\n", varid, ncid, last);
     rc = nc_inq_attid(ncid, varid, attname, &attid);
     if (rc == NC_NOERR) {
         if (myrank==0) fprintf (stderr, "NC4 ERROR attribute(%s) already exists in write_attribute, rc=%d\n", attname, rc);
         err_code = 0;
         goto escape;
     } else if (rc == NC_ENOTATT) {
-//		if (myrank==0) fprintf (stderr, "NC4 ERROR attribute(%s) does not exist in write_attribute, rc=%d\n", attname, rc);
+//        if (myrank==0) fprintf (stderr, "NC4 ERROR attribute(%s) does not exist in write_attribute, rc=%d\n", attname, rc);
     } else {
         if (myrank==0) fprintf (stderr, "NC4 ERROR inquiring about attribute(%s) in write_attribute, rc=%d\n", attname, rc);
         err_code = -2;
         goto escape;
     }
 
-//	printf("patt->type=%d attname : %s\n", patt->type, attname);
+//    printf("patt->type=%d attname : %s\n", patt->type, attname);
     if (patt->type == -1) {
         var_linked = patt->var;
         if (!var_linked || (var_linked && !var_linked->data)) {
@@ -926,11 +926,11 @@ static int write_header(
     deciphered_dims_t deciphered_dims;
     char fullname[255];
 
-//	int myrank=md->rank;
-//	int nproc=md->size;
+//    int myrank=md->rank;
+//    int nproc=md->size;
 
-//	struct adios_var_struct *pvar=fd->group->vars;
-//	enum ADIOS_FLAG fortran_flag=fd->group->adios_host_language_fortran;
+//    struct adios_var_struct *pvar=fd->group->vars;
+//    enum ADIOS_FLAG fortran_flag=fd->group->adios_host_language_fortran;
 
     memset(&deciphered_dims, 0, sizeof(deciphered_dims_t));
 
@@ -1156,15 +1156,15 @@ static int write_var(
     Func_Timer("inqvar", rc = nc_inq_varid(ncid, fullname, &nc4_varid););
     if (rc == NC_ENOTVAR) {
         write_header(ncid, root_group, group, pvar_root, patt_root, pvar, fortran_flag, myrank, nproc);
-//		return 0;
+//        return 0;
     }
 
-//	Func_Timer("enddef", rc = nc_enddef(ncid););
-//	if (rc != NC_NOERR) {
-//		if (myrank==0) fprintf(stderr, "NC4 ERROR ending define mode for scalar variable(%s) in write_var, rc=%d\n", fullname, rc);
-////		return_code=-2;
-////		goto escape;
-//	}
+//    Func_Timer("enddef", rc = nc_enddef(ncid););
+//    if (rc != NC_NOERR) {
+//        if (myrank==0) fprintf(stderr, "NC4 ERROR ending define mode for scalar variable(%s) in write_var, rc=%d\n", fullname, rc);
+////        return_code=-2;
+////        goto escape;
+//    }
 
     if (DEBUG>3) printf("rank(%d) write_var: ncid(%lu) varid(%lu) pvar->data=%p\n", global_rank, ncid, nc4_varid, pvar->data);
 
@@ -1239,7 +1239,7 @@ static int write_var(
         if (DEBUG>3) printf("got varid(%d) for grp_id(%d).variable(%s) in write_var, rc=%d\n", nc4_varid, ncid, fullname, rc);
         if (DEBUG>3) printf("sizeof(size_t)==%d\n", sizeof(size_t));
 
-//		Func_Timer("putvars", rc = nc_put_vars(ncid, nc4_varid, deciphered_dims.nc4_offsets, deciphered_dims.nc4_localdims, deciphered_dims.nc4_strides, pvar->data););
+//        Func_Timer("putvars", rc = nc_put_vars(ncid, nc4_varid, deciphered_dims.nc4_offsets, deciphered_dims.nc4_localdims, deciphered_dims.nc4_strides, pvar->data););
         Func_Timer("putvars", rc = nc_put_vara(ncid, nc4_varid, deciphered_dims.nc4_offsets, deciphered_dims.nc4_localdims, pvar->data););
         if (rc != NC_NOERR) {
             fprintf(stderr, "NC4 ERROR putting to array variable(%s) in write_var, rc=%d\n", fullname, rc);
@@ -1287,7 +1287,7 @@ static int write_var(
                     i, deciphered_dims.nc4_offsets[i],
                     i, deciphered_dims.nc4_localdims[i]);
         }
-//		Func_Timer("putvars", rc = nc_put_vars(ncid, nc4_varid, deciphered_dims.nc4_offsets, deciphered_dims.nc4_localdims, deciphered_dims.nc4_strides, pvar->data););
+//        Func_Timer("putvars", rc = nc_put_vars(ncid, nc4_varid, deciphered_dims.nc4_offsets, deciphered_dims.nc4_localdims, deciphered_dims.nc4_strides, pvar->data););
         Func_Timer("putvars", rc = nc_put_vara(ncid, nc4_varid, deciphered_dims.nc4_offsets, deciphered_dims.nc4_localdims, pvar->data););
         if (rc != NC_NOERR) {
             fprintf(stderr, "NC4 ERROR putting to array variable(%s) in write_var, rc=%d\n", fullname, rc);
@@ -1483,10 +1483,10 @@ void adios_nc4_write(
     md=of->md;
 
     if (fd->mode == adios_mode_write || fd->mode == adios_mode_append) {
-//		if (first_write == 1) {
-//			write_header(fd, md);
-//			first_write = 0;
-//		}
+//        if (first_write == 1) {
+//            write_header(fd, md);
+//            first_write = 0;
+//        }
 
         if (md->rank==0) {
             if (DEBUG>3) fprintf(stderr, "-------------------------\n");

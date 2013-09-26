@@ -21,7 +21,7 @@ int skel_write_coarse_xml_data (double open_time, double write_time, double clos
  */
 int common_skel_write_coarse_xml_data (double open_time, double write_time, double close_time, double total_time)
 {
-    char* filename = "gts_skel_time.xml";
+    char* filename = "skel_time.xml";
 
     int size, rank, i;
     MPI_Comm_size (MPI_COMM_WORLD, &size);

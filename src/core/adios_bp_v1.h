@@ -33,7 +33,7 @@ enum ADIOS_CHARACTERISTICS
 };
 
 #ifndef ADIOS_STAT_LENGTH
-	#define ADIOS_STAT_LENGTH 7 
+    #define ADIOS_STAT_LENGTH 7 
 #endif
 
 // NCSU - Adding statistics
@@ -41,11 +41,11 @@ enum ADIOS_STAT
 {
      adios_statistic_min             = 0
     ,adios_statistic_max             = 1
-    ,adios_statistic_cnt			 = 2 
-    ,adios_statistic_sum			 = 3 
-    ,adios_statistic_sum_square 	 = 4 
-    ,adios_statistic_hist		 	 = 5 
-	,adios_statistic_finite		     = 6 
+    ,adios_statistic_cnt             = 2 
+    ,adios_statistic_sum             = 3 
+    ,adios_statistic_sum_square      = 4 
+    ,adios_statistic_hist            = 5 
+    ,adios_statistic_finite          = 6 
 };
 
 struct adios_bp_buffer_struct_v1
@@ -96,7 +96,7 @@ struct adios_index_characteristic_dims_struct_v1
 // NCSU - Generic data for all statistics
 struct adios_index_characteristics_stat_struct
 {
-	void * data;
+    void * data;
 };
 
 // NCSU - Structure for histogram

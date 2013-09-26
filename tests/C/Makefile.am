@@ -5,6 +5,9 @@ SUBDIRS=flexpath_tests
 
 AUTOMAKE_OPTIONS = no-dependencies
 
+all-local:
+	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
+
 noinst_PROGRAMS=adios_test_c
 
 adios_test_c_SOURCES = adios_test_c.c

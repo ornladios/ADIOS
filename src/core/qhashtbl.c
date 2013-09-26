@@ -103,7 +103,7 @@
 static bool put(qhashtbl_t *tbl, const char *path, const char *name, const void *data);
 static void *get(qhashtbl_t *tbl, const char *fullpath);
 static void *get2(qhashtbl_t *tbl, const char *path, const char *name);
-static bool remove_(qhashtbl_t *tbl, const char *path, const char *name);
+static bool remove_(qhashtbl_t *tbl, const char *fullpath);
 static int size(qhashtbl_t *tbl);
 static void clear(qhashtbl_t *tbl);
 static void debug(qhashtbl_t *tbl, FILE *out, bool detailed);
@@ -390,11 +390,10 @@ static void *get2(qhashtbl_t *tbl, const char *path, const char *name)
  *  - ENOENT : No next element.
  *  - EINVAL : Invalid argument.
  */
-static bool remove_(qhashtbl_t *tbl, const char *path, const char *name)
+static bool remove_(qhashtbl_t *tbl, const char *fullpath)
 {
-    int keylen;
-    char *key;
-    genkey (path, name, &keylen, &key);
+    int keylen = strlen (fullpath);
+    char *key = fullpath;
 
     // get hash integer
     uint32_t hash = qhashmurmur3_32(key, keylen);

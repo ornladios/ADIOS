@@ -28,19 +28,19 @@ struct bp_index_pg_struct_v1
 };
 
 struct bp_minifooter {
-	uint64_t time_steps;  /* = fh->tidx_stop - fh->tidx_start + 1 */
-	uint64_t pgs_count;
-	uint64_t pgs_length;
-	uint16_t vars_count;
-	uint64_t vars_length;
-	uint16_t attrs_count;
-	uint64_t attrs_length;
-	uint64_t pgs_index_offset;
-	uint64_t vars_index_offset;
-	uint64_t attrs_index_offset;
-	uint32_t version;
-	uint32_t change_endianness; // = enum ADIOS_FLAG, 0: unknown!, adios_flag_yes or adios_flag_no
-	uint64_t file_size;
+    uint64_t time_steps;  /* = fh->tidx_stop - fh->tidx_start + 1 */
+    uint64_t pgs_count;
+    uint64_t pgs_length;
+    uint16_t vars_count;
+    uint64_t vars_length;
+    uint16_t attrs_count;
+    uint64_t attrs_length;
+    uint64_t pgs_index_offset;
+    uint64_t vars_index_offset;
+    uint64_t attrs_index_offset;
+    uint32_t version;
+    uint32_t change_endianness; // = enum ADIOS_FLAG, 0: unknown!, adios_flag_yes or adios_flag_no
+    uint64_t file_size;
 } __attribute__((__packed__));
 
 struct BP_file_handle
@@ -80,34 +80,34 @@ typedef struct BP_PROC {
 } BP_PROC;
 
 struct BP_GROUP_VAR {
-	uint16_t group_count;
-	uint16_t group_id; 
-	char ** namelist;
-	uint32_t *** time_index; 
-	uint64_t * pg_offsets;
-	char ** var_namelist;
-	uint16_t * var_counts_per_group;
-	uint64_t ** var_offsets;
+    uint16_t group_count;
+    uint16_t group_id; 
+    char ** namelist;
+    uint32_t *** time_index; 
+    uint64_t * pg_offsets;
+    char ** var_namelist;
+    uint16_t * var_counts_per_group;
+    uint64_t ** var_offsets;
 };
 
 struct BP_GROUP_ATTR {
-        uint16_t group_count;
-        uint16_t group_id;
-        char ** namelist;
-        char ** attr_namelist;
-        uint16_t * attr_counts_per_group;
-        uint64_t ** attr_offsets;
+    uint16_t group_count;
+    uint16_t group_id;
+    char ** namelist;
+    char ** attr_namelist;
+    uint16_t * attr_counts_per_group;
+    uint64_t ** attr_offsets;
 };
 
 struct BP_GROUP {
-	uint16_t group_id;
-	uint16_t vars_offset;
-	uint16_t vars_count;
-        uint16_t attrs_offset;
-        uint16_t attrs_count;
-	struct BP_FILE * fh;
-	struct adios_index_var_struct_v1 * vars_root;  /* pointer into the list of BP_FILE.vars_root */
-        struct adios_index_attribute_struct_v1 * attrs_root;
+    uint16_t group_id;
+    uint16_t vars_offset;
+    uint16_t vars_count;
+    uint16_t attrs_offset;
+    uint16_t attrs_count;
+    struct BP_FILE * fh;
+    struct adios_index_var_struct_v1 * vars_root;  /* pointer into the list of BP_FILE.vars_root */
+    struct adios_index_attribute_struct_v1 * attrs_root;
 };
 
 #endif

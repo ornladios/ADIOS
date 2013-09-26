@@ -25,6 +25,7 @@
 #include "core/buffer.h"
 #include "core/adios_transport_hooks.h"
 #include "core/adios_logger.h"
+#include "core/qhashtbl.h"
 #include "public/adios_error.h"
 
 // NCSU ALACRITY-ADIOS
@@ -770,6 +771,7 @@ int common_adios_read (int64_t fd_p, const char * name, void * buffer
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// OBSOLETE, kept only for backward compatibility
 int common_adios_set_path (int64_t fd_p, const char * path)
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
@@ -798,6 +800,13 @@ int common_adios_set_path (int64_t fd_p, const char * path)
 
     while (a)
     {
+        // skip internal attributes
+        if (a->path && strstr (a->path, "__adios__"))
+        {
+            a = a->next;
+            continue;
+        }
+
         if (a->path)
         {
             free (a->path);
@@ -812,6 +821,10 @@ int common_adios_set_path (int64_t fd_p, const char * path)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// OBSOLETE, kept only for backward compatibility
+// Inconsistent behavior with new ADIOS variable naming
+// The variable is not replaced with the new path in the hash table here, so
+// it is still found using the old path!
 int common_adios_set_path_var (int64_t fd_p, const char * path
                        ,const char * name
                        )
@@ -838,6 +851,17 @@ int common_adios_set_path_var (int64_t fd_p, const char * path
         }
 
         v->path = strdup (path);
+
+        /* Possible new behavior: replace the old path with the new path
+         * in the hash table so that the variable is found by
+         * the new path. Inconsistent with old codes that only used
+         * the variable name without the path in adios_write()
+         */
+        //remove var from hash table by old fullpath...
+        //t->hashtbl_vars->remove (t->hashtbl_vars, name);
+        // and add it back with new fullpath
+        //t->hashtbl_vars->put (t->hashtbl_vars, v->path, v->name, v);
+
     }
     else
     {

@@ -25,7 +25,8 @@ check_C=local_array_time \
         adios_transforms_read_write \
         connect_to_space_subset
 
-test_C=hashtest copy_subvolume transforms_specparse adios_transforms_read_write   # transforms   # this test is obsolete
+test_C=hashtest copy_subvolume transforms_specparse adios_transforms_read_write \
+       set_path set_path_var
 
 endif
 
@@ -43,7 +44,10 @@ check_PROGRAMS=$(check_C) $(check_Fortran) $(check_readonly_C) $(check_readonly_
 TESTS=$(test_C)
 
 INCLUDES = $(all_includes)
-INCLUDES += -I$(top_builddir)/src
+INCLUDES += -I$(top_builddir)/src -I$(top_srcdir)/src/public
+
+all-local:
+	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
 
 #############################
 # Build rules for each test #
@@ -55,7 +59,7 @@ posix_method_LDADD = $(top_builddir)/src/libadiosf.a $(ADIOSLIB_LDADD)
 posix_method_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 posix_method.o: gwrite_posix_method.fh 
 gwrite_posix_method.fh: posix_method.xml
-	$(top_srcdir)/utils/gpp/gpp.py posix_method.xml
+	$(top_builddir)/utils/gpp/gpp.py $(srcdir)/posix_method.xml
 
 local_array_time_SOURCES=local_array_time.c
 local_array_time_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
@@ -101,6 +105,16 @@ write_alternate_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 write_alternate_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 write_alternate.o: write_alternate.c
 
+set_path_SOURCES=set_path.c
+set_path_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+set_path_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+set_path.o: set_path.c
+
+set_path_var_SOURCES=set_path_var.c
+set_path_var_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+set_path_var_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+set_path_var.o: set_path_var.c
+
 two_groups_SOURCES=two_groups.c
 two_groups_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 two_groups_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
@@ -140,17 +154,19 @@ transforms_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 copy_subvolume_SOURCES=copy_subvolume.c
 copy_subvolume_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 copy_subvolume_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+copy_subvolume_CPPFLAGS = -I$(top_srcdir)/src
 #copy_subvolume.o: copy_subvolume.c
 
 transforms_specparse_SOURCES=transforms_specparse.c
 transforms_specparse_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 transforms_specparse_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+transforms_specparse_CPPFLAGS = -I$(top_srcdir)/src
 #transforms_specparse.o: transforms_specparse.c
 
 hashtest_SOURCES=hashtest.c
 hashtest_LDADD = $(top_builddir)/src/libadios_a-qhashtbl.o
 hashtest_LDFLAGS = $(AM_LDFLAGS) 
-hashtest_CPPFLAGS = -I$(top_builddir)/src/core
+hashtest_CPPFLAGS = -I$(top_srcdir)/src
 hashtest.o: hashtest.c
 
 EXTRA_DIST = adios_amr_write.xml adios_amr_write_2vars.xml \

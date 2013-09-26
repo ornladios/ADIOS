@@ -155,10 +155,10 @@ void print_metrics (struct adios_MPI_data_struct * md, int iteration)
 #endif
 
 #if defined(__APPLE__)
-#	include <sys/param.h>
-#	include <sys/mount.h>
+#    include <sys/param.h>
+#    include <sys/mount.h>
 #else
-#	include <sys/statfs.h>
+#    include <sys/statfs.h>
 #endif
 
 // this should be determined at configure time

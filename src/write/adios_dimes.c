@@ -84,7 +84,7 @@ static int connect_to_dimes (struct adios_dimes_data_struct * p, MPI_Comm comm)
         log_debug ("adios_dimes: rank=%d connected to DATASPACES: peers=%d\n", p->rank, p->peers);        
     }
 
-	globals_adios_set_dimes_connected_from_writer();
+    globals_adios_set_dimes_connected_from_writer();
     return ret;
 }
 
@@ -146,8 +146,8 @@ int adios_dimes_open (struct adios_file_struct * fd,
     if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
     {
         log_debug ("adios_dimes_open: rank=%d call write lock...\n", p->rank);       
-	// Block till all previously allocated RDMA buffers are fetched. 
-	dimes_put_sync_all();
+        // Block till all previously allocated RDMA buffers are fetched. 
+        dimes_put_sync_all();
         dspaces_lock_on_write (fd->name, &p->mpi_comm);  
         log_debug ("adios_dimes_open: rank=%d got write lock\n", p->rank);        
     }
