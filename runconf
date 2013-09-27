@@ -4,7 +4,7 @@
 # You can study it to figure out how to configure adios on your system
 #
 
-SRCDIR=`dirname $0`
+SRCDIR=`dirname ${BASH_SOURCE[0]}`
 
 if [ `hostname | cut -c 1-4` == "sith" ]; then
 
