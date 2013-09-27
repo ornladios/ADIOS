@@ -762,8 +762,9 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     int i = 0, j = 0;
 
     while(f->field_name){
+	fprintf(stderr, "field_name: %s, field_size: %d\n", f->field_name, f->field_size);
         char atom_name[200] = "";
-    	flexpath_var * var = find_fp_var(fp->var_list, strdup(f->field_name));	
+    	flexpath_var *var = find_fp_var(fp->var_list, strdup(f->field_name));	
 
     	if(!var){
     	    adios_error(err_file_open_error,
@@ -777,103 +778,101 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
         int num_dims;
         int i;
         get_int_attr(attrs, attr_atom_from_string(strdup(atom_name)), &num_dims);
-    	flexpath_var_chunk * curr_chunk = &var->chunks[0];
+    	var->ndims = num_dims;
 
-    	// scalar
-    	if(num_dims == 0){	   
-	    curr_chunk->global_offsets = NULL;
-	    curr_chunk->global_bounds = NULL;
-	    curr_chunk->local_bounds = NULL;
+	flexpath_var_chunk *curr_chunk = &var->chunks[0];
 
-	    void *tmp_data = get_FMfieldAddr_by_name(f, f->field_name, base_data);
-	    if(var->sel){
-		if(var->sel->type == ADIOS_SELECTION_WRITEBLOCK){
+	// has the var been scheduled?
+	if(var->sel){
+	    if(var->sel->type == ADIOS_SELECTION_WRITEBLOCK){
+		if(num_dims == 0){ // writeblock selection for scalar
 		    if(var->sel->u.block.index == writer_rank){
+			void *tmp_data = get_FMfieldAddr_by_name(f, f->field_name, base_data);
 			memcpy(var->chunks[0].user_buf, tmp_data, f->field_size);
 		    }
 		}
-		else{
+		else { // writeblock selection for arrays
+		    var->dims = malloc(sizeof(uint64_t)*num_dims);
+		    if(var->sel->u.block.index == writer_rank){
+			var->array_size = var->type_size;
+			for(i=0; i<num_dims; i++){
+			    char *dim;
+			    atom_name[0] ='\0';
+			    strcat(atom_name, FP_DIM_ATTR_NAME);
+			    strcat(atom_name, "_");
+			    strcat(atom_name, f->field_name);
+			    strcat(atom_name, "_");
+			    char dim_num[10] = "";
+			    sprintf(dim_num, "%d", i+1);
+			    strcat(atom_name, dim_num);
+			    get_string_attr(attrs, attr_atom_from_string(atom_name), &dim);
+			    FMField *temp_field = find_field_by_name(dim, f);
+			    if(!temp_field){
+				adios_error(err_corrupted_variable,
+					    "Could not find fieldname: %s\n",
+					    dim);
+			    }
+			    else{    			    
+				int *temp_data = get_FMfieldAddr_by_name(temp_field,
+									 temp_field->field_name,
+									 base_data);			    
+				uint64_t dim = (uint64_t)(*temp_data);
+				var->dims[i] = dim;
+				var->array_size = var->array_size * var->dims[i];
+			    }
+			}    	       
+			void *arrays_data  = get_FMPtrField_by_name(f, f->field_name, base_data, 1);
+			memcpy(var->chunks[0].user_buf, arrays_data, var->array_size);
+		    }
+		}
+	    }
+	    else if(var->sel->type == ADIOS_SELECTION_BOUNDINGBOX){
+		if(num_dims == 0){ // scalars; throw error
 		    adios_error(err_offset_required, 
 				"Only scalars can be scheduled with write_block selection.\n");
 		}
+		else{ // arrays
+		    int i;
+		    global_var *gv = find_gbl_var(fp->gp->vars,
+						  var->varname,
+						  fp->gp->num_vars);                
+		    array_displacements * disp = find_displacement(var->displ,
+								   writer_rank,
+								   var->num_displ);
+		    if(disp){ // does this writer hold a chunk we've asked for, for this var?
+			uint64_t *temp = gv->offsets[0].local_dimensions;
+			int offsets_per_rank = gv->offsets[0].offsets_per_rank;
+			uint64_t *writer_sizes = &temp[offsets_per_rank * writer_rank];
+			uint64_t *sel_start = disp->start;
+			uint64_t *sel_count = disp->count;
+	
+			char *writer_array = (char*)get_FMPtrField_by_name(f, f->field_name, base_data, 1);
+			char *reader_array = (char*)var->chunks[0].user_buf;
+			//uint64_t reader_start_pos = var->start_position;
+			uint64_t reader_start_pos = disp->pos;
+			fp_log("DISP", "disp->pos: %d start_position: %d\n", 
+			       (int)disp->pos, (int)var->start_position);
+
+			var->start_position += copyarray(writer_sizes,
+							 sel_start,
+							 sel_count,
+							 disp->ndims,
+							 f->field_size,
+							 0,
+							 writer_array,
+							 reader_array+reader_start_pos);		    
+		    }
+		}
 	    }
-	    else{
+	}
+	else { //var has not been scheduled; 
+	    if(num_dims == 0){ // only worry about scalars
+		void *tmp_data = get_FMfieldAddr_by_name(f, f->field_name, base_data);
 		var->chunks[0].data = malloc(f->field_size);
 		memcpy(var->chunks[0].data, tmp_data, f->field_size);	
 	    }
-	    
-    	    // else it's an array
-    	}else{
-            if(!var->sel){ 
-    		fp_log("SEL", "Variable has not yet been scheduled.  Cannot recieve data for it.\n");
-    	    }
-    	    else if(var->sel->type == ADIOS_SELECTION_WRITEBLOCK){
-    		var->ndims = num_dims;
-    		var->dims = malloc(sizeof(uint64_t)*num_dims);
-    		if(var->sel->u.block.index == writer_rank){
-    		    var->array_size = var->type_size;
-    		    for(i=0; i<num_dims; i++){
-    			char *dim;
-    			atom_name[0] ='\0';
-    			strcat(atom_name, FP_DIM_ATTR_NAME);
-    			strcat(atom_name, "_");
-    			strcat(atom_name, f->field_name);
-    			strcat(atom_name, "_");
-    			char dim_num[10] = "";
-    			sprintf(dim_num, "%d", i+1);
-    			strcat(atom_name, dim_num);
-    			get_string_attr(attrs, attr_atom_from_string(atom_name), &dim);
-    			FMField * temp_field = find_field_by_name(dim, f);
-    			if(!temp_field){
-    			    adios_error(err_invalid_varname,
-    					"Could not find fieldname: %s\n",
-    					dim);
-    			}
-    			else{    			    
-    			    int *temp_data = get_FMfieldAddr_by_name(temp_field,
-    								     temp_field->field_name,
-    								     base_data);			    
-			    uint64_t dim = (uint64_t)(*temp_data);
-			    var->dims[i] = dim;
-    			    var->array_size = var->array_size * var->dims[i];
-    			}
-    		    }    	       
-		    void *arrays_data  = get_FMPtrField_by_name(f, f->field_name, base_data, 1);
-		    memcpy(var->chunks[0].user_buf, arrays_data, var->array_size);
-    		}
-    	    }
-    	    else if(var->sel->type == ADIOS_SELECTION_BOUNDINGBOX){
-    		int i;
-                global_var *gv = find_gbl_var(fp->gp->vars,
-    					      var->varname,
-    					      fp->gp->num_vars);                
-    		array_displacements * disp = find_displacement(var->displ,
-    							       writer_rank,
-    							       var->num_displ);
-		if(disp){
-		    uint64_t *temp = gv->offsets[0].local_dimensions;
-		    int offsets_per_rank = gv->offsets[0].offsets_per_rank;
-		    uint64_t *writer_sizes = &temp[offsets_per_rank * writer_rank];
-		    uint64_t *sel_start = disp->start;
-		    uint64_t *sel_count = disp->count;
-		    char *writer_array = (char*)get_FMPtrField_by_name(f, f->field_name, base_data, 1);
-		    char *reader_array = (char*)var->chunks[0].user_buf;
-		    //uint64_t reader_start_pos = var->start_position;
-		    uint64_t reader_start_pos = disp->pos;
-		    fp_log("DISP", "disp->pos: %d start_position: %d\n", 
-			     (int)disp->pos, (int)var->start_position);
+	}
 
-		    var->start_position += copyarray(writer_sizes,
-						     sel_start,
-						     sel_count,
-						     disp->ndims,
-						     f->field_size,
-						     0,
-						     writer_array,
-						     reader_array+reader_start_pos);		    
-		}
-    	    }
-    	}
         j++;
         f++;
     }

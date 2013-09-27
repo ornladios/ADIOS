@@ -590,7 +590,6 @@ char *multiqueue_action = "{\n\
         mine = EVget_attrs_op_msg(0);\n\
         found = attr_ivalue(mine, \"fp_dst_rank\");\n\
         if(found > 0) {\n\
-            printf(\"writer rank: %d sending op_msg of type: %d to reader rank: %d on port %d with condition: %d\\n\", msg->process_id, msg->type, found-1, found, msg->condition);\n\
             EVdiscard_and_submit_op_msg(found, 0);\n\
         } else {\n\
             EVdiscard_and_submit_op_msg(0,0);\n\
@@ -1124,7 +1123,7 @@ set_dst_condition_atom(attr_list attrs, int condition)
 
 // processes messages from control queue
 void 
-control_thread(void* arg) 
+control_thread(void *arg) 
 {
     FlexpathWriteFileData* fileData = (FlexpathWriteFileData*)arg;
     int rank = fileData->rank;
@@ -1213,7 +1212,8 @@ control_thread(void* arg)
 
 		if(fileData->openCount==0) {
 		     FlexpathQueueNode* node = threaded_dequeue(&fileData->dataQueue, 
-								&fileData->dataMutex, &fileData->dataCondition, 1);
+								&fileData->dataMutex, 
+								&fileData->dataCondition, 1);
 		     FMfree_var_rec_elements(fileData->fm->ioFormat, node->data);
 
 		     drop_evgroup_msg *dropMsg = malloc(sizeof(drop_evgroup_msg));
