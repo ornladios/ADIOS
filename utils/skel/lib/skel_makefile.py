@@ -81,6 +81,7 @@ def generate_makefiles_c (params):
     for template_line in makefile_template:
 
         # Fill in any replacement vars in this line...
+        template_line = template_line.replace ('$$ADIOS_BIN_DIR$$', bindir)
         template_line = template_line.replace ('$$APP$$', params.get_application () )
         template_line = template_line.replace ('$$INCLUDE$$', include_statement)
         template_line = template_line.replace ('$$TARGET$$', platform)
