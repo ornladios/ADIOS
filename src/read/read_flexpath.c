@@ -762,7 +762,6 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     int i = 0, j = 0;
 
     while(f->field_name){
-	fprintf(stderr, "field_name: %s, field_size: %d\n", f->field_name, f->field_size);
         char atom_name[200] = "";
     	flexpath_var *var = find_fp_var(fp->var_list, strdup(f->field_name));	
 
