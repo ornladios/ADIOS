@@ -316,7 +316,8 @@ update_step_msg_free(void *eventData, void *clientData)
 } 
 
 // free data packets once EVPath is finished with them
-void data_free(void* eventData, void* clientData) 
+void 
+data_free(void* eventData, void* clientData) 
 {
     fp_write_log("DATA", "freeing a data message\n");
     FlexpathWriteFileData* fileData = (FlexpathWriteFileData*)clientData;
@@ -325,7 +326,8 @@ void data_free(void* eventData, void* clientData)
 }
 
 // free op packets once EVPath is finished with them
-void op_free(void* eventData, void* clientData) 
+void 
+op_free(void* eventData, void* clientData) 
 {
     fp_write_log("OP", "freeing an op message\n");
     op_msg* op = (op_msg*) eventData;
@@ -356,7 +358,7 @@ queue_count(FlexpathQueueNode** queue)
 // message queue add to head
 void 
 threaded_enqueue(
-    FlexpathQueueNode** queue, 
+    FlexpathQueueNode **queue, 
     void* item, 
     FlexpathMessageType type, 
     pthread_mutex_t *mutex, 
@@ -384,7 +386,7 @@ threaded_enqueue(
 // remove from tail of a message queue
 FlexpathQueueNode* 
 threaded_dequeue(
-    FlexpathQueueNode** queue, 
+    FlexpathQueueNode **queue, 
     pthread_mutex_t *mutex, 
     pthread_cond_t *condition, 
     int signal_dequeue) 
@@ -396,8 +398,8 @@ threaded_dequeue(
         fp_write_log("QUEUE", "queue is null\n");
         pthread_cond_wait(condition, mutex);
     }
-    FlexpathQueueNode* tail;
-    FlexpathQueueNode* prev = NULL;
+    FlexpathQueueNode *tail;
+    FlexpathQueueNode *prev = NULL;
     tail = *queue;
     while(tail && tail->next) {
         prev=tail;
@@ -445,7 +447,8 @@ threaded_peek(FlexpathQueueNode** queue,
 }
 
 // add new var to a var list
-FlexpathVarNode* add_var(FlexpathVarNode* queue, char* varName, FlexpathVarNode* dims, int rank)
+FlexpathVarNode* 
+add_var(FlexpathVarNode* queue, char* varName, FlexpathVarNode* dims, int rank)
 {
     if(queue) {
         queue->next=add_var(queue->next, varName, dims, rank);
@@ -471,7 +474,8 @@ void free_vars(FlexpathVarNode* queue)
 }
 
 // search a var list
-FlexpathVarNode* queue_contains(FlexpathVarNode* queue, const char* name, int rank) 
+FlexpathVarNode* 
+queue_contains(FlexpathVarNode* queue, const char* name, int rank) 
 {
     int compare_rank = 0;
     if(rank >= 0 ) {
@@ -494,7 +498,8 @@ FlexpathVarNode* queue_contains(FlexpathVarNode* queue, const char* name, int ra
 }
 
 // sanitize a name
-char* get_fixed_name(char* name) 
+char* 
+get_fixed_name(char* name) 
 {
     char* oldName = strdup(name);
     char* newName = (char*) malloc(sizeof(char) * 255);
@@ -523,7 +528,8 @@ char* get_fixed_name(char* name)
 }
 
 // return name with operators removed by using the lookup list
-static char* find_fixed_name(FlexpathFMStructure *fm, char *name) 
+static char* 
+find_fixed_name(FlexpathFMStructure *fm, char *name) 
 {
     FlexpathNameTable *node;
     for (node = fm->nameList.lh_first; node != NULL; node = node->entries.le_next) {
@@ -535,7 +541,8 @@ static char* find_fixed_name(FlexpathFMStructure *fm, char *name)
 }
 
 // returns a name with the dimension prepended
-static char *get_alt_name(char *name, char *dimName) 
+static char*
+get_alt_name(char *name, char *dimName) 
 {
     int len = strlen(name) + strlen(dimName) + 2;
     char *newName = (char *) malloc(sizeof(char) * len);
@@ -546,7 +553,8 @@ static char *get_alt_name(char *name, char *dimName)
 }
 
 // lookup a dimensions real name
-static FlexpathAltName *find_alt_name(FlexpathFMStructure *currentFm, char *dimName, char *varName) 
+static FlexpathAltName*
+find_alt_name(FlexpathFMStructure *currentFm, char *dimName, char *varName) 
 {
     char *altName = get_alt_name(varName, dimName);
     FlexpathDimNames *d = NULL;
@@ -581,7 +589,8 @@ static FlexpathAltName *find_alt_name(FlexpathFMStructure *currentFm, char *dimN
 }
 
 // populates offsets array
-int get_var_offsets(struct adios_var_struct *v, 
+int 
+get_var_offsets(struct adios_var_struct *v, 
 		      struct adios_group_struct *g, 
 		      uint64_t **offsets, 
 		      uint64_t **local_dimensions,
@@ -680,7 +689,8 @@ char *multiqueue_action = "{\n\
  }";
 
 // sets a field based on data type
-void set_field(int type, FMFieldList* field_list_ptr, int fieldNo, int* size)
+void 
+set_field(int type, FMFieldList* field_list_ptr, int fieldNo, int* size)
 {
     FMFieldList field_list = *field_list_ptr;
     switch (type) {
@@ -744,7 +754,8 @@ void set_field(int type, FMFieldList* field_list_ptr, int fieldNo, int* size)
 }
 
 // find a field in a given field list
-static FMField *internal_find_field(char *name, FMFieldList flist) 
+static FMField*
+internal_find_field(char *name, FMFieldList flist) 
 {
     FMField *f = flist;
     while (f->field_name != NULL && strcmp(f->field_name, name)) {
@@ -754,7 +765,8 @@ static FMField *internal_find_field(char *name, FMFieldList flist)
 }
 
 // generic memory check for after mallocs
-void mem_check(void* ptr, const char* str) 
+void 
+mem_check(void* ptr, const char* str) 
 {
     if(!ptr) {
         adios_error(err_no_memory, "Cannot allocate memory for flexpath %s.", str);
@@ -778,7 +790,8 @@ static char * get_dim_name (struct adios_dimension_item_struct *d)
 }
 
 // construct an fm structure based off the group xml file
-FlexpathFMStructure* set_format(struct adios_group_struct* t, 
+FlexpathFMStructure* 
+set_format(struct adios_group_struct* t, 
 				struct adios_var_struct* fields, 
 				FlexpathWriteFileData* fileData)
 {
@@ -1233,11 +1246,7 @@ op_handler(CManager cm, void* vevent, void* client_data, attr_list attrs)
 			 &fileData->controlMutex, &fileData->controlCondition, -1);
     } else if(msg->type == CLOSE_MSG) {
         threaded_enqueue(&fileData->controlQueue, msg, CLOSE, 
-			 &fileData->controlMutex, &fileData->controlCondition, -1);
-    } else if(msg->type == INIT_MSG) {
-	threaded_enqueue(&fileData->controlQueue, msg, INIT,
-			 &fileData->controlMutex, &fileData->controlCondition, -1);
-			
+			 &fileData->controlMutex, &fileData->controlCondition, -1);  			
     }
     return 0;
 }
