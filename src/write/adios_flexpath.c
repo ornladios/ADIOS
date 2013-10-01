@@ -136,6 +136,7 @@ typedef struct _flexpath_write_file_data {
     int readerStep;
     int writerStep; // how many times has the writer called closed?
     int finalized; // have we finalized?
+    int use_ctrl_thread;
 
     FlexpathFMStructure* fm;
     FlexpathVarNode* askedVars;
@@ -1296,7 +1297,8 @@ control_thread(void *arg)
 }
 
 // adds an open file handle to global open file list
-void add_open_file(FlexpathWriteFileData* newFile) 
+void 
+add_open_file(FlexpathWriteFileData* newFile) 
 {
     FlexpathWriteFileData* last = flexpathWriteData.openFiles;
     while(last && last->next) {
@@ -1310,7 +1312,8 @@ void add_open_file(FlexpathWriteFileData* newFile)
 }
 
 // searches for an open file handle
-FlexpathWriteFileData* find_open_file(char* name) 
+FlexpathWriteFileData* 
+find_open_file(char* name) 
 {
     FlexpathWriteFileData* file = flexpathWriteData.openFiles;
     while(file && strcmp(file->name, name)) {
@@ -1321,7 +1324,8 @@ FlexpathWriteFileData* find_open_file(char* name)
 
 
 // Initializes flexpath write local data structures
-extern void adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method) 
+extern void 
+adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method) 
 {
     setenv("CMSelfFormats", "1", 1);
     // global data structure creation
@@ -1356,9 +1360,10 @@ extern void adios_flexpath_init(const PairStruct *params, struct adios_method_st
     }
 }
 
-// opens a new adios file for writes
 extern int 
-adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *method, MPI_Comm comm) 
+adios_flexpath_open(struct adios_file_struct *fd, 
+		    struct adios_method_struct *method, 
+		    MPI_Comm comm) 
 {    
     if( fd == NULL || method == NULL) {
         perr("open: Bad input parameters\n");
@@ -1375,11 +1380,12 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
     mem_check(fileData, "fileData");
     memset(fileData, 0, sizeof(FlexpathWriteFileData));
     
-    fileData->maxQueueSize=1;
+    fileData->maxQueueSize = 1;
+    fileData->use_ctrl_thread = 1;
     if(method->parameters) {
-        sscanf(method->parameters,"QUEUE_SIZE=%d;",&fileData->maxQueueSize);
+        sscanf(method->parameters,"QUEUE_SIZE=%d;", &fileData->maxQueueSize);
     }
-    
+   
     // setup step state
     fileData->attrs = create_attr_list();
     fileData->openCount = 0;
@@ -1391,6 +1397,8 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
      
     pthread_cond_init(&fileData->controlCondition, NULL);
     pthread_cond_init(&fileData->dataCondition, NULL);
+
+    double setup_start = dgettimeofday();
 
     // communication channel setup
     char writer_info_filename[200];
@@ -1470,6 +1478,11 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
 	unlink(reader_info_filename);
 	unlink(reader_ready_filename);
     }
+
+    double setup_end = dgettimeofday();
+    
+    fp_log("PERF", "WRITER_PERF:startup:rank:%d:step:%d:time:%lf:mpi_size:%d\n", 
+       fileData->rank, fileData->writerStep, (setup_end - setup_start), fileData->size);
 	
     //process group format
     struct adios_group_struct *t = method->group;
@@ -1495,11 +1508,10 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
     atom_t rank_atom = attr_atom_from_string(FP_RANK_ATTR_NAME);
     add_int_attr(fileData->attrs, rank_atom, fileData->rank);
     
-    //externs[0].extern_value = (void *) (long) get_timestamp_mili;
     EVadd_standard_routines(flexpathWriteData.cm, extern_string, externs);
 
     //generate multiqueue function that sends formats or all data based on flush msg
-    fp_write_log("SETUP", "setup graph\n");
+
     FMStructDescList queue_list[] = {flush_format_list, 
 				     var_format_list, 
 				     op_format_list, 
@@ -1571,7 +1583,8 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
 
 
 //  writes data to multiqueue
-extern void adios_flexpath_write(
+extern void
+adios_flexpath_write(
     struct adios_file_struct *fd, 
     struct adios_var_struct *f, 
     void *data, 
@@ -1617,7 +1630,7 @@ extern void adios_flexpath_write(
 		    }
 		}
 	    } else {
-		log_error("adios_flexpath_write: something has gone wrong with variable creation: %s\n", f->name);
+		log_error("adios_flexpath_write: error with variable creation: %s\n", f->name);
 	    }
 	} else {
 	    //vector quantity
@@ -1668,12 +1681,9 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
                 void* pointer_data_copy = malloc(total_size);
                 //block
             }
-                
-            fp_write_log("DATA","Attempting to get pointer to user data\n");
+                           
             void* temp = get_FMPtrField_by_name(flist, fields->name, fileData->fm->buffer, 0);
-            fp_write_log("DATA","Copying user data to new space\n");
             memcpy(pointer_data_copy, temp, total_size);
-            fp_write_log("DATA","Setting pointer to new space\n");
             set_FMPtrField_by_name(flist, fields->name, fileData->fm->buffer, pointer_data_copy);
         }    
         fields = fields->next;
@@ -1681,7 +1691,6 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
     
     memcpy(buffer, fileData->fm->buffer, fileData->fm->size);
 
-    fp_write_log("DATAMUTEX", "in use 3\n"); 
     threaded_enqueue(&fileData->dataQueue, buffer, 
 		     DATA_BUFFER,
 		     &fileData->dataMutex, 
@@ -1706,7 +1715,6 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
     }
 
     else{	
-	fp_write_log("BOUNDING", "check offsets\n");
         // process local offsets here	
 	int num_gbl_vars = 0;
         global_var * gbl_vars = NULL;
@@ -1714,6 +1722,7 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 	int myrank = fileData->rank;
 	int commsize = fileData->size;
 
+	double offset_start = dgettimeofday();
 	while(list){
 	    //int num_local_offsets = 0;
 	    uint64_t *local_offsets = NULL;
@@ -1758,6 +1767,9 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 	    list=list->next;
 	}
 
+	double offset_end = dgettimeofday();
+	fp_log("PERF", "WRITER_PERF:offset:rank:%d:step:%d:time:%lf:num_sendees:%d\n", 
+	       fileData->rank, fileData->writerStep, (offset_end - offset_start), 1);
 	gp->num_vars = num_gbl_vars;
 	gp->step = fileData->writerStep;
 	gp->vars = gbl_vars;
@@ -1777,11 +1789,10 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 }
 
 // wait until all open files have finished sending data to shutdown
-extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method) 
+extern void 
+adios_flexpath_finalize(int mype, struct adios_method_struct *method) 
 {
     FlexpathWriteFileData* fileData = flexpathWriteData.openFiles;
-    log_info("Flexpath method entered finalize: %d\n", fileData->rank);
-    fp_write_log("FILE", "Entered finalize\n");
     while(fileData) {
 
 	update_step_msg *stepmsg = malloc(sizeof(update_step_msg));
@@ -1789,10 +1800,9 @@ extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method
 	stepmsg->step = fileData->writerStep - 1;
 	stepmsg->condition = -1;
 	EVsubmit_general(fileData->stepSource, stepmsg, update_step_msg_free, fileData->attrs);
-        //fp_write_log("DATAMUTEX", "in use 4\n"); 
+
         pthread_mutex_lock(&fileData->dataMutex);
         while(fileData->dataQueue != NULL) {
-            fp_write_log("FILE", "waiting on %s to empty data\n", fileData->name);
 	    pthread_cond_wait(&fileData->dataCondition, &fileData->dataMutex);
 	}
 	pthread_mutex_unlock(&fileData->dataMutex);
@@ -1888,44 +1898,49 @@ adios_flexpath_get_write_buffer(struct adios_file_struct *fd,
 }
 
 // should not be called from write, reason for inclusion here unknown
-void adios_flexpath_read(struct adios_file_struct *fd, struct adios_var_struct *f, void *buffer, uint64_t buffer_size, struct adios_method_struct *method) 
+void 
+adios_flexpath_read(struct adios_file_struct *fd, 
+		    struct adios_var_struct *f, 
+		    void *buffer, 
+		    uint64_t buffer_size, 
+		    struct adios_method_struct *method) 
 {
     fp_write_log("UNIMPLEMENTED", "adios_flexpath_read\n");
 }
 
 #else // print empty version of all functions (if HAVE_FLEXPATH == 0)
 
-void adios_flexpath_read(struct adios_file_struct *fd, struct adios_var_struct *f, void *buffer, struct adios_method_struct *method) {
+void 
+adios_flexpath_read(struct adios_file_struct *fd, 
+		    struct adios_var_struct *f, 
+		    void *buffer, 
+		    struct adios_method_struct *method) 
+{
 }
 
-extern void adios_flexpath_get_write_buffer(struct adios_file_struct *fd, struct adios_var_struct *f, unsigned long long *size, void **buffer, struct adios_method_struct *method) {
+extern void 
+adios_flexpath_get_write_buffer(struct adios_file_struct *fd, 
+				struct adios_var_struct *f, 
+				unsigned long long *size, 
+				void **buffer, 
+				struct adios_method_struct *method) 
+{
 }
 
-/* extern void adios_flexpath_stop_calculation(struct adios_method_struct *method) { */
-/* } */
+extern void 
+adios_flexpath_stop_calculation(struct adios_method_struct *method) 
+{
+}
 
-/* extern void adios_flexpath_start_calculation(struct adios_method_struct *method) { */
-/* } */
+extern void 
+adios_flexpath_start_calculation(struct adios_method_struct *method) 
+{
+}
 
-/* extern void adios_flexpath_end_iteration(struct adios_method_struct *method) { */
-/* } */
+extern void 
+adios_flexpath_end_iteration(struct adios_method_struct *method) 
+{
+}
 
-/* extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method) { */
-/* } */
-
-/* extern void adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *method) { */
-/* } */
-
-/* extern void adios_flexpath_write(struct adios_file_struct *fd, struct adios_var_struct *f, void *data, struct adios_method_struct *method) { */
-/* } */
-
-/* extern void adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *method) { */
-/* } */
-
-/* extern void adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method) { */
-/* } */
-
-/* enum ADIOS_FLAG adios_flexpath_should_buffer (struct adios_file_struct * fd, struct adios_method_struct * method) { */
-/* } */
 
 #endif

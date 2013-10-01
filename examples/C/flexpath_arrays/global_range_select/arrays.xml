@@ -13,7 +13,7 @@
     </global-bounds>
 </adios-group>
 
-<method group="temperature"  method="FLEXPATH">QUEUE_SIZE=4;</method>
+<method group="temperature"  method="FLEXPATH">QUEUE_SIZE=4;CTRL_THREAD=0;</method>
 
 <buffer size-MB="20" allocate-time="now"/>
 
