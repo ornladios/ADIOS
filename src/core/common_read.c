@@ -191,6 +191,43 @@ ADIOS_FILE * common_read_open (const char * fname,
 
     fp = adios_read_hooks[internals->method].adios_open_fn (fname, comm, lock_mode, timeout_sec);
 
+    //read mesh names from attributes for example the var is using a mesh named trimesh, 
+    //we have /adios_schema/trimesh/type. We need to extract trimesh from the string
+    if (fp->attr_namelist)
+    {
+        for (int i=0; i<fp->nattrs; i++)
+        {
+            if (strstr (fp->attr_namelist[i], "/adios_schema") && strstr (fp->attr_namelist[i], "/type") && 
+                strcspn(fp->attr_namelist[i], "/adios_schema") == 0 && strcspn (fp->attr_namelist[i], "/type") == strlen(fp->attr_namelist[i]-strlen("/type")) )
+            {
+                fp->nmeshes++;
+            }
+        }
+
+        fp->mesh_namelist = (char **) malloc (sizeof (char *) * fp->nmeshes);
+        assert (fp->mesh_namelist);
+
+        for (int i=0; i<fp->nattrs; i++)
+        {
+            int c = 0;
+            if (strstr (fp->attr_namelist[i], "/adios_schema") && strstr (fp->attr_namelist[i], "/type") &&
+                strcspn(fp->attr_namelist[i], "/adios_schema") == 0 && strcspn (fp->attr_namelist[i], "/type") == strlen(fp->attr_namelist[i]-strlen("/type")) )
+            {
+                fp->mesh_namelist[c] = (char *) malloc (strlen (fp->attr_namelist[i]) + 1);
+                assert (fp->mesh_namelist[c]);
+                //avoid to copy slash
+                strncpy (fp->mesh_namelist[c], fp->attr_namelist[i]+strlen("/adios_schema")+1, strlen(fp->attr_namelist[i])-strlen("/adios_schema")-strlen("/type")-1); 
+                c++;
+            }
+        }
+
+    }
+
+/*        for (int i=0; i<fp->nmeshes; i++)
+        {
+            printf ("mesh: %s\n", fp->mesh_namelist[i]);
+        }*/
+    
     // save the method and group information in fp->internal_data
     if (fp){
         adios_read_hooks[internals->method].adios_get_groupinfo_fn (fp, &internals->ngroups, 
@@ -231,6 +268,38 @@ ADIOS_FILE * common_read_open_file (const char * fname,
     internals->read_hooks = adios_read_hooks;
 
     fp = adios_read_hooks[internals->method].adios_open_file_fn (fname, comm);
+
+    //read mesh names from attributes for example the var is using a mesh named trimesh, 
+    //we have /adios_schema/trimesh/type. We need to extract trimesh from the string
+    if (fp->attr_namelist)
+    {
+        for (int i=0; i<fp->nattrs; i++)
+        {
+            if (strstr (fp->attr_namelist[i], "/adios_schema") && strstr (fp->attr_namelist[i], "/type") &&
+                strcspn(fp->attr_namelist[i], "/adios_schema") == 0 && strcspn (fp->attr_namelist[i], "/type") == strlen(fp->attr_namelist[i]-strlen("/type")) )
+            {
+                fp->nmeshes++;
+            }
+        }
+
+        fp->mesh_namelist = (char **) malloc (sizeof (char *) * fp->nmeshes);
+        assert (fp->mesh_namelist);
+
+        for (int i=0; i<fp->nattrs; i++)
+        {
+            int c = 0;
+            if (strstr (fp->attr_namelist[i], "/adios_schema") && strstr (fp->attr_namelist[i], "/type") &&
+                strcspn(fp->attr_namelist[i], "/adios_schema") == 0 && strcspn (fp->attr_namelist[i], "/type") == strlen(fp->attr_namelist[i]-strlen("/type")) )
+            {
+                fp->mesh_namelist[c] = (char *) malloc (strlen (fp->attr_namelist[i]) + 1);
+                assert (fp->mesh_namelist[c]);
+                //avoid to copy slash
+                strncpy (fp->mesh_namelist[c], fp->attr_namelist[i]+strlen("/adios_schema")+1, strlen(fp->attr_namelist[i])-strlen("/adios_schema")-strlen("/type")-1);
+                c++;
+            }
+        }
+
+    }
 
     // save the method and group information in fp->internal_data
     if (fp){
