@@ -192,24 +192,41 @@ ADIOS_FILE * common_read_open (const char * fname,
     fp = adios_read_hooks[internals->method].adios_open_fn (fname, comm, lock_mode, timeout_sec);
 
     //read mesh names from attributes for example the var is using a mesh named trimesh, 
-    //we have /adios_schema/trimesh/type. We need to extract trimesh from the string
+    //we have /adios_schema/trimesh/type. We can extract trimesh from the string
+    fp->nmeshes = 0;
+    fp->mesh_namelist = NULL;
     if (fp->attr_namelist)
     {
+        char ** tmp = (char **) malloc (sizeof(char*) * fp->nattrs);
         for (int i=0; i<fp->nattrs; i++)
         {
-            if (strstr (fp->attr_namelist[i], "/adios_schema") && strstr (fp->attr_namelist[i], "/type") && 
-                strcspn(fp->attr_namelist[i], "/adios_schema") == 0 && strcspn (fp->attr_namelist[i], "/type") == strlen(fp->attr_namelist[i]-strlen("/type")) )
+            // find "/adios_schema/***/type" attributes for getting the names of meshes
+            if (strstr (fp->attr_namelist[i], "/adios_schema/") == fp->attr_namelist[i])   // starts with /adios_schema/
             {
-                fp->nmeshes++;
+                char *s = fp->attr_namelist[i]+strlen("/adios_schema/");
+                char *p = strchr (s, '/');  
+                if ( p && 
+                     strstr (p, "/type") == p)
+                {
+                    // retrieve the name of the mesh
+                    tmp [ fp->nmeshes ] = (char *) malloc (sizeof(char*) * (size_t)(p-s)+1);
+                    memcpy ( tmp[ fp->nmeshes ], s, (size_t)(p-s) ); 
+                    tmp[ fp->nmeshes ][(p-s)] = '\0'; 
+                    fp->nmeshes++;
+                }
             }
         }
 
-        fp->mesh_namelist = (char **) malloc (sizeof (char *) * fp->nmeshes);
-        assert (fp->mesh_namelist);
+        if (fp->nmeshes) 
+        {
+            fp->mesh_namelist = (char **) realloc (tmp, sizeof (char *) * fp->nmeshes);
+            assert (fp->mesh_namelist);
+        }
 
+/*
+        int c = 0;
         for (int i=0; i<fp->nattrs; i++)
         {
-            int c = 0;
             if (strstr (fp->attr_namelist[i], "/adios_schema") && strstr (fp->attr_namelist[i], "/type") &&
                 strcspn(fp->attr_namelist[i], "/adios_schema") == 0 && strcspn (fp->attr_namelist[i], "/type") == strlen(fp->attr_namelist[i]-strlen("/type")) )
             {
@@ -220,6 +237,7 @@ ADIOS_FILE * common_read_open (const char * fname,
                 c++;
             }
         }
+*/
 
     }
 
@@ -268,35 +286,37 @@ ADIOS_FILE * common_read_open_file (const char * fname,
     internals->read_hooks = adios_read_hooks;
 
     fp = adios_read_hooks[internals->method].adios_open_file_fn (fname, comm);
-
+    
     //read mesh names from attributes for example the var is using a mesh named trimesh, 
-    //we have /adios_schema/trimesh/type. We need to extract trimesh from the string
+    //we have /adios_schema/trimesh/type. We can extract trimesh from the string
+    fp->nmeshes = 0;
+    fp->mesh_namelist = NULL;
     if (fp->attr_namelist)
     {
+        char ** tmp = (char **) malloc (sizeof(char*) * fp->nattrs);
         for (int i=0; i<fp->nattrs; i++)
         {
-            if (strstr (fp->attr_namelist[i], "/adios_schema") && strstr (fp->attr_namelist[i], "/type") &&
-                strcspn(fp->attr_namelist[i], "/adios_schema") == 0 && strcspn (fp->attr_namelist[i], "/type") == strlen(fp->attr_namelist[i]-strlen("/type")) )
+            // find "/adios_schema/***/type" attributes for getting the names of meshes
+            if (strstr (fp->attr_namelist[i], "/adios_schema/") == fp->attr_namelist[i])   // starts with /adios_schema/
             {
-                fp->nmeshes++;
+                char *s = fp->attr_namelist[i]+strlen("/adios_schema/");
+                char *p = strchr (s, '/');
+                if ( p &&
+                     strstr (p, "/type") == p)
+                {
+                    // retrieve the name of the mesh
+                    tmp [ fp->nmeshes ] = (char *) malloc (sizeof(char*) * (size_t)(p-s)+1);
+                    memcpy ( tmp[ fp->nmeshes ], s, (size_t)(p-s) );
+                    tmp[ fp->nmeshes ][(p-s)] = '\0';
+                    fp->nmeshes++;
+                }
             }
         }
 
-        fp->mesh_namelist = (char **) malloc (sizeof (char *) * fp->nmeshes);
-        assert (fp->mesh_namelist);
-
-        for (int i=0; i<fp->nattrs; i++)
+        if (fp->nmeshes)
         {
-            int c = 0;
-            if (strstr (fp->attr_namelist[i], "/adios_schema") && strstr (fp->attr_namelist[i], "/type") &&
-                strcspn(fp->attr_namelist[i], "/adios_schema") == 0 && strcspn (fp->attr_namelist[i], "/type") == strlen(fp->attr_namelist[i]-strlen("/type")) )
-            {
-                fp->mesh_namelist[c] = (char *) malloc (strlen (fp->attr_namelist[i]) + 1);
-                assert (fp->mesh_namelist[c]);
-                //avoid to copy slash
-                strncpy (fp->mesh_namelist[c], fp->attr_namelist[i]+strlen("/adios_schema")+1, strlen(fp->attr_namelist[i])-strlen("/adios_schema")-strlen("/type")-1);
-                c++;
-            }
+            fp->mesh_namelist = (char **) realloc (tmp, sizeof (char *) * fp->nmeshes);
+            assert (fp->mesh_namelist);
         }
 
     }
@@ -337,6 +357,12 @@ int common_read_close (ADIOS_FILE *fp)
             // reset from group view before calling the real close
             common_read_group_view (fp, -1);
         }
+        if (fp->nmeshes) {
+            for (int i=0; i<fp->nmeshes; i++)
+                free(fp->mesh_namelist[i]);
+            free(fp->mesh_namelist);
+        }
+                
         retval = internals->read_hooks[internals->method].adios_close_fn (fp);
         free_namelist (internals->group_namelist, internals->ngroups);
         free (internals->nvars_per_group);
@@ -746,6 +772,15 @@ void common_read_free_transinfo(const ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti) {
     }
 }
 #undef MYFREE
+
+ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
+{
+    ADIOS_MESH * meshinfo = (ADIOS_MESH *) malloc (sizeof(ADIOS_MESH));
+    meshinfo->id = meshid;
+    meshinfo->name = strdup(fp->mesh_namelist[meshinfo->id]);
+//    fp->attr_namelist[i]
+//    adios_get_attr (f, f->attr_namelist[i], &attr_type, &attr_size, &data);    
+}
 
 int common_read_schedule_read (const ADIOS_FILE      * fp,
                                const ADIOS_SELECTION * sel,
