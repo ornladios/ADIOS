@@ -616,7 +616,6 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
 //printf ("c = %d, f = %d, time = %d\n", fp->current_step, r->from_steps, time);
         start_idx = get_var_start_index (v, time);
         stop_idx = get_var_stop_index (v, time);
-        printf("Reading idx %d to %d\n", start_idx, stop_idx);
 
         if (start_idx < 0 || stop_idx < 0)
         {

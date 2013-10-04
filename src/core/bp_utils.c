@@ -1596,7 +1596,6 @@ int64_t get_var_stop_index (struct adios_index_var_struct_v1 * v, int t)
     int64_t i = v->characteristics_count - 1;
 
     while (i > -1) {
-        printf("Chunk %d has timestep %d\n", i, v->characteristics[i].time_index);
         if (v->characteristics[i].time_index == t) {
             return i;
         }
