@@ -48,6 +48,7 @@
 #endif
 
 #define FP_BATCH_SIZE 4
+
 /*
  * Contains start & counts for each dimension for a writer_rank.
  */
@@ -605,12 +606,13 @@ send_open_msg(flexpath_reader_file *fp, int destination)
     msg.file_name = fp->file_name;
     msg.step = fp->mystep;
     msg.type = OPEN_MSG;
-    msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
+    int cond = CMCondition_get(fp_read_data->fp_cm, NULL);
+    msg.condition = cond;
 
     EVsubmit(fp->bridges[destination].op_source, &msg, NULL);    
     fp_log("COND", "reader rank: %d waiting on condition: %d in send_open_msg to writer: %d\n",
 	   fp->rank, msg.condition, destination);
-    CMCondition_wait(fp_read_data->fp_cm, msg.condition);
+    CMCondition_wait(fp_read_data->fp_cm, cond);
     fp->bridges[destination].opened = 1;
 }
 
@@ -626,11 +628,13 @@ send_close_msg(flexpath_reader_file *fp, int destination)
     msg.step = fp->mystep;
     msg.type = CLOSE_MSG;
     //msg.condition = -1;
-    msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
+    int cond = CMCondition_get(fp_read_data->fp_cm, NULL);
+    msg.condition = cond;
+
     fp_log("COND", "reader rank: %d waiting on a condition: %d in send_close_msg to writer: %d\n",
 	   fp->rank, msg.condition, destination);
     EVsubmit(fp->bridges[destination].op_source, &msg, NULL);  
-    CMCondition_wait(fp_read_data->fp_cm, msg.condition);  
+    CMCondition_wait(fp_read_data->fp_cm, cond);  
     fp->bridges[destination].opened = 0;
 }
 

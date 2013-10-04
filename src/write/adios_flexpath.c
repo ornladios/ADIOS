@@ -1098,7 +1098,8 @@ process_data_flush(FlexpathWriteFileData *fileData,
 	fileData->bridges[flushMsg->process_id].opened=1;
 	fileData->openCount++;
     }
-    EVsubmit_general(fileData->dataSource, temp, data_free, fileData->attrs);
+    //EVsubmit_general(fileData->dataSource, temp, data_free, fileData->attrs);
+    EVsubmit_general(fileData->dataSource, temp, NULL, fileData->attrs);
 }
 
 void
