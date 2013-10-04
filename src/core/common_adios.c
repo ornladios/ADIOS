@@ -100,6 +100,13 @@ int common_adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_allo
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+// Drew: used for experiments
+uint32_t pinned_timestep = 0;
+void adios_pin_timestep(uint32_t ts) {
+  pinned_timestep = ts;
+}
+
+///////////////////////////////////////////////////////////////////////////////
 int common_adios_open (int64_t * fd, const char * group_name
                 ,const char * name, const char * file_mode, MPI_Comm comm
                )
@@ -193,6 +200,10 @@ int common_adios_open (int64_t * fd, const char * group_name
         g->time_index++;
 #endif
 
+    // Drew: for experiments
+    if (pinned_timestep > 0)
+        g->time_index = pinned_timestep;
+
     while (methods)
     {
         if (   methods->method->m != ADIOS_METHOD_UNKNOWN
@@ -217,11 +228,6 @@ int common_adios_open (int64_t * fd, const char * group_name
 
 ///////////////////////////////////////////////////////////////////////////////
 static const char ADIOS_ATTR_PATH[] = "/__adios__";
-
-uint32_t pinned_timestep = 0;
-void adios_pin_timestep(uint32_t ts) {
-  pinned_timestep = ts;
-}
 
 int common_adios_group_size (int64_t fd_p
                      ,uint64_t data_size
@@ -346,6 +352,10 @@ int common_adios_group_size (int64_t fd_p
         fd->shared_buffer = adios_flag_yes;
     }
 
+    // Drew: for experiments
+    if (pinned_timestep != 0)
+        fd->group->time_index = pinned_timestep;
+
     // call each transport method to coordinate the write and handle
     // if an overflow is detected.
     // now tell each transport attached that it is being written
@@ -369,6 +379,7 @@ int common_adios_group_size (int64_t fd_p
         m = m->next;
     }
 
+    // Drew: for experiments
     if (pinned_timestep != 0)
         fd->group->time_index = pinned_timestep;
 
