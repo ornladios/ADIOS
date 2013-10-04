@@ -3722,12 +3722,6 @@ int adios_write_index_v1 (char ** buffer
                         var_size += len;
                         characteristic_set_length += len;
 
-                        printf("Writing PG with dimensions:");
-                        int iii;
-                        for (iii = 0; iii < 3 * vars_root->characteristics [i].dims.count; iii++)
-                            printf(" %llu", vars_root->characteristics [i].dims.dims[iii]);
-                        printf("\n");
-
                         // NCSU ALACRITY-ADIOS - Adding transform type field
                         characteristic_write_length = 0;
                         characteristic_write_count =
