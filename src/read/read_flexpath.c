@@ -145,6 +145,7 @@ typedef struct _flexpath_reader_file
     int pending_requests;
     int completed_requests;
     uint64_t data_read; // for perf measurements.
+    double time_in; // for perf measurements.
     pthread_mutex_t data_mutex;
     pthread_cond_t data_condition;
 } flexpath_reader_file;
@@ -593,6 +594,60 @@ need_writer(
     return 1;
 }
 
+void
+free_fmstructdesclist(FMStructDescList struct_list)
+{
+    FMField *f = struct_list[0].field_list;
+    
+    //cant free field_name because it's const.
+    /* FMField *temp = f; */
+    /* while(temp->field_name){ */
+    /* 	free(temp->field_name); */
+    /* 	temp++; */
+    /* } */
+    free(f);   
+    free(struct_list[0].opt_info);
+    free(struct_list);   
+}
+
+int
+get_ndims_attr(const char *field_name, attr_list attrs)
+{
+    char atom_name[200] = "";
+    strcat(atom_name, FP_NDIMS_ATTR_NAME);
+    strcat(atom_name, "_");
+    strcat(atom_name, field_name);
+    int num_dims;
+    atom_t atm = attr_atom_from_string(atom_name);
+    get_int_attr(attrs, atm, &num_dims);
+    return num_dims;
+}
+
+flexpath_var*
+setup_flexpath_vars(FMField *f, int *num)
+{
+    flexpath_var *vars = NULL;
+    int var_count = 0;
+
+    while(f->field_name != NULL){
+	flexpath_var *curr_var = new_flexpath_var(f->field_name,
+						  var_count, 
+						  f->field_size);
+	curr_var->num_chunks = 1;
+	curr_var->chunks =  malloc(sizeof(flexpath_var_chunk)*curr_var->num_chunks);
+	memset(curr_var->chunks, 0, sizeof(flexpath_var_chunk)*curr_var->num_chunks);
+	curr_var->sel = NULL;
+	curr_var->type = ffs_type_to_adios_type(f->field_type);
+	flexpath_var *temp = vars;
+	curr_var->next = temp;
+	vars = curr_var;
+	var_count++;
+	f++;
+    }
+    *num = var_count;
+    return vars;
+}
+
 /*****************Messages to writer procs**********************/
 
 void
@@ -753,15 +808,13 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 	    uint64_t *local_dimensions = offset->local_dimensions;
 	    uint64_t *local_offsets = offset->local_offsets;
 	    uint64_t *global_dimensions = offset->global_dimensions;
+
 	    fpvar->num_global_dims = offset->offsets_per_rank;
-	    // fix this --> call free later in release_step or advance_step.
 	    fpvar->global_dims = malloc(sizeof(uint64_t)*fpvar->num_global_dims);
+	    memcpy(fpvar->global_dims, global_dimensions, sizeof(uint64_t)*fpvar->num_global_dims);
+
 	    fp_log("MEM", "malloc flexpath_var global_dims: %p, %d\n", 
 		   fpvar->global_dims, sizeof(uint64_t)*fpvar->num_global_dims);
-	    int j;
-	    for(j=0; j<fpvar->num_global_dims; j++){
-		fpvar->global_dims[j] = global_dimensions[j];
-	    }
 	}else{
 	    adios_error(err_corrupted_variable, 
 			"Mismatch between global variables and variables specified %s.",
@@ -776,34 +829,26 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
     return 0;
 }
 
-free_fmstructdesclist(FMStructDescList struct_list)
-{
-    FMField *f = struct_list[0].field_list;
-    FMField *temp = f;
-    while(temp->field_name){
-	//free(temp->field_name);
-	temp++;
-    }
-    free(f);   
-    free(struct_list[0].opt_info);
-    free(struct_list);   
-}
 
 static int
 raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list attrs)
 {
+    ADIOS_FILE *adiosfile = client_data;
+    flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
+
+    double data_end = dgettimeofday();
+    if(fp->time_in == 0.00)
+	fp->time_in = data_end; // used for perf measurements only
+
     int condition;
     int writer_rank;          
     int flush_id;
-    double data_end = dgettimeofday();
     double data_start;
     get_double_attr(attrs, attr_atom_from_string("fp_starttime"), &data_start);
     get_int_attr(attrs, attr_atom_from_string("fp_dst_condition"), &condition);   
     get_int_attr(attrs, attr_atom_from_string(FP_RANK_ATTR_NAME), &writer_rank); 
     get_int_attr(attrs, attr_atom_from_string("fp_flush_id"), &flush_id);
 
-    ADIOS_FILE *adiosfile = client_data;
-    flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
 
     double format_start = dgettimeofday();
 
@@ -822,30 +867,13 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
        message. Message contains both an FFS description and the data. */
     if(fp->num_vars == 0){
 	int var_count = 0;
-	int i=0;       
-	while(f->field_name != NULL){           
-	    flexpath_var *curr_var = new_flexpath_var(f->field_name, 
-						      var_count, 
-						      f->field_size);
-	    curr_var->num_chunks = 1;
-	    curr_var->chunks = malloc(sizeof(flexpath_var_chunk)*curr_var->num_chunks);
-	    fp_log("MEM", "malloc flexpath_var chunks: %p, %d\n", 
-		   curr_var->chunks, sizeof(flexpath_var_chunk)*curr_var->num_chunks);
-	    memset(curr_var->chunks, 0, sizeof(flexpath_var_chunk)*curr_var->num_chunks);
-
-	    curr_var->sel = NULL;
-	    curr_var->type = ffs_type_to_adios_type(f->field_type);
-	    flexpath_var *temp = fp->var_list;	
-	    curr_var->next = temp;
-	    fp->var_list = curr_var;
-	    var_count++;
-	    f++;
-	}
+	fp->var_list = setup_flexpath_vars(f, &var_count);
 		
 	adiosfile->var_namelist = malloc(var_count * sizeof(char *));
 	fp_log("MEM", "malloc adiosfile->var_namelist: %p, %d\n", 
 	       adiosfile->var_namelist, var_count*sizeof(char*));
-	f = struct_list[0].field_list;  // f is top-level field list 	
+
+	int i = 0;
 	while(f->field_name != NULL) {
 	    fp_log("MEM", "strdup for var_namelist.\n");
 	    adiosfile->var_namelist[i++] = strdup(f->field_name);
@@ -861,7 +889,6 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 
     f = struct_list[0].field_list;
     char *curr_offset = NULL;
-    int i = 0, j = 0;
 
     while(f->field_name){
         char atom_name[200] = "";
@@ -873,12 +900,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     	    return err_file_open_error;
     	}
 
-        strcat(atom_name, FP_NDIMS_ATTR_NAME);
-        strcat(atom_name, "_");
-        strcat(atom_name, f->field_name);
-        int num_dims;
-        int i;
-        get_int_attr(attrs, attr_atom_from_string(atom_name), &num_dims);
+	int num_dims = get_ndims_attr(f->field_name, attrs);
     	var->num_global_dims = num_dims;
 
 	flexpath_var_chunk *curr_chunk = &var->chunks[0];
@@ -893,11 +915,14 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 		    }
 		}
 		else { // writeblock selection for arrays
-		    /* var->global_dims = malloc(sizeof(uint64_t)*num_dims); */
-		    /* fp_log("MEM", "malloc flexpath_var global_dims: %p, %d\n", */
-		    /* 	   var->global_dims, sizeof(uint64_t)*num_dims); */
+		    if(var->num_global_dims == 0){
+			var->global_dims = malloc(sizeof(uint64_t)*num_dims);
+			fp_log("MEM", "malloc flexpath_var global_dims: %p, %d\n",
+			       var->global_dims, sizeof(uint64_t)*num_dims);
+		    }
 		    if(var->sel->u.block.index == writer_rank){
 			var->array_size = var->type_size;
+			int i;
 			for(i=0; i<num_dims; i++){
 			    char *dim;
 			    atom_name[0] ='\0';
@@ -909,9 +934,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 			    sprintf(dim_num, "%d", i+1);
 			    strcat(atom_name, dim_num);
 			    get_string_attr(attrs, attr_atom_from_string(atom_name), &dim);
-
-			    fprintf(stderr, "dimension %d for var: %s is %s\n",
-				    i, var->varname, dim);
+	
 			    FMField *temp_field = find_field_by_name(dim, f);
 			    if(!temp_field){
 				adios_error(err_corrupted_variable,
@@ -986,8 +1009,6 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 		}
 	    }
 	}
-
-        j++;
         f++;
     }
  
@@ -1308,6 +1329,10 @@ void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
 	//fp_log("MEM", "free flexpath_var global_dims: %p\n", tmpvars->global_dims);       
 	//free(tmpvars->global_dims);
 	//tmpvars->global_dims = NULL;
+	if(tmpvars->num_global_dims > 0){
+	    free(tmpvars->global_dims);	   
+	    tmpvars->num_global_dims = 0;
+	}
 	free_displacements(tmpvars->displ, tmpvars->num_displ);
 	tmpvars->displ = NULL;
 	if(tmpvars->sel){
@@ -1333,6 +1358,7 @@ void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
 
 	    chunk->global_offsets = NULL;
 	    chunk->global_bounds = NULL;
+	    chunk->local_bounds = NULL;
 	    chunk->rank = 0;
 	}
 	tmpvars = tmpvars->next;
@@ -1362,7 +1388,6 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
         if(fp->bridges[i].created && fp->bridges[i].opened) {
 	    count++;
 	    send_close_msg(fp, i);
-            op_msg close;
 	}
     }
     MPI_Barrier(fp->comm);
@@ -1459,7 +1484,8 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
     int i,j;
     int num_sendees = fp->num_sendees;
     int total_sent = 0;
-    double data_start = dgettimeofday();
+    fp->time_in = 0.00;
+
     for(i = 0; i<num_sendees; i++){
 	pthread_mutex_lock(&fp->data_mutex);
 	int sendee = fp->sendees[i];	
@@ -1478,7 +1504,7 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
     }
     double data_end = dgettimeofday();
     fp_log("PERF", "READER_PERF:data:rank:%d:step:%d:time:%lf:total_size:%d:num_sendees:%d\n",
-	   fp->rank, fp->mystep, (data_end - data_start), fp->data_read, fp->num_sendees);
+	   fp->rank, fp->mystep, (data_end - fp->time_in), fp->data_read, fp->num_sendees);
     fp_log("MEM", "free flexpath_reader_file sendees: %p\n", fp->sendees);
     free(fp->sendees);
     fp->sendees = NULL;    

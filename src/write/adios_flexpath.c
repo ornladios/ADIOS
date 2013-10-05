@@ -792,9 +792,9 @@ static char * get_dim_name (struct adios_dimension_item_struct *d)
 
 // construct an fm structure based off the group xml file
 FlexpathFMStructure* 
-set_format(struct adios_group_struct* t, 
-				struct adios_var_struct* fields, 
-				FlexpathWriteFileData* fileData)
+set_format(struct adios_group_struct *t, 
+	   struct adios_var_struct *fields, 
+	   FlexpathWriteFileData *fileData)
 {
     FMStructDescRec *format = malloc(sizeof(FMStructDescRec)*2);
     mem_check(format, "format");
@@ -841,9 +841,9 @@ set_format(struct adios_group_struct* t,
         if(tempName!=NULL) {
             int num_dims = 0;
             char atom_name[200] = "";
-            FlexpathVarNode* dims=NULL;
+            FlexpathVarNode *dims=NULL;
             if(f->dimensions) {
-                struct adios_dimension_struct* adim = f->dimensions;  
+                struct adios_dimension_struct *adim = f->dimensions;  
 	
                 // attach appropriate attrs for dimensions	
                 for(; adim != NULL; adim = adim->next) {
@@ -1180,10 +1180,11 @@ process_close_msg(FlexpathWriteFileData *fileData, op_msg *close)
 
 	drop_evgroup_msg *dropMsg = malloc(sizeof(drop_evgroup_msg));
 	dropMsg->step = fileData->readerStep;
-	dropMsg->condition = CMCondition_get(flexpathWriteData.cm, NULL);
+	int wait = CMCondition_get(flexpathWriteData.cm, NULL);
+	dropMsg->condition = wait;
 	EVsubmit_general(fileData->dropSource, dropMsg, drop_evgroup_msg_free, fileData->attrs);
 	// Will have to change when not using ctrl thread.
-	CMCondition_wait(flexpathWriteData.cm,  dropMsg->condition); 		    
+	CMCondition_wait(flexpathWriteData.cm,  wait); 		    
 		     
 	fileData->readerStep++;
     }
