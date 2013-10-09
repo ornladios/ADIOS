@@ -1092,7 +1092,9 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
             if (!file_ok)
             {
                 // This stream does not exist yet
-                log_debug ("file %s found!\n", fname);
+                log_debug ("file %s is not a valid file for streaming read."
+                           "One possible reason is it's a VERY old BP file,"
+                           "which doesn't allow reader to check its validity.\n", fname);
 
                 if (stay_in_poll_loop)
                 {
