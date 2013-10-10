@@ -722,7 +722,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-recursive
-all-am: Makefile $(SCRIPTS) $(DATA)
+all-am: Makefile $(SCRIPTS) $(DATA) all-local
 installdirs: installdirs-recursive
 installdirs-am:
 	for dir in "$(DESTDIR)$(bindir)" "$(DESTDIR)$(pythonlibdir)" "$(DESTDIR)$(templatedir)"; do \
@@ -824,11 +824,11 @@ uninstall-am: uninstall-dist_binSCRIPTS uninstall-dist_pythonlibDATA \
 	install-am install-strip tags-recursive
 
 .PHONY: $(RECURSIVE_CLEAN_TARGETS) $(RECURSIVE_TARGETS) CTAGS GTAGS \
-	all all-am check check-am clean clean-generic clean-libtool \
-	ctags ctags-recursive distclean distclean-generic \
-	distclean-libtool distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-dist_binSCRIPTS \
+	all all-am all-local check check-am clean clean-generic \
+	clean-libtool ctags ctags-recursive distclean \
+	distclean-generic distclean-libtool distclean-tags distdir dvi \
+	dvi-am html html-am info info-am install install-am \
+	install-data install-data-am install-dist_binSCRIPTS \
 	install-dist_pythonlibDATA install-dist_templateDATA \
 	install-dvi install-dvi-am install-exec install-exec-am \
 	install-html install-html-am install-info install-info-am \
@@ -840,6 +840,17 @@ uninstall-am: uninstall-dist_binSCRIPTS uninstall-dist_pythonlibDATA \
 	uninstall uninstall-am uninstall-dist_binSCRIPTS \
 	uninstall-dist_pythonlibDATA uninstall-dist_templateDATA
 
+
+all-local:
+	test "$(srcdir)" = "$(builddir)" || { \
+	 cp -r $(srcdir)/bin $(builddir); \
+	 for f in $(dist_pythonlib_DATA); do \
+	     test ! -f "$(srcdir)/$$f" || cp $(srcdir)/"$$f" $(builddir)/lib; \
+	 done; \
+	 for f in $(dist_template_DATA); do \
+	     test ! -f "$(srcdir)/$$f" || cp $(srcdir)/"$$f" $(builddir)/etc; \
+	 done; \
+	 cp -r $(srcdir)/etc/templates $(builddir)/etc; }
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

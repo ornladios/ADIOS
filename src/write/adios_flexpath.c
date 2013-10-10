@@ -136,6 +136,7 @@ typedef struct _flexpath_write_file_data {
     int readerStep;
     int writerStep; // how many times has the writer called closed?
     int finalized; // have we finalized?
+    int use_ctrl_thread;
 
     FlexpathFMStructure* fm;
     FlexpathVarNode* askedVars;
@@ -236,6 +237,58 @@ void set_attr_dimensions(char* varName, char* altName, int numDims, attr_list at
     add_int_attr(attrs, ndimsAtom, 0);
 }
 
+
+attr_list 
+set_flush_id_atom(attr_list attrs, int value) 
+{
+    atom_t dst_atom = attr_atom_from_string("fp_flush_id");
+    int dst;
+    if(!get_int_attr(attrs, dst_atom, &dst)) {
+        add_int_attr(attrs, dst_atom, value);
+    }
+    set_int_attr(attrs, dst_atom, value);
+    return attrs;
+}
+
+// sets a size atom
+attr_list 
+set_size_atom(attr_list attrs, int value) 
+{
+    atom_t dst_atom = attr_atom_from_string("fp_size");
+    int size;
+    if(!get_int_attr(attrs, dst_atom, &size)) {
+        add_int_attr(attrs, dst_atom, value);
+    }
+    set_int_attr(attrs, dst_atom, value);
+    return attrs;
+}
+
+// sets a dst rank atom
+attr_list 
+set_dst_rank_atom(attr_list attrs, int value) 
+{
+    atom_t dst_atom = attr_atom_from_string("fp_dst_rank");
+    int dst;
+    if(!get_int_attr(attrs, dst_atom, &dst)) {
+        add_int_attr(attrs, dst_atom, value);
+    }
+    set_int_attr(attrs, dst_atom, value);
+    return attrs;
+}
+
+// sets a dst condition atom
+attr_list 
+set_dst_condition_atom(attr_list attrs, int condition)
+{
+    atom_t dst_atom = attr_atom_from_string("fp_dst_condition");
+    int dst;
+    if(!get_int_attr(attrs, dst_atom, &dst)){
+	add_int_attr(attrs, dst_atom, condition);
+    }
+    set_int_attr(attrs, dst_atom, condition);
+    return attrs;
+}
+
 // free format packets once EVPath is finished with them
 
 void
@@ -264,7 +317,8 @@ update_step_msg_free(void *eventData, void *clientData)
 } 
 
 // free data packets once EVPath is finished with them
-void data_free(void* eventData, void* clientData) 
+void 
+data_free(void* eventData, void* clientData) 
 {
     fp_write_log("DATA", "freeing a data message\n");
     FlexpathWriteFileData* fileData = (FlexpathWriteFileData*)clientData;
@@ -273,7 +327,8 @@ void data_free(void* eventData, void* clientData)
 }
 
 // free op packets once EVPath is finished with them
-void op_free(void* eventData, void* clientData) 
+void 
+op_free(void* eventData, void* clientData) 
 {
     fp_write_log("OP", "freeing an op message\n");
     op_msg* op = (op_msg*) eventData;
@@ -304,7 +359,7 @@ queue_count(FlexpathQueueNode** queue)
 // message queue add to head
 void 
 threaded_enqueue(
-    FlexpathQueueNode** queue, 
+    FlexpathQueueNode **queue, 
     void* item, 
     FlexpathMessageType type, 
     pthread_mutex_t *mutex, 
@@ -332,7 +387,7 @@ threaded_enqueue(
 // remove from tail of a message queue
 FlexpathQueueNode* 
 threaded_dequeue(
-    FlexpathQueueNode** queue, 
+    FlexpathQueueNode **queue, 
     pthread_mutex_t *mutex, 
     pthread_cond_t *condition, 
     int signal_dequeue) 
@@ -344,8 +399,8 @@ threaded_dequeue(
         fp_write_log("QUEUE", "queue is null\n");
         pthread_cond_wait(condition, mutex);
     }
-    FlexpathQueueNode* tail;
-    FlexpathQueueNode* prev = NULL;
+    FlexpathQueueNode *tail;
+    FlexpathQueueNode *prev = NULL;
     tail = *queue;
     while(tail && tail->next) {
         prev=tail;
@@ -393,7 +448,8 @@ threaded_peek(FlexpathQueueNode** queue,
 }
 
 // add new var to a var list
-FlexpathVarNode* add_var(FlexpathVarNode* queue, char* varName, FlexpathVarNode* dims, int rank)
+FlexpathVarNode* 
+add_var(FlexpathVarNode* queue, char* varName, FlexpathVarNode* dims, int rank)
 {
     if(queue) {
         queue->next=add_var(queue->next, varName, dims, rank);
@@ -419,7 +475,8 @@ void free_vars(FlexpathVarNode* queue)
 }
 
 // search a var list
-FlexpathVarNode* queue_contains(FlexpathVarNode* queue, const char* name, int rank) 
+FlexpathVarNode* 
+queue_contains(FlexpathVarNode* queue, const char* name, int rank) 
 {
     int compare_rank = 0;
     if(rank >= 0 ) {
@@ -442,7 +499,8 @@ FlexpathVarNode* queue_contains(FlexpathVarNode* queue, const char* name, int ra
 }
 
 // sanitize a name
-char* get_fixed_name(char* name) 
+char* 
+get_fixed_name(char* name) 
 {
     char* oldName = strdup(name);
     char* newName = (char*) malloc(sizeof(char) * 255);
@@ -471,7 +529,8 @@ char* get_fixed_name(char* name)
 }
 
 // return name with operators removed by using the lookup list
-static char* find_fixed_name(FlexpathFMStructure *fm, char *name) 
+static char* 
+find_fixed_name(FlexpathFMStructure *fm, char *name) 
 {
     FlexpathNameTable *node;
     for (node = fm->nameList.lh_first; node != NULL; node = node->entries.le_next) {
@@ -483,7 +542,8 @@ static char* find_fixed_name(FlexpathFMStructure *fm, char *name)
 }
 
 // returns a name with the dimension prepended
-static char *get_alt_name(char *name, char *dimName) 
+static char*
+get_alt_name(char *name, char *dimName) 
 {
     int len = strlen(name) + strlen(dimName) + 2;
     char *newName = (char *) malloc(sizeof(char) * len);
@@ -494,7 +554,8 @@ static char *get_alt_name(char *name, char *dimName)
 }
 
 // lookup a dimensions real name
-static FlexpathAltName *find_alt_name(FlexpathFMStructure *currentFm, char *dimName, char *varName) 
+static FlexpathAltName*
+find_alt_name(FlexpathFMStructure *currentFm, char *dimName, char *varName) 
 {
     char *altName = get_alt_name(varName, dimName);
     FlexpathDimNames *d = NULL;
@@ -529,7 +590,8 @@ static FlexpathAltName *find_alt_name(FlexpathFMStructure *currentFm, char *dimN
 }
 
 // populates offsets array
-int get_var_offsets(struct adios_var_struct *v, 
+int 
+get_var_offsets(struct adios_var_struct *v, 
 		      struct adios_group_struct *g, 
 		      uint64_t **offsets, 
 		      uint64_t **local_dimensions,
@@ -590,7 +652,6 @@ char *multiqueue_action = "{\n\
         mine = EVget_attrs_op_msg(0);\n\
         found = attr_ivalue(mine, \"fp_dst_rank\");\n\
         if(found > 0) {\n\
-            printf(\"writer rank: %d sending op_msg of type: %d to reader rank: %d on port %d with condition: %d\\n\", msg->process_id, msg->type, found-1, found, msg->condition);\n\
             EVdiscard_and_submit_op_msg(found, 0);\n\
         } else {\n\
             EVdiscard_and_submit_op_msg(0,0);\n\
@@ -629,7 +690,8 @@ char *multiqueue_action = "{\n\
  }";
 
 // sets a field based on data type
-void set_field(int type, FMFieldList* field_list_ptr, int fieldNo, int* size)
+void 
+set_field(int type, FMFieldList* field_list_ptr, int fieldNo, int* size)
 {
     FMFieldList field_list = *field_list_ptr;
     switch (type) {
@@ -693,7 +755,8 @@ void set_field(int type, FMFieldList* field_list_ptr, int fieldNo, int* size)
 }
 
 // find a field in a given field list
-static FMField *internal_find_field(char *name, FMFieldList flist) 
+static FMField*
+internal_find_field(char *name, FMFieldList flist) 
 {
     FMField *f = flist;
     while (f->field_name != NULL && strcmp(f->field_name, name)) {
@@ -703,7 +766,8 @@ static FMField *internal_find_field(char *name, FMFieldList flist)
 }
 
 // generic memory check for after mallocs
-void mem_check(void* ptr, const char* str) 
+void 
+mem_check(void* ptr, const char* str) 
 {
     if(!ptr) {
         adios_error(err_no_memory, "Cannot allocate memory for flexpath %s.", str);
@@ -727,9 +791,10 @@ static char * get_dim_name (struct adios_dimension_item_struct *d)
 }
 
 // construct an fm structure based off the group xml file
-FlexpathFMStructure* set_format(struct adios_group_struct* t, 
-				struct adios_var_struct* fields, 
-				FlexpathWriteFileData* fileData)
+FlexpathFMStructure* 
+set_format(struct adios_group_struct *t, 
+	   struct adios_var_struct *fields, 
+	   FlexpathWriteFileData *fileData)
 {
     FMStructDescRec *format = malloc(sizeof(FMStructDescRec)*2);
     mem_check(format, "format");
@@ -776,9 +841,9 @@ FlexpathFMStructure* set_format(struct adios_group_struct* t,
         if(tempName!=NULL) {
             int num_dims = 0;
             char atom_name[200] = "";
-            FlexpathVarNode* dims=NULL;
+            FlexpathVarNode *dims=NULL;
             if(f->dimensions) {
-                struct adios_dimension_struct* adim = f->dimensions;  
+                struct adios_dimension_struct *adim = f->dimensions;  
 	
                 // attach appropriate attrs for dimensions	
                 for(; adim != NULL; adim = adim->next) {
@@ -938,7 +1003,9 @@ FlexpathFMStructure* set_format(struct adios_group_struct* t,
 		break;
 
 	    default:
-		adios_error(err_invalid_group, "set_format: Unknown Type Error %d: name: %s\n", f->type, field_list[fieldNo].field_name);
+		adios_error(err_invalid_group, 
+			    "set_format: Unknown Type Error %d: name: %s\n", 
+			    f->type, field_list[fieldNo].field_name);
 		fieldNo--;	      
 		return NULL;
 		//break;
@@ -1016,8 +1083,129 @@ void* copy_buffer(void* buffer, int rank, FlexpathWriteFileData* fileData)
     return temp;
 }
 
-// terminal action for var messages: enqueues
-static int var_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
+void 
+process_data_flush(FlexpathWriteFileData *fileData, 
+		   Flush_msg *flushMsg, 
+		   FlexpathQueueNode *dataNode)
+{
+    void* temp = copy_buffer(dataNode->data, flushMsg->process_id, fileData);
+   
+    fileData->attrs = set_dst_rank_atom(fileData->attrs, flushMsg->process_id);
+    fileData->attrs = set_dst_condition_atom(fileData->attrs, flushMsg->condition);
+    fileData->attrs = set_flush_id_atom(fileData->attrs, flushMsg->id);
+    
+    if(!fileData->bridges[flushMsg->process_id].opened) {
+	fileData->bridges[flushMsg->process_id].opened=1;
+	fileData->openCount++;
+    }
+    //EVsubmit_general(fileData->dataSource, temp, data_free, fileData->attrs);
+    EVsubmit_general(fileData->dataSource, temp, NULL, fileData->attrs);
+}
+
+void
+process_var_msg(FlexpathWriteFileData *fileData, Var_msg *varMsg)
+{
+    fileData->askedVars = add_var(fileData->askedVars, 
+				  strdup(varMsg->var_name), 
+				  NULL, 
+				  varMsg->process_id);
+}
+
+void
+process_open_msg(FlexpathWriteFileData *fileData, op_msg *open)
+{
+    fileData->bridges[open->process_id].step = open->step;
+    fileData->bridges[open->process_id].condition = open->condition;
+
+    if(!fileData->bridges[open->process_id].created){
+	fileData->bridges[open->process_id].created = 1;
+	fileData->bridges[open->process_id].myNum = 
+	    EVcreate_bridge_action(
+		flexpathWriteData.cm, 
+		attr_list_from_string(fileData->bridges[open->process_id].contact), 
+		fileData->bridges[open->process_id].theirNum);		    
+	
+	EVaction_set_output(flexpathWriteData.cm, 
+			    fileData->multiStone, 
+			    fileData->multi_action, 
+			    open->process_id+1, 
+			    fileData->bridges[open->process_id].myNum);
+    }	
+	
+    if (open->step == fileData->readerStep){
+	pthread_mutex_lock(&fileData->openMutex);
+	fileData->openCount++;  
+	fileData->bridges[open->process_id].opened = 1;
+	pthread_mutex_unlock(&fileData->openMutex);
+
+	op_msg *ack = malloc(sizeof(op_msg));
+	ack->file_name = strdup(fileData->name);
+	ack->process_id = fileData->rank;
+	ack->step = fileData->readerStep;
+	ack->type = 2;
+	ack->condition = open->condition;
+	fileData->attrs = set_dst_rank_atom(fileData->attrs, open->process_id+1);
+
+	fp_log("COND", 
+	       "writer rank: %d, sending ack (open) to readerk: %d on port: %d with condition: %d\n",
+	       ack->process_id, open->process_id, open->process_id+1, ack->condition);
+
+	EVsubmit_general(fileData->opSource, ack, op_free, fileData->attrs);
+    } 
+    else if(open->step < fileData->readerStep) {
+	log_error("Flexpath method control_thread: Received Past Step Open\n");
+    } 
+    else {
+	fp_write_log("STEP", "recieved op with future step\n");
+    }
+}
+
+void
+process_close_msg(FlexpathWriteFileData *fileData, op_msg *close)
+{
+
+    pthread_mutex_lock(&fileData->openMutex);
+    fp_write_log("MUTEX","lock 7\n");
+    fileData->openCount--;
+    fileData->bridges[close->process_id].opened=0;
+    fileData->bridges[close->process_id].condition = close->condition;
+    fp_write_log("MUTEX","unlock 7\n");
+    pthread_mutex_unlock(&fileData->openMutex);
+
+    if(fileData->openCount==0) {
+	FlexpathQueueNode* node = threaded_dequeue(&fileData->dataQueue, 
+						   &fileData->dataMutex, 
+						   &fileData->dataCondition, 1);
+	FMfree_var_rec_elements(fileData->fm->ioFormat, node->data);
+
+	drop_evgroup_msg *dropMsg = malloc(sizeof(drop_evgroup_msg));
+	dropMsg->step = fileData->readerStep;
+	int wait = CMCondition_get(flexpathWriteData.cm, NULL);
+	dropMsg->condition = wait;
+	EVsubmit_general(fileData->dropSource, dropMsg, drop_evgroup_msg_free, fileData->attrs);
+	// Will have to change when not using ctrl thread.
+	CMCondition_wait(flexpathWriteData.cm,  wait); 		    
+		     
+	fileData->readerStep++;
+    }
+		
+    op_msg *ack = malloc(sizeof(op_msg));
+    ack->file_name = strdup(fileData->name);
+    ack->process_id = fileData->rank;
+    ack->step = fileData->readerStep;
+    ack->type = 2;
+    ack->condition = close->condition;
+    fileData->attrs = set_dst_rank_atom(fileData->attrs, close->process_id + 1);
+    EVsubmit_general(fileData->opSource, 
+		     ack, 
+		     op_free, 
+		     fileData->attrs);		
+		
+}
+
+
+static int 
+var_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 {
     FlexpathWriteFileData* fileData = (FlexpathWriteFileData*) client_data;
     Var_msg* msg = (Var_msg*) vevent;
@@ -1028,7 +1216,6 @@ static int var_handler(CManager cm, void *vevent, void *client_data, attr_list a
     return 0;
 }
 
-// terminal action for flush messages: enqueues
 static int 
 flush_handler(CManager cm, void* vevent, void* client_data, attr_list attrs) 
 {
@@ -1044,11 +1231,11 @@ flush_handler(CManager cm, void* vevent, void* client_data, attr_list attrs)
 static int
 drop_evgroup_handler(CManager cm, void *vevent, void *client_data, attr_list attrs){
     drop_evgroup_msg *msg = vevent;
+    // will have to change when not using control thread.
     CMCondition_signal(cm, msg->condition);    
     return 0;
 }
 
-// terminal action for op messages: enqueues
 static int 
 op_handler(CManager cm, void* vevent, void* client_data, attr_list attrs) 
 {
@@ -1062,214 +1249,46 @@ op_handler(CManager cm, void* vevent, void* client_data, attr_list attrs)
 			 &fileData->controlMutex, &fileData->controlCondition, -1);
     } else if(msg->type == CLOSE_MSG) {
         threaded_enqueue(&fileData->controlQueue, msg, CLOSE, 
-			 &fileData->controlMutex, &fileData->controlCondition, -1);
-    } else if(msg->type == INIT_MSG) {
-	threaded_enqueue(&fileData->controlQueue, msg, INIT,
-			 &fileData->controlMutex, &fileData->controlCondition, -1);
-			
+			 &fileData->controlMutex, &fileData->controlCondition, -1);  			
     }
     return 0;
 }
 
-attr_list 
-set_flush_id_atom(attr_list attrs, int value) 
-{
-    atom_t dst_atom = attr_atom_from_string("fp_flush_id");
-    int dst;
-    if(!get_int_attr(attrs, dst_atom, &dst)) {
-        add_int_attr(attrs, dst_atom, value);
-    }
-    set_int_attr(attrs, dst_atom, value);
-    return attrs;
-}
-
-// sets a size atom
-attr_list 
-set_size_atom(attr_list attrs, int value) 
-{
-    atom_t dst_atom = attr_atom_from_string("fp_size");
-    int size;
-    if(!get_int_attr(attrs, dst_atom, &size)) {
-        add_int_attr(attrs, dst_atom, value);
-    }
-    set_int_attr(attrs, dst_atom, value);
-    return attrs;
-}
-
-// sets a dst rank atom
-attr_list 
-set_dst_rank_atom(attr_list attrs, int value) 
-{
-    atom_t dst_atom = attr_atom_from_string("fp_dst_rank");
-    int dst;
-    if(!get_int_attr(attrs, dst_atom, &dst)) {
-        add_int_attr(attrs, dst_atom, value);
-    }
-    set_int_attr(attrs, dst_atom, value);
-    return attrs;
-}
-
-// sets a dst condition atom
-attr_list 
-set_dst_condition_atom(attr_list attrs, int condition)
-{
-    atom_t dst_atom = attr_atom_from_string("fp_dst_condition");
-    int dst;
-    if(!get_int_attr(attrs, dst_atom, &dst)){
-	add_int_attr(attrs, dst_atom, condition);
-    }
-    set_int_attr(attrs, dst_atom, condition);
-    return attrs;
-}
-
 // processes messages from control queue
 void 
-control_thread(void* arg) 
+control_thread(void *arg) 
 {
-    FlexpathWriteFileData* fileData = (FlexpathWriteFileData*)arg;
+    FlexpathWriteFileData *fileData = (FlexpathWriteFileData*)arg;
     int rank = fileData->rank;
-    FlexpathQueueNode* controlMsg;
-    FlexpathQueueNode* dataNode;
+    FlexpathQueueNode *controlMsg;
+    FlexpathQueueNode *dataNode;
     while(1) {
         fp_write_log("CONTROL", "control message attempts dequeue\n");
 	if((controlMsg = threaded_dequeue(&fileData->controlQueue, 
 	    &fileData->controlMutex, &fileData->controlCondition, 0))) {
             fp_write_log("CONTROL", "control message dequeued\n");
-	    if(controlMsg->type==VAR) {
-		Var_msg* varMsg = (Var_msg*) controlMsg->data;
-		fileData->askedVars = add_var(fileData->askedVars, 
-		    strdup(varMsg->var_name), NULL, varMsg->process_id);
+	    if(controlMsg->type==VAR){
+		Var_msg *varMsg = (Var_msg*) controlMsg->data;
+		process_var_msg(fileData, varMsg);
 		EVreturn_event_buffer(flexpathWriteData.cm,controlMsg->data);
-	    } else if(controlMsg->type==DATA_FLUSH) {
+	    }
+	    else if(controlMsg->type==DATA_FLUSH) {
+		Flush_msg *flushMsg = (Flush_msg*)controlMsg->data;
 		dataNode = threaded_peek(&fileData->dataQueue, 
 					 &fileData->dataMutex, 
 					 &fileData->dataCondition);
-		
-		Flush_msg* flushMsg = (Flush_msg*) controlMsg->data;
-                void* temp = copy_buffer(dataNode->data, flushMsg->process_id, fileData);
+		process_data_flush(fileData, flushMsg, dataNode);
 
-		fileData->attrs = set_dst_rank_atom(fileData->attrs, flushMsg->process_id);
-		fileData->attrs = set_dst_condition_atom(fileData->attrs, flushMsg->condition);
-		fileData->attrs = set_flush_id_atom(fileData->attrs, flushMsg->id);
-
-		if(!fileData->bridges[flushMsg->process_id].opened) {
-                  fileData->bridges[flushMsg->process_id].opened=1;
-                  fileData->openCount++;
-                }
-		EVsubmit_general(fileData->dataSource, temp, data_free, fileData->attrs);
-
-	    } else if(controlMsg->type==OPEN) {
-                op_msg* open = (op_msg*) controlMsg->data;
-                fileData->bridges[open->process_id].step = open->step;
-                fileData->bridges[open->process_id].condition = open->condition;
-		if(!fileData->bridges[open->process_id].created){
-		    fileData->bridges[open->process_id].created = 1;
-		    fileData->bridges[open->process_id].myNum = 
-			EVcreate_bridge_action(
-			    flexpathWriteData.cm, 
-			    attr_list_from_string(fileData->bridges[open->process_id].contact), 
-			    fileData->bridges[open->process_id].theirNum);		    
-
-		    EVaction_set_output(flexpathWriteData.cm, 
-					fileData->multiStone, 
-					fileData->multi_action, 
-					open->process_id+1, 
-					fileData->bridges[open->process_id].myNum);
-		}		
-		if(open->step < fileData->readerStep) {
-		    log_error("Flexpath method control_thread: Received Past Step Open\n");
-                } else if (open->step == fileData->readerStep){
-                    pthread_mutex_lock(&fileData->openMutex);
-                    fileData->openCount++;  
-                    fileData->bridges[open->process_id].opened = 1;
-		    pthread_mutex_unlock(&fileData->openMutex);
-
-                    op_msg *ack = malloc(sizeof(op_msg));
-                    ack->file_name = strdup(fileData->name);
-                    ack->process_id = fileData->rank;
-                    ack->step = fileData->readerStep;
-                    ack->type = 2;
-		    ack->condition = open->condition;
-                    fileData->attrs = set_dst_rank_atom(fileData->attrs, open->process_id+1);
-
-		    fp_log("COND", 
-			   "writer rank: %d, sending ack (open) to reader rank: %d on port: %d with condition: %d\n",
-			    ack->process_id, open->process_id, open->process_id+1, ack->condition);
-
-                    EVsubmit_general(fileData->opSource, ack, op_free, fileData->attrs);
-                } else {
-                    fp_write_log("STEP", "recieved op with future step\n");
-                }
+	    }
+	    else if(controlMsg->type==OPEN) {
+                op_msg *open = (op_msg*) controlMsg->data;
+		process_open_msg(fileData, open);                
 		EVreturn_event_buffer(flexpathWriteData.cm, open);
-            } else if(controlMsg->type==CLOSE) {
+            }
+	    else if(controlMsg->type==CLOSE) {
                 op_msg* close = (op_msg*) controlMsg->data;
-		pthread_mutex_lock(&fileData->openMutex);
-                fp_write_log("MUTEX","lock 7\n");
-		fileData->openCount--;
-                fileData->bridges[close->process_id].opened=0;
-		fileData->bridges[close->process_id].condition = close->condition;
-                fp_write_log("MUTEX","unlock 7\n");
-		pthread_mutex_unlock(&fileData->openMutex);
-
-		if(fileData->openCount==0) {
-		     FlexpathQueueNode* node = threaded_dequeue(&fileData->dataQueue, 
-								&fileData->dataMutex, &fileData->dataCondition, 1);
-		     FMfree_var_rec_elements(fileData->fm->ioFormat, node->data);
-
-		     drop_evgroup_msg *dropMsg = malloc(sizeof(drop_evgroup_msg));
-		     dropMsg->step = fileData->readerStep;
-		     dropMsg->condition = CMCondition_get(flexpathWriteData.cm, NULL);
-		     EVsubmit_general(fileData->dropSource, dropMsg, drop_evgroup_msg_free, fileData->attrs);
-		     CMCondition_wait(flexpathWriteData.cm,  dropMsg->condition); 		    
-		     
-		     fileData->readerStep++;
-		}
-		
-		op_msg* ack = malloc(sizeof(op_msg));
-		ack->file_name = strdup(fileData->name);
-		ack->process_id = fileData->rank;
-		ack->step = fileData->readerStep;
-		ack->type = 2;
-		ack->condition = close->condition;
-		fileData->attrs = set_dst_rank_atom(fileData->attrs, close->process_id + 1);
-		EVsubmit_general(fileData->opSource, 
-				 ack, 
-				 op_free, 
-				 fileData->attrs);		
-		
+		process_close_msg(fileData, close);
 		EVreturn_event_buffer(flexpathWriteData.cm, close);
-	    }else if(controlMsg->type == INIT){ 
-		fp_write_log("DATAMUTEX", "in use 1\n"); 
-		dataNode = threaded_peek(&fileData->dataQueue, 
-		    &fileData->dataMutex, &fileData->dataCondition);
-		op_msg* initMsg = (op_msg*) controlMsg->data;
-		void* temp = copy_buffer(dataNode->data, 
-					 initMsg->process_id, fileData);
-		fileData->attrs = set_dst_rank_atom(fileData->attrs, 
-						    initMsg->process_id);
-		fileData->attrs = set_dst_condition_atom(fileData->attrs, 
-							 initMsg->condition);	
-		if(!fileData->bridges[initMsg->process_id].created){
-		    fileData->num_reader_coordinators++;
-		    fileData->reader_coordinators = realloc(fileData->reader_coordinators,
-							    sizeof(int)*fileData->num_reader_coordinators);
-		    fileData->reader_coordinators[fileData->num_reader_coordinators -1] = initMsg->process_id;
-		    fileData->bridges[initMsg->process_id].created = 1;
-		    fileData->bridges[initMsg->process_id].myNum = 
-			EVcreate_bridge_action(flexpathWriteData.cm, 
-					       attr_list_from_string(fileData->bridges[initMsg->process_id].contact),
-					       fileData->bridges[initMsg->process_id].theirNum);
-		    
-		    EVaction_set_output(flexpathWriteData.cm, 
-					fileData->multiStone, 
-					fileData->multi_action, 
-					initMsg->process_id+1, 
-					fileData->bridges[initMsg->process_id].myNum);
-		}
-
-		EVsubmit_general(fileData->dataSource, 
-				 temp, data_free, fileData->attrs);
-		EVreturn_event_buffer(flexpathWriteData.cm, initMsg);
 	    }
 	    else{
 		log_error("control_thread: Unrecognized Control Message\n");
@@ -1280,7 +1299,8 @@ control_thread(void* arg)
 }
 
 // adds an open file handle to global open file list
-void add_open_file(FlexpathWriteFileData* newFile) 
+void 
+add_open_file(FlexpathWriteFileData* newFile) 
 {
     FlexpathWriteFileData* last = flexpathWriteData.openFiles;
     while(last && last->next) {
@@ -1294,7 +1314,8 @@ void add_open_file(FlexpathWriteFileData* newFile)
 }
 
 // searches for an open file handle
-FlexpathWriteFileData* find_open_file(char* name) 
+FlexpathWriteFileData* 
+find_open_file(char* name) 
 {
     FlexpathWriteFileData* file = flexpathWriteData.openFiles;
     while(file && strcmp(file->name, name)) {
@@ -1305,7 +1326,8 @@ FlexpathWriteFileData* find_open_file(char* name)
 
 
 // Initializes flexpath write local data structures
-extern void adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method) 
+extern void 
+adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method) 
 {
     setenv("CMSelfFormats", "1", 1);
     // global data structure creation
@@ -1340,9 +1362,10 @@ extern void adios_flexpath_init(const PairStruct *params, struct adios_method_st
     }
 }
 
-// opens a new adios file for writes
 extern int 
-adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *method, MPI_Comm comm) 
+adios_flexpath_open(struct adios_file_struct *fd, 
+		    struct adios_method_struct *method, 
+		    MPI_Comm comm) 
 {    
     if( fd == NULL || method == NULL) {
         perr("open: Bad input parameters\n");
@@ -1359,11 +1382,12 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
     mem_check(fileData, "fileData");
     memset(fileData, 0, sizeof(FlexpathWriteFileData));
     
-    fileData->maxQueueSize=1;
+    fileData->maxQueueSize = 1;
+    fileData->use_ctrl_thread = 1;
     if(method->parameters) {
-        sscanf(method->parameters,"QUEUE_SIZE=%d;",&fileData->maxQueueSize);
+        sscanf(method->parameters,"QUEUE_SIZE=%d;", &fileData->maxQueueSize);
     }
-    
+   
     // setup step state
     fileData->attrs = create_attr_list();
     fileData->openCount = 0;
@@ -1375,6 +1399,8 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
      
     pthread_cond_init(&fileData->controlCondition, NULL);
     pthread_cond_init(&fileData->dataCondition, NULL);
+
+    double setup_start = dgettimeofday();
 
     // communication channel setup
     char writer_info_filename[200];
@@ -1454,6 +1480,11 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
 	unlink(reader_info_filename);
 	unlink(reader_ready_filename);
     }
+
+    double setup_end = dgettimeofday();
+    
+    fp_log("PERF", "WRITER_PERF:startup:rank:%d:step:%d:time:%lf:mpi_size:%d\n", 
+       fileData->rank, fileData->writerStep, (setup_end - setup_start), fileData->size);
 	
     //process group format
     struct adios_group_struct *t = method->group;
@@ -1479,11 +1510,10 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
     atom_t rank_atom = attr_atom_from_string(FP_RANK_ATTR_NAME);
     add_int_attr(fileData->attrs, rank_atom, fileData->rank);
     
-    //externs[0].extern_value = (void *) (long) get_timestamp_mili;
     EVadd_standard_routines(flexpathWriteData.cm, extern_string, externs);
 
     //generate multiqueue function that sends formats or all data based on flush msg
-    fp_write_log("SETUP", "setup graph\n");
+
     FMStructDescList queue_list[] = {flush_format_list, 
 				     var_format_list, 
 				     op_format_list, 
@@ -1555,7 +1585,8 @@ adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *me
 
 
 //  writes data to multiqueue
-extern void adios_flexpath_write(
+extern void
+adios_flexpath_write(
     struct adios_file_struct *fd, 
     struct adios_var_struct *f, 
     void *data, 
@@ -1601,7 +1632,7 @@ extern void adios_flexpath_write(
 		    }
 		}
 	    } else {
-		log_error("adios_flexpath_write: something has gone wrong with variable creation: %s\n", f->name);
+		log_error("adios_flexpath_write: error with variable creation: %s\n", f->name);
 	    }
 	} else {
 	    //vector quantity
@@ -1652,12 +1683,9 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
                 void* pointer_data_copy = malloc(total_size);
                 //block
             }
-                
-            fp_write_log("DATA","Attempting to get pointer to user data\n");
+                           
             void* temp = get_FMPtrField_by_name(flist, fields->name, fileData->fm->buffer, 0);
-            fp_write_log("DATA","Copying user data to new space\n");
             memcpy(pointer_data_copy, temp, total_size);
-            fp_write_log("DATA","Setting pointer to new space\n");
             set_FMPtrField_by_name(flist, fields->name, fileData->fm->buffer, pointer_data_copy);
         }    
         fields = fields->next;
@@ -1665,7 +1693,6 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
     
     memcpy(buffer, fileData->fm->buffer, fileData->fm->size);
 
-    fp_write_log("DATAMUTEX", "in use 3\n"); 
     threaded_enqueue(&fileData->dataQueue, buffer, 
 		     DATA_BUFFER,
 		     &fileData->dataMutex, 
@@ -1690,7 +1717,6 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
     }
 
     else{	
-	fp_write_log("BOUNDING", "check offsets\n");
         // process local offsets here	
 	int num_gbl_vars = 0;
         global_var * gbl_vars = NULL;
@@ -1698,6 +1724,7 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 	int myrank = fileData->rank;
 	int commsize = fileData->size;
 
+	double offset_start = dgettimeofday();
 	while(list){
 	    //int num_local_offsets = 0;
 	    uint64_t *local_offsets = NULL;
@@ -1742,6 +1769,9 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 	    list=list->next;
 	}
 
+	double offset_end = dgettimeofday();
+	fp_log("PERF", "WRITER_PERF:offset:rank:%d:step:%d:time:%lf:num_sendees:%d\n", 
+	       fileData->rank, fileData->writerStep, (offset_end - offset_start), 1);
 	gp->num_vars = num_gbl_vars;
 	gp->step = fileData->writerStep;
 	gp->vars = gbl_vars;
@@ -1761,11 +1791,10 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 }
 
 // wait until all open files have finished sending data to shutdown
-extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method) 
+extern void 
+adios_flexpath_finalize(int mype, struct adios_method_struct *method) 
 {
     FlexpathWriteFileData* fileData = flexpathWriteData.openFiles;
-    log_info("Flexpath method entered finalize: %d\n", fileData->rank);
-    fp_write_log("FILE", "Entered finalize\n");
     while(fileData) {
 
 	update_step_msg *stepmsg = malloc(sizeof(update_step_msg));
@@ -1773,10 +1802,9 @@ extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method
 	stepmsg->step = fileData->writerStep - 1;
 	stepmsg->condition = -1;
 	EVsubmit_general(fileData->stepSource, stepmsg, update_step_msg_free, fileData->attrs);
-        //fp_write_log("DATAMUTEX", "in use 4\n"); 
+
         pthread_mutex_lock(&fileData->dataMutex);
         while(fileData->dataQueue != NULL) {
-            fp_write_log("FILE", "waiting on %s to empty data\n", fileData->name);
 	    pthread_cond_wait(&fileData->dataCondition, &fileData->dataMutex);
 	}
 	pthread_mutex_unlock(&fileData->dataMutex);
@@ -1872,44 +1900,49 @@ adios_flexpath_get_write_buffer(struct adios_file_struct *fd,
 }
 
 // should not be called from write, reason for inclusion here unknown
-void adios_flexpath_read(struct adios_file_struct *fd, struct adios_var_struct *f, void *buffer, uint64_t buffer_size, struct adios_method_struct *method) 
+void 
+adios_flexpath_read(struct adios_file_struct *fd, 
+		    struct adios_var_struct *f, 
+		    void *buffer, 
+		    uint64_t buffer_size, 
+		    struct adios_method_struct *method) 
 {
     fp_write_log("UNIMPLEMENTED", "adios_flexpath_read\n");
 }
 
 #else // print empty version of all functions (if HAVE_FLEXPATH == 0)
 
-void adios_flexpath_read(struct adios_file_struct *fd, struct adios_var_struct *f, void *buffer, struct adios_method_struct *method) {
+void 
+adios_flexpath_read(struct adios_file_struct *fd, 
+		    struct adios_var_struct *f, 
+		    void *buffer, 
+		    struct adios_method_struct *method) 
+{
 }
 
-extern void adios_flexpath_get_write_buffer(struct adios_file_struct *fd, struct adios_var_struct *f, unsigned long long *size, void **buffer, struct adios_method_struct *method) {
+extern void 
+adios_flexpath_get_write_buffer(struct adios_file_struct *fd, 
+				struct adios_var_struct *f, 
+				unsigned long long *size, 
+				void **buffer, 
+				struct adios_method_struct *method) 
+{
 }
 
-/* extern void adios_flexpath_stop_calculation(struct adios_method_struct *method) { */
-/* } */
+extern void 
+adios_flexpath_stop_calculation(struct adios_method_struct *method) 
+{
+}
 
-/* extern void adios_flexpath_start_calculation(struct adios_method_struct *method) { */
-/* } */
+extern void 
+adios_flexpath_start_calculation(struct adios_method_struct *method) 
+{
+}
 
-/* extern void adios_flexpath_end_iteration(struct adios_method_struct *method) { */
-/* } */
+extern void 
+adios_flexpath_end_iteration(struct adios_method_struct *method) 
+{
+}
 
-/* extern void adios_flexpath_finalize(int mype, struct adios_method_struct *method) { */
-/* } */
-
-/* extern void adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *method) { */
-/* } */
-
-/* extern void adios_flexpath_write(struct adios_file_struct *fd, struct adios_var_struct *f, void *data, struct adios_method_struct *method) { */
-/* } */
-
-/* extern void adios_flexpath_open(struct adios_file_struct *fd, struct adios_method_struct *method) { */
-/* } */
-
-/* extern void adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method) { */
-/* } */
-
-/* enum ADIOS_FLAG adios_flexpath_should_buffer (struct adios_file_struct * fd, struct adios_method_struct * method) { */
-/* } */
 
 #endif
