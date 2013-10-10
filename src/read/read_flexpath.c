@@ -883,8 +883,9 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 	fp->num_vars = var_count;       
 
 	double format_end = dgettimeofday();	
-	fp_log("PERF", "READER_PERF:format:rank:%d:step:%d:time:%lf:num_sendees:%d:flush_id:%d\n", 
-	       fp->rank, fp->mystep, (format_end - format_start), 1, flush_id);
+	fp_log("PERF", 
+	       "READER_PERF:data_first:rank:%d:step:%d:time:%lf:total_size:%d:num_sendees:%d:flush_id:%d\n", 
+	       fp->rank, fp->mystep, (format_end - format_start), packet_size, 1, flush_id);
     }
 
     f = struct_list[0].field_list;
@@ -1025,8 +1026,9 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 	       fp->rank, condition, writer_rank);
 	CMCondition_signal(fp_read_data->fp_cm, condition);
     }
-    fp_log("PERF", "READER_PERF:raw_handler_data:rank:%d:step:%d:time:%lf:num_sendees:%d:flush_id:%d\n", 
-	   fp->rank, fp->mystep, (data_end - data_start), 1, flush_id);
+    fp_log("PERF", 
+	   "READER_PERF:raw_handler_data:rank:%d:step:%d:time:%lf:num_sendees:%d:packet_size:%d:flush_id:%d\n", 
+	   fp->rank, fp->mystep, (data_end - data_start), 1, packet_size,  flush_id);
 
     free_fmstructdesclist(struct_list);
     return 0; 
@@ -1272,7 +1274,8 @@ adios_read_flexpath_open(const char * fname,
     double open_start = dgettimeofday();
     send_open_msg(fp, fp->writer_coordinator);
     double open_end = dgettimeofday();
-
+    
+    fp->data_read = 0;
     double data_start = dgettimeofday();
     send_flush_msg(fp, fp->writer_coordinator, DATA, 1);
     double data_end = dgettimeofday();
@@ -1283,10 +1286,11 @@ adios_read_flexpath_open(const char * fname,
 
     fp_log("PERF", "READER_PERF:open:rank:%d:step:%d:time:%lf:num_sendees:%d\n",
 	   fp->rank, fp->mystep, (open_end - open_start), 1);
-    fp_log("PERF", "READER_PERF:initial_data:rank:%d:step:%d:time:%lf:num_sendees:%d\n",
-	   fp->rank, fp->mystep, (data_end - data_start),1);
+    fp_log("PERF", "READER_PERF:initial_data:rank:%d:step:%d:time:%lf:total_size:%lu:num_sendees:%d\n",
+	   fp->rank, fp->mystep, (data_end - data_start), (int)fp->data_read, 1);
     fp_log("PERF", "READER_PERF:evgroup:rank:%d:step:%d:time:%lf:num_sendees:%d\n",
 	   fp->rank, fp->mystep, (offset_end - offset_start),1);
+    fp->data_read = 0;
     // this has to change. Writer needs to have some way of
     // taking the attributes out of the xml document
     // and sending them over ffs encoded. Not yet implemented.
@@ -1504,7 +1508,7 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
     }
     double data_end = dgettimeofday();
     fp_log("PERF", "READER_PERF:data:rank:%d:step:%d:time:%lf:total_size:%d:num_sendees:%d\n",
-	   fp->rank, fp->mystep, (data_end - fp->time_in), fp->data_read, fp->num_sendees);
+	   fp->rank, fp->mystep, (data_end - fp->time_in), (int)fp->data_read, fp->num_sendees);
     fp_log("MEM", "free flexpath_reader_file sendees: %p\n", fp->sendees);
     free(fp->sendees);
     fp->sendees = NULL;    
