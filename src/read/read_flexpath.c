@@ -1419,7 +1419,12 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
       
     // should only happen if there are more steps available.
     // writer should have advanced.
+    double offset_start = dgettimeofday();
     send_flush_msg(fp, fp->writer_coordinator, EVGROUP, 1);
+    double offset_end = dgettimeofday();
+    
+    fp_log("PERF", "READER_PERF:evgroup:rank:%d:step:%d:time:%lf:num_sendees:%d\n",
+	   fp->rank, fp->mystep, (offset_end - offset_start),1);
     return 0;
 }
 
