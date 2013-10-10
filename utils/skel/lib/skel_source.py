@@ -5,6 +5,7 @@ import argparse
 
 import adios
 import skelconf
+import skel_bpy
 import skel_settings
 
 
@@ -640,8 +641,72 @@ def generate_c_read_all (outfile, config, params, test):
     #end: generate_c_read_all
 
 
+def pparse_command_line (parent_parser):
+    parser = argparse.ArgumentParser (
+                parents = [parent_parser],
+                formatter_class=argparse.RawDescriptionHelpFormatter,
+                prog='skel',
+                add_help=False,
+                description='''\
+        skel source 
+            create source code to access the I/O pattern for the target skeletal application''')
 
-def create_sources (params, config, project):
+    parser.add_argument ('-y', '--yaml-file', dest='yamlfile', help='yaml file to use for I/O pattern')
+    parser.add_argument ('-f', '--force', dest='force', action='store_true', help='overwrite existing source file')
+    parser.set_defaults(force=False)
+
+    return parser.parse_args()
+
+
+def create_source_from_yaml (args, config):
+    print "Using yaml file"
+
+    # Determine the target language
+    if config.host_language == "C" or config.host_language =="c":
+        filetype = ".c"
+    else:
+        filetype = ".f90"
+
+    bpy = skel_bpy.skel_bpy ("test.yaml")
+
+    # Determine outfile name
+    extension = '_skel_' + bpy.get_group_name()
+    outfilename = args.project + extension + filetype
+
+    # Only proceed if outfilename does not already exist, or if -f was used
+    if os.path.exists (outfilename) and not args.force:
+        print "%s exists, aborting. Delete the file or use -f to overwrite." % outfilename
+        return 999
+
+    skel_file = open (outfilename, 'w')
+
+
+    # Now for the Cheetah magic:
+    from Cheetah.Template import Template
+    t = Template(file="source_write_c.tmpl")
+    t.bpy = bpy
+    t.project = args.project
+    skel_file.write (str(t) )
+
+
+def create_sources_with_args (config, parent_parser):
+
+    args = pparse_command_line (parent_parser)
+
+    if args.yamlfile is not None:
+        create_source_from_yaml(args, config)
+    else:
+        create_source_from_xml (args, config)
+
+
+def create_source_from_xml (args, config):
+
+    try:
+        params = skelconf.skelConfig (args.project + '_params.xml')
+    except (IOError):
+        print "Error reading " + args.project + "_params.xml. Try running skel params " + args.project + " first,"
+        print "then check that " + args.project + "_params.xml exists."
+        return  
 
     # Determine the target language
     if config.host_language == "C" or config.host_language =="c":
@@ -657,7 +722,7 @@ def create_sources (params, config, project):
 
             # Determine outfile name
             extension = '_skel_' + test.get_group_name()
-            outfilename = project + extension + filetype
+            outfilename = args.project + extension + filetype
 
             generate (outfilename, config, params, test)
 
@@ -669,7 +734,6 @@ def parse_command_line():
     parser.add_argument ('project', metavar='project', help='Name of the skel project')
 
     return parser.parse_args()
-
 
 
 def main(argv=None):
@@ -690,3 +754,4 @@ if __name__ == "__main__":
     main()
 
  
+

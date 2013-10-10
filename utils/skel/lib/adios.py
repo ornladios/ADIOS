@@ -84,6 +84,7 @@ class adiosGroup:
         return self.vardict [varname]
 
 
+
 class method:
     
     def __init__ (self, method_node):
@@ -178,6 +179,22 @@ class var:
 
     def is_scalar (self):
         return self.get_dimensions() == None
+
+    # TODO: Implement this
+    def find_first_use (self):
+        # Loop through all of the vars in the group
+        for var in self.group.get_vars():
+            dim_num = 0;
+            if var.get_dimensions() is not None:
+                for dim in var.get_dimensions():
+                    # if this one uses this variable as a dimension, return the name and dim number
+                    if dim == self.get_name():
+                        return var.get_name(), dim_num
+                    dim_num = dim_num + 1
+
+        # None found, return None,None
+        return None,None
+
 
 class fortranFormatter:
     @staticmethod

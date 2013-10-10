@@ -4,8 +4,12 @@ import sys
 import os.path
 
 # Make sure that the skel modules are available
-os.path.dirname(sys.argv[0])
+os.path.dirname(sys.argv[1])
+
+# For the installed skel
 sys.path.insert (0, os.path.dirname(sys.argv[0]) + '/../lib/python')
+
+# For the skel in the utils dir of the adios source
 sys.path.insert (0, os.path.dirname(sys.argv[0]) + '/../lib')
 
 import argparse
@@ -21,25 +25,30 @@ import skel_source
 import skel_submit
 import skel_xml
 
-def parse_command_line():
+def get_parser():
 
     parser = argparse.ArgumentParser (
         formatter_class=argparse.RawDescriptionHelpFormatter,
+        prog='skel',
+        add_help=False,
         description='''\
 Skel: Create, run and analyze skeletal I/O applications
 -------------------------------------------------------
 Available subcommands include:
     skel install
+    skel help
     skel makefile
     skel params
     skel source
     skel submit
-    skel xml''')
+    skel xml
+        
+    Use skel help <subcommand> to see detailed options for each subcommand.''')
     parser.add_argument ('subcommand', metavar='subcommand', help='Skel command to execute')
     parser.add_argument ('project', metavar='project', help='Name of the skel project')
-    parser.add_argument ('-g', '--group', help='adios group (only valid for skel params)')
+    #parser.add_argument ('-g', '--group', help='adios group (only valid for skel params)')
 
-    return parser.parse_args()
+    return parser
 
 
 def main(argv=None):
@@ -50,7 +59,9 @@ def main(argv=None):
     if sys.argv[1] == 'install':
         return 0;
 
-    args = parse_command_line()
+    #args = parse_command_line()
+    parser = get_parser()
+    args, unknown = parser.parse_known_args()
 
     # ignore .xml suffix if used (tab completion)
     if args.project and args.project.endswith (".xml"):
@@ -60,7 +71,7 @@ def main(argv=None):
         return 0
 
     if args.subcommand == 'xml':
-        skel_xml.create_skel_xml (args.project)
+        skel_xml.create_skel_xml (args.project, parser)
         return 0
 
     try:
@@ -70,23 +81,33 @@ def main(argv=None):
         return 1
 
     if args.subcommand == 'params':
-        outfilename = args.project + '_params.xml.default'
-        skel_params.generate_param_file (args.project, outfilename, config, args.group)
+        #outfilename = args.project + '_params.xml'
+
+        # Only proceed if outfilename does not already exist.
+        #if os.path.exists (outfilename):
+            #print "%s exists, aborting. Delete the file or use -f to overwrite." % outfilename
+            #return 999
+
+        #skel_params.generate_param_file (args.project, outfilename, config, args.group)
+        skel_params.generate_param_file_with_args (config, parser)
         return 0
+    
+    
+    if args.subcommand == 'source':
+        #skel_source.create_sources (params, config, args.project)
+        skel_source.create_sources_with_args (config, parser)
+        return 0
+
 
     try:    
         params = skelconf.skelConfig (args.project + '_params.xml')
     except (IOError):
         print "Error reading " + args.project + "_params.xml. Try running skel params " + args.project + " first,"
-        print "then copy the generated " + args.project + "_params.xml.default, and edit to suit your needs."
+        print "then check that " + args.project + "_params.xml exists."
         return 1
 
     if args.subcommand == 'makefile':
         skel_makefile.generate_makefiles (params, config)
-        return 0
-
-    if args.subcommand == 'source':
-        skel_source.create_sources (params, config, args.project)
         return 0
 
 #    if args.subcommand == 'dwarf':

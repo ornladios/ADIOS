@@ -386,6 +386,8 @@ pythonlibdir = @libdir@/python
 dist_pythonlib_DATA = \
     lib/adios.py \
 	lib/argparse.py \
+    lib/skel_bpls.py \
+    lib/skel_bpy.py \
     lib/skel_install.py \
     lib/skel_makefile.py \
     lib/skel_params.py \
