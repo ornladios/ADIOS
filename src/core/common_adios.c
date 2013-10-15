@@ -82,6 +82,11 @@ int common_adios_finalize (int mype)
     adios_cleanup ();
 
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+    timer_result_t *timers = timer_get_results_sorted();
+    print("[TIMERS]\n");
+    for (int i = 0; i < timer_get_num_timers(); i++)
+        prinf(" [%s] %lf\n", timers[i].name, timers[i].time);
+    free(timers);
     timer_finalize ();
 #endif
 
