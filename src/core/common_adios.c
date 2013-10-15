@@ -47,6 +47,9 @@ extern int adios_errno;
 ///////////////////////////////////////////////////////////////////////////////
 int common_adios_init (const char * config, MPI_Comm comm)
 {
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+    timer_init ();
+#endif
     // parse the config file
     adios_errno = err_no_error;
     adios_parse_config (config, comm);
@@ -57,6 +60,9 @@ int common_adios_init (const char * config, MPI_Comm comm)
 // all XML file pieces will be provided by another series of calls
 int common_adios_init_noxml (MPI_Comm comm)
 {
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+    timer_init ();
+#endif
     adios_errno = err_no_error;
     adios_local_config (comm);
     return adios_errno;
@@ -83,7 +89,7 @@ int common_adios_finalize (int mype)
 
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_result_t *timers = timer_get_results_sorted();
-    print("[TIMERS]\n");
+    printf("[TIMERS]\n");
     for (int i = 0; i < timer_get_num_timers(); i++)
         printf(" [%s] %lf\n", timers[i].name, timers[i].time);
     free(timers);
