@@ -92,7 +92,7 @@ int common_adios_finalize (int mype)
     printf("[TIMERS]\n");
     int i;
     for (i = 0; i < timer_get_num_timers(); i++)
-        printf(" [%s] %0.4lf", timers[i].name, timers[i].time);
+        printf(" [%s] %0.4lf (%0.4lf)", timers[i].name, timers[i].time, timers[i].stddev);
     printf("\n");
     free(timers);
     timer_finalize ();
@@ -1137,7 +1137,7 @@ int common_adios_close (int64_t fd_p)
     int i;
     timer_result_t *results = timer_get_results_sorted();
     for (i = 0; i < timer_get_num_timers(); i++) {
-        printf(" [%s] %0.4lf", results[i].name, results[i].time);
+        printf(" [%s] %0.4lf (%0.4lf)", results[i].name, results[i].time, timers[i].stddev);
     }
     printf("\n");
     free(results);
