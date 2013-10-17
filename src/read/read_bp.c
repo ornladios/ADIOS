@@ -1037,7 +1037,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     chunk->sel = copy_selection (r->sel);
     chunk->data = r->data;
 
-    timer_stop("adios_read_bp_read_var");
+    timer_stop("adios_read_bp_read_var_bb");
     return chunk;
 }
 
@@ -3442,7 +3442,7 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
     chunk->sel = copy_selection (r->sel);
     chunk->data = data;
 
-    timer_start("adios_read_bp_read_var_wb");
+    timer_stop("adios_read_bp_read_var_wb");
 
     return chunk;
 }
