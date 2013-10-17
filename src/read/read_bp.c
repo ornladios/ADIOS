@@ -43,6 +43,24 @@ static int adios_step_to_time (const ADIOS_FILE * fp, int varid, int from_steps)
 static int map_req_varid (const ADIOS_FILE * fp, int varid);
 static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r);
 
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
+uint64_t seekCount;
+uint64_t readCount;
+
+#define timer_start(t) timer_start(t)
+#define timer_stop(t) timer_stop(t)
+#define read_stats_inc(seeks, read) { seekCount += (seeks); readCount += (read); }
+#define read_stats_reset() seekCount = readCount = 0;
+#define read_stats_print() { printf("[READSTATS] Seeks = %llu, Bytes read = %llu\n", seekCount, readCount); }
+#else
+#define timer_start(t) ((void)0)
+#define timer_stop(t) ((void)0)
+#define read_stats_inc(seeks, read) ((void)0)
+#define read_stats_reset() ((void)0)
+#define read_stats_print() ((void)0)
+#endif
+
+
 // NCSU - For custom memory allocation
 #define CALLOC(var, num, sz, comment)\
 {\
@@ -63,6 +81,7 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r);
 }\
 
 #define MPI_FILE_READ_OPS1                          \
+        timer_start("adios_read_bp_io");            \
         bp_realloc_aligned(fh->b, slice_size);      \
         fh->b->offset = 0;                          \
                                                     \
@@ -78,9 +97,12 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r);
                       ,&status                      \
                       );                            \
         fh->b->offset = 0;                          \
+        timer_stop("adios_read_bp_io");             \
+        read_stats_inc(1, slice_size);
 
 // To read subfiles
 #define MPI_FILE_READ_OPS2                                                                  \
+        timer_start("adios_read_bp_io");                                                    \
         bp_realloc_aligned(fh->b, slice_size);                                              \
         fh->b->offset = 0;                                                                  \
                                                                                             \
@@ -142,9 +164,12 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r);
                       ,&status                                                              \
                       );                                                                    \
         fh->b->offset = 0;                                                                  \
+        timer_stop("adios_read_bp_io");                                                     \
+        read_stats_inc(1, slice_size);
 
 //We also need to be able to read old .bp which doesn't have 'payload_offset'
 #define MPI_FILE_READ_OPS3                                                                  \
+        timer_start("adios_read_bp_io");                                                    \
         MPI_File_seek (fh->mpi_fh                                                           \
                       ,(MPI_Offset) v->characteristics[start_idx + idx].offset       \
                       ,MPI_SEEK_SET);                                                       \
@@ -160,10 +185,13 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r);
         MPI_File_read (fh->mpi_fh, fh->b->buff, tmpcount + 8, MPI_BYTE, &status);           \
         fh->b->offset = 0;                                                                  \
         adios_parse_var_data_header_v1 (fh->b, &var_header);                                \
+        timer_stop("adios_read_bp_io");                                                     \
+        read_stats_inc(2, slice_size + 16);
 
 // NCSU ALACRITY-ADIOS: After much pain and consideration, I've decided to implement a
 //     2nd version of this function to avoid substantial wasted time in the writeblock method
 #define MPI_FILE_READ_OPS1_BUF(buf)                 \
+        timer_start("adios_read_bp_io");            \
         MPI_File_seek (fh->mpi_fh                   \
                       ,(MPI_Offset)slice_offset     \
                       ,MPI_SEEK_SET                 \
@@ -174,10 +202,13 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r);
                       ,slice_size                   \
                       ,MPI_BYTE                     \
                       ,&status                      \
-                      );
+                      );                            \
+        timer_stop("adios_read_bp_io");             \
+        read_stats_inc(1, slice_size);
 
 // To read subfiles
 #define MPI_FILE_READ_OPS2_BUF(buf)                                                         \
+        timer_start("adios_read_bp_io");                                                    \
         MPI_File * sfh;                                                                     \
         sfh = get_BP_file_handle (fh->sfh                                                   \
                                  ,v->characteristics[start_idx + idx].file_index            \
@@ -234,7 +265,9 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r);
                       ,slice_size                                                           \
                       ,MPI_BYTE                                                             \
                       ,&status                                                              \
-                      );
+                      );                                                                    \
+        timer_stop("adios_read_bp_io");                                                     \
+        read_stats_inc(1, slice_size);
 
 
 /* This routine release one step. It only frees the var/attr namelist. */
@@ -430,6 +463,8 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
     ADIOS_SELECTION * sel, * nsel;
     ADIOS_VARCHUNK * chunk;
 
+    timer_start("adios_read_bp_read_var");
+
     log_debug ("read_var()\n");
     sel = r->sel;
     p = (BP_PROC *) fp->fh;
@@ -505,6 +540,7 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
             break;
     }
 
+    timer_stop("adios_read_bp_read_var");
     return chunk;
 }
 
@@ -532,6 +568,8 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     ADIOS_VARCHUNK * chunk;
     struct adios_var_header_struct_v1 var_header;
     struct adios_var_payload_struct_v1 var_payload;
+
+    timer_start("adios_read_bp_read_var_bb");
 
 //    log_debug ("read_var_bb()\n");
     p = (BP_PROC *) fp->fh;
@@ -998,6 +1036,8 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     chunk->nsteps = r->nsteps;
     chunk->sel = copy_selection (r->sel);
     chunk->data = r->data;
+
+    timer_stop("adios_read_bp_read_var");
     return chunk;
 }
 
@@ -3273,6 +3313,8 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
     MPI_Status status;
     const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb;// NCSU ALACRITY-ADIOS
 
+    timer_start("adios_read_bp_read_var_wb");
+
     adios_errno = 0;
 
     file_is_fortran = is_fortran_file (fh);
@@ -3396,6 +3438,8 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
     chunk->nsteps = r->nsteps;
     chunk->sel = copy_selection (r->sel);
     chunk->data = data;
+
+    timer_start("adios_read_bp_read_var_wb");
 
     return chunk;
 }

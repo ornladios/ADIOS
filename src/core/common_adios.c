@@ -92,7 +92,8 @@ int common_adios_finalize (int mype)
     printf("[TIMERS]\n");
     int i;
     for (i = 0; i < timer_get_num_timers(); i++)
-        printf(" [%s] %lf\n", timers[i].name, timers[i].time);
+        printf(" [%s] %0.4lf", timers[i].name, timers[i].time);
+    printf("\n");
     free(timers);
     timer_finalize ();
 #endif
@@ -1132,11 +1133,11 @@ int common_adios_close (int64_t fd_p)
 //    printf ("%lf\n", timer_get_total_interval ("adios_close"     ));
 //    timer_reset_timers ();
 
-    printf("[TIMERS] Proc: %d Time: %d ", fd->group->process_id, fd->group->time_index);
+    printf("[TIMERS] Proc: %d Time: %d", fd->group->process_id, fd->group->time_index);
     int i;
     timer_result_t *results = timer_get_results_sorted();
     for (i = 0; i < timer_get_num_timers(); i++) {
-        printf("%s: %0.4lf ", results[i].name, results[i].time);
+        printf(" [%s] %0.4lf", results[i].name, results[i].time);
     }
     printf("\n");
     free(results);
