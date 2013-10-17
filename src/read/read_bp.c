@@ -1227,6 +1227,7 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
  */
 ADIOS_FILE * adios_read_bp_open (const char * fname, MPI_Comm comm, enum ADIOS_LOCKMODE lock_mode, float timeout_sec)
 {
+    read_stats_reset();
     log_debug ("adios_read_bp_open\n");
 
     ADIOS_FILE * fp = (ADIOS_FILE *) malloc (sizeof (ADIOS_FILE));
@@ -1387,6 +1388,8 @@ int adios_read_bp_close (ADIOS_FILE * fp)
     }
     // internal_data field is taken care of by common reader layer
     free (fp);
+
+    read_stats_print();
 
     return 0;
 }
