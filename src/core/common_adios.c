@@ -88,6 +88,10 @@ int common_adios_finalize (int mype)
     adios_cleanup ();
 
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+    {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if (rank == 0) {
     timer_result_t *timers = timer_get_results_sorted();
     printf("[TIMERS]\n");
     int i;
@@ -96,6 +100,8 @@ int common_adios_finalize (int mype)
     printf("\n");
     free(timers);
     timer_finalize ();
+    }
+    }
 #endif
 
     return adios_errno;
@@ -1120,7 +1126,7 @@ int common_adios_close (int64_t fd_p)
     }
 
     free ((void *) fd_p);
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
     timer_stop ("adios_close");
     timer_stop ("adios_open_to_close");
 //    printf ("Timers, ");
@@ -1133,15 +1139,20 @@ int common_adios_close (int64_t fd_p)
 //    printf ("%lf\n", timer_get_total_interval ("adios_close"     ));
 //    timer_reset_timers ();
 
+    {
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+    if (rank == 0) {
+    timer_result_t *timers = timer_get_results_sorted();
     printf("[TIMERS] Proc: %d Time: %d", fd->group->process_id, fd->group->time_index);
     int i;
-    timer_result_t *results = timer_get_results_sorted();
-    for (i = 0; i < timer_get_num_timers(); i++) {
-        printf(" [%s] %0.4lf (%0.4lf)", results[i].name, results[i].time, results[i].stddev);
-    }
+    for (i = 0; i < timer_get_num_timers(); i++)
+        printf(" [%s] %0.4lf (%0.4lf)", timers[i].name, timers[i].time, timers[i].stddev);
     printf("\n");
-    free(results);
-
+    free(timers);
+    timer_finalize ();
+    }
+    }
     //timer_reset_timers ();
 #endif
 
