@@ -141,6 +141,8 @@ adios_datablock * adios_transform_identity_pg_reqgroup_completed(
                 completed_pg_reqgroup->timestep,
                 completed_pg_reqgroup->pg_intersection_sel,
                 data);
+
+        free(completed_pg_reqgroup->transform_internal);
     } else {
         uint64_t ragged_offset = *(uint64_t*)completed_pg_reqgroup->subreqs->transform_internal;
 
@@ -155,7 +157,6 @@ adios_datablock * adios_transform_identity_pg_reqgroup_completed(
                 pg_data);
     }
 
-    free(completed_pg_reqgroup->transform_internal);
     free(completed_pg_reqgroup->subreqs->transform_internal);
     return db;
 }
