@@ -99,9 +99,9 @@ int common_adios_finalize (int mype)
         printf(" [%s] %0.4lf (%0.4lf)", timers[i].name, timers[i].time, timers[i].stddev);
     printf("\n");
     free(timers);
+    }
+    }
     timer_finalize ();
-    }
-    }
 #endif
 
     return adios_errno;
@@ -1150,9 +1150,9 @@ int common_adios_close (int64_t fd_p)
         printf(" [%s] %0.4lf (%0.4lf)", timers[i].name, timers[i].time, timers[i].stddev);
     printf("\n");
     free(timers);
+    }
+    }
     timer_finalize ();
-    }
-    }
     //timer_reset_timers ();
 #endif
 
