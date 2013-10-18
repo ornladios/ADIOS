@@ -20,6 +20,7 @@
 // the data, but exercises the transform framework for testing.
 
 #define MAX_DIMS 32
+#define FREE(x) { if (x) { free(x); x = NULL; } }
 
 void compute_sieving_offsets_for_pg_selection(const ADIOS_SELECTION *intersect_sel,
                                               const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *pgbb,
@@ -142,7 +143,7 @@ adios_datablock * adios_transform_identity_pg_reqgroup_completed(
                 completed_pg_reqgroup->pg_intersection_sel,
                 data);
 
-        free(completed_pg_reqgroup->transform_internal);
+        FREE(completed_pg_reqgroup->transform_internal);
     } else {
         uint64_t ragged_offset = *(uint64_t*)completed_pg_reqgroup->subreqs->transform_internal;
 
@@ -157,7 +158,7 @@ adios_datablock * adios_transform_identity_pg_reqgroup_completed(
                 pg_data);
     }
 
-    free(completed_pg_reqgroup->subreqs->transform_internal);
+    FREE(completed_pg_reqgroup->subreqs->transform_internal);
     return db;
 }
 
