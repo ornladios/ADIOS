@@ -1152,7 +1152,6 @@ int common_adios_close (int64_t fd_p)
     free(timers);
     }
     }
-    timer_finalize ();
     //timer_reset_timers ();
 #endif
 
