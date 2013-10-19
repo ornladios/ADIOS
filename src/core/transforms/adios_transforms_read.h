@@ -52,6 +52,23 @@ enum ADIOS_TRANSFORM_REQGROUP_RESULT_MODE adios_transform_read_request_get_mode(
 uint64_t adios_transform_get_transformed_var_size_from_blockinfo(int raw_ndim, const ADIOS_VARBLOCK *raw_block);
 
 //
+// VARINFO/TRANSINFO caching
+//
+
+typedef struct {
+    int capacity;
+    ADIOS_VARINFO *varinfos;
+    ADIOS_TRANSINFO *transinfos;
+} adios_transform_infocache;
+
+
+adios_transform_infocache * adios_transform_infocache_new();
+void adios_transform_infocache_free(adios_transform_infocache **cache_ptr);
+
+ADIOS_VARINFO * adios_transforms_infocache_inq_varinfo(const ADIOS_FILE *fp, adios_transform_infocache *cache, int varid);
+ADIOS_TRANSINFO * adios_transforms_infocache_inq_transinfo(const ADIOS_FILE *fp, adios_transform_infocache *cache, int varid);
+
+//
 // Read request handling
 //
 

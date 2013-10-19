@@ -17,6 +17,14 @@
 #include "transforms/adios_transforms_read.h"
 #include "transforms/adios_transforms_util.h"
 
+// Utilities
+static inline int min(int a, int b) { return a < b ? a : b; }
+#define MALLOC_ARRAY(arr,len) { (arr) = (typeof(arr))malloc((len) * sizeof(*arr)); }
+#define CALLOC_ARRAY(arr,len) { (arr) = (typeof(arr))calloc((len), sizeof(*arr)); }
+#define REALLOC_ARRAY(arr,len) { (arr) = (typeof(arr))realloc((len) * sizeof(*arr)); }
+
+#define MALLOC(type, var) type var; MALLOC_ARRAY(var, 1);
+
 #define MYFREE(p) {free(p); (p)=NULL;}
 
 // Read request inspection
@@ -30,6 +38,74 @@ uint64_t adios_transform_get_transformed_var_size_from_blockinfo(int raw_ndim, c
 
     // Since we swtiched to 1D local byte arrays, the first (and only) dimension contains what we want
     return raw_block->count[0];
+}
+
+//
+// Varinfo/transinfo/blockinfo caching
+//
+
+#define INITIAL_INFOCACHE_SIZE 16
+
+static void expand_infocache(adios_transform_infocache *cache, int var_capacity) {
+    int i;
+    const int oldcap = cache->capacity;
+    const int newcap = min(min(oldcap * 2, var_capacity), INITIAL_INFOCACHE_SIZE);
+
+    if (oldcap == 0) {
+        MALLOC_ARRAY(cache->varinfos, newcap);
+        MALLOC_ARRAY(cache->transinfos, newcap);
+    } else {
+        REALLOC_ARRAY(cache->varinfos, newcap);
+        REALLOC_ARRAY(cache->transinfos, newcap);
+    }
+
+    for (i = oldcap; i < newcap; i++) {
+        cache->varinfos[i] = NULL;
+        cache->transinfos[i] = NULL;
+    }
+}
+
+adios_transform_infocache * adios_transform_infocache_new() {
+    MALLOC(adios_transform_infocache *, cache);
+    expand_infocache(cache, INITIAL_INFOCACHE_SIZE);
+    return cache;
+}
+
+void adios_transform_infocache_free(adios_transform_infocache **cache_ptr) {
+    adios_transform_infocache *cache = *cache_ptr;
+    int i;
+
+    for (i = 0; i < cache->capacity; i++) {
+        FREE(cache->varinfos[i]);
+        FREE(cache->transinfos[i]);
+    }
+
+    FREE(cache->varinfos);
+    FREE(cache->transinfos);
+    cache->capacity = 0;
+    FREE(*cache_ptr);
+}
+
+ADIOS_VARINFO * adios_transforms_infocache_inq_varinfo(const ADIOS_FILE *fp, adios_transform_infocache *cache, int varid) {
+    if (varid >= cache->capacity)
+        expand_infocache(cache, varid);
+
+    if (cache->varinfos[varid])
+        return cache->varinfos[varid];
+    else
+        return cache->varinfos[varid] = common_read_inq_var_raw_byid(fp, varid);
+}
+
+ADIOS_TRANSINFO * adios_transforms_infocache_inq_transinfo(const ADIOS_FILE *fp, adios_transform_infocache *cache, int varid) {
+    if (varid >= cache->capacity)
+        expand_infocache(cache, varid);
+
+    if (cache->transinfos[varid]) {
+        return cache->transinfos[varid];
+    } else {
+        ADIOS_VARINFO * vi = adios_transforms_infocache_inq_varinfo(fp, cache, varid);
+        return cache->transinfos[varid] = common_read_inq_transinfo(fp, vi);
+    }
 }
 
 //
