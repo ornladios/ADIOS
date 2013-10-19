@@ -147,9 +147,9 @@ int main (int argc, char ** argv )
     {
         lc = (ndx-1)*ndy*2;
         oc = posx*ndx*ndy*2 + posy*(ndx*npx-1)*ndy*2;
-        for(int i = 0; i < ndx-1; i++)
+        for(i = 0; i < ndx-1; i++)
         {
-            for(int j = 0; j < ndy; j++)
+            for(j = 0; j < ndy; j++)
             {
                 int p = i*ndy+j;
                 if( i<ndx-1 && j<ndy-1 )
@@ -175,8 +175,8 @@ int main (int argc, char ** argv )
     {
         lc = ndx*(ndy-1)*2;
         oc = posy*(ndx*npx-1)*ndy*2 + posx*ndx*(ndy-1)*2;
-        for(int i = 0; i < ndx; i++)
-            for(int j = 0; j < ndy-1; j++)
+        for(i = 0; i < ndx; i++)
+            for(j = 0; j < ndy-1; j++)
             {
                 int p = i*(ndy-1)+j;
                 int p1 = i*ndy+j;
@@ -206,8 +206,8 @@ int main (int argc, char ** argv )
     {
         lc = (ndx-1)*(ndy-1)*2;
         oc = posy*(ndx*npx-1)*ndy*2 + posx*ndx*(ndy-1)*2;
-        for(int i = 0; i < ndx-1; i++)
-            for(int j = 0; j < ndy-1; j++)
+        for(i = 0; i < ndx-1; i++)
+            for(j = 0; j < ndy-1; j++)
             {
                 int p = i*(ndy-1)+j;
                 int p1 = i*ndy+j;
@@ -224,8 +224,8 @@ int main (int argc, char ** argv )
     {
         lc = ndx*ndy*2;
         oc = posx*ndx*ndy*2 + posy*(ndx*npx-1)*ndy*2; 
-        for(int i = 0; i < ndx; i++)
-            for(int j = 0; j < ndy; j++)
+        for(i = 0; i < ndx; i++)
+            for(j = 0; j < ndy; j++)
             {
                 int p = i*ndy+j;
                 if( i<ndx-1 && j<ndy-1 )
