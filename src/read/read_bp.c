@@ -49,13 +49,13 @@ uint64_t readCount;
 
 #define timer_start(t) timer_start(t)
 #define timer_stop(t) timer_stop(t)
-#define read_stats_inc(seeks, read) { seekCount += (seeks); readCount += (read); }
+#define read_stats_inc(seeks, read, off) { seekCount += (seeks); readCount += (read); }
 #define read_stats_reset() seekCount = readCount = 0;
 #define read_stats_print() { printf("[READSTATS] Seeks = %llu, Bytes read = %llu\n", seekCount, readCount); }
 #else
 #define timer_start(t) ((void)0)
 #define timer_stop(t) ((void)0)
-#define read_stats_inc(seeks, read) ((void)0)
+#define read_stats_inc(seeks, read, off) ((void)0)
 #define read_stats_reset() ((void)0)
 #define read_stats_print() ((void)0)
 #endif
@@ -98,7 +98,7 @@ uint64_t readCount;
                       );                            \
         fh->b->offset = 0;                          \
         timer_stop("adios_read_bp_io");             \
-        read_stats_inc(1, slice_size);
+        read_stats_inc(1, slice_size, slice_offset);
 
 // To read subfiles
 #define MPI_FILE_READ_OPS2                                                                  \
@@ -165,7 +165,7 @@ uint64_t readCount;
                       );                                                                    \
         fh->b->offset = 0;                                                                  \
         timer_stop("adios_read_bp_io");                                                     \
-        read_stats_inc(1, slice_size);
+        read_stats_inc(1, slice_size, slice_offset);
 
 //We also need to be able to read old .bp which doesn't have 'payload_offset'
 #define MPI_FILE_READ_OPS3                                                                  \
@@ -186,7 +186,7 @@ uint64_t readCount;
         fh->b->offset = 0;                                                                  \
         adios_parse_var_data_header_v1 (fh->b, &var_header);                                \
         timer_stop("adios_read_bp_io");                                                     \
-        read_stats_inc(2, slice_size + 16);
+        read_stats_inc(2, slice_size + 16, 0);
 
 // NCSU ALACRITY-ADIOS: After much pain and consideration, I've decided to implement a
 //     2nd version of this function to avoid substantial wasted time in the writeblock method
@@ -204,7 +204,7 @@ uint64_t readCount;
                       ,&status                      \
                       );                            \
         timer_stop("adios_read_bp_io");             \
-        read_stats_inc(1, slice_size);
+        read_stats_inc(1, slice_size, slice_offset);
 
 // To read subfiles
 #define MPI_FILE_READ_OPS2_BUF(buf)                                                         \
@@ -267,7 +267,7 @@ uint64_t readCount;
                       ,&status                                                              \
                       );                                                                    \
         timer_stop("adios_read_bp_io");                                                     \
-        read_stats_inc(1, slice_size);
+        read_stats_inc(1, slice_size, slice_offset);
 
 
 /* This routine release one step. It only frees the var/attr namelist. */
