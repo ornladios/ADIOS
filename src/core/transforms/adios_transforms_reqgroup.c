@@ -431,9 +431,9 @@ void adios_transform_read_request_free(adios_transform_read_request **reqgroup_p
         MYFREE(reqgroup->lent_varchunk_data);
 
     common_read_selection_delete((ADIOS_SELECTION*)reqgroup->orig_sel); // Remove const
-    common_read_free_transinfo(reqgroup->raw_varinfo,
-                               (ADIOS_TRANSINFO*)reqgroup->transinfo); // Remove const
-    common_read_free_varinfo((ADIOS_VARINFO*)reqgroup->raw_varinfo); // Remove const
+    //common_read_free_transinfo(reqgroup->raw_varinfo,
+    //                           (ADIOS_TRANSINFO*)reqgroup->transinfo); // Remove const
+    //common_read_free_varinfo((ADIOS_VARINFO*)reqgroup->raw_varinfo); // Remove const
     MYFREE(reqgroup->transform_internal);
 
     // Clear all data to 0's for safety
