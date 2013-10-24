@@ -56,7 +56,7 @@ struct common_read_internals_struct {
     adios_transform_read_request *transform_reqgroups;
 
     // NCSU ALACRITY-ADIOS - Cache of VARINFOs and TRANSINFOs
-    adios_transform_infocache infocache;
+    adios_transform_infocache *infocache;
 };
 
 // NCSU ALACRITY-ADIOS - Forward declaration/function prototypes
