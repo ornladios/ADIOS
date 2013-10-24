@@ -57,8 +57,8 @@ uint64_t adios_transform_get_transformed_var_size_from_blockinfo(int raw_ndim, c
 
 typedef struct {
     int capacity;
-    ADIOS_VARINFO *varinfos;
-    ADIOS_TRANSINFO *transinfos;
+    ADIOS_VARINFO **varinfos;
+    ADIOS_TRANSINFO **transinfos;
 } adios_transform_infocache;
 
 
