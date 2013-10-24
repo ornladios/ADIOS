@@ -25,7 +25,7 @@ static inline int min(int a, int b) { return a < b ? a : b; }
 
 #define MALLOC(type, var) type var; MALLOC_ARRAY(var, 1);
 
-#define MYFREE(p) {free(p); (p)=NULL;}
+#define FREE(p) {if (p){free(p); (p)=NULL;}}
 
 // Read request inspection
 enum ADIOS_TRANSFORM_REQGROUP_RESULT_MODE adios_transform_read_request_get_mode(const adios_transform_read_request *req) {
