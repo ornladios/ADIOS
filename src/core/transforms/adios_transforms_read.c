@@ -21,7 +21,7 @@
 static inline int min(int a, int b) { return a < b ? a : b; }
 #define MALLOC_ARRAY(arr,len) { (arr) = (typeof(arr))malloc((len) * sizeof(*arr)); }
 #define CALLOC_ARRAY(arr,len) { (arr) = (typeof(arr))calloc((len), sizeof(*arr)); }
-#define REALLOC_ARRAY(arr,len) { (arr) = (typeof(arr))realloc((len) * sizeof(*arr)); }
+#define REALLOC_ARRAY(arr,len) { (arr) = (typeof(arr))realloc((arr), (len) * sizeof(*arr)); }
 
 #define MALLOC(type, var) type var; MALLOC_ARRAY(var, 1);
 
