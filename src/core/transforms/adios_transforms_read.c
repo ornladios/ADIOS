@@ -49,7 +49,7 @@ uint64_t adios_transform_get_transformed_var_size_from_blockinfo(int raw_ndim, c
 static void expand_infocache(adios_transform_infocache *cache, int var_capacity) {
     int i;
     const int oldcap = cache->capacity;
-    const int newcap = min(min(oldcap * 2, var_capacity), INITIAL_INFOCACHE_SIZE);
+    const int newcap = max(max(oldcap * 2, var_capacity), INITIAL_INFOCACHE_SIZE);
 
     if (oldcap == 0) {
         MALLOC_ARRAY(cache->varinfos, newcap);
@@ -63,6 +63,8 @@ static void expand_infocache(adios_transform_infocache *cache, int var_capacity)
         cache->varinfos[i] = NULL;
         cache->transinfos[i] = NULL;
     }
+
+    cache->capacity = newcap;
 }
 
 adios_transform_infocache * adios_transform_infocache_new() {
