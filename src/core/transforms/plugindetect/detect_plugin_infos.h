@@ -59,8 +59,7 @@ adios_transform_plugin_info_t ADIOS_TRANSFORM_METHOD_INFOS[] = {
         _PLUGIN_ALIASES_RECORD(TYPEID, XMLALIAS)
 
 adios_transform_plugin_xml_aliases_t ADIOS_TRANSFORM_METHOD_ALIASES[] = {
-    { adios_transform_none, 4, (const char*[]){ "none", "no", "raw", "" } },
-
+    REGISTER_TRANSFORM_PLUGIN(none, "none", "none", "none")
     #include "transforms/transform_plugins.h" // Include rows based on the plugin register statements
 };
 
