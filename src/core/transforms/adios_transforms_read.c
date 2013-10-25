@@ -67,6 +67,10 @@ static void expand_infocache(adios_transform_infocache *cache, int var_capacity)
 
 adios_transform_infocache * adios_transform_infocache_new() {
     MALLOC(adios_transform_infocache *, cache);
+    cache->capacity = 0;
+    cache->varinfos = NULL;
+    cache->transinfos = NULL;
+
     expand_infocache(cache, INITIAL_INFOCACHE_SIZE);
     return cache;
 }
