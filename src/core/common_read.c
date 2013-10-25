@@ -236,6 +236,9 @@ ADIOS_FILE * common_read_open_file (const char * fname,
     internals->method = method;
     internals->read_hooks = adios_read_hooks;
 
+    // NCSU ALACRITY-ADIOS - Added allocation of infocache for more efficient read processing with transforms
+    internals->infocache = adios_transform_infocache_new();
+
     fp = adios_read_hooks[internals->method].adios_open_file_fn (fname, comm);
 
     // save the method and group information in fp->internal_data
