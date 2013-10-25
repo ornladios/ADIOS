@@ -92,13 +92,15 @@ int common_adios_finalize (int mype)
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     if (rank == 0) {
-    timer_result_t *timers = timer_get_results_sorted();
-    printf("[TIMERS]\n");
-    int i;
-    for (i = 0; i < timer_get_num_timers(); i++)
-        printf(" [%s] %0.4lf (%0.4lf)", timers[i].name, timers[i].time, timers[i].stddev);
-    printf("\n");
-    free(timers);
+//    timer_result_t *timers = timer_get_results_sorted();
+//    printf("[TIMERS]\n");
+//    int i;
+//    for (i = 0; i < timer_get_num_timers(); i++)
+//        printf(" [%s] %0.4lf (%0.4lf)", timers[i].name, timers[i].time, timers[i].stddev);
+//    printf("\n");
+//    free(timers);
+        printf("[TIMERS]\n");
+        timer_print_results_tree(1);
     }
     }
     timer_finalize ();
