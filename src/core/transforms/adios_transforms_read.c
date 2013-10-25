@@ -85,8 +85,8 @@ void adios_transform_infocache_free(adios_transform_infocache **cache_ptr) {
     for (i = 0; i < cache->capacity; i++) {
         if (cache->varinfos[i]) {
             if (cache->transinfos[i])
-                adios_free_transinfo(cache->varinfos[i], cache->transinfos[i]);
-            adios_free_varinfo(cache->varinfos[i]);
+                common_adios_free_transinfo(cache->varinfos[i], cache->transinfos[i]);
+            common_adios_free_varinfo(cache->varinfos[i]);
         }
     }
 
