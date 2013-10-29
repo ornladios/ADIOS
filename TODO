@@ -1,18 +1,21 @@
+EXAMPLES
+========
+- remove old crappy examples, move in new ones from the new tutorials
+
 WRITE
 =====
 
 - bring back "write=no" into XML tag to skip some variables
-- time-reset function for appending data to the same timestep ("extend" mode)
-- adios_init() should have a communicator parameter
 - complete error logging
+- undef value (also func: adios_undef_get(), adios_undef_set())
+- each method should process parameters from PairStruct, not from string
+
 
 READ
 ====
+- peek_ahead function to support paraview
 - chunking: 
   - support memory limit
-
-- scalar written over timesteps (need to support old-fashioned way,
-i.e., scalar dimension is tagged with "time-index".)
 
 - missing data blocks when read should contain undef values
 
@@ -28,20 +31,38 @@ i.e., scalar dimension is tagged with "time-index".)
 
 TEST
 =====
-The statistics of scalars written over multiple timestep. Particularly we 
+- Test ISOBAR
+- The statistics of scalars written over multiple timestep. Particularly we 
 need to test adios_complex and adios_double_complex scalars.
+- Tests for schema
+- Test BP reader without user-allocated memory
 
 BUILD
 =====
-- shared libraries (request by Numeca)
+- shared libraries (request by Numeca and ETH)
 - cross-compile support
-- separate source from build 
 - add version defines into adios public header (request by Michele Martone)
 
 MANUAL
 =====
 - developer's manual
 
+PYTHON WRAPPER
+==============
+- example codes
+- add to manual
+
+JAVA WRAPPER
+============
+- example codes
+- add to manual
+
+OTHER
+=====
+- check/fix or throw away bp2ascii
+- bpls
+  - add back sorting of names (needs to copy namelist because cannot sort fp->var_namelist
+  - verbosity -> down to ADIOS level
 
 
 
