@@ -118,7 +118,9 @@ void copy_data (void *dst, void *src,
         uint64_t dst_offset,
         uint64_t src_offset,
         uint64_t ele_num,
-        int      size_of_type
+        int      size_of_type,
+        enum ADIOS_FLAG change_endiness,
+        enum ADIOS_DATATYPES type
         )
 {
     unsigned int i, j;
@@ -130,6 +132,10 @@ void copy_data (void *dst, void *src,
             memcpy ((char *)dst + (i*dst_stride+dst_offset)*size_of_type,
                     (char *)src + (i*src_stride+src_offset)*size_of_type,
                     ele_num*size_of_type);
+            if (change_endiness == adios_flag_yes) {
+                change_endianness ((char *)dst + (i*dst_stride+dst_offset)*size_of_type, 
+                                   ele_num*size_of_type, type);
+            }
         }
         return;
     }
@@ -149,7 +155,7 @@ void copy_data (void *dst, void *src,
                 ldims,readsize,
                 dst_stride, src_stride,
                 dst_offset_new, src_offset_new,
-                ele_num, size_of_type);
+                ele_num, size_of_type, change_endiness, type);
     }
 }
 
@@ -249,8 +255,14 @@ void list_insert_read_request_next (read_request ** h, read_request * q)
     }
     else
     {
-        q->next = head->next;
-        head->next = q;
+        // NCSU ALACRITY-ADIOS: Fixed this prepend ordering bug. Previously, prepending A, B, C, D would produce
+        //   [A, D, C, B], which causes poor seek performance for the Transforms layer versus raw Transport layer
+        //   due to backwards seeks. The fixed code now properly produces [D, C, B, A]
+
+        //q->next = head->next;
+        //head->next = q;
+        q->next = head;
+        *h = q;
     }
 
     return;
@@ -339,6 +351,11 @@ ADIOS_SELECTION * copy_selection (const ADIOS_SELECTION * sel)
     else if (sel->type == ADIOS_SELECTION_WRITEBLOCK)
     {
         nsel->u.block.index = sel->u.block.index;
+        // NCSU ALACRITY-ADIOS: Copy the new fields
+        nsel->u.block.is_absolute_index = sel->u.block.is_absolute_index;
+        nsel->u.block.is_sub_pg_selection = sel->u.block.is_sub_pg_selection;
+        nsel->u.block.element_offset = sel->u.block.element_offset;
+        nsel->u.block.nelements = sel->u.block.nelements;
     }
     else if (sel->type == ADIOS_SELECTION_AUTO)
     {
@@ -549,3 +566,9 @@ double adios_gettime()
         return  ((double)adios_timer_tp.tv_sec + ((double)adios_timer_tp.tv_usec)/1000000.0);
 }
 
+void * bufdup(const void *buf, uint64_t elem_size, uint64_t count) {
+    const uint64_t len = elem_size * count;
+    void *newbuf = malloc(len);
+    memcpy(newbuf, buf, len);
+    return newbuf;
+}

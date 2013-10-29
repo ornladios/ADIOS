@@ -111,7 +111,7 @@ static int parseGroup(mxml_node_t * node, struct adios_nssi_config *config)
             config->nssi_server_ids[service_num].port = (nssi_pid)atoi(port);
 
 //            log_debug(netcdf_config_debug_level, "service (nid=%lld, pid=%llu, hostname=%s, addr=%d, port=%d)",
-//            		(long long)id->nid, (long long)id->pid, id->hostname, id->addr, id->port);
+//                    (long long)id->nid, (long long)id->pid, id->hostname, id->addr, id->port);
 
 //            printf("staging-service: service_num(%d) nid(%lld) pid(%llu) hostname(%s) port(%d)\n",
 //                    service_num,

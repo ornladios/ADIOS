@@ -339,10 +339,10 @@ void adios_phdf5_finalize (int mype, struct adios_method_struct * method)
 }
 
 int hw_attribute ( hid_t root_id
-		,struct adios_var_struct *pvar_root
-		,struct adios_attribute_struct *patt
-		,enum ADIOS_FLAG fortran_flag
-		,int myrank
+                ,struct adios_var_struct *pvar_root
+                ,struct adios_attribute_struct *patt
+                ,enum ADIOS_FLAG fortran_flag
+                ,int myrank
                 ,int nproc) {
 
     H5Eset_auto ( NULL, NULL);
@@ -393,7 +393,7 @@ int hw_attribute ( hid_t root_id
                                           ,h5_type_id,h5_dataspace_id,0);
                 }
                 if (h5_attribute_id > 0) {
-                        if (myrank == 0)	
+                        if (myrank == 0)        
                             H5Awrite ( h5_attribute_id, h5_type_id, var_linked->data);
                 }
                 H5Aclose (h5_attribute_id);
@@ -413,14 +413,17 @@ int hw_attribute ( hid_t root_id
              h5_localdims = (hsize_t *) malloc (rank * sizeof(hsize_t));
              dims = var_linked->dimensions;
              for ( i = 0; i < rank; i++) {
-                 if ( dims->dimension.rank == 0 && dims->dimension.id) { 
-                     var_linked = adios_find_var_by_id (pvar_root , dims->dimension.id);
-                     if ( var_linked) {
-                         h5_localdims [i] = *(int *)var_linked->data;
-                     }
+                 if ( dims->dimension.var) { 
+                     h5_localdims [i] = *(int *)dims->dimension.var->data;
                  }
-                 else
+                 else if ( dims->dimension.attr) { 
+                     if ( dims->dimension.attr->var)
+                         h5_localdims [i] = *(int *)dims->dimension.attr->var->data;
+                     else 
+                         h5_localdims [i] = *(int *)dims->dimension.attr->value;
+                 } else {
                      h5_localdims [i] = dims->dimension.rank;
+                 }
              }
              h5_dataspace_id = H5Screate_simple(rank,h5_localdims, NULL);
              h5_attribute_id = H5Aopen_name ( grp_ids[level], patt->name);
@@ -455,7 +458,7 @@ int hw_attribute ( hid_t root_id
                     h5_attribute_id = H5Acreate ( grp_ids[level], patt->name 
                                         ,h5_type_id, h5_dataspace_id, 0);
                     if (h5_attribute_id > 0) { 
-                       if (myrank == 0)	
+                       if (myrank == 0)        
                           H5Awrite(h5_attribute_id, h5_type_id, patt->value);
                      }
                 }
@@ -539,8 +542,10 @@ int hr_var (hid_t root_id
     }
     dims = pvar->dimensions;
 
-    if ( dims->global_dimension.rank
-        || (dims->global_dimension.rank == 0  && dims->global_dimension.id)) {
+    if ( dims->global_dimension.rank || 
+         dims->global_dimension.var  || 
+         dims->global_dimension.attr) 
+    {
 
         hsize_t * h5_globaldims, * h5_localdims, * h5_offsets, * h5_strides; 
         hsize_t h5_gbstrides[2],h5_gbglobaldims[2], h5_gblocaldims[2], h5_gboffsets[2], *h5_gbdims;
@@ -735,8 +740,10 @@ int hw_var (hid_t root_id
     }
     dims = pvar->dimensions;
     hsize_t * h5_globaldims, * h5_localdims, * h5_offsets, * h5_strides, * h5_gbdims; 
-    if ( dims->dimension.rank 
-        || (dims->dimension.rank == 0  && dims->dimension.id)) {
+    if ( dims->dimension.rank || 
+         dims->dimension.var  ||
+         dims->dimension.attr ) 
+    {
 
         hsize_t h5_gbstrides[2], h5_gbglobaldims[2], h5_gblocaldims[2], h5_gboffsets[2];
         char name[256];
@@ -992,10 +999,10 @@ int getH5TypeId(enum ADIOS_DATATYPES type, hid_t* h5_type_id \
             break;
         case adios_unsigned_integer:
             *h5_type_id = H5Tcopy(H5T_NATIVE_UINT32);
-	    break;
+            break;
         case adios_unsigned_long:
             *h5_type_id = H5Tcopy(H5T_NATIVE_UINT64);
-	    break;
+            break;
         default:
             status = -1;
             break;
@@ -1080,12 +1087,12 @@ void hw_gopen (hid_t root_id, char * path, hid_t * grp_id, int * level, enum ADI
     pch = strtok(tmpstr,"/");
     grp_name = (char **) malloc(NUM_GP);
     while ( pch!=NULL && *pch!=' ') {
-	len = strlen(pch);
-	grp_name[idx]  = (char *)malloc(len+1);
-	grp_name[idx][0]='\0';
-	strcat(grp_name[idx],pch);
-	pch=strtok(NULL,"/");
-	idx=idx+1;
+        len = strlen(pch);
+        grp_name[idx]  = (char *)malloc(len+1);
+        grp_name[idx][0]='\0';
+        strcat(grp_name[idx],pch);
+        pch=strtok(NULL,"/");
+        idx=idx+1;
     }
     *level = idx;
     grp_id [0] = root_id; 
@@ -1135,12 +1142,15 @@ hsize_t parse_dimension(struct adios_var_struct *pvar_root,
     hsize_t dimsize;
     struct adios_var_struct *var_linked = NULL;
     struct adios_attribute_struct *attr_linked;
-    if ( dim->id) {
-        var_linked = adios_find_var_by_id (pvar_root , dim->id);
-        if (!var_linked) {
-            attr_linked = adios_find_attribute_by_id ( patt_root, dim->id);
-            if (!attr_linked->var) {
-                switch (attr_linked->type) {
+    if ( dim->var) {
+        if ( dim->var->data){
+            dimsize = *(int *)dim->var->data;
+        }
+    } else if ( dim->attr) {
+
+        attr_linked = dim->attr;
+        if (!attr_linked->var) {
+            switch (attr_linked->type) {
                 case adios_unsigned_byte:
                     dimsize = *(uint8_t *)attr_linked->value;
                     break;
@@ -1167,21 +1177,18 @@ hsize_t parse_dimension(struct adios_var_struct *pvar_root,
                     break;
                 default:
                     fprintf (stderr, "Invalid datatype for array dimension on "
-                             "var %s: %s\n"
+                            "var %s: %s\n"
                             ,attr_linked->name
                             ,adios_type_to_string_int (var_linked->type)
                             );
                     break;
-                }
-            }
-            else {
-                var_linked = attr_linked->var;
             }
         }
-        if ( var_linked && var_linked->data){
-            dimsize = *(int *)var_linked->data;
+        else {
+            if (attr_linked->var->data) {
+                dimsize = *(int *)attr_linked->var->data;
+            }
         }
-
     }
     else {
         if (dim->time_index == adios_flag_yes)

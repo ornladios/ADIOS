@@ -73,7 +73,7 @@ typedef struct {
         void     ** maxs;           /* maximum per each timestep (array of timestep elements)         */
         double   ** avgs;           /* average per each timestep (array of timestep elements)         */
         double   ** std_devs;       /* standard deviation per each timestep (array of timestep elements)         */
-        struct ADIOS_HIST			/* Histogram */
+        struct ADIOS_HIST           /* Histogram */
         {
             uint32_t num_breaks;
             double max;

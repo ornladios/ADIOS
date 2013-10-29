@@ -34,9 +34,12 @@ def generate_makefiles_fortran (params):
 
     include_statement = "" + os.path.dirname (sys.argv[0]) + '/../etc/skel/compiler_fragment.mk'
 
+    bindir = os.path.abspath(os.path.dirname(sys.argv[0]))        
+
     for template_line in makefile_template:
 
         # Fill in any replacement vars in this line...
+        template_line = template_line.replace ('$$ADIOS_BIN_DIR$$', bindir)
         template_line = template_line.replace ('$$APP$$', params.get_application () )
         template_line = template_line.replace ('$$INCLUDE$$', include_statement)
         template_line = template_line.replace ('$$TARGET$$', platform)
@@ -74,10 +77,13 @@ def generate_makefiles_c (params):
     makefile_template = open(os.path.expanduser(makefile_template_name), 'r')
 
     include_statement = "" + os.path.dirname (sys.argv[0]) + '/../etc/skel/compiler_fragment.mk'
+    
+    bindir = os.path.abspath(os.path.dirname(sys.argv[0]))        
 
     for template_line in makefile_template:
 
         # Fill in any replacement vars in this line...
+        template_line = template_line.replace ('$$ADIOS_BIN_DIR$$', bindir)
         template_line = template_line.replace ('$$APP$$', params.get_application () )
         template_line = template_line.replace ('$$INCLUDE$$', include_statement)
         template_line = template_line.replace ('$$TARGET$$', platform)

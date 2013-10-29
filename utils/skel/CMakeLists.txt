@@ -1,4 +1,5 @@
 add_subdirectory(etc)
+add_subdirectory(src)
 
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/lib/skel_have_adios_timing.py.in ${CMAKE_CURRENT_BINARY_DIR}/lib/skel_have_adios_timing.py)
 

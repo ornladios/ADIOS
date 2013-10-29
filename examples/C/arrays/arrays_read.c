@@ -16,7 +16,7 @@
 #include <stdint.h>
 #include <string.h>
 #include "mpi.h"
-#include "adios.h"
+#include "adios_read.h"
 
 int main (int argc, char ** argv) 
 {
@@ -26,27 +26,24 @@ int main (int argc, char ** argv)
     double      *t;
     int         *p;
     MPI_Comm    comm = MPI_COMM_WORLD;
-
-    int         adios_err;
-    uint64_t    adios_groupsize, adios_totalsize;
-    int64_t     adios_handle, adios_buf_size;
+    enum ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP;
+    ADIOS_SELECTION * sel;
 
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (comm, &rank);
 
+    adios_read_init_method (method, comm, "verbose=3");
 
     strcpy (filename, "arrays.bp");
-    adios_init ("arrays.xml", comm);
+    ADIOS_FILE * f = adios_read_open (filename, method, comm, ADIOS_LOCKMODE_NONE, 0);
 
-    /* First read in the scalars to calculate the size of the arrays */
-    adios_open (&adios_handle, "arrays", filename, "r", comm);
-    adios_groupsize = 0;
-    adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
-    adios_buf_size = 4;
-    adios_read (adios_handle, "NX", &NX, adios_buf_size);
-    adios_read (adios_handle, "NY", &NY, adios_buf_size);
-    adios_close (adios_handle);
-    /* Note that we have to close to perform the reading of the variables above */
+    /* Specify a selection that points to a specific writer's block */
+    sel = adios_selection_writeblock (rank);
+
+    /* First get the scalars to calculate the size of the arrays */
+    adios_schedule_read (f, sel, "NX", 0, 1, &NX);
+    adios_schedule_read (f, sel, "NY", 0, 1, &NY);
+    adios_perform_reads (f, 1);
 
     printf("rank=%d: NX=%d NY=%d\n", rank, NX, NY);
 
@@ -55,14 +52,11 @@ int main (int argc, char ** argv)
     p = (int *) malloc (NX*sizeof(int));
 
     /* Read the arrays */
-    adios_open (&adios_handle, "arrays", filename, "r", comm);
-    adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
-    adios_buf_size = 8 * (NX) * (NY);
-    adios_read (adios_handle, "var_double_2Darray", t, adios_buf_size);
-    adios_buf_size = 4 * (NX);
-    adios_read (adios_handle, "var_int_1Darray", p, adios_buf_size);
-    adios_close (adios_handle);
+    adios_schedule_read (f, sel, "var_double_2Darray", 0, 1, t);
+    adios_schedule_read (f, sel, "var_int_1Darray", 0, 1, p);
+    adios_perform_reads (f, 1);
 
+    /* At this point, we have the data in memory */
     printf("rank=%d: p = [%d", rank, p[0]);
     for (i = 1; i < NX; i++)
         printf(", %d", p[i]);
@@ -73,10 +67,12 @@ int main (int argc, char ** argv)
         printf(", %6.2f", t[5*NY+j]);
     printf("]\n");
 
+    free (t);
+    free (p);
+
+    adios_read_close (f);
     MPI_Barrier (comm);
-
-    adios_finalize (rank);
-
+    adios_read_finalize_method (method);
     MPI_Finalize ();
 
     return 0;

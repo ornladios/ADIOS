@@ -9,7 +9,7 @@
 !/*   Example of reading various types of variable in ADIOS   */
 !/*************************************************************/
 program scalars_read
-    use adios_write_mod
+    use adios_read_mod
     implicit none
     include 'mpif.h'
 
@@ -17,10 +17,10 @@ program scalars_read
     integer             :: rank, size, i, ierr
     integer             :: comm
 
-    ! ADIOS variables declarations for matching gread_scalars.fh 
-    integer                 :: adios_err
-    integer*8               :: adios_groupsize, adios_totalsize
-    integer*8               :: adios_handle, adios_buf_size
+    ! ADIOS variables declarations 
+    integer*8               :: f
+    integer                 :: method = ADIOS_READ_METHOD_BP
+    integer*8               :: sel
 
     ! scalar variables to write out (including a string)
     integer*1           :: v1 = 0
@@ -46,16 +46,32 @@ program scalars_read
     call MPI_Comm_rank (comm, rank, ierr)
     call MPI_Comm_size (comm, size, ierr);
 
-    call adios_init ("scalars.xml", comm, adios_err);
-    call adios_open (adios_handle, "scalars", filename, "r", comm, adios_err);
-#include "gread_scalars.fh"
-    call adios_close (adios_handle, adios_err)
+    call adios_read_init_method (method, comm, "verbose=3", ierr);
 
-    call MPI_Barrier (comm, ierr);
+    call adios_read_open (f, filename, method, comm, ADIOS_LOCKMODE_NONE, 1.0, ierr);
 
-    call adios_finalize (rank, adios_err);
+    sel = 0  ! sel must be integer*8
 
-    call MPI_Finalize (ierr);
+    ! option 1 for scalars: get it from the metadata read at open
+    call adios_get_scalar (f, "var_byte", v1, ierr)
+    call adios_get_scalar (f, "var_short", v2, ierr)
+    call adios_get_scalar (f, "var_int", v3, ierr)
+    call adios_get_scalar (f, "var_long", v4, ierr)
+    ! the above variables contain the value at this point
+
+    ! option 2 for scalars: read them from file
+    call adios_schedule_read (f, sel, "var_ubyte", 1, 1, v5, ierr)
+    call adios_schedule_read (f, sel, "var_ushort", 1, 1, v6, ierr)
+    call adios_schedule_read (f, sel, "var_uint", 1, 1, v7, ierr)
+    call adios_schedule_read (f, sel, "var_ulong", 1, 1, v8, ierr)
+    call adios_schedule_read (f, sel, "var_real", 1, 1, v9, ierr)
+    call adios_schedule_read (f, sel, "var_double", 1, 1, v10, ierr)
+    call adios_schedule_read (f, sel, "var_string", 1, 1, v11, ierr)
+    call adios_schedule_read (f, sel, "var_complex", 1, 1, v12, ierr)
+    call adios_schedule_read (f, sel, "var_double_complex", 1, 1, v13, ierr)
+    ! no read has been performed yet!
+    call adios_perform_reads (f, ierr)
+    ! the above variables contain the value only at this point
 
     if (rank == 0) then
         write (*, '("int*1      v1  = ",i3)') v1
@@ -76,6 +92,11 @@ program scalars_read
         write (*, '("complex*8  v12 = (",f6.2,", ", f6.2,")")') v12
         write (*, '("complex*16 v13 = (",f6.2,", ", f6.2,")")') v13
     endif
+
+    call adios_read_close (f, ierr)
+    call MPI_Barrier (comm, ierr);
+    call adios_read_finalize_method (method, ierr);
+    call MPI_Finalize (ierr);
 
 end program
 

@@ -17,7 +17,7 @@ public class AdiosNoxmlTest
         System.out.println("[DEBUG] MPI rank/size = " + rank + " / " + size);
         System.out.println("[DEBUG] MPI &comm     = " + comm);
 
-        Adios.Init_Noxml();
+        Adios.Init_Noxml(comm);
         Adios.AllocateBuffer(AdiosBufferAllocWhen.NOW, 10);
 
         long group_id = Adios.DeclareGroup("restart", "iter", AdiosFlag.YES);

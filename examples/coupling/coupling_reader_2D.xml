@@ -14,9 +14,9 @@
     <var name="oy" path="/aux" type="integer"/>
 
     <!-- 2D array to write with block,block decomposition -->
-    <global-bounds dimensions="gdx,gdy" offsets="ox,oy">
-        <var name="xy"  path="" type="double" dimensions="ldx,ldy"/>
-        <var name="xy2" path="" type="double" dimensions="ldx,ldy"/>
+    <global-bounds dimensions="gdx,gdy" offsets="/aux/ox,/aux/oy">
+        <var name="xy"  path="" type="double" dimensions="/aux/ldx,/aux/ldy"/>
+        <var name="xy2" path="" type="double" dimensions="/aux/ldx,/aux/ldy"/>
     </global-bounds>
   </adios-group>
 

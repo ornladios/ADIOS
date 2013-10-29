@@ -54,7 +54,11 @@ else
     dnl We don't overwrite CRAY_PMI_LIBDIR.
     if test -z "${CRAY_PMI_LIBDIR}"; then
         if test -n "${CRAY_PMI_DIR}"; then
-            CRAY_PMI_LIBDIR="${CRAY_PMI_DIR}/lib";
+            if test -d "${CRAY_PMI_DIR}/lib64"; then
+                CRAY_PMI_LIBDIR="${CRAY_PMI_DIR}/lib64";
+            else
+                CRAY_PMI_LIBDIR="${CRAY_PMI_DIR}/lib";
+            fi
         fi
     fi
 

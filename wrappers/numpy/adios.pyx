@@ -48,8 +48,12 @@ cdef extern from "adios_types.h":
         pass
 
 cdef extern from "adios.h":
+    ctypedef struct MPI_Comm:
+        pass
+
     ctypedef char* const_char_ptr "const char*"
-    cdef int adios_init (char * config)
+
+    cdef int adios_init (char * config, MPI_Comm)
     
     cdef int adios_finalize (int mype)
     
@@ -74,7 +78,7 @@ cdef extern from "adios.h":
 
     cdef int adios_close(int64_t fd_p)
     
-    cdef int adios_init_noxml ()
+    cdef int adios_init_noxml (MPI_Comm)
     
     cdef int adios_allocate_buffer (ADIOS_BUFFER_ALLOC_WHEN when,
                                     uint64_t buffer_size)
@@ -204,8 +208,8 @@ class BUFFER_ALLOC_WHEN(object):
 ## ADIOS Write API
 ## ==========
 
-cpdef init(char * config):
-    return adios_init(config)
+cpdef init(char * config, MPI.Comm comm = MPI.COMM_WORLD):
+    return adios_init(config, comm.ob_mpi)
 
 cpdef int64_t open(char * group_name,
                    char * name,
@@ -254,8 +258,8 @@ cpdef finalize(int mype = 0):
 ## ==========
 ## ADIOS No-XML API
 ## ==========
-cpdef int init_noxml():
-    return adios_init_noxml()
+cpdef int init_noxml(MPI.Comm comm = MPI.COMM_WORLD):
+    return adios_init_noxml(comm.ob_mpi)
 
 cpdef int allocate_buffer(int when,
                           uint64_t buffer_size):
@@ -573,18 +577,17 @@ cdef class AdiosVariable:
             npoffset.fill(0)
         else:
             npoffset = np.array(offset, dtype=np.int64)
-            assert npshape.ndim == npoffset.ndim, 'Offset dimension mismatch'
         
         cdef np.ndarray npcount
         if len(count) == 0:
             npcount = npshape - npoffset
         else:
             npcount = np.array(count, dtype=np.int64)
-            npcount = npcount - npoffset
 
-        assert npshape.ndim == npcount.ndim, 'Shape dimension mismatch.'
-        assert (npshape - npoffset >= npcount).all(), 'Count is larger than shape.'
-            
+        assert npshape.ndim == npoffset.ndim, 'Offset dimension mismatch'
+        assert npshape.ndim == npcount.ndim, 'Count dimension mismatch.'
+        assert (npshape - npoffset > npcount).all(), 'Count is larger than shape.'
+
         cdef np.ndarray var = np.zeros(npcount, dtype=ntype)
         cdef int64_t nbytes = adios_read_var_byid(
             self.group.gp, 

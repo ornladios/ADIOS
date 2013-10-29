@@ -18,10 +18,10 @@
 int main (int argc, char ** argv) 
 {
     char        filename [256];
-    int         rank, size, i;
-    int         NX = 10; 
-    int         NY = 1;
-    double      t[NX];
+    int         rank, size, i, j, offset, size_y;
+    int         NX = 40; 
+    int         NY = 2;
+    double      t[NX*NY];
     MPI_Comm    comm = MPI_COMM_WORLD;
 
     int64_t     adios_handle;
@@ -30,30 +30,40 @@ int main (int argc, char ** argv)
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &size);
     
-    fprintf(stderr, "starting writer.\n");
     strcpy (filename, "arrays");
-    adios_init ("arrays.xml");
+    adios_init ("arrays.xml", comm);
     
-    
+    int test_scalar = rank * 1000;
+    offset = rank*NY;
+    size_y = size*NY;
     int ii;
-    for(ii = 0; ii<30; ii++){
-      for (i = 0; i < NX; i++)
-        t[i] = rank * NX + i*ii;
-      fprintf(stderr, "open\n");
-      adios_open (&adios_handle, "temperature", filename, "w", &comm);
-      fprintf(stderr, "scalar write\n");
-      adios_write (adios_handle, "NX", &NX);
-      adios_write (adios_handle, "NY", &NY);
-      fprintf(stderr, "array writes\n");
-      adios_write (adios_handle, "size", &size);
-      adios_write (adios_handle, "rank", &rank);
-      adios_write (adios_handle, "var_2d_array", t);
-      fprintf(stderr, "in app: rank: %d, size: %d, NX: %d\n", rank, size, NX);
-      adios_close (adios_handle);
-      fprintf(stderr, "commited write %d\n", ii);
+   
+    for(ii = 0; ii<20; ii++){       
+	for(j=0; j<NY*NX; j++){       
+	    t[j] = (offset * NX) + j + NY*NX*ii;	    
+	}
+
+        //prints the array.
+	adios_open (&adios_handle, "temperature", filename, "w", comm);
+	
+	adios_write (adios_handle, "NX", &NX);
+	adios_write (adios_handle, "NY", &NY);
+	adios_write (adios_handle, "test_scalar", &test_scalar);
+	adios_write (adios_handle, "size", &size);
+	adios_write (adios_handle, "rank", &rank);
+	adios_write (adios_handle, "offset", &offset);
+	adios_write (adios_handle, "size_y", &size_y);
+	adios_write (adios_handle, "var_2d_array", t);
+    
+	adios_close (adios_handle);
+	fprintf(stderr, "Rank=%d commited write %d\n", rank, ii);
+	printf("rank %d: [", rank);
+	//for(i=0; i<NX*NY;i++){
+	printf("%lf, ", t[0]);
+		//}
+	printf("]\n");
     }
     adios_finalize (rank);
-
     MPI_Finalize ();
     return 0;
 }

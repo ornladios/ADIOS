@@ -1,41 +1,18 @@
-## mpicc SETTINGS
-CC=mpicc
-CFLAGS=-g 
-LDFLAGS=-g
 
-## cc SETTINGS
-#CC=cc
-#CFLAGS = -O3
-#LDFLAGS =
+# Change setup in make.settings
 
-#TARGET=gnu
-TARGET=pgi
-
-## Set ADIOS_DIR here or before doing make
-override ADIOS_DIR=/ccs/proj/e2e/pnorbert/ADIOS/sith.${TARGET}
-override ADIOS_INC=`${ADIOS_DIR}/bin/adios_config -c`
-override ADIOS_CLIB=`${ADIOS_DIR}/bin/adios_config -l`
-
-
-default: stage_write 
+default: genarray_stream stage_write 
 all: default
 
-OBJS = utils.o decompose_block.o 
+stage_write: stage_write.c
+	make -f Makefile.stage_write 
 
-%.o: %.c
-	${CC} ${CFLAGS} -c ${ADIOS_INC} $<
-
-stage_write: ${OBJS} stage_write.o
-	${CC} ${LDFLAGS} -o stage_write ${OBJS} stage_write.o ${ADIOS_CLIB}
-
-test_decompose: ${OBJS} test_decompose.o 
-	${CC} ${LDFLAGS} -o test_decompose ${OBJS} test_decompose.o ${ADIOS_CLIB}
+genarray_stream: genarray_stream.F90
+	make -f Makefile.genarray_stream
 
 clean:
-	rm -f *.o *.mod *.fh core.*
-	rm -f stage_write
+	make -f Makefile.stage_write clean
+	make -f Makefile.genarray_stream clean
+	rm -f staging.o[0-9]*
 
-
-distclean: clean
-	rm -f log.* dataspaces.conf conf srv.lck *.bp
 

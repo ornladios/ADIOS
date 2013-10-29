@@ -120,7 +120,7 @@ int ncd_attr_str_ds (int ncid
 
     if ( attribute->is_var == adios_flag_yes) {
         adios_posix_read_vars_index (ptr_buffer);
-        adios_parse_vars_index_v1 (ptr_buffer, &vars_root);
+        adios_parse_vars_index_v1 (ptr_buffer, &vars_root, NULL, NULL);
         //print_vars_index ( vars_root);
         while (vars_root) {
             if (vars_root->id == attribute->var_id) {
@@ -706,7 +706,7 @@ int main (int argc, char ** argv)
 
     copy_buffer(b_0, b);
     adios_posix_read_vars_index (b);
-    adios_parse_vars_index_v1 (b, &vars_root);
+    adios_parse_vars_index_v1 (b, &vars_root, NULL, NULL);
 
     copy_buffer(b_1, b);
     adios_posix_read_attributes_index (b);

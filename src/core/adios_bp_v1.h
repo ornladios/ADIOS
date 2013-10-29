@@ -11,6 +11,7 @@
 #include "unistd.h"
 #include "public/adios_types.h"
 #include "core/adios_transport_hooks.h"
+#include "core/qhashtbl.h"
 
 #define ADIOS_VERSION_NUM_MASK                       0x00000011
 #define ADIOS_VERSION_HAVE_SUBFILE                   0x00000100
@@ -28,10 +29,11 @@ enum ADIOS_CHARACTERISTICS
     ,adios_characteristic_time_index     = 8
     ,adios_characteristic_bitmap         = 9
     ,adios_characteristic_stat           = 10
+    ,adios_characteristic_transform_type = 11
 };
 
 #ifndef ADIOS_STAT_LENGTH
-	#define ADIOS_STAT_LENGTH 7 
+    #define ADIOS_STAT_LENGTH 7 
 #endif
 
 // NCSU - Adding statistics
@@ -39,11 +41,11 @@ enum ADIOS_STAT
 {
      adios_statistic_min             = 0
     ,adios_statistic_max             = 1
-    ,adios_statistic_cnt			 = 2 
-    ,adios_statistic_sum			 = 3 
-    ,adios_statistic_sum_square 	 = 4 
-    ,adios_statistic_hist		 	 = 5 
-	,adios_statistic_finite		     = 6 
+    ,adios_statistic_cnt             = 2 
+    ,adios_statistic_sum             = 3 
+    ,adios_statistic_sum_square      = 4 
+    ,adios_statistic_hist            = 5 
+    ,adios_statistic_finite          = 6 
 };
 
 struct adios_bp_buffer_struct_v1
@@ -94,7 +96,7 @@ struct adios_index_characteristic_dims_struct_v1
 // NCSU - Generic data for all statistics
 struct adios_index_characteristics_stat_struct
 {
-	void * data;
+    void * data;
 };
 
 // NCSU - Structure for histogram
@@ -105,6 +107,17 @@ struct adios_index_characteristics_hist_struct
     uint32_t num_breaks; //number of break points for the histogram
     uint32_t * frequencies; //array of frequencies for the histogram
     double * breaks; //breaks array for the histogram, output this to gnuplot
+};
+
+
+struct adios_index_characteristic_transform_struct {
+    uint8_t transform_type;
+
+    enum ADIOS_DATATYPES pre_transform_type;
+    struct adios_index_characteristic_dims_struct_v1 pre_transform_dimensions;
+
+    uint16_t transform_metadata_len;
+    void *transform_metadata;
 };
 
 struct adios_index_characteristic_struct_v1
@@ -120,6 +133,16 @@ struct adios_index_characteristic_struct_v1
     uint32_t bitmap;
 
     struct adios_index_characteristics_stat_struct ** stats;
+
+    // NCSU ALACRITY-ADIOS - Adding transform-related fields
+    /*
+    uint8_t transform_type;
+    enum ADIOS_DATATYPES pre_transform_type;
+    struct adios_index_characteristic_dims_struct_v1 pre_transform_dimensions;
+    uint16_t transform_metadata_len;
+    void *transform_metadata;
+    */
+    struct adios_index_characteristic_transform_struct transform;
 };
 
 struct adios_index_var_struct_v1
@@ -152,6 +175,20 @@ struct adios_index_attribute_struct_v1
     struct adios_index_characteristic_struct_v1 * characteristics;
 
     struct adios_index_attribute_struct_v1 * next;
+};
+
+/* Struct to hold the 3 main pointers of the index:
+ * group, variable and attribute indices
+ */
+struct adios_index_struct_v1
+{
+    struct adios_index_process_group_struct_v1 * pg_root;
+    struct adios_index_var_struct_v1           * vars_root;
+    struct adios_index_var_struct_v1           * vars_tail;
+    struct adios_index_attribute_struct_v1     * attrs_root;
+    struct adios_index_attribute_struct_v1     * attrs_tail;
+    qhashtbl_t *hashtbl_vars;  // to speed up merging lists
+    qhashtbl_t *hashtbl_attrs; // to speed up merging lists
 };
 
 struct adios_method_info_struct_v1
@@ -252,9 +289,11 @@ int adios_parse_process_group_index_v1 (struct adios_bp_buffer_struct_v1 * b
 
 int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
                               ,struct adios_index_var_struct_v1 ** vars_root
+                              ,qhashtbl_t *hashtbl_vars
+                              ,struct adios_index_var_struct_v1 ** vars_tail
                               );
 int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
-                          ,struct adios_index_attribute_struct_v1 ** attrs_root
+                                    ,struct adios_index_attribute_struct_v1 ** attrs_root
                           );
 
 int adios_parse_process_group_header_v1 (struct adios_bp_buffer_struct_v1 * b

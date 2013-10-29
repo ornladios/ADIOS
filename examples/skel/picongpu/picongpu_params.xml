@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+<skel-config application="picongpu">
+
+<!--
+  Within each group, use the scalar elements to control things like array sizes and offsets.
+  Simply adjust the value attribute as needed. The type is provided for convenience.
+  Note that there are 2 special values that you can use:
+    skel_mpi_size refers to the number of processes participating in this run, and
+    skel_mpi_rank is used to indicate the rank of the local process
+  -->
+
+
+  <adios-group name="fields">
+    <scalar name="npx" type="integer" value="8" />
+    <scalar name="npy" type="integer" value="8" />
+    <scalar name="npz" type="integer" value="8" />
+    <scalar name="size_x" type="integer" value="64" />
+    <scalar name="size_y" type="integer" value="64" />
+    <scalar name="size_z" type="integer" value="64" />
+    <scalar name="total_size_x" type="integer" value="npx*size_x" />
+    <scalar name="total_size_y" type="integer" value="npy*size_y" />
+    <scalar name="total_size_z" type="integer" value="npz*size_z" />
+    <scalar name="iter" type="integer" value="1" />
+    <scalar name="offset_z" type="integer" value="size_x*(skel_mpi_rank%npx)" />
+    <scalar name="offset_y" type="integer" value="size_y*((skel_mpi_rank/npx)%npy)" />
+    <scalar name="offset_x" type="integer" value="size_z*(skel_mpi_rank/(npx*npy))" />
+    <array name="fields_FieldE_x" type="float" dims="size_x,size_y,size_z" fill-method="rank"></array>
+    <array name="fields_FieldE_z" type="float" dims="size_x,size_y,size_z" fill-method="rank"></array>
+    <array name="fields_Density_e" type="float" dims="size_x,size_y,size_z" fill-method="rank"></array>
+    <array name="fields_FieldB_z" type="float" dims="size_x,size_y,size_z" fill-method="rank"></array>
+    <array name="fields_FieldB_x" type="float" dims="size_x,size_y,size_z" fill-method="rank"></array>
+    <array name="fields_FieldE_y" type="float" dims="size_x,size_y,size_z" fill-method="rank"></array>
+    <array name="fields_FieldB_y" type="float" dims="size_x,size_y,size_z" fill-method="rank"></array>
+  </adios-group>
+
+  <batch name="writes" cores="16" walltime="0:30:00">
+    <test type="write" group="fields" method="POSIX" iterations="10" rm="pre" tags="name1:val1,name2:val2" />
+  </batch>
+
+</skel-config>

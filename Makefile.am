@@ -26,13 +26,28 @@ if HAVE_NSSI
                    scripts/start.nssi.staging.sh
 endif
 
+#install-data-hook:
+#	echo -n "VERSIONSTRING=\"$(PACKAGE) version $(VERSION) svn revision " >> adios_config.flags
+#	if type svnversion &>/dev/null; then \
+#	    echo `svnversion`\" >> adios_config.flags; \
+#	else \
+#	    echo "unknown\"" >> adios_config.flags; \
+#	    echo "Error: svnversion command not found"; \
+#	fi 
+#	cp adios_config.flags $(DESTDIR)$(bindir)
+        
 install-data-hook:
-	echo -n "VERSIONSTRING=\"$(PACKAGE) version $(VERSION) svn revision " >> adios_config.flags
-	if type svnversion &>/dev/null; then \
-	    echo `svnversion`\" >> adios_config.flags; \
+	echo "SRCDIR=\"$(PWD)\"" >> adios_config.flags; \
+	if git rev-parse --git-dir &>/dev/null; then \
+	    echo "GITLOG=\"`git log -n 1 --format=\"Last commit on %ad hash %h\"`\"" > git.status; \
+	    echo "read -d '' GITSTAT <<'_EOF_'" >> git.status; \
+	    git status -uno >> git.status; \
+	    echo "_EOF_" >> git.status; \
 	else \
-	    echo "unknown\"" >> adios_config.flags; \
-	    echo "Error: svnversion command not found"; \
+	    echo "GITLOG=\"git log not available\"" >> git.status; \
+	    echo "GITSTAT=\"git status not available\"" >> git.status; \
+	    echo "Note: git command not found or $(PWD) is not a git repository."; \
 	fi 
 	cp adios_config.flags $(DESTDIR)$(bindir)
+	cp git.status $(DESTDIR)$(bindir)
         

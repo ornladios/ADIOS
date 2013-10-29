@@ -36,14 +36,17 @@ copyarray.F90: gwrite_genarray.fh gread_genarray.fh
 
 gwrite_genarray.fh: genarray3d.xml
 	rm -f gwrite_genarray.fh gread_genarray.fh
-	$(top_builddir)/utils/gpp/gpp.py genarray3d.xml
+	$(top_builddir)/utils/gpp/gpp.py $(srcdir)/genarray3d.xml
 gread_genarray.fh: genarray3d.xml
 	rm -f gwrite_genarray.fh gread_genarray.fh
-	$(top_builddir)/utils/gpp/gpp.py genarray3d.xml
+	$(top_builddir)/utils/gpp/gpp.py $(srcdir)/genarray3d.xml
 
 FCLINK = \
 	$(LIBTOOL) --mode=link --tag F77 $(FC) \
 	$(AM_FCFLAGS) $(FCFLAGS) $(LDFLAGS) -o $@
+
+all-local:
+	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/genarray3d.xml $(srcdir)/genarray.xml $(builddir)
 
 CLEANFILES = genarray_comm.mod genarray2d_comm.mod gwrite_genarray.fh gread_genarray.fh
 

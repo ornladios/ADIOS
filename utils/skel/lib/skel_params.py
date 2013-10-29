@@ -5,11 +5,49 @@ import argparse
 
 import adios
 import skel_settings
+import skel_bpls
+
+# Command line parsing is chained together. This is stage two. The first stage happens in ../bin/skel
+def pparse_command_line (parent_parser):
+
+    parser = argparse.ArgumentParser (
+                parents=[parent_parser],
+                formatter_class=argparse.RawDescriptionHelpFormatter,
+                prog='skel',
+                add_help=False,
+                description='''\
+        skel params
+            create a parameter file to define skeletal application behavior''')
+
+    parser.add_argument ('-g', '--group', help='adios group')
+    parser.add_argument ('-b', '--bpls', help='file containing bpls output')
+
+    parser.add_argument ('-f', '--force', dest='force', action='store_true', help='overwrite existing params file')
+    parser.set_defaults(force=False)
+
+    return parser.parse_args()
 
 
-def generate_param_file (app, outfile, config, groupname):
+def generate_param_file_with_args (config, parent_parser):
+    args = pparse_command_line (parent_parser)
+    
+    outfilename = args.project + '_params.xml'
+
+    # Only proceed if outfilename does not already exist, or if -f was used
+    if os.path.exists (outfilename) and not args.force:
+        print "%s exists, aborting. Delete the file or use -f to overwrite." % outfilename
+        return 999
+
+    generate_param_file (args.project, outfilename, config, args.group, args.bpls)
+
+
+def generate_param_file (app, outfile, config, groupname, bplsfile=None):
 
     param_file = open (outfile, 'w')
+
+    if bplsfile is not None:
+        print "Using bpls data in %s" % bplsfile
+        bpdata = skel_bpls.bpls (open (bplsfile, 'r') )
 
     #Write the file header
     param_file.write ('<?xml version="1.0"?>')
@@ -38,7 +76,23 @@ def generate_param_file (app, outfile, config, groupname):
 
         for var in group.get_vars():
             if var.is_scalar():
-                all_scalars.add ('\n    <scalar name="' + var.get_name() + '" type="' + var.get_type() + '" value="128" />')
+
+                scalar_value = None
+
+                first_use_name, first_use_dim_num = var.find_first_use () # Get the name and dimension number of the first array that uses this scalar, or None if it is not used
+                if first_use_name is not None:
+                    dims = bpdata.get_dims (first_use_name)
+                    if dims is None:
+                        # Try adding a leading slash to deal with the way that bpls reports variable names without one
+                        dims = bpdata.get_dims ("/%s" % first_use_name)
+                    if dims is not None:
+                        scalar_value = dims[first_use_dim_num]
+                    
+
+                if scalar_value is None:
+                    scalar_value = 0 # Should be used only for variables that do not appear in any array dimensions
+
+                all_scalars.add ('\n    <scalar name="' + var.get_name() + '" type="' + var.get_type() + '" value="%s" />' % scalar_value)
             else:
                 dims = var.get_dimensions()
                 dim_str ='dims="'
@@ -71,7 +125,7 @@ def generate_param_file (app, outfile, config, groupname):
     param_file.close()
 
 
-
+# TODO: Get rid of this in favor of chained version, above.
 def parse_command_line():
 
     parser = argparse.ArgumentParser (description='Create a parameter file for the given skel project')
@@ -91,6 +145,11 @@ def main(argv=None):
 
     # Determine outfile name
     outfilename = args.project + '_params.xml.default'
+
+    # Only proceed if outfilename does not already exist.
+    if os.path.exists (outfilename):
+        print "%s exists, aborting. Delete the file or use '-f' to overwrite."
+        return 999
 
     generate_param_file (args.project, outfilename, config, args.group)
         

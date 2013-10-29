@@ -34,12 +34,15 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
-	$(am__EXEEXT_3)
-TESTS =
+	$(am__EXEEXT_3) $(am__EXEEXT_4)
+TESTS = $(am__EXEEXT_4)
 subdir = tests/suite/programs
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/ac_cray_pmi.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/ac_alacrity.m4 \
+	$(top_srcdir)/config/ac_aplod.m4 \
+	$(top_srcdir)/config/ac_bzip2.m4 \
+	$(top_srcdir)/config/ac_cray_pmi.m4 \
 	$(top_srcdir)/config/ac_cray_ugni.m4 \
 	$(top_srcdir)/config/ac_dataspaces.m4 \
 	$(top_srcdir)/config/ac_datatap.m4 \
@@ -49,14 +52,18 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cray_pmi.m4 \
 	$(top_srcdir)/config/ac_flexpath.m4 \
 	$(top_srcdir)/config/ac_hdf5.m4 \
 	$(top_srcdir)/config/ac_infiniband.m4 \
+	$(top_srcdir)/config/ac_isobar.m4 \
 	$(top_srcdir)/config/ac_lustre.m4 \
 	$(top_srcdir)/config/ac_mxml.m4 \
 	$(top_srcdir)/config/ac_nc4par.m4 \
+	$(top_srcdir)/config/ac_ncsu_timer.m4 \
 	$(top_srcdir)/config/ac_netcdf.m4 \
 	$(top_srcdir)/config/ac_nssi.m4 \
 	$(top_srcdir)/config/ac_pablo.m4 \
 	$(top_srcdir)/config/ac_phdf5.m4 \
 	$(top_srcdir)/config/ac_portals.m4 \
+	$(top_srcdir)/config/ac_szip.m4 \
+	$(top_srcdir)/config/ac_zlib.m4 \
 	$(top_srcdir)/config/acx_mpi.m4 \
 	$(top_srcdir)/config/acx_pthread.m4 \
 	$(top_srcdir)/config/cercs.m4 $(top_srcdir)/configure.ac
@@ -74,11 +81,18 @@ CONFIG_CLEAN_VPATH_FILES =
 @BUILD_WRITE_TRUE@	adios_staged_read_2vars$(EXEEXT) \
 @BUILD_WRITE_TRUE@	write_read$(EXEEXT) write_alternate$(EXEEXT) \
 @BUILD_WRITE_TRUE@	two_groups$(EXEEXT) many_vars$(EXEEXT) \
-@BUILD_WRITE_TRUE@	selections$(EXEEXT) \
+@BUILD_WRITE_TRUE@	selections$(EXEEXT) path_test$(EXEEXT) \
+@BUILD_WRITE_TRUE@	reuse_dim$(EXEEXT) \
+@BUILD_WRITE_TRUE@	adios_transforms_read_write$(EXEEXT) \
 @BUILD_WRITE_TRUE@	connect_to_space_subset$(EXEEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__EXEEXT_2 =  \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	posix_method$(EXEEXT)
 am__EXEEXT_3 =
+@BUILD_WRITE_TRUE@am__EXEEXT_4 = hashtest$(EXEEXT) \
+@BUILD_WRITE_TRUE@	copy_subvolume$(EXEEXT) \
+@BUILD_WRITE_TRUE@	transforms_specparse$(EXEEXT) \
+@BUILD_WRITE_TRUE@	adios_transforms_read_write$(EXEEXT) \
+@BUILD_WRITE_TRUE@	set_path$(EXEEXT) set_path_var$(EXEEXT)
 am_adios_amr_write_OBJECTS = adios_amr_write.$(OBJEXT)
 adios_amr_write_OBJECTS = $(am_adios_amr_write_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -117,6 +131,17 @@ adios_staged_read_v2_DEPENDENCIES =  \
 adios_staged_read_v2_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(adios_staged_read_v2_LDFLAGS) $(LDFLAGS) -o $@
+am_adios_transforms_read_write_OBJECTS =  \
+	adios_transforms_read_write.$(OBJEXT)
+adios_transforms_read_write_OBJECTS =  \
+	$(am_adios_transforms_read_write_OBJECTS)
+adios_transforms_read_write_DEPENDENCIES =  \
+	$(top_builddir)/src/libadios.a \
+	$(top_builddir)/src/libadiosread.a $(am__DEPENDENCIES_1)
+adios_transforms_read_write_LINK = $(LIBTOOL) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(AM_CFLAGS) $(CFLAGS) $(adios_transforms_read_write_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_connect_to_space_subset_OBJECTS =  \
 	connect_to_space_subset.$(OBJEXT)
 connect_to_space_subset_OBJECTS =  \
@@ -126,6 +151,19 @@ connect_to_space_subset_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 connect_to_space_subset_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(connect_to_space_subset_LDFLAGS) $(LDFLAGS) -o $@
+am_copy_subvolume_OBJECTS = copy_subvolume-copy_subvolume.$(OBJEXT)
+copy_subvolume_OBJECTS = $(am_copy_subvolume_OBJECTS)
+copy_subvolume_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+copy_subvolume_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(copy_subvolume_LDFLAGS) $(LDFLAGS) -o $@
+am_hashtest_OBJECTS = hashtest-hashtest.$(OBJEXT)
+hashtest_OBJECTS = $(am_hashtest_OBJECTS)
+hashtest_DEPENDENCIES = $(top_builddir)/src/libadios_a-qhashtbl.o
+hashtest_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(hashtest_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_local_array_time_OBJECTS = local_array_time.$(OBJEXT)
 local_array_time_OBJECTS = $(am_local_array_time_OBJECTS)
 local_array_time_DEPENDENCIES = $(top_builddir)/src/libadios.a \
@@ -140,6 +178,13 @@ many_vars_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 many_vars_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(many_vars_LDFLAGS) $(LDFLAGS) -o $@
+am_path_test_OBJECTS = path_test.$(OBJEXT)
+path_test_OBJECTS = $(am_path_test_OBJECTS)
+path_test_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+path_test_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(path_test_LDFLAGS) $(LDFLAGS) -o $@
 am_posix_method_OBJECTS = posix_method.$(OBJEXT)
 posix_method_OBJECTS = $(am_posix_method_OBJECTS)
 posix_method_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
@@ -147,6 +192,13 @@ posix_method_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
 posix_method_LINK = $(LIBTOOL) --tag=FC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(FCLD) $(AM_FCFLAGS) $(FCFLAGS) \
 	$(posix_method_LDFLAGS) $(LDFLAGS) -o $@
+am_reuse_dim_OBJECTS = reuse_dim.$(OBJEXT)
+reuse_dim_OBJECTS = $(am_reuse_dim_OBJECTS)
+reuse_dim_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+reuse_dim_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(reuse_dim_LDFLAGS) $(LDFLAGS) -o $@
 am_selections_OBJECTS = selections.$(OBJEXT)
 selections_OBJECTS = $(am_selections_OBJECTS)
 selections_DEPENDENCIES = $(top_builddir)/src/libadios.a \
@@ -154,6 +206,28 @@ selections_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 selections_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(selections_LDFLAGS) $(LDFLAGS) -o $@
+am_set_path_OBJECTS = set_path.$(OBJEXT)
+set_path_OBJECTS = $(am_set_path_OBJECTS)
+set_path_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+set_path_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(set_path_LDFLAGS) \
+	$(LDFLAGS) -o $@
+am_set_path_var_OBJECTS = set_path_var.$(OBJEXT)
+set_path_var_OBJECTS = $(am_set_path_var_OBJECTS)
+set_path_var_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+set_path_var_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(set_path_var_LDFLAGS) $(LDFLAGS) -o $@
+am_transforms_specparse_OBJECTS =  \
+	transforms_specparse-transforms_specparse.$(OBJEXT)
+transforms_specparse_OBJECTS = $(am_transforms_specparse_OBJECTS)
+transforms_specparse_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+transforms_specparse_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(transforms_specparse_LDFLAGS) $(LDFLAGS) -o $@
 am_two_groups_OBJECTS = two_groups.$(OBJEXT)
 two_groups_OBJECTS = $(am_two_groups_OBJECTS)
 two_groups_DEPENDENCIES = $(top_builddir)/src/libadios.a \
@@ -198,18 +272,28 @@ SOURCES = $(adios_amr_write_SOURCES) $(adios_amr_write_2vars_SOURCES) \
 	$(adios_staged_read_SOURCES) \
 	$(adios_staged_read_2vars_SOURCES) \
 	$(adios_staged_read_v2_SOURCES) \
-	$(connect_to_space_subset_SOURCES) $(local_array_time_SOURCES) \
-	$(many_vars_SOURCES) $(posix_method_SOURCES) \
-	$(selections_SOURCES) $(two_groups_SOURCES) \
-	$(write_alternate_SOURCES) $(write_read_SOURCES)
+	$(adios_transforms_read_write_SOURCES) \
+	$(connect_to_space_subset_SOURCES) $(copy_subvolume_SOURCES) \
+	$(hashtest_SOURCES) $(local_array_time_SOURCES) \
+	$(many_vars_SOURCES) $(path_test_SOURCES) \
+	$(posix_method_SOURCES) $(reuse_dim_SOURCES) \
+	$(selections_SOURCES) $(set_path_SOURCES) \
+	$(set_path_var_SOURCES) $(transforms_specparse_SOURCES) \
+	$(two_groups_SOURCES) $(write_alternate_SOURCES) \
+	$(write_read_SOURCES)
 DIST_SOURCES = $(adios_amr_write_SOURCES) \
 	$(adios_amr_write_2vars_SOURCES) $(adios_staged_read_SOURCES) \
 	$(adios_staged_read_2vars_SOURCES) \
 	$(adios_staged_read_v2_SOURCES) \
-	$(connect_to_space_subset_SOURCES) $(local_array_time_SOURCES) \
-	$(many_vars_SOURCES) $(posix_method_SOURCES) \
-	$(selections_SOURCES) $(two_groups_SOURCES) \
-	$(write_alternate_SOURCES) $(write_read_SOURCES)
+	$(adios_transforms_read_write_SOURCES) \
+	$(connect_to_space_subset_SOURCES) $(copy_subvolume_SOURCES) \
+	$(hashtest_SOURCES) $(local_array_time_SOURCES) \
+	$(many_vars_SOURCES) $(path_test_SOURCES) \
+	$(posix_method_SOURCES) $(reuse_dim_SOURCES) \
+	$(selections_SOURCES) $(set_path_SOURCES) \
+	$(set_path_var_SOURCES) $(transforms_specparse_SOURCES) \
+	$(two_groups_SOURCES) $(write_alternate_SOURCES) \
+	$(write_read_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 am__tty_colors = \
@@ -237,12 +321,21 @@ ADIOSREADLIB_SEQ_CFLAGS = @ADIOSREADLIB_SEQ_CFLAGS@
 ADIOSREADLIB_SEQ_CPPFLAGS = @ADIOSREADLIB_SEQ_CPPFLAGS@
 ADIOSREADLIB_SEQ_LDADD = @ADIOSREADLIB_SEQ_LDADD@
 ADIOSREADLIB_SEQ_LDFLAGS = @ADIOSREADLIB_SEQ_LDFLAGS@
+ALACRITY_CPPFLAGS = @ALACRITY_CPPFLAGS@
+ALACRITY_LDFLAGS = @ALACRITY_LDFLAGS@
+ALACRITY_LIBS = @ALACRITY_LIBS@
 AMTAR = @AMTAR@
+APLOD_CPPFLAGS = @APLOD_CPPFLAGS@
+APLOD_LDFLAGS = @APLOD_LDFLAGS@
+APLOD_LIBS = @APLOD_LIBS@
 AR = @AR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BZIP2_CPPFLAGS = @BZIP2_CPPFLAGS@
+BZIP2_LDFLAGS = @BZIP2_LDFLAGS@
+BZIP2_LIBS = @BZIP2_LIBS@
 CC = $(MPICC)
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -305,6 +398,9 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ISOBAR_CPPFLAGS = @ISOBAR_CPPFLAGS@
+ISOBAR_LDFLAGS = @ISOBAR_LDFLAGS@
+ISOBAR_LIBS = @ISOBAR_LIBS@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
@@ -377,7 +473,16 @@ SHELL = @SHELL@
 SKEL_HAVE_ADIOS_TIMING = @SKEL_HAVE_ADIOS_TIMING@
 SKEL_TIMING = @SKEL_TIMING@
 STRIP = @STRIP@
+SZIP_CPPFLAGS = @SZIP_CPPFLAGS@
+SZIP_LDFLAGS = @SZIP_LDFLAGS@
+SZIP_LIBS = @SZIP_LIBS@
+TIMER_CPPFLAGS = @TIMER_CPPFLAGS@
+TIMER_LDFLAGS = @TIMER_LDFLAGS@
+TIMER_LIBS = @TIMER_LIBS@
 VERSION = @VERSION@
+ZLIB_CPPFLAGS = @ZLIB_CPPFLAGS@
+ZLIB_LDFLAGS = @ZLIB_LDFLAGS@
+ZLIB_LIBS = @ZLIB_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -454,11 +559,18 @@ check_readonly_C =
 @BUILD_WRITE_TRUE@        two_groups \
 @BUILD_WRITE_TRUE@        many_vars \
 @BUILD_WRITE_TRUE@        selections \
+@BUILD_WRITE_TRUE@        path_test \
+@BUILD_WRITE_TRUE@        reuse_dim \
+@BUILD_WRITE_TRUE@        adios_transforms_read_write \
 @BUILD_WRITE_TRUE@        connect_to_space_subset
+
+@BUILD_WRITE_TRUE@test_C = hashtest copy_subvolume transforms_specparse adios_transforms_read_write \
+@BUILD_WRITE_TRUE@       set_path set_path_var
 
 @BUILD_FORTRAN_TRUE@check_readonly_Fortran = 
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@check_Fortran = posix_method
-INCLUDES = $(all_includes) -I$(top_builddir)/src
+INCLUDES = $(all_includes) -I$(top_builddir)/src \
+	-I$(top_srcdir)/src/public
 
 #############################
 # Build rules for each test #
@@ -478,20 +590,29 @@ adios_amr_write_2vars_SOURCES = adios_amr_write_2vars.c
 adios_amr_write_2vars_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 adios_amr_write_2vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 adios_staged_read_SOURCES = adios_staged_read.c
-adios_staged_read_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSREADLIB_LDADD)
-adios_staged_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
+adios_staged_read_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSLIB_LDADD)
+adios_staged_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 adios_staged_read_v2_SOURCES = adios_staged_read_v2.c
 adios_staged_read_v2_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSREADLIB_LDADD)
 adios_staged_read_v2_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
 adios_staged_read_2vars_SOURCES = adios_staged_read_2vars.c
-adios_staged_read_2vars_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSREADLIB_LDADD)
-adios_staged_read_2vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
+adios_staged_read_2vars_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSLIB_LDADD)
+adios_staged_read_2vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+adios_transforms_read_write_SOURCES = adios_transforms_read_write.c
+adios_transforms_read_write_LDADD = $(top_builddir)/src/libadios.a $(top_builddir)/src/libadiosread.a $(ADIOSLIB_LDADD)
+adios_transforms_read_write_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
 write_read_SOURCES = write_read.c
 write_read_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 write_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 write_alternate_SOURCES = write_alternate.c
 write_alternate_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 write_alternate_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+set_path_SOURCES = set_path.c
+set_path_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+set_path_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+set_path_var_SOURCES = set_path_var.c
+set_path_var_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+set_path_var_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 two_groups_SOURCES = two_groups.c
 two_groups_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 two_groups_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
@@ -501,12 +622,38 @@ many_vars_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 selections_SOURCES = selections.c
 selections_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 selections_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+path_test_SOURCES = path_test.c
+path_test_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+path_test_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+reuse_dim_SOURCES = reuse_dim.c
+reuse_dim_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+reuse_dim_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 connect_to_space_subset_SOURCES = connect_to_space_subset.c
 connect_to_space_subset_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 connect_to_space_subset_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+transforms_SOURCES = transforms.c
+transforms_CPPFLAGS = -DADIOS_USE_READ_API_1
+transforms_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+transforms_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+#transforms.o: transforms.c
+copy_subvolume_SOURCES = copy_subvolume.c
+copy_subvolume_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+copy_subvolume_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+copy_subvolume_CPPFLAGS = -I$(top_srcdir)/src
+#copy_subvolume.o: copy_subvolume.c
+transforms_specparse_SOURCES = transforms_specparse.c
+transforms_specparse_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+transforms_specparse_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+transforms_specparse_CPPFLAGS = -I$(top_srcdir)/src
+#transforms_specparse.o: transforms_specparse.c
+hashtest_SOURCES = hashtest.c
+hashtest_LDADD = $(top_builddir)/src/libadios_a-qhashtbl.o
+hashtest_LDFLAGS = $(AM_LDFLAGS) 
+hashtest_CPPFLAGS = -I$(top_srcdir)/src
 EXTRA_DIST = adios_amr_write.xml adios_amr_write_2vars.xml \
              posix_method.xml local_array_time.xml  \
-             write_alternate.xml write_read.xml
+             write_alternate.xml write_read.xml transforms.xml \
+             path_test.xml adios_transforms.xml
 
 CLEANFILES = gwrite_posix_method.fh gread_posix_method.fh 
 FCLINK = \
@@ -571,21 +718,45 @@ adios_staged_read_2vars$(EXEEXT): $(adios_staged_read_2vars_OBJECTS) $(adios_sta
 adios_staged_read_v2$(EXEEXT): $(adios_staged_read_v2_OBJECTS) $(adios_staged_read_v2_DEPENDENCIES) 
 	@rm -f adios_staged_read_v2$(EXEEXT)
 	$(adios_staged_read_v2_LINK) $(adios_staged_read_v2_OBJECTS) $(adios_staged_read_v2_LDADD) $(LIBS)
+adios_transforms_read_write$(EXEEXT): $(adios_transforms_read_write_OBJECTS) $(adios_transforms_read_write_DEPENDENCIES) 
+	@rm -f adios_transforms_read_write$(EXEEXT)
+	$(adios_transforms_read_write_LINK) $(adios_transforms_read_write_OBJECTS) $(adios_transforms_read_write_LDADD) $(LIBS)
 connect_to_space_subset$(EXEEXT): $(connect_to_space_subset_OBJECTS) $(connect_to_space_subset_DEPENDENCIES) 
 	@rm -f connect_to_space_subset$(EXEEXT)
 	$(connect_to_space_subset_LINK) $(connect_to_space_subset_OBJECTS) $(connect_to_space_subset_LDADD) $(LIBS)
+copy_subvolume$(EXEEXT): $(copy_subvolume_OBJECTS) $(copy_subvolume_DEPENDENCIES) 
+	@rm -f copy_subvolume$(EXEEXT)
+	$(copy_subvolume_LINK) $(copy_subvolume_OBJECTS) $(copy_subvolume_LDADD) $(LIBS)
+hashtest$(EXEEXT): $(hashtest_OBJECTS) $(hashtest_DEPENDENCIES) 
+	@rm -f hashtest$(EXEEXT)
+	$(hashtest_LINK) $(hashtest_OBJECTS) $(hashtest_LDADD) $(LIBS)
 local_array_time$(EXEEXT): $(local_array_time_OBJECTS) $(local_array_time_DEPENDENCIES) 
 	@rm -f local_array_time$(EXEEXT)
 	$(local_array_time_LINK) $(local_array_time_OBJECTS) $(local_array_time_LDADD) $(LIBS)
 many_vars$(EXEEXT): $(many_vars_OBJECTS) $(many_vars_DEPENDENCIES) 
 	@rm -f many_vars$(EXEEXT)
 	$(many_vars_LINK) $(many_vars_OBJECTS) $(many_vars_LDADD) $(LIBS)
+path_test$(EXEEXT): $(path_test_OBJECTS) $(path_test_DEPENDENCIES) 
+	@rm -f path_test$(EXEEXT)
+	$(path_test_LINK) $(path_test_OBJECTS) $(path_test_LDADD) $(LIBS)
 posix_method$(EXEEXT): $(posix_method_OBJECTS) $(posix_method_DEPENDENCIES) 
 	@rm -f posix_method$(EXEEXT)
 	$(posix_method_LINK) $(posix_method_OBJECTS) $(posix_method_LDADD) $(LIBS)
+reuse_dim$(EXEEXT): $(reuse_dim_OBJECTS) $(reuse_dim_DEPENDENCIES) 
+	@rm -f reuse_dim$(EXEEXT)
+	$(reuse_dim_LINK) $(reuse_dim_OBJECTS) $(reuse_dim_LDADD) $(LIBS)
 selections$(EXEEXT): $(selections_OBJECTS) $(selections_DEPENDENCIES) 
 	@rm -f selections$(EXEEXT)
 	$(selections_LINK) $(selections_OBJECTS) $(selections_LDADD) $(LIBS)
+set_path$(EXEEXT): $(set_path_OBJECTS) $(set_path_DEPENDENCIES) 
+	@rm -f set_path$(EXEEXT)
+	$(set_path_LINK) $(set_path_OBJECTS) $(set_path_LDADD) $(LIBS)
+set_path_var$(EXEEXT): $(set_path_var_OBJECTS) $(set_path_var_DEPENDENCIES) 
+	@rm -f set_path_var$(EXEEXT)
+	$(set_path_var_LINK) $(set_path_var_OBJECTS) $(set_path_var_LDADD) $(LIBS)
+transforms_specparse$(EXEEXT): $(transforms_specparse_OBJECTS) $(transforms_specparse_DEPENDENCIES) 
+	@rm -f transforms_specparse$(EXEEXT)
+	$(transforms_specparse_LINK) $(transforms_specparse_OBJECTS) $(transforms_specparse_LDADD) $(LIBS)
 two_groups$(EXEEXT): $(two_groups_OBJECTS) $(two_groups_DEPENDENCIES) 
 	@rm -f two_groups$(EXEEXT)
 	$(two_groups_LINK) $(two_groups_OBJECTS) $(two_groups_LDADD) $(LIBS)
@@ -607,10 +778,18 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_staged_read.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_staged_read_2vars.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_staged_read_v2.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_transforms_read_write.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/connect_to_space_subset.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/copy_subvolume-copy_subvolume.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hashtest-hashtest.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/local_array_time.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/many_vars.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/path_test.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reuse_dim.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/selections.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/set_path.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/set_path_var.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transforms_specparse-transforms_specparse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/two_groups.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/write_alternate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/write_read.Po@am__quote@
@@ -644,6 +823,48 @@ distclean-compile:
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	source='$<' object='$@' libtool=yes @AMDEPBACKSLASH@
 @AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
 @am__fastdepCC_FALSE@	$(LTCOMPILE) -c -o $@ $<
+
+copy_subvolume-copy_subvolume.o: copy_subvolume.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(copy_subvolume_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT copy_subvolume-copy_subvolume.o -MD -MP -MF $(DEPDIR)/copy_subvolume-copy_subvolume.Tpo -c -o copy_subvolume-copy_subvolume.o `test -f 'copy_subvolume.c' || echo '$(srcdir)/'`copy_subvolume.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/copy_subvolume-copy_subvolume.Tpo $(DEPDIR)/copy_subvolume-copy_subvolume.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='copy_subvolume.c' object='copy_subvolume-copy_subvolume.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(copy_subvolume_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o copy_subvolume-copy_subvolume.o `test -f 'copy_subvolume.c' || echo '$(srcdir)/'`copy_subvolume.c
+
+copy_subvolume-copy_subvolume.obj: copy_subvolume.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(copy_subvolume_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT copy_subvolume-copy_subvolume.obj -MD -MP -MF $(DEPDIR)/copy_subvolume-copy_subvolume.Tpo -c -o copy_subvolume-copy_subvolume.obj `if test -f 'copy_subvolume.c'; then $(CYGPATH_W) 'copy_subvolume.c'; else $(CYGPATH_W) '$(srcdir)/copy_subvolume.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/copy_subvolume-copy_subvolume.Tpo $(DEPDIR)/copy_subvolume-copy_subvolume.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='copy_subvolume.c' object='copy_subvolume-copy_subvolume.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(copy_subvolume_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o copy_subvolume-copy_subvolume.obj `if test -f 'copy_subvolume.c'; then $(CYGPATH_W) 'copy_subvolume.c'; else $(CYGPATH_W) '$(srcdir)/copy_subvolume.c'; fi`
+
+hashtest-hashtest.o: hashtest.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hashtest_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT hashtest-hashtest.o -MD -MP -MF $(DEPDIR)/hashtest-hashtest.Tpo -c -o hashtest-hashtest.o `test -f 'hashtest.c' || echo '$(srcdir)/'`hashtest.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/hashtest-hashtest.Tpo $(DEPDIR)/hashtest-hashtest.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='hashtest.c' object='hashtest-hashtest.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hashtest_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o hashtest-hashtest.o `test -f 'hashtest.c' || echo '$(srcdir)/'`hashtest.c
+
+hashtest-hashtest.obj: hashtest.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hashtest_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT hashtest-hashtest.obj -MD -MP -MF $(DEPDIR)/hashtest-hashtest.Tpo -c -o hashtest-hashtest.obj `if test -f 'hashtest.c'; then $(CYGPATH_W) 'hashtest.c'; else $(CYGPATH_W) '$(srcdir)/hashtest.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/hashtest-hashtest.Tpo $(DEPDIR)/hashtest-hashtest.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='hashtest.c' object='hashtest-hashtest.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(hashtest_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o hashtest-hashtest.obj `if test -f 'hashtest.c'; then $(CYGPATH_W) 'hashtest.c'; else $(CYGPATH_W) '$(srcdir)/hashtest.c'; fi`
+
+transforms_specparse-transforms_specparse.o: transforms_specparse.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(transforms_specparse_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT transforms_specparse-transforms_specparse.o -MD -MP -MF $(DEPDIR)/transforms_specparse-transforms_specparse.Tpo -c -o transforms_specparse-transforms_specparse.o `test -f 'transforms_specparse.c' || echo '$(srcdir)/'`transforms_specparse.c
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/transforms_specparse-transforms_specparse.Tpo $(DEPDIR)/transforms_specparse-transforms_specparse.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='transforms_specparse.c' object='transforms_specparse-transforms_specparse.o' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(transforms_specparse_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o transforms_specparse-transforms_specparse.o `test -f 'transforms_specparse.c' || echo '$(srcdir)/'`transforms_specparse.c
+
+transforms_specparse-transforms_specparse.obj: transforms_specparse.c
+@am__fastdepCC_TRUE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(transforms_specparse_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -MT transforms_specparse-transforms_specparse.obj -MD -MP -MF $(DEPDIR)/transforms_specparse-transforms_specparse.Tpo -c -o transforms_specparse-transforms_specparse.obj `if test -f 'transforms_specparse.c'; then $(CYGPATH_W) 'transforms_specparse.c'; else $(CYGPATH_W) '$(srcdir)/transforms_specparse.c'; fi`
+@am__fastdepCC_TRUE@	$(am__mv) $(DEPDIR)/transforms_specparse-transforms_specparse.Tpo $(DEPDIR)/transforms_specparse-transforms_specparse.Po
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	source='transforms_specparse.c' object='transforms_specparse-transforms_specparse.obj' libtool=no @AMDEPBACKSLASH@
+@AMDEP_TRUE@@am__fastdepCC_FALSE@	DEPDIR=$(DEPDIR) $(CCDEPMODE) $(depcomp) @AMDEPBACKSLASH@
+@am__fastdepCC_FALSE@	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(transforms_specparse_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o transforms_specparse-transforms_specparse.obj `if test -f 'transforms_specparse.c'; then $(CYGPATH_W) 'transforms_specparse.c'; else $(CYGPATH_W) '$(srcdir)/transforms_specparse.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -829,7 +1050,7 @@ check-am: all-am
 	$(MAKE) $(AM_MAKEFLAGS) $(check_PROGRAMS)
 	$(MAKE) $(AM_MAKEFLAGS) check-TESTS
 check: check-am
-all-am: Makefile
+all-am: Makefile all-local
 installdirs:
 install: install-am
 install-exec: install-exec-am
@@ -930,8 +1151,8 @@ uninstall-am:
 
 .MAKE: check-am install-am install-strip
 
-.PHONY: CTAGS GTAGS all all-am check check-TESTS check-am clean \
-	clean-checkPROGRAMS clean-generic clean-libtool ctags \
+.PHONY: CTAGS GTAGS all all-am all-local check check-TESTS check-am \
+	clean clean-checkPROGRAMS clean-generic clean-libtool ctags \
 	distclean distclean-compile distclean-generic \
 	distclean-libtool distclean-tags distdir dvi dvi-am html \
 	html-am info info-am install install-am install-data \
@@ -944,20 +1165,29 @@ uninstall-am:
 	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
 	tags uninstall uninstall-am
 
+
+all-local:
+	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
 posix_method.o: gwrite_posix_method.fh 
 gwrite_posix_method.fh: posix_method.xml
-	$(top_srcdir)/utils/gpp/gpp.py posix_method.xml
+	$(top_builddir)/utils/gpp/gpp.py $(srcdir)/posix_method.xml
 adios_amr_write.o: adios_amr_write.c
 adios_amr_write_2vars.o: adios_amr_write_2vars.c
 adios_staged_read.o: adios_staged_read.c
 adios_staged_read_v2.o: adios_staged_read_v2.c
 adios_staged_read_2vars.o: adios_staged_read_2vars.c
+adios_transforms_read_write.o: adios_transforms_read_write.c 
 write_read.o: write_read.c
 write_alternate.o: write_alternate.c
+set_path.o: set_path.c
+set_path_var.o: set_path_var.c
 two_groups.o: two_groups.c
 many_vars.o: many_vars.c
 selections.o: selections.c
+path_test.o: path_test.c
+reuse_dim.o: reuse_dim.c
 connect_to_space_subset.o: connect_to_space_subset.c
+hashtest.o: hashtest.c
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

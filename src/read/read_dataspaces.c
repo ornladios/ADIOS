@@ -983,6 +983,8 @@ ADIOS_VARINFO * adios_read_dataspaces_inq_var_byid (const ADIOS_FILE *fp, int va
     struct dataspaces_data_struct * ds = (struct dataspaces_data_struct *) fp->fh;
     struct dataspaces_var_struct * vars = ds->vars;
     ADIOS_VARINFO * vi;
+    int i;
+    int datasize;
 
     if (varid < 0 || varid > fp->nvars) {
         adios_error (err_invalid_varid, "Stream %s has %d variables. Invalid variable id %d\n",
@@ -998,14 +1000,32 @@ ADIOS_VARINFO * adios_read_dataspaces_inq_var_byid (const ADIOS_FILE *fp, int va
 
     vi->varid = varid;
     vi->type = vars[varid].type;
-    vi->ndim = vars[varid].ndims;
-    vi->dims = vars[varid].dims;
     vi->nsteps = 1;
-    vi->value = vars[varid].value;
+
+    /* Copy the dimensions (adios_free_varinfo() will free the copy */
+    vi->ndim = vars[varid].ndims;
+    if (vi->ndim) {
+        vi->dims = (uint64_t *) malloc (vi->ndim*sizeof(uint64_t));
+        memcpy (vi->dims, vars[varid].dims, vi->ndim*sizeof(uint64_t));
+    } else {
+        vi->dims = NULL;
+    }
+
+    /* Copy the value */
+    if (vars[varid].value) {
+        datasize = common_read_type_size(vi->type, vars[varid].value);
+        vi->value = (void *) malloc (datasize);
+        memcpy (vi->value, vars[varid].value, datasize);
+    } else {
+        vi->value = NULL;
+    }
+
     vi->global = 1;
     vi->nblocks = (int *) malloc (sizeof(int));
     vi->nblocks[0] = 1;
     vi->sum_nblocks = vi->nblocks[0];
+    vi->statistics = NULL;
+    vi->blockinfo = NULL;
     
     return vi;
 }
@@ -1026,6 +1046,16 @@ int adios_read_dataspaces_inq_var_stat (const ADIOS_FILE *fp, ADIOS_VARINFO * va
     return 0;
 }
 
+ADIOS_TRANSINFO* adios_read_dataspaces_inq_var_transinfo(const ADIOS_FILE *gp, const ADIOS_VARINFO *vi)
+{
+    ADIOS_TRANSINFO *trans = malloc(sizeof(ADIOS_TRANSINFO));
+    memset(trans, 0, sizeof(ADIOS_TRANSINFO));
+    trans->transform_type = adios_transform_none;
+    return trans;
+}
+
+
+
 int adios_read_dataspaces_inq_var_blockinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
 {
     /* FIXME: return the actual block decomposition by the writers
@@ -1040,6 +1070,12 @@ int adios_read_dataspaces_inq_var_blockinfo (const ADIOS_FILE *fp, ADIOS_VARINFO
         varinfo->blockinfo->start[i] = 0;
         varinfo->blockinfo->count[i] = ds->vars[varinfo->varid].dims[i];
     }
+    return 0;
+}
+
+int adios_read_dataspaces_inq_var_trans_blockinfo(const ADIOS_FILE *gp, const ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti)
+{
+    adios_error(err_operation_not_supported, "DataSpaces does not yet support transforms: trans_blockinfo.\n");
     return 0;
 }
 

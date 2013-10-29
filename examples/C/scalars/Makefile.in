@@ -37,9 +37,12 @@ host_triplet = @host@
 noinst_PROGRAMS = scalars_write$(EXEEXT) scalars_read$(EXEEXT) \
 	scalars_write_step$(EXEEXT)
 subdir = examples/C/scalars
-DIST_COMMON = README $(srcdir)/Makefile.am $(srcdir)/Makefile.in
+DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/config/ac_cray_pmi.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/config/ac_alacrity.m4 \
+	$(top_srcdir)/config/ac_aplod.m4 \
+	$(top_srcdir)/config/ac_bzip2.m4 \
+	$(top_srcdir)/config/ac_cray_pmi.m4 \
 	$(top_srcdir)/config/ac_cray_ugni.m4 \
 	$(top_srcdir)/config/ac_dataspaces.m4 \
 	$(top_srcdir)/config/ac_datatap.m4 \
@@ -49,14 +52,18 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_cray_pmi.m4 \
 	$(top_srcdir)/config/ac_flexpath.m4 \
 	$(top_srcdir)/config/ac_hdf5.m4 \
 	$(top_srcdir)/config/ac_infiniband.m4 \
+	$(top_srcdir)/config/ac_isobar.m4 \
 	$(top_srcdir)/config/ac_lustre.m4 \
 	$(top_srcdir)/config/ac_mxml.m4 \
 	$(top_srcdir)/config/ac_nc4par.m4 \
+	$(top_srcdir)/config/ac_ncsu_timer.m4 \
 	$(top_srcdir)/config/ac_netcdf.m4 \
 	$(top_srcdir)/config/ac_nssi.m4 \
 	$(top_srcdir)/config/ac_pablo.m4 \
 	$(top_srcdir)/config/ac_phdf5.m4 \
 	$(top_srcdir)/config/ac_portals.m4 \
+	$(top_srcdir)/config/ac_szip.m4 \
+	$(top_srcdir)/config/ac_zlib.m4 \
 	$(top_srcdir)/config/acx_mpi.m4 \
 	$(top_srcdir)/config/acx_pthread.m4 \
 	$(top_srcdir)/config/cercs.m4 $(top_srcdir)/configure.ac
@@ -70,7 +77,7 @@ PROGRAMS = $(noinst_PROGRAMS)
 am_scalars_read_OBJECTS = scalars_read.$(OBJEXT)
 scalars_read_OBJECTS = $(am_scalars_read_OBJECTS)
 am__DEPENDENCIES_1 =
-scalars_read_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+scalars_read_DEPENDENCIES = $(top_builddir)/src/libadiosread.a \
 	$(am__DEPENDENCIES_1)
 scalars_read_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
@@ -130,12 +137,21 @@ ADIOSREADLIB_SEQ_CFLAGS = @ADIOSREADLIB_SEQ_CFLAGS@
 ADIOSREADLIB_SEQ_CPPFLAGS = @ADIOSREADLIB_SEQ_CPPFLAGS@
 ADIOSREADLIB_SEQ_LDADD = @ADIOSREADLIB_SEQ_LDADD@
 ADIOSREADLIB_SEQ_LDFLAGS = @ADIOSREADLIB_SEQ_LDFLAGS@
+ALACRITY_CPPFLAGS = @ALACRITY_CPPFLAGS@
+ALACRITY_LDFLAGS = @ALACRITY_LDFLAGS@
+ALACRITY_LIBS = @ALACRITY_LIBS@
 AMTAR = @AMTAR@
+APLOD_CPPFLAGS = @APLOD_CPPFLAGS@
+APLOD_LDFLAGS = @APLOD_LDFLAGS@
+APLOD_LIBS = @APLOD_LIBS@
 AR = @AR@
 AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BZIP2_CPPFLAGS = @BZIP2_CPPFLAGS@
+BZIP2_LDFLAGS = @BZIP2_LDFLAGS@
+BZIP2_LIBS = @BZIP2_LIBS@
 CC = $(MPICC)
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -198,6 +214,9 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
+ISOBAR_CPPFLAGS = @ISOBAR_CPPFLAGS@
+ISOBAR_LDFLAGS = @ISOBAR_LDFLAGS@
+ISOBAR_LIBS = @ISOBAR_LIBS@
 LD = @LD@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
@@ -270,7 +289,16 @@ SHELL = @SHELL@
 SKEL_HAVE_ADIOS_TIMING = @SKEL_HAVE_ADIOS_TIMING@
 SKEL_TIMING = @SKEL_TIMING@
 STRIP = @STRIP@
+SZIP_CPPFLAGS = @SZIP_CPPFLAGS@
+SZIP_LDFLAGS = @SZIP_LDFLAGS@
+SZIP_LIBS = @SZIP_LIBS@
+TIMER_CPPFLAGS = @TIMER_CPPFLAGS@
+TIMER_LDFLAGS = @TIMER_LDFLAGS@
+TIMER_LIBS = @TIMER_LIBS@
 VERSION = @VERSION@
+ZLIB_CPPFLAGS = @ZLIB_CPPFLAGS@
+ZLIB_LDFLAGS = @ZLIB_LDFLAGS@
+ZLIB_LIBS = @ZLIB_LIBS@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -325,15 +353,16 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-INCLUDES = $(all_includes) -I$(top_builddir)/src \
-	-I$(top_builddir)/src/public
+INCLUDES = $(all_includes) -I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/public
 AUTOMAKE_OPTIONS = no-dependencies
 scalars_write_SOURCES = scalars_write.c
 scalars_write_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 scalars_write_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 scalars_read_SOURCES = scalars_read.c
-scalars_read_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-scalars_read_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+scalars_read_LDADD = $(top_builddir)/src/libadiosread.a \
+	$(ADIOSREADLIB_LDADD)
+scalars_read_LDFLAGS = $(ADIOSREADLIB_LDFLAGS)
 scalars_write_step_SOURCES = scalars_write.c
 scalars_write_step_LDADD = $(top_builddir)/src/libadios.a \
 	$(ADIOSLIB_LDADD)
@@ -498,7 +527,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS)
+all-am: Makefile $(PROGRAMS) all-local
 installdirs:
 install: install-am
 install-exec: install-exec-am
@@ -597,19 +626,23 @@ uninstall-am:
 
 .MAKE: install-am install-strip
 
-.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libtool clean-noinstPROGRAMS ctags distclean \
-	distclean-compile distclean-generic distclean-libtool \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
-	pdf pdf-am ps ps-am tags uninstall uninstall-am
+.PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
+	clean-generic clean-libtool clean-noinstPROGRAMS ctags \
+	distclean distclean-compile distclean-generic \
+	distclean-libtool distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-man install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	tags uninstall uninstall-am
 
+
+all-local:
+	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -19,6 +19,14 @@
 extern "C" {
 #endif
 
+/* Most functions return 0 if OK, and !=0 on error 
+   which is the value of the variable 'adios_errno'.
+   On error, one can use char * adios_get_last_errmsg() from adios_error.h
+   to retrieve the error string of the last error. 
+
+   exceptions: int64_t adios_define_var() returns a variable ID, 0 indicates an error
+*/
+
 // Global setup using the XML file
 // Only processes of the provided communicator can later participate
 // in any adios activity
@@ -54,8 +62,13 @@ int adios_read (int64_t fd_p,
                 uint64_t buffer_size
                );
 
+// OBSOLETE, kept only for backward compatibility of old codes
+// Inconsistent behavior with new ADIOS variable naming
 int adios_set_path (int64_t fd_p, const char * path);
-
+// OBSOLETE, kept only for backward compatibility of old codes
+// name should be the full path of the variable (as it was defined)
+// in adios_write(), still the OLD full path should be used otherwise
+// the variable is not found in the hash table
 int adios_set_path_var (int64_t fd_p, const char * path, const char * name);
 
 int adios_end_iteration (void);
@@ -93,6 +106,8 @@ int adios_select_method (int64_t group,
                         );
 
 // To define a ADIOS variable
+// Returns a variable ID, which can be used in adios_write_byid()
+// 0 return value indicates an error
 int64_t adios_define_var (int64_t group_id, 
                           const char * name,
                           const char * path,

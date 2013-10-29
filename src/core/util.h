@@ -34,7 +34,9 @@ void copy_data (void *dst, void *src,
                 uint64_t dst_offset,
                 uint64_t src_offset,
                 uint64_t ele_num,
-                int      size_of_type
+                int      size_of_type,
+                enum ADIOS_FLAG change_endiness,
+                enum ADIOS_DATATYPES type
                 );
 void alloc_namelist (char ***namelist, int length);
 void free_namelist (char **namelist, int length);
@@ -74,5 +76,7 @@ void free_name_value_pairs (PairStruct * pairs);
 void adios_nanosleep (int sec, int nanosec);
 /* get current time as double (in seconds) */
 double adios_gettime();
+
+void * bufdup(const void *buf, uint64_t elem_size, uint64_t count);
 
 #endif

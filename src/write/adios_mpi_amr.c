@@ -84,9 +84,7 @@ struct adios_MPI_data_struct
 
     struct adios_bp_buffer_struct_v1 b;
 
-    struct adios_index_process_group_struct_v1 * old_pg_root;
-    struct adios_index_var_struct_v1 * old_vars_root;
-    struct adios_index_attribute_struct_v1 * old_attrs_root;
+    struct adios_index_struct_v1 * index;
 
     uint64_t vars_start;
     uint64_t vars_header_size;
@@ -675,10 +673,11 @@ void adios_mpi_amr_append_var (struct adios_file_struct * fd, struct adios_var_s
 
 void adios_mpi_amr_add_offset (uint64_t var_offset_to_add
                               ,uint64_t attr_offset_to_add
-                              ,struct adios_index_var_struct_v1 * vars_root
-                              ,struct adios_index_attribute_struct_v1 * attrs_root
+                              ,struct adios_index_struct_v1 * index
                               )
 {
+    struct adios_index_var_struct_v1 * vars_root = index->vars_root;
+    struct adios_index_attribute_struct_v1 * attrs_root = index->attrs_root;
     while (vars_root)
     {
         vars_root->characteristics [0].offset += var_offset_to_add;
@@ -696,10 +695,11 @@ void adios_mpi_amr_add_offset (uint64_t var_offset_to_add
 
 void adios_mpi_amr_subtract_offset (uint64_t var_offset_to_subtract
                                     ,uint64_t attr_offset_to_subtract
-                                    ,struct adios_index_var_struct_v1 * vars_root
-                                    ,struct adios_index_attribute_struct_v1 * attrs_root
+                                    ,struct adios_index_struct_v1 * index
                                     )
 {
+    struct adios_index_var_struct_v1 * vars_root = index->vars_root;
+    struct adios_index_attribute_struct_v1 * attrs_root = index->attrs_root;
     while (vars_root)
     {
         vars_root->characteristics [0].offset -= var_offset_to_subtract;
@@ -717,11 +717,12 @@ void adios_mpi_amr_subtract_offset (uint64_t var_offset_to_subtract
 
 
 void adios_mpi_amr_build_global_index_v1 (char * fname
-                                          ,struct adios_index_process_group_struct_v1 * pg_root
-                                          ,struct adios_index_var_struct_v1 * vars_root
-                                          ,struct adios_index_attribute_struct_v1 * attrs_root
+                                         ,struct adios_index_struct_v1 * index
                                           )
 {
+    struct adios_index_process_group_struct_v1 * pg_root = index->pg_root;
+    struct adios_index_var_struct_v1 * vars_root = index->vars_root;
+    struct adios_index_attribute_struct_v1 * attrs_root = index->attrs_root;
     int len;
     char * s;
 
@@ -838,9 +839,7 @@ void adios_mpi_amr_init (const PairStruct * parameters
     md->rank = 0;
     md->size = 0;
     md->group_comm = method->init_comm; //unused, adios_open sets current comm
-    md->old_pg_root = 0;
-    md->old_vars_root = 0;
-    md->old_attrs_root = 0;
+    md->index = adios_alloc_index_v1(1); // with hashtables
     md->vars_start = 0;
     md->vars_header_size = 0;
 
@@ -911,9 +910,10 @@ int adios_mpi_amr_open (struct adios_file_struct * fd
 static
 void build_offsets (struct adios_bp_buffer_struct_v1 * b
                    ,MPI_Offset * offsets, uint64_t size, char * group_name
-                   ,struct adios_index_process_group_struct_v1 * pg_root
+                   ,struct adios_index_struct_v1 * index
                    )
 {
+    struct adios_index_process_group_struct_v1 * pg_root = index->pg_root;
     while (pg_root)
     {
         if (!strcasecmp (pg_root->group_name, group_name))
@@ -1193,7 +1193,7 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                                   ,&md->status
                                   );
                     adios_parse_process_group_index_v1 (&md->b
-                                                       ,&md->old_pg_root
+                                                       ,&md->index->pg_root
                                                        );
 
                     adios_init_buffer_read_vars_index (&md->b);
@@ -1203,7 +1203,9 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                     MPI_File_read (md->fh, md->b.buff, md->b.vars_size, MPI_BYTE
                                   ,&md->status
                                   );
-                    adios_parse_vars_index_v1 (&md->b, &md->old_vars_root);
+                    adios_parse_vars_index_v1 (&md->b, &md->index->vars_root, 
+                                               md->index->hashtbl_vars,
+                                               &md->index->vars_tail);
 
                     adios_init_buffer_read_attributes_index (&md->b);
                     MPI_File_seek (md->fh, md->b.attrs_index_offset
@@ -1213,7 +1215,7 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                                   ,MPI_BYTE, &md->status
                                   );
                     adios_parse_attributes_index_v1 (&md->b
-                                                    ,&md->old_attrs_root
+                                                    ,&md->index->attrs_root
                                                     );
 
                     fd->base_offset = md->b.end_of_pgs;
@@ -2088,9 +2090,7 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
             }
 
             // build index appending to any existing index
-            adios_build_index_v1 (fd, &md->old_pg_root, &md->old_vars_root
-                                 ,&md->old_attrs_root
-                                 );
+            adios_build_index_v1 (fd, md->index);
 
             if (fd->shared_buffer == adios_flag_yes && !md->g_merging_pgs)
             {
@@ -2100,14 +2100,14 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                     uint64_t var_base_offset = 0, attr_base_offset = 0;
 
                     // change to relative offset
-                    if (md->old_vars_root)
+                    if (md->index->vars_root)
                     {
-                        var_base_offset = md->old_vars_root->characteristics [0].offset;
+                        var_base_offset = md->index->vars_root->characteristics [0].offset;
                     }
 
-                    if (md->old_attrs_root)
+                    if (md->index->attrs_root)
                     {
-                        attr_base_offset = md->old_attrs_root->characteristics [0].offset;
+                        attr_base_offset = md->index->attrs_root->characteristics [0].offset;
                     }
 
                     for (i = 0; i < new_rank; i++)
@@ -2118,8 +2118,7 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
 
                     adios_mpi_amr_add_offset (var_offset_to_add
                                              ,attr_offset_to_add
-                                             ,md->old_vars_root
-                                             ,md->old_attrs_root
+                                             ,md->index
                                              );
                 }
 
@@ -2175,19 +2174,15 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                         adios_parse_process_group_index_v1 (&md->b
                                                            ,&new_pg_root
                                                            );
-                        adios_parse_vars_index_v1 (&md->b, &new_vars_root);
+                        adios_parse_vars_index_v1 (&md->b, &new_vars_root, NULL, NULL);
                         adios_parse_attributes_index_v1 (&md->b
                                                         ,&new_attrs_root
                                                         );
                         if (md->g_merging_pgs)
                             new_pg_root = 0;
 
-                        adios_merge_index_v1 (&md->old_pg_root
-                                             ,&md->old_vars_root
-                                             ,&md->old_attrs_root
-                                             ,new_pg_root, new_vars_root
-                                             ,new_attrs_root
-                                             );
+                        adios_merge_index_v1 (md->index, new_pg_root, 
+                                              new_vars_root, new_attrs_root);
                         new_pg_root = 0;
                         new_vars_root = 0;
                         new_attrs_root = 0;
@@ -2204,10 +2199,7 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                 else
                 {
                     adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
-                                         ,0, md->old_pg_root
-                                         ,md->old_vars_root
-                                         ,md->old_attrs_root
-                                         );
+                                         ,0, md->index);
 
                     START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
                     MPI_Gather (&buffer_size, 1, MPI_INT, 0, 0, MPI_INT
@@ -2229,10 +2221,7 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
 
                 adios_write_index_v1 (&buffer, &buffer_size
                                      ,&buffer_offset, index_start
-                                     ,md->old_pg_root
-                                     ,md->old_vars_root
-                                     ,md->old_attrs_root
-                                     );
+                                     ,md->index);
 
                 adios_write_version_flag_v1 (&buffer, &buffer_size, &buffer_offset, flag);
 
@@ -2307,17 +2296,13 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                         adios_parse_process_group_index_v1 (&md->b
                                                            ,&new_pg_root
                                                            );
-                        adios_parse_vars_index_v1 (&md->b, &new_vars_root);
+                        adios_parse_vars_index_v1 (&md->b, &new_vars_root, NULL, NULL);
                         adios_parse_attributes_index_v1 (&md->b
                                                         ,&new_attrs_root
                                                         );
 
-                        adios_merge_index_v1 (&md->old_pg_root
-                                             ,&md->old_vars_root
-                                             ,&md->old_attrs_root
-                                             ,new_pg_root, new_vars_root
-                                             ,new_attrs_root
-                                             );
+                        adios_merge_index_v1 (md->index, new_pg_root, 
+                                              new_vars_root, new_attrs_root);
                         new_pg_root = 0;
                         new_vars_root = 0;
                         new_attrs_root = 0;
@@ -2338,10 +2323,7 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                     uint64_t buffer_offset2 = 0;
 
                     adios_write_index_v1 (&buffer2, &buffer_size2, &buffer_offset2
-                                         ,0, md->old_pg_root
-                                         ,md->old_vars_root
-                                         ,md->old_attrs_root
-                                         );
+                                         ,0, md->index);
 
                     START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
                     MPI_Gather (&buffer_size2, 1, MPI_INT
@@ -2376,7 +2358,7 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
 
                 adios_write_index_v1 (&global_index_buffer, &global_index_buffer_size
                                      ,&global_index_buffer_offset, global_index_start
-                                     ,md->old_pg_root, md->old_vars_root, md->old_attrs_root
+                                     ,md->index
                                      );
 
                 flag |= ADIOS_VERSION_HAVE_SUBFILE;
@@ -2419,16 +2401,6 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
             buffer_size = 0;
             buffer_offset = 0;
 
-            adios_clear_index_v1 (new_pg_root, new_vars_root, new_attrs_root);
-            adios_clear_index_v1 (md->old_pg_root, md->old_vars_root
-                                 ,md->old_attrs_root
-                                 );
-            new_pg_root = 0;
-            new_vars_root = 0;
-            new_attrs_root = 0;
-            md->old_pg_root = 0;
-            md->old_vars_root = 0;
-            md->old_attrs_root = 0;
 
             md->g_num_aggregators = 0;
             md->g_color1 = 0;
@@ -2462,6 +2434,7 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
     md->req = 0;
     memset (&md->status, 0, sizeof (MPI_Status));
 
+    adios_clear_index_v1 (md->index);
     return;
 }
 
@@ -2983,9 +2956,7 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
             }
 
             // build index appending to any existing index
-            adios_build_index_v1 (fd, &md->old_pg_root, &md->old_vars_root
-                                 ,&md->old_attrs_root
-                                 );
+            adios_build_index_v1 (fd, md->index);
 
             if (fd->shared_buffer == adios_flag_yes && !md->g_merging_pgs)
             {
@@ -2995,20 +2966,19 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                     uint64_t var_base_offset = 0, attr_base_offset = 0;
 
                     // change to relative offset
-                    if (md->old_vars_root)
+                    if (md->index->vars_root)
                     {
-                        var_base_offset = md->old_vars_root->characteristics [0].offset;
+                        var_base_offset = md->index->vars_root->characteristics [0].offset;
                     }
 
-                    if (md->old_attrs_root)
+                    if (md->index->attrs_root)
                     {
-                        attr_base_offset = md->old_attrs_root->characteristics [0].offset;
+                        attr_base_offset = md->index->attrs_root->characteristics [0].offset;
                     }
 /*
                     adios_mpi_amr_subtract_offset (var_base_offset
                                                    ,var_base_offset
-                                                   ,md->old_vars_root
-                                                   ,md->old_attrs_root
+                                                   ,md->index
                                                    );
 */
 
@@ -3020,8 +2990,7 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
 
                     adios_mpi_amr_add_offset (var_offset_to_add
                                               ,attr_offset_to_add
-                                              ,md->old_vars_root
-                                              ,md->old_attrs_root
+                                              ,md->index
                                               );
                 }
 
@@ -3038,20 +3007,19 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                     uint64_t var_base_offset = 0, attr_base_offset = 0; 
 
                     // change to relative offset
-                    if (md->old_vars_root)
+                    if (md->index->vars_root)
                     {
-                        var_base_offset = md->old_vars_root->characteristics [0].offset;
+                        var_base_offset = md->index->vars_root->characteristics [0].offset;
                     }
 
-                    if (md->old_attrs_root)
+                    if (md->index->attrs_root)
                     { 
-                        attr_base_offset = md->old_attrs_root->characteristics [0].offset;
+                        attr_base_offset = md->index->attrs_root->characteristics [0].offset;
                     }
 
                     adios_mpi_amr_subtract_offset (var_base_offset
                                                    ,attr_base_offset
-                                                   ,md->old_vars_root
-                                                   ,md->old_attrs_root
+                                                   ,md->index
                                                    );
 
                     for (i = 0; i < new_group_size; i++)
@@ -3067,8 +3035,7 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
 
                     adios_mpi_amr_add_offset (var_offset_to_add
                                               ,attr_offset_to_add
-                                              ,md->old_vars_root
-                                              ,md->old_attrs_root
+                                              ,md->index
                                               );
                 }
 
@@ -3125,19 +3092,15 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                         adios_parse_process_group_index_v1 (&md->b
                                                            ,&new_pg_root
                                                            );
-                        adios_parse_vars_index_v1 (&md->b, &new_vars_root);
+                        adios_parse_vars_index_v1 (&md->b, &new_vars_root, NULL, NULL);
                         adios_parse_attributes_index_v1 (&md->b
                                                         ,&new_attrs_root
                                                         );
                         if (md->g_merging_pgs)
                             new_pg_root = 0;
 
-                        adios_merge_index_v1 (&md->old_pg_root
-                                             ,&md->old_vars_root
-                                             ,&md->old_attrs_root
-                                             ,new_pg_root, new_vars_root
-                                             ,new_attrs_root
-                                             );
+                        adios_merge_index_v1 (md->index, new_pg_root, 
+                                              new_vars_root, new_attrs_root);
                         new_pg_root = 0;
                         new_vars_root = 0;
                         new_attrs_root = 0;
@@ -3154,10 +3117,7 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                 else
                 {
                     adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
-                                         ,0, md->old_pg_root
-                                         ,md->old_vars_root
-                                         ,md->old_attrs_root
-                                         );
+                                         ,0, md->index);
 
                     START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
                     MPI_Gather (&buffer_size, 1, MPI_INT, 0, 0, MPI_INT
@@ -3189,10 +3149,7 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
 #endif
                 adios_write_index_v1 (&buffer, &buffer_size
                                      ,&buffer_offset, index_start
-                                     ,md->old_pg_root
-                                     ,md->old_vars_root
-                                     ,md->old_attrs_root
-                                     );
+                                     ,md->index);
 //FIXME
                 //adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset, flag);
                 adios_write_version_flag_v1 (&buffer, &buffer_size, &buffer_offset, flag);
@@ -3286,17 +3243,13 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                         adios_parse_process_group_index_v1 (&md->b
                                                            ,&new_pg_root
                                                            );
-                        adios_parse_vars_index_v1 (&md->b, &new_vars_root);
+                        adios_parse_vars_index_v1 (&md->b, &new_vars_root, NULL, NULL);
                         adios_parse_attributes_index_v1 (&md->b
                                                         ,&new_attrs_root
                                                         );
 
-                        adios_merge_index_v1 (&md->old_pg_root
-                                             ,&md->old_vars_root
-                                             ,&md->old_attrs_root
-                                             ,new_pg_root, new_vars_root
-                                             ,new_attrs_root
-                                             );
+                        adios_merge_index_v1 (md->index, new_pg_root, 
+                                              new_vars_root, new_attrs_root);
                         new_pg_root = 0;
                         new_vars_root = 0;
                         new_attrs_root = 0;
@@ -3317,10 +3270,7 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                     uint64_t buffer_offset2 = 0;
 
                     adios_write_index_v1 (&buffer2, &buffer_size2, &buffer_offset2
-                                         ,0, md->old_pg_root
-                                         ,md->old_vars_root
-                                         ,md->old_attrs_root
-                                         );
+                                         ,0, md->index);
 
                     START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
                     MPI_Gather (&buffer_size2, 1, MPI_INT
@@ -3355,7 +3305,7 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
 
                 adios_write_index_v1 (&global_index_buffer, &global_index_buffer_size
                                      ,&global_index_buffer_offset, global_index_start
-                                     ,md->old_pg_root, md->old_vars_root, md->old_attrs_root
+                                     ,md->index
                                      );
 
                 flag |= ADIOS_VERSION_HAVE_SUBFILE;
@@ -3410,17 +3360,6 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
             buffer_size = 0;
             buffer_offset = 0;
 
-            adios_clear_index_v1 (new_pg_root, new_vars_root, new_attrs_root);
-            adios_clear_index_v1 (md->old_pg_root, md->old_vars_root
-                                 ,md->old_attrs_root
-                                 );
-            new_pg_root = 0;
-            new_vars_root = 0;
-            new_attrs_root = 0;
-            md->old_pg_root = 0;
-            md->old_vars_root = 0;
-            md->old_attrs_root = 0;
-
             md->g_num_aggregators = 0;
             md->g_color1 = 0;
             md->g_color2 = 0;
@@ -3459,6 +3398,8 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
     md->mfh = 0;
     md->req = 0;
     memset (&md->status, 0, sizeof (MPI_Status));
+
+    adios_clear_index_v1 (md->index);
 }
 
 void adios_mpi_amr_close (struct adios_file_struct * fd
@@ -3488,7 +3429,10 @@ void adios_mpi_amr_close (struct adios_file_struct * fd
 
 void adios_mpi_amr_finalize (int mype, struct adios_method_struct * method)
 {
-// nothing to do here
+    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
+                                                 method->method_data;
+    adios_free_index_v1 (md->index);
+
     if (adios_mpi_amr_initialized)
         adios_mpi_amr_initialized = 0;
 }

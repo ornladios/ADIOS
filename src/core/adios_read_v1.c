@@ -243,9 +243,11 @@ static ADIOS_VARINFO_V1 * adios_varinfo_to_v1 (ADIOS_GROUP_V1 *gp, ADIOS_VARINFO
 
 
         ADIOS_VARSTAT * stat = NULL;
-        if (getstat)
+        if (getstat) {
             common_read_inq_var_stat ((ADIOS_FILE *)gp->fp->internal_data, 
                                        vi, 1, 0);
+            stat = vi->statistics;
+        }
 
         if (stat) {
             v->characteristics_count;// = stat->characteristics_count; FIXME
@@ -253,19 +255,32 @@ static ADIOS_VARINFO_V1 * adios_varinfo_to_v1 (ADIOS_GROUP_V1 *gp, ADIOS_VARINFO
             v->gmax = stat->max; 
             v->gavg = stat->avg; 
             v->gstd_dev = stat->std_dev;
-            v->mins = stat->steps->mins;
-            v->maxs = stat->steps->maxs;
-            v->avgs = stat->steps->avgs;
-            v->std_devs = stat->steps->std_devs;
-
-            v->hist->num_breaks = stat->histogram->num_breaks;
-            v->hist->max = stat->histogram->max;
-            v->hist->min = stat->histogram->min;
-            v->hist->breaks = stat->histogram->breaks;
-            v->hist->frequenciess = stat->histogram->frequencies;
-            v->hist->gfrequencies = stat->histogram->gfrequencies;
+            if (stat->histogram) {
+                v->mins = stat->steps->mins;
+                v->maxs = stat->steps->maxs;
+                v->avgs = stat->steps->avgs;
+                v->std_devs = stat->steps->std_devs;
+            } else {
+                v->mins = 0;
+                v->maxs = 0;
+                v->avgs = 0;
+                v->std_devs = 0;
+            }
+            if (stat->histogram) {
+                v->hist = (struct ADIOS_HIST_V1*) malloc (sizeof(struct ADIOS_HIST));
+                if (v->hist) {
+                    v->hist->num_breaks = stat->histogram->num_breaks;
+                    v->hist->max = stat->histogram->max;
+                    v->hist->min = stat->histogram->min;
+                    v->hist->breaks = stat->histogram->breaks;
+                    v->hist->frequenciess = stat->histogram->frequencies;
+                    v->hist->gfrequencies = stat->histogram->gfrequencies;
+                }
+            } else {
+                v->hist=0;
+            }
         }
-        
+
         v->internal_data = (void *)vi;
     }
     return v;
@@ -333,7 +348,7 @@ int64_t adios_read_var_byid_v1 (ADIOS_GROUP_V1 * gp,
 
     ADIOS_SELECTION * sel = adios_selection_boundingbox (ndim, start+tidx, count+tidx);
 
-    common_read_schedule_read_byid (f, sel, varid, from_step, nsteps, data);
+    common_read_schedule_read_byid (f, sel, varid, from_step, nsteps, NULL, data); // NCSU ALACRITY-ADIOS
     int ret = common_read_perform_reads (f, 1);
     int64_t rbytes;
     if (ret == err_no_error) {
@@ -410,7 +425,7 @@ int64_t adios_read_local_var_v1 (ADIOS_GROUP_V1 * gp,
 
     ADIOS_SELECTION * sel = adios_selection_writeblock (idx_in_step);
 
-    common_read_schedule_read_byid (f, sel, vi->varid, step, 1, data);
+    common_read_schedule_read_byid (f, sel, vi->varid, step, 1, NULL, data); // NCSU ALACRITY-ADIOS
     int ret = common_read_perform_reads (f, 1);
     int64_t rbytes;
     if (ret == err_no_error) {
@@ -465,7 +480,7 @@ double adios_stat_cor_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char *
 
     if (vix == NULL)
     {
-	adios_error(err_invalid_argument, "Variable not defined\n");
+        adios_error(err_invalid_argument, "Variable not defined\n");
         return 0;
     }
 

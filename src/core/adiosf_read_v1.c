@@ -1,4 +1,4 @@
-/* 
+/*
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
@@ -27,7 +27,7 @@ extern "C"  /* prevent C++ name mangling */
 #endif
 
 #ifdef BUILD_WITH_CMAKE
-  #include "../../FC.h"
+  #include "FC.h"
 #endif
 
 static enum ADIOS_READ_METHOD lastmethod = ADIOS_READ_METHOD_BP;
@@ -36,7 +36,7 @@ extern int adios_errno;
 
 // Re-define the ADIOS_GROUP struct here, because we need to emulate the group view behavior
 // of the old read API
-typedef struct { 
+typedef struct {
     uint64_t gh;                /* Group handler                                           */
     int      grpid;             /* group index (0..ADIOS_FILE.groups_count-1)              */
     int      vars_count;        /* Number of variables in this adios group                 */
@@ -152,7 +152,7 @@ void FC_FUNC_(adios_fclose, ADIOS_FCLOSE) (int64_t * fp, int * err)
         fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
 }
 
-void FC_FUNC_(adios_inq_file, ADIOS_INQ_FILE) 
+void FC_FUNC_(adios_inq_file, ADIOS_INQ_FILE)
         (int64_t * fp,
          int     * vars_count,
          int     * attrs_count,
@@ -185,12 +185,12 @@ void FC_FUNC_(adios_inq_file, ADIOS_INQ_FILE)
     }
 }
 
-void FC_FUNC_(adios_gopen, ADIOS_GOPEN) 
+void FC_FUNC_(adios_gopen, ADIOS_GOPEN)
         (int64_t * fp,
          int64_t * gp,
          char    * grpname,
-         int     * vars_count, 
-         int     * attrs_count, 
+         int     * vars_count,
+         int     * attrs_count,
          int     * err,
          int       grpname_len)
 {
@@ -202,7 +202,7 @@ void FC_FUNC_(adios_gopen, ADIOS_GOPEN)
     namestr = futils_fstr_to_cstr(grpname, grpname_len);
     if (namestr != NULL) {
 
-        // get group list and find the group name 
+        // get group list and find the group name
         ngroups = common_read_get_grouplist(afp, &group_namelist);
         for (grpid=0;grpid<(ngroups);grpid++) {
             if (!strcmp(group_namelist[grpid], namestr))
@@ -241,24 +241,24 @@ void FC_FUNC_(adios_gclose, ADIOS_GCLOSE) (int64_t * gp, int * err)
 }
 
 void FC_FUNC_(adios_inq_group, ADIOS_INQ_GROUP)
-        (int64_t * gp, 
-         void    * vnamelist, 
+        (int64_t * gp,
+         void    * vnamelist,
          void    * anamelist,
          int     * timestep,
          int     * lasttimestep,
-         int     * err, 
-         int       vnamelist_len, 
-         int       anamelist_len) 
+         int     * err,
+         int       vnamelist_len,
+         int       anamelist_len)
 {
     ADIOS_FILE *afp = (ADIOS_FILE *) *gp;
     int i;
     if (afp != NULL) {
         for (i=0;i<afp->nvars;i++) {
             futils_cstr_to_fstr( afp->var_namelist[i], (char *)vnamelist+i*vnamelist_len, vnamelist_len);
-        } 
+        }
         for (i=0;i<afp->nattrs;i++) {
             futils_cstr_to_fstr( afp->attr_namelist[i], (char *)anamelist+i*anamelist_len, anamelist_len);
-        } 
+        }
         *timestep = 1;
         *lasttimestep = afp->last_step;
         *err = 0;
@@ -267,8 +267,8 @@ void FC_FUNC_(adios_inq_group, ADIOS_INQ_GROUP)
     }
 }
 
-void FC_FUNC_(adios_inq_var, ADIOS_INQ_VAR) 
-        (int64_t  * gp, 
+void FC_FUNC_(adios_inq_var, ADIOS_INQ_VAR)
+        (int64_t  * gp,
          char     * varname,
          int      * type,
          int      * ndim,
@@ -289,7 +289,7 @@ void FC_FUNC_(adios_inq_var, ADIOS_INQ_VAR)
     if (vi != NULL) {
         *type = vi->type;
 
-        /* TIME dimension should be emulated here !!! */  
+        /* TIME dimension should be emulated here !!! */
         int tidx;
         int timed = common_read_is_var_timed(afp, vi->varid);
         if (timed) {
@@ -318,7 +318,7 @@ void FC_FUNC_(adios_inq_var, ADIOS_INQ_VAR)
         fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
 }
 
-void FC_FUNC_(adios_read_var, ADIOS_READ_VAR) 
+void FC_FUNC_(adios_read_var, ADIOS_READ_VAR)
         (int64_t  * gp,
          char     * varname,
          uint64_t * start,
@@ -340,7 +340,7 @@ void FC_FUNC_(adios_read_var, ADIOS_READ_VAR)
         }
         int tidx;
         int from_step = 0, nsteps = 1;
-        /* TIME dimension should be emulated here !!! */  
+        /* TIME dimension should be emulated here !!! */
         int timed = common_read_is_var_timed(afp, vi->varid);
         if (timed) {
             from_step = (int) start[vi->ndim];
@@ -352,13 +352,13 @@ void FC_FUNC_(adios_read_var, ADIOS_READ_VAR)
 
         ADIOS_SELECTION * sel = common_read_selection_boundingbox (vi->ndim, start, count);
 
-        common_read_schedule_read (afp, sel, varstr, from_step, nsteps, data);
+        common_read_schedule_read (afp, sel, varstr, from_step, nsteps, NULL /* NCSU ALACRITY-ADIOS */, data);
         int ret = common_read_perform_reads (afp, 1);
         if (ret == err_no_error) {
             /* should return the number of bytes read */
             *read_bytes = (int64_t) common_read_type_size (vi->type, data);
             *read_bytes *= nsteps;
-            for (i=0; i<vi->ndim; i++) 
+            for (i=0; i<vi->ndim; i++)
                 *read_bytes *= (int64_t) count[i];
         } else {
             *read_bytes = (int64_t) adios_errno;
@@ -396,7 +396,7 @@ void FC_FUNC_(adios_read_local_var, ADIOS_READ_LOCAL_VAR)
            Otherwise we return an out of bound error, although it probably should
            be a "within bounds" error
 
-           Version 1: 
+           Version 1:
            - start/count has no time dimension for the local read
            - idx is for all timesteps, 0...timesteps*blocks
            Version 2:
@@ -441,7 +441,7 @@ void FC_FUNC_(adios_read_local_var, ADIOS_READ_LOCAL_VAR)
 
         ADIOS_SELECTION * sel = common_read_selection_writeblock (idx_in_step);
 
-        common_read_schedule_read_byid (afp, sel, vi->varid, step, 1, data);
+        common_read_schedule_read_byid (afp, sel, vi->varid, step, 1, NULL /* NCSU ALACRITY-ADIOS */, data);
         int ret = common_read_perform_reads (afp, 1);
         if (ret == err_no_error) {
             /* should return the number of bytes read */
@@ -480,7 +480,7 @@ void FC_FUNC_(adios_read_var_logical2, ADIOS_READ_VAR_LOGICAL2) (int64_t * gp, c
 void FC_FUNC_(adios_read_var_logical4, ADIOS_READ_VAR_LOGICAL4) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adios_read_var, ADIOS_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
 void FC_FUNC_(adios_read_var_logical8, ADIOS_READ_VAR_LOGICAL8) (int64_t * gp, char * varname, uint64_t * start, uint64_t * count, void * data, int64_t * read_bytes, int varname_len) { FC_FUNC_(adios_read_var, ADIOS_READ_VAR) (gp, varname, start, count, data, read_bytes, varname_len); }
 
-void FC_FUNC_(adios_get_statistics, ADIOS_GET_STATISTICS) 
+void FC_FUNC_(adios_get_statistics, ADIOS_GET_STATISTICS)
         (int64_t * gp,
          char    * varname,
          void    * value,
@@ -508,28 +508,28 @@ void FC_FUNC_(adios_get_statistics, ADIOS_GET_STATISTICS)
     if (vi != NULL) {
         size = bp_get_type_size(vi->type, vi->value);
         // get statistics information per each step
-        common_read_inq_var_stat (afp, vi, 1, 0); 
+        common_read_inq_var_stat (afp, vi, 1, 0);
         if (vi->type == adios_string) size++;
         if (vi->value) memcpy(value, vi->value, size);
 
         if (vi->statistics) {
             if (vi->type == adios_complex || vi->type == adios_double_complex) {
-                /* For complex numbers, the statistics in ADIOS_VARINFO, like 
-                   gmin, gavg, std_devs etc, are of base type double. They also 
-                   have an additional dimension that stores the statistics for 
-                   the magnitude, the real part, and the imaginary part of the 
-                   complex number, individually. For example, gmin[0] holds the 
-                   overall minimum value of the magnitude of the complex numbers. 
-                   gmin[1] and gmin [2] contain the global minimums for the real 
-                   and the imaginary parts, respectively. 
+                /* For complex numbers, the statistics in ADIOS_VARINFO, like
+                   gmin, gavg, std_devs etc, are of base type double. They also
+                   have an additional dimension that stores the statistics for
+                   the magnitude, the real part, and the imaginary part of the
+                   complex number, individually. For example, gmin[0] holds the
+                   overall minimum value of the magnitude of the complex numbers.
+                   gmin[1] and gmin [2] contain the global minimums for the real
+                   and the imaginary parts, respectively.
                  */
-                if (vi->statistics->min) 
+                if (vi->statistics->min)
                     memcpy((char *) gmin, (char *) vi->statistics->min, 3*size);
-                if (vi->statistics->max) 
+                if (vi->statistics->max)
                     memcpy(((char *) gmax), (char *) vi->statistics->max, 3*size);
-                if (vi->statistics->avg) 
+                if (vi->statistics->avg)
                     memcpy(gavg, vi->statistics->avg, 3*sizeof(double));
-                if (vi->statistics->std_dev) 
+                if (vi->statistics->std_dev)
                     memcpy(gstd_dev, vi->statistics->std_dev, 3*sizeof(double));
 
                 /* FIXME: I do not know if mins is **void and mins[i] is a void * allocated
@@ -557,23 +557,23 @@ void FC_FUNC_(adios_get_statistics, ADIOS_GET_STATISTICS)
                 }
 
             } else {
-                if (vi->statistics->min) 
+                if (vi->statistics->min)
                     memcpy((char *) gmin, (char *) vi->statistics->min, size);
-                if (vi->statistics->max) 
+                if (vi->statistics->max)
                     memcpy((char *) gmax, (char *) vi->statistics->max, size);
-                if (vi->statistics->avg) 
+                if (vi->statistics->avg)
                     memcpy(gavg, vi->statistics->avg, sizeof(double));
-                if (vi->statistics->std_dev) 
+                if (vi->statistics->std_dev)
                     memcpy(gstd_dev, vi->statistics->std_dev, sizeof(double));
 
                 if (vi->statistics->steps) {
-                    if (vi->statistics->steps->mins) 
+                    if (vi->statistics->steps->mins)
                         memcpy((char *) mins, (char *) vi->statistics->steps->mins, vi->nsteps * size);
-                    if (vi->statistics->steps->maxs) 
+                    if (vi->statistics->steps->maxs)
                         memcpy((char *) maxs, (char *) vi->statistics->steps->maxs, vi->nsteps * size);
-                    if (vi->statistics->steps->avgs) 
+                    if (vi->statistics->steps->avgs)
                         memcpy(avgs, vi->statistics->steps->avgs, vi->nsteps * sizeof(double));
-                    if (vi->statistics->steps->std_devs) 
+                    if (vi->statistics->steps->std_devs)
                         memcpy(std_devs, vi->statistics->steps->std_devs, vi->nsteps * sizeof(double));
                 }
             }
@@ -600,7 +600,7 @@ void FC_FUNC_(adios_get_statistics_logical2, ADIOS_GET_STATISTICS_LOGICAL2) (int
 void FC_FUNC_(adios_get_statistics_logical4, ADIOS_GET_STATISTICS_LOGICAL4) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * gavg, void * gstd_dev, void * mins, void * maxs, void * avgs, void * std_devs, int * err, int varname_len) { FC_FUNC_(adios_get_statistics, ADIOS_GET_STATISTICS) (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err, varname_len); }
 void FC_FUNC_(adios_get_statistics_logical8, ADIOS_GET_STATISTICS_LOGICAL8) (int64_t * gp, char * varname, void * value, void * gmin, void * gmax, void * gavg, void * gstd_dev, void * mins, void * maxs, void * avgs, void * std_devs, int * err, int varname_len) { FC_FUNC_(adios_get_statistics, ADIOS_GET_STATISTICS) (gp, varname, value, gmin, gmax, gavg, gstd_dev, mins, maxs, avgs, std_devs, err, varname_len); }
 
-void FC_FUNC_(adios_get_attr, ADIOS_GET_ATTR) 
+void FC_FUNC_(adios_get_attr, ADIOS_GET_ATTR)
         (int64_t * gp,
          char    * attrname,
          void    * attr,
@@ -627,7 +627,7 @@ void FC_FUNC_(adios_get_attr, ADIOS_GET_ATTR)
         fprintf(stderr, "Error: %s\n", adios_get_last_errmsg());
 }
 
-void FC_FUNC_(adios_inq_attr, ADIOS_INQ_ATTR) 
+void FC_FUNC_(adios_inq_attr, ADIOS_INQ_ATTR)
         (int64_t * gp,
          char    * attrname,
          int     * type,

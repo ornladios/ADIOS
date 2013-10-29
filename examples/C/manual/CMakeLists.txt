@@ -3,17 +3,18 @@ include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/examples/C/manual)
 link_directories(${PROJECT_BINARY_DIR}/examples/C/manual)
 
-add_executable(1_nonadios_example 1_nonadios_example.c)
-target_link_libraries(1_nonadios_example adios ${ADIOSLIB_LDADD})
+set (PROGS 1_nonadios_example 2_adios_write 3_adios_read 4_adios_nfiles)
 
-add_executable(2_adios_write 2_adios_write.c)
-target_link_libraries(2_adios_write adios ${ADIOSLIB_LDADD})
-
-add_executable(3_adios_read 3_adios_read.c)
-target_link_libraries(3_adios_read adios ${ADIOSLIB_LDADD})
-
-add_executable(4_adios_nfiles 4_adios_nfiles.c)
-target_link_libraries(4_adios_nfiles adios ${ADIOSLIB_LDADD})
+foreach (PROG ${PROGS} )
+  add_executable(${PROG} ${PROG}.c)
+  if(MPI_COMPILE_FLAGS)
+    set_target_properties(${PROG} PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
+  endif()
+  if(MPI_LINK_FLAGS)
+    set_target_properties(${PROG} PROPERTIES LINK_FLAGS "${MPI_C_LINK_FLAGS}")
+  endif()
+  target_link_libraries(${PROG} adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES})
+endforeach()
 
 #install(FILES config.xml gread_temperature.ch gwrite_temperature.ch DESTINATION ${PROJECT_BINARY_DIR}/examples/C/manual)
 

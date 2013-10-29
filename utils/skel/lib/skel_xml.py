@@ -1,9 +1,28 @@
 #!/usr/bin/env python
 
 import argparse
+import os
 import xml.dom.minidom
 
+import skel_bpy
 import skel_settings
+
+
+def pparse_command_line (parent_parser):
+    parser = argparse.ArgumentParser (
+                parents = [parent_parser],
+                formatter_class=argparse.RawDescriptionHelpFormatter,
+                prog='skel',
+                add_help=False,
+                description='''\
+        skel xml
+            create an xml file to define the I/O pattern for the target skeletal application''')
+
+    parser.add_argument ('-y', '--yaml-file', dest='yamlfile', help='yaml file to use for I/O pattern')
+    parser.add_argument ('-f', '--force', dest='force', action='store_true', help='overwrite existing XML file')
+    parser.set_defaults(force=False)
+
+    return parser.parse_args()
 
 
 def parse_command_line():
@@ -32,29 +51,72 @@ def cleanse (str):
 
 
 
-def create_skel_xml (project):
+def create_skel_xml (project, parent_parser):
+
+    args = pparse_command_line (parent_parser)
+    if args.yamlfile is not None:
+        create_from_yaml (project, args)
+    else:
+        create_from_xml (project, args)
+
+
+def create_from_yaml (project,args):
+    print "using yaml file"
 
     outfilename = project + '_skel.xml'
 
+    # Only proceed if outfilename does not already exist, or if -f was used
+    if os.path.exists (outfilename) and not args.force:
+        print "%s exists, aborting. Delete the file or use -f to overwrite." % outfilename
+        return 999
+
     skel_file = open (outfilename, 'w')
 
-    doc = xml.dom.minidom.parse (project + '.xml')
-  
-    #remove diagnostic groups (xgc1)
+    bpy = skel_bpy.skel_bpy ("test.yaml")
 
+
+    # Okay, it's time to try out Cheetah.
+    from Cheetah.Template import Template
+    t = Template(file="xml.tmpl")
+    t.bpy = bpy
+    skel_file.write (str(t) )
+    # All done. That was easy.
+
+
+def create_from_xml (project, args):
+
+    outfilename = project + '_skel.xml'
+
+    # Only proceed if outfilename does not already exist, or if -f was used
+    if os.path.exists (outfilename) and not args.force:
+        print "%s exists, aborting. Delete the file or use -f to overwrite." % outfilename
+        return 999
+
+    skel_file = open (outfilename, 'w')
+
+    
+
+
+
+    doc = xml.dom.minidom.parse (project + '.xml')
+ 
+    # TODO: remove this application specific kludge.
+    #remove diagnostic groups (xgc1)
     groups = doc.getElementsByTagName ('adios-group')
     for g in groups:
         if g.getAttribute('name').startswith ('diag'):
             # remove this group
             doc.getElementsByTagName ('adios-config')[0].removeChild(g)
-
     methods = doc.getElementsByTagName ('method')
     for m in methods:
         if m.getAttribute ('group').startswith ('diag'):
             # remove this method
             doc.getElementsByTagName ('adios-config')[0].removeChild(m)
 
+
+
     for m in methods:
+        # TODO: Before adding this node, we should remove any text that is already here...
         token = doc.createTextNode ('***skel-parameters***')
         m.appendChild (token)
 

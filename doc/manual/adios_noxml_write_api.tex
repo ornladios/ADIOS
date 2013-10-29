@@ -44,17 +44,17 @@ and XML configuration file. Note that adios\_init\_noxml is required to be calle
 once and before any other ADIOS calls. 
 
 \begin{lstlisting}[alsolanguage=C,caption={},label={}]
-int adios_init_noxml ()
+int adios_init_noxml (MPI_Comm comm)
 \end{lstlisting}
 
 Input: 
 \begin{itemize}
-\item None
+\item MPI communicator. All processes that uses ADIOS for writing data must be included in the group of this communicator.
 \end{itemize}
 
 Fortran example: 
 \begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
-call adios_init_noxml (ierr)
+call adios_init_noxml (comm, ierr)
 \end{lstlisting}
 
 
@@ -301,7 +301,7 @@ program adios_global
     call MPI_Comm_dup (MPI_COMM_WORLD, comm, ierr)
     call MPI_Comm_rank (comm, rank, ierr) 
     call MPI_Comm_size (comm, size, ierr)
-    call adios_init_noxml (ierr)
+    call adios_init_noxml (comm, ierr)
     call adios_allocate_buffer (10, ierr)
     call adios_declare_group (m_adios_group, "restart", "iter", 1, ierr) 
     call adios_select_method (m_adios_group, "MPI", "", "", ierr)

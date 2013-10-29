@@ -5,6 +5,7 @@ import argparse
 
 import adios
 import skelconf
+import skel_bpy
 import skel_settings
 
 
@@ -63,7 +64,7 @@ def generate_c_write (outfile, config, params, test):
         c_file.write ('\nMPI_Barrier (MPI_COMM_WORLD);')
         c_file.write ('\nskel_init_timer -= MPI_Wtime();')
 
-        c_file.write ('\n\nadios_init ("' + config.get_filename() + '");')
+        c_file.write ('\n\nadios_init ("' + config.get_filename() + '", MPI_COMM_WORLD);')
 
         c_file.write ('\nskel_init_timer += MPI_Wtime();')
 
@@ -171,7 +172,7 @@ def generate_c_write (outfile, config, params, test):
             c_file.write ('\n\n adios_timing_write_xml (adios_handle, "' + params.get_application() + '_skel_time.xml");')
 
         else:
-            c_file.write ('\n\n skel_write_coarse_xml_data ();')
+            c_file.write ('\n\n skel_write_coarse_xml_data (skel_open_timer, skel_access_timer, skel_close_timer, skel_total_timer);')
 
 
         c_file.write ('\ndouble skel_total_init, skel_total_open, skel_total_access, skel_total_close, skel_total_total;')
@@ -189,17 +190,6 @@ def generate_c_write (outfile, config, params, test):
 #            c_file.write ('\nskel_total_close = skel_close_timer;')
 #            c_file.write ('\nskel_total_total = skel_total_timer;')
 
-
-
-# Need to check whether A, compiled with timing support, and B, timing enabled.
-# If A and B, skip other reporting and use adios_timing, otherwise produce xml here.
-
-
-
-        if measure.use_adios_timing():
-            print "Use adios timing"
-        else:
-            print "Don't use adios timing"
 
 
             # Detailed reporting disabled, use adios timing instead.
@@ -433,7 +423,7 @@ def generate_fortran_write (outfile, config, params, test):
         if measure.use_adios_timing():
             f_file.write ('\n\n  call adios_timing_write_xml (adios_handle, "' + params.get_application() + '_skel_time.xml")')
         else:
-            f_file.write ('\n\n  call skel_write_coarse_xml_data_f ()')
+            f_file.write ('\n\n  call skel_write_coarse_xml_data_f (skel_open_timer, skel_access_timer, skel_close_timer, skel_total_timer)')
             
         if measure.use_reduce():
             f_file.write ('\n\n  call MPI_Reduce (skel_init_timer, skel_total_init, 1, MPI_DOUBLE_PRECISION, MPI_MAX, 0, MPI_COMM_WORLD, error)')
@@ -651,8 +641,72 @@ def generate_c_read_all (outfile, config, params, test):
     #end: generate_c_read_all
 
 
+def pparse_command_line (parent_parser):
+    parser = argparse.ArgumentParser (
+                parents = [parent_parser],
+                formatter_class=argparse.RawDescriptionHelpFormatter,
+                prog='skel',
+                add_help=False,
+                description='''\
+        skel source 
+            create source code to access the I/O pattern for the target skeletal application''')
 
-def create_sources (params, config, project):
+    parser.add_argument ('-y', '--yaml-file', dest='yamlfile', help='yaml file to use for I/O pattern')
+    parser.add_argument ('-f', '--force', dest='force', action='store_true', help='overwrite existing source file')
+    parser.set_defaults(force=False)
+
+    return parser.parse_args()
+
+
+def create_source_from_yaml (args, config):
+    print "Using yaml file"
+
+    # Determine the target language
+    if config.host_language == "C" or config.host_language =="c":
+        filetype = ".c"
+    else:
+        filetype = ".f90"
+
+    bpy = skel_bpy.skel_bpy ("test.yaml")
+
+    # Determine outfile name
+    extension = '_skel_' + bpy.get_group_name()
+    outfilename = args.project + extension + filetype
+
+    # Only proceed if outfilename does not already exist, or if -f was used
+    if os.path.exists (outfilename) and not args.force:
+        print "%s exists, aborting. Delete the file or use -f to overwrite." % outfilename
+        return 999
+
+    skel_file = open (outfilename, 'w')
+
+
+    # Now for the Cheetah magic:
+    from Cheetah.Template import Template
+    t = Template(file="source_write_c.tmpl")
+    t.bpy = bpy
+    t.project = args.project
+    skel_file.write (str(t) )
+
+
+def create_sources_with_args (config, parent_parser):
+
+    args = pparse_command_line (parent_parser)
+
+    if args.yamlfile is not None:
+        create_source_from_yaml(args, config)
+    else:
+        create_source_from_xml (args, config)
+
+
+def create_source_from_xml (args, config):
+
+    try:
+        params = skelconf.skelConfig (args.project + '_params.xml')
+    except (IOError):
+        print "Error reading " + args.project + "_params.xml. Try running skel params " + args.project + " first,"
+        print "then check that " + args.project + "_params.xml exists."
+        return  
 
     # Determine the target language
     if config.host_language == "C" or config.host_language =="c":
@@ -668,7 +722,7 @@ def create_sources (params, config, project):
 
             # Determine outfile name
             extension = '_skel_' + test.get_group_name()
-            outfilename = project + extension + filetype
+            outfilename = args.project + extension + filetype
 
             generate (outfilename, config, params, test)
 
@@ -680,7 +734,6 @@ def parse_command_line():
     parser.add_argument ('project', metavar='project', help='Name of the skel project')
 
     return parser.parse_args()
-
 
 
 def main(argv=None):
@@ -701,3 +754,4 @@ if __name__ == "__main__":
     main()
 
  
+

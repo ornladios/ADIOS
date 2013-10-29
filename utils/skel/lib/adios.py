@@ -84,6 +84,7 @@ class adiosGroup:
         return self.vardict [varname]
 
 
+
 class method:
     
     def __init__ (self, method_node):
@@ -110,6 +111,21 @@ class var:
         name = name.replace ("%", "_pct_")
         name = name.split ('(')[0]
         return name
+
+    def get_path (self):
+        path = self.var_node.getAttribute ('path')
+        return path
+
+    def get_fullpath (self):
+        path = self.get_path()
+        name = self.get_name()
+        if (path == ''):
+            fullpath = name
+        elif (path == '/'):
+            fullpath = '/'+name
+        else:
+            fullpath = path + '/' + name
+        return fullpath
 
     def get_gwrite (self):
         gw = self.var_node.getAttribute ('gwrite')
@@ -164,10 +180,28 @@ class var:
     def is_scalar (self):
         return self.get_dimensions() == None
 
+    # TODO: Implement this
+    def find_first_use (self):
+        # Loop through all of the vars in the group
+        for var in self.group.get_vars():
+            dim_num = 0;
+            if var.get_dimensions() is not None:
+                for dim in var.get_dimensions():
+                    # if this one uses this variable as a dimension, return the name and dim number
+                    if dim == self.get_name():
+                        return var.get_name(), dim_num
+                    dim_num = dim_num + 1
+
+        # None found, return None,None
+        return None,None
+
+
 class fortranFormatter:
     @staticmethod
     def get_write_line (var):
-        return '\n  call adios_write (adios_handle, "' + var.get_name() + '", ' + var.get_gwrite() + ', adios_error)'  
+        retval = '\n  call adios_write (adios_handle, "' + var.get_fullpath() + '", ' + var.get_gwrite() + ', adios_error)'  
+        #print retval
+        return retval
 
     @staticmethod
     def get_declaration (var, group_params):
@@ -246,7 +280,9 @@ class cFormatter:
         else:
             var_prefix = '&'
 
-        return '\nadios_write (adios_handle, "' + var.get_name() + '", ' + var_prefix + var.get_gwrite() + ');'  
+        retval = '\nadios_write (adios_handle, "' + var.get_fullpath() + '", ' + var_prefix + var.get_gwrite() + ');'  
+        #print retval
+        return retval
 
     @staticmethod
     def get_read_all_line (var):

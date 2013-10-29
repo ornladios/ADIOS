@@ -49,13 +49,15 @@ void adios_init_transports (struct adios_transport_struct ** t)
     ASSIGN_FNS(mpi,ADIOS_METHOD_MPI)
     ASSIGN_FNS(mpi_lustre,ADIOS_METHOD_MPI_LUSTRE)
     ASSIGN_FNS(mpi_amr,ADIOS_METHOD_MPI_AMR)
+    //Tian's method
+    ASSIGN_FNS(var_merge,ADIOS_METHOD_VAR_MERGE)
 #      ifndef NO_RESEARCH_TRANSPORTS
-    ASSIGN_FNS(mpi_stripe,ADIOS_METHOD_MPI_STRIPE)
-    ASSIGN_FNS(mpi_cio,ADIOS_METHOD_MPI_CIO)
-    ASSIGN_FNS(mpi_stagger,ADIOS_METHOD_MPI_STAGGER)
-    ASSIGN_FNS(mpi_aggregate,ADIOS_METHOD_MPI_AGG)
-    ASSIGN_FNS(mpi_amr1,ADIOS_METHOD_MPI_AMR1)
-    ASSIGN_FNS(adaptive,ADIOS_METHOD_ADAPTIVE)
+    //ASSIGN_FNS(mpi_stripe,ADIOS_METHOD_MPI_STRIPE)
+    //ASSIGN_FNS(mpi_cio,ADIOS_METHOD_MPI_CIO)
+    //ASSIGN_FNS(mpi_stagger,ADIOS_METHOD_MPI_STAGGER)
+    //ASSIGN_FNS(mpi_aggregate,ADIOS_METHOD_MPI_AGG)
+    //ASSIGN_FNS(mpi_amr1,ADIOS_METHOD_MPI_AMR1)
+    //ASSIGN_FNS(adaptive,ADIOS_METHOD_ADAPTIVE)
 #      endif
 #    endif
 
@@ -79,7 +81,7 @@ void adios_init_transports (struct adios_transport_struct ** t)
 #  endif
 
 # if HAVE_FLEXPATH
-	ASSIGN_FNS(flexpath,ADIOS_METHOD_FLEXPATH)
+    ASSIGN_FNS(flexpath,ADIOS_METHOD_FLEXPATH)
 # endif
 
     ASSIGN_FNS(posix,ADIOS_METHOD_POSIX)
@@ -90,15 +92,15 @@ void adios_init_transports (struct adios_transport_struct ** t)
 #  endif
 
 #  if HAVE_DIMES
-	ASSIGN_FNS(dimes,ADIOS_METHOD_DIMES)
+    ASSIGN_FNS(dimes,ADIOS_METHOD_DIMES)
 #  endif
 
 #  ifndef NO_RESEARCH_TRANSPORTS
-    ASSIGN_FNS(provenance,ADIOS_METHOD_PROVENANCE)
+    //ASSIGN_FNS(provenance,ADIOS_METHOD_PROVENANCE)
 #  endif
 
 #endif /* ADIOS_EMPTY_TRANSPORTS */
-	}
+    }
 
 int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
                        ,int * requires_group_comm
@@ -110,6 +112,9 @@ int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
     MATCH_STRING_TO_METHOD("MPI",ADIOS_METHOD_MPI,1)
     MATCH_STRING_TO_METHOD("MPI_LUSTRE",ADIOS_METHOD_MPI_LUSTRE,1)
     MATCH_STRING_TO_METHOD("MPI_AMR",ADIOS_METHOD_MPI_AMR,1)
+    // Tian's method
+    MATCH_STRING_TO_METHOD("VAR_MERGE",ADIOS_METHOD_VAR_MERGE,1)
+
     MATCH_STRING_TO_METHOD("MPI_AGGREGATE",ADIOS_METHOD_MPI_AMR,1)
 #ifndef NO_RESEARCH_TRANSPORTS
     MATCH_STRING_TO_METHOD("MPI_STRIPE",ADIOS_METHOD_MPI_STRIPE,1)

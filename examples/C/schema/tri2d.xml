@@ -1,0 +1,76 @@
+<?xml version="1.0"?>
+<adios-config host-language="C" schema-version="1.1">
+  <adios-group name="tri2d" >
+    <var name="nx_global"  path="" type="integer"/>
+    <var name="ny_global"  path="" type="integer"/>
+    <var name="nproc" path="" type="integer"/>
+    <attribute name="description" path="/nproc" value="Number of writers"/>
+
+    <var name="npoints" path="" type="integer"/>
+    <attribute name="description" path="/npoints" value="Number of points"/>
+
+    <var name="num_cells" path="" type="integer"/>
+    <attribute name="description" path="/num_cells" value="Number of triangles"/>
+
+    <var name="offs_x" path="" type="integer"/>
+    <var name="offs_y" path="" type="integer"/>
+    <var name="nx_local"  path="" type="integer"/>
+    <var name="ny_local"  path="" type="integer"/>
+
+    <var name="op" type="integer"/>
+    <var name="lp" type="integer"/>
+    <var name="oc" type="integer"/>
+    <var name="lc" type="integer"/>
+
+
+    <global-bounds dimensions="npoints,2" offsets="op,0">
+        <var name="points" type="double" dimensions="lp,2"/>
+    </global-bounds>
+
+    <global-bounds dimensions="num_cells,3" offsets="oc,0">
+        <var name="cells" type="integer" dimensions="lc,3"/>
+    </global-bounds>
+
+    <!-- Mesh definition -->
+    <mesh name="trimesh" type="unstructured" time-varying="no">
+         <nspace value="2" />
+         <points-single-var value="points" />
+         <uniform-cells count="num_cells" data="cells" type="triangle" />
+    </mesh>
+
+    <!-- Data -->
+    <global-bounds dimensions="npoints" offsets="op">
+        <var name="N" type="double" dimensions="lp"
+             mesh="trimesh" center="point"/>
+    </global-bounds>
+    <attribute name="description" path="/N" value="Node centered data"/>
+
+    <global-bounds dimensions="num_cells" offsets="oc">
+        <var name="C" type="double" dimensions="lc"
+             mesh="trimesh" center="cell"/>
+    </global-bounds>
+    <attribute name="description" path="/C" value="Cell centered data"/>
+    
+
+  </adios-group>
+
+  <!-- Choose an output method for the above group. 
+       MPI: write 1 file, each process writes its piece into the same file
+       POSIX: write 1 file per process writes 
+       VAR_MERGE: aggregate and merge blocks (up to two levels of aggregation)
+                  default aggregation buffer size is 2 MB
+       VAR_MERGE: limit the aggregation level by decreasing the aggregation buffer
+                  size to 300k
+  -->
+  <transport group="tri2d" method="MPI"/>
+  <!--
+  <transport group="writer" method="POSIX"/>
+  <transport group="writer" method="MPI_AGGREGATE">num_aggregators=4;num_ost=2</transport>
+  <transport group="writer" method="PHDF5"/>
+  <transport group="writer" method="VAR_MERGE">io_method=MPI</transport>
+  <transport group="writer" method="VAR_MERGE">chunk_size=300000;io_method=MPI</transport>
+  -->
+
+  <buffer size-MB="4" allocate-time="now"/>
+
+</adios-config>

@@ -1,7 +1,10 @@
 INCLUDES = $(all_includes)
-INCLUDES += -I$(top_builddir)/src -I$(top_builddir)/src/public
+INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public
 
 AUTOMAKE_OPTIONS = no-dependencies
+
+all-local:
+	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
 
 noinst_PROGRAMS = attributes_write attributes_read
 
@@ -10,10 +13,9 @@ attributes_write_LDADD = $(top_builddir)/src/libadios.a
 attributes_write_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 attributes_write_LDADD += $(ADIOSLIB_LDADD)
 attributes_read_SOURCES = attributes_read.c
-attributes_read_CPPFLAGS = -DADIOS_USE_READ_API_1
 attributes_read_LDADD = $(top_builddir)/src/libadiosread.a
-attributes_read_LDFLAGS = $(ADIOSLIB_LDFLAGS)
-attributes_read_LDADD += $(ADIOSLIB_LDADD)
+attributes_read_LDFLAGS = $(ADIOSREADLIB_LDFLAGS)
+attributes_read_LDADD += $(ADIOSREADLIB_LDADD)
 
 CLEANFILES = *.bp
 CC=$(MPICC)

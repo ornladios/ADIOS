@@ -1,0 +1,34 @@
+<?xml version="1.0" ?>
+<adios-config host-language="C">
+    <adios-group coordination-communicator="comm" name="fields" stats="On">
+        <var name="iter" type="integer"/>
+        <var name="npx" type="integer"/>
+        <var name="npy" type="integer"/>
+        <var name="npz" type="integer"/>
+        <var name="size_x" type="integer"/>
+        <var name="size_y" type="integer"/>
+        <var name="size_z" type="integer"/>
+        <var name="total_size_x" type="integer"/>
+        <var name="total_size_y" type="integer"/>
+        <var name="total_size_z" type="integer"/>
+        <var name="offset_x" type="integer"/>
+        <var name="offset_y" type="integer"/>
+        <var name="offset_z" type="integer"/>
+        <global-bounds dimensions="total_size_x,total_size_y,total_size_z" offsets="offset_x,offset_y,offset_z">
+           <var dimensions="size_x,size_y,size_z" name="fields_FieldE_x" path="/data" type="float"/>
+           <var dimensions="size_x,size_y,size_z" name="fields_FieldE_y" path="/data" type="float"/>
+           <var dimensions="size_x,size_y,size_z" name="fields_FieldE_z" path="/data" type="float"/>
+           
+           <var dimensions="size_x,size_y,size_z" name="fields_FieldB_x" path="/data" type="float"/>
+           <var dimensions="size_x,size_y,size_z" name="fields_FieldB_y" path="/data" type="float"/>
+           <var dimensions="size_x,size_y,size_z" name="fields_FieldB_z" path="/data" type="float"/>
+           
+           <var dimensions="size_x,size_y,size_z" name="fields_Density_e" path="/data" type="float"/>
+        </global-bounds>
+    </adios-group>
+
+    <method group="fields" method="MPI">***skel-parameters***</method>
+
+    <buffer allocate-time="now" size-MB="32"/>
+
+</adios-config>

@@ -1,0 +1,14 @@
+# TODO
+# Created on: Jul 8, 2013
+# Author: Magda S. aka Magic Magg magg dot gatech at gmail.com
+#
+
+TODO
+=======
+
+2013-07-08 (to-fix:reader.c): adios_errno != err_end_of_stream
+           I was told it doesn't behave properly
+           
+
+# EOF
+

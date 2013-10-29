@@ -5,12 +5,15 @@
     <var name="NY" type="integer"/>
     <var name="size" type="integer"/>
     <var name="rank" type="integer"/>
-    <global-bounds dimensions="size,NX" offsets="rank,0">
-        <var name="var_2d_array" gwrite="t" type="double" dimensions="NY,NX"/>
+    <var name="offset" type="integer"/>
+    <var name="size_y" type="integer"/>
+    <var name="test_scalar" type="integer"/>
+    <global-bounds dimensions="NX,size_y" offsets="0,offset">
+        <var name="var_2d_array" gwrite="t" type="double" dimensions="NX,NY"/>
     </global-bounds>
 </adios-group>
 
-<method group="temperature"  method="FLEXPATH">QUEUE_SIZE=100;</method>
+<method group="temperature"  method="FLEXPATH">QUEUE_SIZE=4;CTRL_THREAD=0;</method>
 
 <buffer size-MB="20" allocate-time="now"/>
 

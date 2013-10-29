@@ -26,6 +26,7 @@ Makefile
 # ADIOS generated files
 config.h
 adios_config.flags
+libtool
 
 # http://www.gnu.org/software/autoconf
 
@@ -117,6 +118,18 @@ tests/genarray/genarray2D
 tests/genarray/genarray2d_comm.mod
 tests/genarray/genarray_comm.mod
 tests/suite/programs/.deps/
+tests/C/flexpath_tests/1D_arr_global/reader
+tests/C/flexpath_tests/1D_arr_global/writer
+tests/C/flexpath_tests/1D_arr_global_noxml/reader
+tests/C/flexpath_tests/1D_arr_global_noxml/writer
+tests/C/flexpath_tests/global_range_select/arrays_read
+tests/C/flexpath_tests/global_range_select/arrays_write
+tests/C/flexpath_tests/maya_noxml/reader
+tests/C/flexpath_tests/maya_noxml/writer
+tests/C/flexpath_tests/maya_append/reader
+tests/C/flexpath_tests/maya_append/writer
+tests/C/flexpath_tests/scalar/reader
+tests/C/flexpath_tests/scalar/writer
 utils/adios_lint/adios_lint
 utils/bp2ascii/bp2ascii
 utils/bp2bp/bp2bp
@@ -130,3 +143,7 @@ utils/bpsplit/bpsplit
 utils/skel/etc/compiler_fragment.mk
 utils/skel/lib/skel_have_adios_timing.py
 
+# NCSU ALACRITY-ADIOS - Some extra files we added
+/myrunconf
+/.cproject
+/.project

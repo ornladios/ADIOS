@@ -22,6 +22,9 @@ fi
 cp $SRCDIR/programs/write_read .
 cp $SRCDIR/programs/write_read.xml .
 
+# Insert transform=X if requested by user
+add_transform_to_xmls
+
 echo "Run write_read"
 $MPIRUN $NP_MPIRUN $PROCS ./write_read
 EX=$?

@@ -11,7 +11,7 @@
 #include <stdio.h>
 #include <string.h>
 #include "mpi.h"
-#include "adios.h"
+#include "adios_read.h"
 
 typedef struct complex
 {
@@ -33,10 +33,8 @@ int main (int argc, char ** argv)
     int         NX = 10; 
     double      t[NX];
     MPI_Comm    comm = MPI_COMM_WORLD;
-
-    int         adios_err;
-    uint64_t    adios_groupsize, adios_totalsize;
-    int64_t     adios_handle, adios_buf_size;
+    enum ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP;
+    ADIOS_SELECTION * sel1=NULL;
 
     int8_t  v1 = 0;
     int16_t v2 = 0;
@@ -51,7 +49,7 @@ int main (int argc, char ** argv)
     float v9 = 0.0;
     double v10 = 0.0;
 
-    char v11[20];
+    char v11[256];
 
     complex v12;
     v12.r = 0.0;
@@ -66,16 +64,25 @@ int main (int argc, char ** argv)
 
     strcpy (filename, "scalars.bp");
 
-    adios_init ("scalars.xml", comm);
-    adios_open (&adios_handle, "scalars", filename, "r", comm);
-#include "gread_scalars.ch"
-    adios_close (adios_handle);
+    adios_read_init_method (method, comm, "verbose=3");
+    ADIOS_FILE * f = adios_read_open (filename, method, comm, ADIOS_LOCKMODE_NONE, 0.0);
 
-    MPI_Barrier (comm);
-
-    adios_finalize (rank);
-
-    MPI_Finalize ();
+    adios_schedule_read (f, sel1, "var_byte",           0, 1, &v1);
+    adios_schedule_read (f, sel1, "var_short",          0, 1, &v2);
+    adios_schedule_read (f, sel1, "var_int",            0, 1, &v3);
+    adios_schedule_read (f, sel1, "var_long",           0, 1, &v4);
+    adios_schedule_read (f, sel1, "var_ubyte",          0, 1, &v5);
+    adios_schedule_read (f, sel1, "var_ushort",         0, 1, &v6);
+    adios_schedule_read (f, sel1, "var_uint",           0, 1, &v7);
+    adios_schedule_read (f, sel1, "var_ulong",          0, 1, &v8);
+    adios_schedule_read (f, sel1, "var_real",           0, 1, &v9);
+    adios_schedule_read (f, sel1, "var_double",         0, 1, &v10);
+    /* note that a string is an array and thus v11 a pointer already, 
+       so we pass the v11 instead of &v11 here */
+    adios_schedule_read (f, sel1, "var_string",         0, 1, v11);
+    adios_schedule_read (f, sel1, "var_complex",        0, 1, &v12);
+    adios_schedule_read (f, sel1, "var_double_complex", 0, 1, &v13);
+    adios_perform_reads (f,1);
 
     if (rank == 0) {
         printf("byte        v1  = %d\n", v1);
@@ -96,6 +103,11 @@ int main (int argc, char ** argv)
         printf("complex     v12 = (%g, i%g)\n", v12.r, v12.i);
         printf("dbl-complex v13 = (%g, i%g)\n", v13.r, v13.i);
     }
+
+    adios_read_close (f);
+    MPI_Barrier (comm);
+    adios_read_finalize_method (ADIOS_READ_METHOD_BP);
+    MPI_Finalize ();
 
     return 0;
 }

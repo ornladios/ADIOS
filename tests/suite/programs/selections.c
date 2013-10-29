@@ -19,8 +19,8 @@
 #include <string.h>
 #include <errno.h>
 #include "mpi.h"
-#include "public/adios.h"
-#include "public/adios_read.h"
+#include "adios.h"
+#include "adios_read.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"

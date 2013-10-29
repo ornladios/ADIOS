@@ -31,7 +31,7 @@ extern int adios_errno;
 #define PRINT_ERRMSG() fprintf(stderr, "ADIOS READ ERROR: %s\n", adios_get_last_errmsg())
 
 #ifdef BUILD_WITH_CMAKE
-  #include "../../FC.h"
+  #include "FC.h"
 #endif
 
 /*********************/
@@ -349,7 +349,7 @@ void FC_FUNC_(adios_schedule_read, ADIOS_SCHEDULE_READ)
     int i;
     varstr = futils_fstr_to_cstr(varname, varname_len);
     if (varstr != NULL) {
-        *err = common_read_schedule_read (afp, sel, varstr, *from_step, *nsteps, data);
+        *err = common_read_schedule_read (afp, sel, varstr, *from_step, *nsteps, NULL /* NCSU ALACRITY-ADIOS */, data);
         free(varstr);
     } else {
         *err = adios_errno;

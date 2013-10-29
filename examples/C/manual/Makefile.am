@@ -1,7 +1,10 @@
 INCLUDES = $(all_includes)
-INCLUDES += -I$(top_builddir)/src -I$(top_builddir)/src/public
+INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public
 
 AUTOMAKE_OPTIONS = no-dependencies
+
+all-local:
+	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
 
 noinst_PROGRAMS = 1_nonadios_example 2_adios_write 3_adios_read 4_adios_nfiles
 

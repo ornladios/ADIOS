@@ -27,37 +27,33 @@ int main (int argc, char ** argv)
     void      * data = NULL;
     uint64_t    start[] = {0,0,0,0,0,0,0,0,0,0};
     uint64_t    count[10], bytes_read = 0;
+    ADIOS_SELECTION *sel;
 
     if (argc < 2) {
         printf("Usage: %s <BP-file>\n", argv[0]);
         return 1;
     }
 
-    ADIOS_FILE * f = adios_fopen (argv[1], comm_dummy);
-    if (f == NULL) {
-        printf ("%s\n", adios_errmsg());
-        return -1;
-    }
-
-    /* For all groups */
-    for (gidx = 0; gidx < f->groups_count; gidx++) {
-        printf("Group %s:\n", f->group_namelist[gidx]);
-        ADIOS_GROUP * g = adios_gopen (f, f->group_namelist[gidx]);
-        if (g == NULL) {
+    ADIOS_FILE * f;
+    //int step;
+    //for (step=0; step < 2; step++) {
+        f = adios_read_open_file (argv[1], ADIOS_READ_METHOD_BP, comm_dummy);
+        if (f == NULL) {
             printf ("%s\n", adios_errmsg());
             return -1;
         }
 
         /* For all variables */
-        printf("  Variables=%d:\n", g->vars_count);
-        for (i = 0; i < g->vars_count; i++) {
-            ADIOS_VARINFO * v = adios_inq_var_byid (g, i);
+        printf("  Variables=%d:\n", f->nvars);
+        for (i = 0; i < f->nvars; i++) {
+            ADIOS_VARINFO * v = adios_inq_var_byid (f, i);
+            adios_inq_var_stat (f, v, 0, 0);
 
             uint64_t total_size = adios_type_size (v->type, v->value);
             for (j = 0; j < v->ndim; j++)
                 total_size *= v->dims[j];
 
-            printf("    %-9s  %s", adios_type_to_string(v->type), g->var_namelist[i]);
+            printf("    %-9s  %s", adios_type_to_string(v->type), f->var_namelist[i]);
             if (v->ndim == 0) {
                 /* Scalars do not need to be read in, we get it from the metadata
                    when using adios_inq_var */
@@ -67,8 +63,13 @@ int main (int argc, char ** argv)
                 printf("[%d",v->dims[0]);
                 for (j = 1; j < v->ndim; j++)
                     printf(", %d",v->dims[j]);
-                printf("] = \n");
-
+                //printf("] = \n");
+                
+                if (v->type == adios_integer)
+                    printf("] = min=%d  max=%d\n", (*(int*)v->statistics->min), (*(int*)v->statistics->max));
+                else if (v->type == adios_double)
+                    printf("] = min=%lg  max=%lg\n", (*(double*)v->statistics->min), (*(double*)v->statistics->max));
+                
                 if (total_size > 1024*1024*1024) {
                     printf("        // too big, do not read in\n");
                 } else {
@@ -80,8 +81,10 @@ int main (int argc, char ** argv)
 
                     for (j = 0; j < v->ndim; j++) 
                         count[j] = v->dims[j];   
-                    
-                    bytes_read = adios_read_var_byid (g, i, start, count, data);
+
+                    sel = adios_selection_boundingbox (v->ndim, start, count);
+                    adios_schedule_read_byid (f, sel, i, 0, 1, data);
+                    adios_perform_reads (f, 1);
 
                     if (bytes_read < 0) {
                         printf ("%s\n", adios_errmsg());
@@ -96,7 +99,7 @@ int main (int argc, char ** argv)
                         for (j = 0; j < v->dims[0]; j++) {
                             printf ("        row %d: [", j);
                             for (k = 0; k < v->dims[1]; k++) 
-                               printf("%s ", value_to_string(v->type, data, j*v->dims[1] + k));
+                                printf("%s ", value_to_string(v->type, data, j*v->dims[1] + k));
                             printf ("]\n");
                         }
                     } else if (v->ndim == 3) {
@@ -105,7 +108,8 @@ int main (int argc, char ** argv)
                             for (k = 0; k < v->dims[1]; k++) {
                                 printf ("        row %d: [", k);
                                 for (l = 0; l < v->dims[2]; l++) {
-                                    printf("%s ", value_to_string(v->type, data, j*v->dims[1]*v->dims[2] + k*v->dims[1] + l));
+                                    // NCSU ALACRITY-ADIOS - Fixed bug, k*v->dims[1] changed to  k*v->dims[2]
+                                    printf("%s ", value_to_string(v->type, data, j*v->dims[1]*v->dims[2] + k*v->dims[2] + l));
                                 }
                                 printf ("]\n");
                             }
@@ -122,22 +126,20 @@ int main (int argc, char ** argv)
         } /* variables */
 
         /* For all attributes */
-        printf("  Attributes=%d:\n", g->attrs_count);
-        for (i = 0; i < g->attrs_count; i++) {
+        printf("  Attributes=%d:\n", f->nattrs);
+        for (i = 0; i < f->nattrs; i++) {
             enum ADIOS_DATATYPES atype;
             int  asize;
             void *adata;
-            adios_get_attr_byid (g, i, &atype, &asize, &adata);
+            adios_get_attr_byid (f, i, &atype, &asize, &adata);
             printf("    %-9s  %s = %s\n", adios_type_to_string(atype), 
-                    g->attr_namelist[i], value_to_string(atype, adata, 0));
+                    f->attr_namelist[i], value_to_string(atype, adata, 0));
             free(adata);
         } /* attributes */
 
-        adios_gclose (g);
-    } /* groups */
+        adios_read_close (f);
 
-    adios_fclose (f);
-
+    //} /* loop 'step' */
     return 0;
 }
 

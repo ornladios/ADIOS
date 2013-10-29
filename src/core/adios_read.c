@@ -27,7 +27,7 @@ int adios_read_init_method (enum ADIOS_READ_METHOD method, MPI_Comm comm, const 
 int adios_read_finalize_method(enum ADIOS_READ_METHOD method)
 {
     int retval = common_read_finalize_method(method);
-    log_debug ("adios_read_finalize_method completed");
+    log_debug ("adios_read_finalize_method completed\n");
     return retval;
 }
 
@@ -95,7 +95,7 @@ int adios_schedule_read (const ADIOS_FILE      * fp,
                              int                     nsteps,
                              void                  * data)
 {
-    return common_read_schedule_read (fp, sel, varname, from_steps, nsteps, data);
+    return common_read_schedule_read (fp, sel, varname, from_steps, nsteps, NULL, data);
 }
 
 int adios_schedule_read_byid (const ADIOS_FILE      * fp,
@@ -105,7 +105,27 @@ int adios_schedule_read_byid (const ADIOS_FILE      * fp,
                                   int                     nsteps,
                                   void                  * data)
 {
-    return common_read_schedule_read_byid (fp, sel, varid, from_steps, nsteps, data);
+    return common_read_schedule_read_byid (fp, sel, varid, from_steps, nsteps, NULL, data);
+}
+
+int adios_schedule_read_param (const ADIOS_FILE * fp,
+                               const ADIOS_SELECTION * sel,
+                               const char            * varname,
+                               int                     from_steps,
+                               int                     nsteps,
+                               const char            * param,
+                               void                  * data) {
+    return common_read_schedule_read (fp, sel, varname, from_steps, nsteps, param, data);
+}
+
+int adios_schedule_read_byid_param (const ADIOS_FILE * fp,
+                                    const ADIOS_SELECTION * sel,
+                                    int                     varid,
+                                    int                     from_steps,
+                                    int                     nsteps,
+                                    const char            * param,
+                                    void                  * data) {
+    return common_read_schedule_read_byid (fp, sel, varid, from_steps, nsteps, param, data);
 }
 
 int adios_perform_reads (const ADIOS_FILE *fp, int blocking)

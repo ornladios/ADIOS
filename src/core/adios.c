@@ -30,11 +30,12 @@
 #endif
 
 extern struct adios_transport_struct * adios_transports;
+extern int adios_errno;
 
 int adios_set_application_id (int id)
 {
     globals_adios_set_application_id (id);
-    return 0;
+    return err_no_error;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -96,11 +97,12 @@ int adios_write_byid (int64_t fd_p, int64_t id, void * var)
  */
 int adios_write (int64_t fd_p, const char * name, void * var)
 {
+    int retval;
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     if (!fd)
     {
         adios_error (err_invalid_file_pointer, "Invalid handle passed to adios_write\n");
-        return 1;
+        return adios_errno;
     }
 
     struct adios_var_struct * v = fd->group->vars;
@@ -108,20 +110,20 @@ int adios_write (int64_t fd_p, const char * name, void * var)
 
     if (m && m->next == NULL && m->method->m == ADIOS_METHOD_NULL)
     {
-        // nothing to do so just return
-        return 0;
+        // nothing to do so just return OK (=0)
+        return err_no_error; 
     }
-
-    v = adios_find_var_by_name (v, name, fd->group->all_unique_var_names);
+    log_debug ("%s (%s)\n", __func__, name);
+    v = adios_find_var_by_name (fd->group, name);
 
     if (!v)
     {
         adios_error (err_invalid_varname, "Bad var name (ignored) in adios_write(): '%s'\n", name);
 
-        return 1;
+        return adios_errno;
     }
 
-    common_adios_write_byid (fd, v, var);
+    retval = common_adios_write_byid (fd, v, var);
 #if 0
     if (fd->mode == adios_mode_read)
     {
@@ -208,10 +210,10 @@ int adios_write (int64_t fd_p, const char * name, void * var)
 
     if (fd->mode == adios_mode_write || fd->mode == adios_mode_append) 
     {
-        adios_copy_var_written (&fd->group->vars_written, v, fd);
+        adios_copy_var_written (fd->group, v);
     }
 #endif
-    return 0;
+    return retval;
 }
 
 
@@ -278,6 +280,7 @@ int adios_close (int64_t fd_p)
     while (v) {
         int j, idx;
         int c, count = 1;
+        // NCSU - Clear stats
         if (v->stats) {   
     
             if (v->type == adios_complex || v->type == adios_double_complex)
@@ -312,8 +315,13 @@ int adios_close (int64_t fd_p)
             }
         }
 
+        // NCSU ALACRITY-ADIOS - Clear transform metadata
+        // adios_transform_clear_transform_var(v); // Actually, no, we shouldn't free the metadata here, because this happens once a timestep,
+                                                   // and this shouldn't be free'd until finalize (it is just overwritten each timestep)
+
         v = v->next;
     }
+    return retval;
 }
 
 //////////////////////////////////////////////////////////////////////////////
@@ -330,6 +338,7 @@ int adios_declare_group (int64_t * id, const char * name
                         )
 {
     int ret;
+    adios_errno = err_no_error;
     ret = adios_common_declare_group (id, name, adios_flag_no
                                       ,""
                                       ,""
@@ -340,13 +349,15 @@ int adios_declare_group (int64_t * id, const char * name
         struct adios_group_struct * g = (struct adios_group_struct *) *id;
         g->all_unique_var_names = adios_flag_no;
     }
-    return ret;
+    return adios_errno;
 }
 
 
 int adios_free_group (int64_t id)
 {
-    return adios_common_free_group (id);
+    adios_errno = err_no_error;
+    adios_common_free_group (id);
+    return adios_errno;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -362,10 +373,12 @@ int64_t adios_define_var (int64_t group_id, const char * name
                          ,const char * local_offsets
                          )
 {
+    adios_errno = err_no_error;
     return adios_common_define_var (group_id, name, path
                                    ,type
                                    ,dimensions
                                    ,global_dimensions, local_offsets
+                                   ,NULL // NCSU ALACRITY-ADIOS
                                    );
 }
 
@@ -378,7 +391,9 @@ int adios_define_attribute (int64_t group, const char * name
                            ,const char * value, const char * var
                            )
 {
-    return adios_common_define_attribute (group, name, path, type, value, var);
+    adios_errno = err_no_error;
+    adios_common_define_attribute (group, name, path, type, value, var);
+    return adios_errno;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -389,9 +404,11 @@ int adios_select_method (int64_t group, const char * method
                         ,const char * base_path
                         )
 {
-    return adios_common_select_method_by_group_id (0, method, parameters, group
-                                                  ,base_path, 0
-                                                  );
+    adios_errno = err_no_error;
+    adios_common_select_method_by_group_id (0, method, parameters, group
+                                            ,base_path, 0
+                                            );
+    return adios_errno;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

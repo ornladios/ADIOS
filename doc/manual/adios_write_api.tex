@@ -17,7 +17,7 @@ opposed to the return value for C routines.
 A unique feature of ADIOS is group implementation, which is constituted by a list 
 of variables and associated with individual transport methods. This flexibility 
 allows the applications to make the best use of the file system according to its 
-own different I/O patterns.\label{HToc84890236}\label{HToc212016612}\label{HToc212016854}\label{HToc182553350}
+own different I/O patterns.
 
 \subsection{ADIOS-required functions}
 
@@ -56,23 +56,22 @@ It loads the XML configuration file
 and establishes the execution environment. Before any ADIOS operation starts, adios\_init 
 is required to be called to create internal representations of various data types 
 and to define the transport methods used for writing. 
-For historical reasons, this function does not have an \verb+MPI_Comm comm+ 
-argument, it is using \verb+MPI_COMM_WORLD+ internally to ensure only one process
-is actually reading the XML file. Therefore, this function must be called from
-all application processes. 
+From version 1.5, this function does have an \verb+MPI_Comm comm+ 
+argument. 
 
 \begin{lstlisting}[alsolanguage=C]
-int adios_init (const char * xml_fname)
+int adios_init (const char * xml_fname, MPI_Comm comm)
 \end{lstlisting}
 
 Input: 
 \begin{itemize}
 \item xml\_fname - string containing the name of the XML configuration file
+\item comm - MPI communicator. Any process that is going to use ADIOS should call this function and must be a member of this communicator. 
 \end{itemize}
 
 Fortran example: 
 \begin{lstlisting}[alsolanguage=Fortran]
-call adios_init ("config.xml", ierr)
+call adios_init ("config.xml", comm, ierr)
 \end{lstlisting}
 
 \subsubsection{adios\_open}
@@ -84,7 +83,7 @@ A pointer is returned as \textit{fd\_p} for subsequent operations.
 The group name should match one of the groups defined in the XML file. The I/O handle 
 The third argument, \textit{file\_name}, is a string representing the name of 
 the file. 
-The last argument \textit{mode} is a string containing a file access mode. 
+The fourth argument \textit{mode} is a string containing a file access mode. 
 It can be one of these three mode specifiers: ``r,'' ``w,'' or ``a.'' Currently, 
 ADIOS supports three access modes: ``write or create if file does not exist,'' 
 ``read,'' and ``append file.'' 
@@ -93,9 +92,11 @@ processes that write to the file. Individual writes can be called by individual 
 
 Note, that a file is not necessarily opened during this call. Some methods postpone the actual file open to \textit{adios\_group\_size}.
 
+Note, that before version 1.5, this function required a \verb+void * comm+ argument, so you need to update existing codes to pass the communicator itself now, not a pointer to it.
+
 \begin{lstlisting}[alsolanguage=C]
 int adios_open (int64_t * fd_p, const char * group_name,
-            const char * file_name, const char * mode,void *comm)
+            const char * file_name, const char * mode, MPI_Comm comm)
 \end{lstlisting}
 
 Input: 
@@ -355,12 +356,14 @@ a Fortran90 keyword. The actual module source defines all possible combinations
 of type and dimensionality for such subroutines. 
 
 \begin{lstlisting}[language=ADIOS,alsolanguage=Fortran]
-subroutine adios_init (config, err)
+subroutine adios_init (config, comm, err)
     character(*),   intent(in)  :: config
+    integer,        intent(in)  :: comm
     integer,        intent(out) :: err
 end subroutine
 
-subroutine adios_init_noxml (err)
+subroutine adios_init_noxml (comm, err)
+    integer,        intent(in)  :: comm
     integer,        intent(out) :: err
 end subroutine
 
@@ -503,7 +506,7 @@ int main (int argc, char *argv[])
 
     // data initialization for ( i=0; i<NX; i++)
     t [i] = i * (rank+1) + 0.1; // ADIOS routines 
-    adios_init ("config.xml");
+    adios_init ("config.xml", comm);
     adios_open (&handle, "temperature", "data.bp", "w",comm); 
     group_size = sizeof(int) \        // int NX
                + sizeof(double) * NX; // double array t

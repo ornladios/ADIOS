@@ -14,7 +14,7 @@
 #include "mpi.h"
 
 #define ADIOS_USE_READ_API_1
-#include "public/adios_read.h"
+#include "adios_read.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"

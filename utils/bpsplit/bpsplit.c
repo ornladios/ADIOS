@@ -49,8 +49,9 @@
 
 #define DIVIDER "========================================================\n"
 
-
+#ifndef bool
 typedef int bool;
+#endif
 #define true 1
 #define false 0
 
@@ -203,12 +204,11 @@ int main( int argc, char *argv[] ) {
 // global vars for the functions below
 //   filein's data structs
 struct adios_bp_buffer_struct_v1           * in_bp         = 0;
+struct adios_index_struct_v1               * idx           = 0;
 struct adios_index_process_group_struct_v1 * in_pg_root    = 0;
-struct adios_index_var_struct_v1           * vars_root     = 0; // in-place processing will occur
-struct adios_index_attribute_struct_v1     * attrs_root    = 0; // in-place processing will occur
 //   fileout's data structs 
 struct adios_bp_buffer_struct_v1           * out_bp         = 0;
-struct adios_index_process_group_struct_v1 * out_pg_root    = 0;
+//struct adios_index_process_group_struct_v1 * out_pg_root    = 0; // use idx->pg_root
 uint64_t out_offset_start = 0;  // the beginning offset of group data in in_bp to write out to out_bp
 uint64_t out_offset_end = 0;    // the end offset of group data in in_bp to write out to out_bp
 //   aux variables to contain tail of index chains (for cleanup only)
@@ -246,11 +246,11 @@ int read_indexes(char *filename) {
     
     // read and parse variable index
     adios_posix_read_vars_index (in_bp);
-    adios_parse_vars_index_v1 (in_bp, &vars_root);
+    adios_parse_vars_index_v1 (in_bp, &idx->vars_root, NULL, NULL);
 
     // read and parse attribute index
     adios_posix_read_attributes_index (in_bp);
-    adios_parse_attributes_index_v1 (in_bp, &attrs_root);
+    adios_parse_attributes_index_v1 (in_bp, &idx->attrs_root);
 
     if (verbose>1) {
         printf (DIVIDER);
@@ -373,7 +373,7 @@ void split_pg_index( uint32_t from, uint32_t to) {
         if (section == 0 && pg->time_index >= from) {
             // reached from..to section
             // start out_pg_root index chain
-            out_pg_root = pg;
+            idx->pg_root = pg;
             // this is the starting offset from which data should be copied
             out_offset_start = pg->offset_in_file;
             // unlink previous->next pointer to this item
@@ -421,8 +421,8 @@ void split_pg_index( uint32_t from, uint32_t to) {
 void determine_pg_offsets() {
     // determine offsets
     if (verbose) printf("Determine process group offsets\n");
-    if (out_pg_root) {
-        out_offset_start = out_pg_root->offset_in_file;
+    if (idx->pg_root) {
+        out_offset_start = idx->pg_root->offset_in_file;
         if (tail_pg_root) 
             out_offset_end = tail_pg_root->offset_in_file; // end points to a byte which is not copied!
         else
@@ -441,9 +441,9 @@ void determine_pg_offsets() {
  *  Call after split_pg_index()
  */
 void weed_out_indexes(void) {
-    struct adios_index_var_struct_v1       * vg = vars_root;
+    struct adios_index_var_struct_v1       * vg = idx->vars_root;
     struct adios_index_var_struct_v1       * vg_prev = NULL;
-    struct adios_index_attribute_struct_v1 * ag = attrs_root;
+    struct adios_index_attribute_struct_v1 * ag = idx->attrs_root;
     struct adios_index_attribute_struct_v1 * ag_prev = NULL;
     int i, start, count;
     
@@ -476,7 +476,7 @@ void weed_out_indexes(void) {
             // no characteristics <=> this variable is not contained in the output slice
             // take it out from the chain
             if (vg_prev != NULL) vg_prev->next = vg->next;
-            else vars_root = vg->next;
+            else idx->vars_root = vg->next;
         } else {
             vg_prev = vg; // advance prev only if this variable is kept in chain
         }
@@ -512,7 +512,7 @@ void weed_out_indexes(void) {
             // no characteristics <=> this attribute is not contained in the output slice
             // take it out from the chain
             if (ag_prev != NULL) ag_prev->next = ag->next;
-            else attrs_root = ag->next;
+            else idx->attrs_root = ag->next;
         } else {
             ag_prev = ag; // advance prev only if this attribute is kept in chain
         }
@@ -581,8 +581,7 @@ int write_out( const char *fileout, const char *filein) {
     char * buffer = NULL;
     uint64_t buffer_size = 0;
     uint64_t buffer_offset = 0;
-    adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset, bytes_copied,
-                          out_pg_root, vars_root, attrs_root);
+    adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset, bytes_copied, idx);
     if (verbose>1) printf("  index size %llu 0x%llx\n", buffer_offset, buffer_offset);
     adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 
@@ -604,6 +603,8 @@ int bpsplit(char *filein, char *fileout, char *recordfile, int from_in, int to_i
     uint32_t from, to;
     uint32_t maxtime = 1;   // at least there is time=1 (single group) in a bp file
     struct adios_bp_buffer_struct_v1 * b = 0;
+
+    idx = adios_alloc_index_v1(0);
 
     // open input file, read and parse indexes 
     excode = read_indexes( filein );

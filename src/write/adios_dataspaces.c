@@ -50,58 +50,6 @@ struct adios_ds_data_struct
 
 
 
-static int get_dim_rank_value(struct adios_dimension_item_struct * dim_info, struct adios_group_struct *group)
-{
-    if(!dim_info)
-       return 0;
-
-    if(dim_info->id != 0)
-    {
-        struct adios_var_struct *dim_var = NULL;
-        dim_var = adios_find_var_by_id(group->vars, dim_info->id);
-        if(!dim_var || !dim_var->data)
-           return 0;
-        
-        int rank = 0;
-        switch ( dim_var->type )
-        {
-        case adios_unsigned_byte:
-             rank = (*(uint8_t*) dim_var->data);
-             break;
-        case adios_byte:
-             rank = (*(int8_t*) dim_var->data);
-             break;
-        case adios_unsigned_short:
-             rank = (*(uint16_t*) dim_var->data);
-             break;
-        case adios_short:
-             rank = (*(int16_t*) dim_var->data);
-             break;
-        case adios_unsigned_integer:
-             rank = (*(uint32_t*) dim_var->data);
-             break;
-        case adios_integer:
-             rank = (*(int32_t*) dim_var->data);
-             break;
-        case adios_unsigned_long:
-             rank = (*(uint64_t*) dim_var->data);
-             break;
-        case adios_long:
-             rank = (*(int64_t*) dim_var->data);
-             break;
-
-        default: break;
-        }
-
-        return rank;
-    }
-    else
-    {
-        return dim_info->rank;
-    }
-}
-
-
 static int connect_to_dspaces (struct adios_ds_data_struct * p, MPI_Comm comm)
 {
     int ret = 0;
@@ -134,8 +82,9 @@ static int connect_to_dspaces (struct adios_ds_data_struct * p, MPI_Comm comm)
 #endif
 
         log_debug ("adios_dataspaces: rank=%d connected to DATASPACES: peers=%d\n", p->rank, p->peers);        
-        globals_adios_set_dataspaces_connected_from_writer();
     }
+
+    globals_adios_set_dataspaces_connected_from_writer();
     return ret;
 }
 
@@ -264,9 +213,9 @@ void adios_dataspaces_write (struct adios_file_struct * fd
     // Calculate lower and upper bounds for each available dimension (up to 3 dims)
     while( var_dimensions && ndims < 3)
     {
-        dims[ndims] = get_dim_rank_value(&(var_dimensions->dimension), group);
-        gdims[ndims] = get_dim_rank_value(&(var_dimensions->global_dimension), group);
-        lb[ndims] = get_dim_rank_value(&(var_dimensions->local_offset), group);
+        dims[ndims] = adios_get_dim_value (&(var_dimensions->dimension));
+        gdims[ndims] = adios_get_dim_value (&(var_dimensions->global_dimension));
+        lb[ndims] = adios_get_dim_value (&(var_dimensions->local_offset));
         if (dims[ndims] > 0)  {
             ub[ndims] = lb[ndims] + dims[ndims] - 1;
             ndims++;
@@ -434,25 +383,20 @@ void adios_dataspaces_read (struct adios_file_struct * fd
 /* Gather var/attr indices from all processes to rank 0 */
 static void adios_dataspaces_gather_indices (struct adios_file_struct * fd
                                ,struct adios_method_struct * method
-                               ,struct adios_index_process_group_struct_v1 **pg_root 
-                               ,struct adios_index_var_struct_v1 **vars_root
-                               ,struct adios_index_attribute_struct_v1 ** attrs_root
+                               ,struct adios_index_struct_v1 * index
                                )
 {
     struct adios_ds_data_struct *p = (struct adios_ds_data_struct *)
                                                 method->method_data;
-    struct adios_index_process_group_struct_v1 * my_pg_root = 0;
-    struct adios_index_var_struct_v1 * my_vars_root = 0;
-    struct adios_index_attribute_struct_v1 * my_attrs_root = 0;
     struct adios_index_process_group_struct_v1 * new_pg_root = 0;
     struct adios_index_var_struct_v1 * new_vars_root = 0;
     struct adios_index_attribute_struct_v1 * new_attrs_root = 0;
     
     // build local index first appending to any existing index
-    adios_build_index_v1 (fd, &my_pg_root, &my_vars_root, &my_attrs_root);
+    adios_build_index_v1 (fd, index);
 
     log_debug ("%s index after first build is pg=%x vars=%x attrs=%x\n", 
-                __func__, my_pg_root, my_vars_root, my_attrs_root);
+                __func__, index->pg_root, index->vars_root, index->attrs_root);
 #if 0
 #if HAVE_MPI
     // gather all on rank 0
@@ -495,17 +439,12 @@ static void adios_dataspaces_gather_indices (struct adios_file_struct * fd
                 adios_parse_process_group_index_v1 (&b
                         ,&new_pg_root
                         );
-                adios_parse_vars_index_v1 (&b, &new_vars_root);
+                adios_parse_vars_index_v1 (&b, &new_vars_root, NULL, NULL);
                 adios_parse_attributes_index_v1 (&b
                         ,&new_attrs_root
                         );
-                adios_merge_index_v1 (&my_pg_root
-                        ,&my_vars_root
-                        ,&my_attrs_root
-                        ,new_pg_root, new_vars_root
-                        ,new_attrs_root
-                        );
-                adios_clear_index_v1 (new_pg_root, new_vars_root, new_attrs_root);
+                adios_merge_index_v1 (index, new_pg_root, 
+                                      new_vars_root, new_attrs_root);
                 new_pg_root = 0;
                 new_vars_root = 0;
                 new_attrs_root = 0;
@@ -522,7 +461,7 @@ static void adios_dataspaces_gather_indices (struct adios_file_struct * fd
             uint64_t buffer_offset = 0;
 
             adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
-                    ,0, my_pg_root ,my_vars_root ,my_attrs_root);
+                    ,0, index);
 
             uint32_t tmp_buffer_size = (uint32_t) buffer_size;
             MPI_Gather (&tmp_buffer_size, 1, MPI_INT, 0, 0, MPI_INT
@@ -539,11 +478,8 @@ static void adios_dataspaces_gather_indices (struct adios_file_struct * fd
 #endif
 #endif
 
-    *pg_root = my_pg_root;
-    *vars_root = my_vars_root;
-    *attrs_root = my_attrs_root;
     log_debug ("%s index after gathering is pg=%x vars=%x attrs=%x\n", 
-                __func__, my_pg_root, my_vars_root, my_attrs_root);
+                __func__, index->pg_root, index->vars_root, index->attrs_root);
 }
 
 static int ds_get_full_name_len (char * path, char * name)
@@ -580,16 +516,15 @@ static int ds_get_full_name (char * path, char * name, int maxlen,
 }
 
 void ds_pack_group_info (struct adios_file_struct *fd
-                                  ,struct adios_method_struct * method
-                                  ,struct adios_index_var_struct_v1 *vars_root
-                                  ,struct adios_index_attribute_struct_v1 * attrs_root
-                                  ,char ** buffer, int *buffer_size, int *nvars, int *nattrs
-                                  )
+                        ,struct adios_method_struct * method
+                        ,struct adios_index_struct_v1 *index
+                        ,char ** buffer, int *buffer_size, int *nvars, int *nattrs
+                        )
 {
     struct adios_ds_data_struct *p = (struct adios_ds_data_struct *)
                                                 method->method_data;
-    struct adios_index_var_struct_v1 * v = vars_root;
-    struct adios_index_attribute_struct_v1 * a = attrs_root;
+    struct adios_index_var_struct_v1 * v = index->vars_root;
+    struct adios_index_attribute_struct_v1 * a = index->attrs_root;
     int size;
     int ndims; // whatever the type of v->characteristics->dims.count is, we write an int to buffer
     int hastime; // true if variable has time dimension
@@ -644,8 +579,8 @@ void ds_pack_group_info (struct adios_file_struct *fd
     *buffer_size = size;
 
     /* Second cycle: fill up the buffer */
-    v = vars_root;
-    a = attrs_root;
+    v = index->vars_root;
+    a = index->attrs_root;
     char * b = *buffer;
     int i, j, namelen;
     char name[256];
@@ -814,9 +749,7 @@ void adios_dataspaces_close (struct adios_file_struct * fd
 {
     struct adios_ds_data_struct *p = (struct adios_ds_data_struct *)
                                                 method->method_data;
-    struct adios_index_process_group_struct_v1 * pg_root;
-    struct adios_index_var_struct_v1 * vars_root;
-    struct adios_index_attribute_struct_v1 * attrs_root;
+    struct adios_index_struct_v1 * index = adios_alloc_index_v1(1);
     struct adios_attribute_struct * a = fd->group->attributes;
     int lb[3], ub[3], didx[3]; // for reordering DS dimensions
     unsigned int version;
@@ -831,7 +764,7 @@ void adios_dataspaces_close (struct adios_file_struct * fd
 
         //adios_write_close_vars_v1 (fd);
         /* Gather var/attr indices from all processes to rank 0 */
-        adios_dataspaces_gather_indices (fd, method, &pg_root, &vars_root ,&attrs_root);
+        adios_dataspaces_gather_indices (fd, method, index);
 
         // make sure all processes have finished putting data to the space 
         // before we put metadata from rank 0
@@ -851,7 +784,7 @@ void adios_dataspaces_close (struct adios_file_struct * fd
             char * indexbuf;
             int    indexlen;
             int    nvars, nattrs;
-            ds_pack_group_info (fd, method, vars_root, attrs_root, 
+            ds_pack_group_info (fd, method, index, 
                                    &indexbuf, &indexlen, &nvars, &nattrs);
 
             
@@ -920,7 +853,8 @@ void adios_dataspaces_close (struct adios_file_struct * fd
 
 
         // free allocated index lists
-        adios_clear_index_v1 (pg_root, vars_root, attrs_root);
+        adios_clear_index_v1 (index);
+        adios_free_index_v1 (index);
 
         // rank=0 may be in put_sync when others call unlock, which is a global op
         MPI_Barrier (p->mpi_comm); 

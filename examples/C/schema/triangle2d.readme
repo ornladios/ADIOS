@@ -1,0 +1,40 @@
+REQUIREMENTS:
+    - ADIOS 1.5.0: http://www.olcf.ornl.gov/center-projects/adios
+    - C compiler
+    - MPI
+
+BUILD:
+    - Install ADIOS
+    - In Makefile, set ADIOS_DIR to the installation directory
+    - also set the MPI/C compiler name (e.g. mpicc or cc)
+    - run make
+
+This example is for writing a triangular unstructured mesh and data on it. 
+n = number of processes
+Processes write data on 2(n-1) triangles per process
+N is data on the points (value = rank)
+C is data on the cells (value = rank)
+
+1. Run the writer 
+=================
+$ mpirun -np 4 ./triangle2d
+
+2. Check the output
+===================
+  integer  /nproc      scalar = 4 
+  integer  /npoints    scalar = 20 
+  integer  /num_cells  scalar = 24 
+  integer  /lp         scalar = 8 
+  integer  /op         scalar = 0 
+  integer  /lc         scalar = 6 
+  integer  /oc         scalar = 0 
+  integer  /cells      {24, 3} = 0 / 19 / 9.5 / 5.058 
+  real     /points     {20, 2} = 0 / 4 / 1.85 / 1.18533 
+  double   /N          {20} = 0 / 19 / 9.5 / 5.02494 
+  double   /C          {24} = 0 / 23 / 11.5 / 6.92219
+
+$ bpls -l triangle2d.bp
+
+triangle2d.n4.png is a plot of how the data N[20] over the 20 points should look like if visualized.
+
+

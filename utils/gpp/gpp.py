@@ -11,8 +11,13 @@ import type_mapper
 def checkXML (config_file, path):
     if path == '':
         adios_lint = 'adios_lint '
-    else:
+    elif os.path.exists (path+'/adios_lint'):
         adios_lint = path + '/adios_lint '
+    elif os.path.exists (path+'/../adios_lint/adios_lint'):
+        adios_lint = path+'/../adios_lint/adios_lint '
+    else:
+        adios_lint = 'adios_lint '
+
     rv = os.system (adios_lint + config_file)
     if rv == 0:
         return 'success'
@@ -53,15 +58,18 @@ def get_c_groupsize_code (group):
 
 
 def get_fortran_groupsize_code (group):
+    #print 'Get Fortran Groupsize code for group "'+group.get_name()+'"'
     groupsize_code_string = ''
     groupsize_code_string += 'adios_groupsize = '
     for v in group.get_vars():
+        #print '  count variable "'+v.get_fullpath()+'"'
         if (v.is_scalar() ):
             groupsize_code_string += ('%d' % type_mapper.get_size (v.get_type() ) + ' &\n                + ')
         else:
             groupsize_code_string += ('%d * ' % type_mapper.get_size (v.get_type() ) )
 
             for d in v.get_dimensions():
+                #print '  count dim "'+d+'"'
                 # need to check whether this is the timestep
                 groupsize_code_string += '(' + d + ') * '
 
@@ -74,6 +82,7 @@ def get_fortran_groupsize_code (group):
 
     groupsize_code_string += '\ncall adios_group_size (adios_handle, adios_groupsize, adios_totalsize, adios_err)'
 
+    #print 'Done Fortran Groupsize'
     return groupsize_code_string;
 
 
@@ -94,7 +103,7 @@ def get_fortran_write_statements (group):
         # Otherwise, the item must be a variable
         var = item
 
-        statements += '\ncall adios_write (adios_handle, "' + var.get_name() + '", ' + var.get_gwrite() + ', adios_err)'
+        statements += '\ncall adios_write (adios_handle, "' + var.get_fullpath() + '", ' + var.get_gwrite() + ', adios_err)'
 
     statements += '\n'
     return statements
@@ -125,7 +134,7 @@ def get_c_write_statements (group):
         else:
             var_prefix = '&'
 
-        statements += '\nadios_write (adios_handle, "' + var.get_name() + '", ' + var_prefix + var.get_gwrite() + ');'
+        statements += '\nadios_write (adios_handle, "' + var.get_fullpath() + '", ' + var_prefix + var.get_gwrite() + ');'
 
     statements += '\n'
     return statements

@@ -5,7 +5,7 @@ This directory contains the codes for the ADIOS python/numpy wrapper
 to to call the native ADIOS library. This module is built by Cython.
 
 
-== Build == 
+== Build with CMake == 
 
 This program can be built with CMake (http://www.cmake.org/). You may
 want to a build directory and run cmake pointing the source directory
@@ -35,3 +35,18 @@ $ make test
 If you need a verbose output, type the following
 
 $ ctest -V
+
+== Build with Python == 
+
+This program also can be build and installed by using python's
+standard package distribution method. For example,
+
+$ python setup.py build
+will compile adios python module. Once successfully completed, type
+
+$ python setup.py install 
+Or,
+$ python setup.py install --user
+to install ADIOS module in python's default package directory or user
+local directory.
+
