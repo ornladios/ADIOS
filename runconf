@@ -100,6 +100,8 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         --with-bzip2=$BZIP2_DIR \
         $WITHDART \
         $WITHFLEX \
+        --with-aplod=/ccs/proj/e2e/ncsu/sith.gnu \
+        --with-isobar=/ccs/proj/e2e/ncsu/sith.gnu
         #--with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.sith.$TARGET 
         #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
         #--enable-shared --disable-static
@@ -252,7 +254,7 @@ elif [ `hostname | cut -c 1-4` == "lens" ]; then
 
 elif [ `hostname | cut -c 1-5` == "titan" ]; then
 
-    BUILD_STAGING=false
+    BUILD_STAGING=true
     if [ $BUILD_STAGING == "false" ]; then
     
         ################
@@ -358,7 +360,8 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         --with-cray-pmi=/opt/cray/pmi/default \
         --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
         --with-cray-ugni-libdir=/opt/cray/ugni/default/lib \
-        --with-dataspaces=$DATASPACES_DIR 
+        --with-dataspaces=$DATASPACES_DIR \
+        --with-dimes=$DATASPACES_DIR 
         #--with-netcdf=/opt/cray/netcdf/3.6.2/netcdf-${TARGET} \
         #--with-hdf5=/sw/xt5/hdf5/1.8.2/cnl2.1_gnu4.2.0 \
         #--with-nc4par=/opt/cray/netcdf-hdf5parallel/4.0.1.3/netcdf-hdf5parallel-$TARGET \
@@ -371,6 +374,52 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
     fi
     
 
+
+elif [ `hostname | cut -c 1-4` == "eos-" ]; then
+
+      #################
+      # EOS Cray XC30 #
+      #################
+      TARGET=`module list 2>&1 | grep "PrgEnv"- | sed "s/^.*PrgEnv-\([a-z]*\).*/\1/"`
+      echo "Configure on EOS (Cray XC30) for $TARGET env."
+      export CC=cc
+      #export CFLAGS="-Wall -g" 
+      export FC=ftn
+      export CXX=CC
+      source /opt/modules/default/etc/modules.sh
+      module unload szip
+      module unload hdf5
+      module unload netcdf
+      module unload netcdf-hdf5parallel
+      module unload hdf5-parallel
+      module unload PrgEnv-gnu
+      module unload PrgEnv-pgi
+      module unload PrgEnv-intel
+      module unload PrgEnv-cray
+      module unload papi
+      module unload pmi
+      module load PrgEnv-$TARGET
+      if [ "$TARGET" == "pgi" ]; then
+          # NSSI needs -pgcpplibs flag 
+          export LDFLAGS="-pgcpplibs" 
+          unset EXTRA_LIBS 
+      elif [ "$TARGET" == "gnu" ]; then
+          # NSSI needs libstdc++
+          unset LDFLAGS 
+          export EXTRA_LIBS="/opt/gcc/4.8.1/snos/lib64/libstdc++.a"
+          module swap gcc gcc/4.8.1
+      else
+          unset LDFLAGS 
+          unset EXTRA_LIBS 
+      fi
+      module load mxml
+      module load pmi
+      CFLAGS="-g -fPIC" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/chester.$TARGET \
+          --enable-dependency-tracking \
+          --with-cray-pmi=/opt/cray/pmi/default \
+          --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
+          --with-cray-ugni-libdir=/opt/cray/ugni/default/lib \
+            
 
 elif [ `hostname | cut -c 1-7` == "chester" ]; then
 
