@@ -18,8 +18,9 @@ extern "C" {
 #include "adios_mpi.h"
 #include "adios_types.h"
 #include "adios_selection.h"
-
+#include "adios_schema.h"
 #include <stdint.h>
+
 
 /*************************/
 /* Types used in the API */
@@ -31,6 +32,8 @@ typedef struct {
         char     ** var_namelist;   /* Variable names in a char* array                                */
         int      nattrs;            /* Number of attributes in all groups                             */
         char     ** attr_namelist;  /* Attribute names in a char* array                               */
+        int      nmeshes;            /* Number of attributes in all groups                            */
+        char     ** mesh_namelist;  /* Attribute names in a char* array                               */
 
         /* Stream step information */
         int      current_step;      /* The current step in a stream. For a file, it is always 0.      */
@@ -87,6 +90,18 @@ typedef struct {
     uint64_t * count;      /* local sizes in global array ('ndim' elements)                */
 } ADIOS_VARBLOCK;
 
+enum var_centering
+{
+    no = 0,               // 0 for uniform/rectilinear/structured mesh
+    point = 1,            // unstructured mesh point centering
+    cell = 2              // unstructured mesh cell centering
+};
+
+typedef struct {
+    int meshid;
+    enum var_centering centering;
+} ADIOS_VARMESH;
+
 typedef struct {
         int        varid;           /* variable index (0..ADIOS_FILE.nvars-1)                         */
         enum ADIOS_DATATYPES type;  /* type of variable                                               */
@@ -108,6 +123,8 @@ typedef struct {
         ADIOS_VARBLOCK *blockinfo;  /* Spatial arrangement of written blocks, 
                                        retrieved in separate call: adios_inq_var_blockinfo()       
                                        It is an array of 'sum_nblocks' elements                       */
+        ADIOS_VARMESH *meshinfo;    /* structure in adios_schema.h,
+                                       retrieved in separate call: adios_inq_var_meshinfo()          */ 
 } ADIOS_VARINFO;
 
 
@@ -314,13 +331,13 @@ void adios_release_step (ADIOS_FILE *fp);
  *       varname  name of the variable
  *  RETURN:       pointer to and ADIOS_VARINFO struct, NULL on error (sets adios_errno)
  */
-ADIOS_VARINFO * adios_inq_var (ADIOS_FILE *fp, const char * varname);
+ADIOS_VARINFO * adios_inq_var (ADIOS_FILE *fp, const char * varname);  
 
 /** Inquiry a variable by index
  *       varid    index of variable (0..fp->nvars-1)
  *                in fp->vars_namelist of ADIOS_FILE struct
  */
-ADIOS_VARINFO * adios_inq_var_byid (ADIOS_FILE *fp, int varid);
+ADIOS_VARINFO * adios_inq_var_byid (ADIOS_FILE *fp, int varid);   
 
 /** Free memory used by an ADIOS_VARINFO struct */
 void adios_free_varinfo (ADIOS_VARINFO *cp);
@@ -354,6 +371,23 @@ int adios_inq_var_stat (ADIOS_FILE *fp, ADIOS_VARINFO * varinfo,
  *  RETURN: 0 OK, !=0 on error (adios_errno value)
  */
 int adios_inq_var_blockinfo (ADIOS_FILE *fp, ADIOS_VARINFO * varinfo);
+
+/** Inquiry a mesh by index
+*       meshid   index of mesh (0..fp->nmeshes-1)
+*                in fp->mesh_namelist of ADIOS_FILE struct
+*/
+ADIOS_MESH * adios_inq_mesh_byid (ADIOS_FILE *fp, int meshid);
+
+/** Free memory used by an ADIOS_MESH struct */
+void adios_free_meshinfo (ADIOS_MESH *meshinfo);
+
+/** Get the mesh information of the variable about how it is stored in
+ * ADIOS_MESH structure
+ * IN:  fp       pointer to an (opened) ADIOS_FILE struct
+ *      varinfo  result of adios_inq_var() 
+ * RETURN: 0 OK, !=0 on error
+ */
+int adios_inq_var_meshinfo (ADIOS_FILE *fp, ADIOS_VARINFO * varinfo);
 
 /** Schedule reading a variable (slice) from the file.
  *  You need to call adios_perform_reads() to do the reading of
