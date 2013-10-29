@@ -286,6 +286,9 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
     timer_stop ("adios_transform_generate_read_requests_intersect");
 #endif
 
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
+    timer_start ("adios_transform_generate_read_requests_handle_intersect");
+#endif
         if (pg_intersection_sel) {
             // Make a PG read request group, and fill it with some subrequests, and link it into the read reqgroup
             adios_transform_pg_read_request *new_pg_reqgroup;
@@ -321,6 +324,9 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
     timer_stop ("adios_transform_generate_read_requests_cleanup");
 #endif
         }
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
+    timer_stop ("adios_transform_generate_read_requests_handle_intersect");
+#endif
 
         // Increment block indexes
         blockidx++;

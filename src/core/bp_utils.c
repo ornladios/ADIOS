@@ -28,6 +28,15 @@
 #include "dmalloc.h"
 #endif
 
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
+#define timer_start(t) timer_start(t)
+#define timer_stop(t) timer_stop(t)
+#else
+#define timer_start(t) ((void)0)
+#define timer_stop(t) ((void)0)
+#endif
+
+
 #define BUFREAD8(b,var)  var = (uint8_t) *(b->buff + b->offset); \
                          b->offset += 1;
 
@@ -117,6 +126,7 @@ int bp_get_endianness( uint32_t change_endianness )
  */
 int get_time (struct adios_index_var_struct_v1 * v, int step)
 {
+    timer_start("adios_read_bp_get_time");
     int i = 0;
     int prev_ti = 0, counter = 0;
 
@@ -127,6 +137,7 @@ int get_time (struct adios_index_var_struct_v1 * v, int step)
             counter ++;
             if (counter == (step + 1))
             {
+                timer_stop("adios_read_bp_get_time");
                 return v->characteristics[i].time_index;
             }
             prev_ti = v->characteristics[i].time_index;
@@ -135,8 +146,8 @@ int get_time (struct adios_index_var_struct_v1 * v, int step)
         i++;
     }
 
+    timer_stop("adios_read_bp_get_time");
     return -1;
-
 }
 
 int bp_read_open (const char * filename,
@@ -1577,16 +1588,20 @@ SET_DATA_3(t) \
 // Search for the start var index.
 int64_t get_var_start_index (struct adios_index_var_struct_v1 * v, int t)
 {
+    //fh->gvar_h->time_index
     int64_t i = 0;
+    timer_start("adios_read_bp_start_index");
 
     while (i < v->characteristics_count) {
         if (v->characteristics[i].time_index == t) {
+            timer_stop("adios_read_bp_start_index");
             return i;
         }
 
         i++;
     }
 
+    timer_stop("adios_read_bp_start_index");
     return -1;
 }
 
@@ -1594,15 +1609,18 @@ int64_t get_var_start_index (struct adios_index_var_struct_v1 * v, int t)
 int64_t get_var_stop_index (struct adios_index_var_struct_v1 * v, int t)
 {
     int64_t i = v->characteristics_count - 1;
+    timer_start("adios_read_bp_stop_index");
 
     while (i > -1) {
         if (v->characteristics[i].time_index == t) {
+            timer_stop("adios_read_bp_stop_index");
             return i;
         }
 
         i--;
     }
 
+    timer_stop("adios_read_bp_stop_index");
     return -1;
 }
 
