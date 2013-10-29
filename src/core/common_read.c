@@ -1485,7 +1485,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                                for maximums and ignore the rest maximums\n", meshinfo->name, num_coordinates, meshinfo->rectilinear->num_dimensions);
                 }
                 meshinfo->rectilinear->coordinates = (char **) malloc (num_coordinates*sizeof(char *)); 
-                for (int i=0; i<num_coordinates; i++)
+                for (i=0; i<num_coordinates; i++)
                 {
                     char * i_buffer;
                     int i_digits;
@@ -1728,7 +1728,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                                for points and ignore the rest points\n", meshinfo->name, points_dim, meshinfo->structured->num_dimensions);
                 }
                 meshinfo->structured->points = (char **) malloc (points_dim*sizeof(char *)); 
-                for (int i=0; i<points_dim; i++)
+                for (i=0; i<points_dim; i++)
                 {
                     char * i_buffer;
                     int i_digits;
@@ -1936,7 +1936,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                 int first_dim = 1;
                 meshinfo->unstructured->npoints = 1;
                 char * first_match_var;
-                for (int i=0; i<points_dim; i++)
+                for (i=0; i<points_dim; i++)
                 {
                     char * i_buffer;
                     int i_digits;
