@@ -213,6 +213,8 @@ inline static const ADIOS_SELECTION * create_pg_bounds(int ndim, ADIOS_VARBLOCK 
     return common_read_selection_boundingbox(ndim, orig_vb->start, orig_vb->count);
 }
 
+#define TMP TIMER_LEVEL
+#define TIMER_LEVEL 3
 adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIOS_VARINFO *raw_varinfo, const ADIOS_TRANSINFO* transinfo, const ADIOS_FILE *fp,
                                                                        const ADIOS_SELECTION *sel, int from_steps, int nsteps, const char *param, void *data) {
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
@@ -269,22 +271,26 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
         const ADIOS_SELECTION *pg_bounds_sel;
         ADIOS_SELECTION *pg_intersection_sel;
 
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 3)
     timer_start ("adios_transform_generate_read_requests_createbounds");
 #endif
         raw_vb = &raw_varinfo->blockinfo[blockidx];
         orig_vb = &transinfo->orig_blockinfo[blockidx];
 
         pg_bounds_sel = create_pg_bounds(transinfo->orig_ndim, orig_vb);
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 3)
     timer_stop ("adios_transform_generate_read_requests_createbounds");
+#endif
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 3)
     timer_start ("adios_transform_generate_read_requests_intersect");
 #endif
 
         // Find the intersection, if any
         pg_intersection_sel = adios_selection_intersect(pg_bounds_sel, sel);
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 3)
     timer_stop ("adios_transform_generate_read_requests_intersect");
+#endif
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("adios_transform_generate_read_requests_handle_intersect");
 #endif
         if (pg_intersection_sel) {
@@ -345,6 +351,8 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
 
     return new_reqgroup;
 }
+#define TIMER_LEVEL TMP
+#undef TMP
 
 /*
  * Called whenever a subreq has been served by the read layer. Marks
