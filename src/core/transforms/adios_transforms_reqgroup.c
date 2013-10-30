@@ -338,7 +338,7 @@ adios_transform_read_request * adios_transform_read_request_new(
     assert(fp); assert(varinfo); assert(transinfo);
     assert(nsteps > 0);
 
-    new_reqgroup = calloc(sizeof(adios_transform_read_request), 1);
+    new_reqgroup = calloc(1, sizeof(adios_transform_read_request));
     new_reqgroup->fp = fp;
     new_reqgroup->raw_varinfo = varinfo;
     new_reqgroup->transinfo = transinfo;
