@@ -250,7 +250,7 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
         common_read_inq_trans_blockinfo(fp, raw_varinfo, transinfo);
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
     timer_stop ("adios_transform_generate_read_requests_blockinfo");
-    timer_start ("adios_transform_generate_read_requests_mainloop");
+    timer_start ("adios_transform_generate_read_requests_newreadreq");
 #endif
 
     // Allocate a new, empty request group
@@ -260,6 +260,11 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
     blockidx = start_blockidx;
     timestep = from_steps;
     timestep_blockidx = 0;
+
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
+    timer_stop ("adios_transform_generate_read_requests_newreadreq");
+    timer_start ("adios_transform_generate_read_requests_mainloop");
+#endif
     while (blockidx != end_blockidx) { //for (blockidx = startblock_idx; blockidx != endblock_idx; blockidx++) {
         const ADIOS_SELECTION *pg_bounds_sel;
         ADIOS_SELECTION *pg_intersection_sel;
@@ -323,6 +328,11 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
 #endif
     }
 
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
+    timer_stop ("adios_transform_generate_read_requests_mainloop");
+    timer_stop ("adios_transform_generate_read_requests_checknull");
+#endif
+
     // If this read request does not intersect any PGs, then clear the new read request and return NULL
     if (new_reqgroup->num_pg_reqgroups == 0) {
         adios_transform_read_request_free(&new_reqgroup);
@@ -330,7 +340,7 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
     }
 
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
-    timer_stop ("adios_transform_generate_read_requests_mainloop");
+    timer_stop ("adios_transform_generate_read_requests_checknull");
 #endif
 
     return new_reqgroup;
