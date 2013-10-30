@@ -739,7 +739,7 @@ int bp_parse_pgs (struct BP_FILE * fh)
 
     root = &(fh->pgs_root);
     uint64_t grpid = grpidlist[0];
-    uint32_t pg_time_count = 0, first_pg;
+    uint32_t pg_time_count = 0, first_pg = 0; // NCSU ALACRITY-ADIOS: Bugfix by adding first_pg = 0, it was accessed before it was assigned previously
     uint32_t time_id = tidx_start;
     first_pg = 0; /* The first pg for a given timestep and group */
     for (i = 0; i < mh->pgs_count; i++) {
@@ -1586,7 +1586,7 @@ SET_DATA_3(t) \
 }
 
 // Search for the start var index.
-int64_t get_var_start_index (struct adios_index_var_struct_v1 * v, int t)
+int64_t get_var_start_index (struct adios_index_var_struct_v1 * v, int t, int64_t guess)
 {
     //fh->gvar_h->time_index
     int64_t i = 0;
@@ -1595,6 +1595,7 @@ int64_t get_var_start_index (struct adios_index_var_struct_v1 * v, int t)
     while (i < v->characteristics_count) {
         if (v->characteristics[i].time_index == t) {
             timer_stop("adios_read_bp_start_index");
+            if (i != guess) printf("Wrong guess for timestep %d: guess = %lld, actual = %lld\n", t, guess, i);
             return i;
         }
 
@@ -1606,7 +1607,7 @@ int64_t get_var_start_index (struct adios_index_var_struct_v1 * v, int t)
 }
 
 // Search for the stop var index
-int64_t get_var_stop_index (struct adios_index_var_struct_v1 * v, int t)
+int64_t get_var_stop_index (struct adios_index_var_struct_v1 * v, int t, int64_t guess)
 {
     int64_t i = v->characteristics_count - 1;
     timer_start("adios_read_bp_stop_index");
@@ -1614,6 +1615,7 @@ int64_t get_var_stop_index (struct adios_index_var_struct_v1 * v, int t)
     while (i > -1) {
         if (v->characteristics[i].time_index == t) {
             timer_stop("adios_read_bp_stop_index");
+            if (i != guess) printf("Wrong guess for timestep %d: guess = %lld, actual = %lld\n", t, guess, i);
             return i;
         }
 

@@ -652,8 +652,8 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
 
 //printf ("t = %d(%d,%d), time = %d\n", t, fp->current_step, r->from_steps, time);
 //printf ("c = %d, f = %d, time = %d\n", fp->current_step, r->from_steps, time);
-        start_idx = get_var_start_index (v, time);
-        stop_idx = get_var_stop_index (v, time);
+        start_idx = get_var_start_index (v, time, fh->gvar_h->time_index[0][0][time - fh->tidx_start]);
+        stop_idx = get_var_stop_index (v, time, fh->gvar_h->time_index[1][0][time - fh->tidx_start]);
 
         if (start_idx < 0 || stop_idx < 0)
         {
