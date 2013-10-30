@@ -124,7 +124,40 @@ int bp_get_endianness( uint32_t change_endianness )
 /* Convert 'step' to time, which is used in ADIOS internals.
  * 'step' should start from 0.
  */
-int get_time (struct adios_index_var_struct_v1 * v, int step)
+int get_time(struct adios_index_var_struct_v1 * v, int step) {
+    static int *step_to_time = NULL; // step_to_time[step] = time_index
+
+    int i;
+    int prev_ti = 0, counter = 0;
+
+    timer_start("adios_read_bp_get_time_new");
+
+    if (step_to_time == NULL) {
+        int max_step = 1;
+        step_to_time = calloc(max_step, sizeof(int));
+
+        for (i = 0; i < v->characteristics_count; i++) {
+            if (v->characteristics[i].time_index != prev_ti) {
+                if (counter >= max_step) {
+                    max_step *= 2;
+                    step_to_time = realloc(step_to_time, max_step * sizeof(int));
+                }
+
+                step_to_time[counter] = v->characteristics[i].time_index;
+
+                counter++;
+                prev_ti = v->characteristics[i].time_index;
+            }
+        }
+    }
+
+    timer_stop("adios_read_bp_get_time_new");
+    int time = step_to_time[step];
+    assert(time == get_time_old(v, step));
+    return time;
+}
+
+int get_time_old (struct adios_index_var_struct_v1 * v, int step)
 {
     timer_start("adios_read_bp_get_time");
     int i = 0;
