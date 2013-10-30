@@ -28,7 +28,7 @@
 #include "dmalloc.h"
 #endif
 
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
 #define timer_start(t) timer_start(t)
 #define timer_stop(t) timer_stop(t)
 #else

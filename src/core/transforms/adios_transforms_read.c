@@ -213,11 +213,9 @@ inline static const ADIOS_SELECTION * create_pg_bounds(int ndim, ADIOS_VARBLOCK 
     return common_read_selection_boundingbox(ndim, orig_vb->start, orig_vb->count);
 }
 
-#define TMP TIMER_LEVEL
-#define TIMER_LEVEL 3
 adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIOS_VARINFO *raw_varinfo, const ADIOS_TRANSINFO* transinfo, const ADIOS_FILE *fp,
                                                                        const ADIOS_SELECTION *sel, int from_steps, int nsteps, const char *param, void *data) {
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("adios_transform_generate_read_requests_init");
 #endif
     // Declares
@@ -241,7 +239,7 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
 
     // Compute the blockidx range, given the timesteps
     compute_blockidx_range(raw_varinfo, from_steps, to_steps, &start_blockidx, &end_blockidx);
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("adios_transform_generate_read_requests_init");
     timer_start ("adios_transform_generate_read_requests_blockinfo");
 #endif
@@ -250,7 +248,7 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
         common_read_inq_var_blockinfo_raw(fp, raw_varinfo);
     if (!transinfo->orig_blockinfo)
         common_read_inq_trans_blockinfo(fp, raw_varinfo, transinfo);
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("adios_transform_generate_read_requests_blockinfo");
     timer_start ("adios_transform_generate_read_requests_newreadreq");
 #endif
@@ -263,7 +261,7 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
     timestep = from_steps;
     timestep_blockidx = 0;
 
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("adios_transform_generate_read_requests_newreadreq");
     timer_start ("adios_transform_generate_read_requests_mainloop");
 #endif
@@ -271,23 +269,23 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
         const ADIOS_SELECTION *pg_bounds_sel;
         ADIOS_SELECTION *pg_intersection_sel;
 
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 3)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("adios_transform_generate_read_requests_createbounds");
 #endif
         raw_vb = &raw_varinfo->blockinfo[blockidx];
         orig_vb = &transinfo->orig_blockinfo[blockidx];
 
         pg_bounds_sel = create_pg_bounds(transinfo->orig_ndim, orig_vb);
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 3)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("adios_transform_generate_read_requests_createbounds");
 #endif
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 3)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("adios_transform_generate_read_requests_intersect");
 #endif
 
         // Find the intersection, if any
         pg_intersection_sel = adios_selection_intersect(pg_bounds_sel, sel);
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 3)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("adios_transform_generate_read_requests_intersect");
 #endif
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
@@ -334,7 +332,7 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
 #endif
     }
 
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("adios_transform_generate_read_requests_mainloop");
     timer_stop ("adios_transform_generate_read_requests_checknull");
 #endif
@@ -345,14 +343,12 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
         new_reqgroup = NULL;
     }
 
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("adios_transform_generate_read_requests_checknull");
 #endif
 
     return new_reqgroup;
 }
-#define TIMER_LEVEL TMP
-#undef TMP
 
 /*
  * Called whenever a subreq has been served by the read layer. Marks
@@ -517,7 +513,7 @@ static ADIOS_VARCHUNK * extract_chunk_from_finished_read_reqgroup(adios_transfor
 // variable, consume it, and (optionally) replace it with a detransformed chunk.
 // Otherwise, do nothing, allowing the calling function to manage it as usual.
 void adios_transform_process_read_chunk(adios_transform_read_request **reqgroups_head, ADIOS_VARCHUNK ** chunk) {
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
     timer_start ("adios_transform_handle_data");
 #endif
     adios_transform_read_request *reqgroup;
@@ -588,7 +584,7 @@ void adios_transform_process_read_chunk(adios_transform_read_request **reqgroups
         adios_transform_read_request_remove(reqgroups_head, reqgroup);
         adios_transform_read_request_free(&reqgroup);
     }
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
     timer_stop ("adios_transform_handle_data");
 #endif
 }
@@ -599,9 +595,6 @@ void adios_transform_process_read_chunk(adios_transform_read_request **reqgroups
  * (This function is called after a blocking perform_reads completes)
  */
 void adios_transform_process_all_reads(adios_transform_read_request **reqgroups_head) {
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
-    timer_start ("adios_transform_process_all_reads");
-#endif
     // Mark all subrequests, PG request groups and read request groups
     // as completed, calling callbacks as needed
     adios_transform_read_request *reqgroup;
@@ -656,18 +649,18 @@ void adios_transform_process_all_reads(adios_transform_read_request **reqgroups_
             assert(pg_reqgroup->completed);
 
             // Make the required call to the transform method to apply the results
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("adios_transform_callback_pg_reqgroup_completed");
 #endif
             result = adios_transform_pg_reqgroup_completed(reqgroup, pg_reqgroup);
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("adios_transform_callback_pg_reqgroup_completed");
 #endif
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_start ("adios_transform_apply_datablock_pg_reqgroup");
 #endif
             if (result) apply_datablock_to_result_and_free(result, reqgroup);
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
     timer_stop ("adios_transform_apply_datablock_pg_reqgroup");
 #endif
         }
@@ -692,7 +685,4 @@ void adios_transform_process_all_reads(adios_transform_read_request **reqgroups_
         // Now that the read reqgroup has been processed, free it (which also frees all children)
         adios_transform_read_request_free(&reqgroup);
     }
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
-    timer_stop ("adios_transform_process_all_reads");
-#endif
 }
