@@ -197,7 +197,7 @@ uint64_t readCount;
                       ,MPI_SEEK_SET                 \
                       );                            \
                                                     \
-        if (((uint64_t)buf)) & 0x7 != 0) printf("Misaligned pointer %p\n", buf);                                            \
+        if ((((uint64_t)buf) & 0x7) != 0) printf("Misaligned pointer %p\n", buf);                                            \
         MPI_File_read (fh->mpi_fh                   \
                       ,(buf)                        \
                       ,slice_size                   \
