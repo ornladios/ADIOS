@@ -153,7 +153,7 @@ int get_time(struct adios_index_var_struct_v1 * v, int step) {
 
     timer_stop("adios_read_bp_get_time_new");
     int time = step_to_time[step];
-    assert(time == get_time_old(v, step));
+    //assert(time == get_time_old(v, step));
     return time;
 }
 
