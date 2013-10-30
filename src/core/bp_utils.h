@@ -42,8 +42,8 @@ int bp_parse_pgs (struct BP_FILE * fh);
 int bp_parse_attrs (struct BP_FILE * fh);
 int bp_parse_vars (struct BP_FILE * fh);
 int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs);
-int64_t get_var_start_index (struct adios_index_var_struct_v1 * v, int t, int guess);
-int64_t get_var_stop_index (struct adios_index_var_struct_v1 * v, int t, int guess);
+int64_t get_var_start_index (struct adios_index_var_struct_v1 * v, int t, int64_t guess);
+int64_t get_var_stop_index (struct adios_index_var_struct_v1 * v, int t, int64_t guess);
 
 const char * bp_value_to_string (enum ADIOS_DATATYPES type, void * data);
 int bp_get_type_size (enum ADIOS_DATATYPES type, void * var);
