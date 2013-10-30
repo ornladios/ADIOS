@@ -3261,6 +3261,8 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r)
         return -1;
     }
 
+    timer_start("adios_read_bp_wbidx");
+
     time = adios_step_to_time (fp, r->varid, r->from_steps);
     mapped_varid = r->varid; //map_req_varid (fp, r->varid); // NCSU ALACRITY-ADIOS: Bugfix: r->varid has already been mapped
     v = bp_find_var_byid (fh, mapped_varid);
@@ -3280,6 +3282,7 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r)
     }
 
     ridx =  r->sel->u.block.index;
+    timer_stop("adios_read_bp_wbidx");
     return ridx; // TEMP OPTIMIZATION FIX FOR THE PAPER: THIS WILL NOT WORK FOR SPARSE PG FILES
 
     c = -1;
@@ -3330,6 +3333,7 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
     const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb;// NCSU ALACRITY-ADIOS
 
     timer_start("adios_read_bp_read_var_wb");
+    timer_start("adios_read_bp_read_var_wb_init");
 
     adios_errno = 0;
 
@@ -3351,6 +3355,8 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
 
     ndim = v->characteristics [idx].dims.count;
     size_of_type = bp_get_type_size (v->type, v->characteristics [idx].value);
+
+    timer_stop("adios_read_bp_read_var_wb_init");
 
     if (ndim == 0)
     {
@@ -3391,6 +3397,7 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
     }
     else
     {
+        timer_start("adios_read_bp_read_var_wb_bounds");
         // NCSU ALACRITY-ADIOS: Added sub-PG writeblock selection support
         // If this is a sub-PG selection, use nelements to compute slice_size
         // instead
@@ -3427,6 +3434,8 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
             slice_offset += wb->element_offset * size_of_type;
         }
 
+        timer_stop("adios_read_bp_read_var_wb_bounds");
+
         if (!has_subfile)
         {
             MPI_FILE_READ_OPS1_BUF(data) // NCSU ALACRITY-ADIOS: Read data directly to user buffer
@@ -3444,6 +3453,8 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
         }
     }
 
+    timer_start("adios_read_bp_read_var_wb_finish");
+
     chunk = (ADIOS_VARCHUNK *) malloc (sizeof (ADIOS_VARCHUNK));
     assert (chunk);
 
@@ -3455,6 +3466,7 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
     chunk->sel = copy_selection (r->sel);
     chunk->data = data;
 
+    timer_stop("adios_read_bp_read_var_wb_finish");
     timer_stop("adios_read_bp_read_var_wb");
 
     return chunk;
