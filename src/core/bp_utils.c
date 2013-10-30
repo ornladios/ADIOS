@@ -739,7 +739,7 @@ int bp_parse_pgs (struct BP_FILE * fh)
 
     root = &(fh->pgs_root);
     uint64_t grpid = grpidlist[0];
-    uint32_t pg_time_count = 0, first_pg = 0; // NCSU ALACRITY-ADIOS: Bugfix by adding first_pg = 0, it was accessed before it was assigned previously
+    uint32_t pg_time_count = 0, first_pg;
     uint32_t time_id = tidx_start;
     first_pg = 0; /* The first pg for a given timestep and group */
     for (i = 0; i < mh->pgs_count; i++) {

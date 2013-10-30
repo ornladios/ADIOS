@@ -652,8 +652,11 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
 
 //printf ("t = %d(%d,%d), time = %d\n", t, fp->current_step, r->from_steps, time);
 //printf ("c = %d, f = %d, time = %d\n", fp->current_step, r->from_steps, time);
-        start_idx = get_var_start_index (v, time, fh->gvar_h->time_index[0][0][time - fh->tidx_start]);
-        stop_idx = get_var_stop_index (v, time, fh->gvar_h->time_index[1][0][time - fh->tidx_start]);
+        uint64_t start_idx_lookup = fh->gvar_h->time_index[0][0][time - fh->tidx_start];
+        uint64_t len_lookup = fh->gvar_h->time_index[1][0][time - fh->tidx_start];
+        uint64_t stop_idx_lookup = start_idx_lookup + len_lookup - 1;
+        start_idx = get_var_start_index (v, time, start_idx_lookup);
+        stop_idx = get_var_stop_index (v, time, stop_idx_lookup);
 
         if (start_idx < 0 || stop_idx < 0)
         {
@@ -3259,8 +3262,11 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r)
     mapped_varid = r->varid; //map_req_varid (fp, r->varid); // NCSU ALACRITY-ADIOS: Bugfix: r->varid has already been mapped
     v = bp_find_var_byid (fh, mapped_varid);
 
-    start_idx = get_var_start_index (v, time, fh->gvar_h->time_index[0][0][time - fh->tidx_start]);
-    stop_idx = get_var_stop_index (v, time, fh->gvar_h->time_index[0][0][time - fh->tidx_start]);
+    uint64_t start_idx_lookup = fh->gvar_h->time_index[0][0][time - fh->tidx_start];
+    uint64_t len_lookup = fh->gvar_h->time_index[1][0][time - fh->tidx_start];
+    uint64_t stop_idx_lookup = start_idx_lookup + len_lookup - 1;
+    start_idx = get_var_start_index (v, time, start_idx_lookup);
+    stop_idx = get_var_stop_index (v, time, stop_idx_lookup);
     if (start_idx < 0 || stop_idx < 0)
     {
         adios_error (err_no_data_at_timestep,
