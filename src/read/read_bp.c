@@ -3280,6 +3280,8 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r)
     }
 
     ridx =  r->sel->u.block.index;
+    return ridx; // TEMP OPTIMIZATION FIX FOR THE PAPER: THIS WILL NOT WORK FOR SPARSE PG FILES
+
     c = -1;
     idx = start_idx;
     while (idx <= stop_idx)
