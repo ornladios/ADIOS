@@ -263,11 +263,11 @@ adios_transform_pg_read_request * adios_transform_pg_read_request_new(
     assert(orig_varblock);
     assert(blockidx >= 0);
 
-    new_pg_reqgroup = calloc(sizeof(adios_transform_pg_read_request), 1);
+    new_pg_reqgroup = calloc(1, sizeof(adios_transform_pg_read_request));
     new_pg_reqgroup->timestep = timestep;
     new_pg_reqgroup->blockidx_in_timestep = timestep_blockidx;
     new_pg_reqgroup->blockidx_in_pg = blockidx;
-    new_pg_reqgroup->raw_var_length = adios_transform_get_transformed_var_size_from_blockinfo(raw_ndim, raw_varblock); //raw_varblock->count[0];
+    new_pg_reqgroup->raw_var_length = raw_varblock->count[0];//adios_transform_get_transformed_var_size_from_blockinfo(raw_ndim, raw_varblock); //raw_varblock->count[0];
     new_pg_reqgroup->raw_ndim = raw_ndim;
     new_pg_reqgroup->orig_ndim = orig_ndim;
     new_pg_reqgroup->raw_varblock = raw_varblock;
