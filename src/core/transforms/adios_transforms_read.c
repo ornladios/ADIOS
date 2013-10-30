@@ -213,6 +213,8 @@ inline static const ADIOS_SELECTION * create_pg_bounds(int ndim, ADIOS_VARBLOCK 
     return common_read_selection_boundingbox(ndim, orig_vb->start, orig_vb->count);
 }
 
+#define TMP TIMER_LEVEL
+#undef TIMER_LEVEL
 adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIOS_VARINFO *raw_varinfo, const ADIOS_TRANSINFO* transinfo, const ADIOS_FILE *fp,
                                                                        const ADIOS_SELECTION *sel, int from_steps, int nsteps, const char *param, void *data) {
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
@@ -293,7 +295,7 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
             // Make a PG read request group, and fill it with some subrequests, and link it into the read reqgroup
             adios_transform_pg_read_request *new_pg_reqgroup;
 
-            #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
     timer_start ("adios_transform_generate_read_requests_new");
 #endif
             new_pg_reqgroup = adios_transform_pg_read_request_new(timestep, timestep_blockidx,
@@ -352,6 +354,8 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
 
     return new_reqgroup;
 }
+#define TIMER_LEVEL TMP
+#undef TMP
 
 /*
  * Called whenever a subreq has been served by the read layer. Marks
