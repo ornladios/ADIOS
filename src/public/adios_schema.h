@@ -75,8 +75,8 @@ typedef struct
 typedef struct {   //type returned by adios_inq_mesh for read method
     int id;
     char * name;
-    char * time_varying;
-    char * type;
+    int time_varying;           //0 means not time-varying, 1 means time-varying
+    enum ADIOS_MESH_TYPE type;
     union
     {
         MESH_UNIFORM * uniform;

@@ -1165,12 +1165,17 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
     strcpy (time_varying, "/adios_schema/");
     strcat (time_varying, meshinfo->name);
     strcat (time_varying, "/time-varying");
-    common_read_get_attr_mesh (fp, time_varying, &attr_type, &attr_size, &data);
+    read_fail = common_read_get_attr_mesh (fp, time_varying, &attr_type, &attr_size, &data);
     free (time_varying);
-    if ( !strcmp ((char *)data,"yes") )
-        meshinfo->time_varying = strdup ("yes");  
+    if (read_fail)
+        meshinfo->time_varying = 0;
     else
-        meshinfo->time_varying = strdup ("no");
+    {
+        if ( !strcmp ((char *)data,"yes") )
+            meshinfo->time_varying = 1;  
+        else
+            meshinfo->time_varying = 0;
+    }
     //construct /adios_schema/***/type to get mesh type (uniform, rectilinear, structured, unstructured)
     //mesh type
     char * mesh_attribute = malloc ( strlen("/adios_schema/")+strlen(meshinfo->name)+strlen("/type")+1 );
@@ -1184,7 +1189,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
         bool have_spacing = 0;
         bool have_max = 0;
 
-        meshinfo->type = strdup("uniform");
+        meshinfo->type = ADIOS_MESH_UNIFORM;
         meshinfo->uniform = (MESH_UNIFORM * ) malloc (sizeof(MESH_UNIFORM));
         
         char * dimension_attribute = malloc (strlen("/adios_schema/")+strlen(meshinfo->name)+strlen("/dimensions-num")+1 );
@@ -1304,7 +1309,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
     }
     else if ( !strcmp((char *)data, "rectilinear") )   
     {
-        meshinfo->type = strdup("rectilinear");
+        meshinfo->type = ADIOS_MESH_RECTILINEAR;
         meshinfo->rectilinear = (MESH_RECTILINEAR * ) malloc (sizeof(MESH_RECTILINEAR));
         meshinfo->rectilinear->use_single_var = 0;    // default value 0 indicates using multi-var
 
@@ -1557,7 +1562,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
     }
     else if ( !strcmp((char *)data, "structured") )
     {
-        meshinfo->type = strdup("structured");
+        meshinfo->type = ADIOS_MESH_STRUCTURED;
         meshinfo->structured = (MESH_STRUCTURED* ) malloc (sizeof(MESH_STRUCTURED));
         meshinfo->structured->use_single_var = 0;        // default value 0 indicates using multi-var   
         meshinfo->structured->nspaces = meshinfo->structured->num_dimensions;   //default spaces = # of dims
@@ -1863,7 +1868,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
     }// end of structured mesh
     else if ( !strcmp((char *)data, "unstructured") )
     {
-        meshinfo->type = strdup("unstructured");
+        meshinfo->type = ADIOS_MESH_UNSTRUCTURED;
         meshinfo->unstructured = (MESH_UNSTRUCTURED* ) malloc (sizeof(MESH_UNSTRUCTURED));
         meshinfo->unstructured->use_single_var = 0;  // default value 0 indicates using multi-var
         meshinfo->unstructured->nvar_points = 1;
