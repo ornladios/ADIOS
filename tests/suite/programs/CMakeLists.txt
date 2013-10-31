@@ -1,5 +1,6 @@
 include_directories(${PROJECT_SOURCE_DIR}/tests/suite)
 include_directories(${PROJECT_SOURCE_DIR}/src)
+include_directories(${PROJECT_SOURCE_DIR}/src/public)
 include_directories(${PROJECT_SOURCE_DIR}/tests/suite/programs)
 include_directories(${PROJECT_BINARY_DIR}/tests/suite/programs)
 link_directories(${PROJECT_BINARY_DIR}/tests/suite/programs)
