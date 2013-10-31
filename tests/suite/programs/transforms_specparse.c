@@ -48,14 +48,15 @@ struct specparse_test {
             .params             = NULL
         }
     },
-    {   .specstr = "raw:a=123,b,c=321,,,f=12321",
-        .expected = {
-            .transform_type     = adios_transform_none,
-            .transform_type_str = "raw",
-            .param_count        = 0,
-            .params             = NULL
-        }
-    },
+// Commented this test out since aliasing "raw" to the "none" transform is currently disabled
+//    {   .specstr = "raw:a=123,b,c=321,,,f=12321",
+//        .expected = {
+//            .transform_type     = adios_transform_none,
+//            .transform_type_str = "raw",
+//            .param_count        = 0,
+//            .params             = NULL
+//        }
+//    },
     {   .specstr = "***impossible-transform-name***:a=123,b,c=321,,,f=12321",
         .expected = {
             .transform_type     = adios_transform_unknown,
