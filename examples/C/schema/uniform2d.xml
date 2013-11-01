@@ -16,6 +16,7 @@
 
     <mesh name="uniformmesh" type="uniform" time-varying="no">
          <nspace value="2" />
+         <dimensions value="nx_global,ny_global" />
          <origin value="O1,O2" />
          <spacing value="S1,S2" />
     </mesh>
