@@ -686,7 +686,7 @@ elif [ `hostname -f | cut -c 1-4` == "mira" ]; then
     #####################
     #  MIRA   BlueGene  #
     #####################
-    echo "Configure on Mira (BlueGene)"
+    echo "Configure on Mira (BlueGeneQ)"
     export MPICC=mpixlc_r
     export MPIFC=mpixlf90
     export CFLAGS=""
@@ -696,7 +696,7 @@ elif [ `hostname -f | cut -c 1-4` == "mira" ]; then
     ${SRCDIR}/configure --prefix=/home/qliu/4se/ADIOS \
             --enable-dependency-tracking \
             --with-mxml=/home/qliu/mxml \
-            --without-datatap --without-infiniband
+            --without-datatap --without-infiniband --without-bgq
 
 elif [ `hostname | cut -c 1-4` == "euge" ]; then
     ###################

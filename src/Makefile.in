@@ -42,30 +42,32 @@ bin_PROGRAMS = $(am__EXEEXT_1)
 DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/transforms/Makefile.plugins
 @BUILD_WRITE_TRUE@am__append_2 = libadios.a libadios_nompi.a
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__append_3 = libadiosf.a libadiosf_v1.a libadiosf_nompi.a libadiosf_nompi_v1.a
-@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__append_4 = write/adios_dataspaces.c read/read_dataspaces.c
-@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__append_5 = write/adios_dataspaces.c read/read_dataspaces.c
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__append_6 = write/adios_dataspaces.c read/read_dataspaces.c
-@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__append_7 = write/adios_dimes.c read/read_dimes.c
-@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__append_8 = write/adios_dimes.c read/read_dimes.c
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__append_9 = write/adios_dimes.c read/read_dimes.c
-@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__append_10 = write/adios_datatap.c read/read_datatap.c
-@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__append_11 = write/adios_datatap.c read/read_datatap.c
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__append_12 = write/adios_datatap.c read/read_datatap.c
-@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_13 = write/adios_phdf5.c 
-@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_14 = $(MACRODEFFLAG)PHDF5 $(MACRODEFFLAG)H5_USE_16_API 
-@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_15 = $(PHDF5_CPPFLAGS)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_16 = write/adios_phdf5.c 
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_17 = $(PHDF5_CPPFLAGS)
-@BUILD_WRITE_TRUE@@HAVE_NC4PAR_TRUE@am__append_18 = write/adios_nc4.c 
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NC4PAR_TRUE@am__append_19 = write/adios_nc4.c 
-@BUILD_WRITE_TRUE@@HAVE_FLEXPATH_TRUE@am__append_20 = write/adios_flexpath.c  read/read_flexpath.c
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_FLEXPATH_TRUE@am__append_21 = write/adios_flexpath.c read/read_flexpath.c
-@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_22 = nssi/adios_nssi_config.c write/adios_nssi.c nssi/adios_nssi_filter.c read/read_nssi.c
-@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_23 = $(MACRODEFFLAG)PTL_IFACE_CLIENT=CRAY_USER_NAL $(MACRODEFFLAG)PTL_IFACE_SERVER=CRAY_USER_NAL
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_24 = nssi/adios_nssi_config.c write/adios_nssi.c nssi/adios_nssi_filter.c read/read_nssi.c
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_25 = $(MACRODEFFLAG)PTL_IFACE_CLIENT=CRAY_USER_NAL $(MACRODEFFLAG)PTL_IFACE_SERVER=CRAY_USER_NAL
-@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_26 = adios_nssi_args.c adios_nssi_args.h
+@BUILD_WRITE_TRUE@@HAVE_BGQ_TRUE@am__append_3 = write/adios_mpi_bgq.c 
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__append_4 = libadiosf.a libadiosf_v1.a libadiosf_nompi.a libadiosf_nompi_v1.a
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_BGQ_TRUE@am__append_5 = write/adios_mpi_bgq.c  
+@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__append_6 = write/adios_dataspaces.c read/read_dataspaces.c
+@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__append_7 = write/adios_dataspaces.c read/read_dataspaces.c
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__append_8 = write/adios_dataspaces.c read/read_dataspaces.c
+@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__append_9 = write/adios_dimes.c read/read_dimes.c
+@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__append_10 = write/adios_dimes.c read/read_dimes.c
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__append_11 = write/adios_dimes.c read/read_dimes.c
+@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__append_12 = write/adios_datatap.c read/read_datatap.c
+@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__append_13 = write/adios_datatap.c read/read_datatap.c
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__append_14 = write/adios_datatap.c read/read_datatap.c
+@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_15 = write/adios_phdf5.c 
+@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_16 = $(MACRODEFFLAG)PHDF5 $(MACRODEFFLAG)H5_USE_16_API 
+@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_17 = $(PHDF5_CPPFLAGS)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_18 = write/adios_phdf5.c 
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__append_19 = $(PHDF5_CPPFLAGS)
+@BUILD_WRITE_TRUE@@HAVE_NC4PAR_TRUE@am__append_20 = write/adios_nc4.c 
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NC4PAR_TRUE@am__append_21 = write/adios_nc4.c 
+@BUILD_WRITE_TRUE@@HAVE_FLEXPATH_TRUE@am__append_22 = write/adios_flexpath.c  read/read_flexpath.c
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_FLEXPATH_TRUE@am__append_23 = write/adios_flexpath.c read/read_flexpath.c
+@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_24 = nssi/adios_nssi_config.c write/adios_nssi.c nssi/adios_nssi_filter.c read/read_nssi.c
+@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_25 = $(MACRODEFFLAG)PTL_IFACE_CLIENT=CRAY_USER_NAL $(MACRODEFFLAG)PTL_IFACE_SERVER=CRAY_USER_NAL
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_26 = nssi/adios_nssi_config.c write/adios_nssi.c nssi/adios_nssi_filter.c read/read_nssi.c
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_27 = $(MACRODEFFLAG)PTL_IFACE_CLIENT=CRAY_USER_NAL $(MACRODEFFLAG)PTL_IFACE_SERVER=CRAY_USER_NAL
+@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__append_28 = adios_nssi_args.c adios_nssi_args.h
 
 #libadios_a_SOURCES += write/adios_mpi_stagger.c \
 #                      write/adios_mpi_aggregate.c \
@@ -81,67 +83,68 @@ DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
 #                       write/adios_mpi_stripe.c \
 #                       write/adios_mpi_amr1.c \
 #                       write/adios_adaptive.c 
-@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_FALSE@am__append_27 = $(MACRODEFFLAG)NO_RESEARCH_TRANSPORTS
-@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_FALSE@am__append_28 = $(MACRODEFFLAG)NO_RESEARCH_TRANSPORTS
 @BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_FALSE@am__append_29 = $(MACRODEFFLAG)NO_RESEARCH_TRANSPORTS
 @BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_FALSE@am__append_30 = $(MACRODEFFLAG)NO_RESEARCH_TRANSPORTS
+@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_FALSE@am__append_31 = $(MACRODEFFLAG)NO_RESEARCH_TRANSPORTS
+@BUILD_WRITE_TRUE@@RESEARCH_TRANSPORTS_FALSE@am__append_32 = $(MACRODEFFLAG)NO_RESEARCH_TRANSPORTS
 
 #nodist_libadiosreadf_a_SOURCES += adios_write.mod
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__append_31 = adios_write_mod.mod 
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__append_32 = adios_write_mod.mod
-@HAVE_DATASPACES_TRUE@am__append_33 = read/read_dataspaces.c
-@HAVE_DIMES_TRUE@am__append_34 = read/read_dimes.c
-@HAVE_DATATAP_TRUE@am__append_35 = read/read_datatap.c
-@HAVE_FLEXPATH_TRUE@am__append_36 = read/read_flexpath.c
-@HAVE_NSSI_TRUE@am__append_37 = nssi/adios_nssi_config.c read/read_nssi.c
-@HAVE_NSSI_TRUE@am__append_38 = $(MACRODEFFLAG)PTL_IFACE_CLIENT=CRAY_USER_NAL $(MACRODEFFLAG)PTL_IFACE_SERVER=CRAY_USER_NAL
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__append_33 = adios_write_mod.mod 
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__append_34 = adios_write_mod.mod
+@HAVE_DATASPACES_TRUE@am__append_35 = read/read_dataspaces.c
+@HAVE_DIMES_TRUE@am__append_36 = read/read_dimes.c
+@HAVE_DATATAP_TRUE@am__append_37 = read/read_datatap.c
+@HAVE_FLEXPATH_TRUE@am__append_38 = read/read_flexpath.c
+@HAVE_NSSI_TRUE@am__append_39 = nssi/adios_nssi_config.c read/read_nssi.c
+@HAVE_NSSI_TRUE@am__append_40 = $(MACRODEFFLAG)PTL_IFACE_CLIENT=CRAY_USER_NAL $(MACRODEFFLAG)PTL_IFACE_SERVER=CRAY_USER_NAL
 #libadiosread_a_CPPFLAGS += $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS) # $(MACRODEFFLAG)USE_TIMERS
-@HAVE_NSSI_TRUE@am__append_39 = $(ADIOSLIB_CFLAGS) 
-@BUILD_FORTRAN_TRUE@am__append_40 = libadiosreadf.a libadiosreadf_v1.a
-@BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__append_41 = read/read_dataspaces.c
-@BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__append_42 = read/read_dimes.c
-@BUILD_FORTRAN_TRUE@@HAVE_DATATAP_TRUE@am__append_43 = read/read_datatap.c
-@BUILD_FORTRAN_TRUE@@HAVE_FLEXPATH_TRUE@am__append_44 = read/read_flexpath.c
-@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_45 = nssi/adios_nssi_config.c read/read_nssi.c
-@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_46 = $(MACRODEFFLAG)PTL_IFACE_CLIENT=CRAY_USER_NAL $(MACRODEFFLAG)PTL_IFACE_SERVER=CRAY_USER_NAL
-@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_47 = $(ADIOSLIB_CFLAGS) 
-@BUILD_FORTRAN_TRUE@am__append_48 = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
+@HAVE_NSSI_TRUE@am__append_41 = $(ADIOSLIB_CFLAGS) 
+@BUILD_FORTRAN_TRUE@am__append_42 = libadiosreadf.a libadiosreadf_v1.a
+@BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__append_43 = read/read_dataspaces.c
+@BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__append_44 = read/read_dimes.c
+@BUILD_FORTRAN_TRUE@@HAVE_DATATAP_TRUE@am__append_45 = read/read_datatap.c
+@BUILD_FORTRAN_TRUE@@HAVE_FLEXPATH_TRUE@am__append_46 = read/read_flexpath.c
+@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_47 = nssi/adios_nssi_config.c read/read_nssi.c
+@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_48 = $(MACRODEFFLAG)PTL_IFACE_CLIENT=CRAY_USER_NAL $(MACRODEFFLAG)PTL_IFACE_SERVER=CRAY_USER_NAL
+@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_49 = $(ADIOSLIB_CFLAGS) 
+@BUILD_FORTRAN_TRUE@am__append_50 = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
 
 #nodist_libadiosreadf_a_SOURCES += adios_read_mod.mod
-@BUILD_FORTRAN_TRUE@am__append_49 = adios_read_mod.mod adios_defs_mod.mod
-@BUILD_FORTRAN_TRUE@am__append_50 = adios_read_mod.mod adios_defs_mod.mod
-@HAVE_DATASPACES_TRUE@am__append_51 = read/read_dataspaces.c
-@HAVE_DIMES_TRUE@am__append_52 = read/read_dimes.c
-@HAVE_DATATAP_TRUE@am__append_53 = read/read_datatap.c
-@HAVE_FLEXPATH_TRUE@am__append_54 = read/read_flexpath.c
-@HAVE_NSSI_TRUE@am__append_55 = nssi/adios_nssi_config.c read/read_nssi.c
-@HAVE_NSSI_TRUE@am__append_56 = $(MACRODEFFLAG)PTL_IFACE_CLIENT=CRAY_USER_NAL $(MACRODEFFLAG)PTL_IFACE_SERVER=CRAY_USER_NAL
-@HAVE_NSSI_TRUE@am__append_57 = $(ADIOSLIB_CFLAGS) 
+@BUILD_FORTRAN_TRUE@am__append_51 = adios_read_mod.mod adios_defs_mod.mod
+@BUILD_FORTRAN_TRUE@am__append_52 = adios_read_mod.mod adios_defs_mod.mod
+@HAVE_DATASPACES_TRUE@am__append_53 = read/read_dataspaces.c
+@HAVE_DIMES_TRUE@am__append_54 = read/read_dimes.c
+@HAVE_DATATAP_TRUE@am__append_55 = read/read_datatap.c
+@HAVE_FLEXPATH_TRUE@am__append_56 = read/read_flexpath.c
+@HAVE_NSSI_TRUE@am__append_57 = nssi/adios_nssi_config.c read/read_nssi.c
+@HAVE_NSSI_TRUE@am__append_58 = $(MACRODEFFLAG)PTL_IFACE_CLIENT=CRAY_USER_NAL $(MACRODEFFLAG)PTL_IFACE_SERVER=CRAY_USER_NAL
+@HAVE_NSSI_TRUE@am__append_59 = $(ADIOSLIB_CFLAGS) 
 
 # Note: utils/adios_lint needs to link with adios_internals_mxml.o which depends
 #       on adios_internals.c, buffer.c and adios_transport_hooks.c. 
 #       We put these objects in libadiosread_nompi
 #       so we do not need to make another _nompi lib just for adios_lint
-@BUILD_FORTRAN_TRUE@am__append_58 = libadiosreadf_nompi.a libadiosreadf_nompi_v1.a
-@BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__append_59 = read/read_dataspaces.c
-@BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__append_60 = read/read_dimes.c
-@BUILD_FORTRAN_TRUE@@HAVE_DATATAP_TRUE@am__append_61 = read/read_datatap.c
-@BUILD_FORTRAN_TRUE@@HAVE_FLEXPATH_TRUE@am__append_62 = read/read_flexpath.c
-@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_63 = nssi/adios_nssi_config.c read/read_nssi.c
-@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_64 = $(MACRODEFFLAG)PTL_IFACE_CLIENT=CRAY_USER_NAL \
+@BUILD_FORTRAN_TRUE@am__append_60 = libadiosreadf_nompi.a libadiosreadf_nompi_v1.a
+@BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__append_61 = read/read_dataspaces.c
+@BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__append_62 = read/read_dimes.c
+@BUILD_FORTRAN_TRUE@@HAVE_DATATAP_TRUE@am__append_63 = read/read_datatap.c
+@BUILD_FORTRAN_TRUE@@HAVE_FLEXPATH_TRUE@am__append_64 = read/read_flexpath.c
+@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_65 = nssi/adios_nssi_config.c read/read_nssi.c
+@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_66 = $(MACRODEFFLAG)PTL_IFACE_CLIENT=CRAY_USER_NAL \
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@	$(MACRODEFFLAG)PTL_IFACE_SERVER=CRAY_USER_NAL \
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@	$(ADIOSLIB_EXTRA_CPPFLAGS) \
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@	$(ADIOSLIB_CPPFLAGS) # \
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@	$(MACRODEFFLAG)USE_TIMERS
-@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_65 = $(ADIOSLIB_CFLAGS) 
-@BUILD_FORTRAN_TRUE@am__append_66 = $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
+@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__append_67 = $(ADIOSLIB_CFLAGS) 
+@BUILD_FORTRAN_TRUE@am__append_68 = $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
 #Note: $(MACRODEFFLAG)NOMPI chokes IBM's bgxlf compiler but it can pass $(MACRODEFFLAG)_NOMPI. 
-@HAVE_DMALLOC_TRUE@am__append_67 = $(MACRODEFFLAG)DMALLOC 
-@HAVE_DMALLOC_TRUE@am__append_68 = $(MACRODEFFLAG)DMALLOC 
+@HAVE_DMALLOC_TRUE@am__append_69 = $(MACRODEFFLAG)DMALLOC 
+@HAVE_DMALLOC_TRUE@am__append_70 = $(MACRODEFFLAG)DMALLOC 
 subdir = src
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_alacrity.m4 \
 	$(top_srcdir)/config/ac_aplod.m4 \
+	$(top_srcdir)/config/ac_bgq.m4 \
 	$(top_srcdir)/config/ac_bzip2.m4 \
 	$(top_srcdir)/config/ac_cray_pmi.m4 \
 	$(top_srcdir)/config/ac_cray_ugni.m4 \
@@ -256,10 +259,11 @@ am__libadios_a_SOURCES_DIST = core/adios.c core/common_adios.c \
 	read/read_bp_staged.c read/read_bp_staged1.c write/adios_mpi.c \
 	write/adios_mpi_lustre.c write/adios_mpi_amr.c \
 	write/adios_posix.c write/adios_posix1.c \
-	write/adios_var_merge.c write/adios_dataspaces.c \
-	read/read_dataspaces.c write/adios_dimes.c read/read_dimes.c \
-	write/adios_datatap.c read/read_datatap.c write/adios_phdf5.c \
-	write/adios_nc4.c write/adios_flexpath.c read/read_flexpath.c \
+	write/adios_var_merge.c write/adios_mpi_bgq.c \
+	write/adios_dataspaces.c read/read_dataspaces.c \
+	write/adios_dimes.c read/read_dimes.c write/adios_datatap.c \
+	read/read_datatap.c write/adios_phdf5.c write/adios_nc4.c \
+	write/adios_flexpath.c read/read_flexpath.c \
 	nssi/adios_nssi_config.c write/adios_nssi.c \
 	nssi/adios_nssi_filter.c read/read_nssi.c
 am__objects_1 =
@@ -295,17 +299,18 @@ am__objects_6 = $(am__objects_1) \
 	libadios_a-adios_transforms_util.$(OBJEXT) \
 	libadios_a-adios_transforms_specparse.$(OBJEXT) \
 	$(am__objects_5)
-@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_7 = libadios_a-adios_dataspaces.$(OBJEXT) \
+@BUILD_WRITE_TRUE@@HAVE_BGQ_TRUE@am__objects_7 = libadios_a-adios_mpi_bgq.$(OBJEXT)
+@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_8 = libadios_a-adios_dataspaces.$(OBJEXT) \
 @BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@	libadios_a-read_dataspaces.$(OBJEXT)
-@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__objects_8 = libadios_a-adios_dimes.$(OBJEXT) \
+@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__objects_9 = libadios_a-adios_dimes.$(OBJEXT) \
 @BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@	libadios_a-read_dimes.$(OBJEXT)
-@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__objects_9 = libadios_a-adios_datatap.$(OBJEXT) \
+@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__objects_10 = libadios_a-adios_datatap.$(OBJEXT) \
 @BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@	libadios_a-read_datatap.$(OBJEXT)
-@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__objects_10 = libadios_a-adios_phdf5.$(OBJEXT)
-@BUILD_WRITE_TRUE@@HAVE_NC4PAR_TRUE@am__objects_11 = libadios_a-adios_nc4.$(OBJEXT)
-@BUILD_WRITE_TRUE@@HAVE_FLEXPATH_TRUE@am__objects_12 = libadios_a-adios_flexpath.$(OBJEXT) \
+@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__objects_11 = libadios_a-adios_phdf5.$(OBJEXT)
+@BUILD_WRITE_TRUE@@HAVE_NC4PAR_TRUE@am__objects_12 = libadios_a-adios_nc4.$(OBJEXT)
+@BUILD_WRITE_TRUE@@HAVE_FLEXPATH_TRUE@am__objects_13 = libadios_a-adios_flexpath.$(OBJEXT) \
 @BUILD_WRITE_TRUE@@HAVE_FLEXPATH_TRUE@	libadios_a-read_flexpath.$(OBJEXT)
-@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__objects_13 = libadios_a-adios_nssi_config.$(OBJEXT) \
+@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__objects_14 = libadios_a-adios_nssi_config.$(OBJEXT) \
 @BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@	libadios_a-adios_nssi.$(OBJEXT) \
 @BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@	libadios_a-adios_nssi_filter.$(OBJEXT) \
 @BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@	libadios_a-read_nssi.$(OBJEXT)
@@ -344,7 +349,7 @@ am__objects_6 = $(am__objects_1) \
 @BUILD_WRITE_TRUE@	$(am__objects_7) $(am__objects_8) \
 @BUILD_WRITE_TRUE@	$(am__objects_9) $(am__objects_10) \
 @BUILD_WRITE_TRUE@	$(am__objects_11) $(am__objects_12) \
-@BUILD_WRITE_TRUE@	$(am__objects_13)
+@BUILD_WRITE_TRUE@	$(am__objects_13) $(am__objects_14)
 am__dist_libadios_a_SOURCES_DIST = nssi/adios_nssi_args.x
 dist_libadios_a_OBJECTS =
 @BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@nodist_libadios_a_OBJECTS = libadios_a-adios_nssi_args.$(OBJEXT)
@@ -352,31 +357,31 @@ libadios_a_OBJECTS = $(am_libadios_a_OBJECTS) \
 	$(dist_libadios_a_OBJECTS) $(nodist_libadios_a_OBJECTS)
 libadios_internal_nompi_a_AR = $(AR) $(ARFLAGS)
 libadios_internal_nompi_a_LIBADD =
-am__objects_14 = $(am__objects_1) \
+am__objects_15 = $(am__objects_1) \
 	libadios_internal_nompi_a-adios_transforms_common.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_transforms_hooks.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_copyspec.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_subvolume.$(OBJEXT)
-am__objects_15 = libadios_internal_nompi_a-adios_transform_identity_write.$(OBJEXT) \
+am__objects_16 = libadios_internal_nompi_a-adios_transform_identity_write.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_transform_zlib_write.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_transform_bzip2_write.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_transform_szip_write.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_transform_isobar_write.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_transform_aplod_write.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_transform_alacrity_write.$(OBJEXT)
-am__objects_16 = $(am__objects_1) \
+am__objects_17 = $(am__objects_1) \
 	libadios_internal_nompi_a-adios_transforms_write.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_transforms_hooks_write.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_transforms_util.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_transforms_specparse.$(OBJEXT) \
-	$(am__objects_15)
+	$(am__objects_16)
 am_libadios_internal_nompi_a_OBJECTS =  \
 	libadios_internal_nompi_a-mpidummy.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_bp_v1.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_endianness.$(OBJEXT) \
 	libadios_internal_nompi_a-bp_utils.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_internals.$(OBJEXT) \
-	$(am__objects_14) $(am__objects_16) \
+	$(am__objects_15) $(am__objects_17) \
 	libadios_internal_nompi_a-buffer.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_error.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_logger.$(OBJEXT) \
@@ -447,12 +452,12 @@ am__libadios_nompi_a_SOURCES_DIST = core/adios.c core/common_adios.c \
 	write/adios_dataspaces.c read/read_dataspaces.c \
 	write/adios_dimes.c read/read_dimes.c write/adios_datatap.c \
 	read/read_datatap.c
-am__objects_17 = $(am__objects_1) \
+am__objects_18 = $(am__objects_1) \
 	libadios_nompi_a-adios_transforms_common.$(OBJEXT) \
 	libadios_nompi_a-adios_transforms_hooks.$(OBJEXT) \
 	libadios_nompi_a-adios_copyspec.$(OBJEXT) \
 	libadios_nompi_a-adios_subvolume.$(OBJEXT)
-am__objects_18 =  \
+am__objects_19 =  \
 	libadios_nompi_a-adios_transform_identity_read.$(OBJEXT) \
 	libadios_nompi_a-adios_transform_zlib_read.$(OBJEXT) \
 	libadios_nompi_a-adios_transform_bzip2_read.$(OBJEXT) \
@@ -460,15 +465,15 @@ am__objects_18 =  \
 	libadios_nompi_a-adios_transform_isobar_read.$(OBJEXT) \
 	libadios_nompi_a-adios_transform_aplod_read.$(OBJEXT) \
 	libadios_nompi_a-adios_transform_alacrity_read.$(OBJEXT)
-am__objects_19 = $(am__objects_1) \
+am__objects_20 = $(am__objects_1) \
 	libadios_nompi_a-adios_transforms_read.$(OBJEXT) \
 	libadios_nompi_a-adios_transforms_hooks_read.$(OBJEXT) \
 	libadios_nompi_a-adios_transforms_reqgroup.$(OBJEXT) \
 	libadios_nompi_a-adios_transforms_datablock.$(OBJEXT) \
 	libadios_nompi_a-adios_patchdata.$(OBJEXT) \
 	libadios_nompi_a-adios_selection_util.$(OBJEXT) \
-	$(am__objects_18)
-am__objects_20 =  \
+	$(am__objects_19)
+am__objects_21 =  \
 	libadios_nompi_a-adios_transform_identity_write.$(OBJEXT) \
 	libadios_nompi_a-adios_transform_zlib_write.$(OBJEXT) \
 	libadios_nompi_a-adios_transform_bzip2_write.$(OBJEXT) \
@@ -476,25 +481,25 @@ am__objects_20 =  \
 	libadios_nompi_a-adios_transform_isobar_write.$(OBJEXT) \
 	libadios_nompi_a-adios_transform_aplod_write.$(OBJEXT) \
 	libadios_nompi_a-adios_transform_alacrity_write.$(OBJEXT)
-am__objects_21 = $(am__objects_1) \
+am__objects_22 = $(am__objects_1) \
 	libadios_nompi_a-adios_transforms_write.$(OBJEXT) \
 	libadios_nompi_a-adios_transforms_hooks_write.$(OBJEXT) \
 	libadios_nompi_a-adios_transforms_util.$(OBJEXT) \
 	libadios_nompi_a-adios_transforms_specparse.$(OBJEXT) \
-	$(am__objects_20)
-@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_22 = libadios_nompi_a-adios_dataspaces.$(OBJEXT) \
+	$(am__objects_21)
+@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_23 = libadios_nompi_a-adios_dataspaces.$(OBJEXT) \
 @BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@	libadios_nompi_a-read_dataspaces.$(OBJEXT)
-@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__objects_23 = libadios_nompi_a-adios_dimes.$(OBJEXT) \
+@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__objects_24 = libadios_nompi_a-adios_dimes.$(OBJEXT) \
 @BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@	libadios_nompi_a-read_dimes.$(OBJEXT)
-@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__objects_24 = libadios_nompi_a-adios_datatap.$(OBJEXT) \
+@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__objects_25 = libadios_nompi_a-adios_datatap.$(OBJEXT) \
 @BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@	libadios_nompi_a-read_datatap.$(OBJEXT)
 @BUILD_WRITE_TRUE@am_libadios_nompi_a_OBJECTS =  \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-adios.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-common_adios.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-adios_internals.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-adios_internals_mxml.$(OBJEXT) \
-@BUILD_WRITE_TRUE@	$(am__objects_17) $(am__objects_19) \
-@BUILD_WRITE_TRUE@	$(am__objects_21) \
+@BUILD_WRITE_TRUE@	$(am__objects_18) $(am__objects_20) \
+@BUILD_WRITE_TRUE@	$(am__objects_22) \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-buffer.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-adios_bp_v1.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-adios_endianness.$(OBJEXT) \
@@ -518,8 +523,8 @@ am__objects_21 = $(am__objects_1) \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-read_bp_staged1.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-adios_posix.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-adios_posix1.$(OBJEXT) \
-@BUILD_WRITE_TRUE@	$(am__objects_22) $(am__objects_23) \
-@BUILD_WRITE_TRUE@	$(am__objects_24)
+@BUILD_WRITE_TRUE@	$(am__objects_23) $(am__objects_24) \
+@BUILD_WRITE_TRUE@	$(am__objects_25)
 libadios_nompi_a_OBJECTS = $(am_libadios_nompi_a_OBJECTS)
 libadiosf_a_AR = $(AR) $(ARFLAGS)
 libadiosf_a_LIBADD =
@@ -583,60 +588,60 @@ am__libadiosf_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	write/adios_nssi.c nssi/adios_nssi_filter.c read/read_nssi.c \
 	write/adios_mpi.c write/adios_mpi_lustre.c \
 	write/adios_mpi_amr.c write/adios_var_merge.c \
-	write/adios_phdf5.c write/adios_nc4.c core/adiosf_read.c \
-	core/adiosf_defs_mod.f90 core/adiosf_write_mod.f90 \
-	core/adiosf_read_mod.f90
-am__objects_25 = $(am__objects_1) \
+	write/adios_mpi_bgq.c write/adios_phdf5.c write/adios_nc4.c \
+	core/adiosf_read.c core/adiosf_defs_mod.f90 \
+	core/adiosf_write_mod.f90 core/adiosf_read_mod.f90
+am__objects_26 = $(am__objects_1) \
 	libadiosf_a-adios_transforms_common.$(OBJEXT) \
 	libadiosf_a-adios_transforms_hooks.$(OBJEXT) \
 	libadiosf_a-adios_copyspec.$(OBJEXT) \
 	libadiosf_a-adios_subvolume.$(OBJEXT)
-am__objects_26 = libadiosf_a-adios_transform_identity_read.$(OBJEXT) \
+am__objects_27 = libadiosf_a-adios_transform_identity_read.$(OBJEXT) \
 	libadiosf_a-adios_transform_zlib_read.$(OBJEXT) \
 	libadiosf_a-adios_transform_bzip2_read.$(OBJEXT) \
 	libadiosf_a-adios_transform_szip_read.$(OBJEXT) \
 	libadiosf_a-adios_transform_isobar_read.$(OBJEXT) \
 	libadiosf_a-adios_transform_aplod_read.$(OBJEXT) \
 	libadiosf_a-adios_transform_alacrity_read.$(OBJEXT)
-am__objects_27 = $(am__objects_1) \
+am__objects_28 = $(am__objects_1) \
 	libadiosf_a-adios_transforms_read.$(OBJEXT) \
 	libadiosf_a-adios_transforms_hooks_read.$(OBJEXT) \
 	libadiosf_a-adios_transforms_reqgroup.$(OBJEXT) \
 	libadiosf_a-adios_transforms_datablock.$(OBJEXT) \
 	libadiosf_a-adios_patchdata.$(OBJEXT) \
-	libadiosf_a-adios_selection_util.$(OBJEXT) $(am__objects_26)
-am__objects_28 = libadiosf_a-adios_transform_identity_write.$(OBJEXT) \
+	libadiosf_a-adios_selection_util.$(OBJEXT) $(am__objects_27)
+am__objects_29 = libadiosf_a-adios_transform_identity_write.$(OBJEXT) \
 	libadiosf_a-adios_transform_zlib_write.$(OBJEXT) \
 	libadiosf_a-adios_transform_bzip2_write.$(OBJEXT) \
 	libadiosf_a-adios_transform_szip_write.$(OBJEXT) \
 	libadiosf_a-adios_transform_isobar_write.$(OBJEXT) \
 	libadiosf_a-adios_transform_aplod_write.$(OBJEXT) \
 	libadiosf_a-adios_transform_alacrity_write.$(OBJEXT)
-am__objects_29 = $(am__objects_1) \
+am__objects_30 = $(am__objects_1) \
 	libadiosf_a-adios_transforms_write.$(OBJEXT) \
 	libadiosf_a-adios_transforms_hooks_write.$(OBJEXT) \
 	libadiosf_a-adios_transforms_util.$(OBJEXT) \
 	libadiosf_a-adios_transforms_specparse.$(OBJEXT) \
-	$(am__objects_28)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_30 = libadiosf_a-adios_dataspaces.$(OBJEXT) \
+	$(am__objects_29)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_31 = libadiosf_a-adios_dataspaces.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@	libadiosf_a-read_dataspaces.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__objects_31 = libadiosf_a-adios_dimes.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__objects_32 = libadiosf_a-adios_dimes.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@	libadiosf_a-read_dimes.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__objects_32 = libadiosf_a-adios_datatap.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__objects_33 = libadiosf_a-adios_datatap.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@	libadiosf_a-read_datatap.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_FLEXPATH_TRUE@am__objects_33 = libadiosf_a-adios_flexpath.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_FLEXPATH_TRUE@am__objects_34 = libadiosf_a-adios_flexpath.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_FLEXPATH_TRUE@	libadiosf_a-read_flexpath.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__objects_34 = libadiosf_a-adios_nssi_config.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__objects_35 = libadiosf_a-adios_nssi_config.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@	libadiosf_a-adios_nssi.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@	libadiosf_a-adios_nssi_filter.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@	libadiosf_a-read_nssi.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__objects_35 = libadiosf_a-adiosf.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__objects_36 = libadiosf_a-adiosf.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-common_adios.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_internals.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_internals_mxml.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_25) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_27) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_29) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_26) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_28) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_30) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-buffer.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_bp_v1.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_endianness.$(OBJEXT) \
@@ -657,22 +662,24 @@ am__objects_29 = $(am__objects_1) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-read_bp_staged1.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_posix.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_posix1.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_30) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_31) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_32) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_33) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_34)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__objects_36 = libadiosf_a-adios_phdf5.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NC4PAR_TRUE@am__objects_37 = libadiosf_a-adios_nc4.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__objects_38 = libadiosf_a-adios_mpi.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_34) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_35)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_BGQ_TRUE@am__objects_37 = libadiosf_a-adios_mpi_bgq.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__objects_38 = libadiosf_a-adios_phdf5.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NC4PAR_TRUE@am__objects_39 = libadiosf_a-adios_nc4.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__objects_40 = libadiosf_a-adios_mpi.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_mpi_lustre.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_mpi_amr.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_var_merge.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_36) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_37)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am_libadiosf_a_OBJECTS =  \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_35) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_37) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_38) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_39)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am_libadiosf_a_OBJECTS =  \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_36) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_40) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adiosf_read.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adiosf_defs_mod.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adiosf_write_mod.$(OBJEXT) \
@@ -744,12 +751,12 @@ am__libadiosf_nompi_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	write/adios_nssi.c nssi/adios_nssi_filter.c read/read_nssi.c \
 	core/mpidummy.c core/adiosf_read.c core/adiosf_defs_mod.f90 \
 	core/adiosf_write_mod.f90 core/adiosf_read_mod.f90
-am__objects_39 = $(am__objects_1) \
+am__objects_41 = $(am__objects_1) \
 	libadiosf_nompi_a-adios_transforms_common.$(OBJEXT) \
 	libadiosf_nompi_a-adios_transforms_hooks.$(OBJEXT) \
 	libadiosf_nompi_a-adios_copyspec.$(OBJEXT) \
 	libadiosf_nompi_a-adios_subvolume.$(OBJEXT)
-am__objects_40 =  \
+am__objects_42 =  \
 	libadiosf_nompi_a-adios_transform_identity_read.$(OBJEXT) \
 	libadiosf_nompi_a-adios_transform_zlib_read.$(OBJEXT) \
 	libadiosf_nompi_a-adios_transform_bzip2_read.$(OBJEXT) \
@@ -757,15 +764,15 @@ am__objects_40 =  \
 	libadiosf_nompi_a-adios_transform_isobar_read.$(OBJEXT) \
 	libadiosf_nompi_a-adios_transform_aplod_read.$(OBJEXT) \
 	libadiosf_nompi_a-adios_transform_alacrity_read.$(OBJEXT)
-am__objects_41 = $(am__objects_1) \
+am__objects_43 = $(am__objects_1) \
 	libadiosf_nompi_a-adios_transforms_read.$(OBJEXT) \
 	libadiosf_nompi_a-adios_transforms_hooks_read.$(OBJEXT) \
 	libadiosf_nompi_a-adios_transforms_reqgroup.$(OBJEXT) \
 	libadiosf_nompi_a-adios_transforms_datablock.$(OBJEXT) \
 	libadiosf_nompi_a-adios_patchdata.$(OBJEXT) \
 	libadiosf_nompi_a-adios_selection_util.$(OBJEXT) \
-	$(am__objects_40)
-am__objects_42 =  \
+	$(am__objects_42)
+am__objects_44 =  \
 	libadiosf_nompi_a-adios_transform_identity_write.$(OBJEXT) \
 	libadiosf_nompi_a-adios_transform_zlib_write.$(OBJEXT) \
 	libadiosf_nompi_a-adios_transform_bzip2_write.$(OBJEXT) \
@@ -773,31 +780,31 @@ am__objects_42 =  \
 	libadiosf_nompi_a-adios_transform_isobar_write.$(OBJEXT) \
 	libadiosf_nompi_a-adios_transform_aplod_write.$(OBJEXT) \
 	libadiosf_nompi_a-adios_transform_alacrity_write.$(OBJEXT)
-am__objects_43 = $(am__objects_1) \
+am__objects_45 = $(am__objects_1) \
 	libadiosf_nompi_a-adios_transforms_write.$(OBJEXT) \
 	libadiosf_nompi_a-adios_transforms_hooks_write.$(OBJEXT) \
 	libadiosf_nompi_a-adios_transforms_util.$(OBJEXT) \
 	libadiosf_nompi_a-adios_transforms_specparse.$(OBJEXT) \
-	$(am__objects_42)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_44 = libadiosf_nompi_a-adios_dataspaces.$(OBJEXT) \
+	$(am__objects_44)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_46 = libadiosf_nompi_a-adios_dataspaces.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@	libadiosf_nompi_a-read_dataspaces.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__objects_45 = libadiosf_nompi_a-adios_dimes.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__objects_47 = libadiosf_nompi_a-adios_dimes.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@	libadiosf_nompi_a-read_dimes.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__objects_46 = libadiosf_nompi_a-adios_datatap.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__objects_48 = libadiosf_nompi_a-adios_datatap.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@	libadiosf_nompi_a-read_datatap.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_FLEXPATH_TRUE@am__objects_47 = libadiosf_nompi_a-adios_flexpath.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_FLEXPATH_TRUE@am__objects_49 = libadiosf_nompi_a-adios_flexpath.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_FLEXPATH_TRUE@	libadiosf_nompi_a-read_flexpath.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__objects_48 = libadiosf_nompi_a-adios_nssi_config.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__objects_50 = libadiosf_nompi_a-adios_nssi_config.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@	libadiosf_nompi_a-adios_nssi.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@	libadiosf_nompi_a-adios_nssi_filter.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@	libadiosf_nompi_a-read_nssi.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__objects_49 = libadiosf_nompi_a-adiosf.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__objects_51 = libadiosf_nompi_a-adiosf.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_a-common_adios.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_a-adios_internals.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_a-adios_internals_mxml.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_39) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_41) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_43) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_45) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_a-buffer.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_a-adios_bp_v1.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_a-adios_endianness.$(OBJEXT) \
@@ -818,15 +825,15 @@ am__objects_43 = $(am__objects_1) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_a-read_bp_staged1.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_a-adios_posix.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_a-adios_posix1.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_44) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_45) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_46) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_47) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_48)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__objects_50 = libadiosf_nompi_a-mpidummy.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am_libadiosf_nompi_a_OBJECTS =  \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_48) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_49) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_50) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_50)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__objects_52 = libadiosf_nompi_a-mpidummy.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am_libadiosf_nompi_a_OBJECTS =  \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_51) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_52) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_a-adiosf_read.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adiosf_defs_mod.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adiosf_write_mod.$(OBJEXT) \
@@ -894,12 +901,12 @@ am__libadiosf_nompi_v1_a_SOURCES_DIST = core/adiosf.c \
 	write/adios_nssi.c nssi/adios_nssi_filter.c read/read_nssi.c \
 	core/mpidummy.c core/adiosf_read_v1.c core/adiosf_defs_mod.f90 \
 	core/adiosf_write_mod.f90
-am__objects_51 = $(am__objects_1) \
+am__objects_53 = $(am__objects_1) \
 	libadiosf_nompi_v1_a-adios_transforms_common.$(OBJEXT) \
 	libadiosf_nompi_v1_a-adios_transforms_hooks.$(OBJEXT) \
 	libadiosf_nompi_v1_a-adios_copyspec.$(OBJEXT) \
 	libadiosf_nompi_v1_a-adios_subvolume.$(OBJEXT)
-am__objects_52 =  \
+am__objects_54 =  \
 	libadiosf_nompi_v1_a-adios_transform_identity_read.$(OBJEXT) \
 	libadiosf_nompi_v1_a-adios_transform_zlib_read.$(OBJEXT) \
 	libadiosf_nompi_v1_a-adios_transform_bzip2_read.$(OBJEXT) \
@@ -907,15 +914,15 @@ am__objects_52 =  \
 	libadiosf_nompi_v1_a-adios_transform_isobar_read.$(OBJEXT) \
 	libadiosf_nompi_v1_a-adios_transform_aplod_read.$(OBJEXT) \
 	libadiosf_nompi_v1_a-adios_transform_alacrity_read.$(OBJEXT)
-am__objects_53 = $(am__objects_1) \
+am__objects_55 = $(am__objects_1) \
 	libadiosf_nompi_v1_a-adios_transforms_read.$(OBJEXT) \
 	libadiosf_nompi_v1_a-adios_transforms_hooks_read.$(OBJEXT) \
 	libadiosf_nompi_v1_a-adios_transforms_reqgroup.$(OBJEXT) \
 	libadiosf_nompi_v1_a-adios_transforms_datablock.$(OBJEXT) \
 	libadiosf_nompi_v1_a-adios_patchdata.$(OBJEXT) \
 	libadiosf_nompi_v1_a-adios_selection_util.$(OBJEXT) \
-	$(am__objects_52)
-am__objects_54 =  \
+	$(am__objects_54)
+am__objects_56 =  \
 	libadiosf_nompi_v1_a-adios_transform_identity_write.$(OBJEXT) \
 	libadiosf_nompi_v1_a-adios_transform_zlib_write.$(OBJEXT) \
 	libadiosf_nompi_v1_a-adios_transform_bzip2_write.$(OBJEXT) \
@@ -923,31 +930,31 @@ am__objects_54 =  \
 	libadiosf_nompi_v1_a-adios_transform_isobar_write.$(OBJEXT) \
 	libadiosf_nompi_v1_a-adios_transform_aplod_write.$(OBJEXT) \
 	libadiosf_nompi_v1_a-adios_transform_alacrity_write.$(OBJEXT)
-am__objects_55 = $(am__objects_1) \
+am__objects_57 = $(am__objects_1) \
 	libadiosf_nompi_v1_a-adios_transforms_write.$(OBJEXT) \
 	libadiosf_nompi_v1_a-adios_transforms_hooks_write.$(OBJEXT) \
 	libadiosf_nompi_v1_a-adios_transforms_util.$(OBJEXT) \
 	libadiosf_nompi_v1_a-adios_transforms_specparse.$(OBJEXT) \
-	$(am__objects_54)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_56 = libadiosf_nompi_v1_a-adios_dataspaces.$(OBJEXT) \
+	$(am__objects_56)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_58 = libadiosf_nompi_v1_a-adios_dataspaces.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@	libadiosf_nompi_v1_a-read_dataspaces.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__objects_57 = libadiosf_nompi_v1_a-adios_dimes.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__objects_59 = libadiosf_nompi_v1_a-adios_dimes.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@	libadiosf_nompi_v1_a-read_dimes.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__objects_58 = libadiosf_nompi_v1_a-adios_datatap.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__objects_60 = libadiosf_nompi_v1_a-adios_datatap.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@	libadiosf_nompi_v1_a-read_datatap.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_FLEXPATH_TRUE@am__objects_59 = libadiosf_nompi_v1_a-adios_flexpath.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_FLEXPATH_TRUE@am__objects_61 = libadiosf_nompi_v1_a-adios_flexpath.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_FLEXPATH_TRUE@	libadiosf_nompi_v1_a-read_flexpath.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__objects_60 = libadiosf_nompi_v1_a-adios_nssi_config.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__objects_62 = libadiosf_nompi_v1_a-adios_nssi_config.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@	libadiosf_nompi_v1_a-adios_nssi.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@	libadiosf_nompi_v1_a-adios_nssi_filter.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@	libadiosf_nompi_v1_a-read_nssi.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__objects_61 = libadiosf_nompi_v1_a-adiosf.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__objects_63 = libadiosf_nompi_v1_a-adiosf.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_v1_a-common_adios.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_v1_a-adios_internals.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_v1_a-adios_internals_mxml.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_51) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_53) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_55) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_57) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_v1_a-buffer.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_v1_a-adios_bp_v1.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_v1_a-adios_endianness.$(OBJEXT) \
@@ -968,15 +975,15 @@ am__objects_55 = $(am__objects_1) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_v1_a-read_bp_staged1.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_v1_a-adios_posix.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_v1_a-adios_posix1.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_56) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_57) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_58) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_59) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_60)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__objects_62 = libadiosf_nompi_v1_a-mpidummy.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am_libadiosf_nompi_v1_a_OBJECTS =  \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_60) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_61) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_62) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_62)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__objects_64 = libadiosf_nompi_v1_a-mpidummy.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am_libadiosf_nompi_v1_a_OBJECTS =  \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_63) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_64) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_v1_a-adiosf_read_v1.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adiosf_defs_mod.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adiosf_write_mod.$(OBJEXT)
@@ -1043,14 +1050,15 @@ am__libadiosf_v1_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	write/adios_nssi.c nssi/adios_nssi_filter.c read/read_nssi.c \
 	write/adios_mpi.c write/adios_mpi_lustre.c \
 	write/adios_mpi_amr.c write/adios_var_merge.c \
-	write/adios_phdf5.c write/adios_nc4.c core/adiosf_read_v1.c \
-	core/adiosf_defs_mod.f90 core/adiosf_write_mod.f90
-am__objects_63 = $(am__objects_1) \
+	write/adios_mpi_bgq.c write/adios_phdf5.c write/adios_nc4.c \
+	core/adiosf_read_v1.c core/adiosf_defs_mod.f90 \
+	core/adiosf_write_mod.f90
+am__objects_65 = $(am__objects_1) \
 	libadiosf_v1_a-adios_transforms_common.$(OBJEXT) \
 	libadiosf_v1_a-adios_transforms_hooks.$(OBJEXT) \
 	libadiosf_v1_a-adios_copyspec.$(OBJEXT) \
 	libadiosf_v1_a-adios_subvolume.$(OBJEXT)
-am__objects_64 =  \
+am__objects_66 =  \
 	libadiosf_v1_a-adios_transform_identity_read.$(OBJEXT) \
 	libadiosf_v1_a-adios_transform_zlib_read.$(OBJEXT) \
 	libadiosf_v1_a-adios_transform_bzip2_read.$(OBJEXT) \
@@ -1058,15 +1066,15 @@ am__objects_64 =  \
 	libadiosf_v1_a-adios_transform_isobar_read.$(OBJEXT) \
 	libadiosf_v1_a-adios_transform_aplod_read.$(OBJEXT) \
 	libadiosf_v1_a-adios_transform_alacrity_read.$(OBJEXT)
-am__objects_65 = $(am__objects_1) \
+am__objects_67 = $(am__objects_1) \
 	libadiosf_v1_a-adios_transforms_read.$(OBJEXT) \
 	libadiosf_v1_a-adios_transforms_hooks_read.$(OBJEXT) \
 	libadiosf_v1_a-adios_transforms_reqgroup.$(OBJEXT) \
 	libadiosf_v1_a-adios_transforms_datablock.$(OBJEXT) \
 	libadiosf_v1_a-adios_patchdata.$(OBJEXT) \
 	libadiosf_v1_a-adios_selection_util.$(OBJEXT) \
-	$(am__objects_64)
-am__objects_66 =  \
+	$(am__objects_66)
+am__objects_68 =  \
 	libadiosf_v1_a-adios_transform_identity_write.$(OBJEXT) \
 	libadiosf_v1_a-adios_transform_zlib_write.$(OBJEXT) \
 	libadiosf_v1_a-adios_transform_bzip2_write.$(OBJEXT) \
@@ -1074,31 +1082,31 @@ am__objects_66 =  \
 	libadiosf_v1_a-adios_transform_isobar_write.$(OBJEXT) \
 	libadiosf_v1_a-adios_transform_aplod_write.$(OBJEXT) \
 	libadiosf_v1_a-adios_transform_alacrity_write.$(OBJEXT)
-am__objects_67 = $(am__objects_1) \
+am__objects_69 = $(am__objects_1) \
 	libadiosf_v1_a-adios_transforms_write.$(OBJEXT) \
 	libadiosf_v1_a-adios_transforms_hooks_write.$(OBJEXT) \
 	libadiosf_v1_a-adios_transforms_util.$(OBJEXT) \
 	libadiosf_v1_a-adios_transforms_specparse.$(OBJEXT) \
-	$(am__objects_66)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_68 = libadiosf_v1_a-adios_dataspaces.$(OBJEXT) \
+	$(am__objects_68)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_70 = libadiosf_v1_a-adios_dataspaces.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@	libadiosf_v1_a-read_dataspaces.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__objects_69 = libadiosf_v1_a-adios_dimes.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@am__objects_71 = libadiosf_v1_a-adios_dimes.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DIMES_TRUE@	libadiosf_v1_a-read_dimes.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__objects_70 = libadiosf_v1_a-adios_datatap.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@am__objects_72 = libadiosf_v1_a-adios_datatap.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATATAP_TRUE@	libadiosf_v1_a-read_datatap.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_FLEXPATH_TRUE@am__objects_71 = libadiosf_v1_a-adios_flexpath.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_FLEXPATH_TRUE@am__objects_73 = libadiosf_v1_a-adios_flexpath.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_FLEXPATH_TRUE@	libadiosf_v1_a-read_flexpath.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__objects_72 = libadiosf_v1_a-adios_nssi_config.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@am__objects_74 = libadiosf_v1_a-adios_nssi_config.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@	libadiosf_v1_a-adios_nssi.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@	libadiosf_v1_a-adios_nssi_filter.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@	libadiosf_v1_a-read_nssi.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__objects_73 = libadiosf_v1_a-adiosf.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__objects_75 = libadiosf_v1_a-adiosf.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-common_adios.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-adios_internals.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-adios_internals_mxml.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_63) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_65) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_67) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_69) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-buffer.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-adios_bp_v1.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-adios_endianness.$(OBJEXT) \
@@ -1119,22 +1127,24 @@ am__objects_67 = $(am__objects_1) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-read_bp_staged1.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-adios_posix.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-adios_posix1.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_68) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_69) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_70) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_71) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_72)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__objects_74 = libadiosf_v1_a-adios_phdf5.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NC4PAR_TRUE@am__objects_75 = libadiosf_v1_a-adios_nc4.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__objects_76 = libadiosf_v1_a-adios_mpi.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_72) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_73) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_74)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_BGQ_TRUE@am__objects_76 = libadiosf_v1_a-adios_mpi_bgq.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_PHDF5_TRUE@am__objects_77 = libadiosf_v1_a-adios_phdf5.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NC4PAR_TRUE@am__objects_78 = libadiosf_v1_a-adios_nc4.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__objects_79 = libadiosf_v1_a-adios_mpi.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-adios_mpi_lustre.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-adios_mpi_amr.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-adios_var_merge.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_74) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_75)
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am_libadiosf_v1_a_OBJECTS =  \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_73) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_76) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_77) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_78)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am_libadiosf_v1_a_OBJECTS =  \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_75) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_79) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-adiosf_read_v1.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adiosf_defs_mod.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	adiosf_write_mod.$(OBJEXT)
@@ -1179,12 +1189,12 @@ am__libadiosread_a_SOURCES_DIST = core/adios_bp_v1.c \
 	read/read_bp_staged1.c read/read_dataspaces.c \
 	read/read_dimes.c read/read_datatap.c read/read_flexpath.c \
 	nssi/adios_nssi_config.c read/read_nssi.c
-am__objects_77 = $(am__objects_1) \
+am__objects_80 = $(am__objects_1) \
 	libadiosread_a-adios_transforms_common.$(OBJEXT) \
 	libadiosread_a-adios_transforms_hooks.$(OBJEXT) \
 	libadiosread_a-adios_copyspec.$(OBJEXT) \
 	libadiosread_a-adios_subvolume.$(OBJEXT)
-am__objects_78 =  \
+am__objects_81 =  \
 	libadiosread_a-adios_transform_identity_read.$(OBJEXT) \
 	libadiosread_a-adios_transform_zlib_read.$(OBJEXT) \
 	libadiosread_a-adios_transform_bzip2_read.$(OBJEXT) \
@@ -1192,21 +1202,21 @@ am__objects_78 =  \
 	libadiosread_a-adios_transform_isobar_read.$(OBJEXT) \
 	libadiosread_a-adios_transform_aplod_read.$(OBJEXT) \
 	libadiosread_a-adios_transform_alacrity_read.$(OBJEXT)
-am__objects_79 = $(am__objects_1) \
+am__objects_82 = $(am__objects_1) \
 	libadiosread_a-adios_transforms_read.$(OBJEXT) \
 	libadiosread_a-adios_transforms_hooks_read.$(OBJEXT) \
 	libadiosread_a-adios_transforms_reqgroup.$(OBJEXT) \
 	libadiosread_a-adios_transforms_datablock.$(OBJEXT) \
 	libadiosread_a-adios_patchdata.$(OBJEXT) \
 	libadiosread_a-adios_selection_util.$(OBJEXT) \
-	$(am__objects_78)
-@HAVE_DATASPACES_TRUE@am__objects_80 = libadiosread_a-read_dataspaces.$(OBJEXT)
-@HAVE_DIMES_TRUE@am__objects_81 = libadiosread_a-read_dimes.$(OBJEXT)
-@HAVE_DATATAP_TRUE@am__objects_82 =  \
+	$(am__objects_81)
+@HAVE_DATASPACES_TRUE@am__objects_83 = libadiosread_a-read_dataspaces.$(OBJEXT)
+@HAVE_DIMES_TRUE@am__objects_84 = libadiosread_a-read_dimes.$(OBJEXT)
+@HAVE_DATATAP_TRUE@am__objects_85 =  \
 @HAVE_DATATAP_TRUE@	libadiosread_a-read_datatap.$(OBJEXT)
-@HAVE_FLEXPATH_TRUE@am__objects_83 =  \
+@HAVE_FLEXPATH_TRUE@am__objects_86 =  \
 @HAVE_FLEXPATH_TRUE@	libadiosread_a-read_flexpath.$(OBJEXT)
-@HAVE_NSSI_TRUE@am__objects_84 =  \
+@HAVE_NSSI_TRUE@am__objects_87 =  \
 @HAVE_NSSI_TRUE@	libadiosread_a-adios_nssi_config.$(OBJEXT) \
 @HAVE_NSSI_TRUE@	libadiosread_a-read_nssi.$(OBJEXT)
 am_libadiosread_a_OBJECTS = libadiosread_a-adios_bp_v1.$(OBJEXT) \
@@ -1216,17 +1226,17 @@ am_libadiosread_a_OBJECTS = libadiosread_a-adios_bp_v1.$(OBJEXT) \
 	libadiosread_a-adios_error.$(OBJEXT) \
 	libadiosread_a-adios_read.$(OBJEXT) \
 	libadiosread_a-adios_read_v1.$(OBJEXT) \
-	libadiosread_a-common_read.$(OBJEXT) $(am__objects_77) \
-	$(am__objects_79) libadiosread_a-globals.$(OBJEXT) \
+	libadiosread_a-common_read.$(OBJEXT) $(am__objects_80) \
+	$(am__objects_82) libadiosread_a-globals.$(OBJEXT) \
 	libadiosread_a-adios_read_hooks.$(OBJEXT) \
 	libadiosread_a-adios_logger.$(OBJEXT) \
 	libadiosread_a-util.$(OBJEXT) \
 	libadiosread_a-qhashtbl.$(OBJEXT) \
 	libadiosread_a-read_bp.$(OBJEXT) \
 	libadiosread_a-read_bp_staged.$(OBJEXT) \
-	libadiosread_a-read_bp_staged1.$(OBJEXT) $(am__objects_80) \
-	$(am__objects_81) $(am__objects_82) $(am__objects_83) \
-	$(am__objects_84)
+	libadiosread_a-read_bp_staged1.$(OBJEXT) $(am__objects_83) \
+	$(am__objects_84) $(am__objects_85) $(am__objects_86) \
+	$(am__objects_87)
 am__dist_libadiosread_a_SOURCES_DIST = nssi/adios_nssi_args.x
 dist_libadiosread_a_OBJECTS =
 @HAVE_NSSI_TRUE@nodist_libadiosread_a_OBJECTS =  \
@@ -1273,12 +1283,12 @@ am__libadiosread_nompi_a_SOURCES_DIST = core/mpidummy.c \
 	core/util.c core/qhashtbl.c read/read_bp.c \
 	read/read_dataspaces.c read/read_dimes.c read/read_datatap.c \
 	read/read_flexpath.c nssi/adios_nssi_config.c read/read_nssi.c
-am__objects_85 = $(am__objects_1) \
+am__objects_88 = $(am__objects_1) \
 	libadiosread_nompi_a-adios_transforms_common.$(OBJEXT) \
 	libadiosread_nompi_a-adios_transforms_hooks.$(OBJEXT) \
 	libadiosread_nompi_a-adios_copyspec.$(OBJEXT) \
 	libadiosread_nompi_a-adios_subvolume.$(OBJEXT)
-am__objects_86 =  \
+am__objects_89 =  \
 	libadiosread_nompi_a-adios_transform_identity_read.$(OBJEXT) \
 	libadiosread_nompi_a-adios_transform_zlib_read.$(OBJEXT) \
 	libadiosread_nompi_a-adios_transform_bzip2_read.$(OBJEXT) \
@@ -1286,20 +1296,20 @@ am__objects_86 =  \
 	libadiosread_nompi_a-adios_transform_isobar_read.$(OBJEXT) \
 	libadiosread_nompi_a-adios_transform_aplod_read.$(OBJEXT) \
 	libadiosread_nompi_a-adios_transform_alacrity_read.$(OBJEXT)
-am__objects_87 = $(am__objects_1) \
+am__objects_90 = $(am__objects_1) \
 	libadiosread_nompi_a-adios_transforms_read.$(OBJEXT) \
 	libadiosread_nompi_a-adios_transforms_hooks_read.$(OBJEXT) \
 	libadiosread_nompi_a-adios_transforms_reqgroup.$(OBJEXT) \
 	libadiosread_nompi_a-adios_transforms_datablock.$(OBJEXT) \
 	libadiosread_nompi_a-adios_patchdata.$(OBJEXT) \
 	libadiosread_nompi_a-adios_selection_util.$(OBJEXT) \
-	$(am__objects_86)
-@HAVE_DATASPACES_TRUE@am__objects_88 = libadiosread_nompi_a-read_dataspaces.$(OBJEXT)
-@HAVE_DIMES_TRUE@am__objects_89 =  \
+	$(am__objects_89)
+@HAVE_DATASPACES_TRUE@am__objects_91 = libadiosread_nompi_a-read_dataspaces.$(OBJEXT)
+@HAVE_DIMES_TRUE@am__objects_92 =  \
 @HAVE_DIMES_TRUE@	libadiosread_nompi_a-read_dimes.$(OBJEXT)
-@HAVE_DATATAP_TRUE@am__objects_90 = libadiosread_nompi_a-read_datatap.$(OBJEXT)
-@HAVE_FLEXPATH_TRUE@am__objects_91 = libadiosread_nompi_a-read_flexpath.$(OBJEXT)
-@HAVE_NSSI_TRUE@am__objects_92 = libadiosread_nompi_a-adios_nssi_config.$(OBJEXT) \
+@HAVE_DATATAP_TRUE@am__objects_93 = libadiosread_nompi_a-read_datatap.$(OBJEXT)
+@HAVE_FLEXPATH_TRUE@am__objects_94 = libadiosread_nompi_a-read_flexpath.$(OBJEXT)
+@HAVE_NSSI_TRUE@am__objects_95 = libadiosread_nompi_a-adios_nssi_config.$(OBJEXT) \
 @HAVE_NSSI_TRUE@	libadiosread_nompi_a-read_nssi.$(OBJEXT)
 am_libadiosread_nompi_a_OBJECTS =  \
 	libadiosread_nompi_a-mpidummy.$(OBJEXT) \
@@ -1310,16 +1320,16 @@ am_libadiosread_nompi_a_OBJECTS =  \
 	libadiosread_nompi_a-adios_error.$(OBJEXT) \
 	libadiosread_nompi_a-adios_read.$(OBJEXT) \
 	libadiosread_nompi_a-adios_read_v1.$(OBJEXT) \
-	libadiosread_nompi_a-common_read.$(OBJEXT) $(am__objects_85) \
-	$(am__objects_87) libadiosread_nompi_a-adios_logger.$(OBJEXT) \
+	libadiosread_nompi_a-common_read.$(OBJEXT) $(am__objects_88) \
+	$(am__objects_90) libadiosread_nompi_a-adios_logger.$(OBJEXT) \
 	libadiosread_nompi_a-buffer.$(OBJEXT) \
 	libadiosread_nompi_a-globals.$(OBJEXT) \
 	libadiosread_nompi_a-adios_read_hooks.$(OBJEXT) \
 	libadiosread_nompi_a-util.$(OBJEXT) \
 	libadiosread_nompi_a-qhashtbl.$(OBJEXT) \
-	libadiosread_nompi_a-read_bp.$(OBJEXT) $(am__objects_88) \
-	$(am__objects_89) $(am__objects_90) $(am__objects_91) \
-	$(am__objects_92)
+	libadiosread_nompi_a-read_bp.$(OBJEXT) $(am__objects_91) \
+	$(am__objects_92) $(am__objects_93) $(am__objects_94) \
+	$(am__objects_95)
 am__dist_libadiosread_nompi_a_SOURCES_DIST = nssi/adios_nssi_args.x
 dist_libadiosread_nompi_a_OBJECTS =
 @HAVE_NSSI_TRUE@nodist_libadiosread_nompi_a_OBJECTS = libadiosread_nompi_a-adios_nssi_args.$(OBJEXT)
@@ -1366,12 +1376,12 @@ am__libadiosreadf_a_SOURCES_DIST = core/adios_bp_v1.c \
 	read/read_dimes.c read/read_datatap.c read/read_flexpath.c \
 	nssi/adios_nssi_config.c read/read_nssi.c core/adiosf_read.c \
 	core/adiosf_defs_mod.f90 core/adiosf_read_mod.f90
-am__objects_93 = $(am__objects_1) \
+am__objects_96 = $(am__objects_1) \
 	libadiosreadf_a-adios_transforms_common.$(OBJEXT) \
 	libadiosreadf_a-adios_transforms_hooks.$(OBJEXT) \
 	libadiosreadf_a-adios_copyspec.$(OBJEXT) \
 	libadiosreadf_a-adios_subvolume.$(OBJEXT)
-am__objects_94 =  \
+am__objects_97 =  \
 	libadiosreadf_a-adios_transform_identity_read.$(OBJEXT) \
 	libadiosreadf_a-adios_transform_zlib_read.$(OBJEXT) \
 	libadiosreadf_a-adios_transform_bzip2_read.$(OBJEXT) \
@@ -1379,28 +1389,28 @@ am__objects_94 =  \
 	libadiosreadf_a-adios_transform_isobar_read.$(OBJEXT) \
 	libadiosreadf_a-adios_transform_aplod_read.$(OBJEXT) \
 	libadiosreadf_a-adios_transform_alacrity_read.$(OBJEXT)
-am__objects_95 = $(am__objects_1) \
+am__objects_98 = $(am__objects_1) \
 	libadiosreadf_a-adios_transforms_read.$(OBJEXT) \
 	libadiosreadf_a-adios_transforms_hooks_read.$(OBJEXT) \
 	libadiosreadf_a-adios_transforms_reqgroup.$(OBJEXT) \
 	libadiosreadf_a-adios_transforms_datablock.$(OBJEXT) \
 	libadiosreadf_a-adios_patchdata.$(OBJEXT) \
 	libadiosreadf_a-adios_selection_util.$(OBJEXT) \
-	$(am__objects_94)
-@BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__objects_96 = libadiosreadf_a-read_dataspaces.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__objects_97 = libadiosreadf_a-read_dimes.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@HAVE_DATATAP_TRUE@am__objects_98 = libadiosreadf_a-read_datatap.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@HAVE_FLEXPATH_TRUE@am__objects_99 = libadiosreadf_a-read_flexpath.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__objects_100 = libadiosreadf_a-adios_nssi_config.$(OBJEXT) \
+	$(am__objects_97)
+@BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__objects_99 = libadiosreadf_a-read_dataspaces.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__objects_100 = libadiosreadf_a-read_dimes.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@HAVE_DATATAP_TRUE@am__objects_101 = libadiosreadf_a-read_datatap.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@HAVE_FLEXPATH_TRUE@am__objects_102 = libadiosreadf_a-read_flexpath.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__objects_103 = libadiosreadf_a-adios_nssi_config.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@	libadiosreadf_a-read_nssi.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@am__objects_101 =  \
+@BUILD_FORTRAN_TRUE@am__objects_104 =  \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_a-adios_bp_v1.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_a-adios_endianness.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_a-bp_utils.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_a-futils.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_a-adios_error.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_a-common_read.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@	$(am__objects_93) $(am__objects_95) \
+@BUILD_FORTRAN_TRUE@	$(am__objects_96) $(am__objects_98) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_a-globals.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_a-adios_read_hooks.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_a-adios_logger.$(OBJEXT) \
@@ -1409,10 +1419,10 @@ am__objects_95 = $(am__objects_1) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_a-read_bp.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_a-read_bp_staged.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_a-read_bp_staged1.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@	$(am__objects_96) $(am__objects_97) \
-@BUILD_FORTRAN_TRUE@	$(am__objects_98) $(am__objects_99) \
-@BUILD_FORTRAN_TRUE@	$(am__objects_100)
-@BUILD_FORTRAN_TRUE@am_libadiosreadf_a_OBJECTS = $(am__objects_101) \
+@BUILD_FORTRAN_TRUE@	$(am__objects_99) $(am__objects_100) \
+@BUILD_FORTRAN_TRUE@	$(am__objects_101) $(am__objects_102) \
+@BUILD_FORTRAN_TRUE@	$(am__objects_103)
+@BUILD_FORTRAN_TRUE@am_libadiosreadf_a_OBJECTS = $(am__objects_104) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_a-adiosf_read.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	adiosf_defs_mod.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	adiosf_read_mod.$(OBJEXT)
@@ -1461,12 +1471,12 @@ am__libadiosreadf_nompi_a_SOURCES_DIST = core/mpidummy.c \
 	read/read_bp.c read/read_dataspaces.c read/read_dimes.c \
 	read/read_datatap.c read/read_flexpath.c \
 	nssi/adios_nssi_config.c read/read_nssi.c core/adiosf_read.c
-am__objects_102 = $(am__objects_1) \
+am__objects_105 = $(am__objects_1) \
 	libadiosreadf_nompi_a-adios_transforms_common.$(OBJEXT) \
 	libadiosreadf_nompi_a-adios_transforms_hooks.$(OBJEXT) \
 	libadiosreadf_nompi_a-adios_copyspec.$(OBJEXT) \
 	libadiosreadf_nompi_a-adios_subvolume.$(OBJEXT)
-am__objects_103 =  \
+am__objects_106 =  \
 	libadiosreadf_nompi_a-adios_transform_identity_read.$(OBJEXT) \
 	libadiosreadf_nompi_a-adios_transform_zlib_read.$(OBJEXT) \
 	libadiosreadf_nompi_a-adios_transform_bzip2_read.$(OBJEXT) \
@@ -1474,21 +1484,21 @@ am__objects_103 =  \
 	libadiosreadf_nompi_a-adios_transform_isobar_read.$(OBJEXT) \
 	libadiosreadf_nompi_a-adios_transform_aplod_read.$(OBJEXT) \
 	libadiosreadf_nompi_a-adios_transform_alacrity_read.$(OBJEXT)
-am__objects_104 = $(am__objects_1) \
+am__objects_107 = $(am__objects_1) \
 	libadiosreadf_nompi_a-adios_transforms_read.$(OBJEXT) \
 	libadiosreadf_nompi_a-adios_transforms_hooks_read.$(OBJEXT) \
 	libadiosreadf_nompi_a-adios_transforms_reqgroup.$(OBJEXT) \
 	libadiosreadf_nompi_a-adios_transforms_datablock.$(OBJEXT) \
 	libadiosreadf_nompi_a-adios_patchdata.$(OBJEXT) \
 	libadiosreadf_nompi_a-adios_selection_util.$(OBJEXT) \
-	$(am__objects_103)
-@BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__objects_105 = libadiosreadf_nompi_a-read_dataspaces.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__objects_106 = libadiosreadf_nompi_a-read_dimes.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@HAVE_DATATAP_TRUE@am__objects_107 = libadiosreadf_nompi_a-read_datatap.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@HAVE_FLEXPATH_TRUE@am__objects_108 = libadiosreadf_nompi_a-read_flexpath.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__objects_109 = libadiosreadf_nompi_a-adios_nssi_config.$(OBJEXT) \
+	$(am__objects_106)
+@BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__objects_108 = libadiosreadf_nompi_a-read_dataspaces.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__objects_109 = libadiosreadf_nompi_a-read_dimes.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@HAVE_DATATAP_TRUE@am__objects_110 = libadiosreadf_nompi_a-read_datatap.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@HAVE_FLEXPATH_TRUE@am__objects_111 = libadiosreadf_nompi_a-read_flexpath.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__objects_112 = libadiosreadf_nompi_a-adios_nssi_config.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@	libadiosreadf_nompi_a-read_nssi.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@am__objects_110 =  \
+@BUILD_FORTRAN_TRUE@am__objects_113 =  \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-mpidummy.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-adios_bp_v1.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-adios_endianness.$(OBJEXT) \
@@ -1497,17 +1507,17 @@ am__objects_104 = $(am__objects_1) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-adios_error.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-adios_logger.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-common_read.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@	$(am__objects_102) $(am__objects_104) \
+@BUILD_FORTRAN_TRUE@	$(am__objects_105) $(am__objects_107) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-globals.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-adios_read_hooks.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-util.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-qhashtbl.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-read_bp.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@	$(am__objects_105) $(am__objects_106) \
-@BUILD_FORTRAN_TRUE@	$(am__objects_107) $(am__objects_108) \
-@BUILD_FORTRAN_TRUE@	$(am__objects_109)
+@BUILD_FORTRAN_TRUE@	$(am__objects_108) $(am__objects_109) \
+@BUILD_FORTRAN_TRUE@	$(am__objects_110) $(am__objects_111) \
+@BUILD_FORTRAN_TRUE@	$(am__objects_112)
 @BUILD_FORTRAN_TRUE@am_libadiosreadf_nompi_a_OBJECTS =  \
-@BUILD_FORTRAN_TRUE@	$(am__objects_110) \
+@BUILD_FORTRAN_TRUE@	$(am__objects_113) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-adiosf_read.$(OBJEXT)
 am__dist_libadiosreadf_nompi_a_SOURCES_DIST = nssi/adios_nssi_args.x
 dist_libadiosreadf_nompi_a_OBJECTS =
@@ -1555,33 +1565,33 @@ am__libadiosreadf_nompi_v1_a_SOURCES_DIST = core/mpidummy.c \
 	read/read_datatap.c read/read_flexpath.c \
 	nssi/adios_nssi_config.c read/read_nssi.c \
 	core/adiosf_read_v1.c
-am__objects_111 = $(am__objects_1) \
+am__objects_114 = $(am__objects_1) \
 	libadiosreadf_nompi_v1_a-adios_transforms_common.$(OBJEXT) \
 	libadiosreadf_nompi_v1_a-adios_transforms_hooks.$(OBJEXT) \
 	libadiosreadf_nompi_v1_a-adios_copyspec.$(OBJEXT) \
 	libadiosreadf_nompi_v1_a-adios_subvolume.$(OBJEXT)
-am__objects_112 = libadiosreadf_nompi_v1_a-adios_transform_identity_read.$(OBJEXT) \
+am__objects_115 = libadiosreadf_nompi_v1_a-adios_transform_identity_read.$(OBJEXT) \
 	libadiosreadf_nompi_v1_a-adios_transform_zlib_read.$(OBJEXT) \
 	libadiosreadf_nompi_v1_a-adios_transform_bzip2_read.$(OBJEXT) \
 	libadiosreadf_nompi_v1_a-adios_transform_szip_read.$(OBJEXT) \
 	libadiosreadf_nompi_v1_a-adios_transform_isobar_read.$(OBJEXT) \
 	libadiosreadf_nompi_v1_a-adios_transform_aplod_read.$(OBJEXT) \
 	libadiosreadf_nompi_v1_a-adios_transform_alacrity_read.$(OBJEXT)
-am__objects_113 = $(am__objects_1) \
+am__objects_116 = $(am__objects_1) \
 	libadiosreadf_nompi_v1_a-adios_transforms_read.$(OBJEXT) \
 	libadiosreadf_nompi_v1_a-adios_transforms_hooks_read.$(OBJEXT) \
 	libadiosreadf_nompi_v1_a-adios_transforms_reqgroup.$(OBJEXT) \
 	libadiosreadf_nompi_v1_a-adios_transforms_datablock.$(OBJEXT) \
 	libadiosreadf_nompi_v1_a-adios_patchdata.$(OBJEXT) \
 	libadiosreadf_nompi_v1_a-adios_selection_util.$(OBJEXT) \
-	$(am__objects_112)
-@BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__objects_114 = libadiosreadf_nompi_v1_a-read_dataspaces.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__objects_115 = libadiosreadf_nompi_v1_a-read_dimes.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@HAVE_DATATAP_TRUE@am__objects_116 = libadiosreadf_nompi_v1_a-read_datatap.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@HAVE_FLEXPATH_TRUE@am__objects_117 = libadiosreadf_nompi_v1_a-read_flexpath.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__objects_118 = libadiosreadf_nompi_v1_a-adios_nssi_config.$(OBJEXT) \
+	$(am__objects_115)
+@BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__objects_117 = libadiosreadf_nompi_v1_a-read_dataspaces.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__objects_118 = libadiosreadf_nompi_v1_a-read_dimes.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@HAVE_DATATAP_TRUE@am__objects_119 = libadiosreadf_nompi_v1_a-read_datatap.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@HAVE_FLEXPATH_TRUE@am__objects_120 = libadiosreadf_nompi_v1_a-read_flexpath.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__objects_121 = libadiosreadf_nompi_v1_a-adios_nssi_config.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@	libadiosreadf_nompi_v1_a-read_nssi.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@am__objects_119 = libadiosreadf_nompi_v1_a-mpidummy.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@am__objects_122 = libadiosreadf_nompi_v1_a-mpidummy.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_v1_a-adios_bp_v1.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_v1_a-adios_endianness.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_v1_a-bp_utils.$(OBJEXT) \
@@ -1589,17 +1599,17 @@ am__objects_113 = $(am__objects_1) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_v1_a-adios_error.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_v1_a-adios_logger.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_v1_a-common_read.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@	$(am__objects_111) $(am__objects_113) \
+@BUILD_FORTRAN_TRUE@	$(am__objects_114) $(am__objects_116) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_v1_a-globals.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_v1_a-adios_read_hooks.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_v1_a-util.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_v1_a-qhashtbl.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_v1_a-read_bp.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@	$(am__objects_114) $(am__objects_115) \
-@BUILD_FORTRAN_TRUE@	$(am__objects_116) $(am__objects_117) \
-@BUILD_FORTRAN_TRUE@	$(am__objects_118)
+@BUILD_FORTRAN_TRUE@	$(am__objects_117) $(am__objects_118) \
+@BUILD_FORTRAN_TRUE@	$(am__objects_119) $(am__objects_120) \
+@BUILD_FORTRAN_TRUE@	$(am__objects_121)
 @BUILD_FORTRAN_TRUE@am_libadiosreadf_nompi_v1_a_OBJECTS =  \
-@BUILD_FORTRAN_TRUE@	$(am__objects_119) \
+@BUILD_FORTRAN_TRUE@	$(am__objects_122) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_v1_a-adiosf_read_v1.$(OBJEXT)
 libadiosreadf_nompi_v1_a_OBJECTS =  \
 	$(am_libadiosreadf_nompi_v1_a_OBJECTS)
@@ -1643,12 +1653,12 @@ am__libadiosreadf_v1_a_SOURCES_DIST = core/adios_bp_v1.c \
 	read/read_dimes.c read/read_datatap.c read/read_flexpath.c \
 	nssi/adios_nssi_config.c read/read_nssi.c \
 	core/adiosf_read_v1.c
-am__objects_120 = $(am__objects_1) \
+am__objects_123 = $(am__objects_1) \
 	libadiosreadf_v1_a-adios_transforms_common.$(OBJEXT) \
 	libadiosreadf_v1_a-adios_transforms_hooks.$(OBJEXT) \
 	libadiosreadf_v1_a-adios_copyspec.$(OBJEXT) \
 	libadiosreadf_v1_a-adios_subvolume.$(OBJEXT)
-am__objects_121 =  \
+am__objects_124 =  \
 	libadiosreadf_v1_a-adios_transform_identity_read.$(OBJEXT) \
 	libadiosreadf_v1_a-adios_transform_zlib_read.$(OBJEXT) \
 	libadiosreadf_v1_a-adios_transform_bzip2_read.$(OBJEXT) \
@@ -1656,28 +1666,28 @@ am__objects_121 =  \
 	libadiosreadf_v1_a-adios_transform_isobar_read.$(OBJEXT) \
 	libadiosreadf_v1_a-adios_transform_aplod_read.$(OBJEXT) \
 	libadiosreadf_v1_a-adios_transform_alacrity_read.$(OBJEXT)
-am__objects_122 = $(am__objects_1) \
+am__objects_125 = $(am__objects_1) \
 	libadiosreadf_v1_a-adios_transforms_read.$(OBJEXT) \
 	libadiosreadf_v1_a-adios_transforms_hooks_read.$(OBJEXT) \
 	libadiosreadf_v1_a-adios_transforms_reqgroup.$(OBJEXT) \
 	libadiosreadf_v1_a-adios_transforms_datablock.$(OBJEXT) \
 	libadiosreadf_v1_a-adios_patchdata.$(OBJEXT) \
 	libadiosreadf_v1_a-adios_selection_util.$(OBJEXT) \
-	$(am__objects_121)
-@BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__objects_123 = libadiosreadf_v1_a-read_dataspaces.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__objects_124 = libadiosreadf_v1_a-read_dimes.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@HAVE_DATATAP_TRUE@am__objects_125 = libadiosreadf_v1_a-read_datatap.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@HAVE_FLEXPATH_TRUE@am__objects_126 = libadiosreadf_v1_a-read_flexpath.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__objects_127 = libadiosreadf_v1_a-adios_nssi_config.$(OBJEXT) \
+	$(am__objects_124)
+@BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__objects_126 = libadiosreadf_v1_a-read_dataspaces.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__objects_127 = libadiosreadf_v1_a-read_dimes.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@HAVE_DATATAP_TRUE@am__objects_128 = libadiosreadf_v1_a-read_datatap.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@HAVE_FLEXPATH_TRUE@am__objects_129 = libadiosreadf_v1_a-read_flexpath.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@am__objects_130 = libadiosreadf_v1_a-adios_nssi_config.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@	libadiosreadf_v1_a-read_nssi.$(OBJEXT)
-@BUILD_FORTRAN_TRUE@am__objects_128 =  \
+@BUILD_FORTRAN_TRUE@am__objects_131 =  \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_v1_a-adios_bp_v1.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_v1_a-adios_endianness.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_v1_a-bp_utils.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_v1_a-futils.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_v1_a-adios_error.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_v1_a-common_read.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@	$(am__objects_120) $(am__objects_122) \
+@BUILD_FORTRAN_TRUE@	$(am__objects_123) $(am__objects_125) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_v1_a-globals.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_v1_a-adios_read_hooks.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_v1_a-adios_logger.$(OBJEXT) \
@@ -1686,11 +1696,11 @@ am__objects_122 = $(am__objects_1) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_v1_a-read_bp.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_v1_a-read_bp_staged.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_v1_a-read_bp_staged1.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@	$(am__objects_123) $(am__objects_124) \
-@BUILD_FORTRAN_TRUE@	$(am__objects_125) $(am__objects_126) \
-@BUILD_FORTRAN_TRUE@	$(am__objects_127)
+@BUILD_FORTRAN_TRUE@	$(am__objects_126) $(am__objects_127) \
+@BUILD_FORTRAN_TRUE@	$(am__objects_128) $(am__objects_129) \
+@BUILD_FORTRAN_TRUE@	$(am__objects_130)
 @BUILD_FORTRAN_TRUE@am_libadiosreadf_v1_a_OBJECTS =  \
-@BUILD_FORTRAN_TRUE@	$(am__objects_128) \
+@BUILD_FORTRAN_TRUE@	$(am__objects_131) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_v1_a-adiosf_read_v1.$(OBJEXT)
 libadiosreadf_v1_a_OBJECTS = $(am_libadiosreadf_v1_a_OBJECTS)
 @HAVE_NSSI_TRUE@am__EXEEXT_1 = nssi-staging-server$(EXEEXT) \
@@ -1948,7 +1958,7 @@ PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
 PATHPROG = @PATHPROG@
 PATH_SEPARATOR = @PATH_SEPARATOR@
-PHDF5_CPPFLAGS = @PHDF5_CPPFLAGS@ $(am__append_14)
+PHDF5_CPPFLAGS = @PHDF5_CPPFLAGS@ $(am__append_16)
 PHDF5_LDFLAGS = @PHDF5_LDFLAGS@
 PHDF5_LIBS = @PHDF5_LIBS@
 PORTALS_CFLAGS = @PORTALS_CFLAGS@
@@ -2049,26 +2059,26 @@ METASOURCES = AUTO
 @HAVE_NSSI_TRUE@nssi_coupling_server_LDADD =  \
 @HAVE_NSSI_TRUE@	$(top_builddir)/src/libadios.a \
 @HAVE_NSSI_TRUE@	$(ADIOSLIB_LDADD) $(NSSI_SERVER_LIBS)
-CLEANFILES = $(am__append_26) $(am__append_32) $(am__append_50)
+CLEANFILES = $(am__append_28) $(am__append_34) $(am__append_52)
 include_HEADERS = public/adios.h public/adios_types.h \
 	public/adios_read.h public/adios_error.h public/adios_mpi.h \
 	public/mpidummy.h public/adios_read_v1.h \
 	public/adios_read_v1_defs.h public/adios_read_v2.h \
 	public/adios_selection.h
-nodist_include_HEADERS = $(am__append_31) $(am__append_49)
-lib_LIBRARIES = $(am__append_2) $(am__append_3) libadiosread.a \
-	$(am__append_40) libadiosread_nompi.a $(am__append_58)
-libadiosread_a_CPPFLAGS = $(am__append_38) $(ADIOSLIB_EXTRA_CPPFLAGS) \
-	$(ADIOSREADLIB_CPPFLAGS) $(am__append_67)
-libadiosreadf_a_CPPFLAGS = $(am__append_46) $(am__append_48)
-libadiosread_nompi_a_CPPFLAGS = $(am__append_56) $(MACRODEFFLAG)_NOMPI \
+nodist_include_HEADERS = $(am__append_33) $(am__append_51)
+lib_LIBRARIES = $(am__append_2) $(am__append_4) libadiosread.a \
+	$(am__append_42) libadiosread_nompi.a $(am__append_60)
+libadiosread_a_CPPFLAGS = $(am__append_40) $(ADIOSLIB_EXTRA_CPPFLAGS) \
+	$(ADIOSREADLIB_CPPFLAGS) $(am__append_69)
+libadiosreadf_a_CPPFLAGS = $(am__append_48) $(am__append_50)
+libadiosread_nompi_a_CPPFLAGS = $(am__append_58) $(MACRODEFFLAG)_NOMPI \
 	$(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS) \
-	$(am__append_68)
-libadiosreadf_nompi_a_CPPFLAGS = $(am__append_64) $(am__append_66)
-libadiosread_a_CFLAGS = $(am__append_39)
-libadiosreadf_a_CFLAGS = $(am__append_47)
-libadiosread_nompi_a_CFLAGS = $(am__append_57)
-libadiosreadf_nompi_a_CFLAGS = $(am__append_65)
+	$(am__append_70)
+libadiosreadf_nompi_a_CPPFLAGS = $(am__append_66) $(am__append_68)
+libadiosread_a_CFLAGS = $(am__append_41)
+libadiosreadf_a_CFLAGS = $(am__append_49)
+libadiosread_nompi_a_CFLAGS = $(am__append_59)
+libadiosreadf_nompi_a_CFLAGS = $(am__append_67)
 
 # Identity plugin:
 
@@ -2162,10 +2172,10 @@ transforms_write_SOURCES = $(transforms_write_HDRS) \
 @BUILD_WRITE_TRUE@	write/adios_mpi.c write/adios_mpi_lustre.c \
 @BUILD_WRITE_TRUE@	write/adios_mpi_amr.c write/adios_posix.c \
 @BUILD_WRITE_TRUE@	write/adios_posix1.c write/adios_var_merge.c \
-@BUILD_WRITE_TRUE@	$(am__append_4) $(am__append_7) \
-@BUILD_WRITE_TRUE@	$(am__append_10) $(am__append_13) \
-@BUILD_WRITE_TRUE@	$(am__append_18) $(am__append_20) \
-@BUILD_WRITE_TRUE@	$(am__append_22)
+@BUILD_WRITE_TRUE@	$(am__append_3) $(am__append_6) \
+@BUILD_WRITE_TRUE@	$(am__append_9) $(am__append_12) \
+@BUILD_WRITE_TRUE@	$(am__append_15) $(am__append_20) \
+@BUILD_WRITE_TRUE@	$(am__append_22) $(am__append_24)
 @BUILD_WRITE_TRUE@libadios_nompi_a_SOURCES = core/adios.c \
 @BUILD_WRITE_TRUE@	core/common_adios.c core/adios_internals.c \
 @BUILD_WRITE_TRUE@	core/adios_internals_mxml.c \
@@ -2183,8 +2193,8 @@ transforms_write_SOURCES = $(transforms_write_HDRS) \
 @BUILD_WRITE_TRUE@	core/util.c core/qhashtbl.c read/read_bp.c \
 @BUILD_WRITE_TRUE@	read/read_bp_staged.c read/read_bp_staged1.c \
 @BUILD_WRITE_TRUE@	write/adios_posix.c write/adios_posix1.c \
-@BUILD_WRITE_TRUE@	$(am__append_5) $(am__append_8) \
-@BUILD_WRITE_TRUE@	$(am__append_11)
+@BUILD_WRITE_TRUE@	$(am__append_7) $(am__append_10) \
+@BUILD_WRITE_TRUE@	$(am__append_13)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@FortranLibSources =  \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	core/adiosf.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	core/common_adios.c \
@@ -2213,34 +2223,35 @@ transforms_write_SOURCES = $(transforms_write_HDRS) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	read/read_bp_staged1.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	write/adios_posix.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	write/adios_posix1.c \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_6) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_9) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_12) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_21) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_24)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_8) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_11) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_14) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_23) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_26)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@FortranLibMPISources =  \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	write/adios_mpi.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	write/adios_mpi_lustre.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	write/adios_mpi_amr.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	write/adios_var_merge.c \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_16) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_19)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_5) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_18) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_21)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@FortranLibSEQSources = core/mpidummy.c
 @BUILD_WRITE_TRUE@libadios_a_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) \
-@BUILD_WRITE_TRUE@	$(ADIOSLIB_CPPFLAGS) $(am__append_15) \
-@BUILD_WRITE_TRUE@	$(am__append_23) $(am__append_27)
+@BUILD_WRITE_TRUE@	$(ADIOSLIB_CPPFLAGS) $(am__append_17) \
+@BUILD_WRITE_TRUE@	$(am__append_25) $(am__append_29)
 @BUILD_WRITE_TRUE@libadios_a_CFLAGS = $(ADIOSLIB_CFLAGS) 
 @BUILD_WRITE_TRUE@libadios_nompi_a_CPPFLAGS = $(MACRODEFFLAG)_NOMPI \
 @BUILD_WRITE_TRUE@	$(ADIOSLIB_EXTRA_CPPFLAGS) \
-@BUILD_WRITE_TRUE@	$(ADIOSLIB_SEQ_CPPFLAGS) $(am__append_28)
+@BUILD_WRITE_TRUE@	$(ADIOSLIB_SEQ_CPPFLAGS) $(am__append_30)
 @BUILD_WRITE_TRUE@libadios_nompi_a_CFLAGS = $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_SEQ_CFLAGS) 
 @BUILD_WRITE_TRUE@libadiosf_a_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) \
-@BUILD_WRITE_TRUE@	$(ADIOSLIB_CPPFLAGS) $(am__append_17) \
-@BUILD_WRITE_TRUE@	$(am__append_25) $(am__append_29)
+@BUILD_WRITE_TRUE@	$(ADIOSLIB_CPPFLAGS) $(am__append_19) \
+@BUILD_WRITE_TRUE@	$(am__append_27) $(am__append_31)
 @BUILD_WRITE_TRUE@libadiosf_a_CFLAGS = $(ADIOSLIB_CFLAGS) 
 @BUILD_WRITE_TRUE@libadiosf_nompi_a_CPPFLAGS = $(MACRODEFFLAG)_NOMPI \
 @BUILD_WRITE_TRUE@	$(ADIOSLIB_EXTRA_CPPFLAGS) \
-@BUILD_WRITE_TRUE@	$(ADIOSLIB_SEQ_CPPFLAGS) $(am__append_30)
+@BUILD_WRITE_TRUE@	$(ADIOSLIB_SEQ_CPPFLAGS) $(am__append_32)
 @BUILD_WRITE_TRUE@libadiosf_nompi_a_CFLAGS = $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_SEQ_CFLAGS) 
 @BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@dist_libadios_a_SOURCES = nssi/adios_nssi_args.x
 @BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@nodist_libadios_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
@@ -2285,9 +2296,9 @@ libadiosread_a_SOURCES = core/adios_bp_v1.c core/adios_endianness.c \
 	$(transforms_common_SOURCES) $(transforms_read_SOURCES) \
 	core/globals.c core/adios_read_hooks.c core/adios_logger.c \
 	core/util.c core/qhashtbl.c read/read_bp.c \
-	read/read_bp_staged.c read/read_bp_staged1.c $(am__append_33) \
-	$(am__append_34) $(am__append_35) $(am__append_36) \
-	$(am__append_37)
+	read/read_bp_staged.c read/read_bp_staged1.c $(am__append_35) \
+	$(am__append_36) $(am__append_37) $(am__append_38) \
+	$(am__append_39)
 @HAVE_NSSI_TRUE@dist_libadiosread_a_SOURCES = nssi/adios_nssi_args.x
 @HAVE_NSSI_TRUE@nodist_libadiosread_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
 @BUILD_FORTRAN_TRUE@FortranReadLibSource = core/adios_bp_v1.c \
@@ -2300,9 +2311,9 @@ libadiosread_a_SOURCES = core/adios_bp_v1.c core/adios_endianness.c \
 @BUILD_FORTRAN_TRUE@	core/adios_logger.c core/util.c \
 @BUILD_FORTRAN_TRUE@	core/qhashtbl.c read/read_bp.c \
 @BUILD_FORTRAN_TRUE@	read/read_bp_staged.c \
-@BUILD_FORTRAN_TRUE@	read/read_bp_staged1.c $(am__append_41) \
-@BUILD_FORTRAN_TRUE@	$(am__append_42) $(am__append_43) \
-@BUILD_FORTRAN_TRUE@	$(am__append_44) $(am__append_45)
+@BUILD_FORTRAN_TRUE@	read/read_bp_staged1.c $(am__append_43) \
+@BUILD_FORTRAN_TRUE@	$(am__append_44) $(am__append_45) \
+@BUILD_FORTRAN_TRUE@	$(am__append_46) $(am__append_47)
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@dist_libadiosreadf_a_SOURCES = nssi/adios_nssi_args.x
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@nodist_libadiosreadf_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
 @BUILD_FORTRAN_TRUE@libadiosreadf_a_SOURCES = $(FortranReadLibSource) \
@@ -2318,9 +2329,9 @@ libadiosread_nompi_a_SOURCES = core/mpidummy.c core/adios_bp_v1.c \
 	core/common_read.c $(transforms_common_SOURCES) \
 	$(transforms_read_SOURCES) core/adios_logger.c core/buffer.c \
 	core/globals.c core/adios_read_hooks.c core/util.c \
-	core/qhashtbl.c read/read_bp.c $(am__append_51) \
-	$(am__append_52) $(am__append_53) $(am__append_54) \
-	$(am__append_55)
+	core/qhashtbl.c read/read_bp.c $(am__append_53) \
+	$(am__append_54) $(am__append_55) $(am__append_56) \
+	$(am__append_57)
 @HAVE_NSSI_TRUE@dist_libadiosread_nompi_a_SOURCES = nssi/adios_nssi_args.x
 @HAVE_NSSI_TRUE@nodist_libadiosread_nompi_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
 @BUILD_FORTRAN_TRUE@FortranReadSeqLibSource = core/mpidummy.c \
@@ -2332,9 +2343,9 @@ libadiosread_nompi_a_SOURCES = core/mpidummy.c core/adios_bp_v1.c \
 @BUILD_FORTRAN_TRUE@	$(transforms_read_SOURCES) core/globals.c \
 @BUILD_FORTRAN_TRUE@	core/adios_read_hooks.c core/util.c \
 @BUILD_FORTRAN_TRUE@	core/qhashtbl.c read/read_bp.c \
-@BUILD_FORTRAN_TRUE@	$(am__append_59) $(am__append_60) \
 @BUILD_FORTRAN_TRUE@	$(am__append_61) $(am__append_62) \
-@BUILD_FORTRAN_TRUE@	$(am__append_63)
+@BUILD_FORTRAN_TRUE@	$(am__append_63) $(am__append_64) \
+@BUILD_FORTRAN_TRUE@	$(am__append_65)
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@dist_libadiosreadf_nompi_a_SOURCES = nssi/adios_nssi_args.x
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@nodist_libadiosreadf_nompi_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
 @BUILD_FORTRAN_TRUE@libadiosreadf_nompi_a_SOURCES = $(FortranReadSeqLibSource) core/adiosf_read.c
@@ -2922,6 +2933,12 @@ libadios_a-adios_var_merge.o: write/adios_var_merge.c
 
 libadios_a-adios_var_merge.obj: write/adios_var_merge.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_var_merge.obj `if test -f 'write/adios_var_merge.c'; then $(CYGPATH_W) 'write/adios_var_merge.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_var_merge.c'; fi`
+
+libadios_a-adios_mpi_bgq.o: write/adios_mpi_bgq.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi_bgq.o `test -f 'write/adios_mpi_bgq.c' || echo '$(srcdir)/'`write/adios_mpi_bgq.c
+
+libadios_a-adios_mpi_bgq.obj: write/adios_mpi_bgq.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi_bgq.obj `if test -f 'write/adios_mpi_bgq.c'; then $(CYGPATH_W) 'write/adios_mpi_bgq.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_mpi_bgq.c'; fi`
 
 libadios_a-adios_dataspaces.o: write/adios_dataspaces.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_dataspaces.o `test -f 'write/adios_dataspaces.c' || echo '$(srcdir)/'`write/adios_dataspaces.c
@@ -3960,6 +3977,12 @@ libadiosf_a-adios_var_merge.o: write/adios_var_merge.c
 
 libadiosf_a-adios_var_merge.obj: write/adios_var_merge.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_var_merge.obj `if test -f 'write/adios_var_merge.c'; then $(CYGPATH_W) 'write/adios_var_merge.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_var_merge.c'; fi`
+
+libadiosf_a-adios_mpi_bgq.o: write/adios_mpi_bgq.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_mpi_bgq.o `test -f 'write/adios_mpi_bgq.c' || echo '$(srcdir)/'`write/adios_mpi_bgq.c
+
+libadiosf_a-adios_mpi_bgq.obj: write/adios_mpi_bgq.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_mpi_bgq.obj `if test -f 'write/adios_mpi_bgq.c'; then $(CYGPATH_W) 'write/adios_mpi_bgq.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_mpi_bgq.c'; fi`
 
 libadiosf_a-adios_phdf5.o: write/adios_phdf5.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_phdf5.o `test -f 'write/adios_phdf5.c' || echo '$(srcdir)/'`write/adios_phdf5.c
@@ -5184,6 +5207,12 @@ libadiosf_v1_a-adios_var_merge.o: write/adios_var_merge.c
 
 libadiosf_v1_a-adios_var_merge.obj: write/adios_var_merge.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_var_merge.obj `if test -f 'write/adios_var_merge.c'; then $(CYGPATH_W) 'write/adios_var_merge.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_var_merge.c'; fi`
+
+libadiosf_v1_a-adios_mpi_bgq.o: write/adios_mpi_bgq.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_mpi_bgq.o `test -f 'write/adios_mpi_bgq.c' || echo '$(srcdir)/'`write/adios_mpi_bgq.c
+
+libadiosf_v1_a-adios_mpi_bgq.obj: write/adios_mpi_bgq.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_mpi_bgq.obj `if test -f 'write/adios_mpi_bgq.c'; then $(CYGPATH_W) 'write/adios_mpi_bgq.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_mpi_bgq.c'; fi`
 
 libadiosf_v1_a-adios_phdf5.o: write/adios_phdf5.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_phdf5.o `test -f 'write/adios_phdf5.c' || echo '$(srcdir)/'`write/adios_phdf5.c
