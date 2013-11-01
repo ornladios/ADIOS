@@ -88,6 +88,21 @@ int adios_inq_var_blockinfo (ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
     return common_read_inq_var_blockinfo (fp, varinfo);
 }
 
+ADIOS_MESH * adios_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
+{
+    return common_read_inq_mesh_byid (fp, meshid);
+}
+
+void adios_free_meshinfo (ADIOS_MESH *meshinfo)
+{
+    common_read_free_meshinfo (meshinfo);
+}
+
+int adios_inq_var_meshinfo (ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
+{
+    return common_read_inq_var_meshinfo (fp, varinfo);
+}
+
 int adios_schedule_read (const ADIOS_FILE      * fp,
                              const ADIOS_SELECTION * sel,
                              const char            * varname,

@@ -7143,7 +7143,7 @@ int adios_define_mesh_structured_nspace (const char * nspace
 
     d1 = strdup (nspace);
     adios_conca_mesh_att_nam(&nsp_att_nam, name, "nspace");
-    adios_common_define_attribute (p_new_group,nsp_att_nam,"/",adios_double,nspace,"");
+    adios_common_define_attribute (p_new_group,nsp_att_nam,"/",adios_string,nspace,"");
     free (nsp_att_nam);
     free (d1);
 
@@ -7463,7 +7463,7 @@ int adios_define_mesh_unstructured_uniformCells (const char * count
     char * celltype_att_nam = 0;  // single cell type attribute
 
     adios_conca_mesh_att_nam(&ncellset_att_nam,name,"ncsets");
-    adios_common_define_attribute (p_new_group,ncellset_att_nam,"/",adios_double,"1","");
+    adios_common_define_attribute (p_new_group,ncellset_att_nam,"/",adios_integer,"1","");
     free (ncellset_att_nam);
 
     if (!count)
@@ -7564,11 +7564,11 @@ int adios_define_mesh_unstructured_mixedCells (const char * count
 
     d1 = strdup (count);
     c = strtok (d1, ",");
-
+   
     while (c)
     {
-        cell_list->cell_list.count.var = 0;
-        cell_list->cell_list.count.rank = strtod (c, 0);
+        //cell_list->cell_list.count.var = 0;
+        //cell_list->cell_list.count.rank = strtod (c, 0);
         counterstr[0] = '\0';
         snprintf(counterstr, 5, "%d", counter);
         ccounts_att_nam = 0;
@@ -7578,7 +7578,7 @@ int adios_define_mesh_unstructured_mixedCells (const char * count
         counter++;
         c = strtok (NULL, ",");
     }
-    free (d1);
+//    free (d1);
 
     // We should have at least 2 cell sets, otherwise the cells are uniform
     if (counter <= 1){
@@ -7589,8 +7589,9 @@ int adios_define_mesh_unstructured_mixedCells (const char * count
         return 0;
     }
 
+    snprintf(counterstr, 5, "%d", counter);
     adios_conca_mesh_att_nam(&ncellset_att_nam, name, "ncsets");
-    adios_common_define_attribute (p_new_group,ncellset_att_nam,"/",adios_double,counterstr,"");
+    adios_common_define_attribute (p_new_group,ncellset_att_nam,"/",adios_integer,counterstr,"");
     free (ncellset_att_nam);
 
     // From the number of counts expect the same number of data and type items

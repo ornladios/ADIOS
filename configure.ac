@@ -95,6 +95,7 @@ AC_ISOBAR
 AC_APLOD
 AC_ALACRITY
 AX_NCSU_LIBTIMER
+AC_BGQ
 
 AC_LANG(C)
 
@@ -993,6 +994,12 @@ if test -z "${HAVE_NCSU_TIMER_TRUE}"; then
     echo
 else
     echo "  - No NCSU timer lib"
+fi
+
+if test -z "${HAVE_BGQ_TRUE}"; then
+    echo "  - BGQ METHOD is enabled";
+else
+    echo "  - BGQ METHOD is disabled"
 fi
 
 #echo "  - SVN version = ${SVNVERSION}"

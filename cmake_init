@@ -43,7 +43,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
 # start of  Seq. NetCDF 4 
     module load netcdf/4.1.3
     export SEQ_NC_DIR=$NETCDF_DIR
-    export SEQ_NC_LIBS="-lnetcdf -lcurl -lhdf5_hl -lhdf5 -lsz -lz -lm -L/autofs/na1_sw/sith/netcdf/4.1.3/rhel6_pgi12.8/lib -L/sw/sith/hdf5/1.8.10/rhel6_pgi12.8/lib -L/sw/sith/szip/2.1/rhel6_pgi12.8/lib"
+    export SEQ_NC_LIBS="-lnetcdf -lcurl -lhdf5_hl -lhdf5 -lsz -lz -lm -L/sw/sith/netcdf/4.1.3/rhel6_pgi12.8/lib -L/sw/sith/hdf5/1.8.10/rhel6_pgi12.8/lib -L/sw/sith/szip/2.1/rhel6_pgi12.8/lib"
     module unload netcdf
 # end of  Seq. NetCDF 4
 # start of Parallel NetCDF 4
@@ -52,6 +52,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     export PAR_NC_LIBS="-lnetcdf -lcurl -lhdf5_hl -lhdf5 -lsz -lz -lm -L/sw/sith/netcdf/4.1.3/rhel6_pgi13.4_ompi1.6.3/lib -L/sw/sith/hdf5/1.8.10/rhel6_pgi13.4_ompi1.6.3/lib -L/sw/sith/szip/2.1/rhel6_pgi13.4/lib"
 #    module unload netcdf
 # end of Parallel NetCDF 4 
+    export LUSTRE_DIR="/usr/lib64"
     export BUILD_WRITE=ON
     export BUILD_FORTRAN=ON
     export skel_timing=ON
@@ -64,16 +65,19 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
 #        export CXX=pgCC
 #        export FC=pgf90
         export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith/$TARGET"
+        export FLEXPATH_DIR="/ccs/proj/e2e/chaos/sith/$TARGET"
     elif [ "$TARGET" == "gnu" ]; then
 #        export CC=gcc
 #        export CXX=g++
 #        export FC=gfortran
         export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith/$TARGET"
+        export FLEXPATH_DIR="/ccs/proj/e2e/chaos/sith/$TARGET"
     elif [ "$TARGET" == "intel" ]; then
 #        export CC=icc
 #        export CXX=icpc
 #        export FC=ifort
         export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith/$TARGET"
+        export FLEXPATH_DIR="/ccs/proj/e2e/chaos/sith/$TARGET"
     else
         echo "TARGET must be pgi or gnu or intel"
         exit 1
@@ -81,26 +85,6 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
     export CFLAGS="-g -fPIC" 
-#    ./configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/sith.$TARGET \
-#        --enable-dependency-tracking \
-#        --enable-research-transports \
-#        --with-lustre=/usr/lib64 \
-#        $WITHDART 
-        #--with-hdf5=${SEQ_HDF5_DIR} \
-        #--with-hdf5-libs="${SEQ_HDF5_CLIB}" \
-        #--with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.sith.$TARGET 
-        #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
-        #--enable-shared --disable-static
-        #--without-datatap #--without-infiniband
-        #--with-phdf5=${PAR_HDF5_DIR} \
-        #--with-phdf5-libs="${PAR_HDF5_CLIB}" \
-        #--with-netcdf=${SEQ_NC_DIR} \
-        #--with-netcdf-libs="${SEQ_NC_CLIB}" \
-        #--with-nc4par=${PAR_NC_DIR} \
-        #--with-nc4par-libs="${PAR_NC_CLIB}" \
-        #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
-        #--with-datatap=/ccs/home/habbasi/work/ewok/
-        #--enable-datatap=ib
 
 elif [ `hostname | cut -c 1-4` == "yona" ]; then
 

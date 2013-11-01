@@ -147,8 +147,8 @@ int adios_dimes_open (struct adios_file_struct * fd,
     {
         log_debug ("adios_dimes_open: rank=%d call write lock...\n", p->rank);       
         // Block till all previously allocated RDMA buffers are fetched. 
-        dimes_put_sync_all();
         dspaces_lock_on_write (fd->name, &p->mpi_comm);  
+        dimes_put_sync_all();
         log_debug ("adios_dimes_open: rank=%d got write lock\n", p->rank);        
     }
     else if (fd->mode == adios_mode_read)
