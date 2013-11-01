@@ -249,6 +249,38 @@ elif [ `hostname | cut -c 1-4` == "lens" ]; then
         --without-datatap
         #--with-mxml=/ccs/proj/e2e/pnorbert/mxml \
 
+elif [ `hostname | cut -c 1-3` == "eos" ]; then
+    ################
+    #     EOS      #
+    ################
+    TARGET=intel
+    echo "Configure on EOS (XC30) for $TARGET env."
+    export CC=cc
+    #export CFLAGS="-Wall -g" 
+    export FC=ftn
+    export CXX=CC
+    source /opt/modules/default/etc/modules.sh
+    module unload szip
+    module unload hdf5
+    module unload netcdf
+    module unload netcdf-hdf5parallel
+    module unload hdf5-parallel
+    module unload mxml
+    module unload PrgEnv-gnu
+    module unload PrgEnv-pgi
+    module unload PrgEnv-intel
+    module unload PrgEnv-cray
+    #module unload papi
+    module load PrgEnv-$TARGET
+    #module load szip
+    #module load xt-papi
+    module load mxml
+    # use the two lines below for openmpi
+    #export CC=mpicc
+    #export FC=mpif90
+    CFLAGS="-g -fPIC -O0" ${SRCDIR}/configure \
+            --prefix=/ccs/proj/e2e/qliu/ADIOS/test.$TARGET \
+            --enable-dependency-tracking
 
 elif [ `hostname | cut -c 1-5` == "titan" ]; then
 
@@ -258,7 +290,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         ################
         # Titan #
         ################
-        TARGET=pgi
+        TARGET=intel
         echo "Configure on TITAN (XK7) for $TARGET env."
         export CC=cc
         #export CFLAGS="-Wall -g" 
@@ -277,6 +309,8 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         module unload PrgEnv-cray
         #module unload papi
         module load PrgEnv-$TARGET
+        module unload intel
+        module load intel/13.1.3.192
         module swap xtpe-interlagos xtpe-istanbul
         #module load szip
         #module load xt-papi
@@ -284,9 +318,8 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         # use the two lines below for openmpi
         #export CC=mpicc
         #export FC=mpif90
-        CFLAGS="-g -fPIC" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/qliu/ADIOS/test.$TARGET \
-            --host=titan \
-            --enable-dependency-tracking \
+        CFLAGS="-g -fPIC -O0" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/qliu/ADIOS/test.$TARGET \
+            --enable-dependency-tracking
             #--with-hdf5=/opt/cray/hdf5/1.8.7/pgi/109 \
             #--with-phdf5=/opt/cray/hdf5-parallel/1.8.7/pgi/109 \
 #            --with-lustre=/opt/xt-lustre-ss/2.2_1.6.5/usr
