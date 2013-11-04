@@ -632,10 +632,11 @@ reuse_dim_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 connect_to_space_subset_SOURCES = connect_to_space_subset.c
 connect_to_space_subset_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 connect_to_space_subset_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
-transforms_SOURCES = transforms.c
-transforms_CPPFLAGS = -DADIOS_USE_READ_API_1
-transforms_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-transforms_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+
+#transforms_SOURCES=transforms.c
+#transforms_CPPFLAGS = -DADIOS_USE_READ_API_1
+#transforms_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+#transforms_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 #transforms.o: transforms.c
 copy_subvolume_SOURCES = copy_subvolume.c
 copy_subvolume_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
