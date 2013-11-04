@@ -58,6 +58,7 @@ bool output_xml;
 bool use_regexp;           // use varmasks as regular expressions
 bool sortnames;            // sort names before listing
 bool listattrs;            // do list attributes too
+bool listmeshes;           // do list meshes too
 bool attrsonly;            // do list attributes only
 bool readattrs;            // also read all attributes and print
 bool longopt;              // -l is turned on
@@ -95,6 +96,7 @@ struct option options[] = {
     {"timestep",             no_argument,          NULL,    't'},
     {"attrs",                no_argument,          NULL,    'a'},
     {"attrsonly",            no_argument,          NULL,    'A'},
+    {"meshes",               no_argument,          NULL,    'm'},
     {"long",                 no_argument,          NULL,    'l'},
     {"string",               no_argument,          NULL,    'S'},
     {"columns",              required_argument,    NULL,    'n'}, 
@@ -106,7 +108,7 @@ struct option options[] = {
 };
 
 
-static const char *optstring = "hvepyrtaAldSDg:o:x:s:c:n:f:";
+static const char *optstring = "hvepyrtaAmldSDg:o:x:s:c:n:f:";
 
 // help function
 void display_help() {
@@ -121,6 +123,7 @@ void display_help() {
             "                               min/max values of arrays (no overhead to get them!)\n"
             "  --attrs     | -a           List/match attributes too\n"
             "  --attrsonly | -A           List attributes only\n"
+            "  --meshes    | -m           List meshes\n"
             /*
             "  --sort      | -r           Sort names before listing\n"
             */
@@ -213,6 +216,9 @@ int main( int argc, char *argv[] ) {
             case 'l':
                 longopt = true;
                 readattrs = true;
+                break;
+            case 'm':
+                listmeshes=true;
                 break;
             case 'n':
                 errno = 0;
@@ -361,6 +367,7 @@ void init_globals(void) {
     timestep             = false;
     sortnames            = false;
     listattrs            = false;
+    listmeshes           = false;
     attrsonly            = false;
     readattrs            = false;
     longopt              = false;
@@ -411,6 +418,8 @@ void printSettings(void) {
         printf("      -A : list attributes only\n");
     else if (listattrs)
         printf("      -a : list attributes too\n");
+    else if (listmeshes)
+        printf("      -m : list meshes too\n");
     if (dump)
         printf("      -d : dump matching variables and attributes\n");
     if (use_regexp)
@@ -737,10 +746,137 @@ int doList_group (ADIOS_FILE *fp)
     return 0;
 }                
 
+#define PRINT_DIMENSIONS(str, ndim, dims, loopvar) \
+    fprintf(outf,"%s",str); \
+    if (ndim > 0) { \
+        fprintf(outf,"{%lld", dims[0]); \
+        for (loopvar=1; loopvar < ndim; loopvar++) { \
+            fprintf(outf,", %lld", dims[loopvar]); \
+        } \
+        fprintf(outf,"}\n"); \
+    } else { \
+        fprintf(outf,"empty\n"); \
+    }
 
-int doList(const char *path) {
+void printMeshes (ADIOS_FILE  *fp)
+{
+    int meshid,i,j;     // loop vars
+    if (fp->nmeshes==0) {
+        fprintf(outf, "Mesh info: There are no meshes defined in this file\n");
+        return;
+    }
+    fprintf(outf, "Mesh info: \n");
+    for (meshid=0; meshid < fp->nmeshes; meshid++) {
+        fprintf(outf, "  %s\n", fp->mesh_namelist[meshid]);
+        ADIOS_MESH *mi = adios_inq_mesh_byid (fp, meshid);
+        if (mi) {
+            if (meshid != mi->id)
+                fprintf(outf, "  bpls warning: meshid (=%d) != inquired mesh id (%d)\n", 
+                        meshid, mi->id);
+            if (strcmp (fp->mesh_namelist[meshid], mi->name))
+                fprintf(outf, "  bpls warning: mesh name in list (=\"%s\") != "
+                        "inquired mesh name (\"%s\")\n", 
+                        fp->mesh_namelist[meshid], mi->name);
+            fprintf(outf, "    type:         ");
+            switch (mi->type) {
+                case ADIOS_MESH_UNIFORM:
+                    fprintf(outf, "uniform\n");
+                    PRINT_DIMENSIONS("    dimensions:   ", 
+                                     mi->uniform->num_dimensions, 
+                                     mi->uniform->dimensions, j);
+                    if (mi->uniform->origins) {
+                        PRINT_DIMENSIONS("    origins:      ", 
+                                         mi->uniform->num_dimensions, 
+                                         mi->uniform->origins, j);
+                    }
+                    if (mi->uniform->spacings) {
+                        PRINT_DIMENSIONS("    spacings:     ", 
+                                         mi->uniform->num_dimensions, 
+                                         mi->uniform->spacings, j);
+                    }
+                    if (mi->uniform->maximums) {
+                        PRINT_DIMENSIONS("    maximums:     ", 
+                                         mi->uniform->num_dimensions, 
+                                         mi->uniform->maximums, j);
+                    }
+                    break;
+
+                case ADIOS_MESH_RECTILINEAR:
+                    fprintf(outf, "rectilinear\n");
+                    PRINT_DIMENSIONS("    dimensions:   ", 
+                                     mi->rectilinear->num_dimensions, 
+                                     mi->rectilinear->dimensions, j);
+                    if (mi->rectilinear->use_single_var) {
+                        fprintf(outf, "    coordinates:  single-var: \"%s\"\n", 
+                                mi->rectilinear->coordinates[0]);
+                    } else {
+                        fprintf(outf, "    coordinates:  multi-var: \"%s\"", 
+                                mi->rectilinear->coordinates[0]);
+                        for (i=1; i < mi->rectilinear->num_dimensions; i++) { 
+                            fprintf(outf,", \"%s\"", mi->rectilinear->coordinates[i]); 
+                        }
+                        fprintf(outf, "\n");
+                    }
+                    break;
+
+                case ADIOS_MESH_STRUCTURED:
+                    fprintf(outf, "structured\n");
+                    PRINT_DIMENSIONS("    dimensions:   ", 
+                                     mi->structured->num_dimensions, 
+                                     mi->structured->dimensions, j);
+                    if (mi->structured->use_single_var) {
+                        fprintf(outf, "    points:       single-var: \"%s\"\n", 
+                                mi->structured->points[0]);
+                    } else {
+                        fprintf(outf, "    points:       multi-var: \"%s\"", 
+                                mi->structured->points[0]);
+                        for (i=1; i < mi->structured->num_dimensions; i++) { 
+                            fprintf(outf,", \"%s\"", mi->structured->points[i]); 
+                        }
+                        fprintf(outf, "\n");
+                    }
+                    fprintf(outf, "    nspaces:      %d\n", mi->structured->nspaces);
+                    break;
+
+                case ADIOS_MESH_UNSTRUCTURED:
+                    fprintf(outf, "unstructured\n");
+                    if (mi->unstructured->use_single_var) {
+                        fprintf(outf, "    npoints:      %lld\n", mi->unstructured->npoints);
+                        fprintf(outf, "    points:       single-var: \"%s\"\n", 
+                                mi->unstructured->points[0]);
+                    } else {
+                        fprintf(outf, "    points:       multi-var: \"%s\"", 
+                                mi->unstructured->points[0]);
+                        for (i=1; i < mi->unstructured->nvar_points; i++) { 
+                            fprintf(outf,", \"%s\"", mi->unstructured->points[i]); 
+                        }
+                        fprintf(outf, "\n");
+                    }
+                    fprintf(outf, "    ncsets:       %d\n", mi->unstructured->ncsets);
+                    for (i=0; i < mi->unstructured->ncsets; i++) { 
+                        fprintf(outf, "    cell set %d:\n", i);
+                        fprintf(outf, "      cell type:  %s\n", mi->unstructured->ctypes[i]);
+                        fprintf(outf, "      ncells:     %d\n", mi->unstructured->ccounts[i]);
+                        fprintf(outf, "      cells var:  \"%s\"\n", mi->unstructured->cdata[i]);
+                    }
+                    fprintf(outf, "    nspaces:      %d\n", mi->unstructured->nspaces);
+                    break;
+
+                default:
+                    fprintf(outf, "undefined\n");
+
+            } 
+            fprintf(outf, "    time varying: %s\n", (mi->time_varying ? "yes" : "no") );
+            adios_free_meshinfo (mi);
+        }
+    }
+    fprintf(outf, "\n");
+}
+
+int doList(const char *path) 
+{
     ADIOS_FILE  *fp;
-    int     grpid;     // loop vars
+    int     grpid;
     int     status;
     int     mpi_comm_dummy=0;
     int     nGroupsMatched=0;
@@ -779,6 +915,7 @@ int doList(const char *path) {
         printf ("  of groups:     %d\n", nGroups);
         printf ("  of variables:  %d\n", fp->nvars);
         printf ("  of attributes: %d\n", fp->nattrs);
+        printf ("  of meshes:     %d\n", fp->nmeshes);
         printf ("  time steps:    %d - %d\n", fp->current_step, fp->last_step);
         print_file_size(fp->file_size);
         printf ("  bp version:    %d\n", fp->version);
@@ -788,6 +925,10 @@ int doList(const char *path) {
         printf ("\n");
     }
 
+    // Print out the meshes in the file
+    if (listmeshes) {
+        printMeshes(fp);
+    }
 
     if (grpmask) {
         // each group has to be handled separately
@@ -809,7 +950,7 @@ int doList(const char *path) {
     } else {
         doList_group (fp);
     }
-
+    
     if (grpmask != NULL && nGroupsMatched == 0) {
         fprintf(stderr, "\nError: None of the groups matched the group mask you provided: %s\n", grpmask);
         return 4;
