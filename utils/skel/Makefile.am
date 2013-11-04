@@ -8,7 +8,7 @@ all-local:
 	test "$(srcdir)" = "$(builddir)" || { \
 	 cp -r $(srcdir)/bin $(builddir); \
 	 for f in $(dist_pythonlib_DATA); do \
-	     test ! -f "$(srcdir)/$$f" || cp $(srcdir)/"$$f" $(builddir)/lib; \ 
+	     test ! -f "$(srcdir)/$$f" || cp $(srcdir)/"$$f" $(builddir)/lib; \
 	 done; \
 	 for f in $(dist_template_DATA); do \
 	     test ! -f "$(srcdir)/$$f" || cp $(srcdir)/"$$f" $(builddir)/etc; \
