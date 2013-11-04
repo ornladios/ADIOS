@@ -2504,63 +2504,72 @@ void common_read_free_meshinfo (ADIOS_MESH * meshinfo)
     if(meshinfo)
     {
         int i = 0;
-        if (!strcmp(meshinfo->type,"uniform"))
-        {
-            MESH_UNIFORM *bp = meshinfo->uniform;
-            if (bp->dimensions)
-                free (bp->dimensions);
-            if (bp->origins)
-                free (bp->origins);
-            if (bp->spacings) 
-                free (bp->spacings);
-            if (bp->maximums)
-                free (bp->maximums);
-            free (meshinfo->uniform);
+        switch (meshinfo->type) {
+            case ADIOS_MESH_UNIFORM:
+                {
+                    MESH_UNIFORM *bp = meshinfo->uniform;
+                    if (bp->dimensions)
+                        free (bp->dimensions);
+                    if (bp->origins)
+                        free (bp->origins);
+                    if (bp->spacings) 
+                        free (bp->spacings);
+                    if (bp->maximums)
+                        free (bp->maximums);
+                    free (meshinfo->uniform);
+                    break;
+                }
+            case ADIOS_MESH_RECTILINEAR:
+                {
+                    MESH_RECTILINEAR *bp = meshinfo->rectilinear;
+                    if (bp->dimensions)
+                        free (bp->dimensions);
+                    for (i = 0; i < meshinfo->rectilinear->num_dimensions; i++)
+                    {
+                        if (bp->coordinates[i])
+                            free (bp->coordinates[i]);
+                    }
+                    free (meshinfo->rectilinear);
+                    break;
+                }
+            case ADIOS_MESH_STRUCTURED:
+                {
+                    MESH_STRUCTURED *bp = meshinfo->structured;
+                    if (bp->dimensions)
+                        free (bp->dimensions);
+                    for (i = 0; i < meshinfo->structured->num_dimensions; i++)
+                    {
+                        if (bp->points[i])
+                            free (bp->points[i]);
+                    }
+                    free (meshinfo->unstructured);
+                    break;
+                }
+            case ADIOS_MESH_UNSTRUCTURED:
+                {
+                    MESH_UNSTRUCTURED *bp = meshinfo->unstructured;
+                    if (bp->ccounts)
+                        free (bp->ccounts);
+                    for (i = 0; i < meshinfo->unstructured->ncsets; i++)
+                    {
+                        if (bp->cdata[i])
+                            free (bp->cdata[i]);
+                        if (bp->ctypes[i])
+                            free (bp->ctypes[i]);
+
+                    }
+                    for (i = 0; i < meshinfo->unstructured->nvar_points; i++)
+                    {
+                        if (bp->points[i])
+                            free (bp->points[i]);
+                    }
+                    free (meshinfo->unstructured);
+                    break;
+                }
+            default:
+                break;
         }
-        else if (!strcmp(meshinfo->type,"rectilinear"))     
-        {
-            MESH_RECTILINEAR *bp = meshinfo->rectilinear;
-            if (bp->dimensions)
-                    free (bp->dimensions);
-            for (i = 0; i < meshinfo->rectilinear->num_dimensions; i++)
-            {
-                if (bp->coordinates[i])
-                    free (bp->coordinates[i]);
-            }
-            free (meshinfo->rectilinear);
-        }
-        else if (!strcmp(meshinfo->type,"structured"))
-        {
-            MESH_STRUCTURED *bp = meshinfo->structured;
-            if (bp->dimensions)
-                free (bp->dimensions);
-            for (i = 0; i < meshinfo->structured->num_dimensions; i++)
-            {
-                if (bp->points[i])
-                    free (bp->points[i]);
-            }
-            free (meshinfo->unstructured);
-        }
-        else if (!strcmp(meshinfo->type,"unstructured"))    
-        {
-            MESH_UNSTRUCTURED *bp = meshinfo->unstructured;
-            if (bp->ccounts)
-                free (bp->ccounts);
-            for (i = 0; i < meshinfo->unstructured->ncsets; i++)
-            {
-                if (bp->cdata[i])
-                    free (bp->cdata[i]);
-                if (bp->ctypes[i])
-                    free (bp->ctypes[i]);
-    
-            }
-            for (i = 0; i < meshinfo->unstructured->nvar_points; i++)
-            {
-                if (bp->points[i])
-                    free (bp->points[i]);
-            }
-            free (meshinfo->unstructured);
-        }
+        free (meshinfo);
     }
 }
 
