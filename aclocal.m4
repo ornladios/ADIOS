@@ -8975,6 +8975,7 @@ AC_SUBST([am__untar])
 
 m4_include([config/ac_alacrity.m4])
 m4_include([config/ac_aplod.m4])
+m4_include([config/ac_bgq.m4])
 m4_include([config/ac_bzip2.m4])
 m4_include([config/ac_cray_pmi.m4])
 m4_include([config/ac_cray_ugni.m4])

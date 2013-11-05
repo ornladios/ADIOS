@@ -41,6 +41,7 @@ DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_alacrity.m4 \
 	$(top_srcdir)/config/ac_aplod.m4 \
+	$(top_srcdir)/config/ac_bgq.m4 \
 	$(top_srcdir)/config/ac_bzip2.m4 \
 	$(top_srcdir)/config/ac_cray_pmi.m4 \
 	$(top_srcdir)/config/ac_cray_ugni.m4 \
@@ -631,10 +632,11 @@ reuse_dim_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 connect_to_space_subset_SOURCES = connect_to_space_subset.c
 connect_to_space_subset_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 connect_to_space_subset_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
-transforms_SOURCES = transforms.c
-transforms_CPPFLAGS = -DADIOS_USE_READ_API_1
-transforms_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-transforms_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+
+#transforms_SOURCES=transforms.c
+#transforms_CPPFLAGS = -DADIOS_USE_READ_API_1
+#transforms_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+#transforms_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 #transforms.o: transforms.c
 copy_subvolume_SOURCES = copy_subvolume.c
 copy_subvolume_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)

@@ -91,6 +91,10 @@ enum ADIOS_ERRCODES {
     //invalid argument to function
     err_invalid_argument                = -140,
 
+    // Mesh reading errors
+    err_mesh_unstructured_missing_ncsets = -160, // ncsets was not defined 
+    err_mesh_unstructured_invalid_ncsets = -161, // could not read the ncsets value
+
 
     err_unspecified                     = -200
 };

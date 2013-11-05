@@ -29,6 +29,9 @@
 /* Define to 1 if you have the <Attributes.h> header file. */
 #undef HAVE_ATTRIBUTES_H
 
+/* Define if you want to enable BGQ method */
+#undef HAVE_BGQ
+
 /* Define if you have BZIP2. */
 #undef HAVE_BZIP2
 
