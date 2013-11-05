@@ -1009,7 +1009,8 @@ int adios_get_uniform_mesh_attr (ADIOS_FILE * fp, ADIOS_MESH *meshinfo, char * a
                 {
                     printf("ERROR: mesh %s number of maximums %d is less than the number of dimensions %d!\n", 
                             meshinfo->name, num_attr, meshinfo->uniform->num_dimensions);
-                    return NULL; 
+                    meshinfo->uniform = NULL;
+                    return 0; 
                 }
                 else if (num_attr > meshinfo->uniform->num_dimensions)
                 {
@@ -1049,7 +1050,8 @@ int adios_get_uniform_mesh_attr (ADIOS_FILE * fp, ADIOS_MESH *meshinfo, char * a
             else
             {
                 printf("ERROR: mesh %s has more than 10 dimensions!\n", meshinfo->name);
-                return NULL; 
+                meshinfo->uniform = NULL;
+                return 0; 
             }
             i_digits = sprintf (i_buffer, "%d", i);
             //i_digits to reprent the number in dimensions0/dimensions1/... 
@@ -1071,7 +1073,8 @@ int adios_get_uniform_mesh_attr (ADIOS_FILE * fp, ADIOS_MESH *meshinfo, char * a
                 else if (attrs == "maximums")
                 {
                     printf ("ERROR: mesh %s maximum of maximums[%d] is not provided!\n", meshinfo->name, i);
-                    return NULL; 
+                    meshinfo->uniform = NULL;
+                    return 0; 
                 }
                 else if (attrs == "spacings")
                     printf("WARNING: mesh %s spacings[%d] value is not found, use default value 1\n", meshinfo->name, i);
@@ -1127,8 +1130,9 @@ int adios_get_uniform_mesh_attr (ADIOS_FILE * fp, ADIOS_MESH *meshinfo, char * a
                             printf ("WARNING: mesh %s origins%d is set to 0\n", meshinfo->name, i);
                         else if (attrs == "maximums")
                         {
-                           printf ("ERROR: mesh %s maximums%d var %s is not provided!\n", meshinfo->name, i, (char *)data);
-                           return NULL; 
+                            printf ("ERROR: mesh %s maximums%d var %s is not provided!\n", meshinfo->name, i, (char *)data);
+                            meshinfo->uniform = NULL;
+                            return 0; 
                         }
                         else if (attrs == "spacings")
                             printf ("WARNING: mesh %s spacings%d var %s is not provided, set this sapcing value to 1\n", meshinfo->name, i, (char *)data);
