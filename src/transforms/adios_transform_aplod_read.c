@@ -15,6 +15,7 @@
 #include "adios_transform_identity_read.h"
 
 #define MAX_COMPONENTS 16
+#define MAX_SEEK_SIEVE_SIZE 1048576    // The maximum number of bytes sieving is allowed to sieve over per seek
 
 typedef struct {
     int numComponents;
@@ -67,12 +68,15 @@ int adios_transform_aplod_generate_read_subrequests(adios_transform_read_request
 
     char *buf;
 
+    // Compute some sieving parameters to check if it makes sense
+    compute_sieving_offsets_for_pg_selection(pg_reqgroup->pg_intersection_sel, &pg_reqgroup->pg_bounds_sel->u.bb, &start_off, &end_off);
+    const uint64_t sieveElemCount = end_off - start_off;
+    const uint64_t maxSeekSize = (totalElementsInPG - sieveElementCount) * fulltypelen;
+
     // Determine if we should sieve or not. Current heuristic: only if using 1 component (sieving is always better in this case)
     if (numComponentsToUse == 1) {
-        // Sieve
-        compute_sieving_offsets_for_pg_selection(pg_reqgroup->pg_intersection_sel, &pg_reqgroup->pg_bounds_sel->u.bb, &start_off, &end_off);
-
-        const uint64_t sieveElemCount = end_off - start_off;
+        printf("APLOD NOT SIEVING, COMPS = %d, MAXSEEK = %llu\n", numComponentsToUse, maxSeekSize);
+        // Don't sieve: read only necessary segments
         buf = malloc(sieveElemCount * totalComponentsSize);
 
         int numByteColsDone = 0;
@@ -88,6 +92,11 @@ int adios_transform_aplod_generate_read_subrequests(adios_transform_read_request
             numByteColsDone += aplodmeta.components[i];
         }
     } else {
+        printf("APLOD SIEVING, COMPS = %d, MAXSEEK = %llu\n", numComponentsToUse, maxSeekSize);
+        // Sieve: read the whole PG
+        start_off = 0;
+        end_off = totalElementsInPG;
+
         // Don't sieve
         buf = malloc(totalElementsInPG * totalComponentsSize);
 
@@ -139,15 +148,15 @@ adios_datablock * adios_transform_aplod_pg_reqgroup_completed(adios_transform_re
     parse_aplod_meta(reqgroup->transinfo->transform_metadata, &aplodmeta);
 
     APLODConfig_t *config;
-                                                                                                                                                                                                                                            
+
     if (reqgroup->transinfo->orig_type == adios_double) {
-        config = APLODConfigure (aplodmeta.components, aplodmeta.numComponents, APLOD_DOUBLE, APLOD_LITTLE_E);                                                                                                                              
+        config = APLODConfigure (aplodmeta.components, aplodmeta.numComponents, APLOD_DOUBLE, APLOD_LITTLE_E);
     } else if (reqgroup->transinfo->orig_type == adios_real){
-        config = APLODConfigure (aplodmeta.components, aplodmeta.numComponents, APLOD_FLOAT, APLOD_LITTLE_E);                                                                                                                               
+        config = APLODConfigure (aplodmeta.components, aplodmeta.numComponents, APLOD_FLOAT, APLOD_LITTLE_E);
     }
 
     // config->blockLengthElts = numElements; // Bug workaround, disable chunking
-    config->blockLengthElts = (numElements >= 65536 ? 65536: numElements); 
+    config->blockLengthElts = (numElements >= 65536 ? 65536: numElements);
 
     APLODReconstructComponents  (config,
                                     numElements,
