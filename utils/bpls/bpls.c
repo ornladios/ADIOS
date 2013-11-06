@@ -840,7 +840,7 @@ void printMeshes (ADIOS_FILE  *fp)
 
                 case ADIOS_MESH_UNSTRUCTURED:
                     fprintf(outf, "unstructured\n");
-                    if (mi->unstructured->use_single_var) {
+                    if (mi->unstructured->nvar_points <= 1) {
                         fprintf(outf, "    npoints:      %lld\n", mi->unstructured->npoints);
                         fprintf(outf, "    points:       single-var: \"%s\"\n", 
                                 mi->unstructured->points[0]);
