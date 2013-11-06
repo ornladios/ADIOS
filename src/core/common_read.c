@@ -1836,26 +1836,24 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
         strcat (mesh_nspace, "/nspace");
         data = NULL;
         read_fail = common_read_get_attr_mesh (fp, mesh_nspace, &attr_type, &attr_size, &data);
-//        printf ("value of mesh_nspace is %d\n", *(int *)data);
         free (mesh_nspace);
         if (read_fail)
             printf ("WARNING: structured mesh %s nspace is not provided\n", meshinfo->name);
         else
         {
-            int d1;
+            long int d1;
             char * pEnd;
             d1 = strtol((char *)data, &pEnd, 10);
             if (d1)
                 meshinfo->structured->nspaces = d1;
             else
             {
-                printf ("I am @1838\n");
                 int var_march = 0;
                 char * spaces_var_tmp;
                 spaces_var_tmp = (char *) malloc (strlen("/")+strlen((char *)data)+1);
                 strcpy (spaces_var_tmp, "/");
                 strcat (spaces_var_tmp, (char *)data);
-                printf ("spaces_var_tmp is %s\n", spaces_var_tmp);
+//                printf ("spaces_var_tmp is %s\n", spaces_var_tmp);
                 for (j=0; j<fp->nvars; j++)
                 {
                     if (!strcmp (fp->var_namelist[j], spaces_var_tmp))
@@ -1879,9 +1877,9 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
     {
         meshinfo->type = ADIOS_MESH_UNSTRUCTURED;
         meshinfo->unstructured = (MESH_UNSTRUCTURED* ) malloc (sizeof(MESH_UNSTRUCTURED));
-        meshinfo->unstructured->use_single_var = 0;  // default value 0 indicates using multi-var
+//        meshinfo->unstructured->use_single_var = 0;  // default value 0 indicates using multi-var
         meshinfo->unstructured->nvar_points = 1;
-        meshinfo->unstructured->uniform_cell = 1;   // default value 0 indicates using uniform cell
+//        meshinfo->unstructured->uniform_cell = 1;   // default value 0 indicates using uniform cell
 //        meshinfo->unstrutured->nspaces init
 //        meshinfo->unstructured->npoints init
 
@@ -1895,7 +1893,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
         if (!read_fail)   //use points-single-var
         {
             meshinfo->unstructured->points = (char **) malloc (sizeof(char *));  
-            meshinfo->unstructured->use_single_var = 1;         // modify default value to 1
+//            meshinfo->unstructured->use_single_var = 1;         // modify default value to 1
             int var_march = 0;
             char * coords_tmp = NULL;
             coords_tmp = (char *) malloc (strlen("/")+strlen((char *)data)+1);
@@ -2215,10 +2213,10 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
             if (d1)
             {
                 meshinfo->unstructured->ncsets = d1;
-                if (d1 == 1)
-                    meshinfo->unstructured->uniform_cell = 1;
-                else 
-                    meshinfo->unstructured->uniform_cell = 0;
+//                if (d1 == 1)
+//                    meshinfo->unstructured->uniform_cell = 1;
+//                else 
+//                    meshinfo->unstructured->uniform_cell = 0;
             }
             else
             {
@@ -2230,7 +2228,8 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
         }
 
         // start processing ccount, how many cells for cell type
-        if (meshinfo->unstructured->uniform_cell)        //uniform cells
+//        if (meshinfo->unstructured->uniform_cell)        //uniform cells
+        if (meshinfo->unstructured->ncsets == 1)
         {
             meshinfo->unstructured->ccounts = (uint64_t *) malloc (sizeof(uint64_t));
 
@@ -2352,7 +2351,8 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
         } // end of ccount
         
         // start processing cdata
-        if (meshinfo->unstructured->uniform_cell)        //uniform cells
+//        if (meshinfo->unstructured->uniform_cell)        //uniform cells
+        if (meshinfo->unstructured->ncsets == 1)
         {
             meshinfo->unstructured->cdata = (char **) malloc (sizeof(char *));
             char * data_cells = malloc (strlen("/adios_schema/")+strlen(meshinfo->name)+strlen("/cdata")+1 );
@@ -2443,7 +2443,8 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
         }// end of cdata
 
         // start processing ctypes
-        if (meshinfo->unstructured->uniform_cell)        //uniform cells
+//        if (meshinfo->unstructured->uniform_cell)        //uniform cells
+        if (meshinfo->unstructured->ncsets == 1)
         {
             meshinfo->unstructured->ctypes = (char **) malloc (sizeof(char *));
             char * type_cells = malloc (strlen("/adios_schema/")+strlen(meshinfo->name)+strlen("/ctype")+1 );
