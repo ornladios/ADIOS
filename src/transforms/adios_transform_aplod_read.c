@@ -71,7 +71,7 @@ int adios_transform_aplod_generate_read_subrequests(adios_transform_read_request
     // Compute some sieving parameters to check if it makes sense
     compute_sieving_offsets_for_pg_selection(pg_reqgroup->pg_intersection_sel, &pg_reqgroup->pg_bounds_sel->u.bb, &start_off, &end_off);
     const uint64_t sieveElemCount = end_off - start_off;
-    const uint64_t maxSeekSize = (totalElementsInPG - sieveElementCount) * fulltypelen;
+    const uint64_t maxSeekSize = (totalElementsInPG - sieveElemCount) * fulltypelen;
 
     // Determine if we should sieve or not. Current heuristic: only if using 1 component (sieving is always better in this case)
     if (numComponentsToUse == 1) {
