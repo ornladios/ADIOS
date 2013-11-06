@@ -74,7 +74,7 @@ int adios_transform_aplod_generate_read_subrequests(adios_transform_read_request
     const uint64_t maxSeekSize = (totalElementsInPG - sieveElemCount) * fulltypelen;
 
     // Determine if we should sieve or not. Current heuristic: only if using 1 component (sieving is always better in this case)
-    if (numComponentsToUse == 1) {
+    if (numComponentsToUse == 1 || maxSeekSize > MAX_SEEK_SIEVE_SIZE) {
         printf("APLOD NOT SIEVING, COMPS = %d, MAXSEEK = %llu\n", numComponentsToUse, maxSeekSize);
         // Don't sieve: read only necessary segments
         buf = malloc(sieveElemCount * totalComponentsSize);
