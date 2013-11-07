@@ -60,10 +60,10 @@ int main (int argc, char ** argv )
     int         ndx, ndy;             // size of array per processor
     double * data;
 
-    int         O1 = 0;               //origin in x direction
-    int         O2 = 0;               //origin in y direction
-    int         S1 = 1;               //spacing in x direction
-    int         S2 = 2;               //spacing in y direction
+    double         O1 = 0;               //origin in x direction
+    double         O2 = 0;               //origin in y direction
+    double         S1 = 1;               //spacing in x direction
+    double         S2 = 2;               //spacing in y direction
 
     // Offsets and sizes
     int         offs_x, offs_y;       //offset in x and y direction
@@ -107,7 +107,7 @@ int main (int argc, char ** argv )
     adios_init ("uniform2d.xml", comm);
     adios_open (&adios_handle, "uniform2d", "uniform2d.bp", "w", comm);
 
-    adios_groupsize = 11*sizeof(int) \
+    adios_groupsize = 7*sizeof(int) + 4*sizeof(double)\
 	+ sizeof(double) * (nx_local*ny_local) ;
 
     adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
