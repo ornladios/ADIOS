@@ -15,7 +15,23 @@ target_link_libraries(structured adios ${ADIOSLIB_LDADD})
 add_executable(unstructured unstructured.c)
 target_link_libraries(unstructured adios ${ADIOSLIB_LDADD})
 
-set (PROGS uniform rectilinear structured unstructured)
+add_executable(uniform2d uniform2d.c)
+target_link_libraries(uniform2d adios ${ADIOSLIB_LDADD})
+
+add_executable(rectilinear2d rectilinear2d.c)
+target_link_libraries(rectilinear2d adios ${ADIOSLIB_LDADD})
+
+add_executable(structured2d structured2d.c)
+target_link_libraries(structured2d adios ${ADIOSLIB_LDADD})
+
+add_executable(tri2d tri2d.c)
+target_link_libraries(tri2d adios ${ADIOSLIB_LDADD})
+
+add_executable(triangle2d triangle2d.c)
+target_link_libraries(triangle2d adios ${ADIOSLIB_LDADD})
+
+
+set (PROGS uniform rectilinear structured unstructured uniform2d rectilinear2d structured2d tri2d triangle2d)
 foreach (PROG ${PROGS} )
   if(MPI_COMPILE_FLAGS)
     set_target_properties(${PROG} PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
