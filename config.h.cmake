@@ -121,7 +121,7 @@
 #cmakedefine HAVE_NETCDF_H 1
 
 /* Define if you have NSSI. */
-#define HAVE_NSSI 1
+#define HAVE_NSSI ${HAVE_NSSI}
 
 /* Define to 1 if you have the <p3nal_utcp.h> header file. */
 #cmakedefine HAVE_P3NAL_UTCP_H 1
@@ -133,10 +133,10 @@
 #cmakedefine HAVE_PABLO 1
 
 /* Define if you have PHDF5. */
-#define HAVE_PHDF5 1
+#define HAVE_PHDF5 ${HAVE_PHDF5}
 
 /* Define to 1 if you have the <hdf5.h> header file. */
-#define HAVE_PHDF5_H 1
+#define HAVE_PHDF5_H ${HAVE_PHDF5_H}
 
 /* Define if you have the Portals. */
 #cmakedefine HAVE_PORTALS 1
