@@ -476,6 +476,8 @@ CHECK_INCLUDE_FILES(dmalloc.h HAVE_DMALLOC_H)
 # Define to 1 if you have the `fdatasync' function.
 CHECK_FUNCTION_EXISTS(fdatasync HAVE_FDATASYNC)
 
+set(HAVE_FLEXPATH 0)
+
 # Define to 1 if you have the `gettimeofday' function.
 CHECK_FUNCTION_EXISTS(gettimeofday HAVE_GETTIMEOFDAY)
 
