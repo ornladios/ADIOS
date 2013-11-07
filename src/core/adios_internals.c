@@ -6813,7 +6813,7 @@ int adios_define_mesh_uniform_dimensions (const char * dimensions
     dims = 0;
     adios_conca_mesh_att_nam(&dims, name, "dimensions-num");
 
-    adios_common_define_attribute (p_new_group,dims,"/",adios_double,counterstr,"");
+    adios_common_define_attribute (p_new_group,dims,"/",adios_integer,counterstr,"");
 
     free (dims);
 
@@ -6866,7 +6866,7 @@ int adios_define_mesh_uniform_maximums (const char * maximum
     snprintf(counterstr, 5, "%d", counter);
     maxa = 0;
     adios_conca_mesh_att_nam(&maxa, name, "maximums-num");
-    adios_common_define_attribute (p_new_group,maxa,"/",adios_double,counterstr,"");
+    adios_common_define_attribute (p_new_group,maxa,"/",adios_integer,counterstr,"");
     free (maxa);
     free (d1);
 
@@ -6918,7 +6918,7 @@ int adios_define_mesh_uniform_origins (const char * origin
     snprintf(counterstr, 5, "%d", counter);
     orgs = 0;
     adios_conca_mesh_att_nam(&orgs, name, "origins-num");
-    adios_common_define_attribute (p_new_group,orgs,"/",adios_double,counterstr,"");
+    adios_common_define_attribute (p_new_group,orgs,"/",adios_integer,counterstr,"");
 
     free (orgs);
     free (d1);
@@ -6968,7 +6968,7 @@ int adios_define_mesh_uniform_spacings (const char * spacing
     snprintf(counterstr, 5, "%d", counter);
     spas = 0;
     adios_conca_mesh_att_nam(&spas, name, "spacings-num");
-    adios_common_define_attribute (p_new_group,spas,"/",adios_double,counterstr,"");
+    adios_common_define_attribute (p_new_group,spas,"/",adios_integer,counterstr,"");
     free (spas);
 
     free (d1);
@@ -7021,7 +7021,7 @@ int adios_define_mesh_rectilinear_dimensions (const char * dimensions
     snprintf(counterstr, 5, "%d", counter);
     dims = 0;
     adios_conca_mesh_att_nam(&dims, name, "dimensions-num");
-    adios_common_define_attribute (p_new_group,dims,"/",adios_double,counterstr,"");
+    adios_common_define_attribute (p_new_group,dims,"/",adios_integer,counterstr,"");
 
     free (dims);
 
@@ -7076,7 +7076,7 @@ int adios_define_mesh_rectilinear_coordinatesMultiVar (const char * coordinates
         counterstr[0] = '\0';
         snprintf(counterstr, 5, "%d", counter);
         adios_conca_mesh_att_nam(&coords, name, "coords-multi-var-num");
-        adios_common_define_attribute (p_new_group,coords,"/",adios_double,counterstr,"");
+        adios_common_define_attribute (p_new_group,coords,"/",adios_integer,counterstr,"");
         free (coords);
     } else
     {
@@ -7193,7 +7193,7 @@ int adios_define_mesh_structured_dimensions (const char * dimensions
     snprintf(counterstr, 5, "%d", counter);
     dims = 0;
     adios_conca_mesh_att_nam(&dims, name, "dimensions-num");
-    adios_common_define_attribute (p_new_group,dims,"/",adios_double,counterstr,"");
+    adios_common_define_attribute (p_new_group,dims,"/",adios_integer,counterstr,"");
 
     free (dims);
     free (d1);
@@ -7275,7 +7275,7 @@ int adios_define_mesh_structured_pointsMultiVar (const char * points
         counterstr[0] = '\0';
         snprintf(counterstr, 5, "%d", counter);
         adios_conca_mesh_att_nam(&pts, name, "points-multi-var-num");
-        adios_common_define_attribute (p_new_group,pts,"/",adios_double,counterstr,"");
+        adios_common_define_attribute (p_new_group,pts,"/",adios_integer,counterstr,"");
         free (pts);
     } else
     {
@@ -7398,7 +7398,7 @@ int adios_define_mesh_unstructured_pointsMultiVar (const char * points
         counterstr[0] = '\0';
         snprintf(counterstr, 5, "%d", counter);
         adios_conca_mesh_att_nam(&pts, name, "points-multi-var-num");
-        adios_common_define_attribute (p_new_group,pts,"/",adios_double,counterstr,"");
+        adios_common_define_attribute (p_new_group,pts,"/",adios_integer,counterstr,"");
         free (pts);
         free (d1);
     } else

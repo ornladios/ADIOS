@@ -657,6 +657,7 @@ AC_CONFIG_FILES([Makefile
                  tests/suite/Makefile
                  tests/suite/programs/Makefile
                  utils/Makefile
+                 utils/skeldump/Makefile
                  utils/skel/Makefile
                  utils/skel/etc/Makefile
                  utils/skel/src/Makefile

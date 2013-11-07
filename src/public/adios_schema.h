@@ -59,12 +59,10 @@ typedef struct
 
 typedef struct
 {
-    int use_single_var;        // 1 means points-single-var, 0 mean points-multi-var
     int nspaces;
     uint64_t npoints;
     int nvar_points;           // how much vars for points-multi-var, 1 for points-single-var
     char ** points;
-    int  uniform_cell;
     int ncsets;
     uint64_t * ccounts;
     char ** cdata;

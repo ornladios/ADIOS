@@ -9,10 +9,10 @@
     <var name="nx_local"  path="" type="integer"/>
     <var name="ny_local"  path="" type="integer"/>
 
-    <var name="O1" type="integer"/>
-    <var name="O2" type="integer"/>
-    <var name="S1" type="integer"/>
-    <var name="S2" type="integer"/>
+    <var name="O1" type="double"/>
+    <var name="O2" type="double"/>
+    <var name="S1" type="double"/>
+    <var name="S2" type="double"/>
 
     <mesh name="uniformmesh" type="uniform" time-varying="no">
          <nspace value="2" />

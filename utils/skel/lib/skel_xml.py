@@ -72,12 +72,13 @@ def create_from_yaml (project,args):
 
     skel_file = open (outfilename, 'w')
 
-    bpy = skel_bpy.skel_bpy ("test.yaml")
+    bpy = skel_bpy.skel_bpy (args.yamlfile)
 
 
     # Okay, it's time to try out Cheetah.
     from Cheetah.Template import Template
-    t = Template(file="xml.tmpl")
+    template_file = open (os.path.expanduser("~/.skel/templates/xml.tmpl"), 'r')
+    t = Template(file=template_file)
     t.bpy = bpy
     skel_file.write (str(t) )
     # All done. That was easy.

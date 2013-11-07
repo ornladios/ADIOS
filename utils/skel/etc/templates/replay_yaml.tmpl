@@ -1,0 +1,10 @@
+#!/bin/bash
+
+#bootstrap a skeletal app using a yaml file
+
+skel xml ${project} #if $force #-f #end if#-y ${yamlfile}
+
+skel makefile ${project} #if $force #-f #end if#-y ${yamlfile}
+
+make
+
