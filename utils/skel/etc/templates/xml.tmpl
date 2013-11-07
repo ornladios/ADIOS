@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<adios-config host-language="${bpy.get_language()}">
+  <adios-group name="${bpy.get_group_name()}" coordination-communicator="comm">
+    #for v in $bpy.get_vars():
+  #if $v.has_global_bounds() #  <global-bounds dimensions="$v.get_global_dims_str()" offsets="$v.get_offsets_str()"> #end if
+      <var name="$v.get_name()" type="$v.get_type()" />
+  #if $v.has_global_bounds() #  </global-bounds> #end if
+    #end for
+  </adios-group>
+
+  <method group="${bpy.get_group_name()}" method="${bpy.get_method()}" />
+  <buffer size-MB="10" allocate-time="now" />
+</adios-config>
+
+
+

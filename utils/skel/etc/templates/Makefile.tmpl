@@ -1,0 +1,19 @@
+
+#if $bpy.get_language() == 'fortran' or $bpy.get_language() == 'Fortran' #
+${project}_skel_checkpoint: ${project}_skel_group1.f90
+	mpif90 `adios_config -fc` ${project}_skel_group1.f90 -o ${project}_skel_group1 `adios_config -fl` -L~/adios-github/adios-install/lib/skel -lskel
+
+${project}_skel_group1.f90: ${project}.yaml
+	skel xml ${project} -f -y ${project}.yaml
+	skel source ${project} -f -y ${project}.yaml
+#else #
+${project}_skel_checkpoint: ${project}_skel_group1.c
+	mpicc `adios_config -c` ${project}_skel_group1.c -o ${project}_skel_group1 `adios_config -l` -L~/adios-github/adios-install/lib/skel -lskel
+
+${project}_skel_group1.c: ${project}.yaml
+	skel xml ${project} -f -y ${project}.yaml
+	skel source ${project} -f -y ${project}.yaml
+#end if
+
+
+

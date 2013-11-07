@@ -23,6 +23,7 @@ dist_pythonlib_DATA=\
     lib/skel_install.py \
     lib/skel_makefile.py \
     lib/skel_params.py \
+    lib/skel_replay.py \
     lib/skel_settings.py \
     lib/skel_source.py \
     lib/skel_submit.py \
