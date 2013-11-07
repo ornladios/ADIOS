@@ -664,12 +664,17 @@ def create_source_from_yaml (args, config):
     # Determine the target language
     if config.host_language == "C" or config.host_language =="c":
         filetype = ".c"
+        template_file_name = "~/.skel/templates/source_write_c.tmpl"
     else:
         filetype = ".f90"
+        template_file_name = "~/.skel/templates/source_write_fortran.tmpl"
 
-    bpy = skel_bpy.skel_bpy ("test.yaml")
+    bpy = skel_bpy.skel_bpy (args.yamlfile)
 
     # Determine outfile name
+
+    print bpy.get_group_name()
+
     extension = '_skel_' + bpy.get_group_name()
     outfilename = args.project + extension + filetype
 
@@ -683,7 +688,9 @@ def create_source_from_yaml (args, config):
 
     # Now for the Cheetah magic:
     from Cheetah.Template import Template
-    t = Template(file="source_write_c.tmpl")
+    template_file = open (os.path.expanduser(template_file_name), 'r')
+    t = Template(file=template_file)
+
     t.bpy = bpy
     t.project = args.project
     skel_file.write (str(t) )

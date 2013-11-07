@@ -2,6 +2,9 @@
 
 import yaml
 
+import sys
+
+
 # A representation of a bp file that is stored in a yaml document
 class skel_bpy:
     def __init__ (self, filename):
@@ -20,7 +23,7 @@ class skel_bpy:
         return self.doc['procs']
 
     def get_steps (self):
-        return self.doc['steps']
+        return self.doc.get('steps', 1)
 
     def get_vars (self):
         return self.vars.values()
@@ -54,8 +57,32 @@ class var:
     def get_name (self):
         return self.name
 
+    def get_safe_name (self):
+        # Remove slashes
+        return '_slash_'.join(self.get_name().split('/'))
+
     def get_type (self):
         return self.vardict['type']
+
+    def get_fortran_type (self):
+        self.ftypes = {
+            "double": "real*8",
+            "integer": "integer*4",
+            "double complex": "double complex",
+            "byte": "byte"
+        }
+
+        return self.ftypes.get(self.get_type(), "UNKNOWN_TYPE")
+
+    def get_c_type (self):
+        self.ftypes = {
+            "double": "double",
+            "integer": "int",
+            "long": "long",
+            "long long": "long long"
+        }
+
+        return self.ftypes.get(self.get_type(), "UNKNOWN_TYPE")
 
     def get_dims (self):
         if self.vardict['dims'] == 'scalar':
@@ -63,15 +90,35 @@ class var:
         else:
             return self.vardict['dims']
 
-    def get_unit_size (self):
-        if self.get_type() == "int":
-            return "4"
-        elif self.get_type() == "double":
-            return "8"
+    def get_ndims (self):
+        if self.get_dims() is None:
+            return 0
         else:
-            print "Unknown type in get_unit_size()"
+            return len (self.get_dims()) 
+         
+    # This gives the size of one element of this type
+    def get_unit_size (self):
+
+        #print "Checking size of %s\n" % self.get_type()
+
+        type = self.get_type()
+
+        if type == "int" or type == "integer":
+            return "4"
+        elif type == "double":
+            return "8"
+        elif type == "double complex":
+            return "16"
+        elif type == "long long":
+            return "8"
+        elif type == "byte":
+            return "1"
+        else:
+            print "Unknown type: %s in get_unit_size()" % self.get_type()
             sys.exit()
 
+
+    # This gives the size of a scalar or an array
     def get_size (self):
         if self.vardict['dims'] == 'scalar':
             return self.get_unit_size()
@@ -102,7 +149,10 @@ class var:
         return self.get_global_dims() is not None 
 
     def get_value (self):
-        return self.vardict['values'][0]['val']
+        vals = self.vardict.get('values', None)
+        if vals is None or length (vals) < 1:
+            return None
+        return vals[0]['val']
 
 def main(argv=None):
     b = skel_bpy ("test.yaml")

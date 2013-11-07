@@ -1,0 +1,12 @@
+#!/bin/bash
+
+#bootstrap a skeletal app using a bp file
+
+skeldump ${bpfile} > ${yamlfile}
+
+skel xml ${project} #if $force #-f #end if#-y ${yamlfile}
+
+skel makefile ${project} #if $force #-f #end if#-y ${yamlfile}
+
+make
+

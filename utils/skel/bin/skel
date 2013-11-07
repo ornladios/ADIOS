@@ -20,8 +20,8 @@ import skel_settings
 import skel_install
 import skel_makefile
 import skel_params
+import skel_replay
 import skel_source
-#import skel_dwarf
 import skel_submit
 import skel_xml
 
@@ -74,6 +74,10 @@ def main(argv=None):
         skel_xml.create_skel_xml (args.project, parser)
         return 0
 
+    if args.subcommand == 'replay':
+        skel_replay.do_replay_with_args (parser)
+        return 0
+
     try:
         config = adios.adiosConfig (args.project + '_skel.xml')
     except (IOError):
@@ -99,6 +103,11 @@ def main(argv=None):
         return 0
 
 
+    if args.subcommand == 'makefile':
+        #skel_makefile.generate_makefiles (params, config)
+        skel_makefile.generate_makefiles_with_args (config, parser)
+        return 0
+
     try:    
         params = skelconf.skelConfig (args.project + '_params.xml')
     except (IOError):
@@ -106,13 +115,6 @@ def main(argv=None):
         print "then check that " + args.project + "_params.xml exists."
         return 1
 
-    if args.subcommand == 'makefile':
-        skel_makefile.generate_makefiles (params, config)
-        return 0
-
-#    if args.subcommand == 'dwarf':
-#        skel_dwarf.create_dwarf (params, config, args.project)
-#        return 0
 
     if args.subcommand == 'submit':
         skel_submit.generate_submit_scripts (params)

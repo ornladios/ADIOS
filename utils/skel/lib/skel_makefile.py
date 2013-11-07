@@ -6,8 +6,71 @@ import sys
 
 import adios
 import skelconf
+import skel_bpy
 import skel_settings
 
+
+def pparse_command_line (parent_parser):
+    parser = argparse.ArgumentParser (
+                parents = [parent_parser],
+                formatter_class=argparse.RawDescriptionHelpFormatter,
+                prog='skel',
+                add_help=False,
+                description='''\
+        skel makefile 
+            create a makefile for building a skeletal application''')
+
+    parser.add_argument ('-y', '--yaml-file', dest='yamlfile', help='yaml file to store I/O pattern')
+    parser.add_argument ('-b', '--bp-file', dest='bpfile', help='bp file to extract I/O pattern')
+    parser.add_argument ('-f', '--force', dest='force', action='store_true', help='overwrite existing source file')
+    parser.set_defaults(force=False)
+
+    return parser.parse_args()
+
+
+
+def generate_makefiles_with_args (config, parent_parser):
+    args = pparse_command_line (parent_parser)
+
+    if args.yamlfile:
+        generate_makefile_from_yaml (args)
+    else:
+
+        try:
+            params = skelconf.skelConfig (args.project + '_params.xml')
+        except (IOError):
+            print "Error reading " + args.project + "_params.xml. Try running skel params " + args.project + " first,"
+            print "then check that " + args.project + "_params.xml exists."
+            return
+
+        generate_makefiles (params, config)
+
+
+def generate_makefile_from_yaml (args):
+
+    bpy = skel_bpy.skel_bpy (args.yamlfile)
+
+    template_file_name = "~/.skel/templates/Makefile.tmpl"
+    outfilename = "Makefile"
+
+    # Only proceed if outfilename does not already exist, or if -f was used
+    if os.path.exists (outfilename) and not args.force:
+        print "%s exists, aborting. Delete the file or use -f to overwrite." % outfilename
+        return 999
+
+    skel_file = open (outfilename, 'w')
+
+
+    # Now for the Cheetah magic:
+    from Cheetah.Template import Template
+    template_file = open (os.path.expanduser(template_file_name), 'r')
+    t = Template(file=template_file)
+
+    t.bpy = bpy
+    t.project = args.project
+    t.bpfile = args.bpfile
+    skel_file.write (str(t) )
+ 
 
 
 def generate_makefiles (params, config):
