@@ -1287,7 +1287,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
 
         //start processing origins, origin is optional
         adios_get_uniform_mesh_attr (fp, meshinfo, "origins");
-        for (int i = 0; i < meshinfo->uniform->num_dimensions; i++ )
+        for (i = 0; i < meshinfo->uniform->num_dimensions; i++ )
             printf ("origins[%d] is %lf\n", i, meshinfo->uniform->origins[i]);
 
         //start processing maximums, maximum is optional 
@@ -1297,7 +1297,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
 
         //start processing spacings, spacing is optional 
         int have_spacings = adios_get_uniform_mesh_attr (fp, meshinfo, "spacings");
-        for (int i = 0; i < meshinfo->uniform->num_dimensions; i++ )
+        for (i = 0; i < meshinfo->uniform->num_dimensions; i++ )
             printf ("spacings[%d] is %lf\n", i, meshinfo->uniform->spacings[i]);
 
         //if mesh spacing and maximum are both defined, check if consistant
