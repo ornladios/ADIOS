@@ -35,10 +35,10 @@
 #cmakedefine HAVE_CRAY_UGNI 1
 
 /* Define if you have the DATASPACES. */
-#define HAVE_DATASPACES 1
+#define HAVE_DATASPACES ${HAVE_DATASPACES}
 
 /* Define to 1 if you have the <dataspaces.h> header file. */
-#define HAVE_DATASPACES_H 1
+#define HAVE_DATASPACES_H ${HAVE_DATASPACES}
 
 /* Define if you have the DCMF. */
 #undef HAVE_DCMF
@@ -47,10 +47,10 @@
 #undef HAVE_DCMF_H
 
 /* Define if you have the DIMES. */
-#define HAVE_DIMES 1
+#define HAVE_DIMES ${HAVE_DIMES}
 
 /* Define to 1 if you have the <dimes_interface.h> header file. */
-#define HAVE_DIMES_INTERFACE_H
+#define HAVE_DIMES_INTERFACE_H ${HAVE_DIMES_INTERFACE_H}
 
 /* Define to 1 if you have the <dlfcn.h> header file. */
 #cmakedefine HAVE_DLFCN_H 1
@@ -64,8 +64,8 @@
 /* Define to 1 if you have the `fdatasync' function. */
 #cmakedefine HAVE_FDATASYNC 1
 
-/* Flexpath is enabled */#cmakedefine HAVE_FLEXPATH
-#define HAVE_FLEXPATH
+/* Flexpath is enabled */
+#define HAVE_FLEXPATH ${HAVE_FLEXPATH}
 
 /* Define to 1 if you have the `gettimeofday' function. */
 #cmakedefine HAVE_GETTIMEOFDAY 1
