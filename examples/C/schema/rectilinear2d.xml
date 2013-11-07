@@ -19,7 +19,7 @@
 
     <mesh name="rectilinearmesh" type="rectilinear" time-varying="no">
          <nspace value="2" />
-         <dimensions value="nx_local,ny_local" /> 
+         <dimensions value="nx_global,ny_global" /> 
          <coordinates-multi-var value="X,Y" />
     </mesh>
 
