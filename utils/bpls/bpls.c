@@ -746,17 +746,18 @@ int doList_group (ADIOS_FILE *fp)
     return 0;
 }                
 
-#define PRINT_DIMENSIONS(str, ndim, dims, loopvar) \
+#define PRINT_ARRAY(str, ndim, dims, loopvar, format) \
     fprintf(outf,"%s",str); \
     if (ndim > 0) { \
-        fprintf(outf,"{%lld", dims[0]); \
+        fprintf(outf,"{"#format, dims[0]); \
         for (loopvar=1; loopvar < ndim; loopvar++) { \
-            fprintf(outf,", %lld", dims[loopvar]); \
+            fprintf(outf,", "#format, dims[loopvar]); \
         } \
         fprintf(outf,"}\n"); \
     } else { \
         fprintf(outf,"empty\n"); \
     }
+
 
 void printMeshes (ADIOS_FILE  *fp)
 {
@@ -781,31 +782,37 @@ void printMeshes (ADIOS_FILE  *fp)
             switch (mi->type) {
                 case ADIOS_MESH_UNIFORM:
                     fprintf(outf, "uniform\n");
-                    PRINT_DIMENSIONS("    dimensions:   ", 
-                                     mi->uniform->num_dimensions, 
-                                     mi->uniform->dimensions, j);
+                    PRINT_ARRAY("    dimensions:   ", 
+                                 mi->uniform->num_dimensions, 
+                                 mi->uniform->dimensions, 
+                                 j, %lld)
                     if (mi->uniform->origins) {
-                        PRINT_DIMENSIONS("    origins:      ", 
-                                         mi->uniform->num_dimensions, 
-                                         mi->uniform->origins, j);
+                        PRINT_ARRAY("    origins:      ", 
+                                     mi->uniform->num_dimensions, 
+                                     mi->uniform->origins, 
+                                     j, %g) 
                     }
                     if (mi->uniform->spacings) {
-                        PRINT_DIMENSIONS("    spacings:     ", 
-                                         mi->uniform->num_dimensions, 
-                                         mi->uniform->spacings, j);
+                        mi->uniform->spacings[0]=5.0;
+                        PRINT_ARRAY ("    spacings:     ", 
+                                     mi->uniform->num_dimensions, 
+                                     mi->uniform->spacings,
+                                     j, %g)
                     }
                     if (mi->uniform->maximums) {
-                        PRINT_DIMENSIONS("    maximums:     ", 
-                                         mi->uniform->num_dimensions, 
-                                         mi->uniform->maximums, j);
+                        PRINT_ARRAY ("    maximums:     ", 
+                                     mi->uniform->num_dimensions, 
+                                     mi->uniform->maximums,
+                                     j, %g)
                     }
                     break;
 
                 case ADIOS_MESH_RECTILINEAR:
                     fprintf(outf, "rectilinear\n");
-                    PRINT_DIMENSIONS("    dimensions:   ", 
-                                     mi->rectilinear->num_dimensions, 
-                                     mi->rectilinear->dimensions, j);
+                    PRINT_ARRAY("    dimensions:   ", 
+                                mi->rectilinear->num_dimensions, 
+                                mi->rectilinear->dimensions, 
+                                j, %lld)
                     if (mi->rectilinear->use_single_var) {
                         fprintf(outf, "    coordinates:  single-var: \"%s\"\n", 
                                 mi->rectilinear->coordinates[0]);
@@ -821,9 +828,10 @@ void printMeshes (ADIOS_FILE  *fp)
 
                 case ADIOS_MESH_STRUCTURED:
                     fprintf(outf, "structured\n");
-                    PRINT_DIMENSIONS("    dimensions:   ", 
-                                     mi->structured->num_dimensions, 
-                                     mi->structured->dimensions, j);
+                    PRINT_ARRAY("    dimensions:   ", 
+                                mi->structured->num_dimensions, 
+                                mi->structured->dimensions, 
+                                j, %lld);
                     if (mi->structured->use_single_var) {
                         fprintf(outf, "    points:       single-var: \"%s\"\n", 
                                 mi->structured->points[0]);
