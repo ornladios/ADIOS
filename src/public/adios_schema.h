@@ -57,6 +57,19 @@ typedef struct
     char ** points;            // name of the variable(s) containing the point coordinates 
 } MESH_STRUCTURED;
 
+// ADIOS Schema: supported cell types
+enum ADIOS_CELL_TYPE
+{
+     ADIOS_CELL_PT         = 1
+    ,ADIOS_CELL_LINE       = 2
+    ,ADIOS_CELL_TRI        = 3
+    ,ADIOS_CELL_QUAD       = 4
+    ,ADIOS_CELL_HEX        = 5
+    ,ADIOS_CELL_PRI        = 6
+    ,ADIOS_CELL_TET        = 7
+    ,ADIOS_CELL_PYR        = 8
+};
+
 typedef struct
 {
     int nspaces;
@@ -66,7 +79,7 @@ typedef struct
     int ncsets;
     uint64_t * ccounts;
     char ** cdata;
-    char ** ctypes;
+    enum ADIOS_CELL_TYPE * ctypes;
 } MESH_UNSTRUCTURED;
 
 
@@ -83,20 +96,6 @@ typedef struct {   //type returned by adios_inq_mesh for read method
         MESH_UNSTRUCTURED * unstructured;
     } ;
 } ADIOS_MESH;
-
-
-// ADIOS Schema: supported cell types
-enum ADIOS_CELL_TYPE
-{
-     ADIOS_CELL_PT         = 1
-    ,ADIOS_CELL_LINE       = 2
-    ,ADIOS_CELL_TRI        = 3
-    ,ADIOS_CELL_QUAD       = 4
-    ,ADIOS_CELL_HEX        = 5
-    ,ADIOS_CELL_PRI        = 6
-    ,ADIOS_CELL_TET        = 7
-    ,ADIOS_CELL_PYR        = 8
-};
 
 
 ////////////////////////

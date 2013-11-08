@@ -94,7 +94,13 @@ enum ADIOS_ERRCODES {
     // Mesh reading errors
     err_mesh_unstructured_missing_ncsets = -160, // ncsets was not defined 
     err_mesh_unstructured_invalid_ncsets = -161, // could not read the ncsets value
-
+    err_mesh_unstructured_missing_ccount = -162, // ccount was not defined
+    err_mesh_unstructured_invalid_ccount = -163, // could not read the ccount value
+    err_mesh_unstructured_invalid_ctypes = -164, // # of cell types invalid
+    err_mesh_unstructured_missing_cdata  = -165, // cdata was not defined
+    err_mesh_unstructured_invalid_cdata  = -166, // could not read the cdata value 
+    err_mesh_unstructured_missing_ctype  = -167, // ctype was not defined
+    err_mesh_unstructured_invalid_ctype  = -168, // coule not read ctype value
 
     err_unspecified                     = -200
 };

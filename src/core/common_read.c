@@ -2221,7 +2221,8 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
             else
             {
                 adios_error (err_mesh_unstructured_invalid_ncsets, 
-                            "Reading unstructured mesh %s ncsets failed\n", meshinfo->name);
+                            "Reading unstructured mesh %s ncsets failed\n", 
+                            meshinfo->name);
                 return NULL;
 
             }
@@ -2243,7 +2244,9 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
             free (num_cells);
             if (read_fail)
             {
-                printf ("ERROR: unstructured mesh %s number of cells is required\n", meshinfo->name);    
+                adios_error (err_mesh_unstructured_missing_ccount,
+                            "unstructured mesh %s number of cells (ccount) is required\n", 
+                            meshinfo->name);    
                 return NULL;
             }
             else
@@ -2275,7 +2278,9 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                     free (ccount_tmp);
                     if (var_march == 0)
                     {
-                        printf ("ERROR: unstructured mesh %s var for ccount is not correct\n", meshinfo->name);
+                        adios_error (err_mesh_unstructured_invalid_ccount,
+                                    "unstructured mesh %s var for ccount is invalid\n", 
+                                    meshinfo->name);
                         return NULL;
                     }
                 }
@@ -2293,7 +2298,9 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                     i_buffer = (char *) malloc (sizeof(char)+1);
                 else 
                 {
-                    printf("ERROR: structured mesh %s has more than 10 cell types!\n", meshinfo->name);
+                    adios_error (err_mesh_unstructured_invalid_ctypes,
+                                "unstructured mesh %s has more than 10 cell types!\n", 
+                                meshinfo->name);
                     return NULL;
                 }
                 i_digits = sprintf (i_buffer, "%d", i);
@@ -2308,7 +2315,9 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                 free (ccount_var);
                 if (read_fail)
                 {
-                    printf ("ERROR: unstructured mesh %s ccount%d is not provided!\n", meshinfo->name, i);
+                    adios_error (err_mesh_unstructured_missing_ccount,
+                                "unstructured mesh %s ccount%d is not provided!\n", 
+                                meshinfo->name, i);
                     return NULL; 
                 }
                 else
@@ -2340,7 +2349,9 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                         free (ccount_mix_tmp);
                         if (var_march == 0)
                         {
-                            printf ("ERROR: unstructured mesh %s var for ccount%d is not correct\n", meshinfo->name, i);
+                            adios_error (err_mesh_unstructured_invalid_ccount,
+                                        "unstructured mesh %s var for ccount%d is invalid\n", 
+                                        meshinfo->name, i);
                             return NULL; 
                         }
 
@@ -2364,7 +2375,9 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
             free (data_cells);
             if (read_fail)
             {
-                printf ("ERROR: unstructured mesh %s cell data is required\n", meshinfo->name);
+                adios_error (err_mesh_unstructured_missing_cdata,
+                            "unstructured mesh %s cell data is required\n", 
+                            meshinfo->name);
                 return NULL; 
             }
             else
@@ -2384,7 +2397,9 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                 free (cdata_tmp);
                 if (var_match == 0)
                 {
-                    printf ("ERROR: unstructured mesh %s var for cdata is not correct\n", meshinfo->name);
+                    adios_error (err_mesh_unstructured_invalid_cdata,
+                                "unstructured mesh %s var for cdata is invalid\n", 
+                                meshinfo->name);
                     return NULL; 
                 }
             }
@@ -2401,7 +2416,9 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                     i_buffer = (char *) malloc (sizeof(char)+1);
                 else
                 {
-                    printf("ERROR: structured mesh %s has more than 10 cell data (cell types)!\n", meshinfo->name);
+                    adios_error (err_mesh_unstructured_invalid_ctypes,
+                                "unstructured mesh %s has more than 10 cell types!\n",
+                                meshinfo->name);
                     return NULL; 
                 }
                 i_digits = sprintf (i_buffer, "%d", i);
@@ -2416,7 +2433,9 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                 free (cdata_var);
                 if (read_fail)
                 {
-                    printf ("ERROR: unstructured mesh %s cdata%d is not provided!\n", meshinfo->name, i);
+                    adios_error (err_mesh_unstructured_missing_cdata,
+                                "unstructured mesh %s cdata%d is not provided!\n", 
+                                meshinfo->name, i);
                     return NULL; 
                 }
                 else
@@ -2435,7 +2454,9 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                     }
                     if (var_match == 0)
                     {
-                        printf ("ERROR: unstructured mesh %s var for cdata%d is not correct\n", meshinfo->name, i);
+                        adios_error (err_mesh_unstructured_invalid_cdata,
+                                    "unstructured mesh %s var for cdata%d is not correct\n", 
+                                    meshinfo->name, i);
                         return NULL; 
                     }
                 }
@@ -2446,7 +2467,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
 //        if (meshinfo->unstructured->uniform_cell)        //uniform cells
         if (meshinfo->unstructured->ncsets == 1)
         {
-            meshinfo->unstructured->ctypes = (char **) malloc (sizeof(char *));
+            meshinfo->unstructured->ctypes = (enum ADIOS_CELL_TYPE *) malloc (sizeof(enum ADIOS_CELL_TYPE));
             char * type_cells = malloc (strlen("/adios_schema/")+strlen(meshinfo->name)+strlen("/ctype")+1 );
             strcpy (type_cells, "/adios_schema/");
             strcat (type_cells, meshinfo->name);
@@ -2456,24 +2477,41 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
             free (type_cells);
             if (read_fail)
             {
-                printf ("ERROR: unstructured mesh %s cells type is required\n", meshinfo->name);
+                adios_error (err_mesh_unstructured_missing_ctype,
+                            "unstructured mesh %s cells type is required\n", 
+                            meshinfo->name);
                 return NULL; 
             } 
             else
             {
-                if (!strcmp((char *)data, "line") || !strcmp((char *)data, "triangle") || !strcmp((char *)data, "quad") || !strcmp((char *)data, "hex")
-                        || !strcmp((char *)data, "prism") || !strcmp((char *)data, "tet") || !strcmp((char *)data, "pyr"))
-                    meshinfo->unstructured->ctypes[0] = strdup((char *)data);
+                if (!strcmp((char *)data, "line"))
+                    meshinfo->unstructured->ctypes[i] = ADIOS_CELL_LINE;
+                else if (!strcmp((char *)data, "triangle"))
+                    meshinfo->unstructured->ctypes[i] = ADIOS_CELL_TRI;
+                else if (!strcmp((char *)data, "quad"))
+                    meshinfo->unstructured->ctypes[i] = ADIOS_CELL_QUAD;
+                else if (!strcmp((char *)data, "hex"))
+                    meshinfo->unstructured->ctypes[i] = ADIOS_CELL_HEX;
+                else if (!strcmp((char *)data, "prism"))
+                    meshinfo->unstructured->ctypes[i] = ADIOS_CELL_PRI;
+                else if (!strcmp((char *)data, "tet"))
+                    meshinfo->unstructured->ctypes[i] = ADIOS_CELL_TET;
+                else if (!strcmp((char *)data, "pyr"))
+                    meshinfo->unstructured->ctypes[i] = ADIOS_CELL_PYR;
                 else
                 {
-                    printf ("ERROR: unstructured mesh %s type %s of cells is not correct\n", meshinfo->name, (char *)data);
-                    return NULL; 
+                    adios_error (err_mesh_unstructured_invalid_ctype,
+                                "unstructured mesh %s type %s of for ctype%d is invalid. " 
+                                "we use line, triangle, quad, hex, prism, tet or tet for cell types. "
+                                "please choose to use one of them. ",
+                                 meshinfo->name, (char *)data, i);
+                    return NULL;
                 }
             }
         }
         else
         {
-            meshinfo->unstructured->ctypes = (char **) malloc (sizeof(char *)*meshinfo->unstructured->ncsets);
+            meshinfo->unstructured->ctypes = (enum ADIOS_CELL_TYPE *) malloc (sizeof(enum ADIOS_CELL_TYPE)*meshinfo->unstructured->ncsets);
             int i = 0;
             for (i=0; i<meshinfo->unstructured->ncsets; i++)
             {
@@ -2483,7 +2521,9 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                     i_buffer = (char *) malloc (sizeof(char)+1);
                 else
                 {
-                    printf("ERROR: structured mesh %s has more than 10 cell types!\n", meshinfo->name);
+                    adios_error (err_mesh_unstructured_invalid_ctypes,
+                                "unstructured mesh %s has more than 10 cell types!\n",
+                                meshinfo->name);
                     return NULL; 
                 }
                 i_digits = sprintf (i_buffer, "%d", i);
@@ -2498,17 +2538,35 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                 free (ctype_mix_var);
                 if (read_fail)
                 {
-                    printf ("ERROR: unstructured mesh %s ctype%d is not provided!\n", meshinfo->name, i);
+                    adios_error (err_mesh_unstructured_missing_ctype,
+                                "unstructured mesh %s ctype%d is not provided!\n", 
+                                meshinfo->name, i);
                     return NULL; 
                 }
                 else
                 {
-                    if (!strcmp((char *)data, "line") || !strcmp((char *)data, "triangle") || !strcmp((char *)data, "quad") || !strcmp((char *)data, "hex")
-                            || !strcmp((char *)data, "prism") || !strcmp((char *)data, "tet") || !strcmp((char *)data, "pyr"))
-                        meshinfo->unstructured->ctypes[i] = strdup((char *)data);
+                    if (!strcmp((char *)data, "line"))
+                        meshinfo->unstructured->ctypes[i] = ADIOS_CELL_LINE;
+                    else if (!strcmp((char *)data, "triangle"))
+                        meshinfo->unstructured->ctypes[i] = ADIOS_CELL_TRI;
+                    else if (!strcmp((char *)data, "quad"))
+                        meshinfo->unstructured->ctypes[i] = ADIOS_CELL_QUAD;
+                    else if (!strcmp((char *)data, "hex"))
+                        meshinfo->unstructured->ctypes[i] = ADIOS_CELL_HEX;
+                    else if (!strcmp((char *)data, "prism")) 
+                        meshinfo->unstructured->ctypes[i] = ADIOS_CELL_PRI;
+                    else if (!strcmp((char *)data, "tet"))
+                        meshinfo->unstructured->ctypes[i] = ADIOS_CELL_TET;
+                    else if (!strcmp((char *)data, "pyr"))
+                        meshinfo->unstructured->ctypes[i] = ADIOS_CELL_PYR;
                     else
                     {
-                        printf ("ERROR: unstructured mesh %s type %s of for ctype%d is not correct\n", meshinfo->name, (char *)data, i);
+                        adios_error (err_mesh_unstructured_invalid_ctype,
+                                    "unstructured mesh %s type %s of for ctype%d is invalid. "
+                                    "we use line, triangle, quad, hex, prism, tet or tet for cell types. "
+                                    "please choose to use one of them. ", 
+                                    meshinfo->name, (char *)data, i);
+                        return NULL;
                         
                     }
                 }
