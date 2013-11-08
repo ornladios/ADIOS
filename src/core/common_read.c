@@ -2221,7 +2221,8 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
             else
             {
                 adios_error (err_mesh_unstructured_invalid_ncsets, 
-                            "Reading unstructured mesh %s ncsets failed\n", meshinfo->name);
+                            "Reading unstructured mesh %s ncsets failed\n", 
+                            meshinfo->name);
                 return NULL;
 
             }
@@ -2466,7 +2467,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
 //        if (meshinfo->unstructured->uniform_cell)        //uniform cells
         if (meshinfo->unstructured->ncsets == 1)
         {
-            meshinfo->unstructured->ctypes = (char **) malloc (sizeof(char *));
+            meshinfo->unstructured->ctypes = (enum ADIOS_CELL_TYPE *) malloc (sizeof(enum ADIOS_CELL_TYPE));
             char * type_cells = malloc (strlen("/adios_schema/")+strlen(meshinfo->name)+strlen("/ctype")+1 );
             strcpy (type_cells, "/adios_schema/");
             strcat (type_cells, meshinfo->name);
@@ -2483,21 +2484,34 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
             } 
             else
             {
-                if (!strcmp((char *)data, "line") || !strcmp((char *)data, "triangle") || !strcmp((char *)data, "quad") || !strcmp((char *)data, "hex")
-                        || !strcmp((char *)data, "prism") || !strcmp((char *)data, "tet") || !strcmp((char *)data, "pyr"))
-                    meshinfo->unstructured->ctypes[0] = strdup((char *)data);
+                if (!strcmp((char *)data, "line"))
+                    meshinfo->unstructured->ctypes[i] = ADIOS_CELL_LINE;
+                else if (!strcmp((char *)data, "triangle"))
+                    meshinfo->unstructured->ctypes[i] = ADIOS_CELL_TRI;
+                else if (!strcmp((char *)data, "quad"))
+                    meshinfo->unstructured->ctypes[i] = ADIOS_CELL_QUAD;
+                else if (!strcmp((char *)data, "hex"))
+                    meshinfo->unstructured->ctypes[i] = ADIOS_CELL_HEX;
+                else if (!strcmp((char *)data, "prism"))
+                    meshinfo->unstructured->ctypes[i] = ADIOS_CELL_PRI;
+                else if (!strcmp((char *)data, "tet"))
+                    meshinfo->unstructured->ctypes[i] = ADIOS_CELL_TET;
+                else if (!strcmp((char *)data, "pyr"))
+                    meshinfo->unstructured->ctypes[i] = ADIOS_CELL_PYR;
                 else
                 {
                     adios_error (err_mesh_unstructured_invalid_ctype,
-                                "unstructured mesh %s type %s of cells is invalid\n", 
-                                meshinfo->name, (char *)data);
-                    return NULL; 
+                                "unstructured mesh %s type %s of for ctype%d is invalid. " 
+                                "we use line, triangle, quad, hex, prism, tet or tet for cell types. "
+                                "please choose to use one of them. ",
+                                 meshinfo->name, (char *)data, i);
+                    return NULL;
                 }
             }
         }
         else
         {
-            meshinfo->unstructured->ctypes = (char **) malloc (sizeof(char *)*meshinfo->unstructured->ncsets);
+            meshinfo->unstructured->ctypes = (enum ADIOS_CELL_TYPE *) malloc (sizeof(enum ADIOS_CELL_TYPE)*meshinfo->unstructured->ncsets);
             int i = 0;
             for (i=0; i<meshinfo->unstructured->ncsets; i++)
             {
@@ -2531,13 +2545,26 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                 }
                 else
                 {
-                    if (!strcmp((char *)data, "line") || !strcmp((char *)data, "triangle") || !strcmp((char *)data, "quad") || !strcmp((char *)data, "hex")
-                            || !strcmp((char *)data, "prism") || !strcmp((char *)data, "tet") || !strcmp((char *)data, "pyr"))
-                        meshinfo->unstructured->ctypes[i] = strdup((char *)data);
+                    if (!strcmp((char *)data, "line"))
+                        meshinfo->unstructured->ctypes[i] = ADIOS_CELL_LINE;
+                    else if (!strcmp((char *)data, "triangle"))
+                        meshinfo->unstructured->ctypes[i] = ADIOS_CELL_TRI;
+                    else if (!strcmp((char *)data, "quad"))
+                        meshinfo->unstructured->ctypes[i] = ADIOS_CELL_QUAD;
+                    else if (!strcmp((char *)data, "hex"))
+                        meshinfo->unstructured->ctypes[i] = ADIOS_CELL_HEX;
+                    else if (!strcmp((char *)data, "prism")) 
+                        meshinfo->unstructured->ctypes[i] = ADIOS_CELL_PRI;
+                    else if (!strcmp((char *)data, "tet"))
+                        meshinfo->unstructured->ctypes[i] = ADIOS_CELL_TET;
+                    else if (!strcmp((char *)data, "pyr"))
+                        meshinfo->unstructured->ctypes[i] = ADIOS_CELL_PYR;
                     else
                     {
                         adios_error (err_mesh_unstructured_invalid_ctype,
-                                    "unstructured mesh %s type %s of for ctype%d is not correct\n", 
+                                    "unstructured mesh %s type %s of for ctype%d is invalid. "
+                                    "we use line, triangle, quad, hex, prism, tet or tet for cell types. "
+                                    "please choose to use one of them. ", 
                                     meshinfo->name, (char *)data, i);
                         return NULL;
                         
