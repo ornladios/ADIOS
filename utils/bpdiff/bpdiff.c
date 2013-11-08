@@ -33,7 +33,7 @@
 static enum ADIOS_READ_METHOD read_method = ADIOS_READ_METHOD_BP;
 //static enum ADIOS_READ_METHOD read_method = ADIOS_READ_METHOD_DATASPACES;
 
-double FUZZ_FACTOR = 0.000001;
+double FUZZ_FACTOR = 0.0;
 
 
 // Input arguments
@@ -62,32 +62,47 @@ char     ** group_namelist1; // name of ADIOS group
 char     ** group_namelist2;
 char       *readbuf1, *readbuf2; // read buffer
 double     fuzz_factor; //fuzz factor
+int        verbose = 0;
 
 
 int process_metadata();
 int diff();
+int compare_buffer(char * variable_name, void *data1, void *data2, int total, enum ADIOS_DATATYPES adiosvartype);
 int compare_data(char * variable_name, void *data1, void *data2, int item, enum ADIOS_DATATYPES adiosvartype);
 
 void printUsage(char *fname)
 {
-    print0("Usage: %s file1 file2 fuzz_factor\n"
+    print0("Usage: %s file1 file2 [-f fuzz_factor] [-v]\n"
            "    file1	Input file1 path\n"
            "    file2	Input file2 path\n"
-           "    fuzz factor The difference cutoff\n",
+           "    fuzz factor The difference cutoff for float/double\n",
            fname);
 }
 
 
 int processArgs(int argc, char ** argv)
 {
-    if (argc < 4) {
+    if (argc < 3) {
         printUsage(argv[0]);
         return 1;
     }
     strncpy(infilename1,     argv[1], sizeof(infilename1));
     strncpy(infilename2,    argv[2], sizeof(infilename2));
-    strncpy(fuzzfactor,    argv[3], sizeof(fuzzfactor));
-    fuzz_factor = atof(fuzzfactor);
+    //strncpy(fuzzfactor,    argv[3], sizeof(fuzzfactor));
+
+    int option = 0;
+    while ((option = getopt (argc, argv, "vf:")) != -1){
+      switch (option){
+        case 'v':
+          verbose = 1;
+          break;
+        case 'f': 
+          fuzz_factor = atof(optarg);
+          break;
+        case '?':
+          return 1;
+      }
+    }
 
     return 0;
 }
@@ -325,7 +340,11 @@ int diff(){
       int allret;
       MPI_Reduce(&ret, &allret, 1, MPI_INT, MPI_SUM, 0, comm);
       if(allret > 0){
-        print0("%s has different values in %s and %s, please see output files for details\n", f1->var_namelist[i], infilename1, infilename2);
+        if(!verbose){
+          print0("%s has different values in %s and %s\n", f1->var_namelist[i], infilename1, infilename2);
+        } else {
+          print0("%s has %d different values in %s and %s\n", f1->var_namelist[i], allret, infilename1, infilename2);
+        }
       } else {
         print0("%s is the same in %s and %s\n", f1->var_namelist[i], infilename1, infilename2);
       }
@@ -340,11 +359,20 @@ int diff(){
 
 }
 
+int compare_buffer(char * variable_name, void *data1, void *data2, int total, enum ADIOS_DATATYPES adiosvartype){
+  int i;
+  int total_diff = 0;
+  for(i=0; i<total; i++){
+    total_diff += compare_data(variable_name, data1, data2, i, adiosvartype);
+  }
+  return total_diff;
+}
+
 int compare_data(char * variable_name, void *data1, void *data2, int item, enum ADIOS_DATATYPES adiosvartype){
     int ret = 0;
     if (data1 == NULL || data2 == NULL) {
         print("null data");
-        return 0;
+        return ret;
     }
     
     
@@ -354,63 +382,63 @@ int compare_data(char * variable_name, void *data1, void *data2, int item, enum 
 	    if(((unsigned char *) data1)[item] !=  ((unsigned char *) data2)[item] )//not identical
 	    {
 		    print("%s : %hhu in %s | %hhu in %s\n", variable_name, ((unsigned char *) data1)[item], infilename1, ((unsigned char *) data2)[item], infilename2);
-        ret = 1;
+        ret++;
 	    }
             break;
         case adios_byte:
 	    if(((signed char *) data1)[item] != ((signed char *) data2)[item])//not identical
 	    {
 		print("%s : %hhd in %s | %hhd in %s\n", variable_name, ((signed char *) data1)[item], infilename1, ((signed char *) data2)[item], infilename2);
-        ret = 1;
+        ret++;
 	    }
             break;
         case adios_string:
 	    if(strcmp(((char *) data1), ((char *) data2))!= 0 )//not identical
 	    {
 		print("%s : %s in %s | %s in %s\n", variable_name, ((char *) data1)[item], infilename1, ((char *) data2)[item], infilename2);
-        ret = 1;
+        ret++;
 	    }
             break;
         case adios_unsigned_short:
 	    if(((unsigned short*) data1)[item] != ((unsigned short *) data2)[item])//not identical
 	    {
 		print("%s : %hu in %s | %hu in %s\n", variable_name, ((unsigned short *) data1)[item], infilename1, ((unsigned short *) data2)[item], infilename2);
-        ret = 1;
+        ret++;
 	    }
             break;
         case adios_short:
 	    if(((signed short*) data1)[item] != ((signed short *) data2)[item])//not identical
 	    {
 		print("%s : %hd in %s | %hd in %s\n", variable_name, ((signed short *) data1)[item], infilename1, ((signed short *) data2)[item], infilename2);
-        ret = 1;
+        ret++;
 	    }
             break;
         case adios_unsigned_integer:
 	    if(((unsigned int*) data1)[item] != ((unsigned int*) data2)[item])//not identical
 	    {
 		print("%s : %u in %s | %u in %s\n", variable_name, ((unsigned int*) data1)[item], infilename1, ((unsigned int*) data2)[item], infilename2);
-        ret = 1;
+        ret++;
 	    }
             break;
         case adios_integer:
 	    if(((signed int*) data1)[item] != ((signed int*) data2)[item] != 0 )//not identical
 	    {
 		print("%s : %d in %s | %d in %s\n", variable_name, ((signed int*) data1)[item], infilename1, ((signed int*) data2)[item], infilename2);
-        ret = 1;
+        ret++;
 	    }
             break;
         case adios_unsigned_long:
 	    if(((unsigned long long*) data1)[item] != ((unsigned long long*) data2)[item])//not identical
 	    {
 		print("%s : %llu in %s | %llu in %s\n", variable_name, ((unsigned long long*) data1)[item], infilename1, ((unsigned long long*) data2)[item], infilename2);
-        ret = 1;
+        ret++;
 	    }
             break;
         case adios_long:
 	    if(((unsigned long long*) data1)[item] != ((unsigned long long*) data2)[item])//not identical
 	    {
 		print("%s : %lld in %s | %lld in %s\n", variable_name, ((signed long long*) data1)[item], infilename1, ((signed long long*) data2)[item], infilename2);
-        ret = 1;
+        ret++;
 	    }
             break;
         case adios_real:
@@ -420,7 +448,7 @@ int compare_data(char * variable_name, void *data1, void *data2, int item, enum 
 	    b = ((float *) data2)[item];
 	    if(abs(a-b)> fuzz_factor){
  	      print("%s : %g in %s | %g in %s\n", variable_name, a, infilename1, b, infilename2);
-        ret = 1;
+        ret++;
 	    }
             break;
 	    }
@@ -431,7 +459,7 @@ int compare_data(char * variable_name, void *data1, void *data2, int item, enum 
 	    bb = ((double *) data2)[item];
 	    if(abs(aa-bb)> fuzz_factor){
  	      print("%s : %g in %s | %g in %s\n", variable_name, aa, infilename1, bb, infilename2);
-        ret = 1;
+        ret++;
 	    }
             break;
 	    }
@@ -448,7 +476,7 @@ int compare_data(char * variable_name, void *data1, void *data2, int item, enum 
 	    b12 = ((float *) data2)[2*item+1];
 	    if(abs(a11-b11)> fuzz_factor || abs(a12-b12)>fuzz_factor){
  	      print("%s : %g i%g in %s | %g i%g in %s\n", variable_name, a11, b11, infilename1, a12, b12, infilename2);
-        ret = 1;
+        ret++;
 	    }
 	 
             break;
@@ -462,7 +490,7 @@ int compare_data(char * variable_name, void *data1, void *data2, int item, enum 
 	    b22 = ((float *) data2)[2*item+1];
 	    if(abs(a21-b21)> fuzz_factor || abs(a22-b22)>fuzz_factor){
  	      print("%s : %g i%g in %s | %g i%g in %s\n", variable_name, a21, b21, infilename1, a22, b22, infilename2);
-        ret = 1;
+        ret++;
 	    }
             break;
  	    }
