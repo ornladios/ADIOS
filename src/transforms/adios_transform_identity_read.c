@@ -73,7 +73,7 @@ void compute_sieving_offsets_for_pg_selection(const ADIOS_SELECTION *intersect_s
 int adios_transform_identity_generate_read_subrequests(adios_transform_read_request *reqgroup,
                                                        adios_transform_pg_read_request *pg_reqgroup) {
 
-    int sieve_points = (reqgroup->read_param && strcmp(reqgroup->read_param, "sieve"));
+    int sieve_points = (reqgroup->read_param && strcmp(reqgroup->read_param, "sieve") == 0);
     int is_point_selection = (pg_reqgroup->pg_intersection_sel->type == ADIOS_SELECTION_POINTS);
 
     if (!is_point_selection || sieve_points) {
