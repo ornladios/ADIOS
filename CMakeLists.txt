@@ -683,7 +683,6 @@ endif()
 # Define if you have NSSI.
 set(HAVE_NSSI 0)
 
-
 # Define if you have the Pablo.
 set(HAVE_PABLO 0)
 

@@ -35,7 +35,7 @@
 #cmakedefine HAVE_CRAY_UGNI 1
 
 /* Define if you have the DATASPACES. */
-#define HAVE_DATASPACES ${HAVE_DATASPACES}
+#cmakedefine HAVE_DATASPACES ${HAVE_DATASPACES}
 
 /* Define to 1 if you have the <dataspaces.h> header file. */
 #define HAVE_DATASPACES_H ${HAVE_DATASPACES}
