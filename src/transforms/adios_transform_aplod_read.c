@@ -75,7 +75,6 @@ int adios_transform_aplod_generate_read_subrequests(adios_transform_read_request
 
     // Determine if we should sieve or not. Current heuristic: only if using 1 component (sieving is always better in this case)
     if (numComponentsToUse == 1 || maxSeekSize > MAX_SEEK_SIEVE_SIZE) {
-        printf("APLOD NOT SIEVING, COMPS = %d, MAXSEEK = %llu\n", numComponentsToUse, maxSeekSize);
         // Don't sieve: read only necessary segments
         buf = malloc(sieveElemCount * totalComponentsSize);
 
@@ -92,7 +91,6 @@ int adios_transform_aplod_generate_read_subrequests(adios_transform_read_request
             numByteColsDone += aplodmeta.components[i];
         }
     } else {
-        printf("APLOD SIEVING, COMPS = %d, MAXSEEK = %llu\n", numComponentsToUse, maxSeekSize);
         // Sieve: read the whole PG
         start_off = 0;
         end_off = totalElementsInPG;
