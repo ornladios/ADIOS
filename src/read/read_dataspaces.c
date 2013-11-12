@@ -34,6 +34,8 @@
 
 #define MYFREE(p) {free(p); p=NULL;}
 
+void adios_read_dataspaces_release_step (ADIOS_FILE *fp);
+
 /*
 #include <time.h> // nanosleep
 static void adios_nanosleep (int sec, int nanosec) 
