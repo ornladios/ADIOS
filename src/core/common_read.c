@@ -983,6 +983,7 @@ int adios_get_uniform_mesh_attr (ADIOS_FILE * fp, ADIOS_MESH *meshinfo, char * a
     strcat (attribute, "/");
     strcat (attribute, attrs);
     strcat (attribute, "-num");
+//    printf("attribute is %s\n", attribute);
     data = NULL;
     read_fail = common_read_get_attr_mesh (fp, attribute, &attr_type, &attr_size, &data);
     free (attribute);
@@ -1010,7 +1011,7 @@ int adios_get_uniform_mesh_attr (ADIOS_FILE * fp, ADIOS_MESH *meshinfo, char * a
                     printf("ERROR: mesh %s number of maximums %d is less than the number of dimensions %d!\n", 
                             meshinfo->name, num_attr, meshinfo->uniform->num_dimensions);
                     meshinfo->uniform = NULL;
-                    return 0; 
+                    return -1; 
                 }
                 else if (num_attr > meshinfo->uniform->num_dimensions)
                 {
@@ -1024,21 +1025,24 @@ int adios_get_uniform_mesh_attr (ADIOS_FILE * fp, ADIOS_MESH *meshinfo, char * a
         {
             meshinfo->uniform->origins = (double *) malloc (sizeof(double)*num_attr);
             for (i = 0; i < num_attr; i++ )
-                meshinfo->uniform->origins[i] = 0;
+                meshinfo->uniform->origins[i] = 0.0;
         }
         else if (!strcmp (attrs, "spacings"))
         {
             have_spacing = 1;
             meshinfo->uniform->spacings = (double *) malloc (sizeof(double)*num_attr);
             for (i = 0; i < num_attr; i++ )
-                meshinfo->uniform->spacings[i] = 1;
+            {
+                meshinfo->uniform->spacings[i] = 1.0;
+//                printf("meshinfo->uniform->spacings[%d] = %lf\n", i, meshinfo->uniform->spacings[i]);
+            }
         }
         else if (!strcmp (attrs, "maximums"))
         {
             have_max = 1;
             meshinfo->uniform->maximums = (double *) malloc (sizeof(double)*num_attr);
             for (i = 0; i < num_attr; i++ )
-                meshinfo->uniform->maximums[i] = 0;
+                meshinfo->uniform->maximums[i] = 0.0;
         }
 
         for (i = 0; i < num_attr; i++ )
@@ -1055,7 +1059,7 @@ int adios_get_uniform_mesh_attr (ADIOS_FILE * fp, ADIOS_MESH *meshinfo, char * a
             }
             i_digits = sprintf (i_buffer, "%d", i);
             //i_digits to reprent the number in dimensions0/dimensions1/... 
-            char * value = malloc (strlen("/adios_schema/")+strlen(meshinfo->name)+strlen("/")+strlen(attrs)-strlen("_num")+i_digits+1 );
+            char * value = malloc (strlen("/adios_schema/")+strlen(meshinfo->name)+strlen("/")+strlen(attrs)-strlen("-num")+i_digits+1 );
             strcpy (value, "/adios_schema/");
             strcat (value, meshinfo->name);
             strcat (value, "/");
@@ -1085,7 +1089,7 @@ int adios_get_uniform_mesh_attr (ADIOS_FILE * fp, ADIOS_MESH *meshinfo, char * a
                 double d1;
                 char * tmp_dimensions_value = strdup((char *)data);
                 d1 = strtod (tmp_dimensions_value, &pEnd);
-                if (d1)
+                if (d1 != 0.0)
                 {
                     if (!strcmp (attrs, "origins"))
                         meshinfo->uniform->origins[i] = d1;                           //
@@ -1109,16 +1113,61 @@ int adios_get_uniform_mesh_attr (ADIOS_FILE * fp, ADIOS_MESH *meshinfo, char * a
                             ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[j]);
                             if (!strcmp (attrs, "origins"))
                             {
-                                meshinfo->uniform->origins[i] = *(double *)v->value;                        //
-//                                printf ("meshinfo->uniform->origins[%d] = %lf\n",i, meshinfo->uniform->origins[i]);
-//                                printf ("var name is %s\n", fp->var_namelist[j]);
+                                if (v->type == adios_real)    //adios_real
+                                    meshinfo->uniform->origins[i] = *(float *)v->value;                        //
+                                else if (v->type == adios_double)    //adios_double
+                                    meshinfo->uniform->origins[i] = *(double *)v->value;
+                                else if (v->type == adios_integer || v->type == adios_unsigned_integer)  // adios_integer or adios_unsigned_integer
+                                    meshinfo->uniform->origins[i] = *(int *)v->value;
+                                else if (v->type == adios_long || v->type == adios_unsigned_long)  // adios_long or adios_unsigned_long
+                                    meshinfo->uniform->origins[i] = *(long int *)v->value;
+                                else if (v->type == adios_short || v->type == adios_unsigned_short)  // adios_short or adios_unsigned_short
+                                    meshinfo->uniform->origins[i] = *(short int *)v->value;
+                                else
+                                {
+                                    meshinfo->uniform = NULL;
+                                    printf("ERROR: uniform mesh %s originss support (unsigned) short int, (unsigned) int, (unsigned) long int, float and double\n");
+                                    return -1;
+                                }
                             }
                             else if (!strcmp (attrs, "maximums"))
-                                meshinfo->uniform->maximums[i] = *(double *)v->value;
+                            {
+                                if (v->type == adios_real)    //adios_real
+                                    meshinfo->uniform->maximums[i] = *(float *)v->value;
+                                else if (v->type == adios_double)    //adios_double
+                                    meshinfo->uniform->maximums[i] = *(double *)v->value;
+                                else if (v->type == adios_integer || v->type == adios_unsigned_integer)  // adios_integer or adios_unsigned_integer
+                                    meshinfo->uniform->maximums[i] = *(int *)v->value;
+                                else if (v->type == adios_long || v->type == adios_unsigned_long)  // adios_long or adios_unsigned_long
+                                    meshinfo->uniform->maximums[i] = *(long int *)v->value;
+                                else if (v->type == adios_short || v->type == adios_unsigned_short)  // adios_short or adios_unsigned_short
+                                    meshinfo->uniform->maximums[i] = *(short int *)v->value;
+                                else
+                                {
+                                    meshinfo->uniform = NULL;
+                                    printf("ERROR: uniform mesh %s maximums support (unsigned) short int, (unsigned) int, (unsigned) long int, float and double\n");
+                                    return -1;
+                                }
+                            }
                             else if (!strcmp (attrs, "spacings"))
                             {
-                                meshinfo->uniform->spacings[i] = *(double *)v->value;
-                                printf ("meshinfo->uniform->spacings[%d] = %lf\n",i, meshinfo->uniform->spacings[i]);
+                                if (v->type == adios_real)    //adios_real
+                                    meshinfo->uniform->spacings[i] = *(float *)v->value;
+                                else if (v->type == adios_double)    //adios_double
+                                    meshinfo->uniform->spacings[i] = *(double *)v->value;
+                                else if (v->type == adios_integer || v->type == adios_unsigned_integer)  // adios_integer or adios_unsigned_integer
+                                    meshinfo->uniform->spacings[i] = *(int *)v->value;
+                                else if (v->type == adios_long || v->type == adios_unsigned_long)  // adios_long or adios_unsigned_long
+                                    meshinfo->uniform->spacings[i] = *(long int *)v->value;
+                                else if (v->type == adios_short || v->type == adios_unsigned_short)  // adios_short or adios_unsigned_short
+                                    meshinfo->uniform->spacings[i] = *(short int *)v->value;
+                                else 
+                                {
+                                    meshinfo->uniform = NULL;
+                                    printf("ERROR: uniform mesh %s spacings support (unsigned) short int, (unsigned) int, (unsigned) long int, float and double\n");
+                                    return -1;
+                                }
+//                                printf ("meshinfo->uniform->spacings[%d] = %lf\n",i, meshinfo->uniform->spacings[i]);
                             }
                             common_read_free_varinfo (v);
                         }
@@ -1140,6 +1189,32 @@ int adios_get_uniform_mesh_attr (ADIOS_FILE * fp, ADIOS_MESH *meshinfo, char * a
                 }
             }
         }
+    }
+    else                //not found attributes maximums/spacings/origins
+    {
+        if (!strcmp (attrs,"origins"))
+        {
+            meshinfo->uniform->origins = (double *) malloc (sizeof(double)*meshinfo->uniform->num_dimensions);
+            for (i = 0; i < meshinfo->uniform->num_dimensions; i++ )
+                meshinfo->uniform->origins[i] = 0.0;
+            printf("WARNING: uniform mesh %s does not provide origin info. We use default value 0\n", meshinfo->name);
+        }
+        else if (!strcmp (attrs, "spacings"))
+        {
+            have_spacing = 1;
+            meshinfo->uniform->spacings = (double *) malloc (sizeof(double)*meshinfo->uniform->num_dimensions);
+            for (i = 0; i < meshinfo->uniform->num_dimensions; i++ )
+                meshinfo->uniform->spacings[i] = 1.0;
+            printf("WARNING: uniform mesh %s does not provide spacing info. We use default value 1\n", meshinfo->name);
+        }
+        else if (!strcmp (attrs, "maximums"))
+        {
+//            meshinfo->uniform->maximums = (double *) malloc (sizeof(double)*meshinfo->uniform->num_dimensions);
+//            for (i = 0; i < meshinfo->uniform->num_dimensions; i++ )
+//                meshinfo->uniform->maximums[i] = 0;
+            printf("WARNING: uniform mesh %s does not provide maximum info.\n", meshinfo->name);
+        }
+
     }
 
     if (have_max || have_spacing)
@@ -1287,18 +1362,20 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
 
         //start processing origins, origin is optional
         adios_get_uniform_mesh_attr (fp, meshinfo, "origins");
-        for (i = 0; i < meshinfo->uniform->num_dimensions; i++ )
-            printf ("origins[%d] is %lf\n", i, meshinfo->uniform->origins[i]);
+//        for (i = 0; i < meshinfo->uniform->num_dimensions; i++ )
+//            printf ("origins[%d] is %lf\n", i, meshinfo->uniform->origins[i]);
 
         //start processing maximums, maximum is optional 
-        int have_maximums = adios_get_uniform_mesh_attr (fp, meshinfo, "maximums");
+        int have_maximums;
+        have_maximums = adios_get_uniform_mesh_attr (fp, meshinfo, "maximums");
 //        for (int i = 0; i < meshinfo->uniform->num_dimensions; i++ )
 //            printf ("maximums[%d] is %lf\n", i, meshinfo->uniform->maximums[i]);
 
         //start processing spacings, spacing is optional 
-        int have_spacings = adios_get_uniform_mesh_attr (fp, meshinfo, "spacings");
-        for (i = 0; i < meshinfo->uniform->num_dimensions; i++ )
-            printf ("spacings[%d] is %lf\n", i, meshinfo->uniform->spacings[i]);
+        int have_spacings;
+        have_spacings = adios_get_uniform_mesh_attr (fp, meshinfo, "spacings");
+//        for (i = 0; i < meshinfo->uniform->num_dimensions; i++ )
+//            printf ("spacings[%d] is %lf\n", i, meshinfo->uniform->spacings[i]);
 
         //if mesh spacing and maximum are both defined, check if consistant
         if (have_spacings == 1 && have_maximums == 1)
@@ -2106,7 +2183,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                     {
                         var_march = 1;
                         ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[j]);
-                        if (v->type==4 || v->type==54) //long long or unsigned long long   
+                        if (v->type==adios_long || v->type==adios_unsigned_long) //long long or unsigned long long   
                         {
                             if (meshinfo->unstructured->npoints != *(uint64_t *)v->value)
                                 printf ("WARNING: provided npoints %"PRIu64" does not match points calculated from points-var %"PRIu64"\n", 
@@ -2268,7 +2345,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                         {
                             var_march = 1;
                             ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[j]);
-                            if (v->type == 54 || v->type == 4)
+                            if (v->type == adios_unsigned_long || v->type == adios_long)
                                     meshinfo->unstructured->ccounts[0] = *(uint64_t *)v->value;
                                 else
                                     meshinfo->unstructured->ccounts[0] = *(int *)v->value;
@@ -2339,7 +2416,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                             {
                                 var_march = 1;
                                 ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[j]);
-                                if (v->type == 54 || v->type == 4)
+                                if (v->type == adios_long || v->type == adios_unsigned_long)
                                     meshinfo->unstructured->ccounts[i] = *(uint64_t *)v->value;
                                 else
                                     meshinfo->unstructured->ccounts[i] = *(int *)v->value;
