@@ -7,9 +7,12 @@ install(PROGRAMS bin/skel bin/set_method.sh bin/skel_extract.py bin/skel_cat.py 
 
 install(FILES lib/adios.py 
 	lib/argparse.py 
+    lib/skel_bpls.py
+    lib/skel_bpy.py
 	lib/skel_install.py 
-	lib/skel_makefile.py 
-	lib/skel_params.py 
+	lib/skel_makefile.py
+	lib/skel_params.py
+    lib/skel_replay.py
 	lib/skel_settings.py 
 	lib/skel_source.py 
 	lib/skel_submit.py 
@@ -23,6 +26,12 @@ install(FILES lib/adios.py
 install(FILES etc/templates/Makefile.default.tpl
 	etc/templates/submit_sith.tpl
 	etc/templates/submit_jaguar.tpl
+    etc/templates/Makefile.tmpl
+    etc/templates/source_write_c.tmpl
+    etc/templates/source_write_fortran.tmpl
+    etc/templates/xml.tmpl
+    etc/templates/replay_bp.tmpl
+    etc/templates/replay_yaml.tmpl
 	DESTINATION ${prefix}/etc/skel/templates)
 
 

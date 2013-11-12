@@ -18,7 +18,7 @@ if(HAVE_NETCDF)
 endif(HAVE_NETCDF)
 
 add_subdirectory(skel)
-
+add_subdirectory(skeldump)
 
 #find_library(ADIOS_INTERNAL_NOMPI_LIB adios_internal_nompi ${PROJECT_BINARY_DIR}/src)
 #if(${ADIOS_INTERNAL_NOMPI_LIB}-NOTFOUND)
