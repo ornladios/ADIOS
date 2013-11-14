@@ -1417,19 +1417,26 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
         }
 
         //start processing origins, origin is optional
-        adios_get_uniform_mesh_attr (fp, meshinfo, "origins");
+        int have_origins;
+        have_origins = adios_get_uniform_mesh_attr (fp, meshinfo, "origins");
+        if (have_origins == -1)
+            return NULL;
 //        for (i = 0; i < meshinfo->uniform->num_dimensions; i++ )
 //            printf ("origins[%d] is %lf\n", i, meshinfo->uniform->origins[i]);
 
         //start processing maximums, maximum is optional 
         int have_maximums;
         have_maximums = adios_get_uniform_mesh_attr (fp, meshinfo, "maximums");
+        if (have_maximums == -1)
+            return NULL;
 //        for (int i = 0; i < meshinfo->uniform->num_dimensions; i++ )
 //            printf ("maximums[%d] is %lf\n", i, meshinfo->uniform->maximums[i]);
 
         //start processing spacings, spacing is optional 
         int have_spacings;
         have_spacings = adios_get_uniform_mesh_attr (fp, meshinfo, "spacings");
+        if (have_spacings == 1)
+            return NULL;
 //        for (i = 0; i < meshinfo->uniform->num_dimensions; i++ )
 //            printf ("spacings[%d] is %lf\n", i, meshinfo->uniform->spacings[i]);
 
