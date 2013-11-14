@@ -2064,7 +2064,7 @@ include_HEADERS = public/adios.h public/adios_types.h \
 	public/adios_read.h public/adios_error.h public/adios_mpi.h \
 	public/mpidummy.h public/adios_read_v1.h \
 	public/adios_read_v1_defs.h public/adios_read_v2.h \
-	public/adios_selection.h
+	public/adios_selection.h public/adios_schema.h
 nodist_include_HEADERS = $(am__append_33) $(am__append_51)
 lib_LIBRARIES = $(am__append_2) $(am__append_4) libadiosread.a \
 	$(am__append_42) libadiosread_nompi.a $(am__append_60)

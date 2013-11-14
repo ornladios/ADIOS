@@ -90,8 +90,8 @@ AM_RECURSIVE_TARGETS = $(RECURSIVE_TARGETS:-recursive=) \
 	distdir
 ETAGS = etags
 CTAGS = ctags
-DIST_SUBDIRS = gpp bpdump bp2ascii bpsplit bpls skeldump adios_lint \
-	bp2bp bp2h5 bp2ncd skel
+DIST_SUBDIRS = gpp bpdump bp2ascii bpsplit bpls bpdiff skeldump \
+	adios_lint bp2bp bp2h5 bp2ncd skel
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 am__relativize = \
   dir0=`pwd`; \
@@ -356,8 +356,8 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = gpp bpdump bp2ascii bpsplit bpls skeldump $(am__append_1) \
-	$(am__append_2) $(am__append_3) skel
+SUBDIRS = gpp bpdump bp2ascii bpsplit bpls bpdiff skeldump \
+	$(am__append_1) $(am__append_2) $(am__append_3) skel
 all: all-recursive
 
 .SUFFIXES:
