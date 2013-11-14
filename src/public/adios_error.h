@@ -92,17 +92,55 @@ enum ADIOS_ERRCODES {
     err_invalid_argument                = -140,
 
     // Mesh reading errors
-    err_mesh_unstructured_missing_ncsets = -160, // ncsets was not defined 
-    err_mesh_unstructured_invalid_ncsets = -161, // could not read the ncsets value
-    err_mesh_unstructured_missing_ccount = -162, // ccount was not defined
-    err_mesh_unstructured_invalid_ccount = -163, // could not read the ccount value
-    err_mesh_unstructured_invalid_ctypes = -164, // # of cell types invalid
-    err_mesh_unstructured_missing_cdata  = -165, // cdata was not defined
-    err_mesh_unstructured_invalid_cdata  = -166, // could not read the cdata value 
-    err_mesh_unstructured_missing_ctype  = -167, // ctype was not defined
-    err_mesh_unstructured_invalid_ctype  = -168, // coule not read ctype value
+    err_no_matching_mesh_var                  = -147, // no mesh is associated to var
+    err_mesh_missing                          = -148, // mesh is missing in meshlist
+    err_mesh_name_attr_missing                = -149, // mesh attr is missing
+    err_mesh_unstructured_invaid_points       = -150, // points were invalid
+    err_mesh_unstructured_invaid_num_points   = -151, // number of points is invalid
+    err_mesh_unstructured_invaid_dim_points   = -152, // dim of points is invalid
+    err_mesh_unstructured_missing_one_points  = -153, // one of the points is not defined
+    err_mesh_unstructured_missing_points      = -154, // points are not defined
+    err_mesh_unstructured_missing_ncsets      = -155, // ncsets was not defined 
+    err_mesh_unstructured_invalid_ncsets      = -156, // could not read the ncsets value
+    err_mesh_unstructured_missing_ccount      = -157, // ccount was not defined
+    err_mesh_unstructured_invalid_ccount      = -158, // could not read the ccount value
+    err_mesh_unstructured_invalid_ctypes      = -159, // # of cell types invalid
+    err_mesh_unstructured_missing_cdata       = -160, // cdata was not defined
+    err_mesh_unstructured_invalid_cdata       = -161, // could not read the cdata value 
+    err_mesh_unstructured_missing_ctype       = -162, // ctype was not defined
+    err_mesh_unstructured_invalid_ctype       = -163, // coule not read ctype value
+    err_mesh_unstructured_centering_missing   = -164, // var centering of mesh is missing
+    err_mesh_unstructured_centering_invalid   = -165, // var centering of mesh is invalid
 
-    err_unspecified                     = -200
+    err_mesh_unifrom_invalid_num_dims         = -170, // # dimensions was invalid
+    err_mesh_unifrom_invalid_num_max          = -171, // # of maximums was less than ndims
+    err_mesh_unifrom_missing_maximum          = -172, // maximums was not defined
+    err_mesh_unifrom_invalid_var_type         = -173, // var type is not supported for processing
+    err_mesh_unifrom_missing_one_dim          = -174, // one of the dimensions is not defined 
+    err_mesh_unifrom_invalid_dim              = -175, // could not read the dim value
+    err_mesh_unifrom_missing_dims             = -176, // dimensions are not defined 
+    err_mesh_unifrom_max_conflict             = -177, // maximum is not consistant
+
+    err_mesh_recti_invalid_num_dims           = -180, // # dimensions was invalid
+    err_mesh_recti_missing_dims               = -181, // dimensions are not defined
+    err_mesh_recti_missing_one_dim            = -182, // one of the dimensions is not defined
+    err_mesh_recti_invalid_dim                = -183, // could not read the dim value
+    err_mesh_recti_invalid_coords             = -184, // coordinates were invalid
+    err_mesh_recti_invalid_num_coords         = -185, // # coordinates was invalid
+    err_mesh_recti_missing_one_coords         = -186, // one of the coordinates is not defined
+    err_mesh_recti_missing_coords             = -187, // coordinates are not defined
+
+    err_mesh_structured_invalid_num_dims      = -190, // # dimensions was invalid
+    err_mesh_structured_missing_dims          = -191, // dimensions are not defined
+    err_mesh_structured_missing_one_dim       = -192, // one of the dimensions is not defined
+    err_mesh_structured_invalid_dim           = -193, // could not read the dim value
+    err_mesh_structured_invaid_dim_points     = -194, // # of points were invalid
+    err_mesh_structured_invaid_points         = -195, // points were invalid
+    err_mesh_structured_missing_one_points    = -196, // one of the points is not defined
+    err_mesh_structured_missing_points        = -197, // points are not defined
+    err_mesh_structured_invalid_num_points    = -198, // number of points is invalid
+
+    err_unspecified                           = -200
 };
 
 void adios_error (enum ADIOS_ERRCODES errcode, char *fmt, ...);
