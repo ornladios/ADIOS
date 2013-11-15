@@ -3,6 +3,7 @@ add_subdirectory(bpdump)
 add_subdirectory(bp2ascii)
 add_subdirectory(bpsplit)
 add_subdirectory(bpls)
+add_subdirectory(bpdiff)
 
 if(BUILD_WRITE)
   add_subdirectory(adios_lint)
