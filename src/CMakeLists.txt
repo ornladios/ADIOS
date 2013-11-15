@@ -1,6 +1,6 @@
+include_directories(${PROJECT_BINARY_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/src/core ${PROJECT_SOURCE_DIR}/src/core/transforms)
 include_directories(${PROJECT_BINARY_DIR}/src)
-include_directories(${PROJECT_BINARY_DIR})
 link_directories(${PROJECT_BINARY_DIR}/src)
 
 if(HAVE_NSSI)
