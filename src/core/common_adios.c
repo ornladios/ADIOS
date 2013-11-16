@@ -47,7 +47,7 @@ extern int adios_errno;
 ///////////////////////////////////////////////////////////////////////////////
 int common_adios_init (const char * config, MPI_Comm comm)
 {
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
     timer_init ();
 #endif
     // parse the config file
@@ -60,7 +60,7 @@ int common_adios_init (const char * config, MPI_Comm comm)
 // all XML file pieces will be provided by another series of calls
 int common_adios_init_noxml (MPI_Comm comm)
 {
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
     timer_init ();
 #endif
     adios_errno = err_no_error;
@@ -87,7 +87,7 @@ int common_adios_finalize (int mype)
 
     adios_cleanup ();
 
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
     {
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
@@ -132,7 +132,7 @@ int common_adios_open (int64_t * fd, const char * group_name
                 ,const char * name, const char * file_mode, MPI_Comm comm
                )
 {
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
     timer_start ("adios_open_to_close");
     timer_start ("adios_open");
 #endif
@@ -241,7 +241,7 @@ int common_adios_open (int64_t * fd, const char * group_name
 
     *fd = (int64_t) fd_p;
 
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
     timer_stop ("adios_open");
 #endif
     return adios_errno;
@@ -255,7 +255,7 @@ int common_adios_group_size (int64_t fd_p
                      ,uint64_t * total_size
                      )
 {
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
     timer_start ("adios_group_size");
 #endif
     adios_errno = err_no_error;
@@ -273,7 +273,7 @@ int common_adios_group_size (int64_t fd_p
         fd->write_size_bytes = 0;
         fd->buffer = 0;
         *total_size = 0;
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
     timer_stop ("adios_group_size");
 #endif
         return err_no_error;
@@ -434,7 +434,7 @@ int common_adios_group_size (int64_t fd_p
         }
     }
 
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
     timer_stop ("adios_group_size");
 #endif
     // each var will be added to the buffer by the adios_write calls
@@ -604,7 +604,7 @@ static int common_adios_write_transform_helper(struct adios_file_struct * fd, st
  */
 int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct * v, void * var)
 {
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
     timer_start ("adios_write");
 #endif
     adios_errno = err_no_error;
@@ -633,7 +633,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
     // Else, do a transform
     else
     {
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
     timer_start ("adios_transform");
 #endif
         int success = common_adios_write_transform_helper(fd, v);
@@ -644,7 +644,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
             log_error("Error: unable to apply transform %s to variable %s; likely ran out of memory, check previous error messages\n", adios_transform_plugin_primary_xml_alias(v->transform_type), v->name);
             // FIXME: Reverse the transform metadata and write raw data as usual
         }
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
     timer_stop ("adios_transform");
 #endif
     }
@@ -679,7 +679,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
     }
 
     v->write_count++;
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
     timer_stop ("adios_write");
 #endif
     // printf ("var: %s written %d\n", v->name, v->write_count);
@@ -976,7 +976,7 @@ int common_adios_stop_calculation ()
 ///////////////////////////////////////////////////////////////////////////////
 int common_adios_close (int64_t fd_p)
 {
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
     timer_start ("adios_close");
 #endif
     adios_errno = err_no_error;
@@ -992,7 +992,7 @@ int common_adios_close (int64_t fd_p)
     if (m && m->next == NULL && m->method->m == ADIOS_METHOD_NULL)
     {
         // nothing to do so just return
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
+#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
     timer_stop ("adios_close");
     timer_stop ("adios_open_to_close");
 #endif
