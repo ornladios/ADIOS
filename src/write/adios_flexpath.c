@@ -1116,7 +1116,6 @@ process_open_msg(FlexpathWriteFileData *fileData, op_msg *open)
 {
     fileData->bridges[open->process_id].step = open->step;
     fileData->bridges[open->process_id].condition = open->condition;
-
     if(!fileData->bridges[open->process_id].created){
 	fileData->bridges[open->process_id].created = 1;
 	fileData->bridges[open->process_id].myNum = 
