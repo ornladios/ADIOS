@@ -19,8 +19,23 @@
 /* Define to 1 if your Fortran compiler doesn't accept -c and -o together. */
 #cmakedefine FC_NO_MINUS_C_MINUS_O 1
 
+/* Define if you have ALACRITY. */
+#cmakedefine HAVE_ALACRITY 1
+
+/* Define if you have APLOD. */
+#cmakedefine HAVE_APLOD 1
+
+/* Define to 1 if you have the <aplod.h> header file. */
+#cmakedefine HAVE_APLOD_H 1
+
 /* Define to 1 if you have the <Attributes.h> header file. */
 #cmakedefine HAVE_ATTRIBUTES_H 1
+
+/* Define if you have BZIP2. */
+#cmakedefine HAVE_BZIP2 1
+
+/* Define to 1 if you have the <bzlib.h> header file. */
+#cmakedefine HAVE_BZLIB_H 1
 
 /* Define to 1 if you have the `clock_gettime' function. */
 #cmakedefine HAVE_CLOCK_GETTIME 1
@@ -41,10 +56,10 @@
 #define HAVE_DATASPACES_H ${HAVE_DATASPACES}
 
 /* Define if you have the DCMF. */
-#undef HAVE_DCMF
+#cmakedefine HAVE_DCMF
 
 /* Define to 1 if you have the <dcmf.h> header file. */
-#undef HAVE_DCMF_H
+#cmakedefine HAVE_DCMF_H
 
 /* Define if you have the DIMES. */
 #define HAVE_DIMES ${HAVE_DIMES}
@@ -87,6 +102,12 @@
 /* Define to 1 if you have the <inttypes.h> header file. */
 #cmakedefine HAVE_INTTYPES_H 1
 
+/* Define if you have ISOBAR. */
+#cmakedefine HAVE_ISOBAR 1
+
+/* Define to 1 if you have the <isobar.h> header file. */
+#cmakedefine HAVE_ISOBAR_H 1
+
 /* Define to 1 if you have the `rt' library (-lrt). */
 #cmakedefine HAVE_LIBRT 1
 
@@ -110,6 +131,9 @@
 
 /* Define to 1 if you have the <netcdf.h> header file. */
 #cmakedefine HAVE_NC4PAR_H 1
+
+/* Define if you have libtimer */
+#cmakedefine HAVE_NCSU_TIMER
 
 /* Define if you have NC4PAR. */
 #cmakedefine HAVE_NC4PAR 1
@@ -212,12 +236,23 @@
 /* Define to 1 if you have the <sys/types.h> header file. */
 #cmakedefine HAVE_SYS_TYPES_H 1
 
+/* Define if you have ZLIB. */
+#cmakedefine HAVE_ZLIB 1
+
+/* Define to 1 if you have the <zlib.h> header file. */
+#cmakedefine HAVE_ZLIB_H 1
+
+/* Define if you have SZIP. */
+#cmakedefine HAVE_SZIP 1
+
+/* Define to 1 if you have the <szlib.h> header file. */
+#cmakedefine HAVE_SZLIB_H 1
+
 /* Define to 1 if you have the <unistd.h> header file. */
 #cmakedefine HAVE_UNISTD_H 1
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
-#undef LT_OBJDIR
+/* Define to the sub-directory in which libtool stores uninstalled libraries. */
+#cmakedefine LT_OBJDIR 1
 
 /* Datatap is disabled */
 #cmakedefine NO_DATATAP 1

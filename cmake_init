@@ -36,6 +36,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     export SEQ_HDF5_LIBS="-lhdf5_hl -lhdf5 -lsz -lz -lm -L/sw/sith/hdf5/1.8.10/rhel6_pgi12.8/lib -L/sw/sith/szip/2.1/rhel6_pgi12.8/lib"
     module unload hdf5
     module load szip
+    module load bzip2
     module load hdf5/1.8.10_par
     export PAR_HDF5_DIR=$HDF5_DIR
     export PAR_HDF5_LIBS="-lhdf5_hl -lhdf5 -lsz -lz -lm -L/sw/sith/hdf5/1.8.10/rhel6_pgi13.4_ompi1.6.3/lib -L/sw/sith/szip/2.1/rhel6_pgi13.4/lib"
@@ -60,6 +61,10 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     export CXX=mpiCC
     export FC=mpif90
     export INSTALL_PREFIX="/ccs/home/jya/ADIOS/sith.$TARGET"
+    export APLOD_DIR="/ccs/proj/e2e/ncsu/sith.gnu"
+    export ISOBAR_DIR="/ccs/proj/e2e/ncsu/sith.gnu"
+    export ALACRITY_DIR
+    export NCSU_TIMER_DIR
     if [ "$TARGET" == "pgi" ]; then
 #        export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith/$TARGET"
         export FLEXPATH_DIR="/ccs/proj/e2e/chaos/sith/$TARGET"
