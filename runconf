@@ -82,7 +82,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
     export CFLAGS="-g -fPIC" 
-    $SRCDIR/configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/sith.$TARGET \
+    $SRCDIR/configure --prefix=/ccs/proj/e2e/qliu/ADIOS/sith.$TARGET \
         --enable-dependency-tracking \
         --enable-research-transports \
         --with-lustre=/usr/lib64 \
@@ -94,14 +94,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         --with-netcdf=${SEQ_NC_DIR} \
         --with-netcdf-libs="${SEQ_NC_CLIB}" \
         --with-nc4par=${PAR_NC_DIR} \
-        --with-nc4par-libs="${PAR_NC_CLIB}" \
-        --with-zlib=/lib64 \
-        --with-szip=$SZIP_DIR \
-        --with-bzip2=$BZIP2_DIR \
-        $WITHDART \
-        $WITHFLEX \
-        --with-aplod=/ccs/proj/e2e/ncsu/sith.gnu \
-        --with-isobar=/ccs/proj/e2e/ncsu/sith.gnu
+        --with-nc4par-libs="${PAR_NC_CLIB}"
         #--with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.sith.$TARGET 
         #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
         #--enable-shared --disable-static
@@ -251,48 +244,15 @@ elif [ `hostname | cut -c 1-4` == "lens" ]; then
         --without-datatap
         #--with-mxml=/ccs/proj/e2e/pnorbert/mxml \
 
-elif [ `hostname | cut -c 1-3` == "eos" ]; then
-    ################
-    #     EOS      #
-    ################
-    TARGET=intel
-    echo "Configure on EOS (XC30) for $TARGET env."
-    export CC=cc
-    #export CFLAGS="-Wall -g" 
-    export FC=ftn
-    export CXX=CC
-    source /opt/modules/default/etc/modules.sh
-    module unload szip
-    module unload hdf5
-    module unload netcdf
-    module unload netcdf-hdf5parallel
-    module unload hdf5-parallel
-    module unload mxml
-    module unload PrgEnv-gnu
-    module unload PrgEnv-pgi
-    module unload PrgEnv-intel
-    module unload PrgEnv-cray
-    #module unload papi
-    module load PrgEnv-$TARGET
-    #module load szip
-    #module load xt-papi
-    module load mxml
-    # use the two lines below for openmpi
-    #export CC=mpicc
-    #export FC=mpif90
-    CFLAGS="-g -fPIC -O0" ${SRCDIR}/configure \
-            --prefix=/ccs/proj/e2e/qliu/ADIOS/test.$TARGET \
-            --enable-dependency-tracking
-
 elif [ `hostname | cut -c 1-5` == "titan" ]; then
 
-    BUILD_STAGING=true
+    BUILD_STAGING=false
     if [ $BUILD_STAGING == "false" ]; then
     
         ################
         # Titan #
         ################
-        TARGET=intel
+        TARGET=pgi
         echo "Configure on TITAN (XK7) for $TARGET env."
         export CC=cc
         #export CFLAGS="-Wall -g" 
@@ -311,8 +271,8 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         module unload PrgEnv-cray
         #module unload papi
         module load PrgEnv-$TARGET
-        module unload intel
-        module load intel/13.1.3.192
+        #module unload intel
+        #module load intel/13.1.3.192
         module swap xtpe-interlagos xtpe-istanbul
         #module load szip
         #module load xt-papi

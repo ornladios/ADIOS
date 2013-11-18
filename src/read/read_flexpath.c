@@ -47,7 +47,7 @@
 #include "dmalloc.h"
 #endif
 
-#define FP_BATCH_SIZE 4
+#define FP_BATCH_SIZE 32
 
 /*
  * Contains start & counts for each dimension for a writer_rank.
@@ -1031,6 +1031,8 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 	   fp->rank, fp->mystep, (data_end - data_start), 1, packet_size,  flush_id);
 
     free_fmstructdesclist(struct_list);
+    //double timenow = dgettimeofday();
+    //fprintf(stderr, "rank:%d:step:%d:raw_handler_time:%lf\n", fp->rank, fp->mystep, timenow-data_end);
     return 0; 
 }
 
@@ -1255,6 +1257,8 @@ adios_read_flexpath_open(const char * fname,
     /* Init with a writer to get initial scalar
        data so we can handle inq_var calls and
        also populate the ADIOS_FILE struct. */
+
+    double bridge_start = MPI_Wtime();
     if(fp->size < num_bridges){
     	int mystart = (num_bridges/fp->size) * fp->rank;
     	int myend = (num_bridges/fp->size) * (fp->rank+1);
@@ -1269,11 +1273,15 @@ adios_read_flexpath_open(const char * fname,
 	build_bridge(&fp->bridges[writer_rank]);
 	fp->writer_coordinator = writer_rank;
     }
-    
+
     // requesting initial data.
     double open_start = dgettimeofday();
     send_open_msg(fp, fp->writer_coordinator);
     double open_end = dgettimeofday();
+    
+    double bridge_end = MPI_Wtime();
+    fp_log("bridge", "READER_BRIDGE:rank:%d:filename:%s:step:%d:time:%lf:num_bridges:%d\n",
+	   fp->rank, fname, fp->mystep, bridge_end - bridge_start, num_bridges);
     
     fp->data_read = 0;
     double data_start = dgettimeofday();
@@ -1494,7 +1502,7 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
     int num_sendees = fp->num_sendees;
     int total_sent = 0;
     fp->time_in = 0.00;
-
+    double start_poll = MPI_Wtime();
     for(i = 0; i<num_sendees; i++){
 	pthread_mutex_lock(&fp->data_mutex);
 	int sendee = fp->sendees[i];	
@@ -1511,10 +1519,11 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
 	}
 
     }
-    double data_end = dgettimeofday();
-    fp_log("PERF", "READER_PERF:data:rank:%d:step:%d:time:%lf:total_size:%d:num_sendees:%d\n",
-	   fp->rank, fp->mystep, (data_end - fp->time_in), (int)fp->data_read, fp->num_sendees);
-    fp_log("MEM", "free flexpath_reader_file sendees: %p\n", fp->sendees);
+    double end_poll = MPI_Wtime();
+ 
+    fp_log("TP", "READER_TP:rank:%d:step:%d:start:%lf:end:%lf:dif:%lf:data_size:%d\n",
+    	   fp->rank, fp->mystep, start_poll, end_poll, end_poll - start_poll, fp->data_read);
+
     free(fp->sendees);
     fp->sendees = NULL;    
     fp->num_sendees = 0;
@@ -1599,6 +1608,7 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 	int need_count = 0;
 	array_displacements * all_disp = NULL;
 	uint64_t pos = 0;
+	double sched_start = MPI_Wtime();
         for(j=0; j<fp->num_bridges; j++) {
             int destination=0;	    	    
             if(need_writer(fp, j, var->sel, fp->gp, var->varname)==1){           
@@ -1617,6 +1627,9 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 		send_var_message(fp, j, var->varname);				
             }
 	}
+	double sched_end = MPI_Wtime();
+	fp_log("bridge", "READER_BRIDGE2:fname:%s:rank:%d:step:%d:time:%lf:need_count:%d\n",
+	      fp->file_name, fp->rank, fp->mystep, sched_end - sched_start, need_count);
 	fp_log("MEM", "malloc final realloc of array_displacements: %p, %d\n",
 	       all_disp, sizeof(array_displacements)*need_count);
 	var->displ = all_disp;
