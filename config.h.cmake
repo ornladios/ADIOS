@@ -285,6 +285,9 @@
 /* Skel timing is enabled */
 #cmakedefine SKEL_TIMING 1
 
+/* research_transports is enabled */
+#define RESEARCH_TRANSPORTS ${RESEARCH_TRANSPORTS}
+
 /* Define to 1 if you have the ANSI C header files. */
 #cmakedefine STDC_HEADERS 1
 

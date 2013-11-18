@@ -57,6 +57,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     export BUILD_WRITE=ON
     export BUILD_FORTRAN=ON
     export skel_timing=ON
+    export research_transports=ON
     export CC=mpicc
     export CXX=mpiCC
     export FC=mpif90
@@ -66,7 +67,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     export ALACRITY_DIR
     export NCSU_TIMER_DIR
     if [ "$TARGET" == "pgi" ]; then
-#        export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith/$TARGET"
+        export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith/$TARGET"
         export FLEXPATH_DIR="/ccs/proj/e2e/chaos/sith/$TARGET"
     elif [ "$TARGET" == "gnu" ]; then
         export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith/$TARGET"
