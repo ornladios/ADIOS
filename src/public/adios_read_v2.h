@@ -92,7 +92,6 @@ typedef struct {
 
 enum var_centering
 {
-    no = 0,               // 0 for uniform/rectilinear/structured mesh
     point = 1,            // unstructured mesh point centering
     cell = 2              // unstructured mesh cell centering
 };
@@ -123,7 +122,7 @@ typedef struct {
         ADIOS_VARBLOCK *blockinfo;  /* Spatial arrangement of written blocks, 
                                        retrieved in separate call: adios_inq_var_blockinfo()       
                                        It is an array of 'sum_nblocks' elements                       */
-        ADIOS_VARMESH *meshinfo;    /* structure in adios_schema.h,
+        ADIOS_VARMESH *meshinfo;    /* structure in this file,
                                        retrieved in separate call: adios_inq_var_meshinfo()          */ 
 } ADIOS_VARINFO;
 

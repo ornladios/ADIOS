@@ -889,9 +889,10 @@ int common_read_inq_var_meshinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
     read_fail = common_read_get_attr_mesh (fp, var_mesh, &attr_type, &attr_size, &data); 
     if (read_fail)
     {
-        adios_error (err_no_matching_mesh_var,
-                     "No matching mesh for var %s.\n", 
-                     var_name);
+//        adios_error (err_no_matching_mesh_var,
+//                     "No matching mesh for var %s.\n", 
+//                     var_name);
+        varinfo->meshinfo = NULL;
         return 1;
     }
     else
@@ -909,9 +910,10 @@ int common_read_inq_var_meshinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
         }
         if (match == 0)
         {
-            adios_error (err_mesh_missing,
-                         "Mesh %s for var %s is not stored in meshlist.\n", 
-                         (char *)data, var_name);
+//            adios_error (err_mesh_missing,
+//                         "Mesh %s for var %s is not stored in meshlist.\n", 
+//                         (char *)data, var_name);
+            varinfo->meshinfo = NULL;
             return 1;
         }
     }
@@ -924,35 +926,35 @@ int common_read_inq_var_meshinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
 //    printf ("attr data_centering is %s\n", data_centering);
     free (data_centering);
     free (var_mesh);
-    if (read_fail)        // if no attr for centering, check if it is unstrcutured
+    if (read_fail)        // if no attr for centering
     {
-        varinfo->meshinfo->centering = 0;          // no centering
-        char * meshtype = malloc (strlen("/adios_schema/")+strlen(var_name)+strlen("/type")+1);
-        strcpy (meshtype, "/adios_schema/");
-        strcat (meshtype, fp->mesh_namelist[varinfo->meshinfo->meshid]);      
-        strcat (meshtype, "/type");
+//        char * meshtype = malloc (strlen("/adios_schema/")+strlen(var_name)+strlen("/type")+1);
+//        strcpy (meshtype, "/adios_schema/");
+//        strcat (meshtype, fp->mesh_namelist[varinfo->meshinfo->meshid]);      
+//        strcat (meshtype, "/type");
 //        printf ("attr meshtype is %s\n", meshtype);
-        data = NULL;
-        read_fail = common_read_get_attr_mesh (fp, meshtype, &attr_type, &attr_size, &data);
-        if (read_fail)
-        {
-            adios_error (err_mesh_name_attr_missing,
-                         "Mesh name from attr %s is not available\n", 
-                         meshtype);
-            free (meshtype);
-            return 1;
-        }
-        else
-        {
-            free (meshtype);
-            if (!strcmp((char *)data, "unstructured"))
-            {
+//        data = NULL;
+//        read_fail = common_read_get_attr_mesh (fp, meshtype, &attr_type, &attr_size, &data);
+//        if (read_fail)
+//        {
+//            adios_error (err_mesh_name_attr_missing,
+//                         "Mesh name from attr %s is not available\n", 
+//                         meshtype);
+//            free (meshtype);
+//            return 1;
+//        }
+//        else
+//        {
+//            free (meshtype);
+//            if (!strcmp((char *)data, "unstructured"))
+//            {
                 adios_error (err_mesh_unstructured_centering_missing,
-                             "Centerinr info of var %s on unstructured mesh %s is required\n",
+                             "Centering info of var %s on mesh %s is required\n",
                              var_name, fp->mesh_namelist[varinfo->meshinfo->meshid]);
+                varinfo->meshinfo = NULL; 
                 return 1;
-            }
-        }
+//            }
+//        }
     }
     else
     {
@@ -969,6 +971,7 @@ int common_read_inq_var_meshinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
             adios_error (err_mesh_unstructured_centering_invalid,
                          "Centering method of var %s on mesh %s is not supported (point/cell).\n", 
                          var_name, fp->mesh_namelist[varinfo->meshinfo->meshid]);
+            varinfo->meshinfo = NULL;
             return 1;
         }
     }
@@ -1258,9 +1261,9 @@ int adios_get_uniform_mesh_attr (ADIOS_FILE * fp, ADIOS_MESH *meshinfo, char * a
         }
         else if (!strcmp (attrs, "maximums"))
         {
-//            meshinfo->uniform->maximums = (double *) malloc (sizeof(double)*meshinfo->uniform->num_dimensions);
-//            for (i = 0; i < meshinfo->uniform->num_dimensions; i++ )
-//                meshinfo->uniform->maximums[i] = 0;
+            meshinfo->uniform->maximums = (double *) malloc (sizeof(double)*meshinfo->uniform->num_dimensions);
+            for (i = 0; i < meshinfo->uniform->num_dimensions; i++ )
+                meshinfo->uniform->maximums[i] = (double)(meshinfo->uniform->dimensions[i]-1)*meshinfo->uniform->spacings[i]+meshinfo->uniform->origins[i];
             log_info ("Uniform mesh %s does not provide maximum info.\n", meshinfo->name);
         }
 
