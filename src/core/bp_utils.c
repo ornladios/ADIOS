@@ -287,6 +287,7 @@ thod returns.
     varinfo->sum_nblocks = v->characteristics_count;
     varinfo->statistics = 0;
     varinfo->blockinfo = 0;
+    varinfo->meshinfo = 0;
 
     return varinfo;
 }
