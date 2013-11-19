@@ -9,10 +9,10 @@
     <var name="nx_local"  path="" type="integer"/>
     <var name="ny_local"  path="" type="integer"/>
 
-    <var name="O1" type="double"/>
-    <var name="O2" type="double"/>
-    <var name="S1" type="double"/>
-    <var name="S2" type="double"/>
+    <var name="O1" type="integer"/>
+    <var name="O2" type="integer"/>
+    <var name="S1" type="integer"/>
+    <var name="S2" type="integer"/>
 
     <mesh name="uniformmesh" type="uniform" time-varying="no">
          <nspace value="2" />
@@ -22,7 +22,7 @@
     </mesh>
 
     <global-bounds dimensions="nx_global,ny_global" offsets="offs_x,offs_y">
-        <var name="data" type="double" mesh="uniformmesh" dimensions="nx_local,ny_local"/>
+        <var name="data" type="double" mesh="uniformmesh" dimensions="nx_local,ny_local" center="point"/>
     </global-bounds>
 
   </adios-group>

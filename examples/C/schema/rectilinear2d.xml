@@ -24,7 +24,7 @@
     </mesh>
 
     <global-bounds dimensions="nx_global,ny_global" offsets="offs_x,offs_y">
-        <var name="data" type="double" mesh="rectilinearmesh" dimensions="nx_local,ny_local"/>
+        <var name="data" type="double" mesh="rectilinearmesh" dimensions="nx_local,ny_local" center="point"/>
     </global-bounds>
 
   </adios-group>

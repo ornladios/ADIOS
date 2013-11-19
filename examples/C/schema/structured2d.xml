@@ -19,12 +19,12 @@
 
     <mesh name="structuredmesh" type="structured" time-varying="no">
          <nspace value="2" />
-         <dimensions value="nx_local,ny_local" /> 
+         <dimensions value="nx_global,ny_global" /> 
          <points-multi-var value="X,Y" />
     </mesh>
 
     <global-bounds dimensions="nx_global,ny_global" offsets="offs_x,offs_y">
-        <var name="data" type="double" mesh="structuredmesh" dimensions="nx_local,ny_local"/>
+        <var name="data" type="double" mesh="structuredmesh" dimensions="nx_local,ny_local" center="point"/>
     </global-bounds>
 
   </adios-group>
