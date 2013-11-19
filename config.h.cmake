@@ -31,6 +31,9 @@
 /* Define to 1 if you have the <Attributes.h> header file. */
 #cmakedefine HAVE_ATTRIBUTES_H 1
 
+/* Define if you want to enable BGQ method */
+#cmakedefine HAVE_BGQ 1
+
 /* Define if you have BZIP2. */
 #cmakedefine HAVE_BZIP2 1
 
@@ -53,7 +56,7 @@
 #cmakedefine HAVE_DATASPACES ${HAVE_DATASPACES}
 
 /* Define to 1 if you have the <dataspaces.h> header file. */
-#define HAVE_DATASPACES_H ${HAVE_DATASPACES}
+#cmakedefine HAVE_DATASPACES_H ${HAVE_DATASPACES_H}
 
 /* Define if you have the DCMF. */
 #cmakedefine HAVE_DCMF
