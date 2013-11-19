@@ -42,4 +42,10 @@ foreach (PROG ${PROGS} )
   target_link_libraries(${PROG} adios ${MPI_C_LIBRARIES})
 endforeach()
 
-#install(FILES structured.xml rectilinear.xml unstructured.xml uniform.xml DESTINATION ${PROJECT_BINARY_DIR}/examples/C/schema)
+file(COPY structured.xml rectilinear.xml unstructured.xml uniform.xml 
+        triangle2d.readme triangle2d.xml triangle2d.n4.png 
+        uniform2d.readme uniform2d.xml uniform2d.png
+        rectilinear2d.readme rectilinear2d.xml rectilinear2d.png
+        structured2d.readme structured2d.xml
+        tri2d.readme tri2d.xml tri2d.n.png
+        DESTINATION ${PROJECT_BINARY_DIR}/examples/C/schema)
