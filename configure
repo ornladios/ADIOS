@@ -25963,7 +25963,7 @@ fi
 if test "${with_phdf5+set}" = set; then
   withval=$with_phdf5; PHDF5_DIR=$withval
 else
-  with_phdf5=check
+  with_phdf5=no
 fi
 
 
@@ -26713,7 +26713,7 @@ fi
 if test "${with_nc4par+set}" = set; then
   withval=$with_nc4par; NC4PAR_DIR=$withval
 else
-  with_nc4par=check
+  with_nc4par=no
 fi
 
 

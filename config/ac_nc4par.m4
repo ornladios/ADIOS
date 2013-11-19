@@ -12,9 +12,10 @@ AM_CONDITIONAL(HAVE_NC4PAR,true)
 
 AC_ARG_WITH(nc4par,
             [  --with-nc4par=<location of NetCDF 4 Parallel installation>],
-            [NC4PAR_DIR=$withval], [with_nc4par=check])
+            [NC4PAR_DIR=$withval], [with_nc4par=no])
 
 dnl If --without-nc4par was given set HAVE_NC4PAR to false and do nothing more
+dnl Or if nothing was given, by default we don't try to find it anymore
 if test "x$with_nc4par" == "xno"; then
 
    AM_CONDITIONAL(HAVE_NC4PAR,false)

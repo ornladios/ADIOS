@@ -229,7 +229,7 @@ am__libadios_a_SOURCES_DIST = core/adios.c core/common_adios.c \
 	core/transforms/adios_transforms_hooks_read.h \
 	core/transforms/adios_transforms_reqgroup.h \
 	core/transforms/adios_transforms_datablock.h \
-	core/transforms/adios_transforms_patchdata.h \
+	core/transforms/adios_patchdata.h \
 	core/transforms/adios_transforms_read.c \
 	core/transforms/adios_transforms_hooks_read.c \
 	core/transforms/adios_transforms_reqgroup.c \
@@ -414,7 +414,7 @@ am__libadios_nompi_a_SOURCES_DIST = core/adios.c core/common_adios.c \
 	core/transforms/adios_transforms_hooks_read.h \
 	core/transforms/adios_transforms_reqgroup.h \
 	core/transforms/adios_transforms_datablock.h \
-	core/transforms/adios_transforms_patchdata.h \
+	core/transforms/adios_patchdata.h \
 	core/transforms/adios_transforms_read.c \
 	core/transforms/adios_transforms_hooks_read.c \
 	core/transforms/adios_transforms_reqgroup.c \
@@ -547,7 +547,7 @@ am__libadiosf_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	core/transforms/adios_transforms_hooks_read.h \
 	core/transforms/adios_transforms_reqgroup.h \
 	core/transforms/adios_transforms_datablock.h \
-	core/transforms/adios_transforms_patchdata.h \
+	core/transforms/adios_patchdata.h \
 	core/transforms/adios_transforms_read.c \
 	core/transforms/adios_transforms_hooks_read.c \
 	core/transforms/adios_transforms_reqgroup.c \
@@ -710,7 +710,7 @@ am__libadiosf_nompi_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	core/transforms/adios_transforms_hooks_read.h \
 	core/transforms/adios_transforms_reqgroup.h \
 	core/transforms/adios_transforms_datablock.h \
-	core/transforms/adios_transforms_patchdata.h \
+	core/transforms/adios_patchdata.h \
 	core/transforms/adios_transforms_read.c \
 	core/transforms/adios_transforms_hooks_read.c \
 	core/transforms/adios_transforms_reqgroup.c \
@@ -860,7 +860,7 @@ am__libadiosf_nompi_v1_a_SOURCES_DIST = core/adiosf.c \
 	core/transforms/adios_transforms_hooks_read.h \
 	core/transforms/adios_transforms_reqgroup.h \
 	core/transforms/adios_transforms_datablock.h \
-	core/transforms/adios_transforms_patchdata.h \
+	core/transforms/adios_patchdata.h \
 	core/transforms/adios_transforms_read.c \
 	core/transforms/adios_transforms_hooks_read.c \
 	core/transforms/adios_transforms_reqgroup.c \
@@ -1009,7 +1009,7 @@ am__libadiosf_v1_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	core/transforms/adios_transforms_hooks_read.h \
 	core/transforms/adios_transforms_reqgroup.h \
 	core/transforms/adios_transforms_datablock.h \
-	core/transforms/adios_transforms_patchdata.h \
+	core/transforms/adios_patchdata.h \
 	core/transforms/adios_transforms_read.c \
 	core/transforms/adios_transforms_hooks_read.c \
 	core/transforms/adios_transforms_reqgroup.c \
@@ -1171,7 +1171,7 @@ am__libadiosread_a_SOURCES_DIST = core/adios_bp_v1.c \
 	core/transforms/adios_transforms_hooks_read.h \
 	core/transforms/adios_transforms_reqgroup.h \
 	core/transforms/adios_transforms_datablock.h \
-	core/transforms/adios_transforms_patchdata.h \
+	core/transforms/adios_patchdata.h \
 	core/transforms/adios_transforms_read.c \
 	core/transforms/adios_transforms_hooks_read.c \
 	core/transforms/adios_transforms_reqgroup.c \
@@ -1266,7 +1266,7 @@ am__libadiosread_nompi_a_SOURCES_DIST = core/mpidummy.c \
 	core/transforms/adios_transforms_hooks_read.h \
 	core/transforms/adios_transforms_reqgroup.h \
 	core/transforms/adios_transforms_datablock.h \
-	core/transforms/adios_transforms_patchdata.h \
+	core/transforms/adios_patchdata.h \
 	core/transforms/adios_transforms_read.c \
 	core/transforms/adios_transforms_hooks_read.c \
 	core/transforms/adios_transforms_reqgroup.c \
@@ -1357,7 +1357,7 @@ am__libadiosreadf_a_SOURCES_DIST = core/adios_bp_v1.c \
 	core/transforms/adios_transforms_hooks_read.h \
 	core/transforms/adios_transforms_reqgroup.h \
 	core/transforms/adios_transforms_datablock.h \
-	core/transforms/adios_transforms_patchdata.h \
+	core/transforms/adios_patchdata.h \
 	core/transforms/adios_transforms_read.c \
 	core/transforms/adios_transforms_hooks_read.c \
 	core/transforms/adios_transforms_reqgroup.c \
@@ -1454,7 +1454,7 @@ am__libadiosreadf_nompi_a_SOURCES_DIST = core/mpidummy.c \
 	core/transforms/adios_transforms_hooks_read.h \
 	core/transforms/adios_transforms_reqgroup.h \
 	core/transforms/adios_transforms_datablock.h \
-	core/transforms/adios_transforms_patchdata.h \
+	core/transforms/adios_patchdata.h \
 	core/transforms/adios_transforms_read.c \
 	core/transforms/adios_transforms_hooks_read.c \
 	core/transforms/adios_transforms_reqgroup.c \
@@ -1547,7 +1547,7 @@ am__libadiosreadf_nompi_v1_a_SOURCES_DIST = core/mpidummy.c \
 	core/transforms/adios_transforms_hooks_read.h \
 	core/transforms/adios_transforms_reqgroup.h \
 	core/transforms/adios_transforms_datablock.h \
-	core/transforms/adios_transforms_patchdata.h \
+	core/transforms/adios_patchdata.h \
 	core/transforms/adios_transforms_read.c \
 	core/transforms/adios_transforms_hooks_read.c \
 	core/transforms/adios_transforms_reqgroup.c \
@@ -1634,7 +1634,7 @@ am__libadiosreadf_v1_a_SOURCES_DIST = core/adios_bp_v1.c \
 	core/transforms/adios_transforms_hooks_read.h \
 	core/transforms/adios_transforms_reqgroup.h \
 	core/transforms/adios_transforms_datablock.h \
-	core/transforms/adios_transforms_patchdata.h \
+	core/transforms/adios_patchdata.h \
 	core/transforms/adios_transforms_read.c \
 	core/transforms/adios_transforms_hooks_read.c \
 	core/transforms/adios_transforms_reqgroup.c \
@@ -2122,7 +2122,7 @@ transforms_read_HDRS = core/transforms/adios_transforms_transinfo.h \
                        core/transforms/adios_transforms_hooks_read.h \
                        core/transforms/adios_transforms_reqgroup.h \
                        core/transforms/adios_transforms_datablock.h \
-                       core/transforms/adios_transforms_patchdata.h
+                       core/transforms/adios_patchdata.h
 
 transforms_write_HDRS = core/transforms/adios_transforms_write.h \
                         core/transforms/adios_transforms_hooks_write.h \
