@@ -64,7 +64,7 @@ transforms_read_HDRS = core/transforms/adios_transforms_transinfo.h \
                        core/transforms/adios_transforms_hooks_read.h \
                        core/transforms/adios_transforms_reqgroup.h \
                        core/transforms/adios_transforms_datablock.h \
-                       core/transforms/adios_transforms_patchdata.h
+                       core/transforms/adios_patchdata.h
 
 transforms_write_HDRS = core/transforms/adios_transforms_write.h \
                         core/transforms/adios_transforms_hooks_write.h \
