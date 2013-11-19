@@ -62,14 +62,14 @@ set (transforms_read_SOURCES ${transforms_read_HDRS}
                           core/transforms/adios_transforms_reqgroup.c 
                           core/transforms/adios_transforms_datablock.c 
                           core/transforms/adios_patchdata.c 
-#              			  transforms/adios_transform_alacrity_read.c 
-#			              transforms/adios_transform_isobar_read.c 
-#           			  transforms/adios_transform_aplod_read.c 
-#			              transforms/adios_transform_szip_read.c 
-#           			  transforms/adios_transform_bzip2_read.c 
-#           			  transforms/adios_transform_template_read.c 
-#           			  transforms/adios_transform_identity_read.c 
-#           			  transforms/adios_transform_zlib_read.c 
+              			  transforms/adios_transform_alacrity_read.c 
+			              transforms/adios_transform_isobar_read.c 
+               			  transforms/adios_transform_aplod_read.c 
+			              transforms/adios_transform_szip_read.c 
+               			  transforms/adios_transform_bzip2_read.c 
+               			  transforms/adios_transform_template_read.c 
+               			  transforms/adios_transform_identity_read.c 
+               			  transforms/adios_transform_zlib_read.c 
                           core/adios_selection_util.c 
                           ${transforms_read_method_SOURCES})
 
@@ -78,14 +78,14 @@ set (transforms_write_SOURCES ${transforms_write_HDRS}
                            core/transforms/adios_transforms_hooks_write.c 
                            core/transforms/adios_transforms_util.c 
                            core/transforms/adios_transforms_specparse.c 
-#           			   transforms/adios_transform_alacrity_write.c
-#           			   transforms/adios_transform_aplod_write.c
-#           			   transforms/adios_transform_bzip2_write.c
-#           			   transforms/adios_transform_identity_write.c
-#           			   transforms/adios_transform_isobar_write.c
-#           			   transforms/adios_transform_szip_write.c
-#           			   transforms/adios_transform_template_write.c
-#           			   transforms/adios_transform_zlib_write.c
+               			   transforms/adios_transform_alacrity_write.c
+               			   transforms/adios_transform_aplod_write.c
+               			   transforms/adios_transform_bzip2_write.c
+               			   transforms/adios_transform_identity_write.c
+               			   transforms/adios_transform_isobar_write.c
+               			   transforms/adios_transform_szip_write.c
+               			   transforms/adios_transform_template_write.c
+               			   transforms/adios_transform_zlib_write.c
                            ${transforms_write_method_SOURCES})
 
 #start adios.a and adios_nompi.a
