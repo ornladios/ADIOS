@@ -12,7 +12,7 @@ AM_CONDITIONAL(HAVE_PHDF5,true)
 
 AC_ARG_WITH([phdf5],
             [  --with-phdf5=<location of PHDF5 installation>],
-            [PHDF5_DIR=$withval], [with_phdf5=check])
+            [PHDF5_DIR=$withval], [with_phdf5=no])
 
 dnl allow args --with-phdf5 incdir and --with-phdf5-libdir
 
@@ -32,6 +32,7 @@ AC_ARG_WITH(phdf5-libs,
     with_phdf5=detailed])
 
 dnl If --without-phdf5 was given set HAVE_PHDF5 to false and do nothing more
+dnl Or if nothing was given, by default we don't try to find it anymore
 if test "x$with_phdf5" == "xno"; then
 
    AM_CONDITIONAL(HAVE_PHDF5,false)
