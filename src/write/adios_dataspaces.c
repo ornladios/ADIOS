@@ -33,6 +33,11 @@ static int adios_dataspaces_initialized = 0;
 static char ds_var_name[MAX_DS_NAMELEN];
 static unsigned int adios_dataspaces_verbose = 3;
 
+struct adios_dspaces_file_info {
+    char *name;
+    int time_index;
+};
+
 struct adios_ds_data_struct
 {
     int rank;   // dataspaces rank or MPI rank if MPI is available
@@ -40,6 +45,7 @@ struct adios_ds_data_struct
     int appid;  // from xml parameter or 1
     int time_index; // versioning in DataSpaces, start from 0
     int n_writes; // how many times adios_write has been called
+    struct adios_dspaces_file_info file_info[MAX_NUM_OF_FILES];
 #if HAVE_MPI
     MPI_Comm mpi_comm;
 #endif
@@ -48,7 +54,45 @@ struct adios_ds_data_struct
     int  fversions[MAX_NUM_OF_FILES];   // last steps of files (needed at finalize)
 };
 
+static int init_dspaces_file_info(struct adios_ds_data_struct *p)
+{
+    int i;
+    for (i = 0; i < MAX_NUM_OF_FILES; i++) {
+        p->file_info[i].name = NULL;
+        p->file_info[i].time_index = 0;
+    }
+}
 
+static void free_dspaces_file_info(struct adios_ds_data_struct *p)
+{
+    int i;
+    for (i = 0; i < MAX_NUM_OF_FILES; i++) {
+        if (p->file_info[i].name) {
+            free(p->file_info[i].name);
+        }
+    }
+
+    return;
+}
+
+static struct adios_dspaces_file_info* lookup_dspaces_file_info(struct adios_ds_data_struct *p, const char* fname)
+{
+    int i;    for (i = 0; i < MAX_NUM_OF_FILES; i++) {
+        if (p->file_info[i].name != NULL &&
+            strcmp(p->file_info[i].name, fname) == 0) {
+            return &p->file_info[i];
+        }
+    }
+    for (i = 0; i < MAX_NUM_OF_FILES; i++) {
+        if (p->file_info[i].name == NULL) {
+            p->file_info[i].name = malloc(strlen(fname)+1);
+            strcpy(p->file_info[i].name, fname);
+            return &p->file_info[i];
+        }
+    }
+
+    return NULL;
+}
 
 static int connect_to_dspaces (struct adios_ds_data_struct * p, MPI_Comm comm)
 {
@@ -115,6 +159,7 @@ void adios_dataspaces_init (const PairStruct * parameters,
 #endif
     p->num_of_files = 0;
 
+    init_dspaces_file_info(p);
     connect_to_dspaces (p, method->init_comm);
 
     log_info ("adios_dataspaces_init: done\n");
@@ -131,9 +176,9 @@ int adios_dataspaces_open (struct adios_file_struct * fd,
     int ret = 0;
     struct adios_ds_data_struct *p = (struct adios_ds_data_struct *)
                                                 method->method_data;
-  
+    struct adios_dspaces_file_info *info = lookup_dspaces_file_info(p,fd->name);
     log_info ("adios_dataspaces_open: open %s, mode=%d, time_index=%d \n",
-                        fd->name, fd->mode, p->time_index);
+                        fd->name, fd->mode, info->time_index);
 
 #if HAVE_MPI
     // if we have MPI and a communicator, we can get the exact size of this application
@@ -193,6 +238,7 @@ void adios_dataspaces_write (struct adios_file_struct * fd
     struct adios_ds_data_struct *p = (struct adios_ds_data_struct *)
                                                             method->method_data;
     struct adios_group_struct *group = fd->group;
+    struct adios_dspaces_file_info *info = lookup_dspaces_file_info(p,fd->name);
     //Get var size
     //  FIXME: type size of a string >2GB does not fit to int. 
     //  adios_get_type_size returns uint64_t but dspaces_put handles only int
@@ -230,7 +276,7 @@ void adios_dataspaces_write (struct adios_file_struct * fd
 #ifdef DATASPACES_NO_VERSIONING
     version = 0;              /* Update/overwrite data in DataSpaces  (we write time_index as a variable at close)*/
 #else
-    version = p->time_index;  /* Add new data as separate to DataSpaces */
+    version = info->time_index;  /* Add new data as separate to DataSpaces */
 #endif
     
     if (v->path != NULL && v->path[0] != '\0' && strcmp(v->path,"/")) 
@@ -371,8 +417,8 @@ void adios_dataspaces_read (struct adios_file_struct * fd
     memset(offset2, 0, 3*sizeof(int));
     memset(dim_size, 0, 3*sizeof(int));
 
-    version = p->time_index;
-
+    struct adios_dspaces_file_info *info = lookup_dspaces_file_info(p,fd->name);
+    version = info->time_index;
     //dspaces_lock_on_read_();
 
     //dspaces_get
@@ -751,6 +797,7 @@ void adios_dataspaces_close (struct adios_file_struct * fd
                                                 method->method_data;
     struct adios_index_struct_v1 * index = adios_alloc_index_v1(1);
     struct adios_attribute_struct * a = fd->group->attributes;
+    struct adios_dspaces_file_info *info = lookup_dspaces_file_info(p,fd->name);
     int lb[3], ub[3], didx[3]; // for reordering DS dimensions
     unsigned int version;
 
@@ -777,7 +824,7 @@ void adios_dataspaces_close (struct adios_file_struct * fd
 #ifdef DATASPACES_NO_VERSIONING
             version = 0;              /* Update/overwrite data in DataSpaces */
 #else
-            version = p->time_index;  /* Add new data as separate to DataSpaces */
+            version = info->time_index;  /* Add new data as separate to DataSpaces */
 #endif
 
             /* Make metadata from indices */
@@ -801,8 +848,8 @@ void adios_dataspaces_close (struct adios_file_struct * fd
             char * file_info_buf; /* store FILE@fn's group list */
             int    file_info_buf_len; /* = 128 currently */
             snprintf (ds_var_name, MAX_DS_NAMELEN, "FILE@%s", fd->name);
-            ds_pack_file_info (p->time_index, nvars, nattrs, indexlen, fd->group->name, 
-                               &file_info_buf, &file_info_buf_len);
+            ds_pack_file_info (info->time_index, nvars, nattrs, indexlen,
+                          fd->group->name, &file_info_buf, &file_info_buf_len);
             log_debug ("%s: put %s = buflen=%d time=%d nvars=%d nattr=%d index=%d name=%d:%s into space\n",
                 __func__, ds_var_name, 
                 *(int*)file_info_buf, *(int*)(file_info_buf+4), 
@@ -869,7 +916,7 @@ void adios_dataspaces_close (struct adios_file_struct * fd
     } 
 
     /* Increment the time index */
-    p->time_index++;
+    info->time_index++;
 
 
     log_info ("%s: exit\n", __func__);
@@ -885,6 +932,8 @@ void adios_dataspaces_finalize (int mype, struct adios_method_struct * method)
     int ub[3] = {1,0,0}; // we put 2 integers to space, 
     int didx[3]; // for reordering DS dimensions
     int value[2] = {0, 1}; // integer to be written to space (terminated=1)
+
+    free_dspaces_file_info(p);
 
     // tell the readers which files are finalized
     ds_dimension_ordering(1, 0, 0, didx); // C ordering of 1D array into DS
