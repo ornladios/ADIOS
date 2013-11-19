@@ -41,7 +41,7 @@ set (transforms_read_HDRS core/transforms/adios_transforms_transinfo.h
                        core/transforms/adios_transforms_hooks_read.h 
                        core/transforms/adios_transforms_reqgroup.h 
                        core/transforms/adios_transforms_datablock.h
-		       transforms/adios_transform_identity_read.h)
+		               core/transforms/adios_transforms_patchdata.h)
 
 set (transforms_write_HDRS  core/transforms/adios_transforms_write.h 
                         core/transforms/adios_transforms_hooks_write.h 
@@ -62,14 +62,14 @@ set (transforms_read_SOURCES ${transforms_read_HDRS}
                           core/transforms/adios_transforms_reqgroup.c 
                           core/transforms/adios_transforms_datablock.c 
                           core/transforms/adios_patchdata.c 
-			  transforms/adios_transform_alacrity_read.c 
-			  transforms/adios_transform_isobar_read.c 
-			  transforms/adios_transform_aplod_read.c 
-			  transforms/adios_transform_szip_read.c 
-			  transforms/adios_transform_bzip2_read.c 
-			  transforms/adios_transform_template_read.c 
-			  transforms/adios_transform_identity_read.c 
-			  transforms/adios_transform_zlib_read.c 
+#              			  transforms/adios_transform_alacrity_read.c 
+#			              transforms/adios_transform_isobar_read.c 
+#           			  transforms/adios_transform_aplod_read.c 
+#			              transforms/adios_transform_szip_read.c 
+#           			  transforms/adios_transform_bzip2_read.c 
+#           			  transforms/adios_transform_template_read.c 
+#           			  transforms/adios_transform_identity_read.c 
+#           			  transforms/adios_transform_zlib_read.c 
                           core/adios_selection_util.c 
                           ${transforms_read_method_SOURCES})
 
@@ -78,14 +78,14 @@ set (transforms_write_SOURCES ${transforms_write_HDRS}
                            core/transforms/adios_transforms_hooks_write.c 
                            core/transforms/adios_transforms_util.c 
                            core/transforms/adios_transforms_specparse.c 
-			   transforms/adios_transform_alacrity_write.c
-			   transforms/adios_transform_aplod_write.c
-			   transforms/adios_transform_bzip2_write.c
-			   transforms/adios_transform_identity_write.c
-			   transforms/adios_transform_isobar_write.c
-			   transforms/adios_transform_szip_write.c
-			   transforms/adios_transform_template_write.c
-			   transforms/adios_transform_zlib_write.c
+#           			   transforms/adios_transform_alacrity_write.c
+#           			   transforms/adios_transform_aplod_write.c
+#           			   transforms/adios_transform_bzip2_write.c
+#           			   transforms/adios_transform_identity_write.c
+#           			   transforms/adios_transform_isobar_write.c
+#           			   transforms/adios_transform_szip_write.c
+#           			   transforms/adios_transform_template_write.c
+#           			   transforms/adios_transform_zlib_write.c
                            ${transforms_write_method_SOURCES})
 
 #start adios.a and adios_nompi.a
@@ -125,7 +125,11 @@ if(BUILD_WRITE)
                      write/adios_posix1.c
                      write/adios_var_merge.c)
 
-set(libadios_nompi_a_SOURCES core/adios.c 
+  if(HAVE_BGQ)
+    set(libadios_a_SOURCES ${libadios_a_SOURCES} write/adios_mpi_bgq.c)
+  endif()
+
+  set(libadios_nompi_a_SOURCES core/adios.c 
                      core/common_adios.c 
                      core/adios_internals.c 
                      core/adios_internals_mxml.c 
@@ -163,7 +167,7 @@ set(libadios_nompi_a_SOURCES core/adios.c
                        core/adios_internals.c 
                        core/adios_internals_mxml.c
                        ${transforms_common_SOURCES} 
-		       ${transforms_read_SOURCES} 
+        		       ${transforms_read_SOURCES} 
                        ${transforms_write_SOURCES} 
                        core/buffer.c 
                        core/adios_bp_v1.c  
@@ -190,7 +194,9 @@ set(libadios_nompi_a_SOURCES core/adios.c
                          write/adios_mpi_lustre.c
 	                 write/adios_mpi_amr.c
                          write/adios_var_merge.c)
-
+    if(HAVE_BGQ)
+      set(FortranLibMPISources ${FortranLibMPISources} write/adios_mpi_bgq.c)
+    endif(HAVE_BGQ)
     set(FortranLibSEQSources core/mpidummy.c)
   endif(BUILD_FORTRAN)
 
@@ -629,7 +635,7 @@ if(BUILD_FORTRAN)
                           core/globals.c 
                           core/adios_read_hooks.c 
                           core/util.c 
-			  core/qhashtbl.c 
+            			  core/qhashtbl.c 
                           read/read_bp.c)
   if(HAVE_DATASPACES)
     set(FortranReadSeqLibSource ${FortranReadSeqLibSource} read/read_dataspaces.c)
@@ -687,7 +693,7 @@ set(libadios_internal_nompi_a_SOURCES core/mpidummy.c
                                     core/adios_internals_mxml.c 
                                     core/adios_timing.c 
                                     core/util.c 
-				    core/qhashtbl.c 
+	                			    core/qhashtbl.c 
                                     core/futils.c 
                                     core/adios_transport_hooks.c)
 
@@ -709,8 +715,8 @@ install(FILES ${PROJECT_BINARY_DIR}/src/libadios.a
 	${PROJECT_BINARY_DIR}/src/libadiosreadf_nompi.a
 	${PROJECT_BINARY_DIR}/src/libadiosreadf_nompi_v1.a
 	${PROJECT_BINARY_DIR}/src/libadiosreadf_v1.a
-        ${PROJECT_BINARY_DIR}/src/libadiosf_nompi.a
-        ${PROJECT_BINARY_DIR}/src/libadiosf_nompi_v1.a
+    ${PROJECT_BINARY_DIR}/src/libadiosf_nompi.a
+    ${PROJECT_BINARY_DIR}/src/libadiosf_nompi_v1.a
 	DESTINATION ${libdir})
 
 
