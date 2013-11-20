@@ -891,7 +891,7 @@ int common_read_inq_var_meshinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
     {
 //        adios_error (err_no_matching_mesh_var,
 //                     "No matching mesh for var %s.\n", 
-//                     var_name);
+//                     var_nme);
         varinfo->meshinfo = NULL;
         return 1;
     }
@@ -1078,7 +1078,7 @@ int adios_get_uniform_mesh_attr (ADIOS_FILE * fp, ADIOS_MESH *meshinfo, char * a
             }
             i_digits = sprintf (i_buffer, "%d", i);
             //i_digits to reprent the number in dimensions0/dimensions1/... 
-            char * value = malloc (strlen("/adios_schema/")+strlen(meshinfo->name)+strlen("/")+strlen(attrs)-strlen("-num")+i_digits+1 );
+            char * value = malloc (strlen("/adios_schema/")+strlen(meshinfo->name)+strlen("/")+strlen(attrs)+i_digits+1 );
             strcpy (value, "/adios_schema/");
             strcat (value, meshinfo->name);
             strcat (value, "/");
