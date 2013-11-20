@@ -1269,8 +1269,9 @@ int adios_get_uniform_mesh_attr (ADIOS_FILE * fp, ADIOS_MESH *meshinfo, char * a
                 meshinfo->uniform->maximums[i] = ((double)meshinfo->uniform->dimensions[i]-1.0)*meshinfo->uniform->spacings[i]+meshinfo->uniform->origins[i];
 //                printf("max[%d] is %lf \n", i, meshinfo->uniform->maximums[i]);
             }
-            log_info ("Uniform mesh %s does not provide maximums info.\n", 
-                      "We calculate maximums based on origins and spacings. \n", meshinfo->name);
+            log_info ("Uniform mesh %s does not provide maximums info.\n" 
+                      "We calculate maximums based on origins and spacings. \n", 
+                      meshinfo->name);
         }
 
     }
