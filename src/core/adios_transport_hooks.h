@@ -129,7 +129,8 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
               ,ADIOS_METHOD_NSSI_FILTER  = 20
               ,ADIOS_METHOD_DIMES        = 21
               ,ADIOS_METHOD_VAR_MERGE   = 22
-              ,ADIOS_METHOD_COUNT        = 23
+              ,ADIOS_METHOD_MPI_BGQ     = 23
+              ,ADIOS_METHOD_COUNT       = 24
 };
 
 // forward declare the functions (or dummies for internals use)
@@ -141,6 +142,9 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
      //FORWARD_DECLARE(mpi_stagger)
      //FORWARD_DECLARE(mpi_aggregate)
      FORWARD_DECLARE(mpi_amr)
+#if HAVE_BGQ
+     FORWARD_DECLARE(mpi_bgq)
+#endif
      //FORWARD_DECLARE(mpi_amr1)
      FORWARD_DECLARE(phdf5)
      FORWARD_DECLARE(nc4)

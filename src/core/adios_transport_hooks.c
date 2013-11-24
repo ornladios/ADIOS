@@ -49,6 +49,9 @@ void adios_init_transports (struct adios_transport_struct ** t)
     ASSIGN_FNS(mpi,ADIOS_METHOD_MPI)
     ASSIGN_FNS(mpi_lustre,ADIOS_METHOD_MPI_LUSTRE)
     ASSIGN_FNS(mpi_amr,ADIOS_METHOD_MPI_AMR)
+#    if HAVE_BGQ
+    ASSIGN_FNS(mpi_bgq,ADIOS_METHOD_MPI_BGQ)
+#    endif
     //Tian's method
     ASSIGN_FNS(var_merge,ADIOS_METHOD_VAR_MERGE)
 #      ifndef NO_RESEARCH_TRANSPORTS
@@ -112,6 +115,9 @@ int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
     MATCH_STRING_TO_METHOD("MPI",ADIOS_METHOD_MPI,1)
     MATCH_STRING_TO_METHOD("MPI_LUSTRE",ADIOS_METHOD_MPI_LUSTRE,1)
     MATCH_STRING_TO_METHOD("MPI_AMR",ADIOS_METHOD_MPI_AMR,1)
+#if HAVE_BGQ
+    MATCH_STRING_TO_METHOD("MPI_BGQ",ADIOS_METHOD_MPI_BGQ,1)
+#endif
     // Tian's method
     MATCH_STRING_TO_METHOD("VAR_MERGE",ADIOS_METHOD_VAR_MERGE,1)
 
