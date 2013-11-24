@@ -89,8 +89,6 @@ struct adios_MPI_data_struct
     uint64_t vars_start;
     uint64_t vars_header_size;
 
-    uint64_t striping_unit;  // file system stripe size
-
     int * g_is_aggregator;
     int g_num_aggregators;
     int g_merging_pgs;
@@ -535,54 +533,6 @@ static void adios_mpi_amr_buffer_write (char ** buffer, uint64_t * buffer_size
     *buffer_offset += size;
 }
 
-static int
-adios_mpi_amr_get_striping_unit(MPI_File fh, char *filename)
-{
-    struct statfs fsbuf;
-    int err, flag;
-    uint64_t striping_unit = 1048576;
-    char     value[64];
-    MPI_Info info_used;
-
-    // get striping_unit from MPI hint if it has
-    MPI_File_get_info(fh, &info_used);
-    MPI_Info_get(info_used, "striping_unit", 63, value, &flag);
-    MPI_Info_free(&info_used);
-
-    if (flag) return atoi(value);
-
-    // if striping_unit is not set in MPI file info, get it from system
-    err = statfs(filename, &fsbuf);
-    if (err == -1) {
-        printf("Warning: statfs failed %s %s.\n",filename,strerror(errno));
-        return striping_unit;
-    }
-
-    if (!err && fsbuf.f_type == LUSTRE_SUPER_MAGIC) {
-        int fd, old_mask, perm;
-
-        old_mask = umask(022);
-        umask(old_mask);
-        perm = old_mask ^ 0666;
-
-        fd =  open(filename, O_RDONLY, perm);
-        if (fd != -1) {
-            struct lov_user_md lum;
-            lum.lmm_magic = LOV_USER_MAGIC;
-            err = ioctl(fd, LL_IOC_LOV_GETSTRIPE, (void *) &lum);
-            if (err == 0 && lum.lmm_stripe_size > 0) {
-                striping_unit = lum.lmm_stripe_size;
-            }
-            close(fd);
-        }
-        else
-            printf("Warning: open failed on file %s %s.\n",filename,strerror(errno));
-    }
-
-    // set the file striping size
-    return striping_unit;
-}
-
 static uint64_t
 adios_mpi_amr_striping_unit_write(MPI_File   fh
                                  ,MPI_Offset offset
@@ -775,12 +725,6 @@ void * adios_mpi_amr_do_open_thread (void * param)
     unlink (td->md->subfile_name);
     if (td->parameters)
     {
-/*
-        adios_mpi_amr_set_striping_unit (*td->fh
-                                        ,td->name
-                                        ,td->parameters
-                                        );
-*/
         adios_mpi_amr_set_striping_unit (td->md, td->parameters);
 
     }
@@ -791,8 +735,6 @@ void * adios_mpi_amr_do_open_thread (void * param)
                   ,&td->md->fh
                   );
 
-    td->md->striping_unit = adios_mpi_amr_get_striping_unit (td->md->fh, td->md->subfile_name);
- 
     return NULL;
 }
 
@@ -1093,7 +1035,6 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                                         ,MPI_INFO_NULL
                                         ,&md->fh
                                         );
-                    md->striping_unit = adios_mpi_amr_get_striping_unit (md->fh, name);
 
                     if (err != MPI_SUCCESS)
                     {
@@ -1126,6 +1067,9 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
 
         case adios_mode_append:
         {
+            adios_error (err_invalid_file_mode, "MPI_AGGREGATE method: Append mode is not supported.\n");
+            break;
+#if 0
             int old_file = 1;
             adios_buffer_struct_clear (&md->b);
 
@@ -1154,7 +1098,6 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
 
                     return adios_flag_no;
                 }
-                md->striping_unit = adios_mpi_amr_get_striping_unit(md->fh, name);
             }
 
             if (old_file)
@@ -1247,7 +1190,6 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                                     ,MPI_INFO_NULL
                                     ,&md->fh
                                     );
-                md->striping_unit = adios_mpi_amr_get_striping_unit(md->fh, name);
                 if (next != -1)
                 {
                     MPI_Isend (&sig, 1, MPI_INTEGER, next, current
@@ -1271,7 +1213,6 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                                     ,MPI_INFO_NULL
                                     ,&md->fh
                                     );
-                md->striping_unit = adios_mpi_amr_get_striping_unit(md->fh, name);
             }
 
             if (err != MPI_SUCCESS)
@@ -1354,6 +1295,7 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
             }
 
             break;
+#endif
         }
 
         default:
