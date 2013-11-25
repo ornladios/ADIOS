@@ -94,7 +94,14 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         --with-netcdf=${SEQ_NC_DIR} \
         --with-netcdf-libs="${SEQ_NC_CLIB}" \
         --with-nc4par=${PAR_NC_DIR} \
-        --with-nc4par-libs="${PAR_NC_CLIB}"
+        --with-nc4par-libs="${PAR_NC_CLIB}" \
+        --with-zlib=/lib64 \
+        --with-szip=$SZIP_DIR \
+        --with-bzip2=$BZIP2_DIR \
+        $WITHDART \
+        $WITHFLEX \
+        --with-aplod=/ccs/proj/e2e/ncsu/sith.gnu \
+        --with-isobar=/ccs/proj/e2e/ncsu/sith.gnu
         #--with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.sith.$TARGET 
         #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
         #--enable-shared --disable-static
