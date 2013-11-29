@@ -316,7 +316,7 @@ struct adios_var_struct * adios_mpi_bgq_copy_var (struct adios_var_struct * v)
                             malloc (sizeof (struct adios_var_struct));
     if (v_new == 0)
     {
-        adios_error (err_no_memory, "MPI_GPFS method: Cannot allocate %d bytes "
+        adios_error (err_no_memory, "MPI_BGQ method: Cannot allocate %d bytes "
             "to duplicate variable structure in adios_mpi_bgq_copy_var()\n",
             sizeof (struct adios_var_struct));
         return 0;
@@ -470,7 +470,7 @@ static void adios_var_to_comm (const char * comm_name
         {
             if (!t)
             {
-                log_warn ("MPI_GPFS method: Communicator not provided and none "
+                log_warn ("MPI_BGQ method: Communicator not provided and none "
                         "listed in XML.  Defaulting to MPI_COMM_SELF\n");
 
                 *comm = MPI_COMM_SELF;
@@ -493,7 +493,7 @@ static void adios_var_to_comm (const char * comm_name
             {
                 if (!t)
                 {
-                    log_warn ("MPI_GPFS method: Communicator not provided and none "
+                    log_warn ("MPI_BGQ method: Communicator not provided and none "
                             "listed in XML.  Defaulting to MPI_COMM_SELF\n");
 
                     *comm = MPI_COMM_SELF;
@@ -514,7 +514,7 @@ static void adios_var_to_comm (const char * comm_name
             {
                 if (!t)
                 {
-                    log_warn ("MPI_GPFS method: Communicator not provided but one is "
+                    log_warn ("MPI_BGQ method: Communicator not provided but one is "
                             "listed in XML.  Defaulting to MPI_COMM_WORLD\n");
 
                     *comm = MPI_COMM_WORLD;
@@ -535,7 +535,7 @@ static void adios_var_to_comm (const char * comm_name
     }
     else
     {
-        log_warn ("MPI_GPFS method: Coordination-communication not provided. "
+        log_warn ("MPI_BGQ method: Coordination-communication not provided. "
                   "Using MPI_COMM_WORLD instead\n"
                  );
 
@@ -584,17 +584,13 @@ void adios_mpi_bgq_init (const PairStruct * parameters
 }
 
 int adios_mpi_bgq_open (struct adios_file_struct * fd
-                        ,struct adios_method_struct * method, void * comm
-                        )
+                       ,struct adios_method_struct * method, MPI_Comm comm
+                       )
 {
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                     method->method_data;
-    adios_var_to_comm (fd->group->group_comm
-                      ,fd->group->adios_host_language_fortran
-                      ,comm
-                      ,&md->group_comm
-                      );
 
+    md->group_comm = comm;
     if (md->group_comm != MPI_COMM_NULL)
     {
         MPI_Comm_rank (md->group_comm, &md->rank);
@@ -716,7 +712,7 @@ enum ADIOS_FLAG adios_mpi_bgq_should_buffer (struct adios_file_struct * fd
         case adios_mode_append:
         case adios_mode_read:
         {
-            adios_error (err_invalid_file_mode, "MPI_GPFS method: specified mode is not supported.\n");
+            adios_error (err_invalid_file_mode, "MPI_BGQ method: specified mode is not supported.\n");
             break;
         }
 
@@ -856,7 +852,7 @@ enum ADIOS_FLAG adios_mpi_bgq_should_buffer (struct adios_file_struct * fd
 
         default:
         {
-            adios_error (err_invalid_file_mode, "MPI_GPFS method: Unknown file mode requested: %d\n", fd->mode);
+            adios_error (err_invalid_file_mode, "MPI_BGQ method: Unknown file mode requested: %d\n", fd->mode);
 
             free (name);
 
@@ -882,7 +878,7 @@ enum ADIOS_FLAG adios_mpi_bgq_should_buffer (struct adios_file_struct * fd
                                  );
             if (count != fd->bytes_written)
             {
-                log_warn ("a:MPI_GPFS method tried to write %llu, only wrote %llu\n", 
+                log_warn ("a:MPI_BGQ method tried to write %llu, only wrote %llu\n", 
                           fd->bytes_written, count);
             }
         }
@@ -967,7 +963,7 @@ void adios_mpi_bgq_get_write_buffer (struct adios_file_struct * fd
         {
             adios_method_buffer_free (mem_allowed);
             adios_error (err_no_memory, 
-                    "MPI_GPFS method: Out of memory allocating %llu bytes for variable %s\n",
+                    "MPI_BGQ method: Out of memory allocating %llu bytes for variable %s\n",
                     *size ,v->name);
             v->got_buffer = adios_flag_no;
             v->free_data = adios_flag_no;
@@ -988,7 +984,7 @@ void adios_mpi_bgq_get_write_buffer (struct adios_file_struct * fd
     {
         adios_method_buffer_free (mem_allowed);
         adios_error (err_buffer_overflow, 
-                "MPI_GPFS method: OVERFLOW: Cannot allocate requested buffer of %llu "
+                "MPI_BGQ method: OVERFLOW: Cannot allocate requested buffer of %llu "
                 "bytes for %s. Allowed max size is %llu\n",
                 *size, v->name, mem_allowed);
         *size = 0;
@@ -1104,7 +1100,7 @@ static void adios_mpi_bgq_do_read (struct adios_file_struct * fd
 
         default:
             adios_error (err_invalid_file_version, 
-                    "MPI_GPFS method read: file version unknown: %u\n",
+                    "MPI_BGQ method read: file version unknown: %u\n",
                     md->b.version);
             return;
     }
@@ -1151,7 +1147,7 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
         case adios_mode_update:
         {
             adios_error (err_invalid_file_mode, 
-                    "Only \"w\" mode is supported by MPI_GPFS\n");
+                    "Only \"w\" mode is supported by MPI_BGQ\n");
             break;
         }
         case adios_mode_write:
@@ -1187,7 +1183,7 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
                     fd->pg_start_in_file + fd->write_size_bytes) 
                 {    
                     adios_error (err_out_of_bound, 
-                            "MPI_GPFS method, rank %d: size of buffered data exceeds pg bound.\n"
+                            "MPI_BGQ method, rank %d: size of buffered data exceeds pg bound.\n"
                             "File is corrupted. Need to enlarge group size in adios_group_size().\n"
                             "Group size=%llu, offset at end of variable buffer=%llu\n",
                             md->rank, 
@@ -1212,7 +1208,7 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
                         memset (e, 0, MPI_MAX_ERROR_STRING);
                         MPI_Error_string (err, e, &len);
                         adios_error (err_write_error,
-                                "MPI_GPFS method, rank %d: adios_close(): writing of buffered data "
+                                "MPI_BGQ method, rank %d: adios_close(): writing of buffered data "
                                 "[%llu..%llu] to file %s failed: '%s'\n",
                                 md->rank, bytes_written, bytes_written+to_write-1,
                                 fd->name, e);
@@ -1363,7 +1359,7 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
                         MPI_Get_count(&md->status, MPI_BYTE, &count);
                         if (count != write_len)
                         {
-                            log_error ("MPI_GPFS method, rank %d: Need to do multi-write 1 (tried: "
+                            log_error ("MPI_BGQ method, rank %d: Need to do multi-write 1 (tried: "
                                     "%d wrote: %d) errno %d\n",
                                     md->rank, write_len, count, errno);
                             err = count;
@@ -1382,7 +1378,7 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
                     memset (e, 0, MPI_MAX_ERROR_STRING);
                     MPI_Error_string (err, e, &len);
                     adios_error (err_write_error,
-                            "MPI_GPFS method, rank %d: adios_close(): writing of index data "
+                            "MPI_BGQ method, rank %d: adios_close(): writing of index data "
                             "of %llu bytes to file %s failed: '%s'\n",
                             md->rank, buffer_offset, fd->name, e);
                 }
@@ -1591,7 +1587,7 @@ void adios_mpi_bgq_bg_close (struct adios_file_struct * fd
         case adios_mode_update:
         {
             adios_error (err_invalid_file_mode, 
-                    "Only \"w\" mode is supported by MPI_GPFS\n");
+                    "Only \"w\" mode is supported by MPI_BGQ\n");
             break;
         }
         case adios_mode_write:
@@ -1631,7 +1627,7 @@ void adios_mpi_bgq_bg_close (struct adios_file_struct * fd
                 disp = (int *) malloc (new_group_size * 4);
                 if (pg_sizes == 0 || disp == 0)
                 {
-                    adios_error (err_no_memory, "MPI_GPFS method: Cannot allocate memory "
+                    adios_error (err_no_memory, "MPI_BGQ method: Cannot allocate memory "
                                 "for merging process blocks (mpi_amr_bg_close)\n");
                     return;
                 }
@@ -1653,7 +1649,7 @@ void adios_mpi_bgq_bg_close (struct adios_file_struct * fd
                 {
                     if (2 * max_data_size > MAX_AGG_BUF)
                     {
-                        log_warn ("MPI_GPFS method (BG): The max allowed aggregation "
+                        log_warn ("MPI_BGQ method (BG): The max allowed aggregation "
                                 "buffer is %llu bytes.\n"
                                 "But this ADIOS method needs %llu bytes for aggregation\n",
                                 MAX_AGG_BUF, 2 * max_data_size);
@@ -1663,7 +1659,7 @@ void adios_mpi_bgq_bg_close (struct adios_file_struct * fd
                     recv_buff = malloc (max_data_size);
                     if (aggr_buff == 0 || recv_buff == 0)
                     {
-                        adios_error (err_no_memory, "MPI_GPFS method (BG): Cannot allocate "
+                        adios_error (err_no_memory, "MPI_BGQ method (BG): Cannot allocate "
                                     "2 x %llu bytes for aggregation buffers.\n", 
                                     max_data_size);
                         return;
@@ -1673,7 +1669,7 @@ void adios_mpi_bgq_bg_close (struct adios_file_struct * fd
                 {
                     if (max_data_size > MAX_AGG_BUF)
                     {
-                        log_warn ("MPI_GPFS method (BG): The max allowed aggregation "
+                        log_warn ("MPI_BGQ method (BG): The max allowed aggregation "
                                   "buffer is %llu bytes.\n",
                                   MAX_AGG_BUF);
                     }
@@ -1681,7 +1677,7 @@ void adios_mpi_bgq_bg_close (struct adios_file_struct * fd
                     recv_buff = malloc (max_data_size);
                     if (recv_buff == 0)
                     {
-                        adios_error (err_no_memory, "MPI_GPFS method (BG): Cannot allocate "
+                        adios_error (err_no_memory, "MPI_BGQ method (BG): Cannot allocate "
                                     "%llu bytes for receive buffer.\n", 
                                     max_data_size);
                         return;
@@ -2119,7 +2115,7 @@ void adios_mpi_bgq_ag_close (struct adios_file_struct * fd
         case adios_mode_append:
         {
             adios_error (err_invalid_file_mode, 
-                        "Only \"w\" mode is supported by MPI_GPFS Aggregation IO\n");
+                        "Only \"w\" mode is supported by MPI_BGQ Aggregation IO\n");
             break;
         }
         case adios_mode_write:
@@ -2166,7 +2162,7 @@ void adios_mpi_bgq_ag_close (struct adios_file_struct * fd
 
                     if (count != md->vars_header_size)
                     {
-                        log_warn ("d:MPI_GPFS method tried to write %llu, only wrote %d\n",
+                        log_warn ("d:MPI_BGQ method tried to write %llu, only wrote %d\n",
                                 md->vars_header_size, count);
                     }
                 }
@@ -2215,7 +2211,7 @@ void adios_mpi_bgq_ag_close (struct adios_file_struct * fd
                             if (aggr_buff == 0)
                             {
                                 adios_error (err_no_memory, 
-                                        "MPI_GPFS method (AG): Cannot allocate aggregation buffer.\n"
+                                        "MPI_BGQ method (AG): Cannot allocate aggregation buffer.\n"
                                         "Need to increase the number of aggregators.\n"
                                         );
                                 return;
@@ -2237,7 +2233,7 @@ void adios_mpi_bgq_ag_close (struct adios_file_struct * fd
 
                             if (count != total_size)
                             {
-                                log_warn ("e:MPI_GPFS method tried to write %llu, only wrote %llu\n",
+                                log_warn ("e:MPI_BGQ method tried to write %llu, only wrote %llu\n",
                                         fd->bytes_written, count);
                             }
                         }
@@ -2287,7 +2283,7 @@ void adios_mpi_bgq_ag_close (struct adios_file_struct * fd
 
                     if (count != md->vars_header_size)
                     {
-                        log_warn ("f:MPI_GPFS method tried to write %llu, only wrote %llu\n",
+                        log_warn ("f:MPI_BGQ method tried to write %llu, only wrote %llu\n",
                                   md->vars_header_size, count);
                     }
                 }
@@ -2313,7 +2309,7 @@ void adios_mpi_bgq_ag_close (struct adios_file_struct * fd
                 if (pg_sizes == 0 || disp == 0)
                 {
                     adios_error (err_no_memory, 
-                            "MPI_GPFS method (AG): Cannot allocate buffers (%d bytes) "
+                            "MPI_BGQ method (AG): Cannot allocate buffers (%d bytes) "
                             "for merging process blocks.\n",
                             2*4*new_group_size
                             );
@@ -2344,7 +2340,7 @@ void adios_mpi_bgq_ag_close (struct adios_file_struct * fd
                     if (aggr_buff == 0)
                     {
                         adios_error (err_no_memory, 
-                                "MPI_GPFS method (AG): Cannot allocate %llu bytes "
+                                "MPI_BGQ method (AG): Cannot allocate %llu bytes "
                                 "for aggregation buffer.\n"
                                 "Need to increase the number of aggregators.\n",
                                 total_data_size);
@@ -2704,7 +2700,7 @@ void adios_mpi_bgq_ag_close (struct adios_file_struct * fd
         default:
         {
             adios_error (err_invalid_file_mode, 
-                    "MPI_GPFS method (AG): Unknown file mode (%d) at close time\n", 
+                    "MPI_BGQ method (AG): Unknown file mode (%d) at close time\n", 
                     fd->mode);
         }
     }
@@ -2751,7 +2747,7 @@ void adios_mpi_bgq_close (struct adios_file_struct * fd
     }
     else
     {
-        adios_error (err_invalid_write_method, "MPI_GPFS method: unknown I/O type",
+        adios_error (err_invalid_write_method, "MPI_BGQ method: unknown I/O type",
                 md->g_io_type);
         return;
     }
