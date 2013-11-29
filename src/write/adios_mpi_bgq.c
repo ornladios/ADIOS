@@ -718,6 +718,14 @@ enum ADIOS_FLAG adios_mpi_bgq_should_buffer (struct adios_file_struct * fd
 
         case adios_mode_write:
         {
+            if (fd->shared_buffer == adios_flag_no)
+            {
+                adios_error (err_no_memory, "MPI_BGQ method: ADIOS buffer needs to be enlarged! "
+                                             "Currently don't support un-buffered writes.\n");
+                exit (1);
+                break;
+            }
+
             if (md->partition_id == 0 && md->file_comm_rank == 0)
             {
                 // open metadata file
@@ -1256,7 +1264,15 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
                     }
 
                     recv_buffer = malloc (total_size);
+if (recv_buffer == NULL)
+{
+printf ("buffer size = %d\n", total_size);
+                    for (i = 0; i < md->file_comm_size; i++)
+                    {
+                        printf ("index_offsets [%d] = %d\n", i, index_offsets[i]);
+                    }
 
+}
                     MPI_Gatherv (&size, 0, MPI_BYTE
                                 ,recv_buffer, index_sizes, index_offsets
                                 ,MPI_BYTE, 0, md->file_comm
@@ -1300,7 +1316,8 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
                     adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
                                          ,0, md->index);
 
-                    uint32_t temp_buffer_size = buffer_size;
+//                    uint32_t temp_buffer_size = buffer_size;
+                    uint32_t temp_buffer_size = buffer_offset;
 
 /*
                     MPI_Gather ((uint32_t *)&buffer_size, 1, MPI_INT, 0, 0, MPI_INT
@@ -1456,7 +1473,8 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
                     adios_write_index_v1 (&buffer2, &buffer_size2, &buffer_offset2
                                          ,0, md->index
                                          );
-                    uint32_t temp_buffer_size2 = buffer_size2;
+//                    uint32_t temp_buffer_size2 = buffer_size2;
+                    uint32_t temp_buffer_size2 = buffer_offset2;
 
 /*
                     MPI_Gather (&buffer_size2, 1, MPI_INT
