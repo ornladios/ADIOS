@@ -79,6 +79,7 @@ struct adios_MPI_data_struct
     MPI_Offset * g_offsets;
     struct adios_MPI_thread_data_open * open_thread_data;
     enum ADIOS_MPI_BGQ_IO_TYPE g_io_type;
+    int g_have_mdf;
 };
 
 struct adios_MPI_thread_data_open
@@ -163,8 +164,28 @@ adios_mpi_bgq_set_aggregation_parameters(char * parameters, struct adios_MPI_dat
     }
     else
     {
-        // by default, use BG
+        // by default, use BG. Currently only simple type
+        // is supported. Q. Liu, 11-29-2013.
         md->g_io_type = ADIOS_MPI_BGQ_IO_SIMPLE;
+    }
+
+    strcpy (temp_string, parameters);
+    trim_spaces (temp_string);
+
+    if (p_size = strstr (temp_string, "have_metadata_file"))
+    {
+        char * p = strchr (p_size, '=');
+        char * q = strtok (p, ";");
+
+        if (!q)
+            md->g_have_mdf = atoi (q + 1);
+        else
+            md->g_have_mdf = atoi (p + 1);
+    }
+    else
+    {
+        // by default, write metadata file. 
+        md->g_have_mdf = 1;
     }
 
     free (temp_string);
@@ -579,6 +600,7 @@ void adios_mpi_bgq_init (const PairStruct * parameters
     md->g_offsets = 0;
     md->open_thread_data = 0;
     md->g_io_type = ADIOS_MPI_BGQ_IO_BG;
+    md->g_have_mdf = 1;
 
     adios_buffer_struct_init (&md->b);
 }
@@ -726,23 +748,26 @@ enum ADIOS_FLAG adios_mpi_bgq_should_buffer (struct adios_file_struct * fd
                 break;
             }
 
+            adios_mpi_bgq_set_aggregation_parameters (method->parameters, md);
+
             if (md->partition_id == 0 && md->file_comm_rank == 0)
             {
                 // open metadata file
                 unlink (fd->name);
 
-                MPI_File_open (MPI_COMM_SELF, fd->name
-                              ,MPI_MODE_WRONLY | MPI_MODE_CREATE
-                              ,MPI_INFO_NULL
-                              ,&md->mfh
-                              );
+                if (md->g_have_mdf)
+                {
+                    MPI_File_open (MPI_COMM_SELF, fd->name
+                                  ,MPI_MODE_WRONLY | MPI_MODE_CREATE
+                                  ,MPI_INFO_NULL
+                                  ,&md->mfh
+                                  );
+                }
 
                 adios_mpi_bgq_do_mkdir (fd);
             }
 
             MPI_Barrier (md->group_comm);
-
-            adios_mpi_bgq_set_aggregation_parameters (method->parameters, md);
 
             // Check if fd->name contains path
             if (ch = strrchr (fd->name, '/'))
@@ -1264,15 +1289,8 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
                     }
 
                     recv_buffer = malloc (total_size);
-if (recv_buffer == NULL)
-{
-printf ("buffer size = %d\n", total_size);
-                    for (i = 0; i < md->file_comm_size; i++)
-                    {
-                        printf ("index_offsets [%d] = %d\n", i, index_offsets[i]);
-                    }
+                    assert (recv_buffer);
 
-}
                     MPI_Gatherv (&size, 0, MPI_BYTE
                                 ,recv_buffer, index_sizes, index_offsets
                                 ,MPI_BYTE, 0, md->file_comm
@@ -1316,7 +1334,6 @@ printf ("buffer size = %d\n", total_size);
                     adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
                                          ,0, md->index);
 
-//                    uint32_t temp_buffer_size = buffer_size;
                     uint32_t temp_buffer_size = buffer_offset;
 
 /*
@@ -1400,151 +1417,153 @@ printf ("buffer size = %d\n", total_size);
                             md->rank, buffer_offset, fd->name, e);
                 }
             }
-#if 1
-            // collect index among aggregators
-            if (md->file_comm_rank == 0)
+
+            if (md->g_have_mdf)
             {
-                if (md->partition_id == 0)
+                // collect index among aggregators
+                if (md->file_comm_rank == 0)
                 {
-                    int * index_sizes = malloc (4 * md->n_partitions);
-                    int * index_offsets = malloc (4 * md->n_partitions);
-                    char * recv_buffer = 0;
-                    uint32_t size = 0, total_size = 0;
-
-                    MPI_Gather (&size, 1, MPI_INT
-                               ,index_sizes, 1, MPI_INT
-                               ,0, new_comm2
-                               );
-
-                    for (i = 0; i < md->n_partitions; i++)
+                    if (md->partition_id == 0)
                     {
-                        index_offsets [i] = total_size;
-                        total_size += index_sizes [i];
+                        int * index_sizes = malloc (4 * md->n_partitions);
+                        int * index_offsets = malloc (4 * md->n_partitions);
+                        char * recv_buffer = 0;
+                        uint32_t size = 0, total_size = 0;
+
+                        MPI_Gather (&size, 1, MPI_INT
+                                   ,index_sizes, 1, MPI_INT
+                                   ,0, new_comm2
+                                   );
+
+                        for (i = 0; i < md->n_partitions; i++)
+                        {
+                            index_offsets [i] = total_size;
+                            total_size += index_sizes [i];
+                        }
+
+                        recv_buffer = malloc (total_size);
+                        assert (recv_buffer);
+
+                        MPI_Gatherv (&size, 0, MPI_BYTE
+                                    ,recv_buffer, index_sizes, index_offsets
+                                    ,MPI_BYTE, 0, new_comm2
+                                    );
+
+                        char * buffer_save = md->b.buff;
+                        uint64_t buffer_size_save = md->b.length;
+                        uint64_t offset_save = md->b.offset;
+
+                        for (i = 1; i < md->n_partitions; i++)
+                        {
+                            md->b.buff = recv_buffer + index_offsets [i];
+                            md->b.length = index_sizes [i];
+                            md->b.offset = 0;
+
+                            adios_parse_process_group_index_v1 (&md->b
+                                                               ,&new_pg_root
+                                                               );
+                            adios_parse_vars_index_v1 (&md->b, &new_vars_root, NULL, NULL);
+                            adios_parse_attributes_index_v1 (&md->b
+                                                            ,&new_attrs_root
+                                                            );
+
+                            adios_merge_index_v1 (md->index
+                                                 ,new_pg_root, new_vars_root
+                                                 ,new_attrs_root
+                                                 );
+                            new_pg_root = 0;
+                            new_vars_root = 0;
+                            new_attrs_root = 0;
+                        }
+
+                        md->b.buff = buffer_save;
+                        md->b.length = buffer_size_save;
+                        md->b.offset = offset_save;
+
+                        free (recv_buffer);
+                        free (index_sizes);
+                        free (index_offsets);
                     }
-
-                    recv_buffer = malloc (total_size);
-
-                    MPI_Gatherv (&size, 0, MPI_BYTE
-                                ,recv_buffer, index_sizes, index_offsets
-                                ,MPI_BYTE, 0, new_comm2
-                                );
-
-                    char * buffer_save = md->b.buff;
-                    uint64_t buffer_size_save = md->b.length;
-                    uint64_t offset_save = md->b.offset;
-
-                    for (i = 1; i < md->n_partitions; i++)
+                    else
                     {
-                        md->b.buff = recv_buffer + index_offsets [i];
-                        md->b.length = index_sizes [i];
-                        md->b.offset = 0;
+                        char * buffer2 = 0;
+                        uint64_t buffer_size2 = 0;
+                        uint64_t buffer_offset2 = 0;
 
-                        adios_parse_process_group_index_v1 (&md->b
-                                                           ,&new_pg_root
-                                                           );
-                        adios_parse_vars_index_v1 (&md->b, &new_vars_root, NULL, NULL);
-                        adios_parse_attributes_index_v1 (&md->b
-                                                        ,&new_attrs_root
-                                                        );
-
-                        adios_merge_index_v1 (md->index
-                                             ,new_pg_root, new_vars_root
-                                             ,new_attrs_root
+                        adios_write_index_v1 (&buffer2, &buffer_size2, &buffer_offset2
+                                             ,0, md->index
                                              );
-                        new_pg_root = 0;
-                        new_vars_root = 0;
-                        new_attrs_root = 0;
-                    }
-
-                    md->b.buff = buffer_save;
-                    md->b.length = buffer_size_save;
-                    md->b.offset = offset_save;
-
-                    free (recv_buffer);
-                    free (index_sizes);
-                    free (index_offsets);
-                }
-                else
-                {
-                    char * buffer2 = 0;
-                    uint64_t buffer_size2 = 0;
-                    uint64_t buffer_offset2 = 0;
-
-                    adios_write_index_v1 (&buffer2, &buffer_size2, &buffer_offset2
-                                         ,0, md->index
-                                         );
-//                    uint32_t temp_buffer_size2 = buffer_size2;
-                    uint32_t temp_buffer_size2 = buffer_offset2;
+                        uint32_t temp_buffer_size2 = buffer_offset2;
 
 /*
-                    MPI_Gather (&buffer_size2, 1, MPI_INT
-                               ,0, 0, MPI_INT
-                               ,0, new_comm2
-                               );
-                    MPI_Gatherv (buffer2, buffer_size2, MPI_BYTE
-                                ,0, 0, 0, MPI_BYTE
-                                ,0, new_comm2
-                                );
+                        MPI_Gather (&buffer_size2, 1, MPI_INT
+                                   ,0, 0, MPI_INT
+                                   ,0, new_comm2
+                                   );
+                        MPI_Gatherv (buffer2, buffer_size2, MPI_BYTE
+                                    ,0, 0, 0, MPI_BYTE
+                                    ,0, new_comm2
+                                    );
 */
-                    MPI_Gather (&temp_buffer_size2, 1, MPI_INT
-                               ,0, 0, MPI_INT
-                               ,0, new_comm2
-                               );
-                    MPI_Gatherv (buffer2, temp_buffer_size2, MPI_BYTE
-                                ,0, 0, 0, MPI_BYTE
-                                ,0, new_comm2
-                                );
+                        MPI_Gather (&temp_buffer_size2, 1, MPI_INT
+                                   ,0, 0, MPI_INT
+                                   ,0, new_comm2
+                                   );
+                        MPI_Gatherv (buffer2, temp_buffer_size2, MPI_BYTE
+                                    ,0, 0, 0, MPI_BYTE
+                                    ,0, new_comm2
+                                    );
 
+                        if (buffer2)
+                        {
+                            free (buffer2);
+                            buffer2 = 0;
+                            buffer_size2 = 0;
+                            buffer_offset2 = 0;
+                        }
+                    }
+                }
 
-                    if (buffer2)
+                // write out the metadata file from rank 0
+                if (md->partition_id == 0 && md->file_comm_rank == 0)
+                {
+                    MPI_File m_file;
+                    char * global_index_buffer = 0;
+                    uint64_t global_index_buffer_size = 0;
+                    uint64_t global_index_buffer_offset = 0;
+                    uint64_t global_index_start = 0;
+                    uint16_t flag = 0;
+
+                    adios_write_index_v1 (&global_index_buffer, &global_index_buffer_size
+                                         ,&global_index_buffer_offset, global_index_start
+                                         ,md->index
+                                         );
+
+                    flag |= ADIOS_VERSION_HAVE_SUBFILE;
+
+                    adios_write_version_flag_v1 (&global_index_buffer
+                                                ,&global_index_buffer_size
+                                                ,&global_index_buffer_offset
+                                                ,flag
+                                                );
+
+                    adios_mpi_bgq_striping_unit_write(
+                                      md->mfh,
+                                      -1,
+                                      global_index_buffer,
+                                      global_index_buffer_offset
+                                      );
+
+                    if (global_index_buffer)
                     {
-                        free (buffer2);
-                        buffer2 = 0;
-                        buffer_size2 = 0;
-                        buffer_offset2 = 0;
+                        free (global_index_buffer);
+                        global_index_buffer = 0;
+                        global_index_buffer_size = 0;
+                        global_index_buffer_offset = 0;
                     }
                 }
             }
 
-            // write out the metadata file from rank 0
-            if (md->partition_id == 0 && md->file_comm_rank == 0)
-            {
-                MPI_File m_file;
-                char * global_index_buffer = 0;
-                uint64_t global_index_buffer_size = 0;
-                uint64_t global_index_buffer_offset = 0;
-                uint64_t global_index_start = 0;
-                uint16_t flag = 0;
-
-                adios_write_index_v1 (&global_index_buffer, &global_index_buffer_size
-                                     ,&global_index_buffer_offset, global_index_start
-                                     ,md->index
-                                     );
-
-                flag |= ADIOS_VERSION_HAVE_SUBFILE;
-
-                adios_write_version_flag_v1 (&global_index_buffer
-                                            ,&global_index_buffer_size
-                                            ,&global_index_buffer_offset
-                                            ,flag
-                                            );
-
-                adios_mpi_bgq_striping_unit_write(
-                                  md->mfh,
-                                  -1,
-                                  global_index_buffer,
-                                  global_index_buffer_offset
-                                  );
-
-                if (global_index_buffer)
-                {
-                    free (global_index_buffer);
-                    global_index_buffer = 0;
-                    global_index_buffer_size = 0;
-                    global_index_buffer_offset = 0;
-                }
-            }
-#endif
             FREE (buffer);
             buffer_size = 0;
             buffer_offset = 0;
@@ -1566,7 +1585,7 @@ printf ("buffer size = %d\n", total_size);
     if (md && md->fh)
         MPI_File_close (&md->fh);
 
-    if (md && md->mfh)
+    if (md && md->g_have_mdf && md->mfh)
         MPI_File_close (&md->mfh);
 
     if (   md->group_comm != MPI_COMM_WORLD
