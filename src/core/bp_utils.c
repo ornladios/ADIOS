@@ -982,6 +982,7 @@ int bp_parse_attrs (struct BP_FILE * fh)
     uint64_t ** attr_offsets;
     char ** attr_namelist;
     int grpid, j,cnt;
+    int lenpath, lenname;
 
     attr_counts_per_group = (uint16_t *)
         malloc (sizeof(uint16_t) * fh->gattr_h->group_count);
@@ -1002,7 +1003,8 @@ int bp_parse_attrs (struct BP_FILE * fh)
             }
         }
         // Full name of attributes: concatenate attr_path and attr_name
-        // Always have / in the beginning of the full name
+        /*
+        // Until 1.5 version: Always have / in the beginning of the full name
         if (strcmp ((*root)->attr_path,"/")) {
             attr_namelist [i] = (char *) malloc ( strlen((*root)->attr_name)
                     +strlen((*root)->attr_path) + 1 + 1
@@ -1015,7 +1017,27 @@ int bp_parse_attrs (struct BP_FILE * fh)
         }
         strcat(attr_namelist[i], "/");
         strcat(attr_namelist[i], (*root)->attr_name);
+        */
 
+        // From 1.6, leading / is not required anymore
+        lenpath = strlen((*root)->attr_path);
+        lenname  = strlen((*root)->attr_name);
+        if (lenpath > 0) {
+            attr_namelist [i] = (char *) malloc (lenname + lenpath + 1 + 1);
+                                                                  // extra / and ending \0
+            strcpy(attr_namelist[i], (*root)->attr_path);
+            if ((*root)->attr_path[lenpath-1] != '/') {
+                attr_namelist[i][lenpath] = '/';
+                lenpath++;
+            }
+            strcpy(&attr_namelist[i][lenpath], (*root)->attr_name);
+        }
+        else {
+            attr_namelist [i] = (char *) malloc (lenname+1); 
+            strcpy(attr_namelist[i], (*root)->attr_name);
+        }
+        //printf ("Attribute %d full path is [%s]\n", i, attr_namelist[i]);
+        
         attr_offsets[i] = (uint64_t *) malloc (
                 sizeof(uint64_t)*(*root)->characteristics_count);
         for (j=0;j < (*root)->characteristics_count;j++) {
@@ -1152,7 +1174,7 @@ int bp_parse_vars (struct BP_FILE * fh)
     uint64_t ** var_offsets;
     char ** var_namelist;
     int grpid, j,cnt;
-    int lenpath,lenvar;
+    int lenpath,lenname;
 
     var_counts_per_group = (uint16_t *)
         malloc (sizeof(uint16_t)*fh->gvar_h->group_count);
@@ -1193,16 +1215,19 @@ int bp_parse_vars (struct BP_FILE * fh)
         /* From 1.6, relative and full path (starts with /) are handled separately in search */
         // Full name of variable: concatenate var_path and var_name
         lenpath = strlen((*root)->var_path);
-        lenvar  = strlen((*root)->var_name);
+        lenname  = strlen((*root)->var_name);
         if (lenpath > 0) {
-            var_namelist [i] = (char *) malloc (lenvar + lenpath + 1 + 1);
+            var_namelist [i] = (char *) malloc (lenname + lenpath + 1 + 1);
                                                                   // extra / and ending \0
             strcpy(var_namelist[i], (*root)->var_path);
-            var_namelist[i][lenpath] = '/';
-            strcpy(&var_namelist[i][lenpath+1], (*root)->var_name);
+            if ((*root)->var_path[lenpath-1] != '/') { // if path is not ending with /
+                var_namelist[i][lenpath] = '/';      // add the extra /
+                lenpath++;
+            }
+            strcpy(&var_namelist[i][lenpath], (*root)->var_name);
         }
         else {
-            var_namelist [i] = (char *) malloc (lenvar+1); 
+            var_namelist [i] = (char *) malloc (lenname+1); 
             strcpy(var_namelist[i], (*root)->var_name);
         }
         //printf ("Variable %d full path is [%s]\n", i, var_namelist[i]);
@@ -1642,7 +1667,7 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
     struct adios_index_var_struct_v1 * var_root = fh->vars_root;
     struct adios_index_attribute_struct_v1 * attr_root;
     uint64_t i;
-    int lenpath, lenvar;
+    int lenpath, lenname;
 
     /* Streaming starts with step 0. However, time index in BP file
      * starts with 1. If 'tostep' is -1, that means we want to get all steps.
@@ -1711,16 +1736,19 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
                 /* From 1.6, relative and full path (starts with /) are handled separately in search */
                 // Full name of variable: concatenate var_path and var_name
                 lenpath = strlen(var_root->var_path);
-                lenvar  = strlen(var_root->var_name);
+                lenname = strlen(var_root->var_name);
                 if (lenpath > 0) {
-                    fp->var_namelist [j] = (char *) malloc (lenvar + lenpath + 1 + 1);
+                    fp->var_namelist [j] = (char *) malloc (lenname + lenpath + 1 + 1);
                                                                     // extra / and ending \0
                     strcpy(fp->var_namelist[j], var_root->var_path);
-                    fp->var_namelist[j][lenpath] = '/';
-                    strcpy(&(fp->var_namelist[j][lenpath+1]), var_root->var_name);
+                    if (var_root->var_path[lenpath-1] != '/') {
+                        fp->var_namelist[j][lenpath] = '/';
+                        lenpath++;
+                    }
+                    strcpy(&(fp->var_namelist[j][lenpath]), var_root->var_name);
                 }
                 else {
-                    fp->var_namelist[j] = (char *) malloc (lenvar+1); 
+                    fp->var_namelist[j] = (char *) malloc (lenname+1); 
                     strcpy(fp->var_namelist[j], var_root->var_name);
                 }
                 //printf ("Seek to step: Variable %d full path is [%s]\n", j, fp->var_namelist[j]);
@@ -1777,6 +1805,8 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
             {
                 if (allstep || (!allstep && attr_root->characteristics[i].time_index == t))
                 {
+                    /* Up to 1.5, we always put a / to the beginning */
+                    /*
                     if (strcmp (attr_root->attr_path,"/"))
                     {
                         fp->attr_namelist[j] = (char *)malloc (strlen((attr_root)->attr_name)
@@ -1792,7 +1822,26 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
 
                     strcat (fp->attr_namelist[j], "/");
                     strcat (fp->attr_namelist[j], attr_root->attr_name);
-
+                    */
+                    // Full name of attribute: concatenate attr_path and attr_name
+                    lenpath = strlen(attr_root->attr_path);
+                    lenname = strlen(attr_root->attr_name);
+                    if (lenpath > 0) {
+                        fp->attr_namelist [j] = (char *) malloc (lenname + lenpath + 1 + 1);
+                                                                    // extra / and ending \0
+                        strcpy(fp->attr_namelist[j], attr_root->attr_path);
+                        if (attr_root->attr_path[lenpath-1] != '/') {
+                            fp->attr_namelist[j][lenpath] = '/';
+                            lenpath++;
+                        }
+                        strcpy(&(fp->attr_namelist[j][lenpath]), attr_root->attr_name);
+                    }
+                    else {
+                        fp->attr_namelist[j] = (char *) malloc (lenname+1); 
+                        strcpy(fp->attr_namelist[j], attr_root->attr_name);
+                    }
+                    //printf ("Seek to step: Attribute %d full path is [%s], path=[%s], name=[%s]\n", 
+                    //        j, fp->attr_namelist[j], attr_root->attr_path, attr_root->attr_name);
                     j++;
 
                     break;
