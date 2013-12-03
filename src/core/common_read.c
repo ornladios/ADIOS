@@ -474,7 +474,7 @@ void common_read_release_step (ADIOS_FILE *fp)
     }
 }
 
-static int common_read_find_name_var (ADIOS_FILE *fp, const char *name)
+static int common_read_find_var (const ADIOS_FILE *fp, const char *name, int quiet)
 {
     /** Find a string name in a list of names and return the index. 
         Search should work with starting / characters and without.
@@ -488,7 +488,10 @@ static int common_read_find_name_var (ADIOS_FILE *fp, const char *name)
     adios_errno = err_no_error;
 
     if (!name) {
-        adios_error (err_invalid_varname, "Null pointer passed as variable name!\n");
+        if (!quiet)
+            adios_error (err_invalid_varname, "Null pointer passed as variable name!\n");
+        else
+            adios_errno = err_invalid_varname;
         return -1;
     }
 
@@ -501,12 +504,15 @@ static int common_read_find_name_var (ADIOS_FILE *fp, const char *name)
     }
 
     if (varid == -1) {
-        adios_error (err_invalid_varname, "Variable '%s' is not found!\n", name);
+        if (!quiet)
+            adios_error (err_invalid_varname, "Variable '%s' is not found!\n", name);
+        else
+            adios_errno = err_invalid_varname;
     }
     return varid;
 }
 
-static int common_read_find_name (int n, char ** namelist, const char *name, int role)
+static int common_read_find_attr (int n, char ** namelist, const char *name, int quiet)
 {
     /** Find a string name in a list of names and return the index. 
         Search should work with starting / characters and without.
@@ -516,11 +522,12 @@ static int common_read_find_name (int n, char ** namelist, const char *name, int
      */
     int id, nstartpos=0, sstartpos;
     char ** s = namelist;
-    char *rolename[2] = { "variable", "attribute" };
-    enum ADIOS_ERRCODES roleerror[2] = { err_invalid_varname, err_invalid_attrname };
 
     if (!name) {
-        adios_error (roleerror[role!=0], "Null pointer passed as %s name!\n", rolename[role!=0]);
+        if (!quiet)
+            adios_error (err_invalid_attrname, "Null pointer passed as attribute name!\n");
+        else
+            adios_errno = err_invalid_attrname;
         return -1;
     }
 
@@ -537,11 +544,10 @@ static int common_read_find_name (int n, char ** namelist, const char *name, int
     }
     
     if (id == n) {
-        adios_error (roleerror[role!=0], "%s '%s' is not found! One "
-                "possible error is to set the view to a specific group and "
-                "then try to read a %s of another group. In this case, "
-                "reset the group view with adios_group_view(fp,-1).\n",
-                rolename[role!=0], name, rolename[role!=0]);
+        if (!quiet)
+            adios_error (err_invalid_attrname, "Attribute '%s' is not found!\n", name);
+        else
+            adios_errno = err_invalid_attrname;
         return -1;
     }
     return id;
@@ -556,8 +562,7 @@ ADIOS_VARINFO * common_read_inq_var (const ADIOS_FILE *fp, const char * varname)
     adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
-        //int varid = common_read_find_name (fp->nvars, fp->var_namelist, varname, 0);
-        int varid = common_read_find_name_var (fp, varname);
+        int varid = common_read_find_var (fp, varname, 0);
         if (varid >= 0) {
             retval = common_read_inq_var_byid (fp, varid);
         } else {
@@ -848,40 +853,6 @@ void common_read_free_transinfo(const ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti) {
 }
 #undef MYFREE
 
-// the function is the same as common_read_find_name
-// but no ERROR msg print out
-// called by common_read_get_attr_mesh
-static int common_read_find_name_mesh (int n, char ** namelist, const char *name, int role)
-{
-    /** Find a string name in a list of names and return the index.
-Search should work with starting / characters and without.
-Create adios error and return -1 if name is null or
-if name is not found in the list.
-role = 0 for variable search, 1 for attribute search
-*/
-    int id, nstartpos=0, sstartpos;
-    char ** s = namelist;
-    char *rolename[2] = { "variable", "attribute" };
-    enum ADIOS_ERRCODES roleerror[2] = { err_invalid_varname, err_invalid_attrname };
-
-    if (!name) {
-        adios_error (roleerror[role!=0], "Null pointer passed as %s name!\n", rolename[role!=0]);
-        return -1;
-    }
-
-    // find names with or without beginning /
-    if (*name == '/') nstartpos = 1;
-
-    for (id=0; id < n; id++) {
-        if (*s[0] == '/') sstartpos = 1;
-        else sstartpos = 0;
-        //DBG_PRINTF(" check %s, startpos=%d\n", *s, sstartpos);
-        if (!strcmp (*s+sstartpos, name+nstartpos))
-            break; // found this name
-        s++;
-    }
-    return id;
-}
 
 // the function is the same as common_read_get_attr_byid
 // but no ERROR msg print out
@@ -925,11 +896,11 @@ int common_read_get_attr_mesh (const ADIOS_FILE * fp,
     adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
-        int attrid = common_read_find_name_mesh (fp->nattrs, fp->attr_namelist, attrname, 1);
+        int attrid = common_read_find_attr (fp->nattrs, fp->attr_namelist, attrname, 1);
         if (attrid > -1) {
             retval = common_read_get_attr_byid_mesh (fp, attrid, type, size, data);
         } else {
-            retval = adios_errno; // adios_errno was set in common_read_find_name
+            retval = adios_errno; // adios_errno was set in common_read_find_attr
         }
     } else {
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_read_get_attr()\n");
@@ -1200,10 +1171,7 @@ int adios_get_uniform_mesh_attr (ADIOS_FILE * fp, ADIOS_MESH *meshinfo, char * a
                 {
                     // string may be a variable
                     int var_march = 0;
-                    char * value_tmp = NULL;
-                    value_tmp = (char *) malloc (strlen("/")+strlen((char *)data)+1);
-                    strcpy (value_tmp, "/");
-                    strcat (value_tmp, (char *)data);
+                    char * value_tmp = (char *)data;
                     for (j=0; j<fp->nvars; j++)
                     {
                         if (!strcmp (fp->var_namelist[j], value_tmp))
@@ -1280,7 +1248,6 @@ int adios_get_uniform_mesh_attr (ADIOS_FILE * fp, ADIOS_MESH *meshinfo, char * a
                             common_read_free_varinfo (v);
                         }
                     }
-                    free (value_tmp);
                     if (!var_march)
                     {
                         if (!strcmp (attrs, "origins"))
@@ -1358,7 +1325,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
     int attr_size;
     void * data = NULL;
     int  read_fail = 0;
-    int i, j;
+    int i, j, varid;
 
     ADIOS_MESH * meshinfo = (ADIOS_MESH *) malloc (sizeof(ADIOS_MESH));
     //mesh id
@@ -1457,25 +1424,14 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                         meshinfo->uniform->dimensions[i] = tmp_value;
                     else
                     {
-                        int var_march = 0;
-                        for (j=0; j<fp->nvars; j++)
-                        {
-                            char * dimensions_value_tmp = NULL;
-                            dimensions_value_tmp = (char *) malloc (strlen("/")+strlen((char *)data)+1);
-                            strcpy (dimensions_value_tmp, "/");
-                            strcat (dimensions_value_tmp, (char *)data);
-//                            printf("dimensions_value_tmp is %s\n", dimensions_value_tmp);
-//                            printf("var name is %s\n", fp->var_namelist[j]);
-                            if (!strcmp (fp->var_namelist[j], dimensions_value_tmp))
-                            {
-                                var_march = 1;
-                                ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[j]);
-                                meshinfo->uniform->dimensions[i] = *(uint64_t *)v->value;
-                                common_read_free_varinfo (v);
-                            }
-                            free (dimensions_value_tmp);
+                        char * dimensions_value_tmp = (char *)data;
+                        varid = common_read_find_var (fp, dimensions_value_tmp, 1);
+                        if (varid >= 0) {
+                            ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[varid]);
+                            meshinfo->uniform->dimensions[i] = *(uint64_t *)v->value;
+                            common_read_free_varinfo (v);
                         }
-                        if (!var_march)
+                        else
                         {
                             adios_error (err_mesh_unifrom_invalid_dim,
                                          "Uniform mesh %s dimensions%d var %s is not correct!\n", 
@@ -1598,25 +1554,14 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                         meshinfo->rectilinear->dimensions[i] = tmp_value;
                     else
                     {
-                        int var_march = 0;
-                        for (j=0; j<fp->nvars; j++)
-                        {
-                            char * dimensions_value_tmp = NULL;
-                            dimensions_value_tmp = (char *) malloc (strlen("/")+strlen((char *)data)+1);
-                            strcpy (dimensions_value_tmp, "/");
-                            strcat (dimensions_value_tmp, (char *)data);
-//                          printf("dimensions_value_tmp is %s\n", dimensions_value_tmp);
-//                          printf("var name is %s\n", fp->var_namelist[j]);
-                            if (!strcmp (fp->var_namelist[j], dimensions_value_tmp))
-                            {
-                                var_march = 1;
-                                ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[j]);
-                                meshinfo->rectilinear->dimensions[i] = *(uint64_t *)v->value;
-                                common_read_free_varinfo (v);
-                            }
-                            free (dimensions_value_tmp);
+                        char * dimensions_value_tmp = (char *)data;
+                        varid = common_read_find_var (fp, dimensions_value_tmp, 1);
+                        if (varid >= 0) {
+                            ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[varid]);
+                            meshinfo->rectilinear->dimensions[i] = *(uint64_t *)v->value;
+                            common_read_free_varinfo (v);
                         }
-                        if (!var_march)
+                        else
                         {
                             adios_error (err_mesh_recti_invalid_dim,
                                          "Rectilinear mesh %s dimensions%d var %s is not correct!\n", 
@@ -1651,11 +1596,8 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
             meshinfo->rectilinear->use_single_var = 1;
             for (i=0; i<fp->nvars; i++)
             {
-                char * coords_tmp = NULL;
+                char * coords_tmp = (char *)data;
                 int var_march = 0;
-                coords_tmp = (char *) malloc (strlen("/")+strlen((char *)data)+1);
-                strcpy (coords_tmp, "/");
-                strcat (coords_tmp, (char *)data);
                 if (!strcmp (fp->var_namelist[i], coords_tmp))
                 {
                     var_march = 1;
@@ -1703,7 +1645,6 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                     }
                     common_read_free_varinfo (v);
                 }
-                free (coords_tmp);
             }
 //            printf ("coordinates is %s\n", meshinfo->rectilinear->coordinates[0]);
         }
@@ -1769,10 +1710,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                     int var_march = 0;
                     for (j=0; j<fp->nvars; j++)
                     {
-                        char * coords_var_tmp;
-                        coords_var_tmp = (char *) malloc (strlen("/")+strlen((char *)data)+1);
-                        strcpy (coords_var_tmp, "/");
-                        strcat (coords_var_tmp, (char *)data);
+                        char * coords_var_tmp = (char *)data;
                         if (!strcmp (fp->var_namelist[j], coords_var_tmp))
                         {
                             var_march = 1;
@@ -1796,7 +1734,6 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                             }
                             common_read_free_varinfo (v);
                         }
-                        free (coords_var_tmp);
                     }
                 }
             }
@@ -1870,22 +1807,14 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                     else
                     {
                         int var_march = 0;
-                        for (j=0; j<fp->nvars; j++)
-                        {
-                            char * dimensions_value_tmp = NULL;
-                            dimensions_value_tmp = (char *) malloc (strlen("/")+strlen((char *)data)+1);
-                            strcpy (dimensions_value_tmp, "/");
-                            strcat (dimensions_value_tmp, (char *)data);
-                            if (!strcmp (fp->var_namelist[j], dimensions_value_tmp))
-                            {
-                                var_march = 1;
-                                ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[j]);
-                                meshinfo->structured->dimensions[i] = *(uint64_t *)v->value;
-                                common_read_free_varinfo (v);
-                            }
-                            free (dimensions_value_tmp);
+                        char * dimensions_value_tmp = (char *)data;
+                        varid = common_read_find_var (fp, dimensions_value_tmp, 1);
+                        if (varid >= 0) {
+                            ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[varid]);
+                            meshinfo->structured->dimensions[i] = *(uint64_t *)v->value;
+                            common_read_free_varinfo (v);
                         }
-                        if (!var_march)
+                        else
                         {
                             adios_error (err_mesh_structured_invalid_dim,
                                          "Strctured mesh %s dimensions%d var %s is not correct!\n", 
@@ -1917,11 +1846,8 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
             meshinfo->structured->use_single_var = 1;         // modify default value to 1
             for (i=0; i<fp->nvars; i++)
             {
-                char * coords_tmp = NULL;
+                char * coords_tmp = (char *)data;
                 int var_march = 0;
-                coords_tmp = (char *) malloc (strlen("/")+strlen((char *)data)+1);
-                strcpy (coords_tmp, "/");
-                strcat (coords_tmp, (char *)data);
                 if (!strcmp (fp->var_namelist[i], coords_tmp))
                 {
                     var_march = 1;
@@ -1968,7 +1894,6 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                     }
                     common_read_free_varinfo (v);
                 }
-                free (coords_tmp);
             }
         }
         else                    //use points-multi-var
@@ -2031,10 +1956,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                     int var_march = 0;
                     for (j=0; j<fp->nvars; j++)
                     {
-                        char * points_var_tmp;
-                        points_var_tmp = (char *) malloc (strlen("/")+strlen((char *)data)+1);
-                        strcpy (points_var_tmp, "/");
-                        strcat (points_var_tmp, (char *)data);
+                        char * points_var_tmp = (char *)data;
                         if (!strcmp (fp->var_namelist[j], points_var_tmp))
                         {
                             var_march = 1;
@@ -2074,7 +1996,6 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                             }
                             common_read_free_varinfo (v);
                         }
-                        free (points_var_tmp);
                     }  // end of for loop j
                     if (var_march == 0)
                     {
@@ -2119,10 +2040,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
             else
             {
                 int var_march = 0;
-                char * spaces_var_tmp;
-                spaces_var_tmp = (char *) malloc (strlen("/")+strlen((char *)data)+1);
-                strcpy (spaces_var_tmp, "/");
-                strcat (spaces_var_tmp, (char *)data);
+                char * spaces_var_tmp = (char *)data;
 //                printf ("spaces_var_tmp is %s\n", spaces_var_tmp);
                 for (j=0; j<fp->nvars; j++)
                 {
@@ -2133,7 +2051,6 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                         meshinfo->structured->nspaces = *(int *)v->value;
                         common_read_free_varinfo (v);
                     }
-                    free (spaces_var_tmp);
                 }
                 if (!var_march)
                 {
@@ -2166,10 +2083,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
             meshinfo->unstructured->points = (char **) malloc (sizeof(char *));  
 //            meshinfo->unstructured->use_single_var = 1;         // modify default value to 1
             int var_march = 0;
-            char * coords_tmp = NULL;
-            coords_tmp = (char *) malloc (strlen("/")+strlen((char *)data)+1);
-            strcpy (coords_tmp, "/");
-            strcat (coords_tmp, (char *)data);
+            char * coords_tmp = (char *)data;
 //            printf ("coords_tmp is %s\n", coords_tmp);
             for (i=0; i<fp->nvars; i++)
             {
@@ -2204,7 +2118,6 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                              meshinfo->name, coords_tmp);
                 return NULL;
             }
-            free (coords_tmp);
         }
         else                    //use points-multi-var
         {
@@ -2255,10 +2168,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                         return NULL; 
                     }
                     int var_march = 0;
-                    char * points_var_tmp;
-                    points_var_tmp = (char *) malloc (strlen("/")+strlen((char *)data)+1);
-                    strcpy (points_var_tmp, "/");
-                    strcat (points_var_tmp, (char *)data);
+                    char * points_var_tmp = (char *)data;
 //                    printf ( "points_var_tmp is %s\n", points_var_tmp);
                     for (j=0; j<fp->nvars; j++)
                     {
@@ -2335,7 +2245,6 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                             common_read_free_varinfo (v);
                         }
                     }  // end of for loop j
-                    free (points_var_tmp);
                     if (var_march == 0)
                     {
                         adios_error (err_mesh_unstructured_missing_one_points,
@@ -2389,10 +2298,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                 int var_march = 0;
                 for (j=0; j<fp->nvars; j++)
                 {
-                    char * points_var_tmp;
-                    points_var_tmp = (char *) malloc (strlen("/")+strlen((char *)data)+1);
-                    strcpy (points_var_tmp, "/");
-                    strcat (points_var_tmp, (char *)data);
+                    char * points_var_tmp = (char *)data;
                     if (!strcmp (fp->var_namelist[j], points_var_tmp))
                     {
                         var_march = 1;
@@ -2413,7 +2319,6 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                         }
                         common_read_free_varinfo (v);
                     }
-                    free (points_var_tmp);
                 }
                 if (!var_march)
                     log_warn ("Unstructured mesh %s var of npoints is not correct. "
@@ -2455,10 +2360,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                 int var_march = 0;
                 for (j=0; j<fp->nvars; j++)
                 {
-                    char * spaces_var_tmp;
-                    spaces_var_tmp = (char *) malloc (strlen("/")+strlen((char *)data)+1);
-                    strcpy (spaces_var_tmp, "/");
-                    strcat (spaces_var_tmp, (char *)data);
+                    char * spaces_var_tmp = (char *)data;
                     if (!strcmp (fp->var_namelist[j], spaces_var_tmp))
                     {
                         var_march = 1;
@@ -2474,7 +2376,6 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                             meshinfo->unstructured->nspaces = *(int *)v->value;
                         common_read_free_varinfo (v);
                     }
-                    free (spaces_var_tmp);
                 }
                 if (!var_march)
                     log_warn ("Unstructured mesh %s var of npoints is not correct, "
@@ -2552,9 +2453,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                 else
                 {
                     int var_march = 0;
-                    char * ccount_tmp = (char *) malloc (strlen("/")+strlen((char *)data)+1);
-                    strcpy (ccount_tmp, "/");
-                    strcat (ccount_tmp, (char *)data);
+                    char * ccount_tmp = (char *)data;
                     for (j=0; j<fp->nvars; j++)
                     {
                         if (!strcmp (fp->var_namelist[j], ccount_tmp))
@@ -2568,7 +2467,6 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                             common_read_free_varinfo (v); 
                         }
                     }
-                    free (ccount_tmp);
                     if (var_march == 0)
                     {
                         adios_error (err_mesh_unstructured_invalid_ccount,
@@ -2623,9 +2521,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                     else
                     {
                         int var_march = 0; 
-                        char * ccount_mix_tmp = (char *) malloc (strlen("/")+strlen((char *)data)+1);
-                        strcpy (ccount_mix_tmp, "/");
-                        strcat (ccount_mix_tmp, (char *)data);
+                        char * ccount_mix_tmp = (char *)data;
                         for (j=0; j<fp->nvars; j++)
                         {
                             if (!strcmp (fp->var_namelist[j], ccount_mix_tmp))
@@ -2639,7 +2535,6 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                                 common_read_free_varinfo (v);
                             }
                         }
-                        free (ccount_mix_tmp);
                         if (var_march == 0)
                         {
                             adios_error (err_mesh_unstructured_invalid_ccount,
@@ -2675,9 +2570,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
             }
             else
             {
-                char * cdata_tmp = (char *) malloc (strlen("/")+strlen((char *)data)+1);
-                strcpy (cdata_tmp, "/");
-                strcat (cdata_tmp, (char *)data);
+                char * cdata_tmp = (char *)data;
                 int var_match = 0;
                 for (j=0; j<fp->nvars; j++)
                 {
@@ -2687,7 +2580,6 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                         meshinfo->unstructured->cdata[0] = strdup(fp->var_namelist[j]);
                     }
                 }
-                free (cdata_tmp);
                 if (var_match == 0)
                 {
                     adios_error (err_mesh_unstructured_invalid_cdata,
@@ -2734,9 +2626,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                 else
                 {
                     int var_match = 0;
-                    char * cdata_mix_tmp = (char *) malloc (strlen("/")+strlen((char *)data)+1);
-                    strcpy (cdata_mix_tmp, "/");
-                    strcat (cdata_mix_tmp, (char *)data);
+                    char * cdata_mix_tmp = (char *)data;
                     for (j=0; j<fp->nvars; j++)
                     {
                         if (!strcmp (fp->var_namelist[j], cdata_mix_tmp))
@@ -2964,12 +2854,11 @@ int common_read_schedule_read (const ADIOS_FILE      * fp,
     adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
-        //int varid = common_read_find_name (fp->nvars, fp->var_namelist, varname, 0);
-        int varid = common_read_find_name_var (fp, varname);
+        int varid = common_read_find_var (fp, varname,0);
         if (varid >= 0) {
             retval = common_read_schedule_read_byid (fp, sel, varid, from_steps, nsteps, param /* NCSU ALACRITY-ADIOS */, data);
         } else {
-            retval = adios_errno; // adios_errno was set in common_read_find_name
+            retval = adios_errno; // adios_errno was set in common_read_find_var
         }
     } else {
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_schedule_read()\n");
@@ -3162,11 +3051,11 @@ int common_read_get_attr (const ADIOS_FILE * fp,
     adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
-        int attrid = common_read_find_name (fp->nattrs, fp->attr_namelist, attrname, 1);
+        int attrid = common_read_find_attr (fp->nattrs, fp->attr_namelist, attrname, 0);
         if (attrid > -1) {
             retval = common_read_get_attr_byid (fp, attrid, type, size, data);
         } else {
-            retval = adios_errno; // adios_errno was set in common_read_find_name
+            retval = adios_errno; // adios_errno was set in common_read_find_attr
         }
     } else {
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_read_get_attr()\n");
