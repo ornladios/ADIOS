@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 2.8.0)
 project(ADIOS_PROJECT)
 
+SET_PROPERTY(GLOBAL PROPERTY ALLOW_DUPLICATE_CUSTOM_TARGETS 1)
+
 #set(LANGUAGE "" CACHE FILEPATH "")  #C/CXX/Fortran
 
 #enable_language(${LANGUAGE})
@@ -19,6 +21,7 @@ set(bindir ${exec_prefix}/bin)
 #set(datadir ${prefix}/share)
 set(libdir ${exec_prefix}/lib)
 set(includedir ${prefix}/include)
+
 
 if(DEFINED ENV{MACRODEFFLAG})
   set(MACRODEFFLAG $ENV{MACRODEFFLAG})
@@ -771,7 +774,7 @@ else()
       message(STATUS "find MPI")
       set (HAVE_MPI 1)
 #      set(MPILIBS ${MPI_LIBRARIES})
-#    set(MPILIBS "-lmpi")
+#    set(MPILIBS ${MPILIBS})
       include_directories(${MPI_INCLUDE_PATH})
 #      set(LIBS ${MPILIBS})
   endif(MPI_FOUND)
@@ -841,7 +844,7 @@ if(MXML_LIBS)
 endif()
 if(MXML_LIBS AND HAVE_MXML_H)
   set(HAVE_MXML 1)
-#  set(LIBS "${LIBS} -lmxml")
+#  set(LIBS "${LIBS} ${MXML_LIBS})
 #  set(CPPFLAGS "${CPPFLAGS} ${MXML_CPPFLAGS}")
 endif()
 
@@ -1221,7 +1224,7 @@ FortranCInterface_HEADER(${CMAKE_CURRENT_BINARY_DIR}/FC.h MACRO_NAMESPACE "FC_")
 #FortranCInterface_VERIFY(CXX)
 endif()
 ################################ end of Fortran processing ##############################
-
+find_library(M_LIBS m)
 
 # Generate flags for adios lib creation which depends on the packages we found
 # ADIOSLIB_* for compiling libadios.a and libadiosf.a, and linking codes with those
@@ -1233,22 +1236,22 @@ endif()
 # EXTRA flags are used for compiling adios stuff, which need not go into adios_config for user codes
 set(ADIOSLIB_EXTRA_CPPFLAGS "${MACRODEFFLAG}_FILE_OFFSET_BITS=64 ${MACRODEFFLAG}_LARGEFILE_SOURCE ${MACRODEFFLAG}_LARGEFILE64_SOURCE ${MACRODEFFLAG}_GNU_SOURCE")
 #message("${ADIOSLIB_EXTRA_CPPFLAGS}")
-set(ADIOSLIB_LDADD -lm ${MXML_LIBS})
+set(ADIOSLIB_LDADD ${M_LIBS} ${MXML_LIBS})
 set(ADIOSLIB_CFLAGS "")
 set(ADIOSLIB_CPPFLAGS "${MXML_CPPFLAGS}")
 #message("ADIOSLIB_CPPFLAGS is ${ADIOSLIB_CPPFLAGS}")
 set(ADIOSLIB_SEQ_CPPFLAGS "${MACRODEFFLAG}_NOMPI ${MXML_CPPFLAGS}")
 set(ADIOSLIB_SEQ_CFLAGS "")
-set(ADIOSLIB_SEQ_LDADD -lm ${MXML_LIBS})
+set(ADIOSLIB_SEQ_LDADD ${M_LIBS} ${MXML_LIBS})
 set(ADIOSLIB_INT_CPPFLAGS "${MACRODEFFLAG}_NOMPI ${MXML_CPPFLAGS}")
 set(ADIOSLIB_INT_CFLAGS "")
-set(ADIOSLIB_INT_LDADD -lm ${MXML_LIBS})
+set(ADIOSLIB_INT_LDADD ${M_LIBS} ${MXML_LIBS})
 set(ADIOSREADLIB_CPPFLAGS "")
 set(ADIOSREADLIB_CFLAGS "")
-set(ADIOSREADLIB_LDADD -lm)
+set(ADIOSREADLIB_LDADD ${M_LIBS})
 set(ADIOSREADLIB_SEQ_CPPFLAGS "${MACRODEFFLAG}_NOMPI")
 set(ADIOSREADLIB_SEQ_CFLAGS "")
-set(ADIOSREADLIB_SEQ_LDADD -lm)
+set(ADIOSREADLIB_SEQ_LDADD ${M_LIBS})
 
 if(NOT NO_DATATAP)
   set(ADIOSLIB_CPPFLAGS "${ADIOSLIB_CPPFLAGS} ${DT_CPPFLAGS}")
