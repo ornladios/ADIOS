@@ -1,16 +1,24 @@
 <?xml version="1.0"?>
 <adios-config host-language="C" schema-version="1.1">
-    <adios-group name="channel" coordination-communicator="comm">
-    <attribute name="Reference" path="/" value="http://people.sc.fsu.edu/~jburkardt/m_src/twod_to_vtk/twod_to_vtk.html"/>
+  <adios-group name="channel">
+
+    <attribute name="/Reference" 
+       value="http://people.sc.fsu.edu/~jburkardt/m_src/twod_to_vtk/twod_to_vtk.html"/>
 
     <var name="npoints" type="integer"/>
     <var name="num_cells" type="integer"/>
 
     <var name="Nspace" type="integer"/>
   
-    <var name="U" mesh="mesh1" center="point" time-steps="36,Nspace" type="double" time-series-format="2" dimensions="npoints" hyperslab="0,32"/>
-    <var name="V" mesh="mesh1" center="point" time-scale="npoints,45,num_cells" type="double" dimensions="npoints" hyperslab="0,1,32"/>
-    <var name="V1" mesh="mesh1" center="point" time-scale="npoints,45,num_cells" type="double" dimensions="npoints" hyperslab=":"/>
+    <var name="U" mesh="mesh1" center="point" time-steps="36,Nspace" 
+         type="double" time-series-format="2" dimensions="npoints" hyperslab="0,32"/>
+
+    <var name="V" mesh="mesh1" center="point" time-scale="npoints,45,num_cells" 
+         type="double" dimensions="npoints" hyperslab="0,1,32"/>
+
+    <var name="V1" mesh="mesh1" center="point" time-scale="npoints,45,num_cells" 
+         type="double" dimensions="npoints" hyperslab=":"/>
+
     <var name="T" mesh="mesh1" center="cell" type="double" dimensions="npoints"/>
 
     <var name="cells" type="integer" dimensions="num_cells,3"/>
@@ -31,8 +39,8 @@
         <uniform-cells count="num_cells" data="cells" type="triangle" />
     </mesh>
 
-</adios-group>
+  </adios-group>
 
-<method group="channel" method="MPI"/>
-<buffer size-MB="5" allocate-time="now"/>
+  <method group="channel" method="MPI"/>
+  <buffer size-MB="5" allocate-time="now"/>
 </adios-config>

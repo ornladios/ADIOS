@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <adios-config host-language="C">
-    <adios-group name="schema" coordination-communicator="comm">
+  <adios-group name="schema">
     <var name="NX"   type="integer"/>
     <var name="size" type="integer"/>
     <var name="size-2" type="integer"/>
@@ -12,7 +12,8 @@
     <var name="S1" type="integer"/>
     <var name="M2" type="integer"/>
     <global-bounds  dimensions="size,NX" offsets="rank,0">
-        <var name="temperature" mesh="mesh3" gwrite="t" gread="t" type="double" dimensions="1,NX"/>
+        <var name="temperature" mesh="mesh3" gwrite="t" gread="t" 
+             type="double" dimensions="1,NX"/>
     </global-bounds>
     <!-- Uniform meshes to visualize temperature 2D array of size*NX -->
 
@@ -62,8 +63,8 @@
         <origin value="-2,-1" />
         <maximum value="size-2,M2" />
     </mesh>
-</adios-group>
+  </adios-group>
 
-<method group="schema" method="MPI"/>
-<buffer size-MB="5" allocate-time="now"/>
+  <method group="schema" method="MPI"/>
+  <buffer size-MB="5" allocate-time="now"/>
 </adios-config>
