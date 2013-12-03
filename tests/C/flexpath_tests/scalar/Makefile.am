@@ -7,14 +7,14 @@ all-local:
 	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
 	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/readme.txt $(builddir)
 
-noinst_PROGRAMS = writer reader
+noinst_PROGRAMS = writer_scalar reader_scalar
 
-writer_SOURCES = writer.c ../common/utils.c
-writer_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-writer_LDFLAGS = $(ADIOSLIB_LDFLAGS)
-reader_SOURCES = reader.c ../common/utils.c
-reader_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-reader_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+writer_scalar_SOURCES = writer.c ../common/utils.c
+writer_scalar_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+writer_scalar_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+reader_scalar_SOURCES = reader.c ../common/utils.c
+reader_scalar_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+reader_scalar_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 
 CLEANFILES = *.bp
 CC=$(MPICC)

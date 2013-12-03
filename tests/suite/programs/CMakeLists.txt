@@ -8,7 +8,8 @@ link_directories(${PROJECT_BINARY_DIR}/tests/suite/programs)
 set (WRITE_PROGS local_array_time 
   adios_amr_write 
   adios_amr_write_2vars
-  adios_staged_read 
+  adios_staged_read
+  adios_staged_read_v2 
   adios_staged_read_2vars 
   write_read 
   write_alternate 
@@ -16,7 +17,13 @@ set (WRITE_PROGS local_array_time
   selections 
   path_test 
   reuse_dim 
-  adios_transforms_read_write )
+  adios_transforms_read_write 
+  connect_to_space_subset
+  copy_subvolume
+  transforms_specparse
+  set_path
+  set_path_var
+  hashtest)
 
 if(BUILD_WRITE)
   foreach (PROG ${WRITE_PROGS} )
@@ -28,7 +35,7 @@ if(BUILD_WRITE)
       set_target_properties(${PROG} PROPERTIES LINK_FLAGS "${MPI_C_LINK_FLAGS}")
     endif()
     target_link_libraries(${PROG} adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES})
-  endforeach()
+  endforeach()  
 endif(BUILD_WRITE)
 
 if(BUILD_FORTRAN)
@@ -44,4 +51,4 @@ if(BUILD_FORTRAN)
   endif(BUILD_WRITE)
 endif(BUILD_FORTRAN)
 
-#install(FILES adios_amr_write_2vars.xml adios_amr_write.xml local_array_time.xml posix_method.xml write_alternate.xml write_read.xml DESTINATION ${PROJECT_BINARY_DIR}/tests/suite/programs)
+file(COPY adios_amr_write.xml adios_amr_write_2vars.xml posix_method.xml local_array_time.xml write_alternate.xml write_read.xml transforms.xml path_test.xml adios_transforms.xml DESTINATION ${PROJECT_BINARY_DIR}/tests/suite/programs)

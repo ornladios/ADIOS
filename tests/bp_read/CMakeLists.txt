@@ -36,4 +36,4 @@ if(BUILD_FORTRAN)
 
 endif(BUILD_FORTRAN)
 
-
+file(COPY testbp_c.xml DESTINATION ${PROJECT_BINARY_DIR}/tests/bp_read)
