@@ -1,7 +1,7 @@
 include_directories(${PROJECT_SOURCE_DIR}/tests/C)
 include_directories(${PROJECT_SOURCE_DIR}/src/public)
 include_directories(${PROJECT_SOURCE_DIR}/src)
-link_directories(${PROJECT_SOURCE_DIR}/src)
+link_directories(${PROJECT_BINARY_DIR}/src)
 link_directories(${MXML_INCLUDE_DIR}/../lib)
 
 add_executable(adios_test_c adios_test_c.c)
@@ -13,4 +13,6 @@ if(MPI_LINK_FLAGS)
    set_target_properties(adios_test_c PROPERTIES LINK_FLAGS "${MPI_C_LINK_FLAGS}")
 endif()
 
-#install(FILES config_c.xml DESTINATION ${PROJECT_BINARY_DIR}/tests/C)
+file(COPY config_c.xml DESTINATION ${PROJECT_BINARY_DIR}/tests/C)
+
+add_subdirectory(flexpath_tests)
