@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <adios-config host-language="C">
-    <adios-group name="temperature" coordination-communicator="comm">
+    <adios-group name="temperature">
         <var name="NX"   type="integer"/>
         <var name="size" type="integer"/>
         <var name="rank" type="integer"/>
@@ -12,21 +12,23 @@
         </global-bounds>
 
         <!-- an integer attribute set to 1 -->
-        <attribute name="number of levels" path="/temperature" 
-                   type="integer" value="1"/>
+        <attribute name="temperature/number of levels" 
+                   type="integer" 
+                   value="1"/>
 
         <!-- a string attribute -->
-        <attribute name="description" path="/temperature" 
-                   value="Global array written from 'size' processes" type="string"/>
+        <attribute name="temperature/description"
+                   value="Global array written from 'size' processes" 
+                   type="string"/>
 
         <!-- attributes inheriting the type and value of the scalar variables -->
-        <attribute name="mean value"     path="/temperature" var="mean"/>
-        <attribute name="date of coding" path="/temperature" var="date"/>
+        <attribute name="temperature/mean value"     var="mean"/>
+        <attribute name="temperature/date of coding" var="date"/>
     </adios-group>
 
-<method group="temperature" method="MPI"/>
+    <method group="temperature" method="MPI"/>
 
-<buffer size-MB="2" allocate-time="now"/>
+    <buffer size-MB="2" allocate-time="now"/>
 
 </adios-config>
 

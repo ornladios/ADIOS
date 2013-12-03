@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <adios-config host-language="C">
-    <adios-group name="temperature" coordination-communicator="comm" time-index="iter">
+  <adios-group name="temperature" time-index="iter">
     <var name="NX" type="integer"/>
     <var name="rank" type="integer"/>
     <var name="size" type="integer"/>
@@ -8,12 +8,12 @@
        <var name="temperature" gwrite="t" type="double" dimensions="iter,1,NX"/>
        <var name="complex" gwrite="c" type="double complex" dimensions="iter,1,NX"/>
     </global-bounds>
-</adios-group>
+  </adios-group>
 
-<method group="temperature" method="MPI"/>
-<buffer size-MB="5" allocate-time="now"/>
-<!--temporarily disabled the following because the support for histogram has yet to
-be implemented for the new read API. -->
-<!--analysis adios-group="temperature" var="temperature" break-points="0, 100, 1000, 10000" /-->
+  <method group="temperature" method="MPI"/>
+  <buffer size-MB="5" allocate-time="now"/>
+  <!--temporarily disabled the following because the support for histogram 
+       has yet to be implemented for the new read API. -->
+  <!--analysis adios-group="temperature" var="temperature" break-points="0, 100, 1000, 10000" /-->
 </adios-config>
 

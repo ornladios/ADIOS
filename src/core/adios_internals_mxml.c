@@ -1516,13 +1516,13 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
 
                         return 0;
                     }
-                    if (!path)
+                    /*if (!path)
                     {
                         log_warn ("config.xml: attribute element requires "
                                 "path\n");
 
                         return 0;
-                    }
+                    }*/
                     if ((!value && !var) || (value && var))
                     {
                         log_warn ("config.xml: attribute element '%s' "

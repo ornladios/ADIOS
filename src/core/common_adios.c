@@ -860,7 +860,7 @@ int common_adios_set_path_var (int64_t fd_p, const char * path
         //remove var from hash table by old fullpath...
         //t->hashtbl_vars->remove (t->hashtbl_vars, name);
         // and add it back with new fullpath
-        //t->hashtbl_vars->put (t->hashtbl_vars, v->path, v->name, v);
+        //t->hashtbl_vars->put2 (t->hashtbl_vars, v->path, v->name, v);
 
     }
     else

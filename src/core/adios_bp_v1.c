@@ -763,7 +763,7 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
         log_debug ("  add variable to hash, path=%s, name=%s\n", 
                   (*root)->var_path, (*root)->var_name);
         if (hashtbl_vars) {
-            hashtbl_vars->put (hashtbl_vars, 
+            hashtbl_vars->put2 (hashtbl_vars, 
                 (*root)->var_path, (*root)->var_name, *root);
         }
 

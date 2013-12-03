@@ -99,7 +99,7 @@ int dotest ()
     time (&tbegin);
     for (p=0; p<npaths; p++) {
         for (v=0; v<nvars; v++) {
-            tbl->put(tbl, varpaths[p], varnames[v], &data[p*nvars+v]);
+            tbl->put2(tbl, varpaths[p], varnames[v], &data[p*nvars+v]);
         }
     }
     time (&tput);
