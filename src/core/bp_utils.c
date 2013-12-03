@@ -1152,6 +1152,7 @@ int bp_parse_vars (struct BP_FILE * fh)
     uint64_t ** var_offsets;
     char ** var_namelist;
     int grpid, j,cnt;
+    int lenpath,lenvar;
 
     var_counts_per_group = (uint16_t *)
         malloc (sizeof(uint16_t)*fh->gvar_h->group_count);
@@ -1171,6 +1172,8 @@ int bp_parse_vars (struct BP_FILE * fh)
                 break;
             }
         }
+        /* up until 1.5, name and /name was handled identical */
+        /*
         // Full name of variable: concatenate var_path and var_name
         // Always have / in the beginning of the full name
         if (strcmp ((*root)->var_path,"/")) {
@@ -1185,6 +1188,24 @@ int bp_parse_vars (struct BP_FILE * fh)
         }
         strcat(var_namelist[i], "/");
         strcat(var_namelist[i], (*root)->var_name);
+        */
+
+        /* From 1.6, relative and full path (starts with /) are handled separately in search */
+        // Full name of variable: concatenate var_path and var_name
+        lenpath = strlen((*root)->var_path);
+        lenvar  = strlen((*root)->var_name);
+        if (lenpath > 0) {
+            var_namelist [i] = (char *) malloc (lenvar + lenpath + 1 + 1);
+                                                                  // extra / and ending \0
+            strcpy(var_namelist[i], (*root)->var_path);
+            var_namelist[i][lenpath] = '/';
+            strcpy(&var_namelist[i][lenpath+1], (*root)->var_name);
+        }
+        else {
+            var_namelist [i] = (char *) malloc (lenvar+1); 
+            strcpy(var_namelist[i], (*root)->var_name);
+        }
+        //printf ("Variable %d full path is [%s]\n", i, var_namelist[i]);
 
         var_offsets[i] = (uint64_t *) malloc (
                 sizeof(uint64_t)*(*root)->characteristics_count);
@@ -1621,6 +1642,7 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
     struct adios_index_var_struct_v1 * var_root = fh->vars_root;
     struct adios_index_attribute_struct_v1 * attr_root;
     uint64_t i;
+    int lenpath, lenvar;
 
     /* Streaming starts with step 0. However, time index in BP file
      * starts with 1. If 'tostep' is -1, that means we want to get all steps.
@@ -1667,6 +1689,8 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
         {
             if (allstep || (!allstep && var_root->characteristics[i].time_index == t))
             {
+                /* Up to 1.5, we always put a / to the beginning */
+                /*
                 if (strcmp (var_root->var_path,"/"))
                 {
                     fp->var_namelist[j] = (char *)malloc (strlen((var_root)->var_name)
@@ -1682,6 +1706,26 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
 
                 strcat (fp->var_namelist[j], "/");
                 strcat (fp->var_namelist[j], var_root->var_name);
+                */
+
+                /* From 1.6, relative and full path (starts with /) are handled separately in search */
+                // Full name of variable: concatenate var_path and var_name
+                lenpath = strlen(var_root->var_path);
+                lenvar  = strlen(var_root->var_name);
+                if (lenpath > 0) {
+                    fp->var_namelist [j] = (char *) malloc (lenvar + lenpath + 1 + 1);
+                                                                    // extra / and ending \0
+                    strcpy(fp->var_namelist[j], var_root->var_path);
+                    fp->var_namelist[j][lenpath] = '/';
+                    strcpy(&(fp->var_namelist[j][lenpath+1]), var_root->var_name);
+                }
+                else {
+                    fp->var_namelist[j] = (char *) malloc (lenvar+1); 
+                    strcpy(fp->var_namelist[j], var_root->var_name);
+                }
+                //printf ("Seek to step: Variable %d full path is [%s]\n", j, fp->var_namelist[j]);
+
+
                 p->varid_mapping[j] = k;
 
                 j++;
