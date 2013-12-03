@@ -173,7 +173,9 @@ struct adios_attribute_struct * adios_find_attribute_by_name
                     + strlen (root->path)
                     + 2 // null term and '/'
                     );
-            if (!strcmp (root->path, "/"))
+            if (!root->path || !root->path[0])
+                sprintf (compare_name_path, "%s", root->name);
+            else if (!strcmp (root->path, "/"))
                 sprintf (compare_name_path, "/%s", root->name);
             else
                 sprintf (compare_name_path, "%s/%s", root->path, root->name);
@@ -916,7 +918,10 @@ int adios_common_define_attribute (int64_t group, const char * name
         malloc (sizeof (struct adios_attribute_struct));
 
     attr->name = strdup (name);
-    attr->path = strdup (path);
+    if (path) 
+        attr->path = strdup (path);
+    else
+        attr->path = strdup (""); // not null but empty path
     if (value)
     {
         if (type == adios_unknown)
