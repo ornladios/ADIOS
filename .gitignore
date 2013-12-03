@@ -90,6 +90,16 @@ examples/C/schema/uniform
 examples/C/schema/unstructured
 examples/C/stat/stat_read
 examples/C/stat/stat_write
+examples/C/compression_test/adios_global
+examples/C/compression_test/adios_read_box
+examples/C/compression_test/adios_read_points
+examples/C/compression_test/genarray3D
+examples/C/transforms/adios_global
+examples/C/transforms/adios_read_all_3D
+examples/C/transforms/adios_read_points
+examples/C/transforms/adios_read_subv
+examples/C/transforms/adios_read_wb_subpg
+examples/C/transforms/adios_write_all_3D
 examples/Fortran/arrays/arrays_read
 examples/Fortran/arrays/arrays_write
 examples/Fortran/global-array-time/adios_globaltime
