@@ -100,7 +100,8 @@
 
 
 // member methods
-static bool put(qhashtbl_t *tbl, const char *path, const char *name, const void *data);
+static bool put2(qhashtbl_t *tbl, const char *path, const char *name, const void *data);
+static bool put(qhashtbl_t *tbl, const char *path, const void *data);
 static void *get(qhashtbl_t *tbl, const char *fullpath);
 static void *get2(qhashtbl_t *tbl, const char *path, const char *name);
 static bool remove_(qhashtbl_t *tbl, const char *fullpath);
@@ -151,6 +152,7 @@ qhashtbl_t *qhashtbl(int range)
     memset((void *)tbl->slots, 0, sizeof(qhnobj_t *) * range);
 
     // assign methods
+    tbl->put2       = put2;
     tbl->put        = put;
     tbl->get        = get;
     tbl->get2       = get2;
@@ -198,7 +200,74 @@ static void genkey(const char *path, const char *name, int *keylen, char **key)
     }
 }
 
-static bool put(qhashtbl_t *tbl, const char *path, const char *name, const void *data)
+static bool put(qhashtbl_t *tbl, const char *fullpath, const void *data)
+{
+    if (!fullpath)
+        return false;
+
+    int keylen = strlen(fullpath);
+    char *key = strdup (fullpath);
+
+    // get hash integer
+    uint32_t hash = qhashmurmur3_32(key, keylen);
+    int idx = hash % tbl->range;
+
+    //log_error ("qhastbl:put: key=[%s], keylen=%d hash=%d, idx=%d, d=%x\n", key, keylen, hash, idx, data);
+
+    // find existence key
+    qhnobj_t *obj;
+    for (obj = tbl->slots[idx]; obj != NULL; obj = obj->next) {
+        if (obj->hash == hash && !strcmp(obj->key, key)) {
+            break;
+        }
+    }
+
+    // put into table
+    if (obj == NULL) {
+        // insert
+        obj = (qhnobj_t *)malloc(sizeof(qhnobj_t));
+        if (obj == NULL) {
+            free(key);
+            errno = ENOMEM;
+            return false;
+        }
+        memset((void *)obj, 0, sizeof(qhnobj_t));
+
+        if (tbl->slots[idx] != NULL) {
+            // insert at the beginning
+            obj->next = tbl->slots[idx];
+        }
+        tbl->slots[idx] = obj;
+
+        // increase counter
+        tbl->num++;
+
+        // set data
+        obj->hash  = hash;
+        obj->key   = key;
+        obj->value = (void *)data;
+
+    } else {
+        /* Do not do anything.
+         * Keep the first definition in place, because consider this example
+         * if we would replace the object here:
+         *  def NX
+         *  def A[NX] --> A's dimension is the first variable NX (a pointer to that)
+         *  def NX    --> hashtable stores this variable reference
+         *  def B[NX]
+         *  write NX  --> value is stored in the NX variable found in the hash table
+         *  write A   --> dimension found (valid first pointer) but value is not found
+         *                (stored in the second reference)
+         *  At this point, A's dimension variable is first NX, but the value of
+         *  write NX goes to the variable found here in the hash table.
+         */
+        free(key);
+    }
+
+    return true;
+}
+
+static bool put2(qhashtbl_t *tbl, const char *path, const char *name, const void *data)
 {
     int keylen;
     char *key;

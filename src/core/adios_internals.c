@@ -1194,7 +1194,7 @@ static void adios_append_var (struct adios_group_struct * g, struct adios_var_st
     }
 
     // Add variable to the hash table too
-    g->hashtbl_vars->put(g->hashtbl_vars, var->path, var->name, var);
+    g->hashtbl_vars->put2(g->hashtbl_vars, var->path, var->name, var);
 }
 
 // return is whether or not the name is unique
@@ -2222,7 +2222,7 @@ static void index_append_var_v1 (
             index->vars_tail = item;
         }
         // Add variable to the hash table too
-        index->hashtbl_vars->put(index->hashtbl_vars,
+        index->hashtbl_vars->put2(index->hashtbl_vars,
                 item->var_path, item->var_name, item);
 
     } else {
