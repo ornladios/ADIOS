@@ -1,8 +1,7 @@
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/src/public)
-include_directories(${PROJECT_SOURCE_DIR}/test/C/flexpath_tests/include)
+include_directories(${PROJECT_SOURCE_DIR}/tests/C/flexpath_tests/include)
 link_directories(${PROJECT_BINARY_DIR}/src)
-message(STATUS "${ADIOSLIB_LDADD}")
 
 add_executable(writer_global writer.c ../common/utils.c)
 target_link_libraries(writer_global adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES}) 
