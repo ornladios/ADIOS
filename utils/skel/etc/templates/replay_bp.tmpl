@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 #bootstrap a skeletal app using a bp file
 
 skeldump ${bpfile} > ${yamlfile}
@@ -7,6 +9,8 @@ skeldump ${bpfile} > ${yamlfile}
 skel xml ${project} #if $force #-f #end if#-y ${yamlfile}
 
 skel makefile ${project} #if $force #-f #end if#-y ${yamlfile}
+
+skel submit ${project} #if $force #-f #end if#-y ${yamlfile}
 
 make
 

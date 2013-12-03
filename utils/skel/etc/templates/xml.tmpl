@@ -3,7 +3,7 @@
   <adios-group name="${bpy.get_group_name()}" coordination-communicator="comm">
     #for v in $bpy.get_vars():
   #if $v.has_global_bounds() #  <global-bounds dimensions="$v.get_global_dims_str()" offsets="$v.get_offsets_str()"> #end if
-      <var name="$v.get_name()" type="$v.get_type()" />
+      <var name="$v.get_name()" type="$v.get_lang_type($bpy.get_language() )" dimensions="$v.get_dims_str()" />
   #if $v.has_global_bounds() #  </global-bounds> #end if
     #end for
   </adios-group>

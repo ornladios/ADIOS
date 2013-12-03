@@ -539,8 +539,8 @@ int doList_group (ADIOS_FILE *fp)
     fprintf (outf, "lang: %s\n", 
              fh->pgs_root->adios_host_language_fortran==adios_flag_yes?"Fortran":"C");
 #endif
-    //fprintf (outf, "lang: C\n");
-    fprintf (outf, "procs: 16\n");
+
+    fprintf (outf, "procs: %i\n", fh->mfooter.pgs_count);
     fprintf (outf, "group: group1\n");
 
 
@@ -569,6 +569,10 @@ int doList_group (ADIOS_FILE *fp)
             // print definition of variable
             fprintf (outf, "    name: %s,\n", names[n] );
             fprintf (outf, "    type: %s,\n", adios_type_to_string(vartype) );
+            if (vartype == adios_string)
+            {
+                fprintf (outf, "    len: %i,\n", 1024);
+            }
             // fprintf(outf,"%c %-*s  %-*s", commentchar, maxtypelen, 
             //        adios_type_to_string(vartype), maxlen, names[n]); 
             if (!isVar[n]) {

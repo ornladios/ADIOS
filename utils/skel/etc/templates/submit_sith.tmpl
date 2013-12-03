@@ -1,0 +1,29 @@
+#import math
+#!/bin/bash
+# Submission script for the $target target
+# To make changes to this file, edit the appropriate submit_<target>.tpl file in ~/.skel/templates/
+
+#PBS -A $account
+#PBS -N $job_name
+#PBS -j oe
+#PBS -l walltime=$walltime,nodes=#echo "%d" % (int (math.ceil( (float($bpy.get_num_procs()) / 32.0) ) ) )#:ppn=32
+#PBS -l gres=widow2
+
+cd \$PBS_O_WORKDIR
+
+date
+
+
+for i in {1..$iteration_count}
+do
+echo $bpy.get_method() 
+##dpre_rm
+rm -rf out*
+./set_method.sh $bpy.get_method() ${project}_skel.xml.in ${project}_skel.xml 
+mpirun -n $bpy.get_num_procs() $executable
+mv skel_time.xml ${project}_skel_time_\${PBS_JOBID}_\${i}.xml
+##dpost_rm
+done
+
+
+

@@ -58,6 +58,7 @@ static MPI_Comm init_comm; // communicator for each method's init call
 static enum ADIOS_DATATYPES parseType (const char * type, const char * name)
 {
     if (   !strcasecmp (type, "byte")
+            || !strcasecmp (type, "char")
             || !strcasecmp (type, "integer*1")
        )
         return adios_byte;
@@ -68,16 +69,19 @@ static enum ADIOS_DATATYPES parseType (const char * type, const char * name)
         return adios_short;
 
     if (   !strcasecmp (type, "integer")
+            || !strcasecmp (type, "int")
             || !strcasecmp (type, "integer*4")
        )
         return adios_integer;
 
     if (   !strcasecmp (type, "long")
+            || !strcasecmp (type, "long long")
             || !strcasecmp (type, "integer*8")
        )
         return adios_long;
 
     if (   !strcasecmp (type, "unsigned byte")
+            || !strcasecmp (type, "unsigned char")
             || !strcasecmp (type, "unsigned integer*1")
        )
         return adios_unsigned_byte;
@@ -88,6 +92,7 @@ static enum ADIOS_DATATYPES parseType (const char * type, const char * name)
         return adios_unsigned_short;
 
     if (   !strcasecmp (type, "unsigned integer")
+            || !strcasecmp (type, "unsigned int")
             || !strcasecmp (type, "unsigned integer*4")
        )
         return adios_unsigned_integer;
