@@ -34,7 +34,7 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = writer$(EXEEXT) reader$(EXEEXT)
+noinst_PROGRAMS = writer_maya$(EXEEXT) reader_maya$(EXEEXT)
 subdir = tests/C/flexpath_tests/maya_append
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -74,21 +74,21 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_reader_OBJECTS = reader.$(OBJEXT) utils.$(OBJEXT)
-reader_OBJECTS = $(am_reader_OBJECTS)
+am_reader_maya_OBJECTS = reader.$(OBJEXT) utils.$(OBJEXT)
+reader_maya_OBJECTS = $(am_reader_maya_OBJECTS)
 am__DEPENDENCIES_1 =
-reader_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+reader_maya_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1)
-reader_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(reader_LDFLAGS) \
-	$(LDFLAGS) -o $@
-am_writer_OBJECTS = writer.$(OBJEXT) utils.$(OBJEXT)
-writer_OBJECTS = $(am_writer_OBJECTS)
-writer_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+reader_maya_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(reader_maya_LDFLAGS) $(LDFLAGS) -o $@
+am_writer_maya_OBJECTS = writer.$(OBJEXT) utils.$(OBJEXT)
+writer_maya_OBJECTS = $(am_writer_maya_OBJECTS)
+writer_maya_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 	$(am__DEPENDENCIES_1)
-writer_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
-	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(writer_LDFLAGS) \
-	$(LDFLAGS) -o $@
+writer_maya_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(writer_maya_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -101,8 +101,8 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(reader_SOURCES) $(writer_SOURCES)
-DIST_SOURCES = $(reader_SOURCES) $(writer_SOURCES)
+SOURCES = $(reader_maya_SOURCES) $(writer_maya_SOURCES)
+DIST_SOURCES = $(reader_maya_SOURCES) $(writer_maya_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -347,12 +347,12 @@ top_srcdir = @top_srcdir@
 INCLUDES = $(all_includes) -I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/public -I$(srcdir)/../include
 AUTOMAKE_OPTIONS = no-dependencies
-writer_SOURCES = writer.c ../common/utils.c
-writer_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-writer_LDFLAGS = $(ADIOSLIB_LDFLAGS)
-reader_SOURCES = reader.c ../common/utils.c
-reader_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-reader_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+writer_maya_SOURCES = writer.c ../common/utils.c
+writer_maya_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+writer_maya_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+reader_maya_SOURCES = reader.c ../common/utils.c
+reader_maya_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+reader_maya_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 CLEANFILES = *.bp
 EXTRA_DIST = arrays.xml 
 all: all-am
@@ -398,12 +398,12 @@ clean-noinstPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
-reader$(EXEEXT): $(reader_OBJECTS) $(reader_DEPENDENCIES) 
-	@rm -f reader$(EXEEXT)
-	$(reader_LINK) $(reader_OBJECTS) $(reader_LDADD) $(LIBS)
-writer$(EXEEXT): $(writer_OBJECTS) $(writer_DEPENDENCIES) 
-	@rm -f writer$(EXEEXT)
-	$(writer_LINK) $(writer_OBJECTS) $(writer_LDADD) $(LIBS)
+reader_maya$(EXEEXT): $(reader_maya_OBJECTS) $(reader_maya_DEPENDENCIES) 
+	@rm -f reader_maya$(EXEEXT)
+	$(reader_maya_LINK) $(reader_maya_OBJECTS) $(reader_maya_LDADD) $(LIBS)
+writer_maya$(EXEEXT): $(writer_maya_OBJECTS) $(writer_maya_DEPENDENCIES) 
+	@rm -f writer_maya$(EXEEXT)
+	$(writer_maya_LINK) $(writer_maya_OBJECTS) $(writer_maya_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
