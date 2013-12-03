@@ -16,6 +16,7 @@
 #include "core/common_read.h"
 #include "core/futils.h"
 #include "core/bp_utils.h" // struct namelists_struct
+#include "core/qhashtbl.h"
 #include "public/adios_schema.h"
 
 // NCSU ALACRITY-ADIOS
@@ -53,6 +54,7 @@ struct common_read_internals_struct {
     char ** full_varnamelist;    /* fp->var_namelist to save here if one group is viewed */
     int     full_nattrs;         /* fp->nvars to save here for a group view */
     char ** full_attrnamelist;   /* fp->attr_namelist to save here if one group is viewed */
+    qhashtbl_t *hashtbl_vars;    /* speed up search for var_namelist to varid  */
 
     // NCSU ALACRITY-ADIOS - Table of sub-requests issued by transform method
     adios_transform_read_request *transform_reqgroups;
@@ -173,6 +175,7 @@ ADIOS_FILE * common_read_open (const char * fname,
 {
     ADIOS_FILE * fp;
     struct common_read_internals_struct * internals; 
+    int i;
 
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
         adios_error (err_invalid_read_method, 
@@ -193,11 +196,19 @@ ADIOS_FILE * common_read_open (const char * fname,
 
     fp = adios_read_hooks[internals->method].adios_open_fn (fname, comm, lock_mode, timeout_sec);
 
+    // create hashtable from the variable names as key and their index as value
+    int hashsize = fp->nvars;
+    if (fp->nvars > 100) hashsize = 100;
+    internals->hashtbl_vars = qhashtbl(hashsize);
+    for (i=0; i<fp->nvars; i++) {
+        internals->hashtbl_vars->put (internals->hashtbl_vars, fp->var_namelist[i], 
+                                       (void *)i+1); // avoid 0 for error checking later
+    }
+
     //read mesh names from attributes for example the var is using a mesh named trimesh, 
     //we have /adios_schema/trimesh/type. We can extract trimesh from the string
     fp->nmeshes = 0;
     fp->mesh_namelist = NULL;
-    int i;
     if (fp->attr_namelist)
     {
         char ** tmp = (char **) malloc (sizeof(char*) * fp->nattrs);
@@ -270,6 +281,7 @@ ADIOS_FILE * common_read_open_file (const char * fname,
 {
     ADIOS_FILE * fp;
     struct common_read_internals_struct * internals; 
+    int i;
 
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
         adios_error (err_invalid_read_method, 
@@ -290,11 +302,19 @@ ADIOS_FILE * common_read_open_file (const char * fname,
 
     fp = adios_read_hooks[internals->method].adios_open_file_fn (fname, comm);
     
+    // create hashtable from the variable names as key and their index as value
+    int hashsize = fp->nvars;
+    if (fp->nvars > 100) hashsize = 100;
+    internals->hashtbl_vars = qhashtbl(hashsize);
+    for (i=0; i<fp->nvars; i++) {
+        internals->hashtbl_vars->put (internals->hashtbl_vars, fp->var_namelist[i], 
+                                       (void *)i+1); // avoid 0 for error checking later
+    }
+
     //read mesh names from attributes for example the var is using a mesh named trimesh, 
     //we have /adios_schema/trimesh/type. We can extract trimesh from the string
     fp->nmeshes = 0;
     fp->mesh_namelist = NULL;
-    int i;
 
     if (fp->attr_namelist)
     {
@@ -375,6 +395,8 @@ int common_read_close (ADIOS_FILE *fp)
         free (internals->nattrs_per_group);
         // NCSU ALACRITY-ADIOS - Cleanup read request groups
         clean_up_read_reqgroups(&internals->transform_reqgroups);
+        if (internals->hashtbl_vars)
+            internals->hashtbl_vars->free (internals->hashtbl_vars);
         free (internals);
     } else {
         adios_error ( err_invalid_file_pointer, "Invalid file pointer at adios_read_close()\n");
@@ -400,13 +422,26 @@ void common_read_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
 int common_read_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
 {
     struct common_read_internals_struct * internals;
+    int hashsize;
     int retval;
+    int i;
     
     adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
         retval = internals->read_hooks[internals->method].adios_advance_step_fn (fp, last, timeout_sec);
         if (!retval) {
+            // Re-create hashtable from the variable names as key and their index as value
+            if (internals->hashtbl_vars)
+                internals->hashtbl_vars->free (internals->hashtbl_vars);
+            hashsize = fp->nvars;
+            if (fp->nvars > 100) hashsize = 100;
+            internals->hashtbl_vars = qhashtbl(hashsize);
+            for (i=0; i<fp->nvars; i++) {
+                internals->hashtbl_vars->put (internals->hashtbl_vars, fp->var_namelist[i], 
+                        (void *)i+1); // avoid 0 for error checking later
+            }
+
             /* Update group information too */
             adios_read_hooks[internals->method].adios_get_groupinfo_fn (fp, &internals->ngroups, 
                     &internals->group_namelist, &internals->nvars_per_group, &internals->nattrs_per_group);
@@ -437,6 +472,38 @@ void common_read_release_step (ADIOS_FILE *fp)
     } else {
         adios_error ( err_invalid_file_pointer, "Invalid file pointer at adios_reset_dimension_order()\n");
     }
+}
+
+static int common_read_find_name_var (ADIOS_FILE *fp, const char *name)
+{
+    /** Find a string name in a list of names and return the index. 
+        Search should work with starting / characters and without.
+        Create adios error and return -1 if name is null or
+          if name is not found in the list.
+        role = 0 for variable search, 1 for attribute search
+     */
+    struct common_read_internals_struct * internals;
+    int varid = -1;
+    
+    adios_errno = err_no_error;
+
+    if (!name) {
+        adios_error (err_invalid_varname, "Null pointer passed as variable name!\n");
+        return -1;
+    }
+
+    if (fp) {
+        internals = (struct common_read_internals_struct *) fp->internal_data;
+
+        varid = (int) internals->hashtbl_vars->get (internals->hashtbl_vars, name);
+        // varid=0 is "not found", otherwise +1 bigger than actual varid
+        varid--;
+    }
+
+    if (varid == -1) {
+        adios_error (err_invalid_varname, "Variable '%s' is not found!\n", name);
+    }
+    return varid;
 }
 
 static int common_read_find_name (int n, char ** namelist, const char *name, int role)
@@ -489,7 +556,8 @@ ADIOS_VARINFO * common_read_inq_var (const ADIOS_FILE *fp, const char * varname)
     adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
-        int varid = common_read_find_name (fp->nvars, fp->var_namelist, varname, 0);
+        //int varid = common_read_find_name (fp->nvars, fp->var_namelist, varname, 0);
+        int varid = common_read_find_name_var (fp, varname);
         if (varid >= 0) {
             retval = common_read_inq_var_byid (fp, varid);
         } else {
@@ -2896,7 +2964,8 @@ int common_read_schedule_read (const ADIOS_FILE      * fp,
     adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
-        int varid = common_read_find_name (fp->nvars, fp->var_namelist, varname, 0);
+        //int varid = common_read_find_name (fp->nvars, fp->var_namelist, varname, 0);
+        int varid = common_read_find_name_var (fp, varname);
         if (varid >= 0) {
             retval = common_read_schedule_read_byid (fp, sel, varid, from_steps, nsteps, param /* NCSU ALACRITY-ADIOS */, data);
         } else {
