@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <adios-config host-language="C">
-    <adios-group name="schema" coordination-communicator="comm">
+  <adios-group name="schema">
     <var name="NX"   type="integer"/>
     <var name="size" type="integer"/>
     <var name="rank" type="integer"/>
@@ -11,7 +11,8 @@
     <var name="Y" dimensions="NX" type="float"/>
     <!--<var name="XY" dimensions="xydim" type="float"/>-->
     <global-bounds  dimensions="size,NX" offsets="rank,0">
-        <var name="temperature" mesh="mesh1" gwrite="t" gread="t" type="double" dimensions="1,NX"/>
+        <var name="temperature" mesh="mesh1" gwrite="t" gread="t" 
+             type="double" dimensions="1,NX"/>
     </global-bounds>
 
     <!-- Rectilinear meshes to visualize temperature 2D array of size size*NX -->
@@ -24,8 +25,8 @@
         <dimensions value="size,NX"/>
         <coordinates-multi-var value="X,Y" />
     </mesh>
-</adios-group>
+  </adios-group>
 
-<method group="schema" method="MPI"/>
-<buffer size-MB="5" allocate-time="now"/>
+  <method group="schema" method="MPI"/>
+  <buffer size-MB="5" allocate-time="now"/>
 </adios-config>

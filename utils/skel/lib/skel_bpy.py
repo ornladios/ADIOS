@@ -11,11 +11,11 @@ class skel_bpy:
         stream = file (filename, 'r')
         self.doc = yaml.load(stream)
 
-        print self.doc
+        #print self.doc
 
         self.vars = {}
         for v in self.doc['variables']:
-            print "found variable %s" % v['name']
+            #print "found variable %s" % v['name']
             name = v ['name']
             self.vars [name] = var (name, v)
 
@@ -26,7 +26,7 @@ class skel_bpy:
         return self.doc.get('steps', 1)
 
     def get_vars (self):
-        return self.vars.values()
+        return filter (lambda x: not x.get_type() ==  'string', self.vars.values() )
 
     def get_var_dict (self):
         return self.vars
@@ -64,22 +64,83 @@ class var:
     def get_type (self):
         return self.vardict['type']
 
+    def get_lang_type (self, lang):
+        print "getting type for lang"
+        if lang == 'C' or lang == 'c':
+            return self.get_c_type()
+        else:
+            return self.get_fortran_type()
+          
+
     def get_fortran_type (self):
+
         self.ftypes = {
-            "double": "real*8",
-            "integer": "integer*4",
-            "double complex": "double complex",
-            "byte": "byte"
+            'string' : 'string',
+            'byte' : 'integer*1',
+            'integer*1' : 'integer*1',
+            'short' : 'integer*2',
+            'integer*2' : 'integer*2',
+            'integer' : 'integer*4',
+            'integer*4' : 'integer*4',
+            'long' : 'integer*8',
+            'long long' : 'integer*8',
+            'integer*8' : 'integer*8',
+            'unsigned byte' : 'unsigned integer*1',
+            'unsigned integer*1' : 'unsigned integer*1',
+            'unsigned short' : 'unsigned integer*2',
+            'unsigned integer*2' : 'unsigned integer*2',
+            'unsigned integer' : 'unsigned integer*4',
+            'unsigned integer*4' : 'unsigned integer*4',
+            'unsigned long' : 'unsigned integer*8',
+            'unsigned integer*8' : 'unsigned integer*8',
+            'float' : 'real*4',
+            'real' : 'real*4',
+            'real*4' : 'real*4',
+            'unsigned float' : 'unsigned real*4',
+            'unsigned real' : 'unsigned real*4',
+            'unsigned real*4' : 'unsigned real*4',
+            'double' : 'real*8',
+            'real*8' : 'real*8',
+            'unsigned double' : 'unsigned real*8',
+            'unsigned real*8' : 'unsigned real*8',
+            'complex' : 'complex',
+            'double complex' : 'double complex'
         }
 
         return self.ftypes.get(self.get_type(), "UNKNOWN_TYPE")
 
     def get_c_type (self):
         self.ftypes = {
-            "double": "double",
-            "integer": "int",
-            "long": "long",
-            "long long": "long long"
+            'string' : 'string',
+            'byte' : 'unsigned char',
+            'integer*1' : 'char',
+            'short' : 'short',
+            'integer*2' : 'short',
+            'integer' : 'int',
+            'integer*4' : 'int',
+            'long' : 'long',
+            'long long' : 'long',
+            'integer*8' : 'long',
+            'unsigned byte' : 'unsigned byte',
+            'unsigned integer*1' : 'unsigned byte',
+            'unsigned short' : 'unsigned short',
+            'unsigned integer*2' : 'unsigned short',
+            'unsigned integer' : 'unsigned integer',
+            'unsigned integer*4' : 'unsigned integer',
+            'unsigned long' : 'unsigned long',
+            'unsigned integer*8' : 'unsigned long',
+            'float' : 'float',
+            'real' : 'float',
+            'real*4' : 'float',
+            'unsigned float' : 'unsigned float',
+            'unsigned real' : 'unsigned float',
+            'unsigned real*4' : 'unsigned float',
+            'double' : 'double',
+            'real*8' : 'double',
+            'unsigned double' : 'unsigned double',
+            'unsigned real*8' : 'unsigned double',
+            'complex' : 'complex',
+            'double complex' : 'double complex'
         }
 
         return self.ftypes.get(self.get_type(), "UNKNOWN_TYPE")
@@ -90,12 +151,23 @@ class var:
         else:
             return self.vardict['dims']
 
+    def get_dims_str (self):
+        if self.vardict['dims'] == 'scalar':
+            return ''
+        else:
+            return ','.join(str (d) for d in self.vardict['dims'])
+
     def get_ndims (self):
         if self.get_dims() is None:
             return 0
         else:
             return len (self.get_dims()) 
-         
+    
+    # For strings...
+    def get_len (self):
+        return self.vardict ['len']
+
+
     # This gives the size of one element of this type
     def get_unit_size (self):
 
@@ -103,16 +175,43 @@ class var:
 
         type = self.get_type()
 
-        if type == "int" or type == "integer":
-            return "4"
-        elif type == "double":
-            return "8"
-        elif type == "double complex":
-            return "16"
-        elif type == "long long":
-            return "8"
-        elif type == "byte":
-            return "1"
+        type_sizes = {
+
+            'string' : 1,
+            'byte' : 1,
+            'integer*1' : 1,
+            'short' : 2,
+            'integer*2' : 2,
+            'integer' : 4,
+            'integer*4' : 4,
+            'long' : 8,
+            'long long' : 8,
+            'integer*8' : 8,
+            'unsigned byte' : 1,
+            'unsigned integer*1' : 1,
+            'unsigned short' : 2,
+            'unsigned integer*2' : 2,
+            'unsigned integer' : 4,
+            'unsigned integer*4' : 4,
+            'unsigned long' : 8,
+            'unsigned integer*8' : 8,
+            'float' : 4,
+            'real' : 4,
+            'real*4' : 4,
+            'unsigned float' : 4,
+            'unsigned real' : 4,
+            'unsigned real*4' : 4,
+            'double' : 8,
+            'real*8' : 8,
+            'unsigned double' : 8,
+            'unsigned real*8' : 8,
+            'complex' : 8,
+            'double complex' : 16
+
+        }
+        size = type_sizes.get (type, None)
+        if size is not None:
+            return "%i" % size
         else:
             print "Unknown type: %s in get_unit_size()" % self.get_type()
             sys.exit()

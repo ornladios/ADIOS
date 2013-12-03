@@ -108,16 +108,10 @@ def main(argv=None):
         skel_makefile.generate_makefiles_with_args (config, parser)
         return 0
 
-    try:    
-        params = skelconf.skelConfig (args.project + '_params.xml')
-    except (IOError):
-        print "Error reading " + args.project + "_params.xml. Try running skel params " + args.project + " first,"
-        print "then check that " + args.project + "_params.xml exists."
-        return 1
-
 
     if args.subcommand == 'submit':
-        skel_submit.generate_submit_scripts (params)
+        #skel_submit.generate_submit_scripts (params)
+        skel_submit.generate_submit_scripts_with_args (parser)
         return 0
 
     print 'Unknown subcommand, exiting.'

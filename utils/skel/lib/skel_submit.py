@@ -5,13 +5,14 @@ import os
 
 import skelconf
 import adios
+import skel_bpy
 import skel_settings
 
 
 # To produce submit scripts, we'll work from a template. There will
 # be two types of replacement, simple variables, and macros (for the
 # tests)
-def generate_submit_scripts (params):
+def generate_submit_scripts_from_xml (params):
 
     settings = skel_settings.skel_settings()
 
@@ -112,6 +113,74 @@ def submit_line_template_replace (template_line, params, batch, test, settings):
     return template_line
 
 
+def generate_submit_scripts_from_yaml (args):
+    print "Generating submission script using yaml file"
+
+    bpy = skel_bpy.skel_bpy (args.yamlfile)
+
+    outfilename = "submit.pbs"
+    template_file_name = "~/.skel/templates/submit_sith.tmpl"
+
+    # Only proceed if outfilename does not already exist, or if -f was used
+    if os.path.exists (outfilename) and not args.force:
+        print "%s exists, aborting. Delete the file or use -f to overwrite." % outfilename
+        return 999
+
+    skel_file = open (outfilename, 'w')
+
+    # Now for the Cheetah magic:
+    from Cheetah.Template import Template
+    template_file = open (os.path.expanduser(template_file_name), 'r')
+    t = Template(file=template_file)
+
+    settings = skel_settings.skel_settings()
+
+    t.bpy = bpy
+    t.project = args.project
+    t.target = settings.get_submit_target()
+    t.account = settings.get_account()
+    t.job_name = "skel_%s_%d" % (args.project, bpy.get_num_procs() )
+    t.walltime = "1:00:00"
+    t.iteration_count = 1
+    t.executable = "%s_skel_%s" % (t.project, bpy.get_group_name() )
+
+    skel_file.write (str(t) )
+
+
+def generate_submit_scripts_with_args (parent_parser):
+
+    args = pparse_command_line (parent_parser)
+
+    if args.yamlfile is not None:
+        generate_submit_scripts_from_yaml(args)
+    else:
+        try:
+            params = skelconf.skelConfig (args.project + '_params.xml')
+        except (IOError):
+            print "Error reading " + args.project + "_params.xml. Try running skel params " + args.project + " first,"
+            print "then check that " + args.project + "_params.xml exists."
+            return 1
+
+        generate_submit_scripts_from_xml (params)
+
+
+def pparse_command_line (parent_parser):
+    parser = argparse.ArgumentParser (
+                parents = [parent_parser],
+                formatter_class=argparse.RawDescriptionHelpFormatter,
+                prog='skel',
+                add_help=False,
+                description='''\
+        skel source 
+            create source code to access the I/O pattern for the target skeletal application''')
+
+    parser.add_argument ('-y', '--yaml-file', dest='yamlfile', help='yaml file to use for I/O pattern')
+    parser.add_argument ('-f', '--force', dest='force', action='store_true', help='overwrite existing source file')
+    parser.set_defaults(force=False)
+
+    return parser.parse_args()
+
+
 def parse_command_line():
 
     parser = argparse.ArgumentParser (description='Create submission scripts for the given skel project')
@@ -130,7 +199,7 @@ def main(argv=None):
     params = skelconf.skelConfig (args.project + '_params.xml')
 
     #generate_makefiles_c (params)
-    generate_submit_scripts (params)
+    generate_submit_scripts_from_xml (params)
 
 
 
