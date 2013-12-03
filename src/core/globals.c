@@ -183,7 +183,9 @@ char *get_full_path_name(char *name, char *path)
         fprintf(stderr, "cannot allocate memory. %s:%d\n", __FILE__,__LINE__);
         return NULL;
     }
-    if (!strcmp (path, "/")) {
+    if (!path || !path[0]) { // null or empty string
+        sprintf (full_pathname, "%s\0", name);
+    else if (!strcmp (path, "/")) {
         sprintf (full_pathname, "/%s\0", name);
     }
     else {
