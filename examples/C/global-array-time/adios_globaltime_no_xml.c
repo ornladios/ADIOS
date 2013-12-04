@@ -48,7 +48,7 @@ int main (int argc, char ** argv)
         int64_t       m_adios_group;
         int64_t       m_adios_file;
 
-        adios_declare_group (&m_adios_group, "restart", "iter", adios_flag_yes);
+        adios_declare_group (&m_adios_group, "restart", "", adios_flag_yes);
         adios_select_method (m_adios_group, "MPI", "", "");
 
         adios_define_var (m_adios_group, "NX"
@@ -68,7 +68,7 @@ int main (int argc, char ** argv)
     
             adios_define_var (m_adios_group, "temperature"
                          ,"", adios_double
-                         ,"iter,NX", "G", "O");
+                         ,"NX", "G", "O");
         }
 
         for (it =0; it < 5; it++) {
