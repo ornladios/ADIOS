@@ -18,4 +18,4 @@ reader_scalar_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 
 CLEANFILES = *.bp
 CC=$(MPICC)
-EXTRA_DIST = arrays.xml 
+EXTRA_DIST = test_config_flex.xml test_config_mpi.xml

@@ -405,7 +405,7 @@ adios_read_all_3D_LDADD = $(top_builddir)/src/libadiosread.a \
 	$(ADIOSLIB_LDADD)
 adios_read_all_3D_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 CLEANFILES = *.bp
-EXTRA_DIST = adios_global.xml gread_temperature.ch gwrite_temperature.ch job.pbs
+EXTRA_DIST = adios_global.xml gread_temperature.ch gwrite_temperature.ch 
 all: all-am
 
 .SUFFIXES:

@@ -1708,32 +1708,26 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                         return NULL; 
                     }
                     int var_march = 0;
-                    for (j=0; j<fp->nvars; j++)
-                    {
-                        char * coords_var_tmp = (char *)data;
-                        if (!strcmp (fp->var_namelist[j], coords_var_tmp))
+
+                    char * coords_var_tmp = (char *)data;
+                    varid = common_read_find_var (fp, coords_var_tmp, 1);
+                    if (varid >= 0) {
+                        ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[varid]);
+                        if (meshinfo->rectilinear->dimensions[i] != v->dims[0])
                         {
-                            var_march = 1;
-//                            printf ("match found \n");
-//                            printf ("var_namelist is %s\n", fp->var_namelist[j]);
-//                            printf ("coords_var_tmp is %s\n", coords_var_tmp);
-                            ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[j]);
-//                            printf ("meshinfo->rectilinear->dimensions is %d\n", meshinfo->rectilinear->dimensions[i]);
-//                            printf ("dims[0] is %d \n", v->dims[0]);
-                            if (meshinfo->rectilinear->dimensions[i] != v->dims[0])
-                            {
-                                adios_error (err_mesh_recti_invalid_coords,
-                                             "Rectilinear mesh %s dimension[%d] = %d does not match coordinates dimension[%d] = %d\n",
-                                             meshinfo->name, i, meshinfo->rectilinear->dimensions[i], i, v->dims[0] );
-                                return NULL; 
-                            }
-                            else
-                            {
-                                meshinfo->rectilinear->coordinates[i] = strdup (fp->var_namelist[j]);
-//                                printf ("coordinates[%d] is %s\n", i, meshinfo->rectilinear->coordinates[i]);
-                            }
-                            common_read_free_varinfo (v);
+                            adios_error (err_mesh_recti_invalid_coords,
+                                    "Rectilinear mesh %s dimension[%d] = %lld does not "
+                                    "match coordinates dimension[%d] = %lld\n",
+                                    meshinfo->name, i, meshinfo->rectilinear->dimensions[i], 
+                                    i, v->dims[0] );
+                            return NULL; 
                         }
+                        else
+                        {
+                            meshinfo->rectilinear->coordinates[i] = strdup (fp->var_namelist[j]);
+                            // printf ("coordinates[%d] is %s\n", i, meshinfo->rectilinear->coordinates[i]);
+                        }
+                        common_read_free_varinfo (v);
                     }
                 }
             }
