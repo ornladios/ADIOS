@@ -217,7 +217,6 @@ get_timestamp_mili()
 // add an attr for each dimension to an attr_list
 void set_attr_dimensions(char* varName, char* altName, int numDims, attr_list attrs) 
 {
-    fp_write_log("ATTR", "adding dim attr %s and ndim attr %d\n", varName, numDims);
     char atomName[200] = "";
     char dimNum[10];
     strcat(atomName, FP_DIM_ATTR_NAME);
@@ -320,7 +319,6 @@ update_step_msg_free(void *eventData, void *clientData)
 void 
 data_free(void* eventData, void* clientData) 
 {
-    fp_write_log("DATA", "freeing a data message\n");
     FlexpathWriteFileData* fileData = (FlexpathWriteFileData*)clientData;
     FMfree_var_rec_elements(fileData->fm->ioFormat, eventData);
     free(eventData);
@@ -342,7 +340,6 @@ op_free(void* eventData, void* clientData)
 int 
 queue_count(FlexpathQueueNode** queue) 
 {
-    fp_write_log("QUEUE", "counting a queue\n");
     if(*queue==NULL) {
         return 0;
     }
@@ -352,7 +349,6 @@ queue_count(FlexpathQueueNode** queue)
         count++;
         current = current->next;
     }
-    fp_write_log("QUEUE", "returning count\n");
     return count;
 }
 
@@ -366,21 +362,18 @@ threaded_enqueue(
     pthread_cond_t *condition,
     int max_size) 
 {
-    fp_write_log("QUEUE", "enqueing a message\n");
     pthread_mutex_lock(mutex);
     if(max_size > 0){
 	while(queue_count(queue) > max_size){
 	    pthread_cond_wait(condition, mutex);
 	}
     }
-    fp_write_log("MUTEX","lock 2\n");
     FlexpathQueueNode* newNode = malloc(sizeof(FlexpathQueueNode));
     newNode->data = item;
     newNode->type = type;
     newNode->next = *queue;
     *queue = newNode;
     pthread_cond_broadcast(condition);
-    fp_write_log("MUTEX","unlock 2\n");
     pthread_mutex_unlock(mutex);
 }
 
@@ -392,11 +385,8 @@ threaded_dequeue(
     pthread_cond_t *condition, 
     int signal_dequeue) 
 {
-    fp_write_log("QUEUE", "dequeue\n");
     pthread_mutex_lock(mutex);
-    fp_write_log("MUTEX","lock 4\n");
     while(queue_count(queue) == 0) {
-        fp_write_log("QUEUE", "queue is null\n");
         pthread_cond_wait(condition, mutex);
     }
     FlexpathQueueNode *tail;
@@ -411,9 +401,7 @@ threaded_dequeue(
     } else {
         *queue = NULL;
     }
-    fp_write_log("MUTEX","unlock 4\n");
     pthread_mutex_unlock(mutex);
-    fp_write_log("QUEUE", "exiting dequeue queue:%p ret:%p\n", *queue, tail);
     if(signal_dequeue==1) {
         pthread_cond_broadcast(condition);
     }
@@ -427,23 +415,16 @@ threaded_peek(FlexpathQueueNode** queue,
 	      pthread_cond_t *condition) 
 {
     pthread_mutex_lock(mutex);
-    fp_write_log("MUTEX","lock 5\n");
     int q = queue_count(queue);
-    fp_write_log("QUEUE", "peeking at a queue\n");
-    fp_write_log("QUEUE", "queue count %d\n", q);
     if(q == 0) {	
-	fp_write_log("QUEUE", "null about to wait\n");
 	pthread_cond_wait(condition, mutex);
-	fp_write_log("QUEUE", "signaled with queue %p\n", *queue);	
     }
     FlexpathQueueNode* tail;
     tail = *queue;
     while(tail && tail->next) {
         tail=tail->next;
     }
-    fp_write_log("MUTEX","unlock 5\n");
     pthread_mutex_unlock(mutex);
-    fp_write_log("QUEUE", "returning %p\n", tail);
     return tail;
 }
 
@@ -1144,11 +1125,6 @@ process_open_msg(FlexpathWriteFileData *fileData, op_msg *open)
 	ack->type = 2;
 	ack->condition = open->condition;
 	fileData->attrs = set_dst_rank_atom(fileData->attrs, open->process_id+1);
-
-	fp_log("COND", 
-	       "writer rank: %d, sending ack (open) to readerk: %d on port: %d with condition: %d\n",
-	       ack->process_id, open->process_id, open->process_id+1, ack->condition);
-
 	EVsubmit_general(fileData->opSource, ack, op_free, fileData->attrs);
     } 
     else if(open->step < fileData->readerStep) {
@@ -1164,11 +1140,9 @@ process_close_msg(FlexpathWriteFileData *fileData, op_msg *close)
 {
 
     pthread_mutex_lock(&fileData->openMutex);
-    fp_write_log("MUTEX","lock 7\n");
     fileData->openCount--;
     fileData->bridges[close->process_id].opened=0;
     fileData->bridges[close->process_id].condition = close->condition;
-    fp_write_log("MUTEX","unlock 7\n");
     pthread_mutex_unlock(&fileData->openMutex);
 
     if(fileData->openCount==0) {
@@ -1209,7 +1183,6 @@ var_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
     FlexpathWriteFileData* fileData = (FlexpathWriteFileData*) client_data;
     Var_msg* msg = (Var_msg*) vevent;
     EVtake_event_buffer(cm, vevent);
-    fp_write_log("MSG", "recieved var_msg : rank %d\n", msg->process_id);
     threaded_enqueue(&fileData->controlQueue, msg, VAR, 
 		     &fileData->controlMutex, &fileData->controlCondition, -1);
     return 0;
@@ -1241,8 +1214,6 @@ op_handler(CManager cm, void* vevent, void* client_data, attr_list attrs)
     FlexpathWriteFileData* fileData = (FlexpathWriteFileData*) client_data;
     op_msg* msg = (op_msg*) vevent;
     EVtake_event_buffer(cm, vevent);
-    fp_write_log("MSG", "recieved op_msg : rank %d type %d: condition: %d step: %d\n", 
-		 msg->process_id, msg->type, msg->condition, msg->step);
     if(msg->type == OPEN_MSG) {
         threaded_enqueue(&fileData->controlQueue, msg, OPEN, 
 			 &fileData->controlMutex, &fileData->controlCondition, -1);
@@ -1262,10 +1233,8 @@ control_thread(void *arg)
     FlexpathQueueNode *controlMsg;
     FlexpathQueueNode *dataNode;
     while(1) {
-        fp_write_log("CONTROL", "control message attempts dequeue\n");
 	if((controlMsg = threaded_dequeue(&fileData->controlQueue, 
 	    &fileData->controlMutex, &fileData->controlCondition, 0))) {
-            fp_write_log("CONTROL", "control message dequeued\n");
 	    if(controlMsg->type==VAR){
 		Var_msg *varMsg = (Var_msg*) controlMsg->data;
 		process_var_msg(fileData, varMsg);
@@ -1338,13 +1307,11 @@ adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method
     atom_t CM_TRANSPORT = attr_atom_from_string("CM_TRANSPORT");
     char * transport = getenv("CMTransport");
     if(transport == NULL){
-	fp_write_log("SETUP","transport is null\n");
 	if(CMlisten(flexpathWriteData.cm) == 0) {
 	    fprintf(stderr, "error: unable to initialize connection manager.\n");
 	    exit(1);
 	}
     } else {
-	fp_write_log("SETUP", "writer transport: %s\n", transport);
 	attr_list listen_list = create_attr_list();
 	add_attr(listen_list, CM_TRANSPORT, Attr_String, (attr_value)strdup(transport));
 	CMlisten_specific(flexpathWriteData.cm, listen_list);
@@ -1480,10 +1447,6 @@ adios_flexpath_open(struct adios_file_struct *fd,
 	unlink(reader_ready_filename);
     }
 
-    double setup_end = dgettimeofday();
-    
-    fp_log("PERF", "WRITER_PERF:startup:rank:%d:step:%d:time:%lf:mpi_size:%d\n", 
-       fileData->rank, fileData->writerStep, (setup_end - setup_start), fileData->size);
 	
     //process group format
     struct adios_group_struct *t = method->group;
@@ -1500,10 +1463,9 @@ adios_flexpath_open(struct adios_file_struct *fd,
     }	
 
     fileData->fm = set_format(t, fields, fileData);
-    fp_write_log("SETUP", "set format complete\n");
+
 
     // attach rank attr and add file to open list
-    fp_write_log("FILE", "opening file %s\n", method->group->name);
     fileData->name = strdup(method->group->name); 
     add_open_file(fileData);
     atom_t rank_atom = attr_atom_from_string(FP_RANK_ATTR_NAME);
@@ -1546,7 +1508,6 @@ adios_flexpath_open(struct adios_file_struct *fd,
 						  fileData->multiStone, 
 						  update_step_msg_format_list);
 
-    fp_write_log("SETUP", "setup terminal actions\n");
     EVassoc_terminal_action(flexpathWriteData.cm, fileData->sinkStone, 
 			    var_format_list, var_handler, fileData);
     EVassoc_terminal_action(flexpathWriteData.cm, fileData->sinkStone, 
@@ -1557,24 +1518,18 @@ adios_flexpath_open(struct adios_file_struct *fd,
 	flush_format_list, flush_handler, fileData);
 
     //link multiqueue to sink
-    fp_write_log("SETUP", "linking stones\n");
     EVaction_set_output(flexpathWriteData.cm, fileData->multiStone, 
         fileData->multi_action, 0, fileData->sinkStone);
-   
-    fp_write_log("SETUP", "arranged evpath graph\n");
 	
     FMContext my_context = create_local_FMcontext();
     fileData->fm->ioFormat = register_data_format(my_context, fileData->fm->format);
     
-    fp_write_log("SETUP", "indicating to reader that ready\n");
     sprintf(writer_ready_filename, "%s_%s", fd->name, "writer_ready.txt");
     if(fileData->rank == 0) {
         FILE* writer_info = fopen(writer_ready_filename, "w");
         fprintf(writer_info, "ready");
         fclose(writer_info);
-    }
-        
-    fp_write_log("SETUP", "fork control thread\n");
+    }       
     
     pthread_create(&fileData->ctrl_thr_id, NULL, (void*)&control_thread, fileData);   
     return 0;	
@@ -1591,7 +1546,6 @@ adios_flexpath_write(
     void *data, 
     struct adios_method_struct *method) 
 {
-    fp_write_log("FILE", "entering flexpath file %s write\n", method->group->name);
     FlexpathWriteFileData* fileData = find_open_file(method->group->name);
     FlexpathFMStructure* fm = fileData->fm;
 
@@ -1651,7 +1605,6 @@ adios_flexpath_write(
 extern void 
 adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *method) 
 {
-    fp_write_log("FILE", "file close %s\n", method->group->name);
     FlexpathWriteFileData* fileData = find_open_file(method->group->name);
     void* buffer = malloc(fileData->fm->size);
 
@@ -1768,9 +1721,6 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 	    list=list->next;
 	}
 
-	double offset_end = dgettimeofday();
-	fp_log("PERF", "WRITER_PERF:offset:rank:%d:step:%d:time:%lf:num_sendees:%d\n", 
-	       fileData->rank, fileData->writerStep, (offset_end - offset_start), 1);
 	gp->num_vars = num_gbl_vars;
 	gp->step = fileData->writerStep;
 	gp->vars = gbl_vars;
@@ -1817,7 +1767,6 @@ adios_flexpath_finalize(int mype, struct adios_method_struct *method)
 extern enum ADIOS_FLAG 
 adios_flexpath_should_buffer (struct adios_file_struct * fd,struct adios_method_struct * method) 
 {
-    fp_write_log("UNIMPLEMENTED", "adios_flexpath_should_buffer\n");
     return adios_flag_no;
 }
 
@@ -1825,21 +1774,18 @@ adios_flexpath_should_buffer (struct adios_file_struct * fd,struct adios_method_
 extern void 
 adios_flexpath_end_iteration(struct adios_method_struct *method) 
 {
-    fp_write_log("UNIMPLEMENTED", "adios_flexpath_end_iteration\n");
 }
 
 // provides unknown functionality
 extern void 
 adios_flexpath_start_calculation(struct adios_method_struct *method) 
 {
-    fp_write_log("UNIMPLEMENTED", "adios_flexpath_start_calculation\n");
 }
 
 // provides unknown functionality
 extern void 
 adios_flexpath_stop_calculation(struct adios_method_struct *method) 
 {
-    fp_write_log("UNIMPLEMENTED", "adios_flexpath_stop_calculation\n");
 }
 
 // provides unknown functionality
@@ -1906,7 +1852,6 @@ adios_flexpath_read(struct adios_file_struct *fd,
 		    uint64_t buffer_size, 
 		    struct adios_method_struct *method) 
 {
-    fp_write_log("UNIMPLEMENTED", "adios_flexpath_read\n");
 }
 
 #else // print empty version of all functions (if HAVE_FLEXPATH == 0)
