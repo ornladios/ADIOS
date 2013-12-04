@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <adios-config host-language="Fortran">
 
-    <adios-group name="scalars" coordination-communicator="comm">
+    <adios-group name="scalars">
         <!-- name    defines the variable name in the output file
              gwrite  defines the variable name in the code to write out
              gread   defines the variable name in the code to read the value into
@@ -22,9 +22,9 @@
         <var name="var_double_complex"  gwrite="v13" gread="v13" type="double complex"/>
     </adios-group>
 
-<method group="scalars" method="MPI"/>
+    <method group="scalars" method="MPI"/>
 
-<buffer size-MB="20" allocate-time="now"/>
+    <buffer size-MB="20" allocate-time="now"/>
 
 </adios-config>
 

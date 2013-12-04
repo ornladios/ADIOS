@@ -1,17 +1,17 @@
 <?xml version="1.0"?>
 <adios-config host-language="C">
-  <adios-group name="restart" time-index="iter">
+  <adios-group name="restart">
     <var name="NX" type="integer"/>
     <var name="NY" type="integer"/>
     <var name="size" type="integer"/>
     <var name="rank" type="integer"/>
 
     <global-bounds dimensions="size,NX" offsets="rank,0">
-       <var name="temperature" gwrite="t" type="double" dimensions="iter,1,NX"/>
+       <var name="temperature" gwrite="t" type="double" dimensions="1,NX"/>
     </global-bounds>
 
     <global-bounds dimensions="size,NY" offsets="rank,0">
-       <var name="pressure" gwrite="p" type="double" dimensions="iter,1,NY"/>
+       <var name="pressure" gwrite="p" type="double" dimensions="1,NY"/>
     </global-bounds>
 
     <attribute name="temperature/description" 

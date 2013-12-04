@@ -1,24 +1,31 @@
 <?xml version="1.0"?>
-<adios-config host-language="Fortran">
-    <adios-group name="restart" coordination-communicator="comm" time-index="iter">
+<adios-config host-language="Fortran"> 
+  <!--
+      There are no tricks here compared to the global-array example
+      to have multiple steps of an array recorded in a file.
+      Just do append in the code itself ('a' mode in adios_open())
+      Use the 'bpls' utils to see how multiple steps of an array
+      is represented. 
+  -->
+  <adios-group name="restart">
     <var name="NX" type="integer"/>
     <var name="NY" type="integer"/>
     <var name="size" type="integer"/>
     <var name="rank" type="integer"/>
     <global-bounds dimensions="NX,size" offsets="0,rank">
-       <var name="temperature" gwrite="t" type="double" dimensions="NX,1,iter"/>
+       <var name="temperature" gwrite="t" type="double" dimensions="NX,1"/>
     </global-bounds>
     <global-bounds dimensions="NY,size" offsets="0,rank">
-       <var name="pressure" gwrite="p" type="double" dimensions="NY,1,iter"/>
+       <var name="pressure" gwrite="p" type="double" dimensions="NY,1"/>
     </global-bounds>
-    <attribute name="description" path="/temperature" 
+    <attribute name="temperature/description" 
         value="Global array written from 'size' processes over several timesteps" 
         type="string"/>
-</adios-group>
+  </adios-group>
 
-<method group="restart" method="MPI"/>
+  <method group="restart" method="MPI"/>
 
-<buffer size-MB="2" allocate-time="now"/>
+  <buffer size-MB="2" allocate-time="now"/>
 
 </adios-config>
 
