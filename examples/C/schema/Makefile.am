@@ -56,9 +56,9 @@ triangle2d_LDADD += $(ADIOSLIB_LDADD)
 CLEANFILES = *.bp
 CC=$(MPICC)
 EXTRA_DIST = uniform.xml structured.xml rectilinear.xml unstructured.xml \
-			 unifrom2d.xml unifrom2d.readme unifrom2d.n4.png \
-			 rectilinear2d.xml rectilinear2d.readme rectilinear2d.png \
-			 structured2d.xml structured2d.readme \
-			 tri2d.xml tri2d.readme tri2d.n.png \
+             uniform2d.xml uniform2d.readme uniform2d.png \
+             rectilinear2d.xml rectilinear2d.readme rectilinear2d.png \
+             structured2d.xml structured2d.readme \
+             tri2d.xml tri2d.readme tri2d.n.png \
              triangle2d.xml triangle2d.readme triangle2d.n4.png
 
