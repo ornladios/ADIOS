@@ -24,13 +24,21 @@ int    npx;                // # of procs in x direction
 int    npy;                // # of procs in y direction
 int    nproc;               // # of total procs
 
+void printUsage(char *prgname)
+{
+    printf("Usage: mpirun -np <N> %s <nx> <ny>\n"
+           "    <nx> <ny>  2D decomposition values in each dimension of an 2D array\n"
+           "         The product of these number must be equal the number of processes\n"
+           "         e.g. for N=12 you may use  4 3\n"
+        ,prgname);
+}
+
 int processArgs(int argc, char ** argv)
 {
     int i, j, nd, prod;
     char *end;
     if (argc < 3) {
-//fix printUsage
-//        printUsage (argv[0]);
+        printUsage (argv[0]);
         return 1;
     }
 
@@ -40,11 +48,9 @@ int processArgs(int argc, char ** argv)
     npx = atoi(npx_str);
     npy = atoi(npy_str);
 
-    if (npx*npy > nproc) {
-        printf ("ERROR: Product of decomposition numbers in X and Y dimension %d > number of processes %d\n",
-                npx*npy, nproc);
-//fix
-//        printUsage(argv[0]);
+    if (npx*npy != nproc) {
+        printf ("ERROR: Product of decomposition numbers in X and Y dimension %d != number of processes %d\n", npx*npy, nproc);
+        printUsage(argv[0]);
         return 1;
     }
 
