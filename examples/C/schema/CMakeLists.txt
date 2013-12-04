@@ -3,18 +3,6 @@ include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/examples/C/schema)
 link_directories(${PROJECT_BINARY_DIR}/examples/C/schema)
 
-add_executable(uniform uniform.c)
-target_link_libraries(uniform adios ${ADIOSLIB_LDADD})
-
-add_executable(rectilinear rectilinear.c)
-target_link_libraries(rectilinear adios ${ADIOSLIB_LDADD})
-
-add_executable(structured structured.c)
-target_link_libraries(structured adios ${ADIOSLIB_LDADD})
-
-add_executable(unstructured unstructured.c)
-target_link_libraries(unstructured adios ${ADIOSLIB_LDADD})
-
 add_executable(uniform2d uniform2d.c)
 target_link_libraries(uniform2d adios ${ADIOSLIB_LDADD})
 
@@ -42,8 +30,7 @@ foreach (PROG ${PROGS} )
   target_link_libraries(${PROG} adios ${MPI_C_LIBRARIES})
 endforeach()
 
-file(COPY structured.xml rectilinear.xml unstructured.xml uniform.xml 
-        triangle2d.readme triangle2d.xml triangle2d.n4.png 
+file(COPY triangle2d.readme triangle2d.xml triangle2d.n4.png 
         uniform2d.readme uniform2d.xml uniform2d.png
         rectilinear2d.readme rectilinear2d.xml rectilinear2d.png
         structured2d.readme structured2d.xml
