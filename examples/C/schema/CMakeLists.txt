@@ -19,7 +19,7 @@ add_executable(triangle2d triangle2d.c)
 target_link_libraries(triangle2d adios ${ADIOSLIB_LDADD})
 
 
-set (PROGS uniform rectilinear structured unstructured uniform2d rectilinear2d structured2d tri2d triangle2d)
+set (PROGS uniform2d rectilinear2d structured2d tri2d triangle2d)
 foreach (PROG ${PROGS} )
   if(MPI_COMPILE_FLAGS)
     set_target_properties(${PROG} PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
