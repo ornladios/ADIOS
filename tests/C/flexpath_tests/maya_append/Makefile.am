@@ -14,4 +14,3 @@ reader_maya_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 
 CLEANFILES = *.bp
 CC=$(MPICC)
-EXTRA_DIST = arrays.xml 

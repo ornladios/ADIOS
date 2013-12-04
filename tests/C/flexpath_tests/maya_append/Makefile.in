@@ -354,7 +354,6 @@ reader_maya_SOURCES = reader.c ../common/utils.c
 reader_maya_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 reader_maya_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 CLEANFILES = *.bp
-EXTRA_DIST = arrays.xml 
 all: all-am
 
 .SUFFIXES:
