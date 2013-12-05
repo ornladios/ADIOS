@@ -254,10 +254,10 @@ int read_file (char *fname)
 
     log ("  Global dimensions... %s\n", fname);
     CHECK_SCALAR ("dir1/gdim1",  gdim1,  int)
-    CHECK_SCALAR ("dir1/gdim2",  gdim2,  int)
+    CHECK_SCALAR ("/dir1/gdim2",  gdim2,  int)
     CHECK_SCALAR ("dir1/gdim3",  gdim3,  int)
     CHECK_SCALAR ("/dir1/dir2/gdim4",  gdim4,  int)
-    CHECK_SCALAR ("gdim5",  gdim5,  int)
+    CHECK_SCALAR ("/gdim5",  gdim5,  int)
     CHECK_SCALAR ("gdim6",  gdim6,  int)
     CHECK_SCALAR ("gdim7",  gdim7,  int)
 
@@ -302,7 +302,7 @@ int read_file (char *fname)
     start[0] = offs5;
     count[0] = ldim5;
     sel = adios_selection_boundingbox (1, start, count); 
-    adios_schedule_read (f, sel, "a5", 0, 1, r5);
+    adios_schedule_read (f, sel, "/a5", 0, 1, r5);
     adios_perform_reads (f, 1);
     adios_selection_delete (sel);
     CHECK_ARRAY (a5, r5, ldim5)
