@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <adios-config host-language="C">
-    <adios-group name="temperature" coordination-communicator="comm" stats="On">
+    <adios-group name="transform" stats="On">
     <var name="g1" type="integer"/>
     <var name="g2" type="integer"/>
     <var name="o1" type="integer"/>
@@ -16,10 +16,9 @@
        <var name="t_aplod"    gwrite="t" type="double" dimensions="l1,l2" transform="aplod"   />
        <var name="t_isobar"   gwrite="t" type="double" dimensions="l1,l2" transform="isobar"  />
     </global-bounds>
-    <attribute name="description" path="/temperature" value="Global array written from 'size' processes" type="string"/>
 </adios-group>
 
-<method group="temperature" method="MPI"/>
+<method group="transform" method="MPI"/>
 
 <buffer size-MB="500" allocate-time="now"/>
 
