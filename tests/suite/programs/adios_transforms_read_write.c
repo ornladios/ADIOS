@@ -147,7 +147,6 @@ int main (int argc, char *argv [])
     int         l1, l2, o1, o2, g1, g2;
     MPI_Comm    comm = MPI_COMM_WORLD;
 
-    /* ADIOS variables declarations for matching gwrite_temperature.ch */
     int         adios_err;
     uint64_t    adios_groupsize, adios_totalsize;
     int64_t     adios_handle;
@@ -181,9 +180,9 @@ int main (int argc, char *argv [])
     for (timestep = 0; timestep < size; timestep ++) {
 
         if (timestep == 0) {
-            adios_open (&adios_handle, "temperature", filename, "w", comm);
+            adios_open (&adios_handle, "transform", filename, "w", comm);
         } else {
-            adios_open (&adios_handle, "temperature", filename, "a", comm);
+            adios_open (&adios_handle, "transform", filename, "a", comm);
         }
 
         adios_groupsize = 6 * sizeof (int) \

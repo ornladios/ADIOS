@@ -84,10 +84,11 @@ examples/C/read_all/read_all
 examples/C/scalars/scalars_read
 examples/C/scalars/scalars_write
 examples/C/scalars/scalars_write_step
-examples/C/schema/rectilinear
-examples/C/schema/structured
-examples/C/schema/uniform
-examples/C/schema/unstructured
+examples/C/schema/rectilinear2d
+examples/C/schema/structured2d
+examples/C/schema/uniform2d
+examples/C/schema/tri2d
+examples/C/schema/triangle2d
 examples/C/stat/stat_read
 examples/C/stat/stat_write
 examples/C/compression_test/adios_global
@@ -147,11 +148,13 @@ utils/bp2h5/bp2h5
 utils/bp2ncd/bp2ncd
 utils/bpdump/bpdump
 utils/bpls/bpls
+utils/bpdiff/bpdiff
 utils/bpsplit/bpappend
 utils/bpsplit/bpgettime
 utils/bpsplit/bpsplit
 utils/skel/etc/compiler_fragment.mk
 utils/skel/lib/skel_have_adios_timing.py
+utils/skeldump/skeldump
 
 # NCSU ALACRITY-ADIOS - Some extra files we added
 /myrunconf

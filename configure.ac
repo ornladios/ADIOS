@@ -5,7 +5,7 @@ AC_CONFIG_MACRO_DIR(config)
 AC_REVISION($Revision$)
 
 AC_CONFIG_HEADERS(config.h)
-AM_INIT_AUTOMAKE(adios,1.5.1)
+AM_INIT_AUTOMAKE(adios,1.6.0)
 
 AM_MAINTAINER_MODE([enable])
 
