@@ -114,7 +114,7 @@ def submit_line_template_replace (template_line, params, batch, test, settings):
 
 
 def generate_submit_scripts_from_yaml (args):
-    print "Generating submission script using yaml file"
+    #print "Generating submission script using yaml file"
 
     bpy = skel_bpy.skel_bpy (args.yamlfile)
 

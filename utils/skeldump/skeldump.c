@@ -7,6 +7,9 @@
 
 /* 
  * Extract metadata needed by skel to recreate I/O pattern of a BP file.
+ *   This is a prototype version that contains much unnecessary stuff that
+ *   is leftover from bpls but not needed here. It should be cleaned up 
+ *   eventually.
  *
  * Adapted from bpls.c
  *
@@ -567,7 +570,7 @@ int doList_group (ADIOS_FILE *fp)
             fprintf (outf, "  {\n");
 
             // print definition of variable
-            fprintf (outf, "    name: %s,\n", names[n] );
+            fprintf (outf, "    name: \"%s\",\n", names[n] );
             fprintf (outf, "    type: %s,\n", adios_type_to_string(vartype) );
             if (vartype == adios_string)
             {
@@ -592,14 +595,23 @@ int doList_group (ADIOS_FILE *fp)
                 // array
                 //fprintf(outf,"  {%s%d", (vi->timedim==0 ? "T-": ""),vi->dims[0]);
 
-                fprintf(outf,"    ");
+                //fprintf(outf,"    ");
                 if (timed) 
                     fprintf(outf, "%d*", vi->nsteps);
-                fprintf(outf, "  dims: ");
+
+
+                adios_inq_var_blockinfo (fp, vi);
+                fprintf(outf, "    dims: ");
                 if (vi->ndim > 0) {
-                    fprintf(outf,"[%lld", vi->dims[0]);
+                    if (vi->blockinfo)
+                        fprintf(outf,"[%lld", vi->blockinfo[0].count[0]);
+                    else
+                        fprintf(outf,"[%lld", vi->dims[0]);
                     for (j=1; j < vi->ndim; j++) {
-                        fprintf(outf,", %lld", vi->dims[j]);
+                        if (vi->blockinfo)
+                            fprintf(outf,", %lld", vi->blockinfo[0].count[j]);
+                        else
+                            fprintf(outf,", %lld", vi->dims[j]);
                     }
                     fprintf(outf,"]");
                 } else {
@@ -721,7 +733,12 @@ int doList_group (ADIOS_FILE *fp)
 
             } else {
                 // scalar
-                fprintf(outf,"  dims: scalar");
+                fprintf(outf,"    dims: scalar");
+                if (vi->value) {
+                    fprintf (outf, ",\n    value: \"");
+                    print_data (vi->value, 0, vartype, false);
+                    fprintf (outf, "\"");
+                }
                 if (longopt && vi->value) {
                     fprintf(outf," = ");
                     print_data(vi->value, 0, vartype, false); 
@@ -1514,7 +1531,7 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype, bool all
             fprintf(outf,(f ? format : "%hhd "), ((signed char *) data)[item]);
             break;
         case adios_string:
-            fprintf(outf,(f ? format : "\"%s\""), ((char *) data)+item);
+            fprintf(outf,(f ? format : "%s"), ((char *) data)+item);
             break;
 
         case adios_unsigned_short:  

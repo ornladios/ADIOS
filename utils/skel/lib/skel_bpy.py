@@ -15,9 +15,9 @@ class skel_bpy:
 
         self.vars = {}
         for v in self.doc['variables']:
-            #print "found variable %s" % v['name']
             name = v ['name']
             self.vars [name] = var (name, v)
+            #print "Added variable %s\n" % name
 
     def get_num_procs (self):
         return self.doc['procs']
@@ -65,7 +65,7 @@ class var:
         return self.vardict['type']
 
     def get_lang_type (self, lang):
-        print "getting type for lang"
+        #print "getting type for lang"
         if lang == 'C' or lang == 'c':
             return self.get_c_type()
         else:
@@ -248,6 +248,13 @@ class var:
         return self.get_global_dims() is not None 
 
     def get_value (self):
+
+        # Look for a single value first
+        val = self.vardict.get ('value', None)
+        if not val is None:
+            return val
+
+        # Multiple values not currently handled by template, just return first one.
         vals = self.vardict.get('values', None)
         if vals is None or length (vals) < 1:
             return None

@@ -659,7 +659,7 @@ def pparse_command_line (parent_parser):
 
 
 def create_source_from_yaml (args, config):
-    print "Using yaml file"
+    #print "Using yaml file"
 
     # Determine the target language
     if config.host_language == "C" or config.host_language =="c":
@@ -673,7 +673,7 @@ def create_source_from_yaml (args, config):
 
     # Determine outfile name
 
-    print bpy.get_group_name()
+    #print bpy.get_group_name()
 
     extension = '_skel_' + bpy.get_group_name()
     outfilename = args.project + extension + filetype

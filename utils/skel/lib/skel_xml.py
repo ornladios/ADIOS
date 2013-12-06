@@ -61,7 +61,7 @@ def create_skel_xml (project, parent_parser):
 
 
 def create_from_yaml (project,args):
-    print "using yaml file"
+    #print "using yaml file"
 
     outfilename = project + '_skel.xml'
 
