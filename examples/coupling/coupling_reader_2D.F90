@@ -93,7 +93,7 @@ program coupling
     if (rank==0)    print *, " Input file: "//trim(infn)
 
 
-    call adios_read_init_method (read_method, group_comm, "verbose=3; app_id=2; poll_interval=1000", ierr);
+    call adios_read_init_method (read_method, group_comm, "verbose=4; app_id=2; poll_interval=1000", ierr);
     call adios_init("coupling_reader_2D.xml", group_comm, ierr)
     !call MPI_Barrier (group_comm, ierr)
 
