@@ -281,8 +281,10 @@ void adios_dataspaces_write (struct adios_file_struct * fd
     
     if (v->path != NULL && v->path[0] != '\0' && strcmp(v->path,"/")) 
         snprintf(ds_var_name, MAX_DS_NAMELEN, "%s/%s/%s/%s", fd->name, fd->group->name, v->path, v->name);
-    else 
+    else if (!strcmp(v->path,"/")) 
         snprintf(ds_var_name, MAX_DS_NAMELEN, "%s/%s//%s", fd->name, fd->group->name, v->name);
+    else 
+        snprintf(ds_var_name, MAX_DS_NAMELEN, "%s/%s/%s", fd->name, fd->group->name, v->name);
 
     //snprintf(dspaces_type_var_name, MAX_DS_NAMELEN, "TYPE@%s", ds_var_name);
     
@@ -532,9 +534,11 @@ static int ds_get_full_name_len (char * path, char * name)
 {
     int len;
     // make full name
-    if (!path || !path[0] || !strcmp (path, "/")) { 
-        // no path, just name + leading /
-        len = strlen(name) + 1;
+    if (!path || !path[0]) { 
+        // no path, just name
+        len = strlen(name);
+    } else if (!strcmp (path, "/")) {
+        len = strlen(name)+1;
     } else {
         len = strlen(path) + strlen(name) + 1;
     }
@@ -547,9 +551,12 @@ static int ds_get_full_name (char * path, char * name, int maxlen,
     int len;
     // make full name
     if (!path || !path[0] || !strcmp (path, "/")) { 
-        // no path, just name + leading /
-        len = strlen(name) + 1;
-        out[0] = '/';
+        // no path, just name 
+        len = strlen(name);
+        strncpy(out, name, maxlen);
+    } else if (!strcmp (path, "/")) {
+        len = strlen(name)+1;
+        out[0]='/';
         strncpy(out+1, name, maxlen-1);
     } else {
         len = strlen(path);
