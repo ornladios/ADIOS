@@ -17,86 +17,34 @@ nodes.
   \item[submit\_target]
 This determines which submission script template will be used
 by
-skel submit
-. Templates for
-jaguar
-and
-sith
-are included in this
+{\tt skel\_submit}. Templates for titan and sith are included in this
 release.
   \item[sleep\_before\_open (yes/no)]
-Determines whether a short
-sleep
-statement is
-inserted in the code before the
-adios
-open
-call. Default is
-no
-.
+Determines whether a short sleep statement is inserted in the generated 
+code before the adios open call. Default is no.
   \item[barrier\_before\_open (yes/no)]
-Determines whether an
-MPI
-Barrier
-call is
-inserted into the generated code before
-adios
-open
-. Default is
-yes
-.
+Determines whether an {\tt MPI\_Barrier} call is inserted into the 
+generated code before {\tt adios\_open}. Default is yes.
   \item[barrier\_before\_access (yes/no)]
-Determines whether an
-MPI
-Barrier
-call is
+Determines whether an {\tt MPI\_Barrier} call is
 inserted into the generated code before the sequence of
-adios
-write
-calls.
-Default is
-no
-.
+{\tt adios\_write} calls. Default is no.
   \item[barrier\_before\_close (yes/no)]
-Determines whether an
-MPI
-Barrier
-call is
-inserted into the generated code before
-adios
-close
-. Default is
-no
-.
+Determines whether an {\tt MPI\_Barrier}
+call is inserted into the generated code before {\tt adios\_close}.
+Default is no.
   \item[barrier\_after\_close (yes/no)]
-Determines whether an
-MPI
-Barrier
-call is in-
-serted into the generated code after
-adios
-close
-. Default is
-no
-.
+Determines whether an {\tt MPI\_Barrier} call is inserted
+into the generated code after {\tt adios\_close}. Default is no.
   \item[barrier\_after\_steps (yes/no)]
-Determines whether a single
-MPI
-Barrier
-call
-is inserted into the generated code after the nal
-adios
-close
-. Default is
-no
-.
+Determines whether a single {\tt MPI\_Barrier} call
+is inserted into the generated code after the final
+{\tt adios\_close}. Default is no.
   \item[use\_adios\_timing (yes/no)]
 Determines whether a call is inserted to output
 detailed timing information collected by ADIOS. For this to work, your
 adios distribution must have been configured using
---enable-skel-timing
-.
-Default is
-no
+{\tt --enable-skel-timing}.
+Default is no.
 \end{description}
 
