@@ -1,0 +1,23 @@
+\chapter{Introduction}
+
+Skel is a tool used for the generation of I/O skeletal applications. Skel takes an
+I/O descriptor and a set of parameters, and generates a full I/O benchmark.
+Compared to a scientific application, the generated benchmark is easy to build
+and to run. Despite the simplicity of the generated code, it mimics quite well
+the I/O pattern from the target application, thus simplifying the process of
+understanding the I/O performance of an application.
+Skel provides a simple mechanism for testing the performance of I/O operations
+that are relevant to applications of interest. This is of critical importance
+when evaluating new systems or new system configurations. It is equally useful
+for evaluating new I/O methods, or examining the effects of dirent parameters
+to existing I/O methods. Since the benchmarks produced by skel focus
+on the exact I/O patterns of applications, performance measurements obtained
+from those benchmarks will correlate highly with the performance of the actual
+applications.
+This manual provides a detailed explanation of Skel, including the relevant
+file formats, documentation of skel commands, common usage of skel, and hints
+for porting skel to new platforms. Skel is young and still in development, so we
+expect there will be things that do not work perfectly. Please help us improve by
+letting us know when you encounter troubles. You can reach the skel developers
+by sending email to lot@ornl.gov.
+

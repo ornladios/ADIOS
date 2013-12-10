@@ -1,0 +1,110 @@
+\chapter{The Parameters File}
+Generation of a skeletal application requires some more information that is
+found in the ADIOS configuration file. To specify this additional information,
+the user must supply a Skel parameters file. The parameters file is an XML file
+which contains the elements described in the following section.
+Although it not overly dicult to construct your own parameters files, users
+may find it more convenient to use the {\it skel params} command to automatically
+generate a parameters file with default values, then simply edit the file to provide
+the desired configuration.
+\section{Elements}
+\begin{description}
+  \item[<skel-config>] \hfill \\
+Each parameters file must contain exactly one
+<skel-config> element as the only element at the root level of the document. The
+<skel-config> element should contain one <adios-group> element and one <batch>
+element, as described below.
+
+{\it Supported Attributes:}
+  \begin{description}
+    \item[application]
+The name of the application described by the document.
+This should correspond to the project used for the skel calls, and
+the name of the original XML file given to skel xml .
+  \end{description}
+
+
+  \item[<adios-group>] \hfill \\
+The <adios-group> element is a child of the root <skel-config>
+element. It corresponds to the adios-group that will be written by the I/O
+skeletal application being generated. The <adios-group> element contains a collection of
+<scalar> and <array> elements corresponding to the variables described for the group
+in the ADIOS config file.
+
+{\it Supported Attributes:}
+  \begin{description}
+    \item[name]
+The name of the ADIOS group that this element describes
+  \end{description}
+
+
+  \item[<scalar>] \hfill \\
+Represents a scalar variable that is described in the ADIOS descrip-
+tor. Often integer valued scalars will be used to determine the dimensions
+of arrays, thus providing appropriate values is essential for creating mean-
+ingful benchmarks.
+
+{\it Supported Attributes:}
+  \begin{description}
+    \item[name]
+The name of the scalar variable
+    \item[type]
+(Optional) The type of this variable in the generated code. Supplied
+for convenience by skel params .
+    \item[value]
+A value, of the proper type, that will be assigned to this scalar
+variable in the generated code.
+  \end{description}
+
+  \item[<array>] \hfill \\
+Represents an array variable that is described in the ADIOS descrip-
+tor.
+
+{\it Supported Attributes:}
+  \begin{description}
+    \item[name]
+The name of the array variable
+    \item[type]
+(Optional) The type of this variable in the generated code. Supplied
+for convenience by {\it skel params}.
+    \item[dimensions]
+(Optional) A list of the scalar values that will be used to
+determine the dimensions of this array
+    \item[fill-method]
+Determines how the array memory will be initialized in the
+generated code
+  \end{description}
+  \item[<batch>] \hfill \\
+Describes a set of tests to be performed by the generated I/O kernel.
+The <batch> element contains one or more <test> elements.
+
+{\it Supported Attributes:}
+  \begin{description}
+    \item[name]
+The name of the batch. Used to name the submission script and
+other elements of the batch job.
+    \item[cores]
+The number of MPI tasks that will be used for the skeletal application
+    \item[walltime]
+Amount of runtime requested by the generated submission script
+  \end{description}
+  \item[<test>] \hfill \\
+Describes a single test to be performed.
+
+{\it Supported Attributes:}
+  \begin{description}
+    \item[type]
+The type of test to be performed. Currently only write is supported.
+    \item[group]
+The ADIOS group to be written
+    \item[method]
+The ADIOS write method to use for writing (i.e. POSIX). A
+full listing of available methods can be found in the ADIOS manual.
+    \item[iterations]
+The number of times to repeat this test
+    \item[rm]
+determines whether and when to remove the written output files. One
+of \{pre, post, both, none\}
+  \end{description}
+\end{description}
+

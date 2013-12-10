@@ -1,0 +1,43 @@
+\chapter{Skel Command Reference}
+
+Most skel commands are of the form:
+skel
+subcommand project
+\section{Available Subcommands}
+
+\begin{description}
+  \item[skel install] \hfill \\
+Usage:
+skel install
+  \item[skel makefile] \hfill \\
+Generates a Makefile fit for building and deploying the skeletal
+application.
+Requires <project>\_skel.xml and <project>\_params.xml
+Usage:
+skel makefile <project>
+  \item[skel params] \hfill \\
+Generates a parameters file that can be customized by the user.
+Note that this command creates a file called <project> params.xml.default
+so as to avoid overwriting a customized parameters file. This means that
+the user should copy this file to <project> params.xml and edit before
+proceeding with code generation.
+Requires <project>\_skel.xml
+Usage:
+skel params <project>
+  \item[skel source] \hfill \\
+Generates a C or Fortran code that performs the I/O operations
+described by the XML descriptor and the parameters file.
+Requires <project>\_skel.xml and <project>\_params.xml
+Usage:
+skel source <project>
+  \item[skel submit] \hfill \\
+Generates a submission script for the skeletal application
+Requires <project>\_skel.xml and <project>\_params.xml
+Usage:
+skel submit <project>
+  \item[skel xml] \hfill \\
+Generates the <project>\_skel.xml file.
+Requires <project>.xml
+Usage:
+skel xml <project>
+\end{description}

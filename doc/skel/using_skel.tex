@@ -1,0 +1,28 @@
+\chapter{Using Skel}
+\section{Overview}
+Figure 1 shows the typical workflow of using skel to create a skeletal I/O 
+benchmark. The example uses the GTS application, and thus the workflow begins
+with gts.xml, the XML descriptor from GTS. The {\it skel xml} command is used
+to create a second xml file, gts\_skel.xml which will serve as the ADIOS xml
+descriptor for the skeletal application. Next, skel params is used to generate
+a parameters file. The generated parameters file is then edited by the user to
+guide the subsequent generation of the skeletal application.
+
+Figure 1: Skel Workflow
+
+At this point, the commands {\it skel source}, {\it skel makefile}, and {\it skel submit}
+may be used to generate the source files, Makefile, and submission scripts that
+comprise the skeletal application. With all of the components of the skeletal
+application created, it is now time to build the application, using {\it make}, and
+finally deploy the application to a directory from which it may be launched,
+using {\it make deploy}, which copies the gts\_skel.xml file, executable files, and
+submission script. The user now has a ready to run I/O benchmark without
+having written any source code at all.
+
+
+\section{Detailed Example}
+In this section we will describe the steps used to create an I/O Kernel based
+on the GTS application. The ADIOS config file for GTS can be found in the
+examples directory.
+
+Coming Soon

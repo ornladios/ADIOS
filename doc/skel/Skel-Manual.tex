@@ -1,0 +1,160 @@
+%&LaTeX
+% !TEX encoding = UTF-8 Unicode
+
+%Borrowed from ADIOS Manual, may be some unneccesary bits here...
+
+\documentclass{report}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{textcomp}
+\usepackage{float,fancyvrb}
+\usepackage{listings}
+
+%\usepackage{graphicx}
+\usepackage{longtable}
+\usepackage{color}
+
+\usepackage{ifpdf}
+
+\ifx\pdftexversion\undefined %if using TeX
+    \usepackage{graphicx}
+\else %if using PDFTeX
+    \ifpdf %if using PDFTeX in PDF mode
+        \usepackage[pdftex]{graphicx}
+        \DeclareGraphicsExtensions{.pdf,.png,.mps}
+        \usepackage{pgf}
+    \else %if using TeX or PDFTeX in TeX mode
+        \usepackage{graphicx}
+        \DeclareGraphicsExtensions{.eps,.bmp}
+        \DeclareGraphicsRule{.emf}{bmp}{}{}% declare EMF filename extension
+        \DeclareGraphicsRule{.png}{bmp}{}{}% declare PNG filename extension
+        \usepackage{pgf}
+        \usepackage{pstricks} %variant: \usepackage{pst-all}
+\fi
+
+%\setlength{\paperheight}{297mm}
+%\setlength{\paperwidth}{210mm}
+%\setlength{\voffset}{11mm}
+\setlength{\topmargin}{0mm}
+\setlength{\headsep}{0mm}
+\setlength{\headheight}{0mm}
+\setlength{\textheight}{235mm}
+\setlength{\hoffset}{-4mm}
+\setlength{\textwidth}{166mm}
+\setlength{\oddsidemargin}{0mm}
+\setlength{\evensidemargin}{0mm}
+\setlength{\marginparwidth}{0mm}
+\setlength{\marginparpush}{0mm}
+%\setlength{\columnsep}{6mm}
+%\setlength{\parindent}{0mm}
+
+
+\definecolor{color01}{rgb}{0.00,0.00,0.00}
+\definecolor{color02}{rgb}{0.00,0.00,1.00}
+\definecolor{color06}{rgb}{1.00,0.00,0.00}
+\definecolor{color08}{rgb}{1.00,1.00,1.00}
+\definecolor{color17}{rgb}{0.14,0.25,0.38}
+\definecolor{color20}{rgb}{0.31,0.51,0.74}
+\definecolor{color26}{rgb}{0.50,0.50,0.50}
+
+%% Added by Jong -- to enable \subsubsection
+\setcounter{secnumdepth}{3}
+\usepackage{hyperref}
+
+\newcommand{\comment}[1]{}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Define syntax highlighting for ADIOS
+\lstdefinelanguage{ADIOS}
+{
+sensitive=true,
+keywordsprefix=ADIOS_,
+morekeywords=[1]{
+adios_errno, err_file_not_found, err_end_of_stream, err_step_notready, err_step_deleted},
+morekeywords=[2]{
+% Write API (XML)
+adios_init, adios_finalize, adios_open, adios_write, adios_read, adios_close, 
+adios_group_size, adios_set_path_var, adios_set_path, 
+adios_end_iteration, adios_start_calculation, adios_stop_calculation,
+% Write API (Non-XML)
+adios_init_noxml, adios_declare_group, adios_free_group, adios_define_var, 
+adios_define_attribute, adios_allocate_buffer, adios_select_method,
+adios_get_write_buffer,
+% Read API (1.4)
+adios_read_init_method, adios_read_finalize_method,
+adios_read_open_file, adios_read_open, adios_read_close,
+adios_inq_var, adios_inq_var_byid, adios_free_varinfo,
+adios_inq_var_stat, adios_inq_var_blockinfo,
+adios_get_attr, adios_get_attr_byid,
+adios_schedule_read, adios_schedule_read_byid, adios_perform_reads, adios_check_reads,
+adios_advance_step, adios_release_step,adios_free_chunk,
+adios_selection_boundingbox, adios_selection_points, adios_selection_writeblock, 
+adios_selection_delete, adios_selection_auto, adios_errmsg,
+adios_type_to_string, adios_type_size, adios_get_grouplist,
+% Fortran Read
+adios_reset_dimension_order, adios_inq_ngroups, adios_inq_groupnames, 
+adios_group_view, adios_inq_file, adios_inq_varnames, adios_inq_attrnames,
+adios_inq_attr, adios_get_scalar, adios_get_statistics},
+morecomment=[l]{//},morecomment=[s]{/*}{*/},
+morestring=[b]",morestring=[b]',
+}
+
+\lstdefinelanguage{cython}[]{python}
+{
+sensitive=true,
+keywordsprefix=ADIOS_,
+keywords={def, cpdef, cdef, public, class, self},
+morekeywords=[1]{
+int64_t, uint64_t, int, long, float, double, char, bytes, tuple, list, dict},
+upquote=true,
+}
+
+\lstdefinelanguage{ADIOS-python}[]{python}
+{
+upquote=true,
+}
+
+\definecolor{gray}{rgb}{0.35,0.35,0.35}
+\definecolor{gray85}{rgb}{0.85,0.85,0.85}
+\definecolor{javared}{rgb}{0.6,0,0}
+\definecolor{javagreen}{rgb}{0.25,0.5,0.35}
+\definecolor{javapurple}{rgb}{0.5,0,0.35}
+\definecolor{javadocblue}{rgb}{0.25,0.35,0.75}
+
+\lstset{language=ADIOS, basicstyle=\ttfamily, numbers=none,
+  showspaces=false, showstringspaces=false,
+  keywordstyle=[1]\color{javapurple},
+  keywordstyle=[2]\color{blue}\bf,
+  stringstyle=\color{javared},
+  commentstyle=\color{javagreen},
+  captionpos=b,
+  frame=no,
+  escapechar=`,
+}
+% End of syntax highlight def for ADIOS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\begin{document}
+
+\input{front_matter.tex}
+
+\input{introduction.tex}
+
+\input{using_skel.tex}
+
+\input{cmd_reference.tex}
+
+\input{params_file.tex}
+
+\input{settings_file.tex}
+
+\input{timing_mechanism.tex}
+
+\input{porting_hints.tex}
+
+\end{document}
+
+
+
+
+
