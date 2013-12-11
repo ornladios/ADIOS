@@ -807,7 +807,7 @@ void adios_mpi_amr_init (const PairStruct * parameters
 
     md->g_is_aggregator = 0;
     md->g_num_aggregators = 0;
-    md->g_have_mdf = 0;
+    md->g_have_mdf = 1;
     md->g_merging_pgs = 0;
     md->g_num_ost = 0;
     md->g_threading = 0;
@@ -2373,7 +2373,7 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
 
 
             md->g_num_aggregators = 0;
-            md->g_have_mdf = 0;
+            md->g_have_mdf = 1;
             md->g_color1 = 0;
             md->g_color2 = 0;
 
@@ -3332,7 +3332,7 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
             buffer_offset = 0;
 
             md->g_num_aggregators = 0;
-            md->g_have_mdf = 0;
+            md->g_have_mdf = 1;
             md->g_color1 = 0;
             md->g_color2 = 0;
 
