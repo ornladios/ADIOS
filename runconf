@@ -962,14 +962,15 @@ elif [ `hostname | cut -c 1-7` == "esimmon" ]; then
     export CXX=g++
     export FC=gfortran
 
-    #export CFLAGS="-g -fPIC" 
-    ${SRCDIR}/configure --prefix=/opt/adios/1.5.0 \
+    #export CFLAGS="-g -O0 -fPIC" 
+    ${SRCDIR}/configure --prefix=/opt/adios/1.6 \
         --enable-dependency-tracking \
         --with-mxml=/opt/mxml \
         --with-hdf5=/opt/hdf5 \
         --with-phdf5=/opt/phdf5 \
         --with-netcdf=/opt/netcdf3 \
         --with-nc4par=/opt/nc4par \
+        --with-zlib=/usr \
         --with-flexpath=/opt/chaos
 
 else

@@ -1028,7 +1028,6 @@ int adios_get_uniform_mesh_attr (ADIOS_FILE * fp, ADIOS_MESH *meshinfo, char * a
     int  read_fail = 0;
     bool have_max = 0;
     bool have_spacing = 0;
-    int varid;
 
     char * attribute = malloc (strlen("/adios_schema/")+strlen(meshinfo->name)+strlen("/")+strlen(attrs)+strlen("-num")+1 );
     strcpy (attribute, "/adios_schema/");
@@ -1173,80 +1172,83 @@ int adios_get_uniform_mesh_attr (ADIOS_FILE * fp, ADIOS_MESH *meshinfo, char * a
                     // string may be a variable
                     int var_march = 0;
                     char * value_tmp = (char *)data;
-                    varid = common_read_find_var (fp, value_tmp, 1);
-                    if (varid >= 0)
+                    for (j=0; j<fp->nvars; j++)
                     {
-                        ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[varid]);
-                        if (!strcmp (attrs, "origins"))
+                        if (!strcmp (fp->var_namelist[j], value_tmp))
                         {
-                            if (v->type == adios_real)    //adios_real
-                                meshinfo->uniform->origins[i] = *(float *)v->value;                        //
-                            else if (v->type == adios_double || v->type == adios_long_double)    //adios_double or adios_long_double
-                                meshinfo->uniform->origins[i] = *(double *)v->value;
-                            else if (v->type == adios_integer || v->type == adios_unsigned_integer)  // adios_integer or adios_unsigned_integer
-                                meshinfo->uniform->origins[i] = *(int *)v->value;
-                            else if (v->type == adios_long || v->type == adios_unsigned_long)  // adios_long or adios_unsigned_long
-                                meshinfo->uniform->origins[i] = *(long int *)v->value;
-                            else if (v->type == adios_short || v->type == adios_unsigned_short)  // adios_short or adios_unsigned_short
-                                meshinfo->uniform->origins[i] = *(short int *)v->value;
-                            else
+                            var_march = 1;
+                            ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[j]);
+                            if (!strcmp (attrs, "origins"))
                             {
-                                adios_error (err_mesh_unifrom_invalid_var_type,
-                                             "Uniform mesh %s origins support (unsigned) short int, (unsigned) int, "
-                                             "(unsigned) long int, float and (long) double\n", 
-                                             meshinfo->name);
-                                meshinfo->uniform = NULL;
-                                return -1;
+                                if (v->type == adios_real)    //adios_real
+                                    meshinfo->uniform->origins[i] = *(float *)v->value;                        //
+                                else if (v->type == adios_double || v->type == adios_long_double)    //adios_double or adios_long_double
+                                    meshinfo->uniform->origins[i] = *(double *)v->value;
+                                else if (v->type == adios_integer || v->type == adios_unsigned_integer)  // adios_integer or adios_unsigned_integer
+                                    meshinfo->uniform->origins[i] = *(int *)v->value;
+                                else if (v->type == adios_long || v->type == adios_unsigned_long)  // adios_long or adios_unsigned_long
+                                    meshinfo->uniform->origins[i] = *(long int *)v->value;
+                                else if (v->type == adios_short || v->type == adios_unsigned_short)  // adios_short or adios_unsigned_short
+                                    meshinfo->uniform->origins[i] = *(short int *)v->value;
+                                else
+                                {
+                                    adios_error (err_mesh_unifrom_invalid_var_type,
+                                                 "Uniform mesh %s origins support (unsigned) short int, (unsigned) int, "
+                                                 "(unsigned) long int, float and (long) double\n", 
+                                                 meshinfo->name);
+                                    meshinfo->uniform = NULL;
+                                    return -1;
+                                }
                             }
-                        }
-                        else if (!strcmp (attrs, "maximums"))
-                        {
-                            if (v->type == adios_real)    //adios_real
-                                 meshinfo->uniform->maximums[i] = *(float *)v->value;
-                            else if (v->type == adios_double)    //adios_double
-                                meshinfo->uniform->maximums[i] = *(double *)v->value;
-                            else if (v->type == adios_integer || v->type == adios_unsigned_integer)  // adios_integer or adios_unsigned_integer
-                                meshinfo->uniform->maximums[i] = *(int *)v->value;
-                            else if (v->type == adios_long || v->type == adios_unsigned_long)  // adios_long or adios_unsigned_long
-                                meshinfo->uniform->maximums[i] = *(long int *)v->value;
-                            else if (v->type == adios_short || v->type == adios_unsigned_short)  // adios_short or adios_unsigned_short
-                                meshinfo->uniform->maximums[i] = *(short int *)v->value;
-                            else
+                            else if (!strcmp (attrs, "maximums"))
                             {
-                                adios_error (err_mesh_unifrom_invalid_var_type,
-                                             "Uniform mesh %s maximums support (unsigned) short int, (unsigned) int, "
-                                             "(unsigned) long int, float and (long) double\n",
-                                             meshinfo->name);
-                                meshinfo->uniform = NULL;
-                                return -1;
+                                if (v->type == adios_real)    //adios_real
+                                    meshinfo->uniform->maximums[i] = *(float *)v->value;
+                                else if (v->type == adios_double)    //adios_double
+                                    meshinfo->uniform->maximums[i] = *(double *)v->value;
+                                else if (v->type == adios_integer || v->type == adios_unsigned_integer)  // adios_integer or adios_unsigned_integer
+                                    meshinfo->uniform->maximums[i] = *(int *)v->value;
+                                else if (v->type == adios_long || v->type == adios_unsigned_long)  // adios_long or adios_unsigned_long
+                                    meshinfo->uniform->maximums[i] = *(long int *)v->value;
+                                else if (v->type == adios_short || v->type == adios_unsigned_short)  // adios_short or adios_unsigned_short
+                                    meshinfo->uniform->maximums[i] = *(short int *)v->value;
+                                else
+                                {
+                                    adios_error (err_mesh_unifrom_invalid_var_type,
+                                                 "Uniform mesh %s maximums support (unsigned) short int, (unsigned) int, "
+                                                 "(unsigned) long int, float and (long) double\n",
+                                                 meshinfo->name);
+                                    meshinfo->uniform = NULL;
+                                    return -1;
+                                }
                             }
-                        }
-                        else if (!strcmp (attrs, "spacings"))
-                        {
-                            if (v->type == adios_real)    //adios_real
-                                meshinfo->uniform->spacings[i] = *(float *)v->value;
-                            else if (v->type == adios_double)    //adios_double
-                                meshinfo->uniform->spacings[i] = *(double *)v->value;
-                            else if (v->type == adios_integer || v->type == adios_unsigned_integer)  // adios_integer or adios_unsigned_integer
-                                meshinfo->uniform->spacings[i] = *(int *)v->value;
-                            else if (v->type == adios_long || v->type == adios_unsigned_long)  // adios_long or adios_unsigned_long
-                                meshinfo->uniform->spacings[i] = *(long int *)v->value;
-                            else if (v->type == adios_short || v->type == adios_unsigned_short)  // adios_short or adios_unsigned_short
-                                meshinfo->uniform->spacings[i] = *(short int *)v->value;
-                            else 
+                            else if (!strcmp (attrs, "spacings"))
                             {
-                                adios_error (err_mesh_unifrom_invalid_var_type,
-                                             "Uniform mesh %s spacings support (unsigned) short int, (unsigned) int, "
-                                             "(unsigned) long int, float and (long) double\n",
-                                             meshinfo->name); 
-                                 meshinfo->uniform = NULL;
-                                 return -1;
+                                if (v->type == adios_real)    //adios_real
+                                    meshinfo->uniform->spacings[i] = *(float *)v->value;
+                                else if (v->type == adios_double)    //adios_double
+                                    meshinfo->uniform->spacings[i] = *(double *)v->value;
+                                else if (v->type == adios_integer || v->type == adios_unsigned_integer)  // adios_integer or adios_unsigned_integer
+                                    meshinfo->uniform->spacings[i] = *(int *)v->value;
+                                else if (v->type == adios_long || v->type == adios_unsigned_long)  // adios_long or adios_unsigned_long
+                                    meshinfo->uniform->spacings[i] = *(long int *)v->value;
+                                else if (v->type == adios_short || v->type == adios_unsigned_short)  // adios_short or adios_unsigned_short
+                                    meshinfo->uniform->spacings[i] = *(short int *)v->value;
+                                else 
+                                {
+                                    adios_error (err_mesh_unifrom_invalid_var_type,
+                                                 "Uniform mesh %s spacings support (unsigned) short int, (unsigned) int, "
+                                                 "(unsigned) long int, float and (long) double\n",
+                                                 meshinfo->name); 
+                                    meshinfo->uniform = NULL;
+                                    return -1;
+                                }
+//                                printf ("meshinfo->uniform->spacings[%d] = %lf\n",i, meshinfo->uniform->spacings[i]);
                             }
-//                            printf ("meshinfo->uniform->spacings[%d] = %lf\n",i, meshinfo->uniform->spacings[i]);
+                            common_read_free_varinfo (v);
                         }
-                        common_read_free_varinfo (v);
                     }
-                    else
+                    if (!var_march)
                     {
                         if (!strcmp (attrs, "origins"))
                         {
@@ -1722,8 +1724,8 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                         }
                         else
                         {
-                            meshinfo->rectilinear->coordinates[i] = strdup (fp->var_namelist[j]);
-                            // printf ("coordinates[%d] is %s\n", i, meshinfo->rectilinear->coordinates[i]);
+                            meshinfo->rectilinear->coordinates[i] = strdup (fp->var_namelist[varid]);
+//                            printf ("coordinates[%d] is %s\n", i, meshinfo->rectilinear->coordinates[i]);
                         }
                         common_read_free_varinfo (v);
                     }
