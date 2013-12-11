@@ -1724,8 +1724,8 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                         }
                         else
                         {
-                            meshinfo->rectilinear->coordinates[i] = strdup (fp->var_namelist[j]);
-                            // printf ("coordinates[%d] is %s\n", i, meshinfo->rectilinear->coordinates[i]);
+                            meshinfo->rectilinear->coordinates[i] = strdup (fp->var_namelist[varid]);
+//                            printf ("coordinates[%d] is %s\n", i, meshinfo->rectilinear->coordinates[i]);
                         }
                         common_read_free_varinfo (v);
                     }
