@@ -91,6 +91,7 @@ struct adios_MPI_data_struct
 
     int * g_is_aggregator;
     int g_num_aggregators;
+    int g_have_mdf;
     int g_merging_pgs;
     int g_num_ost;
     int g_threading;
@@ -396,6 +397,25 @@ adios_mpi_amr_set_aggregation_parameters(char * parameters, struct adios_MPI_dat
         {
             md->g_num_aggregators = md->g_num_ost;
         }
+    }
+
+    strcpy (temp_string, parameters);
+    trim_spaces (temp_string);
+
+    if (p_size = strstr (temp_string, "have_metadata_file"))
+    {
+        char * p = strchr (p_size, '=');
+        char * q = strtok (p, ";");
+
+        if (!q)
+            md->g_have_mdf = atoi (q + 1);
+        else
+            md->g_have_mdf = atoi (p + 1);
+    }
+    else
+    {
+        // by default, write metadata file. 
+        md->g_have_mdf = 1;
     }
 
     // set up whether to thread IO ops
@@ -787,6 +807,7 @@ void adios_mpi_amr_init (const PairStruct * parameters
 
     md->g_is_aggregator = 0;
     md->g_num_aggregators = 0;
+    md->g_have_mdf = 0;
     md->g_merging_pgs = 0;
     md->g_num_ost = 0;
     md->g_threading = 0;
@@ -930,37 +951,41 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                 // open metadata file
                 unlink (fd->name);
 
-                f = open(fd->name, O_CREAT | O_RDWR | O_LOV_DELAY_CREATE, 0644);
-                if (f == -1)
+                if (md->g_have_mdf)
                 {
-                    adios_error (err_file_open_error,"MPI_AMR method: open() failed: %s\n", strerror(errno));
-                    return -1;
-                }
+                    f = open(fd->name, O_CREAT | O_RDWR | O_LOV_DELAY_CREATE, 0644);
+                    if (f == -1)
+                    {
+                        adios_error (err_file_open_error,"MPI_AMR method: open() failed: %s\n", strerror(errno));
+                        return -1;
+                    }
 
-                lum.lmm_magic = LOV_USER_MAGIC;
-                lum.lmm_pattern = 0;
-                lum.lmm_stripe_size = DEFAULT_STRIPE_SIZE;
-                lum.lmm_stripe_count = 1;
-                lum.lmm_stripe_offset = -1;
+                    lum.lmm_magic = LOV_USER_MAGIC;
+                    lum.lmm_pattern = 0;
+                    lum.lmm_stripe_size = DEFAULT_STRIPE_SIZE;
+                    lum.lmm_stripe_count = 1;
+                    lum.lmm_stripe_offset = -1;
 
-                ioctl (f, LL_IOC_LOV_SETSTRIPE ,(void *) &lum);
+                    ioctl (f, LL_IOC_LOV_SETSTRIPE ,(void *) &lum);
 #ifdef HAVE_LUSTRE
 
-                md->g_num_ost = 1024;
-                rc = llapi_lov_get_uuids(f, uuids, &md->g_num_ost);
-                if (rc != 0)
-                {
-                    log_warn ("MPI_AMR method: Lustre get uuids failed after creating the file: %s\n" ,strerror(errno));
-                }
+                    md->g_num_ost = 1024;
+                    rc = llapi_lov_get_uuids(f, uuids, &md->g_num_ost);
+                    if (rc != 0)
+                    {
+                        log_warn ("MPI_AMR method: Lustre get uuids failed after creating the file: %s\n" ,
+                                  strerror(errno));
+                    }
 
 #endif 
-                close (f);
+                    close (f);
 
-                MPI_File_open (MPI_COMM_SELF, fd->name
-                              ,MPI_MODE_WRONLY | MPI_MODE_CREATE
-                              ,MPI_INFO_NULL
-                              ,&md->mfh
-                              );
+                    MPI_File_open (MPI_COMM_SELF, fd->name
+                                  ,MPI_MODE_WRONLY | MPI_MODE_CREATE
+                                  ,MPI_INFO_NULL
+                                  ,&md->mfh
+                                  );
+                }
 
                 adios_mpi_amr_do_mkdir (fd);
             }
@@ -2194,138 +2219,141 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
             }
 
             // collect index among aggregators
-            if (is_aggregator (md->rank))
+            if (md->g_have_mdf)
             {
+                if (is_aggregator (md->rank))
+                {
+                    if (md->rank == 0)
+                    {
+                        int * index_sizes = malloc (4 * new_group_size2);
+                        int * index_offsets = malloc (4 * new_group_size2);
+                        char * recv_buffer = 0;
+                        uint32_t size = 0, total_size = 0;
+
+                        START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
+                        MPI_Gather (&size, 1, MPI_INT
+                                   ,index_sizes, 1, MPI_INT
+                                   ,0, new_comm2
+                                   );
+                        STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
+
+                        for (i = 0; i < new_group_size2; i++)
+                        {
+                            index_offsets [i] = total_size;
+                            total_size += index_sizes [i];
+                        }
+
+                        recv_buffer = malloc (total_size);
+
+                        START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
+                        MPI_Gatherv (&size, 0, MPI_BYTE
+                                    ,recv_buffer, index_sizes, index_offsets
+                                    ,MPI_BYTE, 0, new_comm2
+                                    );
+                        STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
+
+                        char * buffer_save = md->b.buff;
+                        uint64_t buffer_size_save = md->b.length;
+                        uint64_t offset_save = md->b.offset;
+
+                        for (i = 1; i < new_group_size2; i++)
+                        {
+                            md->b.buff = recv_buffer + index_offsets [i];
+                            md->b.length = index_sizes [i];
+                            md->b.offset = 0;
+
+                            adios_parse_process_group_index_v1 (&md->b
+                                                               ,&new_pg_root
+                                                               );
+                            adios_parse_vars_index_v1 (&md->b, &new_vars_root, NULL, NULL);
+                            adios_parse_attributes_index_v1 (&md->b
+                                                            ,&new_attrs_root
+                                                            );
+
+                            adios_merge_index_v1 (md->index, new_pg_root, 
+                                                  new_vars_root, new_attrs_root);
+                            new_pg_root = 0;
+                            new_vars_root = 0;
+                            new_attrs_root = 0;
+                        }
+
+                        md->b.buff = buffer_save;
+                        md->b.length = buffer_size_save;
+                        md->b.offset = offset_save;
+
+                        free (recv_buffer);
+                        free (index_sizes);
+                        free (index_offsets);
+                    }
+                    else
+                    {
+                        char * buffer2 = 0;
+                        uint64_t buffer_size2 = 0;
+                        uint64_t buffer_offset2 = 0;
+
+                        adios_write_index_v1 (&buffer2, &buffer_size2, &buffer_offset2
+                                             ,0, md->index);
+ 
+                        START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
+                        MPI_Gather (&buffer_size2, 1, MPI_INT
+                                   ,0, 0, MPI_INT
+                                   ,0, new_comm2
+                                   );
+                        MPI_Gatherv (buffer2, buffer_size2, MPI_BYTE
+                                    ,0, 0, 0, MPI_BYTE
+                                    ,0, new_comm2
+                                    );
+                        STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
+
+                        if (buffer2)
+                        {
+                            free (buffer2);
+                            buffer2 = 0;
+                            buffer_size2 = 0;
+                            buffer_offset2 = 0;
+                        }
+                    }
+                }
+
+                // write out the metadata file from rank 0
                 if (md->rank == 0)
                 {
-                    int * index_sizes = malloc (4 * new_group_size2);
-                    int * index_offsets = malloc (4 * new_group_size2);
-                    char * recv_buffer = 0;
-                    uint32_t size = 0, total_size = 0;
+                    MPI_File m_file;
+                    char * global_index_buffer = 0;
+                    uint64_t global_index_buffer_size = 0;
+                    uint64_t global_index_buffer_offset = 0;
+                    uint64_t global_index_start = 0;
+                    uint16_t flag = 0;
 
-                    START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
-                    MPI_Gather (&size, 1, MPI_INT
-                               ,index_sizes, 1, MPI_INT
-                               ,0, new_comm2
-                               );
-                    STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
+                    adios_write_index_v1 (&global_index_buffer, &global_index_buffer_size
+                                         ,&global_index_buffer_offset, global_index_start
+                                         ,md->index
+                                         );
 
-                    for (i = 0; i < new_group_size2; i++)
+                    flag |= ADIOS_VERSION_HAVE_SUBFILE;
+
+                    adios_write_version_flag_v1 (&global_index_buffer
+                                                ,&global_index_buffer_size
+                                                ,&global_index_buffer_offset
+                                                ,flag
+                                                );
+
+                    START_TIMER (ADIOS_TIMER_MPI_AMR_MD);
+                    adios_mpi_amr_striping_unit_write(
+                                      md->mfh,
+                                      -1,
+                                      global_index_buffer,
+                                      global_index_buffer_offset
+                                      );
+                    STOP_TIMER (ADIOS_TIMER_MPI_AMR_MD);
+
+                    if (global_index_buffer)
                     {
-                        index_offsets [i] = total_size;
-                        total_size += index_sizes [i];
+                        free (global_index_buffer);
+                        global_index_buffer = 0;
+                        global_index_buffer_size = 0;
+                        global_index_buffer_offset = 0;
                     }
-
-                    recv_buffer = malloc (total_size);
-
-                    START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
-                    MPI_Gatherv (&size, 0, MPI_BYTE
-                                ,recv_buffer, index_sizes, index_offsets
-                                ,MPI_BYTE, 0, new_comm2
-                                );
-                    STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
-
-                    char * buffer_save = md->b.buff;
-                    uint64_t buffer_size_save = md->b.length;
-                    uint64_t offset_save = md->b.offset;
-
-                    for (i = 1; i < new_group_size2; i++)
-                    {
-                        md->b.buff = recv_buffer + index_offsets [i];
-                        md->b.length = index_sizes [i];
-                        md->b.offset = 0;
-
-                        adios_parse_process_group_index_v1 (&md->b
-                                                           ,&new_pg_root
-                                                           );
-                        adios_parse_vars_index_v1 (&md->b, &new_vars_root, NULL, NULL);
-                        adios_parse_attributes_index_v1 (&md->b
-                                                        ,&new_attrs_root
-                                                        );
-
-                        adios_merge_index_v1 (md->index, new_pg_root, 
-                                              new_vars_root, new_attrs_root);
-                        new_pg_root = 0;
-                        new_vars_root = 0;
-                        new_attrs_root = 0;
-                    }
-
-                    md->b.buff = buffer_save;
-                    md->b.length = buffer_size_save;
-                    md->b.offset = offset_save;
-
-                    free (recv_buffer);
-                    free (index_sizes);
-                    free (index_offsets);
-                }
-                else
-                {
-                    char * buffer2 = 0;
-                    uint64_t buffer_size2 = 0;
-                    uint64_t buffer_offset2 = 0;
-
-                    adios_write_index_v1 (&buffer2, &buffer_size2, &buffer_offset2
-                                         ,0, md->index);
-
-                    START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
-                    MPI_Gather (&buffer_size2, 1, MPI_INT
-                               ,0, 0, MPI_INT
-                               ,0, new_comm2
-                               );
-                    MPI_Gatherv (buffer2, buffer_size2, MPI_BYTE
-                                ,0, 0, 0, MPI_BYTE
-                                ,0, new_comm2
-                                );
-                    STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
-
-                    if (buffer2)
-                    {
-                        free (buffer2);
-                        buffer2 = 0;
-                        buffer_size2 = 0;
-                        buffer_offset2 = 0;
-                    }
-                }
-            }
-
-            // write out the metadata file from rank 0
-            if (md->rank == 0)
-            {
-                MPI_File m_file;
-                char * global_index_buffer = 0;
-                uint64_t global_index_buffer_size = 0;
-                uint64_t global_index_buffer_offset = 0;
-                uint64_t global_index_start = 0;
-                uint16_t flag = 0;
-
-                adios_write_index_v1 (&global_index_buffer, &global_index_buffer_size
-                                     ,&global_index_buffer_offset, global_index_start
-                                     ,md->index
-                                     );
-
-                flag |= ADIOS_VERSION_HAVE_SUBFILE;
-
-                adios_write_version_flag_v1 (&global_index_buffer
-                                            ,&global_index_buffer_size
-                                            ,&global_index_buffer_offset
-                                            ,flag
-                                            );
-
-                START_TIMER (ADIOS_TIMER_MPI_AMR_MD);
-                adios_mpi_amr_striping_unit_write(
-                                  md->mfh,
-                                  -1,
-                                  global_index_buffer,
-                                  global_index_buffer_offset
-                                  );
-                STOP_TIMER (ADIOS_TIMER_MPI_AMR_MD);
-
-                if (global_index_buffer)
-                {
-                    free (global_index_buffer);
-                    global_index_buffer = 0;
-                    global_index_buffer_size = 0;
-                    global_index_buffer_offset = 0;
                 }
             }
 
@@ -2345,6 +2373,7 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
 
 
             md->g_num_aggregators = 0;
+            md->g_have_mdf = 0;
             md->g_color1 = 0;
             md->g_color2 = 0;
 
@@ -3303,6 +3332,7 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
             buffer_offset = 0;
 
             md->g_num_aggregators = 0;
+            md->g_have_mdf = 0;
             md->g_color1 = 0;
             md->g_color2 = 0;
 
