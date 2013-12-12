@@ -61,6 +61,7 @@ typedef struct BP_FILE {
     struct bp_index_pg_struct_v1 * pgs_root;
     struct adios_index_var_struct_v1 * vars_root;
     struct adios_index_attribute_struct_v1 * attrs_root;
+    struct adios_index_var_struct_v1 ** vars_table; // To speed up vars_root lookup. Q. Liu, 12-2013.
     struct bp_minifooter mfooter; 
     struct BP_GROUP_VAR * gvar_h;
     struct BP_GROUP_ATTR * gattr_h;

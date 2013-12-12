@@ -412,6 +412,12 @@ int bp_close (BP_FILE * fh)
 
     fh->vars_root = 0;
 
+    if (fh->vars_table)
+    {
+        free (fh->vars_table);
+        fh->vars_table = 0;
+    }
+
     /* Free attributes structures */
     /* alloc in bp_utils.c bp_parse_attrs() */
     while (attrs_root) {
@@ -1084,6 +1090,8 @@ int bp_parse_vars (struct BP_FILE * fh)
     BUFREAD16(b, mh->vars_count)
     BUFREAD64(b, mh->vars_length)
 
+    // To speed find_var_byid(). Q. Liu, 11-2013.
+    fh->vars_table = (struct adios_index_var_struct_v1 **) malloc (mh->vars_count * 8);
     // validate remaining length
     int i;
     for (i = 0; i < mh->vars_count; i++) {
@@ -1091,6 +1099,7 @@ int bp_parse_vars (struct BP_FILE * fh)
             *root = (struct adios_index_var_struct_v1 *)
                 malloc (sizeof (struct adios_index_var_struct_v1));
             (*root)->next = 0;
+            fh->vars_table[i] = *root;
         }
         uint8_t flag;
         uint32_t var_entry_length;
@@ -2754,6 +2763,7 @@ int has_subfiles (struct BP_FILE * fh)
 *****************************************************/
 struct adios_index_var_struct_v1 * bp_find_var_byid (BP_FILE * fh, int varid)
 {
+/*
     struct adios_index_var_struct_v1 * var_root = fh->vars_root;
     int i;
 
@@ -2769,8 +2779,9 @@ struct adios_index_var_struct_v1 * bp_find_var_byid (BP_FILE * fh, int varid)
                varid);
         return NULL;
     }
-
-    return var_root;
+*/
+    return fh->vars_table[varid];
+ //   return var_root;
 }
 
 int is_global_array (struct adios_index_characteristic_struct_v1 *ch) {
