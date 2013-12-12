@@ -1028,6 +1028,7 @@ int adios_get_uniform_mesh_attr (ADIOS_FILE * fp, ADIOS_MESH *meshinfo, char * a
     int  read_fail = 0;
     bool have_max = 0;
     bool have_spacing = 0;
+    int varid;
 
     char * attribute = malloc (strlen("/adios_schema/")+strlen(meshinfo->name)+strlen("/")+strlen(attrs)+strlen("-num")+1 );
     strcpy (attribute, "/adios_schema/");
@@ -1170,85 +1171,81 @@ int adios_get_uniform_mesh_attr (ADIOS_FILE * fp, ADIOS_MESH *meshinfo, char * a
                 else
                 {
                     // string may be a variable
-                    int var_march = 0;
-                    char * value_tmp = (char *)data;
-                    for (j=0; j<fp->nvars; j++)
+                    char * value_tmp = strdup((char *)data);
+                    varid = common_read_find_var (fp, value_tmp, 1);
+                    if (varid >= 0)
                     {
-                        if (!strcmp (fp->var_namelist[j], value_tmp))
+                        ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[varid]);
+                        if (!strcmp (attrs, "origins"))
                         {
-                            var_march = 1;
-                            ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[j]);
-                            if (!strcmp (attrs, "origins"))
+                            if (v->type == adios_real)    //adios_real
+                                meshinfo->uniform->origins[i] = *(float *)v->value;                        //
+                            else if (v->type == adios_double || v->type == adios_long_double)    //adios_double or adios_long_double
+                                meshinfo->uniform->origins[i] = *(double *)v->value;
+                            else if (v->type == adios_integer || v->type == adios_unsigned_integer)  // adios_integer or adios_unsigned_integer
+                                meshinfo->uniform->origins[i] = *(int *)v->value;
+                            else if (v->type == adios_long || v->type == adios_unsigned_long)  // adios_long or adios_unsigned_long
+                                meshinfo->uniform->origins[i] = *(long int *)v->value;
+                            else if (v->type == adios_short || v->type == adios_unsigned_short)  // adios_short or adios_unsigned_short
+                                meshinfo->uniform->origins[i] = *(short int *)v->value;
+                            else
                             {
-                                if (v->type == adios_real)    //adios_real
-                                    meshinfo->uniform->origins[i] = *(float *)v->value;                        //
-                                else if (v->type == adios_double || v->type == adios_long_double)    //adios_double or adios_long_double
-                                    meshinfo->uniform->origins[i] = *(double *)v->value;
-                                else if (v->type == adios_integer || v->type == adios_unsigned_integer)  // adios_integer or adios_unsigned_integer
-                                    meshinfo->uniform->origins[i] = *(int *)v->value;
-                                else if (v->type == adios_long || v->type == adios_unsigned_long)  // adios_long or adios_unsigned_long
-                                    meshinfo->uniform->origins[i] = *(long int *)v->value;
-                                else if (v->type == adios_short || v->type == adios_unsigned_short)  // adios_short or adios_unsigned_short
-                                    meshinfo->uniform->origins[i] = *(short int *)v->value;
-                                else
-                                {
-                                    adios_error (err_mesh_unifrom_invalid_var_type,
-                                                 "Uniform mesh %s origins support (unsigned) short int, (unsigned) int, "
-                                                 "(unsigned) long int, float and (long) double\n", 
-                                                 meshinfo->name);
-                                    meshinfo->uniform = NULL;
-                                    return -1;
-                                }
+                                adios_error (err_mesh_unifrom_invalid_var_type,
+                                             "Uniform mesh %s origins support (unsigned) short int, (unsigned) int, "
+                                             "(unsigned) long int, float and (long) double\n", 
+                                             meshinfo->name);
+                                meshinfo->uniform = NULL;
+                                return -1;
                             }
-                            else if (!strcmp (attrs, "maximums"))
-                            {
-                                if (v->type == adios_real)    //adios_real
-                                    meshinfo->uniform->maximums[i] = *(float *)v->value;
-                                else if (v->type == adios_double)    //adios_double
-                                    meshinfo->uniform->maximums[i] = *(double *)v->value;
-                                else if (v->type == adios_integer || v->type == adios_unsigned_integer)  // adios_integer or adios_unsigned_integer
-                                    meshinfo->uniform->maximums[i] = *(int *)v->value;
-                                else if (v->type == adios_long || v->type == adios_unsigned_long)  // adios_long or adios_unsigned_long
-                                    meshinfo->uniform->maximums[i] = *(long int *)v->value;
-                                else if (v->type == adios_short || v->type == adios_unsigned_short)  // adios_short or adios_unsigned_short
-                                    meshinfo->uniform->maximums[i] = *(short int *)v->value;
-                                else
-                                {
-                                    adios_error (err_mesh_unifrom_invalid_var_type,
-                                                 "Uniform mesh %s maximums support (unsigned) short int, (unsigned) int, "
-                                                 "(unsigned) long int, float and (long) double\n",
-                                                 meshinfo->name);
-                                    meshinfo->uniform = NULL;
-                                    return -1;
-                                }
-                            }
-                            else if (!strcmp (attrs, "spacings"))
-                            {
-                                if (v->type == adios_real)    //adios_real
-                                    meshinfo->uniform->spacings[i] = *(float *)v->value;
-                                else if (v->type == adios_double)    //adios_double
-                                    meshinfo->uniform->spacings[i] = *(double *)v->value;
-                                else if (v->type == adios_integer || v->type == adios_unsigned_integer)  // adios_integer or adios_unsigned_integer
-                                    meshinfo->uniform->spacings[i] = *(int *)v->value;
-                                else if (v->type == adios_long || v->type == adios_unsigned_long)  // adios_long or adios_unsigned_long
-                                    meshinfo->uniform->spacings[i] = *(long int *)v->value;
-                                else if (v->type == adios_short || v->type == adios_unsigned_short)  // adios_short or adios_unsigned_short
-                                    meshinfo->uniform->spacings[i] = *(short int *)v->value;
-                                else 
-                                {
-                                    adios_error (err_mesh_unifrom_invalid_var_type,
-                                                 "Uniform mesh %s spacings support (unsigned) short int, (unsigned) int, "
-                                                 "(unsigned) long int, float and (long) double\n",
-                                                 meshinfo->name); 
-                                    meshinfo->uniform = NULL;
-                                    return -1;
-                                }
-//                                printf ("meshinfo->uniform->spacings[%d] = %lf\n",i, meshinfo->uniform->spacings[i]);
-                            }
-                            common_read_free_varinfo (v);
                         }
+                        else if (!strcmp (attrs, "maximums"))
+                        {
+                            if (v->type == adios_real)    //adios_real
+                                 meshinfo->uniform->maximums[i] = *(float *)v->value;
+                            else if (v->type == adios_double)    //adios_double
+                                meshinfo->uniform->maximums[i] = *(double *)v->value;
+                            else if (v->type == adios_integer || v->type == adios_unsigned_integer)  // adios_integer or adios_unsigned_integer
+                                meshinfo->uniform->maximums[i] = *(int *)v->value;
+                            else if (v->type == adios_long || v->type == adios_unsigned_long)  // adios_long or adios_unsigned_long
+                                meshinfo->uniform->maximums[i] = *(long int *)v->value;
+                            else if (v->type == adios_short || v->type == adios_unsigned_short)  // adios_short or adios_unsigned_short
+                                meshinfo->uniform->maximums[i] = *(short int *)v->value;
+                            else
+                            {
+                                adios_error (err_mesh_unifrom_invalid_var_type,
+                                             "Uniform mesh %s maximums support (unsigned) short int, (unsigned) int, "
+                                             "(unsigned) long int, float and (long) double\n",
+                                             meshinfo->name);
+                                meshinfo->uniform = NULL;
+                                return -1;
+                            }
+                        }
+                        else if (!strcmp (attrs, "spacings"))
+                        {
+                            if (v->type == adios_real)    //adios_real
+                                meshinfo->uniform->spacings[i] = *(float *)v->value;
+                            else if (v->type == adios_double)    //adios_double
+                                meshinfo->uniform->spacings[i] = *(double *)v->value;
+                            else if (v->type == adios_integer || v->type == adios_unsigned_integer)  // adios_integer or adios_unsigned_integer
+                                meshinfo->uniform->spacings[i] = *(int *)v->value;
+                            else if (v->type == adios_long || v->type == adios_unsigned_long)  // adios_long or adios_unsigned_long
+                                meshinfo->uniform->spacings[i] = *(long int *)v->value;
+                            else if (v->type == adios_short || v->type == adios_unsigned_short)  // adios_short or adios_unsigned_short
+                                meshinfo->uniform->spacings[i] = *(short int *)v->value;
+                            else 
+                            {
+                                adios_error (err_mesh_unifrom_invalid_var_type,
+                                             "Uniform mesh %s spacings support (unsigned) short int, (unsigned) int, "
+                                             "(unsigned) long int, float and (long) double\n",
+                                             meshinfo->name); 
+                                 meshinfo->uniform = NULL;
+                                 return -1;
+                            }
+//                            printf ("meshinfo->uniform->spacings[%d] = %lf\n",i, meshinfo->uniform->spacings[i]);
+                        }
+                        common_read_free_varinfo (v);
                     }
-                    if (!var_march)
+                    else
                     {
                         if (!strcmp (attrs, "origins"))
                         {
@@ -1424,7 +1421,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                         meshinfo->uniform->dimensions[i] = tmp_value;
                     else
                     {
-                        char * dimensions_value_tmp = (char *)data;
+                        char * dimensions_value_tmp = strdup((char *)data);
                         varid = common_read_find_var (fp, dimensions_value_tmp, 1);
                         if (varid >= 0) {
                             ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[varid]);
@@ -1438,6 +1435,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                                          meshinfo->name, i, (char *)data);
                             return NULL; 
                         }
+//                        free (dimensions_value_tmp);
                     }
                 }  
             }
@@ -1554,7 +1552,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                         meshinfo->rectilinear->dimensions[i] = tmp_value;
                     else
                     {
-                        char * dimensions_value_tmp = (char *)data;
+                        char * dimensions_value_tmp = strdup((char *)data);
                         varid = common_read_find_var (fp, dimensions_value_tmp, 1);
                         if (varid >= 0) {
                             ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[varid]);
@@ -1594,57 +1592,60 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
         {
             meshinfo->rectilinear->coordinates = (char **) malloc (sizeof(char *));
             meshinfo->rectilinear->use_single_var = 1;
-            for (i=0; i<fp->nvars; i++)
+            char * coords_tmp = strdup((char *)data);
+            varid = common_read_find_var (fp, coords_tmp, 1);
+            if (varid >= 0)
             {
-                char * coords_tmp = (char *)data;
-                int var_march = 0;
-                if (!strcmp (fp->var_namelist[i], coords_tmp))
+                ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[varid]);
+                // check if mesh dimension matches coordinates dimension
+                if (v->ndim == 0)                      //scalar
+                {    
+                    adios_error (err_mesh_recti_invalid_coords,
+                                 "Rectilinear mesh %s coordinates dimension is 0\n", 
+                                 meshinfo->name);
+                    return NULL; 
+                }
+                else                                   //vector, more than one dim
                 {
-                    var_march = 1;
-                    ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[i]);
-                    // check if mesh dimension matches coordinates dimension
-                    if (v->ndim == 0)                      //scalar
-                    {    
-                        adios_error (err_mesh_recti_invalid_coords,
-                                     "Rectilinear mesh %s coordinates dimension is 0\n", 
-                                     meshinfo->name);
-                        return NULL; 
-                    }
-                    else                                   //vector, more than one dim
+                   if (v->ndim == 1)                  //one dim vector
                     {
-                        if (v->ndim == 1)                  //one dim vector
+                        uint64_t dim_tmp = 1;
+                        for (j=0; j<meshinfo->rectilinear->num_dimensions; j++)
+                            dim_tmp *= meshinfo->rectilinear->dimensions[j];
+                        if (dim_tmp*meshinfo->rectilinear->num_dimensions != v->dims[0])
                         {
-                            uint64_t dim_tmp = 1;
-                            for (j=0; j<meshinfo->rectilinear->num_dimensions; j++)
-                                dim_tmp *= meshinfo->rectilinear->dimensions[j];
-                            if (dim_tmp*meshinfo->rectilinear->num_dimensions != v->dims[0])
+                            adios_error (err_mesh_recti_invalid_coords,
+                                         "Rectilinear mesh %s coordinates dimension %"PRIu64" does not match mesh dimension %"PRIu64"\n", 
+                                         meshinfo->name, v->dims[0], dim_tmp*meshinfo->rectilinear->num_dimensions);
+                            return NULL; 
+                        }
+                        else
+                            meshinfo->rectilinear->coordinates[0] = strdup (fp->var_namelist[varid]);
+                    }
+                    else        //multi dim vector
+                    {
+                        // check if each mesh dimension matches coordinates dimension 
+                        for (j=0; j<v->ndim; j++)
+                        {
+                            if (meshinfo->rectilinear->dimensions[j] != v->dims[j])
                             {
-                                adios_error (err_mesh_recti_invalid_coords,
-                                             "Rectilinear mesh %s coordinates dimension %"PRIu64" does not match mesh dimension %"PRIu64"\n", 
-                                             meshinfo->name, v->dims[0], dim_tmp*meshinfo->rectilinear->num_dimensions);
+                                adios_error (err_mesh_recti_invalid_coords, 
+                                             "Rectilinear mesh %s dimension[%d]= %d does not match coordinates dimension[%d]= %d\n",
+                                             meshinfo->name, j, meshinfo->rectilinear->dimensions[j], j, v->dims[j] );
                                 return NULL; 
                             }
-                            else
-                                meshinfo->rectilinear->coordinates[0] = strdup (fp->var_namelist[i]);
                         }
-                        else        //multi dim vector
-                        {
-                            // check if each mesh dimension matches coordinates dimension 
-                            for (j=0; j<v->ndim; j++)
-                            {
-                                if (meshinfo->rectilinear->dimensions[j] != v->dims[j])
-                                {
-                                    adios_error (err_mesh_recti_invalid_coords, 
-                                                 "Rectilinear mesh %s dimension[%d]= %d does not match coordinates dimension[%d]= %d\n",
-                                                 meshinfo->name, j, meshinfo->rectilinear->dimensions[j], j, v->dims[j] );
-                                    return NULL; 
-                                }
-                            }
-                            meshinfo->rectilinear->coordinates[0] = strdup (fp->var_namelist[i]); 
-                        }
+                        meshinfo->rectilinear->coordinates[0] = strdup (fp->var_namelist[varid]); 
                     }
-                    common_read_free_varinfo (v);
                 }
+                common_read_free_varinfo (v);
+            }
+            else
+            {
+                adios_error (err_mesh_recti_invalid_coords,    
+                            "Rectilinear mesh %s coordinates var name %s not found\n",
+                            meshinfo->name, coords_tmp );
+                return NULL; 
             }
 //            printf ("coordinates is %s\n", meshinfo->rectilinear->coordinates[0]);
         }
@@ -1707,9 +1708,8 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                                      meshinfo->name, i);
                         return NULL; 
                     }
-                    int var_march = 0;
 
-                    char * coords_var_tmp = (char *)data;
+                    char * coords_var_tmp = strdup((char *)data);
                     varid = common_read_find_var (fp, coords_var_tmp, 1);
                     if (varid >= 0) {
                         ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[varid]);
@@ -1725,7 +1725,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                         else
                         {
                             meshinfo->rectilinear->coordinates[i] = strdup (fp->var_namelist[varid]);
-//                            printf ("coordinates[%d] is %s\n", i, meshinfo->rectilinear->coordinates[i]);
+                            // printf ("coordinates[%d] is %s\n", i, meshinfo->rectilinear->coordinates[i]);
                         }
                         common_read_free_varinfo (v);
                     }
@@ -1800,8 +1800,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                         meshinfo->structured->dimensions[i] = tmp_value;
                     else
                     {
-                        int var_march = 0;
-                        char * dimensions_value_tmp = (char *)data;
+                        char * dimensions_value_tmp = strdup((char *)data);
                         varid = common_read_find_var (fp, dimensions_value_tmp, 1);
                         if (varid >= 0) {
                             ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[varid]);
@@ -1815,6 +1814,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                                          meshinfo->name, i, (char *)data);
                             return NULL; 
                         }
+//                        free (dimensions_value_tmp);
                     }
                 }
             }
@@ -1838,56 +1838,60 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
         {
             meshinfo->structured->points = (char **) malloc (sizeof(char *));
             meshinfo->structured->use_single_var = 1;         // modify default value to 1
-            for (i=0; i<fp->nvars; i++)
+            
+            char * coords_tmp = strdup((char *)data);
+            varid = common_read_find_var (fp, coords_tmp, 1);
+            if (varid >= 0)
             {
-                char * coords_tmp = (char *)data;
-                int var_march = 0;
-                if (!strcmp (fp->var_namelist[i], coords_tmp))
+                ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[varid]); 
+                if (v->ndim == 0)                      //scalar
                 {
-                    var_march = 1;
-                    ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[i]); 
-                    if (v->ndim == 0)                      //scalar
+                    adios_error (err_mesh_structured_invaid_dim_points,
+                                 "Strctured mesh %s points dimension is 0.\n", 
+                                 meshinfo->name);
+                    return NULL; 
+                }
+                else                                   //vector, more than one dim
+                {
+                    if (v->ndim == 1)     //if points is 1D array
                     {
-                        adios_error (err_mesh_structured_invaid_dim_points,
-                                     "Strctured mesh %s points dimension is 0.\n", 
-                                     meshinfo->name);
-                        return NULL; 
-                    }
-                    else                                   //vector, more than one dim
-                    {
-                        if (v->ndim == 1)     //if points is 1D array
+                        uint64_t dim_tmp = 1;
+                        for (j=0; j<meshinfo->structured->num_dimensions; j++)
+                            dim_tmp *= meshinfo->structured->dimensions[j];
+                        if (dim_tmp*meshinfo->structured->num_dimensions != v->dims[0])
                         {
-                            uint64_t dim_tmp = 1;
-                            for (j=0; j<meshinfo->structured->num_dimensions; j++)
-                                dim_tmp *= meshinfo->structured->dimensions[j];
-                            if (dim_tmp*meshinfo->structured->num_dimensions != v->dims[0])
-                            {
-                                adios_error (err_mesh_structured_invaid_points,
-                                             "Strctured mesh %s points dimension %"PRIu64" does not match mesh dimension %"PRIu64"\n", 
-                                             meshinfo->name, v->dims[0], dim_tmp*meshinfo->structured->num_dimensions);
-                                return NULL; 
-                            }
-                            else
-                                meshinfo->structured->points[0] = strdup (fp->var_namelist[i]);
+                            adios_error (err_mesh_structured_invaid_points,
+                                         "Strctured mesh %s points dimension %"PRIu64" does not match mesh dimension %"PRIu64"\n", 
+                                         meshinfo->name, v->dims[0], dim_tmp*meshinfo->structured->num_dimensions);
+                            return NULL; 
                         }
                         else
-                        {
-                            // check if each mesh dimension matches points dimension 
-                            for (j=0; j<v->ndim; j++)              // if points is multi dim array
-                            {
-                                if (meshinfo->structured->dimensions[j] != v->dims[j])
-                                {
-                                    adios_error (err_mesh_structured_invaid_points,
-                                                 "Strctured mesh %s dimension[%d]= %"PRIu64" does not match points dimension[%d]= %"PRIu64"\n",
-                                                 meshinfo->name, j, meshinfo->structured->dimensions[j], j, v->dims[j] );
-                                    return NULL; 
-                                }
-                            }
-                            meshinfo->structured->points[0] = strdup (fp->var_namelist[i]);
-                        }
+                            meshinfo->structured->points[0] = strdup (fp->var_namelist[varid]);
                     }
-                    common_read_free_varinfo (v);
+                    else
+                    {
+                        // check if each mesh dimension matches points dimension 
+                        for (j=0; j<v->ndim; j++)              // if points is multi dim array
+                        {
+                            if (meshinfo->structured->dimensions[j] != v->dims[j])
+                            {
+                                adios_error (err_mesh_structured_invaid_points,
+                                             "Strctured mesh %s dimension[%d]= %"PRIu64" does not match points dimension[%d]= %"PRIu64"\n",
+                                             meshinfo->name, j, meshinfo->structured->dimensions[j], j, v->dims[j] );
+                                return NULL; 
+                            }
+                        }
+                        meshinfo->structured->points[0] = strdup (fp->var_namelist[varid]);
+                    }
                 }
+                common_read_free_varinfo (v);
+            }
+            else
+            {
+                adios_error (err_mesh_structured_invaid_points,
+                            "Strctured mesh %s points var name %s not found\n",
+                            meshinfo->name, coords_tmp);
+                return NULL;
             }
         }
         else                    //use points-multi-var
@@ -1947,51 +1951,47 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                                      meshinfo->name, i);
                         return NULL; 
                     }
-                    int var_march = 0;
-                    for (j=0; j<fp->nvars; j++)
+                    char * points_var_tmp = strdup((char *)data);
+                    varid = common_read_find_var (fp, points_var_tmp, 1);
+                    if (varid >= 0) 
                     {
-                        char * points_var_tmp = (char *)data;
-                        if (!strcmp (fp->var_namelist[j], points_var_tmp))
+                        ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[varid]);
+                        //check if dim of mesh matches point dim
+                        if (v->ndim == 1)     //if var is 1D array
                         {
-                            var_march = 1;
-                            ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[j]);
-                            //check if dim of mesh matches point dim
-                            if (v->ndim == 1)     //if var is 1D array
+                            uint64_t dim_tmp = 1;
+                            int m = 0;
+                            for (m=0; m<meshinfo->structured->num_dimensions; m++)
+                                dim_tmp *= meshinfo->structured->dimensions[m];
+                            if (dim_tmp != v->dims[0])
                             {
-                                uint64_t dim_tmp = 1;
-                                int m = 0;
-                                for (m=0; m<meshinfo->structured->num_dimensions; m++)
-                                    dim_tmp *= meshinfo->structured->dimensions[m];
-                                if (dim_tmp != v->dims[0])
-                                {
-                                    adios_error (err_mesh_structured_invaid_points,
-                                                 "Strctured mesh %s points dimension %"PRIu64" does not match mesh dimension %"PRIu64"\n", 
-                                                 meshinfo->name, v->dims[0], dim_tmp);
-                                    return NULL; 
-                                }
-                                else
-                                    meshinfo->structured->points[i] = strdup (fp->var_namelist[j]);
+                                adios_error (err_mesh_structured_invaid_points,
+                                             "Strctured mesh %s points dimension %"PRIu64" does not match mesh dimension %"PRIu64"\n", 
+                                             meshinfo->name, v->dims[0], dim_tmp);
+                                return NULL; 
                             }
                             else
-                            {
-                                // check if each mesh dim matches points dim (var is multi dim array)
-                                int m = 0;
-                                for (m=0; m<v->ndim; m++)              // if points is multi dim array
-                                {
-                                    if (meshinfo->structured->dimensions[m] != v->dims[m])
-                                    {
-                                        adios_error (err_mesh_structured_invaid_points,
-                                                     "Strctured mesh %s dimension[%d]= %"PRIu64" does not match points dimension[%d]= %"PRIu64"\n",
-                                                     meshinfo->name, m, meshinfo->structured->dimensions[m], m, v->dims[m] );
-                                        return NULL; 
-                                    }
-                                }
-                                meshinfo->structured->points[i] = strdup (fp->var_namelist[j]);
-                            }
-                            common_read_free_varinfo (v);
+                                meshinfo->structured->points[i] = strdup (fp->var_namelist[varid]);
                         }
-                    }  // end of for loop j
-                    if (var_march == 0)
+                        else
+                        {
+                            // check if each mesh dim matches points dim (var is multi dim array)
+                            int m = 0;
+                            for (m=0; m<v->ndim; m++)              // if points is multi dim array
+                            {
+                                if (meshinfo->structured->dimensions[m] != v->dims[m])
+                                {
+                                    adios_error (err_mesh_structured_invaid_points,
+                                                 "Strctured mesh %s dimension[%d]= %"PRIu64" does not match points dimension[%d]= %"PRIu64"\n",
+                                                 meshinfo->name, m, meshinfo->structured->dimensions[m], m, v->dims[m] );
+                                    return NULL; 
+                                }
+                            }
+                            meshinfo->structured->points[i] = strdup (fp->var_namelist[varid]);
+                        }
+                        common_read_free_varinfo (v);
+                    } 
+                    else
                     {
                         adios_error (err_mesh_structured_missing_one_points,
                                      "Structured mesh %s var of points-multi-var%d is not provided.\n", 
@@ -2033,20 +2033,16 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                 meshinfo->structured->nspaces = d1;
             else
             {
-                int var_march = 0;
-                char * spaces_var_tmp = (char *)data;
+                char * spaces_var_tmp = strdup((char *)data);
 //                printf ("spaces_var_tmp is %s\n", spaces_var_tmp);
-                for (j=0; j<fp->nvars; j++)
+                varid = common_read_find_var (fp, spaces_var_tmp, 1);
+                if (varid >= 0)
                 {
-                    if (!strcmp (fp->var_namelist[j], spaces_var_tmp))
-                    {
-                        var_march = 1;
-                        ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[j]);
-                        meshinfo->structured->nspaces = *(int *)v->value;
-                        common_read_free_varinfo (v);
-                    }
+                    ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[varid]);
+                    meshinfo->structured->nspaces = *(int *)v->value;
+                    common_read_free_varinfo (v);
                 }
-                if (!var_march)
+                else
                 {
                     log_warn ("Var %s for structured mesh %s nspace is not found. ", 
                               "We use num of dims %d for nspaces.\n",
@@ -2076,36 +2072,32 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
         {
             meshinfo->unstructured->points = (char **) malloc (sizeof(char *));  
 //            meshinfo->unstructured->use_single_var = 1;         // modify default value to 1
-            int var_march = 0;
-            char * coords_tmp = (char *)data;
+            char * coords_tmp = strdup((char *)data);
 //            printf ("coords_tmp is %s\n", coords_tmp);
-            for (i=0; i<fp->nvars; i++)
+            varid = common_read_find_var (fp, coords_tmp, 1);
+            if (varid >= 0)
             {
-                if (!strcmp (fp->var_namelist[i], coords_tmp))
+                ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[varid]);
+                if (v->ndim == 0)                      //scalar
                 {
-                    var_march = 1;
-                    ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[i]);
-                    if (v->ndim == 0)                      //scalar
-                    {
-                        adios_error (err_mesh_unstructured_invaid_points,
-                                     "Unstructured mesh %s points dimension is 0.\n", 
-                                     meshinfo->name);
-                        return NULL; 
-                    }
-                    else                                   //vector
-                    {
-                        meshinfo->unstructured->nspaces = v->ndim;                //unstructured mesh nspaces init
-                        meshinfo->unstructured->npoints = 1;
-                        int j = 0;
-                        for (j=0; j<v->ndim; j++)
-                            meshinfo->unstructured->npoints *= v->dims[j];         
-                        meshinfo->unstructured->npoints /= v->ndim;               //unstructured mesh npoints init
-                        meshinfo->unstructured->points[0] = strdup (fp->var_namelist[i]);
-                    }
-                    common_read_free_varinfo (v);
+                    adios_error (err_mesh_unstructured_invaid_points,
+                                 "Unstructured mesh %s points dimension is 0.\n", 
+                                 meshinfo->name);
+                    return NULL; 
                 }
+                else                                   //vector
+                {
+                    meshinfo->unstructured->nspaces = v->ndim;                //unstructured mesh nspaces init
+                    meshinfo->unstructured->npoints = 1;
+                    int j = 0;
+                    for (j=0; j<v->ndim; j++)
+                        meshinfo->unstructured->npoints *= v->dims[j];         
+                    meshinfo->unstructured->npoints /= v->ndim;               //unstructured mesh npoints init
+                    meshinfo->unstructured->points[0] = strdup (fp->var_namelist[varid]);
+                }
+                common_read_free_varinfo (v);
             }
-            if (var_march ==0)
+            else
             {
                 adios_error (err_mesh_unstructured_invaid_points,
                              "Unstrctured mesh %s var %s for points-single-var is not found.\n", 
@@ -2161,85 +2153,80 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                                      meshinfo->name, i);
                         return NULL; 
                     }
-                    int var_march = 0;
-                    char * points_var_tmp = (char *)data;
+                    char * points_var_tmp = strdup((char *)data);
 //                    printf ( "points_var_tmp is %s\n", points_var_tmp);
-                    for (j=0; j<fp->nvars; j++)
+                    varid = common_read_find_var (fp, points_var_tmp, 1);
+                    if (varid >= 0)
                     {
-//                        printf ("var is %s\n", fp->var_namelist[j]);
-                        if (!strcmp (fp->var_namelist[j], points_var_tmp))
+                        ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[varid]);
+                        if (first_dim)
                         {
-                            var_march = 1;
-                            ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[j]);
-                            if (first_dim)
+                            first_match_var = strdup (points_var_tmp);
+                            int k = 0;
+                            for (k=0; k<v->ndim; k++)
+                                meshinfo->unstructured->npoints *= v->dims[k];
+                            first_dim = 0;
+                        }
+                        else
+                        {
+                            if (v->ndim == 1)
                             {
-                                first_match_var = strdup (points_var_tmp);
-                                int k = 0;
-                                for (k=0; k<v->ndim; k++)
-                                    meshinfo->unstructured->npoints *= v->dims[k];
-                                first_dim = 0;
-                            }
-                            else
-                            {
-                                if (v->ndim == 1)
+                                if (meshinfo->unstructured->npoints != v->dims[0])
                                 {
-                                    if (meshinfo->unstructured->npoints != v->dims[0])
+                                    adios_error (err_mesh_unstructured_invaid_dim_points,
+                                                 "Unstructured mesh %s points-multi-var%d %"PRIu64" does not match points-multi-var0 %"PRIu64".\n", 
+                                                 meshinfo->name, i, v->dims[0], meshinfo->unstructured->npoints);
+                                    return NULL; 
+                                }
+                            }
+                            else // v->ndim > 1, check if match for each dim
+                            {
+                                ADIOS_VARINFO * v_first = common_read_inq_var(fp, first_match_var);
+                                if (v_first->ndim == 1)
+                                {
+                                    int k = 0;
+                                    uint64_t var_dim_tmp = 1;
+                                    for (k=0; k<v->ndim; k++)
+                                        var_dim_tmp *= v->dims[k];
+                                    if (var_dim_tmp != meshinfo->unstructured->npoints)
                                     {
-                                        adios_error (err_mesh_unstructured_invaid_dim_points,
-                                                     "Unstructured mesh %s points-multi-var%d %"PRIu64" does not match points-multi-var0 %"PRIu64".\n", 
-                                                     meshinfo->name, i, v->dims[0], meshinfo->unstructured->npoints);
+                                        adios_error (err_mesh_unstructured_invaid_dim_points, 
+                                                     "Unstructured mesh %s points-multi-var%d %"PRIu64" does not match points-multi-var0 %"PRIu64".\n",
+                                                     meshinfo->name, i, var_dim_tmp, meshinfo->unstructured->npoints);
                                         return NULL; 
                                     }
                                 }
-                                else // v->ndim > 1, check if match for each dim
+                                else  //both v_first and v has more than 2 dims
                                 {
-                                    ADIOS_VARINFO * v_first = common_read_inq_var(fp, first_match_var);
-                                    if (v_first->ndim == 1)
+                                    if (v_first->ndim != v->ndim)
                                     {
-                                        int k = 0;
-                                        uint64_t var_dim_tmp = 1;
-                                        for (k=0; k<v->ndim; k++)
-                                            var_dim_tmp *= v->dims[k];
-                                        if (var_dim_tmp != meshinfo->unstructured->npoints)
-                                        {
-                                            adios_error (err_mesh_unstructured_invaid_dim_points, 
-                                                         "Unstructured mesh %s points-multi-var%d %"PRIu64" does not match points-multi-var0 %"PRIu64".\n",
-                                                         meshinfo->name, i, var_dim_tmp, meshinfo->unstructured->npoints);
-                                            return NULL; 
-                                        }
+                                        adios_error (err_mesh_unstructured_invaid_dim_points,
+                                                     "Unstructured mesh %s points-multi-var%d dim does not match points-multi-var0 dim.\n",
+                                                     meshinfo->name, i);
+                                        return NULL; 
                                     }
-                                    else  //both v_first and v has more than 2 dims
+                                    else
                                     {
-                                        if (v_first->ndim != v->ndim)
+                                        int k = 0; 
+                                        for (k=0; k<v->ndim; k++)
                                         {
-                                            adios_error (err_mesh_unstructured_invaid_dim_points,
-                                                         "Unstructured mesh %s points-multi-var%d dim does not match points-multi-var0 dim.\n",
-                                                         meshinfo->name, i);
-                                            return NULL; 
-                                        }
-                                        else
-                                        {
-                                            int k = 0; 
-                                            for (k=0; k<v->ndim; k++)
+                                            if (v->dims[k]!=v_first->dims[k])
                                             {
-                                                if (v->dims[k]!=v_first->dims[k])
-                                                {
-                                                    adios_error (err_mesh_unstructured_invaid_dim_points,
-                                                                 "Unstructured mesh %s points-multi-var%d dim%d does not match points-multi-var0 dim%d.\n",
-                                                        meshinfo->name, i, k, k);
-                                                    return NULL; 
-                                                }
+                                                adios_error (err_mesh_unstructured_invaid_dim_points,
+                                                             "Unstructured mesh %s points-multi-var%d dim%d does not match points-multi-var0 dim%d.\n",
+                                                    meshinfo->name, i, k, k);
+                                                return NULL; 
                                             }
                                         }
                                     }
-                                    common_read_free_varinfo (v_first);
                                 }
+                                common_read_free_varinfo (v_first);
                             }
-                            meshinfo->unstructured->points[i] = strdup (fp->var_namelist[j]);
-                            common_read_free_varinfo (v);
                         }
-                    }  // end of for loop j
-                    if (var_march == 0)
+                        meshinfo->unstructured->points[i] = strdup (fp->var_namelist[varid]);
+                        common_read_free_varinfo (v);
+                    }
+                    else
                     {
                         adios_error (err_mesh_unstructured_missing_one_points,
                                      "Unstructured mesh %s var of points-multi-var%d is not provided.\n", 
@@ -2289,35 +2276,33 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
             }
             else
             {
-                int var_march = 0;
-                for (j=0; j<fp->nvars; j++)
+                char * points_var_tmp = strdup((char *)data);
+                varid = common_read_find_var (fp, points_var_tmp, 1);
+                if (varid >= 0)
                 {
-                    char * points_var_tmp = (char *)data;
-                    if (!strcmp (fp->var_namelist[j], points_var_tmp))
+                    ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[varid]);
+                    if (v->type==adios_long || v->type==adios_unsigned_long) //long long or unsigned long long   
                     {
-                        var_march = 1;
-                        ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[j]);
-                        if (v->type==adios_long || v->type==adios_unsigned_long) //long long or unsigned long long   
-                        {
-                            if (meshinfo->unstructured->npoints != *(uint64_t *)v->value)
-                                log_warn ("Provided npoints %"PRIu64" does not match points calculated from points-var %"PRIu64". "
-                                          "We use calculated npoints from points-var %"PRIu64".\n",
-                                    *(uint64_t *)v->value, meshinfo->unstructured->npoints, meshinfo->unstructured->npoints);
-                        }
-                        else      //int
-                        {
-                            if (meshinfo->unstructured->npoints != *(int *)v->value)
-                                log_warn ("Provided npoints %d does not match points calculated from points-var %"PRIu64". "
-                                          "We use calculated npoints from points-var %"PRIu64".\n",
-                                          *(int *)v->value, meshinfo->unstructured->npoints, meshinfo->unstructured->npoints);
-                        }
-                        common_read_free_varinfo (v);
+                        if (meshinfo->unstructured->npoints != *(uint64_t *)v->value)
+                            log_warn ("Provided npoints %"PRIu64" does not match points calculated from points-var %"PRIu64". "
+                                      "We use calculated npoints from points-var %"PRIu64".\n",
+                                      *(uint64_t *)v->value, meshinfo->unstructured->npoints, meshinfo->unstructured->npoints);
                     }
+                    else      //int
+                    {
+                        if (meshinfo->unstructured->npoints != *(int *)v->value)
+                        log_warn ("Provided npoints %d does not match points calculated from points-var %"PRIu64". "
+                                  "We use calculated npoints from points-var %"PRIu64".\n",
+                                  *(int *)v->value, meshinfo->unstructured->npoints, meshinfo->unstructured->npoints);
+                    }
+                    common_read_free_varinfo (v);
                 }
-                if (!var_march)
+                else
+                {
                     log_warn ("Unstructured mesh %s var of npoints is not correct. "
                               "We use calculated default npoints %"PRIu64" from points-var\n", 
                               meshinfo->name, meshinfo->unstructured->npoints);
+                }
             }
         }
 
@@ -2351,27 +2336,23 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
             }
             else
             {
-                int var_march = 0;
-                for (j=0; j<fp->nvars; j++)
+                char * spaces_var_tmp = strdup((char *)data);
+                varid = common_read_find_var (fp, spaces_var_tmp, 1);
+                if (varid >= 0)
                 {
-                    char * spaces_var_tmp = (char *)data;
-                    if (!strcmp (fp->var_namelist[j], spaces_var_tmp))
-                    {
-                        var_march = 1;
-                        ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[j]);
-                        if (meshinfo->unstructured->nspaces > *(int *)v->value) {
-                            log_warn ("Unstructured mesh %s: the provided nspaces %d "
-                                      "is less than the points dim %d. "
-                                      "We use points dim %d for nspaces.\n",
-                                      meshinfo->name, *(int *)v->value, 
-                                      meshinfo->unstructured->nspaces, 
-                                      meshinfo->unstructured->nspaces);
-                        } else
-                            meshinfo->unstructured->nspaces = *(int *)v->value;
-                        common_read_free_varinfo (v);
-                    }
+                    ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[varid]);
+                    if (meshinfo->unstructured->nspaces > *(int *)v->value) {
+                        log_warn ("Unstructured mesh %s: the provided nspaces %d "
+                                  "is less than the points dim %d. "
+                                  "We use points dim %d for nspaces.\n",
+                                  meshinfo->name, *(int *)v->value, 
+                                  meshinfo->unstructured->nspaces, 
+                                  meshinfo->unstructured->nspaces);
+                    } else
+                        meshinfo->unstructured->nspaces = *(int *)v->value;
+                    common_read_free_varinfo (v);
                 }
-                if (!var_march)
+                else
                     log_warn ("Unstructured mesh %s var of npoints is not correct, "
                               " use points dim %d for nspaces\n",
                               meshinfo->name, meshinfo->unstructured->nspaces);
@@ -2446,22 +2427,18 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                     meshinfo->unstructured->ccounts[0] = d1;
                 else
                 {
-                    int var_march = 0;
-                    char * ccount_tmp = (char *)data;
-                    for (j=0; j<fp->nvars; j++)
+                    char * ccount_tmp = strdup((char *)data);
+                    varid = common_read_find_var (fp, ccount_tmp, 1);
+                    if (varid >= 0)
                     {
-                        if (!strcmp (fp->var_namelist[j], ccount_tmp))
-                        {
-                            var_march = 1;
-                            ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[j]);
-                            if (v->type == adios_unsigned_long || v->type == adios_long)
-                                    meshinfo->unstructured->ccounts[0] = *(uint64_t *)v->value;
-                                else
-                                    meshinfo->unstructured->ccounts[0] = *(int *)v->value;
-                            common_read_free_varinfo (v); 
-                        }
+                        ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[varid]);
+                        if (v->type == adios_unsigned_long || v->type == adios_long)
+                            meshinfo->unstructured->ccounts[0] = *(uint64_t *)v->value;
+                        else
+                            meshinfo->unstructured->ccounts[0] = *(int *)v->value;
+                        common_read_free_varinfo (v); 
                     }
-                    if (var_march == 0)
+                    else
                     {
                         adios_error (err_mesh_unstructured_invalid_ccount,
                                     "Unstructured mesh %s var for ccount is invalid.\n", 
@@ -2514,29 +2491,24 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                         meshinfo->unstructured->ccounts[i] = d1;
                     else
                     {
-                        int var_march = 0; 
-                        char * ccount_mix_tmp = (char *)data;
-                        for (j=0; j<fp->nvars; j++)
+                        char * ccount_mix_tmp = strdup((char *)data);
+                        varid = common_read_find_var (fp, ccount_mix_tmp, 1);
+                        if (varid >= 0)
                         {
-                            if (!strcmp (fp->var_namelist[j], ccount_mix_tmp))
-                            {
-                                var_march = 1;
-                                ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[j]);
-                                if (v->type == adios_long || v->type == adios_unsigned_long)
-                                    meshinfo->unstructured->ccounts[i] = *(uint64_t *)v->value;
-                                else
-                                    meshinfo->unstructured->ccounts[i] = *(int *)v->value;
-                                common_read_free_varinfo (v);
-                            }
+                            ADIOS_VARINFO * v = common_read_inq_var(fp, fp->var_namelist[varid]);
+                            if (v->type == adios_long || v->type == adios_unsigned_long)
+                                meshinfo->unstructured->ccounts[i] = *(uint64_t *)v->value;
+                            else
+                                meshinfo->unstructured->ccounts[i] = *(int *)v->value;
+                            common_read_free_varinfo (v);
                         }
-                        if (var_march == 0)
+                        else
                         {
                             adios_error (err_mesh_unstructured_invalid_ccount,
                                         "Unstructured mesh %s var for ccount%d is invalid\n", 
                                         meshinfo->name, i);
                             return NULL; 
                         }
-
                     }
                 }
             }
@@ -2564,17 +2536,11 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
             }
             else
             {
-                char * cdata_tmp = (char *)data;
-                int var_match = 0;
-                for (j=0; j<fp->nvars; j++)
-                {
-                    if (!strcmp (fp->var_namelist[j], cdata_tmp))
-                    {
-                        var_match = 1;
-                        meshinfo->unstructured->cdata[0] = strdup(fp->var_namelist[j]);
-                    }
-                }
-                if (var_match == 0)
+                char * cdata_tmp = strdup((char *)data);
+                varid = common_read_find_var (fp, cdata_tmp, 1);
+                if (varid >= 0)
+                    meshinfo->unstructured->cdata[0] = strdup(fp->var_namelist[varid]);
+                else
                 {
                     adios_error (err_mesh_unstructured_invalid_cdata,
                                 "Unstructured mesh %s var for cdata is invalid\n", 
@@ -2619,17 +2585,11 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                 }
                 else
                 {
-                    int var_match = 0;
-                    char * cdata_mix_tmp = (char *)data;
-                    for (j=0; j<fp->nvars; j++)
-                    {
-                        if (!strcmp (fp->var_namelist[j], cdata_mix_tmp))
-                        {
-                            var_match = 1;
-                            meshinfo->unstructured->cdata[i] = strdup(fp->var_namelist[j]);
-                        }
-                    }
-                    if (var_match == 0)
+                    char * cdata_mix_tmp = strdup((char *)data);
+                    varid = common_read_find_var (fp, cdata_mix_tmp, 1);
+                    if (varid >= 0)
+                        meshinfo->unstructured->cdata[i] = strdup(fp->var_namelist[varid]);
+                    else
                     {
                         adios_error (err_mesh_unstructured_invalid_cdata,
                                     "Unstructured mesh %s var for cdata%d is not correct.\n", 

@@ -201,7 +201,7 @@ Use the configuration option
 
 \subsection{Staging transport methods (optional)}
 
-In ADIOS 1.5, three transport methods
+In \adiosversion, three transport methods
 are available for memory-to-memory transfer (staging) of data between two 
 applications: The DataSpaces and DIMES libraries from Rutgers University and
 the Flexpath library from Georgia Tech.
@@ -308,7 +308,7 @@ While in CMake, you can build this method with
 export PAR_HDF5_DIR=<path>
 \end{lstlisting}
 
-Note: Do not expect better performance with ADIOS/PHDF5 than with PHDF5 itself. ADIOS does not write differently to a HDF5 formatted file, it simply uses PHDF5 function calls to write out data. Also good to know, that the method in ADIOS uses the collective function calls, that requires that every process participates in the writing of each variable. 
+\noindent Notes: Do not expect better performance with ADIOS/PHDF5 than with PHDF5 itself. ADIOS does not write differently to a HDF5 formatted file, it simply uses PHDF5 function calls to write out data. Also good to know, that the method in ADIOS uses the collective function calls, that requires that every process participates in the writing of each variable. 
 
 If you define Parallel HDF5 and do not define serial HDF5, then bp2h5 will be built 
 with the parallel library. 
@@ -336,8 +336,7 @@ While with CMake, the environment variables are set by the folloing:
 export PAR_NC_DIR=<path>
 \end{lstlisting}
 
-\subsection{Serial HDF5 (optional)}
-Note: Do not expect better performance with ADIOS/NC4 than with NC4 itself. ADIOS does not write differently to a HDF5 formatted file, it simply uses NC4 function calls to write out data. Also good to know, that this method requires that every process participates in the writing of each variable. 
+\noindent Note: Do not expect better performance with ADIOS/NC4 than with NC4 itself. ADIOS does not write differently to a HDF5 formatted file, it simply uses NC4 function calls to write out data. Also good to know, that this method requires that every process participates in the writing of each variable. 
 
 \section{Full Installation}
 
