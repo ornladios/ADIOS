@@ -171,14 +171,18 @@ A noncontiguous array, comprising a series of subcontiguous memory blocks,
 should be given separately for each piece.
 
 In the next chapter about the XML file, we will further explain that the var\_name
-argument of this function should correspond to the value of the
-attribute ``name'' in the variable definition. 
+argument of this function should correspond to combined path value of the
+attributes ``path'' and ``name'' in the variable definition. 
 Another attribute, ``gwrite,'' is used by \verb+gpp.py+ to generate the variable name in
 the application source code, that is passed as \textit{var} in this call. 
 See the \verb+<var>+ element inside the \verb+<adios_group>+ element 
 in the XML file. 
 If ``gwrite'' is not defined, it will be handled as if it were the same as the value of attribute ``name''.
 
+Since version 1.6, the matching of variable names in the XML and this function call 
+is strict. If the ``path'' attribute is used in the XML, simply referring to the 
+``name'' attribute in the function call will fail. One need to use the full path of 
+the variable at both writing and reading. 
 
 \begin{lstlisting}[alsolanguage=C,caption={},label={}]
 int adios_write (int64_t fd_p, const char * var_name, void * var)

@@ -79,7 +79,41 @@ Linux clusters and Mac OSX.
 %    \item A staging area for data querying, analysis, and in situ visualization.
 %\end{itemize}
 
-\section {What's new in version 1.5.0}
+
+%
+%
+\section {What's new in version 1.6}
+Some small changes to the API have been made in this version that may require you to change your application using older ADIOS versions:
+\begin{itemize}
+\item Variables are identified by full path at writing (and reading), as they are defined. Omission of the path part and referring to the name only in function calls now will result in an error.
+\item The leading / in variable paths at reading is not enforced by the READ API, i.e., if you write "nx", you must read "nx" and if you write "/nx", you must read "/nx". Before, these two paths were handled identical. 
+\item Fix: all functions with an integer return value now return 0 on success and !=0 on error.
+\end{itemize}
+
+Basically, the user-friendly lax name matching is replaced by strict full-path matching. In return, ADIOS can handle tens of thousands of variables in a dataset much faster than before. 
+
+\vspace{10pt}
+
+\noindent The big news in version 1.6 is that on-the-fly {\bf data transformations} is supported in file-based I/O. The following transformations are supported:
+\begin{itemize}
+\item lossless compression (zlib, bzip, szip, ALACRITY)
+\item lossy compression (ISOBAR)
+\item APLOD indexing + lossless compression
+\end{itemize}
+
+One can select a transformation of \emph{each variable} separately in the XML configuration file, so no recompilation of the code is needed. ALACRITY, ISOBAR and APLOD are not public software at this moment, but they are available for research. To get them, send a request to \verb+"Nagiza Samatova" <samatova@csc.ncsu.edu>+.
+
+\vspace{10pt}
+
+\noindent The C version of the READ API is extended with functions to get information about the {\bf visualization schema} stored in the dataset. The file structure returned by \verb+adios_open()+ contains the name list of meshes defined in the dataset. \verb+adios_inq_mesh_byid()+ returns a structure describing a mesh, and \verb+adios_inq_var_meshinfo()+ tells on which mesh should one visualize a given variable. 
+
+\vspace{10pt}
+
+\noindent Finally, one can build the ADIOS code separately from the source with the automake tools. Just run the \verb+<sourcedir>/configure+ script in a separate directory, then run \verb+make+.
+
+%
+%
+\section {What's new in version 1.5}
 
 Some small changes to the API have been made in this version. 
 \begin{itemize}
@@ -94,6 +128,8 @@ A new build system using CMake has been added. The two, automake and CMake build
 
 A new write method, VAR\_MERGE, has been added, that performs spatial aggregation of small data blocks of processors to write larger chunks to the output file. It improves both the write and read performance of such datasets.
 
+%
+%
 \section {What's new in version 1.4}
 
 With ADIOS 1.4, there are several changes and new functionalities. 
