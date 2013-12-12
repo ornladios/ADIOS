@@ -10,6 +10,8 @@
       - lossless compression (zlib, bzip, szip, ALACRITY)
       - lossy compression (ISOBAR)
       - APLOD indexing + lossless compression
+    - New I/O method for Bluegene/Q called "BGQ"
+        configure with the option --with-bgq
     - Removed performance bottleneck in metadata operations when 
       writing/reading thousands of variables. 
     - fix: one can build ADIOS separately from the source with automake
