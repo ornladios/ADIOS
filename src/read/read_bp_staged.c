@@ -1809,12 +1809,15 @@ fprintf (stderr, "bc %s bo 1 = %llu, bo 2 = %llu, len = %d\n", vars_root->var_na
             }
         }
 
+        fh->vars_table = (struct adios_index_var_struct_v1 **) malloc (fh->mfooter.vars_count * 8);
+
         vars_root = 0;
         for (i = 0; i < fh->mfooter.vars_count; i++)
         {
             v = (struct adios_index_var_struct_v1 *) malloc (sizeof (struct adios_index_var_struct_v1));
             assert (v);
-uint64_t bo = buffer_offset;
+            fh->vars_table[i] = v;
+
             _buffer_read (buffer, &buffer_offset, &v->id, 2);
 
             _buffer_read (buffer, &buffer_offset, &len, 2);
@@ -2167,6 +2170,7 @@ ADIOS_FILE * adios_read_bp_staged_open_file (const char * fname, MPI_Comm comm)
     fh->pgs_root = 0;
     fh->vars_root = 0;
     fh->attrs_root = 0;
+    fh->vars_table = 0;
     fh->b = malloc (sizeof (struct adios_bp_buffer_struct_v1));
     assert (fh->b);
     adios_buffer_struct_init (fh->b);
