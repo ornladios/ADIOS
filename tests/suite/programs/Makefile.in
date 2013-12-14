@@ -224,8 +224,8 @@ set_path_var_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 am_transforms_specparse_OBJECTS =  \
 	transforms_specparse-transforms_specparse.$(OBJEXT)
 transforms_specparse_OBJECTS = $(am_transforms_specparse_OBJECTS)
-transforms_specparse_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1)
+transforms_specparse_DEPENDENCIES =  \
+	$(top_builddir)/src/libadios_nompi.a $(am__DEPENDENCIES_1)
 transforms_specparse_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(transforms_specparse_LDFLAGS) $(LDFLAGS) -o $@
@@ -644,7 +644,7 @@ copy_subvolume_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 copy_subvolume_CPPFLAGS = -I$(top_srcdir)/src
 #copy_subvolume.o: copy_subvolume.c
 transforms_specparse_SOURCES = transforms_specparse.c
-transforms_specparse_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+transforms_specparse_LDADD = $(top_builddir)/src/libadios_nompi.a $(ADIOSLIB_LDADD)
 transforms_specparse_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 transforms_specparse_CPPFLAGS = -I$(top_srcdir)/src
 #transforms_specparse.o: transforms_specparse.c

@@ -158,7 +158,7 @@ copy_subvolume_CPPFLAGS = -I$(top_srcdir)/src
 #copy_subvolume.o: copy_subvolume.c
 
 transforms_specparse_SOURCES=transforms_specparse.c
-transforms_specparse_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+transforms_specparse_LDADD = $(top_builddir)/src/libadios_nompi.a $(ADIOSLIB_LDADD)
 transforms_specparse_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 transforms_specparse_CPPFLAGS = -I$(top_srcdir)/src
 #transforms_specparse.o: transforms_specparse.c
