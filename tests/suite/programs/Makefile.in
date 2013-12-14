@@ -154,8 +154,8 @@ connect_to_space_subset_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(connect_to_space_subset_LDFLAGS) $(LDFLAGS) -o $@
 am_copy_subvolume_OBJECTS = copy_subvolume-copy_subvolume.$(OBJEXT)
 copy_subvolume_OBJECTS = $(am_copy_subvolume_OBJECTS)
-copy_subvolume_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1)
+copy_subvolume_DEPENDENCIES =  \
+	$(top_builddir)/src/libadiosread_nompi.a $(am__DEPENDENCIES_1)
 copy_subvolume_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(copy_subvolume_LDFLAGS) $(LDFLAGS) -o $@
@@ -639,7 +639,7 @@ connect_to_space_subset_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 #transforms_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 #transforms.o: transforms.c
 copy_subvolume_SOURCES = copy_subvolume.c
-copy_subvolume_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+copy_subvolume_LDADD = $(top_builddir)/src/libadiosread_nompi.a $(ADIOSLIB_LDADD)
 copy_subvolume_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 copy_subvolume_CPPFLAGS = -I$(top_srcdir)/src
 #copy_subvolume.o: copy_subvolume.c

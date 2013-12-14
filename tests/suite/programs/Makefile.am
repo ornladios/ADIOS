@@ -152,7 +152,7 @@ connect_to_space_subset.o: connect_to_space_subset.c
 #transforms.o: transforms.c
 
 copy_subvolume_SOURCES=copy_subvolume.c
-copy_subvolume_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+copy_subvolume_LDADD = $(top_builddir)/src/libadiosread_nompi.a $(ADIOSLIB_LDADD)
 copy_subvolume_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 copy_subvolume_CPPFLAGS = -I$(top_srcdir)/src
 #copy_subvolume.o: copy_subvolume.c
