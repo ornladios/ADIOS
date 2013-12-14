@@ -1098,7 +1098,55 @@ end subroutine
 
 \end{lstlisting}
 
+\section{Read Schema API description}
+Please consult the \verb+adios_schema.h+ and \verb+adios_read_v2.h+ for the data structures and functions discussed here. In the source code, do not include this header \verb+adios_read_v2.h+ directly, but \verb+adios_read.h+. The sequence of reading in a mesh from the BP file is
 
+\begin{itemize}
+\renewcommand{\labelitemi}{$-$}
+\item initialize the reading method (once per program run)
+
+\item open file/stream
+
+\item inquiry the mesh by meshid to get related mesh structure information
+
+\item free meshinfo data structure
+
+\item close group
+
+\item close file
+
+\item finalize the read method (once per program run)
+\end{itemize}
+
+\subsection{adios\_inq\_mesh\_byid}
+
+\noindent Inquires about a mesh. This function does not read any anything from the file but processes info already in memory after fopen. It allocates memory for the ADIOS\_MESH struct and content, so you need to free resources later with adios\_free\_meshinfo().
+
+\begin{itemize}
+\item{\bf fp} Pointer to an (opened) ADIOS\_FILE struct.
+\item{\bf meshid}    index of mesh (0..fp->nmeshes-1)
+in fp->mesh\_namelist of ADIOS\_FILE struct
+\end{itemize}
+
+\noindent The function returns a pointer to an ADIOS\_MESHINFO struct or NULL.
+
+\begin{lstlisting}
+ADIOS_MESH * adios_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
+\end{lstlisting}
+
+\subsection{adios\_free\_meshinfo}
+
+\noindent Free memory used by an ADIOS\_MESH struct.
+
+\begin{itemize}
+\item{\bf meshinfo} The ADIOS\_MESH struct that needs to be free'd.
+\end{itemize}
+
+\noindent The function does not return any value.
+
+\begin{lstlisting}
+void adios_free_meshinfo (ADIOS_MESH *meshinfo)
+\end{lstlisting}
 
 \section{Compiling and linking applications}
 

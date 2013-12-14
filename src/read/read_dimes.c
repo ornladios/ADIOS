@@ -1298,11 +1298,11 @@ int adios_read_dimes_schedule_read_byid (const ADIOS_FILE * fp,
         r->priv = 0;
         r->next = 0;
         if (ds->req_list == NULL) {
-            list_insert_read_request_tail (&ds->req_list, r);
+            list_append_read_request_list (&ds->req_list, r);
             ds->req_list_tail = ds->req_list;
         } else {
             // just speed up insert directly after the tail
-            list_insert_read_request_next (&ds->req_list_tail, r);
+            list_append_read_request_list (&ds->req_list_tail, r);
         }
     } else {
         free(r);
