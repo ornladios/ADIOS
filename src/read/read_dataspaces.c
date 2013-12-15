@@ -1258,11 +1258,11 @@ int adios_read_dataspaces_schedule_read_byid (const ADIOS_FILE * fp,
         r->priv = 0;
         r->next = 0;
         if (ds->req_list == NULL) {
-            list_insert_read_request_tail (&ds->req_list, r);
+            list_append_read_request_list (&ds->req_list, r);
             ds->req_list_tail = ds->req_list;
         } else {
             // just speed up insert directly after the tail
-            list_insert_read_request_next (&ds->req_list_tail, r);
+            list_append_read_request_list (&ds->req_list_tail, r);
         }
     } else {
         free(r);
@@ -1303,6 +1303,8 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE *fp, read_request * r)
         } else {
             ds->chunk->data = var->value;
         }
+        log_debug("-- %s, rank %d: scalar: varname=%s value=%d\n",
+                __func__, ds->mpi_rank, var->name, *(int*)var->value); 
         return ds->chunk;
     }
         
