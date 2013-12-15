@@ -687,10 +687,16 @@ elif [ `hostname -f | cut -c 1-4` == "mira" ]; then
     #  MIRA   BlueGene  #
     #####################
     echo "Configure on Mira (BlueGene/Q)"
+    #export MPICC=mpicc
+    #export MPIFC=mpif90
+    #export CFLAGS=""
+    #export FC=gfortran
+    #export CC=gcc
+    #export FCFLAGS="-funderscoring"
     export MPICC=mpixlc_r
-    export MPIFC=mpixlf90
+    export MPIFC=mpixlf90_r
     export CFLAGS=""
-    export FC=xlf90
+    export FC=xlf90_r
     export CC=xlc_r
 
     ${SRCDIR}/configure --prefix=/home/qliu/4se/ADIOS \
