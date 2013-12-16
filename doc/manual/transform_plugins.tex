@@ -1,0 +1,121 @@
+\chapter{Data Transformations}
+\label{sec:transform_plugins}
+The ADIOS data transformations framework, new in version 1.6, enables on-the-fly, transparent ``data transformations'' during the ADIOS
+write phase. Data transformations are a class of algorithms that change the format of a variable's data for some purpose
+(for example, compression to reduce storage footprint).
+Data transforms in ADIOS are fully configurable on a per-variable basis; for instance, one variable
+may be compressed while another has no transform applied.
+
+While ADIOS comes with lossless compression transform plugins, it is possible for plugin developers to implement new plugins.
+Possibilities include: lossy compression, layout optimization for increased spatial locality,
+on-the-fly value indexing, and precision-based and sampling-based level-of-detail encodings.
+
+It is important to note that data transforms are \emph{runtime configurable}, meaning selecting a new configuration of data
+transforms for variables in the ADIOS XML does \emph{not} require recompiling the application (analogously to I/O transport
+selection via the XML). Furthermore, beyond editing the XML, no other changes are required to application code to use data
+transforms during writing or reading. This makes it possible to easily experiment with the effects of a variety of compression
+methods and parameters in an application.
+
+\section{Writing with data transformations}
+Data transforms are selected via the ADIOS XML file, as follows:
+
+\begin{lstlisting}[language=XML]
+<var name="/temperature"
+     dimensions="..."
+     type="adios_real"
+     transform="zlib"    <!-- Add this attribute -->
+  />
+\end{lstlisting}
+
+The above snippet of XML will cause the variable "/temperature" to be compressed using zlib, assuming ADIOS was configured with zlib support
+(see Section~\ref{sec:installation-data-transforms} for configuration instructions). ADIOS 1.6 includes support for transform plugins
+``zlib,'' ``bzip2,'' and ``szip'' (see Table~\ref{tbl:data-transforms-summary}).
+Some transform plugins accept parameters, which are appended after a colon following the transform name.
+For instance, zlib accepts an optional compression level between 1 and 9, with 1 being the fastest and
+9 being the highest compression ratio. Setting the level to 5 would be accomplished as follows:
+
+\begin{lstlisting}[language=XML]
+<var name="/temperature"
+     ...
+     transform="zlib:5"/>
+\end{lstlisting}
+
+In fact, all three lossless compression plugins (zlib, bzip2, and szip) currently accept this same
+1-to-9 compression level. The default compression for each library is used if this parameter is
+omitted, which is typically the case.
+
+\begin{table}%
+\begin{tabular}{l|l|l}
+\textbf{Transform name in XML} & \textbf{Description} & \textbf{Other info} \\
+\hline
+zlib & zlib lossless compression & requires the zlib external library \\
+\hline
+bzip2 & bzip2 lossless compression & requires the bzip2 external library \\
+\hline
+szip & szip lossless compression & requires the szip external library \\
+\end{tabular}
+\caption{Summary of data transform plugins included in ADIOS}
+\label{tbl:data-transforms-summary}
+\end{table}
+
+Data transformations that have been selected for a variable are applied at write time, during the call to \verb+adios_write()+.
+Data transforms are applied on a per-core basis, so no additional data movement or other communication is incurred.
+The resultant re-formatted data is then written using whatever I/O transport method is active.
+
+\section{Reading with data transformations}
+On the read side, no changes to application code are necessary. If a variable being read was transformed when written
+(e.g., zlib compressed), the transformation will be inverted automatically, returning the original data,
+with no changes needed to reader application.
+
+\section{Considerations when selecting data transforms}
+When deciding whether to apply data transforms, and which transform methods to use, depends on a few factors.
+Since the built-in data transforms in ADIOS are compression routines, we will focus on this case, but much of
+this discussion applies generally to any data transform.
+
+First, because the transform is applied at write time, the user must consider the tradeoff between the CPU cost of applying
+the transform (e.g., compression time) with the expected benefits (reduced storage space, and potentially reduced I/O time).
+The balance point for a particular application can only be determined through experimentation, but for compression,
+the more compressible the user's data is, the beneficial a compression transform may be.
+
+Second, note that some transforms, including compression, necessarily make some read operations more costly. This is because
+chunks of variable data in the file (the piece of the variable in each process group, to be precise) will be compressed
+in its entirety, and so during reads, any process group chunk that is touched must be read and decompressed fully, whereas
+without compression, some of the chunk might have been omitted from the read.
+
+As before, experimentation is the only way to definitively identify application- and read-pattern-specific read overhead.
+However, as a rule, smaller PG sizes and read access
+patterns that access large parts of PGs (e.g., full timestep reads and subvolume selections, as opposed to plane cuts and
+point selections) experience less overhead. For example, very large PG sizes (>10MB per variable per writing process per timestep)
+combined with read patterns that touch small pieces of many PGs (such as plane cuts) can experience substantial overhead.
+In contrast, checkpoint-restart-like access patterns that are highly aligned to PG boundaries,
+this overhead should be negligible, and overall performance improvement is possible via reduced I/O time given a high enough compression
+ratio.
+
+Finally, note the compatibility limitations described in the next section.
+
+\section{Compatibility}
+As mentioned above, data transforms work seamlessly with existing read and write APIs; only the addition of the "transform" attribute
+in the XML is required to invoke a data transform.
+
+As for I/O transports, in this release only file-based transports are supported while data transforms are active.
+This includes the \verb+POSIX+, \verb+MPI+, \verb+MPI_LUSTRE+, and \verb+MPI_AGGREGATE+ write transports and
+the \verb+READ_BP+ read transport. Additionally,
+when reading transformed data, only the file access mode is currently supported (i.e., streaming mode is unsupported).
+Of course, none of these limitations apply to use of ADIOS when no data transforms is active
+(i.e., no "transform" attributes in the XML for writes and no transformed variables are accessed for reads).
+
+As a final note, due to the way in which space allocation occurs under compression data transforms,
+applying compression in combination with certain I/O transports (including
+\verb+MPI+ and \verb+MPI_LUSTRE+) will produce ``sparse files'' with ``holes'' (unused space).
+While this may avoided entirely by using other transports (including \verb+MPI_AGGREGATE+ and
+\verb+POSIX+) sparse files are not necessarily bad. Sparse files do not consume extra disk space or
+I/O time on most filesystems (including Lustre, GPFS, PVFS and modern ext Linux filesystems),
+and standard Linux file manipulation tools (including cp and rsync) usually handle such files efficiently.
+Only if moved/copied using a tool (besides cp or rsync) that ``materializes'' them into normal ``dense files''
+will they begin consume more space. A file can be tested for sparsenesss by comparing the output of ``du -h <file>'' and
+``ls -l <file>'' (the former reports actual disk space used, whereas the latter reports logical file size;
+for sparse files, these quantities differ significantly).
+Again, sparse files may be completely avoided by using \verb+MPI_AGGREGATE+ or \verb+POSIX+.
+
+As this is the first release of the ADIOS data transformation framework, optimization and improvements are ongoing, and
+in the future many of these restrictions are likely to be ameliorated.
