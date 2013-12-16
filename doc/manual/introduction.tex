@@ -4,76 +4,76 @@
 
 %\leftskip=0pt
 %\parindent=0pt
-As computational power has increased dramatically with the increase in the number 
-of processors, input/output (IO) performance has become one of the most significant 
-bottlenecks in today's high-performance computing (HPC) applications. With this 
-in mind, ORNL and the Georgia Institute of Technology's Center for Experimental 
-Research in Computer Systems have teamed together to design the Adaptive I/O System 
-(ADIOS) as a componentization of the IO layer, which is scalable, portable, and 
-efficient on different clusters or supercomputer platforms. We are also providing 
-easy-to-use, high-level application program interfaces (APIs) so that application 
-scientists can easily adapt the ADIOS library and produce science without diving 
-too deeply into computer configuration and skills. 
+As computational power has increased dramatically with the increase in the number
+of processors, input/output (IO) performance has become one of the most significant
+bottlenecks in today's high-performance computing (HPC) applications. With this
+in mind, ORNL and the Georgia Institute of Technology's Center for Experimental
+Research in Computer Systems have teamed together to design the Adaptive I/O System
+(ADIOS) as a componentization of the IO layer, which is scalable, portable, and
+efficient on different clusters or supercomputer platforms. We are also providing
+easy-to-use, high-level application program interfaces (APIs) so that application
+scientists can easily adapt the ADIOS library and produce science without diving
+too deeply into computer configuration and skills.
 
 \section{What is ADIOS?}
 
-{\color{color01} ADIOS is a state-of-the-art componentization of the IO system 
-that has demonstrated impressive IO performance results on leadership class machines 
-and clusters; sometimes showing an improvement of more than 1000 times over well 
-known parallel file formats. }ADIOS is essentially an I/O componentization of different 
-I/O transport methods. This feature allows flexibility for application scientists 
-to adopt the best I/O method for different computer infrastructures with very little 
-modification of their scientific applications. ADIOS has a suite of simple, easy-to-use 
-APIs. Instead of being provided as the arguments of APIs, all the required metadata 
-are stored in an external Extensible Markup Language (XML) configuration file, 
-which is readable, editable, and portable for most machines. 
+{\color{color01} ADIOS is a state-of-the-art componentization of the IO system
+that has demonstrated impressive IO performance results on leadership class machines
+and clusters; sometimes showing an improvement of more than 1000 times over well
+known parallel file formats. }ADIOS is essentially an I/O componentization of different
+I/O transport methods. This feature allows flexibility for application scientists
+to adopt the best I/O method for different computer infrastructures with very little
+modification of their scientific applications. ADIOS has a suite of simple, easy-to-use
+APIs. Instead of being provided as the arguments of APIs, all the required metadata
+are stored in an external Extensible Markup Language (XML) configuration file,
+which is readable, editable, and portable for most machines.
 
 \section{The Basic ADIOS Group Concept}
 
-The ADIOS ``group'' is a concept in which input variables are tagged according 
-to the functionality of their respective output files. For example, a common scientific 
-application has checkpoint files prefixed with restart and monitoring files prefixed 
-with diagnostics. In the XML configuration file, the user can define two separate 
-groups with tag names of adios-group as ``restart'' and ``diagnostic.'' Each group 
-contains a set of variables and attributes that need to be written into their respective 
-output files. Each group can choose to have different I/O transport methods, which 
+The ADIOS ``group'' is a concept in which input variables are tagged according
+to the functionality of their respective output files. For example, a common scientific
+application has checkpoint files prefixed with restart and monitoring files prefixed
+with diagnostics. In the XML configuration file, the user can define two separate
+groups with tag names of adios-group as ``restart'' and ``diagnostic.'' Each group
+contains a set of variables and attributes that need to be written into their respective
+output files. Each group can choose to have different I/O transport methods, which
 can be optimal for their I/O patterns.
 
 \section{Other Interesting Features of ADIOS}
 
-ADIOS contains a new self-describing file format, BP. The BP file format was specifically 
-designed to support delayed consistency, lightweight data characterization, and 
-resilience. ADIOS also contains python scripts that allow users to easily write 
-entire ``groups'' with the inclusion of one include statement inside their Fortran/C 
-code. Another interesting feature of ADIOS is that it allows users to use multiple 
-I/O methods for a single group. This is especially useful if users want to write 
-data out to the file system, simultaneously capturing the metadata in a database 
+ADIOS contains a new self-describing file format, BP. The BP file format was specifically
+designed to support delayed consistency, lightweight data characterization, and
+resilience. ADIOS also contains python scripts that allow users to easily write
+entire ``groups'' with the inclusion of one include statement inside their Fortran/C
+code. Another interesting feature of ADIOS is that it allows users to use multiple
+I/O methods for a single group. This is especially useful if users want to write
+data out to the file system, simultaneously capturing the metadata in a database
 method, and visualizing with a visualization method.
 
-The read API enables reading arbitrary subarrays of variables in a BP file and 
-thus variables written out from N processor can be read in on arbitrary number 
-of processors. ADIOS also takes care of the endianness problem at converting to 
-the reader's architecture automatically at reading time. Matlab reader is included 
-in the release while the VisIt parallel interactive visualization software can 
-read BP files too (from version 2.0). 
+The read API enables reading arbitrary subarrays of variables in a BP file and
+thus variables written out from N processor can be read in on arbitrary number
+of processors. ADIOS also takes care of the endianness problem at converting to
+the reader's architecture automatically at reading time. Matlab reader is included
+in the release while the VisIt parallel interactive visualization software can
+read BP files too (from version 2.0).
 
-ADIOS is fully supported on Cray and IBM BlueGene/P supercomputers as well as on 
-Linux clusters and Mac OSX. 
+ADIOS is fully supported on Cray and IBM BlueGene/P supercomputers as well as on
+Linux clusters and Mac OSX.
 
 %\section{Future ADIOS 2.0 Goals}
 %
-%One of the main goals for ADIOS 2.0 is to produce faster reads via indexing methods. 
-%Another goal is to provide more advanced data types via XML in ADIOS so that it 
-%will be compatible with F90/c/C++ structures/objects. 
+%One of the main goals for ADIOS 2.0 is to produce faster reads via indexing methods.
+%Another goal is to provide more advanced data types via XML in ADIOS so that it
+%will be compatible with F90/c/C++ structures/objects.
 %
-%We will also work on the following advanced topics for ADIOS 2.0: 
+%We will also work on the following advanced topics for ADIOS 2.0:
 %
 %\begin{itemize}
 %    \item A link to an external database for provenance recording.
 %
-%    \item Autonomics through a feedback mechanism from the file system 
-%to optimize I/O performance. For instance, ADIOS can be adaptively changed from 
-%a synchronous to an asynchronous method or can decide when to write restart to 
+%    \item Autonomics through a feedback mechanism from the file system
+%to optimize I/O performance. For instance, ADIOS can be adaptively changed from
+%a synchronous to an asynchronous method or can decide when to write restart to
 %improve I/O performance.
 %
 %    \item A staging area for data querying, analysis, and in situ visualization.
@@ -86,26 +86,33 @@ Linux clusters and Mac OSX.
 Some small changes to the API have been made in this version that may require you to change your application using older ADIOS versions:
 \begin{itemize}
 \item Variables are identified by full path at writing (and reading), as they are defined. Omission of the path part and referring to the name only in function calls now will result in an error.
-\item The leading / in variable paths at reading is not enforced by the READ API, i.e., if you write "nx", you must read "nx" and if you write "/nx", you must read "/nx". Before, these two paths were handled identical. 
+\item The leading / in variable paths at reading is not enforced by the READ API, i.e., if you write "nx", you must read "nx" and if you write "/nx", you must read "/nx". Before, these two paths were handled identical.
 \item Fix: all functions with an integer return value now return 0 on success and !=0 on error.
 \end{itemize}
 
-Basically, the user-friendly lax name matching is replaced by strict full-path matching. In return, ADIOS can handle tens of thousands of variables in a dataset much faster than before. 
+Basically, the user-friendly lax name matching is replaced by strict full-path matching. In return, ADIOS can handle tens of thousands of variables in a dataset much faster than before.
 
 \vspace{10pt}
 
-\noindent The big news in version 1.6 is that on-the-fly {\bf data transformations} is supported in file-based I/O. The following transformations are supported:
-\begin{itemize}
-\item lossless compression (zlib, bzip, szip, ALACRITY)
-\item lossy compression (ISOBAR)
-\item APLOD indexing + lossless compression
-\end{itemize}
+\noindent The big news in version 1.6 is the introduction
+of on-the-fly {\bf data transformations} on variables during file-based I/O.
+Currently, several standard lossless compression methods are supported (zlib, bzip, and szip),
+and a plugin framework is in place to enable more transform services to be added in the future.
+ADIOS allows \emph{each variable} to independently be assigned a different transform
+(or no transform) via the XML configuration file, and no recompilation is needed
+when changing the transform configuration in the XML. See
+Section~\ref{sec:installation-data-transforms} for information on enabling the compression
+transform plugins during ADIOS installation, and Section~\ref{sec:transform_plugins}
+for information on their use.
 
-One can select a transformation of \emph{each variable} separately in the XML configuration file, so no recompilation of the code is needed. ALACRITY, ISOBAR and APLOD are not public software at this moment, but they are available for research. To get them, send a request to \verb+"Nagiza Samatova" <samatova@csc.ncsu.edu>+.
+Note: other research data transforms have also been developed: ISOBAR lossless compression and
+APLOD byte-level precision-level-of-detail encoding. If interested, contact
+Nagiza Samatova (\verb+samatova@csc.ncsu.edu+) for more information
+on installing these libraries with ADIOS.
 
 \vspace{10pt}
 
-\noindent The C version of the READ API is extended with functions to get information about the {\bf visualization schema} stored in the dataset. The file structure returned by \verb+adios_open()+ contains the name list of meshes defined in the dataset. \verb+adios_inq_mesh_byid()+ returns a structure describing a mesh, and \verb+adios_inq_var_meshinfo()+ tells on which mesh should one visualize a given variable. 
+\noindent In other news, the C version of the READ API is extended with functions to get information about the {\bf visualization schema} stored in the dataset. The file structure returned by \verb+adios_open()+ contains the name list of meshes defined in the dataset. \verb+adios_inq_mesh_byid()+ returns a structure describing a mesh, and \verb+adios_inq_var_meshinfo()+ tells on which mesh should one visualize a given variable.
 
 \vspace{10pt}
 
@@ -115,16 +122,16 @@ One can select a transformation of \emph{each variable} separately in the XML co
 %
 \section {What's new in version 1.5}
 
-Some small changes to the API have been made in this version. 
+Some small changes to the API have been made in this version.
 \begin{itemize}
 \item \verb+adios_init()+ has an MPI\_Comm argument
-\item \verb+adios_open()+ also has an MPI\_Comm argument instead of a void * argument. This means, existing codes have to be modified to pass the communicator itself instead of a pointer to it. The C compiler gives a warning only when compiling old codes, which can easily be missed. 
+\item \verb+adios_open()+ also has an MPI\_Comm argument instead of a void * argument. This means, existing codes have to be modified to pass the communicator itself instead of a pointer to it. The C compiler gives a warning only when compiling old codes, which can easily be missed.
 \item \verb+adios_read_open()+ is introduced instead of \verb+adios_read_open_stream()+ to indicate that this function is to be used equally for files and staged datasets. It opens the file/stream as a stream, see more explanation in the Read API chapter \ref{chapter:read_api}.
 \end{itemize}
 
 Two new staging methods, DIMES and FLEXPATH have been added. They require third-party software to be installed.
 
-A new build system using CMake has been added. The two, automake and CMake build will go along for a while but eventually ADIOS will use CMake. 
+A new build system using CMake has been added. The two, automake and CMake build will go along for a while but eventually ADIOS will use CMake.
 
 A new write method, VAR\_MERGE, has been added, that performs spatial aggregation of small data blocks of processors to write larger chunks to the output file. It improves both the write and read performance of such datasets.
 
@@ -132,35 +139,35 @@ A new write method, VAR\_MERGE, has been added, that performs spatial aggregatio
 %
 \section {What's new in version 1.4}
 
-With ADIOS 1.4, there are several changes and new functionalities. 
+With ADIOS 1.4, there are several changes and new functionalities.
 The four major changes are in the Read API:
 
 \begin{itemize}
 \item No groups at reading anymore. You get all variables in one list.
-There are no \verb+adios_gopen+ / \verb+adios_gclose+ / \verb+adios_inq_group+ 
+There are no \verb+adios_gopen+ / \verb+adios_gclose+ / \verb+adios_inq_group+
 calls after opening the file.
-\item No time dimension. A 3D variable written multiple times will be seen as 
+\item No time dimension. A 3D variable written multiple times will be seen as
 a 3D variable which has multiple steps (and not as single 4D variable as in adios 1.3.1).
 Read requests should provide the number of steps to be read at once separately from the
 spatial dimensions.
-\item Multiple reads should be "scheduled" and then one \verb+adios_perform_reads()+ 
-will do all at once. 
+\item Multiple reads should be "scheduled" and then one \verb+adios_perform_reads()+
+will do all at once.
 \item Selections. Instead of providing bounding box (offset and count values
-in each dimension) in the read request itself, a selection has to be created 
-beforehand. Besides bounding boxes, also list of individual points are supported 
+in each dimension) in the read request itself, a selection has to be created
+beforehand. Besides bounding boxes, also list of individual points are supported
 as well as selections of a specific block from a particular writing process.
 \end{itemize}
 
-Overall, a single old \verb+adios_read_var()+ becomes three calls, but $n$ reads over the same subdomain requires $1+n+1$ calls.  
-All changes were made towards in situ applications, to support streaming, non-blocking, chunking reads. 
-Old codes can use the old read API too, for reading files but new users are strongly encouraged to use the new read API, even if they personally find the old one simpler to use for reading data from a file. The new API allows applications to move to in situ (staged, or memory-to-memory) processing of simulation data when file-based offline processing or code coupling becomes severely limited.  
+Overall, a single old \verb+adios_read_var()+ becomes three calls, but $n$ reads over the same subdomain requires $1+n+1$ calls.
+All changes were made towards in situ applications, to support streaming, non-blocking, chunking reads.
+Old codes can use the old read API too, for reading files but new users are strongly encouraged to use the new read API, even if they personally find the old one simpler to use for reading data from a file. The new API allows applications to move to in situ (staged, or memory-to-memory) processing of simulation data when file-based offline processing or code coupling becomes severely limited.
 
 Other new things in ADIOS:
 \begin{itemize}
-\item New read API. Files and streams can be processed step-by-step (or files with multiple steps at once). Multiple read requests are served at once, which enables for superior performance with some methods. Support for non-blocking and for chunked reads in memory-limited applications or for interleaving computation with data movement, although no current methods provide performance advantages in this release.  
+\item New read API. Files and streams can be processed step-by-step (or files with multiple steps at once). Multiple read requests are served at once, which enables for superior performance with some methods. Support for non-blocking and for chunked reads in memory-limited applications or for interleaving computation with data movement, although no current methods provide performance advantages in this release.
 \item Fortran90 modules for write and read API. Syntax of ADIOS calls can be checked by the Fortran compiler.
 \item Java and Numpy bindings available (they should be built separately).
-\item Visualization schema support in the XML configuration. Meshes can be described using output variables and data variables can be assigned to meshes. This will allow for automatic visualization from ADIOS-BP files with rich metadata, or to convey the developer's intentions to other users about how to visualize the data. A manual on the schema is separate from this Users' Manual and can be downloaded from the same web page. 
-\item \emph{Skel} I/O skeleton generator for automatic performance evaluation of different methods. The XML configuration, that describes the output of an application, is used to generate code that can be used to test out different methods and to choose the best. Skel is part of ADIOS but it's manual is separate from this Users' Manual and can be downloaded from the same web page. 
+\item Visualization schema support in the XML configuration. Meshes can be described using output variables and data variables can be assigned to meshes. This will allow for automatic visualization from ADIOS-BP files with rich metadata, or to convey the developer's intentions to other users about how to visualize the data. A manual on the schema is separate from this Users' Manual and can be downloaded from the same web page.
+\item \emph{Skel} I/O skeleton generator for automatic performance evaluation of different methods. The XML configuration, that describes the output of an application, is used to generate code that can be used to test out different methods and to choose the best. Skel is part of ADIOS but it's manual is separate from this Users' Manual and can be downloaded from the same web page.
 \end{itemize}
 
