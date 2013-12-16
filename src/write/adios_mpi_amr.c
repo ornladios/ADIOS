@@ -349,6 +349,36 @@ adios_mpi_amr_set_striping_unit(struct adios_MPI_data_struct * md, char *paramet
 }
 
 static void
+adios_mpi_amr_set_have_mdf (char * parameters, struct adios_MPI_data_struct * md)
+{
+    int err = 0, flag, i, aggr_group_size, remain, index;
+    int nproc = md->size, rank = md->rank;
+    char value[64], *temp_string, *p_count,*p_size;
+
+    temp_string = (char *) malloc (strlen (parameters) + 1);
+    strcpy (temp_string, parameters);
+    trim_spaces (temp_string);
+
+    if (p_size = strstr (temp_string, "have_metadata_file"))
+    {
+        char * p = strchr (p_size, '=');
+        char * q = strtok (p, ";");
+
+        if (!q)
+            md->g_have_mdf = atoi (q + 1);
+        else
+            md->g_have_mdf = atoi (p + 1);
+    }
+    else
+    {
+        // by default, write metadata file. 
+        md->g_have_mdf = 1;
+    }
+
+    free (temp_string);
+}
+
+static void
 adios_mpi_amr_set_aggregation_parameters(char * parameters, struct adios_MPI_data_struct * md)
 {
     int err = 0, flag, i, aggr_group_size, remain, index;
@@ -807,7 +837,7 @@ void adios_mpi_amr_init (const PairStruct * parameters
 
     md->g_is_aggregator = 0;
     md->g_num_aggregators = 0;
-    md->g_have_mdf = 0;
+    md->g_have_mdf = 1;
     md->g_merging_pgs = 0;
     md->g_num_ost = 0;
     md->g_threading = 0;
@@ -951,6 +981,7 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                 // open metadata file
                 unlink (fd->name);
 
+                adios_mpi_amr_set_have_mdf (method->parameters, md);
                 if (md->g_have_mdf)
                 {
                     f = open(fd->name, O_CREAT | O_RDWR | O_LOV_DELAY_CREATE, 0644);
@@ -2373,7 +2404,7 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
 
 
             md->g_num_aggregators = 0;
-            md->g_have_mdf = 0;
+            md->g_have_mdf = 1;
             md->g_color1 = 0;
             md->g_color2 = 0;
 
@@ -3332,7 +3363,7 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
             buffer_offset = 0;
 
             md->g_num_aggregators = 0;
-            md->g_have_mdf = 0;
+            md->g_have_mdf = 1;
             md->g_color1 = 0;
             md->g_color2 = 0;
 

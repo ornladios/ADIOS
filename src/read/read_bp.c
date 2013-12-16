@@ -302,6 +302,7 @@ static BP_FILE * open_file (const char * fname, MPI_Comm comm)
     fh->pgs_root = 0;
     fh->vars_root = 0;
     fh->attrs_root = 0;
+    fh->vars_table = 0;
     fh->b = malloc (sizeof (struct adios_bp_buffer_struct_v1));
     assert (fh->b);
 
@@ -1153,6 +1154,7 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
     fh->pgs_root = 0;
     fh->vars_root = 0;
     fh->attrs_root = 0;
+    fh->vars_table = 0;
     fh->b = malloc (sizeof (struct adios_bp_buffer_struct_v1));
     assert (fh->b);
 
@@ -1224,6 +1226,7 @@ ADIOS_FILE * adios_read_bp_open_file (const char * fname, MPI_Comm comm)
     fh->pgs_root = 0;
     fh->vars_root = 0;
     fh->attrs_root = 0;
+    fh->vars_table = 0;
     fh->b = malloc (sizeof (struct adios_bp_buffer_struct_v1));
     assert (fh->b);
 

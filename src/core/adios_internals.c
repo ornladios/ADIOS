@@ -1852,16 +1852,16 @@ static void buffer_write (char ** buffer, uint64_t * buffer_size
 {
     if (*buffer_offset + size > *buffer_size || *buffer == 0)
     {
-        char * b = realloc (*buffer, *buffer_offset + size + 1000);
+        char * b = realloc (*buffer, *buffer_offset + size + 1000000);
         if (b)
         {
             *buffer = b;
-            *buffer_size = (*buffer_offset + size + 1000);
+            *buffer_size = (*buffer_offset + size + 1000000);
         }
         else
         {
             adios_error (err_no_memory, "Cannot allocate memory in buffer_write.  "
-                    "Requested: %llu\n", *buffer_offset + size + 1000);
+                    "Requested: %llu\n", *buffer_offset + size + 1000000);
             return;
         }
     }

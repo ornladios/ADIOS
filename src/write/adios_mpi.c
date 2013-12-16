@@ -1738,11 +1738,12 @@ void adios_mpi_close (struct adios_file_struct * fd
                 {
                     adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
                                          ,0, md->index);
-                    uint32_t tmp_buffer_size = (uint32_t) buffer_size;
+
+                    uint32_t tmp_buffer_size = (uint32_t) buffer_offset;
                     MPI_Gather (&tmp_buffer_size, 1, MPI_INT, 0, 0, MPI_INT
                                ,0, md->group_comm
                                );
-                    MPI_Gatherv (buffer, buffer_size, MPI_BYTE
+                    MPI_Gatherv (buffer, buffer_offset, MPI_BYTE
                                 ,0, 0, 0, MPI_BYTE
                                 ,0, md->group_comm
                                 );
@@ -2169,12 +2170,12 @@ timeval_subtract (&timing.t8, &b, &a);
                     adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
                                          ,0, md->index);
 
-                    int _buffer_size = buffer_size;
+                    int _buffer_size = buffer_offset;
 
                     MPI_Gather (&_buffer_size, 1, MPI_INT, 0, 0, MPI_INT
                                ,0, md->group_comm
                                );
-                    MPI_Gatherv (buffer, buffer_size, MPI_BYTE
+                    MPI_Gatherv (buffer, buffer_offset, MPI_BYTE
                                 ,0, 0, 0, MPI_BYTE
                                 ,0, md->group_comm
                                 );

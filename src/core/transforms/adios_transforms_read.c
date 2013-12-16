@@ -332,7 +332,7 @@ static int apply_datablock_to_result_and_free(adios_datablock *datablock,
     timer_start ("adios_transform_patch_data");
 #endif
     uint64_t used_count =
-            adios_patch_data(output_ptr, 0, reqgroup->orig_sel,
+            adios_patch_data(output_ptr, (uint64_t)0, reqgroup->orig_sel,
                              datablock->data, datablock->ragged_offset, datablock->bounds,
                              datablock->elem_type, reqgroup->swap_endianness);
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)

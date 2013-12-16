@@ -68,7 +68,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     export NCSU_TIMER_DIR
     if [ "$TARGET" == "pgi" ]; then
         export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith/$TARGET"
-#        export FLEXPATH_DIR="/ccs/proj/e2e/chaos/sith/$TARGET"
+        export FLEXPATH_DIR="/ccs/proj/e2e/chaos/sith/$TARGET"
     elif [ "$TARGET" == "gnu" ]; then
         export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith/$TARGET"
         export FLEXPATH_DIR="/ccs/proj/e2e/chaos/sith/$TARGET"

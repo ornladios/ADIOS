@@ -1796,10 +1796,10 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
                                          ,0, md->index);
 
                     START_TIMER (ADIOS_TIMER_MPI_LUSTRE_COMM);
-                    MPI_Gather (&buffer_size, 1, MPI_INT, 0, 0, MPI_INT
+                    MPI_Gather (&buffer_offset, 1, MPI_INT, 0, 0, MPI_INT
                                ,0, md->group_comm
                                );
-                    MPI_Gatherv (buffer, buffer_size, MPI_BYTE
+                    MPI_Gatherv (buffer, buffer_offset, MPI_BYTE
                                 ,0, 0, 0, MPI_BYTE
                                 ,0, md->group_comm
                                 );
@@ -2048,10 +2048,10 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
                                          ,0, md->index);
 
                     START_TIMER (ADIOS_TIMER_MPI_LUSTRE_COMM);
-                    MPI_Gather (&buffer_size, 1, MPI_INT, 0, 0, MPI_INT
+                    MPI_Gather (&buffer_offset, 1, MPI_INT, 0, 0, MPI_INT
                                ,0, md->group_comm
                                );
-                    MPI_Gatherv (buffer, buffer_size, MPI_BYTE
+                    MPI_Gatherv (buffer, buffer_offset, MPI_BYTE
                                 ,0, 0, 0, MPI_BYTE
                                 ,0, md->group_comm
                                 );

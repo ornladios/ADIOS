@@ -686,17 +686,39 @@ elif [ `hostname -f | cut -c 1-4` == "mira" ]; then
     #####################
     #  MIRA   BlueGene  #
     #####################
-    echo "Configure on Mira (BlueGeneQ)"
+    echo "Configure on Mira (BlueGene/Q)"
+    #export MPICC=mpicc
+    #export MPIFC=mpif90
+    #export CFLAGS=""
+    #export FC=gfortran
+    #export CC=gcc
+    #export FCFLAGS="-funderscoring"
     export MPICC=mpixlc_r
-    export MPIFC=mpixlf90
+    export MPIFC=mpixlf90_r
     export CFLAGS=""
-    export FC=xlf90
+    export FC=xlf90_r
     export CC=xlc_r
 
     ${SRCDIR}/configure --prefix=/home/qliu/4se/ADIOS \
             --enable-dependency-tracking \
             --with-mxml=/home/qliu/mxml \
-            --without-datatap --without-infiniband --without-bgq
+            --without-datatap --without-infiniband --with-bgq
+
+elif [ `hostname -f | cut -c 1-5` == "vesta" ]; then
+    ######################
+    #  VESTA   BlueGene  #
+    ######################
+    echo "Configure on Vesta (BlueGene/Q)"
+    export MPICC=mpixlc_r
+    export MPIFC=mpixlf90
+    export CFLAGS=""
+    export FC=bgxlf90
+    export CC=bgxlc
+
+    ${SRCDIR}/configure --prefix=/home/qliu/ADIOS \
+            --enable-dependency-tracking \
+            --with-mxml=/home/qliu/mxml \
+            --without-datatap --without-infiniband --with-bgq
 
 elif [ `hostname | cut -c 1-4` == "euge" ]; then
     ###################
@@ -962,14 +984,15 @@ elif [ `hostname | cut -c 1-7` == "esimmon" ]; then
     export CXX=g++
     export FC=gfortran
 
-    #export CFLAGS="-g -fPIC" 
-    ${SRCDIR}/configure --prefix=/opt/adios/1.5.0 \
+    #export CFLAGS="-g -O0 -fPIC" 
+    ${SRCDIR}/configure --prefix=/opt/adios/1.6 \
         --enable-dependency-tracking \
         --with-mxml=/opt/mxml \
         --with-hdf5=/opt/hdf5 \
         --with-phdf5=/opt/phdf5 \
         --with-netcdf=/opt/netcdf3 \
         --with-nc4par=/opt/nc4par \
+        --with-zlib=/usr \
         --with-flexpath=/opt/chaos
 
 else

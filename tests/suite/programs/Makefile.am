@@ -25,8 +25,7 @@ check_C=local_array_time \
         adios_transforms_read_write \
         connect_to_space_subset
 
-test_C=hashtest copy_subvolume transforms_specparse adios_transforms_read_write \
-       set_path set_path_var
+test_C=hashtest copy_subvolume transforms_specparse
 
 endif
 
@@ -152,13 +151,13 @@ connect_to_space_subset.o: connect_to_space_subset.c
 #transforms.o: transforms.c
 
 copy_subvolume_SOURCES=copy_subvolume.c
-copy_subvolume_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+copy_subvolume_LDADD = $(top_builddir)/src/libadiosread_nompi.a $(ADIOSLIB_LDADD)
 copy_subvolume_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 copy_subvolume_CPPFLAGS = -I$(top_srcdir)/src
 #copy_subvolume.o: copy_subvolume.c
 
 transforms_specparse_SOURCES=transforms_specparse.c
-transforms_specparse_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+transforms_specparse_LDADD = $(top_builddir)/src/libadios_nompi.a $(ADIOSLIB_LDADD)
 transforms_specparse_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 transforms_specparse_CPPFLAGS = -I$(top_srcdir)/src
 #transforms_specparse.o: transforms_specparse.c
