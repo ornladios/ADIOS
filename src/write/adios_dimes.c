@@ -22,6 +22,7 @@
 #include "core/ds_metadata.h"
 #include "core/adios_logger.h"
 
+#include "dimes_interface.h"
 #include "dataspaces.h"
 
 /*#define DATASPACES_NO_VERSIONING  define it at configure as -DDATASPACES_NO_VERSIONING in CFLAGS */
