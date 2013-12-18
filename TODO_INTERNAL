@@ -10,6 +10,7 @@ Others
 - support hyperslab at writing and maybe reading
 - streaming support a series of file(name)s, not just appending to the same file(name)
 
+- ship and build the MXML library with the ADIOS release
 
 
 
