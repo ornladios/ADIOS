@@ -910,9 +910,13 @@ elif [ `hostname | cut -c 1-7` == "esimmon" ]; then
     export CFLAGS="-g -fPIC"
     export MXML_DIR=/opt/mxml
     export SEQ_HDF5_DIR=/opt/hdf5
+    export SEQ_HDF5_LIBS="-L/opt/hdf5/lib -lhdf5_hl -lhdf5 -lm"
     export PAR_HDF5_DIR=/opt/phdf5
+    export PAR_HDF5_LIBS="-L/opt/phdf5/lib -lhdf5_hl -lhdf5 -lm"
     export SEQ_NC_DIR=/opt/netcdf3
+    export SEQ_NC_LIBS="-L/opt/netcdf3/lib -lnetcdf"
     export PAR_NC_DIR=/opt/nc4par
+    export PAR_NC_LIBS="-L/opt/nc4par/lib -lnetcdf"
 
 else
     echo "Could not determine what machine is this."

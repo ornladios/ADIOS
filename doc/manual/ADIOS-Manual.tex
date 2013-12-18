@@ -72,11 +72,11 @@ morekeywords=[1]{
 adios_errno, err_file_not_found, err_end_of_stream, err_step_notready, err_step_deleted},
 morekeywords=[2]{
 % Write API (XML)
-adios_init, adios_finalize, adios_open, adios_write, adios_read, adios_close, 
-adios_group_size, adios_set_path_var, adios_set_path, 
+adios_init, adios_finalize, adios_open, adios_write, adios_read, adios_close,
+adios_group_size, adios_set_path_var, adios_set_path,
 adios_end_iteration, adios_start_calculation, adios_stop_calculation,
 % Write API (Non-XML)
-adios_init_noxml, adios_declare_group, adios_free_group, adios_define_var, 
+adios_init_noxml, adios_declare_group, adios_free_group, adios_define_var,
 adios_define_attribute, adios_allocate_buffer, adios_select_method,
 adios_get_write_buffer,
 % Read API (1.4)
@@ -87,11 +87,11 @@ adios_inq_var_stat, adios_inq_var_blockinfo,
 adios_get_attr, adios_get_attr_byid,
 adios_schedule_read, adios_schedule_read_byid, adios_perform_reads, adios_check_reads,
 adios_advance_step, adios_release_step,adios_free_chunk,
-adios_selection_boundingbox, adios_selection_points, adios_selection_writeblock, 
+adios_selection_boundingbox, adios_selection_points, adios_selection_writeblock,
 adios_selection_delete, adios_selection_auto, adios_errmsg,
 adios_type_to_string, adios_type_size, adios_get_grouplist,
 % Fortran Read
-adios_reset_dimension_order, adios_inq_ngroups, adios_inq_groupnames, 
+adios_reset_dimension_order, adios_inq_ngroups, adios_inq_groupnames,
 adios_group_view, adios_inq_file, adios_inq_varnames, adios_inq_attrnames,
 adios_inq_attr, adios_get_scalar, adios_get_statistics},
 morecomment=[l]{//},morecomment=[s]{/*}{*/},
@@ -148,6 +148,8 @@ upquote=true,
 \input{xml_format}
 
 \input{transport_methods}
+
+\input{transform_plugins}
 
 \input{adios_read_api}
 

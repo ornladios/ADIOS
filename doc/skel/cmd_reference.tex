@@ -8,36 +8,74 @@ subcommand project
 \begin{description}
   \item[skel install] \hfill \\
 Usage:
-skel install
+
+{\tt skel install}
   \item[skel makefile] \hfill \\
 Generates a Makefile fit for building and deploying the skeletal
 application.
+
 Requires <project>\_skel.xml and <project>\_params.xml
+
 Usage:
-skel makefile <project>
+
+{\tt skel makefile <project>}
   \item[skel params] \hfill \\
 Generates a parameters file that can be customized by the user.
 Note that this command creates a file called <project> params.xml.default
 so as to avoid overwriting a customized parameters file. This means that
 the user should copy this file to <project> params.xml and edit before
 proceeding with code generation.
+
 Requires <project>\_skel.xml
+
 Usage:
-skel params <project>
+
+{\tt skel params <project>}
+  \item[skel replay] \hfill \\
+Generates a C or Fortran code that performs the I/O operations
+described by the given bp file or yaml file.
+
+Usage:
+
+{\tt skel replay <project> -y <yaml\_file>}
+
+{\tt skel replay <project> -b <bp\_file>}
   \item[skel source] \hfill \\
 Generates a C or Fortran code that performs the I/O operations
 described by the XML descriptor and the parameters file.
+
 Requires <project>\_skel.xml and <project>\_params.xml
+
 Usage:
-skel source <project>
+
+{\tt skel source <project>}
   \item[skel submit] \hfill \\
 Generates a submission script for the skeletal application
+
 Requires <project>\_skel.xml and <project>\_params.xml
+
 Usage:
-skel submit <project>
+
+{\tt skel submit <project>}
+
   \item[skel xml] \hfill \\
 Generates the <project>\_skel.xml file.
+
 Requires <project>.xml
+
 Usage:
-skel xml <project>
+
+{\tt skel xml <project>}
+\end{description}
+
+\section{Skel Utilities}
+\begin{description}
+  \item[skeldump (experimental)] \hfill \\
+Extracts necessary metadata from a bp file to create a skeletal application.
+Metadata is produced in yaml format, and is sent to standard out.
+
+Usage:
+
+{\tt skeldump <bpfile> > <yamlfile>}
+
 \end{description}
