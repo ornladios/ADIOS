@@ -195,6 +195,8 @@ ADIOS_FILE * common_read_open (const char * fname,
     internals->read_hooks = adios_read_hooks;
 
     fp = adios_read_hooks[internals->method].adios_open_fn (fname, comm, lock_mode, timeout_sec);
+    if (!fp)
+        return fp;
 
     // create hashtable from the variable names as key and their index as value
     int hashsize = fp->nvars;
@@ -301,6 +303,8 @@ ADIOS_FILE * common_read_open_file (const char * fname,
     internals->read_hooks = adios_read_hooks;
 
     fp = adios_read_hooks[internals->method].adios_open_file_fn (fname, comm);
+    if (!fp)
+        return fp;
     
     // create hashtable from the variable names as key and their index as value
     int hashsize = fp->nvars;

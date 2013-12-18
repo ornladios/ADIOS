@@ -2194,7 +2194,7 @@ ADIOS_FILE * adios_read_bp_staged_open_file (const char * fname, MPI_Comm comm)
     {
         if (bp_open (fname, pvt->new_comm2, fh) < 0)
         {
-            adios_error (err_file_open_error, "File open failed: %s", fname);
+            adios_error (err_file_open_error, "File open failed: %s\n", fname);
             return 0;
         }
     }
@@ -2220,7 +2220,7 @@ ently.
 
     fp->path = strdup (fh->fname);
     fp->endianness = bp_get_endianness (fh->mfooter.change_endianness);
-    fp->version = fh->mfooter.version;
+    fp->version = fh->mfooter.version & ADIOS_VERSION_NUM_MASK;
     fp->file_size = fh->mfooter.file_size;
 
     return fp;
