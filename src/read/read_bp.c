@@ -1268,7 +1268,7 @@ typedef struct {
 
     if (bp_open (fname, comm, fh) < 0)
     {
-        adios_error (err_file_open_error, "File open failed: %s", fname);
+        adios_error (err_file_open_error, "File open failed: %s\n", fname);
         return 0;
     }
 
