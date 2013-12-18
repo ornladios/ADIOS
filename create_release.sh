@@ -63,7 +63,7 @@ tar -cO examples/skel --exclude "\.svn" | tar -x -C adios-$VERSION
 
 echo "Clean staging/coupling examples"
 (cd examples/coupling; make distclean)
-(cd examples/staging/stage_write; make distclean; make -f Makefile.genarray_stream clean)
+(cd examples/staging/stage_write; make distclean)
 
 echo "Add staging/coupling examples"
 tar -cO examples/staging examples/coupling  --exclude "\.svn" | tar -x -C adios-$VERSION
