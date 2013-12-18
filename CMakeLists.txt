@@ -1226,7 +1226,7 @@ FortranCInterface_HEADER(${CMAKE_CURRENT_BINARY_DIR}/FC.h MACRO_NAMESPACE "FC_")
 #FortranCInterface_VERIFY(CXX)
 endif()
 ################################ end of Fortran processing ##############################
-find_library(M_LIBS m)
+find_library(M_LIBS libm.a)
 
 # Generate flags for adios lib creation which depends on the packages we found
 # ADIOSLIB_* for compiling libadios.a and libadiosf.a, and linking codes with those
