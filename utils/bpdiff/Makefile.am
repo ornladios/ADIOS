@@ -14,3 +14,4 @@ bpdiff_LDADD += $(ADIOSREADLIB_LDADD)
 CC=$(MPICC)
 CXX=$(MPICXX)
 
+EXTRA_DIST = decompose.h utils.h

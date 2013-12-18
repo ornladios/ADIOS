@@ -18,4 +18,4 @@ reader_global_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 
 CLEANFILES = *.bp
 CC=$(MPICC)
-EXTRA_DIST = test_config_flex.xml 
+EXTRA_DIST = test_config_flex.xml cfg.h 

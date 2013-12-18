@@ -18,4 +18,4 @@ arrays_read_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 
 CLEANFILES = *.bp
 CC=$(MPICC)
-EXTRA_DIST = arrays.xml 
+EXTRA_DIST = arrays.xml run_tests.pl

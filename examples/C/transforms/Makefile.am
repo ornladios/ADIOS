@@ -41,4 +41,4 @@ adios_read_all_3D_LDADD += $(ADIOSLIB_LDADD)
 
 CLEANFILES = *.bp
 CC=$(MPICC)
-EXTRA_DIST = adios_global.xml gread_temperature.ch gwrite_temperature.ch 
+EXTRA_DIST = adios_global.xml gread_temperature.ch gwrite_temperature.ch S3D

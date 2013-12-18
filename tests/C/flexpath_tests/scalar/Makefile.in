@@ -354,7 +354,7 @@ reader_scalar_SOURCES = reader.c ../common/utils.c
 reader_scalar_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 reader_scalar_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 CLEANFILES = *.bp
-EXTRA_DIST = test_config_flex.xml test_config_mpi.xml
+EXTRA_DIST = test_config_flex.xml test_config_mpi.xml cfg.h readme.txt
 all: all-am
 
 .SUFFIXES:

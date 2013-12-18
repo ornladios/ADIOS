@@ -347,6 +347,7 @@ bpdiff_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS) $(ADIOSREA
 bpdiff_LDFLAGS = $(ADIOSREADLIB_LDFLAGS) 
 bpdiff_LDADD = $(top_builddir)/src/libadiosread.a \
 	$(ADIOSREADLIB_LDADD)
+EXTRA_DIST = decompose.h utils.h
 all: all-am
 
 .SUFFIXES:

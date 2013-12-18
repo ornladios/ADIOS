@@ -17,3 +17,6 @@ reader_global_noxml_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 
 CLEANFILES = *.bp
 CC=$(MPICC)
+
+EXTRA_DIST = cfg.h
+
