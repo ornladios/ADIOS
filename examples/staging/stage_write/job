@@ -2,12 +2,15 @@
 #PBS -A STF006
 #PBS -N genarray
 #PBS -j oe
-#PBS -l walltime=1:00:00,size=20
+#PBS -q debug
+#PBS -l walltime=0:10:00,nodes=3
 ## On the Cray, you need at least 3 nodes for 3 separate application runs
 
 cd $PBS_O_WORKDIR
 
-SERVER=/ccs/proj/e2e/dataspaces/sith/pgi/bin/dataspaces_server
+#RUNCMD="mpirun -np"
+RUNCMD="aprun -n"
+SERVER=./dataspaces_server
 
 WRITEPROC=1
 STAGINGPROC=1
@@ -31,7 +34,7 @@ max_versions = 10
 
 # Run DataSpaces
 echo "-- Start DataSpaces server "$SERVER" on $STAGINGPROC PEs, -s$STAGINGPROC -c$PROCALL"
-mpirun -np $STAGINGPROC $SERVER -s$STAGINGPROC -c$PROCALL &> log.server &
+$RUNCMD $STAGINGPROC $SERVER -s$STAGINGPROC -c$PROCALL &> log.server &
 
 ## Give some time for the servers to load and startup
 sleep 1s
@@ -50,11 +53,11 @@ echo "-- DataSpaces IDs: P2TNID = $P2TNID   P2TPID = $P2TPID"
 
 # Start GENARRAY
 echo "-- Start GENARRAY on $WRITEPROC PEs"
-mpirun -np $WRITEPROC ./genarray_stream genarray.bp $WRITEPROC 1 1 16 32 64 5 10 >& log.genarray &
+$RUNCMD $WRITEPROC ./genarray_stream genarray.bp $WRITEPROC 1 1 16 32 64 5 10 >& log.genarray &
 
 # Start STAGE_WRITE
 echo "-- Start STAGE_WRITE on $READPROC PEs"
-mpirun -np $READPROC ./stage_write genarray.bp staged.bp DATASPACES \"\" MPI \"\" $READPROC 1 1 >& log.stage_write &
+$RUNCMD $READPROC ./stage_write genarray.bp staged.bp DATASPACES \"\" MPI \"\" $READPROC 1 1 >& log.stage_write &
 
 echo "-- Wait until all applications exit. Run ./check.sh to see status"
 wait
