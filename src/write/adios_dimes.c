@@ -37,7 +37,7 @@ struct adios_dimes_file_info
 {
     char *name;
     int time_index;
-}
+};
 
 struct adios_dimes_data_struct
 {
