@@ -26,7 +26,7 @@ cp $SRCDIR/programs/write_read.xml .
 add_transform_to_xmls
 
 echo "Run write_read"
-$MPIRUN $NP_MPIRUN $PROCS ./write_read
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./write_read
 EX=$?
 if [ ! -f write_read_1.bp ]; then
     echo "ERROR: write_read failed at creating the 1st BP file, write_read_1.bp. Exit code=$EX"

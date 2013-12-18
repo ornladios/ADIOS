@@ -31,7 +31,7 @@ cp $SRCDIR/programs/posix_method.xml .
 add_transform_to_xmls
 
 echo "Run posix_method"
-$MPIRUN $NP_MPIRUN $PROCS ./posix_method
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./posix_method
 EX=$?
 if [ $EX != 0 ]; then
     echo "ERROR: posix method failed with exit code=$EX"

@@ -30,9 +30,9 @@ for ((m=1; m <= 2 ; m++))
 do
     echo "Run C adios_amr_write_2vars"
     ls -l ./adios_amr_write_2vars
-    echo $MPIRUN $NP_MPIRUN $PROCS ./adios_amr_write_2vars $m
+    echo $MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./adios_amr_write_2vars $m
     rm -f *.bp
-    $MPIRUN $NP_MPIRUN $PROCS ./adios_amr_write_2vars $m
+    $MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./adios_amr_write_2vars $m
     EX=$?
     ls -l ./adios_amr_write_2vars.bp
     if [ ! -f adios_amr_write_2vars.bp ]; then
@@ -46,8 +46,8 @@ do
     export chunk_size=64
     for ((n=1; n <= 5 ; n++))
     do
-        echo $MPIRUN $NP_MPIRUN $READPROCS ./adios_staged_read_2vars $n
-        $MPIRUN $NP_MPIRUN $READPROCS ./adios_staged_read_2vars $n| grep -v aggregator | grep [0-9] > 09_amr_write_read_$n.txt
+        echo $MPIRUN $NP_MPIRUN $READPROCS $EXEOPT ./adios_staged_read_2vars $n
+        $MPIRUN $NP_MPIRUN $READPROCS $EXEOPT ./adios_staged_read_2vars $n| grep -v aggregator | grep [0-9] > 09_amr_write_read_$n.txt
         EX=$?
        echo "Check output with reference"
        diff -q 09_amr_write_read_$n.txt $SRCDIR/reference/amr_write_read_2vars_$n.txt

@@ -29,6 +29,8 @@ function add_transform_to_xmls() {
 # Make this function accessible to child processes (i.e., the actual tests)
 export -f add_transform_to_xmls    
 
+EXEOPT=""
+
 function Usage() {
     echo "
 Usage:  <path>/`basename $0` [-m runcmd] [-n "-np"] [-p procs] [-h] [-k]
@@ -47,6 +49,8 @@ Usage:  <path>/`basename $0` [-m runcmd] [-n "-np"] [-p procs] [-h] [-k]
                 Default: $MAXPROCS
      -k         Do not remove logs and work dir of successful tests.
      -t xform   Run tests with transform 'xform' applied to all non-scalar variables
+     -e exeopt  option to runcmd to specify executable. Default: empty. 
+                BG/Q interactive jobs requires '--exe' before an executable.
      -h         Print this help.
 "
 }
@@ -56,7 +60,7 @@ Usage:  <path>/`basename $0` [-m runcmd] [-n "-np"] [-p procs] [-h] [-k]
 #####################
     
 # process option arguments
-while getopts ":m:n:p:t:kh" Option
+while getopts ":m:n:p:t:e:kh" Option
 do  
   case $Option in
         m) MPIRUN=$OPTARG;;
@@ -64,6 +68,7 @@ do
         p) MAXPROCS=$OPTARG;;
         k) KEEPOUTPUT=yes;;
         t) TRANSFORM=$OPTARG;;
+        e) EXEOPT=$OPTARG;;
         h) Usage; exit 0;;
         *) echo "Invalid option $Option"; Usage; exit 255;;   # DEFAULT
   esac
@@ -98,7 +103,7 @@ echo "  Run command:            $MPIRUN"
 echo "  Run command np option:  $NP_MPIRUN"
 echo "  Max. processes to use:  $MAXPROCS"
 echo "  Keep test output:       $KEEPOUTPUT"
-
+echo "  Execute option:         $EXEOPT"
 
 # find and list tests to be executed
 TESTS=
@@ -147,6 +152,7 @@ for TESTSCRIPT in $TESTS; do
     MPIRUN="$MPIRUN" NP_MPIRUN="$NP_MPIRUN" HAVE_FORTRAN="$HAVE_FORTRAN" SRCDIR="$TESTSRCDIR" \
         TRUNKDIR="$TRUNKDIR" MAXPROCS="$MAXPROCS" \
         TRANSFORM="$TRANSFORM" \
+        EXEOPT="$EXEOPT" \
         $TESTSCRIPT &> ../log.$TEST
     EX=$?
     popd >/dev/null

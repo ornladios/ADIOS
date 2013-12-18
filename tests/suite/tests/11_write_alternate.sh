@@ -27,7 +27,7 @@ cp $SRCDIR/programs/write_alternate.xml .
 add_transform_to_xmls
 
 echo "Run write_alternate"
-$MPIRUN $NP_MPIRUN $PROCS ./write_alternate
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./write_alternate
 EX=$?
 if [ ! -f write_alternate.bp ]; then
     echo "ERROR: write_alternate failed at creating the BP file, write_alternate.bp. Exit code=$EX"
