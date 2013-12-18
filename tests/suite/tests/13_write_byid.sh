@@ -25,8 +25,8 @@ cp $TRUNKDIR/examples/C/global-array/read_no_xml_write_byid .
 
 echo "Run C no_xml_write_byid"
 ls -l ./no_xml_write_byid
-echo $MPIRUN $NP_MPIRUN $PROCS ./no_xml_write_byid
-$MPIRUN $NP_MPIRUN $PROCS ./no_xml_write_byid
+echo $MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./no_xml_write_byid
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./no_xml_write_byid
 EX=$?
 if [ ! -f no_xml_write_byid.bp ]; then
     echo "ERROR: C version of no_xml_write_byid failed. No BP file is created. Exit code=$EX"
@@ -43,7 +43,7 @@ if [ $? != 0 ]; then
 fi
 
 echo "Run C read_no_xml_write_byid"
-$MPIRUN $NP_MPIRUN $READPROCS ./read_no_xml_write_byid > c_read.txt
+$MPIRUN $NP_MPIRUN $READPROCS $EXEOPT ./read_no_xml_write_byid > c_read.txt
 EX=$?
 if [ $? != 0 ]; then
     echo "ERROR: C version of read_no_xml_write_byid exited with $EX"
@@ -69,7 +69,7 @@ mv no_xml_write_byid.bp no_xml_write_byid_c.bp
 cp $TRUNKDIR/examples/Fortran/global-array/no_xml_write_byid no_xml_write_byid_f
 
 echo "Run Fortran no_xml_write_byid"
-$MPIRUN $NP_MPIRUN $PROCS ./no_xml_write_byid_f
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./no_xml_write_byid_f
 EX=$?
 if [ ! -f no_xml_write_byid.bp ]; then
     echo "ERROR: Fortran version of no_xml_write_byid failed. No BP file is created. Exit code=$EX"

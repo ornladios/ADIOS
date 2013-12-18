@@ -22,7 +22,7 @@ fi
 cp $SRCDIR/programs/selections .
 
 echo "Run selections"
-$MPIRUN $NP_MPIRUN $PROCS ./selections
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./selections
 EX=$?
 if [ ! -f selections.bp ]; then
     echo "ERROR: selections failed at creating the BP file, selections.bp. Exit code=$EX"

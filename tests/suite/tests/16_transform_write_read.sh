@@ -20,7 +20,7 @@ cp ${SRCDIR}/programs/${PROGRAM_NAME} .
 cp ${SRCDIR}/programs/adios_transforms.xml .
 
 echo "Run C ${PROGRAM_NAME}"
-$MPIRUN $NP_MPIRUN $PROCS ./${PROGRAM_NAME}
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./${PROGRAM_NAME}
  
 EX=$?
 if [ ! -f ${OUTPUT_FILENAME} ]; then

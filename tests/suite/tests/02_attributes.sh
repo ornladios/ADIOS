@@ -28,7 +28,7 @@ cp $TRUNKDIR/examples/C/attributes/attributes.xml .
 add_transform_to_xmls
 
 echo "Run C attributes_write"
-$MPIRUN $NP_MPIRUN $PROCS ./attributes_write
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./attributes_write
 EX=$?
 if [ ! -f attributes.bp ]; then
     echo "ERROR: C version of attributes_write failed. No BP file is created. Exit code=$EX"
@@ -45,7 +45,7 @@ if [ $? != 0 ]; then
 fi
 
 echo "Run C attributes_read"
-$MPIRUN $NP_MPIRUN $READPROCS ./attributes_read | sort > c_read.txt
+$MPIRUN $NP_MPIRUN $READPROCS $EXEOPT ./attributes_read | sort > c_read.txt
 EX=$?
 if [ $? != 0 ]; then
     echo "ERROR: C version of attributes_read failed with exit code $EX"

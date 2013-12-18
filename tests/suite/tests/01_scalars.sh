@@ -10,6 +10,7 @@
 # HAVE_FORTRAN  yes or no
 # SRCDIR        Test source dir (.. of this script)
 # TRUNKDIR      ADIOS trunk dir
+# EXEOPT        Run command's option to set executable
 
 PROCS=3
 
@@ -27,8 +28,8 @@ cp $TRUNKDIR/examples/C/scalars/scalars.xml .
 add_transform_to_xmls
 
 echo "Run C scalars_write"
-echo $MPIRUN $NP_MPIRUN $PROCS ./scalars_write
-$MPIRUN $NP_MPIRUN $PROCS ./scalars_write
+echo $MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./scalars_write
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./scalars_write
 EX=$?
 if [ ! -f scalars.bp ]; then
     echo "ERROR: C version of scalars_write failed. No BP file is created. Exit code=$EX"
@@ -45,7 +46,7 @@ if [ $? != 0 ]; then
 fi
 
 echo "Run C scalars_read"
-$MPIRUN $NP_MPIRUN $PROCS ./scalars_read > c_read.txt
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./scalars_read > c_read.txt
 EX=$?
 if [ $? != 0 ]; then
     echo "ERROR: C version of scalars_read failed with exit code $EX"
@@ -74,7 +75,7 @@ cp $TRUNKDIR/examples/Fortran/scalars/scalars.xml .
 add_transform_to_xmls
 
 echo "Run Fortran scalar_write"
-$MPIRUN $NP_MPIRUN $PROCS ./fortran_write
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./fortran_write
 EX=$?
 if [ ! -f scalars.bp ]; then
     echo "ERROR: Fortran version of scalars_write failed. No BP file is created. Exit code=$EX"
@@ -91,7 +92,7 @@ if [ $? != 0 ]; then
 fi
 
 echo "Run Fortran scalars_read"
-$MPIRUN $NP_MPIRUN $PROCS ./fortran_read > f_read.txt
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./fortran_read > f_read.txt
 EX=$?
 if [ $? != 0 ]; then
     echo "ERROR: Fortran version of scalars_read failed with exit code $EX"

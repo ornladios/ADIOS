@@ -26,7 +26,7 @@ cp $SRCDIR/programs/path_test.xml .
 add_transform_to_xmls
 
 echo "Run path_test"
-$MPIRUN $NP_MPIRUN $PROCS ./path_test
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./path_test
 EX=$?
 if [ ! -f path_test_1.bp ]; then
     echo "ERROR: path_test failed at creating the BP file, path_test_1.bp. Exit code=$EX"

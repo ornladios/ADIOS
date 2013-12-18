@@ -22,7 +22,7 @@ fi
 cp $SRCDIR/programs/reuse_dim .
 
 echo "Run reuse_dim"
-$MPIRUN $NP_MPIRUN $PROCS ./reuse_dim
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./reuse_dim
 EX=$?
 if [ ! -f reuse_dim.bp ]; then
     echo "ERROR: reuse_dim failed at creating the BP file, reuse_dim.bp. Exit code=$EX"
