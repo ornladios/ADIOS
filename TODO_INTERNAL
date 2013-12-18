@@ -1,0 +1,17 @@
+
+USER REQUESTS
+=============
+Seismic (Jeroen Tromp), ASDF data format
+- support for 100k and more variables and attributes in one file
+- unicode string variable to store XML documents in the file
+
+Others
+- support C/C++ structures (without following pointers) as generic data types
+- support hyperslab at writing and maybe reading
+- streaming support a series of file(name)s, not just appending to the same file(name)
+
+
+
+
+
+
