@@ -2220,7 +2220,7 @@ ently.
 
     fp->path = strdup (fh->fname);
     fp->endianness = bp_get_endianness (fh->mfooter.change_endianness);
-    fp->version = fh->mfooter.version;
+    fp->version = fh->mfooter.version & ADIOS_VERSION_NUM_MASK;
     fp->file_size = fh->mfooter.file_size;
 
     return fp;

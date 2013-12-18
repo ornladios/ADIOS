@@ -332,7 +332,7 @@ void build_ADIOS_FILE_struct (ADIOS_FILE * fp, BP_FILE * fh)
 
     fp->fh = (uint64_t) p;
     fp->file_size = fh->mfooter.file_size;
-    fp->version = fh->mfooter.version;
+    fp->version = fh->mfooter.version & ADIOS_VERSION_NUM_MASK;
     fp->endianness = bp_get_endianness (fh->mfooter.change_endianness);
     fp->last_step = fh->tidx_stop - 1;
 
@@ -1172,7 +1172,7 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
 
     fp->fh = (uint64_t) p;
     fp->file_size = fh->mfooter.file_size;
-    fp->version = fh->mfooter.version;
+    fp->version = fh->mfooter.version & ADIOS_VERSION_NUM_MASK;
     fp->path = strdup (fh->fname);
     fp->endianness = bp_get_endianness (fh->mfooter.change_endianness);
 
@@ -1292,7 +1292,7 @@ typedef struct {
 
     fp->path = strdup (fh->fname);
     fp->endianness = bp_get_endianness (fh->mfooter.change_endianness);
-    fp->version = fh->mfooter.version;
+    fp->version = fh->mfooter.version & ADIOS_VERSION_NUM_MASK;
     fp->file_size = fh->mfooter.file_size;
 
     return fp;
