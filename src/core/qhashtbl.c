@@ -185,7 +185,7 @@ qhashtbl_t *qhashtbl(int range)
 static void genkey(const char *path, const char *name, int *keylen, char **key)
 {
     // create key
-    if (!strcmp (path, "")) {
+    if (!path || !strcmp (path, "")) {
         *keylen = strlen (name);
         *key = malloc (*keylen+1);
         sprintf (*key, "%s", name);
