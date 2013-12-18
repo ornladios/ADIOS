@@ -72,7 +72,7 @@ typedef struct {   //type returned by adios_inq_mesh for read method
         MESH_RECTILINEAR * rectilinear;
         MESH_STRUCTURED * structured;
         MESH_UNSTRUCTURED * unstructured;
-    } ;
+    };
 } ADIOS_MESH;
 
 #endif
