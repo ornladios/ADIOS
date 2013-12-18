@@ -84,17 +84,17 @@ else
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
-    if test "x${ac_infiniband_lib_ok}" == "xyes"; then 
-        dnl LIBS="$LIBS -ldart -ldataspaces"
-        LIBS="$LIBS -ldspaces -ldscommon -ldart"
-    elif test "x${ac_portals_lib_ok}" == "xyes"; then 
-        LIBS="$LIBS -ldart2 -lspaces"
-    elif test "x${ac_dmcf_lib_ok}" == "xyes"; then
-        LIBS="$LIBS -ldspaces -ldscommon -ldart"
-    else
-        LIBS="$LIBS -ldspaces -ldscommon -ldart"
-    fi
-    dnl LIBS="$LIBS -ldspaces -ldscommon -ldart"
+    dnl if test "x${ac_infiniband_lib_ok}" == "xyes"; then 
+    dnl     dnl LIBS="$LIBS -ldart -ldataspaces"
+    dnl     LIBS="$LIBS -ldspaces -ldscommon -ldart"
+    dnl elif test "x${ac_portals_lib_ok}" == "xyes"; then 
+    dnl     LIBS="$LIBS -ldart2 -lspaces"
+    dnl elif test "x${ac_dmcf_lib_ok}" == "xyes"; then
+    dnl     LIBS="$LIBS -ldspaces -ldscommon -ldart"
+    dnl else
+    dnl     LIBS="$LIBS -ldspaces -ldscommon -ldart"
+    dnl fi
+    LIBS="$LIBS -ldspaces -ldscommon -ldart"
     LDFLAGS="$LDFLAGS $DATASPACES_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $DATASPACES_CPPFLAGS"
     
@@ -109,7 +109,7 @@ else
         if test "x${ac_portals_lib_ok}" == "xyes"; then 
             AC_TRY_COMPILE([#include "dataspaces.h"],
                     [int err; err = dspaces_init(1,1);],
-                    [DATASPACES_LIBS="-ldart2 -lspaces"],
+                    [DATASPACES_LIBS="-ldspaces -ldscommon -ldart"],
                     [AM_CONDITIONAL(HAVE_DATASPACES,false)])
         elif test "x${ac_infiniband_lib_ok}" == "xyes"; then 
             AC_TRY_COMPILE([#include "dataspaces.h"],
