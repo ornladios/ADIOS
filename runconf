@@ -886,7 +886,7 @@ elif [ `hostname | cut -c 1-6` == "kraken" ]; then
         --enable-dependency-tracking \
         --with-portals=yes \
         --without-netcdf --without-nc4par --without-hdf5 --without-phdf5 \
-        --with-dataspaces=${HOME}/dataspaces/1.0.0/$TARGET
+        --with-dataspaces=${HOME}/dataspaces/1.3.0/$TARGET
 
 
 elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; then
