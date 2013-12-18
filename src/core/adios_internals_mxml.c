@@ -2459,6 +2459,7 @@ int adios_common_select_method_by_group_id (int priority, const char * method
     new_method->priority = priority;
     new_method->method_data = 0;
     new_method->group = 0;
+    new_method->init_comm = init_comm;
 
     if (adios_parse_method (method, &new_method->m, &requires_group_comm))
     {
