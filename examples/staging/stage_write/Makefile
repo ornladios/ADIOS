@@ -15,4 +15,8 @@ clean:
 	make -f Makefile.genarray_stream clean
 	rm -f staging.o[0-9]*
 
+distclean: 
+	make -f Makefile.stage_write distclean
+	make -f Makefile.genarray_stream distclean
+	rm -f staging.o[0-9]*
 
