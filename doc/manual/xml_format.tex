@@ -13,20 +13,20 @@ debug the errors in the file.
 Abstracting metadata, data type, and dimensions from the source code into an XML 
 file gives users more flexibility to annotate the arrays or variables and centralizes 
 the description of all the data structures, which in return, allows I/O componentization 
-for different implementation of transport methods. By cataloguing the data types 
+for different implementation of transport methods. By cataloging the data types 
 externally, we have an additional documentation source as well as a way to easily 
 validate the write calls compared with the read calls without having to decipher 
 the data reorganization or selection code that may be interspersed with the write 
 calls. It is useful that the XML name attributes are just strings. The only restrictions 
 for their content are that if the item is to be used in a dataset dimension, it 
 must not contain commas and must contain at least one non-numeric character. This 
-is useful for incorporating expressions as various array dimensions elements. Listing~\ref{list-xml-conf-example} llustrates the corresponding XML configuration for the example we demonstrated 
-in Figure 1. 
+is useful for incorporating expressions as various array dimensions elements. 
 
-At a minimum, a configuration document must declare an adios-config element. It 
+At a minimum, a configuration document must declare an \verb+adios-config+ element. It 
 serves as a container for other elements; as such, it MUST be used as the root 
-element. The expected children in any order would be adios-group, method, and buffer. 
-The main elements of the xml file format are of the format 
+element. The expected children in any order would be of \verb+adios-group+, 
+\verb+method+, or \verb+buffer+. The main elements of the xml file format are of the format 
+Listing~\ref{list-xml-conf-example} illustrates the main elements of an ADIOS XML configuration file. 
 
 \begin{lstlisting}
 <element-name attr1=value1 attr2=value2 ...>
@@ -77,35 +77,37 @@ times as is needed.
 
 The following example illustrates how to declare an adios group inside an XML file. 
 First we start with adios-group as our tag name, which is case insensitive. It 
-has an indispensable attribute called ``name,'' whose value is usually defined 
+has an indispensable attribute called \verb+name+ whose value is usually defined 
 as a descriptive string indicating the function of the group. In this case, the 
 string is called ``restart,'' because the files into which this group is written 
 are used as checkpoints. The second attribute ``host-language'' indicates the language 
-in which this group's I/O operations are written. The value of attribute ``coordination-communicator'' 
-is used to coordinate the operations on a shared file accessed by multiple processes 
-in the same communicator domain. ``Coordination-var'' provides the ability to use 
-the user-defined variable, for example mype, rather than an MPI communicator for 
-file coordination. 
+in which this group's I/O operations are written. 
+%The value of attribute ``coordination-communicator'' 
+%is used to coordinate the operations on a shared file accessed by multiple processes 
+%in the same communicator domain. ``Coordination-var'' provides the ability to use 
+%the user-defined variable, for example mype, rather than an MPI communicator for 
+%file coordination. 
 
 \begin{lstlisting}[language=XML]
 <adios-group name="restart"
              host-language="C"
-             coordination-communicator="comm"
-             coordination-var="mype"
-             time-index="iter"/>
 \end{lstlisting}
+%             coordination-communicator="comm"
+%             coordination-var="mype"
+%             time-index="iter"/>
 
 Required:
 \begin{itemize}
-\item name---containing a descriptive string to name the group
+
+\item host-language---language in which the source code for group is written
 \end{itemize}
 
 Optional:
 \begin{itemize}
-\item host-language---language in which the source code for group is written
-\item coordination-communicator---MPI-IO writing to a shared file
-\item coordination-var---coordination variables for non-MPI methods, such as Datatap method
-\item time-index---time attribute variable
+\item name---containing a descriptive string to name the group
+%\item coordination-communicator---MPI-IO writing to a shared file
+%\item coordination-var---coordination variables for non-MPI methods, such as Datatap method
+%\item time-index---time attribute variable
 \end{itemize}
 
 \subsection{Variables}
@@ -131,6 +133,7 @@ The attributes associated with var element  as follows:
 Required:
 \begin{itemize}
 \item name - the string name of variable stored in the output file
+This can be arbitrary string, and full paths containing \verb+\+ characters
 \item type - the data type of the variable
 \end{itemize}
 
@@ -146,8 +149,8 @@ Fortran/C expressions can be used.
 \item gread - the value will be used in the python scripts to generate adios\_read routines' 
 the default value is the value of the attribute \textit{name} if  gread is not 
 defined.
-\item path - HDF-5-style path for the element or path to the HDF-5 group or data item 
-to which this attribute is attached.  The default value is ``/''.
+\item path - Obsolete. HDF-5-style path for the variable.  Since \verb+name+ may contain the path, 
+there is no need to use this attribute anymore.
 \item dimensions - a comma-separated list of numbers and/or names that correspond to 
 integer var elements determine the size of this item. If not specified, the variable 
 is scalar.
@@ -256,12 +259,14 @@ variables that have undetermined dimensional value on the time axis. ADIOS is Si
 to NetCDF in that it accumulates the time-index in terms of the number of records, 
 which theoretically can be added to infinity.
 
-If any of variables in an adios group are time based, they can be marked out by 
-adding the time-index variable as another dimension value. Note, that with the new
-read API, time is not represented as an extra dimension at reading. If you write a
-2D variable over multiple steps, you will see it still as a 2D variable, which has
-multiple steps. Nevertheless, multiple, consecutive steps can be read at once into
-a contigous memory with one read request, if needed.
+Since version 1.6, there is no need to do anything, just append to the same file at subsequent writes. At reading, all output steps will be accessible for reading.
+
+%If any of variables in an adios group are time based, they can be marked out by 
+%adding the time-index variable as another dimension value. Note, that with the new
+%read API, time is not represented as an extra dimension at reading. If you write a
+%2D variable over multiple steps, you will see it still as a 2D variable, which has
+%multiple steps. Nevertheless, multiple, consecutive steps can be read at once into
+%a contigous memory with one read request, if needed.
 
 
 \section{Transport method} 
@@ -287,9 +292,9 @@ There are two major attributes required for the method element:
 <transport group="restart"
     method="MPI"
     priority="1" 
-    base-path="/proj/proj034/simdata/run256" 
     iteration="100"/>
 \end{lstlisting}
+%    base-path="/proj/proj034/simdata/run256" 
 
 Required:
 \begin{itemize}
@@ -301,7 +306,7 @@ Optional:
 \begin{itemize}
 \item priority - a numeric priority for the I/O method to better schedule this write with 
 others that may be pending currently
-\item base-path - the root directory to use when writing to disk or similar purposes
+%\item base-path - the root directory to use when writing to disk or similar purposes
 \item iterations - a number of iterations between writes of this group used to gauge how 
 quickly this data should be evacuated from the compute node
 \end{itemize}

@@ -1098,20 +1098,21 @@ end subroutine
 
 \end{lstlisting}
 
+%
+%  Schema reading
+%
 \section{Read Schema API description}
-Please consult the \verb+adios_schema.h+ and \verb+adios_read_v2.h+ for the data structures and functions discussed here. In the source code, do not include this header \verb+adios_read_v2.h+ directly, but \verb+adios_read.h+. The sequence of reading in a mesh from the BP file is
+Please consult the \verb+adios_schema.h+ and \verb+adios_read_v2.h+ for the data structures and functions discussed here. In the source code, do not include these header files directly, but include \verb+adios_read.h+. The sequence of reading in a mesh from the BP file is
 
 \begin{itemize}
 \renewcommand{\labelitemi}{$-$}
 \item initialize the reading method (once per program run)
 
-\item open file/stream
+\item open file/stream  -- this also provides the name of meshes defined in the file
 
-\item inquiry the mesh by meshid to get related mesh structure information
+\item inquiry a mesh by meshid to get related mesh structure information
 
 \item free meshinfo data structure
-
-\item close group
 
 \item close file
 
@@ -1120,7 +1121,7 @@ Please consult the \verb+adios_schema.h+ and \verb+adios_read_v2.h+ for the data
 
 \subsection{adios\_inq\_mesh\_byid}
 
-\noindent Inquires about a mesh. This function does not read any anything from the file but processes info already in memory after fopen. It allocates memory for the ADIOS\_MESH struct and content, so you need to free resources later with adios\_free\_meshinfo().
+\noindent Inquires about a mesh. This function does not read anything from the file but processes info already in memory after fopen. It allocates memory for the ADIOS\_MESH struct and content, so you need to free resources later with adios\_free\_meshinfo().
 
 \begin{itemize}
 \item{\bf fp} Pointer to an (opened) ADIOS\_FILE struct.
@@ -1128,7 +1129,7 @@ Please consult the \verb+adios_schema.h+ and \verb+adios_read_v2.h+ for the data
 in fp->mesh\_namelist of ADIOS\_FILE struct
 \end{itemize}
 
-\noindent The function returns a pointer to an ADIOS\_MESHINFO struct or NULL.
+\noindent The function returns a pointer to an ADIOS\_MESHINFO struct or NULL on error. 
 
 \begin{lstlisting}
 ADIOS_MESH * adios_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
@@ -1148,6 +1149,19 @@ ADIOS_MESH * adios_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
 void adios_free_meshinfo (ADIOS_MESH *meshinfo)
 \end{lstlisting}
 
+\subsection{adios\_inq\_var\_meshinfo}
+
+\noindent Get the mesh for a given variable. One must call \verb+adios_inq_var()+ first to have the \verb+ADIOS_VARINFO+ struct. This call will fill out the \verb+struct ADIOS_VARMESH *meshinfo+ struct in that struct.
+This simple struct contains the mesh id, and a flag indicating if the centering of the data on the mesh (node centered or cell centered).
+
+\noindent The function returns 0 on success, and and non-zero on error.
+
+\begin{lstlisting}
+int adios_inq_var_meshinfo (ADIOS_FILE *fp, ADIOS_VARINFO * varinfo);
+\end{lstlisting}
+%
+%
+%
 \section{Compiling and linking applications}
 
 You are encouraged to use the utility \verb+adios_config+ to get the compile and link options for your 

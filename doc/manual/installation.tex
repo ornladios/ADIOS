@@ -43,9 +43,9 @@ export CFLAGS="-fPIC"
 
 ./configure --prefix = <location for ADIOS software installation>
             --with-mxml=<location of mini-xml installation>
-            --with-hdf5=<location of HDF5 installation>
-            --with-netcdf=<location of netCDF installation>
 \end{lstlisting}
+%            --with-hdf5=<location of HDF5 installation>
+%            --with-netcdf=<location of netCDF installation>
 
 
 The compiler pointed by MPICC is used to build all the parallel codes and tools
@@ -69,9 +69,9 @@ export CXX=CC
 export FC=ftn
 ./configure --prefix = <location for ADIOS software installation>
             --with-mxml=<location of mini-xml installation>
-            --with-hdf5=<location of HDF5 installation>
-            --with-netcdf=<location of netCDF installation>
 \end{lstlisting}
+%            --with-hdf5=<location of HDF5 installation>
+%            --with-netcdf=<location of netCDF installation>
 
 \subsection{Quick installation with CMake}
 
@@ -116,10 +116,10 @@ export CC=cc
 export CXX=CC
 export FC=ftn
 export MXML_DIR=<location of mini-xml installation>
-export SEQ_HDF5_DIR=<location of HDF5 installation>
-export SEQ_NC_DIR=<location of NETCDF installation>
 cmake <ADIOS_SOURCEDIR>
 \end{lstlisting}
+%export SEQ_HDF5_DIR=<location of HDF5 installation>
+%export SEQ_NC_DIR=<location of NETCDF installation>
 
 
 \subsubsection{Linux cluster}
@@ -577,8 +577,7 @@ If you want to write a C/C++ parallel code using MPI, but also want to provide i
 sequential tool on a login-node without modifying the source code, then write your
 application as MPI, do not include \verb+mpi.h+ but include
 \verb+adios.h+ or \verb+adios_read.h+.
-for the sequential build.
-\verb+adios.h+/\verb+adios_read.h+ include the appropriate header file
+They include the appropriate header file
 \verb+mpi.h+ or \verb+mpidummy.h+
 (the latter provided by ADIOS) depending on which version you want to build.
 

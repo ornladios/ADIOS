@@ -83,18 +83,7 @@ Linux clusters and Mac OSX.
 %
 %
 \section {What's new in version 1.6}
-Some small changes to the API have been made in this version that may require you to change your application using older ADIOS versions:
-\begin{itemize}
-\item Variables are identified by full path at writing (and reading), as they are defined. Omission of the path part and referring to the name only in function calls now will result in an error.
-\item The leading / in variable paths at reading is not enforced by the READ API, i.e., if you write "nx", you must read "nx" and if you write "/nx", you must read "/nx". Before, these two paths were handled identical.
-\item Fix: all functions with an integer return value now return 0 on success and !=0 on error.
-\end{itemize}
-
-Basically, the user-friendly lax name matching is replaced by strict full-path matching. In return, ADIOS can handle tens of thousands of variables in a dataset much faster than before.
-
-\vspace{10pt}
-
-\noindent The big news in version 1.6 is the introduction
+The novelty in version 1.6 is the introduction
 of on-the-fly {\bf data transformations} on variables during file-based I/O.
 Currently, several standard lossless compression methods are supported (zlib, bzip, and szip),
 and a plugin framework is in place to enable more transform services to be added in the future.
@@ -112,7 +101,18 @@ on installing these libraries with ADIOS.
 
 \vspace{10pt}
 
-\noindent In other news, the C version of the READ API is extended with functions to get information about the {\bf visualization schema} stored in the dataset. The file structure returned by \verb+adios_open()+ contains the name list of meshes defined in the dataset. \verb+adios_inq_mesh_byid()+ returns a structure describing a mesh, and \verb+adios_inq_var_meshinfo()+ tells on which mesh should one visualize a given variable.
+\noindent Some small changes to the API have been made in this version that may require you to change your application using older ADIOS versions:
+\begin{itemize}
+\item Variables are identified by full path at writing (and reading), as they are defined. Omission of the path part and referring to the name only in function calls now will result in an error.
+\item The leading / in variable paths at reading is not enforced by the READ API, i.e., if you write "nx", you must read "nx" and if you write "/nx", you must read "/nx". Before, these two paths were handled identical.
+\item Fix: all functions with an integer return value now return 0 on success and !=0 on error.
+\end{itemize}
+
+Basically, the user-friendly lax name matching is replaced by strict full-path matching. In return, ADIOS can handle tens of thousands of variables in a dataset much faster than before.
+
+\vspace{10pt}
+
+\noindent Moreover, the C version of the READ API is extended with functions to get information about the {\bf visualization schema} stored in the dataset. The file structure returned by \verb+adios_open()+ contains the name list of meshes defined in the dataset. \verb+adios_inq_mesh_byid()+ returns a structure describing a mesh, and \verb+adios_inq_var_meshinfo()+ tells on which mesh should one visualize a given variable.
 
 \vspace{10pt}
 

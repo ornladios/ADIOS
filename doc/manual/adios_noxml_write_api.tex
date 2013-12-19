@@ -128,7 +128,8 @@ call adios_declare_group (m_adios_group, "restart", "iter", 1, ierr)
 
 \subsection{adios\_define\_var}
 
-This API is used to declare an ADIOS variable for a particular group. 
+This API is used to declare an ADIOS variable for a particular group. In previous versions, the \verb+name+ was used to denote the base name part of a full path. It could be used in the past to identify the variable in the function calls. Therefore, a separate \verb+path+ argument is provided to define the path for the variable. Since version 1.6, write and read calls must match the full path (\verb+<path>/<name>+) so it's easier to pass the full path in the \verb+name+ argument and leave the \verb+path+ argument empty or NULL. Nevertheless, the old way of doing this is still supported.  
+
 \begin{lstlisting}[alsolanguage=C,caption={},label={}]
 int64_t adios_define_var (int64_t group_id, 
                           const char * name,
@@ -144,9 +145,9 @@ Input:
 \item group\_id - pointer to the internal group structure (returned by adios\_declare\_group 
 call)
 
-\item name - string containing the annotation name of a variable
+\item name - string containing the name part of a variable (can be the full path)
 
-\item path - string containing the path of an variable 
+\item path - string containing the path of an variable (deprecated)
 
 \item type - variable type (e.g., adios\_integer or adios\_double) 
 
