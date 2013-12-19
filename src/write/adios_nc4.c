@@ -1595,6 +1595,10 @@ void adios_nc4_close(
         }
     } else if (fd->mode == adios_mode_write || fd->mode == adios_mode_append) {
         if (DEBUG>3) fprintf(stderr, "entering nc4 write attribute mode!\n");
+        // FIXME: temporarily removed attributes writing and right now,
+        // we don't support writing attrs in PHDF5/NC4 methods. 
+     
+/*
         while(a) {
             if (strcmp(a->path, "/__adios__")) {
                 Func_Timer("write_attribute", 
@@ -1605,6 +1609,7 @@ void adios_nc4_close(
             }
             a = a->next;
         }
+*/
         if (md->rank==0) {
             if (DEBUG>1) fprintf(stderr, "-------------------------\n");
             if (DEBUG>1) fprintf(stderr, "writing done, nc4 file is virtually closed;\n");
