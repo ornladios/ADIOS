@@ -1,7 +1,6 @@
 include make.settings
 
 ## Set ADIOS_DIR here or before doing make
-#override ADIOS_DIR=/ccs/proj/e2e/pnorbert/ADIOS/sith.${TARGET}
 override ADIOS_INC=`${ADIOS_DIR}/bin/adios_config -c`
 override ADIOS_CLIB=`${ADIOS_DIR}/bin/adios_config -l`
 

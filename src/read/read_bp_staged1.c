@@ -4150,7 +4150,7 @@ ADIOS_FILE * adios_read_bp_staged1_fopen (const char * fname, MPI_Comm comm)
         fp->tidx_start = fh->tidx_start;
         fp->ntimesteps = fh->tidx_stop - fh->tidx_start + 1;
         fp->file_size = fh->mfooter.file_size;
-        fp->version = fh->mfooter.version;
+        fp->version = fh->mfooter.version & ADIOS_VERSION_NUM_MASK;
         fp->endianness = adios_read_bp_staged1_get_endianness (fh->mfooter.change_endianness);
     }
 

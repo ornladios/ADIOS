@@ -18,7 +18,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         echo "Cannot determine Programming environment. Exit"
         exit 1
     fi
-    echo "Configure on SITH for $TARGET env."
+    echo "Configure on SITH for $TARGET env. for user $USER"
     source /etc/profile.d/modules.sh
     module unload hdf5
     module unload netcdf
@@ -82,7 +82,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
     export CFLAGS="-g -fPIC" 
-    $SRCDIR/configure --prefix=/ccs/proj/e2e/qliu/ADIOS/sith.$TARGET \
+    $SRCDIR/configure --prefix=/ccs/proj/e2e/$USER/ADIOS/sith.$TARGET \
         --enable-dependency-tracking \
         --enable-research-transports \
         --with-lustre=/usr/lib64 \
@@ -886,7 +886,7 @@ elif [ `hostname | cut -c 1-6` == "kraken" ]; then
         --enable-dependency-tracking \
         --with-portals=yes \
         --without-netcdf --without-nc4par --without-hdf5 --without-phdf5 \
-        --with-dataspaces=${HOME}/dataspaces/1.0.0/$TARGET
+        --with-dataspaces=${HOME}/dataspaces/1.3.0/$TARGET
 
 
 elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; then

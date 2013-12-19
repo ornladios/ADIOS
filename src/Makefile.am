@@ -85,6 +85,8 @@ transforms_read_SOURCES = $(transforms_read_HDRS) \
                           core/transforms/adios_transforms_datablock.c \
                           core/transforms/adios_patchdata.c \
                           core/adios_selection_util.c \
+                          core/transforms/plugindetect/detect_plugin_read_hook_decls.h \
+                          core/transforms/plugindetect/detect_plugin_read_hook_reg.h \
                           $(transforms_read_method_SOURCES)
 
 transforms_write_SOURCES = $(transforms_write_HDRS) \
@@ -92,6 +94,8 @@ transforms_write_SOURCES = $(transforms_write_HDRS) \
                            core/transforms/adios_transforms_hooks_write.c \
                            core/transforms/adios_transforms_util.c \
                            core/transforms/adios_transforms_specparse.c \
+                           core/transforms/plugindetect/detect_plugin_write_hook_decls.h \
+                           core/transforms/plugindetect/detect_plugin_write_hook_reg.h \
                            $(transforms_write_method_SOURCES)
 
 if BUILD_WRITE
@@ -629,7 +633,9 @@ EXTRA_DIST = core/adios_bp_v1.h core/adios_endianness.h \
              core/adios_internals.h core/adios_internals_mxml.h core/adios_logger.h \
              core/adios_read_hooks.h core/adios_socket.h core/adios_timing.h \
              $(transforms_common_HDRS) $(transforms_read_HDRS) $(transforms_write_HDRS) \
-             core/adios_socket.h \
+             transforms/transform_plugins.h transforms/adios_transform_identity_read.h \
+	     transforms/adios_transform_szip.h \
+             core/adios_socket.h core/adios_transport_hooks.h \
              core/bp_types.h core/bp_utils.h core/buffer.h core/common_adios.h \
              core/common_read.h core/futils.h core/globals.h core/ds_metadata.h \
              core/util.h core/flexpath.h core/qhashtbl.h \

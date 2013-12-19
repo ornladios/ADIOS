@@ -27,7 +27,7 @@ cp $TRUNKDIR/examples/C/global-array-time/adios_globaltime.xml .
 add_transform_to_xmls
 
 echo "Run C adios_globaltime"
-$MPIRUN $NP_MPIRUN $PROCS ./adios_globaltime
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./adios_globaltime
 EX=$?
 if [ ! -f adios_globaltime.bp ]; then
     echo "ERROR: C version of adios_globaltime failed. No BP file is created. Exit code=$EX"
@@ -40,11 +40,10 @@ diff -q c_bpls.txt $SRCDIR/reference/global_array_time_bpls.txt
 if [ $? != 0 ]; then
     echo "ERROR: C version of adios_globaltime produced a file different from the reference."
     echo "Compare \"bpls -la $PWD/adios_globaltime.bp | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/global_array_time_bpls.txt"
-    exit 1
 fi
 
 echo "Run C adios_read_globaltime"
-$MPIRUN $NP_MPIRUN $PROCS ./adios_read_globaltime > c_read.txt
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./adios_read_globaltime > c_read.txt
 EX=$?
 if [ $? != 0 ]; then
     echo "ERROR: C version of adios_read_globaltime exited with $EX"
@@ -75,7 +74,7 @@ cp $TRUNKDIR/examples/Fortran/global-array-time/adios_globaltime.xml .
 add_transform_to_xmls
 
 echo "Run Fortran adios_globaltime_f"
-$MPIRUN $NP_MPIRUN $PROCS ./adios_globaltime_f
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./adios_globaltime_f
 EX=$?
 if [ ! -f adios_globaltime.bp ]; then
     echo "ERROR: Fortran version of adios_globaltime failed. No BP file is created. Exit code=$EX"

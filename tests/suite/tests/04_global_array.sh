@@ -28,7 +28,7 @@ cp $TRUNKDIR/examples/C/global-array/adios_global.xml .
 add_transform_to_xmls
 
 echo "Run C adios_global"
-$MPIRUN $NP_MPIRUN $PROCS ./adios_global
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./adios_global
 EX=$?
 if [ ! -f adios_global.bp ]; then
     echo "ERROR: C version of adios_global failed. No BP file is created. Exit code=$EX"
@@ -45,7 +45,7 @@ if [ $? != 0 ]; then
 fi
 
 echo "Run C adios_read_global"
-$MPIRUN $NP_MPIRUN $READPROCS ./adios_read_global | sort > c_read.txt
+$MPIRUN $NP_MPIRUN $READPROCS $EXEOPT ./adios_read_global | sort > c_read.txt
 EX=$?
 if [ $? != 0 ]; then
     echo "ERROR: C version of adios_read_global exited with $EX"
@@ -76,7 +76,7 @@ cp $TRUNKDIR/examples/Fortran/global-array/adios_global.xml .
 add_transform_to_xmls
 
 echo "Run Fortran adios_global_f"
-$MPIRUN $NP_MPIRUN $PROCS ./adios_global_f
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./adios_global_f
 EX=$?
 if [ ! -f adios_global.bp ]; then
     echo "ERROR: Fortran version of adios_global failed. No BP file is created. Exit code=$EX"

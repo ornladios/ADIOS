@@ -103,7 +103,7 @@ program coupling
     call adios_read_open (inh, infn, read_method, group_comm, ADIOS_LOCKMODE_CURRENT, 180.0, ierr)
     if (ierr .ne. 0) then
         print '(" Failed to open stream: ",a)', infn
-        print '(" open stream ierr=: ",i)', ierr
+        print '(" open stream ierr=: ",i0)', ierr
         call exit(1)
     endif
 
@@ -159,6 +159,7 @@ subroutine readArrays()
     print '("rank=",i0,": Read in gdx and gdy, step",i0," from ",a)', rank, wts, trim(infn)
     call adios_get_scalar (inh,"gdx",gdx, ierr)
     call adios_get_scalar (inh,"gdy",gdy, ierr)
+    print '("rank=",i0,": Got scalars gdx ",i0," gdy ",i0)', rank, gdx, gdy
 
     ! Calculate the local x,y offsets
     if (read_mode == 0) then

@@ -891,11 +891,14 @@ int doList(const char *path)
     int     nGroups; // number of groups
     char  **group_namelist;
     char    init_params[128];
+    int     adios_verbose=2;
 
     if (verbose>1) printf("\nADIOS BP open: read header info from %s\n", path);
 
     // initialize BP reader
-    strcpy (init_params, "verbose=2");
+    if (verbose>1) adios_verbose = 3; // print info lines
+    if (verbose>2) adios_verbose = 4; // print debug lines
+    sprintf (init_params, "verbose=%d", adios_verbose);
     if (hidden_attrs)
         strcat (init_params, ";show_hidden_attrs");
     status = adios_read_init_method (ADIOS_READ_METHOD_BP, mpi_comm_dummy, init_params);
@@ -907,7 +910,7 @@ int doList(const char *path)
     // open the BP file
     fp = adios_read_open_file (path, ADIOS_READ_METHOD_BP, mpi_comm_dummy); 
     if (fp == NULL) {
-        fprintf(stderr, "Error: %s\n", adios_errmsg());
+        //fprintf(stderr, "Error: %s\n", adios_errmsg());
         bpexit(7, 0);
     }
 

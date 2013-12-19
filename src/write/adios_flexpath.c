@@ -177,6 +177,27 @@ FlexpathWriteData flexpathWriteData;
 
 /**************************** Function Definitions *********************************/
 
+char*
+resolve_path_name(char *path, char *name)
+{
+    char *fullname = NULL;
+    if(name){
+        if(path){
+            if(strcmp(path, "")){
+                fullname = malloc(strlen(path) + strlen(name) + 2);
+                strcpy(fullname, path);
+                strcat(fullname, "/");
+                strcat(fullname, name);
+                return fullname;
+            }
+        }
+        fullname = malloc(strlen(name));
+        strcpy(fullname, name);
+        return fullname;
+    }
+    return NULL;
+}
+
 static double dgettimeofday( void )
 {
 #ifdef HAVE_GETTIMEOFDAY
@@ -479,48 +500,48 @@ queue_contains(FlexpathVarNode* queue, const char* name, int rank)
     return NULL;
 }
 
-// sanitize a name
-char* 
-get_fixed_name(char* name) 
-{
-    char* oldName = strdup(name);
-    char* newName = (char*) malloc(sizeof(char) * 255);
-    int i;
-    for (i=0; i< OPLEN; i++){
-        char op[] = {opList[i], '\0'};
-        char* opRep=opRepList[i];
-        char* token = strtok(oldName, op);
-        char* lastTok=NULL;
-	strcpy(newName, "");
-	while(token != NULL){
-	    strcat(newName, token);
-            if((token = strtok(NULL, op))) {
-	        strcat(newName, opRep);
-	        lastTok = token;
-	    }
-        }
-        if(lastTok!=NULL && (strlen(newName)-strlen(lastTok)-1>0)) {
-            newName[strlen(newName)-strlen(lastTok)-1]='\0';
-	}
-        free(oldName);
-	oldName = strdup(newName);
-    }
-    free(oldName);
-    return newName;
-}
+/* // sanitize a name */
+/* char*  */
+/* get_fixed_name(char* name)  */
+/* { */
+/*     char* oldName = strdup(name); */
+/*     char* newName = (char*) malloc(sizeof(char) * 255); */
+/*     int i; */
+/*     for (i=0; i< OPLEN; i++){ */
+/*         char op[] = {opList[i], '\0'}; */
+/*         char* opRep=opRepList[i]; */
+/*         char* token = strtok(oldName, op); */
+/*         char* lastTok=NULL; */
+/* 	strcpy(newName, ""); */
+/* 	while(token != NULL){ */
+/* 	    strcat(newName, token); */
+/*             if((token = strtok(NULL, op))) { */
+/* 	        strcat(newName, opRep); */
+/* 	        lastTok = token; */
+/* 	    } */
+/*         } */
+/*         if(lastTok!=NULL && (strlen(newName)-strlen(lastTok)-1>0)) { */
+/*             newName[strlen(newName)-strlen(lastTok)-1]='\0'; */
+/* 	} */
+/*         free(oldName); */
+/* 	oldName = strdup(newName); */
+/*     } */
+/*     free(oldName); */
+/*     return newName; */
+/* } */
 
-// return name with operators removed by using the lookup list
-static char* 
-find_fixed_name(FlexpathFMStructure *fm, char *name) 
-{
-    FlexpathNameTable *node;
-    for (node = fm->nameList.lh_first; node != NULL; node = node->entries.le_next) {
-        if (!strcmp(node->originalName, name)) {
-	    return node->mangledName;
-        }
-    }
-    return name;
-}
+/* // return name with operators removed by using the lookup list */
+/* static char*  */
+/* find_fixed_name(FlexpathFMStructure *fm, char *name)  */
+/* { */
+/*     FlexpathNameTable *node; */
+/*     for (node = fm->nameList.lh_first; node != NULL; node = node->entries.le_next) { */
+/*         if (!strcmp(node->originalName, name)) { */
+/* 	    return node->mangledName; */
+/*         } */
+/*     } */
+/*     return name; */
+/* } */
 
 // returns a name with the dimension prepended
 static char*
@@ -759,8 +780,8 @@ mem_check(void* ptr, const char* str)
 static char * get_dim_name (struct adios_dimension_item_struct *d)
 {
     char *vname = NULL;
-    if (d->var) {
-        vname = d->var->name;
+    if (d->var) {	
+        vname = resolve_path_name(d->var->path, d->var->name);
     } else if (d->attr) {
         if (d->attr->var) 
             vname = d->attr->var->name;
@@ -809,17 +830,11 @@ set_format(struct adios_group_struct *t,
     // for each type look through all the fields
     struct adios_var_struct *f;
     for (f = t->vars; f != NULL; f = f->next, fieldNo++) {
-	char *tempName = get_fixed_name(f->name);
-	if (strcmp(tempName, f->name)) {
-	    FlexpathNameTable *nameNode = (FlexpathNameTable *) malloc(sizeof(FlexpathNameTable));
-	    nameNode->originalName = strdup(f->name);
-	    nameNode->mangledName = strdup(tempName);
-	    LIST_INSERT_HEAD(&currentFm->nameList, nameNode, entries);
-	}
+	char *fullname = resolve_path_name(f->path, f->name);
 
 	// use the mangled name for the field.
-	field_list[fieldNo].field_name = tempName;
-        if(tempName!=NULL) {
+	field_list[fieldNo].field_name = fullname;
+        if(fullname!=NULL) {
             int num_dims = 0;
             char atom_name[200] = "";
             FlexpathVarNode *dims=NULL;
@@ -832,28 +847,28 @@ set_format(struct adios_group_struct *t,
                     
                     char *vname = get_dim_name(&adim->dimension);
                     if (vname) {
-			char *name = find_fixed_name(currentFm, vname);
-			char *aname = get_alt_name(tempName,  name);
+			//char *name = find_fixed_name(currentFm, vname);
+			char *aname = get_alt_name(fullname, vname);
 			dims=add_var(dims, strdup(aname), NULL, 0);
-			set_attr_dimensions(tempName, aname, num_dims, fileData->attrs);
+			set_attr_dimensions(fullname, aname, num_dims, fileData->attrs);
 		    }
                     char *gname = get_dim_name(&adim->global_dimension);
 		    if(gname) {
 			fileData->globalCount++;
-			char *name = find_fixed_name(currentFm, gname);
-			char *aname = get_alt_name(tempName, name);
+			//char *name = find_fixed_name(currentFm, gname);
+			char *aname = get_alt_name(fullname, gname);
 			dims=add_var(dims, strdup(aname), NULL, 0);
-			set_attr_dimensions(tempName, aname, num_dims, fileData->attrs);
+			set_attr_dimensions(fullname, aname, num_dims, fileData->attrs);
 		    }
                 }
             }
             // attach ndims attr
             strcat(atom_name, FP_NDIMS_ATTR_NAME);
             strcat(atom_name, "_");
-            strcat(atom_name, tempName);
+            strcat(atom_name, fullname);
             atom_t ndims_atom = attr_atom_from_string(strdup(atom_name));
             add_int_attr(fileData->attrs, ndims_atom, num_dims);
-            fileData->formatVars = add_var(fileData->formatVars, tempName, dims, 0);
+            fileData->formatVars = add_var(fileData->formatVars, fullname, dims, 0);
         }
 	// if its a single field
 	if (!f->dimensions) {
@@ -872,8 +887,9 @@ set_format(struct adios_group_struct *t,
 	    for (; d != NULL; d = d->next) {
                 char *vname = get_dim_name(&d->dimension);
                 if (vname) {
-		    char *name = find_fixed_name(currentFm, vname);
-		    FlexpathAltName *a = find_alt_name(currentFm, name, (char*)field_list[fieldNo].field_name);
+		    
+		    //char *name = find_fixed_name(currentFm, vname);
+		    FlexpathAltName *a = find_alt_name(currentFm, vname, (char*)field_list[fieldNo].field_name);
 		    altvarcount++;
 		    snprintf(el, ELSIZE, "[%s]", a->name);
 		    v_offset = 0;
@@ -1558,8 +1574,9 @@ adios_flexpath_write(
     
     FMFieldList flist = fm->format->field_list;
     FMField *field = NULL;
-    char *fixedname = find_fixed_name(fm, f->name);
-    field = internal_find_field(fixedname, flist);
+    char *fullname = resolve_path_name(f->path, f->name);
+    field = internal_find_field(fullname, flist);
+
     if (field != NULL) {
 	//scalar quantity
 	if (!f->dimensions) {
@@ -1622,8 +1639,8 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
             }		
             FMFieldList flist = fileData->fm->format->field_list;
             FMField *field = NULL;
-            char *fixedname = find_fixed_name(fileData->fm, fields->name);
-            field = internal_find_field(fixedname, flist);
+	    char *fullname = resolve_path_name(fields->path, fields->name);
+            field = internal_find_field(fullname, flist);
             //perr( "field offset %d size %d\n", field->field_offset, field->field_size);
 
             total_size*=field->field_size;
@@ -1678,6 +1695,7 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 
 	double offset_start = dgettimeofday();
 	while(list){
+	    char *fullname = resolve_path_name(list->path, list->name);
 	    //int num_local_offsets = 0;
 	    uint64_t *local_offsets = NULL;
 	    uint64_t *local_dimensions = NULL;
@@ -1713,7 +1731,7 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 		ostruct->global_dimensions = global_dimensions;
 
 		gbl_vars = realloc(gbl_vars, sizeof(global_var) * num_gbl_vars);
-		gbl_vars[num_gbl_vars - 1].name = strdup(list->name);
+		gbl_vars[num_gbl_vars - 1].name = fullname;
 		gbl_vars[num_gbl_vars - 1].noffset_structs = 1;
 		gbl_vars[num_gbl_vars - 1].offsets = ostruct;
 

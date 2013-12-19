@@ -561,16 +561,57 @@ int bp_read_minifooter (struct BP_FILE * bp_struct)
     b->offset = MINIFOOTER_SIZE - 4;
     adios_parse_version (b, &mh->version);
     mh->change_endianness = b->change_endianness;
+
+    // validity check
+    if ((mh->version & ADIOS_VERSION_NUM_MASK) > 1) {
+        adios_error (err_file_open_error, "Invalid BP file detected. Version number > 1\n");
+        return 1;
+    }
+
     b->offset = 0; // reset offset to beginning
 
     BUFREAD64(b, b->pg_index_offset)
     mh->pgs_index_offset = b->pg_index_offset;
+    // validity check  
+    if (b->pg_index_offset > b->file_size) {
+        adios_error (err_file_open_error,
+                "Invalid BP file detected. PG index offset (%lld) > file size (%lld)\n",
+                b->pg_index_offset, b->file_size);
+        return 1;
+    }
 
     BUFREAD64(b, b->vars_index_offset)
     mh->vars_index_offset = b->vars_index_offset;
+    // validity check  
+    if (b->vars_index_offset > b->file_size) {
+        adios_error (err_file_open_error,
+                "Invalid BP file detected. Variable index offset (%lld) > file size (%lld)\n",
+                b->vars_index_offset, b->file_size);
+        return 1;
+    }
+    if (b->vars_index_offset < b->pg_index_offset) {
+        adios_error (err_file_open_error,
+                "Invalid BP file detected. Variable index offset (%lld) < PG index offset (%lld)\n",
+                b->vars_index_offset, b->pg_index_offset);
+        return 1;
+    }
+
 
     BUFREAD64(b, b->attrs_index_offset)
     mh->attrs_index_offset = b->attrs_index_offset;
+    // validity check  
+    if (b->attrs_index_offset > b->file_size) {
+        adios_error (err_file_open_error,
+                "Invalid BP file detected. Attribute index offset (%lld) > file size (%lld)\n",
+                b->attrs_index_offset, b->file_size);
+        return 1;
+    }
+    if (b->attrs_index_offset < b->vars_index_offset) {
+        adios_error (err_file_open_error,
+                "Invalid BP file detected. Attribute index offset (%lld) < Variable index offset (%lld)\n",
+                b->attrs_index_offset, b->vars_index_offset);
+        return 1;
+    }
 
     b->end_of_pgs = b->pg_index_offset;
     b->pg_size = b->vars_index_offset - b->pg_index_offset;

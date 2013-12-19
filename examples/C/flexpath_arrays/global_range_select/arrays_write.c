@@ -46,8 +46,8 @@ int main (int argc, char ** argv)
         //prints the array.
 	adios_open (&adios_handle, "temperature", filename, "w", comm);
 	
-	adios_write (adios_handle, "NX", &NX);
-	adios_write (adios_handle, "NY", &NY);
+	adios_write (adios_handle, "scalar/dim/NX", &NX);
+	adios_write (adios_handle, "scalar/dim/NY", &NY);
 	adios_write (adios_handle, "test_scalar", &test_scalar);
 	adios_write (adios_handle, "size", &size);
 	adios_write (adios_handle, "rank", &rank);

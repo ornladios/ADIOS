@@ -195,6 +195,8 @@ ADIOS_FILE * common_read_open (const char * fname,
     internals->read_hooks = adios_read_hooks;
 
     fp = adios_read_hooks[internals->method].adios_open_fn (fname, comm, lock_mode, timeout_sec);
+    if (!fp)
+        return fp;
 
     // create hashtable from the variable names as key and their index as value
     int hashsize = fp->nvars;
@@ -301,6 +303,8 @@ ADIOS_FILE * common_read_open_file (const char * fname,
     internals->read_hooks = adios_read_hooks;
 
     fp = adios_read_hooks[internals->method].adios_open_file_fn (fname, comm);
+    if (!fp)
+        return fp;
     
     // create hashtable from the variable names as key and their index as value
     int hashsize = fp->nvars;
@@ -1447,7 +1451,8 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                     char * pEnd;
                     char * tmp_dimensions_value = strdup((char *)data);
                     uint64_t tmp_value = strtoull (tmp_dimensions_value, &pEnd, 10);
-                    if (tmp_value)
+//                    if (tmp_value)
+                    if ( pEnd && pEnd[0]==0 )
                         meshinfo->uniform->dimensions[i] = tmp_value;
                     else
                     {
@@ -1594,7 +1599,8 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                     char * pEnd;
                     char * tmp_dimensions_value = strdup((char *)data);
                     uint64_t tmp_value = strtoull (tmp_dimensions_value, &pEnd, 10);
-                    if (tmp_value)
+//                    if (tmp_value)
+                    if ( pEnd && pEnd[0]==0 )
                         meshinfo->rectilinear->dimensions[i] = tmp_value;
                     else
                     {
@@ -1858,7 +1864,8 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                     char * pEnd;
                     char * tmp_dimensions_value = strdup((char *)data);
                     uint64_t tmp_value = strtoull (tmp_dimensions_value, &pEnd, 10);
-                    if (tmp_value)
+//                    if (tmp_value)
+                    if ( pEnd && pEnd[0]==0 )
                         meshinfo->structured->dimensions[i] = tmp_value;
                     else
                     {
@@ -2107,7 +2114,8 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
             long int d1;
             char * pEnd;
             d1 = strtol((char *)data, &pEnd, 10);
-            if (d1)
+//            if (d1)
+            if ( pEnd && pEnd[0]==0 )
                 meshinfo->structured->nspaces = d1;
             else
             {
@@ -2343,7 +2351,8 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
             uint64_t d1;
             char * pEnd;
             d1 = strtoull((char *)data, &pEnd, 10);
-            if (d1)
+//            if (d1)
+            if ( pEnd && pEnd[0]==0 )
             {
                 if (meshinfo->unstructured->npoints != d1)
                 {
@@ -2402,7 +2411,8 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
             int d1;
             char * pEnd;
             d1 = strtol((char *)data, &pEnd, 10);
-            if (d1)
+//            if (d1)
+            if ( pEnd && pEnd[0]==0 )
             {   
                 if (meshinfo->unstructured->nspaces > d1) {
                     log_warn ("The provided nspaces %d is less the points dim %d. "
@@ -2501,7 +2511,8 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                 uint64_t d1;
                 char * pEnd;
                 d1 = strtoull((char *)data, &pEnd, 10);  //number of cells
-                if (d1)
+//                if (d1)
+                if ( pEnd && pEnd[0]==0 )
                     meshinfo->unstructured->ccounts[0] = d1;
                 else
                 {
@@ -2565,7 +2576,8 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                     uint64_t d1;
                     char * pEnd;
                     d1 = strtoull((char *)data, &pEnd, 10);
-                    if (d1)
+//                    if (d1)
+                    if ( pEnd && pEnd[0]==0 )
                         meshinfo->unstructured->ccounts[i] = d1;
                     else
                     {
@@ -2700,19 +2712,19 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
             else
             {
                 if (!strcmp((char *)data, "line"))
-                    meshinfo->unstructured->ctypes[i] = ADIOS_CELL_LINE;
+                    meshinfo->unstructured->ctypes[0] = ADIOS_CELL_LINE;
                 else if (!strcmp((char *)data, "triangle"))
-                    meshinfo->unstructured->ctypes[i] = ADIOS_CELL_TRI;
+                    meshinfo->unstructured->ctypes[0] = ADIOS_CELL_TRI;
                 else if (!strcmp((char *)data, "quad"))
-                    meshinfo->unstructured->ctypes[i] = ADIOS_CELL_QUAD;
+                    meshinfo->unstructured->ctypes[0] = ADIOS_CELL_QUAD;
                 else if (!strcmp((char *)data, "hex"))
-                    meshinfo->unstructured->ctypes[i] = ADIOS_CELL_HEX;
+                    meshinfo->unstructured->ctypes[0] = ADIOS_CELL_HEX;
                 else if (!strcmp((char *)data, "prism"))
-                    meshinfo->unstructured->ctypes[i] = ADIOS_CELL_PRI;
+                    meshinfo->unstructured->ctypes[0] = ADIOS_CELL_PRI;
                 else if (!strcmp((char *)data, "tet"))
                     meshinfo->unstructured->ctypes[i] = ADIOS_CELL_TET;
                 else if (!strcmp((char *)data, "pyr"))
-                    meshinfo->unstructured->ctypes[i] = ADIOS_CELL_PYR;
+                    meshinfo->unstructured->ctypes[0] = ADIOS_CELL_PYR;
                 else
                 {
                     adios_error (err_mesh_unstructured_invalid_ctype,
@@ -2723,6 +2735,7 @@ ADIOS_MESH * common_read_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
                     return NULL;
                 }
             }
+//printf ("%d, cell type is %d\n", __LINE__, meshinfo->unstructured->ctypes[0]);
         }
         else
         {

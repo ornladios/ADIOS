@@ -140,7 +140,7 @@ void getbasename (char *path, char **dirname, char **basename)
         *basename = strdup(ptr+1);
     } else if (ptr == work) {
         // found / as the first character 
-        *dirname = strdup("");
+        *dirname = strdup("/");
         *basename = strdup(ptr+1);
     } else {
         *dirname = NULL; //strdup(".");

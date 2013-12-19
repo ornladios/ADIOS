@@ -30,5 +30,8 @@ genarray3D_LDADD += $(ADIOSLIB_LDADD)
 
 CLEANFILES = *.bp
 CC=$(MPICC)
-EXTRA_DIST = gread_temperature.ch gwrite_temperature.ch 
+EXTRA_DIST = gread_temperature.ch gwrite_temperature.ch \
+             read_test.h \
+	     test_read_box.sh  test_read_points.sh  write_all.sh \
+	     conf_genarray3D conf_simple 
 

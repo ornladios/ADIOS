@@ -357,6 +357,7 @@ reader_global_noxml_SOURCES = reader.c ../common/utils.c
 reader_global_noxml_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 reader_global_noxml_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 CLEANFILES = *.bp
+EXTRA_DIST = cfg.h
 all: all-am
 
 .SUFFIXES:

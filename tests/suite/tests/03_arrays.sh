@@ -27,7 +27,7 @@ cp $TRUNKDIR/examples/C/arrays/arrays.xml .
 add_transform_to_xmls
 
 echo "Run C arrays_write"
-$MPIRUN $NP_MPIRUN $PROCS ./arrays_write
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./arrays_write
 EX=$?
 if [ ! -f arrays.bp ]; then
     echo "ERROR: C version of arrays_write failed. No BP file is created. Exit code=$EX"
@@ -44,7 +44,7 @@ if [ $? != 0 ]; then
 fi
 
 echo "Run C arrays_read"
-$MPIRUN $NP_MPIRUN $PROCS ./arrays_read | sort > c_read.txt
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./arrays_read | sort > c_read.txt
 EX=$?
 if [ $? != 0 ]; then
     echo "ERROR: C version of arrays_read failed with exit code $EX"

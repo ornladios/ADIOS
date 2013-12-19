@@ -62,7 +62,3 @@ OTHER
 - check/fix or throw away bp2ascii
 - bpls
   - add back sorting of names (needs to copy namelist because cannot sort fp->var_namelist
-  - verbosity -> down to ADIOS level
-
-
-
