@@ -96,8 +96,7 @@ typedef struct _flexpath_var
     uint64_t type_size; // type size, not arrays size
 
     int time_dim; // -1 means no time dimension
-    int num_global_dims;
-    int num_local_dims;
+    int num_dims;
     uint64_t *global_dims; // ndims size (if ndims>0)
     uint64_t *local_dims; // for local arrays
     uint64_t array_size; // not relevant for scalars
@@ -307,7 +306,7 @@ convert_var_info(flexpath_var * fpvar,
     int i;
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;    
     v->type = fpvar->type;
-    v->ndim = fpvar->num_global_dims;
+    v->ndim = fpvar->num_dims;
     // needs to change. Has to get information from write.
     v->nsteps = 1;
     v->nblocks = malloc(sizeof(int)*v->nsteps);
@@ -333,8 +332,14 @@ convert_var_info(flexpath_var * fpvar,
 	    return NULL;
 	}
 	// broken.  fix.
-	int cpysize = fpvar->num_global_dims*sizeof(uint64_t);
-	memcpy(v->dims, fpvar->global_dims, cpysize);
+	int cpysize = fpvar->num_dims*sizeof(uint64_t);
+	if(fpvar->global_dims){
+	    v->global = 1;
+	    memcpy(v->dims, fpvar->global_dims, cpysize);
+	}
+	else{
+	    v->global = 0;
+	}
     }
     return v;
 }
@@ -777,9 +782,9 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 	    uint64_t *local_offsets = offset->local_offsets;
 	    uint64_t *global_dimensions = offset->global_dimensions;
 
-	    fpvar->num_global_dims = offset->offsets_per_rank;
-	    fpvar->global_dims = malloc(sizeof(uint64_t)*fpvar->num_global_dims);
-	    memcpy(fpvar->global_dims, global_dimensions, sizeof(uint64_t)*fpvar->num_global_dims);
+	    fpvar->num_dims = offset->offsets_per_rank;
+	    fpvar->global_dims = malloc(sizeof(uint64_t)*fpvar->num_dims);
+	    memcpy(fpvar->global_dims, global_dimensions, sizeof(uint64_t)*fpvar->num_dims);
 	}else{
 	    adios_error(err_corrupted_variable, 
 			"Mismatch between global variables and variables specified %s.",
@@ -857,7 +862,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     	}
 
 	int num_dims = get_ndims_attr(f->field_name, attrs);
-    	var->num_global_dims = num_dims;
+    	var->num_dims = num_dims;
 
 	flexpath_var_chunk *curr_chunk = &var->chunks[0];
 
@@ -871,9 +876,9 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 		    }
 		}
 		else { // writeblock selection for arrays
-		    if(var->num_global_dims == 0){
-			var->global_dims = malloc(sizeof(uint64_t)*num_dims);
-		    }
+		    /* if(var->num_dims == 0){ */
+		    /* 	var->global_dims = malloc(sizeof(uint64_t)*num_dims); */
+		    /* } */
 		    if(var->sel->u.block.index == writer_rank){
 			var->array_size = var->type_size;
 			int i;
@@ -900,7 +905,6 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 									 temp_field->field_name,
 									 base_data);			    
 				uint64_t dim = (uint64_t)(*temp_data);
-				var->global_dims[i] = dim;
 				var->array_size = var->array_size * dim;
 			    }
 			}    	       
@@ -1253,9 +1257,9 @@ void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
     flexpath_var *tmpvars = fp->var_list;
     while(tmpvars){
 
-	if(tmpvars->num_global_dims > 0){
+	if(tmpvars->num_dims > 0){
 	    free(tmpvars->global_dims);	   
-	    tmpvars->num_global_dims = 0;
+	    tmpvars->num_dims = 0;
 	}
 	free_displacements(tmpvars->displ, tmpvars->num_displ);
 	tmpvars->displ = NULL;
