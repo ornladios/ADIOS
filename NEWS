@@ -1,4 +1,8 @@
 1.6.0 Release Dec 2013
+    - Transformations of data supported in file-based I/O
+      - lossless compression (zlib, bzip, szip)
+      - lossy compression (ISOBAR)
+      - precision-level-of-detail encoding (APLOD)
     - Changes to Write API:
       - variables are identified by full path at writing
       - fix: all int functions return 0 as OK and !=0 on error
@@ -6,10 +10,6 @@
       - Read API extensions to get information about the 
         visualization meshes defined in a file
       - leading / in path names is not enforced
-    - Transformations of data supported in file-based I/O
-      - lossless compression (zlib, bzip, szip, ALACRITY)
-      - lossy compression (ISOBAR)
-      - APLOD indexing + lossless compression
     - New I/O method for Bluegene/Q called "BGQ"
         configure with the option --with-bgq
     - Removed performance bottleneck in metadata operations when 
