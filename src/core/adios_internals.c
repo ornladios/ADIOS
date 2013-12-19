@@ -1627,12 +1627,15 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
     return 1;
 }
 
+/* copy path but remove trailing / characters, and also
+   NULL path becomes "", so that we don't need to check for NULL everywhere
+*/
 static char * dup_path (const char *path)
 {
     char * p = NULL;
     int len;
     if (!path)
-        return NULL;
+        return strdup("");
     len = strlen (path);
     /* remove trailing / characters */
     while (len > 1 && path[len-1] == '/') {
@@ -1677,7 +1680,7 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
         lo_dim_temp = 0;
 
     v->name = strdup (name);
-    v->path = dup_path (path);  // copy but remove trailing / characters
+    v->path = dup_path (path);  // copy but remove trailing / characters, and NULL path becomes ""
     //log_error ("define_var: name=%s, path=[%s], dup=[%s]\n", name, path, v->path);
     v->type = type;
     v->dimensions = 0;
