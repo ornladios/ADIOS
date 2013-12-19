@@ -863,7 +863,7 @@ void printMeshes (ADIOS_FILE  *fp)
                     fprintf(outf, "    ncsets:       %d\n", mi->unstructured->ncsets);
                     for (i=0; i < mi->unstructured->ncsets; i++) { 
                         fprintf(outf, "    cell set %d:\n", i);
-                        fprintf(outf, "      cell type:  %s\n", mi->unstructured->ctypes[i]);
+                        fprintf(outf, "      cell type:  %d\n", mi->unstructured->ctypes[i]);
                         fprintf(outf, "      ncells:     %d\n", mi->unstructured->ccounts[i]);
                         fprintf(outf, "      cells var:  \"%s\"\n", mi->unstructured->cdata[i]);
                     }
