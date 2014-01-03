@@ -94,6 +94,7 @@ struct adios_MPI_data_struct
     int g_have_mdf;
     int g_merging_pgs;
     int g_num_ost;
+    int is_local_fs;
     int g_threading;
     int g_color1;
     int g_color2;
@@ -247,10 +248,32 @@ adios_mpi_amr_set_striping_unit(struct adios_MPI_data_struct * md, char *paramet
     uint64_t striping_unit = 0;
     uint16_t striping_count = 0;
     char     value[64], *temp_string, *p_count,*p_size;
-    int fd, old_mask, perm, n_ost_skipping, n_ost, n, i;
+    int fd, old_mask, perm, n_ost_skipping, n_ost, n, i, should_striping;
     MPI_Info info_used;
 
     temp_string = (char *) malloc (strlen (parameters) + 1);
+    strcpy (temp_string, parameters);
+    trim_spaces (temp_string);
+
+    if (p_count = strstr (temp_string, "striping"))
+    {
+        char * p = strchr (p_count, '=');
+        char * q = strtok (p, ";");
+        if (!q)
+            should_striping = atoi (q + 1);
+        else
+            should_striping = atoi (p + 1);
+    }
+    else
+    {
+        should_striping = 1;
+    }
+
+    if (should_striping == 0)
+    {
+        return;
+    }
+
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
 
@@ -402,6 +425,23 @@ adios_mpi_amr_set_aggregation_parameters(char * parameters, struct adios_MPI_dat
     }
     else
     {
+    }
+
+    strcpy (temp_string, parameters);
+    trim_spaces (temp_string);
+
+    if (p_size = strstr (temp_string, "local-fs"))
+    {
+        char * p = strchr (p_size, '=');
+        char * q = strtok (p, ";");
+        if (!q)
+            md->is_local_fs = atoi(q + 1);
+        else
+            md->is_local_fs = atoi(p + 1);
+    }
+    else
+    {
+        md->is_local_fs = 0;
     }
 
     strcpy (temp_string, parameters);
@@ -754,12 +794,11 @@ void adios_mpi_amr_build_global_index_v1 (char * fname
 }
 
 
-void * adios_mpi_amr_do_mkdir (void * param)
+void * adios_mpi_amr_do_mkdir (char * path)
 {
-    struct adios_file_struct * fd = (struct adios_file_struct *) param;
     // 4 bytes for ".dir" 
-    char * dir_name = malloc (strlen (fd->name) + 4 + 1);
-    sprintf (dir_name, "%s%s", fd->name, ".dir");
+    char * dir_name = malloc (strlen (path) + 4 + 1);
+    sprintf (dir_name, "%s%s", path, ".dir");
     
     mkdir (dir_name, S_IRWXU | S_IRWXG);
   
@@ -771,6 +810,7 @@ void * adios_mpi_amr_do_mkdir (void * param)
 void * adios_mpi_amr_do_open_thread (void * param)
 {
     struct adios_MPI_thread_data_open * td = (struct adios_MPI_thread_data_open *) param;
+    int err;
 
     unlink (td->md->subfile_name);
     if (td->parameters)
@@ -779,11 +819,22 @@ void * adios_mpi_amr_do_open_thread (void * param)
 
     }
 
-    MPI_File_open (MPI_COMM_SELF, td->md->subfile_name
-                  ,MPI_MODE_WRONLY | MPI_MODE_CREATE
-                  ,MPI_INFO_NULL
-                  ,&td->md->fh
-                  );
+    err = MPI_File_open (MPI_COMM_SELF, td->md->subfile_name
+                        ,MPI_MODE_WRONLY | MPI_MODE_CREATE
+                        ,MPI_INFO_NULL
+                        ,&td->md->fh
+                        );
+
+    if (err != MPI_SUCCESS)
+    {
+        char e [MPI_MAX_ERROR_STRING];
+        int len = 0;
+        memset (e, 0, MPI_MAX_ERROR_STRING);
+        MPI_Error_string (err, e, &len);
+        adios_error (err_file_open_error,
+                     "MPI_AMR method: MPI open failed for %s: '%s'\n",
+                     td->md->subfile_name, e);
+    }
 
     return NULL;
 }
@@ -840,6 +891,7 @@ void adios_mpi_amr_init (const PairStruct * parameters
     md->g_have_mdf = 1;
     md->g_merging_pgs = 0;
     md->g_num_ost = 0;
+    md->is_local_fs = 0;
     md->g_threading = 0;
     md->g_color1 = 0;
     md->g_color2 = 0;
@@ -979,12 +1031,12 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                 int f, rc;
 
                 // open metadata file
-                unlink (fd->name);
+                unlink (name);
 
                 adios_mpi_amr_set_have_mdf (method->parameters, md);
                 if (md->g_have_mdf)
                 {
-                    f = open(fd->name, O_CREAT | O_RDWR | O_LOV_DELAY_CREATE, 0644);
+                    f = open(name, O_CREAT | O_RDWR | O_LOV_DELAY_CREATE, 0644);
                     if (f == -1)
                     {
                         adios_error (err_file_open_error,"MPI_AMR method: open() failed: %s\n", strerror(errno));
@@ -1011,14 +1063,14 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
 #endif 
                     close (f);
 
-                    MPI_File_open (MPI_COMM_SELF, fd->name
+                    MPI_File_open (MPI_COMM_SELF, name
                                   ,MPI_MODE_WRONLY | MPI_MODE_CREATE
                                   ,MPI_INFO_NULL
                                   ,&md->mfh
                                   );
                 }
 
-                adios_mpi_amr_do_mkdir (fd);
+//                adios_mpi_amr_do_mkdir (name);
             }
 
             MPI_Bcast (&md->g_num_ost, 1, MPI_INT, 0, md->group_comm);
@@ -1026,6 +1078,21 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
             fd->base_offset = 0;
             fd->pg_start_in_file = 0;
             adios_mpi_amr_set_aggregation_parameters (method->parameters, md);
+
+            if (is_aggregator (md->rank))
+            {
+                if (md->is_local_fs)
+                {
+                    adios_mpi_amr_do_mkdir (name);
+                }
+                else
+                {
+                    if (md->rank == 0)
+                    {
+                        adios_mpi_amr_do_mkdir (name);
+                    }
+                }
+            }
 
             // Check if fd->name contains path
             if (ch = strrchr (fd->name, '/'))
@@ -1039,10 +1106,10 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                 strcpy (name_no_path, fd->name);
             }
 
-            name = realloc (name, strlen (fd->name) + 5 + strlen (method->base_path) + strlen (name_no_path) + 1 + 10 + 1);
+            name = realloc (name, strlen (method->base_path) + strlen (fd->name) + 5 + strlen (name_no_path) + 1 + 10 + 1);
             // create the subfile name, e.g. restart.bp.1
             // 1 for '.' + 10 for subfile index + 1 for '\0'
-            sprintf (name, "%s%s%s%s.%d", fd->name, ".dir/", method->base_path, name_no_path, md->g_color1);
+            sprintf (name, "%s%s%s%s.%d", method->base_path, fd->name, ".dir/", name_no_path, md->g_color1);
             md->subfile_name = strdup (name);
             fd->subfile_index = (uint32_t)md->g_color1;
 
