@@ -354,7 +354,7 @@ reader_global_SOURCES = reader.c ../common/utils.c
 reader_global_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 reader_global_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 CLEANFILES = *.bp
-EXTRA_DIST = test_config_flex.xml cfg.h 
+EXTRA_DIST = test_config_flex.xml cfg.h readme.txt
 all: all-am
 
 .SUFFIXES:
