@@ -64,7 +64,7 @@ int main (int argc, char ** argv)
 	int ny_val = *((int*)ny_info->value);
 	int size_val = *((int*)size_info->value);
 
-	printf("nx: %d, ny: %d, size: %d\n", nx_val, ny_val, size);
+	printf("nx: %d, ny: %d, size: %d\n", nx_val, ny_val, size_val);
 	
 	uint64_t xcount = arry->dims[0];
 	uint64_t ycount = arry->dims[1];
