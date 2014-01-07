@@ -53,3 +53,5 @@ else
 CLEANFILES = *.o bp_read_c genbp read_coords read_phi read_parts_global
 endif
 
+EXTRA_DIST = testbp_c.xml
+
