@@ -344,30 +344,11 @@ convert_var_info(flexpath_var * fpvar,
     return v;
 }
 
-// compare used-provided varname with the full path name of variable
-static int
-compare_var_name (const char *varname, const flexpath_var *v)
-{
-    if (varname[0] == '/') { // varname is full path
-        char fullpath[256];
-        if(!strcmp(v->varpath, "/")) {
-            sprintf(fullpath, "/%s", v->varname);
-        }
-        else {
-            sprintf(fullpath, "%s/%s", v->varpath, v->varname);
-        }
-        return strcmp(fullpath, varname);
-    }
-    else { // varname doesn't include path
-        return strcmp(v->varname, varname);
-    }
-}
-
 flexpath_var *
 find_fp_var(flexpath_var * var_list, const char * varname)
 {
     while(var_list){
-	if(!compare_var_name(varname, var_list)){
+	if(!strcmp(varname, var_list->varname)){
 	    return var_list;
 	}
 	var_list = var_list->next;
