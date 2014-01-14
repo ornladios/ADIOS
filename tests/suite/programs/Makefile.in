@@ -85,7 +85,8 @@ CONFIG_CLEAN_VPATH_FILES =
 @BUILD_WRITE_TRUE@	selections$(EXEEXT) path_test$(EXEEXT) \
 @BUILD_WRITE_TRUE@	reuse_dim$(EXEEXT) \
 @BUILD_WRITE_TRUE@	adios_transforms_read_write$(EXEEXT) \
-@BUILD_WRITE_TRUE@	connect_to_space_subset$(EXEEXT)
+@BUILD_WRITE_TRUE@	connect_to_space_subset$(EXEEXT) \
+@BUILD_WRITE_TRUE@	big_file$(EXEEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__EXEEXT_2 =  \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	posix_method$(EXEEXT)
 am__EXEEXT_3 =
@@ -140,6 +141,13 @@ adios_transforms_read_write_DEPENDENCIES =  \
 adios_transforms_read_write_LINK = $(LIBTOOL) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(AM_CFLAGS) $(CFLAGS) $(adios_transforms_read_write_LDFLAGS) \
+	$(LDFLAGS) -o $@
+am_big_file_OBJECTS = big_file.$(OBJEXT)
+big_file_OBJECTS = $(am_big_file_OBJECTS)
+big_file_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+big_file_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(big_file_LDFLAGS) \
 	$(LDFLAGS) -o $@
 am_connect_to_space_subset_OBJECTS =  \
 	connect_to_space_subset.$(OBJEXT)
@@ -257,7 +265,7 @@ SOURCES = $(adios_amr_write_SOURCES) $(adios_amr_write_2vars_SOURCES) \
 	$(adios_staged_read_SOURCES) \
 	$(adios_staged_read_2vars_SOURCES) \
 	$(adios_staged_read_v2_SOURCES) \
-	$(adios_transforms_read_write_SOURCES) \
+	$(adios_transforms_read_write_SOURCES) $(big_file_SOURCES) \
 	$(connect_to_space_subset_SOURCES) $(copy_subvolume_SOURCES) \
 	$(hashtest_SOURCES) $(local_array_time_SOURCES) \
 	$(many_vars_SOURCES) $(path_test_SOURCES) \
@@ -269,7 +277,7 @@ DIST_SOURCES = $(adios_amr_write_SOURCES) \
 	$(adios_amr_write_2vars_SOURCES) $(adios_staged_read_SOURCES) \
 	$(adios_staged_read_2vars_SOURCES) \
 	$(adios_staged_read_v2_SOURCES) \
-	$(adios_transforms_read_write_SOURCES) \
+	$(adios_transforms_read_write_SOURCES) $(big_file_SOURCES) \
 	$(connect_to_space_subset_SOURCES) $(copy_subvolume_SOURCES) \
 	$(hashtest_SOURCES) $(local_array_time_SOURCES) \
 	$(many_vars_SOURCES) $(path_test_SOURCES) \
@@ -545,7 +553,8 @@ check_readonly_C =
 @BUILD_WRITE_TRUE@        path_test \
 @BUILD_WRITE_TRUE@        reuse_dim \
 @BUILD_WRITE_TRUE@        adios_transforms_read_write \
-@BUILD_WRITE_TRUE@        connect_to_space_subset
+@BUILD_WRITE_TRUE@        connect_to_space_subset \
+@BUILD_WRITE_TRUE@	big_file
 
 @BUILD_WRITE_TRUE@test_C = hashtest copy_subvolume transforms_specparse
 @BUILD_FORTRAN_TRUE@check_readonly_Fortran = 
@@ -612,6 +621,9 @@ reuse_dim_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 connect_to_space_subset_SOURCES = connect_to_space_subset.c
 connect_to_space_subset_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 connect_to_space_subset_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+big_file_SOURCES = big_file.c
+big_file_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+big_file_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 
 #transforms_SOURCES=transforms.c
 #transforms_CPPFLAGS = -DADIOS_USE_READ_API_1
@@ -703,6 +715,9 @@ adios_staged_read_v2$(EXEEXT): $(adios_staged_read_v2_OBJECTS) $(adios_staged_re
 adios_transforms_read_write$(EXEEXT): $(adios_transforms_read_write_OBJECTS) $(adios_transforms_read_write_DEPENDENCIES) 
 	@rm -f adios_transforms_read_write$(EXEEXT)
 	$(adios_transforms_read_write_LINK) $(adios_transforms_read_write_OBJECTS) $(adios_transforms_read_write_LDADD) $(LIBS)
+big_file$(EXEEXT): $(big_file_OBJECTS) $(big_file_DEPENDENCIES) 
+	@rm -f big_file$(EXEEXT)
+	$(big_file_LINK) $(big_file_OBJECTS) $(big_file_LDADD) $(LIBS)
 connect_to_space_subset$(EXEEXT): $(connect_to_space_subset_OBJECTS) $(connect_to_space_subset_DEPENDENCIES) 
 	@rm -f connect_to_space_subset$(EXEEXT)
 	$(connect_to_space_subset_LINK) $(connect_to_space_subset_OBJECTS) $(connect_to_space_subset_LDADD) $(LIBS)
@@ -755,6 +770,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_staged_read_2vars.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_staged_read_v2.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_transforms_read_write.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/big_file.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/connect_to_space_subset.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/copy_subvolume-copy_subvolume.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/hashtest-hashtest.Po@am__quote@
@@ -1161,6 +1177,7 @@ selections.o: selections.c
 path_test.o: path_test.c
 reuse_dim.o: reuse_dim.c
 connect_to_space_subset.o: connect_to_space_subset.c
+big_file.o: big_file.c
 hashtest.o: hashtest.c
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
