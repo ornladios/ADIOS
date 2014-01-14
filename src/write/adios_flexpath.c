@@ -1,3 +1,4 @@
+
 /*
     adios_flexpath.c
     uses evpath for io in conjunction with read/read_flexpath.c
@@ -191,7 +192,7 @@ resolve_path_name(char *path, char *name)
                 return fullname;
             }
         }
-        fullname = malloc(strlen(name));
+        fullname = malloc(strlen(name)+1);
         strcpy(fullname, name);
         return fullname;
     }

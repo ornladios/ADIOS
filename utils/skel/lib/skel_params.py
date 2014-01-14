@@ -76,23 +76,25 @@ def generate_param_file (app, outfile, config, groupname, bplsfile=None):
 
         for var in group.get_vars():
             if var.is_scalar():
+                if bplsfile is None:
+                    all_scalars.add ('\n    <scalar name="' + var.get_name() + '" type="' + var.get_type() + '" value="128" />')
+                else:
+                    scalar_value = None
 
-                scalar_value = None
-
-                first_use_name, first_use_dim_num = var.find_first_use () # Get the name and dimension number of the first array that uses this scalar, or None if it is not used
-                if first_use_name is not None:
-                    dims = bpdata.get_dims (first_use_name)
-                    if dims is None:
-                        # Try adding a leading slash to deal with the way that bpls reports variable names without one
-                        dims = bpdata.get_dims ("/%s" % first_use_name)
-                    if dims is not None:
-                        scalar_value = dims[first_use_dim_num]
+                    first_use_name, first_use_dim_num = var.find_first_use () # Get the name and dimension number of the first array that uses this scalar, or None if it is not used
+                    if first_use_name is not None:
+                        dims = bpdata.get_dims (first_use_name)
+                        if dims is None:
+                            # Try adding a leading slash to deal with the way that bpls reports variable names without one
+                            dims = bpdata.get_dims ("/%s" % first_use_name)
+                        if dims is not None:
+                            scalar_value = dims[first_use_dim_num]
                     
 
-                if scalar_value is None:
-                    scalar_value = 0 # Should be used only for variables that do not appear in any array dimensions
+                    if scalar_value is None:
+                        scalar_value = 0 # Should be used only for variables that do not appear in any array dimensions
 
-                all_scalars.add ('\n    <scalar name="' + var.get_name() + '" type="' + var.get_type() + '" value="%s" />' % scalar_value)
+                    all_scalars.add ('\n    <scalar name="' + var.get_name() + '" type="' + var.get_type() + '" value="%s" />' % scalar_value)
             else:
                 dims = var.get_dimensions()
                 dim_str ='dims="'
