@@ -253,6 +253,7 @@ int write_file (int step)
                 printE ("%s[%d,%d] step %d: wrote %d but read %d\n",VARNAME,i,j,STEP,VALUE,A[k]);\
                 err = 104; \
                /*goto endread;*/\
+               i=DIM1; /*break to end */\
                break; \
             }\
             k++; \
@@ -316,9 +317,9 @@ int read_file ()
 
         tsb = MPI_Wtime();
         adios_schedule_read (f, sel2, "data", step, 1, r2);
-        adios_perform_reads (f, 1);
-        CHECK_2DARRAY ("data",  r2, ldim1, ldim2, v, step, iMacro, jMacro, kMacro)
         ts += MPI_Wtime() - tsb;
+        adios_perform_reads (f, 1);
+        CHECK_2DARRAY ("data",  r2, count[0], count[1], v, step, iMacro, jMacro, kMacro)
 
         adios_selection_delete (sel2);
         MPI_Barrier (comm);
