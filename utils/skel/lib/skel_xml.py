@@ -13,7 +13,7 @@ def pparse_command_line (parent_parser):
                 parents = [parent_parser],
                 formatter_class=argparse.RawDescriptionHelpFormatter,
                 prog='skel',
-                add_help=False,
+                #add_help=False,
                 description='''\
         skel xml
             create an xml file to define the I/O pattern for the target skeletal application''')

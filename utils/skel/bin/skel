@@ -35,10 +35,10 @@ def get_parser():
 Skel: Create, run and analyze skeletal I/O applications
 -------------------------------------------------------
 Available subcommands include:
-    skel install
     skel help
     skel makefile
     skel params
+    skel replay
     skel source
     skel submit
     skel xml
@@ -54,13 +54,39 @@ Available subcommands include:
 def main(argv=None):
 
     skel_settings.create_settings_dir_if_needed()
+    parser = get_parser()
 
     # install does not require a project, so let's just check for it directly
     if sys.argv[1] == 'install':
-        return 0;
+        return 0
+
+    # Also look for skel help, and print the list of subcommands...
+    if sys.argv[1] == 'help' and len(sys.argv) == 2:
+        print parser.description 
+        return 0
+
+    if sys.argv[1] == 'help':
+        if sys.argv[2] == 'makefile':
+            sys.argv = ["skel", "makefile", "junk", "-h"]
+            skel_makefile.generate_makefiles_with_args (None, parser)
+        elif sys.argv[2] == 'params':
+            sys.argv = ["skel", "params", "junk", "-h"]
+            skel_params.generate_param_file_with_args (None, parser)
+        elif sys.argv[2] == 'replay':
+            sys.argv = ["skel", "replay", "junk", "-h"]
+        elif sys.argv[2] == 'source':
+            sys.argv = ["skel", "source", "junk", "-h"]
+            skel_source.create_sources_with_args (None, parser)
+        elif sys.argv[2] == 'submit':
+            sys.argv = ["skel", "submit", "junk", "-h"]
+            skel_submit.generate_submit_scripts_with_args (parser)
+        elif sys.argv[2] == 'xml':
+            sys.argv = ["skel", "xml", "junk", "-h"]
+        else:
+            print "Unknown help topic" 
+            exit(1)
 
     #args = parse_command_line()
-    parser = get_parser()
     args, unknown = parser.parse_known_args()
 
     # ignore .xml suffix if used (tab completion)
@@ -78,11 +104,13 @@ def main(argv=None):
         skel_replay.do_replay_with_args (parser)
         return 0
 
-    try:
-        config = adios.adiosConfig (args.project + '_skel.xml')
-    except (IOError):
-        print "Error reading " + args.project + "_skel.xml. Try running skel xml " + args.project + " first."
-        return 1
+    if sys.argv[1] != 'help':
+        print sys.argv[1]
+        try:
+            config = adios.adiosConfig (args.project + '_skel.xml')
+        except (IOError):
+            print "Error reading " + args.project + "_skel.xml. Try running skel xml " + args.project + " first."
+            return 1
 
     if args.subcommand == 'params':
         #outfilename = args.project + '_params.xml'
