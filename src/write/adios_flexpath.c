@@ -128,9 +128,6 @@ typedef struct _flexpath_write_file_data {
     int numBridges;
     attr_list attrs;
 
-    int num_reader_coordinators;
-    int *reader_coordinators;
-
     // server state
     int maxQueueSize;
     int openCount;
@@ -315,13 +312,14 @@ set_dst_condition_atom(attr_list attrs, int condition)
 void
 evgroup_msg_free(void *eventData, void *clientData)
 {
-    evgroup *msg = (evgroup*)eventData;
-    int num_vars = msg->num_vars;
-    int i;
-    for(i=0; i<num_vars; i++){
-	free(msg->vars[i].offsets);
-    }
-    free(msg);
+    
+    /* evgroup *msg = (evgroup*)eventData; */
+    /* int num_vars = msg->num_vars; */
+    /* int i; */
+    /* for(i=0; i<num_vars; i++){ */
+    /* 	free(msg->vars[i].offsets); */
+    /* } */
+    /* free(msg); */
 }
 
 void
@@ -666,6 +664,7 @@ char *multiqueue_action = "{\n\
              if(EVcount_evgroup()>0){\n\
                evgroup *g = EVdata_evgroup(0); \n\
                g->condition = c->condition;\n\
+               printf(\"\\tnum_vars: %d\\n\", g->num_vars); \n\
                EVsubmit(c->process_id+1, g);\n\
                EVdiscard_flush(0);\n\
              }\n\
@@ -1173,6 +1172,7 @@ process_close_msg(FlexpathWriteFileData *fileData, op_msg *close)
 	int wait = CMCondition_get(flexpathWriteData.cm, NULL);
 	dropMsg->condition = wait;
 	EVsubmit_general(fileData->dropSource, dropMsg, drop_evgroup_msg_free, fileData->attrs);
+	//EVsubmit_general(fileData->dropSource, dropMsg, NULL, fileData->attrs);
 	// Will have to change when not using ctrl thread.
 	CMCondition_wait(flexpathWriteData.cm,  wait); 		    
 		     
@@ -1595,6 +1595,8 @@ adios_flexpath_write(
 			    //check if there are FlexpathAltNames
 			    FlexpathAltName *a = NULL;
 			    for (a = d->altList.lh_first; a != NULL; a = a->entries.le_next) {
+				fprintf(stderr, "ALTNAME: %s, DIM: %s FIELD: %s\n", 
+					a->name, d->name, field->field_name);
 				memcpy(&fm->buffer[a->field->field_offset], 
 				       data, 
 				       a->field->field_size);
@@ -1682,7 +1684,7 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 	gp->step = fileData->writerStep;
 	gp->vars = NULL;
 	//fileData->gp = gp;       
-	fileData->attrs = set_size_atom(fileData->attrs, fileData->size);
+	//fileData->attrs = set_size_atom(fileData->attrs, fileData->size);
 	EVsubmit_general(fileData->offsetSource, gp, evgroup_msg_free, fileData->attrs);
     }
 
