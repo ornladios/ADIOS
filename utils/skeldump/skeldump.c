@@ -1,4 +1,4 @@
-/* 
+/*
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
@@ -613,7 +613,7 @@ int doList_group (ADIOS_FILE *fp)
                         else
                             fprintf(outf,", %lld", vi->dims[j]);
                     }
-                    fprintf(outf,"]");
+                    fprintf(outf,"],");
                 } else {
                     fprintf(outf,"scalar");
                 }
@@ -726,7 +726,7 @@ int doList_group (ADIOS_FILE *fp)
                 } // longopt && vi->statistics 
                 fprintf(outf,"\n");
 
-                if (show_decomp) {
+                if (/*show_decomp*/1) { // Use the bpls -D mechanism to get domain decomposition info
                     adios_inq_var_blockinfo (fp, vi);
                     print_decomp(vi);
                 }
@@ -1686,23 +1686,26 @@ int print_decomp(ADIOS_VARINFO *vi)
             ndigits_dims[k] = ndigits (vi->dims[k]-1);
         }
 
-        for (i=0; i < vi->nsteps; i++) {
-            fprintf(outf, "        step %*d: ", ndigits_nsteps, i);
+        for (i=0; i < /*vi->nsteps*/1; i++) { // For now, just look at the first step xx
+            fprintf(outf, "    decomposition: [", ndigits_nsteps, i);
             fprintf(outf,"\n");
             ndigits_nblocks = ndigits (vi->nblocks[i]-1);
             for (j=0; j < vi->nblocks[i]; j++) {
-                fprintf(outf,"          block %*d: [", ndigits_nblocks, j);
+                fprintf(outf,"        [");
+                //fprintf(outf,"        block %*d: [", ndigits_nblocks, j);
                 for (k=0; k < vi->ndim; k++) {
-                    fprintf(outf, "%*lld:%*lld", 
-                            ndigits_dims[k],
+                    fprintf(outf, "[%lld,%lld]", 
                             vi->blockinfo[j].start[k],
-                            ndigits_dims[k],
                             vi->blockinfo[j].start[k] + vi->blockinfo[j].count[k]-1);
                     if (k < vi->ndim-1)
                         fprintf(outf, ", ");
                 }
-                fprintf(outf, "]\n");
+                fprintf(outf, "]");
+                if (j < vi->nblocks[i]-1)
+                    fprintf(outf, ",");
+                fprintf(outf, "\n");
             }
+            fprintf(outf,"    ]\n");
         }
     }
 }
