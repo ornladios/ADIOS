@@ -664,7 +664,6 @@ char *multiqueue_action = "{\n\
              if(EVcount_evgroup()>0){\n\
                evgroup *g = EVdata_evgroup(0); \n\
                g->condition = c->condition;\n\
-               printf(\"\\tnum_vars: %d\\n\", g->num_vars); \n\
                EVsubmit(c->process_id+1, g);\n\
                EVdiscard_flush(0);\n\
              }\n\
@@ -1595,8 +1594,8 @@ adios_flexpath_write(
 			    //check if there are FlexpathAltNames
 			    FlexpathAltName *a = NULL;
 			    for (a = d->altList.lh_first; a != NULL; a = a->entries.le_next) {
-				fprintf(stderr, "ALTNAME: %s, DIM: %s FIELD: %s\n", 
-					a->name, d->name, field->field_name);
+				/* fprintf(stderr, "ALTNAME: %s, DIM: %s FIELD: %s\n",  */
+				/* 	a->name, d->name, field->field_name); */
 				memcpy(&fm->buffer[a->field->field_offset], 
 				       data, 
 				       a->field->field_size);
