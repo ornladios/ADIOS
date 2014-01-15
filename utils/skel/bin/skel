@@ -104,13 +104,11 @@ def main(argv=None):
         skel_replay.do_replay_with_args (parser)
         return 0
 
-    if sys.argv[1] != 'help':
-        print sys.argv[1]
-        try:
-            config = adios.adiosConfig (args.project + '_skel.xml')
-        except (IOError):
-            print "Error reading " + args.project + "_skel.xml. Try running skel xml " + args.project + " first."
-            return 1
+    try:
+        config = adios.adiosConfig (args.project + '_skel.xml')
+    except (IOError):
+        print "Error reading " + args.project + "_skel.xml. Try running skel xml " + args.project + " first."
+        return 1
 
     if args.subcommand == 'params':
         #outfilename = args.project + '_params.xml'
