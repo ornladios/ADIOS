@@ -17,7 +17,7 @@ def pparse_command_line (parent_parser):
                 parents = [parent_parser],
                 formatter_class=argparse.RawDescriptionHelpFormatter,
                 prog='skel',
-                add_help=False,
+                #add_help=False,
                 description='''\
         skel makefile 
             create a makefile for building a skeletal application''')

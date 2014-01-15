@@ -169,7 +169,7 @@ def pparse_command_line (parent_parser):
                 parents = [parent_parser],
                 formatter_class=argparse.RawDescriptionHelpFormatter,
                 prog='skel',
-                add_help=False,
+                #add_help=False,
                 description='''\
         skel source 
             create source code to access the I/O pattern for the target skeletal application''')

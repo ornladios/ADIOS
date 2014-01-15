@@ -38,13 +38,32 @@ dist_template_DATA=\
     etc/templates/Makefile.default.tpl\
 	etc/templates/submit_sith.tpl\
 	etc/templates/submit_nautilus.tpl\
-	etc/templates/submit_jaguar.tpl
+	etc/templates/submit_jaguar.tpl \
+        etc/templates/Makefile.tmpl \
+        etc/templates/replay_bp.tmpl \
+        etc/templates/replay.tmpl \
+        etc/templates/replay_yaml.tmpl \
+        etc/templates/source_write_c.tmpl \
+        etc/templates/source_write_fortran.tmpl \
+        etc/templates/submit_nautilus.tmpl \
+        etc/templates/submit_sith.tmpl \
+        etc/templates/xml.tmpl
+
 
 EXTRA_DIST=etc/settings \
            etc/templates/Makefile.default.tpl \
            etc/templates/submit_jaguar.tpl \
            etc/templates/submit_sith.tpl \
            etc/templates/submit_nautilus.tpl \
+           etc/templates/Makefile.tmpl \
+           etc/templates/replay_bp.tmpl \
+           etc/templates/replay.tmpl \
+           etc/templates/replay_yaml.tmpl \
+           etc/templates/source_write_c.tmpl \
+           etc/templates/source_write_fortran.tmpl \
+           etc/templates/submit_nautilus.tmpl \
+           etc/templates/submit_sith.tmpl \
+           etc/templates/xml.tmpl \
            lib/skel_have_adios_timing.py.in
            ##etc/compiler_fragment.mk 
 

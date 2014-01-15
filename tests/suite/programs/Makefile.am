@@ -23,7 +23,8 @@ check_C=local_array_time \
         path_test \
         reuse_dim \
         adios_transforms_read_write \
-        connect_to_space_subset
+        connect_to_space_subset \
+	big_file
 
 test_C=hashtest copy_subvolume transforms_specparse
 
@@ -143,6 +144,11 @@ connect_to_space_subset_SOURCES=connect_to_space_subset.c
 connect_to_space_subset_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 connect_to_space_subset_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 connect_to_space_subset.o: connect_to_space_subset.c
+
+big_file_SOURCES=big_file.c
+big_file_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+big_file_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+big_file.o: big_file.c
 
 #transforms_SOURCES=transforms.c
 #transforms_CPPFLAGS = -DADIOS_USE_READ_API_1
