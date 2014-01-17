@@ -35,6 +35,13 @@ program skel
   $v.get_fortran_type() :: $v.get_safe_name()
 #end for
 
+! Skel variables for global array management
+#for v in filter (lambda x: x.get_dims() is not None, $bpy.get_vars() ):
+    #for sv in $v.get_offset_vars()
+  integer*4 :: $sv ($bpy.get_num_procs())
+    #end for
+#end for
+
 ! Array declarations
 #for v in filter (lambda x: x.get_dims() is not None, $bpy.get_vars() ):
   $v.get_fortran_type(), ALLOCATABLE, DIMENSION(:#for d in range(int($v.get_ndims())-1)#,:#end for#) :: $v.get_safe_name()
@@ -59,6 +66,14 @@ program skel
     $v.get_safe_name = $v.get_value()
     #end if
 #end for
+
+! Initialize Skel variables
+#for v in filter (lambda x: x.get_dims() is not None, $bpy.get_vars() ):
+    #for sv in $v.get_offset_vars()
+    $sv = (/ $v.get_offset_values_str($sv) /)
+    #end for
+#end for
+ 
 
 ! Initialize the arrays
 #for v in filter (lambda x: x.get_dims() is not None, $bpy.get_vars() ):
@@ -91,6 +106,11 @@ program skel
 #for v in $bpy.get_vars():
                      $v.get_size() + &
 #end for
+#for v in filter (lambda x: x.get_dims() is not None, $bpy.get_vars() ):
+    #for sv in $v.get_offset_vars()
+                     4 + &
+    #end for
+#end for
                      0
 
   call adios_group_size (adios_handle, adios_groupsize, skel_total_size, adios_error)
@@ -99,6 +119,13 @@ program skel
 ! First the scalars
 #for v in filter (lambda x: x.get_dims() is None, $bpy.get_vars() ):
     call adios_write (adios_handle, "$v.get_name", $v.get_safe_name(), adios_error)
+#end for
+
+! Next Skel variables
+#for v in filter (lambda x: x.get_dims() is not None, $bpy.get_vars() ):
+    #for sv in $v.get_offset_vars()
+    call adios_write (adios_handle, "$sv", $sv (skel_mpi_rank+1), adios_error)
+    #end for
 #end for
 
 ! Now the arrays
