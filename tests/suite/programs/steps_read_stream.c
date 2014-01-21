@@ -93,10 +93,12 @@ int main (int argc, char ** argv)
         while(1) {
             steps++; // start counting from 1
 
+            /*
             printf ("File info:\n");
             printf ("  current step:   %d\n", f->current_step);
             printf ("  last step:      %d\n", f->last_step);
             printf ("  # of variables: %d:\n", f->nvars);
+            */
 
             if (steps==1)
                 retval = process_metadata();
@@ -157,7 +159,7 @@ int process_metadata()
 
     /* First step processing */
 
-    printf ("Get info on variable Width: %s\n", "Width"); 
+    printf ("Get info on variable Width\n"); 
     v = adios_inq_var (f, "Width");
     if (v == NULL) {
         printf ("rank %d: ERROR: Variable %s inquiry failed: %s\n", 
@@ -168,7 +170,7 @@ int process_metadata()
     adios_free_varinfo (v);
     printf ("rank %d: Width = %d\n", rank, Width); 
 
-    printf ("Get info on variable NX: %s\n", "NX"); 
+    printf ("Get info on variable NX\n"); 
     v = adios_inq_var (f, "NX");
     if (v == NULL) {
         printf ("rank %d: ERROR: Variable %s inquiry failed: %s\n", 
@@ -179,7 +181,7 @@ int process_metadata()
     adios_free_varinfo (v);
     printf ("rank %d: NX = %d\n", rank, NX); 
 
-    printf ("Get info on variable record: %s\n", "record"); 
+    printf ("Get info on variable record\n"); 
     v = adios_inq_var (f, "record");
     if (v == NULL) {
         printf ("rank %d: ERROR: Variable %s inquiry failed: %s\n", 
@@ -187,7 +189,7 @@ int process_metadata()
         return 1;
     }
     nblocks = v->nblocks[0];
-    printf ("rank %d: record dims = %llu *%llu \n", rank, v->dims[0], v->dims[1]); 
+    printf ("rank %d: record dims = %llu * %llu \n", rank, v->dims[0], v->dims[1]); 
     adios_free_varinfo (v);
     printf ("rank %d: nblocks = %d\n", rank, nblocks); 
 

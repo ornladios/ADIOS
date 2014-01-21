@@ -18,7 +18,7 @@ int main (int argc, char ** argv)
 	int         rank, size, i, j, step, block;
         int         Offset; 
 
-	int         NX = 4; // number of records written per step per process
+	int         NX = 2; // number of records written per step per process
         int         Width=20;
         int         sub_blocks = 2; // number of record-blocks written per process in one step
         int         steps = 3;

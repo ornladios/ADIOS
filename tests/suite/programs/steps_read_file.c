@@ -90,10 +90,12 @@ int main (int argc, char ** argv)
     {
         // read data here... 
 
+        /*
         printf ("File info:\n");
         printf ("  current step:   %d\n", f->current_step);
         printf ("  last step:      %d\n", f->last_step);
         printf ("  # of variables: %d:\n", f->nvars);
+        */
 
         retval = process_metadata();
 
@@ -130,7 +132,7 @@ int process_metadata()
 
     /* First step processing */
 
-    printf ("Get info on variable Width: %s\n", "Width"); 
+    printf ("Get info on variable Width\n"); 
     v = adios_inq_var (f, "Width");
     if (v == NULL) {
         printf ("rank %d: ERROR: Variable %s inquiry failed: %s\n", 
@@ -141,7 +143,7 @@ int process_metadata()
     adios_free_varinfo (v);
     printf ("rank %d: Width = %d\n", rank, Width); 
 
-    printf ("Get info on variable NX: %s\n", "NX"); 
+    printf ("Get info on variable NX\n"); 
     v = adios_inq_var (f, "NX");
     if (v == NULL) {
         printf ("rank %d: ERROR: Variable %s inquiry failed: %s\n", 
@@ -160,7 +162,7 @@ int process_metadata()
         return 1;
     }
     nblocks = v->sum_nblocks;
-    printf ("rank %d: record dims = %llu *%llu \n", rank, v->dims[0], v->dims[1]); 
+    printf ("rank %d: record dims = %llu * %llu \n", rank, v->dims[0], v->dims[1]); 
     adios_free_varinfo (v);
     printf ("rank %d: nblocks = %d\n", rank, nblocks); 
 
