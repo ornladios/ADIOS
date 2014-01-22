@@ -79,7 +79,7 @@ class var:
 
     def get_safe_name (self):
         # Remove slashes
-        return '_slash_'.join(self.get_name().split('/'))
+        return 'SLASH'.join(self.get_name().split('/'))
 
     def get_type (self):
         return self.vardict['type']

@@ -124,7 +124,10 @@ program skel
 ! Next Skel variables
 #for v in filter (lambda x: x.get_dims() is not None, $bpy.get_vars() ):
     #for sv in $v.get_offset_vars()
-    call adios_write (adios_handle, "$sv", $sv (skel_mpi_rank+1), adios_error)
+    call adios_write (adios_handle, &
+                      "$sv", &
+                       $sv (skel_mpi_rank+1), &
+                       adios_error)
     #end for
 #end for
 
