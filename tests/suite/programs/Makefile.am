@@ -24,7 +24,12 @@ check_C=local_array_time \
         reuse_dim \
         adios_transforms_read_write \
         connect_to_space_subset \
-	big_file
+	big_file \
+	set_path \
+	set_path_var \
+	steps_write \
+	steps_read_file \
+	steps_read_stream
 
 test_C=hashtest copy_subvolume transforms_specparse
 
@@ -149,6 +154,21 @@ big_file_SOURCES=big_file.c
 big_file_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 big_file_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 big_file.o: big_file.c
+
+steps_write_SOURCES=steps_write.c
+steps_write_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+steps_write_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+steps_write.o: steps_write.c
+
+steps_read_file_SOURCES=steps_read_file.c
+steps_read_file_LDADD = $(top_builddir)/src/libadios.a $(ADIOSREADLIB_LDADD)
+steps_read_file_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
+steps_read_file.o: steps_read_file.c
+
+steps_read_stream_SOURCES=steps_read_stream.c
+steps_read_stream_LDADD = $(top_builddir)/src/libadios.a $(ADIOSREADLIB_LDADD)
+steps_read_stream_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
+steps_read_stream.o: steps_read_stream.c
 
 #transforms_SOURCES=transforms.c
 #transforms_CPPFLAGS = -DADIOS_USE_READ_API_1

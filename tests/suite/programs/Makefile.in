@@ -86,7 +86,10 @@ CONFIG_CLEAN_VPATH_FILES =
 @BUILD_WRITE_TRUE@	reuse_dim$(EXEEXT) \
 @BUILD_WRITE_TRUE@	adios_transforms_read_write$(EXEEXT) \
 @BUILD_WRITE_TRUE@	connect_to_space_subset$(EXEEXT) \
-@BUILD_WRITE_TRUE@	big_file$(EXEEXT)
+@BUILD_WRITE_TRUE@	big_file$(EXEEXT) set_path$(EXEEXT) \
+@BUILD_WRITE_TRUE@	set_path_var$(EXEEXT) steps_write$(EXEEXT) \
+@BUILD_WRITE_TRUE@	steps_read_file$(EXEEXT) \
+@BUILD_WRITE_TRUE@	steps_read_stream$(EXEEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__EXEEXT_2 =  \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	posix_method$(EXEEXT)
 am__EXEEXT_3 =
@@ -213,6 +216,41 @@ selections_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 selections_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(selections_LDFLAGS) $(LDFLAGS) -o $@
+am_set_path_OBJECTS = set_path.$(OBJEXT)
+set_path_OBJECTS = $(am_set_path_OBJECTS)
+set_path_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+set_path_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
+	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(set_path_LDFLAGS) \
+	$(LDFLAGS) -o $@
+am_set_path_var_OBJECTS = set_path_var.$(OBJEXT)
+set_path_var_OBJECTS = $(am_set_path_var_OBJECTS)
+set_path_var_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+set_path_var_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(set_path_var_LDFLAGS) $(LDFLAGS) -o $@
+am_steps_read_file_OBJECTS = steps_read_file.$(OBJEXT)
+steps_read_file_OBJECTS = $(am_steps_read_file_OBJECTS)
+steps_read_file_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+steps_read_file_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(steps_read_file_LDFLAGS) $(LDFLAGS) -o $@
+am_steps_read_stream_OBJECTS = steps_read_stream.$(OBJEXT)
+steps_read_stream_OBJECTS = $(am_steps_read_stream_OBJECTS)
+steps_read_stream_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+steps_read_stream_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(steps_read_stream_LDFLAGS) $(LDFLAGS) -o $@
+am_steps_write_OBJECTS = steps_write.$(OBJEXT)
+steps_write_OBJECTS = $(am_steps_write_OBJECTS)
+steps_write_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+steps_write_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(steps_write_LDFLAGS) $(LDFLAGS) -o $@
 am_transforms_specparse_OBJECTS =  \
 	transforms_specparse-transforms_specparse.$(OBJEXT)
 transforms_specparse_OBJECTS = $(am_transforms_specparse_OBJECTS)
@@ -270,9 +308,11 @@ SOURCES = $(adios_amr_write_SOURCES) $(adios_amr_write_2vars_SOURCES) \
 	$(hashtest_SOURCES) $(local_array_time_SOURCES) \
 	$(many_vars_SOURCES) $(path_test_SOURCES) \
 	$(posix_method_SOURCES) $(reuse_dim_SOURCES) \
-	$(selections_SOURCES) $(transforms_specparse_SOURCES) \
-	$(two_groups_SOURCES) $(write_alternate_SOURCES) \
-	$(write_read_SOURCES)
+	$(selections_SOURCES) $(set_path_SOURCES) \
+	$(set_path_var_SOURCES) $(steps_read_file_SOURCES) \
+	$(steps_read_stream_SOURCES) $(steps_write_SOURCES) \
+	$(transforms_specparse_SOURCES) $(two_groups_SOURCES) \
+	$(write_alternate_SOURCES) $(write_read_SOURCES)
 DIST_SOURCES = $(adios_amr_write_SOURCES) \
 	$(adios_amr_write_2vars_SOURCES) $(adios_staged_read_SOURCES) \
 	$(adios_staged_read_2vars_SOURCES) \
@@ -282,9 +322,11 @@ DIST_SOURCES = $(adios_amr_write_SOURCES) \
 	$(hashtest_SOURCES) $(local_array_time_SOURCES) \
 	$(many_vars_SOURCES) $(path_test_SOURCES) \
 	$(posix_method_SOURCES) $(reuse_dim_SOURCES) \
-	$(selections_SOURCES) $(transforms_specparse_SOURCES) \
-	$(two_groups_SOURCES) $(write_alternate_SOURCES) \
-	$(write_read_SOURCES)
+	$(selections_SOURCES) $(set_path_SOURCES) \
+	$(set_path_var_SOURCES) $(steps_read_file_SOURCES) \
+	$(steps_read_stream_SOURCES) $(steps_write_SOURCES) \
+	$(transforms_specparse_SOURCES) $(two_groups_SOURCES) \
+	$(write_alternate_SOURCES) $(write_read_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 am__tty_colors = \
@@ -554,7 +596,12 @@ check_readonly_C =
 @BUILD_WRITE_TRUE@        reuse_dim \
 @BUILD_WRITE_TRUE@        adios_transforms_read_write \
 @BUILD_WRITE_TRUE@        connect_to_space_subset \
-@BUILD_WRITE_TRUE@	big_file
+@BUILD_WRITE_TRUE@	big_file \
+@BUILD_WRITE_TRUE@	set_path \
+@BUILD_WRITE_TRUE@	set_path_var \
+@BUILD_WRITE_TRUE@	steps_write \
+@BUILD_WRITE_TRUE@	steps_read_file \
+@BUILD_WRITE_TRUE@	steps_read_stream
 
 @BUILD_WRITE_TRUE@test_C = hashtest copy_subvolume transforms_specparse
 @BUILD_FORTRAN_TRUE@check_readonly_Fortran = 
@@ -624,6 +671,15 @@ connect_to_space_subset_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 big_file_SOURCES = big_file.c
 big_file_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 big_file_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+steps_write_SOURCES = steps_write.c
+steps_write_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+steps_write_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+steps_read_file_SOURCES = steps_read_file.c
+steps_read_file_LDADD = $(top_builddir)/src/libadios.a $(ADIOSREADLIB_LDADD)
+steps_read_file_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
+steps_read_stream_SOURCES = steps_read_stream.c
+steps_read_stream_LDADD = $(top_builddir)/src/libadios.a $(ADIOSREADLIB_LDADD)
+steps_read_stream_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
 
 #transforms_SOURCES=transforms.c
 #transforms_CPPFLAGS = -DADIOS_USE_READ_API_1
@@ -745,6 +801,21 @@ reuse_dim$(EXEEXT): $(reuse_dim_OBJECTS) $(reuse_dim_DEPENDENCIES)
 selections$(EXEEXT): $(selections_OBJECTS) $(selections_DEPENDENCIES) 
 	@rm -f selections$(EXEEXT)
 	$(selections_LINK) $(selections_OBJECTS) $(selections_LDADD) $(LIBS)
+set_path$(EXEEXT): $(set_path_OBJECTS) $(set_path_DEPENDENCIES) 
+	@rm -f set_path$(EXEEXT)
+	$(set_path_LINK) $(set_path_OBJECTS) $(set_path_LDADD) $(LIBS)
+set_path_var$(EXEEXT): $(set_path_var_OBJECTS) $(set_path_var_DEPENDENCIES) 
+	@rm -f set_path_var$(EXEEXT)
+	$(set_path_var_LINK) $(set_path_var_OBJECTS) $(set_path_var_LDADD) $(LIBS)
+steps_read_file$(EXEEXT): $(steps_read_file_OBJECTS) $(steps_read_file_DEPENDENCIES) 
+	@rm -f steps_read_file$(EXEEXT)
+	$(steps_read_file_LINK) $(steps_read_file_OBJECTS) $(steps_read_file_LDADD) $(LIBS)
+steps_read_stream$(EXEEXT): $(steps_read_stream_OBJECTS) $(steps_read_stream_DEPENDENCIES) 
+	@rm -f steps_read_stream$(EXEEXT)
+	$(steps_read_stream_LINK) $(steps_read_stream_OBJECTS) $(steps_read_stream_LDADD) $(LIBS)
+steps_write$(EXEEXT): $(steps_write_OBJECTS) $(steps_write_DEPENDENCIES) 
+	@rm -f steps_write$(EXEEXT)
+	$(steps_write_LINK) $(steps_write_OBJECTS) $(steps_write_LDADD) $(LIBS)
 transforms_specparse$(EXEEXT): $(transforms_specparse_OBJECTS) $(transforms_specparse_DEPENDENCIES) 
 	@rm -f transforms_specparse$(EXEEXT)
 	$(transforms_specparse_LINK) $(transforms_specparse_OBJECTS) $(transforms_specparse_LDADD) $(LIBS)
@@ -779,6 +850,11 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/path_test.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/reuse_dim.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/selections.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/set_path.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/set_path_var.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/steps_read_file.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/steps_read_stream.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/steps_write.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transforms_specparse-transforms_specparse.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/two_groups.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/write_alternate.Po@am__quote@
@@ -1178,6 +1254,9 @@ path_test.o: path_test.c
 reuse_dim.o: reuse_dim.c
 connect_to_space_subset.o: connect_to_space_subset.c
 big_file.o: big_file.c
+steps_write.o: steps_write.c
+steps_read_file.o: steps_read_file.c
+steps_read_stream.o: steps_read_stream.c
 hashtest.o: hashtest.c
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
