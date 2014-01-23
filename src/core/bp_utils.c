@@ -1219,16 +1219,16 @@ int bp_parse_vars (struct BP_FILE * fh)
     }
 
     root = vars_root;
-    uint16_t * var_counts_per_group;
+    uint64_t * var_counts_per_group;
     uint16_t *  var_gids;
     uint64_t ** var_offsets;
     char ** var_namelist;
     int grpid, j,cnt;
     int lenpath,lenname;
 
-    var_counts_per_group = (uint16_t *)
-        malloc (sizeof(uint16_t)*fh->gvar_h->group_count);
-    memset ( var_counts_per_group, 0, fh->gvar_h->group_count*sizeof(uint16_t));
+    var_counts_per_group = (uint64_t *)
+        malloc (sizeof(uint64_t)*fh->gvar_h->group_count);
+    memset ( var_counts_per_group, 0, fh->gvar_h->group_count*sizeof(uint64_t));
     var_gids = (uint16_t *) malloc (sizeof(uint16_t )*mh->vars_count);
     var_namelist = (char **)malloc(sizeof(char*)*mh->vars_count);
 

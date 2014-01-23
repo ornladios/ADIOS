@@ -110,7 +110,7 @@ void adios_read_bp_staged1_reset_dimension_order (const ADIOS_FILE *fp, int is_f
 
 }
 
-void adios_read_bp_staged1_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, int **nvars_per_group, int **nattrs_per_group)
+void adios_read_bp_staged1_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***group_namelist,  uint64_t **nvars_per_group,  uint64_t **nattrs_per_group)
 {
 
 }

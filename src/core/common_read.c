@@ -41,19 +41,19 @@ struct common_read_internals_struct {
     struct adios_read_hooks_struct * read_hooks; /* Save adios_read_hooks for each fopen for Matlab */
     
     /* Group view information *//* Actual method provides the group names */
-    int     ngroups;
-    char ** group_namelist;
-    int   * nvars_per_group;     /* # of variables per each group */
-    int   * nattrs_per_group;    /* # of attributes per each group */
-    int     group_in_view;       /* 0..ngroups-1: selected group in view,
+    int         ngroups;
+    char     ** group_namelist;
+    uint64_t  * nvars_per_group;     /* # of variables per each group */
+    uint64_t  * nattrs_per_group;    /* # of attributes per each group */
+    int         group_in_view;       /* 0..ngroups-1: selected group in view,
                                   -1: all groups */
-    int     group_varid_offset;  /* offset of var IDs from specific group to full list
+    uint64_t    group_varid_offset;  /* offset of var IDs from specific group to full list
                                     if a selected group is in view */
-    int     group_attrid_offset;
-    int     full_nvars;          /* fp->nvars to save here for a group view */
-    char ** full_varnamelist;    /* fp->var_namelist to save here if one group is viewed */
-    int     full_nattrs;         /* fp->nvars to save here for a group view */
-    char ** full_attrnamelist;   /* fp->attr_namelist to save here if one group is viewed */
+    uint64_t    group_attrid_offset;
+    uint64_t    full_nvars;          /* fp->nvars to save here for a group view */
+    char     ** full_varnamelist;    /* fp->var_namelist to save here if one group is viewed */
+    uint64_t    full_nattrs;         /* fp->nvars to save here for a group view */
+    char     ** full_attrnamelist;   /* fp->attr_namelist to save here if one group is viewed */
     qhashtbl_t *hashtbl_vars;    /* speed up search for var_namelist to varid  */
 
     // NCSU ALACRITY-ADIOS - Table of sub-requests issued by transform method

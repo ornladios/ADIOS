@@ -3045,7 +3045,7 @@ void adios_read_bp_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
     }
 }
 
-void adios_read_bp_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, int **nvars_per_group, int **nattrs_per_group)
+void adios_read_bp_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, uint64_t **nvars_per_group, uint64_t **nattrs_per_group)
 {
     BP_PROC * p;
     BP_FILE * fh;
@@ -3065,7 +3065,7 @@ void adios_read_bp_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***gr
         memcpy ((*group_namelist)[i], fh->gvar_h->namelist[i], strlen (fh->gvar_h->namelist[i]) + 1);
     }
 
-    * nvars_per_group = (int *) malloc (fh->gvar_h->group_count * sizeof (int));
+    * nvars_per_group = (uint64_t *) malloc (fh->gvar_h->group_count * sizeof (uint64_t));
     assert (* nvars_per_group);
 
     for (i = 0; i < fh->gvar_h->group_count; i++)
@@ -3073,7 +3073,7 @@ void adios_read_bp_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***gr
         (* nvars_per_group)[i] = fh->gvar_h->var_counts_per_group[i];
     }
 
-    * nattrs_per_group = (int *) malloc (fh->gattr_h->group_count * sizeof (int));
+    * nattrs_per_group = (uint64_t *) malloc (fh->gattr_h->group_count * sizeof (uint64_t));
     assert (* nattrs_per_group);
 
     for (i = 0; i < fh->gvar_h->group_count; i++)
