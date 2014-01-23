@@ -13,10 +13,15 @@ class skel_bpy:
 
         #print self.doc
 
+        if self.get_language().lower() == "fortran":
+            flip = True
+        else:
+            flip = False
+
         self.vars = {}
         for v in self.doc['variables']:
             name = v ['name']
-            self.vars [name] = var (name, v)
+            self.vars [name] = var (name, v, flip)
             #print "Added variable %s\n" % name
 
     def get_num_procs (self):
@@ -50,16 +55,31 @@ class skel_bpy:
         return "POSIX" # default method
 
 class var:
-    def __init__ (self, name, vardict):
+    def __init__ (self, name, vardict, flip):
         self.name = name
         self.vardict = vardict
+
+        # If we're writing fortran, we need to flip the order of the dimensions, as they were reported by the C API
+        if flip:
+            if self.vardict.get('dims', None) != None and self.vardict['dims'] != 'scalar':
+                self.vardict['dims'].reverse()
+            if self.vardict.get('decomposition', None) != None:
+                for proc in self.vardict['decomposition']:
+                    proc.reverse()
+
+        self.global_dims = None
+        if self.get_decomposition() != None:
+             self.global_dims = []
+             for i in range (self.get_ndims() ):
+                 self.global_dims.append (max ([x[i][1] for x in self.get_decomposition() ] ) + 1 )
+
 
     def get_name (self):
         return self.name
 
     def get_safe_name (self):
         # Remove slashes
-        return '_slash_'.join(self.get_name().split('/'))
+        return 'SLASH'.join(self.get_name().split('/'))
 
     def get_type (self):
         return self.vardict['type']
@@ -224,8 +244,12 @@ class var:
         else:
             return "%s * %s" % (self.get_unit_size(), '*'.join (str(x) for x in self.get_dims() ) ) 
 
+    # Okay, so this is pinned to the decomposition data from the yaml file. We'll just take the max value
+    # in each dimension...
     def get_global_dims (self):
-        return self.vardict.get ('global_dims', None)
+
+        return self.global_dims
+
 
     def get_global_dims_str (self):
         gd = self.get_global_dims()
@@ -233,6 +257,21 @@ class var:
             return ""
         else:
             return ",".join (str(glob_dim) for glob_dim in gd)
+
+    def get_offset_values_str (self, var_name):
+        dim = int (var_name[-1:] )
+        return ",".join ( [str(x[dim][0]) for x in self.get_decomposition()] )
+
+    # This is a list of var names to represent the global offsets in each dimension
+    def get_offset_vars (self):
+        return ["skel__offset_%s_%i" % (self.get_safe_name(),i) for i in range (self.get_ndims() )]
+
+    def get_offset_vars_str (self):
+        o = self.get_offset_vars()
+        if o is None:
+            return ""
+        else:
+            return ",".join (str(off) for off in o)
 
     def get_offsets (self):
         return self.vardict.get ('offsets', None)
@@ -245,7 +284,7 @@ class var:
             return ",".join (str(off) for off in o)
 
     def has_global_bounds (self):
-        return self.get_global_dims() is not None 
+        return self.get_decomposition() is not None 
 
     def get_value (self):
 
@@ -259,6 +298,10 @@ class var:
         if vals is None or length (vals) < 1:
             return None
         return vals[0]['val']
+
+    def get_decomposition (self):
+        return self.vardict.get ('decomposition', None)
+
 
 def main(argv=None):
     b = skel_bpy ("test.yaml")

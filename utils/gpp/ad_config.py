@@ -154,8 +154,8 @@ class var:
         name = self.get_name()
         if (path == ''):
             fullpath = name
-        elif (path == '/'):
-            fullpath = '/'+name
+        elif (path[-1:] == '/'):
+            fullpath = path + name
         else:
             fullpath = path + '/' + name
         return fullpath

@@ -41,6 +41,12 @@ uint64_t skel_total_size;
 $v.get_c_type() $v.get_safe_name();
 #end for
 
+// Skel variables for global array management
+#for v in filter (lambda x: x.get_dims() is not None, $bpy.get_vars() ):
+    #for sv in $v.get_offset_vars()
+int $sv [$bpy.get_num_procs()] = {$v.get_offset_values_str($sv)};
+    #end for
+#end for
 
 
 // Array declarations
@@ -93,6 +99,11 @@ adios_groupsize =
 #for v in $bpy.get_vars():
                      $v.get_size() +
 #end for
+#for v in filter (lambda x: x.get_dims() is not None, $bpy.get_vars() ):
+    #for sv in $v.get_offset_vars()
+                     4 + 
+    #end for
+#end for
                      0;
 
 adios_group_size (adios_handle, adios_groupsize, &skel_total_size);
@@ -103,6 +114,14 @@ adios_group_size (adios_handle, adios_groupsize, &skel_total_size);
 #for v in filter (lambda x: x.get_dims() is None, $bpy.get_vars() ):
     adios_write (adios_handle, "$v.get_name", &$v.get_safe_name());
 #end for
+
+// Next Skel variables
+#for v in filter (lambda x: x.get_dims() is not None, $bpy.get_vars() ):
+    #for sv in $v.get_offset_vars()
+    adios_write (adios_handle, "$sv", &($sv [skel_mpi_rank] ) );
+    #end for
+#end for
+
 // Now the arrays
 #for v in filter (lambda x: x.get_dims() is not None, $bpy.get_vars() ):
     adios_write (adios_handle, "$v.get_name", $v.get_safe_name());
