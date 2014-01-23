@@ -762,6 +762,8 @@ int doList_group (ADIOS_FILE *fp)
 void printMeshes (ADIOS_FILE  *fp)
 {
     int meshid,i,j;     // loop vars
+    ADIOS_FILE *meshfp = NULL;
+    int     mpi_comm_dummy=0;
     if (fp->nmeshes==0) {
         fprintf(outf, "Mesh info: There are no meshes defined in this file\n");
         return;
@@ -778,6 +780,10 @@ void printMeshes (ADIOS_FILE  *fp)
                 fprintf(outf, "  bpls warning: mesh name in list (=\"%s\") != "
                         "inquired mesh name (\"%s\")\n", 
                         fp->mesh_namelist[meshid], mi->name);
+            if (mi->file_name) {
+               meshfp = adios_read_open_file(mi->file_name, ADIOS_READ_METHOD_BP, mpi_comm_dummy );
+               adios_complete_meshinfo (fp, meshfp, mi); 
+            }
             fprintf(outf, "    type:         ");
             switch (mi->type) {
                 case ADIOS_MESH_UNIFORM:
@@ -793,7 +799,6 @@ void printMeshes (ADIOS_FILE  *fp)
                                      j, %g) 
                     }
                     if (mi->uniform->spacings) {
-                        mi->uniform->spacings[0]=5.0;
                         PRINT_ARRAY ("    spacings:     ", 
                                      mi->uniform->num_dimensions, 
                                      mi->uniform->spacings,
@@ -876,6 +881,9 @@ void printMeshes (ADIOS_FILE  *fp)
             } 
             fprintf(outf, "    time varying: %s\n", (mi->time_varying ? "yes" : "no") );
             adios_free_meshinfo (mi);
+            if (meshfp) 
+                adios_read_close(meshfp);
+
         }
     }
     fprintf(outf, "\n");
