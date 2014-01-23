@@ -1367,7 +1367,7 @@ ADIOS_FILE *adios_read_flexpath_fopen(const char *fname, MPI_Comm comm) {
 
 int adios_read_flexpath_is_var_timed(const ADIOS_FILE* fp, int varid) { return 0; }
 
-void adios_read_flexpath_get_groupinfo(const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, uint64_t **nvars_per_group, uint64_t **nattrs_per_group) {}
+void adios_read_flexpath_get_groupinfo(const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, uint32_t **nvars_per_group, uint32_t **nattrs_per_group) {}
 
 int adios_read_flexpath_check_reads(const ADIOS_FILE* fp, ADIOS_VARCHUNK** chunk) { log_debug( "flexpath:adios function check reads\n"); return 0; }
 

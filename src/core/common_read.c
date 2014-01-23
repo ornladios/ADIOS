@@ -43,16 +43,16 @@ struct common_read_internals_struct {
     /* Group view information *//* Actual method provides the group names */
     int         ngroups;
     char     ** group_namelist;
-    uint64_t  * nvars_per_group;     /* # of variables per each group */
-    uint64_t  * nattrs_per_group;    /* # of attributes per each group */
+    uint32_t  * nvars_per_group;     /* # of variables per each group */
+    uint32_t  * nattrs_per_group;    /* # of attributes per each group */
     int         group_in_view;       /* 0..ngroups-1: selected group in view,
                                   -1: all groups */
     uint64_t    group_varid_offset;  /* offset of var IDs from specific group to full list
                                     if a selected group is in view */
     uint64_t    group_attrid_offset;
-    uint64_t    full_nvars;          /* fp->nvars to save here for a group view */
+    uint32_t    full_nvars;          /* fp->nvars to save here for a group view */
     char     ** full_varnamelist;    /* fp->var_namelist to save here if one group is viewed */
-    uint64_t    full_nattrs;         /* fp->nvars to save here for a group view */
+    uint32_t    full_nattrs;         /* fp->nvars to save here for a group view */
     char     ** full_attrnamelist;   /* fp->attr_namelist to save here if one group is viewed */
     qhashtbl_t *hashtbl_vars;    /* speed up search for var_namelist to varid  */
 
@@ -3209,9 +3209,9 @@ int common_read_group_view (ADIOS_FILE  *fp, int groupid)
         if (groupid >= 0 && groupid < internals->ngroups) {
             /* 1. save complete list if first done */
             if (internals->group_in_view == -1) {
-                internals->full_nvars = fp->nvars;
+                internals->full_nvars = (uint32_t) fp->nvars;
                 internals->full_varnamelist = fp->var_namelist;
-                internals->full_nattrs = fp->nattrs;
+                internals->full_nattrs = (uint32_t) fp->nattrs;
                 internals->full_attrnamelist = fp->attr_namelist;
             }
             /* Set ID offsets for easier indexing of vars/attrs in other functions */

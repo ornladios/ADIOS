@@ -31,9 +31,9 @@ struct bp_minifooter {
     uint64_t time_steps;  /* = fh->tidx_stop - fh->tidx_start + 1 */
     uint64_t pgs_count;
     uint64_t pgs_length;
-    uint64_t vars_count;
+    uint32_t vars_count;
     uint64_t vars_length;
-    uint64_t attrs_count;
+    uint32_t attrs_count;
     uint64_t attrs_length;
     uint64_t pgs_index_offset;
     uint64_t vars_index_offset;
@@ -87,7 +87,7 @@ struct BP_GROUP_VAR {
     uint32_t *** time_index; 
     uint64_t * pg_offsets;
     char ** var_namelist;
-    uint64_t * var_counts_per_group;
+    uint32_t * var_counts_per_group;
     uint64_t ** var_offsets;
 };
 
@@ -96,16 +96,16 @@ struct BP_GROUP_ATTR {
     uint16_t group_id;
     char ** namelist;
     char ** attr_namelist;
-    uint16_t * attr_counts_per_group;
+    uint32_t * attr_counts_per_group;
     uint64_t ** attr_offsets;
 };
 
 struct BP_GROUP {
     uint16_t group_id;
     uint16_t vars_offset; // start of variables belonging to this group in the list of variables from all groups; old read API used this
-    uint64_t vars_count;
+    uint32_t vars_count;
     uint16_t attrs_offset; // old read API, this group's attributes in the list of all groups' attrs 
-    uint64_t attrs_count;
+    uint32_t attrs_count;
     struct BP_FILE * fh;
     struct adios_index_var_struct_v1 * vars_root;  /* pointer into the list of BP_FILE.vars_root */
     struct adios_index_attribute_struct_v1 * attrs_root;
