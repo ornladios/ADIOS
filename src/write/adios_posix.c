@@ -743,10 +743,12 @@ static void adios_posix_do_read (struct adios_file_struct * fd
 
     adios_posix_read_version (&p->b);
     adios_parse_version (&p->b, &version);
+    version &= ADIOS_VERSION_NUM_MASK;
 
-    switch (version & ADIOS_VERSION_NUM_MASK)
+    switch (version)
     {
         case 1:
+        case 2:
         {
             struct adios_index_struct_v1 * index = adios_alloc_index_v1(0); // no hashtables
             struct adios_index_process_group_struct_v1 * pg_root = index->pg_root;
@@ -850,9 +852,7 @@ static void adios_posix_do_read (struct adios_file_struct * fd
         }
 
         default:
-            fprintf (stderr, "POSIX read: file version unknown: %u\n"
-                    ,version
-                    );
+            fprintf (stderr, "POSIX read: file version unknown: %u\n", version);
             return;
     }
 
