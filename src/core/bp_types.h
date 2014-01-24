@@ -32,8 +32,8 @@ struct bp_minifooter {
     uint64_t pgs_count;
     uint64_t pgs_length;
     uint32_t vars_count;
-    uint64_t vars_length;
     uint32_t attrs_count;
+    uint64_t vars_length;
     uint64_t attrs_length;
     uint64_t pgs_index_offset;
     uint64_t vars_index_offset;

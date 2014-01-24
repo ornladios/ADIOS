@@ -13,7 +13,8 @@
 #include "core/adios_transport_hooks.h"
 #include "core/qhashtbl.h"
 
-#define ADIOS_VERSION_NUM_MASK                       0x00000011
+#define ADIOS_VERSION_BP_FORMAT                      2
+#define ADIOS_VERSION_NUM_MASK                       0x000000FF
 #define ADIOS_VERSION_HAVE_SUBFILE                   0x00000100
 #define ADIOS_VERSION_HAVE_TIME_INDEX_CHARACTERISTIC 0x00000200
 enum ADIOS_CHARACTERISTICS
@@ -124,7 +125,7 @@ struct adios_index_characteristic_struct_v1
 {
     uint64_t offset;  // beginning of the var or attr entry
     struct adios_index_characteristic_dims_struct_v1 dims;
-    uint16_t var_id;
+    uint32_t var_id;
     void * value;
     uint64_t payload_offset;   // beginning of the var or attr payload
     uint32_t file_index;  // subfile index
@@ -147,7 +148,7 @@ struct adios_index_characteristic_struct_v1
 
 struct adios_index_var_struct_v1
 {
-    uint16_t id;
+    uint32_t id;
     char * group_name;
     char * var_name;
     char * var_path;
@@ -163,7 +164,7 @@ struct adios_index_var_struct_v1
 
 struct adios_index_attribute_struct_v1
 {
-    uint16_t id;
+    uint32_t id;
     char * group_name;
     char * attr_name;
     char * attr_path;
@@ -202,7 +203,7 @@ struct adios_method_info_struct_v1
 struct adios_dimension_item_struct_v1
 {
     uint64_t rank;
-    uint16_t var_id;
+    uint32_t var_id;
     enum ADIOS_FLAG time_index;
 };
 
@@ -218,7 +219,7 @@ struct adios_process_group_header_struct_v1
 {
     enum ADIOS_FLAG host_language_fortran;
     char * name;
-    uint16_t coord_var_id;
+    uint32_t coord_var_id;
     char * time_index_name;
     uint32_t time_index;
     uint8_t methods_count;
@@ -227,19 +228,19 @@ struct adios_process_group_header_struct_v1
 
 struct adios_vars_header_struct_v1
 {
-    uint16_t count;
+    uint32_t count;
     uint64_t length;
 };
 
 struct adios_attributes_header_struct_v1
 {
-    uint16_t count;
+    uint32_t count;
     uint64_t length;
 };
 
 struct adios_var_header_struct_v1
 {
-    uint16_t id;
+    uint32_t id;
     char * name;
     char * path;
     enum ADIOS_DATATYPES type;
@@ -256,13 +257,13 @@ struct adios_var_payload_struct_v1
 
 struct adios_attribute_struct_v1
 {
-    uint16_t id;
+    uint32_t id;
     char * name;
     char * path;
 
     enum ADIOS_FLAG is_var;
 
-    uint16_t var_id;
+    uint32_t var_id;
 
     enum ADIOS_DATATYPES type;
     uint32_t length;
