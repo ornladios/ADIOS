@@ -1297,7 +1297,7 @@ int adios_common_declare_group (int64_t * id, const char * name
     g->member_count = 0; // will be set in adios_append_group
     g->vars = NULL;
     g->vars_tail = NULL;
-    g->hashtbl_vars = qhashtbl(100);
+    g->hashtbl_vars = qhashtbl(500);
     g->vars_written = NULL;
     g->vars_written_tail = NULL;
     g->attributes = NULL;
@@ -2677,7 +2677,7 @@ struct adios_index_struct_v1 * adios_alloc_index_v1 (int alloc_hashtables)
     index->attrs_root = NULL;
     index->attrs_tail = NULL;
     if (alloc_hashtables) {
-        index->hashtbl_vars  = qhashtbl(100);
+        index->hashtbl_vars  = qhashtbl(500);
         //index->hashtbl_attrs = qhashtbl(100);
         index->hashtbl_attrs = NULL; // not used yet
     } else {

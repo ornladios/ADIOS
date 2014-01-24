@@ -153,6 +153,16 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
     return retval;
 }
 
+static int calc_hash_size(unsigned int nvars) 
+{
+    int hash_size;
+    if (nvars < 100) hash_size = nvars; // best speed for most codes
+    else if (nvars < 1000)    hash_size = 100+nvars/10;   // 100..999 variables
+    else if (nvars < 10000)   hash_size = 200+nvars/20;   // 1000..9999 
+    else if (nvars < 100000)  hash_size = 200+nvars/20;  // 10k..99999
+    else                      hash_size = 10000; // 100k..
+    return hash_size;
+}
 
 int common_read_finalize_method(enum ADIOS_READ_METHOD method)
 {
@@ -199,8 +209,7 @@ ADIOS_FILE * common_read_open (const char * fname,
         return fp;
 
     // create hashtable from the variable names as key and their index as value
-    int hashsize = fp->nvars;
-    if (fp->nvars > 100) hashsize = 100;
+    int hashsize = calc_hash_size(fp->nvars);
     internals->hashtbl_vars = qhashtbl(hashsize);
     for (i=0; i<fp->nvars; i++) {
         internals->hashtbl_vars->put (internals->hashtbl_vars, fp->var_namelist[i], 
@@ -307,8 +316,7 @@ ADIOS_FILE * common_read_open_file (const char * fname,
         return fp;
     
     // create hashtable from the variable names as key and their index as value
-    int hashsize = fp->nvars;
-    if (fp->nvars > 100) hashsize = 100;
+    int hashsize = calc_hash_size(fp->nvars);
     internals->hashtbl_vars = qhashtbl(hashsize);
     for (i=0; i<fp->nvars; i++) {
         internals->hashtbl_vars->put (internals->hashtbl_vars, fp->var_namelist[i], 
@@ -438,8 +446,7 @@ int common_read_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
             // Re-create hashtable from the variable names as key and their index as value
             if (internals->hashtbl_vars)
                 internals->hashtbl_vars->free (internals->hashtbl_vars);
-            hashsize = fp->nvars;
-            if (fp->nvars > 100) hashsize = 100;
+            hashsize = calc_hash_size(fp->nvars);
             internals->hashtbl_vars = qhashtbl(hashsize);
             for (i=0; i<fp->nvars; i++) {
                 internals->hashtbl_vars->put (internals->hashtbl_vars, fp->var_namelist[i], 
