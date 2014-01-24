@@ -4,7 +4,7 @@ File info:
   of attributes: 0
   of meshes:     0
   time steps:    0 - 0
-  bp version:    1
+  bp version:    2
   statistics:    Min / Max / Avg / Std_dev
 
   double   temperature  {140} = 0 / 139 / 69.5 / 40.4135 
