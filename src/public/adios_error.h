@@ -92,6 +92,7 @@ enum ADIOS_ERRCODES {
     err_invalid_argument                = -140,
 
     // Mesh reading errors
+    err_mesh_file_missing                     = -146, // mesh file is missing
     err_no_matching_mesh_var                  = -147, // no mesh is associated to var
     err_mesh_missing                          = -148, // mesh is missing in meshlist
     err_mesh_name_attr_missing                = -149, // mesh attr is missing
