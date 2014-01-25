@@ -64,6 +64,7 @@ typedef struct
 typedef struct {   //type returned by adios_inq_mesh for read method
     int id;
     char * name;
+    char * file_name; // 0 means mesh struct from the same file, otherwise mesh struct from externel file 
     int time_varying;           //0 means not time-varying, 1 means time-varying
     enum ADIOS_MESH_TYPE type;
     union
