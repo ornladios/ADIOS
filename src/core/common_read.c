@@ -41,19 +41,19 @@ struct common_read_internals_struct {
     struct adios_read_hooks_struct * read_hooks; /* Save adios_read_hooks for each fopen for Matlab */
     
     /* Group view information *//* Actual method provides the group names */
-    int     ngroups;
-    char ** group_namelist;
-    int   * nvars_per_group;     /* # of variables per each group */
-    int   * nattrs_per_group;    /* # of attributes per each group */
-    int     group_in_view;       /* 0..ngroups-1: selected group in view,
+    int         ngroups;
+    char     ** group_namelist;
+    uint32_t  * nvars_per_group;     /* # of variables per each group */
+    uint32_t  * nattrs_per_group;    /* # of attributes per each group */
+    int         group_in_view;       /* 0..ngroups-1: selected group in view,
                                   -1: all groups */
-    int     group_varid_offset;  /* offset of var IDs from specific group to full list
+    uint64_t    group_varid_offset;  /* offset of var IDs from specific group to full list
                                     if a selected group is in view */
-    int     group_attrid_offset;
-    int     full_nvars;          /* fp->nvars to save here for a group view */
-    char ** full_varnamelist;    /* fp->var_namelist to save here if one group is viewed */
-    int     full_nattrs;         /* fp->nvars to save here for a group view */
-    char ** full_attrnamelist;   /* fp->attr_namelist to save here if one group is viewed */
+    uint64_t    group_attrid_offset;
+    uint32_t    full_nvars;          /* fp->nvars to save here for a group view */
+    char     ** full_varnamelist;    /* fp->var_namelist to save here if one group is viewed */
+    uint32_t    full_nattrs;         /* fp->nvars to save here for a group view */
+    char     ** full_attrnamelist;   /* fp->attr_namelist to save here if one group is viewed */
     qhashtbl_t *hashtbl_vars;    /* speed up search for var_namelist to varid  */
 
     // NCSU ALACRITY-ADIOS - Table of sub-requests issued by transform method
@@ -153,6 +153,16 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
     return retval;
 }
 
+static int calc_hash_size(unsigned int nvars) 
+{
+    int hash_size;
+    if (nvars < 100) hash_size = nvars; // best speed for most codes
+    else if (nvars < 1000)    hash_size = 100+nvars/10;   // 100..999 variables
+    else if (nvars < 10000)   hash_size = 200+nvars/20;   // 1000..9999 
+    else if (nvars < 100000)  hash_size = 200+nvars/20;  // 10k..99999
+    else                      hash_size = 10000; // 100k..
+    return hash_size;
+}
 
 int common_read_finalize_method(enum ADIOS_READ_METHOD method)
 {
@@ -199,8 +209,7 @@ ADIOS_FILE * common_read_open (const char * fname,
         return fp;
 
     // create hashtable from the variable names as key and their index as value
-    int hashsize = fp->nvars;
-    if (fp->nvars > 100) hashsize = 100;
+    int hashsize = calc_hash_size(fp->nvars);
     internals->hashtbl_vars = qhashtbl(hashsize);
     for (i=0; i<fp->nvars; i++) {
         internals->hashtbl_vars->put (internals->hashtbl_vars, fp->var_namelist[i], 
@@ -307,8 +316,7 @@ ADIOS_FILE * common_read_open_file (const char * fname,
         return fp;
     
     // create hashtable from the variable names as key and their index as value
-    int hashsize = fp->nvars;
-    if (fp->nvars > 100) hashsize = 100;
+    int hashsize = calc_hash_size(fp->nvars);
     internals->hashtbl_vars = qhashtbl(hashsize);
     for (i=0; i<fp->nvars; i++) {
         internals->hashtbl_vars->put (internals->hashtbl_vars, fp->var_namelist[i], 
@@ -438,8 +446,7 @@ int common_read_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
             // Re-create hashtable from the variable names as key and their index as value
             if (internals->hashtbl_vars)
                 internals->hashtbl_vars->free (internals->hashtbl_vars);
-            hashsize = fp->nvars;
-            if (fp->nvars > 100) hashsize = 100;
+            hashsize = calc_hash_size(fp->nvars);
             internals->hashtbl_vars = qhashtbl(hashsize);
             for (i=0; i<fp->nvars; i++) {
                 internals->hashtbl_vars->put (internals->hashtbl_vars, fp->var_namelist[i], 
@@ -3321,9 +3328,9 @@ int common_read_group_view (ADIOS_FILE  *fp, int groupid)
         if (groupid >= 0 && groupid < internals->ngroups) {
             /* 1. save complete list if first done */
             if (internals->group_in_view == -1) {
-                internals->full_nvars = fp->nvars;
+                internals->full_nvars = (uint32_t) fp->nvars;
                 internals->full_varnamelist = fp->var_namelist;
-                internals->full_nattrs = fp->nattrs;
+                internals->full_nattrs = (uint32_t) fp->nattrs;
                 internals->full_attrnamelist = fp->attr_namelist;
             }
             /* Set ID offsets for easier indexing of vars/attrs in other functions */

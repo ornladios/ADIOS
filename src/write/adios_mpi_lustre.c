@@ -1477,9 +1477,11 @@ static void adios_mpi_lustre_do_read (struct adios_file_struct * fd
     data.buffer = 0;
     data.buffer_len = 0;
 
-    switch (md->b.version & ADIOS_VERSION_NUM_MASK)
+    uint32_t version = md->b.version & ADIOS_VERSION_NUM_MASK;
+    switch (version)
     {
         case 1:
+        case 2:
         {
             // the three section headers
             struct adios_process_group_header_struct_v1 pg_header;
@@ -1561,9 +1563,7 @@ static void adios_mpi_lustre_do_read (struct adios_file_struct * fd
         }
 
         default:
-            fprintf (stderr, "MPI read: file version unknown: %u\n"
-                    ,md->b.version
-                    );
+            fprintf (stderr, "MPI read: file version unknown: %u\n", version);
             return;
     }
 

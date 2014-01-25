@@ -1566,7 +1566,7 @@ static void broadcast_fh_buffer (ADIOS_FILE * fp)
             _buffer_write (&buffer, &buffer_size, &buffer_offset,
                            fh->gvar_h->namelist[i], len); // namelist
             _buffer_write (&buffer, &buffer_size, &buffer_offset, 
-                           &fh->gvar_h->var_counts_per_group[i], 2); // var_counts_per_group
+                           &fh->gvar_h->var_counts_per_group[i], sizeof(uint32_t)); // var_counts_per_group
         }
 
         _buffer_write (&buffer, &buffer_size, &buffer_offset,
@@ -1574,7 +1574,7 @@ static void broadcast_fh_buffer (ADIOS_FILE * fp)
         for (i = 0; i < fh->gattr_h->group_count; i++)
         {
             _buffer_write (&buffer, &buffer_size, &buffer_offset, 
-                           &fh->gattr_h->attr_counts_per_group[i], 2); // attr_counts_per_group
+                           &fh->gattr_h->attr_counts_per_group[i], sizeof(uint32_t)); // attr_counts_per_group
         }
 
         for (i = 0; i < fh->mfooter.vars_count; i++)
@@ -1626,7 +1626,7 @@ static void broadcast_fh_buffer (ADIOS_FILE * fp)
         vars_root = fh->vars_root;
         while (vars_root)
         {
-uint64_t bo = buffer_offset;
+            uint64_t bo = buffer_offset;
             _buffer_write (&buffer, &buffer_size, &buffer_offset, 
                            &vars_root->id, 2); // id
 
@@ -1708,7 +1708,7 @@ fprintf (stderr, "bc %s bo 1 = %llu, bo 2 = %llu, len = %d\n", vars_root->var_na
 
     if (!isAggregator (p))
     {
-        uint16_t len, group_count, var_counts_per_group;
+        uint16_t len, group_count; 
 
         buffer_offset = 0;
 
@@ -1726,7 +1726,7 @@ fprintf (stderr, "bc %s bo 1 = %llu, bo 2 = %llu, len = %d\n", vars_root->var_na
         _buffer_read (buffer, &buffer_offset, &fh->mfooter.attrs_count, 2); //attrs_count 
 
         fh->gvar_h->namelist = (char **) malloc (fh->gvar_h->group_count * sizeof (char *));
-        fh->gvar_h->var_counts_per_group = (uint16_t *) malloc (fh->gvar_h->group_count * 2);
+        fh->gvar_h->var_counts_per_group = (uint32_t *) malloc (fh->gvar_h->group_count * sizeof(uint32_t));
 
         for (i = 0; i < fh->gvar_h->group_count; i++)
         {
@@ -1735,7 +1735,7 @@ fprintf (stderr, "bc %s bo 1 = %llu, bo 2 = %llu, len = %d\n", vars_root->var_na
             _buffer_read (buffer, &buffer_offset, fh->gvar_h->namelist[i], len); // namelist
             fh->gvar_h->namelist[i][len] = '\0';
 
-            _buffer_read (buffer, &buffer_offset, &fh->gvar_h->var_counts_per_group[i], 2); // var_counts_per_group
+            _buffer_read (buffer, &buffer_offset, &fh->gvar_h->var_counts_per_group[i], sizeof(uint32_t)); // var_counts_per_group
         }
 
         fh->gattr_h = (struct BP_GROUP_ATTR *) malloc (sizeof (struct BP_GROUP_ATTR));
@@ -1744,12 +1744,12 @@ fprintf (stderr, "bc %s bo 1 = %llu, bo 2 = %llu, len = %d\n", vars_root->var_na
 
         _buffer_read (buffer, &buffer_offset, &fh->gattr_h->group_count, 2); //group_count 
 
-        fh->gattr_h->attr_counts_per_group = (uint16_t *) malloc (fh->gattr_h->group_count * 2);
+        fh->gattr_h->attr_counts_per_group = (uint32_t *) malloc (fh->gattr_h->group_count * sizeof(uint32_t));
         fh->gattr_h->namelist = fh->gvar_h->namelist;
 
         for (i = 0; i < fh->gattr_h->group_count; i++)
         {
-            _buffer_read (buffer, &buffer_offset, &fh->gattr_h->attr_counts_per_group[i], 2); // attr_counts_per_group
+            _buffer_read (buffer, &buffer_offset, &fh->gattr_h->attr_counts_per_group[i], sizeof(uint32_t)); // attr_counts_per_group
         }
 
         fh->gvar_h->var_namelist = (char **) malloc (fh->mfooter.vars_count * sizeof (char *));
@@ -2488,7 +2488,7 @@ void adios_read_bp_staged_reset_dimension_order (const ADIOS_FILE *fp, int is_fo
     adios_read_bp_reset_dimension_order (fp, is_fortran);
 }
 
-void adios_read_bp_staged_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, int **nvars_per_group, int **nattrs_per_group)
+void adios_read_bp_staged_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, uint32_t **nvars_per_group, uint32_t **nattrs_per_group)
 {
     BP_PROC * p;
     BP_FILE * fh;
@@ -2509,7 +2509,7 @@ void adios_read_bp_staged_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, cha
 namelist[i]) + 1);
     }
 
-    * nvars_per_group = (int *) malloc (fh->gvar_h->group_count * sizeof (int));
+    * nvars_per_group = (uint32_t *) malloc (fh->gvar_h->group_count * sizeof (uint32_t));
     assert (* nvars_per_group);
 
     for (i = 0; i < fh->gvar_h->group_count; i++)
@@ -2517,7 +2517,7 @@ namelist[i]) + 1);
         (* nvars_per_group)[i] = fh->gvar_h->var_counts_per_group[i];
     }
 
-    * nattrs_per_group = (int *) malloc (fh->gattr_h->group_count * sizeof (int));
+    * nattrs_per_group = (uint32_t *) malloc (fh->gattr_h->group_count * sizeof (uint32_t));
     assert (* nattrs_per_group);
 
     for (i = 0; i < fh->gvar_h->group_count; i++)

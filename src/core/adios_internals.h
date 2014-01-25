@@ -43,8 +43,7 @@ struct adios_stat_struct
 
 struct adios_var_struct
 {
-    uint16_t id;
-    //uint16_t parent_id; // obsolete: remove
+    uint32_t id;
     struct adios_var_struct *parent_var; // copy_var_written links "written var" to "var definition"
 
     char * name;
@@ -61,7 +60,7 @@ struct adios_var_struct
     enum ADIOS_FLAG free_data;    // primarily used for writing
     void * data;                  // primarily used for reading
     uint64_t data_size;           // primarily used for reading
-    uint16_t write_count; // added to support multiple writes for transform layer.
+    uint32_t write_count; // added to support multiple writes for transform layer.
                           // Might needed for other things in the future.
 
     // NCSU - Adding stat related variables
@@ -92,7 +91,7 @@ struct adios_hist_struct
 
 struct adios_attribute_struct
 {
-    uint16_t id;
+    uint32_t id;
     char * name;
     char * path;
     enum ADIOS_DATATYPES type;
@@ -130,7 +129,7 @@ struct adios_group_struct
     uint64_t group_offset;
 
     char * name;
-    int var_count;
+    uint32_t var_count;
     enum ADIOS_FLAG adios_host_language_fortran;
     enum ADIOS_FLAG all_unique_var_names; // obsolete: remove
     struct adios_var_struct * vars;
@@ -183,7 +182,7 @@ struct adios_file_struct
     uint64_t buffer_size;   // how big the buffer is currently
 
     uint64_t vars_start;    // offset for where to put the var/attr count
-    uint16_t vars_written;  // count of vars/attrs to write
+    uint32_t vars_written;  // count of vars/attrs to write
 
 #ifdef SKEL_TIMING
     struct adios_timing_struct * timing_obj;
@@ -194,7 +193,6 @@ struct adios_file_struct
 struct adios_dimension_item_struct
 {
     uint64_t rank;                 // for numerical value
-    //uint16_t id; //obsolete: remove
     struct adios_var_struct * var; // for value stored in variable
     struct adios_attribute_struct * attr; // for value stored in attribute
     enum ADIOS_FLAG time_index;
@@ -387,11 +385,11 @@ struct adios_group_list_struct * adios_get_groups (void);
 struct adios_var_struct * adios_find_var_by_name (struct adios_group_struct * g,
                                                   const char * fullpath);
 struct adios_var_struct * adios_find_var_by_id (struct adios_var_struct * root
-                                               ,uint16_t id
+                                               ,uint32_t id
                                                );
 struct adios_attribute_struct * adios_find_attribute_by_id
                                          (struct adios_attribute_struct * root
-                                         ,uint16_t id
+                                         ,uint32_t id
                                          );
 
 struct adios_attribute_struct * adios_find_attribute_var_by_name
@@ -399,10 +397,10 @@ struct adios_attribute_struct * adios_find_attribute_var_by_name
                                        ,const char * name
                                        );
 
-struct adios_attribute_struct * adios_find_attribute_var_by_id
+/*struct adios_attribute_struct * adios_find_attribute_var_by_id
                                        (struct adios_attribute_struct * root
-                                       ,uint16_t id
-                                       );
+                                       ,uint32_t id
+                                       );*/
 
 /*void adios_parse_buffer (struct adios_file_struct * fd, char * buffer
                         ,uint64_t len
@@ -446,7 +444,7 @@ void adios_append_dimension (struct adios_dimension_struct ** root
 
 void adios_append_attribute (struct adios_attribute_struct ** root
                             ,struct adios_attribute_struct * attribute
-                            ,uint16_t id
+                            ,uint32_t id
                             );
 
 int adios_common_declare_group (int64_t * id, const char * name

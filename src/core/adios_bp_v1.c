@@ -310,14 +310,15 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
     log_debug ("%s: hashtbl=%p size=%d\n", __func__,
                hashtbl_vars, (hashtbl_vars ? hashtbl_vars->size(hashtbl_vars) : 0));
 
-    uint16_t vars_count;
+    /* BP Format v1: vars_count and attrs_count was 16bit, now it's 32 bit */
+    uint32_t vars_count;
     uint64_t vars_length;
 
-    vars_count = *(uint16_t *) (b->buff + b->offset);
+    vars_count = *(uint32_t *) (b->buff + b->offset);
     if(b->change_endianness == adios_flag_yes) {
-        swap_16(vars_count);
+        swap_32(vars_count);
     }
-    b->offset += 2;
+    b->offset += 4;
 
     vars_length = *(uint64_t *) (b->buff + b->offset);
     if(b->change_endianness == adios_flag_yes) {
@@ -348,11 +349,12 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
         }
         b->offset += 4;
 
-        (*root)->id = *(uint16_t *) (b->buff + b->offset);
+        /* BP Format v1: varid/attrid was 16bit, now it's 32 bit */
+        (*root)->id = *(uint32_t *) (b->buff + b->offset);
         if(b->change_endianness == adios_flag_yes) {
-            swap_16((*root)->id);
+            swap_32((*root)->id);
         }
-        b->offset += 2;
+        b->offset += 4;
 
         len = *(uint16_t *) (b->buff + b->offset);
         if(b->change_endianness == adios_flag_yes) {
@@ -797,14 +799,15 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
 
     root = attrs_root;
 
-    uint16_t attrs_count;
+    /* BP Format v1: vars_count and attrs_count was 16bit, now it's 32 bit */
+    uint32_t attrs_count;
     uint64_t attrs_length;
 
-    attrs_count = *(uint16_t *) (b->buff + b->offset);
+    attrs_count = *(uint32_t *) (b->buff + b->offset);
     if(b->change_endianness == adios_flag_yes) {
-        swap_16(attrs_count);
+        swap_32(attrs_count);
     }
-    b->offset += 2;
+    b->offset += 4;
 
     attrs_length = *(uint64_t *) (b->buff + b->offset);
     if(b->change_endianness == adios_flag_yes) {
@@ -835,11 +838,12 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
         }
         b->offset += 4;
 
-        (*root)->id = *(uint16_t *) (b->buff + b->offset);
+        /* BP Format v1: varid/attrid was 16bit, now it's 32 bit */
+        (*root)->id = *(uint32_t *) (b->buff + b->offset);
         if(b->change_endianness == adios_flag_yes) {
-            swap_16((*root)->id);
+            swap_32((*root)->id);
         }
-        b->offset += 2;
+        b->offset += 4;
 
         len = *(uint16_t *) (b->buff + b->offset);
         if(b->change_endianness == adios_flag_yes) {
@@ -1074,12 +1078,13 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
 
                     case adios_characteristic_var_id:
                     {
+                        /* BP Format v1: varid/attrid was 16bit, now it's 32 bit */
                         (*root)->characteristics [j].var_id =
-                                            *(uint16_t *) (b->buff + b->offset);
+                                            *(uint32_t *) (b->buff + b->offset);
                         if(b->change_endianness == adios_flag_yes) {
-                            swap_16((*root)->characteristics [j].var_id);
+                            swap_32((*root)->characteristics [j].var_id);
                         }
-                        b->offset += 2;
+                        b->offset += 4;
 
                         break;
                     }
@@ -1110,10 +1115,10 @@ int adios_parse_process_group_header_v1 (struct adios_bp_buffer_struct_v1 * b
                        ,struct adios_process_group_header_struct_v1 * pg_header
                             )
 {
-    if (b->length - b->offset < 16)
+    if (b->length - b->offset < 24)
     {
         adios_error(err_invalid_buffer_group, "adios_parse_process_group_header_v1"
-                "requires a buffer of at least 16 bytes. "
+                "requires a buffer of at least 24 bytes. "
                 "Only %llu were provided\n",b->length - b->offset);
         return 1;
     }
@@ -1132,7 +1137,6 @@ int adios_parse_process_group_header_v1 (struct adios_bp_buffer_struct_v1 * b
     b->offset += 1;
 
     uint16_t len;
-    uint8_t count;
     len = *(uint16_t *) (b->buff + b->offset);
     if(b->change_endianness == adios_flag_yes) {
         swap_16(len);
@@ -1143,11 +1147,11 @@ int adios_parse_process_group_header_v1 (struct adios_bp_buffer_struct_v1 * b
     memcpy (pg_header->name, b->buff + b->offset, len);
     b->offset += len;
 
-    pg_header->coord_var_id = *(uint16_t *) (b->buff + b->offset);
+    pg_header->coord_var_id = *(uint32_t *) (b->buff + b->offset);
     if(b->change_endianness == adios_flag_yes) {
-        swap_16(pg_header->coord_var_id);
+        swap_32(pg_header->coord_var_id);
     }
-    b->offset += 2;
+    b->offset += 4;
     len = *(uint16_t *) (b->buff + b->offset);
     if(b->change_endianness == adios_flag_yes) {
         swap_16(len);
@@ -1214,10 +1218,10 @@ int adios_parse_vars_header_v1 (struct adios_bp_buffer_struct_v1 * b
                                )
 {
 
-    if (b->length - b->offset < 10)
+    if (b->length - b->offset < 12)
     {
         adios_error(err_invalid_buffer_vars, "adios_parse_vars_header_v1"
-                "requires a buffer of at least 10 bytes. "
+                "requires a buffer of at least 12 bytes. "
                 "Only %llu were provided\n", b->length - b->offset);
 
         vars_header->count = 0;
@@ -1226,11 +1230,11 @@ int adios_parse_vars_header_v1 (struct adios_bp_buffer_struct_v1 * b
         return 1;
     }
 
-    vars_header->count = *(uint16_t *) (b->buff + b->offset);
+    vars_header->count = *(uint32_t *) (b->buff + b->offset);
     if(b->change_endianness == adios_flag_yes) {
-        swap_16(vars_header->count);
+        swap_32(vars_header->count);
     }
-    b->offset += 2;
+    b->offset += 4;
     vars_header->length = *(uint64_t *) (b->buff + b->offset);
     if(b->change_endianness == adios_flag_yes) {
         swap_64(vars_header->length);
@@ -1244,10 +1248,10 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
                                ,struct adios_var_header_struct_v1 * var_header
                                )
 {
-    if (b->length - b->offset < 21)
+    if (b->length - b->offset < 23)
     {
         adios_error(err_invalid_buffer_vars, "adios_parse_var_data_header_v1"
-                "requires a buffer of at least 21 bytes."
+                "requires a buffer of at least 23 bytes."
                 "Only %llu were provided\n", b->length - b->offset);
 
         return 1;
@@ -1266,11 +1270,11 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
 
     //validate remaining length
 
-    var_header->id = *(uint16_t *) (b->buff + b->offset);
+    var_header->id = *(uint32_t *) (b->buff + b->offset);
     if(b->change_endianness == adios_flag_yes) {
-        swap_16(var_header->id);
+        swap_32(var_header->id);
     }
-    b->offset += 2;
+    b->offset += 4;
 
     len = *(uint16_t *) (b->buff + b->offset);
     if(b->change_endianness == adios_flag_yes) {
@@ -1348,13 +1352,13 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
         if (flag == 'y')
         {
             (*root)->dimension.rank = 0;
-            (*root)->dimension.var_id = *(uint16_t *) (b->buff + b->offset);
+            (*root)->dimension.var_id = *(uint32_t *) (b->buff + b->offset);
             if(b->change_endianness == adios_flag_yes) {
-                swap_16((*root)->dimension.var_id);
+                swap_32((*root)->dimension.var_id);
             }
             if ((*root)->dimension.var_id == 0)
                 (*root)->dimension.time_index = adios_flag_yes;
-            b->offset += 2;
+            b->offset += 4;
         }
         else
         {
@@ -1371,14 +1375,14 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
         if (flag == 'y')
         {
             (*root)->global_dimension.rank = 0;
-            (*root)->global_dimension.var_id = *(uint16_t *)
+            (*root)->global_dimension.var_id = *(uint32_t *)
                                                          (b->buff + b->offset);
             if(b->change_endianness == adios_flag_yes) {
-                swap_16((*root)->global_dimension.var_id);
+                swap_32((*root)->global_dimension.var_id);
             }
             if ((*root)->global_dimension.var_id == 0)
                 (*root)->global_dimension.time_index = adios_flag_yes;
-            b->offset += 2;
+            b->offset += 4;
         }
         else
         {
@@ -1396,13 +1400,13 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
         if (flag == 'y')
         {
             (*root)->local_offset.rank = 0;
-            (*root)->local_offset.var_id = *(uint16_t *) (b->buff + b->offset);
+            (*root)->local_offset.var_id = *(uint32_t *) (b->buff + b->offset);
             if(b->change_endianness == adios_flag_yes) {
-                swap_16((*root)->local_offset.var_id);
+                swap_32((*root)->local_offset.var_id);
             }
             if ((*root)->local_offset.var_id == 0)
                 (*root)->local_offset.time_index = adios_flag_yes;
-            b->offset += 2;
+            b->offset += 4;
         }
         else
         {
@@ -1867,11 +1871,11 @@ int adios_parse_attributes_header_v1 (struct adios_bp_buffer_struct_v1 * b
         return 1;
     }
 
-    attrs_header->count = *(uint16_t *) (b->buff + b->offset);
+    attrs_header->count = *(uint32_t *) (b->buff + b->offset);
     if(b->change_endianness == adios_flag_yes) {
-        swap_16(attrs_header->count);
+        swap_32(attrs_header->count);
     }
-    b->offset += 2;
+    b->offset += 4;
 
     attrs_header->length = *(uint64_t *) (b->buff + b->offset);
     if(b->change_endianness == adios_flag_yes) {
@@ -1903,11 +1907,11 @@ int adios_parse_attribute_v1 (struct adios_bp_buffer_struct_v1 * b
         swap_32(attribute_length);
     }
     b->offset += 4;
-    attribute->id = *(uint16_t *) (b->buff + b->offset);
+    attribute->id = *(uint32_t *) (b->buff + b->offset);
     if(b->change_endianness == adios_flag_yes) {
-        swap_16(attribute->id);
+        swap_32(attribute->id);
     }
-    b->offset += 2;
+    b->offset += 4;
 
     len = *(uint16_t *) (b->buff + b->offset);
     if(b->change_endianness == adios_flag_yes) {
@@ -1935,11 +1939,11 @@ int adios_parse_attribute_v1 (struct adios_bp_buffer_struct_v1 * b
     b->offset += 1;
     if (attribute->is_var == adios_flag_yes)
     {
-        attribute->var_id = *(uint16_t *) (b->buff + b->offset);
+        attribute->var_id = *(uint32_t *) (b->buff + b->offset);
         if(b->change_endianness == adios_flag_yes) {
-            swap_16(attribute->var_id);
+            swap_32(attribute->var_id);
         }
-        b->offset += 2;
+        b->offset += 4;
         attribute->type = adios_unknown;
         attribute->length = 0;
         attribute->value = 0;

@@ -133,6 +133,7 @@ int main (int argc, char ** argv)
 
     adios_posix_read_version (b);
     adios_parse_version (b, &version);
+    printf ("BP format version: %d\n", version & ADIOS_VERSION_NUM_MASK);
 
     struct adios_index_process_group_struct_v1 * pg_root = 0;
     struct adios_index_process_group_struct_v1 * pg = 0;

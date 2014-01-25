@@ -205,7 +205,7 @@ struct adios_attribute_struct * adios_find_attribute_by_name
 }
 
 struct adios_var_struct * adios_find_var_by_id (struct adios_var_struct * root
-        ,uint16_t id
+        ,uint32_t id
         )
 {
     while (root)
@@ -221,7 +221,7 @@ struct adios_var_struct * adios_find_var_by_id (struct adios_var_struct * root
 
 struct adios_attribute_struct * adios_find_attribute_by_id
 (struct adios_attribute_struct * root
- ,uint16_t id
+ ,uint32_t id
  )
 {
     while (root)
@@ -1256,7 +1256,7 @@ void adios_append_dimension (struct adios_dimension_struct ** root
 
 void adios_append_attribute (struct adios_attribute_struct ** root
         ,struct adios_attribute_struct * attribute
-        ,uint16_t id
+        ,uint32_t id
         )
 {
     while (root)
@@ -1297,7 +1297,7 @@ int adios_common_declare_group (int64_t * id, const char * name
     g->member_count = 0; // will be set in adios_append_group
     g->vars = NULL;
     g->vars_tail = NULL;
-    g->hashtbl_vars = qhashtbl(100);
+    g->hashtbl_vars = qhashtbl(500);
     g->vars_written = NULL;
     g->vars_written_tail = NULL;
     g->attributes = NULL;
@@ -1959,7 +1959,7 @@ uint16_t adios_calc_var_overhead_v1 (struct adios_var_struct * v)
     struct adios_dimension_struct * d = v->dimensions;
 
     overhead += 8; // length of var entry
-    overhead += 2; // member id
+    overhead += 4; // member id
     overhead += 2; // length of name
     overhead += strlen (v->name); // name
     overhead += 2; // length of path
@@ -1981,7 +1981,7 @@ uint16_t adios_calc_var_overhead_v1 (struct adios_var_struct * v)
         }
         else
         {
-            overhead += 2; // member id
+            overhead += 4; // member id
         }
 
         overhead += 1; // var flag
@@ -1994,7 +1994,7 @@ uint16_t adios_calc_var_overhead_v1 (struct adios_var_struct * v)
         }
         else
         {
-            overhead += 2; // member id
+            overhead += 4; // member id
         }
 
         overhead += 1; // var flag
@@ -2007,7 +2007,7 @@ uint16_t adios_calc_var_overhead_v1 (struct adios_var_struct * v)
         }
         else
         {
-            overhead += 2; // member id
+            overhead += 4; // member id
         }
 
         d = d->next;
@@ -2022,14 +2022,14 @@ uint32_t adios_calc_attribute_overhead_v1 (struct adios_attribute_struct * a)
     uint32_t overhead = 0;
 
     overhead += 4; // attribute length
-    overhead += 2; // member id
+    overhead += 4; // member id
     overhead += 2; // length of name
     overhead += strlen (a->name); // name
     overhead += 2; // length of path
     overhead += strlen (a->path); // path
     overhead += 1; // var flag
     if (a->var)
-        overhead += 2; // var member id
+        overhead += 4; // var member id
     else
     {
         overhead += 1; // datatype
@@ -2051,7 +2051,7 @@ uint64_t adios_calc_overhead_v1 (struct adios_file_struct * fd)
     overhead += 1; // host language flag
     overhead += 2; // length of group name
     overhead += strlen (fd->group->name); // group name
-    overhead += 2; // coordination var id
+    overhead += 4; // coordination var id
     overhead += 2; // length of time index name
     overhead += ((fd->group->time_index_name)
             ? strlen (fd->group->time_index_name)
@@ -2070,7 +2070,7 @@ uint64_t adios_calc_overhead_v1 (struct adios_file_struct * fd)
         m = m->next;
     }
 
-    overhead += 2; // count of vars
+    overhead += 4; // count of vars
     overhead += 8; // length of vars section
 
     while (v)
@@ -2080,7 +2080,7 @@ uint64_t adios_calc_overhead_v1 (struct adios_file_struct * fd)
         v = v->next;
     }
 
-    overhead += 2; // attributes count
+    overhead += 4; // attributes count
     overhead += 8; // attributes length
 
     while (a)
@@ -2117,12 +2117,12 @@ int adios_write_process_group_header_v1 (struct adios_file_struct * fd
     var = adios_find_var_by_name (g, g->group_by);
     if (var)
     {
-        buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &var->id, 2);
+        buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &var->id, 4);
     }
     else
     {
-        uint16_t i = 0;
-        buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &i, 2);
+        uint32_t i = 0;
+        buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &i, 4);
     }
 
     len = ((g->time_index_name) ? strlen (g->time_index_name) : 0);
@@ -2677,7 +2677,7 @@ struct adios_index_struct_v1 * adios_alloc_index_v1 (int alloc_hashtables)
     index->attrs_root = NULL;
     index->attrs_tail = NULL;
     if (alloc_hashtables) {
-        index->hashtbl_vars  = qhashtbl(100);
+        index->hashtbl_vars  = qhashtbl(500);
         //index->hashtbl_attrs = qhashtbl(100);
         index->hashtbl_attrs = NULL; // not used yet
     } else {
@@ -3443,8 +3443,8 @@ int adios_write_index_v1 (char ** buffer
         )
 {
     uint64_t groups_count = 0;
-    uint16_t vars_count = 0;
-    uint16_t attrs_count = 0;
+    uint32_t vars_count = 0;
+    uint32_t attrs_count = 0;
 
     uint64_t index_size = 0;
     uint64_t pg_index_start = index_start;
@@ -3540,7 +3540,7 @@ int adios_write_index_v1 (char ** buffer
     vars_index_start = buffer_offset_start + index_start;
     index_size = 0;
 
-    *buffer_offset += (2 + 8); // save space for count and size
+    *buffer_offset += (4 + 8); // save space for count and size
 
     while (vars_root)
     {
@@ -3554,9 +3554,9 @@ int adios_write_index_v1 (char ** buffer
 
         *buffer_offset += 4; // save space for var length
 
-        buffer_write (buffer, buffer_size, buffer_offset, &vars_root->id, 2);
-        index_size += 2;
-        var_size += 2;
+        buffer_write (buffer, buffer_size, buffer_offset, &vars_root->id, 4);
+        index_size += 4;
+        var_size += 4;
 
         len = strlen (vars_root->group_name);
         buffer_write (buffer, buffer_size, buffer_offset, &len, 2);
@@ -3917,14 +3917,14 @@ int adios_write_index_v1 (char ** buffer
     log_debug ("%s: wrote %d variables into the var-index buffer\n", __func__, vars_count);
 
     // vars index count/size prefix
-    buffer_write (buffer, buffer_size, &buffer_offset_start, &vars_count, 2);
+    buffer_write (buffer, buffer_size, &buffer_offset_start, &vars_count, 4);
     buffer_write (buffer, buffer_size, &buffer_offset_start, &index_size, 8);
 
     buffer_offset_start = *buffer_offset; // save to write the attrs_count/size
     attrs_index_start = buffer_offset_start + index_start;
     index_size = 0;
 
-    *buffer_offset += (2 + 8); // save space for count and size
+    *buffer_offset += (4 + 8); // save space for count and size
 
     while (attrs_root)
     {
@@ -3938,9 +3938,9 @@ int adios_write_index_v1 (char ** buffer
 
         *buffer_offset += 4; // save space for attr length
 
-        buffer_write (buffer, buffer_size, buffer_offset, &attrs_root->id, 2);
-        index_size += 2;
-        attr_size += 2;
+        buffer_write (buffer, buffer_size, buffer_offset, &attrs_root->id, 4);
+        index_size += 4;
+        attr_size += 4;
 
         len = strlen (attrs_root->group_name);
         buffer_write (buffer, buffer_size, buffer_offset, &len, 2);
@@ -4098,11 +4098,11 @@ int adios_write_index_v1 (char ** buffer
                 attr_size += 1;
                 characteristic_set_length += 1;
                 buffer_write (buffer, buffer_size, buffer_offset
-                        ,&attrs_root->characteristics [i].var_id, 2
+                        ,&attrs_root->characteristics [i].var_id, 4
                         );
-                index_size += 2;
-                attr_size += 2;
-                characteristic_set_length += 2;
+                index_size += 4;
+                attr_size += 4;
+                characteristic_set_length += 4;
             }
 
             // characteristics count/size prefix
@@ -4120,7 +4120,7 @@ int adios_write_index_v1 (char ** buffer
     }
 
     // attrs index count/size prefix
-    buffer_write (buffer, buffer_size, &buffer_offset_start, &attrs_count, 2);
+    buffer_write (buffer, buffer_size, &buffer_offset_start, &attrs_count, 4);
     buffer_write (buffer, buffer_size, &buffer_offset_start, &index_size, 8);
 
 
@@ -4167,7 +4167,9 @@ int adios_write_version_v1 (char ** buffer
     else
         test = 0;
 
-    test += 1;   // first data storage version
+    // version number 1 byte, endiness 1 byte,
+    // the rest is user-defined options 2 bytes
+    test += ADIOS_VERSION_BP_FORMAT;   // file format version
     // For the new read API to be able to read back older file format,
     // set this flag
     test |= ADIOS_VERSION_HAVE_TIME_INDEX_CHARACTERISTIC;
@@ -4194,7 +4196,7 @@ int adios_write_version_flag_v1 (char ** buffer
 
     // version number 1 byte, endiness 1 byte,
     // the rest is user-defined options 2 bytes
-    test += 1;   // master index file version
+    test += ADIOS_VERSION_BP_FORMAT;   // file format version
     // For the new read API to be able to read back older file format,
     // set this flag
     test |= ADIOS_VERSION_HAVE_TIME_INDEX_CHARACTERISTIC | flag;
@@ -4221,7 +4223,7 @@ static uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
     }
     else   // it is a var
     {
-        size += 2;  // size of var ID
+        size += 4;  // size of var ID
     }
 
     size += 1; // var (y or n)
@@ -4235,7 +4237,7 @@ static uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
     }
     else
     {
-        size += 2;  // size of var ID
+        size += 4;  // size of var ID
     }
 
     size += 1; // var (y or n)
@@ -4249,7 +4251,7 @@ static uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
     }
     else
     {
-        size += 2;  // size of var ID
+        size += 4;  // size of var ID
     }
 
     return size;
@@ -4275,7 +4277,7 @@ uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
         )
 {
     uint64_t size = 0;
-    uint16_t id;
+    uint32_t id;
     uint8_t var;
 
     if (    dimension->dimension.var == NULL
@@ -4302,8 +4304,8 @@ uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
         var = 'y';
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &var, 1);
         size += 1;
-        buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &id, 2);
-        size += 2;
+        buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &id, 4);
+        size += 4;
     }
 
     if (    dimension->global_dimension.var == NULL
@@ -4330,8 +4332,8 @@ uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
         var = 'y';
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &var, 1);
         size += 1;
-        buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &id, 2);
-        size += 2;
+        buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &id, 4);
+        size += 4;
     }
 
     if (    dimension->local_offset.var == NULL
@@ -4358,8 +4360,8 @@ uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
         var = 'y';
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &var, 1);
         size += 1;
-        buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &id, 2);
-        size += 2;
+        buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &id, 4);
+        size += 4;
     }
 
     return size;
@@ -5073,8 +5075,8 @@ uint64_t adios_write_var_header_v1 (struct adios_file_struct * fd
     fd->offset += 8;              // save space for the size
     total_size += 8;              // makes final parsing easier
 
-    buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &v->id, 2);
-    total_size += 2;
+    buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &v->id, 4);
+    total_size += 4;
 
     len = strlen (v->name);
     buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &len, 2);
@@ -5146,8 +5148,8 @@ int adios_write_attribute_v1 (struct adios_file_struct * fd
     a->write_offset = fd->offset + fd->base_offset; // save offset in file
     fd->offset += 4;
 
-    buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &a->id, 2);
-    size += 2;
+    buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &a->id, 4);
+    size += 4;
 
     len = strlen (a->name);
     buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &len, 2);
@@ -5170,9 +5172,9 @@ int adios_write_attribute_v1 (struct adios_file_struct * fd
     if (a->var)
     {
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                ,&a->var->id, 2
+                ,&a->var->id, 4
                 );
-        size += 2;
+        size += 4;
     }
     else
     {
@@ -5208,7 +5210,7 @@ int adios_write_open_vars_v1 (struct adios_file_struct * fd)
     // it is now setup to write the vars and then the attrs on close
     fd->vars_start = fd->offset;
 
-    fd->offset += (2 + 8); // (count + size)
+    fd->offset += (4 + 8); // (count + size)
 
     if (fd->bytes_written < fd->offset)
         fd->bytes_written = fd->offset;
@@ -5220,7 +5222,7 @@ int adios_write_close_vars_v1 (struct adios_file_struct * fd)
 {
     // close the var area (count and total size) and write the attributes
     uint64_t size = fd->offset - fd->vars_start;
-    buffer_write (&fd->buffer, &fd->buffer_size, &fd->vars_start, &fd->vars_written, 2);
+    buffer_write (&fd->buffer, &fd->buffer_size, &fd->vars_start, &fd->vars_written, 4);
 
     buffer_write (&fd->buffer, &fd->buffer_size, &fd->vars_start, &size, 8);
 
@@ -5230,7 +5232,7 @@ int adios_write_close_vars_v1 (struct adios_file_struct * fd)
 int adios_write_open_attributes_v1 (struct adios_file_struct * fd)
 {
     fd->vars_start = fd->offset;   // save the start of attr area for size
-    fd->offset += (2 + 8);         // space to write the count and size
+    fd->offset += (4 + 8);         // space to write the count and size
     fd->vars_written = 0;
 
     if (fd->bytes_written < fd->offset)
@@ -5243,7 +5245,7 @@ int adios_write_close_attributes_v1 (struct adios_file_struct * fd)
 {
     // write attribute count and total size
     uint64_t size = fd->offset - fd->vars_start;
-    buffer_write (&fd->buffer, &fd->buffer_size, &fd->vars_start, &fd->vars_written, 2);
+    buffer_write (&fd->buffer, &fd->buffer_size, &fd->vars_start, &fd->vars_written, 4);
 
     buffer_write (&fd->buffer, &fd->buffer_size, &fd->vars_start, &size, 8);
 

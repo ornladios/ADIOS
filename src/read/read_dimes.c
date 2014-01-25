@@ -1574,7 +1574,7 @@ void adios_read_dimes_reset_dimension_order (const ADIOS_FILE *fp, int is_fortra
 }
 
 void adios_read_dimes_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, 
-            char ***group_namelist, int **nvars_per_group, int **nattrs_per_group) 
+            char ***group_namelist, uint32_t **nvars_per_group, uint32_t **nattrs_per_group) 
 {
     struct dimes_data_struct * ds;
     if (fp) {

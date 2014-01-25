@@ -563,8 +563,8 @@ int bp_read_minifooter (struct BP_FILE * bp_struct)
     mh->change_endianness = b->change_endianness;
 
     // validity check
-    if ((mh->version & ADIOS_VERSION_NUM_MASK) > 1) {
-        adios_error (err_file_open_error, "Invalid BP file detected. Version number > 1\n");
+    if ((mh->version & ADIOS_VERSION_NUM_MASK) > ADIOS_VERSION_BP_FORMAT) {
+        adios_error (err_file_open_error, "Invalid BP file detected. Version number > recent version = %d\n", ADIOS_VERSION_BP_FORMAT);
         return 1;
     }
 
@@ -888,6 +888,7 @@ int bp_parse_attrs (struct BP_FILE * fh)
     struct bp_minifooter * mh = &(fh->mfooter);
     struct adios_index_attribute_struct_v1 ** root;
     int i;
+    int bpversion = mh->version & ADIOS_VERSION_NUM_MASK;
 
     if (b->length - b->offset < VARS_MINIHEADER_SIZE) {
         adios_error (err_invalid_buffer,
@@ -901,7 +902,11 @@ int bp_parse_attrs (struct BP_FILE * fh)
 
     root = attrs_root;
 
-    BUFREAD16(b, mh->attrs_count)
+    if (bpversion > 1) {
+        BUFREAD32(b, mh->attrs_count)
+    } else {
+        BUFREAD16(b, mh->attrs_count)
+    }
     BUFREAD64(b, mh->attrs_length)
 
     for (i = 0; i < mh->attrs_count; i++) {
@@ -918,7 +923,11 @@ int bp_parse_attrs (struct BP_FILE * fh)
         int type_size;
 
         BUFREAD32(b, attr_entry_length)
-        BUFREAD16(b, (*root)->id)
+        if (bpversion > 1) {
+            BUFREAD32(b, (*root)->id)
+        } else {
+            BUFREAD16(b, (*root)->id)
+        }
 
         BUFREAD16(b, len)
         (*root)->group_name = (char *) malloc (len + 1);
@@ -1003,7 +1012,11 @@ int bp_parse_attrs (struct BP_FILE * fh)
                         BUFREAD32(b, (*root)->characteristics [j].time_index)
                         break;
                     case adios_characteristic_var_id:
-                        BUFREAD16(b, (*root)->characteristics [j].var_id)
+                        if (bpversion > 1) {
+                            BUFREAD32(b, (*root)->characteristics [j].var_id)
+                        } else {
+                            BUFREAD16(b, (*root)->characteristics [j].var_id)
+                        }
                         break;
                 }
                 item++;
@@ -1024,16 +1037,16 @@ int bp_parse_attrs (struct BP_FILE * fh)
     }
 
     root = attrs_root;
-    uint16_t * attr_counts_per_group;
+    uint32_t * attr_counts_per_group;
     uint16_t *  attr_gids;
     uint64_t ** attr_offsets;
     char ** attr_namelist;
     int grpid, j,cnt;
     int lenpath, lenname;
 
-    attr_counts_per_group = (uint16_t *)
-        malloc (sizeof(uint16_t) * fh->gattr_h->group_count);
-    memset (attr_counts_per_group, 0, fh->gattr_h->group_count * sizeof(uint16_t));
+    attr_counts_per_group = (uint32_t *)
+        malloc (sizeof(uint32_t) * fh->gattr_h->group_count);
+    memset (attr_counts_per_group, 0, fh->gattr_h->group_count * sizeof(uint32_t));
     attr_gids = (uint16_t *) malloc (sizeof(uint16_t ) * mh->attrs_count);
     attr_namelist = (char **)malloc (sizeof(char*) * mh->attrs_count);
 
@@ -1115,6 +1128,7 @@ int bp_parse_vars (struct BP_FILE * fh)
     struct bp_minifooter * mh = &(fh->mfooter);
 
     struct adios_index_var_struct_v1 ** root;
+    int bpversion = mh->version & ADIOS_VERSION_NUM_MASK;
 
     if (b->length - b->offset < VARS_MINIHEADER_SIZE) {
         adios_error (err_invalid_buffer,
@@ -1128,11 +1142,15 @@ int bp_parse_vars (struct BP_FILE * fh)
 
     root = vars_root;
 
-    BUFREAD16(b, mh->vars_count)
+    if (bpversion > 1) {
+        BUFREAD32(b, mh->vars_count)
+    } else {
+        BUFREAD16(b, mh->vars_count)
+    }
     BUFREAD64(b, mh->vars_length)
 
     // To speed find_var_byid(). Q. Liu, 11-2013.
-    fh->vars_table = (struct adios_index_var_struct_v1 **) malloc (mh->vars_count * 8);
+    fh->vars_table = (struct adios_index_var_struct_v1 **) malloc (8*(size_t)mh->vars_count);
     // validate remaining length
     int i;
     for (i = 0; i < mh->vars_count; i++) {
@@ -1149,7 +1167,11 @@ int bp_parse_vars (struct BP_FILE * fh)
         int type_size;
 
         BUFREAD32(b, var_entry_length)
-        BUFREAD16(b, (*root)->id)
+        if (bpversion > 1) {
+            BUFREAD32(b, (*root)->id)
+        } else {
+            BUFREAD16(b, (*root)->id)
+        }
 
         BUFREAD16(b, len)
         (*root)->group_name = (char *) malloc (len + 1);
@@ -1219,16 +1241,16 @@ int bp_parse_vars (struct BP_FILE * fh)
     }
 
     root = vars_root;
-    uint16_t * var_counts_per_group;
+    uint32_t * var_counts_per_group;
     uint16_t *  var_gids;
     uint64_t ** var_offsets;
     char ** var_namelist;
     int grpid, j,cnt;
     int lenpath,lenname;
 
-    var_counts_per_group = (uint16_t *)
-        malloc (sizeof(uint16_t)*fh->gvar_h->group_count);
-    memset ( var_counts_per_group, 0, fh->gvar_h->group_count*sizeof(uint16_t));
+    var_counts_per_group = (uint32_t *)
+        malloc (sizeof(uint32_t)*fh->gvar_h->group_count);
+    memset ( var_counts_per_group, 0, fh->gvar_h->group_count*sizeof(uint32_t));
     var_gids = (uint16_t *) malloc (sizeof(uint16_t )*mh->vars_count);
     var_namelist = (char **)malloc(sizeof(char*)*mh->vars_count);
 
