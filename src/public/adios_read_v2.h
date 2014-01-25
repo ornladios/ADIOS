@@ -377,6 +377,11 @@ int adios_inq_var_blockinfo (ADIOS_FILE *fp, ADIOS_VARINFO * varinfo);
 */
 ADIOS_MESH * adios_inq_mesh_byid (ADIOS_FILE *fp, int meshid);
 
+/** fill in the complete mesh structure if mesh struct is stored in external file  
+    call adios_inq_mesh_byid() first to determine if external file is NULL
+*/
+int adios_complete_meshinfo (ADIOS_FILE *datafile, ADIOS_FILE *meshfile, ADIOS_MESH *meshinfo);
+
 /** Free memory used by an ADIOS_MESH struct */
 void adios_free_meshinfo (ADIOS_MESH *meshinfo);
 
