@@ -2932,6 +2932,16 @@ void common_read_free_meshinfo (ADIOS_MESH * meshinfo)
     if(meshinfo)
     {
         int i = 0;
+        if (meshinfo->name)
+        {
+            free (meshinfo->name);
+            meshinfo->name = NULL;
+        }
+        if (meshinfo->file_name) 
+        {
+            free (meshinfo->file_name);
+            meshinfo->file_name = NULL;
+        }
         switch (meshinfo->type) {
             case ADIOS_MESH_UNIFORM:
                 {
