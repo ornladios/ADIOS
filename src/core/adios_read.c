@@ -93,6 +93,11 @@ ADIOS_MESH * adios_inq_mesh_byid (ADIOS_FILE *fp, int meshid)
     return common_read_inq_mesh_byid (fp, meshid);
 }
 
+int adios_complete_meshinfo (ADIOS_FILE *datafile, ADIOS_FILE *meshfile, ADIOS_MESH *meshinfo)
+{
+    return common_read_complete_meshinfo (datafile, meshfile, meshinfo);
+}
+
 void adios_free_meshinfo (ADIOS_MESH *meshinfo)
 {
     common_read_free_meshinfo (meshinfo);
