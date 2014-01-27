@@ -13,6 +13,7 @@
 #include "public/adios_selection.h"
 #include "adios_subvolume.h"
 #include "adios_selection_util.h"
+#include "common_read.h"
 
 //
 // NOTE: Intersection type guarantees:
@@ -235,7 +236,7 @@ ADIOS_SELECTION * adios_selection_intersect(const ADIOS_SELECTION *s1, const ADI
     switch (s1->type) {
     case ADIOS_SELECTION_BOUNDINGBOX:
     {
-        const ADIOS_SELECTION_POINTS_STRUCT *bb1 = &s1->u.bb;
+        const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb1 = &s1->u.bb;
         return adios_selection_intersect_bb(bb1, s2);
     }
     case ADIOS_SELECTION_POINTS:
