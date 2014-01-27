@@ -36,7 +36,7 @@
 #include "core/util.h"
 #include "core/adios_logger.h"
 
-#if HAVE_FLEXPATH==1
+#if HAVE_ICEE==1
 
 // // evpath libraries
 #include <evpath.h>
