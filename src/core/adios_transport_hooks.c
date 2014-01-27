@@ -86,6 +86,9 @@ void adios_init_transports (struct adios_transport_struct ** t)
 # if HAVE_FLEXPATH
     ASSIGN_FNS(flexpath,ADIOS_METHOD_FLEXPATH)
 # endif
+# if HAVE_ICEE
+    ASSIGN_FNS(icee,ADIOS_METHOD_ICEE)
+# endif
 
     ASSIGN_FNS(posix,ADIOS_METHOD_POSIX)
     ASSIGN_FNS(posix1,ADIOS_METHOD_POSIX1)
@@ -160,6 +163,9 @@ int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
 
 #if HAVE_FLEXPATH
     MATCH_STRING_TO_METHOD("FLEXPATH",ADIOS_METHOD_FLEXPATH,0)
+#endif
+#if HAVE_ICEE
+    MATCH_STRING_TO_METHOD("ICEE",ADIOS_METHOD_ICEE,0)
 #endif
 
 #if HAVE_NSSI

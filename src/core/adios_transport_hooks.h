@@ -130,7 +130,8 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
               ,ADIOS_METHOD_DIMES        = 21
               ,ADIOS_METHOD_VAR_MERGE   = 22
               ,ADIOS_METHOD_MPI_BGQ     = 23
-              ,ADIOS_METHOD_COUNT       = 24
+              ,ADIOS_METHOD_ICEE        = 24
+              ,ADIOS_METHOD_COUNT       = 25
 };
 
 // forward declare the functions (or dummies for internals use)
@@ -176,6 +177,9 @@ FORWARD_DECLARE(dataspaces)
 FORWARD_DECLARE(dimes)
 #endif
 
+#if HAVE_ICEE
+FORWARD_DECLARE(icee)
+#endif
 
 #undef FORWARD_DECLARE
 #endif

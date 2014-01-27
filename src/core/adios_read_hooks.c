@@ -62,6 +62,9 @@ void adios_read_hooks_init (struct adios_read_hooks_struct ** t)
 #if HAVE_FLEXPATH
        ASSIGN_FNS(flexpath, ADIOS_READ_METHOD_FLEXPATH);
 #endif
+#if HAVE_ICEE
+       ASSIGN_FNS(icee, ADIOS_READ_METHOD_ICEE);
+#endif
 #endif
 
 #if HAVE_PHDF5
