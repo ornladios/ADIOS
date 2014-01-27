@@ -858,6 +858,8 @@ ZLIB_LDFLAGS
 ZLIB_LIBS
 HAVE_ZLIB_FALSE
 HAVE_ZLIB_TRUE
+HAVE_ICEE_FALSE
+HAVE_ICEE_TRUE
 HAVE_FLEXPATH_FALSE
 HAVE_FLEXPATH_TRUE
 FP_LDFLAGS
@@ -1156,6 +1158,7 @@ with_evpath
 with_atl
 with_dill
 with_cercs_env
+with_icee
 with_zlib
 with_bzip2
 with_szip
@@ -1891,6 +1894,7 @@ Optional Packages:
   --with-atl=DIR	Where to find atl package
   --with-dill=DIR	Where to find dill package
   --with-cercs_env=DIR	Where to find cercs_env package
+  --with-icee=DIR 	Location of icee
   --with-zlib=DIR      Location of ZLIB library
   --with-bzip2=DIR      Location of BZIP2 library
   --with-szip=DIR      Location of SZIP library
@@ -8813,13 +8817,13 @@ if test "${lt_cv_nm_interface+set}" = set; then
 else
   lt_cv_nm_interface="BSD nm"
   echo "int some_variable = 0;" > conftest.$ac_ext
-  (eval echo "\"\$as_me:8816: $ac_compile\"" >&5)
+  (eval echo "\"\$as_me:8820: $ac_compile\"" >&5)
   (eval "$ac_compile" 2>conftest.err)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:8819: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
+  (eval echo "\"\$as_me:8823: $NM \\\"conftest.$ac_objext\\\"\"" >&5)
   (eval "$NM \"conftest.$ac_objext\"" 2>conftest.err > conftest.out)
   cat conftest.err >&5
-  (eval echo "\"\$as_me:8822: output\"" >&5)
+  (eval echo "\"\$as_me:8826: output\"" >&5)
   cat conftest.out >&5
   if $GREP 'External.*some_variable' conftest.out > /dev/null; then
     lt_cv_nm_interface="MS dumpbin"
@@ -10024,7 +10028,7 @@ ia64-*-hpux*)
   ;;
 *-*-irix6*)
   # Find out which ABI we are using.
-  echo '#line 10027 "configure"' > conftest.$ac_ext
+  echo '#line 10031 "configure"' > conftest.$ac_ext
   if { (eval echo "$as_me:$LINENO: \"$ac_compile\"") >&5
   (eval $ac_compile) 2>&5
   ac_status=$?
@@ -12701,11 +12705,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:12704: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:12708: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:12708: \$? = $ac_status" >&5
+   echo "$as_me:12712: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -13040,11 +13044,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13043: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13047: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:13047: \$? = $ac_status" >&5
+   echo "$as_me:13051: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -13145,11 +13149,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13148: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13152: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13152: \$? = $ac_status" >&5
+   echo "$as_me:13156: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -13200,11 +13204,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:13203: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:13207: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:13207: \$? = $ac_status" >&5
+   echo "$as_me:13211: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -16083,7 +16087,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 16086 "configure"
+#line 16090 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -16179,7 +16183,7 @@ else
   lt_dlunknown=0; lt_dlno_uscore=1; lt_dlneed_uscore=2
   lt_status=$lt_dlunknown
   cat > conftest.$ac_ext <<_LT_EOF
-#line 16182 "configure"
+#line 16186 "configure"
 #include "confdefs.h"
 
 #if HAVE_DLFCN_H
@@ -18215,11 +18219,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:18218: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:18222: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:18222: \$? = $ac_status" >&5
+   echo "$as_me:18226: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -18314,11 +18318,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:18317: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:18321: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:18321: \$? = $ac_status" >&5
+   echo "$as_me:18325: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -18366,11 +18370,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:18369: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:18373: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:18373: \$? = $ac_status" >&5
+   echo "$as_me:18377: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -19918,11 +19922,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:19921: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:19925: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>conftest.err)
    ac_status=$?
    cat conftest.err >&5
-   echo "$as_me:19925: \$? = $ac_status" >&5
+   echo "$as_me:19929: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s "$ac_outfile"; then
      # The compiler can only warn and ignore the option if not recognized
      # So say no if there are warnings other than the usual output.
@@ -20017,11 +20021,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:20020: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:20024: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:20024: \$? = $ac_status" >&5
+   echo "$as_me:20028: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -20069,11 +20073,11 @@ else
    -e 's:.*FLAGS}\{0,1\} :&$lt_compiler_flag :; t' \
    -e 's: [^ ]*conftest\.: $lt_compiler_flag&:; t' \
    -e 's:$: $lt_compiler_flag:'`
-   (eval echo "\"\$as_me:20072: $lt_compile\"" >&5)
+   (eval echo "\"\$as_me:20076: $lt_compile\"" >&5)
    (eval "$lt_compile" 2>out/conftest.err)
    ac_status=$?
    cat out/conftest.err >&5
-   echo "$as_me:20076: \$? = $ac_status" >&5
+   echo "$as_me:20080: \$? = $ac_status" >&5
    if (exit $ac_status) && test -s out/conftest2.$ac_objext
    then
      # The compiler can only warn and ignore the option if not recognized
@@ -29436,11 +29440,11 @@ fi
 
 search_list="$datatap_dir/thin_ib.h $datatap_dir/lib/thin_ib.h $datatap_dir/include/thin_ib.h $search_list /usr/include/thin_ib.h /usr/local/include/thin_ib.h /opt/ibpbio/include/thin_ib.h /opt/misc/include/thin_ib.h /opt/misc/include/$cercs_cv_archive/thin_ib.h"
 tmp_search_results=""
-echo "configure:29439: searching for $search_list " >&5
+echo "configure:29443: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29443: first found $tmp_search_results " >&5
+	echo "configure:29447: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29528,11 +29532,11 @@ fi
 
 search_list="$datatap_dir/libibclient.la $datatap_dir/lib/libibclient.la $datatap_dir/include/libibclient.la $search_list /usr/lib/libibclient.la /usr/local/lib/libibclient.la /opt/ibpbio/lib/libibclient.la /opt/misc/lib/libibclient.la /opt/misc/lib/$cercs_cv_archive/libibclient.la"
 tmp_search_results=""
-echo "configure:29531: searching for $search_list " >&5
+echo "configure:29535: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29535: first found $tmp_search_results " >&5
+	echo "configure:29539: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29601,11 +29605,11 @@ else
 
 search_list="$PWD/../ibpbio $PWD/../../ibpbio $PWD/../../../ibpbio"
 tmp_search_results=""
-echo "configure:29604: searching for $search_list " >&5
+echo "configure:29608: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29608: first found $tmp_search_results " >&5
+	echo "configure:29612: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29643,11 +29647,11 @@ else
 
 search_list="$PWD/../ibpbio $PWD/../../ibpbio $PWD/../../../ibpbio"
 tmp_search_results=""
-echo "configure:29646: searching for $search_list " >&5
+echo "configure:29650: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29650: first found $tmp_search_results " >&5
+	echo "configure:29654: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29771,11 +29775,11 @@ fi
 
 search_list="$datatap_dir/ffs.h $datatap_dir/lib/ffs.h $datatap_dir/include/ffs.h $search_list /usr/include/ffs.h /usr/local/include/ffs.h /opt/ffs/include/ffs.h /opt/misc/include/ffs.h /opt/misc/include/$cercs_cv_archive/ffs.h"
 tmp_search_results=""
-echo "configure:29774: searching for $search_list " >&5
+echo "configure:29778: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29778: first found $tmp_search_results " >&5
+	echo "configure:29782: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29863,11 +29867,11 @@ fi
 
 search_list="$datatap_dir/libffs.la $datatap_dir/lib/libffs.la $datatap_dir/include/libffs.la $search_list /usr/lib/libffs.la /usr/local/lib/libffs.la /opt/ffs/lib/libffs.la /opt/misc/lib/libffs.la /opt/misc/lib/$cercs_cv_archive/libffs.la"
 tmp_search_results=""
-echo "configure:29866: searching for $search_list " >&5
+echo "configure:29870: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29870: first found $tmp_search_results " >&5
+	echo "configure:29874: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29936,11 +29940,11 @@ else
 
 search_list="$PWD/../ffs $PWD/../../ffs $PWD/../../../ffs"
 tmp_search_results=""
-echo "configure:29939: searching for $search_list " >&5
+echo "configure:29943: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29943: first found $tmp_search_results " >&5
+	echo "configure:29947: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29978,11 +29982,11 @@ else
 
 search_list="$PWD/../ffs $PWD/../../ffs $PWD/../../../ffs"
 tmp_search_results=""
-echo "configure:29981: searching for $search_list " >&5
+echo "configure:29985: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29985: first found $tmp_search_results " >&5
+	echo "configure:29989: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30106,11 +30110,11 @@ fi
 
 search_list="$datatap_dir/gen_thread.h $datatap_dir/lib/gen_thread.h $datatap_dir/include/gen_thread.h $search_list /usr/include/gen_thread.h /usr/local/include/gen_thread.h /opt/gen_thread/include/gen_thread.h /opt/misc/include/gen_thread.h /opt/misc/include/$cercs_cv_archive/gen_thread.h"
 tmp_search_results=""
-echo "configure:30109: searching for $search_list " >&5
+echo "configure:30113: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30113: first found $tmp_search_results " >&5
+	echo "configure:30117: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30198,11 +30202,11 @@ fi
 
 search_list="$datatap_dir/libgen_thread.la $datatap_dir/lib/libgen_thread.la $datatap_dir/include/libgen_thread.la $search_list /usr/lib/libgen_thread.la /usr/local/lib/libgen_thread.la /opt/gen_thread/lib/libgen_thread.la /opt/misc/lib/libgen_thread.la /opt/misc/lib/$cercs_cv_archive/libgen_thread.la"
 tmp_search_results=""
-echo "configure:30201: searching for $search_list " >&5
+echo "configure:30205: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30205: first found $tmp_search_results " >&5
+	echo "configure:30209: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30271,11 +30275,11 @@ else
 
 search_list="$PWD/../gen_thread $PWD/../../gen_thread $PWD/../../../gen_thread"
 tmp_search_results=""
-echo "configure:30274: searching for $search_list " >&5
+echo "configure:30278: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30278: first found $tmp_search_results " >&5
+	echo "configure:30282: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30313,11 +30317,11 @@ else
 
 search_list="$PWD/../gen_thread $PWD/../../gen_thread $PWD/../../../gen_thread"
 tmp_search_results=""
-echo "configure:30316: searching for $search_list " >&5
+echo "configure:30320: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30320: first found $tmp_search_results " >&5
+	echo "configure:30324: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30464,11 +30468,11 @@ fi
 
 search_list="$datatap_dir/thin_portal.h $datatap_dir/lib/thin_portal.h $datatap_dir/include/thin_portal.h $search_list /usr/include/thin_portal.h /usr/local/include/thin_portal.h /opt/ptlpbio/include/thin_portal.h /opt/misc/include/thin_portal.h /opt/misc/include/$cercs_cv_archive/thin_portal.h"
 tmp_search_results=""
-echo "configure:30467: searching for $search_list " >&5
+echo "configure:30471: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30471: first found $tmp_search_results " >&5
+	echo "configure:30475: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30556,11 +30560,11 @@ fi
 
 search_list="$datatap_dir/libptlclient.a $datatap_dir/lib/libptlclient.a $datatap_dir/include/libptlclient.a $search_list /usr/lib/libptlclient.a /usr/local/lib/libptlclient.a /opt/ptlpbio/lib/libptlclient.a /opt/misc/lib/libptlclient.a /opt/misc/lib/$cercs_cv_archive/libptlclient.a"
 tmp_search_results=""
-echo "configure:30559: searching for $search_list " >&5
+echo "configure:30563: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30563: first found $tmp_search_results " >&5
+	echo "configure:30567: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30629,11 +30633,11 @@ else
 
 search_list="$PWD/../ptlpbio $PWD/../../ptlpbio $PWD/../../../ptlpbio"
 tmp_search_results=""
-echo "configure:30632: searching for $search_list " >&5
+echo "configure:30636: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30636: first found $tmp_search_results " >&5
+	echo "configure:30640: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30671,11 +30675,11 @@ else
 
 search_list="$PWD/../ptlpbio $PWD/../../ptlpbio $PWD/../../../ptlpbio"
 tmp_search_results=""
-echo "configure:30674: searching for $search_list " >&5
+echo "configure:30678: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30678: first found $tmp_search_results " >&5
+	echo "configure:30682: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30831,11 +30835,11 @@ fi
 
 search_list="$datatap_dir/thin_ib.h $datatap_dir/lib/thin_ib.h $datatap_dir/include/thin_ib.h $search_list /usr/include/thin_ib.h /usr/local/include/thin_ib.h /opt/ibpbio/include/thin_ib.h /opt/misc/include/thin_ib.h /opt/misc/include/$cercs_cv_archive/thin_ib.h"
 tmp_search_results=""
-echo "configure:30834: searching for $search_list " >&5
+echo "configure:30838: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30838: first found $tmp_search_results " >&5
+	echo "configure:30842: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30923,11 +30927,11 @@ fi
 
 search_list="$datatap_dir/libibclient.la $datatap_dir/lib/libibclient.la $datatap_dir/include/libibclient.la $search_list /usr/lib/libibclient.la /usr/local/lib/libibclient.la /opt/ibpbio/lib/libibclient.la /opt/misc/lib/libibclient.la /opt/misc/lib/$cercs_cv_archive/libibclient.la"
 tmp_search_results=""
-echo "configure:30926: searching for $search_list " >&5
+echo "configure:30930: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30930: first found $tmp_search_results " >&5
+	echo "configure:30934: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30996,11 +31000,11 @@ else
 
 search_list="$PWD/../ibpbio $PWD/../../ibpbio $PWD/../../../ibpbio"
 tmp_search_results=""
-echo "configure:30999: searching for $search_list " >&5
+echo "configure:31003: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31003: first found $tmp_search_results " >&5
+	echo "configure:31007: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31038,11 +31042,11 @@ else
 
 search_list="$PWD/../ibpbio $PWD/../../ibpbio $PWD/../../../ibpbio"
 tmp_search_results=""
-echo "configure:31041: searching for $search_list " >&5
+echo "configure:31045: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31045: first found $tmp_search_results " >&5
+	echo "configure:31049: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31166,11 +31170,11 @@ fi
 
 search_list="$datatap_dir/ffs.h $datatap_dir/lib/ffs.h $datatap_dir/include/ffs.h $search_list /usr/include/ffs.h /usr/local/include/ffs.h /opt/ffs/include/ffs.h /opt/misc/include/ffs.h /opt/misc/include/$cercs_cv_archive/ffs.h"
 tmp_search_results=""
-echo "configure:31169: searching for $search_list " >&5
+echo "configure:31173: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31173: first found $tmp_search_results " >&5
+	echo "configure:31177: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31258,11 +31262,11 @@ fi
 
 search_list="$datatap_dir/libffs.la $datatap_dir/lib/libffs.la $datatap_dir/include/libffs.la $search_list /usr/lib/libffs.la /usr/local/lib/libffs.la /opt/ffs/lib/libffs.la /opt/misc/lib/libffs.la /opt/misc/lib/$cercs_cv_archive/libffs.la"
 tmp_search_results=""
-echo "configure:31261: searching for $search_list " >&5
+echo "configure:31265: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31265: first found $tmp_search_results " >&5
+	echo "configure:31269: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31331,11 +31335,11 @@ else
 
 search_list="$PWD/../ffs $PWD/../../ffs $PWD/../../../ffs"
 tmp_search_results=""
-echo "configure:31334: searching for $search_list " >&5
+echo "configure:31338: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31338: first found $tmp_search_results " >&5
+	echo "configure:31342: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31373,11 +31377,11 @@ else
 
 search_list="$PWD/../ffs $PWD/../../ffs $PWD/../../../ffs"
 tmp_search_results=""
-echo "configure:31376: searching for $search_list " >&5
+echo "configure:31380: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31380: first found $tmp_search_results " >&5
+	echo "configure:31384: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31501,11 +31505,11 @@ fi
 
 search_list="$datatap_dir/gen_thread.h $datatap_dir/lib/gen_thread.h $datatap_dir/include/gen_thread.h $search_list /usr/include/gen_thread.h /usr/local/include/gen_thread.h /opt/gen_thread/include/gen_thread.h /opt/misc/include/gen_thread.h /opt/misc/include/$cercs_cv_archive/gen_thread.h"
 tmp_search_results=""
-echo "configure:31504: searching for $search_list " >&5
+echo "configure:31508: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31508: first found $tmp_search_results " >&5
+	echo "configure:31512: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31593,11 +31597,11 @@ fi
 
 search_list="$datatap_dir/libgen_thread.la $datatap_dir/lib/libgen_thread.la $datatap_dir/include/libgen_thread.la $search_list /usr/lib/libgen_thread.la /usr/local/lib/libgen_thread.la /opt/gen_thread/lib/libgen_thread.la /opt/misc/lib/libgen_thread.la /opt/misc/lib/$cercs_cv_archive/libgen_thread.la"
 tmp_search_results=""
-echo "configure:31596: searching for $search_list " >&5
+echo "configure:31600: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31600: first found $tmp_search_results " >&5
+	echo "configure:31604: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31666,11 +31670,11 @@ else
 
 search_list="$PWD/../gen_thread $PWD/../../gen_thread $PWD/../../../gen_thread"
 tmp_search_results=""
-echo "configure:31669: searching for $search_list " >&5
+echo "configure:31673: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31673: first found $tmp_search_results " >&5
+	echo "configure:31677: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31708,11 +31712,11 @@ else
 
 search_list="$PWD/../gen_thread $PWD/../../gen_thread $PWD/../../../gen_thread"
 tmp_search_results=""
-echo "configure:31711: searching for $search_list " >&5
+echo "configure:31715: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31715: first found $tmp_search_results " >&5
+	echo "configure:31719: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31859,11 +31863,11 @@ fi
 
 search_list="$datatap_dir/thin_portal.h $datatap_dir/lib/thin_portal.h $datatap_dir/include/thin_portal.h $search_list /usr/include/thin_portal.h /usr/local/include/thin_portal.h /opt/ptlpbio/include/thin_portal.h /opt/misc/include/thin_portal.h /opt/misc/include/$cercs_cv_archive/thin_portal.h"
 tmp_search_results=""
-echo "configure:31862: searching for $search_list " >&5
+echo "configure:31866: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31866: first found $tmp_search_results " >&5
+	echo "configure:31870: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31951,11 +31955,11 @@ fi
 
 search_list="$datatap_dir/libptlclient.a $datatap_dir/lib/libptlclient.a $datatap_dir/include/libptlclient.a $search_list /usr/lib/libptlclient.a /usr/local/lib/libptlclient.a /opt/ptlpbio/lib/libptlclient.a /opt/misc/lib/libptlclient.a /opt/misc/lib/$cercs_cv_archive/libptlclient.a"
 tmp_search_results=""
-echo "configure:31954: searching for $search_list " >&5
+echo "configure:31958: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31958: first found $tmp_search_results " >&5
+	echo "configure:31962: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -32024,11 +32028,11 @@ else
 
 search_list="$PWD/../ptlpbio $PWD/../../ptlpbio $PWD/../../../ptlpbio"
 tmp_search_results=""
-echo "configure:32027: searching for $search_list " >&5
+echo "configure:32031: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:32031: first found $tmp_search_results " >&5
+	echo "configure:32035: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -32066,11 +32070,11 @@ else
 
 search_list="$PWD/../ptlpbio $PWD/../../ptlpbio $PWD/../../../ptlpbio"
 tmp_search_results=""
-echo "configure:32069: searching for $search_list " >&5
+echo "configure:32073: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:32073: first found $tmp_search_results " >&5
+	echo "configure:32077: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -32275,11 +32279,11 @@ fi
 
 search_list="$datatap_dir/evpath.h $datatap_dir/lib/evpath.h $datatap_dir/include/evpath.h $search_list /usr/include/evpath.h /usr/local/include/evpath.h /opt/evpath/include/evpath.h /opt/misc/include/evpath.h /opt/misc/include/$cercs_cv_archive/evpath.h"
 tmp_search_results=""
-echo "configure:32278: searching for $search_list " >&5
+echo "configure:32282: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:32282: first found $tmp_search_results " >&5
+	echo "configure:32286: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -32367,11 +32371,11 @@ fi
 
 search_list="$datatap_dir/libevpath.a $datatap_dir/lib/libevpath.a $datatap_dir/include/libevpath.a $search_list /usr/lib/libevpath.a /usr/local/lib/libevpath.a /opt/evpath/lib/libevpath.a /opt/misc/lib/libevpath.a /opt/misc/lib/$cercs_cv_archive/libevpath.a"
 tmp_search_results=""
-echo "configure:32370: searching for $search_list " >&5
+echo "configure:32374: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:32374: first found $tmp_search_results " >&5
+	echo "configure:32378: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -32440,11 +32444,11 @@ else
 
 search_list="$PWD/../evpath $PWD/../../evpath $PWD/../../../evpath"
 tmp_search_results=""
-echo "configure:32443: searching for $search_list " >&5
+echo "configure:32447: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:32447: first found $tmp_search_results " >&5
+	echo "configure:32451: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -32482,11 +32486,11 @@ else
 
 search_list="$PWD/../evpath $PWD/../../evpath $PWD/../../../evpath"
 tmp_search_results=""
-echo "configure:32485: searching for $search_list " >&5
+echo "configure:32489: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:32489: first found $tmp_search_results " >&5
+	echo "configure:32493: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -32610,11 +32614,11 @@ fi
 
 search_list="$datatap_dir/ffs.h $datatap_dir/lib/ffs.h $datatap_dir/include/ffs.h $search_list /usr/include/ffs.h /usr/local/include/ffs.h /opt/ffs/include/ffs.h /opt/misc/include/ffs.h /opt/misc/include/$cercs_cv_archive/ffs.h"
 tmp_search_results=""
-echo "configure:32613: searching for $search_list " >&5
+echo "configure:32617: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:32617: first found $tmp_search_results " >&5
+	echo "configure:32621: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -32702,11 +32706,11 @@ fi
 
 search_list="$datatap_dir/libffs.a $datatap_dir/lib/libffs.a $datatap_dir/include/libffs.a $search_list /usr/lib/libffs.a /usr/local/lib/libffs.a /opt/ffs/lib/libffs.a /opt/misc/lib/libffs.a /opt/misc/lib/$cercs_cv_archive/libffs.a"
 tmp_search_results=""
-echo "configure:32705: searching for $search_list " >&5
+echo "configure:32709: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:32709: first found $tmp_search_results " >&5
+	echo "configure:32713: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -32775,11 +32779,11 @@ else
 
 search_list="$PWD/../ffs $PWD/../../ffs $PWD/../../../ffs"
 tmp_search_results=""
-echo "configure:32778: searching for $search_list " >&5
+echo "configure:32782: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:32782: first found $tmp_search_results " >&5
+	echo "configure:32786: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -32817,11 +32821,11 @@ else
 
 search_list="$PWD/../ffs $PWD/../../ffs $PWD/../../../ffs"
 tmp_search_results=""
-echo "configure:32820: searching for $search_list " >&5
+echo "configure:32824: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:32824: first found $tmp_search_results " >&5
+	echo "configure:32828: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -32945,11 +32949,11 @@ fi
 
 search_list="$datatap_dir/atl.h $datatap_dir/lib/atl.h $datatap_dir/include/atl.h $search_list /usr/include/atl.h /usr/local/include/atl.h /opt/atl/include/atl.h /opt/misc/include/atl.h /opt/misc/include/$cercs_cv_archive/atl.h"
 tmp_search_results=""
-echo "configure:32948: searching for $search_list " >&5
+echo "configure:32952: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:32952: first found $tmp_search_results " >&5
+	echo "configure:32956: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -33037,11 +33041,11 @@ fi
 
 search_list="$datatap_dir/libatl.a $datatap_dir/lib/libatl.a $datatap_dir/include/libatl.a $search_list /usr/lib/libatl.a /usr/local/lib/libatl.a /opt/atl/lib/libatl.a /opt/misc/lib/libatl.a /opt/misc/lib/$cercs_cv_archive/libatl.a"
 tmp_search_results=""
-echo "configure:33040: searching for $search_list " >&5
+echo "configure:33044: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:33044: first found $tmp_search_results " >&5
+	echo "configure:33048: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -33110,11 +33114,11 @@ else
 
 search_list="$PWD/../atl $PWD/../../atl $PWD/../../../atl"
 tmp_search_results=""
-echo "configure:33113: searching for $search_list " >&5
+echo "configure:33117: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:33117: first found $tmp_search_results " >&5
+	echo "configure:33121: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -33152,11 +33156,11 @@ else
 
 search_list="$PWD/../atl $PWD/../../atl $PWD/../../../atl"
 tmp_search_results=""
-echo "configure:33155: searching for $search_list " >&5
+echo "configure:33159: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:33159: first found $tmp_search_results " >&5
+	echo "configure:33163: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -33280,11 +33284,11 @@ fi
 
 search_list="$datatap_dir/dill.h $datatap_dir/lib/dill.h $datatap_dir/include/dill.h $search_list /usr/include/dill.h /usr/local/include/dill.h /opt/dill/include/dill.h /opt/misc/include/dill.h /opt/misc/include/$cercs_cv_archive/dill.h"
 tmp_search_results=""
-echo "configure:33283: searching for $search_list " >&5
+echo "configure:33287: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:33287: first found $tmp_search_results " >&5
+	echo "configure:33291: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -33372,11 +33376,11 @@ fi
 
 search_list="$datatap_dir/libdill.a $datatap_dir/lib/libdill.a $datatap_dir/include/libdill.a $search_list /usr/lib/libdill.a /usr/local/lib/libdill.a /opt/dill/lib/libdill.a /opt/misc/lib/libdill.a /opt/misc/lib/$cercs_cv_archive/libdill.a"
 tmp_search_results=""
-echo "configure:33375: searching for $search_list " >&5
+echo "configure:33379: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:33379: first found $tmp_search_results " >&5
+	echo "configure:33383: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -33445,11 +33449,11 @@ else
 
 search_list="$PWD/../dill $PWD/../../dill $PWD/../../../dill"
 tmp_search_results=""
-echo "configure:33448: searching for $search_list " >&5
+echo "configure:33452: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:33452: first found $tmp_search_results " >&5
+	echo "configure:33456: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -33487,11 +33491,11 @@ else
 
 search_list="$PWD/../dill $PWD/../../dill $PWD/../../../dill"
 tmp_search_results=""
-echo "configure:33490: searching for $search_list " >&5
+echo "configure:33494: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:33494: first found $tmp_search_results " >&5
+	echo "configure:33498: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -33615,11 +33619,11 @@ fi
 
 search_list="$datatap_dir/cercs_env.h $datatap_dir/lib/cercs_env.h $datatap_dir/include/cercs_env.h $search_list /usr/include/cercs_env.h /usr/local/include/cercs_env.h /opt/cercs_env/include/cercs_env.h /opt/misc/include/cercs_env.h /opt/misc/include/$cercs_cv_archive/cercs_env.h"
 tmp_search_results=""
-echo "configure:33618: searching for $search_list " >&5
+echo "configure:33622: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:33622: first found $tmp_search_results " >&5
+	echo "configure:33626: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -33707,11 +33711,11 @@ fi
 
 search_list="$datatap_dir/libcercs_env.a $datatap_dir/lib/libcercs_env.a $datatap_dir/include/libcercs_env.a $search_list /usr/lib/libcercs_env.a /usr/local/lib/libcercs_env.a /opt/cercs_env/lib/libcercs_env.a /opt/misc/lib/libcercs_env.a /opt/misc/lib/$cercs_cv_archive/libcercs_env.a"
 tmp_search_results=""
-echo "configure:33710: searching for $search_list " >&5
+echo "configure:33714: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:33714: first found $tmp_search_results " >&5
+	echo "configure:33718: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -33780,11 +33784,11 @@ else
 
 search_list="$PWD/../cercs_env $PWD/../../cercs_env $PWD/../../../cercs_env"
 tmp_search_results=""
-echo "configure:33783: searching for $search_list " >&5
+echo "configure:33787: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:33787: first found $tmp_search_results " >&5
+	echo "configure:33791: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -33822,11 +33826,11 @@ else
 
 search_list="$PWD/../cercs_env $PWD/../../cercs_env $PWD/../../../cercs_env"
 tmp_search_results=""
-echo "configure:33825: searching for $search_list " >&5
+echo "configure:33829: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:33829: first found $tmp_search_results " >&5
+	echo "configure:33833: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -33948,6 +33952,1807 @@ _ACEOF
 
 cat >>confdefs.h <<_ACEOF
 #define HAVE_FLEXPATH $HAVE_FLEXPATH
+_ACEOF
+
+
+
+
+
+
+{ $as_echo "$as_me:$LINENO: === checking for ICEE ===" >&5
+$as_echo "$as_me: === checking for ICEE ===" >&6;}
+
+FP_SRCDIR=""
+FP_CPPFLAGS=""
+FP_LDFLAGS=""
+FP_LIBS=""
+
+ac_icee_ok=yes
+
+temptest=enable
+
+icee_dir=""
+
+
+
+# Check whether --with-icee was given.
+if test "${with_icee+set}" = set; then
+  withval=$with_icee;  ac_with_icee=$withval
+else
+  with_icee=no
+fi
+
+
+if test "x$with_icee" = "xno"; then
+	ac_icee_ok=no
+	temptest=disable
+
+elif test x"$with_icee" != xyes -a x"$with_icee" != xcheck; then
+
+{ $as_echo "$as_me:$LINENO: checking got with icee argument $with_icee" >&5
+$as_echo_n "checking got with icee argument $with_icee... " >&6; }
+#	with_evpath=$with_icee
+
+fi
+
+if test "x$ac_icee_ok" != "xno"; then
+
+    icee_dir=$withval
+    datatap_dir=$withval
+
+
+
+
+if test -z "$with_local_specified"; then
+
+
+
+
+# Check whether --with-evpath was given.
+if test "${with_evpath+set}" = set; then
+  withval=$with_evpath;
+fi
+
+
+if test -n "$with_evpath"; then
+unset cercs_cv_evpath_include_arg
+unset cercs_cv_evpath_link_arg
+if test `echo $with_evpath | sed 's/\(.\).*/\1/g'` != "/"; then
+with_evpath=`pwd`/$with_evpath
+fi
+fi
+{ $as_echo "$as_me:$LINENO: checking needed include args for evpath package" >&5
+$as_echo_n "checking needed include args for evpath package... " >&6; }
+if test "${cercs_cv_evpath_include_arg+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+
+
+
+
+cercs_tmp=""
+search_list="./evpath.h"
+CHAOS_HOMEDIR=""
+if test -n "$CSH"; then
+CHAOS_HOMEDIR=`echo "echo ~chaos" | csh -sf  2>/dev/null | sed 's%/$%%'` || CHAOS_HOMEDIR=""
+fi
+if test -n "$with_evpath"; then
+if test `echo $with_evpath | cut -c1` = "~"; then
+EXPANDED=`echo "echo $with_evpath" | csh -sf 2>/dev/null` || EXPANDED=""
+else
+EXPANDED=$with_evpath
+fi
+
+echo "Datatap = $datatap_dir"
+
+search_list="$datatap_dir/evpath.h $datatap_dir/lib/evpath.h $datatap_dir/include/evpath.h $search_list $EXPANDED/evpath.h $EXPANDED/include/evpath.h $EXPANDED/share/evpath.h $EXPANDED/$cercs_cv_archive/evpath.h $EXPANDED/$cercs_cv_archive/include/evpath.h $EXPANDED/evpath/evpath.h $EXPANDED/evpath/$cercs_cv_archive/evpath.h $EXPANDED/evpath/include/evpath.h $EXPANDED/evpath/include/$cercs_cv_archive/evpath.h"
+fi
+if test -z "$with_installed_specified"; then
+search_list="$search_list `pwd`/../evpath/evpath.h `pwd`/../include/evpath.h `pwd`/../share/evpath.h"
+if test "$CHAOS_HOMEDIR" != "$HOME"; then
+search_list="$search_list $HOME/evpath/evpath.h $HOME/$cercs_cv_archive/include/evpath.h $HOME/include/evpath.h"
+fi
+fi
+if test -n "$CHAOS_HOMEDIR" -a -n "$cercs_cv_archive"; then
+search_list="$search_list $CHAOS_HOMEDIR/$cercs_cv_archive/evpath/include/evpath.h $CHAOS_HOMEDIR/$cercs_cv_archive/include/evpath.h $CHAOS_HOMEDIR/evpath/$cercs_cv_archive/include/evpath.h $CHAOS_HOMEDIR/evpath/include/evpath.h $CHAOS_HOMEDIR/include/evpath.h"
+fi
+if test "$libdir" != '${exec_prefix}/lib'; then
+tmpdir=`echo ${libdir} |  sed 's%/$%%'`
+search_list="$tmpdir/evpath.h $search_list"
+fi
+if test "$exec_prefix" != "NONE"; then
+tmpdir=`echo ${exec_prefix} |  sed 's%/$%%'`
+search_list="$tmpdir/lib/evpath.h $search_list"
+fi
+if test "$includedir" != '${prefix}/include'; then
+tmpdir=`echo ${includedir} |  sed 's%/$%%'`
+search_list="$tmpdir/evpath.h $search_list"
+fi
+if test "$prefix" != "NONE"; then
+tmpdir=`echo ${prefix} |  sed 's%/$%%'`
+search_list="$tmpdir/include/evpath.h $search_list"
+fi
+if test "include" == "lib"; then
+  for tmp_lib_value in $sys_lib_search_path_spec; do
+     search_list="$search_list $tmp_lib_value/evpath.h"
+  done
+fi
+
+search_list="$datatap_dir/evpath.h $datatap_dir/lib/evpath.h $datatap_dir/include/evpath.h $search_list /usr/include/evpath.h /usr/local/include/evpath.h /opt/evpath/include/evpath.h /opt/misc/include/evpath.h /opt/misc/include/$cercs_cv_archive/evpath.h"
+tmp_search_results=""
+echo "configure:34083: searching for $search_list " >&5
+for tmp_search_value in $search_list; do
+   if test -r $tmp_search_value; then
+	tmp_search_results=$tmp_search_value
+	echo "configure:34087: first found $tmp_search_results " >&5
+	break
+   fi
+done
+
+if test -n "$tmp_search_results"; then
+cercs_tmp=$tmp_search_results
+fi
+
+if test -n "$cercs_tmp" -a "$cercs_tmp" != "/usr/include/evpath.h"; then
+cercs_cv_evpath_include_arg=-I`$PATHPROG $cercs_tmp | sed 's#\\\\#/#g' | sed "s#.evpath.h##g"`
+fi
+
+fi
+
+{ $as_echo "$as_me:$LINENO: result: $cercs_cv_evpath_include_arg" >&5
+$as_echo "$cercs_cv_evpath_include_arg" >&6; }
+if test -n "$cercs_cv_evpath_include_arg"; then
+arg="$cercs_cv_evpath_include_arg"
+no_dash_arg=`echo $arg | sed 's/^-//g'`
+if test `echo $DT_CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
+if test `echo $arg | grep -c "evpath"` -eq 0; then
+DT_CPPFLAGS="$DT_CPPFLAGS $arg";
+else
+DT_CPPFLAGS="$arg $DT_CPPFLAGS"
+fi
+fi
+fi
+
+{ $as_echo "$as_me:$LINENO: checking needed link args for evpath package" >&5
+$as_echo_n "checking needed link args for evpath package... " >&6; }
+if test "${cercs_cv_evpath_link_dir+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+
+
+
+
+cercs_tmp=""
+search_list="./libevpath.a"
+CHAOS_HOMEDIR=""
+if test -n "$CSH"; then
+CHAOS_HOMEDIR=`echo "echo ~chaos" | csh -sf  2>/dev/null | sed 's%/$%%'` || CHAOS_HOMEDIR=""
+fi
+if test -n "$with_evpath"; then
+if test `echo $with_evpath | cut -c1` = "~"; then
+EXPANDED=`echo "echo $with_evpath" | csh -sf 2>/dev/null` || EXPANDED=""
+else
+EXPANDED=$with_evpath
+fi
+
+echo "Datatap = $datatap_dir"
+
+search_list="$datatap_dir/libevpath.a $datatap_dir/lib/libevpath.a $datatap_dir/include/libevpath.a $search_list $EXPANDED/libevpath.a $EXPANDED/lib/libevpath.a $EXPANDED/share/libevpath.a $EXPANDED/$cercs_cv_archive/libevpath.a $EXPANDED/$cercs_cv_archive/lib/libevpath.a $EXPANDED/evpath/libevpath.a $EXPANDED/evpath/$cercs_cv_archive/libevpath.a $EXPANDED/evpath/lib/libevpath.a $EXPANDED/evpath/lib/$cercs_cv_archive/libevpath.a"
+fi
+if test -z "$with_installed_specified"; then
+search_list="$search_list `pwd`/../evpath/libevpath.a `pwd`/../lib/libevpath.a `pwd`/../share/libevpath.a"
+if test "$CHAOS_HOMEDIR" != "$HOME"; then
+search_list="$search_list $HOME/evpath/libevpath.a $HOME/$cercs_cv_archive/lib/libevpath.a $HOME/lib/libevpath.a"
+fi
+fi
+if test -n "$CHAOS_HOMEDIR" -a -n "$cercs_cv_archive"; then
+search_list="$search_list $CHAOS_HOMEDIR/$cercs_cv_archive/evpath/lib/libevpath.a $CHAOS_HOMEDIR/$cercs_cv_archive/lib/libevpath.a $CHAOS_HOMEDIR/evpath/$cercs_cv_archive/lib/libevpath.a $CHAOS_HOMEDIR/evpath/lib/libevpath.a $CHAOS_HOMEDIR/lib/libevpath.a"
+fi
+if test "$libdir" != '${exec_prefix}/lib'; then
+tmpdir=`echo ${libdir} |  sed 's%/$%%'`
+search_list="$tmpdir/libevpath.a $search_list"
+fi
+if test "$exec_prefix" != "NONE"; then
+tmpdir=`echo ${exec_prefix} |  sed 's%/$%%'`
+search_list="$tmpdir/lib/libevpath.a $search_list"
+fi
+if test "$includedir" != '${prefix}/include'; then
+tmpdir=`echo ${includedir} |  sed 's%/$%%'`
+search_list="$tmpdir/libevpath.a $search_list"
+fi
+if test "$prefix" != "NONE"; then
+tmpdir=`echo ${prefix} |  sed 's%/$%%'`
+search_list="$tmpdir/lib/libevpath.a $search_list"
+fi
+if test "lib" == "lib"; then
+  for tmp_lib_value in $sys_lib_search_path_spec; do
+     search_list="$search_list $tmp_lib_value/libevpath.a"
+  done
+fi
+
+search_list="$datatap_dir/libevpath.a $datatap_dir/lib/libevpath.a $datatap_dir/include/libevpath.a $search_list /usr/lib/libevpath.a /usr/local/lib/libevpath.a /opt/evpath/lib/libevpath.a /opt/misc/lib/libevpath.a /opt/misc/lib/$cercs_cv_archive/libevpath.a"
+tmp_search_results=""
+echo "configure:34175: searching for $search_list " >&5
+for tmp_search_value in $search_list; do
+   if test -r $tmp_search_value; then
+	tmp_search_results=$tmp_search_value
+	echo "configure:34179: first found $tmp_search_results " >&5
+	break
+   fi
+done
+
+if test -n "$tmp_search_results"; then
+cercs_tmp=$tmp_search_results
+fi
+
+if test -n "$cercs_tmp" -a "$cercs_tmp" != "libevpath.a"; then
+cercs_cv_evpath_link_dir=`$PATHPROG $cercs_tmp | sed 's#\\\\#/#g' | sed "s/.libevpath.a//g"`
+else
+cercs_cv_evpath_link_dir=""
+fi
+
+fi
+
+{ $as_echo "$as_me:$LINENO: result: $cercs_cv_evpath_link_dir" >&5
+$as_echo "$cercs_cv_evpath_link_dir" >&6; }
+ld_arg="-L"
+new_flags=$LDFLAGS
+cercs_cv_evpath_link_arg=`echo $cercs_cv_evpath_link_dir | sed "/./ s/^/$ld_arg/1"`
+if test -n "$cercs_cv_evpath_link_arg"; then
+arg=$cercs_cv_evpath_link_arg
+no_dash_arg=`echo $arg | sed 's/^-//g'`
+if test `echo $new_flags | grep -c "$no_dash_arg"` -eq 0; then
+root=`echo libevpath.a | sed 's/\..*//'`
+if test ! -r $cercs_cv_evpath_link_dir/$root.la; then
+if eval "test \"\${LIBTOOL+set}\" = set"; then
+arg="$cercs_cv_evpath_link_arg "`echo $cercs_cv_evpath_link_dir | sed "/./ s/^/-R/1"`
+fi
+fi
+if test `echo $arg | grep -c "evpath"` -eq 0; then
+new_flags="$new_flags $arg"
+else
+new_flags="$arg $new_flags"
+fi
+fi
+DT_LDFLAGS=$new_flags
+fi
+
+
+else
+
+
+
+
+# Check whether --with-evpath was given.
+if test "${with_evpath+set}" = set; then
+  withval=$with_evpath;
+fi
+
+
+if test -n "$with_evpath"; then
+unset cercs_cv_evpath_include_arg
+unset cercs_cv_evpath_link_arg
+if test `echo $with_evpath | sed 's/\(.\).*/\1/g'` != "/"; then
+with_evpath=`pwd`/$with_evpath
+fi
+fi
+{ $as_echo "$as_me:$LINENO: checking needed include args for evpath package" >&5
+$as_echo_n "checking needed include args for evpath package... " >&6; }
+if test "${cercs_cv_evpath_include_arg+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+
+
+search_list="$PWD/../evpath $PWD/../../evpath $PWD/../../../evpath"
+tmp_search_results=""
+echo "configure:34248: searching for $search_list " >&5
+for tmp_search_value in $search_list; do
+   if test -r $tmp_search_value; then
+	tmp_search_results=$tmp_search_value
+	echo "configure:34252: first found $tmp_search_results " >&5
+	break
+   fi
+done
+
+if test -n "$tmp_search_results"; then
+cercs_tmp=$tmp_search_results
+fi
+
+if test -n "$cercs_tmp" -a "$cercs_tmp" != "/usr/include/evpath.h"; then
+cercs_cv_evpath_include_arg=-I`$PATHPROG $cercs_tmp | sed 's#\\\\#/#g' | sed "s#.evpath.h##g"`
+fi
+
+fi
+
+{ $as_echo "$as_me:$LINENO: result: $cercs_cv_evpath_include_arg" >&5
+$as_echo "$cercs_cv_evpath_include_arg" >&6; }
+if test -n "$cercs_cv_evpath_include_arg"; then
+arg="$cercs_cv_evpath_include_arg"
+no_dash_arg=`echo $arg | sed 's/^-//g'`
+if test `echo $DT_CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
+if test `echo $arg | grep -c "evpath"` -eq 0; then
+DT_CPPFLAGS="$DT_CPPFLAGS $arg";
+else
+DT_CPPFLAGS="$arg $DT_CPPFLAGS"
+fi
+fi
+fi
+
+{ $as_echo "$as_me:$LINENO: checking needed link args for evpath package" >&5
+$as_echo_n "checking needed link args for evpath package... " >&6; }
+if test "${cercs_cv_evpath_link_dir+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+
+
+search_list="$PWD/../evpath $PWD/../../evpath $PWD/../../../evpath"
+tmp_search_results=""
+echo "configure:34290: searching for $search_list " >&5
+for tmp_search_value in $search_list; do
+   if test -r $tmp_search_value; then
+	tmp_search_results=$tmp_search_value
+	echo "configure:34294: first found $tmp_search_results " >&5
+	break
+   fi
+done
+
+if test -n "$tmp_search_results"; then
+cercs_tmp=$tmp_search_results
+fi
+
+if test -n "$cercs_tmp" -a "$cercs_tmp" != "libevpath.a"; then
+cercs_cv_evpath_link_dir=`$PATHPROG $cercs_tmp | sed 's#\\\\#/#g' | sed "s/.libevpath.a//g"`
+else
+cercs_cv_evpath_link_dir=""
+fi
+
+fi
+
+{ $as_echo "$as_me:$LINENO: result: $cercs_cv_evpath_link_dir" >&5
+$as_echo "$cercs_cv_evpath_link_dir" >&6; }
+ld_arg="-L"
+new_flags=$LDFLAGS
+cercs_cv_evpath_link_arg=`echo $cercs_cv_evpath_link_dir | sed "/./ s/^/$ld_arg/1"`
+if test -n "$cercs_cv_evpath_link_arg"; then
+arg=$cercs_cv_evpath_link_arg
+no_dash_arg=`echo $arg | sed 's/^-//g'`
+if test `echo $new_flags | grep -c "$no_dash_arg"` -eq 0; then
+root=`echo libevpath.a | sed 's/\..*//'`
+if test ! -r $cercs_cv_evpath_link_dir/$root.la; then
+if eval "test \"\${LIBTOOL+set}\" = set"; then
+arg="$cercs_cv_evpath_link_arg "`echo $cercs_cv_evpath_link_dir | sed "/./ s/^/-R/1"`
+fi
+fi
+if test `echo $arg | grep -c "evpath"` -eq 0; then
+new_flags="$new_flags $arg"
+else
+new_flags="$arg $new_flags"
+fi
+fi
+DT_LDFLAGS=$new_flags
+fi
+
+
+fi
+
+
+
+
+if test -z "$with_local_specified"; then
+
+
+
+
+# Check whether --with-ffs was given.
+if test "${with_ffs+set}" = set; then
+  withval=$with_ffs;
+fi
+
+
+if test -n "$with_ffs"; then
+unset cercs_cv_ffs_include_arg
+unset cercs_cv_ffs_link_arg
+if test `echo $with_ffs | sed 's/\(.\).*/\1/g'` != "/"; then
+with_ffs=`pwd`/$with_ffs
+fi
+fi
+{ $as_echo "$as_me:$LINENO: checking needed include args for ffs package" >&5
+$as_echo_n "checking needed include args for ffs package... " >&6; }
+if test "${cercs_cv_ffs_include_arg+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+
+
+
+
+cercs_tmp=""
+search_list="./ffs.h"
+CHAOS_HOMEDIR=""
+if test -n "$CSH"; then
+CHAOS_HOMEDIR=`echo "echo ~chaos" | csh -sf  2>/dev/null | sed 's%/$%%'` || CHAOS_HOMEDIR=""
+fi
+if test -n "$with_ffs"; then
+if test `echo $with_ffs | cut -c1` = "~"; then
+EXPANDED=`echo "echo $with_ffs" | csh -sf 2>/dev/null` || EXPANDED=""
+else
+EXPANDED=$with_ffs
+fi
+
+echo "Datatap = $datatap_dir"
+
+search_list="$datatap_dir/ffs.h $datatap_dir/lib/ffs.h $datatap_dir/include/ffs.h $search_list $EXPANDED/ffs.h $EXPANDED/include/ffs.h $EXPANDED/share/ffs.h $EXPANDED/$cercs_cv_archive/ffs.h $EXPANDED/$cercs_cv_archive/include/ffs.h $EXPANDED/ffs/ffs.h $EXPANDED/ffs/$cercs_cv_archive/ffs.h $EXPANDED/ffs/include/ffs.h $EXPANDED/ffs/include/$cercs_cv_archive/ffs.h"
+fi
+if test -z "$with_installed_specified"; then
+search_list="$search_list `pwd`/../ffs/ffs.h `pwd`/../include/ffs.h `pwd`/../share/ffs.h"
+if test "$CHAOS_HOMEDIR" != "$HOME"; then
+search_list="$search_list $HOME/ffs/ffs.h $HOME/$cercs_cv_archive/include/ffs.h $HOME/include/ffs.h"
+fi
+fi
+if test -n "$CHAOS_HOMEDIR" -a -n "$cercs_cv_archive"; then
+search_list="$search_list $CHAOS_HOMEDIR/$cercs_cv_archive/ffs/include/ffs.h $CHAOS_HOMEDIR/$cercs_cv_archive/include/ffs.h $CHAOS_HOMEDIR/ffs/$cercs_cv_archive/include/ffs.h $CHAOS_HOMEDIR/ffs/include/ffs.h $CHAOS_HOMEDIR/include/ffs.h"
+fi
+if test "$libdir" != '${exec_prefix}/lib'; then
+tmpdir=`echo ${libdir} |  sed 's%/$%%'`
+search_list="$tmpdir/ffs.h $search_list"
+fi
+if test "$exec_prefix" != "NONE"; then
+tmpdir=`echo ${exec_prefix} |  sed 's%/$%%'`
+search_list="$tmpdir/lib/ffs.h $search_list"
+fi
+if test "$includedir" != '${prefix}/include'; then
+tmpdir=`echo ${includedir} |  sed 's%/$%%'`
+search_list="$tmpdir/ffs.h $search_list"
+fi
+if test "$prefix" != "NONE"; then
+tmpdir=`echo ${prefix} |  sed 's%/$%%'`
+search_list="$tmpdir/include/ffs.h $search_list"
+fi
+if test "include" == "lib"; then
+  for tmp_lib_value in $sys_lib_search_path_spec; do
+     search_list="$search_list $tmp_lib_value/ffs.h"
+  done
+fi
+
+search_list="$datatap_dir/ffs.h $datatap_dir/lib/ffs.h $datatap_dir/include/ffs.h $search_list /usr/include/ffs.h /usr/local/include/ffs.h /opt/ffs/include/ffs.h /opt/misc/include/ffs.h /opt/misc/include/$cercs_cv_archive/ffs.h"
+tmp_search_results=""
+echo "configure:34418: searching for $search_list " >&5
+for tmp_search_value in $search_list; do
+   if test -r $tmp_search_value; then
+	tmp_search_results=$tmp_search_value
+	echo "configure:34422: first found $tmp_search_results " >&5
+	break
+   fi
+done
+
+if test -n "$tmp_search_results"; then
+cercs_tmp=$tmp_search_results
+fi
+
+if test -n "$cercs_tmp" -a "$cercs_tmp" != "/usr/include/ffs.h"; then
+cercs_cv_ffs_include_arg=-I`$PATHPROG $cercs_tmp | sed 's#\\\\#/#g' | sed "s#.ffs.h##g"`
+fi
+
+fi
+
+{ $as_echo "$as_me:$LINENO: result: $cercs_cv_ffs_include_arg" >&5
+$as_echo "$cercs_cv_ffs_include_arg" >&6; }
+if test -n "$cercs_cv_ffs_include_arg"; then
+arg="$cercs_cv_ffs_include_arg"
+no_dash_arg=`echo $arg | sed 's/^-//g'`
+if test `echo $DT_CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
+if test `echo $arg | grep -c "ffs"` -eq 0; then
+DT_CPPFLAGS="$DT_CPPFLAGS $arg";
+else
+DT_CPPFLAGS="$arg $DT_CPPFLAGS"
+fi
+fi
+fi
+
+{ $as_echo "$as_me:$LINENO: checking needed link args for ffs package" >&5
+$as_echo_n "checking needed link args for ffs package... " >&6; }
+if test "${cercs_cv_ffs_link_dir+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+
+
+
+
+cercs_tmp=""
+search_list="./libffs.a"
+CHAOS_HOMEDIR=""
+if test -n "$CSH"; then
+CHAOS_HOMEDIR=`echo "echo ~chaos" | csh -sf  2>/dev/null | sed 's%/$%%'` || CHAOS_HOMEDIR=""
+fi
+if test -n "$with_ffs"; then
+if test `echo $with_ffs | cut -c1` = "~"; then
+EXPANDED=`echo "echo $with_ffs" | csh -sf 2>/dev/null` || EXPANDED=""
+else
+EXPANDED=$with_ffs
+fi
+
+echo "Datatap = $datatap_dir"
+
+search_list="$datatap_dir/libffs.a $datatap_dir/lib/libffs.a $datatap_dir/include/libffs.a $search_list $EXPANDED/libffs.a $EXPANDED/lib/libffs.a $EXPANDED/share/libffs.a $EXPANDED/$cercs_cv_archive/libffs.a $EXPANDED/$cercs_cv_archive/lib/libffs.a $EXPANDED/ffs/libffs.a $EXPANDED/ffs/$cercs_cv_archive/libffs.a $EXPANDED/ffs/lib/libffs.a $EXPANDED/ffs/lib/$cercs_cv_archive/libffs.a"
+fi
+if test -z "$with_installed_specified"; then
+search_list="$search_list `pwd`/../ffs/libffs.a `pwd`/../lib/libffs.a `pwd`/../share/libffs.a"
+if test "$CHAOS_HOMEDIR" != "$HOME"; then
+search_list="$search_list $HOME/ffs/libffs.a $HOME/$cercs_cv_archive/lib/libffs.a $HOME/lib/libffs.a"
+fi
+fi
+if test -n "$CHAOS_HOMEDIR" -a -n "$cercs_cv_archive"; then
+search_list="$search_list $CHAOS_HOMEDIR/$cercs_cv_archive/ffs/lib/libffs.a $CHAOS_HOMEDIR/$cercs_cv_archive/lib/libffs.a $CHAOS_HOMEDIR/ffs/$cercs_cv_archive/lib/libffs.a $CHAOS_HOMEDIR/ffs/lib/libffs.a $CHAOS_HOMEDIR/lib/libffs.a"
+fi
+if test "$libdir" != '${exec_prefix}/lib'; then
+tmpdir=`echo ${libdir} |  sed 's%/$%%'`
+search_list="$tmpdir/libffs.a $search_list"
+fi
+if test "$exec_prefix" != "NONE"; then
+tmpdir=`echo ${exec_prefix} |  sed 's%/$%%'`
+search_list="$tmpdir/lib/libffs.a $search_list"
+fi
+if test "$includedir" != '${prefix}/include'; then
+tmpdir=`echo ${includedir} |  sed 's%/$%%'`
+search_list="$tmpdir/libffs.a $search_list"
+fi
+if test "$prefix" != "NONE"; then
+tmpdir=`echo ${prefix} |  sed 's%/$%%'`
+search_list="$tmpdir/lib/libffs.a $search_list"
+fi
+if test "lib" == "lib"; then
+  for tmp_lib_value in $sys_lib_search_path_spec; do
+     search_list="$search_list $tmp_lib_value/libffs.a"
+  done
+fi
+
+search_list="$datatap_dir/libffs.a $datatap_dir/lib/libffs.a $datatap_dir/include/libffs.a $search_list /usr/lib/libffs.a /usr/local/lib/libffs.a /opt/ffs/lib/libffs.a /opt/misc/lib/libffs.a /opt/misc/lib/$cercs_cv_archive/libffs.a"
+tmp_search_results=""
+echo "configure:34510: searching for $search_list " >&5
+for tmp_search_value in $search_list; do
+   if test -r $tmp_search_value; then
+	tmp_search_results=$tmp_search_value
+	echo "configure:34514: first found $tmp_search_results " >&5
+	break
+   fi
+done
+
+if test -n "$tmp_search_results"; then
+cercs_tmp=$tmp_search_results
+fi
+
+if test -n "$cercs_tmp" -a "$cercs_tmp" != "libffs.a"; then
+cercs_cv_ffs_link_dir=`$PATHPROG $cercs_tmp | sed 's#\\\\#/#g' | sed "s/.libffs.a//g"`
+else
+cercs_cv_ffs_link_dir=""
+fi
+
+fi
+
+{ $as_echo "$as_me:$LINENO: result: $cercs_cv_ffs_link_dir" >&5
+$as_echo "$cercs_cv_ffs_link_dir" >&6; }
+ld_arg="-L"
+new_flags=$LDFLAGS
+cercs_cv_ffs_link_arg=`echo $cercs_cv_ffs_link_dir | sed "/./ s/^/$ld_arg/1"`
+if test -n "$cercs_cv_ffs_link_arg"; then
+arg=$cercs_cv_ffs_link_arg
+no_dash_arg=`echo $arg | sed 's/^-//g'`
+if test `echo $new_flags | grep -c "$no_dash_arg"` -eq 0; then
+root=`echo libffs.a | sed 's/\..*//'`
+if test ! -r $cercs_cv_ffs_link_dir/$root.la; then
+if eval "test \"\${LIBTOOL+set}\" = set"; then
+arg="$cercs_cv_ffs_link_arg "`echo $cercs_cv_ffs_link_dir | sed "/./ s/^/-R/1"`
+fi
+fi
+if test `echo $arg | grep -c "ffs"` -eq 0; then
+new_flags="$new_flags $arg"
+else
+new_flags="$arg $new_flags"
+fi
+fi
+DT_LDFLAGS=$new_flags
+fi
+
+
+else
+
+
+
+
+# Check whether --with-ffs was given.
+if test "${with_ffs+set}" = set; then
+  withval=$with_ffs;
+fi
+
+
+if test -n "$with_ffs"; then
+unset cercs_cv_ffs_include_arg
+unset cercs_cv_ffs_link_arg
+if test `echo $with_ffs | sed 's/\(.\).*/\1/g'` != "/"; then
+with_ffs=`pwd`/$with_ffs
+fi
+fi
+{ $as_echo "$as_me:$LINENO: checking needed include args for ffs package" >&5
+$as_echo_n "checking needed include args for ffs package... " >&6; }
+if test "${cercs_cv_ffs_include_arg+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+
+
+search_list="$PWD/../ffs $PWD/../../ffs $PWD/../../../ffs"
+tmp_search_results=""
+echo "configure:34583: searching for $search_list " >&5
+for tmp_search_value in $search_list; do
+   if test -r $tmp_search_value; then
+	tmp_search_results=$tmp_search_value
+	echo "configure:34587: first found $tmp_search_results " >&5
+	break
+   fi
+done
+
+if test -n "$tmp_search_results"; then
+cercs_tmp=$tmp_search_results
+fi
+
+if test -n "$cercs_tmp" -a "$cercs_tmp" != "/usr/include/ffs.h"; then
+cercs_cv_ffs_include_arg=-I`$PATHPROG $cercs_tmp | sed 's#\\\\#/#g' | sed "s#.ffs.h##g"`
+fi
+
+fi
+
+{ $as_echo "$as_me:$LINENO: result: $cercs_cv_ffs_include_arg" >&5
+$as_echo "$cercs_cv_ffs_include_arg" >&6; }
+if test -n "$cercs_cv_ffs_include_arg"; then
+arg="$cercs_cv_ffs_include_arg"
+no_dash_arg=`echo $arg | sed 's/^-//g'`
+if test `echo $DT_CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
+if test `echo $arg | grep -c "ffs"` -eq 0; then
+DT_CPPFLAGS="$DT_CPPFLAGS $arg";
+else
+DT_CPPFLAGS="$arg $DT_CPPFLAGS"
+fi
+fi
+fi
+
+{ $as_echo "$as_me:$LINENO: checking needed link args for ffs package" >&5
+$as_echo_n "checking needed link args for ffs package... " >&6; }
+if test "${cercs_cv_ffs_link_dir+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+
+
+search_list="$PWD/../ffs $PWD/../../ffs $PWD/../../../ffs"
+tmp_search_results=""
+echo "configure:34625: searching for $search_list " >&5
+for tmp_search_value in $search_list; do
+   if test -r $tmp_search_value; then
+	tmp_search_results=$tmp_search_value
+	echo "configure:34629: first found $tmp_search_results " >&5
+	break
+   fi
+done
+
+if test -n "$tmp_search_results"; then
+cercs_tmp=$tmp_search_results
+fi
+
+if test -n "$cercs_tmp" -a "$cercs_tmp" != "libffs.a"; then
+cercs_cv_ffs_link_dir=`$PATHPROG $cercs_tmp | sed 's#\\\\#/#g' | sed "s/.libffs.a//g"`
+else
+cercs_cv_ffs_link_dir=""
+fi
+
+fi
+
+{ $as_echo "$as_me:$LINENO: result: $cercs_cv_ffs_link_dir" >&5
+$as_echo "$cercs_cv_ffs_link_dir" >&6; }
+ld_arg="-L"
+new_flags=$LDFLAGS
+cercs_cv_ffs_link_arg=`echo $cercs_cv_ffs_link_dir | sed "/./ s/^/$ld_arg/1"`
+if test -n "$cercs_cv_ffs_link_arg"; then
+arg=$cercs_cv_ffs_link_arg
+no_dash_arg=`echo $arg | sed 's/^-//g'`
+if test `echo $new_flags | grep -c "$no_dash_arg"` -eq 0; then
+root=`echo libffs.a | sed 's/\..*//'`
+if test ! -r $cercs_cv_ffs_link_dir/$root.la; then
+if eval "test \"\${LIBTOOL+set}\" = set"; then
+arg="$cercs_cv_ffs_link_arg "`echo $cercs_cv_ffs_link_dir | sed "/./ s/^/-R/1"`
+fi
+fi
+if test `echo $arg | grep -c "ffs"` -eq 0; then
+new_flags="$new_flags $arg"
+else
+new_flags="$arg $new_flags"
+fi
+fi
+DT_LDFLAGS=$new_flags
+fi
+
+
+fi
+
+
+
+
+if test -z "$with_local_specified"; then
+
+
+
+
+# Check whether --with-atl was given.
+if test "${with_atl+set}" = set; then
+  withval=$with_atl;
+fi
+
+
+if test -n "$with_atl"; then
+unset cercs_cv_atl_include_arg
+unset cercs_cv_atl_link_arg
+if test `echo $with_atl | sed 's/\(.\).*/\1/g'` != "/"; then
+with_atl=`pwd`/$with_atl
+fi
+fi
+{ $as_echo "$as_me:$LINENO: checking needed include args for atl package" >&5
+$as_echo_n "checking needed include args for atl package... " >&6; }
+if test "${cercs_cv_atl_include_arg+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+
+
+
+
+cercs_tmp=""
+search_list="./atl.h"
+CHAOS_HOMEDIR=""
+if test -n "$CSH"; then
+CHAOS_HOMEDIR=`echo "echo ~chaos" | csh -sf  2>/dev/null | sed 's%/$%%'` || CHAOS_HOMEDIR=""
+fi
+if test -n "$with_atl"; then
+if test `echo $with_atl | cut -c1` = "~"; then
+EXPANDED=`echo "echo $with_atl" | csh -sf 2>/dev/null` || EXPANDED=""
+else
+EXPANDED=$with_atl
+fi
+
+echo "Datatap = $datatap_dir"
+
+search_list="$datatap_dir/atl.h $datatap_dir/lib/atl.h $datatap_dir/include/atl.h $search_list $EXPANDED/atl.h $EXPANDED/include/atl.h $EXPANDED/share/atl.h $EXPANDED/$cercs_cv_archive/atl.h $EXPANDED/$cercs_cv_archive/include/atl.h $EXPANDED/atl/atl.h $EXPANDED/atl/$cercs_cv_archive/atl.h $EXPANDED/atl/include/atl.h $EXPANDED/atl/include/$cercs_cv_archive/atl.h"
+fi
+if test -z "$with_installed_specified"; then
+search_list="$search_list `pwd`/../atl/atl.h `pwd`/../include/atl.h `pwd`/../share/atl.h"
+if test "$CHAOS_HOMEDIR" != "$HOME"; then
+search_list="$search_list $HOME/atl/atl.h $HOME/$cercs_cv_archive/include/atl.h $HOME/include/atl.h"
+fi
+fi
+if test -n "$CHAOS_HOMEDIR" -a -n "$cercs_cv_archive"; then
+search_list="$search_list $CHAOS_HOMEDIR/$cercs_cv_archive/atl/include/atl.h $CHAOS_HOMEDIR/$cercs_cv_archive/include/atl.h $CHAOS_HOMEDIR/atl/$cercs_cv_archive/include/atl.h $CHAOS_HOMEDIR/atl/include/atl.h $CHAOS_HOMEDIR/include/atl.h"
+fi
+if test "$libdir" != '${exec_prefix}/lib'; then
+tmpdir=`echo ${libdir} |  sed 's%/$%%'`
+search_list="$tmpdir/atl.h $search_list"
+fi
+if test "$exec_prefix" != "NONE"; then
+tmpdir=`echo ${exec_prefix} |  sed 's%/$%%'`
+search_list="$tmpdir/lib/atl.h $search_list"
+fi
+if test "$includedir" != '${prefix}/include'; then
+tmpdir=`echo ${includedir} |  sed 's%/$%%'`
+search_list="$tmpdir/atl.h $search_list"
+fi
+if test "$prefix" != "NONE"; then
+tmpdir=`echo ${prefix} |  sed 's%/$%%'`
+search_list="$tmpdir/include/atl.h $search_list"
+fi
+if test "include" == "lib"; then
+  for tmp_lib_value in $sys_lib_search_path_spec; do
+     search_list="$search_list $tmp_lib_value/atl.h"
+  done
+fi
+
+search_list="$datatap_dir/atl.h $datatap_dir/lib/atl.h $datatap_dir/include/atl.h $search_list /usr/include/atl.h /usr/local/include/atl.h /opt/atl/include/atl.h /opt/misc/include/atl.h /opt/misc/include/$cercs_cv_archive/atl.h"
+tmp_search_results=""
+echo "configure:34753: searching for $search_list " >&5
+for tmp_search_value in $search_list; do
+   if test -r $tmp_search_value; then
+	tmp_search_results=$tmp_search_value
+	echo "configure:34757: first found $tmp_search_results " >&5
+	break
+   fi
+done
+
+if test -n "$tmp_search_results"; then
+cercs_tmp=$tmp_search_results
+fi
+
+if test -n "$cercs_tmp" -a "$cercs_tmp" != "/usr/include/atl.h"; then
+cercs_cv_atl_include_arg=-I`$PATHPROG $cercs_tmp | sed 's#\\\\#/#g' | sed "s#.atl.h##g"`
+fi
+
+fi
+
+{ $as_echo "$as_me:$LINENO: result: $cercs_cv_atl_include_arg" >&5
+$as_echo "$cercs_cv_atl_include_arg" >&6; }
+if test -n "$cercs_cv_atl_include_arg"; then
+arg="$cercs_cv_atl_include_arg"
+no_dash_arg=`echo $arg | sed 's/^-//g'`
+if test `echo $DT_CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
+if test `echo $arg | grep -c "atl"` -eq 0; then
+DT_CPPFLAGS="$DT_CPPFLAGS $arg";
+else
+DT_CPPFLAGS="$arg $DT_CPPFLAGS"
+fi
+fi
+fi
+
+{ $as_echo "$as_me:$LINENO: checking needed link args for atl package" >&5
+$as_echo_n "checking needed link args for atl package... " >&6; }
+if test "${cercs_cv_atl_link_dir+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+
+
+
+
+cercs_tmp=""
+search_list="./libatl.a"
+CHAOS_HOMEDIR=""
+if test -n "$CSH"; then
+CHAOS_HOMEDIR=`echo "echo ~chaos" | csh -sf  2>/dev/null | sed 's%/$%%'` || CHAOS_HOMEDIR=""
+fi
+if test -n "$with_atl"; then
+if test `echo $with_atl | cut -c1` = "~"; then
+EXPANDED=`echo "echo $with_atl" | csh -sf 2>/dev/null` || EXPANDED=""
+else
+EXPANDED=$with_atl
+fi
+
+echo "Datatap = $datatap_dir"
+
+search_list="$datatap_dir/libatl.a $datatap_dir/lib/libatl.a $datatap_dir/include/libatl.a $search_list $EXPANDED/libatl.a $EXPANDED/lib/libatl.a $EXPANDED/share/libatl.a $EXPANDED/$cercs_cv_archive/libatl.a $EXPANDED/$cercs_cv_archive/lib/libatl.a $EXPANDED/atl/libatl.a $EXPANDED/atl/$cercs_cv_archive/libatl.a $EXPANDED/atl/lib/libatl.a $EXPANDED/atl/lib/$cercs_cv_archive/libatl.a"
+fi
+if test -z "$with_installed_specified"; then
+search_list="$search_list `pwd`/../atl/libatl.a `pwd`/../lib/libatl.a `pwd`/../share/libatl.a"
+if test "$CHAOS_HOMEDIR" != "$HOME"; then
+search_list="$search_list $HOME/atl/libatl.a $HOME/$cercs_cv_archive/lib/libatl.a $HOME/lib/libatl.a"
+fi
+fi
+if test -n "$CHAOS_HOMEDIR" -a -n "$cercs_cv_archive"; then
+search_list="$search_list $CHAOS_HOMEDIR/$cercs_cv_archive/atl/lib/libatl.a $CHAOS_HOMEDIR/$cercs_cv_archive/lib/libatl.a $CHAOS_HOMEDIR/atl/$cercs_cv_archive/lib/libatl.a $CHAOS_HOMEDIR/atl/lib/libatl.a $CHAOS_HOMEDIR/lib/libatl.a"
+fi
+if test "$libdir" != '${exec_prefix}/lib'; then
+tmpdir=`echo ${libdir} |  sed 's%/$%%'`
+search_list="$tmpdir/libatl.a $search_list"
+fi
+if test "$exec_prefix" != "NONE"; then
+tmpdir=`echo ${exec_prefix} |  sed 's%/$%%'`
+search_list="$tmpdir/lib/libatl.a $search_list"
+fi
+if test "$includedir" != '${prefix}/include'; then
+tmpdir=`echo ${includedir} |  sed 's%/$%%'`
+search_list="$tmpdir/libatl.a $search_list"
+fi
+if test "$prefix" != "NONE"; then
+tmpdir=`echo ${prefix} |  sed 's%/$%%'`
+search_list="$tmpdir/lib/libatl.a $search_list"
+fi
+if test "lib" == "lib"; then
+  for tmp_lib_value in $sys_lib_search_path_spec; do
+     search_list="$search_list $tmp_lib_value/libatl.a"
+  done
+fi
+
+search_list="$datatap_dir/libatl.a $datatap_dir/lib/libatl.a $datatap_dir/include/libatl.a $search_list /usr/lib/libatl.a /usr/local/lib/libatl.a /opt/atl/lib/libatl.a /opt/misc/lib/libatl.a /opt/misc/lib/$cercs_cv_archive/libatl.a"
+tmp_search_results=""
+echo "configure:34845: searching for $search_list " >&5
+for tmp_search_value in $search_list; do
+   if test -r $tmp_search_value; then
+	tmp_search_results=$tmp_search_value
+	echo "configure:34849: first found $tmp_search_results " >&5
+	break
+   fi
+done
+
+if test -n "$tmp_search_results"; then
+cercs_tmp=$tmp_search_results
+fi
+
+if test -n "$cercs_tmp" -a "$cercs_tmp" != "libatl.a"; then
+cercs_cv_atl_link_dir=`$PATHPROG $cercs_tmp | sed 's#\\\\#/#g' | sed "s/.libatl.a//g"`
+else
+cercs_cv_atl_link_dir=""
+fi
+
+fi
+
+{ $as_echo "$as_me:$LINENO: result: $cercs_cv_atl_link_dir" >&5
+$as_echo "$cercs_cv_atl_link_dir" >&6; }
+ld_arg="-L"
+new_flags=$LDFLAGS
+cercs_cv_atl_link_arg=`echo $cercs_cv_atl_link_dir | sed "/./ s/^/$ld_arg/1"`
+if test -n "$cercs_cv_atl_link_arg"; then
+arg=$cercs_cv_atl_link_arg
+no_dash_arg=`echo $arg | sed 's/^-//g'`
+if test `echo $new_flags | grep -c "$no_dash_arg"` -eq 0; then
+root=`echo libatl.a | sed 's/\..*//'`
+if test ! -r $cercs_cv_atl_link_dir/$root.la; then
+if eval "test \"\${LIBTOOL+set}\" = set"; then
+arg="$cercs_cv_atl_link_arg "`echo $cercs_cv_atl_link_dir | sed "/./ s/^/-R/1"`
+fi
+fi
+if test `echo $arg | grep -c "atl"` -eq 0; then
+new_flags="$new_flags $arg"
+else
+new_flags="$arg $new_flags"
+fi
+fi
+DT_LDFLAGS=$new_flags
+fi
+
+
+else
+
+
+
+
+# Check whether --with-atl was given.
+if test "${with_atl+set}" = set; then
+  withval=$with_atl;
+fi
+
+
+if test -n "$with_atl"; then
+unset cercs_cv_atl_include_arg
+unset cercs_cv_atl_link_arg
+if test `echo $with_atl | sed 's/\(.\).*/\1/g'` != "/"; then
+with_atl=`pwd`/$with_atl
+fi
+fi
+{ $as_echo "$as_me:$LINENO: checking needed include args for atl package" >&5
+$as_echo_n "checking needed include args for atl package... " >&6; }
+if test "${cercs_cv_atl_include_arg+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+
+
+search_list="$PWD/../atl $PWD/../../atl $PWD/../../../atl"
+tmp_search_results=""
+echo "configure:34918: searching for $search_list " >&5
+for tmp_search_value in $search_list; do
+   if test -r $tmp_search_value; then
+	tmp_search_results=$tmp_search_value
+	echo "configure:34922: first found $tmp_search_results " >&5
+	break
+   fi
+done
+
+if test -n "$tmp_search_results"; then
+cercs_tmp=$tmp_search_results
+fi
+
+if test -n "$cercs_tmp" -a "$cercs_tmp" != "/usr/include/atl.h"; then
+cercs_cv_atl_include_arg=-I`$PATHPROG $cercs_tmp | sed 's#\\\\#/#g' | sed "s#.atl.h##g"`
+fi
+
+fi
+
+{ $as_echo "$as_me:$LINENO: result: $cercs_cv_atl_include_arg" >&5
+$as_echo "$cercs_cv_atl_include_arg" >&6; }
+if test -n "$cercs_cv_atl_include_arg"; then
+arg="$cercs_cv_atl_include_arg"
+no_dash_arg=`echo $arg | sed 's/^-//g'`
+if test `echo $DT_CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
+if test `echo $arg | grep -c "atl"` -eq 0; then
+DT_CPPFLAGS="$DT_CPPFLAGS $arg";
+else
+DT_CPPFLAGS="$arg $DT_CPPFLAGS"
+fi
+fi
+fi
+
+{ $as_echo "$as_me:$LINENO: checking needed link args for atl package" >&5
+$as_echo_n "checking needed link args for atl package... " >&6; }
+if test "${cercs_cv_atl_link_dir+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+
+
+search_list="$PWD/../atl $PWD/../../atl $PWD/../../../atl"
+tmp_search_results=""
+echo "configure:34960: searching for $search_list " >&5
+for tmp_search_value in $search_list; do
+   if test -r $tmp_search_value; then
+	tmp_search_results=$tmp_search_value
+	echo "configure:34964: first found $tmp_search_results " >&5
+	break
+   fi
+done
+
+if test -n "$tmp_search_results"; then
+cercs_tmp=$tmp_search_results
+fi
+
+if test -n "$cercs_tmp" -a "$cercs_tmp" != "libatl.a"; then
+cercs_cv_atl_link_dir=`$PATHPROG $cercs_tmp | sed 's#\\\\#/#g' | sed "s/.libatl.a//g"`
+else
+cercs_cv_atl_link_dir=""
+fi
+
+fi
+
+{ $as_echo "$as_me:$LINENO: result: $cercs_cv_atl_link_dir" >&5
+$as_echo "$cercs_cv_atl_link_dir" >&6; }
+ld_arg="-L"
+new_flags=$LDFLAGS
+cercs_cv_atl_link_arg=`echo $cercs_cv_atl_link_dir | sed "/./ s/^/$ld_arg/1"`
+if test -n "$cercs_cv_atl_link_arg"; then
+arg=$cercs_cv_atl_link_arg
+no_dash_arg=`echo $arg | sed 's/^-//g'`
+if test `echo $new_flags | grep -c "$no_dash_arg"` -eq 0; then
+root=`echo libatl.a | sed 's/\..*//'`
+if test ! -r $cercs_cv_atl_link_dir/$root.la; then
+if eval "test \"\${LIBTOOL+set}\" = set"; then
+arg="$cercs_cv_atl_link_arg "`echo $cercs_cv_atl_link_dir | sed "/./ s/^/-R/1"`
+fi
+fi
+if test `echo $arg | grep -c "atl"` -eq 0; then
+new_flags="$new_flags $arg"
+else
+new_flags="$arg $new_flags"
+fi
+fi
+DT_LDFLAGS=$new_flags
+fi
+
+
+fi
+
+
+
+
+if test -z "$with_local_specified"; then
+
+
+
+
+# Check whether --with-dill was given.
+if test "${with_dill+set}" = set; then
+  withval=$with_dill;
+fi
+
+
+if test -n "$with_dill"; then
+unset cercs_cv_dill_include_arg
+unset cercs_cv_dill_link_arg
+if test `echo $with_dill | sed 's/\(.\).*/\1/g'` != "/"; then
+with_dill=`pwd`/$with_dill
+fi
+fi
+{ $as_echo "$as_me:$LINENO: checking needed include args for dill package" >&5
+$as_echo_n "checking needed include args for dill package... " >&6; }
+if test "${cercs_cv_dill_include_arg+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+
+
+
+
+cercs_tmp=""
+search_list="./dill.h"
+CHAOS_HOMEDIR=""
+if test -n "$CSH"; then
+CHAOS_HOMEDIR=`echo "echo ~chaos" | csh -sf  2>/dev/null | sed 's%/$%%'` || CHAOS_HOMEDIR=""
+fi
+if test -n "$with_dill"; then
+if test `echo $with_dill | cut -c1` = "~"; then
+EXPANDED=`echo "echo $with_dill" | csh -sf 2>/dev/null` || EXPANDED=""
+else
+EXPANDED=$with_dill
+fi
+
+echo "Datatap = $datatap_dir"
+
+search_list="$datatap_dir/dill.h $datatap_dir/lib/dill.h $datatap_dir/include/dill.h $search_list $EXPANDED/dill.h $EXPANDED/include/dill.h $EXPANDED/share/dill.h $EXPANDED/$cercs_cv_archive/dill.h $EXPANDED/$cercs_cv_archive/include/dill.h $EXPANDED/dill/dill.h $EXPANDED/dill/$cercs_cv_archive/dill.h $EXPANDED/dill/include/dill.h $EXPANDED/dill/include/$cercs_cv_archive/dill.h"
+fi
+if test -z "$with_installed_specified"; then
+search_list="$search_list `pwd`/../dill/dill.h `pwd`/../include/dill.h `pwd`/../share/dill.h"
+if test "$CHAOS_HOMEDIR" != "$HOME"; then
+search_list="$search_list $HOME/dill/dill.h $HOME/$cercs_cv_archive/include/dill.h $HOME/include/dill.h"
+fi
+fi
+if test -n "$CHAOS_HOMEDIR" -a -n "$cercs_cv_archive"; then
+search_list="$search_list $CHAOS_HOMEDIR/$cercs_cv_archive/dill/include/dill.h $CHAOS_HOMEDIR/$cercs_cv_archive/include/dill.h $CHAOS_HOMEDIR/dill/$cercs_cv_archive/include/dill.h $CHAOS_HOMEDIR/dill/include/dill.h $CHAOS_HOMEDIR/include/dill.h"
+fi
+if test "$libdir" != '${exec_prefix}/lib'; then
+tmpdir=`echo ${libdir} |  sed 's%/$%%'`
+search_list="$tmpdir/dill.h $search_list"
+fi
+if test "$exec_prefix" != "NONE"; then
+tmpdir=`echo ${exec_prefix} |  sed 's%/$%%'`
+search_list="$tmpdir/lib/dill.h $search_list"
+fi
+if test "$includedir" != '${prefix}/include'; then
+tmpdir=`echo ${includedir} |  sed 's%/$%%'`
+search_list="$tmpdir/dill.h $search_list"
+fi
+if test "$prefix" != "NONE"; then
+tmpdir=`echo ${prefix} |  sed 's%/$%%'`
+search_list="$tmpdir/include/dill.h $search_list"
+fi
+if test "include" == "lib"; then
+  for tmp_lib_value in $sys_lib_search_path_spec; do
+     search_list="$search_list $tmp_lib_value/dill.h"
+  done
+fi
+
+search_list="$datatap_dir/dill.h $datatap_dir/lib/dill.h $datatap_dir/include/dill.h $search_list /usr/include/dill.h /usr/local/include/dill.h /opt/dill/include/dill.h /opt/misc/include/dill.h /opt/misc/include/$cercs_cv_archive/dill.h"
+tmp_search_results=""
+echo "configure:35088: searching for $search_list " >&5
+for tmp_search_value in $search_list; do
+   if test -r $tmp_search_value; then
+	tmp_search_results=$tmp_search_value
+	echo "configure:35092: first found $tmp_search_results " >&5
+	break
+   fi
+done
+
+if test -n "$tmp_search_results"; then
+cercs_tmp=$tmp_search_results
+fi
+
+if test -n "$cercs_tmp" -a "$cercs_tmp" != "/usr/include/dill.h"; then
+cercs_cv_dill_include_arg=-I`$PATHPROG $cercs_tmp | sed 's#\\\\#/#g' | sed "s#.dill.h##g"`
+fi
+
+fi
+
+{ $as_echo "$as_me:$LINENO: result: $cercs_cv_dill_include_arg" >&5
+$as_echo "$cercs_cv_dill_include_arg" >&6; }
+if test -n "$cercs_cv_dill_include_arg"; then
+arg="$cercs_cv_dill_include_arg"
+no_dash_arg=`echo $arg | sed 's/^-//g'`
+if test `echo $DT_CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
+if test `echo $arg | grep -c "dill"` -eq 0; then
+DT_CPPFLAGS="$DT_CPPFLAGS $arg";
+else
+DT_CPPFLAGS="$arg $DT_CPPFLAGS"
+fi
+fi
+fi
+
+{ $as_echo "$as_me:$LINENO: checking needed link args for dill package" >&5
+$as_echo_n "checking needed link args for dill package... " >&6; }
+if test "${cercs_cv_dill_link_dir+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+
+
+
+
+cercs_tmp=""
+search_list="./libdill.a"
+CHAOS_HOMEDIR=""
+if test -n "$CSH"; then
+CHAOS_HOMEDIR=`echo "echo ~chaos" | csh -sf  2>/dev/null | sed 's%/$%%'` || CHAOS_HOMEDIR=""
+fi
+if test -n "$with_dill"; then
+if test `echo $with_dill | cut -c1` = "~"; then
+EXPANDED=`echo "echo $with_dill" | csh -sf 2>/dev/null` || EXPANDED=""
+else
+EXPANDED=$with_dill
+fi
+
+echo "Datatap = $datatap_dir"
+
+search_list="$datatap_dir/libdill.a $datatap_dir/lib/libdill.a $datatap_dir/include/libdill.a $search_list $EXPANDED/libdill.a $EXPANDED/lib/libdill.a $EXPANDED/share/libdill.a $EXPANDED/$cercs_cv_archive/libdill.a $EXPANDED/$cercs_cv_archive/lib/libdill.a $EXPANDED/dill/libdill.a $EXPANDED/dill/$cercs_cv_archive/libdill.a $EXPANDED/dill/lib/libdill.a $EXPANDED/dill/lib/$cercs_cv_archive/libdill.a"
+fi
+if test -z "$with_installed_specified"; then
+search_list="$search_list `pwd`/../dill/libdill.a `pwd`/../lib/libdill.a `pwd`/../share/libdill.a"
+if test "$CHAOS_HOMEDIR" != "$HOME"; then
+search_list="$search_list $HOME/dill/libdill.a $HOME/$cercs_cv_archive/lib/libdill.a $HOME/lib/libdill.a"
+fi
+fi
+if test -n "$CHAOS_HOMEDIR" -a -n "$cercs_cv_archive"; then
+search_list="$search_list $CHAOS_HOMEDIR/$cercs_cv_archive/dill/lib/libdill.a $CHAOS_HOMEDIR/$cercs_cv_archive/lib/libdill.a $CHAOS_HOMEDIR/dill/$cercs_cv_archive/lib/libdill.a $CHAOS_HOMEDIR/dill/lib/libdill.a $CHAOS_HOMEDIR/lib/libdill.a"
+fi
+if test "$libdir" != '${exec_prefix}/lib'; then
+tmpdir=`echo ${libdir} |  sed 's%/$%%'`
+search_list="$tmpdir/libdill.a $search_list"
+fi
+if test "$exec_prefix" != "NONE"; then
+tmpdir=`echo ${exec_prefix} |  sed 's%/$%%'`
+search_list="$tmpdir/lib/libdill.a $search_list"
+fi
+if test "$includedir" != '${prefix}/include'; then
+tmpdir=`echo ${includedir} |  sed 's%/$%%'`
+search_list="$tmpdir/libdill.a $search_list"
+fi
+if test "$prefix" != "NONE"; then
+tmpdir=`echo ${prefix} |  sed 's%/$%%'`
+search_list="$tmpdir/lib/libdill.a $search_list"
+fi
+if test "lib" == "lib"; then
+  for tmp_lib_value in $sys_lib_search_path_spec; do
+     search_list="$search_list $tmp_lib_value/libdill.a"
+  done
+fi
+
+search_list="$datatap_dir/libdill.a $datatap_dir/lib/libdill.a $datatap_dir/include/libdill.a $search_list /usr/lib/libdill.a /usr/local/lib/libdill.a /opt/dill/lib/libdill.a /opt/misc/lib/libdill.a /opt/misc/lib/$cercs_cv_archive/libdill.a"
+tmp_search_results=""
+echo "configure:35180: searching for $search_list " >&5
+for tmp_search_value in $search_list; do
+   if test -r $tmp_search_value; then
+	tmp_search_results=$tmp_search_value
+	echo "configure:35184: first found $tmp_search_results " >&5
+	break
+   fi
+done
+
+if test -n "$tmp_search_results"; then
+cercs_tmp=$tmp_search_results
+fi
+
+if test -n "$cercs_tmp" -a "$cercs_tmp" != "libdill.a"; then
+cercs_cv_dill_link_dir=`$PATHPROG $cercs_tmp | sed 's#\\\\#/#g' | sed "s/.libdill.a//g"`
+else
+cercs_cv_dill_link_dir=""
+fi
+
+fi
+
+{ $as_echo "$as_me:$LINENO: result: $cercs_cv_dill_link_dir" >&5
+$as_echo "$cercs_cv_dill_link_dir" >&6; }
+ld_arg="-L"
+new_flags=$LDFLAGS
+cercs_cv_dill_link_arg=`echo $cercs_cv_dill_link_dir | sed "/./ s/^/$ld_arg/1"`
+if test -n "$cercs_cv_dill_link_arg"; then
+arg=$cercs_cv_dill_link_arg
+no_dash_arg=`echo $arg | sed 's/^-//g'`
+if test `echo $new_flags | grep -c "$no_dash_arg"` -eq 0; then
+root=`echo libdill.a | sed 's/\..*//'`
+if test ! -r $cercs_cv_dill_link_dir/$root.la; then
+if eval "test \"\${LIBTOOL+set}\" = set"; then
+arg="$cercs_cv_dill_link_arg "`echo $cercs_cv_dill_link_dir | sed "/./ s/^/-R/1"`
+fi
+fi
+if test `echo $arg | grep -c "dill"` -eq 0; then
+new_flags="$new_flags $arg"
+else
+new_flags="$arg $new_flags"
+fi
+fi
+DT_LDFLAGS=$new_flags
+fi
+
+
+else
+
+
+
+
+# Check whether --with-dill was given.
+if test "${with_dill+set}" = set; then
+  withval=$with_dill;
+fi
+
+
+if test -n "$with_dill"; then
+unset cercs_cv_dill_include_arg
+unset cercs_cv_dill_link_arg
+if test `echo $with_dill | sed 's/\(.\).*/\1/g'` != "/"; then
+with_dill=`pwd`/$with_dill
+fi
+fi
+{ $as_echo "$as_me:$LINENO: checking needed include args for dill package" >&5
+$as_echo_n "checking needed include args for dill package... " >&6; }
+if test "${cercs_cv_dill_include_arg+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+
+
+search_list="$PWD/../dill $PWD/../../dill $PWD/../../../dill"
+tmp_search_results=""
+echo "configure:35253: searching for $search_list " >&5
+for tmp_search_value in $search_list; do
+   if test -r $tmp_search_value; then
+	tmp_search_results=$tmp_search_value
+	echo "configure:35257: first found $tmp_search_results " >&5
+	break
+   fi
+done
+
+if test -n "$tmp_search_results"; then
+cercs_tmp=$tmp_search_results
+fi
+
+if test -n "$cercs_tmp" -a "$cercs_tmp" != "/usr/include/dill.h"; then
+cercs_cv_dill_include_arg=-I`$PATHPROG $cercs_tmp | sed 's#\\\\#/#g' | sed "s#.dill.h##g"`
+fi
+
+fi
+
+{ $as_echo "$as_me:$LINENO: result: $cercs_cv_dill_include_arg" >&5
+$as_echo "$cercs_cv_dill_include_arg" >&6; }
+if test -n "$cercs_cv_dill_include_arg"; then
+arg="$cercs_cv_dill_include_arg"
+no_dash_arg=`echo $arg | sed 's/^-//g'`
+if test `echo $DT_CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
+if test `echo $arg | grep -c "dill"` -eq 0; then
+DT_CPPFLAGS="$DT_CPPFLAGS $arg";
+else
+DT_CPPFLAGS="$arg $DT_CPPFLAGS"
+fi
+fi
+fi
+
+{ $as_echo "$as_me:$LINENO: checking needed link args for dill package" >&5
+$as_echo_n "checking needed link args for dill package... " >&6; }
+if test "${cercs_cv_dill_link_dir+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+
+
+search_list="$PWD/../dill $PWD/../../dill $PWD/../../../dill"
+tmp_search_results=""
+echo "configure:35295: searching for $search_list " >&5
+for tmp_search_value in $search_list; do
+   if test -r $tmp_search_value; then
+	tmp_search_results=$tmp_search_value
+	echo "configure:35299: first found $tmp_search_results " >&5
+	break
+   fi
+done
+
+if test -n "$tmp_search_results"; then
+cercs_tmp=$tmp_search_results
+fi
+
+if test -n "$cercs_tmp" -a "$cercs_tmp" != "libdill.a"; then
+cercs_cv_dill_link_dir=`$PATHPROG $cercs_tmp | sed 's#\\\\#/#g' | sed "s/.libdill.a//g"`
+else
+cercs_cv_dill_link_dir=""
+fi
+
+fi
+
+{ $as_echo "$as_me:$LINENO: result: $cercs_cv_dill_link_dir" >&5
+$as_echo "$cercs_cv_dill_link_dir" >&6; }
+ld_arg="-L"
+new_flags=$LDFLAGS
+cercs_cv_dill_link_arg=`echo $cercs_cv_dill_link_dir | sed "/./ s/^/$ld_arg/1"`
+if test -n "$cercs_cv_dill_link_arg"; then
+arg=$cercs_cv_dill_link_arg
+no_dash_arg=`echo $arg | sed 's/^-//g'`
+if test `echo $new_flags | grep -c "$no_dash_arg"` -eq 0; then
+root=`echo libdill.a | sed 's/\..*//'`
+if test ! -r $cercs_cv_dill_link_dir/$root.la; then
+if eval "test \"\${LIBTOOL+set}\" = set"; then
+arg="$cercs_cv_dill_link_arg "`echo $cercs_cv_dill_link_dir | sed "/./ s/^/-R/1"`
+fi
+fi
+if test `echo $arg | grep -c "dill"` -eq 0; then
+new_flags="$new_flags $arg"
+else
+new_flags="$arg $new_flags"
+fi
+fi
+DT_LDFLAGS=$new_flags
+fi
+
+
+fi
+
+
+
+
+if test -z "$with_local_specified"; then
+
+
+
+
+# Check whether --with-cercs_env was given.
+if test "${with_cercs_env+set}" = set; then
+  withval=$with_cercs_env;
+fi
+
+
+if test -n "$with_cercs_env"; then
+unset cercs_cv_cercs_env_include_arg
+unset cercs_cv_cercs_env_link_arg
+if test `echo $with_cercs_env | sed 's/\(.\).*/\1/g'` != "/"; then
+with_cercs_env=`pwd`/$with_cercs_env
+fi
+fi
+{ $as_echo "$as_me:$LINENO: checking needed include args for cercs_env package" >&5
+$as_echo_n "checking needed include args for cercs_env package... " >&6; }
+if test "${cercs_cv_cercs_env_include_arg+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+
+
+
+
+cercs_tmp=""
+search_list="./cercs_env.h"
+CHAOS_HOMEDIR=""
+if test -n "$CSH"; then
+CHAOS_HOMEDIR=`echo "echo ~chaos" | csh -sf  2>/dev/null | sed 's%/$%%'` || CHAOS_HOMEDIR=""
+fi
+if test -n "$with_cercs_env"; then
+if test `echo $with_cercs_env | cut -c1` = "~"; then
+EXPANDED=`echo "echo $with_cercs_env" | csh -sf 2>/dev/null` || EXPANDED=""
+else
+EXPANDED=$with_cercs_env
+fi
+
+echo "Datatap = $datatap_dir"
+
+search_list="$datatap_dir/cercs_env.h $datatap_dir/lib/cercs_env.h $datatap_dir/include/cercs_env.h $search_list $EXPANDED/cercs_env.h $EXPANDED/include/cercs_env.h $EXPANDED/share/cercs_env.h $EXPANDED/$cercs_cv_archive/cercs_env.h $EXPANDED/$cercs_cv_archive/include/cercs_env.h $EXPANDED/cercs_env/cercs_env.h $EXPANDED/cercs_env/$cercs_cv_archive/cercs_env.h $EXPANDED/cercs_env/include/cercs_env.h $EXPANDED/cercs_env/include/$cercs_cv_archive/cercs_env.h"
+fi
+if test -z "$with_installed_specified"; then
+search_list="$search_list `pwd`/../cercs_env/cercs_env.h `pwd`/../include/cercs_env.h `pwd`/../share/cercs_env.h"
+if test "$CHAOS_HOMEDIR" != "$HOME"; then
+search_list="$search_list $HOME/cercs_env/cercs_env.h $HOME/$cercs_cv_archive/include/cercs_env.h $HOME/include/cercs_env.h"
+fi
+fi
+if test -n "$CHAOS_HOMEDIR" -a -n "$cercs_cv_archive"; then
+search_list="$search_list $CHAOS_HOMEDIR/$cercs_cv_archive/cercs_env/include/cercs_env.h $CHAOS_HOMEDIR/$cercs_cv_archive/include/cercs_env.h $CHAOS_HOMEDIR/cercs_env/$cercs_cv_archive/include/cercs_env.h $CHAOS_HOMEDIR/cercs_env/include/cercs_env.h $CHAOS_HOMEDIR/include/cercs_env.h"
+fi
+if test "$libdir" != '${exec_prefix}/lib'; then
+tmpdir=`echo ${libdir} |  sed 's%/$%%'`
+search_list="$tmpdir/cercs_env.h $search_list"
+fi
+if test "$exec_prefix" != "NONE"; then
+tmpdir=`echo ${exec_prefix} |  sed 's%/$%%'`
+search_list="$tmpdir/lib/cercs_env.h $search_list"
+fi
+if test "$includedir" != '${prefix}/include'; then
+tmpdir=`echo ${includedir} |  sed 's%/$%%'`
+search_list="$tmpdir/cercs_env.h $search_list"
+fi
+if test "$prefix" != "NONE"; then
+tmpdir=`echo ${prefix} |  sed 's%/$%%'`
+search_list="$tmpdir/include/cercs_env.h $search_list"
+fi
+if test "include" == "lib"; then
+  for tmp_lib_value in $sys_lib_search_path_spec; do
+     search_list="$search_list $tmp_lib_value/cercs_env.h"
+  done
+fi
+
+search_list="$datatap_dir/cercs_env.h $datatap_dir/lib/cercs_env.h $datatap_dir/include/cercs_env.h $search_list /usr/include/cercs_env.h /usr/local/include/cercs_env.h /opt/cercs_env/include/cercs_env.h /opt/misc/include/cercs_env.h /opt/misc/include/$cercs_cv_archive/cercs_env.h"
+tmp_search_results=""
+echo "configure:35423: searching for $search_list " >&5
+for tmp_search_value in $search_list; do
+   if test -r $tmp_search_value; then
+	tmp_search_results=$tmp_search_value
+	echo "configure:35427: first found $tmp_search_results " >&5
+	break
+   fi
+done
+
+if test -n "$tmp_search_results"; then
+cercs_tmp=$tmp_search_results
+fi
+
+if test -n "$cercs_tmp" -a "$cercs_tmp" != "/usr/include/cercs_env.h"; then
+cercs_cv_cercs_env_include_arg=-I`$PATHPROG $cercs_tmp | sed 's#\\\\#/#g' | sed "s#.cercs_env.h##g"`
+fi
+
+fi
+
+{ $as_echo "$as_me:$LINENO: result: $cercs_cv_cercs_env_include_arg" >&5
+$as_echo "$cercs_cv_cercs_env_include_arg" >&6; }
+if test -n "$cercs_cv_cercs_env_include_arg"; then
+arg="$cercs_cv_cercs_env_include_arg"
+no_dash_arg=`echo $arg | sed 's/^-//g'`
+if test `echo $DT_CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
+if test `echo $arg | grep -c "cercs_env"` -eq 0; then
+DT_CPPFLAGS="$DT_CPPFLAGS $arg";
+else
+DT_CPPFLAGS="$arg $DT_CPPFLAGS"
+fi
+fi
+fi
+
+{ $as_echo "$as_me:$LINENO: checking needed link args for cercs_env package" >&5
+$as_echo_n "checking needed link args for cercs_env package... " >&6; }
+if test "${cercs_cv_cercs_env_link_dir+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+
+
+
+
+cercs_tmp=""
+search_list="./libcercs_env.a"
+CHAOS_HOMEDIR=""
+if test -n "$CSH"; then
+CHAOS_HOMEDIR=`echo "echo ~chaos" | csh -sf  2>/dev/null | sed 's%/$%%'` || CHAOS_HOMEDIR=""
+fi
+if test -n "$with_cercs_env"; then
+if test `echo $with_cercs_env | cut -c1` = "~"; then
+EXPANDED=`echo "echo $with_cercs_env" | csh -sf 2>/dev/null` || EXPANDED=""
+else
+EXPANDED=$with_cercs_env
+fi
+
+echo "Datatap = $datatap_dir"
+
+search_list="$datatap_dir/libcercs_env.a $datatap_dir/lib/libcercs_env.a $datatap_dir/include/libcercs_env.a $search_list $EXPANDED/libcercs_env.a $EXPANDED/lib/libcercs_env.a $EXPANDED/share/libcercs_env.a $EXPANDED/$cercs_cv_archive/libcercs_env.a $EXPANDED/$cercs_cv_archive/lib/libcercs_env.a $EXPANDED/cercs_env/libcercs_env.a $EXPANDED/cercs_env/$cercs_cv_archive/libcercs_env.a $EXPANDED/cercs_env/lib/libcercs_env.a $EXPANDED/cercs_env/lib/$cercs_cv_archive/libcercs_env.a"
+fi
+if test -z "$with_installed_specified"; then
+search_list="$search_list `pwd`/../cercs_env/libcercs_env.a `pwd`/../lib/libcercs_env.a `pwd`/../share/libcercs_env.a"
+if test "$CHAOS_HOMEDIR" != "$HOME"; then
+search_list="$search_list $HOME/cercs_env/libcercs_env.a $HOME/$cercs_cv_archive/lib/libcercs_env.a $HOME/lib/libcercs_env.a"
+fi
+fi
+if test -n "$CHAOS_HOMEDIR" -a -n "$cercs_cv_archive"; then
+search_list="$search_list $CHAOS_HOMEDIR/$cercs_cv_archive/cercs_env/lib/libcercs_env.a $CHAOS_HOMEDIR/$cercs_cv_archive/lib/libcercs_env.a $CHAOS_HOMEDIR/cercs_env/$cercs_cv_archive/lib/libcercs_env.a $CHAOS_HOMEDIR/cercs_env/lib/libcercs_env.a $CHAOS_HOMEDIR/lib/libcercs_env.a"
+fi
+if test "$libdir" != '${exec_prefix}/lib'; then
+tmpdir=`echo ${libdir} |  sed 's%/$%%'`
+search_list="$tmpdir/libcercs_env.a $search_list"
+fi
+if test "$exec_prefix" != "NONE"; then
+tmpdir=`echo ${exec_prefix} |  sed 's%/$%%'`
+search_list="$tmpdir/lib/libcercs_env.a $search_list"
+fi
+if test "$includedir" != '${prefix}/include'; then
+tmpdir=`echo ${includedir} |  sed 's%/$%%'`
+search_list="$tmpdir/libcercs_env.a $search_list"
+fi
+if test "$prefix" != "NONE"; then
+tmpdir=`echo ${prefix} |  sed 's%/$%%'`
+search_list="$tmpdir/lib/libcercs_env.a $search_list"
+fi
+if test "lib" == "lib"; then
+  for tmp_lib_value in $sys_lib_search_path_spec; do
+     search_list="$search_list $tmp_lib_value/libcercs_env.a"
+  done
+fi
+
+search_list="$datatap_dir/libcercs_env.a $datatap_dir/lib/libcercs_env.a $datatap_dir/include/libcercs_env.a $search_list /usr/lib/libcercs_env.a /usr/local/lib/libcercs_env.a /opt/cercs_env/lib/libcercs_env.a /opt/misc/lib/libcercs_env.a /opt/misc/lib/$cercs_cv_archive/libcercs_env.a"
+tmp_search_results=""
+echo "configure:35515: searching for $search_list " >&5
+for tmp_search_value in $search_list; do
+   if test -r $tmp_search_value; then
+	tmp_search_results=$tmp_search_value
+	echo "configure:35519: first found $tmp_search_results " >&5
+	break
+   fi
+done
+
+if test -n "$tmp_search_results"; then
+cercs_tmp=$tmp_search_results
+fi
+
+if test -n "$cercs_tmp" -a "$cercs_tmp" != "libcercs_env.a"; then
+cercs_cv_cercs_env_link_dir=`$PATHPROG $cercs_tmp | sed 's#\\\\#/#g' | sed "s/.libcercs_env.a//g"`
+else
+cercs_cv_cercs_env_link_dir=""
+fi
+
+fi
+
+{ $as_echo "$as_me:$LINENO: result: $cercs_cv_cercs_env_link_dir" >&5
+$as_echo "$cercs_cv_cercs_env_link_dir" >&6; }
+ld_arg="-L"
+new_flags=$LDFLAGS
+cercs_cv_cercs_env_link_arg=`echo $cercs_cv_cercs_env_link_dir | sed "/./ s/^/$ld_arg/1"`
+if test -n "$cercs_cv_cercs_env_link_arg"; then
+arg=$cercs_cv_cercs_env_link_arg
+no_dash_arg=`echo $arg | sed 's/^-//g'`
+if test `echo $new_flags | grep -c "$no_dash_arg"` -eq 0; then
+root=`echo libcercs_env.a | sed 's/\..*//'`
+if test ! -r $cercs_cv_cercs_env_link_dir/$root.la; then
+if eval "test \"\${LIBTOOL+set}\" = set"; then
+arg="$cercs_cv_cercs_env_link_arg "`echo $cercs_cv_cercs_env_link_dir | sed "/./ s/^/-R/1"`
+fi
+fi
+if test `echo $arg | grep -c "cercs_env"` -eq 0; then
+new_flags="$new_flags $arg"
+else
+new_flags="$arg $new_flags"
+fi
+fi
+DT_LDFLAGS=$new_flags
+fi
+
+
+else
+
+
+
+
+# Check whether --with-cercs_env was given.
+if test "${with_cercs_env+set}" = set; then
+  withval=$with_cercs_env;
+fi
+
+
+if test -n "$with_cercs_env"; then
+unset cercs_cv_cercs_env_include_arg
+unset cercs_cv_cercs_env_link_arg
+if test `echo $with_cercs_env | sed 's/\(.\).*/\1/g'` != "/"; then
+with_cercs_env=`pwd`/$with_cercs_env
+fi
+fi
+{ $as_echo "$as_me:$LINENO: checking needed include args for cercs_env package" >&5
+$as_echo_n "checking needed include args for cercs_env package... " >&6; }
+if test "${cercs_cv_cercs_env_include_arg+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+
+
+search_list="$PWD/../cercs_env $PWD/../../cercs_env $PWD/../../../cercs_env"
+tmp_search_results=""
+echo "configure:35588: searching for $search_list " >&5
+for tmp_search_value in $search_list; do
+   if test -r $tmp_search_value; then
+	tmp_search_results=$tmp_search_value
+	echo "configure:35592: first found $tmp_search_results " >&5
+	break
+   fi
+done
+
+if test -n "$tmp_search_results"; then
+cercs_tmp=$tmp_search_results
+fi
+
+if test -n "$cercs_tmp" -a "$cercs_tmp" != "/usr/include/cercs_env.h"; then
+cercs_cv_cercs_env_include_arg=-I`$PATHPROG $cercs_tmp | sed 's#\\\\#/#g' | sed "s#.cercs_env.h##g"`
+fi
+
+fi
+
+{ $as_echo "$as_me:$LINENO: result: $cercs_cv_cercs_env_include_arg" >&5
+$as_echo "$cercs_cv_cercs_env_include_arg" >&6; }
+if test -n "$cercs_cv_cercs_env_include_arg"; then
+arg="$cercs_cv_cercs_env_include_arg"
+no_dash_arg=`echo $arg | sed 's/^-//g'`
+if test `echo $DT_CPPFLAGS | grep -c "$no_dash_arg"` -eq 0; then
+if test `echo $arg | grep -c "cercs_env"` -eq 0; then
+DT_CPPFLAGS="$DT_CPPFLAGS $arg";
+else
+DT_CPPFLAGS="$arg $DT_CPPFLAGS"
+fi
+fi
+fi
+
+{ $as_echo "$as_me:$LINENO: checking needed link args for cercs_env package" >&5
+$as_echo_n "checking needed link args for cercs_env package... " >&6; }
+if test "${cercs_cv_cercs_env_link_dir+set}" = set; then
+  $as_echo_n "(cached) " >&6
+else
+
+
+search_list="$PWD/../cercs_env $PWD/../../cercs_env $PWD/../../../cercs_env"
+tmp_search_results=""
+echo "configure:35630: searching for $search_list " >&5
+for tmp_search_value in $search_list; do
+   if test -r $tmp_search_value; then
+	tmp_search_results=$tmp_search_value
+	echo "configure:35634: first found $tmp_search_results " >&5
+	break
+   fi
+done
+
+if test -n "$tmp_search_results"; then
+cercs_tmp=$tmp_search_results
+fi
+
+if test -n "$cercs_tmp" -a "$cercs_tmp" != "libcercs_env.a"; then
+cercs_cv_cercs_env_link_dir=`$PATHPROG $cercs_tmp | sed 's#\\\\#/#g' | sed "s/.libcercs_env.a//g"`
+else
+cercs_cv_cercs_env_link_dir=""
+fi
+
+fi
+
+{ $as_echo "$as_me:$LINENO: result: $cercs_cv_cercs_env_link_dir" >&5
+$as_echo "$cercs_cv_cercs_env_link_dir" >&6; }
+ld_arg="-L"
+new_flags=$LDFLAGS
+cercs_cv_cercs_env_link_arg=`echo $cercs_cv_cercs_env_link_dir | sed "/./ s/^/$ld_arg/1"`
+if test -n "$cercs_cv_cercs_env_link_arg"; then
+arg=$cercs_cv_cercs_env_link_arg
+no_dash_arg=`echo $arg | sed 's/^-//g'`
+if test `echo $new_flags | grep -c "$no_dash_arg"` -eq 0; then
+root=`echo libcercs_env.a | sed 's/\..*//'`
+if test ! -r $cercs_cv_cercs_env_link_dir/$root.la; then
+if eval "test \"\${LIBTOOL+set}\" = set"; then
+arg="$cercs_cv_cercs_env_link_arg "`echo $cercs_cv_cercs_env_link_dir | sed "/./ s/^/-R/1"`
+fi
+fi
+if test `echo $arg | grep -c "cercs_env"` -eq 0; then
+new_flags="$new_flags $arg"
+else
+new_flags="$arg $new_flags"
+fi
+fi
+DT_LDFLAGS=$new_flags
+fi
+
+
+fi
+
+
+
+    if test -n "$cercs_cv_evpath_link_dir" -a -n "$cercs_cv_evpath_include_arg";then
+	FP_LDFLAGS="$FP_LDFLAGS -L$cercs_cv_evpath_link_dir"
+	FP_LIBS="$FP_LIBS -levpath"
+	FP_CFLAGS="$FP_CFLAGS $cercs_cv_evpath_include_arg"
+	FP_CPPFLAGS="$FP_CPPFLAGS $cercs_cv_evpath_include_arg"
+    else
+	echo "ICEE couldn't find evpath -  Not building icee"
+	ac_icee_ok=no
+    fi
+    if test -n "$cercs_cv_ffs_link_dir" -a -n "$cercs_cv_ffs_include_arg"; then
+	FP_LDFLAGS="$FP_LDFLAGS -L$cercs_cv_ffs_link_dir"
+	FP_LIBS="$FP_LIBS -lffs"
+	FP_CFLAGS="$FP_CFLAGS $cercs_cv_ffs_include_arg"
+	FP_CPPFLAGS="$FP_CPPFLAGS $cercs_cv_ffs_include_arg"
+    else
+	echo "ICEE couldn't find ffs -  Not building icee"
+	ac_icee_ok=no
+    fi
+    if test -n "$cercs_cv_atl_link_dir" -a -n "$cercs_cv_atl_include_arg"; then
+	FP_LDFLAGS="$FP_LDFLAGS -L$cercs_cv_atl_link_dir"
+	FP_LIBS="$FP_LIBS -latl"
+	FP_CFLAGS="$FP_CFLAGS $cercs_cv_atl_include_arg"
+	FP_CPPFLAGS="$FP_CPPFLAGS $cercs_cv_atl_include_arg"
+    else
+	ac_icee_ok=no
+	echo "ICEE couldn't find atl -  Not building icee"
+    fi
+    if test -n "$cercs_cv_dill_link_dir" -a -n "$cercs_cv_dill_include_arg"; then
+	FP_LDFLAGS="$FP_LDFLAGS -L$cercs_cv_dill_link_dir"
+	FP_LIBS="$FP_LIBS -ldill"
+	FP_CFLAGS="$FP_CFLAGS $cercs_cv_dill_include_arg"
+	FP_CPPFLAGS="$FP_CPPFLAGS $cercs_cv_dill_include_arg"
+    else
+	ac_icee_ok=no
+	echo "ICEE couldn't find dill -  Not building icee"
+    fi
+    if test -n "$cercs_cv_cercs_env_link_dir" -a -n "$cercs_cv_cercs_env_include_arg"; then
+	FP_LDFLAGS="$FP_LDFLAGS -L$cercs_cv_cercs_env_link_dir"
+	FP_LIBS="$FP_LIBS -lcercs_env"
+	FP_CFLAGS="$FP_CFLAGS $cercs_cv_cercs_env_include_arg"
+	FP_CPPFLAGS="$FP_CPPFLAGS $cercs_cv_cercs_env_include_arg"
+    else
+	ac_icee_ok=no
+	echo "ICEE couldn't find cercs_env -  Not building icee"
+    fi
+
+fi
+
+
+
+
+
+
+if test "x$ac_icee_ok" = "xyes"; then
+   HAVE_ICEE=1
+   NO_ICEE=0
+else
+   HAVE_ICEE=0
+   NO_ICEE=1
+fi
+ if test "x$ac_icee_ok" = "xyes"; then
+  HAVE_ICEE_TRUE=
+  HAVE_ICEE_FALSE='#'
+else
+  HAVE_ICEE_TRUE='#'
+  HAVE_ICEE_FALSE=
+fi
+
+
+cat >>confdefs.h <<_ACEOF
+#define NO_ICEE $NO_ICEE
+_ACEOF
+
+
+cat >>confdefs.h <<_ACEOF
+#define HAVE_ICEE $HAVE_ICEE
 _ACEOF
 
 
@@ -35763,6 +37568,24 @@ if test -z "${HAVE_FLEXPATH_TRUE}"; then
     ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${FP_LDFLAGS}"
     ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${FP_LIBS}"
 fi
+if test -z "${HAVE_ICEE_TRUE}"; then
+    ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} ${FP_CPPFLAGS}"
+    ADIOSLIB_CFLAGS="${ADIOSLIB_CFLAGS} ${FP_CFLAGS}"
+    ADIOSLIB_LDFLAGS="${ADIOSLIB_LDFLAGS} ${FP_LDFLAGS}"
+    ADIOSLIB_LDADD="${ADIOSLIB_LDADD} ${FP_LIBS}"
+    ADIOSLIB_SEQ_CPPFLAGS="${ADIOSLIB_SEQ_CPPFLAGS} ${FP_CPPFLAGS}"
+    ADIOSLIB_SEQ_CFLAGS="${ADIOSLIB_SEQ_CFLAGS} ${FP_CFLAGS}"
+    ADIOSLIB_SEQ_LDFLAGS="${ADIOSLIB_SEQ_LDFLAGS} ${FP_LDFLAGS}"
+    ADIOSLIB_SEQ_LDADD="${ADIOSLIB_SEQ_LDADD} ${FP_LIBS}"
+    ADIOSREADLIB_CPPFLAGS="${ADIOSREADLIB_CPPFLAGS} ${FP_CPPFLAGS}"
+    ADIOSREADLIB_CFLAGS="${ADIOSREADLIB_CFLAGS} ${FP_CFLAGS}"
+    ADIOSREADLIB_LDFLAGS="${ADIOSREADLIB_LDFLAGS} ${FP_LDFLAGS}"
+    ADIOSREADLIB_LDADD="${ADIOSREADLIB_LDADD} ${FP_LIBS}"
+    ADIOSREADLIB_SEQ_CPPFLAGS="${ADIOSREADLIB_SEQ_CPPFLAGS} ${FP_CPPFLAGS}"
+    ADIOSREADLIB_SEQ_CFLAGS="${ADIOSREADLIB_SEQ_CFLAGS} ${FP_CFLAGS}"
+    ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${FP_LDFLAGS}"
+    ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${FP_LIBS}"
+fi
 if test -z "${HAVE_NC4PAR_TRUE}"; then
     ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} ${NC4PAR_CPPFLAGS}"
     ADIOSLIB_CFLAGS="${ADIOSLIB_CFLAGS} ${NC4PAR_CFLAGS}"
@@ -36804,6 +38627,13 @@ if test -z "${HAVE_FLEXPATH_TRUE}" && test -z "${HAVE_FLEXPATH_FALSE}"; then
   { { $as_echo "$as_me:$LINENO: error: conditional \"HAVE_FLEXPATH\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 $as_echo "$as_me: error: conditional \"HAVE_FLEXPATH\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_ICEE_TRUE}" && test -z "${HAVE_ICEE_FALSE}"; then
+  { { $as_echo "$as_me:$LINENO: error: conditional \"HAVE_ICEE\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+$as_echo "$as_me: error: conditional \"HAVE_ICEE\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -40007,6 +41837,17 @@ if test -z "${HAVE_FLEXPATH_TRUE}"; then
     echo
 else
     echo "  - No FLEXPATH to build FLEXPATH transport method"
+fi
+
+if test -z "${HAVE_ICEE_TRUE}"; then
+    echo "  - ICEE";
+    echo "      - FP_CFLAGS = $FP_CFLAGS";
+    echo "      - FP_CPPFLAGS = $FP_CPPFLAGS";
+    echo "      - FP_LDFLAGS = $FP_LDFLAGS";
+    echo "      - FP_LIBS = $FP_LIBS";
+    echo
+else
+    echo "  - No ICEE to build ICEE transport method"
 fi
 
 if test -z "${HAVE_ZLIB_TRUE}"; then
