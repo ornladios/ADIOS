@@ -95,6 +95,9 @@
 /* Define to 1 if you have <infiniband/verbs.h>. */
 #undef HAVE_IBVERBS_H
 
+/* icee is enabled */
+#undef HAVE_ICEE
+
 /* Define if you have the Infiniband. */
 #undef HAVE_INFINIBAND
 
@@ -254,6 +257,9 @@
 
 /* Flexpath is disabled */
 #undef NO_FLEXPATH
+
+/* icee is disabled */
+#undef NO_ICEE
 
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
 #undef NO_MINUS_C_MINUS_O
