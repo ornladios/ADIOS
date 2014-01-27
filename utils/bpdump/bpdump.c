@@ -133,7 +133,15 @@ int main (int argc, char ** argv)
 
     adios_posix_read_version (b);
     adios_parse_version (b, &version);
-    printf ("BP format version: %d\n", version & ADIOS_VERSION_NUM_MASK);
+    version = version & ADIOS_VERSION_NUM_MASK;
+    printf ("BP format version: %d\n", version);
+    if (version < 2)
+    {
+        fprintf (stderr, "bpdump: This version of bpdump can only dump BP format version 2. "
+                 "Use an older bpdump from adios 1.6 to dump this file.\n", version);
+        adios_posix_close_internal (b);
+        return -1;
+    }
 
     struct adios_index_process_group_struct_v1 * pg_root = 0;
     struct adios_index_process_group_struct_v1 * pg = 0;
