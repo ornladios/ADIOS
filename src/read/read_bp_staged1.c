@@ -3716,8 +3716,8 @@ static void broadcast_fh_buffer (struct BP_FILE * fh)
         _buffer_write (&buffer, &buffer_size, &buffer_offset, &p->num_aggregators, 4); // n_sf
         _buffer_write (&buffer, &buffer_size, &buffer_offset, &fh->gvar_h->group_count, 2); //group_count 
         _buffer_write (&buffer, &buffer_size, &buffer_offset, &fh->mfooter.pgs_count, 8); //vars_count 
-        _buffer_write (&buffer, &buffer_size, &buffer_offset, &fh->mfooter.vars_count, 2); //vars_count 
-        _buffer_write (&buffer, &buffer_size, &buffer_offset, &fh->mfooter.attrs_count, 2); //attrs_count 
+        _buffer_write (&buffer, &buffer_size, &buffer_offset, &fh->mfooter.vars_count, 4); //vars_count 
+        _buffer_write (&buffer, &buffer_size, &buffer_offset, &fh->mfooter.attrs_count, 4); //attrs_count 
 
         for (i = 0; i < fh->gvar_h->group_count; i++)
         {
@@ -3770,7 +3770,7 @@ static void broadcast_fh_buffer (struct BP_FILE * fh)
         vars_root = fh->vars_root;
         while (vars_root)
         {
-            _buffer_write (&buffer, &buffer_size, &buffer_offset, &vars_root->id, 2); // id
+            _buffer_write (&buffer, &buffer_size, &buffer_offset, &vars_root->id, 4); // id
 
             len = strlen (vars_root->group_name);
             _buffer_write (&buffer, &buffer_size, &buffer_offset, &len, 2); // group_name len
@@ -3853,8 +3853,8 @@ fprintf (stderr, "bc %s bo 1 = %llu, bo 2 = %llu, len = %d\n", vars_root->var_na
 
         _buffer_read (buffer, &buffer_offset, &fh->gvar_h->group_count, 2); //group_count 
         _buffer_read (buffer, &buffer_offset, &fh->mfooter.pgs_count, 8); //pgs_count 
-        _buffer_read (buffer, &buffer_offset, &fh->mfooter.vars_count, 2); //vars_count 
-        _buffer_read (buffer, &buffer_offset, &fh->mfooter.attrs_count, 2); //attrs_count 
+        _buffer_read (buffer, &buffer_offset, &fh->mfooter.vars_count, 4); //vars_count 
+        _buffer_read (buffer, &buffer_offset, &fh->mfooter.attrs_count, 4); //attrs_count 
 
         fh->gvar_h->namelist = (char **) malloc (fh->gvar_h->group_count * sizeof (char *));
         fh->gvar_h->var_counts_per_group = (uint16_t *) malloc (fh->gvar_h->group_count * 2);
@@ -3946,7 +3946,7 @@ fprintf (stderr, "bc %s bo 1 = %llu, bo 2 = %llu, len = %d\n", vars_root->var_na
             v = (struct adios_index_var_struct_v1 *) malloc (sizeof (struct adios_index_var_struct_v1));
             assert (v);
 uint64_t bo = buffer_offset;
-            _buffer_read (buffer, &buffer_offset, &v->id, 2);
+            _buffer_read (buffer, &buffer_offset, &v->id, 4);
 
             _buffer_read (buffer, &buffer_offset, &len, 2);
             v->group_name = (char *) malloc (len + 1);
