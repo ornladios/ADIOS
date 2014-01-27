@@ -564,7 +564,10 @@ int bp_read_minifooter (struct BP_FILE * bp_struct)
 
     // validity check
     if ((mh->version & ADIOS_VERSION_NUM_MASK) > ADIOS_VERSION_BP_FORMAT) {
-        adios_error (err_file_open_error, "Invalid BP file detected. Version number > recent version = %d\n", ADIOS_VERSION_BP_FORMAT);
+        adios_error (err_file_open_error, 
+           "Invalid BP file detected. Format version of file seems to be %d, "
+           "which is greater than the highest supported version %d.\n", 
+           (mh->version & ADIOS_VERSION_NUM_MASK), ADIOS_VERSION_BP_FORMAT);
         return 1;
     }
 
