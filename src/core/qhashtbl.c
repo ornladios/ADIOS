@@ -462,7 +462,7 @@ static void *get2(qhashtbl_t *tbl, const char *path, const char *name)
 static bool remove_(qhashtbl_t *tbl, const char *fullpath)
 {
     int keylen = strlen (fullpath);
-    char *key = fullpath;
+    const char *key = fullpath;
 
     // get hash integer
     uint32_t hash = qhashmurmur3_32(key, keylen);
@@ -545,12 +545,12 @@ void debug(qhashtbl_t *tbl, FILE *out, bool detailed)
     }
     int len, lenmin=1000000, lenmax=0;
 
-    qhnobj_t obj;
+    qhnobj_t *obj;
     int idx;
     for (idx = 0; idx < tbl->range && tbl->num > 0; idx++) {
         len = 0;
         if (detailed) fprintf(out, "[%d]:", idx);
-        qhnobj_t *obj = tbl->slots[idx];
+        obj = tbl->slots[idx];
         while (obj != NULL) {
             qhnobj_t *next = obj->next;
             if (detailed) fprintf(out, "(%s,%p)" , obj->key, obj->value);

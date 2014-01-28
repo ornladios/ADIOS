@@ -698,6 +698,8 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value, void ** 
 
                                 return 1;
                             }
+                        default:
+                                return 1;
                     }
                 }
             }
@@ -789,6 +791,8 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value, void ** 
 
                                 return 1;
                             }
+                        default:
+                                return 1;
                     }
                 }
             }
@@ -1503,7 +1507,7 @@ int adios_common_define_var_characteristics (struct adios_group_struct * g
         , const char * bin_count
         )
 {
-    struct adios_var_struct * root = g->vars, * var;
+    struct adios_var_struct * var;
 
     var = adios_find_var_by_name (g, var_name);
 
@@ -1655,7 +1659,7 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
         ,const char * dimensions
         ,const char * global_dimensions
         ,const char * local_offsets
-        ,char *transform_type_str // NCSU ALACRITY-ADIOS
+        ,const char *transform_type_str // NCSU ALACRITY-ADIOS
         )
 {
     struct adios_group_struct * t = (struct adios_group_struct *) group_id;
@@ -1664,7 +1668,6 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
     char * dim_temp;
     char * g_dim_temp;
     char * lo_dim_temp;
-    enum ADIOS_FLAG flag;
     uint8_t i;
     if (dimensions)
         dim_temp = strdup (dimensions);
@@ -2102,7 +2105,6 @@ int adios_write_process_group_header_v1 (struct adios_file_struct * fd
     uint8_t flag;
     struct adios_var_struct * var;
     uint16_t len;
-    char * temp;
 
     buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &total_size, 8);
 
@@ -2202,7 +2204,6 @@ static void index_append_var_v1 (
         ,struct adios_index_var_struct_v1 * item
         )
 {
-    struct adios_index_var_struct_v1 * root = index->vars_root;
     struct adios_index_var_struct_v1 * olditem;
 
     olditem = (struct adios_index_var_struct_v1 *)
@@ -2408,8 +2409,7 @@ void adios_sort_index_v1 (struct adios_index_process_group_struct_v1 ** p1
         )
 {
     struct adios_index_process_group_struct_v1 * p2 = 0, * p1_temp, * p2_temp, * p2_temp_prev;
-    struct adios_index_var_struct_v1 * v2 = 0, * v1_temp, * v2_temp, * v2_temp_prev;
-    struct adios_index_attribute_struct_v1 * a2 = 0, * a1_temp, * a2_temp, * a2_temp_prev;
+    struct adios_index_var_struct_v1 * v1_temp;
     int i, j;
 
     while (*p1)
@@ -2783,6 +2783,7 @@ static uint64_t cast_var_data_as_uint64 (const char * parent_name
         case adios_string:
         case adios_complex:
         case adios_double_complex:
+        default:
             adios_error (err_unspecified,
                     "Cannot convert type %s to integer for var %s\n",
                     adios_type_to_string_int (type), parent_name);
@@ -2983,6 +2984,11 @@ void adios_copy_var_written (struct adios_group_struct * g, struct adios_var_str
                 ((char *) (var_new->data)) [size] = 0;
 
                 break;
+            }
+        default:
+            {
+                adios_error (err_unspecified, "Reached unexpected branch in %s:%s:%d\n",
+                        __FILE__,__func__, __LINE__);
             }
     }
 
@@ -3185,8 +3191,6 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
     struct adios_attribute_struct * a = g->attributes;
     struct adios_index_process_group_struct_v1 * g_item;
 
-    uint64_t process_group_count = 0;
-
     g_item = (struct adios_index_process_group_struct_v1 *)
         malloc (sizeof (struct adios_index_process_group_struct_v1));
     g_item->group_name = (g->name ? strdup (g->name) : 0L);
@@ -3364,6 +3368,11 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
                         ((char *) (v_index->characteristics [0].value)) [size] = 0;
 
                         break;
+                    }
+                default:
+                    {
+                        adios_error (err_unspecified, "Reached unexpected branch in %s:%s:%d\n",
+                                __FILE__,__func__, __LINE__);
                     }
             }
             v_index->next = 0;
@@ -3899,6 +3908,11 @@ int adios_write_index_v1 (char ** buffer
                         characteristic_set_length += size;
                     }
                     break;
+                default:
+                    {
+                        adios_error (err_unspecified, "Reached unexpected branch in %s:%s:%d\n",
+                                __FILE__,__func__, __LINE__);
+                    }
             }
             // characteristics count/size prefix
             buffer_write (buffer, buffer_size, &characteristic_set_start
@@ -4442,7 +4456,6 @@ uint16_t adios_write_var_characteristics_v1 (struct adios_file_struct * fd
         )
 {
     uint8_t flag;
-    uint64_t size;
     uint16_t len;
     uint8_t characteristic_set_count = 0;
     uint32_t characteristic_set_length = 0;
@@ -4454,7 +4467,6 @@ uint16_t adios_write_var_characteristics_v1 (struct adios_file_struct * fd
 
     // depending on if it is an array or not, generate a different
     // additional set of characteristics
-    size = adios_get_type_size (v->type, v->data);
 
     switch (v->type)
     {
@@ -4610,6 +4622,8 @@ uint16_t adios_write_var_characteristics_v1 (struct adios_file_struct * fd
 
         case adios_string:
             break;
+        default:
+            break;
     }
     // characteristics count/size prefix
     buffer_write (&fd->buffer, &fd->buffer_size, &characteristic_set_start
@@ -4644,7 +4658,7 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
 #if 1
 #define HIST(a) \
     { \
-        int j = 0, low, high, mid; \
+        int low, high, mid; \
         low=0; \
         high=hist->num_breaks - 1; \
         if (hist->breaks[low] > a) \
@@ -4984,7 +4998,8 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
 
             while ((size * sizeof(double)) < total_size)
             {
-                long double magnitude = sqrt((long double) data [size] * data [size] + (long double) data[size + 1] * data[size + 1]);
+                magnitude = sqrt((long double) data [size] * data [size] + 
+                                 (long double) data[size + 1] * data[size + 1]);
 
                 // Both real and imaginary parts have to be finite, else skip calculating the characteristic
                 if ( isnan(data [size]) || !isfinite(data [size]) || isnan(data[size + 1]) || !isfinite(data[size + 1]) ) {
@@ -5053,7 +5068,6 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
 
         default:
         {
-            uint64_t data = adios_unknown;
             var->stats = 0;
 
             return 0;
@@ -5571,13 +5585,11 @@ int adios_define_schema_version(struct adios_group_struct * new_group, char * sc
         char * d;  // dot location
         char * ptr_end;
         ver = strdup (schema_version);
-        char * schema_version_major;
-        char * schema_version_minor;
         char * schema_version_major_att_nam;
         char * schema_version_minor_att_nam;
         d = strtok (ver, ".");
         int counter = 0; // counter
-        //int slength = 0;
+
         while (d)
         {
             int slength = 0;
@@ -5591,13 +5603,11 @@ int adios_define_schema_version(struct adios_group_struct * new_group, char * sc
                     slength = slength + strlen("version_major") + 1;
                     schema_version_major_att_nam = malloc (slength);
                     strcpy(schema_version_major_att_nam,"adios_schema/version_major");
-                    //schema_version_major = strdup(d);
                     adios_common_define_attribute (p_new_group,schema_version_major_att_nam,"/",adios_string,d,"");
                 }else if (counter == 1){
                     slength = slength + strlen("version_minor") + 1;
                     schema_version_minor_att_nam = malloc (slength);
                     strcpy(schema_version_minor_att_nam,"adios_schema/version_minor");
-                    //schema_version_minor = strdup(d);
                     adios_common_define_attribute (p_new_group,schema_version_minor_att_nam,"/",adios_string,d,"");
                 }
             }
@@ -5673,7 +5683,6 @@ int adios_define_mesh_timeScale (const char * timescale
     // 2. start/stride/count 3 components
     // 3. min/max range where this mesh is used
     // 4. An ADIOS var = time could be a list of int stored by user
-    char counterstr[5] = {0,0,0,0,0}; // used to create scale attributes
 
     /* We do not fail if this is not given as variables all have nsteps
        in ADIOS_inq_var = # of times the var was written
@@ -5837,7 +5846,6 @@ int adios_define_mesh_timeSteps (const char * timesteps
     // 2. start/stride/count 3 components
     // 3. min/max range where this mesh is used
     // 4. An ADIOS var = time could be a list of int stored by user
-    char counterstr[5] = {0,0,0,0,0}; // used to create tsteps attributes
 
     /* We do not fail if this is not given as variables all have nsteps
        in ADIOS_inq_var = # of times the var was written
@@ -6110,7 +6118,6 @@ int adios_define_mesh_unstructured(char *nspace
         , struct adios_group_struct * new_group
         , const char * name)
 {
-    int saw_cell_set = 0;
     if (nspace)
     {
         if (!adios_define_mesh_unstructured_nspace (nspace, new_group, name))
@@ -6165,12 +6172,12 @@ int adios_define_mesh_unstructured(char *nspace
     char *pt;
     // If we do find "," in data (uniform cell case)
     if (!(pt = strstr(data, ","))){
-        if (pt = strstr(count,",")){
+        if ( (pt = strstr(count,",")) ){
             log_warn ("count value on uniform-cells (check data value)"
                     " should not contain ',' (%s)\n",name);
             return 0;
         }
-        if (pt = strstr(type,",")){
+        if ( (pt = strstr(type,",")) ){
             log_warn ("type value on uniform-cells (check data value)"
                     " should not contain ',' (%s)\n", name);
             return 0;
@@ -6340,7 +6347,6 @@ int adios_define_var_timesteps (const char * timesteps
     // 2. start/stride/count 3 components - indices of the mesh time steps
     // 3. min/max range of the mesh time step
     // 4. An ADIOS var = time could be a list of int stored by user
-    char counterstr[5] = {0,0,0,0,0}; // used to create tsteps attributes
 
     /* We do not fail if this is not given as variables all have nsteps
        in ADIOS_inq_var = # of times the var was written
@@ -6536,7 +6542,6 @@ int adios_define_var_timescale (const char * timescale
     // 2. start/stride/count 3 components - multiple of the mesh time steps
     // 3. min/max range where this var is used - a range of the mesh time steps
     // 4. An ADIOS var = time could be a list of int stored by user
-    char counterstr[5] = {0,0,0,0,0}; // used to create scale attributes
 
 
     /* We do not fail if this is not given as variables all have nsteps
@@ -6683,14 +6688,12 @@ int adios_define_var_hyperslab ( const char * hyperslab,
     char * gethslabfrom0 = 0;       // hslab attribute xml value
     char * gethslabfrom1 = 0;       // hslab attribute xml value
     char * gethslabfrom2 = 0;       // hslab attribute xml value
-    char * hslab_var_att_nam = 0;   // hslab attribute name for var or num
     char * hslab_start_att_nam = 0; // hslab attribute name for start
     char * hslab_stride_att_nam = 0;// hslab attribute name for stride
     char * hslab_count_att_nam = 0; // hslab attribute name for count
     char * hslab_max_att_nam = 0;   // hslab attribute name for max
     char * hslab_min_att_nam = 0;   // hslab attribute name for min
     char * hslab_single_att_nam = 0;// hslab attribute name for min
-    char * hslab_var_att_val = 0;   // hslab attribute value for var or num
     char * hslab_start_att_val = 0; // hslab attribute value for start
     char * hslab_stride_att_val = 0;// hslab attribute value for stride
     char * hslab_count_att_val = 0; // hslab attribute value for count
@@ -6704,7 +6707,6 @@ int adios_define_var_hyperslab ( const char * hyperslab,
     // 2. min/max range of the mesh dimensions
     // 3. single value
     //    single value of ":" means there is an extra dimension to process
-    char counterstr[5] = {0,0,0,0,0}; // used to create tsteps attributes
 
     /* We do not fail if this is not given as variables all have nsteps
        in ADIOS_inq_var = # of times the var was written
@@ -6787,7 +6789,6 @@ int adios_define_mesh_uniform_dimensions (const char * dimensions
     char * d1; // save of strdup
     int64_t      p_new_group = (int64_t) new_group;
     char * dim_att_nam = 0; // dimensions attribute name
-    char * getdimsfrom = 0; // dimensions attribute that is a var
     int counter = 0;        // used to create dimX attributes
     char counterstr[5] = {0,0,0,0,0}; // used to create dimX attributes
 
@@ -6841,7 +6842,6 @@ int adios_define_mesh_uniform_maximums (const char * maximum
     char * d1; // save of strdup
     int64_t      p_new_group = (int64_t) new_group;
     char * max_att_nam = 0; // maxima attribute name
-    char * getmaxafrom = 0; // maxima attribute name that is a var
     int counter = 0;        // used to create maxX attributes
     char counterstr[5] = {0,0,0,0,0}; // used to create maxX attributes
 
@@ -6890,10 +6890,8 @@ int adios_define_mesh_uniform_origins (const char * origin
 {
     char * c;  // comma location
     char * d1; // save of strdup
-    struct adios_mesh_item_list_struct * item = 0;
     int64_t      p_new_group = (int64_t) new_group;
     char * org_att_nam = 0; // origins attribute name
-    char * getorgsfrom = 0; // origins attribute name that is a var
     int counter = 0;        // used to create orgX attributes
     char counterstr[5] = {0,0,0,0,0}; // used to create orgX attributes
 
@@ -6944,7 +6942,6 @@ int adios_define_mesh_uniform_spacings (const char * spacing
     char * d1; // save of strdup
     int64_t      p_new_group = (int64_t) new_group;
     char * spa_att_nam = 0; // spacings attribute name
-    char * getspasfrom = 0; // spacings attribute name that is a var
     int counter = 0;        // used to create spaX attributes
     char counterstr[5] = {0,0,0,0,0}; // used to create spaX attributes if (!spacing)
 
@@ -6993,10 +6990,8 @@ int adios_define_mesh_rectilinear_dimensions (const char * dimensions
 {
     char * c;  // comma location
     char * d1; // save of strdup
-    struct adios_mesh_item_list_struct * item = 0;
     int64_t      p_new_group = (int64_t) new_group;
     char * dim_att_nam = 0; // dimensions attribute name
-    char * getdimsfrom = 0; // dimensions attribute name that is a var
     int counter = 0;        // used to create dimX attributes
     char counterstr[5] = {0,0,0,0,0}; // used to create dimX attributes
 
@@ -7047,7 +7042,6 @@ int adios_define_mesh_rectilinear_coordinatesMultiVar (const char * coordinates
 {
     char * c;  // comma location
     char * d1; // save of strdup
-    struct adios_mesh_var_list_struct * var = 0;
     int64_t      p_new_group = (int64_t) new_group;
     char * coo_att_nam = 0; // coordinates attribute name
     int counter = 0;        // used to create ptsX attributes
@@ -7109,7 +7103,6 @@ int adios_define_mesh_rectilinear_coordinatesSingleVar (const char * coordinates
         )
 {
     char * d1; // save of strdup
-    struct adios_mesh_var_list_struct * var = 0;
     int64_t      p_new_group = (int64_t) new_group;
     char * coo_att_nam = 0; // coordinates attribute name
 
@@ -7138,7 +7131,6 @@ int adios_define_mesh_structured_nspace (const char * nspace
 {
     char * d1; // save of strdup
     int64_t      p_new_group = (int64_t) new_group;
-    struct adios_mesh_item_struct * item = 0;
     char * nsp_att_nam = 0; // nspace attribute name
 
     if (!nspace)
@@ -7167,10 +7159,8 @@ int adios_define_mesh_structured_dimensions (const char * dimensions
 {
     char * c;  // comma location
     char * d1; // save of strdup
-    struct adios_mesh_item_list_struct * item = 0;
     int64_t      p_new_group = (int64_t) new_group;
     char * dim_att_nam = 0; // dimensions attribute name
-    char * getdimsfrom = 0; // dimensions attribute name that is a var
     int counter = 0;        // used to create dimX attributes
     char counterstr[5] = {0,0,0,0,0}; // used to create dimX attributes
 
@@ -7215,9 +7205,7 @@ int adios_define_mesh_structured_pointsSingleVar (const char * points
         ,const char * name
                                               )
 {
-    char * c;  // comma location
     char * d1; // save of strdup
-    struct adios_mesh_var_list_struct * var = 0;
     int64_t      p_new_group = (int64_t) new_group;
     char * pts_att_nam = 0; // points attribute name
 
@@ -7246,7 +7234,6 @@ int adios_define_mesh_structured_pointsMultiVar (const char * points
 {
     char * c;  // comma location
     char * d1; // save of strdup
-    struct adios_mesh_var_list_struct * var = 0;
     int64_t      p_new_group = (int64_t) new_group;
     char * pts_att_nam = 0; // pointss attribute name
     int counter = 0;        // used to create ptsX attributes
@@ -7310,15 +7297,12 @@ int adios_define_mesh_unstructured_nspace (const char * nspace
 {
     char * d1; // save of strdup
     int64_t      p_new_group = (int64_t) new_group;
-    struct adios_mesh_item_struct * item = 0;
     char * nsp_att_nam = 0; // nspace attribute name
 
     if (!nspace)
     {
-        log_warn ("config.xml: nspace value required"
-                         "for unstructured mesh: %s\n"
-                         ,name
-                );
+        log_warn ("config.xml: nspace value required for unstructured mesh: %s\n",
+                name);
 
         return 0;
     }
@@ -7339,15 +7323,12 @@ int adios_define_mesh_unstructured_npoints (const char * npoints
 {
     char * d1; // save of strdup
     int64_t      p_new_group = (int64_t) new_group;
-    struct adios_mesh_item_struct * item = 0;
     char * npts_att_nam = 0; // npoints attribute name
 
     if (!npoints)
     {
-        log_warn ("config.xml: npoints value required"
-                "for unstructured mesh\n"
-                ,name
-                );
+        log_warn ("config.xml: npoints value required for unstructured mesh %s:\n",
+                name);
 
         return 0;
     }
@@ -7370,7 +7351,6 @@ int adios_define_mesh_unstructured_pointsMultiVar (const char * points
 {
     char * c;  // comma location
     char * d1; // save of strdup
-    struct adios_mesh_var_list_struct * var = 0;
     int64_t      p_new_group = (int64_t) new_group;
     char * pts_att_nam = 0; // pointss attribute name
     int counter = 0;        // used to create ptsX attributes
@@ -7429,9 +7409,7 @@ int adios_define_mesh_unstructured_pointsSingleVar (const char * points
         ,const char * name
         )
 {
-    char * c;  // comma location
     char * d1; // save of strdup
-    struct adios_mesh_var_list_struct * var = 0;
     int64_t      p_new_group = (int64_t) new_group;
     char * pts_att_nam = 0; // points attribute name
 
@@ -7462,10 +7440,7 @@ int adios_define_mesh_unstructured_uniformCells (const char * count
         ,const char * name
         )
 {
-    char * c;  // comma location
     char * d1; // save of strdup
-    struct adios_mesh_cell_list_list_struct * cell_list = 0;
-    struct adios_mesh_item_struct * item = 0;
     int64_t      p_new_group = (int64_t) new_group;
     char * ncellset_att_nam = 0;  // ncellset attribute
     char * cellcount_att_nam = 0; // single cell count attribute
@@ -7534,8 +7509,6 @@ int adios_define_mesh_unstructured_mixedCells (const char * count
 {
     char * c;  // comma location
     char * d1; // save of strdup
-    struct adios_mesh_cell_list_list_struct * cell_list = 0;
-    struct adios_mesh_item_struct * item = 0;
     int counter = 0;        // used to create countX, typeX, dataX? attributes
     char counterstr[5] = {0,0,0,0,0}; // used to create countX, typeX, dataX? attributes
     int64_t      p_new_group = (int64_t) new_group;

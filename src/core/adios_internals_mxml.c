@@ -22,6 +22,8 @@
 #include "core/buffer.h"
 #include "core/adios_logger.h"
 #include "core/util.h" // PairStruct*
+#include "transforms/adios_transforms_hooks_write.h"
+#include "transforms/adios_transforms_write.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"
@@ -157,7 +159,7 @@ static enum ADIOS_FLAG parseFlag (const char * attr_name, const char * flag
     return adios_flag_unknown;
 }
 
-
+/*
 static void adios_append_mesh_item (struct adios_mesh_item_list_struct ** root
         ,struct adios_mesh_item_list_struct * item
         )
@@ -175,7 +177,8 @@ static void adios_append_mesh_item (struct adios_mesh_item_list_struct ** root
         }
     }
 }
-
+*/
+/*
 static void adios_append_mesh_var (struct adios_mesh_var_list_struct ** root
         ,struct adios_mesh_var_list_struct * var
         )
@@ -193,7 +196,8 @@ static void adios_append_mesh_var (struct adios_mesh_var_list_struct ** root
         }
     }
 }
-
+*/
+/*
 static void adios_append_mesh_cell_list
 (struct adios_mesh_cell_list_list_struct ** root
  ,struct adios_mesh_cell_list_list_struct * cell_list
@@ -212,6 +216,7 @@ static void adios_append_mesh_cell_list
         }
     }
 }
+*/
 
 // primary mesh XML parsing
 int parseMeshUniform (mxml_node_t * node
@@ -680,7 +685,6 @@ int parseMeshUnstructured1 (mxml_node_t * node
         )
 {
     mxml_node_t * n;
-    int saw_points = 0;
     int saw_nspace =0;
     int saw_number_of_points = 0;
     int saw_points_multi_var = 0;
@@ -940,6 +944,7 @@ int parseMeshUnstructured1 (mxml_node_t * node
     return 1;
 }
 
+/*
 static int validatePath (const struct adios_var_struct * vars
         ,const char * test_path
         )
@@ -1020,6 +1025,7 @@ static int validatePath (const struct adios_var_struct * vars
 
     return 0;
 }
+*/
 
 static int parseGroup (mxml_node_t * node, char * schema_version)
 {
@@ -1226,7 +1232,7 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                         ,path, t1, dimensions
                         ,gb_global_dimensions
                         ,gb_local_offsets
-                                         ,transform_type // NCSU ALACRITY-ADIOS
+                        ,transform_type // NCSU ALACRITY-ADIOS
                         )
                )
             {
@@ -1272,8 +1278,6 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
             if (!strcasecmp (n->value.element.name, "global-bounds"))
             {
                 mxml_node_t * n1;   // used for global_bounds
-                struct adios_global_bounds_struct * new_global_bounds = 0;
-
                 const char * dimensions = 0;
                 const char * dimension = 0;
                 const char * global_dimensions = 0;
@@ -1421,7 +1425,7 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                                     ,path, t1, dimensions
                                     ,gb_global_dimensions
                                     ,gb_local_offsets
-                                                 ,transform_type // NCSU ALACRITY-ADIOS
+                                    ,transform_type // NCSU ALACRITY-ADIOS
                                     )
                            )
                         {
@@ -1723,8 +1727,6 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
 
 static int parseAnalysis (mxml_node_t * node)
 {
-    mxml_node_t * n;
-
     const char * group = 0;
     const char * var = 0;
     const char * bin_intervals = 0;

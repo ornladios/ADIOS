@@ -567,12 +567,10 @@ static int common_read_find_attr (int n, char ** namelist, const char *name, int
 
 ADIOS_VARINFO * common_read_inq_var (const ADIOS_FILE *fp, const char * varname) 
 {
-    struct common_read_internals_struct * internals;
     ADIOS_VARINFO * retval;
  
     adios_errno = err_no_error;
     if (fp) {
-        internals = (struct common_read_internals_struct *) fp->internal_data;
         int varid = common_read_find_var (fp, varname, 0);
         if (varid >= 0) {
             retval = common_read_inq_var_byid (fp, varid);
@@ -805,7 +803,6 @@ static void common_read_free_blockinfo(ADIOS_VARBLOCK **varblock, int sum_nblock
 
 void common_read_free_varinfo (ADIOS_VARINFO *vp)
 {
-    int i;
     if (vp) {
         common_read_free_blockinfo(&vp->blockinfo, vp->sum_nblocks);
 
@@ -901,12 +898,10 @@ int common_read_get_attr_mesh (const ADIOS_FILE * fp,
                             int * size,
                             void ** data)
 {
-    struct common_read_internals_struct * internals;
     int retval;
 
     adios_errno = err_no_error;
     if (fp) {
-        internals = (struct common_read_internals_struct *) fp->internal_data;
         int attrid = common_read_find_attr (fp->nattrs, fp->attr_namelist, attrname, 1);
         if (attrid > -1) {
             retval = common_read_get_attr_byid_mesh (fp, attrid, type, size, data);
@@ -1132,7 +1127,7 @@ static int common_check_var_type_to_int (enum ADIOS_DATATYPES * type, void * val
 }
 int adios_get_uniform_mesh_attr (ADIOS_FILE * fp, ADIOS_MESH *meshinfo, char * attrs)      //attr for origins-num(origins), spacings-num(spacings), maximums-num(maximums)
 {
-    int i, j;
+    int i;
     enum ADIOS_DATATYPES attr_type;
     int attr_size;
     void * data = NULL;
@@ -1479,9 +1474,6 @@ int common_read_complete_meshinfo (ADIOS_FILE *fp, ADIOS_FILE *mp, ADIOS_MESH * 
 //    if ( !strcmp((char *)data, "uniform") )
     if (meshinfo->type == ADIOS_MESH_UNIFORM)
     {
-        bool have_spacing = 0;
-        bool have_max = 0;
-
 //        meshinfo->type = ADIOS_MESH_UNIFORM;
         meshinfo->uniform = (MESH_UNIFORM * ) malloc (sizeof(MESH_UNIFORM));
 
@@ -2197,9 +2189,10 @@ int common_read_complete_meshinfo (ADIOS_FILE *fp, ADIOS_FILE *mp, ADIOS_MESH * 
                 }
                 else
                 {
-                    log_warn ("Var %s for structured mesh %s nspace is not found. ", 
+                    log_warn ("Var %s for structured mesh %s nspace is not found. "
                               "We use num of dims %d for nspaces.\n",
-                              (char *)data, meshinfo->name, meshinfo->structured->num_dimensions);
+                              (char *)data, meshinfo->name, 
+                              meshinfo->structured->num_dimensions);
                 }
             }
         } // end of structured mesh nspace
@@ -3022,12 +3015,10 @@ int common_read_schedule_read (const ADIOS_FILE      * fp,
                                void                  * data)
 
 {
-    struct common_read_internals_struct * internals;
     int retval;
     
     adios_errno = err_no_error;
     if (fp) {
-        internals = (struct common_read_internals_struct *) fp->internal_data;
         int varid = common_read_find_var (fp, varname,0);
         if (varid >= 0) {
             retval = common_read_schedule_read_byid (fp, sel, varid, from_steps, nsteps, param /* NCSU ALACRITY-ADIOS */, data);
@@ -3186,7 +3177,7 @@ int common_read_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
             if (!*chunk) break; // If no more chunks are available, stop now
 
             // Process the chunk through a transform method, if necessary
-            adios_transform_process_read_chunk(internals->transform_reqgroups, chunk);
+            adios_transform_process_read_chunk(&internals->transform_reqgroups, chunk);
         } while (!*chunk); // Keep reading until we have a chunk to return
     } else {
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_check_reads()\n");
@@ -3219,12 +3210,10 @@ int common_read_get_attr (const ADIOS_FILE * fp,
                           int * size, 
                           void ** data)
 {
-    struct common_read_internals_struct * internals;
     int retval;
     
     adios_errno = err_no_error;
     if (fp) {
-        internals = (struct common_read_internals_struct *) fp->internal_data;
         int attrid = common_read_find_attr (fp->nattrs, fp->attr_namelist, attrname, 0);
         if (attrid > -1) {
             retval = common_read_get_attr_byid (fp, attrid, type, size, data);

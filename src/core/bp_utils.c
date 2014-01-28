@@ -16,9 +16,11 @@
 #include "public/adios_read.h"
 #include "public/adios_error.h"
 #include "core/bp_utils.h"
+#include "core/adios_internals.h"
 #include "core/adios_bp_v1.h"
 #include "core/adios_endianness.h"
 #include "core/adios_logger.h"
+#include "core/futils.h"
 #define BYTE_ALIGN 8
 #define MINIFOOTER_SIZE 28
 
@@ -231,7 +233,7 @@ ADIOS_VARINFO * bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
     struct BP_PROC * p;
     BP_FILE * fh;
     ADIOS_VARINFO * varinfo;
-    int file_is_fortran, i, k, timedim, size;
+    int file_is_fortran, size;
     struct adios_index_var_struct_v1 * v;
 
     adios_errno = 0;
@@ -535,7 +537,6 @@ int bp_read_minifooter (struct BP_FILE * bp_struct)
     struct adios_bp_buffer_struct_v1 * b = bp_struct->b;
     struct bp_minifooter * mh = &bp_struct->mfooter;
     uint64_t attrs_end = b->file_size - MINIFOOTER_SIZE;
-    uint32_t test = 1;
     int r;
 
     MPI_Status status;
@@ -1021,6 +1022,8 @@ int bp_parse_attrs (struct BP_FILE * fh)
                             BUFREAD16(b, (*root)->characteristics [j].var_id)
                         }
                         break;
+                    default:
+                        break;
                 }
                 item++;
             }
@@ -1044,7 +1047,8 @@ int bp_parse_attrs (struct BP_FILE * fh)
     uint16_t *  attr_gids;
     uint64_t ** attr_offsets;
     char ** attr_namelist;
-    int grpid, j,cnt;
+    int grpid, j;
+    //int cnt;
     int lenpath, lenname;
 
     attr_counts_per_group = (uint32_t *)
@@ -1057,7 +1061,6 @@ int bp_parse_attrs (struct BP_FILE * fh)
     memset (attr_offsets, 0, mh->attrs_count * sizeof(uint64_t *));
 
     for (i = 0; i < mh->attrs_count; i++) {
-        struct adios_index_characteristic_dims_struct_v1 * pdims;
         for (grpid = 0; grpid < fh->gattr_h->group_count; grpid++) {
             if (!strcmp((*root)->group_name, fh->gattr_h->namelist[grpid])) {
                 attr_counts_per_group [grpid]++;
@@ -1107,8 +1110,9 @@ int bp_parse_attrs (struct BP_FILE * fh)
             attr_offsets[i][j] = (*root)->characteristics [j].offset;
         }
 
-        pdims = &(*root)->characteristics [0].dims;
-        cnt = pdims->count;
+        //struct adios_index_characteristic_dims_struct_v1 * pdims;
+        //pdims = &(*root)->characteristics [0].dims;
+        //cnt = pdims->count;
         root = &(*root)->next;
     }
     //here is the asssumption that attr_gids is linearly increased
@@ -1167,7 +1171,6 @@ int bp_parse_vars (struct BP_FILE * fh)
         uint32_t var_entry_length;
         uint16_t len;
         uint64_t characteristics_sets_count;
-        int type_size;
 
         BUFREAD32(b, var_entry_length)
         if (bpversion > 1) {
@@ -1196,7 +1199,6 @@ int bp_parse_vars (struct BP_FILE * fh)
 
         BUFREAD8(b, flag)
         (*root)->type = (enum ADIOS_DATATYPES) flag;
-        type_size = bp_get_type_size ((*root)->type, "");
 
         BUFREAD64(b, characteristics_sets_count)
         (*root)->characteristics_count = characteristics_sets_count;
@@ -1248,7 +1250,8 @@ int bp_parse_vars (struct BP_FILE * fh)
     uint16_t *  var_gids;
     uint64_t ** var_offsets;
     char ** var_namelist;
-    int grpid, j,cnt;
+    int grpid, j;
+    //int cnt;
     int lenpath,lenname;
 
     var_counts_per_group = (uint32_t *)
@@ -1261,7 +1264,6 @@ int bp_parse_vars (struct BP_FILE * fh)
     memset ( var_offsets, 0, mh->vars_count*sizeof(uint64_t *));
 
     for (i = 0; i < mh->vars_count; i++) {
-        struct adios_index_characteristic_dims_struct_v1 * pdims;
         for (grpid=0;grpid<fh->gvar_h->group_count;grpid++) {
             if (!strcmp((*root)->group_name,fh->gvar_h->namelist[grpid])) {
                 var_counts_per_group [grpid]++;
@@ -1313,8 +1315,9 @@ int bp_parse_vars (struct BP_FILE * fh)
             var_offsets[i][j] = (*root)->characteristics [j].offset;
         }
 
-        pdims = &(*root)->characteristics [0].dims;
-        cnt = pdims->count;
+        //struct adios_index_characteristic_dims_struct_v1 * pdims;
+        //pdims = &(*root)->characteristics [0].dims;
+        //cnt = pdims->count;
         root = &(*root)->next;
     }
 
@@ -1540,6 +1543,11 @@ SET_DATA_3(t) \
                                 }
 
                                 break;
+
+                            case adios_string:
+                            default:
+                                break;
+
                         }
                         idx ++;
                     }
@@ -2797,6 +2805,9 @@ const char * bp_value_to_string (enum ADIOS_DATATYPES type, void * data)
                                    , *(((double *) data) + 1)
                     );
             break;
+
+        default:
+            break;
     }
 
     return s;
@@ -2969,6 +2980,9 @@ double bp_value_to_double (enum ADIOS_DATATYPES type, void * data)
 
         case adios_real:
             return * ((float *) data);
+
+        default:
+            return 0.0;
     }
 }
 
@@ -3012,7 +3026,6 @@ int check_bp_validity (const char * fname)
 
 int get_num_subfiles (struct BP_FILE * fh)
 {
-    struct adios_bp_buffer_struct_v1 * b = fh->b;
     struct adios_index_var_struct_v1 ** vars_root = &(fh->vars_root);
     struct bp_minifooter * mh = &(fh->mfooter);
     struct adios_index_var_struct_v1 ** root;

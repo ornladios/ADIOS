@@ -460,15 +460,16 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
                                 ,const char * dimensions
                                 ,const char * global_dimensions
                                 ,const char * local_offsets
-                            ,char *transform_type_str // NCSU ALACRITY-ADIOS
+                                ,const char *transform_type_str // NCSU ALACRITY-ADIOS
                                 );
 
-int adios_common_define_var_characteristcs  (struct adios_group_struct * g, const char * var_name
-                                            ,const char * bin_interval
-                                            ,const char * bin_min
-                                            ,const char * bin_max
-                                            ,const char * bin_count
-                                            );
+int adios_common_define_var_characteristics  (struct adios_group_struct * g
+                                              ,const char * var_name
+                                              ,const char * bin_interval
+                                              ,const char * bin_min
+                                              ,const char * bin_max
+                                              ,const char * bin_count
+                                             );
 
 void adios_common_get_group (int64_t * group_id, const char * name);
 int adios_common_free_group (int64_t id);
@@ -534,6 +535,7 @@ void adios_merge_index_v1 (
 void adios_clear_index_v1 (struct adios_index_struct_v1 * index); // in each adios_<method>_close()
 void adios_free_index_v1 (struct adios_index_struct_v1 * index);  // in adios_<method>_finalize()
 
+int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value, void ** out);
 
 // NCSU ALACRITY-ADIOS - This function was static, but is now needed in adios_transforms_*.c
 uint8_t count_dimensions (const struct adios_dimension_struct * dimensions);

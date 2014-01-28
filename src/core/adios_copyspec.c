@@ -12,6 +12,7 @@
 #include <assert.h>
 #include "util.h"
 #include "core/adios_copyspec.h"
+#include "core/adios_subvolume.h"
 #include "core/common_read.h"
 #include "public/adios_selection.h"
 
@@ -52,8 +53,6 @@ void adios_copyspec_init(adios_subvolume_copy_spec *copy_spec,
 int adios_copyspec_init_from_intersection(adios_subvolume_copy_spec *copy_spec, int ndim,
                                           const uint64_t *dst_dims, const uint64_t *dst_goffsets,
                                           const uint64_t *src_dims, const uint64_t *src_goffsets) {
-    int dim;
-
     // Initialize with number of dimensions and source/destination dimensions
     // Offsets and subvolume dimension are unknown at this time
     // Arg order:

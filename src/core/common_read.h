@@ -50,7 +50,9 @@ void common_read_free_varinfo (ADIOS_VARINFO *vp);
 void common_read_free_transinfo(const ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti); // NCSU ALACRITY-ADIOS
 
 ADIOS_MESH * common_read_inq_mesh_byid(ADIOS_FILE *fp, int meshid);
+int common_read_inq_var_meshinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo);
 int common_read_complete_meshinfo (ADIOS_FILE *datafile, ADIOS_FILE *meshfile, ADIOS_MESH *meshinfo);
+void common_read_free_meshinfo (ADIOS_MESH * meshinfo);
 
 int common_read_schedule_read (const ADIOS_FILE      * fp,
                                const ADIOS_SELECTION * sel,

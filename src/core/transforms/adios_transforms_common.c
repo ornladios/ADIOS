@@ -141,6 +141,7 @@
 #include "adios_internals.h"
 #include "adios_endianness.h"
 #include "adios_logger.h"
+#include "bp_utils.h"
 #include "core/common_adios.h"
 
 #include "adios_transforms_common.h"
@@ -214,7 +215,7 @@ uint64_t adios_transform_get_var_transformed_size(const struct adios_index_var_s
     int dim;
     uint64_t size = 1;
 
-    int is_global;
+    //int is_global;
     uint64_t *ldims, *gdims, *offsets;
 
     assert(var);
@@ -225,7 +226,7 @@ uint64_t adios_transform_get_var_transformed_size(const struct adios_index_var_s
     ldims = malloc(sizeof(uint64_t) * dims->count);
     gdims = malloc(sizeof(uint64_t) * dims->count);
     offsets = malloc(sizeof(uint64_t) * dims->count);
-    is_global = bp_get_dimension_generic_notime(dims, ldims, gdims, offsets, 0);
+    //is_global = bp_get_dimension_generic_notime(dims, ldims, gdims, offsets, 0);
     free(gdims);
     free(offsets);
 

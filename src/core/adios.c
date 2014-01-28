@@ -24,6 +24,7 @@
 #include "core/adios_internals_mxml.h"
 #include "core/adios_transport_hooks.h"
 #include "core/adios_logger.h"
+#include "core/adios_timing.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"

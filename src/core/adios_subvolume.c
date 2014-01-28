@@ -13,6 +13,7 @@
 #include "core/util.h"
 #include "core/common_read.h"
 #include "core/adios_subvolume.h"
+#include "core/adios_internals.h"
 
 void vector_add(int ndim, uint64_t *dst_vec, const uint64_t *vec1, const uint64_t *vec2) {
     while (ndim--)
@@ -364,7 +365,6 @@ void copy_subvolume_ragged_offset(void *dst, const void *src, int ndim, const ui
 
         // Enfoce the safety condition for overlapping buffers here
         if (buffers_intersect) {
-            int dim;
             assert((char*)src + src_offset >= (char*)dst + dst_offset);
             for (i = 0; i < last_noncovering_dim + 1; i++)
                 assert(src_strides[i] >= dst_strides[i]);
@@ -419,7 +419,6 @@ void compact_subvolume_ragged_offset(void *buf, int ndim, const uint64_t *subv_d
                                      enum ADIOS_DATATYPES elem_type) {
     int i;
     uint64_t zero[32];
-    uint64_t new_data_buflen;
 
     // Ensure all arguments are non-NULL, and that the subvolume fits
     // completely within the buffer volume

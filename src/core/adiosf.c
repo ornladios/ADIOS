@@ -18,6 +18,7 @@
 #include "core/globals.h"
 #include "public/adios_error.h"
 #include "core/adios_logger.h"
+#include "core/adios_timing.h"
 
 #ifdef __cplusplus
 extern "C"  /* prevent C++ name mangling */

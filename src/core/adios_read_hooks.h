@@ -117,5 +117,7 @@ struct adios_read_hooks_struct
     ADIOS_READ_INQ_VAR_TRANS_BLOCKINFO    adios_inq_var_trans_blockinfo_fn;
 };
 
+void adios_read_hooks_init (struct adios_read_hooks_struct ** t);
+
 #undef FORWARD_DECLARE
 #endif

@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include "public/adios_types.h"
 #include "core/adios_logger.h"
+#include "core/adios_internals.h"
 
 void show_bytes(unsigned char * start, int len)
 {

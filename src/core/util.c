@@ -7,6 +7,8 @@
 
 #include "../config.h"
 #include "core/util.h"
+#include "core/bp_utils.h"
+#include "core/adios_endianness.h"
 #include "core/adios_logger.h"
 
 
@@ -396,7 +398,7 @@ static char * remove_whitespace (char *start, char *end)
 {
     char *s = start;
     char *e = end;
-    int orig_len = (int) (e-s);
+    //int orig_len = (int) (e-s);
     int final_len;
     char *res;
     // remove front whitespace (but do not go far beyond the end)

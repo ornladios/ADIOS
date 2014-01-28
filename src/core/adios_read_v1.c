@@ -54,6 +54,7 @@
 
 
 #include "public/adios_error.h"
+#include "core/bp_utils.h"
 #define BYTE_ALIGN 8
 
 static enum ADIOS_READ_METHOD lastmethod = ADIOS_READ_METHOD_BP;
@@ -250,7 +251,7 @@ static ADIOS_VARINFO_V1 * adios_varinfo_to_v1 (ADIOS_GROUP_V1 *gp, ADIOS_VARINFO
         }
 
         if (stat) {
-            v->characteristics_count;// = stat->characteristics_count; FIXME
+            v->characteristics_count=0;// = stat->characteristics_count; FIXME
             v->gmin = stat->min; 
             v->gmax = stat->max; 
             v->gavg = stat->avg; 
@@ -472,7 +473,7 @@ void adios_print_fileinfo_v1 (ADIOS_FILE_V1 *fp)
 // NCSU - Timer series analysis, correlation
 double adios_stat_cor_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char * characteristic, uint32_t time_start, uint32_t time_end, uint32_t lag)
 {
-    int i,j;
+    int i;
 
     double avg_x = 0.0, avg_y = 0.0, avg_lag = 0.0;
     double var_x = 0.0, var_y = 0.0, var_lag = 0.0;
@@ -680,7 +681,7 @@ double adios_stat_cor_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char *
 //covariance(x,y) = sum(i=1,..N) [(x_1 - x_mean)(y_i - y_mean)]/N
 double adios_stat_cov_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char * characteristic, uint32_t time_start, uint32_t time_end, uint32_t lag)
 {
-    int i,j;
+    int i;
 
     double avg_x = 0.0, avg_y = 0.0, avg_lag = 0.0;
     double cov = 0;

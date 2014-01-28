@@ -59,7 +59,7 @@ const char * adios_transform_plugin_desc(enum ADIOS_TRANSFORM_TYPE transform_typ
 int adios_transform_plugin_num_xml_aliases(enum ADIOS_TRANSFORM_TYPE transform_type) {
     adios_transform_plugin_xml_aliases_t *aliases = find_plugin_xml_aliases(transform_type);
     if (aliases) return aliases->xmlAliasCount;
-    else         return NULL;
+    else         return 0;
 }
 
 const char ** adios_transform_plugin_xml_aliases(enum ADIOS_TRANSFORM_TYPE transform_type) {

@@ -21,6 +21,7 @@
 #include "core/adios_endianness.h"
 #include "core/adios_logger.h"
 #include "public/adios_error.h"
+#include "transforms/adios_transforms_write.h"
 
 #if defined(__APPLE__)
 #    define O_LARGEFILE 0
@@ -153,11 +154,7 @@ int adios_parse_index_offsets_v1 (struct adios_bp_buffer_struct_v1 * b)
     }
 
     uint64_t attrs_end = b->file_size - 28;
-    int i;
 
-    char * t;
-
-    t = b->buff + b->offset;
     b->pg_index_offset = *(uint64_t *) (b->buff + b->offset);
     if(b->change_endianness == adios_flag_yes) {
         swap_64(b->pg_index_offset);
@@ -170,11 +167,9 @@ int adios_parse_index_offsets_v1 (struct adios_bp_buffer_struct_v1 * b)
         swap_64(b->vars_index_offset);
     }
 
-    t = b->buff + b->offset;
     b->offset += 8;
 
     b->attrs_index_offset = *(uint64_t *) (b->buff + b->offset);
-    t = b->buff + b->offset;
     if(b->change_endianness == adios_flag_yes) {
         swap_64(b->attrs_index_offset);
     }
@@ -341,7 +336,6 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
         uint32_t var_entry_length;
         uint16_t len;
         uint64_t characteristics_sets_count;
-        uint64_t type_size;
 
         var_entry_length = *(uint32_t *) (b->buff + b->offset);
         if(b->change_endianness == adios_flag_yes) {
@@ -389,7 +383,6 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
         flag = *(b->buff + b->offset);
         (*root)->type = (enum ADIOS_DATATYPES) flag;
         b->offset += 1;
-        type_size = adios_get_type_size ((*root)->type, "");
 
         characteristics_sets_count = *(uint64_t *) (b->buff + b->offset);
         if(b->change_endianness == adios_flag_yes) {
@@ -560,6 +553,8 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
                                 (*root)->characteristics [j].stats[0][adios_statistic_max].data = data;
                                 (*root)->characteristics [j].bitmap |= (1 << adios_statistic_max);
                                 break;
+                            default:
+                                break;
                         }
                         break;
                     }
@@ -671,7 +666,6 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
 
                     case adios_characteristic_offset:
                     {
-                        uint64_t size = adios_get_type_size ((*root)->type, "");
                         (*root)->characteristics [j].offset =
                                             *(uint64_t *) (b->buff + b->offset);
                         if(b->change_endianness == adios_flag_yes) {
@@ -684,7 +678,6 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
 
                     case adios_characteristic_payload_offset:
                     {
-                        uint64_t size = adios_get_type_size ((*root)->type, "");
                         (*root)->characteristics [j].payload_offset =
                                             *(uint64_t *) (b->buff + b->offset);
                         if(b->change_endianness == adios_flag_yes) {
@@ -754,6 +747,12 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
                     case adios_characteristic_transform_type:
                     {
                         adios_transform_deserialize_transform_characteristic(&(*root)->characteristics[j].transform, b);
+                        break;
+                    }
+
+                    case adios_characteristic_var_id:
+                    {
+                        // this cannot happen, only attributes have variable references
                         break;
                     }
                 }
@@ -830,7 +829,6 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
         uint32_t attr_entry_length;
         uint16_t len;
         uint64_t characteristics_sets_count;
-        uint64_t type_size;
 
         attr_entry_length = *(uint32_t *) (b->buff + b->offset);
         if(b->change_endianness == adios_flag_yes) {
@@ -878,7 +876,6 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
         flag = *(b->buff + b->offset);
         (*root)->type = (enum ADIOS_DATATYPES) flag;
         b->offset += 1;
-        type_size = adios_get_type_size ((*root)->type, "");
 
         characteristics_sets_count = *(uint64_t *) (b->buff + b->offset);
         if(b->change_endianness == adios_flag_yes) {
@@ -1015,7 +1012,6 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
 
                     case adios_characteristic_offset:
                     {
-                        uint64_t size = adios_get_type_size ((*root)->type, "");
                         (*root)->characteristics [j].offset =
                                             *(uint64_t *) (b->buff + b->offset);
                         if(b->change_endianness == adios_flag_yes) {
@@ -1028,7 +1024,6 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
 
                     case adios_characteristic_bitmap:
                     {
-                        uint32_t size = adios_get_type_size ((*root)->type, "");
                         (*root)->characteristics [j].offset =
                                             *(uint32_t *) (b->buff + b->offset);
                         if(b->change_endianness == adios_flag_yes) {
@@ -1041,7 +1036,6 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
 
                     case adios_characteristic_payload_offset:
                     {
-                        uint64_t size = adios_get_type_size ((*root)->type, "");
                         (*root)->characteristics [j].payload_offset =
                                             *(uint64_t *) (b->buff + b->offset);
                         if(b->change_endianness == adios_flag_yes) {
@@ -1100,6 +1094,9 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
                         */
                         break;
                     }
+                    
+                    default:
+                        break;
                 }
                 item++;
             }
@@ -1589,10 +1586,10 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
 
             case adios_characteristic_dimensions:
             {
-                uint8_t dim_count;
+                //uint8_t dim_count;
                 uint16_t dim_length;
 
-                dim_count = *(b->buff + b->offset);
+                //dim_count = *(b->buff + b->offset);
                 b->offset += 1;
                 dim_length = *(uint16_t *) (b->buff + b->offset);
                 if(b->change_endianness == adios_flag_yes) {
@@ -1673,6 +1670,12 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
                 b->offset += val_size;
                 break;
             }
+
+            case adios_characteristic_var_id:
+            case adios_characteristic_file_index:
+            case adios_characteristic_time_index:
+                // these are not in the var header in the PG
+                break;
         }
     }
 
@@ -1824,8 +1827,6 @@ int adios_parse_var_data_payload_v1 (struct adios_bp_buffer_struct_v1 * b
 
         return 1;
     }
-
-    uint64_t size = adios_get_type_size (var_header->type, "");
 
     if (var_payload)
     {
@@ -2002,7 +2003,6 @@ int adios_clear_attribute_v1 (struct adios_attribute_struct_v1 * attribute)
 
 void * adios_dupe_data_scalar (enum ADIOS_DATATYPES type, void * in)
 {
-    void * out;
     int element_size = adios_get_type_size (type, in);
 
     void * d;
@@ -2071,8 +2071,6 @@ void adios_init_buffer_read_version (struct adios_bp_buffer_struct_v1 * b)
 // last 4 bytes of file
 void adios_posix_read_version (struct adios_bp_buffer_struct_v1 * b)
 {
-    uint64_t buffer_size;
-    uint64_t start;
     uint64_t r;
 
     adios_init_buffer_read_version (b);
@@ -2291,6 +2289,10 @@ uint64_t adios_get_stat_size (void * data, enum ADIOS_DATATYPES type, enum ADIOS
 
                 case adios_statistic_cnt:
                     return adios_get_type_size(adios_unsigned_integer, "");
+
+                case adios_statistic_hist:
+                    // this is not supported
+                    return 0;
             }
         case adios_double_complex:
             switch (stat_id)
@@ -2306,6 +2308,10 @@ uint64_t adios_get_stat_size (void * data, enum ADIOS_DATATYPES type, enum ADIOS
 
                 case adios_statistic_cnt:
                     return adios_get_type_size(adios_unsigned_integer, "");
+
+                case adios_statistic_hist:
+                    // this is not supported
+                    return 0;
             }
         default:
         {
@@ -2336,7 +2342,7 @@ uint64_t adios_get_stat_size (void * data, enum ADIOS_DATATYPES type, enum ADIOS
                     return size;
                 }
                 default:
-                    return -1;
+                    return 0;
             }
         }
     }
