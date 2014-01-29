@@ -185,7 +185,7 @@ ADIOS_FILE * common_read_open (const char * fname,
 {
     ADIOS_FILE * fp;
     struct common_read_internals_struct * internals; 
-    int i;
+    long i;
 
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
         adios_error (err_invalid_read_method, 
@@ -292,7 +292,7 @@ ADIOS_FILE * common_read_open_file (const char * fname,
 {
     ADIOS_FILE * fp;
     struct common_read_internals_struct * internals; 
-    int i;
+    long i;
 
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
         adios_error (err_invalid_read_method, 
@@ -436,7 +436,7 @@ int common_read_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
     struct common_read_internals_struct * internals;
     int hashsize;
     int retval;
-    int i;
+    long i;
     
     adios_errno = err_no_error;
     if (fp) {

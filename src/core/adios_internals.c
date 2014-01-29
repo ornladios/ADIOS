@@ -4861,8 +4861,8 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
             */
 
             *cnt_r = *cnt_i = *cnt_m = 0;
-            *min_r = *min_i = *min_m = INFINITY;
-            *max_r = *max_i = *max_m = -INFINITY;
+            *min_r = *min_i = *min_m = HUGE_VAL;
+            *max_r = *max_i = *max_m = -HUGE_VAL;
             *sum_r = *sum_i = *sum_m = 0;
             *sum_square_r = *sum_square_i = *sum_square_m = 0;
 
@@ -4991,8 +4991,8 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
             cnt_i = (uint32_t *) stats[2][map[adios_statistic_cnt]].data;
 
             *cnt_r = *cnt_i = *cnt_m = 0;
-            *min_r = *min_i = *min_m = INFINITY;
-            *max_r = *max_i = *max_m = -INFINITY;
+            *min_r = *min_i = *min_m = HUGE_VAL;
+            *max_r = *max_i = *max_m = -HUGE_VAL;
             *sum_r = *sum_i = *sum_m = 0;
             *sum_square_r = *sum_square_i = *sum_square_m = 0;
 
