@@ -434,7 +434,7 @@ void compact_subvolume_ragged_offset(void *buf, int ndim, const uint64_t *subv_d
                         buf_dims, buf_subv_offsets);
 
     // If the compact operation will do something, do it now
-    if (!adios_copyspec_is_noop(&compact_copyspec)) {
+    if (!adios_copyspec_is_noop(compact_copyspec)) {
         // Overlapping subvolume copy allowed because it matches the safety
         // condition as defined in comment at the top of adios_subvolume.h.
         // NOTE: we infer no endianness swap, as this is an intra-buffer operation
@@ -502,7 +502,7 @@ ADIOS_SELECTION * varblock_to_bb(int ndim, const ADIOS_VARBLOCK *vb) {
                                              bufdup(vb->count, sizeof(uint64_t), ndim));
 }
 
-uint64_t compute_selection_size(ADIOS_SELECTION *sel) {
+uint64_t compute_selection_size(const ADIOS_SELECTION *sel) {
     uint64_t sel_size;
     switch (sel->type) {
     case ADIOS_SELECTION_BOUNDINGBOX:

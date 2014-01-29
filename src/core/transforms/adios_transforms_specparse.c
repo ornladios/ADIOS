@@ -7,8 +7,10 @@
 
 #include <stdlib.h>
 #include <stdint.h>
+#include <string.h>
 #include <assert.h>
 #include "core/transforms/adios_transforms_specparse.h"
+#include "core/transforms/adios_transforms_hooks.h"
 
 inline static char * strsplit(char *input, char split) {
     char *pos = strchr(input, split);

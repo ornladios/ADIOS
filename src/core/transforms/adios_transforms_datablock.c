@@ -10,6 +10,7 @@
 
 #include "public/adios_error.h"
 #include "public/adios_types.h"
+#include "common_read.h"
 
 #include "transforms/adios_transforms_common.h"
 #include "transforms/adios_transforms_read.h"
@@ -76,7 +77,7 @@ void adios_datablock_free(adios_datablock **datablock_ptr, int free_data) {
     adios_datablock *datablock = *datablock_ptr;
     if (datablock) {
         if (datablock->bounds)
-            common_read_selection_delete(datablock->bounds);
+            common_read_selection_delete((ADIOS_SELECTION*)datablock->bounds);
         if (free_data)
             MYFREE(datablock->data);
     }

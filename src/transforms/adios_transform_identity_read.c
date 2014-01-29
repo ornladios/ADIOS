@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include "util.h"
+#include "adios_internals.h" // adios_get_type_size()
 #include "adios_subvolume.h"
 #include "adios_transforms_hooks_read.h"
 #include "adios_transforms_reqgroup.h"
@@ -63,6 +64,11 @@ void compute_sieving_offsets_for_pg_selection(const ADIOS_SELECTION *intersect_s
 
         break;
     }
+
+    case ADIOS_SELECTION_WRITEBLOCK:
+    case ADIOS_SELECTION_AUTO:
+        /* These are unsupported */
+        break;
     }
 
     *start_off_ptr = start_off;

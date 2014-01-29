@@ -234,6 +234,8 @@ int adios_copyspec_is_subvolume_src_covering(const adios_subvolume_copy_spec *co
  */
 int adios_copyspec_is_subvolume_dst_covering(const adios_subvolume_copy_spec *copyspec);
 
+int adios_copyspec_is_noop(const adios_subvolume_copy_spec *copy_spec);
+
 /*
  * @return an ADIOS_SELECTION describing the subvolume within the source
  *         volume.
