@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
-//#include "adios_types.h"
+#include "adios_internals.h"
 #include "adios_bp_v1.h"
 #include "adios_read.h"
 
@@ -163,7 +163,7 @@ int main (int argc, char ** argv)
         switch (var_header.type) {
             case adios_long_double:
                 for (j=0; j<var_header.payload_size/16;j++) 
-                    fprintf(outf, "%f ", *((long double*)var_payload.payload+j));
+                    fprintf(outf, "%Lf ", *((long double*)var_payload.payload+j));
                     break;
             case adios_double:
                 for (j=0; j<var_header.payload_size/8;j++) 
@@ -206,7 +206,7 @@ int main (int argc, char ** argv)
                     fprintf(outf, "%c ", *((char *)var_payload.payload+j));
                     break;
             case adios_string:
-                    fprintf(outf, "%s ", var_payload.payload);
+                    fprintf(outf, "%s ", (char *)var_payload.payload);
                     break;
             case adios_complex:
                 for (j=0; j<(var_header.payload_size)/8;j++) 

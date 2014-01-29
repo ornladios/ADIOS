@@ -24,6 +24,7 @@
 #include <errno.h>
 #include "mpi.h"
 #include "utils.h"
+#include "decompose.h"
 #include "adios.h"
 #include "adios_read.h"
 #include "adios_error.h"
@@ -46,9 +47,6 @@ char   methodparams[256];  // ADIOS write method
 
 static const int max_read_buffer_size  = 1024*1024*1024;
 static const int max_write_buffer_size = 1024*1024*1024;
-
-static int timeout_sec = 0; // will stop if no data found for this time (-1: never stop)
-
 
 // Global variables
 int         rank, numproc;
@@ -146,7 +144,7 @@ int main (int argc, char ** argv)
 
     if (adios_errno == err_file_not_found) 
     {
-        print ("rank %d: File not found: %s\n", adios_errmsg());
+        print ("rank %d: File not found: %s\n", rank, adios_errmsg());
         retval = adios_errno;
     } 
     else if (f1 == NULL) {
@@ -189,20 +187,18 @@ uint64_t sum_count1, sum_count2;
 
 int process_metadata()
 {
-    int retval = 0;
     int i, j;
-    char gdims[256], ldims[256], offs[256];
     ADIOS_VARINFO *v1, *v2; // shortcut pointer
 
 
     varinfo1 = (VarInfo *) malloc (sizeof(VarInfo) * f1->nvars);
     if (!varinfo1) {
-        print("ERROR: rank %d cannot allocate %lu bytes\n", rank, sizeof(VarInfo)*f1->nvars);
+        print("ERROR: rank %d cannot allocate %zu bytes\n", rank, sizeof(VarInfo)*f1->nvars);
         return 1;
     }
     varinfo2 = (VarInfo *) malloc (sizeof(VarInfo) * f2->nvars);
     if (!varinfo2) {
-        print("ERROR: rank %d cannot allocate %lu bytes\n", rank, sizeof(VarInfo)*f2->nvars);
+        print("ERROR: rank %d cannot allocate %zu bytes\n", rank, sizeof(VarInfo)*f2->nvars);
         return 1;
     }
 
@@ -316,8 +312,8 @@ int diff(){
                 varinfo1[i].count, varinfo1[i].start, &sum_count1);
       decompose (numproc, rank, v2->ndim, v2->dims, decomp_values,
                 varinfo2[cross_ref].count, varinfo2[cross_ref].start, &sum_count2);
-      //for(x=0; x<v1->ndim; x++) print("%d %d %d %d %d %d %d\n",rank, varinfo1[i].count[x], varinfo1[i].start[x], sum_count1,\
-       //                                                              varinfo2[cross_ref].start[x], varinfo2[cross_ref].count[x], sum_count2);
+      /*for(x=0; x<v1->ndim; x++) print("%d %d %d %d %d %d %d\n",rank, varinfo1[i].count[x], varinfo1[i].start[x], sum_count1,\
+                                                                     varinfo2[cross_ref].start[x], varinfo2[cross_ref].count[x], sum_count2); */
 
       //read from files
       uint64_t size = adios_type_size (v1->type, v1->value);
@@ -336,7 +332,7 @@ int diff(){
       adios_perform_reads (f2, 1);   
 
       int sum_count = MIN(sum_count1, sum_count2);
-	    int ret = compare_data(f1->var_namelist[i], readbuf1, readbuf2, sum_count, v1->type);
+      int ret = compare_data(f1->var_namelist[i], readbuf1, readbuf2, sum_count, v1->type);
       int allret;
       MPI_Reduce(&ret, &allret, 1, MPI_INT, MPI_SUM, 0, comm);
       if(allret > 0){
@@ -356,7 +352,7 @@ int diff(){
       adios_selection_delete(sel2);
     }
   }//for
-
+  return 0;
 }
 
 int compare_buffer(char * variable_name, void *data1, void *data2, int total, enum ADIOS_DATATYPES adiosvartype){
@@ -368,132 +364,135 @@ int compare_buffer(char * variable_name, void *data1, void *data2, int total, en
   return total_diff;
 }
 
-int compare_data(char * variable_name, void *data1, void *data2, int item, enum ADIOS_DATATYPES adiosvartype){
+int compare_data(char * variable_name, void *data1, void *data2, int item, enum ADIOS_DATATYPES adiosvartype)
+{
     int ret = 0;
     if (data1 == NULL || data2 == NULL) {
         print("null data");
         return ret;
     }
-    
-    
+
+
     // print next data item into vstr
     switch(adiosvartype) {
         case adios_unsigned_byte:
-	    if(((unsigned char *) data1)[item] !=  ((unsigned char *) data2)[item] )//not identical
-	    {
-		    print("%s : %hhu in %s | %hhu in %s\n", variable_name, ((unsigned char *) data1)[item], infilename1, ((unsigned char *) data2)[item], infilename2);
-        ret++;
-	    }
+            if(((unsigned char *) data1)[item] !=  ((unsigned char *) data2)[item] )//not identical
+            {
+                print("%s : %hhu in %s | %hhu in %s\n", variable_name, ((unsigned char *) data1)[item], infilename1, ((unsigned char *) data2)[item], infilename2);
+                ret++;
+            }
             break;
         case adios_byte:
-	    if(((signed char *) data1)[item] != ((signed char *) data2)[item])//not identical
-	    {
-		print("%s : %hhd in %s | %hhd in %s\n", variable_name, ((signed char *) data1)[item], infilename1, ((signed char *) data2)[item], infilename2);
-        ret++;
-	    }
+            if(((signed char *) data1)[item] != ((signed char *) data2)[item])//not identical
+            {
+                print("%s : %hhd in %s | %hhd in %s\n", variable_name, ((signed char *) data1)[item], infilename1, ((signed char *) data2)[item], infilename2);
+                ret++;
+            }
             break;
         case adios_string:
-	    if(strcmp(((char *) data1), ((char *) data2))!= 0 )//not identical
-	    {
-		print("%s : %s in %s | %s in %s\n", variable_name, ((char *) data1)[item], infilename1, ((char *) data2)[item], infilename2);
-        ret++;
-	    }
+            if(strcmp(((char *) data1), ((char *) data2))!= 0 )//not identical
+            {
+                print("%s : %s in %s | %s in %s\n", variable_name, (char *) data1, infilename1, (char *) data2, infilename2);
+                ret++;
+            }
             break;
         case adios_unsigned_short:
-	    if(((unsigned short*) data1)[item] != ((unsigned short *) data2)[item])//not identical
-	    {
-		print("%s : %hu in %s | %hu in %s\n", variable_name, ((unsigned short *) data1)[item], infilename1, ((unsigned short *) data2)[item], infilename2);
-        ret++;
-	    }
+            if(((unsigned short*) data1)[item] != ((unsigned short *) data2)[item])//not identical
+            {
+                print("%s : %hu in %s | %hu in %s\n", variable_name, ((unsigned short *) data1)[item], infilename1, ((unsigned short *) data2)[item], infilename2);
+                ret++;
+            }
             break;
         case adios_short:
-	    if(((signed short*) data1)[item] != ((signed short *) data2)[item])//not identical
-	    {
-		print("%s : %hd in %s | %hd in %s\n", variable_name, ((signed short *) data1)[item], infilename1, ((signed short *) data2)[item], infilename2);
-        ret++;
-	    }
+            if(((signed short*) data1)[item] != ((signed short *) data2)[item])//not identical
+            {
+                print("%s : %hd in %s | %hd in %s\n", variable_name, ((signed short *) data1)[item], infilename1, ((signed short *) data2)[item], infilename2);
+                ret++;
+            }
             break;
         case adios_unsigned_integer:
-	    if(((unsigned int*) data1)[item] != ((unsigned int*) data2)[item])//not identical
-	    {
-		print("%s : %u in %s | %u in %s\n", variable_name, ((unsigned int*) data1)[item], infilename1, ((unsigned int*) data2)[item], infilename2);
-        ret++;
-	    }
+            if(((unsigned int*) data1)[item] != ((unsigned int*) data2)[item])//not identical
+            {
+                print("%s : %u in %s | %u in %s\n", variable_name, ((unsigned int*) data1)[item], infilename1, ((unsigned int*) data2)[item], infilename2);
+                ret++;
+            }
             break;
         case adios_integer:
-	    if(((signed int*) data1)[item] != ((signed int*) data2)[item] != 0 )//not identical
-	    {
-		print("%s : %d in %s | %d in %s\n", variable_name, ((signed int*) data1)[item], infilename1, ((signed int*) data2)[item], infilename2);
-        ret++;
-	    }
+            if(((signed int*) data1)[item] != ((signed int*) data2)[item])//not identical
+            {
+                print("%s : %d in %s | %d in %s\n", variable_name, ((signed int*) data1)[item], infilename1, ((signed int*) data2)[item], infilename2);
+                ret++;
+            }
             break;
         case adios_unsigned_long:
-	    if(((unsigned long long*) data1)[item] != ((unsigned long long*) data2)[item])//not identical
-	    {
-		print("%s : %llu in %s | %llu in %s\n", variable_name, ((unsigned long long*) data1)[item], infilename1, ((unsigned long long*) data2)[item], infilename2);
-        ret++;
-	    }
+            if(((unsigned long long*) data1)[item] != ((unsigned long long*) data2)[item])//not identical
+            {
+                print("%s : %llu in %s | %llu in %s\n", variable_name, ((unsigned long long*) data1)[item], infilename1, ((unsigned long long*) data2)[item], infilename2);
+                ret++;
+            }
             break;
         case adios_long:
-	    if(((unsigned long long*) data1)[item] != ((unsigned long long*) data2)[item])//not identical
-	    {
-		print("%s : %lld in %s | %lld in %s\n", variable_name, ((signed long long*) data1)[item], infilename1, ((signed long long*) data2)[item], infilename2);
-        ret++;
-	    }
+            if(((unsigned long long*) data1)[item] != ((unsigned long long*) data2)[item])//not identical
+            {
+                print("%s : %lld in %s | %lld in %s\n", variable_name, ((signed long long*) data1)[item], infilename1, ((signed long long*) data2)[item], infilename2);
+                ret++;
+            }
             break;
         case adios_real:
-	    {
-	    float a, b;
-	    a = ((float *) data1)[item];
-	    b = ((float *) data2)[item];
-	    if(abs(a-b)> fuzz_factor){
- 	      print("%s : %g in %s | %g in %s\n", variable_name, a, infilename1, b, infilename2);
-        ret++;
-	    }
-            break;
-	    }
+            {
+                float a, b;
+                a = ((float *) data1)[item];
+                b = ((float *) data2)[item];
+                if(abs(a-b)> fuzz_factor){
+                    print("%s : %g in %s | %g in %s\n", variable_name, a, infilename1, b, infilename2);
+                    ret++;
+                }
+                break;
+            }
         case adios_double:
-	    {
-	    double aa, bb;
-	    aa = ((double *) data1)[item];
-	    bb = ((double *) data2)[item];
-	    if(abs(aa-bb)> fuzz_factor){
- 	      print("%s : %g in %s | %g in %s\n", variable_name, aa, infilename1, bb, infilename2);
-        ret++;
-	    }
-            break;
-	    }
+            {
+                double aa, bb;
+                aa = ((double *) data1)[item];
+                bb = ((double *) data2)[item];
+                if(abs(aa-bb)> fuzz_factor){
+                    print("%s : %g in %s | %g in %s\n", variable_name, aa, infilename1, bb, infilename2);
+                    ret++;
+                }
+                break;
+            }
         case adios_long_double:
             //fprintf(outf,(f ? format : "%g "), ((double *) data1)[item]);
-        //                fprintf(outf,(f ? format : "????????"));
+            //                fprintf(outf,(f ? format : "????????"));
             break;
         case adios_complex:
-	    {
-	    float a11, a12, b11, b12;
-	    a11 = ((float *) data1)[2*item];
-	    a12 = ((float *) data1)[2*item+1];
-	    b11 = ((float *) data2)[2*item];
-	    b12 = ((float *) data2)[2*item+1];
-	    if(abs(a11-b11)> fuzz_factor || abs(a12-b12)>fuzz_factor){
- 	      print("%s : %g i%g in %s | %g i%g in %s\n", variable_name, a11, b11, infilename1, a12, b12, infilename2);
-        ret++;
-	    }
-	 
-            break;
-	    }
+            {
+                float a11, a12, b11, b12;
+                a11 = ((float *) data1)[2*item];
+                a12 = ((float *) data1)[2*item+1];
+                b11 = ((float *) data2)[2*item];
+                b12 = ((float *) data2)[2*item+1];
+                if(abs(a11-b11)> fuzz_factor || abs(a12-b12)>fuzz_factor){
+                    print("%s : %g i%g in %s | %g i%g in %s\n", variable_name, a11, b11, infilename1, a12, b12, infilename2);
+                    ret++;
+                }
+
+                break;
+            }
         case adios_double_complex:
             {
-	    double a21, a22, b21, b22;
-	    a21 = ((float *) data1)[2*item];
-	    a22 = ((float *) data1)[2*item+1];
-	    b21 = ((float *) data2)[2*item];
-	    b22 = ((float *) data2)[2*item+1];
-	    if(abs(a21-b21)> fuzz_factor || abs(a22-b22)>fuzz_factor){
- 	      print("%s : %g i%g in %s | %g i%g in %s\n", variable_name, a21, b21, infilename1, a22, b22, infilename2);
-        ret++;
-	    }
+                double a21, a22, b21, b22;
+                a21 = ((float *) data1)[2*item];
+                a22 = ((float *) data1)[2*item+1];
+                b21 = ((float *) data2)[2*item];
+                b22 = ((float *) data2)[2*item+1];
+                if(abs(a21-b21)> fuzz_factor || abs(a22-b22)>fuzz_factor){
+                    print("%s : %g i%g in %s | %g i%g in %s\n", variable_name, a21, b21, infilename1, a22, b22, infilename2);
+                    ret++;
+                }
+                break;
+            }
+        default:
             break;
- 	    }
     } // end switch
     return ret;
 }

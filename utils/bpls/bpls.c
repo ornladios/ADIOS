@@ -387,8 +387,8 @@ void init_globals(void) {
 }
 
 
-#define PRINT_DIMS(str, v, n, loopvar) printf("%s = { ", str); \
-    for (loopvar=0; loopvar<n;loopvar++) printf("%lld ", v[loopvar]);    \
+#define PRINT_DIMS32(str, v, n, loopvar) printf("%s = { ", str); \
+    for (loopvar=0; loopvar<n;loopvar++) printf("%d ", v[loopvar]);    \
 printf("}")
 
 void printSettings(void) {
@@ -404,10 +404,10 @@ void printSettings(void) {
     printf("  output : %s\n", (outpath ? outpath : "stdout"));
 
     if (start != NULL) {
-        PRINT_DIMS("  start", istart, ndimsspecified,i); printf("\n");
+        PRINT_DIMS32("  start", istart, ndimsspecified,i); printf("\n");
     }
     if (count != NULL) {
-        PRINT_DIMS("  count", icount, ndimsspecified,i); printf("\n");
+        PRINT_DIMS32("  count", icount, ndimsspecified,i); printf("\n");
     }
 
     if (longopt)
@@ -869,7 +869,7 @@ void printMeshes (ADIOS_FILE  *fp)
                     for (i=0; i < mi->unstructured->ncsets; i++) { 
                         fprintf(outf, "    cell set %d:\n", i);
                         fprintf(outf, "      cell type:  %d\n", mi->unstructured->ctypes[i]);
-                        fprintf(outf, "      ncells:     %d\n", mi->unstructured->ccounts[i]);
+                        fprintf(outf, "      ncells:     %llu\n", mi->unstructured->ccounts[i]);
                         fprintf(outf, "      cells var:  \"%s\"\n", mi->unstructured->cdata[i]);
                     }
                     fprintf(outf, "    nspaces:      %d\n", mi->unstructured->nspaces);
@@ -1034,7 +1034,7 @@ int print_data_hist(ADIOS_VARINFO * vi, char * varname)
     strcat(xtics, ")\n");
 
     fprintf(out_plot, "start = -0.5\npos(x) = start + x * 1\nset boxwidth 1\nset style fill solid border 5#5lt6#6\n");
-    fprintf(out_plot, xtics);
+    fputs(xtics, out_plot);
     fprintf(out_plot, "plot '%s' using 3 smooth frequency w boxes\n", hist_file);
     fprintf(out_plot, "pause -1 'Press Enter to quit'\n");
 }
@@ -1147,6 +1147,9 @@ int getTypeInfo( enum ADIOS_DATATYPES adiosvartype, int* elemsize)
     return 0;
 }
 
+#define PRINT_DIMS64(str, v, n, loopvar) printf("%s = { ", str); \
+    for (loopvar=0; loopvar<n;loopvar++) printf("%lld ", v[loopvar]);    \
+printf("}")
 /** Read data of a variable and print 
  * Return: 0: ok, != 0 on error
  */
@@ -1291,8 +1294,8 @@ int readVar(ADIOS_FILE *fp, ADIOS_VARINFO *vi, const char * name, bool timed)
 
         if (verbose>2) {
             printf("adios_read_var name=%s ", name);
-            PRINT_DIMS("  start", s, tdims, j); 
-            PRINT_DIMS("  count", c, tdims, j); 
+            PRINT_DIMS64("  start", s, tdims, j); 
+            PRINT_DIMS64("  count", c, tdims, j); 
             printf("  read %d elems\n", actualreadn);
         }
 
@@ -1612,8 +1615,7 @@ int print_data_characteristics(void * min, void * max, double * avg, double * st
             break;
 
         case adios_long_double:
-            //fprintf(outf,(f ? format : "%g "), ((double *) data)[item]);
-            fprintf(outf,(f ? format : "????????"));
+            fprintf(outf,"????????");
             break;
 
             // TO DO
@@ -1680,8 +1682,8 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype, bool all
 
 
         case adios_long_double:
-            //fprintf(outf,(f ? format : "%g "), ((double *) data)[item]);
-            fprintf(outf,(f ? format : "????????"));
+            fprintf(outf,(f ? format : "%Lg "), ((long double *) data)[item]);
+            //fprintf(outf,(f ? format : "????????"));
             break;
 
 

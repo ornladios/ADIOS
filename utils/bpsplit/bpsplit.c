@@ -589,7 +589,7 @@ int write_out( const char *fileout, const char *filein) {
     if (verbose>1) printf("  write %llu 0x%llx bytes of indexes into %s\n", buffer_offset, buffer_offset, fileout);
     bytes_written = write (f, buffer, buffer_offset);
 
-    if (verbose>1) printf("  written %llu 0x%llx bytes of indexes into %s\n", bytes_written, bytes_written, fileout);
+    if (verbose>1) printf("  written %zu 0x%zx bytes of indexes into %s\n", bytes_written, bytes_written, fileout);
 
     // clean up
     free(buffer);
