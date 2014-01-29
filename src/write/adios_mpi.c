@@ -543,7 +543,6 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                                         ,struct adios_method_struct * method
                                         )
 {
-    int i;
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                       method->method_data;
     char * name;
@@ -1065,7 +1064,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
         MPI_Get_count (&md->status, MPI_BYTE, &count);
         if (count != fd->bytes_written)
         {
-            log_warn ("a:MPI method tried to write %llu, only wrote %llu\n",
+            log_warn ("a:MPI method tried to write %llu, only wrote %d\n",
                       fd->bytes_written, count);
         }
         fd->base_offset += count;

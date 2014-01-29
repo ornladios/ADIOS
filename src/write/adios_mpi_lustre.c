@@ -222,20 +222,14 @@ static void trim_spaces (char * str)
 static void
 adios_mpi_lustre_set_striping_unit(char *filename, char *parameters, struct adios_MPI_data_struct * md)
 {
-    MPI_File fh = md->fh;
-    int nproc = md->size;
-    struct statfs fsbuf;
-    int err = 0, flag;
+    int err = 0;
 //    uint64_t striping_unit = 0;
     uint64_t block_unit = 0;
     uint16_t striping_count = 0;
     uint16_t stripe_offset = -1;
-    char     value[64], *temp_string, *p_count,*p_size;
-    MPI_Info info_used;
+    char     *temp_string, *p_count,*p_size;
 
-    int fd, old_mask, perm, num_ost, rc;
-    struct lov_user_md lum;
-    struct obd_uuid uuids[1024], * uuidp;
+    int fd, old_mask, perm, num_ost;
 
     old_mask = umask(022);
     umask(old_mask);
@@ -247,6 +241,8 @@ adios_mpi_lustre_set_striping_unit(char *filename, char *parameters, struct adio
 
 #ifdef HAVE_LUSTRE
     // To get the number of ost's in the system
+    struct obd_uuid uuids[1024];
+    int rc;
     num_ost = 1024;
     rc = llapi_lov_get_uuids(fd, uuids, &num_ost);
     if (rc != 0)
@@ -263,7 +259,7 @@ adios_mpi_lustre_set_striping_unit(char *filename, char *parameters, struct adio
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
 
-    if (p_count = strstr (temp_string, "stripe_count"))
+    if ( (p_count = strstr (temp_string, "stripe_count")) )
     {
         char * p = strchr (p_count, '=');
         char * q = strtok (p, ",");
@@ -275,6 +271,7 @@ adios_mpi_lustre_set_striping_unit(char *filename, char *parameters, struct adio
     else
     {
 #ifdef HAVE_LUSTRE
+        int nproc = md->size;
         striping_count = (nproc > num_ost ? -1 : nproc);
 #else
         striping_count = 4;
@@ -284,7 +281,7 @@ adios_mpi_lustre_set_striping_unit(char *filename, char *parameters, struct adio
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
 
-    if (p_size = strstr (temp_string, "stripe_size"))
+    if ( (p_size = strstr (temp_string, "stripe_size")))
     {
         char * p = strchr (p_size, '=');
         char * q = strtok (p, ",");
@@ -302,7 +299,7 @@ adios_mpi_lustre_set_striping_unit(char *filename, char *parameters, struct adio
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
 
-    if (p_size = strstr (temp_string, "stripe_offset"))
+    if ( (p_size = strstr (temp_string, "stripe_offset")) )
     {
         char * p = strchr (p_size, '=');
         char * q = strtok (p, ",");
@@ -320,7 +317,7 @@ adios_mpi_lustre_set_striping_unit(char *filename, char *parameters, struct adio
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
 
-    if (p_size = strstr (temp_string, "block_size"))
+    if ( (p_size = strstr (temp_string, "block_size"))) 
     {
         char * p = strchr (p_size, '=');
         char * q = strtok (p, ",");
@@ -361,13 +358,13 @@ adios_mpi_lustre_set_striping_unit(char *filename, char *parameters, struct adio
 static void
 adios_mpi_lustre_set_block_unit(uint64_t *block_unit, char *parameters)
 {
-    char *temp_string, *p_count,*p_size;
+    char *temp_string, *p_size;
 
     temp_string = (char *) malloc (strlen (parameters) + 1);
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
 
-    if (p_size = strstr (temp_string, "block_size"))
+    if ( (p_size = strstr (temp_string, "block_size")) )
     {
         char * p = strchr (p_size, '=');
         char * q = strtok (p, ",");
@@ -850,9 +847,9 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
                     }
                     // How to handle that each processor has varying amount of data??
                     md->striping_unit = offsets[1] - offsets[0];
-                    if (md->striping_unit > 4 * 1024 * 1024 * 1024L)
+                    if (md->striping_unit > 4 * 1024 * (uint64_t) (1024 * 1024L))
                     {
-                        md->striping_unit = 4 * 1024 * 1024 * 1024L;
+                        md->striping_unit = 4 * 1024 * (uint64_t) (1024 * 1024L);
                     }
 
                     md->b.pg_index_offset =   offsets [md->size - 1]
@@ -1622,7 +1619,6 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
                 adios_write_close_vars_v1 (fd);
                 // fd->vars_start gets updated with the size written
                 uint64_t count;
-                int retlen;
                 START_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
                 count = adios_mpi_lustre_striping_unit_write(
                                   md->fh,
@@ -1634,7 +1630,7 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
                 if (count != md->vars_header_size)
                 {
                     fprintf (stderr, "d:MPI method tried to write %llu, "
-                                     "only wrote %d\n"
+                                     "only wrote %llu\n"
                             ,md->vars_header_size
                             ,count
                             );

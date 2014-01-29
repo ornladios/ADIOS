@@ -38,7 +38,7 @@ typedef int MPI_Fint;
 #define MPI_SEEK_CUR                SEEK_CUR
 #define MPI_SEEK_END                SEEK_END
 #define MPI_BYTE                    1          /* I need the size of the type here */
-#define MPI_INFO_NULL               NULL
+#define MPI_INFO_NULL               0
 
 #define MPI_COMM_NULL               0
 #define MPI_COMM_WORLD              1
@@ -67,6 +67,11 @@ MPI_Comm MPI_Comm_f2c(MPI_Fint comm);
 
 int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf, int recvcnt, MPI_Datatype recvtype, int root, MPI_Comm comm) ;
 int MPI_Gatherv(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf, int *recvcnts, int *displs, MPI_Datatype recvtype, int root, MPI_Comm comm);
+
+int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf, int recvcnt, MPI_Datatype recvtype, int root, MPI_Comm comm);
+int MPI_Scatterv(void *sendbuf, int *sendcnts, int *displs, MPI_Datatype sendtype, void *recvbuf, int recvcnt, MPI_Datatype recvtype, int root, MPI_Comm comm);
+
+
 
 int MPI_File_open(MPI_Comm comm, char *filename, int amode, MPI_Info info, MPI_File *fh);
 int MPI_File_close(MPI_File *fh);

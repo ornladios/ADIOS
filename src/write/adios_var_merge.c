@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <assert.h>
 
 // xml parser
 #include <mxml.h>
@@ -153,6 +154,7 @@ static uint64_t cast_var_data_as_uint64 (const char * parent_name
         case adios_string:
         case adios_complex:
         case adios_double_complex:
+        default:
             adios_error (err_unspecified,
                          "Cannot convert type %s to integer for var %s\n",
                          adios_type_to_string_int (type), parent_name);
@@ -232,10 +234,11 @@ static int cal_layout(int *procs, int rank, int nprocs, int ndims, MPI_Comm comm
 {
     char *sbuf, *recvbuf;
     int slen, recvlen, blen;
-    uint64_t *t_ldims, *t_offsets, prev_off[3];
+    uint64_t *t_ldims, *t_offsets;
     int i,j;
     int decomp=0;
 
+    assert (ndims <= 3);
 
     for(i=0;i<3;i++){
         procs[i]=-1;
@@ -364,8 +367,6 @@ static int cal_layout(int *procs, int rank, int nprocs, int ndims, MPI_Comm comm
 
 static void cal_offsets(int *procs, int rank, int ndims, int decomp, int *offsets)
 {
-    int i;
-
     if(decomp>=1) {
         offsets[sequence[0]]=rank%procs[sequence[0]];
     }
@@ -410,7 +411,7 @@ static void cal_process_map(int rank, int *procs)
 
 static int get_clients_2d(int ndims, int level, int *offsets, int scale, int *procs, int rank)
 {
-    int posx, posy, posz, pos;
+    int posx, posy, pos;
 
     if((offsets[0]+scale)<procs[0]) {
         posx=offsets[0]+1*scale;
@@ -513,7 +514,6 @@ static void prep_aggr(int *procs, int ndims, int decomp, int rank, int size, int
 {
     int scale=1, step=2;
     int aggrx, aggry, aggrz;
-    int aggr=1;
     int i,j,k;
     int prev_step, hole;
     int *offsets;
@@ -560,7 +560,7 @@ static void prep_aggr(int *procs, int ndims, int decomp, int rank, int size, int
                 memset(aggr1d_clients[i-1], 0x00, mal_size*sizeof(struct aggr_client));
             }
 
-            int posx, posy, posz, pos;
+            int pos;
 
             //3D variable
             /*FIXME XXX: hard coded for calculating aggr_clients*/
@@ -701,6 +701,7 @@ static int convert_file_mode(enum ADIOS_METHOD_MODE mode, char * file_mode)
    return 0;
 }
 
+#if 0
 //find the variable within the buffer link list
 static int var_lookup(const char *varname, char *path, struct aggr_var_struct *list)
 {
@@ -722,16 +723,14 @@ static int var_lookup(const char *varname, char *path, struct aggr_var_struct *l
     //variable is not within the list, return -1
     return -1;
 }
+#endif
 
 static void output_vars(struct aggr_var_struct *vars, int varcnt, struct
         adios_MPI_data_struct * md, struct adios_file_struct * fd)
 {
-    int i,j;
+    int i;
     char file_mode[2];
-    char fname[256];
-    uint64_t adios_size, datasize;
-    int iocnt=0;
-    char *output;
+    uint64_t adios_size;
 
     if(convert_file_mode(fd->mode, file_mode) == -1) //strange file mode
         return;
@@ -798,7 +797,6 @@ static void init_layout_flag(struct adios_MPI_data_struct *md)
 
 void init_output_parameters(const PairStruct *params)
 {
-    int len;
     const PairStruct *p = params;
 
     while (p) {
@@ -806,7 +804,7 @@ void init_output_parameters(const PairStruct *params)
             errno = 0;
             aggr_chunksize = strtol(p->value, NULL, 10);
             if (aggr_chunksize > 0 && !errno) {
-                log_debug ("Chunk size set to %llu for VAR_MERGE method\n", aggr_chunksize);
+                log_debug ("Chunk size set to %d for VAR_MERGE method\n", aggr_chunksize);
             } else {
                 log_error ("Invalid 'chunk_size' parameter given to the VAR_MERGE method"
                            "method: '%s'\n", p->value);
@@ -857,91 +855,6 @@ void adios_var_merge_init(const PairStruct * parameters,
 }
 
 
-static void adios_var_to_comm (const char * comm_name
-                              ,enum ADIOS_FLAG host_language_fortran
-                              ,void * data
-                              ,MPI_Comm * comm
-                              )
-{
-    if (data)
-    {
-        int t = *(int *) data;
-
-        if (!comm_name)
-        {
-            if (!t)
-            {
-                log_warn ("TIAN method: communicator not provided and none "
-                          "listed in XML.  Defaulting to MPI_COMM_SELF\n");
-
-                *comm = MPI_COMM_SELF;
-            }
-            else
-            {
-                if (host_language_fortran == adios_flag_yes)
-                {
-                    *comm = MPI_Comm_f2c (t);
-                }
-                else
-                {
-                    *comm = *(MPI_Comm *) data;
-                }
-            }
-        }
-        else
-        {
-            if (!strcmp (comm_name, ""))
-            {
-                if (!t)
-                {
-                    log_warn ("TIAN method: communicator not provided and none "
-                              "listed in XML.  Defaulting to MPI_COMM_SELF\n");
-
-                    *comm = MPI_COMM_SELF;
-                }
-                 else
-                 {
-                     if (host_language_fortran == adios_flag_yes)
-                     {
-                         *comm = MPI_Comm_f2c (t);
-                     }
-                     else
-                     {
-                         *comm = *(MPI_Comm *) data;
-                     }
-                 }
-             }
-             else
-             {
-                 if (!t)
-                 {
-                     log_warn ("TIAN method: communicator not provided but one "
-                               "listed in XML.  Defaulting to MPI_COMM_WORLD\n");
-
-                     *comm = MPI_COMM_WORLD;
-                 }
-                 else
-                 {
-                     if (host_language_fortran == adios_flag_yes)
-                     {
-                         *comm = MPI_Comm_f2c (t);
-                     }
-                     else
-                     {
-                         *comm = *(MPI_Comm *) data;
-                     }
-                 }
-             }
-         }
-     }
-     else
-     {
-         log_warn ("TIAN method: coordination-communication not provided. "
-                   "Using MPI_COMM_WORLD instead\n");
-
-         *comm = MPI_COMM_WORLD;
-     }
-}
 
 static void init_method_parameters()
 {
@@ -996,8 +909,6 @@ enum ADIOS_FLAG adios_var_merge_should_buffer (struct adios_file_struct * fd
                                          ,struct adios_method_struct * method)
 {
 
-    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
-                                                    method->method_data;
     switch (fd->mode)
     {
         case adios_mode_read:
@@ -1023,6 +934,7 @@ enum ADIOS_FLAG adios_var_merge_should_buffer (struct adios_file_struct * fd
     return adios_flag_no;
 }
 
+#if 0
 static void prepare_data(void **data, uint64_t varsize, int dims)
 {
     int i,j,k,l;
@@ -1040,7 +952,9 @@ static void prepare_data(void **data, uint64_t varsize, int dims)
         }
     }
 }
+#endif
 
+#if 0
 static struct aggr_var_struct *allocate_vars(int varcnt, struct aggr_var_struct *vars)
 {
      if(varcnt==0) {
@@ -1054,6 +968,7 @@ static struct aggr_var_struct *allocate_vars(int varcnt, struct aggr_var_struct 
 
      return vars;
 }
+#endif
 
 void adios_var_merge_write (struct adios_file_struct * fd
                      ,struct adios_var_struct * v
@@ -1067,11 +982,10 @@ void adios_var_merge_write (struct adios_file_struct * fd
     struct adios_dimension_struct * d = v->dimensions;
     struct aggr_var_struct *tmp;
     uint8_t dims_count = 0;
-    uint64_t total_size, varsize, alloc_size;
-    int64_t afd;
+    uint64_t varsize, alloc_size;
     int i, ndims,type_size=0;
     uint64_t *ldims, *offsets, *gdims;
-    char *new_ldims, *dimensions, *local_offsets, *global_dimensions;
+    char *new_ldims;
     int chunk_cnt, decomp=0;
 
     ndims=0;
@@ -1410,8 +1324,8 @@ static void cal_gdims(int ndims, uint64_t *p_offsets, uint64_t *offsets, uint64_
 static uint64_t do_spatial_aggr(int level, int *procs, int ndims, uint64_t *ldims, uint64_t *offsets, char *new_ldims, int rank,  void *data, uint64_t varsize, void *output, int type_size, MPI_Comm comm)
 {
     //struct adios_var_struct * v = g->vars;
-    int i, j, k, client_cnt, lev;
-    uint64_t aggrsize, buff_offset, tmpsize, alloc_size;
+    int i, j, k, lev;
+    uint64_t buff_offset, tmpsize, alloc_size;
     uint64_t *tmp_dims, *tmp_offsets, *gdims, *ldims_list, *size_list;
     char   *tmpbuf, *recvbuf, *sendbuf;
     MPI_Status status;
@@ -1575,13 +1489,10 @@ static uint64_t do_spatial_aggr(int level, int *procs, int ndims, uint64_t *ldim
 static void aggr_chunks(char **output, int *procs, int ndims, uint64_t *ldims_list,
     uint64_t *gdims, uint64_t *size_list, uint64_t totalsize, int nchunks, int rank, int level, int type_size)
 {
-    uint64_t count[3];
-    uint64_t size;
-    int i,j,k, m, cnt;
+    int i,j,k,cnt;
     uint64_t var_offset, dset_offset, buff_offset, size_in_dset[2];
     uint64_t datasize, dst_stride, src_stride;
     //cycles_t c1, c2;
-    double tmem=0;
     char *input;
     int chunk_cnt;
     uint64_t prev_x, prev_y, prev_z;

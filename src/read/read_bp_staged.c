@@ -18,6 +18,7 @@
 #include <pthread.h>
 #include <assert.h>
 #include <errno.h>
+#include <sys/time.h>
 #include "public/adios_types.h"
 #include "public/adios_read.h"
 #include "public/adios_error.h"
@@ -178,7 +179,7 @@ static void _buffer_read (char * buffer, uint64_t * buffer_offset
 
 static int calc_data_size (BP_PROC * p)
 {
-    int i, size = 0;
+    int size = 0;
     read_request * h = p->local_read_request_list;
 
     // count
@@ -207,10 +208,10 @@ static void get_data_addr (const ADIOS_FILE * fp, int varid,
     BP_PROC * p = (BP_PROC *) fp->fh;
     BP_FILE * fh = (BP_FILE *) p->fh;
     struct adios_index_var_struct_v1 * v;
-    int i, j, k, idx, t;
-    int start_time, stop_time, start_idx, stop_idx, f_idx;
+    int j, idx, t;
+    int start_idx, stop_idx;
     int ndim, time, has_subfile, file_is_fortran;
-    uint64_t size, * dims = 0;
+    uint64_t * dims = 0;
     uint64_t ldims[32], gdims[32], offsets[32];
     uint64_t * start, * count;
     int nsteps, is_global = 0, flag;
@@ -395,12 +396,10 @@ static void sort_read_requests (BP_PROC * p)
     pvt->split_read_request_list = n;
 }
 
+/*
 static void send_read_data1 (BP_PROC * p)
 {
     bp_proc_pvt_struct * pvt = (bp_proc_pvt_struct *) p->priv;
-    void * data = 0;
-    uint64_t ds;
-    int i, counter = 0;
     read_request * r = p->local_read_request_list;
     rr_pvt_struct * rr_pvt;
 
@@ -419,6 +418,7 @@ static void send_read_data1 (BP_PROC * p)
         r = r->next;
     }
 }
+*/
 
 static void send_read_data (BP_PROC * p)
 {
@@ -485,6 +485,7 @@ e group
     free (offsets);
 }
 
+/*
 static void get_read_data1 (BP_PROC * p)
 {
     bp_proc_pvt_struct * pvt = (bp_proc_pvt_struct *) p->priv;
@@ -504,6 +505,7 @@ static void get_read_data1 (BP_PROC * p)
         }
     }
 }
+*/
 
 /* Receive read data from aggregator */
 static void get_read_data (BP_PROC * p)
@@ -512,7 +514,6 @@ static void get_read_data (BP_PROC * p)
     char * b = 0, * recv_buff = 0;
     int * sizes = 0, * offsets = 0;
     int size = 0;
-    MPI_Status status;
     read_request * r = p->local_read_request_list;
 
     if (pvt->rank == pvt->aggregator_rank)
@@ -554,9 +555,7 @@ static void get_read_data (BP_PROC * p)
 
 static void parse_buffer (BP_PROC * p, char * b, int src)
 {
-    read_request * h = p->local_read_request_list;
-    int i, j, type, count, varid, ndims, size = calc_data_size (p);
-    void * buf;
+    int i, count;
     read_request * r;
     rr_pvt_struct * rr_pvt;
 
@@ -629,10 +628,10 @@ static read_request * split_read_requests (const ADIOS_FILE * fp, read_request *
     BP_PROC * p = (BP_PROC *) fp->fh;
     BP_FILE * fh = (BP_FILE *) p->fh;
     struct adios_index_var_struct_v1 * v;
-    int i, j, k, idx, t, varid, nsteps, time, dummy;
-    int start_time, stop_time, start_idx, stop_idx, f_idx;
+    int i, j, idx, t, varid, nsteps, time, dummy;
+    int start_idx, stop_idx;
     int ndim, has_subfile, file_is_fortran;
-    uint64_t size, * dims = 0;
+    uint64_t * dims = 0;
     uint64_t ldims[32], gdims[32], offsets[32];
     uint64_t * start, * count;
     int is_global = 0, flag;
@@ -812,8 +811,6 @@ static read_request * split_read_requests (const ADIOS_FILE * fp, read_request *
             else if (hole_break == 0)
             {
                 int isize;
-                uint64_t size_in_dset = 0;
-                uint64_t offset_in_dset = 0;
 
                 isize = offsets[0] + ldims[0];
                 if (start[0] >= offsets[0])
@@ -838,7 +835,6 @@ static read_request * split_read_requests (const ADIOS_FILE * fp, read_request *
                     if (isize < start[0] + count[0])
                     {
                         n->sel->u.bb.count[0] = ldims[0];
-                    //    size_in_dset = ldims[0];
                     }
                     else
                     {
@@ -846,13 +842,11 @@ static read_request * split_read_requests (const ADIOS_FILE * fp, read_request *
                         n->sel->u.bb.count[0] = count[0] + start[0] - offsets[0];
                     }
                     n->sel->u.bb.start[0] = offsets[0];
-                    //offset_in_dset = 0;
                 }
 
             }
             else
             {
-                uint64_t stride_offset = 0;
                 int isize;
                 uint64_t size_in_dset[10];
                 uint64_t offset_in_dset[10];
@@ -978,7 +972,7 @@ gettimeofday (&t0, NULL);
 
             new_h->file_index = file_idx;
             new_h->next = 0;
-            if (ch = strrchr (fh->fname, '/'))
+            if ( (ch = strrchr (fh->fname, '/')))
             {
                 name_no_path = malloc (strlen (ch + 1) + 1);
                 strcpy (name_no_path, ch + 1);
@@ -1049,10 +1043,7 @@ The read request link list needs to be sorted beforehand
 static void do_read (const ADIOS_FILE * fp)
 {
     BP_PROC * p = (BP_PROC *) fp->fh;
-    BP_FILE * fh = (BP_FILE *) p->fh;
     bp_proc_pvt_struct * pvt = (bp_proc_pvt_struct *) p->priv;
-    void * data = 0;
-    int i, counter = 0;
     int file_idx;
     uint64_t offset, payload_size;
 struct timeval t0;
@@ -1153,7 +1144,7 @@ static void read_buffer (const ADIOS_FILE * fp,
     struct adios_index_var_struct_v1 * v;
     uint64_t * s_start, * s_count;
     uint64_t * start, * count;
-    int i, j, k, idx, t, time, ndim, dummy;
+    int i, j, idx, t, time, ndim, dummy;
     int varid, start_idx, stop_idx, has_subfile, file_is_fortran;
     uint64_t ldims[MAX_DIMS], gdims[MAX_DIMS], offsets[MAX_DIMS];
     uint64_t datasize, dset_stride, var_stride, total_size = 0, items_read;
@@ -1410,7 +1401,6 @@ static void read_buffer (const ADIOS_FILE * fp,
             }
             else
             {
-                uint64_t stride_offset = 0;
                 int isize;
                 uint64_t size_in_dset[MAX_DIMS];
                 uint64_t offset_in_dset[MAX_DIMS];
@@ -1530,7 +1520,6 @@ static void broadcast_fh_buffer (ADIOS_FILE * fp)
     BP_FILE * fh = (BP_FILE *) p->fh;
     struct bp_index_pg_struct_v1 * pgs_root = fh->pgs_root, * pg;
     struct adios_index_var_struct_v1 * vars_root = fh->vars_root, * v;
-    struct adios_index_attribute_struct_v1 * attrs_root = fh->attrs_root;
     char * buffer;
     uint64_t buffer_size, buffer_offset = 0;
     int i, j, nsteps;
@@ -1626,7 +1615,6 @@ static void broadcast_fh_buffer (ADIOS_FILE * fp)
         vars_root = fh->vars_root;
         while (vars_root)
         {
-            uint64_t bo = buffer_offset;
             _buffer_write (&buffer, &buffer_size, &buffer_offset, 
                            &vars_root->id, 4); // id
 
@@ -1708,7 +1696,7 @@ fprintf (stderr, "bc %s bo 1 = %llu, bo 2 = %llu, len = %d\n", vars_root->var_na
 
     if (!isAggregator (p))
     {
-        uint16_t len, group_count; 
+        uint16_t len; 
 
         buffer_offset = 0;
 
@@ -2020,7 +2008,6 @@ ADIOS_FILE * adios_read_bp_staged_open (const char * fname, MPI_Comm comm, enum 
 static void free_proc_struct (BP_PROC * p)
 {
     bp_proc_pvt_struct * pvt = (bp_proc_pvt_struct *) p->priv;
-    read_request * h = p->local_read_request_list, * n;
 
     /* We need to free split_read_request_list cause
      * people might do two back-to-back sets of
@@ -2150,7 +2137,7 @@ static void init_read (BP_PROC * p)
 
 ADIOS_FILE * adios_read_bp_staged_open_file (const char * fname, MPI_Comm comm)
 {
-    int i, rank;
+    int rank;
     struct BP_PROC * p;
     BP_FILE * fh;
     ADIOS_FILE * fp;
@@ -2329,11 +2316,9 @@ int adios_read_bp_staged_schedule_read_byid (const ADIOS_FILE * fp,
 int adios_read_bp_staged_perform_reads (const ADIOS_FILE *fp, int blocking)
 {
     BP_PROC * p = (BP_PROC *) fp->fh;
-    BP_FILE * fh = (BP_FILE *) p->fh;
     bp_proc_pvt_struct * pvt = (bp_proc_pvt_struct *) p->priv;
     read_request * r, * h;
     int i, count, varid, ndims, total_size, size;
-    rr_pvt_struct * rrs;
     void * buf;
 
     // First populate the read request private struct for
@@ -2492,7 +2477,7 @@ void adios_read_bp_staged_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, cha
 {
     BP_PROC * p;
     BP_FILE * fh;
-    int i, j, k, offset;
+    int i, j, offset;
 
     p = (BP_PROC *) fp->fh;
     fh = (BP_FILE *) p->fh;
@@ -2551,7 +2536,7 @@ int adios_read_bp_staged_is_var_timed (const ADIOS_FILE *fp, int varid)
     BP_FILE * fh;
     struct adios_index_var_struct_v1 * v;
     struct adios_index_characteristic_struct_v1 ch;
-    int retval = 0, ndim, k, dummy, file_is_fortran;
+    int retval = 0, ndim, k;
     uint64_t gdims[32];
 
     p = (BP_PROC *) fp->fh;

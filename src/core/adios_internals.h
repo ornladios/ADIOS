@@ -485,6 +485,11 @@ int adios_write_version_v1 (char ** buffer
                            ,uint64_t * buffer_size
                            ,uint64_t * buffer_offset
                            );
+int adios_write_version_flag_v1 (char ** buffer
+                           ,uint64_t * buffer_size
+                           ,uint64_t * buffer_offset
+                           ,uint32_t flag
+                           );
 int adios_write_process_group_header_v1 (struct adios_file_struct * fd
                                         ,uint64_t total_size
                                         );
@@ -526,12 +531,19 @@ int adios_write_index_v1 (char ** buffer
 void adios_build_index_v1 (struct adios_file_struct * fd
                          ,struct adios_index_struct_v1 * index
                        );
+
 void adios_merge_index_v1 (
                    struct adios_index_struct_v1 * main_index
                   ,struct adios_index_process_group_struct_v1 * new_pg_root
                   ,struct adios_index_var_struct_v1 * new_vars_root
                   ,struct adios_index_attribute_struct_v1 * new_attrs_root
                   );
+
+void adios_sort_index_v1 (struct adios_index_process_group_struct_v1 ** p1
+                         ,struct adios_index_var_struct_v1 ** v1
+                         ,struct adios_index_attribute_struct_v1 ** a1
+                         );
+ 
 void adios_clear_index_v1 (struct adios_index_struct_v1 * index); // in each adios_<method>_close()
 void adios_free_index_v1 (struct adios_index_struct_v1 * index);  // in adios_<method>_finalize()
 

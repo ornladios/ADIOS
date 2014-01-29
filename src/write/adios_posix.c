@@ -110,7 +110,6 @@ int adios_posix_open (struct adios_file_struct * fd
 {
     char * subfile_name;
     char * mdfile_name;
-    int rank;
     char * name_with_rank, rank_string[16];
     struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
                                                           method->method_data;
@@ -469,9 +468,9 @@ enum ADIOS_FLAG adios_posix_should_buffer (struct adios_file_struct * fd
         if (s != fd->bytes_written)
         {
             fprintf (stderr, "POSIX method tried to write %llu, "
-                             "only wrote %llu\n"
+                             "only wrote %lld\n"
                     ,fd->bytes_written
-                    ,s
+                    ,(int64_t)s
                     );
         }
         fd->base_offset += s;
@@ -533,9 +532,9 @@ void adios_posix_write (struct adios_file_struct * fd
         if (s != fd->bytes_written)
         {
             fprintf (stderr, "POSIX method tried to write %llu, "
-                             "only wrote %llu\n"
+                             "only wrote %lld\n"
                     ,fd->bytes_written
-                    ,s
+                    ,(int64_t)s
                     );
         }
         fd->base_offset += s;
@@ -586,9 +585,9 @@ void adios_posix_write (struct adios_file_struct * fd
         if (s != var_size)
         {
             fprintf (stderr, "POSIX method tried to write %llu, "
-                             "only wrote %llu\n"
+                             "only wrote %lld\n"
                     ,var_size
-                    ,s
+                    ,(int64_t)s
                     );
         }
         fd->base_offset += s;
@@ -894,9 +893,9 @@ void adios_posix_close (struct adios_file_struct * fd
                 if (s != fd->vars_start)
                 {
                     fprintf (stderr, "POSIX method tried to write %llu, "
-                                     "only wrote %llu\n"
+                                     "only wrote %lld\n"
                             ,fd->vars_start
-                            ,s
+                            ,(int64_t)s
                             );
                 }
                 fd->offset = 0;
@@ -925,9 +924,9 @@ void adios_posix_close (struct adios_file_struct * fd
                         if (s != fd->bytes_written)
                         {
                             fprintf (stderr, "POSIX method tried to write %llu, "
-                                    "only wrote %llu\n"
+                                    "only wrote %lld\n"
                                     ,fd->bytes_written
-                                    ,s
+                                    ,(int64_t)s
                                     );
                         }
                         fd->base_offset += s;
@@ -952,9 +951,9 @@ void adios_posix_close (struct adios_file_struct * fd
                 if (s != p->vars_header_size)
                 {
                     fprintf (stderr, "POSIX method tried to write %llu, "
-                                     "only wrote %llu\n"
+                                     "only wrote %lld\n"
                             ,p->vars_header_size
-                            ,s
+                            ,(int64_t)s
                             );
                 }
                 fd->offset = 0;
@@ -1068,9 +1067,9 @@ void adios_posix_close (struct adios_file_struct * fd
                     if (s != global_index_buffer_offset)
                     {
                         fprintf (stderr, "POSIX method tried to write %llu, "
-                                         "only wrote %llu\n"
+                                         "only wrote %lld\n"
                                          ,fd->bytes_written
-                                         ,s
+                                         ,(int64_t)s
                                 );
                     }
 
@@ -1119,9 +1118,9 @@ void adios_posix_close (struct adios_file_struct * fd
                 if (s != fd->vars_start)
                 {
                     fprintf (stderr, "POSIX method tried to write %llu, "
-                                     "only wrote %llu\n"
+                                     "only wrote %lld\n"
                             ,fd->vars_start
-                            ,s
+                            ,(int64_t)s
                             );
                 }
                 fd->offset = 0;
@@ -1147,9 +1146,9 @@ void adios_posix_close (struct adios_file_struct * fd
                         if (s != fd->bytes_written)
                         {
                             fprintf (stderr, "POSIX method tried to write %llu, "
-                                    "only wrote %llu\n"
+                                    "only wrote %lld\n"
                                     ,fd->bytes_written
-                                    ,s
+                                    ,(int64_t)s
                                     );
                         }
                         fd->base_offset += s;
@@ -1174,9 +1173,9 @@ void adios_posix_close (struct adios_file_struct * fd
                 if (s != p->vars_header_size)
                 {
                     fprintf (stderr, "POSIX method tried to write %llu, "
-                                     "only wrote %llu\n"
+                                     "only wrote %lld\n"
                             ,p->vars_header_size
-                            ,s
+                            ,(int64_t)s
                             );
                 }
                 fd->offset = 0;
@@ -1291,9 +1290,9 @@ void adios_posix_close (struct adios_file_struct * fd
                     if (s != global_index_buffer_offset)
                     {
                         fprintf (stderr, "POSIX method tried to write %llu, "
-                                         "only wrote %llu, Mode: a\n"
+                                         "only wrote %lld, Mode: a\n"
                                          ,global_index_buffer_offset
-                                         ,s
+                                         ,(int64_t)s
                                 );
                     }
 

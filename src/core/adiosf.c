@@ -145,7 +145,7 @@ void FC_FUNC_(adios_write_byid, ADIOS_WRITE_BYID)
     if (!var)
     {
         adios_error (err_invalid_data, "Invalid data (NULL pointer) passed to write\n");
-        *err = adios_error;
+        *err = adios_errno;
         return;
     }
 

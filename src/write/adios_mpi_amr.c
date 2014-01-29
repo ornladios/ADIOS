@@ -241,21 +241,18 @@ static void
 //adios_mpi_amr_set_striping_unit(MPI_File fh, char *filename, char *parameters)
 adios_mpi_amr_set_striping_unit(struct adios_MPI_data_struct * md, char *parameters)
 {
-    MPI_File fh = md->fh;
     char * filename = md->subfile_name;
-    struct statfs fsbuf;
-    int err = 0, flag;
+    int err = 0;
     uint64_t striping_unit = 0;
     uint16_t striping_count = 0;
-    char     value[64], *temp_string, *p_count,*p_size;
+    char     *temp_string, *p_count,*p_size;
     int fd, old_mask, perm, n_ost_skipping, n_ost, n, i, should_striping;
-    MPI_Info info_used;
 
     temp_string = (char *) malloc (strlen (parameters) + 1);
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
 
-    if (p_count = strstr (temp_string, "striping"))
+    if ( (p_count = strstr (temp_string, "striping")) )
     {
         char * p = strchr (p_count, '=');
         char * q = strtok (p, ";");
@@ -277,7 +274,7 @@ adios_mpi_amr_set_striping_unit(struct adios_MPI_data_struct * md, char *paramet
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
 
-    if (p_count = strstr (temp_string, "stripe_count"))
+    if ( (p_count = strstr (temp_string, "stripe_count")) )
     {
         char * p = strchr (p_count, '=');
         char * q = strtok (p, ";");
@@ -295,7 +292,7 @@ adios_mpi_amr_set_striping_unit(struct adios_MPI_data_struct * md, char *paramet
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
 
-    if (p_size = strstr (temp_string, "stripe_size"))
+    if ( (p_size = strstr (temp_string, "stripe_size")) )
     {
         char * p = strchr (p_size, '=');
         char * q = strtok (p, ";");
@@ -374,15 +371,13 @@ adios_mpi_amr_set_striping_unit(struct adios_MPI_data_struct * md, char *paramet
 static void
 adios_mpi_amr_set_have_mdf (char * parameters, struct adios_MPI_data_struct * md)
 {
-    int err = 0, flag, i, aggr_group_size, remain, index;
-    int nproc = md->size, rank = md->rank;
-    char value[64], *temp_string, *p_count,*p_size;
+    char *temp_string, *p_size;
 
     temp_string = (char *) malloc (strlen (parameters) + 1);
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
 
-    if (p_size = strstr (temp_string, "have_metadata_file"))
+    if ( (p_size = strstr (temp_string, "have_metadata_file")) )
     {
         char * p = strchr (p_size, '=');
         char * q = strtok (p, ";");
@@ -404,9 +399,9 @@ adios_mpi_amr_set_have_mdf (char * parameters, struct adios_MPI_data_struct * md
 static void
 adios_mpi_amr_set_aggregation_parameters(char * parameters, struct adios_MPI_data_struct * md)
 {
-    int err = 0, flag, i, aggr_group_size, remain, index;
+    int i, aggr_group_size, remain, index;
     int nproc = md->size, rank = md->rank;
-    char value[64], *temp_string, *p_count,*p_size;
+    char *temp_string, *p_size;
 
     temp_string = (char *) malloc (strlen (parameters) + 1);
 
@@ -414,7 +409,7 @@ adios_mpi_amr_set_aggregation_parameters(char * parameters, struct adios_MPI_dat
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
 
-    if (p_size = strstr (temp_string, "num_ost"))
+    if ( (p_size = strstr (temp_string, "num_ost")) )
     {
         char * p = strchr (p_size, '=');
         char * q = strtok (p, ";");
@@ -430,7 +425,7 @@ adios_mpi_amr_set_aggregation_parameters(char * parameters, struct adios_MPI_dat
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
 
-    if (p_size = strstr (temp_string, "local-fs"))
+    if ( (p_size = strstr (temp_string, "local-fs")) )
     {
         char * p = strchr (p_size, '=');
         char * q = strtok (p, ";");
@@ -448,7 +443,7 @@ adios_mpi_amr_set_aggregation_parameters(char * parameters, struct adios_MPI_dat
     trim_spaces (temp_string);
 
     // set up # of aggregators
-    if (p_size = strstr (temp_string, "num_aggregators"))
+    if ( (p_size = strstr (temp_string, "num_aggregators")) )
     {
         char * p = strchr (p_size, '=');
         char * q = strtok (p, ";");
@@ -472,7 +467,7 @@ adios_mpi_amr_set_aggregation_parameters(char * parameters, struct adios_MPI_dat
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
 
-    if (p_size = strstr (temp_string, "have_metadata_file"))
+    if ( (p_size = strstr (temp_string, "have_metadata_file")) )
     {
         char * p = strchr (p_size, '=');
         char * q = strtok (p, ";");
@@ -492,7 +487,7 @@ adios_mpi_amr_set_aggregation_parameters(char * parameters, struct adios_MPI_dat
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
 
-    if (p_size = strstr (temp_string, "threading"))
+    if ( (p_size = strstr (temp_string, "threading")) )
     {
         char * p = strchr (p_size, '=');
         char * q = strtok (p, ";");
@@ -513,7 +508,7 @@ adios_mpi_amr_set_aggregation_parameters(char * parameters, struct adios_MPI_dat
 
     md->g_ost_skipping_list = allocOSTList (md->g_num_ost);
 
-    if (p_size = strstr (temp_string, "osts_to_skip"))
+    if ( (p_size = strstr (temp_string, "osts_to_skip")) )
     {
         char * p = strchr (p_size, '=');
         char * q = strtok (p, ";");
@@ -528,7 +523,7 @@ adios_mpi_amr_set_aggregation_parameters(char * parameters, struct adios_MPI_dat
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
 
-    if (p_size = strstr (temp_string, "aggregation_type"))
+    if ( (p_size = strstr (temp_string, "aggregation_type")) )
     {
         char * p = strchr (p_size, '=');
         char * q = strtok (p, ";");
@@ -760,7 +755,7 @@ void adios_mpi_amr_build_global_index_v1 (char * fname
                                          ,struct adios_index_struct_v1 * index
                                           )
 {
-    struct adios_index_process_group_struct_v1 * pg_root = index->pg_root;
+    //struct adios_index_process_group_struct_v1 * pg_root = index->pg_root;
     struct adios_index_var_struct_v1 * vars_root = index->vars_root;
     struct adios_index_attribute_struct_v1 * attrs_root = index->attrs_root;
     int len;
@@ -952,6 +947,7 @@ int adios_mpi_amr_open (struct adios_file_struct * fd
     return 1;
 }
 
+/*
 static
 void build_offsets (struct adios_bp_buffer_struct_v1 * b
                    ,MPI_Offset * offsets, uint64_t size, char * group_name
@@ -982,23 +978,21 @@ void build_offsets (struct adios_bp_buffer_struct_v1 * b
         pg_root = pg_root->next;
     }
 }
+*/
 
 enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                                             ,struct adios_method_struct * method
                                             )
 {
-    int i;
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                       method->method_data;
     char * name, * name_no_path, * ch;
-    char * d_name;
     int err;
-    int sig;    // used for coordinating the MPI_File_open
+    //int sig;    // used for coordinating the MPI_File_open
 
     int previous;
     int current;
     int next;
-    uint16_t flag;
 
     START_TIMER (ADIOS_TIMER_MPI_AMR_AD_SHOULD_BUFFER);
 
@@ -1027,8 +1021,7 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
             if (md->rank == 0)
             {
                 struct lov_user_md lum;
-                struct obd_uuid uuids[1024], * uuidp;
-                int f, rc;
+                int f;
 
                 // open metadata file
                 unlink (name);
@@ -1051,7 +1044,8 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
 
                     ioctl (f, LL_IOC_LOV_SETSTRIPE ,(void *) &lum);
 #ifdef HAVE_LUSTRE
-
+                    struct obd_uuid uuids[1024];
+                    int rc;
                     md->g_num_ost = 1024;
                     rc = llapi_lov_get_uuids(f, uuids, &md->g_num_ost);
                     if (rc != 0)
@@ -1095,7 +1089,7 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
             }
 
             // Check if fd->name contains path
-            if (ch = strrchr (fd->name, '/'))
+            if ( (ch = strrchr (fd->name, '/')) )
             {
                 name_no_path = malloc (strlen (ch + 1) + 1); 
                 strcpy (name_no_path, ch + 1); 
@@ -1668,6 +1662,7 @@ void adios_mpi_amr_read (struct adios_file_struct * fd
     v->data_size = buffer_size;
 }
 
+/*
 static void adios_mpi_amr_do_read (struct adios_file_struct * fd
                               ,struct adios_method_struct * method
                               )
@@ -1775,6 +1770,7 @@ static void adios_mpi_amr_do_read (struct adios_file_struct * fd
 
     adios_buffer_struct_clear (&md->b);
 }
+*/
 
 static
 uint32_t adios_mpi_amr_calculate_attributes_size (struct adios_file_struct * fd)
@@ -1823,7 +1819,7 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
             uint64_t buffer_size = 0;
             uint64_t buffer_offset = 0;
             uint64_t index_start = md->b.pg_index_offset, index_start1;
-            int * pg_sizes = 0, * disp = 0, * sendbuf = 0, * recvbuf = 0, * attr_sizes = 0;
+            int * pg_sizes = 0, * disp = 0;
             void * aggr_buff = 0, * recv_buff = 0;
             struct adios_MPI_thread_data_write write_thread_data;
             int i, new_rank, new_group_size, new_rank2, new_group_size2, max_data_size = 0, total_data_size = 0, total_data_size1 = 0;
@@ -2004,11 +2000,7 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
             if (fd->shared_buffer == adios_flag_yes && !md->g_merging_pgs)
             {
                 //printf ("do not merge pg\n");
-                struct adios_bp_buffer_struct_v1 b;
-                struct adios_process_group_header_struct_v1 pg_header;
-                struct adios_vars_header_struct_v1 vars_header;
-                int pg_size, header_size;
-                uint64_t vars_count_offset;
+                int pg_size;
                 MPI_Request request;
                 MPI_Status status;
 
@@ -2043,8 +2035,8 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                     if (2 * max_data_size > MAX_AGG_BUF)
                     {
                         log_warn ("MPI_AMR method (BG): The max allowed aggregation "
-                                "buffer is %llu bytes.\n"
-                                "But this ADIOS method needs %llu bytes for aggregation\n",
+                                "buffer is %d bytes.\n"
+                                "But this ADIOS method needs %d bytes for aggregation\n",
                                 MAX_AGG_BUF, 2 * max_data_size);
                     }
 
@@ -2053,7 +2045,7 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                     if (aggr_buff == 0 || recv_buff == 0)
                     {
                         adios_error (err_no_memory, "MPI_AMR method (BG): Cannot allocate "
-                                    "2 x %llu bytes for aggregation buffers.\n", 
+                                    "2 x %d bytes for aggregation buffers.\n", 
                                     max_data_size);
                         return;
                     }
@@ -2063,7 +2055,7 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                     if (max_data_size > MAX_AGG_BUF)
                     {
                         log_warn ("MPI_AMR method (BG): The max allowed aggregation "
-                                  "buffer is %llu bytes.\n",
+                                  "buffer is %d bytes.\n",
                                   MAX_AGG_BUF);
                     }
 
@@ -2071,7 +2063,7 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                     if (recv_buff == 0)
                     {
                         adios_error (err_no_memory, "MPI_AMR method (BG): Cannot allocate "
-                                    "%llu bytes for receive buffer.\n", 
+                                    "%d bytes for receive buffer.\n", 
                                     max_data_size);
                         return;
                     }
@@ -2418,7 +2410,6 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                 // write out the metadata file from rank 0
                 if (md->rank == 0)
                 {
-                    MPI_File m_file;
                     char * global_index_buffer = 0;
                     uint64_t global_index_buffer_size = 0;
                     uint64_t global_index_buffer_offset = 0;
@@ -2577,7 +2568,7 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
 
                     if (count != md->vars_header_size)
                     {
-                        log_warn ("d:MPI_AMR method tried to write %llu, only wrote %d\n",
+                        log_warn ("d:MPI_AMR method tried to write %llu, only wrote %llu\n",
                                 md->vars_header_size, count);
                     }
                 }
@@ -2723,11 +2714,7 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
             if (fd->shared_buffer == adios_flag_yes && !md->g_merging_pgs)
             {
                 //printf ("do not merge pg\n");
-                struct adios_bp_buffer_struct_v1 b;
-                struct adios_process_group_header_struct_v1 pg_header;
-                struct adios_vars_header_struct_v1 vars_header;
-                int pg_size, header_size;
-                uint64_t vars_count_offset;
+                int pg_size;
 
                 pg_size = fd->bytes_written;
                 pg_sizes = (int *) malloc (new_group_size * 4);
@@ -2760,7 +2747,7 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                 {
                     if (total_data_size > MAX_AGG_BUF)
                     {
-                        log_warn ("The max allowed aggregation buffer is %llu. Requested %llu.\n"
+                        log_warn ("The max allowed aggregation buffer is %d. Requested %d.\n"
                                 "Need to increase the number of aggregators.\n",
                                 MAX_AGG_BUF, total_data_size);
                     }
@@ -2768,7 +2755,7 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                     if (aggr_buff == 0)
                     {
                         adios_error (err_no_memory, 
-                                "MPI_AMR method (AG): Cannot allocate %llu bytes "
+                                "MPI_AMR method (AG): Cannot allocate %d bytes "
                                 "for aggregation buffer.\n"
                                 "Need to increase the number of aggregators.\n",
                                 total_data_size);
@@ -2986,10 +2973,10 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                     STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
                 }
 
-                uint64_t count = 0;
                 if (is_aggregator(md->rank))
                 {
 #if 0
+                    uint64_t count = 0;
                     pthread_join (t, NULL);
           
                     write_thread_data.fh = &md->fh;
@@ -3367,7 +3354,6 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
             // write out the metadata file from rank 0
             if (md->rank == 0)
             {
-                MPI_File m_file;
                 char * global_index_buffer = 0;
                 uint64_t global_index_buffer_size = 0;
                 uint64_t global_index_buffer_offset = 0;
