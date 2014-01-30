@@ -169,7 +169,7 @@ void copy_subvolume_ragged_offset(void *dst, const void *src, int ndim, const ui
  * subvolume copy spec.
  */
 void copy_subvolume_with_spec(void *dst, const void *src,
-                              const const adios_subvolume_copy_spec *copy_spec,
+                              const adios_subvolume_copy_spec *copy_spec,
                               enum ADIOS_DATATYPES datum_type,
                               enum ADIOS_FLAG swap_endianness);
 

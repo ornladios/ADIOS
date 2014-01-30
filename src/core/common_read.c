@@ -213,7 +213,7 @@ ADIOS_FILE * common_read_open (const char * fname,
     internals->hashtbl_vars = qhashtbl(hashsize);
     for (i=0; i<fp->nvars; i++) {
         internals->hashtbl_vars->put (internals->hashtbl_vars, fp->var_namelist[i], 
-                                       (void *)i+1); // avoid 0 for error checking later
+                                       (void *)(i+1)); // avoid 0 for error checking later
     }
 
     //read mesh names from attributes for example the var is using a mesh named trimesh, 
@@ -320,7 +320,7 @@ ADIOS_FILE * common_read_open_file (const char * fname,
     internals->hashtbl_vars = qhashtbl(hashsize);
     for (i=0; i<fp->nvars; i++) {
         internals->hashtbl_vars->put (internals->hashtbl_vars, fp->var_namelist[i], 
-                                       (void *)i+1); // avoid 0 for error checking later
+                                       (void *)(i+1)); // avoid 0 for error checking later
     }
 
     //read mesh names from attributes for example the var is using a mesh named trimesh, 
@@ -450,7 +450,7 @@ int common_read_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
             internals->hashtbl_vars = qhashtbl(hashsize);
             for (i=0; i<fp->nvars; i++) {
                 internals->hashtbl_vars->put (internals->hashtbl_vars, fp->var_namelist[i], 
-                        (void *)i+1); // avoid 0 for error checking later
+                        (void *)(i+1)); // avoid 0 for error checking later
             }
 
             /* Update group information too */
@@ -1005,11 +1005,11 @@ int common_read_inq_var_meshinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
     {
         if (!strcmp((char *)data, "point"))
         {
-            varinfo->meshinfo->centering = 1;      // point centering
+            varinfo->meshinfo->centering = point_centering;
         }
         else if (!strcmp((char *)data, "cell"))
         {
-            varinfo->meshinfo->centering = 2;      // cell centering
+            varinfo->meshinfo->centering = cell_centering;
         }
         else
         {

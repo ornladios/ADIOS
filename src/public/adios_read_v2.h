@@ -92,8 +92,8 @@ typedef struct {
 
 enum var_centering
 {
-    point = 1,            // unstructured mesh point centering
-    cell = 2              // unstructured mesh cell centering
+    point_centering = 1,            // unstructured mesh point centering
+    cell_centering = 2              // unstructured mesh cell centering
 };
 
 typedef struct {
