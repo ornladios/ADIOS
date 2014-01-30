@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <time.h>
 #include "mpi.h"
 #include "adios_read.h"
 
@@ -46,7 +47,7 @@ int generate_random_box(uint64_t* starts, uint64_t* counts)
 	{
 		starts[d] = rand() % (g_dim[d] - 1);
 		counts[d] = rand() % (g_dim[d] - 1 - starts[d]) + 1;
-		printf("sel dim[%d]: %d %d\n", d, starts[d], counts[d]);
+		printf("sel dim[%d]: %lld %lld\n", d, starts[d], counts[d]);
 	}
 	return 0;
 }
@@ -57,7 +58,7 @@ int generate_random_points(uint64_t** points, uint64_t* npoints)
 	*npoints = rand() % g_total + 1;	
 	*points  = (uint64_t *)malloc((*npoints) * g_ndims * sizeof (uint64_t));
 	
-	printf("num of points %d %d\n", *npoints, g_total);
+	printf("num of points %lld %lld\n", *npoints, g_total);
 	
 	int i = 0;
 	for (i = 0; i < *npoints; i ++)

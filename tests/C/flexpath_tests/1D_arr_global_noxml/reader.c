@@ -33,7 +33,6 @@
 
 
 int main (int argc, char **argv){
-	char filename[256];
 	int rank =0, size =0;
 	int NX = 0;
 	double *t = NULL;
@@ -69,12 +68,10 @@ int main (int argc, char **argv){
 	ADIOS_VARINFO *avi = NULL;
 
 
-	int64_t adios_buf_size;
 	// for storing the variables
 	char buf[STR_BUFFER_SIZE];
 
 	int step = 0;
-	int n = 0;
 
 	// read how many processors wrote that array
 	avi = adios_inq_var (adios_handle, "size");
@@ -150,7 +147,7 @@ int main (int argc, char **argv){
 		goto just_clean;
 	}
 
-	n = sprintf(buf, "Rank %d: var_1d_array: step %d: t: ", rank, step);
+	sprintf(buf, "Rank %d: var_1d_array: step %d: t: ", rank, step);
 
 	int i = 0;
 	for(i=0; i < NX; ++i){

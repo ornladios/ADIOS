@@ -35,8 +35,6 @@ void printUsage(char *prgname)
 
 int processArgs(int argc, char ** argv)
 {
-    int i, j, nd, prod;
-    char *end;
     if (argc < 3) {
         printUsage (argv[0]);
         return 1;
@@ -77,7 +75,6 @@ int main (int argc, char ** argv )
     int         i,j;
   
     /* ADIOS variables declarations for matching gwrite_temperature.ch */
-    int         adios_err;
     uint64_t    adios_groupsize, adios_totalsize;
     int64_t     adios_handle;
 

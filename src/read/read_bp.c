@@ -3256,7 +3256,7 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
     BP_FILE * fh = (BP_FILE *)p->fh;;
     struct adios_index_var_struct_v1 * v;
     int j, varid, start_idx, idx;
-    int ndim, has_subfile, file_is_fortran;
+    int ndim, has_subfile;
     uint64_t ldims[32], gdims[32], offsets[32];
     int size_of_type;
     uint64_t slice_offset, slice_size;
@@ -3267,7 +3267,6 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
 
     adios_errno = 0;
 
-    file_is_fortran = is_fortran_file (fh);
     has_subfile = has_subfiles (fh);
     data = r->data;
     varid = r->varid; //varid = map_req_varid (fp, r->varid); // NCSU ALACRITY-ADIOS: Bugfix: r->varid has already been mapped

@@ -64,11 +64,7 @@ const char * value_to_string_ptr (enum ADIOS_DATATYPES type, void * data, uint64
 int main (int argc, char ** argv)
 {
     char * filename;
-    char * var;
-    int i = 0;
     int rc = 0;
-    uint64_t element_size = 0;
-    struct adios_bp_element_struct * element = NULL;
     struct dump_struct dump;
 
     if (argc < 2)
@@ -118,7 +114,6 @@ int main (int argc, char ** argv)
 
     struct adios_bp_buffer_struct_v1 * b = 0;
     uint32_t version = 0;
-    uint16_t flag = 0;
 
     b = malloc (sizeof (struct adios_bp_buffer_struct_v1));
     adios_buffer_struct_init (b);
@@ -138,7 +133,7 @@ int main (int argc, char ** argv)
     if (version < 2)
     {
         fprintf (stderr, "bpdump: This version of bpdump can only dump BP format version 2. "
-                 "Use an older bpdump from adios 1.6 to dump this file.\n", version);
+                 "Use an older bpdump from adios 1.6 to dump this file.\n");
         adios_posix_close_internal (b);
         return -1;
     }
@@ -233,9 +228,10 @@ int main (int argc, char ** argv)
             adios_parse_var_data_header_v1 (b, &var_header);
             print_var_header (&var_header);
 
-            if (   var_header.dims == 0
-                ||    dump.do_dump
-                   && !strcasecmp (dump.dump_var, var_header.name)
+            if ( var_header.dims == 0 || 
+                 ( dump.do_dump &&
+                   !strcasecmp (dump.dump_var, var_header.name)
+                 )
                )
             {
                 // add one for string null terminators
@@ -460,9 +456,8 @@ const char * value_to_string_ptr (enum ADIOS_DATATYPES type, void * data, uint64
 
         case adios_string:
         {
-            char * p = (char *) data;
+            //char * p = (char *) data;
             //sprintf (s, "%s", p [element]);
-            sprintf (s, "");
             fprintf (stderr, "arrays of strings not fully supported\n");
             break;
         }
@@ -484,6 +479,9 @@ const char * value_to_string_ptr (enum ADIOS_DATATYPES type, void * data, uint64
                     );
             break;
         }
+
+        case adios_unknown:
+            break;
     }
 
     return s;
@@ -493,7 +491,6 @@ void print_process_group_header (uint64_t num
                       ,struct adios_process_group_header_struct_v1 * pg_header
                       )
 {
-    int i;
     struct adios_method_info_struct_v1 * m;
 
     printf ("Process Group: %llu\n", num);
@@ -870,7 +867,6 @@ void print_var_payload (struct adios_var_header_struct_v1 * var_header
             uint64_t * position = 0;
             uint64_t * dims = 0;
             int i = 0;
-            int size_of_type = adios_get_type_size (var_header->type, "");
 
             while (d)
             {

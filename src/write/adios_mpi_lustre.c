@@ -10,6 +10,8 @@
 #include <math.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 // xml parser
 #include <mxml.h>
@@ -224,12 +226,14 @@ adios_mpi_lustre_set_striping_unit(char *filename, char *parameters, struct adio
 {
     int err = 0;
 //    uint64_t striping_unit = 0;
-    uint64_t block_unit = 0;
     uint16_t striping_count = 0;
     uint16_t stripe_offset = -1;
     char     *temp_string, *p_count,*p_size;
 
-    int fd, old_mask, perm, num_ost;
+    int fd, old_mask, perm;
+#ifdef HAVE_LUSTRE
+    int num_ost;
+#endif
 
     old_mask = umask(022);
     umask(old_mask);
@@ -252,7 +256,7 @@ adios_mpi_lustre_set_striping_unit(char *filename, char *parameters, struct adio
                 );
     }
 #else
-    num_ost = 0;
+    //num_ost = 0;
 #endif
 
     temp_string = (char *) malloc (strlen (parameters) + 1);
@@ -314,23 +318,6 @@ adios_mpi_lustre_set_striping_unit(char *filename, char *parameters, struct adio
         stripe_offset = -1;
     }
 
-    strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
-
-    if ( (p_size = strstr (temp_string, "block_size"))) 
-    {
-        char * p = strchr (p_size, '=');
-        char * q = strtok (p, ",");
-        if (!q)
-            block_unit = atoi(q + 1);
-        else
-            block_unit = atoi(p + 1);
-    }
-    else
-    {
-        // set block_unit to 0 to make one large write
-        block_unit = 0;
-    }
 
     free (temp_string);
 
@@ -1467,12 +1454,6 @@ static void adios_mpi_lustre_do_read (struct adios_file_struct * fd
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                       method->method_data;
     struct adios_var_struct * v = fd->group->vars;
-
-    struct adios_parse_buffer_struct data;
-
-    data.vars = v;
-    data.buffer = 0;
-    data.buffer_len = 0;
 
     uint32_t version = md->b.version & ADIOS_VERSION_NUM_MASK;
     switch (version)

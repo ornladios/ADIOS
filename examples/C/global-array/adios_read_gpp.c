@@ -21,11 +21,10 @@ int main (int argc, char ** argv)
 	char        filename [256];
 	int         rank, size, i;
 	int         NX = 4096; 
-	double      t[NX], t1, t2;
+	double      t[NX];
 	MPI_Comm    comm = MPI_COMM_WORLD;
 
 	/* ADIOS variables declarations for matching gwrite_temperature.ch */
-	int         adios_err;
 	ADIOS_FILE *fp;
 	ADIOS_SELECTION *s;
 

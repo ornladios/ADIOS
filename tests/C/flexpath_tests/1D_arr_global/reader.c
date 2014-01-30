@@ -62,11 +62,6 @@ int main (int argc, char **argv){
 	ADIOS_VARINFO *avi = NULL;
 
 
-	int64_t adios_buf_size;
-
-	int step = 0;
-	int n = 0;
-
 	// read how many processors wrote that array
 	avi = adios_inq_var (adios_handle, "size");
 	if (!avi){

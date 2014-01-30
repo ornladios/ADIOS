@@ -218,7 +218,7 @@ int common_adios_open (int64_t * fd, const char * group_name
 ///////////////////////////////////////////////////////////////////////////////
 static const char ADIOS_ATTR_PATH[] = "/__adios__";
 
-uint32_t pinned_timestep = 0;
+static uint32_t pinned_timestep = 0;
 void adios_pin_timestep(uint32_t ts) {
   pinned_timestep = ts;
 }

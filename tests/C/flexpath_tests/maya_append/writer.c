@@ -113,7 +113,7 @@ int main(int argc, char ** argv){
 
     	uint64_t adios_totalsize = 0;
     	retval=adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
-    	fprintf(stderr, "Rank=%d adios_group_size(): adios_groupsize=%ld, adios_totalsize=%ld, retval=%d\n",
+    	fprintf(stderr, "Rank=%d adios_group_size(): adios_groupsize=%lld, adios_totalsize=%lld, retval=%d\n",
     				rank, adios_groupsize, adios_totalsize, retval);
     	WRITE_VAR("/level/", MAYA_GF_VAR_PFX, &level[i]);
     	WRITE_VAR("/scalar/", MAYA_GF_VAR_PFX, &level[i]);

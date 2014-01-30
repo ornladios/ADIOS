@@ -990,21 +990,10 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
     int err;
     //int sig;    // used for coordinating the MPI_File_open
 
-    int previous;
-    int current;
-    int next;
-
     START_TIMER (ADIOS_TIMER_MPI_AMR_AD_SHOULD_BUFFER);
 
     name = malloc (strlen (method->base_path) + strlen (fd->name) + 1);
     sprintf (name, "%s%s", method->base_path, fd->name);
-
-    if (md->rank == md->size - 1)
-        next = -1;
-    else
-        next = md->rank + 1;
-    previous = md->rank - 1;
-    current = md->rank;
 
     fd->base_offset = 0;
 
@@ -1187,6 +1176,17 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
             adios_error (err_invalid_file_mode, "MPI_AGGREGATE method: Append mode is not supported.\n");
             break;
 #if 0
+            int previous;
+            int current;
+            int next;
+
+            if (md->rank == md->size - 1)
+                next = -1;
+            else
+                next = md->rank + 1;
+            previous = md->rank - 1;
+            current = md->rank;
+
             int old_file = 1;
             adios_buffer_struct_clear (&md->b);
 
@@ -2156,18 +2156,6 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                 if (!is_aggregator(md->rank))
                 {
                     uint64_t var_offset_to_add = 0, attr_offset_to_add = 0;
-                    uint64_t var_base_offset = 0, attr_base_offset = 0;
-
-                    // change to relative offset
-                    if (md->index->vars_root)
-                    {
-                        var_base_offset = md->index->vars_root->characteristics [0].offset;
-                    }
-
-                    if (md->index->attrs_root)
-                    {
-                        attr_base_offset = md->index->attrs_root->characteristics [0].offset;
-                    }
 
                     for (i = 0; i < new_rank; i++)
                     {
@@ -3021,24 +3009,6 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                 if (!is_aggregator(md->rank))
                 {
                     uint64_t var_offset_to_add = 0, attr_offset_to_add = 0;
-                    uint64_t var_base_offset = 0, attr_base_offset = 0;
-
-                    // change to relative offset
-                    if (md->index->vars_root)
-                    {
-                        var_base_offset = md->index->vars_root->characteristics [0].offset;
-                    }
-
-                    if (md->index->attrs_root)
-                    {
-                        attr_base_offset = md->index->attrs_root->characteristics [0].offset;
-                    }
-/*
-                    adios_mpi_amr_subtract_offset (var_base_offset
-                                                   ,var_base_offset
-                                                   ,md->index
-                                                   );
-*/
 
                     for (i = 0; i < new_rank; i++)
                     {

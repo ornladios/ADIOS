@@ -16,12 +16,9 @@
 
 int main (int argc, char ** argv) 
 {
-    char        filename [256];
-    int         rank, size, i, j, k;
+    int         rank, size, i, j;
     MPI_Comm    comm = MPI_COMM_WORLD;
     enum ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP;
-
-    uint64_t start[3], count[3], bytes_read = 0;
 
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (comm, &rank);

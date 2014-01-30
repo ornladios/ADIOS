@@ -20,10 +20,8 @@ const char * value_to_string (enum ADIOS_DATATYPES type, void * data, int idx);
 
 int main (int argc, char ** argv) 
 {
-    char        filename [256];
-    int         rank, size, gidx, i, j, k,l;
+    int         i, j, k,l;
     MPI_Comm    comm_dummy = 0;  /* MPI_Comm is defined through adios_read.h */
-    enum ADIOS_DATATYPES attr_type;
     void      * data = NULL;
     uint64_t    start[] = {0,0,0,0,0,0,0,0,0,0};
     uint64_t    count[10], bytes_read = 0;
@@ -60,9 +58,9 @@ int main (int argc, char ** argv)
                 printf(" = %s\n", value_to_string(v->type, v->value, 0));
             } else {
                 /* Arrays have to be read in from the file */
-                printf("[%d",v->dims[0]);
+                printf("[%lld",v->dims[0]);
                 for (j = 1; j < v->ndim; j++)
-                    printf(", %d",v->dims[j]);
+                    printf(", %lld",v->dims[j]);
                 //printf("] = \n");
                 
                 if (v->type == adios_integer)
@@ -208,6 +206,9 @@ const char * value_to_string (enum ADIOS_DATATYPES type, void * data, int idx)
         case adios_double_complex:
             sprintf (s, "(%lg, %lg)", 
                     ((double *) data)[2*idx], ((double *) data)[2*idx+1]);
+            break;
+        
+        case adios_unknown:
             break;
     }
 

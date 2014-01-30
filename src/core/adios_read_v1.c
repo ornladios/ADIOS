@@ -47,7 +47,7 @@
 #undef adios_type_to_string
 #undef adios_type_size
 #undef adios_print_groupinfo
-//#undef adios_print_fileinfo
+#undef adios_print_fileinfo
 
 
 #include "core/common_read.h"

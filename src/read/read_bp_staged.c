@@ -210,14 +210,13 @@ static void get_data_addr (const ADIOS_FILE * fp, int varid,
     struct adios_index_var_struct_v1 * v;
     int j, idx, t;
     int start_idx, stop_idx;
-    int ndim, time, has_subfile, file_is_fortran;
+    int ndim, time, file_is_fortran;
     uint64_t * dims = 0;
     uint64_t ldims[32], gdims[32], offsets[32];
     uint64_t * start, * count;
     int nsteps, is_global = 0, flag;
 
     file_is_fortran = is_fortran_file (fh);
-    has_subfile = has_subfiles (fh);
     v = bp_find_var_byid (fh, varid);
 
     /* Get dimensions and flip if caller != writer language */
@@ -630,22 +629,19 @@ static read_request * split_read_requests (const ADIOS_FILE * fp, read_request *
     struct adios_index_var_struct_v1 * v;
     int i, j, idx, t, varid, nsteps, time, dummy;
     int start_idx, stop_idx;
-    int ndim, has_subfile, file_is_fortran;
+    int ndim, file_is_fortran;
     uint64_t * dims = 0;
     uint64_t ldims[32], gdims[32], offsets[32];
     uint64_t * start, * count;
     int is_global = 0, flag;
-    ADIOS_SELECTION * sel;
     read_request * h = 0;
     rr_pvt_struct * rr_pvt = (rr_pvt_struct *) r->priv;
     assert (rr_pvt);
 
     varid = r->varid;
-    sel = r->sel;
     start = r->sel->u.bb.start;
     count = r->sel->u.bb.count;
     file_is_fortran = is_fortran_file (fh);
-    has_subfile = has_subfiles (fh);
     v = bp_find_var_byid (fh, varid);
 
     bp_get_and_swap_dimensions (fh, v, file_is_fortran,
@@ -951,8 +947,8 @@ static void read_chunk (const ADIOS_FILE * fp,
     MPI_Status status;
     int has_subfile;
 
-struct timeval t0, t1;
-gettimeofday (&t0, NULL);
+    //struct timeval t0, t1;
+    //gettimeofday (&t0, NULL);
 
     has_subfile = has_subfiles (fh);
 
@@ -1032,9 +1028,8 @@ gettimeofday (&t0, NULL);
 
     fh->b->offset = 0;
 
-    gettimeofday (&t1, NULL);
-
-//    printf ("read chunk time = %f \n", t1.tv_sec - t0.tv_sec + (double)(t1.tv_usec - t0.tv_usec)/1000000 );
+    //gettimeofday (&t1, NULL);
+    //printf ("read chunk time = %f \n", t1.tv_sec - t0.tv_sec + (double)(t1.tv_usec - t0.tv_usec)/1000000 );
 }
 
 /* 
@@ -1046,16 +1041,16 @@ static void do_read (const ADIOS_FILE * fp)
     bp_proc_pvt_struct * pvt = (bp_proc_pvt_struct *) p->priv;
     int file_idx;
     uint64_t offset, payload_size;
-struct timeval t0;
-struct timeval t1;
-double t2, t3, t4, t5;
+    //struct timeval t0;
+    //struct timeval t1;
+    //double t2, t3, t4, t5;
 
     read_request * s = pvt->split_read_request_list, * f_start = s, * f_end = s;
     read_request * o_start = s, * o_end = s, * o_prev_end = 0, * parent = 0;
 
-    gettimeofday (&t0, NULL);
+    //gettimeofday (&t0, NULL);
 
-    t2 = MPI_Wtime();
+    //t2 = MPI_Wtime();
 
     while (f_start)
     {
@@ -1093,7 +1088,7 @@ double t2, t3, t4, t5;
 //printf ("o_start.offset = %llu\n", o_start->ra->offset);
 //printf ("o_prev_end.offset = %llu\n", o_prev_end->ra->offset);
 
-            t4 = MPI_Wtime ();
+            //t4 = MPI_Wtime ();
             // read a chunk from file into internal buffer
             read_chunk (fp, 
                         ((rr_pvt_struct *) o_start->priv)->file_idx, 
@@ -1102,7 +1097,7 @@ double t2, t3, t4, t5;
                          - ((rr_pvt_struct *) o_start->priv)->offset + payload_size
                        );
 
-            t5 = MPI_Wtime ();
+            //t5 = MPI_Wtime ();
 //    printf ("read chunk = %f \n", t5 - t4);
 
             s = o_start;
@@ -1122,11 +1117,11 @@ double t2, t3, t4, t5;
         f_start = f_end;
     }
 
-    gettimeofday (&t1, NULL);
-    t3 = MPI_Wtime ();
+    //gettimeofday (&t1, NULL);
+    //t3 = MPI_Wtime ();
 
-//    printf ("while time = %f \n", t1.tv_sec - t0.tv_sec + (double)(t1.tv_usec - t0.tv_usec)/1000000 );
-//    printf ("while time = %f \n", t3 - t2);
+    //printf ("while time = %f \n", t1.tv_sec - t0.tv_sec + (double)(t1.tv_usec - t0.tv_usec)/1000000 );
+    //printf ("while time = %f \n", t3 - t2);
 }
 
 /* r - the original read rquest
@@ -1145,7 +1140,7 @@ static void read_buffer (const ADIOS_FILE * fp,
     uint64_t * s_start, * s_count;
     uint64_t * start, * count;
     int i, j, idx, t, time, ndim, dummy;
-    int varid, start_idx, stop_idx, has_subfile, file_is_fortran;
+    int varid, start_idx, stop_idx, file_is_fortran;
     uint64_t ldims[MAX_DIMS], gdims[MAX_DIMS], offsets[MAX_DIMS];
     uint64_t datasize, dset_stride, var_stride, total_size = 0, items_read;
     int is_global = 0, size_unit, break_dim, idx_check1, idx_check2;
@@ -1160,7 +1155,6 @@ static void read_buffer (const ADIOS_FILE * fp,
     s_start = s->sel->u.bb.start;
     s_count = s->sel->u.bb.count;
     file_is_fortran = is_fortran_file (fh);
-    has_subfile = has_subfiles (fh);
     ndim = r->sel->u.bb.ndim;
     size_unit = bp_get_type_size (v->type,
                                   v->characteristics [0].value

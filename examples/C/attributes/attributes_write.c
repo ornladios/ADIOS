@@ -15,13 +15,12 @@ int main (int argc, char ** argv)
 {
     char        filename [256];
     int         rank, size, i;
-    int         NX = 10, level = 1; 
+    int         NX = 10; 
     double      t[NX], mean = 0;
     MPI_Comm    comm = MPI_COMM_WORLD;
     const char * str = "Nov, 2009";
 
     /* ADIOS variables declarations for matching gwrite_temperature.ch */
-    int         adios_err;
     uint64_t    adios_groupsize, adios_totalsize;
     int64_t     adios_handle;
 

@@ -29,12 +29,9 @@ typedef struct double_complex
 int main (int argc, char ** argv) 
 {
     char        filename [256];
-    int         rank, size, i;
-    int         NX = 10; 
-    double      t[NX];
+    int         rank;
     MPI_Comm    comm = MPI_COMM_WORLD;
 
-    int         adios_err;
     uint64_t    adios_groupsize, adios_totalsize;
     int64_t     adios_handle;
 
@@ -62,6 +59,7 @@ int main (int argc, char ** argv)
     v13.i = 11.0;
 
     MPI_Init (&argc, &argv);
+    MPI_Comm_rank (comm, &rank);
 
     strcpy (filename, "scalars.bp");
 

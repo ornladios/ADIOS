@@ -30,9 +30,8 @@ int main (int argc, char ** argv)
 	MPI_Comm    comm = MPI_COMM_WORLD;
 
 	/* ADIOS variables declarations for matching gwrite_temperature.ch */
-	int         adios_err, it;
+	int         it;
 	uint64_t    adios_groupsize, adios_totalsize;
-	int64_t     adios_handle;
 
 	MPI_Init (&argc, &argv);
 	MPI_Comm_rank (comm, &rank);

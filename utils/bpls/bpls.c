@@ -179,8 +179,8 @@ int main( int argc, char *argv[] ) {
     ////prgname = strdup(argv[0]);
 
     /* other variables */
-    int c, last_c='_';
-    int last_opt = -1;
+    int c;
+    //int last_c = '_';
     /* Process the arguments */
     while ((c = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
         switch (c) {
@@ -296,7 +296,7 @@ int main( int argc, char *argv[] ) {
                 printf("Processing default: %c\n", c);
                 break;
         } /* end switch */
-        last_c = c;
+        //last_c = c;
     } /* end while */
 
     /* Check if we have a file defined */
@@ -442,9 +442,8 @@ void printSettings(void) {
 
 void print_file_size(uint64_t size)
 {
-    static const int  sn=7;
     static const char *sm[]={"bytes", "KB", "MB", "GB", "TB", "PB", "EB"};
-    uint64_t s = size, r;
+    uint64_t s = size, r=0;
     int idx = 0;
     while ( s/1024 > 0 ) {
         r = s%1024; 
@@ -454,7 +453,6 @@ void print_file_size(uint64_t size)
     if (r > 511)
         s++;
     printf ("  file size:     %lld %s\n", s, sm[idx]); 
-
 }
 
 
@@ -473,9 +471,7 @@ int doList_group (ADIOS_FILE *fp)
     ADIOS_VARINFO **vis; 
     enum ADIOS_DATATYPES vartype;
     int     i, j, n;             // loop vars
-    int     status;
     int     attrsize;                       // info about one attribute
-    int     mpi_comm_dummy=0;
     bool    matches;
     int     len, maxlen, maxtypelen;
     int     retval;
@@ -591,7 +587,7 @@ int doList_group (ADIOS_FILE *fp)
                 }
 
                 if (longopt || plot) {
-                    status = adios_inq_var_stat (fp, vi, timestep && timed, 0);
+                    adios_inq_var_stat (fp, vi, timestep && timed, 0);
                 }
 
                 if (plot && vi->statistics && vi->statistics->histogram) {
@@ -1037,6 +1033,7 @@ int print_data_hist(ADIOS_VARINFO * vi, char * varname)
     fputs(xtics, out_plot);
     fprintf(out_plot, "plot '%s' using 3 smooth frequency w boxes\n", hist_file);
     fprintf(out_plot, "pause -1 'Press Enter to quit'\n");
+    return 0;
 }
 
 int cmpstringp(const void *p1, const void *p2)
@@ -1476,7 +1473,6 @@ int print_data_as_string(void * data, int maxlen, enum ADIOS_DATATYPES adiosvart
 {
     char *str = (char *)data;
     int len = maxlen;
-    bool cstring = false;
     switch(adiosvartype) {
         case adios_unsigned_byte:
         case adios_byte:
@@ -1628,6 +1624,8 @@ int print_data_characteristics(void * min, void * max, double * avg, double * st
                fprintf(outf,(f ? format : "(%g,i%g)" ), ((double *) data)[2*item], ((double *) data)[2*item+1]);
                break;
              */
+        default:
+            break;
     } // end switch
     return 0;
 }
@@ -1639,7 +1637,7 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype, bool all
         fprintf(outf, "null ");
         return 0;
     }
-    // print next data item into vstr
+    // print next data item 
     switch(adiosvartype) {
         case adios_unsigned_byte:
             fprintf(outf,(f ? format : "%hhu "), ((unsigned char *) data)[item]);
@@ -1694,6 +1692,9 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype, bool all
         case adios_double_complex:
             fprintf(outf,(f ? format : "(%g,i%g)" ), ((double *) data)[2*item], ((double *) data)[2*item+1]);
             break;
+
+        default:
+            break;
     } // end switch
     return 0;
 }
@@ -1702,7 +1703,7 @@ int print_dataset(void *data, enum ADIOS_DATATYPES adiosvartype,
         uint64_t *s, uint64_t *c, int tdims, int *ndigits)
 {
     int i,item, steps;
-    char idxstr[128], vstr[128], buf[16];
+    char idxstr[128], buf[16];
     uint64_t ids[MAX_DIMS];  // current indices
     bool roll;
 
@@ -1779,7 +1780,7 @@ void print_endline(void)
 }
 
 
-int print_decomp(ADIOS_VARINFO *vi)
+void print_decomp(ADIOS_VARINFO *vi)
 {
     /* Print block info */
     int i,j,k;
@@ -1791,7 +1792,7 @@ int print_decomp(ADIOS_VARINFO *vi)
             fprintf(outf, "        step %*d: ", ndigits_nsteps, i);
             fprintf(outf, "%d instances available\n", vi->nblocks[i]);
         }
-        return 0;
+        return;
     } 
     else 
     {

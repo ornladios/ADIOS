@@ -22,16 +22,13 @@
 int main (int argc, char ** argv) 
 {
     /* application data structures */
-    char        filename [256];
-    int         rank, size, i, j;
+    int         rank;
     int         NX, NY; 
     double      *t;
     int         *p;
 
     /* MPI and ADIOS data structures */
     MPI_Comm    comm = MPI_COMM_WORLD;
-    int         adios_err;
-    int64_t     adios_handle, adios_buf_size;
 
     /* MPI and ADIOS setup */
     MPI_Init (&argc, &argv);
@@ -51,7 +48,6 @@ int main (int argc, char ** argv)
     ADIOS_FILE* afile = adios_read_open("arrays", ADIOS_READ_METHOD_FLEXPATH, comm, 
                                         ADIOS_LOCKMODE_NONE, 30.0);
     /* Read arrays for each time step */
-    int ii=0;
     while(adios_errno != err_end_of_stream){
 
 	ADIOS_VARINFO* nx_info = adios_inq_var( afile, "NX");

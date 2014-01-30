@@ -17,6 +17,7 @@ extern diag_t get_options(struct adios_tsprt_opts * p_tsprt_opts, int argc, char
 extern diag_t set_value(double *p_arr, int arr_len, double value);
 extern diag_t get_data_size(int *shape, int shape_elem_count, int* data_size);
 extern diag_t get_maya_var_name(char *prefix, int number);
+extern diag_t gen_maya_var_name(char *buf, int buf_size, char *maya_var_pfx, int number);
 
 
 

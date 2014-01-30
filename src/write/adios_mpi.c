@@ -1327,12 +1327,6 @@ static void adios_mpi_do_read (struct adios_file_struct * fd
                                                       method->method_data;
     struct adios_var_struct * v = fd->group->vars;
 
-    struct adios_parse_buffer_struct data;
-
-    data.vars = v;
-    data.buffer = 0;
-    data.buffer_len = 0;
-
     uint32_t version = md->b.version & ADIOS_VERSION_NUM_MASK;
     switch (version)
     {

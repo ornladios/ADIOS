@@ -233,7 +233,7 @@ static uint64_t get_value_for_dim (struct adios_dimension_item_struct * dimensio
 static int cal_layout(int *procs, int rank, int nprocs, int ndims, MPI_Comm comm, uint64_t *ldims, uint64_t *gdims, uint64_t *offsets)
 {
     char *sbuf, *recvbuf;
-    int slen, recvlen, blen;
+    int slen, blen;
     uint64_t *t_ldims, *t_offsets;
     int i,j;
     int decomp=0;
@@ -254,7 +254,6 @@ static int cal_layout(int *procs, int rank, int nprocs, int ndims, MPI_Comm comm
     slen+=ndims*sizeof(uint64_t);
 
     recvbuf=(char *)malloc(nprocs*ndims*2*sizeof(uint64_t));
-    recvlen=0;
     //rank 0 calculate the info then send to the rest
     if(rank==0) {
         //gather all the info to rank 0
@@ -382,13 +381,14 @@ static void cal_offsets(int *procs, int rank, int ndims, int decomp, int *offset
 static void cal_process_map(int rank, int *procs)
 {
     int i,j,k;
-    int pos, cnt=0;
+    int cnt=0;
+    //int pos;
 
     if(layout==0) {
         for(i=0;i<procs[2];i++) {
             for(j=0;j<procs[1];j++) {
                 for(k=0;k<procs[0];k++) {
-                    pos=i*procs[0]*procs[1]+j*procs[0]+k;
+                    //pos=i*procs[0]*procs[1]+j*procs[0]+k;
                     proc_map[i*procs[0]*procs[1]+j*procs[0]+k]=cnt;
                     cnt++;
                 }
@@ -399,7 +399,7 @@ static void cal_process_map(int rank, int *procs)
         for(i=0;i<procs[0];i++) {
             for(j=0;j<procs[1];j++) {
                 for(k=0;k<procs[2];k++) {
-                    pos=k*procs[0]*procs[1]+j*procs[0]+i;
+                    //pos=k*procs[0]*procs[1]+j*procs[0]+i;
                     proc_map[k*procs[0]*procs[1]+j*procs[0]+i]=cnt;
                     cnt++;
                 }
@@ -1494,13 +1494,13 @@ static void aggr_chunks(char **output, int *procs, int ndims, uint64_t *ldims_li
     uint64_t datasize, dst_stride, src_stride;
     //cycles_t c1, c2;
     char *input;
-    int chunk_cnt;
+    //int chunk_cnt;
     uint64_t prev_x, prev_y, prev_z;
     uint64_t m_offx, m_offy, m_offz;
     uint64_t offx, offy, offz;
     int ni, nj, nk;
 
-    chunk_cnt=(int)pow(2, ndims);
+    //chunk_cnt=(int)pow(2, ndims);
     input=(char *)malloc(totalsize);
     memcpy(input, *output, totalsize);
 

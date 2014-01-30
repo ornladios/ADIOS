@@ -49,6 +49,7 @@
 #define adios_get_attr_byid adios_get_attr_byid_v1
 #define adios_type_to_string adios_type_to_string_v1
 #define adios_type_size adios_type_size_v1
+#define adios_print_fileinfo adios_print_fileinfo_v1
 
 
 #define err_end_of_file err_end_of_stream

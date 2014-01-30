@@ -95,7 +95,8 @@ int main( int argc, char *argv[] ) {
     prgname = strdup(argv[0]);
 
     /* other variables */
-    int c, last_c='_';
+    int c;
+    //int last_c='_';
     int idx = 1;
     /* Process the arguments */
     while ((c = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
@@ -125,7 +126,7 @@ int main( int argc, char *argv[] ) {
             exit (1);
             break;
         } /* end switch */
-        last_c = c;
+        //last_c = c;
         idx++;
     } /* end while */
 

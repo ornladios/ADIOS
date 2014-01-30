@@ -59,7 +59,6 @@ int main (int argc, char ** argv)
     char filename [100];
     int64_t io_handle;  // io handle
     MPI_Comm comm = MPI_COMM_WORLD;
-    MPI_Comm c1;
     int rank;
     int size;
     struct timeval time_start;
@@ -69,7 +68,6 @@ int main (int argc, char ** argv)
     struct timeval time_group_size;
     struct timeval time_write1;
     struct timeval time_write2;
-    struct timeval time_close;
     struct timeval * time_diff_all;
 
     MPI_Init (&argc, &argv);
@@ -87,9 +85,6 @@ printf ("rank %d filename: %s\n", rank, filename);
 
     //uint64_t byte_test_length = 768LL * 1024 * 1024;
     uint64_t byte_test_length = 512LL * 1024 * 1024;
-    uint64_t memory_thief_length =  1024 * 1024 * 1024  // 1 GB
-                              + 128 * 1024 * 1024   // 128 MB
-                             - byte_test_length;
 if (rank == 0) printf ("Byte_test_length: %llu\n", byte_test_length);
 #if DO_WRITE
     char * byte_test = 0;
@@ -136,10 +131,6 @@ if (rank == 0) printf ("Byte_test_length: %llu\n", byte_test_length);
     memset (zion1, 0, zionsize1 * sizeof (float));
     memset (zion2, 0, zionsize2 * zionsize2 * sizeof (float));
     memset (zion3, 0, zionsize2 * zionsize3 * sizeof (float));
-    int r_var_x1;
-    int r_var_x2;
-    int r_zsize;
-    float r_z [zionsize1];
 
     int node = 0;
 
@@ -165,6 +156,9 @@ if (rank == 0) printf ("Byte_test_length: %llu\n", byte_test_length);
     // allocate a big block of memory to stymie unwanted local caching
     // that would make the numbers suspect
 #if MEMORY_THIEF
+    uint64_t memory_thief_length =  1024 * 1024 * 1024  // 1 GB
+                              + 128 * 1024 * 1024   // 128 MB
+                             - byte_test_length;
     char * memory_thief = malloc (1 * 1024 * 1024 * 1024);
 #endif
 
@@ -233,8 +227,9 @@ if (rank == 0) printf ("Byte_test_length: %llu\n", byte_test_length);
         printf ("Proc\tSec\n");
         for (i = 0; i < size; i++)
         {
-            printf ("%06d\t%02d.%06d\n", i, time_diff_all [i].tv_sec
-                   ,time_diff_all [i].tv_usec
+            printf ("%06d\t%02lld.%06lld\n", i, 
+                    (int64_t)time_diff_all [i].tv_sec,
+                    (int64_t)time_diff_all [i].tv_usec
                    );
 
             if (time_diff_all [i].tv_sec >= max_sec)
@@ -311,6 +306,10 @@ if (rank == 0) printf ("Byte_test_length: %llu\n", byte_test_length);
 #if DO_READ
 printf ("XXXXXXXXXXXXXXXX do a read XXXXXXXXXXXXXXXXX\n");
 
+    int r_var_x1;
+    int r_var_x2;
+    int r_zsize;
+    float r_z [zionsize1];
     adios_open (&io_handle, type_name, filename, "r", comm);
     adios_group_size (io_handle, 0, &total);
     adios_read (io_handle, "/mype", &r_var_x1, 4);

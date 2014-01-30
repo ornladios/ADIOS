@@ -62,7 +62,7 @@ int main(int argc, char** argv)
 	int i = 0;
 	for(i = 0; i < g_ndims; i++)
 	{
-		printf("%d ", g_dim[i]);
+		printf("%lld ", g_dim[i]);
 	}
 	printf("\n");
 	

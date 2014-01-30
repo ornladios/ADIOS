@@ -14,6 +14,7 @@
  *
  */
 #include <stdio.h>
+#include <string.h>
 #include "mpi.h"
 #include "adios.h"
 int main (int argc, char ** argv) 
@@ -26,7 +27,6 @@ int main (int argc, char ** argv)
     int         i;
     
     /* ADIOS variables declarations for matching gread_temperature.ch */
-    int         adios_err;
     uint64_t    adios_groupsize, adios_totalsize, adios_buf_size;
     int64_t     adios_handle;
     MPI_Comm    comm =  MPI_COMM_WORLD;

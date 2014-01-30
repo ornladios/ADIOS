@@ -43,7 +43,7 @@ int main (int argc, char ** argv)
 
     uint64_t total;
 
-    int vi, vj, vk, vt, vl;
+    int vi, vj, vk, vl;
     for (i = 0; i < dim1; i++) {
         int_1D[i] = i;
         vi = i*dim2;

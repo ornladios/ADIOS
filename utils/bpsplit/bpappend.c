@@ -94,15 +94,14 @@ void display_help() {
 /** Main */
 int main( int argc, char *argv[] ) {
     int excode;
-    int from      = -1;           // split from  'from'. -1=last
-    int to        = -1;           // split until 'to'. -1=last
     char *filein  = NULL;
     char *fileout = NULL;       
 
     prgname = strdup(argv[0]);
 
     /* other variables */
-    int c, last_c='_';
+    int c;
+    //int last_c='_';
     int idx = 1;
     /* Process the arguments */
     while ((c = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
@@ -129,7 +128,7 @@ int main( int argc, char *argv[] ) {
             exit (1);
             break;
         } /* end switch */
-        last_c = c;
+        //last_c = c;
         idx++;
     } /* end while */
 
@@ -339,7 +338,7 @@ void recalc_offsets(void) {
     struct adios_index_process_group_struct_v1 * pg = in_pg_root;
     struct adios_index_var_struct_v1       * vg = in_vars_root;
     struct adios_index_attribute_struct_v1 * ag = in_attrs_root;
-    int i, start, count;
+    int i;
 
     // process group offsets
     if (verbose) printf("Recalc offsets for new process groups\n");
@@ -351,8 +350,6 @@ void recalc_offsets(void) {
     // variable characteristics offsets
     if (verbose) printf("Recalc offsets for new variable characteristics\n");
     while (vg) {
-        start = 0;
-        count = 0;
         for (i=0; i < vg->characteristics_count; i++) {
             vg->characteristics[i].offset += out_bp->pg_index_offset;
         }
@@ -362,8 +359,6 @@ void recalc_offsets(void) {
     // attribute characteristics offsets
     if (verbose) printf("Recalc offsets for new attribute characteristics\n");
     while (ag) {
-        start = 0;
-        count = 0;
         for (i=0; i < ag->characteristics_count; i++) {
             ag->characteristics[i].offset += out_bp->pg_index_offset;
         }
@@ -536,10 +531,6 @@ int append_in_to_out( const char *fileout, const char *filein) {
 
 int bpappend(char *filein, char *fileout) {
     int excode = 0;
-    uint32_t from, to;
-    uint32_t maxtime = 1;   // at least there is time=1 (single group) in a bp file
-    struct adios_bp_buffer_struct_v1 * b = 0;
-
     // open output file if exists, read and parse indexes 
     excode = read_indexes( fileout, false );
     if (excode == 128) {

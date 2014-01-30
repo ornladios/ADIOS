@@ -337,16 +337,12 @@ void FC_FUNC_(adios_read_var, ADIOS_READ_VAR)
             *read_bytes = adios_errno;
             return;
         }
-        int tidx;
         int from_step = 0, nsteps = 1;
         /* TIME dimension should be emulated here !!! */
         int timed = common_read_is_var_timed(afp, vi->varid);
         if (timed) {
             from_step = (int) start[vi->ndim];
             nsteps    = (int) count[vi->ndim];
-            tidx = 1;
-        } else {
-            tidx = 0;
         }
 
         ADIOS_SELECTION * sel = common_read_selection_boundingbox (vi->ndim, start, count);

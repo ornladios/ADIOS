@@ -12,16 +12,14 @@
  *
 */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 #include "mpi.h"
 #include "adios_read.h"
 
 int main (int argc, char ** argv) 
 {
-    char        filename [256];
     int         rank, size, i;
-    int         NX = 10, level = 1; 
-    double      t[NX], mean = 0;
     MPI_Comm    comm = MPI_COMM_WORLD;
     enum ADIOS_DATATYPES attr_type;
     enum ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP;

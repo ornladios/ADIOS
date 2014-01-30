@@ -569,6 +569,9 @@ double adios_stat_cov (ADIOS_VARINFO * vix, ADIOS_VARINFO * viy, char * characte
  */
 void adios_reset_dimension_order (ADIOS_FILE *fp, int is_fortran);
 
+/** Test function to print basic info about the file to stdout */
+void adios_print_fileinfo (ADIOS_FILE *fp);
+
 #endif  /*__INCLUDED_FROM_FORTRAN_API__*/
 
 #ifdef __cplusplus

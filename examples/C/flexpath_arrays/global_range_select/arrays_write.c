@@ -36,11 +36,10 @@ int main (int argc, char ** argv)
     int test_scalar = rank * 1000;
     offset = rank*NY;
     size_y = size*NY;
-    int ii;
    
-    for(ii = 0; ii<20; ii++){       
+    for(i = 0; i<20; i++){       
 	for(j=0; j<NY*NX; j++){       
-	    t[j] = (offset * NX) + j + NY*NX*ii;	    
+	    t[j] = (offset * NX) + j + NY*NX*i;	    
 	}
 
         //prints the array.
@@ -56,7 +55,7 @@ int main (int argc, char ** argv)
 	adios_write (adios_handle, "var_2d_array", t);
     
 	adios_close (adios_handle);
-	fprintf(stderr, "Rank=%d commited write %d\n", rank, ii);
+	fprintf(stderr, "Rank=%d commited write %d\n", rank, i);
 	printf("rank %d: [", rank);
 	//for(i=0; i<NX*NY;i++){
 	printf("%lf, ", t[0]);

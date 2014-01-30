@@ -25,14 +25,16 @@
 
 int main (int argc, char ** argv) 
 {
-    char        filename [256];
-    int         rank, size, i, j, datasize, if_any;
+    int         rank, size, i, datasize;
+    //int j;
     MPI_Comm    comm = MPI_COMM_WORLD;
     enum ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP_AGGREGATE;
-    ADIOS_SELECTION * sel1, * sel2;
-    ADIOS_VARCHUNK * chunk = 0;
+    ADIOS_SELECTION * sel1;
+    //ADIOS_SELECTION * sel2;
+    //ADIOS_VARCHUNK * chunk = 0;
     void * data = NULL;
-    uint64_t start[2], count[2], npoints, * points;
+    uint64_t start[2], count[2]; 
+    //uint64_t npoints, * points;
    
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (comm, &rank);
@@ -56,7 +58,7 @@ int main (int argc, char ** argv)
         for (i = 0; i < varinfo->ndim; i++)
         {
             datasize *= varinfo->dims[i];
-            printf ("%lu", varinfo->dims[i]);
+            printf ("%llu", varinfo->dims[i]);
             if (i != varinfo->ndim - 1)
             {
                 printf (",");

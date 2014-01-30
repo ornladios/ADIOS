@@ -48,7 +48,6 @@ void adios_write_pg (char transform [], char input_dir [], uint8_t nvars, char *
     char        varfile [nvars][256];
     FILE        *fp [nvars];
 
-    int         adios_err;
     uint64_t    adios_groupsize, adios_totalsize;
     int64_t     adios_handle;
 

@@ -25,7 +25,6 @@ int main (int argc, char ** argv)
     struct double_complex c[NX];
 
     /* ADIOS variables declarations for matching gwrite_temperature.ch */
-    int         adios_err;
     uint64_t    adios_groupsize, adios_totalsize;
     int64_t     adios_handle;
     MPI_Comm    comm=MPI_COMM_WORLD;
