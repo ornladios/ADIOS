@@ -80,17 +80,9 @@ int adios_int_is_num (char * temp) // 1 == yes, 0 == no
 struct adios_var_struct * adios_find_var_by_name (struct adios_group_struct * g,
                                                   const char * fullpath)
 {
-    struct adios_var_struct * var = NULL;
-
-    if (!fullpath) {
-        return NULL;
-    }
-
     // Find variable in the hash table
-    var = (struct adios_var_struct *)
+    return  (struct adios_var_struct *)
             g->hashtbl_vars->get (g->hashtbl_vars, fullpath);
-
-    return var;
 }
 
 /*
