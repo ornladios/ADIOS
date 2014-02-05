@@ -41,6 +41,7 @@ extern "C" {
 
 
 typedef struct qhnobj_s qhnobj_t;  
+typedef struct qhslot_s qhslot_t;  
 typedef struct qhashtbl_s qhashtbl_t;
 
 struct qhnobj_s {
@@ -48,6 +49,12 @@ struct qhnobj_s {
     char *key;         /*!< object key */
     void *value;       /*!< object value */
     qhnobj_t *next;    /*!< for chaining next collision object */
+};
+
+// Head node in hash table 
+struct qhslot_s {
+    qhnobj_t *head;    /*!< The first collision object for gets */
+    qhnobj_t *tail;    /*!< The last collision object for puts */
 };
 
 struct qhashtbl_s {
@@ -67,7 +74,13 @@ struct qhashtbl_s {
     /* private variables - do not access directly */
     int num;         /*!< number of objects in this table */
     int range;       /*!< hash range, vertical number of slots */
-    qhnobj_t **slots;   /*!< slot pointer container */
+    qhslot_t *slots; /*!< slot head node */
+
+    /* private debug variables */
+    int ncalls_get; // number of calls to get()
+    int nwalks_get; // number of walking steps in hash list in get()
+    int ncalls_put; // number of calls to put()
+    int nwalks_put; // number of walking steps in hash list in put()
 };
 
 qhashtbl_t* qhashtbl(int range);
