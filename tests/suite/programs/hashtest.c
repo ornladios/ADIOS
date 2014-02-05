@@ -105,10 +105,6 @@ int dotest ()
     time (&tput);
     tput = tput - tbegin;
 
-    /* Print hashtable */
-    printf("============== PRINT HASHTABLE ============\n");
-    tbl->debug(tbl,NULL,0);
-
     /* Get each element and check value */
     printf("============== GET DATA FROM HASHTABLE ============\n");
     time (&tbegin);
@@ -132,6 +128,10 @@ int dotest ()
     tget = tget - tbegin;
     printf("Timing: put %d elements in %d seconds, got them back in %d seconds\n",
             npaths*nvars, tput, tget);
+
+    /* Print hashtable */
+    printf("============== PRINT HASHTABLE ============\n");
+    tbl->debug(tbl,NULL,0);
 
     /* Free hashtable */
     tbl->free(tbl);
