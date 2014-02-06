@@ -790,7 +790,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                 {
                     /* The slowest changing dimensions should not be read completely but
                        we still need to read only one block */
-                    int isize;
+                    uint64_t isize;
                     uint64_t size_in_dset = 0;
                     uint64_t offset_in_dset = 0;
                     uint64_t offset_in_var = 0;
@@ -853,7 +853,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                 }
                 else
                 {
-                    int isize;
+                    uint64_t isize;
                     uint64_t size_in_dset[10];
                     uint64_t offset_in_dset[10];
                     uint64_t offset_in_var[10];
