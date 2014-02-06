@@ -187,7 +187,7 @@ struct adios_file_struct
 #ifdef SKEL_TIMING
     struct adios_timing_struct * timing_obj;
 #endif
-
+    MPI_Comm comm;          // duplicate of comm received in adios_open()
 };
 
 struct adios_dimension_item_struct

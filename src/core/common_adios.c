@@ -157,6 +157,7 @@ int common_adios_open (int64_t * fd, const char * group_name
     fd_p->write_size_bytes = 0;
     fd_p->base_offset = 0;
     fd_p->pg_start_in_file = 0;
+    MPI_Comm_dup(comm, &fd_p->comm);
 
 #ifdef SKEL_TIMING
     fd_p->timing_obj = 0;
@@ -201,7 +202,7 @@ int common_adios_open (int64_t * fd, const char * group_name
            )
         {
             adios_transports [methods->method->m].adios_open_fn
-                                                 (fd_p, methods->method, comm);
+                                                 (fd_p, methods->method, fd_p->comm);
         }
 
         methods = methods->next;
@@ -1094,6 +1095,8 @@ int common_adios_close (int64_t fd_p)
         free (fd->name);
         fd->name = 0;
     }
+
+    MPI_Comm_free (&fd->comm);
 
     free ((void *) fd_p);
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
