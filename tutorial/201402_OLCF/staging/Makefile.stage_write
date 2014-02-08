@@ -1,0 +1,21 @@
+
+
+default: stage_write 
+all: default
+
+OBJS = utils.o decompose_block.o 
+
+%.o: %.c
+	${CC} ${CFLAGS} -c ${ADIOS_INC} $<
+
+stage_write: ${OBJS} stage_write.o
+	${CC} ${LDFLAGS} -o stage_write ${OBJS} stage_write.o ${ADIOS_CLIB}
+
+test_decompose: ${OBJS} test_decompose.o 
+	${CC} ${LDFLAGS} -o test_decompose ${OBJS} test_decompose.o ${ADIOS_CLIB}
+
+clean:
+	rm -f *.o *.mod *.fh core.*
+	rm -f log.stage_write dataspaces.conf conf srv.lck staged.bp
+	rm -f stage_write
+

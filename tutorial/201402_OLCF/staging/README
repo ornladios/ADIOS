@@ -1,0 +1,132 @@
+REQUIREMENTS:
+    - ADIOS 1.6.0: http://www.olcf.ornl.gov/center-projects/adios
+    - Fortran 90 compiler
+    - MPI
+
+BUILD:
+    - Install ADIOS
+    - In Makefile, set ADIOS_DIR to the installation directory
+    - also set the MPI/F90 compiler name (e.g. mpif90 or ftn)
+    - run make
+
+
+1. Run the writer 
+=================
+ 2x2 processes write 4x5 blocks (8x10 global array), 5 timesteps
+
+$ mpirun -np 4 ./coupling_writer_2D 2 2 4 5 5
+ Process number        : 2 x 2
+ Array size per process: 4 x 5
+rank=0: 2D array pos: 0,0 offset: 0,0
+rank=1: 2D array pos: 1,0 offset: 4,0
+rank=2: 2D array pos: 0,1 offset: 0,5
+rank=3: 2D array pos: 1,1 offset: 4,5
+rank=1 set matrix to   1.01
+rank=0 set matrix to   0.01
+  Output file: writer_001.bp
+rank=2 set matrix to   2.01
+rank=3 set matrix to   3.01
+rank=1: ----------------------  write completed ----------------------
+rank=2: ----------------------  write completed ----------------------
+rank=3: ----------------------  write completed ----------------------
+rank=0: ----------------------  write completed ----------------------
+...
+
+
+2. Check the output
+===================
+
+$ bpls -l writer.bp 
+  integer  /info/nproc  5*scalar = 4 / 4 
+  integer  /info/npx    5*scalar = 2 / 2 
+  integer  /info/npy    5*scalar = 2 / 2 
+  integer  /gdx         5*scalar = 8 / 8 
+  integer  /gdy         5*scalar = 10 / 10 
+  integer  /ox          5*scalar = 0 / 0 
+  integer  /oy          5*scalar = 0 / 0 
+  integer  /ldx         5*scalar = 4 / 4 
+  integer  /ldy         5*scalar = 5 / 5 
+  double   /xy          5*{10, 8} = 0.01 / 3.05 / 1.53 / 1.11812 
+
+Note that F90 app writes 8x10 arrays in Fortran column-order, 
+which is 10x8 in C row-order. bpls sees/shows the C ordering 
+because it is a C program.  The reader below sees 8x10 Fortran
+array because it is a Fortan program.
+
+
+3. Run the reader
+=================
+
+$ mpirun -np 3 ./coupling_reader_2D 1 3 MPI 1 1
+ Process number        : 1 x 3
+ Method for reading: 0
+  Input file: writer.bp
+rank=0: Read in gdx and gdy, step1 from writer.bp
+rank=2: Read in gdx and gdy, step1 from writer.bp
+rank=1: Read in gdx and gdy, step1 from writer.bp
+rank=0: Read in xy(1:2,1:10) from writer.bp
+rank=2: Read in xy(5:8,1:10) from writer.bp
+rank=1: Read in xy(3:4,1:10) from writer.bp
+rank=1: Collectively wrote xy and new xy2 to reader_001.bp
+rank=2: Collectively wrote xy and new xy2 to reader_001.bp
+rank=0: Collectively wrote xy and new xy2 to reader_001.bp
+rank=2: Read in gdx and gdy, step2 from writer.bp
+rank=0: Read in gdx and gdy, step2 from writer.bp
+rank=1: Read in gdx and gdy, step2 from writer.bp
+rank=0: Read in xy(1:2,1:10) from writer.bp
+rank=2: Read in xy(5:8,1:10) from writer.bp
+rank=1: Read in xy(3:4,1:10) from writer.bp
+rank=2: Collectively wrote xy and new xy2 to reader_002.bp
+rank=1: Collectively wrote xy and new xy2 to reader_002.bp
+rank=0: Collectively wrote xy and new xy2 to reader_002.bp
+...
+
+
+4. Check the output
+===================
+
+$ bpls -l reader_001.bp 
+  integer  /info/rank  scalar = 0 
+  integer  /gdx        scalar = 8 
+  integer  /gdy        scalar = 10 
+  integer  /ldx        scalar = 2 
+  integer  /ldy        scalar = 10 
+  integer  /ox         scalar = 0 
+  integer  /oy         scalar = 0 
+  double   /xy         {10, 8} = 0.01 / 3.01 / 1.51 / 1.11803 
+  double   /xy2        {10, 8} = 0.0001 / 2.0301 / 1.2651 / 0.833742 
+
+
+xy in the two files should match:
+
+
+$ bpls -l reader_001.bp -d xy -n 8
+  double     /xy         {10, 8} = 0.01 / 3.01 / 1.51 / 1.11803 
+    (0,0)    0.01 0.01 0.01 0.01 1.01 1.01 1.01 1.01 
+    (1,0)    0.01 0.01 0.01 0.01 1.01 1.01 1.01 1.01 
+    (2,0)    0.01 0.01 0.01 0.01 1.01 1.01 1.01 1.01 
+    (3,0)    0.01 0.01 0.01 0.01 1.01 1.01 1.01 1.01 
+    (4,0)    0.01 0.01 0.01 0.01 1.01 1.01 1.01 1.01 
+    (5,0)    2.01 2.01 2.01 2.01 3.01 3.01 3.01 3.01 
+    (6,0)    2.01 2.01 2.01 2.01 3.01 3.01 3.01 3.01 
+    (7,0)    2.01 2.01 2.01 2.01 3.01 3.01 3.01 3.01 
+    (8,0)    2.01 2.01 2.01 2.01 3.01 3.01 3.01 3.01 
+    (9,0)    2.01 2.01 2.01 2.01 3.01 3.01 3.01 3.01 
+
+$ bpls -l writer.bp -d xy -n 8 -c "1,-1,-1"
+  double   /xy          5*{10, 8} = 0.01 / 3.05 / 1.53 / 1.11812 
+    slice (0:0, 0:9, 0:7)
+    (0,0,0)    0.01 0.01 0.01 0.01 1.01 1.01 1.01 1.01 
+    (0,1,0)    0.01 0.01 0.01 0.01 1.01 1.01 1.01 1.01 
+    (0,2,0)    0.01 0.01 0.01 0.01 1.01 1.01 1.01 1.01 
+    (0,3,0)    0.01 0.01 0.01 0.01 1.01 1.01 1.01 1.01 
+    (0,4,0)    0.01 0.01 0.01 0.01 1.01 1.01 1.01 1.01 
+    (0,5,0)    2.01 2.01 2.01 2.01 3.01 3.01 3.01 3.01 
+    (0,6,0)    2.01 2.01 2.01 2.01 3.01 3.01 3.01 3.01 
+    (0,7,0)    2.01 2.01 2.01 2.01 3.01 3.01 3.01 3.01 
+    (0,8,0)    2.01 2.01 2.01 2.01 3.01 3.01 3.01 3.01 
+    (0,9,0)    2.01 2.01 2.01 2.01 3.01 3.01 3.01 3.01 
+
+
+
+
