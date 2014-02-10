@@ -12,8 +12,10 @@
     <global-bounds dimensions="nx_global,ny_global" offsets="offs_x,offs_y">
         <var name="xy" type="real*8" dimensions="nx_local,ny_local" 
              transform="none" />
-          <!-- transform="zlib" /> -->
-          <!-- On Rhea only  transform="isobar" /> -->
+          <!-- 
+             transform="zlib" /> 
+             transform="isobar" /> 
+           -->
     </global-bounds>
 
     <attribute name="xy/description" type="string"
@@ -30,7 +32,10 @@
   -->
   <transport group="writer" method="MPI"/>
   <!--
+  <transport group="writer" method="POSIX"/>
   <transport group="writer" method="VAR_MERGE">chunk_size=30000000;io_method=MPI</transport>
+  <transport group="writer" method="MPI_AGGREGATE">num_aggregators=4;num_ost=2</transport>
+  <transport group="writer" method="MPI_LUSTRE">stripe_count=3;stripe_size=1048576</transport>
   -->
 
   <buffer size-MB="30" allocate-time="now"/>
