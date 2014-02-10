@@ -1,0 +1,49 @@
+REQUIREMENTS:
+    - ADIOS 1.5.0: http://www.olcf.ornl.gov/center-projects/adios
+    - C compiler
+    - MPI
+
+BUILD:
+    - Install ADIOS
+    - In Makefile, set ADIOS_DIR to the installation directory
+    - also set the MPI/C compiler name (e.g. mpicc or cc)
+    - run make
+
+This example is for writing a uniform 2D mesh and data on it. 
+2D mesh is decomposed in x and y direction by npx and npy, which are passed in from the command line following the executable.
+npx = number of processes in x direction
+npy = number of processes in y direction
+X = coordinates of data in x direction
+Y = coordinates of data in y direction
+
+Processes write ndx*ndy points per process
+data is data on the points (value = rank)
+
+1. Run the writer 
+=================
+$ mpirun -np 12 ./tri2d 4 3
+
+2. Check the output
+===================
+  integer  /nproc      scalar = 12 
+  integer  /npoints    scalar = 144 
+  integer  /num_cells  scalar = 240 
+  integer  /nx_global  scalar = 16 
+  integer  /ny_global  scalar = 9 
+  integer  /offs_x     scalar = 0 
+  integer  /offs_y     scalar = 0 
+  integer  /nx_local   scalar = 4 
+  integer  /ny_local   scalar = 3 
+  integer  /lp         scalar = 12 
+  integer  /op         scalar = 0 
+  integer  /lc         scalar = 24 
+  integer  /oc         scalar = 0 
+  double   /N          {144} = 0 / 11 / 5.5 / 3.45205 
+  double   /C          {240} = 0 / 11 / 4.9 / 3.30505 
+  double   /points     {144, 2} = 0 / 25.6667 / 8.41667 / 6.27624 
+  integer  /cells      {240, 3} = 0 / 143 / 71.5 / 40.0625 
+
+$ bpls -l tri2d.bp
+
+tri2d.n.png is a plot of how the data over the nx_global*ny_global points should look like if visualized.
+plotter2d -f tri2d.bp -triangle -yvar cells -xvar points -v N -o t.png 

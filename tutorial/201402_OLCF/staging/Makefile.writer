@@ -1,0 +1,21 @@
+
+default: writer 
+all: default
+
+writer.o : writer.F90 gwrite_writer2D.fh
+	${FC} -g -c ${ADIOS_INC} writer.F90  $<
+
+writer:  writer.o gwrite_writer2D.fh
+	${FC} -g -o writer writer.o ${ADIOS_FLIB} 
+
+gwrite_writer2D.fh: writer.xml
+	${GPP} writer.xml
+
+clean:
+	rm -f *.o *.mod *.fh core.*a 
+	rm -f xy.*.png xy2.*.png writer.bp reader_0*.bp 
+	rm -f log.writer log.reader log.server
+	rm -f writer 
+	rm -f writer.bp_reader*.txt
+	rm -f conf dataspaces.conf srv.lck 
+        
