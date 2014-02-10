@@ -92,6 +92,11 @@ This finishes after long time on Rhea, but the bp file is bad:
 $bpls -l buginxml.bp  data
    double   data       {5, 7} = 0 / 3 / 0.375 / 0.856957 
 
+
+Hint: 
+Try 'bpls -lD' to see the decomposition of the global array as see by ADIOS.
+
+
 Hint:
 Try dumping it with 'bpdump' and look for the variable 'data' definition. 
 Are the dimensions right? Do the individual processes fill out a large global array?
