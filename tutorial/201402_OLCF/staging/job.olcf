@@ -78,7 +78,6 @@ max_versions = 10
 
     # Run DataSpaces
     echo "-- Start DataSpaces server "$SERVER" on $STAGINGPROC PEs, -s$STAGINGPROC -c$PROCALL"
-    echo $RUNCMD $STAGINGPROC $SERVER -s$STAGINGPROC -c$PROCALL 
     $RUNCMD $STAGINGPROC $SERVER -s$STAGINGPROC -c$PROCALL &> log.server &
 
     ## Give some time for the servers to load and startup
