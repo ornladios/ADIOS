@@ -1,33 +1,46 @@
 #!/bin/bash
 #PBS -A STF006
-#PBS -N coupling
+#PBS -N staging
 #PBS -j oe
-#PBS -l walltime=1:00:00,nodes=1:ppn=32
-## On Cray, you need -lnodes=3 (3 nodes for 3 separate apruns)
-## On a cluster, you need WRITEPROC+STAGINGPROC+READPROC cores
+#PBS -l walltime=0:10:00,nodes=3
 
 #cd $PBS_O_WORKDIR
 
-## Sith cluster
-RUNCMD="mpirun -np"
-SERVER=/ccs/proj/e2e/dataspaces/sith/pgi/bin/dataspaces_server
-#
-## Chester
-#RUNCMD="aprun -n"
-#SERVER=/sw/xk6/dataspaces/1.2.0/cle4.0_pgi12.10.0/bin/dataspaces_server
+if [ `hostname | cut -c 1-4` == "sith" -o `hostname | cut -c 1-4` == "rhea" ]; then
+    ## Rhea/Sith cluster
+    source /etc/profile.d/modules.sh
+    module load adios/1.6.0
+    module load dataspaces/1.3.0
+
+    RUNCMD="mpirun -np"
+    SERVER=$DATASPACES_DIR/bin/dataspaces_server
+
+elif [ `hostname | cut -c 1-7` == "chester" ]; then
+    ## Chester
+    source /opt/modules/default/etc/modules.sh
+    module load adios/1.6.0
+    module load dataspaces/1.3.0
+
+    RUNCMD="aprun -n"
+    SERVER=$DATASPACES_DIR/bin/dataspaces_server
+
+else
+    echo "Could not determine what machine is this."
+    return
+fi
 
 # Number of writers (WPX*WPY = WRITEPROC)
-WRITEPROC=4
-WPX=2
-WPY=2
+WRITEPROC=12
+WPX=4
+WPY=3
 # Number of staging processes, if staging is used
 # DIMES needs only 1 (more is useless)
 # DATASPACES may need many to store multiple steps of data in memory
 STAGINGPROC=2
 # Number of readers (RPX*RPY = READPROC)
 READPROC=3
-RPX=1
-RPY=3
+RPX=3
+RPY=1
 
 
 let "WP=WPX*WPY"
@@ -45,10 +58,10 @@ fi
 
 # clean-up
 rm -f log.* draw* core* conf dataspaces.conf srv.lck
-rm -f writer.bp reader_0*.bp
+rm -f writer.bp staged.bp
 
-METHOD=`grep "<transport .*method=" coupling_writer_2D.xml | sed -e "s/^.*method=\"\([A-Z]*\).*/\1/"`
-echo "The selected coupling method in coupling_writer_2D.xml is: $METHOD"
+METHOD=`grep "<transport .*method=" writer.xml | sed -e "s/^.*method=\"\([A-Z]*\).*/\1/"`
+echo "The selected method in writer.xml is: $METHOD"
 
 if [ "x$METHOD" == "xDATASPACES" -o "x$METHOD" == "xDIMES" ]; then
     READMETHOD="$METHOD"
@@ -65,6 +78,7 @@ max_versions = 10
 
     # Run DataSpaces
     echo "-- Start DataSpaces server "$SERVER" on $STAGINGPROC PEs, -s$STAGINGPROC -c$PROCALL"
+    echo $RUNCMD $STAGINGPROC $SERVER -s$STAGINGPROC -c$PROCALL 
     $RUNCMD $STAGINGPROC $SERVER -s$STAGINGPROC -c$PROCALL &> log.server &
 
     ## Give some time for the servers to load and startup
@@ -82,16 +96,17 @@ max_versions = 10
 
     echo "-- DataSpaces Portals IDs: P2TNID = $P2TNID   P2TPID = $P2TPID"
 else
-    READMETHOD="FILE"
+    READMETHOD="BP"
 fi
 
 # Start WRITER
 echo "-- Start WRITER on $WRITEPROC PEs"
-$RUNCMD $WRITEPROC ./coupling_writer_2D $WPX $WPY 10 10 5  >& log.writer &
+$RUNCMD $WRITEPROC ./writer $WPX $WPY 65 129 5  >& log.writer &
+
 
 # Start READER
 echo "-- Start READER on $READPROC PEs."
-$RUNCMD $READPROC ./coupling_reader_2D $RPX $RPY $READMETHOD 1 >& log.reader &
+$RUNCMD $READPROC ./stage_write writer.bp staged.bp $READMETHOD "" MPI "" $READPROC 1 1 >& log.stage_write &
 
 echo "-- Wait until all applications exit. Run ./check.sh to see status"
 wait
