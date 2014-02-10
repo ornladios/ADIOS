@@ -2,17 +2,17 @@
 <adios-config host-language="Fortran">
   <adios-group name="writer" >
     <var name="nx_global"  type="integer"/>
-    <var name="ny_global"   type="integer"/>
+    <var name="ny_global"  type="integer"/>
+    <var name="nx_local"   type="integer"/>
+    <var name="ny_local"   type="integer"/>
+    <var name="aux/offs_x" gwrite="offs_x" type="integer"/>
+    <var name="aux/offs_y" gwrite="offs_y" type="integer"/>
 
-    <var name="offs_x" type="integer"/>
-    <var name="offs_y" type="integer"/>
-    <var name="nx_local"  type="integer"/>
-    <var name="ny_local"  type="integer"/>
-
-    <global-bounds dimensions="nx_global,ny_global" offsets="offs_x,offs_y">
+    <global-bounds dimensions="nx_global,ny_global" offsets="aux/offs_x,aux/offs_y">
         <var name="xy" type="real*8" dimensions="nx_local,ny_local" 
              transform="none" />
           <!-- 
+             transform="none" />
              transform="zlib" /> 
              transform="isobar" /> 
            -->
