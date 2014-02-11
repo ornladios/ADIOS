@@ -12,10 +12,14 @@ GPP = ${ADIOS_DIR}/bin/gpp.py
 
 
 default: all
-all: nc4_write adios_write
+all: nc4_write nc4_read
+# adios_write adios_read
 
 nc4_write: nc4_write.F90 
 	${FC}   -g -o nc4_write -I${NETCDF_DIR}/include  nc4_write.F90 -L${NETCDF_DIR}/lib/libnetcdff
+
+nc4_read: nc4_read.F90 
+	${FC}   -g -o nc4_read -I${NETCDF_DIR}/include  nc4_read.F90 -L${NETCDF_DIR}/lib/libnetcdff
 
 adios_write: adios_write.F90 gwrite_writer.fh
 	${FC}   -g -o adios_write ${ADIOS_INC} adios_write.F90 ${ADIOS_FLIB}
