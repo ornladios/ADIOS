@@ -23,10 +23,11 @@ char   npy_str[256];       // # of procs in y dim (string value)
 int    npx;                // # of procs in x direction
 int    npy;                // # of procs in y direction
 int    nproc;               // # of total procs
+char  *xmlfile;            // The XML file to use for adios
 
 void printUsage(char *prgname)
 {
-    printf("Usage: mpirun -np <N> %s <nx> <ny>\n"
+    printf("Usage: mpirun -np <N> %s <xmlfile> <nx> <ny>\n"
            "    <nx> <ny>  2D decomposition values in each dimension of an 2D array\n"
            "         The product of these number must be equal the number of processes\n"
            "         e.g. for N=12 you may use  4 3\n"
@@ -38,13 +39,14 @@ int processArgs(int argc, char ** argv)
 {
     int i, j, nd, prod;
     char *end;
-    if (argc < 3) {
+    if (argc < 4) {
         printUsage (argv[0]);
         return 1;
     }
 
-    strncpy(npx_str, argv[1], sizeof(npx_str));
-    strncpy(npy_str, argv[2], sizeof(npy_str));  
+    xmlfile = strdup (argv[1]);
+    strncpy(npx_str, argv[2], sizeof(npx_str));
+    strncpy(npy_str, argv[3], sizeof(npy_str));  
 
     npx = atoi(npx_str);
     npy = atoi(npy_str);
@@ -111,7 +113,7 @@ int main (int argc, char ** argv )
         for( j = 0; j < ndy; j++)
             data[i*ndy + j] = 1.0*rank;
  
-    adios_init ("buginxml.xml", comm);
+    adios_init (xmlfile, comm);
     adios_open (&adios_handle, "buginxml", "buginxml.bp", "w", comm);
 
     adios_groupsize = 7*sizeof(int) + 4*sizeof(double)\

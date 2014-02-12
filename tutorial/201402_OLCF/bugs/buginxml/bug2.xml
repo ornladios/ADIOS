@@ -1,20 +1,20 @@
 <?xml version="1.0"?>
-<adios-config host-language="C">
+<adios-config host-language="CC">
   <adios-group name="buginxml" >
-    <var name="nx_global"  path="" type="integer"/>
-    <var name="ny_global"  path="" type="integer"/>
-    <var name="nproc" path="" type="integer"/>
-    <var name="offs_x" path="" type="integer"/>
-    <var name="offs_y" path="" type="integer"/>
-    <var name="nx_local"  path="" type="integer"/>
-    <var name="ny_local"  path="" type="integer"/>
+    <var name="nx_global"  type="integer"/>
+    <var name="ny_global"  type="integer"/>
+    <var name="nproc"  type="integer"/>
+    <var name="offs_x"  type="integer"/>
+    <var name="offs_y"  type="integer"/>
+    <var name="nx_local"   type="integer"/>
+    <var name="ny_local"   type="integer"/>
 
     <var name="O1" type="integer"/>
     <var name="O2" type="integer"/>
     <var name="S1" type="integer"/>
     <var name="S2" type="integer"/>
 
-    <global-bounds dimensions="nx_global,ny_global" offsets="offs_y,offs_x">
+    <global-bounds dimensions="nx_globa,ny_globa" offsets="offs_x,offs_y">
         <var name="data" type="double" dimensions="nx_local,ny_local"/>
     </global-bounds>
 
