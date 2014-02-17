@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+
+#for test in $test_plan.get_tests():
+<%= '#####Start Test#####' %>
+mkdir $test.get_subdir()
+pushd $test.get_subdir()
+echo "$test.to_yaml()" > test.yaml
+popd
+<%= '#####End Test#####' %>
+
+#end for

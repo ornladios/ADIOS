@@ -23,6 +23,7 @@ import skel_params
 import skel_replay
 import skel_source
 import skel_submit
+import skel_suite
 import skel_xml
 
 def get_parser():
@@ -102,6 +103,10 @@ def main(argv=None):
 
     if args.subcommand == 'replay':
         skel_replay.do_replay_with_args (parser)
+        return 0
+
+    if args.subcommand == 'suite':
+        skel_suite.gen_suite_with_args (parser)
         return 0
 
     try:
