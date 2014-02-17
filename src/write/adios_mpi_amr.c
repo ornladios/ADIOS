@@ -40,7 +40,8 @@ enum ADIOS_MPI_AMR_IO_TYPE
 
 static int adios_mpi_amr_initialized = 0;
 
-#define is_aggregator(rank)  md->g_is_aggregator[rank]
+//#define is_aggregator(rank)  md->g_is_aggregator[rank]
+#define is_aggregator(rank)  (md->g_color2 == 0)
 #define FREE(v) \
   if (v)        \
   {             \
@@ -96,6 +97,7 @@ struct adios_MPI_data_struct
     int g_num_ost;
     int is_local_fs;
     int g_threading;
+    int is_color_set; // whether 'color' is set from XML.
     int g_color1;
     int g_color2;
     MPI_Offset * g_offsets;
@@ -464,6 +466,30 @@ adios_mpi_amr_set_aggregation_parameters(char * parameters, struct adios_MPI_dat
         }
     }
 
+    // Get 'color' parameter. If 'color' is set,
+    // the num_aggregators will be disregarded.
+    // The actual # of aggregators will be caculated
+    // according to color. 
+    strcpy (temp_string, parameters);
+    trim_spaces (temp_string);
+
+    if ( (p_size = strstr (temp_string, "color")) )
+    {
+        char * p = strchr (p_size, '=');
+        char * q = strtok (p, ";");
+
+        md->is_color_set = 1;
+        if (!q)
+            md->g_color1 = atoi (q + 1);
+        else
+            md->g_color1 = atoi (p + 1);
+    }
+    else
+    {
+        // by default, use BG
+        md->g_io_type = ADIOS_MPI_AMR_IO_BG;
+    }
+
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
 
@@ -554,41 +580,51 @@ adios_mpi_amr_set_aggregation_parameters(char * parameters, struct adios_MPI_dat
     }
     memset (md->g_is_aggregator, 0, nproc * sizeof(int));
 
-    aggr_group_size = nproc / md->g_num_aggregators;
-    remain = nproc - (int) aggr_group_size * md->g_num_aggregators;
-
-    index = 0;
-    for (i = 0; i < md->g_num_aggregators; i++)
+    if (!md->is_color_set)
     {
-        md->g_is_aggregator[index] = 1;
+        aggr_group_size = nproc / md->g_num_aggregators;
+        remain = nproc - (int) aggr_group_size * md->g_num_aggregators;
 
-        if (i < remain)
+        index = 0;
+        for (i = 0; i < md->g_num_aggregators; i++)
         {
-            index += aggr_group_size + 1;
+            md->g_is_aggregator[index] = 1;
+
+            if (i < remain)
+            {
+                index += aggr_group_size + 1;
+            }
+            else
+            {
+                index += aggr_group_size;
+            }
+        }
+
+        if (remain == 0)
+        {
+            md->g_color1 = rank / aggr_group_size;
+            md->g_color2 = rank % aggr_group_size;
         }
         else
         {
-            index += aggr_group_size;
+            if (rank < (aggr_group_size + 1) * remain)
+            {
+                md->g_color1 = rank / (aggr_group_size + 1);
+                md->g_color2 = rank % (aggr_group_size + 1);
+            }
+            else
+            {
+                md->g_color1 = remain + (rank - (aggr_group_size + 1) * remain) / aggr_group_size;
+                md->g_color2 = (rank - (aggr_group_size + 1) * remain)% aggr_group_size;
+            }
         }
     }
+    else // if color is set
+    {
+        MPI_Comm new_comm;
 
-    if (remain == 0)
-    {
-        md->g_color1 = rank / aggr_group_size;
-        md->g_color2 = rank % aggr_group_size;
-    }
-    else
-    {
-        if (rank < (aggr_group_size + 1) * remain)
-        {
-            md->g_color1 = rank / (aggr_group_size + 1);
-            md->g_color2 = rank % (aggr_group_size + 1);
-        }
-        else
-        {
-            md->g_color1 = remain + (rank - (aggr_group_size + 1) * remain) / aggr_group_size;
-            md->g_color2 = (rank - (aggr_group_size + 1) * remain)% aggr_group_size;
-        }
+        MPI_Comm_split (md->group_comm, md->g_color1, md->rank, &new_comm);
+        MPI_Comm_rank (new_comm, &md->g_color2);
     }
 }
 
@@ -888,6 +924,7 @@ void adios_mpi_amr_init (const PairStruct * parameters
     md->g_num_ost = 0;
     md->is_local_fs = 0;
     md->g_threading = 0;
+    md->is_color_set = 0;
     md->g_color1 = 0;
     md->g_color2 = 0;
     md->g_offsets = 0;
@@ -2453,6 +2490,7 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
 
             md->g_num_aggregators = 0;
             md->g_have_mdf = 1;
+            md->is_color_set = 0;
             md->g_color1 = 0;
             md->g_color2 = 0;
 
@@ -3389,6 +3427,7 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
 
             md->g_num_aggregators = 0;
             md->g_have_mdf = 1;
+            md->is_color_set = 0;
             md->g_color1 = 0;
             md->g_color2 = 0;
 

@@ -11,7 +11,6 @@
 /*
    A dummy MPI 'implementation' for the BP READ API, to have an MPI-free version of the API
 */
-
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
@@ -63,6 +62,7 @@ int MPI_Bcast(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm
 int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm);
 int MPI_Comm_rank(MPI_Comm comm, int *rank);
 int MPI_Comm_size(MPI_Comm comm, int *size);
+int MPI_Comm_free(MPI_Comm *comm);
 MPI_Comm MPI_Comm_f2c(MPI_Fint comm);
 
 int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf, int recvcnt, MPI_Datatype recvtype, int root, MPI_Comm comm) ;

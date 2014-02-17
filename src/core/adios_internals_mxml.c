@@ -1575,6 +1575,7 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                     const char * time_scale;
                     const char * time_format;
                     const char * mesh_file;
+                    const char * mesh_ref;
                     const char * mesh_group;
                     int t_varying;
                     const char * name;
@@ -1632,11 +1633,16 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                     // Only parse mesh if the variables are in this file
                     // otherwise simply point the mesh file
                     mesh_file = mxmlElementGetAttr(n, "file");
-                    mesh_group = mxmlElementGetAttr(n, "group");
-
                     if (mesh_file)
                         adios_common_define_attribute (ptr_new_group,meshfile,"/",adios_string,mesh_file,"");
+                    else
+                    {
+                        mesh_ref = mxmlElementGetAttr(n, "ref");
+                        if (mesh_ref)
+                            adios_common_define_attribute (ptr_new_group,meshfile,"/",adios_string,mesh_ref,"");
+                    }
 
+                    mesh_group = mxmlElementGetAttr(n, "group");
                     if (mesh_group)
                         adios_common_define_attribute (ptr_new_group,meshgroup,"/",adios_string,mesh_group,"");
 

@@ -143,13 +143,13 @@ qhashtbl_t *qhashtbl(int range)
     memset((void *)tbl, 0, sizeof(qhashtbl_t));
 
     // allocate table space
-    tbl->slots = (qhnobj_t **)malloc(sizeof(qhnobj_t *) * range);
+    tbl->slots = (qhslot_t *)malloc(sizeof(qhslot_t) * range);
     if (tbl->slots == NULL) {
         errno = ENOMEM;
         free_(tbl);
         return NULL;
     }
-    memset((void *)tbl->slots, 0, sizeof(qhnobj_t *) * range);
+    memset((void *)tbl->slots, 0, sizeof(qhslot_t) * range);
 
     // assign methods
     tbl->put2       = put2;
@@ -165,6 +165,12 @@ qhashtbl_t *qhashtbl(int range)
     // now table can be used
     tbl->range = range;
     tbl->num = 0;
+
+    // debug variables
+    tbl->nwalks_get = 0;
+    tbl->ncalls_get = 0;
+    tbl->nwalks_put = 0;
+    tbl->ncalls_put = 0;
 
     return tbl;
 }
@@ -200,26 +206,23 @@ static void genkey(const char *path, const char *name, int *keylen, char **key)
     }
 }
 
-static bool put(qhashtbl_t *tbl, const char *fullpath, const void *data)
+static bool qhput(qhashtbl_t *tbl, char *key, int keylen, const void *data)
 {
-    if (!fullpath)
-        return false;
-
-    int keylen = strlen(fullpath);
-    char *key = strdup (fullpath);
-
     // get hash integer
     uint32_t hash = qhashmurmur3_32(key, keylen);
     int idx = hash % tbl->range;
+    tbl->ncalls_put++; // debug
 
     //log_error ("qhastbl:put: key=[%s], keylen=%d hash=%d, idx=%d, d=%x\n", key, keylen, hash, idx, data);
 
-    // find existence key
+    // find existing key
+    qhslot_t *slot = &tbl->slots[idx];
     qhnobj_t *obj;
-    for (obj = tbl->slots[idx]; obj != NULL; obj = obj->next) {
+    for (obj = slot->head; obj != NULL; obj = obj->next) {
         if (obj->hash == hash && !strcmp(obj->key, key)) {
             break;
         }
+        tbl->nwalks_put++; // debug: we walk one step in a chain of elements 
     }
 
     // put into table
@@ -233,11 +236,16 @@ static bool put(qhashtbl_t *tbl, const char *fullpath, const void *data)
         }
         memset((void *)obj, 0, sizeof(qhnobj_t));
 
-        if (tbl->slots[idx] != NULL) {
-            // insert at the beginning
-            obj->next = tbl->slots[idx];
+        if (slot->tail != NULL) {
+            // connect old tail to this new tail 
+            slot->tail->next = obj;
         }
-        tbl->slots[idx] = obj;
+        if (slot->head == NULL) {
+            // insert as very first element
+            slot->head = obj;
+        }
+        slot->tail = obj;
+        obj->next = 0;
 
         // increase counter
         tbl->num++;
@@ -267,69 +275,24 @@ static bool put(qhashtbl_t *tbl, const char *fullpath, const void *data)
     return true;
 }
 
+static bool put(qhashtbl_t *tbl, const char *fullpath, const void *data)
+{
+    if (!fullpath)
+        return false;
+
+    int keylen = strlen(fullpath);
+    char *key = strdup (fullpath);
+
+    return qhput (tbl, key, keylen, data);
+}
+
 static bool put2(qhashtbl_t *tbl, const char *path, const char *name, const void *data)
 {
     int keylen;
     char *key;
     genkey (path, name, &keylen, &key);
 
-    // get hash integer
-    uint32_t hash = qhashmurmur3_32(key, keylen);
-    int idx = hash % tbl->range;
-
-    //log_error ("qhastbl:put: key=[%s], keylen=%d hash=%d, idx=%d, d=%x\n", key, keylen, hash, idx, data);
-
-    // find existence key
-    qhnobj_t *obj;
-    for (obj = tbl->slots[idx]; obj != NULL; obj = obj->next) {
-        if (obj->hash == hash && !strcmp(obj->key, key)) {
-            break;
-        }
-    }
-
-    // put into table
-    if (obj == NULL) {
-        // insert
-        obj = (qhnobj_t *)malloc(sizeof(qhnobj_t));
-        if (obj == NULL) {
-            free(key);
-            errno = ENOMEM;
-            return false;
-        }
-        memset((void *)obj, 0, sizeof(qhnobj_t));
-
-        if (tbl->slots[idx] != NULL) {
-            // insert at the beginning
-            obj->next = tbl->slots[idx];
-        }
-        tbl->slots[idx] = obj;
-
-        // increase counter
-        tbl->num++;
-
-        // set data
-        obj->hash  = hash;
-        obj->key   = key;
-        obj->value = (void *)data;
-
-    } else {
-        /* Do not do anything.
-         * Keep the first definition in place, because consider this example
-         * if we would replace the object here:
-         *  def NX
-         *  def A[NX] --> A's dimension is the first variable NX (a pointer to that)
-         *  def NX    --> hashtable stores this variable reference
-         *  def B[NX]
-         *  write NX  --> value is stored in the NX variable found in the hash table
-         *  write A   --> dimension found (valid first pointer) but value is not found
-         *                (stored in the second reference)
-         *  At this point, A's dimension variable is first NX, but the value of
-         *  write NX goes to the variable found here in the hash table.
-         */
-        free(key);
-    }
-
-    return true;
+    return qhput (tbl, key, keylen, data);
 }
 
 
@@ -362,20 +325,23 @@ static bool put2(qhashtbl_t *tbl, const char *path, const char *name, const void
  * @endcode
  *
  */
-static void *get(qhashtbl_t *tbl, const char *fullpath)
+static void *qhget(qhashtbl_t *tbl, char *key, int keylen)
 {
     // get hash integer
-    uint32_t hash = qhashmurmur3_32(fullpath, strlen(fullpath));
+    uint32_t hash = qhashmurmur3_32(key, keylen);
     int idx = hash % tbl->range;
+    tbl->ncalls_get++; // debug
 
     //log_error ("qhastbl:get: key=[%s], keylen=%d, hash=%d, idx=%d\n", fullpath, strlen(fullpath), hash, idx);
 
     // find key
+    qhslot_t *slot = &tbl->slots[idx];
     qhnobj_t *obj;
-    for (obj = tbl->slots[idx]; obj != NULL; obj = obj->next) {
-        if (obj->hash == hash && !strcmp(obj->key, fullpath)) {
+    for (obj = slot->head; obj != NULL; obj = obj->next) {
+        if (obj->hash == hash && !strcmp(obj->key, key)) {
             break;
         }
+        tbl->nwalks_get++; // debug: we walk one step in a chain of elements 
     }
 
     void *data = NULL;
@@ -388,63 +354,24 @@ static void *get(qhashtbl_t *tbl, const char *fullpath)
     return data;
 }
 
-/**
- * qhashtbl->get2(): Get a object from this table.
- *
- * @param tbl       qhashtbl_t container pointer.
- * @param name      key name.
- * @param size      if not NULL, oject size will be stored.
- * @param newmem    whether or not to allocate memory for the data.
- *
- * @return a pointer of data if the key is found, otherwise returns NULL.
- * @retval errno will be set in error condition.
- *  - ENOENT : No such key found.
- *  - EINVAL : Invalid argument.
- *  - ENOMEM : Memory allocation failure.
- *
- * @code
- *  qhashtbl_t *tbl = qHashtbl(1000);
- *  (...codes...)
- *
- *  // with newmem flag unset
- *  int size;
- *  struct myobj *obj = (struct myobj*)tbl->get(tbl, "key_name", &size, false);
- *
- *  // with newmem flag set
- *  int size;
- *  struct myobj *obj = (struct myobj*)tbl->get(tbl, "key_name", &size, true);
- *  if(obj != NULL) free(obj);
- * @endcode
- *
- */
+static void *get(qhashtbl_t *tbl, const char *fullpath)
+{
+    if (!fullpath)
+        return NULL;
+
+    int keylen = strlen(fullpath);
+    char *key = strdup (fullpath);
+
+    return qhget (tbl, key, keylen);
+}
+
 static void *get2(qhashtbl_t *tbl, const char *path, const char *name)
 {
     int keylen;
     char *key;
     genkey (path, name, &keylen, &key);
 
-    // get hash integer
-    uint32_t hash = qhashmurmur3_32(key, keylen);
-    int idx = hash % tbl->range;
-
-    //log_error ("qhastbl:get: key=[%s], keylen=%d, hash=%d, idx=%d\n", key, keylen, hash, idx);
-
-    // find key
-    qhnobj_t *obj;
-    for (obj = tbl->slots[idx]; obj != NULL; obj = obj->next) {
-        if (obj->hash == hash && !strcmp(obj->key, key)) {
-            break;
-        }
-    }
-
-    void *data = NULL;
-    if (obj != NULL) {
-        data = obj->value;
-    }
-
-    if (data == NULL) errno = ENOENT;
-    //log_error ("qhastbl:get: data=%x\n", data);
-    return data;
+    return qhget (tbl, key, keylen);
 }
 
 
@@ -472,13 +399,24 @@ static bool remove_(qhashtbl_t *tbl, const char *fullpath)
 
     // find key
     bool found = false;
+    qhslot_t *slot = &tbl->slots[idx];
     qhnobj_t *prev = NULL;
     qhnobj_t *obj;
-    for (obj = tbl->slots[idx]; obj != NULL; obj = obj->next) {
+    for (obj = slot->head; obj != NULL; obj = obj->next) {
         if (obj->hash == hash && !strcmp(obj->key, key)) {
-            // adjust link
-            if (prev == NULL) tbl->slots[idx] = obj->next;
-            else prev->next = obj->next;
+            // adjust links
+            if (prev == NULL) {
+                // remove as very first
+                slot->head = obj->next;
+            } else {
+                // remove otherwise
+                prev->next = obj->next;
+            }
+
+            if (obj == slot->tail) {
+                // this was last element: update tail
+                slot->tail = prev;
+            }
 
             // remove
             free(obj->key);
@@ -516,11 +454,12 @@ static int size(qhashtbl_t *tbl)
  */
 void clear(qhashtbl_t *tbl)
 {
+    if (!tbl) return;
+    //debug(tbl, stdout, 0);
     int idx;
+    qhnobj_t *obj;
     for (idx = 0; idx < tbl->range && tbl->num > 0; idx++) {
-        if (tbl->slots[idx] == NULL) continue;
-        qhnobj_t *obj = tbl->slots[idx];
-        tbl->slots[idx] = NULL;
+        obj = tbl->slots[idx].head;
         while (obj != NULL) {
             qhnobj_t *next = obj->next;
             free(obj->key);
@@ -528,6 +467,8 @@ void clear(qhashtbl_t *tbl)
             obj = next;
             tbl->num--;
         }
+        tbl->slots[idx].head = NULL;
+        tbl->slots[idx].tail = NULL;
     }
 }
 
@@ -550,7 +491,7 @@ void debug(qhashtbl_t *tbl, FILE *out, bool detailed)
     for (idx = 0; idx < tbl->range && tbl->num > 0; idx++) {
         len = 0;
         if (detailed) fprintf(out, "[%d]:", idx);
-        obj = tbl->slots[idx];
+        obj = tbl->slots[idx].head;
         while (obj != NULL) {
             qhnobj_t *next = obj->next;
             if (detailed) fprintf(out, "(%s,%p)" , obj->key, obj->value);
@@ -561,10 +502,13 @@ void debug(qhashtbl_t *tbl, FILE *out, bool detailed)
         if (len < lenmin) lenmin = len;
         if (len > lenmax) lenmax = len;
     }
+    fprintf(out, "Hash table %p\n", tbl);
     fprintf(out, "Hash table size = %d\n", tbl->range);
     fprintf(out, "Number of elements = %d\n", tbl->num);
     fprintf(out, "Shortest collision list size = %d\n", lenmin);
     fprintf(out, "Longest  collision list size = %d\n", lenmax);
+    fprintf(out, "get() calls = %d, walks = %d\n", tbl->ncalls_get, tbl->nwalks_get);
+    fprintf(out, "put() calls = %d, walks = %d\n", tbl->ncalls_put, tbl->nwalks_put);
     fflush(out);
 }
 
@@ -576,6 +520,7 @@ void debug(qhashtbl_t *tbl, FILE *out, bool detailed)
  */
 void free_(qhashtbl_t *tbl)
 {
+    if (!tbl) return;
     clear(tbl);
     if (tbl->slots != NULL) free(tbl->slots);
     free(tbl);

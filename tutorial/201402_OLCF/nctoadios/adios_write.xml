@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<adios-config host-language="Fortran">
+  <adios-group name="writer" >
+    <var name="x" gwrite="p" type="integer"/>
+    <var name="y" gwrite="N" type="integer"/>
+    <var name="my_rank"  type="integer"/>
+
+    <global-bounds dimensions="y,x" offsets="0,my_rank">
+        <var name="data" gwrite="data_out" type="integer" dimensions="y,1"/> 
+    </global-bounds>
+
+  </adios-group>
+
+  <transport group="writer" method="MPI"/>
+  <buffer size-MB="3" allocate-time="now"/>
+
+</adios-config>
