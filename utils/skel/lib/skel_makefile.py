@@ -23,7 +23,9 @@ def pparse_command_line (parent_parser):
     parser.add_argument ('-y', '--yaml-file', dest='yamlfile', help='yaml file to store I/O pattern')
     parser.add_argument ('-b', '--bp-file', dest='bpfile', help='bp file to extract I/O pattern')
     parser.add_argument ('-f', '--force', dest='force', action='store_true', help='overwrite existing source file')
+    parser.add_argument ('-n', '--noxml', dest='noxml', action='store_true', help='generate noxml code')
     parser.set_defaults(force=False)
+    parser.set_defaults(noxml=False)
 
     return parser.parse_args()
 
@@ -69,6 +71,7 @@ def generate_makefile_from_yaml (args):
     t.bpy = bpy
     t.project = args.project
     t.bpfile = args.bpfile
+    t.noxml = args.noxml
     skel_file.write (str(t) )
  
 

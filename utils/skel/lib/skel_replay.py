@@ -19,13 +19,15 @@ def pparse_command_line (parent_parser):
                 prog='skel',
                 #add_help=False,
                 description='''\
-        skel makefile 
-            create a makefile for building a skeletal application''')
+        skel replay 
+            Generate an entire skeletal application that duplicates a specified I/O''')
 
     parser.add_argument ('-y', '--yaml-file', dest='yamlfile', help='yaml file to load I/O pattern')
     parser.add_argument ('-b', '--bp-file', dest='bpfile', help='bp file to extract I/O pattern')
     parser.add_argument ('-f', '--force', dest='force', action='store_true', help='overwrite existing source files')
+    parser.add_argument ('-n', '--noxml', dest='noxml', action='store_true', help='generate noxml code')
     parser.set_defaults(force=False)
+    parser.set_defaults(noxml=False)
 
     return parser.parse_args()
 
@@ -84,6 +86,7 @@ def do_replay_from_yaml (args):
     template_file = open (os.path.expanduser("~/.skel/templates/replay_yaml.tmpl"), 'r')
     t = Template(file=template_file)
     t.bpy = bpy
+    t.noxml = args.noxml
 
     # No, I don't like these either.
     t.yamlfile = args.yamlfile
