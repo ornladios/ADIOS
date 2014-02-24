@@ -1866,8 +1866,8 @@ void print_decomp(ADIOS_VARINFO *vi)
 
                 }
                 fprintf(outf, "\n");
+                blockid++;
             }
-            blockid++;
         }
     }
 }
