@@ -587,7 +587,7 @@ int doList_group (ADIOS_FILE *fp)
                 }
 
                 if (longopt || plot) {
-                    adios_inq_var_stat (fp, vi, timestep && timed, 0);
+                    adios_inq_var_stat (fp, vi, timestep && timed, show_decomp);
                 }
 
                 if (plot && vi->statistics && vi->statistics->histogram) {
@@ -1799,6 +1799,7 @@ void print_decomp(ADIOS_VARINFO *vi)
         // arrays
         int ndigits_nblocks;
         int ndigits_dims[32];
+        int blockid = 0;
         for (k=0; k < vi->ndim; k++) {
             // get digit lengths for each dimension
             ndigits_dims[k] = ndigits (vi->dims[k]-1);
@@ -1819,8 +1820,54 @@ void print_decomp(ADIOS_VARINFO *vi)
                     if (k < vi->ndim-1)
                         fprintf(outf, ", ");
                 }
-                fprintf(outf, "]\n");
+                fprintf(outf, "]");
+
+                /* Print per-block statistics if available */
+                if (longopt && vi->statistics->blocks) {
+                    fprintf(outf," = ");
+                    if (vi->statistics->blocks->mins) {
+                        print_data(vi->statistics->blocks->mins[blockid], 0, vi->type, false); 
+                    } else {
+                        fprintf(outf,"N/A ");
+                    }
+
+                    fprintf(outf,"/ ");
+                    if (vi->statistics->blocks->maxs) {
+                        print_data(vi->statistics->blocks->maxs[blockid], 0, vi->type, false); 
+                    } else {
+                        fprintf(outf,"N/A ");
+                    }
+
+                    fprintf(outf,"/ ");
+                    if (vi->statistics->blocks->avgs) {
+                        if(vi->type == adios_complex || vi->type == adios_double_complex) {
+                            print_data (vi->statistics->blocks->avgs[blockid], 0, 
+                                        adios_double_complex, false);
+                        } else {
+                            print_data (vi->statistics->blocks->avgs[blockid], 0, 
+                                        adios_double, false);
+                        }
+                    } else {
+                        fprintf(outf,"N/A ");
+                    }
+
+                    fprintf(outf,"/ ");
+                    if (vi->statistics->blocks->avgs) {
+                        if(vi->type == adios_complex || vi->type == adios_double_complex) {
+                            print_data (vi->statistics->blocks->std_devs[blockid], 0, 
+                                        adios_double_complex, false);
+                        } else {
+                            print_data (vi->statistics->blocks->std_devs[blockid], 0, 
+                                        adios_double, false);
+                        }
+                    } else {
+                        fprintf(outf,"N/A ");
+                    }
+
+                }
+                fprintf(outf, "\n");
             }
+            blockid++;
         }
     }
 }
