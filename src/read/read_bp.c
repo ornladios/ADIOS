@@ -1739,35 +1739,43 @@ typedef struct {
                 for (c = 0; c < count; c ++)
                     data[c] = bp_value_to_double((enum ADIOS_DATATYPES)type, stats[c][map[adios_statistic_min]].data);
 
-                if(!vs->min)
-                {
+                if(!vs->min) {
                     MALLOC (vs->min, count * size, "global minimum")
                     for (c = 0; c < count; c ++)
                            ((double * ) vs->min)[c] = data[c];
 
-                }
-                else
-                {
+                } else {
                     for (c = 0; c < count; c ++)
                         if (data[c] < ((double *) vs->min)[c])
                                ((double * ) vs->min)[c] = data[c];
                 }
 
-                if(!vs->steps->mins[timestep])
-                {
-                    MALLOC (vs->steps->mins[timestep], count * size, "minimum per timestep")
-                    for (c = 0; c < count; c ++)
-                    {
-                        ((double **) vs->steps->mins)[timestep][c] = data[c];
+                if (per_step_stat) {
+                    if(!vs->steps->mins[timestep]) {
+                        MALLOC (vs->steps->mins[timestep], count * size, "minimum per timestep")
+                        for (c = 0; c < count; c ++) {
+                            ((double **) vs->steps->mins)[timestep][c] = data[c];
+                        }
+                    } else {
+                        for (c = 0; c < count; c ++) {
+                            if (data[c] < ((double **) vs->steps->mins)[timestep][c]) {
+                                ((double **) vs->steps->mins)[timestep][c] = data[c];
+                            }
+                        }
                     }
                 }
-                else
-                {
-                    for (c = 0; c < count; c ++)
-                    {
-                        if (data[c] < ((double **) vs->steps->mins)[timestep][c])
-                        {
-                            ((double **) vs->steps->mins)[timestep][c] = data[c];
+
+                if (per_block_stat) {
+                    if(!vs->blocks->mins[i]) {
+                        MALLOC (vs->blocks->mins[i], count * size, "minimum per writeblock")
+                        for (c = 0; c < count; c ++) {
+                            ((double **) vs->blocks->mins)[i][c] = data[c];
+                        }
+                    } else {
+                        for (c = 0; c < count; c ++) {
+                            if (data[c] < ((double **) vs->blocks->mins)[i][c]) {
+                                ((double **) vs->blocks->mins)[i][c] = data[c];
+                            }
                         }
                     }
                 }
@@ -1790,15 +1798,30 @@ typedef struct {
                             ((double * ) vs->max)[c] = data[c];
                 }
 
-                if(!vs->steps->maxs[timestep]) {
-                    MALLOC (vs->steps->maxs[timestep], count * size, "minimum per timestep")
-                    for (c = 0; c < count; c ++)
-                        ((double **) vs->steps->maxs)[timestep][c] = data[c];
-
-                } else {
-                    for (c = 0; c < count; c ++)
-                        if (data[c] > ((double **) vs->steps->maxs)[timestep][c])
+                if (per_step_stat) {
+                    if(!vs->steps->maxs[timestep]) {
+                        MALLOC (vs->steps->maxs[timestep], count * size, "maximum per timestep")
+                        for (c = 0; c < count; c ++)
                             ((double **) vs->steps->maxs)[timestep][c] = data[c];
+
+                    } else {
+                        for (c = 0; c < count; c ++)
+                            if (data[c] > ((double **) vs->steps->maxs)[timestep][c])
+                                ((double **) vs->steps->maxs)[timestep][c] = data[c];
+                    }
+                }
+
+                if (per_block_stat) {
+                    if(!vs->blocks->maxs[i]) {
+                        MALLOC (vs->blocks->maxs[i], count * size, "maximum per writeblock")
+                        for (c = 0; c < count; c ++)
+                            ((double **) vs->blocks->maxs)[i][c] = data[c];
+
+                    } else {
+                        for (c = 0; c < count; c ++)
+                            if (data[c] > ((double **) vs->blocks->maxs)[i][c])
+                                ((double **) vs->blocks->maxs)[i][c] = data[c];
+                    }
                 }
             }
 
@@ -1811,21 +1834,35 @@ typedef struct {
                 if(!gsum) {
                     MALLOC(gsum, count * sum_size, "global summation")
                     for (c = 0; c < count; c ++)
-                           gsum[c] = data[c];
+                        gsum[c] = data[c];
 
                 } else {
                     for (c = 0; c < count; c ++)
                         gsum[c] = gsum[c] + data[c];
                 }
 
-                if(!sums[timestep]) {
-                    MALLOC(sums[timestep], count * sum_size, "summation per timestep")
-                    for (c = 0; c < count; c ++)
-                        sums[timestep][c] = data[c];
+                if (per_step_stat) {
+                    if(!sums[timestep]) {
+                        MALLOC(sums[timestep], count * sum_size, "summation per timestep")
+                        for (c = 0; c < count; c ++)
+                            sums[timestep][c] = data[c];
 
-                } else {
-                    for (c = 0; c < count; c ++)
-                        sums[timestep][c] = sums[timestep][c] + data[c];
+                    } else {
+                        for (c = 0; c < count; c ++)
+                            sums[timestep][c] = sums[timestep][c] + data[c];
+                    }
+                }
+
+                if (per_block_stat) {
+                    if(!bsums[i]) {
+                        MALLOC(bsums[i], count * sum_size, "summation per writeblock")
+                        for (c = 0; c < count; c ++)
+                            bsums[i][c] = data[c];
+
+                    } else {
+                        for (c = 0; c < count; c ++)
+                            bsums[i][c] = bsums[i][c] + data[c];
+                    }
                 }
             }
 
@@ -1842,42 +1879,87 @@ typedef struct {
 
                 } else {
                     for (c = 0; c < count; c ++)
-                           gsum_square[c] = gsum_square[c] + data[c];
+                        gsum_square[c] = gsum_square[c] + data[c];
                 }
 
-                if(!sum_squares[timestep]) {
-                    MALLOC(sum_squares[timestep], count * sum_size, "summation of square per timestep")
-                    for (c = 0; c < count; c ++)
-                        sum_squares[timestep][c] = data[c];
+                if (per_step_stat) {
+                    if(!sum_squares[timestep]) {
+                        MALLOC(sum_squares[timestep], count * sum_size, "summation of square per timestep")
+                        for (c = 0; c < count; c ++)
+                            sum_squares[timestep][c] = data[c];
 
-                } else {
-                    for (c = 0; c < count; c ++)
-                        sum_squares[timestep][c] = sum_squares[timestep][c] + data[c];
+                    } else {
+                        for (c = 0; c < count; c ++)
+                            sum_squares[timestep][c] = sum_squares[timestep][c] + data[c];
+                    }
+                }
+
+                if (per_block_stat) {
+                    if(!bsum_squares[i]) {
+                        MALLOC(bsum_squares[i], count * sum_size, "summation of square per writeblock")
+                        for (c = 0; c < count; c ++)
+                            bsum_squares[i][c] = data[c];
+
+                    } else {
+                        for (c = 0; c < count; c ++)
+                            bsum_squares[i][c] = bsum_squares[i][c] + data[c];
+                    }
                 }
             }
 
             if (map[adios_statistic_cnt] != -1 && stats[0][map[adios_statistic_cnt]].data)
             {
-                cnts[timestep] += * ((uint32_t *) stats[0][map[adios_statistic_cnt]].data);
+                if (per_step_stat) {
+                    cnts[timestep] += * ((uint32_t *) stats[0][map[adios_statistic_cnt]].data);
+                }
+                if (per_block_stat) {
+                    bcnts[i] += * ((uint32_t *) stats[0][map[adios_statistic_cnt]].data);
+                }
                 gcnt += * (uint32_t *) stats[0][map[adios_statistic_cnt]].data;
             }
         }
 
-        if(vs->min && (map[adios_statistic_sum] != -1) && (map[adios_statistic_sum_square] != -1)) {
-            // min, max, summation exists only for arrays
-            // Calculate average / timestep
+        if (per_step_stat) {
+            if(vs->min && (map[adios_statistic_sum] != -1) && (map[adios_statistic_sum_square] != -1)) {
+                // min, max, summation exists only for arrays
+                // Calculate average / timestep
 
-            for(timestep = 0; timestep < nsteps; timestep ++) {
-                MALLOC(vs->steps->avgs[timestep], count * sum_size, "average per timestep")
-                for (c = 0; c < count; c ++)
-                    vs->steps->avgs[timestep][c] = sums[timestep][c] / cnts[timestep];
+                for(timestep = 0; timestep < nsteps; timestep ++) {
+                    MALLOC(vs->steps->avgs[timestep], count * sum_size, "average per timestep")
+                    for (c = 0; c < count; c ++)
+                        vs->steps->avgs[timestep][c] = sums[timestep][c] / cnts[timestep];
 
-                MALLOC(vs->steps->std_devs[timestep], count * sum_size, "standard deviation per timestep")
-                for (c = 0; c < count; c ++)
-                    vs->steps->std_devs[timestep][c] = sqrt((sum_squares[timestep][c] / cnts[timestep]) - (vs->steps->avgs[timestep][c] * vs->steps->avgs[timestep][c]));
+                    MALLOC(vs->steps->std_devs[timestep], count * sum_size, "standard deviation per timestep")
+                    for (c = 0; c < count; c ++)
+                        vs->steps->std_devs[timestep][c] = 
+                            sqrt((sum_squares[timestep][c] / cnts[timestep]) - 
+                            (vs->steps->avgs[timestep][c] * vs->steps->avgs[timestep][c]));
 
-                free (sums[timestep]);
-                free (sum_squares[timestep]);
+                    free (sums[timestep]);
+                    free (sum_squares[timestep]);
+                }
+            }
+        }
+
+        // Calculate per-block average 
+        if (per_block_stat) {
+            if(vs->min && (map[adios_statistic_sum] != -1) && (map[adios_statistic_sum_square] != -1)) 
+            {
+                for (i = 0; i < var_root->characteristics_count; i++)
+                {
+                    MALLOC(vs->blocks->avgs[i], count * sum_size, "average per writeblock")
+                    for (c = 0; c < count; c ++)
+                        vs->blocks->avgs[i][c] = bsums[i][c] / bcnts[i];
+
+                    MALLOC(vs->blocks->std_devs[i], count * sum_size, "standard deviation per writeblock")
+                    for (c = 0; c < count; c ++)
+                        vs->blocks->std_devs[i][c] = 
+                            sqrt((bsum_squares[i][c] / bcnts[i]) - 
+                            (vs->blocks->avgs[i][c] * vs->blocks->avgs[i][c]));
+
+                    free (bsums[i]);
+                    free (bsum_squares[i]);
+                }
             }
         }
 
@@ -1885,20 +1967,20 @@ typedef struct {
         if(vs->min && gsum && (map[adios_statistic_sum] != -1) && (map[adios_statistic_sum_square] != -1)) {
             MALLOC(vs->avg, count * sum_size, "global average")
 
-            if(gcnt > 0)
-                for (c = 0; c < count; c ++)
-                    vs->avg[c] = gsum[c] / gcnt;
-            else
-                for (c = 0; c < count; c ++)
-                    vs->avg[c] = gsum[c];
+                if(gcnt > 0)
+                    for (c = 0; c < count; c ++)
+                        vs->avg[c] = gsum[c] / gcnt;
+                else
+                    for (c = 0; c < count; c ++)
+                        vs->avg[c] = gsum[c];
 
             MALLOC(vs->std_dev, count * sum_size, "global average")
-            if(vs->avg && gcnt > 0)
-                for (c = 0; c < count; c ++)
-                    vs->std_dev[c] = sqrt(gsum_square[c] / gcnt - (vs->avg[c] * vs->avg[c]));
-            else
-                for (c = 0; c < count; c ++)
-                    vs->std_dev[c] = 0;
+                if(vs->avg && gcnt > 0)
+                    for (c = 0; c < count; c ++)
+                        vs->std_dev[c] = sqrt(gsum_square[c] / gcnt - (vs->avg[c] * vs->avg[c]));
+                else
+                    for (c = 0; c < count; c ++)
+                        vs->std_dev[c] = 0;
         }
     }
     else
@@ -2127,7 +2209,7 @@ typedef struct {
 
         // Calculate per-block  average
         if (per_block_stat) {
-            if(vs->min && gsum && (map[adios_statistic_sum] != -1) && (map[adios_statistic_sum_square] != -1))
+            if(vs->min && (map[adios_statistic_sum] != -1) && (map[adios_statistic_sum_square] != -1))
             {
                 for (i = 0; i < var_root->characteristics_count; i++)
                 {
