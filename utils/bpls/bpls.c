@@ -600,27 +600,21 @@ int doList_group (ADIOS_FILE *fp)
                     if(timestep == false || timed == false ) {
 
                         fprintf(outf," = ");
-                        print_data(vi->statistics->min, 0, vartype, false); 
-
-                        fprintf(outf,"/ ");
-                        print_data(vi->statistics->max, 0, vartype, false); 
-
                         if(vartype == adios_complex || vartype == adios_double_complex) {
-
+                            // force printing (double,double) here
+                            print_data(vi->statistics->min, 0, adios_double_complex, false); 
+                            fprintf(outf,"/ ");
+                            print_data(vi->statistics->max, 0, adios_double_complex, false); 
                             fprintf(outf,"/ ");
                             print_data(vi->statistics->avg, 0, adios_double_complex, false);
-                        } else {
-
-                            fprintf(outf,"/ ");
-                            print_data(vi->statistics->avg, 0, adios_double, false);
-                        }
-
-                        if(vartype == adios_complex || vartype == adios_double_complex) {
-
                             fprintf(outf,"/ ");
                             print_data(vi->statistics->std_dev, 0, adios_double_complex, false);
                         } else {
-
+                            print_data(vi->statistics->min, 0, vartype, false); 
+                            fprintf(outf,"/ ");
+                            print_data(vi->statistics->max, 0, vartype, false); 
+                            fprintf(outf,"/ ");
+                            print_data(vi->statistics->avg, 0, adios_double, false);
                             fprintf(outf,"/ ");
                             print_data(vi->statistics->std_dev, 0, adios_double, false);
                         }
@@ -1826,14 +1820,22 @@ void print_decomp(ADIOS_VARINFO *vi)
                 if (longopt && vi->statistics->blocks) {
                     fprintf(outf," = ");
                     if (vi->statistics->blocks->mins) {
-                        print_data(vi->statistics->blocks->mins[blockid], 0, vi->type, false); 
+                        if(vi->type == adios_complex || vi->type == adios_double_complex) {
+                            print_data(vi->statistics->blocks->mins[blockid], 0, adios_double_complex, false); 
+                        } else {
+                            print_data(vi->statistics->blocks->mins[blockid], 0, vi->type, false); 
+                        }
                     } else {
                         fprintf(outf,"N/A ");
                     }
 
                     fprintf(outf,"/ ");
                     if (vi->statistics->blocks->maxs) {
-                        print_data(vi->statistics->blocks->maxs[blockid], 0, vi->type, false); 
+                        if(vi->type == adios_complex || vi->type == adios_double_complex) {
+                            print_data(vi->statistics->blocks->maxs[blockid], 0, adios_double_complex, false); 
+                        } else {
+                            print_data(vi->statistics->blocks->maxs[blockid], 0, vi->type, false); 
+                        }
                     } else {
                         fprintf(outf,"N/A ");
                     }
