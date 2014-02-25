@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<adios-config host-language="C">
+<adios-group name="temperature" coordination-communicator="comm" stats="On">
+    <var name="NX" path="scalar/dim" type="integer"/>
+    <var name="NY" path="scalar/dim" type="integer"/>
+    <var name="size" type="integer"/>
+    <var name="rank" type="integer"/>
+    <var name="offset" type="integer"/>
+    <var name="size_y" type="integer"/>
+    <var name="test_scalar" type="integer"/>
+    <global-bounds dimensions="scalar/dim/NX,size_y" offsets="0,offset">
+        <var name="var_2d_array" gwrite="t" type="double" dimensions="scalar/dim/NX,scalar/dim/NY"/>
+    </global-bounds>
+</adios-group>
+
+<method group="temperature"  method="ICEE">
+cm_list=:59999,:60000
+</method>
+
+<buffer size-MB="20" allocate-time="now"/>
+
+</adios-config>
+
