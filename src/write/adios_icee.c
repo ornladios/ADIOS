@@ -252,7 +252,8 @@ adios_icee_write(
         vp->offsets = calloc(vp->ndims, sizeof(uint64_t));
         
         struct adios_dimension_struct *d = f->dimensions;
-        for (size_t i = 0; i < vp->ndims; i++)
+        size_t i;
+        for (i = 0; i < vp->ndims; i++)
         {
             vp->gdims[i] = adios_get_dim_value(&d->global_dimension);
             vp->ldims[i] = adios_get_dim_value(&d->dimension);

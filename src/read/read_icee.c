@@ -375,7 +375,8 @@ adios_read_icee_open(const char * fname,
 
     icee_varinfo_rec_ptr_t vp = fp->varinfo;
 
-    for (int i = 0; i < fp->nvars; i++)
+    int i;
+    for (i = 0; i < fp->nvars; i++)
     {
         adiosfile->var_namelist[i] = strdup(vp->varname);
         vp = vp->next;
@@ -581,7 +582,8 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
             adios_error(err_invalid_dimension,
                         "Dimension mismatch\n");
 
-        for (int i = 0; i < vp->ndims; i++)
+        int i;
+        for (i = 0; i < vp->ndims; i++)
         {
             //DUMP("g,l,o = %llu,%llu,%llu", vp->gdims[i], vp->ldims[i], vp->offsets[i]);
             //DUMP("start,count = %llu,%llu", sel->u.bb.start[i], sel->u.bb.count[i]);
