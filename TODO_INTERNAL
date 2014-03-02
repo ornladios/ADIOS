@@ -12,6 +12,8 @@ Others
 
 - ship and build the MXML library with the ADIOS release
 
+- create and store metadata in staging methods (like in BP format)
+  Detailed per-writer info is completely missing right now.
 
 
 
