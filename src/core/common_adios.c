@@ -157,7 +157,10 @@ int common_adios_open (int64_t * fd, const char * group_name
     fd_p->write_size_bytes = 0;
     fd_p->base_offset = 0;
     fd_p->pg_start_in_file = 0;
-    MPI_Comm_dup(comm, &fd_p->comm);
+    if (comm != MPI_COMM_NULL)
+        MPI_Comm_dup(comm, &fd_p->comm);
+    else
+        comm = MPI_COMM_NULL;
 
 #ifdef SKEL_TIMING
     fd_p->timing_obj = 0;
