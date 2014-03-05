@@ -160,7 +160,7 @@ int common_adios_open (int64_t * fd, const char * group_name
     if (comm != MPI_COMM_NULL)
         MPI_Comm_dup(comm, &fd_p->comm);
     else
-        comm = MPI_COMM_NULL;
+        fd_p->comm = MPI_COMM_NULL;
 
 #ifdef SKEL_TIMING
     fd_p->timing_obj = 0;
@@ -1099,7 +1099,9 @@ int common_adios_close (int64_t fd_p)
         fd->name = 0;
     }
 
-    MPI_Comm_free (&fd->comm);
+    if (fd->comm != MPI_COMM_NULL) {
+        MPI_Comm_free (&fd->comm);
+    }
 
     free ((void *) fd_p);
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
