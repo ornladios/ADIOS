@@ -24,6 +24,7 @@ import skel_replay
 import skel_source
 import skel_submit
 import skel_suite
+import skel_template
 import skel_xml
 
 def get_parser():
@@ -46,7 +47,7 @@ Available subcommands include:
         
     Use skel help <subcommand> to see detailed options for each subcommand.''')
     parser.add_argument ('subcommand', metavar='subcommand', help='Skel command to execute')
-    parser.add_argument ('project', metavar='project', help='Name of the skel project')
+    #parser.add_argument ('project', metavar='project', help='Name of the skel project')
     #parser.add_argument ('-g', '--group', help='adios group (only valid for skel params)')
 
     return parser
@@ -91,14 +92,18 @@ def main(argv=None):
     args, unknown = parser.parse_known_args()
 
     # ignore .xml suffix if used (tab completion)
-    if args.project and args.project.endswith (".xml"):
-        args.project = args.project[:-4]
+    #if args.project and args.project.endswith (".xml"):
+    #    args.project = args.project[:-4]
 
     if args.subcommand == 'install':
         return 0
 
+    if args.subcommand == 'template':
+        skel_template.fill_template (parser)
+        return 0
+
     if args.subcommand == 'xml':
-        skel_xml.create_skel_xml (args.project, parser)
+        skel_xml.create_skel_xml (parser)
         return 0
 
     if args.subcommand == 'replay':
@@ -109,11 +114,15 @@ def main(argv=None):
         skel_suite.gen_suite_with_args (parser)
         return 0
 
-    try:
-        config = adios.adiosConfig (args.project + '_skel.xml')
-    except (IOError):
-        print "Error reading " + args.project + "_skel.xml. Try running skel xml " + args.project + " first."
-        return 1
+
+    # Decided to push this further down rather than deal with increasingly
+    # complicated landscape of which subcommands do or don't require
+    # a project or an xml file.
+    #try:
+    #    config = adios.adiosConfig (args.project + '_skel.xml')
+    #except (IOError):
+    #    print "XXError reading " + args.project + "_skel.xml. Try running skel xml " + args.project + " first."
+    #    return 1
 
     if args.subcommand == 'params':
         #outfilename = args.project + '_params.xml'
@@ -124,19 +133,19 @@ def main(argv=None):
             #return 999
 
         #skel_params.generate_param_file (args.project, outfilename, config, args.group)
-        skel_params.generate_param_file_with_args (config, parser)
+        skel_params.generate_param_file_with_args (parser)
         return 0
     
     
     if args.subcommand == 'source':
         #skel_source.create_sources (params, config, args.project)
-        skel_source.create_sources_with_args (config, parser)
+        skel_source.create_sources_with_args (parser)
         return 0
 
 
     if args.subcommand == 'makefile':
         #skel_makefile.generate_makefiles (params, config)
-        skel_makefile.generate_makefiles_with_args (config, parser)
+        skel_makefile.generate_makefiles_with_args (parser)
         return 0
 
 

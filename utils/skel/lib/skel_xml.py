@@ -18,6 +18,7 @@ def pparse_command_line (parent_parser):
         skel xml
             create an xml file to define the I/O pattern for the target skeletal application''')
 
+    parser.add_argument ('project', metavar='project', help='Name of the skel project')
     parser.add_argument ('-y', '--yaml-file', dest='yamlfile', help='yaml file to use for I/O pattern')
     parser.add_argument ('-f', '--force', dest='force', action='store_true', help='overwrite existing XML file')
     parser.set_defaults(force=False)
@@ -51,13 +52,13 @@ def cleanse (str):
 
 
 
-def create_skel_xml (project, parent_parser):
+def create_skel_xml (parent_parser):
 
     args = pparse_command_line (parent_parser)
     if args.yamlfile is not None:
-        create_from_yaml (project, args)
+        create_from_yaml (args.project, args)
     else:
-        create_from_xml (project, args)
+        create_from_xml (args.project, args)
 
 
 def create_from_yaml (project,args):

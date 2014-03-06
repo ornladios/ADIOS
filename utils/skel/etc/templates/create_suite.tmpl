@@ -4,7 +4,11 @@
 <%= '#####Start Test#####' %>
 mkdir $test.get_subdir()
 pushd $test.get_subdir()
+
 echo "$test.to_yaml()" > test.yaml
+
+skel template -y test.yaml -t ../writer.yaml.in -o writer.yaml
+skel replay writer -f -y writer.yaml
 popd
 <%= '#####End Test#####' %>
 

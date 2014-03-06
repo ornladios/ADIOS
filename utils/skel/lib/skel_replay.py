@@ -22,6 +22,7 @@ def pparse_command_line (parent_parser):
         skel replay 
             Generate an entire skeletal application that duplicates a specified I/O''')
 
+    parser.add_argument ('project', metavar='project', help='Name of the skel project')
     parser.add_argument ('-y', '--yaml-file', dest='yamlfile', help='yaml file to load I/O pattern')
     parser.add_argument ('-b', '--bp-file', dest='bpfile', help='bp file to extract I/O pattern')
     parser.add_argument ('-f', '--force', dest='force', action='store_true', help='overwrite existing source files')

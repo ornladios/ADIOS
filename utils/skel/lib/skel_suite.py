@@ -23,6 +23,7 @@ def pparse_command_line (parent_parser):
         skel suite 
             instantiate a suite of tests based on a given test plan''')
 
+    parser.add_argument ('project', metavar='project', help='Name of the skel project')
     parser.add_argument ('-y', '--yaml-file', dest='yamlfile', help='yaml file to load I/O pattern')
     parser.add_argument ('-f', '--force', dest='force', action='store_true', help='overwrite existing source files')
     parser.set_defaults(force=False)

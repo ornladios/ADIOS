@@ -54,10 +54,28 @@ class skel_bpy:
             return ret_val
         return "POSIX" # default method
 
+    def get_parameters (self):
+        ret_val = self.doc.get ('parameters', None)
+        if ret_val:
+            return ret_val
+        return "" # default parameters 
+
+    def get_buf_size_mb (self):
+        ret_val = self.doc.get ('buf_size_mb', None)
+        if ret_val:
+            return ret_val
+        return "50"
+
 class var:
     def __init__ (self, name, vardict, flip):
         self.name = name
         self.vardict = vardict
+        self.global_dims = None
+
+        if self.is_scalar():
+            # This is a scalar
+            print "%s is a scalar" % name
+            return
 
         # If we're writing fortran, we need to flip the order of the dimensions, as they were reported by the C API
         if flip:
@@ -66,12 +84,80 @@ class var:
             if self.vardict.get('decomposition', None) != None:
                 for proc in self.vardict['decomposition']:
                     proc.reverse()
+            if self.vardict.get('decomp-procs', None) != None:
+                self.vardict['decomp-procs'].reverse()
+            if self.vardict.get('global-dims', None) != None:
+                self.vardict['global-dims'].reverse()
 
-        self.global_dims = None
+        # We want to accept either the individual blocks of the decomposition
+        # or do a regular decomposition based on given global dims and the
+        # number of procs to split in each dimension
+
+        # Case 1, we are given the individual blocks in vardict['decomposition']
         if self.get_decomposition() != None:
-             self.global_dims = []
-             for i in range (self.get_ndims() ):
-                 self.global_dims.append (max ([x[i][1] for x in self.get_decomposition() ] ) + 1 )
+            # Calculate global dimensions
+            # Find the global dims by looking for the largest end of block in each dimension 
+            self.global_dims = []
+            for i in range (self.get_ndims() ):
+                self.global_dims.append (max ([x[i][1] for x in self.get_decomposition() ] ) + 1 )
+
+        # Case 2, we are given the global dimensions and decomposition parameters
+        elif self.get_decomp_procs() != None and self.get_global_dims() != None:
+            dp = self.get_decomp_procs()
+            gd = self.get_global_dims()
+
+            # Sanity check
+            if len(dp) != len(gd):
+                print 'Dimensional mismatch, exiting'
+                exit(13)
+            for i in range(len(dp)):
+                #divides evenly
+                if gd[i] % dp[i] != 0:
+                    print 'irregular decomposition not supported, exiting'
+                    exit(17)
+
+            # Calculate individual blocks
+            self.vardict['dims'] = []
+            procs = 1
+            for i in range(len(dp)):
+                self.vardict['dims'].append (gd[i] / dp[i])
+                procs = procs * dp[i]
+
+
+            self.vardict['decomposition'] = []
+            #Assume there is at least one dimension specified
+            for i in range(dp[0]):
+                if len(dp) == 1: #1D
+                    start0 = i * self.vardict['dims'][0]
+                    end0 = (i+1) * self.vardict['dims'][0] - 1
+                    self.vardict['decomposition'].append([[start0,end0]])
+                else:
+                    for j in range(dp[1]):
+                        if len(dp) == 2: #2D
+                            start0 = i * self.vardict['dims'][0]
+                            end0 = (i+1) * self.vardict['dims'][0] - 1
+                            start1 = j * self.vardict['dims'][1]
+                            end1 = (j+1) * self.vardict['dims'][1] - 1
+                            self.vardict['decomposition'].append([[start0,end0],[start1,end1]])
+                        else:
+                            for k in range(dp[2]):
+                                if len(dp) == 2: #3D
+                                    start0 = i * self.vardict['dims'][0]
+                                    end0 = (i+1) * self.vardict['dims'][0] - 1
+                                    start1 = j * self.vardict['dims'][1]
+                                    end1 = (j+1) * self.vardict['dims'][1] - 1
+                                    start2 = k * self.vardict['dims'][2]
+                                    end2 = (k+1) * self.vardict['dims'][2] - 1
+                                    self.vardict['decomposition'].append([[start0,end0],[start1,end1],[start2,end2]])
+                                else:
+                                    print "Failed sanity check, more than 3 dimensions specified"
+                                    exit (13) 
+                        
+        # Case 3, no decomposition given
+        else:
+            #What to do here? PANIC!
+            print "No decomposition found, exiting."
+            exit(11)
 
 
     def get_name (self):
@@ -92,8 +178,40 @@ class var:
             return self.get_fortran_type()
           
 
-    def get_fortran_type (self):
+    def get_adios_type (self):
 
+        self.ftypes = {
+            'string' : 'adios_string',
+            'byte' : 'adios_byte',
+            'integer*1' : 'adios_byte',
+            'short' : 'adios_short',
+            'integer*2' : 'adios_short',
+            'integer' : 'adios_integer',
+            'integer*4' : 'adios_integer',
+            'long' : 'adios_long',
+            'long long' : 'adios_long',
+            'integer*8' : 'adios_long',
+            'unsigned byte' : 'adios_unsigned_byte',
+            'unsigned integer*1' : 'adios_unsigned_byte',
+            'unsigned short' : 'adios_unsigned_short',
+            'unsigned integer*2' : 'adios_unsigned_short',
+            'unsigned integer' : 'adios_unsigned_integer',
+            'unsigned integer*4' : 'adios_unsigned_integer',
+            'unsigned long' : 'adios_unsigned_long',
+            'unsigned integer*8' : 'adios_unsigned_long',
+            'float' : 'adios_real',
+            'real' : 'adios_real',
+            'real*4' : 'adios_real',
+            'double' : 'adios_double',
+            'real*8' : 'adios_double',
+            'complex' : 'adios_complex',
+            'double complex' : 'adios_double_complex'
+        }
+
+        return self.ftypes.get(self.get_type(), "UNKNOWN_TYPE")
+
+
+    def get_fortran_type (self):
         self.ftypes = {
             'string' : 'string',
             'byte' : 'integer*1',
@@ -165,17 +283,24 @@ class var:
 
         return self.ftypes.get(self.get_type(), "UNKNOWN_TYPE")
 
+    def is_scalar (self):
+        d = self.vardict.get('dims', None)
+        return d == 'scalar'
+
+
     def get_dims (self):
-        if self.vardict['dims'] == 'scalar':
+        d = self.vardict.get('dims', None)
+        if d == None or d == 'scalar':
             return None
         else:
             return self.vardict['dims']
 
     def get_dims_str (self):
-        if self.vardict['dims'] == 'scalar':
+        dims = self.get_dims()
+        if dims == None:
             return ''
         else:
-            return ','.join(str (d) for d in self.vardict['dims'])
+            return ','.join(str (d) for d in dims)
 
     def get_ndims (self):
         if self.get_dims() is None:
@@ -239,7 +364,7 @@ class var:
 
     # This gives the size of a scalar or an array
     def get_size (self):
-        if self.vardict['dims'] == 'scalar':
+        if self.vardict.get ('dims', None) == 'scalar':
             return self.get_unit_size()
         else:
             return "%s * %s" % (self.get_unit_size(), '*'.join (str(x) for x in self.get_dims() ) ) 
@@ -247,8 +372,10 @@ class var:
     # Okay, so this is pinned to the decomposition data from the yaml file. We'll just take the max value
     # in each dimension...
     def get_global_dims (self):
+        if self.global_dims:
+            return self.global_dims
 
-        return self.global_dims
+        return self.vardict.get ('global-dims', None)
 
 
     def get_global_dims_str (self):
@@ -301,6 +428,9 @@ class var:
 
     def get_decomposition (self):
         return self.vardict.get ('decomposition', None)
+
+    def get_decomp_procs (self):
+        return self.vardict.get ('decomp-procs', None)
 
 
 def main(argv=None):

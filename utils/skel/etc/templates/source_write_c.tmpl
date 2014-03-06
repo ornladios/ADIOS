@@ -62,9 +62,15 @@ $v.get_c_type() * $v.get_safe_name();
 #if $noxml
 int64_t skel_adios_group;
 
+int color = skel_mpi_rank / 2;
+
 adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, $bpy.get_buf_size_mb());
 adios_declare_group (&skel_adios_group, "${bpy.get_group_name()}", "", adios_flag_no);
-adios_select_method (skel_adios_group, "$bpy.get_method()", "$bpy.get_parameters()", "");
+
+char paramstring[<%= len(self.bpy.get_parameters()) + 64 %>];
+//sprintf (paramstring, "color:%i;%s", color, "$bpy.get_parameters()");
+sprintf (paramstring, "%s", "$bpy.get_parameters()");
+adios_select_method (skel_adios_group, "$bpy.get_method()", paramstring, "");
 
 ## This loop generates any needed skel auxiliary variables
 #for v in $bpy.get_vars():
