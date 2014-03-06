@@ -26,7 +26,7 @@ program writer
   integer :: adios_err
   ! actual timestep
   integer   :: ts 
-
+  character(len=1) :: filemode ! "w" or "a" for create/append
   
   call MPI_Init (ierr)
   call MPI_Comm_dup (MPI_COMM_WORLD, group_comm, ierr)
@@ -61,9 +61,9 @@ program writer
   hx= 2.0 * PI / (nx_global-1) 
   hy= 2.0 * PI / (ny_global-1) 
   
-
+  filemode="w"
   do ts=0,timesteps-1
-     write(filename,'(a6,i2.2,a3)') 'writer',ts,'.bp'
+     write(filename,'(a6,a3)') 'writer','.bp'
      if (rank==0) write(6,*) 'ts=',ts
       do j = 1 , ny_local
       do i = 1 , nx_local
@@ -73,10 +73,10 @@ program writer
          end do
       end do
      !xy = rank
-     call adios_open (adios_handle, "writer", trim(filename), "w", group_comm, adios_err)
+     call adios_open (adios_handle, "writer", trim(filename), filemode, group_comm, adios_err)
 #include "gwrite_writer.fh"
      call adios_close (adios_handle, adios_err)
-     
+     filemode="a"
   enddo
 
   ! Terminate

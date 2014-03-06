@@ -7,7 +7,7 @@ program reader
     integer :: timesteps      ! number of times to read data    
     integer :: nproc          ! number of processors
     
-    real*8, dimension(:,:),   allocatable :: xy
+    real*8, dimension(:,:,:),   allocatable :: xy
 
     ! Offsets and sizes
     integer :: nx_global, ny_global
@@ -25,6 +25,8 @@ program reader
     integer :: ntsteps
     
     integer*8 :: fh ! ADIOS file handle
+    ! number of variables and attributes, first and last step available in file
+    integer   :: vcnt, acnt, current_step, last_step
 
 
 
@@ -36,12 +38,12 @@ program reader
 
     ntsteps=2
 
-    do ts = 0, ntsteps-1
-       write(filename,'(a6,i2.2,a3)') 'writer',ts,'.bp'
-       call adios_read_open_file (fh, filename, ADIOS_READ_METHOD_BP, group_comm, ierr)
-  
-       if (rank==0) write(6,*) 'ts=',ts
-       if (ts==0) then
+    write(filename,'(a6,a3)') 'writer','.bp'
+    call adios_read_open_file (fh, filename, ADIOS_READ_METHOD_BP, group_comm, ierr)
+    call adios_inq_file (fh, vcnt, acnt, current_step, last_step, ierr)
+    ntsteps = last_step-current_step+1
+
+          if (rank==0) write(6,*) 'steps available=',ntsteps
           ! adios_get_scalar() gets the value from metadata in memory
           call adios_get_scalar(fh, "nx_global", nx_global, ierr)
           call adios_get_scalar(fh, "ny_global", ny_global, ierr)
@@ -55,25 +57,25 @@ program reader
              readsize(1) = nx_global - readsize(1)*(nproc-1)
           endif
           
-          allocate( xy  (readsize(1), readsize(2)) )
+          allocate( xy  (readsize(1), readsize(2), ntsteps) )
 
           ! Create a 2D selection for the subset
           call adios_selection_boundingbox (sel, 2, offset, readsize)
 
-       end if
        
        ! Arrays are read by scheduling one or more of them
        ! and performing the reads at once
-       call adios_schedule_read(fh, sel, "xy", 0, 1, xy, ierr)
+       call adios_schedule_read(fh, sel, "xy", current_step, ntsteps, xy, ierr)
        call adios_perform_reads (fh, ierr)
 
+    do ts=current_step, last_step ! runs from 0, not from 1
        do j=1,readsize(2)
           do i=1,readsize(1)
-             write (100+rank, '(3i5,f8.1)') ts,i-1+offset(1),j-1+offset(2),xy(i,j)
+             write (100+rank, '(3i5,f8.1)') ts,i-1+offset(1),j-1+offset(2),xy(i,j,ts+1)
           enddo
        enddo
-       call adios_read_close (fh, ierr)
-    end do
+    enddo
+    call adios_read_close (fh, ierr)
     ! Terminate
     call adios_selection_delete (sel)
     call adios_read_finalize_method (ADIOS_READ_METHOD_BP, ierr)

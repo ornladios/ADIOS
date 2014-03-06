@@ -47,7 +47,8 @@ struct adios_dimes_data_struct
     int time_index; // versioning in DataSpaces, start from 0
     int n_writes; // how many times adios_write has been called
 #if HAVE_MPI
-    MPI_Comm mpi_comm;
+    MPI_Comm mpi_comm; // for use in open..close
+    MPI_Comm mpi_comm_init; // for use in init/finalize
 #endif
     int  num_of_files; // how many files do we have with this method
     char *fnames[MAX_NUM_OF_FILES];  // names of files (needed at finalize)
@@ -159,6 +160,7 @@ void adios_dimes_init (const PairStruct * parameters,
     p->n_writes = 0;
 #if HAVE_MPI
     p->mpi_comm = MPI_COMM_NULL;
+    p->mpi_comm_init = method->init_comm;
 #endif
     p->num_of_files = 0;
 
@@ -940,7 +942,7 @@ void adios_dimes_finalize (int mype, struct adios_method_struct * method)
     for (i=0; i<p->num_of_files; i++) {
         /* Put VERSION@fn into space. Indicates that this file will not be extended anymore.  */
         log_debug("%s: call dspaces_lock_on_write(%s), rank=%d\n", __func__, p->fnames[i], mype);
-        dspaces_lock_on_write(p->fnames[i], &p->mpi_comm); // lock is global operation in DataSpaces
+        dspaces_lock_on_write(p->fnames[i], &p->mpi_comm_init); // lock is global operation in DataSpaces
         if (p->rank == 0) {
             value[0] = p->fversions[i];
             snprintf(ds_var_name, MAX_DS_NAMELEN, "VERSION@%s", p->fnames[i]);
@@ -954,7 +956,7 @@ void adios_dimes_finalize (int mype, struct adios_method_struct * method)
             dspaces_put_sync();
         }
         log_debug("%s: call dspaces_unlock_on_write(%s), rank=%d\n", __func__, p->fnames[i], mype);
-        dspaces_unlock_on_write(p->fnames[i], &p->mpi_comm);
+        dspaces_unlock_on_write(p->fnames[i], &p->mpi_comm_init);
         free (p->fnames[i]);
     }
 

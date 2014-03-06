@@ -1,7 +1,10 @@
+1.x.x Release xxx 2014
+    - Support for more than 64k variables in a file
+
 1.6.0 Release Dec 2013
     - Transformations of data supported in file-based I/O
       - lossless compression (zlib, bzip, szip)
-      - lossy compression (ISOBAR)
+      - lossless compression (ISOBAR)
       - precision-level-of-detail encoding (APLOD)
     - Changes to Write API:
       - variables are identified by full path at writing
