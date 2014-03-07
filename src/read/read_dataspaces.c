@@ -1137,11 +1137,13 @@ static int adios_read_dataspaces_get (const char * varname, enum ADIOS_DATATYPES
         __func__, rank, varname, version, lb[0], lb[1], lb[2], 
         ub[0], ub[1], ub[2], gdims[0], gdims[1], gdims[2]);
 
-    err =  dspaces_get (varname, version, elemsize, 
-                     lb[0], lb[1], lb[2],
-                     ub[0], ub[1], ub[2],
-                     data
-                    );
+    err =  dspaces_get_with_gdim (varname, version, elemsize,
+                ndims, lb, ub, gdims, data); 
+    //err =  dspaces_get (varname, version, elemsize, 
+    //                 lb[0], lb[1], lb[2],
+    //                 ub[0], ub[1], ub[2],
+    //                 data
+    // 
 
     /*if (err == -ENOMEM) {
         adios_error (err_no_memory, "Not enough memory for DATASPACES to perform dspaces_get()");  

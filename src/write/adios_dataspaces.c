@@ -325,10 +325,17 @@ void adios_dataspaces_write (struct adios_file_struct * fd
             group->adios_host_language_fortran == adios_flag_yes, 
             0 /*pack*/, didx);
 
-    dspaces_put(ds_var_name, version, var_type_size, 
-             lb[didx[0]], lb[didx[1]], lb[didx[2]], 
-             ub[didx[0]], ub[didx[1]], ub[didx[2]], 
-             data);
+    uint64_t lb_in[3], ub_in[3], gdims_in[3];
+    lb_in[0] = lb[didx[0]]; lb_in[1] = lb[didx[1]]; lb_in[2] = lb[didx[2]];
+    ub_in[0] = ub[didx[0]]; ub_in[1] = ub[didx[1]]; ub_in[2] = ub[didx[2]];
+    gdims_in[0] = gdims[didx[0]]; gdims_in[1] = gdims[didx[1]]; gdims_in[2] = gdims[didx[2]];
+
+    dspaces_put_with_gdim(ds_var_name, version, var_type_size,
+        ndims, lb_in, ub_in, gdims_in, data); 
+    //dspaces_put(ds_var_name, version, var_type_size, 
+    //         lb[didx[0]], lb[didx[1]], lb[didx[2]], 
+    //         ub[didx[0]], ub[didx[1]], ub[didx[2]], 
+    //         data);
     
     log_debug ("var_name=%s, dimension ordering=(%d,%d,%d), gdims=(%llu,%llu,%llu), lb=(%llu,%llu,%llu), ub=(%llu,%llu,%llu)\n",
             ds_var_name, 
@@ -950,9 +957,12 @@ void adios_dataspaces_finalize (int mype, struct adios_method_struct * method)
     ds_dimension_ordering(1, 0, 0, didx); // C ordering of 1D array into DS
     for (i=0; i<p->num_of_files; i++) {
         /* Put VERSION@fn into space. Indicates that this file will not be extended anymore.  */
-        log_debug("%s: call dspaces_lock_on_write(%s), rank=%d\n", __func__, p->fnames[i], mype);
-        dspaces_lock_on_write(p->fnames[i], &p->mpi_comm_init); // lock is global operation in DataSpaces
+        //log_debug("%s: call dspaces_lock_on_write(%s), rank=%d\n", __func__, p->fnames[i], mype);
+        //dspaces_lock_on_write(p->fnames[i], &p->mpi_comm_init); // lock is global operation in DataSpaces
         if (p->rank == 0) {
+            log_debug("%s: call dspaces_lock_on_write(%s), rank=%d\n", __func__, p->fnames[i], mype);
+            p->mpi_comm = MPI_COMM_SELF;
+            dspaces_lock_on_write(p->fnames[i], &p->mpi_comm); // lock is global operation in DataSpaces
             value[0] = p->fversions[i];
             snprintf(ds_var_name, MAX_DS_NAMELEN, "VERSION@%s", p->fnames[i]);
             log_debug ("%s: update %s in the space [%d, %d]\n", 
@@ -963,9 +973,11 @@ void adios_dataspaces_finalize (int mype, struct adios_method_struct * method)
                     &value); 
             log_debug("%s: call dspaces_put_sync()\n", __func__);
             dspaces_put_sync();
+            log_debug("%s: call dspaces_unlock_on_write(%s), rank=%d\n", __func__, p->fnames[i], mype);
+            dspaces_unlock_on_write(p->fnames[i], &p->mpi_comm);
         }
-        log_debug("%s: call dspaces_unlock_on_write(%s), rank=%d\n", __func__, p->fnames[i], mype);
-        dspaces_unlock_on_write(p->fnames[i], &p->mpi_comm_init);
+        //log_debug("%s: call dspaces_unlock_on_write(%s), rank=%d\n", __func__, p->fnames[i], mype);
+        //dspaces_unlock_on_write(p->fnames[i], &p->mpi_comm_init);
         free (p->fnames[i]);
     }
 
