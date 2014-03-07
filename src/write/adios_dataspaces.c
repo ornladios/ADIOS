@@ -28,7 +28,7 @@
 
 static int adios_dataspaces_initialized = 0;
 #define MAX_DS_NAMELEN 128
-#define MAX_NUM_OF_FILES 20
+#define MAX_NUM_OF_FILES 200
 //static char ds_type_var_name[MAX_DS_NAMELEN];
 static char ds_var_name[MAX_DS_NAMELEN];
 static unsigned int adios_dataspaces_verbose = 3;
@@ -188,6 +188,7 @@ int adios_dataspaces_open (struct adios_file_struct * fd,
     p->mpi_comm = comm;
     MPI_Comm_rank (p->mpi_comm, &(p->rank));
     MPI_Comm_size (p->mpi_comm, &(p->peers));
+    dspaces_set_mpi_rank(p->rank);
 #endif
 
     // connect to DATASPACES at the very first adios_open(), disconnect in adios_finalize()
@@ -253,7 +254,7 @@ void adios_dataspaces_write (struct adios_file_struct * fd
     //Get two offset coordinate values
     unsigned int version;
 
-    int dims[3]={1,1,1}, gdims[3]={0,0,0}, lb[3]={0,0,0}, ub[3]={0,0,0}; /* lower and upper bounds for DataSpaces */
+    uint64_t dims[3]={1,1,1}, gdims[3]={0,0,0}, lb[3]={0,0,0}, ub[3]={0,0,0}; /* lower and upper bounds for DataSpaces */
     int didx[3]; // for reordering the dimensions
     int ndims = 0;
     int hastime = 0;
@@ -309,7 +310,7 @@ void adios_dataspaces_write (struct adios_file_struct * fd
     adios_write_var_characteristics_v1 (fd, v);
     
 
-    log_debug ("var_name=%s, type=%s(%d) elemsize=%d, version=%d, ndims=%d, size=(%d,%d,%d), gdim=(%d,%d,%d), lb=(%d,%d,%d), ub=(%d,%d,%d)\n",
+    log_debug ("var_name=%s, type=%s(%d) elemsize=%d, version=%d, ndims=%d, size=(%llu,%llu,%llu), gdim=(%llu,%llu,%llu), lb=(%llu,%llu,%llu), ub=(%llu,%llu,%llu)\n",
             ds_var_name, adios_type_to_string_int(v->type), v->type, var_type_size, version, ndims,
             dims[0], dims[1], dims[2], gdims[0], gdims[1], gdims[2], lb[0], lb[1], lb[2], ub[0], ub[1], ub[2]);
 
@@ -329,7 +330,7 @@ void adios_dataspaces_write (struct adios_file_struct * fd
              ub[didx[0]], ub[didx[1]], ub[didx[2]], 
              data);
     
-    log_debug ("var_name=%s, dimension ordering=(%d,%d,%d), gdims=(%d,%d,%d), lb=(%d,%d,%d), ub=(%d,%d,%d)\n",
+    log_debug ("var_name=%s, dimension ordering=(%d,%d,%d), gdims=(%llu,%llu,%llu), lb=(%llu,%llu,%llu), ub=(%llu,%llu,%llu)\n",
             ds_var_name, 
             didx[0], didx[1], didx[2], 
             gdims[didx[0]], gdims[didx[1]], gdims[didx[2]], 
@@ -807,7 +808,8 @@ void adios_dataspaces_close (struct adios_file_struct * fd
     struct adios_index_struct_v1 * index = adios_alloc_index_v1(1);
     struct adios_attribute_struct * a = fd->group->attributes;
     struct adios_dspaces_file_info *info = lookup_dspaces_file_info(p,fd->name);
-    int lb[3], ub[3], didx[3]; // for reordering DS dimensions
+    uint64_t lb[3], ub[3];
+    int didx[3]; // for reordering DS dimensions
     unsigned int version;
 
     if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
@@ -937,8 +939,8 @@ void adios_dataspaces_finalize (int mype, struct adios_method_struct * method)
         method->method_data;
     int i;
     char ds_var_name[MAX_DS_NAMELEN];
-    int lb[3] = {0,0,0}; 
-    int ub[3] = {1,0,0}; // we put 2 integers to space, 
+    uint64_t lb[3] = {0,0,0}; 
+    uint64_t ub[3] = {1,0,0}; // we put 2 integers to space, 
     int didx[3]; // for reordering DS dimensions
     int value[2] = {0, 1}; // integer to be written to space (terminated=1)
 
