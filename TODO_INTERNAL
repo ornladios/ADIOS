@@ -7,6 +7,7 @@ Seismic (Jeroen Tromp), ASDF data format
 
 Others
 - support C/C++ structures (without following pointers) as generic data types
+  - traverse a tree and flatten into a buffer
 - support hyperslab at writing and maybe reading
 - streaming support a series of file(name)s, not just appending to the same file(name)
 
