@@ -21,9 +21,11 @@
 #include "mpi.h"
 #include "adios.h"
 
-int64_t gh;
-uint64_t groupsize;
-MPI_Comm iocomm;
+static int rank;
+static int64_t gh;
+static uint64_t groupsize;
+static MPI_Comm iocomm;
+static int file_per_process = 0;  // 0: method dependent, 1: N process writes to N files
 
 char * DEFAULT_ADIOSMETHOD_NAME   = "MPI";
 char * DEFAULT_ADIOSMETHOD_PARAMS = "";
@@ -31,6 +33,7 @@ char * DEFAULT_ADIOSMETHOD_PARAMS = "";
 int output_init(MPI_Comm comm, int bufsizeMB)
 {
     char * wmethodname, *wmethodparams;
+    MPI_Comm_rank (comm, &rank);
     adios_init_noxml(comm);
     adios_declare_group(&gh,"writer","",adios_flag_yes);
     adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, bufsizeMB);
@@ -45,7 +48,13 @@ int output_init(MPI_Comm comm, int bufsizeMB)
     adios_select_method (gh, wmethodname, wmethodparams, "");
 
     groupsize = 0;
-    iocomm = comm;
+
+    if (!strcmp(wmethodname, "POSIX1")) {
+        file_per_process = 1;
+        iocomm = MPI_COMM_SELF;
+    } else {
+        iocomm = comm;
+    }
     return 0;
 }
 
@@ -65,8 +74,14 @@ int output_dump(char *filename, int step, void *data)
     int64_t fh;
     uint64_t tsize;
     double t1, t2;
+    char fname[256];
+    if (file_per_process) {
+        snprintf (fname, sizeof(fname), "%s_%d.bp",filename, rank);
+    } else {
+        snprintf (fname, sizeof(fname), "%s.bp",filename);
+    }
     t1 = MPI_Wtime();
-    adios_open (&fh, "writer", filename, "w", iocomm);
+    adios_open (&fh, "writer", fname, "w", iocomm);
     t2 = MPI_Wtime();
     Tio_open[step] = t2-t1;
     adios_group_size (fh, groupsize, &tsize);
