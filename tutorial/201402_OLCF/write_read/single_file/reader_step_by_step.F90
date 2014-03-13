@@ -25,6 +25,8 @@ program reader
     integer :: ntsteps
     
     integer*8 :: fh ! ADIOS file handle
+    ! number of variables and attributes, first and last step available in file
+    integer   :: vcnt, acnt, current_step, last_step
 
 
 
@@ -36,10 +38,11 @@ program reader
 
     ntsteps=2
 
-    do ts = 0, ntsteps-1
-       write(filename,'(a6,i2.2,a3)') 'writer',ts,'.bp'
-       call adios_read_open_file (fh, filename, ADIOS_READ_METHOD_BP, group_comm, ierr)
-  
+    write(filename,'(a6,a3)') 'writer','.bp'
+    call adios_read_open (fh, filename, ADIOS_READ_METHOD_BP, group_comm, &
+                          ADIOS_LOCKMODE_CURRENT, 0.0, ierr)
+    ts = 0
+    do while (ierr==0)
        if (rank==0) write(6,*) 'ts=',ts
        if (ts==0) then
           ! adios_get_scalar() gets the value from metadata in memory
@@ -72,8 +75,12 @@ program reader
              write (100+rank, '(3i5,f8.1)') ts,i-1+offset(1),j-1+offset(2),xy(i,j)
           enddo
        enddo
-       call adios_read_close (fh, ierr)
+       ts = ts + 1
+
+       ! advance file to the next available step  
+       call adios_advance_step (fh, 0, 0.0, ierr)
     end do
+    call adios_read_close (fh, ierr)
     ! Terminate
     call adios_selection_delete (sel)
     call adios_read_finalize_method (ADIOS_READ_METHOD_BP, ierr)

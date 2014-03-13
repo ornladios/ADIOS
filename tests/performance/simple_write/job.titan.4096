@@ -1,0 +1,124 @@
+#!/bin/bash
+#PBS -A env003
+#PBS -N aggr256
+#PBS -j oe
+#PBS -m be
+##PBS -q debug
+#PBS -l walltime=2:00:00,nodes=2048
+## On Cray, you need -lnodes=3 (3 nodes for 3 separate apruns)
+## On a cluster, you need WRITEPROC+STAGINGPROC+READPROC cores
+
+# Chester
+# Load adios module on chester to set environment 
+# for Gemini ptag/cookie (used by DataSpaces)
+source /opt/modules/default/etc/modules.sh
+module load vampirtrace/5.14.4-nogpu
+
+export VT_GNU_NMFILE=nm.writer_adios
+nm --demangle writer_adios > nm.writer_adios
+
+
+cd $PBS_O_WORKDIR
+
+## Sith cluster
+#RUNCMD="mpirun -np"
+#
+## Titan
+RUNCMD="aprun -n"
+
+# Number of writers (WPX*WPY = WRITEPROC)
+WRITEPROC=4096
+WPX=1800
+WPY=2000
+WN=2
+
+# clean-up
+rm -f log_* write_adios.*
+rm -rf data0* 
+
+
+for ((RUN=1;RUN<=1;RUN++)); do
+
+    ###### RUN NONE test ##########
+    echo "-- Start No-IO on $WRITEPROC PEs"
+    date
+    $RUNCMD $WRITEPROC -N $WN ./writer_none 5 100 100 50 $WPX $WPY >& log_${WRITEPROC}.none
+    
+    ###### RUN POSIX test ##########
+    echo "-- Start POSIX IO on $WRITEPROC PEs"
+    date
+    $RUNCMD $WRITEPROC -N $WN ./writer_posix 5 100 100 50 $WPX $WPY >& log_${WRITEPROC}.posix
+    du -sh data0*
+    rm -r data0*
+    
+    ###### RUN HDF5 test ##########
+    echo "-- Start HDF5 N-to-N IO on $WRITEPROC PEs"
+    date
+    $RUNCMD $WRITEPROC -N $WN ./writer_hdf5_seq 5 100 100 50 $WPX $WPY >& log_${WRITEPROC}.hdf5_seq
+    du -sh data0*
+    rm -r data0*
+    
+    ###### RUN HDF5 test ##########
+    echo "-- Start HDF5 single-file-IO on $WRITEPROC PEs"
+    date
+    $RUNCMD $WRITEPROC -N $WN ./writer_hdf5_nto1 5 100 100 50 $WPX $WPY >& log_${WRITEPROC}.hdf5_nto1
+    du -sh data0*
+    rm -r data0*
+    
+    ###### RUN ADIOS test ##########
+    # Start WRITER
+    export ADIOSMETHOD_PARAMS="num_aggregators=64;num_ost=100;verbose=2"
+    export ADIOSMETHOD=MPI_AGGREGATE
+    echo "-- Start ADIOS on $WRITEPROC PEs with $ADIOSMETHOD method with params [$ADIOSMETHOD_PARAMS]"
+    date
+    $RUNCMD $WRITEPROC -N $WN ./writer_adios 5 100 100 50 $WPX $WPY >& log_${WRITEPROC}.adios_$ADIOSMETHOD
+    mkdir -p Aggr
+    rm -r Aggr/*
+    mv data0* Aggr
+    du -sh Aggr/data0*.dir
+
+    ###### RUN ADIOS test ##########
+    # Start WRITER
+    export ADIOSMETHOD_PARAMS="num_aggregators=64;num_ost=100;striping=0;verbose=2"
+    export ADIOSMETHOD=MPI_AGGREGATE
+    echo "-- Start ADIOS on $WRITEPROC PEs with $ADIOSMETHOD method with params [$ADIOSMETHOD_PARAMS]"
+    date
+    $RUNCMD $WRITEPROC -N $WN ./writer_adios 5 100 100 50 $WPX $WPY >& log_${WRITEPROC}.adios_${ADIOSMETHOD}_nostriping
+    mkdir -p Aggr_nostriping
+    rm -r Aggr_nostriping/*
+    mv data0* Aggr_nostriping
+    du -sh Aggr_nostriping/data0*.dir
+
+
+    ###### RUN ADIOS test ##########
+    # Start WRITER
+    export ADIOSMETHOD_PARAMS="stripe_size=29000000;verbose=2"
+    export ADIOSMETHOD=MPI_LUSTRE
+    echo "-- Start ADIOS on $WRITEPROC PEs with $ADIOSMETHOD method with params [$ADIOSMETHOD_PARAMS]"
+    date
+    $RUNCMD $WRITEPROC -N $WN ./writer_adios 5 100 100 50 $WPX $WPY >& log_${WRITEPROC}.adios_$ADIOSMETHOD
+    du -sh data0*
+    rm -r data0*
+
+    ###### RUN ADIOS test ##########
+    # Start WRITER
+    export ADIOSMETHOD_PARAMS="verbose=2"
+    export ADIOSMETHOD=POSIX
+    echo "-- Start ADIOS on $WRITEPROC PEs with $ADIOSMETHOD method"
+    date
+    $RUNCMD $WRITEPROC -N $WN ./writer_adios 5 100 100 50 $WPX $WPY >& log_${WRITEPROC}.adios_$ADIOSMETHOD
+    du -sh data0*.dir
+    rm -r data0*
+
+    ###### RUN ADIOS test ##########
+    # Start WRITER
+    #export ADIOSMETHOD_PARAMS="verbose=2"
+    #export ADIOSMETHOD=POSIX1
+    #echo "-- Start ADIOS on $WRITEPROC PEs with $ADIOSMETHOD method"
+    #date
+    #$RUNCMD $WRITEPROC -N $WN ./writer_adios 5 100 100 50 $WPX $WPY >& log_${WRITEPROC}.adios_$ADIOSMETHOD
+    #du -sh data0*
+    #rm -r data0*
+
+done
+

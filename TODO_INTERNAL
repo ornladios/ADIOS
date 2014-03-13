@@ -7,11 +7,14 @@ Seismic (Jeroen Tromp), ASDF data format
 
 Others
 - support C/C++ structures (without following pointers) as generic data types
+  - traverse a tree and flatten into a buffer
 - support hyperslab at writing and maybe reading
 - streaming support a series of file(name)s, not just appending to the same file(name)
 
 - ship and build the MXML library with the ADIOS release
 
+- create and store metadata in staging methods (like in BP format)
+  Detailed per-writer info is completely missing right now.
 
 
 

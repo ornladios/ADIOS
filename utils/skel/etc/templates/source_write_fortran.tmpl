@@ -9,6 +9,7 @@ program skel
 
 
   use mpi
+  use adios_write_mod
   IMPLICIT NONE
 
   real*8 :: skel_init_timer = 0, &
@@ -23,6 +24,9 @@ program skel
   integer*4 :: error
   integer*8 :: adios_error
   integer*8 :: adios_groupsize
+#if $noxml
+  integer*8 :: skel_adios_group
+#end if
 
   integer :: comm
 
@@ -53,7 +57,12 @@ program skel
   call MPI_BARRIER (MPI_COMM_WORLD, error)
   skel_init_timer = skel_init_timer - MPI_Wtime();
 
+#if $noxml
+  call adios_init_noxml (MPI_COMM_WORLD, error)
+#else
   call adios_init ("${project}_skel.xml", MPI_COMM_WORLD, adios_error)
+#end if
+
   skel_init_timer = skel_init_timer + MPI_WTIME();
   call MPI_Comm_rank (MPI_COMM_WORLD, skel_mpi_rank, error)
   call MPI_Comm_size (MPI_COMM_WORLD, skel_mpi_size, error)
@@ -84,6 +93,35 @@ program skel
 
  skel_i = 0
 
+
+#if $noxml
+
+call adios_allocate_buffer ($bpy.get_buf_size_mb(), error);
+call adios_declare_group (skel_adios_group, "${bpy.get_group_name()}", "", 1, error);
+call adios_select_method (skel_adios_group, "$bpy.get_method()", "$bpy.get_parameters()", "", error);
+
+## This loop generates any needed skel auxiliary variables
+#for v in $bpy.get_vars():
+    #if $v.has_global_bounds():
+        #for sv in $v.get_offset_vars()
+call adios_define_var (skel_adios_group, "$sv", "", adios_integer, "", "", "", adios_error)
+        #end for
+    #end if
+#end for
+
+## This loop handles the user defined variables
+    #for v in $bpy.get_vars():
+call adios_define_var (skel_adios_group, &
+                       "$v.get_name()", "", &
+                       $v.get_adios_type(), "$v.get_dims_str()", &
+                       "$v.get_global_dims_str()", "$v.get_offset_vars_str()", adios_error)
+    #end for
+
+
+#end if
+
+
+
  DO
   skel_i = skel_i + 1
   IF (skel_i .GT. 1) EXIT
@@ -95,7 +133,7 @@ program skel
   write (skel_filename, '(I0)') skel_i
   skel_filename = "out_${bpy.get_group_name()}_write_"//skel_filename//".bp"
  call MPI_Comm_dup (MPI_COMM_WORLD, comm, error)
-  call adios_open(adios_handle, "${bpy.get_group_name()}", skel_filename, "w", comm, adios_error);
+  call adios_open(adios_handle, "${bpy.get_group_name()}", skel_filename, "w", comm, error);
   skel_open_timer = skel_open_timer + MPI_Wtime()
 
 ! Time the writes
@@ -113,12 +151,12 @@ program skel
 #end for
                      0
 
-  call adios_group_size (adios_handle, adios_groupsize, skel_total_size, adios_error)
+  call adios_group_size (adios_handle, adios_groupsize, skel_total_size, error)
 
 ! Write each variable
 ! First the scalars
 #for v in filter (lambda x: x.get_dims() is None, $bpy.get_vars() ):
-    call adios_write (adios_handle, "$v.get_name", $v.get_safe_name(), adios_error)
+    call adios_write (adios_handle, "$v.get_name", $v.get_safe_name(), error)
 #end for
 
 ! Next Skel variables
@@ -127,13 +165,13 @@ program skel
     call adios_write (adios_handle, &
                       "$sv", &
                        $sv (skel_mpi_rank+1), &
-                       adios_error)
+                       error)
     #end for
 #end for
 
 ! Now the arrays
 #for v in filter (lambda x: x.get_dims() is not None, $bpy.get_vars() ):
-    call adios_write (adios_handle, "$v.get_name", $v.get_safe_name(), adios_error)
+    call adios_write (adios_handle, "$v.get_name", $v.get_safe_name(), error)
 #end for
 
 
@@ -142,7 +180,7 @@ program skel
 
 ! Time the closes
   skel_close_timer = skel_close_timer - MPI_Wtime()
-  call adios_close (adios_handle, adios_error)
+  call adios_close (adios_handle, error)
   skel_close_timer = skel_close_timer + MPI_Wtime()
 
  END DO
@@ -172,7 +210,7 @@ program skel
   endif
 
 ! Clean up
-  call adios_finalize(0, adios_error)
+  call adios_finalize(0, error)
   call MPI_Finalize(error)
 
 end program skel

@@ -27,6 +27,8 @@ dist_pythonlib_DATA=\
     lib/skel_settings.py \
     lib/skel_source.py \
     lib/skel_submit.py \
+    lib/skel_suite.py \
+    lib/skel_test_plan.py \
     lib/skel_xml.py \
     lib/skelconf.py \
     lib/skel_have_adios_timing.py \
@@ -39,6 +41,7 @@ dist_template_DATA=\
 	etc/templates/submit_sith.tpl\
 	etc/templates/submit_nautilus.tpl\
 	etc/templates/submit_jaguar.tpl \
+        etc/templates/create_suite.tmpl \
         etc/templates/Makefile.tmpl \
         etc/templates/replay_bp.tmpl \
         etc/templates/replay.tmpl \
@@ -56,6 +59,7 @@ EXTRA_DIST=etc/settings \
            etc/templates/submit_sith.tpl \
            etc/templates/submit_nautilus.tpl \
            etc/templates/Makefile.tmpl \
+           etc/templates/create_suite.tmpl \
            etc/templates/replay_bp.tmpl \
            etc/templates/replay.tmpl \
            etc/templates/replay_yaml.tmpl \
