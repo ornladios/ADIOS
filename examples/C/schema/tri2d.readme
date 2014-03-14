@@ -22,6 +22,8 @@ data is data on the points (value = rank)
 1. Run the writer 
 =================
 $ mpirun -np 12 ./tri2d 4 3
+or
+$ mpirun -np 12 ./tri2d_noxml 4 3
 
 2. Check the output
 ===================
