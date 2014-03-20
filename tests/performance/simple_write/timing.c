@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include "mpi.h"
 #include "timing.h"
 
 
@@ -25,7 +26,88 @@ void timing_free ()
     free (Tio_close);
 }
 
-void timing_report (int nsteps)
+typedef  struct { 
+    double value; 
+    int    rank; 
+} DBL_INT;
+
+void timing_report (int nsteps, MPI_Comm comm)
+{
+    FILE *f = stdout;
+    int step;
+    double tcalc=0.0, tcomm=0.0, tio=0.0; // total sums */
+    int rank; 
+    DBL_INT *Tio;
+    DBL_INT *Tio_max;
+
+    MPI_Comm_rank (comm, &rank);
+
+    /* Tio = SUM(Tio_*) and rank */
+    Tio     = (DBL_INT*) calloc (nsteps, sizeof(DBL_INT));
+
+    /* Tio_max[i] = maximum I/O time (among processors) in step 'i' (computed on rank 0) +
+                    the rank of process which provided the maximum */
+    Tio_max = (DBL_INT*) calloc (nsteps, sizeof(DBL_INT));
+
+    for (step = 0; step < nsteps; step++) {
+        Tio[step].value = Tio_open[step]+Tio_group[step]+Tio_write[step]+Tio_close[step];
+        Tio[step].rank = rank;
+    }
+
+    MPI_Allreduce (Tio, Tio_max, nsteps, MPI_DOUBLE_INT, MPI_MAXLOC, comm);
+
+    if (!rank) {
+        fprintf (f, "===================================================================================\n"
+                    "                               TIMING   REPORT\n"
+                    "\n"
+                    "Step     Tcalc     Tcomm     Tio(max)  Tio_open  Tio_group Tio_write Tio_close rank\n"
+                );
+        fflush(f);
+    }
+
+    for (step = 0; step < nsteps; step++)
+    {
+        MPI_Barrier(comm);
+        /* Process with maximum Tio prints this line (lowest rank of equal Tios) */ 
+        if (Tio_max[step].rank == rank) {
+            fprintf (f, "%6d    %.3f %9.3f %9.3f %9.3f %9.3f %9.3f %9.3f     %d\n",
+                    step,
+                    Tcalc[step], 
+                    Tcomm[step],
+                    Tio_max[step].value,
+                    Tio_open[step],
+                    Tio_group[step],
+                    Tio_write[step],
+                    Tio_close[step],
+                    rank
+                    );
+            fflush(f);
+        }
+        tcalc += Tcalc[step];
+        tcomm += Tcomm[step];
+        tio += Tio_max[step].value;
+    }
+            
+    MPI_Barrier(comm);
+    if (!rank) {
+        fprintf (f, "===================================================================================\n"
+                    "Total    Tcalc     Tcomm     Tio \n"
+                );
+        fprintf (f, "      %9.3f %9.3f %9.3f\n",
+                tcalc, 
+                tcomm,
+                tio
+                );
+        fprintf (f, "Calc+comm+io = %.3f\n", tcalc+tcomm+tio);
+        fprintf (f, "===================================================================================\n");
+        fflush(f);
+    }
+
+}
+
+
+#if 0
+void timing_report_rank0 (int nsteps, double *Tio_max)
 {
     FILE *f = stdout;
     int step;
@@ -36,6 +118,7 @@ void timing_report (int nsteps)
                 "                               TIMING   REPORT\n"
                 "\n"
                 "Step     Tcalc     Tcomm     Tio       Tio_open  Tio_group Tio_write Tio_close\n"
+                "                             max        rank 0    rank 0     rank0     rank0  \n"
             );
 
     for (step = 0; step < nsteps; step++)
@@ -45,7 +128,7 @@ void timing_report (int nsteps)
                 step,
                 Tcalc[step], 
                 Tcomm[step],
-                tiosum,
+                Tio_max[step],
                 Tio_open[step],
                 Tio_group[step],
                 Tio_write[step],
@@ -77,4 +160,4 @@ void timing_report (int nsteps)
     fprintf (f, "==============================================================================\n");
 
 }
-
+#endif
