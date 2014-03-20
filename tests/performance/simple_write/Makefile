@@ -5,18 +5,18 @@
 ####################
 ## Chester, Titan ##
 ####################
-CC=cc
-H5PCC=cc 
+#CC=cc
+#H5PCC=cc 
 ## ADIOS with VAMPIR
 #ADIOS_DIR = /ccs/proj/e2e/pnorbert/ADIOS/xk6.pgi.vampir
 #ADIOS_INC = -I${ADIOS_DIR}/include
 #ADIOS_CLIB = -L${ADIOS_DIR}/lib -ladios -L/sw/xk6/mxml/2.6/cle4.0_pgi11.8.0/lib -lmxml /usr/lib64/liblustreapi.a
 #override LINKER=vtcc -vt:mpi -vt:cc cc
 ## ADIOS vanilla
-ADIOS_DIR=/ccs/proj/e2e/pnorbert/ADIOS/xk6.pgi
-ADIOS_INC = $(shell ${ADIOS_DIR}/bin/adios_config -c)
-ADIOS_CLIB = $(shell ${ADIOS_DIR}/bin/adios_config -l)
-override LINKER=cc
+#ADIOS_DIR=/ccs/proj/e2e/pnorbert/ADIOS/xk6.pgi
+#ADIOS_INC = $(shell ${ADIOS_DIR}/bin/adios_config -c)
+#ADIOS_CLIB = $(shell ${ADIOS_DIR}/bin/adios_config -l)
+#override LINKER=${CC}
 
 ################
 ## Rhea, Sith ##
@@ -28,38 +28,57 @@ override LINKER=cc
 #ADIOS_CLIB = $(shell ${ADIOS_DIR}/bin/adios_config -l)
 #override LINKER=vtcc -vt:mpi -vt:cc mpicc
 
+################
+## AdiosVM    ##
+################
+CC=mpicc -g 
+H5PCC=/opt/hdf5-1.8.12-parallel/bin/h5pcc -g
+ADIOS_DIR = /opt/adios/1.6.0
+ADIOS_INC = $(shell ${ADIOS_DIR}/bin/adios_config -c)
+ADIOS_CLIB = $(shell ${ADIOS_DIR}/bin/adios_config -l)
+override LINKER=${CC}
+
 
 default: all
-all: writer_adios writer_posix writer_none writer_hdf5_nto1 writer_hdf5_seq
+all: setup_comp_comm_ratio writer_adios writer_posix writer_none writer_hdf5_nto1 writer_hdf5_seq
+
+OBJS = writer.o timing.o comp_comm.o
 
 %.o:   %.c
 	${CC} -c -o $@ $<
 
-writer.o:   writer.c
-	${CC} -c -o writer.o writer.c 
+setup_comp_comm_ratio: comp_comm.o setup_comp_comm_ratio.c
+	${CC} -o setup_comp_comm_ratio setup_comp_comm_ratio.c comp_comm.o
 
-writer_adios: writer.o timing.o output_adios.c 
+#writer.o:   writer.c
+#	${CC} -c -o writer.o writer.c 
+#
+#comp_comm.o:   comp_comm.c
+#	${CC} -c -o comp_comm.o comp_comm.c 
+
+writer_adios: ${OBJS} output_adios.c 
 	${CC} -c -o output_adios.o ${ADIOS_INC} output_adios.c
-	${LINKER} -o writer_adios writer.o timing.o output_adios.o ${ADIOS_CLIB}
+	${LINKER} -o writer_adios writer.o timing.o comp_comm.o output_adios.o ${ADIOS_CLIB}
 
-writer_posix: writer.o timing.o output_posix.c 
+writer_posix: ${OBJS} output_posix.c 
 	${CC} -c -o output_posix.o output_posix.c
-	${CC} -o writer_posix writer.o timing.o output_posix.o 
+	${CC} -o writer_posix writer.o timing.o comp_comm.o output_posix.o 
 
-writer_none: writer.o timing.o output_none.c 
+writer_none: ${OBJS} output_none.c 
 	${CC} -c -o output_none.o output_none.c
-	${CC} -o writer_none writer.o timing.o output_none.o 
+	${CC} -o writer_none writer.o timing.o comp_comm.o output_none.o 
 
-writer_hdf5_nto1: writer.o timing.o output_hdf5_nto1.c 
+writer_hdf5_nto1: ${OBJS} output_hdf5_nto1.c 
 	${H5PCC} -c -o output_hdf5_nto1.o output_hdf5_nto1.c
-	${H5PCC} -o writer_hdf5_nto1 writer.o timing.o output_hdf5_nto1.o 
+	${H5PCC} -o writer_hdf5_nto1 writer.o timing.o comp_comm.o output_hdf5_nto1.o 
 
-writer_hdf5_seq: writer.o timing.o output_hdf5_seq.c 
+writer_hdf5_seq: ${OBJS} output_hdf5_seq.c 
 	${H5PCC} -c -o output_hdf5_seq.o output_hdf5_seq.c
-	${H5PCC} -o writer_hdf5_seq writer.o timing.o output_hdf5_seq.o 
+	${H5PCC} -o writer_hdf5_seq writer.o timing.o comp_comm.o output_hdf5_seq.o 
 
 clean:
 	rm -f *.o core*  
 	rm -f writer_adios writer_posix writer_none writer_hdf5_nto1 writer_hdf5_seq
+	rm -f setup_comp_comm_ratio
 	rm -rf data[0-9]*
 
