@@ -16,6 +16,7 @@ Others
 - create and store metadata in staging methods (like in BP format)
   Detailed per-writer info is completely missing right now.
 
+- replace INT32_MAX with a smaller number in write methods everywhere to ensure MPI_File_Write works on all machines
 
 
 
