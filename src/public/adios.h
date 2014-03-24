@@ -214,7 +214,7 @@ int adios_define_mesh_structured (char * dimensions,
                                   char * points,
                                   char * nspace,
                                   int64_t group_id,
-                                  char * name);
+                                  const char * name);
 
 // Define an unstructured mesh
 // For not requried attributes in this function, please use 0 instead
