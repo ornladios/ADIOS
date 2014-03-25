@@ -94,7 +94,7 @@ if(ADIOS_CONFIG)
     message(STATUS "Found 'adios_config': ${ADIOS_CONFIG}")
 else(ADIOS_CONFIG)
     set(ADIOS_FOUND FALSE)
-    message(STATUS "Can NOT find 'adios_config' - set ADIOS_ROOT or check your PATH")
+    message(STATUS "Can NOT find 'adios_config' - set ADIOS_ROOT or ADIOS_DIR, or check your PATH")
 endif(ADIOS_CONFIG)
 
 
