@@ -4,7 +4,7 @@ PROJECT(schema_uniform)
 include_directories(${PROJECT_SOURCE_DIR})
 link_directories(${PROJECT_BINARY_DIR})
 
-set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "$ENV{ADIOS_ROOT}/lib")
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "$ENV{ADIOS_ROOT}/lib" "$ENV{ADIOS_DIR}/lib" "$ENV{INSTALL_PREFIX}/lib")
 
 add_executable(uniform2d uniform2d.c)
 find_package(ADIOS)
