@@ -290,8 +290,7 @@ void FC_FUNC_(adios_inq_var, ADIOS_INQ_VAR)
 
         /* TIME dimension should be emulated here !!! */
         int tidx;
-        int timed = common_read_is_var_timed(afp, vi->varid);
-        if (timed) {
+        if (vi->nsteps > 1) {
             *ndim = vi->ndim + 1;
             *timedim = vi->ndim;
             dims[0] = vi->nsteps;
@@ -339,8 +338,7 @@ void FC_FUNC_(adios_read_var, ADIOS_READ_VAR)
         }
         int from_step = 0, nsteps = 1;
         /* TIME dimension should be emulated here !!! */
-        int timed = common_read_is_var_timed(afp, vi->varid);
-        if (timed) {
+        if (vi->nsteps > 1) {
             from_step = (int) start[vi->ndim];
             nsteps    = (int) count[vi->ndim];
         }
