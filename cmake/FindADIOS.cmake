@@ -88,7 +88,7 @@ set(ADIOS_FOUND TRUE)
 #   check the ADIOS_ROOT hint and the normal PATH
 find_file(ADIOS_CONFIG
     NAME adios_config
-    PATHS $ENV{ADIOS_ROOT}/bin $ENV{PATH})
+    PATHS $ENV{ADIOS_ROOT}/bin $ENV{ADIOS_DIR}/bin $ENV{PATH})
 
 if(ADIOS_CONFIG)
     message(STATUS "Found 'adios_config': ${ADIOS_CONFIG}")
