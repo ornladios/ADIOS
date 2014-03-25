@@ -20,7 +20,7 @@ const char * value_to_string (enum ADIOS_DATATYPES type, void * data, int idx);
 
 int main (int argc, char ** argv) 
 {
-    int         i, j, k,l;
+    int         i, j, k, l, t;
     MPI_Comm    comm_dummy = 0;  /* MPI_Comm is defined through adios_read.h */
     void      * data = NULL;
     uint64_t    start[] = {0,0,0,0,0,0,0,0,0,0};
@@ -58,6 +58,9 @@ int main (int argc, char ** argv)
                 printf(" = %s\n", value_to_string(v->type, v->value, 0));
             } else {
                 /* Arrays have to be read in from the file */
+                if (v->nsteps > 1) {
+                    printf(" %d*",v->nsteps);
+                }
                 printf("[%lld",v->dims[0]);
                 for (j = 1; j < v->ndim; j++)
                     printf(", %lld",v->dims[j]);
@@ -80,41 +83,44 @@ int main (int argc, char ** argv)
                     for (j = 0; j < v->ndim; j++) 
                         count[j] = v->dims[j];   
 
-                    sel = adios_selection_boundingbox (v->ndim, start, count);
-                    adios_schedule_read_byid (f, sel, i, 0, 1, data);
-                    adios_perform_reads (f, 1);
+                    for (t=0; t<v->nsteps; t++) {
+                        sel = adios_selection_boundingbox (v->ndim, start, count);
+                        adios_schedule_read_byid (f, sel, i, t, 1, data);
+                        adios_perform_reads (f, 1);
 
-                    if (bytes_read < 0) {
-                        printf ("%s\n", adios_errmsg());
-                    } else if (bytes_read > 1024*1024) {
-                        printf ("Too big to print\n");
-                    } else if (v->ndim == 1) {
-                        printf ("        [");
-                        for (j = 0; j < v->dims[0]; j++) 
-                            printf("%s ", value_to_string(v->type, data, j));
-                        printf ("]\n");
-                    } else if (v->ndim == 2) {
-                        for (j = 0; j < v->dims[0]; j++) {
-                            printf ("        row %d: [", j);
-                            for (k = 0; k < v->dims[1]; k++) 
-                                printf("%s ", value_to_string(v->type, data, j*v->dims[1] + k));
+                        printf("      Step %d:\n", t);
+                        if (bytes_read < 0) {
+                            printf ("%s\n", adios_errmsg());
+                        } else if (bytes_read > 1024*1024) {
+                            printf ("Too big to print\n");
+                        } else if (v->ndim == 1) {
+                            printf ("        [");
+                            for (j = 0; j < v->dims[0]; j++) 
+                                printf("%s ", value_to_string(v->type, data, j));
                             printf ("]\n");
-                        }
-                    } else if (v->ndim == 3) {
-                        for (j = 0; j < v->dims[0]; j++) {
-                            printf ("      block %d: \n", j);
-                            for (k = 0; k < v->dims[1]; k++) {
-                                printf ("        row %d: [", k);
-                                for (l = 0; l < v->dims[2]; l++) {
-                                    // NCSU ALACRITY-ADIOS - Fixed bug, k*v->dims[1] changed to  k*v->dims[2]
-                                    printf("%s ", value_to_string(v->type, data, j*v->dims[1]*v->dims[2] + k*v->dims[2] + l));
-                                }
+                        } else if (v->ndim == 2) {
+                            for (j = 0; j < v->dims[0]; j++) {
+                                printf ("        row %d: [", j);
+                                for (k = 0; k < v->dims[1]; k++) 
+                                    printf("%s ", value_to_string(v->type, data, j*v->dims[1] + k));
                                 printf ("]\n");
                             }
-                            printf ("\n");
+                        } else if (v->ndim == 3) {
+                            for (j = 0; j < v->dims[0]; j++) {
+                                printf ("      block %d: \n", j);
+                                for (k = 0; k < v->dims[1]; k++) {
+                                    printf ("        row %d: [", k);
+                                    for (l = 0; l < v->dims[2]; l++) {
+                                        // NCSU ALACRITY-ADIOS - Fixed bug, k*v->dims[1] changed to  k*v->dims[2]
+                                        printf("%s ", value_to_string(v->type, data, j*v->dims[1]*v->dims[2] + k*v->dims[2] + l));
+                                    }
+                                    printf ("]\n");
+                                }
+                                printf ("\n");
+                            }
+                        } else {
+                            printf ("    cannot print arrays with >3 dimensions\n");
                         }
-                    } else {
-                        printf ("    cannot print arrays with >3 dimensions\n");
                     }
                     free (data);
                 }
