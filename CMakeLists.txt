@@ -1630,6 +1630,7 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/adios_config.flags.in ${CMAKE_CURRENT
 #####################end of processing adios_config.flags.in #####################
 install(FILES ${CMAKE_BINARY_DIR}/adios_config.flags DESTINATION ${bindir})
 install(PROGRAMS adios_config DESTINATION ${bindir})
+install(FILES ${PROJECT_SOURCE_DIR}/scripts/FindADIOS.cmake DESTINATION ${libdir}) 
 
 add_subdirectory(utils)
 add_subdirectory(tests)
