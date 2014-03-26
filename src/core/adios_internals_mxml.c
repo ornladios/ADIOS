@@ -359,12 +359,17 @@ int parseMeshUniform (mxml_node_t * node
                         if (!adios_define_mesh_uniform_maximums (value, new_group, name))
                             return 0;
                     } else
-                    {
-                        if (!strncmp (n->value.element.name, "!--", 3)) // a comment
+                        if (!strcasecmp (n->value.element.name, "nspace"))
                         {
-                            continue;
+                            const char * value;
+                            value = mxmlElementGetAttr (n, "value");
+                            adios_define_mesh_nspace (value, new_group, name);
+                        } else {
+                            if (!strncmp (n->value.element.name, "!--", 3)) // a comment
+                            {
+                                continue;
+                            }
                         }
-                    }
     }
 
     return 1;
@@ -478,12 +483,18 @@ int parseMeshRectilinear1 (mxml_node_t * node
                     if (!adios_define_mesh_rectilinear_coordinatesSingleVar(value, new_group, name))
                         return 0;
                 } else
-                {
-                    if (!strncmp (n->value.element.name, "!--", 3)) // a comment
+                    if (!strcasecmp (n->value.element.name, "nspace"))
                     {
-                        continue;
+                        const char * value;
+                        value = mxmlElementGetAttr (n, "value");
+                        adios_define_mesh_nspace (value, new_group, name);
+                    } else
+                    {
+                        if (!strncmp (n->value.element.name, "!--", 3)) // a comment
+                        {
+                            continue;
+                        }
                     }
-                }
     }
 
     if (!saw_dimensions)
@@ -545,19 +556,19 @@ int parseMeshStructured1 (mxml_node_t * node
 
             saw_nspace = 1;
             value = mxmlElementGetAttr (n, "value");
+            adios_define_mesh_nspace (value, new_group, name);
+//            if (!value)
+//            {
+//                log_warn ("config.xml: value attribute on "
+//                        "nspace required (%s)\n"
+//                        ,name
+//                        );
+//
+//                return 0;
+//            }
 
-            if (!value)
-            {
-                log_warn ("config.xml: value attribute on "
-                        "nspace required (%s)\n"
-                        ,name
-                        );
-
-                return 0;
-            }
-
-            if (!adios_define_mesh_structured_nspace (value, new_group, name))
-                return 0;
+//            if (!adios_define_mesh_structured_nspace (value, new_group, name))
+//                return 0;
         } else
             if (!strcasecmp (n->value.element.name, "dimensions"))
             {
@@ -717,19 +728,20 @@ int parseMeshUnstructured1 (mxml_node_t * node
 
             saw_nspace = 1;
             value = mxmlElementGetAttr (n, "value");
+            adios_define_mesh_nspace (value, new_group, name);
 
-            if (!value)
-            {
-                log_warn ("config.xml: value attribute on "
-                        "nspace required (%s)\n"
-                        ,name
-                        );
+//            if (!value)
+//            {
+//                log_warn ("config.xml: value attribute on "
+//                        "nspace required (%s)\n"
+//                        ,name
+//                        );
+//
+//                return 0;
+//            }
 
-                return 0;
-            }
-
-            if (!adios_define_mesh_unstructured_nspace (value, new_group, name))
-                return 0;
+//            if (!adios_define_mesh_unstructured_nspace (value, new_group, name))
+//                return 0;
         }else
             if (!strcasecmp (n->value.element.name, "number-of-points"))
             {
@@ -1135,7 +1147,7 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
             );
     new_group = (struct adios_group_struct *)ptr_new_group;
 
-   adios_define_schema_version(new_group, schema_version);
+   adios_common_define_schema_version(new_group, schema_version);
     for (n = mxmlWalkNext (node, node, MXML_DESCEND)
             ;n
             ;n = mxmlWalkNext (n, node, MXML_NO_DESCEND)
@@ -1241,37 +1253,31 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                 // Successfully define a variable, so now
                 // an attribute for the mesh if it exists.
                 if (strcmp(mesh,"")){
-                    mpath1 = malloc(strlen("/adios_schema")+strlen(name)+1);
-                    strcpy(mpath1,name);
-                    strcat(mpath1,"/adios_schema");
-                    adios_common_define_attribute (ptr_new_group,mpath1,path,adios_string,mesh,"");
+                    adios_common_define_var_mesh (ptr_new_group, name, mesh, path);
                 }
                 // an attribute for the center if it exists.
                 if (strcmp(center,"")){
-                    mpath2 = malloc(strlen("/adios_schema/centering")+strlen(name)+1);
-                    strcpy(mpath2,name);
-                    strcat(mpath2,"/adios_schema/centering");
-                    adios_common_define_attribute (ptr_new_group,mpath2,path,adios_string,center,"");
+                    adios_common_define_var_mesh (ptr_new_group, name, center, path);
                 }
                 // if a time attribute exists
                 // parse it and define it
                 if (strcmp(tsteps,"")){
-                    adios_define_var_timesteps(tsteps,new_group,name,path);
+                    adios_common_define_var_timesteps(tsteps,new_group,name,path);
                 }
                 // if a time scale attribute exists
                 // parse it and define it
                 if (strcmp(tscale,"")){
-                    adios_define_var_timescale(tscale,new_group,name,path);
+                    adios_common_define_var_timescale(tscale,new_group,name,path);
                 }
                 // if a time series format attribute exists
                 // parse it and define it
                 if (strcmp(tformat,"")){
-                    adios_define_var_timeseriesformat(tformat,new_group,name,path);
+                    adios_common_define_var_timeseriesformat(tformat,new_group,name,path);
                 }
                 // if a hyperslab attribute exists
                 // parse it and define it
                 if (strcmp(hyperslab,"")){
-                    adios_define_var_hyperslab(hyperslab,new_group,name,path);
+                    adios_common_define_var_hyperslab(hyperslab,new_group,name,path);
                 }
             }
         } else
@@ -1449,22 +1455,22 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                             // if a time attribute exists
                             // parse it and define it
                             if (strcmp(tsteps,"")){
-                                adios_define_var_timesteps(tsteps,new_group,name,path);
+                                adios_common_define_var_timesteps(tsteps,new_group,name,path);
                             }
                             // if a time scale attribute exists
                             // parse it and define it
                             if (strcmp(tscale,"")){
-                                adios_define_var_timescale(tscale,new_group,name,path);
+                                adios_common_define_var_timescale(tscale,new_group,name,path);
                             }
                             // if a time series format attribute exists
                             // parse it and define it
                             if (strcmp(tformat,"")){
-                                adios_define_var_timeseriesformat(tformat,new_group,name,path);
+                                adios_common_define_var_timeseriesformat(tformat,new_group,name,path);
                             }
                             // if a hyperslab attribute exists
                             // parse it and define it
                             if (strcmp(hyperslab,"")){
-                                adios_define_var_hyperslab(hyperslab,new_group,name,path);
+                                adios_common_define_var_hyperslab(hyperslab,new_group,name,path);
                             }
                         }
                     } else
@@ -1627,9 +1633,9 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                     // Define attribute for the type and time varying characteristics
                     adios_common_define_attribute (ptr_new_group,meshtype,"/",adios_string,type,"");
                     adios_common_define_attribute (ptr_new_group,meshtime,"/",adios_string,time_varying,"");
-                    adios_define_mesh_timeSteps(time_steps, new_group, name);
-                    adios_define_mesh_timeScale(time_scale, new_group, name);
-                    adios_define_mesh_timeSeriesFormat(time_format, new_group, name);
+                    adios_common_define_mesh_timeSteps(time_steps, new_group, name);
+                    adios_common_define_mesh_timeScale(time_scale, new_group, name);
+                    adios_common_define_mesh_timeSeriesFormat(time_format, new_group, name);
                     // Only parse mesh if the variables are in this file
                     // otherwise simply point the mesh file
                     mesh_file = mxmlElementGetAttr(n, "file");

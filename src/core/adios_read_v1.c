@@ -225,8 +225,7 @@ static ADIOS_VARINFO_V1 * adios_varinfo_to_v1 (ADIOS_GROUP_V1 *gp, ADIOS_VARINFO
         v->value = vi->value; 
              
         /* TIME dimension should be emulated here !!! */
-        int timed = common_read_is_var_timed((ADIOS_FILE *)gp->fp->internal_data, vi->varid);
-        if (timed) {
+        if (vi->nsteps > 1) {
             v->ndim = vi->ndim + 1;
             v->timedim = 0;
         } else {
@@ -235,7 +234,7 @@ static ADIOS_VARINFO_V1 * adios_varinfo_to_v1 (ADIOS_GROUP_V1 *gp, ADIOS_VARINFO
         }
         int tidx = 0, i;
         v->dims = (uint64_t *) malloc (sizeof(uint64_t) * (v->ndim));
-        if (timed) {
+        if (vi->nsteps > 1) {
             v->dims[0] = vi->nsteps;
             tidx=1;
         }

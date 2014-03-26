@@ -5568,9 +5568,11 @@ int queue_dequeue (Queue * queue, void ** data)
     return list_rem_next (queue, NULL, data);
 }
 
+
 // Functions for non-XML API fo ADIOS Schema some of which are also called from functions in adios_internals_mxml.c
-int adios_define_schema_version(struct adios_group_struct * new_group, char * schema_version){
-    int64_t      p_new_group = (int64_t) new_group;
+int adios_common_define_schema_version (struct adios_group_struct * new_group, char * schema_version)
+{
+    int64_t p_new_group = (int64_t) new_group;
 
     if (strcasecmp (schema_version,"")){
         char * ver;// copy version
@@ -5614,15 +5616,16 @@ int adios_define_schema_version(struct adios_group_struct * new_group, char * sc
     return 0;
 }
 
+
 // Parse mesh time series (single file for multiple time steps or
 // multiple files for time steps, basename + timeformat + extension)
-int adios_define_mesh_timeSeriesFormat (const char * timeseries
-        ,struct adios_group_struct * new_group
-        ,const char * name
-        )
+int adios_common_define_mesh_timeSeriesFormat (const char * timeseries,
+                                               struct adios_group_struct * new_group,
+                                               const char * name
+                                              )
 {
     char * d1;                     // save of strdup
-    int64_t      p_new_group = (int64_t) new_group;
+    int64_t p_new_group = (int64_t) new_group;
     char * format_att_nam = 0;     // extension format .xxxx att name
     char * format_att_val = 0;     // extension format att value
 
@@ -5630,29 +5633,33 @@ int adios_define_mesh_timeSeriesFormat (const char * timeseries
     // The number indicates how to write the time steps. Ex: 4 ==>
     // varname.XXXX.png where XXXX is the time step padded with 0s
     // We do not fail if this is not given as variables all have nsteps
-    if (!timeseries){
+    if (!timeseries || !strcmp(timeseries,"")){
         return 1;
     }
 
     char * ptr_end;
     d1 = strdup (timeseries);
-    if (strtod (d1, &ptr_end)){
+
+    double tmp_d = strtod (d1, &ptr_end);
+    if (!(ptr_end && ptr_end[0]==0))
+    {
         adios_conca_mesh_att_nam(&format_att_nam, name, "time-series-format");
         adios_common_define_attribute (p_new_group,format_att_nam,"/",adios_double,d1,"");
-        free(format_att_val);    }
-        free (d1);
-        return 1;
+        free(format_att_val);
+    }
+    free (d1);
+    return 1;
 }
 
 // Parse mesh time scale (real time tracking, not integers)
-int adios_define_mesh_timeScale (const char * timescale
-        ,struct adios_group_struct * new_group
-        ,const char * name
-        )
+int adios_common_define_mesh_timeScale (const char * timescale,
+                                        struct adios_group_struct * new_group,
+                                        const char * name
+                                       )
 {
     char * c;                      // comma location
     char * d1;                     // save of strdup
-    int64_t      p_new_group = (int64_t) new_group;
+    int64_t p_new_group = (int64_t) new_group;
     char * gettscalefrom0 = 0;     // scale attribute xml value
     char * gettscalefrom1 = 0;     // scale attribute xml value
     char * gettscalefrom2 = 0;     // scale attribute xml value
@@ -5679,8 +5686,8 @@ int adios_define_mesh_timeScale (const char * timescale
     /* We do not fail if this is not given as variables all have nsteps
        in ADIOS_inq_var = # of times the var was written
        */
-    if (!timescale){
-        printf("time-scale attribute for mesh: %s not provided.\n", name);
+    if (!timescale || !strcmp(timescale,"")){
+//        printf("time-scale attribute for mesh: %s not provided.\n", name);
         return 1;
     }
 
@@ -5692,17 +5699,16 @@ int adios_define_mesh_timeScale (const char * timescale
     {
         struct adios_var_struct * var = 0;
         //if (adios_int_is_num (c))
-        if (!strtod (c,&ptr_end))
+        double tmp_d1;
+        tmp_d1 = strtod (c,&ptr_end);
+        if (!(ptr_end && ptr_end[0]==0))
         {
-            var =
-                adios_find_var_by_name (new_group, c);
+            var = adios_find_var_by_name (new_group, c);
             if (!var)
             {
                 log_warn ("config.xml: invalid variable %s\n"
-                        "for time scale of mesh: %s\n"
-                        ,c
-                        ,name
-                        );
+                          "for time scale of mesh: %s\n",
+                          c, name);
                 free (d1);
 
                 return 0;
@@ -5740,24 +5746,31 @@ int adios_define_mesh_timeScale (const char * timescale
         c = strtok (NULL, ",");
     }
     if (counter == 3){
+        double tmp_d2;
         time_start_att_val = strdup(gettscalefrom0);
         adios_conca_mesh_att_nam(&time_start_att_nam, name, "time-scale-start");
         // if this is string
-        if (!strtod (time_start_att_val, &ptr_end))
+        tmp_d2 = strtod (time_start_att_val, &ptr_end);
+        if (!(ptr_end && ptr_end[0]==0))
+//        if (!strtod (time_start_att_val, &ptr_end))
             adios_common_define_attribute (p_new_group,time_start_att_nam,"/",adios_string,time_start_att_val,"");
         else
             adios_common_define_attribute (p_new_group,time_start_att_nam,"/",adios_double,time_start_att_val,"");
         time_stride_att_val = strdup(gettscalefrom1);
         adios_conca_mesh_att_nam(&time_stride_att_nam, name, "time-scale-stride");
         // if this is string
-        if (!strtod (time_stride_att_val, &ptr_end))
+        tmp_d2 = strtod (time_stride_att_val, &ptr_end);
+//        if (!strtod (time_stride_att_val, &ptr_end))
+        if (!(ptr_end && ptr_end[0]==0))
             adios_common_define_attribute (p_new_group,time_stride_att_nam,"/",adios_string,time_stride_att_val,"");
         else
             adios_common_define_attribute (p_new_group,time_stride_att_nam,"/",adios_double,time_stride_att_val,"");
         time_count_att_val = strdup(gettscalefrom2);
         adios_conca_mesh_att_nam(&time_count_att_nam, name, "time-scale-count");
         // if this is string
-        if (!strtod (time_count_att_val, &ptr_end))
+        tmp_d2 = strtod (time_count_att_val, &ptr_end);
+//        if (!strtod (time_count_att_val, &ptr_end))
+        if (!(ptr_end && ptr_end[0]==0))
             adios_common_define_attribute (p_new_group,time_count_att_nam,"/",adios_string,time_count_att_val,"");
         else
             adios_common_define_attribute (p_new_group,time_count_att_nam,"/",adios_double,time_count_att_val,"");
@@ -5768,16 +5781,21 @@ int adios_define_mesh_timeScale (const char * timescale
         free(gettscalefrom1);
         free(gettscalefrom0);
     }else if (counter == 2) {
+        double tmp_d2;
         adios_conca_mesh_att_nam(&time_min_att_nam, name, "time-scale-min");
         // if this is string
-        if (!strtod (time_min_att_val, &ptr_end))
+        tmp_d2 = strtod (time_min_att_nam, &ptr_end);
+        if (!(ptr_end && ptr_end[0]==0))
+//        if (!strtod (time_min_att_val, &ptr_end))
             adios_common_define_attribute (p_new_group,time_min_att_nam,"/",adios_string,time_min_att_val,"");
         else
             adios_common_define_attribute (p_new_group,time_min_att_nam,"/",adios_double,time_min_att_val,"");
         time_max_att_val = strdup(gettscalefrom1);
         adios_conca_mesh_att_nam(&time_max_att_nam, name, "time-scale-max");
         // if this is string
-        if (!strtod (time_max_att_val, &ptr_end))
+        tmp_d2 = strtod (time_max_att_nam, &ptr_end);
+        if (!(ptr_end && ptr_end[0]==0))
+//        if (!strtod (time_max_att_val, &ptr_end))
             adios_common_define_attribute (p_new_group,time_max_att_nam,"/",adios_string,time_max_att_val,"");
         else
             adios_common_define_attribute (p_new_group,time_max_att_nam,"/",adios_double,time_max_att_val,"");
@@ -5786,8 +5804,12 @@ int adios_define_mesh_timeScale (const char * timescale
         free(gettscalefrom1);
         free(gettscalefrom0);
     } else if (counter == 1){
+        double tmp_d2;
         time_var_att_val = strdup(gettscalefrom0);
-        if (!strtod (time_var_att_val, &ptr_end)){
+        tmp_d2 = strtod (time_var_att_val, &ptr_end);
+        if (!(ptr_end && ptr_end[0]==0))
+//        if (!strtod (time_var_att_val, &ptr_end))
+        {
             adios_conca_mesh_att_nam(&time_var_att_nam, name, "time-scale-var");
             adios_common_define_attribute (p_new_group,time_var_att_nam,"/",adios_string,time_var_att_val,"");
         }else{
@@ -5807,15 +5829,27 @@ int adios_define_mesh_timeScale (const char * timescale
     return 1;
 }
 
+int adios_common_define_mesh_timeVarying (const char * timevarying, int64_t group_id, const char * name)
+{
+    char * mpath = 0;
+    mpath = malloc(strlen("/adios_schema/")+strlen(name)+strlen("/time-varying")+1);
+    strcpy (mpath, "/adios_schema/");
+    strcat (mpath, name);
+    strcat (mpath, "/time-varying");
+    adios_common_define_attribute (group_id, mpath, "", adios_string, timevarying, "");
+    free (mpath);
+    return 0; 
+}
+
 // Parse mesh time steps (integers = number of times vars are written)
-int adios_define_mesh_timeSteps (const char * timesteps
-        ,struct adios_group_struct * new_group
-        ,const char * name
-        )
+int adios_common_define_mesh_timeSteps (const char * timesteps,
+                                        struct adios_group_struct * new_group,
+                                        const char * name
+                                       )
 {
     char * c;                      // comma location
     char * d1;                     // save of strdup
-    int64_t      p_new_group = (int64_t) new_group;
+    int64_t p_new_group = (int64_t) new_group;
     char * gettstepsfrom0 = 0;     // tstep attribute xml value
     char * gettstepsfrom1 = 0;     // tstep attribute xml value
     char * gettstepsfrom2 = 0;     // tstep attribute xml value
@@ -5842,8 +5876,8 @@ int adios_define_mesh_timeSteps (const char * timesteps
     /* We do not fail if this is not given as variables all have nsteps
        in ADIOS_inq_var = # of times the var was written
        */
-    if (!timesteps){
-        printf("time-steps for mesh %s attribute not provided.\n", name);
+    if (!timesteps || !strcmp(timesteps,"")){
+//        printf("time-steps for mesh %s attribute not provided.\n", name);
         return 1;
     }
 
@@ -5856,15 +5890,12 @@ int adios_define_mesh_timeSteps (const char * timesteps
         struct adios_var_struct * var = 0;
         if (adios_int_is_var (c))
         {
-            var =
-                adios_find_var_by_name (new_group, c);
+            var = adios_find_var_by_name (new_group, c);
             if (!var)
             {
                 log_warn ("config.xml: invalid variable %s\n"
-                        "for dimensions of mesh: %s\n"
-                        ,c
-                        ,name
-                        );
+                          "for dimensions of mesh: %s\n",
+                          c, name);
                 free (d1);
 
                 return 0;
@@ -5972,115 +6003,109 @@ int adios_define_mesh_timeSteps (const char * timesteps
 }
 
 // defining a uniform mesh
-int adios_define_mesh_uniform (char * dimensions, char * origin, char * spacing, char * maximum, struct adios_group_struct * new_group ,const char * name)
-{
-    if (dimensions)
-    {
-        if (!adios_define_mesh_uniform_dimensions (dimensions, new_group, name))
-            return 0;
-    }else{
-        log_warn ("config.xml: value attribute on "
-                "dimensions required (%s)\n"
-                ,name
-                );
-        return 0;
-    }
+int adios_common_define_mesh_uniform (char * dimensions, 
+                                      char * origin, 
+                                      char * spacing, 
+                                      char * maximum, 
+                                      char * nspace,
+//                                      struct adios_group_struct * new_group,
+                                      const char * name,
+                                      int64_t group_id
+                                     )
+{   
+    struct adios_group_struct * new_group = (struct adios_group_struct *) group_id;
+    char * mpath = 0;
+    mpath = malloc(strlen("/adios_schema/")+strlen(name)+strlen("/type")+1);
+    strcpy (mpath, "/adios_schema/");
+    strcat (mpath, name);
+    strcat (mpath, "/type");
+    adios_common_define_attribute (group_id, mpath, "", adios_string, "uniform", "");
 
-    if (origin)
-    {
-        if (!adios_define_mesh_uniform_origins (origin, new_group, name))
-            return 0;
-    }else{
-        log_warn ("config.xml: value attribute on "
-                "origin required (%s)\n"
-                ,name
-                );
-        return 0;
-    }
-    if (spacing)
-    {
-        if (!adios_define_mesh_uniform_spacings (spacing, new_group, name))
-            return 0;
-    }else{
-        log_warn ("config.xml: value attribute on "
-                "spacing required (%s)\n"
-                ,name
-                );
-        return 0;
-    }
+    if (!adios_define_mesh_uniform_dimensions (dimensions, new_group, name))
+        return 1;
 
-    if (maximum)
-    {
-        if (!adios_define_mesh_uniform_maximums (maximum, new_group, name))
-            return 0;
-    }else{
-        log_warn ("config.xml: value attribute on "
-                "max required (%s)\n"
-                ,name
-                );
-        return 0;
-    }
+    adios_define_mesh_uniform_origins (origin, new_group, name);
+    
+    adios_define_mesh_uniform_spacings (spacing, new_group, name);
 
-    return 1;
+    adios_define_mesh_uniform_maximums (maximum, new_group, name);
+
+    adios_define_mesh_nspace (nspace, new_group, name);
+
+    free (mpath);   
+    return 0;
 }
 
-int adios_define_mesh_rectilinear (char * dimensions, char * coordinates
-        ,struct adios_group_struct * new_group
-        ,const char * name
-        )
+// defining a rectilinear mesh
+int adios_common_define_mesh_rectilinear (char * dimensions, 
+                                          char * coordinates,
+//                                          struct adios_group_struct * new_group,
+                                          char * nspace,
+                                          const char * name,
+                                          int64_t group_id
+                                         )
 {
-    if (dimensions)
-    {
-        if (!adios_define_mesh_rectilinear_dimensions (dimensions, new_group, name))
-            return 0;
-    }else{
-        log_warn ("config.xml: value attribute on "
-                "dimensions required (%s)\n"
-                ,name
-                );
-        return 0;
-    }
+    struct adios_group_struct * new_group = (struct adios_group_struct *) group_id;
+    char * mpath = 0;
+    mpath = malloc(strlen("/adios_schema/")+strlen(name)+strlen("/type")+1);
+    strcpy (mpath, "/adios_schema/");
+    strcat (mpath, name);
+    strcat (mpath, "/type");
+    adios_common_define_attribute (group_id, mpath, "", adios_string, "rectilinear", "");
+
+    if (!adios_define_mesh_rectilinear_dimensions (dimensions, new_group, name))
+        return 1;
 
     // Determine if it is the multi-var or single-var case
-    if (coordinates)
+    char *p;
+    // If we do not find "," in the coordinates
+    if (!(p = strstr(coordinates, ",")))
     {
-        char *p;
-        // If we do not find "," in the coordinates
-        if (!(p = strstr(coordinates, ","))){
-            if (!adios_define_mesh_rectilinear_coordinatesSingleVar (coordinates, new_group, name))
-                return 0;
-        }else{
-            if (!adios_define_mesh_rectilinear_coordinatesMultiVar (coordinates, new_group, name))
-                return 0;
-        }
-    }else{
-        log_warn ("config.xml: value attribute on "
-                "coordinates required for rectilinear mesh: (%s)\n"
-                ,name
-                );
-        return 0;
+        if (!adios_define_mesh_rectilinear_coordinatesSingleVar (coordinates, new_group, name))
+            return 1;
     }
-    return 1;
+    else
+    {
+        if (!adios_define_mesh_rectilinear_coordinatesMultiVar (coordinates, new_group, name))
+            return 1;
+    }
+
+    adios_define_mesh_nspace (nspace, new_group, name);
+
+    free (mpath);
+    return 0;
 }
 
-int adios_define_mesh_structured(char * dimensions, char * nspace
-        , char * points
-        ,struct adios_group_struct * new_group
-        , char * name){
+// defining a structured mesh
+int adios_common_define_mesh_structured (char * dimensions,
+                                         char * nspace,
+                                         char * points,
+//                                         struct adios_group_struct * new_group,
+                                         char * name,
+                                         int64_t group_id
+                                        )
+{
+    struct adios_group_struct * new_group = (struct adios_group_struct *) group_id;
+    char * mpath = 0;
+    mpath = malloc(strlen("/adios_schema/")+strlen(name)+strlen("/type")+1);
+    strcpy (mpath, "/adios_schema/");
+    strcat (mpath, name);
+    strcat (mpath, "/type");
+    adios_common_define_attribute (group_id, mpath, "", adios_string, "structured", "");
+
     if (dimensions){
         if (!adios_define_mesh_structured_dimensions (dimensions, new_group, name))
             return 0;
     }else{
         log_warn ("config.xml: value attribute on "
-                "dimensions required (%s)\n"
-                ,name
-                );
+                  "dimensions required (%s)\n", name);
 
         return 0;
     }
 
     if (nspace){
-        if (!adios_define_mesh_structured_nspace (nspace, new_group, name))
+//        if (!adios_define_mesh_structured_nspace (nspace, new_group, name))
+          if (!adios_define_mesh_nspace (nspace, new_group, name))
             return 0;
     }
     if (points){
@@ -6094,25 +6119,35 @@ int adios_define_mesh_structured(char * dimensions, char * nspace
                 return 0;
         }
     }else{
-        log_warn ("config.xml: value on"
-                "points required for mesh type=structured (%s)\n"
-                ,name
-                );
+        log_warn ("config.xml: value on "
+                  "points required for mesh type=structured (%s)\n", name);
         return 0;
     }
-
+    free (mpath);
     return 1;
 }
 
-int adios_define_mesh_unstructured(char *nspace
-        , char *npoints, char *points
-        , char * data, char * count, char * type
-        , struct adios_group_struct * new_group
-        , const char * name)
+// defining a unstructured mesh
+int adios_common_define_mesh_unstructured (char * points,
+                                           char * data, 
+                                           char * count, 
+                                           char * type,
+                                           char * nspace,
+                                           char * npoints,
+                                           const char * name,
+                                           int64_t group_id)
 {
+    struct adios_group_struct * new_group = (struct adios_group_struct *) group_id;
+    char * mpath = 0;
+    mpath = malloc(strlen("/adios_schema/")+strlen(name)+strlen("/type")+1);
+    strcpy (mpath, "/adios_schema/");
+    strcat (mpath, name);
+    strcat (mpath, "/type");
+    adios_common_define_attribute (group_id, mpath, "", adios_string, "unstructured", "");
     if (nspace)
     {
-        if (!adios_define_mesh_unstructured_nspace (nspace, new_group, name))
+//        if (!adios_define_mesh_unstructured_nspace (nspace, new_group, name))
+            if (!adios_define_mesh_nspace (nspace, new_group, name))
             return 0;
     }
     if (npoints)
@@ -6132,33 +6167,25 @@ int adios_define_mesh_unstructured(char *nspace
                 return 0;
         }
     }else{
-        log_warn ("config.xml: value on"
-                "points required for mesh type=structured (%s)\n"
-                ,name
-                );
+        log_warn ("config.xml: value on "
+                  "points required for mesh type=structured (%s)\n", name);
         return 0;
     }
     if (!data){
         log_warn ("config.xml: data attribute on "
-                "uniform-cells required (%s)\n"
-                ,name
-                );
+                  "uniform-cells required (%s)\n", name);
         return 0;
     }
     if (!count)
     {
         log_warn ("config.xml: count attribute on "
-                "uniform-cells required (%s)\n"
-                ,name
-                );
+                  "uniform-cells required (%s)\n", name);
         return 0;
     }
     if (!type)
     {
         log_warn ("config.xml: type attribute on "
-                "uniform-cells required (%s)\n"
-                ,name
-                );
+                  "uniform-cells required (%s)\n", name);
         return 0;
     }
     char *pt;
@@ -6166,12 +6193,12 @@ int adios_define_mesh_unstructured(char *nspace
     if (!(pt = strstr(data, ","))){
         if ( (pt = strstr(count,",")) ){
             log_warn ("count value on uniform-cells (check data value)"
-                    " should not contain ',' (%s)\n",name);
+                      " should not contain ',' (%s)\n",name);
             return 0;
         }
         if ( (pt = strstr(type,",")) ){
             log_warn ("type value on uniform-cells (check data value)"
-                    " should not contain ',' (%s)\n", name);
+                      " should not contain ',' (%s)\n", name);
             return 0;
         }
         if (!adios_define_mesh_unstructured_uniformCells (count, data, type
@@ -6184,19 +6211,18 @@ int adios_define_mesh_unstructured(char *nspace
     }else{
         if (!(pt = strstr(count,","))){
             log_warn ("count value on mixed-cells (check data value)"
-                    " should contain ',' (%s)\n",name);
+                      " should contain ',' (%s)\n", name);
             return 0;
         }
         if (!(pt = strstr(type,","))){
             log_warn ("type value on mixed-cells (check data value)"
-                    " should contain ',' (%s)\n", name);
+                      " should contain ',' (%s)\n", name);
             return 0;
         }
         if (!adios_define_mesh_unstructured_mixedCells (count, data, type
                     , new_group, name))
             return 0;
     }
-
     return 1;
 }
 
@@ -6294,9 +6320,7 @@ struct adios_mesh_struct * adios_common_define_mesh (
     if (flag == adios_flag_no)
     {
         log_warn ("config.xml: unique mesh names required; "
-                "second mesh: %s will be ignored.\n"
-                ,name
-                );
+                  "second mesh: %s will be ignored.\n", name);
         free(m);
         m = 0;
     } else {
@@ -6308,15 +6332,15 @@ struct adios_mesh_struct * adios_common_define_mesh (
 
 // Define time steps, scale and formatting
 // Parse var time steps (integers = number of times vars are written)
-int adios_define_var_timesteps (const char * timesteps
-        ,struct adios_group_struct * new_group
-        ,const char * name
-        ,const char * path
-        )
+int adios_common_define_var_timesteps (const char * timesteps,
+                                       struct adios_group_struct * new_group,
+                                       const char * name,
+                                       const char * path
+                                      )
 {
     char * c;                      // comma location
     char * d1;                     // save of strdup
-    int64_t      p_new_group = (int64_t) new_group;
+    int64_t p_new_group = (int64_t) new_group;
     char * gettstepsfrom0 = 0;     // tstep attribute xml value
     char * gettstepsfrom1 = 0;     // tstep attribute xml value
     char * gettstepsfrom2 = 0;     // tstep attribute xml value
@@ -6343,7 +6367,7 @@ int adios_define_var_timesteps (const char * timesteps
     /* We do not fail if this is not given as variables all have nsteps
        in ADIOS_inq_var = # of times the var was written
        */
-    if (!timesteps){
+    if (!timesteps || !strcmp(timesteps,"")){
         return 1;
     }
 
@@ -6356,15 +6380,12 @@ int adios_define_var_timesteps (const char * timesteps
         struct adios_var_struct * var = 0;
         if (adios_int_is_var (c))
         {
-            var =
-                adios_find_var_by_name (new_group, c);
+            var = adios_find_var_by_name (new_group, c);
             if (!var)
             {
                 log_warn ("config.xml: invalid variable %s\n"
-                        "for time-steps of var: %s\n"
-                        ,c
-                        ,name
-                        );
+                          "for time-steps of var: %s\n",
+                          c, name);
                 free (d1);
 
                 return 0;
@@ -6472,14 +6493,14 @@ int adios_define_var_timesteps (const char * timesteps
 }
 
 // Parse var time series format (real time tracking, not integers)
-int adios_define_var_timeseriesformat (const char * timeseries
-        ,struct adios_group_struct * new_group
-        ,const char * name
-        ,const char * path
-        )
+int adios_common_define_var_timeseriesformat (const char * timeseries,
+                                              struct adios_group_struct * new_group,
+                                              const char * name,
+                                              const char * path
+                                             )
 {
     char * d1;                     // save of strdup
-    int64_t      p_new_group = (int64_t) new_group;
+    int64_t p_new_group = (int64_t) new_group;
     char * format_att_nam = 0;     // extension format .xxxx att name
     char * format_att_val = 0;     // extension format att value
 
@@ -6487,13 +6508,17 @@ int adios_define_var_timeseriesformat (const char * timeseries
     // The number indicates how to write the time steps. Ex: 4 ==>
     // varname.XXXX.png where XXXX is the time step padded with 0s
     // We do not fail if this is not given as variables all have nsteps
-    if (!timeseries){
+    if (!timeseries || !strcmp(timeseries,"")){
         return 1;
     }
 
     char * ptr_end;
     d1 = strdup (timeseries);
-    if (strtod(d1, &ptr_end)){
+    double tmp_d2;
+    tmp_d2 = strtod (d1, &ptr_end);
+//    if (strtod(d1, &ptr_end))
+    if ( !(ptr_end && ptr_end[0]==0))
+    {
         adios_conca_mesh_att_nam(&format_att_nam, name, "time-series-format");
         adios_common_define_attribute (p_new_group,format_att_nam,path,adios_string,d1,"");
         free(format_att_val);
@@ -6503,15 +6528,15 @@ int adios_define_var_timeseriesformat (const char * timeseries
 }
 
 // Parse var time scale (real time tracking, not integers)
-int adios_define_var_timescale (const char * timescale
-        ,struct adios_group_struct * new_group
-        ,const char * name
-        ,const char * path
-        )
+int adios_common_define_var_timescale (const char * timescale,
+                                       struct adios_group_struct * new_group,
+                                       const char * name,
+                                       const char * path
+                                      )
 {
     char * c;                      // comma location
     char * d1;                     // save of strdup
-    int64_t      p_new_group = (int64_t) new_group;
+    int64_t p_new_group = (int64_t) new_group;
     char * gettscalefrom0 = 0;     // scale attribute xml value
     char * gettscalefrom1 = 0;     // scale attribute xml value
     char * gettscalefrom2 = 0;     // scale attribute xml value
@@ -6539,11 +6564,12 @@ int adios_define_var_timescale (const char * timescale
     /* We do not fail if this is not given as variables all have nsteps
        in ADIOS_inq_var = # of times the var was written
        */
-    if (!timescale){
+    if (!timescale || !strcmp(timescale,"")){
         return 1;
     }
 
     d1 = strdup (timescale);
+
     char * ptr_end;
     c = strtok (d1, ",");
 
@@ -6551,17 +6577,16 @@ int adios_define_var_timescale (const char * timescale
     {
         struct adios_var_struct * var = 0;
         //if (adios_int_is_num (c))
-        if (!strtod (c,&ptr_end))
+        double tmp_d1;
+        tmp_d1 = strtod (c,&ptr_end);
+        if (!(ptr_end && ptr_end[0]==0))
         {
-            var =
-                adios_find_var_by_name (new_group, c);
+            var = adios_find_var_by_name (new_group, c);
             if (!var)
             {
                 log_warn ("config.xml: invalid variable %s\n"
-                        "for attribute of var: %s\n"
-                        ,c
-                        ,name
-                        );
+                          "for attribute of var: %s\n",
+                          c, name);
                 free (d1);
 
                 return 0;
@@ -6600,24 +6625,31 @@ int adios_define_var_timescale (const char * timescale
     }
 
     if (counter == 3){
+        double tmp_d2;
         time_start_att_val = strdup(gettscalefrom0);
         conca_var_att_nam(&time_start_att_nam, name, "time-scale-start");
+        tmp_d2 = strtod (time_start_att_val, &ptr_end);
         // if this is string
-        if (!strtod (time_start_att_val, &ptr_end))
+        if ( !(ptr_end && ptr_end[0]==0))
+//        if (!strtod (time_start_att_val, &ptr_end))
             adios_common_define_attribute (p_new_group,time_start_att_nam,path,adios_string,time_start_att_val,"");
         else
             adios_common_define_attribute (p_new_group,time_start_att_nam,path,adios_double,time_start_att_val,"");
         time_stride_att_val = strdup(gettscalefrom1);
         conca_var_att_nam(&time_stride_att_nam, name, "time-scale-stride");
         // if this is string
-        if (!strtod (time_stride_att_val, &ptr_end))
+        tmp_d2 = strtod (time_stride_att_nam, &ptr_end);
+        if ( !(ptr_end && ptr_end[0]==0))
+//        if (!strtod (time_stride_att_val, &ptr_end))
             adios_common_define_attribute (p_new_group,time_stride_att_nam,path,adios_string,time_stride_att_val,"");
         else
             adios_common_define_attribute (p_new_group,time_stride_att_nam,path,adios_double,time_stride_att_val,"");
         time_count_att_val = strdup(gettscalefrom2);
         conca_var_att_nam(&time_count_att_nam, name, "time-scale-count");
         // if this is string
-        if (!strtod (time_count_att_val, &ptr_end))
+        tmp_d2 = strtod (time_count_att_nam, &ptr_end);
+        if ( !(ptr_end && ptr_end[0]==0))
+//        if (!strtod (time_count_att_val, &ptr_end))
             adios_common_define_attribute (p_new_group,time_count_att_nam,path,adios_string,time_count_att_val,"");
         else
             adios_common_define_attribute (p_new_group,time_count_att_nam,path,adios_double,time_count_att_val,"");
@@ -6628,17 +6660,22 @@ int adios_define_var_timescale (const char * timescale
         free(gettscalefrom1);
         free(gettscalefrom0);
     }else if (counter == 2) {
+        double tmp_d2;
         time_min_att_val = strdup(gettscalefrom0);
         conca_var_att_nam(&time_min_att_nam, name, "time-scale-min");
         // if this is string
-        if (!strtod (time_min_att_val, &ptr_end))
+        tmp_d2 = strtod (time_min_att_val, &ptr_end);
+        if ( !(ptr_end && ptr_end[0]==0))
+//        if (!strtod (time_min_att_val, &ptr_end))
             adios_common_define_attribute (p_new_group,time_min_att_nam,path,adios_string,time_min_att_val,"");
         else
             adios_common_define_attribute (p_new_group,time_min_att_nam,path,adios_double,time_min_att_val,"");
         time_max_att_val = strdup(gettscalefrom1);
         conca_var_att_nam(&time_max_att_nam, name, "time-scale-max");
         // if this is string
-        if (!strtod (time_max_att_val, &ptr_end))
+        tmp_d2 = strtod (time_max_att_nam, &ptr_end);
+        if ( !(ptr_end && ptr_end[0]==0))
+//        if (!strtod (time_max_att_val, &ptr_end))
             adios_common_define_attribute (p_new_group,time_max_att_nam,path,adios_string,time_max_att_val,"");
         else
             adios_common_define_attribute (p_new_group,time_max_att_nam,path,adios_double,time_max_att_val,"");
@@ -6647,8 +6684,12 @@ int adios_define_var_timescale (const char * timescale
         free(gettscalefrom1);
         free(gettscalefrom0);
     } else if (counter == 1){
+        double tmp_d2;
         time_var_att_val = strdup(gettscalefrom0);
-        if (!strtod (time_var_att_val, &ptr_end)){
+        tmp_d2 = strtod (time_var_att_val, &ptr_end);
+        if ( !(ptr_end && ptr_end[0]==0))
+//        if (!strtod (time_var_att_val, &ptr_end))
+        {
             conca_var_att_nam(&time_var_att_nam, name, "time-scale-var");
             adios_common_define_attribute (p_new_group,time_var_att_nam,path,adios_string,time_var_att_val,"");
         }else{
@@ -6669,14 +6710,14 @@ int adios_define_var_timescale (const char * timescale
 }
 
 // Parse var hyper slab: lines or planes from a higher dimension mesh
-int adios_define_var_hyperslab ( const char * hyperslab,
-        struct adios_group_struct * new_group,
-        const char * name,
-        const char * path)
+int adios_common_define_var_hyperslab ( const char * hyperslab,
+                                        struct adios_group_struct * new_group,
+                                        const char * name,
+                                        const char * path)
 {
     char * c;                      // comma location
     char * d1;                     // save of strdup
-    int64_t      p_new_group = (int64_t) new_group;
+    int64_t p_new_group = (int64_t) new_group;
     char * gethslabfrom0 = 0;       // hslab attribute xml value
     char * gethslabfrom1 = 0;       // hslab attribute xml value
     char * gethslabfrom2 = 0;       // hslab attribute xml value
@@ -6703,7 +6744,7 @@ int adios_define_var_hyperslab ( const char * hyperslab,
     /* We do not fail if this is not given as variables all have nsteps
        in ADIOS_inq_var = # of times the var was written
        */
-    if (!hyperslab){
+    if (!hyperslab || !strcmp(hyperslab,"")){
         return 1;
     }
 
@@ -6772,25 +6813,47 @@ int adios_define_var_hyperslab ( const char * hyperslab,
 
 }
 
-int adios_define_mesh_uniform_dimensions (const char * dimensions
-        ,struct adios_group_struct * new_group
-        ,const char * name
-        )
+int adios_define_mesh_nspace (const char * nspace,
+                              struct adios_group_struct * new_group,
+                              const char * name
+                             )
+{
+    char * d1; // save of strdup
+    int64_t p_new_group = (int64_t) new_group;
+    char * nsp_att_nam = 0; // nspace attribute name
+
+    if (!nspace || !strcmp(nspace, ""))
+    {
+//        log_warn ("config.xml: nspace value (optional) is not provided"
+//                  "for uniform mesh: %s\n", name);
+        return 0;
+    }
+    d1 = strdup (nspace);
+
+    adios_conca_mesh_att_nam(&nsp_att_nam, name, "nspace");
+    adios_common_define_attribute (p_new_group,nsp_att_nam,"/",adios_string,nspace,"");
+    free (nsp_att_nam);
+    free (d1);
+
+    return 1;
+}
+
+int adios_define_mesh_uniform_dimensions (const char * dimensions,
+                                          struct adios_group_struct * new_group,
+                                          const char * name
+                                         )
 {
     char * c;  // comma location
     char * d1; // save of strdup
-    int64_t      p_new_group = (int64_t) new_group;
+    int64_t p_new_group = (int64_t) new_group;
     char * dim_att_nam = 0; // dimensions attribute name
     int counter = 0;        // used to create dimX attributes
     char counterstr[5] = {0,0,0,0,0}; // used to create dimX attributes
 
-    if (!dimensions)
+    if (!dimensions || !strcmp(dimensions,""))
     {
-        log_warn ("config.xml: dimensions value required for"
-                "uniform mesh: %s\n"
-                ,name
-                );
-
+        log_warn ("config.xml: dimensions value required for "
+                  "uniform mesh: %s\n", name);
         return 0;
     }
 
@@ -6825,25 +6888,23 @@ int adios_define_mesh_uniform_dimensions (const char * dimensions
     return 1;
 }
 
-int adios_define_mesh_uniform_maximums (const char * maximum
-        ,struct adios_group_struct * new_group
-        ,const char * name
-        )
+int adios_define_mesh_uniform_maximums (const char * maximum,
+                                        struct adios_group_struct * new_group,
+                                        const char * name
+                                       )
 {
     char * c;  // comma location
     char * d1; // save of strdup
-    int64_t      p_new_group = (int64_t) new_group;
+    int64_t p_new_group = (int64_t) new_group;
     char * max_att_nam = 0; // maxima attribute name
     int counter = 0;        // used to create maxX attributes
     char counterstr[5] = {0,0,0,0,0}; // used to create maxX attributes
 
-    if (!maximum)
+    if (!maximum || !strcmp(maximum,""))
     {
-        log_warn ("config.xml: maximum value required"
-                "for uniform mesh: %s\n"
-                ,name
-                );
-
+//        log_warn ("config.xml: maximum value (optional) is not provided"
+//                  "for uniform mesh: %s\n",
+//                  name);
         return 0;
     }
 
@@ -6875,25 +6936,23 @@ int adios_define_mesh_uniform_maximums (const char * maximum
     return 1;
 }
 
-int adios_define_mesh_uniform_origins (const char * origin
-        ,struct adios_group_struct * new_group
-        ,const char * name
-        )
+int adios_define_mesh_uniform_origins (const char * origin,
+                                       struct adios_group_struct * new_group,
+                                       const char * name
+                                      )
 {
     char * c;  // comma location
     char * d1; // save of strdup
-    int64_t      p_new_group = (int64_t) new_group;
+    int64_t p_new_group = (int64_t) new_group;
     char * org_att_nam = 0; // origins attribute name
     int counter = 0;        // used to create orgX attributes
     char counterstr[5] = {0,0,0,0,0}; // used to create orgX attributes
 
-    if (!origin)
+    if (!origin || !strcmp(origin,""))
     {
-        log_warn ("config.xml: origin value required "
-                "for uniform mesh: %s\n"
-                ,name
-                );
-
+//        log_warn ("config.xml: origin value (optional) not provided "
+//                  "for uniform mesh: %s\n",
+//                  name);
         return 0;
     }
 
@@ -6925,24 +6984,23 @@ int adios_define_mesh_uniform_origins (const char * origin
     return 1;
 }
 
-int adios_define_mesh_uniform_spacings (const char * spacing
-        ,struct adios_group_struct * new_group
-        ,const char * name
-        )
+int adios_define_mesh_uniform_spacings (const char * spacing,
+                                        struct adios_group_struct * new_group,
+                                        const char * name
+                                       )
 {
     char * c;  // comma location
     char * d1; // save of strdup
-    int64_t      p_new_group = (int64_t) new_group;
+    int64_t p_new_group = (int64_t) new_group;
     char * spa_att_nam = 0; // spacings attribute name
     int counter = 0;        // used to create spaX attributes
     char counterstr[5] = {0,0,0,0,0}; // used to create spaX attributes if (!spacing)
 
-    if (!spacing)
+    if (!spacing || !strcmp(spacing,""))
     {
-        log_warn ("config.xml: mesh uniform spacing value "
-                "required for mesh: %s\n"
-                ,name
-                );
+//        log_warn ("config.xml: spacing value (optional) not provided "
+//                  "for uniform mesh: %s\n",
+//                  name);
         return 0;
     }
 
@@ -6969,31 +7027,27 @@ int adios_define_mesh_uniform_spacings (const char * spacing
     adios_conca_mesh_att_nam(&spas, name, "spacings-num");
     adios_common_define_attribute (p_new_group,spas,"/",adios_integer,counterstr,"");
     free (spas);
-
     free (d1);
 
     return 1;
 }
 
-int adios_define_mesh_rectilinear_dimensions (const char * dimensions
-        ,struct adios_group_struct * new_group
-        ,const char * name
-        )
+int adios_define_mesh_rectilinear_dimensions (const char * dimensions,
+                                              struct adios_group_struct * new_group,
+                                              const char * name
+                                             )
 {
     char * c;  // comma location
     char * d1; // save of strdup
-    int64_t      p_new_group = (int64_t) new_group;
+    int64_t p_new_group = (int64_t) new_group;
     char * dim_att_nam = 0; // dimensions attribute name
     int counter = 0;        // used to create dimX attributes
     char counterstr[5] = {0,0,0,0,0}; // used to create dimX attributes
 
-    if (!dimensions)
+    if (!dimensions || !strcmp(dimensions,""))
     {
-        log_warn ("config.xml: dimensions value required"
-                "for rectilinear mesh: %s\n"
-                ,name
-                );
-
+        log_warn ("config.xml: dimensions value required "
+                  "for rectilinear mesh: %s\n", name);
         return 0;
     }
 
@@ -7021,30 +7075,27 @@ int adios_define_mesh_rectilinear_dimensions (const char * dimensions
     adios_common_define_attribute (p_new_group,dims,"/",adios_integer,counterstr,"");
 
     free (dims);
-
     free (d1);
 
     return 1;
 }
 
-int adios_define_mesh_rectilinear_coordinatesMultiVar (const char * coordinates
-        ,struct adios_group_struct * new_group
-        ,const char * name
-        )
+int adios_define_mesh_rectilinear_coordinatesMultiVar (const char * coordinates,
+                                                       struct adios_group_struct * new_group,
+                                                       const char * name
+                                                      )
 {
     char * c;  // comma location
     char * d1; // save of strdup
-    int64_t      p_new_group = (int64_t) new_group;
+    int64_t p_new_group = (int64_t) new_group;
     char * coo_att_nam = 0; // coordinates attribute name
     int counter = 0;        // used to create ptsX attributes
     char counterstr[5] = {0,0,0,0,0}; // used to create ptsX attributes
 
-    if (!coordinates)
+    if (!coordinates || !strcmp(coordinates,""))
     {
-        log_warn ("config.xml: coordinates-multi-var value required"
-                "for rectilinear mesh: %s\n"
-                ,name
-                );
+        log_warn ("config.xml: coordinates-multi-var value required "
+                  "for rectilinear mesh: %s\n", name);
 
         return 0;
     }
@@ -7074,12 +7125,11 @@ int adios_define_mesh_rectilinear_coordinatesMultiVar (const char * coordinates
         adios_conca_mesh_att_nam(&coords, name, "coords-multi-var-num");
         adios_common_define_attribute (p_new_group,coords,"/",adios_integer,counterstr,"");
         free (coords);
-    } else
+    } 
+    else
     {
         log_warn ("config.xml: coordinates-multi-var expects "
-                "at least 2 variables (%s)\n"
-                ,name
-                );
+                  "at least 2 variables (%s)\n", name);
         free (d1);
         return 0;
     }
@@ -7089,26 +7139,25 @@ int adios_define_mesh_rectilinear_coordinatesMultiVar (const char * coordinates
     return 1;
 }
 
-int adios_define_mesh_rectilinear_coordinatesSingleVar (const char * coordinates
-        ,struct adios_group_struct * new_group
-        ,const char * name
-        )
+int adios_define_mesh_rectilinear_coordinatesSingleVar (const char * coordinates,
+                                                        struct adios_group_struct * new_group,
+                                                        const char * name
+                                                       )
 {
     char * d1; // save of strdup
-    int64_t      p_new_group = (int64_t) new_group;
+    int64_t p_new_group = (int64_t) new_group;
     char * coo_att_nam = 0; // coordinates attribute name
 
-    if (!coordinates)
+    if (!coordinates || !strcmp(coordinates,""))
     {
-        log_warn ("config.xml: coordinates-single-var value required"
-                "for rectilinear mesh: %s\n"
-                ,name
-                );
+        log_warn ("config.xml: coordinates-single-var value required "
+                  "for rectilinear mesh: %s\n", name);
 
         return 0;
     }
 
     d1 = strdup (coordinates);
+    
     adios_conca_mesh_att_nam(&coo_att_nam, name, "coords-single-var");
     adios_common_define_attribute (p_new_group,coo_att_nam,"/",adios_string,d1,"");
     free (coo_att_nam);
@@ -7116,6 +7165,7 @@ int adios_define_mesh_rectilinear_coordinatesSingleVar (const char * coordinates
     return 1;
 }
 
+/*
 int adios_define_mesh_structured_nspace (const char * nspace
         ,struct adios_group_struct * new_group
         ,const char * name
@@ -7143,30 +7193,30 @@ int adios_define_mesh_structured_nspace (const char * nspace
 
     return 1;
 }
+*/
 
-int adios_define_mesh_structured_dimensions (const char * dimensions
-        ,struct adios_group_struct * new_group
-        ,const char * name
-        )
+int adios_define_mesh_structured_dimensions (const char * dimensions,
+                                             struct adios_group_struct * new_group,
+                                             const char * name
+                                            )
 {
     char * c;  // comma location
     char * d1; // save of strdup
-    int64_t      p_new_group = (int64_t) new_group;
+    int64_t p_new_group = (int64_t) new_group;
     char * dim_att_nam = 0; // dimensions attribute name
     int counter = 0;        // used to create dimX attributes
     char counterstr[5] = {0,0,0,0,0}; // used to create dimX attributes
 
-    if (!dimensions)
+    if (!dimensions || !strcmp(dimensions,""))
     {
-        log_warn ("config.xml: dimensions value required"
-                "for structured mesh: %s\n"
-                ,name
-                );
+        log_warn ("config.xml: dimensions value required "
+                  "for structured mesh: %s\n", name);
 
         return 0;
     }
 
     d1 = strdup (dimensions);
+
     c = strtok (d1, ",");
     while (c)
     {
@@ -7192,51 +7242,47 @@ int adios_define_mesh_structured_dimensions (const char * dimensions
     return 1;
 }
 
-int adios_define_mesh_structured_pointsSingleVar (const char * points
-        ,struct adios_group_struct * new_group
-        ,const char * name
-                                              )
+int adios_define_mesh_structured_pointsSingleVar (const char * points,
+                                                  struct adios_group_struct * new_group,
+                                                  const char * name
+                                                 )
 {
     char * d1; // save of strdup
-    int64_t      p_new_group = (int64_t) new_group;
+    int64_t p_new_group = (int64_t) new_group;
     char * pts_att_nam = 0; // points attribute name
 
-    if (!points)
+    if (!points || !strcmp(points,""))
     {
-        log_warn ("config.xml: points-single-var value required"
-                         "for structured mesh: %s\n"
-                         ,name
-                );
+        log_warn ("config.xml: points-single-var value required "
+                  "for structured mesh: %s\n", name);
 
         return 0;
     }
 
     d1 = strdup (points);
-        adios_conca_mesh_att_nam(&pts_att_nam, name, "points-single-var");
-        adios_common_define_attribute (p_new_group,pts_att_nam,"/",adios_string,d1,"");
-        free (pts_att_nam);
+    adios_conca_mesh_att_nam(&pts_att_nam, name, "points-single-var");
+    adios_common_define_attribute (p_new_group,pts_att_nam,"/",adios_string,d1,"");
+    free (pts_att_nam);
     free (d1);
     return 1;
 }
 
-int adios_define_mesh_structured_pointsMultiVar (const char * points
-        ,struct adios_group_struct * new_group
-        ,const char * name
-        )
+int adios_define_mesh_structured_pointsMultiVar (const char * points,
+                                                 struct adios_group_struct * new_group,
+                                                 const char * name
+                                                )
 {
     char * c;  // comma location
     char * d1; // save of strdup
-    int64_t      p_new_group = (int64_t) new_group;
+    int64_t p_new_group = (int64_t) new_group;
     char * pts_att_nam = 0; // pointss attribute name
     int counter = 0;        // used to create ptsX attributes
     char counterstr[5] = {0,0,0,0,0}; // used to create ptsX attributes
 
-    if (!points)
+    if (!points || !strcmp(points,""))
     {
-        log_warn ("config.xml: points-multi-var value required"
-                "for structured mesh: %s\n"
-                ,name
-                );
+        log_warn ("config.xml: points-multi-var value required "
+                  "for structured mesh: %s\n", name);
 
         return 0;
     }
@@ -7244,7 +7290,6 @@ int adios_define_mesh_structured_pointsMultiVar (const char * points
     d1 = strdup (points);
 
     c = strtok (d1, ",");
-
     while (c)
     {
         pts_att_nam = 0;
@@ -7269,9 +7314,7 @@ int adios_define_mesh_structured_pointsMultiVar (const char * points
     } else
     {
         log_warn ("config.xml: points-multi-var tag for mesh: %s "
-                " expects at least 2 variables\n"
-                ,name
-                );
+                  " expects at least 2 variables\n", name);
         free (d1);
 
         return 0;
@@ -7282,6 +7325,7 @@ int adios_define_mesh_structured_pointsMultiVar (const char * points
     return 1;
 }
 
+/*
 int adios_define_mesh_unstructured_nspace (const char * nspace
         ,struct adios_group_struct * new_group
         ,const char * name
@@ -7307,6 +7351,7 @@ int adios_define_mesh_unstructured_nspace (const char * nspace
 
     return 1;
 }
+*/
 
 int adios_define_mesh_unstructured_npoints (const char * npoints
         ,struct adios_group_struct * new_group
@@ -7314,13 +7359,13 @@ int adios_define_mesh_unstructured_npoints (const char * npoints
         )
 {
     char * d1; // save of strdup
-    int64_t      p_new_group = (int64_t) new_group;
+    int64_t p_new_group = (int64_t) new_group;
     char * npts_att_nam = 0; // npoints attribute name
 
-    if (!npoints)
+    if (!npoints || !strcmp(npoints,""))
     {
-        log_warn ("config.xml: npoints value required for unstructured mesh %s:\n",
-                name);
+//        log_warn ("config.xml: npoints value required for unstructured mesh %s:\n",
+//                  name);
 
         return 0;
     }
@@ -7336,30 +7381,27 @@ int adios_define_mesh_unstructured_npoints (const char * npoints
     return 1;
 }
 
-int adios_define_mesh_unstructured_pointsMultiVar (const char * points
-        ,struct adios_group_struct * new_group
-        ,const char * name
-        )
+int adios_define_mesh_unstructured_pointsMultiVar (const char * points,
+                                                   struct adios_group_struct * new_group,
+                                                   const char * name
+                                                  )
 {
     char * c;  // comma location
     char * d1; // save of strdup
-    int64_t      p_new_group = (int64_t) new_group;
+    int64_t p_new_group = (int64_t) new_group;
     char * pts_att_nam = 0; // pointss attribute name
     int counter = 0;        // used to create ptsX attributes
     char counterstr[5] = {0,0,0,0,0}; // used to create ptsX attributes
 
-    if (!points)
+    if (!points || !strcmp(points,""))
     {
-        log_warn ("config.xml: points-multi-var value required"
-                "for unstructured mesh: %s\n"
-                ,name
-                );
+        log_warn ("config.xml: points-multi-var value required "
+                  "for unstructured mesh: %s\n", name);
 
         return 0;
     }
 
     d1 = strdup (points);
-
     c = strtok (d1, ",");
 
     while (c)
@@ -7386,9 +7428,7 @@ int adios_define_mesh_unstructured_pointsMultiVar (const char * points
     } else
     {
         log_warn ("config.xml: points-multi-var tag expects "
-                " at least two variabels. (%s)\n"
-                ,name
-                );
+                  "at least two variabels. (%s)\n" , name);
         free (d1);
         return 0;
     }
@@ -7396,21 +7436,19 @@ int adios_define_mesh_unstructured_pointsMultiVar (const char * points
     return 1;
 }
 
-int adios_define_mesh_unstructured_pointsSingleVar (const char * points
-        ,struct adios_group_struct * new_group
-        ,const char * name
-        )
+int adios_define_mesh_unstructured_pointsSingleVar (const char * points,
+                                                    struct adios_group_struct * new_group,
+                                                    const char * name
+                                                   )
 {
     char * d1; // save of strdup
-    int64_t      p_new_group = (int64_t) new_group;
+    int64_t p_new_group = (int64_t) new_group;
     char * pts_att_nam = 0; // points attribute name
 
-    if (!points)
+    if (!points || !strcmp(points,""))
     {
-        log_warn ("config.xml: points-single-var value required"
-                "for unstructured mesh: %s\n"
-                ,name
-                );
+        log_warn ("config.xml: points-single-var value required "
+                  "for unstructured mesh: %s\n", name);
 
         return 0;
     }
@@ -7425,15 +7463,15 @@ int adios_define_mesh_unstructured_pointsSingleVar (const char * points
     return 1;
 }
 
-int adios_define_mesh_unstructured_uniformCells (const char * count
-        ,const char * data
-        ,const char * type
-        ,struct adios_group_struct * new_group
-        ,const char * name
-        )
+int adios_define_mesh_unstructured_uniformCells (const char * count,
+                                                 const char * data,
+                                                 const char * type,
+                                                 struct adios_group_struct * new_group,
+                                                 const char * name
+                                                )
 {
     char * d1; // save of strdup
-    int64_t      p_new_group = (int64_t) new_group;
+    int64_t p_new_group = (int64_t) new_group;
     char * ncellset_att_nam = 0;  // ncellset attribute
     char * cellcount_att_nam = 0; // single cell count attribute
     char * celldata_att_nam = 0;  // single cell data  attribute
@@ -7443,30 +7481,24 @@ int adios_define_mesh_unstructured_uniformCells (const char * count
     adios_common_define_attribute (p_new_group,ncellset_att_nam,"/",adios_integer,"1","");
     free (ncellset_att_nam);
 
-    if (!count)
+    if (!count || !strcmp(count,""))
     {
-        log_warn ("config.xml: uniform-cells count value required"
-                "for unstructured mesh: %s\n"
-                ,name
-                );
+        log_warn ("config.xml: uniform-cells count value required "
+                  "for unstructured mesh: %s\n", name);
 
         return 0;
     }
-    if (!data)
+    if (!data || !strcmp(data,""))
     {
-        log_warn ("config.xml: uniform-cells data value required"
-                "for unstructured mesh: %s\n"
-                ,name
-                );
+        log_warn ("config.xml: uniform-cells data value required "
+                  "for unstructured mesh: %s\n", name);
 
         return 0;
     }
-    if (!type)
+    if (!type || !strcmp(type,""))
     {
-        log_warn ("config.xml: uniform-cells type value required"
-                "for unstructured mesh: %s\n"
-                ,name
-                );
+        log_warn ("config.xml: uniform-cells type value required "
+                  "for unstructured mesh: %s\n", name);
 
         return 0;
     }
@@ -7492,54 +7524,47 @@ int adios_define_mesh_unstructured_uniformCells (const char * count
     return 1;
 }
 
-int adios_define_mesh_unstructured_mixedCells (const char * count
-        ,const char * data
-        ,const char * types
-        ,struct adios_group_struct * new_group
-        ,const char * name
-        )
+int adios_define_mesh_unstructured_mixedCells (const char * count,
+                                               const char * data,
+                                               const char * types,
+                                               struct adios_group_struct * new_group,
+                                               const char * name
+                                              )
 {
     char * c;  // comma location
     char * d1; // save of strdup
     int counter = 0;        // used to create countX, typeX, dataX? attributes
     char counterstr[5] = {0,0,0,0,0}; // used to create countX, typeX, dataX? attributes
-    int64_t      p_new_group = (int64_t) new_group;
+    int64_t p_new_group = (int64_t) new_group;
     char * ncellset_att_nam = 0;  // ncellset attribute
     char * ccounts_att_nam = 0;   // ccountX attributes
     char * cdata_att_nam = 0;     // cdataX attributes
     char * celltype_att_nam = 0;  // ctypeX attributes
 
-    if (!count)
+    if (!count || !strcmp(count,""))
     {
-        log_warn ("config.xml: mixed-cells count value required"
-                "for unstructured mesh: %s\n"
-                ,name
-                );
+        log_warn ("config.xml: mixed-cells count value required "
+                  "for unstructured mesh: %s\n", name);
 
         return 0;
     }
-    if (!data)
+    if (!data || !strcmp(data,""))
     {
-        log_warn ("config.xml: mixed-cells data value required"
-                "for unstructured mesh: %s\n"
-                ,name
-                );
+        log_warn ("config.xml: mixed-cells data value required "
+                  "for unstructured mesh: %s\n", name);
 
         return 0;
     }
-    if (!types)
+    if (!types || !strcmp(types,""))
     {
         log_warn ("config.xml: mixed-cells type value required "
-                "for unstructured mesh: %s\n"
-                ,name
-                );
+                  "for unstructured mesh: %s\n", name);
 
         return 0;
     }
 
     d1 = strdup (count);
     c = strtok (d1, ",");
-   
     while (c)
     {
         //cell_list->cell_list.count.var = 0;
@@ -7558,9 +7583,7 @@ int adios_define_mesh_unstructured_mixedCells (const char * count
     // We should have at least 2 cell sets, otherwise the cells are uniform
     if (counter <= 1){
         log_warn ("config.xml: Please provide at least 2 cell counts of mesh: %s\n"
-                "or use the 'uniform-cells' tag.\n"
-                ,name
-                );
+                  "or use the 'uniform-cells' tag.\n", name);
         return 0;
     }
 
@@ -7593,10 +7616,7 @@ int adios_define_mesh_unstructured_mixedCells (const char * count
     // Generate an error message
     if (counter != cell_set_count){
         log_warn ("config.xml: Please provide at least %d cell data of mesh: %s\n"
-                "or use the 'uniform-cells' tag\n"
-                ,cell_set_count
-                ,name
-                );
+                  "or use the 'uniform-cells' tag\n", cell_set_count, name);
         return 0;
     }
 
@@ -7623,48 +7643,57 @@ int adios_define_mesh_unstructured_mixedCells (const char * count
     // Generate an error message
     if (counter != cell_set_count){
         log_warn ("config.xml: Please provide at least %d cell types of mesh: %s\n"
-                "or use the 'uniform-cells' tag\n"
-                ,cell_set_count
-                ,name
-                );
+                  "or use the 'uniform-cells' tag\n", cell_set_count, name);
         return 0;
     }
 
     return 1;
 }
 
-// NO-XML API
-int adios_define_var_mesh(int64_t ptr_new_group, char * varname, char * varpath, char * meshname){
+// called by NO-XML API
+int adios_common_define_var_mesh (int64_t group_id, char * varname, char * meshname, char * path)
+{
     char *mpath = 0;
     mpath = malloc(strlen("/adios_schema")+strlen(varname)+1);
     strcpy(mpath,varname);
     strcat(mpath,"/adios_schema");
-    adios_common_define_attribute (ptr_new_group,mpath,varpath,adios_string,meshname,"");
+    adios_common_define_attribute (group_id, mpath, path, adios_string, meshname, "");
     free (mpath);
     return 0;
 }
 
-int adios_define_var_centering(int64_t ptr_new_group, char * varname, char * varpath, char * centering){
+int adios_common_define_var_centering (int64_t group_id, char * varname, char * centering, char * path)
+{
     char *mpath = 0;
     mpath = malloc(strlen("/adios_schema/centering")+strlen(varname)+1);
     strcpy(mpath,varname);
     strcat(mpath,"/adios_schema/centering");
-    adios_common_define_attribute (ptr_new_group,mpath,varpath,adios_string,centering,"");
+    adios_common_define_attribute (group_id, mpath, path, adios_string, centering, "");
     free (mpath);
     return 0;
 }
 
-int adios_define_mesh_group(int64_t ptr_new_group, char * name, char * group){
-    char * meshgroup = 0;
-    adios_conca_mesh_att_nam(&group, name, "mesh-group");
-    adios_common_define_attribute (ptr_new_group,meshgroup,"/",adios_string,group,"");
+int adios_common_define_mesh_group (int64_t group_id, char * name, char * group)
+{
+    char * mpath = 0;
+    mpath = malloc(strlen("/adios_schema/")+strlen(name)+strlen("/mesh-group")+1);
+    strcpy (mpath, "/adios_schema/");
+    strcat (mpath, name);
+    strcat (mpath, "/mesh-group");
+//    adios_conca_mesh_att_nam(&group, name, "mesh-group");
+    adios_common_define_attribute (group_id, mpath, "", adios_string, group, "");
+    free (mpath);
     return 0;
 }
 
-int adios_define_mesh_file(int64_t ptr_new_group, char * name, char * file){
-    char * meshfile = 0;
-    adios_conca_mesh_att_nam(&meshfile, name, "mesh-file");
-    adios_common_define_attribute (ptr_new_group,file,"/",adios_string,file,"");
+int adios_common_define_mesh_file (int64_t group_id, char * name, char * file){
+    char * mpath = 0;
+    mpath = malloc(strlen("/adios_schema/")+strlen(name)+strlen("/mesh-file")+1);
+    strcpy (mpath, "/adios_schema/");
+    strcat (mpath, name);
+    strcat (mpath, "/mesh-file");
+    adios_common_define_attribute (group_id, mpath, "", adios_string, file, "");
+    free (mpath);
     return 0;
 }
 
