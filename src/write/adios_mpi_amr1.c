@@ -488,7 +488,7 @@ printf("adios_mpi_amr1_striping_unit_write offset=%12lld len=%12d\n",offset,len)
         char * buf_ptr = buf;
         while (total_written < len)
         {
-            write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
+            write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
             MPI_File_write (fh, buf_ptr, write_len, MPI_BYTE, &status);
             MPI_Get_count(&status, MPI_BYTE, &count);
             if (count != write_len)

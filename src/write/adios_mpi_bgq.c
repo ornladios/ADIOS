@@ -314,7 +314,7 @@ adios_mpi_bgq_striping_unit_write(MPI_File   fh
 
     while (total_written < len)
     {
-        write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
+        write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
         MPI_File_write (fh, buf_ptr, write_len, MPI_BYTE, &status);
         MPI_Get_count(&status, MPI_BYTE, &count);
         if (count != write_len)
@@ -1201,12 +1201,12 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
             if (fd->shared_buffer == adios_flag_yes)
             {    
                 // if we need to write > 2 GB, need to do it in parts
-                // since count is limited to INT32_MAX (signed 32-bit max).
+                // since count is limited to MAX_MPIWRITE_SIZE (signed 32-bit max).
                 uint64_t bytes_written = 0; 
                 int32_t to_write = 0; 
-                if (fd->bytes_written > INT32_MAX)
+                if (fd->bytes_written > MAX_MPIWRITE_SIZE)
                 {    
-                    to_write = INT32_MAX;
+                    to_write = MAX_MPIWRITE_SIZE;
                 }    
                 else 
                 {    
@@ -1250,9 +1250,9 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
                     bytes_written += to_write;
                     if (fd->bytes_written > bytes_written)
                     {
-                        if (fd->bytes_written - bytes_written > INT32_MAX)
+                        if (fd->bytes_written - bytes_written > MAX_MPIWRITE_SIZE)
                         {
-                            to_write = INT32_MAX;
+                            to_write = MAX_MPIWRITE_SIZE;
                         }
                         else
                         {
@@ -1388,7 +1388,7 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
       
                     while (total_written < buffer_offset)
                     {
-                        write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
+                        write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
                         err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
 
                         MPI_Get_count(&md->status, MPI_BYTE, &count);

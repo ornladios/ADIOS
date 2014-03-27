@@ -698,7 +698,7 @@ adios_mpi_amr_striping_unit_write(MPI_File   fh
 
     while (total_written < len)
     {
-        write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
+        write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
         MPI_File_write (fh, buf_ptr, write_len, MPI_BYTE, &status);
         MPI_Get_count(&status, MPI_BYTE, &count);
         if (count != write_len)

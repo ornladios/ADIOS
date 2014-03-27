@@ -25,6 +25,11 @@
 #include "core/adios_timing.h"
 #endif
 
+/* Some cluster experience MPI_File_write() errors when trying to write INT32_MAX bytes (2GB) at once.
+ * Use this number to limit block sizes written with MPI-IO.
+ */
+#define MAX_MPIWRITE_SIZE 2130706432    /* 2GB - 16MB */
+
 enum ADIOS_METHOD_MODE {adios_mode_write  = 1
                        ,adios_mode_read   = 2
                        ,adios_mode_update = 3 // not supported yet
