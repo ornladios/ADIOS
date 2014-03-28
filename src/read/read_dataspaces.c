@@ -1197,7 +1197,7 @@ int adios_read_dataspaces_schedule_read_byid (const ADIOS_FILE * fp,
 
                 /* We cannot do this with DataSpaces yet (fp->nwriter == 1) */
                 /* Read the whole variable */
-                memcpy (s, 0, 10*sizeof(uint64_t));
+                memset (s, 0, 10*sizeof(uint64_t));
                 r->sel = common_read_selection_boundingbox(var->ndims, s, var->dims);
                 for (i=0; i<var->ndims; i++) 
                     reqsize *= var->dims[i];
@@ -1209,7 +1209,7 @@ int adios_read_dataspaces_schedule_read_byid (const ADIOS_FILE * fp,
                    Let's do a simple 1D domain decomposition
                    FIXME: should be smarter and do multi-dim decomp if needed
                 */
-                memcpy (s, 0, 10*sizeof(uint64_t));
+                memset (s, 0, 10*sizeof(uint64_t));
                 memcpy (c, var->dims, 10*sizeof(uint64_t));
                 if (var->ndims) {
                     ld0 = var->dims[0]/ds->nproc;
@@ -1243,7 +1243,7 @@ int adios_read_dataspaces_schedule_read_byid (const ADIOS_FILE * fp,
         } // switch
     } else {
         // NULL selection means the whole variable
-        memcpy (s, 0, 10*sizeof(uint64_t));
+        memset (s, 0, 10*sizeof(uint64_t));
         r->sel = common_read_selection_boundingbox(var->ndims, s, var->dims);
         for (i=0; i<var->ndims; i++) 
             reqsize *= var->dims[i];
