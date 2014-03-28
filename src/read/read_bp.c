@@ -2605,6 +2605,8 @@ int adios_read_bp_perform_reads (const ADIOS_FILE *fp, int blocking)
         // remove head from list
         r = p->local_read_request_list;
         p->local_read_request_list = p->local_read_request_list->next;
+        common_read_selection_delete (r->sel);
+        r->sel = NULL;
         free(r);
 
         common_read_free_chunk (chunk);
