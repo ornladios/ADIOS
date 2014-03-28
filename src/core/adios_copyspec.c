@@ -202,13 +202,13 @@ int adios_copyspec_is_noop(const adios_subvolume_copy_spec *copy_spec) {
 // Extracts a selection corresponding to the subvolume within the source buffer
 ADIOS_SELECTION * adios_copyspec_to_src_selection(adios_subvolume_copy_spec *copy_spec) {
     return common_read_selection_boundingbox(copy_spec->ndim,
-                                             copy_spec->src_subv_offsets,
-                                             copy_spec->subv_dims);
+                                             bufdup(copy_spec->src_subv_offsets, sizeof(uint64_t), copy_spec->ndim),
+                                             bufdup(copy_spec->subv_dims, sizeof(uint64_t), copy_spec->ndim));
 }
 
 // Extracts a selection corresponding to the subvolume within the destination buffer
 ADIOS_SELECTION * adios_copyspec_to_dst_selection(adios_subvolume_copy_spec *copy_spec) {
     return common_read_selection_boundingbox(copy_spec->ndim,
-                                             copy_spec->dst_subv_offsets,
-                                             copy_spec->subv_dims);
+                                             bufdup(copy_spec->dst_subv_offsets, sizeof(uint64_t), copy_spec->ndim),
+                                             bufdup(copy_spec->subv_dims, sizeof(uint64_t), copy_spec->ndim));
 }

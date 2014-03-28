@@ -3442,22 +3442,13 @@ ADIOS_SELECTION * common_read_selection_boundingbox (int ndim, const uint64_t *s
     adios_errno = err_no_error;
     ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
     if (sel) {
-        sel->u.bb.start = (uint64_t *) malloc (ndim*sizeof(uint64_t));
-        if (sel->u.bb.start) {
-            sel->u.bb.count = (uint64_t *) malloc (ndim*sizeof(uint64_t));
-        }
-    }
-    if (!sel || !sel->u.bb.start || !sel->u.bb.count) {
+        sel->type = ADIOS_SELECTION_BOUNDINGBOX;
+        sel->u.bb.ndim = ndim;
+        sel->u.bb.start = (uint64_t *)start;
+        sel->u.bb.count = (uint64_t *)count;
+    } else {
         adios_error(err_no_memory, "Cannot allocate memory for bounding box selection\n");
-        if (sel->u.bb.start) free(sel->u.bb.start);
-        if (sel) free(sel);
-        return NULL;
     }
-
-    sel->type = ADIOS_SELECTION_BOUNDINGBOX;
-    sel->u.bb.ndim = ndim;
-    memcpy (sel->u.bb.start, start, ndim*sizeof (uint64_t));
-    memcpy (sel->u.bb.count, count, ndim*sizeof (uint64_t));
     return sel;
 }
 
@@ -3467,19 +3458,13 @@ ADIOS_SELECTION * common_read_selection_points (int ndim, uint64_t npoints, cons
     adios_errno = err_no_error;
     ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
     if (sel) {
-        sel->u.points.points = (uint64_t *) malloc (npoints*ndim*sizeof(uint64_t));
-    }
-    if (!sel || !sel->u.points.points) {
+        sel->type = ADIOS_SELECTION_POINTS;
+        sel->u.points.ndim = ndim;
+        sel->u.points.npoints = npoints;
+        sel->u.points.points = (uint64_t *) points;
+    } else {
         adios_error(err_no_memory, "Cannot allocate memory for points selection\n");
-        if (sel) free(sel);
-        return NULL;
     }
-
-    sel->type = ADIOS_SELECTION_POINTS;
-    sel->u.points.ndim = ndim;
-    sel->u.points.npoints = npoints;
-    memcpy (sel->u.points.points, points, npoints*ndim*sizeof(uint64_t));
-
     return sel;
 }
 
@@ -3502,49 +3487,17 @@ ADIOS_SELECTION * common_read_selection_writeblock (int index)
 ADIOS_SELECTION * common_read_selection_auto (char *hints)
 {   
     adios_errno = err_no_error;
-    int len = strlen(hints);
-    if (len > 1048576) {
-        adios_error(err_unspecified, "You passed a hint of %d characters for an auto selection.\n"
-            "ADIOS refuses to do that. Increase this limit in the source if you are serious.\n"
-            "Source code: src/core/%s, line %d", len,  __FILE__, __LINE__);
-        return NULL;
-    }
-
     ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
     if (sel) {
-        sel->u.autosel.hints = (char *) malloc (len+1);
-    }
-    if (!sel || !sel->u.autosel.hints) {
+        sel->type = ADIOS_SELECTION_AUTO;
+        sel->u.autosel.hints = hints;
+    } else {
         adios_error(err_no_memory, "Cannot allocate memory for auto selection\n");
-        if (sel) free(sel);
-        return NULL;
     }
-
-    sel->type = ADIOS_SELECTION_AUTO;
-    memcpy (sel->u.autosel.hints, hints, len+1);
     return sel;
 }
 
 void common_read_selection_delete (ADIOS_SELECTION *sel)
 {
-    if (sel) {
-        switch (sel->type) {
-            case ADIOS_SELECTION_BOUNDINGBOX:
-                if (sel->u.bb.start) free (sel->u.bb.start);
-                if (sel->u.bb.count) free (sel->u.bb.count);
-                break;
-
-            case ADIOS_SELECTION_POINTS:
-                if (sel->u.points.points) free (sel->u.points.points);
-                break;
-
-            case ADIOS_SELECTION_AUTO:
-                if (sel->u.autosel.hints) free (sel->u.autosel.hints);
-                break;
-        
-            default:
-                break;
-        }
-        free(sel);
-    }
+    free(sel);
 }

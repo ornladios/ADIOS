@@ -26,9 +26,7 @@
 // One-on-one intersection functions
 //
 ADIOS_SELECTION * adios_selection_intersect_bb_bb(const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb1,
-                                                  const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb2) 
-{
-    ADIOS_SELECTION *sel = NULL;
+                                                  const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb2) {
     const int ndim = bb1->ndim;
     uint64_t *new_start = malloc(ndim * sizeof(uint64_t));
     uint64_t *new_count = malloc(ndim * sizeof(uint64_t));
@@ -40,17 +38,16 @@ ADIOS_SELECTION * adios_selection_intersect_bb_bb(const ADIOS_SELECTION_BOUNDING
     }
 
     if (intersect_bb(bb1, bb2, new_start, NULL, NULL, new_count)) {
-        sel = common_read_selection_boundingbox(ndim, new_start, new_count);
-    } 
-    free(new_start);
-    free(new_count);
-    return sel;
+        return common_read_selection_boundingbox(ndim, new_start, new_count);
+    } else {
+        free(new_start);
+        free(new_count);
+        return NULL;
+    }
 }
 
 ADIOS_SELECTION * adios_selection_intersect_bb_pts(const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb1,
-                                                   const ADIOS_SELECTION_POINTS_STRUCT *pts2) 
-{
-    ADIOS_SELECTION *sel = NULL;
+                                                   const ADIOS_SELECTION_POINTS_STRUCT *pts2) {
     const int ndim = bb1->ndim;
     const uint64_t max_new_npts = pts2->npoints;
 
@@ -87,17 +84,17 @@ ADIOS_SELECTION * adios_selection_intersect_bb_pts(const ADIOS_SELECTION_BOUNDIN
         }
     }
 
-    if (new_npts != 0) {
-        sel =  common_read_selection_points(ndim, new_npts, new_pts);
+    if (new_npts == 0) {
+        free(new_pts);
+        return NULL;
+    } else {
+        new_pts = (uint64_t*)realloc(new_pts, new_npts * ndim * sizeof(uint64_t));
+        return common_read_selection_points(ndim, new_npts, new_pts);
     }
-    free(new_pts);
-    return sel;
 }
 
 ADIOS_SELECTION * adios_selection_intersect_pts_pts(const ADIOS_SELECTION_POINTS_STRUCT *pts1,
-                                                    const ADIOS_SELECTION_POINTS_STRUCT *pts2) 
-{
-    ADIOS_SELECTION *sel = NULL;
+                                                    const ADIOS_SELECTION_POINTS_STRUCT *pts2) {
     const int ndim = pts1->ndim;
     const uint64_t max_new_npts = pts1->npoints > pts2->npoints ? pts1->npoints : pts2->npoints;
 
@@ -136,11 +133,13 @@ ADIOS_SELECTION * adios_selection_intersect_pts_pts(const ADIOS_SELECTION_POINTS
         }
     }
 
-    if (new_npts != 0) {
-        sel = common_read_selection_points(ndim, new_npts, new_pts);
+    if (new_npts == 0) {
+        free(new_pts);
+        return NULL;
+    } else {
+        new_pts = (uint64_t*)realloc(new_pts, new_npts * sizeof(uint64_t));
+        return common_read_selection_points(ndim, new_npts, new_pts);
     }
-    free(new_pts);
-    return sel;
 }
 
 ADIOS_SELECTION * adios_selection_intersect_wb_wb(const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb1,
