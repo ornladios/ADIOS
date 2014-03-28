@@ -456,12 +456,12 @@ ADIOS_SELECTION * new_derelativized_selection(const ADIOS_SELECTION *sel, const 
         const int ndim = sel->u.bb.ndim;
         const int dimsize = ndim * sizeof(uint64_t);
         uint64_t * const new_start = malloc(dimsize);
-        uint64_t * const new_count = bufdup(sel->u.bb.count, sizeof(uint64_t), ndim);
 
         // Add the global offset to the bounding box start
         vector_add(ndim, new_start, sel->u.bb.start, sel_global_offset);
 
-        new_sel = common_read_selection_boundingbox(ndim, new_start, new_count);
+        new_sel = common_read_selection_boundingbox(ndim, new_start, sel->u.bb.count);
+        free (new_start);
         break;
     }
     case ADIOS_SELECTION_POINTS:
@@ -482,6 +482,7 @@ ADIOS_SELECTION * new_derelativized_selection(const ADIOS_SELECTION *sel, const 
         }
 
         new_sel = common_read_selection_points(ndim, npoints, new_points);
+        free (new_points);
         break;
     }
     case ADIOS_SELECTION_WRITEBLOCK:
@@ -497,9 +498,7 @@ ADIOS_SELECTION * new_derelativized_selection(const ADIOS_SELECTION *sel, const 
 }
 
 ADIOS_SELECTION * varblock_to_bb(int ndim, const ADIOS_VARBLOCK *vb) {
-    return common_read_selection_boundingbox(ndim,
-                                             bufdup(vb->start, sizeof(uint64_t), ndim),
-                                             bufdup(vb->count, sizeof(uint64_t), ndim));
+    return common_read_selection_boundingbox(ndim, vb->start, vb->count);
 }
 
 uint64_t compute_selection_size(const ADIOS_SELECTION *sel) {
