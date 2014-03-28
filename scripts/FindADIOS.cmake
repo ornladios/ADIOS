@@ -7,7 +7,8 @@
 #     [REQUIRED]            # Fail with an error if ADIOS or a required
 #                           #   component is not found
 #     [QUIET]               # ...
-#     [COMPONENTS <...>]    # Compiled in components, ignored
+#     [COMPONENTS <...>]    # Compiled in components: fortran, readonly, 
+                            # sequential (all are case insentative) 
 #   )
 #
 # Module that finds the includes and libraries for a working ADIOS install.
@@ -35,8 +36,21 @@
 #   ADIOS_DEFINITIONS     - Compiler definitions you should add with
 #                           add_definitions(${ADIOS_DEFINITIONS})
 #
+# Example to find ADIOS (default)
+# find_package(ADIOS)
+# if(ADIOS_FOUND)
+#   include_directories(${ADIOS_INCLUDE_DIRS})
+#   add_executable(foo foo.c)
+#   target_link_libraries(foo ${ADIOS_LIBRARIES})
+# endif()
 
-
+# Example to find ADIOS using component
+# find_package(ADIOS COMPONENTS fortran)
+# if(ADIOS_FOUND)
+#   include_directories(${ADIOS_INCLUDE_DIRS})
+#   add_executable(foo foo.c)
+#   target_link_libraries(foo ${ADIOS_LIBRARIES})
+# endif()
 ###############################################################################
 #Copyright (c) 2014, Axel Huebl and Felix Schmitt from http://picongpu.hzdr.de
 #All rights reserved.
@@ -78,6 +92,24 @@ cmake_minimum_required(VERSION 2.8.5)
 ###############################################################################
 # ADIOS
 ###############################################################################
+# get flags for adios_config, -l is the default
+#-f for fortran, -r for readonly, -s for sequential (nompi)
+set(OPTLIST "-l")
+if(ADIOS_FIND_COMPONENTS)
+    foreach(COMP ${ADIOS_FIND_COMPONENTS})
+        string(TOLOWER ${COMP} comp)
+        if(comp STREQUAL "fortran")
+            set(OPTLIST ${OPTLIST} f)
+        elseif(comp STREQUAL "readonly")
+            set(OPTLIST ${OPTLIST} r)
+        elseif(comp STREQUAL "sequential")
+            set(OPTLIST ${OPTLIST} s)
+        else()
+            message("ADIOS component ${COMP} is not supported. Please use fortran, readonly, or sequential")
+        endif()
+    endforeach()
+endif()
+string(REGEX REPLACE ";" "" OPTLIST "${OPTLIST}")
 
 # we start by assuming we found ADIOS and falsify it if some
 # dependencies are missing (or if we did not find ADIOS at all)
@@ -97,10 +129,9 @@ else(ADIOS_CONFIG)
     message(STATUS "Can NOT find 'adios_config' - set ADIOS_ROOT, ADIOS_DIR or INSTALL_PREFIX, or check your PATH")
 endif(ADIOS_CONFIG)
 
-
 # check `adios_config` program ################################################
 if(ADIOS_FOUND)
-    execute_process(COMMAND ${ADIOS_CONFIG} -l
+    execute_process(COMMAND ${ADIOS_CONFIG} ${OPTLIST}
                     OUTPUT_VARIABLE ADIOS_LINKFLAGS
                     RESULT_VARIABLE ADIOS_CONFIG_RETURN)
     if(NOT ADIOS_CONFIG_RETURN EQUAL 0)
@@ -121,7 +152,6 @@ if(ADIOS_FOUND)
         message(STATUS "The directory provided by 'adios_config -d' does not exist: ${ADIOS_ROOT_DIR}")
     endif()
 endif(ADIOS_FOUND)
-
 
 # option: use only static libs ################################################
 if(ADIOS_USE_STATIC_LIBS)
