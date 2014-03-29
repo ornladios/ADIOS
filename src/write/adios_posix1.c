@@ -325,9 +325,9 @@ void adios_posix1_write (struct adios_file_struct * fd
 
         int32_t to_write;
         uint64_t bytes_written = 0;
-        if (var_size > INT32_MAX)
+        if (var_size > MAX_MPIWRITE_SIZE)
         {
-            to_write = INT32_MAX;
+            to_write = MAX_MPIWRITE_SIZE;
         }
         else
         {
@@ -339,9 +339,9 @@ void adios_posix1_write (struct adios_file_struct * fd
             bytes_written += write (p->b.f, v->data + bytes_written, to_write);
             if (var_size > bytes_written)
             {
-                if (var_size - bytes_written > INT32_MAX)
+                if (var_size - bytes_written > MAX_MPIWRITE_SIZE)
                 {
-                    to_write = INT32_MAX;
+                    to_write = MAX_MPIWRITE_SIZE;
                 }
                 else
                 {
@@ -456,9 +456,9 @@ static void adios_posix1_do_write (struct adios_file_struct * fd
             fprintf (stderr, "adios_posix1_write exceeds pg bound. File is corrupted. "
                              "Need to enlarge group size. \n");
 
-        if (fd->bytes_written > INT32_MAX)
+        if (fd->bytes_written > MAX_MPIWRITE_SIZE)
         {
-            to_write = INT32_MAX;
+            to_write = MAX_MPIWRITE_SIZE;
         }
         else
         {
@@ -471,9 +471,9 @@ static void adios_posix1_do_write (struct adios_file_struct * fd
             bytes_written += to_write;
             if (fd->bytes_written > bytes_written)
             {
-                if (fd->bytes_written - bytes_written > INT32_MAX)
+                if (fd->bytes_written - bytes_written > MAX_MPIWRITE_SIZE)
                 {
-                    to_write = INT32_MAX;
+                    to_write = MAX_MPIWRITE_SIZE;
                 }
                 else
                 {

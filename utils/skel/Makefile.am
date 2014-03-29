@@ -28,6 +28,7 @@ dist_pythonlib_DATA=\
     lib/skel_source.py \
     lib/skel_submit.py \
     lib/skel_suite.py \
+    lib/skel_template.py \
     lib/skel_test_plan.py \
     lib/skel_xml.py \
     lib/skelconf.py \

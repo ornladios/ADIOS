@@ -620,7 +620,7 @@ if(HAVE_DATASPACES_H)
     set(DATASPACES_LIBS2 "${DATASPACES_LIBS2}" CACHE INTERNAL "Internal variable")
     find_library(DATASPACES_LIBS3 NAMES libdart.a  PATHS ${DATASPACES_LIBDIR})
     set(DATASPACES_LIBS3 "${DATASPACES_LIBS3}" CACHE INTERNAL "Internal variable")
-    find_library(DATASPACES_LIBS4 NAMES librdmacm.a  PATHS ${DATASPACES_LIBDIR})
+    find_library(DATASPACES_LIBS4 NAMES rdmacm  PATHS ${DATASPACES_LIBDIR} /usr/lib64)
     set(DATASPACES_LIBS4 "${DATASPACES_LIBS4}" CACHE INTERNAL "Internal variable")
     if(DATASPACES_LIBS1 AND DATASPACES_LIBS2 AND DATASPACES_LIBS3 AND DATASPACES_LIBS4)
       set(DATASPACES_LIBS ${DATASPACES_LIBS1} ${DATASPACES_LIBS2} ${DATASPACES_LIBS3} ${DATASPACES_LIBS4})
@@ -1069,7 +1069,7 @@ set(NO_DATATAP 1)
 set(HAVE_ZLIB 0)
 set(HAVE_ZLIB_H 0)
 #CHECK_INCLUDE_FILES(zlib.h HAVE_ZLIB_H)
-#find_library(ZLIB_LIBS NAMES libz.a PATHS ${SZIP_DIR}/lib)
+#find_library(ZLIB_LIBS NAMES libz.a PATHS ${ZIP_DIR}/lib)
 #if(HAVE_ZLIB_H AND ZLIB_LIBS)
 
 set(HAVE_ZLIB 0)
@@ -1201,10 +1201,10 @@ set(PACKAGE adios)
 set(VERSION_MAJOR 1)
 
 # Minor version number
-set(VERSION_MINOR 5)
+set(VERSION_MINOR 6)
 
 # Micro version number
-set(VERSION_MICRO 1)
+set(VERSION_MICRO 0)
 
 # Version number of package
 set(VERSION ${VERSION_MAJOR}.${VERSION_MINOR}.${VERSION_MICRO})
@@ -1630,6 +1630,7 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/adios_config.flags.in ${CMAKE_CURRENT
 #####################end of processing adios_config.flags.in #####################
 install(FILES ${CMAKE_BINARY_DIR}/adios_config.flags DESTINATION ${bindir})
 install(PROGRAMS adios_config DESTINATION ${bindir})
+install(FILES ${PROJECT_SOURCE_DIR}/scripts/FindADIOS.cmake DESTINATION ${libdir}) 
 
 add_subdirectory(utils)
 add_subdirectory(tests)

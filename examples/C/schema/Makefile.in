@@ -35,7 +35,9 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = uniform2d$(EXEEXT) rectilinear2d$(EXEEXT) \
-	structured2d$(EXEEXT) tri2d$(EXEEXT) triangle2d$(EXEEXT)
+	structured2d$(EXEEXT) tri2d$(EXEEXT) triangle2d$(EXEEXT) \
+	uniform2d_noxml$(EXEEXT) rectilinear2d_noxml$(EXEEXT) \
+	structured2d_noxml$(EXEEXT) tri2d_noxml$(EXEEXT)
 subdir = examples/C/schema
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -83,6 +85,13 @@ rectilinear2d_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 rectilinear2d_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(rectilinear2d_LDFLAGS) $(LDFLAGS) -o $@
+rectilinear2d_noxml_SOURCES = rectilinear2d_noxml.c
+rectilinear2d_noxml_OBJECTS = rectilinear2d_noxml.$(OBJEXT)
+rectilinear2d_noxml_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+rectilinear2d_noxml_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(rectilinear2d_noxml_LDFLAGS) $(LDFLAGS) -o $@
 am_structured2d_OBJECTS = structured2d.$(OBJEXT)
 structured2d_OBJECTS = $(am_structured2d_OBJECTS)
 structured2d_DEPENDENCIES = $(top_builddir)/src/libadios.a \
@@ -90,6 +99,13 @@ structured2d_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 structured2d_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(structured2d_LDFLAGS) $(LDFLAGS) -o $@
+structured2d_noxml_SOURCES = structured2d_noxml.c
+structured2d_noxml_OBJECTS = structured2d_noxml.$(OBJEXT)
+structured2d_noxml_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+structured2d_noxml_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(structured2d_noxml_LDFLAGS) $(LDFLAGS) -o $@
 am_tri2d_OBJECTS = tri2d.$(OBJEXT)
 tri2d_OBJECTS = $(am_tri2d_OBJECTS)
 tri2d_DEPENDENCIES = $(top_builddir)/src/libadios.a \
@@ -97,6 +113,13 @@ tri2d_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 tri2d_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(tri2d_LDFLAGS) \
 	$(LDFLAGS) -o $@
+tri2d_noxml_SOURCES = tri2d_noxml.c
+tri2d_noxml_OBJECTS = tri2d_noxml.$(OBJEXT)
+tri2d_noxml_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+tri2d_noxml_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(tri2d_noxml_LDFLAGS) $(LDFLAGS) -o $@
 am_triangle2d_OBJECTS = triangle2d.$(OBJEXT)
 triangle2d_OBJECTS = $(am_triangle2d_OBJECTS)
 triangle2d_DEPENDENCIES = $(top_builddir)/src/libadios.a \
@@ -111,6 +134,13 @@ uniform2d_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 uniform2d_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(uniform2d_LDFLAGS) $(LDFLAGS) -o $@
+uniform2d_noxml_SOURCES = uniform2d_noxml.c
+uniform2d_noxml_OBJECTS = uniform2d_noxml.$(OBJEXT)
+uniform2d_noxml_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+uniform2d_noxml_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(uniform2d_noxml_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -123,10 +153,14 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(rectilinear2d_SOURCES) $(structured2d_SOURCES) \
-	$(tri2d_SOURCES) $(triangle2d_SOURCES) uniform2d.c
-DIST_SOURCES = $(rectilinear2d_SOURCES) $(structured2d_SOURCES) \
-	$(tri2d_SOURCES) $(triangle2d_SOURCES) uniform2d.c
+SOURCES = $(rectilinear2d_SOURCES) rectilinear2d_noxml.c \
+	$(structured2d_SOURCES) structured2d_noxml.c $(tri2d_SOURCES) \
+	tri2d_noxml.c $(triangle2d_SOURCES) uniform2d.c \
+	uniform2d_noxml.c
+DIST_SOURCES = $(rectilinear2d_SOURCES) rectilinear2d_noxml.c \
+	$(structured2d_SOURCES) structured2d_noxml.c $(tri2d_SOURCES) \
+	tri2d_noxml.c $(triangle2d_SOURCES) uniform2d.c \
+	uniform2d_noxml.c
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -385,6 +419,17 @@ tri2d_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 triangle2d_SOURCES = triangle2d.c
 triangle2d_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 triangle2d_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+uniform2d_noxml_LDADD = $(top_builddir)/src/libadios.a \
+	$(ADIOSLIB_LDADD)
+uniform2d_noxml_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+rectilinear2d_noxml_LDADD = $(top_builddir)/src/libadios.a \
+	$(ADIOSLIB_LDADD)
+rectilinear2d_noxml_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+structured2d_noxml_LDADD = $(top_builddir)/src/libadios.a \
+	$(ADIOSLIB_LDADD)
+structured2d_noxml_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+tri2d_noxml_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+tri2d_noxml_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 CLEANFILES = *.bp
 EXTRA_DIST = uniform2d.xml uniform2d.readme uniform2d.png \
 	rectilinear2d.xml rectilinear2d.readme rectilinear2d.png \
@@ -438,18 +483,30 @@ clean-noinstPROGRAMS:
 rectilinear2d$(EXEEXT): $(rectilinear2d_OBJECTS) $(rectilinear2d_DEPENDENCIES) 
 	@rm -f rectilinear2d$(EXEEXT)
 	$(rectilinear2d_LINK) $(rectilinear2d_OBJECTS) $(rectilinear2d_LDADD) $(LIBS)
+rectilinear2d_noxml$(EXEEXT): $(rectilinear2d_noxml_OBJECTS) $(rectilinear2d_noxml_DEPENDENCIES) 
+	@rm -f rectilinear2d_noxml$(EXEEXT)
+	$(rectilinear2d_noxml_LINK) $(rectilinear2d_noxml_OBJECTS) $(rectilinear2d_noxml_LDADD) $(LIBS)
 structured2d$(EXEEXT): $(structured2d_OBJECTS) $(structured2d_DEPENDENCIES) 
 	@rm -f structured2d$(EXEEXT)
 	$(structured2d_LINK) $(structured2d_OBJECTS) $(structured2d_LDADD) $(LIBS)
+structured2d_noxml$(EXEEXT): $(structured2d_noxml_OBJECTS) $(structured2d_noxml_DEPENDENCIES) 
+	@rm -f structured2d_noxml$(EXEEXT)
+	$(structured2d_noxml_LINK) $(structured2d_noxml_OBJECTS) $(structured2d_noxml_LDADD) $(LIBS)
 tri2d$(EXEEXT): $(tri2d_OBJECTS) $(tri2d_DEPENDENCIES) 
 	@rm -f tri2d$(EXEEXT)
 	$(tri2d_LINK) $(tri2d_OBJECTS) $(tri2d_LDADD) $(LIBS)
+tri2d_noxml$(EXEEXT): $(tri2d_noxml_OBJECTS) $(tri2d_noxml_DEPENDENCIES) 
+	@rm -f tri2d_noxml$(EXEEXT)
+	$(tri2d_noxml_LINK) $(tri2d_noxml_OBJECTS) $(tri2d_noxml_LDADD) $(LIBS)
 triangle2d$(EXEEXT): $(triangle2d_OBJECTS) $(triangle2d_DEPENDENCIES) 
 	@rm -f triangle2d$(EXEEXT)
 	$(triangle2d_LINK) $(triangle2d_OBJECTS) $(triangle2d_LDADD) $(LIBS)
 uniform2d$(EXEEXT): $(uniform2d_OBJECTS) $(uniform2d_DEPENDENCIES) 
 	@rm -f uniform2d$(EXEEXT)
 	$(uniform2d_LINK) $(uniform2d_OBJECTS) $(uniform2d_LDADD) $(LIBS)
+uniform2d_noxml$(EXEEXT): $(uniform2d_noxml_OBJECTS) $(uniform2d_noxml_DEPENDENCIES) 
+	@rm -f uniform2d_noxml$(EXEEXT)
+	$(uniform2d_noxml_LINK) $(uniform2d_noxml_OBJECTS) $(uniform2d_noxml_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)

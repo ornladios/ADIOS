@@ -249,6 +249,7 @@ adios_mpi_amr_set_striping_unit(struct adios_MPI_data_struct * md, char *paramet
     uint16_t striping_count = 0;
     char     *temp_string, *p_count,*p_size;
     int fd, old_mask, perm, n_ost_skipping, n_ost, n, i, should_striping;
+    int random_offset_flag;
 
     temp_string = (char *) malloc (strlen (parameters) + 1);
     strcpy (temp_string, parameters);
@@ -289,6 +290,24 @@ adios_mpi_amr_set_striping_unit(struct adios_MPI_data_struct * md, char *paramet
     {
         // By default, set stripe count to 1 to maximize concurrency.
         striping_count = DEFAULT_STRIPE_COUNT;
+    }
+
+    strcpy (temp_string, parameters);
+    trim_spaces (temp_string);
+
+    if ( (p_count = strstr (temp_string, "random_offset")) )
+    {
+        char * p = strchr (p_count, '=');
+        char * q = strtok (p, ";");
+        if (!q)
+            random_offset_flag = atoi (q + 1);
+        else
+            random_offset_flag = atoi (p + 1);
+    }
+    else
+    {
+        // By default, set stripe count to 1 to maximize concurrency.
+        random_offset_flag = 0;
     }
 
     strcpy (temp_string, parameters);
@@ -355,7 +374,7 @@ adios_mpi_amr_set_striping_unit(struct adios_MPI_data_struct * md, char *paramet
             i++;
         }
 
-        lum.lmm_stripe_offset = i;
+        lum.lmm_stripe_offset = (random_offset_flag ? -1 : i);
         ioctl (fd, LL_IOC_LOV_SETSTRIPE
               ,(void *) &lum
               );
@@ -679,7 +698,7 @@ adios_mpi_amr_striping_unit_write(MPI_File   fh
 
     while (total_written < len)
     {
-        write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
+        write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
         MPI_File_write (fh, buf_ptr, write_len, MPI_BYTE, &status);
         MPI_Get_count(&status, MPI_BYTE, &count);
         if (count != write_len)
@@ -1058,7 +1077,8 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                     f = open(name, O_CREAT | O_RDWR | O_LOV_DELAY_CREATE, 0644);
                     if (f == -1)
                     {
-                        adios_error (err_file_open_error,"MPI_AMR method: open() failed: %s\n", strerror(errno));
+//                        adios_error (err_file_open_error,"MPI_AMR method: open() failed: %s\n", strerror(errno));
+                        adios_error (err_file_open_error,"MPI_AMR method: open() failed: %s\n", name);
                         return -1;
                     }
 

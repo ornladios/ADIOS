@@ -38,7 +38,8 @@ noinst_PROGRAMS = adios_global$(EXEEXT) adios_global_2files$(EXEEXT) \
 	adios_read_gpp$(EXEEXT) adios_read_global$(EXEEXT) \
 	adios_read_writeblock$(EXEEXT) adios_read_chunk$(EXEEXT) \
 	adios_global_no_xml$(EXEEXT) adios_read_global_no_xml$(EXEEXT) \
-	no_xml_write_byid$(EXEEXT) read_no_xml_write_byid$(EXEEXT)
+	no_xml_write_byid$(EXEEXT) read_no_xml_write_byid$(EXEEXT) \
+	adios_global_aggregate_by_color$(EXEEXT)
 subdir = examples/C/global-array
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -93,6 +94,16 @@ adios_global_2files_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 adios_global_2files_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(adios_global_2files_LDFLAGS) $(LDFLAGS) -o $@
+am_adios_global_aggregate_by_color_OBJECTS =  \
+	adios_global_aggregate_by_color.$(OBJEXT)
+adios_global_aggregate_by_color_OBJECTS =  \
+	$(am_adios_global_aggregate_by_color_OBJECTS)
+adios_global_aggregate_by_color_DEPENDENCIES =  \
+	$(top_builddir)/src/libadios.a $(am__DEPENDENCIES_1)
+adios_global_aggregate_by_color_LINK = $(LIBTOOL) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(AM_CFLAGS) $(CFLAGS) \
+	$(adios_global_aggregate_by_color_LDFLAGS) $(LDFLAGS) -o $@
 am_adios_global_no_xml_OBJECTS = adios_global_no_xml.$(OBJEXT)
 adios_global_no_xml_OBJECTS = $(am_adios_global_no_xml_OBJECTS)
 adios_global_no_xml_DEPENDENCIES = $(top_builddir)/src/libadios.a \
@@ -164,12 +175,14 @@ LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 SOURCES = $(adios_global_SOURCES) $(adios_global_2files_SOURCES) \
+	$(adios_global_aggregate_by_color_SOURCES) \
 	$(adios_global_no_xml_SOURCES) $(adios_read_chunk_SOURCES) \
 	$(adios_read_global_SOURCES) \
 	$(adios_read_global_no_xml_SOURCES) $(adios_read_gpp_SOURCES) \
 	$(adios_read_writeblock_SOURCES) $(no_xml_write_byid_SOURCES) \
 	$(read_no_xml_write_byid_SOURCES)
 DIST_SOURCES = $(adios_global_SOURCES) $(adios_global_2files_SOURCES) \
+	$(adios_global_aggregate_by_color_SOURCES) \
 	$(adios_global_no_xml_SOURCES) $(adios_read_chunk_SOURCES) \
 	$(adios_read_global_SOURCES) \
 	$(adios_read_global_no_xml_SOURCES) $(adios_read_gpp_SOURCES) \
@@ -446,6 +459,10 @@ adios_global_no_xml_SOURCES = adios_global_no_xml.c
 adios_global_no_xml_LDADD = $(top_builddir)/src/libadios.a \
 	$(ADIOSLIB_LDADD)
 adios_global_no_xml_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+adios_global_aggregate_by_color_SOURCES = adios_global_aggregate_by_color.c
+adios_global_aggregate_by_color_LDADD =  \
+	$(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+adios_global_aggregate_by_color_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 adios_read_global_no_xml_SOURCES = adios_read_global_no_xml.c
 adios_read_global_no_xml_LDADD = $(top_builddir)/src/libadiosread.a \
 	$(ADIOSREADLIB_LDADD)
@@ -509,6 +526,9 @@ adios_global$(EXEEXT): $(adios_global_OBJECTS) $(adios_global_DEPENDENCIES)
 adios_global_2files$(EXEEXT): $(adios_global_2files_OBJECTS) $(adios_global_2files_DEPENDENCIES) 
 	@rm -f adios_global_2files$(EXEEXT)
 	$(adios_global_2files_LINK) $(adios_global_2files_OBJECTS) $(adios_global_2files_LDADD) $(LIBS)
+adios_global_aggregate_by_color$(EXEEXT): $(adios_global_aggregate_by_color_OBJECTS) $(adios_global_aggregate_by_color_DEPENDENCIES) 
+	@rm -f adios_global_aggregate_by_color$(EXEEXT)
+	$(adios_global_aggregate_by_color_LINK) $(adios_global_aggregate_by_color_OBJECTS) $(adios_global_aggregate_by_color_LDADD) $(LIBS)
 adios_global_no_xml$(EXEEXT): $(adios_global_no_xml_OBJECTS) $(adios_global_no_xml_DEPENDENCIES) 
 	@rm -f adios_global_no_xml$(EXEEXT)
 	$(adios_global_no_xml_LINK) $(adios_global_no_xml_OBJECTS) $(adios_global_no_xml_LDADD) $(LIBS)
