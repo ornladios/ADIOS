@@ -322,10 +322,16 @@ void adios_dimes_write (struct adios_file_struct * fd
             group->adios_host_language_fortran == adios_flag_yes, 
             0 /*pack*/, didx);
 
-    dimes_put(ds_var_name, version, var_type_size, 
-             lb[didx[0]], lb[didx[1]], lb[didx[2]], 
-             ub[didx[0]], ub[didx[1]], ub[didx[2]], 
-             data);
+    uint64_t lb_in[3], ub_in[3], gdims_in[3];
+    lb_in[0] = lb[didx[0]]; lb_in[1] = lb[didx[1]]; lb_in[2] = lb[didx[2]];
+    ub_in[0] = ub[didx[0]]; ub_in[1] = ub[didx[1]]; ub_in[2] = ub[didx[2]];
+    gdims_in[0] = gdims[didx[0]]; gdims_in[1] = gdims[didx[1]]; gdims_in[2] = gdims[didx[2]];   
+    dimes_put_with_gdim(ds_var_name, version, var_type_size,
+        ndims, lb_in, ub_in, gdims_in, data); 
+    //dimes_put(ds_var_name, version, var_type_size, 
+    //         lb[didx[0]], lb[didx[1]], lb[didx[2]], 
+    //         ub[didx[0]], ub[didx[1]], ub[didx[2]], 
+    //         data);
     
     log_debug ("var_name=%s, dimension ordering=(%d,%d,%d), gdims=(%lld,%lld,%lld), lb=(%lld,%lld,%lld), ub=(%lld,%lld,%lld)\n",
             ds_var_name, 

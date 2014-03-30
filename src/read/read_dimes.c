@@ -148,7 +148,8 @@ static int adios_read_dimes_get_meta(const char * varname, enum ADIOS_DATATYPES 
 static int adios_read_dimes_get_data(const char * varname, enum ADIOS_DATATYPES vartype, 
                                 int version, int rank, 
                                 int ndims, int is_fortran_ordering, 
-                                uint64_t * offset, uint64_t * readsize, void * data);
+                                uint64_t * offset, uint64_t * readsize, uint64_t * dims,
+                                void * data);
 static int adios_read_dimes_get_meta_collective(const char * varname,
                                 enum ADIOS_DATATYPES vartype,
                                 int version, int rank,
@@ -1110,7 +1111,8 @@ int adios_read_dimes_inq_var_trans_blockinfo(const ADIOS_FILE *gp, const ADIOS_V
 static int adios_read_dimes_get_data(const char * varname, enum ADIOS_DATATYPES vartype, 
                                 int version, int rank,
                                 int ndims, int is_fortran_ordering, 
-                                uint64_t * offset, uint64_t * readsize, void * data)
+                                uint64_t * offset, uint64_t * readsize, uint64_t * dims,
+                                void * data)
 {
 
     struct obj_data *od;
@@ -1119,23 +1121,27 @@ static int adios_read_dimes_get_data(const char * varname, enum ADIOS_DATATYPES 
     int didx[3];
     uint64_t lb[3] = {0,0,0};
     uint64_t ub[3] = {0,0,0};
+    uint64_t gdims[3] = {0,0,0};
 
     // reorder DS dimensions to Fortran/C dimensions
     dimes_dimension_ordering (ndims, is_fortran_ordering, 0 /*pack*/, didx);
     for (i=0; i<3; i++) {
         lb[i] = offset[didx[i]];
         ub[i] = offset[didx[i]]+readsize[didx[i]]-1;
+        gdims[i] = dims[didx[i]];
     }
 
     log_debug("-- %s, rank %d: get data: varname=%s version=%d, lb=(%llu,%llu,%llu) ub=(%llu,%llu,%llu)}\n",
         __func__, rank, varname, version, lb[0], lb[1], lb[2], 
         ub[0], ub[1], ub[2]);
 
-    err =  dimes_get (varname, version, elemsize, 
-                     lb[0], lb[1], lb[2],
-                     ub[0], ub[1], ub[2],
-                     data
-                    );
+    err = dimes_get_with_gdim (varname, version, elemsize,
+                ndims, lb, ub, gdims, data);
+    //err =  dimes_get (varname, version, elemsize, 
+    //                 lb[0], lb[1], lb[2],
+    //                 ub[0], ub[1], ub[2],
+    //                 data
+    //                );
     /*if (err == -ENOMEM) {
         adios_error (err_no_memory, "Not enough memory for DATASPACES to perform dspaces_get()");  
         return err_no_memory;
@@ -1412,10 +1418,16 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE *fp, read_request * r)
     //int64_t total_size;
     uint64_t offset[3] = {0,0,0};
     uint64_t readsize[3] = {1,1,1};
+    uint64_t dims[3] = {0,0,0};
     int elemsize;
     int err;
     int i,k,ndims,tidx;
     char ds_name[MAX_DS_NAMELEN];
+
+    // set global dimension
+    for (i = 0; i < var->ndims; i++) {
+        dims[i] = var->dims[i];
+    }
 
     if (!ds->chunk)
         ds->chunk = (ADIOS_VARCHUNK *) malloc (sizeof (ADIOS_VARCHUNK));
@@ -1471,7 +1483,7 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE *fp, read_request * r)
 
         err = adios_read_dimes_get_data(ds_name, var->type, ds->current_step, ds->mpi_rank, 
                 var->ndims, futils_is_called_from_fortran(),
-                offset, readsize, ds->chunk->data);
+                offset, readsize, dims, ds->chunk->data);
     }
     else if (r->sel->type == ADIOS_SELECTION_POINTS)
     {
@@ -1486,7 +1498,7 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE *fp, read_request * r)
 
             err = adios_read_dimes_get_data(ds_name, var->type, ds->current_step, ds->mpi_rank, 
                     var->ndims, futils_is_called_from_fortran(),
-                    offset, readsize, ds->chunk->data+k*elemsize);
+                    offset, readsize, dims, ds->chunk->data+k*elemsize);
             k++;
         }
     }
