@@ -2541,6 +2541,10 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
     md->mfh = 0;
     md->req = 0;
     memset (&md->status, 0, sizeof (MPI_Status));
+    if (md->g_ost_skipping_list) {
+        free (md->g_ost_skipping_list);
+        md->g_ost_skipping_list = NULL;
+    }
 
     adios_clear_index_v1 (md->index);
     return;
@@ -3485,6 +3489,10 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
     md->mfh = 0;
     md->req = 0;
     memset (&md->status, 0, sizeof (MPI_Status));
+    if (md->g_ost_skipping_list) {
+        free (md->g_ost_skipping_list);
+        md->g_ost_skipping_list = NULL;
+    }
 
     adios_clear_index_v1 (md->index);
 }
