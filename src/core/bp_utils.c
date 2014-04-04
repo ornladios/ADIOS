@@ -2021,12 +2021,22 @@ int bp_get_dimension_generic_notime (const struct adios_index_characteristic_dim
     if (!is_global)
     {
         /* local array */
-        for (k =0; k < ndim; k++)
+        if (!has_time)
         {
-            gdims[k] = ldims[k];
+            for (k =0; k < ndim; k++)
+            {
+                gdims[k] = ldims[k];
+            }
+        }
+        else
+        {
+            for (k = 0; k < ndim - 1; k++)
+            {
+                gdims[k] = ldims[k + 1];
+                ldims[k] = ldims[k + 1];
+            }
         }
     }
-
     else // NCSU ALACRITY-ADIOS - Bugfix, I think (should have commented on this when I did it...)
     {
         if (has_time)
