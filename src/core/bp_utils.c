@@ -1873,7 +1873,7 @@ int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
         attr_root = attr_root->next;
     }
 
-    alloc_namelist (&fp->attr_namelist, fp->nattrs);
+    fp->attr_namelist = (char **) malloc (sizeof (char *) * fp->nattrs);
 
     attr_root = fh->attrs_root;
     j = 0;

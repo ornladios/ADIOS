@@ -698,7 +698,7 @@ adios_mpi_amr_striping_unit_write(MPI_File   fh
 
     while (total_written < len)
     {
-        write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
+        write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
         MPI_File_write (fh, buf_ptr, write_len, MPI_BYTE, &status);
         MPI_Get_count(&status, MPI_BYTE, &count);
         if (count != write_len)
@@ -2541,6 +2541,10 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
     md->mfh = 0;
     md->req = 0;
     memset (&md->status, 0, sizeof (MPI_Status));
+    if (md->g_ost_skipping_list) {
+        free (md->g_ost_skipping_list);
+        md->g_ost_skipping_list = NULL;
+    }
 
     adios_clear_index_v1 (md->index);
     return;
@@ -3485,6 +3489,10 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
     md->mfh = 0;
     md->req = 0;
     memset (&md->status, 0, sizeof (MPI_Status));
+    if (md->g_ost_skipping_list) {
+        free (md->g_ost_skipping_list);
+        md->g_ost_skipping_list = NULL;
+    }
 
     adios_clear_index_v1 (md->index);
 }

@@ -354,6 +354,8 @@ ADIOS_FILE * common_read_open_file (const char * fname,
         {
             fp->mesh_namelist = (char **) realloc (tmp, sizeof (char *) * fp->nmeshes);
             assert (fp->mesh_namelist);
+        } else {
+            free (tmp);
         }
 
     }
@@ -3104,6 +3106,8 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
             internals = (struct common_read_internals_struct *) fp->internal_data;
             retval = internals->read_hooks[internals->method].adios_schedule_read_byid_fn (fp, sel, varid+internals->group_varid_offset, from_steps, nsteps, data);
             }
+            common_read_free_transinfo (raw_varinfo, transinfo);
+            common_read_free_varinfo (raw_varinfo);
         } else {
             adios_error (err_invalid_varid, 
                          "Variable ID %d is not valid in adios_schedule_read_byid(). "
