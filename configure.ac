@@ -86,6 +86,7 @@ AC_PROG_DATASPACES
 AC_PROG_DIMES
 AC_DMALLOC
 AC_LUSTRE
+AC_FGR
 AC_DATATAP
 AC_FLEXPATH
 AC_ZLIB
@@ -765,6 +766,17 @@ if test -z "${HAVE_LUSTRE_TRUE}"; then
         echo
 else
         echo "  - No LUSTRE"
+fi
+
+if test -z "${HAVE_FGR_TRUE}"; then
+        echo "  - FGR";
+        echo "      - FGR_CFLAGS = $FGR_CFLAGS";
+        echo "      - FGR_CPPFLAGS = $FGR_CPPFLAGS";
+        echo "      - FGR_LDFLAGS = $FGR_LDFLAGS";
+        echo "      - FGR_LIBS = $FGR_LIBS";
+        echo
+else
+        echo "  - No FGR"
 fi
 
     echo "  - Networking library for staging methods:";

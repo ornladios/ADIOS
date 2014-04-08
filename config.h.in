@@ -80,6 +80,9 @@
 /* Define to 1 if you have the `fdatasync' function. */
 #undef HAVE_FDATASYNC
 
+/* Define if you have FGR. */
+#undef HAVE_FGR
+
 /* Flexpath is enabled */
 #undef HAVE_FLEXPATH
 
