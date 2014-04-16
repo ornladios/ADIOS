@@ -364,9 +364,9 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
         --with-cray-ugni-libdir=/opt/cray/ugni/default/lib \
         --with-dataspaces=$DATASPACES_DIR \
-        --with-dimes=$DATASPACES_DIR
-#        --with-fgr=/ccs/proj/e2e/qliu/tap \
-#        --with-glib=/ccs/proj/e2e/qliu/glib
+        --with-dimes=$DATASPACES_DIR \
+        --with-fgr=/ccs/proj/e2e/qliu/tap \
+        --with-glib=/ccs/proj/e2e/qliu/glib
 
         #--with-netcdf=/opt/cray/netcdf/3.6.2/netcdf-${TARGET} \
         #--with-hdf5=/sw/xt5/hdf5/1.8.2/cnl2.1_gnu4.2.0 \

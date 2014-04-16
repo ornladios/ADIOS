@@ -243,25 +243,42 @@ int * parseOSTSkipping (int * ost_list, char * str, int n_ost)
     return ost_list;
 }
 
-int get_myost (MPI_Comm comm)
+#ifdef HAVE_FGR
+int find_myost (MPI_Comm comm)
 {
-    uint32_t * nids, * osts;
-    int nnids = get_unique_nids (comm, nids);
+    uint32_t * nids, * osts, myid;
+    int i, nnids = get_unique_nids (comm, nids);
     osts = (uint32_t *) malloc (nnids * 4);
 
-#ifdef HAVE_FGR
     if (fgr_nid2ost (nids, osts, nnids, ATLAS) == true)
-#else
-    if (1)
-#endif
     {
+        uint32_t mynid = nid_atoi();
+        for (i = 0; i < nnids; i++)
+        {
+            if (nids[i] == myid)
+            {
+                break;
+            }
+        }
+
+        if (i == nnids)
+        {
+            // something is wrong
+        }
+
+        free (nids);
+        free (osts);
+    
+        return i;
     }
     else
     {
         free (nids);
+        free (osts);
         return -1;
     }
 }
+#endif
 
 static void
 //adios_mpi_amr_set_striping_unit(MPI_File fh, char *filename, char *parameters)
@@ -399,7 +416,7 @@ adios_mpi_amr_set_striping_unit(struct adios_MPI_data_struct * md, char *paramet
         }
 
 #ifdef HAVE_FGR
-       int ost_id = get_myost (md->group_comm);
+       int ost_id = find_myost (md->group_comm);
        if (ost_id >= 0)
        {
            lum.lmm_stripe_offset = ost_id;
