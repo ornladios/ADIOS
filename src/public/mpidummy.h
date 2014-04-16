@@ -52,6 +52,7 @@ typedef int MPI_Fint;
 
 #define MPI_SUM                     0
 
+#define MPI_MAX_PROCESSOR_NAME      32
 int MPI_Init(int *argc, char ***argv);
 int MPI_Finalize();
 int MPI_Initialized( int* flag ) ;

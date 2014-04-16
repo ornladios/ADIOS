@@ -51,6 +51,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_alacrity.m4 \
 	$(top_srcdir)/config/ac_dmalloc.m4 \
 	$(top_srcdir)/config/ac_fgr.m4 \
 	$(top_srcdir)/config/ac_flexpath.m4 \
+	$(top_srcdir)/config/ac_glib.m4 \
 	$(top_srcdir)/config/ac_hdf5.m4 \
 	$(top_srcdir)/config/ac_infiniband.m4 \
 	$(top_srcdir)/config/ac_isobar.m4 \
@@ -189,6 +190,9 @@ FGR_LIBS = @FGR_LIBS@
 FP_CPPFLAGS = @FP_CPPFLAGS@
 FP_LDFLAGS = @FP_LDFLAGS@
 FP_LIBS = @FP_LIBS@
+GLIB_CPPFLAGS = @GLIB_CPPFLAGS@
+GLIB_LDFLAGS = @GLIB_LDFLAGS@
+GLIB_LIBS = @GLIB_LIBS@
 GREP = @GREP@
 HDF5_CPPFLAGS = @HDF5_CPPFLAGS@
 HDF5_LDFLAGS = @HDF5_LDFLAGS@

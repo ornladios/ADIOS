@@ -141,6 +141,7 @@ enum ADIOS_ERRCODES {
     err_mesh_structured_missing_points        = -197, // points are not defined
     err_mesh_structured_invalid_num_points    = -198, // number of points is invalid
 
+    err_fgr                                   = -199, // FGR lib error
     err_unspecified                           = -200
 };
 
