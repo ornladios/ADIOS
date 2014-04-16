@@ -251,6 +251,8 @@ int get_myost (MPI_Comm comm)
 
 #ifdef HAVE_FGR
     if (fgr_nid2ost (nids, osts, nnids, ATLAS) == true)
+#else
+    if (1)
 #endif
     {
     }
