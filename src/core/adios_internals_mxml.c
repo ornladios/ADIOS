@@ -1985,6 +1985,30 @@ static int parseBuffer (mxml_node_t * node)
     return 1;
 }
 
+
+void PRINT_MXML_NODE (mxml_node_t *root)
+{
+    if (!root)
+    {
+        log_debug("MXML root=NULL\n");
+    }
+    else if (root->type == MXML_ELEMENT) 
+    {
+        log_debug("MXML ELEMENT root=%p, name=[%s] parent=%p\n",
+                root, root->value.element.name, root->parent);
+    } 
+    else if (root->type == MXML_TEXT) 
+    {
+        log_debug("MXML TEXT root=%p, text=[%s] parent=%p\n",
+                root, root->value.text.string, root->parent);
+    } 
+    else 
+    {
+        log_debug("MXML Type=%d root=%p, parent=%p\n",
+                root->type, root, root->parent);
+    }
+}
+
 int adios_parse_config (const char * config, MPI_Comm comm)
 {
     FILE * fp = 0;
@@ -2083,60 +2107,18 @@ int adios_parse_config (const char * config, MPI_Comm comm)
     }
 
     root = doc;
+    PRINT_MXML_NODE(root);
 
-    while (root && root->type != MXML_ELEMENT)
-    {
-        root = mxmlWalkNext (root, doc, MXML_DESCEND);
-    }
-
-    while (!strncmp (root->value.element.name, "!--", 3))
-    {
-        root = mxmlWalkNext (root, doc, MXML_NO_DESCEND);
-        root = mxmlWalkNext (root, doc, MXML_NO_DESCEND);
-    }
-
-    if (strcasecmp (root->value.element.name, "adios-config"))
-    {
-        if (strncmp (root->value.element.name, "?xml", 4))
-        {
-            adios_error (err_invalid_xml_doc, "config.xml: invalid root xml element: %s\n"
-                    ,root->value.element.name
-                    );
-
-            mxmlRelease (doc);
-
-            return 0;
-        }
-        else
-        {
-            while (!strncmp (root->value.element.name, "!--", 3))
-            {
-                root = mxmlWalkNext (root, doc, MXML_NO_DESCEND);
-            }
-
-            root = mxmlWalkNext (root, doc, MXML_DESCEND);  // skip ver num
-            root = mxmlWalkNext (root, doc, MXML_NO_DESCEND);  // get next
-            while (!strncmp (root->value.element.name, "!--", 3))
-            {
-                root = mxmlWalkNext (root, doc, MXML_NO_DESCEND);
-                root = mxmlWalkNext (root, doc, MXML_NO_DESCEND);
-            }
-        }
-    }
-    else
-    {
-        //printf ("it is adios-config\n");
+    if (strcasecmp (root->value.element.name, "adios-config")) {
+        root = mxmlFindElement (doc, doc, "adios-config", NULL, NULL, MXML_DESCEND);
+        PRINT_MXML_NODE(root);
     }
 
 
-    if (strcasecmp (root->value.element.name, "adios-config"))
+    if (!root || !root->value.element.name || strcasecmp (root->value.element.name, "adios-config"))
     {
-        adios_error (err_invalid_xml_doc, "config.xml: invalid root xml element: %s\n"
-                ,root->value.element.name
-                );
-
+        adios_error (err_invalid_xml_doc, "config.xml: did not find adios-config xml element\n");
         mxmlRelease (doc);
-
         return 0;
     }
     else
