@@ -99,6 +99,12 @@ int MPI_Gatherv(void *sendbuf, int sendcnt, MPI_Datatype sendtype,
   return ier ;
 }
 
+int MPI_Allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                  void *recvbuf, int recvcount, MPI_Datatype recvtype,
+                  MPI_Comm comm)
+{
+    return MPI_Gather (sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, 0, comm);
+}
 
 int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, 
                void *recvbuf, int recvcnt, MPI_Datatype recvtype, int root, 
@@ -211,3 +217,11 @@ double MPI_Wtime()
     gettimeofday (&tv, NULL);
     return (double)(tv.tv_sec) + (double)(tv.tv_usec) / 1000000;    
 }
+
+int MPI_Get_processor_name (char *name, int *resultlen)
+{
+    sprintf(name, "0");
+    *resultlen = 1;
+    return 0;
+}
+

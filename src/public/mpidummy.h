@@ -68,6 +68,9 @@ MPI_Comm MPI_Comm_f2c(MPI_Fint comm);
 
 int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf, int recvcnt, MPI_Datatype recvtype, int root, MPI_Comm comm) ;
 int MPI_Gatherv(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf, int *recvcnts, int *displs, MPI_Datatype recvtype, int root, MPI_Comm comm);
+int MPI_Allgather(const void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                  void *recvbuf, int recvcount, MPI_Datatype recvtype,
+                  MPI_Comm comm);
 
 int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf, int recvcnt, MPI_Datatype recvtype, int root, MPI_Comm comm);
 int MPI_Scatterv(void *sendbuf, int *sendcnts, int *displs, MPI_Datatype sendtype, void *recvbuf, int recvcnt, MPI_Datatype recvtype, int root, MPI_Comm comm);
@@ -83,6 +86,8 @@ int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence);
 int MPI_Get_count(MPI_Status *status, MPI_Datatype datatype, int *count);
 int MPI_Error_string(int errorcode, char *string, int *resultlen);
 int MPI_Comm_split ( MPI_Comm comm, int color, int key, MPI_Comm *comm_out );
+
+int MPI_Get_processor_name (char *name, int *resultlen);
 
 double MPI_Wtime();
 
