@@ -585,12 +585,14 @@ libadios_internal_nompi_a_SOURCES = core/mpidummy.c \
                                     core/buffer.c \
                                     core/adios_error.c \
                                     core/adios_logger.c \
-                                    core/adios_internals_mxml.c \
                                     core/adios_timing.c \
                                     core/util.c \
                                     core/qhashtbl.c \
                                     core/futils.c \
                                     core/adios_transport_hooks.c 
+if BUILD_WRITE
+libadios_internal_nompi_a_SOURCES += core/adios_internals_mxml.c 
+endif
 
 
 libadios_internal_nompi_a_CPPFLAGS = $(MACRODEFFLAG)_INTERNAL $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_INT_CPPFLAGS) $(ADIOSLIB_CPPFLAGS)
