@@ -990,7 +990,7 @@ elif [ `hostname | cut -c 1-5` == "adios" ]; then
     export CXX=g++
     export FC=gfortran
 
-    #export CFLAGS="-g -O0 -fPIC" 
+    export CFLAGS="-g -O0 -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast"
     ${SRCDIR}/configure --prefix=/opt/adios/1.6 \
         --enable-dependency-tracking \
         --with-mxml=/opt/mxml \
