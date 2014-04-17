@@ -52,8 +52,9 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     PAR_NC_DIR=$NETCDF_DIR
     PAR_NC_CLIB=$NETCDF_CLIB
     module unload netcdf
-    module load szip
+    #module load szip
     module load bzip2
+    module load dataspaces/1.3.0
     export MPICC=mpicc
     export MPICXX=mpiCC
     export MPIFC=mpif90
@@ -96,14 +97,15 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         --with-nc4par=${PAR_NC_DIR} \
         --with-nc4par-libs="${PAR_NC_CLIB}" \
         --with-zlib=/lib64 \
-        --with-szip=$SZIP_DIR \
         --with-bzip2=$BZIP2_DIR \
-        $WITHDART \
+        --with-dataspaces=$DATASPACES_DIR \
         $WITHFLEX \
         --with-aplod=/ccs/proj/e2e/ncsu/sith.gnu \
         --with-isobar=/ccs/proj/e2e/ncsu/sith.gnu \
         --with-fgr=/ccs/proj/e2e/qliu/tap \
         --with-glib=/ccs/proj/e2e/qliu/glib
+        #$WITHDART \
+        #--with-szip=$SZIP_DIR \
         #--with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.sith.$TARGET 
         #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
         #--enable-shared --disable-static
@@ -420,7 +422,7 @@ elif [ `hostname | cut -c 1-4` == "eos-" ]; then
       fi
       module load mxml
       module load pmi
-      CFLAGS="-g -fPIC" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/chester.$TARGET \
+      CFLAGS="-g -fPIC" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/eos.$TARGET \
           --enable-dependency-tracking \
           --with-cray-pmi=/opt/cray/pmi/default \
           --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
