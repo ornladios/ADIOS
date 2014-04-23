@@ -620,8 +620,6 @@ ADIOS_VARINFO * common_read_inq_var_byid (const ADIOS_FILE *fp, int varid)
     if (vi == NULL)
         return NULL;
     
-    vi->meshinfo = NULL;
-
     // NCSU ALACRITY-ADIOS - translate between original and transformed metadata if necessary
     ti = common_read_inq_transinfo(fp, vi); // No orig_blockinfo
     if (ti && ti->transform_type != adios_transform_none) {
@@ -649,6 +647,7 @@ ADIOS_VARINFO * common_read_inq_var_raw_byid (const ADIOS_FILE *fp, int varid)
             if (retval) {
                 /* Translate real varid to the group varid presented to the user */
                 retval->varid = varid;
+                retval->meshinfo = NULL; // initialize here because it's a common layer addition
             }
         } else {
             adios_error (err_invalid_varid, 
