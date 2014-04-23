@@ -323,8 +323,10 @@ void adios_dimes_write (struct adios_file_struct * fd
     
      
     v->write_offset = 1; // only !=0 offsets will be included in build index
+    /* This is not needed here, this is already called in common_adios_write() 
     adios_generate_var_characteristics_v1 (fd, v); // characteristics will be included in build index
     adios_write_var_characteristics_v1 (fd, v);
+    */
     
 
     log_debug ("var_name=%s, type=%s(%d) elemsize=%d, version=%d, ndims=%d, size=(%d,%d,%d), gdim=(%d,%d,%d), lb=(%d,%d,%d), ub=(%d,%d,%d)\n",
