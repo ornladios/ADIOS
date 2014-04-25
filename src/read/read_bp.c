@@ -2429,6 +2429,7 @@ ADIOS_TRANSINFO * adios_read_bp_inq_var_transinfo(const ADIOS_FILE *fp, const AD
         transinfo->should_free_transform_metadata = 0;
     }
     transinfo->orig_blockinfo = 0;
+    transinfo->transform_metadatas = 0;
 
     return transinfo;
 }
