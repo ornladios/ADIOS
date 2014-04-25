@@ -2435,9 +2435,35 @@ ADIOS_TRANSINFO * adios_read_bp_inq_var_transinfo(const ADIOS_FILE *fp, const AD
 }
 
 // NCSU ALACRITY-ADIOS - Adding an inq function to get original (pre-transform) blockinfo for variables from storage
-int adios_read_bp_inq_var_trans_blockinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti) 
-{
+int adios_read_bp_inq_var_trans_blockinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti) {
+	assert(fp);
+	assert(vi);
+	assert(ti);
+
+	struct BP_PROC * p = (struct BP_PROC *) fp->fh;
+    BP_FILE * fh = (BP_FILE *) p->fh;
+    struct adios_index_var_struct_v1 * var_root;
+    int i;
+
+    // Perform variable ID mapping, since the input to this function is user-perceived
+    int mapped_id = map_req_varid (fp, vi->varid);
+    var_root = bp_find_var_byid (fh, mapped_id);
+
     ti->orig_blockinfo = inq_var_blockinfo(fp, vi, 1); // 1 -> use original, pretransform dimensions
+    assert(ti->orig_blockinfo);
+
+    // Allocate and fill the transform_metadatas array
+    ti->transform_metadatas = (ADIOS_TRANSINFO_TRANSMETA*)malloc(vi->sum_nblocks * sizeof(ADIOS_TRANSINFO_TRANSMETA));
+    assert(ti->transform_metadatas);
+    for (i = 0; i < vi->sum_nblocks; i++) {
+    	const struct adios_index_characteristic_transform_struct *transform_char = var_root->characteristics[i].transform;
+
+    	ti->transform_metadatas[i] = (ADIOS_TRANSINFO_TRANSMETA){
+    		.length = transform_char->transform_metadata_len,
+    		.content = transform_char->transform_metadata,
+    	};
+    }
+
     return 0;
 }
 
