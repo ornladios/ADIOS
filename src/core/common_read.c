@@ -881,6 +881,15 @@ void common_read_free_transinfo(const ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti) {
         if (ti->transform_metadata && ti->should_free_transform_metadata)
             MYFREE(ti->transform_metadata);
 
+        if (ti->transform_metadatas) {
+        	if (ti->should_free_transform_metadata) {
+                int i;
+        		for (i = 0; i < vi->sum_nblocks; i++)
+                	MYFREE(ti->transform_metadatas[i].content);
+        	}
+            MYFREE(ti->transform_metadatas);
+        }
+
         common_read_free_blockinfo(&ti->orig_blockinfo, vi->sum_nblocks);
 
         free(ti);
