@@ -58,8 +58,7 @@ transforms_common_HDRS = core/adios_copyspec.h \
                          core/transforms/adios_transforms_hooks.h \
                          core/transforms/adios_transforms_util.h 
 
-transforms_read_HDRS = core/transforms/adios_transforms_transinfo.h \
-                       core/transforms/adios_transforms_read.h \
+transforms_read_HDRS = core/transforms/adios_transforms_read.h \
                        core/transforms/adios_transforms_hooks_read.h \
                        core/transforms/adios_transforms_reqgroup.h \
                        core/transforms/adios_transforms_datablock.h \
