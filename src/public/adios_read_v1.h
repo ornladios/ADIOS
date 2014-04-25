@@ -86,6 +86,37 @@ typedef struct {
         void * internal_data;       /* internal storage for version 2 read API data */
 } ADIOS_VARINFO;
 
+// Needed by ADIOS_TRANSINFO below
+typedef struct {
+    uint64_t * start;      /* offset start point in global array ('ndim' elements)         */
+    uint64_t * count;      /* local sizes in global array ('ndim' elements)                */
+} ADIOS_VARBLOCK;
+
+typedef struct {
+	void *content;
+	uint64_t length;
+} ADIOS_TRANSINFO_TRANSMETA;
+
+// NCSU ALACRITY-ADIOS - struct for original metadata
+typedef struct {
+    int transform_type; // type actually "enum ADIOS_TRANSFORM_TYPE", but this type is not accessible outside ADIOS internals
+
+    uint16_t transform_metadata_len;
+    void *transform_metadata;
+    int should_free_transform_metadata; // Used internally by read method and free
+
+    enum ADIOS_DATATYPES orig_type;
+
+    int orig_ndim;
+    uint64_t *orig_dims;
+
+    int orig_global;
+
+    ADIOS_VARBLOCK *orig_blockinfo;
+
+    ADIOS_TRANSINFO_TRANSMETA *transform_metadatas;
+} ADIOS_TRANSINFO;
+
 /* The list of the available read methods */
 enum ADIOS_READ_METHOD {
          ADIOS_READ_METHOD_BP           = 0    /* Read from ADIOS BP file (written by POSIX, MPI etc methods) */

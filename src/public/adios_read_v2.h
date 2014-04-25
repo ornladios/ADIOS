@@ -125,6 +125,31 @@ struct _ADIOS_VARINFO {
                                        retrieved in separate call: adios_inq_var_meshinfo()          */ 
 };
 
+typedef struct {
+	void *content;
+	uint64_t length;
+} ADIOS_TRANSINFO_TRANSMETA;
+
+// NCSU ALACRITY-ADIOS - struct for original metadata
+typedef struct {
+    int transform_type; // type actually "enum ADIOS_TRANSFORM_TYPE", but this type is not accessible outside ADIOS internals
+
+    uint16_t transform_metadata_len;
+    void *transform_metadata;
+    int should_free_transform_metadata; // Used internally by read method and free
+
+    enum ADIOS_DATATYPES orig_type;
+
+    int orig_ndim;
+    uint64_t *orig_dims;
+
+    int orig_global;
+
+    ADIOS_VARBLOCK *orig_blockinfo;
+
+    ADIOS_TRANSINFO_TRANSMETA *transform_metadatas;
+} ADIOS_TRANSINFO;
+
 struct _ADIOS_VARCHUNK {
         int                   varid;    /* variable index (0..ADIOS_FILE.nvars-1)              */
         enum ADIOS_DATATYPES  type;     /* type of variable                                    */

@@ -13,7 +13,7 @@
 
 #include "public/adios_types.h"
 #include "public/adios_read_v2.h"  /* C API's struct's are used here */
-#include "core/transforms/adios_transforms_transinfo.h" // NCSU ALACRITY-ADIOS
+//#include "core/transforms/adios_transforms_transinfo.h" // NCSU ALACRITY-ADIOS
 
 #include <stdint.h>
 

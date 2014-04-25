@@ -7,6 +7,9 @@
 #ifndef ADIOS_READ_EXT_H_
 #define ADIOS_READ_EXT_H_
 
+#include <stdint.h>
+
+#include "adios_read.h"
 #include "adios_selection.h"
 
 // Sets whether the transform layer is enabled for the given ADIOS file descriptor. The default is

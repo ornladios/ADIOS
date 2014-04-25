@@ -19,7 +19,7 @@
 #include "transforms/adios_transforms_read.h"
 #include "transforms/adios_transforms_reqgroup.h"
 #include "transforms/adios_transforms_datablock.h"
-#include "transforms/adios_transforms_transinfo.h"
+//#include "transforms/adios_transforms_transinfo.h"
 
 // Initialize the transform system for adios read-only libraries
 void adios_transform_read_init();

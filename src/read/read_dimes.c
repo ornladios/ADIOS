@@ -26,6 +26,8 @@
 #include "core/ds_metadata.h"
 #include "core/common_read.h" // common_read_selection_* functions
 
+#include "core/transforms/adios_transforms_common.h" // NCSU ALACRITY-ADIOS
+
 #include "dataspaces.h"
 
 #ifdef DMALLOC

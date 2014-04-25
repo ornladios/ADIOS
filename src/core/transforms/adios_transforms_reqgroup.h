@@ -9,10 +9,10 @@
 #define ADIOS_TRANSFORMS_REQGROUP_H_
 
 #include <stdint.h>
-#include "core/transforms/adios_transforms_common.h"
-#include "core/transforms/adios_transforms_transinfo.h"
 #include "public/adios_read.h"
 #include "public/adios_types.h"
+#include "core/transforms/adios_transforms_common.h"
+//#include "core/transforms/adios_transforms_transinfo.h"
 
 //
 // Read request-related structs:

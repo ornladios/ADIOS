@@ -43,6 +43,8 @@
 #include "public/adios_error.h"
 #include "core/flexpath.h"
 
+#include "core/transforms/adios_transforms_common.h" // NCSU ALACRITY-ADIOS
+
 // conditional libraries
 #ifdef DMALLOC
 #include "dmalloc.h"
