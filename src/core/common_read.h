@@ -41,13 +41,14 @@ void common_read_release_step (ADIOS_FILE *fp);
 ADIOS_VARINFO * common_read_inq_var (const ADIOS_FILE  *fp, const char * varname);
 ADIOS_VARINFO * common_read_inq_var_byid (const ADIOS_FILE  *fp, int varid);
 ADIOS_VARINFO * common_read_inq_var_raw_byid (const ADIOS_FILE  *fp, int varid);
-ADIOS_TRANSINFO * common_read_inq_transinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi);
+ADIOS_TRANSINFO * common_read_inq_transinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi); // NCSU ALACRITY-ADIOS
 int common_read_inq_var_stat (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo,
                              int per_step_stat, int per_block_stat);
 
 int common_read_inq_trans_blockinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi, ADIOS_TRANSINFO * ti);
 int common_read_inq_var_blockinfo_raw (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo);
 int common_read_inq_var_blockinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo);
+int common_read_inq_trans_blockinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi, ADIOS_TRANSINFO * ti); // NCSU ALACRITY-ADIOS
 void common_read_free_varinfo (ADIOS_VARINFO *vp);
 void common_read_free_transinfo(const ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti); // NCSU ALACRITY-ADIOS
 
