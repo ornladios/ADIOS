@@ -2456,7 +2456,7 @@ int adios_read_bp_inq_var_trans_blockinfo(const ADIOS_FILE *fp, const ADIOS_VARI
     ti->transform_metadatas = (ADIOS_TRANSINFO_TRANSMETA*)malloc(vi->sum_nblocks * sizeof(ADIOS_TRANSINFO_TRANSMETA));
     assert(ti->transform_metadatas);
     for (i = 0; i < vi->sum_nblocks; i++) {
-    	const struct adios_index_characteristic_transform_struct *transform_char = var_root->characteristics[i].transform;
+    	const struct adios_index_characteristic_transform_struct *transform_char = &var_root->characteristics[i].transform;
 
     	ti->transform_metadatas[i] = (ADIOS_TRANSINFO_TRANSMETA){
     		.length = transform_char->transform_metadata_len,
