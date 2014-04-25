@@ -379,8 +379,7 @@ include_HEADERS += public/adios.h \
                    public/adios_read_v2.h \
                    public/adios_read_v2_fwd.h \
                    public/adios_selection.h \
-				   public/adios_schema.h
-
+                   public/adios_read_ext.h
 
 lib_LIBRARIES += libadiosread.a
 libadiosread_a_SOURCES = core/adios_bp_v1.c \
