@@ -9,6 +9,11 @@
 #include "adios_transforms_common.h"
 #include "public/adios_read.h"
 
+typedef struct {
+	void *content;
+	uint64_t length;
+} ADIOS_TRANSINFO_TRANSMETA;
+
 // NCSU ALACRITY-ADIOS - struct for original metadata
 typedef struct {
     enum ADIOS_TRANSFORM_TYPE transform_type;
@@ -25,6 +30,8 @@ typedef struct {
     int orig_global;
 
     ADIOS_VARBLOCK *orig_blockinfo;
+
+    ADIOS_TRANSINFO_TRANSMETA *transform_metadatas;
 } ADIOS_TRANSINFO;
 
 #endif /* ADIOS_TRANSFORMS_TRANSINFO_H_ */
