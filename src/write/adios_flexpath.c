@@ -499,49 +499,6 @@ queue_contains(FlexpathVarNode* queue, const char* name, int rank)
     return NULL;
 }
 
-/* // sanitize a name */
-/* char*  */
-/* get_fixed_name(char* name)  */
-/* { */
-/*     char* oldName = strdup(name); */
-/*     char* newName = (char*) malloc(sizeof(char) * 255); */
-/*     int i; */
-/*     for (i=0; i< OPLEN; i++){ */
-/*         char op[] = {opList[i], '\0'}; */
-/*         char* opRep=opRepList[i]; */
-/*         char* token = strtok(oldName, op); */
-/*         char* lastTok=NULL; */
-/* 	strcpy(newName, ""); */
-/* 	while(token != NULL){ */
-/* 	    strcat(newName, token); */
-/*             if((token = strtok(NULL, op))) { */
-/* 	        strcat(newName, opRep); */
-/* 	        lastTok = token; */
-/* 	    } */
-/*         } */
-/*         if(lastTok!=NULL && (strlen(newName)-strlen(lastTok)-1>0)) { */
-/*             newName[strlen(newName)-strlen(lastTok)-1]='\0'; */
-/* 	} */
-/*         free(oldName); */
-/* 	oldName = strdup(newName); */
-/*     } */
-/*     free(oldName); */
-/*     return newName; */
-/* } */
-
-/* // return name with operators removed by using the lookup list */
-/* static char*  */
-/* find_fixed_name(FlexpathFMStructure *fm, char *name)  */
-/* { */
-/*     FlexpathNameTable *node; */
-/*     for (node = fm->nameList.lh_first; node != NULL; node = node->entries.le_next) { */
-/*         if (!strcmp(node->originalName, name)) { */
-/* 	    return node->mangledName; */
-/*         } */
-/*     } */
-/*     return name; */
-/* } */
-
 // returns a name with the dimension prepended
 static char*
 get_alt_name(char *name, char *dimName) 
@@ -827,9 +784,9 @@ set_format(struct adios_group_struct *t,
     int altvarcount = 0;
 
     // for each type look through all the fields
-    struct adios_var_struct *f;
-    for (f = t->vars; f != NULL; f = f->next, fieldNo++) {
-	char *fullname = resolve_path_name(f->path, f->name);
+    struct adios_var_struct *adios_var;
+    for (adios_var = t->vars; adios_var != NULL; adios_var = adios_var->next, fieldNo++) {
+	char *fullname = resolve_path_name(adios_var->path, adios_var->name);
 
 	// use the mangled name for the field.
 	field_list[fieldNo].field_name = fullname;
@@ -837,17 +794,20 @@ set_format(struct adios_group_struct *t,
             int num_dims = 0;
             char atom_name[200] = "";
             FlexpathVarNode *dims=NULL;
-            if(f->dimensions) {
-                struct adios_dimension_struct *adim = f->dimensions;  
-	
+            if(adios_var->dimensions) {
+                struct adios_dimension_struct *adim = adios_var->dimensions;  
+		
                 // attach appropriate attrs for dimensions	
                 for(; adim != NULL; adim = adim->next) {
                     num_dims++;		    
                     
+		    // have to change get_alt_name to append FPVAR at the start of each varname.
                     char *vname = get_dim_name(&adim->dimension);
                     if (vname) {
+			printf("vname: %s\n", vname);
 			//char *name = find_fixed_name(currentFm, vname);
 			char *aname = get_alt_name(fullname, vname);
+			printf("aname: %s\n", aname);
 			dims=add_var(dims, strdup(aname), NULL, 0);
 			set_attr_dimensions(fullname, aname, num_dims, fileData->attrs);
 		    }
@@ -870,12 +830,12 @@ set_format(struct adios_group_struct *t,
             fileData->formatVars = add_var(fileData->formatVars, fullname, dims, 0);
         }
 	// if its a single field
-	if (!f->dimensions) {
+	if (!adios_var->dimensions) {
 	    // set the field type size and offset approrpriately
-	    set_field(f->type, &field_list, fieldNo, &currentFm->size);
+	    set_field(adios_var->type, &field_list, fieldNo, &currentFm->size);
 	} else {
 	    //it's a vector!
-	    struct adios_dimension_struct *d = f->dimensions;
+	    struct adios_dimension_struct *d = adios_var->dimensions;
             #define DIMSIZE 10240
 	    #define ELSIZE 256
             char dims[DIMSIZE] = "";
@@ -904,7 +864,7 @@ set_format(struct adios_group_struct *t,
 		currentFm->size ++;					
 	    }
 		  
-	    switch (f->type) {
+	    switch (adios_var->type) {
 	    case adios_unknown:
 		fprintf(stderr, "set_format: Bad Type Error\n");
 		fieldNo--;
@@ -1001,7 +961,7 @@ set_format(struct adios_group_struct *t,
 	    default:
 		adios_error(err_invalid_group, 
 			    "set_format: Unknown Type Error %d: name: %s\n", 
-			    f->type, field_list[fieldNo].field_name);
+			    adios_var->type, field_list[fieldNo].field_name);
 		fieldNo--;	      
 		return NULL;
 		//break;
