@@ -503,9 +503,10 @@ queue_contains(FlexpathVarNode* queue, const char* name, int rank)
 static char*
 get_alt_name(char *name, char *dimName) 
 {
-    int len = strlen(name) + strlen(dimName) + 2;
-    char *newName = (char *) malloc(sizeof(char) * len);
-    strcpy(newName, dimName);
+    int len = strlen(name) + strlen(dimName) + strlen("FPDIM_") + 2;
+    char *newName = malloc(sizeof(char) * len);
+    strcpy(newName, "FPDIM_");
+    strcat(newName, dimName);
     strcat(newName, "_");
     strcat(newName, name);
     return newName;
@@ -733,7 +734,8 @@ mem_check(void* ptr, const char* str)
 }
 
 
-static char * get_dim_name (struct adios_dimension_item_struct *d)
+static char*
+get_dim_name (struct adios_dimension_item_struct *d)
 {
     char *vname = NULL;
     if (d->var) {	

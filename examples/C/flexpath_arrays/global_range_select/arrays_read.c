@@ -51,8 +51,8 @@ int main (int argc, char ** argv)
     int ii = 0;
     while(adios_errno != err_end_of_stream){       
         /* get a bounding box - rank 0 for now*/
-        ADIOS_VARINFO *nx_info = adios_inq_var( afile, "scalar/dim/NX");
-        ADIOS_VARINFO *ny_info = adios_inq_var( afile, "scalar/dim/NY");
+        ADIOS_VARINFO *nx_info = adios_inq_var( afile, "/scalar/dim/NX");
+        ADIOS_VARINFO *ny_info = adios_inq_var( afile, "/scalar/dim/NY");
 	ADIOS_VARINFO *size_info = adios_inq_var( afile, "size");
 	ADIOS_VARINFO *arry = adios_inq_var( afile, "var_2d_array");
 
