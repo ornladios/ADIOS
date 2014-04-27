@@ -35,7 +35,7 @@ int main (int argc, char ** argv)
 
     ADIOS_SELECTION scalar_block_select;
     scalar_block_select.type = ADIOS_SELECTION_WRITEBLOCK;
-    scalar_block_select.u.block.index = rank;
+    scalar_block_select.u.block.index = 0;
 
     /* schedule_read of a scalar. */    
     int test_scalar = -1;
@@ -44,9 +44,10 @@ int main (int argc, char ** argv)
 					comm,
 					ADIOS_LOCKMODE_NONE, 0.0);
 
-    /* for(i=0; i<afile->nvars; i++){ */
-    /* 	printf("var: %s\n", afile->var_namelist[i]); */
-    /* } */
+    int i;
+    for(i=0; i<afile->nvars; i++){
+    	printf("var: %s\n", afile->var_namelist[i]);
+    }
     
     int ii = 0;
     while(adios_errno != err_end_of_stream){       

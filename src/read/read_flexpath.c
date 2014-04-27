@@ -542,7 +542,7 @@ need_writer(
     //for each dimension
     int i=0;
     offset_struct var_offsets = gvar->offsets[0];
-    for(i=0; i< var_offsets.offsets_per_rank; i++){      
+    for (i=0; i< var_offsets.offsets_per_rank; i++) {      
 	int pos = writer*(var_offsets.offsets_per_rank) + i;
 
         uint64_t sel_offset = sel->u.bb.start[i];
@@ -551,14 +551,14 @@ need_writer(
         uint64_t rank_offset = var_offsets.local_offsets[pos];
         uint64_t rank_size = var_offsets.local_dimensions[pos];        
 	
-        if((rank_offset <= sel_offset) && (rank_offset + rank_size - 1 >=sel_offset)) {
+        if ((rank_offset <= sel_offset) && (rank_offset + rank_size - 1 >=sel_offset)) {
 	     log_debug("matched overlap type 1\n");
         }
 
-        else if((rank_offset <= sel_offset + sel_size - 1) && \
+        else if ((rank_offset <= sel_offset + sel_size - 1) && \
 		(rank_offset+rank_size>=sel_offset+sel_size-1)) {
-        }else if((sel_offset <= rank_offset) && (rank_offset+rank_size<= sel_offset+sel_size-1)) {
-        }else {
+        } else if ((sel_offset <= rank_offset) && (rank_offset+rank_size<= sel_offset+sel_size-1)) {
+        } else {
             return 0;
         }
     }
@@ -612,7 +612,9 @@ setup_flexpath_vars(FMField *f, int *num)
 	flexpath_var *temp = vars;
 	curr_var->next = temp;
 	vars = curr_var;
-	var_count++;
+	if (strncmp(f->field_name, "FPDIM", 5)) {
+	    var_count++;
+	}
 	f++;
     }
     *num = var_count;
@@ -822,7 +824,9 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 	adiosfile->var_namelist = malloc(var_count * sizeof(char *));
 	int i = 0;
 	while(f->field_name != NULL) {
-	    adiosfile->var_namelist[i++] = strdup(f->field_name);
+	    if (strncmp(f->field_name, "FPDIM", 5)) {	    
+		adiosfile->var_namelist[i++] = strdup(f->field_name);
+	    }
 	    f++;
 	}
 	adiosfile->nvars = var_count;
@@ -857,9 +861,6 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 		    }
 		}
 		else { // writeblock selection for arrays
-		    /* if(var->num_dims == 0){ */
-		    /* 	var->global_dims = malloc(sizeof(uint64_t)*num_dims); */
-		    /* } */
 		    if(var->sel->u.block.index == writer_rank){
 			var->array_size = var->type_size;
 			int i;
