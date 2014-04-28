@@ -49,6 +49,10 @@ struct _ADIOS_FILE {
 
         /* Internals */
         void     * internal_data;   /* Data for internal use                                          */
+
+        int transform_layer_enabled ; /* toggle for dis/enabling seeing the transform data            */
+                                      /* 1 => disable seeing the transform data                       */
+        							  /* 0 => enable seeing the transform data                       */
 };
 
 struct _ADIOS_VARSTAT {
