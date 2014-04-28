@@ -115,8 +115,8 @@ typedef struct _flexpath_var
 
 typedef struct _flexpath_reader_file
 {
-    char * file_name;
-    char * group_name; // assuming one group per file right now.
+    char *file_name;
+    char *group_name; // assuming one group per file right now.
 
     EVstone stone;
 
@@ -754,6 +754,9 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
     evgroup *msg = (evgroup*)vevent;
     ADIOS_FILE *adiosfile = client_data;
     flexpath_reader_file * fp = (flexpath_reader_file*)adiosfile->fh;
+    if (fp->group_name == NULL) {
+        fp->group_name = strdup(msg->group_name);
+    }
     fp->gp = msg;
     int i;
     for(i = 0; i<msg->num_vars; i++){
@@ -1368,7 +1371,12 @@ ADIOS_FILE *adios_read_flexpath_fopen(const char *fname, MPI_Comm comm) {
 
 int adios_read_flexpath_is_var_timed(const ADIOS_FILE* fp, int varid) { return 0; }
 
-void adios_read_flexpath_get_groupinfo(const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, uint32_t **nvars_per_group, uint32_t **nattrs_per_group) {}
+void adios_read_flexpath_get_groupinfo(
+    const ADIOS_FILE *fp, 
+    int *ngroups, 
+    char ***group_namelist, 
+    uint32_t **nvars_per_group, 
+    uint32_t **nattrs_per_group) {}
 
 int adios_read_flexpath_check_reads(const ADIOS_FILE* fp, ADIOS_VARCHUNK** chunk) { log_debug( "flexpath:adios function check reads\n"); return 0; }
 

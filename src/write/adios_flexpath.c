@@ -806,10 +806,10 @@ set_format(struct adios_group_struct *t,
 		    // have to change get_alt_name to append FPVAR at the start of each varname.
                     char *vname = get_dim_name(&adim->dimension);
                     if (vname) {
-			printf("vname: %s\n", vname);
+			//printf("vname: %s\n", vname);
 			//char *name = find_fixed_name(currentFm, vname);
 			char *aname = get_alt_name(fullname, vname);
-			printf("aname: %s\n", aname);
+			//printf("aname: %s\n", aname);
 			dims=add_var(dims, strdup(aname), NULL, 0);
 			set_attr_dimensions(fullname, aname, num_dims, fileData->attrs);
 		    }
@@ -1322,6 +1322,7 @@ adios_flexpath_open(struct adios_file_struct *fd,
         return 0;
     }
 
+    printf("group_name: %s file_name: %s\n", method->group->name, fd->name);
     FlexpathWriteFileData *fileData = malloc(sizeof(FlexpathWriteFileData));
     mem_check(fileData, "fileData");
     memset(fileData, 0, sizeof(FlexpathWriteFileData));
@@ -1616,10 +1617,12 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
                 void* pointer_data_copy = malloc(total_size);
                 //block
             }
-                           
-            void* temp = get_FMPtrField_by_name(flist, fields->name, fileData->fm->buffer, 0);
+            
+            char *resolved_name = resolve_path_name(fields->path, fields->name);
+            printf("\t\t\tlooking for %s\n", resolved_name);
+            void *temp = get_FMPtrField_by_name(flist, resolved_name, fileData->fm->buffer, 0);
             memcpy(pointer_data_copy, temp, total_size);
-            set_FMPtrField_by_name(flist, fields->name, fileData->fm->buffer, pointer_data_copy);
+            set_FMPtrField_by_name(flist, resolved_name, fileData->fm->buffer, pointer_data_copy);
         }    
         fields = fields->next;
     }
@@ -1638,6 +1641,7 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
     struct adios_group_struct * g = fd->group;
     struct adios_var_struct * list = g->vars;
     evgroup *gp = malloc(sizeof(evgroup));    
+    gp->group_name = strdup(method->group->name);
     gp->process_id = fileData->rank;
     if(fileData->globalCount == 0){
 
