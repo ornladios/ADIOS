@@ -110,8 +110,8 @@ int main (int argc, char ** argv)
 
         if (query->queryType == REGION_RETRIEVAL_INDEX_ONLY_QUERY_TYPE) {
             		// No data, no candidate checks, just return the results as-is
-            		data = NULL;
-                	populateQueryResult(*result, resultData, index, resultCount);
+            resultData = NULL;
+            populateQueryResult(*result, resultData, index, resultCount);
     	} else {
     		// TODO
     	}
