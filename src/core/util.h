@@ -2,6 +2,7 @@
 #define UTIL_H_
 
 #include <stdint.h>
+#include "public/adios_mpi.h"
 #include "public/adios_types.h"
 #include "public/adios_selection.h"
 
@@ -47,6 +48,8 @@ void list_free_read_request (read_request * h);
 int list_get_length (read_request * h);
 ADIOS_SELECTION * copy_selection (const ADIOS_SELECTION * sel);
 void free_selection (ADIOS_SELECTION * sel);
+// This helper routine returns a vector of unique NID's
+int get_nids (MPI_Comm comm, uint32_t * nids);
 
 /*******************************************************
    Processing parameter lists

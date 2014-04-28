@@ -354,6 +354,8 @@ ADIOS_FILE * common_read_open_file (const char * fname,
         {
             fp->mesh_namelist = (char **) realloc (tmp, sizeof (char *) * fp->nmeshes);
             assert (fp->mesh_namelist);
+        } else {
+            free (tmp);
         }
 
     }
@@ -618,8 +620,6 @@ ADIOS_VARINFO * common_read_inq_var_byid (const ADIOS_FILE *fp, int varid)
     if (vi == NULL)
         return NULL;
     
-    vi->meshinfo = NULL;
-
     // NCSU ALACRITY-ADIOS - translate between original and transformed metadata if necessary
     ti = common_read_inq_transinfo(fp, vi); // No orig_blockinfo
     if (ti && ti->transform_type != adios_transform_none) {
@@ -647,6 +647,7 @@ ADIOS_VARINFO * common_read_inq_var_raw_byid (const ADIOS_FILE *fp, int varid)
             if (retval) {
                 /* Translate real varid to the group varid presented to the user */
                 retval->varid = varid;
+                retval->meshinfo = NULL; // initialize here because it's a common layer addition
             }
         } else {
             adios_error (err_invalid_varid, 
@@ -3104,6 +3105,8 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
             internals = (struct common_read_internals_struct *) fp->internal_data;
             retval = internals->read_hooks[internals->method].adios_schedule_read_byid_fn (fp, sel, varid+internals->group_varid_offset, from_steps, nsteps, data);
             }
+            common_read_free_transinfo (raw_varinfo, transinfo);
+            common_read_free_varinfo (raw_varinfo);
         } else {
             adios_error (err_invalid_varid, 
                          "Variable ID %d is not valid in adios_schedule_read_byid(). "

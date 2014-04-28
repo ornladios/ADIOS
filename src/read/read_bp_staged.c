@@ -2478,7 +2478,7 @@ void adios_read_bp_staged_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, cha
 
     * ngroups = fh->gvar_h->group_count;
 
-    alloc_namelist (group_namelist, fh->gvar_h->group_count);
+    *group_namelist = (char **) malloc (sizeof (char *) * fh->gvar_h->group_count);
     for (i = 0; i < fh->gvar_h->group_count; i++)
     {
         (*group_namelist)[i] = malloc (strlen (fh->gvar_h->namelist[i]) + 1);

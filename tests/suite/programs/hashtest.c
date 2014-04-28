@@ -85,6 +85,23 @@ void alloc_vars()
     printf ("data[%d]=%lf\n", npaths*nvars-1, data[npaths*nvars-1]);
 }
 
+void free_vars()
+{
+    int p,v;
+
+    for (p=0; p<npaths; p++) {
+        free (varpaths[p]);
+    }
+    free (varpaths);
+
+    for (v=0; v<nvars; v++) {
+        free(varnames[v]);
+    }
+    free(varnames);
+
+    free(data);
+}
+
 
 int dotest ()
 {
@@ -135,6 +152,8 @@ int dotest ()
 
     /* Free hashtable */
     tbl->free(tbl);
+
+    free_vars();
     return 0;
 }
 

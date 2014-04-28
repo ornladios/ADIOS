@@ -2690,6 +2690,7 @@ void adios_free_index_v1 (struct adios_index_struct_v1 * index)
         index->hashtbl_vars->free  (index->hashtbl_vars);
     if (index->hashtbl_attrs)
         index->hashtbl_attrs->free (index->hashtbl_attrs);
+    free(index);
 }
 
 void adios_clear_index_v1 (struct adios_index_struct_v1 * index)

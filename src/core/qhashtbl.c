@@ -362,7 +362,9 @@ static void *get(qhashtbl_t *tbl, const char *fullpath)
     int keylen = strlen(fullpath);
     char *key = strdup (fullpath);
 
-    return qhget (tbl, key, keylen);
+    void * data = qhget (tbl, key, keylen);
+    free (key);
+    return data;
 }
 
 static void *get2(qhashtbl_t *tbl, const char *path, const char *name)
@@ -371,7 +373,9 @@ static void *get2(qhashtbl_t *tbl, const char *path, const char *name)
     char *key;
     genkey (path, name, &keylen, &key);
 
-    return qhget (tbl, key, keylen);
+    void * data = qhget (tbl, key, keylen);
+    free (key);
+    return data;
 }
 
 

@@ -163,6 +163,10 @@ struct obd_uuid {
         char uuid[40];
 };
 
+#ifdef HAVE_FGR
+#include "fgr.h"
+#endif
+
 static void trim_spaces (char * str)
 {
     char * t = str, * p = NULL;
@@ -239,6 +243,43 @@ int * parseOSTSkipping (int * ost_list, char * str, int n_ost)
     return ost_list;
 }
 
+#ifdef HAVE_FGR
+int find_myost (MPI_Comm comm)
+{
+    uint32_t * nids, * osts, myid;
+    int i, nnids = get_unique_nids (comm, nids);
+    osts = (uint32_t *) malloc (nnids * 4);
+
+    if (fgr_nid2ost (nids, osts, nnids, ATLAS) == true)
+    {
+        uint32_t mynid = nid_atoi();
+        for (i = 0; i < nnids; i++)
+        {
+            if (nids[i] == myid)
+            {
+                break;
+            }
+        }
+
+        if (i == nnids)
+        {
+            // something is wrong
+        }
+
+        free (nids);
+        free (osts);
+    
+        return i;
+    }
+    else
+    {
+        free (nids);
+        free (osts);
+        return -1;
+    }
+}
+#endif
+
 static void
 //adios_mpi_amr_set_striping_unit(MPI_File fh, char *filename, char *parameters)
 adios_mpi_amr_set_striping_unit(struct adios_MPI_data_struct * md, char *parameters)
@@ -249,7 +290,7 @@ adios_mpi_amr_set_striping_unit(struct adios_MPI_data_struct * md, char *paramet
     uint16_t striping_count = 0;
     char     *temp_string, *p_count,*p_size;
     int fd, old_mask, perm, n_ost_skipping, n_ost, n, i, should_striping;
-    int random_offset_flag;
+    int random_offset_flag, name_len;
 
     temp_string = (char *) malloc (strlen (parameters) + 1);
     strcpy (temp_string, parameters);
@@ -374,7 +415,19 @@ adios_mpi_amr_set_striping_unit(struct adios_MPI_data_struct * md, char *paramet
             i++;
         }
 
+#ifdef HAVE_FGR
+       int ost_id = find_myost (md->group_comm);
+       if (ost_id >= 0)
+       {
+           lum.lmm_stripe_offset = ost_id;
+       }
+       else
+       {
+           lum.lmm_stripe_offset = (random_offset_flag ? -1 : i);
+       }
+#else
         lum.lmm_stripe_offset = (random_offset_flag ? -1 : i);
+#endif
         ioctl (fd, LL_IOC_LOV_SETSTRIPE
               ,(void *) &lum
               );
@@ -952,6 +1005,13 @@ void adios_mpi_amr_init (const PairStruct * parameters
     md->g_io_type = ADIOS_MPI_AMR_IO_BG;
 
     adios_buffer_struct_init (&md->b);
+
+#ifdef HAVE_FGR
+    if (fgr_init (0) == false)
+    {
+        adios_error (err_fgr, "fgr_init() error\n");
+    }
+#endif
 }
 
 
@@ -2541,6 +2601,10 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
     md->mfh = 0;
     md->req = 0;
     memset (&md->status, 0, sizeof (MPI_Status));
+    if (md->g_ost_skipping_list) {
+        free (md->g_ost_skipping_list);
+        md->g_ost_skipping_list = NULL;
+    }
 
     adios_clear_index_v1 (md->index);
     return;
@@ -3485,6 +3549,10 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
     md->mfh = 0;
     md->req = 0;
     memset (&md->status, 0, sizeof (MPI_Status));
+    if (md->g_ost_skipping_list) {
+        free (md->g_ost_skipping_list);
+        md->g_ost_skipping_list = NULL;
+    }
 
     adios_clear_index_v1 (md->index);
 }
@@ -3520,6 +3588,9 @@ void adios_mpi_amr_finalize (int mype, struct adios_method_struct * method)
                                                  method->method_data;
     adios_free_index_v1 (md->index);
 
+#ifdef HAVE_FGR
+    fgr_finalize ();
+#endif
     if (adios_mpi_amr_initialized)
         adios_mpi_amr_initialized = 0;
 }

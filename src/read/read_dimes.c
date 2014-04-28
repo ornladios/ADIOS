@@ -1274,7 +1274,7 @@ int adios_read_dimes_schedule_read_byid (const ADIOS_FILE * fp,
     struct dimes_data_struct * ds = (struct dimes_data_struct *) fp->fh;
     struct dimes_var_struct * var = &ds->vars[varid];
     read_request * r;
-    uint64_t s[10], c[10], ld0, off0;
+    uint64_t *s, *c, ld0, off0;
     uint64_t reqsize;
     int i;
 
@@ -1337,7 +1337,7 @@ int adios_read_dimes_schedule_read_byid (const ADIOS_FILE * fp,
 
                 /* We cannot do this with DataSpaces yet (fp->nwriter == 1) */
                 /* Read the whole variable */
-                memcpy (s, 0, 10*sizeof(uint64_t));
+                s = (uint64_t *) calloc (var->ndims, sizeof(uint64_t));
                 r->sel = common_read_selection_boundingbox(var->ndims, s, var->dims);
                 for (i=0; i<var->ndims; i++) 
                     reqsize *= var->dims[i];
@@ -1349,8 +1349,9 @@ int adios_read_dimes_schedule_read_byid (const ADIOS_FILE * fp,
                    Let's do a simple 1D domain decomposition
                    FIXME: should be smarter and do multi-dim decomp if needed
                 */
-                memcpy (s, 0, 10*sizeof(uint64_t));
-                memcpy (c, var->dims, 10*sizeof(uint64_t));
+                s = (uint64_t *) calloc (var->ndims, sizeof(uint64_t));
+                c = (uint64_t *) malloc (var->ndims * sizeof(uint64_t));
+                memcpy (c, var->dims, var->ndims*sizeof(uint64_t));
                 if (var->ndims) {
                     ld0 = var->dims[0]/ds->nproc;
                     if (ld0 != 0) {
@@ -1383,7 +1384,7 @@ int adios_read_dimes_schedule_read_byid (const ADIOS_FILE * fp,
         } // switch
     } else {
         // NULL selection means the whole variable
-        memcpy (s, 0, 10*sizeof(uint64_t));
+        s = (uint64_t *) calloc (var->ndims, sizeof(uint64_t));
         r->sel = common_read_selection_boundingbox(var->ndims, s, var->dims);
         for (i=0; i<var->ndims; i++) 
             reqsize *= var->dims[i];
@@ -1550,6 +1551,9 @@ int adios_read_dimes_perform_reads (const ADIOS_FILE *fp, int blocking)
         // remove head from list
         r = ds->req_list;
         ds->req_list = ds->req_list->next;
+        // FIXME: if we allocated start/count arrays in schedule read for r->sel,
+        // we need to manually free them here
+        common_read_selection_delete(r->sel);
         free(r);
         ds->nreq--;
     }
