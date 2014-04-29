@@ -18,6 +18,7 @@
 #include "adios_selection.h"
 #include "adios_schema.h"
 #include "adios_read_v2_fwd.h"
+#include "adios_read_ext.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -50,9 +51,7 @@ struct _ADIOS_FILE {
         /* Internals */
         void     * internal_data;   /* Data for internal use                                          */
 
-        int transform_layer_enabled ; /* toggle for dis/enabling seeing the transform data            */
-                                      /* 1 => disable seeing the transform data                       */
-        							  /* 0 => enable seeing the transform data                       */
+        data_view_t data_view;
 };
 
 struct _ADIOS_VARSTAT {

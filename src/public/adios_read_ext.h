@@ -54,8 +54,9 @@ typedef struct {
 // as it actually exists on disk.
 void adios_read_set_data_view(ADIOS_FILE *fp, data_view_t vt);
 
-// Populates data transform information about a given variable into an existing ADIOS_VARINFO struct
-int adios_inq_var_transform(const ADIOS_FILE *fp, ADIOS_VARINFO *varinfo);
+// Populates data transform information about a given variable into an ADIOS_VARTRANSFORM struct
+// Return NULL if failed
+ADIOS_VARTRANSFORM *  adios_inq_var_transform(const ADIOS_FILE *fp, const ADIOS_VARINFO *varinfo);
 
 // Creates a writeblock selection that only retrieves elements [start_elem, start_elem + num_elems)
 // within a variable. An element is a single value of whatever the varaible's datatype is (i.e.,
