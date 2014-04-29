@@ -58,6 +58,9 @@ void adios_read_set_data_view(ADIOS_FILE *fp, data_view_t vt);
 // Return NULL if failed
 ADIOS_VARTRANSFORM *  adios_inq_var_transform(const ADIOS_FILE *fp, const ADIOS_VARINFO *varinfo);
 
+// Frees an ADIOS_VARTRANSFORM previous received from a call to adios_inq_var_transform
+void adios_free_var_transform(ADIOS_VARTRANSFORM *vartransform);
+
 // Creates a writeblock selection that only retrieves elements [start_elem, start_elem + num_elems)
 // within a variable. An element is a single value of whatever the varaible's datatype is (i.e.,
 // 1 element = 1 double if the variable type is double, 1 byte if the variable type is byte, etc.)
