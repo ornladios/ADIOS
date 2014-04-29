@@ -35,6 +35,8 @@ ADIOS_VARTRANSFORM *  adios_inq_var_transform(const ADIOS_FILE *fp, const ADIOS_
 	ADIOS_VARTRANSFORM *vartransform = (ADIOS_VARTRANSFORM*) malloc(sizeof(ADIOS_VARTRANSFORM));
 
 	*vartransform = (ADIOS_VARTRANSFORM){
+		.varid = varinfo->varid,
+		.sum_nblocks = varinfo->sum_nblocks,
 		.transform_type = info->transform_type,
 		.should_free_transform_metadata = info->should_free_transform_metadata,
 		.transform_metadatas = info->transform_metadatas
@@ -55,7 +57,7 @@ void adios_free_var_transform(ADIOS_VARTRANSFORM *vartransform) {
 	if (vartransform->transform_metadatas) {
 		if (vartransform->should_free_transform_metadata) {
 			int i;
-			for (i = 0; i < vi->sum_nblocks; i++)
+			for (i = 0; i < vartransform->sum_nblocks; i++)
 				MYFREE(vartransform->transform_metadatas[i].content);
 		}
 		MYFREE(vartransform->transform_metadatas);

@@ -44,7 +44,11 @@ typedef struct {
 
 // A transform information structure describing how a particular variable has been transformed
 typedef struct {
+	const int varid;       // Copied from ADIOS_VARINFO, since it is needed for some ADIOS_VARTRANSFORM operations
+	const int sum_nblocks; // ...
+
 	const adios_transform_type_t transform_type; /* The data transform applied to this variable */
+
 	const int should_free_transform_metadata; // Used internally for free
 
 	/* An array of transform plugin-specific metadata buffers, one for each
