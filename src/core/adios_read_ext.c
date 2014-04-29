@@ -16,8 +16,8 @@
 // transformed variables; a logical view of a transformed variable presents the data as it was
 // originally written (this is the default), whereas a physical view presents the transformed data
 // as it actually exists on disk.
-void adios_read_set_data_view(ADIOS_FILE *fp, data_view_t vt) {
-	fp->data_view = vt;
+void adios_read_set_data_view(ADIOS_FILE *fp, data_view_t data_view) {
+	common_read_set_data_view(fp, data_view);
 }
 
 // Populates data transform information about a given variable into an ADIOS_VARTRANSFORM struct

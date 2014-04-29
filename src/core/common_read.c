@@ -448,6 +448,12 @@ int common_read_close (ADIOS_FILE *fp)
     return retval;
 }
 
+// NCSU ALACRITY-ADIOS
+void common_read_set_data_view(ADIOS_FILE *fp, data_view_t data_view) {
+	struct common_read_internals_struct *internals = (struct common_read_internals_struct *) fp->internal_data;
+	internals->data_view = data_view;
+}
+
 void common_read_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
 {
     struct common_read_internals_struct * internals;
