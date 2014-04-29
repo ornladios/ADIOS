@@ -226,6 +226,9 @@ ADIOS_FILE * common_read_open (const char * fname,
     internals->method = method;
     internals->read_hooks = adios_read_hooks;
 
+    // NCSU ALACRITY-ADIOS - Added a data view field, which by default starts in logical view mode
+    internals->data_view = LOGICAL_DATA_VIEW;
+
     fp = adios_read_hooks[internals->method].adios_read_open_fn (fname, comm, lock_mode, timeout_sec);
     if (!fp)
         return fp;
@@ -286,8 +289,6 @@ ADIOS_FILE * common_read_open (const char * fname,
         }
 */
 
-    }
-
 /*        for (i=0; i<fp->nmeshes; i++)
         {
             printf ("mesh: %s\n", fp->mesh_namelist[i]);
@@ -333,6 +334,9 @@ ADIOS_FILE * common_read_open_file (const char * fname,
 
     internals->method = method;
     internals->read_hooks = adios_read_hooks;
+
+    // NCSU ALACRITY-ADIOS - Added a data view field, which by default starts in logical view mode
+    internals->data_view = LOGICAL_DATA_VIEW;
 
     if (!adios_read_hooks[internals->method].adios_read_open_file_fn) {
         adios_error (err_invalid_read_method, 
