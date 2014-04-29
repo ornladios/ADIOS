@@ -69,8 +69,9 @@ void adios_free_var_transform(ADIOS_VARTRANSFORM *vartransform) {
 // Creates a writeblock selection that only retrieves elements [start_elem, start_elem + num_elems)
 // within a variable. An element is a single value of whatever the varaible's datatype is (i.e.,
 // 1 element = 1 double if the variable type is double, 1 byte if the variable type is byte, etc.)
-ADIOS_SELECTION * adios_selection_writeblock_bounded(int index, uint64_t start_elem, uint64_t num_elems) {
+ADIOS_SELECTION * adios_selection_writeblock_bounded(int index, uint64_t start_elem, uint64_t num_elems, int is_timestep_relative) {
 	ADIOS_SELECTION *sel = common_read_selection_writeblock(index);
+	sel->u.block.is_absolute_index = !is_timestep_relative;
 	sel->u.block.is_sub_pg_selection = 1;
 	sel->u.block.element_offset = start_elem;
 	sel->u.block.nelements = num_elems;

@@ -85,7 +85,7 @@ int main(int argc, char ** argv) {
 		// 1. load partition Metadata
 		int ndim = 1;
 		int startStep = 0, numStep = 1; // TODO: what time step we will have? user supply timesteps
-		sel = adios_selection_writeblock_bounded(i, 0, metaSize);
+		sel = adios_selection_writeblock_bounded(i, 0, metaSize, 1);
 		ALMetadata partitionMeta;
 		memstream_t ms = memstreamInitReturn(malloc(metaSize));
 		adios_schedule_read(f, sel, varName, startStep, numStep, ms.buf);
@@ -109,7 +109,7 @@ int main(int argc, char ** argv) {
 			const uint64_t last_bin_off = indexOffset + ALGetIndexBinOffset(
 					partitionMeta, hi_bin);
 			const uint64_t bin_read_len = last_bin_off - first_bin_off;
-			sel = adios_selection_writeblock_bounded(i, metaSize, bin_read_len);
+			sel = adios_selection_writeblock_bounded(i, metaSize, bin_read_len, 1);
 			void *indexData = NULL;
 			adios_schedule_read(f, sel, varName, startStep, numStep, indexData);
 			adios_perform_reads(f, 1);
