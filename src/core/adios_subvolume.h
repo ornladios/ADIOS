@@ -42,7 +42,7 @@
 
 #include <stdint.h>
 #include "public/adios_types.h"
-#include "public/adios_read.h"
+#include "public/adios_read_v2.h"
 #include "public/adios_selection.h"
 #include "core/adios_copyspec.h"
 

@@ -72,7 +72,7 @@ int main(int argc, char ** argv) {
 	// Will assume user providing PG range for us
 	// Right now, use all PGs -> user bounding box
 	for (int i = 0; i < totalPG; i++) {
-		ADIOS_TRANSINFO_TRANSMETA * tmeta = ti->transform_metadatas[i];
+		ADIOS_TRANSFORM_META * tmeta = ti->transform_metadatas[i];
 		assert(tmeta->length == 24);
 		uint64_t * threeData = (uint64_t *) tmeta->content;
 		metaSizes[i] = threeData[0];

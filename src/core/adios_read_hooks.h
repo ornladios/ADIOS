@@ -11,8 +11,8 @@
 #include "config.h"
 #include <stdint.h>
 #include <string.h>
-#include "public/adios_read.h"
-//#include "core/transforms/adios_transforms_transinfo.h" // NCSU ALACRITY-ADIOS
+#include "public/adios_read_v2.h"
+#include "core/transforms/adios_transforms_transinfo.h" // NCSU ALACRITY-ADIOS
 #include "core/util.h" // PairStruct*
 
 #define FORWARD_DECLARE(a) \
