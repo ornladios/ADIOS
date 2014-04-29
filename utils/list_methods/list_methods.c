@@ -30,6 +30,7 @@
 
 #include "core/adios_internals.h" // write hooks and adios_transport_struct
 #include "core/adios_read_hooks.h" // read hooks and adios_read_hooks_struct
+#include "core/transforms/adios_transforms_hooks.h" 
 
 
 int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype);
@@ -55,19 +56,30 @@ int main (int argc, char ** argv) {
     adios_read_hooks_init (&adios_read_hooks);
 
     if(rank==0) {
+
 #ifdef WRITE
         // print all write methods
-        printf ("Available write methods (in XML <method> tag or in adios_select_method()):\n");
+        printf ("Available write methods (in XML <method> element or in adios_select_method()):\n");
         for (i = 0; i < ADIOS_METHOD_COUNT; i++) {    
             if (adios_transports[i].method_name) {
                 printf("    \"%s\"\n", adios_transports[i].method_name);
             }
         }
 #endif
+
         printf ("Available read methods (constants after #include \"adios_read.h\"):\n");
         for (i = 0; i < ADIOS_READ_METHOD_COUNT; i++) {    
             if (adios_read_hooks[i].method_name) {
                 printf("    %s (=%d)\n", adios_read_hooks[i].method_name, i);
+            }
+        }
+
+        printf ("Available data transformation methods (in XML transform tags in <var> elements):\n");
+        for (i = (int)adios_transform_none; i < num_adios_transform_types; i++) {    
+            if (adios_read_hooks[i].method_name) {
+                printf("    \"%s\"\t: %s\n", 
+                       adios_transform_plugin_primary_xml_alias((enum ADIOS_TRANSFORM_TYPE)i),
+                       adios_transform_plugin_desc((enum ADIOS_TRANSFORM_TYPE)i));
             }
         }
     }
