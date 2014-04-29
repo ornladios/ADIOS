@@ -29,7 +29,7 @@ typedef struct {
 
     ADIOS_VARBLOCK *orig_blockinfo;
 
-    ADIOS_TRANSFORM_META *transform_metadatas;
+    ADIOS_TRANSFORM_METADATA *transform_metadatas;
 } ADIOS_TRANSINFO;
 
 #endif /* ADIOS_TRANSFORMS_TRANSINFO_H_ */

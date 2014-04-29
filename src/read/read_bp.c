@@ -2453,12 +2453,12 @@ int adios_read_bp_inq_var_trans_blockinfo(const ADIOS_FILE *fp, const ADIOS_VARI
     assert(ti->orig_blockinfo);
 
     // Allocate and fill the transform_metadatas array
-    ti->transform_metadatas = (ADIOS_TRANSFORM_META*)malloc(vi->sum_nblocks * sizeof(ADIOS_TRANSFORM_META));
+    ti->transform_metadatas = (ADIOS_TRANSFORM_METADATA*)malloc(vi->sum_nblocks * sizeof(ADIOS_TRANSFORM_METADATA));
     assert(ti->transform_metadatas);
     for (i = 0; i < vi->sum_nblocks; i++) {
     	const struct adios_index_characteristic_transform_struct *transform_char = &var_root->characteristics[i].transform;
 
-    	ti->transform_metadatas[i] = (ADIOS_TRANSFORM_META){
+    	ti->transform_metadatas[i] = (ADIOS_TRANSFORM_METADATA){
     		.length = transform_char->transform_metadata_len,
     		.content = transform_char->transform_metadata,
     	};
