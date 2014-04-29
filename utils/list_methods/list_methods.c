@@ -76,11 +76,9 @@ int main (int argc, char ** argv) {
 
         printf ("Available data transformation methods (in XML transform tags in <var> elements):\n");
         for (i = (int)adios_transform_none; i < num_adios_transform_types; i++) {    
-            if (adios_read_hooks[i].method_name) {
-                printf("    \"%s\"\t: %s\n", 
-                       adios_transform_plugin_primary_xml_alias((enum ADIOS_TRANSFORM_TYPE)i),
-                       adios_transform_plugin_desc((enum ADIOS_TRANSFORM_TYPE)i));
-            }
+            printf("    \"%s\"\t: %s\n", 
+                    adios_transform_plugin_primary_xml_alias((enum ADIOS_TRANSFORM_TYPE)i),
+                    adios_transform_plugin_desc((enum ADIOS_TRANSFORM_TYPE)i));
         }
     }
 
