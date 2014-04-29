@@ -35,9 +35,10 @@ extern const adios_transform_type_t NO_TRANSFORM;
 
 // A transform information structure describing how a particular variable has been transformed
 typedef struct {
-	adios_transform_type_t transform_type; /* The data transform applied to this variable */
+	const adios_transform_type_t transform_type; /* The data transform applied to this variable */
+	const int should_free_transform_metadata; // Used internally for free
 
-	struct {
+	const struct {
 		const void *content; /* The transform plugin-specific metadata buffer for a given varblock */
 		uint64_t length;     /* The number of bytes in the above "content" field */
 	} *transform_metadatas; /* An array of transform plugin-specific metadata buffers, one for each
