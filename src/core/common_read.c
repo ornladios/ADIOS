@@ -58,6 +58,9 @@ struct common_read_internals_struct {
 
     // NCSU ALACRITY-ADIOS - Table of sub-requests issued by transform method
     adios_transform_read_request *transform_reqgroups;
+
+    // NCSU ALACRITY-ADIOS - The view mode of this file
+    data_view_t data_view;
 };
 
 // NCSU ALACRITY-ADIOS - Forward declaration/function prototypes

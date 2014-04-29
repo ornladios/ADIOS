@@ -50,8 +50,6 @@ struct _ADIOS_FILE {
 
         /* Internals */
         void     * internal_data;   /* Data for internal use                                          */
-
-        data_view_t data_view;
 };
 
 struct _ADIOS_VARSTAT {
