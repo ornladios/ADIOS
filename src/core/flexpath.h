@@ -156,7 +156,7 @@ static FMField evgroup_field_list[]=
     {"num_vars", "integer", sizeof(int), FMOffset(evgroup_ptr, num_vars)},
     {"step", "integer", sizeof(int), FMOffset(evgroup_ptr, step)},
     {"process_id", "integer", sizeof(int), FMOffset(evgroup_ptr, process_id)},
-    {"group_name", "string", sizeof(char*) FMOffset(evgroup_ptr, group_name)},
+    {"group_name", "string", sizeof(char*), FMOffset(evgroup_ptr, group_name)},
     {"vars", "global_var[num_vars]", sizeof(global_var), FMOffset(evgroup_ptr, vars)},
     {NULL, NULL, 0, 0}
 };
