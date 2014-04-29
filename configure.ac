@@ -699,6 +699,7 @@ AC_CONFIG_FILES([Makefile
                  utils/bpls/Makefile
                  utils/bpdiff/Makefile
                  utils/bp2bp/Makefile
+                 utils/list_methods/Makefile
                  examples/Makefile
                  examples/C/Makefile
                  examples/C/scalars/Makefile
