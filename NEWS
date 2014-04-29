@@ -1,5 +1,7 @@
-1.x.x Release xxx 2014
+1.7.0 Release June 2014
     - Support for more than 64k variables in a file
+    - adios_config -m to print available write/read methods
+    - works fine with mxml 2.8 (the latest) version
 
 1.6.0 Release Dec 2013
     - Transformations of data supported in file-based I/O
