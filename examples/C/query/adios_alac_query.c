@@ -61,8 +61,8 @@ int main(int argc, char ** argv) {
 
 	adios_read_set_transforms_enabled(f, 0); // load transformed 1-D byte array
 	ADIOS_VARINFO * v = adios_inq_var(f, varName);
-	ADIOS_TRANSINFO *ti = adios_inq_transinfo(f, v);
-	adios_inq_trans_metadata(f, v, ti);
+	ADIOS_VARTRANSFORM *ti = adios_inq_transinfo(f, v);
+//	adios_inq_trans_metadata(f, v, ti);
 
 	int totalPG = v->sum_nblocks;
 
