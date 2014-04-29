@@ -29,32 +29,34 @@ ADIOS_VARTRANSFORM *  adios_inq_var_transform(const ADIOS_FILE *fp, const ADIOS_
 	ADIOS_VARTRANSFORM *vartransform = (ADIOS_VARTRANSFORM*) malloc(sizeof(ADIOS_VARTRANSFORM));
 
 	*vartransform = (ADIOS_VARTRANSFORM){
-	.transform_type = info->transform_type,
-    .should_free_transform_metadata = info->should_free_transform_metadata,
-    .transform_metadatas = info->transform_metadatas
+		.transform_type = info->transform_type,
+		.should_free_transform_metadata = info->should_free_transform_metadata,
+		.transform_metadatas = info->transform_metadatas
 	};
 
-//	vartransform->transform_type = info->transform_type;
+	//	vartransform->transform_type = info->transform_type;
 
 	// Transfer ownership of the transform_metadatas array to the new struct
-//	vartransform->should_free_transform_metadata = info->should_free_transform_metadata;
-//	vartransform->transform_metadatas = info->transform_metadatas; // TODO: Make this work without casting
+	//	vartransform->should_free_transform_metadata = info->should_free_transform_metadata;
+	//	vartransform->transform_metadatas = info->transform_metadatas; // TODO: Make this work without casting
 	info->transform_metadatas = NULL;
 	common_read_free_transinfo(varinfo, info);
 	return vartransform;
 }
 
-void adios_free_var_transform(const ADIOS_VARINFO *vi, ADIOS_VARTRANSFORM *vartransform) {
-
+#define MYFREE(p) {if (p){ free((void*)(p)); (p) = NULL; }}
+void adios_free_var_transform(ADIOS_VARTRANSFORM *vartransform) {
 	if (vartransform->transform_metadatas) {
-	        	if (vartransform->should_free_transform_metadata) {
-	                int i;
-	        		for (i = 0; i < vi->sum_nblocks; i++)
-	                	MYFREE(vartransform->transform_metadatas[i].content);
-	        	}
-	            MYFREE(vartransform->transform_metadatas);
+		if (vartransform->should_free_transform_metadata) {
+			int i;
+			for (i = 0; i < vi->sum_nblocks; i++)
+				MYFREE(vartransform->transform_metadatas[i].content);
+		}
+		MYFREE(vartransform->transform_metadatas);
 	}
+	MYFREE(vartransform);
 }
+#undef MYFREE
 
 // Creates a writeblock selection that only retrieves elements [start_elem, start_elem + num_elems)
 // within a variable. An element is a single value of whatever the varaible's datatype is (i.e.,
