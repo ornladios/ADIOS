@@ -648,19 +648,24 @@ static void patch_varinfo_with_transinfo(ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti)
 //   patch the original metadata in from the transform info
 ADIOS_VARINFO * common_read_inq_var_byid (const ADIOS_FILE *fp, int varid)
 {
-    ADIOS_VARINFO *vi;
+    struct common_read_internals_struct * internals;
+	ADIOS_VARINFO *vi;
     ADIOS_TRANSINFO *ti;
+
+    internals = (struct common_read_internals_struct *)fp->internal_data;
 
     vi = common_read_inq_var_raw_byid(fp, varid);
     if (vi == NULL)
         return NULL;
-    
-    // NCSU ALACRITY-ADIOS - translate between original and transformed metadata if necessary
-    ti = common_read_inq_transinfo(fp, vi); // No orig_blockinfo
-    if (ti && ti->transform_type != adios_transform_none) {
-        patch_varinfo_with_transinfo(vi, ti);
+
+    if (internals->data_view == LOGICAL_DATA_VIEW) { // Only translate the varinfo in logical view mode
+    	// NCSU ALACRITY-ADIOS - translate between original and transformed metadata if necessary
+    	ti = common_read_inq_transinfo(fp, vi); // No orig_blockinfo
+    	if (ti && ti->transform_type != adios_transform_none) {
+    		patch_varinfo_with_transinfo(vi, ti);
+    	}
+    	common_read_free_transinfo(vi, ti);
     }
-    common_read_free_transinfo(vi, ti);
 
     return vi;
 }
@@ -776,22 +781,38 @@ int common_read_inq_var_stat (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo,
 //   patch the original metadata in from the transform info
 int common_read_inq_var_blockinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
 {
+    int retval;
+	struct common_read_internals_struct *internals;
     ADIOS_TRANSINFO *ti;
 
-    int retval = common_read_inq_var_blockinfo_raw(fp, varinfo);
-    if (retval != err_no_error)
-        return retval;
+    internals = (struct common_read_internals_struct *)fp->internal_data;
+
+    // If the blockinfo is already loaded, don't load it again
+    if (varinfo->blockinfo)
+    	return err_no_error;
 
     // NCSU ALACRITY-ADIOS - translate between original and transformed metadata if necessary
-    ti = common_read_inq_transinfo(fp, varinfo);
-    if (ti && ti->transform_type != adios_transform_none) {
-        retval = common_read_inq_trans_blockinfo(fp, varinfo, ti);
+    // If we're in logical view mode, and if this variable is transformed, use the transformed blockinfo
+    if (internals->data_view == LOGICAL_DATA_VIEW) {
+        ti = common_read_inq_transinfo(fp, varinfo);
+        if (ti && ti->transform_type != adios_transform_none) {
+            retval = common_read_inq_trans_blockinfo(fp, varinfo, ti);
+            if (retval != err_no_error)
+                return retval;
+
+            patch_varinfo_with_transform_blockinfo(varinfo, ti);
+        }
+        common_read_free_transinfo(varinfo, ti);
+    }
+
+    // If we haven't set the blockinfo yet, either we're in physical view
+    // mode, or the variable isn't transformed. Either way, use the normal
+    // blockinfo
+    if (!varinfo->blockinfo) {
+        retval = common_read_inq_var_blockinfo_raw(fp, varinfo);
         if (retval != err_no_error)
             return retval;
-
-        patch_varinfo_with_transform_blockinfo(varinfo, ti);
-    }
-    common_read_free_transinfo(varinfo, ti);
+   }
 
     return err_no_error;
 }
@@ -3091,7 +3112,7 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
     timer_start ("adios_schedule_read");
 #endif
-    struct common_read_internals_struct * internals;
+    struct common_read_internals_struct * internals = (struct common_read_internals_struct *) fp->internal_data;
     int retval;
     
     adios_errno = err_no_error;
@@ -3104,15 +3125,13 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
             //assert(vi);
             //assert(ti);
 
-            // If this variable is transformed, delegate to the transform
-            // method to generate subrequests
+            // If this variable is transformed and we are in logical view mode,
+            // delegate to the transform method to generate subrequests
             // Else, do the normal thing
-            if (transinfo && transinfo->transform_type != adios_transform_none) {
+            if (internals->data_view == LOGICAL_DATA_VIEW && transinfo && transinfo->transform_type != adios_transform_none) {
                 adios_transform_raw_read_request *subreq;
                 adios_transform_pg_read_request *pg_reqgroup;
                 adios_transform_read_request *new_reqgroup;
-
-                internals = (struct common_read_internals_struct *) fp->internal_data;
 
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
     timer_start ("adios_transform_generate_read_requests");
@@ -3149,7 +3168,6 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
                 common_read_free_transinfo (raw_varinfo, transinfo);
                 common_read_free_varinfo (raw_varinfo);
 
-                internals = (struct common_read_internals_struct *) fp->internal_data;
                 retval = internals->read_hooks[internals->method].adios_schedule_read_byid_fn (fp, sel, varid+internals->group_varid_offset, from_steps, nsteps, data);
             }
         } else {
