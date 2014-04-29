@@ -18,7 +18,7 @@
 
 // An opaque type defining a particular view of the data.
 // Currently, there are only two possible values: LOGICAL_DATA_VIEW and PHYSICAL_DATA_VIEW
-typedef void* data_view_t;
+typedef const void* data_view_t;
 
 // LOGICAL_DATA_VIEW: the default, ADIOS presents the same view of the data as it was written to the
 //   file (e.g., if processes wrote to a 3D global array of doubles, the user API will present a 3D global
@@ -38,24 +38,24 @@ typedef int adios_transform_type_t;
 extern const adios_transform_type_t NO_TRANSFORM;
 
 typedef struct {
-	void *content;
+	const void *content;
 	uint64_t length;
 } ADIOS_TRANSFORM_METADATA;
 
 // A transform information structure describing how a particular variable has been transformed
 typedef struct {
-	const int varid;       // Copied from ADIOS_VARINFO, since it is needed for some ADIOS_VARTRANSFORM operations
-	const int sum_nblocks; // ...
+	int varid;       // Copied from ADIOS_VARINFO, since it is needed for some ADIOS_VARTRANSFORM operations
+	int sum_nblocks; // ...
 
-	const adios_transform_type_t transform_type; /* The data transform applied to this variable */
+	adios_transform_type_t transform_type; /* The data transform applied to this variable */
 
-	const int should_free_transform_metadata; // Used internally for free
+	int should_free_transform_metadata; // Used internally for free
 
 	/* An array of transform plugin-specific metadata buffers, one for each
        varblock in this file (number of varblocks == ADIOS_VARINFO.sum_nblocks).
 	   Only needed by advanced applications requiring direct manipulation
 	   of transformed data. */
-	const ADIOS_TRANSFORM_METADATA *transform_metadatas;
+	ADIOS_TRANSFORM_METADATA *transform_metadatas;
 } ADIOS_VARTRANSFORM;
 
 // Sets the "data view" for this ADIOS file, which determines how ADIOS presents variables through

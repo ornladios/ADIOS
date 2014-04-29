@@ -8,13 +8,15 @@
 #include <stdlib.h>
 
 #include "public/adios_read_ext.h"
+#include "core/common_read.h"
 #include "core/transforms/adios_transforms_common.h"
+#include "core/transforms/adios_transforms_transinfo.h"
 
 // Ensure unique pointer-based values for each one
 const data_view_t LOGICAL_DATA_VIEW = &LOGICAL_DATA_VIEW;
 const data_view_t PHYSICAL_DATA_VIEW = &PHYSICAL_DATA_VIEW;
 
-extern const adios_transform_type_t NO_TRANSFORM = adios_transform_none;
+const adios_transform_type_t NO_TRANSFORM = adios_transform_none;
 
 // Sets the "data view" for this ADIOS file, which determines how ADIOS presents variables through
 // adios_inq_var*, and how reads are evaluated in adios_schedule_reads/adios_check_reads calls.
