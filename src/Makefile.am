@@ -86,6 +86,7 @@ transforms_read_SOURCES = $(transforms_read_HDRS) \
                           core/adios_selection_util.c \
                           core/transforms/plugindetect/detect_plugin_read_hook_decls.h \
                           core/transforms/plugindetect/detect_plugin_read_hook_reg.h \
+                          core/adios_read_ext.c \
                           $(transforms_read_method_SOURCES)
 
 transforms_write_SOURCES = $(transforms_write_HDRS) \
