@@ -182,7 +182,6 @@ fi
 
 if [ "$PRINT_METHODS" == "yes" ]; then
     if [ "$OPT_SEQ" == "yes" ]; then
-    echo "DEBUG: methods for NOMPI"
         if [ "$OPT_READ" == "yes" ]; then
             # ADIOSREAD + SEQ
             if [ -x ./list_methods_readonly_nompi ]; then
@@ -203,7 +202,6 @@ if [ "$PRINT_METHODS" == "yes" ]; then
             fi
         fi
     else
-    echo "DEBUG: methods for MPI"
         if [ "$OPT_READ" == "yes" ]; then
             # ADIOSREAD
             if [ -x ./list_methods_readonly ]; then
