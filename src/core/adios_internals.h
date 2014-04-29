@@ -348,6 +348,7 @@ typedef void (* ADIOS_STOP_CALCULATION_FN)
 
 struct adios_transport_struct
 {
+    char * method_name;
     ADIOS_INIT_FN adios_init_fn;
     ADIOS_OPEN_FN adios_open_fn;
     ADIOS_SHOULD_BUFFER_FN adios_should_buffer_fn;

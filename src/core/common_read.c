@@ -85,7 +85,7 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
     // NCSU ALACRITY-ADIOS - Initialize transform methods
     adios_transform_read_init();
 
-    if (!adios_read_hooks[method].adios_init_method_fn) {
+    if (!adios_read_hooks[method].adios_read_init_method_fn) {
         adios_error (err_invalid_read_method, 
             "Read method (=%d) passed to adios_read_init_method() is not provided "
             "by this build of ADIOS.\n", (int)method);
@@ -155,7 +155,7 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
     }
 
     // call method specific init 
-    retval = adios_read_hooks[method].adios_init_method_fn (comm, params);
+    retval = adios_read_hooks[method].adios_read_init_method_fn (comm, params);
     free_name_value_pairs (params);
     return retval;
 }
@@ -178,14 +178,14 @@ int common_read_finalize_method(enum ADIOS_READ_METHOD method)
         adios_error (err_invalid_read_method, 
             "Invalid read method (=%d) passed to adios_read_finalize_method().\n", (int)method);
         return err_invalid_read_method;
-    } else if (!adios_read_hooks[method].adios_finalize_method_fn) {
+    } else if (!adios_read_hooks[method].adios_read_finalize_method_fn) {
         adios_error (err_invalid_read_method, 
             "Read method (=%d) passed to adios_read_finalize_method() is not provided "
             "by this build of ADIOS.\n", (int)method);
         return err_invalid_read_method;
     }
 
-    return adios_read_hooks[method].adios_finalize_method_fn ();
+    return adios_read_hooks[method].adios_read_finalize_method_fn ();
 }
 
 
@@ -213,7 +213,7 @@ ADIOS_FILE * common_read_open (const char * fname,
     // NCSU ALACRITY-ADIOS - Initialize transform methods
     adios_transform_read_init();
 
-    if (!adios_read_hooks[method].adios_open_fn) {
+    if (!adios_read_hooks[method].adios_read_open_fn) {
         adios_error (err_invalid_read_method, 
             "Read method (=%d) passed to adios_read_open() is not provided "
             "by this build of ADIOS.\n", (int)method);
@@ -223,7 +223,7 @@ ADIOS_FILE * common_read_open (const char * fname,
     internals->method = method;
     internals->read_hooks = adios_read_hooks;
 
-    fp = adios_read_hooks[internals->method].adios_open_fn (fname, comm, lock_mode, timeout_sec);
+    fp = adios_read_hooks[internals->method].adios_read_open_fn (fname, comm, lock_mode, timeout_sec);
     if (!fp)
         return fp;
 
@@ -317,7 +317,7 @@ ADIOS_FILE * common_read_open_file (const char * fname,
         adios_error (err_invalid_read_method, 
             "Invalid read method (=%d) passed to adios_read_open_file().\n", (int)method);
         return NULL;
-    } else if (!adios_read_hooks[internals->method].adios_open_file_fn) {
+    } else if (!adios_read_hooks[internals->method].adios_read_open_file_fn) {
         adios_error (err_invalid_read_method, 
             "Read method (=%d) passed to adios_read_open_file() is not provided "
             "by this build of ADIOS.\n", (int)method);
@@ -336,7 +336,7 @@ ADIOS_FILE * common_read_open_file (const char * fname,
     internals->method = method;
     internals->read_hooks = adios_read_hooks;
 
-    fp = adios_read_hooks[internals->method].adios_open_file_fn (fname, comm);
+    fp = adios_read_hooks[internals->method].adios_read_open_file_fn (fname, comm);
     if (!fp)
         return fp;
     
@@ -428,7 +428,7 @@ int common_read_close (ADIOS_FILE *fp)
             free(fp->mesh_namelist);
         }
                 
-        retval = internals->read_hooks[internals->method].adios_close_fn (fp);
+        retval = internals->read_hooks[internals->method].adios_read_close_fn (fp);
         free_namelist (internals->group_namelist, internals->ngroups);
         free (internals->nvars_per_group);
         free (internals->nattrs_per_group);
