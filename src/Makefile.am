@@ -263,6 +263,7 @@ endif
 
 if HAVE_FLEXPATH
 libadios_a_SOURCES += write/adios_flexpath.c  read/read_flexpath.c
+libadios_nompi_a_SOURCES += write/adios_flexpath.c  read/read_flexpath.c
 if BUILD_FORTRAN
 FortranLibSources += write/adios_flexpath.c read/read_flexpath.c
 endif
