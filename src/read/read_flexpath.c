@@ -1372,11 +1372,21 @@ ADIOS_FILE *adios_read_flexpath_fopen(const char *fname, MPI_Comm comm) {
 int adios_read_flexpath_is_var_timed(const ADIOS_FILE* fp, int varid) { return 0; }
 
 void adios_read_flexpath_get_groupinfo(
-    const ADIOS_FILE *fp, 
+    const ADIOS_FILE *adiosfile, 
     int *ngroups, 
     char ***group_namelist, 
     uint32_t **nvars_per_group, 
-    uint32_t **nattrs_per_group) {}
+    uint32_t **nattrs_per_group) 
+{
+    flexpath_reader_file *fp;
+    if (adiosfile) {
+        fp = (flexpath_reader_file *) adiosfile->fh;
+        *ngroups = 1;
+        *group_namelist = (char **) malloc (sizeof (char*));
+        *group_namelist[0] = strdup (fp->group_name);
+    }
+
+}
 
 int adios_read_flexpath_check_reads(const ADIOS_FILE* fp, ADIOS_VARCHUNK** chunk) { log_debug( "flexpath:adios function check reads\n"); return 0; }
 
