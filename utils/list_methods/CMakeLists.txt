@@ -1,5 +1,6 @@
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/src/core)
+include_directories(${PROJECT_BINARY_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/utils/list_methods)
 link_directories(${PROJECT_BINARY_DIR}/utils/list_methods)
 
