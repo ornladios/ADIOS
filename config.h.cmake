@@ -82,11 +82,17 @@
 /* Define to 1 if you have the `fdatasync' function. */
 #cmakedefine HAVE_FDATASYNC 1
 
+/* Define if you have FGR. */
+#cmakedefine HAVE_FGR 1
+
 /* Flexpath is enabled */
 #define HAVE_FLEXPATH ${HAVE_FLEXPATH}
 
 /* Define to 1 if you have the `gettimeofday' function. */
 #cmakedefine HAVE_GETTIMEOFDAY 1
+
+/* Define if you have GLIB. */
+#cmakedefine HAVE_GLIB 1
 
 /* Define if you have HDF5. */
 #cmakedefine HAVE_HDF5 1

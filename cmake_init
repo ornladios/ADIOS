@@ -54,6 +54,8 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
 #    module unload netcdf
 # end of Parallel NetCDF 4 
     export LUSTRE_DIR="/usr/lib64"
+    export FGR_DIR="/ccs/proj/e2e/qliu/tap"
+    export GLIB_DIR="/ccs/proj/e2e/qliu/glib"
     export BUILD_WRITE=ON
     export BUILD_FORTRAN=ON
     export skel_timing=ON
