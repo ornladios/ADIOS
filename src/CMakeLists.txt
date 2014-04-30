@@ -252,7 +252,7 @@ if(BUILD_WRITE)
 
   if(HAVE_FLEXPATH)
     set(libadios_a_SOURCES ${libadios_a_SOURCES} write/adios_flexpath.c read/read_flexpath.c)
-    set(libadios_nompi_a_SOURCES ${libadios_a_SOURCES} write/adios_flexpath.c read/read_flexpath.c)
+    set(libadios_nompi_a_SOURCES ${libadios_nompi_a_SOURCES} write/adios_flexpath.c read/read_flexpath.c)
     if(BUILD_FORTRAN)
       set(FortranLibSources ${FortranLibSources} write/adios_flexpath.c read/read_flexpath.c)
     endif(BUILD_FORTRAN)
