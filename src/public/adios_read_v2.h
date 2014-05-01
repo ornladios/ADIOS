@@ -11,11 +11,12 @@
 #ifndef __ADIOS_READ_VER2_H__
 #define __ADIOS_READ_VER2_H__
 
+#include <stdint.h>
+
 #include "adios_mpi.h"
 #include "adios_types.h"
 #include "adios_selection.h"
 #include "adios_schema.h"
-#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {

@@ -13,11 +13,11 @@
 #ifndef __ADIOS_READ_V1_H__
 #define __ADIOS_READ_V1_H__
 
+#include <stdint.h>
+
 #include "adios_mpi.h"
 #include "adios_read_v1_defs.h"
 #include "adios_types.h"
-
-#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {

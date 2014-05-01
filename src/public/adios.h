@@ -8,10 +8,11 @@
 #ifndef ADIOS_H
 #define ADIOS_H
 
+#include <stdint.h>
+
 #include "adios_mpi.h"
 #include "adios_types.h"
 #include "adios_error.h"
-#include <stdint.h>
 
 // ADIOS - Adaptable IO System
 
