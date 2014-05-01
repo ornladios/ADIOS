@@ -8,6 +8,10 @@
 #ifndef ADIOS_TYPES_H
 #define ADIOS_TYPES_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /* global defines needed for the type creation/setup functions */
 enum ADIOS_DATATYPES {adios_unknown = -1             /* (size) */
 
@@ -39,5 +43,9 @@ enum ADIOS_BUFFER_ALLOC_WHEN {ADIOS_BUFFER_ALLOC_UNKNOWN
                              ,ADIOS_BUFFER_ALLOC_NOW
                              ,ADIOS_BUFFER_ALLOC_LATER
                              };
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

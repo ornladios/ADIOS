@@ -8,6 +8,10 @@
 #ifndef __ADIOS_ERROR_H_
 #define __ADIOS_ERROR_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum ADIOS_ERRCODES {
     err_no_error                        = 0,
     err_no_memory                       = -1,
@@ -144,10 +148,6 @@ enum ADIOS_ERRCODES {
     err_fgr                                   = -199, // FGR lib error
     err_unspecified                           = -200
 };
-
-#ifdef __cplusplus
-extern "C" {
-#endif
 
 void adios_error (enum ADIOS_ERRCODES errcode, char *fmt, ...);
 void adios_error_at_line (enum ADIOS_ERRCODES errcode, const char* filename, unsigned int linenum, char *fmt, ...);

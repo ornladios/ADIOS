@@ -1,6 +1,10 @@
 #ifndef ADIOS_SCHEMA_H
 #define ADIOS_SCHEMA_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum ADIOS_MESH_TYPE
 {
      ADIOS_MESH_UNIFORM      = 1
@@ -75,5 +79,9 @@ typedef struct {   //type returned by adios_inq_mesh for read method
         MESH_UNSTRUCTURED * unstructured;
     };
 } ADIOS_MESH;
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
