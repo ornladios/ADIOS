@@ -31,6 +31,7 @@
 #include "core/adios_internals.h" // write hooks and adios_transport_struct
 #include "core/adios_read_hooks.h" // read hooks and adios_read_hooks_struct
 #include "core/transforms/adios_transforms_hooks.h" 
+#include "core/transforms/adios_transforms_read.h"
 
 
 int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype);
@@ -54,6 +55,7 @@ int main (int argc, char ** argv) {
     adios_init_transports (&adios_transports);
 #endif
     adios_read_hooks_init (&adios_read_hooks);
+    adios_transform_read_init();
 
     if(rank==0) {
 
@@ -76,9 +78,11 @@ int main (int argc, char ** argv) {
 
         printf ("Available data transformation methods (in XML transform tags in <var> elements):\n");
         for (i = (int)adios_transform_none; i < num_adios_transform_types; i++) {    
+            if (adios_transform_is_implemented((enum ADIOS_TRANSFORM_TYPE)i)) {
             printf("    \"%s\"\t: %s\n", 
                     adios_transform_plugin_primary_xml_alias((enum ADIOS_TRANSFORM_TYPE)i),
                     adios_transform_plugin_desc((enum ADIOS_TRANSFORM_TYPE)i));
+            }
         }
     }
 
