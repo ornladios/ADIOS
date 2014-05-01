@@ -13,6 +13,8 @@
 
 #define ELEMENT_BYTES    8
 
+int adios_transform_isobar_is_implemented (void) {return 1;}
+
 int decompress_isobar_pre_allocated(const void* input_data, const uint64_t input_len,
                                     void* output_data, uint64_t* output_len)
 {

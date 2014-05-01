@@ -41,6 +41,8 @@ adios_datablock * adios_transform_read_reqgroup_completed(adios_transform_read_r
 
 // Transform read method registry entry
 typedef struct {
+    int (*transform_is_implemented) (void);
+
     int (*transform_generate_read_subrequests)(
             adios_transform_read_request *reqgroup,
             adios_transform_pg_read_request *pg_reqgroup);
@@ -68,6 +70,7 @@ typedef struct {
 
 // Transform method function declarations
 #define DECLARE_TRANSFORM_READ_METHOD(tmethod)                            \
+    int adios_transform_##tmethod##_is_implemented (void);                \
     int adios_transform_##tmethod##_generate_read_subrequests(            \
             adios_transform_read_request *reqgroup,                       \
             adios_transform_pg_read_request *pg_reqgroup);                \
@@ -83,6 +86,7 @@ typedef struct {
 
 // Transform method function registration
 #define TRANSFORM_READ_METHOD_HOOK_LIST(tmethod) \
+    adios_transform_##tmethod##_is_implemented, \
     adios_transform_##tmethod##_generate_read_subrequests, \
     adios_transform_##tmethod##_subrequest_completed, \
     adios_transform_##tmethod##_pg_reqgroup_completed, \
@@ -99,6 +103,9 @@ typedef struct {
                 #tmethod, func);
 
 #define DECLARE_TRANSFORM_READ_METHOD_UNIMPL(tmethod)                     \
+    int adios_transform_##tmethod##_is_implemented (void) { \
+        return 0;                                                         \
+    }                                                                     \
     int adios_transform_##tmethod##_generate_read_subrequests(            \
             adios_transform_read_request *reqgroup,                    \
             adios_transform_pg_read_request *pg_reqgroup) {                    \

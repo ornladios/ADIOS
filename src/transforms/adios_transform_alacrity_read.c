@@ -11,6 +11,8 @@
 
 #include "alacrity.h"
 
+int adios_transform_alacrity_is_implemented (void) {return 1;}
+
 int adios_transform_alacrity_generate_read_subrequests(adios_transform_read_request *reqgroup,
                                                     adios_transform_pg_read_request *pg_reqgroup)
 {
