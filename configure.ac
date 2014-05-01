@@ -137,7 +137,13 @@ dnl CC="$MPICC"
 dnl CXX="$MPICXX"
 dnl FC="$MPIFC"
 
-LIBS="$MPILIBS"
+dnl Unset if MPILIBS == " ", a byproduct of config/acx_mpi.m4 on success
+if test "x y" == "x${MPILIBS}y"; then
+    MPILIBS=""
+fi
+if test -n "${MPILIBS}"; then
+    LIBS="${MPILIBS} ${LIBS}"
+fi
 
 AM_CONDITIONAL(USE_PARALLEL_COMPILER,false)
 
