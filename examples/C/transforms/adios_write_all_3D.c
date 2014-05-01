@@ -14,6 +14,7 @@
 */
 #include <stdio.h>
 #include <string.h>
+#include <sys/types.h>
 #include "mpi.h"
 #include "adios.h"
 #include <stdint.h>
