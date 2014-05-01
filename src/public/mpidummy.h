@@ -17,6 +17,10 @@
 #include <stdint.h>
 #include <stdio.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 typedef int MPI_Comm;
 typedef uint64_t MPI_Status;
 typedef int MPI_File;
@@ -84,5 +88,9 @@ int MPI_Error_string(int errorcode, char *string, int *resultlen);
 int MPI_Comm_split ( MPI_Comm comm, int color, int key, MPI_Comm *comm_out );
 
 double MPI_Wtime();
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif
