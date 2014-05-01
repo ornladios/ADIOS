@@ -319,7 +319,7 @@ convert_var_info(flexpath_var * fpvar,
 	int value_size = fpvar->type_size;	
 	v->value = malloc(value_size);
 	if(!v->value) {
-	    adios_error(err_no_memory, "Cannot allocate buffer in adios_read_datatap_inq_var()");
+	    adios_error(err_no_memory, "Cannot allocate buffer in adios_read_flexpath_inq_var()");
 	    return NULL;
 	}
 	flexpath_var_chunk * chunk = &fpvar->chunks[0];
@@ -328,7 +328,7 @@ convert_var_info(flexpath_var * fpvar,
     }else{ // arrays
 	v->dims = (uint64_t*)malloc(v->ndim * sizeof(uint64_t));
 	if(!v->dims) {
-	    adios_error(err_no_memory, "Cannot allocate buffer in adios_read_datatap_inq_var()");
+	    adios_error(err_no_memory, "Cannot allocate buffer in adios_read_flexpath_inq_var()");
 	    return NULL;
 	}
 	// broken.  fix.
@@ -1589,25 +1589,25 @@ adios_read_flexpath_inq_var(const ADIOS_FILE * adiosfile, const char* varname)
 {
     fp_log("FUNC", "entering flexpath_inq_var\n");
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
-    ADIOS_VARINFO *v = malloc(sizeof(ADIOS_VARINFO));
-
-    if(!v) {
-        adios_error(err_no_memory, 
-		    "Cannot allocate buffer in adios_read_datatap_inq_var()");
-        return NULL;
-    }
-    memset(v, 0, sizeof(ADIOS_VARINFO));
+    ADIOS_VARINFO *v = NULL;
     
     flexpath_var *fpvar = find_fp_var(fp->var_list, varname);
-    if(fpvar) {
+    if (fpvar) {
+        v = calloc(1, sizeof(ADIOS_VARINFO));
+
+        if (!v) {
+            adios_error(err_no_memory, 
+                        "Cannot allocate buffer in adios_read_flexpath_inq_var()");
+            return NULL;
+        }           
+
 	v = convert_var_info(fpvar, v, varname, adiosfile);
 	fp_log("FUNC", "leaving flexpath_inq_var\n");
-	return v;
     }
     else {
         adios_error(err_invalid_varname, "Cannot find var %s\n", varname);
-        return NULL;
     }
+    return v;
 }
 
 ADIOS_VARINFO* 
