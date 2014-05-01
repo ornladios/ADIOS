@@ -41,9 +41,9 @@ dnl PtlFini
 
 AC_ARG_WITH(portals,
         [  --with-portals=DIR      Location of Portals (yes/no/path_to_portals)],
-        [ ac_with_portals=yes; ])
+        [ ac_with_portals=$withval; ], [ac_with_portals=no])
 
-if test x"$withval" = xno; then
+if test x"$ac_with_portals" = xno; then
 
         AM_CONDITIONAL(HAVE_PORTALS,false)
         ac_with_portals=no;
