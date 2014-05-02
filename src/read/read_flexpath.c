@@ -166,37 +166,6 @@ flexpath_read_data* fp_read_data = NULL;
 
 /********** Helper functions. **********/
 
-static double dgettimeofday( void )
-{
-#ifdef HAVE_GETTIMEOFDAY
-    double timestamp;
-    struct timeval now;
-    gettimeofday(&now, NULL);
-    timestamp = now.tv_sec + now.tv_usec* 1.0e-6 ;
-    return timestamp;
-#else
-    return -1;
-#endif
-}
-
-static uint64_t 
-get_timestamp_mili()
-{
-    struct timespec stamp;
-#ifdef __MACH__
-    clock_serv_t cclock;
-    mach_timespec_t mts;
-    host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
-    clock_get_time(cclock, &mts);
-    mach_port_deallocate(mach_task_self(), cclock);
-    stamp.tv_sec = mts.tv_sec;
-    stamp.tv_nsec = mts.tv_nsec;
-#else
-    clock_gettime(CLOCK_MONOTONIC, &stamp);
-#endif
-    return ((stamp.tv_sec * 1000000000) + stamp.tv_nsec)/1000000;
-}
-
 void build_bridge(bridge_info* bridge) {
     attr_list contact_list = attr_list_from_string(bridge->contact);
     if(bridge->created == 0){
@@ -789,10 +758,6 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     ADIOS_FILE *adiosfile = client_data;
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
 
-    double data_end = dgettimeofday();
-    if(fp->time_in == 0.00)
-	fp->time_in = data_end; // used for perf measurements only
-
     int condition;
     int writer_rank;          
     int flush_id;
@@ -801,9 +766,6 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     get_int_attr(attrs, attr_atom_from_string("fp_dst_condition"), &condition);   
     get_int_attr(attrs, attr_atom_from_string(FP_RANK_ATTR_NAME), &writer_rank); 
     get_int_attr(attrs, attr_atom_from_string("fp_flush_id"), &flush_id);
-
-
-    double format_start = dgettimeofday();
 
     FMContext context = CMget_FMcontext(cm);
     void *base_data = FMheader_skip(context, vevent);
@@ -1083,8 +1045,6 @@ adios_read_flexpath_open(const char * fname,
     /* Gather the contact info from the other readers
        and write it to a file. Create a ready file so
        that the writer knows it can parse this file. */
-    double setup_start = dgettimeofday();
-
     char writer_ready_filename[200];
     char writer_info_filename[200];
     char reader_ready_filename[200];
@@ -1176,8 +1136,6 @@ adios_read_flexpath_open(const char * fname,
     /* Init with a writer to get initial scalar
        data so we can handle inq_var calls and
        also populate the ADIOS_FILE struct. */
-
-    double bridge_start = MPI_Wtime();
     if(fp->size < num_bridges){
     	int mystart = (num_bridges/fp->size) * fp->rank;
     	int myend = (num_bridges/fp->size) * (fp->rank+1);
@@ -1289,7 +1247,6 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
 	send_flush_msg(fp, fp->writer_coordinator, STEP, 1);
     }
 
-    double advclose_start = dgettimeofday();
     int i=0;    
     for(i=0; i<fp->num_bridges; i++) {
         if(fp->bridges[i].created && fp->bridges[i].opened) {
@@ -1299,28 +1256,22 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
     }
     MPI_Barrier(fp->comm);
 
-    double advclose_end = dgettimeofday();
     count = 0;
     adiosfile->current_step++;
     fp->mystep = adiosfile->current_step;
-
-    
-    double advopen_start = dgettimeofday();
+   
     for(i=0; i<fp->num_bridges; i++){
 	if(fp->bridges[i].created && !fp->bridges[i].opened){	    
 	    send_open_msg(fp, i);
 	    count++;
         }
     }   
-    double advopen_end = dgettimeofday();
     // need to remove selectors from each var now.
     send_flush_msg(fp, fp->writer_coordinator, DATA, 1);
       
     // should only happen if there are more steps available.
     // writer should have advanced.
-    double offset_start = dgettimeofday();
     send_flush_msg(fp, fp->writer_coordinator, EVGROUP, 1);
-    double offset_end = dgettimeofday();    
     return 0;
 }
 
@@ -1399,7 +1350,6 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
     int num_sendees = fp->num_sendees;
     int total_sent = 0;
     fp->time_in = 0.00;
-    double start_poll = MPI_Wtime();
     for(i = 0; i<num_sendees; i++){
 	pthread_mutex_lock(&fp->data_mutex);
 	int sendee = fp->sendees[i];	
@@ -1416,7 +1366,6 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
 	}
 
     }
-    double end_poll = MPI_Wtime();
 
     free(fp->sendees);
     fp->sendees = NULL;    
@@ -1501,7 +1450,6 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 	int need_count = 0;
 	array_displacements * all_disp = NULL;
 	uint64_t pos = 0;
-	double sched_start = MPI_Wtime();
         for(j=0; j<fp->num_bridges; j++) {
             int destination=0;	    	    
             if(need_writer(fp, j, var->sel, fp->gp, var->varname)==1){           
@@ -1509,7 +1457,7 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 		need_count++;
                 destination = j;
 		global_var *gvar = find_gbl_var(fp->gp->vars, var->varname, fp->gp->num_vars);
-		// TODO: memory leak here. have to free these at some point.
+		// displ is freed in release_step.
 		array_displacements *displ = get_writer_displacements(j, var->sel, gvar, &_pos);
 		displ->pos = pos;
 		_pos *= (uint64_t)var->type_size; 
@@ -1520,7 +1468,6 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 		send_var_message(fp, j, var->varname);				
             }
 	}
-	double sched_end = MPI_Wtime();
 	var->displ = all_disp;
 	var->num_displ = need_count;
         break;
