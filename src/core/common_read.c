@@ -317,11 +317,6 @@ ADIOS_FILE * common_read_open_file (const char * fname,
         adios_error (err_invalid_read_method, 
             "Invalid read method (=%d) passed to adios_read_open_file().\n", (int)method);
         return NULL;
-    } else if (!adios_read_hooks[internals->method].adios_read_open_file_fn) {
-        adios_error (err_invalid_read_method, 
-            "Read method (=%d) passed to adios_read_open_file() is not provided "
-            "by this build of ADIOS.\n", (int)method);
-        return NULL;
     }
 
 
@@ -336,6 +331,12 @@ ADIOS_FILE * common_read_open_file (const char * fname,
     internals->method = method;
     internals->read_hooks = adios_read_hooks;
 
+    if (!adios_read_hooks[internals->method].adios_read_open_file_fn) {
+        adios_error (err_invalid_read_method, 
+            "Read method (=%d) passed to adios_read_open_file() is not provided "
+            "by this build of ADIOS.\n", (int)method);
+        return NULL;
+    }
     fp = adios_read_hooks[internals->method].adios_read_open_file_fn (fname, comm);
     if (!fp)
         return fp;
