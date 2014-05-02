@@ -68,7 +68,7 @@ typedef struct _bridge_info
     EVsource var_source;
     EVsource op_source;
     int their_num;
-    char * contact;
+    char *contact;
     int created;
     int opened;
     int step;
@@ -78,13 +78,10 @@ typedef struct _bridge_info
 typedef struct _flexpath_var_chunk
 {
     int has_data;
-    int rank;
+    int rank; // the writer's rank this chunk represents. not used or needed right now
     void *data;
     void *user_buf;
-    uint64_t *local_bounds; // nodims
-    uint64_t *global_bounds; // ndims
-    uint64_t *global_offsets; // ndims
-} flexpath_var_chunk, *flexpath_var_chunk_p;
+} flexpath_var_chunk;
 
 typedef struct _flexpath_var
 {
@@ -95,8 +92,8 @@ typedef struct _flexpath_var
     enum ADIOS_DATATYPES type;
     uint64_t type_size; // type size, not arrays size
 
-    int time_dim; // -1 means no time dimension
-    int num_dims;
+    int time_dim; // -1 means it is not a time dimension
+    int ndims;
     uint64_t *global_dims; // ndims size (if ndims>0)
     uint64_t *local_dims; // for local arrays
     uint64_t array_size; // not relevant for scalars
@@ -252,6 +249,7 @@ new_flexpath_reader_file(const char *fname)
 enum ADIOS_DATATYPES
 ffs_type_to_adios_type(const char *ffs_type)
 {
+    printf("\t\tffs_type: %s\n", ffs_type);
     if(!strcmp("integer", ffs_type))
 	return adios_integer;
     else if(!strcmp("float", ffs_type))
@@ -275,7 +273,7 @@ convert_var_info(flexpath_var * fpvar,
     int i;
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;    
     v->type = fpvar->type;
-    v->ndim = fpvar->num_dims;
+    v->ndim = fpvar->ndims;
     // needs to change. Has to get information from write.
     v->nsteps = 1;
     v->nblocks = malloc(sizeof(int)*v->nsteps);
@@ -301,7 +299,7 @@ convert_var_info(flexpath_var * fpvar,
 	    return NULL;
 	}
 	// broken.  fix.
-	int cpysize = fpvar->num_dims*sizeof(uint64_t);
+	int cpysize = fpvar->ndims*sizeof(uint64_t);
 	if(fpvar->global_dims){
 	    v->global = 1;
 	    memcpy(v->dims, fpvar->global_dims, cpysize);
@@ -737,9 +735,9 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 	    uint64_t *local_offsets = offset->local_offsets;
 	    uint64_t *global_dimensions = offset->global_dimensions;
 
-	    fpvar->num_dims = offset->offsets_per_rank;
-	    fpvar->global_dims = malloc(sizeof(uint64_t)*fpvar->num_dims);
-	    memcpy(fpvar->global_dims, global_dimensions, sizeof(uint64_t)*fpvar->num_dims);
+	    fpvar->ndims = offset->offsets_per_rank;
+	    fpvar->global_dims = malloc(sizeof(uint64_t)*fpvar->ndims);
+	    memcpy(fpvar->global_dims, global_dimensions, sizeof(uint64_t)*fpvar->ndims);
 	}else{
 	    adios_error(err_corrupted_variable, 
 			"Mismatch between global variables and variables specified %s.",
@@ -812,7 +810,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     	}
 
 	int num_dims = get_ndims_attr(f->field_name, attrs);
-    	var->num_dims = num_dims;
+    	var->ndims = num_dims;
 
 	flexpath_var_chunk *curr_chunk = &var->chunks[0];
 
@@ -842,15 +840,14 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 			    get_string_attr(attrs, attr_atom_from_string(atom_name), &dim);
 	
 			    FMField *temp_field = find_field_by_name(dim, f);
-			    if(!temp_field){
+			    if (!temp_field) {
 				adios_error(err_corrupted_variable,
 					    "Could not find fieldname: %s\n",
 					    dim);
-			    }
-			    else{    			    
+			    } else {    			    
 				int *temp_data = get_FMfieldAddr_by_name(temp_field,
 									 temp_field->field_name,
-									 base_data);			    
+									 base_data);
 				uint64_t dim = (uint64_t)(*temp_data);
 				var->array_size = var->array_size * dim;
 			    }
@@ -860,12 +857,9 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 		    }
 		}
 	    }
-	    else if(var->sel->type == ADIOS_SELECTION_BOUNDINGBOX){
-		if(num_dims == 0){ // scalars; throw error
-		    adios_error(err_offset_required, 
-				"Only scalars can be scheduled with write_block selection.\n");
-		}
-		else{ // arrays
+	    else if (var->sel->type == ADIOS_SELECTION_BOUNDINGBOX) {
+
+		if (var->ndims > 0) { // arrays
 		    int i;
 		    global_var *gv = find_gbl_var(fp->gp->vars,
 						  var->varname,
@@ -893,7 +887,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 							 f->field_size,
 							 0,
 							 writer_array,
-							 reader_array+reader_start_pos);		    
+							 reader_array+reader_start_pos);
 		    }
 		}
 	    }
@@ -1200,9 +1194,9 @@ void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
     flexpath_var *tmpvars = fp->var_list;
     while(tmpvars){
 
-	if(tmpvars->num_dims > 0){
+	if(tmpvars->ndims > 0){
 	    free(tmpvars->global_dims);	   
-	    tmpvars->num_dims = 0;
+	    tmpvars->ndims = 0;
 	}
 	free_displacements(tmpvars->displ, tmpvars->num_displ);
 	tmpvars->displ = NULL;
@@ -1217,13 +1211,6 @@ void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
 		chunk->data = NULL;
 		chunk->has_data = 0;		
 	    }
-	    free(chunk->local_bounds);
-	    free(chunk->global_offsets);
-	    free(chunk->global_bounds);
-
-	    chunk->global_offsets = NULL;
-	    chunk->global_bounds = NULL;
-	    chunk->local_bounds = NULL;
 	    chunk->rank = 0;
 	}
 	tmpvars = tmpvars->next;
@@ -1291,21 +1278,15 @@ int adios_read_flexpath_close(ADIOS_FILE * fp)
     that the user maintains a copy of. 
     */
     flexpath_var *v = file->var_list;
-    while(v){        	
+    while (v) {        	
     	// free chunks; data has already been copied to user
     	int i;	
     	for(i = 0; i<v->num_chunks; i++){    		    
     	    flexpath_var_chunk *c = &v->chunks[i];	    
 	    if(!c)
 		log_error("FLEXPATH: %s This should not happen! line %d\n",__func__,__LINE__);
-	    //free(c->data);
-	    free(c->global_bounds);		
-	    free(c->global_offsets);
-	    free(c->local_bounds);
+	    //free(c->data);	    
 	    c->data = NULL;
-	    c->global_bounds = NULL;
-	    c->global_offsets = NULL;
-	    c->local_bounds = NULL;
 	    free(c);
 	}
 	flexpath_var *tmp = v->next;	
@@ -1396,25 +1377,23 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 				       void *data)
 {   
     fp_log("FUNC", "entering schedule_read_byid\n");
-    flexpath_reader_file * fp = (flexpath_reader_file*)adiosfile->fh;
-    flexpath_var * var = fp->var_list;
-    while(var){
-        if(var->id == varid)
+    flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
+    flexpath_var *fpvar = fp->var_list;
+    while (fpvar) {
+        if (fpvar->id == varid)
         	break;
         else
-	    var=var->next;
+	    fpvar=fpvar->next;
     }
-    if(!var){
+    if(!fpvar){
         adios_error(err_invalid_varid,
 		    "Invalid variable id: %d\n",
 		    varid);
         return err_invalid_varid;
     }    
     //store the user allocated buffer.
-    flexpath_var_chunk *chunk = &var->chunks[0];  
-    chunk->user_buf = data;
-    var->start_position = 0;
-    if(nsteps != 1){
+    flexpath_var_chunk *chunk = &fpvar->chunks[0];  
+    if (nsteps != 1) {
 	adios_error (err_invalid_timestep,
                      "Only one step can be read from a stream at a time. "
                      "You requested % steps in adios_schedule_read()\n", 
@@ -1424,52 +1403,61 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
     // this is done so that the user can do multiple schedule_read/perform_reads
     // within before doing release/advance step. Might need a better way to 
     // manage the ADIOS selections.
-    if(var->sel){
-	free_selection(var->sel);
+    if(fpvar->sel){
+	free_selection(fpvar->sel);
     }
-    var->sel = copy_selection(sel);
+    fpvar->sel = copy_selection(sel);
 
-    switch(var->sel->type)
+    switch(fpvar->sel->type)
     {
     case ADIOS_SELECTION_WRITEBLOCK:
     {
-	int writer_index = var->sel->u.block.index;
-	if(writer_index > fp->num_bridges){
+        chunk->user_buf = data;
+        fpvar->start_position = 0;
+	int writer_index = fpvar->sel->u.block.index;
+	if (writer_index > fp->num_bridges) {
 	    adios_error(err_out_of_bound,
 			"No process exists on the writer side matching the index.\n");
 	    return err_out_of_bound;
 	}
-	send_var_message(fp, writer_index, var->varname);
+	send_var_message(fp, writer_index, fpvar->varname);
 	break;
     }
     case ADIOS_SELECTION_BOUNDINGBOX:
     {   
-	free_displacements(var->displ, var->num_displ);
-	var->displ = NULL;
-        int j=0;
-	int need_count = 0;
-	array_displacements * all_disp = NULL;
-	uint64_t pos = 0;
-        for(j=0; j<fp->num_bridges; j++) {
-            int destination=0;	    	    
-            if(need_writer(fp, j, var->sel, fp->gp, var->varname)==1){           
-		uint64_t _pos = 0;
-		need_count++;
-                destination = j;
-		global_var *gvar = find_gbl_var(fp->gp->vars, var->varname, fp->gp->num_vars);
-		// displ is freed in release_step.
-		array_displacements *displ = get_writer_displacements(j, var->sel, gvar, &_pos);
-		displ->pos = pos;
-		_pos *= (uint64_t)var->type_size; 
-		pos += _pos;
+        // boundingbox for a scalar; handle it as we do with inq_var
+        if (fpvar->ndims == 0) {                        
+            memcpy(data, chunk->data, fpvar->type_size);
+        } else {
+            chunk->user_buf = data;
+            fpvar->start_position = 0;
+            free_displacements(fpvar->displ, fpvar->num_displ);
+            fpvar->displ = NULL;
+            int j=0;
+            int need_count = 0;
+            array_displacements *all_disp = NULL;
+            uint64_t pos = 0;
+            for (j=0; j<fp->num_bridges; j++) {
+                int destination=0;	    	    
+                if(need_writer(fp, j, fpvar->sel, fp->gp, fpvar->varname)==1){           
+                    uint64_t _pos = 0;
+                    need_count++;
+                    destination = j;
+                    global_var *gvar = find_gbl_var(fp->gp->vars, fpvar->varname, fp->gp->num_vars);
+                    // displ is freed in release_step.
+                    array_displacements *displ = get_writer_displacements(j, fpvar->sel, gvar, &_pos);
+                    displ->pos = pos;
+                    _pos *= (uint64_t)fpvar->type_size; 
+                    pos += _pos;
 		
-		all_disp = realloc(all_disp, sizeof(array_displacements)*need_count);
-		all_disp[need_count-1] = *displ;
-		send_var_message(fp, j, var->varname);				
+                    all_disp = realloc(all_disp, sizeof(array_displacements)*need_count);
+                    all_disp[need_count-1] = *displ;
+                    send_var_message(fp, j, fpvar->varname);				
+                }
             }
-	}
-	var->displ = all_disp;
-	var->num_displ = need_count;
+            fpvar->displ = all_disp;
+            fpvar->num_displ = need_count;
+        }
         break;
     }
     case ADIOS_SELECTION_AUTO:

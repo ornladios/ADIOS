@@ -196,43 +196,6 @@ resolve_path_name(char *path, char *name)
     return NULL;
 }
 
-static double dgettimeofday( void )
-{
-#ifdef HAVE_GETTIMEOFDAY
-    double timestamp;
-    struct timeval now;
-    gettimeofday(&now, NULL);
-    timestamp = now.tv_sec + now.tv_usec* 1.0e-6 ;
-    return timestamp;
-#else
-    return -1;
-#endif
-}
-
-char extern_string[] = "double dgettimeofday(); \n";
-cod_extern_entry externs[] = {
-    {"dgettimeofday", (void *) dgettimeofday},	        // 0
-    {(void *) 0, (void *) 0}
-};
-
-static uint64_t
-get_timestamp_mili()
-{
-    struct timespec stamp;
-#ifdef __MACH__
-    clock_serv_t cclock;
-    mach_timespec_t mts;
-    host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
-    clock_get_time(cclock, &mts);
-    mach_port_deallocate(mach_task_self(), cclock);
-    stamp.tv_sec = mts.tv_sec;
-    stamp.tv_nsec = mts.tv_nsec;
-#else
-    clock_gettime(CLOCK_MONOTONIC, &stamp);
-#endif
-    return ((stamp.tv_sec * 1000000000) + stamp.tv_nsec)/1000000;
-}
-
 // add an attr for each dimension to an attr_list
 void set_attr_dimensions(char* varName, char* altName, int numDims, attr_list attrs) 
 {
@@ -642,8 +605,6 @@ char *multiqueue_action = "{\n\
     if(EVcount_anonymous()>0){\n\
         mine = EVget_attrs_anonymous(0);\n\
         found = attr_ivalue(mine, \"fp_dst_rank\");\n\
-        double start = dgettimeofday(); \n\
-        set_double_attr(mine, \"fp_starttime\", start);\n\
         EVdiscard_and_submit_anonymous(found+1,0);\n\
     }\n\
  }";
@@ -900,7 +861,8 @@ set_format(struct adios_group_struct *t,
 		{  currentFm->size += (v_offset * sizeof(unsigned int));  } 
 		break;
 
-	    case adios_unsigned_long:
+	    case adios_unsigned_long: // needs to be unsigned integer in ffs
+                // to distinguish on reader_side, I have to look at the size also
 		field_list[fieldNo].field_type =
 		    (char *) malloc(sizeof(char) * 255);
 		snprintf((char *) field_list[fieldNo].field_type, 255,
@@ -915,6 +877,7 @@ set_format(struct adios_group_struct *t,
 		break;
 
 	    case adios_real:
+                printf("\t\treal: %d\n", sizeof(float));
 		field_list[fieldNo].field_type =
 		    (char *) malloc(sizeof(char) * 255);
 		snprintf((char *) field_list[fieldNo].field_type, 255,
@@ -935,10 +898,11 @@ set_format(struct adios_group_struct *t,
 		break;
 
 	    case adios_double:
+                printf("\t\tdouble\n");
 		field_list[fieldNo].field_type =
 		    (char *) malloc(sizeof(char) * 255);
 		snprintf((char *) field_list[fieldNo].field_type, 255,
-			 "float%s", dims);
+			 "double%s", dims);
 		field_list[fieldNo].field_size = sizeof(double);
 		field_list[fieldNo].field_offset = currentFm->size;
 		if (v_offset == 0 ) // pointer to variably sized array
@@ -1345,8 +1309,6 @@ adios_flexpath_open(struct adios_file_struct *fd,
     pthread_cond_init(&fileData->controlCondition, NULL);
     pthread_cond_init(&fileData->dataCondition, NULL);
 
-    double setup_start = dgettimeofday();
-
     // communication channel setup
     char writer_info_filename[200];
     char writer_ready_filename[200];
@@ -1448,9 +1410,7 @@ adios_flexpath_open(struct adios_file_struct *fd,
     fileData->name = strdup(method->group->name); 
     add_open_file(fileData);
     atom_t rank_atom = attr_atom_from_string(FP_RANK_ATTR_NAME);
-    add_int_attr(fileData->attrs, rank_atom, fileData->rank);
-    
-    EVadd_standard_routines(flexpathWriteData.cm, extern_string, externs);
+    add_int_attr(fileData->attrs, rank_atom, fileData->rank);   
 
     //generate multiqueue function that sends formats or all data based on flush msg
 
@@ -1661,7 +1621,6 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 	int myrank = fileData->rank;
 	int commsize = fileData->size;
 
-	double offset_start = dgettimeofday();
 	while(list){
 	    char *fullname = resolve_path_name(list->path, list->name);
 	    //int num_local_offsets = 0;
