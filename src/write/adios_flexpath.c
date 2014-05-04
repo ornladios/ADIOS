@@ -877,7 +877,6 @@ set_format(struct adios_group_struct *t,
 		break;
 
 	    case adios_real:
-                printf("\t\treal: %d\n", sizeof(float));
 		field_list[fieldNo].field_type =
 		    (char *) malloc(sizeof(char) * 255);
 		snprintf((char *) field_list[fieldNo].field_type, 255,
@@ -898,7 +897,6 @@ set_format(struct adios_group_struct *t,
 		break;
 
 	    case adios_double:
-                printf("\t\tdouble\n");
 		field_list[fieldNo].field_type =
 		    (char *) malloc(sizeof(char) * 255);
 		snprintf((char *) field_list[fieldNo].field_type, 255,
@@ -1286,7 +1284,6 @@ adios_flexpath_open(struct adios_file_struct *fd,
         return 0;
     }
 
-    printf("group_name: %s file_name: %s\n", method->group->name, fd->name);
     FlexpathWriteFileData *fileData = malloc(sizeof(FlexpathWriteFileData));
     mem_check(fileData, "fileData");
     memset(fileData, 0, sizeof(FlexpathWriteFileData));
@@ -1579,7 +1576,6 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
             }
             
             char *resolved_name = resolve_path_name(fields->path, fields->name);
-            printf("\t\t\tlooking for %s\n", resolved_name);
             void *temp = get_FMPtrField_by_name(flist, resolved_name, fileData->fm->buffer, 0);
             memcpy(pointer_data_copy, temp, total_size);
             set_FMPtrField_by_name(flist, resolved_name, fileData->fm->buffer, pointer_data_copy);

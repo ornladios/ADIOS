@@ -248,17 +248,29 @@ new_flexpath_reader_file(const char *fname)
 
 enum ADIOS_DATATYPES
 ffs_type_to_adios_type(const char *ffs_type)
+
 {
-    printf("\t\tffs_type: %s\n", ffs_type);
-    if(!strcmp("integer", ffs_type))
+    char *bracket = "[";
+    size_t posfound = strcspn(ffs_type, bracket);
+    char *filtered_type = NULL;
+    if (strlen(ffs_type) == strlen(bracket)) {
+        filtered_type = ffs_type;
+    }
+    else {
+        filtered_type = malloc(posfound+1);
+        memset(filtered_type, '\0', posfound+1);
+        filtered_type = strncpy(filtered_type, ffs_type, posfound);       
+    }
+
+    if (!strcmp("integer", filtered_type))
 	return adios_integer;
-    else if(!strcmp("float", ffs_type))
+    else if(!strcmp("float", filtered_type))
 	return adios_real;
-    else if(!strcmp("string", ffs_type))
+    else if(!strcmp("string", filtered_type))
 	return adios_string;
-    else if(!strcmp("double", ffs_type))
+    else if(!strcmp("double", filtered_type))
 	return adios_double;
-    else if(!strcmp("char", ffs_type))
+    else if(!strcmp("char", filtered_type))
 	return adios_byte;
     else
 	return adios_unknown;
