@@ -10,7 +10,8 @@
 #include <string.h>
 #include "mpi.h"
 #include "adios_read_ext.h"
-#include <alacrity.h>
+//#include <alacrity.h>
+#include "alacrity.h"
 
 /*
  * Draft codes of ALACRITY query engine, there are a few notes:
@@ -22,6 +23,12 @@
  */
 
 int main(int argc, char ** argv) {
+
+	if (argc < 5 ){
+		printf("input correct usage: ./adios_query [bp file path] [variable] [low boundary] [high boundary]\n");
+		return 1;
+	}
+
 	char filename[256];
 	char varName[256];
 	int rank, size, i, j;
@@ -36,9 +43,13 @@ int main(int argc, char ** argv) {
 
 	adios_read_init_method(method, comm, "verbose=3");
 
-	strcpy(filename, "adios_alac.bp");
+//	strcpy(filename, "adios_alac.bp");
+//	strcpy(varName, "temp");
+	strcpy(filename, argv[1]);
+	strcpy(varName, argv[2]);
 	double lb = 0, hb = 0;
-	strcpy(varName, "temp");
+	lb = atof(argv[3]);
+	hb = atof(argv[4]);
 
 	ADIOS_FILE * f = adios_read_open(filename, method, comm,
 			ADIOS_LOCKMODE_NONE, 0);
@@ -49,7 +60,7 @@ int main(int argc, char ** argv) {
 	ALQueryEngine qe;
 	ALUnivariateQuery query;
 	ALQueryEngineStartUnivariateDoubleQuery(&qe, lb, hb,
-			VALUE_RETRIEVAL_QUERY_TYPE, &query);
+			REGION_RETRIEVAL_INDEX_ONLY_QUERY_TYPE, &query);
 	/*********** doQuery ***************
 	 *
 	 * 1. Open partition  [locate offsets of meta, data, and index for the partition]
@@ -59,25 +70,30 @@ int main(int argc, char ** argv) {
 	 5. read dataBin
 	 */
 
-	adios_read_set_transforms_enabled(f, 0); // load transformed 1-D byte array
+	//adios_read_set_transforms_enabled(f, 0); // load transformed 1-D byte array
 	ADIOS_VARINFO * v = adios_inq_var(f, varName);
-	ADIOS_VARTRANSFORM *ti = adios_inq_transinfo(f, v);
+	ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(f, v);
 //	adios_inq_trans_metadata(f, v, ti);
 
 	int totalPG = v->sum_nblocks;
+
+	printf("total PG number: %d", totalPG);
 
 	uint64_t * metaSizes = (uint64_t *) malloc(sizeof(uint64_t) * totalPG);
 	uint64_t * indexSizes = (uint64_t *) malloc(sizeof(uint64_t) * totalPG);
 	uint64_t * dataSizes = (uint64_t *) malloc(sizeof(uint64_t) * totalPG);
 	// Will assume user providing PG range for us
 	// Right now, use all PGs -> user bounding box
-	for (int i = 0; i < totalPG; i++) {
-		ADIOS_TRANSFORM_METADATA * tmeta = ti->transform_metadatas[i];
-		assert(tmeta->length == 24);
-		uint64_t * threeData = (uint64_t *) tmeta->content;
+	for (i = 0; i < totalPG; i++) {
+		ADIOS_TRANSFORM_METADATA *  tmetas = ti->transform_metadatas;
+		ADIOS_TRANSFORM_METADATA tmeta = tmetas[i];
+//	assert(tmeta->length == 24);
+		uint64_t * threeData = (uint64_t *) tmeta.content;
 		metaSizes[i] = threeData[0];
 		indexSizes[i] = threeData[1];
 		dataSizes[i] = threeData[2];
+
+		printf("PG[%d] has meta size[%ul], index size[%ul], and data size[%ul] \n", i, metaSizes[i], indexSizes[i], dataSizes[i]);
 
 		uint64_t metaSize = metaSizes[i];
 
@@ -103,11 +119,11 @@ int main(int argc, char ** argv) {
 			//3. load index size
 			uint64_t indexOffset = metaSize; // metadata size is index start offset
 
-			const char insigbytes = insigBytesCeil(partitionMeta);
+			const char insigbytes = insigBytesCeil(&partitionMeta);
 			const uint64_t first_bin_off = indexOffset + ALGetIndexBinOffset(
-					partitionMeta, low_bin);
+					&partitionMeta, low_bin);
 			const uint64_t last_bin_off = indexOffset + ALGetIndexBinOffset(
-					partitionMeta, hi_bin);
+					&partitionMeta, hi_bin);
 			const uint64_t bin_read_len = last_bin_off - first_bin_off;
 			sel = adios_selection_writeblock_bounded(i, metaSize, bin_read_len, 1);
 			void *indexData = NULL;
@@ -123,13 +139,17 @@ int main(int argc, char ** argv) {
 			resultCount = bl->binStartOffsets[hi_bin]
 					- bl->binStartOffsets[low_bin];
 
-			if (query->queryType == REGION_RETRIEVAL_INDEX_ONLY_QUERY_TYPE) {
+			if (query.queryType == REGION_RETRIEVAL_INDEX_ONLY_QUERY_TYPE) {
 				// No data, no candidate checks, just return the results as-is
 				resultData = NULL;
-				populateQueryResult(*result, resultData, index, resultCount);
+				populateQueryResult(&result, resultData, index, resultCount);
+				printf("Returned RID number : %ul \n", result.resultCount);
+//				populateQueryResult(&result, resultData, index, resultCount);
 			} else {
 				// TODO
 			}
+		}else {
+			printf("No results matched query constraint \n");
 		}
 
 	}

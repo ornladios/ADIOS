@@ -15,6 +15,7 @@ adios_alac_query_SOURCES = adios_alac_query.c
 adios_alac_query_LDADD = $(top_builddir)/src/libadios.a 
 adios_alac_query_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 adios_alac_query_LDADD += $(ADIOSLIB_LDADD)
+adios_alac_query_CPPFLAGS = $(ALACRITY_CPPFLAGS)
 
 CLEANFILES = *.bp
 CC=$(MPICC)
