@@ -78,7 +78,7 @@ int adios_transform_zlib_apply(struct adios_file_struct *fd,
     assert(var->transform_type == adios_transform_zlib);
 
     // Get the input data and data length
-    const uint64_t input_size = adios_transform_get_pre_transform_var_size(fd->group, var);
+    const uint64_t input_size = adios_transform_get_pre_transform_var_size(var);
     const void *input_buff= var->data;
 
     // parse the compressiong parameter

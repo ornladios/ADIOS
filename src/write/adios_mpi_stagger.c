@@ -1579,7 +1579,7 @@ void adios_mpi_stagger_write (struct adios_file_struct * fd
 
         // write payload
         // adios_write_var_payload_v1 (fd, v);
-        uint64_t var_size = adios_get_var_size (v, fd->group, v->data);
+        uint64_t var_size = adios_get_var_size (v, v->data);
         MPI_File_write (md->fh, v->data, var_size, MPI_BYTE, &md->status);
         MPI_Get_count (&md->status, MPI_BYTE, &count);
         if (count != var_size)

@@ -118,6 +118,11 @@ int64_t adios_define_var (int64_t group_id,
                           const char * local_offsets
                          );
 
+// To set the transform method for a variable just defined 
+// var_id is the value returned by adios_define_var
+// returns adios_errno (0=OK)
+int adios_set_transform (int64_t var_id, const char *transform_type_str);
+
 int adios_define_attribute (int64_t group, 
                             const char * name,
                             const char * path, 

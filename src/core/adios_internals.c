@@ -34,6 +34,7 @@
 #include "adios_transforms_hooks.h"
 #include "adios_transforms_read.h"
 #include "adios_transforms_write.h"
+#include "adios_transforms_specparse.h"
 
 struct adios_method_list_struct * adios_methods = 0;
 struct adios_group_list_struct * adios_groups = 0;
@@ -1651,7 +1652,6 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
         ,const char * dimensions
         ,const char * global_dimensions
         ,const char * local_offsets
-        ,const char *transform_type_str // NCSU ALACRITY-ADIOS
         )
 {
     struct adios_group_struct * t = (struct adios_group_struct *) group_id;
@@ -1696,7 +1696,7 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
     v->stats = 0;
     v->bitmap = 0;
 
-    // NCSU ALACRITY-ADIOS - Initialize transform metadata
+    // NCSU ALACRITY-ADIOS - Initialize transform metadata (set to 'none')
     adios_transform_init_transform_var(v);
 
     // Q.L. - Check whether stats are disabled or not
@@ -1800,24 +1800,33 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
     if (lo_dim_temp)
         free (lo_dim_temp);
 
-    // NCSU ALACRITY-ADIOS - parse transform type string, and call the transform layer to
-    //   set up the variable as needed
-    struct adios_transform_spec *transform_spec = adios_transform_parse_spec(transform_type_str);
-    if (transform_spec->transform_type == adios_transform_unknown) {
-        log_error("Unknown transform type \"%s\" specified for variable \"%s\", ignoring it...\n",
-                  transform_spec->transform_type_str, v->name);
-        transform_spec->transform_type = adios_transform_none;
-    }
-
-    // This function sets the transform_type field. It does nothing if transform_type is none.
-    // Note: ownership of the transform_spec struct is given to this function
-    v = adios_transform_define_var(t, v, transform_spec);
-
     v->id = ++t->member_count;
     adios_append_var (t, v);
 
     return (int64_t)v;
 }
+
+/* Set the transformation method for a variable. Only one transformation will work for each variable */
+int adios_common_set_transform (int64_t var_id, const char *transform_type_str)
+{
+    struct adios_var_struct * v = (struct adios_var_struct *)var_id;
+    assert (v);
+    // NCSU ALACRITY-ADIOS - parse transform type string, and call the transform layer to
+    //   set up the variable as needed
+    struct adios_transform_spec *transform_spec = adios_transform_parse_spec(transform_type_str, v->transform_spec);
+    if (transform_spec->transform_type == adios_transform_unknown) {
+        adios_error(err_invalid_transform_type, 
+                  "Unknown transform type \"%s\" specified for variable \"%s\", ignoring it...\n",
+                  transform_spec->transform_type_str, v->name);
+        transform_spec->transform_type == adios_transform_none;
+    }
+
+    // This function sets the transform_type field. It does nothing if transform_type is none.
+    // Note: ownership of the transform_spec struct is given to this function
+    v = adios_transform_define_var(v, transform_spec);
+    return adios_errno;
+}
+
 
 void adios_common_get_group (int64_t * group_id, const char * name)
 {
@@ -4637,9 +4646,9 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
     enum ADIOS_DATATYPES original_var_type = adios_transform_get_var_original_type_var(var);
 
     if (var->transform_type != adios_transform_none) {
-        total_size = adios_transform_get_pre_transform_var_size (fd->group, var);
+        total_size = adios_transform_get_pre_transform_var_size (var);
     } else {
-        total_size = adios_get_var_size (var, fd->group, var->data);
+        total_size = adios_get_var_size (var, var->data);
     }
 
     if (var->bitmap == 0)
@@ -5113,7 +5122,7 @@ uint64_t adios_write_var_header_v1 (struct adios_file_struct * fd
     // adios_generate_var_characteristics_v1 (fd, v);
     total_size += adios_write_var_characteristics_v1 (fd, v);
 
-    total_size += adios_get_var_size (v, fd->group, v->data); // payload
+    total_size += adios_get_var_size (v, v->data); // payload
 
     buffer_write (&fd->buffer, &fd->buffer_size, &start, &total_size, 8);
 
@@ -5132,7 +5141,7 @@ int adios_write_var_payload_v1 (struct adios_file_struct * fd
     uint64_t size;
 
     // write payload
-    size = adios_get_var_size (var, fd->group, var->data);
+    size = adios_get_var_size (var, var->data);
     buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, var->data, size);
 
     if (fd->bytes_written < fd->offset)
@@ -5316,8 +5325,7 @@ int adios_multiply_dimensions (uint64_t * size
 // TODO: Factor out "var", since needed because of adios_multiply_dimensions, which needs
 //       it only for debugging output.
 uint64_t adios_get_dimension_space_size (struct adios_var_struct *var
-                                        ,struct adios_dimension_struct * d
-                                        ,struct adios_group_struct * group) {
+                                        ,struct adios_dimension_struct * d) {
     uint64_t size = 1;
     while (d)
     {
@@ -5402,13 +5410,11 @@ uint64_t adios_get_dimension_space_size (struct adios_var_struct *var
 }
 
 // NCSU ALACRITY-ADIOS: Refactored to call the above dimension space compute code
-uint64_t adios_get_var_size (struct adios_var_struct * var
-        ,struct adios_group_struct * group, void * data
-        )
+uint64_t adios_get_var_size (struct adios_var_struct * var, void * data)
 {
     uint64_t size = adios_get_type_size (var->type, data);
     if (var->dimensions)
-        size *= adios_get_dimension_space_size(var, var->dimensions, group);
+        size *= adios_get_dimension_space_size(var, var->dimensions);
 
     return size;
 }

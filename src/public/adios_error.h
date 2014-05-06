@@ -145,8 +145,13 @@ enum ADIOS_ERRCODES {
     err_mesh_structured_missing_points        = -197, // points are not defined
     err_mesh_structured_invalid_num_points    = -198, // number of points is invalid
 
-    err_fgr                                   = -199, // FGR lib error
-    err_unspecified                           = -200
+    // Transform layer errors
+    err_invalid_transform_type                = -300, // unknown transform is requested 
+
+    // Miscellaneous
+    err_fgr                                   = -900, // FGR lib error
+
+    err_unspecified                           = -1000
 };
 
 void adios_error (enum ADIOS_ERRCODES errcode, char *fmt, ...);
