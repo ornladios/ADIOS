@@ -3128,11 +3128,11 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
 #endif
             } else {
                 // Old functionality
-				common_read_free_transinfo (raw_varinfo, transinfo);
-				common_read_free_varinfo (raw_varinfo);
+                common_read_free_transinfo (raw_varinfo, transinfo);
+                common_read_free_varinfo (raw_varinfo);
 
-				internals = (struct common_read_internals_struct *) fp->internal_data;
-				retval = internals->read_hooks[internals->method].adios_schedule_read_byid_fn (fp, sel, varid+internals->group_varid_offset, from_steps, nsteps, data);
+                internals = (struct common_read_internals_struct *) fp->internal_data;
+                retval = internals->read_hooks[internals->method].adios_schedule_read_byid_fn (fp, sel, varid+internals->group_varid_offset, from_steps, nsteps, data);
             }
         } else {
             adios_error (err_invalid_varid, 
