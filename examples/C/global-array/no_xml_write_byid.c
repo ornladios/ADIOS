@@ -70,6 +70,7 @@ int main (int argc, char ** argv)
                                           ,"", adios_double
                                           ,l_str, g_str, o_str
                                           );
+            adios_set_transform (var_ids[i], "identity");
         }
    
         adios_open (&m_adios_file, "restart", filename, "w", comm);

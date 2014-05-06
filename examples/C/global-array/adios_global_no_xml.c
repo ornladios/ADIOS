@@ -73,9 +73,11 @@ int main (int argc, char ** argv)
                         ,"", adios_integer
                         ,0, 0, 0);
    
-           adios_define_var (m_adios_group, "temperature"
+           int64_t varid;
+           varid = adios_define_var (m_adios_group, "temperature"
                         ,"", adios_double
                         ,"NX", "Global_bounds", "Offsets");
+           adios_set_transform (varid, "none");
         }
    
         adios_open (&m_adios_file, "restart", filename, "w", comm);
