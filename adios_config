@@ -7,7 +7,6 @@
 #
 
 MYDIR=`dirname $0`
-echo "--- MYDIR = [$MYDIR] ---"
 
 FLAGSFILE=${MYDIR}/adios_config.flags
 if [ ! -f ${FLAGSFILE} ]; then
