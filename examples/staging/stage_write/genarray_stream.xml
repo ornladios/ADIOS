@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <adios-config host-language="Fortran">
-  <adios-group name="genarray" coordination-communicator="group_comm" time-index="steps">
+  <adios-group name="genarray" coordination-communicator="group_comm">
     <var name="gndx" path="/dimensions" type="integer"/>
     <var name="gndy" path="/dimensions" type="integer"/>
     <var name="gndz" path="/dimensions" type="integer"/>
@@ -27,23 +27,23 @@
     <global-bounds dimensions="/dimensions/gndx,/dimensions/gndy,/dimensions/gndz" 
                    offsets="/aux/offx,/aux/offy,/aux/offz">
         <var name="var1" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" 
-             dimensions="/aux/ndx,/aux/ndy,/aux/ndz,steps"/>
+             dimensions="/aux/ndx,/aux/ndy,/aux/ndz"/>
         <var name="var2" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" 
-             dimensions="/aux/ndx,/aux/ndy,/aux/ndz,steps"/>
+             dimensions="/aux/ndx,/aux/ndy,/aux/ndz"/>
         <var name="var3" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" 
-             dimensions="/aux/ndx,/aux/ndy,/aux/ndz,steps"/>
+             dimensions="/aux/ndx,/aux/ndy,/aux/ndz"/>
         <var name="var4" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" 
-             dimensions="/aux/ndx,/aux/ndy,/aux/ndz,steps"/>
+             dimensions="/aux/ndx,/aux/ndy,/aux/ndz"/>
         <var name="var5" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" 
-             dimensions="/aux/ndx,/aux/ndy,/aux/ndz,steps"/>
+             dimensions="/aux/ndx,/aux/ndy,/aux/ndz"/>
         <var name="var6" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" 
-             dimensions="/aux/ndx,/aux/ndy,/aux/ndz,steps"/>
+             dimensions="/aux/ndx,/aux/ndy,/aux/ndz"/>
         <var name="var7" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" 
-             dimensions="/aux/ndx,/aux/ndy,/aux/ndz,steps"/>
+             dimensions="/aux/ndx,/aux/ndy,/aux/ndz"/>
         <var name="var8" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" 
-             dimensions="/aux/ndx,/aux/ndy,/aux/ndz,steps"/>
+             dimensions="/aux/ndx,/aux/ndy,/aux/ndz"/>
         <var name="var9" gwrite="double_xyz" gread="double_xyz" path="/var" type="real*8" 
-             dimensions="/aux/ndx,/aux/ndy,/aux/ndz,steps"/>
+             dimensions="/aux/ndx,/aux/ndy,/aux/ndz"/>
     </global-bounds>
     <attribute name="description" path="/var/double_xyz"
                value="3D array with 3D decomposition"/>
@@ -51,7 +51,7 @@
 
   </adios-group>
 
-  <method group="genarray" method="DATASPACES">verbose=3</method>
+  <method group="genarray" method="FLEXPATH">verbose=3</method>
 
   <buffer size-MB="20" allocate-time="now"/>
 
