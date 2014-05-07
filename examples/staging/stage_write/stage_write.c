@@ -296,7 +296,8 @@ int process_metadata(int step)
 
     varinfo = (VarInfo *) malloc (sizeof(VarInfo) * f->nvars);
     if (!varinfo) {
-        print("ERROR: rank %d cannot allocate %lu bytes\n", rank, sizeof(VarInfo)*f->nvars);
+        print("ERROR: rank %d cannot allocate %llu bytes\n", 
+                rank, (uint64_t)(sizeof(VarInfo)*f->nvars));
         return 1;
     }
 
