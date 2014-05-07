@@ -6,14 +6,17 @@
 # Configuration values from configure script
 #
 
-FLAGSFILE=`dirname $0`/adios_config.flags
+MYDIR=`dirname $0`
+echo "--- MYDIR = [$MYDIR] ---"
+
+FLAGSFILE=${MYDIR}/adios_config.flags
 if [ ! -f ${FLAGSFILE} ]; then
     echo "ERROR: settings file ${FLAGSFILE} not found."
     exit 1
 fi
 . ${FLAGSFILE}
 
-GITSTATFILE=`dirname $0`/git.status
+GITSTATFILE=${MYDIR}/git.status
 if [ -f ${GITSTATFILE} ]; then
     . ${GITSTATFILE}
 fi
@@ -185,8 +188,8 @@ if [ "$PRINT_METHODS" == "yes" ]; then
     if [ "$OPT_SEQ" == "yes" ]; then
         if [ "$OPT_READ" == "yes" ]; then
             # ADIOSREAD + SEQ
-            if [ -x ./list_methods_readonly_nompi ]; then
-                ./list_methods_readonly_nompi
+            if [ -x ${MYDIR}/list_methods_readonly_nompi ]; then
+                ${MYDIR}/list_methods_readonly_nompi
             elif [ -x ./utils/list_methods/list_methods_readonly_nompi ]; then
                 ./utils/list_methods/list_methods_readonly_nompi
             else
@@ -194,8 +197,8 @@ if [ "$PRINT_METHODS" == "yes" ]; then
             fi
         else
             # ADIOS + SEQ
-            if [ -x ./list_methods_nompi ]; then
-                ./list_methods_nompi
+            if [ -x ${MYDIR}/list_methods_nompi ]; then
+                ${MYDIR}/list_methods_nompi
             elif [ -x ./utils/list_methods/list_methods_nompi ]; then
                 ./utils/list_methods/list_methods_nompi
             else
@@ -205,8 +208,8 @@ if [ "$PRINT_METHODS" == "yes" ]; then
     else
         if [ "$OPT_READ" == "yes" ]; then
             # ADIOSREAD
-            if [ -x ./list_methods_readonly ]; then
-                ./list_methods_readonly
+            if [ -x ${MYDIR}/list_methods_readonly ]; then
+                ${MYDIR}/list_methods_readonly
             elif [ -x ./utils/list_methods/list_methods_readonly ]; then
                 ./utils/list_methods/list_methods_readonly
             else
@@ -214,8 +217,8 @@ if [ "$PRINT_METHODS" == "yes" ]; then
             fi
         else
             # ADIOS
-            if [ -x ./list_methods ]; then
-                ./list_methods
+            if [ -x ${MYDIR}/list_methods ]; then
+                ${MYDIR}/list_methods
             elif [ -x ./utils/list_methods/list_methods ]; then
                 ./utils/list_methods/list_methods
             else
