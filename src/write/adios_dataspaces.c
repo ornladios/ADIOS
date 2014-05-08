@@ -115,7 +115,7 @@ static int connect_to_dspaces (struct adios_ds_data_struct * md, MPI_Comm comm)
                 md->rank, num_peers, md->appid);
 
         //Init the dart client
-        ret = dspaces_init (num_peers, md->appid);
+        ret = dspaces_init (num_peers, md->appid, NULL);
         if (ret) {
             log_error ("adios_dataspaces: rank=%d Failed to connect to DATASPACES: err=%d,  rank=%d\n", md->rank, ret);        
             return ret;
@@ -354,12 +354,8 @@ void adios_dataspaces_write (struct adios_file_struct * fd
     ub_in[0] = ub[didx[0]]; ub_in[1] = ub[didx[1]]; ub_in[2] = ub[didx[2]];
     gdims_in[0] = gdims[didx[0]]; gdims_in[1] = gdims[didx[1]]; gdims_in[2] = gdims[didx[2]];
 
-    dspaces_put_with_gdim(ds_var_name, version, var_type_size,
-        ndims, lb_in, ub_in, gdims_in, data); 
-    //dspaces_put(ds_var_name, version, var_type_size, 
-    //         lb[didx[0]], lb[didx[1]], lb[didx[2]], 
-    //         ub[didx[0]], ub[didx[1]], ub[didx[2]], 
-    //         data);
+    dspaces_define_gdim(ds_var_name, ndims, gdims_in);
+    dspaces_put(ds_var_name, version, var_type_size, ndims, lb_in, ub_in, data);
     
     log_debug ("var_name=%s, dimension ordering=(%d,%d,%d), gdims=(%llu,%llu,%llu), lb=(%llu,%llu,%llu), ub=(%llu,%llu,%llu)\n",
             ds_var_name, 
@@ -839,7 +835,7 @@ void adios_dataspaces_close (struct adios_file_struct * fd
     struct adios_index_struct_v1 * index = adios_alloc_index_v1(1);
     struct adios_attribute_struct * a = fd->group->attributes;
     struct adios_dspaces_file_info *info = lookup_dspaces_file_info(md,fd->name);
-    uint64_t lb[3], ub[3];
+    uint64_t lb[3], ub[3], lb_in[3], ub_in[3];
     int didx[3]; // for reordering DS dimensions
     unsigned int version;
 
@@ -882,8 +878,8 @@ void adios_dataspaces_close (struct adios_file_struct * fd
             log_debug ("%s: put %s with buf len %d into space\n", __func__, ds_var_name, indexlen);
             ub[0] = indexlen-1; ub[1] = 0; ub[2] = 0;
             ds_dimension_ordering(1, 0, 0, didx); // C ordering of 1D array into DS
-            dspaces_put(ds_var_name, version, 1,    0, 0, 0, /* lb 0..2 */
-                     ub[didx[0]], ub[didx[1]], ub[didx[2]],  indexbuf); 
+            lb_in[0] = 0; ub_in[0] = indexlen-1;
+            dspaces_put(ds_var_name, version, 1, 1, lb_in, ub_in, indexbuf);
             free (indexbuf);
 
             /* Create and put FILE@fn header into space */
@@ -902,8 +898,8 @@ void adios_dataspaces_close (struct adios_file_struct * fd
             ub[0] = file_info_buf_len-1; ub[1] = 0; ub[2] = 0;
             ds_dimension_ordering(1, 0, 0, didx); // C ordering of 1D array into DS
             dspaces_put_sync(); //wait on previous put to finish
-            dspaces_put(ds_var_name, version, 1,    0, 0, 0, /* lb 0..2 */
-                     ub[didx[0]], ub[didx[1]], ub[didx[2]], file_info_buf); 
+            lb_in[0] = 0; ub_in[0] = file_info_buf_len-1;
+            dspaces_put(ds_var_name, version, 1, 1, lb_in, ub_in, file_info_buf);
 
             /* Create and put VERSION@fn version info into space */
             int version_buf[2] = {version, 0}; /* last version put in space; not terminated */
@@ -914,8 +910,8 @@ void adios_dataspaces_close (struct adios_file_struct * fd
             ub[0] = version_buf_len-1; ub[1] = 0; ub[2] = 0;
             ds_dimension_ordering(1, 0, 0, didx); // C ordering of 1D array into DS
             dspaces_put_sync(); //wait on previous put to finish
-            dspaces_put(ds_var_name, 0, sizeof(int),    0, 0, 0, /* lb 0..2 */
-                     ub[didx[0]], ub[didx[1]], ub[didx[2]],  version_buf); 
+            lb_in[0] = 0; ub_in[0] = version_buf_len-1;
+            dspaces_put(ds_var_name, 0, sizeof(int), 1, lb_in, ub_in, version_buf);
             dspaces_put_sync(); //wait on previous put to finish
             
         }
@@ -972,6 +968,7 @@ void adios_dataspaces_finalize (int mype, struct adios_method_struct * method)
     char ds_var_name[MAX_DS_NAMELEN];
     uint64_t lb[3] = {0,0,0}; 
     uint64_t ub[3] = {1,0,0}; // we put 2 integers to space, 
+    uint64_t lb_in[3] = {0,0,0}, ub_in[3] = {1,0,0};
     int didx[3]; // for reordering DS dimensions
     int value[2] = {0, 1}; // integer to be written to space (terminated=1)
 
@@ -990,10 +987,7 @@ void adios_dataspaces_finalize (int mype, struct adios_method_struct * method)
             snprintf(ds_var_name, MAX_DS_NAMELEN, "VERSION@%s", md->fnames[i]);
             log_debug ("%s: update %s in the space [%d, %d]\n", 
                     __func__, ds_var_name, value[0], value[1] );
-            dspaces_put(ds_var_name, 0, sizeof(int),   
-                    lb[didx[0]], lb[didx[1]], lb[didx[2]], 
-                    ub[didx[0]], ub[didx[1]], ub[didx[2]],  
-                    &value); 
+            dspaces_put(ds_var_name, 0, sizeof(int), 1, lb_in, ub_in, &value); 
             log_debug("%s: call dspaces_put_sync()\n", __func__);
             dspaces_put_sync();
 

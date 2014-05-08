@@ -250,7 +250,7 @@ int adios_read_dimes_init_method (MPI_Comm comm, PairStruct * params)
             appid = 2;
         log_debug("-- %s, rank %d: connect to dataspaces with nproc=%d and appid=%d\n", 
                     __func__, rank, nproc, appid);
-        err = dspaces_init(nproc, appid);
+        err = dspaces_init(nproc, appid, NULL);
         if (err < 0) {
             adios_error (err_connection_failed, "Failed to connect with DATASPACES\n");
             return err_connection_failed;
@@ -1135,13 +1135,9 @@ static int adios_read_dimes_get_data(const char * varname, enum ADIOS_DATATYPES 
         __func__, rank, varname, version, lb[0], lb[1], lb[2], 
         ub[0], ub[1], ub[2]);
 
-    err = dimes_get_with_gdim (varname, version, elemsize,
-                ndims, lb, ub, gdims, data);
-    //err =  dimes_get (varname, version, elemsize, 
-    //                 lb[0], lb[1], lb[2],
-    //                 ub[0], ub[1], ub[2],
-    //                 data
-    //                );
+    dimes_define_gdim (varname, ndims, gdims);
+    err = dimes_get (varname, version, elemsize,
+                ndims, lb, ub, data);
     /*if (err == -ENOMEM) {
         adios_error (err_no_memory, "Not enough memory for DATASPACES to perform dspaces_get()");  
         return err_no_memory;
@@ -1178,11 +1174,7 @@ static int adios_read_dimes_get_meta(const char * varname, enum ADIOS_DATATYPES 
         __func__, rank, varname, version, lb[0], lb[1], lb[2], 
         ub[0], ub[1], ub[2]);
 
-    err =  dspaces_get (varname, version, elemsize, 
-                     lb[0], lb[1], lb[2],
-                     ub[0], ub[1], ub[2],
-                     data
-                    );
+    err =  dspaces_get (varname, version, elemsize, ndims, lb, ub, data); 
     /*if (err == -ENOMEM) {
         adios_error (err_no_memory, "Not enough memory for DATASPACES to perform dspaces_get()");  
         return err_no_memory;
@@ -1230,11 +1222,7 @@ static int adios_read_dimes_get_meta_collective(const char * varname,
         ub[0], ub[1], ub[2]);
 
     if (rank == root) {
-        err =  dspaces_get (varname, version, elemsize,
-                         lb[0], lb[1], lb[2],
-                         ub[0], ub[1], ub[2],
-                         data
-                        );
+        err =  dspaces_get (varname, version, elemsize, ndims, lb, ub, data);
 
         // set pad to indicate if root rank successfully fetch the meta data
         pad = (int*)buf;
