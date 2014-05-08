@@ -1240,17 +1240,20 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
 
             // fix the bgp bugs
             //            if (!adios_common_define_var (*(int64_t *) &new_group, name
-            if (!adios_common_define_var (ptr_new_group, name
+            int64_t var = adios_common_define_var (ptr_new_group, name
                         ,path, t1, dimensions
                         ,gb_global_dimensions
                         ,gb_local_offsets
-                        ,transform_type // NCSU ALACRITY-ADIOS
-                        )
-               )
+                        );
+            if (!var)
             {
                 return 0;
             }else{
                 // Successfully define a variable, so now
+                // an attribute for the transform method if given.
+                if (transform_type && strcmp(transform_type,"")) {
+                    adios_common_set_transform (var, transform_type);
+                }
                 // an attribute for the mesh if it exists.
                 if (strcmp(mesh,"")){
                     adios_common_define_var_mesh (ptr_new_group, name, mesh, path);
@@ -1426,18 +1429,20 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                             parseFlag ("read", read_flag, adios_flag_no);
                         // fix the bgp bugs
                         //                    if (!adios_common_define_var (*(int64_t *) &new_group
-                        if (!adios_common_define_var (ptr_new_group
-                                    ,name
-                                    ,path, t1, dimensions
-                                    ,gb_global_dimensions
-                                    ,gb_local_offsets
-                                    ,transform_type // NCSU ALACRITY-ADIOS
-                                    )
-                           )
+                        int64_t var = adios_common_define_var (ptr_new_group, name
+                                ,path, t1, dimensions
+                                ,gb_global_dimensions
+                                ,gb_local_offsets
+                                );
+                        if (!var)
                         {
                             return 0;
                         }else{
                             // Successfully define a variable, so now
+                            // an attribute for the transform method if given.
+                            if (transform_type && strcmp(transform_type,"")) {
+                                adios_common_set_transform (var, transform_type);
+                            }
                             // an attribute for the mesh if it exists.
                             if (strcmp(mesh,"")){
                                 mpath1 = malloc(strlen("/adios_schema")+strlen(name)+1);

@@ -549,6 +549,8 @@ Arguments
    -s   Print above flags for using ADIOS in a sequential code (no MPI).
    -1   Print above flags for using old Read API of ADIOS.
 
+   -m   Print available write/read methods and data transformation methods
+
    -v   Version of the installed package
    -i   More installation information about the package
 
@@ -558,6 +560,7 @@ Notes
    - If none of d,c,l are given, all of them is printed
    - If none of f,r,s are given, flags for C/C++, using ADIOS write/read
      methods are printed
+   - -m can be combined with -r (readonly libraries) and -s (sequential libraries)
 \end{lstlisting}
 
 That is, for example, \verb+adios_config -lfrs+ will print the \emph{link} flags for building

@@ -1175,7 +1175,7 @@ void adios_mpi_write (struct adios_file_struct * fd
 
         // write payload
         // adios_write_var_payload_v1 (fd, v);
-        uint64_t var_size = adios_get_var_size (v, fd->group, v->data);
+        uint64_t var_size = adios_get_var_size (v, v->data);
 
         if (fd->base_offset + var_size > fd->pg_start_in_file + fd->write_size_bytes)
             adios_error (err_out_of_bound, 

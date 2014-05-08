@@ -40,6 +40,8 @@ typedef struct {
     char *outputBuf;
 } aplod_read_meta_t;
 
+int adios_transform_aplod_is_implemented (void) {return 1;}
+
 int adios_transform_aplod_generate_read_subrequests(adios_transform_read_request *reqgroup,
                                                     adios_transform_pg_read_request *pg_reqgroup)
 {

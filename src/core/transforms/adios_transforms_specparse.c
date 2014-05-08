@@ -36,10 +36,15 @@ inline static int strcount(char *input, char chr) {
 #define CALLOC_ARRAY(var, count) ((var) = (__typeof__(var))calloc((count), sizeof(*var)))
 #define CALLOC_VAR(var) CALLOC_ARRAY(var, 1)
 
-struct adios_transform_spec * adios_transform_parse_spec(const char *spec_str) {
+//struct adios_transform_spec * adios_transform_parse_spec(const char *spec_str) {
+struct adios_transform_spec * adios_transform_parse_spec(const char *spec_str, 
+                                                         struct adios_transform_spec *spec_in) 
+{
     //struct adios_transform_spec *spec = (struct adios_transform_spec *)malloc(sizeof(struct adios_transform_spec));
-    struct adios_transform_spec *spec;
-    MALLOC_VAR(spec);
+    struct adios_transform_spec *spec = spec_in;
+    if (!spec_in) {
+        MALLOC_VAR(spec);
+    }
 
     *spec = (struct adios_transform_spec){
         .transform_type = adios_transform_none,

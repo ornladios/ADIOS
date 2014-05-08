@@ -4,8 +4,8 @@ TARGET=pgi
 override ADIOS_DIR=/ccs/proj/e2e/qliu/ADIOS/test.${TARGET}
 
 ## mpicc and mpif90 SETTINGS
-CC=cc
-FC=ftn
+CC=mpicc
+FC=mpif90
 CFLAGS=-g
 LDFLAGS=-g
 

@@ -1457,7 +1457,7 @@ void adios_nssi_write(
             if (DEBUG>3) fprintf(stderr, "-------------------------\n");
             if (DEBUG>3) fprintf(stderr, "write var: %s start!\n", v->name);
         }
-        uint64_t var_size = adios_get_var_size (v, f->group, data);
+        uint64_t var_size = adios_get_var_size (v, data);
         if (DEBUG>2) printf("rank (%d) adios_nssi_write: vpath(%s) vname(%s) vsize(%ld)\n", global_rank, v->path, v->name, var_size);
         write_var(file_data,
                 f->group,

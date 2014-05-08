@@ -7,12 +7,32 @@ deployment of new techniques for data movement through the use of {\em
 this manual, the user is given the option to easily select a specific method for
 the needs of an application at run time. 
 
-ADIOS includes two broad classes of transport method, viz. mainline methods and
+ADIOS includes two broad classes of transport method, mainline methods and
 experimental methods. Mainline methods are supported methods that provide both
 high performance, reliability and usability. Experimental methods are
 under-development research techniques to explore new I/O techniques. While we
 encourage our users to experiment with all available methods, no explicit
 support is provided for these research methods. 
+
+The \verb+adios_config+ tool lists the transport (write) methods when using the -m option.
+
+\begin{lstlisting}
+$ adios_config -m
+...
+available write methods (in XML <method> element or in adios_select_method()):
+    "MPI"
+    "POSIX"
+    "DATASPACES"
+    "PHDF5"
+    "MPI_LUSTRE"
+    "POSIX1"
+    "NC4"
+    "MPI_AGGREGATE"
+    "FLEXPATH"
+    "VAR_MERGE"
+...
+\end{lstlisting}
+
 
 %% Because of the time it can take to move data from one process to another or to 
 %% write and read data to and from a disk, it is often advantageous to arrange the 

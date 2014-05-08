@@ -8,10 +8,11 @@
 #ifndef ADIOS_H
 #define ADIOS_H
 
+#include <stdint.h>
+
 #include "adios_mpi.h"
 #include "adios_types.h"
 #include "adios_error.h"
-#include <stdint.h>
 
 // ADIOS - Adaptable IO System
 
@@ -116,6 +117,11 @@ int64_t adios_define_var (int64_t group_id,
                           const char * global_dimensions,
                           const char * local_offsets
                          );
+
+// To set the transform method for a variable just defined 
+// var_id is the value returned by adios_define_var
+// returns adios_errno (0=OK)
+int adios_set_transform (int64_t var_id, const char *transform_type_str);
 
 int adios_define_attribute (int64_t group, 
                             const char * name,

@@ -40,7 +40,7 @@ enum ADIOS_READ_METHOD read_method;
 static const int max_read_buffer_size  = 1024*1024*1024;
 static const int max_write_buffer_size = 1024*1024*1024;
 
-static int timeout_sec = 30; // will stop if no data found for this time (-1: never stop)
+static int timeout_sec = 300; // will stop if no data found for this time (-1: never stop)
 
 
 // Global variables
@@ -178,12 +178,7 @@ int main (int argc, char ** argv)
     print0("Write method parameters = \"%s\"\n", wmethodparams);
     
 
-    err = adios_read_init_method(read_method, comm, 
-                                 "max_chunk_size=100; "
-                                 "app_id =32767; \n"
-                                 "verbose= 3;"
-                                 "poll_interval  =  100;"
-                                );
+    err = adios_read_init_method(read_method, comm, rmethodparams);
 
     if (!err) {
         print0 ("%s\n", adios_errmsg());
@@ -301,7 +296,8 @@ int process_metadata(int step)
 
     varinfo = (VarInfo *) malloc (sizeof(VarInfo) * f->nvars);
     if (!varinfo) {
-        print("ERROR: rank %d cannot allocate %lu bytes\n", rank, sizeof(VarInfo)*f->nvars);
+        print("ERROR: rank %d cannot allocate %llu bytes\n", 
+                rank, (uint64_t)(sizeof(VarInfo)*f->nvars));
         return 1;
     }
 

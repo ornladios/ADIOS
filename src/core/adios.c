@@ -379,9 +379,18 @@ int64_t adios_define_var (int64_t group_id, const char * name
                                    ,type
                                    ,dimensions
                                    ,global_dimensions, local_offsets
-                                   ,NULL // NCSU ALACRITY-ADIOS
                                    );
 }
+
+///////////////////////////////////////////////////////////////////////////////
+// adios_common_set_transform is in adios_internals.c
+// set the transform method for the selected variable (default is "none")
+int adios_set_transform (int64_t var_id, const char *transform_type_str)
+{
+    adios_errno = err_no_error;
+    return adios_common_set_transform (var_id, transform_type_str);
+}
+
 
 ///////////////////////////////////////////////////////////////////////////////
 

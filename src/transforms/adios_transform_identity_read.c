@@ -22,6 +22,8 @@
 
 #define MAX_DIMS 32
 
+int adios_transform_identity_is_implemented (void) {return 1;}
+
 void compute_sieving_offsets_for_pg_selection(const ADIOS_SELECTION *intersect_sel,
                                               const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *pgbb,
                                               uint64_t *start_off_ptr, uint64_t *end_off_ptr) {

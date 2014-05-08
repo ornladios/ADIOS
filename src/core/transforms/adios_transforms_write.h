@@ -15,11 +15,10 @@
 /*
  * Returns the pre-transform size, in bytes, of a variable. Note: only works on
  * "dimensioned" variables (i.e., not a scalar or a string).
- * @param group the ADIOS group of the variable
  * @param var the variable to examine
  * @return the pre-transform size, in bytes, of var
  */
-uint64_t adios_transform_get_pre_transform_var_size(struct adios_group_struct *group, struct adios_var_struct *var);
+uint64_t adios_transform_get_pre_transform_var_size(struct adios_var_struct *var);
 
 /*
  * Modifies the variable definition appropriately for the case that the variable
@@ -27,8 +26,7 @@ uint64_t adios_transform_get_pre_transform_var_size(struct adios_group_struct *g
  * the variable type to a byte array, storing the old dimension/type metadata,
  * and setting appropriate flag fields.
  */
-struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *orig_var_grp,
-                                                     struct adios_var_struct *orig_var,
+struct adios_var_struct * adios_transform_define_var(struct adios_var_struct *orig_var,
                                                      struct adios_transform_spec *transform_spec);
 
 /*

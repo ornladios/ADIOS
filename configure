@@ -23536,17 +23536,19 @@ INFINIBAND_LIBS=""
 
 # Check whether --with-infiniband was given.
 if test "${with_infiniband+set}" = set; then
-  withval=$with_infiniband;  ac_with_infiniband=yes;
+  withval=$with_infiniband;  INFINIBAND_DIR=$withval;
+else
+  with_infiniband=yes
 fi
 
 
 
 
-if test x"$withval" = xno; then
+if test x"$with_infiniband" = xno; then
 
         ac_with_infiniband=no;
 
-elif test x"$withval" = xyes -o x"$withval" = x; then
+elif test x"$with_infiniband" = xyes -o x"$with_infiniband" = x; then
 
         INFINIBAND_CPPFLAGS="";
         INFINIBAND_LDFLAGS="";
@@ -23571,6 +23573,9 @@ fi
 
 
 if test x"$ac_with_infiniband" = xyes; then
+
+        { $as_echo "$as_me:$LINENO: === checking for INFINIBAND ===" >&5
+$as_echo "$as_me: === checking for INFINIBAND ===" >&6;}
 
                 save_CPPFLAGS=$CPPFLAGS;
         save_LDFLAGS=$LDFLAGS;
@@ -23928,11 +23933,13 @@ PORTALS_LIBS=""
 
 # Check whether --with-portals was given.
 if test "${with_portals+set}" = set; then
-  withval=$with_portals;  ac_with_portals=yes;
+  withval=$with_portals;  ac_with_portals=$withval;
+else
+  ac_with_portals=no
 fi
 
 
-if test x"$withval" = xno; then
+if test x"$ac_with_portals" = xno; then
 
          if false; then
   HAVE_PORTALS_TRUE=
@@ -25281,9 +25288,6 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
 ac_cray_pmi_lib_ok=no
 
-{ $as_echo "$as_me:$LINENO: === checking for CRAY PMI ===" >&5
-$as_echo "$as_me: === checking for CRAY PMI ===" >&6;}
-
  if true; then
   HAVE_CRAY_PMI_TRUE=
   HAVE_CRAY_PMI_FALSE='#'
@@ -25339,6 +25343,9 @@ fi
 
 
 else
+
+    { $as_echo "$as_me:$LINENO: === checking for CRAY PMI ===" >&5
+$as_echo "$as_me: === checking for CRAY PMI ===" >&6;}
 
             if test -z "${CRAY_PMI_INCDIR}"; then
         if test -n "${CRAY_PMI_DIR}"; then
@@ -25509,9 +25516,6 @@ fi
 
 ac_cray_ugni_lib_ok=no
 
-{ $as_echo "$as_me:$LINENO: === checking for CRAY UGNI ===" >&5
-$as_echo "$as_me: === checking for CRAY UGNI ===" >&6;}
-
  if true; then
   HAVE_CRAY_UGNI_TRUE=
   HAVE_CRAY_UGNI_FALSE='#'
@@ -25567,6 +25571,9 @@ fi
 
 
 else
+
+    { $as_echo "$as_me:$LINENO: === checking for CRAY UGNI ===" >&5
+$as_echo "$as_me: === checking for CRAY UGNI ===" >&6;}
 
             if test -z "${CRAY_UGNI_INCDIR}"; then
         if test -n "${CRAY_UGNI_DIR}"; then
@@ -29645,11 +29652,11 @@ fi
 
 search_list="$datatap_dir/thin_ib.h $datatap_dir/lib/thin_ib.h $datatap_dir/include/thin_ib.h $search_list /usr/include/thin_ib.h /usr/local/include/thin_ib.h /opt/ibpbio/include/thin_ib.h /opt/misc/include/thin_ib.h /opt/misc/include/$cercs_cv_archive/thin_ib.h"
 tmp_search_results=""
-echo "configure:29648: searching for $search_list " >&5
+echo "configure:29655: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29652: first found $tmp_search_results " >&5
+	echo "configure:29659: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29737,11 +29744,11 @@ fi
 
 search_list="$datatap_dir/libibclient.la $datatap_dir/lib/libibclient.la $datatap_dir/include/libibclient.la $search_list /usr/lib/libibclient.la /usr/local/lib/libibclient.la /opt/ibpbio/lib/libibclient.la /opt/misc/lib/libibclient.la /opt/misc/lib/$cercs_cv_archive/libibclient.la"
 tmp_search_results=""
-echo "configure:29740: searching for $search_list " >&5
+echo "configure:29747: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29744: first found $tmp_search_results " >&5
+	echo "configure:29751: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29810,11 +29817,11 @@ else
 
 search_list="$PWD/../ibpbio $PWD/../../ibpbio $PWD/../../../ibpbio"
 tmp_search_results=""
-echo "configure:29813: searching for $search_list " >&5
+echo "configure:29820: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29817: first found $tmp_search_results " >&5
+	echo "configure:29824: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29852,11 +29859,11 @@ else
 
 search_list="$PWD/../ibpbio $PWD/../../ibpbio $PWD/../../../ibpbio"
 tmp_search_results=""
-echo "configure:29855: searching for $search_list " >&5
+echo "configure:29862: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29859: first found $tmp_search_results " >&5
+	echo "configure:29866: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -29980,11 +29987,11 @@ fi
 
 search_list="$datatap_dir/ffs.h $datatap_dir/lib/ffs.h $datatap_dir/include/ffs.h $search_list /usr/include/ffs.h /usr/local/include/ffs.h /opt/ffs/include/ffs.h /opt/misc/include/ffs.h /opt/misc/include/$cercs_cv_archive/ffs.h"
 tmp_search_results=""
-echo "configure:29983: searching for $search_list " >&5
+echo "configure:29990: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:29987: first found $tmp_search_results " >&5
+	echo "configure:29994: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30072,11 +30079,11 @@ fi
 
 search_list="$datatap_dir/libffs.la $datatap_dir/lib/libffs.la $datatap_dir/include/libffs.la $search_list /usr/lib/libffs.la /usr/local/lib/libffs.la /opt/ffs/lib/libffs.la /opt/misc/lib/libffs.la /opt/misc/lib/$cercs_cv_archive/libffs.la"
 tmp_search_results=""
-echo "configure:30075: searching for $search_list " >&5
+echo "configure:30082: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30079: first found $tmp_search_results " >&5
+	echo "configure:30086: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30145,11 +30152,11 @@ else
 
 search_list="$PWD/../ffs $PWD/../../ffs $PWD/../../../ffs"
 tmp_search_results=""
-echo "configure:30148: searching for $search_list " >&5
+echo "configure:30155: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30152: first found $tmp_search_results " >&5
+	echo "configure:30159: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30187,11 +30194,11 @@ else
 
 search_list="$PWD/../ffs $PWD/../../ffs $PWD/../../../ffs"
 tmp_search_results=""
-echo "configure:30190: searching for $search_list " >&5
+echo "configure:30197: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30194: first found $tmp_search_results " >&5
+	echo "configure:30201: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30315,11 +30322,11 @@ fi
 
 search_list="$datatap_dir/gen_thread.h $datatap_dir/lib/gen_thread.h $datatap_dir/include/gen_thread.h $search_list /usr/include/gen_thread.h /usr/local/include/gen_thread.h /opt/gen_thread/include/gen_thread.h /opt/misc/include/gen_thread.h /opt/misc/include/$cercs_cv_archive/gen_thread.h"
 tmp_search_results=""
-echo "configure:30318: searching for $search_list " >&5
+echo "configure:30325: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30322: first found $tmp_search_results " >&5
+	echo "configure:30329: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30407,11 +30414,11 @@ fi
 
 search_list="$datatap_dir/libgen_thread.la $datatap_dir/lib/libgen_thread.la $datatap_dir/include/libgen_thread.la $search_list /usr/lib/libgen_thread.la /usr/local/lib/libgen_thread.la /opt/gen_thread/lib/libgen_thread.la /opt/misc/lib/libgen_thread.la /opt/misc/lib/$cercs_cv_archive/libgen_thread.la"
 tmp_search_results=""
-echo "configure:30410: searching for $search_list " >&5
+echo "configure:30417: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30414: first found $tmp_search_results " >&5
+	echo "configure:30421: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30480,11 +30487,11 @@ else
 
 search_list="$PWD/../gen_thread $PWD/../../gen_thread $PWD/../../../gen_thread"
 tmp_search_results=""
-echo "configure:30483: searching for $search_list " >&5
+echo "configure:30490: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30487: first found $tmp_search_results " >&5
+	echo "configure:30494: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30522,11 +30529,11 @@ else
 
 search_list="$PWD/../gen_thread $PWD/../../gen_thread $PWD/../../../gen_thread"
 tmp_search_results=""
-echo "configure:30525: searching for $search_list " >&5
+echo "configure:30532: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30529: first found $tmp_search_results " >&5
+	echo "configure:30536: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30673,11 +30680,11 @@ fi
 
 search_list="$datatap_dir/thin_portal.h $datatap_dir/lib/thin_portal.h $datatap_dir/include/thin_portal.h $search_list /usr/include/thin_portal.h /usr/local/include/thin_portal.h /opt/ptlpbio/include/thin_portal.h /opt/misc/include/thin_portal.h /opt/misc/include/$cercs_cv_archive/thin_portal.h"
 tmp_search_results=""
-echo "configure:30676: searching for $search_list " >&5
+echo "configure:30683: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30680: first found $tmp_search_results " >&5
+	echo "configure:30687: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30765,11 +30772,11 @@ fi
 
 search_list="$datatap_dir/libptlclient.a $datatap_dir/lib/libptlclient.a $datatap_dir/include/libptlclient.a $search_list /usr/lib/libptlclient.a /usr/local/lib/libptlclient.a /opt/ptlpbio/lib/libptlclient.a /opt/misc/lib/libptlclient.a /opt/misc/lib/$cercs_cv_archive/libptlclient.a"
 tmp_search_results=""
-echo "configure:30768: searching for $search_list " >&5
+echo "configure:30775: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30772: first found $tmp_search_results " >&5
+	echo "configure:30779: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30838,11 +30845,11 @@ else
 
 search_list="$PWD/../ptlpbio $PWD/../../ptlpbio $PWD/../../../ptlpbio"
 tmp_search_results=""
-echo "configure:30841: searching for $search_list " >&5
+echo "configure:30848: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30845: first found $tmp_search_results " >&5
+	echo "configure:30852: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -30880,11 +30887,11 @@ else
 
 search_list="$PWD/../ptlpbio $PWD/../../ptlpbio $PWD/../../../ptlpbio"
 tmp_search_results=""
-echo "configure:30883: searching for $search_list " >&5
+echo "configure:30890: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:30887: first found $tmp_search_results " >&5
+	echo "configure:30894: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31040,11 +31047,11 @@ fi
 
 search_list="$datatap_dir/thin_ib.h $datatap_dir/lib/thin_ib.h $datatap_dir/include/thin_ib.h $search_list /usr/include/thin_ib.h /usr/local/include/thin_ib.h /opt/ibpbio/include/thin_ib.h /opt/misc/include/thin_ib.h /opt/misc/include/$cercs_cv_archive/thin_ib.h"
 tmp_search_results=""
-echo "configure:31043: searching for $search_list " >&5
+echo "configure:31050: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31047: first found $tmp_search_results " >&5
+	echo "configure:31054: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31132,11 +31139,11 @@ fi
 
 search_list="$datatap_dir/libibclient.la $datatap_dir/lib/libibclient.la $datatap_dir/include/libibclient.la $search_list /usr/lib/libibclient.la /usr/local/lib/libibclient.la /opt/ibpbio/lib/libibclient.la /opt/misc/lib/libibclient.la /opt/misc/lib/$cercs_cv_archive/libibclient.la"
 tmp_search_results=""
-echo "configure:31135: searching for $search_list " >&5
+echo "configure:31142: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31139: first found $tmp_search_results " >&5
+	echo "configure:31146: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31205,11 +31212,11 @@ else
 
 search_list="$PWD/../ibpbio $PWD/../../ibpbio $PWD/../../../ibpbio"
 tmp_search_results=""
-echo "configure:31208: searching for $search_list " >&5
+echo "configure:31215: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31212: first found $tmp_search_results " >&5
+	echo "configure:31219: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31247,11 +31254,11 @@ else
 
 search_list="$PWD/../ibpbio $PWD/../../ibpbio $PWD/../../../ibpbio"
 tmp_search_results=""
-echo "configure:31250: searching for $search_list " >&5
+echo "configure:31257: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31254: first found $tmp_search_results " >&5
+	echo "configure:31261: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31375,11 +31382,11 @@ fi
 
 search_list="$datatap_dir/ffs.h $datatap_dir/lib/ffs.h $datatap_dir/include/ffs.h $search_list /usr/include/ffs.h /usr/local/include/ffs.h /opt/ffs/include/ffs.h /opt/misc/include/ffs.h /opt/misc/include/$cercs_cv_archive/ffs.h"
 tmp_search_results=""
-echo "configure:31378: searching for $search_list " >&5
+echo "configure:31385: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31382: first found $tmp_search_results " >&5
+	echo "configure:31389: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31467,11 +31474,11 @@ fi
 
 search_list="$datatap_dir/libffs.la $datatap_dir/lib/libffs.la $datatap_dir/include/libffs.la $search_list /usr/lib/libffs.la /usr/local/lib/libffs.la /opt/ffs/lib/libffs.la /opt/misc/lib/libffs.la /opt/misc/lib/$cercs_cv_archive/libffs.la"
 tmp_search_results=""
-echo "configure:31470: searching for $search_list " >&5
+echo "configure:31477: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31474: first found $tmp_search_results " >&5
+	echo "configure:31481: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31540,11 +31547,11 @@ else
 
 search_list="$PWD/../ffs $PWD/../../ffs $PWD/../../../ffs"
 tmp_search_results=""
-echo "configure:31543: searching for $search_list " >&5
+echo "configure:31550: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31547: first found $tmp_search_results " >&5
+	echo "configure:31554: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31582,11 +31589,11 @@ else
 
 search_list="$PWD/../ffs $PWD/../../ffs $PWD/../../../ffs"
 tmp_search_results=""
-echo "configure:31585: searching for $search_list " >&5
+echo "configure:31592: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31589: first found $tmp_search_results " >&5
+	echo "configure:31596: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31710,11 +31717,11 @@ fi
 
 search_list="$datatap_dir/gen_thread.h $datatap_dir/lib/gen_thread.h $datatap_dir/include/gen_thread.h $search_list /usr/include/gen_thread.h /usr/local/include/gen_thread.h /opt/gen_thread/include/gen_thread.h /opt/misc/include/gen_thread.h /opt/misc/include/$cercs_cv_archive/gen_thread.h"
 tmp_search_results=""
-echo "configure:31713: searching for $search_list " >&5
+echo "configure:31720: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31717: first found $tmp_search_results " >&5
+	echo "configure:31724: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31802,11 +31809,11 @@ fi
 
 search_list="$datatap_dir/libgen_thread.la $datatap_dir/lib/libgen_thread.la $datatap_dir/include/libgen_thread.la $search_list /usr/lib/libgen_thread.la /usr/local/lib/libgen_thread.la /opt/gen_thread/lib/libgen_thread.la /opt/misc/lib/libgen_thread.la /opt/misc/lib/$cercs_cv_archive/libgen_thread.la"
 tmp_search_results=""
-echo "configure:31805: searching for $search_list " >&5
+echo "configure:31812: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31809: first found $tmp_search_results " >&5
+	echo "configure:31816: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31875,11 +31882,11 @@ else
 
 search_list="$PWD/../gen_thread $PWD/../../gen_thread $PWD/../../../gen_thread"
 tmp_search_results=""
-echo "configure:31878: searching for $search_list " >&5
+echo "configure:31885: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31882: first found $tmp_search_results " >&5
+	echo "configure:31889: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -31917,11 +31924,11 @@ else
 
 search_list="$PWD/../gen_thread $PWD/../../gen_thread $PWD/../../../gen_thread"
 tmp_search_results=""
-echo "configure:31920: searching for $search_list " >&5
+echo "configure:31927: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:31924: first found $tmp_search_results " >&5
+	echo "configure:31931: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -32068,11 +32075,11 @@ fi
 
 search_list="$datatap_dir/thin_portal.h $datatap_dir/lib/thin_portal.h $datatap_dir/include/thin_portal.h $search_list /usr/include/thin_portal.h /usr/local/include/thin_portal.h /opt/ptlpbio/include/thin_portal.h /opt/misc/include/thin_portal.h /opt/misc/include/$cercs_cv_archive/thin_portal.h"
 tmp_search_results=""
-echo "configure:32071: searching for $search_list " >&5
+echo "configure:32078: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:32075: first found $tmp_search_results " >&5
+	echo "configure:32082: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -32160,11 +32167,11 @@ fi
 
 search_list="$datatap_dir/libptlclient.a $datatap_dir/lib/libptlclient.a $datatap_dir/include/libptlclient.a $search_list /usr/lib/libptlclient.a /usr/local/lib/libptlclient.a /opt/ptlpbio/lib/libptlclient.a /opt/misc/lib/libptlclient.a /opt/misc/lib/$cercs_cv_archive/libptlclient.a"
 tmp_search_results=""
-echo "configure:32163: searching for $search_list " >&5
+echo "configure:32170: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:32167: first found $tmp_search_results " >&5
+	echo "configure:32174: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -32233,11 +32240,11 @@ else
 
 search_list="$PWD/../ptlpbio $PWD/../../ptlpbio $PWD/../../../ptlpbio"
 tmp_search_results=""
-echo "configure:32236: searching for $search_list " >&5
+echo "configure:32243: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:32240: first found $tmp_search_results " >&5
+	echo "configure:32247: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -32275,11 +32282,11 @@ else
 
 search_list="$PWD/../ptlpbio $PWD/../../ptlpbio $PWD/../../../ptlpbio"
 tmp_search_results=""
-echo "configure:32278: searching for $search_list " >&5
+echo "configure:32285: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:32282: first found $tmp_search_results " >&5
+	echo "configure:32289: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -32484,11 +32491,11 @@ fi
 
 search_list="$datatap_dir/evpath.h $datatap_dir/lib/evpath.h $datatap_dir/include/evpath.h $search_list /usr/include/evpath.h /usr/local/include/evpath.h /opt/evpath/include/evpath.h /opt/misc/include/evpath.h /opt/misc/include/$cercs_cv_archive/evpath.h"
 tmp_search_results=""
-echo "configure:32487: searching for $search_list " >&5
+echo "configure:32494: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:32491: first found $tmp_search_results " >&5
+	echo "configure:32498: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -32576,11 +32583,11 @@ fi
 
 search_list="$datatap_dir/libevpath.a $datatap_dir/lib/libevpath.a $datatap_dir/include/libevpath.a $search_list /usr/lib/libevpath.a /usr/local/lib/libevpath.a /opt/evpath/lib/libevpath.a /opt/misc/lib/libevpath.a /opt/misc/lib/$cercs_cv_archive/libevpath.a"
 tmp_search_results=""
-echo "configure:32579: searching for $search_list " >&5
+echo "configure:32586: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:32583: first found $tmp_search_results " >&5
+	echo "configure:32590: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -32649,11 +32656,11 @@ else
 
 search_list="$PWD/../evpath $PWD/../../evpath $PWD/../../../evpath"
 tmp_search_results=""
-echo "configure:32652: searching for $search_list " >&5
+echo "configure:32659: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:32656: first found $tmp_search_results " >&5
+	echo "configure:32663: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -32691,11 +32698,11 @@ else
 
 search_list="$PWD/../evpath $PWD/../../evpath $PWD/../../../evpath"
 tmp_search_results=""
-echo "configure:32694: searching for $search_list " >&5
+echo "configure:32701: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:32698: first found $tmp_search_results " >&5
+	echo "configure:32705: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -32819,11 +32826,11 @@ fi
 
 search_list="$datatap_dir/ffs.h $datatap_dir/lib/ffs.h $datatap_dir/include/ffs.h $search_list /usr/include/ffs.h /usr/local/include/ffs.h /opt/ffs/include/ffs.h /opt/misc/include/ffs.h /opt/misc/include/$cercs_cv_archive/ffs.h"
 tmp_search_results=""
-echo "configure:32822: searching for $search_list " >&5
+echo "configure:32829: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:32826: first found $tmp_search_results " >&5
+	echo "configure:32833: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -32911,11 +32918,11 @@ fi
 
 search_list="$datatap_dir/libffs.a $datatap_dir/lib/libffs.a $datatap_dir/include/libffs.a $search_list /usr/lib/libffs.a /usr/local/lib/libffs.a /opt/ffs/lib/libffs.a /opt/misc/lib/libffs.a /opt/misc/lib/$cercs_cv_archive/libffs.a"
 tmp_search_results=""
-echo "configure:32914: searching for $search_list " >&5
+echo "configure:32921: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:32918: first found $tmp_search_results " >&5
+	echo "configure:32925: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -32984,11 +32991,11 @@ else
 
 search_list="$PWD/../ffs $PWD/../../ffs $PWD/../../../ffs"
 tmp_search_results=""
-echo "configure:32987: searching for $search_list " >&5
+echo "configure:32994: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:32991: first found $tmp_search_results " >&5
+	echo "configure:32998: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -33026,11 +33033,11 @@ else
 
 search_list="$PWD/../ffs $PWD/../../ffs $PWD/../../../ffs"
 tmp_search_results=""
-echo "configure:33029: searching for $search_list " >&5
+echo "configure:33036: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:33033: first found $tmp_search_results " >&5
+	echo "configure:33040: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -33154,11 +33161,11 @@ fi
 
 search_list="$datatap_dir/atl.h $datatap_dir/lib/atl.h $datatap_dir/include/atl.h $search_list /usr/include/atl.h /usr/local/include/atl.h /opt/atl/include/atl.h /opt/misc/include/atl.h /opt/misc/include/$cercs_cv_archive/atl.h"
 tmp_search_results=""
-echo "configure:33157: searching for $search_list " >&5
+echo "configure:33164: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:33161: first found $tmp_search_results " >&5
+	echo "configure:33168: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -33246,11 +33253,11 @@ fi
 
 search_list="$datatap_dir/libatl.a $datatap_dir/lib/libatl.a $datatap_dir/include/libatl.a $search_list /usr/lib/libatl.a /usr/local/lib/libatl.a /opt/atl/lib/libatl.a /opt/misc/lib/libatl.a /opt/misc/lib/$cercs_cv_archive/libatl.a"
 tmp_search_results=""
-echo "configure:33249: searching for $search_list " >&5
+echo "configure:33256: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:33253: first found $tmp_search_results " >&5
+	echo "configure:33260: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -33319,11 +33326,11 @@ else
 
 search_list="$PWD/../atl $PWD/../../atl $PWD/../../../atl"
 tmp_search_results=""
-echo "configure:33322: searching for $search_list " >&5
+echo "configure:33329: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:33326: first found $tmp_search_results " >&5
+	echo "configure:33333: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -33361,11 +33368,11 @@ else
 
 search_list="$PWD/../atl $PWD/../../atl $PWD/../../../atl"
 tmp_search_results=""
-echo "configure:33364: searching for $search_list " >&5
+echo "configure:33371: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:33368: first found $tmp_search_results " >&5
+	echo "configure:33375: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -33489,11 +33496,11 @@ fi
 
 search_list="$datatap_dir/dill.h $datatap_dir/lib/dill.h $datatap_dir/include/dill.h $search_list /usr/include/dill.h /usr/local/include/dill.h /opt/dill/include/dill.h /opt/misc/include/dill.h /opt/misc/include/$cercs_cv_archive/dill.h"
 tmp_search_results=""
-echo "configure:33492: searching for $search_list " >&5
+echo "configure:33499: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:33496: first found $tmp_search_results " >&5
+	echo "configure:33503: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -33581,11 +33588,11 @@ fi
 
 search_list="$datatap_dir/libdill.a $datatap_dir/lib/libdill.a $datatap_dir/include/libdill.a $search_list /usr/lib/libdill.a /usr/local/lib/libdill.a /opt/dill/lib/libdill.a /opt/misc/lib/libdill.a /opt/misc/lib/$cercs_cv_archive/libdill.a"
 tmp_search_results=""
-echo "configure:33584: searching for $search_list " >&5
+echo "configure:33591: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:33588: first found $tmp_search_results " >&5
+	echo "configure:33595: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -33654,11 +33661,11 @@ else
 
 search_list="$PWD/../dill $PWD/../../dill $PWD/../../../dill"
 tmp_search_results=""
-echo "configure:33657: searching for $search_list " >&5
+echo "configure:33664: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:33661: first found $tmp_search_results " >&5
+	echo "configure:33668: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -33696,11 +33703,11 @@ else
 
 search_list="$PWD/../dill $PWD/../../dill $PWD/../../../dill"
 tmp_search_results=""
-echo "configure:33699: searching for $search_list " >&5
+echo "configure:33706: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:33703: first found $tmp_search_results " >&5
+	echo "configure:33710: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -33824,11 +33831,11 @@ fi
 
 search_list="$datatap_dir/cercs_env.h $datatap_dir/lib/cercs_env.h $datatap_dir/include/cercs_env.h $search_list /usr/include/cercs_env.h /usr/local/include/cercs_env.h /opt/cercs_env/include/cercs_env.h /opt/misc/include/cercs_env.h /opt/misc/include/$cercs_cv_archive/cercs_env.h"
 tmp_search_results=""
-echo "configure:33827: searching for $search_list " >&5
+echo "configure:33834: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:33831: first found $tmp_search_results " >&5
+	echo "configure:33838: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -33916,11 +33923,11 @@ fi
 
 search_list="$datatap_dir/libcercs_env.a $datatap_dir/lib/libcercs_env.a $datatap_dir/include/libcercs_env.a $search_list /usr/lib/libcercs_env.a /usr/local/lib/libcercs_env.a /opt/cercs_env/lib/libcercs_env.a /opt/misc/lib/libcercs_env.a /opt/misc/lib/$cercs_cv_archive/libcercs_env.a"
 tmp_search_results=""
-echo "configure:33919: searching for $search_list " >&5
+echo "configure:33926: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:33923: first found $tmp_search_results " >&5
+	echo "configure:33930: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -33989,11 +33996,11 @@ else
 
 search_list="$PWD/../cercs_env $PWD/../../cercs_env $PWD/../../../cercs_env"
 tmp_search_results=""
-echo "configure:33992: searching for $search_list " >&5
+echo "configure:33999: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:33996: first found $tmp_search_results " >&5
+	echo "configure:34003: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -34031,11 +34038,11 @@ else
 
 search_list="$PWD/../cercs_env $PWD/../../cercs_env $PWD/../../../cercs_env"
 tmp_search_results=""
-echo "configure:34034: searching for $search_list " >&5
+echo "configure:34041: searching for $search_list " >&5
 for tmp_search_value in $search_list; do
    if test -r $tmp_search_value; then
 	tmp_search_results=$tmp_search_value
-	echo "configure:34038: first found $tmp_search_results " >&5
+	echo "configure:34045: first found $tmp_search_results " >&5
 	break
    fi
 done
@@ -35787,7 +35794,12 @@ fi
 
 
 
-LIBS="$MPILIBS"
+if test "x y" == "x${MPILIBS}y"; then
+    MPILIBS=""
+fi
+if test -n "${MPILIBS}"; then
+    LIBS="${MPILIBS} ${LIBS}"
+fi
 
  if false; then
   USE_PARALLEL_COMPILER_TRUE=
@@ -36366,7 +36378,7 @@ _ACEOF
 
 
 
-ac_config_files="$ac_config_files Makefile src/Makefile tests/Makefile tests/C/Makefile tests/C/flexpath_tests/Makefile tests/C/flexpath_tests/1D_arr_global/Makefile tests/C/flexpath_tests/1D_arr_global_noxml/Makefile tests/C/flexpath_tests/global_range_select/Makefile tests/C/flexpath_tests/maya_noxml/Makefile tests/C/flexpath_tests/maya_append/Makefile tests/C/flexpath_tests/scalar/Makefile tests/Fortran/Makefile tests/genarray/Makefile tests/bp_read/Makefile tests/suite/Makefile tests/suite/programs/Makefile utils/Makefile utils/skeldump/Makefile utils/skel/Makefile utils/skel/etc/Makefile utils/skel/src/Makefile utils/skel/lib/skel_have_adios_timing.py utils/adios_lint/Makefile utils/gpp/Makefile utils/bpdump/Makefile utils/bp2h5/Makefile utils/bp2ncd/Makefile utils/bp2ascii/Makefile utils/bpsplit/Makefile utils/bpls/Makefile utils/bpdiff/Makefile utils/bp2bp/Makefile examples/Makefile examples/C/Makefile examples/C/scalars/Makefile examples/C/arrays/Makefile examples/C/flexpath_arrays/Makefile examples/C/flexpath_arrays/process_select/Makefile examples/C/flexpath_arrays/global_range_select/Makefile examples/C/attributes/Makefile examples/C/manual/Makefile examples/C/global-array/Makefile examples/C/global-array-time/Makefile examples/C/stat/Makefile examples/C/read_all/Makefile examples/C/schema/Makefile examples/C/transforms/Makefile examples/C/compression_test/Makefile examples/Fortran/Makefile examples/Fortran/scalars/Makefile examples/Fortran/arrays/Makefile examples/Fortran/global-array/Makefile examples/Fortran/global-array-time/Makefile adios_config.flags"
+ac_config_files="$ac_config_files Makefile src/Makefile tests/Makefile tests/C/Makefile tests/C/flexpath_tests/Makefile tests/C/flexpath_tests/1D_arr_global/Makefile tests/C/flexpath_tests/1D_arr_global_noxml/Makefile tests/C/flexpath_tests/global_range_select/Makefile tests/C/flexpath_tests/maya_noxml/Makefile tests/C/flexpath_tests/maya_append/Makefile tests/C/flexpath_tests/scalar/Makefile tests/Fortran/Makefile tests/genarray/Makefile tests/bp_read/Makefile tests/suite/Makefile tests/suite/programs/Makefile utils/Makefile utils/skeldump/Makefile utils/skel/Makefile utils/skel/etc/Makefile utils/skel/src/Makefile utils/skel/lib/skel_have_adios_timing.py utils/adios_lint/Makefile utils/gpp/Makefile utils/bpdump/Makefile utils/bp2h5/Makefile utils/bp2ncd/Makefile utils/bp2ascii/Makefile utils/bpsplit/Makefile utils/bpls/Makefile utils/bpdiff/Makefile utils/bp2bp/Makefile utils/list_methods/Makefile examples/Makefile examples/C/Makefile examples/C/scalars/Makefile examples/C/arrays/Makefile examples/C/flexpath_arrays/Makefile examples/C/flexpath_arrays/process_select/Makefile examples/C/flexpath_arrays/global_range_select/Makefile examples/C/attributes/Makefile examples/C/manual/Makefile examples/C/global-array/Makefile examples/C/global-array-time/Makefile examples/C/stat/Makefile examples/C/read_all/Makefile examples/C/schema/Makefile examples/C/transforms/Makefile examples/C/compression_test/Makefile examples/Fortran/Makefile examples/Fortran/scalars/Makefile examples/Fortran/arrays/Makefile examples/Fortran/global-array/Makefile examples/Fortran/global-array-time/Makefile adios_config.flags"
 
 
 cat >confcache <<\_ACEOF
@@ -38257,6 +38269,7 @@ do
     "utils/bpls/Makefile") CONFIG_FILES="$CONFIG_FILES utils/bpls/Makefile" ;;
     "utils/bpdiff/Makefile") CONFIG_FILES="$CONFIG_FILES utils/bpdiff/Makefile" ;;
     "utils/bp2bp/Makefile") CONFIG_FILES="$CONFIG_FILES utils/bp2bp/Makefile" ;;
+    "utils/list_methods/Makefile") CONFIG_FILES="$CONFIG_FILES utils/list_methods/Makefile" ;;
     "examples/Makefile") CONFIG_FILES="$CONFIG_FILES examples/Makefile" ;;
     "examples/C/Makefile") CONFIG_FILES="$CONFIG_FILES examples/C/Makefile" ;;
     "examples/C/scalars/Makefile") CONFIG_FILES="$CONFIG_FILES examples/C/scalars/Makefile" ;;

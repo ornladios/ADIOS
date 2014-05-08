@@ -226,7 +226,7 @@ static void adios_transform_attach_byte_array_dimensions_old(struct adios_group_
 #endif
 
 // Attaches to the given variable new metadata defining a 1D local array of bytes.
-static void adios_transform_attach_byte_array_dimensions(struct adios_group_struct *grp, struct adios_var_struct *var) {
+static void adios_transform_attach_byte_array_dimensions(struct adios_var_struct *var) {
     int i;
 
     //const int fortran_dim_order = (grp->adios_host_language_fortran == adios_flag_yes);
@@ -256,7 +256,7 @@ static void adios_transform_attach_byte_array_dimensions(struct adios_group_stru
     }
 }
 
-static void adios_transform_convert_var_to_byte_array(struct adios_group_struct *grp, struct adios_var_struct *var) {
+static void adios_transform_convert_var_to_byte_array(struct adios_var_struct *var) {
     // Save old metadata
     var->pre_transform_type = var->type;
     var->pre_transform_dimensions = var->dimensions;
@@ -267,7 +267,7 @@ static void adios_transform_convert_var_to_byte_array(struct adios_group_struct 
     var->dimensions = 0;
 
     // Attach the new dimension to the variable
-    adios_transform_attach_byte_array_dimensions(grp, var);
+    adios_transform_attach_byte_array_dimensions(var);
 }
 
 ////////////////////////////////////////
@@ -290,11 +290,11 @@ static int is_timed_scalar(const struct adios_var_struct *var) {
  * the given transform spec. Also handles error conditions, such as the variable
  * being a scalar (which disallows any data transform).
  */
-struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *orig_var_grp,
-                                                     struct adios_var_struct *orig_var,
+struct adios_var_struct * adios_transform_define_var(struct adios_var_struct *orig_var,
                                                      struct adios_transform_spec *transform_spec) {
     // First detect error conditions that prevent the transform from being applied
 
+    if (!transform_spec) return orig_var;
     // If the variable has a transform, but is a scalar: remove the transform, warn the user, and continue as usual
     if (transform_spec->transform_type != adios_transform_none &&
         (is_scalar(orig_var) || is_timed_scalar(orig_var))) {
@@ -325,7 +325,7 @@ struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *
     // variable into a 1D byte array.
 
     // Convert variable to 1D byte array
-    adios_transform_convert_var_to_byte_array(orig_var_grp, orig_var);
+    adios_transform_convert_var_to_byte_array(orig_var);
     log_debug("Data Transforms layer: Converted variable %s into byte array internally\n", orig_var->name);
 
     // Allocate the transform-specific metadata buffer
@@ -343,14 +343,13 @@ struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *
 
 // NCSU ALACRITY-ADIOS - Compute the pre-transform size of a variable, in bytes
 // Precondition: var is a non-scalar that has been transformed (transform_type != none)
-uint64_t adios_transform_get_pre_transform_var_size(struct adios_group_struct *group, struct adios_var_struct *var) {
+uint64_t adios_transform_get_pre_transform_var_size(struct adios_var_struct *var) {
     assert(var->dimensions);
     assert(var->type != adios_string);
     assert(var->transform_type != adios_transform_none);
     return adios_get_type_size(var->pre_transform_type, NULL) *
            adios_get_dimension_space_size(var,
-                                          var->pre_transform_dimensions,
-                                          group);
+                                          var->pre_transform_dimensions);
 }
 
 static inline uint64_t generate_unique_block_id(const struct adios_file_struct * fd, const struct adios_var_struct *var) {
@@ -514,7 +513,7 @@ static void buffer_write (char ** buffer, uint64_t * buffer_size
 // Init
 int adios_transform_init_transform_var(struct adios_var_struct *var) {
     var->transform_type = adios_transform_none;
-    var->transform_spec = 0;
+    var->transform_spec = adios_transform_parse_spec ("none", NULL);
     var->pre_transform_dimensions = 0;
     var->pre_transform_type = adios_unknown;
     //var->transform_type_param_len = 0;

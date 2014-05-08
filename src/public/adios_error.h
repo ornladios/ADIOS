@@ -8,6 +8,10 @@
 #ifndef __ADIOS_ERROR_H_
 #define __ADIOS_ERROR_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 enum ADIOS_ERRCODES {
     err_no_error                        = 0,
     err_no_memory                       = -1,
@@ -141,13 +145,14 @@ enum ADIOS_ERRCODES {
     err_mesh_structured_missing_points        = -197, // points are not defined
     err_mesh_structured_invalid_num_points    = -198, // number of points is invalid
 
-    err_fgr                                   = -199, // FGR lib error
-    err_unspecified                           = -200
-};
+    // Transform layer errors
+    err_invalid_transform_type                = -300, // unknown transform is requested 
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+    // Miscellaneous
+    err_fgr                                   = -900, // FGR lib error
+
+    err_unspecified                           = -1000
+};
 
 void adios_error (enum ADIOS_ERRCODES errcode, char *fmt, ...);
 void adios_error_at_line (enum ADIOS_ERRCODES errcode, const char* filename, unsigned int linenum, char *fmt, ...);

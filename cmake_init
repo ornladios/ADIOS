@@ -54,6 +54,8 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
 #    module unload netcdf
 # end of Parallel NetCDF 4 
     export LUSTRE_DIR="/usr/lib64"
+    export FGR_DIR="/ccs/proj/e2e/qliu/tap"
+    export GLIB_DIR="/ccs/proj/e2e/qliu/glib"
     export BUILD_WRITE=ON
     export BUILD_FORTRAN=ON
     export skel_timing=ON
@@ -955,6 +957,28 @@ elif [ `hostname | cut -c 1-7` == "esimmon" ]; then
     export PAR_NC_DIR=/opt/nc4par
     export PAR_NC_LIBS="-L/opt/nc4par/lib -lnetcdf"
 
+elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
+
+    #######################
+    # ADIOS Virtual Box   #
+    #######################
+    echo "Configure on adiosVM VirtualBox ."
+    export BUILD_WRITE=ON
+    export BUILD_FORTRAN=ON
+    export skel_timing=ON
+    export CC=mpicc
+    export CXX=mpicxx
+    export FC=mpif90
+    export INSTALL_PREFIX="/opt/adios/1.7"
+    export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
+    export CFLAGS="-g -O0 -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast"
+    export MXML_DIR=/opt/mxml/2.8
+    export SEQ_HDF5_DIR=/opt/hdf5-1.8.12
+    export SEQ_HDF5_LIBS="-L/opt/hdf5-1.8.12/lib -lhdf5_hl -lhdf5 -lm"
+    export PAR_HDF5_DIR=/opt/hdf5-1.8.12-parallel
+    export PAR_HDF5_LIBS="-L/opt/hdf5-1.8.12-parallel/lib -lhdf5_hl -lhdf5 -lm"
+    export SEQ_NC_DIR=/opt/netcdf-3.6.3
+    export SEQ_NC_LIBS="-L/opt/netcdf-3.6.3/lib -lnetcdf"
 else
     echo "Could not determine what machine is this."
     echo "This script is for configuring adios on the authors' machines."

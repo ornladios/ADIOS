@@ -68,7 +68,7 @@ typedef struct _bridge_info
     EVsource var_source;
     EVsource op_source;
     int their_num;
-    char * contact;
+    char *contact;
     int created;
     int opened;
     int step;
@@ -78,13 +78,10 @@ typedef struct _bridge_info
 typedef struct _flexpath_var_chunk
 {
     int has_data;
-    int rank;
+    int rank; // the writer's rank this chunk represents. not used or needed right now
     void *data;
     void *user_buf;
-    uint64_t *local_bounds; // nodims
-    uint64_t *global_bounds; // ndims
-    uint64_t *global_offsets; // ndims
-} flexpath_var_chunk, *flexpath_var_chunk_p;
+} flexpath_var_chunk;
 
 typedef struct _flexpath_var
 {
@@ -95,8 +92,8 @@ typedef struct _flexpath_var
     enum ADIOS_DATATYPES type;
     uint64_t type_size; // type size, not arrays size
 
-    int time_dim; // -1 means no time dimension
-    int num_dims;
+    int time_dim; // -1 means it is not a time dimension
+    int ndims;
     uint64_t *global_dims; // ndims size (if ndims>0)
     uint64_t *local_dims; // for local arrays
     uint64_t array_size; // not relevant for scalars
@@ -115,8 +112,8 @@ typedef struct _flexpath_var
 
 typedef struct _flexpath_reader_file
 {
-    char * file_name;
-    char * group_name; // assuming one group per file right now.
+    char *file_name;
+    char *group_name; // assuming one group per file right now.
 
     EVstone stone;
 
@@ -165,37 +162,6 @@ typedef struct _local_read_data
 flexpath_read_data* fp_read_data = NULL;
 
 /********** Helper functions. **********/
-
-static double dgettimeofday( void )
-{
-#ifdef HAVE_GETTIMEOFDAY
-    double timestamp;
-    struct timeval now;
-    gettimeofday(&now, NULL);
-    timestamp = now.tv_sec + now.tv_usec* 1.0e-6 ;
-    return timestamp;
-#else
-    return -1;
-#endif
-}
-
-static uint64_t 
-get_timestamp_mili()
-{
-    struct timespec stamp;
-#ifdef __MACH__
-    clock_serv_t cclock;
-    mach_timespec_t mts;
-    host_get_clock_service(mach_host_self(), CALENDAR_CLOCK, &cclock);
-    clock_get_time(cclock, &mts);
-    mach_port_deallocate(mach_task_self(), cclock);
-    stamp.tv_sec = mts.tv_sec;
-    stamp.tv_nsec = mts.tv_nsec;
-#else
-    clock_gettime(CLOCK_MONOTONIC, &stamp);
-#endif
-    return ((stamp.tv_sec * 1000000000) + stamp.tv_nsec)/1000000;
-}
 
 void build_bridge(bridge_info* bridge) {
     attr_list contact_list = attr_list_from_string(bridge->contact);
@@ -282,16 +248,29 @@ new_flexpath_reader_file(const char *fname)
 
 enum ADIOS_DATATYPES
 ffs_type_to_adios_type(const char *ffs_type)
+
 {
-    if(!strcmp("integer", ffs_type))
+    char *bracket = "[";
+    size_t posfound = strcspn(ffs_type, bracket);
+    char *filtered_type = NULL;
+    if (strlen(ffs_type) == strlen(bracket)) {
+        filtered_type = ffs_type;
+    }
+    else {
+        filtered_type = malloc(posfound+1);
+        memset(filtered_type, '\0', posfound+1);
+        filtered_type = strncpy(filtered_type, ffs_type, posfound);       
+    }
+
+    if (!strcmp("integer", filtered_type))
 	return adios_integer;
-    else if(!strcmp("float", ffs_type))
+    else if(!strcmp("float", filtered_type))
 	return adios_real;
-    else if(!strcmp("string", ffs_type))
+    else if(!strcmp("string", filtered_type))
 	return adios_string;
-    else if(!strcmp("double", ffs_type))
+    else if(!strcmp("double", filtered_type))
 	return adios_double;
-    else if(!strcmp("char", ffs_type))
+    else if(!strcmp("char", filtered_type))
 	return adios_byte;
     else
 	return adios_unknown;
@@ -306,7 +285,7 @@ convert_var_info(flexpath_var * fpvar,
     int i;
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;    
     v->type = fpvar->type;
-    v->ndim = fpvar->num_dims;
+    v->ndim = fpvar->ndims;
     // needs to change. Has to get information from write.
     v->nsteps = 1;
     v->nblocks = malloc(sizeof(int)*v->nsteps);
@@ -319,7 +298,7 @@ convert_var_info(flexpath_var * fpvar,
 	int value_size = fpvar->type_size;	
 	v->value = malloc(value_size);
 	if(!v->value) {
-	    adios_error(err_no_memory, "Cannot allocate buffer in adios_read_datatap_inq_var()");
+	    adios_error(err_no_memory, "Cannot allocate buffer in adios_read_flexpath_inq_var()");
 	    return NULL;
 	}
 	flexpath_var_chunk * chunk = &fpvar->chunks[0];
@@ -328,11 +307,11 @@ convert_var_info(flexpath_var * fpvar,
     }else{ // arrays
 	v->dims = (uint64_t*)malloc(v->ndim * sizeof(uint64_t));
 	if(!v->dims) {
-	    adios_error(err_no_memory, "Cannot allocate buffer in adios_read_datatap_inq_var()");
+	    adios_error(err_no_memory, "Cannot allocate buffer in adios_read_flexpath_inq_var()");
 	    return NULL;
 	}
 	// broken.  fix.
-	int cpysize = fpvar->num_dims*sizeof(uint64_t);
+	int cpysize = fpvar->ndims*sizeof(uint64_t);
 	if(fpvar->global_dims){
 	    v->global = 1;
 	    memcpy(v->dims, fpvar->global_dims, cpysize);
@@ -542,7 +521,7 @@ need_writer(
     //for each dimension
     int i=0;
     offset_struct var_offsets = gvar->offsets[0];
-    for(i=0; i< var_offsets.offsets_per_rank; i++){      
+    for (i=0; i< var_offsets.offsets_per_rank; i++) {      
 	int pos = writer*(var_offsets.offsets_per_rank) + i;
 
         uint64_t sel_offset = sel->u.bb.start[i];
@@ -551,14 +530,14 @@ need_writer(
         uint64_t rank_offset = var_offsets.local_offsets[pos];
         uint64_t rank_size = var_offsets.local_dimensions[pos];        
 	
-        if((rank_offset <= sel_offset) && (rank_offset + rank_size - 1 >=sel_offset)) {
+        if ((rank_offset <= sel_offset) && (rank_offset + rank_size - 1 >=sel_offset)) {
 	     log_debug("matched overlap type 1\n");
         }
 
-        else if((rank_offset <= sel_offset + sel_size - 1) && \
+        else if ((rank_offset <= sel_offset + sel_size - 1) && \
 		(rank_offset+rank_size>=sel_offset+sel_size-1)) {
-        }else if((sel_offset <= rank_offset) && (rank_offset+rank_size<= sel_offset+sel_size-1)) {
-        }else {
+        } else if ((sel_offset <= rank_offset) && (rank_offset+rank_size<= sel_offset+sel_size-1)) {
+        } else {
             return 0;
         }
     }
@@ -612,7 +591,9 @@ setup_flexpath_vars(FMField *f, int *num)
 	flexpath_var *temp = vars;
 	curr_var->next = temp;
 	vars = curr_var;
-	var_count++;
+	if (strncmp(f->field_name, "FPDIM", 5)) {
+	    var_count++;
+	}
 	f++;
     }
     *num = var_count;
@@ -752,6 +733,9 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
     evgroup *msg = (evgroup*)vevent;
     ADIOS_FILE *adiosfile = client_data;
     flexpath_reader_file * fp = (flexpath_reader_file*)adiosfile->fh;
+    if (fp->group_name == NULL) {
+        fp->group_name = strdup(msg->group_name);
+    }
     fp->gp = msg;
     int i;
     for(i = 0; i<msg->num_vars; i++){
@@ -763,9 +747,9 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 	    uint64_t *local_offsets = offset->local_offsets;
 	    uint64_t *global_dimensions = offset->global_dimensions;
 
-	    fpvar->num_dims = offset->offsets_per_rank;
-	    fpvar->global_dims = malloc(sizeof(uint64_t)*fpvar->num_dims);
-	    memcpy(fpvar->global_dims, global_dimensions, sizeof(uint64_t)*fpvar->num_dims);
+	    fpvar->ndims = offset->offsets_per_rank;
+	    fpvar->global_dims = malloc(sizeof(uint64_t)*fpvar->ndims);
+	    memcpy(fpvar->global_dims, global_dimensions, sizeof(uint64_t)*fpvar->ndims);
 	}else{
 	    adios_error(err_corrupted_variable, 
 			"Mismatch between global variables and variables specified %s.",
@@ -784,10 +768,6 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     ADIOS_FILE *adiosfile = client_data;
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
 
-    double data_end = dgettimeofday();
-    if(fp->time_in == 0.00)
-	fp->time_in = data_end; // used for perf measurements only
-
     int condition;
     int writer_rank;          
     int flush_id;
@@ -796,9 +776,6 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     get_int_attr(attrs, attr_atom_from_string("fp_dst_condition"), &condition);   
     get_int_attr(attrs, attr_atom_from_string(FP_RANK_ATTR_NAME), &writer_rank); 
     get_int_attr(attrs, attr_atom_from_string("fp_flush_id"), &flush_id);
-
-
-    double format_start = dgettimeofday();
 
     FMContext context = CMget_FMcontext(cm);
     void *base_data = FMheader_skip(context, vevent);
@@ -822,7 +799,9 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 	adiosfile->var_namelist = malloc(var_count * sizeof(char *));
 	int i = 0;
 	while(f->field_name != NULL) {
-	    adiosfile->var_namelist[i++] = strdup(f->field_name);
+	    if (strncmp(f->field_name, "FPDIM", 5)) {	    
+		adiosfile->var_namelist[i++] = strdup(f->field_name);
+	    }
 	    f++;
 	}
 	adiosfile->nvars = var_count;
@@ -843,7 +822,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     	}
 
 	int num_dims = get_ndims_attr(f->field_name, attrs);
-    	var->num_dims = num_dims;
+    	var->ndims = num_dims;
 
 	flexpath_var_chunk *curr_chunk = &var->chunks[0];
 
@@ -857,9 +836,6 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 		    }
 		}
 		else { // writeblock selection for arrays
-		    /* if(var->num_dims == 0){ */
-		    /* 	var->global_dims = malloc(sizeof(uint64_t)*num_dims); */
-		    /* } */
 		    if(var->sel->u.block.index == writer_rank){
 			var->array_size = var->type_size;
 			int i;
@@ -876,15 +852,14 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 			    get_string_attr(attrs, attr_atom_from_string(atom_name), &dim);
 	
 			    FMField *temp_field = find_field_by_name(dim, f);
-			    if(!temp_field){
+			    if (!temp_field) {
 				adios_error(err_corrupted_variable,
 					    "Could not find fieldname: %s\n",
 					    dim);
-			    }
-			    else{    			    
+			    } else {    			    
 				int *temp_data = get_FMfieldAddr_by_name(temp_field,
 									 temp_field->field_name,
-									 base_data);			    
+									 base_data);
 				uint64_t dim = (uint64_t)(*temp_data);
 				var->array_size = var->array_size * dim;
 			    }
@@ -894,12 +869,9 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 		    }
 		}
 	    }
-	    else if(var->sel->type == ADIOS_SELECTION_BOUNDINGBOX){
-		if(num_dims == 0){ // scalars; throw error
-		    adios_error(err_offset_required, 
-				"Only scalars can be scheduled with write_block selection.\n");
-		}
-		else{ // arrays
+	    else if (var->sel->type == ADIOS_SELECTION_BOUNDINGBOX) {
+
+		if (var->ndims > 0) { // arrays
 		    int i;
 		    global_var *gv = find_gbl_var(fp->gp->vars,
 						  var->varname,
@@ -927,7 +899,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 							 f->field_size,
 							 0,
 							 writer_array,
-							 reader_array+reader_start_pos);		    
+							 reader_array+reader_start_pos);
 		    }
 		}
 	    }
@@ -1079,8 +1051,6 @@ adios_read_flexpath_open(const char * fname,
     /* Gather the contact info from the other readers
        and write it to a file. Create a ready file so
        that the writer knows it can parse this file. */
-    double setup_start = dgettimeofday();
-
     char writer_ready_filename[200];
     char writer_info_filename[200];
     char reader_ready_filename[200];
@@ -1172,8 +1142,6 @@ adios_read_flexpath_open(const char * fname,
     /* Init with a writer to get initial scalar
        data so we can handle inq_var calls and
        also populate the ADIOS_FILE struct. */
-
-    double bridge_start = MPI_Wtime();
     if(fp->size < num_bridges){
     	int mystart = (num_bridges/fp->size) * fp->rank;
     	int myend = (num_bridges/fp->size) * (fp->rank+1);
@@ -1238,9 +1206,9 @@ void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
     flexpath_var *tmpvars = fp->var_list;
     while(tmpvars){
 
-	if(tmpvars->num_dims > 0){
+	if(tmpvars->ndims > 0){
 	    free(tmpvars->global_dims);	   
-	    tmpvars->num_dims = 0;
+	    tmpvars->ndims = 0;
 	}
 	free_displacements(tmpvars->displ, tmpvars->num_displ);
 	tmpvars->displ = NULL;
@@ -1255,13 +1223,6 @@ void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
 		chunk->data = NULL;
 		chunk->has_data = 0;		
 	    }
-	    free(chunk->local_bounds);
-	    free(chunk->global_offsets);
-	    free(chunk->global_bounds);
-
-	    chunk->global_offsets = NULL;
-	    chunk->global_bounds = NULL;
-	    chunk->local_bounds = NULL;
 	    chunk->rank = 0;
 	}
 	tmpvars = tmpvars->next;
@@ -1285,7 +1246,6 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
 	send_flush_msg(fp, fp->writer_coordinator, STEP, 1);
     }
 
-    double advclose_start = dgettimeofday();
     int i=0;    
     for(i=0; i<fp->num_bridges; i++) {
         if(fp->bridges[i].created && fp->bridges[i].opened) {
@@ -1295,28 +1255,22 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
     }
     MPI_Barrier(fp->comm);
 
-    double advclose_end = dgettimeofday();
     count = 0;
     adiosfile->current_step++;
     fp->mystep = adiosfile->current_step;
-
-    
-    double advopen_start = dgettimeofday();
+   
     for(i=0; i<fp->num_bridges; i++){
 	if(fp->bridges[i].created && !fp->bridges[i].opened){	    
 	    send_open_msg(fp, i);
 	    count++;
         }
     }   
-    double advopen_end = dgettimeofday();
     // need to remove selectors from each var now.
     send_flush_msg(fp, fp->writer_coordinator, DATA, 1);
       
     // should only happen if there are more steps available.
     // writer should have advanced.
-    double offset_start = dgettimeofday();
     send_flush_msg(fp, fp->writer_coordinator, EVGROUP, 1);
-    double offset_end = dgettimeofday();    
     return 0;
 }
 
@@ -1336,21 +1290,15 @@ int adios_read_flexpath_close(ADIOS_FILE * fp)
     that the user maintains a copy of. 
     */
     flexpath_var *v = file->var_list;
-    while(v){        	
+    while (v) {        	
     	// free chunks; data has already been copied to user
     	int i;	
     	for(i = 0; i<v->num_chunks; i++){    		    
     	    flexpath_var_chunk *c = &v->chunks[i];	    
 	    if(!c)
 		log_error("FLEXPATH: %s This should not happen! line %d\n",__func__,__LINE__);
-	    //free(c->data);
-	    free(c->global_bounds);		
-	    free(c->global_offsets);
-	    free(c->local_bounds);
+	    //free(c->data);	    
 	    c->data = NULL;
-	    c->global_bounds = NULL;
-	    c->global_offsets = NULL;
-	    c->local_bounds = NULL;
 	    free(c);
 	}
 	flexpath_var *tmp = v->next;	
@@ -1367,7 +1315,22 @@ ADIOS_FILE *adios_read_flexpath_fopen(const char *fname, MPI_Comm comm) {
 
 int adios_read_flexpath_is_var_timed(const ADIOS_FILE* fp, int varid) { return 0; }
 
-void adios_read_flexpath_get_groupinfo(const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, uint32_t **nvars_per_group, uint32_t **nattrs_per_group) {}
+void adios_read_flexpath_get_groupinfo(
+    const ADIOS_FILE *adiosfile, 
+    int *ngroups, 
+    char ***group_namelist, 
+    uint32_t **nvars_per_group, 
+    uint32_t **nattrs_per_group) 
+{
+    flexpath_reader_file *fp;
+    if (adiosfile) {
+        fp = (flexpath_reader_file *) adiosfile->fh;
+        *ngroups = 1;
+        *group_namelist = (char **) malloc (sizeof (char*));
+        *group_namelist[0] = strdup (fp->group_name);
+    }
+
+}
 
 int adios_read_flexpath_check_reads(const ADIOS_FILE* fp, ADIOS_VARCHUNK** chunk) { log_debug( "flexpath:adios function check reads\n"); return 0; }
 
@@ -1380,7 +1343,6 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
     int num_sendees = fp->num_sendees;
     int total_sent = 0;
     fp->time_in = 0.00;
-    double start_poll = MPI_Wtime();
     for(i = 0; i<num_sendees; i++){
 	pthread_mutex_lock(&fp->data_mutex);
 	int sendee = fp->sendees[i];	
@@ -1397,7 +1359,6 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
 	}
 
     }
-    double end_poll = MPI_Wtime();
 
     free(fp->sendees);
     fp->sendees = NULL;    
@@ -1428,25 +1389,23 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 				       void *data)
 {   
     fp_log("FUNC", "entering schedule_read_byid\n");
-    flexpath_reader_file * fp = (flexpath_reader_file*)adiosfile->fh;
-    flexpath_var * var = fp->var_list;
-    while(var){
-        if(var->id == varid)
+    flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
+    flexpath_var *fpvar = fp->var_list;
+    while (fpvar) {
+        if (fpvar->id == varid)
         	break;
         else
-	    var=var->next;
+	    fpvar=fpvar->next;
     }
-    if(!var){
+    if(!fpvar){
         adios_error(err_invalid_varid,
 		    "Invalid variable id: %d\n",
 		    varid);
         return err_invalid_varid;
     }    
     //store the user allocated buffer.
-    flexpath_var_chunk *chunk = &var->chunks[0];  
-    chunk->user_buf = data;
-    var->start_position = 0;
-    if(nsteps != 1){
+    flexpath_var_chunk *chunk = &fpvar->chunks[0];  
+    if (nsteps != 1) {
 	adios_error (err_invalid_timestep,
                      "Only one step can be read from a stream at a time. "
                      "You requested % steps in adios_schedule_read()\n", 
@@ -1456,54 +1415,61 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
     // this is done so that the user can do multiple schedule_read/perform_reads
     // within before doing release/advance step. Might need a better way to 
     // manage the ADIOS selections.
-    if(var->sel){
-	free_selection(var->sel);
+    if(fpvar->sel){
+	free_selection(fpvar->sel);
     }
-    var->sel = copy_selection(sel);
+    fpvar->sel = copy_selection(sel);
 
-    switch(var->sel->type)
+    switch(fpvar->sel->type)
     {
     case ADIOS_SELECTION_WRITEBLOCK:
     {
-	int writer_index = var->sel->u.block.index;
-	if(writer_index > fp->num_bridges){
+        chunk->user_buf = data;
+        fpvar->start_position = 0;
+	int writer_index = fpvar->sel->u.block.index;
+	if (writer_index > fp->num_bridges) {
 	    adios_error(err_out_of_bound,
 			"No process exists on the writer side matching the index.\n");
 	    return err_out_of_bound;
 	}
-	send_var_message(fp, writer_index, var->varname);
+	send_var_message(fp, writer_index, fpvar->varname);
 	break;
     }
     case ADIOS_SELECTION_BOUNDINGBOX:
     {   
-	free_displacements(var->displ, var->num_displ);
-	var->displ = NULL;
-        int j=0;
-	int need_count = 0;
-	array_displacements * all_disp = NULL;
-	uint64_t pos = 0;
-	double sched_start = MPI_Wtime();
-        for(j=0; j<fp->num_bridges; j++) {
-            int destination=0;	    	    
-            if(need_writer(fp, j, var->sel, fp->gp, var->varname)==1){           
-		uint64_t _pos = 0;
-		need_count++;
-                destination = j;
-		global_var *gvar = find_gbl_var(fp->gp->vars, var->varname, fp->gp->num_vars);
-		// TODO: memory leak here. have to free these at some point.
-		array_displacements *displ = get_writer_displacements(j, var->sel, gvar, &_pos);
-		displ->pos = pos;
-		_pos *= (uint64_t)var->type_size; 
-		pos += _pos;
+        // boundingbox for a scalar; handle it as we do with inq_var
+        if (fpvar->ndims == 0) {                        
+            memcpy(data, chunk->data, fpvar->type_size);
+        } else {
+            chunk->user_buf = data;
+            fpvar->start_position = 0;
+            free_displacements(fpvar->displ, fpvar->num_displ);
+            fpvar->displ = NULL;
+            int j=0;
+            int need_count = 0;
+            array_displacements *all_disp = NULL;
+            uint64_t pos = 0;
+            for (j=0; j<fp->num_bridges; j++) {
+                int destination=0;	    	    
+                if(need_writer(fp, j, fpvar->sel, fp->gp, fpvar->varname)==1){           
+                    uint64_t _pos = 0;
+                    need_count++;
+                    destination = j;
+                    global_var *gvar = find_gbl_var(fp->gp->vars, fpvar->varname, fp->gp->num_vars);
+                    // displ is freed in release_step.
+                    array_displacements *displ = get_writer_displacements(j, fpvar->sel, gvar, &_pos);
+                    displ->pos = pos;
+                    _pos *= (uint64_t)fpvar->type_size; 
+                    pos += _pos;
 		
-		all_disp = realloc(all_disp, sizeof(array_displacements)*need_count);
-		all_disp[need_count-1] = *displ;
-		send_var_message(fp, j, var->varname);				
+                    all_disp = realloc(all_disp, sizeof(array_displacements)*need_count);
+                    all_disp[need_count-1] = *displ;
+                    send_var_message(fp, j, fpvar->varname);				
+                }
             }
-	}
-	double sched_end = MPI_Wtime();
-	var->displ = all_disp;
-	var->num_displ = need_count;
+            fpvar->displ = all_disp;
+            fpvar->num_displ = need_count;
+        }
         break;
     }
     case ADIOS_SELECTION_AUTO:
@@ -1570,25 +1536,25 @@ adios_read_flexpath_inq_var(const ADIOS_FILE * adiosfile, const char* varname)
 {
     fp_log("FUNC", "entering flexpath_inq_var\n");
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
-    ADIOS_VARINFO *v = malloc(sizeof(ADIOS_VARINFO));
-
-    if(!v) {
-        adios_error(err_no_memory, 
-		    "Cannot allocate buffer in adios_read_datatap_inq_var()");
-        return NULL;
-    }
-    memset(v, 0, sizeof(ADIOS_VARINFO));
+    ADIOS_VARINFO *v = NULL;
     
     flexpath_var *fpvar = find_fp_var(fp->var_list, varname);
-    if(fpvar) {
+    if (fpvar) {
+        v = calloc(1, sizeof(ADIOS_VARINFO));
+
+        if (!v) {
+            adios_error(err_no_memory, 
+                        "Cannot allocate buffer in adios_read_flexpath_inq_var()");
+            return NULL;
+        }           
+
 	v = convert_var_info(fpvar, v, varname, adiosfile);
 	fp_log("FUNC", "leaving flexpath_inq_var\n");
-	return v;
     }
     else {
         adios_error(err_invalid_varname, "Cannot find var %s\n", varname);
-        return NULL;
     }
+    return v;
 }
 
 ADIOS_VARINFO* 

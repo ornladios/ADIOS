@@ -348,6 +348,7 @@ typedef void (* ADIOS_STOP_CALCULATION_FN)
 
 struct adios_transport_struct
 {
+    char * method_name;
     ADIOS_INIT_FN adios_init_fn;
     ADIOS_OPEN_FN adios_open_fn;
     ADIOS_SHOULD_BUFFER_FN adios_should_buffer_fn;
@@ -465,8 +466,10 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
                                 ,const char * dimensions
                                 ,const char * global_dimensions
                                 ,const char * local_offsets
-                                ,const char *transform_type_str // NCSU ALACRITY-ADIOS
                                 );
+
+// set a transform method for a variable (=none if this function is never called)
+int adios_common_set_transform (int64_t var_id, const char *transform_type_str);
 
 int adios_common_define_var_characteristics  (struct adios_group_struct * g
                                               ,const char * var_name
@@ -560,11 +563,8 @@ uint8_t count_dimensions (const struct adios_dimension_struct * dimensions);
 uint64_t adios_get_type_size (enum ADIOS_DATATYPES type, void * var);
 // NCSU ALACRITY-ADIOS - added this for use in the transform layer
 uint64_t adios_get_dimension_space_size (struct adios_var_struct * var
-                                        ,struct adios_dimension_struct * d
-                                        ,struct adios_group_struct * group);
-uint64_t adios_get_var_size (struct adios_var_struct * var
-                            ,struct adios_group_struct * group, void * data
-                            );
+                                        ,struct adios_dimension_struct * d);
+uint64_t adios_get_var_size (struct adios_var_struct * var, void * data);
 uint64_t adios_get_dim_value (struct adios_dimension_item_struct * dimension);
 uint64_t adios_get_stat_size (void * data, enum ADIOS_DATATYPES type, enum ADIOS_STAT stat_id);
 uint8_t adios_get_stat_set_count (enum ADIOS_DATATYPES type);

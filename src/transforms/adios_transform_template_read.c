@@ -9,6 +9,8 @@
 
 #ifdef TEMPLATE
 
+int adios_transform_template_is_implemented (void) {return 1;}
+
 int adios_transform_template_generate_read_subrequests(adios_transform_read_request *reqgroup,
                                                        adios_transform_pg_read_request *pg_reqgroup)
 {

@@ -1,5 +1,16 @@
-1.x.x Release xxx 2014
-    - Support for more than 64k variables in a file
+1.7.0 Release June 2014
+    - Support for more than 64k variables in a file 
+    - adios_config -m to print available write/read methods
+    - Works fine with mxml 2.8 (the latest) version
+    - File system topology aware I/O method for Titan@OLCF
+    - DataSpaces staging support for 64bit sizes and more 
+      than three dimensions
+    - Staging support on Bluegene/Q (with DataSpaces)
+    - Additions to non-XML Write API: 
+      - Support for the visualization schema
+      - adios_set_transform() to choose the transformation
+        for a variable
+
 
 1.6.0 Release Dec 2013
     - Transformations of data supported in file-based I/O

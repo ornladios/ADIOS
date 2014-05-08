@@ -122,6 +122,13 @@ module adios_write_mod
             integer*8,      intent(out) :: id
         end subroutine
 
+        subroutine adios_set_transform (var_id, transform_method, err)
+            implicit none
+            integer*8,      intent(in)  :: var_id
+            character(*),   intent(in)  :: transform_method
+            integer,        intent(out) :: err
+        end subroutine
+
         subroutine adios_define_attribute (group_id, attrname, path, attrtype, value, varname, err)
             implicit none
             integer*8,      intent(in)  :: group_id

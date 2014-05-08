@@ -137,7 +137,13 @@ dnl CC="$MPICC"
 dnl CXX="$MPICXX"
 dnl FC="$MPIFC"
 
-LIBS="$MPILIBS"
+dnl Unset if MPILIBS == " ", a byproduct of config/acx_mpi.m4 on success
+if test "x y" == "x${MPILIBS}y"; then
+    MPILIBS=""
+fi
+if test -n "${MPILIBS}"; then
+    LIBS="${MPILIBS} ${LIBS}"
+fi
 
 AM_CONDITIONAL(USE_PARALLEL_COMPILER,false)
 
@@ -699,6 +705,7 @@ AC_CONFIG_FILES([Makefile
                  utils/bpls/Makefile
                  utils/bpdiff/Makefile
                  utils/bp2bp/Makefile
+                 utils/list_methods/Makefile
                  examples/Makefile
                  examples/C/Makefile
                  examples/C/scalars/Makefile

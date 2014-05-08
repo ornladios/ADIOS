@@ -26,6 +26,7 @@ static int64_t gh;
 static uint64_t groupsize;
 static MPI_Comm iocomm;
 static int file_per_process = 0;  // 0: method dependent, 1: N process writes to N files
+static int streaming = 0;  // 0: separate file names, 1: append to data.bp 
 
 char * DEFAULT_ADIOSMETHOD_NAME   = "MPI";
 char * DEFAULT_ADIOSMETHOD_PARAMS = "";
@@ -49,11 +50,23 @@ int output_init(MPI_Comm comm, int bufsizeMB)
 
     groupsize = 0;
 
-    if (!strcmp(wmethodname, "POSIX1")) {
+    if (!strcmp(wmethodname, "POSIX1")) 
+    {
         file_per_process = 1;
         iocomm = MPI_COMM_SELF;
-    } else {
+    } 
+    else 
+    {
         iocomm = comm;
+    }
+
+    if (!strcmp(wmethodname, "DATASPACES") ||  
+        !strcmp(wmethodname, "DIMES")      || 
+        !strcmp(wmethodname, "FLEXPATH")    ) 
+    {
+        streaming = 1;
+    } else {
+        streaming = 0;
     }
     return 0;
 }
@@ -74,14 +87,26 @@ int output_dump(char *filename, int step, void *data)
     int64_t fh;
     uint64_t tsize;
     double t1, t2;
-    char fname[256];
-    if (file_per_process) {
+    char fname[256], mode[2]="w";
+
+    if (streaming) 
+    {
+        snprintf (fname, sizeof(fname), "data.bp",filename);
+        mode[0]='a'; mode[1] = 0;
+    } 
+    else if (file_per_process) 
+    {
         snprintf (fname, sizeof(fname), "%s_%d.bp",filename, rank);
-    } else {
+        mode[0]='w'; mode[1] = 0;
+    } 
+    else 
+    {
         snprintf (fname, sizeof(fname), "%s.bp",filename);
+        mode[0]='w'; mode[1] = 0;
     }
+
     t1 = MPI_Wtime();
-    adios_open (&fh, "writer", fname, "w", iocomm);
+    adios_open (&fh, "writer", fname, mode, iocomm);
     t2 = MPI_Wtime();
     Tio_open[step] = t2-t1;
     adios_group_size (fh, groupsize, &tsize);

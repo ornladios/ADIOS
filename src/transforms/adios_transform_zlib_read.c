@@ -13,6 +13,8 @@
 
 #include "zlib.h"
 
+int adios_transform_zlib_is_implemented (void) {return 1;}
+
 int decompress_zlib_pre_allocated(const void* input_data, 
                                   const uint64_t input_len,
                                   void* output_data, 

@@ -974,11 +974,16 @@ void adios_dataspaces_finalize (int mype, struct adios_method_struct * method)
 
     free_dspaces_file_info(md);
 
+    MPI_Comm_rank (md->mpi_comm_init, &(md->rank));
     // tell the readers which files are finalized
     ds_dimension_ordering(1, 0, 0, didx); // C ordering of 1D array into DS
     for (i=0; i<md->num_of_files; i++) {
         /* Put VERSION@fn into space. Indicates that this file will not be extended anymore.  */
         if (md->rank == 0) {
+            /*FIXME: Only the rank=0 in each adios_open() remembers a file. 
+             * Rank 0 here is from the communicator at adios_init(). If a communicator in 
+             * an adios_open() is different, that file information is lost here
+             */
             MPI_Comm mpi_comm = MPI_COMM_SELF;
             log_debug("%s: call dspaces_lock_on_write(%s), rank=%d\n", __func__, md->fnames[i], mype);
             dspaces_lock_on_write(md->fnames[i], &mpi_comm); // lock is global operation in DataSpaces
@@ -1001,8 +1006,8 @@ void adios_dataspaces_finalize (int mype, struct adios_method_struct * method)
     if (globals_adios_is_dataspaces_connected_from_writer() && 
             !globals_adios_is_dataspaces_connected_from_both())
     {
-        log_debug ("%s: call dspaces_barrier(), rank=%d\n", __func__,mype);
-        dspaces_barrier();
+        log_debug ("%s: call MPI Barrier on all connected processes(), rank=%d\n", __func__,mype);
+        MPI_Barrier (md->mpi_comm_init); 
         log_debug ("%s: call dspaces_finalize(), rank=%d\n", __func__,mype);
         dspaces_finalize();
 

@@ -544,7 +544,7 @@ void adios_posix_write (struct adios_file_struct * fd
 
         // write payload
         adios_write_var_payload_v1 (fd, v);
-        uint64_t var_size = adios_get_var_size (v, fd->group, v->data);
+        uint64_t var_size = adios_get_var_size (v, v->data);
         if (fd->base_offset + var_size > fd->pg_start_in_file + fd->write_size_bytes)
             fprintf (stderr, "adios_posix_write exceeds pg bound. File is corrupted. "
                              "Need to enlarge group size. \n"); 

@@ -1006,7 +1006,7 @@ void adios_var_merge_write (struct adios_file_struct * fd
     init_vars(vars, v, ndims);
 
     //retrieve the chunk size
-    varsize=adios_get_var_size(v, method->group, data);
+    varsize=adios_get_var_size(v, data);
 
     //number of the dimensions of this variable
     ndims=count_dimensions(v->dimensions);
@@ -1050,7 +1050,7 @@ void adios_var_merge_write (struct adios_file_struct * fd
 
         if(type_size==1) {
             vars->multidim=adios_flag_yes;
-            varsize=adios_get_var_size(v, method->group, data);
+            varsize=adios_get_var_size(v, data);
             vars->data=malloc(varsize);
             memcpy(vars->data, data, varsize);
         }
@@ -1149,15 +1149,17 @@ void adios_var_merge_write (struct adios_file_struct * fd
     {
         vars->multidim=adios_flag_no;
 
-        varsize=adios_get_var_size(v, method->group, data);
+        varsize=adios_get_var_size(v, data);
         vars->data=malloc(varsize);
         memcpy(vars->data, data, varsize);
     }
 
     totalsize+=varsize;
     if(varsize>0) {
-        // NCSU ALACRITY-ADIOS: In the future, the transform type string here needs to be reconsidered, to possibly allow transforms after aggregation...
-        adios_common_define_var(grp, vars->name, vars->path, vars->type, vars->dimensions, vars->global_dimensions, vars->local_offsets, "");
+        adios_common_define_var(grp, vars->name, vars->path, vars->type, vars->dimensions, vars->global_dimensions, vars->local_offsets);
+        // NCSU ALACRITY-ADIOS: In the future, the transform method here needs to be 
+        // reconsidered, to possibly allow transforms after aggregation...
+        // call adios_common_set_transform (var, transform_string)
         varcnt++;
     }
     else { //move back the pointer, and release the memory

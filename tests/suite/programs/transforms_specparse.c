@@ -10,6 +10,7 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <assert.h>
 #include "core/transforms/adios_transforms_specparse.h"
 
@@ -75,7 +76,7 @@ struct specparse_test {
 const int NUM_TESTS = sizeof(TESTS)/sizeof(TESTS[0]);
 
 void run_test(struct specparse_test *test) {
-    const struct adios_transform_spec *actual = adios_transform_parse_spec(test->specstr);
+    const struct adios_transform_spec *actual = adios_transform_parse_spec(test->specstr, NULL);
     const struct adios_transform_spec *expected = &test->expected;
 
     // Check transform type ID

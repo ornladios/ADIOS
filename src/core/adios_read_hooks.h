@@ -70,12 +70,12 @@ FORWARD_DECLARE(datatap)
 //FORWARD_DECLARE(hdf5)
 
 
-typedef int  (* ADIOS_INIT_METHOD_FN) (MPI_Comm comm, PairStruct * params);
-typedef int  (* ADIOS_FINALIZE_METHOD_FN) ();
-typedef ADIOS_FILE * (* ADIOS_OPEN_FN) (const char * fname, MPI_Comm comm, 
+typedef int  (* ADIOS_READ_INIT_METHOD_FN) (MPI_Comm comm, PairStruct * params);
+typedef int  (* ADIOS_READ_FINALIZE_METHOD_FN) ();
+typedef ADIOS_FILE * (* ADIOS_READ_OPEN_FN) (const char * fname, MPI_Comm comm, 
                                  enum ADIOS_LOCKMODE lock_mode, float timeout_sec);
-typedef ADIOS_FILE * (* ADIOS_OPEN_FILE_FN) (const char * fname, MPI_Comm comm);
-typedef int  (* ADIOS_CLOSE_FN) (ADIOS_FILE *fp);
+typedef ADIOS_FILE * (* ADIOS_READ_OPEN_FILE_FN) (const char * fname, MPI_Comm comm);
+typedef int  (* ADIOS_READ_CLOSE_FN) (ADIOS_FILE *fp);
 typedef int  (* ADIOS_ADVANCE_STEP_FN) (ADIOS_FILE *fp, int last, float timeout_sec);
 typedef void (* ADIOS_RELEASE_STEP_FN) (ADIOS_FILE *fp);
 typedef ADIOS_VARINFO * (* ADIOS_INQ_VAR_BYID_FN) (const ADIOS_FILE *fp, int varid);
@@ -96,11 +96,12 @@ typedef int (*ADIOS_READ_INQ_VAR_TRANS_BLOCKINFO)(const ADIOS_FILE *gp, const AD
 
 struct adios_read_hooks_struct
 {
-    ADIOS_INIT_METHOD_FN            adios_init_method_fn;
-    ADIOS_FINALIZE_METHOD_FN        adios_finalize_method_fn;
-    ADIOS_OPEN_FN                   adios_open_fn;
-    ADIOS_OPEN_FILE_FN              adios_open_file_fn;
-    ADIOS_CLOSE_FN                  adios_close_fn;
+    char * method_name;
+    ADIOS_READ_INIT_METHOD_FN       adios_read_init_method_fn;
+    ADIOS_READ_FINALIZE_METHOD_FN   adios_read_finalize_method_fn;
+    ADIOS_READ_OPEN_FN              adios_read_open_fn;
+    ADIOS_READ_OPEN_FILE_FN         adios_read_open_file_fn;
+    ADIOS_READ_CLOSE_FN             adios_read_close_fn;
     ADIOS_ADVANCE_STEP_FN           adios_advance_step_fn;
     ADIOS_RELEASE_STEP_FN           adios_release_step_fn;
     ADIOS_INQ_VAR_BYID_FN           adios_inq_var_byid_fn;

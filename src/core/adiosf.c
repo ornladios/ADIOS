@@ -535,8 +535,7 @@ void FC_FUNC_(adios_define_var, ADIOS_DEFINE_VAR)
     if (buf1 != 0 && buf2 != 0) {
         *id = adios_common_define_var (*group_id, buf1, buf2
                                        ,(enum ADIOS_DATATYPES) *type
-                                       ,buf3, buf4, buf5
-                                       ,NULL); // NCSU ALACRITY-ADIOS
+                                       ,buf3, buf4, buf5);
 
         free (buf1);
         free (buf2);
@@ -548,6 +547,23 @@ void FC_FUNC_(adios_define_var, ADIOS_DEFINE_VAR)
     }
 }
 
+///////////////////////////////////////////////////////////////////////////////
+// adios_common_set_transform is in adios_internals.c
+// set the transform method for the selected variable (default is "none")
+void FC_FUNC_(adios_set_transform, ADIOS_SET_TRANSFORM)
+    (int64_t * var_id, const char *transform_type_str, int *err, 
+     int str_size)
+{
+    char * buf1 = 0;
+    adios_errno = err_no_error;
+    buf1 = futils_fstr_to_cstr (transform_type_str, str_size);
+    if (buf1 != 0) {
+        *err = adios_common_set_transform (*var_id, buf1);
+        free (buf1);
+    } else {
+        *err = adios_errno;
+    }
+}
 ///////////////////////////////////////////////////////////////////////////////
 // adios_common_define_attribute is in adios_internals.c
 void FC_FUNC_(adios_define_attribute, ADIOS_DEFINE_ATTRIBUTE) 
