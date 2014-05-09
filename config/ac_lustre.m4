@@ -6,14 +6,10 @@
 #
 dnl @synopsis AC_LUSTRE
 dnl
-dnl This macro test if dmalloc is to be used. 
-dnl Use in C code:
-dnl     #ifdef DMALLOC
-dnl     #include "dmalloc.h"
-dnl     #endif
-dnl
-dnl @version 1.0
+dnl This macro test if lustreapi.a can be used
+dnl @version 2.0
 dnl @author Qing Liu, UT
+dnl @author Norbert Podhorszki, ORNL
 dnl
 AC_DEFUN([AC_LUSTRE],[
 
@@ -32,7 +28,7 @@ fi
 
 if test -z "${HAVE_LUSTRE_TRUE}"; then
 
-    AC_MSG_NOTICE([   debug: with_lustre="$with_lustre"])
+    dnl AC_MSG_NOTICE([   debug: with_lustre="$with_lustre"])
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
