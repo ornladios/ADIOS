@@ -1324,7 +1324,7 @@ int adios_common_free_group (int64_t id)
 
     if (!root)
     {
-        adios_error (err_unspecified, "Err in adios_common_free_group()\n");
+        adios_error (err_unspecified, "Err in adios_common_free_group(): no groups left\n");
         return -1;
     }
     while (root && root->group->id != g->id)
@@ -1336,12 +1336,12 @@ int adios_common_free_group (int64_t id)
     if (!root)
     {
         // Didn't find the group
-        adios_error (err_unspecified, "Err in adios_common_free_group()\n");
+        adios_error (err_unspecified, "Err in adios_common_free_group(): did not find requested group\n");
         return -1;
     }
 
     // old_root->root->root next
-    if (old_root == adios_groups)
+    if (root == adios_groups)
     {
         adios_groups =  root->next;
     }
