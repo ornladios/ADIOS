@@ -436,13 +436,13 @@ int adios_define_schema_version (int64_t group_id, char * schema_version)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int adios_define_var_mesh (int64_t group_id, char * varname, char * meshname)
+int adios_define_var_mesh (int64_t group_id, const char * varname, const char * meshname)
 {
     return adios_common_define_var_mesh ( group_id, varname, meshname, ""); 
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int adios_define_var_centering (int64_t group_id, char * varname, char * centering)
+int adios_define_var_centering (int64_t group_id, const char * varname, const char * centering)
 {
     return adios_common_define_var_centering (group_id, varname, centering, "");
 }

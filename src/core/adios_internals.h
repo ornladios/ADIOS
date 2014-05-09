@@ -586,8 +586,8 @@ void adios_conca_mesh_att_nam (char ** returnstr, const char * meshname, char * 
 
 // No-XML API
 int adios_common_define_schema_version (struct adios_group_struct * new_group, char * schema_version);
-int adios_common_define_var_mesh (int64_t ptr_new_group, char * varname, char * meshname, char * path);
-int adios_common_define_var_centering (int64_t ptr_new_group, char * varname, char * centering, char * path);
+int adios_common_define_var_mesh (int64_t ptr_new_group, const char * varname, const char * meshname, const char * path);
+int adios_common_define_var_centering (int64_t ptr_new_group, const char * varname, const char * centering, const char * path);
 int adios_common_define_var_timesteps (const char * timesteps,struct adios_group_struct * new_group,const char * name, const char *path);
 int adios_common_define_var_timescale (const char * timescale,struct adios_group_struct * new_group,const char * name, const char *path);
 int adios_common_define_var_timeseriesformat (const char * timeseries,struct adios_group_struct * new_group,const char * name, const char *path);

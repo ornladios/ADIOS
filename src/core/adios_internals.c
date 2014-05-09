@@ -7658,7 +7658,7 @@ int adios_define_mesh_unstructured_mixedCells (const char * count,
 }
 
 // called by NO-XML API
-int adios_common_define_var_mesh (int64_t group_id, char * varname, char * meshname, char * path)
+int adios_common_define_var_mesh (int64_t group_id, const char * varname, const char * meshname, const char * path)
 {
     char *mpath = 0;
     mpath = malloc(strlen("/adios_schema")+strlen(varname)+1);
@@ -7669,7 +7669,7 @@ int adios_common_define_var_mesh (int64_t group_id, char * varname, char * meshn
     return 0;
 }
 
-int adios_common_define_var_centering (int64_t group_id, char * varname, char * centering, char * path)
+int adios_common_define_var_centering (int64_t group_id, const char * varname, const char * centering, const char * path)
 {
     char *mpath = 0;
     mpath = malloc(strlen("/adios_schema/centering")+strlen(varname)+1);
