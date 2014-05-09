@@ -6088,7 +6088,7 @@ int adios_common_define_mesh_structured (char * dimensions,
                                          char * nspace,
                                          char * points,
 //                                         struct adios_group_struct * new_group,
-                                         char * name,
+                                         const char * name,
                                          int64_t group_id
                                         )
 {
@@ -7680,7 +7680,7 @@ int adios_common_define_var_centering (int64_t group_id, char * varname, char * 
     return 0;
 }
 
-int adios_common_define_mesh_group (int64_t group_id, char * name, char * group)
+int adios_common_define_mesh_group (int64_t group_id, const char * name, const char * group)
 {
     char * mpath = 0;
     mpath = malloc(strlen("/adios_schema/")+strlen(name)+strlen("/mesh-group")+1);
