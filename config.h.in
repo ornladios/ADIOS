@@ -119,6 +119,9 @@
 /* Define if you have LUSTRE. */
 #undef HAVE_LUSTRE
 
+/* Define to 1 if you have the <lustre/lustreapi.h> header file. */
+#undef HAVE_LUSTRE_LUSTREAPI_H
+
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
 

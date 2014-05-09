@@ -84,9 +84,10 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
     export CFLAGS="-g -fPIC" 
     $SRCDIR/configure --prefix=/ccs/proj/e2e/$USER/ADIOS/sith.$TARGET \
+        --config-cache \
         --enable-dependency-tracking \
         --enable-research-transports \
-        --with-lustre=/usr/lib64 \
+        --with-lustre \
         --with-mxml=$MXMLDIR \
         --with-hdf5=${SEQ_HDF5_DIR} \
         --with-hdf5-libs="${SEQ_HDF5_CLIB}" \
