@@ -1,4 +1,3 @@
-
 #include <adios_read.h>
 #include "common_query.h"
 
@@ -8,13 +7,12 @@ void adios_query_init(enum ADIOS_QUERY_TOOL tool)
 }
 
 ADIOS_QUERY* adios_query_create(ADIOS_FILE* f, 
-				uint64_t *start,
-				uint64_t *count,
 				const char* varName,
+				ADIOS_SELECTION* queryBoundry,
 				enum ADIOS_PREDICATE_MODE op,
 				const char* value)
 {
-  return common_query_create(f, start, count, varName, op, value);
+  return common_query_create(f, varName, queryBoundry, op, value);
 }
 					
 
@@ -25,27 +23,25 @@ ADIOS_QUERY* adios_query_combine(ADIOS_QUERY* q1,
   return common_query_combine(q1, operator, q2);
 }
 
-int64_t adios_query_estimate(ADIOS_QUERY* q, 
-			     int timeStep)
+int64_t adios_query_estimate(ADIOS_QUERY* q)
 {
-  return common_query_estimate(q, timeStep);
+  return common_query_estimate(q);
 }
 
  
-
-int64_t adios_query_evaluate(ADIOS_QUERY* q, 
-			     int timeStep,
-			     uint64_t maxResult)
+void adios_query_set_timestep(int timeStep)
 {
-  return common_query_evaluate(q, timeStep, maxResult);
+  return common_query_set_timestep(timeStep);
 }
 
-void adios_query_get_selection(ADIOS_QUERY* q, 
-			       int timeStep, 
-			       int batchSize, // limited by maxResult
-			       ADIOS_SELECTION* result)
+int  adios_query_get_selection(ADIOS_QUERY* q, 
+			       //const char* varName,
+			       //int timeStep, 
+			       uint64_t batchSize, // limited by maxResult
+			       ADIOS_SELECTION* outputBoundry,
+			       ADIOS_SELECTION** queryResult)
 {
-  common_query_get_selection(q, timeStep, batchSize, result);
+  common_query_get_selection(q,  batchSize, outputBoundry, queryResult);
 }
 
 void adios_query_free(ADIOS_QUERY* q)

@@ -9,9 +9,12 @@ extern "C" {
 
 #define ADIOS_QUERY_TOOL_COUNT  2
 
+int gCurrentTimeStep;
+
 enum ADIOS_QUERY_TOOL 
 {
         ADIOS_QUERY_TOOL_FASTBIT = 0,
+        ADIOS_QUERY_TOOL_ALACRITY = 0,
         ADIOS_QUERY_TOOL_OTHER = 1
 };
     
@@ -33,37 +36,39 @@ enum ADIOS_CLAUSE_OP_MODE
 };
 
 typedef struct {
-    char* condition;
-    void* dataSelection;
+    char* _condition;
+    void* _queryInternal;
 
   // keeping start/count to map 1d results from fastbit to N-d
-    uint64_t* _start;
-    uint64_t* _count;  
 
     ADIOS_SELECTION* _sel;
-    void* dataSlice;
+    void* _dataSlice;
 
-    ADIOS_VARINFO* var;
-    ADIOS_FILE* f;
+    ADIOS_VARINFO* _var;
+    ADIOS_FILE* _f;
 
-    enum ADIOS_PREDICATE_MODE op;
+    enum ADIOS_PREDICATE_MODE _op;
     char* _value;
-    uint64_t dataSize;
+    uint64_t _rawDataSize; // this is the result of dim/start+count
 
-    void* left;
-    void* right;
-    enum ADIOS_CLAUSE_OP_MODE leftRightOp;
+    void* _left;
+    void* _right;
+    enum ADIOS_CLAUSE_OP_MODE _leftToRightOp;
+
+    int _onTimeStep; // dataSlice is obtained with this timeStep 
+
+    uint64_t _maxResultDesired;
+    uint64_t _lastRead;
 } ADIOS_QUERY;
    
 
 
 /* functions */
-void adios_query_init();
+void adios_query_init(enum ADIOS_QUERY_TOOL tool);
 
 ADIOS_QUERY* adios_query_create(ADIOS_FILE* f, 
-				uint64_t *start,
-				uint64_t *count,
 				const char* varName,
+				ADIOS_SELECTION* queryBoundry,
 				enum ADIOS_PREDICATE_MODE op,
 				const char* value); //this value needs to be &int &double etc, not a string!
 					
@@ -72,17 +77,17 @@ ADIOS_QUERY* adios_query_combine(ADIOS_QUERY* q1,
 				 enum ADIOS_CLAUSE_OP_MODE operator,		    
 				 ADIOS_QUERY* q2);
 
-int64_t adios_query_estimate(ADIOS_QUERY* q, 
-			     int timeStep);
+int64_t adios_query_estimate(ADIOS_QUERY* q);
 
-int64_t adios_query_evaluate(ADIOS_QUERY* q, 
-			     int timeStep,
-			     uint64_t maxResult);
+void adios_query_set_timestep(int timeStep);
 
-void adios_query_get_selection(ADIOS_QUERY* q, 
-			       int timeStep, 
-			       int batchSize, // limited by maxResult
-			       ADIOS_SELECTION* result);
+int  adios_query_get_selection(ADIOS_QUERY* q, 
+			       //const char* varName,
+			       //int timeStep, // same as in evaluate
+			       uint64_t batchSize, // limited by maxResult
+			       ADIOS_SELECTION* outputBoundry,// must supply to get results
+			       ADIOS_SELECTION** queryResult);
+
 
 void adios_query_free(ADIOS_QUERY* q);
 
