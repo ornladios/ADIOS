@@ -10,6 +10,7 @@
       - Support for the visualization schema
       - adios_set_transform() to choose the transformation
         for a variable
+    - CMake Module for find_package(ADIOS)
 
 
 1.6.0 Release Dec 2013
