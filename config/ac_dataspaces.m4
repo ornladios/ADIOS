@@ -108,22 +108,22 @@ else
         # Check for the DataSpaces library and headers
         if test "x${ac_portals_lib_ok}" == "xyes"; then 
             AC_TRY_COMPILE([#include "dataspaces.h"],
-                    [int err; err = dspaces_init(1,1);],
+                    [int err; err = dspaces_init(1,1,"");],
                     [DATASPACES_LIBS="-ldspaces -ldscommon -ldart"],
                     [AM_CONDITIONAL(HAVE_DATASPACES,false)])
         elif test "x${ac_infiniband_lib_ok}" == "xyes"; then 
             AC_TRY_COMPILE([#include "dataspaces.h"],
-                    [int err; err = dspaces_init(1,1);],
+                    [int err; err = dspaces_init(1,1,"");],
                     [DATASPACES_LIBS="-ldspaces -ldscommon -ldart -lrdmacm"],
                     [AM_CONDITIONAL(HAVE_DATASPACES,false)])
         elif test -z "${HAVE_CRAY_PMI_TRUE}" -a -z "${HAVE_CRAY_UGNI_TRUE}"; then 
             AC_TRY_COMPILE([#include "dataspaces.h"],
-                    [int err; err = dspaces_init(1,1);],
+                    [int err; err = dspaces_init(1,1,"");],
                     [DATASPACES_LIBS="-ldspaces -ldscommon -ldart"],
                     [AM_CONDITIONAL(HAVE_DATASPACES,false)])
 	elif test "x${ac_dcmf_lib_ok}" == "xyes"; then
             AC_TRY_COMPILE([#include "dataspaces.h"],
-                    [int err; err = dspaces_init(1,1);],
+                    [int err; err = dspaces_init(1,1,"");],
                     [DATASPACES_LIBS="-ldspaces -ldscommon -ldart"],
                     [AM_CONDITIONAL(HAVE_DATASPACES,false)])
         else

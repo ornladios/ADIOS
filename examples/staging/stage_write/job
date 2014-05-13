@@ -24,9 +24,7 @@ rm staged.bp genarray.bp
 # Prepare config file for DataSpaces
 echo "## Config file for DataSpaces
 ndim = 3
-dimx = 128
-dimy = 32768
-dimz = 128
+dims = 128,32768,128
 max_versions = 10
 #max_readers =" $READPROC " 
 #lock_type = 2

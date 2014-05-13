@@ -28199,7 +28199,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-int err; err = dspaces_init(1,1);
+int err; err = dspaces_init(1,1,"");
   ;
   return 0;
 }
@@ -28257,7 +28257,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-int err; err = dspaces_init(1,1);
+int err; err = dspaces_init(1,1,"");
   ;
   return 0;
 }
@@ -28315,7 +28315,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-int err; err = dspaces_init(1,1);
+int err; err = dspaces_init(1,1,"");
   ;
   return 0;
 }
@@ -28373,7 +28373,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-int err; err = dspaces_init(1,1);
+int err; err = dspaces_init(1,1,"");
   ;
   return 0;
 }
