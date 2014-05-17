@@ -26,7 +26,7 @@ extern "C" {
 /* Types used in the API */
 /*************************/
 
-typedef struct {
+typedef struct _ADIOS_FILE {
         uint64_t fh;                /* File handler                                                   */
         int      nvars;             /* Number of variables in all groups (with full path)             */
         char     ** var_namelist;   /* Variable names in a char* array                                */
@@ -50,7 +50,7 @@ typedef struct {
         void     * internal_data;   /* Data for internal use                                          */
 } ADIOS_FILE;
 
-typedef struct {
+typedef struct _ADIOS_VARSTAT {
         void     * min;            /* minimum value in an array variable, = value for a scalar       */
         void     * max;            /* maximum value of an array variable (over all steps)            */
         double   * avg;            /* average value of an array variable (over all steps)            */
@@ -81,11 +81,9 @@ typedef struct {
             uint32_t ** frequencies;
             uint32_t *  gfrequencies;
         } *histogram;
-
 } ADIOS_VARSTAT;
 
-
-typedef struct {
+typedef struct _ADIOS_VARBLOCK {
     uint64_t * start;      /* offset start point in global array ('ndim' elements)         */
     uint64_t * count;      /* local sizes in global array ('ndim' elements)                */
 } ADIOS_VARBLOCK;
@@ -96,12 +94,12 @@ enum var_centering
     cell_centering = 2              // unstructured mesh cell centering
 };
 
-typedef struct {
+typedef struct _ADIOS_VARMESH {
     int meshid;
     enum var_centering centering;
 } ADIOS_VARMESH;
 
-typedef struct {
+typedef struct _ADIOS_VARINFO {
         int        varid;           /* variable index (0..ADIOS_FILE.nvars-1)                         */
         enum ADIOS_DATATYPES type;  /* type of variable                                               */
         int        ndim;            /* number of dimensions, 0 for scalars                            */
@@ -126,8 +124,7 @@ typedef struct {
                                        retrieved in separate call: adios_inq_var_meshinfo()          */ 
 } ADIOS_VARINFO;
 
-
-typedef struct {
+typedef struct _ADIOS_VARCHUNK {
         int                   varid;    /* variable index (0..ADIOS_FILE.nvars-1)              */
         enum ADIOS_DATATYPES  type;     /* type of variable                                    */
         // NCSU ALACRITY-ADIOS - Added timestep information into varchunks
