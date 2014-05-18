@@ -1260,7 +1260,7 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                 }
                 // an attribute for the center if it exists.
                 if (strcmp(center,"")){
-                    adios_common_define_var_mesh (ptr_new_group, name, center, path);
+                    adios_common_define_var_centering (ptr_new_group, name, center, path);
                 }
                 // if a time attribute exists
                 // parse it and define it
@@ -1445,17 +1445,11 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                             }
                             // an attribute for the mesh if it exists.
                             if (strcmp(mesh,"")){
-                                mpath1 = malloc(strlen("/adios_schema")+strlen(name)+1);
-                                strcpy(mpath1,name);
-                                strcat(mpath1,"/adios_schema");
-                                adios_common_define_attribute (ptr_new_group,mpath1,path,adios_string,mesh,"");
+                                adios_common_define_var_mesh (ptr_new_group, name, mesh, path);
                             }
                             // an attribute for the mesh if it exists.
                             if (strcmp(center,"")){
-                                mpath2 = malloc(strlen("/adios_schema/centering")+strlen(name)+1);
-                                strcpy(mpath2,name);
-                                strcat(mpath2,"/adios_schema/centering");
-                                adios_common_define_attribute (ptr_new_group,mpath2,path,adios_string,center,"");
+                                adios_common_define_var_centering (ptr_new_group, name, center, path);
                             }
                             // if a time attribute exists
                             // parse it and define it

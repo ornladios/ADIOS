@@ -158,10 +158,10 @@ int adios_define_schema_version (int64_t group_id, char * schema_version);
 
 // Assign mesh to a variable
 // The function implements the same as "var name="Var1" mesh="meshname" " in xml 
-int adios_define_var_mesh(int64_t group_id, char * varname, char * meshname);
+int adios_define_var_mesh(int64_t group_id, const char * varname, const char * meshname);
 
 // Define centering of the variable value onto the mesh, centering is "cell" or "point"
-int adios_define_var_centering(int64_t group_id, char * varname, char * centering);
+int adios_define_var_centering(int64_t group_id, const char * varname, const char * centering);
 
 // Define a external file where mesh variables are written 
 int adios_define_mesh_file(int64_t group_id, char * name, char * file);

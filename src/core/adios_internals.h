@@ -586,8 +586,8 @@ void adios_conca_mesh_att_nam (char ** returnstr, const char * meshname, char * 
 
 // No-XML API
 int adios_common_define_schema_version (struct adios_group_struct * new_group, char * schema_version);
-int adios_common_define_var_mesh (int64_t ptr_new_group, char * varname, char * meshname, char * path);
-int adios_common_define_var_centering (int64_t ptr_new_group, char * varname, char * centering, char * path);
+int adios_common_define_var_mesh (int64_t ptr_new_group, const char * varname, const char * meshname, const char * path);
+int adios_common_define_var_centering (int64_t ptr_new_group, const char * varname, const char * centering, const char * path);
 int adios_common_define_var_timesteps (const char * timesteps,struct adios_group_struct * new_group,const char * name, const char *path);
 int adios_common_define_var_timescale (const char * timescale,struct adios_group_struct * new_group,const char * name, const char *path);
 int adios_common_define_var_timeseriesformat (const char * timeseries,struct adios_group_struct * new_group,const char * name, const char *path);
@@ -595,7 +595,7 @@ int adios_common_define_var_hyperslab ( const char * hyperslab,struct adios_grou
 
 // defineMesh functions (missing mesh structs for now dueto problems checking accross groups
 int adios_common_define_mesh_file (int64_t ptr_new_group, char * name, char * file);
-int adios_common_define_mesh_group (int64_t ptr_new_group, char * name, char * group);
+int adios_common_define_mesh_group (int64_t ptr_new_group, const char * name, const char * group);
 int adios_common_define_mesh_timeVarying (const char * timevarying, int64_t group_id, const char * name);
 int adios_common_define_mesh_timeSeriesFormat (const char * timeseries, struct adios_group_struct * new_group, const char * name);
 int adios_common_define_mesh_timeScale (const char * timescale, struct adios_group_struct * new_group, const char * name);
@@ -613,7 +613,7 @@ int adios_define_mesh_uniform_origins (const char * origin ,struct adios_group_s
 int adios_define_mesh_uniform_spacings (const char * spacing,struct adios_group_struct * new_group,const char * name);
 int adios_define_mesh_uniform_maximums (const char * maximum,struct adios_group_struct * new_group,const char * name);
 
-int adios_common_define_mesh_structured (char * dimensions, char * nspace, char * points, char * name, int64_t group_id);
+int adios_common_define_mesh_structured (char * dimensions, char * nspace, char * points, const char * name, int64_t group_id);
 int adios_define_mesh_structured_dimensions (const char * dimensions,struct adios_group_struct * new_group,const char * name);
 //int adios_define_mesh_structured_nspace (const char * nspace,struct adios_group_struct * new_group,const char * name);
 int adios_define_mesh_structured_pointsSingleVar (const char * points,struct adios_group_struct * new_group,const char * name);

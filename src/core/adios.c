@@ -436,13 +436,13 @@ int adios_define_schema_version (int64_t group_id, char * schema_version)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int adios_define_var_mesh (int64_t group_id, char * varname, char * meshname)
+int adios_define_var_mesh (int64_t group_id, const char * varname, const char * meshname)
 {
     return adios_common_define_var_mesh ( group_id, varname, meshname, ""); 
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int adios_define_var_centering (int64_t group_id, char * varname, char * centering)
+int adios_define_var_centering (int64_t group_id, const char * varname, const char * centering)
 {
     return adios_common_define_var_centering (group_id, varname, centering, "");
 }
@@ -478,14 +478,13 @@ int adios_define_var_timeseriesformat (const char * timeseries, int64_t group_id
 int adios_define_var_hyperslab ( const char * hyperslab, int64_t group_id, const char * name)
 {
     struct adios_group_struct * g = (struct adios_group_struct *) group_id;
-    return adios_common_define_var_hyperslab (hyperslab, group_id, name, ""); 
+    return adios_common_define_var_hyperslab (hyperslab, g, name, ""); 
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 int adios_define_mesh_timevarying (const char * timevarying, int64_t group_id, const char * name)
 {
-    struct adios_group_struct * g = (struct adios_group_struct *) group_id;
-    return adios_common_define_mesh_timeVarying (timevarying, g, name);
+    return adios_common_define_mesh_timeVarying (timevarying, group_id, name);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

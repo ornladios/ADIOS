@@ -1324,7 +1324,7 @@ int adios_common_free_group (int64_t id)
 
     if (!root)
     {
-        adios_error (err_unspecified, "Err in adios_common_free_group()\n");
+        adios_error (err_unspecified, "Err in adios_common_free_group(): no groups left\n");
         return -1;
     }
     while (root && root->group->id != g->id)
@@ -1336,12 +1336,12 @@ int adios_common_free_group (int64_t id)
     if (!root)
     {
         // Didn't find the group
-        adios_error (err_unspecified, "Err in adios_common_free_group()\n");
+        adios_error (err_unspecified, "Err in adios_common_free_group(): did not find requested group\n");
         return -1;
     }
 
     // old_root->root->root next
-    if (old_root == adios_groups)
+    if (root == adios_groups)
     {
         adios_groups =  root->next;
     }
@@ -6088,7 +6088,7 @@ int adios_common_define_mesh_structured (char * dimensions,
                                          char * nspace,
                                          char * points,
 //                                         struct adios_group_struct * new_group,
-                                         char * name,
+                                         const char * name,
                                          int64_t group_id
                                         )
 {
@@ -7658,7 +7658,7 @@ int adios_define_mesh_unstructured_mixedCells (const char * count,
 }
 
 // called by NO-XML API
-int adios_common_define_var_mesh (int64_t group_id, char * varname, char * meshname, char * path)
+int adios_common_define_var_mesh (int64_t group_id, const char * varname, const char * meshname, const char * path)
 {
     char *mpath = 0;
     mpath = malloc(strlen("/adios_schema")+strlen(varname)+1);
@@ -7669,7 +7669,7 @@ int adios_common_define_var_mesh (int64_t group_id, char * varname, char * meshn
     return 0;
 }
 
-int adios_common_define_var_centering (int64_t group_id, char * varname, char * centering, char * path)
+int adios_common_define_var_centering (int64_t group_id, const char * varname, const char * centering, const char * path)
 {
     char *mpath = 0;
     mpath = malloc(strlen("/adios_schema/centering")+strlen(varname)+1);
@@ -7680,7 +7680,7 @@ int adios_common_define_var_centering (int64_t group_id, char * varname, char * 
     return 0;
 }
 
-int adios_common_define_mesh_group (int64_t group_id, char * name, char * group)
+int adios_common_define_mesh_group (int64_t group_id, const char * name, const char * group)
 {
     char * mpath = 0;
     mpath = malloc(strlen("/adios_schema/")+strlen(name)+strlen("/mesh-group")+1);
