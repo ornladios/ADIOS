@@ -28199,7 +28199,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-int err; err = dspaces_init(1,1,"");
+int err; err = dspaces_init(1,1,0,"");
   ;
   return 0;
 }
@@ -28257,7 +28257,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-int err; err = dspaces_init(1,1,"");
+int err; err = dspaces_init(1,1,0,"");
   ;
   return 0;
 }
@@ -28315,7 +28315,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-int err; err = dspaces_init(1,1,"");
+int err; err = dspaces_init(1,1,0,"");
   ;
   return 0;
 }
@@ -28373,7 +28373,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-int err; err = dspaces_init(1,1,"");
+int err; err = dspaces_init(1,1,0,"");
   ;
   return 0;
 }
@@ -28732,7 +28732,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-int err; dimes_set_storage_type(1);
+int err; dimes_put_sync_all();
   ;
   return 0;
 }
@@ -28795,7 +28795,7 @@ cat >>conftest.$ac_ext <<_ACEOF
 int
 main ()
 {
-int err; dimes_set_storage_type(1);
+int err; dimes_put_sync_all();
   ;
   return 0;
 }

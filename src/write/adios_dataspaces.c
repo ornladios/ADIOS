@@ -115,7 +115,7 @@ static int connect_to_dspaces (struct adios_ds_data_struct * md, MPI_Comm comm)
                 md->rank, num_peers, md->appid);
 
         //Init the dart client
-        ret = dspaces_init (num_peers, md->appid, NULL);
+        ret = dspaces_init (num_peers, md->appid, &md->mpi_comm_init, NULL);
         if (ret) {
             log_error ("adios_dataspaces: rank=%d Failed to connect to DATASPACES: err=%d,  rank=%d\n", md->rank, ret);        
             return ret;

@@ -249,7 +249,7 @@ int adios_read_dataspaces_init_method (MPI_Comm comm, PairStruct * params)
             appid = 2;
         log_debug("-- %s, rank %d: connect to dataspaces with nproc=%d and appid=%d\n", 
                     __func__, rank, nproc, appid);
-        err = dspaces_init(nproc, appid, NULL);
+        err = dspaces_init(nproc, appid, &comm, NULL);
         if (err < 0) {
             adios_error (err_connection_failed, "Failed to connect with DATASPACES\n");
             return err_connection_failed;
