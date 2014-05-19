@@ -4,19 +4,24 @@
 
  Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
 """
+"""
+ This is a cython file. To generate a CPP file, use the following command:
+ $ cython --cplus adios.pyx
+"""
 
 import numpy as np
 cimport numpy as np
 
-import mpi4py.MPI as MPI 
-cimport mpi4py.MPI as MPI
+## This is a serial version of Adios. No use of MPI.
+##import mpi4py.MPI as MPI 
+##cimport mpi4py.MPI as MPI
 
 import cython
 cimport cython
 
-## ==========
+## ====================
 ## ADIOS Exported Functions
-## ==========
+## ====================
 
 from libc.stdint cimport uint32_t, int64_t, uint64_t
 from libc.stdlib cimport malloc, free
@@ -48,8 +53,8 @@ cdef extern from "adios_types.h":
         pass
 
 cdef extern from "adios.h":
-    ctypedef struct MPI_Comm:
-        pass
+    ctypedef int MPI_Comm
+    int MPI_COMM_WORLD
 
     ctypedef char* const_char_ptr "const char*"
 
@@ -61,7 +66,7 @@ cdef extern from "adios.h":
                          char * group_name,
                          char * name, 
                          char * mode,
-                         void * comm)
+                         MPI_Comm comm)
     
     cdef int adios_group_size (int64_t fd_p,
                                uint64_t data_size,
@@ -173,9 +178,9 @@ cdef extern from "adios_read.h":
     cdef int adios_errno
 
 
-## ==========
+## ====================
 ## ADIOS Enum
-## ==========
+## ====================
 
 class DATATYPE(object):
     unknown = -1
@@ -204,20 +209,20 @@ class BUFFER_ALLOC_WHEN(object):
     NOW = 1
     LATER = 2
     
-## ==========
+## ====================
 ## ADIOS Write API
-## ==========
+## ====================
 
-cpdef init(char * config, MPI.Comm comm = MPI.COMM_WORLD):
-    return adios_init(config, comm.ob_mpi)
+cpdef init(char * config, MPI_Comm comm = MPI_COMM_WORLD):
+    return adios_init(config, comm)
 
 cpdef int64_t open(char * group_name,
                    char * name,
                    char * mode,
-                   MPI.Comm comm = MPI.COMM_WORLD):
+                   MPI_Comm comm = MPI_COMM_WORLD):
     cdef int64_t fd
     cdef int result
-    result = adios_open(&fd, group_name, name, mode, comm.ob_mpi)
+    result = adios_open(&fd, group_name, name, mode, comm)
     return fd
 
 cpdef int64_t set_group_size(int64_t fd_p, uint64_t data_size):
@@ -255,11 +260,11 @@ cpdef int close(int64_t fd_p):
 cpdef finalize(int mype = 0):
     return adios_finalize(mype)
 
-## ==========
+## ====================
 ## ADIOS No-XML API
-## ==========
-cpdef int init_noxml(MPI.Comm comm = MPI.COMM_WORLD):
-    return adios_init_noxml(comm.ob_mpi)
+## ====================
+cpdef int init_noxml(MPI_Comm comm = MPI_COMM_WORLD):
+    return adios_init_noxml(comm)
 
 cpdef int allocate_buffer(int when,
                           uint64_t buffer_size):
@@ -313,9 +318,9 @@ cpdef int select_method (int64_t group,
                                 base_path)
 
 
-## ==========
-## ADIOS Read API
-## ==========
+## ====================
+## ADIOS Read API (V1)
+## ====================
 
 cpdef type adios2nptype(ADIOS_DATATYPES t):
     cdef type ntype = None
@@ -416,9 +421,9 @@ cdef adios2scalar(ADIOS_DATATYPES t, void * val):
     else:
         return None
 
-## ==========
+## ====================
 ## ADIOS Class Definition
-## ==========
+## ====================
     
 cdef class AdiosFile:
     """ Private Memeber """
@@ -437,11 +442,11 @@ cdef class AdiosFile:
     
     cpdef public dict group
     
-    def __init__(self, char * fname, MPI.Comm comm = MPI.COMM_WORLD):
+    def __init__(self, char * fname, MPI_Comm comm = MPI_COMM_WORLD):
         self.fp = NULL
         self.group = {}
         
-        self.fp = adios_fopen(fname, comm.ob_mpi)
+        self.fp = adios_fopen(fname, comm)
         assert self.fp != NULL, 'Not an open file'
 
         self.name         = fname.split('/')[-1]  ## basename
@@ -586,7 +591,7 @@ cdef class AdiosVariable:
 
         assert npshape.ndim == npoffset.ndim, 'Offset dimension mismatch'
         assert npshape.ndim == npcount.ndim, 'Count dimension mismatch.'
-        assert (npshape - npoffset > npcount).all(), 'Count is larger than shape.'
+        assert (npshape - npoffset >= npcount).all(), 'Count is larger than shape.'
 
         cdef np.ndarray var = np.zeros(npcount, dtype=ntype)
         cdef int64_t nbytes = adios_read_var_byid(
@@ -608,3 +613,33 @@ cdef class AdiosVariable:
         print '=== AdiosVariable ==='
         print '%15s : %lu' % ('vp', <unsigned long> self.vp)
         printAdiosVariable(self.vp)
+
+## ====================
+## ADIOS Global functions
+## ====================
+
+def readvar(fname, varname):
+    f = AdiosFile(fname)
+    val = None
+    for g in f.group.itervalues():
+        if g.var.has_key(varname):
+            val = g.var[varname].read()
+    f.close()
+            
+    if val is None:
+        print "No valid variables"
+    ##else:
+    ##    if val.ndim == 0:
+    ##        val = val.item()
+
+    return val 
+
+def bpls(fname):
+    f = AdiosFile(fname)
+    val = []
+    for g in f.group.itervalues():
+        for v in g.var.iterkeys():
+            val.append(v)
+
+    return val
+    

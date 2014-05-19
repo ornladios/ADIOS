@@ -2,44 +2,24 @@ ADIOS Python/Numpy wrapper
 -----------------
 
 This directory contains the codes for the ADIOS python/numpy wrapper
-to to call the native ADIOS library. This module is built by Cython.
+to call the native ADIOS library. This module is built by Cython.
 
+== Compile with Cython ==
 
-== Build with CMake == 
+The C++ code (adios.cpp) has been already compiled with Cython
+(version 0.20.1) and included here. Just in case to reproduce the C++
+code, try the following command. Otherwise, one can skip this part.
 
-This program can be built with CMake (http://www.cmake.org/). You may
-want to a build directory and run cmake pointing the source directory
-containing CMakeLists.txt (this directory). For example, 
+$ cython --cplus adios.pyx 
 
-$ mkdir build; cd build
-$ cmake /dir/to/source
+If you need a parallel adios wrapper, try:
 
-CMake will search installed ADIOS library and Python/Numpy. Once
-completed, type make to build:
-
-$ make
-Or, 
-$ make VERBOSE=1
-if you need verbose output.
-
-After successful building, you can see adios.so. This file can be
-loaded in Python.
-
-== Test == 
-
-This program contains a test program. To run testing after building,
-type the following command:
-
-$ make test
-
-If you need a verbose output, type the following
-
-$ ctest -V
+$ cython --cplus adios_mpi.pyx 
 
 == Build with Python == 
 
-This program also can be build and installed by using python's
-standard package distribution method. For example,
+This program can be built and installed by using python's standard
+package distribution method. For example,
 
 $ python setup.py build
 will compile adios python module. Once successfully completed, type
@@ -49,4 +29,12 @@ Or,
 $ python setup.py install --user
 to install ADIOS module in python's default package directory or user
 local directory.
+
+If you need a parallel adios wrapper, try:
+
+$ python setup_mpi.py build
+$ python setup_mpi.py install
+Or,
+$ python setup_mpi.py install --user
+
 
