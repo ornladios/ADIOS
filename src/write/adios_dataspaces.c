@@ -28,7 +28,7 @@
 
 static int adios_dataspaces_initialized = 0;
 #define MAX_DS_NAMELEN 128
-#define MAX_NUM_OF_FILES 200
+#define MAX_NUM_OF_FILES 20
 //static char ds_type_var_name[MAX_DS_NAMELEN];
 static char ds_var_name[MAX_DS_NAMELEN];
 static unsigned int adios_dataspaces_verbose = 3;

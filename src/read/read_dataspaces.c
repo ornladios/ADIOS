@@ -79,7 +79,7 @@ static inline double time_get()
 
 #define MAX_DS_NAMELEN 128
 /* Maximum number of different filenames allowed per process during the whole run */
-#define MAXNFILE 200 
+#define MAXNFILE 20 
 /*#define DATASPACES_NO_VERSIONING   define it at configure as -DDATASPACES_NO_VERSIONING in CFLAGS */
 /* Length of the 1D array representing the file in DataSpaces (contains metadata) */
 #define FILEINFO_BUFLEN 128
