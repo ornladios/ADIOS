@@ -11,8 +11,8 @@ from mpidistutils import setup
 
 import subprocess
 
-m1 = Extension('adios', 
-               sources=['adios.cpp'], 
+m1 = Extension('adios_mpi', 
+               sources=['adios_mpi.cpp'], 
                define_macros=[('ADIOS_USE_READ_API_1', None)],
                include_dirs = [np.get_include()],
                library_dirs = [],
@@ -31,8 +31,8 @@ for path in p.communicate()[0].strip().split(" "):
     if path.startswith('-l'):
         m1.libraries.append(path.replace('-l', '', 1))
 
-setup(name = 'Adios',
+setup(name = 'Adios_MPI',
       version = '1.0',
-      description = 'Python Module for Adios',
+      description = 'Python Module for Adios MPI',
       url = 'http://www.olcf.ornl.gov/center-projects/adios/',
       ext_modules = [m1])
