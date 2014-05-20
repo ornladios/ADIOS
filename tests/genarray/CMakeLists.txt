@@ -34,4 +34,4 @@ add_custom_command(
 	DEPENDS genarray3d.xml
 	)
 
-file(COPY genarray.xml genarray3d.xml job.ewok job2D.ewok job.xt5 DESTINATION ${PROJECT_BINARY_DIR}/tests/genarray) 
+file(COPY genarray.xml genarray3d.xml job.ewok job2D.ewok DESTINATION ${PROJECT_BINARY_DIR}/tests/genarray) 
