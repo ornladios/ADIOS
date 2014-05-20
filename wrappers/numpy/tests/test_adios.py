@@ -5,29 +5,46 @@ Example:
 $ python ./test_adios.py
 """
 
-import adios
+import adios as ad
 import numpy as np
 
-### Writing
-adios.init("config.xml")
-fd = adios.open("temperature", "adios_test.bp", "w")
+## Writing
+print "\n>>> Writing ...\n"
+
+ad.init("config.xml")
+fd = ad.open("temperature", "adios_test.bp", "w")
 
 NX = 10
 size = 2
 groupsize =  4 + 4 + 8 * size * NX
 t = np.array(range(NX*size), dtype=np.float64)
 tt = t.reshape((size, NX))
-adios.set_group_size(fd, groupsize)
-adios.write_int(fd, "NX", NX)
-adios.write_int(fd, "size", size)
-adios.write(fd, "temperature", tt)
-adios.close(fd)
+ad.set_group_size(fd, groupsize)
+ad.write_int(fd, "NX", NX)
+ad.write_int(fd, "size", size)
+ad.write(fd, "temperature", tt)
+ad.close(fd)
 
-adios.finalize()
+ad.finalize()
 
-### Reading
-v = adios.readvar("adios_test.bp", "temperature")
+## Reading
+print "\n>>> Reading ...\n"
 
-assert ((tt == v).all())
+f = ad.file("adios_test.bp")
+f.printself()
 
-print "Done."
+v = f.var['temperature']
+v.printself()
+
+val = v.read()
+print val
+assert ((tt == val).all())
+
+## Testing
+print "\n>>> Test utility functions ...\n"
+
+print "bpls:\n", ad.bpls('adios_test.bp')
+print "readvar:\n", ad.readvar("adios_test.bp", "temperature")
+
+print "\n>>> Done.\n"
+
