@@ -13,7 +13,7 @@ import subprocess
 
 m1 = Extension('adios', 
                sources=['adios.cpp'], 
-               define_macros=[('ADIOS_USE_READ_API_1', None), ('_NOMPI', None)],
+               define_macros=[('_NOMPI', None)],
                include_dirs = [np.get_include()],
                library_dirs = [],
                libraries = [],
