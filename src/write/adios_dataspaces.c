@@ -209,7 +209,6 @@ int adios_dataspaces_open (struct adios_file_struct * fd,
     md->mpi_comm = comm;
     MPI_Comm_rank (md->mpi_comm, &(md->rank));
     MPI_Comm_size (md->mpi_comm, &(md->peers));
-    dspaces_set_mpi_rank(md->rank);
 #endif
 
     // connect to DATASPACES at the very first adios_open(), disconnect in adios_finalize()
