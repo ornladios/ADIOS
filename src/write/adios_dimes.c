@@ -268,6 +268,7 @@ void adios_dimes_write (struct adios_file_struct * fd
     char * var_name = v->name;
     int err;
 
+    char lb_str[256], ub_str[256], gdims_str[256], dims_str[256], didx_str[256];
     //Get two offset coordinate values
     unsigned int version;
     uint64_t dims[MAX_DS_NDIM], gdims[MAX_DS_NDIM], lb[MAX_DS_NDIM], ub[MAX_DS_NDIM]; /* lower and upper bounds for DataSpaces */
@@ -327,11 +328,14 @@ void adios_dimes_write (struct adios_file_struct * fd
     adios_generate_var_characteristics_v1 (fd, v); // characteristics will be included in build index
     adios_write_var_characteristics_v1 (fd, v);
     */
-    
-    // TODO: fix printing dimension
-    //log_debug ("var_name=%s, type=%s(%d) elemsize=%d, version=%d, ndims=%d, size=(%lld,%lld,%lld), gdim=(%lld,%lld,%lld), lb=(%lld,%lld,%lld), ub=(%lld,%lld,%lld)\n",
-    //        ds_var_name, adios_type_to_string_int(v->type), v->type, var_type_size, version, ndims,
-    //        dims[0], dims[1], dims[2], gdims[0], gdims[1], gdims[2], lb[0], lb[1], lb[2], ub[0], ub[1], ub[2]);
+
+    dimes_int64s_to_str(ndims, lb, lb_str);
+    dimes_int64s_to_str(ndims, ub, ub_str);
+    dimes_int64s_to_str(ndims, dims, dims_str);
+    dimes_int64s_to_str(ndims, gdims, gdims_str);
+    log_debug ("var_name=%s, type=%s(%d) elemsize=%d, version=%d, ndims=%d, size=(%s), gdim=(%s), lb=(%s), ub=(%s)\n",
+            ds_var_name, adios_type_to_string_int(v->type), v->type, var_type_size, version, ndims,
+            dims_str, gdims_str, lb_str, ub_str);    
 
     /* non-timed scalars are written in the metadata at close(), not here */
     if (ndims == 0 && !hastime)
@@ -354,13 +358,12 @@ void adios_dimes_write (struct adios_file_struct * fd
     dimes_define_gdim(ds_var_name, ndims, gdims_in);
     dimes_put(ds_var_name, version, var_type_size, ndims, lb_in, ub_in, data);
 
-    // TODO: fix printing dimension    
-    //log_debug ("var_name=%s, dimension ordering=(%d,%d,%d), gdims=(%lld,%lld,%lld), lb=(%lld,%lld,%lld), ub=(%lld,%lld,%lld)\n",
-    //        ds_var_name, 
-    //        didx[0], didx[1], didx[2], 
-    //        gdims[didx[0]], gdims[didx[1]], gdims[didx[2]], 
-    //        lb[didx[0]], lb[didx[1]], lb[didx[2]], 
-    //        ub[didx[0]], ub[didx[1]], ub[didx[2]]);
+    dimes_ints_to_str(ndims, didx, didx_str);
+    dimes_int64s_to_str(ndims, gdims_in, gdims_str);
+    dimes_int64s_to_str(ndims, lb_in, lb_str);
+    dimes_int64s_to_str(ndims, ub_in, ub_str);
+    log_debug ("var_name=%s, dimension ordering=(%s), gdims=(%s), lb=(%s), ub=(%s)\n",
+            ds_var_name, didx_str, gdims_str, lb_str, ub_str);
 }
 
 void adios_dimes_get_write_buffer (struct adios_file_struct * fd

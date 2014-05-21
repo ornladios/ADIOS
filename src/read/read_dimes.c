@@ -1126,6 +1126,7 @@ static int adios_read_dimes_get_data(const char * varname, enum ADIOS_DATATYPES 
     int i, err;
     int didx[MAX_DS_NDIM];
     uint64_t gdims[MAX_DS_NDIM], lb[MAX_DS_NDIM], ub[MAX_DS_NDIM];
+    char gdims_str[256], lb_str[256], ub_str[256];
 
     // reorder DS dimensions to Fortran/C dimensions
     dimes_dimension_ordering (ndims, is_fortran_ordering, 0 /*pack*/, didx);
@@ -1135,10 +1136,10 @@ static int adios_read_dimes_get_data(const char * varname, enum ADIOS_DATATYPES 
         gdims[i] = dims[didx[i]];
     }
 
-    // TODO: fix printing dimension
-    //log_debug("-- %s, rank %d: get data: varname=%s version=%d, lb=(%llu,%llu,%llu) ub=(%llu,%llu,%llu)}\n",
-    //    __func__, rank, varname, version, lb[0], lb[1], lb[2], 
-    //    ub[0], ub[1], ub[2]);
+    dimes_int64s_to_str(ndims, lb, lb_str);
+    dimes_int64s_to_str(ndims, ub, ub_str);
+    log_debug("-- %s, rank %d: get data: varname=%s version=%d, lb=(%s) ub=(%s)\n",
+        __func__, rank, varname, version, lb_str, ub_str);
 
     dimes_define_gdim (varname, ndims, gdims);
     err = dimes_get (varname, version, elemsize,
@@ -1166,6 +1167,7 @@ static int adios_read_dimes_get_meta(const char * varname, enum ADIOS_DATATYPES 
     int i, err;
     int didx[MAX_DS_NDIM];
     uint64_t gdims[MAX_DS_NDIM], lb[MAX_DS_NDIM], ub[MAX_DS_NDIM];
+    char gdims_str[256], lb_str[256], ub_str[256];
 
     // reorder DS dimensions to Fortran/C dimensions
     dimes_dimension_ordering (ndims, is_fortran_ordering, 0 /*pack*/, didx);
@@ -1174,10 +1176,10 @@ static int adios_read_dimes_get_meta(const char * varname, enum ADIOS_DATATYPES 
         ub[i] = offset[didx[i]]+readsize[didx[i]]-1;
     }
 
-    // TODO: fix printing dimension
-    //log_debug("-- %s, rank %d: get data: varname=%s version=%d, lb=(%lld,%lld,%lld) ub=(%lld,%lld,%lld)}\n",
-    //    __func__, rank, varname, version, lb[0], lb[1], lb[2], 
-    //    ub[0], ub[1], ub[2]);
+    dimes_int64s_to_str(ndims, lb, lb_str);
+    dimes_int64s_to_str(ndims, ub, ub_str);
+    log_debug("-- %s, rank %d: get data: varname=%s version=%d, lb=(%s) ub=(%s)\n",
+        __func__, rank, varname, version, lb_str, ub_str);
 
     err =  dspaces_get (varname, version, elemsize, ndims, lb, ub, data); 
     /*if (err == -ENOMEM) {
@@ -1202,6 +1204,7 @@ static int adios_read_dimes_get_meta_collective(const char * varname,
     int i, err;
     int didx[MAX_DS_NDIM];
     uint64_t gdims[MAX_DS_NDIM], lb[MAX_DS_NDIM], ub[MAX_DS_NDIM];
+    char gdims_str[256], lb_str[256], ub_str[256];
     size_t datasize;
     size_t padsize = common_read_type_size(adios_integer, NULL);
     void *buf;
@@ -1221,10 +1224,11 @@ static int adios_read_dimes_get_meta_collective(const char * varname,
         lb[i] = offset[didx[i]];
         ub[i] = offset[didx[i]]+readsize[didx[i]]-1;
     }
-    // TODO: fix printing dimension
-    //log_debug("-- %s, rank %d: get data: varname=%s version=%d, lb=(%lld,%lld,%lld) ub=(%lld,%lld,%lld)}\n",
-    //    __func__, rank, varname, version, lb[0], lb[1], lb[2],
-    //    ub[0], ub[1], ub[2]);
+    
+    dimes_int64s_to_str(ndims, lb, lb_str);
+    dimes_int64s_to_str(ndims, ub, ub_str);
+    log_debug("-- %s, rank %d: get data: varname=%s version=%d, lb=(%s) ub=(%s)\n",
+        __func__, rank, varname, version, lb_str, ub_str);
 
     if (rank == root) {
         err =  dspaces_get (varname, version, elemsize, ndims, lb, ub, data);
@@ -1411,9 +1415,10 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE *fp, read_request * r)
     struct dimes_var_struct * var = &ds->vars[r->varid];
     //int64_t total_size;
     uint64_t offset[MAX_DS_NDIM], readsize[MAX_DS_NDIM], dims[MAX_DS_NDIM];
+    char offset_str[256], readsize_str[256];
     int elemsize;
     int err;
-    int i,k,ndims,tidx;
+    int i,k,tidx;
     char ds_name[MAX_DS_NAMELEN];
 
     // set global dimension
@@ -1465,14 +1470,10 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE *fp, read_request * r)
             readsize[i]  = r->sel->u.bb.count[i];
         }
 
-        // TODO: fix printing dimension
-        //log_debug("-- %s, rank %d: get data: varname=%s start=(%lld,%lld,%lld) count=(%lld,%lld,%lld)}\n",
-        //        __func__, ds->mpi_rank, ds_name, 
-        //        r->sel->u.bb.start[0], r->sel->u.bb.start[1], r->sel->u.bb.start[2], 
-        //        r->sel->u.bb.count[0], r->sel->u.bb.count[1], r->sel->u.bb.count[2]);
-        //log_debug("-- %s, rank %d: get data: varname=%s offset=(%d,%d,%d) readsize=(%d,%d,%d)}\n",
-        //        __func__, ds->mpi_rank, ds_name, offset[0], offset[1], offset[2], 
-        //        readsize[0], readsize[1], readsize[2]);
+        dimes_int64s_to_str(var->ndims, offset, offset_str);
+        dimes_int64s_to_str(var->ndims, readsize, readsize_str);
+        log_debug("-- %s, rank %d: get data: varname=%s offset=(%s) readsize=(%s)\n",
+                __func__, ds->mpi_rank, ds_name, offset_str, readsize_str);
 
         err = adios_read_dimes_get_data(ds_name, var->type, ds->current_step, ds->mpi_rank, 
                 var->ndims, futils_is_called_from_fortran(),
@@ -1627,6 +1628,38 @@ void dimes_dimension_ordering(int ndims, int is_app_fortran, int unpack, int *di
     }
 
     return;
+}
+
+void dimes_ints_to_str (int ndim, int *values, char *s)
+{
+    int i;
+    char v[32];
+    if (!ndim) {
+        s[0] = '\0';
+        return;
+    }
+    sprintf(s,"%d", values[0]);
+    for (i=1; i<ndim; i++)
+    {
+        sprintf (v,",%d", values[i]);
+        strcat (s,v);
+    }
+}
+
+void dimes_int64s_to_str(int ndim, uint64_t *values, char *s)
+{
+    int i;
+    char v[32];
+    if (!ndim) {
+        s[0] = '\0';
+        return;
+    }
+    sprintf(s,"%llu", values[0]);
+    for (i=1; i<ndim; i++)
+    {
+        sprintf (v,",%llu", values[i]);
+        strcat (s,v);
+    }
 }
 
 int adios_read_dimes_get_attr_byid (const ADIOS_FILE * fp, int attrid, 
