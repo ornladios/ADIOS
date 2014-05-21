@@ -18,6 +18,7 @@
 #include "public/adios_types.h"
 #include "public/adios_read.h"
 
+#define MAX_DS_NDIM 10
 
 /* functions currently defined in adios_dataspaces.c and read_dataspaces.c */
 
