@@ -979,7 +979,7 @@ void adios_dataspaces_finalize (int mype, struct adios_method_struct * method)
                     __func__, ds_var_name, value[0], value[1] );
             elemsize = sizeof(int); ndim = 1;
             lb[0] = 0; ub[0] = 1;
-            gdims[0] = (ub[0]-lb[0]) * dspaces_get_num_space_server();
+            gdims[0] = (ub[0]-lb[0]+1) * dspaces_get_num_space_server();
             dspaces_define_gdim(ds_var_name, ndim, gdims);
             dspaces_put(ds_var_name, 0, elemsize, ndim, lb, ub, &value); 
             log_debug("%s: call dspaces_put_sync()\n", __func__);
