@@ -310,7 +310,7 @@ convert_var_info(flexpath_var * fpvar,
 	    adios_error(err_no_memory, "Cannot allocate buffer in adios_read_flexpath_inq_var()");
 	    return NULL;
 	}
-	// broken.  fix.
+	// broken.  fix. -- why did I put this comment here?
 	int cpysize = fpvar->ndims*sizeof(uint64_t);
 	if(fpvar->global_dims){
 	    v->global = 1;
@@ -1212,9 +1212,12 @@ void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
 	}
 	free_displacements(tmpvars->displ, tmpvars->num_displ);
 	tmpvars->displ = NULL;
-	if(tmpvars->sel){
+
+	if (tmpvars->sel) {
 	    free_selection(tmpvars->sel);
+	    tmpvars->sel = NULL;
 	}
+
 	tmpvars->sel = NULL;	
 	for(i=0; i<tmpvars->num_chunks; i++){	   
 	    flexpath_var_chunk *chunk = &tmpvars->chunks[i];	    	    
@@ -1391,6 +1394,7 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
     fp_log("FUNC", "entering schedule_read_byid\n");
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     flexpath_var *fpvar = fp->var_list;
+
     while (fpvar) {
         if (fpvar->id == varid)
         	break;
@@ -1415,10 +1419,24 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
     // this is done so that the user can do multiple schedule_read/perform_reads
     // within before doing release/advance step. Might need a better way to 
     // manage the ADIOS selections.
-    if(fpvar->sel){
+    if (fpvar->sel) {
 	free_selection(fpvar->sel);
+	fpvar->sel = NULL;
     }
-    fpvar->sel = copy_selection(sel);
+    if (!sel) { // null selection; read whole variable
+	//TODO: This will have to be fixed for local arrays,
+	// but dataspaces doesn't have local arrays so there
+	// are no use cases for it. 
+	// TODO: This might be bad performance for the "points" case
+	// where there's a lot of points requested. Norbert's solution
+	// will work but will induce a memory leak.
+	uint64_t *starts = calloc(fpvar->ndims, sizeof(uint64_t));
+	uint64_t *counts = calloc(fpvar->ndims, sizeof(uint64_t));
+	memcpy(counts, fpvar->global_dims, fpvar->ndims*sizeof(uint64_t));
+	fpvar->sel = common_read_selection_boundingbox(fpvar->ndims, starts, counts);
+    } else {
+	fpvar->sel = copy_selection(sel);
+    }
 
     switch(fpvar->sel->type)
     {
