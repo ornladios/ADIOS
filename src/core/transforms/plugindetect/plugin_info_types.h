@@ -17,8 +17,7 @@ typedef struct {
 typedef struct {
     enum ADIOS_TRANSFORM_TYPE type;
 
-    int xmlAliasCount;
-    const char **xmlAliases;
+    const char *xmlAlias;
 } adios_transform_plugin_xml_aliases_t;
 
 #endif /* PLUGIN_INFO_TYPES_H_ */

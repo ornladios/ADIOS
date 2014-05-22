@@ -31,7 +31,7 @@
 
 #define _ARRAYLEN(arr) (sizeof(arr)/sizeof(arr[0]))
 #define _PLUGIN_ALIASES_RECORD(TYPEID, XMLALIAS) \
-    { adios_transform_##TYPEID, 1, (const char *[]){ XMLALIAS } },
+    { adios_transform_##TYPEID, (const char *)(XMLALIAS) },
 
 //
 // Actual table building
@@ -44,7 +44,7 @@
         _PLUGIN_INFO_RECORD(TYPEID, UID, DESC)
 
 adios_transform_plugin_info_t ADIOS_TRANSFORM_METHOD_INFOS[] = {
-    { adios_transform_none, "none", "No data transform"},
+    REGISTER_TRANSFORM_PLUGIN(none, "none", "none", "No data transform")
 
     #include "transforms/transform_plugins.h" // Include rows based on the plugin register statements
 };
@@ -59,7 +59,8 @@ adios_transform_plugin_info_t ADIOS_TRANSFORM_METHOD_INFOS[] = {
         _PLUGIN_ALIASES_RECORD(TYPEID, XMLALIAS)
 
 adios_transform_plugin_xml_aliases_t ADIOS_TRANSFORM_METHOD_ALIASES[] = {
-    REGISTER_TRANSFORM_PLUGIN(none, "none", "none", "none")
+    REGISTER_TRANSFORM_PLUGIN(none, "none", "none", "No data transform")
+
     #include "transforms/transform_plugins.h" // Include rows based on the plugin register statements
 };
 
