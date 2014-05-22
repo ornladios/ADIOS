@@ -77,7 +77,7 @@ static inline double time_get()
 
 #define MAX_DS_NAMELEN 128
 /* Maximum number of different filenames allowed per process during the whole run */
-#define MAXNFILE 10 
+#define MAXNFILE 20 
 /*#define DATASPACES_NO_VERSIONING   define it at configure as -DDATASPACES_NO_VERSIONING in CFLAGS */
 /* Length of the 1D array representing the file in DataSpaces (contains metadata) */
 #define FILEINFO_BUFLEN 128
@@ -86,6 +86,8 @@ static int chunk_buffer_size = 1024*1024*16; // 16MB default size for reading in
 static char *chunk_buffer = 0;
 
 static int poll_interval_msec = 10; // how much to wait between polls when timeout is used
+
+static int enable_read_meta_collective = 0; // when enabled, meta data reading becomes collective. One reader process would fetch meta data from DataSpaces and broadcast to other procseses using MPI_Bcast
 
 struct dimes_fileversions_struct { // current opened version of each stream/file
     char      * filename[MAXNFILE];
@@ -100,7 +102,7 @@ struct dimes_var_struct { // describes one variable (of one group)
     enum ADIOS_DATATYPES   type;
     int                    hastime; // 0: no, 1:yes (time dimension is not stored in dataspaces)
     int                    ndims;
-    uint64_t               dims[3]; // we have max 3 dims in DataSpaces
+    uint64_t               dims[MAX_DS_NDIM]; // we have max MAX_DS_NDIM dims in DataSpaces
     void                 * value;
 };
 
@@ -142,11 +144,17 @@ struct dimes_data_struct { // accessible as fp->fh
 static int adios_read_dimes_get_meta(const char * varname, enum ADIOS_DATATYPES vartype, 
                                 int version, int rank, 
                                 int ndims, int is_fortran_ordering, 
-                                int * offset, int * readsize, void * data);
+                                uint64_t * offset, uint64_t * readsize, void * data);
 static int adios_read_dimes_get_data(const char * varname, enum ADIOS_DATATYPES vartype, 
                                 int version, int rank, 
                                 int ndims, int is_fortran_ordering, 
-                                int * offset, int * readsize, void * data);
+                                uint64_t * offset, uint64_t * readsize, uint64_t * dims,
+                                void * data);
+static int adios_read_dimes_get_meta_collective(const char * varname,
+                                enum ADIOS_DATATYPES vartype,
+                                int version, int rank,
+                                int ndims, int is_fortran_ordering,
+                                uint64_t * offset, uint64_t * readsize, void * data, MPI_Comm comm);
 
 static char* get_chunk_buffer()
 {
@@ -158,6 +166,21 @@ static char* get_chunk_buffer()
         }
     }
     return chunk_buffer;
+}
+
+static int get_meta(const char * varname,
+                    enum ADIOS_DATATYPES vartype,
+                    int version, int rank,
+                    int ndims, int is_fortran_ordering,
+                    uint64_t * offset, uint64_t * readsize, void * data, MPI_Comm comm)
+{
+    if (enable_read_meta_collective) {
+        return adios_read_dimes_get_meta_collective(varname, vartype, version,
+            rank, ndims, is_fortran_ordering, offset, readsize, data, comm);
+    } else {
+        return adios_read_dimes_get_meta(varname, vartype, version, rank, ndims,
+            is_fortran_ordering, offset, readsize, data);
+    }
 }
 
 
@@ -208,6 +231,10 @@ int adios_read_dimes_init_method (MPI_Comm comm, PairStruct * params)
                 log_error ("Invalid 'poll_interval' parameter given to the DIMES "
                             "read method: '%s'\n", p->value);
             }
+        } else if (!strcasecmp (p->name, "enable_collective_read_meta")) {
+            errno = 0;
+            enable_read_meta_collective = 1;
+            log_debug("Set 'enable_collective_read_meta' for DIMES read method\n"); 
         } else {
             log_error ("Parameter name %s is not recognized by the DIMES read "
                         "method\n", p->name);
@@ -223,7 +250,7 @@ int adios_read_dimes_init_method (MPI_Comm comm, PairStruct * params)
             appid = 2;
         log_debug("-- %s, rank %d: connect to dataspaces with nproc=%d and appid=%d\n", 
                     __func__, rank, nproc, appid);
-        err = dspaces_init(nproc, appid);
+        err = dspaces_init(nproc, appid, &comm, NULL);
         if (err < 0) {
             adios_error (err_connection_failed, "Failed to connect with DATASPACES\n");
             return err_connection_failed;
@@ -307,8 +334,8 @@ static int dimes_unpack_group_info (ADIOS_FILE *fp, char * buf)
     int datasize;
     struct dimes_var_struct * vars;
     struct dimes_attr_struct * attrs;
-    uint64_t dims[3]; // all variables has 3 dimension values in the index 
-    int didx[3]; // dimension reordering 
+    uint64_t dims[MAX_DS_NDIM]; // all variables has MAX_DS_NDIM dimension values in the index 
+    int didx[MAX_DS_NDIM]; // dimension reordering 
     struct dimes_data_struct * ds = (struct dimes_data_struct *) fp->fh;
     int buf_len = ds->group_index_len;
     
@@ -405,7 +432,7 @@ static int dimes_unpack_group_info (ADIOS_FILE *fp, char * buf)
         vars[i].ndims = *(int*)b; 
         b += sizeof(int);
         log_debug("        ndims w/o time = %d, b = %d\n", vars[i].ndims, b);
-        for (j=0; j < 3; j++) {
+        for (j=0; j < MAX_DS_NDIM; j++) {
             dims[j] = *(uint64_t*)b; 
             b += 8;
             log_debug("          unordered dim[%d] = %lld, b = %d\n", j, dims[j], b);
@@ -498,7 +525,9 @@ static int get_groupdata (ADIOS_FILE *fp)
 
     /* Try to get group metadata from DataSpaces. If it does not exists, we get an error, which means
        the data does not exist. */
-    int offset[] = {0,0,0}, readsize[3] = {ds->group_index_len,1,1};
+    uint64_t offset[MAX_DS_NDIM], readsize[MAX_DS_NDIM];
+    offset[0] = 0; readsize[0] = ds->group_index_len;
+    int ndim = 1;
     char * group_info_buf = malloc (ds->group_index_len);
     if (!group_info_buf) {
             adios_error (err_no_memory, 
@@ -511,8 +540,8 @@ static int get_groupdata (ADIOS_FILE *fp)
     snprintf (ds_name, MAX_DS_NAMELEN, "GROUP@%s/%s",fp->path, ds->group_name);
     log_debug("-- %s, rank %d: Get variable %s with size %d\n", __func__, 
               ds->mpi_rank, ds_name, readsize[0]);
-    err = adios_read_dimes_get_meta(ds_name, adios_byte, ds->current_step, ds->mpi_rank, 
-                                     1, 0, offset, readsize, group_info_buf);
+    err = get_meta(ds_name, adios_byte, ds->current_step, ds->mpi_rank, 
+                 ndim, 0, offset, readsize, group_info_buf, ds->comm);
     if (err) {
         adios_error (err_invalid_group, "Invalid group name %s for file %s. "
                      "Entity %s could not be retrieved from DataSpaces\n",
@@ -565,7 +594,8 @@ static int get_step (ADIOS_FILE *fp, int step, enum WHICH_VERSION which_version,
     /* Try to get variable with fname. If it does not exists, we get an error, which means
        the data does not exist. So we return an error just like with real files */
     struct dimes_data_struct * ds = (struct dimes_data_struct *) fp->fh;
-    int offset[] = {0,0,0}, readsize[3] = {1,1,1};
+    uint64_t offset[MAX_DS_NDIM], readsize[MAX_DS_NDIM];
+    int ndim;
     char file_info_buf[FILEINFO_BUFLEN];
     int version_info_buf[2]; // 0: last version, 1: terminated?
     int err, i;
@@ -591,9 +621,10 @@ static int get_step (ADIOS_FILE *fp, int step, enum WHICH_VERSION which_version,
         step_status = STEP_OK;
 
         log_debug("   rank %d: dspaces_get %s\n", ds->mpi_rank, ds_vname);
-        readsize[0] = 2; //*sizeof(int); // VERSION%name is 2 integers only
-        err = adios_read_dimes_get_meta(ds_vname, adios_integer, 0, ds->mpi_rank, 1, 0, 
-                                         offset, readsize, version_info_buf);
+        ndim = 1;
+        offset[0] = 0; readsize[0] = 2; //*sizeof(int); // VERSION%name is 2 integers only
+        err = get_meta (ds_vname, adios_integer, 0, ds->mpi_rank, ndim, 0,
+                         offset, readsize, version_info_buf, ds->comm);
 
         if (!err) {
             int last_version = version_info_buf[0];
@@ -625,8 +656,8 @@ static int get_step (ADIOS_FILE *fp, int step, enum WHICH_VERSION which_version,
                 // Loop until we find what we need or go past the last version
                 do {
                     log_debug("   rank %d: dspaces_get %s\n", ds->mpi_rank, ds_fname);
-                    err = adios_read_dimes_get_meta(ds_fname, adios_byte, step, ds->mpi_rank, 
-                                                     1, 0, offset, readsize, file_info_buf);
+                    err = get_meta(ds_fname, adios_byte, step, ds->mpi_rank, 
+                                 ndim, 0, offset, readsize, file_info_buf, ds->comm);
                     step++; // value will go over the target with 1
                 } while (err && step <= max_check_version);
 
@@ -888,7 +919,8 @@ int adios_read_dimes_peek_ahead (ADIOS_FILE *fp)
     log_debug("peek ahead from version %d of filename=%s, last available step %d\n", 
               ds->current_step, fp->path, fp->last_step);
 
-    int offset[] = {0,0,0}, readsize[3] = {1,1,1};
+    uint64_t offset[MAX_DS_NDIM], readsize[MAX_DS_NDIM];
+    int ndim;
     int version_info_buf[2]; // 0: last version, 1: terminated?
     int err;
     char ds_vname[MAX_DS_NAMELEN];
@@ -896,9 +928,10 @@ int adios_read_dimes_peek_ahead (ADIOS_FILE *fp)
     snprintf(ds_vname, MAX_DS_NAMELEN, "VERSION@%s",fp->path);
 
     log_debug("   rank %d: dspaces_get %s\n", ds->mpi_rank, ds_vname);
-    readsize[0] = 2; //*sizeof(int); // VERSION%name is 2 integers only
-    err = adios_read_dimes_get_meta(ds_vname, adios_integer, 0, ds->mpi_rank, 1, 0, 
-            offset, readsize, version_info_buf);
+    ndim = 1;
+    offset[0] = 0; readsize[0] = 2; //*sizeof(int); // VERSION%name is 2 integers only
+    err = get_meta(ds_vname, adios_integer, 0, ds->mpi_rank, ndim, 0,
+            offset, readsize, version_info_buf, ds->comm);
 
     if (!err) {
         int last_version = version_info_buf[0];
@@ -1084,32 +1117,33 @@ int adios_read_dimes_inq_var_trans_blockinfo(const ADIOS_FILE *gp, const ADIOS_V
 static int adios_read_dimes_get_data(const char * varname, enum ADIOS_DATATYPES vartype, 
                                 int version, int rank,
                                 int ndims, int is_fortran_ordering, 
-                                int * offset, int * readsize, void * data)
+                                uint64_t * offset, uint64_t * readsize, uint64_t * dims,
+                                void * data)
 {
 
     struct obj_data *od;
     int elemsize = common_read_type_size(vartype, NULL);
     int i, err;
-    int didx[3];
-    int lb[3] = {0,0,0};
-    int ub[3] = {0,0,0};
+    int didx[MAX_DS_NDIM];
+    uint64_t gdims[MAX_DS_NDIM], lb[MAX_DS_NDIM], ub[MAX_DS_NDIM];
+    char gdims_str[256], lb_str[256], ub_str[256];
 
     // reorder DS dimensions to Fortran/C dimensions
     dimes_dimension_ordering (ndims, is_fortran_ordering, 0 /*pack*/, didx);
-    for (i=0; i<3; i++) {
+    for (i=0; i<ndims; i++) {
         lb[i] = offset[didx[i]];
         ub[i] = offset[didx[i]]+readsize[didx[i]]-1;
+        gdims[i] = dims[didx[i]];
     }
 
-    log_debug("-- %s, rank %d: get data: varname=%s version=%d, lb=(%d,%d,%d) ub=(%d,%d,%d)}\n",
-        __func__, rank, varname, version, lb[0], lb[1], lb[2], 
-        ub[0], ub[1], ub[2]);
+    dimes_int64s_to_str(ndims, lb, lb_str);
+    dimes_int64s_to_str(ndims, ub, ub_str);
+    log_debug("-- %s, rank %d: get data: varname=%s version=%d, lb=(%s) ub=(%s)\n",
+        __func__, rank, varname, version, lb_str, ub_str);
 
-    err =  dimes_get (varname, version, elemsize, 
-                     lb[0], lb[1], lb[2],
-                     ub[0], ub[1], ub[2],
-                     data
-                    );
+    dimes_define_gdim (varname, ndims, gdims);
+    err = dimes_get (varname, version, elemsize,
+                ndims, lb, ub, data);
     /*if (err == -ENOMEM) {
         adios_error (err_no_memory, "Not enough memory for DATASPACES to perform dspaces_get()");  
         return err_no_memory;
@@ -1125,32 +1159,31 @@ static int adios_read_dimes_get_data(const char * varname, enum ADIOS_DATATYPES 
 static int adios_read_dimes_get_meta(const char * varname, enum ADIOS_DATATYPES vartype, 
                                 int version, int rank,
                                 int ndims, int is_fortran_ordering, 
-                                int * offset, int * readsize, void * data)
+                                uint64_t * offset, uint64_t * readsize, void * data)
 {
 
     struct obj_data *od;
     int elemsize = common_read_type_size(vartype, NULL);
     int i, err;
-    int didx[3];
-    int lb[3] = {0,0,0};
-    int ub[3] = {0,0,0};
+    int didx[MAX_DS_NDIM];
+    uint64_t gdims[MAX_DS_NDIM], lb[MAX_DS_NDIM], ub[MAX_DS_NDIM];
+    char gdims_str[256], lb_str[256], ub_str[256];
 
     // reorder DS dimensions to Fortran/C dimensions
     dimes_dimension_ordering (ndims, is_fortran_ordering, 0 /*pack*/, didx);
-    for (i=0; i<3; i++) {
+    for (i=0; i<ndims; i++) {
         lb[i] = offset[didx[i]];
         ub[i] = offset[didx[i]]+readsize[didx[i]]-1;
+        gdims[i] = (ub[i]-lb[i]+1) * dspaces_get_num_space_server();
     }
 
-    log_debug("-- %s, rank %d: get data: varname=%s version=%d, lb=(%d,%d,%d) ub=(%d,%d,%d)}\n",
-        __func__, rank, varname, version, lb[0], lb[1], lb[2], 
-        ub[0], ub[1], ub[2]);
+    dimes_int64s_to_str(ndims, lb, lb_str);
+    dimes_int64s_to_str(ndims, ub, ub_str);
+    log_debug("-- %s, rank %d: get data: varname=%s version=%d, lb=(%s) ub=(%s)\n",
+        __func__, rank, varname, version, lb_str, ub_str);
 
-    err =  dspaces_get (varname, version, elemsize, 
-                     lb[0], lb[1], lb[2],
-                     ub[0], ub[1], ub[2],
-                     data
-                    );
+    dspaces_define_gdim(varname, ndims, gdims);
+    err =  dspaces_get (varname, version, elemsize, ndims, lb, ub, data); 
     /*if (err == -ENOMEM) {
         adios_error (err_no_memory, "Not enough memory for DATASPACES to perform dspaces_get()");  
         return err_no_memory;
@@ -1163,6 +1196,74 @@ static int adios_read_dimes_get_meta(const char * varname, enum ADIOS_DATATYPES 
     return 0;
 }
 
+static int adios_read_dimes_get_meta_collective(const char * varname,
+                                enum ADIOS_DATATYPES vartype,
+                                int version, int rank,
+                                int ndims, int is_fortran_ordering,
+                                uint64_t * offset, uint64_t * readsize, void * data, MPI_Comm comm)
+{
+    int elemsize = common_read_type_size(vartype, NULL);
+    int i, err;
+    int didx[MAX_DS_NDIM];
+    uint64_t gdims[MAX_DS_NDIM], lb[MAX_DS_NDIM], ub[MAX_DS_NDIM];
+    char gdims_str[256], lb_str[256], ub_str[256];
+    size_t datasize;
+    size_t padsize = common_read_type_size(adios_integer, NULL);
+    void *buf;
+    int *pad;
+    int root = 0;
+
+    // calculate size of the meta data 
+    for (i = 0, datasize = 1; i < ndims; i++) {
+        datasize *= (readsize[i]*elemsize);
+    }
+
+    buf = malloc(padsize + datasize);
+
+    // reorder DS dimensions to Fortran/C dimensions
+    dimes_dimension_ordering (ndims, is_fortran_ordering, 0 /*pack*/, didx);
+    for (i=0; i<ndims; i++) {
+        lb[i] = offset[didx[i]];
+        ub[i] = offset[didx[i]]+readsize[didx[i]]-1;
+        gdims[i] = (ub[i]-lb[i]+1) * dspaces_get_num_space_server();
+    }
+    
+    dimes_int64s_to_str(ndims, lb, lb_str);
+    dimes_int64s_to_str(ndims, ub, ub_str);
+    log_debug("-- %s, rank %d: get data: varname=%s version=%d, lb=(%s) ub=(%s)\n",
+        __func__, rank, varname, version, lb_str, ub_str);
+
+    if (rank == root) {
+        dspaces_define_gdim(varname, ndims, gdims);
+        err =  dspaces_get (varname, version, elemsize, ndims, lb, ub, data);
+
+        // set pad to indicate if root rank successfully fetch the meta data
+        pad = (int*)buf;
+        pad[0] = err;
+        // copy meta data
+        memcpy(buf+padsize, data, datasize);
+    }
+
+    // broadcast the meta data        
+    if (MPI_Bcast(buf, datasize+padsize, MPI_BYTE, root, comm) == MPI_SUCCESS) {
+        if (rank != root) {
+            pad = (int*)buf;
+            err = pad[0];
+            memcpy(data, buf+padsize, datasize);
+        }
+    } else {
+        err = -1;
+    }
+
+    free(buf);
+
+    if (err) {
+        adios_error (err_corrupted_variable, "DATASPACES failed to read variable %s.\n", varname);
+        return err_corrupted_variable;
+    }
+
+    return 0;
+}
 
 int adios_read_dimes_schedule_read_byid (const ADIOS_FILE * fp, 
                                               const ADIOS_SELECTION * sel, 
@@ -1317,12 +1418,17 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE *fp, read_request * r)
     struct dimes_data_struct * ds = (struct dimes_data_struct *) fp->fh;
     struct dimes_var_struct * var = &ds->vars[r->varid];
     //int64_t total_size;
-    int offset[3] = {0,0,0};
-    int readsize[3] = {1,1,1};
+    uint64_t offset[MAX_DS_NDIM], readsize[MAX_DS_NDIM], dims[MAX_DS_NDIM];
+    char offset_str[256], readsize_str[256];
     int elemsize;
     int err;
-    int i,k,ndims,tidx;
+    int i,k,tidx;
     char ds_name[MAX_DS_NAMELEN];
+
+    // set global dimension
+    for (i = 0; i < var->ndims; i++) {
+        dims[i] = var->dims[i];
+    }
 
     if (!ds->chunk)
         ds->chunk = (ADIOS_VARCHUNK *) malloc (sizeof (ADIOS_VARCHUNK));
@@ -1364,21 +1470,18 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE *fp, read_request * r)
     {
         // transform uint64_t array to int array for DataSpaces
         for (i=0; i<var->ndims; i++) {
-            offset[i]    = (int) r->sel->u.bb.start[i];
-            readsize[i]  = (int) r->sel->u.bb.count[i];
+            offset[i]    = r->sel->u.bb.start[i];
+            readsize[i]  = r->sel->u.bb.count[i];
         }
 
-        log_debug("-- %s, rank %d: get data: varname=%s start=(%lld,%lld,%lld) count=(%lld,%lld,%lld)}\n",
-                __func__, ds->mpi_rank, ds_name, 
-                r->sel->u.bb.start[0], r->sel->u.bb.start[1], r->sel->u.bb.start[2], 
-                r->sel->u.bb.count[0], r->sel->u.bb.count[1], r->sel->u.bb.count[2]);
-        log_debug("-- %s, rank %d: get data: varname=%s offset=(%d,%d,%d) readsize=(%d,%d,%d)}\n",
-                __func__, ds->mpi_rank, ds_name, offset[0], offset[1], offset[2], 
-                readsize[0], readsize[1], readsize[2]);
+        dimes_int64s_to_str(var->ndims, offset, offset_str);
+        dimes_int64s_to_str(var->ndims, readsize, readsize_str);
+        log_debug("-- %s, rank %d: get data: varname=%s offset=(%s) readsize=(%s)\n",
+                __func__, ds->mpi_rank, ds_name, offset_str, readsize_str);
 
         err = adios_read_dimes_get_data(ds_name, var->type, ds->current_step, ds->mpi_rank, 
                 var->ndims, futils_is_called_from_fortran(),
-                offset, readsize, ds->chunk->data);
+                offset, readsize, dims, ds->chunk->data);
     }
     else if (r->sel->type == ADIOS_SELECTION_POINTS)
     {
@@ -1387,13 +1490,13 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE *fp, read_request * r)
         while (!err && k < r->sel->u.points.npoints) {
             // pick and read k-th point individually
             for (i=0; i<var->ndims; i++) {
-                offset[i]    = (int) r->sel->u.points.points[k*var->ndims+i];
+                offset[i]    = r->sel->u.points.points[k*var->ndims+i];
                 readsize[i]  = 1;
             }
 
             err = adios_read_dimes_get_data(ds_name, var->type, ds->current_step, ds->mpi_rank, 
                     var->ndims, futils_is_called_from_fortran(),
-                    offset, readsize, ds->chunk->data+k*elemsize);
+                    offset, readsize, dims, ds->chunk->data+k*elemsize);
             k++;
         }
     }
@@ -1498,52 +1601,68 @@ int adios_read_dimes_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk
 }
 
 
-/* Tell the DataSpaces order of dimensions for a 1-3 dim array written from Fortran or C.
+/* Tell the DataSpaces order of dimensions for a 1 - MAX_DS_NDIM dim array written from Fortran or C.
    unpack=1: the reverse of packing (to retrieve the original order).
-   didx should be an int [3] array in any case.
+   didx should be an int [MAX_DS_NDIM] array in any case.
 */
 void dimes_dimension_ordering(int ndims, int is_app_fortran, int unpack, int *didx)
 {
-    /* Order of dimensions: in DataSpaces: slow, fast, slowest
-       Fortran: i,j,k --> j, i, k  = lb[1], lb[0], lb[2]
-                i,j   --> j, i     = lb[1], lb[0], lb[2]=1
-                i     --> 1, i     = lb[1]=1, lb[0], lb[2]=1
-       C:       i,j,k --> j, k, i  = lb[1], lb[2], lb[0]
-                i,j   --> i, j     = lb[0], lb[1], lb[2]=1
-                i     --> 1, i     = lb[1]=1, lb[0], lb[2]=1 (same as Fortran)
-
-       unpack: C(i,j,k) ordering applied twice does not result in the original order
-               so we need to have a reverse mapping for this case.
-               For all the other cases, applying twice results in the same order
-               even for packing from Fortran and unpacking to C, and vice versa.
-               F(i,j,k) -(pack)-> DS(j,i,k) -(unpack)-> C(k,j,i) or F(i,j,k)
-               C(i,j,k) -(pack)-> DS(j,k,i) -(unpack)-> C(i,j,k) or F(k,j,i)
-               F(i,j)   -(pack)-> DS(j,i)   -(unpack)-> C(j,i)   or F(i,j)
-               C(i,j)   -(pack)-> DS(i,j)   -(unpack)-> C(i,j)   or F(j,i)
-               F(i)     -(pack)-> DS(1,i)   -(unpack)-> C(i,(1)) or F(i,(1))
-               C(i)     -(pack)-> DS(1,i)   -(unpack)-> C(i,(1)) or F(i,(1))
+    /* Order of dimensions: in DataSpaces: fast --> slow --> slowest
+       For example: 
+       Fortran: i,j,k --> i, j, k  = lb[0], lb[1], lb[2]
+                i,j   --> i, j     = lb[0], lb[1]
+                i     --> i        = lb[0]
+       C:       i,j,k --> k, j, i  = lb[2], lb[1], lb[0]
+                i,j   --> j, i     = lb[1], lb[0]
+                i     --> i        = lb[0] 
     */
 
-    if (ndims == 0) {
-        didx[0] = 0; didx[1] = 1; didx[2] = 2;
-    } else if (is_app_fortran || ndims == 1) {
-        /* Flip 1st and 2nd dimension for DataSpaces representation
-           for any Fortran writings and for any 1D array :
-           Fortran: i,j,k --> j, i, k  = lb[1], lb[0], lb[2]
-           C:       i     --> 1, i     = lb[1]=1, lb[0], lb[2]=1 
-        */
-        didx[0] = 1; didx[1] = 0; didx[2] = 2;
-    } else if (ndims == 2) {
-        /* C: i,j   --> i, j     = lb[0], lb[1], lb[2]=1 */
-        didx[0] = 0; didx[1] = 1; didx[2] = 2;
-    } else { // (ndims == 3) 
-        if (!unpack) {
-            /* C: i,j,k --> j, k, i  = lb[1], lb[2], lb[0] */
-            didx[0] = 1; didx[1] = 2; didx[2] = 0;
-        } else {
-            /* DataSpaces x,y,z --> z,x,y  (ijk->kij, or jki->ijk) */
-            didx[0] = 2; didx[1] = 0; didx[2] = 1;
+    int i, n;
+    if (ndims == 0) n = MAX_DS_NDIM;
+    else n = ndims;
+
+    if (is_app_fortran) {
+        for (i = 0; i < n; i++) {
+            didx[i] = i;
         }
+    } else {
+        for (i = 0; i < n; i++) {
+            didx[i] = n-1-i;
+        }
+    }
+
+    return;
+}
+
+void dimes_ints_to_str (int ndim, int *values, char *s)
+{
+    int i;
+    char v[32];
+    if (!ndim) {
+        s[0] = '\0';
+        return;
+    }
+    sprintf(s,"%d", values[0]);
+    for (i=1; i<ndim; i++)
+    {
+        sprintf (v,",%d", values[i]);
+        strcat (s,v);
+    }
+}
+
+void dimes_int64s_to_str(int ndim, uint64_t *values, char *s)
+{
+    int i;
+    char v[32];
+    if (!ndim) {
+        s[0] = '\0';
+        return;
+    }
+    sprintf(s,"%llu", values[0]);
+    for (i=1; i<ndim; i++)
+    {
+        sprintf (v,",%llu", values[i]);
+        strcat (s,v);
     }
 }
 
