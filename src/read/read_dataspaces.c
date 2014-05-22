@@ -1176,6 +1176,7 @@ static int adios_read_dataspaces_get_meta(const char * varname, enum ADIOS_DATAT
     for (i=0; i<ndims; i++) {
         lb[i] = offset[didx[i]];
         ub[i] = offset[didx[i]]+readsize[didx[i]]-1;
+        gdims[i] = (ub[i]-lb[i]+1) * dspaces_get_num_space_server();
     }
 
     ds_int64s_to_str(ndims, lb, lb_str);
@@ -1183,6 +1184,7 @@ static int adios_read_dataspaces_get_meta(const char * varname, enum ADIOS_DATAT
     log_debug("-- %s, rank %d: get data: varname=%s version=%d, lb=(%s) ub=(%s)\n",
         __func__, rank, varname, version, lb_str, ub_str);
 
+    dspaces_define_gdim(varname, ndims, gdims);
     err =  dspaces_get (varname, version, elemsize, ndims, lb, ub, data);
     /*if (err == -ENOMEM) {
         adios_error (err_no_memory, "Not enough memory for DATASPACES to perform dspaces_get()");  
@@ -1224,6 +1226,7 @@ static int adios_read_dataspaces_get_meta_collective(const char * varname,
     for (i=0; i<ndims; i++) {
         lb[i] = offset[didx[i]];
         ub[i] = offset[didx[i]]+readsize[didx[i]]-1;
+        gdims[i] = (ub[i]-lb[i]+1) * dspaces_get_num_space_server();
     }
 
     ds_int64s_to_str(ndims, lb, lb_str);
@@ -1232,6 +1235,7 @@ static int adios_read_dataspaces_get_meta_collective(const char * varname,
         __func__, rank, varname, version, lb_str, ub_str);
 
     if (rank == root) {
+        dspaces_define_gdim(varname, ndims, gdims);
         err =  dspaces_get (varname, version, elemsize, ndims, lb, ub, data);
 
         // set pad to indicate if root rank successfully fetch the meta data

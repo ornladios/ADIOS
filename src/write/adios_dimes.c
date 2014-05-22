@@ -814,7 +814,7 @@ void adios_dimes_close (struct adios_file_struct * fd
     struct adios_index_struct_v1 * index = adios_alloc_index_v1(1);
     struct adios_attribute_struct * a = fd->group->attributes;
     struct adios_dimes_file_info *info = lookup_dimes_file_info(md, fd->name);
-    uint64_t gdim[MAX_DS_NDIM], lb[MAX_DS_NDIM], ub[MAX_DS_NDIM];
+    uint64_t gdims[MAX_DS_NDIM], lb[MAX_DS_NDIM], ub[MAX_DS_NDIM];
     int didx[MAX_DS_NDIM]; // for reordering DS dimensions
     int elemsize, ndim;
     unsigned int version;
@@ -855,10 +855,11 @@ void adios_dimes_close (struct adios_file_struct * fd
             
             /* Put GROUP@fn/gn header into space */
             snprintf(ds_var_name, MAX_DS_NAMELEN, "GROUP@%s/%s", fd->name, fd->group->name);
-            log_debug ("%s: put %s with buf len %d into space\n", __func__, ds_var_name, indexlen);
-            elemsize = 1;
-            ndim = 1;
+            log_debug ("%s: put %s buflen=%d (bytes) into space\n", __func__, ds_var_name, indexlen);
+            elemsize = 1; ndim = 1;
             lb[0] = 0; ub[0] = indexlen-1;
+            gdims[0] = (ub[0]-lb[0]+1) * dspaces_get_num_space_server();
+            dspaces_define_gdim(ds_var_name, ndim, gdims);
             dspaces_put(ds_var_name, version, elemsize, ndim, lb, ub, indexbuf);
             free (indexbuf);
 
@@ -868,31 +869,32 @@ void adios_dimes_close (struct adios_file_struct * fd
             snprintf (ds_var_name, MAX_DS_NAMELEN, "FILE@%s", fd->name);
             dimes_pack_file_info (info->time_index, nvars, nattrs, indexlen,
                         fd->group->name, &file_info_buf, &file_info_buf_len);
-            log_debug ("%s: put %s = buflen=%d time=%d nvars=%d nattr=%d index=%d name=%d:%s into space\n",
+            log_debug ("%s: put %s buflen=%d (bytes) time=%d nvars=%d nattr=%d index=%d name=%d:%s into space\n",
                 __func__, ds_var_name, 
                 *(int*)file_info_buf, *(int*)(file_info_buf+4), 
                 *(int*)(file_info_buf+8), *(int*)(file_info_buf+12),
                 *(int*)(file_info_buf+16), *(int*)(file_info_buf+20),
                 file_info_buf+24);
             dspaces_put_sync(); //wait on previous put to finish
-            elemsize = 1;
-            ndim = 1;
+            elemsize = 1; ndim = 1;
             lb[0] = 0; ub[0] = file_info_buf_len-1;
+            gdims[0] = (ub[0]-lb[0]+1) * dspaces_get_num_space_server();
+            dspaces_define_gdim(ds_var_name, ndim, gdims);
             dspaces_put(ds_var_name, version, elemsize, ndim, lb, ub, file_info_buf);
 
             /* Create and put VERSION@fn version info into space */
             int version_buf[2] = {version, 0}; /* last version put in space; not terminated */
             int version_buf_len = 2; 
             snprintf (ds_var_name, MAX_DS_NAMELEN, "VERSION@%s", fd->name);
-            log_debug ("%s: put %s with buf = [%d,%d] (len=%d integers) into space\n", 
+            log_debug ("%s: put %s buf= [%d,%d] buflen=%d (integers) into space\n", 
                        __func__, ds_var_name, version_buf[0], version_buf[1], version_buf_len);
             dspaces_put_sync(); //wait on previous put to finish
-            elemsize = sizeof(int);
-            ndim = 1;
+            elemsize = sizeof(int); ndim = 1;
             lb[0] = 0; ub[0] = version_buf_len-1;
+            gdims[0] = (ub[0]-lb[0]+1) * dspaces_get_num_space_server();
+            dspaces_define_gdim(ds_var_name, ndim, gdims);
             dspaces_put(ds_var_name, 0, elemsize, ndim, lb, ub, version_buf);
             dspaces_put_sync(); //wait on previous put to finish
-            
         }
 
         // remember this filename and its version for finalize
@@ -946,7 +948,7 @@ void adios_dimes_finalize (int mype, struct adios_method_struct * method)
         method->method_data;
     int i;
     char ds_var_name[MAX_DS_NAMELEN];
-    uint64_t gdim[MAX_DS_NDIM], lb[MAX_DS_NDIM], ub[MAX_DS_NDIM];
+    uint64_t gdims[MAX_DS_NDIM], lb[MAX_DS_NDIM], ub[MAX_DS_NDIM];
     int elemsize, ndim;
     int value[2] = {0, 1}; // integer to be written to space (terminated=1)
 
@@ -964,9 +966,10 @@ void adios_dimes_finalize (int mype, struct adios_method_struct * method)
             snprintf(ds_var_name, MAX_DS_NAMELEN, "VERSION@%s", md->fnames[i]);
             log_debug ("%s: update %s in the space [%d, %d]\n", 
                     __func__, ds_var_name, value[0], value[1] );
-            elemsize = sizeof(int);
-            ndim = 1;
+            elemsize = sizeof(int); ndim = 1;
             lb[0] = 0; ub[0] = 1;
+            gdims[0] = (ub[0]-lb[0]+1) * dspaces_get_num_space_server();
+            dspaces_define_gdim(ds_var_name, ndim, gdims);
             dspaces_put(ds_var_name, 0, elemsize, ndim, lb, ub, &value);
             log_debug("%s: call dspaces_put_sync()\n", __func__);
             dspaces_put_sync();
