@@ -28,6 +28,7 @@
 // General plugin info inspection
 //
 
+// Transform ID -> plugin info retrieval
 static adios_transform_plugin_info_t * find_plugin_info(enum ADIOS_TRANSFORM_TYPE transform_type) {
     int i;
     for (i = 0; i < num_adios_transform_types; i++)
@@ -58,22 +59,20 @@ const char * adios_transform_plugin_desc(enum ADIOS_TRANSFORM_TYPE transform_typ
 
 int adios_transform_plugin_num_xml_aliases(enum ADIOS_TRANSFORM_TYPE transform_type) {
     adios_transform_plugin_xml_aliases_t *aliases = find_plugin_xml_aliases(transform_type);
-    if (aliases) return aliases->xmlAliasCount;
+    if (aliases) return 1;
     else         return 0;
 }
 
 const char ** adios_transform_plugin_xml_aliases(enum ADIOS_TRANSFORM_TYPE transform_type) {
     adios_transform_plugin_xml_aliases_t *aliases = find_plugin_xml_aliases(transform_type);
-    if (aliases) return aliases->xmlAliases;
+    if (aliases) return &aliases->xmlAlias;
     else         return NULL;
 }
 
 const char * adios_transform_plugin_primary_xml_alias(enum ADIOS_TRANSFORM_TYPE transform_type) {
     adios_transform_plugin_xml_aliases_t *aliases = find_plugin_xml_aliases(transform_type);
-    if (aliases && aliases->xmlAliasCount > 0)
-        return aliases->xmlAliases[0];
-    else
-        return NULL;
+    if (aliases) return aliases->xmlAlias;
+    else         return NULL;
 }
 
 ////////////////////////////////////////
@@ -98,7 +97,7 @@ enum ADIOS_TRANSFORM_TYPE adios_transform_find_type_by_uid(const char *uid) {
 }
 
 ////////////////////////////////////////
-// Transform XML alias<->id conversion
+// Transform XML alias -> Transform ID conversion
 ////////////////////////////////////////
 
 /*
@@ -108,34 +107,18 @@ enum ADIOS_TRANSFORM_TYPE adios_transform_find_type_by_uid(const char *uid) {
  *         transform type
  */
 enum ADIOS_TRANSFORM_TYPE adios_transform_find_type_by_xml_alias(const char *xml_alias) {
-    int i, j;
-    for (i = adios_transform_none; i < num_adios_transform_types; i++) {
-        const adios_transform_plugin_xml_aliases_t *aliasesForType = &ADIOS_TRANSFORM_METHOD_ALIASES[i];
-        for (j = 0; j < aliasesForType->xmlAliasCount; j++) {
-            if (strcasecmp(xml_alias, aliasesForType->xmlAliases[j]) == 0)
-                return aliasesForType->type;
+    enum ADIOS_TRANSFORM_TYPE plugin_type;
+	int j;
+    for (plugin_type = adios_transform_none; plugin_type < num_adios_transform_types; plugin_type++) {
+        const int naliases = adios_transform_plugin_num_xml_aliases(plugin_type);
+        const char **aliases = adios_transform_plugin_xml_aliases(plugin_type);
+
+        for (j = 0; j < naliases; j++) {
+            if (strcasecmp(xml_alias, aliases[j]) == 0)
+                return plugin_type;
         }
     }
     return adios_transform_unknown;
-}
-
-/*
- * @param transform_type a transform type
- * @return a name that can be used to refer to that transform type within
- *         the ADIOS XML file, or "" if transform_type is not valid.
- */
-const char * adios_transform_xml_alias_by_type(enum ADIOS_TRANSFORM_TYPE transform_type) {
-    int i;
-    for (i = adios_transform_none; i < num_adios_transform_types; i++) {
-        const adios_transform_plugin_xml_aliases_t *aliasesForType = &ADIOS_TRANSFORM_METHOD_ALIASES[i];
-        if (transform_type == aliasesForType->type) {
-            if (aliasesForType->xmlAliasCount == 0)
-                return "";
-            else
-                return aliasesForType->xmlAliases[0];
-        }
-    }
-    return "";
 }
 
 /////////////////////////////////////////
