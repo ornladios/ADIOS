@@ -50,9 +50,7 @@ if [ "x$METHOD" == "xDATASPACES" ]; then
     # Prepare config file for DataSpaces
     echo "## Config file for DataSpaces
 ndim = 3
-dimx = 1000
-dimy = 1000
-dimz = 1000
+dims = 1000,1000,1000
 max_versions = 10
 " > dataspaces.conf
 

@@ -29,7 +29,6 @@
 static int adios_dataspaces_initialized = 0;
 #define MAX_DS_NAMELEN 128
 #define MAX_NUM_OF_FILES 20
-//static char ds_type_var_name[MAX_DS_NAMELEN];
 static char ds_var_name[MAX_DS_NAMELEN];
 static unsigned int adios_dataspaces_verbose = 3;
 
@@ -115,7 +114,7 @@ static int connect_to_dspaces (struct adios_ds_data_struct * md, MPI_Comm comm)
                 md->rank, num_peers, md->appid);
 
         //Init the dart client
-        ret = dspaces_init (num_peers, md->appid);
+        ret = dspaces_init (num_peers, md->appid, &md->mpi_comm_init, NULL);
         if (ret) {
             log_error ("adios_dataspaces: rank=%d Failed to connect to DATASPACES: err=%d,  rank=%d\n", md->rank, ret);        
             return ret;
@@ -272,21 +271,22 @@ void adios_dataspaces_write (struct adios_file_struct * fd
     char * var_name = v->name;
     int err;
 
+    char lb_str[256], ub_str[256], gdims_str[256], dims_str[256], didx_str[256];
     //Get two offset coordinate values
     unsigned int version;
-
-    int dims[3]={1,1,1}, gdims[3]={0,0,0}, lb[3]={0,0,0}, ub[3]={0,0,0}; /* lower and upper bounds for DataSpaces */
-    int didx[3]; // for reordering the dimensions
+    uint64_t dims[MAX_DS_NDIM], gdims[MAX_DS_NDIM], lb[MAX_DS_NDIM], ub[MAX_DS_NDIM]; /* lower and upper bounds for DataSpaces */
+    int didx[MAX_DS_NDIM]; // for reordering the dimensions
     int ndims = 0;
     int hastime = 0;
+    gdims[0] = 0;
     struct adios_dimension_struct* var_dimensions = v->dimensions;
-    // Calculate lower and upper bounds for each available dimension (up to 3 dims)
-    while( var_dimensions && ndims < 3)
+    // Calculate lower and upper bounds for each available dimension (up to MAX_DS_NDIM dims)
+    while( var_dimensions && ndims < MAX_DS_NDIM)
     {
         dims[ndims] = adios_get_dim_value (&(var_dimensions->dimension));
         gdims[ndims] = adios_get_dim_value (&(var_dimensions->global_dimension));
         lb[ndims] = adios_get_dim_value (&(var_dimensions->local_offset));
-        if (dims[ndims] > 0)  {
+        if (gdims[ndims] > 0 && dims[ndims] > 0)  {
             ub[ndims] = lb[ndims] + dims[ndims] - 1;
             ndims++;
         }   else {
@@ -331,11 +331,15 @@ void adios_dataspaces_write (struct adios_file_struct * fd
     adios_generate_var_characteristics_v1 (fd, v); // characteristics will be included in build index
     adios_write_var_characteristics_v1 (fd, v);
     */
-    
-
-    log_debug ("var_name=%s, type=%s(%d) elemsize=%d, version=%d, ndims=%d, size=(%d,%d,%d), gdim=(%d,%d,%d), lb=(%d,%d,%d), ub=(%d,%d,%d)\n",
+   
+    // TODO: simplify this. Put into a debug print function? 
+    ds_int64s_to_str(ndims, lb, lb_str);
+    ds_int64s_to_str(ndims, ub, ub_str);    
+    ds_int64s_to_str(ndims, dims, dims_str);
+    ds_int64s_to_str(ndims, gdims, gdims_str);
+    log_debug ("var_name=%s, type=%s(%d) elemsize=%d, version=%d, ndims=%d, size=(%s), gdim=(%s), lb=(%s), ub=(%s)\n",
             ds_var_name, adios_type_to_string_int(v->type), v->type, var_type_size, version, ndims,
-            dims[0], dims[1], dims[2], gdims[0], gdims[1], gdims[2], lb[0], lb[1], lb[2], ub[0], ub[1], ub[2]);
+            dims_str, gdims_str, lb_str, ub_str);
 
     /* non-timed scalars are written in the metadata at close(), not here */
     if (ndims == 0 && !hastime)
@@ -348,17 +352,23 @@ void adios_dataspaces_write (struct adios_file_struct * fd
             group->adios_host_language_fortran == adios_flag_yes, 
             0 /*pack*/, didx);
 
-    dspaces_put(ds_var_name, version, var_type_size, 
-             lb[didx[0]], lb[didx[1]], lb[didx[2]], 
-             ub[didx[0]], ub[didx[1]], ub[didx[2]], 
-             data);
-    
-    log_debug ("var_name=%s, dimension ordering=(%d,%d,%d), gdims=(%d,%d,%d), lb=(%d,%d,%d), ub=(%d,%d,%d)\n",
-            ds_var_name, 
-            didx[0], didx[1], didx[2], 
-            gdims[didx[0]], gdims[didx[1]], gdims[didx[2]], 
-            lb[didx[0]], lb[didx[1]], lb[didx[2]], 
-            ub[didx[0]], ub[didx[1]], ub[didx[2]]);
+    uint64_t lb_in[MAX_DS_NDIM], ub_in[MAX_DS_NDIM], gdims_in[MAX_DS_NDIM];
+    int i;
+    for (i = 0; i < ndims; i++) {
+        lb_in[i] = lb[didx[i]];
+        ub_in[i] = ub[didx[i]];
+        gdims_in[i] = gdims[didx[i]];
+    }
+
+    dspaces_define_gdim(ds_var_name, ndims, gdims_in);
+    dspaces_put(ds_var_name, version, var_type_size, ndims, lb_in, ub_in, data);
+  
+    ds_ints_to_str(ndims, didx, didx_str);
+    ds_int64s_to_str(ndims, gdims_in, gdims_str);
+    ds_int64s_to_str(ndims, lb_in, lb_str);
+    ds_int64s_to_str(ndims, ub_in, ub_str);      
+    log_debug ("var_name=%s, dimension ordering=(%s), gdims=(%s), lb=(%s), ub=(%s)\n",
+            ds_var_name, didx_str, gdims_str, lb_str, ub_str);
     dspaces_put_sync();
 }
 
@@ -431,27 +441,6 @@ void adios_dataspaces_read (struct adios_file_struct * fd
                      ,struct adios_method_struct * method
                      )
 {
-    struct adios_ds_data_struct *md = (struct adios_ds_data_struct *)
-                                                            method->method_data;
-    uint64_t var_type_size = adios_get_type_size(v->type, v->data);
-
-    //Get var name
-    char * var_name = v->name;
-
-    //Get two offset coordinate values
-    int version, offset1[3],offset2[3];
-    int dim_size[3];
-    memset(offset1, 0, 3*sizeof(int));
-    memset(offset2, 0, 3*sizeof(int));
-    memset(dim_size, 0, 3*sizeof(int));
-
-    struct adios_dspaces_file_info *info = lookup_dspaces_file_info(md,fd->name);
-    version = info->time_index;
-    //dspaces_lock_on_read_();
-
-    //dspaces_get
-
-    //dspaces_unlock_on_read_();
 }
 
 /* Gather var/attr indices from all processes to rank 0 */
@@ -607,10 +596,10 @@ void ds_pack_group_info (struct adios_file_struct *fd
     int size;
     int ndims; // whatever the type of v->characteristics->dims.count is, we write an int to buffer
     int hastime; // true if variable has time dimension
-    uint64_t ldims[10], gdims[10]; // we can write only 3 dimensions, will drop time dim
+    uint64_t ldims[MAX_DS_NDIM], gdims[MAX_DS_NDIM]; 
     *nvars = 0;
     *nattrs = 0;
-    int didx[3]; // dimension ordering indices
+    int didx[MAX_DS_NDIM]; // dimension ordering indices
 
     log_debug ("%s entered\n", __func__);
 
@@ -619,7 +608,7 @@ void ds_pack_group_info (struct adios_file_struct *fd
     while (v) {
         size += 4*sizeof(int) // name len, type, hastime, number of dims 
                 + ds_get_full_name_len (v->var_path, v->var_name) // full path
-                + 3 * 8; // always write 3 dimensions in the index (even for scalars)
+                + MAX_DS_NDIM * 8; // always write MAX_DS_NDIM dimensions in the index (even for scalars)
         if (v->characteristics->dims.count == 0) {
             // For scalars, we write the value into the index
             if (v->type != adios_string)
@@ -682,7 +671,7 @@ void ds_pack_group_info (struct adios_file_struct *fd
         //ndims = MAX(v->characteristics->dims.count,3); // convert whatever type to int
         //memcpy (b, &(v->characteristics->dims.count), sizeof(int)); // number of dimensions
         log_debug("Variable %s, total dims = %d\n", name, v->characteristics->dims.count);
-        j = 0; // we can write only 3 dims, will drop the time dimension
+        j = 0; 
         hastime = 0;
         for (i = 0; i<v->characteristics->dims.count; i++) {
             ldims[j] = v->characteristics->dims.dims[j*3];  // ith dimension 
@@ -697,12 +686,12 @@ void ds_pack_group_info (struct adios_file_struct *fd
             }
             j++;
         }
-        for (i=j; i<3; i++) {
-            // fill up dimensions up to 3rd dim
+        for (i=j; i<MAX_DS_NDIM; i++) {
+            // fill up dimensions up to MAX_DS_NDIM dim
             ldims[i] = 1;
             gdims[i] = 1;
         }
-        ndims = (j < 3 ? j : 3); // we can have max 3 dimensions in DataSpaces
+        ndims = (j < MAX_DS_NDIM ? j : MAX_DS_NDIM); // we can have max MAX_DS_NDIM dimensions in DataSpaces
         memcpy (b, &hastime, sizeof(int)); // has time dimension?
         log_debug("             has time = %d (%d)\n", hastime, *(int*)b);
         b += sizeof(int); 
@@ -712,7 +701,7 @@ void ds_pack_group_info (struct adios_file_struct *fd
         ds_dimension_ordering(ndims, 
                 fd->group->adios_host_language_fortran == adios_flag_yes, 
                 0 /*pack*/, didx);
-        for (i = 0; i < 3; i++) {
+        for (i = 0; i < MAX_DS_NDIM; i++) {
             if (gdims[didx[i]]) { 
                 // global variable
                 memcpy (b, &(gdims[didx[i]]), 8);  // ith dimension 
@@ -831,7 +820,9 @@ void adios_dataspaces_close (struct adios_file_struct * fd
     struct adios_index_struct_v1 * index = adios_alloc_index_v1(1);
     struct adios_attribute_struct * a = fd->group->attributes;
     struct adios_dspaces_file_info *info = lookup_dspaces_file_info(md,fd->name);
-    int lb[3], ub[3], didx[3]; // for reordering DS dimensions
+    uint64_t gdims[MAX_DS_NDIM], lb[MAX_DS_NDIM], ub[MAX_DS_NDIM];
+    int didx[MAX_DS_NDIM]; // for reordering DS dimensions
+    int elemsize, ndim;
     unsigned int version;
 
     if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
@@ -870,11 +861,12 @@ void adios_dataspaces_close (struct adios_file_struct * fd
             
             /* Put GROUP@fn/gn header into space */
             snprintf(ds_var_name, MAX_DS_NAMELEN, "GROUP@%s/%s", fd->name, fd->group->name);
-            log_debug ("%s: put %s with buf len %d into space\n", __func__, ds_var_name, indexlen);
-            ub[0] = indexlen-1; ub[1] = 0; ub[2] = 0;
-            ds_dimension_ordering(1, 0, 0, didx); // C ordering of 1D array into DS
-            dspaces_put(ds_var_name, version, 1,    0, 0, 0, /* lb 0..2 */
-                     ub[didx[0]], ub[didx[1]], ub[didx[2]],  indexbuf); 
+            log_debug ("%s: put %s buflen=%d (bytes) into space\n", __func__, ds_var_name, indexlen);
+            elemsize = 1; ndim = 1;
+            lb[0] = 0; ub[0] = indexlen-1;
+            gdims[0] = (ub[0]-lb[0]+1) * dspaces_get_num_space_server(); // define 1D global data domain: (ub[0]-lb[0]+1)* number of dataspaces servers
+            dspaces_define_gdim(ds_var_name, ndim, gdims);
+            dspaces_put(ds_var_name, version, elemsize, ndim, lb, ub, indexbuf);
             free (indexbuf);
 
             /* Create and put FILE@fn header into space */
@@ -883,30 +875,31 @@ void adios_dataspaces_close (struct adios_file_struct * fd
             snprintf (ds_var_name, MAX_DS_NAMELEN, "FILE@%s", fd->name);
             ds_pack_file_info (info->time_index, nvars, nattrs, indexlen,
                           fd->group->name, &file_info_buf, &file_info_buf_len);
-            log_debug ("%s: put %s = buflen=%d time=%d nvars=%d nattr=%d index=%d name=%d:%s into space\n",
+            log_debug ("%s: put %s buflen=%d (bytes) time=%d nvars=%d nattr=%d index=%d name=%d:%s into space\n",
                 __func__, ds_var_name, 
                 *(int*)file_info_buf, *(int*)(file_info_buf+4), 
                 *(int*)(file_info_buf+8), *(int*)(file_info_buf+12),
                 *(int*)(file_info_buf+16), *(int*)(file_info_buf+20),
                 file_info_buf+24);
-            /* Flip 1st and 2nd dimension for DataSpaces representation for a 1D array*/
-            ub[0] = file_info_buf_len-1; ub[1] = 0; ub[2] = 0;
-            ds_dimension_ordering(1, 0, 0, didx); // C ordering of 1D array into DS
             dspaces_put_sync(); //wait on previous put to finish
-            dspaces_put(ds_var_name, version, 1,    0, 0, 0, /* lb 0..2 */
-                     ub[didx[0]], ub[didx[1]], ub[didx[2]], file_info_buf); 
+            elemsize = 1; ndim = 1;
+            lb[0] = 0; ub[0] = file_info_buf_len-1;
+            gdims[0] = (ub[0]-lb[0]+1) * dspaces_get_num_space_server();
+            dspaces_define_gdim(ds_var_name, ndim, gdims);
+            dspaces_put(ds_var_name, version, elemsize, ndim, lb, ub, file_info_buf);
 
             /* Create and put VERSION@fn version info into space */
             int version_buf[2] = {version, 0}; /* last version put in space; not terminated */
             int version_buf_len = 2; 
             snprintf (ds_var_name, MAX_DS_NAMELEN, "VERSION@%s", fd->name);
-            log_debug ("%s: put %s with buf = [%d,%d] (len=%d integers) into space\n", 
+            log_debug ("%s: put %s buf= [%d,%d] buflen=%d (integers) into space\n", 
                        __func__, ds_var_name, version_buf[0], version_buf[1], version_buf_len);
-            ub[0] = version_buf_len-1; ub[1] = 0; ub[2] = 0;
-            ds_dimension_ordering(1, 0, 0, didx); // C ordering of 1D array into DS
             dspaces_put_sync(); //wait on previous put to finish
-            dspaces_put(ds_var_name, 0, sizeof(int),    0, 0, 0, /* lb 0..2 */
-                     ub[didx[0]], ub[didx[1]], ub[didx[2]],  version_buf); 
+            elemsize = sizeof(int); ndim = 1;
+            lb[0] = 0; ub[0] = version_buf_len-1;
+            gdims[0] = (ub[0]-lb[0]+1) * dspaces_get_num_space_server();
+            dspaces_define_gdim(ds_var_name, ndim, gdims);
+            dspaces_put(ds_var_name, 0, elemsize, ndim, lb, ub, version_buf);
             dspaces_put_sync(); //wait on previous put to finish
             
         }
@@ -961,16 +954,14 @@ void adios_dataspaces_finalize (int mype, struct adios_method_struct * method)
         method->method_data;
     int i;
     char ds_var_name[MAX_DS_NAMELEN];
-    int lb[3] = {0,0,0}; 
-    int ub[3] = {1,0,0}; // we put 2 integers to space, 
-    int didx[3]; // for reordering DS dimensions
+    uint64_t gdims[MAX_DS_NDIM], lb[MAX_DS_NDIM], ub[MAX_DS_NDIM];
+    int elemsize, ndim;
     int value[2] = {0, 1}; // integer to be written to space (terminated=1)
 
     free_dspaces_file_info(md);
 
     MPI_Comm_rank (md->mpi_comm_init, &(md->rank));
     // tell the readers which files are finalized
-    ds_dimension_ordering(1, 0, 0, didx); // C ordering of 1D array into DS
     for (i=0; i<md->num_of_files; i++) {
         /* Put VERSION@fn into space. Indicates that this file will not be extended anymore.  */
         if (md->rank == 0) {
@@ -986,10 +977,11 @@ void adios_dataspaces_finalize (int mype, struct adios_method_struct * method)
             snprintf(ds_var_name, MAX_DS_NAMELEN, "VERSION@%s", md->fnames[i]);
             log_debug ("%s: update %s in the space [%d, %d]\n", 
                     __func__, ds_var_name, value[0], value[1] );
-            dspaces_put(ds_var_name, 0, sizeof(int),   
-                    lb[didx[0]], lb[didx[1]], lb[didx[2]], 
-                    ub[didx[0]], ub[didx[1]], ub[didx[2]],  
-                    &value); 
+            elemsize = sizeof(int); ndim = 1;
+            lb[0] = 0; ub[0] = 1;
+            gdims[0] = (ub[0]-lb[0]+1) * dspaces_get_num_space_server();
+            dspaces_define_gdim(ds_var_name, ndim, gdims);
+            dspaces_put(ds_var_name, 0, elemsize, ndim, lb, ub, &value); 
             log_debug("%s: call dspaces_put_sync()\n", __func__);
             dspaces_put_sync();
 
