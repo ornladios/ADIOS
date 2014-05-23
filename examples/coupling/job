@@ -6,6 +6,10 @@
 ## On jaguarpf, you need size=48 (4 nodes * 12cores for 4 apruns)
 
 #cd $PBS_O_WORKDIR
+if [ `hostname | cut -c 1-4` == "sith" ]; then
+    source /etc/profile.d/modules.sh
+    module load szip
+fi
 
 # Number of writers (WPX*WPY = WRITEPROC)
 WRITEPROC=16
