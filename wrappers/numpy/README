@@ -4,7 +4,7 @@ ADIOS Python/Numpy wrapper
 This directory contains the codes for the ADIOS python/numpy wrapper
 to call the native ADIOS library. This module is built by Cython.
 
-== Compile with Cython ==
+== Compile with Cython (only for develpers) ==
 
 The C++ code (adios.cpp) has been already compiled with Cython
 (version 0.20.1) and included here. Just in case to reproduce the C++
