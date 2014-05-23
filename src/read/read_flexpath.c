@@ -1214,7 +1214,7 @@ void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
 	tmpvars->displ = NULL;
 
 	if (tmpvars->sel) {
-	    free_selection(tmpvars->sel);
+	    common_read_selection_delete(tmpvars->sel);
 	    tmpvars->sel = NULL;
 	}
 
@@ -1420,7 +1420,7 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
     // within before doing release/advance step. Might need a better way to 
     // manage the ADIOS selections.
     if (fpvar->sel) {
-	free_selection(fpvar->sel);
+	common_read_selection_delete(fpvar->sel);
 	fpvar->sel = NULL;
     }
     if (!sel) { // null selection; read whole variable
@@ -1470,6 +1470,7 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
             for (j=0; j<fp->num_bridges; j++) {
                 int destination=0;	    	    
                 if(need_writer(fp, j, fpvar->sel, fp->gp, fpvar->varname)==1){           
+		    printf("\t\tneed_writer: %d\n", j);
                     uint64_t _pos = 0;
                     need_count++;
                     destination = j;
