@@ -12,6 +12,7 @@
 import numpy as np
 cimport numpy as np
 
+
 ## This is a serial version of Adios. No use of MPI.
 ##import mpi4py.MPI as MPI 
 ##cimport mpi4py.MPI as MPI
@@ -471,8 +472,6 @@ cdef class file:
             
     cpdef close(self):
         assert self.fp != NULL, 'Not an open file'
-        #for g in self.group.values():
-        #    g.close()
         adios_read_close(self.fp)
         self.fp = NULL
         

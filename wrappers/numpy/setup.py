@@ -35,5 +35,4 @@ setup(name = 'Adios',
       version = '1.0',
       description = 'Python Module for Adios',
       url = 'http://www.olcf.ornl.gov/center-projects/adios/',
-      ext_modules = [m1],
-      test_suite="tests/test_adios_write.py")
+      ext_modules = [m1])
