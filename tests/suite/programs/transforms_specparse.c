@@ -14,11 +14,17 @@
 #include <assert.h>
 #include "core/transforms/adios_transforms_specparse.h"
 
+#define DISABLE_SPECPARSE_TESTS
+
+#ifdef DISABLE_SPECPARSE_TESTS
+
 struct specparse_test {
     const char *specstr;
     struct adios_transform_spec expected;
-} TESTS[4];
-#if 0
+} TESTS[0];
+
+#else
+
 struct specparse_test {
     const char *specstr;
     struct adios_transform_spec expected;
@@ -54,15 +60,6 @@ struct specparse_test {
             .params             = NULL
         }
     },
-// Commented this test out since aliasing "raw" to the "none" transform is currently disabled
-//    {   .specstr = "raw:a=123,b,c=321,,,f=12321",
-//        .expected = {
-//            .transform_type     = adios_transform_none,
-//            .transform_type_str = "raw",
-//            .param_count        = 0,
-//            .params             = NULL
-//        }
-//    },
     {   .specstr = "***impossible-transform-name***:a=123,b,c=321,,,f=12321",
         .expected = {
             .transform_type     = adios_transform_unknown,
@@ -72,7 +69,9 @@ struct specparse_test {
         }
     },
 };
+
 #endif
+
 const int NUM_TESTS = sizeof(TESTS)/sizeof(TESTS[0]);
 
 void run_test(struct specparse_test *test) {

@@ -33,13 +33,6 @@ enum ADIOS_TRANSFORM_TYPE adios_transform_find_type_by_uid(const char *uid);
  */
 enum ADIOS_TRANSFORM_TYPE adios_transform_find_type_by_xml_alias(const char *xml_alias);
 
-/*
- * @param transform_type a transform type
- * @return a name that can be used to refer to that transform type within
- *         the ADIOS XML file, or "" if transform_type is not valid.
- */
-const char * adios_transform_xml_alias_by_type(enum ADIOS_TRANSFORM_TYPE transform_type);
-
 // Other inspection functions
 
 int is_transform_type_valid(enum ADIOS_TRANSFORM_TYPE transform_type);
