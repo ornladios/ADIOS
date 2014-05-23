@@ -344,8 +344,8 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
             #DATASPACES_DIR="/ccs/proj/e2e/qliu/dataspaces"
             WITHFLEX=""
         elif [ "$TARGET" == "gnu" ]; then
-            # NSSI needs libstdc++
-            export EXTRA_LIBS="/opt/gcc/4.7.2/snos/lib64/libstdc++.a"
+            # NSSI/FLEXPATH needs libstdc++
+            export EXTRA_LIBS="${GCC_PATH}/snos/lib64/libstdc++.a"
             WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/titan/$TARGET"
             #module swap gcc gcc/4.4.4
             #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
