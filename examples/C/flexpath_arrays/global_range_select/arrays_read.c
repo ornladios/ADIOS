@@ -97,7 +97,7 @@ int main (int argc, char ** argv)
       
         /* Read the arrays */        
         adios_schedule_read (afile, 
-                             global_range_select, 
+                             NULL, 
                              "var_2d_array", 
                              0, 1, t);
 	adios_schedule_read (afile,
