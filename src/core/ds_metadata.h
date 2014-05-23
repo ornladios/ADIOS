@@ -15,9 +15,12 @@
 #define __SPACES_INDEX_H__
 
 #include <stdint.h>
+#include <stdio.h>
+#include <string.h>
 #include "public/adios_types.h"
 #include "public/adios_read.h"
 
+#define MAX_DS_NDIM 10
 
 /* functions currently defined in adios_dataspaces.c and read_dataspaces.c */
 
@@ -51,6 +54,11 @@ void dimes_pack_group_info (struct adios_file_struct *fd
         ,struct adios_index_struct_v1 *index
         ,char ** buffer, int *buffer_size, int *nvars, int *nattrs
         );
+
+void ds_ints_to_str (int ndim, int *values, char *s);
+void ds_int64s_to_str(int ndim, uint64_t *values, char *s);
+void dimes_ints_to_str (int ndim, int *values, char *s);
+void dimes_int64s_to_str(int ndim, uint64_t *values, char *s);
 
 /***********************
   FILE info buffer: 

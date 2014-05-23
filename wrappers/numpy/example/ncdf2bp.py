@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-from adios import *
+from adios_mpi import *
 from scipy.io import netcdf
 import numpy as np
 import sys
@@ -112,10 +112,13 @@ for it in range(tdim):
         write_int(fd, name, val)
         
     for name, var in tdepvar.items():
-        arr = np.array(var.data.take([it], axis=tdx),
-                       dtype=np.float64)
-        print "Variable writing : %s %s" % (name, arr.shape)
-        write(fd, name, arr)
+        try:
+            arr = np.array(var.data.take([it], axis=tdx),
+                           dtype=np.float64)
+            print "Variable writing : %s %s" % (name, arr.shape)
+            write(fd, name, arr)
+        except ValueError:
+            print "Skip:", name
 
     close(fd)
     

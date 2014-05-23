@@ -18,10 +18,7 @@
 
 #ifdef DISABLE_SPECPARSE_TESTS
 
-struct specparse_test {
-    const char *specstr;
-    struct adios_transform_spec expected;
-} TESTS[0];
+int main(int argc, char **argv) { return 0; }
 
 #else
 
@@ -70,7 +67,6 @@ struct specparse_test {
     },
 };
 
-#endif
 
 const int NUM_TESTS = sizeof(TESTS)/sizeof(TESTS[0]);
 
@@ -163,3 +159,5 @@ int main(int argc, char **argv) {
 
     return 0;
 }
+
+#endif /* else of DISABLE_SPECPARSE_TESTS */

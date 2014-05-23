@@ -6,6 +6,10 @@
 ## On jaguarpf, you need size=48 (4 nodes * 12cores for 4 apruns)
 
 #cd $PBS_O_WORKDIR
+if [ `hostname | cut -c 1-4` == "sith" ]; then
+    source /etc/profile.d/modules.sh
+    module load szip
+fi
 
 # Number of writers (WPX*WPY = WRITEPROC)
 WRITEPROC=16
@@ -46,9 +50,7 @@ if [ "x$METHOD" == "xDATASPACES" ]; then
     # Prepare config file for DataSpaces
     echo "## Config file for DataSpaces
 ndim = 3
-dimx = 1000
-dimy = 1000
-dimz = 1000
+dims = 1000,1000,1000
 max_versions = 10
 " > dataspaces.conf
 

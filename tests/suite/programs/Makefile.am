@@ -31,7 +31,7 @@ check_C=local_array_time \
 	steps_read_file \
 	steps_read_stream
 
-test_C=hashtest copy_subvolume transforms_specparse
+test_C=hashtest copy_subvolume transforms_specparse group_free_test
 
 endif
 
@@ -193,6 +193,12 @@ hashtest_LDADD = $(top_builddir)/src/libadios_a-qhashtbl.o
 hashtest_LDFLAGS = $(AM_LDFLAGS) 
 hashtest_CPPFLAGS = -I$(top_srcdir)/src
 hashtest.o: hashtest.c
+
+group_free_test_SOURCES=group_free_test.c
+group_free_test_LDADD = $(top_builddir)/src/libadios_nompi.a $(ADIOSLIB_LDADD)
+group_free_test_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+group_free_test_CPPFLAGS = -I$(top_srcdir)/src
+group_free_test.o: group_free_test.c
 
 EXTRA_DIST = adios_amr_write.xml adios_amr_write_2vars.xml \
              posix_method.xml local_array_time.xml  \
