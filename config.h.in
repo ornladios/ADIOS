@@ -161,6 +161,12 @@
 /* Define if you have the Pablo. */
 #undef HAVE_PABLO
 
+/* Define if you have the PAMI. */
+#undef HAVE_PAMI
+
+/* Define to 1 if you have the <pami.h> header file. */
+#undef HAVE_PAMI_H
+
 /* Define if you have PHDF5. */
 #undef HAVE_PHDF5
 
