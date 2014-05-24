@@ -126,6 +126,11 @@ else
                     [int err; err = dspaces_init(1,1,0,"");],
                     [DATASPACES_LIBS="-ldspaces -ldscommon -ldart"],
                     [AM_CONDITIONAL(HAVE_DATASPACES,false)])
+	elif test "x${ac_pami_lib_ok}" == "xyes"; then
+            AC_TRY_COMPILE([#include "dataspaces.h"],
+                    [int err; err = dspaces_init(1,1,0,"");],
+                    [DATASPACES_LIBS="-ldspaces -ldscommon -ldart"],
+                    [AM_CONDITIONAL(HAVE_DATASPACES,false)])
         else
             AM_CONDITIONAL(HAVE_DATASPACES,false)
         fi

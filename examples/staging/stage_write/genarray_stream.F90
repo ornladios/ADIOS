@@ -70,8 +70,9 @@ program genarray
     ! Have to split and create a 'world' communicator for genarray only
     color = 1
     !print *,"call MPI_split "
-    !call MPI_Comm_split (MPI_COMM_WORLD, color, wrank, app_comm, ierr)
-    call MPI_Comm_dup (MPI_COMM_WORLD, app_comm, ierr)
+    call MPI_Barrier(MPI_COMM_WORLD, ierr);
+    call MPI_Comm_split (MPI_COMM_WORLD, color, wrank, app_comm, ierr)
+    !call MPI_Comm_dup (MPI_COMM_WORLD, app_comm, ierr)
     !print *,"call MPI_rank (app) "
     call MPI_Comm_rank (app_comm, rank, ierr)
     !print *,"call MPI_size (app) "
@@ -110,7 +111,7 @@ program genarray
     ! Terminate
     call MPI_Barrier (app_comm, ierr)
     call adios_finalize (rank, ierr)
-    call MPI_Barrier (MPI_COMM_WORLD, ierr)
+    !call MPI_Barrier (MPI_COMM_WORLD, ierr)
     print *,"Writer calls MPI_Finalize"
     call MPI_Finalize (ierr)
     print *,"Exit writer code "
@@ -231,7 +232,7 @@ subroutine writeArray()
         sz = adios_totalsize * nproc/1024.d0/1024.d0/1024.d0 !size in GB
         gbs = sz/io_total_time
         if (rank==0) print '("Writing: ",a20,d12.2,2x,d12.2,2x,d12.3)', outputfile,sz,io_total_time,gbs
-        if (tstep<timesteps) call sleep(sleeptime)
+        !if (tstep<timesteps) call sleep(sleeptime)
      end do
 end subroutine writeArray
 

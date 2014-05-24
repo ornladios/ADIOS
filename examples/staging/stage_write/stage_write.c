@@ -162,7 +162,14 @@ int main (int argc, char ** argv)
     int         retval = 0;
 
     MPI_Init (&argc, &argv);
-    comm = MPI_COMM_WORLD;
+    //comm = MPI_COMM_WORLD;
+    //MPI_Comm_rank (comm, &rank);
+    //MPI_Comm_size (comm, &numproc);
+    MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+    MPI_Comm_size (MPI_COMM_WORLD, &numproc);
+    MPI_Barrier(MPI_COMM_WORLD);
+
+    MPI_Comm_split(MPI_COMM_WORLD, 2, rank, &comm);	//color=2
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &numproc);
 
@@ -256,6 +263,7 @@ int main (int argc, char ** argv)
 
     adios_read_finalize_method (read_method);
     adios_finalize (rank);
+
     MPI_Finalize ();
 
     return retval;
