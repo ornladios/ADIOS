@@ -565,7 +565,7 @@ cdef class var:
 ## ====================
 
 def readvar(fname, varname):
-    f = file(fname)
+    f = file(fname, comm=MPI.COMM_SELF)
     if not f.var.has_key(varname):
         print "No valid variable"
         return
@@ -574,7 +574,7 @@ def readvar(fname, varname):
     return v.read(from_steps=0, nsteps=v.nsteps)
 
 def bpls(fname):
-    f = file(fname)
+    f = file(fname, comm=MPI.COMM_SELF)
     return {'nvars': f.nvars,
             'nattrs': f.nattrs,
             'vars': tuple([ k for k in f.var.iterkeys() ]),

@@ -48,3 +48,12 @@ if rank == 0:
     f.close()
 
 print "\n>>> Done.\n"
+
+## Testing
+if rank == 0:
+    print "\n>>> Test utility functions ...\n"
+
+    print "bpls:\n", ad.bpls('adios_test_mpi.bp')
+    print "readvar:\n", ad.readvar("adios_test_mpi.bp", "temperature")
+
+    print "\n>>> Done.\n"
