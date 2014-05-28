@@ -652,33 +652,35 @@ ctest -V
 \subsection{Support for Numpy}
 \label{section-install-numpy}
 
-ADIOS also provides a Python/Numpy language binding. The source code is located in \verb+wrappers/numpy+. This module is developed by Cython.
+ADIOS also provides two Python/Numpy language bindings developed by Cython; One is a binding for serial ADIOS (default), which requires no MPI, and the other is a MPI-enabled binding (optional). Like Matlab, ADIOS Python/Numpy wrapper requires ADIOS built by the GNU C compiler with relocatable codes. Add -fPIC flag to CFLAGS before configuring ADIOS.
 
-Like the Java binding, this Python/Numpy wrapper can be built by using CMake (\url{http://www.cmake.org/}). You can create a build directory and run cmake by pointing the source directory. For example,
+The following command will build a Python/Numpy binding for serial ADIOS (\verb+adios_config+ and \verb+python+ should be in the path):
 \begin{lstlisting}
 cd wrappers/numpy
-mkdir build
-cd build
-cmake ..
+make python
 \end{lstlisting}
 
-CMake will search installed ADIOS library and Python/Numpy. Once completed, type \verb+make+ to build or type the following for the verbose output.
+If you need a MPI-enabled binding, which requires MPI4Py installed, type the following:
+
 \begin{lstlisting}
-make VERBOSE=1
+make MPI=y python
 \end{lstlisting}
 
-After successful building, you will see adios.so. This file can be
-loaded in Python. Detailed instructions for using this module in Python will be discussed in Section~\ref{section-bindings-numpy}.
+After successful building, you need to install them in a python path. There are three options.
 
-This program contains a few test programs. To run testing after building,
-type the following command:
 \begin{lstlisting}
-make test
+python setup.py install
 \end{lstlisting}
+will install python's default installation location. This may require an admin privilege.
 
-If you need a verbose output, type the following
+If you want to install in a custom directory, type
 \begin{lstlisting}
-ctest -V
+python setup.py install --prefix=/dir/to/install
 \end{lstlisting}
+and append the directory to the \verb+PYTHONPATH+ environment variable
 
+You can also install in your local directory. Use the following command:
+\begin{lstlisting}
+python setup.py install --user
+\end{lstlisting}
 
