@@ -1,8 +1,12 @@
 ADIOS Python/Numpy wrapper
 -----------------
 
-This directory contains the codes for the ADIOS python/numpy wrapper
+This directory contains the codes for the ADIOS Python/Numpy wrapper
 to call the native ADIOS library. This module is built by Cython.
+
+This module requires ADIOS built with the GNU C compiler with
+relocatable codes. Add -fPIC flag to CFLAGS before configuring ADIOS.
+
 
 == Build and install with make ==
 
@@ -40,6 +44,12 @@ You can also install in your local directory, run
 
 $ python setup.py install --user
 
+== Test cases and examples ==
+
+Test cases and example files are located in tests and example
+directory.
+
+
 == Compile with Cython (only for developers) ==
 
 The C++ code (adios.cpp and adios_mpi.cpp) has been already generated
@@ -53,15 +63,3 @@ for the serial version of Adios wrapper. If you need to generated C++
 for MPI-enabled version, try the following
 
 $ make CYTHON=y MPI=y python
-
-== Note on compilers ==
-
-In most cases, pre-installed python is built with gcc. Thus, before
-build Adios python wrappers, you load a GNU programming
-environment. For example, in Sith, type the following:
-
-$ module load PE-gnu
-
-In Titan, type:
-
-$ module load PrgEnv-gnu
