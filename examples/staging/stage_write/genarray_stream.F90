@@ -232,7 +232,7 @@ subroutine writeArray()
         sz = adios_totalsize * nproc/1024.d0/1024.d0/1024.d0 !size in GB
         gbs = sz/io_total_time
         if (rank==0) print '("Writing: ",a20,d12.2,2x,d12.2,2x,d12.3)', outputfile,sz,io_total_time,gbs
-        !if (tstep<timesteps) call sleep(sleeptime)
+        if (tstep<timesteps) call sleep(sleeptime)
      end do
 end subroutine writeArray
 
