@@ -160,7 +160,7 @@ else()
 endif()
 
 if(DEFINED ENV{PAR_NC_DIR})
-  if($ENV{PAR_NC_DIR} STREQUAL "")
+  if("$ENV{PAR_NC_DIR}" STREQUAL "")
     set(NC4PAR OFF CACHE BOOL "")
   else()
     set(NC4PAR ON CACHE BOOL "")
