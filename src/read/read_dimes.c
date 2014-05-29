@@ -87,7 +87,7 @@ static char *chunk_buffer = 0;
 
 static int poll_interval_msec = 10; // how much to wait between polls when timeout is used
 
-static int enable_read_meta_collective = 0; // when enabled, meta data reading becomes collective. One reader process would fetch meta data from DataSpaces and broadcast to other procseses using MPI_Bcast
+static int enable_read_meta_collective = 1; // when enabled, meta data reading becomes collective. One reader process would fetch meta data from DataSpaces and broadcast to other procseses using MPI_Bcast
 
 struct dimes_fileversions_struct { // current opened version of each stream/file
     char      * filename[MAXNFILE];
@@ -231,10 +231,10 @@ int adios_read_dimes_init_method (MPI_Comm comm, PairStruct * params)
                 log_error ("Invalid 'poll_interval' parameter given to the DIMES "
                             "read method: '%s'\n", p->value);
             }
-        } else if (!strcasecmp (p->name, "enable_collective_read_meta")) {
+        } else if (!strcasecmp (p->name, "disable_collective_read_meta")) {
             errno = 0;
-            enable_read_meta_collective = 1;
-            log_debug("Set 'enable_collective_read_meta' for DIMES read method\n"); 
+            enable_read_meta_collective = 0;
+            log_debug("Set 'disable_collective_read_meta' for DIMES read method\n"); 
         } else {
             log_error ("Parameter name %s is not recognized by the DIMES read "
                         "method\n", p->name);
