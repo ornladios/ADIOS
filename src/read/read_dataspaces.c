@@ -1618,22 +1618,24 @@ void ds_dimension_ordering(int ndims, int is_app_fortran, int unpack, int *didx)
                 i,j   --> j, i     = lb[1], lb[0]
                 i     --> i        = lb[0] 
     */
+    int i;
+    // initialize didx[]
+    for (i = 0; i < MAX_DS_NDIM; i++) {
+        didx[i] = i;
+    }
 
-    int i, n;
-    if (ndims == 0) n = MAX_DS_NDIM;
-    else n = ndims;
-
+    if (ndims == 0) return; 
     if (is_app_fortran) {
-        for (i = 0; i < n; i++) {
+        for (i = 0; i < ndims; i++) {
             didx[i] = i;
         }
     } else {
-        for (i = 0; i < n; i++) {
-            didx[i] = n-1-i;
+        for (i = 0; i < ndims; i++) {
+            didx[i] = ndims-1-i;
         }
     }
 
-    return; 
+    return;
 }
 
 void ds_ints_to_str (int ndim, int *values, char *s)
