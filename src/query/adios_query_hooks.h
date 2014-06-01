@@ -14,7 +14,7 @@
 
 // default query tool is fastbit
 FORWARD_DECLARE(fastbit)
-
+FORWARD_DECLARE(alacrity)
 
 typedef int      (* ADIOS_QUERY_FREE_METHOD_FN) (ADIOS_QUERY* q);
 typedef int      (* ADIOS_QUERY_INIT_METHOD_FN) ();
