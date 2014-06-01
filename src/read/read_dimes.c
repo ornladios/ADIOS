@@ -88,6 +88,7 @@ static char *chunk_buffer = 0;
 static int poll_interval_msec = 10; // how much to wait between polls when timeout is used
 
 static int enable_read_meta_collective = 1; // when enabled, meta data reading becomes collective. One reader process would fetch meta data from DataSpaces and broadcast to other procseses using MPI_Bcast
+static int enable_check_read_status = 0;
 
 struct dimes_fileversions_struct { // current opened version of each stream/file
     char      * filename[MAXNFILE];
@@ -155,6 +156,31 @@ static int adios_read_dimes_get_meta_collective(const char * varname,
                                 int version, int rank,
                                 int ndims, int is_fortran_ordering,
                                 uint64_t * offset, uint64_t * readsize, void * data, MPI_Comm comm);
+
+static int update_read_status(ADIOS_FILE *fp, struct dimes_data_struct *ds, int status_code) {
+    char ds_vname[MAX_DS_NAMELEN];
+    uint64_t gdims[MAX_DS_NDIM], lb[MAX_DS_NDIM], ub[MAX_DS_NDIM];
+    int elemsize, ndim;
+    int read_status_buf[2] = {-1, -1};
+    int read_status_buf_len = 2;
+
+    if (ds->mpi_rank == 0) {
+        // Put READ_STATUS@fn information into space
+        read_status_buf[0] = ds->current_step;
+        read_status_buf[1] = status_code;
+        snprintf (ds_vname, MAX_DS_NAMELEN, "READ_STATUS@%s", fp->path);
+        log_debug("%s: rank= %d put %s buf= [%d,%d] into space\n",
+                __func__, ds->mpi_rank, ds_vname, read_status_buf[0], read_status_buf[1]);
+        elemsize = sizeof(int); ndim = 1;
+        lb[0] = 0; ub[0] = read_status_buf_len-1;
+        gdims[0] = (ub[0]-lb[0]+1) * dspaces_get_num_space_server();
+        dspaces_define_gdim(ds_vname, ndim, gdims);
+        dspaces_put(ds_vname, 0, elemsize, ndim, lb, ub, read_status_buf);
+        dspaces_put_sync();
+    }
+
+    return 0;
+}
 
 static char* get_chunk_buffer()
 {
@@ -235,6 +261,10 @@ int adios_read_dimes_init_method (MPI_Comm comm, PairStruct * params)
             errno = 0;
             enable_read_meta_collective = 0;
             log_debug("Set 'disable_collective_read_meta' for DIMES read method\n"); 
+        } else if (!strcasecmp (p->name, "enable_check_read_status")) {
+            errno = 0;
+            enable_check_read_status = 1;
+            log_debug("Set 'enable_check_read_status' for DIMES read method\n");
         } else {
             log_error ("Parameter name %s is not recognized by the DIMES read "
                         "method\n", p->name);
@@ -849,6 +879,9 @@ ADIOS_FILE * adios_read_dimes_open (const char * fname,
         fp = NULL;
     } else {
         log_debug("opened version %d of filename=%s\n", ds->current_step, fname);
+        if (enable_check_read_status) {
+            update_read_status(fp, ds, 0); // statue code: 0 - not done, 1 - done
+        }
     }
 
     return fp;
@@ -989,6 +1022,9 @@ int adios_read_dimes_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
     if (!err) {
         file_versions.version [ ds->file_index ] = ds->current_step; // why do we store this?
         log_debug("advanced to version %d of filename=%s\n", ds->current_step, fp->path);
+        if (enable_check_read_status) {
+            update_read_status(fp, ds, 0); // statue code: 0 - not done, 1 - done
+        }
     } else {
         if (!adios_errno) {
             adios_error (err_unspecified, "Unspecified error during adios_advance_step()\n");
@@ -1010,6 +1046,9 @@ void adios_read_dimes_release_step (ADIOS_FILE *fp)
 
     /* Release read lock locked in fopen */
     unlock_file (fp, ds);
+    if (enable_check_read_status) {
+        update_read_status(fp, ds, 1);
+    }
 
     free_step_data (fp);
 }
