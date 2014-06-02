@@ -1,0 +1,40 @@
+\chapter{Yaml File Format}
+
+Skel supports various methods for specifying the high-level I/O description to be
+used for creating skeletal applications. One of these is the yaml file, described below.
+YAML is a data serialization language that is similar
+to JSON. YAML supports data abstractions including sequences and mappings, and allows
+these to be nested. General information about YAML is available at http://www.yaml.org/
+
+The yaml format described here is the one that is produced by the {\tt skeldump} utility,
+and which is accepted by the {\tt skel replay} command, both described elsewhere in
+this manual.
+\vspace{5mm}
+
+At the top level of the yaml file, there are a series of mappings as follows:
+\begin{description}
+  \item[lang] specifies the target language, currently C and fortran are supported.
+
+  \item[procs] indicates the number of MPI tasks involved in the I/O operations.
+
+  \item[group] is the name of the ADIOS group in which to write the variables.
+
+  \item[variables] is a sequence of mappings representing the variables to be written
+
+\end{description}
+
+\vspace{5mm}
+Each variable is represented by a nested mapping that consists of:
+\begin{description}
+
+  \item[name] The name of the variable
+
+  \item[type] The unit type of the variable, should correspond to a valid type in the target language
+
+  \item[dims] Either {\tt scalar}, or a comma separated list of array dimensions
+
+  \item[value] (For scalars) a string representing the value to be assigned to this variable in the skeletal application code.
+
+\end{description}
+
+
