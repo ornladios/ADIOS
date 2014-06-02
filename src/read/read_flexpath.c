@@ -1010,6 +1010,7 @@ adios_read_flexpath_open(const char * fname,
 			 enum ADIOS_LOCKMODE lock_mode,
 			 float timeout_sec)
 {
+    printf("fortran? %d\n", futils_is_called_from_fortran());
     fp_log("FUNC", "entering flexpath_open\n");
     ADIOS_FILE *adiosfile = malloc(sizeof(ADIOS_FILE));        
     if(!adiosfile){
@@ -1430,9 +1431,6 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 	//TODO: This will have to be fixed for local arrays,
 	// but dataspaces doesn't have local arrays so there
 	// are no use cases for it. 
-	// TODO: This might be bad performance for the "points" case
-	// where there's a lot of points requested. Norbert's solution
-	// will work but will induce a memory leak.
 	uint64_t *starts = calloc(fpvar->ndims, sizeof(uint64_t));
 	uint64_t *counts = calloc(fpvar->ndims, sizeof(uint64_t));
 	memcpy(counts, fpvar->global_dims, fpvar->ndims*sizeof(uint64_t));

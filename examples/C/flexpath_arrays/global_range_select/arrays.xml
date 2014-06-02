@@ -9,8 +9,8 @@
     <var name="offset" type="integer"/>
     <var name="size_y" type="integer"/>
     <var name="test_scalar" type="integer"/>
-    <global-bounds dimensions="/scalar/dim/NX,size_y,/scalar/dim/NZ" offsets="0,offset,0">
-        <var name="var_2d_array" gwrite="t" type="double" dimensions="/scalar/dim/NX,/scalar/dim/NY,/scalar/dim/NZ"/>
+    <global-bounds dimensions="/scalar/dim/NZ,size_y,/scalar/dim/NX" offsets="0,offset,0">
+        <var name="var_2d_array" gwrite="t" type="double" dimensions="/scalar/dim/NZ,/scalar/dim/NY,/scalar/dim/NX"/>
     </global-bounds>
 </adios-group>
 
