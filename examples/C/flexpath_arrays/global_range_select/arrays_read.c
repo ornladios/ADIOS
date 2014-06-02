@@ -79,9 +79,9 @@ int main (int argc, char ** argv)
 					ADIOS_LOCKMODE_NONE, 0.0);
 
     int i;
-    for(i=0; i<afile->nvars; i++){
-    	printf("var: %s\n", afile->var_namelist[i]);
-    }
+    /* for(i=0; i<afile->nvars; i++){ */
+    /* 	printf("var: %s\n", afile->var_namelist[i]); */
+    /* } */
     
     int ii = 0;
     while(adios_errno != err_end_of_stream){       
@@ -97,21 +97,26 @@ int main (int argc, char ** argv)
 	int ny_val = *((int*)ny_info->value);
 	int size_val = *((int*)size_info->value);
 
-	printf("nx: %d, ny: %d, size: %d\n", nx_val, ny_val, size_val);
+	//printf("nx: %d, ny: %d, size: %d\n", nx_val, ny_val, size_val);
 	
 	// slice array along y dimension
 	uint64_t my_ystart, my_yend, my_ycount;
 	slice(arry->dims[1], &my_ystart, &my_yend, rank, size);
 
-	printf("rank: %d my_ystart: %d, my_yend: %d\n",
-	       rank, my_ystart, my_yend);
+	/* printf("rank: %d my_ystart: %d, my_yend: %d\n", */
+	/*        rank, (int)my_ystart, (int)my_yend); */
 
 	uint64_t xcount = arry->dims[0];
 	uint64_t ycount = my_yend - my_ystart;
 	uint64_t zcount = arry->dims[2];
 
-	uint64_t starts[] = {0,0,0};
+	uint64_t starts[] = {0, my_ystart, 0};
 	uint64_t counts[] = {xcount, ycount, zcount};
+
+	/* printf("rank: %d starts: %d %d %d. counts: %d %d %d\n", */
+	/*        rank, */
+	/*        (int)starts[0], (int)starts[1], (int)starts[2], */
+	/*        (int)counts[0], (int)counts[1], (int)counts[2]); */
 
 	global_range_select = adios_selection_boundingbox(arry->ndim, starts, counts);
 
@@ -144,7 +149,7 @@ int main (int argc, char ** argv)
       
         /* Read the arrays */        
         adios_schedule_read (afile, 
-                             NULL, 
+                             global_range_select, 
                              "var_2d_array", 
                              0, 1, t);
 	adios_schedule_read (afile,

@@ -634,6 +634,7 @@ static int get_step (ADIOS_FILE *fp, int step, enum WHICH_VERSION which_version,
     double t1 = adios_gettime();
     enum STEP_STATUS step_status = STEP_OK;
 
+    adios_errno = err_no_error; // clear error values now
     snprintf(ds_vname, MAX_DS_NAMELEN, "VERSION@%s",fp->path);
     snprintf(ds_fname, MAX_DS_NAMELEN, "FILE@%s",fp->path);
     //log_debug("-- %s, rank %d: Get variable %s\n", __func__, ds->mpi_rank, ds_fname);
@@ -674,28 +675,21 @@ static int get_step (ADIOS_FILE *fp, int step, enum WHICH_VERSION which_version,
                     // we may stay in poll loop
                 }
             } else {
-                // Try to get the version the user wants
-                if (which_version == LAST_VERSION)
-                    step = last_version;
+                // By API design: Try to get the version the user wants: next or last
+                // By DIMES design: we can only give the last version no matter what
+                step = last_version;
                 readsize[0] = FILEINFO_BUFLEN; // FILE%name is FILEINFO_BUFLEN bytes long
+                stay_in_poll_loop = 0;
 
                 int max_check_version = last_version;
-                if (which_version == NEXT_VERSION) 
-                    max_check_version = step;
 
-                // Loop until we find what we need or go past the last version
-                do {
-                    log_debug("   rank %d: dspaces_get %s\n", ds->mpi_rank, ds_fname);
-                    err = get_meta(ds_fname, adios_byte, step, ds->mpi_rank, 
-                                 ndim, 0, offset, readsize, file_info_buf, ds->comm);
-                    step++; // value will go over the target with 1
-                } while (err && step <= max_check_version);
+                log_debug("   rank %d: dspaces_get %s\n", ds->mpi_rank, ds_fname);
+                err = get_meta(ds_fname, adios_byte, step, ds->mpi_rank, 
+                        ndim, 0, offset, readsize, file_info_buf, ds->comm);
 
                 if (!err) {
-                    /* Found object with this access version */
-                    step--; // undo the last increment above
+                    /* Found object with this access version. Get file info. Update fp */
                     ds->current_step = step;
-                    stay_in_poll_loop = 0;
                     log_debug("   rank %d: step %d of '%s' exists\n", 
                             ds->mpi_rank, ds->current_step, ds_fname);
 
@@ -705,36 +699,29 @@ static int get_step (ADIOS_FILE *fp, int step, enum WHICH_VERSION which_version,
                         fp->current_step = ds->current_step;
                         fp->last_step = last_version;
 
-                        /* Get the variables and attributes the (only) group separately */
+                        /* Get the variables and attribute of the (only) group separately */
                         err = get_groupdata (fp);
                         if (err) {
-                            // something went wrong with the group(s)
+                            // something went wrong with the group(s) metadata
                             step_status = STEP_OTHERERROR;
+                            adios_error (err_unspecified, "DIMES method: Unexpected state: "
+                                    "found last version %d of dataset %s but then could not "
+                                    "parse the group metadata.\n", step, fp->path);
                         }
                     } else {
                         // something went wrong with the file metadata
                         step_status = STEP_OTHERERROR;
+                        adios_error (err_unspecified, "DIMES method: Unexpected state: "
+                                "found last version %d of dataset %s but then could not "
+                                "parse the file metadata.\n", step, fp->path);
                     }
 
                 } else {
-                    if (which_version == NEXT_VERSION) 
-                    {
-                        if (step < last_version) {
-                            step_status = STEP_STEPDISAPPEARED;
-                            stay_in_poll_loop = 0;
-                        } else {
-                            step_status = STEP_STEPNOTREADY;
-                            // we may stay in poll loop
-                        }
-                    } 
-                    else if (which_version == LAST_VERSION || 
-                             which_version == NEXT_AVAILABLE_VERSION) 
-                    {
-                        step_status = STEP_OTHERERROR;
-                        stay_in_poll_loop = 0;
-                        log_warn ("DIMES method: Unexpected state: found last version %d"
-                                "of dataset but then could not read it.\n", step);
-                    }
+                    // We got VERSION@ with a given step, but failed to get FILE@
+                    // for that step. This is an unknown error. 
+                    step_status = STEP_OTHERERROR;
+                    adios_error (err_unspecified, "DIMES method: Unexpected state: found last version %d"
+                            "of dataset %s but then could not get the metadata for it.\n", step, fp->path);
                 }
             }
 
@@ -776,6 +763,9 @@ static int get_step (ADIOS_FILE *fp, int step, enum WHICH_VERSION which_version,
     case STEP_STEPDISAPPEARED:
             adios_error (err_step_disappeared, 
                     "Step %d in stream '%s' is not available anymore\n", step, fp->path);
+            break;
+    case STEP_OTHERERROR:
+            // These were handled at their places
             break;
     default:
             adios_errno = err_no_error; // clear temporary error during polling

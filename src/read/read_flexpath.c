@@ -511,12 +511,12 @@ int
 need_writer(
     flexpath_reader_file *fp, 
     int writer, 
-    const ADIOS_SELECTION* sel, 
+    const ADIOS_SELECTION *sel, 
     evgroup_ptr gp, 
-    char* varname) 
+    char *varname) 
 {    
     //select var from group
-    global_var * gvar = find_gbl_var(gp->vars, varname, gp->num_vars);
+    global_var *gvar = find_gbl_var(gp->vars, varname, gp->num_vars);
 
     //for each dimension
     int i=0;
@@ -530,6 +530,9 @@ need_writer(
         uint64_t rank_offset = var_offsets.local_offsets[pos];
         uint64_t rank_size = var_offsets.local_dimensions[pos];        
 	
+	/* printf("need writer rank: %d writer: %d sel_start: %d sel_count: %d rank_offset: %d rank_size: %d\n", */
+	/*        fp->rank, writer, (int)sel_offset, (int)sel_size, (int)rank_offset, (int)rank_size); */
+
         if ((rank_offset <= sel_offset) && (rank_offset + rank_size - 1 >=sel_offset)) {
 	     log_debug("matched overlap type 1\n");
         }
@@ -1007,6 +1010,7 @@ adios_read_flexpath_open(const char * fname,
 			 enum ADIOS_LOCKMODE lock_mode,
 			 float timeout_sec)
 {
+    printf("fortran? %d\n", futils_is_called_from_fortran());
     fp_log("FUNC", "entering flexpath_open\n");
     ADIOS_FILE *adiosfile = malloc(sizeof(ADIOS_FILE));        
     if(!adiosfile){
@@ -1427,9 +1431,6 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
 	//TODO: This will have to be fixed for local arrays,
 	// but dataspaces doesn't have local arrays so there
 	// are no use cases for it. 
-	// TODO: This might be bad performance for the "points" case
-	// where there's a lot of points requested. Norbert's solution
-	// will work but will induce a memory leak.
 	uint64_t *starts = calloc(fpvar->ndims, sizeof(uint64_t));
 	uint64_t *counts = calloc(fpvar->ndims, sizeof(uint64_t));
 	memcpy(counts, fpvar->global_dims, fpvar->ndims*sizeof(uint64_t));
@@ -1470,7 +1471,7 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
             for (j=0; j<fp->num_bridges; j++) {
                 int destination=0;	    	    
                 if(need_writer(fp, j, fpvar->sel, fp->gp, fpvar->varname)==1){           
-		    printf("\t\tneed_writer: %d\n", j);
+		    //printf("\t\trank: %d need_writer: %d\n", fp->rank, j);
                     uint64_t _pos = 0;
                     need_count++;
                     destination = j;
