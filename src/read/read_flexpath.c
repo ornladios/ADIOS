@@ -164,7 +164,8 @@ flexpath_read_data* fp_read_data = NULL;
 
 /********** Helper functions. **********/
 
-void build_bridge(bridge_info* bridge) {
+void build_bridge(bridge_info* bridge) 
+{
     attr_list contact_list = attr_list_from_string(bridge->contact);
     if(bridge->created == 0){
 	bridge->bridge_stone =
@@ -299,7 +300,8 @@ convert_var_info(flexpath_var * fpvar,
 	int value_size = fpvar->type_size;	
 	v->value = malloc(value_size);
 	if(!v->value) {
-	    adios_error(err_no_memory, "Cannot allocate buffer in adios_read_flexpath_inq_var()");
+	    adios_error(err_no_memory, 
+			"Cannot allocate buffer in adios_read_flexpath_inq_var()");
 	    return NULL;
 	}
 	flexpath_var_chunk * chunk = &fpvar->chunks[0];
@@ -308,7 +310,8 @@ convert_var_info(flexpath_var * fpvar,
     }else{ // arrays
 	v->dims = (uint64_t*)malloc(v->ndim * sizeof(uint64_t));
 	if(!v->dims) {
-	    adios_error(err_no_memory, "Cannot allocate buffer in adios_read_flexpath_inq_var()");
+	    adios_error(err_no_memory, 
+			"Cannot allocate buffer in adios_read_flexpath_inq_var()");
 	    return NULL;
 	}
 	// broken.  fix. -- why did I put this comment here?
@@ -405,11 +408,31 @@ calc_ffspacket_size(FMField *f, attr_list attrs, void *buffer)
     return size;
 }
 
+void
+print_displacement(array_displacements *disp, int myrank)
+{
+    printf("rank: %d, writer displacements for writer: %d\n", myrank, disp->writer_rank);
+    printf("\tndims: %d, pos: %d\n", disp->ndims, (int)disp->pos);
+    
+    int i;
+    printf("\tstarts: ");
+    for (i = 0; i<disp->ndims; i++) {
+	printf("%d ", (int)disp->start[i]);
+    }
+    printf("\n");
+    printf("\tcounts: ");
+    for (i = 0; i<disp->ndims; i++) {
+	printf("%d ", (int)disp->count[i]);
+    }
+    printf("\n");
+}
+
 /*
  * Finds the array displacements for a writer identified by its rank.
  */
 array_displacements*
-find_displacement(array_displacements* list, int rank, int num_displ){
+find_displacement(array_displacements *list, int rank, int num_displ)
+{
     int i;
     for(i=0; i<num_displ; i++){
 	if(list[i].writer_rank == rank)
@@ -835,7 +858,9 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 	    if(var->sel->type == ADIOS_SELECTION_WRITEBLOCK){
 		if(num_dims == 0){ // writeblock selection for scalar
 		    if(var->sel->u.block.index == writer_rank){
-			void *tmp_data = get_FMfieldAddr_by_name(f, f->field_name, base_data);
+			void *tmp_data = get_FMfieldAddr_by_name(f, 
+								 f->field_name, 
+								 base_data);
 			memcpy(var->chunks[0].user_buf, tmp_data, f->field_size);
 		    }
 		}
@@ -861,14 +886,21 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 					    "Could not find fieldname: %s\n",
 					    dim);
 			    } else {    			    
-				int *temp_data = get_FMfieldAddr_by_name(temp_field,
-									 temp_field->field_name,
-									 base_data);
+				int *temp_data = get_FMfieldAddr_by_name
+				    (
+					temp_field,
+					temp_field->field_name,
+					base_data
+				    );
+
 				uint64_t dim = (uint64_t)(*temp_data);
 				var->array_size = var->array_size * dim;
 			    }
 			}    	       
-			void *arrays_data  = get_FMPtrField_by_name(f, f->field_name, base_data, 1);
+			void *arrays_data  = get_FMPtrField_by_name(f, 
+								    f->field_name, 
+								    base_data, 
+								    1);
 			memcpy(var->chunks[0].user_buf, arrays_data, var->array_size);
 		    }
 		}
@@ -879,11 +911,15 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 		    int i;
 		    global_var *gv = find_gbl_var(fp->gp->vars,
 						  var->varname,
-						  fp->gp->num_vars);                
-		    array_displacements * disp = find_displacement(var->displ,
-								   writer_rank,
-								   var->num_displ);
-		    if(disp){ // does this writer hold a chunk we've asked for, for this var?
+						  fp->gp->num_vars);
+
+		    array_displacements *disp = find_displacement(var->displ,
+								  writer_rank,
+								  var->num_displ);
+		    if (disp) { // does this writer hold a chunk we've asked for
+
+			//print_displacement(disp, fp->rank);
+
 			uint64_t *temp = gv->offsets[0].local_dimensions;
 			int offsets_per_rank = gv->offsets[0].offsets_per_rank;
 			uint64_t *writer_sizes = &temp[offsets_per_rank * writer_rank];
@@ -1215,8 +1251,10 @@ void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
 	    free(tmpvars->global_dims);	   
 	    tmpvars->ndims = 0;
 	}
-	free_displacements(tmpvars->displ, tmpvars->num_displ);
-	tmpvars->displ = NULL;
+	if (tmpvars->displ) {
+	    free_displacements(tmpvars->displ, tmpvars->num_displ);
+	    tmpvars->displ = NULL;
+	}
 
 	if (tmpvars->sel) {
 	    common_read_selection_delete(tmpvars->sel);
@@ -1371,6 +1409,21 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
     free(fp->sendees);
     fp->sendees = NULL;    
     fp->num_sendees = 0;
+    
+    flexpath_var *tmpvars = fp->var_list;
+    while (tmpvars) {
+	if (tmpvars->displ) {
+	    free_displacements(tmpvars->displ, tmpvars->num_displ);
+	    tmpvars->displ = NULL;
+	}
+    
+	if (tmpvars->sel) {
+	    common_read_selection_delete(tmpvars->sel);
+	    tmpvars->sel = NULL;
+	}
+    
+	tmpvars = tmpvars->next;
+    }
     fp_log("FUNC", "leaving perform_reads.\n");
     return 0;
 }
