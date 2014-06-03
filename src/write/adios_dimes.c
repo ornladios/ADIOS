@@ -1077,9 +1077,9 @@ void adios_dimes_finalize (int mype, struct adios_method_struct * method)
     if (globals_adios_is_dimes_connected_from_writer() && 
             !globals_adios_is_dimes_connected_from_both())
     {
-        log_debug ("%s: call dspaces_barrier(), rank=%d\n", __func__,mype);
-        dspaces_barrier();
-        log_debug ("%s: call dspaces_finalize(), rank=%d\n", __func__,mype);
+        log_debug ("%s: call MPI Barrier on all connected processes(), rank=%d\n", __func__,mype);
+        MPI_Barrier (md->mpi_comm_init); 
+        log_debug ("%s: call dspaces_finalize(), rank=%d\n", __func__, mype);
         dspaces_finalize();
     }
     globals_adios_set_dimes_disconnected_from_writer();
