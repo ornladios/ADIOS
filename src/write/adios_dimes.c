@@ -67,8 +67,8 @@ static int check_read_status(const char* fname, int last_version)
 
     uint64_t lb[MAX_DS_NDIM], ub[MAX_DS_NDIM], gdims[MAX_DS_NDIM];
     int elemsize, ndim;
-    int read_status_buf[2] = {-1, -1};
-    int read_status_buf_len = 2;
+    int read_status_buf[1] = {-1};
+    int read_status_buf_len = 1;
 
     while (stay_in_poll_loop) {
         snprintf(ds_var_name, MAX_DS_NAMELEN, "READ_STATUS@%s", fname);
@@ -79,10 +79,9 @@ static int check_read_status(const char* fname, int last_version)
         int err = dspaces_get(ds_var_name, 0, elemsize, ndim, lb, ub, read_status_buf);
         if (!err) {
             int version = read_status_buf[0];
-            int status_code = read_status_buf[1];
-            log_debug("%s: ds_var_name %s read_status_buf = {%d, %d}\n",
-                __func__, ds_var_name, version, status_code);
-            if (version == last_version && status_code == 1) {
+            log_debug("%s: ds_var_name %s read_status_buf = {%d}\n",
+                __func__, ds_var_name, version);
+            if (version == last_version) {
                 stay_in_poll_loop = 0;
             }            
         } else {
@@ -1032,6 +1031,9 @@ void adios_dimes_finalize (int mype, struct adios_method_struct * method)
     for (i=0; i<md->num_of_files; i++) {
         /* Put VERSION@fn into space. Indicates that this file will not be extended anymore.  */
         if (md->rank == 0) {
+            if (enable_check_read_status) {
+                check_read_status(md->fnames[i], md->fversions[i]);
+            }
             MPI_Comm mpi_comm = MPI_COMM_SELF;
             log_debug("%s: call dspaces_lock_on_write(%s), rank=%d\n", __func__, md->fnames[i], mype);
             dspaces_lock_on_write(md->fnames[i], &mpi_comm); // lock is global operation in DataSpaces
@@ -1051,21 +1053,13 @@ void adios_dimes_finalize (int mype, struct adios_method_struct * method)
             log_debug("%s: call dspaces_unlock_on_write(%s), rank=%d\n", __func__, md->fnames[i], mype);
             dspaces_unlock_on_write(md->fnames[i], &mpi_comm);
         }
-    }
-
-    if (enable_check_read_status) { 
-        if (md->rank == 0) {
-            for (i=0; i<md->num_of_files; i++) {
-                check_read_status(md->fnames[i], md->fversions[i]); 
-            }
-        }
-        MPI_Barrier(md->mpi_comm_init);
-    }
-
-    for (i=0; i<md->num_of_files; i++) {
         free(md->fnames[i]);
     }
 
+    if (enable_check_read_status) {
+        // Note: dspaces_lock_on_write() above is only called by single process (whose md->rank == 0). MPI_Barrier ensures all writer processes to wait until reader application fetches data of last version. 
+        MPI_Barrier(md->mpi_comm_init);
+    }
     // Free all previsouly allocated RDMA buffers
     dimes_put_sync_all();
 
