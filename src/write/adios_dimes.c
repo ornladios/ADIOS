@@ -32,8 +32,8 @@ static int adios_dimes_initialized = 0;
 #define MAX_NUM_OF_FILES 20
 static char ds_var_name[MAX_DS_NAMELEN];
 static unsigned int adios_dimes_verbose = 3;
-static int enable_check_read_status = 0;
-static double check_read_status_timeout_sec = 0;
+static int check_read_status = 2; // 0: disable, 1: at every step (not supported yet), 2: at finalize (default value)
+static double check_read_status_timeout_sec = 1;
 static int check_read_status_poll_interval_ms = 100;
 
 struct adios_dimes_file_info
@@ -60,7 +60,7 @@ struct adios_dimes_data_struct
 };
 
 
-static int check_read_status(const char* fname, int last_version)
+static int check_read_status_var(const char* fname, int last_version)
 {
     int stay_in_poll_loop = 1;
     double t1 = adios_gettime();
@@ -198,7 +198,8 @@ void adios_dimes_init (const PairStruct * parameters,
    
     method->method_data = calloc (1, sizeof (struct adios_dimes_data_struct));
     md = (struct adios_dimes_data_struct*)method->method_data;
-    
+   
+    int check_read; 
     int index, i;
     char temp[64];
 
@@ -227,10 +228,19 @@ void adios_dimes_init (const PairStruct * parameters,
                 log_error ("Invalid 'app_id' parameter given to the DIMES write "
                            "method: '%s'\n", p->value);
             }
-        } else if (!strcasecmp(p->name, "enable_check_read_status")) {
+        } else if (!strcasecmp(p->name, "check_read_status")) {
             errno = 0;
-            enable_check_read_status = 1;
-            log_debug ("Set 'enable_check_read_status' for DIMES write method\n");
+            check_read = strtol(p->value, NULL, 10);
+            if (!errno && (check_read == 0 || check_read == 2)) {
+                check_read_status = check_read;
+                log_debug("check_read_status set to %d for DIMES write method\n", 
+                    check_read_status);
+            } else {
+                log_error("Invalid 'check_read_status' parameter given to the DIMES "
+                            "write method: '%s'\n", p->value);
+                log_error("check_read_status=<value>, 0: disable, 1: at every step "
+                            " (not supported yet), 2: at finalize (default value).\n");
+            }
         } else if (!strcasecmp(p->name, "check_read_status_timeout_sec")) {
             errno = 0;
             double timeout = strtof(p->value, NULL);
@@ -1031,8 +1041,8 @@ void adios_dimes_finalize (int mype, struct adios_method_struct * method)
     for (i=0; i<md->num_of_files; i++) {
         /* Put VERSION@fn into space. Indicates that this file will not be extended anymore.  */
         if (md->rank == 0) {
-            if (enable_check_read_status) {
-                check_read_status(md->fnames[i], md->fversions[i]);
+            if (check_read_status == 2) {
+                check_read_status_var(md->fnames[i], md->fversions[i]);
             }
             MPI_Comm mpi_comm = MPI_COMM_SELF;
             log_debug("%s: call dspaces_lock_on_write(%s), rank=%d\n", __func__, md->fnames[i], mype);
@@ -1056,7 +1066,7 @@ void adios_dimes_finalize (int mype, struct adios_method_struct * method)
         free(md->fnames[i]);
     }
 
-    if (enable_check_read_status) {
+    if (check_read_status == 2) {
         // Note: dspaces_lock_on_write() above is only called by single process (whose md->rank == 0). MPI_Barrier ensures all writer processes to wait until reader application fetches data of last version. 
         MPI_Barrier(md->mpi_comm_init);
     }

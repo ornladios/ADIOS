@@ -88,7 +88,7 @@ static char *chunk_buffer = 0;
 static int poll_interval_msec = 10; // how much to wait between polls when timeout is used
 
 static int enable_read_meta_collective = 1; // when enabled, meta data reading becomes collective. One reader process would fetch meta data from DataSpaces and broadcast to other procseses using MPI_Bcast
-static int enable_check_read_status = 0;
+static int check_read_status = 2; // 0: disable, 1: at every step (not supported yet), 2: at finalize (default value)
 
 struct dimes_fileversions_struct { // current opened version of each stream/file
     char      * filename[MAXNFILE];
@@ -157,7 +157,7 @@ static int adios_read_dimes_get_meta_collective(const char * varname,
                                 int ndims, int is_fortran_ordering,
                                 uint64_t * offset, uint64_t * readsize, void * data, MPI_Comm comm);
 
-static int update_read_status(ADIOS_FILE *fp, struct dimes_data_struct *ds) {
+static int update_read_status_var(ADIOS_FILE *fp, struct dimes_data_struct *ds) {
     char ds_vname[MAX_DS_NAMELEN];
     uint64_t gdims[MAX_DS_NDIM], lb[MAX_DS_NDIM], ub[MAX_DS_NDIM];
     int elemsize, ndim;
@@ -217,7 +217,7 @@ int adios_read_dimes_init_method (MPI_Comm comm, PairStruct * params)
 { 
     int  nproc, drank, dpeers;
     int  rank, err;
-    int  appid, max_chunk_size, pollinterval, was_set;
+    int  appid, max_chunk_size, pollinterval, was_set, check_read;
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &nproc);
 
@@ -260,10 +260,19 @@ int adios_read_dimes_init_method (MPI_Comm comm, PairStruct * params)
             errno = 0;
             enable_read_meta_collective = 0;
             log_debug("Set 'disable_collective_read_meta' for DIMES read method\n"); 
-        } else if (!strcasecmp (p->name, "enable_check_read_status")) {
+        } else if (!strcasecmp (p->name, "check_read_status")) {
             errno = 0;
-            enable_check_read_status = 1;
-            log_debug("Set 'enable_check_read_status' for DIMES read method\n");
+            check_read = strtol(p->value, NULL, 10);
+            if (!errno && (check_read == 0 || check_read == 2)) {
+                check_read_status = check_read;
+                log_debug("check_read_status set to %d for DIMES read method\n",
+                    check_read_status);
+            } else {
+                log_error("Invalid 'check_read_status' parameter given to the DIMES "
+                            "read method: '%s'\n", p->value);
+                log_error("check_read_status=<value>, 0: disable, 1: at every step "
+                            " (not supported yet), 2: at finalize (default value).\n");
+            }
         } else {
             log_error ("Parameter name %s is not recognized by the DIMES read "
                         "method\n", p->name);
@@ -1027,8 +1036,8 @@ void adios_read_dimes_release_step (ADIOS_FILE *fp)
     struct dimes_attr_struct * attrs = 
                 (struct dimes_attr_struct *) ds->attrs;
 
-    if (enable_check_read_status) {
-        update_read_status(fp, ds);
+    if (check_read_status == 2) {
+        update_read_status_var(fp, ds);
     }
     /* Release read lock locked in fopen */
     unlock_file (fp, ds);
