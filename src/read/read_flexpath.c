@@ -39,6 +39,7 @@
 #include "public/adios_read_v2.h"
 #include "core/adios_read_hooks.h"
 #include "core/adios_logger.h"
+#include "core/common_read.h"
 #include "public/adios_error.h"
 #include "core/flexpath.h"
 
@@ -254,7 +255,7 @@ ffs_type_to_adios_type(const char *ffs_type)
     size_t posfound = strcspn(ffs_type, bracket);
     char *filtered_type = NULL;
     if (strlen(ffs_type) == strlen(bracket)) {
-        filtered_type = ffs_type;
+        filtered_type = strdup(ffs_type);
     }
     else {
         filtered_type = malloc(posfound+1);
