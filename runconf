@@ -54,7 +54,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     module unload netcdf
     #module load szip
     module load bzip2
-    module load dataspaces/1.3.0
+    module load dataspaces/1.4.0
     export MPICC=mpicc
     export MPICXX=mpiCC
     export MPIFC=mpif90
@@ -62,19 +62,16 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         export CC=pgcc
         export CXX=pgCC
         export FC=pgf90
-        WITHDART="--with-dataspaces=/ccs/proj/e2e/dataspaces/sith/$TARGET"
         WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/sith/$TARGET"
     elif [ "$TARGET" == "gnu" ]; then
         export CC=gcc
         export CXX=g++
         export FC=gfortran
-        WITHDART="--with-dataspaces=/ccs/proj/e2e/dataspaces/sith/$TARGET"
         WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/sith/$TARGET"
     elif [ "$TARGET" == "intel" ]; then
         export CC=icc
         export CXX=icpc
         export FC=ifort
-        WITHDART=""
         WITHFLEX=""
     else
         echo "TARGET must be pgi or gnu or intel"
@@ -105,7 +102,6 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         --with-isobar=/ccs/proj/e2e/ncsu/sith.gnu \
         --with-fgr=/ccs/proj/e2e/qliu/tap \
         --with-glib=/ccs/proj/e2e/qliu/glib
-        #$WITHDART \
         #--with-szip=$SZIP_DIR \
         #--with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.sith.$TARGET 
         #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
@@ -334,14 +330,14 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         module load PrgEnv-$TARGET
         module swap craype-interlagos craype-istanbul
         module swap cray-libsci
-        module load dataspaces/1.3.0
+        module load dataspaces/1.4.0
         unset EXTRA_LIBS
         unset LDFLAGS
         if [ "$TARGET" == "pgi" ]; then
             #module swap pgi pgi/11.8.0
             # NSSI needs -pgcpplibs flag 
             export LDFLAGS="-pgcpplibs" 
-            #DATASPACES_DIR="/ccs/proj/e2e/qliu/dataspaces"
+            #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
             WITHFLEX=""
         elif [ "$TARGET" == "gnu" ]; then
             # NSSI/FLEXPATH needs libstdc++
@@ -457,7 +453,8 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
       module unload pmi
       module load PrgEnv-$TARGET
       module swap cray-libsci
-      module load dataspaces/1.3.0
+      module swap craype-interlagos craype-istanbul
+      module load dataspaces/1.4.0
       if [ "$TARGET" == "pgi" ]; then
           # NSSI needs -pgcpplibs flag 
           export LDFLAGS="-pgcpplibs" 
@@ -485,6 +482,7 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
           --with-cray-ugni-libdir=/opt/cray/ugni/default/lib \
           --with-dataspaces=$DATASPACES_DIR \
           --with-dimes=$DATASPACES_DIR \
+          --without-infiniband 
 #            --with-lustre=/opt/xt-lustre-ss/2.2_1.6.5/usr \
 #            --with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.$TARGET \
 #            --enable-research-transports \
