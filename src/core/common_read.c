@@ -1032,11 +1032,11 @@ int common_read_inq_var_meshinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
     {
         if (!strcmp((char *)data, "point"))
         {
-            varinfo->meshinfo->centering = point_centering;
+            varinfo->meshinfo->centering = point;
         }
         else if (!strcmp((char *)data, "cell"))
         {
-            varinfo->meshinfo->centering = cell_centering;
+            varinfo->meshinfo->centering = cell;
         }
         else
         {
