@@ -32,6 +32,9 @@ static int adios_dimes_initialized = 0;
 #define MAX_NUM_OF_FILES 20
 static char ds_var_name[MAX_DS_NAMELEN];
 static unsigned int adios_dimes_verbose = 3;
+static int check_read_status = 2; // 0: disable, 1: at every step (not supported yet), 2: at finalize (default value)
+static double check_read_status_timeout_sec = 1;
+static int check_read_status_poll_interval_ms = 100;
 
 struct adios_dimes_file_info
 {
@@ -55,6 +58,52 @@ struct adios_dimes_data_struct
     int  fversions[MAX_NUM_OF_FILES];   // last steps of files (needed at finalize)
     struct adios_dimes_file_info file_info[MAX_NUM_OF_FILES]; // keep track of time index for each opened file
 };
+
+
+static int check_read_status_var(const char* fname, int last_version)
+{
+    int stay_in_poll_loop = 1;
+    double t1 = adios_gettime();
+
+    uint64_t lb[MAX_DS_NDIM], ub[MAX_DS_NDIM], gdims[MAX_DS_NDIM];
+    int elemsize, ndim;
+    int read_status_buf[1] = {-1};
+    int read_status_buf_len = 1;
+
+    while (stay_in_poll_loop) {
+        snprintf(ds_var_name, MAX_DS_NAMELEN, "READ_STATUS@%s", fname);
+        elemsize = sizeof(int); ndim = 1;
+        lb[0] = 0; ub[0] = read_status_buf_len-1;
+        gdims[0] = (ub[0]-lb[0]+1) * dspaces_get_num_space_server();
+        dspaces_define_gdim(ds_var_name, ndim, gdims);
+        int err = dspaces_get(ds_var_name, 0, elemsize, ndim, lb, ub, read_status_buf);
+        if (!err) {
+            int version = read_status_buf[0];
+            log_debug("%s: ds_var_name %s read_status_buf = {%d}\n",
+                __func__, ds_var_name, version);
+            if (version == last_version) {
+                stay_in_poll_loop = 0;
+            }            
+        } else {
+            log_error("%s: failed to read ds_var_name %s from space\n",
+                __func__, ds_var_name); 
+        }
+
+        // check if we need to stay in loop
+        if (stay_in_poll_loop) {
+            double elapsed_time = adios_gettime() - t1;
+            if (check_read_status_timeout_sec >= 0.0 &&
+                elapsed_time > check_read_status_timeout_sec) {
+                stay_in_poll_loop = 0;
+            } else {
+                adios_nanosleep(check_read_status_poll_interval_ms/1000,
+                    (int)(((uint64_t)check_read_status_poll_interval_ms * 1000000L)%1000000000L));      
+            }
+        }
+    }
+
+    return 0;
+}
 
 static int init_dimes_file_info(struct adios_dimes_data_struct *md)
 {
@@ -149,7 +198,8 @@ void adios_dimes_init (const PairStruct * parameters,
    
     method->method_data = calloc (1, sizeof (struct adios_dimes_data_struct));
     md = (struct adios_dimes_data_struct*)method->method_data;
-    
+   
+    int check_read; 
     int index, i;
     char temp[64];
 
@@ -171,15 +221,48 @@ void adios_dimes_init (const PairStruct * parameters,
             errno = 0;
             md->appid = strtol(p->value, NULL, 10);
             if (md->appid > 0 && !errno) {
-                log_debug ("App ID parameter set to %d for DATASPACES write method\n",
+                log_debug ("App ID parameter set to %d for DIMES write method\n",
                             md->appid);
                 globals_adios_set_application_id (md->appid);
             } else {
-                log_error ("Invalid 'app_id' parameter given to the DATASPACES write "
+                log_error ("Invalid 'app_id' parameter given to the DIMES write "
                            "method: '%s'\n", p->value);
             }
+        } else if (!strcasecmp(p->name, "check_read_status")) {
+            errno = 0;
+            check_read = strtol(p->value, NULL, 10);
+            if (!errno && (check_read == 0 || check_read == 2)) {
+                check_read_status = check_read;
+                log_debug("check_read_status set to %d for DIMES write method\n", 
+                    check_read_status);
+            } else {
+                log_error("Invalid 'check_read_status' parameter given to the DIMES "
+                            "write method: '%s'\n", p->value);
+                log_error("check_read_status=<value>, 0: disable, 1: at every step "
+                            " (not supported yet), 2: at finalize (default value).\n");
+            }
+        } else if (!strcasecmp(p->name, "check_read_status_timeout_sec")) {
+            errno = 0;
+            double timeout = strtof(p->value, NULL);
+            if (timeout > 0.0 && !errno) {
+                log_debug("check_read_status_timeout_sec set to %f seconds for DIMES write method\n", timeout);
+                check_read_status_timeout_sec = timeout;
+            } else {
+                log_error("Invalid 'check_read_status_timeout_sec' parameter given to the DIMES "
+                        "write method: '%s'\n", p->value);
+            }   
+        } else if (!strcasecmp(p->name, "check_read_status_poll_interval")) {
+            errno = 0;
+            int pollinterval = strtol(p->value, NULL, 10);
+            if (pollinterval > 0 && !errno) {
+                log_debug("check_read_status_poll_interval set to %d milliseconds for DIMES write method\n", pollinterval);
+                check_read_status_poll_interval_ms = pollinterval;
+            } else {
+                log_error("Invalid 'check_read_status_poll_interval' parameter given to DIMES "
+                    "write method: '%s'\n", p->value);
+            }
         } else {
-            log_error ("Parameter name %s is not recognized by the DATASPACES read "
+            log_error ("Parameter name %s is not recognized by the DIMES write "
                         "method\n", p->name);
         }
         p = p->next;
@@ -958,6 +1041,9 @@ void adios_dimes_finalize (int mype, struct adios_method_struct * method)
     for (i=0; i<md->num_of_files; i++) {
         /* Put VERSION@fn into space. Indicates that this file will not be extended anymore.  */
         if (md->rank == 0) {
+            if (check_read_status == 2) {
+                check_read_status_var(md->fnames[i], md->fversions[i]);
+            }
             MPI_Comm mpi_comm = MPI_COMM_SELF;
             log_debug("%s: call dspaces_lock_on_write(%s), rank=%d\n", __func__, md->fnames[i], mype);
             dspaces_lock_on_write(md->fnames[i], &mpi_comm); // lock is global operation in DataSpaces
@@ -977,9 +1063,13 @@ void adios_dimes_finalize (int mype, struct adios_method_struct * method)
             log_debug("%s: call dspaces_unlock_on_write(%s), rank=%d\n", __func__, md->fnames[i], mype);
             dspaces_unlock_on_write(md->fnames[i], &mpi_comm);
         }
-        free (md->fnames[i]);
+        free(md->fnames[i]);
     }
 
+    if (check_read_status == 2) {
+        // Note: dspaces_lock_on_write() above is only called by single process (whose md->rank == 0). MPI_Barrier ensures all writer processes to wait until reader application fetches data of last version. 
+        MPI_Barrier(md->mpi_comm_init);
+    }
     // Free all previsouly allocated RDMA buffers
     dimes_put_sync_all();
 
@@ -987,9 +1077,9 @@ void adios_dimes_finalize (int mype, struct adios_method_struct * method)
     if (globals_adios_is_dimes_connected_from_writer() && 
             !globals_adios_is_dimes_connected_from_both())
     {
-        log_debug ("%s: call dspaces_barrier(), rank=%d\n", __func__,mype);
-        dspaces_barrier();
-        log_debug ("%s: call dspaces_finalize(), rank=%d\n", __func__,mype);
+        log_debug ("%s: call MPI Barrier on all connected processes(), rank=%d\n", __func__,mype);
+        MPI_Barrier (md->mpi_comm_init); 
+        log_debug ("%s: call dspaces_finalize(), rank=%d\n", __func__, mype);
         dspaces_finalize();
     }
     globals_adios_set_dimes_disconnected_from_writer();
