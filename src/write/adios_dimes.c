@@ -39,7 +39,7 @@ static int check_read_status_poll_interval_ms = 100;
 struct adios_dimes_file_info
 {
     char *name;
-    int time_index;
+    int time_index; // versioning, start from 0
 };
 
 struct adios_dimes_data_struct
@@ -47,7 +47,6 @@ struct adios_dimes_data_struct
     int rank;   // dataspaces rank or MPI rank if MPI is available
     int peers;  // from xml parameter or group communicator
     int appid;  // from xml parameter or 1
-    int time_index; // versioning in DataSpaces, start from 0
     int n_writes; // how many times adios_write has been called
 #if HAVE_MPI
     MPI_Comm mpi_comm; // for use in open..close
@@ -206,7 +205,6 @@ void adios_dimes_init (const PairStruct * parameters,
     //Init the static data structure
     md->peers = 1;
     md->appid = -1;
-    md->time_index = 0;
     md->n_writes = 0;
 #if HAVE_MPI
     md->mpi_comm = MPI_COMM_NULL;

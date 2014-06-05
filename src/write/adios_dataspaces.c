@@ -34,7 +34,7 @@ static unsigned int adios_dataspaces_verbose = 3;
 
 struct adios_dspaces_file_info {
     char *name;
-    int time_index;
+    int time_index; // versioning, start from 0
 };
 
 struct adios_ds_data_struct
@@ -42,7 +42,6 @@ struct adios_ds_data_struct
     int rank;   // dataspaces rank or MPI rank if MPI is available
     int peers;  // from xml parameter or group communicator
     int appid;  // from xml parameter or 1
-    int time_index; // versioning in DataSpaces, start from 0
     int n_writes; // how many times adios_write has been called
     struct adios_dspaces_file_info file_info[MAX_NUM_OF_FILES];
 #if HAVE_MPI
@@ -152,7 +151,6 @@ void adios_dataspaces_init (const PairStruct * parameters,
     //Init the static data structure
     md->peers = 1;
     md->appid = -1;
-    md->time_index = 0;
     md->n_writes = 0;
 #if HAVE_MPI
     md->mpi_comm = MPI_COMM_NULL;
