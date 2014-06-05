@@ -923,8 +923,6 @@ void adios_dataspaces_close (struct adios_file_struct * fd
         if (i < md->num_of_files) {
             md->fversions[i] = version;
             md->mpi_ranks[i] = md->rank;
-            log_debug("%s: info->time_index= %d version= %d md->rank= %d\n",
-                __func__, info->time_index, version, md->rank);
         }
 
 
