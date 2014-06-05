@@ -55,6 +55,7 @@ struct adios_dimes_data_struct
     int  num_of_files; // how many files do we have with this method
     char *fnames[MAX_NUM_OF_FILES];  // names of files (needed at finalize)
     int  fversions[MAX_NUM_OF_FILES];   // last steps of files (needed at finalize)
+    int  mpi_ranks[MAX_NUM_OF_FILES];   // mpi rank of current process for each written file (needed at finalize)
     struct adios_dimes_file_info file_info[MAX_NUM_OF_FILES]; // keep track of time index for each opened file
 };
 
@@ -996,6 +997,9 @@ void adios_dimes_close (struct adios_file_struct * fd
         }
         if (i < md->num_of_files) {
             md->fversions[i] = version;
+            md->mpi_ranks[i] = md->rank;
+            log_debug("%s: info->time_index= %d version= %d md->rank= %d\n",
+                __func__, info->time_index, version, md->rank);
         }
 
 
@@ -1038,7 +1042,7 @@ void adios_dimes_finalize (int mype, struct adios_method_struct * method)
     // tell the readers which files are finalized
     for (i=0; i<md->num_of_files; i++) {
         /* Put VERSION@fn into space. Indicates that this file will not be extended anymore.  */
-        if (md->rank == 0) {
+        if (md->mpi_ranks[i] == 0) {
             if (check_read_status == 2) {
                 check_read_status_var(md->fnames[i], md->fversions[i]);
             }
