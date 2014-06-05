@@ -13,7 +13,6 @@
     - Usability improvements:
       - CMake Module for find_package(ADIOS)
       - adios_config -m to print available write/read methods
-      - works with mxml 2.8 (the latest version)
 
 
 1.6.0 Release Dec 2013
