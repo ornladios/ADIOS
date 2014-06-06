@@ -413,6 +413,7 @@ set(include_HEADERS ${include_HEADERS} public/adios.h
                    public/adios_read_v1.h 
                    public/adios_read_v1_defs.h 
                    public/adios_read_v2.h 
+                   public/adios_read_v2_fwd.h 
                    public/adios_selection.h
                    public/adios_schema.h) 
 
