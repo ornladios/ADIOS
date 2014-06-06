@@ -918,7 +918,7 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 								  var->num_displ);
 		    if (disp) { // does this writer hold a chunk we've asked for
 
-			//print_displacement(disp, fp->rank);
+		      //print_displacement(disp, fp->rank);
 
 			uint64_t *temp = gv->offsets[0].local_dimensions;
 			int offsets_per_rank = gv->offsets[0].offsets_per_rank;
@@ -1047,7 +1047,7 @@ adios_read_flexpath_open(const char * fname,
 			 enum ADIOS_LOCKMODE lock_mode,
 			 float timeout_sec)
 {
-    printf("fortran? %d\n", futils_is_called_from_fortran());
+    //printf("fortran? %d\n", futils_is_called_from_fortran());
     fp_log("FUNC", "entering flexpath_open\n");
     ADIOS_FILE *adiosfile = malloc(sizeof(ADIOS_FILE));        
     if(!adiosfile){
