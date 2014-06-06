@@ -49,22 +49,42 @@ if test -z "${HAVE_LUSTRE_TRUE}"; then
     LDFLAGS="$LDFLAGS $LUSTRE_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $LUSTRE_CPPFLAGS"
     
+    oldheader=no
     AC_CHECK_HEADERS([lustre/lustreapi.h],
                     ,
                     [AM_CONDITIONAL(HAVE_LUSTRE,false)])
+
+    dnl if lustreapi.h is missing, we may still find 1.x lustre's liblustreapi.h
+    if test -z "${HAVE_LUSTRE_FALSE}"; then
+        AC_CHECK_HEADERS([lustre/liblustreapi.h],
+                        oldheader=yes,
+                        [AM_CONDITIONAL(HAVE_LUSTRE,false)])
+    fi
     
     if test -z "${HAVE_LUSTRE_TRUE}"; then
         dnl Check for the lustre library
         AC_MSG_CHECKING([if lustre code can be linked with $LUSTRE_LDFLAGS])
-        AC_TRY_LINK(
-            [#include "lustre/lustreapi.h"
-             int fd, num_ost;
-             struct obd_uuid uuids[1024];],
-            [llapi_lov_get_uuids(fd, uuids, &num_ost);],
-            [AC_MSG_RESULT(yes)],
-            [AM_CONDITIONAL(HAVE_LUSTRE,false)
-             AC_MSG_RESULT(no)
-            ])
+        if test "${oldheader}" == "no" ; then
+            AC_TRY_LINK(
+                [#include "lustre/lustreapi.h"
+                 int fd, num_ost;
+                 struct obd_uuid uuids[1024];],
+                [llapi_lov_get_uuids(fd, uuids, &num_ost);],
+                [AC_MSG_RESULT(yes)],
+                [AM_CONDITIONAL(HAVE_LUSTRE,false)
+                 AC_MSG_RESULT(no)
+                ])
+        else
+            AC_TRY_LINK(
+                [#include "lustre/liblustreapi.h"
+                 int fd, num_ost;
+                 struct obd_uuid uuids[1024];],
+                [llapi_lov_get_uuids(fd, uuids, &num_ost);],
+                [AC_MSG_RESULT(yes)],
+                [AM_CONDITIONAL(HAVE_LUSTRE,false)
+                 AC_MSG_RESULT(no)
+                ])
+        fi
     fi
 
     dnl If Linking above failed, one reason might be that we looked in lib64/ instead of lib/

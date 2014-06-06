@@ -291,10 +291,10 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         #export FC=mpif90
         CFLAGS="-g -fPIC -O0" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/xk6.$TARGET \
             --with-fgr=/ccs/proj/e2e/qliu/tap \
-            --enable-dependency-tracking
+            --enable-dependency-tracking \
+            --with-lustre
             #--with-hdf5=/opt/cray/hdf5/1.8.7/pgi/109 \
             #--with-phdf5=/opt/cray/hdf5-parallel/1.8.7/pgi/109 \
-#            --with-lustre=/opt/xt-lustre-ss/2.2_1.6.5/usr
 #            --with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.$TARGET
 #            --enable-research-transports \
 #            --with-netcdf=/opt/cray/netcdf/3.6.2/netcdf-${TARGET} \
@@ -367,7 +367,8 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         --with-dimes=$DATASPACES_DIR \
         $WITHFLEX \
         --with-fgr=/ccs/proj/e2e/qliu/tap \
-        --with-glib=/ccs/proj/e2e/qliu/glib
+        --with-glib=/ccs/proj/e2e/qliu/glib \
+        --with-lustre
 
         #--with-netcdf=/opt/cray/netcdf/3.6.2/netcdf-${TARGET} \
         #--with-hdf5=/sw/xt5/hdf5/1.8.2/cnl2.1_gnu4.2.0 \
