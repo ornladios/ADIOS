@@ -8,7 +8,7 @@
 /**********************************************************************/
 /* Forward declarations of the C structs used in the read API.  This  */
 /* header can be directly copied and used in interface code to allow  */
-/* classes that use the ADIOS structures in thier interface to be     */
+/* classes that use the ADIOS structures in their interface to be     */
 /* consumed with no direct knowledge of ADIOS.                        */
 /**********************************************************************/
 #ifndef __ADIOS_READ_V2_FWD_H__
