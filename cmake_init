@@ -29,30 +29,8 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     module load PE-$TARGET
     module load mxml
     module load python
-    # Use both seq hdf5 (for utils) and 
-    #   parallel hdf5 (for PHDF5 method)
-    module load hdf5/1.8.10
-    export SEQ_HDF5_DIR=$HDF5_DIR
-    export SEQ_HDF5_LIBS="-L/sw/sith/hdf5/1.8.10/rhel6_pgi12.8/lib -L/sw/sith/szip/2.1/rhel6_pgi12.8/lib -lhdf5_hl -lhdf5 -lsz -lz -lm"
-    module unload hdf5
     module load szip
     module load bzip2
-    module load hdf5/1.8.10_par
-    export PAR_HDF5_DIR=$HDF5_DIR
-    export PAR_HDF5_LIBS="-L/sw/sith/hdf5/1.8.10/rhel6_pgi13.4_ompi1.6.3/lib -L/sw/sith/szip/2.1/rhel6_pgi13.4/lib -lhdf5_hl -lhdf5 -lsz -lz -lm"
-    module unload hdf5/1.8.10_par
-# start of  Seq. NetCDF 4 
-    module load netcdf/4.1.3
-    export SEQ_NC_DIR=$NETCDF_DIR
-    export SEQ_NC_LIBS="-L/sw/sith/netcdf/4.1.3/rhel6_pgi12.8/lib -L/sw/sith/hdf5/1.8.10/rhel6_pgi12.8/lib -L/sw/sith/szip/2.1/rhel6_pgi12.8/lib -lnetcdf -lcurl -lhdf5_hl -lhdf5 -lsz -lz -lm"
-    module unload netcdf
-# end of  Seq. NetCDF 4
-# start of Parallel NetCDF 4
-    module load netcdf/4.1.3_par
-    export PAR_NC_DIR=$NETCDF_DIR
-    export PAR_NC_LIBS="-L/sw/sith/netcdf/4.1.3/rhel6_pgi13.4_ompi1.6.3/lib -L/sw/sith/hdf5/1.8.10/rhel6_pgi13.4_ompi1.6.3/lib -L/sw/sith/szip/2.1/rhel6_pgi13.4/lib -lnetcdf -lcurl -lhdf5_hl -lhdf5 -lsz -lz -lm"
-#    module unload netcdf
-# end of Parallel NetCDF 4 
     export LUSTRE_DIR="/usr/lib64"
     export FGR_DIR="/ccs/proj/e2e/qliu/tap"
     export GLIB_DIR="/ccs/proj/e2e/qliu/glib"
@@ -69,14 +47,64 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     export ALACRITY_DIR
     export NCSU_TIMER_DIR
     if [ "$TARGET" == "pgi" ]; then
+        module load hdf5/1.8.10
+        export SEQ_HDF5_DIR=$HDF5_DIR
+        export SEQ_HDF5_LIBS="-L/sw/sith/hdf5/1.8.10/rhel6_pgi12.8/lib -L/sw/sith/szip/2.1/rhel6_pgi12.8/lib -lhdf5_hl -lhdf5 -lsz -lz -lm"
+        module unload hdf5/1.8.10
+        module load hdf5/1.8.10_par
+        export PAR_HDF5_DIR=$HDF5_DIR
+        export PAR_HDF5_LIBS="-L/sw/sith/hdf5/1.8.10/rhel6_pgi13.4_ompi1.6.3/lib -L/sw/sith/szip/2.1/rhel6_pgi13.4/lib -lhdf5_hl -lhdf5 -lsz -lz -lm"
+        module unload hdf5/1.8.10_par
+        module load netcdf/4.1.3
+        export SEQ_NC_DIR=$NETCDF_DIR
+        export SEQ_NC_LIBS="-L/sw/sith/netcdf/4.1.3/rhel6_pgi12.8/lib -L/sw/sith/hdf5/1.8.10/rhel6_pgi12.8/lib -L/sw/sith/szip/2.1/rhel6_pgi12.8/lib -lnetcdf -lcurl -lhdf5_hl -lhdf5 -lsz -lz -lm"
+        module unload netcdf/4.1.3
+        module load netcdf/4.1.3_par
+        export PAR_NC_DIR=$NETCDF_DIR
+        export PAR_NC_LIBS="-L/sw/sith/netcdf/4.1.3/rhel6_pgi13.4_ompi1.6.3/lib -L/sw/sith/hdf5/1.8.10/rhel6_pgi13.4_ompi1.6.3/lib -L/sw/sith/szip/2.1/rhel6_pgi13.4/lib -lnetcdf -lcurl -lhdf5_hl -lhdf5 -lsz -lz -lm"
+        module unload netcdf/4.1.3_par
+
         export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith/$TARGET"
         export FLEXPATH_DIR="/ccs/proj/e2e/chaos/sith/$TARGET"
     elif [ "$TARGET" == "gnu" ]; then
-        export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith/$TARGET"
+        module load hdf5/1.8.10
+        export SEQ_HDF5_DIR=$HDF5_DIR
+        export SEQ_HDF5_LIBS="-L/sw/sith/hdf5/1.8.10/rhel6_gnu4.7.1/lib -lhdf5_hl -lhdf5 -L/sw/sith/szip/2.1/rhel6_gnu4.7.1/lib -lsz -lz -lm"
+        module unload hdf5/1.8.10
+        module load hdf5/1.8.10_par
+        export PAR_HDF5_DIR=$HDF5_DIR
+        export PAR_HDF5_LIBS="-L/sw/sith/hdf5/1.8.10/rhel6_gnu4.7.1_ompi1.6.3/lib -lhdf5_hl -lhdf5 -L/sw/sith/szip/2.1/rhel6_gnu4.7.1/lib -lsz -lz -lm"
+        module unload hdf5/1.8.10_par
+        module load netcdf/4.1.3
+        export SEQ_NC_DIR=$NETCDF_DIR
+        export SEQ_NC_LIBS="-L/sw/sith/netcdf/4.1.3/rhel6_gnu4.7.1/lib -L/sw/sith/hdf5/1.8.10/rhel6_gnu4.7.1/lib -L/sw/sith/szip/2.1/rhel6_gnu4.7.1/lib -lnetcdf -lm -lcurl -lhdf5_hl -lhdf5 -lsz -lz -lm"
+        module unload netcdf/4.1.3
+#        module load netcdf/4.1.3_par
+#        export PAR_NC_DIR=$NETCDF_DIR
+#        export PAR_NC_LIBS=""
+#        module unload netcdf/4.1.3_par
+
+#        export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith/$TARGET"
         export FLEXPATH_DIR="/ccs/proj/e2e/chaos/sith/$TARGET"
     elif [ "$TARGET" == "intel" ]; then
-        export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith/$TARGET"
-        export FLEXPATH_DIR="/ccs/proj/e2e/chaos/sith/$TARGET"
+        module load hdf5/1.8.10
+        export SEQ_HDF5_DIR=$HDF5_DIR
+        export SEQ_HDF5_LIBS="-L/sw/sith/hdf5/1.8.10/rhel6_intel11.1/lib -lhdf5_hl -lhdf5 -L/sw/sith/szip/2.1/rhel6_intel11.1.072/lib -lsz -lz -lm"
+        module unload hdf5/1.8.10
+        module load hdf5/1.8.10_par
+        export PAR_HDF5_DIR=$HDF5_DIR
+        export PAR_HDF5_LIBS="-L/sw/sith/hdf5/1.8.10/rhel6_intel11.1_ompi1.6.3/lib -lhdf5_hl -lhdf5 -L/sw/sith/szip/2.1/rhel6_intel11.1.072/lib -lsz -lz -lm"
+        module unload hdf5/1.8.10_par
+        module load netcdf/4.1.3
+        export SEQ_NC_DIR=$NETCDF_DIR
+        export SEQ_NC_LIBS="-L/sw/sith/netcdf/4.1.3/rhel6_intel11.1/lib -L/sw/sith/hdf5/1.8.10/rhel6_intel11.1/lib -L/sw/sith/szip/2.1/rhel6_intel11.1.072/lib -lnetcdf -lm -lcurl -lhdf5_hl -lhdf5 -lsz -lz -lm"
+        module unload netcdf/4.1.3
+#        module load netcdf/4.1.3_par
+#        export PAR_NC_DIR=$NETCDF_DIR
+#        export PAR_NC_LIBS=""
+#        module unload netcdf/4.1.3_par
+#        export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith/$TARGET"
+        export FLEXPATH_DIR=
     else
         echo "TARGET must be pgi or gnu or intel"
         exit 1
@@ -260,30 +288,10 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         module unload PrgEnv-cray
         #module unload papi
         module load PrgEnv-$TARGET
-        module swap xtpe-interlagos xtpe-istanbul
-        #module load szip
+        module swap craype-interlagos craype-istanbul
+        module load szip
         #module load xt-papi
         module load mxml
-#        module load hdf5/1.8.11
-#    	export SEQ_HDF5_DIR=$HDF5_DIR
-#        export SEQ_HDF5_LIBS="-L/opt/cray/hdf5/1.8.11/PGI/121/lib -L/sw/xk6/szip/2.1/sles11.1_pgi12.4.0/lib -lhdf5_hl -lhdf5 -lsz -lz -lm"
-#    	module unload hdf5/1.8.11
-#    	module load hdf5-parallel/1.8.11
-#    	export PAR_HDF5_DIR=$HDF5_DIR
-#        export PAR_HDF5_LIBS="-L/opt/cray/hdf5-parallel/1.8.11/PGI/121/lib -L/sw/xk6/szip/2.1/sles11.1_pgi12.4.0/lib -lhdf5_hl -lhdf5 -lsz -lz -lm"
-#    	module unload hdf5-parallel/1.8.11
-# start of Seq. NetCDF 4 
-#    	module load netcdf/4.2.0
-#    	export SEQ_NC_DIR=$NETCDF_DIR
-#    	export SEQ_NC_LIBS="-L/opt/cray/netcdf/4.2.0/pgi/119/lib -lnetcdf"
-#    	module unload netcdf/4.2.0
-#end of Seq. NetCDF 4 
-#start of Parallel NetCDF 4
-    	module load netcdf-hdf5parallel/4.2.0
-    	export PAR_NC_DIR=$NETCDF_DIR
-    	export PAR_NC_LIBS="-L/opt/cray/netcdf-hdf5parallel/4.2.0/pgi/119/lib -lnetcdf"
-     	module unload netcdf
-#endof Parallel NetCDF 4 
     	# use the two lines below for openmpi
         export CRAY_UGNI_DIR="/opt/cray/ugni/4.0-1.0401.5928.9.5.gem"
         export CRAY_PMI_DIR="/opt/cray/pmi/4.0.1-1.0000.9421.73.3.gem"
@@ -295,6 +303,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         export CXX=CC
         export CFLAGS="-g -fPIC -O0" 
     	export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET-1.3.0"
+        export FLEXPATH_DIR="/ccs/proj/e2e/chaos/titan/$TARGET"
     	export skel_timing=ON
     	export INSTALL_PREFIX="/ccs/home/jya/ADIOS/titan.$TARGET"
             
@@ -303,7 +312,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         ##########################
         # Titan + staging #
         ##########################
-        TARGET=pgi
+        TARGET=gnu
         echo "Configure on TITAN (XK7) including staging methods for $TARGET env."
         source /opt/modules/default/etc/modules.sh
         module unload szip
@@ -319,61 +328,92 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         #module unload papi
         #module unload xtpe-quadcore
         module load PrgEnv-$TARGET
-        module swap xtpe-interlagos xtpe-istanbul
+        module swap craype-interlagos craype-istanbul
 	    #module load xtpe-istanbul
         unset EXTRA_LIBS
         unset LDFLAGS
         if [ "$TARGET" == "pgi" ]; then
             #module swap pgi pgi/11.8.0
             # NSSI needs -pgcpplibs flag 
+            module unload hdf5
+#            module load cray-hdf5
+            module load hdf5/1.8.8
+            export SEQ_HDF5_DIR=$HDF5_DIR
+#            export SEQ_HDF5_LIBS="-L/opt/cray/hdf5/1.8.11/PGI/121/lib -L/sw/xk6/szip/2.1/sles11.1_pgi12.4.0/lib -lhdf5_hl -lhdf5 -lsz -lz -lm"
+            export SEQ_HDF5_LIBS="-L/opt/cray/hdf5/1.8.8/pgi/119/lib  -L/sw/xk6/szip/2.1/sles11.1_pgi12.4.0/lib -lhdf5_hl -lhdf5 -lsz -lz -lm"
+            module unload hdf5/1.8.8
+#            module unload cray-hdf5
+#            module load cray-hdf5-parallel
+#            export PAR_HDF5_DIR=$HDF5_DIR
+#            export PAR_HDF5_LIBS="-L/opt/cray/hdf5-parallel/1.8.11/PGI/121/lib -L/sw/xk6/szip/2.1/sles11.1_pgi12.4.0/lib -lhdf5_hl -lhdf5 -lsz -lz -lm"
+#            module unload cray-hdf5-parallel
+            module unload netcdf
+            module load cray-netcdf
+            export SEQ_NC_DIR=$NETCDF_DIR
+            export SEQ_NC_LIBS="-L/opt/cray/netcdf/4.3.0/PGI/121/lib -lnetcdf"
+            module unload cray-netcdf
+#            module load cray-netcdf-hdf5parallel
+#            export PAR_NC_DIR=$NETCDF_DIR
+#            export PAR_NC_LIBS="-L/opt/cray/netcdf-hdf5parallel/4.3.0/PGI/121/lib -lnetcdf"
+#            module unload cray-netcdf-hdf5parallel
             export LDFLAGS="-pgcpplibs" 
-            export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET-1.3.0"
+            export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
+            export FLEXPATH_DIR="/ccs/proj/e2e/chaos/titan/$TARGET"
         elif [ "$TARGET" == "gnu" ]; then
             # NSSI needs libstdc++
+            module unload hdf5
+            module load cray-hdf5
+            export SEQ_HDF5_DIR=$HDF5_DIR
+            export SEQ_HDF5_LIBS="-L/opt/cray/hdf5/1.8.11/GNU/48/lib  -L/sw/xk6/szip/2.1/sles11.1_gnu4.7.2/lib -lhdf5_hl -lhdf5 -lsz -lz -lm"
+            module unload cray-hdf5
+#            module unload hdf5-parallel
+#            module load hdf5-parallel/1.8.8
+#            export PAR_HDF5_DIR=$HDF5_DIR
+#            export PAR_HDF5_LIBS="-L/opt/cray/hdf5-parallel/1.8.8/gnu/47/lib -L/sw/xk6/szip/2.1/sles11.1_gnu4.7.2/lib -lhdf5_hl -lhdf5 -lsz -lz -lm"
+#            module unload hdf5-parallel/1.8.8
+            module unload netcdf
+            module load cray-netcdf
+            export SEQ_NC_DIR=$NETCDF_DIR
+            export SEQ_NC_LIBS="-L/opt/cray/netcdf/4.3.0/GNU/48/lib -lnetcdf"
+            module unload cray-netcdf
+#            module unload netcdf-hdf5parallel
+#            module load cray-netcdf-hdf5parallel
+#            export PAR_NC_DIR=$NETCDF_DIR
+#            export PAR_NC_LIBS="-L/opt/cray/netcdf-hdf5parallel/4.3.0/GNU/48/lib -lnetcdf"
+#            module unload cray-netcdf-hdf5parallel
+
             export EXTRA_LIBS="/opt/gcc/4.7.2/snos/lib64/libstdc++.a"
             #module swap gcc gcc/4.4.4
             export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
+        elif [ "$TARGET" == "intel" ]; then
+            module unload hdf5
+            module load cray-hdf5
+            export SEQ_HDF5_DIR=$HDF5_DIR
+            export SEQ_HDF5_LIBS="-L/opt/cray/hdf5/1.8.11/INTEL/130/lib -L/sw/xk6/szip/2.1/sles11.1_intel12.1.3.293/lib -lhdf5_hl -lhdf5 -lsz -lz -lm"
+            module unload cray-hdf5
+#            module load cray-hdf5-parallel
+#            export PAR_HDF5_DIR=$HDF5_DIR
+#            export PAR_HDF5_LIBS="-L/opt/cray/hdf5-parallel/1.8.11/PGI/121/lib -L/sw/xk6/szip/2.1/sles11.1_pgi12.4.0/lib -lhdf5_hl -lhdf5 -lsz -lz -lm"
+#            module unload cray-hdf5-parallel
+            module unload netcdf
+            module load cray-netcdf
+            export SEQ_NC_DIR=$NETCDF_DIR
+            export SEQ_NC_LIBS="-L/opt/cray/netcdf/4.3.0/INTEL/130/lib -lnetcdf"
+            module unload cray-netcdf
+#            module load cray-netcdf-hdf5parallel
+#            export PAR_NC_DIR=$NETCDF_DIR
+#            export PAR_NC_LIBS="-L/opt/cray/netcdf-hdf5parallel/4.3.0/PGI/121/lib -lnetcdf"
+#            module unload cray-netcdf-hdf5parallel 
         else
             unset DATASPACES_DIR
         fi
      
         # NOTE hdf5-parallel module does not work with C++ compiler
-#start of seq and parallel hdf5
-#        module unload hdf5
-#        module load hdf5/1.8.8
-#        export SEQ_HDF5_DIR=$HDF5_DIR
-#        export SEQ_HDF5_LIBS="-L/opt/cray/hdf5/1.8.8/pgi/119/lib -L/sw/xk6/szip/2.1/sles11.1_pgi12.10.0/lib -lhdf5_hl -lhdf5 -lsz -lz -lm"
-#	module unload hdf5/1.8.8
-#        module load hdf5-parallel/1.8.8
-#        export PAR_HDF5_DIR=$HDF5_DIR
-#        export PAR_HDF5_LIBS="-L/opt/cray/hdf5-parallel/1.8.8/pgi/119/lib -L/sw/xk6/szip/2.1/sles11.1_pgi12.10.0/lib -lhdf5_hl -lhdf5 -lsz -lz -lm "
-#        module unload hdf5-paralle/1.8.8
-#end of hdf5
         #module load papi
         module load mxml
-#        module load hdf5/1.8.11
-#       export SEQ_HDF5_DIR=$HDF5_DIR
-#        export SEQ_HDF5_LIBS="-L/opt/cray/hdf5/1.8.11/PGI/121/lib -L/sw/xk6/szip/2.1/sles11.1_pgi12.4.0/lib -lhdf5_hl -lhdf5 -lsz -lz -lm"
-#       module unload hdf5/1.8.11
-#       module load hdf5-parallel/1.8.11
-#       export PAR_HDF5_DIR=$HDF5_DIR
-#        export PAR_HDF5_LIBS="-L/opt/cray/hdf5-parallel/1.8.11/PGI/121/lib -L/sw/xk6/szip/2.1/sles11.1_pgi12.4.0/lib -lhdf5_hl -lhdf5 -lsz -lz -lm"
-#       module unload hdf5-parallel/1.8.11
-# start of Seq. NetCDF 4 
-#       module load netcdf/4.2.0
-#       export SEQ_NC_DIR=$NETCDF_DIR
-#       export SEQ_NC_LIBS="-L/opt/cray/netcdf/4.2.0/pgi/119/lib -lnetcdf"
-#       module unload netcdf/4.2.0
-#end of Seq. NetCDF 4 
-#start of Parallel NetCDF 4
-        module load netcdf-hdf5parallel/4.2.0
-        export PAR_NC_DIR=$NETCDF_DIR
-        export PAR_NC_LIBS="-L/opt/cray/netcdf-hdf5parallel/4.2.0/pgi/119/lib -lnetcdf"
-        module unload netcdf
-#endof Parallel NetCDF 4 
         # use the two lines below for openmpi
-        export CRAY_UGNI_DIR="/opt/cray/ugni/4.0-1.0401.5928.9.5.gem"
-        export CRAY_PMI_DIR="/opt/cray/pmi/4.0.1-1.0000.9421.73.3.gem"
+        export CRAY_UGNI_DIR="/opt/cray/ugni/default"
+        export CRAY_PMI_DIR="/opt/cray/pmi/default"
         export LUSTRE_DIR="/usr/lib64"
         export BUILD_WRITE=ON
         export BUILD_FORTRAN=ON
@@ -411,6 +451,8 @@ elif [ `hostname | cut -c 1-4` == "eos-" ]; then
       module unload papi
       module unload pmi
       module load PrgEnv-$TARGET
+      export BUILD_WRITE=ON
+      export BUILD_FORTRAN=ON
       if [ "$TARGET" == "pgi" ]; then
           # NSSI needs -pgcpplibs flag 
           export LDFLAGS="-pgcpplibs"
@@ -420,6 +462,8 @@ elif [ `hostname | cut -c 1-4` == "eos-" ]; then
           unset LDFLAGS 
           export EXTRA_LIBS="/opt/gcc/4.8.1/snos/lib64/libstdc++.a"
           module swap gcc gcc/4.8.1
+      elif [ "$TARGET" == "intel" ]; then
+          export LDFLAGS=
       else
           unset LDFLAGS 
           unset EXTRA_LIBS 
@@ -972,17 +1016,13 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
     export INSTALL_PREFIX="/opt/adios/1.7"
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
     export CFLAGS="-g -O0 -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast"
-    export MXML_DIR=/opt/mxml
+    export MXML_DIR=/opt/mxml/2.8
     export SEQ_HDF5_DIR=/opt/hdf5-1.8.12
     export SEQ_HDF5_LIBS="-L/opt/hdf5-1.8.12/lib -lhdf5_hl -lhdf5 -lm"
     export PAR_HDF5_DIR=/opt/hdf5-1.8.12-parallel
     export PAR_HDF5_LIBS="-L/opt/hdf5-1.8.12-parallel/lib -lhdf5_hl -lhdf5 -lm"
     export SEQ_NC_DIR=/opt/netcdf-3.6.3
     export SEQ_NC_LIBS="-L/opt/netcdf-3.6.3/lib -lnetcdf"
-    export ISOBAR_DIR="/opt/isobar"
-    export SZIP_DIR="/opt/szip"
-    export BZIP2_DIR="/usr"
-    export FLEXPATH_DIR="/opt/chaos"
 else
     echo "Could not determine what machine is this."
     echo "This script is for configuring adios on the authors' machines."
