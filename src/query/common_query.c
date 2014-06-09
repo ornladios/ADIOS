@@ -166,6 +166,59 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f,
   return result;
 }
 					
+int isSelectionCompatible(ADIOS_SELECTION* first, ADIOS_SELECTION* second)			  
+{
+  if ((first == NULL) || (second == NULL)) {
+    return 1;
+  }
+
+  switch (first->type) {
+  case  ADIOS_SELECTION_BOUNDINGBOX:    
+    if (second->type != ADIOS_SELECTION_BOUNDINGBOX) {
+        printf("Error! Not supported: comparing bounding box to another type \n");
+	return 0;
+    }
+    
+    return 1;
+  case ADIOS_SELECTION_POINTS:
+    if (second->type != ADIOS_SELECTION_POINTS) {
+        printf("Error! Not supported: comparing adios points to another type \n");
+	return 0;
+    }
+    const ADIOS_SELECTION_POINTS_STRUCT *pt1 = &(first->u.points);
+    const ADIOS_SELECTION_POINTS_STRUCT *pt2 = &(second->u.points);
+    
+    if (pt1 -> npoints != pt2->npoints) {
+      return 0;
+    }
+  default:
+    return 1;
+  }    
+}
+
+uint64_t getVariableSize(ADIOS_VARINFO* v) 
+{
+  uint64_t dataSize;
+  uint64_t s = 0;
+  for (s=0; s<v->ndim; s++) {
+    dataSize *= v->dims[s];
+  }
+  return dataSize;
+}
+
+int isCompatible(ADIOS_QUERY* q1, ADIOS_QUERY* q2) {
+  if (q1->_rawDataSize != q2->_rawDataSize) {
+    printf("Error! Not supported: combining query with different sizes!\n");
+    return 0;
+  }
+  
+  if ((q1->_sel != NULL) && (q2->_sel != NULL)) {
+    return isSelectionCompatible(q1->_sel, q2->_sel);
+  } 
+
+  // all other cases, as long as data sizes match, fastbit can work on it.
+  return 1;
+}
 
 ADIOS_QUERY* common_query_combine(ADIOS_QUERY* q1, 
 				  enum ADIOS_CLAUSE_OP_MODE operator,		    
@@ -174,6 +227,15 @@ ADIOS_QUERY* common_query_combine(ADIOS_QUERY* q1,
   // combine selection sel3 = q1.fastbitSelection & q2.fastbitSelection
   //create a new query (q1.cond :op: q2.cond, sel3);
   //ADIOS_QUERY* result = (ADIOS_QUERY*)malloc(sizeof(ADIOS_QUERY));
+
+  if ((q1 == NULL) || (q2 == NULL)) {
+    printf("Error: detected NULL query when combining.\n");
+    return NULL;
+  }
+
+  if (isCompatible(q1, q2) != 1) {
+    return NULL;
+  }
   ADIOS_QUERY* result = (ADIOS_QUERY*)calloc(1, sizeof(ADIOS_QUERY));
   result->_condition = malloc(strlen(q1->_condition)+strlen(q2->_condition)+10);
   

@@ -26,27 +26,30 @@ void multiBoundBox(ADIOS_FILE* f)
   // if box has a different shape, e.g. different count values, then combine() returns error
   ADIOS_QUERY* q = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
 
-  int timestep = 0;
-  uint64_t max = 10000;
-  
-  //int64_t hitSize = adios_query_evaluate(q, timestep, max);
-  int64_t batchSize = 50;
-  
-  // box3 is the same shape as other boxes
-  // if it is in different shape from box1/box2, then error
-  while (1) {
-    ADIOS_SELECTION* currBatch = NULL;
-    //ADIOS_SELECTION* box3 = adios_selection_boundingbox(3, start3, count3);
-    int hasMore =  adios_query_get_selection(q, batchSize, box1, &currBatch);
-    adios_selection_delete(currBatch);
+  if (q != NULL) {
+    int timestep = 0;
+    uint64_t max = 10000;
     
-    if (hasMore == 0) {
-      break;
+    //int64_t hitSize = adios_query_evaluate(q, timestep, max);
+    int64_t batchSize = 50;
+    
+    // box3 is the same shape as other boxes
+    // if it is in different shape from box1/box2, then error
+    while (1) {
+      ADIOS_SELECTION* currBatch = NULL;
+      //ADIOS_SELECTION* box3 = adios_selection_boundingbox(3, start3, count3);
+      int hasMore =  adios_query_get_selection(q, batchSize, box1, &currBatch);
+      adios_selection_delete(currBatch);
+      
+      if (hasMore == 0) {
+	break;
+      }
     }
+    
+    fastbit_selection_free(q->_queryInternal);
+    adios_query_free(q);
   }
 
-  fastbit_selection_free(q->_queryInternal);
-  adios_query_free(q);
   adios_query_free(q1);
   adios_query_free(q2);
 
@@ -72,23 +75,26 @@ void defaultBoundBox(ADIOS_FILE* f)
 
   ADIOS_QUERY* q = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
 
-  int timestep = 0;
-  uint64_t max = 10000;
-  //int64_t hitSize = adios_query_evaluate(q, timestep, max);
-  
-  int64_t batchSize = 50;
-  while (1) {
-    ADIOS_SELECTION* currBatch = NULL;
-    int hasMore =  adios_query_get_selection(q, batchSize, box, &currBatch);
-    adios_selection_delete(currBatch);
-
-    if (hasMore == 0) {
-      break;
+  if (q != NULL) {
+    int timestep = 0;
+    uint64_t max = 10000;
+    //int64_t hitSize = adios_query_evaluate(q, timestep, max);
+    
+    int64_t batchSize = 50;
+    while (1) {
+      ADIOS_SELECTION* currBatch = NULL;
+      int hasMore =  adios_query_get_selection(q, batchSize, box, &currBatch);
+      adios_selection_delete(currBatch);
+      
+      if (hasMore == 0) {
+	break;
+      }
     }
+
+    fastbit_selection_free(q->_queryInternal);
+    adios_query_free(q);
   }
 
-  fastbit_selection_free(q->_queryInternal);
-  adios_query_free(q);
   adios_query_free(q1);
   adios_query_free(q2);
 
@@ -119,23 +125,26 @@ void onePointList(ADIOS_FILE* f)
 
   ADIOS_QUERY* q = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
 
-  int timestep = 0;
-  uint64_t max = 10000;
-  //int64_t hitSize = adios_query_evaluate(q, timestep, max);
-  
-  int64_t batchSize = 50;
-  while (1) {
-    ADIOS_SELECTION* currBatch = NULL;
-    int hasMore =  adios_query_get_selection(q, batchSize, box, &currBatch);
-    adios_selection_delete(currBatch);
-
-    if (hasMore == 0) {
-      break;
+  if (q!= NULL) {
+    int timestep = 0;
+    uint64_t max = 10000;
+    //int64_t hitSize = adios_query_evaluate(q, timestep, max);
+    
+    int64_t batchSize = 50;
+    while (1) {
+      ADIOS_SELECTION* currBatch = NULL;
+      int hasMore =  adios_query_get_selection(q, batchSize, box, &currBatch);
+      adios_selection_delete(currBatch);
+      
+      if (hasMore == 0) {
+	break;
+      }
     }
+    
+    fastbit_selection_free(q->_queryInternal);
+    adios_query_free(q);
   }
 
-  fastbit_selection_free(q->_queryInternal);
-  adios_query_free(q);
   adios_query_free(q1);
   adios_query_free(q2);
 
@@ -163,31 +172,33 @@ void oneBoundBoxForAllVar(ADIOS_FILE* f)
 
   ADIOS_QUERY* q = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
 
-  int timestep = 0;
-  uint64_t max = 10000;
-  //int64_t hitSize = adios_query_evaluate(q, timestep, max);
-  
-  int64_t batchSize = 50;
-
-  int i = 0;
-  printf("times steps for variable is: %d \n",q1->_var->nsteps);
-  for (i=0; i<q1->_var->nsteps; i++) {
-    adios_query_set_timestep(i);
+  if (q!= NULL) {
+    int timestep = 0;
+    uint64_t max = 10000;
+    //int64_t hitSize = adios_query_evaluate(q, timestep, max);
     
-    while (1) {
-      ADIOS_SELECTION* currBatch = NULL;
-      int hasMore =  adios_query_get_selection(q, batchSize, box, &currBatch);
-      adios_selection_delete(currBatch);
+    int64_t batchSize = 50;
+    
+    int i = 0;
+    printf("times steps for variable is: %d \n",q1->_var->nsteps);
+    for (i=0; i<q1->_var->nsteps; i++) {
+      adios_query_set_timestep(i);
       
-      if (hasMore == 0) {
-	break;
+      while (1) {
+	ADIOS_SELECTION* currBatch = NULL;
+	int hasMore =  adios_query_get_selection(q, batchSize, box, &currBatch);
+	adios_selection_delete(currBatch);
+	
+	if (hasMore == 0) {
+	  break;
+	}
       }
+      
     }
 
+    fastbit_selection_free(q->_queryInternal);
+    adios_query_free(q);
   }
-
-  fastbit_selection_free(q->_queryInternal);
-  adios_query_free(q);
   adios_query_free(q1);
   adios_query_free(q2);
 
@@ -216,7 +227,7 @@ int main (int argc, char ** argv)
     defaultBoundBox(f);
     multiBoundBox(f);
     
-    oneBoundBoxForAllVar(f);
+    oneBoundBoxForAllVar(f); 
     onePointList(f);
 
     adios_query_clean();
