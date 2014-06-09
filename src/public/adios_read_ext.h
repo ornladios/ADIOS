@@ -58,6 +58,22 @@ typedef struct {
 	ADIOS_TRANSFORM_METADATA *transform_metadatas;
 } ADIOS_VARTRANSFORM;
 
+
+
+typedef struct {
+	int timestep;
+	int blockidx;
+	int blockidx_in_timestep;
+	ADIOS_SELECTION *pg_bounds_sel;    // it is a global box (offset/start is global)
+	ADIOS_SELECTION *intersection_sel; // it is a global box (offset/start is global)
+} ADIOS_PG_INTERSECTION ;
+
+
+typedef struct {
+	ADIOS_PG_INTERSECTION ** intersections;
+	int npg;
+}ADIOS_PG_INTERSECTIONS;
+
 // Sets the "data view" for this ADIOS file, which determines how ADIOS presents variables through
 // adios_inq_var*, and how reads are evaluated in adios_schedule_reads/adios_check_reads calls.
 // Currently, the choice is between a logical and physical view of the data, which only differ for
@@ -77,5 +93,11 @@ void adios_free_var_transform(ADIOS_VARTRANSFORM *vartransform);
 // within a variable. An element is a single value of whatever the varaible's datatype is (i.e.,
 // 1 element = 1 double if the variable type is double, 1 byte if the variable type is byte, etc.)
 ADIOS_SELECTION * adios_selection_writeblock_bounded(int index, uint64_t start_elem, uint64_t num_elems, int is_timestep_relative);
+
+ADIOS_PG_INTERSECTIONS * adios_find_intersecting_pgs(
+		const ADIOS_FILE *fp, int varid, const ADIOS_SELECTION *sel
+		, const int from_step, const int nsteps);
+
+
 
 #endif /* ADIOS_READ_EXT_H_ */
