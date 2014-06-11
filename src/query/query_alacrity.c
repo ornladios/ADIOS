@@ -824,6 +824,31 @@ int64_t adios_query_alac_estimate_method(ADIOS_QUERY* q) {
 	return calSetBitsNum(b);
 }
 
+/* memory format:
+ * | length | elmSize | bits ....
+ */
+void convertALACBitmapTomemstream( ADIOS_ALAC_BITMAP * b, void ** mem /*OUT*/){
+
+	uint64_t totalSize = b->length + 1 /*b->length*/ + 1 /*b->elmSize*/;
+	uint64_t * ptr  = (uint64_t *) malloc(sizeof(uint64_t)* totalSize);
+	(*mem) = ptr;
+	ptr[0] = b->length;   ptr[1] = b->elmSize;
+	ptr += 2;
+	memcpy(ptr, b->bits, sizeof(uint64_t)*(totalSize-2));
+
+}
+
+void convertMemstreamToALACBitmap( void *mem , ADIOS_ALAC_BITMAP ** bout /*OUT*/){
+
+	ADIOS_ALAC_BITMAP * b = *bout;
+	b = (ADIOS_ALAC_BITMAP *) malloc(sizeof(ADIOS_ALAC_BITMAP));
+	uint64_t * ptr  = (uint64_t *) mem;
+	b ->length = ptr[0];
+	b -> elmSize = ptr[1];
+	b-> bits = (ptr+2);
+}
+
+
 
 int  adios_query_get_selection(ADIOS_QUERY* q,
 			       uint64_t batchSize, // limited by maxResult
@@ -831,11 +856,15 @@ int  adios_query_get_selection(ADIOS_QUERY* q,
 			       ADIOS_SELECTION** queryResult) {
 	// first time, we have to evaluate it
 	ADIOS_ALAC_BITMAP* b ;
-	if (q->_maxResultDesired <= 0) {
+	if (q->_maxResultDesired < 0) { // negative number is not evaluated
 		create_lookup(set_bit_count, set_bit_position);
 		b = adios_alac_process(q, true);
 		q->_maxResultDesired =  calSetBitsNum(b);
 		q->_lastRead = 0;
+		//convert ADIOS_ALAC_BITMAP to  " void* _internal"
+		convertALACBitmapTomemstream(b, &(q->_queryInternal));
+	}else { //convert void* _internal to ADIOS_ALAC_BITMAP
+		convertMemstreamToALACBitmap(q->_queryInternal, &b);
 	}
 	uint64_t retrievalSize = q->_maxResultDesired - q->_lastRead;
 	if (retrievalSize == 0) {
@@ -847,12 +876,13 @@ int  adios_query_get_selection(ADIOS_QUERY* q,
 			retrievalSize = batchSize;
 	}
 
-	//TODO: convert retrieval bits to RIDs
-	// TODO: convert void* _internal to ADIOS_ALAC_BITMAP
 	adios_query_alac_build_results(retrievalSize,q,b,queryResult);
 
+	if (q->_maxResultDesired < 0) { // negative number is not evaluated
+		free(b->bits); // these data is copied to q->_queryInternal
+	}
+	free(b); // NOTE: only free the structure
 	q->_lastRead += retrievalSize;
-
 	if (q->_lastRead == q->_maxResultDesired) {
 		return 0;
 	}
