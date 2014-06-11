@@ -57,7 +57,8 @@ if test -z "${HAVE_LUSTRE_TRUE}"; then
     dnl if lustreapi.h is missing, we may still find 1.x lustre's liblustreapi.h
     if test -z "${HAVE_LUSTRE_FALSE}"; then
         AC_CHECK_HEADERS([lustre/liblustreapi.h],
-                        oldheader=yes,
+                        [AM_CONDITIONAL(HAVE_LUSTRE,true)
+                         oldheader=yes],
                         [AM_CONDITIONAL(HAVE_LUSTRE,false)])
     fi
     
@@ -66,7 +67,8 @@ if test -z "${HAVE_LUSTRE_TRUE}"; then
         AC_MSG_CHECKING([if lustre code can be linked with $LUSTRE_LDFLAGS])
         if test "${oldheader}" == "no" ; then
             AC_TRY_LINK(
-                [#include "lustre/lustreapi.h"
+                [#include <stdlib.h>
+                 #include "lustre/lustreapi.h"
                  int fd, num_ost;
                  struct obd_uuid uuids[1024];],
                 [llapi_lov_get_uuids(fd, uuids, &num_ost);],
@@ -76,7 +78,8 @@ if test -z "${HAVE_LUSTRE_TRUE}"; then
                 ])
         else
             AC_TRY_LINK(
-                [#include "lustre/liblustreapi.h"
+                [#include <stdlib.h>
+                 #include "lustre/liblustreapi.h"
                  int fd, num_ost;
                  struct obd_uuid uuids[1024];],
                 [llapi_lov_get_uuids(fd, uuids, &num_ost);],
@@ -94,15 +97,31 @@ if test -z "${HAVE_LUSTRE_TRUE}"; then
             LDFLAGS="$save_LDFLAGS $LUSTRE_LDFLAGS"
             dnl Check for the lustre library
             AC_MSG_CHECKING([if lustre code can be linked with $LUSTRE_LDFLAGS])
-            AC_TRY_LINK(
-                [#include "lustre/lustreapi.h"
-                int fd, num_ost;
-                struct obd_uuid uuids[1024];],
-                [llapi_lov_get_uuids(fd, uuids, &num_ost);],
-                [AC_MSG_RESULT(yes)],
-                [AM_CONDITIONAL(HAVE_LUSTRE,false)
-                AC_MSG_RESULT(no)
-                ])
+            if test "${oldheader}" == "no" ; then
+                AC_TRY_LINK(
+                    [#include <stdlib.h>
+                     #include "lustre/lustreapi.h"
+                     int fd, num_ost;
+                     struct obd_uuid uuids[1024];],
+                    [llapi_lov_get_uuids(fd, uuids, &num_ost);],
+                    [AM_CONDITIONAL(HAVE_LUSTRE,true)
+                     AC_MSG_RESULT(yes)],
+                    [AM_CONDITIONAL(HAVE_LUSTRE,false)
+                    AC_MSG_RESULT(no)
+                    ])
+            else
+                AC_TRY_LINK(
+                    [#include <stdlib.h>
+                     #include "lustre/liblustreapi.h"
+                     int fd, num_ost;
+                     struct obd_uuid uuids[1024];],
+                    [llapi_lov_get_uuids(fd, uuids, &num_ost);],
+                    [AM_CONDITIONAL(HAVE_LUSTRE,true)
+                     AC_MSG_RESULT(yes)],
+                    [AM_CONDITIONAL(HAVE_LUSTRE,false)
+                    AC_MSG_RESULT(no)
+                    ])
+            fi
         fi
     fi
     
