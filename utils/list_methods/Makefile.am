@@ -3,9 +3,10 @@ INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/core
 
 AUTOMAKE_OPTIONS = no-dependencies
 
-bin_PROGRAMS = list_methods list_methods_nompi list_methods_readonly list_methods_readonly_nompi
+bin_PROGRAMS = list_methods_readonly list_methods_readonly_nompi
 
 if BUILD_WRITE
+bin_PROGRAMS += list_methods list_methods_nompi 
 list_methods_SOURCES = list_methods.c
 list_methods_CPPFLAGS = ${MACRODEFFLAG}WRITE $(ADIOSLIB_CPPFLAGS) $(ADIOSLIB_CFLAGS) $(ADIOSLIB_EXTRA_CPPFLAGS) 
 list_methods_LDFLAGS = $(ADIOSLIB_LDFLAGS) 

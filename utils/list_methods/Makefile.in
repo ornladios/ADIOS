@@ -34,9 +34,9 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-bin_PROGRAMS = list_methods$(EXEEXT) list_methods_nompi$(EXEEXT) \
-	list_methods_readonly$(EXEEXT) \
-	list_methods_readonly_nompi$(EXEEXT)
+bin_PROGRAMS = list_methods_readonly$(EXEEXT) \
+	list_methods_readonly_nompi$(EXEEXT) $(am__EXEEXT_1)
+@BUILD_WRITE_TRUE@am__append_1 = list_methods list_methods_nompi 
 subdir = utils/list_methods
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -78,6 +78,8 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
+@BUILD_WRITE_TRUE@am__EXEEXT_1 = list_methods$(EXEEXT) \
+@BUILD_WRITE_TRUE@	list_methods_nompi$(EXEEXT)
 am__installdirs = "$(DESTDIR)$(bindir)"
 PROGRAMS = $(bin_PROGRAMS)
 am__list_methods_SOURCES_DIST = list_methods.c
