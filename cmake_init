@@ -312,7 +312,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         ##########################
         # Titan + staging #
         ##########################
-        TARGET=gnu
+        TARGET=pgi
         echo "Configure on TITAN (XK7) including staging methods for $TARGET env."
         source /opt/modules/default/etc/modules.sh
         module unload szip
@@ -336,11 +336,11 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
             #module swap pgi pgi/11.8.0
             # NSSI needs -pgcpplibs flag 
             module unload hdf5
-#            module load cray-hdf5
-            module load hdf5/1.8.8
+            module load cray-hdf5
+#            module load hdf5/1.8.8
             export SEQ_HDF5_DIR=$HDF5_DIR
-#            export SEQ_HDF5_LIBS="-L/opt/cray/hdf5/1.8.11/PGI/121/lib -L/sw/xk6/szip/2.1/sles11.1_pgi12.4.0/lib -lhdf5_hl -lhdf5 -lsz -lz -lm"
-            export SEQ_HDF5_LIBS="-L/opt/cray/hdf5/1.8.8/pgi/119/lib  -L/sw/xk6/szip/2.1/sles11.1_pgi12.4.0/lib -lhdf5_hl -lhdf5 -lsz -lz -lm"
+            export SEQ_HDF5_LIBS="-L/opt/cray/hdf5/1.8.11/PGI/121/lib -L/sw/xk6/szip/2.1/sles11.1_pgi12.4.0/lib -lhdf5_hl -lhdf5 -lsz -lz -lm"
+#            export SEQ_HDF5_LIBS="-L/opt/cray/hdf5/1.8.8/pgi/119/lib  -L/sw/xk6/szip/2.1/sles11.1_pgi12.4.0/lib -lhdf5_hl -lhdf5 -lsz -lz -lm"
             module unload hdf5/1.8.8
 #            module unload cray-hdf5
 #            module load cray-hdf5-parallel
@@ -356,7 +356,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
 #            export PAR_NC_DIR=$NETCDF_DIR
 #            export PAR_NC_LIBS="-L/opt/cray/netcdf-hdf5parallel/4.3.0/PGI/121/lib -lnetcdf"
 #            module unload cray-netcdf-hdf5parallel
-            export LDFLAGS="-pgcpplibs" 
+            export LDFLAGS="-pgcpplibs -Wl,-Bstatic" 
             export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
             export FLEXPATH_DIR="/ccs/proj/e2e/chaos/titan/$TARGET"
         elif [ "$TARGET" == "gnu" ]; then
@@ -1016,7 +1016,7 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
     export INSTALL_PREFIX="/opt/adios/1.7"
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
     export CFLAGS="-g -O0 -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast"
-    export MXML_DIR=/opt/mxml
+    export MXML_DIR=/opt/mxml/2.8
     export SEQ_HDF5_DIR=/opt/hdf5-1.8.12
     export SEQ_HDF5_LIBS="-L/opt/hdf5-1.8.12/lib -lhdf5_hl -lhdf5 -lm"
     export PAR_HDF5_DIR=/opt/hdf5-1.8.12-parallel
