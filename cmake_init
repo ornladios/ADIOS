@@ -1016,7 +1016,7 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
     export INSTALL_PREFIX="/opt/adios/1.7"
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
     export CFLAGS="-g -O0 -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast"
-    export MXML_DIR=/opt/mxml/2.8
+    export MXML_DIR=/opt/mxml
     export SEQ_HDF5_DIR=/opt/hdf5-1.8.12
     export SEQ_HDF5_LIBS="-L/opt/hdf5-1.8.12/lib -lhdf5_hl -lhdf5 -lm"
     export PAR_HDF5_DIR=/opt/hdf5-1.8.12-parallel
