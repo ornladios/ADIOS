@@ -381,6 +381,7 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
                 switch (version & ADIOS_VERSION_NUM_MASK)
                 {
                     case 1:
+                    case 2:
                         // read the old stuff and set the base offset
                         adios_posix_read_index_offsets (&p->b);
                         adios_parse_index_offsets_v1 (&p->b);
