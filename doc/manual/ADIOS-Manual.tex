@@ -105,11 +105,28 @@ keywordsprefix=ADIOS_,
 keywords={def, cpdef, cdef, public, class, self},
 morekeywords=[1]{
 int64_t, uint64_t, int, long, float, double, char, bytes, tuple, list, dict},
+morekeywords=[2]{init, open, set_group_size, 
+write, write_int, write_long, write_float, read, close, finalize,
+init_noxml, allocate_buffer, declare_group, 
+define_var, define_attribute, select_method,
+read_init, read_finalize, 
+printself, __init__,
+readvar, bpls,
+},
 upquote=true,
 }
 
 \lstdefinelanguage{ADIOS-python}[]{python}
 {
+sensitive=true,
+morekeywords=[2]{init, open, set_group_size, 
+write, write_int, write_long, write_float, read, close, finalize,
+init_noxml, allocate_buffer, declare_group, 
+define_var, define_attribute, select_method,
+read_init, read_finalize, printself,
+file, var, printself,
+readvar, bpls,
+},
 upquote=true,
 }
 
