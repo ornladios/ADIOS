@@ -417,15 +417,18 @@ cdef printvar(ADIOS_VARINFO * v):
 ## ADIOS Class Definitions for Read
 ## ====================
 
+""" Call adios_read_init_method """
 cpdef read_init(ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP,
                 MPI.Comm comm = MPI.COMM_WORLD,
                 char * parameters = ""):
     return adios_read_init_method (method, comm.ob_mpi, parameters)
 
 
+""" Call adios_read_finalize_method """
 cpdef read_finalize(ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP):
     return adios_read_finalize_method (method)
 
+""" Python class for ADIOS_FILE structure """
 cdef class file:
     """ Private Memeber """
     cpdef ADIOS_FILE * fp
@@ -443,6 +446,7 @@ cdef class file:
     cpdef public dict var
     cpdef public dict attr
 
+    """ Initialization. Call adios_read_open and populate public members """
     def __init__(self, char * fname,
                  ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP,
                  MPI.Comm comm = MPI.COMM_WORLD):
@@ -467,18 +471,21 @@ cdef class file:
 
     def __del__(self):
             self.close()
-            
+
+    """ Call adios_read_close """
     cpdef close(self):
         assert self.fp != NULL, 'Not an open file'
         adios_read_close(self.fp)
         self.fp = NULL
-        
+
+    """ Print self """
     cpdef printself(self):
         assert self.fp != NULL, 'Not an open file'
         print '=== AdiosFile ==='
         print '%15s : %lu' % ('fp', <unsigned long> self.fp)
         printfile(self.fp)
 
+""" Python class for ADIOS_VARINFO structure """
 cdef class var:
     """ Private Memeber """
     cdef file file
@@ -492,6 +499,7 @@ cdef class var:
     cpdef public tuple dims
     cpdef public int nsteps
 
+    """ Initialization. Call adios_inq_var and populate public members """
     def __init__(self, file file, char * name):
         self.file = file
         self.vp = NULL
@@ -510,11 +518,13 @@ cdef class var:
     def __del__(self):
         self.close()
 
+    """ Call adios_free_varinfo """
     cpdef close(self):
         assert self.vp != NULL, 'Not an open var'
         adios_free_varinfo(self.vp)
         self.vp = NULL
 
+    """ Call adios_schedule_read and adios_perform_reads """
     cpdef read(self, tuple offset = (), tuple count = (), from_steps = 0, nsteps = 1):
         assert self.type is not None, 'Data type is not supported yet'
         assert from_steps + nsteps <= self.nsteps, 'Step index is out of range'
@@ -564,6 +574,7 @@ cdef class var:
 ## ADIOS Global functions
 ## ====================
 
+""" Read data in a BP file and return as a numpy array """
 def readvar(fname, varname):
     f = file(fname, comm=MPI.COMM_SELF)
     if not f.var.has_key(varname):
@@ -573,6 +584,7 @@ def readvar(fname, varname):
     v = f.var[varname]
     return v.read(from_steps=0, nsteps=v.nsteps)
 
+""" List attributes of a BP file """
 def bpls(fname):
     f = file(fname, comm=MPI.COMM_SELF)
     return {'nvars': f.nvars,
