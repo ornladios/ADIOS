@@ -168,6 +168,7 @@ int adios_posix1_open (struct adios_file_struct * fd
                 switch (version & ADIOS_VERSION_NUM_MASK)
                 {
                     case 1:
+                    case 2:
                         // read the old stuff and set the base offset
                         adios_posix_read_index_offsets (&p->b);
                         adios_parse_index_offsets_v1 (&p->b);
@@ -190,7 +191,9 @@ int adios_posix1_open (struct adios_file_struct * fd
                         fd->group->time_index = ++max_time_index;
 
                         adios_posix_read_vars_index (&p->b);
-                        adios_parse_vars_index_v1 (&p->b, &p->index->vars_root, NULL, NULL);
+                        adios_parse_vars_index_v1 (&p->b, &p->index->vars_root, 
+                                                   p->index->hashtbl_vars,
+                                                   &p->index->vars_tail);
 
                         adios_posix_read_attributes_index (&p->b);
                         adios_parse_attributes_index_v1 (&p->b
