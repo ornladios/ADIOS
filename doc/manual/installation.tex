@@ -274,9 +274,30 @@ DIMES is part of the DataSpaces library.
 
 
 \subsubsection{Flexpath staging method}
- Flexpath transport requires several packages from the Chaos repository at Georgia Tech: \verb+dill+, \verb+cercs_env+, \verb+gen_thread+, \verb+atl+, \verb+ffs+, and \verb+evpath+.
-To download and install these libraries, a script (\verb+trunk/chaos_build.pl+) is available at: \url{http://svn.research.cc.gatech.edu/kaos/chaos_base/} (username: \verb+anon+, password: \verb+anon+).
-Download the repository using SVN, and follow the instructions at the top of the script.
+ Flexpath transport requires the Georgia Tech EVPath middleware library,
+ which is built from several packages, including some from the Chaos
+ repository at Georgia Tech and some from GitHub.  Those required packages
+ are: \verb+dill+, \verb+cercs_env+, \verb+enet+, \verb+atl+, \verb+ffs+,
+ and \verb+evpath+. 
+At present, the easiest way to get EVPath is to build it directly for your environment. In an empty directory do:
+\begin{lstlisting}
+   wget http://www.cc.gatech.edu/systems/projects/EVPath/chaos_bootstrap.pl
+\end{lstlisting}
+to download a bootstrapping perl script.  Then to configure a build
+environment compatible with ADIOS 1.7, run the bootstrap script with
+``adios-1.7'' as a version tag:
+\begin{lstlisting}
+  perl ./chaos_bootstrap.pl adios-1.7 [optional install directory]
+\end{lstlisting}
+
+If you leave off the the \verb+[optional install directory]+ argument, the
+script will set up an environment for an install target of
+\$HOME/\{lib,bin,include\}.  The bootstrap script will download several
+files.  After bootstrapping, run:
+\begin{lstlisting}
+  perl ./chaos_build.pl 
+\end{lstlisting}
+to build and install the GaTech packages required by Flexpath.
 
 \noindent To use ADIOS with Flexpath, configure adios with the option:
 
