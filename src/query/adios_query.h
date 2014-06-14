@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include <adios_read.h>
+#include "public/adios_read.h"
 
 #define ADIOS_QUERY_TOOL_COUNT  2
 

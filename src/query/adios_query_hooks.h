@@ -2,7 +2,7 @@
 #define ADIOS_QUERY_HOOKS_H
 
 #include "adios_query.h"
-#include "adios_read.h"
+#include "public/adios_read.h"
 
 #define FORWARD_DECLARE(a) \
   int64_t adios_query_##a##_estimate_method(ADIOS_QUERY* q);	\

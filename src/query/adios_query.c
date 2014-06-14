@@ -1,4 +1,4 @@
-#include <adios_read.h>
+#include "public/adios_read.h"
 #include "common_query.h"
 
 void adios_query_init(enum ADIOS_QUERY_TOOL tool) 

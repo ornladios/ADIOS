@@ -1,4 +1,4 @@
-INCLUDES=-I$(top_srcdir) -I$(top_srcdir)/src/core -I$(top_srcdir)/src/core/transforms
+INCLUDES=-I$(top_srcdir) -I$(top_srcdir)/src/core -I$(top_srcdir)/src/core/transforms -I$(top_srcdir)/src/core/query
 
 AUTOMAKE_OPTIONS = no-dependencies
 METASOURCES=AUTO
@@ -98,6 +98,20 @@ transforms_write_SOURCES = $(transforms_write_HDRS) \
                            core/transforms/plugindetect/detect_plugin_write_hook_reg.h \
                            $(transforms_write_method_SOURCES)
 
+#######Query source files 
+query_method_SOURCES=
+
+include query/Makefile.plugins
+
+query_read_HDRS = query/adios_query_hooks.h \
+				  query/adios_query.h \
+				  query/common_query.h 
+				  
+query_read_SOURCES = $(query_read_HDRS) \
+                     $(query_method_SOURCES) 				  
+
+
+
 if BUILD_WRITE
 lib_LIBRARIES += libadios.a libadios_nompi.a
 libadios_a_SOURCES = core/adios.c \
@@ -113,6 +127,7 @@ libadios_a_SOURCES = core/adios.c \
                      core/adios_read.c \
                      core/adios_read_v1.c \
                      core/common_read.c \
+                     core/adios_read_ext.c \
                      core/globals.c \
                      core/adios_timing.c \
                      core/adios_read_hooks.c \
@@ -152,6 +167,7 @@ libadios_nompi_a_SOURCES = core/adios.c \
                      core/adios_read.c \
                      core/adios_read_v1.c \
                      core/common_read.c \
+                     core/adios_read_ext.c \
                      core/globals.c \
                      core/mpidummy.c \
                      core/adios_timing.c \
@@ -379,7 +395,8 @@ include_HEADERS += public/adios.h \
                    public/adios_read_v2.h \
                    public/adios_read_v2_fwd.h \
                    public/adios_selection.h \
-                   public/adios_read_ext.h
+                   public/adios_read_ext.h \
+                   query/adios_query.h
 
 lib_LIBRARIES += libadiosread.a
 libadiosread_a_SOURCES = core/adios_bp_v1.c \
@@ -390,8 +407,10 @@ libadiosread_a_SOURCES = core/adios_bp_v1.c \
                       core/adios_read.c \
                       core/adios_read_v1.c \
                       core/common_read.c \
+                      core/adios_read_ext.c \
                       $(transforms_common_SOURCES) \
                       $(transforms_read_SOURCES) \
+                      $(query_read_SOURCES) \
                       core/globals.c \
                       core/adios_read_hooks.c \
                       core/adios_logger.c \
@@ -493,8 +512,10 @@ libadiosread_nompi_a_SOURCES = core/mpidummy.c\
                       core/adios_read.c \
                       core/adios_read_v1.c \
                       core/common_read.c \
+                      core/adios_read_ext.c \
                       $(transforms_common_SOURCES) \
                       $(transforms_read_SOURCES) \
+                      $(query_read_SOURCES) \
                       core/adios_logger.c \
                       core/buffer.c \
                       core/globals.c \
@@ -541,6 +562,7 @@ FortranReadSeqLibSource = core/mpidummy.c\
                           core/common_read.c \
                           $(transforms_common_SOURCES) \
                           $(transforms_read_SOURCES) \
+                          $(query_read_SOURCES) \
                           core/globals.c \
                           core/adios_read_hooks.c \
                           core/util.c \
@@ -583,6 +605,7 @@ libadios_internal_nompi_a_SOURCES = core/mpidummy.c \
                                     core/adios_internals.c \
                                     $(transforms_common_SOURCES) \
                                     $(transforms_write_SOURCES) \
+                                    $(query_read_SOURCES) \
                                     core/buffer.c \
                                     core/adios_error.c \
                                     core/adios_logger.c \
