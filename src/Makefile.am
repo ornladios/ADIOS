@@ -139,6 +139,7 @@ libadios_a_SOURCES = core/adios.c \
                      $(transforms_common_SOURCES) \
                      $(transforms_read_SOURCES) \
                      $(transforms_write_SOURCES) \
+                     $(query_read_SOURCES) \
                      read/read_bp.c \
                      read/read_bp_staged.c \
                      read/read_bp_staged1.c \
@@ -158,6 +159,7 @@ libadios_nompi_a_SOURCES = core/adios.c \
                      $(transforms_common_SOURCES) \
                      $(transforms_read_SOURCES) \
                      $(transforms_write_SOURCES) \
+                     $(query_read_SOURCES) \
                      core/buffer.c \
                      core/adios_bp_v1.c  \
                      core/adios_endianness.c \
