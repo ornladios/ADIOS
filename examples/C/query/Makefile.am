@@ -1,5 +1,5 @@
 INCLUDES = $(all_includes)
-INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public
+INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public -I$(top_srcdir)/src/query
 
 AUTOMAKE_OPTIONS = no-dependencies
 
@@ -9,15 +9,23 @@ all-local:
 #all-local:
 #	test "$(srcdir)" = "$(builddir)" && $(MAKE) $(AM_MAKEFLAGS) all 
 	 
-noinst_PROGRAMS = adios_alac_query
+noinst_PROGRAMS = adios_build_alac_index adios_read_alac_index
 
-adios_alac_query_SOURCES = adios_alac_query.c
-adios_alac_query_LDADD = $(top_builddir)/src/libadios.a 
-adios_alac_query_LDFLAGS = $(ADIOSLIB_LDFLAGS)
-adios_alac_query_LDADD += $(ADIOSLIB_LDADD)
-adios_alac_query_CPPFLAGS = $(ALACRITY_CPPFLAGS)
+adios_build_alac_index_SOURCES = adios_build_alac_index.c
+adios_build_alac_index_LDADD = $(top_builddir)/src/libadios.a 
+adios_build_alac_index_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+adios_build_alac_index_LDADD += $(ADIOSLIB_LDADD)
+adios_build_alac_index_CPPFLAGS = $(ALACRITY_CPPFLAGS)
+
+
+adios_read_alac_index_SOURCES = adios_read_alac_index.c
+adios_read_alac_index_LDADD = $(top_builddir)/src/libadios.a 
+adios_read_alac_index_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+adios_read_alac_index_LDADD += $(ADIOSLIB_LDADD)
+adios_read_alac_index_CPPFLAGS = $(ALACRITY_CPPFLAGS)
+
 
 CLEANFILES = *.bp
 CC=$(MPICC)
-EXTRA_DIST = adios_alac_query.xml gread_temperature.ch gwrite_temperature.ch job.pbs
+EXTRA_DIST = adios_build_alac_index.xml gread_temperature.ch gwrite_temperature.ch job.pbs
 

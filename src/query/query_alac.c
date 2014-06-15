@@ -159,7 +159,7 @@ bool ridConversionWithCheck(rid_t rid/*relative to local src selectoin*/, uint64
 	int i = 0;
 	*relativeRid = 0;
 	int * coordinates = (int *) malloc(sizeof(int) * dim); // coordinate of current PG
-	uint64_t * destend = (uint64_t*) malloc(sizeof(int)*dim); // coordinate of ending points on the destination box
+	uint64_t * destend = (uint64_t*) malloc(sizeof(uint64_t)*dim); // coordinate of ending points on the destination box
 	for(i = 0; i < dim; i ++){
 		destend[i] = deststart[i] + destcount[i] -1;
 	}

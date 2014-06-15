@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <inttypes.h>
 
 #include "common_query.h"
 #include "adios_query_hooks.h"
@@ -10,7 +11,7 @@ static struct adios_query_hooks_struct * gAdios_query_hooks = 0;
 enum ADIOS_QUERY_TOOL gAssigned_query_tool = 0;
 
 void common_query_init(enum ADIOS_QUERY_TOOL tool) {
-	adios_query_hooks_init(&gAdios_query_hooks);
+	adios_query_hooks_init(&gAdios_query_hooks, tool);
 	gAdios_query_hooks[tool].adios_query_init_method_fn();
 	gAssigned_query_tool = tool;
 }
@@ -34,7 +35,7 @@ int getTotalByteSize(ADIOS_VARINFO* v, ADIOS_SELECTION* sel,
 		for (s = 0; s < v->ndim; s++) {
 			*total_byte_size *= v->dims[s];
 			*dataSize *= v->dims[s];
-			printf(" dim %d default count %d \n", s, v->dims[s]);
+			printf(" dim %" PRIu64 "default count %" PRIu64 "\n", s, v->dims[s]);
 		}
 		return 0;
 	}
@@ -55,10 +56,10 @@ int getTotalByteSize(ADIOS_VARINFO* v, ADIOS_SELECTION* sel,
 			}
 			*total_byte_size *= count[s];
 			*dataSize *= count[s];
-			printf(" dim %d count %d \n", s, count[s]);
+			printf(" dim %" PRIu64 "count %" PRIu64 " \n", s, count[s]);
 		}
 
-		printf("\tThe data size is = %lld \n", *dataSize);
+		printf("\tThe data size is = %" PRIu64 " \n", *dataSize);
 		break;
 	}
 	case ADIOS_SELECTION_POINTS: {
@@ -100,7 +101,7 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f, const char* varName,
 		exit(EXIT_FAILURE);
 	}
 
-	if (gAdios_query_hooks == ADIOS_QUERY_TOOL_FASTBIT || gAdios_query_hooks
+	if (gAssigned_query_tool == ADIOS_QUERY_TOOL_FASTBIT || gAssigned_query_tool
 			== ADIOS_QUERY_TOOL_ALACRITY) {
 		//TODO:
 		//    if ((queryBoundry->type == ADIOS_SELECTION_BOUNDINGBOX) &&
