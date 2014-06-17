@@ -70,9 +70,9 @@ typedef struct {
 
 
 typedef struct {
-	ADIOS_PG_INTERSECTION ** intersections;
+	ADIOS_PG_INTERSECTION * intersections;
 	int npg;
-}ADIOS_PG_INTERSECTIONS;
+} ADIOS_PG_INTERSECTIONS;
 
 // Sets the "data view" for this ADIOS file, which determines how ADIOS presents variables through
 // adios_inq_var*, and how reads are evaluated in adios_schedule_reads/adios_check_reads calls.

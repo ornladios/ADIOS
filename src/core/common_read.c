@@ -931,7 +931,6 @@ void common_read_free_transinfo(const ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti) {
 }
 #undef MYFREE
 
-
 // the function is the same as common_read_get_attr_byid
 // but no ERROR msg print out
 // called by common_read_get_attr_mesh
