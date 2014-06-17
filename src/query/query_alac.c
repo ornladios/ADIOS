@@ -12,6 +12,8 @@
 #include "public/adios_read_ext.h"
 #include "adios_query.h"
 //#include <alacrity.h>
+
+#ifdef ALACRITY
 #include "alacrity.h"
 
 /************Uncompressed bitmap*********/
@@ -940,3 +942,5 @@ void adios_query_alac_clean_method() {
 	//  fastbit_iapi_free_all();
 	//  fastbit_cleanup();
 }
+
+#endif
