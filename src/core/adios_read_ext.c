@@ -34,26 +34,30 @@ void adios_read_set_data_view(ADIOS_FILE *fp, data_view_t data_view) {
 // Populates data transform information about a given variable into an ADIOS_VARTRANSFORM struct
 // Return NULL if failed
 ADIOS_VARTRANSFORM *  adios_inq_var_transform(const ADIOS_FILE *fp, const ADIOS_VARINFO *varinfo){
-	ADIOS_TRANSINFO* info = common_read_inq_transinfo(fp, varinfo);
-	if (info == NULL)
+	// Get the global metadata
+	ADIOS_TRANSINFO* tinfo = common_read_inq_transinfo(fp, varinfo);
+	if (tinfo == NULL)
 		return NULL;
-	ADIOS_VARTRANSFORM *vartransform = (ADIOS_VARTRANSFORM*) malloc(sizeof(ADIOS_VARTRANSFORM));
 
+	// Get the per-PG metadata
+	common_read_inq_trans_blockinfo(fp, varinfo, tinfo);
+	if (tinfo->orig_blockinfo == NULL || tinfo->transform_metadatas == NULL)
+		return NULL;
+
+	// Load all the metadata into the ADIOS_VARTRANSFORM datastructure
+	ADIOS_VARTRANSFORM *vartransform = (ADIOS_VARTRANSFORM*) malloc(sizeof(ADIOS_VARTRANSFORM));
 	*vartransform = (ADIOS_VARTRANSFORM){
 		.varid = varinfo->varid,
 		.sum_nblocks = varinfo->sum_nblocks,
-		.transform_type = info->transform_type,
-		.should_free_transform_metadata = info->should_free_transform_metadata,
-		.transform_metadatas = info->transform_metadatas
+		.transform_type = tinfo->transform_type,
+		.should_free_transform_metadata = tinfo->should_free_transform_metadata,
+		.transform_metadatas = tinfo->transform_metadatas
 	};
 
-	//	vartransform->transform_type = info->transform_type;
+	// Transfer ownership of the transform_metadatas array to the new struct, then free the struct
+	tinfo->transform_metadatas = NULL;
+	common_read_free_transinfo(varinfo, tinfo);
 
-	// Transfer ownership of the transform_metadatas array to the new struct
-	//	vartransform->should_free_transform_metadata = info->should_free_transform_metadata;
-	//	vartransform->transform_metadatas = info->transform_metadatas; // TODO: Make this work without casting
-	info->transform_metadatas = NULL;
-	common_read_free_transinfo(varinfo, info);
 	return vartransform;
 }
 
