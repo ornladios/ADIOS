@@ -13,7 +13,7 @@
 #include "adios_query.h"
 //#include <alacrity.h>
 
-//#ifdef ALACRITY
+#ifdef ALACRITY
 #include "alacrity.h"
 
 /************Uncompressed bitmap*********/
@@ -92,7 +92,7 @@ unsigned char set_bit_position[65536][16];
 void readTransformedElms(ADIOS_FILE* fp,ADIOS_VARINFO* vi
 		, int startStep, int numStep
 		, int blockId, uint64_t start_elem, uint64_t num_elems, int is_timestep_relative, void ** outputData/*out*/){
-	ADIOS_SELECTION *sel = adios_selection_writeblock_bounded(blockId, start_elem, num_elems, 0);
+	ADIOS_SELECTION *sel = adios_selection_writeblock_bounded(blockId, start_elem, num_elems, is_timestep_relative);
 	adios_schedule_read_byid(fp, sel, vi->varid, startStep, numStep, (*outputData));
 	adios_perform_reads(fp, 1);
 	// adios_selection_writeblock_bounded internally malloc data for adios_selection
@@ -107,14 +107,14 @@ void readIndexData(int blockId, uint64_t offsetSize /*in bytes*/
 		, int startStep, int numStep
 		, void **lowBytes /*OUT*/){
 
-	readTransformedElms(fp, vi, startStep, numStep, blockId, offsetSize, length, 1, lowBytes);
+	readTransformedElms(fp, vi, startStep, numStep, blockId, offsetSize, length, 0, lowBytes);
 }
 
 void readLowOrderBytes(int blockId, uint64_t offsetSize /*in bytes*/
 		,uint64_t length /*in bytes*/, ADIOS_FILE* fp,ADIOS_VARINFO* vi
 		, int startStep, int numStep
 		, void **lowBytes /*OUT*/){
-	readTransformedElms(fp, vi, startStep, numStep, blockId, offsetSize,length, 1, lowBytes);
+	readTransformedElms(fp, vi, startStep, numStep, blockId, offsetSize,length, 0, lowBytes);
 }
 
 void readPartitionMeta( int blockId, uint64_t metaSize, ADIOS_FILE* fp,ADIOS_VARINFO* vi
@@ -122,7 +122,7 @@ void readPartitionMeta( int blockId, uint64_t metaSize, ADIOS_FILE* fp,ADIOS_VAR
 		, ALMetadata *pm /*OUT*/){
 	ALMetadata partitionMeta = *pm;
 	memstream_t ms = memstreamInitReturn(malloc(metaSize));
-	readTransformedElms(fp, vi, startStep,numStep,blockId, 0, metaSize, 1, &(ms.buf));
+	readTransformedElms(fp, vi, startStep,numStep,blockId, 0, metaSize, 0, &(ms.buf));
 	ALDeserializeMetadata(&partitionMeta, &ms);
 	memstreamDestroy(&ms, true);
 
@@ -1098,4 +1098,4 @@ void adios_alac_check_candidate(ALMetadata *meta, bin_id_t startBin, bin_id_t en
 
 
 
-//#endif
+#endif
