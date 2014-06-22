@@ -83,7 +83,9 @@ void adios_free_pg_intersections(ADIOS_PG_INTERSECTIONS **intersections){
 		adios_selection_delete(inter.pg_bounds_sel);
 		adios_selection_delete(inter.intersection_sel);
 	}
-	MYFREE(intsec);
+	intsec->npg = 0;
+	intsec->intersections = NULL;
+	MYFREE(*intersections);
 }
 
 #undef MYFREE
