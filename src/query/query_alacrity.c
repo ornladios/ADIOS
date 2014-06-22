@@ -346,7 +346,9 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	 5. read dataBin
 	 */
 
-	//adios_read_set_transforms_enabled(f, 0); // load transformed 1-D byte array
+	 // load transformed 1-D byte array
+	adios_read_set_data_view(adiosQuery->_f, PHYSICAL_DATA_VIEW);
+
 	ADIOS_VARINFO * v = adiosQuery->_var;
 
 	ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->_f, v);

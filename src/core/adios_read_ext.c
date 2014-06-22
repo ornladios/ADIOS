@@ -73,6 +73,19 @@ void adios_free_var_transform(ADIOS_VARTRANSFORM *vartransform) {
 	}
 	MYFREE(vartransform);
 }
+
+
+void adios_free_pg_intersections(ADIOS_PG_INTERSECTIONS **intersections){
+	ADIOS_PG_INTERSECTIONS * intsec = *intersections;
+	int i = 0;
+	for(i=0; i < intsec->npg; i++){
+		ADIOS_PG_INTERSECTION inter = intsec->intersections[i];
+		adios_selection_delete(inter.pg_bounds_sel);
+		adios_selection_delete(inter.intersection_sel);
+	}
+	MYFREE(intsec);
+}
+
 #undef MYFREE
 
 // Creates a writeblock selection that only retrieves elements [start_elem, start_elem + num_elems)
@@ -204,6 +217,8 @@ ADIOS_PG_INTERSECTIONS * adios_find_intersecting_pgs(const ADIOS_FILE *fp, int v
 
     return resulting_intersections;
 }
+
+
 
 
 

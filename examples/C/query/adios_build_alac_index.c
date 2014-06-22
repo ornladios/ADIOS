@@ -32,19 +32,18 @@ struct dimensions {
 
 typedef struct dimensions dim_t;
 
-// Given the input file, you want to divide the data into different PG sizes,
-// with different transforms
+// Given the input file, you want to divide the data into different PG sizes, data is transformed by ALACRITY plugin
+// Run this program with only ONE processor.
 
 void adios_write_pg ( char input_dir [], char transform [], uint8_t nvars, char **vars,
                        dim_t data_dim, dim_t pg_dim)
 {
     int         rank, size;
-    int         i = 0;
-    int         proc = 0;
+    int         i = 0,   ts = 0; // timestep
     uint32_t    pg_var_size = pg_dim.element_size;
     uint32_t    data_var_size = data_dim.element_size;
 
-    uint32_t    procs_num = 1;
+    uint32_t    ntimesteps = 1;
     char        varfile [nvars][256];
     FILE        *fp [nvars];
 
@@ -77,9 +76,9 @@ void adios_write_pg ( char input_dir [], char transform [], uint8_t nvars, char 
     // Name the output bp file based on the name of the transform
     sprintf (output_bp_file, "%s/%s_%d.bp", input_dir, transform, pg_var_size);
 
-    procs_num = data_var_size / pg_var_size;
+    ntimesteps = data_var_size / pg_var_size;
 
-    assert(size == procs_num);
+//    assert(size == ntimesteps);
 
     // Open the input raw data file for each variable
     for (i = 0; i < nvars; i ++) {
@@ -102,7 +101,7 @@ void adios_write_pg ( char input_dir [], char transform [], uint8_t nvars, char 
 
     char *pg_var_data = (char *) malloc (pg_var_size);
 
-    printf ("ntimesteps = %d, NX = %u, NY = %u, NZ = %u\n", procs_num, NX, NY, NZ);
+    printf ("ntimesteps = %d, NX = %u, NY = %u, NZ = %u\n", ntimesteps, NX, NY, NZ);
 
     adios_groupsize = 4 \
                     + 4 \
@@ -115,16 +114,30 @@ void adios_write_pg ( char input_dir [], char transform [], uint8_t nvars, char 
                     + 8 * (1) * (DX * DY * DZ) ;
 
 
-    for (proc = 0; proc < procs_num; proc ++) {
+    for (ts = 0; ts < ntimesteps; ts ++) {
 
-        uint32_t OX = (proc / ((data_dim.dims [1] * data_dim.dims [2]) / (pg_dim.dims [1] * pg_dim.dims [2]))) * pg_dim.dims [0];
-        uint32_t OY = ((proc / (data_dim.dims [2] / pg_dim.dims [2])) * pg_dim.dims [1]) % data_dim.dims [1];
-        uint32_t OZ = (proc * pg_dim.dims [2]) % data_dim.dims [2];
+        uint32_t OX = (ts /
+        			       (
+        		              (data_dim.dims [1] * data_dim.dims [2])
+        		                /
+        		              (pg_dim.dims [1] * pg_dim.dims [2])
+        		           )
+        		       ) * pg_dim.dims [0];
+
+        uint32_t OY = (
+        		        (ts /
+        		    	    (data_dim.dims [2] / pg_dim.dims [2])
+        		        ) * pg_dim.dims [1]
+        		      ) % data_dim.dims [1];
+
+        uint32_t OZ = (
+        		        ts * pg_dim.dims [2]
+        		      ) % data_dim.dims [2];
 
 //        rank = proc;
 
         adios_pin_timestep(1);
-        if (proc == 0) {
+        if (ts == 0) {
             adios_open (&adios_handle, "S3D", output_bp_file, "w", comm);
         } else {
             adios_open (&adios_handle, "S3D", output_bp_file, "a", comm);
@@ -146,7 +159,7 @@ void adios_write_pg ( char input_dir [], char transform [], uint8_t nvars, char 
         adios_write (adios_handle, "OY", &OY);
         adios_write (adios_handle, "OZ", &OZ);
         adios_write (adios_handle, "size", &size);
-        adios_write (adios_handle, "rank", &proc);
+        adios_write (adios_handle, "rank", &ts);
 
         printf ("Start: %u %u %u\n", OX, OY, OZ);
         // fread and adios_write for each variable
@@ -163,7 +176,7 @@ void adios_write_pg ( char input_dir [], char transform [], uint8_t nvars, char 
         fclose (fp [i]);
     }
 
-    adios_finalize (proc);
+    adios_finalize (ts);
 
     return ;
 }
@@ -176,15 +189,15 @@ int main (int argc, char ** argv)
     dim_t pg_dim;
 
     data_dim.ndims = 3;
-    data_dim.dims [0] = 256;
-    data_dim.dims [1] = 128;
-    data_dim.dims [2] = 128;
+    data_dim.dims [0] = 128;  //256; 
+    data_dim.dims [1] = 64 ;  //128;
+    data_dim.dims [2] = 64;   //128;
     data_dim.element_size = 8;
 
     pg_dim.ndims = 3;
-    pg_dim.dims [0] = 256;
-    pg_dim.dims [1] = 128;
-    pg_dim.dims [2] = 128;
+    pg_dim.dims [0] = 64; //256;
+    pg_dim.dims [1] = 32; //128;
+    pg_dim.dims [2] = 32; //128;
     pg_dim.element_size = 8;
 
 //    char *vars [4] = {"temp", "uvel", "vvel", "wvel"};

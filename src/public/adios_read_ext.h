@@ -99,5 +99,6 @@ ADIOS_PG_INTERSECTIONS * adios_find_intersecting_pgs(
 		, const int from_step, const int nsteps);
 
 
+void adios_free_pg_intersections(ADIOS_PG_INTERSECTIONS **intersections);
 
 #endif /* ADIOS_READ_EXT_H_ */

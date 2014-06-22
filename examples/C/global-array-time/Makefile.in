@@ -68,6 +68,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_alacrity.m4 \
 	$(top_srcdir)/config/ac_pami.m4 \
 	$(top_srcdir)/config/ac_phdf5.m4 \
 	$(top_srcdir)/config/ac_portals.m4 \
+	$(top_srcdir)/config/ac_ridcompress.m4 \
 	$(top_srcdir)/config/ac_szip.m4 \
 	$(top_srcdir)/config/ac_zlib.m4 \
 	$(top_srcdir)/config/acx_mpi.m4 \
@@ -319,6 +320,9 @@ PTHREAD_CC = @PTHREAD_CC@
 PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
 PTHREAD_LIBS = @PTHREAD_LIBS@
 RANLIB = @RANLIB@
+RIDCOMPRESS_CPPFLAGS = @RIDCOMPRESS_CPPFLAGS@
+RIDCOMPRESS_LDFLAGS = @RIDCOMPRESS_LDFLAGS@
+RIDCOMPRESS_LIBS = @RIDCOMPRESS_LIBS@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@

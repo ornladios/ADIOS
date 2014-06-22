@@ -13,7 +13,7 @@
 #include "adios_query.h"
 //#include <alacrity.h>
 
-#ifdef ALACRITY
+//#ifdef ALACRITY
 #include "alacrity.h"
 
 /************Uncompressed bitmap*********/
@@ -395,7 +395,8 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 
 	int blockId;
 	ADIOS_SELECTION * sel;
-	ADIOS_PG_INTERSECTION *  PGs = *(intersectedPGs->intersections);
+	ADIOS_PG_INTERSECTION *  PGs = intersectedPGs->intersections;
+	//TODO: free : adios_free_pg_intersections
 //	for (i = startPG; i < endPG; i++) {
 	for (j = 0; j < totalPG; j++) {
 		ADIOS_PG_INTERSECTION pg = PGs[j];
@@ -943,4 +944,4 @@ void adios_query_alac_clean_method() {
 	//  fastbit_cleanup();
 }
 
-#endif
+//#endif
