@@ -39,7 +39,7 @@ extern const adios_transform_type_t NO_TRANSFORM;
 
 typedef struct {
 	const void *content;
-	uint64_t length;
+	uint64_t length;   // in bytes
 } ADIOS_TRANSFORM_METADATA;
 
 // A transform information structure describing how a particular variable has been transformed
