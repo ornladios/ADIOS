@@ -44,10 +44,13 @@ void test_adios_alac_meta_read(ADIOS_FILE *fp, ADIOS_VARINFO *v){
 		ALMetadata metadata;
 		readPartitionMeta(i, metaSize,fp, v
 							,startStep,numStep,&metadata);
+
 		printf("partitionMeta in block [%d]\n", i);
 		printf("meta size: %" PRIu64 ", index size: %" PRIu64
 							", data size: %" PRIu64 "\n"
 							, threeData[0], threeData[1], threeData[2]);
+
+
 
 		printALMetadata(&metadata);
 //		ALPrintMetaData(metadata)
