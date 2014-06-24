@@ -14,6 +14,10 @@
 #include "adios_read_ext.h"
 #include "./query/query_alac.c"
 
+void printALMetadata(ALMetadata *pm);
+void printBB(const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *olBB);
+
+
 void printALMetadata(ALMetadata *pm){
 	printf("global offset id %" PRIu64" \n", pm->globalOffset);
 	printf("partition length %" PRIu32" \n" , pm->partitionLength);
@@ -49,20 +53,108 @@ void test_adios_alac_meta_read(ADIOS_FILE *fp, ADIOS_VARINFO *v){
 		printf("meta size: %" PRIu64 ", index size: %" PRIu64
 							", data size: %" PRIu64 "\n"
 							, threeData[0], threeData[1], threeData[2]);
-
-
-
 		printALMetadata(&metadata);
-//		ALPrintMetaData(metadata)
 		free(metadata.binLayout.binStartOffsets);
 		free(metadata.binLayout.binValues);
 		if (metadata.indexMeta.indexForm == ALCompressedInvertedIndex)
 			free(metadata.indexMeta.u.ciim.indexBinStartOffsets);
-//		printPartitionMeta(&partitionMeta);
 	}
 }
 
 
+void printBB(const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *olBB)
+{
+	int i ;
+    for(i=0; i < olBB->ndim; i++){
+			printf("[%" PRIu64 ": %"PRIu64"], " , olBB->start[i], olBB->start[i] + olBB->count[i] -1 );
+	}
+    printf("\n");
+}
+
+void checkRidConversion(rid_t rid, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *pgBB, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *userBB)
+{
+    rid_t newRid = 0;
+    if (ridConversionWithCheck(rid, pgBB->start, pgBB->count
+				, userBB->start, userBB->count, userBB->ndim, &newRid)) {
+			printf("rid %"PRIu32" is converted to %" PRIu32 " \n"
+					,rid, newRid);
+		}else{
+			printf("rid is not in user selection \n");
+		}
+}
+
+void testContainingAndRidConversion(ADIOS_FILE *fp, ADIOS_VARINFO *v){
+
+	//******************* Get Selection BoundingBox first ***************//
+	int from_step =0;
+	int nsteps =1, i = 0,j =0;
+	/*uint64_t start[3] = {45, 10,0};
+	uint64_t count[3] = {65, 40, 60};*/
+	//********this is boundary case, in which user selection is the entire domain *******//
+	uint64_t start[3] = {0, 0,0};
+	uint64_t count[3] = {128, 64, 64};
+	ADIOS_SELECTION *userSelection =  adios_selection_boundingbox(3, start, count);
+	ADIOS_PG_INTERSECTIONS* intersectedPGs2 = adios_find_intersecting_pgs(
+				fp, v->varid, userSelection, from_step, nsteps);
+	int totalnpg = intersectedPGs2->npg;
+	ADIOS_PG_INTERSECTION *  PGs = intersectedPGs2->intersections;
+
+	printf("user's input selection box: ");
+	assert(userSelection->type == ADIOS_SELECTION_BOUNDINGBOX );
+	const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *userBB = &(userSelection->u.bb);
+    printBB(userBB);
+
+    ADIOS_PG_INTERSECTION pg;
+	for(j= 0; j < totalnpg; j ++){
+		pg = PGs[j];
+		printf("PG[%d], timestep[%d], PG id in TS[%d]\n", pg.blockidx, pg.timestep, pg.blockidx_in_timestep);
+		ADIOS_SELECTION * pgSelBox = pg.pg_bounds_sel;
+		assert (pgSelBox->type == ADIOS_SELECTION_BOUNDINGBOX );
+		printf("touched PG bounding box : ");
+		const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *pgBB = &(pgSelBox->u.bb);
+		printBB(pgBB);
+
+
+		ADIOS_SELECTION * intersectedBox = pg.intersection_sel;
+		assert (intersectedBox->type == ADIOS_SELECTION_BOUNDINGBOX );
+		printf("overlapped/intersected bounding box: ");
+		const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *interBB = &(intersectedBox->u.bb);
+		printBB(interBB);
+
+		printf("does user input bounding box contain the PG box: %d \n", boxEqual(pgBB, interBB));
+
+		rid_t rid = 0;
+		checkRidConversion(rid, pgBB, userBB);
+		rid = 13;
+		checkRidConversion(rid, pgBB, userBB);
+	}
+
+	adios_selection_delete(userSelection);
+	adios_free_pg_intersections(&intersectedPGs2);
+
+}
+
+void testAlacBitmapConversion(){
+	ADIOS_ALAC_BITMAP b ;
+	b.length = 3;
+	b.bits = (uint64_t *) malloc(sizeof(uint64_t)*b.length);
+	b.bits[0] = 1083;
+	b.bits[1] = 8384;
+	b.bits[2] = 382;
+	b.numSetBits = 1883;
+	b.realElmSize = 38;
+	void * mem;
+	convertALACBitmapTomemstream(&b, &mem);
+	ADIOS_ALAC_BITMAP rb ;
+	convertMemstreamToALACBitmap(mem, &rb);
+	assert(rb.length == b.length);
+	assert(rb.numSetBits == b.numSetBits);
+	assert(rb.realElmSize == b.realElmSize );
+	assert(memcmp(rb.bits, b.bits, sizeof(uint64_t)*b.length) == 0);
+	FREE(mem);
+	FREE(b.bits);
+	FREE(rb.bits);
+}
 /*
  * RUN with one processor is enough
  * sample usage:
@@ -105,7 +197,18 @@ int main (int argc, char ** argv)
     adios_read_set_data_view(fp, dv);
 
     //====================start to test ==================//
-    test_adios_alac_meta_read(fp, v);
+    printf("//====================test_adios_alac_meta_read ==================//\n");
+//    test_adios_alac_meta_read(fp, v);
+    printf("///////////////////////////////////////\n");
+
+    printf("//====================testContainingAndRidConversion==================//\n");
+//    testContainingAndRidConversion(fp, v);
+    printf("///////////////////////////////////////\n");
+
+    printf("//====================testAlacBitmapConversion==================//\n");
+    testAlacBitmapConversion();
+    printf("// test is passed \n");
+    printf("///////////////////////////////////////\n");
 
     adios_read_close (fp);
 

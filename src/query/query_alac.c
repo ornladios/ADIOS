@@ -21,12 +21,17 @@
 typedef struct{
 	uint64_t *bits; // uint64_t array holds the bits
 	uint64_t length; // the bits array size
-	uint64_t elmSize; // actual element size of this bits array represents ( the number of set bits(1s) in the bits array)
+	uint64_t numSetBits; // actual element size of this bits array represents ( the number of set bits(1s) in the bits array)
+	uint64_t realElmSize; // the number of elements the bits are presenting
+	                      // if number of elements is 100, then, the length = 2 ( 100 / 64 + 100%64 ), and realElmSize = 100
 } ADIOS_ALAC_BITMAP;
 
 
 /**** Funcs. that are internal funcs. ********/
 
+void convertALACBitmapTomemstream( ADIOS_ALAC_BITMAP * b, void ** mem /*OUT*/);
+
+void convertMemstreamToALACBitmap( void *mem , ADIOS_ALAC_BITMAP * bout /*OUT*/);
 
 ADIOS_ALAC_BITMAP * adios_alac_process(ADIOS_QUERY* q, int timeStep,
 		bool estimate);
@@ -55,17 +60,17 @@ void readPartitionMeta(int blockId, uint64_t metaSize, ADIOS_FILE* fp,ADIOS_VARI
 
 void readTransformedElms(ADIOS_FILE* fp,ADIOS_VARINFO* vi
 		, int startStep, int numStep
-		, int blockId, uint64_t start_elem, uint64_t num_elems, int is_timestep_relative, void ** outputData/*out*/);
+		, int blockId, uint64_t start_elem, uint64_t num_elems, int is_timestep_relative, void * outputData/*out*/);
 
 void readIndexData(int blockId, uint64_t offsetSize /*in bytes*/
 		,uint64_t length /*in bytes*/, ADIOS_FILE* fp,ADIOS_VARINFO* vi
 		, int startStep, int numStep
-		, void **lowBytes /*OUT*/);
+		, void *lowBytes /*OUT*/);
 
 void readLowOrderBytes(int blockId, uint64_t offsetSize /*in bytes*/
 		,uint64_t length /*in bytes*/, ADIOS_FILE* fp,ADIOS_VARINFO* vi
 		, int startStep, int numStep
-		, void **lowBytes /*OUT*/);
+		, void *lowBytes /*OUT*/);
 
 inline void setBitsinBitMap(rid_t rid, ADIOS_ALAC_BITMAP * alacResultBitmap){
 
@@ -91,9 +96,9 @@ unsigned char set_bit_position[65536][16];
 
 void readTransformedElms(ADIOS_FILE* fp,ADIOS_VARINFO* vi
 		, int startStep, int numStep
-		, int blockId, uint64_t start_elem, uint64_t num_elems, int is_timestep_relative, void ** outputData/*out*/){
+		, int blockId, uint64_t start_elem, uint64_t num_elems, int is_timestep_relative, void * outputData/*out*/){
 	ADIOS_SELECTION *sel = adios_selection_writeblock_bounded(blockId, start_elem, num_elems, is_timestep_relative);
-	adios_schedule_read_byid(fp, sel, vi->varid, startStep, numStep, (*outputData));
+	adios_schedule_read_byid(fp, sel, vi->varid, startStep, numStep, outputData);
 	adios_perform_reads(fp, 1);
 	// adios_selection_writeblock_bounded internally malloc data for adios_selection
 	// so I need to free it before the next usage
@@ -105,7 +110,7 @@ void readTransformedElms(ADIOS_FILE* fp,ADIOS_VARINFO* vi
 void readIndexData(int blockId, uint64_t offsetSize /*in bytes*/
 		,uint64_t length /*in bytes*/, ADIOS_FILE* fp,ADIOS_VARINFO* vi
 		, int startStep, int numStep
-		, void **lowBytes /*OUT*/){
+		, void *lowBytes /*OUT*/){
 
 	readTransformedElms(fp, vi, startStep, numStep, blockId, offsetSize, length, 0, lowBytes);
 }
@@ -113,17 +118,16 @@ void readIndexData(int blockId, uint64_t offsetSize /*in bytes*/
 void readLowOrderBytes(int blockId, uint64_t offsetSize /*in bytes*/
 		,uint64_t length /*in bytes*/, ADIOS_FILE* fp,ADIOS_VARINFO* vi
 		, int startStep, int numStep
-		, void **lowBytes /*OUT*/){
+		, void *lowBytes /*OUT*/){
 	readTransformedElms(fp, vi, startStep, numStep, blockId, offsetSize,length, 0, lowBytes);
 }
 
 void readPartitionMeta( int blockId, uint64_t metaSize, ADIOS_FILE* fp,ADIOS_VARINFO* vi
 		, int startStep, int numStep
 		, ALMetadata *pm /*OUT*/){
-	ALMetadata partitionMeta = *pm;
 	memstream_t ms = memstreamInitReturn(malloc(metaSize));
-	readTransformedElms(fp, vi, startStep,numStep,blockId, 0, metaSize, 0, &(ms.buf));
-	ALDeserializeMetadata(&partitionMeta, &ms);
+	readTransformedElms(fp, vi, startStep,numStep,blockId, 0, metaSize, 0, ms.buf);
+	ALDeserializeMetadata(pm, &ms);
 	memstreamDestroy(&ms, true);
 
 }
@@ -320,8 +324,8 @@ void adios_alac_check_candidate(ALMetadata *meta, bin_id_t startBin, bin_id_t en
 							rid = decodeRids[el];
 							if (ridConversionWithCheck(rid,
 									srcstart,srccount, deststart,destcount, dim, &newRid)){
-								setBitsinBitMap(rid, alacResultBitmap);
-								alacResultBitmap->elmSize ++;
+								setBitsinBitMap(newRid, alacResultBitmap);
+								alacResultBitmap->numSetBits ++;
 							}
 						}
 					}
@@ -336,8 +340,8 @@ void adios_alac_check_candidate(ALMetadata *meta, bin_id_t startBin, bin_id_t en
 								rid = decodeRids[el];
 								if (ridConversionWithCheck(rid,
 										srcstart,srccount, deststart,destcount, dim, &newRid)){
-									setBitsinBitMap(rid, alacResultBitmap);
-									alacResultBitmap->elmSize ++;
+									setBitsinBitMap(newRid, alacResultBitmap);
+									alacResultBitmap->numSetBits ++;
 								}
 							}
 						}
@@ -350,8 +354,8 @@ void adios_alac_check_candidate(ALMetadata *meta, bin_id_t startBin, bin_id_t en
 							rid = decodeRids[el];
 							if (ridConversionWithCheck(rid,
 									srcstart,srccount, deststart,destcount, dim, &newRid)){
-								setBitsinBitMap(rid, alacResultBitmap);
-								alacResultBitmap->elmSize ++;
+								setBitsinBitMap(newRid, alacResultBitmap);
+								alacResultBitmap->numSetBits ++;
 							}
 						}
 					}
@@ -364,8 +368,8 @@ void adios_alac_check_candidate(ALMetadata *meta, bin_id_t startBin, bin_id_t en
 							rid = decodeRids[el];
 							if (ridConversionWithCheck(rid,
 									srcstart,srccount, deststart,destcount, dim, &newRid)){
-								setBitsinBitMap(rid, alacResultBitmap);
-								alacResultBitmap->elmSize ++;
+								setBitsinBitMap(newRid, alacResultBitmap);
+								alacResultBitmap->numSetBits ++;
 							}
 						}
 					}
@@ -462,7 +466,8 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	alacResultBitmap.length = BITNSLOTS64(totalElm);
 	alacResultBitmap.bits = (uint64_t *) malloc(
 			alacResultBitmap.length * sizeof(uint64_t));
-	alacResultBitmap.elmSize = 0;
+	alacResultBitmap.numSetBits = 0;
+	alacResultBitmap.realElmSize = totalElm;
 
 
 	uint64_t * metaSizes = (uint64_t *) malloc(sizeof(uint64_t) * totalPG);
@@ -532,7 +537,7 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 			const uint64_t bin_read_len = last_bin_off - first_bin_off; // in bytes
 			void *indexData =  (void *) malloc(sizeof(char)*bin_read_len);
 			readIndexData(blockId, indexOffset,bin_read_len
-					,adiosQuery->_f, varInfo, startStep,numStep,&indexData);
+					,adiosQuery->_f, varInfo, startStep,numStep, indexData);
 
 			ALIndex index = (ALIndex) indexData;
 			const ALBinLayout * const bl = &(partitionMeta.binLayout);
@@ -561,7 +566,7 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 								, deststart, destcount //region dimension of Selection box
 								, ndim , &alacResultBitmap.bits);
 						inputCurPtr += binCompressedLen;
-						alacResultBitmap.elmSize += decodedElm;
+						alacResultBitmap.numSetBits += decodedElm;
 					}
 
 				}else{
@@ -570,7 +575,7 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 					void * lowdata = (void *) lowOrderBytes;
 					// Read low-order bytes
 					readLowOrderBytes(blockId,metaSize+indexSizes[j], dataSizes[j]
-					                  , adiosQuery->_f, varInfo, startStep, numStep, (&lowdata));
+					                  , adiosQuery->_f, varInfo, startStep, numStep, lowdata);
 
 					// It touches at least 3 bins, so, we need to check RIDs that are in first and last bins
 					if (hi_bin - low_bin > 2) {
@@ -602,7 +607,7 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 									, srcstart, srccount //PG region dimension
 									, deststart, destcount //region dimension of Selection box
 									, ndim , &alacResultBitmap.bits);
-							alacResultBitmap.elmSize += decodedElm;
+							alacResultBitmap.numSetBits += decodedElm;
 							inputCurPtr += binCompressedLen;
 						}
 
@@ -653,17 +658,17 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 						rid_t rid_val = idx[ni];
 						if (ridConversionWithCheck(rid_val,
 								srcstart,srccount, deststart,destcount, pgBB->ndim, &newRid)){
-							setBitsinBitMap(rid_val, &alacResultBitmap);
+							setBitsinBitMap(newRid, &alacResultBitmap);
 						}
 
 					}
-					alacResultBitmap.elmSize += resultCount;
+					alacResultBitmap.numSetBits += resultCount;
 				} else {
 					rid_t newRid;
 					char * lowOrderBytes2 = (char *) malloc(dataSizes[j]);
 					void * lowdata2 = (void *)lowOrderBytes2;
 					readLowOrderBytes(blockId,metaSize+indexSizes[j], dataSizes[j]
-										                  , adiosQuery->_f, varInfo, startStep, numStep, (&lowdata2));
+										                  , adiosQuery->_f, varInfo, startStep, numStep, lowdata2);
 					rid_t * decodedRid = (rid_t *) index;
 					char * iptPtr = (char*)decodedRid;
 					/*uint64_t firstBinElmBegin = 0, firstBinElmEnd = 0,
@@ -693,12 +698,12 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 							rid_t rid_val = innerIdx[ni];
 							if (ridConversionWithCheck(rid_val,
 									srcstart,srccount, deststart,destcount, pgBB->ndim, &newRid)){
-								setBitsinBitMap(rid_val, &alacResultBitmap);
+								setBitsinBitMap(newRid, &alacResultBitmap);
 							}
 
 						}
 						innerIdx  +=  innerElm;
-						alacResultBitmap.elmSize += innerElm;
+						alacResultBitmap.numSetBits += innerElm;
 						// high boundary bin
 						iptPtr = (char *) innerIdx;
 						adios_alac_check_candidate(&partitionMeta, hi_bin-1, hi_bin
@@ -898,30 +903,39 @@ int64_t adios_query_alac_estimate_method(ADIOS_QUERY* q) {
 }
 
 /* memory format:
- * | length | elmSize | bits ....
+ * | length | numSetBits | realNumSize | bits ....
  */
 void convertALACBitmapTomemstream( ADIOS_ALAC_BITMAP * b, void ** mem /*OUT*/){
 
-	uint64_t totalSize = b->length + 1 /*b->length*/ + 1 /*b->elmSize*/;
+	uint64_t totalSize = b->length + 1 /*b->length*/ + 1 /*b->numSetBits*/ + 1 /*b->realNumSize*/;
 	uint64_t * ptr  = (uint64_t *) malloc(sizeof(uint64_t)* totalSize);
 	(*mem) = ptr;
-	ptr[0] = b->length;   ptr[1] = b->elmSize;
-	ptr += 2;
-	memcpy(ptr, b->bits, sizeof(uint64_t)*(totalSize-2));
+	ptr[0] = b->length;   ptr[1] = b->numSetBits; ptr[2] = b->realElmSize;
+	ptr += 3;
+	memcpy(ptr, b->bits, sizeof(uint64_t)*(totalSize-3));
 
 }
 
-void convertMemstreamToALACBitmap( void *mem , ADIOS_ALAC_BITMAP ** bout /*OUT*/){
+/*
+ * do memory copy for the bits, so that the `mem` could be free later
+ */
+void convertMemstreamToALACBitmap( void *mem , ADIOS_ALAC_BITMAP * bout /*OUT*/){
 
-	ADIOS_ALAC_BITMAP * b = *bout;
-	b = (ADIOS_ALAC_BITMAP *) malloc(sizeof(ADIOS_ALAC_BITMAP));
 	uint64_t * ptr  = (uint64_t *) mem;
-	b ->length = ptr[0];
-	b -> elmSize = ptr[1];
-	b-> bits = (ptr+2);
+
+//	(*bout) = (ADIOS_ALAC_BITMAP *) malloc(sizeof(ADIOS_ALAC_BITMAP));
+	/*(*bout) ->length = ptr[0];
+	(*bout) -> numSetBits = ptr[1];
+	(*bout)->realElmSize = ptr[2];
+	(*bout)->bits = (uint64_t *) malloc(sizeof(uint64_t)*((*bout)->length));
+	memcpy((*bout)->bits, ptr+3, sizeof(uint64_t)*((*bout)->length));
+	*/
+	bout->length = ptr[0];
+	bout->numSetBits = ptr[1];
+	bout->realElmSize = ptr[2];
+	bout->bits = (uint64_t *) malloc(sizeof(uint64_t)*(bout->length));
+	memcpy(bout->bits, ptr+3, sizeof(uint64_t)*(bout->length));
 }
-
-
 
 int  adios_query_get_selection(ADIOS_QUERY* q,
 			       uint64_t batchSize, // limited by maxResult
@@ -937,7 +951,8 @@ int  adios_query_get_selection(ADIOS_QUERY* q,
 		//convert ADIOS_ALAC_BITMAP to  " void* _internal"
 		convertALACBitmapTomemstream(b, &(q->_queryInternal));
 	}else { //convert void* _internal to ADIOS_ALAC_BITMAP
-		convertMemstreamToALACBitmap(q->_queryInternal, &b);
+		b = (ADIOS_ALAC_BITMAP*) malloc(sizeof(ADIOS_ALAC_BITMAP));
+		convertMemstreamToALACBitmap(q->_queryInternal, b);
 	}
 	uint64_t retrievalSize = q->_maxResultDesired - q->_lastRead;
 	if (retrievalSize == 0) {
@@ -955,6 +970,8 @@ int  adios_query_get_selection(ADIOS_QUERY* q,
 		free(b->bits); // these data is copied to q->_queryInternal
 	}
 	free(b); // NOTE: only free the structure
+	//TODO:
+//	freeALACBitmap(&b);
 	q->_lastRead += retrievalSize;
 	if (q->_lastRead == q->_maxResultDesired) {
 		return 0;
@@ -987,113 +1004,6 @@ void adios_query_alac_clean_method() {
 	//  fastbit_iapi_free_all();
 	//  fastbit_cleanup();
 }
-
-
-
-//===================backup =================//
-
-
-/*
-void adios_alac_check_candidate(ALMetadata *meta, bin_id_t startBin, bin_id_t endBin
-		, double hb, double lb
-		, uint64_t *srcstart, uint64_t *srccount //PG region dimension
-		, uint64_t *deststart, uint64_t *destcount //region dimension of Selection box
-		, int dim
-		, const char *inputCurPtr index bytes of entire PG
-		, bool decoded  true: need decoding
-		, char * lowOrderBytes low order bytes of entire PG
-		,ADIOS_ALAC_BITMAP * alacResultBitmap OUT){
-	ALMetadata partitionMeta = *meta;
-	const ALBinLayout * const bl = &(partitionMeta.binLayout);
-	uint64_t  binCompressedLen = bl->binStartOffsets[endBin]
-										- bl->binStartOffsets[startBin];
-	uint32_t * decodeRids;
-	if (decoded){
-		decodeRids= (uint32_t*) malloc(sizeof(uint32_t)*binCompressedLen);
-		ALDecompressRIDs( inputCurPtr, binCompressedLen,
-			decodeRids, &binCompressedLen);
-	}else{
-		decodeRids = (uint32_t *) inputCurPtr;
-	}
-	bin_offset_t loworderElm = bl->binStartOffsets[endBin] - bl->binStartOffsets[startBin];
-	char * loadLowBytes = (char *) malloc(sizeof(partitionMeta.elementSize)*loworderElm);
-
-		reconstituteData(partitionMeta, startBin, endBin,
-										 lowOrderBytes, loadLowBytes);
-		rid_t rid, newRid;
-		bin_offset_t el = 0;
-
-		  switch (partitionMeta.elementSize) {
-			case  sizeof(uint64_t): {
-			   uint64_t * lowData64 = (uint64_t *)loadLowBytes;
-				for(el= 0; el < loworderElm; el ++){
-					if (lowData64[el] <= hb && lowData64[el] >= lb){
-						rid = decodeRids[el];
-						if (ridConversionWithCheck(rid,
-								srcstart,srccount, deststart,destcount, dim, &newRid)){
-							setBitsinBitMap(rid, alacResultBitmap);
-							alacResultBitmap->elmSize ++;
-						}
-
-					}
-				}
-				break;
-			}
-			case sizeof(uint32_t): {
-
-				uint32_t * lowData32 = (uint32_t *)loadLowBytes;
-						for(el= 0; el < loworderElm; el ++){
-							if (lowData32[el] <= hb && lowData32[el] >= lb){
-								rid = decodeRids[el];
-								if (ridConversionWithCheck(rid,
-										srcstart,srccount, deststart,destcount, dim, &newRid)){
-									setBitsinBitMap(rid, alacResultBitmap);
-									alacResultBitmap->elmSize ++;
-								}
-							}
-						}
-				break;
-				}
-			case sizeof(uint16_t): {
-				uint16_t * lowData16 = (uint16_t *)loadLowBytes;
-					for(el= 0; el < loworderElm; el ++){
-						if (lowData16[el] <= hb && lowData16[el] >= lb){
-							rid = decodeRids[el];
-							if (ridConversionWithCheck(rid,
-									srcstart,srccount, deststart,destcount, dim, &newRid)){
-								setBitsinBitMap(rid, alacResultBitmap);
-								alacResultBitmap->elmSize ++;
-							}
-						}
-					}
-				break;
-			}
-			case sizeof(uint8_t): {
-				uint8_t * lowData8 = (uint8_t *)loadLowBytes;
-					for(el= 0; el < loworderElm; el ++){
-						if (lowData8[el] <= hb && lowData8[el] >= lb){
-							rid = decodeRids[el];
-							if (ridConversionWithCheck(rid,
-									srcstart,srccount, deststart,destcount, dim, &newRid)){
-								setBitsinBitMap(rid, alacResultBitmap);
-								alacResultBitmap->elmSize ++;
-							}
-						}
-					}
-				break;
-			}
-		   default:
-				eprintf("Unsupported element size %d in %s\n", partitionMeta->elementSize, __FUNCTION__);
-				assert(false);
-				return ;
-			}
-
-		free(loadLowBytes);
-		if(decoded)
-			free(decodeRids);
-
-}
-*/
 
 
 
