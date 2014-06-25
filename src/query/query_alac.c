@@ -8,9 +8,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <assert.h>
 #include <float.h>
 #include "public/adios_read_ext.h"
 #include "adios_query.h"
+#include "common_query.h"
 //#include <alacrity.h>
 
 #ifdef ALACRITY
@@ -376,8 +378,7 @@ void adios_alac_check_candidate(ALMetadata *meta, bin_id_t startBin, bin_id_t en
 				break;
 			}
 		   default:
-				eprintf("Unsupported element size %d in %s\n", partitionMeta->elementSize, __FUNCTION__);
-				assert(false);
+				printf("Unsupported element size %d in %s\n", partitionMeta.elementSize, __FUNCTION__);
 				return ;
 			}
 
@@ -414,7 +415,6 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 
 	int j = 1;
 //	adios_find_intersecting_pgs();
-	uint64_t ridOffset = 0;
 	uint64_t* deststart ; // current variables selection box
 	uint64_t* destcount ;
 	uint64_t * srcstart;  // PG's bounding box is the global bounding box
@@ -423,13 +423,6 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 		const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(adiosQuery->_sel->u.bb);
 		destcount = bb->count;
 		deststart = bb->start;
-		ridOffset = deststart[0];
-		// if for estimate, it will stop here
-		// otherwise, continue searching for the precise results
-		// TODO: verify this
-		for (j = 1; adiosQuery->_var->dims; j++) {
-			ridOffset += (deststart[j] * deststart[j - 1]);
-		}
 	} else {
 		printf("not supported selection typed in alacrity \n");
 		exit(EXIT_FAILURE);
@@ -937,13 +930,13 @@ void convertMemstreamToALACBitmap( void *mem , ADIOS_ALAC_BITMAP * bout /*OUT*/)
 	memcpy(bout->bits, ptr+3, sizeof(uint64_t)*(bout->length));
 }
 
-int  adios_query_get_selection(ADIOS_QUERY* q,
+int  adios_query_alac_get_selection_method(ADIOS_QUERY* q,
 			       uint64_t batchSize, // limited by maxResult
 			       ADIOS_SELECTION* outputBoundry,
 			       ADIOS_SELECTION** queryResult) {
 	// first time, we have to evaluate it
 	ADIOS_ALAC_BITMAP* b ;
-	if (q->_maxResultDesired < 0) { // negative number is not evaluated
+	if (q->_maxResultDesired == NO_EVAL_BEFORE ) { // negative number is not evaluated
 		create_lookup(set_bit_count, set_bit_position);
 		b = adios_alac_process(q, gCurrentTimeStep, true);
 		q->_maxResultDesired =  calSetBitsNum(b);
@@ -955,7 +948,7 @@ int  adios_query_get_selection(ADIOS_QUERY* q,
 		convertMemstreamToALACBitmap(q->_queryInternal, b);
 	}
 	uint64_t retrievalSize = q->_maxResultDesired - q->_lastRead;
-	if (retrievalSize == 0) {
+	if (retrievalSize <= 0) {
 		(*queryResult) = NULL;
 		printf(":: ==> no more results to fetch\n");
 		return 0;
@@ -966,7 +959,7 @@ int  adios_query_get_selection(ADIOS_QUERY* q,
 
 	adios_query_alac_build_results(retrievalSize,q,b,queryResult);
 
-	if (q->_maxResultDesired < 0) { // negative number is not evaluated
+	if (q->_maxResultDesired >= 0) {
 		free(b->bits); // these data is copied to q->_queryInternal
 	}
 	free(b); // NOTE: only free the structure

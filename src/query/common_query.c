@@ -82,7 +82,7 @@ int getTotalByteSize(ADIOS_VARINFO* v, ADIOS_SELECTION* sel,
 
 void initialize(ADIOS_QUERY* result) {
 	result->_onTimeStep = -1; // no data recorded
-	result->_maxResultDesired = 0; // init
+	result->_maxResultDesired = NO_EVAL_BEFORE;// init
 	result->_lastRead = 0; // init
 }
 

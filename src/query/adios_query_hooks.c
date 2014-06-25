@@ -29,10 +29,10 @@ void adios_query_hooks_init(struct adios_query_hooks_struct ** t, enum ADIOS_QUE
   //#ifdef _USE_FASTBIT
   // default initiation
 
-  if (tool ==  ADIOS_QUERY_TOOL_FASTBIT){
+  /*if (tool ==  ADIOS_QUERY_TOOL_FASTBIT){
 	  ASSIGN_FNS(fastbit, ADIOS_QUERY_TOOL_FASTBIT);
 
-  }else if ( tool == ADIOS_QUERY_TOOL_ALACRITY){
+  }else */if ( tool == ADIOS_QUERY_TOOL_ALACRITY){
 	  ASSIGN_FNS(alac, ADIOS_QUERY_TOOL_ALACRITY);
   }else {
 	  printf("unknown query tool type \n");

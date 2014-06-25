@@ -13,7 +13,7 @@
 
 
 // default query tool is fastbit
-FORWARD_DECLARE(fastbit)
+//FORWARD_DECLARE(fastbit)
 
 FORWARD_DECLARE(alac)
 

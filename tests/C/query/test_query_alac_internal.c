@@ -136,13 +136,15 @@ void testContainingAndRidConversion(ADIOS_FILE *fp, ADIOS_VARINFO *v){
 
 void testAlacBitmapConversion(){
 	ADIOS_ALAC_BITMAP b ;
-	b.length = 3;
-	b.bits = (uint64_t *) malloc(sizeof(uint64_t)*b.length);
-	b.bits[0] = 1083;
+	b.length = 1024;
+//	b.bits = (uint64_t *) malloc(sizeof(uint64_t)*b.length);
+	b.bits = (uint64_t *) calloc(b.length, sizeof(uint64_t));
+
+	/*b.bits[0] = 1083;
 	b.bits[1] = 8384;
-	b.bits[2] = 382;
-	b.numSetBits = 1883;
-	b.realElmSize = 38;
+	b.bits[2] = 382;*/
+	b.numSetBits = 0;
+	b.realElmSize = 65536;
 	void * mem;
 	convertALACBitmapTomemstream(&b, &mem);
 	ADIOS_ALAC_BITMAP rb ;

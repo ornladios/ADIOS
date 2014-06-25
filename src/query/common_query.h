@@ -7,6 +7,8 @@ extern "C" {
 
 #include "adios_query.h"
 
+#define NO_EVAL_BEFORE -1
+
 void common_query_init(enum ADIOS_QUERY_TOOL tool);
 
 ADIOS_QUERY* common_query_create(ADIOS_FILE* f, 				 

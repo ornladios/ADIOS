@@ -11,10 +11,49 @@
  */
 #include <stdio.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #include <string.h>
 #include <assert.h>
-#include "mpi.h"
-#include "adios_read.h"
+//#include "adios_read.h"
+#include "adios_query.h"
+
+void oneDefinedBox(ADIOS_FILE* bf ){
+
+	  printf("\n=============== testing one single bounding box ===========\n");
+	  int ndim = 3;
+	  uint64_t start1[] = {0, 0, 0};
+	  uint64_t count1[] = {64, 32,32};
+
+
+	  ADIOS_SELECTION* box1 = adios_selection_boundingbox(ndim, start1, count1);
+	  // rdm data is in the range btw 100 and 200, and this query constraint should return zero
+	  const char* varName1 = "rdm";
+	  enum ADIOS_PREDICATE_MODE op1 = ADIOS_GT;
+      const char* value1 = "201";
+
+      ADIOS_QUERY* q1 = adios_query_create(bf, varName1, box1, op1, value1);
+
+      int timestep = 0;
+      int64_t batchSize = 50;
+
+      while (1) {
+        ADIOS_SELECTION* currBatch = NULL;
+        int hasMore =  adios_query_get_selection(q1, batchSize, box1, &currBatch);
+
+        assert(currBatch->type ==ADIOS_SELECTION_POINTS);
+        const ADIOS_SELECTION_POINTS_STRUCT * retrievedPts = &(currBatch->u.points);
+        printf("retrieved points %" PRIu64 " \n",  retrievedPts->npoints);
+        adios_selection_delete(currBatch);
+
+        if (hasMore == 0) {
+          break;
+        }
+      }
+
+      adios_query_free(q1);
+      adios_selection_delete(box1);
+}
+
 
 int main (int argc, char ** argv)
 {
@@ -42,43 +81,14 @@ int main (int argc, char ** argv)
     	printf(" can not open file %s \n", argv[1]);
     	return 1;
     }
-    /*  ADIOS_VARINFO * varinfo = adios_inq_var (f, "temperature");
-    if (varinfo)
-    {
-        int nranks;
 
-        assert(varinfo->ndim == 2);
 
-        nranks = varinfo->dims[0];
-        assert(nranks % 4 == 0);
-        assert(varinfo->dims[1] == 10);
+    adios_query_init(ADIOS_QUERY_TOOL_ALACRITY);
 
-        datasize = (nranks / 2) * varinfo->dims[1] * sizeof(double);
-        data = malloc (datasize);
+    //====================== start to test ===================//
+    oneDefinedBox(f );
 
-        start[0] = nranks / 4;
-        start[1] = 2;
-        count[0] = nranks / 2;
-        count[1] = 6;
 
-        sel1 = adios_selection_boundingbox (varinfo->ndim, start, count);
-
-        adios_schedule_read (f, sel1, "temperature", 0, 1, data);
-        adios_perform_reads (f, 1);
-
-        printf("Subvolume at (%llu,%llu) of size (%llu,%llu):\n", start[0], start[1], count[0], count[1]);
-        for (i = 0; i < count[0]; i++) {
-            printf("[ ");
-            for (j = 0; j < count[1]; j++) {
-                printf("%.0lf ", data[i * count[1] + j]);
-            }
-            printf("]\n");
-        }
-
-        adios_selection_delete (sel1);
-    }
-
-    adios_free_varinfo (varinfo);*/
     adios_read_close (f);
 
     adios_read_finalize_method (ADIOS_READ_METHOD_BP);
