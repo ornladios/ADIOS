@@ -31,7 +31,7 @@ typedef struct{
 
 /**** Funcs. that are internal funcs. ********/
 
-void convertALACBitmapTomemstream( ADIOS_ALAC_BITMAP * b, void ** mem /*OUT*/);
+uint64_t * convertALACBitmapTomemstream( ADIOS_ALAC_BITMAP * b);
 
 void convertMemstreamToALACBitmap( void *mem , ADIOS_ALAC_BITMAP * bout /*OUT*/);
 
@@ -41,7 +41,7 @@ ADIOS_ALAC_BITMAP * adios_alac_process(ADIOS_QUERY* q, int timeStep,
 ADIOS_ALAC_BITMAP * adios_alac_bitsOp(ADIOS_ALAC_BITMAP * op1,
 		ADIOS_ALAC_BITMAP * op2, enum ADIOS_CLAUSE_OP_MODE operator);
 
-uint64_t calSetBitsNum(ADIOS_ALAC_BITMAP *b1);
+uint64_t calSetBitsNum(ADIOS_ALAC_BITMAP *b);
 
 int coordinateConversionWithCheck(int * coordinates, const  int dim
 		, const  uint64_t *srcstart, const  uint64_t *deststart, const  uint64_t *destend);
@@ -176,19 +176,19 @@ void create_lookup(unsigned char set_bit_count[],
 
 
 
-uint64_t calSetBitsNum(ADIOS_ALAC_BITMAP *b1) {
+uint64_t calSetBitsNum(ADIOS_ALAC_BITMAP *b) {
 
-	uint64_t total = 0;
-	int kk = 0;
-	for (; kk < b1->length; kk++) {
-		uint64_t count = bits_in_char[b1->bits[kk] & 0xff]
-				+ bits_in_char[(b1->bits[kk] >> 8) & 0xff]
-				+ bits_in_char[(b1->bits[kk] >> 16) & 0xff]
-				+ bits_in_char[(b1->bits[kk] >> 24) & 0xff]
-				+ bits_in_char[(b1->bits[kk] >> 32) & 0xff]
-				+ bits_in_char[(b1->bits[kk] >> 40) & 0xff]
-				+ bits_in_char[(b1->bits[kk] >> 48) & 0xff]
-				+ bits_in_char[(b1->bits[kk] >> 56) & 0xff];
+	uint64_t total = 0, count = 0;
+	int i = 0;
+	for (; i < b->length; i++) {
+		  count = bits_in_char[b->bits[i] & 0xff]
+				+ bits_in_char[(b->bits[i] >> 8) & 0xff]
+				+ bits_in_char[(b->bits[i] >> 16) & 0xff]
+				+ bits_in_char[(b->bits[i] >> 24) & 0xff]
+				+ bits_in_char[(b->bits[i] >> 32) & 0xff]
+				+ bits_in_char[(b->bits[i] >> 40) & 0xff]
+				+ bits_in_char[(b->bits[i] >> 48) & 0xff]
+				+ bits_in_char[(b->bits[i] >> 56) & 0xff];
 		total += count;
 	}
 	return total;
@@ -457,8 +457,8 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	ADIOS_ALAC_BITMAP alacResultBitmap;
 
 	alacResultBitmap.length = BITNSLOTS64(totalElm);
-	alacResultBitmap.bits = (uint64_t *) malloc(
-			alacResultBitmap.length * sizeof(uint64_t));
+	//initially, no 1s at all
+	alacResultBitmap.bits = (uint64_t *) calloc( alacResultBitmap.length , sizeof(uint64_t));
 	alacResultBitmap.numSetBits = 0;
 	alacResultBitmap.realElmSize = totalElm;
 
@@ -898,15 +898,18 @@ int64_t adios_query_alac_estimate_method(ADIOS_QUERY* q) {
 /* memory format:
  * | length | numSetBits | realNumSize | bits ....
  */
-void convertALACBitmapTomemstream( ADIOS_ALAC_BITMAP * b, void ** mem /*OUT*/){
-
-	uint64_t totalSize = b->length + 1 /*b->length*/ + 1 /*b->numSetBits*/ + 1 /*b->realNumSize*/;
-	uint64_t * ptr  = (uint64_t *) malloc(sizeof(uint64_t)* totalSize);
-	(*mem) = ptr;
-	ptr[0] = b->length;   ptr[1] = b->numSetBits; ptr[2] = b->realElmSize;
-	ptr += 3;
-	memcpy(ptr, b->bits, sizeof(uint64_t)*(totalSize-3));
-
+uint64_t * convertALACBitmapTomemstream( ADIOS_ALAC_BITMAP * b ){
+	int metaLen = 3; //----- 1 /*b->length*/ + 1 /*b->numSetBits*/ + 1 /*b->realNumSize*/----//
+	uint64_t totalSize = b->length + metaLen;
+	uint64_t * headPtr  = (uint64_t *) calloc (totalSize, sizeof(uint64_t));
+	if (headPtr == NULL){
+		printf("%s failed to allocat %"PRIu64 " bytes memory \n", __FUNCTION__, sizeof(uint64_t)*totalSize);
+		return NULL;
+	}
+	uint64_t * movePtr = headPtr;
+	movePtr[0] = b->length;   movePtr[1] = b->numSetBits; movePtr[2] = b->realElmSize;
+	memcpy(movePtr+ metaLen, b->bits, sizeof(uint64_t) * b->length);
+	return headPtr;
 }
 
 /*
@@ -915,14 +918,6 @@ void convertALACBitmapTomemstream( ADIOS_ALAC_BITMAP * b, void ** mem /*OUT*/){
 void convertMemstreamToALACBitmap( void *mem , ADIOS_ALAC_BITMAP * bout /*OUT*/){
 
 	uint64_t * ptr  = (uint64_t *) mem;
-
-//	(*bout) = (ADIOS_ALAC_BITMAP *) malloc(sizeof(ADIOS_ALAC_BITMAP));
-	/*(*bout) ->length = ptr[0];
-	(*bout) -> numSetBits = ptr[1];
-	(*bout)->realElmSize = ptr[2];
-	(*bout)->bits = (uint64_t *) malloc(sizeof(uint64_t)*((*bout)->length));
-	memcpy((*bout)->bits, ptr+3, sizeof(uint64_t)*((*bout)->length));
-	*/
 	bout->length = ptr[0];
 	bout->numSetBits = ptr[1];
 	bout->realElmSize = ptr[2];
@@ -941,8 +936,7 @@ int  adios_query_alac_get_selection_method(ADIOS_QUERY* q,
 		b = adios_alac_process(q, gCurrentTimeStep, true);
 		q->_maxResultDesired =  calSetBitsNum(b);
 		q->_lastRead = 0;
-		//convert ADIOS_ALAC_BITMAP to  " void* _internal"
-		convertALACBitmapTomemstream(b, &(q->_queryInternal));
+		q->_queryInternal = convertALACBitmapTomemstream(b);
 	}else { //convert void* _internal to ADIOS_ALAC_BITMAP
 		b = (ADIOS_ALAC_BITMAP*) malloc(sizeof(ADIOS_ALAC_BITMAP));
 		convertMemstreamToALACBitmap(q->_queryInternal, b);
@@ -960,9 +954,9 @@ int  adios_query_alac_get_selection_method(ADIOS_QUERY* q,
 	adios_query_alac_build_results(retrievalSize,q,b,queryResult);
 
 	if (q->_maxResultDesired >= 0) {
-		free(b->bits); // these data is copied to q->_queryInternal
+		FREE(b->bits); // these data is copied to q->_queryInternal
 	}
-	free(b); // NOTE: only free the structure
+	FREE(b); // NOTE: only free the structure
 	//TODO:
 //	freeALACBitmap(&b);
 	q->_lastRead += retrievalSize;
@@ -972,31 +966,44 @@ int  adios_query_alac_get_selection_method(ADIOS_QUERY* q,
 	return 1;
 }
 
+int adios_query_alac_free_one_node(ADIOS_QUERY* query){
+	if (query == NULL) {
+		return 0;
+	}
+
+	//TODO: confirm, SHOULD WE DO free here?
+	//ADIOS_VARINFO* v = adios_inq_var(f, varName);
+	adios_free_varinfo(query->_var);
+
+	FREE(query->_condition);
+	FREE(query->_dataSlice);
+	FREE(query->_value);
+
+	//TODO: confirm: adios_selection_delete(query->_sel);
+	//RIGHT NOW, user will free this box
+
+
+	//fastbit_selection_free(query->_queryInternal);
+	FREE(query);
+	return 1;
+
+}
 
 int adios_query_alac_free_method(ADIOS_QUERY* query) {
 
-	//TODO:
-	if (query == NULL) {
-		return;
+	// free the tree in a bottom-to-up manner
+	if (query->_left == NULL && query->_right == NULL) {
+		return adios_query_alac_free_one_node(query);
+	}else if  (query->_right){
+		return adios_query_alac_free_method(query->_right);
+	}else if (query->_left) {
+		return adios_query_alac_free_method(query->_left);
 	}
 
-	printf(":: free %s\n", query->_condition);
-	free(query->_value);
-	free(query->_dataSlice);
-	free(query->_condition);
-
-	//adios_selection_delete(query->_sel);
-	adios_free_varinfo(query->_var);
-
-	//fastbit_selection_free(query->_queryInternal);
-	free(query);
-
+	return 1;
 }
 
-void adios_query_alac_clean_method() {
-	//  fastbit_iapi_free_all();
-	//  fastbit_cleanup();
-}
+void adios_query_alac_clean_method() { }
 
 
 

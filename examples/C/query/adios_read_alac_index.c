@@ -40,12 +40,15 @@ void oneDefinedBox(ADIOS_FILE* bf ){
         ADIOS_SELECTION* currBatch = NULL;
         int hasMore =  adios_query_get_selection(q1, batchSize, box1, &currBatch);
 
+        if (currBatch == NULL) { // there is no results at all
+        	break;
+        }
         assert(currBatch->type ==ADIOS_SELECTION_POINTS);
         const ADIOS_SELECTION_POINTS_STRUCT * retrievedPts = &(currBatch->u.points);
         printf("retrieved points %" PRIu64 " \n",  retrievedPts->npoints);
         adios_selection_delete(currBatch);
 
-        if (hasMore == 0) {
+        if (hasMore == 0) { // there is no left results to retrieve
           break;
         }
       }

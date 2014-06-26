@@ -134,6 +134,19 @@ void testContainingAndRidConversion(ADIOS_FILE *fp, ADIOS_VARINFO *v){
 
 }
 
+void  testBitsCal(){
+	ADIOS_ALAC_BITMAP b ;
+	b.length = 10;
+	b.bits = (uint64_t *) calloc(b.length, sizeof(uint64_t));
+	b.numSetBits = 0;
+	b.realElmSize = 630;
+	uint64_t tbits = calSetBitsNum(&b);
+	assert(tbits == 0);
+	b.bits[0] = 3;
+	tbits = calSetBitsNum(&b);
+	assert(tbits == 2);
+}
+
 void testAlacBitmapConversion(){
 	ADIOS_ALAC_BITMAP b ;
 	b.length = 1024;
@@ -145,8 +158,8 @@ void testAlacBitmapConversion(){
 	b.bits[2] = 382;*/
 	b.numSetBits = 0;
 	b.realElmSize = 65536;
-	void * mem;
-	convertALACBitmapTomemstream(&b, &mem);
+	void * mem = NULL;
+	mem = convertALACBitmapTomemstream(&b);
 	ADIOS_ALAC_BITMAP rb ;
 	convertMemstreamToALACBitmap(mem, &rb);
 	assert(rb.length == b.length);
@@ -209,6 +222,12 @@ int main (int argc, char ** argv)
 
     printf("//====================testAlacBitmapConversion==================//\n");
     testAlacBitmapConversion();
+    printf("// test is passed \n");
+    printf("///////////////////////////////////////\n");
+
+
+    printf("//====================testBitsCal==================//\n");
+    testBitsCal();
     printf("// test is passed \n");
     printf("///////////////////////////////////////\n");
 
