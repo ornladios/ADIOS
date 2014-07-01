@@ -34,7 +34,7 @@ def pparse_command_line (parent_parser):
 def fill_template (parent_parser):
     args = pparse_command_line (parent_parser)
 
-    print "filling template"
+    #print "filling template"
 
 
     output_file = open (args.outfile, "w")
@@ -50,7 +50,7 @@ def fill_template (parent_parser):
 
     # No, I don't like these either.
     t.i = items 
-    print items
+    #print items
 
 
     output_file.write (str(t) )
