@@ -109,7 +109,6 @@ if(ADIOS_FIND_COMPONENTS)
         endif()
     endforeach()
 endif()
-string(REGEX REPLACE ";" "" OPTLIST "${OPTLIST}")
 
 # we start by assuming we found ADIOS and falsify it if some
 # dependencies are missing (or if we did not find ADIOS at all)
@@ -163,7 +162,8 @@ if(ADIOS_FOUND)
     # ADIOS headers
     list(APPEND ADIOS_INCLUDE_DIRS ${ADIOS_ROOT_DIR}/include)
 
-    # check for compiled in dependencies
+    # check for compiled in dependencies, recomve ";" in ADIOS_LINKFLAGS (from cmake build)
+    string(REGEX REPLACE ";" " " ADIOS_LINKFLAGS "${ADIOS_LINKFLAGS}")
     message(STATUS "ADIOS linker flags (unparsed): ${ADIOS_LINKFLAGS}")
 
     # find all library paths -L
