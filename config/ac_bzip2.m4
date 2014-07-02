@@ -12,8 +12,9 @@ dnl     #ifdef BZIP2
 dnl     #include "bzlib.h"
 dnl     #endif
 dnl
-dnl @version 1.0
+dnl @version 2.0
 dnl @author Zhenhuan (Steve) Gong
+dnl dnl @author Norbert Podhorszki
 dnl
 AC_DEFUN([AC_BZIP2],[
 
@@ -23,10 +24,7 @@ AM_CONDITIONAL(HAVE_BZIP2,true)
 
 AC_ARG_WITH(bzip2,
         [  --with-bzip2=DIR      Location of BZIP2 library],
-        [BZIP2_LDFLAGS="-L$withval/lib";
-         BZIP2_LIBS="-lbz2";
-         BZIP2_CPPFLAGS="-I$withval/include";],
-        [with_bzip2=no])
+        [:], [with_bzip2=no])
 
 if test "x$with_bzip2" == "xno"; then
 
@@ -37,7 +35,20 @@ else
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
-    LIBS="$LIBS -lbz2"
+
+    if test "x$with_bzlib" == "xyes"; then
+        dnl No path given
+        BZIP2_CPPFLAGS=""
+        BZIP2_LDFLAGS=""
+        BZIP2_LIBS="-lbz2"
+    else
+        dnl Path given, first try path/lib64
+        BZIP2_CPPFLAGS="-I$withval/include"
+        BZIP2_LDFLAGS="-L$withval/lib64"
+        BZIP2_LIBS="-lbz2"
+    fi
+
+    LIBS="$LIBS $BZIP2_LIBS"
     LDFLAGS="$LDFLAGS $BZIP2_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $BZIP2_CPPFLAGS"
 
@@ -47,11 +58,47 @@ else
                    [AM_CONDITIONAL(HAVE_BZIP2,false)])
     fi
 
-    # Check for the BZIP2 library and headers
-    dnl AC_TRY_COMPILE([struct obd_uuid {char uuid[40];};int fd, num_ost;struct obd_uuid uuids[1024];],
-    dnl        [llapi_lov_get_uuids(fd, uuids, &num_ost);],
-    dnl        [BZIP2_LIBS="-lbz2"],
-    dnl        [AM_CONDITIONAL(HAVE_BZIP2,false)])
+    if test -z "${HAVE_BZIP2_TRUE}"; then
+        dnl Try to link an example now
+        AC_MSG_CHECKING([if bzip2 code can be linked with $BZIP2_LDFLAGS])
+        AC_TRY_LINK(
+            [#include <stdlib.h>
+             #include "bzlib.h"],
+            [char* in, *out;
+             unsigned int in_len, *out_len;
+             int blocksize100k = 5;
+             int bzerr = BZ2_bzBuffToBuffCompress (
+                           out, out_len, in, in_len, blocksize100k, 0, 30);
+             return (bzerr != BZ_OK);],
+            [AC_MSG_RESULT(yes)],
+            [AM_CONDITIONAL(HAVE_BZIP2,false)
+             AC_MSG_RESULT(no)
+            ])
+
+        dnl If linking above failed, one reason might be that we looked in lib64/
+        dnl instead of lib/
+        if test -z "${HAVE_BZIP2_FALSE}"; then
+            if test "x$with_lustre" != "xyes"; then
+            BZIP2_LDFLAGS="-L$withval/lib"
+            LDFLAGS="$LDFLAGS $BZIP2_LDFLAGS"
+            AC_MSG_CHECKING([if bzip2 code can be linked with $BZIP2_LDFLAGS])
+            AC_TRY_LINK(
+                [#include <stdlib.h>
+                 #include "bzlib.h"],
+                [char* in, *out;
+                 unsigned int in_len, *out_len;
+                 int blocksize100k = 5;
+                 int bzerr = BZ2_bzBuffToBuffCompress (
+                               out, out_len, in, in_len, blocksize100k, 0, 30);
+                 return (bzerr != BZ_OK);],
+                [AC_MSG_RESULT(yes)],
+                [AM_CONDITIONAL(HAVE_BZIP2,false)
+                 AC_MSG_RESULT(no)
+                ])
+            fi
+        fi
+    fi
+ 
 
     LIBS="$save_LIBS"
     LDFLAGS="$save_LDFLAGS"
