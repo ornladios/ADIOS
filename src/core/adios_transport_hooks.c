@@ -89,7 +89,7 @@ void adios_init_transports (struct adios_transport_struct ** t)
     ASSIGN_FNS(flexpath,ADIOS_METHOD_FLEXPATH,"FLEXPATH")
 # endif
 # if HAVE_ICEE
-    ASSIGN_FNS(icee,ADIOS_METHOD_ICEE, "ICEE")
+    ASSIGN_FNS(icee,ADIOS_METHOD_ICEE,"ICEE")
 # endif
 
     ASSIGN_FNS(posix,ADIOS_METHOD_POSIX,"POSIX")

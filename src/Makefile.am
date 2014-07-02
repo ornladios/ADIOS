@@ -271,6 +271,7 @@ endif
 
 if HAVE_ICEE
 libadios_a_SOURCES += write/adios_icee.c read/read_icee.c
+libadios_nompi_a_SOURCES += write/adios_icee.c  read/read_icee.c
 if BUILD_FORTRAN
 FortranLibSources += write/adios_icee.c read/read_icee.c
 endif

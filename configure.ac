@@ -751,6 +751,8 @@ AC_CONFIG_FILES([Makefile
                  examples/C/flexpath_arrays/Makefile
                  examples/C/flexpath_arrays/process_select/Makefile
                  examples/C/flexpath_arrays/global_range_select/Makefile
+                 examples/C/icee_arrays/Makefile
+                 examples/C/icee_arrays/global_range_select/Makefile
                  examples/C/attributes/Makefile
                  examples/C/manual/Makefile
                  examples/C/global-array/Makefile
