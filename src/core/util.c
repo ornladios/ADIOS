@@ -405,7 +405,7 @@ int unique (uint32_t * nids, int size)
             }
         }
     }
- 
+
     // remove duplicates
     i = 0;
     k = 0;
@@ -436,11 +436,12 @@ int unique (uint32_t * nids, int size)
 uint32_t nid_atoi ()
 {
     int name_len;
-    char * nid_str = malloc (MPI_MAX_PROCESSOR_NAME);
+    char * nid_str, * str_buf = malloc (MPI_MAX_PROCESSOR_NAME);
     uint32_t nid;
 
-    MPI_Get_processor_name (nid_str, &name_len);
+    MPI_Get_processor_name (str_buf, &name_len);
 
+    nid_str = str_buf;
     while (*nid_str != '\0' && (!isdigit (*nid_str) || *nid_str == '0'))
     {
         nid_str++;
@@ -452,28 +453,27 @@ uint32_t nid_atoi ()
     }
 
     nid = atoi (nid_str);
-    free (nid_str);
+    free (str_buf);
 
     return nid;
 }
 
 // This helper routine returns a vector of unique NID's.
-// It is the caller's responsiblity to free 'nids'.
-int get_unique_nids (MPI_Comm comm, uint32_t * nids)
+// It is caller's responsiblity to free nids afterwards.
+int get_unique_nids (MPI_Comm comm, uint32_t ** nids)
 {
     int size;
     uint32_t my_nid;
 
     my_nid = nid_atoi ();
-
     MPI_Comm_size (comm, &size);
-    nids = (uint32_t *) malloc (size * 4);
+    * nids = (uint32_t *) malloc (size * 4);
+    assert (* nids);
 
     MPI_Allgather (&my_nid, 1, MPI_INT,
-                   nids, 1, MPI_INT,
+                   *nids, 1, MPI_INT,
                    comm);
-    
-    return unique (nids, size);
+    return unique (*nids, size);
 }
 
 /*******************************************************
