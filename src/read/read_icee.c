@@ -560,60 +560,63 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
         return adios_errno;
     }
 
-    switch(sel->type)
-    {
-    case ADIOS_SELECTION_WRITEBLOCK:
-    {
-        //DUMP("fp->rank: %d", fp->rank);
-        //DUMP("u.block.index: %d", sel->u.block.index);
+    if (sel==0)
+        memcpy(data, vp->data, vp->varlen);
+    else
+        switch(sel->type)
+        {
+        case ADIOS_SELECTION_WRITEBLOCK:
+        {
+            //DUMP("fp->rank: %d", fp->rank);
+            //DUMP("u.block.index: %d", sel->u.block.index);
 
-        if (fp->rank != sel->u.block.index)
+            if (fp->rank != sel->u.block.index)
                 adios_error(err_unspecified,
                             "Block id missmatch. "
                             "Not yet supported by ICEE\n");
 
-        // Possible memory overwrite
-        memcpy(data, vp->data, vp->varlen);
-        break;
-    }
-    case ADIOS_SELECTION_BOUNDINGBOX:
-    {
-        if (vp->ndims != sel->u.bb.ndim)
-            adios_error(err_invalid_dimension,
-                        "Dimension mismatch\n");
-
-        int i;
-        for (i = 0; i < vp->ndims; i++)
-        {
-            //DUMP("g,l,o = %llu,%llu,%llu", vp->gdims[i], vp->ldims[i], vp->offsets[i]);
-            //DUMP("start,count = %llu,%llu", sel->u.bb.start[i], sel->u.bb.count[i]);
-            if (sel->u.bb.start[i] != vp->offsets[i])
-                adios_error(err_expected_read_size_mismatch,
-                            "Requested data is out of the local size. "
-                            "Not yet supported by ICEE\n");
-
-            if (sel->u.bb.start[i] + sel->u.bb.count[i] != vp->offsets[i] + vp->ldims[i])
-                adios_error(err_expected_read_size_mismatch,
-                            "Requested data is out of the local size. "
-                            "Not yet supported by ICEE\n");
+            // Possible memory overwrite
+            memcpy(data, vp->data, vp->varlen);
+            break;
         }
+        case ADIOS_SELECTION_BOUNDINGBOX:
+        {
+            if (vp->ndims != sel->u.bb.ndim)
+                adios_error(err_invalid_dimension,
+                            "Dimension mismatch\n");
+
+            int i;
+            for (i = 0; i < vp->ndims; i++)
+            {
+                //DUMP("g,l,o = %llu,%llu,%llu", vp->gdims[i], vp->ldims[i], vp->offsets[i]);
+                //DUMP("start,count = %llu,%llu", sel->u.bb.start[i], sel->u.bb.count[i]);
+                if (sel->u.bb.start[i] != vp->offsets[i])
+                    adios_error(err_expected_read_size_mismatch,
+                                "Requested data is out of the local size. "
+                                "Not yet supported by ICEE\n");
+
+                if (sel->u.bb.start[i] + sel->u.bb.count[i] != vp->offsets[i] + vp->ldims[i])
+                    adios_error(err_expected_read_size_mismatch,
+                                "Requested data is out of the local size. "
+                                "Not yet supported by ICEE\n");
+            }
         
-        memcpy(data, vp->data, vp->varlen);
-        break;
-    }
-    case ADIOS_SELECTION_AUTO:
-    {
-        // Possible memory overwrite
-        memcpy(data, vp->data, vp->varlen);
-        break;
-    }
-    case ADIOS_SELECTION_POINTS:
-    {
-        adios_error(err_operation_not_supported,
-                    "ADIOS_SELECTION_POINTS not yet supported by ICEE.\n");
-        break;
-    }
-    }
+            memcpy(data, vp->data, vp->varlen);
+            break;
+        }
+        case ADIOS_SELECTION_AUTO:
+        {
+            // Possible memory overwrite
+            memcpy(data, vp->data, vp->varlen);
+            break;
+        }
+        case ADIOS_SELECTION_POINTS:
+        {
+            adios_error(err_operation_not_supported,
+                        "ADIOS_SELECTION_POINTS not yet supported by ICEE.\n");
+            break;
+        }
+        }
 
     return adios_errno;
 }
