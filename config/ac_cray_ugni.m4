@@ -9,8 +9,6 @@ AC_DEFUN([AC_CRAY_UGNI],
 
 ac_cray_ugni_lib_ok=no
 
-AC_MSG_NOTICE([=== checking for CRAY UGNI ===])
-
 AM_CONDITIONAL(HAVE_CRAY_UGNI,true)
 
 dnl Automatic checking for CRAY_UGNI is disabled now.
@@ -41,6 +39,8 @@ if test "x$with_cray_ugni" == "xno"; then
    AM_CONDITIONAL(HAVE_CRAY_UGNI,false)
 
 else
+
+    AC_MSG_NOTICE([=== checking for CRAY UGNI ===])
 
     dnl If we know CRAY_UGNI_DIR, then we can know CRAY_UGNI_INCDIR.
     dnl We don't overwrite CRAY_UGNI_INCDIR.

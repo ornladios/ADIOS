@@ -168,6 +168,7 @@ int adios_posix1_open (struct adios_file_struct * fd
                 switch (version & ADIOS_VERSION_NUM_MASK)
                 {
                     case 1:
+                    case 2:
                         // read the old stuff and set the base offset
                         adios_posix_read_index_offsets (&p->b);
                         adios_parse_index_offsets_v1 (&p->b);
@@ -190,7 +191,9 @@ int adios_posix1_open (struct adios_file_struct * fd
                         fd->group->time_index = ++max_time_index;
 
                         adios_posix_read_vars_index (&p->b);
-                        adios_parse_vars_index_v1 (&p->b, &p->index->vars_root, NULL, NULL);
+                        adios_parse_vars_index_v1 (&p->b, &p->index->vars_root, 
+                                                   p->index->hashtbl_vars,
+                                                   &p->index->vars_tail);
 
                         adios_posix_read_attributes_index (&p->b);
                         adios_parse_attributes_index_v1 (&p->b
@@ -248,9 +251,9 @@ enum ADIOS_FLAG adios_posix1_should_buffer (struct adios_file_struct * fd
         if (s != fd->bytes_written)
         {
             fprintf (stderr, "POSIX1 method tried to write %llu, "
-                             "only wrote %llu\n"
+                             "only wrote %lld\n"
                     ,fd->bytes_written
-                    ,s
+                    ,(int64_t)s
                     );
         }
         fd->base_offset += s;
@@ -306,9 +309,9 @@ void adios_posix1_write (struct adios_file_struct * fd
         if (s != fd->bytes_written)
         {
             fprintf (stderr, "POSIX1 method tried to write %llu, "
-                             "only wrote %llu\n"
+                             "only wrote %lld\n"
                     ,fd->bytes_written
-                    ,s
+                    ,(int64_t)s
                     );
         }
         fd->base_offset += s;
@@ -318,16 +321,16 @@ void adios_posix1_write (struct adios_file_struct * fd
 
         // write payload
         // adios_write_var_payload_v1 (fd, v);
-        uint64_t var_size = adios_get_var_size (v, fd->group, v->data);
+        uint64_t var_size = adios_get_var_size (v, v->data);
         if (fd->base_offset + var_size > fd->pg_start_in_file + fd->write_size_bytes)
             fprintf (stderr, "adios_posix1_write exceeds pg bound. File is corrupted. "
                              "Need to enlarge group size. \n"); 
 
         int32_t to_write;
         uint64_t bytes_written = 0;
-        if (var_size > INT32_MAX)
+        if (var_size > MAX_MPIWRITE_SIZE)
         {
-            to_write = INT32_MAX;
+            to_write = MAX_MPIWRITE_SIZE;
         }
         else
         {
@@ -339,9 +342,9 @@ void adios_posix1_write (struct adios_file_struct * fd
             bytes_written += write (p->b.f, v->data + bytes_written, to_write);
             if (var_size > bytes_written)
             {
-                if (var_size - bytes_written > INT32_MAX)
+                if (var_size - bytes_written > MAX_MPIWRITE_SIZE)
                 {
-                    to_write = INT32_MAX;
+                    to_write = MAX_MPIWRITE_SIZE;
                 }
                 else
                 {
@@ -355,9 +358,9 @@ void adios_posix1_write (struct adios_file_struct * fd
         if (s != var_size)
         {
             fprintf (stderr, "POSIX1 method tried to write %llu, "
-                             "only wrote %llu\n"
+                             "only wrote %lld\n"
                     ,var_size
-                    ,s
+                    ,(int64_t)s
                     );
         }
         fd->base_offset += s;
@@ -456,9 +459,9 @@ static void adios_posix1_do_write (struct adios_file_struct * fd
             fprintf (stderr, "adios_posix1_write exceeds pg bound. File is corrupted. "
                              "Need to enlarge group size. \n");
 
-        if (fd->bytes_written > INT32_MAX)
+        if (fd->bytes_written > MAX_MPIWRITE_SIZE)
         {
-            to_write = INT32_MAX;
+            to_write = MAX_MPIWRITE_SIZE;
         }
         else
         {
@@ -471,9 +474,9 @@ static void adios_posix1_do_write (struct adios_file_struct * fd
             bytes_written += to_write;
             if (fd->bytes_written > bytes_written)
             {
-                if (fd->bytes_written - bytes_written > INT32_MAX)
+                if (fd->bytes_written - bytes_written > MAX_MPIWRITE_SIZE)
                 {
-                    to_write = INT32_MAX;
+                    to_write = MAX_MPIWRITE_SIZE;
                 }
                 else
                 {
@@ -498,12 +501,6 @@ static void adios_posix1_do_read (struct adios_file_struct * fd
     struct adios_POSIX1_data_struct * p = (struct adios_POSIX1_data_struct *)
                                                           method->method_data;
     struct adios_var_struct * v = fd->group->vars;
-
-    struct adios_parse_buffer_struct data;
-
-    data.vars = v;
-    data.buffer = 0;
-    data.buffer_len = 0;
 
     uint32_t version = 0;
 
@@ -652,9 +649,9 @@ void adios_posix1_close (struct adios_file_struct * fd
                 if (s != fd->vars_start)
                 {
                     fprintf (stderr, "POSIX1 method tried to write %llu, "
-                                     "only wrote %llu\n"
+                                     "only wrote %lld\n"
                             ,fd->vars_start
-                            ,s
+                            ,(int64_t)s
                             );
                 }
                 fd->offset = 0;
@@ -680,9 +677,9 @@ void adios_posix1_close (struct adios_file_struct * fd
                     if (s != fd->bytes_written)
                     {
                         fprintf (stderr, "POSIX1 method tried to write %llu, "
-                                         "only wrote %llu\n"
+                                         "only wrote %lld\n"
                                 ,fd->bytes_written
-                                ,s
+                                ,(int64_t)s
                                 );
                     }
                     fd->base_offset += s;
@@ -704,9 +701,9 @@ void adios_posix1_close (struct adios_file_struct * fd
                 if (s != p->vars_header_size)
                 {
                     fprintf (stderr, "POSIX1 method tried to write %llu, "
-                                     "only wrote %llu\n"
+                                     "only wrote %lld\n"
                             ,p->vars_header_size
-                            ,s
+                            ,(int64_t)s
                             );
                 }
                 fd->offset = 0;
@@ -748,9 +745,9 @@ void adios_posix1_close (struct adios_file_struct * fd
                 if (s != fd->vars_start)
                 {
                     fprintf (stderr, "POSIX1 method tried to write %llu, "
-                                     "only wrote %llu\n"
+                                     "only wrote %lld\n"
                             ,fd->vars_start
-                            ,s
+                            ,(int64_t)s
                             );
                 }
                 fd->offset = 0;
@@ -773,9 +770,9 @@ void adios_posix1_close (struct adios_file_struct * fd
                     if (s != fd->bytes_written)
                     {
                         fprintf (stderr, "POSIX1 method tried to write %llu, "
-                                         "only wrote %llu\n"
+                                         "only wrote %lld\n"
                                 ,fd->bytes_written
-                                ,s
+                                ,(int64_t)s
                                 );
                     }
                     fd->base_offset += s;
@@ -797,9 +794,9 @@ void adios_posix1_close (struct adios_file_struct * fd
                 if (s != p->vars_header_size)
                 {
                     fprintf (stderr, "POSIX1 method tried to write %llu, "
-                                     "only wrote %llu\n"
+                                     "only wrote %lld\n"
                             ,p->vars_header_size
-                            ,s
+                            ,(int64_t)s
                             );
                 }
                 fd->offset = 0;
@@ -856,7 +853,7 @@ void adios_posix1_close (struct adios_file_struct * fd
 
 void adios_posix1_finalize (int mype, struct adios_method_struct * method)
 {
-    struct adios_POSIX1_data_struct * p = (struct adios_POSIX_data_struct *)
+    struct adios_POSIX1_data_struct * p = (struct adios_POSIX1_data_struct *)
         method->method_data;
     adios_free_index_v1 (p->index);
     if (adios_posix1_initialized)

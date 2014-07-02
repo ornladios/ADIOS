@@ -25,13 +25,11 @@
 
 int main (int argc, char ** argv) 
 {
-    char        filename [256];
     int         rank, size, i, j, datasize;
     MPI_Comm    comm = MPI_COMM_WORLD;
     enum ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP;
     ADIOS_SELECTION * sel;
     void * data = NULL;
-    uint64_t start[2], count[2], bytes_read = 0;
    
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (comm, &rank);
@@ -57,12 +55,12 @@ int main (int argc, char ** argv)
             printf ("start=");
             for (j = 0; j < varinfo->ndim; j++)
             {
-                printf ("%lu ", varinfo->blockinfo[i].start[j]);
+                printf ("%llu ", varinfo->blockinfo[i].start[j]);
             }
             printf ("count=");
             for (j = 0; j < varinfo->ndim; j++)
             {
-                printf ("%lu ", varinfo->blockinfo[i].count[j]);
+                printf ("%llu ", varinfo->blockinfo[i].count[j]);
             }
             printf ("\n");
         }

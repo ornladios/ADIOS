@@ -1,0 +1,115 @@
+
+There is a bug in the buginxml application. We want to write out a 2D array 
+with 2D decomposition of processes. If we run it with 4 processes with 2x2 
+decomposition, each writing a 5x7 array, thus forming a global 10x14 array, 
+it should look like this (each local array contains the rank of the writing 
+process):
+
+$ mpirun -np 4 ./buginxml bug1.xml 2 2 
+$ bpls -l buginxml.bp  -d data -n 14
+
+  double   data   {10, 14} 
+    (0, 0)    0 0 0 0 0 0 0 2 2 2 2 2 2 2 
+    (1, 0)    0 0 0 0 0 0 0 2 2 2 2 2 2 2 
+    (2, 0)    0 0 0 0 0 0 0 2 2 2 2 2 2 2 
+    (3, 0)    0 0 0 0 0 0 0 2 2 2 2 2 2 2 
+    (4, 0)    0 0 0 0 0 0 0 2 2 2 2 2 2 2 
+    (5, 0)    1 1 1 1 1 1 1 3 3 3 3 3 3 3 
+    (6, 0)    1 1 1 1 1 1 1 3 3 3 3 3 3 3 
+    (7, 0)    1 1 1 1 1 1 1 3 3 3 3 3 3 3 
+    (8, 0)    1 1 1 1 1 1 1 3 3 3 3 3 3 3 
+    (9, 0)    1 1 1 1 1 1 1 3 3 3 3 3 3 3 
+
+Instead, we have the following erroneous XML files:
+
+bug1.xml
+========
+$ ./buginxml bug1.xml 1 1
+ERROR: config.xml: invalid var dimension: ny_local
+ERROR: config.xml: must define at least 1 adios-group in config.xml
+WARN : adios_group_size (buginxml): Not buffering. needs: 846 available: 0.
+ERROR: Bad var name (ignored) in adios_write(): 'ny_local'
+ERROR: Bad var name (ignored) in adios_write(): 'data'
+
+bug2.xml
+========
+$ ./buginxml bug2.xml 1 1
+ERROR: config.xml: invalid host-language CCERROR: adios-group 'buginxml' not found in configuration file
+
+After fixing this error, there will be another one about some invalid global-bounds dimension...
+
+
+bug3.xml
+========
+$ ./buginxml bug3.xml 1 1
+mxml: Missing value for attribute 'buginxml"' in element attribute!
+ERROR: config.xml: unknown error parsing XML (probably structural)
+Did you remember to start the file with
+<?xml version="1.0"?>
+ERROR: adios-group 'buginxml' not found in configuration file
+
+After fixing this error, there will be another one about invalid transport... 
+After fixing this error, there will be another one about buffer allocation time...
+
+
+bug4.xml
+========
+$ ./buginxml bug4.xml 1 1
+WARN : config.xml: unknown attribute 'size-GB' on buffer (ignored)
+ERROR: config.xml: must define allocate-time and either size-MB or free-memory-percentage for buffer element
+ERROR: config.xml: must define the buffer element in config.xml
+WARN : adios_group_size (buginxml): Not buffering. needs: 1063 available: 0.
+ERROR: Bad var name (ignored) in adios_write(): 'S1'
+
+These are two errors above there to fix. Then, when we run this application 
+and print with bpls, we see the following:
+
+$ mpirun -np 4 ./buginxml bug5.xml 2 2 
+$ bpls -l buginxml.bp -d data -n 14
+  double   data         {10, 14} = 0 / 3 / 1.5 / 1.11803 
+    (0, 0)    0 0 0 0 0 1 1 1 1 1 1 1 0 0 
+    (1, 0)    0 0 0 0 0 1 1 1 1 1 1 1 0 0 
+    (2, 0)    0 0 0 0 0 1 1 1 1 1 1 1 0 0 
+    (3, 0)    0 0 0 0 0 1 1 1 1 1 1 1 0 0 
+    (4, 0)    0 0 0 0 0 1 1 1 1 1 1 1 0 0 
+    (5, 0)    0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+    (6, 0)    0 0 0 0 0 0 0 0 0 0 0 0 0 0 
+    (7, 0)    2 2 2 2 2 3 3 3 3 3 3 3 0 0 
+    (8, 0)    2 2 2 2 2 3 3 3 3 3 3 3 0 0 
+    (9, 0)    2 2 2 2 2 3 3 3 3 3 3 3 0 0 
+
+
+
+bug5.xml
+========
+$ mpirun -np 4 ./buginxml bug5.xml 2 2 
+ERROR: MPI method, rank 1: size of buffered data exceeds pg bound.
+File is corrupted. Need to enlarge group size in adios_group_size().
+Group size=931, offset at end of variable buffer=1681
+...
+
+This finishes after long time on Rhea, but the bp file is bad:
+$bpls -l buginxml.bp  data
+   double   data       {5, 7} = 0 / 3 / 0.375 / 0.856957 
+
+
+Hint: 
+Try 'bpls -lD' to see the decomposition of the global array as see by ADIOS.
+
+
+Hint:
+Try dumping it with 'bpdump' and look for the variable 'data' definition. 
+Are the dimensions right? Do the individual processes fill out a large global array?
+(l:g:o) means the local size, global size and the offset of one dimension, 
+so for 2D array you see six numbers, e.g. 
+
+  Dims (l:g:o) (10:20:0,10:20:0)
+
+would be the case for a 20x20 global array, 
+this particular process writing a 10x10 local piece, 
+to the 0,0 offset in the global array. 
+
+
+
+
+

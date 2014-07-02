@@ -25,7 +25,12 @@ double skel_total_timer = 0;
 MPI_Barrier (MPI_COMM_WORLD);
 skel_init_timer -= MPI_Wtime();
 
+#if $noxml
+adios_init_noxml (MPI_COMM_WORLD);
+#else
 adios_init ("${project}_skel.xml", MPI_COMM_WORLD);
+#end if
+
 skel_init_timer += MPI_Wtime();
 
 int skel_mpi_size, skel_mpi_rank, skel_i;
@@ -54,6 +59,35 @@ int $sv [$bpy.get_num_procs()] = {$v.get_offset_values_str($sv)};
 $v.get_c_type() * $v.get_safe_name();
 #end for
 
+#if $noxml
+int64_t skel_adios_group;
+
+int color = skel_mpi_rank / 2;
+
+adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, $bpy.get_buf_size_mb());
+adios_declare_group (&skel_adios_group, "${bpy.get_group_name()}", "", adios_flag_no);
+
+char paramstring[<%= len(self.bpy.get_parameters()) + 64 %>];
+//sprintf (paramstring, "color:%i;%s", color, "$bpy.get_parameters()");
+sprintf (paramstring, "%s", "$bpy.get_parameters()");
+adios_select_method (skel_adios_group, "$bpy.get_method()", paramstring, "");
+
+## This loop generates any needed skel auxiliary variables
+#for v in $bpy.get_vars():
+    #if $v.has_global_bounds():
+        #for sv in $v.get_offset_vars()
+adios_define_var (skel_adios_group, "$sv", "", adios_integer, "", "", "");
+        #end for
+    #end if
+#end for
+
+## This loop handles the user defined variables
+    #for v in $bpy.get_vars():
+adios_define_var (skel_adios_group, "$v.get_name()", "", $v.get_adios_type(), "$v.get_dims_str()", "$v.get_global_dims_str()", "$v.get_offset_vars_str()");
+    #end for
+
+
+#end if
 
 int skel_steps = ${bpy.get_steps()};
 int step;

@@ -24,11 +24,14 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <stdbool.h>
+#include <string.h>
 #include <assert.h>
 
 #include "public/adios_error.h"
 #include "public/adios_selection.h"
+#include "common_read.h"
 #include "adios_subvolume.h"
+#include "adios_internals.h" // adios_get_type_size()
 #include "adios_selection_util.h"
 #include "adios_patchdata.h"
 
@@ -50,7 +53,7 @@ inline static uint64_t adios_patch_data_bb_to_bb(void *dst, uint64_t dst_ragged_
     uint64_t volume;
 
     // Intersect the two bounding boxes
-    const ADIOS_SELECTION *inter_sel = adios_selection_intersect_bb_bb(dst_bb, src_bb);
+    ADIOS_SELECTION *inter_sel = adios_selection_intersect_bb_bb(dst_bb, src_bb);
 
     // If there is no intersection, stop now, nothing to do
     if (!inter_sel)

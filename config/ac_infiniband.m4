@@ -36,15 +36,15 @@ INFINIBAND_LIBS=""
 
 AC_ARG_WITH(infiniband,
         [  --with-infiniband=DIR      Location of Infiniband],
-        [ ac_with_infiniband=yes;])
+        [ INFINIBAND_DIR=$withval;], [with_infiniband=yes])
 
 
 
-if test x"$withval" = xno; then
+if test x"$with_infiniband" = xno; then
 
         ac_with_infiniband=no;
 
-elif test x"$withval" = xyes -o x"$withval" = x; then
+elif test x"$with_infiniband" = xyes -o x"$with_infiniband" = x; then
 
         INFINIBAND_CPPFLAGS="";
         INFINIBAND_LDFLAGS="";
@@ -63,6 +63,8 @@ AM_CONDITIONAL(HAVE_INFINIBAND,test x$ac_with_infiniband = xyes)
 
 dnl Check for command-line disable
 if test x"$ac_with_infiniband" = xyes; then
+
+        AC_MSG_NOTICE([=== checking for INFINIBAND ===])
 
         dnl Look for Infiniband header files
         save_CPPFLAGS=$CPPFLAGS;

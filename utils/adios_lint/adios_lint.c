@@ -20,6 +20,7 @@
 #include "adios.h"
 #include "adios_transport_hooks.h"
 #include "adios_internals.h"
+#include "adios_internals_mxml.h"
 
 #define STR_LEN 1000
 
@@ -47,13 +48,14 @@ int main (int argc, char ** argv)
     struct adios_method_list_struct * methods = 0;
     struct adios_group_list_struct * groups = 0;
     char * filename;
+    MPI_Comm comm = 0; //dummy comm
 
     if (argc < 2)
         filename = "config.xml";
     else
         filename = argv [1];
 
-    if (!adios_parse_config (filename))
+    if (!adios_parse_config (filename, comm))
         return 1;
 
     methods = adios_get_methods ();

@@ -66,7 +66,7 @@ int main(int argc, char ** argv){
 	adios_open( &adios_handle, "temperature", FILE_NAME, "w", comm);
 	adios_groupsize = 4 + 4 + 4 + 8 * (NX);
 	retval=adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
-	fprintf(stderr, "Rank=%d adios_group_size(): adios_groupsize=%ld, adios_totalsize=%ld, retval=%d\n",
+	fprintf(stderr, "Rank=%d adios_group_size(): adios_groupsize=%lld, adios_totalsize=%lld, retval=%d\n",
 			rank, adios_groupsize, adios_totalsize, retval);
 
 	// write; don't check errors for simplicity reasons

@@ -54,6 +54,15 @@ void adios_transform_read_init() {
     adios_transforms_initialized = 1;
 }
 
+/* return 0 if the method is not implemented (functions generated with DECLARE_TRANSFORM_READ_METHOD_UNIMPL, or 1 if the method is implemented */
+int adios_transform_is_implemented (enum ADIOS_TRANSFORM_TYPE transform_type)
+{
+    assert(is_transform_type_valid(transform_type));
+    if (transform_type == adios_transform_none)
+        return 1; // method "none" is implemented
+    return TRANSFORM_READ_METHODS[transform_type].transform_is_implemented();
+}
+
 adios_datablock * adios_transform_subrequest_completed(adios_transform_read_request *reqgroup,
                                                        adios_transform_pg_read_request *pg_reqgroup,
                                                        adios_transform_raw_read_request *completed_subreq) {

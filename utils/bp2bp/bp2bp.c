@@ -76,7 +76,6 @@ int main (int argc, char ** argv) {
     char       gbounds[1007], lbounds[1007], offs[1007],tstring[100];
     //size = number of cores,  gidx = adios group index
     int        rank, size, gidx, i, j, k, ii;
-    enum       ADIOS_DATATYPES attr_type;
     //data = pointer to read-in data
     void       * data = NULL;
     uint64_t   s[] = {0,0,0,0,0,0,0,0,0,0};  //starting offset
@@ -86,7 +85,6 @@ int main (int argc, char ** argv) {
     int64_t    new_adios_group, m_adios_file;
     uint64_t   var_size;  //portion_bound,
     uint64_t   adios_groupsize, adios_totalsize;
-    int        err;
     int        read_buffer;        //possible maximum size you the user would like for each chunk in MB
     int           write_buffer = 1536;  //actual buffer size you use in MB
     int        itime;
@@ -199,7 +197,7 @@ int main (int argc, char ** argv) {
             {   
                 // scalars: every process does them the same.
                 adios_define_var(new_adios_group,var_name,var_path,v->type,0,0,0);
-                err = getTypeInfo( v->type, &element_size);    //element_size is size per element based on its type
+                getTypeInfo( v->type, &element_size);    //element_size is size per element based on its type
                 if (v->type == adios_string) {  //special case when the scalar is string.
                     adios_groupsize += strlen(v->value);
                 } else {
@@ -209,7 +207,7 @@ int main (int argc, char ** argv) {
             else 
             { 
                 // vector variables
-                err = getTypeInfo( v->type, &element_size);
+                getTypeInfo( v->type, &element_size);
                 var_size=1;
                 for (ii=0;ii<v->ndim;ii++) {
                     var_size*=v->dims[ii];
@@ -441,7 +439,7 @@ int main (int argc, char ** argv) {
                         s[j] = 0;
                         c[j] = 1;
                     }
-                    err = getTypeInfo( v->type, &element_size);
+                    getTypeInfo( v->type, &element_size);
 
                     uint64_t total_size = 1;
                     for (ii=0;ii<v->ndim;ii++)
@@ -1096,6 +1094,9 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype)
 
         case adios_double_complex:
             printf ("(%g,i%g)", ((double *) data)[2*item], ((double *) data)[2*item+1]);
+            break;
+
+        case adios_unknown:
             break;
     } // end switch
     return 0;

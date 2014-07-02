@@ -85,6 +85,13 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
     // NCSU ALACRITY-ADIOS - Initialize transform methods
     adios_transform_read_init();
 
+    if (!adios_read_hooks[method].adios_read_init_method_fn) {
+        adios_error (err_invalid_read_method, 
+            "Read method (=%d) passed to adios_read_init_method() is not provided "
+            "by this build of ADIOS.\n", (int)method);
+        return err_invalid_read_method;
+    }
+
     // process common parameters here
     params = text_to_name_value_pairs (parameters);
     p = params;
@@ -148,7 +155,7 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
     }
 
     // call method specific init 
-    retval = adios_read_hooks[method].adios_init_method_fn (comm, params);
+    retval = adios_read_hooks[method].adios_read_init_method_fn (comm, params);
     free_name_value_pairs (params);
     return retval;
 }
@@ -171,9 +178,14 @@ int common_read_finalize_method(enum ADIOS_READ_METHOD method)
         adios_error (err_invalid_read_method, 
             "Invalid read method (=%d) passed to adios_read_finalize_method().\n", (int)method);
         return err_invalid_read_method;
-    } 
+    } else if (!adios_read_hooks[method].adios_read_finalize_method_fn) {
+        adios_error (err_invalid_read_method, 
+            "Read method (=%d) passed to adios_read_finalize_method() is not provided "
+            "by this build of ADIOS.\n", (int)method);
+        return err_invalid_read_method;
+    }
 
-    return adios_read_hooks[method].adios_finalize_method_fn ();
+    return adios_read_hooks[method].adios_read_finalize_method_fn ();
 }
 
 
@@ -185,7 +197,7 @@ ADIOS_FILE * common_read_open (const char * fname,
 {
     ADIOS_FILE * fp;
     struct common_read_internals_struct * internals; 
-    int i;
+    long i;
 
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
         adios_error (err_invalid_read_method, 
@@ -201,10 +213,17 @@ ADIOS_FILE * common_read_open (const char * fname,
     // NCSU ALACRITY-ADIOS - Initialize transform methods
     adios_transform_read_init();
 
+    if (!adios_read_hooks[method].adios_read_open_fn) {
+        adios_error (err_invalid_read_method, 
+            "Read method (=%d) passed to adios_read_open() is not provided "
+            "by this build of ADIOS.\n", (int)method);
+        return NULL;
+    }
+
     internals->method = method;
     internals->read_hooks = adios_read_hooks;
 
-    fp = adios_read_hooks[internals->method].adios_open_fn (fname, comm, lock_mode, timeout_sec);
+    fp = adios_read_hooks[internals->method].adios_read_open_fn (fname, comm, lock_mode, timeout_sec);
     if (!fp)
         return fp;
 
@@ -213,7 +232,7 @@ ADIOS_FILE * common_read_open (const char * fname,
     internals->hashtbl_vars = qhashtbl(hashsize);
     for (i=0; i<fp->nvars; i++) {
         internals->hashtbl_vars->put (internals->hashtbl_vars, fp->var_namelist[i], 
-                                       (void *)i+1); // avoid 0 for error checking later
+                                       (void *)(i+1)); // avoid 0 for error checking later
     }
 
     //read mesh names from attributes for example the var is using a mesh named trimesh, 
@@ -292,13 +311,14 @@ ADIOS_FILE * common_read_open_file (const char * fname,
 {
     ADIOS_FILE * fp;
     struct common_read_internals_struct * internals; 
-    int i;
+    long i;
 
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
         adios_error (err_invalid_read_method, 
             "Invalid read method (=%d) passed to adios_read_open_file().\n", (int)method);
         return NULL;
-    } 
+    }
+
 
     adios_errno = err_no_error;
     internals = (struct common_read_internals_struct *) 
@@ -311,7 +331,13 @@ ADIOS_FILE * common_read_open_file (const char * fname,
     internals->method = method;
     internals->read_hooks = adios_read_hooks;
 
-    fp = adios_read_hooks[internals->method].adios_open_file_fn (fname, comm);
+    if (!adios_read_hooks[internals->method].adios_read_open_file_fn) {
+        adios_error (err_invalid_read_method, 
+            "Read method (=%d) passed to adios_read_open_file() is not provided "
+            "by this build of ADIOS.\n", (int)method);
+        return NULL;
+    }
+    fp = adios_read_hooks[internals->method].adios_read_open_file_fn (fname, comm);
     if (!fp)
         return fp;
     
@@ -320,7 +346,7 @@ ADIOS_FILE * common_read_open_file (const char * fname,
     internals->hashtbl_vars = qhashtbl(hashsize);
     for (i=0; i<fp->nvars; i++) {
         internals->hashtbl_vars->put (internals->hashtbl_vars, fp->var_namelist[i], 
-                                       (void *)i+1); // avoid 0 for error checking later
+                                       (void *)(i+1)); // avoid 0 for error checking later
     }
 
     //read mesh names from attributes for example the var is using a mesh named trimesh, 
@@ -354,6 +380,8 @@ ADIOS_FILE * common_read_open_file (const char * fname,
         {
             fp->mesh_namelist = (char **) realloc (tmp, sizeof (char *) * fp->nmeshes);
             assert (fp->mesh_namelist);
+        } else {
+            free (tmp);
         }
 
     }
@@ -401,7 +429,7 @@ int common_read_close (ADIOS_FILE *fp)
             free(fp->mesh_namelist);
         }
                 
-        retval = internals->read_hooks[internals->method].adios_close_fn (fp);
+        retval = internals->read_hooks[internals->method].adios_read_close_fn (fp);
         free_namelist (internals->group_namelist, internals->ngroups);
         free (internals->nvars_per_group);
         free (internals->nattrs_per_group);
@@ -436,7 +464,7 @@ int common_read_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
     struct common_read_internals_struct * internals;
     int hashsize;
     int retval;
-    int i;
+    long i;
     
     adios_errno = err_no_error;
     if (fp) {
@@ -450,7 +478,7 @@ int common_read_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
             internals->hashtbl_vars = qhashtbl(hashsize);
             for (i=0; i<fp->nvars; i++) {
                 internals->hashtbl_vars->put (internals->hashtbl_vars, fp->var_namelist[i], 
-                        (void *)i+1); // avoid 0 for error checking later
+                        (void *)(i+1)); // avoid 0 for error checking later
             }
 
             /* Update group information too */
@@ -567,12 +595,10 @@ static int common_read_find_attr (int n, char ** namelist, const char *name, int
 
 ADIOS_VARINFO * common_read_inq_var (const ADIOS_FILE *fp, const char * varname) 
 {
-    struct common_read_internals_struct * internals;
     ADIOS_VARINFO * retval;
  
     adios_errno = err_no_error;
     if (fp) {
-        internals = (struct common_read_internals_struct *) fp->internal_data;
         int varid = common_read_find_var (fp, varname, 0);
         if (varid >= 0) {
             retval = common_read_inq_var_byid (fp, varid);
@@ -620,8 +646,6 @@ ADIOS_VARINFO * common_read_inq_var_byid (const ADIOS_FILE *fp, int varid)
     if (vi == NULL)
         return NULL;
     
-    vi->meshinfo = NULL;
-
     // NCSU ALACRITY-ADIOS - translate between original and transformed metadata if necessary
     ti = common_read_inq_transinfo(fp, vi); // No orig_blockinfo
     if (ti && ti->transform_type != adios_transform_none) {
@@ -649,6 +673,7 @@ ADIOS_VARINFO * common_read_inq_var_raw_byid (const ADIOS_FILE *fp, int varid)
             if (retval) {
                 /* Translate real varid to the group varid presented to the user */
                 retval->varid = varid;
+                retval->meshinfo = NULL; // initialize here because it's a common layer addition
             }
         } else {
             adios_error (err_invalid_varid, 
@@ -805,7 +830,6 @@ static void common_read_free_blockinfo(ADIOS_VARBLOCK **varblock, int sum_nblock
 
 void common_read_free_varinfo (ADIOS_VARINFO *vp)
 {
-    int i;
     if (vp) {
         common_read_free_blockinfo(&vp->blockinfo, vp->sum_nblocks);
 
@@ -901,12 +925,10 @@ int common_read_get_attr_mesh (const ADIOS_FILE * fp,
                             int * size,
                             void ** data)
 {
-    struct common_read_internals_struct * internals;
     int retval;
 
     adios_errno = err_no_error;
     if (fp) {
-        internals = (struct common_read_internals_struct *) fp->internal_data;
         int attrid = common_read_find_attr (fp->nattrs, fp->attr_namelist, attrname, 1);
         if (attrid > -1) {
             retval = common_read_get_attr_byid_mesh (fp, attrid, type, size, data);
@@ -1010,11 +1032,11 @@ int common_read_inq_var_meshinfo (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo)
     {
         if (!strcmp((char *)data, "point"))
         {
-            varinfo->meshinfo->centering = 1;      // point centering
+            varinfo->meshinfo->centering = point;
         }
         else if (!strcmp((char *)data, "cell"))
         {
-            varinfo->meshinfo->centering = 2;      // cell centering
+            varinfo->meshinfo->centering = cell;
         }
         else
         {
@@ -1132,7 +1154,7 @@ static int common_check_var_type_to_int (enum ADIOS_DATATYPES * type, void * val
 }
 int adios_get_uniform_mesh_attr (ADIOS_FILE * fp, ADIOS_MESH *meshinfo, char * attrs)      //attr for origins-num(origins), spacings-num(spacings), maximums-num(maximums)
 {
-    int i, j;
+    int i;
     enum ADIOS_DATATYPES attr_type;
     int attr_size;
     void * data = NULL;
@@ -1479,9 +1501,6 @@ int common_read_complete_meshinfo (ADIOS_FILE *fp, ADIOS_FILE *mp, ADIOS_MESH * 
 //    if ( !strcmp((char *)data, "uniform") )
     if (meshinfo->type == ADIOS_MESH_UNIFORM)
     {
-        bool have_spacing = 0;
-        bool have_max = 0;
-
 //        meshinfo->type = ADIOS_MESH_UNIFORM;
         meshinfo->uniform = (MESH_UNIFORM * ) malloc (sizeof(MESH_UNIFORM));
 
@@ -2197,9 +2216,10 @@ int common_read_complete_meshinfo (ADIOS_FILE *fp, ADIOS_FILE *mp, ADIOS_MESH * 
                 }
                 else
                 {
-                    log_warn ("Var %s for structured mesh %s nspace is not found. ", 
+                    log_warn ("Var %s for structured mesh %s nspace is not found. "
                               "We use num of dims %d for nspaces.\n",
-                              (char *)data, meshinfo->name, meshinfo->structured->num_dimensions);
+                              (char *)data, meshinfo->name, 
+                              meshinfo->structured->num_dimensions);
                 }
             }
         } // end of structured mesh nspace
@@ -3022,12 +3042,10 @@ int common_read_schedule_read (const ADIOS_FILE      * fp,
                                void                  * data)
 
 {
-    struct common_read_internals_struct * internals;
     int retval;
     
     adios_errno = err_no_error;
     if (fp) {
-        internals = (struct common_read_internals_struct *) fp->internal_data;
         int varid = common_read_find_var (fp, varname,0);
         if (varid >= 0) {
             retval = common_read_schedule_read_byid (fp, sel, varid, from_steps, nsteps, param /* NCSU ALACRITY-ADIOS */, data);
@@ -3110,8 +3128,11 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
 #endif
             } else {
                 // Old functionality
-            internals = (struct common_read_internals_struct *) fp->internal_data;
-            retval = internals->read_hooks[internals->method].adios_schedule_read_byid_fn (fp, sel, varid+internals->group_varid_offset, from_steps, nsteps, data);
+                common_read_free_transinfo (raw_varinfo, transinfo);
+                common_read_free_varinfo (raw_varinfo);
+
+                internals = (struct common_read_internals_struct *) fp->internal_data;
+                retval = internals->read_hooks[internals->method].adios_schedule_read_byid_fn (fp, sel, varid+internals->group_varid_offset, from_steps, nsteps, data);
             }
         } else {
             adios_error (err_invalid_varid, 
@@ -3186,7 +3207,7 @@ int common_read_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
             if (!*chunk) break; // If no more chunks are available, stop now
 
             // Process the chunk through a transform method, if necessary
-            adios_transform_process_read_chunk(internals->transform_reqgroups, chunk);
+            adios_transform_process_read_chunk(&internals->transform_reqgroups, chunk);
         } while (!*chunk); // Keep reading until we have a chunk to return
     } else {
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_check_reads()\n");
@@ -3219,12 +3240,10 @@ int common_read_get_attr (const ADIOS_FILE * fp,
                           int * size, 
                           void ** data)
 {
-    struct common_read_internals_struct * internals;
     int retval;
     
     adios_errno = err_no_error;
     if (fp) {
-        internals = (struct common_read_internals_struct *) fp->internal_data;
         int attrid = common_read_find_attr (fp->nattrs, fp->attr_namelist, attrname, 0);
         if (attrid > -1) {
             retval = common_read_get_attr_byid (fp, attrid, type, size, data);

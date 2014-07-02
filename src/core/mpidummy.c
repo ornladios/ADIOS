@@ -52,9 +52,12 @@ int MPI_Bcast(void *buffer, int count, MPI_Datatype datatype, int root, MPI_Comm
 int MPI_Comm_dup(MPI_Comm comm, MPI_Comm *newcomm) { *newcomm = comm; return MPI_SUCCESS; }
 int MPI_Comm_rank(MPI_Comm comm, int *rank) { *rank = 0; return MPI_SUCCESS; }
 int MPI_Comm_size(MPI_Comm comm, int *size) { *size = 1; return MPI_SUCCESS; }
+int MPI_Comm_free(MPI_Comm *comm) { *comm = 0; return MPI_SUCCESS; };
 MPI_Comm MPI_Comm_f2c(MPI_Fint comm) { return comm; }
 
-int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype, void *recvbuf, int recvcnt, MPI_Datatype recvtype, int root, MPI_Comm comm)
+int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype, 
+               void *recvbuf, int recvcnt, MPI_Datatype recvtype, 
+               int root, MPI_Comm comm)
 {
   int ier = MPI_SUCCESS;
   size_t n=0, nsent=0, nrecv=0 ;
@@ -95,6 +98,59 @@ int MPI_Gatherv(void *sendbuf, int sendcnt, MPI_Datatype sendtype,
 
   return ier ;
 }
+
+int MPI_Allgather(void *sendbuf, int sendcount, MPI_Datatype sendtype,
+                  void *recvbuf, int recvcount, MPI_Datatype recvtype,
+                  MPI_Comm comm)
+{
+    return MPI_Gather (sendbuf, sendcount, sendtype, recvbuf, recvcount, recvtype, 0, comm);
+}
+
+int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype, 
+               void *recvbuf, int recvcnt, MPI_Datatype recvtype, int root, 
+               MPI_Comm comm)
+{
+  int ier = MPI_SUCCESS;
+  size_t n=0, nsent=0, nrecv=0 ;
+  if( !sendbuf || !recvbuf )        ier = MPI_ERR_BUFFER ;
+  if( comm==MPI_COMM_NULL || root ) ier = MPI_ERR_COMM ;
+
+  switch( sendtype )
+  {
+    case MPI_INT : n = sizeof( int ) ;
+    default      : return MPI_ERR_TYPE ;
+  }
+  nsent = n * sendcnt ;
+
+  switch( recvtype )
+  {
+    case MPI_INT : nrecv = sizeof( int ) ;
+    default      : return MPI_ERR_TYPE ;
+  }
+  nrecv = n * recvcnt ;
+
+  if( nrecv!=nsent ) ier = MPI_ERR_COUNT ;
+
+  if( ier == MPI_SUCCESS ) memcpy( sendbuf, recvbuf, nsent );
+  else snprintf(mpierrmsg, ier, "could not scatter data\n" );
+
+  return ier ;
+}
+
+int MPI_Scatterv( void *sendbuf, int *sendcnts, int *displs, 
+                 MPI_Datatype sendtype, void *recvbuf, int recvcnt,
+                 MPI_Datatype recvtype,
+                 int root, MPI_Comm comm)
+{
+  int ier = MPI_SUCCESS;
+  if( !sendcnts || !displs ) ier = MPI_ERR_BUFFER ;
+
+  if( ier == MPI_SUCCESS )
+    ier = MPI_Scatter(sendbuf, sendcnts[0], sendtype, recvbuf, recvcnt, recvtype, root, comm ) ;
+
+  return ier ;
+}
+
 
 int MPI_File_open(MPI_Comm comm, char *filename, int amode, MPI_Info info, MPI_File *fh) 
 {
@@ -161,3 +217,11 @@ double MPI_Wtime()
     gettimeofday (&tv, NULL);
     return (double)(tv.tv_sec) + (double)(tv.tv_usec) / 1000000;    
 }
+
+int MPI_Get_processor_name (char *name, int *resultlen)
+{
+    sprintf(name, "0");
+    *resultlen = 1;
+    return 0;
+}
+

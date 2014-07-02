@@ -19,8 +19,7 @@
 
 int main (int argc, char ** argv) 
 {
-    char        filename [256];
-    int         rank, size, i, j, NX = 16;
+    int         rank, size, i, j;
     MPI_Comm    comm = MPI_COMM_WORLD;
     ADIOS_FILE * f;
     ADIOS_VARINFO * v;
@@ -29,9 +28,8 @@ int main (int argc, char ** argv)
     int retval = 0;
     float timeout_sec = 1.0; 
 
-    void * data = NULL, * data1 = NULL, * data2 = NULL;
-    uint64_t start[2], count[2], bytes_read = 0;
-    struct timeval t0, t1;
+    void * data = NULL;
+    uint64_t start[2], count[2];
 
     MPI_Init (&argc, &argv);
 
@@ -65,7 +63,7 @@ int main (int argc, char ** argv)
 
         printf ("ndim = %d\n",  v->ndim);
         //printf ("nsteps = %d\n",  v->nsteps);
-        printf ("dims[%lu][%lu]\n",  v->dims[0], v->dims[1]);
+        printf ("dims[%llu][%llu]\n",  v->dims[0], v->dims[1]);
 
         uint64_t slice_size = v->dims[0]/size;
         if (rank == size-1)

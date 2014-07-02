@@ -80,11 +80,17 @@
 /* Define to 1 if you have the `fdatasync' function. */
 #undef HAVE_FDATASYNC
 
+/* Define if you have FGR. */
+#undef HAVE_FGR
+
 /* Flexpath is enabled */
 #undef HAVE_FLEXPATH
 
 /* Define to 1 if you have the `gettimeofday' function. */
 #undef HAVE_GETTIMEOFDAY
+
+/* Define if you have GLIB. */
+#undef HAVE_GLIB
 
 /* Define if you have HDF5. */
 #undef HAVE_HDF5
@@ -115,6 +121,12 @@
 
 /* Define if you have LUSTRE. */
 #undef HAVE_LUSTRE
+
+/* Define to 1 if you have the <lustre/liblustreapi.h> header file. */
+#undef HAVE_LUSTRE_LIBLUSTREAPI_H
+
+/* Define to 1 if you have the <lustre/lustreapi.h> header file. */
+#undef HAVE_LUSTRE_LUSTREAPI_H
 
 /* Define to 1 if you have the <memory.h> header file. */
 #undef HAVE_MEMORY_H
@@ -154,6 +166,12 @@
 
 /* Define if you have the Pablo. */
 #undef HAVE_PABLO
+
+/* Define if you have the PAMI. */
+#undef HAVE_PAMI
+
+/* Define to 1 if you have the <pami.h> header file. */
+#undef HAVE_PAMI_H
 
 /* Define if you have PHDF5. */
 #undef HAVE_PHDF5
@@ -261,9 +279,6 @@
 /* icee is disabled */
 #undef NO_ICEE
 
-/* Define to 1 if your C compiler doesn't accept -c and -o together. */
-#undef NO_MINUS_C_MINUS_O
-
 /* Name of package */
 #undef PACKAGE
 
@@ -278,6 +293,9 @@
 
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION

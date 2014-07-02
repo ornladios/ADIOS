@@ -68,7 +68,7 @@
 
 
 int main (int argc, char **argv){
-	int rank =0, size =0;
+	int rank =0;
 	MPI_Comm comm = MPI_COMM_WORLD;
 	diag_t diag = DIAG_OK;  // to store the diagnostic information
 	struct test_info test_result = { TEST_PASSED, "maya_noxml" };
@@ -119,7 +119,7 @@ int main (int argc, char **argv){
 	char fullname[MAYA_VAR_BUF_SIZE];
 	int i = 0;
 	// for storing shape_dim_x, shape_dim_y, shape_dim_z
-	uint32_t shape_max_dims[3];
+	int shape_max_dims[3];
 
 	// space for the data (size will depend on the shape_dim_x, etc)
 	double *data = NULL;

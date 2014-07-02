@@ -13,10 +13,9 @@ int main (int argc, char ** argv)
 	char        filename [256];
 	int         rank;
 	int         NX = 10; 
-	double      t[NX], p[NX], s[NX];
+	double      t[NX];
 
 	/* ADIOS variables declarations for matching gwrite_temperature.ch */
-	int         adios_err;
 	uint64_t    adios_groupsize, adios_totalsize;
 	int64_t     adios_handle;
 	MPI_Comm comm;

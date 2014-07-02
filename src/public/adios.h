@@ -8,10 +8,11 @@
 #ifndef ADIOS_H
 #define ADIOS_H
 
+#include <stdint.h>
+
 #include "adios_mpi.h"
 #include "adios_types.h"
 #include "adios_error.h"
-#include <stdint.h>
 
 // ADIOS - Adaptable IO System
 
@@ -117,6 +118,11 @@ int64_t adios_define_var (int64_t group_id,
                           const char * local_offsets
                          );
 
+// To set the transform method for a variable just defined 
+// var_id is the value returned by adios_define_var
+// returns adios_errno (0=OK)
+int adios_set_transform (int64_t var_id, const char *transform_type_str);
+
 int adios_define_attribute (int64_t group, 
                             const char * name,
                             const char * path, 
@@ -145,7 +151,87 @@ int adios_write_byid (int64_t fd_p, int64_t id, void * var);
 
 void adios_timing_write_xml (int64_t fd_p, const char* filename);
 
+// no-xml schema API
+// Define adios schema version
+// The function implements the same as "schema version="1.1 ""in xml
+int adios_define_schema_version (int64_t group_id, char * schema_version);
 
+// Assign mesh to a variable
+// The function implements the same as "var name="Var1" mesh="meshname" " in xml 
+int adios_define_var_mesh(int64_t group_id, const char * varname, const char * meshname);
+
+// Define centering of the variable value onto the mesh, centering is "cell" or "point"
+int adios_define_var_centering(int64_t group_id, const char * varname, const char * centering);
+
+// Define a external file where mesh variables are written 
+int adios_define_mesh_file(int64_t group_id, char * name, char * file);
+
+// The time-­steps points to time variables using steps, starting from step 0
+int adios_define_var_timesteps (const char * timesteps, int64_t group_id, const char * name);
+
+// The time-­steps points to time variables using real time, starting from time 
+// Exactly like the time steps except with real numbers
+int adios_define_var_timescale (const char * timescale, int64_t group_id, const char * name);
+
+// Describe the padding pattern for output images
+// If this number is 4, then the time-steps for images will be padded with 0 up to 4 digit numbers
+int adios_define_var_timeseriesformat (const char * timeseries, int64_t group_id, const char * name);
+
+// Use the concept of start, stride and count in all dimensions of a variable to identify a subset of a dataset
+int adios_define_var_hyperslab (const char * hyperslab, int64_t group_id, const char * name);
+
+// Describe if the mesh changes over time, and the option is "yes" or "no" 
+int adios_define_mesh_timevarying (const char * timevarying, int64_t group_id, const char * name);
+
+// The time-­steps points to time variables using steps, starting from step 0
+int adios_define_mesh_timesteps (const char * timesteps, int64_t group_id, const char * name);
+
+// The time-­steps points to time variables using real time, starting from time 0
+int adios_define_mesh_timescale (const char * timescale, int64_t group_id, const char * name);
+
+// Represent an integer for padding and formatting output image files
+// If this number is 4, then the time-steps for images will be padded with 0 up to 4 digit number
+int adios_define_mesh_timeseriesformat (const char * timeseries, int64_t group_id, const char * name);
+
+// Indicates where (which ADIOS group) mesh variables are stored
+int adios_define_mesh_group (const char * group, int64_t group_id, const char * name);
+
+// Defines a uniform mesh
+// For not requried attributes in this function, please use 0 instead
+int adios_define_mesh_uniform (char * dimensions, 
+                               char * origin, 
+                               char * spacing, 
+                               char * maximum, 
+                               char * nspace,
+                               int64_t group_id,
+                               const char * name);
+
+// Defines a rectilinear mesh
+// For not requried attributes in this function, please use 0 instead
+int adios_define_mesh_rectilinear (char * dimensions, 
+                                   char * coordinates,
+                                   char * nspace,
+                                   int64_t group_id,
+                                   const char * name);
+
+// Defines a structured mesh
+// For not requried attributes in this function, please use 0 instead
+int adios_define_mesh_structured (char * dimensions, 
+                                  char * points,
+                                  char * nspace,
+                                  int64_t group_id,
+                                  const char * name);
+
+// Define an unstructured mesh
+// For not requried attributes in this function, please use 0 instead
+int adios_define_mesh_unstructured (char * points,
+                                    char * data, 
+                                    char * count, 
+                                    char * cell_type,
+                                    char * npoints,
+                                    char * nspace,
+                                    int64_t group_id,
+                                    const char * name);
 #ifdef __cplusplus
 }
 #endif

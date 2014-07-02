@@ -6,14 +6,10 @@
 #
 dnl @synopsis AC_LUSTRE
 dnl
-dnl This macro test if dmalloc is to be used. 
-dnl Use in C code:
-dnl     #ifdef DMALLOC
-dnl     #include "dmalloc.h"
-dnl     #endif
-dnl
-dnl @version 1.0
+dnl This macro test if lustreapi.a can be used
+dnl @version 2.0
 dnl @author Qing Liu, UT
+dnl @author Norbert Podhorszki, ORNL
 dnl
 AC_DEFUN([AC_LUSTRE],[
 
@@ -21,37 +17,113 @@ AC_MSG_NOTICE([=== checking for Lustre ===])
 
 AM_CONDITIONAL(HAVE_LUSTRE,true)
 
+dnl This is optional, if not given, do nothing
 AC_ARG_WITH(lustre,
-        [  --with-lustre=DIR      Location of lustre library],
-        [LUSTRE_LDFLAGS="-L$withval/lib";
-         LUSTRE_LIBS="-llustreapi";
-         LUSTRE_CPPFLAGS="-I$withval/include";],
-        [with_lustre=no])
+        [  --with-lustre[=DIR]      Location of lustre library],
+        [:],[with_lustre=no])
 
-if test "x$with_lustre" == "xno"; then
+if test "x${with_lustre}" == "xno"; then
+       AM_CONDITIONAL(HAVE_LUSTRE,false)
+fi
 
-   AM_CONDITIONAL(HAVE_LUSTRE,false)
+if test -z "${HAVE_LUSTRE_TRUE}"; then
 
-else
-
+    dnl AC_MSG_NOTICE([   debug: with_lustre="$with_lustre"])
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
-    LIBS="$LIBS -llustreapi"
+    
+    if test "x$with_lustre" == "xyes"; then
+        dnl No path given
+        LUSTRE_CPPFLAGS=""
+        LUSTRE_LIBS="-llustreapi"
+        LUSTRE_LDFLAGS=""
+    else
+        dnl Path given, first try path/lib64
+        LUSTRE_CPPFLAGS="-I${with_lustre}/include"
+        LUSTRE_LIBS="-llustreapi"
+        LUSTRE_LDFLAGS="-L${with_lustre}/lib64"
+    fi
+
+    LIBS="$LIBS $LUSTRE_LIBS"
     LDFLAGS="$LDFLAGS $LUSTRE_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $LUSTRE_CPPFLAGS"
     
-    dnl if test -z "${HAVE_DMALLOC_TRUE}"; then
-    dnl        AC_CHECK_HEADERS(dmalloc.h,
-    dnl                ,
-    dnl                [AM_CONDITIONAL(HAVE_DMALLOC,false)])
-    dnl fi
+    oldheader=no
+    AC_CHECK_HEADERS([lustre/lustreapi.h],
+                    ,
+                    [AM_CONDITIONAL(HAVE_LUSTRE,false)])
+
+    dnl if lustreapi.h is missing, we may still find 1.x lustre's liblustreapi.h
+    if test -z "${HAVE_LUSTRE_FALSE}"; then
+        AC_CHECK_HEADERS([lustre/liblustreapi.h],
+                        [AM_CONDITIONAL(HAVE_LUSTRE,true)
+                         oldheader=yes],
+                        [AM_CONDITIONAL(HAVE_LUSTRE,false)])
+    fi
     
-    # Check for the lustre library and headers
-    dnl AC_TRY_COMPILE([struct obd_uuid {char uuid[40];};int fd, num_ost;struct obd_uuid uuids[1024];],
-    dnl        [llapi_lov_get_uuids(fd, uuids, &num_ost);],
-    dnl        [LUSTRE_LIBS="-llustreapi"],
-    dnl        [AM_CONDITIONAL(HAVE_LUSTRE,false)])
+    if test -z "${HAVE_LUSTRE_TRUE}"; then
+        dnl Check for the lustre library
+        AC_MSG_CHECKING([if lustre code can be linked with $LUSTRE_LDFLAGS])
+        if test "${oldheader}" == "no" ; then
+            AC_TRY_LINK(
+                [#include <stdlib.h>
+                 #include "lustre/lustreapi.h"
+                 int fd, num_ost;
+                 struct obd_uuid uuids[1024];],
+                [llapi_lov_get_uuids(fd, uuids, &num_ost);],
+                [AC_MSG_RESULT(yes)],
+                [AM_CONDITIONAL(HAVE_LUSTRE,false)
+                 AC_MSG_RESULT(no)
+                ])
+        else
+            AC_TRY_LINK(
+                [#include <stdlib.h>
+                 #include "lustre/liblustreapi.h"
+                 int fd, num_ost;
+                 struct obd_uuid uuids[1024];],
+                [llapi_lov_get_uuids(fd, uuids, &num_ost);],
+                [AC_MSG_RESULT(yes)],
+                [AM_CONDITIONAL(HAVE_LUSTRE,false)
+                 AC_MSG_RESULT(no)
+                ])
+        fi
+    fi
+
+    dnl If Linking above failed, one reason might be that we looked in lib64/ instead of lib/
+    if test -z "${HAVE_LUSTRE_FALSE}"; then
+        if test "x$with_lustre" != "xyes"; then
+            LUSTRE_LDFLAGS="-L${with_lustre}/lib"
+            LDFLAGS="$save_LDFLAGS $LUSTRE_LDFLAGS"
+            dnl Check for the lustre library
+            AC_MSG_CHECKING([if lustre code can be linked with $LUSTRE_LDFLAGS])
+            if test "${oldheader}" == "no" ; then
+                AC_TRY_LINK(
+                    [#include <stdlib.h>
+                     #include "lustre/lustreapi.h"
+                     int fd, num_ost;
+                     struct obd_uuid uuids[1024];],
+                    [llapi_lov_get_uuids(fd, uuids, &num_ost);],
+                    [AM_CONDITIONAL(HAVE_LUSTRE,true)
+                     AC_MSG_RESULT(yes)],
+                    [AM_CONDITIONAL(HAVE_LUSTRE,false)
+                    AC_MSG_RESULT(no)
+                    ])
+            else
+                AC_TRY_LINK(
+                    [#include <stdlib.h>
+                     #include "lustre/liblustreapi.h"
+                     int fd, num_ost;
+                     struct obd_uuid uuids[1024];],
+                    [llapi_lov_get_uuids(fd, uuids, &num_ost);],
+                    [AM_CONDITIONAL(HAVE_LUSTRE,true)
+                     AC_MSG_RESULT(yes)],
+                    [AM_CONDITIONAL(HAVE_LUSTRE,false)
+                    AC_MSG_RESULT(no)
+                    ])
+            fi
+        fi
+    fi
     
     LIBS="$save_LIBS"
     LDFLAGS="$save_LDFLAGS"

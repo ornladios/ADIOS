@@ -238,7 +238,7 @@
 #define TEST_LONG_EQUAL(value_ref, value, err_count, test_res) \
 	if (value != value_ref ){ \
 		test_res = TEST_FAILED; \
-		p_test_failed("(expected=%ld, got=%ld)\n", value_ref, value); \
+		p_test_failed("(expected=%lld, got=%lld)\n", value_ref, value); \
 		err_count++; \
 	}
 

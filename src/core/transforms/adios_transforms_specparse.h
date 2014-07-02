@@ -31,9 +31,11 @@ struct adios_transform_spec {
  * Parses the transform spec string (i.e. transform="zlib:5"), returning a struct
  * describing the result
  * @param transform_spec_str the transform spec string
+ * @param pre-allocated struct to fill in; if null this func allocates the memory
  * @return the parsed transform spec
  */
-struct adios_transform_spec * adios_transform_parse_spec(const char *transform_spec_str);
+struct adios_transform_spec * adios_transform_parse_spec(const char *transform_spec_str,
+                                                         struct adios_transform_spec *spec_in);
 
 /*
  * Copies a transform spec struct, creating a new, independent instance

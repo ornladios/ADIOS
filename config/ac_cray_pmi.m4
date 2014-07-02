@@ -9,8 +9,6 @@ AC_DEFUN([AC_CRAY_PMI],
 
 ac_cray_pmi_lib_ok=no
 
-AC_MSG_NOTICE([=== checking for CRAY PMI ===])
-
 AM_CONDITIONAL(HAVE_CRAY_PMI,true)
 
 dnl Automatic checking for CRAY_PMI is disabled now.
@@ -41,6 +39,8 @@ if test "x$with_cray_pmi" == "xno"; then
    AM_CONDITIONAL(HAVE_CRAY_PMI,false)
 
 else
+
+    AC_MSG_NOTICE([=== checking for CRAY PMI ===])
 
     dnl If we know CRAY_PMI_DIR, then we can know CRAY_PMI_INCDIR.
     dnl We don't overwrite CRAY_PMI_INCDIR.

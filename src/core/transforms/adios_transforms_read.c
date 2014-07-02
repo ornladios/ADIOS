@@ -2,6 +2,7 @@
 
 #include "adios_bp_v1.h"
 #include "adios_internals.h"
+#include "common_read.h"
 #include "public/adios_selection.h"
 #include "public/adios_error.h"
 #include "public/adios_types.h"
@@ -16,6 +17,7 @@
 #include "transforms/adios_transforms_hooks_read.h"
 #include "transforms/adios_transforms_read.h"
 #include "transforms/adios_transforms_util.h"
+#include "transforms/adios_patchdata.h"
 
 #define MYFREE(p) {free(p); (p)=NULL;}
 
@@ -135,8 +137,7 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
     // Declares
     adios_transform_read_request *new_reqgroup;
     int blockidx, timestep, timestep_blockidx;
-    int curblocks, start_blockidx, end_blockidx;
-    int intersects;
+    int start_blockidx, end_blockidx;
     ADIOS_VARBLOCK *raw_vb, *orig_vb;
 
     enum ADIOS_FLAG swap_endianness = (fp->endianness == get_system_endianness()) ? adios_flag_no : adios_flag_yes;
@@ -177,7 +178,7 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
     timestep = from_steps;
     timestep_blockidx = 0;
     while (blockidx != end_blockidx) { //for (blockidx = startblock_idx; blockidx != endblock_idx; blockidx++) {
-        const ADIOS_SELECTION *pg_bounds_sel;
+        ADIOS_SELECTION *pg_bounds_sel;
         ADIOS_SELECTION *pg_intersection_sel;
 
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 1)
@@ -340,7 +341,6 @@ static int apply_datablock_to_result_and_free(adios_datablock *datablock,
 #endif
 
     adios_datablock_free(&datablock, 1);
-    //return intersects;
     return used_count != 0;
 }
 
@@ -351,10 +351,6 @@ static int apply_datablock_to_result_and_free(adios_datablock *datablock,
  */
 static ADIOS_VARCHUNK * apply_datablock_to_chunk_and_free(adios_datablock *result, adios_transform_read_request *reqgroup) {
     ADIOS_VARCHUNK *chunk;
-    uint64_t *inter_goffset;
-    uint64_t *inter_offset_within_result;
-    uint64_t *inter_dims;
-
     uint64_t chunk_buffer_size;
     ADIOS_SELECTION *inter_sel;
 
@@ -423,7 +419,7 @@ void adios_transform_process_read_chunk(adios_transform_read_request **reqgroups
     adios_transform_read_request *reqgroup;
     adios_transform_pg_read_request *pg_reqgroup;
     adios_transform_raw_read_request *subreq;
-    adios_datablock *result, *tmp_result;
+    adios_datablock *result;
 
     // Find the subrequest that matches the VARCHUNK that was just read (if any)
     int found = adios_transform_read_request_list_match_chunk(*reqgroups_head, *chunk, 1, &reqgroup, &pg_reqgroup, &subreq);

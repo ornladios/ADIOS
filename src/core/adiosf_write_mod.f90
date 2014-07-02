@@ -25,7 +25,7 @@ module adios_write_mod
             integer,        intent(out) :: err
         end subroutine
 
-        subroutine adios_init_noxml_withcomm (comm, err)
+        subroutine adios_init_noxml (comm, err)
             implicit none
             integer,        intent(in)  :: comm
             integer,        intent(out) :: err
@@ -120,6 +120,13 @@ module adios_write_mod
             character(*),   intent(in)  :: global_dimensions
             character(*),   intent(in)  :: local_offsets
             integer*8,      intent(out) :: id
+        end subroutine
+
+        subroutine adios_set_transform (var_id, transform_method, err)
+            implicit none
+            integer*8,      intent(in)  :: var_id
+            character(*),   intent(in)  :: transform_method
+            integer,        intent(out) :: err
         end subroutine
 
         subroutine adios_define_attribute (group_id, attrname, path, attrtype, value, varname, err)

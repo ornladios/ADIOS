@@ -6,24 +6,25 @@ from distutils.extension import Extension
 import numpy as np
 
 # Use mpi4py dist utils: https://bitbucket.org/mpi4py/mpi4py
-from mpidistutils import setup
+#from mpidistutils import setup
+from distutils.core import setup
 
 import subprocess
 
 m1 = Extension('adios', 
                sources=['adios.cpp'], 
-               define_macros=[('ADIOS_USE_READ_API_1', None)],
+               define_macros=[('_NOMPI', None)],
                include_dirs = [np.get_include()],
                library_dirs = [],
                libraries = [],
                extra_objects = [])
 
-p = subprocess.Popen(["adios_config", "-c"], stdout=subprocess.PIPE)
+p = subprocess.Popen(["adios_config", "-c", "-s"], stdout=subprocess.PIPE)
 for path in p.communicate()[0].strip().split(" "):
     if path.startswith('-I'):
         m1.include_dirs.append(path.replace('-I', '', 1))
 
-p = subprocess.Popen(["adios_config", "-l"], stdout=subprocess.PIPE)
+p = subprocess.Popen(["adios_config", "-l", "-s"], stdout=subprocess.PIPE)
 for path in p.communicate()[0].strip().split(" "):
     if path.startswith('-L'):
         m1.library_dirs.append(path.replace('-L', '', 1))

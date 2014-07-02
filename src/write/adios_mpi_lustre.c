@@ -10,6 +10,8 @@
 #include <math.h>
 #include <string.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 // xml parser
 #include <mxml.h>
@@ -222,20 +224,16 @@ static void trim_spaces (char * str)
 static void
 adios_mpi_lustre_set_striping_unit(char *filename, char *parameters, struct adios_MPI_data_struct * md)
 {
-    MPI_File fh = md->fh;
-    int nproc = md->size;
-    struct statfs fsbuf;
-    int err = 0, flag;
+    int err = 0;
 //    uint64_t striping_unit = 0;
-    uint64_t block_unit = 0;
     uint16_t striping_count = 0;
     uint16_t stripe_offset = -1;
-    char     value[64], *temp_string, *p_count,*p_size;
-    MPI_Info info_used;
+    char     *temp_string, *p_count,*p_size;
 
-    int fd, old_mask, perm, num_ost, rc;
-    struct lov_user_md lum;
-    struct obd_uuid uuids[1024], * uuidp;
+    int fd, old_mask, perm;
+#ifdef HAVE_LUSTRE
+    int num_ost;
+#endif
 
     old_mask = umask(022);
     umask(old_mask);
@@ -247,6 +245,8 @@ adios_mpi_lustre_set_striping_unit(char *filename, char *parameters, struct adio
 
 #ifdef HAVE_LUSTRE
     // To get the number of ost's in the system
+    struct obd_uuid uuids[1024];
+    int rc;
     num_ost = 1024;
     rc = llapi_lov_get_uuids(fd, uuids, &num_ost);
     if (rc != 0)
@@ -256,14 +256,14 @@ adios_mpi_lustre_set_striping_unit(char *filename, char *parameters, struct adio
                 );
     }
 #else
-    num_ost = 0;
+    //num_ost = 0;
 #endif
 
     temp_string = (char *) malloc (strlen (parameters) + 1);
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
 
-    if (p_count = strstr (temp_string, "stripe_count"))
+    if ( (p_count = strstr (temp_string, "stripe_count")) )
     {
         char * p = strchr (p_count, '=');
         char * q = strtok (p, ",");
@@ -275,6 +275,7 @@ adios_mpi_lustre_set_striping_unit(char *filename, char *parameters, struct adio
     else
     {
 #ifdef HAVE_LUSTRE
+        int nproc = md->size;
         striping_count = (nproc > num_ost ? -1 : nproc);
 #else
         striping_count = 4;
@@ -284,7 +285,7 @@ adios_mpi_lustre_set_striping_unit(char *filename, char *parameters, struct adio
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
 
-    if (p_size = strstr (temp_string, "stripe_size"))
+    if ( (p_size = strstr (temp_string, "stripe_size")))
     {
         char * p = strchr (p_size, '=');
         char * q = strtok (p, ",");
@@ -302,7 +303,7 @@ adios_mpi_lustre_set_striping_unit(char *filename, char *parameters, struct adio
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
 
-    if (p_size = strstr (temp_string, "stripe_offset"))
+    if ( (p_size = strstr (temp_string, "stripe_offset")) )
     {
         char * p = strchr (p_size, '=');
         char * q = strtok (p, ",");
@@ -317,23 +318,6 @@ adios_mpi_lustre_set_striping_unit(char *filename, char *parameters, struct adio
         stripe_offset = -1;
     }
 
-    strcpy (temp_string, parameters);
-    trim_spaces (temp_string);
-
-    if (p_size = strstr (temp_string, "block_size"))
-    {
-        char * p = strchr (p_size, '=');
-        char * q = strtok (p, ",");
-        if (!q)
-            block_unit = atoi(q + 1);
-        else
-            block_unit = atoi(p + 1);
-    }
-    else
-    {
-        // set block_unit to 0 to make one large write
-        block_unit = 0;
-    }
 
     free (temp_string);
 
@@ -361,13 +345,13 @@ adios_mpi_lustre_set_striping_unit(char *filename, char *parameters, struct adio
 static void
 adios_mpi_lustre_set_block_unit(uint64_t *block_unit, char *parameters)
 {
-    char *temp_string, *p_count,*p_size;
+    char *temp_string, *p_size;
 
     temp_string = (char *) malloc (strlen (parameters) + 1);
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
 
-    if (p_size = strstr (temp_string, "block_size"))
+    if ( (p_size = strstr (temp_string, "block_size")) )
     {
         char * p = strchr (p_size, '=');
         char * q = strtok (p, ",");
@@ -489,7 +473,7 @@ printf("adios_mpi_lustre_striping_unit_write offset=%12lld len=%12d\n",offset,wr
         char * buf_ptr = buf;
         while (total_written < len)
         {
-            write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
+            write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
             MPI_File_write (fh, buf_ptr, write_len, MPI_BYTE, &status);
             MPI_Get_count(&status, MPI_BYTE, &count);
             if (count != write_len)
@@ -850,9 +834,9 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
                     }
                     // How to handle that each processor has varying amount of data??
                     md->striping_unit = offsets[1] - offsets[0];
-                    if (md->striping_unit > 4 * 1024 * 1024 * 1024L)
+                    if (md->striping_unit > 4 * 1024 * (uint64_t) (1024 * 1024L))
                     {
-                        md->striping_unit = 4 * 1024 * 1024 * 1024L;
+                        md->striping_unit = 4 * 1024 * (uint64_t) (1024 * 1024L);
                     }
 
                     md->b.pg_index_offset =   offsets [md->size - 1]
@@ -1357,7 +1341,7 @@ void adios_mpi_lustre_write (struct adios_file_struct * fd
 
         // write payload
         // adios_write_var_payload_v1 (fd, v);
-        uint64_t var_size = adios_get_var_size (v, fd->group, v->data);
+        uint64_t var_size = adios_get_var_size (v, v->data);
         if (fd->base_offset + var_size > fd->pg_start_in_file + fd->write_size_bytes) 
             fprintf (stderr, "adios_mpi_write exceeds pg bound. File is corrupted. "
                              "Need to enlarge group size. \n");
@@ -1470,12 +1454,6 @@ static void adios_mpi_lustre_do_read (struct adios_file_struct * fd
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                       method->method_data;
     struct adios_var_struct * v = fd->group->vars;
-
-    struct adios_parse_buffer_struct data;
-
-    data.vars = v;
-    data.buffer = 0;
-    data.buffer_len = 0;
 
     uint32_t version = md->b.version & ADIOS_VERSION_NUM_MASK;
     switch (version)
@@ -1622,7 +1600,6 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
                 adios_write_close_vars_v1 (fd);
                 // fd->vars_start gets updated with the size written
                 uint64_t count;
-                int retlen;
                 START_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
                 count = adios_mpi_lustre_striping_unit_write(
                                   md->fh,
@@ -1634,7 +1611,7 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
                 if (count != md->vars_header_size)
                 {
                     fprintf (stderr, "d:MPI method tried to write %llu, "
-                                     "only wrote %d\n"
+                                     "only wrote %llu\n"
                             ,md->vars_header_size
                             ,count
                             );

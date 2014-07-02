@@ -407,7 +407,7 @@ printf("adios_mpi_stripe_striping_unit_write offset=%12lld len=%12d\n",offset,le
         char * buf_ptr = buf;
         while (total_written < len)
         {
-            write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
+            write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
             MPI_File_write (fh, buf_ptr, write_len, MPI_BYTE, &status);
             MPI_Get_count(&status, MPI_BYTE, &count);
             if (count != write_len)
@@ -1156,7 +1156,7 @@ void adios_mpi_stripe_write (struct adios_file_struct * fd
 
         // write payload
         // adios_write_var_payload_v1 (fd, v);
-        uint64_t var_size = adios_get_var_size (v, fd->group, v->data);
+        uint64_t var_size = adios_get_var_size (v, v->data);
         if (fd->base_offset + var_size > fd->pg_start_in_file + fd->write_size_bytes) 
             fprintf (stderr, "adios_mpi_write exceeds pg bound. File is corrupted. "
                              "Need to enlarge group size. \n");

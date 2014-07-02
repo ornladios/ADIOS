@@ -16,6 +16,21 @@ selection via the XML). Furthermore, beyond editing the XML, no other changes ar
 transforms during writing or reading. This makes it possible to easily experiment with the effects of a variety of compression
 methods and parameters in an application.
 
+\section{Available data transformations}
+The \verb+adios_config+ tool lists the transformation methods (as well as write/read methods) when using the -m option.
+
+\begin{lstlisting}
+$ adios_config -m
+...
+Available data transformation methods (in XML transform tags in <var> elements):
+    "none"     : No data transform
+    "identity" : Identity transform
+    "bzip2"    : bzip2 compression
+    "isobar"   : ISOBAR compression
+
+\end{lstlisting}
+
+
 \section{Writing with data transformations}
 Data transforms are selected via the ADIOS XML file, as follows:
 

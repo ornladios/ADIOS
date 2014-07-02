@@ -21,14 +21,10 @@
 
 int main (int argc, char ** argv) 
 {
-    char        filename [256];
-    int         rank, size, i, j;
+    int         rank, j;
     int         NX, NY; 
     double      *t;
     MPI_Comm    comm = MPI_COMM_WORLD;
-
-    int         adios_err;
-    int64_t     adios_handle, adios_buf_size;
 
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (comm, &rank);

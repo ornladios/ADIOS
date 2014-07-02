@@ -247,37 +247,10 @@ public class AdiosNoxmlExample
 We developed a ADIOS python wrapper by using Cython. Numpy, a scientific module for Python, is a mandatory requirement. 
 
 \subsection{APIs for Writing and No-XML}
-The ADIOS python/numpy wrapper provides functions to call ADIOS write and no-XML related APIs as follows (defined in Cython syntax):
+The ADIOS python/numpy wrapper provides functions to call ADIOS write and no-XML related APIs as follows (defined in Cython syntax). MPI related arguments can be ignored in the serial binding.
 \begin{lstlisting}[language=cython,caption={Functions for writing and No-XML},label={},]
 """ Call adios_init """
-cpdef init(char * config)
-
-""" Call adios_open """
-cpdef int64_t open(char * group_name,
-                   char * name,
-                   char * mode,
-                   MPI.Comm comm = MPI.COMM_WORLD)
-
-""" Call adios_group_size """
-cpdef int64_t set_group_size(int64_t fd_p, uint64_t data_size)
-
-""" Call adios_write """
-cpdef int write (int64_t fd_p, char * name, np.ndarray val)
-cpdef int write_int (int64_t fd_p, char * name, int val)
-cpdef int write_long (int64_t fd_p, char * name, long val)
-cpdef int write_float (int64_t fd_p, char * name, float val)
-
-""" Call adios_read """
-cpdef int read(int64_t fd_p, char * name, np.ndarray val)
-
-""" Call adios_close """
-cpdef int close(int64_t fd_p)
-
-""" Call adios_finalize """
-cpdef finalize(int mype = 0)
-
-""" Call adios_init """
-cpdef init(char * config)
+cpdef init(char * config, MPI_Comm comm = MPI_COMM_WORLD)
 
 """ Call adios_open """
 cpdef int64_t open(char * group_name,
@@ -304,7 +277,7 @@ cpdef int close(int64_t fd_p)
 cpdef finalize(int mype = 0)
 
 """ Call adios_init_noxml """
-cpdef int init_noxml():
+cpdef int init_noxml(MPI_Comm comm = MPI_COMM_WORLD):
 
 """ Call adios_allocate_buffer """
 cpdef int allocate_buffer(int when,
@@ -340,69 +313,41 @@ cpdef int select_method (int64_t group,
 \end{lstlisting}
 
 \subsection{APIs for Reading}
-The ADIOS python/numpy wrapper provides ADIOS read related classes as follows (defined in Cython syntax):
-\begin{lstlisting}[language=cython,caption={Write functions},label={},]
+The ADIOS python/numpy wrapper provides ADIOS read related classes and APIs as follows (defined in Cython syntax). Like in the writing, MPI related arguments can be ignored in the serial binding.
+\begin{lstlisting}[language=cython,caption={Read functions},label={},]
 """ Python class for ADIOS_FILE structure """
-cdef class AdiosFile:
+cdef class file:
     """ Private Memeber """
     cpdef ADIOS_FILE * fp
 
     """ Public Memeber """
     cpdef public bytes name
-    cpdef public int groups_count
-    cpdef public int vars_count
-    cpdef public int attrs_count
-    cpdef public int tidx_start
-    cpdef public int ntimesteps
+    cpdef public int nvars
+    cpdef public int nattrs
+    cpdef public int current_step
+    cpdef public int last_step
+    cpdef public int endianness
     cpdef public int version
     cpdef public int file_size
-    cpdef public int endianness
-    
-    cpdef public dict group
-    
-    """ Initialization. Call adios_fopen and populate public members """
-    def __init__(self, char * fname, MPI.Comm comm = MPI.COMM_WORLD):
-        ...
-    
-    """ Call adios_fclose """
-    cpdef close(self):
-        ...
-        
-    """ Print self """
-    cpdef printself(self):
-        ...
-
-""" Python class for ADIOS_GROUP structure """
-cdef class AdiosGroup:
-    """ Private Memeber """
-    cdef AdiosFile file
-    cdef ADIOS_GROUP * gp
-
-    """ Public Memeber """
-    cpdef public bytes name
-    cpdef public int grpid
-    cpdef public int vars_count
-    cpdef public int attrs_count
-    cpdef public int timestep
-    cpdef public int lasttimestep
     
     cpdef public dict var
+    cpdef public dict attr
     
-    """ Initialization. Call adios_gopen and populate public members """
-    def __init__(self, AdiosFile file, char * name):
-
-    """ Call adios_gclose """
-    cpdef close(self):
-        ...
+    """ Initialization. Call adios_read_open and populate public members """
+    def __init__(self, char * fname, 
+                 ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP, 
+                 MPI.Comm comm = MPI.COMM_WORLD)
+    
+    """ Call adios_read_close """
+    cpdef close(self)
         
     """ Print self """
-    cpdef printself(self):
-        ...
+    cpdef printself(self)
 
 """ Python class for ADIOS_VARINFO structure """
-cdef class AdiosVariable:
+cdef class var:
     """ Private Memeber """
-    cdef AdiosGroup group
+    cdef file file
     cdef ADIOS_VARINFO * vp
 
     """ Public Memeber """
@@ -411,135 +356,142 @@ cdef class AdiosVariable:
     cpdef public type type
     cpdef public int ndim
     cpdef public tuple dims
-    cpdef public int timedim
-    cpdef public int characteristics_count
+    cpdef public int nsteps
     
     """ Initialization. Call adios_inq_var and populate public members """
-    def __init__(self, AdiosGroup group, char * name):
-        ...
+    def __init__(self, file file, char * name)
         
     """ Call adios_free_varinfo """
-    cpdef close(self):
-        ...
+    cpdef close(self)
         
-    """ Call adios_read_var """
-    cpdef read(self, tuple offset = (), tuple count = ()):
-        ...
+    """ Call adios_schedule_read and adios_perform_reads """
+    cpdef read(self, tuple offset = (), tuple count = (),
+               from_steps = 0, nsteps = 1)
 
     """ Print self """
-    cpdef printself(self):
-        ...
+    cpdef printself(self)
+
+""" Call adios_read_init_method """
+cpdef read_init(ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP,
+                MPI.Comm comm = MPI.COMM_WORLD,
+                char * parameters = "")
+
+""" Call adios_read_finalize_method """
+cpdef read_finalize(ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP)
 
 \end{lstlisting}
 
-\subsection{Example}
-An example of Python program to call ADIOS functions is shown below. The example is a Python program for converting a NetCDF file to a ADIOS BP file. You can find the code in the source distribution: \verb+/wrapper/numpy/example/ncdf2bp.py+.
+\subsection{Utility functions}
+Besides exposing ADIOS APIs directly, we provide utility functions users can call in python in a simple way
 
-\begin{lstlisting}[language=ADIOS-python,caption={ncdf2bp.py. An example Python/Numpy wrapper code for converting a NetCDF file to a ADIOS BP file},label={},]
-#!/usr/bin/env python
-from adios import *
-from scipy.io import netcdf
+\begin{lstlisting}[language=cython,caption={Utility functions},label={},]
+
+""" Read data in a BP file and return as a numpy array """
+def readvar(fname, varname)
+
+""" List attributes of a BP file """
+def bpls(fname)
+
+\end{lstlisting}
+
+\subsection{Examples}
+Examples of using ADIOS Python/Numpy functions are shown below. The first example is to write and read ADIOS BP files in a single process. You can find the code in the source distribution: \verb+/wrapper/numpy/tests/test_adios.py+.
+
+\begin{lstlisting}[language=ADIOS-python,caption={A Python/Numpy example for writing/reading ADIOS BP file},label={},]
+""" Import ADIOS Python/Numpy wrapper """
+import adios as ad
 import numpy as np
-import sys
-import os
-import operator
 
-def usage():
-    print os.path.basename(sys.argv[0]),"netcdf_file","[time dimension name]"
+""" Writing """
+print "\n>>> Writing ...\n"
 
-if len(sys.argv) < 2:
-    usage()
-    sys.exit(0)
+ad.init("config.xml")
+fd = ad.open("temperature", "adios_test.bp", "w")
 
-fname = sys.argv[1]
-fout = '.'.join(fname.split('.')[:-1]) + ".bp"
+NX = 10
+size = 2
+groupsize =  4 + 4 + 8 * size * NX
+t = np.array(range(NX*size), dtype=np.float64)
+tt = t.reshape((size, NX))
+ad.set_group_size(fd, groupsize)
+ad.write_int(fd, "NX", NX)
+ad.write_int(fd, "size", size)
+ad.write(fd, "temperature", tt)
+ad.close(fd)
 
-tname = "time"
-if len(sys.argv) > 2:
-    tname = sys.argv[2]
+ad.finalize()
 
-## Open NetCDF file
-f = netcdf.netcdf_file(fname, 'r')
+""" Reading """
+print "\n>>> Reading ...\n"
 
-## Check dimension
-assert (all(map(lambda x: x is not None,
-                [ val for k, val in f.dimensions.items()
-                  if k != tname])))
+f = ad.file("adios_test.bp")
+f.printself()
 
-## Two types of variables : time-dependent or time-independent
-dimvar = {n:v for n,v in f.variables.items() if n in f.dimensions.keys()}
-var = {n:v for n,v in f.variables.items() if n not in f.dimensions.keys()}
-tdepvar = {n:v for n,v in var.items() if tname in v.dimensions}
-tindvar = {n:v for n,v in var.items() if tname not in v.dimensions}
+v = f.var['temperature']
+v.printself()
 
-## Time dimension
-assert (len(set([v.dimensions.index(tname) for v in tdepvar.values()]))==1)
-tdx = tdepvar.values()[0].dimensions.index(tname)
-
-assert (all([v.data.shape[tdx] for v in tdepvar.values()]))
-tdim = tdepvar.values()[0].shape[tdx]
-
-## Init ADIOS without xml
-init_noxml()
-allocate_buffer(BUFFER_ALLOC_WHEN.NOW, 10)
-gid = declare_group ("group", tname, FLAG.YES)
-select_method (gid, "MPI", "", "")
-
-d1size = 0
-for name, val in f.dimensions.items():
-    if name == tname:
-        continue
-    print "Dimension : %s (%d)" % (name, val)
-    define_var (gid, name, "", DATATYPE.integer, "", "", "")
-    d1size += 4
-    
-v2size = 0
-for name, var in tdepvar.items():
-    print "Variable : %s (%s)" % (name, ','.join(var.dimensions))
-    define_var (gid, name, "", DATATYPE.double,
-                ','.join(var.dimensions),
-                ','.join([dname for dname in var.dimensions
-                          if dname != tname]),
-                "0,0,0")
-    v2size += reduce(operator.mul, var.shape) / tdim * 8
-
-print "Count (dim, var) : ", (d1size, v2size)
-
-## Clean old file
-if os.access(fout, os.F_OK):
-    os.remove(fout)
-
-for it in range(tdim):
-    print 
-    print "Time step : %d" % (it)
-    
-    fd = open("group", fout, "a")
-    groupsize = d1size + v2size
-    set_group_size(fd, groupsize)
-
-    for name, val in f.dimensions.items():
-        if name == tname:
-            continue
-        print "Dimension writing : %s (%d)" % (name, val)
-        write_int(fd, name, val)
-        
-    for name, var in tdepvar.items():
-        arr = np.array(var.data.take([it], axis=tdx),
-                       dtype=np.float64)
-        print "Variable writing : %s %s" % (name, arr.shape)
-        write(fd, name, arr)
-
-    close(fd)
-    
+val = v.read()
+print val
+assert ((tt == val).all())
 f.close()
-finalize()
 
-print
-print "Done. Saved:", fout
-    
 \end{lstlisting}
 
+The above code can be executed as follows:
+\begin{lstlisting}
+python test_adios.py
+\end{lstlisting}
 
-%\section{Matlab support}
-%\label{section-bindings-matlab}
+The second example is about parallel writing and reading by using multiple MPI processes. You can find the code in the source distribution: \verb+/wrapper/numpy/tests/test_adios_mpi.py+.
 
+\begin{lstlisting}[language=ADIOS-python,caption={A Python/Numpy example for parallel writing/reading ADIOS BP file},label={},]
+""" Import ADIOS Python/Numpy wrapper """
+import adios_mpi as ad
+import numpy as np
+""" Require MPI4Py installed """
+from mpi4py import MPI
+
+""" Init """
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+size = comm.Get_size()
+
+""" Writing """
+print "\n>>> Writing ... (rank = %d)\n" % rank
+
+ad.init("config_mpi.xml", comm)
+fd = ad.open("temperature", "adios_test_mpi.bp", "w", comm)
+
+NX = 10
+groupsize =  4 + 4 + 4 + 8 * 1 * NX
+t = np.array(range(NX), dtype=np.float64) + rank*NX
+ad.set_group_size(fd, groupsize)
+ad.write_int(fd, "NX", NX)
+ad.write_int(fd, "rank", rank)
+ad.write_int(fd, "size", size)
+ad.write(fd, "temperature", t)
+ad.close(fd)
+
+ad.finalize()
+
+""" Reading """
+if rank == 0:
+    print "\n>>> Reading ...\n"
+
+    f = ad.file("adios_test_mpi.bp", comm=MPI.COMM_SELF)
+    f.printself()
+
+    v = f.var['temperature']
+    v.printself()
+
+    val = v.read()
+    print val
+    assert (int(sum(sum(val))) == (size*NX-1)*(size*NX)/2)
+    f.close()
+
+\end{lstlisting}
+
+The above code can be executed as follows:
+\begin{lstlisting}
+mpiexec -n 4 python ./test_adios.py
+\end{lstlisting}

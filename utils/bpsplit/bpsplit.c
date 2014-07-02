@@ -125,7 +125,8 @@ int main( int argc, char *argv[] ) {
     prgname = strdup(argv[0]);
 
     /* other variables */
-    int c, last_c='_';
+    int c; 
+    //int last_c='_';
     int idx = 1;
     /* Process the arguments */
     while ((c = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
@@ -175,7 +176,7 @@ int main( int argc, char *argv[] ) {
             exit (1);
             break;
         } /* end switch */
-        last_c = c;
+        //last_c = c;
         idx++;
     } /* end while */
 
@@ -589,7 +590,7 @@ int write_out( const char *fileout, const char *filein) {
     if (verbose>1) printf("  write %llu 0x%llx bytes of indexes into %s\n", buffer_offset, buffer_offset, fileout);
     bytes_written = write (f, buffer, buffer_offset);
 
-    if (verbose>1) printf("  written %llu 0x%llx bytes of indexes into %s\n", bytes_written, bytes_written, fileout);
+    if (verbose>1) printf("  written %zu 0x%zx bytes of indexes into %s\n", bytes_written, bytes_written, fileout);
 
     // clean up
     free(buffer);
@@ -602,8 +603,6 @@ int bpsplit(char *filein, char *fileout, char *recordfile, int from_in, int to_i
     int excode = 0;
     uint32_t from, to;
     uint32_t maxtime = 1;   // at least there is time=1 (single group) in a bp file
-    struct adios_bp_buffer_struct_v1 * b = 0;
-
     idx = adios_alloc_index_v1(0);
 
     // open input file, read and parse indexes 

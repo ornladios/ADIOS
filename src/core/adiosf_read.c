@@ -12,7 +12,7 @@
 #define __INCLUDED_FROM_FORTRAN_API__
 #include "public/adios_read.h"
 #include "public/adios_error.h"
-//#include "core/bp_utils.h" // bp_get_type_size
+#include "core/bp_utils.h" // bp_get_type_size
 //#include "core/bp_types.h"
 #include "core/common_read.h"
 #include "core/futils.h"
@@ -133,6 +133,7 @@ int FC_FUNC_(adios_advance_step, ADIOS_ADVANCE_STEP)
     *err = common_read_advance_step (afp, *last, *timeout_sec);
     if (*err)
         PRINT_ERRMSG();
+    return *err;
 }
 
 
@@ -222,7 +223,6 @@ void FC_FUNC_(adios_inq_file, ADIOS_INQ_FILE)
          int     * err)
 {
     ADIOS_FILE *afp = (ADIOS_FILE *) *fp;
-    int i;
     if (afp != NULL) {
         *vars_count = afp->nvars;
         *attrs_count = afp->nattrs;
@@ -346,7 +346,6 @@ void FC_FUNC_(adios_schedule_read, ADIOS_SCHEDULE_READ)
     ADIOS_FILE *afp = (ADIOS_FILE *) *fp;
     ADIOS_SELECTION * sel = (ADIOS_SELECTION *) *fsel;
     char *varstr;
-    int i;
     varstr = futils_fstr_to_cstr(varname, varname_len);
     if (varstr != NULL) {
         *err = common_read_schedule_read (afp, sel, varstr, *from_step, *nsteps, NULL /* NCSU ALACRITY-ADIOS */, data);
@@ -388,7 +387,7 @@ void FC_FUNC_(adios_get_statistics, ADIOS_GET_STATISTICS)
     ADIOS_FILE *afp = (ADIOS_FILE *) *gp;
     ADIOS_VARINFO *vi = NULL;
     char *varstr;
-    int i, size;
+    int size;
 
     varstr = futils_fstr_to_cstr(varname, varname_len);
     if (varstr != NULL) {
@@ -485,7 +484,6 @@ void FC_FUNC_(adios_get_attr, ADIOS_GET_ATTR)
 {
     ADIOS_FILE *afp = (ADIOS_FILE *) *gp;
     char *attrstr;
-    int i;
     void *data;
     int size;
     enum ADIOS_DATATYPES type;
@@ -514,7 +512,6 @@ void FC_FUNC_(adios_inq_attr, ADIOS_INQ_ATTR)
 {
     ADIOS_FILE *afp = (ADIOS_FILE *) *gp;
     char *attrstr;
-    int i;
     void *data;
     attrstr = futils_fstr_to_cstr(attrname, attrname_len);
     if (attrstr != NULL) {

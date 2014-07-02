@@ -1,0 +1,43 @@
+<?xml version="1.0"?>
+<adios-config host-language="Fortran">
+  <adios-group name="writer" >
+    <var name="nx_global"  type="integer"/>
+    <var name="ny_global"  type="integer"/>
+    <var name="nx_local"   type="integer"/>
+    <var name="ny_local"   type="integer"/>
+    <var name="aux/offs_x" gwrite="offs_x" type="integer"/>
+    <var name="aux/offs_y" gwrite="offs_y" type="integer"/>
+
+    <global-bounds dimensions="nx_global,ny_global" offsets="aux/offs_x,aux/offs_y">
+        <var name="xy" type="real*8" dimensions="nx_local,ny_local" 
+             transform="none" />
+          <!-- 
+             transform="none" />
+             transform="zlib" /> 
+             transform="isobar" /> 
+           -->
+    </global-bounds>
+
+    <attribute name="xy/description" type="string"
+               value="An example 2D array"/>
+
+  </adios-group>
+
+  <!-- Choose an output method for the above group. 
+       MPI: write 1 file, each process writes its own piece into the file
+       VAR_MERGE: aggregate and merge blocks (up to two levels of aggregation)
+                  default aggregation buffer size is 2 MB
+       VAR_MERGE: limit the aggregation level by decreasing the aggregation buffer
+                  size to 300k
+  -->
+  <transport group="writer" method="MPI"/>
+  <!--
+  <transport group="writer" method="POSIX"/>
+  <transport group="writer" method="VAR_MERGE">chunk_size=30000000;io_method=MPI</transport>
+  <transport group="writer" method="MPI_AGGREGATE">num_aggregators=4;num_ost=2</transport>
+  <transport group="writer" method="MPI_LUSTRE">stripe_count=3;stripe_size=1048576</transport>
+  -->
+
+  <buffer size-MB="30" allocate-time="now"/>
+
+</adios-config>

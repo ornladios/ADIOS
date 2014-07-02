@@ -13,6 +13,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <time.h>
 #include "mpi.h"
 #include "adios_read.h"
 #include <stdint.h>
@@ -54,7 +55,7 @@ void read_points (char filename [], char varname [], uint32_t npoints)
 
     assert (varinfo);
 
-    uint32_t                nblocks = varinfo->sum_nblocks;
+    //uint32_t                nblocks = varinfo->sum_nblocks;
     uint32_t                i       = 0;
     uint32_t                j       = 0;
     uint32_t                t       = 0;
@@ -128,7 +129,7 @@ void read_bounding_box (char filename [], char varname [], uint64_t counts [], u
     assert (varinfo);
     adios_inq_var_blockinfo (f, varinfo);
 
-    uint32_t                nblocks = varinfo->sum_nblocks;
+    //uint32_t                nblocks = varinfo->sum_nblocks;
    
     uint32_t                i       = 0;
     uint32_t                j       = 0;
@@ -143,9 +144,9 @@ void read_bounding_box (char filename [], char varname [], uint64_t counts [], u
     // This code should only work for 3D data
     // assert (varinfo->ndim == 3);
 
-    printf ("%lu dimensions for %s are %s: ", ndim, filename, varname);
+    printf ("%u dimensions for %s are %s: ", ndim, filename, varname);
     for (i = 0; i < varinfo->ndim; i ++) {
-        printf ("%d ", varinfo->dims [i]);        
+        printf ("%lld ", varinfo->dims [i]);        
     }
     printf ("\n");
     printf ("Timesteps: %d\n", f->last_step + 1);
@@ -162,7 +163,7 @@ void read_bounding_box (char filename [], char varname [], uint64_t counts [], u
         npoints *= counts [j];
     }
 
-    printf ("npoints: %d\n", npoints);
+    printf ("npoints: %lld\n", npoints);
 
     data    = (double *) malloc (npoints * sizeof (double));
     starts  = (uint64_t *) malloc (varinfo->ndim * sizeof (uint64_t));
@@ -203,14 +204,14 @@ void read_bounding_box (char filename [], char varname [], uint64_t counts [], u
             starts [2] = 28;
             
             for (j = 0; j < ndim; j ++) {
-                printf ("%lu ", starts [j]);
+                printf ("%llu ", starts [j]);
             }
             printf ("\n");
 
             printf ("Counts: ");
             starts [0] = 0;
             for (j = 0; j < ndim; j ++) {
-                printf ("%lu ", counts [j]);
+                printf ("%llu ", counts [j]);
             }
             printf ("\n");
         #endif

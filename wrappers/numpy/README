@@ -1,52 +1,65 @@
 ADIOS Python/Numpy wrapper
 -----------------
 
-This directory contains the codes for the ADIOS python/numpy wrapper
-to to call the native ADIOS library. This module is built by Cython.
+This directory contains the codes for the ADIOS Python/Numpy wrapper
+to call the native ADIOS library. This module is built by Cython.
+
+This module requires ADIOS built with the GNU C compiler with
+relocatable codes. Add -fPIC flag to CFLAGS before configuring ADIOS.
 
 
-== Build with CMake == 
+== Build and install with make ==
 
-This program can be built with CMake (http://www.cmake.org/). You may
-want to a build directory and run cmake pointing the source directory
-containing CMakeLists.txt (this directory). For example, 
-
-$ mkdir build; cd build
-$ cmake /dir/to/source
-
-CMake will search installed ADIOS library and Python/Numpy. Once
-completed, type make to build:
+A Makefile is included for building. The following commands will
+display instructions on how to build and install python wrappers for
+Adios.
 
 $ make
-Or, 
-$ make VERBOSE=1
-if you need verbose output.
+$ make install
 
-After successful building, you can see adios.so. This file can be
-loaded in Python.
+Have 'adios_config' and 'python' in the path and run
 
-== Test == 
+$ make python
 
-This program contains a test program. To run testing after building,
-type the following command:
+If you need a MPI-enabled ADIOS wrapper, which requires MPI4Py, type
+the following:
 
-$ make test
+$ make MPI=y python
 
-If you need a verbose output, type the following
+After successful building, you can install in a python path. There are
+three options
 
-$ ctest -V
+$ python setup.py install
 
-== Build with Python == 
+which will install python's default installation location. This may
+require an admin privilege.
 
-This program also can be build and installed by using python's
-standard package distribution method. For example,
+You may want to use a custom directory to install. Type
 
-$ python setup.py build
-will compile adios python module. Once successfully completed, type
+$ python setup.py install --prefix=/dir/to/install
 
-$ python setup.py install 
-Or,
+and append the directory to the PYTHONPATH environment variable
+
+You can also install in your local directory, run
+
 $ python setup.py install --user
-to install ADIOS module in python's default package directory or user
-local directory.
 
+== Test cases and examples ==
+
+Test cases and example files are located in tests and example
+directory.
+
+
+== Compile with Cython (only for developers) ==
+
+The C++ code (adios.cpp and adios_mpi.cpp) has been already generated
+by with Cython (version 0.20.1) and included here. Just in case to
+reproduce the C++ code, try the following command. Otherwise, one can
+skip this part.
+
+$ make CYTHON=y python
+
+for the serial version of Adios wrapper. If you need to generated C++
+for MPI-enabled version, try the following
+
+$ make CYTHON=y MPI=y python

@@ -6,20 +6,22 @@
 # Configuration values from configure script
 #
 
-FLAGSFILE=`dirname $0`/adios_config.flags
+MYDIR=`dirname $0`
+
+FLAGSFILE=${MYDIR}/adios_config.flags
 if [ ! -f ${FLAGSFILE} ]; then
     echo "ERROR: settings file ${FLAGSFILE} not found."
     exit 1
 fi
 . ${FLAGSFILE}
 
-GITSTATFILE=`dirname $0`/git.status
+GITSTATFILE=${MYDIR}/git.status
 if [ -f ${GITSTATFILE} ]; then
     . ${GITSTATFILE}
 fi
 
 function Usage () {
-    echo "`basename $0` [-d | -c | -l] [-f] [-r] [-s] [-1] [-v] [-i]
+    echo "`basename $0` [-d | -c | -l] [-f] [-r] [-s] [-1] [-m] [-v] [-i]
 Arguments
    -d   Base directory for ADIOS install
    -c   Compiler flags for C/C++, using ADIOS write/read methods
@@ -30,6 +32,8 @@ Arguments
    -s   Print above flags for using ADIOS in a sequential code (no MPI). 
    -1   Print above flags for using old Read API of ADIOS.
 
+   -m   Print available write/read methods and data transformation methods
+
    -v   Version of the installed package
    -i   More installation information about the package
 
@@ -39,6 +43,7 @@ Notes
    - If none of d,c,l are given, all of them is printed
    - If none of f,r,s are given, flags for C/C++, using ADIOS write/read 
      methods are printed
+   - -m can be combined with -r (readonly libraries) and -s (sequential libraries)
 "
 }
 
@@ -50,8 +55,9 @@ OPT_FORTRAN=no
 OPT_READ=no
 OPT_SEQ=no
 NFLAGS_ASKED=0
+PRINT_METHODS=no
 
-while getopts ":dclfrs1vih" Option
+while getopts ":dclfrs1mvih" Option
 do          
   case $Option in               
         d) PRINT_DIR=yes; let "NFLAGS_ASKED=NFLAGS_ASKED+1";;
@@ -61,6 +67,7 @@ do
         r) OPT_READ=yes;;
         s) OPT_SEQ=yes;;
         1) OPT_V1=yes;;
+        m) PRINT_METHODS=yes; let "NFLAGS_ASKED=NFLAGS_ASKED+1";;
         v) echo "$VERSIONSTRING"; 
            exit 0;;
         i) echo "ADIOS $VERSIONSTRING"; 
@@ -75,10 +82,11 @@ done
 shift $(($OPTIND - 1))
 
 if [ $NFLAGS_ASKED == 0 ]; then
-    NFLAGS_ASKED=3;
+    NFLAGS_ASKED=4;
     PRINT_DIR=yes
     PRINT_CFLAGS=yes
     PRINT_LDFLAGS=yes
+    PRINT_METHODS=yes
 fi
 
 #if [ "$OPT_SEQ" == "yes" ]; then
@@ -174,6 +182,50 @@ if [ "$PRINT_LDFLAGS" == "yes" ]; then
     echo $LDFLAGS
 fi
 
+
+if [ "$PRINT_METHODS" == "yes" ]; then
+    if [ "$OPT_SEQ" == "yes" ]; then
+        if [ "$OPT_READ" == "yes" ]; then
+            # ADIOSREAD + SEQ
+            if [ -x ${MYDIR}/list_methods_readonly_nompi ]; then
+                ${MYDIR}/list_methods_readonly_nompi
+            elif [ -x ./utils/list_methods/list_methods_readonly_nompi ]; then
+                ./utils/list_methods/list_methods_readonly_nompi
+            else
+                echo "ERROR: cannot find executable list_methods_readonly_nompi"
+            fi
+        else
+            # ADIOS + SEQ
+            if [ -x ${MYDIR}/list_methods_nompi ]; then
+                ${MYDIR}/list_methods_nompi
+            elif [ -x ./utils/list_methods/list_methods_nompi ]; then
+                ./utils/list_methods/list_methods_nompi
+            else
+               echo "ERROR: cannot find executable list_methods_nompi"
+            fi
+        fi
+    else
+        if [ "$OPT_READ" == "yes" ]; then
+            # ADIOSREAD
+            if [ -x ${MYDIR}/list_methods_readonly ]; then
+                ${MYDIR}/list_methods_readonly
+            elif [ -x ./utils/list_methods/list_methods_readonly ]; then
+                ./utils/list_methods/list_methods_readonly
+            else
+                echo "ERROR: cannot find executable list_methods_readonly"
+            fi
+        else
+            # ADIOS
+            if [ -x ${MYDIR}/list_methods ]; then
+                ${MYDIR}/list_methods
+            elif [ -x ./utils/list_methods/list_methods ]; then
+                ./utils/list_methods/list_methods
+            else
+               echo "ERROR: cannot find executable list_methods"
+            fi
+        fi
+    fi
+fi
 
 
 

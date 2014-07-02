@@ -12,7 +12,7 @@
 #define __INCLUDED_FROM_FORTRAN_API__
 #include "public/adios_read.h"
 #include "public/adios_error.h"
-//#include "core/bp_utils.h"
+#include "core/bp_utils.h" // bp_get_type_size()
 //#include "core/bp_types.h"
 #include "core/common_read.h"
 #include "core/futils.h"
@@ -56,7 +56,6 @@ void FC_FUNC_(adios_errmsg, adios_errmsg) (char *msg, int msg_len)
 
 void FC_FUNC_(adios_set_read_method, ADIOS_SET_READ_METHOD) (int *fmethod, int *err)
 {
-    enum ADIOS_READ_METHOD method = (enum ADIOS_READ_METHOD) *fmethod;
     switch (*fmethod) {
         // Translate from V1 method IDs to the new API's methods
         case 0: //ADIOS_READ_METHOD_BP_V1:
@@ -291,8 +290,7 @@ void FC_FUNC_(adios_inq_var, ADIOS_INQ_VAR)
 
         /* TIME dimension should be emulated here !!! */
         int tidx;
-        int timed = common_read_is_var_timed(afp, vi->varid);
-        if (timed) {
+        if (vi->nsteps > 1) {
             *ndim = vi->ndim + 1;
             *timedim = vi->ndim;
             dims[0] = vi->nsteps;
@@ -338,16 +336,11 @@ void FC_FUNC_(adios_read_var, ADIOS_READ_VAR)
             *read_bytes = adios_errno;
             return;
         }
-        int tidx;
         int from_step = 0, nsteps = 1;
         /* TIME dimension should be emulated here !!! */
-        int timed = common_read_is_var_timed(afp, vi->varid);
-        if (timed) {
+        if (vi->nsteps > 1) {
             from_step = (int) start[vi->ndim];
             nsteps    = (int) count[vi->ndim];
-            tidx = 1;
-        } else {
-            tidx = 0;
         }
 
         ADIOS_SELECTION * sel = common_read_selection_boundingbox (vi->ndim, start, count);
@@ -498,7 +491,7 @@ void FC_FUNC_(adios_get_statistics, ADIOS_GET_STATISTICS)
     ADIOS_FILE *afp = (ADIOS_FILE *) *gp;
     ADIOS_VARINFO *vi = NULL;
     char *varstr;
-    int i, size;
+    int size;
 
     varstr = futils_fstr_to_cstr(varname, varname_len);
     if (varstr != NULL) {
@@ -609,7 +602,6 @@ void FC_FUNC_(adios_get_attr, ADIOS_GET_ATTR)
 {
     ADIOS_FILE *afp = (ADIOS_FILE *) *gp;
     char *attrstr;
-    int i;
     void *data;
     int size;
     enum ADIOS_DATATYPES type;
@@ -637,7 +629,6 @@ void FC_FUNC_(adios_inq_attr, ADIOS_INQ_ATTR)
 {
     ADIOS_FILE *afp = (ADIOS_FILE *) *gp;
     char *attrstr;
-    int i;
     void *data;
     attrstr = futils_fstr_to_cstr(attrname, attrname_len);
     if (attrstr != NULL) {

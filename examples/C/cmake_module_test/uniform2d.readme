@@ -1,0 +1,51 @@
+This is the examples/C/uniform example but with CMAKE build instructions
+
+REQUIREMENTS:
+    - ADIOS 1.5.0: http://www.olcf.ornl.gov/center-projects/adios
+    - CMAKE 2.8.0 or newer
+    - C compiler
+    - MPI
+
+BUILD with CMAKE
+    - Install ADIOS
+    - Have cmake 2.8.0 or newer
+    - set environment variable ADIOS_DIR to the installation directory
+    - set environment variable CC to the MPI C compiler (e.g. mpicc or cc)
+    - then do the following commands
+    $ mkdir build
+    $ cd build
+    $ cmake ..
+    $ make
+
+
+This example is for writing a uniform 2D mesh and data on it. 
+2D mesh is decomposed in x and y direction by npx and npy, which are passed in from the command line following the executable.
+npx = number of processes in x direction
+npy = number of processes in y direction
+Processes write ndx*ndy points per process
+data is data on the points (value = rank)
+
+1. Run the writer 
+=================
+$ mpirun -np 12 ./uniform2d 4 3
+
+2. Check the output
+===================
+  integer  /nproc      scalar = 12 
+  integer  /nx_global  scalar = 260 
+  integer  /ny_global  scalar = 387 
+  integer  /offs_x     scalar = 0 
+  integer  /offs_y     scalar = 0 
+  integer  /nx_local   scalar = 65 
+  integer  /ny_local   scalar = 129 
+  integer  /O1         scalar = 0 
+  integer  /O2         scalar = 0 
+  integer  /S1         scalar = 1 
+  integer  /S2         scalar = 2 
+  double   /data         {260, 387} = 0 / 11 / 5.5 / 3.45205
+
+$ bpls -l uniform2d.bp
+
+uniform2d.png is a plot of how the data over the nx_global*ny_global points should look like if visualized.
+/ccs/proj/e2e/plotter/sith/plotter2d  -f uniform2d.bp -v data -o uniform2d
+

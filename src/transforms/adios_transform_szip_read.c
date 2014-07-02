@@ -9,6 +9,8 @@
 
 #include "adios_transform_szip.h"
 
+int adios_transform_szip_is_implemented (void) {return 1;}
+
 int decompress_szip_pre_allocated(const void* input_data, const uint64_t input_len,
                                     void* output_data, uint64_t* output_len,
                                     const uint32_t ndims, const uint64_t* dim)

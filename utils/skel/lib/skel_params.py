@@ -19,6 +19,7 @@ def pparse_command_line (parent_parser):
         skel params
             create a parameter file to define skeletal application behavior''')
 
+    parser.add_argument ('project', metavar='project', help='Name of the skel project')
     parser.add_argument ('-g', '--group', help='adios group')
     parser.add_argument ('-b', '--bpls', help='file containing bpls output')
 
@@ -28,15 +29,28 @@ def pparse_command_line (parent_parser):
     return parser.parse_args()
 
 
-def generate_param_file_with_args (config, parent_parser):
+def generate_param_file_with_args (parent_parser):
     args = pparse_command_line (parent_parser)
-    
+   
+    try:
+        config = adios.adiosConfig (args.project + '_skel.xml')
+    except (IOError):
+        print "XXError reading " + args.project + "_skel.xml. Try running skel xml " + args.project + " first."
+        return 1
+
+ 
     outfilename = args.project + '_params.xml'
 
     # Only proceed if outfilename does not already exist, or if -f was used
     if os.path.exists (outfilename) and not args.force:
         print "%s exists, aborting. Delete the file or use -f to overwrite." % outfilename
         return 999
+
+    try:
+        config = adios.adiosConfig (args.project + '_skel.xml')
+    except (IOError):
+        print "Error reading " + args.project + "_skel.xml. Try running skel xml " + args.project + " first."
+        return 1
 
     generate_param_file (args.project, outfilename, config, args.group, args.bpls)
 

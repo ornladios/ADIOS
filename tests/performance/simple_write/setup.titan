@@ -1,0 +1,15 @@
+#!/bin/bash
+
+source /opt/modules/default/etc/modules.sh
+module unload PrgEnv-intel PrgEnv-pgi PrgEnv-gnu PrgEnv-cray
+module unload adios 
+module unload cray-hdf5-parallel cray-hdf5 hdf5-parallel hdf5
+module load PrgEnv-pgi
+#module load vampirtrace/5.14.4-nogpu
+module load adios/1.6.0
+module load cray-hdf5-parallel szip
+#export ADIOSMETHOD_PARAMS="num_aggregators=16;num_ost=100;verbose=2"
+#export ADIOSMETHOD=MPI_AGGREGATE
+echo "Build command: make"
+echo "Run command: aprun -n 4 ./writer_adios 1 10 100 20 100 100"
+

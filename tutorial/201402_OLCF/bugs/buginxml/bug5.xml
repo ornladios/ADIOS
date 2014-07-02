@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<adios-config host-language="C">
+  <adios-group name="buginxml" >
+    <var name="nx_global"  type="integer"/>
+    <var name="ny_global"  type="integer"/>
+    <var name="nproc"  type="integer"/>
+    <var name="offs_x"  type="integer"/>
+    <var name="offs_y"  type="integer"/>
+    <var name="nx_local"   type="integer"/>
+    <var name="ny_local"   type="integer"/>
+
+    <var name="O1" type="integer"/>
+    <var name="O2" type="integer"/>
+    <var name="S1" type="integer"/>
+    <var name="S2" type="integer"/>
+
+    <global-bounds dimensions="nx_local,ny_local" offsets="offs_x,offs_y">
+        <var name="data" type="double" dimensions="nx_global,ny_global"/>
+    </global-bounds>
+
+    <attribute name="description" type="string"
+               value="An example to demonstrate a bug in the XML file"/>
+
+  </adios-group>
+
+  <transport group="buginxml" method="MPI"/>
+  <buffer size-MB="4" allocate-time="now"/>
+
+</adios-config>

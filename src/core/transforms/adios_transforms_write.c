@@ -90,6 +90,7 @@ static struct adios_dimension_struct * new_dimension() {
 }
 
 // TODO: Delete this function when the new version is confirmed working (i.e., tests with FORTRAN writes and C reads, and vice versa, all work)
+#if 0
 static int find_time_dimension_old(struct adios_dimension_struct *dim, struct adios_dimension_struct **time_dim, enum ADIOS_FLAG fortran_order_flag) {
     struct adios_dimension_struct *cur_dim;
     int i;
@@ -119,6 +120,7 @@ static int find_time_dimension_old(struct adios_dimension_struct *dim, struct ad
     if (time_dim) *time_dim = 0;
     return -1;
 }
+#endif
 
 static int is_dimension_item_zero(struct adios_dimension_item_struct *dim_item) {
     return dim_item->rank == 0 && dim_item->var == NULL && dim_item->attr == NULL;
@@ -130,6 +132,8 @@ static int is_time_dimension(struct adios_dimension_struct *dim) {
            dim->local_offset.time_index == adios_flag_yes;
 }
 
+#if 0 
+// This function is not used anywhere
 static int has_time_dimension(struct adios_dimension_struct *dim, int fortran_dim_order) {
     int has_time = 0;
     struct adios_dimension_struct *first_dim = dim;
@@ -157,12 +161,14 @@ static int has_time_dimension(struct adios_dimension_struct *dim, int fortran_di
 
     return has_time;
 }
+#endif
 
 // TODO: Delete this once the replacement is working correctly
 // If there is a time dimension the final dimensions will look like this:
 //   local:  t  l1 l2 l3 (or l1 l2 l3 t if fortran order)
 //   global: g1 g2 g3 0
 //   offset: o1 o2 o3 0
+#if 0
 static void adios_transform_attach_byte_array_dimensions_old(struct adios_group_struct *grp, struct adios_var_struct *var) {
     int i, new_ndim, new_time_dim_pos;
     uint64_t ldims[3];
@@ -217,14 +223,15 @@ static void adios_transform_attach_byte_array_dimensions_old(struct adios_group_
         adios_append_dimension(&var->dimensions, new_dim);
     }
 }
+#endif
 
 // Attaches to the given variable new metadata defining a 1D local array of bytes.
-static void adios_transform_attach_byte_array_dimensions(struct adios_group_struct *grp, struct adios_var_struct *var) {
+static void adios_transform_attach_byte_array_dimensions(struct adios_var_struct *var) {
     int i;
 
-    const int fortran_dim_order = (grp->adios_host_language_fortran == adios_flag_yes);
-    const int orig_ndim = count_dimensions(var->pre_transform_dimensions);
-    const int orig_has_time = has_time_dimension(var->pre_transform_dimensions, fortran_dim_order);
+    //const int fortran_dim_order = (grp->adios_host_language_fortran == adios_flag_yes);
+    //const int orig_ndim = count_dimensions(var->pre_transform_dimensions);
+    //const int orig_has_time = has_time_dimension(var->pre_transform_dimensions, fortran_dim_order);
 
     //const int new_ndim = (orig_has_time ? 2 : 1); // 1D byte array, plus a time dimension if the original had one
     //const int new_has_time = orig_has_time;
@@ -249,7 +256,7 @@ static void adios_transform_attach_byte_array_dimensions(struct adios_group_stru
     }
 }
 
-static void adios_transform_convert_var_to_byte_array(struct adios_group_struct *grp, struct adios_var_struct *var) {
+static void adios_transform_convert_var_to_byte_array(struct adios_var_struct *var) {
     // Save old metadata
     var->pre_transform_type = var->type;
     var->pre_transform_dimensions = var->dimensions;
@@ -260,7 +267,7 @@ static void adios_transform_convert_var_to_byte_array(struct adios_group_struct 
     var->dimensions = 0;
 
     // Attach the new dimension to the variable
-    adios_transform_attach_byte_array_dimensions(grp, var);
+    adios_transform_attach_byte_array_dimensions(var);
 }
 
 ////////////////////////////////////////
@@ -283,11 +290,11 @@ static int is_timed_scalar(const struct adios_var_struct *var) {
  * the given transform spec. Also handles error conditions, such as the variable
  * being a scalar (which disallows any data transform).
  */
-struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *orig_var_grp,
-                                                     struct adios_var_struct *orig_var,
+struct adios_var_struct * adios_transform_define_var(struct adios_var_struct *orig_var,
                                                      struct adios_transform_spec *transform_spec) {
     // First detect error conditions that prevent the transform from being applied
 
+    if (!transform_spec) return orig_var;
     // If the variable has a transform, but is a scalar: remove the transform, warn the user, and continue as usual
     if (transform_spec->transform_type != adios_transform_none &&
         (is_scalar(orig_var) || is_timed_scalar(orig_var))) {
@@ -318,7 +325,7 @@ struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *
     // variable into a 1D byte array.
 
     // Convert variable to 1D byte array
-    adios_transform_convert_var_to_byte_array(orig_var_grp, orig_var);
+    adios_transform_convert_var_to_byte_array(orig_var);
     log_debug("Data Transforms layer: Converted variable %s into byte array internally\n", orig_var->name);
 
     // Allocate the transform-specific metadata buffer
@@ -336,14 +343,13 @@ struct adios_var_struct * adios_transform_define_var(struct adios_group_struct *
 
 // NCSU ALACRITY-ADIOS - Compute the pre-transform size of a variable, in bytes
 // Precondition: var is a non-scalar that has been transformed (transform_type != none)
-uint64_t adios_transform_get_pre_transform_var_size(struct adios_group_struct *group, struct adios_var_struct *var) {
+uint64_t adios_transform_get_pre_transform_var_size(struct adios_var_struct *var) {
     assert(var->dimensions);
     assert(var->type != adios_string);
     assert(var->transform_type != adios_transform_none);
     return adios_get_type_size(var->pre_transform_type, NULL) *
            adios_get_dimension_space_size(var,
-                                          var->pre_transform_dimensions,
-                                          group);
+                                          var->pre_transform_dimensions);
 }
 
 static inline uint64_t generate_unique_block_id(const struct adios_file_struct * fd, const struct adios_var_struct *var) {
@@ -351,6 +357,7 @@ static inline uint64_t generate_unique_block_id(const struct adios_file_struct *
 }
 
 // TODO: Delete this once the new implementation is known to work
+#if 0
 static int adios_transform_store_transformed_length_old(struct adios_file_struct * fd, struct adios_var_struct *var, uint64_t transformed_len) {
     struct adios_dimension_struct *dim1, *dim2, *dim3;
     struct adios_dimension_item_struct *pg_id_offset, *byte_length_ldim;
@@ -393,6 +400,7 @@ static int adios_transform_store_transformed_length_old(struct adios_file_struct
 
     return 1;
 }
+#endif
 
 /*
  * Stores the given transformed data length (number of bytes) into the appropriate place
@@ -505,7 +513,7 @@ static void buffer_write (char ** buffer, uint64_t * buffer_size
 // Init
 int adios_transform_init_transform_var(struct adios_var_struct *var) {
     var->transform_type = adios_transform_none;
-    var->transform_spec = 0;
+    var->transform_spec = adios_transform_parse_spec ("none", NULL);
     var->pre_transform_dimensions = 0;
     var->pre_transform_type = adios_unknown;
     //var->transform_type_param_len = 0;
@@ -538,7 +546,7 @@ static void adios_transform_dereference_dimensions_characteristic(struct adios_i
 static void dereference_dimension_item(struct adios_dimension_item_struct *dst_dim_item, const struct adios_dimension_item_struct *src_dim_item) {
     dst_dim_item->var = NULL;
     dst_dim_item->attr = NULL;
-    dst_dim_item->rank = adios_get_dim_value((struct adios_dimension_item *)src_dim_item);
+    dst_dim_item->rank = adios_get_dim_value((struct adios_dimension_item_struct *)src_dim_item);
     dst_dim_item->time_index = src_dim_item->time_index;
 }
 

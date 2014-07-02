@@ -1,0 +1,509 @@
+GITLOG="Last commit on Fri Feb 28 15:31:41 2014 -0500 hash be18e40"
+read -d '' GITSTAT <<'_EOF_'
+On branch icee
+Your branch is up-to-date with 'origin/icee'.
+
+All conflicts fixed but you are still merging.
+  (use "git commit" to conclude merge)
+
+Changes to be committed:
+
+	modified:   CMakeLists.txt
+	new file:   FindADIOS.cmake
+	modified:   INSTALL
+	modified:   Makefile.am
+	modified:   Makefile.in
+	modified:   NEWS
+	modified:   TODO_INTERNAL
+	modified:   aclocal.m4
+	modified:   adios_config
+	modified:   cmake_init
+	modified:   config.h.cmake
+	modified:   config.h.in
+	modified:   config/ac_cray_pmi.m4
+	modified:   config/ac_cray_ugni.m4
+	modified:   config/ac_dataspaces.m4
+	modified:   config/ac_dimes.m4
+	new file:   config/ac_fgr.m4
+	new file:   config/ac_glib.m4
+	modified:   config/ac_infiniband.m4
+	modified:   config/ac_lustre.m4
+	new file:   config/ac_pami.m4
+	modified:   config/ac_portals.m4
+	modified:   configure.ac
+	modified:   doc/manual/ADIOS-Manual.tex
+	modified:   doc/manual/adios_noxml_write_api.tex
+	modified:   doc/manual/adios_read_api.tex
+	modified:   doc/manual/adios_write_api.tex
+	modified:   doc/manual/front_matter.tex
+	modified:   doc/manual/installation.tex
+	modified:   doc/manual/introduction.tex
+	modified:   doc/manual/language_bindings.tex
+	modified:   doc/manual/transform_plugins.tex
+	modified:   doc/manual/transport_methods.tex
+	modified:   doc/manual/utilities.tex
+	new file:   doc/skel/figures/overview.png
+	modified:   doc/skel/front_matter.tex
+	modified:   doc/skel/porting_hints.tex
+	modified:   doc/skel/using_skel.tex
+	new file:   doc/skel/yaml_file.tex
+	modified:   examples/C/Makefile.in
+	modified:   examples/C/arrays/Makefile.in
+	modified:   examples/C/arrays/arrays_read.c
+	modified:   examples/C/arrays/arrays_write.c
+	modified:   examples/C/attributes/Makefile.in
+	modified:   examples/C/attributes/attributes_read.c
+	modified:   examples/C/attributes/attributes_write.c
+	new file:   examples/C/cmake_module_test/CMakeLists.txt
+	new file:   examples/C/cmake_module_test/uniform2d.c
+	new file:   examples/C/cmake_module_test/uniform2d.readme
+	new file:   examples/C/cmake_module_test/uniform2d.xml
+	modified:   examples/C/compression_test/Makefile.in
+	modified:   examples/C/compression_test/adios_global.c
+	modified:   examples/C/compression_test/adios_read_box.c
+	modified:   examples/C/compression_test/genarray3D.c
+	modified:   examples/C/compression_test/read_test.h
+	modified:   examples/C/flexpath_arrays/Makefile.in
+	modified:   examples/C/flexpath_arrays/global_range_select/Makefile.in
+	modified:   examples/C/flexpath_arrays/global_range_select/arrays.xml
+	modified:   examples/C/flexpath_arrays/global_range_select/arrays_read.c
+	modified:   examples/C/flexpath_arrays/global_range_select/arrays_write.c
+	modified:   examples/C/flexpath_arrays/process_select/Makefile.in
+	modified:   examples/C/flexpath_arrays/process_select/arrays_read.c
+	modified:   examples/C/flexpath_arrays/process_select/arrays_write.c
+	modified:   examples/C/global-array-time/Makefile.in
+	modified:   examples/C/global-array-time/adios_globaltime.c
+	modified:   examples/C/global-array-time/adios_globaltime_no_xml.c
+	modified:   examples/C/global-array-time/adios_read_globaltime.c
+	modified:   examples/C/global-array-time/adios_read_globaltime_streaming.c
+	modified:   examples/C/global-array/Makefile.am
+	modified:   examples/C/global-array/Makefile.in
+	modified:   examples/C/global-array/adios_global.c
+	modified:   examples/C/global-array/adios_global.xml
+	modified:   examples/C/global-array/adios_global_2files.c
+	new file:   examples/C/global-array/adios_global_aggregate_by_color.c
+	modified:   examples/C/global-array/adios_global_no_xml.c
+	modified:   examples/C/global-array/adios_read_chunk.c
+	modified:   examples/C/global-array/adios_read_global.c
+	modified:   examples/C/global-array/adios_read_global_no_xml.c
+	modified:   examples/C/global-array/adios_read_gpp.c
+	modified:   examples/C/global-array/adios_read_writeblock.c
+	modified:   examples/C/global-array/no_xml_write_byid.c
+	modified:   examples/C/global-array/read_no_xml_write_byid.c
+	modified:   examples/C/manual/2_adios_write.c
+	modified:   examples/C/manual/3_adios_read.c
+	modified:   examples/C/manual/4_adios_nfiles.c
+	modified:   examples/C/manual/Makefile.in
+	modified:   examples/C/read_all/Makefile.in
+	modified:   examples/C/read_all/read_all.c
+	modified:   examples/C/read_all/read_all_v1.c
+	modified:   examples/C/scalars/Makefile.in
+	modified:   examples/C/scalars/scalars_read.c
+	modified:   examples/C/scalars/scalars_write.c
+	modified:   examples/C/schema/CMakeLists.txt
+	modified:   examples/C/schema/Makefile.am
+	modified:   examples/C/schema/Makefile.in
+	modified:   examples/C/schema/rectilinear2d.c
+	modified:   examples/C/schema/rectilinear2d.readme
+	new file:   examples/C/schema/rectilinear2d_noxml.c
+	modified:   examples/C/schema/structured2d.c
+	modified:   examples/C/schema/structured2d.readme
+	new file:   examples/C/schema/structured2d_noxml.c
+	modified:   examples/C/schema/tri2d.c
+	modified:   examples/C/schema/tri2d.readme
+	new file:   examples/C/schema/tri2d_noxml.c
+	modified:   examples/C/schema/triangle2d.c
+	modified:   examples/C/schema/uniform2d.c
+	modified:   examples/C/schema/uniform2d.readme
+	new file:   examples/C/schema/uniform2d_noxml.c
+	modified:   examples/C/stat/Makefile.in
+	modified:   examples/C/stat/stat_read.c
+	modified:   examples/C/stat/stat_write.c
+	modified:   examples/C/transforms/Makefile.in
+	modified:   examples/C/transforms/adios_global.c
+	modified:   examples/C/transforms/adios_read_all_3D.c
+	modified:   examples/C/transforms/adios_read_points.c
+	modified:   examples/C/transforms/adios_read_subv.c
+	modified:   examples/C/transforms/adios_read_wb_subpg.c
+	modified:   examples/C/transforms/adios_write_all_3D.c
+	modified:   examples/Fortran/Makefile.in
+	modified:   examples/Fortran/arrays/Makefile.in
+	modified:   examples/Fortran/global-array-time/Makefile.in
+	modified:   examples/Fortran/global-array/Makefile.in
+	modified:   examples/Fortran/global-array/no_xml_write_byid.F90
+	modified:   examples/Fortran/scalars/Makefile.in
+	modified:   examples/Makefile.in
+	modified:   examples/coupling/job
+	modified:   examples/staging/stage_write/genarray_stream.F90
+	modified:   examples/staging/stage_write/genarray_stream.xml
+	modified:   examples/staging/stage_write/job
+	modified:   examples/staging/stage_write/make.settings
+	modified:   examples/staging/stage_write/stage_write.c
+	modified:   runconf
+	new file:   scripts/FindADIOS.cmake
+	modified:   src/CMakeLists.txt
+	modified:   src/Makefile.am
+	modified:   src/Makefile.in
+	modified:   src/core/adios.c
+	modified:   src/core/adios_bp_v1.c
+	modified:   src/core/adios_copyspec.c
+	modified:   src/core/adios_copyspec.h
+	modified:   src/core/adios_endianness.c
+	modified:   src/core/adios_internals.c
+	modified:   src/core/adios_internals.h
+	modified:   src/core/adios_internals_mxml.c
+	modified:   src/core/adios_read_hooks.c
+	modified:   src/core/adios_read_hooks.h
+	modified:   src/core/adios_read_v1.c
+	modified:   src/core/adios_selection_util.c
+	modified:   src/core/adios_socket.c
+	modified:   src/core/adios_subvolume.c
+	modified:   src/core/adios_subvolume.h
+	modified:   src/core/adios_timing.h
+	modified:   src/core/adios_transport_hooks.c
+	modified:   src/core/adios_transport_hooks.h
+	modified:   src/core/adiosf.c
+	modified:   src/core/adiosf_read.c
+	modified:   src/core/adiosf_read_v1.c
+	modified:   src/core/adiosf_write_mod.f90
+	modified:   src/core/bp_utils.c
+	modified:   src/core/common_adios.c
+	modified:   src/core/common_adios.h
+	modified:   src/core/common_read.c
+	modified:   src/core/common_read.h
+	modified:   src/core/ds_metadata.h
+	modified:   src/core/flexpath.h
+	modified:   src/core/mpidummy.c
+	modified:   src/core/qhashtbl.c
+	modified:   src/core/qhashtbl.h
+	modified:   src/core/transforms/adios_patchdata.c
+	modified:   src/core/transforms/adios_transforms_common.c
+	modified:   src/core/transforms/adios_transforms_datablock.c
+	modified:   src/core/transforms/adios_transforms_hooks.c
+	modified:   src/core/transforms/adios_transforms_hooks.h
+	modified:   src/core/transforms/adios_transforms_hooks_read.c
+	modified:   src/core/transforms/adios_transforms_hooks_read.h
+	modified:   src/core/transforms/adios_transforms_hooks_write.c
+	modified:   src/core/transforms/adios_transforms_read.c
+	modified:   src/core/transforms/adios_transforms_reqgroup.c
+	modified:   src/core/transforms/adios_transforms_specparse.c
+	modified:   src/core/transforms/adios_transforms_specparse.h
+	modified:   src/core/transforms/adios_transforms_write.c
+	modified:   src/core/transforms/adios_transforms_write.h
+	modified:   src/core/transforms/plugindetect/detect_plugin_infos.h
+	modified:   src/core/transforms/plugindetect/plugin_info_types.h
+	modified:   src/core/util.c
+	modified:   src/core/util.h
+	modified:   src/public/adios.h
+	modified:   src/public/adios_error.h
+	modified:   src/public/adios_read_v1.h
+	modified:   src/public/adios_read_v1_defs.h
+	modified:   src/public/adios_read_v2.h
+	new file:   src/public/adios_read_v2_fwd.h
+	modified:   src/public/adios_schema.h
+	modified:   src/public/adios_types.h
+	modified:   src/public/mpidummy.h
+	modified:   src/read/read_bp.c
+	modified:   src/read/read_bp_staged.c
+	modified:   src/read/read_dataspaces.c
+	modified:   src/read/read_dimes.c
+	modified:   src/read/read_flexpath.c
+	modified:   src/transforms/adios_transform_alacrity_read.c
+	modified:   src/transforms/adios_transform_alacrity_write.c
+	modified:   src/transforms/adios_transform_aplod_read.c
+	modified:   src/transforms/adios_transform_aplod_write.c
+	modified:   src/transforms/adios_transform_bzip2_read.c
+	modified:   src/transforms/adios_transform_bzip2_write.c
+	modified:   src/transforms/adios_transform_identity_read.c
+	modified:   src/transforms/adios_transform_identity_write.c
+	modified:   src/transforms/adios_transform_isobar_read.c
+	modified:   src/transforms/adios_transform_isobar_write.c
+	modified:   src/transforms/adios_transform_szip_read.c
+	modified:   src/transforms/adios_transform_szip_write.c
+	modified:   src/transforms/adios_transform_template_read.c
+	modified:   src/transforms/adios_transform_template_write.c
+	modified:   src/transforms/adios_transform_zlib_read.c
+	modified:   src/transforms/adios_transform_zlib_write.c
+	modified:   src/write/adios_adaptive.c
+	modified:   src/write/adios_dataspaces.c
+	modified:   src/write/adios_dimes.c
+	modified:   src/write/adios_flexpath.c
+	modified:   src/write/adios_mpi.c
+	modified:   src/write/adios_mpi_aggregate.c
+	modified:   src/write/adios_mpi_amr.c
+	modified:   src/write/adios_mpi_amr1.c
+	modified:   src/write/adios_mpi_bgq.c
+	modified:   src/write/adios_mpi_lustre.c
+	modified:   src/write/adios_mpi_stagger.c
+	modified:   src/write/adios_mpi_stripe.c
+	modified:   src/write/adios_nc4.c
+	modified:   src/write/adios_nssi.c
+	modified:   src/write/adios_posix.c
+	modified:   src/write/adios_posix1.c
+	modified:   src/write/adios_var_merge.c
+	modified:   tests/C/Makefile.in
+	modified:   tests/C/adios_test_c.c
+	modified:   tests/C/flexpath_tests/1D_arr_global/Makefile.in
+	modified:   tests/C/flexpath_tests/1D_arr_global/reader.c
+	modified:   tests/C/flexpath_tests/1D_arr_global/writer.c
+	modified:   tests/C/flexpath_tests/1D_arr_global_noxml/Makefile.in
+	modified:   tests/C/flexpath_tests/1D_arr_global_noxml/reader.c
+	modified:   tests/C/flexpath_tests/1D_arr_global_noxml/writer.c
+	modified:   tests/C/flexpath_tests/Makefile.in
+	modified:   tests/C/flexpath_tests/common/utils.c
+	modified:   tests/C/flexpath_tests/global_range_select/Makefile.in
+	modified:   tests/C/flexpath_tests/global_range_select/arrays_read.c
+	modified:   tests/C/flexpath_tests/include/test_common.h
+	modified:   tests/C/flexpath_tests/include/utils.h
+	modified:   tests/C/flexpath_tests/maya_append/Makefile.in
+	modified:   tests/C/flexpath_tests/maya_append/reader.c
+	modified:   tests/C/flexpath_tests/maya_append/writer.c
+	modified:   tests/C/flexpath_tests/maya_noxml/Makefile.in
+	modified:   tests/C/flexpath_tests/maya_noxml/reader.c
+	modified:   tests/C/flexpath_tests/maya_noxml/writer.c
+	modified:   tests/C/flexpath_tests/scalar/Makefile.in
+	modified:   tests/C/flexpath_tests/scalar/reader.c
+	modified:   tests/C/flexpath_tests/scalar/writer.c
+	modified:   tests/Fortran/Makefile.in
+	modified:   tests/Makefile.in
+	modified:   tests/bp_read/Makefile.in
+	modified:   tests/bp_read/bp_read_c.c
+	modified:   tests/bp_read/genbp.c
+	modified:   tests/genarray/CMakeLists.txt
+	modified:   tests/genarray/Makefile.in
+	new file:   tests/performance/simple_write/Makefile
+	new file:   tests/performance/simple_write/comp_comm.c
+	new file:   tests/performance/simple_write/comp_comm.h
+	new file:   tests/performance/simple_write/job.titan.256
+	new file:   tests/performance/simple_write/job.titan.4096
+	new file:   tests/performance/simple_write/output.h
+	new file:   tests/performance/simple_write/output_adios.c
+	new file:   tests/performance/simple_write/output_hdf5_nto1.c
+	new file:   tests/performance/simple_write/output_hdf5_seq.c
+	new file:   tests/performance/simple_write/output_none.c
+	new file:   tests/performance/simple_write/output_posix.c
+	new file:   tests/performance/simple_write/setup.rhea
+	new file:   tests/performance/simple_write/setup.titan
+	new file:   tests/performance/simple_write/setup_comp_comm_ratio.c
+	new file:   tests/performance/simple_write/timing.c
+	new file:   tests/performance/simple_write/timing.h
+	new file:   tests/performance/simple_write/writer.c
+	modified:   tests/suite/Makefile.in
+	modified:   tests/suite/programs/Makefile.am
+	modified:   tests/suite/programs/Makefile.in
+	new file:   tests/suite/programs/group_free_test.c
+	modified:   tests/suite/programs/hashtest.c
+	modified:   tests/suite/programs/many_vars.c
+	modified:   tests/suite/programs/steps_read_file.c
+	modified:   tests/suite/programs/transforms_specparse.c
+	new file:   tutorial/201402_OLCF/bugs/buginxml/Makefile
+	new file:   tutorial/201402_OLCF/bugs/buginxml/README
+	new file:   tutorial/201402_OLCF/bugs/buginxml/bug1.xml
+	new file:   tutorial/201402_OLCF/bugs/buginxml/bug2.xml
+	new file:   tutorial/201402_OLCF/bugs/buginxml/bug3.xml
+	new file:   tutorial/201402_OLCF/bugs/buginxml/bug4.xml
+	new file:   tutorial/201402_OLCF/bugs/buginxml/bug5.xml
+	new file:   tutorial/201402_OLCF/bugs/buginxml/buginxml.c
+	new file:   tutorial/201402_OLCF/bugs/buginxml/plot_buginxml.sh
+	new file:   tutorial/201402_OLCF/bugs/triplebugs/Makefile
+	new file:   tutorial/201402_OLCF/bugs/triplebugs/README
+	new file:   tutorial/201402_OLCF/bugs/triplebugs/write.F90
+	new file:   tutorial/201402_OLCF/bugs/triplebugs/write.xml
+	new file:   tutorial/201402_OLCF/nctoadios/Makefile
+	new file:   tutorial/201402_OLCF/nctoadios/adios_read.F90
+	new file:   tutorial/201402_OLCF/nctoadios/adios_write.F90
+	new file:   tutorial/201402_OLCF/nctoadios/adios_write.xml
+	new file:   tutorial/201402_OLCF/nctoadios/nc4_read.F90
+	new file:   tutorial/201402_OLCF/nctoadios/nc4_write.F90
+	new file:   tutorial/201402_OLCF/noxml/Makefile
+	new file:   tutorial/201402_OLCF/noxml/adios_global_no_xml.c
+	new file:   tutorial/201402_OLCF/noxml/plot_global.sh
+	new file:   tutorial/201402_OLCF/noxml/plot_writer.sh
+	new file:   tutorial/201402_OLCF/noxml/writer_noxml.F90
+	new file:   tutorial/201402_OLCF/schema/Makefile
+	new file:   tutorial/201402_OLCF/schema/plot.sh
+	new file:   tutorial/201402_OLCF/schema/r.png
+	new file:   tutorial/201402_OLCF/schema/rectilinear2d.c
+	new file:   tutorial/201402_OLCF/schema/rectilinear2d.png
+	new file:   tutorial/201402_OLCF/schema/rectilinear2d.readme
+	new file:   tutorial/201402_OLCF/schema/rectilinear2d.xml
+	new file:   tutorial/201402_OLCF/schema/structured2d.c
+	new file:   tutorial/201402_OLCF/schema/structured2d.readme
+	new file:   tutorial/201402_OLCF/schema/structured2d.xml
+	new file:   tutorial/201402_OLCF/schema/t.png
+	new file:   tutorial/201402_OLCF/schema/tri2d.c
+	new file:   tutorial/201402_OLCF/schema/tri2d.n.png
+	new file:   tutorial/201402_OLCF/schema/tri2d.readme
+	new file:   tutorial/201402_OLCF/schema/tri2d.xml
+	new file:   tutorial/201402_OLCF/schema/uniform2d.c
+	new file:   tutorial/201402_OLCF/schema/uniform2d.png
+	new file:   tutorial/201402_OLCF/schema/uniform2d.readme
+	new file:   tutorial/201402_OLCF/schema/uniform2d.xml
+	new file:   tutorial/201402_OLCF/staging/Makefile
+	new file:   tutorial/201402_OLCF/staging/Makefile.stage_write
+	new file:   tutorial/201402_OLCF/staging/Makefile.writer
+	new file:   tutorial/201402_OLCF/staging/README
+	new file:   tutorial/201402_OLCF/staging/decompose.h
+	new file:   tutorial/201402_OLCF/staging/decompose_block.c
+	new file:   tutorial/201402_OLCF/staging/job.olcf
+	new file:   tutorial/201402_OLCF/staging/plot.sh
+	new file:   tutorial/201402_OLCF/staging/stage_write.c
+	new file:   tutorial/201402_OLCF/staging/utils.c
+	new file:   tutorial/201402_OLCF/staging/utils.h
+	new file:   tutorial/201402_OLCF/staging/writer.F90
+	new file:   tutorial/201402_OLCF/staging/writer.xml
+	new file:   tutorial/201402_OLCF/write_read/Makefile
+	new file:   tutorial/201402_OLCF/write_read/README
+	new file:   tutorial/201402_OLCF/write_read/plot_writer.sh
+	new file:   tutorial/201402_OLCF/write_read/reader.F90
+	new file:   tutorial/201402_OLCF/write_read/single_file/Makefile
+	new file:   tutorial/201402_OLCF/write_read/single_file/reader_all_at_once.F90
+	new file:   tutorial/201402_OLCF/write_read/single_file/reader_step_by_step.F90
+	new file:   tutorial/201402_OLCF/write_read/single_file/writer.xml
+	new file:   tutorial/201402_OLCF/write_read/single_file/writer_single_file.F90
+	new file:   tutorial/201402_OLCF/write_read/writer.F90
+	new file:   tutorial/201402_OLCF/write_read/writer.xml
+	new file:   tutorial/201402_OLCF/write_read/xy.00.png
+	new file:   tutorial/201402_OLCF/write_read/xy.01.png
+	modified:   utils/CMakeLists.txt
+	modified:   utils/Makefile.am
+	modified:   utils/Makefile.in
+	modified:   utils/adios_lint/Makefile.in
+	modified:   utils/adios_lint/adios_lint.c
+	modified:   utils/bp2ascii/Makefile.in
+	modified:   utils/bp2ascii/bp2ascii.c
+	modified:   utils/bp2bp/Makefile.in
+	modified:   utils/bp2bp/bp2bp.c
+	modified:   utils/bp2h5/Makefile.in
+	modified:   utils/bp2ncd/Makefile.in
+	modified:   utils/bpdiff/Makefile.in
+	modified:   utils/bpdiff/bpdiff.c
+	modified:   utils/bpdump/Makefile.in
+	modified:   utils/bpdump/bpdump.c
+	modified:   utils/bpls/Makefile.in
+	modified:   utils/bpls/bpls.c
+	modified:   utils/bpls/bpls.h
+	modified:   utils/bpsplit/Makefile.in
+	modified:   utils/bpsplit/bpappend.c
+	modified:   utils/bpsplit/bpgettime.c
+	modified:   utils/bpsplit/bpsplit.c
+	modified:   utils/gpp/Makefile.in
+	new file:   utils/list_methods/.gitignore
+	new file:   utils/list_methods/CMakeLists.txt
+	new file:   utils/list_methods/Makefile.am
+	new file:   utils/list_methods/Makefile.in
+	new file:   utils/list_methods/list_methods.c
+	modified:   utils/skel/Makefile.am
+	modified:   utils/skel/Makefile.in
+	modified:   utils/skel/bin/skel
+	modified:   utils/skel/etc/Makefile.in
+	modified:   utils/skel/etc/templates/Makefile.tmpl
+	new file:   utils/skel/etc/templates/create_suite.tmpl
+	modified:   utils/skel/etc/templates/replay_bp.tmpl
+	modified:   utils/skel/etc/templates/replay_yaml.tmpl
+	modified:   utils/skel/etc/templates/source_write_c.tmpl
+	modified:   utils/skel/etc/templates/source_write_fortran.tmpl
+	modified:   utils/skel/lib/skel_bpy.py
+	modified:   utils/skel/lib/skel_makefile.py
+	modified:   utils/skel/lib/skel_params.py
+	modified:   utils/skel/lib/skel_replay.py
+	modified:   utils/skel/lib/skel_source.py
+	modified:   utils/skel/lib/skel_submit.py
+	new file:   utils/skel/lib/skel_suite.py
+	new file:   utils/skel/lib/skel_template.py
+	new file:   utils/skel/lib/skel_test_plan.py
+	modified:   utils/skel/lib/skel_xml.py
+	modified:   utils/skel/src/Makefile.in
+	modified:   utils/skeldump/Makefile.in
+	deleted:    wrappers/numpy/CMakeLists.txt
+	new file:   wrappers/numpy/Makefile
+	deleted:    wrappers/numpy/Modules/CMakeUtilityFunctions.cmake
+	deleted:    wrappers/numpy/Modules/FindADIOS.cmake
+	deleted:    wrappers/numpy/Modules/FindMPI4Py.cmake
+	deleted:    wrappers/numpy/Modules/FindNumpy.cmake
+	deleted:    wrappers/numpy/Modules/FindPackageHandleStandardArgs.cmake
+	modified:   wrappers/numpy/README
+	modified:   wrappers/numpy/adios.cpp
+	modified:   wrappers/numpy/adios.pyx
+	new file:   wrappers/numpy/adios_mpi.cpp
+	new file:   wrappers/numpy/adios_mpi.pyx
+	modified:   wrappers/numpy/example/ncdf2bp.py
+	new file:   wrappers/numpy/mpi.cfg
+	new file:   wrappers/numpy/mpiconfig.py
+	new file:   wrappers/numpy/mpidistutils.py
+	modified:   wrappers/numpy/setup.py
+	new file:   wrappers/numpy/setup_mpi.py
+	deleted:    wrappers/numpy/test/adios_noxml_test.py
+	deleted:    wrappers/numpy/test/adios_read_test.py
+	deleted:    wrappers/numpy/test/adios_write_test.py
+	deleted:    wrappers/numpy/test/test_adios_noxml.sh
+	renamed:    wrappers/numpy/test/test_adios_read.sh -> wrappers/numpy/tests/config.xml
+	renamed:    wrappers/numpy/test/test_adios_write.sh -> wrappers/numpy/tests/config_mpi.xml
+	new file:   wrappers/numpy/tests/test_adios.py
+	new file:   wrappers/numpy/tests/test_adios_mpi.py
+	new file:   wrappers/numpy/tests/test_adios_timestep.py
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git checkout -- <file>..." to discard changes in working directory)
+
+	modified:   Makefile.in
+	modified:   aclocal.m4
+	modified:   config.h.in
+	modified:   configure
+	modified:   examples/C/Makefile.in
+	modified:   examples/C/arrays/Makefile.in
+	modified:   examples/C/attributes/Makefile.in
+	modified:   examples/C/compression_test/Makefile.in
+	modified:   examples/C/flexpath_arrays/Makefile.in
+	modified:   examples/C/flexpath_arrays/global_range_select/Makefile.in
+	modified:   examples/C/flexpath_arrays/process_select/Makefile.in
+	modified:   examples/C/global-array-time/Makefile.in
+	modified:   examples/C/global-array/Makefile.in
+	modified:   examples/C/manual/Makefile.in
+	modified:   examples/C/read_all/Makefile.in
+	modified:   examples/C/scalars/Makefile.in
+	modified:   examples/C/schema/Makefile.in
+	modified:   examples/C/stat/Makefile.in
+	modified:   examples/C/transforms/Makefile.in
+	modified:   examples/Fortran/Makefile.in
+	modified:   examples/Fortran/arrays/Makefile.in
+	modified:   examples/Fortran/global-array-time/Makefile.in
+	modified:   examples/Fortran/global-array/Makefile.in
+	modified:   examples/Fortran/scalars/Makefile.in
+	modified:   examples/Makefile.in
+	modified:   src/Makefile.in
+	modified:   src/core/adios_transport_hooks.c
+	modified:   tests/C/Makefile.in
+	modified:   tests/C/flexpath_tests/1D_arr_global/Makefile.in
+	modified:   tests/C/flexpath_tests/1D_arr_global_noxml/Makefile.in
+	modified:   tests/C/flexpath_tests/Makefile.in
+	modified:   tests/C/flexpath_tests/global_range_select/Makefile.in
+	modified:   tests/C/flexpath_tests/maya_append/Makefile.in
+	modified:   tests/C/flexpath_tests/maya_noxml/Makefile.in
+	modified:   tests/C/flexpath_tests/scalar/Makefile.in
+	modified:   tests/Fortran/Makefile.in
+	modified:   tests/Makefile.in
+	modified:   tests/bp_read/Makefile.in
+	modified:   tests/genarray/Makefile.in
+	modified:   tests/suite/Makefile.in
+	modified:   tests/suite/programs/Makefile.in
+	modified:   utils/Makefile.in
+	modified:   utils/adios_lint/Makefile.in
+	modified:   utils/bp2ascii/Makefile.in
+	modified:   utils/bp2bp/Makefile.in
+	modified:   utils/bp2h5/Makefile.in
+	modified:   utils/bp2ncd/Makefile.in
+	modified:   utils/bpdiff/Makefile.in
+	modified:   utils/bpdump/Makefile.in
+	modified:   utils/bpls/Makefile.in
+	modified:   utils/bpsplit/Makefile.in
+	modified:   utils/gpp/Makefile.in
+	modified:   utils/list_methods/Makefile.in
+	modified:   utils/skel/Makefile.in
+	modified:   utils/skel/etc/Makefile.in
+	modified:   utils/skel/src/Makefile.in
+	modified:   utils/skeldump/Makefile.in
+
+Untracked files not listed (use -u option to show untracked files)
+_EOF_

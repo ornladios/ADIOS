@@ -13,6 +13,7 @@
 
 #include "zlib.h"
 
+#if 0
 static int is_digit_str(char* input_str)
 {
     if(strlen(input_str) > 2)    // at most 2 digits for zlib
@@ -30,6 +31,7 @@ static int is_digit_str(char* input_str)
     }
     return 1;
 }
+#endif
 
 int compress_zlib_pre_allocated(const void* input_data,
                                 const uint64_t input_len,
@@ -76,7 +78,7 @@ int adios_transform_zlib_apply(struct adios_file_struct *fd,
     assert(var->transform_type == adios_transform_zlib);
 
     // Get the input data and data length
-    const uint64_t input_size = adios_transform_get_pre_transform_var_size(fd->group, var);
+    const uint64_t input_size = adios_transform_get_pre_transform_var_size(var);
     const void *input_buff= var->data;
 
     // parse the compressiong parameter
@@ -105,7 +107,6 @@ int adios_transform_zlib_apply(struct adios_file_struct *fd,
     uint64_t output_size = input_size; // for compression, at most the original data size
     void* output_buff = NULL;
 
-    uint64_t mem_allowed = 0;
     if (use_shared_buffer)    // If shared buffer is permitted, serialize to there
     {
         *wrote_to_shared_buffer = 1;

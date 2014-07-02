@@ -26,14 +26,13 @@
 
 int main (int argc, char ** argv) 
 {
-    char        filename [256];
     int         rank, size, i, j, npl, token;
     MPI_Comm    comm = MPI_COMM_WORLD;
     MPI_Status  status;
     enum ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP;
     ADIOS_SELECTION * sel;
     void * data = NULL;
-    uint64_t start[1], count[1], bytes_read = 0;
+    uint64_t start[1], count[1];
 
     MPI_Init (&argc, &argv);
     MPI_Comm_rank (comm, &rank);
@@ -77,7 +76,7 @@ int main (int argc, char ** argv)
     printf (" ======== Rank %d ========== \n", rank);
     npl = 10;
     for (i = 0; i < slice_size; i+=npl) {
-        printf ("[%4.4d]  ", rank*slice_size+i);
+        printf ("[%4.4lld]  ", rank*slice_size+i);
         for (j= 0; j < npl; j++) {
             printf (" %6.6g", * ((double *)data + i + j));
         }

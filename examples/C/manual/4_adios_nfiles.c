@@ -25,7 +25,6 @@ int main (int argc, char ** argv)
     int         i;
 
     /* ADIOS variables declarations for matching gwrite_temperature.ch */
-    int         adios_err;
     uint64_t    adios_groupsize, adios_totalsize;
     int64_t     adios_handle;
     int         color, key;

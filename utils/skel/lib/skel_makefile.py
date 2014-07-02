@@ -20,17 +20,27 @@ def pparse_command_line (parent_parser):
         skel makefile 
             create a makefile for building a skeletal application''')
 
+    parser.add_argument ('project', metavar='project', help='Name of the skel project')
     parser.add_argument ('-y', '--yaml-file', dest='yamlfile', help='yaml file to store I/O pattern')
     parser.add_argument ('-b', '--bp-file', dest='bpfile', help='bp file to extract I/O pattern')
     parser.add_argument ('-f', '--force', dest='force', action='store_true', help='overwrite existing source file')
+    parser.add_argument ('-n', '--noxml', dest='noxml', action='store_true', help='generate noxml code')
     parser.set_defaults(force=False)
+    parser.set_defaults(noxml=False)
 
     return parser.parse_args()
 
 
 
-def generate_makefiles_with_args (config, parent_parser):
+def generate_makefiles_with_args (parent_parser):
     args = pparse_command_line (parent_parser)
+
+    try:
+        config = adios.adiosConfig (args.project + '_skel.xml')
+    except (IOError):
+        print "XXError reading " + args.project + "_skel.xml. Try running skel xml " + args.project + " first."
+        return 1
+
 
     if args.yamlfile:
         generate_makefile_from_yaml (args)
@@ -69,6 +79,7 @@ def generate_makefile_from_yaml (args):
     t.bpy = bpy
     t.project = args.project
     t.bpfile = args.bpfile
+    t.noxml = args.noxml
     skel_file.write (str(t) )
  
 

@@ -21,7 +21,7 @@
 int main (int argc, char ** argv) 
 {
     char        filename [256];
-    int         rank, size, i, j;
+    int         rank, i, j;
     int         NX, NY; 
     double      *t;
     int         *p;

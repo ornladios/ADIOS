@@ -1,0 +1,25 @@
+
+$ mpirun -np 12 ./writer
+This run creates 2 output files, writer00.bp and writer01.bp
+
+$ bpls -l writer00.bp 
+  integer  /nx_global     scalar = 260 
+  integer  /ny_global     scalar = 387 
+  integer  /aux/offs_x    scalar = 0 
+  integer  /aux/offs_y    scalar = 0 
+  integer  /aux/nx_local  scalar = 65 
+  integer  /aux/ny_local  scalar = 129 
+  double   /xy            {387, 260} = 0 / 11 / 5.5 / 3.45205 
+
+
+$ mpirun -np 3 ./reader
+Each process reads 1/3rd of the data  (decomposing the fastest dimension of the xy array) and uses standard Fortran writes to dump data to fort.100, fort.101, fort.102 files
+
+output format:
+<step> <offx> <offy> <value>
+
+$ plot_writer.sh
+Makes images of the 2D array xy in both output files
+
+$ eog . &
+Runs Eye of GNOME in this directory to see the images

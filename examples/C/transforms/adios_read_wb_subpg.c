@@ -22,14 +22,11 @@
 
 int main (int argc, char ** argv)
 {
-    char        filename [256];
-    int         i, j, datasize, if_any, ndim;
+    int         i, datasize, ndim;
     MPI_Comm    comm = MPI_COMM_WORLD;
     enum ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP;
-    ADIOS_SELECTION * wbsel, * sel2;
-    ADIOS_VARCHUNK * chunk = 0;
+    ADIOS_SELECTION * wbsel;
     double * data = NULL;
-    uint64_t start[2], count[2], npoints, * points;
 
     MPI_Init (&argc, &argv);
 #ifdef WITH_NCSU_TIMER
@@ -43,12 +40,10 @@ int main (int argc, char ** argv)
     adios_inq_var_blockinfo(f, varinfo);
     if (varinfo)
     {
-        int nranks;
-
         ndim = varinfo->ndim;
         assert(ndim == 2);
 
-        nranks = varinfo->dims[0];
+        //int nranks = varinfo->dims[0];
         assert(varinfo->dims[1] == 10);
 
         assert(varinfo->nsteps >= 1);

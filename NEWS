@@ -1,7 +1,24 @@
+1.7.0 Release June 2014
+    - Support for more than 64k variables in a file 
+    - File system topology aware I/O method for Titan@OLCF
+    - DataSpaces staging 
+      - support for 64bit dimension sizes 
+      - support for more than three dimensions
+      - works on Bluegene/Q (DataSpaces+DIMES methods)
+      - can run as a service (dynamic connections)
+    - Additions to non-XML Write API: 
+      - Support for the visualization schema
+      - adios_set_transform() to choose the transformation
+        for a variable
+    - Usability improvements:
+      - CMake Module for find_package(ADIOS)
+      - adios_config -m to print available write/read methods
+
+
 1.6.0 Release Dec 2013
     - Transformations of data supported in file-based I/O
       - lossless compression (zlib, bzip, szip)
-      - lossy compression (ISOBAR)
+      - lossless compression (ISOBAR)
       - precision-level-of-detail encoding (APLOD)
     - Changes to Write API:
       - variables are identified by full path at writing

@@ -53,6 +53,7 @@ void adios_transform_init() {
 // Delegate functions
 
 uint16_t adios_transform_get_metadata_size(struct adios_transform_spec *transform_spec) {
+    if (!transform_spec) return 0;
     assert(transform_spec->transform_type >= adios_transform_none && transform_spec->transform_type < num_adios_transform_types);
     return TRANSFORM_WRITE_METHODS[transform_spec->transform_type].transform_get_metadata_size(transform_spec);
 }

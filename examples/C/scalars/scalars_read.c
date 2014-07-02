@@ -29,9 +29,7 @@ typedef struct double_complex
 int main (int argc, char ** argv) 
 {
     char        filename [256];
-    int         rank, size, i;
-    int         NX = 10; 
-    double      t[NX];
+    int         rank;
     MPI_Comm    comm = MPI_COMM_WORLD;
     enum ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP;
     ADIOS_SELECTION * sel1=NULL;

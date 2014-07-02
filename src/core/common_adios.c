@@ -157,6 +157,10 @@ int common_adios_open (int64_t * fd, const char * group_name
     fd_p->write_size_bytes = 0;
     fd_p->base_offset = 0;
     fd_p->pg_start_in_file = 0;
+    if (comm != MPI_COMM_NULL)
+        MPI_Comm_dup(comm, &fd_p->comm);
+    else
+        fd_p->comm = MPI_COMM_NULL;
 
 #ifdef SKEL_TIMING
     fd_p->timing_obj = 0;
@@ -201,7 +205,7 @@ int common_adios_open (int64_t * fd, const char * group_name
            )
         {
             adios_transports [methods->method->m].adios_open_fn
-                                                 (fd_p, methods->method, comm);
+                                                 (fd_p, methods->method, fd_p->comm);
         }
 
         methods = methods->next;
@@ -218,7 +222,7 @@ int common_adios_open (int64_t * fd, const char * group_name
 ///////////////////////////////////////////////////////////////////////////////
 static const char ADIOS_ATTR_PATH[] = "/__adios__";
 
-uint32_t pinned_timestep = 0;
+static uint32_t pinned_timestep = 0;
 void adios_pin_timestep(uint32_t ts) {
   pinned_timestep = ts;
 }
@@ -1093,6 +1097,10 @@ int common_adios_close (int64_t fd_p)
     {
         free (fd->name);
         fd->name = 0;
+    }
+
+    if (fd->comm != MPI_COMM_NULL) {
+        MPI_Comm_free (&fd->comm);
     }
 
     free ((void *) fd_p);

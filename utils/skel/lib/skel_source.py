@@ -651,9 +651,12 @@ def pparse_command_line (parent_parser):
         skel source 
             create source code to access the I/O pattern for the target skeletal application''')
 
+    parser.add_argument ('project', metavar='project', help='Name of the skel project')
     parser.add_argument ('-y', '--yaml-file', dest='yamlfile', help='yaml file to use for I/O pattern')
     parser.add_argument ('-f', '--force', dest='force', action='store_true', help='overwrite existing source file')
     parser.set_defaults(force=False)
+    parser.add_argument ('-n', '--noxml', dest='noxml', action='store_true', help='generate noxml code')
+    parser.set_defaults(noxml=False)
 
     return parser.parse_args()
 
@@ -693,16 +696,26 @@ def create_source_from_yaml (args, config):
 
     t.bpy = bpy
     t.project = args.project
+    t.noxml = args.noxml
     skel_file.write (str(t) )
 
 
-def create_sources_with_args (config, parent_parser):
+def create_sources_with_args (parent_parser):
 
     args = pparse_command_line (parent_parser)
+
+    try:
+        config = adios.adiosConfig (args.project + '_skel.xml')
+    except (IOError):
+        print "XXError reading " + args.project + "_skel.xml. Try running skel xml " + args.project + " first."
+        return 1
+
 
     if args.yamlfile is not None:
         create_source_from_yaml(args, config)
     else:
+        if args.noxml:
+            print "NOXML generation only supported with yaml input. Generating XML based code."
         create_source_from_xml (args, config)
 
 

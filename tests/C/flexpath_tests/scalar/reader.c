@@ -119,7 +119,6 @@ int main (int argc, char **argv){
 		}
 	//}
 
-just_clean:
 		// clean everything
 		adios_selection_delete(sel);
 		sel = NULL;

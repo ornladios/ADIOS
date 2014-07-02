@@ -12,6 +12,7 @@
 #include <stdint.h>
 #include <assert.h>
 #include "util.h"
+#include "adios_internals.h" // adios_get_type_size()
 #include "adios_subvolume.h"
 #include "adios_transforms_hooks_read.h"
 #include "adios_transforms_reqgroup.h"
@@ -20,6 +21,8 @@
 // the data, but exercises the transform framework for testing.
 
 #define MAX_DIMS 32
+
+int adios_transform_identity_is_implemented (void) {return 1;}
 
 void compute_sieving_offsets_for_pg_selection(const ADIOS_SELECTION *intersect_sel,
                                               const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *pgbb,
@@ -63,6 +66,11 @@ void compute_sieving_offsets_for_pg_selection(const ADIOS_SELECTION *intersect_s
 
         break;
     }
+
+    case ADIOS_SELECTION_WRITEBLOCK:
+    case ADIOS_SELECTION_AUTO:
+        /* These are unsupported */
+        break;
     }
 
     *start_off_ptr = start_off;

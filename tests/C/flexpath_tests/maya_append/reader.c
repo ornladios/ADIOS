@@ -11,6 +11,7 @@
 #include "adios_read.h"
 
 #include "misc.h"
+#include "utils.h"
 #include "test_common.h"
 #include "cfg.h"
 
@@ -24,6 +25,7 @@
  * @param out_buf  The output buffer
  */
 #define READ_FULLPATH(attribute, grid_func_name, out_buf) \
+	char fullpath[STR_BUFFER_SIZE]; \
 	sprintf(fullpath, "%s%s", attribute, grid_func_name);  \
 	SET_ERROR_IF_NOT_ZERO(adios_schedule_read(adios_handle, sel, fullpath,0,10, out_buf), error_counts.adios);
 
@@ -32,7 +34,7 @@
 #define STR_BUFFER_SIZE 100
 
 int main (int argc, char **argv){
-	int rank =0, size =0;
+	int rank =0;
 	MPI_Comm comm = MPI_COMM_WORLD;
 	struct err_counts err = {0, 0};
 	struct test_info test_result = {TEST_PASSED, "maya_append"};
@@ -67,8 +69,6 @@ int main (int argc, char **argv){
 	memset(level, 0, sizeof(int) * TIMESTEP_COUNT);
 	memset(cctk_bbox, 0, sizeof(int) * TIMESTEP_COUNT*6);
 	memset(data, 0, sizeof(double) * 11* 12*13 * TIMESTEP_COUNT);
-
-	char fullpath[STR_BUFFER_SIZE];
 
 	// selection should be NULL or as a single variable
 	// just say that you want to take different steps

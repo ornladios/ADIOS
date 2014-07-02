@@ -22,18 +22,11 @@
 int main (int argc, char ** argv)
 {
     char * filename;
-    int    rank, pe_size, rc, version;    
-    struct bp_index_pg_struct_v1 * pg_root = 0;
-    struct bp_index_pg_struct_v1 * pg = 0;
+    int    rank, pe_size; 
 
-    struct  adios_index_var_struct_v1 * vars_root = 0;
-    struct  adios_index_attribute_struct_v1 * attrs_root = 0;
-    int     ngroup, nvar, nattr, ntstep;
+    int     nvar;
     int     i,j,k;    
 
-    int     NX = 10, G_NX=30;
-    int     NY = 10, G_NY=30;
-    int     NZ = 10, G_NZ=30;
     void    * var = NULL;
     MPI_Comm comm; 
 
@@ -83,7 +76,6 @@ int main (int argc, char ** argv)
     */
     uint64_t start[3], size[3];
     const char *type_str;
-    double time;
 
     /* variable int_1D */
     vi = adios_inq_var (gp, "int_1D");
@@ -130,7 +122,7 @@ int main (int argc, char ** argv)
     // vnamelist[14] is not written at time step 0
     // so the function returns as error
     adios_read_var (gp, "int_2D", start, size, var);
-    printf("\tslice (%d:%d, %d:%d) = ", 
+    printf("\tslice (%lld:%lld, %lld:%lld) = ", 
            start[0], start[0]+size[0]-1,
            start[1], start[1]+size[1]-1);
     k=0;
@@ -169,7 +161,7 @@ int main (int argc, char ** argv)
     size[2]=3;
     var = malloc ( sizeof(int) * size[0]*size[1]*size[2]);
     adios_read_var (gp, "int_3D", start, size, var);
-    printf("\t[%d:%d, %d:%d, %d:%d]", 
+    printf("\t[%lld:%lld, %lld:%lld, %lld:%lld]", 
            start[0], start[0]+size[0]-1,
            start[1], start[1]+size[1]-1,
            start[2], start[2]+size[2]-1

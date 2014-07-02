@@ -18,6 +18,17 @@ target_link_libraries(tri2d adios ${ADIOSLIB_LDADD})
 add_executable(triangle2d triangle2d.c)
 target_link_libraries(triangle2d adios ${ADIOSLIB_LDADD})
 
+add_executable(uniform2d_noxml uniform2d_noxml.c)
+target_link_libraries(uniform2d_noxml adios ${ADIOSLIB_LDADD})
+
+add_executable(rectilinear2d_noxml rectilinear2d_noxml.c)
+target_link_libraries(rectilinear2d_noxml adios ${ADIOSLIB_LDADD})
+
+add_executable(structured2d_noxml structured2d_noxml.c)
+target_link_libraries(structured2d_noxml adios ${ADIOSLIB_LDADD})
+
+add_executable(tri2d_noxml tri2d_noxml.c)
+target_link_libraries(tri2d_noxml adios ${ADIOSLIB_LDADD})
 
 set (PROGS uniform2d rectilinear2d structured2d tri2d triangle2d)
 foreach (PROG ${PROGS} )

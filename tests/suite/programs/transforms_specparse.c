@@ -10,14 +10,18 @@
 
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <assert.h>
 #include "core/transforms/adios_transforms_specparse.h"
 
-struct specparse_test {
-    const char *specstr;
-    struct adios_transform_spec expected;
-} TESTS[4];
-#if 0
+#define DISABLE_SPECPARSE_TESTS
+
+#ifdef DISABLE_SPECPARSE_TESTS
+
+int main(int argc, char **argv) { return 0; }
+
+#else
+
 struct specparse_test {
     const char *specstr;
     struct adios_transform_spec expected;
@@ -53,15 +57,6 @@ struct specparse_test {
             .params             = NULL
         }
     },
-// Commented this test out since aliasing "raw" to the "none" transform is currently disabled
-//    {   .specstr = "raw:a=123,b,c=321,,,f=12321",
-//        .expected = {
-//            .transform_type     = adios_transform_none,
-//            .transform_type_str = "raw",
-//            .param_count        = 0,
-//            .params             = NULL
-//        }
-//    },
     {   .specstr = "***impossible-transform-name***:a=123,b,c=321,,,f=12321",
         .expected = {
             .transform_type     = adios_transform_unknown,
@@ -71,11 +66,12 @@ struct specparse_test {
         }
     },
 };
-#endif
+
+
 const int NUM_TESTS = sizeof(TESTS)/sizeof(TESTS[0]);
 
 void run_test(struct specparse_test *test) {
-    const struct adios_transform_spec *actual = adios_transform_parse_spec(test->specstr);
+    const struct adios_transform_spec *actual = adios_transform_parse_spec(test->specstr, NULL);
     const struct adios_transform_spec *expected = &test->expected;
 
     // Check transform type ID
@@ -163,3 +159,5 @@ int main(int argc, char **argv) {
 
     return 0;
 }
+
+#endif /* else of DISABLE_SPECPARSE_TESTS */

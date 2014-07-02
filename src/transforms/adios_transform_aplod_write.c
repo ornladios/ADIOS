@@ -33,7 +33,7 @@ int adios_transform_aplod_apply(struct adios_file_struct *fd,
                                 int *wrote_to_shared_buffer)
 {
     // Get the input data and data length
-    const uint64_t input_size = adios_transform_get_pre_transform_var_size(fd->group, var);
+    const uint64_t input_size = adios_transform_get_pre_transform_var_size(var);
     const void *input_buff = var->data;
 
     // max size supported is long double

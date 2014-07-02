@@ -52,8 +52,9 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     PAR_NC_DIR=$NETCDF_DIR
     PAR_NC_CLIB=$NETCDF_CLIB
     module unload netcdf
-    module load szip
+    #module load szip
     module load bzip2
+    module load dataspaces/1.4.0
     export MPICC=mpicc
     export MPICXX=mpiCC
     export MPIFC=mpif90
@@ -61,19 +62,16 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         export CC=pgcc
         export CXX=pgCC
         export FC=pgf90
-        WITHDART="--with-dataspaces=/ccs/proj/e2e/dataspaces/sith/$TARGET"
         WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/sith/$TARGET"
     elif [ "$TARGET" == "gnu" ]; then
         export CC=gcc
         export CXX=g++
         export FC=gfortran
-        WITHDART="--with-dataspaces=/ccs/proj/e2e/dataspaces/sith/$TARGET"
         WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/sith/$TARGET"
     elif [ "$TARGET" == "intel" ]; then
         export CC=icc
         export CXX=icpc
         export FC=ifort
-        WITHDART=""
         WITHFLEX=""
     else
         echo "TARGET must be pgi or gnu or intel"
@@ -83,9 +81,10 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
     export CFLAGS="-g -fPIC" 
     $SRCDIR/configure --prefix=/ccs/proj/e2e/$USER/ADIOS/sith.$TARGET \
+        --config-cache \
         --enable-dependency-tracking \
         --enable-research-transports \
-        --with-lustre=/usr/lib64 \
+        --with-lustre \
         --with-mxml=$MXMLDIR \
         --with-hdf5=${SEQ_HDF5_DIR} \
         --with-hdf5-libs="${SEQ_HDF5_CLIB}" \
@@ -96,12 +95,14 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         --with-nc4par=${PAR_NC_DIR} \
         --with-nc4par-libs="${PAR_NC_CLIB}" \
         --with-zlib=/lib64 \
-        --with-szip=$SZIP_DIR \
         --with-bzip2=$BZIP2_DIR \
-        $WITHDART \
+        --with-dataspaces=$DATASPACES_DIR \
         $WITHFLEX \
         --with-aplod=/ccs/proj/e2e/ncsu/sith.gnu \
-        --with-isobar=/ccs/proj/e2e/ncsu/sith.gnu
+        --with-isobar=/ccs/proj/e2e/ncsu/sith.gnu \
+        --with-fgr=/ccs/proj/e2e/qliu/tap \
+        --with-glib=/ccs/proj/e2e/qliu/glib
+        #--with-szip=$SZIP_DIR \
         #--with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.sith.$TARGET 
         #--with-dmalloc=/ccs/proj/e2e/pnorbert/dmalloc.$TARGET 
         #--enable-shared --disable-static
@@ -253,13 +254,14 @@ elif [ `hostname | cut -c 1-4` == "lens" ]; then
 
 elif [ `hostname | cut -c 1-5` == "titan" ]; then
 
-    BUILD_STAGING=false
+    BUILD_STAGING=true
+    TARGET=`module list 2>&1 | grep "PrgEnv"- | sed "s/^.*PrgEnv-\([a-z]*\).*/\1/"`
     if [ $BUILD_STAGING == "false" ]; then
     
         ################
         # Titan #
         ################
-        TARGET=pgi
+        #TARGET=pgi
         echo "Configure on TITAN (XK7) for $TARGET env."
         export CC=cc
         #export CFLAGS="-Wall -g" 
@@ -280,18 +282,19 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         module load PrgEnv-$TARGET
         #module unload intel
         #module load intel/13.1.3.192
-        module swap xtpe-interlagos xtpe-istanbul
+        module swap craype-interlagos craype-istanbul
         #module load szip
         #module load xt-papi
         module load mxml
         # use the two lines below for openmpi
         #export CC=mpicc
         #export FC=mpif90
-        CFLAGS="-g -fPIC -O0" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/qliu/ADIOS/test.$TARGET \
-            --enable-dependency-tracking
+        CFLAGS="-g -fPIC -O0" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/xk6.$TARGET \
+            --enable-dependency-tracking \
+            --with-lustre
+            #--with-fgr=/ccs/proj/e2e/qliu/tap \
             #--with-hdf5=/opt/cray/hdf5/1.8.7/pgi/109 \
             #--with-phdf5=/opt/cray/hdf5-parallel/1.8.7/pgi/109 \
-#            --with-lustre=/opt/xt-lustre-ss/2.2_1.6.5/usr
 #            --with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.$TARGET
 #            --enable-research-transports \
 #            --with-netcdf=/opt/cray/netcdf/3.6.2/netcdf-${TARGET} \
@@ -306,7 +309,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         ##########################
         # Titan + staging #
         ##########################
-        TARGET=pgi
+        #TARGET=pgi
         echo "Configure on TITAN (XK7) including staging methods for $TARGET env."
         export CC=cc
         export FC=ftn
@@ -325,22 +328,23 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         #module unload papi
         #module unload xtpe-quadcore
         module load PrgEnv-$TARGET
-        module swap xtpe-interlagos xtpe-istanbul
-        #module load dataspaces/1.0.0
+        module swap craype-interlagos craype-istanbul
+        module swap cray-libsci
+        module load dataspaces/1.4.0
         unset EXTRA_LIBS
         unset LDFLAGS
         if [ "$TARGET" == "pgi" ]; then
             #module swap pgi pgi/11.8.0
             # NSSI needs -pgcpplibs flag 
             export LDFLAGS="-pgcpplibs" 
-            DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
+            #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
+            WITHFLEX=""
         elif [ "$TARGET" == "gnu" ]; then
-            # NSSI needs libstdc++
-            export EXTRA_LIBS="/opt/gcc/4.7.2/snos/lib64/libstdc++.a"
+            # NSSI/FLEXPATH needs libstdc++
+            export EXTRA_LIBS="${GCC_PATH}/snos/lib64/libstdc++.a"
+            WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/titan/$TARGET"
             #module swap gcc gcc/4.4.4
-            DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
-        else
-            unset DATASPACES_DIR
+            #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
         fi
      
         # NOTE hdf5-parallel module does not work with C++ compiler
@@ -354,14 +358,18 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         #export FC=mpif90
         export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK -DDART_DO_VERSIONING" 
         export CFLAGS="-fPIC -g -O0" 
-        #${SRCDIR}/configure --prefix=/ccs/proj/fus022/norbert/RMP/adios.xt5.$TARGET \
-        ${SRCDIR}/configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/titan.$TARGET \
+        ${SRCDIR}/configure --prefix=/ccs/proj/e2e/$USER/ADIOS/xk6.$TARGET \
         --enable-dependency-tracking \
         --with-cray-pmi=/opt/cray/pmi/default \
         --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
         --with-cray-ugni-libdir=/opt/cray/ugni/default/lib \
         --with-dataspaces=$DATASPACES_DIR \
-        --with-dimes=$DATASPACES_DIR 
+        --with-dimes=$DATASPACES_DIR \
+        $WITHFLEX \
+        --with-lustre
+
+        #--with-fgr=/ccs/proj/e2e/qliu/tap \
+        #--with-glib=/ccs/proj/e2e/qliu/glib \
         #--with-netcdf=/opt/cray/netcdf/3.6.2/netcdf-${TARGET} \
         #--with-hdf5=/sw/xt5/hdf5/1.8.2/cnl2.1_gnu4.2.0 \
         #--with-nc4par=/opt/cray/netcdf-hdf5parallel/4.0.1.3/netcdf-hdf5parallel-$TARGET \
@@ -414,7 +422,7 @@ elif [ `hostname | cut -c 1-4` == "eos-" ]; then
       fi
       module load mxml
       module load pmi
-      CFLAGS="-g -fPIC" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/chester.$TARGET \
+      CFLAGS="-g -fPIC" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/eos.$TARGET \
           --enable-dependency-tracking \
           --with-cray-pmi=/opt/cray/pmi/default \
           --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
@@ -445,24 +453,23 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
       module unload papi
       module unload pmi
       module load PrgEnv-$TARGET
-      #module load dataspaces/1.0.0
+      module swap cray-libsci
+      module swap craype-interlagos craype-istanbul
+      module load dataspaces/1.4.0
+      unset FLEXPATH
       if [ "$TARGET" == "pgi" ]; then
-          module swap pgi pgi/11.8.0
           # NSSI needs -pgcpplibs flag 
           export LDFLAGS="-pgcpplibs" 
           unset EXTRA_LIBS 
-          #WITHDART="--with-dataspaces=$DATASPACES_DIR"
-          WITHDART="--with-dataspaces=/ccs/proj/e2e/dataspaces/chester/pgi --with-dimes=/ccs/proj/e2e/dataspaces/chester/pgi"
       elif [ "$TARGET" == "gnu" ]; then
           # NSSI needs libstdc++
           unset LDFLAGS 
           export EXTRA_LIBS="/opt/gcc/4.7.1/snos/lib64/libstdc++.a"
+          export FLEXPATH="--with-flexpath=/ccs/proj/e2e/chaos/titan/gnu"
           #module swap gcc gcc/4.4.4
-          WITHDART="--with-dataspaces=$DATASPACES_DIR"
       else
           unset LDFLAGS 
           unset EXTRA_LIBS 
-          WITHDART=""
       fi
       #module load szip
       #module load xt-papi
@@ -476,7 +483,10 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
           --with-cray-pmi=/opt/cray/pmi/default \
           --with-cray-ugni-incdir=/opt/cray/gni-headers/2.1-1.0400.4351.3.1.gem/include \
           --with-cray-ugni-libdir=/opt/cray/ugni/default/lib \
-          $WITHDART
+          --with-dataspaces=$DATASPACES_DIR \
+          --with-dimes=$DATASPACES_DIR \
+          $FLEXPATH \
+          --without-infiniband 
 #            --with-lustre=/opt/xt-lustre-ss/2.2_1.6.5/usr \
 #            --with-dmalloc=/ccs/proj/e2e/qliu/dmalloc.$TARGET \
 #            --enable-research-transports \
@@ -984,7 +994,7 @@ elif [ `hostname | cut -c 1-5` == "adios" ]; then
     export CXX=g++
     export FC=gfortran
 
-    #export CFLAGS="-g -O0 -fPIC" 
+    export CFLAGS="-g -O0 -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast"
     ${SRCDIR}/configure --prefix=/opt/adios/1.6 \
         --enable-dependency-tracking \
         --with-mxml=/opt/mxml \

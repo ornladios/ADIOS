@@ -18,11 +18,10 @@
 
 int main (int argc, char ** argv ) 
 {
-    int         rank, size, i, x, y;
+    int         rank, size, i, y;
     MPI_Comm    comm = MPI_COMM_WORLD;
 
     int         npoints, num_cells;
-    int         Nspace = 2;
     float       *points;
     int         *cells;
     double      *N; // node centered variable
@@ -30,7 +29,6 @@ int main (int argc, char ** argv )
 	
 
     /* ADIOS variables declarations for matching gwrite_temperature.ch */
-    int         adios_err;
     uint64_t    adios_groupsize, adios_totalsize;
     int64_t     adios_handle;
 

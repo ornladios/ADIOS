@@ -39,9 +39,7 @@ int main (int argc, char ** argv)
 	MPI_Comm    comm = MPI_COMM_WORLD;
 
 	/* ADIOS variables declarations for matching gwrite_temperature.ch */
-	int         adios_err;
 	uint64_t    adios_groupsize, adios_totalsize;
-	int64_t     adios_handle;
 
 	MPI_Init (&argc, &argv);
 	MPI_Comm_rank (comm, &rank);
@@ -75,9 +73,11 @@ int main (int argc, char ** argv)
                         ,"", adios_integer
                         ,0, 0, 0);
    
-           adios_define_var (m_adios_group, "temperature"
+           int64_t varid;
+           varid = adios_define_var (m_adios_group, "temperature"
                         ,"", adios_double
                         ,"NX", "Global_bounds", "Offsets");
+           adios_set_transform (varid, "none");
         }
    
         adios_open (&m_adios_file, "restart", filename, "w", comm);

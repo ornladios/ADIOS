@@ -179,8 +179,8 @@ int main( int argc, char *argv[] ) {
     ////prgname = strdup(argv[0]);
 
     /* other variables */
-    int c, last_c='_';
-    int last_opt = -1;
+    int c;
+    //int last_c = '_';
     /* Process the arguments */
     while ((c = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
         switch (c) {
@@ -296,7 +296,7 @@ int main( int argc, char *argv[] ) {
                 printf("Processing default: %c\n", c);
                 break;
         } /* end switch */
-        last_c = c;
+        //last_c = c;
     } /* end while */
 
     /* Check if we have a file defined */
@@ -387,8 +387,8 @@ void init_globals(void) {
 }
 
 
-#define PRINT_DIMS(str, v, n, loopvar) printf("%s = { ", str); \
-    for (loopvar=0; loopvar<n;loopvar++) printf("%lld ", v[loopvar]);    \
+#define PRINT_DIMS32(str, v, n, loopvar) printf("%s = { ", str); \
+    for (loopvar=0; loopvar<n;loopvar++) printf("%d ", v[loopvar]);    \
 printf("}")
 
 void printSettings(void) {
@@ -404,10 +404,10 @@ void printSettings(void) {
     printf("  output : %s\n", (outpath ? outpath : "stdout"));
 
     if (start != NULL) {
-        PRINT_DIMS("  start", istart, ndimsspecified,i); printf("\n");
+        PRINT_DIMS32("  start", istart, ndimsspecified,i); printf("\n");
     }
     if (count != NULL) {
-        PRINT_DIMS("  count", icount, ndimsspecified,i); printf("\n");
+        PRINT_DIMS32("  count", icount, ndimsspecified,i); printf("\n");
     }
 
     if (longopt)
@@ -442,9 +442,8 @@ void printSettings(void) {
 
 void print_file_size(uint64_t size)
 {
-    static const int  sn=7;
     static const char *sm[]={"bytes", "KB", "MB", "GB", "TB", "PB", "EB"};
-    uint64_t s = size, r;
+    uint64_t s = size, r=0;
     int idx = 0;
     while ( s/1024 > 0 ) {
         r = s%1024; 
@@ -454,7 +453,6 @@ void print_file_size(uint64_t size)
     if (r > 511)
         s++;
     printf ("  file size:     %lld %s\n", s, sm[idx]); 
-
 }
 
 
@@ -473,9 +471,7 @@ int doList_group (ADIOS_FILE *fp)
     ADIOS_VARINFO **vis; 
     enum ADIOS_DATATYPES vartype;
     int     i, j, n;             // loop vars
-    int     status;
     int     attrsize;                       // info about one attribute
-    int     mpi_comm_dummy=0;
     bool    matches;
     int     len, maxlen, maxtypelen;
     int     retval;
@@ -591,7 +587,7 @@ int doList_group (ADIOS_FILE *fp)
                 }
 
                 if (longopt || plot) {
-                    status = adios_inq_var_stat (fp, vi, timestep && timed, 0);
+                    adios_inq_var_stat (fp, vi, timestep && timed, show_decomp);
                 }
 
                 if (plot && vi->statistics && vi->statistics->histogram) {
@@ -604,27 +600,21 @@ int doList_group (ADIOS_FILE *fp)
                     if(timestep == false || timed == false ) {
 
                         fprintf(outf," = ");
-                        print_data(vi->statistics->min, 0, vartype, false); 
-
-                        fprintf(outf,"/ ");
-                        print_data(vi->statistics->max, 0, vartype, false); 
-
                         if(vartype == adios_complex || vartype == adios_double_complex) {
-
+                            // force printing (double,double) here
+                            print_data(vi->statistics->min, 0, adios_double_complex, false); 
+                            fprintf(outf,"/ ");
+                            print_data(vi->statistics->max, 0, adios_double_complex, false); 
                             fprintf(outf,"/ ");
                             print_data(vi->statistics->avg, 0, adios_double_complex, false);
-                        } else {
-
-                            fprintf(outf,"/ ");
-                            print_data(vi->statistics->avg, 0, adios_double, false);
-                        }
-
-                        if(vartype == adios_complex || vartype == adios_double_complex) {
-
                             fprintf(outf,"/ ");
                             print_data(vi->statistics->std_dev, 0, adios_double_complex, false);
                         } else {
-
+                            print_data(vi->statistics->min, 0, vartype, false); 
+                            fprintf(outf,"/ ");
+                            print_data(vi->statistics->max, 0, vartype, false); 
+                            fprintf(outf,"/ ");
+                            print_data(vi->statistics->avg, 0, adios_double, false);
                             fprintf(outf,"/ ");
                             print_data(vi->statistics->std_dev, 0, adios_double, false);
                         }
@@ -869,7 +859,7 @@ void printMeshes (ADIOS_FILE  *fp)
                     for (i=0; i < mi->unstructured->ncsets; i++) { 
                         fprintf(outf, "    cell set %d:\n", i);
                         fprintf(outf, "      cell type:  %d\n", mi->unstructured->ctypes[i]);
-                        fprintf(outf, "      ncells:     %d\n", mi->unstructured->ccounts[i]);
+                        fprintf(outf, "      ncells:     %llu\n", mi->unstructured->ccounts[i]);
                         fprintf(outf, "      cells var:  \"%s\"\n", mi->unstructured->cdata[i]);
                     }
                     fprintf(outf, "    nspaces:      %d\n", mi->unstructured->nspaces);
@@ -1034,9 +1024,10 @@ int print_data_hist(ADIOS_VARINFO * vi, char * varname)
     strcat(xtics, ")\n");
 
     fprintf(out_plot, "start = -0.5\npos(x) = start + x * 1\nset boxwidth 1\nset style fill solid border 5#5lt6#6\n");
-    fprintf(out_plot, xtics);
+    fputs(xtics, out_plot);
     fprintf(out_plot, "plot '%s' using 3 smooth frequency w boxes\n", hist_file);
     fprintf(out_plot, "pause -1 'Press Enter to quit'\n");
+    return 0;
 }
 
 int cmpstringp(const void *p1, const void *p2)
@@ -1147,6 +1138,9 @@ int getTypeInfo( enum ADIOS_DATATYPES adiosvartype, int* elemsize)
     return 0;
 }
 
+#define PRINT_DIMS64(str, v, n, loopvar) printf("%s = { ", str); \
+    for (loopvar=0; loopvar<n;loopvar++) printf("%lld ", v[loopvar]);    \
+printf("}")
 /** Read data of a variable and print 
  * Return: 0: ok, != 0 on error
  */
@@ -1291,8 +1285,8 @@ int readVar(ADIOS_FILE *fp, ADIOS_VARINFO *vi, const char * name, bool timed)
 
         if (verbose>2) {
             printf("adios_read_var name=%s ", name);
-            PRINT_DIMS("  start", s, tdims, j); 
-            PRINT_DIMS("  count", c, tdims, j); 
+            PRINT_DIMS64("  start", s, tdims, j); 
+            PRINT_DIMS64("  count", c, tdims, j); 
             printf("  read %d elems\n", actualreadn);
         }
 
@@ -1473,7 +1467,6 @@ int print_data_as_string(void * data, int maxlen, enum ADIOS_DATATYPES adiosvart
 {
     char *str = (char *)data;
     int len = maxlen;
-    bool cstring = false;
     switch(adiosvartype) {
         case adios_unsigned_byte:
         case adios_byte:
@@ -1612,8 +1605,7 @@ int print_data_characteristics(void * min, void * max, double * avg, double * st
             break;
 
         case adios_long_double:
-            //fprintf(outf,(f ? format : "%g "), ((double *) data)[item]);
-            fprintf(outf,(f ? format : "????????"));
+            fprintf(outf,"????????");
             break;
 
             // TO DO
@@ -1626,6 +1618,8 @@ int print_data_characteristics(void * min, void * max, double * avg, double * st
                fprintf(outf,(f ? format : "(%g,i%g)" ), ((double *) data)[2*item], ((double *) data)[2*item+1]);
                break;
              */
+        default:
+            break;
     } // end switch
     return 0;
 }
@@ -1637,7 +1631,7 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype, bool all
         fprintf(outf, "null ");
         return 0;
     }
-    // print next data item into vstr
+    // print next data item 
     switch(adiosvartype) {
         case adios_unsigned_byte:
             fprintf(outf,(f ? format : "%hhu "), ((unsigned char *) data)[item]);
@@ -1680,8 +1674,8 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype, bool all
 
 
         case adios_long_double:
-            //fprintf(outf,(f ? format : "%g "), ((double *) data)[item]);
-            fprintf(outf,(f ? format : "????????"));
+            fprintf(outf,(f ? format : "%Lg "), ((long double *) data)[item]);
+            //fprintf(outf,(f ? format : "????????"));
             break;
 
 
@@ -1692,6 +1686,9 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype, bool all
         case adios_double_complex:
             fprintf(outf,(f ? format : "(%g,i%g)" ), ((double *) data)[2*item], ((double *) data)[2*item+1]);
             break;
+
+        default:
+            break;
     } // end switch
     return 0;
 }
@@ -1700,7 +1697,7 @@ int print_dataset(void *data, enum ADIOS_DATATYPES adiosvartype,
         uint64_t *s, uint64_t *c, int tdims, int *ndigits)
 {
     int i,item, steps;
-    char idxstr[128], vstr[128], buf[16];
+    char idxstr[128], buf[16];
     uint64_t ids[MAX_DIMS];  // current indices
     bool roll;
 
@@ -1777,7 +1774,7 @@ void print_endline(void)
 }
 
 
-int print_decomp(ADIOS_VARINFO *vi)
+void print_decomp(ADIOS_VARINFO *vi)
 {
     /* Print block info */
     int i,j,k;
@@ -1789,13 +1786,14 @@ int print_decomp(ADIOS_VARINFO *vi)
             fprintf(outf, "        step %*d: ", ndigits_nsteps, i);
             fprintf(outf, "%d instances available\n", vi->nblocks[i]);
         }
-        return 0;
+        return;
     } 
     else 
     {
         // arrays
         int ndigits_nblocks;
         int ndigits_dims[32];
+        int blockid = 0;
         for (k=0; k < vi->ndim; k++) {
             // get digit lengths for each dimension
             ndigits_dims[k] = ndigits (vi->dims[k]-1);
@@ -1816,7 +1814,61 @@ int print_decomp(ADIOS_VARINFO *vi)
                     if (k < vi->ndim-1)
                         fprintf(outf, ", ");
                 }
-                fprintf(outf, "]\n");
+                fprintf(outf, "]");
+
+                /* Print per-block statistics if available */
+                if (longopt && vi->statistics->blocks) {
+                    fprintf(outf," = ");
+                    if (vi->statistics->blocks->mins) {
+                        if(vi->type == adios_complex || vi->type == adios_double_complex) {
+                            print_data(vi->statistics->blocks->mins[blockid], 0, adios_double_complex, false); 
+                        } else {
+                            print_data(vi->statistics->blocks->mins[blockid], 0, vi->type, false); 
+                        }
+                    } else {
+                        fprintf(outf,"N/A ");
+                    }
+
+                    fprintf(outf,"/ ");
+                    if (vi->statistics->blocks->maxs) {
+                        if(vi->type == adios_complex || vi->type == adios_double_complex) {
+                            print_data(vi->statistics->blocks->maxs[blockid], 0, adios_double_complex, false); 
+                        } else {
+                            print_data(vi->statistics->blocks->maxs[blockid], 0, vi->type, false); 
+                        }
+                    } else {
+                        fprintf(outf,"N/A ");
+                    }
+
+                    fprintf(outf,"/ ");
+                    if (vi->statistics->blocks->avgs) {
+                        if(vi->type == adios_complex || vi->type == adios_double_complex) {
+                            print_data (vi->statistics->blocks->avgs[blockid], 0, 
+                                        adios_double_complex, false);
+                        } else {
+                            print_data (vi->statistics->blocks->avgs[blockid], 0, 
+                                        adios_double, false);
+                        }
+                    } else {
+                        fprintf(outf,"N/A ");
+                    }
+
+                    fprintf(outf,"/ ");
+                    if (vi->statistics->blocks->avgs) {
+                        if(vi->type == adios_complex || vi->type == adios_double_complex) {
+                            print_data (vi->statistics->blocks->std_devs[blockid], 0, 
+                                        adios_double_complex, false);
+                        } else {
+                            print_data (vi->statistics->blocks->std_devs[blockid], 0, 
+                                        adios_double, false);
+                        }
+                    } else {
+                        fprintf(outf,"N/A ");
+                    }
+
+                }
+                fprintf(outf, "\n");
+                blockid++;
             }
         }
     }

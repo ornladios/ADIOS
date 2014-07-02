@@ -111,16 +111,9 @@ int main (int argc, char ** argv)
 }
 
 
-typedef struct {
-    ADIOS_VARINFO * v;
-    uint64_t        start[10];
-    uint64_t        count[10];
-    uint64_t        writesize; // size of subset this process writes, 0: do not write
-} VarInfo;
 
-VarInfo * varinfo;
-
-int NX, Width, nblocks;
+ADIOS_VARINFO * varinfo;
+int NX, Width;
 
 int process_metadata()
 {
@@ -155,16 +148,15 @@ int process_metadata()
     printf ("rank %d: NX = %d\n", rank, NX); 
 
     printf ("Get info on variable record: %s\n", "record"); 
-    v = adios_inq_var (f, "record");
-    if (v == NULL) {
+    varinfo = adios_inq_var (f, "record"); // need this struct to the end of reading
+    if (varinfo == NULL) {
         printf ("rank %d: ERROR: Variable %s inquiry failed: %s\n", 
                 rank, "record", adios_errmsg());
         return 1;
     }
-    nblocks = v->sum_nblocks;
-    printf ("rank %d: record dims = %llu * %llu \n", rank, v->dims[0], v->dims[1]); 
-    adios_free_varinfo (v);
-    printf ("rank %d: nblocks = %d\n", rank, nblocks); 
+    printf ("rank %d: record dims = %llu * %llu \n", rank, varinfo->dims[0], varinfo->dims[1]); 
+    printf ("rank %d: total nblocks = %d in %d steps\n", 
+             rank, varinfo->sum_nblocks, varinfo->nsteps); 
 
     return retval;
 }
@@ -174,7 +166,7 @@ int read_records()
     int retval = 0;
     int i,j;
 
-    int N = nblocks/numproc;
+    int N = varinfo->sum_nblocks/numproc;
     int startidx=N*rank;
 
     char *text;
@@ -197,6 +189,7 @@ int read_records()
         printf ("\n");
     }
 
+    adios_free_varinfo (varinfo); // now we don't need this struct
     return retval;
 }
 

@@ -6,7 +6,7 @@ AUTOMAKE_OPTIONS = no-dependencies
 all-local:
 	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
 
-noinst_PROGRAMS = uniform2d rectilinear2d structured2d tri2d triangle2d
+noinst_PROGRAMS = uniform2d rectilinear2d structured2d tri2d triangle2d uniform2d_noxml rectilinear2d_noxml structured2d_noxml tri2d_noxml
 
 uniform2d_LDADD = $(top_builddir)/src/libadios.a
 uniform2d_LDFLAGS = $(ADIOSLIB_LDFLAGS)
@@ -31,6 +31,22 @@ triangle2d_SOURCES = triangle2d.c
 triangle2d_LDADD = $(top_builddir)/src/libadios.a 
 triangle2d_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 triangle2d_LDADD += $(ADIOSLIB_LDADD)
+
+uniform2d_noxml_LDADD = $(top_builddir)/src/libadios.a
+uniform2d_noxml_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+uniform2d_noxml_LDADD += $(ADIOSLIB_LDADD)
+
+rectilinear2d_noxml_LDADD = $(top_builddir)/src/libadios.a
+rectilinear2d_noxml_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+rectilinear2d_noxml_LDADD += $(ADIOSLIB_LDADD)
+
+structured2d_noxml_LDADD = $(top_builddir)/src/libadios.a
+structured2d_noxml_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+structured2d_noxml_LDADD += $(ADIOSLIB_LDADD)
+
+tri2d_noxml_LDADD = $(top_builddir)/src/libadios.a
+tri2d_noxml_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+tri2d_noxml_LDADD += $(ADIOSLIB_LDADD)
 
 CLEANFILES = *.bp
 CC=$(MPICC)

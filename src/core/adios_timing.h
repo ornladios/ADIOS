@@ -41,5 +41,7 @@ void adios_timing_stop (struct adios_timing_struct * ts, int64_t index);
 void adios_timing_declare_user_timers (int64_t fd_p, int user_timer_count, char** user_timer_names);
 
 
+/* Print out all gathered info */
+void adios_timing_write_xml_common (int64_t fd_p, const char* filename);
 
 #endif

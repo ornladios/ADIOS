@@ -27,7 +27,7 @@ int adios_transform_identity_apply(struct adios_file_struct *fd, struct adios_va
                                    int use_shared_buffer, int *wrote_to_shared_buffer) {
     // Just use what is already in var->data; size remains the same, and no
     // shared buffer is used
-    *transformed_len = adios_transform_get_pre_transform_var_size(fd->group, var);
+    *transformed_len = adios_transform_get_pre_transform_var_size(var);
     *wrote_to_shared_buffer = 0;
     return 1;
 }

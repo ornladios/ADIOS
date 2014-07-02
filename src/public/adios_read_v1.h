@@ -13,11 +13,11 @@
 #ifndef __ADIOS_READ_V1_H__
 #define __ADIOS_READ_V1_H__
 
+#include <stdint.h>
+
 #include "adios_mpi.h"
 #include "adios_read_v1_defs.h"
 #include "adios_types.h"
-
-#include <stdint.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -284,6 +284,10 @@ const char * adios_type_to_string (enum ADIOS_DATATYPES type);
  *  the size occupied by one element.
  */
 int adios_type_size(enum ADIOS_DATATYPES type, void *data);
+
+/** Test function to print basic info about the file to stdout */
+void adios_print_fileinfo (ADIOS_FILE *fp);
+void adios_print_groupinfo (ADIOS_GROUP *gp);
 
 #endif  /*__INCLUDED_FROM_FORTRAN_API__*/
 

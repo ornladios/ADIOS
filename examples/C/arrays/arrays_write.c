@@ -18,13 +18,12 @@
 int main (int argc, char ** argv) 
 {
     char        filename [256];
-    int         rank, size, i, j;
+    int         rank, i, j;
     int         NX = 10, NY = 100; 
     double      t[NX][NY];
     int         p[NX];
     MPI_Comm    comm = MPI_COMM_WORLD;
 
-    int         adios_err;
     uint64_t    adios_groupsize, adios_totalsize;
     int64_t     adios_handle;
 

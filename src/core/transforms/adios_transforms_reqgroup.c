@@ -489,7 +489,7 @@ int adios_transform_read_request_list_match_chunk(const adios_transform_read_req
                                                   adios_transform_raw_read_request **matching_subreq) {
     int found;
     adios_transform_read_request *cur;
-    for (cur = reqgroup_head; cur; cur = cur->next) {
+    for (cur = (adios_transform_read_request *)reqgroup_head; cur; cur = cur->next) {
         found = adios_transform_read_request_match_chunk(cur, chunk, skip_completed, matching_pg_reqgroup, matching_subreq);
         if (found)
             break;

@@ -169,7 +169,7 @@ void copy_subvolume_ragged_offset(void *dst, const void *src, int ndim, const ui
  * subvolume copy spec.
  */
 void copy_subvolume_with_spec(void *dst, const void *src,
-                              const const adios_subvolume_copy_spec *copy_spec,
+                              const adios_subvolume_copy_spec *copy_spec,
                               enum ADIOS_DATATYPES datum_type,
                               enum ADIOS_FLAG swap_endianness);
 
@@ -257,5 +257,7 @@ ADIOS_SELECTION * new_derelativized_selection(const ADIOS_SELECTION *sel, const 
  *         ADIOS_VARBLOCK.
  */
 ADIOS_SELECTION * varblock_to_bb(int ndim, const ADIOS_VARBLOCK *vb);
+
+uint64_t compute_selection_size(const ADIOS_SELECTION *sel);
 
 #endif /* ADIOS_SUBVOLUME_H_ */

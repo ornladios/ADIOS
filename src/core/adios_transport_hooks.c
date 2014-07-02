@@ -6,6 +6,7 @@
  */
 
 #include "config.h"
+#include "string.h" // strdup
 
 #ifdef _INTERNAL
     /* Sequential processes can use the library compiled with -D_NOMPI */
@@ -23,7 +24,8 @@
 if (!strcasecmp (buf,b)) \
 {*method=d;*requires_group_comm=r;return 1;}
 
-#define ASSIGN_FNS(a,b) \
+#define ASSIGN_FNS(a,b,name) \
+(*t) [b].method_name = strdup(name); \
 (*t) [b].adios_init_fn = adios_##a##_init; \
 (*t) [b].adios_open_fn = adios_##a##_open; \
 (*t) [b].adios_should_buffer_fn = adios_##a##_should_buffer; \
@@ -46,14 +48,14 @@ void adios_init_transports (struct adios_transport_struct ** t)
 #  ifndef _NOMPI
 
 #    if HAVE_MPI
-    ASSIGN_FNS(mpi,ADIOS_METHOD_MPI)
-    ASSIGN_FNS(mpi_lustre,ADIOS_METHOD_MPI_LUSTRE)
-    ASSIGN_FNS(mpi_amr,ADIOS_METHOD_MPI_AMR)
+    ASSIGN_FNS(mpi,ADIOS_METHOD_MPI,"MPI")
+    ASSIGN_FNS(mpi_lustre,ADIOS_METHOD_MPI_LUSTRE,"MPI_LUSTRE")
+    ASSIGN_FNS(mpi_amr,ADIOS_METHOD_MPI_AMR,"MPI_AGGREGATE")
 #    if HAVE_BGQ
-    ASSIGN_FNS(mpi_bgq,ADIOS_METHOD_MPI_BGQ)
+    ASSIGN_FNS(mpi_bgq,ADIOS_METHOD_MPI_BGQ,"MPI_BGQ")
 #    endif
     //Tian's method
-    ASSIGN_FNS(var_merge,ADIOS_METHOD_VAR_MERGE)
+    ASSIGN_FNS(var_merge,ADIOS_METHOD_VAR_MERGE,"VAR_MERGE")
 #      ifndef NO_RESEARCH_TRANSPORTS
     //ASSIGN_FNS(mpi_stripe,ADIOS_METHOD_MPI_STRIPE)
     //ASSIGN_FNS(mpi_cio,ADIOS_METHOD_MPI_CIO)
@@ -65,40 +67,40 @@ void adios_init_transports (struct adios_transport_struct ** t)
 #    endif
 
 #    if HAVE_PHDF5
-    ASSIGN_FNS(phdf5,ADIOS_METHOD_PHDF5)
+    ASSIGN_FNS(phdf5,ADIOS_METHOD_PHDF5,"PHDF5")
 #    endif
 
 #    if HAVE_NC4PAR
-    ASSIGN_FNS(nc4,ADIOS_METHOD_NC4)
+    ASSIGN_FNS(nc4,ADIOS_METHOD_NC4,"NC4")
 #    endif
 
 #    if HAVE_NSSI
-    ASSIGN_FNS(nssi,ADIOS_METHOD_NSSI_STAGING)
-    ASSIGN_FNS(nssi_filter,ADIOS_METHOD_NSSI_FILTER)
+    ASSIGN_FNS(nssi,ADIOS_METHOD_NSSI_STAGING,"NSSI")
+    ASSIGN_FNS(nssi_filter,ADIOS_METHOD_NSSI_FILTER,"NSSI_FILTER")
 #    endif
 
 #  endif /* _NOMPI */
 
 #  if HAVE_DATATAP
-    ASSIGN_FNS(datatap,ADIOS_METHOD_DATATAP)
+    ASSIGN_FNS(datatap,ADIOS_METHOD_DATATAP,"DATATAP")
 #  endif
 
 # if HAVE_FLEXPATH
-    ASSIGN_FNS(flexpath,ADIOS_METHOD_FLEXPATH)
+    ASSIGN_FNS(flexpath,ADIOS_METHOD_FLEXPATH,"FLEXPATH")
 # endif
 # if HAVE_ICEE
-    ASSIGN_FNS(icee,ADIOS_METHOD_ICEE)
+    ASSIGN_FNS(icee,ADIOS_METHOD_ICEE, "ICEE")
 # endif
 
-    ASSIGN_FNS(posix,ADIOS_METHOD_POSIX)
-    ASSIGN_FNS(posix1,ADIOS_METHOD_POSIX1)
+    ASSIGN_FNS(posix,ADIOS_METHOD_POSIX,"POSIX")
+    ASSIGN_FNS(posix1,ADIOS_METHOD_POSIX1,"POSIX1")
 
 #  if HAVE_DATASPACES
-    ASSIGN_FNS(dataspaces,ADIOS_METHOD_DATASPACES)
+    ASSIGN_FNS(dataspaces,ADIOS_METHOD_DATASPACES,"DATASPACES")
 #  endif
 
 #  if HAVE_DIMES
-    ASSIGN_FNS(dimes,ADIOS_METHOD_DIMES)
+    ASSIGN_FNS(dimes,ADIOS_METHOD_DIMES,"DIMES")
 #  endif
 
 #  ifndef NO_RESEARCH_TRANSPORTS

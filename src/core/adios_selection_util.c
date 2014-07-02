@@ -52,7 +52,6 @@ ADIOS_SELECTION * adios_selection_intersect_bb_pts(const ADIOS_SELECTION_BOUNDIN
     const uint64_t max_new_npts = pts2->npoints;
 
     uint64_t *new_pts = malloc(max_new_npts * ndim * sizeof(uint64_t));
-    uint64_t i;
     int j;
     uint64_t *new_pts_ptr = new_pts;
     uint64_t *pts2_ptr;
@@ -100,7 +99,6 @@ ADIOS_SELECTION * adios_selection_intersect_pts_pts(const ADIOS_SELECTION_POINTS
     const uint64_t max_new_npts = pts1->npoints > pts2->npoints ? pts1->npoints : pts2->npoints;
 
     uint64_t *new_pts = malloc(max_new_npts * ndim * sizeof(uint64_t));
-    uint64_t i, j;
     int k;
     uint64_t *new_pts_ptr = new_pts;
     uint64_t *pts1_ptr, *pts2_ptr;

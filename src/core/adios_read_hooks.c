@@ -7,6 +7,7 @@
 
 #include "config.h"
 #include <stdio.h>
+#include <string.h>
 #include <stdlib.h>
 #include "adios_read_hooks.h"
 
@@ -15,11 +16,12 @@ if (!strcasecmp (buf,b)) \
 {*method=d;*requires_group_comm=r;return 1;}
 
 #define ASSIGN_FNS(a,b) \
-(*t) [b].adios_init_method_fn = adios_read_##a##_init_method; \
-(*t) [b].adios_finalize_method_fn = adios_read_##a##_finalize_method; \
-(*t) [b].adios_open_fn = adios_read_##a##_open; \
-(*t) [b].adios_open_file_fn = adios_read_##a##_open_file; \
-(*t) [b].adios_close_fn = adios_read_##a##_close; \
+(*t) [b].method_name = strdup(#b); \
+(*t) [b].adios_read_init_method_fn = adios_read_##a##_init_method; \
+(*t) [b].adios_read_finalize_method_fn = adios_read_##a##_finalize_method; \
+(*t) [b].adios_read_open_fn = adios_read_##a##_open; \
+(*t) [b].adios_read_open_file_fn = adios_read_##a##_open_file; \
+(*t) [b].adios_read_close_fn = adios_read_##a##_close; \
 (*t) [b].adios_advance_step_fn = adios_read_##a##_advance_step; \
 (*t) [b].adios_release_step_fn = adios_read_##a##_release_step; \
 (*t) [b].adios_inq_var_byid_fn = adios_read_##a##_inq_var_byid; \

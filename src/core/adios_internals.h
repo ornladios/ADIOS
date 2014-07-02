@@ -25,6 +25,11 @@
 #include "core/adios_timing.h"
 #endif
 
+/* Some cluster experience MPI_File_write() errors when trying to write INT32_MAX bytes (2GB) at once.
+ * Use this number to limit block sizes written with MPI-IO.
+ */
+#define MAX_MPIWRITE_SIZE 2130706432    /* 2GB - 16MB */
+
 enum ADIOS_METHOD_MODE {adios_mode_write  = 1
                        ,adios_mode_read   = 2
                        ,adios_mode_update = 3 // not supported yet
@@ -187,7 +192,7 @@ struct adios_file_struct
 #ifdef SKEL_TIMING
     struct adios_timing_struct * timing_obj;
 #endif
-
+    MPI_Comm comm;          // duplicate of comm received in adios_open()
 };
 
 struct adios_dimension_item_struct
@@ -343,6 +348,7 @@ typedef void (* ADIOS_STOP_CALCULATION_FN)
 
 struct adios_transport_struct
 {
+    char * method_name;
     ADIOS_INIT_FN adios_init_fn;
     ADIOS_OPEN_FN adios_open_fn;
     ADIOS_SHOULD_BUFFER_FN adios_should_buffer_fn;
@@ -460,15 +466,18 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
                                 ,const char * dimensions
                                 ,const char * global_dimensions
                                 ,const char * local_offsets
-                            ,char *transform_type_str // NCSU ALACRITY-ADIOS
                                 );
 
-int adios_common_define_var_characteristcs  (struct adios_group_struct * g, const char * var_name
-                                            ,const char * bin_interval
-                                            ,const char * bin_min
-                                            ,const char * bin_max
-                                            ,const char * bin_count
-                                            );
+// set a transform method for a variable (=none if this function is never called)
+int adios_common_set_transform (int64_t var_id, const char *transform_type_str);
+
+int adios_common_define_var_characteristics  (struct adios_group_struct * g
+                                              ,const char * var_name
+                                              ,const char * bin_interval
+                                              ,const char * bin_min
+                                              ,const char * bin_max
+                                              ,const char * bin_count
+                                             );
 
 void adios_common_get_group (int64_t * group_id, const char * name);
 int adios_common_free_group (int64_t id);
@@ -483,6 +492,11 @@ uint64_t adios_calc_overhead_v1 (struct adios_file_struct * fd);
 int adios_write_version_v1 (char ** buffer
                            ,uint64_t * buffer_size
                            ,uint64_t * buffer_offset
+                           );
+int adios_write_version_flag_v1 (char ** buffer
+                           ,uint64_t * buffer_size
+                           ,uint64_t * buffer_offset
+                           ,uint32_t flag
                            );
 int adios_write_process_group_header_v1 (struct adios_file_struct * fd
                                         ,uint64_t total_size
@@ -525,15 +539,23 @@ int adios_write_index_v1 (char ** buffer
 void adios_build_index_v1 (struct adios_file_struct * fd
                          ,struct adios_index_struct_v1 * index
                        );
+
 void adios_merge_index_v1 (
                    struct adios_index_struct_v1 * main_index
                   ,struct adios_index_process_group_struct_v1 * new_pg_root
                   ,struct adios_index_var_struct_v1 * new_vars_root
                   ,struct adios_index_attribute_struct_v1 * new_attrs_root
                   );
+
+void adios_sort_index_v1 (struct adios_index_process_group_struct_v1 ** p1
+                         ,struct adios_index_var_struct_v1 ** v1
+                         ,struct adios_index_attribute_struct_v1 ** a1
+                         );
+ 
 void adios_clear_index_v1 (struct adios_index_struct_v1 * index); // in each adios_<method>_close()
 void adios_free_index_v1 (struct adios_index_struct_v1 * index);  // in adios_<method>_finalize()
 
+int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value, void ** out);
 
 // NCSU ALACRITY-ADIOS - This function was static, but is now needed in adios_transforms_*.c
 uint8_t count_dimensions (const struct adios_dimension_struct * dimensions);
@@ -541,11 +563,8 @@ uint8_t count_dimensions (const struct adios_dimension_struct * dimensions);
 uint64_t adios_get_type_size (enum ADIOS_DATATYPES type, void * var);
 // NCSU ALACRITY-ADIOS - added this for use in the transform layer
 uint64_t adios_get_dimension_space_size (struct adios_var_struct * var
-                                        ,struct adios_dimension_struct * d
-                                        ,struct adios_group_struct * group);
-uint64_t adios_get_var_size (struct adios_var_struct * var
-                            ,struct adios_group_struct * group, void * data
-                            );
+                                        ,struct adios_dimension_struct * d);
+uint64_t adios_get_var_size (struct adios_var_struct * var, void * data);
 uint64_t adios_get_dim_value (struct adios_dimension_item_struct * dimension);
 uint64_t adios_get_stat_size (void * data, enum ADIOS_DATATYPES type, enum ADIOS_STAT stat_id);
 uint8_t adios_get_stat_set_count (enum ADIOS_DATATYPES type);
@@ -562,45 +581,47 @@ int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
 /* some internal functions that adios_internals.c and adios_internals_mxml.c share */
 int adios_int_is_var (const char * temp); // 1 == yes, 0 == no
 int adios_int_is_num (char * temp); // 1 == yes, 0 == no
-void adios_conca_mesh_numb_att_nam(char ** returnstr, const char * meshname, char * att_nam, char counterstr[5]);
-void adios_conca_mesh_att_nam(char ** returnstr, const char * meshname, char * att_nam);
-int adios_define_schema_version(struct adios_group_struct * new_group, char * schema_version);
+void adios_conca_mesh_numb_att_nam (char ** returnstr, const char * meshname, char * att_nam, char counterstr[5]);
+void adios_conca_mesh_att_nam (char ** returnstr, const char * meshname, char * att_nam);
 
 // No-XML API
-int adios_define_var_mesh(int64_t ptr_new_group, char * varname, char * varpath, char * meshname);
-int adios_define_var_centering(int64_t ptr_new_group, char * varname, char * varpath, char * centering);
-int adios_define_var_timesteps (const char * timesteps,struct adios_group_struct * new_group,const char * name, const char *path);
-int adios_define_var_timescale (const char * timescale,struct adios_group_struct * new_group,const char * name, const char *path);
-int adios_define_var_timeseriesformat (const char * timeseries,struct adios_group_struct * new_group,const char * name, const char *path);
-int adios_define_var_hyperslab ( const char * hyperslab,struct adios_group_struct * new_group,const char * name, const char *path);
+int adios_common_define_schema_version (struct adios_group_struct * new_group, char * schema_version);
+int adios_common_define_var_mesh (int64_t ptr_new_group, const char * varname, const char * meshname, const char * path);
+int adios_common_define_var_centering (int64_t ptr_new_group, const char * varname, const char * centering, const char * path);
+int adios_common_define_var_timesteps (const char * timesteps,struct adios_group_struct * new_group,const char * name, const char *path);
+int adios_common_define_var_timescale (const char * timescale,struct adios_group_struct * new_group,const char * name, const char *path);
+int adios_common_define_var_timeseriesformat (const char * timeseries,struct adios_group_struct * new_group,const char * name, const char *path);
+int adios_common_define_var_hyperslab ( const char * hyperslab,struct adios_group_struct * new_group,const char * name, const char *path);
 
 // defineMesh functions (missing mesh structs for now dueto problems checking accross groups
-int adios_define_mesh_group(int64_t ptr_new_group, char * name, char * group);
-int adios_define_mesh_file(int64_t ptr_new_group, char * name, char * file);
-int adios_define_mesh_timeSeriesFormat (const char * timeseries, struct adios_group_struct * new_group, const char * name);
-int adios_define_mesh_timeScale (const char * timescale, struct adios_group_struct * new_group, const char * name);
-int adios_define_mesh_timeSteps (const char * timesteps, struct adios_group_struct * new_group, const char * name);
+int adios_common_define_mesh_file (int64_t ptr_new_group, char * name, char * file);
+int adios_common_define_mesh_group (int64_t ptr_new_group, const char * name, const char * group);
+int adios_common_define_mesh_timeVarying (const char * timevarying, int64_t group_id, const char * name);
+int adios_common_define_mesh_timeSeriesFormat (const char * timeseries, struct adios_group_struct * new_group, const char * name);
+int adios_common_define_mesh_timeScale (const char * timescale, struct adios_group_struct * new_group, const char * name);
+int adios_common_define_mesh_timeSteps (const char * timesteps, struct adios_group_struct * new_group, const char * name);
 
-int adios_define_mesh_rectilinear (char * dimensions, char * coordinates,struct adios_group_struct * new_group,const char * name);
+int adios_define_mesh_nspace (const char * nspace,struct adios_group_struct * new_group,const char * name);
+int adios_common_define_mesh_rectilinear (char * dimensions, char * coordinates, char * nspace, const char * name, int64_t group_id);
 int adios_define_mesh_rectilinear_dimensions (const char * dimensions,struct adios_group_struct * new_group,const char * name);
 int adios_define_mesh_rectilinear_coordinatesSingleVar (const char * coordinates,struct adios_group_struct * new_group,const char * name);
 int adios_define_mesh_rectilinear_coordinatesMultiVar (const char * coordinates,struct adios_group_struct * new_group,const char * name);
 
-int adios_define_mesh_uniform (char * dimensions, char * origin, char * spacing, char * maximum, struct adios_group_struct * new_group ,const char * name);
+int adios_common_define_mesh_uniform (char * dimensions, char * origin, char * spacing, char * maximum, char * nspace, const char * name, int64_t group_id);
 int adios_define_mesh_uniform_dimensions (const char * dimensions, struct adios_group_struct * new_group, const char * name);
 int adios_define_mesh_uniform_origins (const char * origin ,struct adios_group_struct * new_group,const char * name);
 int adios_define_mesh_uniform_spacings (const char * spacing,struct adios_group_struct * new_group,const char * name);
 int adios_define_mesh_uniform_maximums (const char * maximum,struct adios_group_struct * new_group,const char * name);
 
-int adios_define_mesh_structured(char * dimensions, char * nspace, char * points,struct adios_group_struct * new_group, char * name);
+int adios_common_define_mesh_structured (char * dimensions, char * nspace, char * points, const char * name, int64_t group_id);
 int adios_define_mesh_structured_dimensions (const char * dimensions,struct adios_group_struct * new_group,const char * name);
-int adios_define_mesh_structured_nspace (const char * nspace,struct adios_group_struct * new_group,const char * name);
+//int adios_define_mesh_structured_nspace (const char * nspace,struct adios_group_struct * new_group,const char * name);
 int adios_define_mesh_structured_pointsSingleVar (const char * points,struct adios_group_struct * new_group,const char * name);
 int adios_define_mesh_structured_pointsMultiVar (const char * points,struct adios_group_struct * new_group,const char * name);
 
-int adios_define_mesh_unstructured(char *nspace, char *npoints, char *points, char * data, char * count, char * type, struct adios_group_struct * new_group, const char * name);
+int adios_common_define_mesh_unstructured (char * points, char * data, char * count, char * type, char * nspace, char * npoints, const char * name, int64_t group_id);
 int adios_define_mesh_unstructured_npoints (const char * npoints,struct adios_group_struct * new_group ,const char * name);
-int adios_define_mesh_unstructured_nspace (const char * nspace,struct adios_group_struct * new_group,const char * name);
+//int adios_define_mesh_unstructured_nspace (const char * nspace,struct adios_group_struct * new_group,const char * name);
 int adios_define_mesh_unstructured_pointsSingleVar (const char * points,struct adios_group_struct * new_group,const char * name);
 int adios_define_mesh_unstructured_pointsMultiVar (const char * points,struct adios_group_struct * new_group ,const char * name);
 int adios_define_mesh_unstructured_uniformCells (const char * count,const char * data,const char * type,struct adios_group_struct * new_group,const char * name);

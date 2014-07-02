@@ -263,6 +263,7 @@ endif
 
 if HAVE_FLEXPATH
 libadios_a_SOURCES += write/adios_flexpath.c  read/read_flexpath.c
+libadios_nompi_a_SOURCES += write/adios_flexpath.c  read/read_flexpath.c
 if BUILD_FORTRAN
 FortranLibSources += write/adios_flexpath.c read/read_flexpath.c
 endif
@@ -383,6 +384,7 @@ include_HEADERS += public/adios.h \
                    public/adios_read_v1.h \
                    public/adios_read_v1_defs.h \
                    public/adios_read_v2.h \
+                   public/adios_read_v2_fwd.h \
                    public/adios_selection.h \
 				   public/adios_schema.h
 
@@ -604,12 +606,14 @@ libadios_internal_nompi_a_SOURCES = core/mpidummy.c \
                                     core/buffer.c \
                                     core/adios_error.c \
                                     core/adios_logger.c \
-                                    core/adios_internals_mxml.c \
                                     core/adios_timing.c \
                                     core/util.c \
                                     core/qhashtbl.c \
                                     core/futils.c \
                                     core/adios_transport_hooks.c 
+if BUILD_WRITE
+libadios_internal_nompi_a_SOURCES += core/adios_internals_mxml.c 
+endif
 
 
 libadios_internal_nompi_a_CPPFLAGS = $(MACRODEFFLAG)_INTERNAL $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_INT_CPPFLAGS) $(ADIOSLIB_CPPFLAGS)

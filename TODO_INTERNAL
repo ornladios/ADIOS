@@ -2,17 +2,21 @@
 USER REQUESTS
 =============
 Seismic (Jeroen Tromp), ASDF data format
-- support for 100k and more variables and attributes in one file
++ support for 100k and more variables and attributes in one file
 - unicode string variable to store XML documents in the file
 
 Others
 - support C/C++ structures (without following pointers) as generic data types
+  - traverse a tree and flatten into a buffer
 - support hyperslab at writing and maybe reading
 - streaming support a series of file(name)s, not just appending to the same file(name)
 
 - ship and build the MXML library with the ADIOS release
 
+- create and store metadata in staging methods (like in BP format)
+  Detailed per-writer info is completely missing right now.
 
++ replace INT32_MAX with a smaller number in write methods everywhere to ensure MPI_File_Write works on all machines
 
 
 

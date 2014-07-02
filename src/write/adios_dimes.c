@@ -32,11 +32,14 @@ static int adios_dimes_initialized = 0;
 #define MAX_NUM_OF_FILES 20
 static char ds_var_name[MAX_DS_NAMELEN];
 static unsigned int adios_dimes_verbose = 3;
+static int check_read_status = 2; // 0: disable, 1: at every step (not supported yet), 2: at finalize (default value)
+static double check_read_status_timeout_sec = 1;
+static int check_read_status_poll_interval_ms = 100;
 
 struct adios_dimes_file_info
 {
     char *name;
-    int time_index;
+    int time_index; // versioning, start from 0
 };
 
 struct adios_dimes_data_struct
@@ -44,91 +47,138 @@ struct adios_dimes_data_struct
     int rank;   // dataspaces rank or MPI rank if MPI is available
     int peers;  // from xml parameter or group communicator
     int appid;  // from xml parameter or 1
-    int time_index; // versioning in DataSpaces, start from 0
     int n_writes; // how many times adios_write has been called
 #if HAVE_MPI
-    MPI_Comm mpi_comm;
+    MPI_Comm mpi_comm; // for use in open..close
+    MPI_Comm mpi_comm_init; // for use in init/finalize
 #endif
     int  num_of_files; // how many files do we have with this method
     char *fnames[MAX_NUM_OF_FILES];  // names of files (needed at finalize)
     int  fversions[MAX_NUM_OF_FILES];   // last steps of files (needed at finalize)
+    int  mpi_ranks[MAX_NUM_OF_FILES];   // mpi rank of current process for each written file (needed at finalize)
     struct adios_dimes_file_info file_info[MAX_NUM_OF_FILES]; // keep track of time index for each opened file
 };
 
-static int init_dimes_file_info(struct adios_dimes_data_struct *p)
+
+static int check_read_status_var(const char* fname, int last_version)
+{
+    int stay_in_poll_loop = 1;
+    double t1 = adios_gettime();
+
+    uint64_t lb[MAX_DS_NDIM], ub[MAX_DS_NDIM], gdims[MAX_DS_NDIM];
+    int elemsize, ndim;
+    int read_status_buf[1] = {-1};
+    int read_status_buf_len = 1;
+
+    while (stay_in_poll_loop) {
+        snprintf(ds_var_name, MAX_DS_NAMELEN, "READ_STATUS@%s", fname);
+        elemsize = sizeof(int); ndim = 1;
+        lb[0] = 0; ub[0] = read_status_buf_len-1;
+        gdims[0] = (ub[0]-lb[0]+1) * dspaces_get_num_space_server();
+        dspaces_define_gdim(ds_var_name, ndim, gdims);
+        int err = dspaces_get(ds_var_name, 0, elemsize, ndim, lb, ub, read_status_buf);
+        if (!err) {
+            int version = read_status_buf[0];
+            log_debug("%s: ds_var_name %s read_status_buf = {%d}\n",
+                __func__, ds_var_name, version);
+            if (version == last_version) {
+                stay_in_poll_loop = 0;
+            }            
+        } else {
+            log_error("%s: failed to read ds_var_name %s from space\n",
+                __func__, ds_var_name); 
+        }
+
+        // check if we need to stay in loop
+        if (stay_in_poll_loop) {
+            double elapsed_time = adios_gettime() - t1;
+            if (check_read_status_timeout_sec >= 0.0 &&
+                elapsed_time > check_read_status_timeout_sec) {
+                stay_in_poll_loop = 0;
+            } else {
+                adios_nanosleep(check_read_status_poll_interval_ms/1000,
+                    (int)(((uint64_t)check_read_status_poll_interval_ms * 1000000L)%1000000000L));      
+            }
+        }
+    }
+
+    return 0;
+}
+
+static int init_dimes_file_info(struct adios_dimes_data_struct *md)
 {
     int i;
     for (i = 0; i < MAX_NUM_OF_FILES; i++) {
-        p->file_info[i].name = NULL;
-        p->file_info[i].time_index = 0;
+        md->file_info[i].name = NULL;
+        md->file_info[i].time_index = 0;
     }
 }
 
-static void free_dimes_file_info(struct adios_dimes_data_struct *p)
+static void free_dimes_file_info(struct adios_dimes_data_struct *md)
 {
     int i;
     for (i = 0; i < MAX_NUM_OF_FILES; i++) {
-        if (p->file_info[i].name) {
-            free(p->file_info[i].name);
+        if (md->file_info[i].name) {
+            free(md->file_info[i].name);
         }
     }
 
     return;
 }
 
-static struct adios_dimes_file_info* lookup_dimes_file_info(struct adios_dimes_data_struct *p, const char* fname)
+static struct adios_dimes_file_info* lookup_dimes_file_info(struct adios_dimes_data_struct *md, const char* fname)
 {
     int i;
     for (i = 0; i < MAX_NUM_OF_FILES; i++) {
-        if (p->file_info[i].name != NULL &&
-            strcmp(p->file_info[i].name, fname) == 0) {
-            return &p->file_info[i];
+        if (md->file_info[i].name != NULL &&
+            strcmp(md->file_info[i].name, fname) == 0) {
+            return &md->file_info[i];
         }
     }
 
     for (i = 0; i < MAX_NUM_OF_FILES; i++) {
-        if (p->file_info[i].name == NULL) {
-            p->file_info[i].name = malloc(strlen(fname)+1);
-            strcpy(p->file_info[i].name, fname);
-            return &p->file_info[i];
+        if (md->file_info[i].name == NULL) {
+            md->file_info[i].name = malloc(strlen(fname)+1);
+            strcpy(md->file_info[i].name, fname);
+            return &md->file_info[i];
         }
     }
 
     return NULL;
 }
 
-static int connect_to_dimes (struct adios_dimes_data_struct * p, MPI_Comm comm)
+static int connect_to_dimes (struct adios_dimes_data_struct *md, MPI_Comm comm)
 {
     int ret = 0;
     int num_peers;
 
     if (!globals_adios_is_dimes_connected()) {
 
-        MPI_Comm_rank (comm, &(p->rank));
+        MPI_Comm_rank (comm, &(md->rank));
         MPI_Comm_size (comm, &num_peers);
 
         // Application ID should be set by the application calling adios_set_application_id()
         int was_set;
-        p->appid = globals_adios_get_application_id (&was_set);
+        md->appid = globals_adios_get_application_id (&was_set);
         if (!was_set)
-            p->appid = 1;
+            md->appid = 1;
 
         log_debug ("adios_dimes: rank=%d connect to DATASPACES, peers=%d, appid=%d \n",
-                p->rank, num_peers, p->appid);
+                md->rank, num_peers, md->appid);
 
         //Init the dart client
-        ret = dspaces_init (num_peers, p->appid);
+        ret = dspaces_init (num_peers, md->appid, &md->mpi_comm_init, NULL);
         if (ret) {
-            log_error ("adios_dimes: rank=%d Failed to connect to DATASPACES: err=%d,  rank=%d\n", p->rank, ret);        
+            log_error ("adios_dimes: rank=%d Failed to connect to DATASPACES: err=%d,  rank=%d\n", md->rank, ret);        
             return ret;
         }
 
 #if ! HAVE_MPI
-        dspaces_rank (&(p->rank));
-        dspaces_peers (&(p->peers));
+        dspaces_rank (&(md->rank));
+        dspaces_peers (&(md->peers));
 #endif
 
-        log_debug ("adios_dimes: rank=%d connected to DATASPACES: peers=%d\n", p->rank, p->peers);        
+        log_debug ("adios_dimes: rank=%d connected to DATASPACES: peers=%d\n", md->rank, md->peers);        
     }
 
     globals_adios_set_dimes_connected_from_writer();
@@ -140,30 +190,84 @@ void adios_dimes_init (const PairStruct * parameters,
                      struct adios_method_struct * method
                      )
 {
-    struct adios_dimes_data_struct *p = 0;
+    struct adios_dimes_data_struct *md = 0;
     if (!adios_dimes_initialized)
     {
         adios_dimes_initialized = 1;
     }
    
     method->method_data = calloc (1, sizeof (struct adios_dimes_data_struct));
-    p = (struct adios_dimes_data_struct*)method->method_data;
-    
+    md = (struct adios_dimes_data_struct*)method->method_data;
+   
+    int check_read; 
     int index, i;
     char temp[64];
 
     //Init the static data structure
-    p->peers = 1;
-    p->appid = -1;
-    p->time_index = 0;
-    p->n_writes = 0;
+    md->peers = 1;
+    md->appid = -1;
+    md->n_writes = 0;
 #if HAVE_MPI
-    p->mpi_comm = MPI_COMM_NULL;
+    md->mpi_comm = MPI_COMM_NULL;
+    md->mpi_comm_init = method->init_comm;
 #endif
-    p->num_of_files = 0;
+    md->num_of_files = 0;
 
-    init_dimes_file_info(p);
-    connect_to_dimes (p, method->init_comm);
+    // process user parameters
+    const PairStruct *p = parameters;
+    while (p) {
+        if (!strcasecmp (p->name, "app_id")) {
+            errno = 0;
+            md->appid = strtol(p->value, NULL, 10);
+            if (md->appid > 0 && !errno) {
+                log_debug ("App ID parameter set to %d for DIMES write method\n",
+                            md->appid);
+                globals_adios_set_application_id (md->appid);
+            } else {
+                log_error ("Invalid 'app_id' parameter given to the DIMES write "
+                           "method: '%s'\n", p->value);
+            }
+        } else if (!strcasecmp(p->name, "check_read_status")) {
+            errno = 0;
+            check_read = strtol(p->value, NULL, 10);
+            if (!errno && (check_read == 0 || check_read == 2)) {
+                check_read_status = check_read;
+                log_debug("check_read_status set to %d for DIMES write method\n", 
+                    check_read_status);
+            } else {
+                log_error("Invalid 'check_read_status' parameter given to the DIMES "
+                            "write method: '%s'\n", p->value);
+                log_error("check_read_status=<value>, 0: disable, 1: at every step "
+                            " (not supported yet), 2: at finalize (default value).\n");
+            }
+        } else if (!strcasecmp(p->name, "check_read_status_timeout_sec")) {
+            errno = 0;
+            double timeout = strtof(p->value, NULL);
+            if (timeout > 0.0 && !errno) {
+                log_debug("check_read_status_timeout_sec set to %f seconds for DIMES write method\n", timeout);
+                check_read_status_timeout_sec = timeout;
+            } else {
+                log_error("Invalid 'check_read_status_timeout_sec' parameter given to the DIMES "
+                        "write method: '%s'\n", p->value);
+            }   
+        } else if (!strcasecmp(p->name, "check_read_status_poll_interval")) {
+            errno = 0;
+            int pollinterval = strtol(p->value, NULL, 10);
+            if (pollinterval > 0 && !errno) {
+                log_debug("check_read_status_poll_interval set to %d milliseconds for DIMES write method\n", pollinterval);
+                check_read_status_poll_interval_ms = pollinterval;
+            } else {
+                log_error("Invalid 'check_read_status_poll_interval' parameter given to DIMES "
+                    "write method: '%s'\n", p->value);
+            }
+        } else {
+            log_error ("Parameter name %s is not recognized by the DIMES write "
+                        "method\n", p->name);
+        }
+        p = p->next;
+    }
+    init_dimes_file_info(md);
+    connect_to_dimes (md, method->init_comm);
 
     log_info ("adios_dimes_init: done\n");
    
@@ -177,32 +281,32 @@ int adios_dimes_open (struct adios_file_struct * fd,
                     )
 {
     int ret = 0;
-    struct adios_dimes_data_struct *p = (struct adios_dimes_data_struct *)
+    struct adios_dimes_data_struct *md = (struct adios_dimes_data_struct *)
                                                 method->method_data;
-    struct adios_dimes_file_info *info = lookup_dimes_file_info(p, fd->name);
+    struct adios_dimes_file_info *info = lookup_dimes_file_info(md, fd->name);
     log_info ("adios_dimes_open: open %s, mode=%d, time_index=%d \n",
                         fd->name, fd->mode, info->time_index);
 
 #if HAVE_MPI
     // if we have MPI and a communicator, we can get the exact size of this application
     // that we need to tell DATASPACES
-    p->mpi_comm = comm;
-    MPI_Comm_rank (p->mpi_comm, &(p->rank));
-    MPI_Comm_size (p->mpi_comm, &(p->peers));
+    md->mpi_comm = comm;
+    MPI_Comm_rank (md->mpi_comm, &(md->rank));
+    MPI_Comm_size (md->mpi_comm, &(md->peers));
 #endif
 
     if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
     {
-        log_debug ("adios_dimes_open: rank=%d call write lock...\n", p->rank);       
-        dspaces_lock_on_write (fd->name, &p->mpi_comm);  
-        log_debug ("adios_dimes_open: rank=%d got write lock\n", p->rank);        
+        log_debug ("adios_dimes_open: rank=%d call write lock...\n", md->rank);       
+        dspaces_lock_on_write (fd->name, &md->mpi_comm);  
+        log_debug ("adios_dimes_open: rank=%d got write lock\n", md->rank);        
         // Free data objects written in the previous steps
         dimes_put_sync_group(fd->name, info->time_index);
         dimes_put_set_group(fd->name, info->time_index);    
     }
     else if (fd->mode == adios_mode_read)
     {
-        dspaces_lock_on_read (fd->name, &p->mpi_comm);
+        dspaces_lock_on_read (fd->name, &md->mpi_comm);
     } 
   
     return ret;
@@ -233,10 +337,10 @@ void adios_dimes_write (struct adios_file_struct * fd
                       ,struct adios_method_struct * method
                       )
 {
-    struct adios_dimes_data_struct *p = (struct adios_dimes_data_struct *)
+    struct adios_dimes_data_struct *md = (struct adios_dimes_data_struct *)
                                                             method->method_data;
     struct adios_group_struct *group = fd->group;
-    struct adios_dimes_file_info *info = lookup_dimes_file_info(p, fd->name);
+    struct adios_dimes_file_info *info = lookup_dimes_file_info(md, fd->name);
     //Get var size
     //  FIXME: type size of a string >2GB does not fit to int. 
     //  adios_get_type_size returns uint64_t but dspaces_put handles only int
@@ -246,21 +350,22 @@ void adios_dimes_write (struct adios_file_struct * fd
     char * var_name = v->name;
     int err;
 
+    char lb_str[256], ub_str[256], gdims_str[256], dims_str[256], didx_str[256];
     //Get two offset coordinate values
     unsigned int version;
-
-    int dims[3]={1,1,1}, gdims[3]={0,0,0}, lb[3]={0,0,0}, ub[3]={0,0,0}; /* lower and upper bounds for DataSpaces */
-    int didx[3]; // for reordering the dimensions
+    uint64_t dims[MAX_DS_NDIM], gdims[MAX_DS_NDIM], lb[MAX_DS_NDIM], ub[MAX_DS_NDIM]; /* lower and upper bounds for DataSpaces */
+    int didx[MAX_DS_NDIM]; // for reordering the dimensions
     int ndims = 0;
     int hastime = 0;
+    gdims[0] = 0;
     struct adios_dimension_struct* var_dimensions = v->dimensions;
     // Calculate lower and upper bounds for each available dimension (up to 3 dims)
-    while( var_dimensions && ndims < 3)
+    while( var_dimensions && ndims < MAX_DS_NDIM)
     {
         dims[ndims] = adios_get_dim_value (&(var_dimensions->dimension));
         gdims[ndims] = adios_get_dim_value (&(var_dimensions->global_dimension));
         lb[ndims] = adios_get_dim_value (&(var_dimensions->local_offset));
-        if (dims[ndims] > 0)  {
+        if (gdims[ndims] > 0 && dims[ndims] > 0)  {
             ub[ndims] = lb[ndims] + dims[ndims] - 1;
             ndims++;
         }   else {
@@ -287,8 +392,8 @@ void adios_dimes_write (struct adios_file_struct * fd
     //snprintf(dspaces_type_var_name, MAX_DS_NAMELEN, "TYPE@%s", ds_var_name);
     
     /* non-global variables are put in space ONLY by rank = 0 process */
-    if (gdims[0] == 0 && p->rank != 0) {
-        //fprintf(stderr, "rank=%d var_name=%s is not global. Skip\n", p->rank, ds_var_name);
+    if (gdims[0] == 0 && md->rank != 0) {
+        //fprintf(stderr, "rank=%d var_name=%s is not global. Skip\n", md->rank, ds_var_name);
         return;
     }
 
@@ -301,13 +406,18 @@ void adios_dimes_write (struct adios_file_struct * fd
     
      
     v->write_offset = 1; // only !=0 offsets will be included in build index
+    /* This is not needed here, this is already called in common_adios_write() 
     adios_generate_var_characteristics_v1 (fd, v); // characteristics will be included in build index
     adios_write_var_characteristics_v1 (fd, v);
-    
+    */
 
-    log_debug ("var_name=%s, type=%s(%d) elemsize=%d, version=%d, ndims=%d, size=(%d,%d,%d), gdim=(%d,%d,%d), lb=(%d,%d,%d), ub=(%d,%d,%d)\n",
+    dimes_int64s_to_str(ndims, lb, lb_str);
+    dimes_int64s_to_str(ndims, ub, ub_str);
+    dimes_int64s_to_str(ndims, dims, dims_str);
+    dimes_int64s_to_str(ndims, gdims, gdims_str);
+    log_debug ("var_name=%s, type=%s(%d) elemsize=%d, version=%d, ndims=%d, size=(%s), gdim=(%s), lb=(%s), ub=(%s)\n",
             ds_var_name, adios_type_to_string_int(v->type), v->type, var_type_size, version, ndims,
-            dims[0], dims[1], dims[2], gdims[0], gdims[1], gdims[2], lb[0], lb[1], lb[2], ub[0], ub[1], ub[2]);
+            dims_str, gdims_str, lb_str, ub_str);    
 
     /* non-timed scalars are written in the metadata at close(), not here */
     if (ndims == 0 && !hastime)
@@ -320,17 +430,22 @@ void adios_dimes_write (struct adios_file_struct * fd
             group->adios_host_language_fortran == adios_flag_yes, 
             0 /*pack*/, didx);
 
-    dimes_put(ds_var_name, version, var_type_size, 
-             lb[didx[0]], lb[didx[1]], lb[didx[2]], 
-             ub[didx[0]], ub[didx[1]], ub[didx[2]], 
-             data);
-    
-    log_debug ("var_name=%s, dimension ordering=(%d,%d,%d), gdims=(%d,%d,%d), lb=(%d,%d,%d), ub=(%d,%d,%d)\n",
-            ds_var_name, 
-            didx[0], didx[1], didx[2], 
-            gdims[didx[0]], gdims[didx[1]], gdims[didx[2]], 
-            lb[didx[0]], lb[didx[1]], lb[didx[2]], 
-            ub[didx[0]], ub[didx[1]], ub[didx[2]]);
+    uint64_t lb_in[MAX_DS_NDIM], ub_in[MAX_DS_NDIM], gdims_in[MAX_DS_NDIM];
+    int i;
+    for (i = 0; i < ndims; i++) {
+        lb_in[i] = lb[didx[i]];
+        ub_in[i] = ub[didx[i]];
+        gdims_in[i] = gdims[didx[i]];
+    }
+    dimes_define_gdim(ds_var_name, ndims, gdims_in);
+    dimes_put(ds_var_name, version, var_type_size, ndims, lb_in, ub_in, data);
+
+    dimes_ints_to_str(ndims, didx, didx_str);
+    dimes_int64s_to_str(ndims, gdims_in, gdims_str);
+    dimes_int64s_to_str(ndims, lb_in, lb_str);
+    dimes_int64s_to_str(ndims, ub_in, ub_str);
+    log_debug ("var_name=%s, dimension ordering=(%s), gdims=(%s), lb=(%s), ub=(%s)\n",
+            ds_var_name, didx_str, gdims_str, lb_str, ub_str);
 }
 
 void adios_dimes_get_write_buffer (struct adios_file_struct * fd
@@ -402,22 +517,6 @@ void adios_dimes_read (struct adios_file_struct * fd
                      ,struct adios_method_struct * method
                      )
 {
-    struct adios_dimes_data_struct *p = (struct adios_dimes_data_struct *)
-                                                            method->method_data;
-    uint64_t var_type_size = adios_get_type_size(v->type, v->data);
-
-    //Get var name
-    char * var_name = v->name;
-
-    //Get two offset coordinate values
-    int version, offset1[3],offset2[3];
-    int dim_size[3];
-    memset(offset1, 0, 3*sizeof(int));
-    memset(offset2, 0, 3*sizeof(int));
-    memset(dim_size, 0, 3*sizeof(int));
-
-    struct adios_dimes_file_info *info = lookup_dimes_file_info(p, fd->name);
-    version = info->time_index;
 }
 
 /* Gather var/attr indices from all processes to rank 0 */
@@ -426,7 +525,7 @@ static void adios_dimes_gather_indices (struct adios_file_struct * fd
                                ,struct adios_index_struct_v1 * index
                                )
 {
-    struct adios_dimes_data_struct *p = (struct adios_dimes_data_struct *)
+    struct adios_dimes_data_struct *md = (struct adios_dimes_data_struct *)
                                                 method->method_data;
     struct adios_index_process_group_struct_v1 * new_pg_root = 0;
     struct adios_index_var_struct_v1 * new_vars_root = 0;
@@ -440,12 +539,12 @@ static void adios_dimes_gather_indices (struct adios_file_struct * fd
 #if 0
 #if HAVE_MPI
     // gather all on rank 0
-    if (p->mpi_comm != MPI_COMM_NULL)
+    if (md->mpi_comm != MPI_COMM_NULL)
     {                                
-        if (p->rank == 0)           
+        if (md->rank == 0)           
         {                            
-            int * index_sizes = malloc (4 * p->peers);
-            int * index_offsets = malloc (4 * p->peers);
+            int * index_sizes = malloc (4 * md->peers);
+            int * index_offsets = malloc (4 * md->peers);
             char * recv_buffer = 0;
             uint32_t size = 0;
             uint32_t total_size = 0;
@@ -454,10 +553,10 @@ static void adios_dimes_gather_indices (struct adios_file_struct * fd
 
             MPI_Gather (&size, 1, MPI_INT
                     ,index_sizes, 1, MPI_INT
-                    ,0, p->mpi_comm
+                    ,0, md->mpi_comm
                     );
 
-            for (i = 0; i < p->peers; i++)
+            for (i = 0; i < md->peers; i++)
             {
                 index_offsets [i] = total_size;
                 total_size += index_sizes [i];
@@ -467,10 +566,10 @@ static void adios_dimes_gather_indices (struct adios_file_struct * fd
 
             MPI_Gatherv (&size, 0, MPI_BYTE
                     ,recv_buffer, index_sizes, index_offsets
-                    ,MPI_BYTE, 0, p->mpi_comm
+                    ,MPI_BYTE, 0, md->mpi_comm
                     );
 
-            for (i = 1; i < p->peers; i++)
+            for (i = 1; i < md->peers; i++)
             {
                 b.buff = recv_buffer + index_offsets [i];
                 b.length = index_sizes [i];
@@ -505,11 +604,11 @@ static void adios_dimes_gather_indices (struct adios_file_struct * fd
 
             uint32_t tmp_buffer_size = (uint32_t) buffer_size;
             MPI_Gather (&tmp_buffer_size, 1, MPI_INT, 0, 0, MPI_INT
-                    ,0, p->mpi_comm
+                    ,0, md->mpi_comm
                     );
             MPI_Gatherv (buffer, buffer_size, MPI_BYTE
                     ,0, 0, 0, MPI_BYTE
-                    ,0, p->mpi_comm
+                    ,0, md->mpi_comm
                     );
             free (buffer);
         }
@@ -566,17 +665,17 @@ void dimes_pack_group_info (struct adios_file_struct *fd
                                   ,char ** buffer, int *buffer_size, int *nvars, int *nattrs
                                   )
 {
-    struct adios_dimes_data_struct *p = (struct adios_dimes_data_struct *)
+    struct adios_dimes_data_struct *md = (struct adios_dimes_data_struct *)
                                                 method->method_data;
     struct adios_index_var_struct_v1 * v = index->vars_root;
     struct adios_index_attribute_struct_v1 * a = index->attrs_root;
     int size;
     int ndims; // whatever the type of v->characteristics->dims.count is, we write an int to buffer
     int hastime; // true if variable has time dimension
-    uint64_t ldims[10], gdims[10]; // we can write only 3 dimensions, will drop time dim
+    uint64_t ldims[MAX_DS_NDIM], gdims[MAX_DS_NDIM];
     *nvars = 0;
     *nattrs = 0;
-    int didx[3]; // dimension ordering indices
+    int didx[MAX_DS_NDIM]; // dimension ordering indices
 
     log_debug ("%s entered\n", __func__);
 
@@ -585,7 +684,7 @@ void dimes_pack_group_info (struct adios_file_struct *fd
     while (v) {
         size += 4*sizeof(int) // name len, type, hastime, number of dims 
                 + dimes_get_full_name_len (v->var_path, v->var_name) // full path
-                + 3 * 8; // always write 3 dimensions in the index (even for scalars)
+                + MAX_DS_NDIM * 8; // always write 3 dimensions in the index (even for scalars)
         if (v->characteristics->dims.count == 0) {
             // For scalars, we write the value into the index
             if (v->type != adios_string)
@@ -648,7 +747,7 @@ void dimes_pack_group_info (struct adios_file_struct *fd
         //ndims = MAX(v->characteristics->dims.count,3); // convert whatever type to int
         //memcpy (b, &(v->characteristics->dims.count), sizeof(int)); // number of dimensions
         log_debug("Variable %s, total dims = %d\n", name, v->characteristics->dims.count);
-        j = 0; // we can write only 3 dims, will drop the time dimension
+        j = 0; // will drop the time dimension
         hastime = 0;
         for (i = 0; i<v->characteristics->dims.count; i++) {
             ldims[j] = v->characteristics->dims.dims[j*3];  // ith dimension 
@@ -663,12 +762,12 @@ void dimes_pack_group_info (struct adios_file_struct *fd
             }
             j++;
         }
-        for (i=j; i<3; i++) {
-            // fill up dimensions up to 3rd dim
+        for (i=j; i<MAX_DS_NDIM; i++) {
+            // fill up dimensions up to MAX_DS_NDIM dim
             ldims[i] = 1;
             gdims[i] = 1;
         }
-        ndims = (j < 3 ? j : 3); // we can have max 3 dimensions in DataSpaces
+        ndims = (j < MAX_DS_NDIM ? j : MAX_DS_NDIM); // we can have max MAX_DS_NDIM dimensions in DataSpaces
         memcpy (b, &hastime, sizeof(int)); // has time dimension?
         log_debug("             has time = %d (%d)\n", hastime, *(int*)b);
         b += sizeof(int); 
@@ -678,7 +777,7 @@ void dimes_pack_group_info (struct adios_file_struct *fd
         dimes_dimension_ordering(ndims, 
                 fd->group->adios_host_language_fortran == adios_flag_yes, 
                 0 /*pack*/, didx);
-        for (i = 0; i < 3; i++) {
+        for (i = 0; i < MAX_DS_NDIM; i++) {
             if (gdims[didx[i]]) { 
                 // global variable
                 memcpy (b, &(gdims[didx[i]]), 8);  // ith dimension 
@@ -792,12 +891,14 @@ void adios_dimes_close (struct adios_file_struct * fd
                       ,struct adios_method_struct * method
                       )
 {
-    struct adios_dimes_data_struct *p = (struct adios_dimes_data_struct *)
+    struct adios_dimes_data_struct *md = (struct adios_dimes_data_struct *)
                                                 method->method_data;
     struct adios_index_struct_v1 * index = adios_alloc_index_v1(1);
     struct adios_attribute_struct * a = fd->group->attributes;
-    struct adios_dimes_file_info *info = lookup_dimes_file_info(p, fd->name);
-    int lb[3], ub[3], didx[3]; // for reordering DS dimensions
+    struct adios_dimes_file_info *info = lookup_dimes_file_info(md, fd->name);
+    uint64_t gdims[MAX_DS_NDIM], lb[MAX_DS_NDIM], ub[MAX_DS_NDIM];
+    int didx[MAX_DS_NDIM]; // for reordering DS dimensions
+    int elemsize, ndim;
     unsigned int version;
 
     if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
@@ -814,9 +915,9 @@ void adios_dimes_close (struct adios_file_struct * fd
 
         // make sure all processes have finished putting data to the space 
         // before we put metadata from rank 0
-        MPI_Barrier (p->mpi_comm); 
+        MPI_Barrier (md->mpi_comm); 
 
-        if (p->rank == 0) {
+        if (md->rank == 0) {
 
             /* Write two adios specific variables with the name of the file and name of the group into the space */
             /* ADIOS Read API fopen() checks these variables to see if writing already happened */
@@ -836,11 +937,12 @@ void adios_dimes_close (struct adios_file_struct * fd
             
             /* Put GROUP@fn/gn header into space */
             snprintf(ds_var_name, MAX_DS_NAMELEN, "GROUP@%s/%s", fd->name, fd->group->name);
-            log_debug ("%s: put %s with buf len %d into space\n", __func__, ds_var_name, indexlen);
-            ub[0] = indexlen-1; ub[1] = 0; ub[2] = 0;
-            dimes_dimension_ordering(1, 0, 0, didx); // C ordering of 1D array into DS
-            dspaces_put(ds_var_name, version, 1,    0, 0, 0, /* lb 0..2 */
-                     ub[didx[0]], ub[didx[1]], ub[didx[2]],  indexbuf); 
+            log_debug ("%s: put %s buflen=%d (bytes) into space\n", __func__, ds_var_name, indexlen);
+            elemsize = 1; ndim = 1;
+            lb[0] = 0; ub[0] = indexlen-1;
+            gdims[0] = (ub[0]-lb[0]+1) * dspaces_get_num_space_server();
+            dspaces_define_gdim(ds_var_name, ndim, gdims);
+            dspaces_put(ds_var_name, version, elemsize, ndim, lb, ub, indexbuf);
             free (indexbuf);
 
             /* Create and put FILE@fn header into space */
@@ -849,52 +951,53 @@ void adios_dimes_close (struct adios_file_struct * fd
             snprintf (ds_var_name, MAX_DS_NAMELEN, "FILE@%s", fd->name);
             dimes_pack_file_info (info->time_index, nvars, nattrs, indexlen,
                         fd->group->name, &file_info_buf, &file_info_buf_len);
-            log_debug ("%s: put %s = buflen=%d time=%d nvars=%d nattr=%d index=%d name=%d:%s into space\n",
+            log_debug ("%s: put %s buflen=%d (bytes) time=%d nvars=%d nattr=%d index=%d name=%d:%s into space\n",
                 __func__, ds_var_name, 
                 *(int*)file_info_buf, *(int*)(file_info_buf+4), 
                 *(int*)(file_info_buf+8), *(int*)(file_info_buf+12),
                 *(int*)(file_info_buf+16), *(int*)(file_info_buf+20),
                 file_info_buf+24);
-            /* Flip 1st and 2nd dimension for DataSpaces representation for a 1D array*/
-            ub[0] = file_info_buf_len-1; ub[1] = 0; ub[2] = 0;
-            dimes_dimension_ordering(1, 0, 0, didx); // C ordering of 1D array into DS
             dspaces_put_sync(); //wait on previous put to finish
-            dspaces_put(ds_var_name, version, 1,    0, 0, 0, /* lb 0..2 */
-                     ub[didx[0]], ub[didx[1]], ub[didx[2]], file_info_buf); 
+            elemsize = 1; ndim = 1;
+            lb[0] = 0; ub[0] = file_info_buf_len-1;
+            gdims[0] = (ub[0]-lb[0]+1) * dspaces_get_num_space_server();
+            dspaces_define_gdim(ds_var_name, ndim, gdims);
+            dspaces_put(ds_var_name, version, elemsize, ndim, lb, ub, file_info_buf);
 
             /* Create and put VERSION@fn version info into space */
             int version_buf[2] = {version, 0}; /* last version put in space; not terminated */
             int version_buf_len = 2; 
             snprintf (ds_var_name, MAX_DS_NAMELEN, "VERSION@%s", fd->name);
-            log_debug ("%s: put %s with buf = [%d,%d] (len=%d integers) into space\n", 
+            log_debug ("%s: put %s buf= [%d,%d] buflen=%d (integers) into space\n", 
                        __func__, ds_var_name, version_buf[0], version_buf[1], version_buf_len);
-            ub[0] = version_buf_len-1; ub[1] = 0; ub[2] = 0;
-            dimes_dimension_ordering(1, 0, 0, didx); // C ordering of 1D array into DS
             dspaces_put_sync(); //wait on previous put to finish
-            dspaces_put(ds_var_name, 0, sizeof(int),    0, 0, 0, /* lb 0..2 */
-                     ub[didx[0]], ub[didx[1]], ub[didx[2]],  version_buf); 
+            elemsize = sizeof(int); ndim = 1;
+            lb[0] = 0; ub[0] = version_buf_len-1;
+            gdims[0] = (ub[0]-lb[0]+1) * dspaces_get_num_space_server();
+            dspaces_define_gdim(ds_var_name, ndim, gdims);
+            dspaces_put(ds_var_name, 0, elemsize, ndim, lb, ub, version_buf);
             dspaces_put_sync(); //wait on previous put to finish
-            
         }
 
         // remember this filename and its version for finalize
         int i;
-        for (i=0; i<p->num_of_files; i++) {
-            if (!strcmp(fd->name, p->fnames[i]))
+        for (i=0; i<md->num_of_files; i++) {
+            if (!strcmp(fd->name, md->fnames[i]))
                 break;
         }
-        if (i == p->num_of_files) {
-            if (p->num_of_files < MAX_NUM_OF_FILES) {
-                p->fnames[ p->num_of_files ] = strdup(fd->name);
-                p->num_of_files++;
+        if (i == md->num_of_files) {
+            if (md->num_of_files < MAX_NUM_OF_FILES) {
+                md->fnames[ md->num_of_files ] = strdup(fd->name);
+                md->num_of_files++;
             } else {
                 log_error ("%s: Max %d files can be written by one application "
                         "using the DATASPACES method\n",
                         __func__, MAX_NUM_OF_FILES);
             }
         }
-        if (i < p->num_of_files) {
-            p->fversions[i] = version;
+        if (i < md->num_of_files) {
+            md->fversions[i] = version;
+            md->mpi_ranks[i] = md->rank;
         }
 
 
@@ -903,16 +1006,16 @@ void adios_dimes_close (struct adios_file_struct * fd
         adios_free_index_v1 (index);
 
         // rank=0 may be in put_sync when others call unlock, which is a global op
-        MPI_Barrier (p->mpi_comm); 
+        MPI_Barrier (md->mpi_comm); 
         //log_debug("%s: call dspaces_put_sync()\n", __func__);
         //dspaces_put_sync();
         dimes_put_unset_group();
         log_debug("%s: call dspaces_unlock_on_write(%s)\n", __func__, fd->name);
-        dspaces_unlock_on_write(fd->name, &p->mpi_comm);
+        dspaces_unlock_on_write(fd->name, &md->mpi_comm);
     }
     else if( fd->mode == adios_mode_read )
     {
-        dspaces_unlock_on_read(fd->name, &p->mpi_comm);
+        dspaces_unlock_on_read(fd->name, &md->mpi_comm);
     } 
 
     /* Increment the time index */
@@ -924,40 +1027,49 @@ void adios_dimes_close (struct adios_file_struct * fd
 
 void adios_dimes_finalize (int mype, struct adios_method_struct * method)
 {
-    struct adios_dimes_data_struct *p = (struct adios_dimes_data_struct *)
+    struct adios_dimes_data_struct *md = (struct adios_dimes_data_struct *)
         method->method_data;
     int i;
     char ds_var_name[MAX_DS_NAMELEN];
-    int lb[3] = {0,0,0}; 
-    int ub[3] = {1,0,0}; // we put 2 integers to space, 
-    int didx[3]; // for reordering DS dimensions
+    uint64_t gdims[MAX_DS_NDIM], lb[MAX_DS_NDIM], ub[MAX_DS_NDIM];
+    int elemsize, ndim;
     int value[2] = {0, 1}; // integer to be written to space (terminated=1)
 
-    free_dimes_file_info(p);
+    free_dimes_file_info(md);
 
     // tell the readers which files are finalized
-    dimes_dimension_ordering(1, 0, 0, didx); // C ordering of 1D array into DS
-    for (i=0; i<p->num_of_files; i++) {
+    for (i=0; i<md->num_of_files; i++) {
         /* Put VERSION@fn into space. Indicates that this file will not be extended anymore.  */
-        log_debug("%s: call dspaces_lock_on_write(%s), rank=%d\n", __func__, p->fnames[i], mype);
-        dspaces_lock_on_write(p->fnames[i], &p->mpi_comm); // lock is global operation in DataSpaces
-        if (p->rank == 0) {
-            value[0] = p->fversions[i];
-            snprintf(ds_var_name, MAX_DS_NAMELEN, "VERSION@%s", p->fnames[i]);
+        if (md->mpi_ranks[i] == 0) {
+            if (check_read_status == 2) {
+                check_read_status_var(md->fnames[i], md->fversions[i]);
+            }
+            MPI_Comm mpi_comm = MPI_COMM_SELF;
+            log_debug("%s: call dspaces_lock_on_write(%s), rank=%d\n", __func__, md->fnames[i], mype);
+            dspaces_lock_on_write(md->fnames[i], &mpi_comm); // lock is global operation in DataSpaces
+
+            value[0] = md->fversions[i];
+            snprintf(ds_var_name, MAX_DS_NAMELEN, "VERSION@%s", md->fnames[i]);
             log_debug ("%s: update %s in the space [%d, %d]\n", 
                     __func__, ds_var_name, value[0], value[1] );
-            dspaces_put(ds_var_name, 0, sizeof(int),   
-                    lb[didx[0]], lb[didx[1]], lb[didx[2]], 
-                    ub[didx[0]], ub[didx[1]], ub[didx[2]],  
-                    &value); 
+            elemsize = sizeof(int); ndim = 1;
+            lb[0] = 0; ub[0] = 1;
+            gdims[0] = (ub[0]-lb[0]+1) * dspaces_get_num_space_server();
+            dspaces_define_gdim(ds_var_name, ndim, gdims);
+            dspaces_put(ds_var_name, 0, elemsize, ndim, lb, ub, &value);
             log_debug("%s: call dspaces_put_sync()\n", __func__);
             dspaces_put_sync();
+
+            log_debug("%s: call dspaces_unlock_on_write(%s), rank=%d\n", __func__, md->fnames[i], mype);
+            dspaces_unlock_on_write(md->fnames[i], &mpi_comm);
         }
-        log_debug("%s: call dspaces_unlock_on_write(%s), rank=%d\n", __func__, p->fnames[i], mype);
-        dspaces_unlock_on_write(p->fnames[i], &p->mpi_comm);
-        free (p->fnames[i]);
+        free(md->fnames[i]);
     }
 
+    if (check_read_status == 2) {
+        // Note: dspaces_lock_on_write() above is only called by single process (whose md->rank == 0). MPI_Barrier ensures all writer processes to wait until reader application fetches data of last version. 
+        MPI_Barrier(md->mpi_comm_init);
+    }
     // Free all previsouly allocated RDMA buffers
     dimes_put_sync_all();
 
@@ -965,9 +1077,9 @@ void adios_dimes_finalize (int mype, struct adios_method_struct * method)
     if (globals_adios_is_dimes_connected_from_writer() && 
             !globals_adios_is_dimes_connected_from_both())
     {
-        log_debug ("%s: call dspaces_barrier(), rank=%d\n", __func__,mype);
-        dspaces_barrier();
-        log_debug ("%s: call dspaces_finalize(), rank=%d\n", __func__,mype);
+        log_debug ("%s: call MPI Barrier on all connected processes(), rank=%d\n", __func__,mype);
+        MPI_Barrier (md->mpi_comm_init); 
+        log_debug ("%s: call dspaces_finalize(), rank=%d\n", __func__, mype);
         dspaces_finalize();
     }
     globals_adios_set_dimes_disconnected_from_writer();

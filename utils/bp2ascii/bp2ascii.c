@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/types.h>
-//#include "adios_types.h"
+#include "adios_internals.h"
 #include "adios_bp_v1.h"
 #include "adios_read.h"
 
@@ -35,12 +35,9 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header);
 int main (int argc, char ** argv)
 {
     char * filename;
-    char * var;
     char newfilename [256];
     int i = 0;
     int rc = 0;
-    uint64_t element_num = 0, element_count;
-    struct adios_bp_element_struct * element = NULL;
     struct dump_struct dump;
 
     if (argv [1][0] && argv [1][0] == '-' && argc > 3)
@@ -94,9 +91,8 @@ int main (int argc, char ** argv)
     adios_parse_version (b, &version);
 
     struct adios_index_process_group_struct_v1 * pg_root = 0;
-    struct adios_index_process_group_struct_v1 * pg = 0;
     struct adios_index_var_struct_v1 * vars_root = 0;
-    struct adios_index_attribute_struct_v1 * attrs_root = 0;
+    //struct adios_index_attribute_struct_v1 * attrs_root = 0;
 
     adios_posix_read_index_offsets (b);
     adios_parse_index_offsets_v1 (b);
@@ -118,7 +114,7 @@ int main (int argc, char ** argv)
     }
 
     uint64_t element_counts = vars_root->characteristics_count;
-    struct adios_process_group_header_struct_v1 pg_header;
+    //struct adios_process_group_header_struct_v1 pg_header;
     struct adios_var_header_struct_v1 var_header;
     struct adios_var_payload_struct_v1 var_payload;
     uint64_t offset, var_len;
@@ -163,7 +159,7 @@ int main (int argc, char ** argv)
         switch (var_header.type) {
             case adios_long_double:
                 for (j=0; j<var_header.payload_size/16;j++) 
-                    fprintf(outf, "%f ", *((long double*)var_payload.payload+j));
+                    fprintf(outf, "%Lf ", *((long double*)var_payload.payload+j));
                     break;
             case adios_double:
                 for (j=0; j<var_header.payload_size/8;j++) 
@@ -206,7 +202,7 @@ int main (int argc, char ** argv)
                     fprintf(outf, "%c ", *((char *)var_payload.payload+j));
                     break;
             case adios_string:
-                    fprintf(outf, "%s ", var_payload.payload);
+                    fprintf(outf, "%s ", (char *)var_payload.payload);
                     break;
             case adios_complex:
                 for (j=0; j<(var_header.payload_size)/8;j++) 
@@ -215,6 +211,8 @@ int main (int argc, char ** argv)
             case adios_double_complex:
                 for (j=0; j<(var_header.payload_size)/16;j++) 
                     fprintf(outf, "%f + %fi", *((double *)var_payload.payload+2*j),*((double *)var_payload.payload+j*2+1));
+                    break;
+            case adios_unknown:
                     break;
          }        
          fprintf(outf,"\n");
@@ -228,7 +226,6 @@ void print_process_group_header (uint64_t num
                       ,struct adios_process_group_header_struct_v1 * pg_header
                       )
 {
-    int i;
     struct adios_method_info_struct_v1 * m;
 
     printf ("Process Group: %llu\n", num);
@@ -267,7 +264,6 @@ void print_process_group_index (
 }
 void print_var_header (struct adios_var_header_struct_v1 * var_header)
 {
-    int i = 0;
     printf ("\t\tVar Name (ID): %s (%d)\n", var_header->name, var_header->id);
     printf ("\t\tVar Path: %s\n", var_header->path);
     printf ("\t\tDatatype: %s\n", adios_type_to_string_int (var_header->type));

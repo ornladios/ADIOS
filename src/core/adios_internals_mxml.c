@@ -22,6 +22,8 @@
 #include "core/buffer.h"
 #include "core/adios_logger.h"
 #include "core/util.h" // PairStruct*
+#include "transforms/adios_transforms_hooks_write.h"
+#include "transforms/adios_transforms_write.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"
@@ -157,7 +159,7 @@ static enum ADIOS_FLAG parseFlag (const char * attr_name, const char * flag
     return adios_flag_unknown;
 }
 
-
+/*
 static void adios_append_mesh_item (struct adios_mesh_item_list_struct ** root
         ,struct adios_mesh_item_list_struct * item
         )
@@ -175,7 +177,8 @@ static void adios_append_mesh_item (struct adios_mesh_item_list_struct ** root
         }
     }
 }
-
+*/
+/*
 static void adios_append_mesh_var (struct adios_mesh_var_list_struct ** root
         ,struct adios_mesh_var_list_struct * var
         )
@@ -193,7 +196,8 @@ static void adios_append_mesh_var (struct adios_mesh_var_list_struct ** root
         }
     }
 }
-
+*/
+/*
 static void adios_append_mesh_cell_list
 (struct adios_mesh_cell_list_list_struct ** root
  ,struct adios_mesh_cell_list_list_struct * cell_list
@@ -212,6 +216,7 @@ static void adios_append_mesh_cell_list
         }
     }
 }
+*/
 
 // primary mesh XML parsing
 int parseMeshUniform (mxml_node_t * node
@@ -354,12 +359,17 @@ int parseMeshUniform (mxml_node_t * node
                         if (!adios_define_mesh_uniform_maximums (value, new_group, name))
                             return 0;
                     } else
-                    {
-                        if (!strncmp (n->value.element.name, "!--", 3)) // a comment
+                        if (!strcasecmp (n->value.element.name, "nspace"))
                         {
-                            continue;
+                            const char * value;
+                            value = mxmlElementGetAttr (n, "value");
+                            adios_define_mesh_nspace (value, new_group, name);
+                        } else {
+                            if (!strncmp (n->value.element.name, "!--", 3)) // a comment
+                            {
+                                continue;
+                            }
                         }
-                    }
     }
 
     return 1;
@@ -473,12 +483,18 @@ int parseMeshRectilinear1 (mxml_node_t * node
                     if (!adios_define_mesh_rectilinear_coordinatesSingleVar(value, new_group, name))
                         return 0;
                 } else
-                {
-                    if (!strncmp (n->value.element.name, "!--", 3)) // a comment
+                    if (!strcasecmp (n->value.element.name, "nspace"))
                     {
-                        continue;
+                        const char * value;
+                        value = mxmlElementGetAttr (n, "value");
+                        adios_define_mesh_nspace (value, new_group, name);
+                    } else
+                    {
+                        if (!strncmp (n->value.element.name, "!--", 3)) // a comment
+                        {
+                            continue;
+                        }
                     }
-                }
     }
 
     if (!saw_dimensions)
@@ -540,19 +556,19 @@ int parseMeshStructured1 (mxml_node_t * node
 
             saw_nspace = 1;
             value = mxmlElementGetAttr (n, "value");
+            adios_define_mesh_nspace (value, new_group, name);
+//            if (!value)
+//            {
+//                log_warn ("config.xml: value attribute on "
+//                        "nspace required (%s)\n"
+//                        ,name
+//                        );
+//
+//                return 0;
+//            }
 
-            if (!value)
-            {
-                log_warn ("config.xml: value attribute on "
-                        "nspace required (%s)\n"
-                        ,name
-                        );
-
-                return 0;
-            }
-
-            if (!adios_define_mesh_structured_nspace (value, new_group, name))
-                return 0;
+//            if (!adios_define_mesh_structured_nspace (value, new_group, name))
+//                return 0;
         } else
             if (!strcasecmp (n->value.element.name, "dimensions"))
             {
@@ -680,7 +696,6 @@ int parseMeshUnstructured1 (mxml_node_t * node
         )
 {
     mxml_node_t * n;
-    int saw_points = 0;
     int saw_nspace =0;
     int saw_number_of_points = 0;
     int saw_points_multi_var = 0;
@@ -713,19 +728,20 @@ int parseMeshUnstructured1 (mxml_node_t * node
 
             saw_nspace = 1;
             value = mxmlElementGetAttr (n, "value");
+            adios_define_mesh_nspace (value, new_group, name);
 
-            if (!value)
-            {
-                log_warn ("config.xml: value attribute on "
-                        "nspace required (%s)\n"
-                        ,name
-                        );
+//            if (!value)
+//            {
+//                log_warn ("config.xml: value attribute on "
+//                        "nspace required (%s)\n"
+//                        ,name
+//                        );
+//
+//                return 0;
+//            }
 
-                return 0;
-            }
-
-            if (!adios_define_mesh_unstructured_nspace (value, new_group, name))
-                return 0;
+//            if (!adios_define_mesh_unstructured_nspace (value, new_group, name))
+//                return 0;
         }else
             if (!strcasecmp (n->value.element.name, "number-of-points"))
             {
@@ -940,6 +956,7 @@ int parseMeshUnstructured1 (mxml_node_t * node
     return 1;
 }
 
+/*
 static int validatePath (const struct adios_var_struct * vars
         ,const char * test_path
         )
@@ -1020,6 +1037,7 @@ static int validatePath (const struct adios_var_struct * vars
 
     return 0;
 }
+*/
 
 static int parseGroup (mxml_node_t * node, char * schema_version)
 {
@@ -1129,7 +1147,7 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
             );
     new_group = (struct adios_group_struct *)ptr_new_group;
 
-   adios_define_schema_version(new_group, schema_version);
+   adios_common_define_schema_version(new_group, schema_version);
     for (n = mxmlWalkNext (node, node, MXML_DESCEND)
             ;n
             ;n = mxmlWalkNext (n, node, MXML_NO_DESCEND)
@@ -1222,58 +1240,53 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
 
             // fix the bgp bugs
             //            if (!adios_common_define_var (*(int64_t *) &new_group, name
-            if (!adios_common_define_var (ptr_new_group, name
+            int64_t var = adios_common_define_var (ptr_new_group, name
                         ,path, t1, dimensions
                         ,gb_global_dimensions
                         ,gb_local_offsets
-                                         ,transform_type // NCSU ALACRITY-ADIOS
-                        )
-               )
+                        );
+            if (!var)
             {
                 return 0;
             }else{
                 // Successfully define a variable, so now
+                // an attribute for the transform method if given.
+                if (transform_type && strcmp(transform_type,"")) {
+                    adios_common_set_transform (var, transform_type);
+                }
                 // an attribute for the mesh if it exists.
                 if (strcmp(mesh,"")){
-                    mpath1 = malloc(strlen("/adios_schema")+strlen(name)+1);
-                    strcpy(mpath1,name);
-                    strcat(mpath1,"/adios_schema");
-                    adios_common_define_attribute (ptr_new_group,mpath1,path,adios_string,mesh,"");
+                    adios_common_define_var_mesh (ptr_new_group, name, mesh, path);
                 }
                 // an attribute for the center if it exists.
                 if (strcmp(center,"")){
-                    mpath2 = malloc(strlen("/adios_schema/centering")+strlen(name)+1);
-                    strcpy(mpath2,name);
-                    strcat(mpath2,"/adios_schema/centering");
-                    adios_common_define_attribute (ptr_new_group,mpath2,path,adios_string,center,"");
+                    adios_common_define_var_centering (ptr_new_group, name, center, path);
                 }
                 // if a time attribute exists
                 // parse it and define it
                 if (strcmp(tsteps,"")){
-                    adios_define_var_timesteps(tsteps,new_group,name,path);
+                    adios_common_define_var_timesteps(tsteps,new_group,name,path);
                 }
                 // if a time scale attribute exists
                 // parse it and define it
                 if (strcmp(tscale,"")){
-                    adios_define_var_timescale(tscale,new_group,name,path);
+                    adios_common_define_var_timescale(tscale,new_group,name,path);
                 }
                 // if a time series format attribute exists
                 // parse it and define it
                 if (strcmp(tformat,"")){
-                    adios_define_var_timeseriesformat(tformat,new_group,name,path);
+                    adios_common_define_var_timeseriesformat(tformat,new_group,name,path);
                 }
                 // if a hyperslab attribute exists
                 // parse it and define it
                 if (strcmp(hyperslab,"")){
-                    adios_define_var_hyperslab(hyperslab,new_group,name,path);
+                    adios_common_define_var_hyperslab(hyperslab,new_group,name,path);
                 }
             }
         } else
             if (!strcasecmp (n->value.element.name, "global-bounds"))
             {
                 mxml_node_t * n1;   // used for global_bounds
-                struct adios_global_bounds_struct * new_global_bounds = 0;
-
                 const char * dimensions = 0;
                 const char * dimension = 0;
                 const char * global_dimensions = 0;
@@ -1416,51 +1429,47 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                             parseFlag ("read", read_flag, adios_flag_no);
                         // fix the bgp bugs
                         //                    if (!adios_common_define_var (*(int64_t *) &new_group
-                        if (!adios_common_define_var (ptr_new_group
-                                    ,name
-                                    ,path, t1, dimensions
-                                    ,gb_global_dimensions
-                                    ,gb_local_offsets
-                                                 ,transform_type // NCSU ALACRITY-ADIOS
-                                    )
-                           )
+                        int64_t var = adios_common_define_var (ptr_new_group, name
+                                ,path, t1, dimensions
+                                ,gb_global_dimensions
+                                ,gb_local_offsets
+                                );
+                        if (!var)
                         {
                             return 0;
                         }else{
                             // Successfully define a variable, so now
+                            // an attribute for the transform method if given.
+                            if (transform_type && strcmp(transform_type,"")) {
+                                adios_common_set_transform (var, transform_type);
+                            }
                             // an attribute for the mesh if it exists.
                             if (strcmp(mesh,"")){
-                                mpath1 = malloc(strlen("/adios_schema")+strlen(name)+1);
-                                strcpy(mpath1,name);
-                                strcat(mpath1,"/adios_schema");
-                                adios_common_define_attribute (ptr_new_group,mpath1,path,adios_string,mesh,"");
+                                adios_common_define_var_mesh (ptr_new_group, name, mesh, path);
                             }
                             // an attribute for the mesh if it exists.
                             if (strcmp(center,"")){
-                                mpath2 = malloc(strlen("/adios_schema/centering")+strlen(name)+1);
-                                strcpy(mpath2,name);
-                                strcat(mpath2,"/adios_schema/centering");
-                                adios_common_define_attribute (ptr_new_group,mpath2,path,adios_string,center,"");
+                                adios_common_define_var_centering (ptr_new_group, name, center, path);
                             }
                             // if a time attribute exists
                             // parse it and define it
                             if (strcmp(tsteps,"")){
-                                adios_define_var_timesteps(tsteps,new_group,name,path);
+                                adios_common_define_var_timesteps(tsteps,new_group,name,path);
                             }
                             // if a time scale attribute exists
                             // parse it and define it
                             if (strcmp(tscale,"")){
-                                adios_define_var_timescale(tscale,new_group,name,path);
+                                adios_common_define_var_timescale(tscale,new_group,name,path);
                             }
                             // if a time series format attribute exists
                             // parse it and define it
                             if (strcmp(tformat,"")){
-                                adios_define_var_timeseriesformat(tformat,new_group,name,path);
+                                adios_common_define_var_timeseriesformat(tformat,new_group,name,path);
                             }
                             // if a hyperslab attribute exists
                             // parse it and define it
                             if (strcmp(hyperslab,"")){
-                                adios_define_var_hyperslab(hyperslab,new_group,name,path);
+                                adios_common_define_var_hyperslab(hyperslab,new_group,name,path);
                             }
                         }
                     } else
@@ -1571,6 +1580,7 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                     const char * time_scale;
                     const char * time_format;
                     const char * mesh_file;
+                    const char * mesh_ref;
                     const char * mesh_group;
                     int t_varying;
                     const char * name;
@@ -1622,17 +1632,22 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                     // Define attribute for the type and time varying characteristics
                     adios_common_define_attribute (ptr_new_group,meshtype,"/",adios_string,type,"");
                     adios_common_define_attribute (ptr_new_group,meshtime,"/",adios_string,time_varying,"");
-                    adios_define_mesh_timeSteps(time_steps, new_group, name);
-                    adios_define_mesh_timeScale(time_scale, new_group, name);
-                    adios_define_mesh_timeSeriesFormat(time_format, new_group, name);
+                    adios_common_define_mesh_timeSteps(time_steps, new_group, name);
+                    adios_common_define_mesh_timeScale(time_scale, new_group, name);
+                    adios_common_define_mesh_timeSeriesFormat(time_format, new_group, name);
                     // Only parse mesh if the variables are in this file
                     // otherwise simply point the mesh file
                     mesh_file = mxmlElementGetAttr(n, "file");
-                    mesh_group = mxmlElementGetAttr(n, "group");
-
                     if (mesh_file)
                         adios_common_define_attribute (ptr_new_group,meshfile,"/",adios_string,mesh_file,"");
+                    else
+                    {
+                        mesh_ref = mxmlElementGetAttr(n, "ref");
+                        if (mesh_ref)
+                            adios_common_define_attribute (ptr_new_group,meshfile,"/",adios_string,mesh_ref,"");
+                    }
 
+                    mesh_group = mxmlElementGetAttr(n, "group");
                     if (mesh_group)
                         adios_common_define_attribute (ptr_new_group,meshgroup,"/",adios_string,mesh_group,"");
 
@@ -1723,8 +1738,6 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
 
 static int parseAnalysis (mxml_node_t * node)
 {
-    mxml_node_t * n;
-
     const char * group = 0;
     const char * var = 0;
     const char * bin_intervals = 0;
@@ -1971,6 +1984,30 @@ static int parseBuffer (mxml_node_t * node)
     return 1;
 }
 
+
+void PRINT_MXML_NODE (mxml_node_t *root)
+{
+    if (!root)
+    {
+        log_debug("MXML root=NULL\n");
+    }
+    else if (root->type == MXML_ELEMENT) 
+    {
+        log_debug("MXML ELEMENT root=%p, name=[%s] parent=%p\n",
+                root, root->value.element.name, root->parent);
+    } 
+    else if (root->type == MXML_TEXT) 
+    {
+        log_debug("MXML TEXT root=%p, text=[%s] parent=%p\n",
+                root, root->value.text.string, root->parent);
+    } 
+    else 
+    {
+        log_debug("MXML Type=%d root=%p, parent=%p\n",
+                root->type, root, root->parent);
+    }
+}
+
 int adios_parse_config (const char * config, MPI_Comm comm)
 {
     FILE * fp = 0;
@@ -2069,60 +2106,18 @@ int adios_parse_config (const char * config, MPI_Comm comm)
     }
 
     root = doc;
+    PRINT_MXML_NODE(root);
 
-    while (root && root->type != MXML_ELEMENT)
-    {
-        root = mxmlWalkNext (root, doc, MXML_DESCEND);
-    }
-
-    while (!strncmp (root->value.element.name, "!--", 3))
-    {
-        root = mxmlWalkNext (root, doc, MXML_NO_DESCEND);
-        root = mxmlWalkNext (root, doc, MXML_NO_DESCEND);
-    }
-
-    if (strcasecmp (root->value.element.name, "adios-config"))
-    {
-        if (strncmp (root->value.element.name, "?xml", 4))
-        {
-            adios_error (err_invalid_xml_doc, "config.xml: invalid root xml element: %s\n"
-                    ,root->value.element.name
-                    );
-
-            mxmlRelease (doc);
-
-            return 0;
-        }
-        else
-        {
-            while (!strncmp (root->value.element.name, "!--", 3))
-            {
-                root = mxmlWalkNext (root, doc, MXML_NO_DESCEND);
-            }
-
-            root = mxmlWalkNext (root, doc, MXML_DESCEND);  // skip ver num
-            root = mxmlWalkNext (root, doc, MXML_NO_DESCEND);  // get next
-            while (!strncmp (root->value.element.name, "!--", 3))
-            {
-                root = mxmlWalkNext (root, doc, MXML_NO_DESCEND);
-                root = mxmlWalkNext (root, doc, MXML_NO_DESCEND);
-            }
-        }
-    }
-    else
-    {
-        //printf ("it is adios-config\n");
+    if (strcasecmp (root->value.element.name, "adios-config")) {
+        root = mxmlFindElement (doc, doc, "adios-config", NULL, NULL, MXML_DESCEND);
+        PRINT_MXML_NODE(root);
     }
 
 
-    if (strcasecmp (root->value.element.name, "adios-config"))
+    if (!root || !root->value.element.name || strcasecmp (root->value.element.name, "adios-config"))
     {
-        adios_error (err_invalid_xml_doc, "config.xml: invalid root xml element: %s\n"
-                ,root->value.element.name
-                );
-
+        adios_error (err_invalid_xml_doc, "config.xml: did not find adios-config xml element\n");
         mxmlRelease (doc);
-
         return 0;
     }
     else

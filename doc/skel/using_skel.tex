@@ -1,4 +1,22 @@
 \chapter{Using Skel}
+
+\section{Requirements}
+Skel is bundled with ADIOS, and thus requires a system capable of building ADIOS on. In addition there are a couple of extra python packages that may be required to use all of the features of skel. 
+
+Skel has been tested to work with Python 2.7. Other versions of python may or may not work.
+
+You will need Cheetah, which is free and open source software. Instructions for installing
+Cheetah may be found here: www.cheetahtemplate.org/docs/users\_guide\_html/users\_guide.html
+This version of Skel has been tested with version 2.4.4 of Cheetah.
+
+You will also need the PyYAML package. Instructions for downloading and installing 
+PyYAML may be found here: http://pyyaml.org/wiki/PyYAML. This version of Skel has been
+tested with version 3.10 of PyYaml.
+
+On Linux systems, you may be able to find these packages in your package manager's library,
+which may simplify the installation process. 
+
+
 \section{Overview of Manual Benchmark Creation}
 Figure \ref{fig:overview}  shows the typical workflow of using skel to create a skeletal I/O 
 benchmark. The example uses the GTS application, and thus the workflow begins

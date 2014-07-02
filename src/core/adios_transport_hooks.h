@@ -49,10 +49,6 @@ void adios_##a##_end_iteration (struct adios_method_struct * method) {} \
 void adios_##a##_start_calculation (struct adios_method_struct * method) {} \
 void adios_##a##_stop_calculation (struct adios_method_struct * method) {}
 
-//#ifdef ADIOS_EMPTY_TRANSPORTS
-// this is defined in the lint program to get empty implementations
-//#define FORWARD_DECLARE(a) FORWARD_DECLARE_EMPTY(a) \
-//#else
 #define FORWARD_DECLARE(a) \
 void adios_##a##_init (const PairStruct * parameters \
                       ,struct adios_method_struct * method \
@@ -173,7 +169,7 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
 FORWARD_DECLARE(dataspaces)
 #endif
 
-#if HAVE_DIMES
+#if defined(HAVE_DIMES) && !defined(ADIOS_EMPTY_TRANSPORTS) 
 FORWARD_DECLARE(dimes)
 #endif
 

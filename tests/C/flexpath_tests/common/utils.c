@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <string.h>
+#include <ctype.h>
 
 #include "misc.h"
 #include "utils.h"
@@ -171,7 +172,6 @@ diag_t gen_1D_array_int(int *p_arr, int arr_len, int rank){
 diag_t get_options(struct adios_tsprt_opts * p_tsprt_opts, int argc, char ** argv, int *p_show_help){
 
 	diag_t diag = DIAG_OK;
-	int tsprt_flag = 0;
 	int c;
 	char *cvalue = NULL;
 	int i = 0;

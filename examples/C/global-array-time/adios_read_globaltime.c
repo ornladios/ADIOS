@@ -16,7 +16,6 @@
 
 int main (int argc, char ** argv) 
 {
-    char        filename [256];
     int         rank, size, i, j, k, token;
     MPI_Comm    comm = MPI_COMM_WORLD;
     MPI_Status  status;
@@ -71,7 +70,7 @@ int main (int argc, char ** argv)
         MPI_Recv (&token, 1, MPI_INT, rank-1, 0, comm, &status);
     }
 
-    printf("------------------------------------------------\n", rank);
+    printf("------------------------------------------------\n");
     printf("rank=%d: \n", rank);
     for (i = 0; i < 2; i++) {
         printf ("step %lld = [\n", step+i);   

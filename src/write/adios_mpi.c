@@ -543,7 +543,6 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                                         ,struct adios_method_struct * method
                                         )
 {
-    int i;
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                       method->method_data;
     char * name;
@@ -1032,7 +1031,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
             char * buf_ptr = fd->buffer;
             while (total_written < fd->bytes_written)
             {
-                write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
+                write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
                 err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
                 MPI_Get_count(&md->status, MPI_BYTE, &count);
                 if (count != write_len)
@@ -1065,7 +1064,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
         MPI_Get_count (&md->status, MPI_BYTE, &count);
         if (count != fd->bytes_written)
         {
-            log_warn ("a:MPI method tried to write %llu, only wrote %llu\n",
+            log_warn ("a:MPI method tried to write %llu, only wrote %d\n",
                       fd->bytes_written, count);
         }
         fd->base_offset += count;
@@ -1135,7 +1134,7 @@ void adios_mpi_write (struct adios_file_struct * fd
             char * buf_ptr = fd->buffer;
             while (total_written < fd->bytes_written)
             {
-                write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
+                write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
                 err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
                 MPI_Get_count(&md->status, MPI_BYTE, &count);
                 if (count != write_len)
@@ -1176,7 +1175,7 @@ void adios_mpi_write (struct adios_file_struct * fd
 
         // write payload
         // adios_write_var_payload_v1 (fd, v);
-        uint64_t var_size = adios_get_var_size (v, fd->group, v->data);
+        uint64_t var_size = adios_get_var_size (v, v->data);
 
         if (fd->base_offset + var_size > fd->pg_start_in_file + fd->write_size_bytes)
             adios_error (err_out_of_bound, 
@@ -1197,7 +1196,7 @@ void adios_mpi_write (struct adios_file_struct * fd
             char * buf_ptr = v->data;
             while (total_written < var_size)
             {
-                write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
+                write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
                 err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
                 MPI_Get_count(&md->status, MPI_BYTE, &count);
                 if (count != write_len)
@@ -1327,12 +1326,6 @@ static void adios_mpi_do_read (struct adios_file_struct * fd
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                       method->method_data;
     struct adios_var_struct * v = fd->group->vars;
-
-    struct adios_parse_buffer_struct data;
-
-    data.vars = v;
-    data.buffer = 0;
-    data.buffer_len = 0;
 
     uint32_t version = md->b.version & ADIOS_VERSION_NUM_MASK;
     switch (version)
@@ -1494,7 +1487,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                     char * buf_ptr = fd->buffer;
                     while (total_written < md->vars_header_size)
                     {
-                        write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
+                        write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
                         err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
                         MPI_Get_count(&md->status, MPI_BYTE, &count);
                         if (count != write_len)
@@ -1567,7 +1560,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                             char * buf_ptr = fd->buffer;
                             while (total_written < fd->bytes_written)
                             {
-                                write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
+                                write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
                                 err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
                                 MPI_Get_count(&md->status, MPI_BYTE, &count);
                                 if (count != write_len)
@@ -1629,7 +1622,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                     char * buf_ptr = fd->buffer;
                     while (total_written < md->vars_header_size)
                     {
-                        write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
+                        write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
                         err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
                         MPI_Get_count(&md->status, MPI_BYTE, &count);
                         if (count != write_len)
@@ -1758,12 +1751,12 @@ void adios_mpi_close (struct adios_file_struct * fd
             if (fd->shared_buffer == adios_flag_yes)
             {
                 // if we need to write > 2 GB, need to do it in parts
-                // since count is limited to INT32_MAX (signed 32-bit max).
+                // since count is limited to MAX_MPIWRITE_SIZE (signed 32-bit max).
                 uint64_t bytes_written = 0;
                 int32_t to_write = 0;
-                if (fd->bytes_written > INT32_MAX)
+                if (fd->bytes_written > MAX_MPIWRITE_SIZE)
                 {
-                    to_write = INT32_MAX;
+                    to_write = MAX_MPIWRITE_SIZE;
                 }
                 else
                 {
@@ -1807,9 +1800,9 @@ void adios_mpi_close (struct adios_file_struct * fd
                     bytes_written += to_write;
                     if (fd->bytes_written > bytes_written)
                     {
-                        if (fd->bytes_written - bytes_written > INT32_MAX)
+                        if (fd->bytes_written - bytes_written > MAX_MPIWRITE_SIZE)
                         {
-                            to_write = INT32_MAX;
+                            to_write = MAX_MPIWRITE_SIZE;
                         }
                         else
                         {
@@ -1839,7 +1832,7 @@ void adios_mpi_close (struct adios_file_struct * fd
                     char * buf_ptr = buffer;
                     while (total_written < buffer_offset)
                     {
-                        write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
+                        write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
 #if COLLECT_METRICS
 struct timeval a, b;
 gettimeofday (&a, NULL);
@@ -1929,7 +1922,7 @@ timeval_subtract (&timing.t8, &b, &a);
                     char * buf_ptr = fd->buffer;
                     while (total_written < md->vars_header_size)
                     {
-                        write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
+                        write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
                         err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
                         MPI_Get_count(&md->status, MPI_BYTE, &count);
                         if (count != write_len)
@@ -2002,7 +1995,7 @@ timeval_subtract (&timing.t8, &b, &a);
                             char * buf_ptr = fd->buffer;
                             while (total_written < fd->bytes_written)
                             {
-                                write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
+                                write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
                                 err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
                                 MPI_Get_count(&md->status, MPI_BYTE, &count);
                                 if (count != write_len)
@@ -2064,7 +2057,7 @@ timeval_subtract (&timing.t8, &b, &a);
                     char * buf_ptr = fd->buffer;
                     while (total_written < md->vars_header_size)
                     {
-                        write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
+                        write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
                         err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
                         MPI_Get_count(&md->status, MPI_BYTE, &count);
                         if (count != write_len)
@@ -2212,7 +2205,7 @@ timeval_subtract (&timing.t8, &b, &a);
                     char * buf_ptr = fd->buffer;
                     while (total_written < fd->bytes_written)
                     {
-                        write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
+                        write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
                         err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
                         MPI_Get_count(&md->status, MPI_BYTE, &count);
                         if (count != write_len)
@@ -2259,7 +2252,7 @@ timeval_subtract (&timing.t8, &b, &a);
                     char * buf_ptr = buffer;
                     while (total_written < buffer_offset)
                     {
-                        write_len = (to_write > INT32_MAX) ? INT32_MAX : to_write;
+                        write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
                         err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
                         MPI_Get_count(&md->status, MPI_BYTE, &count);
                         if (count != write_len)

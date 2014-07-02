@@ -1,6 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/time.h>
+
 #include "mpi.h"
 #include "adios.h"
 
@@ -55,10 +57,10 @@ int main (int argc, char ** argv)
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &nproc);
 
-    double t1 = 0.0;
-    double t2 = 0.0;
-    double t3 = 0.0;
-    double t4 = 0.0;
+    //double t1 = 0.0;
+    //double t2 = 0.0;
+    //double t3 = 0.0;
+    //double t4 = 0.0;
 
     // variable dimensions
     int gndx = DIM_GLOBAL;
@@ -91,7 +93,6 @@ int main (int argc, char ** argv)
     int offy = posy * ndy;
     int offz = posz * ndz;
 
-    int timesteps = 0;
 
     srand(0); // all procs generate the same random datasets
 
@@ -101,16 +102,15 @@ int main (int argc, char ** argv)
         double_xyz[i] = (double) rand () / RAND_MAX;
     }
 
-    int adios_err;
     uint64_t adios_groupsize, adios_totalsize;
     int64_t adios_handle;
 
-    if(rank == 0)
-        t3 = dclock();
+    //if(rank == 0)
+    //    t3 = dclock();
 
     MPI_Barrier(comm);
 
-    t1 = dclock();
+    //t1 = dclock();
 
     adios_init (xml_file_name, comm);
     adios_open (&adios_handle, GROUP_NAME, bp_file_name, "w", comm);

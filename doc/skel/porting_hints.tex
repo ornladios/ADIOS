@@ -30,3 +30,14 @@ it with the desired submit target name. Then, adjust the submission syntax
 so that the generated files work properly with the submission mechanism on
 your system. Once again, if you run into trouble with this, please contact us as
 described above.
+
+\section{Cheetah templates}
+We are in the process of modifying the code generation system to use Cheetah. Cheetah
+provides a powerful and flexible template language that simplifies code generation for more
+complicated scenarios, and will make creating new generators less tedious. Currently only
+the {\tt skel replay} subcommand uses Cheetah, but future releases should shift completely
+to Cheetah. Cheetah templates are included in the same directory with the skel templates,
+but use the .tmpl extension. For information about the syntax supported by Cheetah, see the
+Cheetah website: http://www.cheetahtemplate.org/
+
+

@@ -1,0 +1,13 @@
+#!/bin/bash
+
+source /etc/profile.d/modules.sh
+module unload PE-intel PE-pgi PE-gnu
+module load PE-pgi
+module load vampirtrace
+module load hdf5-parallel szip
+module load adios/1.6.0
+#export ADIOSMETHOD_PARAMS="num_aggregators=1;num_ost=10;verbose=4"
+#export ADIOSMETHOD=MPI_AGGREGATE
+echo "Build command: make"
+echo "Run command: mpirun -np 4 ./writer_adios 1 10 100 20 100 100"
+
