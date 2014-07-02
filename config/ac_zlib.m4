@@ -12,8 +12,9 @@ dnl     #ifdef ZLIB
 dnl     #include "zlib.h"
 dnl     #endif
 dnl
-dnl @version 1.0
+dnl @version 2.0
 dnl @author Zhenhuan (Steve) Gong
+dnl @author Norbert Podhorszki
 dnl
 AC_DEFUN([AC_ZLIB],[
 
@@ -23,10 +24,7 @@ AM_CONDITIONAL(HAVE_ZLIB,true)
 
 AC_ARG_WITH(zlib,
         [  --with-zlib=DIR      Location of ZLIB library],
-        [ZLIB_LDFLAGS="-L$withval/lib -L$withval/lib64";
-         ZLIB_LIBS="-lz";
-         ZLIB_CPPFLAGS="-I$withval/include";],
-        [with_zlib=no])
+        [:], [with_zlib=no])
 
 if test "x$with_zlib" == "xno"; then
 
@@ -37,21 +35,66 @@ else
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
+
+    if test "x$with_zlib" == "xyes"; then
+        dnl No path given
+        ZLIB_CPPFLAGS=""
+        ZLIB_LDFLAGS=""
+        ZLIB_LIBS="-lz"
+    else
+        dnl Path given, first try path/lib64
+        ZLIB_CPPFLAGS="-I$withval/include"
+        ZLIB_LDFLAGS="-L$withval/lib64"
+        ZLIB_LIBS="-lz"
+    fi
+
     LIBS="$LIBS $ZLIB_LIBS"
     LDFLAGS="$LDFLAGS $ZLIB_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $ZLIB_CPPFLAGS"
 
-    if test -z "${HAVE_ZLIB_TRUE}"; then
-           AC_CHECK_HEADERS(zlib.h,
-                   ,
-                   [AM_CONDITIONAL(HAVE_ZLIB,false)])
-    fi
+    dnl Find header file first
+    AC_CHECK_HEADERS(zlib.h,
+              ,
+              [AM_CONDITIONAL(HAVE_ZLIB,false)])
 
-    # Check for the ZLIB library and headers
-    dnl AC_TRY_COMPILE([struct obd_uuid {char uuid[40];};int fd, num_ost;struct obd_uuid uuids[1024];],
-    dnl        [llapi_lov_get_uuids(fd, uuids, &num_ost);],
-    dnl        [ZLIB_LIBS="-lz"],
-    dnl        [AM_CONDITIONAL(HAVE_ZLIB,false)])
+    if test -z "${HAVE_ZLIB_TRUE}"; then
+        dnl Try to link an example now
+        AC_MSG_CHECKING([if zlib code can be linked with $ZLIB_LDFLAGS])
+        AC_TRY_LINK(
+            [#include <stdlib.h>
+             #include "zlib.h"],
+            [Bytef* in, *out;
+             uLongf in_len, *out_len;
+             int level = 5;
+             int zerr = compress2 (out, out_len, in, in_len, level);
+             return (zerr != Z_OK);],
+            [AC_MSG_RESULT(yes)],
+            [AM_CONDITIONAL(HAVE_ZLIB,false)
+             AC_MSG_RESULT(no)
+            ])
+            
+        dnl If linking above failed, one reason might be that we looked in lib64/
+        dnl instead of lib/
+        if test -z "${HAVE_ZLIB_FALSE}"; then
+            if test "x$with_lustre" != "xyes"; then
+            ZLIB_LDFLAGS="-L$withval/lib"
+            LDFLAGS="$LDFLAGS $ZLIB_LDFLAGS"
+            AC_MSG_CHECKING([if zlib code can be linked with $ZLIB_LDFLAGS])
+            AC_TRY_LINK(
+                [#include <stdlib.h>
+                 #include "zlib.h"],
+                [Bytef* in, *out;
+                 uLongf in_len, *out_len;
+                 int level = 5;
+                 int zerr = compress2 (out, out_len, in, in_len, level);
+                 return (zerr != Z_OK);],
+                [AC_MSG_RESULT(yes)],
+                [AM_CONDITIONAL(HAVE_ZLIB,false)
+                 AC_MSG_RESULT(no)
+                ])
+            fi
+        fi
+    fi
 
     LIBS="$save_LIBS"
     LDFLAGS="$save_LDFLAGS"

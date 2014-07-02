@@ -711,7 +711,6 @@ add_subdirectory(write)
 
 install(FILES ${PROJECT_BINARY_DIR}/src/libadiosread.a
               ${PROJECT_BINARY_DIR}/src/libadiosread_nompi.a
-              ${PROJECT_BINARY_DIR}/src/libadios_internal_nompi.a
         DESTINATION ${libdir})
 if(BUILD_FORTRAN)
     install(FILES ${PROJECT_BINARY_DIR}/src/libadiosreadf.a

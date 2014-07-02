@@ -1269,7 +1269,7 @@ set(PACKAGE adios)
 set(VERSION_MAJOR 1)
 
 # Minor version number
-set(VERSION_MINOR 6)
+set(VERSION_MINOR 7)
 
 # Micro version number
 set(VERSION_MICRO 0)
