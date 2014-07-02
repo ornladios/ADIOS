@@ -448,7 +448,7 @@ adios_read_icee_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_sec)
         head->item = next;
         adiosfile->fh = (uint64_t) next;
 
-        icee_fileinfo_free(fp);
+        //icee_fileinfo_free(fp);
     }
     else
         adios_error (err_step_notready, 
