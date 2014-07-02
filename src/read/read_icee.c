@@ -57,6 +57,11 @@
 
 #define MYFREE(var) free(var); var = NULL;
 
+#define MYMIN(a,b)               \
+    ({ __typeof__ (a) _a = (a);  \
+        __typeof__ (b) _b = (b); \
+        _a < _b ? _a : _b; })
+
 ///////////////////////////
 // Global Variables
 ///////////////////////////
@@ -202,6 +207,83 @@ void icee_varinfo_copy(icee_varinfo_rec_ptr_t dest, const icee_varinfo_rec_ptr_t
     memcpy(dest->data, src->data, src->varlen);
 
     dest->next = NULL;
+}
+
+double dsum(const int len, const double* data)
+{
+    double s = 0.0;
+    int i;
+    for (i=0; i<len; i++)
+        s += data[i];
+
+    return s;
+}
+
+void icee_data_print(const int type, const uint64_t varlen, const char* data)
+{
+    switch (type)
+    {
+    case 6: // double
+        fprintf(stderr, "%10s : %p\n", "*data", data);
+        if (data)
+        {
+            fprintf(stderr, "%10s : %g,%g,%g,...\n", "data", 
+                    ((double*)data)[0], ((double*)data)[1], ((double*)data)[2]);
+            fprintf(stderr, "%10s : %g\n", "sum", dsum(varlen/8, (double*)data));
+        }
+        break;
+    }
+}
+
+void icee_dims_print(const char* name, const int ndims, const uint64_t *dims)
+{
+    
+    switch (ndims)
+    {
+    case 0:
+        fprintf(stderr, "%10s : none\n", name);
+        break;
+    case 1:
+        fprintf(stderr, "%10s : %llu\n", name, dims[0]);
+        break;
+    case 2:
+        fprintf(stderr, "%10s : %llu,%llu\n", 
+                name, dims[0], dims[1]);
+        break;
+    case 3:
+        fprintf(stderr, "%10s : %llu,%llu,%llu\n", 
+                name, dims[0], dims[1], dims[2]);
+        break;
+    default:
+        fprintf(stderr, "%10s : %llu,%llu,%llu,...\n", 
+                name, dims[0], dims[1], dims[2]);
+        break;
+    }
+}
+
+void icee_varinfo_print(const icee_varinfo_rec_ptr_t vp)
+{
+    int i;
+
+    fprintf(stderr, "===== varinfo (%p) =====\n", vp);
+
+    if (vp)
+    {
+        fprintf(stderr, "%10s : %s\n", "varname", vp->varname);
+        fprintf(stderr, "%10s : %d\n", "varid", vp->varid);
+        fprintf(stderr, "%10s : %d\n", "type", vp->type);
+        fprintf(stderr, "%10s : %d\n", "typesize", vp->typesize);
+        fprintf(stderr, "%10s : %d\n", "ndims", vp->ndims);
+        icee_dims_print("gdims", vp->ndims, vp->gdims);
+        icee_dims_print("ldims", vp->ndims, vp->ldims);
+        icee_dims_print("offsets", vp->ndims, vp->offsets);
+        fprintf(stderr, "%10s : %llu\n", "varlen", vp->varlen);
+        icee_data_print(vp->type, vp->varlen, vp->data);
+    }
+    else
+    {
+        fprintf(stderr, "varinfo is invalid\n");
+    }
 }
 
 static int
@@ -540,6 +622,7 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
 
     icee_fileinfo_rec_ptr_t fp = (icee_fileinfo_rec_ptr_t) adiosfile->fh;
     assert(varid < fp->nvars);
+    log_warn("%s (%s)\n", __FUNCTION__, fp->fname);
 
     if(nsteps != 1){
         adios_error (err_invalid_timestep,
@@ -551,7 +634,6 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
     
     icee_varinfo_rec_ptr_t vp = NULL;
     vp = icee_varinfo_search_byname(fp->varinfo, adiosfile->var_namelist[varid]);
-    //DUMP("%s", vp->varname);
 
     if(!vp){
         adios_error(err_invalid_varid,
@@ -559,6 +641,8 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
                     varid);
         return adios_errno;
     }
+
+    icee_varinfo_print(vp);
 
     if (sel==0)
         memcpy(data, vp->data, vp->varlen);
@@ -671,14 +755,15 @@ adios_read_icee_inq_var_byid (const ADIOS_FILE * adiosfile, int varid)
     
     icee_varinfo_rec_ptr_t vp = NULL;
     vp = icee_varinfo_search_byname(fp->varinfo, adiosfile->var_namelist[varid]);
-    
+    icee_varinfo_print(vp);
+
     if (vp)
     {
         a->varid = vp->varid;
         a->type = vp->type;
         a->ndim = vp->ndims;
         a->dims = vp->ldims;
-        a->value = (void *) vp->data;
+        a->value = vp->ndims == 0? (void*) vp->data : NULL;
     }
 
     return a;
@@ -695,7 +780,7 @@ adios_read_icee_free_varinfo (ADIOS_VARINFO *adiosvar)
 
 ADIOS_TRANSINFO* 
 adios_read_icee_inq_var_transinfo(const ADIOS_FILE *gp, 
-                                      const ADIOS_VARINFO *vi)
+                                  const ADIOS_VARINFO *vi)
 {    
     log_warn("%s\n", __FUNCTION__);
     ADIOS_TRANSINFO *trans = malloc(sizeof(ADIOS_TRANSINFO));
@@ -707,8 +792,8 @@ adios_read_icee_inq_var_transinfo(const ADIOS_FILE *gp,
 
 int 
 adios_read_icee_inq_var_trans_blockinfo(const ADIOS_FILE *gp, 
-                                            const ADIOS_VARINFO *vi, 
-                                            ADIOS_TRANSINFO *ti)
+                                        const ADIOS_VARINFO *vi, 
+                                        ADIOS_TRANSINFO *ti)
 {
     log_error("No support yet: %s\n", __FUNCTION__);
     return 0;
@@ -716,7 +801,7 @@ adios_read_icee_inq_var_trans_blockinfo(const ADIOS_FILE *gp,
 
 void 
 adios_read_icee_reset_dimension_order (const ADIOS_FILE *adiosfile, 
-                                           int is_fortran)
+                                       int is_fortran)
 {
     log_error("No support yet: %s\n", __FUNCTION__);
     return;
