@@ -94,7 +94,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         --with-netcdf-libs="${SEQ_NC_CLIB}" \
         --with-nc4par=${PAR_NC_DIR} \
         --with-nc4par-libs="${PAR_NC_CLIB}" \
-        --with-zlib=/lib64 \
+        --with-zlib \
         --with-bzip2=$BZIP2_DIR \
         --with-dataspaces=$DATASPACES_DIR \
         $WITHFLEX \
