@@ -36,7 +36,7 @@ else
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
 
-    if test "x$with_bzlib" == "xyes"; then
+    if test "x$with_bzip2" == "xyes"; then
         dnl No path given
         BZIP2_CPPFLAGS=""
         BZIP2_LDFLAGS=""
