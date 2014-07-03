@@ -5,7 +5,7 @@ Example:
 $ mpiexec -n 4 python ./test_adios_mpi.py
 """
 
-import adios_mpi
+import adios_mpi as ad
 import numpy as np
 from mpi4py import MPI
 
@@ -15,24 +15,45 @@ rank = comm.Get_rank()
 size = comm.Get_size()
 
 ## Writing
-adios_mpi.init("config_mpi.xml", comm)
-fd = adios_mpi.open("temperature", "adios_test_mpi.bp", "w", comm)
+print "\n>>> Writing ... (rank = %d)\n" % rank
+
+ad.init("config_mpi.xml", comm)
+fd = ad.open("temperature", "adios_test_mpi.bp", "w", comm)
 
 NX = 10
 groupsize =  4 + 4 + 4 + 8 * 1 * NX
 t = np.array(range(NX), dtype=np.float64) + rank*NX
-adios_mpi.set_group_size(fd, groupsize)
-adios_mpi.write_int(fd, "NX", NX)
-adios_mpi.write_int(fd, "rank", rank)
-adios_mpi.write_int(fd, "size", size)
-adios_mpi.write(fd, "temperature", t)
-adios_mpi.close(fd)
+ad.set_group_size(fd, groupsize)
+ad.write_int(fd, "NX", NX)
+ad.write_int(fd, "rank", rank)
+ad.write_int(fd, "size", size)
+ad.write(fd, "temperature", t)
+ad.close(fd)
 
-adios_mpi.finalize()
+ad.finalize()
 
 ## Reading
-v = adios_mpi.readvar("adios_test_mpi.bp", "temperature")
+if rank == 0:
+    print "\n>>> Reading ...\n"
 
-assert ((t == v[rank,]).all())
+    f = ad.file("adios_test_mpi.bp", comm=MPI.COMM_SELF)
+    f.printself()
 
-print "Done."
+    v = f.var['temperature']
+    v.printself()
+
+    val = v.read()
+    print val
+    assert (int(sum(sum(val))) == (size*NX-1)*(size*NX)/2)
+    f.close()
+
+print "\n>>> Done.\n"
+
+## Testing
+if rank == 0:
+    print "\n>>> Test utility functions ...\n"
+
+    print "bpls:\n", ad.bpls('adios_test_mpi.bp')
+    print "readvar:\n", ad.readvar("adios_test_mpi.bp", "temperature")
+
+    print "\n>>> Done.\n"

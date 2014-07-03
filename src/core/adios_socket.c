@@ -57,7 +57,7 @@ int adios_set_socket_address(char *hostname,int port,struct sockaddr_in *address
       return 1;
   }
 
-  memset(address,0,sizeof(address));
+  memset(address,0,sizeof(*address));
   memcpy(&(address->sin_addr),hp->h_addr,hp->h_length);
   address->sin_family = hp->h_addrtype;
   address->sin_port = htons(port);

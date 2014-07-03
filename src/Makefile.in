@@ -168,6 +168,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_alacrity.m4 \
 	$(top_srcdir)/config/ac_netcdf.m4 \
 	$(top_srcdir)/config/ac_nssi.m4 \
 	$(top_srcdir)/config/ac_pablo.m4 \
+	$(top_srcdir)/config/ac_pami.m4 \
 	$(top_srcdir)/config/ac_phdf5.m4 \
 	$(top_srcdir)/config/ac_portals.m4 \
 	$(top_srcdir)/config/ac_szip.m4 \
@@ -2026,6 +2027,10 @@ PACKAGE_NAME = @PACKAGE_NAME@
 PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
+PAMI_CFLAGS = @PAMI_CFLAGS@
+PAMI_CPPFLAGS = @PAMI_CPPFLAGS@
+PAMI_LDFLAGS = @PAMI_LDFLAGS@
+PAMI_LIBS = @PAMI_LIBS@
 PATHPROG = @PATHPROG@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PHDF5_CPPFLAGS = @PHDF5_CPPFLAGS@ $(am__append_16)
@@ -2134,7 +2139,8 @@ include_HEADERS = public/adios.h public/adios_types.h \
 	public/adios_read.h public/adios_error.h public/adios_mpi.h \
 	public/mpidummy.h public/adios_read_v1.h \
 	public/adios_read_v1_defs.h public/adios_read_v2.h \
-	public/adios_selection.h public/adios_schema.h
+	public/adios_read_v2_fwd.h public/adios_selection.h \
+	public/adios_schema.h
 nodist_include_HEADERS = $(am__append_34) $(am__append_52)
 lib_LIBRARIES = $(am__append_2) $(am__append_4) libadiosread.a \
 	$(am__append_43) libadiosread_nompi.a $(am__append_61)

@@ -4,6 +4,10 @@
 
  Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
 """
+"""
+ This is a cython file. To generate a CPP file, use the following command:
+ $ cython --cplus adios.pyx
+"""
 
 import numpy as np
 cimport numpy as np
@@ -14,9 +18,9 @@ cimport mpi4py.MPI as MPI
 import cython
 cimport cython
 
-## ==========
+## ====================
 ## ADIOS Exported Functions
-## ==========
+## ====================
 
 from libc.stdint cimport uint32_t, int64_t, uint64_t
 from libc.stdlib cimport malloc, free
@@ -61,7 +65,7 @@ cdef extern from "adios.h":
                          char * group_name,
                          char * name, 
                          char * mode,
-                         void * comm)
+                         MPI_Comm comm)
     
     cdef int adios_group_size (int64_t fd_p,
                                uint64_t data_size,
@@ -108,76 +112,115 @@ cdef extern from "adios.h":
                                   char * parameters,
                                   char * base_path)
 
-cdef extern from "adios_read.h":
-    ctypedef struct MPI_Comm:
+cdef extern from "adios_selection.h":
+    ctypedef enum ADIOS_SELECTION_TYPE:
+        ADIOS_SELECTION_BOUNDINGBOX
+        ADIOS_SELECTION_POINTS
+        ADIOS_SELECTION_WRITEBLOCK
+        ADIOS_SELECTION_AUTO
+
+    ctypedef struct ADIOS_SELECTION_BOUNDINGBOX_STRUCT:
+        int       ndim
+        uint64_t *start
+        uint64_t *count
+
+    ctypedef struct ADIOS_SELECTION_POINTS_STRUCT:
         pass
 
-    ctypedef struct ADIOS_FILE:
-        uint64_t fh
-        int      groups_count
-        int      vars_count
-        int      attrs_count
-        int      tidx_start
-        int      ntimesteps
-        int      version
-        uint64_t file_size
-        int      endianness
-        char     ** group_namelist
-        void     * internal_data
+    ctypedef struct ADIOS_SELECTION_WRITEBLOCK_STRUCT:
+        pass
+    
+    ctypedef struct ADIOS_SELECTION_AUTO_STRUCT:
+        pass
 
-    ctypedef struct ADIOS_GROUP:
-        uint64_t gh
-        int      grpid
-        int      vars_count
-        char     ** var_namelist
-        int      attrs_count
-        char     ** attr_namelist
-        ADIOS_FILE * fp
-        int      timestep
-        int      lasttimestep
+    cdef union ADIOS_SELECTION_UNION:
+        ADIOS_SELECTION_BOUNDINGBOX_STRUCT bb
+        ADIOS_SELECTION_POINTS_STRUCT points
+        ADIOS_SELECTION_WRITEBLOCK_STRUCT block
+        ADIOS_SELECTION_AUTO_STRUCT autosel
+
+    ctypedef struct ADIOS_SELECTION:
+        ADIOS_SELECTION_TYPE    type
+        ADIOS_SELECTION_UNION   u
+
+    cdef ADIOS_SELECTION * adios_selection_boundingbox (int ndim,
+                                                        const uint64_t *start,
+                                                        const uint64_t *count)
+
+cdef extern from "adios_read.h":
+    ctypedef enum ADIOS_READ_METHOD:
+        ADIOS_READ_METHOD_BP
+        ADIOS_READ_METHOD_BP_AGGREGATE
+        pass
+
+    ctypedef enum ADIOS_LOCKMODE:
+        ADIOS_LOCKMODE_NONE
+        ADIOS_LOCKMODE_CURRENT
+        ADIOS_LOCKMODE_ALL
+
+    ctypedef struct ADIOS_FILE:
+        uint64_t fh               
+        int      nvars            
+        char     ** var_namelist  
+        int      nattrs           
+        char     ** attr_namelist 
+        int      nmeshes          
+        char     ** mesh_namelist 
+        int      current_step     
+        int      last_step        
+        char     *path            
+        int      endianness       
+        int      version          
+        uint64_t file_size
 
     ctypedef struct ADIOS_VARINFO:
-        int        grpid
         int        varid
-        ADIOS_DATATYPES   type
-        int        ndim
-        uint64_t * dims
-        int        timedim
-        int        characteristics_count
-        void     * value
-        void     * gmin
-        void     * gmax
-        double   * gavg
-        double   * gstd_dev
-        void     ** mins
-        void     ** maxs
-        double   ** avgs
-        double   ** std_devs
+        ADIOS_DATATYPES type  
+        int        ndim       
+        uint64_t * dims       
+        int        nsteps     
+        void     * value      
+        int      * nblocks    
+        int        sum_nblocks
+
+    cdef int adios_read_init_method (ADIOS_READ_METHOD method, 
+                                     MPI_Comm comm, 
+                                     char * parameters)
+    cdef int adios_read_finalize_method(ADIOS_READ_METHOD method)
+    cdef ADIOS_FILE * adios_read_open (const char * fname, 
+                                       ADIOS_READ_METHOD method, 
+                                       MPI_Comm comm, 
+                                       ADIOS_LOCKMODE lock_mode,
+                                       float timeout_sec)
+    cdef ADIOS_FILE * adios_read_open_file (const char * fname, 
+                                            ADIOS_READ_METHOD method, 
+                                            MPI_Comm comm)
+    cdef int adios_read_close (ADIOS_FILE *fp)
+    cdef int adios_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
+    cdef void adios_release_step (ADIOS_FILE *fp)
+    cdef ADIOS_VARINFO * adios_inq_var (ADIOS_FILE *fp, const char * varname)
+    cdef ADIOS_VARINFO * adios_inq_var_byid (ADIOS_FILE *fp, int varid)
+    cdef void adios_free_varinfo (ADIOS_VARINFO *cp)
+    cdef int adios_schedule_read (const ADIOS_FILE * fp,
+                                  const ADIOS_SELECTION * sel,
+                                  const char * varname,
+                                  int from_steps,
+                                  int nsteps,
+                                  void * data)
+    cdef int adios_schedule_read_byid (const ADIOS_FILE * fp, 
+                                       const ADIOS_SELECTION * sel,
+                                       int varid,
+                                       int from_steps,
+                                       int nsteps,
+                                       void * data)
+    cdef int adios_perform_reads (const ADIOS_FILE *fp, int blocking)
 
 
-    cdef ADIOS_FILE * adios_fopen (char *, MPI_Comm)
-    cdef int adios_fclose (ADIOS_FILE *)
+## ====================
+## ADIOS Enum (public)
+## ====================
 
-    cdef ADIOS_GROUP * adios_gopen (ADIOS_FILE *, char *)
-    cdef ADIOS_GROUP * adios_gopen_byid (ADIOS_FILE *, int)
-    cdef int adios_gclose (ADIOS_GROUP *)
-
-    cdef ADIOS_VARINFO * adios_inq_var (ADIOS_GROUP *, char *)
-    cdef ADIOS_VARINFO * adios_inq_var_byid (ADIOS_GROUP *, int)
-    cdef void adios_free_varinfo(ADIOS_VARINFO *)
-    cdef int64_t adios_read_var_byid (ADIOS_GROUP *, int,
-                             uint64_t *, uint64_t *,
-                             void *)
-
-    cdef char * adios_errmsg()
-    cdef int adios_errno
-
-
-## ==========
-## ADIOS Enum
-## ==========
-
-class DATATYPE(object):
+class DATATYPE:
     unknown = -1
     byte = 0
     short = 1
@@ -194,19 +237,19 @@ class DATATYPE(object):
     complex = 10
     double_complex = 11
 
-class FLAG(object):
+class FLAG:
     UNKNOWN = 0
     YES = 1
     NO = 2
     
-class BUFFER_ALLOC_WHEN(object):
+class BUFFER_ALLOC_WHEN:
     UNKNOWN = 0
     NOW = 1
     LATER = 2
     
-## ==========
+## ====================
 ## ADIOS Write API
-## ==========
+## ====================
 
 cpdef init(char * config, MPI.Comm comm = MPI.COMM_WORLD):
     return adios_init(config, comm.ob_mpi)
@@ -255,9 +298,9 @@ cpdef int close(int64_t fd_p):
 cpdef finalize(int mype = 0):
     return adios_finalize(mype)
 
-## ==========
+## ====================
 ## ADIOS No-XML API
-## ==========
+## ====================
 cpdef int init_noxml(MPI.Comm comm = MPI.COMM_WORLD):
     return adios_init_noxml(comm.ob_mpi)
 
@@ -313,11 +356,11 @@ cpdef int select_method (int64_t group,
                                 base_path)
 
 
-## ==========
-## ADIOS Read API
-## ==========
+## ====================
+## ADIOS Read API (V2)
+## ====================
 
-cpdef type adios2nptype(ADIOS_DATATYPES t):
+cdef type adios2nptype(ADIOS_DATATYPES t):
     cdef type ntype = None
     if t == adios_byte:
         ntype = np.int8
@@ -350,185 +393,102 @@ cpdef type adios2nptype(ADIOS_DATATYPES t):
 
     return ntype
 
-"""
-cpdef int np2adiostype(np.dtype t):
-    cdef int atype = -1
-    if t.type == np.float64:
-        atype = DATATYPE.double
-    else:
-        atype = -1
-
-    return atype
-"""
-
-cdef printAdiosFile(ADIOS_FILE * f):
+cdef printfile(ADIOS_FILE * f):
     print '%15s : %lu' % ('fh', f.fh)
-    print '%15s : %d' % ('groups_count', f.groups_count)
-    print '%15s : %d' % ('vars_count', f.vars_count)
-    print '%15s : %d' % ('attrs_count', f.attrs_count)      
-    print '%15s : %d' % ('tidx_start', f.tidx_start)       
-    print '%15s : %d' % ('ntimesteps', f.ntimesteps)       
-    print '%15s : %d' % ('version', f.version)          
+    print '%15s : %d' % ('nvars', f.nvars)
+    print '%15s : %s' % ('var_namelist', [f.var_namelist[i] for i in range(f.nvars)])
+    print '%15s : %d' % ('nattrs', f.nattrs)
+    print '%15s : %s' % ('attr_namelist', [f.attr_namelist[i] for i in range(f.nattrs)])
+    print '%15s : %d' % ('current_step', f.current_step)       
+    print '%15s : %d' % ('last_step', f.last_step)       
+    print '%15s : %s' % ('path', f.path)
+    print '%15s : %d' % ('endianness', f.endianness)       
+    print '%15s : %d' % ('version', f.version)       
     print '%15s : %lu' % ('file_size', f.file_size)
-    print '%15s : %d' % ('endianness', f.endianness)
-    print '%15s : %s' % ('group_namelist', [f.group_namelist[i] for i in range(f.groups_count)])
 
-cdef printAdiosGroup(ADIOS_GROUP * g):
-    print '%15s : %lu' % ('gh', g.gh)
-    print '%15s : %d' % ('grpid', g.grpid)
-    print '%15s : %d' % ('vars_count', g.vars_count)
-    print '%15s : %s' % ('var_namelist', [g.var_namelist[i] for i in range(g.vars_count)])
-    print '%15s : %d' % ('attrs_count', g.attrs_count)      
-    print '%15s : %s' % ('attr_namelist', [g.attr_namelist[i] for i in range(g.attrs_count)])
-    print '%15s : %lu' % ('fp', <unsigned long> g.fp)
-
-cdef printAdiosVariable(ADIOS_VARINFO * v):
-    print '%15s : %d' % ('grpid', v.grpid)
+cdef printvar(ADIOS_VARINFO * v):
     print '%15s : %d' % ('varid', v.varid)
     print '%15s : %s' % ('type', adios2nptype(v.type))
     print '%15s : %d' % ('ndim', v.ndim)
     print '%15s : %s' % ('dims', [v.dims[i] for i in range(v.ndim)])
-    print '%15s : %d' % ('timedim', v.timedim)
+    print '%15s : %d' % ('nsteps', v.nsteps)
 
-cdef adios2scalar(ADIOS_DATATYPES t, void * val):
-    if t == adios_byte :
-        return (<char *> val)[0]
-    elif t == adios_short:
-        return (<short *> val)[0]
-    elif t == adios_integer:
-        return (<int *> val)[0]
-    elif t == adios_long:
-        return (<long *> val)[0]
-    elif t == adios_unsigned_byte:
-        return (<unsigned char *> val)[0]
-    elif t == adios_unsigned_short:
-        return (<unsigned short *> val)[0]
-    elif t == adios_unsigned_integer:
-        return (<unsigned int *> val)[0]
-    elif t == adios_unsigned_long:
-        return (<unsigned long *> val)[0]
-    elif t == adios_real:
-        return (<float *> val)[0]
-    elif t == adios_double:
-        return (<double *> val)[0]
-    elif t == adios_long_double:
-        return (<long double *> val)[0]
-    else:
-        return None
+## ====================
+## ADIOS Class Definitions for Read
+## ====================
 
-## ==========
-## ADIOS Class Definition
-## ==========
-    
-cdef class AdiosFile:
+""" Call adios_read_init_method """
+cpdef read_init(ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP,
+                MPI.Comm comm = MPI.COMM_WORLD,
+                char * parameters = ""):
+    return adios_read_init_method (method, comm.ob_mpi, parameters)
+
+
+""" Call adios_read_finalize_method """
+cpdef read_finalize(ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP):
+    return adios_read_finalize_method (method)
+
+""" Python class for ADIOS_FILE structure """
+cdef class file:
     """ Private Memeber """
     cpdef ADIOS_FILE * fp
 
     """ Public Memeber """
     cpdef public bytes name
-    cpdef public int groups_count
-    cpdef public int vars_count
-    cpdef public int attrs_count
-    cpdef public int tidx_start
-    cpdef public int ntimesteps
+    cpdef public int nvars
+    cpdef public int nattrs
+    cpdef public int current_step
+    cpdef public int last_step
+    cpdef public int endianness
     cpdef public int version
     cpdef public int file_size
-    cpdef public int endianness
     
-    cpdef public dict group
-    
-    def __init__(self, char * fname, MPI.Comm comm = MPI.COMM_WORLD):
+    cpdef public dict var
+    cpdef public dict attr
+
+    """ Initialization. Call adios_read_open and populate public members """
+    def __init__(self, char * fname,
+                 ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP,
+                 MPI.Comm comm = MPI.COMM_WORLD):
         self.fp = NULL
-        self.group = {}
-        
-        self.fp = adios_fopen(fname, comm.ob_mpi)
+        self.var = {}
+        self.attr = {}
+
+        self.fp = adios_read_open_file(fname, method, comm.ob_mpi)
         assert self.fp != NULL, 'Not an open file'
 
-        self.name         = fname.split('/')[-1]  ## basename
-        self.groups_count = self.fp.groups_count
-        self.vars_count   = self.fp.vars_count  
-        self.attrs_count  = self.fp.attrs_count 
-        self.tidx_start   = self.fp.tidx_start  
-        self.ntimesteps   = self.fp.ntimesteps  
-        self.version      = self.fp.version     
-        self.file_size    = self.fp.file_size   
-        self.endianness   = self.fp.endianness  
+        self.name = fname.split('/')[-1]  ## basename
+        self.nvars = self.fp.nvars
+        self.nattrs = self.fp.nattrs
+        self.current_step = self.fp.current_step
+        self.last_step = self.fp.last_step
+        self.endianness = self.fp.endianness  
+        self.version = self.fp.version     
+        self.file_size = self.fp.file_size   
     
-        cdef AdiosGroup g
-        for grpname in [self.fp.group_namelist[i] for i in range(self.groups_count)]:
-            g = AdiosGroup(self, grpname)
-            self.group[grpname] = g
+        for varname in [self.fp.var_namelist[i] for i in range(self.nvars)]:
+            self.var[varname] = var(self, varname)
 
     def __del__(self):
-        self.close()
-            
+            self.close()
+
+    """ Call adios_read_close """
     cpdef close(self):
         assert self.fp != NULL, 'Not an open file'
-        for g in self.group.values():
-            g.close()
-        adios_fclose(self.fp)
+        adios_read_close(self.fp)
         self.fp = NULL
-        
+
+    """ Print self """
     cpdef printself(self):
         assert self.fp != NULL, 'Not an open file'
         print '=== AdiosFile ==='
         print '%15s : %lu' % ('fp', <unsigned long> self.fp)
-        printAdiosFile(self.fp)
+        printfile(self.fp)
 
-
-cdef class AdiosGroup:
+""" Python class for ADIOS_VARINFO structure """
+cdef class var:
     """ Private Memeber """
-    cdef AdiosFile file
-    cdef ADIOS_GROUP * gp
-
-    """ Public Memeber """
-    cpdef public bytes name
-    cpdef public int grpid
-    cpdef public int vars_count
-    cpdef public int attrs_count
-    cpdef public int timestep
-    cpdef public int lasttimestep
-    
-    cpdef public dict var
-    
-    def __init__(self, AdiosFile file, char * name):
-        self.file = file
-        self.var = {}
-        
-        self.gp = adios_gopen(self.file.fp, name)
-        assert self.gp != NULL, 'Not an open group'
-
-        self.name         = name
-        self.grpid        = self.gp.grpid        
-        self.vars_count   = self.gp.vars_count   
-        self.attrs_count  = self.gp.attrs_count  
-        self.timestep     = self.gp.timestep     
-        self.lasttimestep = self.gp.lasttimestep 
-        
-        cdef AdiosVariable v
-        for varname in [self.gp.var_namelist[i] for i in range(self.vars_count)]:
-            v = AdiosVariable(self, varname)
-            self.var[varname] = v
-
-    def __del__(self):
-        self.close()
-
-    cpdef close(self):
-        assert self.gp != NULL, 'Not an open file'
-        for v in self.var.values():
-            v.close()
-        adios_gclose(self.gp)
-        self.gp = NULL
-        
-    cpdef printself(self):
-        assert self.gp != NULL, 'Not an open file'
-        print '=== AdiosGroup ==='
-        print '%15s : %lu' % ('gp', <unsigned long> self.gp)
-        printAdiosGroup(self.gp)
-        
-cdef class AdiosVariable:
-    """ Private Memeber """
-    cdef AdiosGroup group
+    cdef file file
     cdef ADIOS_VARINFO * vp
 
     """ Public Memeber """
@@ -537,36 +497,37 @@ cdef class AdiosVariable:
     cpdef public type type
     cpdef public int ndim
     cpdef public tuple dims
-    cpdef public int timedim
-    cpdef public int characteristics_count
-    
-    def __init__(self, AdiosGroup group, char * name):
-        self.group = group
+    cpdef public int nsteps
+
+    """ Initialization. Call adios_inq_var and populate public members """
+    def __init__(self, file file, char * name):
+        self.file = file
         self.vp = NULL
 
-        self.vp = adios_inq_var(self.group.gp, name)
-        assert self.group.gp != NULL, 'Not an open group'
+        assert self.file.fp != NULL, 'Not an open file'
+        self.vp = adios_inq_var(self.file.fp, name)
+        assert self.vp != NULL, 'Not a valid var'
 
-        self.name                  = name
-        self.varid                 = self.vp.varid                
-        self.type                  = adios2nptype(self.vp.type)
-        self.ndim                  = self.vp.ndim                 
-        self.timedim               = self.vp.timedim              
-        self.characteristics_count = self.vp.characteristics_count
-        
+        self.name = name
+        self.varid = self.vp.varid                
+        self.type = adios2nptype(self.vp.type)
+        self.ndim = self.vp.ndim                 
         self.dims = tuple([self.vp.dims[i] for i in range(self.vp.ndim)])
+        self.nsteps = self.vp.nsteps
         
     def __del__(self):
         self.close()
 
+    """ Call adios_free_varinfo """
     cpdef close(self):
-        assert self.vp != NULL, 'Not an open file'
+        assert self.vp != NULL, 'Not an open var'
         adios_free_varinfo(self.vp)
         self.vp = NULL
-        
-    cpdef read(self, tuple offset = (), tuple count = ()):
-        cdef type ntype = adios2nptype(self.vp.type)
-        assert ntype is not None, 'Data type is not supported yet'
+
+    """ Call adios_schedule_read and adios_perform_reads """
+    cpdef read(self, tuple offset = (), tuple count = (), from_steps = 0, nsteps = 1):
+        assert self.type is not None, 'Data type is not supported yet'
+        assert from_steps + nsteps <= self.nsteps, 'Step index is out of range'
         
         cdef list lshape = [self.vp.dims[i] for i in range(self.vp.ndim)]
         cdef np.ndarray npshape = np.array(lshape, dtype=np.int64)
@@ -588,52 +549,48 @@ cdef class AdiosVariable:
         assert npshape.ndim == npcount.ndim, 'Count dimension mismatch.'
         assert (npshape - npoffset >= npcount).all(), 'Count is larger than shape.'
 
-        cdef np.ndarray var = np.zeros(npcount, dtype=ntype)
-        cdef int64_t nbytes = adios_read_var_byid(
-            self.group.gp, 
-            self.vp.varid, 
-            <uint64_t *> npoffset.data, 
-            <uint64_t *> npcount.data, 
-            <void *> var.data
-            )
+        shape = list(npcount)
+        if (nsteps > 1):
+            shape.insert(0, nsteps)
+        cdef np.ndarray var = np.zeros(shape, dtype=self.type)
 
-        if nbytes < 0:
-            print "[WARNING] bytes read :", nbytes
+        cdef ADIOS_SELECTION * sel
+        sel = adios_selection_boundingbox (self.vp.ndim, <uint64_t *> npoffset.data, <uint64_t *> npcount.data)
+        
+        adios_schedule_read_byid (self.file.fp, sel, self.vp.varid, from_steps, nsteps, <void *> var.data)
+        adios_perform_reads(self.file.fp, 1)
 
         return var
 
     """ Print self """
     cpdef printself(self):
-        assert self.vp != NULL, 'Not an open file'
+        assert self.vp != NULL, 'Not an open variable'
         print '=== AdiosVariable ==='
         print '%15s : %lu' % ('vp', <unsigned long> self.vp)
-        printAdiosVariable(self.vp)
+        print '%15s : %lu' % ('fp', <unsigned long> self.file.fp)
+        printvar(self.vp)
 
 ## ====================
 ## ADIOS Global functions
 ## ====================
 
+""" Read data in a BP file and return as a numpy array """
 def readvar(fname, varname):
-    f = AdiosFile(fname)
-    val = None
-    for g in f.group.itervalues():
-        if g.var.has_key(varname):
-            val = g.var[varname].read()
-    f.close()
-            
-    if val is None:
-        print "No valid variables"
-    ##else:
-    ##    if val.ndim == 0:
-    ##        val = val.item()
+    f = file(fname, comm=MPI.COMM_SELF)
+    if not f.var.has_key(varname):
+        print "No valid variable"
+        return
 
-    return val 
+    v = f.var[varname]
+    return v.read(from_steps=0, nsteps=v.nsteps)
 
+""" List attributes of a BP file """
 def bpls(fname):
-    f = AdiosFile(fname)
-    val = []
-    for g in f.group.itervalues():
-        for v in g.var.iterkeys():
-            val.append(v)
-
-    return val
+    f = file(fname, comm=MPI.COMM_SELF)
+    return {'nvars': f.nvars,
+            'nattrs': f.nattrs,
+            'vars': tuple([ k for k in f.var.iterkeys() ]),
+            'attrs': tuple([ k for k in f.attr.iterkeys() ]),
+            'time_steps': (f.current_step, f.last_step),
+            'file_size': f.file_size}
+    

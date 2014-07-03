@@ -88,7 +88,7 @@ static int chunk_buffer_size = 1024*1024*16; // 16MB default size for reading in
 static char *chunk_buffer = 0;
 
 static int poll_interval_msec = 10; // how much to wait between polls when timeout is used
-static int enable_read_meta_collective = 0; // when enabled, meta data reading becomes collective. One reader process would fetch meta data from DataSpaces and broadcast to other procseses using MPI_Bcast
+static int enable_read_meta_collective = 1; // when enabled, meta data reading becomes collective. One reader process would fetch meta data from DataSpaces and broadcast to other procseses using MPI_Bcast
 
 struct dataspaces_fileversions_struct { // current opened version of each stream/file
     char      * filename[MAXNFILE];
@@ -230,10 +230,10 @@ int adios_read_dataspaces_init_method (MPI_Comm comm, PairStruct * params)
                 log_error ("Invalid 'poll_interval' parameter given to the DATASPACES "
                             "read method: '%s'\n", p->value);
             }
-        } else if (!strcasecmp (p->name, "enable_collective_read_meta")) {
+        } else if (!strcasecmp (p->name, "disable_collective_read_meta")) {
             errno = 0;
-            enable_read_meta_collective = 1;
-            log_debug("Set 'enable_collective_read_meta' for DATASPACES read method\n");
+            enable_read_meta_collective = 0;
+            log_debug("Set 'disable_collective_read_meta' for DATASPACES read method\n");
         } else { 
             log_error ("Parameter name %s is not recognized by the DATASPACES read "
                         "method\n", p->name);
@@ -1618,22 +1618,24 @@ void ds_dimension_ordering(int ndims, int is_app_fortran, int unpack, int *didx)
                 i,j   --> j, i     = lb[1], lb[0]
                 i     --> i        = lb[0] 
     */
+    int i;
+    // initialize didx[]
+    for (i = 0; i < MAX_DS_NDIM; i++) {
+        didx[i] = i;
+    }
 
-    int i, n;
-    if (ndims == 0) n = MAX_DS_NDIM;
-    else n = ndims;
-
+    if (ndims == 0) return; 
     if (is_app_fortran) {
-        for (i = 0; i < n; i++) {
+        for (i = 0; i < ndims; i++) {
             didx[i] = i;
         }
     } else {
-        for (i = 0; i < n; i++) {
-            didx[i] = n-1-i;
+        for (i = 0; i < ndims; i++) {
+            didx[i] = ndims-1-i;
         }
     }
 
-    return; 
+    return;
 }
 
 void ds_ints_to_str (int ndim, int *values, char *s)

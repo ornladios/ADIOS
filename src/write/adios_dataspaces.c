@@ -34,7 +34,7 @@ static unsigned int adios_dataspaces_verbose = 3;
 
 struct adios_dspaces_file_info {
     char *name;
-    int time_index;
+    int time_index; // versioning, start from 0
 };
 
 struct adios_ds_data_struct
@@ -42,9 +42,7 @@ struct adios_ds_data_struct
     int rank;   // dataspaces rank or MPI rank if MPI is available
     int peers;  // from xml parameter or group communicator
     int appid;  // from xml parameter or 1
-    int time_index; // versioning in DataSpaces, start from 0
     int n_writes; // how many times adios_write has been called
-    struct adios_dspaces_file_info file_info[MAX_NUM_OF_FILES];
 #if HAVE_MPI
     MPI_Comm mpi_comm; // for use in open..close
     MPI_Comm mpi_comm_init; // for use in init/finalize
@@ -52,6 +50,8 @@ struct adios_ds_data_struct
     int  num_of_files; // how many files do we have with this method
     char *fnames[MAX_NUM_OF_FILES];  // names of files (needed at finalize)
     int  fversions[MAX_NUM_OF_FILES];   // last steps of files (needed at finalize)
+    int  mpi_ranks[MAX_NUM_OF_FILES];   // mpi rank of current process for each written file (needed at finalize)
+    struct adios_dspaces_file_info file_info[MAX_NUM_OF_FILES];
 };
 
 static int init_dspaces_file_info(struct adios_ds_data_struct *md)
@@ -77,7 +77,8 @@ static void free_dspaces_file_info(struct adios_ds_data_struct *md)
 
 static struct adios_dspaces_file_info* lookup_dspaces_file_info(struct adios_ds_data_struct *md, const char* fname)
 {
-    int i;    for (i = 0; i < MAX_NUM_OF_FILES; i++) {
+    int i;
+    for (i = 0; i < MAX_NUM_OF_FILES; i++) {
         if (md->file_info[i].name != NULL &&
             strcmp(md->file_info[i].name, fname) == 0) {
             return &md->file_info[i];
@@ -152,7 +153,6 @@ void adios_dataspaces_init (const PairStruct * parameters,
     //Init the static data structure
     md->peers = 1;
     md->appid = -1;
-    md->time_index = 0;
     md->n_writes = 0;
 #if HAVE_MPI
     md->mpi_comm = MPI_COMM_NULL;
@@ -922,6 +922,7 @@ void adios_dataspaces_close (struct adios_file_struct * fd
         }
         if (i < md->num_of_files) {
             md->fversions[i] = version;
+            md->mpi_ranks[i] = md->rank;
         }
 
 
@@ -960,15 +961,10 @@ void adios_dataspaces_finalize (int mype, struct adios_method_struct * method)
 
     free_dspaces_file_info(md);
 
-    MPI_Comm_rank (md->mpi_comm_init, &(md->rank));
     // tell the readers which files are finalized
     for (i=0; i<md->num_of_files; i++) {
         /* Put VERSION@fn into space. Indicates that this file will not be extended anymore.  */
-        if (md->rank == 0) {
-            /*FIXME: Only the rank=0 in each adios_open() remembers a file. 
-             * Rank 0 here is from the communicator at adios_init(). If a communicator in 
-             * an adios_open() is different, that file information is lost here
-             */
+        if (md->mpi_ranks[i] == 0) {
             MPI_Comm mpi_comm = MPI_COMM_SELF;
             log_debug("%s: call dspaces_lock_on_write(%s), rank=%d\n", __func__, md->fnames[i], mype);
             dspaces_lock_on_write(md->fnames[i], &mpi_comm); // lock is global operation in DataSpaces

@@ -7,7 +7,8 @@ EXTRA_DIST = runconf \
              adios_config \
              scripts/create.nssi.config.sh \
              scripts/kill.nssi.staging.sh \
-             scripts/start.nssi.staging.sh
+             scripts/start.nssi.staging.sh \
+	     scripts/FindADIOS.cmake
 
 #             wrappers/matlab/Makefile \
 #             wrappers/matlab/adios.m \
@@ -25,6 +26,8 @@ if HAVE_NSSI
                    scripts/kill.nssi.staging.sh  \
                    scripts/start.nssi.staging.sh
 endif
+
+sysconf_DATA = scripts/FindADIOS.cmake
 
 #install-data-hook:
 #	echo -n "VERSIONSTRING=\"$(PACKAGE) version $(VERSION) svn revision " >> adios_config.flags

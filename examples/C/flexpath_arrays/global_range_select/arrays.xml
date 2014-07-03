@@ -3,13 +3,14 @@
 <adios-group name="temperature" coordination-communicator="comm" stats="On">
     <var name="NX" path="/scalar/dim" type="integer"/>
     <var name="NY" path="/scalar/dim" type="integer"/>
+    <var name="NZ" path="/scalar/dim" type="integer"/>
     <var name="size" type="integer"/>
     <var name="rank" type="integer"/>
     <var name="offset" type="integer"/>
     <var name="size_y" type="integer"/>
     <var name="test_scalar" type="integer"/>
-    <global-bounds dimensions="/scalar/dim/NX,size_y" offsets="0,offset">
-        <var name="var_2d_array" gwrite="t" type="double" dimensions="/scalar/dim/NX,/scalar/dim/NY"/>
+    <global-bounds dimensions="/scalar/dim/NZ,size_y,/scalar/dim/NX" offsets="0,offset,0">
+        <var name="var_2d_array" gwrite="t" type="double" dimensions="/scalar/dim/NZ,/scalar/dim/NY,/scalar/dim/NX"/>
     </global-bounds>
 </adios-group>
 

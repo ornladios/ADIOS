@@ -82,6 +82,37 @@ Linux clusters and Mac OSX.
 
 %
 %
+
+\section {What's new in version 1.7}
+This version brings several improvements for usability and portability. 
+\begin{itemize}
+\item Support for more than 64k variables in a file. This may sound a bit strange but there have been two applications requiring this.
+\item File system topology aware I/O method for Titan@OLCF. It uses better routing from compute nodes to file system nodes to
+           avoid bottlenecks. 
+           
+\item Usability enhancements
+    \begin{itemize}
+    \item \verb+adios_config -m+ to print available write/read methods
+    \item CMake Module for \verb+find_package(ADIOS)+
+%    \item This version works fine with mxml 2.8 (the latest version) (and also 2.7...)
+    \end{itemize}
+    
+ \item Additions to non-XML Write API:
+     \begin{itemize}
+     \item Support for the visualization schema (as was in 1.6 for the XML version of the API)
+     \item Added function \verb+adios_set_transform()+ to choose the transformation for a variable. Call it after \verb+adios_define_var()+
+     \end{itemize}
+            
+\item DataSpaces staging
+     \begin{itemize}
+     \item support for 64bit dimension sizes
+     \item support for more than three dimensions
+     \item it works on Bluegene/Q (both DataSpaces and DIMES methods)
+     \item DataSpaces can run as a service, allowing dynamic connections/disconnections from applications
+     \end{itemize}
+     
+\end{itemize}
+
 \section {What's new in version 1.6}
 The novelty in version 1.6 is the introduction
 of on-the-fly {\bf data transformations} on variables during file-based I/O.

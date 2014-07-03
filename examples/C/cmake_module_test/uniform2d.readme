@@ -1,13 +1,22 @@
+This is the examples/C/uniform example but with CMAKE build instructions
+
 REQUIREMENTS:
     - ADIOS 1.5.0: http://www.olcf.ornl.gov/center-projects/adios
+    - CMAKE 2.8.0 or newer
     - C compiler
     - MPI
 
-BUILD:
+BUILD with CMAKE
     - Install ADIOS
-    - In Makefile, set ADIOS_DIR to the installation directory
-    - also set the MPI/C compiler name (e.g. mpicc or cc)
-    - run make
+    - Have cmake 2.8.0 or newer
+    - set environment variable ADIOS_DIR to the installation directory
+    - set environment variable CC to the MPI C compiler (e.g. mpicc or cc)
+    - then do the following commands
+    $ mkdir build
+    $ cd build
+    $ cmake ..
+    $ make
+
 
 This example is for writing a uniform 2D mesh and data on it. 
 2D mesh is decomposed in x and y direction by npx and npy, which are passed in from the command line following the executable.

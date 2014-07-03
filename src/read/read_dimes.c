@@ -87,7 +87,8 @@ static char *chunk_buffer = 0;
 
 static int poll_interval_msec = 10; // how much to wait between polls when timeout is used
 
-static int enable_read_meta_collective = 0; // when enabled, meta data reading becomes collective. One reader process would fetch meta data from DataSpaces and broadcast to other procseses using MPI_Bcast
+static int enable_read_meta_collective = 1; // when enabled, meta data reading becomes collective. One reader process would fetch meta data from DataSpaces and broadcast to other procseses using MPI_Bcast
+static int check_read_status = 2; // 0: disable, 1: at every step (not supported yet), 2: at finalize (default value)
 
 struct dimes_fileversions_struct { // current opened version of each stream/file
     char      * filename[MAXNFILE];
@@ -156,6 +157,30 @@ static int adios_read_dimes_get_meta_collective(const char * varname,
                                 int ndims, int is_fortran_ordering,
                                 uint64_t * offset, uint64_t * readsize, void * data, MPI_Comm comm);
 
+static int update_read_status_var(ADIOS_FILE *fp, struct dimes_data_struct *ds) {
+    char ds_vname[MAX_DS_NAMELEN];
+    uint64_t gdims[MAX_DS_NDIM], lb[MAX_DS_NDIM], ub[MAX_DS_NDIM];
+    int elemsize, ndim;
+    int read_status_buf[1] = {-1};
+    int read_status_buf_len = 1;
+
+    if (ds->mpi_rank == 0) {
+        // Put READ_STATUS@fn information into space
+        read_status_buf[0] = ds->current_step;
+        snprintf (ds_vname, MAX_DS_NAMELEN, "READ_STATUS@%s", fp->path);
+        log_debug("%s: rank= %d put %s buf= {%d} into space\n",
+                __func__, ds->mpi_rank, ds_vname, read_status_buf[0]);
+        elemsize = sizeof(int); ndim = 1;
+        lb[0] = 0; ub[0] = read_status_buf_len-1;
+        gdims[0] = (ub[0]-lb[0]+1) * dspaces_get_num_space_server();
+        dspaces_define_gdim(ds_vname, ndim, gdims);
+        dspaces_put(ds_vname, 0, elemsize, ndim, lb, ub, read_status_buf);
+        dspaces_put_sync();
+    }
+
+    return 0;
+}
+
 static char* get_chunk_buffer()
 {
     if (!chunk_buffer) {
@@ -192,7 +217,7 @@ int adios_read_dimes_init_method (MPI_Comm comm, PairStruct * params)
 { 
     int  nproc, drank, dpeers;
     int  rank, err;
-    int  appid, max_chunk_size, pollinterval, was_set;
+    int  appid, max_chunk_size, pollinterval, was_set, check_read;
     MPI_Comm_rank(comm, &rank);
     MPI_Comm_size(comm, &nproc);
 
@@ -231,10 +256,23 @@ int adios_read_dimes_init_method (MPI_Comm comm, PairStruct * params)
                 log_error ("Invalid 'poll_interval' parameter given to the DIMES "
                             "read method: '%s'\n", p->value);
             }
-        } else if (!strcasecmp (p->name, "enable_collective_read_meta")) {
+        } else if (!strcasecmp (p->name, "disable_collective_read_meta")) {
             errno = 0;
-            enable_read_meta_collective = 1;
-            log_debug("Set 'enable_collective_read_meta' for DIMES read method\n"); 
+            enable_read_meta_collective = 0;
+            log_debug("Set 'disable_collective_read_meta' for DIMES read method\n"); 
+        } else if (!strcasecmp (p->name, "check_read_status")) {
+            errno = 0;
+            check_read = strtol(p->value, NULL, 10);
+            if (!errno && (check_read == 0 || check_read == 2)) {
+                check_read_status = check_read;
+                log_debug("check_read_status set to %d for DIMES read method\n",
+                    check_read_status);
+            } else {
+                log_error("Invalid 'check_read_status' parameter given to the DIMES "
+                            "read method: '%s'\n", p->value);
+                log_error("check_read_status=<value>, 0: disable, 1: at every step "
+                            " (not supported yet), 2: at finalize (default value).\n");
+            }
         } else {
             log_error ("Parameter name %s is not recognized by the DIMES read "
                         "method\n", p->name);
@@ -604,6 +642,7 @@ static int get_step (ADIOS_FILE *fp, int step, enum WHICH_VERSION which_version,
     double t1 = adios_gettime();
     enum STEP_STATUS step_status = STEP_OK;
 
+    adios_errno = err_no_error; // clear error values now
     snprintf(ds_vname, MAX_DS_NAMELEN, "VERSION@%s",fp->path);
     snprintf(ds_fname, MAX_DS_NAMELEN, "FILE@%s",fp->path);
     //log_debug("-- %s, rank %d: Get variable %s\n", __func__, ds->mpi_rank, ds_fname);
@@ -644,28 +683,21 @@ static int get_step (ADIOS_FILE *fp, int step, enum WHICH_VERSION which_version,
                     // we may stay in poll loop
                 }
             } else {
-                // Try to get the version the user wants
-                if (which_version == LAST_VERSION)
-                    step = last_version;
+                // By API design: Try to get the version the user wants: next or last
+                // By DIMES design: we can only give the last version no matter what
+                step = last_version;
                 readsize[0] = FILEINFO_BUFLEN; // FILE%name is FILEINFO_BUFLEN bytes long
+                stay_in_poll_loop = 0;
 
                 int max_check_version = last_version;
-                if (which_version == NEXT_VERSION) 
-                    max_check_version = step;
 
-                // Loop until we find what we need or go past the last version
-                do {
-                    log_debug("   rank %d: dspaces_get %s\n", ds->mpi_rank, ds_fname);
-                    err = get_meta(ds_fname, adios_byte, step, ds->mpi_rank, 
-                                 ndim, 0, offset, readsize, file_info_buf, ds->comm);
-                    step++; // value will go over the target with 1
-                } while (err && step <= max_check_version);
+                log_debug("   rank %d: dspaces_get %s\n", ds->mpi_rank, ds_fname);
+                err = get_meta(ds_fname, adios_byte, step, ds->mpi_rank, 
+                        ndim, 0, offset, readsize, file_info_buf, ds->comm);
 
                 if (!err) {
-                    /* Found object with this access version */
-                    step--; // undo the last increment above
+                    /* Found object with this access version. Get file info. Update fp */
                     ds->current_step = step;
-                    stay_in_poll_loop = 0;
                     log_debug("   rank %d: step %d of '%s' exists\n", 
                             ds->mpi_rank, ds->current_step, ds_fname);
 
@@ -675,36 +707,29 @@ static int get_step (ADIOS_FILE *fp, int step, enum WHICH_VERSION which_version,
                         fp->current_step = ds->current_step;
                         fp->last_step = last_version;
 
-                        /* Get the variables and attributes the (only) group separately */
+                        /* Get the variables and attribute of the (only) group separately */
                         err = get_groupdata (fp);
                         if (err) {
-                            // something went wrong with the group(s)
+                            // something went wrong with the group(s) metadata
                             step_status = STEP_OTHERERROR;
+                            adios_error (err_unspecified, "DIMES method: Unexpected state: "
+                                    "found last version %d of dataset %s but then could not "
+                                    "parse the group metadata.\n", step, fp->path);
                         }
                     } else {
                         // something went wrong with the file metadata
                         step_status = STEP_OTHERERROR;
+                        adios_error (err_unspecified, "DIMES method: Unexpected state: "
+                                "found last version %d of dataset %s but then could not "
+                                "parse the file metadata.\n", step, fp->path);
                     }
 
                 } else {
-                    if (which_version == NEXT_VERSION) 
-                    {
-                        if (step < last_version) {
-                            step_status = STEP_STEPDISAPPEARED;
-                            stay_in_poll_loop = 0;
-                        } else {
-                            step_status = STEP_STEPNOTREADY;
-                            // we may stay in poll loop
-                        }
-                    } 
-                    else if (which_version == LAST_VERSION || 
-                             which_version == NEXT_AVAILABLE_VERSION) 
-                    {
-                        step_status = STEP_OTHERERROR;
-                        stay_in_poll_loop = 0;
-                        log_warn ("DIMES method: Unexpected state: found last version %d"
-                                "of dataset but then could not read it.\n", step);
-                    }
+                    // We got VERSION@ with a given step, but failed to get FILE@
+                    // for that step. This is an unknown error. 
+                    step_status = STEP_OTHERERROR;
+                    adios_error (err_unspecified, "DIMES method: Unexpected state: found last version %d"
+                            "of dataset %s but then could not get the metadata for it.\n", step, fp->path);
                 }
             }
 
@@ -746,6 +771,9 @@ static int get_step (ADIOS_FILE *fp, int step, enum WHICH_VERSION which_version,
     case STEP_STEPDISAPPEARED:
             adios_error (err_step_disappeared, 
                     "Step %d in stream '%s' is not available anymore\n", step, fp->path);
+            break;
+    case STEP_OTHERERROR:
+            // These were handled at their places
             break;
     default:
             adios_errno = err_no_error; // clear temporary error during polling
@@ -1008,6 +1036,9 @@ void adios_read_dimes_release_step (ADIOS_FILE *fp)
     struct dimes_attr_struct * attrs = 
                 (struct dimes_attr_struct *) ds->attrs;
 
+    if (check_read_status == 2) {
+        update_read_status_var(fp, ds);
+    }
     /* Release read lock locked in fopen */
     unlock_file (fp, ds);
 
@@ -1616,18 +1647,20 @@ void dimes_dimension_ordering(int ndims, int is_app_fortran, int unpack, int *di
                 i,j   --> j, i     = lb[1], lb[0]
                 i     --> i        = lb[0] 
     */
-
-    int i, n;
-    if (ndims == 0) n = MAX_DS_NDIM;
-    else n = ndims;
-
+    int i;
+    // initialize didx[]
+    for (i = 0; i < MAX_DS_NDIM; i++) {
+        didx[i] = i;
+    }
+    
+    if (ndims == 0) return;
     if (is_app_fortran) {
-        for (i = 0; i < n; i++) {
+        for (i = 0; i < ndims; i++) {
             didx[i] = i;
         }
     } else {
-        for (i = 0; i < n; i++) {
-            didx[i] = n-1-i;
+        for (i = 0; i < ndims; i++) {
+            didx[i] = ndims-1-i;
         }
     }
 

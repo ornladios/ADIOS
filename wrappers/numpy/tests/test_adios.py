@@ -39,6 +39,7 @@ v.printself()
 val = v.read()
 print val
 assert ((tt == val).all())
+f.close()
 
 ## Testing
 print "\n>>> Test utility functions ...\n"

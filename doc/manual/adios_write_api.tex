@@ -203,13 +203,14 @@ call adios_write (handle, "myvar", v, ierr)
 \subsubsection{adios\_read}
 \label{section:adios_read}
 
+{\bf Obsolete function}.
 The write API contains a read function (historically, the first one) that uses 
 the same transport method and the xml config file to read in data. It works only 
 on the same number of processes as the data was written out. Typically, checkpoint/restart 
 files are written and read on the same number of processors and this function is 
 the simplest way to read in data. However, if you need to read in on a different 
 number of processors, use a transport method that does not support read (e.g. 
-the MPI\_AMR method) or you do not want to carry the xml config file with the 
+the MPI\_AGGREGATE method) or you do not want to carry the xml config file with the 
 reading application, you should use the newer and more generic read API discussed 
 in Section 7.
 

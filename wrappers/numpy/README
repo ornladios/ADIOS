@@ -1,40 +1,65 @@
 ADIOS Python/Numpy wrapper
 -----------------
 
-This directory contains the codes for the ADIOS python/numpy wrapper
+This directory contains the codes for the ADIOS Python/Numpy wrapper
 to call the native ADIOS library. This module is built by Cython.
 
-== Compile with Cython ==
+This module requires ADIOS built with the GNU C compiler with
+relocatable codes. Add -fPIC flag to CFLAGS before configuring ADIOS.
 
-The C++ code (adios.cpp) has been already compiled with Cython
-(version 0.20.1) and included here. Just in case to reproduce the C++
-code, try the following command. Otherwise, one can skip this part.
 
-$ cython --cplus adios.pyx 
+== Build and install with make ==
 
-If you need a parallel adios wrapper, try:
+A Makefile is included for building. The following commands will
+display instructions on how to build and install python wrappers for
+Adios.
 
-$ cython --cplus adios_mpi.pyx 
+$ make
+$ make install
 
-== Build with Python == 
+Have 'adios_config' and 'python' in the path and run
 
-This program can be built and installed by using python's standard
-package distribution method. For example,
+$ make python
 
-$ python setup.py build
-will compile adios python module. Once successfully completed, type
+If you need a MPI-enabled ADIOS wrapper, which requires MPI4Py, type
+the following:
 
-$ python setup.py install 
-Or,
+$ make MPI=y python
+
+After successful building, you can install in a python path. There are
+three options
+
+$ python setup.py install
+
+which will install python's default installation location. This may
+require an admin privilege.
+
+You may want to use a custom directory to install. Type
+
+$ python setup.py install --prefix=/dir/to/install
+
+and append the directory to the PYTHONPATH environment variable
+
+You can also install in your local directory, run
+
 $ python setup.py install --user
-to install ADIOS module in python's default package directory or user
-local directory.
 
-If you need a parallel adios wrapper, try:
+== Test cases and examples ==
 
-$ python setup_mpi.py build
-$ python setup_mpi.py install
-Or,
-$ python setup_mpi.py install --user
+Test cases and example files are located in tests and example
+directory.
 
 
+== Compile with Cython (only for developers) ==
+
+The C++ code (adios.cpp and adios_mpi.cpp) has been already generated
+by with Cython (version 0.20.1) and included here. Just in case to
+reproduce the C++ code, try the following command. Otherwise, one can
+skip this part.
+
+$ make CYTHON=y python
+
+for the serial version of Adios wrapper. If you need to generated C++
+for MPI-enabled version, try the following
+
+$ make CYTHON=y MPI=y python

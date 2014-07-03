@@ -184,7 +184,7 @@ int adios_define_var_hyperslab (const char * hyperslab, int64_t group_id, const 
 int adios_define_mesh_timevarying (const char * timevarying, int64_t group_id, const char * name);
 
 // The time-­steps points to time variables using steps, starting from step 0
-int adios_define_mesh_timesteps (const char * timeseries, int64_t group_id, const char * name);
+int adios_define_mesh_timesteps (const char * timesteps, int64_t group_id, const char * name);
 
 // The time-­steps points to time variables using real time, starting from time 0
 int adios_define_mesh_timescale (const char * timescale, int64_t group_id, const char * name);

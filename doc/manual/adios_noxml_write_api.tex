@@ -174,6 +174,26 @@ call adios_define_var (m_adios_group, "temperature", "", 6, &
                        "NX", "G", "O", varid)
 \end{lstlisting}
 
+\subsection{adios\_set\_transform}
+
+\begin{lstlisting}[alsolanguage=C,caption={},label={}]
+int adios_set_transform (int64_t var_id, const char *transform_type_str)
+\end{lstlisting}
+
+Input:
+\begin{itemize}
+\item id---id returned by the corresponding adios\_define\_var() call
+\item transform\_type\_str---string of selected transform method; use the same string as in the XML transform attribute of the <var> element.
+\end{itemize}
+
+Return value = adios\_errno. 0 indicates success, otherwise adios\_errno is set and the same value is returned. 
+
+Fortran example: 
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
+call adios_set_transform (var_id, "zlib", ierr)
+\end{lstlisting}
+
+
 \subsection{adios\_write\_byid}
 \verb+adios\_write()+ finds the definition of a variable by its name. If you write
 a variable multiple times in an output step, you must define it as many times as you
@@ -347,4 +367,459 @@ program adios_global
     call adios_finalize (rank, ierr)
     call MPI_Finalize (ierr) 
 end program
+\end{lstlisting}
+
+
+\section{No-XML Write API for visualization schema Description}
+This section lists routines that are needed for ADIOS no-XML functionalities
+that provide support for the visualization schema. These routines prepare ADIOS
+attributes that is consistant for different kinds of meshes and could be
+understood by both scientists and visulization experts. These attributes will
+be used by ADIOS read API and visualization tool will be able to reconstruct the
+mesh from the attributes stored in ADIOS files.
+
+\textbf{adios\_define\_schema\_version ---} Defines the schema version
+
+\textbf{adios\_define\_var\_mesh ---} Assigns a mesh to a variable
+
+\textbf{adios\_define\_var\_centering ---} Defines the variable centering on the mesh
+
+\textbf{adios\_define\_var\_timesteps ---} Defines the variable time steps
+
+\textbf{adios\_define\_var\_timescale ---} Define the variable time scale
+
+\textbf{adios\_define\_var\_timeseriesformat ---} Defines the variable time series format or padding pattern for images
+
+\textbf{adios\_define\_var\_hyperslab ---} Defines a variable hyper slab (sub set or super set)
+
+\textbf{adios\_define\_mesh\_timevarying ---} Indicate the mesh will change with time or not
+
+\textbf{adios\_define\_mesh\_timesteps ---} Define the time steps at the mesh level (for all variables on that mesh)
+
+\textbf{adios\_define\_mesh\_timescale ---} Define the time scale at the mesh level (for all variables on that mesh)
+
+\textbf{adios\_define\_mesh\_timeseriesformat ---} Define the time series formatting at the mesh level (for all variables on that mesh)
+
+\textbf{adios\_define\_mesh\_group ---} Indicates where (which ADIOS group) mesh variables are stored
+
+\textbf{adios\_define\_mesh\_file ---} Define a external file where mesh variables are written
+
+\textbf{adios\_define\_mesh\_uniform ---} Defines a uniform mesh
+
+\textbf{adios\_define\_mesh\_rectilinear ---} Defines a rectilinear mesh
+
+\textbf{adios\_define\_mesh\_structured ---} Defines a structured mesh
+
+\textbf{adios\_define\_mesh\_unstructured ---} Defines a unstructured mesh
+
+\subsection{adios\_define\_schema\_version}
+This function defines which version of schema is used for visualization in ADIOS.
+
+\begin{lstlisting}[alsolanguage=C,caption={},label={}]
+int adios_define_schema_version (int64_t group_id, char * schema_version)
+\end{lstlisting}
+
+Input:
+\begin{itemize}
+\item group\_id - id of the internal group structure (returned by adios\_declare\_group call)
+\item schema\_version - string containing the version of schema
+\end{itemize}
+
+Fortran example:
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
+call adios_define_schema_version (m_adios_group, "1.1")
+\end{lstlisting}
+
+
+\subsection{adios\_define\_var\_mesh}
+This API assigns a mesh to a variable.
+
+\begin{lstlisting}[alsolanguage=C,caption={},label={}]
+int adios_define_var_mesh (int64_t group_id, 
+                           const char * varname, 
+                           const char * meshname)
+\end{lstlisting}
+
+Input:
+\begin{itemize}
+\item group\_id - id the internal group structure (returned by adios\_declare\_group call)
+\item varname - string containing the variable name which is going to be visualized
+\item meshname - string containing the mesh name which is used to visualize the variable
+\end{itemize}
+
+Fortran example:
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
+adios_define_var_mesh (m_adios_group, "NX", "uniformmesh")
+\end{lstlisting}
+
+
+\subsection{adios\_define\_var\_centering}
+This API efines the variable centering on the mesh. Variables could be cell centered or point centered.
+
+\begin{lstlisting}[alsolanguage=C,caption={},label={}]
+int adios_define_var_centering (int64_t group_id, 
+                                const char * varname, 
+                                const char * centering)
+\end{lstlisting}
+
+Input:
+\begin{itemize}
+\item group\_id - id of the internal group structure (returned by adios\_declare\_group call)
+\item varname - string containing the variable name which is going to be visualized
+\item centering - string containing the centering information of the variable (point or cell)
+\end{itemize}
+
+Fortran example:
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
+call adios_define_var_centering (m_adios_group, "NX", "cell")
+\end{lstlisting}
+
+
+\subsection{adios\_define\_var\_timesteps}
+This API defines the variable time steps. The timesteps point to time variables using steps, 
+starting from step 0.
+
+
+\begin{lstlisting}[alsolanguage=C,caption={},label={}]
+int adios_define_var_timesteps (const char * timesteps, 
+                                int64_t group_id, 
+                                const char * name)
+\end{lstlisting}
+
+Input:
+\begin{itemize}
+\item timesteps - string containing time step of the variable on the mesh. There are three types of
+timesteps. For more detailed information, please consult ADIOS-VisualizationSchema-1.1 manual,
+which is available at https://users.nccs.gov/~pnorbert/ADIOS-VisualizationSchema-1.1.pdf
+\item group\_id - id of the internal group structure (returned by adios\_declare\_group call)
+\item name - string containing the variable name which is going to be visualized
+\end{itemize}
+
+Fortran example:
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
+call adios_define_var_timesteps ("5", m_adios_group, "NX")
+\end{lstlisting}
+
+
+\subsection{adios\_define\_var\_timescale}
+This API defines the variable time scale. The timescale points to time variables using real time, 
+starting from time exactly the same as time steps except with real numbers. 
+
+\begin{lstlisting}[alsolanguage=C,caption={},label={}]
+int adios_define_var_timescale (const char * timescale, 
+                                int64_t group_id, 
+                                const char * name)
+\end{lstlisting}
+
+Input:
+\begin{itemize}
+\item timescale - string containing time scale of the variable on the mesh. There are three types of
+timescales. For more detailed information, please consult ADIOS-VisualizationSchema-1.1 manual,
+which is available at https://users.nccs.gov/~pnorbert/ADIOS-VisualizationSchema-1.1.pdf
+\item group\_id - id of the internal group structure (returned by adios\_declare\_group call)
+\item name - string containing the variable name which is going to be visualized
+\end{itemize}
+
+Fortran example:
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
+call adios_define_var_timescale ("0,0.0015,200", m_adios_group, "NX")
+\end{lstlisting}
+                             
+
+\subsection{adios\_define\_var\_timeseriesformat}
+This API defines the variable time series format or padding pattern for images.
+If this number is 4, then the time-steps for images will be padded with 0 up to 4 digit numbers.
+
+\begin{lstlisting}[alsolanguage=C,caption={},label={}]
+int adios_define_var_timeseriesformat (const char * timeseries, 
+                                       int64_t group_id, 
+                                       const char * name)
+\end{lstlisting}
+
+Input:
+\begin{itemize}
+\item timeseries - string containing time series format (integers)
+\item group\_id - id of the internal group structure (returned by adios\_declare\_group call)
+\item name - string containing the variable name which is going to be visualized
+\end{itemize}
+
+Fortran example:
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
+call adios_define_var_timeseriesformat ("4", m_adios_group, "NX")
+\end{lstlisting}
+
+
+\subsection{adios\_define\_var\_hyperslab}
+This API defines a variable hyper slab (sub set or super set). Use the concept of start, stride
+and count in all dimensions of a variable to identify a subset of a dataset.
+
+\begin{lstlisting}[alsolanguage=C,caption={},label={}]
+int adios_define_var_hyperslab (const char * hyperslab, 
+                                int64_t group_id, 
+                                const char * name)
+\end{lstlisting}
+
+Input:
+\begin{itemize}
+\item hyperslab - string containing hyperslab (a number, a range or 3 numbers)
+\item group\_id - id of the internal group structure (returned by adios\_declare\_group call)
+\item name - string containing the variable name which is going to be visualized
+\end{itemize}
+
+Fortran example:
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
+call adios_define_var_hyperslab ("0,32", m_adios_group, "NX")
+\end{lstlisting}
+
+
+\subsection{adios\_define\_mesh\_timevarying}
+This API indicates the mesh will change with time or not.
+
+\begin{lstlisting}[alsolanguage=C,caption={},label={}]
+int adios_define_mesh_timevarying (const char * timevarying, 
+                                   int64_t group_id, 
+                                   const char * name)
+\end{lstlisting}
+
+Input:
+\begin{itemize}
+\item timevarying - string containing time varying information (yes or no)
+\item group\_id - id of the internal group structure (returned by adios\_declare\_group call)
+\item name - string containing the mesh name
+\end{itemize}
+
+Fortran example:
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
+call adios_define_mesh_timevarying ("no", m_adios_group, "uniformmesh")
+\end{lstlisting}
+
+
+\subsection{adios\_define\_mesh\_timesteps}
+This API define the time steps at the mesh level (for all variables on that mesh).
+
+\begin{lstlisting}[alsolanguage=C,caption={},label={}]
+int adios_define_mesh_timesteps (const char * timesteps, 
+                                 int64_t group_id, 
+                                 const char * name)
+\end{lstlisting}
+
+Input:
+\begin{itemize}
+\item timesteps - string containing time step of the mesh. There are three types of
+timesteps. For more detailed information, please consult ADIOS-VisualizationSchema-1.1 manual,
+which is available at https://users.nccs.gov/~pnorbert/ADIOS-VisualizationSchema-1.1.pdf
+\item group\_id - id of the internal group structure (returned by adios\_declare\_group call)
+\item name - string containing the mesh name
+\end{itemize}
+
+Fortran example:
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
+call adios_define_mesh_timesteps ("1,32", m_adios_group, "uniformmesh")
+\end{lstlisting}
+
+
+\subsection{adios\_define\_mesh\_timescale}
+This API define the time scale at the mesh level (for all variables on that mesh).
+
+\begin{lstlisting}[alsolanguage=C,caption={},label={}]
+int adios_define_mesh_timescale (const char * timescale, 
+                                 int64_t group_id, 
+                                 const char * name)
+\end{lstlisting}
+
+Input:
+\begin{itemize}
+\item timescale - string containing time scale of the mesh. There are three types of
+time scales. For more detailed information, please consult ADIOS-VisualizationSchema-1.1 manual,
+which is available at https://users.nccs.gov/~pnorbert/ADIOS-VisualizationSchema-1.1.pdf
+\item group\_id - id of the internal group structure (returned by adios\_declare\_group call)
+\item name - string containing the mesh name
+\end{itemize}
+
+Fortran example:
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
+call adios_define_mesh_timescale ("0.1,3", m_adios_group, "uniformmesh")
+\end{lstlisting}
+
+
+\subsection{adios\_define\_mesh\_timeseriesformat}
+This API define the time series formatting at the mesh level (for all variables on that mesh).
+
+\begin{lstlisting}[alsolanguage=C,caption={},label={}]
+int adios_define_mesh_timeseriesformat (const char * timeseries, 
+                                        int64_t group_id, 
+                                        const char * name)
+\end{lstlisting}
+
+Input:
+\begin{itemize}
+\item timeseries - string containing time series format (integers)
+\item group\_id - id of the internal group structure (returned by adios\_declare\_group call)
+\item name - string containing the mesh name
+\end{itemize}
+
+Fortran example:
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
+call adios_define_mesh_timeseriesformat ("5", m_adios_group, "uniformmesh")
+\end{lstlisting}
+
+
+\subsection{adios\_define\_mesh\_group}
+This API indicates where (which ADIOS group) mesh variables are stored.
+
+\begin{lstlisting}[alsolanguage=C,caption={},label={}]
+int adios_define_mesh_group (const char * group, 
+                             int64_t group_id, 
+                             const char * name)
+\end{lstlisting}
+
+Input:
+\begin{itemize}
+\item group - string containing ADIOS group name
+\item group\_id - id of the internal group structure (returned by adios\_declare\_group call)
+\item name - string containing the mesh name
+\end{itemize}
+
+Fortran example:
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
+call adios_define_mesh_group ("experiment", m_adios_group, "uniformmesh")
+\end{lstlisting}
+
+
+\subsection{adios\_define\_mesh\_file}
+This API indicates a external file where mesh is defined.
+
+\begin{lstlisting}[alsolanguage=C,caption={},label={}]
+int adios_define_mesh_file(int64_t group_id, char * name, char * file)
+\end{lstlisting}
+
+Input:
+\begin{itemize}
+\item group\_id - id of the internal group structure (returned by adios\_declare\_group call)
+\item name - string containing the mesh name
+\item file - string containing the file name storing the mesh definition
+\end{itemize}
+
+Fortran example:
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
+call adios_define_mesh_file (m_adios_group, "uniformmesh", "uniformmesh.bp")
+\end{lstlisting}
+
+
+\subsection{adios\_define\_mesh\_uniform}
+This function defines a uniform mesh. For not requried attributes in this function, please use 0 instead.
+
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
+int adios_define_mesh_uniform (char * dimensions,
+                               char * origin,
+                               char * spacing,
+                               char * maximum,
+                               char * nspace,
+                               int64_t group_id,
+                               const char * name)
+\end{lstlisting}
+
+Input:
+\begin{itemize}
+\item dimensions - string containing the number of dimensions, required
+\item origin - string containing the mesh origins (in all dimensions), not required (default 0)
+\item spacing - string containing the mesh spacings (between points in all dimensions), not requried (default 1)
+\item maximum - string containing the mesh maximums (in all dimensions), not required
+\item nspace - string containing the number of spcaces of the mesh, not required (default is the number of dimension)
+\item group\_id - id of the internal group structure (returned by adios\_declare\_group call), required
+\item name - string containing mesh name, required
+\end{itemize}
+
+Fortran example:
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
+call adios_define_mesh_uniform ("10,10,10", "0,1,0.5", "0.5, 0.3, 1", 0, 
+                                "3", m_adios_group, "uniformmesh")
+\end{lstlisting}
+
+
+\subsection{adios\_define\_mesh\_rectilinear}
+This function defines a rectilinear mesh. For not requried attributes in this function, please use 0 instead.
+
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
+int adios_define_mesh_rectilinear (char * dimensions,
+                                   char * coordinates,
+                                   char * nspace,
+                                   int64_t group_id,
+                                   const char * name)
+\end{lstlisting}
+
+Input:
+\begin{itemize}
+\item dimensions - string containing the number of dimensions, required
+\item coordinates - string containing the variable name(s) pointing to the mesh coordinates, required
+\item nspace - string containing the number of spcaces of the mesh, not required (default is the number of dimension)
+\item group\_id - id of the internal group structure (returned by adios\_declare\_group call), required
+\item name - string containing mesh name, required
+\end{itemize}
+
+Fortran example:
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
+call adios_define_mesh_rectilinear ("10,10,10", "X,Y", "2", m_adios_group, 
+                                    "rectilinearmesh")
+\end{lstlisting}
+
+
+\subsection{adios\_define\_mesh\_structured}
+This function defines a structured mesh. For not requried attributes in this function, please use 0 instead.
+
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
+int adios_define_mesh_structured (char * dimensions,
+                                  char * points,
+                                  char * nspace,
+                                  int64_t group_id,
+                                  const char * name)
+\end{lstlisting}
+
+Input:
+\begin{itemize}
+\item dimensions - string containing the number of dimensions, required
+\item points - string containing variable name(s) pointing to mesh points, required 
+\item nspace - string containing the number of spcaces of the mesh, not required (default is the number of dimension)
+\item group\_id - id of the internal group structure (returned by adios\_declare\_group call), required
+\item name - string containing mesh name, required
+\end{itemize}
+
+Fortran example:
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
+call adios_define_mesh_structured ("10,10,10", "X,Y", "2", m_adios_group, 
+                                   "structuredmesh");
+\end{lstlisting}
+
+
+\subsection{adios\_define\_mesh\_unstructured}
+This function defines a unstructured mesh. For not requried attributes in this function, please use 0 instead.
+
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
+int adios_define_mesh_unstructured (char * points,
+                                    char * data,
+                                    char * count,
+                                    char * cell_type,
+                                    char * npoints,
+                                    char * nspace,
+                                    int64_t group_id,
+                                    const char * name)
+\end{lstlisting}
+
+Input:
+\begin{itemize}
+\item points - string containing variable name(s) pointing to mesh points, required
+\item data - string containing the variable name(s) pointing to the mesh cell data (arrays)
+\item count - string containing numbers or variable names(s) pointing to the mesh cell counts, required
+\item cell\_type - string containing cell types or variable names(s) pointing to the mesh cell types 
+(line, triangle, quad, hex, prism, tet, pyr), required
+\item nspace - string containing the number of spcaces of the mesh, not required (default is the number of dimension)
+\item group\_id - id of the internal group structure (returned by adios\_declare\_group call), required
+\item name - string containing mesh name, required
+\end{itemize}
+
+Fortran example:
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
+call adios_define_mesh_unstructured ("points", "cells", "num_cells", 
+                                     "triangle", 0, "2", m_adios_group, 
+                                     "trimesh")
 \end{lstlisting}

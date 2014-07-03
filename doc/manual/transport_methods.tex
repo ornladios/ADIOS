@@ -327,7 +327,7 @@ Dataspaces is an asynchronous method available in ADIOS, that can be selected by
 the transport method in the external ADIOS XML configuration file as ``Dataspaces''.
 
 \begin{lstlisting}[language=XML, caption=Select Dataspaces as a transport method in the configuration file example.]
-<method group="fluxdiag" method="Dataspaces"/>
+<method group="fluxdiag" method="DATASPACES"/>
 \end{lstlisting}
 
 To make use of the Dataspaces transport, an application job needs to also run the dataspaces\_server 
@@ -370,6 +370,15 @@ The server component will terminate automatically when the applications finish.
 The clients  will send an unregister message to the server before 
 they finish execution, and the servers will exit after they receive \$PROC unregister 
 messages.
+
+The server also needs a user configuration read from a text file called \verb+dataspaces.conf+. The size of the global space has to be defined and also that how many output timesteps of the same dataset (called versions) should be kept in the server's memory and served to readers. If this file does not exist in the current directory, the server will assume default values (3D space, $1000^3$ cube global space, only 1 timestep stored). Dataspaces handles dimensions as Fortran does. The first dimension is the contiguous dimension, unlike in C programs where the last dimension is the fastest dimension. Ensure that the writing application does not create larger global arrays than this space defined, otherwise, data outside of these boundaries will get lost and the reader side may experience reading errors.
+
+\begin{lstlisting}[language=bash, caption=''Example configuration file dataspaces.conf. Dimension order is Fortran order.'']
+## Config file for DataSpaces
+ndim = 3
+dims = 1024,512,64
+max_versions = 5
+\end{lstlisting}
 
 %% The Dataspaces transport method is experimental and is not included with the public version 
 %% of the ADIOS source code in this release; however it is available for use on the 

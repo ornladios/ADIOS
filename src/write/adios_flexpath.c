@@ -1388,7 +1388,7 @@ adios_flexpath_open(struct adios_file_struct *fd,
 	
     //process group format
     struct adios_group_struct *t = method->group;
-
+    //printf("fortran? %d\n", t->adios_host_language_fortran);
     if(t == NULL){
 	adios_error(err_invalid_group, "Invalid group.\n");
 	return err_invalid_group;

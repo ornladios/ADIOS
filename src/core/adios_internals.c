@@ -1818,7 +1818,7 @@ int adios_common_set_transform (int64_t var_id, const char *transform_type_str)
         adios_error(err_invalid_transform_type, 
                   "Unknown transform type \"%s\" specified for variable \"%s\", ignoring it...\n",
                   transform_spec->transform_type_str, v->name);
-        transform_spec->transform_type == adios_transform_none;
+        transform_spec->transform_type = adios_transform_none;
     }
 
     // This function sets the transform_type field. It does nothing if transform_type is none.

@@ -18,10 +18,12 @@ Requirements and optional features
 
  - ADIOS requires MPI and MPI-IO. 
 
- - ADIOS requires a version 2.5 or higher of Mini-XML.
+ - ADIOS requires Mini-XML. Versions 2.5, 2.6 and 2.7 are supported.
    The Mini-XML library is used to parse XML configuration files. 
    It can be downloaded from 
-      http://www.minixml.org/software.php
+      http://www.msweet.org/downloads.php?L+Z3
+      http://www.msweet.org/files/project3/mxml-2.7.tar.gz
+   Note that ADIOS does NOT work with mxml 2.8
 
  - A Fortran 90 compiler is optional.
    The Fortran API is built only if a Fortran 90 compiler is available.
@@ -35,6 +37,8 @@ Requirements and optional features
    
    NetCDF version 3.6.2 can be downloaded from
        http://www.unidata.ucar.edu/downloads/netcdf
+
+   For this purpose, you can use a sequential build of NetCDF-4 too. 
 
  - HDF5 is optional.
    The bp2h5 converter utility to HDF5 format is built only if a HDF5 
@@ -88,8 +92,8 @@ Quick Installation
    For example, to install ADIOS to /usr/local/adios on a machine where
    mpicc and mpif90 are the compilers:
 
-   $ tar zxf adios-1.0.tar.gz
-   $ cd adios-1.0
+   $ tar zxf adios-1.7.0.tar.gz
+   $ cd adios-1.7.0
    $ CC=mpicc FC=mpif90 ./configure --prefix=/usr/local/adios 
        --with-mxml=<location of mini-xml installation>
        --with-hdf5=<location of HDF5 installation>
