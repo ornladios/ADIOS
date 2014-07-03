@@ -11,6 +11,8 @@
  *  Then open for reading and check if the blockinfo for each block is correct. 
  *  Do the reading twice, once with opening as file (all steps at once) and 
  *     once as streaming (step-by-step)
+ *  Additionally, read a scalar's all instances in the file using writeblock 
+ *     selection.
  *
  * How to run: mpirun -np <N> blocks
  * Output: blocks.bp
@@ -55,12 +57,14 @@ int main (int argc, char ** argv)
         print_written_info(); // this is just for debug to check if rank 0 stores the correct values
         read_all();
         read_stepbystep();
+        read_scalar();
     }
 
     MPI_Barrier (comm);
     MPI_Finalize ();
     free (block_offset);
     free (block_count);
+    if (!rank) printf ("----------- Done. Found %d errors -------\n", nerrors);
     return nerrors;
 }
 
@@ -166,7 +170,7 @@ int write_blocks ()
 void print_written_info()
 {
     int s, r, b;
-    printf ("------- Information on rank 0 --------\n");
+    printf ("\n------- Information on rank 0 --------\n");
     for (s = 0; s < nsteps; s++) {
         printf ("Step %d:\n", s);
         for (r = 0; r < size; r++) {
@@ -209,22 +213,23 @@ int print_varinfo (ADIOS_FILE *f, int start_step)
                       block_count  [(start_step+i)*nblocks_per_step*size + j] -1
                 );
             }
-            printf("]\n");
+            printf("\n");
         }
     }
     adios_free_varinfo (v);
 }
 
+
 int read_all ()
 {
-    ADIOS_FILE * f;
-    float timeout_sec = 0.0; 
-    int steps = 0;
+        ADIOS_FILE * f;
+        float timeout_sec = 0.0; 
+        int steps = 0;
     int retval = 0;
     MPI_Comm    comm = MPI_COMM_SELF;
 
     adios_read_init_method (ADIOS_READ_METHOD_BP, comm, "verbose=3");
-    printf ("--------- Read as file  ------------\n");
+    printf ("\n--------- Read as file  ------------\n");
     f = adios_read_open_file (fname, ADIOS_READ_METHOD_BP, comm);
     if (f == NULL) {
         printf ("Error at opening file: %s\n", adios_errmsg());
@@ -249,7 +254,7 @@ int read_stepbystep ()
     MPI_Comm    comm = MPI_COMM_SELF;
 
     adios_read_init_method (ADIOS_READ_METHOD_BP, comm, "verbose=3");
-    printf ("--------- Read as stream  ------------\n");
+    printf ("\n--------- Read as stream  ------------\n");
     f = adios_read_open (fname, ADIOS_READ_METHOD_BP,
                           comm, ADIOS_LOCKMODE_NONE, timeout_sec);
     if (adios_errno == err_file_not_found)
@@ -288,5 +293,127 @@ int read_stepbystep ()
     }
     adios_read_finalize_method (ADIOS_READ_METHOD_BP);
     //printf ("We have processed %d steps\n", steps);
+    return retval;
+}
+
+
+
+int print_scalar (ADIOS_FILE *f, char * name) 
+{
+    ADIOS_VARINFO * v;
+    int i,j,k;
+
+    v = adios_inq_var (f, name);
+    adios_inq_var_blockinfo (f, v);
+
+    printf ("Scalar '%s':\n",  name);
+    printf ("nsteps = %d\n",  v->nsteps);
+    printf ("nblocks per step = %d\n",  v->nblocks[0]);
+
+    int err;
+
+    /* Read one writeblock across all timesteps */
+    int *data = (int*) calloc (v->nsteps, sizeof(int));
+    ADIOS_SELECTION *s;
+    printf ("Read same instance across all timesteps:\n");
+    for (i=0; i < v->nblocks[0]; i++) {
+        s = adios_selection_writeblock(i);
+        err = adios_schedule_read_byid(f, s, v->varid, 0, v->nsteps, data);
+        if (!err) 
+        { 
+            err = adios_perform_reads(f, 1);
+            if (!err) 
+            { 
+                err = 0;
+                printf ("  block %d = [",  i);
+                for (j=0; j < v->nsteps; j++) {
+                    printf ("%d", data[j]);
+                    if (data[j] != 
+                        block_offset [j*nblocks_per_step*size + i]) 
+                    {
+                        err = 1;
+                    }
+                    if (j < v->nsteps-1) printf(",");
+                }
+                printf("]");
+
+                if (err) 
+                {
+                    nerrors++;
+                    printf ("\tERROR expected = [");
+                    for (j=0; j < v->nsteps; j++) {
+                        printf ("%llu", block_offset [j*nblocks_per_step*size + i]);
+                        if (j < v->nsteps-1) printf(",");
+                    }
+                    printf("]");
+                }
+                printf("\n");
+
+            } else {
+                printf ("ERROR at reading scalar '%s': %s\n", name, adios_errmsg());
+            } 
+        } else {
+                printf ("ERROR at scheduling read for scalar '%s': %s\n", name, adios_errmsg());
+        }
+        adios_selection_delete(s);
+    }
+
+    /* Now read piecewise, one writeblock at a time */
+    printf ("Read each instance individually:\n");
+    for (j=0; j < v->nsteps; j++) {
+        printf ("  step %d: \n",  j);
+        for (i=0; i < v->nblocks[j]; i++) {
+            s = adios_selection_writeblock(i);
+            err = adios_schedule_read_byid(f, s, v->varid, j, 1, data);
+            if (!err) 
+            { 
+                err = adios_perform_reads(f, 1);
+                if (!err) 
+                { 
+                    printf ("    block %d = %d", i, data[0]);
+                    if (data[0] != 
+                        block_offset [j*nblocks_per_step*size + i]) 
+                    {
+                        printf ("\tERROR expected = %llu", 
+                                block_offset [j*nblocks_per_step*size + i]);
+                        nerrors++;
+                    }
+                    printf ("\n");
+                } else {
+                    printf ("ERROR at reading scalar '%s': %s\n", name, adios_errmsg());
+                } 
+            } else {
+                printf ("ERROR at scheduling read for scalar '%s': %s\n", name, adios_errmsg());
+            }
+            adios_selection_delete(s);
+        }
+    }
+
+    adios_free_varinfo (v);
+    free(data);
+}
+
+int read_scalar ()
+{
+    ADIOS_FILE * f;
+    float timeout_sec = 0.0; 
+    int steps = 0;
+    int retval = 0;
+    MPI_Comm    comm = MPI_COMM_SELF;
+
+    adios_read_init_method (ADIOS_READ_METHOD_BP, comm, "verbose=3");
+    printf ("\n--------- Read all instances of the scalar 'O'  ------------\n");
+    f = adios_read_open_file (fname, ADIOS_READ_METHOD_BP, comm);
+    if (f == NULL) {
+        printf ("Error at opening file: %s\n", adios_errmsg());
+        retval = adios_errno;
+    }
+    else
+    {
+        /* Read the scalar O with writeblock selection */
+        print_scalar (f, "O");
+        adios_read_close (f);
+    }
+    adios_read_finalize_method (ADIOS_READ_METHOD_BP);
     return retval;
 }
