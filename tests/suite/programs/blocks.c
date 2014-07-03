@@ -20,6 +20,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <stdint.h>
 #include <string.h>
 #include "adios.h"
 #include "adios_read.h"
@@ -38,8 +39,8 @@ int read_stepbystep ();
 /* Remember (on rank 0) what was written (from all process) to check against it at reading */
 static int nblocks_per_step;
 static int nsteps;
-static int * block_offset;  // block_offset[ step*nblocks_per_step + i ] is i-th block offset written in "step".
-static int * block_count;   // block_count [ step*nblocks_per_step + i ] is i-th block size written in "step".
+static uint64_t * block_offset;  // block_offset[ step*nblocks_per_step + i ] is i-th block offset written in "step".
+static uint64_t * block_count;   // block_count [ step*nblocks_per_step + i ] is i-th block size written in "step".
 
 
 int main (int argc, char ** argv) 
@@ -75,8 +76,8 @@ int write_blocks ()
     // We will have "3 steps * 2 blocks per process * number of processes" blocks
     nsteps = 3;
     nblocks_per_step = 2;
-    block_offset = (int*) malloc (sizeof(int) * nsteps * nblocks_per_step * size);
-    block_count  = (int*) malloc (sizeof(int) * nsteps * nblocks_per_step * size);
+    block_offset = (uint64_t*) malloc (sizeof(uint64_t) * nsteps * nblocks_per_step * size);
+    block_count  = (uint64_t*) malloc (sizeof(uint64_t) * nsteps * nblocks_per_step * size);
 
     adios_init_noxml (comm);
     adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 10);
@@ -118,7 +119,10 @@ int write_blocks ()
             t[i] = rank + it*0.1 + 0.01;
 
         MPI_Barrier (comm);
-        adios_open (&m_adios_file, "restart", fname, "a", comm);
+        if (it==0) 
+            adios_open (&m_adios_file, "restart", fname, "w", comm);
+        else
+            adios_open (&m_adios_file, "restart", fname, "a", comm);
         adios_groupsize = 4 + 4 + 4 + NX * 8
             + 4 + 4 + 4 + NX * 8;
         adios_group_size (m_adios_file, adios_groupsize, &adios_totalsize);
@@ -167,7 +171,7 @@ void print_written_info()
         printf ("Step %d:\n", s);
         for (r = 0; r < size; r++) {
             for (b = 0; b < nblocks_per_step; b++) {
-                printf ("rank %d: block %d: size=%d, offset=%d\n", r, b+1, 
+                printf ("rank %d: block %d: size=%llu, offset=%llu\n", r, b+1, 
                         block_count  [s*nblocks_per_step*size + nblocks_per_step*r + b],
                         block_offset [s*nblocks_per_step*size + nblocks_per_step*r + b]
                        );
@@ -191,7 +195,7 @@ int print_varinfo (ADIOS_FILE *f, int start_step)
     for (i = 0; i < v->nsteps; i++) {
         printf ("  nblocks[%d] = %d\n", i, v->nblocks[i]);
         for (j = 0; j < v->nblocks[i]; j++) {
-            printf("    block %2d: [%lld:%lld]", j,
+            printf("    block %2d: [%llu:%llu]", j,
                         v->blockinfo[j].start[0],
                         v->blockinfo[j].start[0] + v->blockinfo[j].count[0]-1);
             
@@ -199,7 +203,7 @@ int print_varinfo (ADIOS_FILE *f, int start_step)
                 v->blockinfo[j].count[0] != block_count  [(start_step+i)*nblocks_per_step*size + j] ) 
             {
                 nerrors++;
-                printf ("\tERROR: expected [%lld:%lld]",
+                printf ("\tERROR: expected [%llu:%llu]",
                     block_offset [(start_step+i)*nblocks_per_step*size + j],
                     block_offset [(start_step+i)*nblocks_per_step*size + j] + 
                       block_count  [(start_step+i)*nblocks_per_step*size + j] -1
