@@ -530,7 +530,7 @@ adios_read_icee_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_sec)
         head->item = next;
         adiosfile->fh = (uint64_t) next;
 
-        //icee_fileinfo_free(fp);
+        icee_fileinfo_free(fp);
     }
     else
         adios_error (err_step_notready, 
@@ -618,11 +618,9 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
 				       int nsteps,
 				       void *data)
 {   
-    log_warn("%s (%d)\n", __FUNCTION__, varid);
-
     icee_fileinfo_rec_ptr_t fp = (icee_fileinfo_rec_ptr_t) adiosfile->fh;
+    log_warn("%s (%d:%s)\n", __FUNCTION__, varid, fp->fname);
     assert(varid < fp->nvars);
-    log_warn("%s (%s)\n", __FUNCTION__, fp->fname);
 
     if(nsteps != 1){
         adios_error (err_invalid_timestep,
@@ -634,6 +632,7 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
     
     icee_varinfo_rec_ptr_t vp = NULL;
     vp = icee_varinfo_search_byname(fp->varinfo, adiosfile->var_namelist[varid]);
+    icee_varinfo_print(vp);
 
     if(!vp){
         adios_error(err_invalid_varid,
@@ -641,8 +640,6 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
                     varid);
         return adios_errno;
     }
-
-    icee_varinfo_print(vp);
 
     if (sel==0)
         memcpy(data, vp->data, vp->varlen);
@@ -755,15 +752,25 @@ adios_read_icee_inq_var_byid (const ADIOS_FILE * adiosfile, int varid)
     
     icee_varinfo_rec_ptr_t vp = NULL;
     vp = icee_varinfo_search_byname(fp->varinfo, adiosfile->var_namelist[varid]);
-    icee_varinfo_print(vp);
+    //icee_varinfo_print(vp);
 
     if (vp)
     {
         a->varid = vp->varid;
         a->type = vp->type;
         a->ndim = vp->ndims;
-        a->dims = vp->ldims;
-        a->value = vp->ndims == 0? (void*) vp->data : NULL;
+
+        uint64_t dimsize = vp->ndims * sizeof(uint64_t);
+        a->dims = malloc(dimsize);
+        memcpy(a->dims, vp->ldims, dimsize);
+
+        if (vp->ndims == 0)
+        {
+            a->value = malloc(vp->typesize);
+            memcpy(a->value, vp->data, vp->typesize);
+        }
+        else
+            a->value = NULL;
     }
 
     return a;
