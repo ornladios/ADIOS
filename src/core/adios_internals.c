@@ -6151,19 +6151,19 @@ int adios_common_define_mesh_unstructured (char * points,
     strcat (mpath, name);
     strcat (mpath, "/type");
     adios_common_define_attribute (group_id, mpath, "", adios_string, "unstructured", "");
-    if (nspace)
+    if (nspace && *nspace != 0)
     {
 //        if (!adios_define_mesh_unstructured_nspace (nspace, new_group, name))
             if (!adios_define_mesh_nspace (nspace, new_group, name))
             return 0;
     }
-    if (npoints)
+    if (npoints && *npoints != 0)
     {
         if (!adios_define_mesh_unstructured_npoints (npoints, new_group, name))
             return 0;
 
     }
-    if (points){
+    if (points && *points != 0){
         char *p;
         // If we do find "," in points (single-var case)
         if (!(p = strstr(points, ","))){
@@ -6183,7 +6183,7 @@ int adios_common_define_mesh_unstructured (char * points,
                   "uniform-cells required (%s)\n", name);
         return 0;
     }
-    if (!count)
+    if (!count) 
     {
         log_warn ("config.xml: count attribute on "
                   "uniform-cells required (%s)\n", name);
