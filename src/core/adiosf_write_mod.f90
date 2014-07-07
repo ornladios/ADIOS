@@ -156,8 +156,53 @@ module adios_write_mod
             integer,        intent(out) :: err
         end subroutine
 
-    end interface
+        subroutine adios_define_schema_version (group_id, schema_version)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: schema_version
+        end subroutine
+        
+        subroutine adios_define_var_mesh (group_id, varname, meshname)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: varname
+            character(*),   intent(in)  :: meshname
+        end subroutine
 
+        subroutine adios_define_var_centering (group_id, varname, centering)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: varname
+            character(*),   intent(in)  :: centering
+        end subroutine
+
+        subroutine adios_define_mesh_timevarying (timevarying, group_id, name)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: name
+            character(*),   intent(in)  :: timevarying
+        end subroutine
+
+        subroutine adios_define_mesh_file (group_id, name, file)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: name
+            character(*),   intent(in)  :: file
+        end subroutine
+
+        subroutine adios_define_mesh_unstructured (points, data, count, cell_type, npoints, nspace, group_id, name)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: points
+            character(*),   intent(in)  :: data
+            character(*),   intent(in)  :: count
+            character(*),   intent(in)  :: cell_type
+            character(*),   intent(in)  :: npoints
+            character(*),   intent(in)  :: nspace
+            character(*),   intent(in)  :: name
+        end subroutine
+
+    end interface
 
     !
     !

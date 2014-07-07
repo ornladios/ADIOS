@@ -389,6 +389,29 @@ int print_scalar (ADIOS_FILE *f, char * name)
         }
     }
 
+    /* Now get them piecewise, but not with reading but through statistics */
+    printf ("Get each instance individually from available statistics:\n");
+    adios_inq_var_stat (f, v, 0, 1);
+    if (v->statistics && v->statistics->blocks) {
+        ADIOS_VARSTAT *stat = v->statistics;
+        int blockid = 0;
+        for (j=0; j < v->nsteps; j++) {
+            printf ("  step %d: \n",  j);
+            for (i=0; i < v->nblocks[j]; i++) {
+                printf ("    block %d = %d", i, *(int*)stat->blocks->mins[blockid]);
+                if (*(int*)stat->blocks->mins[blockid] != 
+                        block_offset [j*nblocks_per_step*size + i]) 
+                {
+                    printf ("\tERROR expected = %llu", 
+                            block_offset [j*nblocks_per_step*size + i]);
+                    nerrors++;
+                }
+                printf ("\n");
+                blockid++;
+            }
+        }
+    }
+
     adios_free_varinfo (v);
     free(data);
 }

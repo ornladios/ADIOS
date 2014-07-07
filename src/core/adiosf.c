@@ -627,7 +627,120 @@ void FC_FUNC_(adios_select_method, ADIOS_SELECT_METHOD)
     *err = adios_errno;
 }
 
+// no-xml schema API
+///////////////////////////////////////////////////////////////////////////////
+void FC_FUNC_(adios_define_schema_version, ADIOS_DEFINE_SCHEMA_VERSION)
+    (int64_t * group_id, char * schema_version
+    ,int schema_version_size)
+{
+    char * buf1 = 0;
+    buf1 = futils_fstr_to_cstr (schema_version, schema_version_size);
+    if (buf1 != 0)
+    {
+//        printf ("call adios_define_schema_version in adiosf.c\n");
+//        printf ("schema_version is %s\n", buf1);
+        struct adios_group_struct * g = (struct adios_group_struct *) *group_id;
+        adios_common_define_schema_version (g, buf1);
+    }
+    free (buf1);
+}
 
+///////////////////////////////////////////////////////////////////////////////
+void FC_FUNC_(adios_define_var_mesh, ADIOS_DEFINE_VAR_MESH)
+    (int64_t * group_id, const char * varname, const char * meshname
+    ,int varname_size, int meshname_size)
+{
+    char * buf1 = 0;
+    char * buf2 = 0;
+    buf1 = futils_fstr_to_cstr (varname, varname_size);
+    buf2 = futils_fstr_to_cstr (meshname, meshname_size);
+
+    if (buf1 != 0 && buf2 != 0)
+        adios_common_define_var_mesh ( *group_id, buf1, buf2, "");        
+
+    free (buf1);
+    free (buf2);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void FC_FUNC_(adios_define_var_centering, ADIOS_DEFINE_VAR_CENTERING)
+    (int64_t * group_id, const char * varname, const char * centering
+    , int varname_size, int centering_size)
+{
+    char * buf1 = 0;
+    char * buf2 = 0;
+    buf1 = futils_fstr_to_cstr (varname, varname_size);
+    buf2 = futils_fstr_to_cstr (centering, centering_size);
+    if (buf1 != 0 && buf2 != 0)
+        adios_common_define_var_centering (*group_id, buf1, buf2, "");
+
+    free (buf1);
+    free (buf2);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void FC_FUNC_(adios_define_mesh_timevarying, ADIOS_DEFINE_MESH_TIMEVARYING)
+    (const char * timevarying, int64_t * group_id, const char * name
+    ,int timevarying_size, int name_size)
+{
+    char * buf1 = 0;
+    char * buf2 = 0;
+    buf1 = futils_fstr_to_cstr (timevarying, timevarying_size);
+    buf2 = futils_fstr_to_cstr (name, name_size);
+    if (buf1 != 0 && buf2 != 0)
+        adios_common_define_mesh_timeVarying (buf1, *group_id, buf2);
+
+    free (buf1);
+    free (buf2);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void FC_FUNC_(adios_define_mesh_file, ADIOS_DEFINE_MESH_FILE)
+    (int64_t * group_id, char * name, char * file
+    ,int name_size, int file_size)
+{
+    char * buf1 = 0;
+    char * buf2 = 0;
+    buf1 = futils_fstr_to_cstr (name, name_size);
+    buf2 = futils_fstr_to_cstr (file, file_size);
+    if (buf1 != 0 && buf2 != 0)
+        adios_common_define_mesh_file (*group_id, buf1, buf2);
+
+    free (buf1);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void FC_FUNC_(adios_define_mesh_unstructured, ADIOS_DEFINE_MESH_UNSTRUCTURED)
+    (char * points, char * data, char * count, char * cell_type, char * npoints
+    ,char * nspace, int64_t * group_id, const char * name, int points_size, int data_size
+    ,int count_size, int cell_type_size, int npoints_size, int nspace_size, int name_size)
+{
+    char * buf1 = 0;
+    char * buf2 = 0;
+    char * buf3 = 0;
+    char * buf4 = 0;
+    char * buf5 = 0;
+    char * buf6 = 0;
+    char * buf7 = 0;
+    buf1 = futils_fstr_to_cstr (points, points_size);
+    buf2 = futils_fstr_to_cstr (data, data_size);
+    buf3 = futils_fstr_to_cstr (count, count_size);
+    buf4 = futils_fstr_to_cstr (cell_type, cell_type_size);
+    buf5 = futils_fstr_to_cstr (npoints, npoints_size);
+    buf6 = futils_fstr_to_cstr (nspace, nspace_size);
+    buf7 = futils_fstr_to_cstr (name, name_size);
+
+//    adios_common_define_mesh_unstructured (buf1, buf2, buf3, buf4, buf5, buf6, buf7, *group_id);
+    adios_common_define_mesh_unstructured (buf1, buf2, buf3, buf4, buf6, buf5, buf7, *group_id);
+
+    free (buf1);
+    free (buf2);
+    free (buf3);
+    free (buf4);
+    free (buf5);
+    free (buf6);
+    free (buf7);
+}
 
 /**************************************************************************/
 /*                  Specific function for each data type                  */
