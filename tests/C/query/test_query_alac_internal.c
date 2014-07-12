@@ -147,6 +147,16 @@ void  testBitsCal(){
 	assert(tbits == 2);
 }
 
+void testResolveBoundary(){
+	ADIOS_QUERY q;
+	q._value = "0.651";
+	q._op = ADIOS_LT;
+	double lb , hb;
+	resolveQueryBoundary(&q, &hb, &lb);
+	assert(hb == 0.651);
+	assert(lb == DBL_MIN);
+}
+
 void testAlacBitmapConversion(){
 	ADIOS_ALAC_BITMAP b ;
 	b.length = 1024;
@@ -170,6 +180,56 @@ void testAlacBitmapConversion(){
 	FREE(b.bits);
 	FREE(rb.bits);
 }
+
+
+void test_adios_read_alac_index(ADIOS_FILE *fp, ADIOS_VARINFO *v){
+    int blockId = 0;
+    ADIOS_VARTRANSFORM *tfv = adios_inq_var_transform(fp, v);
+    ADIOS_TRANSFORM_METADATA *tmetas = tfv->transform_metadatas;
+    ADIOS_TRANSFORM_METADATA tmeta = tmetas[blockId];
+    assert(tmeta.length == 24);
+    uint64_t *threeData = (uint64_t*)tmeta.content;
+    printf("meta size: %" PRIu64 ", index size: %" PRIu64
+			", data size: %" PRIu64 "\n"
+			, threeData[0], threeData[1], threeData[2]);
+
+    uint64_t metaSize = threeData[0];
+    int startStep = 0, numStep = 1;
+
+    ALMetadata partitionMeta;
+	const ALBinLayout * const bl = &(partitionMeta.binLayout);
+    readPartitionMeta(blockId, metaSize,fp, v ,startStep,numStep,&partitionMeta);
+
+    bin_id_t low_bin =0 , hi_bin = 1;
+    uint64_t indexStartPos = metaSize;
+
+    const uint64_t first_bin_off = ALGetIndexBinOffset( &partitionMeta, low_bin);
+	const uint64_t last_bin_off = ALGetIndexBinOffset( &partitionMeta, hi_bin);
+	const uint64_t bin_read_len = last_bin_off - first_bin_off;
+
+    void *indexData =  (void *) malloc(sizeof(char)*bin_read_len);
+
+    ADIOS_SELECTION *sel = adios_selection_writeblock_bounded(blockId, indexStartPos, bin_read_len, 0);
+	adios_schedule_read_byid(fp, sel, v->varid, startStep, numStep, indexData);
+	adios_perform_reads(fp, 1);
+	adios_selection_delete(sel);
+
+	ALIndex index = (ALIndex) indexData;
+	rid_t * idx = (rid_t *) index;
+	uint64_t resultCount = bl->binStartOffsets[hi_bin] - bl->binStartOffsets[low_bin];
+	uint64_t ni;
+	printf("index from bin %" PRIu32 " to bin %"PRIu32 " : ", low_bin, hi_bin);
+	for ( ni = 0; ni < resultCount; ni++) {
+		rid_t rid_val = idx[ni];
+		printf("%"PRIu32 ",", rid_val);
+	}
+	printf("\n");
+
+	FREE(index);
+	adios_free_var_transform(tfv);
+}
+
+
 /*
  * RUN with one processor is enough
  * sample usage:
@@ -230,6 +290,18 @@ int main (int argc, char ** argv)
     testBitsCal();
     printf("// test is passed \n");
     printf("///////////////////////////////////////\n");
+
+    printf("//====================testResolveBoundary==================//\n");
+    testResolveBoundary();
+    printf("// test is passed \n");
+    printf("///////////////////////////////////////\n");
+
+
+    printf("//====================test_adios_read_alac_index==================//\n");
+    test_adios_read_alac_index(fp,v);
+    printf("// test is passed \n");
+    printf("///////////////////////////////////////\n");
+
 
     adios_read_close (fp);
 
