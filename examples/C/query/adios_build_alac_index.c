@@ -43,7 +43,7 @@ void adios_write_pg ( char input_dir [], char transform [], uint8_t nvars, char 
     uint32_t    pg_var_size = pg_dim.element_size;
     uint32_t    data_var_size = data_dim.element_size;
 
-    uint32_t    ntimesteps = 1;
+    uint32_t    numPGs = 1;
     char        varfile [nvars][256];
     FILE        *fp [nvars];
 
@@ -76,7 +76,7 @@ void adios_write_pg ( char input_dir [], char transform [], uint8_t nvars, char 
     // Name the output bp file based on the name of the transform
     sprintf (output_bp_file, "%s/%s_%d.bp", input_dir, transform, pg_var_size);
 
-    ntimesteps = data_var_size / pg_var_size;
+    numPGs = data_var_size / pg_var_size;
 
 //    assert(size == ntimesteps);
 
@@ -101,7 +101,7 @@ void adios_write_pg ( char input_dir [], char transform [], uint8_t nvars, char 
 
     char *pg_var_data = (char *) malloc (pg_var_size);
 
-    printf ("ntimesteps = %d, NX = %u, NY = %u, NZ = %u\n", ntimesteps, NX, NY, NZ);
+    printf ("ntimesteps = %d, NX = %u, NY = %u, NZ = %u\n", numPGs, NX, NY, NZ);
 
     adios_groupsize = 4 \
                     + 4 \
@@ -114,7 +114,7 @@ void adios_write_pg ( char input_dir [], char transform [], uint8_t nvars, char 
                     + 8 * (1) * (DX * DY * DZ) ;
 
 
-    for (ts = 0; ts < ntimesteps; ts ++) {
+    for (ts = 0; ts < numPGs; ts ++) {
 
         uint32_t OX = (ts /
         			       (
@@ -181,6 +181,9 @@ void adios_write_pg ( char input_dir [], char transform [], uint8_t nvars, char 
     return ;
 }
 
+/*
+ * ./adios_build_alac_index ./xml alacrity-1var
+ */
 int main (int argc, char ** argv)
 {
     MPI_Init (&argc, &argv);

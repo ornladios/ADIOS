@@ -13,6 +13,7 @@
 #include "mpi.h"
 #include "adios_read.h"
 #include "adios_read_ext.h"
+
 void test_adios_inq_var_transform(ADIOS_FILE *fp, ADIOS_VARINFO *v)
 {
     int blockId = 0;
@@ -28,6 +29,7 @@ void test_adios_inq_var_transform(ADIOS_FILE *fp, ADIOS_VARINFO *v)
 
     adios_free_var_transform(tfv);
 }
+
 
 /*
  * ADIOS_PG_INTERSECTIONS * adios_find_intersecting_pgs(
@@ -139,18 +141,17 @@ int main (int argc, char ** argv)
     char varName[256] = "rdm";
 
     ADIOS_VARINFO* v = adios_inq_var(fp, varName);
+    //====================start to test ==================//
 
     data_view_t  dv = PHYSICAL_DATA_VIEW;
     adios_read_set_data_view(fp, dv);
-
-    //====================start to test ==================//
-
     test_adios_inq_var_transform(fp, v);
+
+
 
     dv = LOGICAL_DATA_VIEW;
     adios_read_set_data_view(fp, dv);
     test_adios_find_intersecting_pgs(fp,v);
-
 
 
     adios_read_close (fp);

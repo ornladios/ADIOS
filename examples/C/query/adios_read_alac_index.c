@@ -17,7 +17,8 @@
 //#include "adios_read.h"
 #include "adios_query.h"
 
-void oneDefinedBox(ADIOS_FILE* bf ){
+
+void oneDefinedBox(ADIOS_FILE* bf , const char * lb, const char * hb){
 
 	  printf("\n=============== testing one single bounding box ===========\n");
 	  int ndim = 3;
@@ -26,15 +27,24 @@ void oneDefinedBox(ADIOS_FILE* bf ){
 
 
 	  ADIOS_SELECTION* box1 = adios_selection_boundingbox(ndim, start1, count1);
-	  // rdm data is in the range btw 100 and 200, and this query constraint should return zero
+	  // rdm data is in the range btw 100 and 200
+	  // and this query constraint should return zero
 	  const char* varName1 = "rdm";
 	  enum ADIOS_PREDICATE_MODE op1 = ADIOS_GT;
-      const char* value1 = "201";
+//      const char* value1 = "201";  // return no results
+//	   const char* value1 = "150";
 
-      ADIOS_QUERY* q1 = adios_query_create(bf, varName1, box1, op1, value1);
+	  printf("query constraint : lb = %s and hb = %s \n", lb, hb);
+      ADIOS_QUERY* q1 = adios_query_create(bf, varName1, box1, op1, lb);
+
 
       int timestep = 0;
-      int64_t batchSize = 50;
+      adios_query_set_timestep(timestep);
+      int64_t batchSize = 10000;
+
+//      int64_t estimateResults = adios_query_estimate(q1);
+
+//      printf("estimated result number %"PRIu64 " \n", estimateResults);
 
       while (1) {
         ADIOS_SELECTION* currBatch = NULL;
@@ -73,9 +83,15 @@ int main (int argc, char ** argv)
     MPI_Init (&argc, &argv);
 
     if (argc < 2 ){
-    	printf(" usage: %s {input bp file} \n", argv[0]);
+    	printf(" usage: %s {input bp file}, {lb} {hb} \n", argv[0]);
     	return 1;
     }
+
+    char lbstr[255], hbstr[255];
+    argc >= 3 ? strcpy(lbstr, argv[2]) : strcpy(lbstr, "0.0");
+    argc >= 4 ? strcpy(hbstr, argv[3]) : strcpy(hbstr, "0.0");
+
+
     adios_read_init_method (method, comm, NULL);
 
     ADIOS_FILE * f = adios_read_open_file (argv[1], method, comm);
@@ -89,7 +105,7 @@ int main (int argc, char ** argv)
     adios_query_init(ADIOS_QUERY_TOOL_ALACRITY);
 
     //====================== start to test ===================//
-    oneDefinedBox(f );
+    oneDefinedBox(f , lbstr, hbstr);
 
 
     adios_read_close (f);
