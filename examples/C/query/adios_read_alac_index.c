@@ -17,6 +17,25 @@
 //#include "adios_read.h"
 #include "adios_query.h"
 
+void printPoints(const ADIOS_SELECTION_POINTS_STRUCT * pts){
+	uint64_t i = 0;
+	if (pts->ndim == 3){
+
+		for(i = 0; i < pts->npoints; i++){
+			printf("[ %"PRIu64", %"PRIu64", %"PRIu64" ] ,"
+					, pts->points[i*3], pts->points[i*3+1], pts->points[i*3+ 2]);
+		}
+
+	}
+	if (pts->ndim ==2){
+		for(i = 0; i < pts->npoints; i++){
+				printf("[ %"PRIu64", %"PRIu64" ] ,"
+					, pts->points[i*2], pts->points[i*2 +1]);
+		}
+	}
+	printf("\n");
+
+}
 
 void oneDefinedBox(ADIOS_FILE* bf , const char * lb, const char * hb){
 
@@ -56,6 +75,7 @@ void oneDefinedBox(ADIOS_FILE* bf , const char * lb, const char * hb){
         assert(currBatch->type ==ADIOS_SELECTION_POINTS);
         const ADIOS_SELECTION_POINTS_STRUCT * retrievedPts = &(currBatch->u.points);
         printf("retrieved points %" PRIu64 " \n",  retrievedPts->npoints);
+        printPoints(retrievedPts);
         adios_selection_delete(currBatch);
 
         if (hasMore == 0) { // there is no left results to retrieve
