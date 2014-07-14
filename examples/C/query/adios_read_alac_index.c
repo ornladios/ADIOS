@@ -49,14 +49,15 @@ void oneDefinedBox(ADIOS_FILE* bf , const char * lb, const char * hb){
 	  // rdm data is in the range btw 100 and 200
 	  // and this query constraint should return zero
 	  const char* varName1 = "rdm";
-	  enum ADIOS_PREDICATE_MODE op1 = ADIOS_GT;
+	  enum ADIOS_PREDICATE_MODE op1 = ADIOS_GTEQ;
+	  enum ADIOS_PREDICATE_MODE op2 = ADIOS_LTEQ;
 //      const char* value1 = "201";  // return no results
 //	   const char* value1 = "150";
 
 	  printf("query constraint : lb = %s and hb = %s \n", lb, hb);
       ADIOS_QUERY* q1 = adios_query_create(bf, varName1, box1, op1, lb);
-
-
+      ADIOS_QUERY* q2 = adios_query_create(bf, varName1, box1, op2, hb);
+      ADIOS_QUERY* q = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
       int timestep = 0;
       adios_query_set_timestep(timestep);
       int64_t batchSize = 10000;
@@ -67,7 +68,7 @@ void oneDefinedBox(ADIOS_FILE* bf , const char * lb, const char * hb){
 
       while (1) {
         ADIOS_SELECTION* currBatch = NULL;
-        int hasMore =  adios_query_get_selection(q1, batchSize, box1, &currBatch);
+        int hasMore =  adios_query_get_selection(q, batchSize, box1, &currBatch);
 
         if (currBatch == NULL) { // there is no results at all
         	break;
@@ -75,7 +76,7 @@ void oneDefinedBox(ADIOS_FILE* bf , const char * lb, const char * hb){
         assert(currBatch->type ==ADIOS_SELECTION_POINTS);
         const ADIOS_SELECTION_POINTS_STRUCT * retrievedPts = &(currBatch->u.points);
         printf("retrieved points %" PRIu64 " \n",  retrievedPts->npoints);
-        printPoints(retrievedPts);
+//        printPoints(retrievedPts);
         adios_selection_delete(currBatch);
 
         if (hasMore == 0) { // there is no left results to retrieve
