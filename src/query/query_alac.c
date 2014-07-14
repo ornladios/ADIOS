@@ -21,11 +21,14 @@
 /************Uncompressed bitmap*********/
 /***********This is an internal data structure for multi-variate constraints query processing ******/
 typedef struct{
-	uint64_t *bits; // uint64_t array holds the bits
-	uint64_t length; // the bits array size
-	uint64_t numSetBits; // actual element size of this bits array represents ( the number of set bits(1s) in the bits array)
+	uint64_t *bits;       // uint64_t array holds the bits
+	uint64_t length;      // the bits array size
+	uint64_t numSetBits;  // actual element size of this bits array represents ( the number of set bits(1s) in the bits array)
 	uint64_t realElmSize; // the number of elements the bits are presenting
 	                      // if number of elements is 100, then, the length = 2 ( 100 / 64 + 100%64 ), and realElmSize = 100
+	uint64_t lastConvRid; // it is only used when the bit map is converted to RIDs, it indicates the bit position (local RID) of last RID conversion
+	                      // if the last converting bit array is ....(234) 0001 0001 0000 0000 , then lastConvRid = 238 indicates the left RID 242(0001) has
+	                      // not been converted
 } ADIOS_ALAC_BITMAP;
 
 #define FreeALACBITMAP(b) { FREE(b->bits); FREE(b) }
@@ -43,6 +46,12 @@ ADIOS_ALAC_BITMAP * adios_alac_bitsOp(ADIOS_ALAC_BITMAP * op1,
 		ADIOS_ALAC_BITMAP * op2, enum ADIOS_CLAUSE_OP_MODE operator);
 
 uint64_t calSetBitsNum(ADIOS_ALAC_BITMAP *b);
+
+// since we could not set initial lastConvRid to 0 ( 0 represents the first RID in the bitmap )
+// we need extra effort to set lastConvRid to initial state
+void initLastConvRid (ADIOS_ALAC_BITMAP *b);
+
+bool isLastConvRidInit(const ADIOS_ALAC_BITMAP *b);
 
 int coordinateConversionWithCheck(int * coordinates, const  int dim
 		, const  uint64_t *srcstart, const  uint64_t *deststart, const  uint64_t *destend);
@@ -86,10 +95,10 @@ void setRidToBits(bool isPGContained ,uint64_t *srcstart, uint64_t *srccount, ui
 		ADIOS_ALAC_BITMAP *alacResultBitmap /*IN&OUT*/);
 
 
-void adios_query_alac_retrieval_points2d( ADIOS_ALAC_BITMAP *b, uint64_t retrieval_size , uint64_t lastRetrievalPos
+void adios_query_alac_retrieval_points2d( ADIOS_ALAC_BITMAP *b, uint64_t retrieval_size
 		, ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb , uint64_t *points /*OUT*/ );
 
-void adios_query_alac_retrieval_points3d( ADIOS_ALAC_BITMAP *b, uint64_t retrieval_size , uint64_t lastRetrievalPos
+void adios_query_alac_retrieval_points3d( ADIOS_ALAC_BITMAP *b, uint64_t retrieval_size
 		, ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb , uint64_t *points /*OUT*/ );
 
 inline void setBitsinBitMap(rid_t rid, ADIOS_ALAC_BITMAP * alacResultBitmap){
@@ -111,6 +120,17 @@ unsigned char set_bit_count[65536];
 unsigned char set_bit_position[65536][16];
 
 /**** END -- Funcs. that are internal funcs. ********/
+
+void initLastConvRid (ADIOS_ALAC_BITMAP *b){
+	b->lastConvRid = b->realElmSize + 1;
+}
+
+bool isLastConvRidInit(const ADIOS_ALAC_BITMAP *b){
+	return (b->lastConvRid == (b->realElmSize +1));
+}
+
+
+
 
 /*since we are set data view is physical view, the element size is 1 byte */
 
@@ -361,6 +381,7 @@ void adios_alac_check_candidate(ALMetadata *partitionMeta, bin_id_t startBin, bi
 		case  sizeof(uint64_t): {
 			double * lowData64 = (double *)recoveredDataInBytes;
 				for(el= 0; el < totalElm; el ++){
+					//TODO: <= or < hb | >= lb or > lb depends on the PREDICATE TYPE
 					if (lowData64[el] <= hb && lowData64[el] >= lb){
 						rid = decodeRids[el];
 						//TODO: do need to check when the PG is fully covered by user's selection box
@@ -798,13 +819,16 @@ ADIOS_ALAC_BITMAP * adios_alac_process(ADIOS_QUERY* q, int timestep,
 	ADIOS_ALAC_BITMAP * rbitmap, *lbitmap;
 	if (q ->_left == NULL && q->_right == NULL) {
 		return adios_alac_uniengine(q, timestep, estimate);
-	} else if (q->_right) {
-		rbitmap = adios_alac_process((ADIOS_QUERY*) q->_right, timestep, estimate);
-	} else if (q->_left) {
-		lbitmap = adios_alac_process((ADIOS_QUERY*) q->_left, timestep, estimate);
 	}
 
-	return adios_alac_bitsOp(rbitmap, lbitmap, q->_leftToRightOp );
+	if (q->_left)
+		lbitmap = adios_alac_process((ADIOS_QUERY*) q->_left, timestep, estimate);
+
+	if (q->_right)
+		rbitmap = adios_alac_process((ADIOS_QUERY*) q->_right, timestep, estimate);
+
+
+	return adios_alac_bitsOp(lbitmap, rbitmap, q->_leftToRightOp );
 }
 
 
@@ -813,60 +837,19 @@ void adios_query_alac_init_method() {}
 
 void adios_query_alac_retrieval_points2d(
 		ADIOS_ALAC_BITMAP *b, uint64_t retrieval_size
-		, uint64_t lastRetrievalPos
 		, ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb
 		, uint64_t *points /*OUT*/ ){
 
-	//TODO: indicates the left bits in the bit array
-	uint64_t start_pos = lastRetrievalPos / 64; // each array element has 64 bits
-	uint64_t retrieveUnitNum = (retrieval_size + 64 -1)  / 64 ;
-	uint64_t remain = lastRetrievalPos % 64, count = 1;
+	uint64_t start_pos = 0;
+	if (!isLastConvRidInit(b))
+		start_pos =	b->lastConvRid  / 64;
+
 	uint64_t * p_bitmap = b->bits;
-	uint64_t pidx = 0, off = start_pos, retrieveCount;
-	int j , m;
-	for (retrieveCount= 0; retrieveCount < retrieveUnitNum ; retrieveCount++) {
-		uint64_t offset_long_int = off * 64; // original index offset
-		// 2 bytes (unsigned short int)  = 16 bits
-		// 4 bytes (unsigned long int )= 64 bit
-		uint16_t * temp = (uint16_t *) &(p_bitmap[off]);
-		uint64_t offset;
-		for (j = 0; j < 4; j++) {
-			offset = offset_long_int + j * 16; // here, 16 is used because temp is 16bits (unsigned short int) pointer
-			// set_bit_count for each 2 bytes, the number of 1
-			/*
-			 * *******|               64 bits                 | => final_result_bitmap []
-			 * *******| 16 bits | 16 bits | 16 bits | 16 bits | => temp[]
-			 */
-			for (m = 0; m < set_bit_count[temp[j]] && (count <= retrieval_size) ; m++) {
-				uint64_t reconstct_rid = offset+ set_bit_position[temp[j]][m];
-				if (count > remain ){
-					points[pidx++] = bb->start[0] + reconstct_rid / bb->count[1];
-					points[pidx++] = bb->start[1] + reconstct_rid % bb->count[1];
-				}
-				count ++;
-			}
-		}
-		off ++;
-	}
-
-}
-
-void adios_query_alac_retrieval_points3d( ADIOS_ALAC_BITMAP *b, uint64_t retrieval_size , uint64_t lastRetrievalPos
-		, ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb , uint64_t *points /*OUT*/ ){
-
-	//TODO: indicates the left bits in the bit array
-	uint64_t start_pos = lastRetrievalPos / 64; // each array element has 64 bits
-	uint64_t retrieveUnitNum = (retrieval_size + 64 -1)  / 64 ;
-	uint64_t remain = lastRetrievalPos % 64;
-	uint64_t count = 1;
-	uint64_t * p_bitmap = b->bits;
-	uint64_t pidx = 0, off = start_pos, retrieveCount;
-
-	for (retrieveCount= 0; retrieveCount < retrieveUnitNum ; retrieveCount++) {
-		uint64_t offset_long_int = off * 64; // original index offset
-		// 2 bytes (unsigned short int)  = 16 bits
-		// 4 bytes (unsigned long int )= 64 bit
-		uint16_t * temp = (uint16_t *) &(p_bitmap[off]);
+	uint64_t pidx = 0, off = start_pos, retrieveCount = 0;
+	uint64_t reconstct_rid;
+	while (off <= b->length ){
+		uint16_t * temp = (uint16_t *) &(p_bitmap[off]); // 2 bytes (unsigned short int)  = 16 bits
+		uint64_t offset_long_int = off * 64; // original index offset ; // 4 bytes (unsigned long int )= 64 bit
 		uint64_t offset;
 		int j , m;
 		for (j = 0; j < 4; j++) {
@@ -876,14 +859,78 @@ void adios_query_alac_retrieval_points3d( ADIOS_ALAC_BITMAP *b, uint64_t retriev
 			 * *******|               64 bits                 | => final_result_bitmap []
 			 * *******| 16 bits | 16 bits | 16 bits | 16 bits | => temp[]
 			 */
-			for (m = 0; m < set_bit_count[temp[j]] && (count <= retrieval_size) ; m++) {
-				uint64_t reconstct_rid = offset+ set_bit_position[temp[j]][m];
-				if (count > remain ){
+			for (m = 0; m < set_bit_count[temp[j]]  ; m++) {
+				reconstct_rid = offset+ set_bit_position[temp[j]][m];
+				if (!isLastConvRidInit(b)) {
+					if (reconstct_rid > b->lastConvRid) { // skip the RIDs in the 16-bits part
+//						printf("recovered RID %"PRIu64"\n", reconstct_rid);
+						points[pidx++] = bb->start[0] + reconstct_rid / bb->count[1];
+						points[pidx++] = bb->start[1] + reconstct_rid % bb->count[1];
+						retrieveCount++;
+					}
+				}else { // lastConvRid == realElmSize+1 represents the initial state
+					// in which the RID recovering has not started yet
+//					printf("recovered RID %"PRIu64"\n", reconstct_rid);
+					points[pidx++] = bb->start[0] + reconstct_rid / bb->count[1];
+					points[pidx++] = bb->start[1] + reconstct_rid % bb->count[1];
+					retrieveCount++;
+				}
+
+				if (retrieveCount == retrieval_size){
+					b->lastConvRid = reconstct_rid; 					 // updated the status
+					return ;
+				}
+			}
+		}
+		off ++;
+	}
+}
+
+void adios_query_alac_retrieval_points3d( ADIOS_ALAC_BITMAP *b, uint64_t retrieval_size
+		, ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb , uint64_t *points /*OUT*/ ){
+
+	uint64_t start_pos = 0;
+	if (!isLastConvRidInit(b))
+		start_pos =	b->lastConvRid  / 64;
+
+	uint64_t * p_bitmap = b->bits;
+	uint64_t pidx = 0, off = start_pos, retrieveCount = 0;
+	uint64_t reconstct_rid;
+	while (off <= b->length ){
+		uint16_t * temp = (uint16_t *) &(p_bitmap[off]); // 2 bytes (unsigned short int)  = 16 bits
+		uint64_t offset_long_int = off * 64; // original index offset ; // 4 bytes (unsigned long int )= 64 bit
+		uint64_t offset;
+		int j , m;
+		for (j = 0; j < 4; j++) {
+			offset = offset_long_int + j * 16; // here, 16 is used because temp is 16bits (unsigned short int) pointer
+			// set_bit_count for each 2 bytes, the number of 1
+			/*
+			 * *******|               64 bits                 | => final_result_bitmap []
+			 * *******| 16 bits | 16 bits | 16 bits | 16 bits | => temp[]
+			 */
+			for (m = 0; m < set_bit_count[temp[j]]  ; m++) {
+				reconstct_rid = offset+ set_bit_position[temp[j]][m];
+				if (!isLastConvRidInit(b)) {
+					if (reconstct_rid > b->lastConvRid) { // skip the RIDs in the 16-bits part
+//						printf("recovered RID %"PRIu64"\n", reconstct_rid);
+						points[pidx++] = bb->start[0] + reconstct_rid / (bb->count[1] * bb->count[2]) ;
+						points[pidx++] = bb->start[1] + (reconstct_rid % (bb->count[1] * bb->count[2])) / bb->count[2];
+						points[pidx++] = bb->start[2] + (reconstct_rid % (bb->count[1] * bb->count[2])) % bb->count[2] ;
+						retrieveCount++;
+					}
+				}else { // lastConvRid == realElmSize+1 represents the initial state
+					// in which the RID recovering has not started yet
+//					printf("recovered RID %"PRIu64"\n", reconstct_rid);
 					points[pidx++] = bb->start[0] + reconstct_rid / (bb->count[1] * bb->count[2]) ;
 					points[pidx++] = bb->start[1] + (reconstct_rid % (bb->count[1] * bb->count[2])) / bb->count[2];
 					points[pidx++] = bb->start[2] + (reconstct_rid % (bb->count[1] * bb->count[2])) % bb->count[2] ;
+					retrieveCount++;
 				}
-				count ++;
+
+				if (retrieveCount == retrieval_size){
+					b->lastConvRid = reconstct_rid; 					 // updated the status
+					return ;
+				}
 			}
 		}
 		off ++;
@@ -892,12 +939,10 @@ void adios_query_alac_retrieval_points3d( ADIOS_ALAC_BITMAP *b, uint64_t retriev
 }
 
 void adios_query_alac_build_results(
-		uint64_t retrieval_size, ADIOS_QUERY * q, ADIOS_ALAC_BITMAP *b
+		uint64_t retrieval_size, ADIOS_SELECTION* outputBoundry, ADIOS_ALAC_BITMAP *b
 		, ADIOS_SELECTION ** queryResult){
 
 	//last bounding box / points supplied by user
-	ADIOS_SELECTION * outputBoundry = q->_sel;
-	uint64_t offset = q->_lastRead;
 	switch (outputBoundry->type) {
 	case ADIOS_SELECTION_BOUNDINGBOX: {
 		ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(outputBoundry->u.bb);
@@ -905,9 +950,9 @@ void adios_query_alac_build_results(
 		uint64_t dataSize = retrieval_size * (bb->ndim);
 		uint64_t* points = (uint64_t*) (malloc(dataSize * sizeof(uint64_t)));
 		if ( bb->ndim == 3){
-			adios_query_alac_retrieval_points3d(b,retrieval_size,offset,  bb, points);
+			adios_query_alac_retrieval_points3d(b,retrieval_size, bb, points);
 		}else if (bb -> ndim == 2){
-			adios_query_alac_retrieval_points2d(b,retrieval_size,offset,  bb, points);
+			adios_query_alac_retrieval_points2d(b,retrieval_size, bb, points);
 		}
 		*queryResult = adios_selection_points(bb->ndim, retrieval_size, points);
 	}
@@ -933,10 +978,10 @@ int64_t adios_query_alac_estimate_method(ADIOS_QUERY* q) {
 }
 
 /* memory format:
- * | length | numSetBits | realNumSize | bits ....
+ * | length | numSetBits | realNumSize | lastConvRid  |bits ....
  */
 uint64_t * convertALACBitmapTomemstream( ADIOS_ALAC_BITMAP * b ){
-	int metaLen = 3; //----- 1 /*b->length*/ + 1 /*b->numSetBits*/ + 1 /*b->realNumSize*/----//
+	int metaLen = 4; //----- 1 /*b->length*/ + 1 /*b->numSetBits*/ + 1 /*b->realNumSize*/ + 1 /*b->lastConvRid*/----//
 	uint64_t totalSize = b->length + metaLen;
 	uint64_t * headPtr  = (uint64_t *) calloc (totalSize, sizeof(uint64_t));
 	if (headPtr == NULL){
@@ -944,7 +989,7 @@ uint64_t * convertALACBitmapTomemstream( ADIOS_ALAC_BITMAP * b ){
 		return NULL;
 	}
 	uint64_t * movePtr = headPtr;
-	movePtr[0] = b->length;   movePtr[1] = b->numSetBits; movePtr[2] = b->realElmSize;
+	movePtr[0] = b->length;   movePtr[1] = b->numSetBits; movePtr[2] = b->realElmSize; movePtr[3] = b->lastConvRid;
 	memcpy(movePtr+ metaLen, b->bits, sizeof(uint64_t) * b->length);
 	return headPtr;
 }
@@ -958,8 +1003,9 @@ void convertMemstreamToALACBitmap( void *mem , ADIOS_ALAC_BITMAP * bout /*OUT*/)
 	bout->length = ptr[0];
 	bout->numSetBits = ptr[1];
 	bout->realElmSize = ptr[2];
+	bout->lastConvRid = ptr[3];
 	bout->bits = (uint64_t *) malloc(sizeof(uint64_t)*(bout->length));
-	memcpy(bout->bits, ptr+3, sizeof(uint64_t)*(bout->length));
+	memcpy(bout->bits, ptr+4, sizeof(uint64_t)*(bout->length));
 }
 
 int  adios_query_alac_get_selection_method(ADIOS_QUERY* q,
@@ -971,6 +1017,7 @@ int  adios_query_alac_get_selection_method(ADIOS_QUERY* q,
 	if (q->_onTimeStep == NO_EVAL_BEFORE ) { // negative number is not evaluated
 		create_lookup(set_bit_count, set_bit_position);
 		b = adios_alac_process(q, gCurrentTimeStep, false);
+		initLastConvRid(b);
 		q->_maxResultDesired =  calSetBitsNum(b);
 		q->_lastRead = 0;
 		q->_queryInternal = convertALACBitmapTomemstream(b);
@@ -990,7 +1037,7 @@ int  adios_query_alac_get_selection_method(ADIOS_QUERY* q,
 			retrievalSize = batchSize;
 	}
 
-	adios_query_alac_build_results(retrievalSize,q,b,queryResult);
+	adios_query_alac_build_results(retrievalSize, outputBoundry,b,queryResult);
 
 	/*if (q->_maxResultDesired >= 0) {
 		FREE(b->bits); // these data is copied to q->_queryInternal

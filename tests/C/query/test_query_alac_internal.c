@@ -140,6 +140,7 @@ ADIOS_ALAC_BITMAP * mockBitmap(uint64_t length, uint64_t numSetBits, uint64_t re
 	b->bits = (uint64_t *) calloc(b->length, sizeof(uint64_t));
 	b->numSetBits = numSetBits;
 	b->realElmSize = realElmSize;
+	initLastConvRid(b);
 	return b;
 }
 void  testBitsCal(){
@@ -171,6 +172,7 @@ void testAlacBitmapConversion(){
 	assert(rb.length == b->length);
 	assert(rb.numSetBits == b->numSetBits);
 	assert(rb.realElmSize == b->realElmSize );
+	assert(rb.lastConvRid == b->lastConvRid);
 	assert(memcmp(rb.bits, b->bits, sizeof(uint64_t)* (b->length)) == 0);
 	FREE(mem);
 	FreeALACBITMAP(b);
@@ -235,24 +237,34 @@ void test_adios_read_alac_index(ADIOS_FILE *fp, ADIOS_VARINFO *v){
 void test_adios_query_alac_retrieval_points3d(){
 	create_lookup(set_bit_count, set_bit_position);
 	ADIOS_ALAC_BITMAP *b = mockBitmap(10, 0, 630) ;
-	b->bits[0] = 6;
-	uint64_t retrieval_size =2, lastRetrievalPos = 0, i = 0;
+	b->bits[0] = 6;     // 0110 .... | 0 ->        rid: 1, 2
+	b->bits[1] = 7;     // 111 ....  |  64 ->      rid: 64 65 66
+	b->bits[2] = 8;     // 0001 .... |  128 ->     rid: 131
+	b->bits[3] = 255;   // 1111 1111 ...  | 192 -> rid: 192 193 194 195 196 197 198 199
+	b->bits[4] = 100;   // 0010 0110 ...  | 256 -> rid: 258 256 257
+	b->bits[5] = 130;   // 0100 0001 ...  | 320 -> rid: 321 328
+
+	uint64_t retrieval_size =9, i = 0;
 	uint64_t start1[] = {0, 0, 0};
-	uint64_t count1[] = {256, 1,32};
+	uint64_t count1[] = {64, 32,32};
 	int ndim = 3;
 	ADIOS_SELECTION* box1 = adios_selection_boundingbox(ndim, start1, count1);
-
+	int retrieveTimes =2, p = 0;
 	switch (box1->type) {
 		case ADIOS_SELECTION_BOUNDINGBOX: {
 			ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(box1->u.bb);
-			uint64_t dataSize = retrieval_size * (bb->ndim);
-			uint64_t* points = (uint64_t*) (malloc(dataSize * sizeof(uint64_t)));
-			adios_query_alac_retrieval_points3d( b,  retrieval_size, lastRetrievalPos  ,bb , points /*OUT*/ );
-			printf("retrieved points: ");
-			for(i = 0; i < retrieval_size ; i ++){
-				printf("[%"PRIu64", %"PRIu64",%"PRIu64"] , ", points[i*3], points[i*3+1], points[i*3+2]);
+
+			for (p = 0; p < retrieveTimes ; p ++ ){
+				uint64_t dataSize = retrieval_size * (bb->ndim);
+				uint64_t* points = (uint64_t*) (malloc(dataSize * sizeof(uint64_t)));
+				adios_query_alac_retrieval_points3d( b,  retrieval_size, bb , points /*OUT*/ );
+				printf("[%d] retrieved points: ", p);
+				for(i = 0; i < retrieval_size ; i ++){
+					printf("[%"PRIu64", %"PRIu64",%"PRIu64"] , ", points[i*3], points[i*3+1], points[i*3+2]);
+				}
+				printf("\n");
+				FREE(points);
 			}
-			printf("\n");
 		}
 	}
 
