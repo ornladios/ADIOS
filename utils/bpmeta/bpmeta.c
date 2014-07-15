@@ -153,6 +153,8 @@ int main (int argc, char ** argv)
 
     filename = strdup(argv[optind++]);
 
+    if (nthreads < 0) 
+        nthreads = 1;
     if (nthreads > nsubfiles) {
         printf ("Warning: asked for processing %d subfiles using %d threads. "
                 "We will utilize only %d threads.\n", 
