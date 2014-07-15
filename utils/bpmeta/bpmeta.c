@@ -5,8 +5,15 @@
  * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
  */
 
+#include "config.h"
+
+#ifndef _GNU_SOURCE
+#   define _GNU_SOURCE
+#endif
+
 #include <stdio.h>
 #include <stdlib.h>
+#include <getopt.h>
 #include <errno.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -18,50 +25,300 @@
 #include "adios_transforms_common.h" // NCSU ALACRITY-ADIOS
 #include "adios_transforms_read.h" // NCSU ALACRITY-ADIOS
 
+#if HAVE_PTHREAD
+#   include "pthread.h"
+#endif
+
 #define DIVIDER "========================================================\n"
 
+// User arguments
+int verbose=0;   // 1: print summary, 2: print indexes 3: print working info
+int nthreads=1;  // Number of threads to use (main counts as 1 thread)
+char * filename; // process 'filename'.dir/'filename'.NNN subfiles and 
+                 //   generate metadata file 'filename'
+int nsubfiles=0; // number of subfiles to process
 
-void print_process_group_index (
-                         struct adios_index_process_group_struct_v1 * pg_root
-                         );
-void print_vars_index (struct adios_index_var_struct_v1 * vars_root);
-void print_attributes_index
-                         (struct adios_index_attribute_struct_v1 * attrs_root);
+struct option options[] = {
+    {"help",                 no_argument,          NULL,    'h'},
+    {"verbose",              no_argument,          NULL,    'v'},
+    {"nsubfiles",            required_argument,    NULL,    'n'},
+#if HAVE_PTHREAD
+    {"nthreads",             required_argument,    NULL,    't'},
+#endif
+    {NULL,                   0,                    NULL,    0}
+};
 
-int verbose=1; // 1: print summary, 2: print indexes 3: print working info
+#if HAVE_PTHREAD
+static const char *optstring = "hvn:t:";
+#else
+static const char *optstring = "hvn:";
+#endif
+
+// help function
+void display_help() {
+    printf ("usage: bpmeta [OPTIONS] -n <N> <filename>\n"
+            "\nbpmeta processes <filename>.dir/<filename>.<nnn> subfiles and\n"
+            "generates a metadata file <filename>.\n"
+            "\nIt is used to generate the missing metadata file after using\n"
+            "the MPI_AGGREGATE output method with 'have_metada_file=0' option.\n" 
+            "\n"
+            "  --nsubfiles | -n <N>   The number of subfiles to process in\n"
+            "                           <filename>.dir\n"
+#if HAVE_PTHREAD
+            "  --nthreads  | -t <T>   Parallel reading with <T> threads.\n"
+            "                           The main thread is counted in.\n"
+#endif
+            "\n"
+            "Help options\n"
+            "  --help      | -h       Print this help.\n"
+            "  --verbose   | -v       Print log about what this program is doing.\n"
+            "                           Use multiple -v to increase logging level.\n"
+            "Typical use: bpmeta -t 16 -n 1024 mydata.bp\n"
+           );
+}
+
+
+/* Global variables among threads */
+struct adios_bp_buffer_struct_v1 ** b = 0;
+  /* sub-index structure variables */
+struct adios_index_struct_v1 ** subindex;
+
+int process_subfiles (int tid, int startidx, int endidx);
+int write_index (struct adios_index_struct_v1 * index, char * fname);
+void print_pg_index ( int tid, struct adios_index_process_group_struct_v1 * pg_root);
+void print_variable_index (int tid, struct adios_index_var_struct_v1 * vars_root);
+void print_attribute_index (int tid,  struct adios_index_attribute_struct_v1 * attrs_root);
+
+#if HAVE_PTHREAD
+struct thread_args 
+{
+    int tid;
+    int startidx;
+    int endidx;
+};
+
+void * thread_main (void *arg)
+{
+    struct thread_args *targ = (struct thread_args *) arg;
+    process_subfiles (targ->tid, targ->startidx, targ->endidx);
+    pthread_exit(NULL);
+    return NULL; // just to avoid compiler warning
+}
+#endif
+
 
 int main (int argc, char ** argv)
 {
-    char * filename;
-    int rc = 0;
-    int nsubfiles=1;
+    long int tmp;
+    int c;
+    while ((c = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
+        switch (c) {
+            case 'n':
+            case 't':
+                errno = 0;
+                tmp = strtol(optarg, (char **)NULL, 0);
+                if (errno) {
+                    fprintf(stderr, "Error: could not convert -%c value: %s\n", 
+                            c, optarg);
+                    return 1;
+                }
+                if (c == 'n')
+                    nsubfiles=tmp;
+                else 
+                    nthreads=tmp;
+                break;
 
-    if (argc < 3)
+            case 'h':
+                display_help();
+                return 0;
+                break;
+
+            case 'v':
+                verbose++;
+                break;
+
+            default:
+                printf("Unrecognized argument: %s\n", optarg);
+                break;
+
+        }
+    }
+
+    /* Check if we have a file defined */
+    if (optind >= argc) {
+        printf ("Missing file name\n");
+        display_help();
+        return 1;
+    }
+
+    filename = strdup(argv[optind++]);
+
+    if (nthreads > nsubfiles) {
+        printf ("Warning: asked for processing %d subfiles using %d threads. "
+                "We will utilize only %d threads.\n", 
+                nsubfiles, nthreads, nsubfiles);
+        nthreads = nsubfiles;
+    }
+
+    if (verbose>1)
+        printf ("Create metadata file %s from %d subfiles using %d threads\n", 
+                filename, nsubfiles, nthreads);
+
+    /* Initialize global variables */
+    b = malloc (nsubfiles * sizeof (struct adios_bp_buffer_struct_v1*));
+    subindex = malloc (nthreads * sizeof (struct adios_index_struct_v1*));
+
+    /* Split the processing work among T threads */
+    int tid;
+
+#if HAVE_PTHREAD
+
+    pthread_t *thread = (pthread_t *) malloc (nthreads * sizeof(pthread_t));
+    struct thread_args *targs = (struct thread_args*) 
+                                  malloc (nthreads * sizeof(struct thread_args));
+    int K = nsubfiles/nthreads; // base number of files to be processed by one thread
+    int L = nsubfiles%nthreads; // this many threads processes one more subfile
+    int startidx, endidx;
+    int rc;
+    //printf ("K=%d L=%d\n", K, L);
+    endidx = -1;
+    for (tid=0; tid<nthreads; tid++)
     {
-        fprintf (stderr, "usage: %s <filename> <number of subfiles>\n" ,argv [0]);
+        startidx = endidx + 1;
+        endidx = startidx + K - 1;
+        targs[tid].tid = tid;
+        targs[tid].startidx = startidx;
+        targs[tid].endidx = endidx;
+        if (tid < L) {
+            endidx++;
+        }
+        if (verbose)
+            printf ("Process subfiles from %d to %d with thread %d\n", 
+                    targs[tid].startidx, targs[tid].endidx, targs[tid]);
+
+        if (tid < nthreads-1) {
+            /* Start worker thread. */
+            pthread_attr_t attr;
+            pthread_attr_init (&attr);
+            pthread_attr_setdetachstate (&attr, PTHREAD_CREATE_JOINABLE);
+            rc = pthread_create (&thread[tid], &attr, thread_main, &targs[tid]);
+            if (rc) {
+                printf ("ERROR: Thread %d: Cannot create thread, err code = %d\n", 
+                        tid, rc);
+            }
+            pthread_attr_destroy(&attr);
+        } 
+        else
+        {
+            // last "thread" is the main thread
+            process_subfiles (tid, startidx, endidx);
+        }
+    }
+    // wait here for everyone to finish
+    for (tid=0; tid<nthreads-1; tid++)
+    {
+        void *status;
+        rc = pthread_join (thread[tid], &status);
+        if (rc) {
+            printf ("ERROR: Thread %d: Cannot join thread, err code = %d\n", tid, rc);
+        } else {
+            if (verbose>1)
+                printf ("Thread %d: Joined thread.\n", tid);
+        }
+    }
+    free (targs);
+    free (thread);
+
+#else /* non-threaded version */
+
+    nthreads = 1;
+    process_subfiles (0, 0, nsubfiles-1);
+
+#endif
+
+    /* Merge the T indexes into the global output index */
+    struct adios_index_struct_v1 * globalindex;
+    globalindex = adios_alloc_index_v1(1);
+    for (tid=0; tid<nthreads; tid++)
+    {
+        adios_merge_index_v1 (globalindex, 
+                              subindex[tid]->pg_root, 
+                              subindex[tid]->vars_root, 
+                              subindex[tid]->attrs_root); 
+    }
+    write_index (globalindex, filename);
+
+    /* Clean-up */
+    adios_clear_index_v1 (globalindex);
+    /*... already cleaned-up by globalindex clearing
+    for (tid=0; tid<nthreads; tid++) {
+        adios_clear_index_v1 (subindex[tid]);
+        free (subindex[tid]);
+    }
+    */
+    free (subindex);
+    free (globalindex);
+    free (b);
+    return 0;
+}
+
+int write_index (struct adios_index_struct_v1 * index, char * fname)
+{
+    /* Write out the global index */
+    char * buffer = 0;
+    uint64_t buffer_size = 0;
+    uint64_t buffer_offset = 0;
+    uint64_t index_start = 0; 
+    int err;
+    int f;
+    uint16_t flag = 0;
+    ssize_t bytes_written = 0;
+
+    flag |= ADIOS_VERSION_HAVE_SUBFILE;
+    adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
+            ,index_start, index);
+    if (verbose>2) {
+        printf ("buffer=%p size=%lld offset=%lld\n", buffer, buffer_size, buffer_offset);
+    }
+
+    adios_write_version_flag_v1 (&buffer, &buffer_size, &buffer_offset, flag);
+    if (verbose>2) {
+        printf ("buffer=%p size=%lld offset=%lld\n", buffer, buffer_size, buffer_offset);
+    }
+
+    f = open (fname, O_CREAT | O_RDWR, 0644);
+    if (f == -1)
+    {
+        fprintf (stderr, "Failed to create metadata file %s: %s\n", 
+                 fname, strerror(errno));
         return -1;
     }
 
-    filename = argv [1];
-    errno = 0;
-    nsubfiles = strtol (argv[2], NULL, 10);
-    if (errno != 0 || nsubfiles < 1) {
-        fprintf (stderr, "Invalid number of subfiles given\n" ,argv [2]);
-        return -1;
+    bytes_written = write (f, buffer, (size_t)buffer_offset);
+    if (bytes_written == -1) 
+    {
+        fprintf (stderr, "Failed to write metadata to file %s: %s\n", 
+                 fname, strerror(errno));
+    } 
+    else if (bytes_written != (ssize_t) buffer_offset) 
+    {
+        fprintf (stderr, "Failed to write metadata of %lld bytes to file %s. "
+                "Only wrote %lld bytes\n", buffer_offset, fname, (long long)bytes_written);
     }
-    printf ("Create metadata file %s from %d subfiles\n", filename, nsubfiles);
+    close(f);
+    return 0;
+}
 
-    struct adios_bp_buffer_struct_v1 ** b = 0;
+int process_subfiles (int tid, int startidx, int endidx)
+{
+    char fn[256];
     uint32_t version = 0;
     int idx;
-    char fn[256];
+    int rc = 0;
 
-    /* Output index structure variables */
-    struct adios_index_struct_v1 * index;
-    index = adios_alloc_index_v1(1);
+    subindex[tid] = adios_alloc_index_v1(1);
 
-    b = malloc (nsubfiles * sizeof (struct adios_bp_buffer_struct_v1*));
-    for (idx=0; idx<nsubfiles; idx++) 
+    for (idx=startidx; idx<=endidx; idx++) 
     {
         b[idx] = malloc (sizeof (struct adios_bp_buffer_struct_v1));
         adios_buffer_struct_init (b[idx]);
@@ -78,9 +335,9 @@ int main (int argc, char ** argv)
         adios_parse_version (b[idx], &version);
         version = version & ADIOS_VERSION_NUM_MASK;
         if (verbose) {
-            printf (DIVIDER);
-            printf ("Metadata of %s:\n", fn);
-            printf ("BP format version: %d\n", version);
+            //printf (DIVIDER);
+            printf ("Thread %d: Metadata of %s:\n", tid, fn);
+            printf ("Thread %d: BP format version: %d\n", tid, version);
         }
         if (version < 2)
         {
@@ -109,17 +366,17 @@ int main (int argc, char ** argv)
 
         adios_posix_read_process_group_index (b[idx]);
         adios_parse_process_group_index_v1 (b[idx], &new_pg_root);
-        print_process_group_index (new_pg_root);
+        print_pg_index (tid, new_pg_root);
 
         adios_posix_read_vars_index (b[idx]);
         adios_parse_vars_index_v1 (b[idx], &new_vars_root, NULL, NULL);
-        print_vars_index (new_vars_root);
+        print_variable_index (tid, new_vars_root);
 
         adios_posix_read_attributes_index (b[idx]);
         adios_parse_attributes_index_v1 (b[idx], &new_attrs_root);
-        print_attributes_index (new_attrs_root);
+        print_attribute_index (tid, new_attrs_root);
 
-        adios_merge_index_v1 (index, new_pg_root, new_vars_root, new_attrs_root); 
+        adios_merge_index_v1 (subindex[tid], new_pg_root, new_vars_root, new_attrs_root); 
 
         adios_posix_close_internal (b[idx]);
         adios_shared_buffer_free (b[idx]);
@@ -127,92 +384,46 @@ int main (int argc, char ** argv)
     }
 
     if (verbose>1) {
-        printf (DIVIDER);
-        printf ("End of reading all subfiles\n");
+        //printf (DIVIDER);
+        printf ("Thread %d: End of reading all subfiles\n", tid);
     }
 
-    /* Write out the global index */
-    char * buffer = 0;
-    uint64_t buffer_size = 0;
-    uint64_t buffer_offset = 0;
-    uint64_t index_start = 0; 
-    int err;
-    int f;
-    uint16_t flag = 0;
-    ssize_t bytes_written = 0;
-
-    flag |= ADIOS_VERSION_HAVE_SUBFILE;
-    adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
-            ,index_start, index);
-    if (verbose>2) {
-        printf ("buffer=%p size=%lld offset=%lld\n", buffer, buffer_size, buffer_offset);
-    }
-
-    adios_write_version_flag_v1 (&buffer, &buffer_size, &buffer_offset, flag);
-    if (verbose>2) {
-        printf ("buffer=%p size=%lld offset=%lld\n", buffer, buffer_size, buffer_offset);
-    }
-
-    f = open (filename, O_CREAT | O_RDWR, 0644);
-    if (f == -1)
-    {
-        fprintf (stderr, "Failed to create metadata file %s: %s\n", 
-                 filename, strerror(errno));
-        return -1;
-    }
-
-    bytes_written = write (f, buffer, (size_t)buffer_offset);
-    if (bytes_written == -1) 
-    {
-        fprintf (stderr, "Failed to write metadata to file %s: %s\n", 
-                 filename, strerror(errno));
-    } 
-    else if (bytes_written != (ssize_t) buffer_offset) 
-    {
-        fprintf (stderr, "Failed to write metadata of %lld bytes to file %s. "
-                "Only wrote %lld bytes\n", buffer_offset, filename, (long long)bytes_written);
-    }
-    close(f);
-
-    free (b);
 
     return 0;
 }
 
 
 
-void print_process_group_index (
-                         struct adios_index_process_group_struct_v1 * pg_root
-                         )
+void print_pg_index (int tid, struct adios_index_process_group_struct_v1 * pg_root)
 {
     unsigned int npg=0;
     if (verbose>1) {
-        printf (DIVIDER);
-        printf ("Process Groups Index:\n");
+        //printf (DIVIDER);
+        printf ("Thread %d:   Process Groups Index:\n", tid);
     }
     while (pg_root)
     {
         if (verbose>1) {
-            printf ("Group: %s\n", pg_root->group_name);
-            printf ("\tProcess ID: %d\n", pg_root->process_id);
-            printf ("\tTime Name: %s\n", pg_root->time_index_name);
-            printf ("\tTime: %d\n", pg_root->time_index);
-            printf ("\tOffset in File: %llu\n", pg_root->offset_in_file);
+            printf ("Thread %d:   Group: %s\n", tid, pg_root->group_name);
+            printf ("Thread %d:   \tProcess ID: %d\n", tid, pg_root->process_id);
+            printf ("Thread %d:   \tTime Name: %s\n", tid, pg_root->time_index_name);
+            printf ("Thread %d:   \tTime: %d\n", tid, pg_root->time_index);
+            printf ("Thread %d:   \tOffset in File: %llu\n", tid, pg_root->offset_in_file);
         }
         pg_root = pg_root->next;
         npg++;
     }
     if (verbose==1) {
-        printf ("Number of process groups: %u\n", npg);
+        printf ("Thread %d: Number of process groups: %u\n", tid, npg);
     }
 }
 
-void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
+void print_variable_index (int tid, struct adios_index_var_struct_v1 * vars_root)
 {
     unsigned int nvars=0;
     if (verbose>1) {
-        printf (DIVIDER);
-        printf ("Variable Index:\n");
+        //printf (DIVIDER);
+        printf ("Thread %d: Variable Index:\n", tid);
     }
     while (vars_root)
     {
@@ -220,26 +431,26 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
         {
             if (!strcmp (vars_root->var_path, "/"))
             {
-                printf ("Var (Group) [ID]: /%s (%s) [%d]\n", vars_root->var_name
-                        ,vars_root->group_name, vars_root->id
+                printf ("Thread %d:   Var (Group) [ID]: /%s (%s) [%d]\n", 
+                        tid, vars_root->var_name,vars_root->group_name, vars_root->id
                        );
             }
             else
             {
-                printf ("Var (Group) [ID]: %s/%s (%s) [%d]\n", vars_root->var_path
-                        ,vars_root->var_name, vars_root->group_name, vars_root->id
+                printf ("Thread %d:   Var (Group) [ID]: %s/%s (%s) [%d]\n", 
+                        tid, vars_root->var_path, 
+                        vars_root->var_name, vars_root->group_name, vars_root->id
                        );
             }
             const char * typestr = adios_type_to_string_int (vars_root->type);
-            printf ("\tDatatype: %s\n", typestr);
-            //printf ("\tDatatype: %s\n", adios_type_to_string_int (vars_root->type));
-            printf ("\tVars Characteristics: %llu\n"
-                    ,vars_root->characteristics_count
+            printf ("Thread %d: \tDatatype: %s\n", tid, typestr);
+            printf ("Thread %d: \tVars Characteristics: %llu\n",
+                    tid, vars_root->characteristics_count
                    );
             uint64_t i;
             for (i = 0; i < vars_root->characteristics_count; i++)
             {
-                printf ("\tOffset(%llu)", vars_root->characteristics [i].offset);
+                printf ("Thread %d: \tOffset(%llu)", tid, vars_root->characteristics [i].offset);
                 printf ("\tPayload Offset(%llu)", vars_root->characteristics [i].payload_offset);
                 printf ("\tFile Index(%d)", vars_root->characteristics [i].file_index);
                 printf ("\tTime Index(%d)", vars_root->characteristics [i].time_index);
@@ -368,17 +579,16 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
         nvars++;
     }
     if (verbose==1) {
-        printf ("Number of variables: %u\n", nvars);
+        printf ("Thread %d: Number of variables: %u\n", tid, nvars);
     }
 }
 
-void print_attributes_index
-                          (struct adios_index_attribute_struct_v1 * attrs_root)
+void print_attribute_index (int tid, struct adios_index_attribute_struct_v1 * attrs_root)
 {
     unsigned int nattrs=0;
     if (verbose>1) {
-        printf (DIVIDER);
-        printf ("Attribute Index:\n");
+        //printf (DIVIDER);
+        printf ("Thread %d: Attribute Index:\n", tid);
     }
     while (attrs_root)
     {
@@ -386,27 +596,28 @@ void print_attributes_index
         {
             if (!strcmp (attrs_root->attr_path, "/"))
             {
-                printf ("Attribute (Group) [ID]: /%s (%s) [%d]\n"
-                        ,attrs_root->attr_name, attrs_root->group_name
-                        ,attrs_root->id
+                printf ("Thread %d:   Attribute (Group) [ID]: /%s (%s) [%d]\n",
+                        tid, attrs_root->attr_name, attrs_root->group_name,
+                        attrs_root->id
                        );
             }
             else
             {
-                printf ("Attribute (Group) [ID]: %s/%s (%s) [%d]\n"
-                        ,attrs_root->attr_path
-                        ,attrs_root->attr_name, attrs_root->group_name
-                        ,attrs_root->id
+                printf ("Thread %d:   Attribute (Group) [ID]: %s/%s (%s) [%d]\n",
+                        tid, attrs_root->attr_path, attrs_root->attr_name, 
+                        attrs_root->group_name, attrs_root->id
                        );
             }
-            printf ("\tDatatype: %s\n", adios_type_to_string_int (attrs_root->type));
-            printf ("\tAttribute Characteristics: %llu\n"
-                    ,attrs_root->characteristics_count
+            printf ("Thread %d: \tDatatype: %s\n", tid, 
+                        adios_type_to_string_int (attrs_root->type));
+            printf ("Thread %d: \tAttribute Characteristics: %llu\n", tid,
+                        attrs_root->characteristics_count
                    );
             uint64_t i;
             for (i = 0; i < attrs_root->characteristics_count; i++)
             {
-                printf ("\t\tOffset(%llu)", attrs_root->characteristics [i].offset);
+                printf ("Thread %d: \t\tOffset(%llu)", tid, 
+                            attrs_root->characteristics [i].offset);
                 printf ("\t\tPayload Offset(%llu)", attrs_root->characteristics [i].payload_offset);
                 printf ("\t\tFile Index(%d)", attrs_root->characteristics [i].file_index);
                 printf ("\t\tTime Index(%d)", attrs_root->characteristics [i].time_index);
@@ -500,6 +711,6 @@ void print_attributes_index
         nattrs++;
     }
     if (verbose==1) {
-        printf ("Number of attributes: %u\n", nattrs);
+        printf ("Thread %d: Number of attributes: %u\n", tid, nattrs);
     }
 }
