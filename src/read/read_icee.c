@@ -302,7 +302,7 @@ icee_fileinfo_handler(CManager cm, void *vevent, void *client_data, attr_list at
     {
         *lvpp = malloc(sizeof(icee_varinfo_rec_t));
         icee_varinfo_copy(*lvpp, eventvp);
-        DUMP("id,name = %d,%s", (*lvpp)->varid, (*lvpp)->varname);
+        if (adios_verbose_level > 3) DUMP("id,name = %d,%s", (*lvpp)->varid, (*lvpp)->varname);
         
         lvpp = &(*lvpp)->next;
         eventvp = eventvp->next;

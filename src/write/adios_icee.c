@@ -79,7 +79,7 @@ int get_ndims(struct adios_var_struct *f)
 extern void 
 adios_icee_init(const PairStruct *params, struct adios_method_struct *method) 
 {
-    log_warn ("%s\n", __FUNCTION__);
+    log_debug ("%s\n", __FUNCTION__);
     
     int cm_port = 59999;
     char *cm_host = "localhost";
@@ -88,7 +88,7 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
 
     int rank;
     MPI_Comm_rank(method->init_comm, &rank);
-    log_warn ("rank : %d\n", rank);
+    log_debug ("rank : %d\n", rank);
     
 
     const PairStruct * p = params;
@@ -150,9 +150,9 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
         p = p->next;
     }
 
-    //log_warn ("cm_attr : %s\n", cm_attr);
-    log_warn ("cm_host : %s\n", cm_host);
-    log_warn ("cm_port : %d\n", cm_port);
+    //log_info ("cm_attr : %s\n", cm_attr);
+    log_info ("cm_host : %s\n", cm_host);
+    log_info ("cm_port : %d\n", cm_port);
 
     if (!adios_icee_initialized)
     {
@@ -183,7 +183,7 @@ adios_icee_open(struct adios_file_struct *fd,
 		    struct adios_method_struct *method, 
 		    MPI_Comm comm) 
 {    
-    log_warn ("%s\n", __FUNCTION__);
+    log_debug ("%s\n", __FUNCTION__);
 
     if( fd == NULL || method == NULL) {
         perror("open: Bad input parameters\n");
@@ -206,7 +206,7 @@ adios_icee_write(
     void *data, 
     struct adios_method_struct *method) 
 {
-    log_warn ("%s\n", __FUNCTION__);
+    log_debug ("%s\n", __FUNCTION__);
 
     if( fd == NULL || method == NULL) {
         perror("open: Bad input parameters\n");
@@ -238,7 +238,7 @@ adios_icee_write(
     }
 
     vp->varid = f->id;
-    DUMP("id,name = %d,%s", vp->varid, vp->varname);
+    if (adios_verbose_level > 3) DUMP("id,name = %d,%s", vp->varid, vp->varname);
     vp->type = f->type;
     vp->typesize = adios_get_type_size(f->type, ""); 
 
@@ -273,7 +273,7 @@ adios_icee_write(
 extern void 
 adios_icee_close(struct adios_file_struct *fd, struct adios_method_struct *method) 
 {
-    log_warn ("%s\n", __FUNCTION__);
+    log_debug ("%s\n", __FUNCTION__);
 
     if( fd == NULL || method == NULL) {
         perror("open: Bad input parameters\n");
@@ -305,7 +305,7 @@ adios_icee_close(struct adios_file_struct *fd, struct adios_method_struct *metho
 extern void 
 adios_icee_finalize(int mype, struct adios_method_struct *method) 
 {
-    log_warn ("%s\n", __FUNCTION__);
+    log_debug ("%s\n", __FUNCTION__);
 
     if (adios_icee_initialized)
     {
