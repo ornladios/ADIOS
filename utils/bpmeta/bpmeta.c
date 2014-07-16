@@ -14,6 +14,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <getopt.h>
+#include <glob.h>
 #include <errno.h>
 #include <unistd.h>
 #include <sys/types.h>
@@ -85,6 +86,7 @@ struct adios_index_struct_v1 ** subindex;
 
 int process_subfiles (int tid, int startidx, int endidx);
 int write_index (struct adios_index_struct_v1 * index, char * fname);
+int get_nsubfiles (char *filename);
 void print_pg_index ( int tid, struct adios_index_process_group_struct_v1 * pg_root);
 void print_variable_index (int tid, struct adios_index_var_struct_v1 * vars_root);
 void print_attribute_index (int tid,  struct adios_index_attribute_struct_v1 * attrs_root);
@@ -152,6 +154,14 @@ int main (int argc, char ** argv)
     }
 
     filename = strdup(argv[optind++]);
+
+    if (nsubfiles < 1)
+        nsubfiles = get_nsubfiles (filename);
+    if (nsubfiles < 1) {
+        printf ("Cannot determine the number of subfiles. To avoid this problem, "
+                "provide the number of subfiles manually with the -n <N> option.\n");
+        return -1;
+    }
 
     if (nthreads < 1) 
         nthreads = 1;
@@ -395,6 +405,35 @@ int process_subfiles (int tid, int startidx, int endidx)
 }
 
 
+int get_nsubfiles (char *filename)
+{
+    char pattern[256];
+    glob_t g;
+    int err,ret;
+
+    snprintf (pattern, 256, "%s.dir/%s.*", filename, filename);
+    err = glob (pattern, GLOB_ERR | GLOB_NOSORT, NULL, &g);
+    if (!err) {
+        ret = g.gl_pathc;
+    } else {
+        switch (err) {
+            case GLOB_NOMATCH:
+                printf ("ERROR: No matching file found for %s\n", pattern);
+                break;
+
+            case GLOB_NOSPACE:
+                printf ("ERROR: Not enough memory for running glob for pattern %s\n", pattern);
+                break;
+
+            case GLOB_ABORTED:
+                printf ("ERROR: glob was aborted by a reading error for pattern %s\n", pattern);
+                printf ("errno = %d: %s\n", errno, strerror(errno));
+                break;
+        }
+        ret = 0;
+    }
+    return ret;
+}
 
 void print_pg_index (int tid, struct adios_index_process_group_struct_v1 * pg_root)
 {
@@ -406,11 +445,11 @@ void print_pg_index (int tid, struct adios_index_process_group_struct_v1 * pg_ro
     while (pg_root)
     {
         if (verbose>1) {
-            printf ("Thread %d:   Group: %s\n", tid, pg_root->group_name);
-            printf ("Thread %d:   \tProcess ID: %d\n", tid, pg_root->process_id);
-            printf ("Thread %d:   \tTime Name: %s\n", tid, pg_root->time_index_name);
-            printf ("Thread %d:   \tTime: %d\n", tid, pg_root->time_index);
-            printf ("Thread %d:   \tOffset in File: %llu\n", tid, pg_root->offset_in_file);
+                printf ("Thread %d:   Group: %s\n", tid, pg_root->group_name);
+                printf ("Thread %d:   \tProcess ID: %d\n", tid, pg_root->process_id);
+                printf ("Thread %d:   \tTime Name: %s\n", tid, pg_root->time_index_name);
+                printf ("Thread %d:   \tTime: %d\n", tid, pg_root->time_index);
+                printf ("Thread %d:   \tOffset in File: %llu\n", tid, pg_root->offset_in_file);
         }
         pg_root = pg_root->next;
         npg++;
