@@ -38,60 +38,149 @@ void printPoints(const ADIOS_SELECTION_POINTS_STRUCT * pts){
 
 }
 
+ADIOS_QUERY * createQueryConstraints(ADIOS_FILE* bf, const char* varName , ADIOS_SELECTION* box
+		, const char * lb, const char * hb){
+	/* lb <= x <= hb */
+    ADIOS_QUERY* q1 = adios_query_create(bf, varName, box, ADIOS_GTEQ, lb);
+    ADIOS_QUERY* q2 = adios_query_create(bf, varName, box, ADIOS_LTEQ, hb);
+    ADIOS_QUERY* q = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
+    return q;
+
+    /* x != lb
+     * return adios_query_create(bf, varName, box, ADIOS_NE, lb);*/
+}
+
+#define CHECK_ERROR_DATA(data, num, check) {                     \
+		 uint64_t di = 0;                                        \
+		 for(di = 0; di < (num); di++){                          \
+				if (check)                                       \
+					printf("error data: %f, ", (data)[di]);      \
+		 }                                                       \
+}
+
+
+void multiBoundBox(ADIOS_FILE* bf , const char * b1, const char * b2, ADIOS_FILE *dataF) {
+  printf("\n=============== testing multiple bound box  ===========\n");
+  const char* varName1 = "rdm";
+  int ndim = 3;
+  uint64_t start1[] = {0, 0, 0}; // block 0 -> 1st block
+  uint64_t count1[] = {64, 10, 32};
+  ADIOS_SELECTION *box1 = adios_selection_boundingbox(ndim, start1, count1);
+
+  uint64_t start2[] = {0, 32, 0}; //block 2 -> 3rd block
+  uint64_t count2[] = {64, 10,32};
+  ADIOS_SELECTION* box2 = adios_selection_boundingbox(ndim, start2, count2);
+
+
+/*
+  uint64_t start3[] = {64, 32, 0}; //block 4 -> 5th block
+  uint64_t count3[] = {64, 10,32};
+  ADIOS_SELECTION* outBox = adios_selection_boundingbox(ndim, start3, count3);
+*/
+
+  ADIOS_VARINFO * dataV = adios_inq_var(dataF, varName1);
+  double lb1v = atof(b1);
+  double lb2v = atof(b2);
+  int timestep = 0;
+  adios_query_set_timestep(timestep);
+  int64_t batchSize = 1000;
+
+  ADIOS_QUERY* q1 = adios_query_create(bf, varName1, box1, ADIOS_GT, b1); // > b1
+  ADIOS_QUERY* q2 = adios_query_create(bf, varName1, box2, ADIOS_LT, b2); // < b2
+  // if box has a different shape, e.g. different count values, then combine() returns error
+  ADIOS_QUERY* q = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
+
+
+  // box3 is the same shape as other boxes , if it is in different shape from box1/box2, then error
+  ADIOS_SELECTION* outBox = box1;
+  while (1) {
+    ADIOS_SELECTION* currBatch = NULL;
+    int hasMore =  adios_query_get_selection(q, batchSize, outBox, &currBatch);
+    if (currBatch == NULL)  // there is no results at all
+    	break;
+
+
+    const ADIOS_SELECTION_POINTS_STRUCT * retrievedPts = &(currBatch->u.points);
+    printf("retrieved points %" PRIu64 " \n",  retrievedPts->npoints);
+
+    double * data = (double *) malloc(retrievedPts->npoints * sizeof(double));
+    adios_schedule_read_byid (dataF, currBatch, dataV->varid, 0, 1, data);
+    adios_perform_reads(dataF, 1);
+    CHECK_ERROR_DATA(data, retrievedPts->npoints, (data[di] <= lb1v ));
+    free(data);
+    adios_selection_delete(currBatch);
+    if (hasMore == 0) { // there is no left results to retrieve
+              break;
+    }
+  }
+
+     //reset query engine
+  q->_onTimeStep = -1; // NO_EVAL_BEFORE
+  outBox = box2; // switch to different output box
+  while (1) {
+    ADIOS_SELECTION* currBatch = NULL;
+    int hasMore =  adios_query_get_selection(q, batchSize, outBox, &currBatch);
+    if (currBatch == NULL)  // there is no results at all
+         	break;
+
+    const ADIOS_SELECTION_POINTS_STRUCT * retrievedPts = &(currBatch->u.points);
+    printf("retrieved points %" PRIu64 " \n",  retrievedPts->npoints);
+
+    double * data = (double *) malloc(retrievedPts->npoints * sizeof(double));
+    adios_schedule_read_byid (dataF, currBatch, dataV->varid, 0, 1, data);
+    adios_perform_reads(dataF, 1);
+    CHECK_ERROR_DATA(data, retrievedPts->npoints, (data[di] >= lb2v ));
+    free(data);
+    adios_selection_delete(currBatch);
+    if (hasMore == 0) { // there is no left results to retrieve
+                  break;
+     }
+  }
+
+  adios_query_free(q);
+
+  adios_selection_delete(box1);
+  adios_selection_delete(box2);
+}
+
 void oneDefinedBox(ADIOS_FILE* bf , const char * lb, const char * hb, ADIOS_FILE *dataF){
 
 	  printf("\n=============== testing one single bounding box ===========\n");
+	  // rdm data is in the range btw 100 and 200
+	  const char* varName1 = "rdm";
 	  int ndim = 3;
 	  uint64_t start1[] = {0, 0, 0};
-	  uint64_t count1[] = {64, 32,32};
-
-
-	  ADIOS_SELECTION* box1 = adios_selection_boundingbox(ndim, start1, count1);
-	  // rdm data is in the range btw 100 and 200
-	  // and this query constraint should return zero
-	  const char* varName1 = "rdm";
-
+	  uint64_t count1[] = {64, 32, 32};
+	  ADIOS_SELECTION *box1 = adios_selection_boundingbox(ndim, start1, count1);
 	  ADIOS_VARINFO * dataV = adios_inq_var(dataF, varName1);
-
-	  enum ADIOS_PREDICATE_MODE op1 = ADIOS_GTEQ;
-	  enum ADIOS_PREDICATE_MODE op2 = ADIOS_LTEQ;
-
-	  printf("query constraint : lb = %s and hb = %s \n", lb, hb);
-      ADIOS_QUERY* q1 = adios_query_create(bf, varName1, box1, op1, lb);
-      ADIOS_QUERY* q2 = adios_query_create(bf, varName1, box1, op2, hb);
-      ADIOS_QUERY* q = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
       double lbv = atof(lb);
       double hbv = atof(hb);
       int timestep = 0;
       adios_query_set_timestep(timestep);
       int64_t batchSize = 10000;
 
+      ADIOS_QUERY * q = createQueryConstraints(bf, varName1, box1, lb, hb);
 //      int64_t estimateResults = adios_query_estimate(q1);
-
 //      printf("estimated result number %"PRIu64 " \n", estimateResults);
 
       while (1) {
         ADIOS_SELECTION* currBatch = NULL;
         int hasMore =  adios_query_get_selection(q, batchSize, box1, &currBatch);
-
-        if (currBatch == NULL) { // there is no results at all
+        if (currBatch == NULL)  // there is no results at all
         	break;
-        }
+
         assert(currBatch->type ==ADIOS_SELECTION_POINTS);
         const ADIOS_SELECTION_POINTS_STRUCT * retrievedPts = &(currBatch->u.points);
         printf("retrieved points %" PRIu64 " \n",  retrievedPts->npoints);
 
-//        adios_double * data = (adios_double *) malloc(retrievedPts->npoints * sizeof(adios_double));
         double * data = (double *) malloc(retrievedPts->npoints * sizeof(double));
         adios_schedule_read_byid (dataF, currBatch, dataV->varid, 0, 1, data);
         adios_perform_reads(dataF, 1);
-        uint64_t di = 0;
-        for(di = 0; di < retrievedPts->npoints; di++){
-        	if (data[di] > hbv || data[di] < lbv)
-        		printf("error data: %f, ", data[di]);
-        }
+        // lb <= x <= lb
+        CHECK_ERROR_DATA(data, retrievedPts->npoints, (data[di] > hbv || data[di] < lbv));
+//        CHECK_ERROR_DATA(data, retrievedPts->npoints, (data[di] == lbv));
         free(data);
-        //        printPoints(retrievedPts);
+        	//        printPoints(retrievedPts);
         adios_selection_delete(currBatch);
 
         if (hasMore == 0) { // there is no left results to retrieve
@@ -99,8 +188,9 @@ void oneDefinedBox(ADIOS_FILE* bf , const char * lb, const char * hb, ADIOS_FILE
         }
       }
 
-      adios_query_free(q1);
+      adios_query_free(q);
       adios_selection_delete(box1);
+
 }
 
 
@@ -157,6 +247,7 @@ int main (int argc, char ** argv)
 
     //====================== start to test ===================//
     oneDefinedBox(f , lbstr, hbstr, dataF);
+    multiBoundBox(f , lbstr, hbstr, dataF);
 
 
     adios_read_close (f);
