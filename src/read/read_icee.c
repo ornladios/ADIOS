@@ -290,7 +290,7 @@ static int
 icee_fileinfo_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 {
     icee_fileinfo_rec_ptr_t event = vevent;
-    log_warn("%s (%s)\n", __FUNCTION__, event->fname);
+    log_debug("%s (%s)\n", __FUNCTION__, event->fname);
 
     icee_fileinfo_rec_ptr_t lfp = malloc(sizeof(icee_fileinfo_rec_t));
     icee_fileinfo_copy(lfp, event);
@@ -337,7 +337,7 @@ EVstone stone;
 int
 adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
 {   
-    log_warn ("%s\n", __FUNCTION__);
+    log_debug ("%s\n", __FUNCTION__);
 
     int cm_port = 59999;
     char *cm_host = "localhost";
@@ -374,9 +374,9 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         add_string_attr(contact_list, attr_atom_from_string("IP_HOST"), cm_host);
     }
 
-    //log_warn ("cm_attr : %s\n", cm_attr);
-    log_warn ("cm_host : %s\n", cm_host);
-    log_warn ("cm_port : %d\n", cm_port);
+    //log_info ("cm_attr : %s\n", cm_attr);
+    log_info ("cm_host : %s\n", cm_host);
+    log_info ("cm_port : %d\n", cm_port);
 
     if (!adios_read_icee_initialized)
     {
@@ -390,7 +390,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
             exit(-1);
         }
 
-        log_warn("Contact list \"%s\"\n", attr_list_to_string(contact_list));
+        log_debug("Contact list \"%s\"\n", attr_list_to_string(contact_list));
 
         stone = EValloc_stone(cm);
         EVassoc_terminal_action(cm, stone, icee_fileinfo_format_list, icee_fileinfo_handler, NULL);
@@ -424,7 +424,7 @@ adios_read_icee_open(const char * fname,
                      enum ADIOS_LOCKMODE lock_mode,
                      float timeout_sec)
 {
-    log_warn("%s\n", __FUNCTION__);
+    log_debug("%s\n", __FUNCTION__);
 
     icee_llist_ptr_t head = NULL;
 
@@ -482,7 +482,7 @@ adios_read_icee_open(const char * fname,
 int 
 adios_read_icee_finalize_method ()
 {
-    log_warn("%s\n", __FUNCTION__);
+    log_debug("%s\n", __FUNCTION__);
 
     if (adios_read_icee_initialized)
     {
@@ -496,13 +496,13 @@ adios_read_icee_finalize_method ()
 void 
 adios_read_icee_release_step(ADIOS_FILE *adiosfile) 
 {
-    log_warn("%s\n", __FUNCTION__);
+    log_debug("%s\n", __FUNCTION__);
 }
 
 int 
 adios_read_icee_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_sec) 
 {
-    log_warn("%s\n", __FUNCTION__);
+    log_debug("%s\n", __FUNCTION__);
     adios_errno = 0;
 
     icee_fileinfo_rec_ptr_t fp = (icee_fileinfo_rec_ptr_t) adiosfile->fh;
@@ -542,7 +542,7 @@ adios_read_icee_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_sec)
 int 
 adios_read_icee_close(ADIOS_FILE * fp)
 {
-    log_warn("%s\n", __FUNCTION__);
+    log_debug("%s\n", __FUNCTION__);
 
     return 0;
 }
@@ -564,7 +564,7 @@ adios_read_icee_is_var_timed(const ADIOS_FILE* fp, int varid)
 void 
 adios_read_icee_get_groupinfo(const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, uint32_t **nvars_per_group, uint32_t **nattrs_per_group) 
 {
-    log_warn("%s\n", __FUNCTION__);
+    log_debug("%s\n", __FUNCTION__);
 
     icee_fileinfo_rec_ptr_t p = (icee_fileinfo_rec_ptr_t) fp->fh;
 
@@ -587,7 +587,7 @@ adios_read_icee_check_reads(const ADIOS_FILE* fp, ADIOS_VARCHUNK** chunk)
 
 int adios_read_icee_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
 {
-    log_warn("%s\n", __FUNCTION__);
+    log_debug("%s\n", __FUNCTION__);
     return 0;
 }
 
@@ -619,7 +619,7 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
 				       void *data)
 {   
     icee_fileinfo_rec_ptr_t fp = (icee_fileinfo_rec_ptr_t) adiosfile->fh;
-    log_warn("%s (%d:%s)\n", __FUNCTION__, varid, fp->fname);
+    log_debug("%s (%d:%s)\n", __FUNCTION__, varid, fp->fname);
     assert(varid < fp->nvars);
 
     if(nsteps != 1){
@@ -632,7 +632,7 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
     
     icee_varinfo_rec_ptr_t vp = NULL;
     vp = icee_varinfo_search_byname(fp->varinfo, adiosfile->var_namelist[varid]);
-    icee_varinfo_print(vp);
+    if (adios_verbose_level > 3) icee_varinfo_print(vp);
 
     if(!vp){
         adios_error(err_invalid_varid,
@@ -735,7 +735,7 @@ adios_read_icee_get_attr_byid (const ADIOS_FILE *adiosfile, int attrid,
 ADIOS_VARINFO* 
 adios_read_icee_inq_var(const ADIOS_FILE * adiosfile, const char* varname)
 {
-    log_warn("%s (%s)\n", __FUNCTION__, varname);
+    log_debug("%s (%s)\n", __FUNCTION__, varname);
 
     return NULL;
 }
@@ -743,7 +743,7 @@ adios_read_icee_inq_var(const ADIOS_FILE * adiosfile, const char* varname)
 ADIOS_VARINFO* 
 adios_read_icee_inq_var_byid (const ADIOS_FILE * adiosfile, int varid)
 {
-    log_warn("%s (%d)\n", __FUNCTION__, varid);
+    log_debug("%s (%d)\n", __FUNCTION__, varid);
 
     icee_fileinfo_rec_ptr_t fp = (icee_fileinfo_rec_ptr_t) adiosfile->fh;
     assert(varid < fp->nvars);
@@ -779,7 +779,7 @@ adios_read_icee_inq_var_byid (const ADIOS_FILE * adiosfile, int varid)
 void 
 adios_read_icee_free_varinfo (ADIOS_VARINFO *adiosvar)
 {
-    log_warn("%s\n", __FUNCTION__);
+    log_debug("%s\n", __FUNCTION__);
     free(adiosvar);
     return;
 }
@@ -789,7 +789,7 @@ ADIOS_TRANSINFO*
 adios_read_icee_inq_var_transinfo(const ADIOS_FILE *gp, 
                                   const ADIOS_VARINFO *vi)
 {    
-    log_warn("%s\n", __FUNCTION__);
+    log_debug("%s\n", __FUNCTION__);
     ADIOS_TRANSINFO *trans = malloc(sizeof(ADIOS_TRANSINFO));
     memset(trans, 0, sizeof(ADIOS_TRANSINFO));
     trans->transform_type = adios_transform_none;
