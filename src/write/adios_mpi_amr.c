@@ -2171,38 +2171,28 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
 
                 if (is_aggregator (md->rank))
                 {
-                    if (2 * max_data_size > MAX_AGG_BUF)
-                    {
-                        log_warn ("MPI_AMR method (BG): The max allowed aggregation "
-                                "buffer is %d bytes.\n"
-                                "But this ADIOS method needs %d bytes for aggregation\n",
-                                MAX_AGG_BUF, 2 * max_data_size);
-                    }
-
                     aggr_buff = malloc (max_data_size);
                     recv_buff = malloc (max_data_size);
                     if (aggr_buff == 0 || recv_buff == 0)
                     {
-                        adios_error (err_no_memory, "MPI_AMR method (BG): Cannot allocate "
-                                    "2 x %d bytes for aggregation buffers.\n", 
+                        adios_error (err_no_memory, "MPI_AMR method (with brigade strategy): Cannot allocate "
+                                    "2 x %d bytes for aggregation buffers. "
+                                    "An aggregator process needs a buffer to hold one process' output for writing, "
+                                    "while it needs another buffer to concurrently receive another process' output for "
+                                    "subsequent writing.\n", 
                                     max_data_size);
                         return;
                     }
                 }
                 else
                 {
-                    if (max_data_size > MAX_AGG_BUF)
-                    {
-                        log_warn ("MPI_AMR method (BG): The max allowed aggregation "
-                                  "buffer is %d bytes.\n",
-                                  MAX_AGG_BUF);
-                    }
-
                     recv_buff = malloc (max_data_size);
                     if (recv_buff == 0)
                     {
-                        adios_error (err_no_memory, "MPI_AMR method (BG): Cannot allocate "
-                                    "%d bytes for receive buffer.\n", 
+                        adios_error (err_no_memory, "MPI_AMR method (with brigade strategy): Cannot allocate "
+                                    "%d bytes for receive buffer in a non-aggregator process. "
+                                    "This method needs an extra buffer in every process to pass data along "
+                                    "towards the aggregator.\n", 
                                     max_data_size);
                         return;
                     }

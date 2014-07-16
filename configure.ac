@@ -725,6 +725,7 @@ AC_CONFIG_FILES([Makefile
                  utils/bpdiff/Makefile
                  utils/bp2bp/Makefile
                  utils/list_methods/Makefile
+                 utils/bpmeta/Makefile
                  examples/Makefile
                  examples/C/Makefile
                  examples/C/scalars/Makefile
@@ -746,6 +747,7 @@ AC_CONFIG_FILES([Makefile
                  examples/Fortran/arrays/Makefile
                  examples/Fortran/global-array/Makefile
                  examples/Fortran/global-array-time/Makefile
+                 examples/Fortran/schema/Makefile
                  adios_config.flags
                 ])
 
