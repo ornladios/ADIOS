@@ -256,12 +256,17 @@ int find_myost (MPI_Comm comm)
     if (fgr_nid2ost (nids, osts, nnids, ATLAS) == true)
     {
 /*
+int rank;
+MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+if (rank == 0)
+{         
         printf ("nids:");
         for (i = 0; i < nnids; i++)
         {
             printf ("%d:%d ", nids[i], osts[i]);
         }
         printf ("\n");
+}
 */
         myid = nid_atoi();
         for (i = 0; i < nnids; i++)
@@ -275,16 +280,18 @@ int find_myost (MPI_Comm comm)
 
         if (i == nnids)
         {
+printf ("something is wrong\n");
             // something is wrong
         }
 
         free (nids);
         free (osts);
-    
-        return ost_id;
+#define ATLAS_OFFSET 1008
+        return (ost_id >= ATLAS_OFFSET ? ost_id - ATLAS_OFFSET : ost_id);
     }
     else
     {
+printf ("something is wrong with FGR\n");
         free (nids);
         free (osts);
         return -1;
@@ -435,6 +442,7 @@ adios_mpi_amr_set_striping_unit(struct adios_MPI_data_struct * md, char *paramet
        }
        else
        {
+printf ("why is here\n");
            lum.lmm_stripe_offset = (random_offset_flag ? -1 : i);
        }
 #else
@@ -451,7 +459,9 @@ adios_mpi_amr_set_striping_unit(struct adios_MPI_data_struct * md, char *paramet
         close(fd);
     }
     else
-        log_warn("MPI_AMR method: open to set lustre striping failed on file %s %s.\n",filename,strerror(errno));
+    {
+        log_warn("MPI_AMR method: open to set lustre striping failed on file %s %s rank = %d.\n",filename,strerror(errno), md->rank);
+    }
 }
 
 static void
@@ -1205,6 +1215,8 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                         adios_mpi_amr_do_mkdir (name);
                     }
                 }
+            
+                MPI_Barrier (md->g_comm2);
             }
 
             // Check if fd->name contains path

@@ -440,7 +440,6 @@ uint32_t nid_atoi ()
     uint32_t nid;
 
     MPI_Get_processor_name (str_buf, &name_len);
-
     nid_str = str_buf;
     while (*nid_str != '\0' && (!isdigit (*nid_str) || *nid_str == '0'))
     {

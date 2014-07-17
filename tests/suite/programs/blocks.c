@@ -196,15 +196,16 @@ int print_varinfo (ADIOS_FILE *f, int start_step)
     printf ("dims[%llu]\n",  v->dims[0]);
     printf ("nsteps = %d\n",  v->nsteps);
     printf ("sum_nblocks = %d\n",  v->sum_nblocks);
+    k = 0; // blockinfo is a contigous 1D array of elements from 0 to v->sum_nblocks-1
     for (i = 0; i < v->nsteps; i++) {
         printf ("  nblocks[%d] = %d\n", i, v->nblocks[i]);
         for (j = 0; j < v->nblocks[i]; j++) {
             printf("    block %2d: [%llu:%llu]", j,
-                        v->blockinfo[j].start[0],
-                        v->blockinfo[j].start[0] + v->blockinfo[j].count[0]-1);
+                        v->blockinfo[k].start[0],
+                        v->blockinfo[k].start[0] + v->blockinfo[k].count[0]-1);
             
-            if (v->blockinfo[j].start[0] != block_offset [(start_step+i)*nblocks_per_step*size + j] ||
-                v->blockinfo[j].count[0] != block_count  [(start_step+i)*nblocks_per_step*size + j] ) 
+            if (v->blockinfo[k].start[0] != block_offset [(start_step+i)*nblocks_per_step*size + j] ||
+                v->blockinfo[k].count[0] != block_count  [(start_step+i)*nblocks_per_step*size + j] ) 
             {
                 nerrors++;
                 printf ("\tERROR: expected [%llu:%llu]",
@@ -214,6 +215,7 @@ int print_varinfo (ADIOS_FILE *f, int start_step)
                 );
             }
             printf("\n");
+            k++;
         }
     }
     adios_free_varinfo (v);
