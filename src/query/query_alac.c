@@ -1031,6 +1031,7 @@ int  adios_query_alac_get_selection_method(ADIOS_QUERY* q,
 	if (retrievalSize <= 0) {
 		(*queryResult) = NULL;
 		FreeALACBITMAP(b);
+		q->_onTimeStep = NO_EVAL_BEFORE;
 		printf(":: ==> no more results to fetch\n");
 		return 0;
 	}
@@ -1047,6 +1048,7 @@ int  adios_query_alac_get_selection_method(ADIOS_QUERY* q,
 	FreeALACBITMAP(b);
 	q->_lastRead += retrievalSize;
 	if (q->_lastRead == q->_maxResultDesired) {
+		q->_onTimeStep = NO_EVAL_BEFORE;
 		return 0;
 	}
 	return 1;

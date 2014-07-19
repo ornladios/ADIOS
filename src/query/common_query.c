@@ -87,7 +87,7 @@ void initialize(ADIOS_QUERY* result) {
 }
 
 ADIOS_QUERY* common_query_create(ADIOS_FILE* f, const char* varName,
-		ADIOS_SELECTION* queryBoundry, enum ADIOS_PREDICATE_MODE op,
+		ADIOS_SELECTION* queryBoundary, enum ADIOS_PREDICATE_MODE op,
 		const char* value) {
 	if (gAdios_query_hooks == NULL) {
 		printf(
@@ -95,23 +95,9 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f, const char* varName,
 		exit(EXIT_FAILURE);
 	}
 
-	if ((value == NULL) || (f == NULL) || (varName == NULL) || (queryBoundry
-			== NULL)) {
+	if ((value == NULL) || (f == NULL) || (varName == NULL) ) {
 		printf("Error:No valid input is provided when creating query.\n");
 		exit(EXIT_FAILURE);
-	}
-
-	if (gAssigned_query_tool == ADIOS_QUERY_TOOL_FASTBIT || gAssigned_query_tool
-			== ADIOS_QUERY_TOOL_ALACRITY) {
-		//TODO:
-		//    if ((queryBoundry->type == ADIOS_SELECTION_BOUNDINGBOX) &&
-		//	(queryBoundry->type == ADIOS_SELECTION_POINTS))
-		if ((queryBoundry->type != ADIOS_SELECTION_BOUNDINGBOX)
-				&& (queryBoundry->type != ADIOS_SELECTION_POINTS)) {
-			printf(
-					"Error: selection type is not supported by fastbit or alacrity. Choose either boundingbox or points\n");
-			exit(EXIT_FAILURE);
-		}
 	}
 
 	// get varinfo from bp structure
@@ -121,9 +107,40 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f, const char* varName,
 		exit(EXIT_FAILURE);
 	}
 
+	if (queryBoundary == NULL){
+		// make the query bounding box as the largest one
+		if ( v->ndim == 3){
+			uint64_t  start [] = {0, 0, 0};
+			uint64_t  count [] = {v->dims[0], v->dims[1],v->dims[2]};
+			queryBoundary = adios_selection_boundingbox(v->ndim, start, count);
+		}else if (v->ndim == 2) {
+			uint64_t  start [] = {0, 0};
+			uint64_t  count [] = {v->dims[0], v->dims[1]};
+			queryBoundary = adios_selection_boundingbox(v->ndim, start, count);
+		}else if (v->ndim == 1){
+			uint64_t  start [] = {0};
+			uint64_t  count [] = {v->dims[0]};
+			queryBoundary = adios_selection_boundingbox(v->ndim, start, count);
+		}
+
+	}
+
+	if (gAssigned_query_tool == ADIOS_QUERY_TOOL_FASTBIT || gAssigned_query_tool
+			== ADIOS_QUERY_TOOL_ALACRITY) {
+		//TODO:
+		if ((queryBoundary->type != ADIOS_SELECTION_BOUNDINGBOX)
+				&& (queryBoundary->type != ADIOS_SELECTION_POINTS)) {
+			printf(
+					"Error: selection type is not supported by fastbit or alacrity. Choose either boundingbox or points\n");
+			exit(EXIT_FAILURE);
+		}
+	}
+
+
+
 	uint64_t total_byte_size, dataSize;
 
-	if (getTotalByteSize(v, queryBoundry, &total_byte_size, &dataSize) < 0) {
+	if (getTotalByteSize(v, queryBoundary, &total_byte_size, &dataSize) < 0) {
 		exit(EXIT_FAILURE);
 	}
 
@@ -154,7 +171,7 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f, const char* varName,
 	query->_dataSlice = malloc(total_byte_size);
 	query->_rawDataSize = dataSize;
 
-	query->_sel = queryBoundry;
+	query->_sel = queryBoundary;
 
 	query->_op = op;
 	query->_value = strdup(value);

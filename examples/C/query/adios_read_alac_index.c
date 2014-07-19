@@ -61,7 +61,7 @@ ADIOS_QUERY * createQueryConstraints(ADIOS_FILE* bf, const char* varName , ADIOS
 
 void multiBoundBox(ADIOS_FILE* bf , const char * b1, const char * b2, ADIOS_FILE *dataF) {
   printf("\n=============== testing multiple bound box  ===========\n");
-  const char* varName1 = "rdm";
+  const char* varName1 = "temp";
   int ndim = 3;
   uint64_t start1[] = {0, 0, 0}; // block 0 -> 1st block
   uint64_t count1[] = {64, 10, 32};
@@ -146,8 +146,8 @@ void multiBoundBox(ADIOS_FILE* bf , const char * b1, const char * b2, ADIOS_FILE
 void oneDefinedBox(ADIOS_FILE* bf , const char * lb, const char * hb, ADIOS_FILE *dataF){
 
 	  printf("\n=============== testing one single bounding box ===========\n");
-	  // rdm data is in the range btw 100 and 200
-	  const char* varName1 = "rdm";
+	  // temp data is in the range btw 100 and 200
+	  const char* varName1 = "temp";
 	  int ndim = 3;
 	  uint64_t start1[] = {0, 0, 0};
 	  uint64_t count1[] = {64, 32, 32};

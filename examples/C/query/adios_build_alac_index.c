@@ -34,6 +34,7 @@ typedef struct dimensions dim_t;
 
 // Given the input file, you want to divide the data into different PG sizes, data is transformed by ALACRITY plugin
 // Run this program with only ONE processor.
+// this file is stolen from ../transform/adios_write_all_3D.c
 
 void adios_write_pg ( char input_dir [], char transform [], uint8_t nvars, char **vars,
                        dim_t data_dim, dim_t pg_dim)
@@ -191,22 +192,24 @@ int main (int argc, char ** argv)
     dim_t data_dim;
     dim_t pg_dim;
 
-    data_dim.ndims = 3;
+    data_dim.ndims = 3;  // data variable dimension size
     data_dim.dims [0] = 128;  //256; 
     data_dim.dims [1] = 64 ;  //128;
     data_dim.dims [2] = 64;   //128;
     data_dim.element_size = 8;
 
-    pg_dim.ndims = 3;
-    pg_dim.dims [0] = 64; //256;
-    pg_dim.dims [1] = 32; //128;
-    pg_dim.dims [2] = 32; //128;
+    pg_dim.ndims = 3; // each block dimension size
+    pg_dim.dims [0] = 64; //64
+    pg_dim.dims [1] = 32; //32
+    pg_dim.dims [2] = 32; //32
     pg_dim.element_size = 8;
 
+    // temp == rdm , values are randomly generated, the value range is [100-200]
 //    char *vars [4] = {"temp", "uvel", "vvel", "wvel"};
-    char *vars[1]  = {"rdm" };
+    char *vars [2] = {"temp", "uvel"};
+//    char *vars[1]  = {"rdm" };
     if (argc >= 2) {
-        adios_write_pg (argv [1], argv [2], 1, vars, data_dim, pg_dim);
+        adios_write_pg (argv [1], argv [2], 2, vars, data_dim, pg_dim);
     } else {
         printf ("Usage: %s <base directory> <transform> \n", argv [0]);
     }
