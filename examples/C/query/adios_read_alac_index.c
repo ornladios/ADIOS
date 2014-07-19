@@ -166,9 +166,9 @@ void oneDefinedBox(ADIOS_FILE* bf , const char * lb, const char * hb, ADIOS_FILE
       while (1) {
         ADIOS_SELECTION* currBatch = NULL;
         int hasMore =  adios_query_get_selection(q, batchSize, box1, &currBatch);
-        if (currBatch == NULL)  // there is no results at all
-        	break;
-
+        if (hasMore == 0) { // there is no left results to retrieve
+                  break;
+         }
         assert(currBatch->type ==ADIOS_SELECTION_POINTS);
         const ADIOS_SELECTION_POINTS_STRUCT * retrievedPts = &(currBatch->u.points);
         printf("retrieved points %" PRIu64 " \n",  retrievedPts->npoints);
@@ -183,9 +183,7 @@ void oneDefinedBox(ADIOS_FILE* bf , const char * lb, const char * hb, ADIOS_FILE
         	//        printPoints(retrievedPts);
         adios_selection_delete(currBatch);
 
-        if (hasMore == 0) { // there is no left results to retrieve
-          break;
-        }
+
       }
 
       adios_query_free(q);
@@ -193,6 +191,72 @@ void oneDefinedBox(ADIOS_FILE* bf , const char * lb, const char * hb, ADIOS_FILE
 
 }
 
+
+void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF)
+{
+  printf("\n=============== test oneBoundingBoxForVars ===========\n");
+  uint64_t start[] = {0, 0, 0};
+  uint64_t count[] = {64, 32, 32};
+  ADIOS_SELECTION* box = adios_selection_boundingbox(3, start, count);
+
+  const char* varName1 = "temp";
+  const char* value1 = "150.0";
+  double tempConstraint = atof(value1);
+
+  const char* varName2 = "uvel";
+  const char* value2 = "15";
+  double uvelConstraint = atof(value2);
+
+  ADIOS_QUERY* q1 = adios_query_create(f, varName1, box, ADIOS_LT, value1);  // temp < 150.0
+  ADIOS_QUERY* q2 = adios_query_create(f, varName2, box, ADIOS_GT, value2);  // uvel > 15
+
+  ADIOS_QUERY* q = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
+
+  ADIOS_VARINFO * tempVar = adios_inq_var(dataF, varName1);
+  ADIOS_VARINFO * uvelVar = adios_inq_var(dataF, varName2);
+
+  int timestep = 0;
+  int64_t batchSize = 1500;
+
+  int i = 0;
+  printf("times steps for variable is: %d \n", q1->_var->nsteps);
+  for (i=0; i<q1->_var->nsteps; i++) {
+	adios_query_set_timestep(i);
+
+    while (1) {
+      ADIOS_SELECTION* currBatch = NULL;
+      int hasMore =  adios_query_get_selection(q, batchSize, box, &currBatch);
+
+      if (hasMore == 0) { // there is no left results to retrieve
+                        break;
+       }
+      assert(currBatch->type ==ADIOS_SELECTION_POINTS);
+      const ADIOS_SELECTION_POINTS_STRUCT * retrievedPts = &(currBatch->u.points);
+      printf("retrieved points %" PRIu64 " \n",  retrievedPts->npoints);
+
+      double * data = (double *) malloc(retrievedPts->npoints * sizeof(double));
+
+      // check returned temp data
+/*
+      adios_schedule_read_byid (dataF, currBatch, tempVar->varid, 0, 1, data);
+      adios_perform_reads(dataF, 1);
+      CHECK_ERROR_DATA(data, retrievedPts->npoints, (data[di] >= tempConstraint));
+*/
+
+      // check return uvel data
+      adios_schedule_read_byid (dataF, currBatch, uvelVar->varid, 0, 1, data);
+      adios_perform_reads(dataF, 1);
+      CHECK_ERROR_DATA(data, retrievedPts->npoints, (data[di] <= uvelConstraint));
+      free(data);
+      adios_selection_delete(currBatch);
+
+    }
+
+  }
+
+  adios_query_free(q);
+  adios_selection_delete(box);
+}
 
 int main (int argc, char ** argv)
 {
@@ -207,20 +271,21 @@ int main (int argc, char ** argv)
     uint64_t start[2], count[2], npoints, * points;
     MPI_Init (&argc, &argv);
     if (argc < 2 ){
-    	printf(" usage: %s {input bp file}, {lb} {hb} {bp file without transform} \n", argv[0]);
+    	printf(" usage: %s {input bp file},  {bp file without transform} {lb} {hb} \n", argv[0]);
     	return 1;
     }
 
     char lbstr[255], hbstr[255];
-    argc >= 3 ? strcpy(lbstr, argv[2]) : strcpy(lbstr, "0.0");
-    argc >= 4 ? strcpy(hbstr, argv[3]) : strcpy(hbstr, "0.0");
 
     char dataFileName[256];
-    if (argc == 5) {
-    	strcpy(dataFileName, argv[4]);
-    }else{
-    	strcpy(dataFileName, "./xml/alacrity-1var-no-transform_524288.bp");
-    }
+	if (argc >= 3) {
+		strcpy(dataFileName, argv[2]);
+	}else{
+		strcpy(dataFileName, "./xml/alacrity-2var-no-transform_524288.bp");
+	}
+
+    argc >= 4 ? strcpy(lbstr, argv[3]) : strcpy(lbstr, "0.0");
+    argc >= 5 ? strcpy(hbstr, argv[4]) : strcpy(hbstr, "0.0");
 
     adios_read_init_method (method, comm, NULL);
 
@@ -246,9 +311,10 @@ int main (int argc, char ** argv)
     adios_query_init(ADIOS_QUERY_TOOL_ALACRITY);
 
     //====================== start to test ===================//
-    oneDefinedBox(f , lbstr, hbstr, dataF);
-    multiBoundBox(f , lbstr, hbstr, dataF);
+//    oneDefinedBox(f , lbstr, hbstr, dataF);
+//    multiBoundBox(f , lbstr, hbstr, dataF);
 
+    oneBoundingBoxForVars(f, dataF);
 
     adios_read_close (f);
     adios_read_close (dataF);
