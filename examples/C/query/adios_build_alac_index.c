@@ -101,6 +101,7 @@ void adios_write_pg ( char input_dir [], char transform [], uint8_t nvars, char 
     uint32_t DZ = pg_dim.dims [2];
 
     char *pg_var_data = (char *) malloc (pg_var_size);
+    int timestep = 1;
 
     printf ("ntimesteps = %d, NX = %u, NY = %u, NZ = %u\n", numPGs, NX, NY, NZ);
 
@@ -136,8 +137,15 @@ void adios_write_pg ( char input_dir [], char transform [], uint8_t nvars, char 
         		      ) % data_dim.dims [2];
 
 //        rank = proc;
+        if (ts <= 3	){
+			adios_pin_timestep(1);
 
-        adios_pin_timestep(1);
+        }else{
+        	adios_pin_timestep(2);
+        }
+
+
+
         if (ts == 0) {
             adios_open (&adios_handle, "S3D", output_bp_file, "w", comm);
         } else {
@@ -206,10 +214,10 @@ int main (int argc, char ** argv)
 
     // temp == rdm , values are randomly generated, the value range is [100-200]
 //    char *vars [4] = {"temp", "uvel", "vvel", "wvel"};
-    char *vars [2] = {"temp", "uvel"};
-//    char *vars[1]  = {"rdm" };
+//    char *vars [2] = {"temp", "uvel"};
+    char *vars[1]  = {"temp" };
     if (argc >= 2) {
-        adios_write_pg (argv [1], argv [2], 2, vars, data_dim, pg_dim);
+        adios_write_pg (argv [1], argv [2], 1, vars, data_dim, pg_dim);
     } else {
         printf ("Usage: %s <base directory> <transform> \n", argv [0]);
     }

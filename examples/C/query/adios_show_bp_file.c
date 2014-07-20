@@ -37,8 +37,9 @@ void showBPFile(ADIOS_FILE * fp, char *varName ){
 		}
 
 		printf("var info: ");
-		printf("varId: %d, type: %d, ndim: %d, nsteps: %d, nblocks: %d, ",
+		printf("varId: %d, type: %d, ndim: %d, nsteps: %d, total nblocks: %d, ",
 				v->varid, v->type, v->ndim, v->nsteps, v->sum_nblocks);
+
 		printf("dims: {");
 		for(i = 0; i < v->ndim; i++){
 			printf("%" PRIu64 ",", v->dims[i]);
@@ -50,6 +51,12 @@ void showBPFile(ADIOS_FILE * fp, char *varName ){
 			printf("error from adios_inq_var_blockinfo \n");
 			return ;
 		}
+
+		printf("number of blocks in each timestep: {");
+		for(i = 0 ; i < v->nsteps; i++){
+			printf ("%d,", v->nblocks[i]); // it is an array of length n->nsteps;
+		}
+		printf("}\n");
 
 		ADIOS_VARBLOCK * bi = v->blockinfo;
 		printf("block info: ");
