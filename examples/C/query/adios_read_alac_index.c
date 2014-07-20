@@ -197,10 +197,11 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF)
   printf("\n=============== test oneBoundingBoxForVars ===========\n");
   uint64_t start[] = {0, 0, 0};
   uint64_t count[] = {64, 32, 32};
+//  uint64_t count[] = {32,16,16};
   ADIOS_SELECTION* box = adios_selection_boundingbox(3, start, count);
 
   const char* varName1 = "temp";
-  const char* value1 = "150.0";
+  const char* value1 = "170.0";
   double tempConstraint = atof(value1);
 
   const char* varName2 = "uvel";
@@ -228,7 +229,7 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF)
       int hasMore =  adios_query_get_selection(q, batchSize, box, &currBatch);
 
       if (hasMore == 0) { // there is no left results to retrieve
-                        break;
+            break;
        }
       assert(currBatch->type ==ADIOS_SELECTION_POINTS);
       const ADIOS_SELECTION_POINTS_STRUCT * retrievedPts = &(currBatch->u.points);
@@ -237,16 +238,16 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF)
       double * data = (double *) malloc(retrievedPts->npoints * sizeof(double));
 
       // check returned temp data
-/*
       adios_schedule_read_byid (dataF, currBatch, tempVar->varid, 0, 1, data);
       adios_perform_reads(dataF, 1);
       CHECK_ERROR_DATA(data, retrievedPts->npoints, (data[di] >= tempConstraint));
-*/
 
       // check return uvel data
+/*
       adios_schedule_read_byid (dataF, currBatch, uvelVar->varid, 0, 1, data);
       adios_perform_reads(dataF, 1);
       CHECK_ERROR_DATA(data, retrievedPts->npoints, (data[di] <= uvelConstraint));
+*/
       free(data);
       adios_selection_delete(currBatch);
 
