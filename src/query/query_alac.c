@@ -730,8 +730,6 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
     resolveQueryBoundary(adiosQuery, &hb, &lb); // query constraints
     printf("%s\n", adiosQuery->_condition);
 
-
-
 	ALQueryEngine qe;
 	ALUnivariateQuery alacQuery;
 	ALQueryEngineStartUnivariateDoubleQuery(&qe, lb, hb, REGION_RETRIEVAL_INDEX_ONLY_QUERY_TYPE, &alacQuery);
@@ -789,22 +787,22 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 		adios_free_pg_intersections(&intersectedPGs);
 	}
 	else if (adiosQuery->_sel->type == ADIOS_SELECTION_WRITEBLOCK){
-
 		const ADIOS_SELECTION_WRITEBLOCK_STRUCT *writeBlock = &(adiosQuery->_sel->u.block);
 		int blockId= writeBlock->index;
-	    adios_read_set_data_view(adiosQuery->_f, LOGICAL_DATA_VIEW); // in order to read the dimension info. of the block id
 	    int globalBlockId = blockId;
 	    int t=0;
-	    for(; t < startStep; t++){
+	    for(; t < startStep; t++){  // here the varInfo is obtained by calling adios_inq_var in the common_query , which means it doesn't have the blockinfo
 	    	globalBlockId += varInfo->nblocks[t]; // convert block index (relative to timestep) to the global index
 	    }
+	    adios_inq_var_blockinfo(adiosQuery->_f, varInfo);
 	    ADIOS_VARBLOCK block = varInfo->blockinfo[globalBlockId];
 	    // since user supplies the query with block id, in this case, the start and destination(querying) bounding box are the block itself
 	    srcstart = block.start; srccount = block.count;
 	    deststart = block.start;  destcount = block.count;
-	    bool isPGContained = true; // because they are same bounding boxes, they are fully contained
 	    adios_read_set_data_view(adiosQuery->_f, PHYSICAL_DATA_VIEW); // switch to the transform view,
-		ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->_f, varInfo);
+		ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->_f, varInfo); // this func. will fill the blockinfo field
+	    bool isPGContained = true; // because they are same bounding boxes, they are fully contained
+
 
 		proc_write_block(blockId,isPGContained,ti, adiosQuery,startStep,estimate,&alacQuery,lb,hb
 				,srcstart, srccount, deststart, destcount,alacResultBitmap	);
