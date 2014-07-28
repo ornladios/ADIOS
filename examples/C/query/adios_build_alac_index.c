@@ -214,10 +214,10 @@ int main (int argc, char ** argv)
 
     // temp == rdm , values are randomly generated, the value range is [100-200]
 //    char *vars [4] = {"temp", "uvel", "vvel", "wvel"};
-//    char *vars [2] = {"temp", "uvel"};
-    char *vars[1]  = {"temp" };
+    char *vars [2] = {"temp", "uvel"};
+//    char *vars[1]  = {"temp" };
     if (argc >= 2) {
-        adios_write_pg (argv [1], argv [2], 1, vars, data_dim, pg_dim);
+        adios_write_pg (argv [1], argv [2], 2, vars, data_dim, pg_dim);
     } else {
         printf ("Usage: %s <base directory> <transform> \n", argv [0]);
     }

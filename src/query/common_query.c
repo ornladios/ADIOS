@@ -129,9 +129,10 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f, const char* varName,
 			== ADIOS_QUERY_TOOL_ALACRITY) {
 		//TODO:
 		if ((queryBoundary->type != ADIOS_SELECTION_BOUNDINGBOX)
-				&& (queryBoundary->type != ADIOS_SELECTION_POINTS)) {
+				&& (queryBoundary->type != ADIOS_SELECTION_POINTS)
+				&& (queryBoundary->type != ADIOS_SELECTION_WRITEBLOCK)) {
 			printf(
-					"Error: selection type is not supported by fastbit or alacrity. Choose either boundingbox or points\n");
+					"Error: selection type is not supported by fastbit or alacrity. Choose either boundingbox, points or writeBlock \n");
 			exit(EXIT_FAILURE);
 		}
 	}

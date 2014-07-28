@@ -547,7 +547,7 @@ char * readIndexAmongBins(ALMetadata *partitionMeta, bin_id_t low_bin , bin_id_t
 ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, bool estimate) {
 
 	double lb , hb ;
-    resolveQueryBoundary(adiosQuery, &hb, &lb);
+    resolveQueryBoundary(adiosQuery, &hb, &lb); // query constraints
     printf("%s\n", adiosQuery->_condition);
 
     adios_read_set_data_view(adiosQuery->_f, PHYSICAL_DATA_VIEW);
@@ -560,6 +560,13 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 		const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(adiosQuery->_sel->u.bb);
 		destcount = bb->count;
 		deststart = bb->start;
+	} else if (adiosQuery->_sel->type == ADIOS_SELECTION_POINTS){
+		// TODO: at this point, this type of querying is took careful by the common query layer
+	}
+	else if (adiosQuery->_sel->type == ADIOS_SELECTION_WRITEBLOCK){
+		const ADIOS_SELECTION_WRITEBLOCK_STRUCT *writeBlock = &(adiosQuery->_sel->u.block);
+		int blockId = writeBlock->index;
+
 	} else {
 		printf("not supported selection typed in alacrity \n");
 		exit(EXIT_FAILURE);

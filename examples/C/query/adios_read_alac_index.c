@@ -201,7 +201,7 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF)
   ADIOS_SELECTION* box = adios_selection_boundingbox(3, start, count);
 
   const char* varName1 = "temp";
-  const char* value1 = "170.0";
+  const char* value1 = "160.0";
   double tempConstraint = atof(value1);
 
   const char* varName2 = "uvel";
@@ -217,11 +217,12 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF)
   ADIOS_VARINFO * uvelVar = adios_inq_var(dataF, varName2);
 
   int timestep = 0;
-  int64_t batchSize = 1500;
+  int64_t batchSize = 1220;
 
   int i = 0;
   printf("times steps for variable is: %d \n", q1->_var->nsteps);
   for (i=0; i<q1->_var->nsteps; i++) {
+	printf("querying on timestep %d \n", i);
 	adios_query_set_timestep(i);
 
     while (1) {
