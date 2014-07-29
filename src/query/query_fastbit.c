@@ -17,6 +17,27 @@ void getCoordinateFromPoints(uint64_t pos, const ADIOS_SELECTION_POINTS_STRUCT* 
   }
 }
 
+
+void getCoordinateFromBlock(uint64_t pos, const ADIOS_VARBLOCK* sel, int n, uint64_t* coordinates) 
+{
+  //printf("pos = %ld, n=%d \n", pos, n);
+  if (n == 1) {
+      coordinates[n-1] = pos + sel->start[n-1];
+      return ;
+  } 
+ 
+  uint64_t lastDimSize= sel->count[n-1];     
+  uint64_t res  = pos % lastDimSize;
+
+  //printf("      lastDim = %ld, res=%d \n", lastDimSize, res);
+  coordinates[n-1] = res + sel->start[n-1];
+  uint64_t stepUp = (pos - res)/lastDimSize;
+
+  //printf("      coordinate[%d]=%ld\n", n-1, coordinates[n-1]);
+
+  getCoordinateFromBlock(stepUp, sel, n-1, coordinates);  
+}
+
 //check point coordinates
 //offset in the bounding box needs to be taken account
 void getCoordinateFromBox(uint64_t pos, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT* sel, int n, uint64_t* coordinates) 
@@ -69,89 +90,6 @@ ADIOS_VARINFO* getAdiosVariable(ADIOS_FILE* f, const char* varName)
 }
 
 
-FastBitDataType getFastbitDataType(enum ADIOS_DATATYPES type) 
-{  
-  switch (type)
-    {
-    case adios_unsigned_byte:
-      return FastBitDataTypeUByte;
-      break;
-
-    case adios_byte:
-      return FastBitDataTypeByte;
-      break;
-
-    case adios_short:
-      return FastBitDataTypeShort;
-      break;
-
-    case adios_unsigned_short:
-      return FastBitDataTypeUShort;
-      break;
-
-    case adios_integer:
-      return FastBitDataTypeInt;
-      break;
-
-    case adios_unsigned_integer:
-      return FastBitDataTypeUInt;
-      break;
-
-    case adios_long:
-      return FastBitDataTypeLong;
-      break;
-
-    case adios_unsigned_long:
-      return FastBitDataTypeULong;
-      break;
-
-    case adios_string:
-      return FastBitDataTypeUnknown;
-      break;
-
-    case adios_real:
-      return FastBitDataTypeFloat;
-      break;
-
-    case adios_double:
-      return FastBitDataTypeDouble;
-      break;
-
-    case adios_long_double:
-    //sprintf (s, "%Lg", ((long double *) data)[idx]);
-    case adios_complex:
-    //sprintf (s, "(%g, %g)", ((float *) data)[2*idx], ((float *) data)[2*idx+1]);   	       
-    case adios_double_complex:
-    //sprintf (s, "(%lg, %lg)", ((double *) data)[2*idx], ((double *) data)[2*idx+1]);	       
-    return FastBitDataTypeDouble;
-    }
-
-}
-
-FastBitCompareType getFastbitCompareType(enum ADIOS_PREDICATE_MODE op) 
-{
-    switch (op) 
-    {
-    case ADIOS_LT:
-      return FastBitCompareLess;
-      break;
-    case ADIOS_LTEQ:
-      return FastBitCompareLessEqual;
-      break;
-    case ADIOS_GT:
-      return FastBitCompareGreater;
-      break;
-    case ADIOS_GTEQ:
-      return FastBitCompareGreaterEqual;
-      break;
-    case ADIOS_EQ:
-      return FastBitCompareEqual;
-      break;
-    case ADIOS_NE:
-      return FastBitCompareNotEqual;
-      break;
-    }
-}
 
 //
 //
@@ -191,14 +129,14 @@ int readWithTimeStep(ADIOS_QUERY* q, int timeStep) {
   }
 
   adios_perform_reads (q->_f, 1); // return 0 regardless whether data is valid, so donnt need to check return value     
-  printf("      perfo read error code = %d adios_errno=%d\n", errorCode, adios_errno);
+  printf("      perform read got error code = %d adios_errno=%d\n", errorCode, adios_errno);
   if (adios_errno != 0) {
     return -1;
   }
   
   uint64_t dataSize = q->_rawDataSize;
   int j;
-  printf ("::\t %s At timestep: %llu datasize=%llu \n\t\t   data:  [", q->_condition, timeStep, dataSize);
+  printf ("::\t %s At timestep: %llu datasize=%llu \n\t\t   raw data:  [", q->_condition, timeStep, dataSize);
   for (j = 0; j < dataSize; j++) {
     if (j < 64) {
       if ((j % 10) == 0) {
@@ -372,20 +310,20 @@ ADIOS_SELECTION* getSpatialCoordinatesDefault(ADIOS_VARINFO* var, uint64_t* coor
     
     fillUp(var->ndim, spatialCoordinates, i, pointArray);
   }
+  ADIOS_SELECTION* result =  adios_selection_points(var->ndim, retrivalSize, pointArray);
   free(pointArray);
-  return adios_selection_points(var->ndim, retrivalSize, pointArray);
-
+  return result;
 }
 
-ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundry, uint64_t* coordinates, uint64_t retrivalSize)
+ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundary, uint64_t* coordinates, uint64_t retrivalSize, ADIOS_VARINFO* v)
 {
   int k = 0;
   uint64_t i=0;
 
-  switch (outputBoundry->type) {
+  switch (outputBoundary->type) {
   case  ADIOS_SELECTION_BOUNDINGBOX:    
     {
-      const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(outputBoundry->u.bb);
+      const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(outputBoundary->u.bb);
 
       uint64_t arraySize = retrivalSize * (bb->ndim);
       uint64_t* pointArray = (uint64_t*) (malloc(arraySize  * sizeof(uint64_t)));
@@ -396,13 +334,14 @@ ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundry, uint64_t*
 
 	   fillUp(bb->ndim, spatialCoordinates, i, pointArray);
       }
+      ADIOS_SELECTION* result =  adios_selection_points(bb->ndim, retrivalSize, pointArray);    
       free(pointArray);
-      return adios_selection_points(bb->ndim, retrivalSize, pointArray);
+      return result;
+      break;
     }
-    break;
   case ADIOS_SELECTION_POINTS:
     {
-      const ADIOS_SELECTION_POINTS_STRUCT *points = &(outputBoundry->u.points);	      
+      const ADIOS_SELECTION_POINTS_STRUCT *points = &(outputBoundary->u.points);	      
 
       uint64_t arraySize = retrivalSize * (points->ndim);
       uint64_t* pointArray = (uint64_t*) (malloc(arraySize  * sizeof(uint64_t)));
@@ -419,14 +358,37 @@ ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundry, uint64_t*
 	}	
 	*/
       }
+      ADIOS_SELECTION* result = adios_selection_points(points->ndim, retrivalSize, pointArray);	      
       free(pointArray);
-      return adios_selection_points(points->ndim, retrivalSize, pointArray);	
-      
+      return result;
       //printOneSpatialCoordinate(points->ndim, spatialCoordinates);      
+      
+      break;
     }
-    break;
+    //  if it is blocks, should use bounding box to retrive the coordinates
+  case ADIOS_SELECTION_WRITEBLOCK:
+    {
+      const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb = &(outputBoundary->u.block);
+      
+      uint64_t arraySize = retrivalSize * (v->ndim);
+      uint64_t* pointArray = (uint64_t*) (malloc(arraySize  * sizeof(uint64_t)));
+      
+      for (i=0; i<retrivalSize; i++) {
+	   uint64_t spatialCoordinates[v->ndim];
+	   //create bb from block;
+	   int absBlockCounter = getGlobalWriteBlockId(wb->index, gCurrentTimeStep, v);
+	   getCoordinateFromBlock(coordinates[i], &(v->blockinfo[absBlockCounter]), v->ndim, spatialCoordinates);
+
+	   fillUp(v->ndim, spatialCoordinates, i, pointArray);
+      }
+      ADIOS_SELECTION* result = adios_selection_points(v->ndim, retrivalSize, pointArray);
+      free(pointArray);
+      return result;
+      break;      
+    }
   default:
-    printf("Error: Type of selection is not supported!");
+    printf("Error: Type of selection is not supported!\n\n");
+    return NULL;
   }
 }
 
@@ -443,7 +405,7 @@ ADIOS_QUERY* getFirstLeaf(ADIOS_QUERY* q) {
 
 int  adios_query_fastbit_get_selection_method(ADIOS_QUERY* q, 
 					      uint64_t batchSize, 
-					      ADIOS_SELECTION* outputBoundry, 
+					      ADIOS_SELECTION* outputBoundary, 
 					      ADIOS_SELECTION** result)
 {
   /*
@@ -471,14 +433,26 @@ int  adios_query_fastbit_get_selection_method(ADIOS_QUERY* q,
     
   q->_lastRead += retrivalSize;
   
-  if (outputBoundry == 0) {
-    if ((getFirstLeaf(q) == NULL) || (getFirstLeaf(q)->_var == NULL)) {
+  if (outputBoundary == 0) {
+    ADIOS_QUERY* firstLeaf = getFirstLeaf(q);
+    if ((firstLeaf == NULL) || (firstLeaf->_var == NULL)) {
 	printf(":: Error: unable to get a valid first leaf! Exit. \n");
 	return -1;
       }
-    *result = getSpatialCoordinatesDefault(getFirstLeaf(q)->_var, coordinates, retrivalSize);
+    if (firstLeaf->_sel == NULL) {
+      *result = getSpatialCoordinatesDefault(firstLeaf->_var, coordinates, retrivalSize);
+    } else {
+      *result = getSpatialCoordinates(firstLeaf->_sel, coordinates, retrivalSize, firstLeaf->_var);
+    }
   } else {
-    *result = getSpatialCoordinates(outputBoundry, coordinates, retrivalSize);
+    //*result = getSpatialCoordinates(outputBoundary, coordinates, retrivalSize);
+    // variable needs to be in place to handle the block information
+    // not sure wheather this is well defined case of combined query?! but the first varibale will be used for block information calculation
+    *result = getSpatialCoordinates(outputBoundary, coordinates, retrivalSize, getFirstLeaf(q)->_var);
+
+    if (*result == 0) {
+      return -1;
+    }
   }
   // print results
   int i=0; 
@@ -507,7 +481,7 @@ int  adios_query_fastbit_free_method(ADIOS_QUERY* query)
     return;
   }
 
-  printf(":: free %s\n", query->_condition);
+  printf(":: free %s  has parent? %d\n", query->_condition, query->_hasParent);
   free(query->_value);
   free(query->_dataSlice);
   free(query->_condition);
@@ -515,7 +489,10 @@ int  adios_query_fastbit_free_method(ADIOS_QUERY* query)
   //adios_selection_delete(query->_sel);
   adios_free_varinfo(query->_var);
 
-  //fastbit_selection_free(query->_queryInternal);
+  // can free _queryInternal only once
+  if(query->_hasParent == 0) {
+    fastbit_selection_free(query->_queryInternal);
+  }
   free(query);
 
 }
@@ -540,10 +517,6 @@ void assert(void* ptr, const char* notes)
 */
 
 
-void usage(char* prog) 
-{
-  printf("Usage: %s <BP-file> [query]\n e.g. ./test_v1 my.bp \"x1 > 10\" \n", prog);
-}
 
 
 

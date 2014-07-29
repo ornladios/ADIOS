@@ -26,11 +26,16 @@ void adios_query_hooks_init(struct adios_query_hooks_struct ** t)
  
   *t = (struct adios_query_hooks_struct *) calloc (ADIOS_QUERY_TOOL_COUNT, sizeof (struct adios_query_hooks_struct));
 
-  //#ifdef _USE_FASTBIT
-  // default initiation
+#ifdef ALACRITY
   has_init_called = 1;
-  ASSIGN_FNS(fastbit, ADIOS_QUERY_TOOL_FASTBIT);
-  //#endif
+  ASSIGN_FNS(alac, ADIOS_QUERY_TOOL_ALACRITY);
+#else 
+  // default initiation
+  if (has_init_called == 0) {
+    has_init_called = 1;
+    ASSIGN_FNS(fastbit, ADIOS_QUERY_TOOL_FASTBIT);
+  }
+#endif
 
 }
 

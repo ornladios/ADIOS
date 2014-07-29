@@ -14,8 +14,8 @@ int gCurrentTimeStep;
 enum ADIOS_QUERY_TOOL 
 {
         ADIOS_QUERY_TOOL_FASTBIT = 0,
-        ADIOS_QUERY_TOOL_ALACRITY = 0,
-        ADIOS_QUERY_TOOL_OTHER = 1
+        ADIOS_QUERY_TOOL_ALACRITY = 1,
+        ADIOS_QUERY_TOOL_OTHER = 2
 };
     
 
@@ -59,6 +59,9 @@ typedef struct {
 
     uint64_t _maxResultDesired;
     uint64_t _lastRead;
+
+    int _hasParent;
+  int _deleteSelectionWhenFreed;
 } ADIOS_QUERY;
    
 
@@ -68,7 +71,7 @@ void adios_query_init(enum ADIOS_QUERY_TOOL tool);
 
 ADIOS_QUERY* adios_query_create(ADIOS_FILE* f, 
 				const char* varName,
-				ADIOS_SELECTION* queryBoundry,
+				ADIOS_SELECTION* queryBoundary,
 				enum ADIOS_PREDICATE_MODE op,
 				const char* value); //this value needs to be &int &double etc, not a string!
 					
@@ -85,7 +88,7 @@ int  adios_query_get_selection(ADIOS_QUERY* q,
 			       //const char* varName,
 			       //int timeStep, // same as in evaluate
 			       uint64_t batchSize, // limited by maxResult
-			       ADIOS_SELECTION* outputBoundry,// must supply to get results
+			       ADIOS_SELECTION* outputBoundary,// must supply to get results
 			       ADIOS_SELECTION** queryResult);
 
 

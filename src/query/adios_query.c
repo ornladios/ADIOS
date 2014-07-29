@@ -8,11 +8,11 @@ void adios_query_init(enum ADIOS_QUERY_TOOL tool)
 
 ADIOS_QUERY* adios_query_create(ADIOS_FILE* f, 
 				const char* varName,
-				ADIOS_SELECTION* queryBoundry,
+				ADIOS_SELECTION* queryBoundary,
 				enum ADIOS_PREDICATE_MODE op,
 				const char* value)
 {
-  return common_query_create(f, varName, queryBoundry, op, value);
+  return common_query_create(f, varName, queryBoundary, op, value);
 }
 					
 
@@ -38,10 +38,10 @@ int  adios_query_get_selection(ADIOS_QUERY* q,
 			       //const char* varName,
 			       //int timeStep, 
 			       uint64_t batchSize, // limited by maxResult
-			       ADIOS_SELECTION* outputBoundry,
+			       ADIOS_SELECTION* outputBoundary,
 			       ADIOS_SELECTION** queryResult)
 {
-  common_query_get_selection(q,  batchSize, outputBoundry, queryResult);
+  return common_query_get_selection(q,  batchSize, outputBoundary, queryResult);
 }
 
 void adios_query_free(ADIOS_QUERY* q)
