@@ -60,7 +60,7 @@ program skel
 #if $noxml
   call adios_init_noxml (MPI_COMM_WORLD, error)
 #else
-  call adios_init ("${project}_skel.xml", MPI_COMM_WORLD, adios_error)
+  call adios_init ("${project}_skel.xml", MPI_COMM_WORLD, error)
 #end if
 
   skel_init_timer = skel_init_timer + MPI_WTIME();
