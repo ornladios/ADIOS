@@ -63,8 +63,8 @@ program tri2d_f_noxml
     integer*4               :: ndx, ndy                            ! size of array per processor
     real*8, dimension(:), allocatable       :: N                                   ! node centered variable
     real*8, dimension(:), allocatable       :: C                                   ! cell centered variable
-    real*8, dimension(:), allocatable       :: points                              ! X,Y coordinate
-    integer*4, dimension(:), allocatable    :: cells
+    real*8, dimension(:,:), allocatable     :: points                              ! X,Y coordinate
+    integer*4, dimension(:,:), allocatable  :: cells
     character(:), allocatable            :: schema_version, dimemsions
 
     integer*4               :: offs_x, offs_y                      ! offset in x and y direction
@@ -111,20 +111,20 @@ program tri2d_f_noxml
 
 ! local mesh + data
     allocate (N(0:ndx*ndy*8-1))            ! 8 is sizeof(double)
-    allocate (points(0:2*ndx*ndy*8-1))   ! 8 is sizeof(double)
+    allocate (points(2,0:ndx*ndy*8-1))   ! 8 is sizeof(double)
 
     if (posx == npx-1 .AND. posy < npy-1 ) then
         allocate (C(0:8*(ndx-1)*ndy*2-1))      ! 8 is sizeof(double)
-        allocate (cells(0:4*(ndx-1)*ndy*2*3-1))! 4 is sizeof(int)
+        allocate (cells(3,0:4*(ndx-1)*ndy*2-1))! 4 is sizeof(int)
     else if (posy == npy-1 .AND. posx < npx-1 ) then
         allocate (C(0:8*ndx*(ndy-1)*2-1))
-        allocate (cells(0:4*ndx*(ndy-1)*2*3-1))
+        allocate (cells(3,0:4*ndx*(ndy-1)*2-1))
     else if ( posx == npx-1 .AND. posy == npy-1 ) then 
         allocate (C(0:8*(ndx-1)*(ndy-1)*2-1))
-        allocate (cells(0:4*(ndx-1)*(ndy-1)*2*3-1))
+        allocate (cells(3,0:4*(ndx-1)*(ndy-1)*2-1))
     else
         allocate (C(0:8*ndx*ndy*2-1))
-        allocate (cells(0:4*ndx*ndy*2*3-1))
+        allocate (cells(3,0:4*ndx*ndy*2-1))
     endif
 
 ! generate local data
@@ -133,8 +133,8 @@ program tri2d_f_noxml
 
     do i = 0, ndx-1
         do j = 0, ndy-1
-            points((i*ndy + j)*2) = offs_x + posy*ndx + DBLE(i)*ndx/ndx + DBLE(ndx)*j/ndy
-            points((i*ndy + j)*2+1) = offs_y + DBLE(ndy)*j/ndy
+            points(1,(i*ndy + j)) = offs_x + posy*ndx + DBLE(i)*ndx/ndx + DBLE(ndx)*j/ndy
+            points(2,(i*ndy + j)) = offs_y + DBLE(ndy)*j/ndy
         enddo
     enddo
 
@@ -142,106 +142,79 @@ program tri2d_f_noxml
         N(i) = 1.0*DBLE(rank)
     enddo
     
-    if( posx == npx-1 .AND. posy < npy-1 ) then 
-        lc = ndx*(ndy-1)*2
-        oc = posy*(ndx*npx-1)*ndy*2 + posx*ndx*(ndy-1)*2
+    if( posx == npx-1 .AND. posy < npy-1 ) then
+        lc = (ndx-1)*ndy*2
+        oc = posx*ndx*ndy*2 + posy*(ndx*npx-1)*ndy*2
+        !write (*,'("Rank",i0,": case 1: define ",i0," triangles, oc=",i0)'), rank, lc, oc
         do i = 0, ndx-2
             do j = 0, ndy-1
-               p = i*ndy+j 
+               p = i*ndy+j
                if( i<ndx-1 .AND. j<ndy-1 ) then
-                   cells(6*p+0) = op+p
-                   cells(6*p+1) = op+p+ndy
-                   cells(6*p+2) = op+p+ndy+1
-                   cells(6*p+3) = op+p
-                   cells(6*p+4) =op+p+ndy+1
-                   cells(6*p+5) = op+p+1
+                   cells(:,2*p)   = (/ op+p, op+p+ndy,   op+p+ndy+1  /)
+                   cells(:,2*p+1) = (/ op+p, op+p+ndy+1, op+p+1      /)
+                   !write (*,'("Rank",i0,": 1A cell ",i0,"= [",3i3,"]")'), rank, 2*p, cells(:,2*p)
+                   !write (*,'("Rank",i0,": 1A cell ",i0,"= [",3i3,"]")'), rank, 2*p+1, cells(:,2*p+1)
                 else                     ! extend in Y direction only
-                   cells(6*p+0) = op+p
-                   cells(6*p+1) = op+p+ndy
-                   cells(6*p+2) = op+nx_global*ndy+(i+1)*ndy
-                   cells(6*p+3) = op+p
-                   cells(6*p+4) = op+nx_global*ndy+(i+1)*ndy
-                   cells(6*p+5) = op+nx_global*ndy+i*ndy
+                   cells(:,2*p)   = (/ op+p, op+p+ndy,   op+nx_global*ndy+(i+1)*ndy  /)
+                   cells(:,2*p+1) = (/ op+p, op+nx_global*ndy+(i+1)*ndy, op+nx_global*ndy+i*ndy /)
+                   !write (*,'("Rank",i0,": 1B cell ",i0,"= [",3i3,"]")'), rank, 2*p, cells(:,2*p)
+                   !write (*,'("Rank",i0,": 1B cell ",i0,"= [",3i3,"]")'), rank, 2*p+1, cells(:,2*p+1)
                 endif
             enddo
         enddo
     else if( posy == npy-1 .AND. posx < npx-1 ) then
         lc = ndx*(ndy-1)*2
         oc = posy*(ndx*npx-1)*ndy*2 + posx*ndx*(ndy-1)*2
+        !write (*,'("Rank",i0,": case 2: define ",i0," triangles, oc=",i0)'), rank, lc, oc
         do i = 0, ndx-1
             do j = 0, ndy-2
                 p = i*(ndy-1)+j
                 p1 = i*ndy+j
                 if( i<ndx-1 .AND. j<ndy-1 ) then
-                    cells(6*p+0) = op+p1
-                    cells(6*p+1) = op+p1+ndy
-                    cells(6*p+2) = op+p1+ndy+1
-                    cells(6*p+3) = op+p1
-                    cells(6*p+4) =op+p1+ndy+1
-                    cells(6*p+5) = op+p1+1
+                   cells(:,2*p)   = (/ op+p1, op+p1+ndy,   op+p1+ndy+1  /)
+                   cells(:,2*p+1) = (/ op+p1, op+p1+ndy+1, op+p1+1      /)
                 else
-                    cells(6*p+0) = op+p1
-                    cells(6*p+1) = op+ndx*ndy+j
-                    cells(6*p+2) = op+ndx*ndy+j+1;
-                    cells(6*p+3) = op+p1
-                    cells(6*p+4) = op+ndx*ndy+j+1
-                    cells(6*p+5) = op+p1+1
+                   cells(:,2*p)   = (/ op+p1, op+ndx*ndy+j,   op+ndx*ndy+j+1  /)
+                   cells(:,2*p+1) = (/ op+p1, op+ndx*ndy+j+1, op+p1+1      /)
                 endif
             enddo
         enddo
     else if( posx == npx-1 .AND. posy == npy-1 ) then
         lc = (ndx-1)*(ndy-1)*2
         oc = posy*(ndx*npx-1)*ndy*2 + posx*ndx*(ndy-1)*2
+        !write (*,'("Rank",i0,": case 3: define ",i0," triangles, oc=",i0)'), rank, lc, oc
         do i = 0, ndx-2
             do j = 0, ndy-2
                 p = i*(ndy-1)+j
                 p1 = i*ndy+j
-                cells(6*p+0) = op+p1
-                cells(6*p+1) = op+p1+ndy
-                cells(6*p+2) = op+p1+ndy+1
-                cells(6*p+3) = op+p1
-                cells(6*p+4) = op+p1+ndy+1
-                cells(6*p+5) = op+p1+1
+                cells(:,2*p)   = (/ op+p1, op+p1+ndy,   op+p1+ndy+1  /)
+                cells(:,2*p+1) = (/ op+p1, op+p1+ndy+1, op+p1+1      /)
             enddo
         enddo
     else
         lc = ndx*ndy*2
         oc = posx*ndx*ndy*2 + posy*(ndx*npx-1)*ndy*2
+        !write (*,'("Rank",i0,": case 4: define ",i0," triangles, oc=", i0)'), rank, lc, oc
         do i = 0, ndx-1
             do j = 0, ndy-1
                 p = i*ndy+j
                 if( i<ndx-1 .AND. j<ndy-1 ) then
-                    cells(6*p+0) = op+p
-                    cells(6*p+1) = op+p+ndy
-                    cells(6*p+2) = op+p+ndy+1
-                    cells(6*p+3) = op+p
-                    cells(6*p+4) =op+p+ndy+1
-                    cells(6*p+5) = op+p+1
+                    cells(:,2*p)   = (/ op+p, op+p+ndy,   op+p+ndy+1  /)
+                    cells(:,2*p+1) = (/ op+p, op+p+ndy+1, op+p+1      /)
                 else if( i==ndx-1 .AND. j<ndy-1 ) then
-                    cells(6*p+0) = op+p
-                    cells(6*p+1) = op+ndx*ndy+j
-                    cells(6*p+2) = op+ndx*ndy+j+1
-                    cells(6*p+3) = op+p
-                    cells(6*p+4) = op+ndx*ndy+j+1
-                    cells(6*p+5) = op+p+1
+                    cells(:,2*p)   = (/ op+p, op+ndx*ndy+j,   op+ndx*ndy+j+1  /)
+                    cells(:,2*p+1) = (/ op+p, op+ndx*ndy+j+1, op+p+1  /)
                 else if( i<ndx-1 .AND. j==ndy-1 ) then
-                    cells(6*p+0) = op+p
-                    cells(6*p+1) = op+p+ndy
-                    cells(6*p+2) = op+nx_global*ndy+(i+1)*ndy
-                    cells(6*p+3) = op+p
-                    cells(6*p+4) = op+nx_global*ndy+(i+1)*ndy
-                    cells(6*p+5) = op+nx_global*ndy+i*ndy
-                else 
-                    cells(6*p+0) = op+p
-                    cells(6*p+1) = op+ndx*ndy+j
-                    cells(6*p+2) = op+nx_global*ndy+ndx*ndy
-                    cells(6*p+3) = op+p
-                    cells(6*p+4) = op+nx_global*ndy+ndx*ndy
-                    cells(6*p+5) = op+nx_global*ndy+i*ndy
+                    cells(:,2*p)   = (/ op+p, op+p+ndy,   op+nx_global*ndy+(i+1)*ndy /)
+                    cells(:,2*p+1) = (/ op+p, op+nx_global*ndy+(i+1)*ndy, op+nx_global*ndy+i*ndy /)
+                else
+                    cells(:,2*p)   = (/ op+p, op+ndx*ndy+j, op+nx_global*ndy+ndx*ndy /)
+                    cells(:,2*p+1) = (/ op+p, op+nx_global*ndy+ndx*ndy, op+nx_global*ndy+i*ndy /)
                 endif
             enddo
         enddo
     endif
+
 
     do i = 0, lc-1
         C(i) = 1.0*DBLE(rank)
@@ -348,10 +321,10 @@ program tri2d_f_noxml
                 ,"","","", varid)
     call adios_define_var (mesh_group, "points" &
                     ,"", adios_double &
-                    ,"lp,2", "npoints,2", "op,0", varid)
+                    ,"2,lp", "2,npoints", "0,op", varid)
     call adios_define_var (mesh_group, "cells" &
                     ,"", adios_integer &
-                    ,"lc,3", "num_cells,3", "oc,0", varid)
+                    ,"3,lc", "3,num_cells", "0,oc", varid)
 
     call adios_define_attribute (mesh_group, "description", "/npoints", adios_string, "Number of points", "", adios_err)
     call adios_define_attribute (mesh_group, "description", "/num_cells", adios_string, "Number of triangles", "", adios_err)
