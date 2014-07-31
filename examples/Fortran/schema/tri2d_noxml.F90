@@ -315,7 +315,7 @@ program tri2d_f_noxml
     call adios_define_schema_version (m_adios_group, schema_version)
     call adios_define_mesh_timevarying ("no", m_adios_group, "trimesh")
     call adios_define_mesh_unstructured ("points", "cells", "num_cells", "triangle", "", "2", m_adios_group, "trimesh")
-    call adios_define_mesh_file (m_adios_group, "trimesh", "http://adios/xgc.mesh.bp")
+    !!call adios_define_mesh_file (m_adios_group, "trimesh", "http://adios/xgc.mesh.bp")
 
     call adios_define_var_mesh (m_adios_group, "N", "trimesh")
     call adios_define_var_centering (m_adios_group, "N", "point")
