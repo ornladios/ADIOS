@@ -735,7 +735,7 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	ALQueryEngineStartUnivariateDoubleQuery(&qe, lb, hb, REGION_RETRIEVAL_INDEX_ONLY_QUERY_TYPE, &alacQuery);
 	ADIOS_VARINFO * varInfo = adiosQuery->_var;
 	int startStep = timeStep, numStep = 1;
-	uint64_t totalElm = adiosQuery->_rawDataSize;
+	uint64_t totalElm = adiosQuery->_rawDataSize; // no matter bounding box or writeblock selection, the rawDataSize has been calculated in the common query layer
 	ADIOS_ALAC_BITMAP *alacResultBitmap =  (ADIOS_ALAC_BITMAP *) malloc(sizeof(ADIOS_ALAC_BITMAP ));
 	alacResultBitmap->length = BITNSLOTS64(totalElm);
 	//initially, no 1s at all
@@ -789,11 +789,7 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	else if (adiosQuery->_sel->type == ADIOS_SELECTION_WRITEBLOCK){
 		const ADIOS_SELECTION_WRITEBLOCK_STRUCT *writeBlock = &(adiosQuery->_sel->u.block);
 		int blockId= writeBlock->index;
-	    int globalBlockId = blockId;
-	    int t=0;
-	    for(; t < startStep; t++){  // here the varInfo is obtained by calling adios_inq_var in the common_query , which means it doesn't have the blockinfo
-	    	globalBlockId += varInfo->nblocks[t]; // convert block index (relative to timestep) to the global index
-	    }
+	    int globalBlockId = getGlobalWriteBlockId(blockId, startStep, varInfo);
 	    adios_inq_var_blockinfo(adiosQuery->_f, varInfo);
 	    ADIOS_VARBLOCK block = varInfo->blockinfo[globalBlockId];
 	    // since user supplies the query with block id, in this case, the start and destination(querying) bounding box are the block itself

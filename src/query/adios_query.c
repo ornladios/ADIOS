@@ -41,7 +41,7 @@ int  adios_query_get_selection(ADIOS_QUERY* q,
 			       ADIOS_SELECTION* outputBoundry,
 			       ADIOS_SELECTION** queryResult)
 {
-  common_query_get_selection(q,  batchSize, outputBoundry, queryResult);
+  return common_query_get_selection(q,  batchSize, outputBoundry, queryResult);
 }
 
 void adios_query_free(ADIOS_QUERY* q)

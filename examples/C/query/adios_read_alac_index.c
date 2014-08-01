@@ -97,11 +97,7 @@ void multiSelection(ADIOS_FILE* bf, const char * b1, const char * b2,
 
     }else if (sel_type == ADIOS_SELECTION_WRITEBLOCK){
     	ADIOS_SELECTION *block1= adios_selection_writeblock(0); // block 0 ->  1st block
-    	const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb1 = &(block1->u.block);
-    	wb1->nelements = (64*10*32);  // NEEDED since the adios_selection_writeblock does not set this value, but adios_query_create needs it
     	ADIOS_SELECTION* block2 = adios_selection_writeblock(2); //block 2 -> 3rd block
-    	const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb2 = &(block1->u.block);
-    	wb2->nelements = (64*10*32);
 		q1 = adios_query_create(bf, varName1, block1, ADIOS_GT, b1); // > b1
 		q2 = adios_query_create(bf, varName1, block2, ADIOS_LT, b2); // < b2
     }
