@@ -30,6 +30,10 @@
 #include "core/util.h"
 #include "core/adios_logger.h"
 
+#ifdef SKEL_TIMING
+#include "core/adios_timing.h"
+#endif
+
 
 enum ADIOS_MPI_AMR_IO_TYPE
 {

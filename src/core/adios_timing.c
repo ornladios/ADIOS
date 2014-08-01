@@ -108,7 +108,7 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
         {
             if (fd->timing_obj->names[ADIOS_TIMING_MAX_USER_TIMERS + i])
             {
-                fprintf (f, fd->timing_obj->names[ADIOS_TIMING_MAX_USER_TIMERS + i]);
+                fprintf (f, "%s", fd->timing_obj->names[ADIOS_TIMING_MAX_USER_TIMERS + i]);
             }
             else
             {
@@ -232,13 +232,55 @@ int adios_get_timing_value (int64_t fd_p, int64_t index, double* value)
 
 void adios_timing_go (struct adios_timing_struct * ts, int64_t index)
 {
-    ts->times[index] -= MPI_Wtime();
+    // Grab the time
+    double now = MPI_Wtime();
+
+    // Do accounting for time summary
+    ts->times[index] -= now;
+
+    // Log the event
+    struct adios_timing_event_struct * new_event =
+        (struct adios_timing_event_struct *) malloc (
+            sizeof (struct adios_timing_event_struct)
+        );
+    new_event->type = index;
+    new_event->is_start = 1;
+    new_event->time = now;
+    new_event->next = 0;
+
+    // add it to the linked list
+    if (ts->first_event == 0) {
+        ts->first_event = ts->last_event = new_event;
+    } else {
+        ts->last_event->next = new_event;
+    }
 }
 
 
 void adios_timing_stop (struct adios_timing_struct * ts, int64_t index)
 {
-    ts->times[index] += MPI_Wtime();
+    // Grab the time
+    double now = MPI_Wtime();
+
+    // Do accounting for time summary
+    ts->times[index] += now;
+
+    // Log the event
+    struct adios_timing_event_struct * new_event =
+        (struct adios_timing_event_struct *) malloc (
+            sizeof (struct adios_timing_event_struct)
+        );
+    new_event->type = index;
+    new_event->is_start = 0;
+    new_event->time = now;
+    new_event->next = 0;
+
+    // add it to the linked list
+    if (ts->first_event == 0) {
+        ts->first_event = ts->last_event = new_event;
+    } else {
+        ts->last_event->next = new_event;
+    }
 }
 
 
@@ -252,6 +294,7 @@ struct adios_timing_struct *  adios_timing_create (int timer_count, char** timer
     ts->user_count = 0;
     ts->names = (char**) malloc ( (ADIOS_TIMING_MAX_USER_TIMERS + timer_count) * sizeof (char*) );
     ts->times = (double*) malloc ( (ADIOS_TIMING_MAX_USER_TIMERS + timer_count) * sizeof (double) );
+    ts->first_event = ts->last_event = 0;
 
     // Clear all timers
     memset(ts->times, 0, (ADIOS_TIMING_MAX_USER_TIMERS + timer_count) * sizeof (double) );
@@ -272,6 +315,14 @@ void adios_timing_destroy (struct adios_timing_struct * timing_obj)
 {
     if (timing_obj)
     {
+
+        while (timing_obj->first_event)
+        {
+            struct adios_timing_event_struct* free_me = timing_obj->first_event;
+            timing_obj->first_event = timing_obj->first_event->next;
+            free (free_me);
+        }
+
         if (timing_obj->times)
         {
             free (timing_obj->times);

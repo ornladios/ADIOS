@@ -17,14 +17,21 @@
 
 struct adios_timing_struct
 {
-
     int64_t internal_count;
     int64_t user_count;
     char ** names;
     double *times;
-
+    struct adios_timing_event_struct *first_event;
+    struct adios_timing_event_struct *last_event;
 };
 
+struct adios_timing_event_struct
+{
+    int type; // index of event type, reference timing_struct->names[type] for name of event type
+    int is_start;
+    double time; // time that the event occurred
+    struct adios_timing_event_struct * next; // link for the singly linked list of events
+};
 
 //int adios_get_timing_count (int64_t fd_p, int64_t * tc);
 //int adios_get_timing_name (int64_t fd_p, int64_t index, char* name);
