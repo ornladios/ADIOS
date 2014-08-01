@@ -90,6 +90,10 @@ void adios_free_pg_intersections(ADIOS_PG_INTERSECTIONS **intersections){
 
 #undef MYFREE
 
+adios_transform_type_t adios_get_transform_type_by_uid(const char *transform_uid) {
+	return (adios_transform_type_t)adios_transform_find_type_by_uid(transform_uid);
+}
+
 // Creates a writeblock selection that only retrieves elements [start_elem, start_elem + num_elems)
 // within a variable. An element is a single value of whatever the varaible's datatype is (i.e.,
 // 1 element = 1 double if the variable type is double, 1 byte if the variable type is byte, etc.)

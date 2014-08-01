@@ -89,6 +89,17 @@ ADIOS_VARTRANSFORM *  adios_inq_var_transform(const ADIOS_FILE *fp, const ADIOS_
 // Frees an ADIOS_VARTRANSFORM previous received from a call to adios_inq_var_transform
 void adios_free_var_transform(ADIOS_VARTRANSFORM *vartransform);
 
+// Returns the adios_transform_type_t constant for a data transformation method specified
+// by its unique ID, corresponding to the third argument in transforms/transform_plugins.h.
+// For example, to get ISOBAR's type constant:
+//
+// In transforms/transform_plugin.h:
+//   REGISTER_TRANSFORM_PLUGIN(isobar, "isobar", "ncsu-isobar", "ISOBAR compression")
+//                                               ^^^^^^^^^^^^^
+// const adios_transform_type_t ISOBAR_TTYPE = adios_get_transform_type_by_uid("ncsu-isobar");
+//
+adios_transform_type_t adios_get_transform_type_by_uid(const char *transform_uid);
+
 // Creates a writeblock selection that only retrieves elements [start_elem, start_elem + num_elems)
 // within a variable. An element is a single value of whatever the varaible's datatype is (i.e.,
 // 1 element = 1 double if the variable type is double, 1 byte if the variable type is byte, etc.)
