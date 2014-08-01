@@ -337,7 +337,7 @@ int main(int argc, char ** argv) {
 	adios_query_init(ADIOS_QUERY_TOOL_ALACRITY);
 
 	//====================== start to test ===================//
-	//    oneDefinedBox(f , lbstr, hbstr, dataF);
+//	    oneDefinedBox(f , lbstr, hbstr, dataF);
 	multiSelection(f , lbstr, hbstr, dataF, ADIOS_SELECTION_BOUNDINGBOX);
 
 	multiSelection(f , lbstr, hbstr, dataF, ADIOS_SELECTION_WRITEBLOCK);

@@ -730,10 +730,12 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
     resolveQueryBoundary(adiosQuery, &hb, &lb); // query constraints
     printf("%s\n", adiosQuery->_condition);
 
-	ALQueryEngine qe;
-	ALUnivariateQuery alacQuery;
-	ALQueryEngineStartUnivariateDoubleQuery(&qe, lb, hb, REGION_RETRIEVAL_INDEX_ONLY_QUERY_TYPE, &alacQuery);
+
+
 	ADIOS_VARINFO * varInfo = adiosQuery->_var;
+
+	adios_read_set_data_view(adiosQuery->_f, LOGICAL_DATA_VIEW); // switch to the transform view,
+ 	ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->_f, varInfo); // this func. will fill the blockinfo field
 	int startStep = timeStep, numStep = 1;
 	uint64_t totalElm = adiosQuery->_rawDataSize; // no matter bounding box or writeblock selection, the rawDataSize has been calculated in the common query layer
 	ADIOS_ALAC_BITMAP *alacResultBitmap =  (ADIOS_ALAC_BITMAP *) malloc(sizeof(ADIOS_ALAC_BITMAP ));
@@ -743,81 +745,92 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	alacResultBitmap->numSetBits = 0;
 	alacResultBitmap->realElmSize = totalElm;
 
-	/*********** doQuery ***************
-	 *
-	 * 1. Open partition  [locate offsets of meta, data, and index for the partition]
-	 * 2. Read Partition Meta from file => meta
-	 3. find touched bins:  are_bins_touched = findBinRange1C(meta, uniquery, &start_bin, &end_bin);
-	 4. read index of touched bins: ALPartitionStoreReadIndexBins
-	 5. read dataBin
-	 */
-	uint64_t* deststart ;  uint64_t* destcount ;// current variables selection box
-	uint64_t * srcstart;  	uint64_t * srccount; // PG's bounding box is the global bounding box
-	int ndim = varInfo->ndim;
-	if (adiosQuery->_sel->type == ADIOS_SELECTION_BOUNDINGBOX) {
-		const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(adiosQuery->_sel->u.bb);
-		destcount = bb->count;   deststart = bb->start;
-	    adios_read_set_data_view(adiosQuery->_f, PHYSICAL_DATA_VIEW);
-		ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->_f, varInfo);
-		ADIOS_PG_INTERSECTIONS* intersectedPGs = adios_find_intersecting_pgs( adiosQuery->_f, varInfo->varid, adiosQuery->_sel, timeStep, numStep);
-		int totalPG = intersectedPGs->npg;
-		int blockId, j;
-		ADIOS_PG_INTERSECTION *  PGs = intersectedPGs->intersections;
-		for (j = 0; j < totalPG; j++) {
-			ADIOS_PG_INTERSECTION pg = PGs[j];
-			//TODO: check we should use pg.pg_bounds_sel and pg.blockidx???
-			ADIOS_SELECTION * interSelBox = pg.intersection_sel;
-			// false: PG selection box is intersecting with variable's selection box
-			// true : PG selection box is fully contained within variable's selection box
-			bool isPGContained = false;
-			ADIOS_SELECTION * pgSelBox = pg.pg_bounds_sel;
-			assert(pgSelBox->type == ADIOS_SELECTION_BOUNDINGBOX );
-			assert(pgSelBox->type == interSelBox->type );
-			const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *pgBB = &(pgSelBox->u.bb);
-			const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *interBB = &(interSelBox->u.bb);
-			isPGContained = boxEqual(pgBB, interBB);
+	// check the transform type, if it is alacrity,
+	if (ti->transform_type == adios_get_transform_type_by_uid("ncsu-alacrity")) {
+		ALQueryEngine qe;
+		ALUnivariateQuery alacQuery;
+		ALQueryEngineStartUnivariateDoubleQuery(&qe, lb, hb, REGION_RETRIEVAL_INDEX_ONLY_QUERY_TYPE, &alacQuery);
 
-			srcstart = pgBB->start;
-			srccount = pgBB->count;
-			blockId = pg.blockidx_in_timestep ;
+		/*********** doQuery ***************
+		 *
+		 * 1. Open partition  [locate offsets of meta, data, and index for the partition]
+		 * 2. Read Partition Meta from file => meta
+		 3. find touched bins:  are_bins_touched = findBinRange1C(meta, uniquery, &start_bin, &end_bin);
+		 4. read index of touched bins: ALPartitionStoreReadIndexBins
+		 5. read dataBin
+		 */
+		uint64_t* deststart ;  uint64_t* destcount ;// current variables selection box
+		uint64_t * srcstart;  	uint64_t * srccount; // PG's bounding box is the global bounding box
+		int ndim = varInfo->ndim;
+		if (adiosQuery->_sel->type == ADIOS_SELECTION_BOUNDINGBOX) {
+			const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(adiosQuery->_sel->u.bb);
+			destcount = bb->count;   deststart = bb->start;
+			adios_read_set_data_view(adiosQuery->_f, PHYSICAL_DATA_VIEW);
+			ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->_f, varInfo);
+			ADIOS_PG_INTERSECTIONS* intersectedPGs = adios_find_intersecting_pgs( adiosQuery->_f, varInfo->varid, adiosQuery->_sel, timeStep, numStep);
+			int totalPG = intersectedPGs->npg;
+			int blockId, j;
+			ADIOS_PG_INTERSECTION *  PGs = intersectedPGs->intersections;
+			for (j = 0; j < totalPG; j++) {
+				ADIOS_PG_INTERSECTION pg = PGs[j];
+				//TODO: check we should use pg.pg_bounds_sel and pg.blockidx???
+				ADIOS_SELECTION * interSelBox = pg.intersection_sel;
+				// false: PG selection box is intersecting with variable's selection box
+				// true : PG selection box is fully contained within variable's selection box
+				bool isPGContained = false;
+				ADIOS_SELECTION * pgSelBox = pg.pg_bounds_sel;
+				assert(pgSelBox->type == ADIOS_SELECTION_BOUNDINGBOX );
+				assert(pgSelBox->type == interSelBox->type );
+				const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *pgBB = &(pgSelBox->u.bb);
+				const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *interBB = &(interSelBox->u.bb);
+				isPGContained = boxEqual(pgBB, interBB);
 
+				srcstart = pgBB->start;
+				srccount = pgBB->count;
+				blockId = pg.blockidx_in_timestep ;
+
+				proc_write_block(blockId,isPGContained,ti, adiosQuery,startStep,estimate,&alacQuery,lb,hb
+						,srcstart, srccount, deststart, destcount,alacResultBitmap	);
+			}
+			adios_free_pg_intersections(&intersectedPGs);
+		}
+		else if (adiosQuery->_sel->type == ADIOS_SELECTION_WRITEBLOCK){
+			const ADIOS_SELECTION_WRITEBLOCK_STRUCT *writeBlock = &(adiosQuery->_sel->u.block);
+			int blockId= writeBlock->index;
+			int globalBlockId = getGlobalWriteBlockId(blockId, startStep, varInfo);
+			adios_inq_var_blockinfo(adiosQuery->_f, varInfo);
+			ADIOS_VARBLOCK block = varInfo->blockinfo[globalBlockId];
+			// since user supplies the query with block id, in this case, the start and destination(querying) bounding box are the block itself
+			srcstart = block.start; srccount = block.count;
+			deststart = block.start;  destcount = block.count;
+			adios_read_set_data_view(adiosQuery->_f, PHYSICAL_DATA_VIEW); // switch to the transform view,
+			ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->_f, varInfo); // this func. will fill the blockinfo field
+			bool isPGContained = true; // because they are same bounding boxes, they are fully contained
 			proc_write_block(blockId,isPGContained,ti, adiosQuery,startStep,estimate,&alacQuery,lb,hb
 					,srcstart, srccount, deststart, destcount,alacResultBitmap	);
+
+		} else if (adiosQuery->_sel->type == ADIOS_SELECTION_POINTS){
+			// TODO: at this point, this type of querying is took careful by the common query layer
+		} else {
+			printf("not supported selection typed in alacrity \n");
+			exit(EXIT_FAILURE);
 		}
-		adios_free_pg_intersections(&intersectedPGs);
-	}
-	else if (adiosQuery->_sel->type == ADIOS_SELECTION_WRITEBLOCK){
-		const ADIOS_SELECTION_WRITEBLOCK_STRUCT *writeBlock = &(adiosQuery->_sel->u.block);
-		int blockId= writeBlock->index;
-	    int globalBlockId = getGlobalWriteBlockId(blockId, startStep, varInfo);
-	    adios_inq_var_blockinfo(adiosQuery->_f, varInfo);
-	    ADIOS_VARBLOCK block = varInfo->blockinfo[globalBlockId];
-	    // since user supplies the query with block id, in this case, the start and destination(querying) bounding box are the block itself
-	    srcstart = block.start; srccount = block.count;
-	    deststart = block.start;  destcount = block.count;
-	    adios_read_set_data_view(adiosQuery->_f, PHYSICAL_DATA_VIEW); // switch to the transform view,
-		ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->_f, varInfo); // this func. will fill the blockinfo field
-	    bool isPGContained = true; // because they are same bounding boxes, they are fully contained
 
-
-		proc_write_block(blockId,isPGContained,ti, adiosQuery,startStep,estimate,&alacQuery,lb,hb
-				,srcstart, srccount, deststart, destcount,alacResultBitmap	);
-
-	} else if (adiosQuery->_sel->type == ADIOS_SELECTION_POINTS){
-		// TODO: at this point, this type of querying is took careful by the common query layer
-	} else {
-		printf("not supported selection typed in alacrity \n");
-		exit(EXIT_FAILURE);
-	}
-
-	if (adiosQuery->_op == ADIOS_NE){ // we flip the bits, since we treat it "=" before
-		uint64_t i  = 0;
-		for (; i < alacResultBitmap->length; i++) {
-			alacResultBitmap->bits[i]  = ~(alacResultBitmap->bits[i]);
+		if (adiosQuery->_op == ADIOS_NE){ // we flip the bits, since we treat it "=" before
+			uint64_t i  = 0;
+			for (; i < alacResultBitmap->length; i++) {
+				alacResultBitmap->bits[i]  = ~(alacResultBitmap->bits[i]);
+			}
 		}
-	}
-	// NOTE: this is for correctness of reading info later. We switch back to ensure the end-use are not affected
-	adios_read_set_data_view(adiosQuery->_f, LOGICAL_DATA_VIEW);
+		// NOTE: this is for correctness of reading info later. We switch back to ensure the end-use are not affected
+		adios_read_set_data_view(adiosQuery->_f, LOGICAL_DATA_VIEW);
+
+ 	}else {
+ 		// data is not transformed by alacrity, query engine will loads the original data, and check the data one by one
+ 		adios_read_set_data_view(adiosQuery->_f, LOGICAL_DATA_VIEW);
+
+
+ 	}
 	return alacResultBitmap;
 }
 
