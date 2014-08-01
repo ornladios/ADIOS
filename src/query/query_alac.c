@@ -90,7 +90,7 @@ void readLowOrderBytes(int blockId, uint64_t offsetSize /*in bytes*/
 
 void resolveQueryBoundary(ADIOS_QUERY *adiosQuery, double *hb, double *lb);
 
-void setRidToBits(bool isPGContained ,uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount,
+void setRidToBits(bool isPGCovered ,uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount,
 		int ndim, rid_t * idx, uint64_t totalRids,
 		ADIOS_ALAC_BITMAP *alacResultBitmap /*IN&OUT*/);
 
@@ -102,7 +102,7 @@ void adios_query_alac_retrieval_points3d( ADIOS_ALAC_BITMAP *b, uint64_t retriev
 		, ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb , uint64_t *points /*OUT*/ );
 
 
-void proc_write_block(int blockId, bool isPGContained, ADIOS_VARTRANSFORM *ti, ADIOS_QUERY * adiosQuery, int startStep, bool estimate
+void proc_write_block(int blockId, bool isPGCovered, ADIOS_VARTRANSFORM *ti, ADIOS_QUERY * adiosQuery, int startStep, bool estimate
 		, ALUnivariateQuery * alacQuery , double lb , double hb
 		,uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount
 		, ADIOS_ALAC_BITMAP * alacResultBitmap /*OUT*/ );
@@ -157,7 +157,15 @@ void readTransformedElms(ADIOS_FILE* fp,ADIOS_VARINFO* vi
 
 }
 
-
+void readBlockData(int blockId , ADIOS_QUERY * adiosQuery, int startStep,
+		ADIOS_VARINFO * varInfo, uint64_t dataElmNum, void ** data){
+	adios_read_set_data_view(adiosQuery->_f, LOGICAL_DATA_VIEW); // switch to the transform view,
+	int dataElmSize = adios_type_size(varInfo->type, NULL); // data element size, in bytes
+	char * blockData = (char*) (*data);
+	blockData = (char *) malloc(sizeof(char) * dataElmSize * dataElmNum);
+	ADIOS_SELECTION *sel = adios_selection_writeblock_bounded(blockId, 0, dataElmNum, 1); // entire PG selection
+	adios_schedule_read_byid(adiosQuery->_f, sel, varInfo->varid, startStep, 1, blockData);
+}
 void readIndexData(int blockId, uint64_t offsetSize /*in bytes*/
 		,uint64_t length /*in bytes*/, ADIOS_FILE* fp,ADIOS_VARINFO* vi
 		, int startStep, int numStep
@@ -381,30 +389,31 @@ uint64_t ridConversionWithoutCheck(uint64_t rid/*relative to local src selectoin
  * NOTE: for ADIOS_NE (!=), we still use == to do the candidate check,
  * since we first treat != to be =, and at end, we will flip the bits
  */
-#define CHECK_GENERIC_DATA(data) {                       \
+#define CHECK_GENERIC_DATA(data, FUNC) {                       \
 	switch(op){                                          \
 		case(ADIOS_LT):                                  \
-				CHECK_ELEMENT(data[el] < hb);            \
+				FUNC(data[el] < hb);            \
 				break;                                   \
 		case (ADIOS_LTEQ):                               \
-				CHECK_ELEMENT(data[el] <= hb);           \
+				FUNC(data[el] <= hb);           \
 				break;                                   \
 		case (ADIOS_GT):                                 \
-				CHECK_ELEMENT(data[el] > lb);            \
+				FUNC(data[el] > lb);            \
 				break;                                   \
 		case (ADIOS_GTEQ):                               \
-				CHECK_ELEMENT(data[el] >= lb);           \
+				FUNC(data[el] >= lb);           \
 				break;                                   \
 		case (ADIOS_EQ):                                 \
-				CHECK_ELEMENT(data[el] ==  lb);          \
+				FUNC(data[el] ==  lb);          \
 				break;                                   \
 		case (ADIOS_NE):                                 \
-				CHECK_ELEMENT(data[el] == lb);           \
+				FUNC(data[el] == lb);           \
 				break;                                   \
 		default :                                        \
 			printf("unknown predicate mode %d \n", op);  \
 	}                                                    \
 }
+
 void adios_alac_check_candidate(ALMetadata *partitionMeta, bin_id_t startBin, bin_id_t endBin , double hb, double lb
 		, uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount, int dim
 		, ADIOS_QUERY * adiosQuery , const char *inputCurPtr /*index bytes of entire PG*/
@@ -436,28 +445,28 @@ void adios_alac_check_candidate(ALMetadata *partitionMeta, bin_id_t startBin, bi
 	switch (partitionMeta->elementSize) {
 		case  sizeof(uint64_t): {
 			double * lowData64 = (double *)recoveredDataInBytes;
-			CHECK_GENERIC_DATA(lowData64);
+			CHECK_GENERIC_DATA(lowData64, CHECK_ELEMENT);
 			break;
 		}
 		case sizeof(uint32_t): {
 			float * lowData32 = (float *)recoveredDataInBytes;
-			CHECK_GENERIC_DATA(lowData32);
+			CHECK_GENERIC_DATA(lowData32, CHECK_ELEMENT);
 			break;
 			}
 		case sizeof(uint16_t): {
 			uint16_t * lowData16 = (uint16_t *)recoveredDataInBytes;
-			CHECK_GENERIC_DATA(lowData16);
+			CHECK_GENERIC_DATA(lowData16, CHECK_ELEMENT);
 			break;
 		}
 		case sizeof(uint8_t): {
 			uint8_t * lowData8 = (uint8_t *)recoveredDataInBytes;
-			CHECK_GENERIC_DATA(lowData8);
+			CHECK_GENERIC_DATA(lowData8, CHECK_ELEMENT);
 			break;
 		}
 	   default:
 			printf("Unsupported element size %d in %s\n", partitionMeta->elementSize, __FUNCTION__);
 			return ;
-		}
+	}
 
 	free(recoveredDataInBytes);
 	if(decoded)
@@ -466,15 +475,73 @@ void adios_alac_check_candidate(ALMetadata *partitionMeta, bin_id_t startBin, bi
 }
 
 
+
+#define CHECK_NODECODE_ELEMENT(code) {                         \
+		if (isPGCovered){                             \
+			for(el= 0; el < totalElm; el ++){         \
+				if (data) {                           \
+					newRid = ridConversionWithoutCheck(el, srcstart,srccount, deststart,destcount, ndim);   \
+					setBitsinBitMap(newRid, alacResultBitmap);    \
+					alacResultBitmap->numSetBits ++;              \
+				}                                                 \
+			}                                                     \
+		}else {                                                   \
+			for(el= 0; el < totalElm; el ++){                     \
+				if (code) {                                       \
+					if (ridConversionWithCheck(el,	srcstart,srccount, deststart,destcount, ndim, &newRid)){  \
+						setBitsinBitMap(newRid, alacResultBitmap); \
+						alacResultBitmap->numSetBits ++;           \
+					}                                              \
+				}                                                  \
+			}                                                      \
+		}                                                          \
+}
+
+/*
+ * go through every data value in the array, check whether the value satisfies the query condition
+ */
+void literallyCheckData(void *data, uint64_t totalElm , int dataType, ADIOS_QUERY * adiosQuery, double hb, double lb
+		, uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount, int ndim, bool isPGCovered
+		,ADIOS_ALAC_BITMAP * alacResultBitmap /*OUT*/){
+	uint32_t newRid ;
+	uint64_t el = 0;
+	enum ADIOS_PREDICATE_MODE op = adiosQuery->_op;
+	switch (dataType) {
+		case  sizeof(uint64_t): {
+			double * lowData64 = (double *)data;
+			CHECK_GENERIC_DATA(lowData64, CHECK_NODECODE_ELEMENT );
+			break;
+		}
+		case sizeof(uint32_t): {
+			float * lowData32 = (float *)data;
+			CHECK_GENERIC_DATA(lowData32, CHECK_NODECODE_ELEMENT);
+			break;
+			}
+		case sizeof(uint16_t): {
+			uint16_t * lowData16 = (uint16_t *)data;
+			CHECK_GENERIC_DATA(lowData16, CHECK_NODECODE_ELEMENT);
+			break;
+		}
+		case sizeof(uint8_t): {
+			uint8_t * lowData8 = (uint8_t *)data;
+			CHECK_GENERIC_DATA(lowData8,CHECK_NODECODE_ELEMENT);
+			break;
+		}
+	   default:
+			printf("Unsupported element size %d in %s\n", dataType, __FUNCTION__);
+			return ;
+	}
+
+}
 /*for each RID, set bit as 1 at corresponding position */
 /*check the rid whether it belongs to user selection box
  if the current PG is not fully covered by user selection box*/
-void setRidToBits(bool isPGContained
+void setRidToBits(bool isPGCovered
 		,uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount,
 		int ndim, rid_t * idx, uint64_t totalRids,
 		ADIOS_ALAC_BITMAP *alacResultBitmap /*IN&OUT*/){
 	uint32_t newRid ;
-	if (isPGContained){ // if PG is fully covered by the user bounding box, we dont need to check the new location(position) of converted point
+	if (isPGCovered){ // if PG is fully covered by the user bounding box, we dont need to check the new location(position) of converted point
 		uint64_t ni;
 		for ( ni = 0; ni < totalRids; ni++) {
 			rid_t rid_val = idx[ni];
@@ -548,7 +615,7 @@ char * readIndexAmongBins(ALMetadata *partitionMeta, bin_id_t low_bin , bin_id_t
 }
 
 
-void proc_write_block(int blockId, bool isPGContained, ADIOS_VARTRANSFORM *ti, ADIOS_QUERY * adiosQuery, int startStep, bool estimate
+void proc_write_block(int blockId, bool isPGCovered, ADIOS_VARTRANSFORM *ti, ADIOS_QUERY * adiosQuery, int startStep, bool estimate
 		, ALUnivariateQuery * alacQuery , double lb , double hb
 		,uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount
 		, ADIOS_ALAC_BITMAP * alacResultBitmap /*OUT*/ ){
@@ -598,7 +665,7 @@ void proc_write_block(int blockId, bool isPGContained, ADIOS_VARTRANSFORM *ti, A
 			uint64_t resultCount = bl->binStartOffsets[hi_bin] - bl->binStartOffsets[low_bin];
 
 			if (estimate) {
-				setRidToBits(isPGContained, srcstart, srccount, deststart, destcount, ndim
+				setRidToBits(isPGCovered, srcstart, srccount, deststart, destcount, ndim
 						, (rid_t *)index, resultCount, alacResultBitmap);
 
 			} else {
@@ -620,7 +687,7 @@ void proc_write_block(int blockId, bool isPGContained, ADIOS_VARTRANSFORM *ti, A
 					decodedRid += lowBinElm;
 
 					uint64_t innerElm = resultCount- lowBinElm - hiBinElm;
-					setRidToBits(isPGContained, srcstart, srccount, deststart, destcount, ndim
+					setRidToBits(isPGCovered, srcstart, srccount, deststart, destcount, ndim
 												, decodedRid, innerElm, alacResultBitmap);
 					decodedRid  +=  innerElm;
 
@@ -652,7 +719,7 @@ void proc_write_block(int blockId, bool isPGContained, ADIOS_VARTRANSFORM *ti, A
 				bin_id_t bin ;
 				for ( bin = low_bin; bin < hi_bin; bin++) {
 					binCompressedLen = compBinStartOffs[bin + 1] - compBinStartOffs[bin];
-					uint32_t decodedElm = ALDecompressRIDtoSelBox(isPGContained , inputCurPtr, binCompressedLen
+					uint32_t decodedElm = ALDecompressRIDtoSelBox(isPGCovered , inputCurPtr, binCompressedLen
 							, srcstart, srccount /*PG region dimension*/ , deststart, destcount /*region dimension of Selection box*/
 							, ndim , &(alacResultBitmap->bits));
 					inputCurPtr += binCompressedLen;
@@ -684,7 +751,7 @@ void proc_write_block(int blockId, bool isPGContained, ADIOS_VARTRANSFORM *ti, A
 					for ( bin = innerlowBin; bin < innerHiBin; bin++) {
 						binCompressedLen = compBinStartOffs[bin + 1] - compBinStartOffs[bin];
 
-						uint32_t decodedElm = ALDecompressRIDtoSelBox(isPGContained
+						uint32_t decodedElm = ALDecompressRIDtoSelBox(isPGCovered
 								, inputCurPtr, binCompressedLen
 								, srcstart, srccount //PG region dimension
 								, deststart, destcount //region dimension of Selection box
@@ -730,8 +797,6 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
     resolveQueryBoundary(adiosQuery, &hb, &lb); // query constraints
     printf("%s\n", adiosQuery->_condition);
 
-
-
 	ADIOS_VARINFO * varInfo = adiosQuery->_var;
 
 	adios_read_set_data_view(adiosQuery->_f, LOGICAL_DATA_VIEW); // switch to the transform view,
@@ -746,91 +811,109 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	alacResultBitmap->realElmSize = totalElm;
 
 	// check the transform type, if it is alacrity,
-	if (ti->transform_type == adios_get_transform_type_by_uid("ncsu-alacrity")) {
-		ALQueryEngine qe;
-		ALUnivariateQuery alacQuery;
+	ALQueryEngine qe;
+	ALUnivariateQuery alacQuery;
+	if (ti->transform_type == adios_get_transform_type_by_uid("ncsu-alacrity")) { // if it is not alacrity type, do not initialize this query engine
 		ALQueryEngineStartUnivariateDoubleQuery(&qe, lb, hb, REGION_RETRIEVAL_INDEX_ONLY_QUERY_TYPE, &alacQuery);
+	}
 
-		/*********** doQuery ***************
-		 *
-		 * 1. Open partition  [locate offsets of meta, data, and index for the partition]
-		 * 2. Read Partition Meta from file => meta
-		 3. find touched bins:  are_bins_touched = findBinRange1C(meta, uniquery, &start_bin, &end_bin);
-		 4. read index of touched bins: ALPartitionStoreReadIndexBins
-		 5. read dataBin
-		 */
-		uint64_t* deststart ;  uint64_t* destcount ;// current variables selection box
-		uint64_t * srcstart;  	uint64_t * srccount; // PG's bounding box is the global bounding box
-		int ndim = varInfo->ndim;
-		if (adiosQuery->_sel->type == ADIOS_SELECTION_BOUNDINGBOX) {
-			const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(adiosQuery->_sel->u.bb);
-			destcount = bb->count;   deststart = bb->start;
-			adios_read_set_data_view(adiosQuery->_f, PHYSICAL_DATA_VIEW);
-			ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->_f, varInfo);
-			ADIOS_PG_INTERSECTIONS* intersectedPGs = adios_find_intersecting_pgs( adiosQuery->_f, varInfo->varid, adiosQuery->_sel, timeStep, numStep);
-			int totalPG = intersectedPGs->npg;
-			int blockId, j;
-			ADIOS_PG_INTERSECTION *  PGs = intersectedPGs->intersections;
-			for (j = 0; j < totalPG; j++) {
-				ADIOS_PG_INTERSECTION pg = PGs[j];
-				//TODO: check we should use pg.pg_bounds_sel and pg.blockidx???
-				ADIOS_SELECTION * interSelBox = pg.intersection_sel;
-				// false: PG selection box is intersecting with variable's selection box
-				// true : PG selection box is fully contained within variable's selection box
-				bool isPGContained = false;
-				ADIOS_SELECTION * pgSelBox = pg.pg_bounds_sel;
-				assert(pgSelBox->type == ADIOS_SELECTION_BOUNDINGBOX );
-				assert(pgSelBox->type == interSelBox->type );
-				const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *pgBB = &(pgSelBox->u.bb);
-				const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *interBB = &(interSelBox->u.bb);
-				isPGContained = boxEqual(pgBB, interBB);
+	/*********** doQuery ***************
+	 *
+	 * 1. Open partition  [locate offsets of meta, data, and index for the partition]
+	 * 2. Read Partition Meta from file => meta
+	 3. find touched bins:  are_bins_touched = findBinRange1C(meta, uniquery, &start_bin, &end_bin);
+	 4. read index of touched bins: ALPartitionStoreReadIndexBins
+	 5. read dataBin
+	 */
+	uint64_t* deststart ;  uint64_t* destcount ;// current variables selection box
+	uint64_t * srcstart;  	uint64_t * srccount; // PG's bounding box is the global bounding box
+	int ndim = varInfo->ndim;
+	if (adiosQuery->_sel->type == ADIOS_SELECTION_BOUNDINGBOX) {
+		const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(adiosQuery->_sel->u.bb);
+		destcount = bb->count;   deststart = bb->start;
+		adios_read_set_data_view(adiosQuery->_f, PHYSICAL_DATA_VIEW);
+		ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->_f, varInfo);
+		ADIOS_PG_INTERSECTIONS* intersectedPGs = adios_find_intersecting_pgs( adiosQuery->_f, varInfo->varid, adiosQuery->_sel, timeStep, numStep);
+		int totalPG = intersectedPGs->npg;
+		int blockId, j;
+		ADIOS_PG_INTERSECTION *  PGs = intersectedPGs->intersections;
+		for (j = 0; j < totalPG; j++) {
+			ADIOS_PG_INTERSECTION pg = PGs[j];
+			ADIOS_SELECTION * interSelBox = pg.intersection_sel;
+			// false: PG selection box is intersecting with variable's selection box
+			// true : PG selection box is fully contained within variable's selection box
+			bool isPGCovered = false;
+			ADIOS_SELECTION * pgSelBox = pg.pg_bounds_sel;
+			assert(pgSelBox->type == ADIOS_SELECTION_BOUNDINGBOX );
+			assert(pgSelBox->type == interSelBox->type );
+			const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *pgBB = &(pgSelBox->u.bb);
+			const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *interBB = &(interSelBox->u.bb);
+			isPGCovered = boxEqual(pgBB, interBB);
 
-				srcstart = pgBB->start;
-				srccount = pgBB->count;
-				blockId = pg.blockidx_in_timestep ;
+			srcstart = pgBB->start;
+			srccount = pgBB->count;
+			blockId = pg.blockidx_in_timestep ;
 
-				proc_write_block(blockId,isPGContained,ti, adiosQuery,startStep,estimate,&alacQuery,lb,hb
+			if (ti->transform_type == adios_get_transform_type_by_uid("ncsu-alacrity")) {
+				proc_write_block(blockId,isPGCovered,ti, adiosQuery,startStep,estimate,&alacQuery,lb,hb
 						,srcstart, srccount, deststart, destcount,alacResultBitmap	);
+			}else {
+				char * blockData  = NULL;
+				uint64_t totalElm = 1;
+				int t = 0;
+				for(t=0; t < ndim; t++){
+					totalElm *= pgBB->count[t];
+				}
+				readBlockData(blockId, adiosQuery, startStep, varInfo,totalElm, &blockData );
+				int dataType = adios_type_size(varInfo->type, NULL); // data element size, in bytes
+				literallyCheckData(blockData, totalElm, dataType,adiosQuery,hb, lb
+						, srcstart, srccount, deststart, destcount, ndim, isPGCovered
+						, alacResultBitmap);
 			}
-			adios_free_pg_intersections(&intersectedPGs);
 		}
-		else if (adiosQuery->_sel->type == ADIOS_SELECTION_WRITEBLOCK){
-			const ADIOS_SELECTION_WRITEBLOCK_STRUCT *writeBlock = &(adiosQuery->_sel->u.block);
-			int blockId= writeBlock->index;
-			int globalBlockId = getGlobalWriteBlockId(blockId, startStep, varInfo);
-			adios_inq_var_blockinfo(adiosQuery->_f, varInfo);
-			ADIOS_VARBLOCK block = varInfo->blockinfo[globalBlockId];
-			// since user supplies the query with block id, in this case, the start and destination(querying) bounding box are the block itself
-			srcstart = block.start; srccount = block.count;
-			deststart = block.start;  destcount = block.count;
+		adios_free_pg_intersections(&intersectedPGs);
+	}
+	else if (adiosQuery->_sel->type == ADIOS_SELECTION_WRITEBLOCK){
+		const ADIOS_SELECTION_WRITEBLOCK_STRUCT *writeBlock = &(adiosQuery->_sel->u.block);
+		int blockId= writeBlock->index;
+		int globalBlockId = getGlobalWriteBlockId(blockId, startStep, varInfo);
+		adios_inq_var_blockinfo(adiosQuery->_f, varInfo);
+		ADIOS_VARBLOCK block = varInfo->blockinfo[globalBlockId];
+		// since user supplies the query with block id, in this case, the start and destination(querying) bounding box are the block itself
+		srcstart = block.start; srccount = block.count;
+		deststart = block.start;  destcount = block.count;
+		bool isPGCovered = true; // because they are same bounding boxes, they are fully contained
+
+		if (ti->transform_type == adios_get_transform_type_by_uid("ncsu-alacrity")){
 			adios_read_set_data_view(adiosQuery->_f, PHYSICAL_DATA_VIEW); // switch to the transform view,
 			ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->_f, varInfo); // this func. will fill the blockinfo field
-			bool isPGContained = true; // because they are same bounding boxes, they are fully contained
-			proc_write_block(blockId,isPGContained,ti, adiosQuery,startStep,estimate,&alacQuery,lb,hb
+			proc_write_block(blockId,isPGCovered,ti, adiosQuery,startStep,estimate,&alacQuery,lb,hb
 					,srcstart, srccount, deststart, destcount,alacResultBitmap	);
-
-		} else if (adiosQuery->_sel->type == ADIOS_SELECTION_POINTS){
-			// TODO: at this point, this type of querying is took careful by the common query layer
-		} else {
-			printf("not supported selection typed in alacrity \n");
-			exit(EXIT_FAILURE);
+		}else {
+			char * blockData  = NULL;
+			readBlockData(blockId, adiosQuery, startStep, varInfo,adiosQuery->_rawDataSize, &blockData );
+			int dataType = adios_type_size(varInfo->type, NULL); // data element size, in bytes
+			literallyCheckData(blockData, adiosQuery->_rawDataSize,  dataType,adiosQuery,hb, lb
+					, srcstart, srccount, deststart, destcount, ndim, isPGCovered
+					, alacResultBitmap);
 		}
 
-		if (adiosQuery->_op == ADIOS_NE){ // we flip the bits, since we treat it "=" before
-			uint64_t i  = 0;
-			for (; i < alacResultBitmap->length; i++) {
-				alacResultBitmap->bits[i]  = ~(alacResultBitmap->bits[i]);
-			}
+	} else if (adiosQuery->_sel->type == ADIOS_SELECTION_POINTS){
+		// TODO: at this point, this type of querying is took careful by the common query layer
+	} else {
+		printf("not supported selection typed in alacrity \n");
+		exit(EXIT_FAILURE);
+	}
+
+
+	if (adiosQuery->_op == ADIOS_NE){ // we flip the bits, since we treat it "=" before
+		uint64_t i  = 0;
+		for (; i < alacResultBitmap->length; i++) {
+			alacResultBitmap->bits[i]  = ~(alacResultBitmap->bits[i]);
 		}
-		// NOTE: this is for correctness of reading info later. We switch back to ensure the end-use are not affected
-		adios_read_set_data_view(adiosQuery->_f, LOGICAL_DATA_VIEW);
-
- 	}else {
- 		// data is not transformed by alacrity, query engine will loads the original data, and check the data one by one
- 		adios_read_set_data_view(adiosQuery->_f, LOGICAL_DATA_VIEW);
-
-
- 	}
+	}
+	// NOTE: this is for correctness of reading info later. We switch back to ensure the end-use are not affected
+	adios_read_set_data_view(adiosQuery->_f, LOGICAL_DATA_VIEW);
 	return alacResultBitmap;
 }
 
@@ -1117,81 +1200,5 @@ int adios_query_alac_free_method(ADIOS_QUERY* query) {
 
 void adios_query_alac_clean_method() { }
 
-
-
-/*TODO:
-void doSelection(ALMetadata *partitionMeta, bin_id_t hi_bin, bin_id_t low_bin, bool compressed
-		,  ADIOS_QUERY * adiosQuery,  int startStep, int numStep
-		,
-		ADIOS_ALAC_BITMAP *alacResultBitmap){
-
-	ALBinLayout * bl = &(partitionMeta->binLayout);
-
-
-	// element count of touched bins, which is also the count of low order data
-	const bin_offset_t elementCount = bl->binStartOffsets[hi_bin] - bl->binStartOffsets[low_bin];
-	const int insigbytes = insigBytesCeil(&partitionMeta);
-	uint64_t lowDataByteOffset = metaSizes + insigbytes * bl->binStartOffsets[low_bin] element offset;
-	// low order bytes from low_bin to hi_bin, ITS NOT entire low order byte
-	char * lowOrderBytes = (char *) calloc(elementCount, insigbytes);
-	// Read low-order bytes, offset of low order bytes is the meta data size
-	readLowOrderBytes(blockId,lowDataByteOffset, elementCount * insigbytes
-					  , adiosQuery->_f, adiosQuery->_var, startStep, numStep, (void*)lowOrderBytes);
-	char *lowOrderPtr = lowOrderBytes; // temporary pointer
-
-	// It touches at least 3 bins, so, we need to check RIDs that are in first and last bins
-	if (hi_bin - low_bin > 2) {
-		// low boundary bin, compressed byte offset
-		binCompressedLen = compBinStartOffs[low_bin + 1] - compBinStartOffs[low_bin];
-
-		adios_alac_check_candidate(&partitionMeta, low_bin, low_bin+1 , hb, lb
-				, srcstart, srccount //PG region dimension
-				, deststart, destcount //region dimension of Selection box
-				, ndim , inputCurPtr index bytes of entire PG , true  need decoding
-				, true, lowOrderPtr it points to the start of `low_bin`
-				,alacResultBitmap /*OUT);
-		inputCurPtr += binCompressedLen;
-
-		bin_id_t innerlowBin = low_bin + 1;
-		bin_id_t innerHiBin = hi_bin -1;
-		bin_id_t bin;
-		// Now compress each bin in turn
-		for ( bin = innerlowBin; bin < innerHiBin; bin++) {
-			binCompressedLen = compBinStartOffs[bin + 1] - compBinStartOffs[bin];
-
-			uint32_t decodedElm = ALDecompressRIDtoSelBox(isPGContained
-					, inputCurPtr, binCompressedLen
-					, srcstart, srccount //PG region dimension
-					, deststart, destcount //region dimension of Selection box
-					, ndim , &(alacResultBitmap->bits));
-			alacResultBitmap->numSetBits += decodedElm;
-			inputCurPtr += binCompressedLen;
-		}
-
-		// high boundary bin
-		binCompressedLen = compBinStartOffs[hi_bin]- compBinStartOffs[hi_bin-1];
-		// point to the low order byte of one bin before hi_bin
-		lowOrderPtr += (( bl->binStartOffsets[hi_bin-1] - bl->binStartOffsets[low_bin]) * insigbytes);
-		adios_alac_check_candidate(&partitionMeta, hi_bin-1, hi_bin , hb, lb
-				, srcstart, srccount //PG region dimension
-				, deststart, destcount //region dimension of Selection box
-				, ndim , inputCurPtr index bytes of entire PG
-				, true  need decoding , lowOrderPtr low order bytes of entire PG
-				,alacResultBitmap OUT);
-		inputCurPtr += binCompressedLen;
-
-	} else { // for 1 or 2 bins touched, we need to check all RIDs
-
-		adios_alac_check_candidate(&partitionMeta, low_bin, hi_bin , hb, lb
-				, srcstart, srccount //PG region dimension
-				, deststart, destcount //region dimension of Selection box
-				, ndim , inputCurPtr index bytes of entire PG
-				, true , lowOrderPtr
-				,alacResultBitmap OUT);
-	}
-
-	FREE(lowOrderBytes);
-
-}*/
 
 #endif
