@@ -1,7 +1,7 @@
 INCLUDES = $(all_includes)
 INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public
 
-SUBDIRS=flexpath_tests
+SUBDIRS=flexpath_tests fgr_tests
 
 AUTOMAKE_OPTIONS = no-dependencies
 
