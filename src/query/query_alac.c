@@ -386,100 +386,13 @@ uint64_t ridConversionWithoutCheck(uint64_t rid/*relative to local src selectoin
 }
 
 /*
- * NOTE: for ADIOS_NE (!=), we still use == to do the candidate check,
- * since we first treat != to be =, and at end, we will flip the bits
+ * NOTE : relies on  a lots of variables:
+ * isPGCovered, el, srcstart, srcount, deststart, destcount, ndim, newRid, totalElm, op
  */
-#define CHECK_GENERIC_DATA(data, FUNC) {                       \
-	switch(op){                                          \
-		case(ADIOS_LT):                                  \
-				FUNC(data[el] < hb);            \
-				break;                                   \
-		case (ADIOS_LTEQ):                               \
-				FUNC(data[el] <= hb);           \
-				break;                                   \
-		case (ADIOS_GT):                                 \
-				FUNC(data[el] > lb);            \
-				break;                                   \
-		case (ADIOS_GTEQ):                               \
-				FUNC(data[el] >= lb);           \
-				break;                                   \
-		case (ADIOS_EQ):                                 \
-				FUNC(data[el] ==  lb);          \
-				break;                                   \
-		case (ADIOS_NE):                                 \
-				FUNC(data[el] == lb);           \
-				break;                                   \
-		default :                                        \
-			printf("unknown predicate mode %d \n", op);  \
-	}                                                    \
-}
-
-void adios_alac_check_candidate(ALMetadata *partitionMeta, bin_id_t startBin, bin_id_t endBin , double hb, double lb
-		, uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount, int dim
-		, ADIOS_QUERY * adiosQuery , const char *inputCurPtr /*index bytes of entire PG*/
-		, bool decoded  /*true: need decoding */ , char * lowOrderBytes /*low order bytes of from startBin to endBin*/
-		,ADIOS_ALAC_BITMAP * alacResultBitmap /*OUT*/){
-	const ALBinLayout * bl = &(partitionMeta->binLayout);
-	/*assert(adiosQuery->_sel->type == ADIOS_SELECTION_BOUNDINGBOX);
-	const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(adiosQuery->_sel->u.bb);
-	uint64_t * destcount = bb->count;  uint64_t * deststart = bb->start; //region dimension of Selection box
-	uint64_t *srcstart = pgBB->start; uint64_t *srccount = pgBB->count; //PG region dimension
-	int dim = pgBB->ndim;*/
-	uint32_t * decodeRids;
-	if (decoded){
-		uint64_t  binCompressedLen = bl->binStartOffsets[endBin] - bl->binStartOffsets[startBin];
-		decodeRids= (uint32_t*) malloc(sizeof(uint32_t)*binCompressedLen);
-		ALDecompressRIDs( inputCurPtr, binCompressedLen, decodeRids, &binCompressedLen);
-	}else{
-		decodeRids = (uint32_t *) inputCurPtr;
-	}
-	bin_offset_t totalElm = bl->binStartOffsets[endBin] - bl->binStartOffsets[startBin];
-	char * recoveredDataInBytes = (char *) malloc(partitionMeta->elementSize*totalElm);
-
-	reconstituteData(partitionMeta, startBin, endBin,
-										 lowOrderBytes, recoveredDataInBytes);
-	rid_t newRid;
-	enum ADIOS_PREDICATE_MODE op = adiosQuery->_op;
-	bin_offset_t el = 0;   rid_t rid ;
-	//TODO: do need to check when the PG is fully covered by user's selection box
-	switch (partitionMeta->elementSize) {
-		case  sizeof(uint64_t): {
-			double * lowData64 = (double *)recoveredDataInBytes;
-			CHECK_GENERIC_DATA(lowData64, CHECK_ELEMENT);
-			break;
-		}
-		case sizeof(uint32_t): {
-			float * lowData32 = (float *)recoveredDataInBytes;
-			CHECK_GENERIC_DATA(lowData32, CHECK_ELEMENT);
-			break;
-			}
-		case sizeof(uint16_t): {
-			uint16_t * lowData16 = (uint16_t *)recoveredDataInBytes;
-			CHECK_GENERIC_DATA(lowData16, CHECK_ELEMENT);
-			break;
-		}
-		case sizeof(uint8_t): {
-			uint8_t * lowData8 = (uint8_t *)recoveredDataInBytes;
-			CHECK_GENERIC_DATA(lowData8, CHECK_ELEMENT);
-			break;
-		}
-	   default:
-			printf("Unsupported element size %d in %s\n", partitionMeta->elementSize, __FUNCTION__);
-			return ;
-	}
-
-	free(recoveredDataInBytes);
-	if(decoded)
-		free(decodeRids);
-
-}
-
-
-
 #define CHECK_NODECODE_ELEMENT(code) {                         \
 		if (isPGCovered){                             \
 			for(el= 0; el < totalElm; el ++){         \
-				if (data) {                           \
+				if (code) {                           \
 					newRid = ridConversionWithoutCheck(el, srcstart,srccount, deststart,destcount, ndim);   \
 					setBitsinBitMap(newRid, alacResultBitmap);    \
 					alacResultBitmap->numSetBits ++;              \
@@ -498,39 +411,208 @@ void adios_alac_check_candidate(ALMetadata *partitionMeta, bin_id_t startBin, bi
 }
 
 /*
- * go through every data value in the array, check whether the value satisfies the query condition
+ * NOTE: for ADIOS_NE (!=), we still use == to do the candidate check,
+ * since we first treat != to be =, and at end, we will flip the bits
  */
-void literallyCheckData(void *data, uint64_t totalElm , int dataType, ADIOS_QUERY * adiosQuery, double hb, double lb
+#define CHECK_GENERIC_DATA(data, FUNC) {                       \
+	switch(op){                                          \
+		case(ADIOS_LT):                                  \
+				FUNC((data)[el] < hb);            \
+				break;                                   \
+		case (ADIOS_LTEQ):                               \
+				FUNC((data)[el] <= hb);           \
+				break;                                   \
+		case (ADIOS_GT):                                 \
+				FUNC((data)[el] > lb);            \
+				break;                                   \
+		case (ADIOS_GTEQ):                               \
+				FUNC((data)[el] >= lb);           \
+				break;                                   \
+		case (ADIOS_EQ):                                 \
+				FUNC((data)[el] ==  lb);          \
+				break;                                   \
+		case (ADIOS_NE):                                 \
+				FUNC((data)[el] == lb);           \
+				break;                                   \
+		default :                                        \
+			printf("unknown predicate mode %d \n", op);  \
+	}                                                    \
+}
+
+/*
+ * TODO : GOT compile errors using following codes
+ */
+/*#define GENERIC_DATA_CONV(data, FUNC)  {                                             \
+	switch(dataType){                                                                \
+		case adios_unsigned_byte:                                                    \
+			CHECK_GENERIC_DATA((unsigned char  *)data, (FUNC) );           \
+			break;                                                                   \
+		case adios_byte:                                                             \
+			CHECK_GENERIC_DATA((signed char  *)data, (FUNC) );             \
+			break;                                                                   \
+		case adios_string:                                                           \
+			CHECK_GENERIC_DATA((char *)data, (FUNC) );                   \
+			break;                                                                   \
+		case adios_unsigned_short:                                                   \
+			CHECK_GENERIC_DATA((unsigned short  *)data, (FUNC) );          \
+			break;                                                                   \
+		case adios_short:                                                            \
+			CHECK_GENERIC_DATA((signed short  *)data, (FUNC) );            \
+			break;                                                                   \
+		case adios_unsigned_integer:                                                 \
+			CHECK_GENERIC_DATA((unsigned int *)data, (FUNC) );            \
+			break;                                                                   \
+		case adios_integer:                                                          \
+			CHECK_GENERIC_DATA((signed int *)data, (FUNC) );              \
+			break;                                                                   \
+		case adios_unsigned_long:                                                    \
+			CHECK_GENERIC_DATA((unsigned long long  *)data, (FUNC) );       \
+			break;                                                                   \
+		case adios_long:                                                             \
+			CHECK_GENERIC_DATA((signed long long  *)data, (FUNC) );         \
+			break;                                                                   \
+		case adios_real:                                                             \
+			CHECK_GENERIC_DATA((float *)data, (FUNC) );                  \
+			break;                                                                   \
+		case adios_double:                                                           \
+			CHECK_GENERIC_DATA((double *)data, (FUNC) );                 \
+			break;                                                                   \
+	}                                                                                \
+}*/
+
+
+/*
+ * return : 1 => yes, there is unsupported data type
+ *          0 => no
+ */
+int checkUnsupportedDataType(enum ADIOS_DATATYPES dataType) {
+
+	return (dataType == adios_long_double) ||
+			(dataType == adios_complex)  ||
+			(dataType ==  adios_double_complex) ;
+}
+int adios_alac_check_candidate(ALMetadata *partitionMeta, bin_id_t startBin, bin_id_t endBin , double hb, double lb
+		, uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount, int dim
+		, ADIOS_QUERY * adiosQuery , const char *inputCurPtr /*index bytes of entire PG*/
+		, bool decoded  /*true: need decoding */ , char * lowOrderBytes /*low order bytes of from startBin to endBin*/
+		, enum ADIOS_DATATYPES dataType
+		,ADIOS_ALAC_BITMAP * alacResultBitmap /*OUT*/){
+	const ALBinLayout * bl = &(partitionMeta->binLayout);
+	/*assert(adiosQuery->_sel->type == ADIOS_SELECTION_BOUNDINGBOX);
+	const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(adiosQuery->_sel->u.bb);
+	uint64_t * destcount = bb->count;  uint64_t * deststart = bb->start; //region dimension of Selection box
+	uint64_t *srcstart = pgBB->start; uint64_t *srccount = pgBB->count; //PG region dimension
+	int dim = pgBB->ndim;*/
+	uint32_t * decodeRids;
+	if (decoded){
+		uint64_t  binCompressedLen = bl->binStartOffsets[endBin] - bl->binStartOffsets[startBin];
+		decodeRids= (uint32_t*) malloc(sizeof(uint32_t)*binCompressedLen);
+		ALDecompressRIDs( inputCurPtr, binCompressedLen, decodeRids, &binCompressedLen);
+	}else{
+		decodeRids = (uint32_t *) inputCurPtr;
+	}
+	bin_offset_t totalElm = bl->binStartOffsets[endBin] - bl->binStartOffsets[startBin];
+	char * data = (char *) malloc(partitionMeta->elementSize*totalElm); // recovered data in bytes
+	reconstituteData(partitionMeta, startBin, endBin,
+										 lowOrderBytes, data);
+	//Following variables are needed for the micros definition
+	rid_t newRid;
+	enum ADIOS_PREDICATE_MODE op = adiosQuery->_op;
+	bin_offset_t el = 0;   rid_t rid ;
+
+	switch(dataType){
+		case adios_unsigned_byte:
+			CHECK_GENERIC_DATA((unsigned char  *)data, CHECK_ELEMENT );
+			break;
+		case adios_byte:
+			CHECK_GENERIC_DATA((signed char  *)data, CHECK_ELEMENT );
+			break;
+		case adios_string:
+			CHECK_GENERIC_DATA((char *)data, CHECK_ELEMENT );
+			break;
+		case adios_unsigned_short:
+			CHECK_GENERIC_DATA((unsigned short  *)data, CHECK_ELEMENT );
+			break;
+		case adios_short:
+			CHECK_GENERIC_DATA((signed short  *)data, CHECK_ELEMENT );
+			break;
+		case adios_unsigned_integer:
+			CHECK_GENERIC_DATA((unsigned int *)data, CHECK_ELEMENT );
+			break;
+		case adios_integer:
+			CHECK_GENERIC_DATA((signed int *)data, CHECK_ELEMENT );
+			break;
+		case adios_unsigned_long:
+			CHECK_GENERIC_DATA((unsigned long long  *)data, CHECK_ELEMENT );
+			break;
+		case adios_long:
+			CHECK_GENERIC_DATA((signed long long  *)data, CHECK_ELEMENT );
+			break;
+		case adios_real:
+			CHECK_GENERIC_DATA((float *)data, CHECK_ELEMENT );
+			break;
+		case adios_double:
+			CHECK_GENERIC_DATA((double *)data, CHECK_ELEMENT );
+			break;
+	}
+
+
+	free(data);
+	if(decoded)
+		free(decodeRids);
+	return 0;
+
+}
+
+/*
+ * go through every data value in the array, check whether the value satisfies the query condition
+ * return: 1 ==> error, 0 ==> no error
+ */
+int literallyCheckData(void *data, uint64_t totalElm , enum ADIOS_DATATYPES dataType, ADIOS_QUERY * adiosQuery, double hb, double lb
 		, uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount, int ndim, bool isPGCovered
 		,ADIOS_ALAC_BITMAP * alacResultBitmap /*OUT*/){
 	uint32_t newRid ;
 	uint64_t el = 0;
 	enum ADIOS_PREDICATE_MODE op = adiosQuery->_op;
-	switch (dataType) {
-		case  sizeof(uint64_t): {
-			double * lowData64 = (double *)data;
-			CHECK_GENERIC_DATA(lowData64, CHECK_NODECODE_ELEMENT );
+//	GENERIC_DATA_CONV(data, CHECK_NODECODE_ELEMENT );
+	switch(dataType){
+		case adios_unsigned_byte:
+			CHECK_GENERIC_DATA((unsigned char  *)data, CHECK_NODECODE_ELEMENT );
 			break;
-		}
-		case sizeof(uint32_t): {
-			float * lowData32 = (float *)data;
-			CHECK_GENERIC_DATA(lowData32, CHECK_NODECODE_ELEMENT);
+		case adios_byte:
+			CHECK_GENERIC_DATA((signed char  *)data, CHECK_NODECODE_ELEMENT );
 			break;
-			}
-		case sizeof(uint16_t): {
-			uint16_t * lowData16 = (uint16_t *)data;
-			CHECK_GENERIC_DATA(lowData16, CHECK_NODECODE_ELEMENT);
+		case adios_string:
+			CHECK_GENERIC_DATA((char *)data, CHECK_NODECODE_ELEMENT );
 			break;
-		}
-		case sizeof(uint8_t): {
-			uint8_t * lowData8 = (uint8_t *)data;
-			CHECK_GENERIC_DATA(lowData8,CHECK_NODECODE_ELEMENT);
+		case adios_unsigned_short:
+			CHECK_GENERIC_DATA((unsigned short  *)data, CHECK_NODECODE_ELEMENT );
 			break;
-		}
-	   default:
-			printf("Unsupported element size %d in %s\n", dataType, __FUNCTION__);
-			return ;
+		case adios_short:
+			CHECK_GENERIC_DATA((signed short  *)data, CHECK_NODECODE_ELEMENT );
+			break;
+		case adios_unsigned_integer:
+			CHECK_GENERIC_DATA((unsigned int *)data, CHECK_NODECODE_ELEMENT );
+			break;
+		case adios_integer:
+			CHECK_GENERIC_DATA((signed int *)data, CHECK_NODECODE_ELEMENT );
+			break;
+		case adios_unsigned_long:
+			CHECK_GENERIC_DATA((unsigned long long  *)data, CHECK_NODECODE_ELEMENT );
+			break;
+		case adios_long:
+			CHECK_GENERIC_DATA((signed long long  *)data, CHECK_NODECODE_ELEMENT );
+			break;
+		case adios_real:
+			CHECK_GENERIC_DATA((float *)data, CHECK_NODECODE_ELEMENT );
+			break;
+		case adios_double:
+			CHECK_GENERIC_DATA((double *)data, CHECK_NODECODE_ELEMENT );
+			break;
 	}
+
+	free(data);
+	return 0;
 
 }
 /*for each RID, set bit as 1 at corresponding position */
@@ -682,7 +764,7 @@ void proc_write_block(int blockId, bool isPGCovered, ADIOS_VARTRANSFORM *ti, ADI
 					// low boundary bin
 					adios_alac_check_candidate(&partitionMeta, low_bin, low_bin+1 , hb, lb
 							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , (char*) decodedRid /*index bytes of entire PG*/
-							, false  /*don't need decoding*/ , lowOrderPtr2
+							, false  /*don't need decoding*/ , lowOrderPtr2, varInfo->type
 							,alacResultBitmap /*OUT*/);
 					decodedRid += lowBinElm;
 
@@ -695,13 +777,13 @@ void proc_write_block(int blockId, bool isPGCovered, ADIOS_VARTRANSFORM *ti, ADI
 					// high boundary bin
 					adios_alac_check_candidate(&partitionMeta, hi_bin-1, hi_bin , hb, lb
 							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , (char *)decodedRid
-							, false , lowOrderPtr2
+							, false , lowOrderPtr2, varInfo->type
 							,alacResultBitmap /*OUT*/);
 
 				} else { // for 1 or 2 bins touched, we need to check all RIDs
 					adios_alac_check_candidate(&partitionMeta, low_bin, hi_bin  , hb, lb
 							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , (char*)decodedRid
-							, false , lowOrderPtr2
+							, false , lowOrderPtr2, varInfo->type
 							,alacResultBitmap /*OUT*/);
 				}
 
@@ -740,7 +822,7 @@ void proc_write_block(int blockId, bool isPGCovered, ADIOS_VARTRANSFORM *ti, ADI
 
 					adios_alac_check_candidate(&partitionMeta, low_bin, low_bin+1 , hb, lb
 							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery  , inputCurPtr /*index bytes of entire PG*/
-							, true  /*need decoding*/ , lowOrderPtr /*it points to the start of `low_bin` */
+							, true  /*need decoding*/ , lowOrderPtr /*it points to the start of `low_bin` */, varInfo->type
 							,alacResultBitmap /*OUT*/);
 					inputCurPtr += binCompressedLen;
 
@@ -766,7 +848,7 @@ void proc_write_block(int blockId, bool isPGCovered, ADIOS_VARTRANSFORM *ti, ADI
 					lowOrderPtr += (( bl->binStartOffsets[hi_bin-1] - bl->binStartOffsets[low_bin]) * insigbytes);
 					adios_alac_check_candidate(&partitionMeta, hi_bin-1, hi_bin , hb, lb
 							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , inputCurPtr /*index bytes of entire PG*/
-							, true  /*need decoding*/ , lowOrderPtr /*low order bytes of entire PG*/
+							, true  /*need decoding*/ , lowOrderPtr /*low order bytes of entire PG*/, varInfo->type
 							,alacResultBitmap /*OUT*/);
 					inputCurPtr += binCompressedLen;
 
@@ -774,7 +856,7 @@ void proc_write_block(int blockId, bool isPGCovered, ADIOS_VARTRANSFORM *ti, ADI
 
 					adios_alac_check_candidate(&partitionMeta, low_bin, hi_bin , hb, lb
 							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , inputCurPtr /*index bytes of entire PG*/
-							, true , lowOrderPtr
+							, true , lowOrderPtr, varInfo->type
 							,alacResultBitmap /*OUT*/);
 				}
 
@@ -788,10 +870,17 @@ void proc_write_block(int blockId, bool isPGCovered, ADIOS_VARTRANSFORM *ti, ADI
 	}
 }
 
+
+
 /*
  * PG selection, [startPG, endPG)
  */
 ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, bool estimate) {
+
+	if (checkUnsupportedDataType(adiosQuery->_var->type)){
+		printf("unsupported data type [%d] at this point \n", adiosQuery->_var->type);
+		exit(EXIT_FAILURE);
+	}
 
 	double lb , hb ;
     resolveQueryBoundary(adiosQuery, &hb, &lb); // query constraints
@@ -864,9 +953,8 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 				for(t=0; t < ndim; t++){
 					totalElm *= pgBB->count[t];
 				}
-				readBlockData(blockId, adiosQuery, startStep, varInfo,totalElm, &blockData );
-				int dataType = adios_type_size(varInfo->type, NULL); // data element size, in bytes
-				literallyCheckData(blockData, totalElm, dataType,adiosQuery,hb, lb
+				readBlockData(blockId, adiosQuery, startStep, varInfo,totalElm, (void**)&blockData );
+				literallyCheckData(blockData, totalElm, varInfo->type,adiosQuery,hb, lb
 						, srcstart, srccount, deststart, destcount, ndim, isPGCovered
 						, alacResultBitmap);
 			}
@@ -891,9 +979,8 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 					,srcstart, srccount, deststart, destcount,alacResultBitmap	);
 		}else {
 			char * blockData  = NULL;
-			readBlockData(blockId, adiosQuery, startStep, varInfo,adiosQuery->_rawDataSize, &blockData );
-			int dataType = adios_type_size(varInfo->type, NULL); // data element size, in bytes
-			literallyCheckData(blockData, adiosQuery->_rawDataSize,  dataType,adiosQuery,hb, lb
+			readBlockData(blockId, adiosQuery, startStep, varInfo,adiosQuery->_rawDataSize, (void**) &blockData );
+			literallyCheckData(blockData, adiosQuery->_rawDataSize,  varInfo->type,adiosQuery,hb, lb
 					, srcstart, srccount, deststart, destcount, ndim, isPGCovered
 					, alacResultBitmap);
 		}
