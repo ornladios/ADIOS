@@ -21,13 +21,13 @@
 
 
 /*
- * Dump the timing information to an XML file.
- * The first process writes first, the last writes last, and the others are in unspecified order.
+ * Dump the timing information to a file.
  * Called both from C and Fortran API's (adios.c and adiosf.c)
 */
 void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
 {
 #ifdef SKEL_TIMING
+
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     if (!fd)
     {
@@ -43,6 +43,114 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
         return;
     }
 
+    int size, rank, i, global_event_count, count_to_send;
+    int * counts;
+    int * displs;
+    struct adios_timing_event_struct* events;
+    MPI_Datatype event_type;
+    MPI_Comm_size (MPI_COMM_WORLD, &size);
+    MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+
+    if (rank == 0)
+    {
+        counts = (int*) malloc (sizeof (int) * size);
+    }
+
+    // Collect all of the events on proc 0
+    // First, per proc event counts
+
+    count_to_send = (fd->timing_obj->event_count > ADIOS_TIMING_MAX_EVENTS) ?
+                      ADIOS_TIMING_MAX_EVENTS : fd->timing_obj->event_count;
+
+
+    MPI_Gather (
+        &count_to_send, // sendbuf
+        1,              // sendcount
+        MPI_INT,        // sendtype
+        counts,         // recvbuf
+        1,           // recvcount
+        MPI_INT,        // recvtype
+        0,              // root
+        MPI_COMM_WORLD  // comm
+    );
+
+printf("B"); fflush (stdout);
+    if (rank == 0)
+    {
+
+        displs = (int*) malloc (sizeof (int) * size);
+        displs[0] = 0;
+        global_event_count = counts[0];
+
+        for (i = 1; i < size; i++)
+        {
+            displs[i] = displs[i-1] + counts[i-1];
+            global_event_count += counts[i];
+printf ("displs[%i]=%i, counts[%i]=%i\n", i, displs[i], i, counts[i]);
+        }
+
+        events = (struct adios_timing_event_struct*) malloc (
+            sizeof (struct adios_timing_event_struct) * global_event_count);
+    }
+printf("C"); fflush (stdout);
+
+    // structure of the adios_timing_event_struct (int, int, double)
+    int blocklens[]  = {2,1};
+    int disps[]      = {0,8};
+    MPI_Datatype types[] = {MPI_INT,MPI_DOUBLE};
+
+    MPI_Type_create_struct (
+        2, // count
+        blocklens, // array_of_blocklengths
+        disps, // array_of_displacements
+        types, // array_of_types
+        &event_type
+    );
+    MPI_Type_commit (&event_type);
+
+    // Now the events
+    MPI_Gatherv (
+        &fd->timing_obj->events, // sendbuf
+        count_to_send, // sendcount
+        event_type, // sendtype
+        events, //recvbuf
+        counts, // recvcounts
+        displs, // displacements
+        event_type, // recvtype
+        0, // root
+        MPI_COMM_WORLD // comm
+    );
+printf("D"); fflush (stdout);
+
+    // Write the events to a file
+    if (rank == 0)
+    {
+        FILE* f = fopen (filename, "w");
+
+        for (i = 0; i < global_event_count; i++)
+        {
+            fprintf (f, "%i%s,%f\n", events[i].type, events[i].is_start?"S":"E", events[i].time);
+        }
+
+        fclose(f);
+    }
+
+
+    if (rank == 0)
+    {
+        if (counts)
+            free (counts);
+    }
+
+#else
+    log_warn ("Timing information is not currently available.\n"
+              "To use the Skel timing functions, you must enable them when building ADIOS.\n"
+              "Use --enable-skel-timing during the configuration step.\n");
+#endif
+
+
+// The old XML timing output
+#if 0
     int size, rank, i, p;
     MPI_Comm_size (MPI_COMM_WORLD, &size);
     MPI_Comm_rank (MPI_COMM_WORLD, &rank);
@@ -160,11 +268,8 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
         fclose (f);
 
     }
-#else
-    log_warn ("Timing information is not currently available.\n"
-              "To use the Skel timing functions, you must enable them when building ADIOS.\n"
-              "Use --enable-skel-timing during the configuration step.\n");
 #endif
+
 }
 
 
@@ -240,20 +345,12 @@ void adios_timing_go (struct adios_timing_struct * ts, int64_t index)
 
     // Log the event
     struct adios_timing_event_struct * new_event =
-        (struct adios_timing_event_struct *) malloc (
-            sizeof (struct adios_timing_event_struct)
-        );
+        &(ts->events[ts->event_count % ADIOS_TIMING_MAX_EVENTS]);
     new_event->type = index;
     new_event->is_start = 1;
     new_event->time = now;
-    new_event->next = 0;
+    ts->event_count++;
 
-    // add it to the linked list
-    if (ts->first_event == 0) {
-        ts->first_event = ts->last_event = new_event;
-    } else {
-        ts->last_event->next = new_event;
-    }
 }
 
 
@@ -267,20 +364,12 @@ void adios_timing_stop (struct adios_timing_struct * ts, int64_t index)
 
     // Log the event
     struct adios_timing_event_struct * new_event =
-        (struct adios_timing_event_struct *) malloc (
-            sizeof (struct adios_timing_event_struct)
-        );
+        &(ts->events[ts->event_count % ADIOS_TIMING_MAX_EVENTS]);
+
     new_event->type = index;
     new_event->is_start = 0;
     new_event->time = now;
-    new_event->next = 0;
-
-    // add it to the linked list
-    if (ts->first_event == 0) {
-        ts->first_event = ts->last_event = new_event;
-    } else {
-        ts->last_event->next = new_event;
-    }
+    ts->event_count++;
 }
 
 
@@ -294,7 +383,8 @@ struct adios_timing_struct *  adios_timing_create (int timer_count, char** timer
     ts->user_count = 0;
     ts->names = (char**) malloc ( (ADIOS_TIMING_MAX_USER_TIMERS + timer_count) * sizeof (char*) );
     ts->times = (double*) malloc ( (ADIOS_TIMING_MAX_USER_TIMERS + timer_count) * sizeof (double) );
-    ts->first_event = ts->last_event = 0;
+    ts->event_count = 0;
+
 
     // Clear all timers
     memset(ts->times, 0, (ADIOS_TIMING_MAX_USER_TIMERS + timer_count) * sizeof (double) );
@@ -315,13 +405,6 @@ void adios_timing_destroy (struct adios_timing_struct * timing_obj)
 {
     if (timing_obj)
     {
-
-        while (timing_obj->first_event)
-        {
-            struct adios_timing_event_struct* free_me = timing_obj->first_event;
-            timing_obj->first_event = timing_obj->first_event->next;
-            free (free_me);
-        }
 
         if (timing_obj->times)
         {

@@ -25,6 +25,7 @@
 #include "core/buffer.h"
 #include "core/adios_transport_hooks.h"
 #include "core/adios_logger.h"
+#include "core/adios_timing.h"
 #include "core/qhashtbl.h"
 #include "public/adios_error.h"
 
@@ -1127,6 +1128,10 @@ int common_adios_close (int64_t fd_p)
     free(results);
 
     //timer_reset_timers ();
+#endif
+
+#ifdef SKEL_TIMING
+    adios_timing_write_xml_common (fd_p, "filename.perf");
 #endif
 
     return adios_errno;
