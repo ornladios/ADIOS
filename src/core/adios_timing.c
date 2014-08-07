@@ -74,7 +74,6 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
         MPI_COMM_WORLD  // comm
     );
 
-printf("B"); fflush (stdout);
     if (rank == 0)
     {
 
@@ -86,13 +85,11 @@ printf("B"); fflush (stdout);
         {
             displs[i] = displs[i-1] + counts[i-1];
             global_event_count += counts[i];
-printf ("displs[%i]=%i, counts[%i]=%i\n", i, displs[i], i, counts[i]);
         }
 
         events = (struct adios_timing_event_struct*) malloc (
             sizeof (struct adios_timing_event_struct) * global_event_count);
     }
-printf("C"); fflush (stdout);
 
     // structure of the adios_timing_event_struct (int, int, double)
     int blocklens[]  = {2,1};
@@ -120,7 +117,6 @@ printf("C"); fflush (stdout);
         0, // root
         MPI_COMM_WORLD // comm
     );
-printf("D"); fflush (stdout);
 
     // Write the events to a file
     if (rank == 0)
