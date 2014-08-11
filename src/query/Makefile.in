@@ -32,9 +32,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = scalars_write$(EXEEXT) scalars_read$(EXEEXT) \
-	scalars_write_step$(EXEEXT)
-subdir = examples/C/scalars
+noinst_PROGRAMS = adiosQuery$(EXEEXT)
+subdir = src/query
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
 am__aclocal_m4_deps = $(top_srcdir)/config/ac_alacrity.m4 \
@@ -62,46 +61,33 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_alacrity.m4 \
 	$(top_srcdir)/config/ac_netcdf.m4 \
 	$(top_srcdir)/config/ac_nssi.m4 \
 	$(top_srcdir)/config/ac_pablo.m4 \
-	$(top_srcdir)/config/ac_pami.m4 \
 	$(top_srcdir)/config/ac_phdf5.m4 \
 	$(top_srcdir)/config/ac_portals.m4 \
 	$(top_srcdir)/config/ac_szip.m4 \
 	$(top_srcdir)/config/ac_zlib.m4 \
 	$(top_srcdir)/config/acx_mpi.m4 \
 	$(top_srcdir)/config/acx_pthread.m4 \
-	$(top_srcdir)/config/cercs.m4 $(top_srcdir)/config/libtool.m4 \
-	$(top_srcdir)/config/ltoptions.m4 \
-	$(top_srcdir)/config/ltsugar.m4 \
-	$(top_srcdir)/config/ltversion.m4 \
-	$(top_srcdir)/config/lt~obsolete.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/config/cercs.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_scalars_read_OBJECTS = scalars_read.$(OBJEXT)
-scalars_read_OBJECTS = $(am_scalars_read_OBJECTS)
+am_adiosQuery_OBJECTS = adiosQuery-adios_query.$(OBJEXT) \
+	adiosQuery-adios_query_hooks.$(OBJEXT) \
+	adiosQuery-common_query.$(OBJEXT) \
+	adiosQuery-fastbit_adios.$(OBJEXT) \
+	adiosQuery-mock_alacrity.$(OBJEXT) \
+	adiosQuery-myTestCases.$(OBJEXT) \
+	adiosQuery-query_fastbit.$(OBJEXT)
+adiosQuery_OBJECTS = $(am_adiosQuery_OBJECTS)
 am__DEPENDENCIES_1 =
-scalars_read_DEPENDENCIES = $(top_builddir)/src/libadiosread.a \
+adiosQuery_DEPENDENCIES = $(top_builddir)/src/libadiosread_nompi.a \
 	$(am__DEPENDENCIES_1)
-scalars_read_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+adiosQuery_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(scalars_read_LDFLAGS) $(LDFLAGS) -o $@
-am_scalars_write_OBJECTS = scalars_write.$(OBJEXT)
-scalars_write_OBJECTS = $(am_scalars_write_OBJECTS)
-scalars_write_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1)
-scalars_write_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(scalars_write_LDFLAGS) $(LDFLAGS) -o $@
-am_scalars_write_step_OBJECTS = scalars_write.$(OBJEXT)
-scalars_write_step_OBJECTS = $(am_scalars_write_step_OBJECTS)
-scalars_write_step_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1)
-scalars_write_step_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(scalars_write_step_LDFLAGS) $(LDFLAGS) -o $@
+	$(adiosQuery_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -114,10 +100,8 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(scalars_read_SOURCES) $(scalars_write_SOURCES) \
-	$(scalars_write_step_SOURCES)
-DIST_SOURCES = $(scalars_read_SOURCES) $(scalars_write_SOURCES) \
-	$(scalars_write_step_SOURCES)
+SOURCES = $(adiosQuery_SOURCES)
+DIST_SOURCES = $(adiosQuery_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -158,7 +142,7 @@ AWK = @AWK@
 BZIP2_CPPFLAGS = @BZIP2_CPPFLAGS@
 BZIP2_LDFLAGS = @BZIP2_LDFLAGS@
 BZIP2_LIBS = @BZIP2_LIBS@
-CC = $(MPICC)
+CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
@@ -282,10 +266,6 @@ PACKAGE_NAME = @PACKAGE_NAME@
 PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
-PAMI_CFLAGS = @PAMI_CFLAGS@
-PAMI_CPPFLAGS = @PAMI_CPPFLAGS@
-PAMI_LDFLAGS = @PAMI_LDFLAGS@
-PAMI_LIBS = @PAMI_LIBS@
 PATHPROG = @PATHPROG@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PHDF5_CPPFLAGS = @PHDF5_CPPFLAGS@
@@ -372,22 +352,20 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-INCLUDES = $(all_includes) -I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/public
+#
+# ${ADIOSREADLIB_CPPFLAGS} has all the flags like -DFASTBIT -DALACRITY
+# as well as related includes, so it is needed here
+# 
+INCLUDES = $(all_includes) -I$(top_srcdir)/src/public \
+	${ADIOSREADLIB_CPPFLAGS}
 AUTOMAKE_OPTIONS = no-dependencies
-scalars_write_SOURCES = scalars_write.c
-scalars_write_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
-scalars_write_LDFLAGS = $(ADIOSLIB_LDFLAGS)
-scalars_read_SOURCES = scalars_read.c
-scalars_read_LDADD = $(top_builddir)/src/libadiosread.a \
-	$(ADIOSREADLIB_LDADD)
-scalars_read_LDFLAGS = $(ADIOSREADLIB_LDFLAGS)
-scalars_write_step_SOURCES = scalars_write.c
-scalars_write_step_LDADD = $(top_builddir)/src/libadios.a \
-	$(ADIOSLIB_LDADD)
-scalars_write_step_LDFLAGS = $(ADIOSLIB_LDFLAGS)
-CLEANFILES = *.bp
-EXTRA_DIST = scalars.xml gwrite_scalars.ch gread_scalars.ch job.pbs
+adiosQuery_SOURCES = adios_query.c  adios_query_hooks.c  common_query.c  fastbit_adios.c  mock_alacrity.c  myTestCases.c  query_fastbit.c
+query_fastbit_SOURCES = fastbit_adios.c query_fastbit.c common_query.c query.c adios_query_hooks.c myTestCases.c
+index_fastbit_SOURCES = useindex.c fastbit_adios.c
+mock_alacrity_SOURCES = fastbit_adios.c mock_alacrity.c common_query.c query.c adios_query_hooks.c myTestCases.c
+adiosQuery_CPPFLAGS = ${MACRODEFFLAG}_NOMPI 
+adiosQuery_LDADD = $(top_builddir)/src/libadiosread_nompi.a $(ADIOSREADLIB_LDADD)
+adiosQuery_LDFLAGS = $(ADIOSREADLIB_LDFLAGS)
 all: all-am
 
 .SUFFIXES:
@@ -401,9 +379,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  examples/C/scalars/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu  src/query/Makefile'; \
 	cd $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu  examples/C/scalars/Makefile
+	  $(AUTOMAKE) --gnu  src/query/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \
@@ -428,15 +406,9 @@ clean-noinstPROGRAMS:
 	  echo " rm -f $$p $$f"; \
 	  rm -f $$p $$f ; \
 	done
-scalars_read$(EXEEXT): $(scalars_read_OBJECTS) $(scalars_read_DEPENDENCIES) 
-	@rm -f scalars_read$(EXEEXT)
-	$(scalars_read_LINK) $(scalars_read_OBJECTS) $(scalars_read_LDADD) $(LIBS)
-scalars_write$(EXEEXT): $(scalars_write_OBJECTS) $(scalars_write_DEPENDENCIES) 
-	@rm -f scalars_write$(EXEEXT)
-	$(scalars_write_LINK) $(scalars_write_OBJECTS) $(scalars_write_LDADD) $(LIBS)
-scalars_write_step$(EXEEXT): $(scalars_write_step_OBJECTS) $(scalars_write_step_DEPENDENCIES) 
-	@rm -f scalars_write_step$(EXEEXT)
-	$(scalars_write_step_LINK) $(scalars_write_step_OBJECTS) $(scalars_write_step_LDADD) $(LIBS)
+adiosQuery$(EXEEXT): $(adiosQuery_OBJECTS) $(adiosQuery_DEPENDENCIES) 
+	@rm -f adiosQuery$(EXEEXT)
+	$(adiosQuery_LINK) $(adiosQuery_OBJECTS) $(adiosQuery_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -452,6 +424,48 @@ distclean-compile:
 
 .c.lo:
 	$(LTCOMPILE) -c -o $@ $<
+
+adiosQuery-adios_query.o: adios_query.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adiosQuery_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adiosQuery-adios_query.o `test -f 'adios_query.c' || echo '$(srcdir)/'`adios_query.c
+
+adiosQuery-adios_query.obj: adios_query.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adiosQuery_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adiosQuery-adios_query.obj `if test -f 'adios_query.c'; then $(CYGPATH_W) 'adios_query.c'; else $(CYGPATH_W) '$(srcdir)/adios_query.c'; fi`
+
+adiosQuery-adios_query_hooks.o: adios_query_hooks.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adiosQuery_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adiosQuery-adios_query_hooks.o `test -f 'adios_query_hooks.c' || echo '$(srcdir)/'`adios_query_hooks.c
+
+adiosQuery-adios_query_hooks.obj: adios_query_hooks.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adiosQuery_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adiosQuery-adios_query_hooks.obj `if test -f 'adios_query_hooks.c'; then $(CYGPATH_W) 'adios_query_hooks.c'; else $(CYGPATH_W) '$(srcdir)/adios_query_hooks.c'; fi`
+
+adiosQuery-common_query.o: common_query.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adiosQuery_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adiosQuery-common_query.o `test -f 'common_query.c' || echo '$(srcdir)/'`common_query.c
+
+adiosQuery-common_query.obj: common_query.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adiosQuery_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adiosQuery-common_query.obj `if test -f 'common_query.c'; then $(CYGPATH_W) 'common_query.c'; else $(CYGPATH_W) '$(srcdir)/common_query.c'; fi`
+
+adiosQuery-fastbit_adios.o: fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adiosQuery_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adiosQuery-fastbit_adios.o `test -f 'fastbit_adios.c' || echo '$(srcdir)/'`fastbit_adios.c
+
+adiosQuery-fastbit_adios.obj: fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adiosQuery_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adiosQuery-fastbit_adios.obj `if test -f 'fastbit_adios.c'; then $(CYGPATH_W) 'fastbit_adios.c'; else $(CYGPATH_W) '$(srcdir)/fastbit_adios.c'; fi`
+
+adiosQuery-mock_alacrity.o: mock_alacrity.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adiosQuery_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adiosQuery-mock_alacrity.o `test -f 'mock_alacrity.c' || echo '$(srcdir)/'`mock_alacrity.c
+
+adiosQuery-mock_alacrity.obj: mock_alacrity.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adiosQuery_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adiosQuery-mock_alacrity.obj `if test -f 'mock_alacrity.c'; then $(CYGPATH_W) 'mock_alacrity.c'; else $(CYGPATH_W) '$(srcdir)/mock_alacrity.c'; fi`
+
+adiosQuery-myTestCases.o: myTestCases.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adiosQuery_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adiosQuery-myTestCases.o `test -f 'myTestCases.c' || echo '$(srcdir)/'`myTestCases.c
+
+adiosQuery-myTestCases.obj: myTestCases.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adiosQuery_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adiosQuery-myTestCases.obj `if test -f 'myTestCases.c'; then $(CYGPATH_W) 'myTestCases.c'; else $(CYGPATH_W) '$(srcdir)/myTestCases.c'; fi`
+
+adiosQuery-query_fastbit.o: query_fastbit.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adiosQuery_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adiosQuery-query_fastbit.o `test -f 'query_fastbit.c' || echo '$(srcdir)/'`query_fastbit.c
+
+adiosQuery-query_fastbit.obj: query_fastbit.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adiosQuery_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adiosQuery-query_fastbit.obj `if test -f 'query_fastbit.c'; then $(CYGPATH_W) 'query_fastbit.c'; else $(CYGPATH_W) '$(srcdir)/query_fastbit.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
@@ -534,7 +548,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS) all-local
+all-am: Makefile $(PROGRAMS)
 installdirs:
 install: install-am
 install-exec: install-exec-am
@@ -553,7 +567,6 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
-	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
@@ -620,23 +633,19 @@ uninstall-am:
 
 .MAKE: install-am install-strip
 
-.PHONY: CTAGS GTAGS all all-am all-local check check-am clean \
-	clean-generic clean-libtool clean-noinstPROGRAMS ctags \
-	distclean distclean-compile distclean-generic \
-	distclean-libtool distclean-tags distdir dvi dvi-am html \
-	html-am info info-am install install-am install-data \
-	install-data-am install-dvi install-dvi-am install-exec \
-	install-exec-am install-html install-html-am install-info \
-	install-info-am install-man install-pdf install-pdf-am \
-	install-ps install-ps-am install-strip installcheck \
-	installcheck-am installdirs maintainer-clean \
-	maintainer-clean-generic mostlyclean mostlyclean-compile \
-	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
-	tags uninstall uninstall-am
+.PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
+	clean-libtool clean-noinstPROGRAMS ctags distclean \
+	distclean-compile distclean-generic distclean-libtool \
+	distclean-tags distdir dvi dvi-am html html-am info info-am \
+	install install-am install-data install-data-am install-dvi \
+	install-dvi-am install-exec install-exec-am install-html \
+	install-html-am install-info install-info-am install-man \
+	install-pdf install-pdf-am install-ps install-ps-am \
+	install-strip installcheck installcheck-am installdirs \
+	maintainer-clean maintainer-clean-generic mostlyclean \
+	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
+	pdf pdf-am ps ps-am tags uninstall uninstall-am
 
-
-all-local:
-	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
 .NOEXPORT:
