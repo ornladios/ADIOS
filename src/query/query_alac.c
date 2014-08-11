@@ -727,7 +727,7 @@ void proc_write_block(int blockId, bool isPGCovered, ADIOS_VARTRANSFORM *ti, ADI
 
 	//2. find touched bin
 	bin_id_t low_bin, hi_bin;
-	_Bool are_bins_touched = findBinRange1C(&partitionMeta, &alacQuery, &low_bin,
+	_Bool are_bins_touched = findBinRange1C(&partitionMeta, alacQuery, &low_bin,
 			&hi_bin);
 
 	if (are_bins_touched) {
@@ -867,6 +867,8 @@ void proc_write_block(int blockId, bool isPGCovered, ADIOS_VARTRANSFORM *ti, ADI
 			exit(EXIT_FAILURE);
 		}
 		FREE(input_index);
+	}else {
+		printf("there is no touched bin for constraint \n");
 	}
 }
 
