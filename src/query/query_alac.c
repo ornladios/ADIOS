@@ -504,14 +504,17 @@ int adios_alac_check_candidate(ALMetadata *partitionMeta, bin_id_t startBin, bin
 	uint64_t *srcstart = pgBB->start; uint64_t *srccount = pgBB->count; //PG region dimension
 	int dim = pgBB->ndim;*/
 	uint32_t * decodeRids;
+	bin_offset_t totalElm = bl->binStartOffsets[endBin] - bl->binStartOffsets[startBin];
 	if (decoded){
-		uint64_t  binCompressedLen = bl->binStartOffsets[endBin] - bl->binStartOffsets[startBin];
-		decodeRids= (uint32_t*) malloc(sizeof(uint32_t)*binCompressedLen);
-		ALDecompressRIDs( inputCurPtr, binCompressedLen, decodeRids, &binCompressedLen);
+		const uint64_t *compBinStartOffs = partitionMeta->indexMeta.u.ciim.indexBinStartOffsets;
+		uint64_t  binCompressedLen = compBinStartOffs[endBin] - compBinStartOffs[startBin];
+		decodeRids= (uint32_t*) malloc(sizeof(uint32_t)*totalElm);
+		ALDecompressRIDs( inputCurPtr, binCompressedLen, decodeRids, &totalElm);
+		assert(totalElm== bl->binStartOffsets[endBin] - bl->binStartOffsets[startBin]);
 	}else{
 		decodeRids = (uint32_t *) inputCurPtr;
 	}
-	bin_offset_t totalElm = bl->binStartOffsets[endBin] - bl->binStartOffsets[startBin];
+
 	char * data = (char *) malloc(partitionMeta->elementSize*totalElm); // recovered data in bytes
 	reconstituteData(partitionMeta, startBin, endBin,
 										 lowOrderBytes, data);
