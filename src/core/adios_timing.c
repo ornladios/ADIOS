@@ -122,10 +122,15 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
     if (rank == 0)
     {
         FILE* f = fopen (filename, "w");
+        int event_rank;
 
-        for (i = 0; i < global_event_count; i++)
+        i = 0;
+        for (event_rank = 0; event_rank < size; event_rank++)
         {
-            fprintf (f, "%i%s,%f\n", events[i].type, events[i].is_start?"S":"E", events[i].time);
+            for ( ; i < displs[event_rank] + counts[event_rank]; i++) 
+            {
+                fprintf (f, "%i,%i%s,%f\n", event_rank, events[i].type, events[i].is_start?"S":"E", events[i].time);
+            }
         }
 
         fclose(f);

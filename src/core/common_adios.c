@@ -1094,6 +1094,19 @@ int common_adios_close (int64_t fd_p)
         fd->group->vars_written = v;
     }
 
+
+#ifdef SKEL_TIMING
+    char* extension = ".perf";
+    int name_len = strlen (fd->name);
+    int fn_len = name_len + strlen (extension) + 1;
+    char* fn = (char*) malloc (sizeof (char) * fn_len);
+    
+    sprintf (fn, "%s%s", fd->name, extension);
+
+    adios_timing_write_xml_common (fd_p, fn);
+#endif
+
+
     if (fd->name)
     {
         free (fd->name);
@@ -1130,9 +1143,6 @@ int common_adios_close (int64_t fd_p)
     //timer_reset_timers ();
 #endif
 
-#ifdef SKEL_TIMING
-    adios_timing_write_xml_common (fd_p, "filename.perf");
-#endif
 
     return adios_errno;
 }
