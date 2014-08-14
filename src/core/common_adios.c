@@ -25,6 +25,7 @@
 #include "core/buffer.h"
 #include "core/adios_transport_hooks.h"
 #include "core/adios_logger.h"
+#include "core/adios_timing.h"
 #include "core/qhashtbl.h"
 #include "public/adios_error.h"
 
@@ -1093,6 +1094,19 @@ int common_adios_close (int64_t fd_p)
         fd->group->vars_written = v;
     }
 
+
+#ifdef SKEL_TIMING
+    char* extension = ".perf";
+    int name_len = strlen (fd->name);
+    int fn_len = name_len + strlen (extension) + 1;
+    char* fn = (char*) malloc (sizeof (char) * fn_len);
+    
+    sprintf (fn, "%s%s", fd->name, extension);
+
+    adios_timing_write_xml_common (fd_p, fn);
+#endif
+
+
     if (fd->name)
     {
         free (fd->name);
@@ -1128,6 +1142,7 @@ int common_adios_close (int64_t fd_p)
 
     //timer_reset_timers ();
 #endif
+
 
     return adios_errno;
 }

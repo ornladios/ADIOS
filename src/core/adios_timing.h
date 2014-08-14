@@ -13,6 +13,16 @@
 
 
 #define ADIOS_TIMING_MAX_USER_TIMERS 16
+#define ADIOS_TIMING_MAX_EVENTS 64
+
+
+struct adios_timing_event_struct
+{
+    int type; // index of event type, reference timing_struct->names[type] for name of event type
+    int is_start;
+    double time; // time that the event occurred
+
+};
 
 
 struct adios_timing_struct
@@ -21,16 +31,12 @@ struct adios_timing_struct
     int64_t user_count;
     char ** names;
     double *times;
-    struct adios_timing_event_struct *first_event;
-    struct adios_timing_event_struct *last_event;
-};
+    
+    // keep the last MAX_EVENTS events, older events
+    // are overwritten in a circular fashion
+    int64_t event_count;
+    struct adios_timing_event_struct events[ADIOS_TIMING_MAX_EVENTS];
 
-struct adios_timing_event_struct
-{
-    int type; // index of event type, reference timing_struct->names[type] for name of event type
-    int is_start;
-    double time; // time that the event occurred
-    struct adios_timing_event_struct * next; // link for the singly linked list of events
 };
 
 //int adios_get_timing_count (int64_t fd_p, int64_t * tc);
