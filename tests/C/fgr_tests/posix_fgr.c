@@ -49,9 +49,9 @@ struct obd_uuid {
 };
 
 #include "mpi.h"
-#ifdef HAVE_FGR
+//#ifdef HAVE_FGR
 #include "fgr.h"
-#endif
+//#endif
 
 int main (int argc, char ** argv) 
 {
@@ -67,10 +67,15 @@ int main (int argc, char ** argv)
 	MPI_Comm_rank (comm, &rank);
 	MPI_Comm_size (comm, &size);
 
+        if (fgr_init (0) == false)
+        {
+            fprintf (stderr, "fgr_init() error\n");
+        }
+
 	for (i = 0; i < NX; i++)
 		t[i] = rank*NX + i;
 
-	strcpy (filename, "posix_fgr.bp");
+        sprintf (filename, "%s.%d", "posix_fgr.bin", rank);
 
         MPI_Barrier (MPI_COMM_WORLD);
         double start_time = MPI_Wtime();
@@ -84,29 +89,39 @@ int main (int argc, char ** argv)
 
         lum.lmm_magic = LOV_USER_MAGIC;
         lum.lmm_pattern = 0;
-        lum.lmm_stripe_size = 0;
+        lum.lmm_stripe_size = NX * 8;
         lum.lmm_stripe_count = 1;
-        lum.lmm_stripe_offset = -1;
+//#ifdef HAVE_FGR
+        lum.lmm_stripe_offset = find_myost(comm);
+//        lum.lmm_stripe_offset = rank;
+//#else
+//        lum.lmm_stripe_offset = -1;
+//#endif
 
         ioctl (f, LL_IOC_LOV_SETSTRIPE ,(void *) &lum);
 
-	close (f);
-
-        f = open(filename, O_RDWR, 0644);
-	if (write(f, t, NX*8) == -1)
+        for (i = 0; i < 10; i++)
         {
-            fprintf (stderr, "write() error.\n");
+	    if (write(f, t, NX*8) == -1)
+            {
+                fprintf (stderr, "write() error.\n");
+            }
         }
+
         close (f);
 
         double io_time = MPI_Wtime() - start_time;
-        double min;
-MPI_Reduce(&io_time, &min, 1,
-           MPI_DOUBLE, MPI_MAX, 0,
-           MPI_COMM_WORLD);
-if (rank == 0)
-printf ("time = %4.2f\n", min);
+        double max;
 
+        MPI_Reduce(&io_time, &max, 1,
+                   MPI_DOUBLE, MPI_MAX, 0,
+                   MPI_COMM_WORLD);
+
+        if (rank == 0)
+            printf ("time = %4.2f\n", max);
+
+        fgr_finalize();
 	MPI_Finalize ();
+
 	return 0;
 }
