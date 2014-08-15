@@ -200,7 +200,7 @@ adios_transform_raw_read_request * adios_transform_raw_read_request_new_byte_seg
 adios_transform_raw_read_request * adios_transform_raw_read_request_new_whole_pg(const adios_transform_pg_read_request *pg_reqgroup, void *data) {
 #ifdef RAW_READS_USE_WRITEBLOCK
     // Use absolute time index, but not sub-PG read
-    ADIOS_SELECTION *sel = common_read_selection_writeblock(pg_reqgroup->blockidx_in_pg);
+    ADIOS_SELECTION *sel = common_read_selection_writeblock(pg_reqgroup->blockidx);
     sel->u.block.is_absolute_index = 1;
     return adios_transform_raw_read_request_new(sel, data);
 #else
@@ -266,7 +266,7 @@ adios_transform_pg_read_request * adios_transform_pg_read_request_new(
     new_pg_reqgroup = calloc(sizeof(adios_transform_pg_read_request), 1);
     new_pg_reqgroup->timestep = timestep;
     new_pg_reqgroup->blockidx_in_timestep = timestep_blockidx;
-    new_pg_reqgroup->blockidx_in_pg = blockidx;
+    new_pg_reqgroup->blockidx = blockidx;
     new_pg_reqgroup->raw_var_length = adios_transform_get_transformed_var_size_from_blockinfo(raw_ndim, raw_varblock); //raw_varblock->count[0];
     new_pg_reqgroup->raw_ndim = raw_ndim;
     new_pg_reqgroup->orig_ndim = orig_ndim;
