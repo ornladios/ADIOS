@@ -49,9 +49,9 @@ struct obd_uuid {
 };
 
 #include "mpi.h"
-//#ifdef HAVE_FGR
+#ifdef HAVE_FGR
 #include "fgr.h"
-//#endif
+#endif
 
 int main (int argc, char ** argv) 
 {
@@ -67,11 +67,12 @@ int main (int argc, char ** argv)
 	MPI_Comm_rank (comm, &rank);
 	MPI_Comm_size (comm, &size);
 
+#ifdef HAVE_FGR
         if (fgr_init (0) == false)
         {
             fprintf (stderr, "fgr_init() error\n");
         }
-
+#endif
 	for (i = 0; i < NX; i++)
 		t[i] = rank*NX + i;
 
@@ -91,12 +92,12 @@ int main (int argc, char ** argv)
         lum.lmm_pattern = 0;
         lum.lmm_stripe_size = NX * 8;
         lum.lmm_stripe_count = 1;
-//#ifdef HAVE_FGR
+#ifdef HAVE_FGR
         lum.lmm_stripe_offset = find_myost(comm);
 //        lum.lmm_stripe_offset = rank;
-//#else
-//        lum.lmm_stripe_offset = -1;
-//#endif
+#else
+        lum.lmm_stripe_offset = -1;
+#endif
 
         ioctl (f, LL_IOC_LOV_SETSTRIPE ,(void *) &lum);
 
@@ -119,8 +120,9 @@ int main (int argc, char ** argv)
 
         if (rank == 0)
             printf ("time = %4.2f\n", max);
-
+#ifdef HAVE_FGR
         fgr_finalize();
+#endif
 	MPI_Finalize ();
 
 	return 0;
