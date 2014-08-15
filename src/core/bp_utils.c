@@ -286,7 +286,7 @@ thod returns.
 
     assert (varinfo->nblocks);
 
-    varinfo->sum_nblocks = v->characteristics_count;
+    varinfo->sum_nblocks = (!p->streaming ? v->characteristics_count : varinfo->nblocks[0]) ;
     varinfo->statistics = 0;
     varinfo->blockinfo = 0;
     varinfo->meshinfo = 0;
