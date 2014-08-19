@@ -40,7 +40,7 @@ typedef struct _adios_transform_pg_read_request {
     // PG information
     int timestep;                        // The timestep to which this PG belongs
     int blockidx_in_timestep;            // The block ID of this PG within the timestep
-    int blockidx_in_pg;                  // The block ID of this PG within the variable
+    int blockidx;                        // The block ID of this PG within the variable
     uint64_t raw_var_length;             // Transformed variable data length, in bytes
     int raw_ndim;                        // Number of dimensions in the raw (byte array) dimensions (should always be 1)
     int orig_ndim;                       // Number of dimensions in the original (user-view) dimensions
