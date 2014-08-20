@@ -145,9 +145,8 @@ ADIOS_PG_INTERSECTIONS * adios_find_intersecting_pgs(const ADIOS_FILE *fp, int v
     enum ADIOS_FLAG swap_endianness = (fp->endianness == get_system_endianness()) ? adios_flag_no : adios_flag_yes;
     int to_steps = from_step + nsteps;
 
-    adios_transform_infocache *infocache = common_read_get_file_infocache(fp);
-    const ADIOS_VARINFO *raw_varinfo = adios_transforms_infocache_inq_varinfo(fp, infocache, varid);
-    const ADIOS_TRANSINFO* transinfo = adios_transforms_infocache_inq_transinfo(fp, infocache, varid);
+    const ADIOS_VARINFO *raw_varinfo = common_read_inq_var_raw_byid(fp, varid); // Bypasses data view
+    const ADIOS_TRANSINFO* transinfo = common_read_inq_transinfo(fp, varid); // Bypasses data view
 
     ADIOS_PG_INTERSECTIONS *resulting_intersections = (ADIOS_PG_INTERSECTIONS *)calloc(1, sizeof(ADIOS_PG_INTERSECTIONS));
     resulting_intersections->npg = 0;
