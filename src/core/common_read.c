@@ -272,6 +272,7 @@ ADIOS_FILE * common_read_open (const char * fname,
             fp->mesh_namelist = (char **) realloc (tmp, sizeof (char *) * fp->nmeshes);
             assert (fp->mesh_namelist);
         }
+    }
 
 /*
         int c = 0;
