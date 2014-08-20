@@ -146,7 +146,7 @@ ADIOS_PG_INTERSECTIONS * adios_find_intersecting_pgs(const ADIOS_FILE *fp, int v
     int to_steps = from_step + nsteps;
 
     const ADIOS_VARINFO *raw_varinfo = common_read_inq_var_raw_byid(fp, varid); // Bypasses data view
-    const ADIOS_TRANSINFO* transinfo = common_read_inq_transinfo(fp, varid); // Bypasses data view
+    const ADIOS_TRANSINFO* transinfo = common_read_inq_transinfo(fp, raw_varinfo); // Bypasses data view
 
     ADIOS_PG_INTERSECTIONS *resulting_intersections = (ADIOS_PG_INTERSECTIONS *)calloc(1, sizeof(ADIOS_PG_INTERSECTIONS));
     resulting_intersections->npg = 0;

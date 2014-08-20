@@ -409,7 +409,7 @@ ADIOS_FILE * common_read_open_file (const char * fname,
 }
 
 // NCSU ALACRITY-ADIOS - Cleanup for read request groups
-#define MYFREE(p) {if (p) free((void*)p); (p)=NULL;}
+#define MYFREE(p) {if (p) free((void*)(p)); (p)=NULL;}
 static void clean_up_read_reqgroups(adios_transform_read_request **reqgroups_head) {
     adios_transform_read_request *removed;
     while ((removed = adios_transform_read_request_pop(reqgroups_head)) != NULL) {
@@ -848,7 +848,7 @@ int common_read_inq_var_blockinfo_raw (const ADIOS_FILE *fp, ADIOS_VARINFO * var
     return retval;
 }
 
-#define MYFREE(p) {free(p); (p)=NULL;}
+#define MYFREE(p) {if (p) free((void*)(p)); (p)=NULL;}
 // NCSU ALACRITY-ADIOS - Factored this out to use elsewhere
 static void common_read_free_blockinfo(ADIOS_VARBLOCK **varblock, int sum_nblocks) {
     if (*varblock) {
