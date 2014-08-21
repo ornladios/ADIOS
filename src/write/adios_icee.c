@@ -37,7 +37,7 @@
 #include "core/util.h"
 #include "core/adios_logger.h"
 
-#if HAVE_ICEE==1
+#ifdef HAVE_ICEE
 
 // // evpath libraries
 #include <evpath.h>
@@ -252,16 +252,34 @@ adios_icee_write(
         vp->offsets = calloc(vp->ndims, sizeof(uint64_t));
         
         struct adios_dimension_struct *d = f->dimensions;
-        size_t i;
-        for (i = 0; i < vp->ndims; i++)
+        // Default: Fortran. 
+        if (fd->group->adios_host_language_fortran == adios_flag_yes)
         {
-            vp->gdims[i] = adios_get_dim_value(&d->global_dimension);
-            vp->ldims[i] = adios_get_dim_value(&d->dimension);
-            vp->offsets[i] = adios_get_dim_value(&d->local_offset);
-
-            vp->varlen *= vp->ldims[i];
-
-            d = d->next;
+            int i;
+            for (i = 0; i < vp->ndims; ++i)
+            {
+                vp->gdims[i] = adios_get_dim_value(&d->global_dimension);
+                vp->ldims[i] = adios_get_dim_value(&d->dimension);
+                vp->offsets[i] = adios_get_dim_value(&d->local_offset);
+                
+                vp->varlen *= vp->ldims[i];
+                
+                d = d->next;
+            }
+        }
+        else
+        {
+            int i;
+            for (i = vp->ndims-1; i >= 0; --i)
+            {
+                vp->gdims[i] = adios_get_dim_value(&d->global_dimension);
+                vp->ldims[i] = adios_get_dim_value(&d->dimension);
+                vp->offsets[i] = adios_get_dim_value(&d->local_offset);
+                
+                vp->varlen *= vp->ldims[i];
+                
+                d = d->next;
+            }
         }
     }
     
