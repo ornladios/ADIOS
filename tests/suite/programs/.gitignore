@@ -15,5 +15,11 @@ path_test
 reuse_dim
 hashtest
 transforms
+big_file
+blocks
+group_free_test
+steps_read_file
+steps_read_stream
+steps_write
 
 *.bp
