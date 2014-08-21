@@ -221,10 +221,18 @@ double dsum(const int len, const double* data)
 
 void icee_data_print(const int type, const uint64_t varlen, const char* data)
 {
+    fprintf(stderr, "%10s : %p\n", "*data", data);
     switch (type)
     {
+    case 2: // int
+        if (data)
+        {
+            fprintf(stderr, "%10s : %d,%d,%d,...\n", "data", 
+                    ((int*)data)[0], ((int*)data)[1], ((int*)data)[2]);
+            fprintf(stderr, "%10s : %g\n", "sum", dsum(varlen/8, (double*)data));
+        }
+        break;
     case 6: // double
-        fprintf(stderr, "%10s : %p\n", "*data", data);
         if (data)
         {
             fprintf(stderr, "%10s : %g,%g,%g,...\n", "data", 
