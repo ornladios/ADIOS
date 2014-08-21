@@ -65,7 +65,7 @@
 ///////////////////////////
 // Global Variables
 ///////////////////////////
-#include "icee.h"
+#include "adios_icee.h"
 
 #define DUMP(fmt, ...) fprintf(stderr, ">>> "fmt"\n", ## __VA_ARGS__); 
 
