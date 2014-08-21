@@ -15,12 +15,15 @@
 
 void adios_query_hooks_init(struct adios_query_hooks_struct ** t, enum ADIOS_QUERY_TOOL tool )
 { 
-  static int has_init_called = 0;
-  if (has_init_called) {
-      return;
-  }
-
-  has_init_called = 1;
+	static int has_init_called[ADIOS_QUERY_TOOL_COUNT] = {0};
+	if (tool < 0 || tool >= ADIOS_QUERY_TOOL_COUNT) {
+		fprintf(stderr, "adios_query_hooks_init(): tool ID %d is an invalid tool identifier\n", (int)tool);
+		exit(EXIT_FAILURE);
+	}
+	if (has_init_called[tool]) {
+		return;
+	}
+	has_init_called[tool] = 1;
 
   fflush(stdout);
  
