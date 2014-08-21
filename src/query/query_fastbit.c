@@ -315,15 +315,15 @@ ADIOS_SELECTION* getSpatialCoordinatesDefault(ADIOS_VARINFO* var, uint64_t* coor
   return result;
 }
 
-ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundry, uint64_t* coordinates, uint64_t retrivalSize, ADIOS_VARINFO* v)
+ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundary, uint64_t* coordinates, uint64_t retrivalSize, ADIOS_VARINFO* v)
 {
   int k = 0;
   uint64_t i=0;
 
-  switch (outputBoundry->type) {
+  switch (outputBoundary->type) {
   case  ADIOS_SELECTION_BOUNDINGBOX:    
     {
-      const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(outputBoundry->u.bb);
+      const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(outputBoundary->u.bb);
 
       uint64_t arraySize = retrivalSize * (bb->ndim);
       uint64_t* pointArray = (uint64_t*) (malloc(arraySize  * sizeof(uint64_t)));
@@ -341,7 +341,7 @@ ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundry, uint64_t*
     }
   case ADIOS_SELECTION_POINTS:
     {
-      const ADIOS_SELECTION_POINTS_STRUCT *points = &(outputBoundry->u.points);	      
+      const ADIOS_SELECTION_POINTS_STRUCT *points = &(outputBoundary->u.points);	      
 
       uint64_t arraySize = retrivalSize * (points->ndim);
       uint64_t* pointArray = (uint64_t*) (malloc(arraySize  * sizeof(uint64_t)));
@@ -368,7 +368,7 @@ ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundry, uint64_t*
     //  if it is blocks, should use bounding box to retrive the coordinates
   case ADIOS_SELECTION_WRITEBLOCK:
     {
-      const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb = &(outputBoundry->u.block);
+      const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb = &(outputBoundary->u.block);
       
       uint64_t arraySize = retrivalSize * (v->ndim);
       uint64_t* pointArray = (uint64_t*) (malloc(arraySize  * sizeof(uint64_t)));
@@ -405,7 +405,7 @@ ADIOS_QUERY* getFirstLeaf(ADIOS_QUERY* q) {
 
 int  adios_query_fastbit_get_selection_method(ADIOS_QUERY* q, 
 					      uint64_t batchSize, 
-					      ADIOS_SELECTION* outputBoundry, 
+					      ADIOS_SELECTION* outputBoundary, 
 					      ADIOS_SELECTION** result)
 {
   /*
@@ -432,18 +432,23 @@ int  adios_query_fastbit_get_selection_method(ADIOS_QUERY* q,
   fastbit_selection_get_coordinates(q->_queryInternal, coordinates, retrivalSize, q->_lastRead);
     
   q->_lastRead += retrivalSize;
-  
-  if (outputBoundry == 0) {
-    if ((getFirstLeaf(q) == NULL) || (getFirstLeaf(q)->_var == NULL)) {
+
+  if (outputBoundary == 0) {
+    ADIOS_QUERY* firstLeaf = getFirstLeaf(q);
+    if ((firstLeaf == NULL) || (firstLeaf->_var == NULL)) {
 	printf(":: Error: unable to get a valid first leaf! Exit. \n");
 	return -1;
       }
-    *result = getSpatialCoordinatesDefault(getFirstLeaf(q)->_var, coordinates, retrivalSize);
+    if (firstLeaf->_sel == NULL) {
+      *result = getSpatialCoordinatesDefault(firstLeaf->_var, coordinates, retrivalSize);
+    } else {
+      *result = getSpatialCoordinates(firstLeaf->_sel, coordinates, retrivalSize, firstLeaf->_var);
+    }
   } else {
-    //*result = getSpatialCoordinates(outputBoundry, coordinates, retrivalSize);
+    //*result = getSpatialCoordinates(outputBoundary, coordinates, retrivalSize);
     // variable needs to be in place to handle the block information
     // not sure wheather this is well defined case of combined query?! but the first varibale will be used for block information calculation
-    *result = getSpatialCoordinates(outputBoundry, coordinates, retrivalSize, getFirstLeaf(q)->_var);
+    *result = getSpatialCoordinates(outputBoundary, coordinates, retrivalSize, getFirstLeaf(q)->_var);
 
     if (*result == 0) {
       return -1;
@@ -476,7 +481,7 @@ int  adios_query_fastbit_free_method(ADIOS_QUERY* query)
     return;
   }
 
-  printf(":: free %s\n", query->_condition);
+  printf(":: free %s  has parent? %d\n", query->_condition, query->_hasParent);
   free(query->_value);
   free(query->_dataSlice);
   free(query->_condition);
@@ -484,7 +489,10 @@ int  adios_query_fastbit_free_method(ADIOS_QUERY* query)
   //adios_selection_delete(query->_sel);
   adios_free_varinfo(query->_var);
 
-  //fastbit_selection_free(query->_queryInternal);
+  // can free _queryInternal only once
+  if(query->_hasParent == 0) {
+    fastbit_selection_free(query->_queryInternal);
+  }
   free(query);
 
 }
@@ -507,14 +515,6 @@ void assert(void* ptr, const char* notes)
 /*
 
 */
-
-
-void usage(char* prog) 
-{
-  printf("Usage: %s <BP-file> [query]\n e.g. ./test_v1 my.bp \"x1 > 10\" \n", prog);
-}
-
-
 
 
 void getVarName(const char* sliceStr, char** varName, char** dimDef)

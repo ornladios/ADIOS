@@ -11,13 +11,8 @@
   int     adios_query_##a##_free_method (ADIOS_QUERY* q);			\
   int     adios_query_##a##_clean_method();
 
-
-// default query tool is fastbit
-//FORWARD_DECLARE(fastbit)
-
+FORWARD_DECLARE(fastbit)
 FORWARD_DECLARE(alac)
-
-
 
 typedef int      (* ADIOS_QUERY_FREE_METHOD_FN) (ADIOS_QUERY* q);
 typedef int      (* ADIOS_QUERY_INIT_METHOD_FN) ();

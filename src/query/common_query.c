@@ -3,13 +3,40 @@
 #include <string.h>
 #include <inttypes.h>
 
-
 #include "common_query.h"
 #include "adios_query_hooks.h"
 
 static struct adios_query_hooks_struct * gAdios_query_hooks = 0;
 
 enum ADIOS_QUERY_TOOL gAssigned_query_tool = 0;
+
+ADIOS_SELECTION* getAdiosDefaultBoundingBox(ADIOS_VARINFO* v) 
+{
+  if (v->ndim == 0) {
+    return NULL;
+  }
+  /*uint64_t start[v->ndim];
+  uint64_t count[v->ndim];
+
+  int i=0;
+  for (i=0; i<v->ndim; i++) {
+    start[i] = 0;
+    count[i] = v->dims[i];
+  }
+  */
+  uint64_t* start = malloc(v->ndim * sizeof(uint64_t));
+  uint64_t* count = malloc(v->ndim * sizeof(uint64_t));
+
+  int i=0;
+                                                                                                                                                                         
+  for (i=0; i<v->ndim; i++) {
+    start[i] = 0;
+    count[i] = v->dims[i];
+  }   
+
+  ADIOS_SELECTION* result =  adios_selection_boundingbox(v->ndim, start, count);
+  return result;
+}
 
 void common_query_init(enum ADIOS_QUERY_TOOL tool)
 {
@@ -20,6 +47,9 @@ void common_query_init(enum ADIOS_QUERY_TOOL tool)
 
 void common_query_free(ADIOS_QUERY* q)
 {
+  if (q->_deleteSelectionWhenFreed) {
+    adios_selection_delete(q->_sel);
+  }
   gAdios_query_hooks[gAssigned_query_tool].adios_query_free_method_fn(q);
 }
 
@@ -40,7 +70,6 @@ int getTotalByteSize(ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* sel, uint
          *total_byte_size *=v->dims[s];
 	 *dataSize *= v->dims[s];
 	printf(" dim %" PRIu64 "default count %" PRIu64 "\n", s, v->dims[s]);
-
     }
     return 0;
   }
@@ -51,11 +80,12 @@ int getTotalByteSize(ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* sel, uint
       const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(sel->u.bb);
       uint64_t* count = bb->count;            
       uint64_t* start = bb->start;            
-      uint64_t s=0;
+
+      int s=0;
 
       for (s=0; s<v->ndim; s++) {
 	   if (start[s]+count[s] > v->dims[s]) {
-	     printf(" invalid bounding box start %ld plus count %ld exceeds dim size: %ld\n", start[s], count[s], v->dims[s]);
+	     printf(" Invalid bounding box start %" PRIu64 " + count %" PRIu64 " exceeds dim size: %" PRIu64 "\n", start[s], count[s], v->dims[s]);
 	     return -1;
 	   }
 	   *total_byte_size *=count[s];
@@ -120,6 +150,8 @@ void initialize(ADIOS_QUERY* result)
   result->_onTimeStep = -1; // no data recorded
   result->_maxResultDesired = 0; // init
   result->_lastRead = 0; // init
+  result->_hasParent = 0;
+  result->_deleteSelectionWhenFreed = 0;
 }
 
 ADIOS_QUERY* common_query_create(ADIOS_FILE* f, 
@@ -135,7 +167,6 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f,
 
   if (gAssigned_query_tool == ADIOS_QUERY_TOOL_FASTBIT || gAssigned_query_tool
   			== ADIOS_QUERY_TOOL_ALACRITY) {
-  		//TODO:
   		if ((queryBoundary->type != ADIOS_SELECTION_BOUNDINGBOX)
   				&& (queryBoundary->type != ADIOS_SELECTION_POINTS)
   				&& (queryBoundary->type != ADIOS_SELECTION_WRITEBLOCK)) {
@@ -150,7 +181,6 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f,
     exit(EXIT_FAILURE);
   }
 
-
   // get data from bp file
   ADIOS_VARINFO* v = adios_inq_var(f, varName);
   if (v == NULL) {
@@ -158,29 +188,20 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f,
     exit(EXIT_FAILURE);
   }
 
-
   uint64_t total_byte_size, dataSize;
 
-
-  if (queryBoundary == NULL){
-  		// make the query bounding box as the largest one
-  		if ( v->ndim == 3){
-  			uint64_t  start [] = {0, 0, 0};
-  			uint64_t  count [] = {v->dims[0], v->dims[1],v->dims[2]};
-  			queryBoundary = adios_selection_boundingbox(v->ndim, start, count);
-  		}else if (v->ndim == 2) {
-  			uint64_t  start [] = {0, 0};
-  			uint64_t  count [] = {v->dims[0], v->dims[1]};
-  			queryBoundary = adios_selection_boundingbox(v->ndim, start, count);
-  		}else if (v->ndim == 1){
-  			uint64_t  start [] = {0};
-  			uint64_t  count [] = {v->dims[0]};
-  			queryBoundary = adios_selection_boundingbox(v->ndim, start, count);
-  		}
-
+  int defaultBoundaryUsed = 0;
+  if (queryBoundary == NULL) {
+#ifdef ALACRITY
+    queryBoundary = getAdiosDefaultBoundingBox(v);
+    defaultBoundaryUsed = 1;
+#endif
   }
 
   if (getTotalByteSize(f, v, queryBoundary, &total_byte_size, &dataSize) < 0) {
+    if (defaultBoundaryUsed) {
+      adios_selection_delete(queryBoundary);
+    }
     exit(EXIT_FAILURE);
   }   
 
@@ -206,6 +227,8 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f,
 
   (result->_condition)[strlen(result->_condition)] = 0;
 
+  initialize(result);
+
   result->_var = v;
   result->_f = f;
 
@@ -213,6 +236,7 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f,
   result->_rawDataSize = dataSize;
 
   result->_sel = queryBoundary;
+  result->_deleteSelectionWhenFreed = defaultBoundaryUsed;
 
   result->_op = op;
   result->_value = strdup(value);
@@ -221,7 +245,6 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f,
   result->_left = NULL;
   result->_right = NULL;
 
-  initialize(result);
   return result;
 }
 					
@@ -315,6 +338,8 @@ ADIOS_QUERY* common_query_combine(ADIOS_QUERY* q1,
   }
   result->_condition[strlen(result->_condition)]=0; 
 
+  q1->_hasParent = 1;
+  q2->_hasParent = 1;
   result->_left = q1;
   result->_right = q2;
   result->_leftToRightOp = operator;
@@ -357,7 +382,6 @@ void updateBlockSize(const ADIOS_SELECTION_WRITEBLOCK_STRUCT* wb, ADIOS_QUERY* l
     }
 
   printf("\t\t   block %d (linedup as %d), bytes: %" PRIu64 ", size = %" PRIu64 " \n", wb->index, serializedBlockNum, total_byte_size, dataSize);
-
 
   if (dataSize != leaf->_rawDataSize) {
     printf("\t\t reallocate dataSlice due to block size change\n");
@@ -429,7 +453,7 @@ int common_query_get_selection(ADIOS_QUERY* q,
 			       //const char* varName,
 			       //int timeStep, 
 			        uint64_t batchSize, // limited by maxResult
-				ADIOS_SELECTION* outputBoundry, 
+				ADIOS_SELECTION* outputBoundary, 
 				ADIOS_SELECTION** result)
 {
   if ((q->_onTimeStep >= 0) && (q->_onTimeStep != gCurrentTimeStep)) 
@@ -446,7 +470,7 @@ int common_query_get_selection(ADIOS_QUERY* q,
       }
     }
 
-  return gAdios_query_hooks[gAssigned_query_tool].adios_query_get_selection_method_fn(q,  batchSize, outputBoundry, result);
+  return gAdios_query_hooks[gAssigned_query_tool].adios_query_get_selection_method_fn(q,  batchSize, outputBoundary, result);
 }
 
 

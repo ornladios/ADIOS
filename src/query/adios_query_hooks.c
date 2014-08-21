@@ -16,33 +16,31 @@
 void adios_query_hooks_init(struct adios_query_hooks_struct ** t, enum ADIOS_QUERY_TOOL tool )
 { 
   static int has_init_called = 0;
-
   if (has_init_called) {
       return;
-  }
-  
-  fflush(stdout);
-
- 
-  *t = (struct adios_query_hooks_struct *) calloc (ADIOS_QUERY_TOOL_COUNT, sizeof (struct adios_query_hooks_struct));
-
-  //#ifdef _USE_FASTBIT
-  // default initiation
-
-  /*if (tool ==  ADIOS_QUERY_TOOL_FASTBIT){
-	  ASSIGN_FNS(fastbit, ADIOS_QUERY_TOOL_FASTBIT);
-
-  }else */if ( tool == ADIOS_QUERY_TOOL_ALACRITY){
-	  ASSIGN_FNS(alac, ADIOS_QUERY_TOOL_ALACRITY);
-  }else {
-	  printf("unknown query tool type \n");
-	  exit(EXIT_FAILURE);
   }
 
   has_init_called = 1;
 
-  //#endif
+  fflush(stdout);
+ 
+  *t = (struct adios_query_hooks_struct *) calloc (ADIOS_QUERY_TOOL_COUNT, sizeof (struct adios_query_hooks_struct));
 
+  switch (tool) {
+#ifdef ALACRITY
+  case ADIOS_QUERY_TOOL_ALACRITY:
+	  ASSIGN_FNS(alac, ADIOS_QUERY_TOOL_ALACRITY);
+	  break;
+#endif
+#ifdef FASTBIT
+  case ADIOS_QUERY_TOOL_FASTBIT:
+	  ASSIGN_FNS(alac, ADIOS_QUERY_TOOL_FASTBIT);
+	  break;
+#endif
+  default:
+	  printf("unknown query tool type %d\n", (int)tool);
+	  exit(EXIT_FAILURE);
+  }
 }
 
 #undef ASSIGN_FNS
