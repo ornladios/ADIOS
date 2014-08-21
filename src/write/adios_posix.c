@@ -195,7 +195,9 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
         mdfile_name = 0;
     }
 
-    fd->subfile_index = p->rank;
+#ifdef HAVE_MPI
+    fd->subfile_index = p->rank; // Only if HAVE_MPI
+#endif
 
     struct stat s;
     if (stat (subfile_name, &s) == 0)
