@@ -1,7 +1,7 @@
 
 /*
-    adios_flexpath.c
-    uses evpath for io in conjunction with read/read_flexpath.c
+    adios_icee.c
+    uses evpath for io in conjunction with read/read_icee.c
 */
 
 #include <stdio.h>
@@ -59,6 +59,7 @@ EVstone remote_stone;
 EVsource source;
 
 icee_fileinfo_rec_ptr_t fp = NULL;
+int reverse_dim = 0;
 
 int get_ndims(struct adios_var_struct *f)
 {
@@ -75,7 +76,7 @@ int get_ndims(struct adios_var_struct *f)
     return ndims;
 }
 
-// Initializes flexpath write local data structures
+// Initializes icee write local data structures
 extern void 
 adios_icee_init(const PairStruct *params, struct adios_method_struct *method) 
 {
@@ -145,6 +146,10 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
             }
 
             free(plist);
+        }
+        else if (!strcasecmp (p->name, "reverse_dim"))
+        {
+            reverse_dim = 1;
         }
 
         p = p->next;
@@ -253,10 +258,10 @@ adios_icee_write(
         
         struct adios_dimension_struct *d = f->dimensions;
         // Default: Fortran. 
-        if (fd->group->adios_host_language_fortran == adios_flag_yes)
+        if (reverse_dim)
         {
             int i;
-            for (i = 0; i < vp->ndims; ++i)
+            for (i = vp->ndims-1; i >= 0; --i)
             {
                 vp->gdims[i] = adios_get_dim_value(&d->global_dimension);
                 vp->ldims[i] = adios_get_dim_value(&d->dimension);
@@ -270,7 +275,7 @@ adios_icee_write(
         else
         {
             int i;
-            for (i = vp->ndims-1; i >= 0; --i)
+            for (i = 0; i < vp->ndims; ++i)
             {
                 vp->gdims[i] = adios_get_dim_value(&d->global_dimension);
                 vp->ldims[i] = adios_get_dim_value(&d->dimension);
@@ -377,7 +382,7 @@ adios_icee_read(struct adios_file_struct *fd,
 {
 }
 
-#else // print empty version of all functions (if HAVE_FLEXPATH == 0)
+#else // print empty version of all functions (if HAVE_ICEE == 0)
 
 void 
 adios_icee_read(struct adios_file_struct *fd, 
