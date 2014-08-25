@@ -88,7 +88,7 @@ program tri2d_f_noxml
     call processArgs
 
     if (arg_err == 1) then
-        return
+        stop
     endif
 
     ndx = 4
