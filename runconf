@@ -1080,6 +1080,35 @@ elif [ `hostname | cut -c 1-4` == "qliu" ]; then
         #--with-hdf5=/home/thkorde/local \
         #--with-netcdf=/home/thkorde/local
 
+
+elif [ `hostname | cut -c 1-2` == "ln" ]; then
+    #######################
+    # Tianhe-1A           #
+    #######################
+    echo "Configure on Tianhe-1A."
+    #export MPICC=
+    #export MPICXX=
+    #export MPIFC=
+    export CC=icc
+    export CXX=icpc
+    export FC=ifort
+
+    ${SRCDIR}/configure --prefix=/vol6/home/Jeremy/adios-install \
+        --enable-dependency-tracking \
+        --with-mxml=/vol6/home/Jeremy/mxml-install \
+        --enable-skel-timing \
+        --disable-maintainer-mode 
+
+
+        #--with-phdf5=/opt/hdf5-1.8.12-parallel \
+        #--with-hdf5=/opt/hdf5-1.8.12 \
+        #--with-netcdf=/opt/netcdf-3.6.3 \
+        #--with-zlib=/opt/zlib  \
+        #--with-szip=/opt/szip-2.1 \
+        #--with-bzip2=/usr/lib/i386-linux-gnu \
+        #--with-isobar=/opt/isobar \
+        #--with-flexpath=/opt/chaos
+
 elif [ `hostname | cut -c 1-5` == "adios" ]; then
 
     #######################
