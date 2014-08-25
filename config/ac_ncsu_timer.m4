@@ -18,7 +18,7 @@ if test "x$with_timer" != xno -a "x$with_timer" != x; then
 
     TIMER_CPPFLAGS="-I$with_timer/include"
     TIMER_LDFLAGS="-L$with_timer/lib"
-    TIMER_LIBS="-ltimer"
+    TIMER_LIBS="-ltimer -lm"
 
     saveLIB="$LIB"
     saveLDFLAGS="$LDFLAGS"
@@ -45,7 +45,8 @@ if test "x$with_timer" != xno -a "x$with_timer" != x; then
       )],
       [AC_MSG_FAILURE(
         [Cannot successfully link with the timer lib. Make sure it has been properly installed at the path specified ($with_timer).]dnl
-      )]dnl
+      )],
+      [-lm]dnl
     )
 
     LIBS="$saveLIBS"

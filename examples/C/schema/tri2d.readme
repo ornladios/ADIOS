@@ -48,4 +48,4 @@ $ mpirun -np 12 ./tri2d_noxml 4 3
 $ bpls -l tri2d.bp
 
 tri2d.n.png is a plot of how the data over the nx_global*ny_global points should look like if visualized.
-/ccs/proj/e2e/plotter/sith/plotter2d -f tri2d.bp -triangle -yvar /cells -xvar /points -v N -o tri2d.n.png -d -d
+/ccs/proj/e2e/plotter/sith/plotter2d -f tri2d.bp -triangle -yvar cells -xvar points -v N -o tri2d.n.png -d -d

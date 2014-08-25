@@ -3,9 +3,6 @@ INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public
 
 AUTOMAKE_OPTIONS = no-dependencies
 
-all-local:
-	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
-
 noinst_PROGRAMS=posix_fgr
 
 posix_fgr_SOURCES = posix_fgr.c

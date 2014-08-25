@@ -41,7 +41,7 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r);
 
 static int adios_step_to_time (const ADIOS_FILE * fp, int varid, int from_steps);
 static int map_req_varid (const ADIOS_FILE * fp, int varid);
-static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r);
+static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r, int step_offset);
 
 // NCSU - For custom memory allocation
 #define CALLOC(var, num, sz, comment)\
@@ -2273,7 +2273,7 @@ typedef struct {
 // NCSU ALACRITY-ADIOS - Factored out VARBLOCK inquiry function to permit sourcing
 static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VARINFO * varinfo, int use_pretransform_dimensions) {
     struct BP_PROC * p = (struct BP_PROC *) fp->fh;
-    int i, file_is_fortran;
+    int i, j, file_is_fortran, nblks, time;
     uint64_t * ldims, * gdims, * offsets;
     BP_FILE * fh;
     struct adios_index_var_struct_v1 * var_root;
@@ -2283,12 +2283,16 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
 
     fh = (BP_FILE *) p->fh;
     file_is_fortran = is_fortran_file (fh);
+    // For file mode: return all blocks info;
+    // For streaming mode: return all blocks within the current step
+    // 08/14/2014 Q. Liu
+    nblks = (p->streaming ? varinfo->nblocks[0] : varinfo->sum_nblocks);
 
     // Perform variable ID mapping, since the input to this function is user-perceived
     int mapped_id = map_req_varid (fp, varinfo->varid);
     var_root = bp_find_var_byid (fh, mapped_id);
 
-    blockinfo = (ADIOS_VARBLOCK *) malloc (varinfo->sum_nblocks * sizeof (ADIOS_VARBLOCK));
+    blockinfo = (ADIOS_VARBLOCK *) malloc (nblks * sizeof (ADIOS_VARBLOCK));
     assert (blockinfo);
 
     if (use_pretransform_dimensions)
@@ -2307,17 +2311,44 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
     offsets = (uint64_t *) malloc (dimcount * 8);
     assert (ldims && gdims && offsets);
 
-    for (i = 0; i < varinfo->sum_nblocks; i++)
+    time = adios_step_to_time (fp, varinfo->varid, 0);
+
+    j = 0; 
+    for (i = 0; i < nblks; i++)
     {
         blockinfo[i].start = (uint64_t *) malloc (dimcount * 8);
         blockinfo[i].count = (uint64_t *) malloc (dimcount * 8);
         assert (blockinfo[i].start && blockinfo[i].count);
 
-        bp_get_dimension_generic_notime (use_pretransform_dimensions ?
-                                            &var_root->characteristics[i].transform.pre_transform_dimensions :
-                                            &var_root->characteristics[i].dims,
-                                         ldims, gdims, offsets, file_is_fortran
-                                         );
+        if (!p->streaming)
+        {
+            bp_get_dimension_generic_notime (use_pretransform_dimensions ?
+                                             &var_root->characteristics[i].transform.pre_transform_dimensions :
+                                             &var_root->characteristics[i].dims,
+                                             ldims, gdims, offsets, file_is_fortran
+                                            );
+        }
+        else
+        {
+            while (j < var_root->characteristics_count && var_root->characteristics[j].time_index != time)
+            {
+                j++;
+            }
+
+            if (j < var_root->characteristics_count)
+            {
+                bp_get_dimension_generic_notime (use_pretransform_dimensions ?
+                                                 &var_root->characteristics[j].transform.pre_transform_dimensions :
+                                                 &var_root->characteristics[j].dims,
+                                                 ldims, gdims, offsets, file_is_fortran
+                                                );
+                j++;
+            }
+            else
+            {
+                // shoudn't be here.
+            }
+        }
 
         // NCSU ALACRITY-ADIOS - If a time dimension was removed above, update
         // dimcount so that dimension copy/swapping works below
@@ -2447,7 +2478,7 @@ uint64_t get_req_datasize (const ADIOS_FILE * fp, read_request * r, struct adios
         // NCSU ALACRITY-ADIOS: Adding absoluet PG indexing
         pgidx = sel->u.block.is_absolute_index ?
                     sel->u.block.index :
-                adios_wbidx_to_pgidx (fp, r);
+                adios_wbidx_to_pgidx (fp, r, 0);
         // NCSU ALACRITY-ADIOS: Adding sub-PG writeblock read support
         if (sel->u.block.is_sub_pg_selection) {
             datasize = sel->u.block.nelements;
@@ -3413,7 +3444,7 @@ static int map_req_varid (const ADIOS_FILE * fp, int varid)
 /* This routine converts the write block index, which is of a particular step,
  * to the adios internal PG index.
  */
-static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r)
+static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r, int step_offset)
 {
     BP_PROC * p = (BP_PROC *) fp->fh;
     BP_FILE * fh = (BP_FILE *) p->fh;
@@ -3426,7 +3457,7 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r)
         return -1;
     }
 
-    time = adios_step_to_time (fp, r->varid, r->from_steps);
+    time = adios_step_to_time (fp, r->varid, r->from_steps + step_offset);
     mapped_varid = r->varid; //map_req_varid (fp, r->varid); // NCSU ALACRITY-ADIOS: Bugfix: r->varid has already been mapped
     v = bp_find_var_byid (fh, mapped_varid);
 
@@ -3476,7 +3507,7 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
     BP_PROC * p = (BP_PROC *)fp->fh;
     BP_FILE * fh = (BP_FILE *)p->fh;;
     struct adios_index_var_struct_v1 * v;
-    int j, varid, start_idx, idx;
+    int i, j, varid, start_idx, idx;
     int ndim, has_subfile;
     uint64_t ldims[32], gdims[32], offsets[32];
     int size_of_type;
@@ -3499,102 +3530,107 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
     assert(r->sel->type == ADIOS_SELECTION_WRITEBLOCK);
     wb = &r->sel->u.block;
 
-    idx = wb->is_absolute_index ? wb->index : adios_wbidx_to_pgidx (fp, r);
-    //if (!wb->is_absolute_index) printf("Timestep-relative writeblock index used!\n");
-    assert (idx >= 0);
-
-    ndim = v->characteristics [idx].dims.count;
-    size_of_type = bp_get_type_size (v->type, v->characteristics [idx].value);
-
-    if (ndim == 0)
+    for (i = 0; i < r->nsteps; i++)
     {
-        r->datasize = size_of_type;
-        slice_size = size_of_type;
-        start_idx = 0; // OPS macros below need it
+        idx = wb->is_absolute_index ? wb->index : adios_wbidx_to_pgidx (fp, r, i);
+        //if (!wb->is_absolute_index) printf("Timestep-relative writeblock index used!\n");
+        assert (idx >= 0);
 
-        if (v->type == adios_string)
+        ndim = v->characteristics [idx].dims.count;
+        size_of_type = bp_get_type_size (v->type, v->characteristics [idx].value);
+
+        if (ndim == 0)
         {
-            size_of_type--;
-        }
+            r->datasize = size_of_type;
+            slice_size = size_of_type;
+            start_idx = 0; // OPS macros below need it
 
-        slice_offset = v->characteristics[idx].payload_offset;
+            if (v->type == adios_string)
+            {
+                size_of_type--;
+            }
 
-        if (!has_subfile)
-        {
-            MPI_FILE_READ_OPS1
+            slice_offset = v->characteristics[idx].payload_offset;
+
+            if (!has_subfile)
+            {
+                MPI_FILE_READ_OPS1
+            }
+            else
+            {
+                MPI_FILE_READ_OPS2
+            }
+
+            memcpy((char *)data, fh->b->buff + fh->b->offset, size_of_type);
+
+            if (fh->mfooter.change_endianness == adios_flag_yes)
+            {
+                 change_endianness ((char *)data,
+                                    size_of_type,
+                                    v->type
+                                   );
+            }
+
+            if (v->type == adios_string)
+            {
+                ((char*)data)[size_of_type] = '\0';
+            }
+
+            data = (char *) data + size_of_type;
         }
         else
         {
-            MPI_FILE_READ_OPS2
-        }
+            // NCSU ALACRITY-ADIOS: Added sub-PG writeblock selection support
+            // If this is a sub-PG selection, use nelements to compute slice_size
+            // instead
+            if (wb->is_sub_pg_selection) {
+                // The start and end of the sub-PG selection must fall within the PG
+                slice_size = wb->nelements * size_of_type;
+            } else {
+                // NCSU ALACRITY-ADIOS: This used to not be inside an else block
+                // Else, do the old method of computing PG size from bounds
+                slice_size = size_of_type;
 
-        memcpy((char *)data, fh->b->buff + fh->b->offset, size_of_type);
-
-        if (fh->mfooter.change_endianness == adios_flag_yes)
-        {
-            change_endianness ((char *)data,
-                               size_of_type,
-                               v->type
-                              );
-        }
-
-        if (v->type == adios_string)
-        {
-            ((char*)data)[size_of_type] = '\0';
-        }
-    }
-    else
-    {
-        // NCSU ALACRITY-ADIOS: Added sub-PG writeblock selection support
-        // If this is a sub-PG selection, use nelements to compute slice_size
-        // instead
-        if (wb->is_sub_pg_selection) {
-            // The start and end of the sub-PG selection must fall within the PG
-            slice_size = wb->nelements * size_of_type;
-        } else {
-            // NCSU ALACRITY-ADIOS: This used to not be inside an else block
-            // Else, do the old method of computing PG size from bounds
-            slice_size = size_of_type;
-
-            /* To get ldims for the chunk and then calculate payload size */
-            bp_get_dimension_characteristics(&(v->characteristics[idx]),
+                /* To get ldims for the chunk and then calculate payload size */
+                bp_get_dimension_characteristics(&(v->characteristics[idx]),
                                              ldims, gdims, offsets);
 
-            for (j = 0; j < ndim; j++)
-            {
-                slice_size *= ldims [j];
+                for (j = 0; j < ndim; j++)
+                {
+                    slice_size *= ldims [j];
+                }
             }
-        }
 
-        r->datasize = slice_size;
-        /* Note: MPI_FILE_READ_OPS1 - for reading single BP file.
-         *       MPI_FILE_READ_OPS2 - for reading those with subfiles.
-         * Whenever to use OPS macro, start_idx and idx variable needs to be
-         * properly set.
-         */
-        start_idx = 0;
-        slice_offset = v->characteristics[idx].payload_offset;
+            r->datasize = slice_size;
+            /* Note: MPI_FILE_READ_OPS1 - for reading single BP file.
+             *       MPI_FILE_READ_OPS2 - for reading those with subfiles.
+             * Whenever to use OPS macro, start_idx and idx variable needs to be
+             * properly set.
+             */
+            start_idx = 0;
+            slice_offset = v->characteristics[idx].payload_offset;
 
-        // NCSU ALACRITY-ADIOS: Added sub-PG writeblock selection support
-        // If this is a sub-PG read, add the element_offset within the PG to the base offset in the file
-        if (wb->is_sub_pg_selection) {
-            slice_offset += wb->element_offset * size_of_type;
-        }
+            // NCSU ALACRITY-ADIOS: Added sub-PG writeblock selection support
+            // If this is a sub-PG read, add the element_offset within the PG to the base offset in the file
+            if (wb->is_sub_pg_selection) {
+                slice_offset += wb->element_offset * size_of_type;
+            }
 
-        if (!has_subfile)
-        {
-            MPI_FILE_READ_OPS1_BUF(data) // NCSU ALACRITY-ADIOS: Read data directly to user buffer
-        }
-        else
-        {
-            MPI_FILE_READ_OPS2_BUF(data) // NCSU ALACRITY-ADIOS: Read data directly to user buffer
-        }
+            if (!has_subfile)
+            {
+                MPI_FILE_READ_OPS1_BUF(data) // NCSU ALACRITY-ADIOS: Read data directly to user buffer
+            }
+            else
+            {
+                MPI_FILE_READ_OPS2_BUF(data) // NCSU ALACRITY-ADIOS: Read data directly to user buffer
+            }
 
-        // NCSU ALACRITY-ADIOS: Reading directly to user buffer eliminates the need for this memcpy (profiling revealed it was hurting performance for transformed data)
-        //memcpy ((char *)data, fh->b->buff + fh->b->offset, slice_size);
-        if (fh->mfooter.change_endianness == adios_flag_yes)
-        {
-            change_endianness ((char *)data, slice_size, v->type);
+            // NCSU ALACRITY-ADIOS: Reading directly to user buffer eliminates the need for this memcpy (profiling revealed it was hurting performance for transformed data)
+            //memcpy ((char *)data, fh->b->buff + fh->b->offset, slice_size);
+            if (fh->mfooter.change_endianness == adios_flag_yes)
+            {
+                change_endianness ((char *)data, slice_size, v->type);
+            }
         }
     }
 

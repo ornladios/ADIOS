@@ -1808,9 +1808,9 @@ void print_decomp(ADIOS_VARINFO *vi)
                 for (k=0; k < vi->ndim; k++) {
                     fprintf(outf, "%*lld:%*lld", 
                             ndigits_dims[k],
-                            vi->blockinfo[j].start[k],
+                            vi->blockinfo[blockid].start[k],
                             ndigits_dims[k],
-                            vi->blockinfo[j].start[k] + vi->blockinfo[j].count[k]-1);
+                            vi->blockinfo[blockid].start[k] + vi->blockinfo[blockid].count[k]-1);
                     if (k < vi->ndim-1)
                         fprintf(outf, ", ");
                 }
