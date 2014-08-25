@@ -19,7 +19,7 @@
 #include "public/adios_mpi.h"
 //#include "mpi.h"
 
-
+ 
 /*
  * Dump the timing information to a file.
  * Called both from C and Fortran API's (adios.c and adiosf.c)
@@ -124,12 +124,21 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
         FILE* f = fopen (filename, "w");
         int event_rank;
 
+        // Write the labels
+        for (i = 0; i < fd->timing_obj->internal_count; i++)
+        {
+            fprintf (f, ":%i:%s\n", ADIOS_TIMING_MAX_USER_TIMERS + i,
+                     fd->timing_obj->names[ADIOS_TIMING_MAX_USER_TIMERS + i]); 
+        }
+
+        // Now the event data
         i = 0;
         for (event_rank = 0; event_rank < size; event_rank++)
         {
             for ( ; i < displs[event_rank] + counts[event_rank]; i++) 
             {
-                fprintf (f, "%i,%i%s,%f\n", event_rank, events[i].type, events[i].is_start?"S":"E", events[i].time);
+                fprintf (f, "%i,%i%s,%f\n", event_rank, events[i].type,
+                         events[i].is_start?"S":"E", events[i].time);
             }
         }
 
