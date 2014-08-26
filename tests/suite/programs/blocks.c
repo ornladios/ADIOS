@@ -43,6 +43,7 @@ static int nblocks_per_step;
 static int nsteps;
 static uint64_t * block_offset;  // block_offset[ step*nblocks_per_step + i ] is i-th block offset written in "step".
 static uint64_t * block_count;   // block_count [ step*nblocks_per_step + i ] is i-th block size written in "step".
+static uint64_t * gdims;  // gdims[i] is the global dimension in i-th "step".
 
 
 int main (int argc, char ** argv) 
@@ -64,6 +65,7 @@ int main (int argc, char ** argv)
     MPI_Finalize ();
     free (block_offset);
     free (block_count);
+    free (gdims);
     if (!rank) printf ("----------- Done. Found %d errors -------\n", nerrors);
     return nerrors;
 }
@@ -82,6 +84,7 @@ int write_blocks ()
     nblocks_per_step = 2;
     block_offset = (uint64_t*) malloc (sizeof(uint64_t) * nsteps * nblocks_per_step * size);
     block_count  = (uint64_t*) malloc (sizeof(uint64_t) * nsteps * nblocks_per_step * size);
+    gdims        = (uint64_t*) malloc (sizeof(uint64_t) * nsteps);
 
     adios_init_noxml (comm);
     adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 10);
@@ -155,6 +158,7 @@ int write_blocks ()
             block_count  [it*nblocks_per_step*size + nblocks_per_step*r + 1] = NX; 
             block_offset [it*nblocks_per_step*size + nblocks_per_step*r + 1] = r * nblocks_per_step * NX + NX; 
         }
+        gdims [it] = G;
 
         adios_close (m_adios_file);
         MPI_Barrier (comm);
@@ -170,12 +174,13 @@ int write_blocks ()
 void print_written_info()
 {
     int s, r, b;
-    printf ("\n------- Information on rank 0 --------\n");
+    printf ("\n------- Information recorded on rank 0 (read will compare to this info)  --------\n");
     for (s = 0; s < nsteps; s++) {
         printf ("Step %d:\n", s);
+        printf ("  Global dim = %d\n", gdims[s]);
         for (r = 0; r < size; r++) {
             for (b = 0; b < nblocks_per_step; b++) {
-                printf ("rank %d: block %d: size=%llu, offset=%llu\n", r, b+1, 
+                printf ("  rank %d: block %d: size=%llu, offset=%llu\n", r, b+1, 
                         block_count  [s*nblocks_per_step*size + nblocks_per_step*r + b],
                         block_offset [s*nblocks_per_step*size + nblocks_per_step*r + b]
                        );
@@ -193,7 +198,13 @@ int print_varinfo (ADIOS_FILE *f, int start_step)
     adios_inq_var_blockinfo (f, v);
 
     printf ("ndim = %d\n",  v->ndim);
-    printf ("dims[%llu]\n",  v->dims[0]);
+    printf ("dims[%llu]",  v->dims[0]);
+    if (v->dims[0] != gdims[start_step]) 
+    {
+        printf ("\tERROR: expected [%llu]", gdims[start_step]);
+        nerrors++;
+    }
+    printf("\n");
     printf ("nsteps = %d\n",  v->nsteps);
     printf ("sum_nblocks = %d\n",  v->sum_nblocks);
     k = 0; // blockinfo is a contigous 1D array of elements from 0 to v->sum_nblocks-1
