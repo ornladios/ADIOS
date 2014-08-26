@@ -48,8 +48,7 @@
 #include "dmalloc.h"
 #endif
 
-#define FP_BATCH_SIZE 32
-#define REQ_INITIALIZER = {flexpath_read_request){.num_pending = 0, .num_completed = 0, .condition = -1};
+#define FP_BATCH_SIZE 4
 
 typedef struct _bridge_info
 {
@@ -796,7 +795,6 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 {
     ADIOS_FILE *adiosfile = client_data;
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
-
     int writer_rank;          
     int flush_id;
     double data_start;
@@ -1393,17 +1391,16 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
     int total_sent = 0;
     fp->time_in = 0.00;
     fp->req.num_completed = 0;
-    fp->req.num_pending = 0;
+    fp->req.num_pending = FP_BATCH_SIZE;
     fp->req.condition = CMCondition_get(fp_read_data->cm, NULL);
-    
+
     for(i = 0; i<num_sendees; i++){	
 	int sendee = fp->sendees[i];
         batchcount++;
-	fp->req.num_pending++;
 	total_sent++;
 	send_flush_msg(fp, sendee, DATA, 0);
 
-	if ((total_sent % FP_BATCH_SIZE == 0) || (total_sent = num_sendees)) {
+	if ((total_sent % FP_BATCH_SIZE == 0) || (total_sent == num_sendees)) {
             fp->req.num_pending = batchcount;
             CMCondition_wait(fp_read_data->cm, fp->req.condition);
 	    fp->req.num_completed = 0;
