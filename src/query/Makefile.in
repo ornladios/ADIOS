@@ -61,6 +61,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_alacrity.m4 \
 	$(top_srcdir)/config/ac_netcdf.m4 \
 	$(top_srcdir)/config/ac_nssi.m4 \
 	$(top_srcdir)/config/ac_pablo.m4 \
+	$(top_srcdir)/config/ac_pami.m4 \
 	$(top_srcdir)/config/ac_phdf5.m4 \
 	$(top_srcdir)/config/ac_portals.m4 \
 	$(top_srcdir)/config/ac_szip.m4 \
@@ -266,6 +267,10 @@ PACKAGE_NAME = @PACKAGE_NAME@
 PACKAGE_STRING = @PACKAGE_STRING@
 PACKAGE_TARNAME = @PACKAGE_TARNAME@
 PACKAGE_VERSION = @PACKAGE_VERSION@
+PAMI_CFLAGS = @PAMI_CFLAGS@
+PAMI_CPPFLAGS = @PAMI_CPPFLAGS@
+PAMI_LDFLAGS = @PAMI_LDFLAGS@
+PAMI_LIBS = @PAMI_LIBS@
 PATHPROG = @PATHPROG@
 PATH_SEPARATOR = @PATH_SEPARATOR@
 PHDF5_CPPFLAGS = @PHDF5_CPPFLAGS@
@@ -357,7 +362,8 @@ top_srcdir = @top_srcdir@
 # as well as related includes, so it is needed here
 # 
 INCLUDES = $(all_includes) -I$(top_srcdir)/src/public \
-	${ADIOSREADLIB_CPPFLAGS}
+	-I$(top_srcdir)/src/ \
+	-I$(top_srcdir)/src/${ADIOSREADLIB_CPPFLAGS}
 AUTOMAKE_OPTIONS = no-dependencies
 adiosQuery_SOURCES = adios_query.c  adios_query_hooks.c  common_query.c  fastbit_adios.c  mock_alacrity.c  myTestCases.c  query_fastbit.c
 query_fastbit_SOURCES = fastbit_adios.c query_fastbit.c common_query.c query.c adios_query_hooks.c myTestCases.c
