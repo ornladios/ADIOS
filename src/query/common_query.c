@@ -166,15 +166,18 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f,
   }
 
   if (gAssigned_query_tool == ADIOS_QUERY_TOOL_FASTBIT || gAssigned_query_tool
-  			== ADIOS_QUERY_TOOL_ALACRITY) {
-  		if ((queryBoundary->type != ADIOS_SELECTION_BOUNDINGBOX)
-  				&& (queryBoundary->type != ADIOS_SELECTION_POINTS)
-  				&& (queryBoundary->type != ADIOS_SELECTION_WRITEBLOCK)) {
-  			printf(
-  					"Error: selection type is not supported by fastbit or alacrity. Choose either boundingbox, points or writeBlock \n");
-  			exit(EXIT_FAILURE);
-  		}
-  	}
+      == ADIOS_QUERY_TOOL_ALACRITY) 
+  {
+    if (queryBoundary != NULL) {
+      if ((queryBoundary->type != ADIOS_SELECTION_BOUNDINGBOX)
+	  && (queryBoundary->type != ADIOS_SELECTION_POINTS)
+	  && (queryBoundary->type != ADIOS_SELECTION_WRITEBLOCK)) 
+      {
+	printf("Error: selection type is not supported by fastbit or alacrity. Choose either boundingbox, points or writeBlock \n");	       
+	exit(EXIT_FAILURE);
+      }
+    }
+  }
  
   if ((value == NULL) || (f == NULL) || (varName == NULL)) {
     printf("Error:No valid input is provided when creating query.\n");

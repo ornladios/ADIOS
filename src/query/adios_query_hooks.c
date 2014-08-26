@@ -37,7 +37,7 @@ void adios_query_hooks_init(struct adios_query_hooks_struct ** t, enum ADIOS_QUE
 #endif
 #ifdef FASTBIT
   case ADIOS_QUERY_TOOL_FASTBIT:
-	  ASSIGN_FNS(alac, ADIOS_QUERY_TOOL_FASTBIT);
+	  ASSIGN_FNS(fastbit, ADIOS_QUERY_TOOL_FASTBIT);
 	  break;
 #endif
   default:

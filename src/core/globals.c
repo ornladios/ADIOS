@@ -185,7 +185,7 @@ char *get_full_path_name(char *name, char *path)
     }
     if (!path || !path[0]) { // null or empty string
         sprintf (full_pathname, "%s\0", name);
-    else if (!strcmp (path, "/")) {
+    } else if (!strcmp (path, "/")) {
         sprintf (full_pathname, "/%s\0", name);
     }
     else {
