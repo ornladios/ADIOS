@@ -51,7 +51,7 @@
 
   </adios-group>
 
-  <method group="genarray" method="MPI">verbose=3</method>
+  <method group="genarray" method="DATASPACES">verbose=3</method>
 
   <buffer size-MB="20" allocate-time="now"/>
 

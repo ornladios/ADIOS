@@ -287,28 +287,24 @@ int process_metadata(int step)
     uint64_t sum_count;
     ADIOS_VARINFO *v; // shortcut pointer
 
-    if (step > 1)
+    if (step == 1)
     {
-        // right now, nothing to prepare in later steps
-        print("Step %d. return immediately\n",step);
-        return 0;
+
+        /* First step processing */
+
+        // get groupname of stream, then declare for output
+        adios_get_grouplist(f, &group_namelist);
+        print0("Group name is %s\n", group_namelist[0]);
+        adios_declare_group(&gh,group_namelist[0],"",adios_flag_yes);
+
+
+        varinfo = (VarInfo *) malloc (sizeof(VarInfo) * f->nvars);
+        if (!varinfo) {
+            print("ERROR: rank %d cannot allocate %llu bytes\n", 
+                    rank, (uint64_t)(sizeof(VarInfo)*f->nvars));
+            return 1;
+        }
     }
-
-    /* First step processing */
-
-    // get groupname of stream, then declare for output
-    adios_get_grouplist(f, &group_namelist);
-    print0("Group name is %s\n", group_namelist[0]);
-    adios_declare_group(&gh,group_namelist[0],"",adios_flag_yes);
-
-
-    varinfo = (VarInfo *) malloc (sizeof(VarInfo) * f->nvars);
-    if (!varinfo) {
-        print("ERROR: rank %d cannot allocate %llu bytes\n", 
-                rank, (uint64_t)(sizeof(VarInfo)*f->nvars));
-        return 1;
-    }
-
     write_total = 0;
     largest_block = 0;
 
@@ -356,25 +352,34 @@ int process_metadata(int step)
         return 1;
     }
     print0 ("Rank %d: allocate %llu MB for output buffer\n", rank, bufsize/1048576+1);
-    adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, bufsize/1048576+1); 
+    if (step == 1)
+    {
+        adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, bufsize/1048576+1); 
+    }
 
     // allocate read buffer
-    bufsize = largest_block + 128;
+    bufsize = largest_block + 1048576;
     if (bufsize > max_read_buffer_size) {
         print ("ERROR: rank %d: read buffer size needs to hold at least %llu bytes, "
                 "but max is set to %d\n", rank, bufsize, max_read_buffer_size);
         return 1;
     }
     print0 ("Rank %d: allocate %g MB for input buffer\n", rank, (double)bufsize/1048576.0);
-    readbuf = (char *) malloc ((size_t)bufsize);
-    if (!readbuf) {
-        print ("ERROR: rank %d: cannot allocate %llu bytes for read buffer\n",
-               rank, bufsize);
-        return 1;
+    if (step == 1)
+    {
+        readbuf = (char *) malloc ((size_t)bufsize);
+        if (!readbuf) {
+            print ("ERROR: rank %d: cannot allocate %llu bytes for read buffer\n",
+                    rank, bufsize);
+            return 1;
+        }
     }
 
-    // Select output method
-    adios_select_method (gh, wmethodname, wmethodparams, "");
+    if (step == 1)
+    {
+        // Select output method
+        adios_select_method (gh, wmethodname, wmethodparams, "");
+    }
 
     // Define variables for output based on decomposition
     char *vpath, *vname;
@@ -392,15 +397,15 @@ int process_metadata(int step)
                 int64s_to_str (v->ndim, varinfo[i].start, offs);
 
                 print ("rank %d: Define variable path=\"%s\" name=\"%s\"  "
-                       "gdims=%s  ldims=%s  offs=%s\n", 
-                       rank, vpath, vname, gdims, ldims, offs);
+                        "gdims=%s  ldims=%s  offs=%s\n", 
+                        rank, vpath, vname, gdims, ldims, offs);
 
                 adios_define_var (gh, vname, vpath, v->type, ldims, gdims, offs);
             }
             else 
             {
                 print ("rank %d: Define scalar path=\"%s\" name=\"%s\"\n",
-                       rank, vpath, vname);
+                        rank, vpath, vname);
 
                 adios_define_var (gh, vname, vpath, v->type, "", "", "");
             }
@@ -409,28 +414,31 @@ int process_metadata(int step)
         }
     }
 
-    if (rank == 0)
+    if (step == 1)
     {
-        // get and define attributes
-        enum ADIOS_DATATYPES attr_type;
-        void * attr_value;
-        char * attr_value_str;
-        int  attr_size;
-        for (i=0; i<f->nattrs; i++) 
+        if (rank == 0)
         {
-            adios_get_attr_byid (f, i, &attr_type, &attr_size, &attr_value);
-            attr_value_str = (char *)value_to_string (attr_type, attr_value, 0);
-            getbasename (f->attr_namelist[i], &vpath, &vname);
-            if (vpath && !strcmp(vpath,"/__adios__")) { 
-                // skip on /__adios/... attributes 
-                print ("rank %d: Ignore this attribute path=\"%s\" name=\"%s\" value=\"%s\"\n",
-                        rank, vpath, vname, attr_value_str);
-            } else {
-                adios_define_attribute (gh, vname, vpath,
-                        attr_type, attr_value_str, "");
-                print ("rank %d: Define attribute path=\"%s\" name=\"%s\" value=\"%s\"\n",
-                        rank, vpath, vname, attr_value_str);
-                free (attr_value);
+            // get and define attributes
+            enum ADIOS_DATATYPES attr_type;
+            void * attr_value;
+            char * attr_value_str;
+            int  attr_size;
+            for (i=0; i<f->nattrs; i++) 
+            {
+                adios_get_attr_byid (f, i, &attr_type, &attr_size, &attr_value);
+                attr_value_str = (char *)value_to_string (attr_type, attr_value, 0);
+                getbasename (f->attr_namelist[i], &vpath, &vname);
+                if (vpath && !strcmp(vpath,"/__adios__")) { 
+                    // skip on /__adios/... attributes 
+                    print ("rank %d: Ignore this attribute path=\"%s\" name=\"%s\" value=\"%s\"\n",
+                            rank, vpath, vname, attr_value_str);
+                } else {
+                    adios_define_attribute (gh, vname, vpath,
+                            attr_type, attr_value_str, "");
+                    print ("rank %d: Define attribute path=\"%s\" name=\"%s\" value=\"%s\"\n",
+                            rank, vpath, vname, attr_value_str);
+                    free (attr_value);
+                }
             }
         }
     }
