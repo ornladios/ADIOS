@@ -148,7 +148,6 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
      FORWARD_DECLARE(nssi)
      FORWARD_DECLARE(nssi_filter)
      FORWARD_DECLARE(flexpath)
-     FORWARD_DECLARE(icee)
      FORWARD_DECLARE(var_merge)
 #endif
 
@@ -174,7 +173,7 @@ FORWARD_DECLARE(dataspaces)
 FORWARD_DECLARE(dimes)
 #endif
 
-#if HAVE_ICEE
+#if defined(HAVE_ICEE) && !defined(ADIOS_EMPTY_TRANSPORTS) 
 FORWARD_DECLARE(icee)
 #endif
 
