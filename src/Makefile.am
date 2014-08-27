@@ -99,18 +99,22 @@ transforms_write_SOURCES = $(transforms_write_HDRS) \
                            $(transforms_write_method_SOURCES)
 
 #######Query source files 
-query_method_SOURCES=
 
+query_common_HDRS = query/adios_query.h query/common_query.h query/adios_query_hooks.h
+query_common_SOURCES = $(query_common_HDRS) \
+                       query/adios_query.c \
+                       query/common_query.c  \
+                       query/adios_query_hooks.c
+
+# Include source files that are specific to each query plugin
+query_method_HDRS =
+query_method_SOURCES =
 include query/Makefile.plugins
 
-query_read_HDRS = query/adios_query_hooks.h \
-				  query/adios_query.h \
-				  query/common_query.h 
-				  
-query_read_SOURCES = $(query_read_HDRS) \
+query_method_SOURCES += $(query_method_HDRS) 
+
+query_read_SOURCES = $(query_common_SOURCES) \
                      $(query_method_SOURCES) 				  
-
-
 
 if BUILD_WRITE
 lib_LIBRARIES += libadios.a libadios_nompi.a
@@ -196,6 +200,7 @@ FortranLibSources = core/adiosf.c \
                      $(transforms_common_SOURCES) \
                      $(transforms_read_SOURCES) \
                      $(transforms_write_SOURCES) \
+                     $(query_read_SOURCES) \
                      core/buffer.c \
                      core/adios_bp_v1.c  \
                      core/adios_endianness.c\
@@ -454,6 +459,7 @@ FortranReadLibSource = core/adios_bp_v1.c \
                       core/common_read.c \
                       $(transforms_common_SOURCES) \
                       $(transforms_read_SOURCES) \
+                      $(query_read_SOURCES) \
                       core/globals.c \
                       core/adios_read_hooks.c \
                       core/adios_logger.c \
@@ -661,6 +667,7 @@ EXTRA_DIST = core/adios_bp_v1.h core/adios_endianness.h \
              core/adios_internals.h core/adios_internals_mxml.h core/adios_logger.h \
              core/adios_read_hooks.h core/adios_socket.h core/adios_timing.h \
              $(transforms_common_HDRS) $(transforms_read_HDRS) $(transforms_write_HDRS) \
+             $(query_common_HDRS) $(query_method_HDRS) \
              transforms/transform_plugins.h transforms/adios_transform_identity_read.h \
 	     transforms/adios_transform_szip.h \
              core/adios_socket.h core/adios_transport_hooks.h \

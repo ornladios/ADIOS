@@ -1,5 +1,5 @@
-# Identity plugin:
-query_method_SOURCES += query/adios_query_hooks.c
-query_method_SOURCES += query/adios_query.c
-query_method_SOURCES += query/common_query.c
+
+if HAVE_ALACRITY
+query_method_HDRS += 
 query_method_SOURCES += query/query_alac.c
+endif # HAVE_ALACRITY
