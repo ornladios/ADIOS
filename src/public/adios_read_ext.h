@@ -13,8 +13,8 @@
 
 #include <stdint.h>
 
-#include "public/adios_read_v2.h"
-#include "public/adios_selection.h"
+#include "adios_read_v2.h"
+#include "adios_selection.h"
 
 // An opaque type defining a particular view of the data.
 // Currently, there are only two possible values: LOGICAL_DATA_VIEW and PHYSICAL_DATA_VIEW
