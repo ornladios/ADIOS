@@ -208,6 +208,7 @@ FortranLibSources = core/adiosf.c \
                      core/adios_error.c \
                      core/bp_utils.c \
                      core/common_read.c \
+                     core/adios_read_ext.c \
                      core/globals.c \
                      core/adios_timing.c \
                      core/adios_read_hooks.c \
@@ -457,6 +458,7 @@ FortranReadLibSource = core/adios_bp_v1.c \
                       core/futils.c \
                       core/adios_error.c \
                       core/common_read.c \
+                      core/adios_read_ext.c \
                       $(transforms_common_SOURCES) \
                       $(transforms_read_SOURCES) \
                       $(query_read_SOURCES) \
@@ -568,6 +570,7 @@ FortranReadSeqLibSource = core/mpidummy.c\
                           core/adios_error.c \
                           core/adios_logger.c \
                           core/common_read.c \
+                          core/adios_read_ext.c \
                           $(transforms_common_SOURCES) \
                           $(transforms_read_SOURCES) \
                           $(query_read_SOURCES) \
