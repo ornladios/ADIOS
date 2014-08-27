@@ -480,6 +480,7 @@ int adios_common_define_var_characteristics  (struct adios_group_struct * g
                                              );
 
 void adios_common_get_group (int64_t * group_id, const char * name);
+int adios_common_delete_vardefs (struct adios_group_struct * g);
 int adios_common_free_group (int64_t id);
 
 // ADIOS file format functions

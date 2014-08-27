@@ -122,6 +122,12 @@ module adios_write_mod
             integer*8,      intent(out) :: id
         end subroutine
 
+        subroutine adios_delete_vardefs (group_id, err)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            integer,        intent(out) :: err
+        end subroutine
+
         subroutine adios_set_transform (var_id, transform_method, err)
             implicit none
             integer*8,      intent(in)  :: var_id
@@ -137,6 +143,12 @@ module adios_write_mod
             integer,        intent(in)  :: attrtype
             character(*),   intent(in)  :: value
             character(*),   intent(in)  :: varname
+            integer,        intent(out) :: err
+        end subroutine
+
+        subroutine adios_delete_attrdefs (group_id, err)
+            implicit none
+            integer*8,      intent(in)  :: group_id
             integer,        intent(out) :: err
         end subroutine
 

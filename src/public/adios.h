@@ -118,6 +118,11 @@ int64_t adios_define_var (int64_t group_id,
                           const char * local_offsets
                          );
 
+// To remove all variable definitions from a group.
+// Use it if you want to have a new set of variables defined
+// for the next output step.
+int adios_delete_vardefs (int64_t id);
+
 // To set the transform method for a variable just defined 
 // var_id is the value returned by adios_define_var
 // returns adios_errno (0=OK)
@@ -130,6 +135,9 @@ int adios_define_attribute (int64_t group,
                             const char * value, 
                             const char * var
                            );
+
+int adios_delete_attrdefs (int64_t id);
+
 /** This function does similar function as adios_write. It is, however, used
  * in the following scenario that
  * 1. numbers, instead of a variable, are used to annotate array dimensions, and
