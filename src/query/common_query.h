@@ -5,7 +5,7 @@
 extern "C" {
 #endif
 
-#include "adios_query.h"
+#include "public/adios_query.h"
 
 #define NO_EVAL_BEFORE -1
 

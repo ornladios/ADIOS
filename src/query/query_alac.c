@@ -11,7 +11,7 @@
 #include <assert.h>
 #include <float.h>
 #include "public/adios_read_ext.h"
-#include "adios_query.h"
+#include "public/adios_query.h"
 #include "common_query.h"
 //#include <alacrity.h>
 

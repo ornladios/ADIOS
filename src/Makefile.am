@@ -100,7 +100,7 @@ transforms_write_SOURCES = $(transforms_write_HDRS) \
 
 #######Query source files 
 
-query_common_HDRS = query/adios_query.h query/common_query.h query/adios_query_hooks.h
+query_common_HDRS = query/common_query.h query/adios_query_hooks.h
 query_common_SOURCES = $(query_common_HDRS) \
                        query/adios_query.c \
                        query/common_query.c  \
@@ -404,7 +404,7 @@ include_HEADERS += public/adios.h \
                    public/adios_read_v2_fwd.h \
                    public/adios_selection.h \
                    public/adios_read_ext.h \
-                   query/adios_query.h
+                   public/adios_query.h
 
 lib_LIBRARIES += libadiosread.a
 libadiosread_a_SOURCES = core/adios_bp_v1.c \

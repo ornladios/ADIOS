@@ -1,4 +1,4 @@
-#include "adios_query.h"
+#include "public/adios_query.h"
 
 void testNoBoxOnSelection(ADIOS_FILE* f) 
 {

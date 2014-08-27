@@ -1,7 +1,7 @@
 #ifndef ADIOS_QUERY_HOOKS_H
 #define ADIOS_QUERY_HOOKS_H
 
-#include "adios_query.h"
+#include "public/adios_query.h"
 #include "public/adios_read.h"
 
 #define FORWARD_DECLARE(a) \

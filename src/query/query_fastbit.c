@@ -1,4 +1,4 @@
-#include "adios_query.h"
+#include "public/adios_query.h"
    
 #include <stdio.h>
 #include <stdlib.h>

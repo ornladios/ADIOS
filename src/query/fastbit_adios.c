@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "adios_read.h"
+#include "public/adios_read.h"
 #include <iapi.h>
 
 #include "fastbit_adios.h"

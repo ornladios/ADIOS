@@ -3,7 +3,7 @@
 #include <string.h>
     
 #include "adios_query_hooks.h"
-#include "adios_query.h"
+#include "public/adios_query.h"
 
 #define ASSIGN_FNS(a,b) \
   (*t) [b].adios_query_init_method_fn          = adios_query_##a##_init_method; \
