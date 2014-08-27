@@ -23,9 +23,9 @@ AM_CONDITIONAL(HAVE_RIDCOMPRESS,true)
 
 AC_ARG_WITH([ridcompress],
         [  --with-ridcompress=DIR      Location of RIDCOMPRESS library],
-        [RIDCOMPRESS_LDFLAGS="-L$withval/";
+        [RIDCOMPRESS_LDFLAGS="-L$withval/ -L$withval/lib";
          RIDCOMPRESS_LIBS="-lridcompress -lstdc++";
-         RIDCOMPRESS_CPPFLAGS="-I$withval/";],
+         RIDCOMPRESS_CPPFLAGS="-I$withval/ -I$withval/include";],
         [with_RIDCOMPRESS=no])
 
 if test "x$with_RIDCOMPRESS" == "xno"; then
