@@ -80,8 +80,8 @@ void adios_free_pg_intersections(ADIOS_PG_INTERSECTIONS **intersections){
 	int i = 0;
 	for(i=0; i < intsec->npg; i++){
 		ADIOS_PG_INTERSECTION inter = intsec->intersections[i];
-		adios_selection_delete(inter.pg_bounds_sel);
-		adios_selection_delete(inter.intersection_sel);
+		common_read_selection_delete(inter.pg_bounds_sel);
+		common_read_selection_delete(inter.intersection_sel);
 	}
 	intsec->npg = 0;
 	intsec->intersections = NULL;
