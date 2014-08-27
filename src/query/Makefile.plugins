@@ -3,3 +3,8 @@ if HAVE_ALACRITY
 query_method_HDRS += 
 query_method_SOURCES += query/query_alac.c
 endif # HAVE_ALACRITY
+
+if HAVE_FASTBIT
+query_method_HDRS += 
+query_method_SOURCES += query/query_fastbit.c
+endif # HAVE_FASTBIT
