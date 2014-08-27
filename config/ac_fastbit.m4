@@ -17,10 +17,11 @@ if test "x$with_fastbit" != xno; then
 
     saveCPPFLAGS="$CPPFLAGS"
     saveLDFLAGS="$LDFLAGS"
-    CPPFLAGS="$CPPFLAGS $FASTBIT_CPPFLAGS"
-    LDFLAGS="$LDFLAGS $FASTBIT_LDFLAGS $FASTBIT_LIBS"
 
     AC_LANG_PUSH([C++])
+
+    CPPFLAGS="$CPPFLAGS $FASTBIT_CPPFLAGS"
+    LDFLAGS="$LDFLAGS $FASTBIT_LDFLAGS $FASTBIT_LIBS"
 
     AC_CHECK_HEADERS(
       [iapi.h],
@@ -45,10 +46,10 @@ dnl        [Cannot successfully link with the FastBit lib. Make sure it has been
 dnl      )],dnl
 dnl    )
     
-    AC_LANG_POP([C++])
-
     CPPFLAGS="$saveCPPFLAGS"
     LDFLAGS="$saveLDFLAGS"
+
+    AC_LANG_POP([C++])
 
     if test -z "$HAVE_FASTBIT"; then
       AM_CONDITIONAL(HAVE_FASTBIT,false)
