@@ -20,8 +20,6 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include <core/adios_internals.h>
-
 #define MAX_DIMS 5
 
 struct dimensions {
@@ -31,6 +29,8 @@ struct dimensions {
 };
 
 typedef struct dimensions dim_t;
+
+void adios_pin_timestep(uint32_t ts); // Not in the standard header, but accessible
 
 // Given the input file, you want to divide the data into different PG sizes, data is transformed by ALACRITY plugin
 // Run this program with only ONE processor.
