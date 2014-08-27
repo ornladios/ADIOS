@@ -36790,9 +36790,9 @@ fi
 
 # Check whether --with-ridcompress was given.
 if test "${with_ridcompress+set}" = set; then
-  withval=$with_ridcompress; RIDCOMPRESS_LDFLAGS="-L$withval/";
+  withval=$with_ridcompress; RIDCOMPRESS_LDFLAGS="-L$withval/ -L$withval/lib";
          RIDCOMPRESS_LIBS="-lridcompress -lstdc++";
-         RIDCOMPRESS_CPPFLAGS="-I$withval/";
+         RIDCOMPRESS_CPPFLAGS="-I$withval/ -I$withval/include";
 else
   with_RIDCOMPRESS=no
 fi
