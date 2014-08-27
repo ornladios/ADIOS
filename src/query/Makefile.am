@@ -3,11 +3,11 @@ INCLUDES = $(all_includes)
 # ${ADIOSREADLIB_CPPFLAGS} has all the flags like -DFASTBIT -DALACRITY
 # as well as related includes, so it is needed here
 # 
-INCLUDES += -I$(top_srcdir)/src/public -I$(top_srcdir)/src/ -I$(top_srcdir)/src/${ADIOSREADLIB_CPPFLAGS}
+INCLUDES += -I$(top_srcdir)/src/public
 
 AUTOMAKE_OPTIONS = no-dependencies
 
-noinst_PROGRAMS = adiosQuery
+noinst_PROGRAMS = adiosQuery query_fastbit index_fastbit mock_alacrity
 
 adiosQuery_SOURCES = adios_query.c  adios_query_hooks.c  common_query.c  fastbit_adios.c  mock_alacrity.c  myTestCases.c  query_fastbit.c
 query_fastbit_SOURCES = fastbit_adios.c query_fastbit.c common_query.c query.c adios_query_hooks.c myTestCases.c

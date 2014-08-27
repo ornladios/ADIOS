@@ -24,8 +24,9 @@ if test "x$with_fastbit" != xno; then
 
     AC_CHECK_HEADERS(
       [iapi.h],
-      [],
-      [AC_MSG_FAILURE(
+      [HAVE_FASTBIT=y],
+      [HAVE_FASTBIT="";dnl
+       AC_MSG_RESULT(
         [Cannot find iapi.h from the FastBit lib. Make sure it has been properly installed at the path specified ($with_fastbit).]dnl
       )]dnl
     )
@@ -49,14 +50,19 @@ dnl    )
     CPPFLAGS="$saveCPPFLAGS"
     LDFLAGS="$saveLDFLAGS"
 
-    AC_SUBST(FASTBIT_CPPFLAGS)
-    AC_SUBST(FASTBIT_LDFLAGS)
-    AC_SUBST(FASTBIT_LIBS)
+    if test -z "$HAVE_FASTBIT"; then
+      AM_CONDITIONAL(HAVE_FASTBIT,false)
+      AC_MSG_RESULT([Not building with FastBit library])
+    else
+      AC_SUBST(FASTBIT_CPPFLAGS)
+      AC_SUBST(FASTBIT_LDFLAGS)
+      AC_SUBST(FASTBIT_LIBS)
 
-    AM_CONDITIONAL(HAVE_FASTBIT,true)
-    AC_DEFINE([HAVE_FASTBIT], [1], [Define if we have libfastbit])
+      AM_CONDITIONAL(HAVE_FASTBIT,true)
+      AC_DEFINE([HAVE_FASTBIT], [1], [Define if we have libfastbit])
 
-    AC_MSG_RESULT([FastBit library found at $with_fastbit])
+      AC_MSG_RESULT([FastBit library found at $with_fastbit])
+    fi
 else
   AM_CONDITIONAL(HAVE_FASTBIT,false)
 
