@@ -56,6 +56,7 @@ char       *readbuf; // read buffer
 int         decomp_values[10];
 
 
+void cleanup_step ();
 int process_metadata(int step);
 int read_write(int step);
 
@@ -194,8 +195,8 @@ int main (int argc, char ** argv)
     adios_init_noxml(comm);
 
     print0 ("Waiting to open stream %s...\n", infilename);
-    f = adios_read_open_stream (infilename, read_method, comm, 
-                                             ADIOS_LOCKMODE_ALL, timeout_sec);
+    f = adios_read_open (infilename, read_method, comm, 
+                         ADIOS_LOCKMODE_ALL, timeout_sec);
     if (adios_errno == err_file_not_found) 
     {
         print ("rank %d: Stream not found after waiting %d seconds: %s\n", 
@@ -236,6 +237,7 @@ int main (int argc, char ** argv)
 
             // advance to 1) next available step with 2) blocking wait 
             curr_step = f->current_step; // save for final bye print
+            cleanup_step();
             adios_advance_step (f, 0, timeout_sec);
 
             if (adios_errno == err_end_of_stream) 
@@ -279,6 +281,26 @@ typedef struct {
 
 VarInfo * varinfo;
 
+// cleanup all info from previous step except
+// do
+//   remove all variable and attribute definitions from output group
+//   free all varinfo (will be inquired again at next step)
+//   free read buffer (required size may change at next step)
+// do NOT 
+//   destroy group
+//
+void cleanup_step ()
+{
+    int i;
+    for (i=0; i<f->nvars; i++) {
+        adios_free_varinfo(varinfo[i].v);
+    }
+    free (varinfo);
+    adios_delete_vardefs (gh);
+    adios_delete_attrdefs (gh);
+    free (readbuf);
+}
+
 int process_metadata(int step)
 {
     int retval = 0;
@@ -289,22 +311,20 @@ int process_metadata(int step)
 
     if (step == 1)
     {
-
         /* First step processing */
-
         // get groupname of stream, then declare for output
         adios_get_grouplist(f, &group_namelist);
         print0("Group name is %s\n", group_namelist[0]);
         adios_declare_group(&gh,group_namelist[0],"",adios_flag_yes);
-
-
-        varinfo = (VarInfo *) malloc (sizeof(VarInfo) * f->nvars);
-        if (!varinfo) {
-            print("ERROR: rank %d cannot allocate %llu bytes\n", 
-                    rank, (uint64_t)(sizeof(VarInfo)*f->nvars));
-            return 1;
-        }
     }
+
+    varinfo = (VarInfo *) malloc (sizeof(VarInfo) * f->nvars);
+    if (!varinfo) {
+        print("ERROR: rank %d cannot allocate %llu bytes\n", 
+                rank, (uint64_t)(sizeof(VarInfo)*f->nvars));
+        return 1;
+    }
+
     write_total = 0;
     largest_block = 0;
 
@@ -351,28 +371,25 @@ int process_metadata(int step)
                 "but max is set to %d\n", rank, bufsize, max_write_buffer_size);
         return 1;
     }
-    print0 ("Rank %d: allocate %llu MB for output buffer\n", rank, bufsize/1048576+1);
     if (step == 1)
     {
+        print0 ("Rank %d: allocate %llu MB for output buffer\n", rank, bufsize/1048576+1);
         adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, bufsize/1048576+1); 
     }
 
     // allocate read buffer
-    bufsize = largest_block + 1048576;
+    bufsize = largest_block + 128;
     if (bufsize > max_read_buffer_size) {
         print ("ERROR: rank %d: read buffer size needs to hold at least %llu bytes, "
                 "but max is set to %d\n", rank, bufsize, max_read_buffer_size);
         return 1;
     }
     print0 ("Rank %d: allocate %g MB for input buffer\n", rank, (double)bufsize/1048576.0);
-    if (step == 1)
-    {
-        readbuf = (char *) malloc ((size_t)bufsize);
-        if (!readbuf) {
-            print ("ERROR: rank %d: cannot allocate %llu bytes for read buffer\n",
-                    rank, bufsize);
-            return 1;
-        }
+    readbuf = (char *) malloc ((size_t)bufsize);
+    if (!readbuf) {
+        print ("ERROR: rank %d: cannot allocate %llu bytes for read buffer\n",
+                rank, bufsize);
+        return 1;
     }
 
     if (step == 1)
@@ -414,31 +431,28 @@ int process_metadata(int step)
         }
     }
 
-    if (step == 1)
+    if (rank == 0)
     {
-        if (rank == 0)
+        // get and define attributes
+        enum ADIOS_DATATYPES attr_type;
+        void * attr_value;
+        char * attr_value_str;
+        int  attr_size;
+        for (i=0; i<f->nattrs; i++) 
         {
-            // get and define attributes
-            enum ADIOS_DATATYPES attr_type;
-            void * attr_value;
-            char * attr_value_str;
-            int  attr_size;
-            for (i=0; i<f->nattrs; i++) 
-            {
-                adios_get_attr_byid (f, i, &attr_type, &attr_size, &attr_value);
-                attr_value_str = (char *)value_to_string (attr_type, attr_value, 0);
-                getbasename (f->attr_namelist[i], &vpath, &vname);
-                if (vpath && !strcmp(vpath,"/__adios__")) { 
-                    // skip on /__adios/... attributes 
-                    print ("rank %d: Ignore this attribute path=\"%s\" name=\"%s\" value=\"%s\"\n",
-                            rank, vpath, vname, attr_value_str);
-                } else {
-                    adios_define_attribute (gh, vname, vpath,
-                            attr_type, attr_value_str, "");
-                    print ("rank %d: Define attribute path=\"%s\" name=\"%s\" value=\"%s\"\n",
-                            rank, vpath, vname, attr_value_str);
-                    free (attr_value);
-                }
+            adios_get_attr_byid (f, i, &attr_type, &attr_size, &attr_value);
+            attr_value_str = (char *)value_to_string (attr_type, attr_value, 0);
+            getbasename (f->attr_namelist[i], &vpath, &vname);
+            if (vpath && !strcmp(vpath,"/__adios__")) { 
+                // skip on /__adios/... attributes 
+                print ("rank %d: Ignore this attribute path=\"%s\" name=\"%s\" value=\"%s\"\n",
+                        rank, vpath, vname, attr_value_str);
+            } else {
+                adios_define_attribute (gh, vname, vpath,
+                        attr_type, attr_value_str, "");
+                print ("rank %d: Define attribute path=\"%s\" name=\"%s\" value=\"%s\"\n",
+                        rank, vpath, vname, attr_value_str);
+                free (attr_value);
             }
         }
     }
