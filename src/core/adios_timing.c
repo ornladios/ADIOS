@@ -38,7 +38,6 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
 
     if (!fd->timing_obj)
     {
-        log_error ("No timing info available, file not written\n");
         // No timing info, don't write anything.
         return;
     }
