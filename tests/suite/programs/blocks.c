@@ -37,6 +37,8 @@ int write_blocks ();
 void print_written_info();
 int read_all ();
 int read_stepbystep ();
+int read_scalar ();
+int read_scalar_stepbystep ();
 
 /* Remember (on rank 0) what was written (from all process) to check against it at reading */
 static int nblocks_per_step;
@@ -59,6 +61,7 @@ int main (int argc, char ** argv)
         read_all();
         read_stepbystep();
         read_scalar();
+        read_scalar_stepbystep ();
     }
 
     MPI_Barrier (comm);
@@ -451,5 +454,68 @@ int read_scalar ()
         adios_read_close (f);
     }
     adios_read_finalize_method (ADIOS_READ_METHOD_BP);
+    return retval;
+}
+
+int read_scalar_stepbystep ()
+{
+    ADIOS_FILE * f;
+    float timeout_sec = 0.0; 
+    int steps = 0;
+    int retval = 0;
+    MPI_Comm    comm = MPI_COMM_SELF;
+
+    adios_read_init_method (ADIOS_READ_METHOD_BP, comm, "verbose=3");
+    printf ("\n--------- Read scalar in stream using varinfo->value  ------------\n");
+    f = adios_read_open (fname, ADIOS_READ_METHOD_BP,
+                          comm, ADIOS_LOCKMODE_NONE, timeout_sec);
+    if (adios_errno == err_file_not_found)
+    {
+        printf ("Stream not found after waiting %f seconds: %s\n",
+                timeout_sec, adios_errmsg());
+        retval = adios_errno;
+    }
+    else if (adios_errno == err_end_of_stream)
+    {
+        printf ("Stream terminated before open. %s\n", adios_errmsg());
+        retval = adios_errno;
+    }
+    else if (f == NULL) {
+        printf ("Error at opening stream: %s\n", adios_errmsg());
+        retval = adios_errno;
+    }
+    else
+    {
+        /* Processing loop over the steps (we are already in the first one) */
+        while (adios_errno != err_end_of_stream) {
+            steps++; // steps start counting from 1
+            printf ("Step: %d\n", f->current_step);
+
+            /* Check the scalar O with varinfo->value */
+            ADIOS_VARINFO * v = adios_inq_var (f, "NX");
+            int value =  *(int*)v->value;
+            printf ("Scalar NX = %d", value);
+            if (value != 
+                    block_count [f->current_step*nblocks_per_step*size]) 
+            {
+                printf ("\tERROR expected = %d", 
+                        block_count [f->current_step*nblocks_per_step*size]);
+                nerrors++;
+            }
+            printf ("\n");
+
+            // advance to 1) next available step with 2) blocking wait
+            adios_advance_step (f, 0, timeout_sec);
+            if (adios_errno == err_step_notready)
+            {
+                //printf ("No new step arrived within the timeout. Quit. %s\n",
+                //        adios_errmsg());
+                break; // quit while loop
+            }
+        }
+        adios_read_close (f);
+    }
+    adios_read_finalize_method (ADIOS_READ_METHOD_BP);
+    //printf ("We have processed %d steps\n", steps);
     return retval;
 }
