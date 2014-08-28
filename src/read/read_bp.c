@@ -548,7 +548,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     /* Note: ndim below doesn't include time if there is any */
     // NCSU ALACRITY-ADIOS - Note: this function has been modified to return
     //   the "raw" dimensions (i.e., 1D byte array)
-    bp_get_and_swap_dimensions (fh, v, file_is_fortran, &ndim, &dims, &nsteps, file_is_fortran);
+    bp_get_and_swap_dimensions (fp, v, file_is_fortran, &ndim, &dims, &nsteps, file_is_fortran);
 
     assert (ndim == sel->u.bb.ndim);
     ndim = sel->u.bb.ndim;
@@ -2407,7 +2407,7 @@ ADIOS_TRANSINFO * adios_read_bp_inq_var_transinfo(const ADIOS_FILE *fp, const AD
         transinfo->orig_type = transform->pre_transform_type;
 
         // Load orig_ndims/orig_dims using the utility function
-        bp_get_and_swap_dimensions_generic (fh, var_root, file_is_fortran,
+        bp_get_and_swap_dimensions_generic (fp, var_root, file_is_fortran,
                                             &transinfo->orig_ndim, &transinfo->orig_dims,
                                             &dummy,
                                             file_is_fortran != futils_is_called_from_fortran(),
@@ -2546,7 +2546,7 @@ int adios_read_bp_schedule_read_byid (const ADIOS_FILE * fp, const ADIOS_SELECTI
 
     if (!sel)
     {
-        bp_get_and_swap_dimensions (fh, v, file_is_fortran,
+        bp_get_and_swap_dimensions (fp, v, file_is_fortran,
                                     &ndim, &dims,
                                     &ns,
                                     file_is_fortran != futils_is_called_from_fortran()
@@ -3401,37 +3401,6 @@ int adios_read_bp_is_var_timed (const ADIOS_FILE *fp, int varid)
     log_debug ("%s is_var_timed: = %d\n", v->var_name, retval);
 
     return retval;
-}
-
-/* Since ADIOS internal use "time" instead of step, this
- * routine convers a step to time.
- */
-static int adios_step_to_time (const ADIOS_FILE * fp, int varid, int from_steps)
-{
-    BP_PROC * p;
-    BP_FILE * fh;
-    struct adios_index_var_struct_v1 * v;
-    int mapped_varid, time, t;
-
-    adios_errno = 0;
-
-    p = (BP_PROC *)fp->fh;
-    fh = (BP_FILE *)p->fh;
-
-    mapped_varid = p->varid_mapping[varid];
-    v = bp_find_var_byid (fh, mapped_varid);
-
-    t = fp->current_step + from_steps;
-    if (!p->streaming)
-    {
-        time = get_time (v, t);
-    }
-    else
-    {
-        time = t + 1;
-    }
-
-    return time;
 }
 
 static int map_req_varid (const ADIOS_FILE * fp, int varid)

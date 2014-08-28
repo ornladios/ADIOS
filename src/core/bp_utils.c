@@ -141,6 +141,55 @@ int get_time (struct adios_index_var_struct_v1 * v, int step)
 
 }
 
+/* This routine converts "step" to "time", which is an ADIOS internal thing.
+ * The calculated "time" is needed by other BP routines to figure 
+ * correct piece of var index to process.
+ * NOTE that
+ * 1. For file mode, an application could write a variable at every other dump,
+ * say, the 1th dump, 3rd dump, 5th dump. The corresponding step
+ * should be 0, 1, 2 for it.
+ */
+int _adios_step_to_time (const ADIOS_FILE * fp, struct adios_index_var_struct_v1 * v, int from_steps)
+{
+    BP_PROC * p = (BP_PROC *)fp->fh;
+    BP_FILE * fh = (BP_FILE *)p->fh;
+    int t, time;
+
+    t = fp->current_step + from_steps;
+    if (!p->streaming)
+    {
+        time = get_time (v, t);
+    }
+    else
+    {
+        time = t + 1;
+    }
+
+    return time;
+}
+
+/* Same functionality as _adios_step_to_time()
+ * The only different is the second argument is varid, 
+ * instead of index_var_struct.
+ */
+int adios_step_to_time (const ADIOS_FILE * fp, int varid, int from_steps)
+{
+    BP_PROC * p;
+    BP_FILE * fh;
+    struct adios_index_var_struct_v1 * v;
+    int mapped_varid;
+
+    adios_errno = 0;
+
+    p = (BP_PROC *)fp->fh;
+    fh = (BP_FILE *)p->fh;
+
+    mapped_varid = p->varid_mapping[varid];
+    v = bp_find_var_byid (fh, mapped_varid);
+
+    return _adios_step_to_time (fp, v, from_steps);
+}
+
 int bp_read_open (const char * filename,
           MPI_Comm comm,
           struct BP_FILE * fh)
@@ -255,12 +304,14 @@ thod returns.
 
     assert (v->characteristics_count);
 
-    bp_get_and_swap_dimensions (fh, v, file_is_fortran,
+    // Bugfix for block test (block.c).
+    // For streaming mode, varinfo is built per steps.
+    // Q. Liu 08/27/2014
+    bp_get_and_swap_dimensions (fp, v, file_is_fortran,
                                 &varinfo->ndim, &varinfo->dims,
                                 &varinfo->nsteps,
                                 file_is_fortran != futils_is_called_from_fortran()
                                );
-
     if (p->streaming)
     {
         varinfo->nsteps = 1;
@@ -2126,16 +2177,16 @@ int bp_get_dimension_characteristics_notime (struct adios_index_characteristic_s
 
 
 // NCSU ALACRITY-ADIOS - Delegate to generic function
-void bp_get_dimensions (BP_FILE * fh, struct adios_index_var_struct_v1 * var_root, int file_is_fortran,
+void bp_get_dimensions (const ADIOS_FILE * fp, struct adios_index_var_struct_v1 * var_root, int file_is_fortran,
                         int * ndim, uint64_t ** dims, int * nsteps) {
-    bp_get_dimensions_generic(fh, var_root, file_is_fortran, ndim, dims, nsteps, 0);
+    bp_get_dimensions_generic (fp, var_root, file_is_fortran, ndim, dims, nsteps, 0);
 }
 
 // NCSU ALACRITY-ADIOS - Factored out generic version of this function
 /* Fill out ndim and dims for the variable.
    ndim and dims doesn't include 'time' dimension.
 */
-void bp_get_dimensions_generic (BP_FILE * fh, struct adios_index_var_struct_v1 * var_root, int file_is_fortran,
+void bp_get_dimensions_generic (const ADIOS_FILE * fp, struct adios_index_var_struct_v1 * var_root, int file_is_fortran,
                         int * ndim, uint64_t ** dims, int * nsteps, int use_pretransform_dimensions)
 {
     int i, j, has_time_index_characteristic;
@@ -2144,10 +2195,37 @@ void bp_get_dimensions_generic (BP_FILE * fh, struct adios_index_var_struct_v1 *
     uint64_t gdims[32];
     uint64_t offsets[32];
 
-    // NCSU ALACRITY-ADIOS - Use the correct dimension struct
-    struct adios_index_characteristic_dims_struct_v1 *var_dims =
-            use_pretransform_dimensions ? &var_root->characteristics[0].transform.pre_transform_dimensions
-                                        : &var_root->characteristics[0].dims;
+    struct BP_PROC * p = (struct BP_PROC *) fp->fh;
+    BP_FILE * fh = (BP_FILE *)p->fh;
+    struct adios_index_characteristic_dims_struct_v1 *var_dims;
+
+    if (!p->streaming)
+    {
+        // NCSU ALACRITY-ADIOS - Use the correct dimension struct
+        var_dims = use_pretransform_dimensions ? 
+                       &var_root->characteristics[0].transform.pre_transform_dimensions
+                     : &var_root->characteristics[0].dims;
+    }
+    else
+    {
+        int time = fp->current_step + 1;
+        i = 0;
+        while (i < var_root->characteristics_count && var_root->characteristics[i].time_index != time)
+        {
+            i++;
+        }
+
+        if (i < var_root->characteristics_count)
+        {
+            var_dims = use_pretransform_dimensions ?
+                       &var_root->characteristics[i].transform.pre_transform_dimensions
+                     : &var_root->characteristics[i].dims;
+        }
+        else
+        {
+            // shouldn't be here
+        }
+    }
 
     has_time_index_characteristic = fh->mfooter.version & ADIOS_VERSION_HAVE_TIME_INDEX_CHARACTERISTIC;
     /* Get dimension information */
@@ -2252,9 +2330,9 @@ void bp_get_dimensions_generic (BP_FILE * fh, struct adios_index_var_struct_v1 *
 }
 
 
-void bp_get_and_swap_dimensions (BP_FILE * fh, struct adios_index_var_struct_v1 *var_root, int file_is_fortran,
+void bp_get_and_swap_dimensions (const ADIOS_FILE * fp, struct adios_index_var_struct_v1 *var_root, int file_is_fortran,
                                  int *ndim, uint64_t **dims, int *nsteps, int swap_flag) {
-    bp_get_and_swap_dimensions_generic(fh, var_root, file_is_fortran, ndim, dims, nsteps, swap_flag, 0);
+    bp_get_and_swap_dimensions_generic (fp, var_root, file_is_fortran, ndim, dims, nsteps, swap_flag, 0);
 }
 
 // NCSU ALACRITY-ADIOS - Factored out a generic version of this function
@@ -2262,12 +2340,12 @@ void bp_get_and_swap_dimensions (BP_FILE * fh, struct adios_index_var_struct_v1 
    ndim: has already taken time dimension out if there is any.
    dims: is local dims if local array. is global dims if global array.
 */
-void bp_get_and_swap_dimensions_generic (BP_FILE * fh, struct adios_index_var_struct_v1 *var_root, int file_is_fortran,
+void bp_get_and_swap_dimensions_generic (const ADIOS_FILE * fp, struct adios_index_var_struct_v1 *var_root, int file_is_fortran,
                                          int *ndim, uint64_t **dims, int *nsteps, int swap_flag, int use_pretransform_dimensions)
 {
     int dummy = 0;
 
-    bp_get_dimensions_generic(fh, var_root, file_is_fortran, ndim, dims, nsteps, use_pretransform_dimensions);
+    bp_get_dimensions_generic (fp, var_root, file_is_fortran, ndim, dims, nsteps, use_pretransform_dimensions);
 
     if (swap_flag)
     {
