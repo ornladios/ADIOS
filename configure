@@ -36859,8 +36859,6 @@ if test "x$with_fastbit" != xno; then
 
     saveCPPFLAGS="$CPPFLAGS"
     saveLDFLAGS="$LDFLAGS"
-    CPPFLAGS="$CPPFLAGS $FASTBIT_CPPFLAGS"
-    LDFLAGS="$LDFLAGS $FASTBIT_LDFLAGS $FASTBIT_LIBS"
 
     ac_ext=cpp
 ac_cpp='$CXXCPP $CPPFLAGS'
@@ -36868,6 +36866,9 @@ ac_compile='$CXX -c $CXXFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CXX -o conftest$ac_exeext $CXXFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_cxx_compiler_gnu
 
+
+    CPPFLAGS="$CPPFLAGS $FASTBIT_CPPFLAGS"
+    LDFLAGS="$LDFLAGS $FASTBIT_LDFLAGS $FASTBIT_LIBS"
 
 
 for ac_header in iapi.h
@@ -37020,15 +37021,15 @@ done
 
 
 
+    CPPFLAGS="$saveCPPFLAGS"
+    LDFLAGS="$saveLDFLAGS"
+
     ac_ext=c
 ac_cpp='$CPP $CPPFLAGS'
 ac_compile='$CC -c $CFLAGS $CPPFLAGS conftest.$ac_ext >&5'
 ac_link='$CC -o conftest$ac_exeext $CFLAGS $CPPFLAGS $LDFLAGS conftest.$ac_ext $LIBS >&5'
 ac_compiler_gnu=$ac_cv_c_compiler_gnu
 
-
-    CPPFLAGS="$saveCPPFLAGS"
-    LDFLAGS="$saveLDFLAGS"
 
     if test -z "$HAVE_FASTBIT"; then
        if false; then
