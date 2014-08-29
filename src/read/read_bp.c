@@ -320,7 +320,7 @@ void build_ADIOS_FILE_struct (ADIOS_FILE * fp, BP_FILE * fh)
 
     MPI_Comm_rank (fh->comm, &rank);
 
-    p = (struct BP_PROC *) malloc (sizeof (struct BP_PROC));
+    p = (BP_PROC *) malloc (sizeof (BP_PROC));
     assert (p);
     p->fh = fh;
     p->streaming = 1;
@@ -1060,7 +1060,7 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
                         MPI_Comm comm, float timeout_sec)
 {
     int rank;
-    struct BP_PROC * p;
+    BP_PROC * p;
     BP_FILE * fh;
     int stay_in_poll_loop = 1;
     int file_ok = 0;
@@ -1153,7 +1153,7 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
     fh->b = malloc (sizeof (struct adios_bp_buffer_struct_v1));
     assert (fh->b);
 
-    p = (struct BP_PROC *) malloc (sizeof (struct BP_PROC));
+    p = (BP_PROC *) malloc (sizeof (BP_PROC));
     assert (p);
     p->fh = fh;
     p->streaming = 1;
@@ -1203,7 +1203,7 @@ ADIOS_FILE * adios_read_bp_open (const char * fname, MPI_Comm comm, enum ADIOS_L
 ADIOS_FILE * adios_read_bp_open_file (const char * fname, MPI_Comm comm)
 {
     int rank;
-    struct BP_PROC * p;
+    BP_PROC * p;
     BP_FILE * fh;
     ADIOS_FILE * fp;
 
@@ -1225,7 +1225,7 @@ ADIOS_FILE * adios_read_bp_open_file (const char * fname, MPI_Comm comm)
     fh->b = malloc (sizeof (struct adios_bp_buffer_struct_v1));
     assert (fh->b);
 
-    p = (struct BP_PROC *) malloc (sizeof (struct BP_PROC));
+    p = (BP_PROC *) malloc (sizeof (BP_PROC));
     assert (p);
     p->fh = fh;
     p->streaming = 0;
@@ -1295,7 +1295,7 @@ typedef struct {
 
 int adios_read_bp_close (ADIOS_FILE * fp)
 {
-    struct BP_PROC * p;
+    BP_PROC * p;
     BP_FILE * fh;
 
     if (!fp)
@@ -1303,7 +1303,7 @@ int adios_read_bp_close (ADIOS_FILE * fp)
         return 0;
     }
 
-    p = (struct BP_PROC *) fp->fh;
+    p = (BP_PROC *) fp->fh;
     assert (p);
 
     fh = p->fh;
@@ -2271,7 +2271,7 @@ typedef struct {
 
 // NCSU ALACRITY-ADIOS - Factored out VARBLOCK inquiry function to permit sourcing
 static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VARINFO * varinfo, int use_pretransform_dimensions) {
-    struct BP_PROC * p = (struct BP_PROC *) fp->fh;
+    BP_PROC * p = (BP_PROC *) fp->fh;
     int i, j, file_is_fortran, nblks, time;
     uint64_t * ldims, * gdims, * offsets;
     BP_FILE * fh;
@@ -2382,7 +2382,7 @@ int adios_read_bp_inq_var_blockinfo (const ADIOS_FILE * fp, ADIOS_VARINFO * vari
 
 // NCSU ALACRITY-ADIOS - Adding an inq function to get the new transform metadata from storage
 ADIOS_TRANSINFO * adios_read_bp_inq_var_transinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi) {
-    struct BP_PROC * p = (struct BP_PROC *) fp->fh;
+    BP_PROC * p = (BP_PROC *) fp->fh;
     BP_FILE * fh;
     struct adios_index_var_struct_v1 * var_root;
     int file_is_fortran;
@@ -2597,11 +2597,11 @@ int adios_read_bp_schedule_read_byid (const ADIOS_FILE * fp, const ADIOS_SELECTI
 
 int adios_read_bp_perform_reads (const ADIOS_FILE *fp, int blocking)
 {
-    struct BP_PROC * p;
+    BP_PROC * p;
     read_request * r;
     ADIOS_VARCHUNK * chunk;
 
-    p = (struct BP_PROC *) fp->fh;
+    p = (BP_PROC *) fp->fh;
 
     /* 1. prepare all reads */
     // check if all user memory is provided for blocking read
@@ -2879,7 +2879,7 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
  *                  <0 on error, sets adios_errno too
  */
     log_debug ("adios_read_bp_check_reads()\n");
-    p = (struct BP_PROC *) fp->fh;
+    p = (BP_PROC *) fp->fh;
 
     if (!p->local_read_request_list)
     {

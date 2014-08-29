@@ -192,7 +192,7 @@ int adios_step_to_time (const ADIOS_FILE * fp, int varid, int from_steps)
 
 int bp_read_open (const char * filename,
           MPI_Comm comm,
-          struct BP_FILE * fh)
+          BP_FILE * fh)
 {
     int  err;
     int  rank;
@@ -226,7 +226,7 @@ int bp_read_open (const char * filename,
  */
 int bp_open (const char * fname,
              MPI_Comm comm,
-             struct BP_FILE * fh)
+             BP_FILE * fh)
 {
     int rank;
     uint64_t header_size;
@@ -279,7 +279,7 @@ int bp_open (const char * fname,
 
 ADIOS_VARINFO * bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
 {
-    struct BP_PROC * p;
+    BP_PROC * p;
     BP_FILE * fh;
     ADIOS_VARINFO * varinfo;
     int file_is_fortran, size, i;
@@ -287,7 +287,7 @@ ADIOS_VARINFO * bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
 
     adios_errno = 0;
 
-    p = (struct BP_PROC *) fp->fh;
+    p = (BP_PROC *) fp->fh;
     fh = (BP_FILE *)p->fh;
     v = bp_find_var_byid (fh, varid);
 
@@ -604,7 +604,7 @@ int bp_close (BP_FILE * fh)
     return 0;
 }
 
-int bp_read_minifooter (struct BP_FILE * bp_struct)
+int bp_read_minifooter (BP_FILE * bp_struct)
 {
     struct adios_bp_buffer_struct_v1 * b = bp_struct->b;
     struct bp_minifooter * mh = &bp_struct->mfooter;
@@ -715,7 +715,7 @@ int bp_read_minifooter (struct BP_FILE * bp_struct)
 /****************/
 /* Parse GROUPS */
 /****************/
-int bp_parse_pgs (struct BP_FILE * fh)
+int bp_parse_pgs (BP_FILE * fh)
 {
     struct bp_index_pg_struct_v1 ** root = &(fh->pgs_root); // need the pointer to it to malloc below
     struct adios_bp_buffer_struct_v1 * b = fh->b;
@@ -957,7 +957,7 @@ int bp_parse_pgs (struct BP_FILE * fh)
 /********************/
 /* Parse ATTRIBUTES */
 /********************/
-int bp_parse_attrs (struct BP_FILE * fh)
+int bp_parse_attrs (BP_FILE * fh)
 {
     struct adios_bp_buffer_struct_v1 * b = fh->b;
     struct adios_index_attribute_struct_v1 ** attrs_root = &(fh->attrs_root);
@@ -1200,7 +1200,7 @@ int bp_parse_attrs (struct BP_FILE * fh)
 /*******************/
 /* Parse VARIABLES */
 /*******************/
-int bp_parse_vars (struct BP_FILE * fh)
+int bp_parse_vars (BP_FILE * fh)
 {
     struct adios_bp_buffer_struct_v1 * b = fh->b;
     struct adios_index_var_struct_v1 ** vars_root = &(fh->vars_root);
@@ -1817,8 +1817,8 @@ int64_t get_var_stop_index (struct adios_index_var_struct_v1 * v, int t)
 int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
 {
     int j, k, t, allstep;
-    struct BP_PROC * p = (struct BP_PROC *) fp->fh;
-    struct BP_FILE * fh = p->fh;
+    BP_PROC * p = (BP_PROC *) fp->fh;
+    BP_FILE * fh = p->fh;
     struct adios_index_var_struct_v1 * var_root = fh->vars_root;
     struct adios_index_attribute_struct_v1 * attr_root;
     uint64_t i;
@@ -2216,7 +2216,7 @@ void bp_get_dimensions_generic (const ADIOS_FILE * fp, struct adios_index_var_st
     uint64_t gdims[32];
     uint64_t offsets[32];
 
-    struct BP_PROC * p = (struct BP_PROC *) fp->fh;
+    BP_PROC * p = (BP_PROC *) fp->fh;
     BP_FILE * fh = (BP_FILE *)p->fh;
     struct adios_index_characteristic_dims_struct_v1 *var_dims;
 
@@ -2511,10 +2511,10 @@ void * bp_read_data_from_buffer(struct adios_bp_buffer_struct_v1 *b, enum ADIOS_
 }
 
 /*
-void bp_grouping ( struct BP_FILE * fh_p,
+void bp_grouping ( BP_FILE * fh_p,
            uint64_t * gh_p)
 {
-    struct BP_FILE * fh = (struct BP_FILE *) fh_p;
+    BP_FILE * fh = (BP_FILE *) fh_p;
     struct bp_index_pg_struct_v1 * pg_root = fh->pgs_root;
     struct bp_minifooter * mh = &fh->mfooter;
     int i, j;
@@ -2575,7 +2575,7 @@ void bp_grouping ( struct BP_FILE * fh_p,
 }
 */
 /*
-int bp_read_pgs (struct BP_FILE * bp_struct)
+int bp_read_pgs (BP_FILE * bp_struct)
 {
         struct adios_bp_buffer_struct_v1 * b = bp_struct->b;
     int r = 0;
@@ -2610,7 +2610,7 @@ int bp_read_pgs (struct BP_FILE * bp_struct)
 }
 */
 /*
-int bp_read_vars (struct BP_FILE * bp_struct)
+int bp_read_vars (BP_FILE * bp_struct)
 {
         struct adios_bp_buffer_struct_v1 * b = bp_struct->b;
     int r = 0;
@@ -2934,12 +2934,12 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
 }
 */
 
-int is_fortran_file (struct BP_FILE * fh)
+int is_fortran_file (BP_FILE * fh)
 {
     return (fh->pgs_root->adios_host_language_fortran == adios_flag_yes);
 }
 
-int has_subfiles (struct BP_FILE * fh)
+int has_subfiles (BP_FILE * fh)
 {
     return (fh->mfooter.version & ADIOS_VERSION_HAVE_SUBFILE);
 }
@@ -3133,7 +3133,7 @@ int check_bp_validity (const char * fname)
     return flag;
 }
 
-int get_num_subfiles (struct BP_FILE * fh)
+int get_num_subfiles (BP_FILE * fh)
 {
     struct adios_index_var_struct_v1 ** vars_root = &(fh->vars_root);
     struct bp_minifooter * mh = &(fh->mfooter);

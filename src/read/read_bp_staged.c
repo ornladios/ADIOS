@@ -2132,7 +2132,7 @@ static void init_read (BP_PROC * p)
 ADIOS_FILE * adios_read_bp_staged_open_file (const char * fname, MPI_Comm comm)
 {
     int rank;
-    struct BP_PROC * p;
+    BP_PROC * p;
     BP_FILE * fh;
     ADIOS_FILE * fp;
     bp_proc_pvt_struct * pvt;
@@ -2156,7 +2156,7 @@ ADIOS_FILE * adios_read_bp_staged_open_file (const char * fname, MPI_Comm comm)
     assert (fh->b);
     adios_buffer_struct_init (fh->b);
 
-    p = (struct BP_PROC *) malloc (sizeof (struct BP_PROC));
+    p = (BP_PROC *) malloc (sizeof (BP_PROC));
     assert (p);
     p->fh = fh;
     p->streaming = 0;
