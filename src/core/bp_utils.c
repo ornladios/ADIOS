@@ -304,7 +304,8 @@ thod returns.
 
     assert (v->characteristics_count);
 
-    // Bugfix for block test (block.c).
+    // Bugfix for block test (block.c). Actually changes
+    // are actually inside bp_get_and_swap_dimensions.
     // For streaming mode, varinfo is built per steps.
     // Q. Liu 08/27/2014
     bp_get_and_swap_dimensions (fp, v, file_is_fortran,

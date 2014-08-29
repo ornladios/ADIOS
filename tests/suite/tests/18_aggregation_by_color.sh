@@ -25,9 +25,9 @@ cp $TRUNKDIR/examples/C/global-array/adios_global_aggregate_by_color .
 echo "Run C adios_global_aggregate_by_color"
 $MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./adios_global_aggregate_by_color
 EX=$?
-if [ ! -f adios_global_aggregate_by_color.bp\
-> || ! -f adios_global_aggregate_by_color.bp.dir/adios_global_aggregate_by_color.bp.0\
-> || ! -f adios_global_aggregate_by_color.bp.dir/adios_global_aggregate_by_color.bp.1 ]; then
+if [ ! -f adios_global_aggregate_by_color.bp ] \
+|| [! -f adios_global_aggregate_by_color.bp.dir/adios_global_aggregate_by_color.bp.0 ] \
+|| [! -f adios_global_aggregate_by_color.bp.dir/adios_global_aggregate_by_color.bp.1 ]; then
     echo "ERROR: adios_global_aggregate_by_color failed. No BP file is created. Exit code=$EX"
     exit 1
 fi
