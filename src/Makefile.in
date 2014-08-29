@@ -44,8 +44,8 @@ DIST_COMMON = $(include_HEADERS) $(srcdir)/Makefile.am \
 	$(srcdir)/transforms/Makefile.plugins
 @HAVE_ALACRITY_TRUE@am__append_2 = 
 @HAVE_ALACRITY_TRUE@am__append_3 = query/query_alac.c
-@HAVE_FASTBIT_TRUE@am__append_4 = 
-@HAVE_FASTBIT_TRUE@am__append_5 = query/query_fastbit.c
+@HAVE_FASTBIT_TRUE@am__append_4 = query/fastbit_adios.h
+@HAVE_FASTBIT_TRUE@am__append_5 = query/query_fastbit.c query/fastbit_adios.c
 @BUILD_WRITE_TRUE@am__append_6 = libadios.a libadios_nompi.a
 @BUILD_WRITE_TRUE@@HAVE_BGQ_TRUE@am__append_7 = write/adios_mpi_bgq.c 
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__append_8 = libadiosf.a libadiosf_v1.a libadiosf_nompi.a libadiosf_nompi_v1.a
@@ -277,7 +277,8 @@ am__libadios_a_SOURCES_DIST = core/adios.c core/common_adios.c \
 	query/common_query.h query/adios_query_hooks.h \
 	query/adios_query.c query/common_query.c \
 	query/adios_query_hooks.c query/query_alac.c \
-	query/query_fastbit.c read/read_bp.c read/read_bp_staged.c \
+	query/query_fastbit.c query/fastbit_adios.c \
+	query/fastbit_adios.h read/read_bp.c read/read_bp_staged.c \
 	read/read_bp_staged1.c write/adios_mpi.c \
 	write/adios_mpi_lustre.c write/adios_mpi_amr.c \
 	write/adios_posix.c write/adios_posix1.c \
@@ -326,7 +327,8 @@ am__objects_7 = $(am__objects_1) libadios_a-adios_query.$(OBJEXT) \
 	libadios_a-common_query.$(OBJEXT) \
 	libadios_a-adios_query_hooks.$(OBJEXT)
 @HAVE_ALACRITY_TRUE@am__objects_8 = libadios_a-query_alac.$(OBJEXT)
-@HAVE_FASTBIT_TRUE@am__objects_9 = libadios_a-query_fastbit.$(OBJEXT)
+@HAVE_FASTBIT_TRUE@am__objects_9 = libadios_a-query_fastbit.$(OBJEXT) \
+@HAVE_FASTBIT_TRUE@	libadios_a-fastbit_adios.$(OBJEXT)
 am__objects_10 = $(am__objects_1) $(am__objects_1)
 am__objects_11 = $(am__objects_8) $(am__objects_9) $(am__objects_10)
 am__objects_12 = $(am__objects_7) $(am__objects_11)
@@ -421,7 +423,8 @@ am__libadios_internal_nompi_a_SOURCES_DIST = core/mpidummy.c \
 	query/common_query.h query/adios_query_hooks.h \
 	query/adios_query.c query/common_query.c \
 	query/adios_query_hooks.c query/query_alac.c \
-	query/query_fastbit.c core/buffer.c core/adios_error.c \
+	query/query_fastbit.c query/fastbit_adios.c \
+	query/fastbit_adios.h core/buffer.c core/adios_error.c \
 	core/adios_logger.c core/adios_timing.c core/util.c \
 	core/qhashtbl.c core/futils.c core/adios_transport_hooks.c \
 	core/adios_internals_mxml.c
@@ -448,7 +451,8 @@ am__objects_24 = $(am__objects_1) \
 	libadios_internal_nompi_a-common_query.$(OBJEXT) \
 	libadios_internal_nompi_a-adios_query_hooks.$(OBJEXT)
 @HAVE_ALACRITY_TRUE@am__objects_25 = libadios_internal_nompi_a-query_alac.$(OBJEXT)
-@HAVE_FASTBIT_TRUE@am__objects_26 = libadios_internal_nompi_a-query_fastbit.$(OBJEXT)
+@HAVE_FASTBIT_TRUE@am__objects_26 = libadios_internal_nompi_a-query_fastbit.$(OBJEXT) \
+@HAVE_FASTBIT_TRUE@	libadios_internal_nompi_a-fastbit_adios.$(OBJEXT)
 am__objects_27 = $(am__objects_25) $(am__objects_26) $(am__objects_10)
 am__objects_28 = $(am__objects_24) $(am__objects_27)
 @BUILD_WRITE_TRUE@am__objects_29 = libadios_internal_nompi_a-adios_internals_mxml.$(OBJEXT)
@@ -524,7 +528,8 @@ am__libadios_nompi_a_SOURCES_DIST = core/adios.c core/common_adios.c \
 	query/common_query.h query/adios_query_hooks.h \
 	query/adios_query.c query/common_query.c \
 	query/adios_query_hooks.c query/query_alac.c \
-	query/query_fastbit.c core/buffer.c core/adios_bp_v1.c \
+	query/query_fastbit.c query/fastbit_adios.c \
+	query/fastbit_adios.h core/buffer.c core/adios_bp_v1.c \
 	core/adios_endianness.c core/bp_utils.c core/futils.c \
 	core/adios_error.c core/adios_read.c core/adios_read_v1.c \
 	core/common_read.c core/globals.c core/mpidummy.c \
@@ -579,7 +584,8 @@ am__objects_35 = $(am__objects_1) \
 @HAVE_ALACRITY_TRUE@am__objects_36 =  \
 @HAVE_ALACRITY_TRUE@	libadios_nompi_a-query_alac.$(OBJEXT)
 @HAVE_FASTBIT_TRUE@am__objects_37 =  \
-@HAVE_FASTBIT_TRUE@	libadios_nompi_a-query_fastbit.$(OBJEXT)
+@HAVE_FASTBIT_TRUE@	libadios_nompi_a-query_fastbit.$(OBJEXT) \
+@HAVE_FASTBIT_TRUE@	libadios_nompi_a-fastbit_adios.$(OBJEXT)
 am__objects_38 = $(am__objects_36) $(am__objects_37) $(am__objects_10)
 am__objects_39 = $(am__objects_35) $(am__objects_38)
 @BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_40 = libadios_nompi_a-adios_dataspaces.$(OBJEXT) \
@@ -678,7 +684,8 @@ am__libadiosf_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	query/common_query.h query/adios_query_hooks.h \
 	query/adios_query.c query/common_query.c \
 	query/adios_query_hooks.c query/query_alac.c \
-	query/query_fastbit.c core/buffer.c core/adios_bp_v1.c \
+	query/query_fastbit.c query/fastbit_adios.c \
+	query/fastbit_adios.h core/buffer.c core/adios_bp_v1.c \
 	core/adios_endianness.c core/futils.c core/adios_error.c \
 	core/bp_utils.c core/common_read.c core/globals.c \
 	core/adios_timing.c core/adios_read_hooks.c \
@@ -734,7 +741,8 @@ am__objects_49 = $(am__objects_1) libadiosf_a-adios_query.$(OBJEXT) \
 	libadiosf_a-adios_query_hooks.$(OBJEXT)
 @HAVE_ALACRITY_TRUE@am__objects_50 = libadiosf_a-query_alac.$(OBJEXT)
 @HAVE_FASTBIT_TRUE@am__objects_51 =  \
-@HAVE_FASTBIT_TRUE@	libadiosf_a-query_fastbit.$(OBJEXT)
+@HAVE_FASTBIT_TRUE@	libadiosf_a-query_fastbit.$(OBJEXT) \
+@HAVE_FASTBIT_TRUE@	libadiosf_a-fastbit_adios.$(OBJEXT)
 am__objects_52 = $(am__objects_50) $(am__objects_51) $(am__objects_10)
 am__objects_53 = $(am__objects_49) $(am__objects_52)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_54 = libadiosf_a-adios_dataspaces.$(OBJEXT) \
@@ -859,7 +867,8 @@ am__libadiosf_nompi_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	query/common_query.h query/adios_query_hooks.h \
 	query/adios_query.c query/common_query.c \
 	query/adios_query_hooks.c query/query_alac.c \
-	query/query_fastbit.c core/buffer.c core/adios_bp_v1.c \
+	query/query_fastbit.c query/fastbit_adios.c \
+	query/fastbit_adios.h core/buffer.c core/adios_bp_v1.c \
 	core/adios_endianness.c core/futils.c core/adios_error.c \
 	core/bp_utils.c core/common_read.c core/globals.c \
 	core/adios_timing.c core/adios_read_hooks.c \
@@ -916,7 +925,8 @@ am__objects_69 = $(am__objects_1) \
 @HAVE_ALACRITY_TRUE@am__objects_70 =  \
 @HAVE_ALACRITY_TRUE@	libadiosf_nompi_a-query_alac.$(OBJEXT)
 @HAVE_FASTBIT_TRUE@am__objects_71 =  \
-@HAVE_FASTBIT_TRUE@	libadiosf_nompi_a-query_fastbit.$(OBJEXT)
+@HAVE_FASTBIT_TRUE@	libadiosf_nompi_a-query_fastbit.$(OBJEXT) \
+@HAVE_FASTBIT_TRUE@	libadiosf_nompi_a-fastbit_adios.$(OBJEXT)
 am__objects_72 = $(am__objects_70) $(am__objects_71) $(am__objects_10)
 am__objects_73 = $(am__objects_69) $(am__objects_72)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_74 = libadiosf_nompi_a-adios_dataspaces.$(OBJEXT) \
@@ -1028,7 +1038,8 @@ am__libadiosf_nompi_v1_a_SOURCES_DIST = core/adiosf.c \
 	query/common_query.h query/adios_query_hooks.h \
 	query/adios_query.c query/common_query.c \
 	query/adios_query_hooks.c query/query_alac.c \
-	query/query_fastbit.c core/buffer.c core/adios_bp_v1.c \
+	query/query_fastbit.c query/fastbit_adios.c \
+	query/fastbit_adios.h core/buffer.c core/adios_bp_v1.c \
 	core/adios_endianness.c core/futils.c core/adios_error.c \
 	core/bp_utils.c core/common_read.c core/globals.c \
 	core/adios_timing.c core/adios_read_hooks.c \
@@ -1085,7 +1096,8 @@ am__objects_86 = $(am__objects_1) \
 	libadiosf_nompi_v1_a-adios_query_hooks.$(OBJEXT)
 @HAVE_ALACRITY_TRUE@am__objects_87 =  \
 @HAVE_ALACRITY_TRUE@	libadiosf_nompi_v1_a-query_alac.$(OBJEXT)
-@HAVE_FASTBIT_TRUE@am__objects_88 = libadiosf_nompi_v1_a-query_fastbit.$(OBJEXT)
+@HAVE_FASTBIT_TRUE@am__objects_88 = libadiosf_nompi_v1_a-query_fastbit.$(OBJEXT) \
+@HAVE_FASTBIT_TRUE@	libadiosf_nompi_v1_a-fastbit_adios.$(OBJEXT)
 am__objects_89 = $(am__objects_87) $(am__objects_88) $(am__objects_10)
 am__objects_90 = $(am__objects_86) $(am__objects_89)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_91 = libadiosf_nompi_v1_a-adios_dataspaces.$(OBJEXT) \
@@ -1196,7 +1208,8 @@ am__libadiosf_v1_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	query/common_query.h query/adios_query_hooks.h \
 	query/adios_query.c query/common_query.c \
 	query/adios_query_hooks.c query/query_alac.c \
-	query/query_fastbit.c core/buffer.c core/adios_bp_v1.c \
+	query/query_fastbit.c query/fastbit_adios.c \
+	query/fastbit_adios.h core/buffer.c core/adios_bp_v1.c \
 	core/adios_endianness.c core/futils.c core/adios_error.c \
 	core/bp_utils.c core/common_read.c core/globals.c \
 	core/adios_timing.c core/adios_read_hooks.c \
@@ -1256,7 +1269,8 @@ am__objects_103 = $(am__objects_1) \
 @HAVE_ALACRITY_TRUE@am__objects_104 =  \
 @HAVE_ALACRITY_TRUE@	libadiosf_v1_a-query_alac.$(OBJEXT)
 @HAVE_FASTBIT_TRUE@am__objects_105 =  \
-@HAVE_FASTBIT_TRUE@	libadiosf_v1_a-query_fastbit.$(OBJEXT)
+@HAVE_FASTBIT_TRUE@	libadiosf_v1_a-query_fastbit.$(OBJEXT) \
+@HAVE_FASTBIT_TRUE@	libadiosf_v1_a-fastbit_adios.$(OBJEXT)
 am__objects_106 = $(am__objects_104) $(am__objects_105) \
 	$(am__objects_10)
 am__objects_107 = $(am__objects_103) $(am__objects_106)
@@ -1361,7 +1375,8 @@ am__libadiosread_a_SOURCES_DIST = core/adios_bp_v1.c \
 	query/common_query.h query/adios_query_hooks.h \
 	query/adios_query.c query/common_query.c \
 	query/adios_query_hooks.c query/query_alac.c \
-	query/query_fastbit.c core/globals.c core/adios_read_hooks.c \
+	query/query_fastbit.c query/fastbit_adios.c \
+	query/fastbit_adios.h core/globals.c core/adios_read_hooks.c \
 	core/adios_logger.c core/util.c core/qhashtbl.c read/read_bp.c \
 	read/read_bp_staged.c read/read_bp_staged1.c \
 	read/read_dataspaces.c read/read_dimes.c read/read_datatap.c \
@@ -1394,7 +1409,8 @@ am__objects_121 = $(am__objects_1) \
 @HAVE_ALACRITY_TRUE@am__objects_122 =  \
 @HAVE_ALACRITY_TRUE@	libadiosread_a-query_alac.$(OBJEXT)
 @HAVE_FASTBIT_TRUE@am__objects_123 =  \
-@HAVE_FASTBIT_TRUE@	libadiosread_a-query_fastbit.$(OBJEXT)
+@HAVE_FASTBIT_TRUE@	libadiosread_a-query_fastbit.$(OBJEXT) \
+@HAVE_FASTBIT_TRUE@	libadiosread_a-fastbit_adios.$(OBJEXT)
 am__objects_124 = $(am__objects_122) $(am__objects_123) \
 	$(am__objects_10)
 am__objects_125 = $(am__objects_121) $(am__objects_124)
@@ -1474,7 +1490,8 @@ am__libadiosread_nompi_a_SOURCES_DIST = core/mpidummy.c \
 	query/common_query.h query/adios_query_hooks.h \
 	query/adios_query.c query/common_query.c \
 	query/adios_query_hooks.c query/query_alac.c \
-	query/query_fastbit.c core/adios_logger.c core/buffer.c \
+	query/query_fastbit.c query/fastbit_adios.c \
+	query/fastbit_adios.h core/adios_logger.c core/buffer.c \
 	core/globals.c core/adios_read_hooks.c core/util.c \
 	core/qhashtbl.c read/read_bp.c read/read_dataspaces.c \
 	read/read_dimes.c read/read_datatap.c read/read_flexpath.c \
@@ -1507,7 +1524,8 @@ am__objects_134 = $(am__objects_1) \
 	libadiosread_nompi_a-adios_query_hooks.$(OBJEXT)
 @HAVE_ALACRITY_TRUE@am__objects_135 =  \
 @HAVE_ALACRITY_TRUE@	libadiosread_nompi_a-query_alac.$(OBJEXT)
-@HAVE_FASTBIT_TRUE@am__objects_136 = libadiosread_nompi_a-query_fastbit.$(OBJEXT)
+@HAVE_FASTBIT_TRUE@am__objects_136 = libadiosread_nompi_a-query_fastbit.$(OBJEXT) \
+@HAVE_FASTBIT_TRUE@	libadiosread_nompi_a-fastbit_adios.$(OBJEXT)
 am__objects_137 = $(am__objects_135) $(am__objects_136) \
 	$(am__objects_10)
 am__objects_138 = $(am__objects_134) $(am__objects_137)
@@ -1583,7 +1601,8 @@ am__libadiosreadf_a_SOURCES_DIST = core/adios_bp_v1.c \
 	query/common_query.h query/adios_query_hooks.h \
 	query/adios_query.c query/common_query.c \
 	query/adios_query_hooks.c query/query_alac.c \
-	query/query_fastbit.c core/globals.c core/adios_read_hooks.c \
+	query/query_fastbit.c query/fastbit_adios.c \
+	query/fastbit_adios.h core/globals.c core/adios_read_hooks.c \
 	core/adios_logger.c core/util.c core/qhashtbl.c read/read_bp.c \
 	read/read_bp_staged.c read/read_bp_staged1.c \
 	read/read_dataspaces.c read/read_dimes.c read/read_datatap.c \
@@ -1618,7 +1637,8 @@ am__objects_147 = $(am__objects_1) \
 @HAVE_ALACRITY_TRUE@am__objects_148 =  \
 @HAVE_ALACRITY_TRUE@	libadiosreadf_a-query_alac.$(OBJEXT)
 @HAVE_FASTBIT_TRUE@am__objects_149 =  \
-@HAVE_FASTBIT_TRUE@	libadiosreadf_a-query_fastbit.$(OBJEXT)
+@HAVE_FASTBIT_TRUE@	libadiosreadf_a-query_fastbit.$(OBJEXT) \
+@HAVE_FASTBIT_TRUE@	libadiosreadf_a-fastbit_adios.$(OBJEXT)
 am__objects_150 = $(am__objects_148) $(am__objects_149) \
 	$(am__objects_10)
 am__objects_151 = $(am__objects_147) $(am__objects_150)
@@ -1697,7 +1717,8 @@ am__libadiosreadf_nompi_a_SOURCES_DIST = core/mpidummy.c \
 	query/common_query.h query/adios_query_hooks.h \
 	query/adios_query.c query/common_query.c \
 	query/adios_query_hooks.c query/query_alac.c \
-	query/query_fastbit.c core/globals.c core/adios_read_hooks.c \
+	query/query_fastbit.c query/fastbit_adios.c \
+	query/fastbit_adios.h core/globals.c core/adios_read_hooks.c \
 	core/util.c core/qhashtbl.c read/read_bp.c \
 	read/read_dataspaces.c read/read_dimes.c read/read_datatap.c \
 	read/read_flexpath.c nssi/adios_nssi_config.c read/read_nssi.c \
@@ -1729,7 +1750,8 @@ am__objects_161 = $(am__objects_1) \
 	libadiosreadf_nompi_a-common_query.$(OBJEXT) \
 	libadiosreadf_nompi_a-adios_query_hooks.$(OBJEXT)
 @HAVE_ALACRITY_TRUE@am__objects_162 = libadiosreadf_nompi_a-query_alac.$(OBJEXT)
-@HAVE_FASTBIT_TRUE@am__objects_163 = libadiosreadf_nompi_a-query_fastbit.$(OBJEXT)
+@HAVE_FASTBIT_TRUE@am__objects_163 = libadiosreadf_nompi_a-query_fastbit.$(OBJEXT) \
+@HAVE_FASTBIT_TRUE@	libadiosreadf_nompi_a-fastbit_adios.$(OBJEXT)
 am__objects_164 = $(am__objects_162) $(am__objects_163) \
 	$(am__objects_10)
 am__objects_165 = $(am__objects_161) $(am__objects_164)
@@ -1806,7 +1828,8 @@ am__libadiosreadf_nompi_v1_a_SOURCES_DIST = core/mpidummy.c \
 	query/common_query.h query/adios_query_hooks.h \
 	query/adios_query.c query/common_query.c \
 	query/adios_query_hooks.c query/query_alac.c \
-	query/query_fastbit.c core/globals.c core/adios_read_hooks.c \
+	query/query_fastbit.c query/fastbit_adios.c \
+	query/fastbit_adios.h core/globals.c core/adios_read_hooks.c \
 	core/util.c core/qhashtbl.c read/read_bp.c \
 	read/read_dataspaces.c read/read_dimes.c read/read_datatap.c \
 	read/read_flexpath.c nssi/adios_nssi_config.c read/read_nssi.c \
@@ -1837,7 +1860,8 @@ am__objects_175 = $(am__objects_1) \
 	libadiosreadf_nompi_v1_a-common_query.$(OBJEXT) \
 	libadiosreadf_nompi_v1_a-adios_query_hooks.$(OBJEXT)
 @HAVE_ALACRITY_TRUE@am__objects_176 = libadiosreadf_nompi_v1_a-query_alac.$(OBJEXT)
-@HAVE_FASTBIT_TRUE@am__objects_177 = libadiosreadf_nompi_v1_a-query_fastbit.$(OBJEXT)
+@HAVE_FASTBIT_TRUE@am__objects_177 = libadiosreadf_nompi_v1_a-query_fastbit.$(OBJEXT) \
+@HAVE_FASTBIT_TRUE@	libadiosreadf_nompi_v1_a-fastbit_adios.$(OBJEXT)
 am__objects_178 = $(am__objects_176) $(am__objects_177) \
 	$(am__objects_10)
 am__objects_179 = $(am__objects_175) $(am__objects_178)
@@ -1909,7 +1933,8 @@ am__libadiosreadf_v1_a_SOURCES_DIST = core/adios_bp_v1.c \
 	query/common_query.h query/adios_query_hooks.h \
 	query/adios_query.c query/common_query.c \
 	query/adios_query_hooks.c query/query_alac.c \
-	query/query_fastbit.c core/globals.c core/adios_read_hooks.c \
+	query/query_fastbit.c query/fastbit_adios.c \
+	query/fastbit_adios.h core/globals.c core/adios_read_hooks.c \
 	core/adios_logger.c core/util.c core/qhashtbl.c read/read_bp.c \
 	read/read_bp_staged.c read/read_bp_staged1.c \
 	read/read_dataspaces.c read/read_dimes.c read/read_datatap.c \
@@ -1943,7 +1968,8 @@ am__objects_189 = $(am__objects_1) \
 @HAVE_ALACRITY_TRUE@am__objects_190 =  \
 @HAVE_ALACRITY_TRUE@	libadiosreadf_v1_a-query_alac.$(OBJEXT)
 @HAVE_FASTBIT_TRUE@am__objects_191 =  \
-@HAVE_FASTBIT_TRUE@	libadiosreadf_v1_a-query_fastbit.$(OBJEXT)
+@HAVE_FASTBIT_TRUE@	libadiosreadf_v1_a-query_fastbit.$(OBJEXT) \
+@HAVE_FASTBIT_TRUE@	libadiosreadf_v1_a-fastbit_adios.$(OBJEXT)
 am__objects_192 = $(am__objects_190) $(am__objects_191) \
 	$(am__objects_10)
 am__objects_193 = $(am__objects_189) $(am__objects_192)
@@ -3229,6 +3255,12 @@ libadios_a-query_fastbit.o: query/query_fastbit.c
 libadios_a-query_fastbit.obj: query/query_fastbit.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-query_fastbit.obj `if test -f 'query/query_fastbit.c'; then $(CYGPATH_W) 'query/query_fastbit.c'; else $(CYGPATH_W) '$(srcdir)/query/query_fastbit.c'; fi`
 
+libadios_a-fastbit_adios.o: query/fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-fastbit_adios.o `test -f 'query/fastbit_adios.c' || echo '$(srcdir)/'`query/fastbit_adios.c
+
+libadios_a-fastbit_adios.obj: query/fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-fastbit_adios.obj `if test -f 'query/fastbit_adios.c'; then $(CYGPATH_W) 'query/fastbit_adios.c'; else $(CYGPATH_W) '$(srcdir)/query/fastbit_adios.c'; fi`
+
 libadios_a-read_bp.o: read/read_bp.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-read_bp.o `test -f 'read/read_bp.c' || echo '$(srcdir)/'`read/read_bp.c
 
@@ -3529,6 +3561,12 @@ libadios_internal_nompi_a-query_fastbit.o: query/query_fastbit.c
 libadios_internal_nompi_a-query_fastbit.obj: query/query_fastbit.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_internal_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_internal_nompi_a-query_fastbit.obj `if test -f 'query/query_fastbit.c'; then $(CYGPATH_W) 'query/query_fastbit.c'; else $(CYGPATH_W) '$(srcdir)/query/query_fastbit.c'; fi`
 
+libadios_internal_nompi_a-fastbit_adios.o: query/fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_internal_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_internal_nompi_a-fastbit_adios.o `test -f 'query/fastbit_adios.c' || echo '$(srcdir)/'`query/fastbit_adios.c
+
+libadios_internal_nompi_a-fastbit_adios.obj: query/fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_internal_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_internal_nompi_a-fastbit_adios.obj `if test -f 'query/fastbit_adios.c'; then $(CYGPATH_W) 'query/fastbit_adios.c'; else $(CYGPATH_W) '$(srcdir)/query/fastbit_adios.c'; fi`
+
 libadios_internal_nompi_a-buffer.o: core/buffer.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_internal_nompi_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libadios_internal_nompi_a-buffer.o `test -f 'core/buffer.c' || echo '$(srcdir)/'`core/buffer.c
 
@@ -3810,6 +3848,12 @@ libadios_nompi_a-query_fastbit.o: query/query_fastbit.c
 
 libadios_nompi_a-query_fastbit.obj: query/query_fastbit.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-query_fastbit.obj `if test -f 'query/query_fastbit.c'; then $(CYGPATH_W) 'query/query_fastbit.c'; else $(CYGPATH_W) '$(srcdir)/query/query_fastbit.c'; fi`
+
+libadios_nompi_a-fastbit_adios.o: query/fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-fastbit_adios.o `test -f 'query/fastbit_adios.c' || echo '$(srcdir)/'`query/fastbit_adios.c
+
+libadios_nompi_a-fastbit_adios.obj: query/fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-fastbit_adios.obj `if test -f 'query/fastbit_adios.c'; then $(CYGPATH_W) 'query/fastbit_adios.c'; else $(CYGPATH_W) '$(srcdir)/query/fastbit_adios.c'; fi`
 
 libadios_nompi_a-buffer.o: core/buffer.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-buffer.o `test -f 'core/buffer.c' || echo '$(srcdir)/'`core/buffer.c
@@ -4224,6 +4268,12 @@ libadiosf_a-query_fastbit.o: query/query_fastbit.c
 
 libadiosf_a-query_fastbit.obj: query/query_fastbit.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-query_fastbit.obj `if test -f 'query/query_fastbit.c'; then $(CYGPATH_W) 'query/query_fastbit.c'; else $(CYGPATH_W) '$(srcdir)/query/query_fastbit.c'; fi`
+
+libadiosf_a-fastbit_adios.o: query/fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-fastbit_adios.o `test -f 'query/fastbit_adios.c' || echo '$(srcdir)/'`query/fastbit_adios.c
+
+libadiosf_a-fastbit_adios.obj: query/fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-fastbit_adios.obj `if test -f 'query/fastbit_adios.c'; then $(CYGPATH_W) 'query/fastbit_adios.c'; else $(CYGPATH_W) '$(srcdir)/query/fastbit_adios.c'; fi`
 
 libadiosf_a-buffer.o: core/buffer.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-buffer.o `test -f 'core/buffer.c' || echo '$(srcdir)/'`core/buffer.c
@@ -4699,6 +4749,12 @@ libadiosf_nompi_a-query_fastbit.o: query/query_fastbit.c
 libadiosf_nompi_a-query_fastbit.obj: query/query_fastbit.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_a-query_fastbit.obj `if test -f 'query/query_fastbit.c'; then $(CYGPATH_W) 'query/query_fastbit.c'; else $(CYGPATH_W) '$(srcdir)/query/query_fastbit.c'; fi`
 
+libadiosf_nompi_a-fastbit_adios.o: query/fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_a-fastbit_adios.o `test -f 'query/fastbit_adios.c' || echo '$(srcdir)/'`query/fastbit_adios.c
+
+libadiosf_nompi_a-fastbit_adios.obj: query/fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_a-fastbit_adios.obj `if test -f 'query/fastbit_adios.c'; then $(CYGPATH_W) 'query/fastbit_adios.c'; else $(CYGPATH_W) '$(srcdir)/query/fastbit_adios.c'; fi`
+
 libadiosf_nompi_a-buffer.o: core/buffer.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_a-buffer.o `test -f 'core/buffer.c' || echo '$(srcdir)/'`core/buffer.c
 
@@ -5130,6 +5186,12 @@ libadiosf_nompi_v1_a-query_fastbit.o: query/query_fastbit.c
 
 libadiosf_nompi_v1_a-query_fastbit.obj: query/query_fastbit.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_v1_a-query_fastbit.obj `if test -f 'query/query_fastbit.c'; then $(CYGPATH_W) 'query/query_fastbit.c'; else $(CYGPATH_W) '$(srcdir)/query/query_fastbit.c'; fi`
+
+libadiosf_nompi_v1_a-fastbit_adios.o: query/fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_v1_a-fastbit_adios.o `test -f 'query/fastbit_adios.c' || echo '$(srcdir)/'`query/fastbit_adios.c
+
+libadiosf_nompi_v1_a-fastbit_adios.obj: query/fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_v1_a-fastbit_adios.obj `if test -f 'query/fastbit_adios.c'; then $(CYGPATH_W) 'query/fastbit_adios.c'; else $(CYGPATH_W) '$(srcdir)/query/fastbit_adios.c'; fi`
 
 libadiosf_nompi_v1_a-buffer.o: core/buffer.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_v1_a-buffer.o `test -f 'core/buffer.c' || echo '$(srcdir)/'`core/buffer.c
@@ -5563,6 +5625,12 @@ libadiosf_v1_a-query_fastbit.o: query/query_fastbit.c
 libadiosf_v1_a-query_fastbit.obj: query/query_fastbit.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-query_fastbit.obj `if test -f 'query/query_fastbit.c'; then $(CYGPATH_W) 'query/query_fastbit.c'; else $(CYGPATH_W) '$(srcdir)/query/query_fastbit.c'; fi`
 
+libadiosf_v1_a-fastbit_adios.o: query/fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-fastbit_adios.o `test -f 'query/fastbit_adios.c' || echo '$(srcdir)/'`query/fastbit_adios.c
+
+libadiosf_v1_a-fastbit_adios.obj: query/fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-fastbit_adios.obj `if test -f 'query/fastbit_adios.c'; then $(CYGPATH_W) 'query/fastbit_adios.c'; else $(CYGPATH_W) '$(srcdir)/query/fastbit_adios.c'; fi`
+
 libadiosf_v1_a-buffer.o: core/buffer.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-buffer.o `test -f 'core/buffer.c' || echo '$(srcdir)/'`core/buffer.c
 
@@ -5989,6 +6057,12 @@ libadiosread_a-query_fastbit.o: query/query_fastbit.c
 libadiosread_a-query_fastbit.obj: query/query_fastbit.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_a_CFLAGS) $(CFLAGS) -c -o libadiosread_a-query_fastbit.obj `if test -f 'query/query_fastbit.c'; then $(CYGPATH_W) 'query/query_fastbit.c'; else $(CYGPATH_W) '$(srcdir)/query/query_fastbit.c'; fi`
 
+libadiosread_a-fastbit_adios.o: query/fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_a_CFLAGS) $(CFLAGS) -c -o libadiosread_a-fastbit_adios.o `test -f 'query/fastbit_adios.c' || echo '$(srcdir)/'`query/fastbit_adios.c
+
+libadiosread_a-fastbit_adios.obj: query/fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_a_CFLAGS) $(CFLAGS) -c -o libadiosread_a-fastbit_adios.obj `if test -f 'query/fastbit_adios.c'; then $(CYGPATH_W) 'query/fastbit_adios.c'; else $(CYGPATH_W) '$(srcdir)/query/fastbit_adios.c'; fi`
+
 libadiosread_a-globals.o: core/globals.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_a_CFLAGS) $(CFLAGS) -c -o libadiosread_a-globals.o `test -f 'core/globals.c' || echo '$(srcdir)/'`core/globals.c
 
@@ -6271,6 +6345,12 @@ libadiosread_nompi_a-query_fastbit.o: query/query_fastbit.c
 libadiosread_nompi_a-query_fastbit.obj: query/query_fastbit.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-query_fastbit.obj `if test -f 'query/query_fastbit.c'; then $(CYGPATH_W) 'query/query_fastbit.c'; else $(CYGPATH_W) '$(srcdir)/query/query_fastbit.c'; fi`
 
+libadiosread_nompi_a-fastbit_adios.o: query/fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-fastbit_adios.o `test -f 'query/fastbit_adios.c' || echo '$(srcdir)/'`query/fastbit_adios.c
+
+libadiosread_nompi_a-fastbit_adios.obj: query/fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-fastbit_adios.obj `if test -f 'query/fastbit_adios.c'; then $(CYGPATH_W) 'query/fastbit_adios.c'; else $(CYGPATH_W) '$(srcdir)/query/fastbit_adios.c'; fi`
+
 libadiosread_nompi_a-adios_logger.o: core/adios_logger.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-adios_logger.o `test -f 'core/adios_logger.c' || echo '$(srcdir)/'`core/adios_logger.c
 
@@ -6528,6 +6608,12 @@ libadiosreadf_a-query_fastbit.o: query/query_fastbit.c
 
 libadiosreadf_a-query_fastbit.obj: query/query_fastbit.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_a-query_fastbit.obj `if test -f 'query/query_fastbit.c'; then $(CYGPATH_W) 'query/query_fastbit.c'; else $(CYGPATH_W) '$(srcdir)/query/query_fastbit.c'; fi`
+
+libadiosreadf_a-fastbit_adios.o: query/fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_a-fastbit_adios.o `test -f 'query/fastbit_adios.c' || echo '$(srcdir)/'`query/fastbit_adios.c
+
+libadiosreadf_a-fastbit_adios.obj: query/fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_a-fastbit_adios.obj `if test -f 'query/fastbit_adios.c'; then $(CYGPATH_W) 'query/fastbit_adios.c'; else $(CYGPATH_W) '$(srcdir)/query/fastbit_adios.c'; fi`
 
 libadiosreadf_a-globals.o: core/globals.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_a-globals.o `test -f 'core/globals.c' || echo '$(srcdir)/'`core/globals.c
@@ -6811,6 +6897,12 @@ libadiosreadf_nompi_a-query_fastbit.o: query/query_fastbit.c
 libadiosreadf_nompi_a-query_fastbit.obj: query/query_fastbit.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-query_fastbit.obj `if test -f 'query/query_fastbit.c'; then $(CYGPATH_W) 'query/query_fastbit.c'; else $(CYGPATH_W) '$(srcdir)/query/query_fastbit.c'; fi`
 
+libadiosreadf_nompi_a-fastbit_adios.o: query/fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-fastbit_adios.o `test -f 'query/fastbit_adios.c' || echo '$(srcdir)/'`query/fastbit_adios.c
+
+libadiosreadf_nompi_a-fastbit_adios.obj: query/fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-fastbit_adios.obj `if test -f 'query/fastbit_adios.c'; then $(CYGPATH_W) 'query/fastbit_adios.c'; else $(CYGPATH_W) '$(srcdir)/query/fastbit_adios.c'; fi`
+
 libadiosreadf_nompi_a-globals.o: core/globals.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-globals.o `test -f 'core/globals.c' || echo '$(srcdir)/'`core/globals.c
 
@@ -7075,6 +7167,12 @@ libadiosreadf_nompi_v1_a-query_fastbit.o: query/query_fastbit.c
 libadiosreadf_nompi_v1_a-query_fastbit.obj: query/query_fastbit.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_v1_a-query_fastbit.obj `if test -f 'query/query_fastbit.c'; then $(CYGPATH_W) 'query/query_fastbit.c'; else $(CYGPATH_W) '$(srcdir)/query/query_fastbit.c'; fi`
 
+libadiosreadf_nompi_v1_a-fastbit_adios.o: query/fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_v1_a-fastbit_adios.o `test -f 'query/fastbit_adios.c' || echo '$(srcdir)/'`query/fastbit_adios.c
+
+libadiosreadf_nompi_v1_a-fastbit_adios.obj: query/fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_v1_a-fastbit_adios.obj `if test -f 'query/fastbit_adios.c'; then $(CYGPATH_W) 'query/fastbit_adios.c'; else $(CYGPATH_W) '$(srcdir)/query/fastbit_adios.c'; fi`
+
 libadiosreadf_nompi_v1_a-globals.o: core/globals.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_v1_a-globals.o `test -f 'core/globals.c' || echo '$(srcdir)/'`core/globals.c
 
@@ -7320,6 +7418,12 @@ libadiosreadf_v1_a-query_fastbit.o: query/query_fastbit.c
 
 libadiosreadf_v1_a-query_fastbit.obj: query/query_fastbit.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_v1_a-query_fastbit.obj `if test -f 'query/query_fastbit.c'; then $(CYGPATH_W) 'query/query_fastbit.c'; else $(CYGPATH_W) '$(srcdir)/query/query_fastbit.c'; fi`
+
+libadiosreadf_v1_a-fastbit_adios.o: query/fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_v1_a-fastbit_adios.o `test -f 'query/fastbit_adios.c' || echo '$(srcdir)/'`query/fastbit_adios.c
+
+libadiosreadf_v1_a-fastbit_adios.obj: query/fastbit_adios.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_v1_a-fastbit_adios.obj `if test -f 'query/fastbit_adios.c'; then $(CYGPATH_W) 'query/fastbit_adios.c'; else $(CYGPATH_W) '$(srcdir)/query/fastbit_adios.c'; fi`
 
 libadiosreadf_v1_a-globals.o: core/globals.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_v1_a-globals.o `test -f 'core/globals.c' || echo '$(srcdir)/'`core/globals.c

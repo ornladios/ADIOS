@@ -5,6 +5,6 @@ query_method_SOURCES += query/query_alac.c
 endif # HAVE_ALACRITY
 
 if HAVE_FASTBIT
-query_method_HDRS += 
-query_method_SOURCES += query/query_fastbit.c
+query_method_HDRS += query/fastbit_adios.h
+query_method_SOURCES += query/query_fastbit.c query/fastbit_adios.c
 endif # HAVE_FASTBIT
