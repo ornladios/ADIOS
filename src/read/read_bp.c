@@ -39,7 +39,6 @@ static int show_hidden_attrs = 0; // don't show hidden attr by default
 static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE * fp, read_request * r);
 static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r);
 
-static int adios_step_to_time (const ADIOS_FILE * fp, int varid, int from_steps);
 static int map_req_varid (const ADIOS_FILE * fp, int varid);
 static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r, int step_offset);
 

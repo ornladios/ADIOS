@@ -282,7 +282,7 @@ ADIOS_VARINFO * bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
     struct BP_PROC * p;
     BP_FILE * fh;
     ADIOS_VARINFO * varinfo;
-    int file_is_fortran, size;
+    int file_is_fortran, size, i;
     struct adios_index_var_struct_v1 * v;
 
     adios_errno = 0;
@@ -320,11 +320,32 @@ thod returns.
     // set value for scalar
     if (v->characteristics [0].value)
     {
-        size = bp_get_type_size (v->type, v->characteristics [0].value);
+        i = 0;
+
+        if (p->streaming)
+        {
+            int time = fp->current_step + 1;
+            i = 0;
+            while (i < v->characteristics_count && v->characteristics[i].time_index != time)
+            {
+                i++;
+            }
+
+            if (i >= v->characteristics_count)
+            {
+                // shouldn't be here
+            }
+        }
+        else
+        {
+            // keep i as 0
+        }
+
+        size = bp_get_type_size (v->type, v->characteristics [i].value);
         varinfo->value = (void *) malloc (size);
         assert (varinfo->value);
 
-        memcpy (varinfo->value, v->characteristics [0].value, size);
+        memcpy (varinfo->value, v->characteristics [i].value, size);
     }
     else
     {
