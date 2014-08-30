@@ -1,10 +1,5 @@
-
-if HAVE_ALACRITY
-query_method_HDRS += 
+# Identity plugin:
+query_method_SOURCES += query/adios_query_hooks.c
+query_method_SOURCES += query/adios_query.c
+query_method_SOURCES += query/common_query.c
 query_method_SOURCES += query/query_alac.c
-endif # HAVE_ALACRITY
-
-if HAVE_FASTBIT
-query_method_HDRS += query/fastbit_adios.h
-query_method_SOURCES += query/query_fastbit.c query/fastbit_adios.c
-endif # HAVE_FASTBIT

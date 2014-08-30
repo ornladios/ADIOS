@@ -748,7 +748,6 @@ AC_DEFINE_UNQUOTED(VERSION_MICRO, ${VERSION_MICRO}, [Micro version number])
 
 AC_CONFIG_FILES([Makefile
                  src/Makefile
-		 src/query/Makefile
                  tests/Makefile
                  tests/C/Makefile
                  tests/C/flexpath_tests/Makefile
