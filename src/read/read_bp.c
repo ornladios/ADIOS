@@ -239,7 +239,7 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r, int st
 /* This routine release one step. It only frees the var/attr namelist. */
 static void release_step (ADIOS_FILE *fp)
 {
-    BP_PROC * p = (BP_PROC *) fp->fh;
+    BP_PROC * p = GET_BP_PROC ((const ADIOS_FILE *)fp);
 
     if (p->varid_mapping)
     {
@@ -418,8 +418,9 @@ static int get_new_step (ADIOS_FILE * fp, const char * fname, MPI_Comm comm, int
 */
 static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
 {
-    BP_PROC * p;
-    BP_FILE * fh;
+    BP_PROC * p = GET_BP_PROC (fp);
+    BP_FILE * fh = GET_BP_FILE (fp);
+
     int size_of_type;
     struct adios_index_var_struct_v1 * v;
     uint64_t i;
@@ -429,9 +430,6 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
 
     log_debug ("read_var()\n");
     sel = r->sel;
-    p = (BP_PROC *) fp->fh;
-    fh = (BP_FILE *) p->fh;
-
     v = bp_find_var_byid (fh, r->varid);
 
     switch (sel->type)
@@ -511,8 +509,9 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
  */
 static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
 {
-    BP_PROC * p;
-    BP_FILE * fh;
+    BP_PROC * p = GET_BP_PROC (fp);
+    BP_FILE * fh = GET_BP_FILE (fp);
+
     ADIOS_SELECTION * sel;
     struct adios_index_var_struct_v1 * v;
     int i, j, t, time, nsteps;
@@ -531,8 +530,6 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
     //struct adios_var_payload_struct_v1 var_payload;
 
 //    log_debug ("read_var_bb()\n");
-    p = (BP_PROC *) fp->fh;
-    fh = (BP_FILE *) p->fh;
     file_is_fortran = is_fortran_file (fh);
     has_subfile = has_subfiles (fh);
 
@@ -1295,18 +1292,8 @@ typedef struct {
 
 int adios_read_bp_close (ADIOS_FILE * fp)
 {
-    BP_PROC * p;
-    BP_FILE * fh;
-
-    if (!fp)
-    {
-        return 0;
-    }
-
-    p = (BP_PROC *) fp->fh;
-    assert (p);
-
-    fh = p->fh;
+    BP_PROC * p = GET_BP_PROC (fp);
+    BP_FILE * fh = GET_BP_FILE (fp);
 
     if (p->fh)
     {
@@ -1368,8 +1355,8 @@ int adios_read_bp_close (ADIOS_FILE * fp)
  */
 int adios_read_bp_advance_step (ADIOS_FILE * fp, int last, float timeout_sec)
 {
-    BP_PROC * p = (BP_PROC *) fp->fh;
-    BP_FILE * fh = (BP_FILE *) p->fh;
+    BP_PROC * p = GET_BP_PROC (fp);
+    BP_FILE * fh = GET_BP_FILE (fp);
     int last_tidx;
     MPI_Comm comm;
     char * fname;
@@ -1512,8 +1499,9 @@ typedef struct {
     int i, j, c, count = 1, timestep;
     int size, sum_size, nsteps, prev_timestep;
     int nb; // total number of blocks (varinfo->sum_nblocks)
-    BP_PROC * p = (BP_PROC *) fp->fh;
-    BP_FILE * fh = (BP_FILE *) p->fh;
+    BP_PROC * p = GET_BP_PROC (fp);
+    BP_FILE * fh = GET_BP_FILE (fp);
+
     ADIOS_VARSTAT * vs;
     struct adios_index_var_struct_v1 * var_root;
 
@@ -2271,16 +2259,15 @@ typedef struct {
 
 // NCSU ALACRITY-ADIOS - Factored out VARBLOCK inquiry function to permit sourcing
 static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VARINFO * varinfo, int use_pretransform_dimensions) {
-    BP_PROC * p = (BP_PROC *) fp->fh;
+    BP_PROC * p = GET_BP_PROC (fp);
+    BP_FILE * fh = GET_BP_FILE (fp);
     int i, j, file_is_fortran, nblks, time;
     uint64_t * ldims, * gdims, * offsets;
-    BP_FILE * fh;
     struct adios_index_var_struct_v1 * var_root;
     ADIOS_VARBLOCK *blockinfo;
 
     assert (varinfo);
 
-    fh = (BP_FILE *) p->fh;
     file_is_fortran = is_fortran_file (fh);
     // For file mode: return all blocks info;
     // For streaming mode: return all blocks within the current step
@@ -2382,14 +2369,13 @@ int adios_read_bp_inq_var_blockinfo (const ADIOS_FILE * fp, ADIOS_VARINFO * vari
 
 // NCSU ALACRITY-ADIOS - Adding an inq function to get the new transform metadata from storage
 ADIOS_TRANSINFO * adios_read_bp_inq_var_transinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi) {
-    BP_PROC * p = (BP_PROC *) fp->fh;
-    BP_FILE * fh;
+    BP_PROC * p = GET_BP_PROC (fp);
+    BP_FILE * fh = GET_BP_FILE (fp);
     struct adios_index_var_struct_v1 * var_root;
     int file_is_fortran;
     int dummy;
     ADIOS_TRANSINFO *transinfo;
     assert(vi);
-    fh = (BP_FILE *) p->fh;
     file_is_fortran = is_fortran_file (fh);
 
     // Perform variable ID mapping, since the input to this function is user-perceived
@@ -2523,18 +2509,14 @@ uint64_t get_req_datasize (const ADIOS_FILE * fp, read_request * r, struct adios
 int adios_read_bp_schedule_read_byid (const ADIOS_FILE * fp, const ADIOS_SELECTION * sel,
                                       int varid, int from_steps, int nsteps, void * data)
 {
-    BP_PROC * p;
-    BP_FILE * fh;
+    BP_PROC * p = GET_BP_PROC (fp);
+    BP_FILE * fh = GET_BP_FILE (fp);
+
     read_request * r;
     ADIOS_SELECTION * nullsel = 0;
     struct adios_index_var_struct_v1 * v;
     int i, ndim, ns, file_is_fortran, mapped_varid;
     uint64_t * dims = 0;
-
-    assert (fp);
-
-    p = (BP_PROC *) fp->fh;
-    fh = (BP_FILE *) p->fh;
 
     mapped_varid = p->varid_mapping[varid];
     v = bp_find_var_byid (fh, mapped_varid);
@@ -2597,11 +2579,9 @@ int adios_read_bp_schedule_read_byid (const ADIOS_FILE * fp, const ADIOS_SELECTI
 
 int adios_read_bp_perform_reads (const ADIOS_FILE *fp, int blocking)
 {
-    BP_PROC * p;
+    BP_PROC * p = GET_BP_PROC (fp);
     read_request * r;
     ADIOS_VARCHUNK * chunk;
-
-    p = (BP_PROC *) fp->fh;
 
     /* 1. prepare all reads */
     // check if all user memory is provided for blocking read
@@ -2650,8 +2630,9 @@ int adios_read_bp_perform_reads (const ADIOS_FILE *fp, int blocking)
  */
 static read_request * split_req (const ADIOS_FILE * fp, const read_request * r, int buffer_size)
 {
-    BP_PROC * p = (BP_PROC *) fp->fh;
-    BP_FILE * fh = (BP_FILE *) p->fh;
+    BP_PROC * p = GET_BP_PROC (fp);
+    BP_FILE * fh = GET_BP_FILE (fp);
+
     read_request * h = 0;
     ADIOS_SELECTION * sel = r->sel;
     struct adios_index_var_struct_v1 * v;
@@ -2869,7 +2850,9 @@ static read_request * split_req (const ADIOS_FILE * fp, const read_request * r, 
 
 int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
 {
-    BP_PROC * p;
+    BP_PROC * p = GET_BP_PROC (fp);
+    BP_FILE * fh = GET_BP_FILE (fp);
+
     read_request * r;
     ADIOS_VARCHUNK * varchunk;
 /*
@@ -2879,7 +2862,6 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
  *                  <0 on error, sets adios_errno too
  */
     log_debug ("adios_read_bp_check_reads()\n");
-    p = (BP_PROC *) fp->fh;
 
     if (!p->local_read_request_list)
     {
@@ -2985,8 +2967,8 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
 int adios_read_bp_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_DATATYPES * type, int * size, void ** data)
 {
     int i;
-    BP_PROC * p = (BP_PROC *) fp->fh;
-    BP_FILE * fh = (BP_FILE *) p->fh;
+    BP_PROC * p = GET_BP_PROC (fp);
+    BP_FILE * fh = GET_BP_FILE (fp);
     struct adios_index_attribute_struct_v1 * attr_root;
     struct adios_index_var_struct_v1 * var_root, * v1;
     int file_is_fortran, last_step = fp->last_step, show_hidden_attrs;
@@ -3271,8 +3253,8 @@ int adios_read_bp_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_D
 
 void adios_read_bp_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
 {
-    BP_PROC * p = (BP_PROC *) fp->fh;
-    BP_FILE * fh = (BP_FILE *)(p->fh);
+    BP_PROC * p = GET_BP_PROC (fp);
+    BP_FILE * fh = GET_BP_FILE (fp);
     struct bp_index_pg_struct_v1 ** root = &(fh->pgs_root);
     struct bp_minifooter * mh = &(fh->mfooter);
     uint64_t i;
@@ -3286,12 +3268,9 @@ void adios_read_bp_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
 
 void adios_read_bp_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, uint32_t **nvars_per_group, uint32_t **nattrs_per_group)
 {
-    BP_PROC * p;
-    BP_FILE * fh;
+    BP_PROC * p = GET_BP_PROC (fp);
+    BP_FILE * fh = GET_BP_FILE (fp);
     int i, j, offset;
-
-    p = (BP_PROC *) fp->fh;
-    fh = (BP_FILE *) p->fh;
 
     * ngroups = fh->gvar_h->group_count;
 
@@ -3344,15 +3323,13 @@ void adios_read_bp_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***gr
  */
 int adios_read_bp_is_var_timed (const ADIOS_FILE *fp, int varid)
 {
-    BP_PROC * p;
-    BP_FILE * fh;
+    BP_PROC * p = GET_BP_PROC (fp);
+    BP_FILE * fh = GET_BP_FILE (fp);
+
     struct adios_index_var_struct_v1 * v;
     //struct adios_index_characteristic_struct_v1 ch;
     int retval = 0, ndim, k;
     uint64_t gdims[32];
-
-    p = (BP_PROC *) fp->fh;
-    fh = (BP_FILE *) p->fh;
 
     v = bp_find_var_byid (fh, varid);
     //ch = v->characteristics[0];
@@ -3404,7 +3381,7 @@ int adios_read_bp_is_var_timed (const ADIOS_FILE *fp, int varid)
 
 static int map_req_varid (const ADIOS_FILE * fp, int varid)
 {
-    BP_PROC * p = (BP_PROC *) fp->fh;
+    BP_PROC * p = GET_BP_PROC (fp);
 
     return p->varid_mapping[varid];
 }
@@ -3414,8 +3391,9 @@ static int map_req_varid (const ADIOS_FILE * fp, int varid)
  */
 static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r, int step_offset)
 {
-    BP_PROC * p = (BP_PROC *) fp->fh;
-    BP_FILE * fh = (BP_FILE *) p->fh;
+    BP_PROC * p = GET_BP_PROC (fp);
+    BP_FILE * fh = GET_BP_FILE (fp);
+
     int time, start_idx, stop_idx, c, idx;
     int mapped_varid, ridx;
     struct adios_index_var_struct_v1* v;
@@ -3472,8 +3450,9 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r, int st
  */
 static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
 {
-    BP_PROC * p = (BP_PROC *)fp->fh;
-    BP_FILE * fh = (BP_FILE *)p->fh;;
+    BP_PROC * p = GET_BP_PROC (fp);
+    BP_FILE * fh = GET_BP_FILE (fp);
+
     struct adios_index_var_struct_v1 * v;
     int i, j, varid, start_idx, idx;
     int ndim, has_subfile;

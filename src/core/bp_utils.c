@@ -48,6 +48,16 @@
                              swap_64(var); \
                          b->offset += 8;
 
+inline BP_PROC * GET_BP_PROC (const ADIOS_FILE * fp)
+{
+    return (BP_PROC *) fp->fh;
+}
+
+inline BP_FILE * GET_BP_FILE (const ADIOS_FILE * fp)
+{
+    return (BP_FILE *) ((BP_PROC *) fp->fh)->fh;
+}
+
 /* prototypes */
 void * bp_read_data_from_buffer(struct adios_bp_buffer_struct_v1 *b, enum ADIOS_DATATYPES type);
 int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b, struct adios_index_var_struct_v1 ** root, uint64_t j);
@@ -151,8 +161,8 @@ int get_time (struct adios_index_var_struct_v1 * v, int step)
  */
 int _adios_step_to_time (const ADIOS_FILE * fp, struct adios_index_var_struct_v1 * v, int from_steps)
 {
-    BP_PROC * p = (BP_PROC *)fp->fh;
-    BP_FILE * fh = (BP_FILE *)p->fh;
+    BP_PROC * p = GET_BP_PROC (fp);
+    BP_FILE * fh = GET_BP_FILE (fp);
     int t, time;
 
     t = fp->current_step + from_steps;
@@ -174,15 +184,12 @@ int _adios_step_to_time (const ADIOS_FILE * fp, struct adios_index_var_struct_v1
  */
 int adios_step_to_time (const ADIOS_FILE * fp, int varid, int from_steps)
 {
-    BP_PROC * p;
-    BP_FILE * fh;
+    BP_PROC * p = GET_BP_PROC (fp);
+    BP_FILE * fh = GET_BP_FILE (fp);
     struct adios_index_var_struct_v1 * v;
     int mapped_varid;
 
     adios_errno = 0;
-
-    p = (BP_PROC *)fp->fh;
-    fh = (BP_FILE *)p->fh;
 
     mapped_varid = p->varid_mapping[varid];
     v = bp_find_var_byid (fh, mapped_varid);
@@ -279,16 +286,14 @@ int bp_open (const char * fname,
 
 ADIOS_VARINFO * bp_inq_var_byid (const ADIOS_FILE * fp, int varid)
 {
-    BP_PROC * p;
-    BP_FILE * fh;
+    BP_PROC * p = GET_BP_PROC (fp);
+    BP_FILE * fh = GET_BP_FILE (fp);
     ADIOS_VARINFO * varinfo;
     int file_is_fortran, size, i;
     struct adios_index_var_struct_v1 * v;
 
     adios_errno = 0;
 
-    p = (BP_PROC *) fp->fh;
-    fh = (BP_FILE *)p->fh;
     v = bp_find_var_byid (fh, varid);
 
     varinfo = (ADIOS_VARINFO *) malloc (sizeof (ADIOS_VARINFO));
@@ -1817,9 +1822,9 @@ int64_t get_var_stop_index (struct adios_index_var_struct_v1 * v, int t)
  */
 int bp_seek_to_step (ADIOS_FILE * fp, int tostep, int show_hidden_attrs)
 {
+    BP_PROC * p = GET_BP_PROC (fp);
+    BP_FILE * fh = GET_BP_FILE (fp);
     int j, k, t, allstep;
-    BP_PROC * p = (BP_PROC *) fp->fh;
-    BP_FILE * fh = p->fh;
     struct adios_index_var_struct_v1 * var_root = fh->vars_root;
     struct adios_index_attribute_struct_v1 * attr_root;
     uint64_t i;
@@ -2211,14 +2216,13 @@ void bp_get_dimensions (const ADIOS_FILE * fp, struct adios_index_var_struct_v1 
 void bp_get_dimensions_generic (const ADIOS_FILE * fp, struct adios_index_var_struct_v1 * var_root, int file_is_fortran,
                         int * ndim, uint64_t ** dims, int * nsteps, int use_pretransform_dimensions)
 {
+    BP_PROC * p = GET_BP_PROC (fp);
+    BP_FILE * fh = GET_BP_FILE (fp);
     int i, j, has_time_index_characteristic;
     int is_global; // global array or just an array written by one process?
     uint64_t ldims[32];
     uint64_t gdims[32];
     uint64_t offsets[32];
-
-    BP_PROC * p = (BP_PROC *) fp->fh;
-    BP_FILE * fh = (BP_FILE *)p->fh;
     struct adios_index_characteristic_dims_struct_v1 *var_dims;
 
     if (!p->streaming)
