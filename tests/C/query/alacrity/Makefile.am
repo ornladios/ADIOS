@@ -3,19 +3,37 @@ INCLUDES += $(ADIOSLIB_CPPFLAGS)
 INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public -I$(srcdir)/../include
 
 AUTOMAKE_OPTIONS = no-dependencies
-
-all-local:
-	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
-	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/readme.txt $(builddir)
-
-noinst_PROGRAMS =
-
 if HAVE_ALACRITY
-noinst_PROGRAMS += query_test
-query_test_SOURCES = test_query_alac_internal.c 
-query_test_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
-query_test_LDFLAGS = $(ADIOSLIB_LDFLAGS)  
-endif # HAVE_ALACRITY
+
+noinst_PROGRAMS = alac_internal_test adios_read_ext_test adios_build_alac_index adios_alac_query adios_show_bp_file
+
+alac_internal_test_SOURCES = test_query_alac_internal.c 
+alac_internal_test_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
+alac_internal_test_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+
+
+adios_read_ext_test_SOURCES = adios_read_ext_test.c
+adios_read_ext_test_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
+adios_read_ext_test_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+adios_read_ext_test_CPPFLAGS = $(ALACRITY_CPPFLAGS)
+
+
+adios_build_alac_index_SOURCES = adios_build_alac_index.c
+adios_build_alac_index_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
+adios_build_alac_index_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+adios_build_alac_index_CPPFLAGS = $(ALACRITY_CPPFLAGS)
+
+adios_alac_query_SOURCES = adios_alac_query.c
+adios_alac_query_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
+adios_alac_query_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+adios_alac_query_CPPFLAGS = $(ALACRITY_CPPFLAGS)
+
+adios_show_bp_file_SOURCES = adios_show_bp_file.c
+adios_show_bp_file_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDFLAGS) 
+adios_show_bp_file_LDADD += $(ADIOSLIB_LDADD)
+  
+
+endif
 
 CLEANFILES = *.bp
 CC=$(MPICC)
