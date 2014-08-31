@@ -1,8 +1,3 @@
-# Identity plugin:
-query_method_SOURCES += query/adios_query_hooks.c
-query_method_SOURCES += query/adios_query.c
-query_method_SOURCES += query/common_query.c
-
 if HAVE_FASTBIT
 query_method_SOURCES += query/query_fastbit.c
 query_method_SOURCES += query/fastbit_adios.c
