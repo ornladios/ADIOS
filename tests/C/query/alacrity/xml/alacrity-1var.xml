@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+<adios-config host-language="C">
+    <adios-group name="S3D" coordination-communicator="comm">
+    <var name="NX" type="integer"/>
+    <var name="NY" type="integer"/>
+    <var name="NZ" type="integer"/>
+    <var name="DX" type="integer"/>
+    <var name="DY" type="integer"/>
+    <var name="DZ" type="integer"/>
+    <var name="OX" type="integer"/>
+    <var name="OY" type="integer"/>
+    <var name="OZ" type="integer"/>
+    <var name="size" type="integer"/>
+    <var name="rank" type="integer"/>
+    <global-bounds dimensions="NX,NY,NZ" offsets="OX,OY,OZ">
+       <var name="temp" gwrite="t" type="double" dimensions="DX,DY,DZ" transform="alacrity"/>
+    </global-bounds>
+</adios-group>
+
+<method group="S3D" method="MPI"/>
+
+<buffer size-MB="128" allocate-time="now"/>
+
+</adios-config>
+

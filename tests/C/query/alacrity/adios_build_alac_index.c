@@ -19,12 +19,92 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <assert.h>
+#include <inttypes.h>
+#include <mxml.h>
+#include <sys/stat.h>
+//#include "core/adios_internals.c"
 
-#define MAX_DIMS 5
+//#define GET_ATTR(n,attr,var,en)
+
+//these functions are copied from core/adios_internals.c due to  compilation errors
+#define GET_ATTR2(n,attr,var,en)                              \
+    if (!strcasecmp (n, attr->name)) {                           \
+        if (!var)                                                \
+        {                                                        \
+            var = attr->value;                                   \
+            continue;                                            \
+        }                                                        \
+        else                                                     \
+        {                                                        \
+            printf ("xml: duplicate attribute %s on %s (ignored)",n,en); \
+            continue;                                            \
+        }                                                        \
+    }
+
+void trim_spaces2 (char * str)
+{
+    char * t = str, * p = NULL;
+    while (*t != '\0')
+    {
+        if (*t == ' ')
+        {
+            p = t + 1;
+            strcpy (t, p);
+        }
+        else
+            t++;
+    }
+
+}
+
+void tokenize_dimensions2 (const char * str, char *** tokens, int * count)
+{
+    if (!str)
+    {
+        *tokens = 0;
+        *count = 0;
+
+        return;
+    }
+
+    char * save_str = strdup (str);
+    char * t = save_str;
+    int i;
+
+    trim_spaces (save_str);
+
+    if (strlen (save_str) > 0)
+        *count = 1;
+    else
+    {
+        *tokens = 0;
+        *count = 0;
+        free (save_str);
+
+        return;
+    }
+
+    while (*t)
+    {
+        if (*t == ',')
+            (*count)++;
+        t++;
+    }
+
+    *tokens = (char **) malloc (sizeof (char **) * *count);
+    (*tokens) [0] = strdup (strtok (save_str, ","));
+    for (i = 1; i < *count; i++)
+    {
+        (*tokens) [i] = strdup (strtok (NULL, ","));
+    }
+
+    free (save_str);
+}
+//end of stolen functions
 
 struct dimensions {
     uint8_t ndims;
-    uint32_t dims [MAX_DIMS];
+    uint32_t * dims ;
     uint8_t element_size;
 };
 
@@ -32,17 +112,81 @@ typedef struct dimensions dim_t;
 
 void adios_pin_timestep(uint32_t ts); // Not in the standard header, but accessible
 
+dim_t * initDimension(uint8_t ndims, uint8_t elementSize){
+	dim_t * D = (dim_t *) malloc(sizeof(dim_t));
+	D->ndims = ndims;
+	D->element_size  = elementSize;
+	D->dims = (uint32_t* ) malloc(sizeof(uint32_t) * ndims);
+	return D;
+}
+
+void freeDimension(dim_t * D){
+	free(D->dims);
+}
+
+void printDimension(dim_t *D){
+	printf("ndims[%u], element size [%u], ", D->ndims, D->element_size);
+	printf("dims [");
+	uint8_t i = 0;
+	for(i = 0; i < D->ndims; i ++){
+		if (i != D->ndims -1){
+			printf("%"PRIu32",", D->dims[i]);
+		}else {
+			printf("%"PRIu32"]", D->dims[i]);
+		}
+	}
+	printf("\n");
+}
+void printListVars(char **vars, int numVars){
+	int i = 0;
+	printf("[");
+	for (i = 0; i < numVars; i ++){
+		if ( i != numVars -1){
+			printf("%s,", vars[i]);
+		}else {
+			printf("%s]", vars[i]);
+		}
+	}
+	printf("\n");
+}
+/*
+ * calculate the offset of each PG(rank), highest dimension is the fastest dimension
+ */
+uint32_t * calPGOffsets(const int rank , const uint32_t *dataDim, const uint32_t *pgDim, uint8_t ndims){
+
+	uint32_t pgSize = 1, tmpSize = 1;
+	uint8_t i = 0, j = 0, k = 0;
+    for (i = 0; i < ndims; i ++) {
+        pgSize *= pgDim[i];
+    }
+    uint32_t startOffset = rank * pgSize;
+    uint32_t remain = startOffset;
+    uint32_t * offsets= malloc(ndims* sizeof(uint32_t));
+	while ( j < ndims){ // j is the dimension to been set
+		k = j + 1;
+		tmpSize = 1;
+		while ( k < ndims){
+			tmpSize *= dataDim[k];
+			k++;
+		}
+		offsets[j] = remain / tmpSize ;
+		remain = remain  %  tmpSize;
+		j ++;
+	}
+	return offsets;
+}
+
 // Given the input file, you want to divide the data into different PG sizes, data is transformed by ALACRITY plugin
 // Run this program with only ONE processor.
 // this file is stolen from ../transform/adios_write_all_3D.c
 
 void adios_write_pg ( char input_dir [], char transform [], uint8_t nvars, char **vars,
-                       dim_t data_dim, dim_t pg_dim)
+                       dim_t *data_dim, dim_t *pg_dim)
 {
     int         rank, size;
-    int         i = 0,   ts = 0; // timestep
-    uint32_t    pg_var_size = pg_dim.element_size;
-    uint32_t    data_var_size = data_dim.element_size;
+    int         i = 0,   pg = 0; // timestep
+    uint32_t    pg_var_size = pg_dim->element_size;
+    uint32_t    data_var_size = data_dim->element_size;
 
     uint32_t    numPGs = 1;
     char        varfile [nvars][256];
@@ -59,14 +203,13 @@ void adios_write_pg ( char input_dir [], char transform [], uint8_t nvars, char 
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &size);
 
-    printf ("pg_var_size = %u, data_var_size = %u\n", pg_var_size, data_var_size);
     // Get the var size and the pg size
-    for (i = 0; i < pg_dim.ndims; i ++) {
-        pg_var_size *= pg_dim.dims [i];
+    for (i = 0; i < pg_dim->ndims; i ++) {
+        pg_var_size *= pg_dim->dims [i];
     }
 
-    for (i = 0; i < data_dim.ndims; i ++) {
-        data_var_size *= data_dim.dims [i];
+    for (i = 0; i < data_dim->ndims; i ++) {
+        data_var_size *= data_dim->dims [i];
     }
     printf ("pg_var_size = %u, data_var_size = %u\n", pg_var_size, data_var_size);
 
@@ -79,8 +222,6 @@ void adios_write_pg ( char input_dir [], char transform [], uint8_t nvars, char 
 
     numPGs = data_var_size / pg_var_size;
 
-//    assert(size == ntimesteps);
-
     // Open the input raw data file for each variable
     for (i = 0; i < nvars; i ++) {
         sprintf (varfile [i], "%s/%s", input_dir, vars [i]);
@@ -91,86 +232,57 @@ void adios_write_pg ( char input_dir [], char transform [], uint8_t nvars, char 
         }
 //        assert (fp [i] != 0);
     }
-
-    // Calculate the length, and allocate memory
-    uint32_t NX = data_dim.dims [0];
-    uint32_t NY = data_dim.dims [1];
-    uint32_t NZ = data_dim.dims [2];
-    uint32_t DX = pg_dim.dims [0];
-    uint32_t DY = pg_dim.dims [1];
-    uint32_t DZ = pg_dim.dims [2];
-
     char *pg_var_data = (char *) malloc (pg_var_size);
+
     int timestep = 1;
 
-    printf ("ntimesteps = %d, NX = %u, NY = %u, NZ = %u\n", numPGs, NX, NY, NZ);
 
-    adios_groupsize = 4 \
-                    + 4 \
-                    + 4 * 3 \
-                    + 4 * 3 \
-                    + 4 * 3 \
-                    + 8 * (1) * (DX * DY * DZ) \
-                    + 8 * (1) * (DX * DY * DZ) \
-                    + 8 * (1) * (DX * DY * DZ) \
-                    + 8 * (1) * (DX * DY * DZ) ;
+    adios_groupsize = 0;
+    adios_groupsize += 4 /*rank*/   + 4  /*size*/ ;
+    adios_groupsize += (4 * data_dim->ndims); // /* N_0 + N_{ndim -1} , entire data domain space*/
+    adios_groupsize += (4 * data_dim->ndims); // /* O_0 + O_{ndim -1} , offset of write data subspace*/
+    adios_groupsize += (4 * data_dim->ndims); // /* D_0 + D_{ndim -1} , pg dimension*/
+    adios_groupsize += nvars * ( pg_var_size ); //  total variable size
 
+    /*quick dirty fix on the incorrect data size estimation on the very small data size from transformer */
+    adios_groupsize += 1000;
 
-    for (ts = 0; ts < numPGs; ts ++) {
+    printf("adios_groupsize = %"PRIu64 "\n", adios_groupsize);
 
-        uint32_t OX = (ts /
-        			       (
-        		              (data_dim.dims [1] * data_dim.dims [2])
-        		                /
-        		              (pg_dim.dims [1] * pg_dim.dims [2])
-        		           )
-        		       ) * pg_dim.dims [0];
+    char tmp[256];
+    uint8_t k  = 0;
+    for (pg = 0; pg < numPGs; pg ++) {
 
-        uint32_t OY = (
-        		        (ts /
-        		    	    (data_dim.dims [2] / pg_dim.dims [2])
-        		        ) * pg_dim.dims [1]
-        		      ) % data_dim.dims [1];
+    	adios_pin_timestep(timestep); // every PG only has one timestep data
+    	uint32_t *offsets = calPGOffsets(pg, data_dim->dims, pg_dim->dims, data_dim->ndims);
 
-        uint32_t OZ = (
-        		        ts * pg_dim.dims [2]
-        		      ) % data_dim.dims [2];
-
-//        rank = proc;
-        if (ts <= 3	){
-			adios_pin_timestep(1);
-
-        }else{
-        	adios_pin_timestep(2);
-        }
-
-
-
-        if (ts == 0) {
+        if (pg == 0) {
             adios_open (&adios_handle, "S3D", output_bp_file, "w", comm);
         } else {
             adios_open (&adios_handle, "S3D", output_bp_file, "a", comm);
         }
-
-        // OX = OY = OZ = 0;
-        // NX = DX;
-        // NY = DY;
-        // NZ = DZ;
         adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
 
-        adios_write (adios_handle, "NX", &NX);
-        adios_write (adios_handle, "NY", &NY);
-        adios_write (adios_handle, "NZ", &NZ);
-        adios_write (adios_handle, "DX", &DX);
-        adios_write (adios_handle, "DY", &DY);
-        adios_write (adios_handle, "DZ", &DZ);
-        adios_write (adios_handle, "OX", &OX);
-        adios_write (adios_handle, "OY", &OY);
-        adios_write (adios_handle, "OZ", &OZ);
-        adios_write (adios_handle, "size", &size);
-        adios_write (adios_handle, "rank", &ts);
+        char prefix[256];
+        strcpy(prefix, "N%d");
+		for (k = 0; k < data_dim -> ndims ; k ++ ) {
+			sprintf(tmp, prefix, k); // N0, N1... D0, D1 ... O0, O1, ...
+			adios_write (adios_handle, tmp, &(data_dim->dims[k]));
+		}
+		strcpy(prefix, "D%d");
+		for (k = 0; k < pg_dim -> ndims ; k ++ ) {
+			sprintf(tmp, prefix, k); // N0, N1... D0, D1 ... O0, O1, ...
+			adios_write (adios_handle, tmp, &(pg_dim->dims[k]));
+		}
+		strcpy(prefix, "O%d");
+		for (k = 0; k < data_dim -> ndims ; k ++ ) {
+			sprintf(tmp, prefix, k); // N0, N1... D0, D1 ... O0, O1, ...
+			adios_write (adios_handle, tmp, &(offsets[k]));
+		}
 
-        printf ("Start: %u %u %u\n", OX, OY, OZ);
+        adios_write (adios_handle, "size", &size);
+        adios_write (adios_handle, "rank", &pg);
+
         // fread and adios_write for each variable
         for (i = 0; i < nvars; i ++) {
             fread (pg_var_data, sizeof (char), pg_var_size, fp [i]);
@@ -185,42 +297,272 @@ void adios_write_pg ( char input_dir [], char transform [], uint8_t nvars, char 
         fclose (fp [i]);
     }
 
-    adios_finalize (ts);
+    adios_finalize (rank);
 
     return ;
 }
 
+void testCalculation(dim_t *data_dim, dim_t *pg_dim){
+    uint32_t pg_var_size = pg_dim->element_size;
+    uint32_t data_var_size = data_dim->element_size;
+    int i = 0, k;
+    for(i = 0;i < pg_dim->ndims;i++){
+        pg_var_size *= pg_dim->dims[i];
+    }
+    for(i = 0;i < data_dim->ndims;i++){
+        data_var_size *= data_dim->dims[i];
+    }
+    uint32_t numPGs = data_var_size / pg_var_size;
+    uint32_t j = 0;
+    uint32_t *offset;
+    for(j = 0;j < numPGs;j++){
+        offset = calPGOffsets(j, data_dim->dims, pg_dim->dims, data_dim->ndims);
+        printf("rank [%d] {", j);
+        for(k = 0;k < data_dim->ndims;k++){
+            if(k != data_dim->ndims - 1){
+                printf("%d,", offset[k]);
+            }else{
+                printf("%d}", offset[k]);
+            }
+        }
+        printf("\n");
+		free(offset);
+
+    }
+
+}
+
 /*
- * ./adios_build_alac_index ./xml alacrity-1var
+ * a bunch of fixed test cases
+ */
+void testCalPGOffset(){
+	dim_t d1 ;
+	dim_t p1 ;
+	d1.ndims = 1;
+	d1.element_size = 8;
+	d1.dims [ 0] = 128;
+	p1.ndims = 1 ;
+	p1.dims[ 0] = 32;
+	p1.element_size = 8;
+	printf("testing 1 dimension \n");
+	testCalculation(&d1, &p1);
+
+	dim_t d2 ;
+	dim_t p2 ;
+	d2.ndims = 2;
+	d2.element_size = 8;
+	d2.dims [ 0] = 32;
+	d2.dims [ 1] = 32;
+	p2.ndims = 2 ;
+	p2.dims[ 0] = 16;
+	p2.dims[ 1] = 8;
+	p2.element_size = 8;
+	printf("testing 2 dimension \n");
+	testCalculation(&d2, &p2);
+
+	dim_t data_dim;
+	dim_t pg_dim;
+
+	data_dim.ndims = 3;  // data variable dimension size
+	data_dim.dims [0] = 32;  //256;
+	data_dim.dims [1] = 32 ;  //128;
+	data_dim.dims [2] = 32;   //128;
+	data_dim.element_size = 8;
+
+	pg_dim.ndims = 3; // each block dimension size
+	pg_dim.dims [0] = 16; //64
+	pg_dim.dims [1] = 16; //32
+	pg_dim.dims [2] = 16; //32
+	pg_dim.element_size = 8;
+	printf("testing 3 dimension \n");
+    testCalculation(&data_dim, &pg_dim);
+}
+
+
+int  parseInputs(char * inputxml, dim_t **dataDim, dim_t **pgDim, char*** varList, int *numVarsOut){
+
+	FILE * fp = fopen (inputxml,"r");
+	if (!fp){
+		printf("missing xml input file %s \n", inputxml);
+		return 1;
+	}
+	struct stat s;
+	char * buffer = NULL;
+	if (stat (inputxml, &s) == 0) {
+		buffer = malloc (s.st_size + 1);
+		buffer [s.st_size] = 0;
+	}
+
+	if (buffer)	{
+		size_t bytes_read = fread (buffer, 1, s.st_size, fp);
+
+		if (bytes_read != s.st_size) {
+			printf("error reading input xml file: %s. Expected %ld Got %ld\n"
+		                        ,inputxml, s.st_size, bytes_read );
+			fclose(fp);
+		    return 1;
+		}
+	}
+	fclose (fp);
+	mxml_node_t * doc = NULL;
+	mxml_node_t * root = NULL;
+	mxml_node_t * varsNode = NULL;
+	doc = mxmlLoadString (NULL, buffer, MXML_TEXT_CALLBACK);
+	free (buffer);
+	buffer = NULL;
+	root = doc;
+
+	 if (!doc) {
+	        printf( "unknown error parsing XML (probably structural)\n"
+	                "Did you remember to start the file with\n"
+	                "<?xml version=\"1.0\"?>\n");
+
+	        return 0;
+	    }
+	if (strcasecmp (doc->value.element.name, "adios-alac-test-inputs")) {
+	        root = mxmlFindElement (doc, doc, "adios-alac-test-inputs", NULL, NULL, MXML_DESCEND_FIRST);
+    }
+
+	varsNode = mxmlFindElement(root, root, "vars", NULL, NULL, MXML_DESCEND_FIRST);
+	mxml_node_t * varnode = NULL, *dimnode = NULL;
+	const char * varname = 0,  *dimS = 0, *dataDimS = 0, *pgDimS = 0, *numVarS=0, *elmSizeS=0;
+	int numVars = 0, i, numDim=0, countVar= 0, elmSize = 0;
+	for (i = 0; i < varsNode->value.element.num_attrs; i++) {
+		mxml_attr_t * attr = &varsNode->value.element.attrs [i];
+		GET_ATTR2("num",attr,numVarS,"vars");
+	}
+	if ( !numVarS || !strcmp ( numVarS, "")) {
+			printf("missing values for num attribute \n");
+			mxmlRelease(doc);
+			return 0;
+	}else {
+			numVars = atoi(numVarS);
+	}
+
+
+	dimnode = mxmlFindElement(varsNode, varsNode, "dimension", NULL, NULL, MXML_DESCEND_FIRST);
+	if ( !dimnode) {
+		printf("missing dimension element under vars \n");
+		mxmlRelease(doc);
+		return 0;
+	}
+
+	uint32_t * inputDataDim, * inputPGDim ;
+	for (i = 0; i < dimnode->value.element.num_attrs; i++) {
+		mxml_attr_t * attr = &dimnode->value.element.attrs [i];
+		GET_ATTR2("dim",attr,dimS,"dimension");
+		GET_ATTR2("elementSize",attr,elmSizeS,"dimension");
+		GET_ATTR2("dataDim",attr,dataDimS,"dimension");
+		GET_ATTR2("pgDim",attr,pgDimS,"dimension");
+
+	}
+	if ( !dimS || !strcmp ( dimS, "")) {
+		printf("missing values for dim attribute on dimension element\n");
+		mxmlRelease(doc);
+		return 0;
+	}else{
+		numDim = atoi(dimS);
+	}
+	if ( !elmSizeS || !strcmp ( elmSizeS, "")) {
+				printf("missing values for elementSize attribute on dimension element \n");
+				mxmlRelease(doc);
+				return 0;
+	}else{
+		elmSize = atoi(elmSizeS);
+	}
+
+
+	int dim_count, pgCount;
+	char ** dim_tokens = 0, **pgDimTokens = 0;
+	if ( !dataDimS || !strcmp ( dataDimS, "")) {
+		printf("missing values for dataDim attribute on dimension element  \n");
+		mxmlRelease(doc);
+		return 0;
+	}
+
+	if ( !pgDimS || !strcmp ( pgDimS, "")) {
+		printf("missing values for pgDim attribute \n");
+		mxmlRelease(doc);
+		return 0;
+	}
+	tokenize_dimensions2 (dataDimS, &dim_tokens, &dim_count);
+	tokenize_dimensions2 (pgDimS, &pgDimTokens, &pgCount);
+	if (dim_count != numDim || pgCount != numDim){
+		printf("input dimension does not match expected number dimension \n");
+		mxmlRelease(doc);
+		return 0;
+	}
+	inputDataDim = (uint32_t *) malloc(sizeof(uint32_t)*numDim);
+	inputPGDim = (uint32_t *) malloc(sizeof(uint32_t)*numDim);
+
+	int j = 0;
+	for (j = 0; j < numDim ; j ++){
+		inputDataDim[j] = atoi(dim_tokens[j]);
+		inputPGDim[j] = atoi(pgDimTokens[j]);
+	}
+
+	(*dataDim) = initDimension(numDim, elmSize);
+	memcpy((*dataDim)->dims, inputDataDim, sizeof(uint32_t)* (*dataDim)->ndims);
+	(*pgDim )= initDimension(numDim, elmSize);
+	memcpy((*pgDim)->dims, inputPGDim, sizeof(uint32_t)* (*pgDim)->ndims);
+
+	(*varList) = (char **) malloc(sizeof(char*) * numVars);
+	for(i= 0; i < numVars;  i ++){
+		(*varList)[i] = (char*) malloc(256);
+	}
+	 for (varnode = mxmlWalkNext (varsNode, doc, MXML_DESCEND_FIRST)
+	            ;varnode
+	            ;varnode = mxmlWalkNext (varnode, varsNode, MXML_NO_DESCEND) ){
+		 if (varnode->type != MXML_ELEMENT) {
+		            continue;
+		 }
+		 if (!strcasecmp (varnode->value.element.name, "var")) {
+			 for (i = 0; i < varnode->value.element.num_attrs; i++) {
+				 mxml_attr_t * attr = &varnode->value.element.attrs [i];
+				 if (!strcmp(attr->name, "name")){
+					 strcpy((*varList)[countVar], attr->value);
+					 countVar ++;
+				 }
+			 }
+
+		 }
+	 }
+	 *numVarsOut = numVars;
+	 free(inputDataDim);
+	 free(inputPGDim);
+	return 0;
+}
+/*
+ * ./adios_build_alac_index ./xml alacrity-1var ./xml/build-alac-index-input.xml
  */
 int main (int argc, char ** argv)
 {
     MPI_Init (&argc, &argv);
 
-    dim_t data_dim;
-    dim_t pg_dim;
+  if (argc >= 4) {
+	 dim_t *dataDim , *pgDim ;
+	 char **vars ;
+	 int numVar;
+	 if ( parseInputs(argv[3],&dataDim,&pgDim, &vars , &numVar) ){
+		 printf("errors in the input xml file parse \n");
+		 return 0;
+	 }else {
+		 printf("XML Inputs info \n");
+		 printf("data space: ");
+		 printDimension(dataDim);
+		 printf("PG space: ");
+		 printDimension(pgDim);
+		 printListVars(vars, numVar);
+	 }
+	 printf("Write BP file \n");
+	 adios_write_pg (argv [1], argv [2], numVar, vars, dataDim, pgDim);
+	 freeDimension(dataDim);
+	 freeDimension(pgDim);
 
-    data_dim.ndims = 3;  // data variable dimension size
-    data_dim.dims [0] = 128;  //256; 
-    data_dim.dims [1] = 64 ;  //128;
-    data_dim.dims [2] = 64;   //128;
-    data_dim.element_size = 8;
+  } else {
+	  printf ("Usage: %s <base directory> <transform> <input xml> \n Example: ./adios_build_alac_index ./xml alacrity-1var ./xml/build-alac-index-input.xml", argv [0]);
+ }
 
-    pg_dim.ndims = 3; // each block dimension size
-    pg_dim.dims [0] = 64; //64
-    pg_dim.dims [1] = 32; //32
-    pg_dim.dims [2] = 32; //32
-    pg_dim.element_size = 8;
-
-    // temp == rdm , values are randomly generated, the value range is [100-200]
-//    char *vars [4] = {"temp", "uvel", "vvel", "wvel"};
-//    char *vars [2] = {"temp", "uvel"};
-    char *vars[1]  = {"temp" };
-    if (argc >= 2) {
-        adios_write_pg (argv [1], argv [2], 1, vars, data_dim, pg_dim);
-    } else {
-        printf ("Usage: %s <base directory> <transform> \n", argv [0]);
-    }
 
     MPI_Finalize ();
     return 0;
