@@ -54,9 +54,12 @@
 static int adios_icee_initialized = 0;
 
 CManager cm;
-EVstone stone;
-EVstone remote_stone;
+//EVstone stone;
+//EVstone remote_stone;
 EVsource source;
+
+EVstone split_stone;
+EVaction split_action;
 
 int n_client = 0;
 //int max_client = 1;
@@ -103,7 +106,6 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
     int cm_port = 59999;
     char *cm_host = "localhost";
     char *cm_attr = NULL;
-    attr_list contact_list;
 
     int rank;
     MPI_Comm_rank(method->init_comm, &rank);
@@ -174,14 +176,19 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
     }
 
     //log_info ("cm_attr : %s\n", cm_attr);
-    log_info ("cm_host : %s\n", cm_host);
+    //log_info ("cm_host : %s\n", cm_host);
     log_info ("cm_port : %d\n", cm_port);
 
     if (!adios_icee_initialized)
     {
+        EVstone stone, remote_stone;
+        attr_list contact_list;
+
         cm = CManager_create();
+        CMlisten(cm);
+
         contact_list = create_attr_list();
-        add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), 59997);
+        add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), cm_port);
 
         if (CMlisten_specific(cm, contact_list) == 0) 
         {
@@ -199,30 +206,35 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
 
         while (n_client < max_client) {
             /* do some work here */
-            usleep(0.1*1E6);
+            usleep(0.1*1E7);
             CMpoll_network(cm);
             log_debug("Num. of client: %d\n", n_client);
         }
 
+        split_stone = EValloc_stone(cm);
+        split_action = EVassoc_split_action(cm, split_stone, NULL);
+
         int i;
         for (i=0; i<max_client; i++)
         {
-            EVstone stone_w = EValloc_stone(cm);
-            attr_list contact_list_w;
-            contact_list_w = create_attr_list();
-            add_int_attr(contact_list_w, attr_atom_from_string("IP_PORT"), client_info[i].client_port);
-            add_string_attr(contact_list_w, attr_atom_from_string("IP_HOST"), client_info[i].client_host);
+            //EVstone stone_w = EValloc_stone(cm);
+            stone = EValloc_stone(cm);
+            contact_list = create_attr_list();
+            add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), client_info[i].client_port);
+            add_string_attr(contact_list, attr_atom_from_string("IP_HOST"), client_info[i].client_host);
 
-            EVaction evaction = EVassoc_bridge_action(cm, stone_w, contact_list_w, remote_stone);
+            EVaction evaction = EVassoc_bridge_action(cm, stone, contact_list, remote_stone);
             if (evaction == -1)
             {
                 fprintf(stderr, "No connection. Exit.\n");
                 exit(1);
             }
 
-            source = EVcreate_submit_handle(cm, stone_w, icee_fileinfo_format_list);
+            //source = EVcreate_submit_handle(cm, stone, icee_fileinfo_format_list);
+            EVaction_add_split_target(cm, split_stone, split_action, stone);
 
         }
+        source = EVcreate_submit_handle(cm, split_stone, icee_fileinfo_format_list);
 
         /*
         cm = CManager_create();

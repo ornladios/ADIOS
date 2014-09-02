@@ -349,7 +349,9 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
 {   
     log_debug ("%s\n", __FUNCTION__);
 
-    int cm_port = 59999;
+    int remote_port = 59999;
+    char *remote_host = "localhost";
+    int cm_port = 59997;
     char *cm_host = "localhost";
     char *cm_attr = NULL;
     attr_list contact_list;
@@ -369,6 +371,14 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         else if (!strcasecmp (p->name, "cm_port"))
         {
             cm_port = atoi(p->value);
+        }
+        else if (!strcasecmp (p->name, "remote_host"))
+        {
+            remote_host = p->value;
+        }
+        else if (!strcasecmp (p->name, "remote_port"))
+        {
+            remote_port = atoi(p->value);
         }
         p = p->next;
     }
@@ -392,6 +402,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
     {
         cm = CManager_create();
 
+        // Listen first
         {
             //cm = CManager_create();
             attr_list contact_list_r;
@@ -416,11 +427,12 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         }
 
 
+        // Send client info
         stone = EValloc_stone(cm);
 
         contact_list = create_attr_list();
-        add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), 59997);
-        add_string_attr(contact_list, attr_atom_from_string("IP_HOST"), "localhost");
+        add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), remote_port);
+        add_string_attr(contact_list, attr_atom_from_string("IP_HOST"), remote_host);
 
         EVaction evaction = EVassoc_bridge_action(cm, stone, contact_list, remote_stone);
         if (evaction == -1)
@@ -432,8 +444,8 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         EVsource source = EVcreate_submit_handle(cm, stone, icee_clientinfo_format_list);
         
         icee_clientinfo_rec_t info;
-        info.client_host = "localhost";
-        info.client_port = 59999;
+        info.client_host = cm_host;
+        info.client_port = cm_port;
         
         EVsubmit(source, &info, NULL);
         //CManager_close(cm);
