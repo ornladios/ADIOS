@@ -63,3 +63,23 @@ static FMStructDescRec icee_fileinfo_format_list[] =
     {NULL, NULL}
 };
 
+/* Auto-generated on Mon Sep  1 18:02:11 EDT 2014 */
+
+typedef struct icee_clientinfo_rec {
+    char* client_host;
+    int client_port;
+} icee_clientinfo_rec_t, *icee_clientinfo_rec_ptr_t;
+
+static FMField icee_clientinfo_field_list[] =
+{
+    {"client_host", "string", sizeof(char*), FMOffset(icee_clientinfo_rec_ptr_t, client_host)},
+    {"client_port", "integer", sizeof(int), FMOffset(icee_clientinfo_rec_ptr_t, client_port)},
+    {NULL, NULL, 0, 0}
+};
+
+static FMStructDescRec icee_clientinfo_format_list[] =
+{
+    {"icee_clientinfo", icee_clientinfo_field_list, sizeof(icee_clientinfo_rec_t), NULL},
+    {NULL, NULL}
+};
+

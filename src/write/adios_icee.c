@@ -58,6 +58,10 @@ EVstone stone;
 EVstone remote_stone;
 EVsource source;
 
+int n_client = 0;
+//int max_client = 1;
+icee_clientinfo_rec_t *client_info;
+
 icee_fileinfo_rec_ptr_t fp = NULL;
 int reverse_dim = 0;
 
@@ -74,6 +78,20 @@ int get_ndims(struct adios_var_struct *f)
     }
 
     return ndims;
+}
+
+static int
+icee_clientinfo_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
+{
+    icee_clientinfo_rec_ptr_t event = vevent;
+    log_debug("%s (%s)\n", __FUNCTION__, event->client_host);
+    log_debug("%s (%d)\n", __FUNCTION__, event->client_port);
+
+    client_info[n_client].client_host = strdup(event->client_host);
+    client_info[n_client].client_port = event->client_port;
+    n_client++;
+
+    return 1;
 }
 
 // Initializes icee write local data structures
@@ -162,6 +180,52 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
     if (!adios_icee_initialized)
     {
         cm = CManager_create();
+        contact_list = create_attr_list();
+        add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), 59997);
+
+        if (CMlisten_specific(cm, contact_list) == 0) 
+        {
+            fprintf(stderr, "error: unable to initialize connection manager.\n");
+            exit(-1);
+        }
+
+        log_debug("Contact list \"%s\"\n", attr_list_to_string(contact_list));
+
+        stone = EValloc_stone(cm);
+        EVassoc_terminal_action(cm, stone, icee_clientinfo_format_list, icee_clientinfo_handler, NULL);
+
+        int max_client = 1;
+        client_info = calloc(max_client, sizeof(icee_clientinfo_rec_t));
+
+        while (n_client < max_client) {
+            /* do some work here */
+            usleep(0.1*1E6);
+            CMpoll_network(cm);
+            log_debug("Num. of client: %d\n", n_client);
+        }
+
+        int i;
+        for (i=0; i<max_client; i++)
+        {
+            EVstone stone_w = EValloc_stone(cm);
+            attr_list contact_list_w;
+            contact_list_w = create_attr_list();
+            add_int_attr(contact_list_w, attr_atom_from_string("IP_PORT"), client_info[i].client_port);
+            add_string_attr(contact_list_w, attr_atom_from_string("IP_HOST"), client_info[i].client_host);
+
+            EVaction evaction = EVassoc_bridge_action(cm, stone_w, contact_list_w, remote_stone);
+            if (evaction == -1)
+            {
+                fprintf(stderr, "No connection. Exit.\n");
+                exit(1);
+            }
+
+            source = EVcreate_submit_handle(cm, stone_w, icee_fileinfo_format_list);
+
+        }
+
+        /*
+        cm = CManager_create();
         CMlisten(cm);
         
         stone = EValloc_stone(cm);
@@ -178,6 +242,7 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
         }
 
         source = EVcreate_submit_handle(cm, stone, icee_fileinfo_format_list);
+        */
 
         adios_icee_initialized = 1;
     }

@@ -1,7 +1,7 @@
 /*
-  read_flexpath.c       
+  read_icee.c       
   Goal: to create evpath io connection layer in conjunction with 
-  write/adios_flexpath.c
+  write/adios_icee.c
 */
 // system libraries
 #include <stdio.h>
@@ -336,6 +336,8 @@ static int adios_read_icee_initialized = 0;
 
 CManager cm;
 EVstone stone;
+EVstone remote_stone;
+EVstone stone_r;
 
 /********** Core ADIOS Read functions. **********/
 
@@ -389,6 +391,56 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
     if (!adios_read_icee_initialized)
     {
         cm = CManager_create();
+
+        {
+            //cm = CManager_create();
+            attr_list contact_list_r;
+            contact_list_r = create_attr_list();
+            add_int_attr(contact_list_r, attr_atom_from_string("IP_PORT"), cm_port);
+            if (CMlisten_specific(cm, contact_list_r) == 0) 
+            {
+                fprintf(stderr, "error: unable to initialize connection manager.\n");
+                exit(-1);
+            }
+
+            log_debug("Contact list \"%s\"\n", attr_list_to_string(contact_list_r));
+
+            stone_r = EValloc_stone(cm);
+            EVassoc_terminal_action(cm, stone_r, icee_fileinfo_format_list, icee_fileinfo_handler, NULL);
+
+            if (!CMfork_comm_thread(cm)) 
+            {
+                printf("Fork of communication thread failed, exiting\n");
+                exit(-1);
+            }
+        }
+
+
+        stone = EValloc_stone(cm);
+
+        contact_list = create_attr_list();
+        add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), 59997);
+        add_string_attr(contact_list, attr_atom_from_string("IP_HOST"), "localhost");
+
+        EVaction evaction = EVassoc_bridge_action(cm, stone, contact_list, remote_stone);
+        if (evaction == -1)
+        {
+            fprintf(stderr, "No connection. Exit.\n");
+            exit(1);
+        }
+
+        EVsource source = EVcreate_submit_handle(cm, stone, icee_clientinfo_format_list);
+        
+        icee_clientinfo_rec_t info;
+        info.client_host = "localhost";
+        info.client_port = 59999;
+        
+        EVsubmit(source, &info, NULL);
+        //CManager_close(cm);
+        
+
+        /*
+        cm = CManager_create();
         contact_list = create_attr_list();
         add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), cm_port);
 
@@ -410,7 +462,8 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
             printf("Fork of communication thread failed, exiting\n");
             exit(-1);
         }
-
+        */
+        
         adios_read_icee_initialized = 1;
     }
 
