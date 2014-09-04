@@ -1806,11 +1806,15 @@ void print_decomp(ADIOS_VARINFO *vi)
             for (j=0; j < vi->nblocks[i]; j++) {
                 fprintf(outf,"          block %*d: [", ndigits_nblocks, j);
                 for (k=0; k < vi->ndim; k++) {
+                    if (vi->blockinfo[blockid].count[k]) {
                     fprintf(outf, "%*lld:%*lld", 
                             ndigits_dims[k],
                             vi->blockinfo[blockid].start[k],
                             ndigits_dims[k],
                             vi->blockinfo[blockid].start[k] + vi->blockinfo[blockid].count[k]-1);
+                    } else {
+                        fprintf(outf, "%-*s",2*ndigits_dims[k]+1, "null");
+                    }
                     if (k < vi->ndim-1)
                         fprintf(outf, ", ");
                 }

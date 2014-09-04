@@ -1935,15 +1935,23 @@ typedef struct {
                 for (i = 0; i < var_root->characteristics_count; i++)
                 {
                     MALLOC(vs->blocks->avgs[i], count * sum_size, "average per writeblock")
-                    for (c = 0; c < count; c ++)
-                        vs->blocks->avgs[i][c] = bsums[i][c] / bcnts[i];
-
                     MALLOC(vs->blocks->std_devs[i], count * sum_size, "standard deviation per writeblock")
-                    for (c = 0; c < count; c ++)
-                        vs->blocks->std_devs[i][c] = 
-                            sqrt((bsum_squares[i][c] / bcnts[i]) - 
-                            (vs->blocks->avgs[i][c] * vs->blocks->avgs[i][c]));
 
+                    if(bcnts[i]) {
+                        for (c = 0; c < count; c ++)
+                            vs->blocks->avgs[i][c] = bsums[i][c] / bcnts[i];
+
+                        for (c = 0; c < count; c ++)
+                            vs->blocks->std_devs[i][c] = 
+                                sqrt((bsum_squares[i][c] / bcnts[i]) - 
+                                        (vs->blocks->avgs[i][c] * vs->blocks->avgs[i][c]));
+                    } else {
+                        // this block is an empty block (0 size) in file
+                        for (c = 0; c < count; c ++) {
+                            vs->blocks->avgs[i][c] = 0.0;
+                            vs->blocks->std_devs[i][c] = 0.0;
+                        }
+                    }
                     free (bsums[i]);
                     free (bsum_squares[i]);
                 }
@@ -2201,11 +2209,17 @@ typedef struct {
                 for (i = 0; i < var_root->characteristics_count; i++)
                 {
                     MALLOC(vs->blocks->avgs[i], sum_size, "average per writeblock")
-                    *(vs->blocks->avgs[i]) = *(bsums[i]) / bcnts[i];
-
                     MALLOC(vs->blocks->std_devs[i], sum_size, "standard deviation per writeblock")
-                    *(vs->blocks->std_devs[i]) = sqrt(*(bsum_squares[i]) / bcnts[i]
-                                - ((*(vs->blocks->avgs[i]) * (*(vs->blocks->avgs[i])))));
+                    if(bcnts[i]) {
+                        *(vs->blocks->avgs[i]) = *(bsums[i]) / bcnts[i];
+
+                        *(vs->blocks->std_devs[i]) = sqrt(*(bsum_squares[i]) / bcnts[i]
+                                    - ((*(vs->blocks->avgs[i]) * (*(vs->blocks->avgs[i])))));
+                    } else {
+                        // this block is an empty block (0 size) in file
+                        *(vs->blocks->avgs[i]) = 0.0;
+                        *(vs->blocks->std_devs[i]) = 0.0;
+                    }
 
                     free (bsums[i]);
                     free (bsum_squares[i]);

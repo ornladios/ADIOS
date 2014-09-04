@@ -228,6 +228,7 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
         }
     }
 
+    /* // Do not check NULL pointer here, it works fine in writing
     if (!var)
     {
         adios_error (err_invalid_data, "Invalid data (NULL pointer) passed to write for variable %s\n", buf1);
@@ -235,6 +236,7 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
         free (buf1);
         return;
     }
+    */
 
     if (v->data)
     {
