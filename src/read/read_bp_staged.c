@@ -220,7 +220,7 @@ static void get_data_addr (const ADIOS_FILE * fp, int varid,
     v = bp_find_var_byid (fh, varid);
 
     /* Get dimensions and flip if caller != writer language */
-    bp_get_and_swap_dimensions (fh, v, file_is_fortran,
+    bp_get_and_swap_dimensions (fp, v, file_is_fortran,
                                 &ndim, &dims, &nsteps,
                                 file_is_fortran);
 
@@ -644,7 +644,7 @@ static read_request * split_read_requests (const ADIOS_FILE * fp, read_request *
     file_is_fortran = is_fortran_file (fh);
     v = bp_find_var_byid (fh, varid);
 
-    bp_get_and_swap_dimensions (fh, v, file_is_fortran,
+    bp_get_and_swap_dimensions (fp, v, file_is_fortran,
                                 &ndim, &dims, &nsteps,
                                 file_is_fortran);
 
