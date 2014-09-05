@@ -26,7 +26,7 @@
 */
 void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
 {
-#ifdef SKEL_TIMING
+#if defined SKEL_TIMING && !defined _NOMPI //No timing information on single process
 
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     if (!fd)
@@ -43,6 +43,7 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
     }
 
     int size, rank, i, global_event_count, count_to_send;
+ 
     int * counts;
     int * displs;
     struct adios_timing_event_struct* events;
@@ -92,7 +93,7 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
 
     // structure of the adios_timing_event_struct (int, int, double)
     int blocklens[]  = {2,1};
-    int disps[]      = {0,8};
+    MPI_Aint disps[]      = {0,2*sizeof(int)};
     MPI_Datatype types[] = {MPI_INT,MPI_DOUBLE};
 
     MPI_Type_create_struct (
@@ -103,6 +104,7 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
         &event_type
     );
     MPI_Type_commit (&event_type);
+
 
     // Now the events
     MPI_Gatherv (
@@ -117,11 +119,34 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
         MPI_COMM_WORLD // comm
     );
 
+    // Gather the write sizes
+    int *write_sizes = NULL;
+    if (rank == 0)
+    {
+        write_sizes = (int*) malloc (sizeof(int) * size);
+    }
+
+    MPI_Gather (
+        &fd->write_size_bytes, //sendbuf
+        1, //sendcount
+        MPI_INT, //sendtype
+        write_sizes, //recvbuf
+        1, //recvcount
+        MPI_INT, //recvtype
+        0, //root
+        MPI_COMM_WORLD //comm
+    );
+
     // Write the events to a file
     if (rank == 0)
     {
         FILE* f = fopen (filename, "w");
         int event_rank;
+
+        for (i = 0; i < size; i++)
+        {
+            fprintf (f, "'%i'%i\n", i, write_sizes[i]);
+        }
 
         // Write the labels
         for (i = 0; i < fd->timing_obj->internal_count; i++)
