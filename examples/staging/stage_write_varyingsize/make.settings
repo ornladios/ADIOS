@@ -1,4 +1,4 @@
-TARGET=pgi
+TARGET=gnu
 
 ## Set ADIOS_DIR here or before doing make
 override ADIOS_DIR=/ccs/proj/e2e/${USER}/ADIOS/sith.${TARGET}
