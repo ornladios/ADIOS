@@ -10,6 +10,8 @@
 
 if [ `hostname | cut -c 1-4` == "sith" ]; then
     source /etc/profile.d/modules.sh
+    module unload PE-pgi PE-intel PE-gnu
+    module load PE-gnu
     module load szip
     module load dataspaces/1.4.0
     module load mxml/2.7
@@ -59,12 +61,12 @@ done < conf
 echo "-- DataSpaces IDs: P2TNID = $P2TNID   P2TPID = $P2TPID"
 
 # Start STAGE_WRITE
-echo "-- Start STAGE_WRITE on $READPROC PEs"
-$RUNCMD $READPROC ./stage_write genarray.bp staged.bp DATASPACES "" MPI "" $READPROC 1 1 >& log.stage_write &
+#echo "-- Start STAGE_WRITE on $READPROC PEs"
+#$RUNCMD $READPROC ./stage_write genarray.bp staged.bp DATASPACES "verbose=4;poll_interval=100" MPI "" $READPROC 1 1 >& log.stage_write &
 
 # Start GENARRAY
-echo "-- Start GENARRAY on $WRITEPROC PEs"
-$RUNCMD $WRITEPROC ./genarray_varying genarray.bp $WRITEPROC 1 1 16 32 64 5 10 >& log.genarray
+#echo "-- Start GENARRAY on $WRITEPROC PEs"
+#$RUNCMD $WRITEPROC ./genarray_varying genarray.bp $WRITEPROC 1 1 16 32 64 5 10 >& log.genarray
 
 #echo "-- Wait until all applications exit. Run ./check.sh to see status"
 wait
