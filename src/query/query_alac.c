@@ -487,9 +487,8 @@ uint64_t ridConversionWithoutCheck(uint64_t rid/*relative to local src selectoin
  */
 int checkUnsupportedDataType(enum ADIOS_DATATYPES dataType) {
 
-	return (dataType == adios_long_double) ||
-			(dataType == adios_complex)  ||
-			(dataType ==  adios_double_complex) ;
+	return !( (dataType == adios_real ) ||
+			 (dataType == adios_double) ) ;
 }
 int adios_alac_check_candidate(ALMetadata *partitionMeta, bin_id_t startBin, bin_id_t endBin , double hb, double lb
 		, uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount, int dim
@@ -908,7 +907,11 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	ALQueryEngine qe;
 	ALUnivariateQuery alacQuery;
 	if (ti->transform_type == adios_get_transform_type_by_uid("ncsu-alacrity")) { // if it is not alacrity type, do not initialize this query engine
-		ALQueryEngineStartUnivariateDoubleQuery(&qe, lb, hb, REGION_RETRIEVAL_INDEX_ONLY_QUERY_TYPE, &alacQuery);
+		if ( adiosQuery->_var->type == adios_double){
+			ALQueryEngineStartUnivariateDoubleQuery(&qe, lb, hb, REGION_RETRIEVAL_INDEX_ONLY_QUERY_TYPE, &alacQuery);
+		}else if (adiosQuery->_var->type == adios_real){
+			ALQueryEngineStartUnivariateFloatQuery(&qe, lb, hb, REGION_RETRIEVAL_INDEX_ONLY_QUERY_TYPE, &alacQuery);
+		}
 	}
 
 	/*********** doQuery ***************
