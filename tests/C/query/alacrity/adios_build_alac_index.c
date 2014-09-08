@@ -110,6 +110,27 @@ struct dimensions {
 
 typedef struct dimensions dim_t;
 
+// Tang: add timestep struct
+struct timesteps {
+    uint8_t nts;
+    uint32_t * tss ;
+};
+
+typedef struct timesteps ts_t;
+
+ts_t* initTimestep(uint8_t nts){
+	ts_t * D = (ts_t *) malloc(sizeof(ts_t));
+	D->nts = nts;
+	D->tss = (uint32_t* ) malloc(sizeof(uint32_t) * nts);
+	return D;
+}
+
+void freeTimestep(ts_t * D){
+	free(D->tss);
+}
+
+// Tang ^
+
 void adios_pin_timestep(uint32_t ts); // Not in the standard header, but accessible
 
 dim_t * initDimension(uint8_t ndims, uint8_t elementSize){
@@ -181,7 +202,7 @@ uint32_t * calPGOffsets(const int rank , const uint32_t *dataDim, const uint32_t
 // this file is stolen from ../transform/adios_write_all_3D.c
 
 void adios_write_pg ( char input_dir [], char transform [], uint8_t nvars, char **vars,
-                       dim_t *data_dim, dim_t *pg_dim)
+                       dim_t *data_dim, dim_t *pg_dim, ts_t *data_ts)
 {
     int         rank, size;
     int         i = 0,   pg = 0; // timestep
@@ -226,6 +247,7 @@ void adios_write_pg ( char input_dir [], char transform [], uint8_t nvars, char 
     for (i = 0; i < nvars; i ++) {
         sprintf (varfile [i], "%s/%s", input_dir, vars [i]);
         fp [i] = fopen (varfile [i], "rb");
+        printf("%s\n", varfile [i]);
         if ( fp[i] == NULL){
         	printf("can not open file %s\n", varfile[i]);
         	return ;
@@ -245,51 +267,60 @@ void adios_write_pg ( char input_dir [], char transform [], uint8_t nvars, char 
     adios_groupsize += nvars * ( pg_var_size ); //  total variable size
 
     /*quick dirty fix on the incorrect data size estimation on the very small data size from transformer */
-    adios_groupsize += 1000;
+    adios_groupsize += 10000;
 
     printf("adios_groupsize = %"PRIu64 "\n", adios_groupsize);
 
     char tmp[256];
     uint8_t k  = 0;
-    for (pg = 0; pg < numPGs; pg ++) {
 
-    	adios_pin_timestep(timestep); // every PG only has one timestep data
-    	uint32_t *offsets = calPGOffsets(pg, data_dim->dims, pg_dim->dims, data_dim->ndims);
-
-        if (pg == 0) {
+    int tsIdx;
+    for (tsIdx = 0; tsIdx < data_ts->nts; tsIdx++) {
+        printf("Writing timestep %d\n", tsIdx);
+        if (tsIdx == 0) {
             adios_open (&adios_handle, "S3D", output_bp_file, "w", comm);
         } else {
             adios_open (&adios_handle, "S3D", output_bp_file, "a", comm);
         }
-        adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
 
-        char prefix[256];
-        strcpy(prefix, "N%d");
-		for (k = 0; k < data_dim -> ndims ; k ++ ) {
-			sprintf(tmp, prefix, k); // N0, N1... D0, D1 ... O0, O1, ...
-			adios_write (adios_handle, tmp, &(data_dim->dims[k]));
-		}
-		strcpy(prefix, "D%d");
-		for (k = 0; k < pg_dim -> ndims ; k ++ ) {
-			sprintf(tmp, prefix, k); // N0, N1... D0, D1 ... O0, O1, ...
-			adios_write (adios_handle, tmp, &(pg_dim->dims[k]));
-		}
-		strcpy(prefix, "O%d");
-		for (k = 0; k < data_dim -> ndims ; k ++ ) {
-			sprintf(tmp, prefix, k); // N0, N1... D0, D1 ... O0, O1, ...
-			adios_write (adios_handle, tmp, &(offsets[k]));
-		}
+           adios_group_size (adios_handle, adios_groupsize, &adios_totalsize);
+            //    adios_open (&adios_handle, "S3D", output_bp_file, "w", comm);
+        for (pg = 0; pg < numPGs; pg ++) {
 
-        adios_write (adios_handle, "size", &size);
-        adios_write (adios_handle, "rank", &pg);
+        	//adios_pin_timestep(data_ts->tss[tsIdx]); // every PG only has one timestep data
+        	uint32_t *offsets = calPGOffsets(pg, data_dim->dims, pg_dim->dims, data_dim->ndims);
 
-        // fread and adios_write for each variable
-        for (i = 0; i < nvars; i ++) {
-            fread (pg_var_data, sizeof (char), pg_var_size, fp [i]);
-            adios_write (adios_handle, vars [i], pg_var_data);
+
+            char prefix[256];
+            strcpy(prefix, "N%d");
+            	for (k = 0; k < data_dim -> ndims ; k ++ ) {
+            		sprintf(tmp, prefix, k); // N0, N1... D0, D1 ... O0, O1, ...
+            		adios_write (adios_handle, tmp, &(data_dim->dims[k]));
+            	}
+            	strcpy(prefix, "D%d");
+            	for (k = 0; k < pg_dim -> ndims ; k ++ ) {
+            		sprintf(tmp, prefix, k); // N0, N1... D0, D1 ... O0, O1, ...
+            		adios_write (adios_handle, tmp, &(pg_dim->dims[k]));
+            	}
+            	strcpy(prefix, "O%d");
+            	for (k = 0; k < data_dim -> ndims ; k ++ ) {
+            		sprintf(tmp, prefix, k); // N0, N1... D0, D1 ... O0, O1, ...
+            		adios_write (adios_handle, tmp, &(offsets[k]));
+            	}
+
+            adios_write (adios_handle, "size", &size);
+            adios_write (adios_handle, "rank", &pg);
+
+            // fread and adios_write for each variable
+            int readBytes;
+            for (i = 0; i < nvars; i ++) {
+                readBytes = fread (pg_var_data, sizeof (char), pg_var_size, fp [i]);
+                //printf("%d %x %d\n", pg_var_size, *fp [i], readBytes);
+                adios_write (adios_handle, vars [i], pg_var_data);
+            }
+
         }
-
-        adios_close (adios_handle);
+            adios_close (adios_handle);
     }
 
     free (pg_var_data);
@@ -379,7 +410,7 @@ void testCalPGOffset(){
 }
 
 
-int  parseInputs(char * inputxml, dim_t **dataDim, dim_t **pgDim, char*** varList, int *numVarsOut){
+int  parseInputs(char * inputxml, dim_t **dataDim, dim_t **pgDim, char*** varList, int *numVarsOut, ts_t **dataTs){
 
 	FILE * fp = fopen (inputxml,"r");
 	if (!fp){
@@ -421,11 +452,12 @@ int  parseInputs(char * inputxml, dim_t **dataDim, dim_t **pgDim, char*** varLis
 	    }
 	if (strcasecmp (doc->value.element.name, "adios-alac-test-inputs")) {
 	        root = mxmlFindElement (doc, doc, "adios-alac-test-inputs", NULL, NULL, MXML_DESCEND_FIRST);
-    }
+        }
 
 	varsNode = mxmlFindElement(root, root, "vars", NULL, NULL, MXML_DESCEND_FIRST);
 	mxml_node_t * varnode = NULL, *dimnode = NULL;
 	const char * varname = 0,  *dimS = 0, *dataDimS = 0, *pgDimS = 0, *numVarS=0, *elmSizeS=0;
+
 	int numVars = 0, i, numDim=0, countVar= 0, elmSize = 0;
 	for (i = 0; i < varsNode->value.element.num_attrs; i++) {
 		mxml_attr_t * attr = &varsNode->value.element.attrs [i];
@@ -439,6 +471,35 @@ int  parseInputs(char * inputxml, dim_t **dataDim, dim_t **pgDim, char*** varLis
 			numVars = atoi(numVarS);
 	}
 
+        // Tang: parsing timestep info
+        mxml_node_t * tsnode = NULL;                     
+        const char * tsNumS = NULL, *tsS = NULL;               
+        int tsNum = 0;                                   
+        tsnode = mxmlFindElement(varsNode, varsNode, "timestep", NULL, NULL, MXML_DESCEND_FIRST);
+	if ( !tsnode) {
+		printf("missing timestep element under vars \n");
+		mxmlRelease(doc);
+		return 0;
+	}
+	for (i = 0; i < tsnode->value.element.num_attrs; i++) {
+		mxml_attr_t * attr = &tsnode->value.element.attrs [i];
+		GET_ATTR2("tsnum",attr,tsNumS,"timestep");
+		//GET_ATTR2("ts",attr,tsS,"timestep");
+	}
+	if ( !tsNumS || !strcmp ( tsNumS, "")) {
+		printf("missing values for tsNum attribute on timestep element\n");
+		mxmlRelease(doc);
+		return 0;
+	}
+        else {
+		tsNum = atoi(tsNumS);
+	}
+
+        int j;
+
+        (*dataTs) = initTimestep(tsNum); 
+
+        // Tang: ^
 
 	dimnode = mxmlFindElement(varsNode, varsNode, "dimension", NULL, NULL, MXML_DESCEND_FIRST);
 	if ( !dimnode) {
@@ -495,7 +556,6 @@ int  parseInputs(char * inputxml, dim_t **dataDim, dim_t **pgDim, char*** varLis
 	inputDataDim = (uint32_t *) malloc(sizeof(uint32_t)*numDim);
 	inputPGDim = (uint32_t *) malloc(sizeof(uint32_t)*numDim);
 
-	int j = 0;
 	for (j = 0; j < numDim ; j ++){
 		inputDataDim[j] = atoi(dim_tokens[j]);
 		inputPGDim[j] = atoi(pgDimTokens[j]);
@@ -530,6 +590,7 @@ int  parseInputs(char * inputxml, dim_t **dataDim, dim_t **pgDim, char*** varLis
 	 *numVarsOut = numVars;
 	 free(inputDataDim);
 	 free(inputPGDim);
+         //free(inputTsDim); // Tang
 	return 0;
 }
 /*
@@ -541,9 +602,11 @@ int main (int argc, char ** argv)
 
   if (argc >= 4) {
 	 dim_t *dataDim , *pgDim ;
+         ts_t *dataTs;              // Tang: add for timestep
 	 char **vars ;
 	 int numVar;
-	 if ( parseInputs(argv[3],&dataDim,&pgDim, &vars , &numVar) ){
+	 //if ( parseInputs(argv[3],&dataDim,&pgDim, &vars , &numVar) ){
+	 if ( parseInputs(argv[3],&dataDim,&pgDim, &vars , &numVar, &dataTs) ){
 		 printf("errors in the input xml file parse \n");
 		 return 0;
 	 }else {
@@ -555,9 +618,11 @@ int main (int argc, char ** argv)
 		 printListVars(vars, numVar);
 	 }
 	 printf("Write BP file \n");
-	 adios_write_pg (argv [1], argv [2], numVar, vars, dataDim, pgDim);
+	 //adios_write_pg (argv [1], argv [2], numVar, vars, dataDim, pgDim);
+	 adios_write_pg (argv [1], argv [2], numVar, vars, dataDim, pgDim, dataTs);
 	 freeDimension(dataDim);
 	 freeDimension(pgDim);
+         freeTimestep(dataTs);     // Tang: free dataTs
 
   } else {
 	  printf ("Usage: %s <base directory> <transform> <input xml> \n Example: ./adios_build_alac_index ./xml alacrity-1var ./xml/build-alac-index-input.xml", argv [0]);
