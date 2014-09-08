@@ -23,6 +23,12 @@ void printALMetadata(ALMetadata *pm){
 	printf("partition length %" PRIu32" \n" , pm->partitionLength);
 	printf("significant bits %d \n" , pm->significantBits);
 	printf("num bins %" PRIu32" \n", pm->binLayout.numBins);
+        int i;
+        printf("bin values:\n");
+        for (i = 0; i < pm->binLayout.numBins; i++) {
+	    printf("%x \t", pm->binLayout.binValues[i]);
+        }
+        printf("\n");
 	printf("index form %d \n", pm->indexMeta.indexForm);
 
 }
@@ -316,7 +322,7 @@ int main (int argc, char ** argv)
 
     //====================start to test ==================//
     printf("//====================test_adios_alac_meta_read ==================//\n");
-//    test_adios_alac_meta_read(fp, v);
+    test_adios_alac_meta_read(fp, v);
     printf("///////////////////////////////////////\n");
 
     printf("//====================testContainingAndRidConversion==================//\n");
