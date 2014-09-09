@@ -1,0 +1,7 @@
+<?xml version="1.0"?>
+<adios-alac-test-inputs>
+	<vars num="1">
+		<dimension dim="3" dataDim="4,4,4" pgDim="2,2,2" elementSize="4"/>
+		<var name="temp" />
+	</vars>
+</adios-alac-test-inputs>
