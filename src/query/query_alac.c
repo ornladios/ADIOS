@@ -60,7 +60,7 @@ bool ridConversionWithCheck(rid_t rid/*relative to local src selectoin*/
 		, uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount,
 		int dim, rid_t *relativeRid  );
 
-uint64_t ridConversionWithoutCheck(uint64_t rid/*relative to local src selectoin*/,
+rid_t ridConversionWithoutCheck(rid_t rid/*relative to local src selectoin*/,
 		uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount,
 		int dim);
 
@@ -303,75 +303,190 @@ int coordinateConversionWithCheck(uint64_t * coordinates, const  int dim, const 
 /* Give a rid that is relative to a src region
  * return a rid that is relative to dest selection box
  * Assume all the start & count array has slowest dimension at first position
+ * NOTE: some redundant codes are for performance sake
  */
 bool ridConversionWithCheck(rid_t rid/*relative to local src selectoin*/, uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount,
 		int dim, rid_t *relativeRid  ){
 
 	int i = 0;
 	*relativeRid = 0;
+
 	if (dim == 3) {
 		uint64_t coordinates[3]= {0}, destend[3]={0};
-		for(i = 0; i < dim; i ++){
-				destend[i] = deststart[i] + destcount[i] -1;
-		}
+		destend[0] = deststart[0] + destcount[0] -1 ;
+		destend[1] = deststart[1] + destcount[1] -1 ;
+		destend[2] = deststart[2] + destcount[2] -1 ;
+
 		coordinates[0] = rid / (srccount[1] * srccount[2]) ;
 		coordinates[1] = (rid % (srccount[1] * srccount[2])) / srccount[2];
 		coordinates[2] = (rid % (srccount[1] * srccount[2])) % srccount[2] ;
 
-		if (coordinateConversionWithCheck(coordinates, dim, srcstart, deststart, destend) < 0){
+		coordinates[0] += (srcstart[0] /*global coordinate*/ );
+		if ( coordinates[0] < deststart[0] || coordinates[0] > destend[0])
 			return false;
-		}
 
+		coordinates[1] += (srcstart[1] /*global coordinate*/ );
+		if ( coordinates[1] < deststart[1] || coordinates[1] > destend[1])
+			return false;
+
+		coordinates[2] += (srcstart[2] /*global coordinate*/ );
+		if ( coordinates[2] < deststart[2] || coordinates[2] > destend[2])
+			return false;
+
+		/*change coordinate to the destination box*/
+		coordinates[0] -=  deststart[0];
+		coordinates[1] -=  deststart[1];
+		coordinates[2] -=  deststart[2];
 		*relativeRid = coordinates[2] + coordinates[1] * destcount[2] + coordinates[0]* destcount[1] * destcount[2];
 
-	}
-
-	if (dim == 2){
+	}else if (dim == 2){
 		uint64_t coordinates[2]= {0}, destend[2]={0};
-		for(i = 0; i < dim; i ++){
-			destend[i] = deststart[i] + destcount[i] -1;
-		}
+		destend[0] = deststart[0] + destcount[0] -1 ;
+		destend[1] = deststart[1] + destcount[1] -1 ;
 
 		coordinates[0] = rid / (srccount[1]);
 		coordinates[1] = rid % (srccount[1] );
-		if (coordinateConversionWithCheck(coordinates, dim, srcstart, deststart, destend) < 0){
+
+		coordinates[0] += (srcstart[0] /*global coordinate*/ );
+		if ( coordinates[0] < deststart[0] || coordinates[0] > destend[0])
+			return false;
+
+		coordinates[1] += (srcstart[1] /*global coordinate*/ );
+		if ( coordinates[1] < deststart[1] || coordinates[1] > destend[1])
+			return false;
+
+		/*change coordinate to the destination box*/
+		coordinates[0] -=  deststart[0];
+		coordinates[1] -=  deststart[1];
+		*relativeRid = coordinates[1] + coordinates[0] * destcount[1] ;
+
+	}else if (dim == 1){
+		uint64_t coordinates, destend;
+		destend = deststart[0] + destcount[0] -1 ;
+		coordinates =  rid + srcstart[0]; /*global coordinate*/
+		if (coordinates < deststart[0] || coordinates > destend ){
+			return false;
+		}
+		*relativeRid = coordinates - deststart[0];
+
+	}else if (dim >= 4){
+		uint64_t * coordinates = (uint64_t *) malloc(sizeof(uint64_t) * dim);
+		uint64_t * destend = (uint64_t *) malloc(sizeof(uint64_t) * dim);
+		for(i=0; i < dim ; i ++){
+			destend[i] = deststart[i] + destcount[i] -1;
+		}
+
+		//calculate coordinates
+		int j = 0, k;
+		uint64_t tmpSize = 1;
+		rid_t remain = rid;
+		while ( j < dim){ // j is the dimension to been set
+			k = j + 1;
+			tmpSize = 1;
+			while ( k < dim){
+				tmpSize *= srccount[k];
+				k++;
+			}
+			coordinates[j] = remain / tmpSize ;
+			remain = remain  %  tmpSize;
+			j ++;
+		}
+
+		if (coordinateConversionWithCheck(coordinates, dim, srcstart, deststart, destend)< 0 ){
 			return false;
 		}
 
-		*relativeRid = coordinates[1] + coordinates[0] * destcount[1] ;
+		*relativeRid = 0;
+		for (i = 0; i < dim; i ++){
+			tmpSize = coordinates[i];
+			for ( j = i + 1; j < dim ; j ++ ){
+				tmpSize = tmpSize * destcount[j];
+			}
+			*relativeRid = *relativeRid + tmpSize;
+		}
 
+		free(coordinates);
+		free(destend);
 	}
 
 	return true;
 }
 
+void ridToCoordinates(int dim, rid_t rid,  uint64_t * dimSize , uint64_t * coordinates /*OUT*/ ){
+	int j = 0, k;
+	uint64_t tmpSize = 1;
+	rid_t remain = rid;
+	while ( j < dim){ // j is the dimension to been set
+		k = j + 1;
+		tmpSize = 1;
+		while ( k < dim){
+			tmpSize *= dimSize[k];
+			k++;
+		}
+		coordinates[j] = remain / tmpSize ;
+		remain = remain  %  tmpSize;
+		j ++;
+	}
+}
 
-uint64_t ridConversionWithoutCheck(uint64_t rid/*relative to local src selectoin*/,
+rid_t ridConversionWithoutCheck(rid_t rid/*relative to local src selectoin*/,
 		uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount,
 		int dim){
 
 	uint64_t relativeRid = 0;
-	int * coordinates = (int *) malloc(sizeof(int) * dim); // coordinate of current PG
-	if (dim == 3) {
+
+	if ( dim == 3 ) {
+		int coordinates[3];
 		coordinates[0] = rid / (srccount[1] * srccount[2]);
 		coordinates[1] = (rid % (srccount[1] * srccount[2])) / srccount[2];
 		coordinates[2] = (rid % (srccount[1] * srccount[2])) % srccount[2] ;
-		relativeRid = coordinates[2] + coordinates[1] * destcount[2] + coordinates[0]* destcount[1] * destcount[2];
-	}
 
-	if (dim == 2){
+		coordinates[0] += (srcstart[0] - deststart[0] /*global coordinate*/ );
+		coordinates[1] += (srcstart[1] - deststart[1] /*global coordinate*/ );
+		coordinates[2] += (srcstart[2] - deststart[2] /*global coordinate*/ );
+
+		relativeRid = coordinates[2] + coordinates[1] * destcount[2] + coordinates[0]* destcount[1] * destcount[2];
+	}else if (dim == 2){
+		int coordinates[2];
 		coordinates[0] = rid / (srccount[1]);
 		coordinates[1] = rid % (srccount[1] );
+
+		coordinates[0] += (srcstart[0] - deststart[0] /*global coordinate*/ );
+		coordinates[1] += (srcstart[1] - deststart[1] /*global coordinate*/ );
+
 		relativeRid = coordinates[1] + coordinates[0] * destcount[1] ;
+	}else if ( dim == 1) {
+		relativeRid = rid + srcstart[0] - deststart[0];  // rid + srcstart[0] -> global rid ( - deststart[0] ) -> relativeRid
+	}else if (dim >= 4){
+
+		uint64_t * coordinates = (uint64_t *) malloc(sizeof(uint64_t) * dim);
+		int i = 0;
+		//calculate coordinates
+		ridToCoordinates(dim, rid, srccount, coordinates);
+
+		for(i = 0; i < dim ; i ++){
+			coordinates[i] += (srcstart[i] - deststart[i]);
+		}
+		int j = 0;
+		uint64_t tmpSize = 1;
+		relativeRid = 0;
+		for (i = 0; i < dim; i ++){
+			tmpSize = coordinates[i];
+			for ( j = i + 1; j < dim ; j ++ ){
+				tmpSize = tmpSize * destcount[j];
+			}
+			relativeRid = relativeRid + tmpSize;
+		}
+
+		free(coordinates);
 	}
 
-	free(coordinates);
 	return relativeRid;
 }
 
 /*
  * usage: this MACRO tightly depends on the usage context,
- * which requires the context declare the exact variables
+ * which requires the context to declare the exact variables
  */
 #define CHECK_ELEMENT(code) { \
 		for(el= 0; el < totalElm; el ++){              \
@@ -1038,6 +1153,54 @@ ADIOS_ALAC_BITMAP * adios_alac_process(ADIOS_QUERY* q, int timestep,
 void adios_query_alac_init_method() {}
 
 
+
+void adios_query_alac_retrieval_points1d(
+		ADIOS_ALAC_BITMAP *b, uint64_t retrieval_size
+		, ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb
+		, uint64_t *points /*OUT*/ ){
+
+	uint64_t start_pos = 0;
+	if (!isLastConvRidInit(b))
+		start_pos =	b->lastConvRid  / 64;
+
+	uint64_t * p_bitmap = b->bits;
+	uint64_t pidx = 0, off = start_pos, retrieveCount = 0;
+	uint64_t reconstct_rid;
+	while (off <= b->length ){
+		uint16_t * temp = (uint16_t *) &(p_bitmap[off]); // 2 bytes (unsigned short int)  = 16 bits
+		uint64_t offset_long_int = off * 64; // original index offset ; // 4 bytes (unsigned long int )= 64 bit
+		uint64_t offset;
+		int j , m;
+		for (j = 0; j < 4; j++) {
+			offset = offset_long_int + j * 16; // here, 16 is used because temp is 16bits (unsigned short int) pointer
+			// set_bit_count for each 2 bytes, the number of 1
+			/*
+			 * *******|               64 bits                 | => final_result_bitmap []
+			 * *******| 16 bits | 16 bits | 16 bits | 16 bits | => temp[]
+			 */
+			for (m = 0; m < set_bit_count[temp[j]]  ; m++) {
+				reconstct_rid = offset+ set_bit_position[temp[j]][m];
+				if (!isLastConvRidInit(b)) {
+					if (reconstct_rid > b->lastConvRid) { // skip the RIDs in the 16-bits part
+						points[pidx++] = bb->start[0] + reconstct_rid ;
+						retrieveCount++;
+					}
+				}else { // lastConvRid == realElmSize+1 represents the initial state
+					// in which the RID recovering has not started yet
+					points[pidx++] = bb->start[0] + reconstct_rid ;
+					retrieveCount++;
+				}
+
+				if (retrieveCount == retrieval_size){
+					b->lastConvRid = reconstct_rid; 					 // updated the status
+					return ;
+				}
+			}
+		}
+		off ++;
+	}
+}
+
 void adios_query_alac_retrieval_points2d(
 		ADIOS_ALAC_BITMAP *b, uint64_t retrieval_size
 		, ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb
@@ -1141,6 +1304,64 @@ void adios_query_alac_retrieval_points3d( ADIOS_ALAC_BITMAP *b, uint64_t retriev
 
 }
 
+
+void adios_query_alac_retrieval_pointsNd( ADIOS_ALAC_BITMAP *b, uint64_t retrieval_size
+		, ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb , uint64_t *points /*OUT*/ ){
+	int d = 0, td;
+	uint64_t start_pos = 0;
+	if (!isLastConvRidInit(b))
+		start_pos =	b->lastConvRid  / 64;
+
+	uint64_t * p_bitmap = b->bits;
+	uint64_t pidx = 0, off = start_pos, retrieveCount = 0;
+	uint64_t reconstct_rid;
+	uint64_t * coordinates = (uint64_t *) malloc(sizeof(uint64_t) * (bb->ndim));
+	while (off <= b->length ){
+		uint16_t * temp = (uint16_t *) &(p_bitmap[off]); // 2 bytes (unsigned short int)  = 16 bits
+		uint64_t offset_long_int = off * 64; // original index offset ; // 4 bytes (unsigned long int )= 64 bit
+		uint64_t offset;
+		int j , m;
+		for (j = 0; j < 4; j++) {
+			offset = offset_long_int + j * 16; // here, 16 is used because temp is 16bits (unsigned short int) pointer
+			// set_bit_count for each 2 bytes, the number of 1
+			/*
+			 * *******|               64 bits                 | => final_result_bitmap []
+			 * *******| 16 bits | 16 bits | 16 bits | 16 bits | => temp[]
+			 */
+
+			for (m = 0; m < set_bit_count[temp[j]]  ; m++) {
+				reconstct_rid = offset+ set_bit_position[temp[j]][m];
+				if (!isLastConvRidInit(b)) {
+					if (reconstct_rid > b->lastConvRid) { // skip the RIDs in the 16-bits part
+						ridToCoordinates(bb->ndim, reconstct_rid, bb->count, coordinates);
+						for (d = 0; d < bb->ndim; d ++){
+							points[pidx++] = bb->start[d] + coordinates[d];
+						}
+						retrieveCount++;
+					}
+				}else { // lastConvRid == realElmSize+1 represents the initial state
+					// in which the RID recovering has not started yet
+					ridToCoordinates(bb->ndim, reconstct_rid, bb->count, coordinates);
+					for (d = 0; d < bb->ndim; d ++){
+						points[pidx++] = bb->start[d] + coordinates[d];
+					}
+					retrieveCount++;
+				}
+
+				if (retrieveCount == retrieval_size){
+					b->lastConvRid = reconstct_rid; 					 // updated the status
+					free(coordinates);
+					return ;
+				}
+			}
+		}
+		off ++;
+	}
+	free(coordinates);
+
+}
+
+
 void adios_query_alac_build_results(
 		uint64_t retrieval_size, ADIOS_SELECTION* outputBoundry, ADIOS_ALAC_BITMAP *b
 		, ADIOS_SELECTION ** queryResult){
@@ -1156,6 +1377,10 @@ void adios_query_alac_build_results(
 			adios_query_alac_retrieval_points3d(b,retrieval_size, bb, points);
 		}else if (bb -> ndim == 2){
 			adios_query_alac_retrieval_points2d(b,retrieval_size, bb, points);
+		}else if (bb->ndim == 1){
+			adios_query_alac_retrieval_points1d(b,retrieval_size, bb, points);
+		}else if ( bb->ndim >=4 ){
+
 		}
 		*queryResult = adios_selection_points(bb->ndim, retrieval_size, points);
 	}
