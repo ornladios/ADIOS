@@ -235,26 +235,30 @@ void oneDefinedBox(ADIOS_FILE* bf, const char * lb, const char * hb,
 
 void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF) {
 	printf("\n=============== test oneBoundingBoxForVars ===========\n");
-	uint64_t start[] = { 0, 0, 0 };
-	uint64_t count[] = { 64, 32, 32 };
+	uint64_t start[] = { 0, 0 };
+	uint64_t count[] = { 8, 8 };
+	//uint64_t start[] = { 0, 0, 0 };
+	//uint64_t count[] = { 64, 32, 32 };
 	//  uint64_t count[] = {32,16,16};
-	ADIOS_SELECTION* box = adios_selection_boundingbox(3, start, count);
+	ADIOS_SELECTION* box = adios_selection_boundingbox(2, start, count);
 
 	const char* varName1 = "temp";
 	const char* value1 = "170.0";
 	double tempConstraint = atof(value1);
 
 	const char* varName2 = "uvel";
-	const char* value2 = "14";
+	const char* value2 = "0.5";
+	//const char* value2 = "14";
 	double uvelConstraint = atof(value2);
 
 	ADIOS_QUERY* q1 = adios_query_create(f, varName1, box, ADIOS_LT, value1); // temp < 150.0
-	ADIOS_QUERY* q2 = adios_query_create(f, varName2, box, ADIOS_GT, value2); // uvel > 15
+	ADIOS_QUERY* q2 = adios_query_create(f, varName1, box, ADIOS_GT, value2); // uvel > 15
+	//ADIOS_QUERY* q2 = adios_query_create(f, varName2, box, ADIOS_GT, value2); // uvel > 15
 
 	ADIOS_QUERY* q = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
 
 	ADIOS_VARINFO * tempVar = adios_inq_var(dataF, varName1);
-	ADIOS_VARINFO * uvelVar = adios_inq_var(dataF, varName2);
+	//ADIOS_VARINFO * uvelVar = adios_inq_var(dataF, varName2);
 
 	int timestep = 0;
 	int64_t batchSize = 1220;
@@ -265,11 +269,15 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF) {
 		printf("querying on timestep %d \n", i);
 		adios_query_set_timestep(i);
 
+                // Tang
+                //q->_onTimeStep = i+1; 
+                // Tang^
 		while (1) {
 			ADIOS_SELECTION* currBatch = NULL;
 			int hasMore = adios_query_get_selection(q, batchSize, box,
 					&currBatch);
 
+                        printf("hasMore=%d\n",hasMore);
 			if (hasMore == 0) { // there is no left results to retrieve
 				break;
 			}
@@ -285,6 +293,11 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF) {
 			adios_schedule_read_byid(dataF, currBatch, tempVar->varid, 0, 1,
 					data);
 			adios_perform_reads(dataF, 1);
+                        printf("Total data retrived:%d\n", retrievedPts->npoints);
+                        for (i = 0; i < retrievedPts->npoints; i++) {
+                            printf("%.6f\t", data[i]);
+                        }
+                        printf("\n");
 			CHECK_ERROR_DATA(data, retrievedPts->npoints, (data[di] >= tempConstraint));
 
 			// check return uvel data
