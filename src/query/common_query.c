@@ -68,8 +68,8 @@ int getTotalByteSize(ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* sel, uint
     uint64_t s = 0;
     for (s=0; s<v->ndim; s++) {
          *total_byte_size *=v->dims[s];
-	 *dataSize *= v->dims[s];
-	printf(" dim %" PRIu64 "default count %" PRIu64 "\n", s, v->dims[s]);
+         *dataSize *= v->dims[s];
+         //	printf(" dim %" PRIu64 "default count %" PRIu64 "\n", s, v->dims[s]);
     }
     return 0;
   }
@@ -90,10 +90,10 @@ int getTotalByteSize(ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* sel, uint
 	   }
 	   *total_byte_size *=count[s];
 	   *dataSize *= count[s];
-	   printf(" dim %" PRIu64 "count %" PRIu64 " \n", s, count[s]);
+//	   printf(" dim %" PRIu64 "count %" PRIu64 " \n", s, count[s]);
       }
       
-	   printf("\tThe data size is = %" PRIu64 " \n", *dataSize);
+//	   printf("\tThe data size is = %" PRIu64 " \n", *dataSize);
       break;
     }
   case ADIOS_SELECTION_POINTS:
