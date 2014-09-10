@@ -25,9 +25,7 @@
 //#include "core/adios_internals.c"
 
 //#define GET_ATTR(n,attr,var,en)
-
-//these functions are copied from core/adios_internals.c due to  compilation errors
-#define GET_ATTR2(n,attr,var,en)                              \
+#define GET_ATTR2(n,attr,var,en)                                 \
     if (!strcasecmp (n, attr->name)) {                           \
         if (!var)                                                \
         {                                                        \
@@ -39,7 +37,8 @@
             printf ("xml: duplicate attribute %s on %s (ignored)",n,en); \
             continue;                                            \
         }                                                        \
-    }
+    }   
+
 
 void trim_spaces2 (char * str)
 {
@@ -110,27 +109,6 @@ struct dimensions {
 
 typedef struct dimensions dim_t;
 
-// Tang: add timestep struct
-struct timesteps {
-    uint8_t nts;
-    uint32_t * tss ;
-};
-
-typedef struct timesteps ts_t;
-
-ts_t* initTimestep(uint8_t nts){
-	ts_t * D = (ts_t *) malloc(sizeof(ts_t));
-	D->nts = nts;
-	D->tss = (uint32_t* ) malloc(sizeof(uint32_t) * nts);
-	return D;
-}
-
-void freeTimestep(ts_t * D){
-	free(D->tss);
-}
-
-// Tang ^
-
 void adios_pin_timestep(uint32_t ts); // Not in the standard header, but accessible
 
 dim_t * initDimension(uint8_t ndims, uint8_t elementSize){
@@ -170,6 +148,48 @@ void printListVars(char **vars, int numVars){
 	}
 	printf("\n");
 }
+
+// Tang: add timestep and pg offset struct
+struct timesteps {
+    uint8_t nts;
+    //uint32_t * tss ;
+};
+typedef struct timesteps ts_t;
+
+ts_t* initTimestep(uint8_t nts){
+    ts_t * D = (ts_t *) malloc(sizeof(ts_t));
+    D->nts = nts;
+    //D->tss = (uint32_t* ) malloc(sizeof(uint32_t) * nts);
+    return D;
+}
+
+void freeTimestep(ts_t * D){
+    //free(D->tss);
+    free(D);
+}
+
+struct pgoffset{
+    uint8_t ndims;
+    uint8_t npg;
+    uint32_t * off;
+};
+typedef struct pgoffset pgoff_t;
+
+pgoff_t* initPGoff(uint8_t npg, uint8_t ndims){
+    pgoff_t * D = (pgoff_t *) malloc(sizeof(pgoff_t));
+    D->npg   = npg;
+    D->ndims = ndims;
+    D->off   = (uint32_t* ) malloc(sizeof(uint32_t) * npg * ndims);
+    return D;
+}
+
+void freePGoff(pgoff_t* D){
+    free(D->off);
+}
+
+// Tang ^
+
+
 /*
  * calculate the offset of each PG(rank), highest dimension is the fastest dimension
  */
@@ -202,7 +222,7 @@ uint32_t * calPGOffsets(const int rank , const uint32_t *dataDim, const uint32_t
 // this file is stolen from ../transform/adios_write_all_3D.c
 
 void adios_write_pg ( char input_dir [], char transform [], uint8_t nvars, char **vars,
-                       dim_t *data_dim, dim_t *pg_dim, ts_t *data_ts)
+                       dim_t *data_dim, dim_t *pg_dim, ts_t *data_ts, pgoff_t *pgOff)
 {
     int         rank, size;
     int         i = 0,   pg = 0; // timestep
@@ -287,20 +307,6 @@ void adios_write_pg ( char input_dir [], char transform [], uint8_t nvars, char 
             //    adios_open (&adios_handle, "S3D", output_bp_file, "w", comm);
         for (pg = 0; pg < numPGs; pg ++) {
 
-        	//adios_pin_timestep(data_ts->tss[tsIdx]); // every PG only has one timestep data
-//        	uint32_t *offsets = calPGOffsets(pg, data_dim->dims, pg_dim->dims, data_dim->ndims);
-        	uint32_t offsets[2];
-        	if ( pg == 0) {
-        		offsets[0] = 0; offsets[1] = 0;
-        	}else if (pg == 1){
-        		offsets[0] = 4; offsets[1] = 0;
-        	}else if (pg == 2){
-        		offsets[0] = 0; offsets[1] = 4;
-        	}else if (pg == 3){
-        		offsets[0] = 4; offsets[1] = 4;
-        	}
-
-
             char prefix[256];
             strcpy(prefix, "N%d");
             	for (k = 0; k < data_dim -> ndims ; k ++ ) {
@@ -315,7 +321,8 @@ void adios_write_pg ( char input_dir [], char transform [], uint8_t nvars, char 
             	strcpy(prefix, "O%d");
             	for (k = 0; k < data_dim -> ndims ; k ++ ) {
             		sprintf(tmp, prefix, k); // N0, N1... D0, D1 ... O0, O1, ...
-            		adios_write (adios_handle, tmp, &(offsets[k]));
+            		adios_write (adios_handle, tmp, &(pgOff->off[pg*(pg_dim->ndims)+k]));
+            		//adios_write (adios_handle, tmp, &(offsets[k]));
             	}
 
             adios_write (adios_handle, "size", &size);
@@ -420,7 +427,7 @@ void testCalPGOffset(){
 }
 
 
-int  parseInputs(char * inputxml, dim_t **dataDim, dim_t **pgDim, char*** varList, int *numVarsOut, ts_t **dataTs){
+int  parseInputs(char * inputxml, dim_t **dataDim, dim_t **pgDim, char*** varList, int *numVarsOut, ts_t **dataTs, pgoff_t **pgOff){
 
 	FILE * fp = fopen (inputxml,"r");
 	if (!fp){
@@ -468,7 +475,7 @@ int  parseInputs(char * inputxml, dim_t **dataDim, dim_t **pgDim, char*** varLis
 	mxml_node_t * varnode = NULL, *dimnode = NULL;
 	const char * varname = 0,  *dimS = 0, *dataDimS = 0, *pgDimS = 0, *numVarS=0, *elmSizeS=0;
 
-	int numVars = 0, i, numDim=0, countVar= 0, elmSize = 0;
+	int numVars = 0, i, j, numDim=0, countVar= 0, elmSize = 0;
 	for (i = 0; i < varsNode->value.element.num_attrs; i++) {
 		mxml_attr_t * attr = &varsNode->value.element.attrs [i];
 		GET_ATTR2("num",attr,numVarS,"vars");
@@ -487,25 +494,22 @@ int  parseInputs(char * inputxml, dim_t **dataDim, dim_t **pgDim, char*** varLis
         int tsNum = 0;                                   
         tsnode = mxmlFindElement(varsNode, varsNode, "timestep", NULL, NULL, MXML_DESCEND_FIRST);
 	if ( !tsnode) {
-		printf("missing timestep element under vars \n");
-		mxmlRelease(doc);
-		return 0;
+	    printf("missing timestep element under vars \n");
+	    mxmlRelease(doc);
+	    return 0;
 	}
 	for (i = 0; i < tsnode->value.element.num_attrs; i++) {
-		mxml_attr_t * attr = &tsnode->value.element.attrs [i];
-		GET_ATTR2("tsnum",attr,tsNumS,"timestep");
-		//GET_ATTR2("ts",attr,tsS,"timestep");
+	    mxml_attr_t * attr = &tsnode->value.element.attrs [i];
+	    GET_ATTR2("tsnum",attr,tsNumS,"timestep");
 	}
 	if ( !tsNumS || !strcmp ( tsNumS, "")) {
-		printf("missing values for tsNum attribute on timestep element\n");
-		mxmlRelease(doc);
-		return 0;
+	    printf("missing values for tsNum attribute on timestep element\n");
+	    mxmlRelease(doc);
+	    return 0;
 	}
         else {
-		tsNum = atoi(tsNumS);
+	    tsNum = atoi(tsNumS);
 	}
-
-        int j;
 
         (*dataTs) = initTimestep(tsNum); 
 
@@ -580,27 +584,105 @@ int  parseInputs(char * inputxml, dim_t **dataDim, dim_t **pgDim, char*** varLis
 	for(i= 0; i < numVars;  i ++){
 		(*varList)[i] = (char*) malloc(256);
 	}
-	 for (varnode = mxmlWalkNext (varsNode, doc, MXML_DESCEND_FIRST)
-	            ;varnode
-	            ;varnode = mxmlWalkNext (varnode, varsNode, MXML_NO_DESCEND) ){
-		 if (varnode->type != MXML_ELEMENT) {
-		            continue;
-		 }
-		 if (!strcasecmp (varnode->value.element.name, "var")) {
-			 for (i = 0; i < varnode->value.element.num_attrs; i++) {
-				 mxml_attr_t * attr = &varnode->value.element.attrs [i];
-				 if (!strcmp(attr->name, "name")){
-					 strcpy((*varList)[countVar], attr->value);
-					 countVar ++;
-				 }
-			 }
+	for (varnode = mxmlWalkNext (varsNode, doc, MXML_DESCEND_FIRST)
+	           ;varnode
+	           ;varnode = mxmlWalkNext (varnode, varsNode, MXML_NO_DESCEND) ){
+	        if (varnode->type != MXML_ELEMENT) {
+	                   continue;
+	        }
+	        if (!strcasecmp (varnode->value.element.name, "var")) {
+	       	 for (i = 0; i < varnode->value.element.num_attrs; i++) {
+	       		 mxml_attr_t * attr = &varnode->value.element.attrs [i];
+	       		 if (!strcmp(attr->name, "name")){
+	       			 strcpy((*varList)[countVar], attr->value);
+	       			 countVar ++;
+	       		 }
+	       	 }
 
-		 }
-	 }
-	 *numVarsOut = numVars;
-	 free(inputDataDim);
-	 free(inputPGDim);
-         //free(inputTsDim); // Tang
+	        }
+	}
+
+        *numVarsOut = numVars;
+	
+        
+        // Tang: Parsing pg offset info, assuming we have already know dim dataDim and pgDim
+        // from parsed result of <dimension/>
+        int nPG = 0;
+        for (i = 0; i < numDim; i++) {
+            nPG += ((*dataDim)->dims[i] / (*pgDim)->dims[i]); 
+        }
+
+
+        mxml_node_t * pgoffnode = NULL;                     
+        const char * pgoffNumS = NULL, *pgoffS = NULL;               
+        int pgoffNum= 0;                                   
+        pgoffnode = mxmlFindElement(varsNode, varsNode, "pgoffset", NULL, NULL, MXML_DESCEND_FIRST);
+
+	if ( !pgoffnode) {
+	    printf("missing pgoffset element under vars \n");
+	    mxmlRelease(doc);
+	    return 0;
+	}
+
+	for (i = 0; i < pgoffnode->value.element.num_attrs; i++) {
+	    mxml_attr_t * attr = &pgoffnode->value.element.attrs [i];
+	    GET_ATTR2("pgNum",attr,pgoffNumS,"pgoffset");
+	}
+
+	if ( !pgoffNumS || !strcmp ( pgoffNumS, "")) {
+	    printf("missing values for tsNum attribute on timestep element\n");
+	    mxmlRelease(doc);
+	    return 0;
+	}
+        else {
+	    pgoffNum = atoi(pgoffNumS);
+	}
+
+        if (pgoffNum != nPG) {
+	    printf("pgNum from pgoffset doesn't match the number of pgs calculated from dataDim/pgDim \n");
+	    mxmlRelease(doc);
+	    return 0;
+        }
+
+        (*pgOff) = initPGoff(nPG, numDim);
+
+        char pgoffName[16];
+        char** pgoffValueS;
+        char** pgoffValue_tokens=NULL;
+        pgoffValueS = (char**)malloc(sizeof(char*) * nPG);
+        for (i = 0; i < nPG; i++) {
+            pgoffValueS[i] = NULL;
+        }
+        pgoffnode = mxmlFindElement(varsNode, varsNode, "pgoffset", NULL, NULL, MXML_DESCEND_FIRST);
+	for (i = 0; i < pgoffnode->value.element.num_attrs; i++) {
+	    mxml_attr_t * attr = &pgoffnode->value.element.attrs [i];
+            for (j = 0; j < nPG; j++) {
+                sprintf(pgoffName,"pg_%d", j);
+                if (pgoffValueS[j] != NULL) {
+                    continue;
+                }
+	        GET_ATTR2(pgoffName,attr,pgoffValueS[j],"pgoffset");
+            }
+	}
+
+        for (i = 0; i < nPG; i++) {
+            tokenize_dimensions2 (pgoffValueS[i], &pgoffValue_tokens, &numDim);
+            for (j = 0; j < numDim; j++) {
+                (*pgOff)->off[i*numDim+j] = atoi(pgoffValue_tokens[j]);
+            }
+        }
+
+        for (i = 0; i < nPG; i++) {
+            printf("PG offset_%d: ",i);
+            for (j = 0; j < numDim; j++) {
+                printf("%d ",(*pgOff)->off[i*numDim+j]);
+            }
+            printf("\n");
+        }
+
+        free(pgoffValueS);
+	free(inputDataDim);
+	free(inputPGDim);
 	return 0;
 }
 /*
@@ -613,10 +695,11 @@ int main (int argc, char ** argv)
   if (argc >= 4) {
 	 dim_t *dataDim , *pgDim ;
          ts_t *dataTs;              // Tang: add for timestep
+         pgoff_t *pgOff;            // Tang: add for pg offsets
 	 char **vars ;
 	 int numVar;
 	 //if ( parseInputs(argv[3],&dataDim,&pgDim, &vars , &numVar) ){
-	 if ( parseInputs(argv[3],&dataDim,&pgDim, &vars , &numVar, &dataTs) ){
+	 if ( parseInputs(argv[3],&dataDim,&pgDim, &vars , &numVar, &dataTs, &pgOff) ){
 		 printf("errors in the input xml file parse \n");
 		 return 0;
 	 }else {
@@ -629,10 +712,11 @@ int main (int argc, char ** argv)
 	 }
 	 printf("Write BP file \n");
 	 //adios_write_pg (argv [1], argv [2], numVar, vars, dataDim, pgDim);
-	 adios_write_pg (argv [1], argv [2], numVar, vars, dataDim, pgDim, dataTs);
+	 adios_write_pg (argv [1], argv [2], numVar, vars, dataDim, pgDim, dataTs, pgOff);
 	 freeDimension(dataDim);
 	 freeDimension(pgDim);
          freeTimestep(dataTs);     // Tang: free dataTs
+         freePGoff(pgOff);
 
   } else {
 	  printf ("Usage: %s <base directory> <transform> <input xml> \n Example: ./adios_build_alac_index ./xml alacrity-1var ./xml/build-alac-index-input.xml", argv [0]);
