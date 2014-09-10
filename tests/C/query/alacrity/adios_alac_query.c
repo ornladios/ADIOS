@@ -273,9 +273,6 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF, const char * lbs, c
 		printf("querying on timestep %d \n", i);
 		adios_query_set_timestep(i);
 
-                // Tang
-                //q->_onTimeStep = i+1; 
-                // Tang^
 		while (1) {
 			ADIOS_SELECTION* currBatch = NULL;
 			int hasMore = adios_query_get_selection(q, batchSize, box,
@@ -290,19 +287,39 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF, const char * lbs, c
 					&(currBatch->u.points);
 			printf("retrieved points %" PRIu64 " \n", retrievedPts->npoints);
 
-			double * data = (double *) malloc(
-					retrievedPts->npoints * sizeof(double));
+
+			int elmSize = adios_type_size(tempVar->type, NULL);
+			void *data = malloc(retrievedPts->npoints * elmSize);
+/*
+			if (tempVar->type == adios_real){
+				data = (float*) malloc( retrievedPts->npoints * sizeof(float));
+			}else if (tempVar ->type == adios_double ){
+				data = (double*) malloc( retrievedPts->npoints * sizeof(double));
+			}else {
+				printf("its not supported data type [%d] currently \n", tempVar->type);
+			}
+*/
 
 			// check returned temp data
-			adios_schedule_read_byid(dataF, currBatch, tempVar->varid, 0, 1,
-					data);
+			adios_schedule_read_byid(dataF, currBatch, tempVar->varid, i, 1, data);
+
 			adios_perform_reads(dataF, 1);
-                        printf("Total data retrived:%d\n", retrievedPts->npoints);
-                        for (i = 0; i < retrievedPts->npoints; i++) {
-                            printf("%.6f\t", data[i]);
-                        }
-                        printf("\n");
-			CHECK_ERROR_DATA(data, retrievedPts->npoints, (data[di] >= hb && data[di] <=lb));
+
+			printf("Total data retrieved:%"PRIu64"\n", retrievedPts->npoints);
+			if (tempVar->type == adios_double){
+				for (i = 0; i < retrievedPts->npoints; i++) {
+					printf("%.6f\t", ((double*)data)[i]);
+				}
+				printf("\n");
+//				CHECK_ERROR_DATA(data, retrievedPts->npoints, (data[di] >= hb && data[di] <=lb));
+			}else if (tempVar->type == adios_real){
+				for (i = 0; i < retrievedPts->npoints; i++) {
+					printf("%.6f\t", ((float*)data)[i]);
+				}
+				printf("\n");
+			}
+
+
 
 			// check return uvel data
 			/*
