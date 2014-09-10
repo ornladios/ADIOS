@@ -607,9 +607,9 @@ int  parseInputs(char * inputxml, dim_t **dataDim, dim_t **pgDim, char*** varLis
         
         // Tang: Parsing pg offset info, assuming we have already know dim dataDim and pgDim
         // from parsed result of <dimension/>
-        int nPG = 0;
+        int nPG = 1;
         for (i = 0; i < numDim; i++) {
-            nPG += ((*dataDim)->dims[i] / (*pgDim)->dims[i]); 
+            nPG *= ((*dataDim)->dims[i] / (*pgDim)->dims[i]); 
         }
 
 
