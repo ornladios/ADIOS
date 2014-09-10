@@ -243,21 +243,21 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF, const char * lbs, c
 	ADIOS_SELECTION* box = adios_selection_boundingbox(2, start, count);
 
 	const char* varName1 = "temp";
-//	const char* value1 = "170.0";
 	double lb = atof(lbs);
 	double hb = atof(hbs);
 
+//	const char* value1 = "170.0";
 //	const char* varName2 = "uvel";
 //	const char* value2 = "0.5";
 	//const char* value2 = "14";
 //	double uvelConstraint = atof(value2);
+//	ADIOS_QUERY* q1 = adios_query_create(f, varName1, box, ADIOS_LT, value1); // temp < 150.0
+//	ADIOS_QUERY* q2 = adios_query_create(f, varName1, box, ADIOS_GT, value2); // uvel > 15
+	//ADIOS_QUERY* q2 = adios_query_create(f, varName2, box, ADIOS_GT, value2); // uvel > 15
 
 	ADIOS_QUERY* q1 = adios_query_create(f, varName1, box, ADIOS_LT, hbs); // temp < hb
 	ADIOS_QUERY* q2 = adios_query_create(f, varName1, box, ADIOS_GT, lbs); // temp < lb
 
-//	ADIOS_QUERY* q1 = adios_query_create(f, varName1, box, ADIOS_LT, value1); // temp < 150.0
-//	ADIOS_QUERY* q2 = adios_query_create(f, varName1, box, ADIOS_GT, value2); // uvel > 15
-	//ADIOS_QUERY* q2 = adios_query_create(f, varName2, box, ADIOS_GT, value2); // uvel > 15
 
 	ADIOS_QUERY* q = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
 
