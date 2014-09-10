@@ -831,8 +831,7 @@ void proc_write_block(int blockId, bool isPGCovered, ADIOS_VARTRANSFORM *ti, ADI
 	dataSize   = threeData[2];
 
 	//TODO: offset of each PG should be included
-	printf("PG[%d] has meta size[ %" PRIu64 "], index size[ %" PRIu64 "], and data size[ %" PRIu64 "] \n",
-			blockId, metaSize,  indexSize, dataSize);
+//	printf("PG[%d] has meta size[ %" PRIu64 "], index size[ %" PRIu64 "], and data size[ %" PRIu64 "] \n", blockId, metaSize,  indexSize, dataSize);
 
 	// transformed data has 1 dimension,
 	// 1. load partition Metadata
@@ -1003,7 +1002,7 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 
 	double lb , hb ;
     resolveQueryBoundary(adiosQuery, &hb, &lb); // query constraints
-    printf("%s\n", adiosQuery->_condition);
+    printf("constraint: %s\n", adiosQuery->_condition);
 
 	ADIOS_VARINFO * varInfo = adiosQuery->_var;
 
@@ -1474,7 +1473,7 @@ int  adios_query_alac_get_selection_method(ADIOS_QUERY* q,
 	FREE(b); // NOTE: only free the structure*/
 	FreeALACBITMAP(b);
 	q->_lastRead += retrievalSize;
-	if (q->_lastRead == q->_maxResultDesired) {
+	if (q->_lastRead > q->_maxResultDesired) {
 		q->_onTimeStep = NO_EVAL_BEFORE;
 		return 0;
 	}

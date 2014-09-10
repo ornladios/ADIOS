@@ -20,7 +20,7 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include <core/adios_internals.h>
+//#include "src/core/adios_internals.h"
 
 #define MAX_DIMS 5
 
@@ -31,6 +31,9 @@ struct dimensions {
 };
 
 typedef struct dimensions dim_t;
+
+void adios_pin_timestep(uint32_t ts); // Not in the standard header, but accessible
+
 
 // Given the input file, you want to divide the data into different PG sizes,
 // with different transforms
@@ -117,12 +120,11 @@ void adios_write_pg ( char input_dir [], char transform [], uint8_t nvars, char 
 
     for (proc = 0; proc < procs_num; proc ++) {
 
-        uint32_t OX = (proc / ((data_dim.dims [1] * data_dim.dims [2]) / (pg_dim.dims [1] * pg_dim.dims [2]))) * pg_dim.dims [0];
+        uint32_t OX = (proc / ((data_dim.dims [1] * data_dim.dims [2]) / (pg_dim.dims [1] * pg_dim.dims [2]))) * data_dim.dims [0];
         uint32_t OY = ((proc / (data_dim.dims [2] / pg_dim.dims [2])) * pg_dim.dims [1]) % data_dim.dims [1];
         uint32_t OZ = (proc * pg_dim.dims [2]) % data_dim.dims [2];
 
-//        rank = proc;
-
+        printf("proc[%d], OX[%d], OY[%d], OZ[%d] \n", proc, OX,OY,OZ);
         adios_pin_timestep(1);
         if (proc == 0) {
             adios_open (&adios_handle, "S3D", output_bp_file, "w", comm);
@@ -176,19 +178,19 @@ int main (int argc, char ** argv)
     dim_t pg_dim;
 
     data_dim.ndims = 3;
-    data_dim.dims [0] = 256;
+    data_dim.dims [0] = 128;
     data_dim.dims [1] = 128;
     data_dim.dims [2] = 128;
     data_dim.element_size = 8;
 
     pg_dim.ndims = 3;
-    pg_dim.dims [0] = 256;
-    pg_dim.dims [1] = 128;
-    pg_dim.dims [2] = 128;
+    pg_dim.dims [0] = 64;
+    pg_dim.dims [1] = 64;
+    pg_dim.dims [2] = 64;
     pg_dim.element_size = 8;
 
 //    char *vars [4] = {"temp", "uvel", "vvel", "wvel"};
-    char *vars[1]  = {"rdm" };
+    char *vars[1]  = {"temp" };
     if (argc >= 2) {
         adios_write_pg (argv [1], argv [2], 1, vars, data_dim, pg_dim);
     } else {

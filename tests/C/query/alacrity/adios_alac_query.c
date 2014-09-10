@@ -233,7 +233,7 @@ void oneDefinedBox(ADIOS_FILE* bf, const char * lb, const char * hb,
 
 }
 
-void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF) {
+void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF, const char * lbs, const char * hbs) {
 	printf("\n=============== test oneBoundingBoxForVars ===========\n");
 	uint64_t start[] = { 0, 0 };
 	uint64_t count[] = { 8, 8 };
@@ -243,16 +243,20 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF) {
 	ADIOS_SELECTION* box = adios_selection_boundingbox(2, start, count);
 
 	const char* varName1 = "temp";
-	const char* value1 = "170.0";
-	double tempConstraint = atof(value1);
+//	const char* value1 = "170.0";
+	double lb = atof(lbs);
+	double hb = atof(hbs);
 
-	const char* varName2 = "uvel";
-	const char* value2 = "0.5";
+//	const char* varName2 = "uvel";
+//	const char* value2 = "0.5";
 	//const char* value2 = "14";
-	double uvelConstraint = atof(value2);
+//	double uvelConstraint = atof(value2);
 
-	ADIOS_QUERY* q1 = adios_query_create(f, varName1, box, ADIOS_LT, value1); // temp < 150.0
-	ADIOS_QUERY* q2 = adios_query_create(f, varName1, box, ADIOS_GT, value2); // uvel > 15
+	ADIOS_QUERY* q1 = adios_query_create(f, varName1, box, ADIOS_LT, hbs); // temp < hb
+	ADIOS_QUERY* q2 = adios_query_create(f, varName1, box, ADIOS_GT, lbs); // temp < lb
+
+//	ADIOS_QUERY* q1 = adios_query_create(f, varName1, box, ADIOS_LT, value1); // temp < 150.0
+//	ADIOS_QUERY* q2 = adios_query_create(f, varName1, box, ADIOS_GT, value2); // uvel > 15
 	//ADIOS_QUERY* q2 = adios_query_create(f, varName2, box, ADIOS_GT, value2); // uvel > 15
 
 	ADIOS_QUERY* q = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
@@ -298,7 +302,7 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF) {
                             printf("%.6f\t", data[i]);
                         }
                         printf("\n");
-			CHECK_ERROR_DATA(data, retrievedPts->npoints, (data[di] >= tempConstraint));
+			CHECK_ERROR_DATA(data, retrievedPts->npoints, (data[di] >= hb && data[di] <=lb));
 
 			// check return uvel data
 			/*
@@ -376,7 +380,7 @@ int main(int argc, char ** argv) {
 
 //	multiSelection(f , lbstr, hbstr, dataF, ADIOS_SELECTION_WRITEBLOCK);
 
-	oneBoundingBoxForVars(f, dataF);
+	oneBoundingBoxForVars(f, dataF, lbstr, hbstr);
 
 	adios_read_close(f);
 	adios_read_close(dataF);

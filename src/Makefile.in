@@ -327,10 +327,7 @@ am__objects_7 = $(am__objects_1) libadios_a-adios_query.$(OBJEXT) \
 @HAVE_FASTBIT_TRUE@am__objects_8 = libadios_a-query_fastbit.$(OBJEXT) \
 @HAVE_FASTBIT_TRUE@	libadios_a-fastbit_adios.$(OBJEXT)
 @HAVE_ALACRITY_TRUE@am__objects_9 = libadios_a-query_alac.$(OBJEXT)
-am__objects_10 = libadios_a-adios_query_hooks.$(OBJEXT) \
-	libadios_a-adios_query.$(OBJEXT) \
-	libadios_a-common_query.$(OBJEXT) $(am__objects_8) \
-	$(am__objects_9) $(am__objects_1)
+am__objects_10 = $(am__objects_8) $(am__objects_9) $(am__objects_1)
 am__objects_11 = $(am__objects_7) $(am__objects_10)
 @BUILD_WRITE_TRUE@@HAVE_BGQ_TRUE@am__objects_12 = libadios_a-adios_mpi_bgq.$(OBJEXT)
 @BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_13 = libadios_a-adios_dataspaces.$(OBJEXT) \
@@ -452,11 +449,7 @@ am__objects_23 = $(am__objects_1) \
 @HAVE_FASTBIT_TRUE@am__objects_24 = libadios_internal_nompi_a-query_fastbit.$(OBJEXT) \
 @HAVE_FASTBIT_TRUE@	libadios_internal_nompi_a-fastbit_adios.$(OBJEXT)
 @HAVE_ALACRITY_TRUE@am__objects_25 = libadios_internal_nompi_a-query_alac.$(OBJEXT)
-am__objects_26 =  \
-	libadios_internal_nompi_a-adios_query_hooks.$(OBJEXT) \
-	libadios_internal_nompi_a-adios_query.$(OBJEXT) \
-	libadios_internal_nompi_a-common_query.$(OBJEXT) \
-	$(am__objects_24) $(am__objects_25) $(am__objects_1)
+am__objects_26 = $(am__objects_24) $(am__objects_25) $(am__objects_1)
 am__objects_27 = $(am__objects_23) $(am__objects_26)
 @BUILD_WRITE_TRUE@am__objects_28 = libadios_internal_nompi_a-adios_internals_mxml.$(OBJEXT)
 am_libadios_internal_nompi_a_OBJECTS =  \
@@ -588,10 +581,7 @@ am__objects_34 = $(am__objects_1) \
 @HAVE_FASTBIT_TRUE@	libadios_nompi_a-fastbit_adios.$(OBJEXT)
 @HAVE_ALACRITY_TRUE@am__objects_36 =  \
 @HAVE_ALACRITY_TRUE@	libadios_nompi_a-query_alac.$(OBJEXT)
-am__objects_37 = libadios_nompi_a-adios_query_hooks.$(OBJEXT) \
-	libadios_nompi_a-adios_query.$(OBJEXT) \
-	libadios_nompi_a-common_query.$(OBJEXT) $(am__objects_35) \
-	$(am__objects_36) $(am__objects_1)
+am__objects_37 = $(am__objects_35) $(am__objects_36) $(am__objects_1)
 am__objects_38 = $(am__objects_34) $(am__objects_37)
 @BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_39 = libadios_nompi_a-adios_dataspaces.$(OBJEXT) \
 @BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@	libadios_nompi_a-read_dataspaces.$(OBJEXT)
@@ -747,10 +737,7 @@ am__objects_48 = $(am__objects_1) libadiosf_a-adios_query.$(OBJEXT) \
 @HAVE_FASTBIT_TRUE@	libadiosf_a-query_fastbit.$(OBJEXT) \
 @HAVE_FASTBIT_TRUE@	libadiosf_a-fastbit_adios.$(OBJEXT)
 @HAVE_ALACRITY_TRUE@am__objects_50 = libadiosf_a-query_alac.$(OBJEXT)
-am__objects_51 = libadiosf_a-adios_query_hooks.$(OBJEXT) \
-	libadiosf_a-adios_query.$(OBJEXT) \
-	libadiosf_a-common_query.$(OBJEXT) $(am__objects_49) \
-	$(am__objects_50) $(am__objects_1)
+am__objects_51 = $(am__objects_49) $(am__objects_50) $(am__objects_1)
 am__objects_52 = $(am__objects_48) $(am__objects_51)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_53 = libadiosf_a-adios_dataspaces.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@	libadiosf_a-read_dataspaces.$(OBJEXT)
@@ -933,10 +920,7 @@ am__objects_68 = $(am__objects_1) \
 @HAVE_FASTBIT_TRUE@	libadiosf_nompi_a-fastbit_adios.$(OBJEXT)
 @HAVE_ALACRITY_TRUE@am__objects_70 =  \
 @HAVE_ALACRITY_TRUE@	libadiosf_nompi_a-query_alac.$(OBJEXT)
-am__objects_71 = libadiosf_nompi_a-adios_query_hooks.$(OBJEXT) \
-	libadiosf_nompi_a-adios_query.$(OBJEXT) \
-	libadiosf_nompi_a-common_query.$(OBJEXT) $(am__objects_69) \
-	$(am__objects_70) $(am__objects_1)
+am__objects_71 = $(am__objects_69) $(am__objects_70) $(am__objects_1)
 am__objects_72 = $(am__objects_68) $(am__objects_71)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_73 = libadiosf_nompi_a-adios_dataspaces.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@	libadiosf_nompi_a-read_dataspaces.$(OBJEXT)
@@ -1106,10 +1090,7 @@ am__objects_85 = $(am__objects_1) \
 @HAVE_FASTBIT_TRUE@	libadiosf_nompi_v1_a-fastbit_adios.$(OBJEXT)
 @HAVE_ALACRITY_TRUE@am__objects_87 =  \
 @HAVE_ALACRITY_TRUE@	libadiosf_nompi_v1_a-query_alac.$(OBJEXT)
-am__objects_88 = libadiosf_nompi_v1_a-adios_query_hooks.$(OBJEXT) \
-	libadiosf_nompi_v1_a-adios_query.$(OBJEXT) \
-	libadiosf_nompi_v1_a-common_query.$(OBJEXT) $(am__objects_86) \
-	$(am__objects_87) $(am__objects_1)
+am__objects_88 = $(am__objects_86) $(am__objects_87) $(am__objects_1)
 am__objects_89 = $(am__objects_85) $(am__objects_88)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_90 = libadiosf_nompi_v1_a-adios_dataspaces.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@	libadiosf_nompi_v1_a-read_dataspaces.$(OBJEXT)
@@ -1281,10 +1262,8 @@ am__objects_102 = $(am__objects_1) \
 @HAVE_FASTBIT_TRUE@	libadiosf_v1_a-fastbit_adios.$(OBJEXT)
 @HAVE_ALACRITY_TRUE@am__objects_104 =  \
 @HAVE_ALACRITY_TRUE@	libadiosf_v1_a-query_alac.$(OBJEXT)
-am__objects_105 = libadiosf_v1_a-adios_query_hooks.$(OBJEXT) \
-	libadiosf_v1_a-adios_query.$(OBJEXT) \
-	libadiosf_v1_a-common_query.$(OBJEXT) $(am__objects_103) \
-	$(am__objects_104) $(am__objects_1)
+am__objects_105 = $(am__objects_103) $(am__objects_104) \
+	$(am__objects_1)
 am__objects_106 = $(am__objects_102) $(am__objects_105)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@am__objects_107 = libadiosf_v1_a-adios_dataspaces.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_DATASPACES_TRUE@	libadiosf_v1_a-read_dataspaces.$(OBJEXT)
@@ -1423,10 +1402,8 @@ am__objects_120 = $(am__objects_1) \
 @HAVE_FASTBIT_TRUE@	libadiosread_a-fastbit_adios.$(OBJEXT)
 @HAVE_ALACRITY_TRUE@am__objects_122 =  \
 @HAVE_ALACRITY_TRUE@	libadiosread_a-query_alac.$(OBJEXT)
-am__objects_123 = libadiosread_a-adios_query_hooks.$(OBJEXT) \
-	libadiosread_a-adios_query.$(OBJEXT) \
-	libadiosread_a-common_query.$(OBJEXT) $(am__objects_121) \
-	$(am__objects_122) $(am__objects_1)
+am__objects_123 = $(am__objects_121) $(am__objects_122) \
+	$(am__objects_1)
 am__objects_124 = $(am__objects_120) $(am__objects_123)
 @HAVE_DATASPACES_TRUE@am__objects_125 = libadiosread_a-read_dataspaces.$(OBJEXT)
 @HAVE_DIMES_TRUE@am__objects_126 =  \
@@ -1539,10 +1516,8 @@ am__objects_133 = $(am__objects_1) \
 @HAVE_FASTBIT_TRUE@	libadiosread_nompi_a-fastbit_adios.$(OBJEXT)
 @HAVE_ALACRITY_TRUE@am__objects_135 =  \
 @HAVE_ALACRITY_TRUE@	libadiosread_nompi_a-query_alac.$(OBJEXT)
-am__objects_136 = libadiosread_nompi_a-adios_query_hooks.$(OBJEXT) \
-	libadiosread_nompi_a-adios_query.$(OBJEXT) \
-	libadiosread_nompi_a-common_query.$(OBJEXT) $(am__objects_134) \
-	$(am__objects_135) $(am__objects_1)
+am__objects_136 = $(am__objects_134) $(am__objects_135) \
+	$(am__objects_1)
 am__objects_137 = $(am__objects_133) $(am__objects_136)
 @HAVE_DATASPACES_TRUE@am__objects_138 = libadiosread_nompi_a-read_dataspaces.$(OBJEXT)
 @HAVE_DIMES_TRUE@am__objects_139 =  \
@@ -1653,10 +1628,8 @@ am__objects_146 = $(am__objects_1) \
 @HAVE_FASTBIT_TRUE@	libadiosreadf_a-fastbit_adios.$(OBJEXT)
 @HAVE_ALACRITY_TRUE@am__objects_148 =  \
 @HAVE_ALACRITY_TRUE@	libadiosreadf_a-query_alac.$(OBJEXT)
-am__objects_149 = libadiosreadf_a-adios_query_hooks.$(OBJEXT) \
-	libadiosreadf_a-adios_query.$(OBJEXT) \
-	libadiosreadf_a-common_query.$(OBJEXT) $(am__objects_147) \
-	$(am__objects_148) $(am__objects_1)
+am__objects_149 = $(am__objects_147) $(am__objects_148) \
+	$(am__objects_1)
 am__objects_150 = $(am__objects_146) $(am__objects_149)
 @BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__objects_151 = libadiosreadf_a-read_dataspaces.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__objects_152 = libadiosreadf_a-read_dimes.$(OBJEXT)
@@ -1767,10 +1740,8 @@ am__objects_160 = $(am__objects_1) \
 @HAVE_FASTBIT_TRUE@am__objects_161 = libadiosreadf_nompi_a-query_fastbit.$(OBJEXT) \
 @HAVE_FASTBIT_TRUE@	libadiosreadf_nompi_a-fastbit_adios.$(OBJEXT)
 @HAVE_ALACRITY_TRUE@am__objects_162 = libadiosreadf_nompi_a-query_alac.$(OBJEXT)
-am__objects_163 = libadiosreadf_nompi_a-adios_query_hooks.$(OBJEXT) \
-	libadiosreadf_nompi_a-adios_query.$(OBJEXT) \
-	libadiosreadf_nompi_a-common_query.$(OBJEXT) \
-	$(am__objects_161) $(am__objects_162) $(am__objects_1)
+am__objects_163 = $(am__objects_161) $(am__objects_162) \
+	$(am__objects_1)
 am__objects_164 = $(am__objects_160) $(am__objects_163)
 @BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__objects_165 = libadiosreadf_nompi_a-read_dataspaces.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__objects_166 = libadiosreadf_nompi_a-read_dimes.$(OBJEXT)
@@ -1879,11 +1850,8 @@ am__objects_174 = $(am__objects_1) \
 @HAVE_FASTBIT_TRUE@am__objects_175 = libadiosreadf_nompi_v1_a-query_fastbit.$(OBJEXT) \
 @HAVE_FASTBIT_TRUE@	libadiosreadf_nompi_v1_a-fastbit_adios.$(OBJEXT)
 @HAVE_ALACRITY_TRUE@am__objects_176 = libadiosreadf_nompi_v1_a-query_alac.$(OBJEXT)
-am__objects_177 =  \
-	libadiosreadf_nompi_v1_a-adios_query_hooks.$(OBJEXT) \
-	libadiosreadf_nompi_v1_a-adios_query.$(OBJEXT) \
-	libadiosreadf_nompi_v1_a-common_query.$(OBJEXT) \
-	$(am__objects_175) $(am__objects_176) $(am__objects_1)
+am__objects_177 = $(am__objects_175) $(am__objects_176) \
+	$(am__objects_1)
 am__objects_178 = $(am__objects_174) $(am__objects_177)
 @BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__objects_179 = libadiosreadf_nompi_v1_a-read_dataspaces.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__objects_180 = libadiosreadf_nompi_v1_a-read_dimes.$(OBJEXT)
@@ -1990,10 +1958,8 @@ am__objects_188 = $(am__objects_1) \
 @HAVE_FASTBIT_TRUE@	libadiosreadf_v1_a-fastbit_adios.$(OBJEXT)
 @HAVE_ALACRITY_TRUE@am__objects_190 =  \
 @HAVE_ALACRITY_TRUE@	libadiosreadf_v1_a-query_alac.$(OBJEXT)
-am__objects_191 = libadiosreadf_v1_a-adios_query_hooks.$(OBJEXT) \
-	libadiosreadf_v1_a-adios_query.$(OBJEXT) \
-	libadiosreadf_v1_a-common_query.$(OBJEXT) $(am__objects_189) \
-	$(am__objects_190) $(am__objects_1)
+am__objects_191 = $(am__objects_189) $(am__objects_190) \
+	$(am__objects_1)
 am__objects_192 = $(am__objects_188) $(am__objects_191)
 @BUILD_FORTRAN_TRUE@@HAVE_DATASPACES_TRUE@am__objects_193 = libadiosreadf_v1_a-read_dataspaces.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@HAVE_DIMES_TRUE@am__objects_194 = libadiosreadf_v1_a-read_dimes.$(OBJEXT)
@@ -2507,10 +2473,7 @@ query_common_SOURCES = $(query_common_HDRS) \
 
 # Include source files that are specific to each query plugin
 query_method_HDRS = 
-
-# Identity plugin:
-query_method_SOURCES = query/adios_query_hooks.c query/adios_query.c \
-	query/common_query.c $(am__append_2) $(am__append_3) \
+query_method_SOURCES = $(am__append_2) $(am__append_3) \
 	$(query_method_HDRS)
 query_read_SOURCES = $(query_common_SOURCES) \
                      $(query_method_SOURCES) 				  

@@ -288,7 +288,17 @@ void adios_write_pg ( char input_dir [], char transform [], uint8_t nvars, char 
         for (pg = 0; pg < numPGs; pg ++) {
 
         	//adios_pin_timestep(data_ts->tss[tsIdx]); // every PG only has one timestep data
-        	uint32_t *offsets = calPGOffsets(pg, data_dim->dims, pg_dim->dims, data_dim->ndims);
+//        	uint32_t *offsets = calPGOffsets(pg, data_dim->dims, pg_dim->dims, data_dim->ndims);
+        	uint32_t offsets[2];
+        	if ( pg == 0) {
+        		offsets[0] = 0; offsets[1] = 0;
+        	}else if (pg == 1){
+        		offsets[0] = 4; offsets[1] = 0;
+        	}else if (pg == 2){
+        		offsets[0] = 0; offsets[1] = 4;
+        	}else if (pg == 3){
+        		offsets[0] = 4; offsets[1] = 4;
+        	}
 
 
             char prefix[256];
