@@ -264,24 +264,18 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF, const char * lbs, c
 	ADIOS_VARINFO * tempVar = adios_inq_var(dataF, varName1);
 	//ADIOS_VARINFO * uvelVar = adios_inq_var(dataF, varName2);
 
-	int timestep = 0;
 	int64_t batchSize = 1220;
 
-	int i = 0;
+	int i = 0, timestep = 0 ;
 	printf("times steps for variable is: %d \n", q1->_var->nsteps);
-	for (i = 0; i < q1->_var->nsteps; i++) {
-		printf("querying on timestep %d \n", i);
-		adios_query_set_timestep(i);
+	for (timestep  = 0; timestep  < q1->_var->nsteps; timestep ++) {
+		printf("querying on timestep %d \n", timestep );
+		adios_query_set_timestep(timestep );
 
-		while (1) {
-			ADIOS_SELECTION* currBatch = NULL;
-			int hasMore = adios_query_get_selection(q, batchSize, box,
-					&currBatch);
+		ADIOS_SELECTION* currBatch = NULL;
+		while ( adios_query_get_selection(q, batchSize, box,
+				&currBatch)) {
 
-                        printf("hasMore=%d\n",hasMore);
-			if (hasMore == 0) { // there is no left results to retrieve
-				break;
-			}
 			assert(currBatch->type ==ADIOS_SELECTION_POINTS);
 			const ADIOS_SELECTION_POINTS_STRUCT * retrievedPts =
 					&(currBatch->u.points);
@@ -290,19 +284,9 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF, const char * lbs, c
 
 			int elmSize = adios_type_size(tempVar->type, NULL);
 			void *data = malloc(retrievedPts->npoints * elmSize);
-/*
-			if (tempVar->type == adios_real){
-				data = (float*) malloc( retrievedPts->npoints * sizeof(float));
-			}else if (tempVar ->type == adios_double ){
-				data = (double*) malloc( retrievedPts->npoints * sizeof(double));
-			}else {
-				printf("its not supported data type [%d] currently \n", tempVar->type);
-			}
-*/
 
 			// check returned temp data
-			adios_schedule_read_byid(dataF, currBatch, tempVar->varid, i, 1, data);
-
+			adios_schedule_read_byid(dataF, currBatch, tempVar->varid, timestep , 1, data);
 			adios_perform_reads(dataF, 1);
 
 			printf("Total data retrieved:%"PRIu64"\n", retrievedPts->npoints);
@@ -329,6 +313,7 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF, const char * lbs, c
 			 */
 			free(data);
 			adios_selection_delete(currBatch);
+			currBatch = NULL;
 
 		}
 
