@@ -1063,7 +1063,7 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 
 			srcstart = pgBB->start;
 			srccount = pgBB->count;
-			blockId = pg.blockidx_in_timestep ;
+			blockId = pg.blockidx;           //	blockId = pg.blockidx_in_timestep ;
 
 			if (ti->transform_type == adios_get_transform_type_by_uid("ncsu-alacrity")) {
 				proc_write_block(blockId,isPGCovered,ti, adiosQuery,startStep,estimate,&alacQuery,lb,hb
@@ -1226,6 +1226,7 @@ void adios_query_alac_retrieval_points2d(
 			 */
 			for (m = 0; m < set_bit_count[temp[j]]  ; m++) {
 				reconstct_rid = offset+ set_bit_position[temp[j]][m];
+//				printf("rids: %"PRIu64", ab rids: %"PRIu64"\n", reconstct_rid, reconstct_rid+ 64);
 				if (!isLastConvRidInit(b)) {
 					if (reconstct_rid > b->lastConvRid) { // skip the RIDs in the 16-bits part
 //						printf("recovered RID %"PRIu64"\n", reconstct_rid);

@@ -233,6 +233,43 @@ void oneDefinedBox(ADIOS_FILE* bf, const char * lb, const char * hb,
 
 }
 
+void retrieveAllValues(ADIOS_FILE* f) {
+	uint64_t start[] = { 0 , 0};
+	uint64_t count[] = { 4, 4 };
+	int dim = 2;
+	int c = 0;
+	uint64_t totalElm = 1;
+	for(c =0; c < dim ; c ++){
+		totalElm *= count[c];
+	}
+	uint64_t* points = (uint64_t*) (malloc(dim * totalElm* sizeof(uint64_t)));
+	uint64_t i = 0, j = 0, k = 0;
+	for(i = 0; i < count[0]; i ++ ){
+		for (j = 0 ; j < count[1]; j ++){
+			points[k++] = i;
+			points[k++] = j;
+		}
+	}
+
+	ADIOS_SELECTION* currBatch  = adios_selection_points(dim, totalElm, points);
+
+	const ADIOS_SELECTION_POINTS_STRUCT * retrievedPts =
+						&(currBatch->u.points);
+
+	printPoints(retrievedPts);
+	void *data = malloc(totalElm * 4);
+
+	adios_schedule_read (f, currBatch, "temp", 0, 1, data);
+	adios_perform_reads(f, 1);
+
+	for (i = 0; i < totalElm; i++) {
+		printf("%.6f\t", ((float*)data)[i]);
+	}
+	printf("\n");
+
+	free(points);
+}
+
 void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF, const char * lbs, const char * hbs) {
 	printf("\n=============== test oneBoundingBoxForVars ===========\n");
 	uint64_t start[] = { 0, 0 };
@@ -281,12 +318,14 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF, const char * lbs, c
 					&(currBatch->u.points);
 			printf("retrieved points %" PRIu64 " \n", retrievedPts->npoints);
 
+			printPoints(retrievedPts);
 
 			int elmSize = adios_type_size(tempVar->type, NULL);
 			void *data = malloc(retrievedPts->npoints * elmSize);
 
 			// check returned temp data
-			adios_schedule_read_byid(dataF, currBatch, tempVar->varid, timestep , 1, data);
+//			adios_schedule_read_byid(dataF, currBatch, tempVar->varid, timestep , 1, data);
+			adios_schedule_read (dataF, currBatch, varName1, timestep , 1, data);
 			adios_perform_reads(dataF, 1);
 
 			printf("Total data retrieved:%"PRIu64"\n", retrievedPts->npoints);
@@ -383,6 +422,7 @@ int main(int argc, char ** argv) {
 //	multiSelection(f , lbstr, hbstr, dataF, ADIOS_SELECTION_WRITEBLOCK);
 
 	oneBoundingBoxForVars(f, dataF, lbstr, hbstr);
+//	retrieveAllValues(f);
 
 	adios_read_close(f);
 	adios_read_close(dataF);
