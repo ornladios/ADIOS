@@ -44,9 +44,10 @@ uint64_t adios_transform_worst_case_transformed_group_size(uint64_t group_size, 
     {
     	if (!cur_var->dimensions) // Scalar var
         {
-    		// Remove the scalar's size from the group size that can be affected by data transforms
+    		// Remove the scalar's size from the group size that can be affected by data transforms, and add it as a constant factor
     		// Even if it's a string, we don't know the content yet, so use an empty string to get minimum size (we are computing an upper bound)
     		transformed_group_size -= adios_get_type_size(cur_var->type, "");
+    		total_constant_factor += adios_get_type_size(cur_var->type, "");
         }
     	else if (cur_var->transform_type == adios_transform_none) // Non-transformed, non-scalar var
     	{
