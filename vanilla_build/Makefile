@@ -23,16 +23,29 @@ libadiosf_nompi_a_FOBJS := $(libadiosf_nompi_a_FSRC:.f90=.o)
 
 OBJDIRS = core core/transforms transforms read write 
 
-flags:
-	@echo "================================================================="
-	@echo "C objects"
-	@echo $(libadiosf_nompi_a_COBJS)
-	@echo "================================================================="
-	@echo "F90 objects"
-	@echo $(libadiosf_nompi_a_FOBJS)
-	@echo "================================================================="
-	@echo O1 = $(O1)
-	@echo O2 = $(O2)
+help:
+	@echo "Settings imported from: make.settings.$(HOST)"
+	@echo "CC=$(CC)"
+	@echo "CPPFLAGS=$(CPPFLAGS)"
+	@echo "CFLAGS=$(CFLAGS)"
+	@echo "FC=$(FC)"
+	@echo "FFLAGS=$(FFLAGS)"
+	@echo "INC=$(INC)"
+	@echo " "
+	@echo "Install path PREFIX=$(PREFIX)"
+	@echo " "
+	@echo "Build steps: "
+	@echo "   make "
+	@echo "   make test"
+	@echo "   ./bpls -la write_read_1.bp"
+	@echo "   ./bpdump -la write_read_1.bp"
+	@echo "   make install"
+	@echo " "
+	@echo "Application building flags" 
+	@echo "   CFLAGS=-I$(PREFIX)/include"
+	@echo "   LDFLAGS=-L$(PREFIX)/lib $(MXML_LDFLAGS)"
+	@echo "   CLIBS=-ladios  $(MXML_LIBS) -lm"
+	@echo "   FLIBS=-ladiosf $(MXML_LIBS) -lm"
 
 
 
@@ -83,7 +96,7 @@ bpdump: libadios.a
 
 
 write_read.xml: ../tests/suite/programs/write_read.xml
-	cat ../tests/suite/programs/write_read.xml | sed -s "s/method.*group=\"alltypes\".*method=\".*\"/method group=\"alltype\" method=\"POSIX1\"/" > write_read.xml
+	cat ../tests/suite/programs/write_read.xml | sed -s "s/method.*group=\"alltypes\".*method=\".*\"/method group=\"alltypes\" method=\"POSIX1\"/" > write_read.xml
 
 write_read: libadios.a ../tests/suite/programs/write_read.c write_read.xml
 	$(CC)  $(CPPFLAGS) \
