@@ -34,7 +34,7 @@ int adios_transform_template_apply(struct adios_file_struct *fd,
     const void *input_buff = var->data;
 
     // decide the output buffer
-    uint64_t output_size = adios_transform_template_calc_vars_transformed_size(adios_transform_identity, input_size, 1);
+    uint64_t output_size = /* Compute how much output size we need */;
     void* output_buff = NULL;
 
     if (use_shared_buffer) {
