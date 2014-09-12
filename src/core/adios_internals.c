@@ -5,7 +5,7 @@
  * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
  */
 
-#include "../config.h" /* VERSION_xxx */
+#include "config.h" /* VERSION_xxx */
 #include <math.h>
 #include <string.h>
 #include <ctype.h>  /* isdigit() */
