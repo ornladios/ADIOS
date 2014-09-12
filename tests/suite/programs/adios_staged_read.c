@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "mpi.h"
 
 #define ADIOS_USE_READ_API_1
 #include "adios_read.h"
