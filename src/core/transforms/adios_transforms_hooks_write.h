@@ -83,12 +83,12 @@ typedef struct {
 // Transform method function declarations
 #define DECLARE_TRANSFORM_WRITE_METHOD(tmethod) \
     uint16_t adios_transform_##tmethod##_get_metadata_size(struct adios_transform_spec *transform_spec); \
-    uint64_t adios_transform_##tmethod##_transformed_size_growth(const struct adios_var_struct *var, \
-    															 const struct adios_transform_spec *transform_spec, \
-    															 uint64_t *constant_factor, \
-    															 double *linear_factor, \
-    															 double *capped_linear_factor, \
-    															 uint64_t *capped_linear_cap); \
+    void adios_transform_##tmethod##_transformed_size_growth(const struct adios_var_struct *var, \
+    														 const struct adios_transform_spec *transform_spec, \
+    														 uint64_t *constant_factor, \
+    														 double *linear_factor, \
+    														 double *capped_linear_factor, \
+    														 uint64_t *capped_linear_cap); \
     int adios_transform_##tmethod##_apply(struct adios_file_struct *fd, struct adios_var_struct *var, \
                                           uint64_t *transformed_len,                                     \
                                           int use_shared_buffer, int *wrote_to_shared_buffer);
@@ -116,11 +116,10 @@ typedef struct {
             UNIMPL_TRANSFORM_WRITE_FN(tmethod, __FUNCTION__);                                \
             return 0;                                                                        \
         }                                                                                    \
-        uint64_t adios_transform_##tmethod##_transformed_size_growth( \
+        void adios_transform_##tmethod##_transformed_size_growth( \
         		const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec, \
         		uint64_t *constant_factor, double *linear_factor, double *capped_linear_factor, uint64_t *capped_linear_cap) { \
             UNIMPL_TRANSFORM_WRITE_FN(tmethod, __FUNCTION__);                                \
-            return 0;                                                                        \
         }                                                                                    \
         int adios_transform_##tmethod##_apply(struct adios_file_struct *fd,                  \
                                               struct adios_var_struct *var,                  \
