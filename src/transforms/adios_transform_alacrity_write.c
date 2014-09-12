@@ -18,21 +18,7 @@ uint16_t adios_transform_alacrity_get_metadata_size(struct adios_transform_spec 
     return (3 * sizeof(uint64_t));
 }
 
-uint64_t adios_transform_alacrity_calc_vars_transformed_size(struct adios_transform_spec *transform_spec, uint64_t orig_size, int num_vars)
-{
-    return (uint64_t)(1.75 * orig_size);
-}
-
-int adios_transform_alacrity_apply(struct adios_file_struct *fd,
-                                   struct adios_var_struct *var,
-                                   uint64_t *transformed_len,
-                                   int use_shared_buffer,
-                                   int *wrote_to_shared_buffer)
-{
-    // Get the input data and data length
-    const uint64_t input_size = adios_transform_get_pre_transform_var_size(var);
-    const void *input_buff = var->data;
-
+static ALEncoderConfig parse_configuration(const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec) {
     ALEncoderConfig config;
     uint32_t numElements = 0;
 
@@ -49,67 +35,9 @@ int adios_transform_alacrity_apply(struct adios_file_struct *fd,
         return 0;
     }
 
-    // Longest parameter-parsing code ever.
-    // parse the parameter relating to sigbits, with index compression
-    // Read all ALACRITY parameters here
-    /*// Old, pre-specparse parameter parsing
-    if(var->transform_type_param) {
-        char transform_param [1024];
-        char *transform_param_ptr       = 0;
-        uint16_t transform_param_length = 0;
-
-        char transform_param_option [256];
-
-        uint16_t idx = 0;
-
-        strcpy (transform_param, var->transform_type_param);
-        transform_param_ptr     = transform_param;
-        transform_param_length  = strlen (transform_param);
-
-        // Change all the delimiters to a space
-        while (idx < transform_param_length) {
-            if (transform_param [idx] == ':') {
-                transform_param [idx] = ' ';
-            }
-            idx ++;
-        }
-
-        // For each option in the transform parameter,
-        // get its key and possibly its value.
-        idx = 0;
-        while (idx < transform_param_length) {
-            // Get the first key, value pair
-            sscanf (transform_param_ptr, "%s", transform_param_option);
-
-            // Advance the pointer
-            idx += strlen (transform_param_option) + 1;
-            transform_param_ptr = transform_param + idx;
-
-            // Get the key
-            char *key = strtok (transform_param_option, "=");
-
-            if (strcmp (key, "indexForm") == 0) {
-                char *value = strtok (NULL, "=");
-                if (strcmp (value, "ALCompressedInvertedIndex") == 0) {
-                    config.indexForm = ALCompressedInvertedIndex;
-                } else if (strcmp (value, "ALInvertedIndex") == 0) {
-                    config.indexForm = ALInvertedIndex;
-                }
-
-            } else if (strcmp (key, "sigBits") == 0) {
-                char *value = strtok (NULL, "=");
-                int significantBits = 0;
-                sscanf (value, "%d", &(significantBits));
-                config.significantBits = significantBits;
-            } else {
-                printf ("Option %s not found. \n", key);
-            }
-        }
-    }
-    */
     int i;
-    for (i = 0; i < var->transform_spec->param_count; i++) {
-        const struct adios_transform_spec_kv_pair * const param = &var->transform_spec->params[i];
+    for (i = 0; i < transform_spec->param_count; i++) {
+        const struct adios_transform_spec_kv_pair * const param = &transform_spec->params[i];
         if (strcmp(param->key, "indexForm") == 0) {
             if (strcmp(param->value, "ALCompressedInvertedIndex") == 0)
                 config.indexForm = ALCompressedInvertedIndex;
@@ -119,6 +47,192 @@ int adios_transform_alacrity_apply(struct adios_file_struct *fd,
             config.significantBits = atoi(param->value);
         }
     }
+
+    return config;
+}
+
+/*
+uint64_t ALGetBinLayoutSize(const ALBinLayout *binLayout, uint8_t significantBits) {
+    const uint8_t sigbytes = (significantBits + 0x07) >> 3;
+    return    sizeof(binLayout->numBins) +                      // Number of bins
+            (binLayout->numBins) * sizeof(bin_offset_t) +                   // Bin Values
+            (binLayout->numBins + 1) * sizeof(bin_offset_t);    // The Bin Offsets
+}
+ */
+static void add_bin_layout_size_growth(
+		ALEncoderConfig *config,
+		const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec,
+		uint64_t *constant_factor, double *linear_factor, double *capped_linear_factor, uint64_t *capped_linear_cap)
+{
+	const int sigbytes = (config->significantBits + 0x07) >> 3;
+
+	*constant_factor += sizeof(bin_id_t) + // Number of bins
+						sizeof(bin_offset_t); // Ending bin offset
+
+	// Computing an upper bound on the part of the metadata that depends on number of bins is hard.
+	// Since this is data dependent, we must assume worst-case data, which results in one bin per value
+	// However, there is always a maximum number of bins possible, based on the sigbits used, so after
+	// we reach that many bins, we don't need to keep adding this factor. Thus, we use a "capped linear"
+	// factor that scales linearly (one bin per value) until we reach the "cap" (the max number of bins,
+	// already set in adios_transform_alacrity_transformed_size_growth).
+	const int metadata_bytes_per_bin = 2 * sizeof(bin_offset_t);
+	const int datatype_size = adios_type_size(var->pre_transform_type, NULL);
+	const double metadata_bytes_per_data_bytes = metadata_bytes_per_bin / datatype_size;
+
+	*capped_linear_factor += metadata_bytes_per_data_bytes; // For every value under the cap, add the corresponding number of metadata bytes
+
+}
+
+/*
+uint64_t ALGetIndexMetadataSize(const ALIndexMetadata *indexMeta, const ALMetadata *metadata) {
+    uint64_t size = sizeof(indexMeta->indexForm);
+    switch (indexMeta->indexForm) {
+    case ALCompressionIndex:
+    case ALInvertedIndex:
+        break;
+    case ALCompressedInvertedIndex:
+        size += (metadata->binLayout.numBins + 1) * sizeof(indexMeta->u.ciim.indexBinStartOffsets[0]);
+        break;
+    case ALCompressedHybridInvertedIndex:
+    case ALCompressedSkipInvertedIndex:
+    case ALCompressedMixInvertedIndex:
+    case ALCompressedExpansionII:
+    	size += (metadata->binLayout.numBins + 1) * sizeof(indexMeta->u.ciim.indexBinStartOffsets[0]);
+    	break;
+    default:
+        abort();
+    }
+
+    return size;
+}
+*/
+static void add_index_size_growth(
+		ALEncoderConfig *config,
+		const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec,
+		uint64_t *constant_factor, double *linear_factor, double *capped_linear_factor, uint64_t *capped_linear_cap)
+{
+	const int datatype_size = adios_type_size(var->pre_transform_type, NULL);
+	int metadata_bytes_per_bin = 0;
+
+	*constant_factor += sizeof(ALIndexForm); // Index form
+
+	switch (config->indexForm) {
+    case ALCompressionIndex:
+    	fprintf(stderr, "ALCompressionIndex is UNSUPPORTED in the ALACRITY transform plugin (it should not be possible to reach this error; something has gone very, very wrong)\n");
+    	abort();
+    	break;
+    case ALInvertedIndex:
+    	// No extra metadata for this index forms
+    	*linear_factor += (double)sizeof(rid_t) / datatype_size; // RIDs
+    	break;
+    case ALCompressedInvertedIndex:
+    	break;
+    	*constant_factor += sizeof(uint64_t) + // Ending index bin offset
+    	                    sizeof(uint64_t); // PFOR-Delta adds this much overhead to the first chunk of compressed RIDs. If there
+    	                                      // are >1 chunks in a bin, assume the compression makes up for the additional overhead
+    	metadata_bytes_per_bin += sizeof(uint64_t); // Index bin offsets
+    	*linear_factor += (double)sizeof(rid_t) / datatype_size; // RIDs (assume 1x compression ratio as worst case)
+    	break;
+    case ALCompressedHybridInvertedIndex:
+    case ALCompressedSkipInvertedIndex:
+    case ALCompressedMixInvertedIndex:
+    case ALCompressedExpansionII:
+    	// All same as above, but there is a higher upper bound linear factor
+    	*constant_factor += sizeof(uint64_t) +
+    	                    sizeof(uint64_t);
+    	metadata_bytes_per_bin += sizeof(uint64_t);
+    	*linear_factor += (double)(2 * sizeof(rid_t)) / datatype_size; // RIDs (2x due to the hybrid method)
+    	break;
+    default:
+        break;
+	}
+
+	if (metadata_bytes_per_bin > 0) {
+		const double metadata_bytes_per_data_bytes = metadata_bytes_per_bin / datatype_size;
+		*capped_linear_factor = metadata_bytes_per_data_bytes; // For every value under the cap, add the corresponding number of metadata bytes
+	}
+}
+
+static void add_data_size_growth(
+		ALEncoderConfig *config,
+		const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec,
+		uint64_t *constant_factor, double *linear_factor, double *capped_linear_factor, uint64_t *capped_linear_cap)
+{
+	const int datatype_size = adios_type_size(var->pre_transform_type, NULL);
+	const int insigbytes = ((datatype_size << 3) - config->significantBits + 0x07) >> 3;
+
+	*linear_factor += (double)insigbytes / datatype_size; // insigbytes per data value
+}
+
+/*
+uint64_t ALGetMetadataSize(const ALMetadata *metadata) {
+    return  sizeof(global_rid_t) +                                                  // Global RID offset
+            sizeof(partition_length_t) +                                            // Partition length
+            ALGetBinLayoutSize(&metadata->binLayout, metadata->significantBits) +   // Bin layout metadata
+            ALGetIndexMetadataSize(&metadata->indexMeta, metadata) +                // Index metadata
+            sizeof(char) +                                                          // Significant bytes
+            sizeof(char) +                                                          // Element size
+            sizeof(ALDatatype) +                                                    // Datatype
+            sizeof(char);                                                           // Endianness
+}
+*/
+void adios_transform_alacrity_transformed_size_growth(
+		const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec,
+		uint64_t *constant_factor, double *linear_factor, double *capped_linear_factor, uint64_t *capped_linear_cap)
+{
+	ALEncoderConfig config = parse_configuration(var, transform_spec);
+
+	// ALACRITY metadata (not counting bin layout metadata and index-specific metadata, added in below)
+	*constant_factor =
+			sizeof(global_rid_t) +													// Global RID offset
+			sizeof(partition_length_t) +                                            // Partition length
+			sizeof(char) +                                                          // Significant bytes
+			sizeof(char) +                                                          // Element size
+			sizeof(ALDatatype) +                                                    // Datatype
+			sizeof(char);															// Endianness
+
+	*linear_factor = 1;
+
+	// Some of the following metadata upper bounds are proportional to the number of bins,
+	// which is worst-case linear with number of values, but only up to the max possible bins.
+	// These bounds will all use the same capped linear cap (bytes corresponding to number of
+	// values equal to max possible bins), so compute it here, and let each function add to
+	// the capped linear factor assuming this cap is in place.
+	const uint64_t max_possible_bins = (1ULL << config.significantBits);
+	const int datatype_size = adios_type_size(var->pre_transform_type, NULL);
+	*capped_linear_cap = max_possible_bins * datatype_size; // There can be at most one bin per value, so stop adding this factor after (max bins) * (bytes per value) bytes
+	*capped_linear_factor = 0;
+
+#ifdef ALACRITY_DEBUG
+#define PRINT_FACTORS(msg) fprintf(stderr, "%s: const=%ull, lin=%lf, lincap=%lf->%ull\n", (msg), *constant_factor, *linear_factor, *capped_linear_factor, *capped_linear_cap);
+	fprintf("ALACRITY growth compute info: datatype size: %d, maxbins: %llu\n", datatype_size, max_possible_bins);
+	PRINT_FACTORS("after metadata");
+#else
+#define PRINT_FACTORS(msg) ((void)0)
+#endif
+
+	add_bin_layout_size_growth(&config, var, transform_spec, constant_factor, linear_factor, capped_linear_factor, capped_linear_cap);
+	PRINT_FACTORS("after bin layout");
+	add_index_size_growth(&config, var, transform_spec, constant_factor, linear_factor, capped_linear_factor, capped_linear_cap);
+	PRINT_FACTORS("after index");
+	add_data_size_growth(&config, var, transform_spec, constant_factor, linear_factor, capped_linear_factor, capped_linear_cap);
+	PRINT_FACTORS("after data");
+
+	// Phew!
+}
+
+int adios_transform_alacrity_apply(struct adios_file_struct *fd,
+                                   struct adios_var_struct *var,
+                                   uint64_t *transformed_len,
+                                   int use_shared_buffer,
+                                   int *wrote_to_shared_buffer)
+{
+    // Get the input data and data length
+    const uint64_t input_size = adios_transform_get_pre_transform_var_size(var);
+    const void *input_buff = var->data;
+
+    // Determine the ALACRITY encoder configuration to use
+    ALEncoderConfig config = parse_configuration(var, var->transform_spec);
 
     // decide the output buffer
     uint64_t output_size = 0;
