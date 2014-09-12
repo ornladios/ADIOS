@@ -187,7 +187,7 @@ void adios_transform_alacrity_transformed_size_growth(
 			sizeof(ALDatatype) +                                                    // Datatype
 			sizeof(char);															// Endianness
 
-	*linear_factor = 1;
+	*linear_factor = 0; // We totally re-encode the data, so start from scratch (i.e., we aren't adding to existing data, we're replacing it)
 
 	// Some of the following metadata upper bounds are proportional to the number of bins,
 	// which is worst-case linear with number of values, but only up to the max possible bins.
