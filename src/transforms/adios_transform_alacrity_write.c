@@ -76,7 +76,6 @@ static void add_bin_layout_size_growth(
 	const double metadata_bytes_per_data_bytes = metadata_bytes_per_bin / datatype_size;
 
 	*capped_linear_factor += metadata_bytes_per_data_bytes; // For every value under the cap, add the corresponding number of metadata bytes
-
 }
 
 /*
@@ -249,7 +248,8 @@ int adios_transform_alacrity_apply(struct adios_file_struct *fd,
         return 0;
     }
 
-    output_size = ALGetPartitionDataSize (&output_partition);
+    output_size = ALGetPartitionDataSize(&output_partition);
+    fprintf(stderr, "ALGetPartitionDataSize: %llu\n", output_size);
 
     if (use_shared_buffer) {
         // If shared buffer is permitted, serialize to there
