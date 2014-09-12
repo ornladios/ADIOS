@@ -249,7 +249,10 @@ int adios_transform_alacrity_apply(struct adios_file_struct *fd,
     }
 
     output_size = ALGetPartitionDataSize(&output_partition);
+
+#ifdef ALACRITY_DEBUG
     fprintf(stderr, "ALGetPartitionDataSize: %llu\n", output_size);
+#endif
 
     if (use_shared_buffer) {
         // If shared buffer is permitted, serialize to there
