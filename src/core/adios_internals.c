@@ -5,7 +5,7 @@
  * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
  */
 
-#include "../config.h" /* VERSION_xxx */
+#include "config.h" /* VERSION_xxx */
 #include <math.h>
 #include <string.h>
 #include <ctype.h>  /* isdigit() */
@@ -1316,6 +1316,89 @@ int adios_common_declare_group (int64_t * id, const char * name
     return 1;
 }
 
+// Delete all attribute (definitions) from a group
+int adios_common_delete_attrdefs (struct adios_group_struct * g)
+{
+    while (g->attributes)
+    {
+        struct adios_attribute_struct * attr = g->attributes;
+        g->attributes = g->attributes->next;
+        free (attr->value);
+        free (attr->name);
+        free (attr->path);
+        free (attr);
+    }
+}
+
+// Delete all variable (definitions) from a group
+int adios_common_delete_vardefs (struct adios_group_struct * g)
+{
+    // remove variables from the hashtable at once
+    g->hashtbl_vars->clear(g->hashtbl_vars);
+
+    while (g->vars)
+    {
+        struct adios_var_struct * var = g->vars;
+        g->vars = g->vars->next;
+
+        if (var->name)
+            free (var->name);
+        if (var->path)
+            free (var->path);
+
+        while (var->dimensions)
+        {
+            struct adios_dimension_struct * dimensions
+                = var->dimensions->next;
+
+            free (var->dimensions);
+            var->dimensions = dimensions;
+        }
+
+        // NCSU - Clear Stat
+        if (var->stats)
+        {
+            uint8_t j = 0, idx = 0;
+            enum ADIOS_DATATYPES original_var_type = adios_transform_get_var_original_type_var(var);
+            uint8_t c = 0, count = adios_get_stat_set_count(original_var_type);
+
+            for (c = 0; c < count; c ++)
+            {
+                while (var->bitmap >> j)
+                {
+                    if ((var->bitmap >> j) & 1)
+                    {
+                        if (j == adios_statistic_hist)
+                        {
+                            struct adios_hist_struct * hist = (struct adios_hist_struct *) (var->stats[c][idx].data);
+                            free (hist->breaks);
+                            free (hist->frequencies);
+                            free (hist);
+                        }
+                        else
+                            free (var->stats[c][idx].data);
+
+                        idx ++;
+                    }
+                    j ++;
+                }
+                free (var->stats[c]);
+            }
+            free (var->stats);
+        }
+
+        // NCSU ALACRITY-ADIOS - Clean transform metadata
+        adios_transform_clear_transform_var(var);
+
+        if (var->data)
+            free (var->data);
+
+        free (var);
+    }
+
+    return 0;
+}
+
 int adios_common_free_group (int64_t id)
 {
     struct adios_group_list_struct * root = adios_groups;
@@ -1353,67 +1436,9 @@ int adios_common_free_group (int64_t id)
     if (g->name)
         free (g->name);
 
-    // free the hashtables
+    adios_common_delete_vardefs (g);
+    adios_common_delete_attrdefs (g);
     g->hashtbl_vars->free(g->hashtbl_vars);
-    while (g->vars)
-    {
-        struct adios_var_struct * vars = g->vars->next;
-
-        if (g->vars->name)
-            free (g->vars->name);
-        if (g->vars->path)
-            free (g->vars->path);
-
-        while (g->vars->dimensions)
-        {
-            struct adios_dimension_struct * dimensions
-                = g->vars->dimensions->next;
-
-            free (g->vars->dimensions);
-            g->vars->dimensions = dimensions;
-        }
-
-        // NCSU - Clear Stat
-        if (g->vars->stats)
-        {
-            uint8_t j = 0, idx = 0;
-            enum ADIOS_DATATYPES original_var_type = adios_transform_get_var_original_type_var(g->vars);
-            uint8_t c = 0, count = adios_get_stat_set_count(original_var_type);
-
-            for (c = 0; c < count; c ++)
-            {
-                while (g->vars->bitmap >> j)
-                {
-                    if ((g->vars->bitmap >> j) & 1)
-                    {
-                        if (j == adios_statistic_hist)
-                        {
-                            struct adios_hist_struct * hist = (struct adios_hist_struct *) (g->vars->stats[c][idx].data);
-                            free (hist->breaks);
-                            free (hist->frequencies);
-                            free (hist);
-                        }
-                        else
-                            free (g->vars->stats[c][idx].data);
-
-                        idx ++;
-                    }
-                    j ++;
-                }
-                free (g->vars->stats[c]);
-            }
-            free (g->vars->stats);
-        }
-
-        // NCSU ALACRITY-ADIOS - Clean transform metadata
-        adios_transform_clear_transform_var(g->vars);
-
-        if (g->vars->data)
-            free (g->vars->data);
-
-        free (g->vars);
-        g->vars = vars;
-    }
 
     free (root);
 
@@ -6151,19 +6176,19 @@ int adios_common_define_mesh_unstructured (char * points,
     strcat (mpath, name);
     strcat (mpath, "/type");
     adios_common_define_attribute (group_id, mpath, "", adios_string, "unstructured", "");
-    if (nspace)
+    if (nspace && *nspace != 0)
     {
 //        if (!adios_define_mesh_unstructured_nspace (nspace, new_group, name))
             if (!adios_define_mesh_nspace (nspace, new_group, name))
             return 0;
     }
-    if (npoints)
+    if (npoints && *npoints != 0)
     {
         if (!adios_define_mesh_unstructured_npoints (npoints, new_group, name))
             return 0;
 
     }
-    if (points){
+    if (points && *points != 0){
         char *p;
         // If we do find "," in points (single-var case)
         if (!(p = strstr(points, ","))){
@@ -6183,7 +6208,7 @@ int adios_common_define_mesh_unstructured (char * points,
                   "uniform-cells required (%s)\n", name);
         return 0;
     }
-    if (!count)
+    if (!count) 
     {
         log_warn ("config.xml: count attribute on "
                   "uniform-cells required (%s)\n", name);

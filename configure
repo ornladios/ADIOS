@@ -35240,9 +35240,7 @@ fi
 
 # Check whether --with-zlib was given.
 if test "${with_zlib+set}" = set; then
-  withval=$with_zlib; ZLIB_LDFLAGS="-L$withval/lib -L$withval/lib64";
-         ZLIB_LIBS="-lz";
-         ZLIB_CPPFLAGS="-I$withval/include";
+  withval=$with_zlib; :
 else
   with_zlib=no
 fi
@@ -35264,11 +35262,21 @@ else
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
+
+    if test "x$with_zlib" == "xyes"; then
+                ZLIB_CPPFLAGS=""
+        ZLIB_LDFLAGS=""
+        ZLIB_LIBS="-lz"
+    else
+                ZLIB_CPPFLAGS="-I$withval/include"
+        ZLIB_LDFLAGS="-L$withval/lib64"
+        ZLIB_LIBS="-lz"
+    fi
+
     LIBS="$LIBS $ZLIB_LIBS"
     LDFLAGS="$LDFLAGS $ZLIB_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $ZLIB_CPPFLAGS"
 
-    if test -z "${HAVE_ZLIB_TRUE}"; then
 
 for ac_header in zlib.h
 do
@@ -35424,9 +35432,162 @@ fi
 
 done
 
-    fi
 
-    # Check for the ZLIB library and headers
+    if test -z "${HAVE_ZLIB_TRUE}"; then
+                { $as_echo "$as_me:$LINENO: checking if zlib code can be linked with $ZLIB_LDFLAGS" >&5
+$as_echo_n "checking if zlib code can be linked with $ZLIB_LDFLAGS... " >&6; }
+        cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <stdlib.h>
+             #include "zlib.h"
+#ifdef FC_DUMMY_MAIN
+#ifndef FC_DUMMY_MAIN_EQ_F77
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int FC_DUMMY_MAIN() { return 1; }
+#endif
+#endif
+int
+main ()
+{
+Bytef* in, *out;
+             uLongf in_len, *out_len;
+             int level = 5;
+             int zerr = compress2 (out, out_len, in, in_len, level);
+             return (zerr != Z_OK);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+  { $as_echo "$as_me:$LINENO: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	 if false; then
+  HAVE_ZLIB_TRUE=
+  HAVE_ZLIB_FALSE='#'
+else
+  HAVE_ZLIB_TRUE='#'
+  HAVE_ZLIB_FALSE=
+fi
+
+             { $as_echo "$as_me:$LINENO: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+
+                        if test -z "${HAVE_ZLIB_FALSE}"; then
+            if test "x$with_lustre" != "xyes"; then
+            ZLIB_LDFLAGS="-L$withval/lib"
+            LDFLAGS="$LDFLAGS $ZLIB_LDFLAGS"
+            { $as_echo "$as_me:$LINENO: checking if zlib code can be linked with $ZLIB_LDFLAGS" >&5
+$as_echo_n "checking if zlib code can be linked with $ZLIB_LDFLAGS... " >&6; }
+            cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <stdlib.h>
+                 #include "zlib.h"
+#ifdef FC_DUMMY_MAIN
+#ifndef FC_DUMMY_MAIN_EQ_F77
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int FC_DUMMY_MAIN() { return 1; }
+#endif
+#endif
+int
+main ()
+{
+Bytef* in, *out;
+                 uLongf in_len, *out_len;
+                 int level = 5;
+                 int zerr = compress2 (out, out_len, in, in_len, level);
+                 return (zerr != Z_OK);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+  { $as_echo "$as_me:$LINENO: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	 if false; then
+  HAVE_ZLIB_TRUE=
+  HAVE_ZLIB_FALSE='#'
+else
+  HAVE_ZLIB_TRUE='#'
+  HAVE_ZLIB_FALSE=
+fi
+
+                 { $as_echo "$as_me:$LINENO: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+            fi
+        fi
+    fi
 
     LIBS="$save_LIBS"
     LDFLAGS="$save_LDFLAGS"
@@ -35467,9 +35628,7 @@ fi
 
 # Check whether --with-bzip2 was given.
 if test "${with_bzip2+set}" = set; then
-  withval=$with_bzip2; BZIP2_LDFLAGS="-L$withval/lib";
-         BZIP2_LIBS="-lbz2";
-         BZIP2_CPPFLAGS="-I$withval/include";
+  withval=$with_bzip2; :
 else
   with_bzip2=no
 fi
@@ -35491,7 +35650,18 @@ else
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
-    LIBS="$LIBS -lbz2"
+
+    if test "x$with_bzip2" == "xyes"; then
+                BZIP2_CPPFLAGS=""
+        BZIP2_LDFLAGS=""
+        BZIP2_LIBS="-lbz2"
+    else
+                BZIP2_CPPFLAGS="-I$withval/include"
+        BZIP2_LDFLAGS="-L$withval/lib64"
+        BZIP2_LIBS="-lbz2"
+    fi
+
+    LIBS="$LIBS $BZIP2_LIBS"
     LDFLAGS="$LDFLAGS $BZIP2_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $BZIP2_CPPFLAGS"
 
@@ -35653,7 +35823,164 @@ done
 
     fi
 
-    # Check for the BZIP2 library and headers
+    if test -z "${HAVE_BZIP2_TRUE}"; then
+                { $as_echo "$as_me:$LINENO: checking if bzip2 code can be linked with $BZIP2_LDFLAGS" >&5
+$as_echo_n "checking if bzip2 code can be linked with $BZIP2_LDFLAGS... " >&6; }
+        cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <stdlib.h>
+             #include "bzlib.h"
+#ifdef FC_DUMMY_MAIN
+#ifndef FC_DUMMY_MAIN_EQ_F77
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int FC_DUMMY_MAIN() { return 1; }
+#endif
+#endif
+int
+main ()
+{
+char* in, *out;
+             unsigned int in_len, *out_len;
+             int blocksize100k = 5;
+             int bzerr = BZ2_bzBuffToBuffCompress (
+                           out, out_len, in, in_len, blocksize100k, 0, 30);
+             return (bzerr != BZ_OK);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+  { $as_echo "$as_me:$LINENO: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	 if false; then
+  HAVE_BZIP2_TRUE=
+  HAVE_BZIP2_FALSE='#'
+else
+  HAVE_BZIP2_TRUE='#'
+  HAVE_BZIP2_FALSE=
+fi
+
+             { $as_echo "$as_me:$LINENO: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+
+                        if test -z "${HAVE_BZIP2_FALSE}"; then
+            if test "x$with_lustre" != "xyes"; then
+            BZIP2_LDFLAGS="-L$withval/lib"
+            LDFLAGS="$LDFLAGS $BZIP2_LDFLAGS"
+            { $as_echo "$as_me:$LINENO: checking if bzip2 code can be linked with $BZIP2_LDFLAGS" >&5
+$as_echo_n "checking if bzip2 code can be linked with $BZIP2_LDFLAGS... " >&6; }
+            cat >conftest.$ac_ext <<_ACEOF
+/* confdefs.h.  */
+_ACEOF
+cat confdefs.h >>conftest.$ac_ext
+cat >>conftest.$ac_ext <<_ACEOF
+/* end confdefs.h.  */
+#include <stdlib.h>
+                 #include "bzlib.h"
+#ifdef FC_DUMMY_MAIN
+#ifndef FC_DUMMY_MAIN_EQ_F77
+#  ifdef __cplusplus
+     extern "C"
+#  endif
+   int FC_DUMMY_MAIN() { return 1; }
+#endif
+#endif
+int
+main ()
+{
+char* in, *out;
+                 unsigned int in_len, *out_len;
+                 int blocksize100k = 5;
+                 int bzerr = BZ2_bzBuffToBuffCompress (
+                               out, out_len, in, in_len, blocksize100k, 0, 30);
+                 return (bzerr != BZ_OK);
+  ;
+  return 0;
+}
+_ACEOF
+rm -f conftest.$ac_objext conftest$ac_exeext
+if { (ac_try="$ac_link"
+case "(($ac_try" in
+  *\"* | *\`* | *\\*) ac_try_echo=\$ac_try;;
+  *) ac_try_echo=$ac_try;;
+esac
+eval ac_try_echo="\"\$as_me:$LINENO: $ac_try_echo\""
+$as_echo "$ac_try_echo") >&5
+  (eval "$ac_link") 2>conftest.er1
+  ac_status=$?
+  grep -v '^ *+' conftest.er1 >conftest.err
+  rm -f conftest.er1
+  cat conftest.err >&5
+  $as_echo "$as_me:$LINENO: \$? = $ac_status" >&5
+  (exit $ac_status); } && {
+	 test -z "$ac_c_werror_flag" ||
+	 test ! -s conftest.err
+       } && test -s conftest$ac_exeext && {
+	 test "$cross_compiling" = yes ||
+	 $as_test_x conftest$ac_exeext
+       }; then
+  { $as_echo "$as_me:$LINENO: result: yes" >&5
+$as_echo "yes" >&6; }
+else
+  $as_echo "$as_me: failed program was:" >&5
+sed 's/^/| /' conftest.$ac_ext >&5
+
+	 if false; then
+  HAVE_BZIP2_TRUE=
+  HAVE_BZIP2_FALSE='#'
+else
+  HAVE_BZIP2_TRUE='#'
+  HAVE_BZIP2_FALSE=
+fi
+
+                 { $as_echo "$as_me:$LINENO: result: no" >&5
+$as_echo "no" >&6; }
+
+fi
+
+rm -rf conftest.dSYM
+rm -f core conftest.err conftest.$ac_objext conftest_ipa8_conftest.oo \
+      conftest$ac_exeext conftest.$ac_ext
+            fi
+        fi
+    fi
+
 
     LIBS="$save_LIBS"
     LDFLAGS="$save_LDFLAGS"
@@ -36458,7 +36785,7 @@ fi
 
     TIMER_CPPFLAGS="-I$with_timer/include"
     TIMER_LDFLAGS="-L$with_timer/lib"
-    TIMER_LIBS="-ltimer"
+    TIMER_LIBS="-ltimer -lm"
 
     saveLIB="$LIB"
     saveLDFLAGS="$LDFLAGS"
@@ -36628,7 +36955,7 @@ if test "${ac_cv_lib_timer_timer_init+set}" = set; then
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
-LIBS="-ltimer  $LIBS"
+LIBS="-ltimer -lm     $LIBS"
 cat >conftest.$ac_ext <<_ACEOF
 /* confdefs.h.  */
 _ACEOF
@@ -37451,7 +37778,7 @@ _ACEOF
 
 
 
-ac_config_files="$ac_config_files Makefile src/Makefile tests/Makefile tests/C/Makefile tests/C/flexpath_tests/Makefile tests/C/flexpath_tests/1D_arr_global/Makefile tests/C/flexpath_tests/1D_arr_global_noxml/Makefile tests/C/flexpath_tests/global_range_select/Makefile tests/C/flexpath_tests/maya_noxml/Makefile tests/C/flexpath_tests/maya_append/Makefile tests/C/flexpath_tests/scalar/Makefile tests/Fortran/Makefile tests/genarray/Makefile tests/bp_read/Makefile tests/suite/Makefile tests/suite/programs/Makefile utils/Makefile utils/skeldump/Makefile utils/skel/Makefile utils/skel/etc/Makefile utils/skel/src/Makefile utils/skel/lib/skel_have_adios_timing.py utils/adios_lint/Makefile utils/gpp/Makefile utils/bpdump/Makefile utils/bp2h5/Makefile utils/bp2ncd/Makefile utils/bp2ascii/Makefile utils/bpsplit/Makefile utils/bpls/Makefile utils/bpdiff/Makefile utils/bp2bp/Makefile utils/list_methods/Makefile examples/Makefile examples/C/Makefile examples/C/scalars/Makefile examples/C/arrays/Makefile examples/C/flexpath_arrays/Makefile examples/C/flexpath_arrays/process_select/Makefile examples/C/flexpath_arrays/global_range_select/Makefile examples/C/attributes/Makefile examples/C/manual/Makefile examples/C/global-array/Makefile examples/C/global-array-time/Makefile examples/C/stat/Makefile examples/C/read_all/Makefile examples/C/schema/Makefile examples/C/transforms/Makefile examples/C/compression_test/Makefile examples/Fortran/Makefile examples/Fortran/scalars/Makefile examples/Fortran/arrays/Makefile examples/Fortran/global-array/Makefile examples/Fortran/global-array-time/Makefile adios_config.flags"
+ac_config_files="$ac_config_files Makefile src/Makefile tests/Makefile tests/C/Makefile tests/C/flexpath_tests/Makefile tests/C/flexpath_tests/1D_arr_global/Makefile tests/C/flexpath_tests/1D_arr_global_noxml/Makefile tests/C/flexpath_tests/global_range_select/Makefile tests/C/flexpath_tests/maya_noxml/Makefile tests/C/flexpath_tests/maya_append/Makefile tests/C/flexpath_tests/scalar/Makefile tests/C/fgr_tests/Makefile tests/Fortran/Makefile tests/genarray/Makefile tests/bp_read/Makefile tests/suite/Makefile tests/suite/programs/Makefile utils/Makefile utils/skeldump/Makefile utils/skel/Makefile utils/skel/etc/Makefile utils/skel/src/Makefile utils/skel/lib/skel_have_adios_timing.py utils/adios_lint/Makefile utils/gpp/Makefile utils/bpdump/Makefile utils/bp2h5/Makefile utils/bp2ncd/Makefile utils/bp2ascii/Makefile utils/bpsplit/Makefile utils/bpls/Makefile utils/bpdiff/Makefile utils/bp2bp/Makefile utils/list_methods/Makefile utils/bpmeta/Makefile examples/Makefile examples/C/Makefile examples/C/scalars/Makefile examples/C/arrays/Makefile examples/C/flexpath_arrays/Makefile examples/C/flexpath_arrays/process_select/Makefile examples/C/flexpath_arrays/global_range_select/Makefile examples/C/attributes/Makefile examples/C/manual/Makefile examples/C/global-array/Makefile examples/C/global-array-time/Makefile examples/C/stat/Makefile examples/C/read_all/Makefile examples/C/schema/Makefile examples/C/transforms/Makefile examples/Fortran/Makefile examples/Fortran/scalars/Makefile examples/Fortran/arrays/Makefile examples/Fortran/global-array/Makefile examples/Fortran/global-array-time/Makefile examples/Fortran/schema/Makefile adios_config.flags"
 
 
 cat >confcache <<\_ACEOF
@@ -38277,6 +38604,34 @@ if test -z "${HAVE_ZLIB_TRUE}" && test -z "${HAVE_ZLIB_FALSE}"; then
   { { $as_echo "$as_me:$LINENO: error: conditional \"HAVE_ZLIB\" was never defined.
 Usually this means the macro was only invoked conditionally." >&5
 $as_echo "$as_me: error: conditional \"HAVE_ZLIB\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_ZLIB_TRUE}" && test -z "${HAVE_ZLIB_FALSE}"; then
+  { { $as_echo "$as_me:$LINENO: error: conditional \"HAVE_ZLIB\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+$as_echo "$as_me: error: conditional \"HAVE_ZLIB\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_ZLIB_TRUE}" && test -z "${HAVE_ZLIB_FALSE}"; then
+  { { $as_echo "$as_me:$LINENO: error: conditional \"HAVE_ZLIB\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+$as_echo "$as_me: error: conditional \"HAVE_ZLIB\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_BZIP2_TRUE}" && test -z "${HAVE_BZIP2_FALSE}"; then
+  { { $as_echo "$as_me:$LINENO: error: conditional \"HAVE_BZIP2\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+$as_echo "$as_me: error: conditional \"HAVE_BZIP2\" was never defined.
+Usually this means the macro was only invoked conditionally." >&2;}
+   { (exit 1); exit 1; }; }
+fi
+if test -z "${HAVE_BZIP2_TRUE}" && test -z "${HAVE_BZIP2_FALSE}"; then
+  { { $as_echo "$as_me:$LINENO: error: conditional \"HAVE_BZIP2\" was never defined.
+Usually this means the macro was only invoked conditionally." >&5
+$as_echo "$as_me: error: conditional \"HAVE_BZIP2\" was never defined.
 Usually this means the macro was only invoked conditionally." >&2;}
    { (exit 1); exit 1; }; }
 fi
@@ -39419,6 +39774,7 @@ do
     "tests/C/flexpath_tests/maya_noxml/Makefile") CONFIG_FILES="$CONFIG_FILES tests/C/flexpath_tests/maya_noxml/Makefile" ;;
     "tests/C/flexpath_tests/maya_append/Makefile") CONFIG_FILES="$CONFIG_FILES tests/C/flexpath_tests/maya_append/Makefile" ;;
     "tests/C/flexpath_tests/scalar/Makefile") CONFIG_FILES="$CONFIG_FILES tests/C/flexpath_tests/scalar/Makefile" ;;
+    "tests/C/fgr_tests/Makefile") CONFIG_FILES="$CONFIG_FILES tests/C/fgr_tests/Makefile" ;;
     "tests/Fortran/Makefile") CONFIG_FILES="$CONFIG_FILES tests/Fortran/Makefile" ;;
     "tests/genarray/Makefile") CONFIG_FILES="$CONFIG_FILES tests/genarray/Makefile" ;;
     "tests/bp_read/Makefile") CONFIG_FILES="$CONFIG_FILES tests/bp_read/Makefile" ;;
@@ -39441,6 +39797,7 @@ do
     "utils/bpdiff/Makefile") CONFIG_FILES="$CONFIG_FILES utils/bpdiff/Makefile" ;;
     "utils/bp2bp/Makefile") CONFIG_FILES="$CONFIG_FILES utils/bp2bp/Makefile" ;;
     "utils/list_methods/Makefile") CONFIG_FILES="$CONFIG_FILES utils/list_methods/Makefile" ;;
+    "utils/bpmeta/Makefile") CONFIG_FILES="$CONFIG_FILES utils/bpmeta/Makefile" ;;
     "examples/Makefile") CONFIG_FILES="$CONFIG_FILES examples/Makefile" ;;
     "examples/C/Makefile") CONFIG_FILES="$CONFIG_FILES examples/C/Makefile" ;;
     "examples/C/scalars/Makefile") CONFIG_FILES="$CONFIG_FILES examples/C/scalars/Makefile" ;;
@@ -39456,12 +39813,12 @@ do
     "examples/C/read_all/Makefile") CONFIG_FILES="$CONFIG_FILES examples/C/read_all/Makefile" ;;
     "examples/C/schema/Makefile") CONFIG_FILES="$CONFIG_FILES examples/C/schema/Makefile" ;;
     "examples/C/transforms/Makefile") CONFIG_FILES="$CONFIG_FILES examples/C/transforms/Makefile" ;;
-    "examples/C/compression_test/Makefile") CONFIG_FILES="$CONFIG_FILES examples/C/compression_test/Makefile" ;;
     "examples/Fortran/Makefile") CONFIG_FILES="$CONFIG_FILES examples/Fortran/Makefile" ;;
     "examples/Fortran/scalars/Makefile") CONFIG_FILES="$CONFIG_FILES examples/Fortran/scalars/Makefile" ;;
     "examples/Fortran/arrays/Makefile") CONFIG_FILES="$CONFIG_FILES examples/Fortran/arrays/Makefile" ;;
     "examples/Fortran/global-array/Makefile") CONFIG_FILES="$CONFIG_FILES examples/Fortran/global-array/Makefile" ;;
     "examples/Fortran/global-array-time/Makefile") CONFIG_FILES="$CONFIG_FILES examples/Fortran/global-array-time/Makefile" ;;
+    "examples/Fortran/schema/Makefile") CONFIG_FILES="$CONFIG_FILES examples/Fortran/schema/Makefile" ;;
     "adios_config.flags") CONFIG_FILES="$CONFIG_FILES adios_config.flags" ;;
 
   *) { { $as_echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5

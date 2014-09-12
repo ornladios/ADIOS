@@ -5,7 +5,7 @@
  * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
  */
 
-#include "../config.h"
+#include "config.h"
 
 #include <stdlib.h>
 #include <math.h>
@@ -25,6 +25,7 @@
 #include "core/buffer.h"
 #include "core/adios_transport_hooks.h"
 #include "core/adios_logger.h"
+#include "core/adios_timing.h"
 #include "core/qhashtbl.h"
 #include "public/adios_error.h"
 
@@ -97,6 +98,13 @@ int common_adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_allo
     adios_buffer_alloc_when_set (adios_buffer_alloc_when);
     adios_set_buffer_size ();
     return adios_errno;
+}
+
+///////////////////////////////////////////////////////////////////////////////
+// Drew: used for experiments
+uint32_t pinned_timestep = 0;
+void adios_pin_timestep(uint32_t ts) {
+  pinned_timestep = ts;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -197,6 +205,10 @@ int common_adios_open (int64_t * fd, const char * group_name
         g->time_index++;
 #endif
 
+    // Drew: for experiments
+    if (pinned_timestep > 0)
+        g->time_index = pinned_timestep;
+
     while (methods)
     {
         if (   methods->method->m != ADIOS_METHOD_UNKNOWN
@@ -221,11 +233,6 @@ int common_adios_open (int64_t * fd, const char * group_name
 
 ///////////////////////////////////////////////////////////////////////////////
 static const char ADIOS_ATTR_PATH[] = "/__adios__";
-
-static uint32_t pinned_timestep = 0;
-void adios_pin_timestep(uint32_t ts) {
-  pinned_timestep = ts;
-}
 
 int common_adios_group_size (int64_t fd_p
                      ,uint64_t data_size
@@ -350,6 +357,10 @@ int common_adios_group_size (int64_t fd_p
         fd->shared_buffer = adios_flag_yes;
     }
 
+    // Drew: for experiments
+    if (pinned_timestep != 0)
+        fd->group->time_index = pinned_timestep;
+
     // call each transport method to coordinate the write and handle
     // if an overflow is detected.
     // now tell each transport attached that it is being written
@@ -373,6 +384,7 @@ int common_adios_group_size (int64_t fd_p
         m = m->next;
     }
 
+    // Drew: for experiments
     if (pinned_timestep != 0)
         fd->group->time_index = pinned_timestep;
 
@@ -1093,6 +1105,19 @@ int common_adios_close (int64_t fd_p)
         fd->group->vars_written = v;
     }
 
+
+#ifdef SKEL_TIMING
+    char* extension = ".perf";
+    int name_len = strlen (fd->name);
+    int fn_len = name_len + strlen (extension) + 1;
+    char* fn = (char*) malloc (sizeof (char) * fn_len);
+    
+    sprintf (fn, "%s%s", fd->name, extension);
+
+    adios_timing_write_xml_common (fd_p, fn);
+#endif
+
+
     if (fd->name)
     {
         free (fd->name);
@@ -1128,6 +1153,7 @@ int common_adios_close (int64_t fd_p)
 
     //timer_reset_timers ();
 #endif
+
 
     return adios_errno;
 }

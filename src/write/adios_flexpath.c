@@ -1011,7 +1011,6 @@ process_data_flush(FlexpathWriteFileData *fileData,
     void* temp = copy_buffer(dataNode->data, flushMsg->process_id, fileData);
    
     fileData->attrs = set_dst_rank_atom(fileData->attrs, flushMsg->process_id);
-    fileData->attrs = set_dst_condition_atom(fileData->attrs, flushMsg->condition);
     fileData->attrs = set_flush_id_atom(fileData->attrs, flushMsg->id);
     
     if(!fileData->bridges[flushMsg->process_id].opened) {

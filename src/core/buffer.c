@@ -78,7 +78,8 @@ static inline size_t adios_get_avphys_pages ()
 
 int adios_set_buffer_size ()
 {
-    if (!adios_buffer_size_max) // not called before
+    //if (!adios_buffer_size_max) // not called before
+    if (adios_buffer_size_max < adios_buffer_size_requested) // not called before
     {
         long pagesize;
         long pages;
@@ -116,8 +117,8 @@ int adios_set_buffer_size ()
     }
     else
     {
-        log_error ("adios_allocate_buffer already called. No changes made.\n");
-        return 0;
+        log_debug ("adios_allocate_buffer already called. No changes made.\n");
+        return 1;
     }
 }
 

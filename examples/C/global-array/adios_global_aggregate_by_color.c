@@ -32,7 +32,8 @@
 int main (int argc, char ** argv) 
 {
 	char        filename [256];
-	int         rank, size, i;
+        char        color_str[256];
+	int         rank, size, i, color;
 	int         NX = 100, Global_bounds, Offsets; 
 	double      t[NX];
 	MPI_Comm    comm = MPI_COMM_WORLD;
@@ -46,7 +47,7 @@ int main (int argc, char ** argv)
 
         Global_bounds = NX * size;
 
-	strcpy (filename, "adios_global_no_xml.bp");
+	strcpy (filename, "adios_global_aggregate_by_color.bp");
 
 	adios_init_noxml (comm);
         adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 10);
@@ -55,8 +56,11 @@ int main (int argc, char ** argv)
         int64_t       m_adios_file;
 
         adios_declare_group (&m_adios_group, "restart", "iter", adios_flag_yes);
-        adios_select_method (m_adios_group, "MPI", "", "");
 
+        // split into 2 groups 
+        color = (rank % 2 == 0 ? 0 : 1);
+        sprintf (color_str, "color=%d", color);
+        adios_select_method (m_adios_group, "MPI", color_str, "");
 
         adios_define_var (m_adios_group, "NX"
 			,"", adios_integer

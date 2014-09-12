@@ -353,7 +353,6 @@ int adios_declare_group (int64_t * id, const char * name
     return adios_errno;
 }
 
-
 int adios_free_group (int64_t id)
 {
     adios_errno = err_no_error;
@@ -382,6 +381,20 @@ int64_t adios_define_var (int64_t group_id, const char * name
                                    );
 }
 
+// delete all variable definitions from a group
+// Use if you want to define a new set of variables for the next output step.
+int adios_delete_vardefs (int64_t id)
+{
+    adios_errno = err_no_error;
+    if (id != 0) {
+        struct adios_group_struct * g = (struct adios_group_struct *) id;
+        adios_common_delete_vardefs (g);
+    } else {
+        adios_error (err_invalid_group, "adios_delete_vardefs() called with 0 argument\n");
+    }
+    return adios_errno;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // adios_common_set_transform is in adios_internals.c
 // set the transform method for the selected variable (default is "none")
@@ -403,6 +416,20 @@ int adios_define_attribute (int64_t group, const char * name
 {
     adios_errno = err_no_error;
     adios_common_define_attribute (group, name, path, type, value, var);
+    return adios_errno;
+}
+
+// delete all attribute definitions from a group
+// Use if you want to define a new set of attributes for the next output step.
+int adios_delete_attrdefs (int64_t id)
+{
+    adios_errno = err_no_error;
+    if (id != 0) {
+        struct adios_group_struct * g = (struct adios_group_struct *) id;
+        adios_common_delete_attrdefs (g);
+    } else {
+        adios_error (err_invalid_group, "adios_delete_attrdefs() called with 0 argument\n");
+    }
     return adios_errno;
 }
 

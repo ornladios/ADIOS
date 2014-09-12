@@ -709,19 +709,27 @@ set_target_properties(adios_internal_nompi PROPERTIES COMPILE_FLAGS "${libadios_
 add_subdirectory(core)
 add_subdirectory(write)
 
-install(FILES ${PROJECT_BINARY_DIR}/src/libadios.a
-        ${PROJECT_BINARY_DIR}/src/libadios_nompi.a
-        ${PROJECT_BINARY_DIR}/src/libadiosf.a
-        ${PROJECT_BINARY_DIR}/src/libadiosf_v1.a
-        ${PROJECT_BINARY_DIR}/src/libadiosread.a
-        ${PROJECT_BINARY_DIR}/src/libadiosread_nompi.a
-        ${PROJECT_BINARY_DIR}/src/libadiosreadf.a
-        ${PROJECT_BINARY_DIR}/src/libadiosreadf_nompi.a
-        ${PROJECT_BINARY_DIR}/src/libadiosreadf_nompi_v1.a
-        ${PROJECT_BINARY_DIR}/src/libadiosreadf_v1.a
-        ${PROJECT_BINARY_DIR}/src/libadiosf_nompi.a
-        ${PROJECT_BINARY_DIR}/src/libadiosf_nompi_v1.a
+install(FILES ${PROJECT_BINARY_DIR}/src/libadiosread.a
+              ${PROJECT_BINARY_DIR}/src/libadiosread_nompi.a
         DESTINATION ${libdir})
+if(BUILD_FORTRAN)
+    install(FILES ${PROJECT_BINARY_DIR}/src/libadiosreadf.a
+                  ${PROJECT_BINARY_DIR}/src/libadiosreadf_nompi.a
+                  ${PROJECT_BINARY_DIR}/src/libadiosreadf_nompi_v1.a
+                  ${PROJECT_BINARY_DIR}/src/libadiosreadf_v1.a
+            DESTINATION ${libdir})
+endif()
 
-
+if(BUILD_WRITE)
+    install(FILES ${PROJECT_BINARY_DIR}/src/libadios.a
+                  ${PROJECT_BINARY_DIR}/src/libadios_nompi.a
+            DESTINATION ${libdir})
+    if(BUILD_FORTRAN)
+        install(FILES ${PROJECT_BINARY_DIR}/src/libadiosf.a
+                      ${PROJECT_BINARY_DIR}/src/libadiosf_v1.a
+                      ${PROJECT_BINARY_DIR}/src/libadiosf_nompi.a
+                      ${PROJECT_BINARY_DIR}/src/libadiosf_nompi_v1.a
+                DESTINATION ${libdir})
+    endif()
+endif()
 #Note: ${MACRODEFFLAG}NOMPI chokes IBM's bgxlf compiler but it can pass ${MACRODEFFLAG}_NOMPI.

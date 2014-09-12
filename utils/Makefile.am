@@ -1,4 +1,4 @@
-SUBDIRS= gpp bpdump bp2ascii bpsplit bpls bpdiff skeldump list_methods
+SUBDIRS= gpp bpdump bp2ascii bpsplit bpls bpdiff skeldump list_methods bpmeta
 if BUILD_WRITE
 SUBDIRS += adios_lint bp2bp 
 endif

@@ -29,7 +29,8 @@ check_C=local_array_time \
 	set_path_var \
 	steps_write \
 	steps_read_file \
-	steps_read_stream
+	steps_read_stream \
+	blocks
 
 test_C=hashtest copy_subvolume transforms_specparse group_free_test
 
@@ -169,6 +170,11 @@ steps_read_stream_SOURCES=steps_read_stream.c
 steps_read_stream_LDADD = $(top_builddir)/src/libadios.a $(ADIOSREADLIB_LDADD)
 steps_read_stream_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
 steps_read_stream.o: steps_read_stream.c
+
+blocks_SOURCES=blocks.c
+blocks_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+blocks_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+blocks.o: blocks.c
 
 #transforms_SOURCES=transforms.c
 #transforms_CPPFLAGS = -DADIOS_USE_READ_API_1

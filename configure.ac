@@ -703,6 +703,7 @@ AC_CONFIG_FILES([Makefile
                  tests/C/flexpath_tests/maya_noxml/Makefile
                  tests/C/flexpath_tests/maya_append/Makefile
                  tests/C/flexpath_tests/scalar/Makefile
+                 tests/C/fgr_tests/Makefile
                  tests/Fortran/Makefile
                  tests/genarray/Makefile
                  tests/bp_read/Makefile
@@ -725,6 +726,7 @@ AC_CONFIG_FILES([Makefile
                  utils/bpdiff/Makefile
                  utils/bp2bp/Makefile
                  utils/list_methods/Makefile
+                 utils/bpmeta/Makefile
                  examples/Makefile
                  examples/C/Makefile
                  examples/C/scalars/Makefile
@@ -740,12 +742,12 @@ AC_CONFIG_FILES([Makefile
                  examples/C/read_all/Makefile
                  examples/C/schema/Makefile
                  examples/C/transforms/Makefile
-                 examples/C/compression_test/Makefile
                  examples/Fortran/Makefile
                  examples/Fortran/scalars/Makefile
                  examples/Fortran/arrays/Makefile
                  examples/Fortran/global-array/Makefile
                  examples/Fortran/global-array-time/Makefile
+                 examples/Fortran/schema/Makefile
                  adios_config.flags
                 ])
 
