@@ -719,7 +719,7 @@ int main (int argc, char ** argv)
          freePGoff(pgOff);
 
   } else {
-	  printf ("Usage: %s <base directory> <transform> <input xml> \n Example: ./adios_build_alac_index ./xml alacrity-1var ./xml/build-alac-index-input.xml", argv [0]);
+	  printf ("Usage: %s <base directory> <transform> <input xml> \n Example: ./adios_build_alac_index ./xml alacrity-1var ./xml/build-alac-index-input.xml \n", argv [0]);
  }
 
 

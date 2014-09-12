@@ -15,6 +15,9 @@
 #include "common_query.h"
 //#include <alacrity.h>
 
+
+//#define RIDBUG
+
 #ifdef ALACRITY
 #include "alacrity.h"
 
@@ -109,7 +112,6 @@ void proc_write_block(int blockId, bool isPGCovered, ADIOS_VARTRANSFORM *ti, ADI
 
 
 inline void setBitsinBitMap(rid_t rid, ADIOS_ALAC_BITMAP * alacResultBitmap){
-
 	uint32_t word = (uint32_t) (rid >> 6);
 	if (word > alacResultBitmap->length){
 		printf("what a hell\n");
@@ -500,6 +502,8 @@ rid_t ridConversionWithoutCheck(rid_t rid/*relative to local src selectoin*/,
 		}                                              \
 }
 
+// printf("%"PRIu32"->%"PRIu32",", rid, newRid);
+
 /*
  * NOTE : relies on  a lots of variables:
  * isPGCovered, el, srcstart, srcount, deststart, destcount, ndim, newRid, totalElm, op
@@ -745,6 +749,9 @@ void setRidToBits(bool isPGCovered
 		for ( ni = 0; ni < totalRids; ni++) {
 			rid_t rid_val = idx[ni];
 			newRid = ridConversionWithoutCheck(rid_val, srcstart,srccount, deststart,destcount, ndim);
+#ifdef RIDBUG
+			printf("%"PRIu32"->%"PRIu32",", rid_val, newRid);
+#endif
 			setBitsinBitMap(newRid, alacResultBitmap);
 		}
 		alacResultBitmap->numSetBits += totalRids;
@@ -753,6 +760,9 @@ void setRidToBits(bool isPGCovered
 		for ( ni = 0; ni < totalRids; ni++) {
 			rid_t rid_val = idx[ni];
 			if (ridConversionWithCheck(rid_val,	srcstart,srccount, deststart,destcount, ndim, &newRid)){
+#ifdef RIDBUG
+			printf("%"PRIu32"->%"PRIu32",", rid_val, newRid);
+#endif
 				setBitsinBitMap(newRid, alacResultBitmap);
 				alacResultBitmap->numSetBits ++;
 			}
@@ -818,6 +828,11 @@ void proc_write_block(int blockId, bool isPGCovered, ADIOS_VARTRANSFORM *ti, ADI
 		, ALUnivariateQuery * alacQuery , double lb , double hb
 		,uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount
 		, ADIOS_ALAC_BITMAP * alacResultBitmap /*OUT*/ ){
+
+#ifdef RIDBUG
+	printf("PG [%d], RIDs relative to PG converted to RIDs relative to output BoundingBox: ", blockId);
+#endif
+
 	int numStep = 1; // only deal with one timestep
 	uint64_t metaSize, indexSize, dataSize;
 	ADIOS_VARINFO * varInfo = adiosQuery->_var;
@@ -986,6 +1001,10 @@ void proc_write_block(int blockId, bool isPGCovered, ADIOS_VARTRANSFORM *ti, ADI
 	}else {
 		printf("there is no touched bin for constraint \n");
 	}
+
+#ifdef RIDBUG
+	printf("\n");
+#endif
 }
 
 
@@ -1042,6 +1061,19 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	if (adiosQuery->_sel->type == ADIOS_SELECTION_BOUNDINGBOX) {
 		const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(adiosQuery->_sel->u.bb);
 		destcount = bb->count;   deststart = bb->start;
+#ifdef RIDBUG
+		printf("Output Bounding box, start: [");
+		int t = 0;
+		for(t  = 0 ; t < ndim ; t++){
+			printf("%"PRIu64", ", deststart[t]);
+		}
+		printf("], count: [");
+		for(t  = 0 ; t < ndim ; t++){
+			printf("%"PRIu64", ", destcount[t]);
+		}
+		printf("]\n");
+
+#endif
 		adios_read_set_data_view(adiosQuery->_f, PHYSICAL_DATA_VIEW);
 		ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->_f, varInfo);
 		ADIOS_PG_INTERSECTIONS* intersectedPGs = adios_find_intersecting_pgs( adiosQuery->_f, varInfo->varid, adiosQuery->_sel, timeStep, numStep);
@@ -1212,6 +1244,9 @@ void adios_query_alac_retrieval_points2d(
 	uint64_t * p_bitmap = b->bits;
 	uint64_t pidx = 0, off = start_pos, retrieveCount = 0;
 	uint64_t reconstct_rid;
+#ifdef RIDBUG
+	printf("reconstrcuted RID relative to timestep : ");
+#endif
 	while (off <= b->length ){
 		uint16_t * temp = (uint16_t *) &(p_bitmap[off]); // 2 bytes (unsigned short int)  = 16 bits
 		uint64_t offset_long_int = off * 64; // original index offset ; // 4 bytes (unsigned long int )= 64 bit
@@ -1226,7 +1261,9 @@ void adios_query_alac_retrieval_points2d(
 			 */
 			for (m = 0; m < set_bit_count[temp[j]]  ; m++) {
 				reconstct_rid = offset+ set_bit_position[temp[j]][m];
-//				printf("rids: %"PRIu64", ab rids: %"PRIu64"\n", reconstct_rid, reconstct_rid+ 64);
+#ifdef RIDBUG
+				printf("%"PRIu64", ", reconstct_rid);
+#endif
 				if (!isLastConvRidInit(b)) {
 					if (reconstct_rid > b->lastConvRid) { // skip the RIDs in the 16-bits part
 //						printf("recovered RID %"PRIu64"\n", reconstct_rid);
@@ -1244,12 +1281,20 @@ void adios_query_alac_retrieval_points2d(
 
 				if (retrieveCount == retrieval_size){
 					b->lastConvRid = reconstct_rid; 					 // updated the status
+
+#ifdef RIDBUG
+		printf("\n");
+#endif
 					return ;
 				}
 			}
 		}
 		off ++;
 	}
+
+#ifdef RIDBUG
+		printf("\n");
+#endif
 }
 
 void adios_query_alac_retrieval_points3d( ADIOS_ALAC_BITMAP *b, uint64_t retrieval_size

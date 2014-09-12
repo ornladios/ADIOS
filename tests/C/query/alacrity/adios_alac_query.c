@@ -235,7 +235,7 @@ void oneDefinedBox(ADIOS_FILE* bf, const char * lb, const char * hb,
 
 void retrieveAllValues(ADIOS_FILE* f) {
 	uint64_t start[] = { 0 , 0};
-	uint64_t count[] = { 4, 4 };
+	uint64_t count[] = { 8, 8 };
 	int dim = 2;
 	int c = 0;
 	uint64_t totalElm = 1;
@@ -259,7 +259,8 @@ void retrieveAllValues(ADIOS_FILE* f) {
 	printPoints(retrievedPts);
 	void *data = malloc(totalElm * 4);
 
-	adios_schedule_read (f, currBatch, "temp", 0, 1, data);
+	int timestep = 1;
+	adios_schedule_read (f, currBatch, "temp", timestep, 1, data);
 	adios_perform_reads(f, 1);
 
 	for (i = 0; i < totalElm; i++) {
@@ -295,7 +296,8 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF, const char * lbs, c
 	ADIOS_QUERY* q1 = adios_query_create(f, varName1, box, ADIOS_LT, hbs); // temp < hb
 	ADIOS_QUERY* q2 = adios_query_create(f, varName1, box, ADIOS_GT, lbs); // temp < lb
 
-
+//	ADIOS_QUERY* q1 = adios_query_create(f, varName1, box, ADIOS_GT, lbs); // temp < hb
+//	ADIOS_QUERY *q = q1;
 	ADIOS_QUERY* q = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
 
 	ADIOS_VARINFO * tempVar = adios_inq_var(dataF, varName1);
@@ -305,7 +307,7 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF, const char * lbs, c
 
 	int i = 0, timestep = 0 ;
 	printf("times steps for variable is: %d \n", q1->_var->nsteps);
-	for (timestep  = 0; timestep  < q1->_var->nsteps; timestep ++) {
+	for (timestep  = 1; timestep  < q1->_var->nsteps; timestep ++) {
 		printf("querying on timestep %d \n", timestep );
 		adios_query_set_timestep(timestep );
 
@@ -422,6 +424,7 @@ int main(int argc, char ** argv) {
 //	multiSelection(f , lbstr, hbstr, dataF, ADIOS_SELECTION_WRITEBLOCK);
 
 	oneBoundingBoxForVars(f, dataF, lbstr, hbstr);
+//	printf("retrieve all values \n");
 //	retrieveAllValues(f);
 
 	adios_read_close(f);
