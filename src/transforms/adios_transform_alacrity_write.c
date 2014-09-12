@@ -200,8 +200,8 @@ void adios_transform_alacrity_transformed_size_growth(
 	*capped_linear_factor = 0;
 
 #ifdef ALACRITY_DEBUG
-#define PRINT_FACTORS(msg) fprintf(stderr, "%s: const=%ull, lin=%lf, lincap=%lf->%ull\n", (msg), *constant_factor, *linear_factor, *capped_linear_factor, *capped_linear_cap);
-	fprintf("ALACRITY growth compute info: datatype size: %d, maxbins: %llu\n", datatype_size, max_possible_bins);
+#define PRINT_FACTORS(msg) fprintf(stderr, "%s: const=%llu, lin=%lf, lincap=%lf->%llu\n", (msg), *constant_factor, *linear_factor, *capped_linear_factor, *capped_linear_cap);
+	fprintf(stderr, "ALACRITY growth compute info: datatype size: %d, maxbins: %llu\n", datatype_size, max_possible_bins);
 	PRINT_FACTORS("after metadata");
 #else
 #define PRINT_FACTORS(msg) ((void)0)
