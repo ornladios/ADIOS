@@ -20,6 +20,7 @@
 ////////////////////////////////////////
 // adios_group_size support
 ////////////////////////////////////////
+#define MIN(X, Y) ((X) < (Y) ? (X) : (Y) )
 #define MAX(X, Y) ((X) > (Y) ? (X) : (Y) )
 uint64_t adios_transform_worst_case_transformed_group_size(uint64_t group_size, struct adios_file_struct *fd)
 {
@@ -72,7 +73,7 @@ uint64_t adios_transform_worst_case_transformed_group_size(uint64_t group_size, 
     const uint64_t max_transformed_group_size =
     		total_constant_factor +
     		ceil(max_linear_factor * transformed_group_size) +
-    		ceil(max_capped_linear_factor * MAX(transformed_group_size, max_capped_linear_cap));
+    		ceil(max_capped_linear_factor * MIN(transformed_group_size, max_capped_linear_cap));
 
     fprintf(stderr, "adios_transform_worst_case_transformed_group_size: %llu->%llu (const: %llu, lin: %lf, lincap: %lf->%llu)\n",
     		group_size, max_transformed_group_size, total_constant_factor, max_linear_factor, max_capped_linear_factor, max_capped_linear_cap);
