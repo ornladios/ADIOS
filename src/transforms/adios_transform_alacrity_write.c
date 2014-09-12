@@ -13,6 +13,8 @@
 #include "alacrity.h"
 #include "alacrity-serialization-debug.h"
 
+uint64_t adios_get_type_size(enum ADIOS_DATATYPES type, void *var);
+
 uint16_t adios_transform_alacrity_get_metadata_size(struct adios_transform_spec *transform_spec)
 {
     return (3 * sizeof(uint64_t));
@@ -22,10 +24,8 @@ static ALEncoderConfig parse_configuration(const struct adios_var_struct *var, c
     ALEncoderConfig config;
 
     if (var->pre_transform_type == adios_real) {
-        assert (sizeof (DATATYPE_FLOAT32) == sizeof (adios_real));
         ALEncoderConfigure(&config, 16, DATATYPE_FLOAT32, ALInvertedIndex);
     } else if (var->pre_transform_type == adios_double) {
-        assert (sizeof (DATATYPE_FLOAT64) == sizeof (adios_double));
         ALEncoderConfigure(&config, 16, DATATYPE_FLOAT64, ALInvertedIndex);
     } else {
         log_error("Can index only real datatypes. \n");
@@ -72,7 +72,7 @@ static void add_bin_layout_size_growth(
 	// factor that scales linearly (one bin per value) until we reach the "cap" (the max number of bins,
 	// already set in adios_transform_alacrity_transformed_size_growth).
 	const int metadata_bytes_per_bin = 2 * sizeof(bin_offset_t);
-	const int datatype_size = adios_type_size(var->pre_transform_type, NULL);
+	const int datatype_size = adios_get_type_size(var->pre_transform_type, NULL);
 	const double metadata_bytes_per_data_bytes = metadata_bytes_per_bin / datatype_size;
 
 	*capped_linear_factor += metadata_bytes_per_data_bytes; // For every value under the cap, add the corresponding number of metadata bytes
@@ -107,7 +107,7 @@ static void add_index_size_growth(
 		const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec,
 		uint64_t *constant_factor, double *linear_factor, double *capped_linear_factor, uint64_t *capped_linear_cap)
 {
-	const int datatype_size = adios_type_size(var->pre_transform_type, NULL);
+	const int datatype_size = adios_get_type_size(var->pre_transform_type, NULL);
 	int metadata_bytes_per_bin = 0;
 
 	*constant_factor += sizeof(ALIndexForm); // Index form
@@ -154,7 +154,7 @@ static void add_data_size_growth(
 		const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec,
 		uint64_t *constant_factor, double *linear_factor, double *capped_linear_factor, uint64_t *capped_linear_cap)
 {
-	const int datatype_size = adios_type_size(var->pre_transform_type, NULL);
+	const int datatype_size = adios_get_type_size(var->pre_transform_type, NULL);
 	const int insigbytes = ((datatype_size << 3) - config->significantBits + 0x07) >> 3;
 
 	*linear_factor += (double)insigbytes / datatype_size; // insigbytes per data value
@@ -195,7 +195,7 @@ void adios_transform_alacrity_transformed_size_growth(
 	// values equal to max possible bins), so compute it here, and let each function add to
 	// the capped linear factor assuming this cap is in place.
 	const uint64_t max_possible_bins = (1ULL << config.significantBits);
-	const int datatype_size = adios_type_size(var->pre_transform_type, NULL);
+	const int datatype_size = adios_get_type_size(var->pre_transform_type, NULL);
 	*capped_linear_cap = max_possible_bins * datatype_size; // There can be at most one bin per value, so stop adding this factor after (max bins) * (bytes per value) bytes
 	*capped_linear_factor = 0;
 
@@ -231,7 +231,7 @@ int adios_transform_alacrity_apply(struct adios_file_struct *fd,
     ALEncoderConfig config = parse_configuration(var, var->transform_spec);
 
     uint32_t numElements = 0;
-    numElements = input_size / adios_type_size(var->pre_transform_type, NULL);
+    numElements = input_size / adios_get_type_size(var->pre_transform_type, NULL);
 
     // decide the output buffer
     uint64_t output_size = 0;
