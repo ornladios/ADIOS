@@ -20,19 +20,15 @@ uint16_t adios_transform_alacrity_get_metadata_size(struct adios_transform_spec 
 
 static ALEncoderConfig parse_configuration(const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec) {
     ALEncoderConfig config;
-    uint32_t numElements = 0;
 
     if (var->pre_transform_type == adios_real) {
         assert (sizeof (DATATYPE_FLOAT32) == sizeof (adios_real));
         ALEncoderConfigure(&config, 16, DATATYPE_FLOAT32, ALInvertedIndex);
-        numElements = input_size / sizeof (float);
     } else if (var->pre_transform_type == adios_double) {
         assert (sizeof (DATATYPE_FLOAT64) == sizeof (adios_double));
         ALEncoderConfigure(&config, 16, DATATYPE_FLOAT64, ALInvertedIndex);
-        numElements = input_size / sizeof (double);
     } else {
         log_error("Can index only real datatypes. \n");
-        return 0;
     }
 
     int i;
@@ -233,6 +229,9 @@ int adios_transform_alacrity_apply(struct adios_file_struct *fd,
 
     // Determine the ALACRITY encoder configuration to use
     ALEncoderConfig config = parse_configuration(var, var->transform_spec);
+
+    uint32_t numElements = 0;
+    numElements = input_size / adios_type_size(var->pre_transform_type, NULL);
 
     // decide the output buffer
     uint64_t output_size = 0;
