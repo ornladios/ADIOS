@@ -145,7 +145,7 @@ static void add_index_size_growth(
 
 	if (metadata_bytes_per_bin > 0) {
 		const double metadata_bytes_per_data_bytes = metadata_bytes_per_bin / datatype_size;
-		*capped_linear_factor = metadata_bytes_per_data_bytes; // For every value under the cap, add the corresponding number of metadata bytes
+		*capped_linear_factor += metadata_bytes_per_data_bytes; // For every value under the cap, add the corresponding number of metadata bytes
 	}
 }
 
