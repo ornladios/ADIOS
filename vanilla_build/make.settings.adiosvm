@@ -1,0 +1,17 @@
+CC=gcc
+CFLAGS=-g -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast
+FC=gfortran
+FFLAGS=-g
+CPPFLAGS=-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_GNU_SOURCE
+
+PREFIX=/opt/adios/nompi
+
+# required dependencies
+MXML_INC=-I/opt/mxml/2.7/include
+MXML_LDFLAGS=-L/opt/mxml/2.7/lib
+MXML_LIBS= -lmxml -lpthread
+
+INSTALLCMD=install
+
+
+
