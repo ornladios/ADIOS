@@ -1,4 +1,4 @@
-/* Auto-generated on Tue Feb 25 12:27:40 EST 2014 */
+/* Auto-generated on Sat Sep 13 16:09:17 EDT 2014 */
 
 typedef struct icee_varinfo_rec {
     char* varname;
@@ -36,12 +36,15 @@ static FMStructDescRec icee_varinfo_format_list[] =
     {NULL, NULL}
 };
 
-/* Auto-generated on Tue Feb 25 12:27:40 EST 2014 */
+/* Auto-generated on Sat Sep 13 16:09:17 EDT 2014 */
 
 typedef struct icee_fileinfo_rec {
     char* fname;
     int nvars;
-    int rank;
+    int comm_size;
+    int comm_rank;
+    int merge_count;
+    int timestep;
     struct icee_varinfo_rec * varinfo;
     struct icee_fileinfo_rec * next;
 } icee_fileinfo_rec_t, *icee_fileinfo_rec_ptr_t;
@@ -50,7 +53,10 @@ static FMField icee_fileinfo_field_list[] =
 {
     {"fname", "string", sizeof(char*), FMOffset(icee_fileinfo_rec_ptr_t, fname)},
     {"nvars", "integer", sizeof(int), FMOffset(icee_fileinfo_rec_ptr_t, nvars)},
-    {"rank", "integer", sizeof(int), FMOffset(icee_fileinfo_rec_ptr_t, rank)},
+    {"comm_size", "integer", sizeof(int), FMOffset(icee_fileinfo_rec_ptr_t, comm_size)},
+    {"comm_rank", "integer", sizeof(int), FMOffset(icee_fileinfo_rec_ptr_t, comm_rank)},
+    {"merge_count", "integer", sizeof(int), FMOffset(icee_fileinfo_rec_ptr_t, merge_count)},
+    {"timestep", "integer", sizeof(int), FMOffset(icee_fileinfo_rec_ptr_t, timestep)},
     {"varinfo", "*icee_varinfo", sizeof(struct icee_varinfo_rec ), FMOffset(icee_fileinfo_rec_ptr_t, varinfo)},
     {"next", "*icee_fileinfo", sizeof(struct icee_fileinfo_rec ), FMOffset(icee_fileinfo_rec_ptr_t, next)},
     {NULL, NULL, 0, 0}
@@ -63,7 +69,7 @@ static FMStructDescRec icee_fileinfo_format_list[] =
     {NULL, NULL}
 };
 
-/* Auto-generated on Mon Sep  1 18:02:11 EDT 2014 */
+/* Auto-generated on Sat Sep 13 16:09:17 EDT 2014 */
 
 typedef struct icee_clientinfo_rec {
     char* client_host;

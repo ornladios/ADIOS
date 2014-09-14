@@ -69,6 +69,17 @@
 
 #define DUMP(fmt, ...) fprintf(stderr, ">>> "fmt"\n", ## __VA_ARGS__); 
 
+
+/* Data Structure
++ fileinfo 1.1 - fileinfo 1.2 - ...
+|    + var 1.1      + var 1.2 
+|    + var 2.1      + var 2.2
+|    + ...          + ...
++ fileinfo 2.1 - fileinfo 2.2 - ...
+
+x.y (x=filename, y=version)
+ */
+
 typedef struct icee_llist
 {
     void*             item;
@@ -120,6 +131,18 @@ icee_llist_search(const icee_llist_ptr_t root, int (*fp)(const void*, const void
     return p;
 }
 
+void
+icee_llist_map(const icee_llist_ptr_t root, void (*fp)(const void*))
+{
+    icee_llist_ptr_t p = root;
+    
+    while (p != NULL)
+    {
+        (*fp)(p->item);
+        p = p->next;
+    }
+}
+
 int icee_fileinfo_checkname(const void* item, const void* fname)
 {
     icee_fileinfo_rec_ptr_t fp = (icee_fileinfo_rec_ptr_t) item;
@@ -127,6 +150,41 @@ int icee_fileinfo_checkname(const void* item, const void* fname)
         return 1;
     else
         return 0;
+}
+
+void icee_varinfo_print(const icee_varinfo_rec_ptr_t vp);
+void icee_fileinfo_print(const void* item)
+{
+    icee_fileinfo_rec_ptr_t fp = (icee_fileinfo_rec_ptr_t) item;
+
+    fprintf(stderr, "===== fileinfo (%p) =====\n", fp);
+
+    if (fp)
+    {
+        fprintf(stderr, "%10s : %s\n", "fname", fp->fname);
+        fprintf(stderr, "%10s : %d\n", "nvars", fp->nvars);
+        fprintf(stderr, "%10s : %d\n", "comm_size", fp->comm_size);
+        fprintf(stderr, "%10s : %d\n", "comm_rank", fp->comm_rank);
+        fprintf(stderr, "%10s : %d\n", "merge_count", fp->merge_count);
+        fprintf(stderr, "%10s : %d\n", "timestep", fp->timestep);
+        fprintf(stderr, "%10s : %p\n", "varinfo", fp->varinfo);
+        fprintf(stderr, "%10s : %p\n", "next", fp->next);
+
+        icee_varinfo_rec_ptr_t vp = fp->varinfo;
+
+        while (vp != NULL)
+        {
+            icee_varinfo_print(vp);
+            vp = vp->next; 
+        }
+
+        if (fp->next != NULL)
+            icee_fileinfo_print(fp->next);
+    }
+    else
+    {
+        fprintf(stderr, "fileinfo is invalid\n");
+    }
 }
 
 icee_llist_ptr_t icee_filelist = NULL;
@@ -137,10 +195,36 @@ void icee_fileinfo_append(const icee_fileinfo_rec_ptr_t root, icee_fileinfo_rec_
     
     icee_fileinfo_rec_ptr_t p = root;
 
+    while ((p->timestep != fp->timestep) && (p->next != NULL))
+    {
+        p = p->next; 
+    }
+
+    if (p->timestep == fp->timestep)
+    {
+        icee_varinfo_rec_ptr_t v = p->varinfo;
+        
+        while (v->next != NULL)
+            v = v->next;
+
+        v->next = fp->varinfo;
+        p->merge_count++;
+
+        free(fp);
+    }
+    else
+    {
+        p->next = fp;
+    }
+
+    /*
     while (p->next != NULL)
+    {
         p = p->next;
+    }
 
     p->next = fp;
+    */
 }
 
 void icee_fileinfo_copy(icee_fileinfo_rec_ptr_t dest, const icee_fileinfo_rec_ptr_t src)
@@ -271,8 +355,6 @@ void icee_dims_print(const char* name, const int ndims, const uint64_t *dims)
 
 void icee_varinfo_print(const icee_varinfo_rec_ptr_t vp)
 {
-    int i;
-
     fprintf(stderr, "===== varinfo (%p) =====\n", vp);
 
     if (vp)
@@ -302,6 +384,7 @@ icee_fileinfo_handler(CManager cm, void *vevent, void *client_data, attr_list at
 
     icee_fileinfo_rec_ptr_t lfp = malloc(sizeof(icee_fileinfo_rec_t));
     icee_fileinfo_copy(lfp, event);
+    lfp->merge_count = 1;
 
     icee_varinfo_rec_ptr_t eventvp = event->varinfo;
     icee_varinfo_rec_ptr_t *lvpp = &lfp->varinfo;
@@ -329,6 +412,9 @@ icee_fileinfo_handler(CManager cm, void *vevent, void *client_data, attr_list at
             icee_fileinfo_append((icee_fileinfo_rec_ptr_t)head->item, lfp);
     }
 
+    // Debugging ...
+    //icee_llist_map(icee_filelist, icee_fileinfo_print);
+
     return 1;
 }
 
@@ -338,6 +424,9 @@ CManager cm;
 EVstone stone;
 EVstone remote_stone;
 EVstone stone_r;
+EVstone split_stone;
+EVaction split_action;
+EVsource source;
 
 /********** Core ADIOS Read functions. **********/
 
@@ -356,6 +445,14 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
     char *cm_attr = NULL;
     attr_list contact_list;
 
+    icee_clientinfo_rec_t *remote_server;
+    int num_remote_server = 1;
+    int i;
+
+    remote_server = calloc(1, sizeof(icee_clientinfo_rec_t));
+    remote_server[0].client_host = remote_host;
+    remote_server[0].client_port = remote_port;
+
     PairStruct * p = params;
 
     while (p)
@@ -372,6 +469,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         {
             cm_port = atoi(p->value);
         }
+        /*
         else if (!strcasecmp (p->name, "remote_host"))
         {
             remote_host = p->value;
@@ -380,6 +478,57 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         {
             remote_port = atoi(p->value);
         }
+        */
+        else if (!strcasecmp (p->name, "remote_list"))
+        {
+            char **plist;
+            int plen = 8;
+
+            plist = malloc(plen * sizeof(char *));
+
+            char* token = strtok(p->value, ",");
+            int len = 0;
+            while (token) 
+            {
+                plist[len] = token;
+
+                token = strtok(NULL, ",");
+                len++;
+                
+                if (len > plen)
+                {
+                    plen = plen*2;
+                    realloc (plist, plen * sizeof(char *));
+                }
+            }
+
+            if (len > num_remote_server)
+            {
+                realloc (remote_server, len * sizeof(icee_clientinfo_rec_t));
+                num_remote_server = len;
+            }
+            
+            for (i=0; i<len; i++)
+            {
+                char *myparam = plist[i];
+                token = strtok(myparam, ":");
+                
+                if (myparam[0] == ':')
+                {
+                    remote_server[i].client_host = "localhost";
+                    remote_server[i].client_port = atoi(token);
+                }
+                else
+                {
+                    remote_server[i].client_host = token;
+                    token = strtok(NULL, ":");
+                    remote_server[i].client_port = atoi(token);
+                }
+            }
+
+            free(plist);
+        }
+
         p = p->next;
     }
 
@@ -397,6 +546,10 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
     //log_info ("cm_attr : %s\n", cm_attr);
     log_info ("cm_host : %s\n", cm_host);
     log_info ("cm_port : %d\n", cm_port);
+    for (i = 0; i < num_remote_server; i++) 
+    {
+        log_info ("remote_list : %s:%d\n", remote_server[i].client_host, remote_server[i].client_port);
+    }
 
     if (!adios_read_icee_initialized)
     {
@@ -426,7 +579,28 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
             }
         }
 
+        split_stone = EValloc_stone(cm);
+        split_action = EVassoc_split_action(cm, split_stone, NULL);
+        for (i = 0; i < num_remote_server; i++) 
+        {
+            //attr_list contact_list;
+            EVstone remote_stone, output_stone;
+            output_stone = EValloc_stone(cm);
 
+            contact_list = create_attr_list();
+            add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), remote_server[i].client_port);
+            add_string_attr(contact_list, attr_atom_from_string("IP_HOST"), remote_server[i].client_host);
+            EVassoc_bridge_action(cm, output_stone, contact_list, remote_stone);
+            EVaction_add_split_target(cm, split_stone, split_action, output_stone);
+        }
+        source = EVcreate_submit_handle(cm, split_stone, icee_clientinfo_format_list);
+        icee_clientinfo_rec_t info;
+        info.client_host = cm_host;
+        info.client_port = cm_port;
+        
+        EVsubmit(source, &info, NULL);
+
+        /*
         // Send client info
         stone = EValloc_stone(cm);
 
@@ -449,7 +623,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         
         EVsubmit(source, &info, NULL);
         //CManager_close(cm);
-        
+        */
 
         /*
         cm = CManager_create();
@@ -479,6 +653,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         adios_read_icee_initialized = 1;
     }
 
+    free(remote_server);
     return 0;
 }
 
@@ -691,6 +866,7 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
 				       int nsteps,
 				       void *data)
 {   
+    int i;
     icee_fileinfo_rec_ptr_t fp = (icee_fileinfo_rec_ptr_t) adiosfile->fh;
     log_debug("%s (%d:%s)\n", __FUNCTION__, varid, fp->fname);
     assert(varid < fp->nvars);
@@ -714,6 +890,16 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
         return adios_errno;
     }
 
+    DUMP("fp->merge_count: %d", fp->merge_count);
+
+    while (fp->merge_count != fp->comm_size)
+    {
+        log_debug("Waiting the rest of blocks\n");
+        
+        usleep(0.1*1E6);
+    }
+    
+
     if (sel==0)
         memcpy(data, vp->data, vp->varlen);
     else
@@ -724,7 +910,7 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
             //DUMP("fp->rank: %d", fp->rank);
             //DUMP("u.block.index: %d", sel->u.block.index);
 
-            if (fp->rank != sel->u.block.index)
+            if (fp->comm_rank != sel->u.block.index)
                 adios_error(err_unspecified,
                             "Block id missmatch. "
                             "Not yet supported by ICEE\n");
@@ -739,23 +925,117 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
                 adios_error(err_invalid_dimension,
                             "Dimension mismatch\n");
 
-            int i;
-            for (i = 0; i < vp->ndims; i++)
+            if (fp->comm_size > 1)
             {
-                //DUMP("g,l,o = %llu,%llu,%llu", vp->gdims[i], vp->ldims[i], vp->offsets[i]);
-                //DUMP("start,count = %llu,%llu", sel->u.bb.start[i], sel->u.bb.count[i]);
-                if (sel->u.bb.start[i] != vp->offsets[i])
-                    adios_error(err_expected_read_size_mismatch,
-                                "Requested data is out of the local size. "
-                                "Not yet supported by ICEE\n");
+                DUMP("Debugging .... ");
+                // Debugging ...
+                while (vp != NULL)
+                {
+                    icee_varinfo_print(vp);
+                    
+                    for (i=0; i<vp->ndims; i++)
+                    {
+                        if (sel->u.bb.start[i] != 0)
+                            adios_error(err_expected_read_size_mismatch,
+                                        "Requested range is out of the global size. "
+                                        "Not yet supported by ICEE\n");
+                        
+                        if (sel->u.bb.start[i] + sel->u.bb.count[i] != vp->gdims[i])
+                            adios_error(err_expected_read_size_mismatch,
+                                        "Requested range is out of the global size. "
+                                        "Not yet supported by ICEE\n");
+                    }
 
-                if (sel->u.bb.start[i] + sel->u.bb.count[i] != vp->offsets[i] + vp->ldims[i])
-                    adios_error(err_expected_read_size_mismatch,
-                                "Requested data is out of the local size. "
-                                "Not yet supported by ICEE\n");
+                    /*
+                    // Check continuous
+                    uint64_t offset = vp->typesize;
+                    for (i=vp->ndims; i>1; i--)
+                    {
+                        if (sel->u.bb.count[i-1] != vp->ldims[i-1])
+                            adios_error(err_expected_read_size_mismatch,
+                                        "Received data is not contiguous in memory (dim=%d). "
+                                        "Not yet supported by ICEE\n", i);
+                        else
+                            offset *= vp->ldims[i-1];
+                    }
+                    offset *= vp->offsets[0];
+
+                    memcpy(data + offset, vp->data, vp->varlen);
+                    */
+
+                    int is_contiguous = 1;
+
+                    for (i=vp->ndims; i>1; i--)
+                    {
+                        if (sel->u.bb.count[i-1] != vp->ldims[i-1])
+                        {
+                            is_contiguous = 0;
+                            break;
+                        }
+                    }
+
+                    if (is_contiguous)
+                    {
+                        uint64_t offset = vp->typesize;
+                        for (i=vp->ndims; i>1; i--)
+                        {
+                            offset *= vp->ldims[i-1];
+                        }
+                        offset *= vp->offsets[0];
+
+                        memcpy(data + offset, vp->data, vp->varlen);
+                    }
+                    else
+                    {
+                        switch (vp->ndims)
+                        {
+                        case 2:
+                        {
+                            int i, j, ol2a, ol2b, ol1a, ol1b;
+                            for (j=0; j<vp->ldims[0]; j++)
+                            {
+                                ol2a = (j + vp->offsets[0]) * vp->gdims[1];
+                                ol2b = j * vp->ldims[0];
+                                for (i=0; i<vp->ldims[1]; i++)
+                                {
+                                    ol1a = (ol2a + i + vp->offsets[1]) * vp->typesize;
+                                    ol1b = (ol2b + i) * vp->typesize;
+                                    memcpy(data + ol1a, vp->data + ol1b, vp->typesize);
+                                }
+                            }
+                        }
+                            break;
+                        default:
+                            adios_error(err_expected_read_size_mismatch,
+                                        "The variable dimension is out of the range. ",
+                                        "Not yet supported by ICEE\n");
+                            break;
+                        }
+                    }
+
+                    vp = icee_varinfo_search_byname(vp->next, adiosfile->var_namelist[varid]);
+                }
             }
-        
-            memcpy(data, vp->data, vp->varlen);
+            else
+            {
+                for (i = 0; i < vp->ndims; i++)
+                {
+                    //DUMP("g,l,o = %llu,%llu,%llu", vp->gdims[i], vp->ldims[i], vp->offsets[i]);
+                    //DUMP("start,count = %llu,%llu", sel->u.bb.start[i], sel->u.bb.count[i]);
+                    if (sel->u.bb.start[i] != vp->offsets[i])
+                        adios_error(err_expected_read_size_mismatch,
+                                    "Requested data is out of the local size. "
+                                    "Not yet supported by ICEE\n");
+
+                    if (sel->u.bb.start[i] + sel->u.bb.count[i] != vp->offsets[i] + vp->ldims[i])
+                        adios_error(err_expected_read_size_mismatch,
+                                    "Requested data is out of the local size. "
+                                    "Not yet supported by ICEE\n");
+                }
+
+                memcpy(data, vp->data, vp->varlen);
+            }
+
             break;
         }
         case ADIOS_SELECTION_AUTO:
@@ -833,17 +1113,26 @@ adios_read_icee_inq_var_byid (const ADIOS_FILE * adiosfile, int varid)
         a->type = vp->type;
         a->ndim = vp->ndims;
 
-        uint64_t dimsize = vp->ndims * sizeof(uint64_t);
-        a->dims = malloc(dimsize);
-        memcpy(a->dims, vp->ldims, dimsize);
-
         if (vp->ndims == 0)
         {
             a->value = malloc(vp->typesize);
             memcpy(a->value, vp->data, vp->typesize);
         }
         else
+        {
+            uint64_t dimsize = vp->ndims * sizeof(uint64_t);
+            a->dims = malloc(dimsize);
+            memcpy(a->dims, vp->gdims, dimsize);
+            a->global = 1;
+            
+            if (a->dims[0] == 0)
+            {
+                a->global = 0;
+                memcpy(a->dims, vp->ldims, dimsize);
+            }
+            
             a->value = NULL;
+        }
     }
 
     return a;

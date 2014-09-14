@@ -68,6 +68,8 @@ icee_clientinfo_rec_t *client_info;
 icee_fileinfo_rec_ptr_t fp = NULL;
 int reverse_dim = 0;
 
+int timestep = 0; // global timestep. Will be increased by 1 at each adios_open
+
 int get_ndims(struct adios_var_struct *f)
 {
     struct adios_var_struct * item;
@@ -275,7 +277,9 @@ adios_icee_open(struct adios_file_struct *fd,
     if (fp == NULL) fp = calloc(1, sizeof(icee_fileinfo_rec_t));
     
     fp->fname = fd->name;
-    MPI_Comm_rank(comm, &(fp->rank));
+    MPI_Comm_size(comm, &(fp->comm_size));
+    MPI_Comm_rank(comm, &(fp->comm_rank));
+    fp->timestep = timestep++;
 
     return 0;	
 }
