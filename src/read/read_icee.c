@@ -890,7 +890,7 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
         return adios_errno;
     }
 
-    DUMP("fp->merge_count: %d", fp->merge_count);
+    //DUMP("fp->merge_count: %d", fp->merge_count);
 
     while (fp->merge_count != fp->comm_size)
     {
@@ -927,11 +927,11 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
 
             if (fp->comm_size > 1)
             {
-                DUMP("Debugging .... ");
-                // Debugging ...
+                log_debug("Merging operation (comm. size: %d).\n", fp->comm_size);
+                
                 while (vp != NULL)
                 {
-                    icee_varinfo_print(vp);
+                    if (adios_verbose_level > 3) icee_varinfo_print(vp);
                     
                     for (i=0; i<vp->ndims; i++)
                     {
@@ -963,6 +963,8 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
                     memcpy(data + offset, vp->data, vp->varlen);
                     */
 
+                    // debugging: force to false
+                    //int is_contiguous = 0;
                     int is_contiguous = 1;
 
                     for (i=vp->ndims; i>1; i--)
@@ -976,6 +978,7 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
 
                     if (is_contiguous)
                     {
+                        log_debug("Performing contignuous memory merging\n");
                         uint64_t offset = vp->typesize;
                         for (i=vp->ndims; i>1; i--)
                         {
@@ -987,10 +990,13 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
                     }
                     else
                     {
+                        log_debug("Performing non-contignuous memory merging\n");
+
                         switch (vp->ndims)
                         {
                         case 2:
                         {
+                            /*
                             int i, j, ol2a, ol2b, ol1a, ol1b;
                             for (j=0; j<vp->ldims[0]; j++)
                             {
@@ -1002,6 +1008,14 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
                                     ol1b = (ol2b + i) * vp->typesize;
                                     memcpy(data + ol1a, vp->data + ol1b, vp->typesize);
                                 }
+                            }
+                            */
+                            int i, o1, o2;
+                            for (i=0; i<vp->ldims[0]; i++)
+                            {
+                                o1 = (i + vp->offsets[0]) * vp->gdims[1] + vp->offsets[1];
+                                o2 = (i * vp->ldims[0]);
+                                memcpy(data + o1 * vp->typesize, vp->data + o2 * vp->typesize, vp->ldims[1] * vp->typesize);
                             }
                         }
                             break;

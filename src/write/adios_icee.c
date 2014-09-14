@@ -62,7 +62,7 @@ EVstone split_stone;
 EVaction split_action;
 
 int n_client = 0;
-//int max_client = 1;
+int max_client = 1;
 icee_clientinfo_rec_t *client_info;
 
 icee_fileinfo_rec_ptr_t fp = NULL;
@@ -173,6 +173,10 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
         {
             reverse_dim = 1;
         }
+        else if (!strcasecmp (p->name, "max_client"))
+        {
+            max_client = atoi(p->value);
+        }
 
         p = p->next;
     }
@@ -203,7 +207,6 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
         stone = EValloc_stone(cm);
         EVassoc_terminal_action(cm, stone, icee_clientinfo_format_list, icee_clientinfo_handler, NULL);
 
-        int max_client = 1;
         client_info = calloc(max_client, sizeof(icee_clientinfo_rec_t));
 
         while (n_client < max_client) {
