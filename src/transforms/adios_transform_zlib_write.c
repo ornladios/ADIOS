@@ -63,9 +63,11 @@ uint16_t adios_transform_zlib_get_metadata_size(struct adios_transform_spec *tra
     return (sizeof(uint64_t) + sizeof(char));    // metadata: original data size (uint64_t) + compression succ flag (char)
 }
 
-uint64_t adios_transform_zlib_calc_vars_transformed_size(enum ADIOS_TRANSFORM_TYPE type, uint64_t orig_size, int num_vars)
+void adios_transform_zlib_transformed_size_growth(
+		const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec,
+		uint64_t *constant_factor, double *linear_factor, double *capped_linear_factor, uint64_t *capped_linear_cap)
 {
-    return (orig_size);
+	// Do nothing (defaults to "no transform effect on data size")
 }
 
 int adios_transform_zlib_apply(struct adios_file_struct *fd,
