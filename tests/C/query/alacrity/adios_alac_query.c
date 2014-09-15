@@ -16,8 +16,107 @@
 #include <assert.h>
 #include "adios_selection.h"
 #include "adios_query.h"
-//#include "adios_types.h"
+#include <mxml.h>
+#include <sys/stat.h>
 
+//#include "adios_types.h"
+#define MAXDIM    10
+#define MAXQUERY  1000
+
+#define GET_ATTR2(n,attr,var,en)                                 \
+    if (!strcasecmp (n, attr->name)) {                           \
+        if (!var)                                                \
+        {                                                        \
+            var = attr->value;                                   \
+            continue;                                            \
+        }                                                        \
+        else                                                     \
+        {                                                        \
+            printf ("xml: duplicate attribute %s on %s (ignored)",n,en); \
+            continue;                                            \
+        }                                                        \
+    }
+
+void tokenize_dimensions2 (const char * str, char *** tokens, int * count)
+{
+    if (!str)
+    {
+        *tokens = 0;
+        *count = 0;
+
+        return;
+    }
+
+    char * save_str = strdup (str);
+    char * t = save_str;
+    int i;
+
+    trim_spaces (save_str);
+
+    if (strlen (save_str) > 0)
+        *count = 1;
+    else
+    {
+        *tokens = 0;
+        *count = 0;
+        free (save_str);
+
+        return;
+    }
+
+    while (*t)
+    {
+        if (*t == ',')
+            (*count)++;
+        t++;
+    }
+
+    *tokens = (char **) malloc (sizeof (char **) * *count);
+    (*tokens) [0] = strdup (strtok (save_str, ","));
+    for (i = 1; i < *count; i++)
+    {
+        (*tokens) [i] = strdup (strtok (NULL, ","));
+    }
+
+    free (save_str);
+}
+//end of stolen functions
+
+// Stack for storing queries
+typedef struct {
+    int size;
+    ADIOS_QUERY *stack[MAXQUERY];
+} QueryStack;
+
+// init query stack
+void queryStackInit(QueryStack* queryStack)
+{
+    queryStack->size=0;
+}
+
+void queryPush(QueryStack* queryStack, ADIOS_QUERY *q)
+{
+    if (queryStack->size>=MAXQUERY) {
+        printf("Query number exceeds MAXQUERY, exiting\n");
+        exit(-1);
+    }
+    queryStack->stack[queryStack->size++] = q;
+
+}
+
+int queryStackSize(QueryStack* queryStack)
+{
+    return queryStack->size;
+}
+
+ADIOS_QUERY * queryPop(QueryStack* queryStack)
+{
+    if (queryStackSize(queryStack)==0) {
+        printf("Error: popping empty query stack, exiting...\n");
+        exit(-1);
+    }
+    return queryStack->stack[--queryStack->size];
+}
 
 // coordinates[2] + coordinates[1] * destcount[2] + coordinates[0]* destcount[1] * destcount[2];
  //coordinates[1] + coordinates[0] * destcount[1] ;
@@ -307,7 +406,7 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF, const char * lbs, c
 
 	int i = 0, timestep = 0 ;
 	printf("times steps for variable is: %d \n", q1->_var->nsteps);
-	for (timestep  = 1; timestep  < q1->_var->nsteps; timestep ++) {
+	for (timestep  = 0; timestep  < q1->_var->nsteps; timestep ++) {
 		printf("querying on timestep %d \n", timestep );
 		adios_query_set_timestep(timestep );
 
@@ -364,9 +463,289 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF, const char * lbs, c
 	adios_selection_delete(box);
 }
 
+int performQuery(ADIOS_FILE *dataF, ADIOS_QUERY* q, ADIOS_SELECTION* box, char* varname)
+{
+
+    int64_t batchSize = 1220;
+   
+    int i = 0, timestep = 0 ;
+    ADIOS_VARINFO * tempVar = adios_inq_var(dataF, varname);
+    printf("times steps for variable is: %d \n", 2);
+    //printf("times steps for variable is: %d \n", q->_var->nsteps);
+    for (timestep  = 0; timestep  < 2; timestep ++) {
+    //for (timestep  = 0; timestep  < q->_var->nsteps; timestep ++) {
+    	printf("querying on timestep %d \n", timestep );
+    	adios_query_set_timestep(timestep);
+    
+    	ADIOS_SELECTION* currBatch = NULL;
+    	while ( adios_query_get_selection(q, batchSize, box, &currBatch)) {
+    
+            assert(currBatch->type ==ADIOS_SELECTION_POINTS);
+    	    const ADIOS_SELECTION_POINTS_STRUCT * retrievedPts = &(currBatch->u.points);
+            printf("retrieved points %" PRIu64 " \n", retrievedPts->npoints);
+    
+    	    printPoints(retrievedPts);
+    
+    	    int elmSize = adios_type_size(tempVar->type, NULL);
+    	    void *data = malloc(retrievedPts->npoints * elmSize);
+    
+    	    // check returned temp data
+    	    adios_schedule_read_byid(dataF, currBatch, tempVar->varid, timestep , 1, data);
+    	    adios_schedule_read (dataF, currBatch, varname, timestep , 1, data);
+    	    adios_perform_reads(dataF, 1);
+    
+    	    printf("Total data retrieved:%"PRIu64"\n", retrievedPts->npoints);
+    	    if (tempVar->type == adios_double){
+    	    	for (i = 0; i < retrievedPts->npoints; i++) {
+    	    		printf("%.6f\t", ((double*)data)[i]);
+    	    	}
+    	    	printf("\n");
+    	    }
+            else if (tempVar->type == adios_real){
+    	    	for (i = 0; i < retrievedPts->npoints; i++) {
+    	    		printf("%.6f\t", ((float*)data)[i]);
+    	    	}
+    	    	printf("\n");
+    	    }
+    
+    
+    	    free(data);
+    	    adios_selection_delete(currBatch);
+    	    currBatch = NULL;
+    
+        }
+
+    }
+
+    adios_query_free(q);
+}
+
+int parseXml(char* inputxml, ADIOS_FILE* f, ADIOS_FILE* dataF)
+{
+    int i, j;
+    FILE * fp = fopen (inputxml,"r");
+    if (!fp){
+        printf("missing xml input file %s \n", inputxml);
+        exit(-1);
+    }
+    struct stat s;
+    char * buffer = NULL;
+    if (stat (inputxml, &s) == 0) {
+        buffer = malloc (s.st_size + 1);
+        buffer [s.st_size] = 0;
+    }
+
+    if (buffer)     {
+        size_t bytes_read = fread (buffer, 1, s.st_size, fp);
+
+        if (bytes_read != s.st_size) {
+            printf("error reading input xml file: %s. Expected %ld Got %ld\n"
+                            ,inputxml, s.st_size, bytes_read );
+            fclose(fp);
+            exit(-1);
+        }
+    }
+    fclose (fp);
+    mxml_node_t * doc = NULL;
+    mxml_node_t * root = NULL;
+    mxml_node_t * queryNode = NULL;
+    doc = mxmlLoadString (NULL, buffer, MXML_TEXT_CALLBACK);
+    free (buffer);
+    buffer = NULL;
+    root = doc;
+
+    if (!doc) {
+        printf( "unknown error parsing XML (probably structural)\n"
+                "Did you remember to start the file with\n"
+                "<?xml version=\"1.0\"?>\n");
+        exit(-1);
+    }
+    if (strcasecmp (doc->value.element.name, "adios-alac-test-inputs")) {
+        root = mxmlFindElement (doc, doc, "adios-alac-test-inputs", NULL, NULL, MXML_DESCEND_FIRST);
+    }
+
+    queryNode = mxmlFindElement(root, root, "query", NULL, NULL, MXML_DESCEND_FIRST);
+    const char *numVarS=0;
+
+    int numQuery = 0;
+    for (i = 0; i < queryNode->value.element.num_attrs; i++) {
+        mxml_attr_t * attr = &queryNode->value.element.attrs [i];
+        GET_ATTR2("num",attr,numVarS,"query");
+    }
+    if ( !numVarS || !strcmp ( numVarS, "")) {
+        printf("missing values for num attribute \n");
+        mxmlRelease(doc);
+        exit(-1);
+    }
+    else {
+        numQuery = atoi(numVarS);
+    }
+
+    mxml_node_t *entryNode      = NULL;
+    mxml_node_t *selectionNode  = NULL;
+    const char *varNameS=NULL, *opS=NULL, *constraintS=NULL;
+    const char *typeS=NULL, *dimS=NULL, *startS=NULL, *countS=NULL;
+
+
+    // Fterate all combine/entry nodes in <query>
+    int entryIter;
+    int selType;
+    int queryDim;
+    uint64_t queryCount[MAXDIM];
+    uint64_t queryStart[MAXDIM];
+    char** queryCountTokens=NULL;
+    char** queryStartTokens=NULL;
+    char *queryCombineOp=NULL;
+    ADIOS_SELECTION* box;
+    ADIOS_QUERY *q, *q1, *q2, *qc;
+
+    // init query stack
+    QueryStack queryStack;
+    queryStackInit(&queryStack);
+
+    for (entryIter = 0; entryIter < (numQuery*2-1); entryIter++) {
+        
+        // Find entry node
+        if (entryIter == 0) {
+            entryNode = mxmlFindElement(queryNode, queryNode, "entry", NULL, NULL, MXML_DESCEND_FIRST);
+        }
+        else {
+            // this is the only way I found for getting the next <entry> or <combine> node
+            entryNode= mxmlWalkNext(entryNode, queryNode, MXML_NO_DESCEND);
+            entryNode= mxmlWalkNext(entryNode, queryNode, MXML_NO_DESCEND);
+        }
+        
+        // check if current node is <combine>
+        if ( strcmp( (&(entryNode->value.element.attrs[0]))->name, "op") == 0 ) {
+            queryCombineOp = (&(entryNode->value.element.attrs[0]))->value;
+            printf("Found combine op %s\n", queryCombineOp);
+            // pop up two query and perform the op
+            if (queryStackSize(&queryStack)<2) {
+                printf("Popping with less than 2 queries in query stack, exiting...\n");
+                exit(-1);
+            }
+
+            q1 = queryPop(&queryStack);
+            q2 = queryPop(&queryStack);
+            if (strcmp(queryCombineOp, "AND") == 0 || strcmp(queryCombineOp, "and") == 0) {
+                qc = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
+            }
+            else if (strcmp(queryCombineOp, "OR") == 0 || strcmp(queryCombineOp, "or") == 0) {
+                qc = adios_query_combine(q1, ADIOS_QUERY_OP_OR, q2);
+            }
+            queryPush(&queryStack,qc);
+
+            //adios_query_free(q1);
+            //adios_query_free(q2);
+
+            continue;
+        }
+        
+
+        // Make sure all *S are NULL for verification
+        varNameS=NULL, opS=NULL, constraintS=NULL;
+        typeS=NULL, dimS=NULL, startS=NULL, countS=NULL;
+
+        for (i = 0; i < entryNode->value.element.num_attrs; i++) {
+            mxml_attr_t * attr = &entryNode->value.element.attrs [i];
+            GET_ATTR2("var",attr,varNameS,"entry");
+            GET_ATTR2("op",attr,opS,"entry");
+            GET_ATTR2("constraint",attr,constraintS,"entry");
+        }
+        if ( !varNameS || !opS || !constraintS || !strcmp (varNameS, "")|| !strcmp (opS, "") || !strcmp (constraintS, "") ) {
+            printf("missing values for entry attribute \n");
+            mxmlRelease(doc);
+            exit(-1);
+        }
+
+        // Parse selection 
+        selectionNode = mxmlFindElement(entryNode, entryNode, "selection", NULL, NULL, MXML_DESCEND_FIRST);
+ 
+        for (i = 0; i < selectionNode->value.element.num_attrs; i++) {
+            mxml_attr_t * attr = &selectionNode->value.element.attrs [i];
+            GET_ATTR2("type",attr,typeS,"selection");
+            if ( strcmp(typeS, "ADIOS_SELECTION_BOUNDINGBOX") == 0) {
+                selType = ADIOS_SELECTION_BOUNDINGBOX;
+                GET_ATTR2("dim",attr,dimS,"selection");
+                GET_ATTR2("start",attr,startS,"selection");
+                GET_ATTR2("count",attr,countS,"selection");
+            }
+        }
+        if ( selType == ADIOS_SELECTION_BOUNDINGBOX ) {
+
+            if ( !typeS || !dimS || !startS || !countS || !strcmp (typeS, "")|| !strcmp (dimS, "") || !strcmp (startS, "") || !strcmp (countS, "") ) {
+                printf("missing values for selection attribute \n");
+                mxmlRelease(doc);
+                exit(-1);
+            }
+            else {
+                queryDim = atoi(dimS);
+                if (queryDim > MAXDIM) {
+                    printf("QueryDim exceeds 10, readjust MAXDIM to larger value, exiting...\n");
+                    exit(-1);
+                }
+        
+                tokenize_dimensions2(startS, &queryStartTokens, &queryDim);
+                tokenize_dimensions2(countS, &queryCountTokens, &queryDim);
+
+                for (j = 0; j < queryDim; j ++){
+                    queryStart[j] = atoi(queryStartTokens[j]);
+                    queryCount[j] = atoi(queryCountTokens[j]);
+                }
+
+                box = adios_selection_boundingbox(queryDim, queryStart, queryCount);
+
+                if( strcmp(opS, "<=") == 0 )
+                    q = adios_query_create(f, varNameS, box, ADIOS_LTEQ, constraintS);
+                else if( strcmp(opS, "<") == 0 )
+                    q = adios_query_create(f, varNameS, box, ADIOS_LT, constraintS);
+                else if( strcmp(opS, ">=") == 0 )
+                    q = adios_query_create(f, varNameS, box, ADIOS_GTEQ, constraintS);
+                else if( strcmp(opS, ">") == 0 )
+                    q = adios_query_create(f, varNameS, box, ADIOS_GT, constraintS);
+                else {
+                    printf("Unsupported entry op %s\n", opS);
+                    exit(-1);
+                }
+
+                queryPush(&queryStack,q);
+
+                printf("type:%s dim:%d start:", "BB", queryDim);
+                for (j = 0; j < queryDim; j ++){
+                    printf(" %d", queryStart[j]);
+                }
+                printf("\t count:");
+                for (j = 0; j < queryDim; j ++){
+                    printf(" %d", queryCount[j]);
+                }
+                printf("\n");
+
+
+
+            }
+        } // selType == ADIOS_SELECTION_BOUNDINGBOX
+        else {
+
+            // TODO: currently only support bounding box selection
+        }
+       
+   
+        printf("Parsed entry: var=%s op=%s constraint=%s\n", varNameS, opS, constraintS);
+    
+    
+    }
+
+    // TODO: need some correct checking for box and varNameS
+    performQuery(dataF, queryPop(&queryStack), box, varNameS);
+
+}
+
 int main(int argc, char ** argv) {
 
 	char filename[256];
+	char dataFileName[256];
+        char xmlFileName[256];
+
 	int i, j, datasize, if_any;
 	MPI_Comm comm = MPI_COMM_WORLD;
 	enum ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP;
@@ -375,24 +754,24 @@ int main(int argc, char ** argv) {
 	double * data = NULL;
 	uint64_t start[2], count[2], npoints, *points;
 	MPI_Init(&argc, &argv);
-	if (argc < 2) {
-		printf(
-				" usage: %s {input bp file},  {bp file without transform} {lb} {hb} \n",
-				argv[0]);
+	if (argc < 4) {
+		printf(" usage: %s {input bp file},  {bp file without transform} {xml file}\n",	argv[0]);
+		//printf(" usage: %s {input bp file},  {bp file without transform} {lb} {hb} \n",	argv[0]);
 		return 1;
 	}
 
-	char lbstr[255], hbstr[255];
+	/* char lbstr[255], hbstr[255]; */
 
-	char dataFileName[256];
-	if (argc >= 3) {
+	if (argc >= 4) {
 		strcpy(dataFileName, argv[2]);
+		strcpy(xmlFileName,  argv[3]);
+
 	} else {
 		strcpy(dataFileName, "./xml/alacrity-2var-no-transform_524288.bp");
 	}
 
-	argc >= 4 ? strcpy(lbstr, argv[3]) : strcpy(lbstr, "0.0");
-	argc >= 5 ? strcpy(hbstr, argv[4]) : strcpy(hbstr, "0.0");
+	/* argc >= 4 ? strcpy(lbstr, argv[3]) : strcpy(lbstr, "0.0"); */
+	/* argc >= 5 ? strcpy(hbstr, argv[4]) : strcpy(hbstr, "0.0"); */
 
 	adios_read_init_method(method, comm, NULL);
 
@@ -423,7 +802,11 @@ int main(int argc, char ** argv) {
 
 //	multiSelection(f , lbstr, hbstr, dataF, ADIOS_SELECTION_WRITEBLOCK);
 
-	oneBoundingBoxForVars(f, dataF, lbstr, hbstr);
+        parseXml(xmlFileName, f, dataF);	
+
+        //char *lbstr="0.9";
+        //char *hbstr="0.9";
+	//oneBoundingBoxForVars(f, dataF, lbstr, hbstr);
 //	printf("retrieve all values \n");
 //	retrieveAllValues(f);
 

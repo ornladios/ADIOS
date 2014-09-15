@@ -10,7 +10,7 @@
 	    <var name="size" type="integer"/>
 	    <var name="rank" type="integer"/>
 	    <global-bounds dimensions="N0,N1" offsets="O0,O1">
-	       <var name="temp" gwrite="t" type="float" dimensions="D0,D1" transform="alacrity"/>
+	       <var name="temp" gwrite="t" type="float" dimensions="D0,D1"/>
 	    </global-bounds>
 	</adios-group>
 
