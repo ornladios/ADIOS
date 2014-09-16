@@ -170,10 +170,6 @@ int common_adios_open (int64_t * fd, const char * group_name
     else
         fd_p->comm = MPI_COMM_NULL;
 
-#ifdef SKEL_TIMING
-    if (fd_p->group)
-        fd_p->group->timing_obj = 0;
-#endif
 
 #if 1
     /* Time index magic done here */

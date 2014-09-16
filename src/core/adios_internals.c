@@ -1309,6 +1309,11 @@ int adios_common_declare_group (int64_t * id, const char * name
     g->meshs = NULL;
     g->mesh_count = 0;
 
+#ifdef SKEL_TIMING
+    g->timing_obj = 0;
+    g->prev_timing_obj = 0;
+#endif
+
     *id = (int64_t) g;
 
     adios_append_group (g);

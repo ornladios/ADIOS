@@ -159,7 +159,10 @@ struct adios_group_struct
     int attrid_update_epoch; // ID of special attribute "/__adios__/update_time_epoch" to find it fast
 
 #ifdef SKEL_TIMING
+    // Using a "double buffering" approach. Current write cycle stored in timing_obj, while timing info from
+    // previous cycle is kept in prev_timing_obj, and is written before close
     struct adios_timing_struct * timing_obj;
+    struct adios_timing_struct * prev_timing_obj;
 #endif
 };
 

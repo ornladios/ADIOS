@@ -125,8 +125,19 @@ int adios_posix_open (struct adios_file_struct * fd
     timer_names [5] = "ad_close";
     timer_names [6] = "ad_should_buffer";
 
+
+    // Ensure both timing objects exist
+    // timing_obj should get created at every open
+    // prev_timing_obj should only be created at the first open
     if (fd->group)
-        fd->group->timing_obj = adios_timing_create (timer_count, timer_names);
+    {
+        if (!fd->group->timing_obj)
+            fd->group->timing_obj = adios_timing_create (timer_count, timer_names);
+
+        if (!fd->group->prev_timing_obj)
+            fd->group->prev_timing_obj = adios_timing_create (timer_count, timer_names);
+    }
+
 
 #endif
 
@@ -1349,6 +1360,18 @@ void adios_posix_close (struct adios_file_struct * fd
     adios_clear_index_v1 (p->index);
 
     STOP_TIMER (ADIOS_TIMER_POSIX_AD_CLOSE);
+
+#ifdef SKEL_TIMING
+
+    //Finished timing this cycle, swap the timing buffers
+    adios_timing_destroy(fd->group->prev_timing_obj);
+    fd->group->prev_timing_obj = fd->group->timing_obj;
+    fd->group->timing_obj = 0;
+
+    // prev_timing_obj points to unwritten timing info, timing_obj is
+    // ready to allocate at the next open
+
+#endif
 
 }
 
