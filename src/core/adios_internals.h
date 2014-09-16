@@ -157,6 +157,10 @@ struct adios_group_struct
     enum ADIOS_FLAG all_unique_mesh_names;
 
     int attrid_update_epoch; // ID of special attribute "/__adios__/update_time_epoch" to find it fast
+
+#ifdef SKEL_TIMING
+    struct adios_timing_struct * timing_obj;
+#endif
 };
 
 struct adios_group_list_struct
@@ -189,9 +193,6 @@ struct adios_file_struct
     uint64_t vars_start;    // offset for where to put the var/attr count
     uint32_t vars_written;  // count of vars/attrs to write
 
-#ifdef SKEL_TIMING
-    struct adios_timing_struct * timing_obj;
-#endif
     MPI_Comm comm;          // duplicate of comm received in adios_open()
 };
 

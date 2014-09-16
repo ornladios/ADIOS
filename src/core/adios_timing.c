@@ -36,7 +36,7 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
         return;
     }
 
-    if (!fd->timing_obj)
+    if (!fd->group || !fd->group->timing_obj)
     {
         // No timing info, don't write anything.
         return;
@@ -59,8 +59,8 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
     // Collect all of the events on proc 0
     // First, per proc event counts
 
-    count_to_send = (fd->timing_obj->event_count > ADIOS_TIMING_MAX_EVENTS) ?
-                      ADIOS_TIMING_MAX_EVENTS : fd->timing_obj->event_count;
+    count_to_send = (fd->group->timing_obj->event_count > ADIOS_TIMING_MAX_EVENTS) ?
+                      ADIOS_TIMING_MAX_EVENTS : fd->group->timing_obj->event_count;
 
 
     MPI_Gather (
@@ -108,7 +108,7 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
 
     // Now the events
     MPI_Gatherv (
-        &fd->timing_obj->events, // sendbuf
+        &fd->group->timing_obj->events, // sendbuf
         count_to_send, // sendcount
         event_type, // sendtype
         events, //recvbuf
@@ -149,10 +149,10 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
         }
 
         // Write the labels
-        for (i = 0; i < fd->timing_obj->internal_count; i++)
+        for (i = 0; i < fd->group->timing_obj->internal_count; i++)
         {
             fprintf (f, ":%i:%s\n", ADIOS_TIMING_MAX_USER_TIMERS + i,
-                     fd->timing_obj->names[ADIOS_TIMING_MAX_USER_TIMERS + i]); 
+                     fd->group->timing_obj->names[ADIOS_TIMING_MAX_USER_TIMERS + i]); 
         }
 
         // Now the event data
@@ -196,31 +196,31 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
     if (rank == 0)
     {
         internal_times = (double*) malloc (sizeof (double) *
-                             fd->timing_obj->internal_count * size);
+                             fd->group->timing_obj->internal_count * size);
         user_times = (double*) malloc (sizeof (double) *
-                             fd->timing_obj->user_count * size);
+                             fd->group->timing_obj->user_count * size);
     }
 
     // Aggregate timing info on rank 0
     // Handle internal counts and user counts separately
 
     MPI_Gather (
-        fd->timing_obj->times + ADIOS_TIMING_MAX_USER_TIMERS,
-        fd->timing_obj->internal_count,  // sendcount
+        fd->group->timing_obj->times + ADIOS_TIMING_MAX_USER_TIMERS,
+        fd->group->timing_obj->internal_count,  // sendcount
         MPI_DOUBLE, // sendtype
         internal_times,
-        fd->timing_obj->internal_count, // recvcount
+        fd->group->timing_obj->internal_count, // recvcount
         MPI_DOUBLE, // recvtype
         0, // root
         MPI_COMM_WORLD
     );
 
     MPI_Gather (
-        fd->timing_obj->times,  // sendbuf
-        fd->timing_obj->user_count,  // sendcount
+        fd->group->timing_obj->times,  // sendbuf
+        fd->group->timing_obj->user_count,  // sendcount
         MPI_DOUBLE, // sendtype
         user_times,
-        fd->timing_obj->user_count, // recvcount
+        fd->group->timing_obj->user_count, // recvcount
         MPI_DOUBLE, // recvtype
         0, // root
         MPI_COMM_WORLD
@@ -235,28 +235,28 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
 
         // Rank 0 starts the xml and includes the text labels
         fprintf (f, "<skel_result><adios_timing cores='%i' keys='", size);
-        for (i = 0; i < fd->timing_obj->user_count; i++)
+        for (i = 0; i < fd->group->timing_obj->user_count; i++)
         {
-            if (fd->timing_obj->names[i])
+            if (fd->group->timing_obj->names[i])
             {
-                fprintf (f, "%s, ", fd->timing_obj->names[i]);
+                fprintf (f, "%s, ", fd->group->timing_obj->names[i]);
             }
             else
             {
                 fprintf (f, "user%i, ", i);
             }
         }
-        for (i = 0; i < fd->timing_obj->internal_count; i++)
+        for (i = 0; i < fd->group->timing_obj->internal_count; i++)
         {
-            if (fd->timing_obj->names[ADIOS_TIMING_MAX_USER_TIMERS + i])
+            if (fd->group->timing_obj->names[ADIOS_TIMING_MAX_USER_TIMERS + i])
             {
-                fprintf (f, "%s", fd->timing_obj->names[ADIOS_TIMING_MAX_USER_TIMERS + i]);
+                fprintf (f, "%s", fd->group->timing_obj->names[ADIOS_TIMING_MAX_USER_TIMERS + i]);
             }
             else
             {
                 fprintf (f, "internal%i", i);
             }
-            if (i != fd->timing_obj->internal_count - 1) // Skip trailing comma
+            if (i != fd->group->timing_obj->internal_count - 1) // Skip trailing comma
             {
                 fprintf (f, ", ");
             }
@@ -280,16 +280,16 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
         {
             // This part should be the same for all procs
             fprintf (f, "<proc id='%i' vals='", p);
-            for (i = 0; i < fd->timing_obj->user_count; i++)
+            for (i = 0; i < fd->group->timing_obj->user_count; i++)
             {
-                fprintf (f, "%f, ", user_times[p*fd->timing_obj->user_count+i]);
-                //fprintf (f, "%f, ", fd->timing_obj->times[i]);
+                fprintf (f, "%f, ", user_times[p*fd->group->timing_obj->user_count+i]);
+                //fprintf (f, "%f, ", fd->group->timing_obj->times[i]);
             }
-            for (i = 0; i < fd->timing_obj->internal_count; i++)
+            for (i = 0; i < fd->group->timing_obj->internal_count; i++)
             {
-                fprintf (f, "%f", internal_times[p*fd->timing_obj->internal_count+i]);
-                //fprintf (f, "%f", fd->timing_obj->times[ADIOS_TIMING_MAX_USER_TIMERS + i]);
-                if (i != fd->timing_obj->internal_count - 1)
+                fprintf (f, "%f", internal_times[p*fd->group->timing_obj->internal_count+i]);
+                //fprintf (f, "%f", fd->group->timing_obj->times[ADIOS_TIMING_MAX_USER_TIMERS + i]);
+                if (i != fd->group->timing_obj->internal_count - 1)
                 {
                     fprintf (f, ", ");
                 }
@@ -321,13 +321,13 @@ int adios_get_timing_internal_count (int64_t fd_p, int64_t * tc)
         return 1;
     }
 
-    if (! fd->timing_obj)
+    if (! fd->group->timing_obj)
     {
         *tc = 0;
     }
     else
     {
-        *tc = fd->timing_obj->internal_count;
+        *tc = fd->group->timing_obj->internal_count;
     }
 
     return 0;
@@ -345,8 +345,8 @@ int adios_get_timing_name (int64_t fd_p, int64_t index, char* name)
         return 1;
     }
 
-    strcpy (name, fd->timing_obj->names[index]);
-    //*name = fd->timing_obj->names[index];
+    strcpy (name, fd->group->timing_obj->names[index]);
+    //*name = fd->group->timing_obj->names[index];
 
     return 0;
 }
@@ -363,7 +363,7 @@ int adios_get_timing_value (int64_t fd_p, int64_t index, double* value)
         return 1;
     }
 
-    *value = fd->timing_obj->times[index];
+    *value = fd->group->timing_obj->times[index];
 
     return 0;
 }

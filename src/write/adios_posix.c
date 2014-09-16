@@ -33,13 +33,13 @@
 #endif
 
 #ifdef SKEL_TIMING
-#define START_TIMER(t) adios_timing_go (fd->timing_obj, (t) ) 
+#define START_TIMER(t) adios_timing_go (fd->group->timing_obj, (t) ) 
 #else
 #define START_TIMER(t) ; 
 #endif
 
 #ifdef SKEL_TIMING
-#define STOP_TIMER(t) adios_timing_stop (fd->timing_obj, (t) )
+#define STOP_TIMER(t) adios_timing_stop (fd->group->timing_obj, (t) )
 #else
 #define STOP_TIMER(t) ;
 #endif
@@ -125,7 +125,9 @@ int adios_posix_open (struct adios_file_struct * fd
     timer_names [5] = "ad_close";
     timer_names [6] = "ad_should_buffer";
 
-    fd->timing_obj = adios_timing_create (timer_count, timer_names);
+    if (fd->group)
+        fd->group->timing_obj = adios_timing_create (timer_count, timer_names);
+
 #endif
 
 START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
