@@ -463,17 +463,13 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF, const char * lbs, c
 	adios_selection_delete(box);
 }
 
-int performQuery(ADIOS_FILE *dataF, ADIOS_QUERY* q, ADIOS_SELECTION* box, char* varname)
+int performQuery(ADIOS_FILE *dataF, ADIOS_QUERY* q, ADIOS_SELECTION* box, char* varname, int totalTS, uint64_t batchSize)
 {
 
-    int64_t batchSize = 1220;
-   
     int i = 0, timestep = 0 ;
     ADIOS_VARINFO * tempVar = adios_inq_var(dataF, varname);
-    printf("times steps for variable is: %d \n", 2);
-    //printf("times steps for variable is: %d \n", q->_var->nsteps);
-    for (timestep  = 0; timestep  < 2; timestep ++) {
-    //for (timestep  = 0; timestep  < q->_var->nsteps; timestep ++) {
+    printf("times steps for variable is: %d, batch size is %llu\n", totalTS, batchSize);
+    for (timestep  = 0; timestep  < totalTS; timestep ++) {
     	printf("querying on timestep %d \n", timestep );
     	adios_query_set_timestep(timestep);
     
@@ -565,12 +561,18 @@ int parseXml(char* inputxml, ADIOS_FILE* f, ADIOS_FILE* dataF)
     }
 
     queryNode = mxmlFindElement(root, root, "query", NULL, NULL, MXML_DESCEND_FIRST);
-    const char *numVarS=0;
+    const char *numVarS=NULL;
+    const char *timestepS=NULL;
+    const char *batchsizeS=NULL;
 
     int numQuery = 0;
+    int timestep = 1;
+    uint64_t batchsize= 1;
     for (i = 0; i < queryNode->value.element.num_attrs; i++) {
         mxml_attr_t * attr = &queryNode->value.element.attrs [i];
         GET_ATTR2("num",attr,numVarS,"query");
+        GET_ATTR2("timestep",attr,timestepS,"query");
+        GET_ATTR2("batchsize",attr,batchsizeS,"query");
     }
     if ( !numVarS || !strcmp ( numVarS, "")) {
         printf("missing values for num attribute \n");
@@ -578,26 +580,106 @@ int parseXml(char* inputxml, ADIOS_FILE* f, ADIOS_FILE* dataF)
         exit(-1);
     }
     else {
-        numQuery = atoi(numVarS);
+        numQuery  = atoi(numVarS);
+        timestep  = atoi(timestepS);
+        batchsize = strtoull(batchsizeS, NULL, 10);
     }
 
+    mxml_node_t *outputNode     = NULL;
+    const char *outputTypeS=NULL, *outputDimS=NULL, *outputStartS=NULL, *outputCountS=NULL, *outputWbIndexS=NULL;
+    int outputDim;
+    int outputWbIndex;
+    int selType;
+    uint64_t outputCount[MAXDIM];
+    uint64_t outputStart[MAXDIM];
+    char** outputCountTokens=NULL;
+    char** outputStartTokens=NULL;
+    ADIOS_SELECTION *outputBox;
+    
+    // Parse output selection info
+
+    outputNode = mxmlFindElement(queryNode, queryNode, "output", NULL, NULL, MXML_DESCEND_FIRST);
+    for (i = 0; i < outputNode->value.element.num_attrs; i++) {
+        mxml_attr_t * attr = &outputNode->value.element.attrs [i];
+        GET_ATTR2("type",attr,outputTypeS,"output");
+        if ( strcmp(outputTypeS, "ADIOS_SELECTION_BOUNDINGBOX") == 0) {
+            selType = ADIOS_SELECTION_BOUNDINGBOX;
+            GET_ATTR2("dim",attr,outputDimS,"output");
+            GET_ATTR2("start",attr,outputStartS,"output");
+            GET_ATTR2("count",attr,outputCountS,"output");
+        }
+        else if ( strcmp(outputTypeS, "ADIOS_SELECTION_WRITEBLOCK") == 0) {
+            selType = ADIOS_SELECTION_WRITEBLOCK;
+            GET_ATTR2("index",attr,outputWbIndexS,"selection");
+        }
+    }
+    if ( selType == ADIOS_SELECTION_BOUNDINGBOX ) {
+        if ( !outputTypeS || !outputDimS || !outputStartS || !outputCountS || !strcmp (outputTypeS, "")|| !strcmp (outputDimS, "") || !strcmp (outputStartS, "") || !strcmp (outputCountS, "") ) {
+            printf("missing values for output attribute \n");
+            mxmlRelease(doc);
+            exit(-1);
+        }
+        else {
+            outputDim = atoi(outputDimS);
+            if (outputDim > MAXDIM) {
+                printf("QueryDim exceeds 10, readjust MAXDIM to larger value, exiting...\n");
+                exit(-1);
+            }
+    
+            tokenize_dimensions2(outputStartS, &outputStartTokens, &outputDim);
+            tokenize_dimensions2(outputCountS, &outputCountTokens, &outputDim);
+
+            for (j = 0; j < outputDim; j ++){
+                outputStart[j] = atoi(outputStartTokens[j]);
+                outputCount[j] = atoi(outputCountTokens[j]);
+            }
+
+            outputBox = adios_selection_boundingbox(outputDim, outputStart, outputCount);
+
+            printf("Selected output boundingbox: dim:%d start:", outputDim);
+            for (j = 0; j < outputDim; j ++){
+                printf(" %d", outputStart[j]);
+            }
+            printf("\t count:");
+            for (j = 0; j < outputDim; j ++){
+                printf(" %d", outputCount[j]);
+            }
+            printf("\n");
+
+        }
+
+    }
+    else if( selType == ADIOS_SELECTION_WRITEBLOCK ) {
+
+        if ( !outputWbIndexS || !strcmp (outputWbIndexS, "") ) {
+                printf("missing values for selection attribute \n");
+                mxmlRelease(doc);
+                exit(-1);
+            }
+            else {
+                outputWbIndex = atoi(outputWbIndexS);
+    	        outputBox = adios_selection_writeblock(outputWbIndex);
+
+                printf("Selected output writeblock: %d\n", outputWbIndex);
+            }
+    }
+
+
+    // Iterate all combine/entry nodes in <query>
     mxml_node_t *entryNode      = NULL;
     mxml_node_t *selectionNode  = NULL;
     const char *varNameS=NULL, *opS=NULL, *constraintS=NULL;
-    const char *typeS=NULL, *dimS=NULL, *startS=NULL, *countS=NULL;
-
-
-    // Fterate all combine/entry nodes in <query>
+    const char *typeS=NULL, *dimS=NULL, *startS=NULL, *countS=NULL, *wbIndexS=NULL;
     int entryIter;
-    int selType;
     int queryDim;
+    int wbIndex;
     uint64_t queryCount[MAXDIM];
     uint64_t queryStart[MAXDIM];
+    ADIOS_SELECTION *box, *block;
+    ADIOS_QUERY *q, *q1, *q2, *qc;
     char** queryCountTokens=NULL;
     char** queryStartTokens=NULL;
     char *queryCombineOp=NULL;
-    ADIOS_SELECTION* box;
-    ADIOS_QUERY *q, *q1, *q2, *qc;
 
     // init query stack
     QueryStack queryStack;
@@ -644,7 +726,7 @@ int parseXml(char* inputxml, ADIOS_FILE* f, ADIOS_FILE* dataF)
 
         // Make sure all *S are NULL for verification
         varNameS=NULL, opS=NULL, constraintS=NULL;
-        typeS=NULL, dimS=NULL, startS=NULL, countS=NULL;
+        typeS=NULL, dimS=NULL, startS=NULL, countS=NULL, wbIndexS=NULL;
 
         for (i = 0; i < entryNode->value.element.num_attrs; i++) {
             mxml_attr_t * attr = &entryNode->value.element.attrs [i];
@@ -669,6 +751,10 @@ int parseXml(char* inputxml, ADIOS_FILE* f, ADIOS_FILE* dataF)
                 GET_ATTR2("dim",attr,dimS,"selection");
                 GET_ATTR2("start",attr,startS,"selection");
                 GET_ATTR2("count",attr,countS,"selection");
+            }
+            else if ( strcmp(typeS, "ADIOS_SELECTION_WRITEBLOCK") == 0) {
+                selType = ADIOS_SELECTION_WRITEBLOCK;
+                GET_ATTR2("index",attr,wbIndexS,"selection");
             }
         }
         if ( selType == ADIOS_SELECTION_BOUNDINGBOX ) {
@@ -710,7 +796,7 @@ int parseXml(char* inputxml, ADIOS_FILE* f, ADIOS_FILE* dataF)
 
                 queryPush(&queryStack,q);
 
-                printf("type:%s dim:%d start:", "BB", queryDim);
+                printf("Selected input bounding box:  dim:%d start:", queryDim);
                 for (j = 0; j < queryDim; j ++){
                     printf(" %d", queryStart[j]);
                 }
@@ -726,7 +812,33 @@ int parseXml(char* inputxml, ADIOS_FILE* f, ADIOS_FILE* dataF)
         } // selType == ADIOS_SELECTION_BOUNDINGBOX
         else {
 
-            // TODO: currently only support bounding box selection
+            if ( !wbIndexS || !strcmp (wbIndexS, "") ) {
+                printf("missing values for selection attribute \n");
+                mxmlRelease(doc);
+                exit(-1);
+            }
+            else {
+                wbIndex = atoi(wbIndexS);
+
+    	        block   = adios_selection_writeblock(wbIndex);
+                if( strcmp(opS, "<=") == 0 )
+                    q = adios_query_create(f, varNameS, block, ADIOS_LTEQ, constraintS);
+                else if( strcmp(opS, "<") == 0 )
+                    q = adios_query_create(f, varNameS, block, ADIOS_LT, constraintS);
+                else if( strcmp(opS, ">=") == 0 )
+                    q = adios_query_create(f, varNameS, block, ADIOS_GTEQ, constraintS);
+                else if( strcmp(opS, ">") == 0 )
+                    q = adios_query_create(f, varNameS, block, ADIOS_GT, constraintS);
+                else {
+                    printf("Unsupported entry op %s\n", opS);
+                    exit(-1);
+                }
+
+                queryPush(&queryStack,q);
+                printf("Selected input writeblock: %d\n", wbIndex);
+
+            }
+
         }
        
    
@@ -736,7 +848,7 @@ int parseXml(char* inputxml, ADIOS_FILE* f, ADIOS_FILE* dataF)
     }
 
     // TODO: need some correct checking for box and varNameS
-    performQuery(dataF, queryPop(&queryStack), box, varNameS);
+    performQuery(dataF, queryPop(&queryStack), outputBox, varNameS, timestep, batchsize);
 
 }
 
