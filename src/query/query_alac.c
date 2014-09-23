@@ -1158,16 +1158,47 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	return alacResultBitmap;
 }
 
+static void dump_bitmap_word(FILE *stream, uint64_t word, int nbits) {
+	char bitstr[65];
+	for (int i = 0; i < nbits; ++i) {
+		const int bit = (word >> i) & 1;
+		bitstr[i] = bit ? '1' : '0';
+	}
+	bitstr[nbits] = 0;
+	fprintf(stream, bitstr);
+}
+
+static void dump_bitmap(FILE *stream, ADIOS_ALAC_BITMAP *bitmap) {
+	for (uint64_t i = 0; i < bitmap->length - 1; ++i)
+		dump_bitmap_word(stream, bitmap->bits[i], 64);
+
+	if (bitmap->realElmSize > 0) {
+		// Dump only the valid bits of the last word
+		dump_bitmap_word(
+			stream,								// output stream
+			bitmap->bits[bitmap->length - 1],	// the last word
+			(bitmap->realElmSize - 1) % 64 + 1	// the number of valid bits in the last word
+		);
+	}
+}
+
 /*
  * This is an internal function processing the expression tree
  */
 ADIOS_ALAC_BITMAP * adios_alac_process(ADIOS_QUERY* q, int timestep,
 		bool estimate) {
 
+	ADIOS_ALAC_BITMAP *result;
 	//LEAF NODE
 	ADIOS_ALAC_BITMAP * rbitmap, *lbitmap;
 	if (q ->_left == NULL && q->_right == NULL) {
-		return adios_alac_uniengine(q, timestep, estimate);
+		result = adios_alac_uniengine(q, timestep, estimate);
+#ifdef ADIOS_ALAC_QUERY_DEBUG
+		fprintf(stderr, "constraint %s = ", q->_condition);
+		dump_bitmap(stderr, result);
+		fprintf(stderr, "\n");
+#endif
+		return result;
 	}
 
 	if (q->_left)
@@ -1176,8 +1207,13 @@ ADIOS_ALAC_BITMAP * adios_alac_process(ADIOS_QUERY* q, int timestep,
 	if (q->_right)
 		rbitmap = adios_alac_process((ADIOS_QUERY*) q->_right, timestep, estimate);
 
-
-	return adios_alac_bitsOp(lbitmap, rbitmap, q->_leftToRightOp );
+	result = adios_alac_bitsOp(lbitmap, rbitmap, q->_leftToRightOp);
+#ifdef ADIOS_ALAC_QUERY_DEBUG
+	fprintf(stderr, "op %s = ", (q->_op == ADIOS_QUERY_OP_AND ? "AND" : "OR"));
+	dump_bitmap(stderr, result);
+	fprintf(stderr, "\n");
+#endif
+	return result;
 }
 
 
