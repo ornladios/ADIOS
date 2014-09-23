@@ -1159,8 +1159,9 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 }
 
 static void dump_bitmap_word(FILE *stream, uint64_t word, int nbits) {
+	int i;
 	char bitstr[65];
-	for (int i = 0; i < nbits; ++i) {
+	for (i = 0; i < nbits; ++i) {
 		const int bit = (word >> i) & 1;
 		bitstr[i] = bit ? '1' : '0';
 	}
@@ -1169,7 +1170,8 @@ static void dump_bitmap_word(FILE *stream, uint64_t word, int nbits) {
 }
 
 static void dump_bitmap(FILE *stream, ADIOS_ALAC_BITMAP *bitmap) {
-	for (uint64_t i = 0; i < bitmap->length - 1; ++i)
+	uint64_t i;
+	for (i = 0; i < bitmap->length - 1; ++i)
 		dump_bitmap_word(stream, bitmap->bits[i], 64);
 
 	if (bitmap->realElmSize > 0) {
