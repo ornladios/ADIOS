@@ -1211,7 +1211,7 @@ ADIOS_ALAC_BITMAP * adios_alac_process(ADIOS_QUERY* q, int timestep,
 
 	result = adios_alac_bitsOp(lbitmap, rbitmap, q->_leftToRightOp);
 #ifdef ADIOS_ALAC_QUERY_DEBUG
-	fprintf(stderr, "op %s = ", (q->_op == ADIOS_QUERY_OP_AND ? "AND" : "OR"));
+	fprintf(stderr, "op %s = ", (q->_leftToRightOp == ADIOS_QUERY_OP_AND ? "AND" : "OR"));
 	dump_bitmap(stderr, result);
 	fprintf(stderr, "\n");
 #endif
