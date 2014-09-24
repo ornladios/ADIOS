@@ -463,11 +463,11 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF, const char * lbs, c
 	adios_selection_delete(box);
 }
 
-int performQuery(ADIOS_FILE *dataF, ADIOS_QUERY* q, ADIOS_SELECTION* box, char* varname, int totalTS, uint64_t batchSize)
+int performQuery(ADIOS_FILE *f, ADIOS_QUERY* q, ADIOS_SELECTION* box, char* varname, int totalTS, uint64_t batchSize)
 {
 
     int i = 0, timestep = 0 ;
-    ADIOS_VARINFO * tempVar = adios_inq_var(dataF, varname);
+    ADIOS_VARINFO * tempVar = adios_inq_var(f, varname);
     printf("times steps for variable is: %d, batch size is %llu\n", totalTS, batchSize);
     for (timestep  = 0; timestep  < totalTS; timestep ++) {
     	printf("querying on timestep %d \n", timestep );
@@ -486,9 +486,9 @@ int performQuery(ADIOS_FILE *dataF, ADIOS_QUERY* q, ADIOS_SELECTION* box, char* 
     	    void *data = malloc(retrievedPts->npoints * elmSize);
     
     	    // check returned temp data
-    	    adios_schedule_read_byid(dataF, currBatch, tempVar->varid, timestep , 1, data);
-    	    adios_schedule_read (dataF, currBatch, varname, timestep , 1, data);
-    	    adios_perform_reads(dataF, 1);
+    	    adios_schedule_read_byid(f, currBatch, tempVar->varid, timestep , 1, data);
+    	    adios_schedule_read (f, currBatch, varname, timestep , 1, data);
+    	    adios_perform_reads(f, 1);
     
     	    printf("Total data retrieved:%"PRIu64"\n", retrievedPts->npoints);
     	    if (tempVar->type == adios_double){
@@ -516,7 +516,7 @@ int performQuery(ADIOS_FILE *dataF, ADIOS_QUERY* q, ADIOS_SELECTION* box, char* 
     adios_query_free(q);
 }
 
-int parseXml(char* inputxml, ADIOS_FILE* f, ADIOS_FILE* dataF)
+int parseXml(char* inputxml, ADIOS_FILE* f)
 {
     int i, j;
     FILE * fp = fopen (inputxml,"r");
@@ -848,7 +848,7 @@ int parseXml(char* inputxml, ADIOS_FILE* f, ADIOS_FILE* dataF)
     }
 
     // TODO: need some correct checking for box and varNameS
-    performQuery(dataF, queryPop(&queryStack), outputBox, varNameS, timestep, batchsize);
+    performQuery(f, queryPop(&queryStack), outputBox, varNameS, timestep, batchsize);
 
 }
 
@@ -866,21 +866,24 @@ int main(int argc, char ** argv) {
 	double * data = NULL;
 	uint64_t start[2], count[2], npoints, *points;
 	MPI_Init(&argc, &argv);
-	if (argc < 4) {
-		printf(" usage: %s {input bp file},  {bp file without transform} {xml file}\n",	argv[0]);
+	if (argc != 3) {
+		printf(" usage: %s {input bp file} {xml file}\n", argv[0]);
 		//printf(" usage: %s {input bp file},  {bp file without transform} {lb} {hb} \n",	argv[0]);
 		return 1;
 	}
+        else {
+	    strcpy(xmlFileName,  argv[2]);
+        }
 
 	/* char lbstr[255], hbstr[255]; */
 
-	if (argc >= 4) {
-		strcpy(dataFileName, argv[2]);
-		strcpy(xmlFileName,  argv[3]);
+/* 	if (argc == 3) { */
+/* 		strcpy(dataFileName, argv[2]); */
+/* 		strcpy(xmlFileName,  argv[3]); */
 
-	} else {
-		strcpy(dataFileName, "./xml/alacrity-2var-no-transform_524288.bp");
-	}
+/* 	} else { */
+/* 		strcpy(dataFileName, "./xml/alacrity-2var-no-transform_524288.bp"); */
+/* 	} */
 
 	/* argc >= 4 ? strcpy(lbstr, argv[3]) : strcpy(lbstr, "0.0"); */
 	/* argc >= 5 ? strcpy(hbstr, argv[4]) : strcpy(hbstr, "0.0"); */
@@ -895,16 +898,16 @@ int main(int argc, char ** argv) {
 		return 1;
 	}
 
-	ADIOS_FILE * dataF = adios_read_open_file(dataFileName, method, comm);
+	/* ADIOS_FILE * dataF = adios_read_open_file(dataFileName, method, comm); */
 
-	if (dataF == NULL) {
-		if (f) {
-			adios_read_close(f);
-			MPI_Finalize();
-		}
-		printf(" can not open file %s \n", dataFileName);
-		return 1;
-	}
+	/* if (dataF == NULL) { */
+	/* 	if (f) { */
+	/* 		adios_read_close(f); */
+	/* 		MPI_Finalize(); */
+	/* 	} */
+	/* 	printf(" can not open file %s \n", dataFileName); */
+	/* 	return 1; */
+	/* } */
 
 	adios_query_init(ADIOS_QUERY_TOOL_ALACRITY);
 
@@ -914,7 +917,8 @@ int main(int argc, char ** argv) {
 
 //	multiSelection(f , lbstr, hbstr, dataF, ADIOS_SELECTION_WRITEBLOCK);
 
-        parseXml(xmlFileName, f, dataF);	
+        parseXml(xmlFileName, f);
+        //parseXml(xmlFileName, f, dataF);	
 
         //char *lbstr="0.9";
         //char *hbstr="0.9";
@@ -923,7 +927,7 @@ int main(int argc, char ** argv) {
 //	retrieveAllValues(f);
 
 	adios_read_close(f);
-	adios_read_close(dataF);
+	/* adios_read_close(dataF); */
 
 	adios_read_finalize_method(ADIOS_READ_METHOD_BP);
 
