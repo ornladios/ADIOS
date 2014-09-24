@@ -202,6 +202,35 @@ module adios_write_mod
             character(*),   intent(in)  :: file
         end subroutine
 
+        subroutine adios_define_mesh_uniform (dimensions, origin, spacing, maximum, nspace, group_id, name)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: dimensions
+            character(*),   intent(in)  :: origin
+            character(*),   intent(in)  :: spacing
+            character(*),   intent(in)  :: maximum
+            character(*),   intent(in)  :: nspace
+            character(*),   intent(in)  :: name
+        end subroutine
+        
+        subroutine adios_define_mesh_rectilinear (dimensions, coordinates, nspace, group_id, name)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: dimensions
+            character(*),   intent(in)  :: coordinates
+            character(*),   intent(in)  :: nspace
+            character(*),   intent(in)  :: name
+        end subroutine
+
+        subroutine adios_define_mesh_structured (dimensions, points, nspace, group_id, name)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: dimensions
+            character(*),   intent(in)  :: points
+            character(*),   intent(in)  :: nspace
+            character(*),   intent(in)  :: name
+        end subroutine
+
         subroutine adios_define_mesh_unstructured (points, data, count, cell_type, npoints, nspace, group_id, name)
             implicit none
             integer*8,      intent(in)  :: group_id
