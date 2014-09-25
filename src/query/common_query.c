@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
+#include <assert.h>
 
 #include "common_query.h"
 #include "adios_query_hooks.h"
@@ -452,6 +453,88 @@ int checkCompatibility(ADIOS_QUERY* q)
   return 1; // ok, no need to check  
 }
 
+static ADIOS_VARBLOCK * computePGBounds(ADIOS_QUERY *q, int wbindex, int timestep, int *out_ndim) {
+	if (!q->_left && !q->_right) {
+		// In this case, we have reached a leaf query node, so directly
+		// retrieve the varblock from the varinfo
+		assert(q->_var);
+
+		// Read the blockinfo if not already present
+		if (!q->_var->blockinfo) {
+			adios_read_set_data_view(q->_f, LOGICAL_DATA_VIEW);
+			adios_inq_var_blockinfo(q->_f, q->_var);
+		}
+
+		// Note: adios_get_absolute_writeblock_index ensures that timestep and wbindex
+		// are both in bounds, signalling an adios_error if not. However, there will be
+		// no variable name cited in the error, so perhaps better error handling would
+		// be desirable in the future
+		const int abs_wbindex = adios_get_absolute_writeblock_index(q->_var, wbindex, timestep);
+
+		// Finally, return ndim and the varblock
+		*out_ndim = q->_var->ndim;
+		return &q->_var->blockinfo[abs_wbindex];
+	} else if (!q->_left || !q->_right) {
+		// In this case, we have only one subtree, so just return the
+		// ndim and varblock from that subtree directly, since there's
+		// nothing to compare against
+
+		ADIOS_QUERY *present_subtree = q->_left ? (ADIOS_QUERY*)q->_left : (ADIOS_QUERY*)q->_right;
+		return computePGBounds(present_subtree, wbindex, timestep, out_ndim);
+	} else {
+		// In this final case, we have two subtrees, and we must compare
+		// the resultant varblock from each one to ensure they are equal
+		// before returning
+
+		ADIOS_QUERY *left = (ADIOS_QUERY *)q->_left;
+		ADIOS_QUERY *right = (ADIOS_QUERY *)q->_right;
+
+		// Next, retrieve the ndim and varblock for each subtree
+		int left_ndim, right_ndim;
+		ADIOS_VARBLOCK *left_vb = computePGBounds(left, wbindex, timestep, &left_ndim);
+		ADIOS_VARBLOCK *right_vb = computePGBounds(right, wbindex, timestep, &right_ndim);
+
+		// If either subtree returns an invalid (NULL) varblock, fail immediately
+		if (!left_vb || !right_vb) {
+			return NULL;
+		}
+
+		// Check that the ndims are equal, failing if not
+		int ndim;
+		if (left_ndim != right_ndim) {
+			return NULL;
+		} else {
+			ndim = left_ndim;
+		}
+
+		// Check the start/count coordinate in each dimension for equality,
+		// failing if any coordinate is not equal between the subtrees
+		int i;
+		for (i = 0; i < ndim; i++) {
+			if (left_vb->start[i] != right_vb->start[i] ||
+				left_vb->count[i] != right_vb->count[i]) {
+				return NULL;
+			}
+		}
+
+		// Finally, we have ensured that both subtrees yield valid and equal
+		// varblocks, so return the common ndim and varblock (arbitrarily use
+		// left_vb, since right and left equal)
+		*out_ndim = ndim;
+		return left_vb;
+	}
+}
+
+static ADIOS_SELECTION * convertWriteblockToBoundingBox(ADIOS_QUERY *q, ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb, int timestep) {
+	assert(!wb->is_absolute_index && !wb->is_sub_pg_selection); // The user should not be using the internal ADIOS writeblock flags
+
+	int pg_ndim;
+	ADIOS_VARBLOCK *pg_bounds = computePGBounds(q, wb->index, timestep, &pg_ndim);
+
+	ADIOS_SELECTION *bb = adios_selection_boundingbox(pg_ndim, pg_bounds->start, pg_bounds->count);
+	return bb;
+}
+
 int common_query_get_selection(ADIOS_QUERY* q, 
 			       //const char* varName,
 			       //int timeStep, 
@@ -459,21 +542,29 @@ int common_query_get_selection(ADIOS_QUERY* q,
 				ADIOS_SELECTION* outputBoundary, 
 				ADIOS_SELECTION** result)
 {
-  if ((q->_onTimeStep >= 0) && (q->_onTimeStep != gCurrentTimeStep)) 
-    {
-      int updateResult = updateBlockSizeIfNeeded(q);
-      if (updateResult < 0) {
-	printf("Error with this timestep %d. Can not proceed. \n", gCurrentTimeStep);
-	return -1;
-      }
-      if (updateResult > 0) { // blocks were updated. check compatitibity
-	if (checkCompatibility(q) <= 0) {
-	  return -1;
+	if ((q->_onTimeStep >= 0) && (q->_onTimeStep != gCurrentTimeStep)) {
+		int updateResult = updateBlockSizeIfNeeded(q);
+		if (updateResult < 0) {
+			printf("Error with this timestep %d. Can not proceed. \n", gCurrentTimeStep);
+			return -1;
+		}
+		if (updateResult > 0) { // blocks were updated. check compatitibity
+			if (checkCompatibility(q) <= 0) {
+				return -1;
+			}
+		}
 	}
-      }
-    }
 
-  return gAdios_query_hooks[gAssigned_query_tool].adios_query_get_selection_method_fn(q,  batchSize, outputBoundary, result);
+	int freeOutputBoundary = 0;
+	if (outputBoundary->type == ADIOS_SELECTION_WRITEBLOCK) {
+		outputBoundary = convertWriteblockToBoundingBox(q, &outputBoundary->u.block, gCurrentTimeStep);
+		freeOutputBoundary = 1;
+	}
+
+	const int retval = gAdios_query_hooks[gAssigned_query_tool].adios_query_get_selection_method_fn(q,  batchSize, outputBoundary, result);
+
+	if (freeOutputBoundary) adios_selection_delete(outputBoundary);
+	return retval;
 }
 
 

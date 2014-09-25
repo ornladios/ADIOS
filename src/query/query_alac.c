@@ -10,6 +10,7 @@
 #include <string.h>
 #include <assert.h>
 #include <float.h>
+#include "public/adios_error.h"
 #include "public/adios_read_ext.h"
 #include "public/adios_query.h"
 #include "common_query.h"
@@ -1473,18 +1474,10 @@ void adios_query_alac_build_results(
 		break;
 	}
 	case ADIOS_SELECTION_WRITEBLOCK : {
-		assert(!outputBoundry->u.block.is_absolute_index && !outputBoundry->u.block.is_sub_pg_selection);
-		assert(varinfo->blockinfo);
-
-		const int wbindex = outputBoundry->u.block.index;
-		const int abs_wbindex = adios_get_absolute_writeblock_index(varinfo, wbindex, gCurrentTimeStep /* GLOBAL VARIABLE */);
-
-		const ADIOS_VARBLOCK *pgbounds = &varinfo->blockinfo[abs_wbindex];
-		const ADIOS_SELECTION *pgbounds_sel = adios_selection_boundingbox(varinfo->ndim, pgbounds->start, pgbounds->count);
-
-		*queryResult = adios_query_build_results_boundingbox(b, retrieval_size, pgbounds_sel);
-
-		adios_selection_delete(pgbounds_sel);
+		adios_error(err_unspecified,
+					"Detected writeblock selection as query output selection internally, "
+					"but the writeblock selection should have already been mapped to a bounding box! (at %s:%s)",
+					__FILE__, __LINE__);
 		break;
 	}
 	case ADIOS_SELECTION_POINTS: {
@@ -1565,13 +1558,6 @@ int  adios_query_alac_get_selection_method(ADIOS_QUERY* q,
 	}
 	if (retrievalSize > batchSize) {
 			retrievalSize = batchSize;
-	}
-
-	// Ensure we have blockinfo, since adios_query_alac_build_results
-	// requires it but cannot retrieve it by itself
-	if (!q->_var->blockinfo) {
-		adios_read_set_data_view(q->_f, LOGICAL_DATA_VIEW);
-		adios_inq_var_blockinfo(q->_f, q->_var);
 	}
 
 	adios_query_alac_build_results(retrievalSize, outputBoundry, b, q->_var, queryResult);

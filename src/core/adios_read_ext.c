@@ -138,7 +138,15 @@ int adios_get_absolute_writeblock_index(ADIOS_VARINFO *varinfo, int timestep_rel
 	int absolute_idx = timestep_relative_idx;
 
 	if (timestep < 0 || timestep >= varinfo->nsteps) {
-		adios_error(err_invalid_timestep, "Timestep %d out of range (min 0, max %d) (at %s:%s)", timestep, varinfo->nsteps, __FILE__, __LINE__);
+		adios_error(err_invalid_timestep,
+					"Timestep %d out of range (min 0, max %d) (at %s:%s)",
+					timestep, varinfo->nsteps, __FILE__, __LINE__);
+		return -1;
+	}
+	if (timestep_relative_idx < 0 || timestep_relative_idx >= varinfo->nblocks[timestep]) {
+		adios_error(err_invalid_argument,
+					"Writeblock %d out of range for timestep %d (min 0, max %d) (at %s:%s)",
+					timestep_relative_idx, timestep, varinfo->nsteps, __FILE__, __LINE__);
 		return -1;
 	}
 
