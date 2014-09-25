@@ -202,6 +202,62 @@ module adios_write_mod
             character(*),   intent(in)  :: file
         end subroutine
 
+        subroutine adios_define_var_timesteps (timesteps, group_id, name)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: timesteps
+            character(*),   intent(in)  :: name
+        end subroutine
+
+        subroutine adios_define_var_timescale (timescale, group_id, name)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: timescale
+            character(*),   intent(in)  :: name
+        end subroutine
+        
+        subroutine adios_define_var_timeseriesformat (timeseries, group_id, name)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: timeseries
+            character(*),   intent(in)  :: name
+        end subroutine
+
+        subroutine adios_define_var_hyperslab (hyperslab, group_id, name)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: hyperslab
+            character(*),   intent(in)  :: name
+        end subroutine
+
+        subroutine adios_define_mesh_timesteps (timesteps, group_id, name)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: timesteps
+            character(*),   intent(in)  :: name
+        end subroutine
+
+        subroutine adios_define_mesh_timescale (timescale, group_id, name)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: timescale
+            character(*),   intent(in)  :: name
+        end subroutine
+
+        subroutine adios_define_mesh_timeseriesformat (timeseries, group_id, name)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: timeseries
+            character(*),   intent(in)  :: name
+        end subroutine
+
+        subroutine adios_define_mesh_group (group, group_id, name)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: group
+            character(*),   intent(in)  :: name
+        end subroutine
+
         subroutine adios_define_mesh_uniform (dimensions, origin, spacing, maximum, nspace, group_id, name)
             implicit none
             integer*8,      intent(in)  :: group_id
