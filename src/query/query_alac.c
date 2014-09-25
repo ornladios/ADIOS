@@ -1466,8 +1466,12 @@ void adios_query_alac_build_results(
 			adios_query_alac_retrieval_pointsNd(b,retrieval_size, bb, points);
 		}
 		*queryResult = adios_selection_points(bb->ndim, retrieval_size, points);
-	}
 		break;
+	}
+	case ADIOS_SELECTION_WRITEBLOCK : {
+		// TODO: obtain bounding box from given writeblock
+
+	}
 	case ADIOS_SELECTION_POINTS: {
 		const ADIOS_SELECTION_POINTS_STRUCT *points =
 				&(outputBoundry->u.points);
@@ -1475,8 +1479,8 @@ void adios_query_alac_build_results(
 		uint64_t* pointArray =
 				(uint64_t*) (malloc(arraySize * sizeof(uint64_t)));
 		//TODO:
-	}
 		break;
+	}
 	default:
 		printf("Error: Type of selection is not supported!");
 	}
