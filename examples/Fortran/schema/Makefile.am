@@ -6,7 +6,12 @@ AUTOMAKE_OPTIONS = no-dependencies
 #all-local:
 #	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
 
-noinst_PROGRAMS = tri2d_f_noxml tri2d_f_noxml_seperate 
+noinst_PROGRAMS = uniform2d_f_noxml tri2d_f_noxml tri2d_f_noxml_seperate 
+
+uniform2d_f_noxml_SOURCES = uniform2d_noxml.F90
+uniform2d_f_noxml_LDADD = $(top_builddir)/src/libadiosf.a
+uniform2d_f_noxml_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+uniform2d_f_noxml_LDADD += $(ADIOSLIB_LDADD)
 
 tri2d_f_noxml_SOURCES = tri2d_noxml.F90 
 tri2d_f_noxml_LDADD = $(top_builddir)/src/libadiosf.a
