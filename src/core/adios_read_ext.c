@@ -133,21 +133,6 @@ inline static const ADIOS_SELECTION * create_pg_bounds(int ndim, ADIOS_VARBLOCK 
     return common_read_selection_boundingbox(ndim, orig_vb->start, orig_vb->count);
 }
 
-int adios_get_absolute_writeblock_index(ADIOS_VARINFO *varinfo, int timestep_relative_idx, int timestep) {
-	int i;
-	int absolute_idx = timestep_relative_idx;
-
-	if (timestep < 0 || timestep >= varinfo->nsteps) {
-		adios_error(err_invalid_timestep, "Timestep %d out of range (min 0, max %d) (at %s:%s)", timestep, varinfo->nsteps, __FILE__, __LINE__);
-		return -1;
-	}
-
-	for (i = 0; i < timestep; i++)
-		absolute_idx += varinfo->nblocks[i];
-
-	return absolute_idx;
-}
-
 #define INITIAL_INTERSECTION_CAPACITY 16;
 ADIOS_PG_INTERSECTIONS * adios_find_intersecting_pgs(const ADIOS_FILE *fp, int varid, const ADIOS_SELECTION *sel, const int from_step, const int nsteps) {
     // Declares
