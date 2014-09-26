@@ -45,11 +45,11 @@ subroutine processArgs
      endif
 end subroutine
 
-program rectilinear2d_f_noxml
+program structured2d_f_noxml
     use adios_write_mod
     implicit none
     include 'mpif.h'
-    character(len=256)      :: filename = "rectilinear2d_f_noxml.bp"
+    character(len=256)      :: filename = "structured2d_f_noxml.bp"
     integer*8               :: adios_groupsize, adios_totalsize
     integer*8               :: adios_handle
     integer*8               :: m_adios_group
@@ -58,15 +58,15 @@ program rectilinear2d_f_noxml
     real*8, dimension(:), allocatable       :: X   ! X coordinate
     real*8, dimension(:), allocatable       :: Y   ! Y coordinate 
     real*8, dimension(:), allocatable       :: data
-    character(:), allocatable               :: schema_version, dimemsions 
+    character(:), allocatable               :: schema_version, dimemsions
 
+    integer*4               :: rank, i, j, ierr, adios_err
+    integer*4               :: ndx, ndy                            ! size of array per processor
     integer*4               :: offs_x, offs_y                      ! offset in x and y direction
     integer*4               :: nx_local, ny_local                  ! local address
     integer*4               :: posx, posy                          ! position index in the array
     integer*4               :: nx_global, ny_global                ! global address
-    integer*4               :: rank, i, j, k, p, p1, ierr, adios_err
-    integer*4               :: ndx, ndy                            ! size of array per processor
- 
+
     !will work with 12 cores, which are arranged by npx=4, npy=3 (4x3)
     integer*4               :: npx                                 ! # of procs in x direction
     integer*4               :: npy                                 ! # of procs in y direction
@@ -87,7 +87,7 @@ program rectilinear2d_f_noxml
         stop
     endif
 
-    !will work with each core writing ndx = 65, ndy = 129, (65*4,129*3) global
+    ! will work with 12 cores, which are arranged by npx=4, npy=3 (4x3)
     ndx = 65
     ndy = 129
 
@@ -101,6 +101,9 @@ program rectilinear2d_f_noxml
     nx_global = npx * ndx
     ny_global = npy * ndy
 
+    schema_version = "1.1"
+    dimemsions = "nx_global,ny_global"
+
     allocate (data(0:(ndx-1)*(ndy-1)*8))
     do i = 0, ndx-1
         do j = 0, ndy-1
@@ -108,22 +111,24 @@ program rectilinear2d_f_noxml
         enddo
     enddo
 
-    allocate (X(0:(ndx-1)*8))
+    allocate (X(0:(ndx-1)*(ndy-1)*8))
     do i = 0, ndx-1
-        X(i) = 0.1*(i+offs_x)*(i+offs_x)
+        do j = 0, ndy-1
+            X(i*ndy+j) = offs_x + posy*ndx + i*ndx/ndx + DBLE(ndx)*j/DBLE(ndy)
+        enddo
     enddo
 
-    allocate (Y(0:(ndy-1)*8))
-    do i = 0, ndy-1
-        Y(i) = 0.1*(i+offs_y)*(i+offs_y)
+    allocate (Y(0:(ndx-1)*(ndy-1)*8))
+    Y(0) = offs_y
+    do i = 0, ndx-1
+        do j = 0, ndy-1
+            Y(i*ndy+j) = offs_y + ndy*j/ndy 
+        enddo
     enddo
-
-    schema_version = "1.1"
-    dimemsions = "nx_global,ny_global"
 
     call adios_init_noxml (comm, adios_err)
     call adios_allocate_buffer (50, adios_err)
-    call adios_declare_group (m_adios_group, "rectilinear2d", "", 1, adios_err)
+    call adios_declare_group (m_adios_group, "structured2d", "", 1, adios_err)
     call adios_select_method (m_adios_group, "MPI", "", "", adios_err)
 
     ! This example doesn't use varid during writing.
@@ -152,26 +157,24 @@ program rectilinear2d_f_noxml
                 ,"","","", varid)
     call adios_define_var (m_adios_group, "X" &
                     ,"", adios_double &
-                    ,"nx_local", "nx_global", "offs_x", varid)
+                    ,"ny_local,nx_local", "ny_global,nx_global", "offs_y,offs_x", varid)
     call adios_define_var (m_adios_group, "Y" &
                     ,"", adios_double &
-                    ,"ny_local", "ny_global", "offs_y", varid)
+                    ,"ny_local,nx_local", "ny_global,nx_global", "offs_y,offs_x", varid)
     call adios_define_var (m_adios_group, "data" &
                     ,"", adios_double &
                     ,"ny_local,nx_local", "ny_global,nx_global", "offs_y,offs_x", varid)
 
     call adios_define_schema_version (m_adios_group, schema_version)
-    call adios_define_mesh_rectilinear (dimemsions, "X,Y", "2", m_adios_group, "rectilinearmesh")
-    call adios_define_mesh_timevarying ("no", m_adios_group, "rectilinearmesh")
-    call adios_define_var_mesh (m_adios_group, "data", "rectilinearmesh")
+    call adios_define_mesh_structured (dimemsions, "X,Y", "2", m_adios_group, "structuredmesh")
+    call adios_define_mesh_timevarying ("no", m_adios_group, "structuredmesh")
+    call adios_define_var_mesh (m_adios_group, "data", "structuredmesh")
     call adios_define_var_centering (m_adios_group, "data", "point")
 
     adios_groupsize = 7*4 & !int
-    + 8 * (nx_local*ny_local) &! double (data)
-    + 8 * nx_local & ! double (X)
-    + 8 * ny_local   ! double (Y)
+    + 3 * 8 * (nx_local*ny_local) ! double (data)
 
-    call adios_open (adios_handle, "rectilinear2d", filename, "w", comm, adios_err)
+    call adios_open (adios_handle, "structured2d", filename, "w", comm, adios_err)
     call adios_group_size (adios_handle, adios_groupsize, adios_totalsize, adios_err)
 
     call adios_write (adios_handle, "nx_global", nx_global, adios_err)
@@ -181,12 +184,9 @@ program rectilinear2d_f_noxml
     call adios_write (adios_handle, "offs_y", offs_y, adios_err)
     call adios_write (adios_handle, "nx_local", nx_local, adios_err)
     call adios_write (adios_handle, "ny_local", ny_local, adios_err)
-    if (rank .LT. npx) then
-        call adios_write (adios_handle, "X", X, adios_err)
-    endif
-    if (mod(rank,npx) .EQ. 0) then
-        call adios_write (adios_handle, "Y", Y, adios_err)
-    endif
+
+    call adios_write (adios_handle, "X", X, adios_err)
+    call adios_write (adios_handle, "Y", Y, adios_err)
     call adios_write (adios_handle, "data", data, adios_err)
 
     call adios_close (adios_handle, adios_err)
@@ -195,3 +195,4 @@ program rectilinear2d_f_noxml
     call MPI_Finalize (ierr)
 
 end program
+

@@ -109,9 +109,9 @@ program uniform2d_f_noxml
     spacing = "S1,S2"
 
     allocate (data(0:(ndx-1)*(ndy-1)*8))
-    do j = 0, ndy-1
-        do i = 0, ndx-1
-            data(j*ndx+i) = 1.0*DBLE(rank)
+    do i = 0, ndx-1
+        do j = 0, ndy-1
+            data(i*ndy+j) = 1.0*DBLE(rank)
         enddo
     enddo
 
