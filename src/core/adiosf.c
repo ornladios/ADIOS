@@ -888,8 +888,8 @@ void FC_FUNC_(adios_define_mesh_uniform, ADIOS_DEFINE_MESH_UNIFROM)
 
 ///////////////////////////////////////////////////////////////////////////////
 void FC_FUNC_(adios_define_mesh_rectilinear, ADIOS_DEFINE_MESH_RECTILINEAR)
-    (char * dimensions, char * coordinates, char * nspace, const char * name
-    ,int64_t * group_id, int dimensions_size, int coordinates_size, int nspace_size
+    (char * dimensions, char * coordinates, char * nspace, int64_t * group_id
+    ,const char * name,  int dimensions_size, int coordinates_size, int nspace_size
     ,int name_size)
 {
     char * buf1 = 0;
