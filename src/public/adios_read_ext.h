@@ -109,6 +109,7 @@ ADIOS_PG_INTERSECTIONS * adios_find_intersecting_pgs(
 		const ADIOS_FILE *fp, int varid, const ADIOS_SELECTION *sel
 		, const int from_step, const int nsteps);
 
+int adios_get_absolute_writeblock_index(ADIOS_VARINFO *varinfo, int timestep_relative_idx, int timestep);
 
 void adios_free_pg_intersections(ADIOS_PG_INTERSECTIONS **intersections);
 

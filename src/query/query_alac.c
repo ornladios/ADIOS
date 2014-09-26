@@ -1445,33 +1445,47 @@ void adios_query_alac_retrieval_pointsNd( ADIOS_ALAC_BITMAP *b, uint64_t retriev
 
 }
 
+static ADIOS_SELECTION * adios_query_build_results_boundingbox(ADIOS_ALAC_BITMAP *b, uint64_t retrieval_size, ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb) {
+	const uint64_t dataSize = retrieval_size * (bb->ndim);
+	uint64_t *points = (uint64_t *)(malloc(dataSize * sizeof(uint64_t)));
+	if (bb->ndim == 1) {
+		adios_query_alac_retrieval_points1d(b,retrieval_size, bb, points);
+	} else if (bb -> ndim == 2) {
+		adios_query_alac_retrieval_points2d(b,retrieval_size, bb, points);
+	} else if (bb->ndim == 3) {
+		adios_query_alac_retrieval_points3d(b,retrieval_size, bb, points);
+	} else if (bb->ndim >= 4) {
+		adios_query_alac_retrieval_pointsNd(b,retrieval_size, bb, points);
+	}
+	return adios_selection_points(bb->ndim, retrieval_size, points);
+}
 
 void adios_query_alac_build_results(
-		uint64_t retrieval_size, ADIOS_SELECTION* outputBoundry, ADIOS_ALAC_BITMAP *b
-		, ADIOS_SELECTION ** queryResult){
+		uint64_t retrieval_size, ADIOS_SELECTION* outputBoundry, ADIOS_ALAC_BITMAP *b,
+		ADIOS_VARINFO *varinfo, ADIOS_SELECTION ** queryResult)
+{
 
 	//last bounding box / points supplied by user
 	switch (outputBoundry->type) {
 	case ADIOS_SELECTION_BOUNDINGBOX: {
 		ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(outputBoundry->u.bb);
-
-		uint64_t dataSize = retrieval_size * (bb->ndim);
-		uint64_t* points = (uint64_t*) (malloc(dataSize * sizeof(uint64_t)));
-		if ( bb->ndim == 3){
-			adios_query_alac_retrieval_points3d(b,retrieval_size, bb, points);
-		}else if (bb -> ndim == 2){
-			adios_query_alac_retrieval_points2d(b,retrieval_size, bb, points);
-		}else if (bb->ndim == 1){
-			adios_query_alac_retrieval_points1d(b,retrieval_size, bb, points);
-		}else if ( bb->ndim >=4 ){
-			adios_query_alac_retrieval_pointsNd(b,retrieval_size, bb, points);
-		}
-		*queryResult = adios_selection_points(bb->ndim, retrieval_size, points);
+		*queryResult = adios_query_build_results_boundingbox(b, retrieval_size, bb);
 		break;
 	}
 	case ADIOS_SELECTION_WRITEBLOCK : {
-		// TODO: obtain bounding box from given writeblock
+		assert(!outputBoundry->u.block.is_absolute_index && !outputBoundry->u.block.is_sub_pg_selection);
+		assert(varinfo->blockinfo);
 
+		const int wbindex = outputBoundry->u.block.index;
+		const int abs_wbindex = adios_get_absolute_writeblock_index(varinfo, wbindex, gCurrentTimeStep /* GLOBAL VARIABLE */);
+
+		const ADIOS_VARBLOCK *pgbounds = &varinfo->blockinfo[abs_wbindex];
+		const ADIOS_SELECTION *pgbounds_sel = adios_selection_boundingbox(varinfo->ndim, pgbounds->start, pgbounds->count);
+
+		*queryResult = adios_query_build_results_boundingbox(b, retrieval_size, pgbounds_sel);
+
+		adios_selection_delete(pgbounds_sel);
+		break;
 	}
 	case ADIOS_SELECTION_POINTS: {
 		const ADIOS_SELECTION_POINTS_STRUCT *points =
@@ -1553,7 +1567,14 @@ int  adios_query_alac_get_selection_method(ADIOS_QUERY* q,
 			retrievalSize = batchSize;
 	}
 
-	adios_query_alac_build_results(retrievalSize, outputBoundry,b,queryResult);
+	// Ensure we have blockinfo, since adios_query_alac_build_results
+	// requires it but cannot retrieve it by itself
+	if (!q->_var->blockinfo) {
+		adios_read_set_data_view(q->_f, LOGICAL_DATA_VIEW);
+		adios_inq_var_blockinfo(q->_f, q->_var);
+	}
+
+	adios_query_alac_build_results(retrievalSize, outputBoundry, b, q->_var, queryResult);
 	// b->lastConvRid is updated in the above func., so the bitmap serializing function has to wait until the above function is finished
 	q->_queryInternal = convertALACBitmapTomemstream(b);
 
