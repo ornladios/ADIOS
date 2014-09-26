@@ -45,26 +45,28 @@ subroutine processArgs
      endif
 end subroutine
 
-program uniform2d_f_noxml
+program rectilinear2d_f_noxml
     use adios_write_mod
     implicit none
     include 'mpif.h'
-    character(len=256)      :: filename = "uniform2d_f_noxml.bp"
+    character(len=256)      :: filename = "rectilinear2d_f_noxml.bp"
     integer*8               :: adios_groupsize, adios_totalsize
     integer*8               :: adios_handle
     integer*8               :: m_adios_group
     integer*8               :: varid
     integer*4               :: comm
-    integer*4               :: rank, i, j, k, p, p1, ierr, adios_err
-    integer*4               :: ndx, ndy                            ! size of array per processor
-    integer*4               :: O1, O2, S1, S2                      ! origin in x,y direction and spacing in x,y direction
+    real*8, dimension(:), allocatable       :: X   ! X coordinate
+    real*8, dimension(:), allocatable       :: Y   ! Y coordinate 
+    real*8, dimension(:), allocatable       :: data
+    character(:), allocatable               :: schema_version, dimemsions 
+
     integer*4               :: offs_x, offs_y                      ! offset in x and y direction
     integer*4               :: nx_local, ny_local                  ! local address
     integer*4               :: posx, posy                          ! position index in the array
     integer*4               :: nx_global, ny_global                ! global address
-    real*8, dimension(:), allocatable       :: data
-    character(:), allocatable               :: schema_version, dimemsions, origin, spacing    
-
+    integer*4               :: rank, i, j, k, p, p1, ierr, adios_err
+    integer*4               :: ndx, ndy                            ! size of array per processor
+ 
     !will work with 12 cores, which are arranged by npx=4, npy=3 (4x3)
     integer*4               :: npx                                 ! # of procs in x direction
     integer*4               :: npy                                 ! # of procs in y direction
@@ -85,7 +87,7 @@ program uniform2d_f_noxml
         stop
     endif
 
-    ! will work with 12 cores, which are arranged by npx=4, npy=3 (4x3)
+    !will work with each core writing ndx = 65, ndy = 129, (65*4,129*3) global
     ndx = 65
     ndy = 129
 
@@ -99,15 +101,6 @@ program uniform2d_f_noxml
     nx_global = npx * ndx
     ny_global = npy * ndy
 
-    O1 = 0
-    O2 = 0
-    S1 = 1
-    S2 = 2
-    schema_version = "1.1"
-    dimemsions = "nx_global,ny_global"
-    origin = "O1,O2"
-    spacing = "S1,S2"
-
     allocate (data(0:(ndx-1)*(ndy-1)*8))
     do j = 0, ndy-1
         do i = 0, ndx-1
@@ -115,9 +108,22 @@ program uniform2d_f_noxml
         enddo
     enddo
 
+    allocate (X(0:(ndx-1)*8))
+    do i = 0, ndx-1
+        X(i) = 0.1*(i+offs_x)*(i+offs_x)
+    enddo
+
+    allocate (Y(0:(ndy-1)*8))
+    do i = 0, ndy-1
+        Y(i) = 0.1*(i+offs_y)*(i+offs_y)
+    enddo
+
+    schema_version = "1.1"
+    dimemsions = "nx_global,ny_global"
+
     call adios_init_noxml (comm, adios_err)
     call adios_allocate_buffer (50, adios_err)
-    call adios_declare_group (m_adios_group, "uniform2d", "", 1, adios_err)    
+    call adios_declare_group (m_adios_group, "rectilinear2d", "", 1, adios_err)
     call adios_select_method (m_adios_group, "MPI", "", "", adios_err)
 
     ! This example doesn't use varid during writing.
@@ -144,44 +150,28 @@ program uniform2d_f_noxml
     call adios_define_var (m_adios_group, "ny_local" &
                 ,"", adios_integer &
                 ,"","","", varid)
-    call adios_define_var (m_adios_group, "O1" &
-                ,"", adios_integer &
-                ,"","","", varid)
-    call adios_define_var (m_adios_group, "O2" &
-                ,"", adios_integer &
-                ,"","" ,"" , varid)
-    call adios_define_var (m_adios_group, "S1" &
-                ,"", adios_integer &
-                ,"","" , "", varid)
-    call adios_define_var (m_adios_group, "S2" &
-                ,"", adios_integer &
-                ,"","","", varid)
+    call adios_define_var (m_adios_group, "X" &
+                    ,"", adios_double &
+                    ,"nx_local", "nx_global", "offs_x", varid)
+    call adios_define_var (m_adios_group, "Y" &
+                    ,"", adios_double &
+                    ,"ny_local", "ny_global", "offs_y", varid)
     call adios_define_var (m_adios_group, "data" &
-                    ,"X/Y/Z", adios_double &
+                    ,"", adios_double &
                     ,"ny_local,nx_local", "ny_global,nx_global", "offs_y,offs_x", varid)
 
     call adios_define_schema_version (m_adios_group, schema_version)
-    call adios_define_mesh_uniform (dimemsions, origin, spacing, "", "2", m_adios_group, "uniformmesh")
-    call adios_define_mesh_timevarying ("no", m_adios_group, "uniformmesh")
-    call adios_define_var_mesh (m_adios_group, "X/Y/Z/data", "uniformmesh")
-    call adios_define_var_centering (m_adios_group, "X/Y/Z/data", "point")
+    call adios_define_mesh_rectilinear (dimemsions, "X,Y", "2", m_adios_group, "rectilinearmesh")
+    call adios_define_mesh_timevarying ("no", m_adios_group, "rectilinearmesh")
+    call adios_define_var_mesh (m_adios_group, "data", "rectilinearmesh")
+    call adios_define_var_centering (m_adios_group, "data", "point")
 
-    !function test
-    call adios_define_var_timesteps ("0,1,200",m_adios_group, "X/Y/Z/data")
-    call adios_define_var_timescale ("0,0.01,10", m_adios_group, "X/Y/Z/data")
-    call adios_define_var_timeseriesformat ("5", m_adios_group, "X/Y/Z/data")
-    call adios_define_var_hyperslab ("0,1,32", m_adios_group, "X/Y/Z/data")
+    adios_groupsize = 7*4 & !int
+    + 8 * (nx_local*ny_local) &! double (data)
+    + 8 * nx_local & ! double (X)
+    + 8 * ny_local   ! double (Y)
 
-    call adios_define_mesh_timevarying ("no", m_adios_group, "uniformmesh")
-    call adios_define_mesh_group ("xgc.mesh", m_adios_group, "uniformmesh")
-    call adios_define_mesh_timesteps ("0,1,200",m_adios_group, "uniformmesh")
-    call adios_define_mesh_timescale ("0,0.01,10", m_adios_group, "uniformmesh")
-    call adios_define_mesh_timeseriesformat ("5", m_adios_group, "uniformmesh")
-
-    adios_groupsize = 11*4 & !int
-    + 8 * (nx_local*ny_local) ! double (data)
-
-    call adios_open (adios_handle, "uniform2d", filename, "w", comm, adios_err)
+    call adios_open (adios_handle, "rectilinear2d", filename, "w", comm, adios_err)
     call adios_group_size (adios_handle, adios_groupsize, adios_totalsize, adios_err)
 
     call adios_write (adios_handle, "nx_global", nx_global, adios_err)
@@ -191,11 +181,13 @@ program uniform2d_f_noxml
     call adios_write (adios_handle, "offs_y", offs_y, adios_err)
     call adios_write (adios_handle, "nx_local", nx_local, adios_err)
     call adios_write (adios_handle, "ny_local", ny_local, adios_err)
-    call adios_write (adios_handle, "O1", O1, adios_err)
-    call adios_write (adios_handle, "O2", O2, adios_err)
-    call adios_write (adios_handle, "S1", S1, adios_err)
-    call adios_write (adios_handle, "S2", S2, adios_err)
-    call adios_write (adios_handle, "X/Y/Z/data", data, adios_err)
+    if (rank .LT. npx) then
+        call adios_write (adios_handle, "X", X, adios_err)
+    endif
+    if (mod(rank,npx) .EQ. 0) then
+        call adios_write (adios_handle, "Y", Y, adios_err)
+    endif
+    call adios_write (adios_handle, "data", data, adios_err)
 
     call adios_close (adios_handle, adios_err)
     call MPI_Barrier (comm, ierr)
