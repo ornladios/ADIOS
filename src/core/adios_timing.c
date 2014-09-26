@@ -185,6 +185,11 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
 
 }
 
+//Build the internal functions only when timing is enabled.
+#ifdef SKEL_TIMING
+
+
+
 void adios_write_timing_variables (struct adios_file_struct * fd)
 {
     struct adios_group_struct * g = fd->group;
@@ -351,9 +356,6 @@ int adios_add_timing_variables (struct adios_file_struct * fd)
 
 }
 
-
-//Build the internal functions only when timing is enabled.
-#ifdef SKEL_TIMING
 
 #if 0 // I don't think this is used, can be removed..?
 int adios_get_timing_internal_count (int64_t fd_p, int64_t * tc)
