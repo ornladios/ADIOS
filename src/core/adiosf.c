@@ -228,6 +228,7 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
         }
     }
 
+    /* // Do not check NULL pointer here, it works fine in writing
     if (!var)
     {
         adios_error (err_invalid_data, "Invalid data (NULL pointer) passed to write for variable %s\n", buf1);
@@ -235,6 +236,7 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
         free (buf1);
         return;
     }
+    */
 
     if (v->data)
     {
@@ -547,6 +549,20 @@ void FC_FUNC_(adios_define_var, ADIOS_DEFINE_VAR)
     }
 }
 
+// delete all variable definitions from a group
+// Use if you want to define a new set of variables for the next output step.
+void FC_FUNC_(adios_delete_vardefs, ADIOS_DELETE_VARDEFS) (int64_t *id, int *err)
+{
+    adios_errno = err_no_error;
+    if (id != 0) {
+        struct adios_group_struct * g = (struct adios_group_struct *) *id;
+        *err = adios_common_delete_vardefs (g);
+    } else {
+        adios_error (err_invalid_group, "adios_delete_vardefs() called with 0 argument\n");
+        *err = adios_errno;
+    }
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 // adios_common_set_transform is in adios_internals.c
 // set the transform method for the selected variable (default is "none")
@@ -596,6 +612,20 @@ void FC_FUNC_(adios_define_attribute, ADIOS_DEFINE_ATTRIBUTE)
         free (buf4);
     }
     *err = adios_errno;
+}
+
+// delete all attribute definitions from a group
+// Use if you want to define a new set of attribute for the next output step.
+void FC_FUNC_(adios_delete_attrdefs, ADIOS_DELETE_VARDEFS) (int64_t *id, int *err)
+{
+    adios_errno = err_no_error;
+    if (id != 0) {
+        struct adios_group_struct * g = (struct adios_group_struct *) *id;
+        *err = adios_common_delete_attrdefs (g);
+    } else {
+        adios_error (err_invalid_group, "adios_delete_attrdefs() called with 0 argument\n");
+        *err = adios_errno;
+    }
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -656,7 +686,7 @@ void FC_FUNC_(adios_define_var_mesh, ADIOS_DEFINE_VAR_MESH)
     buf2 = futils_fstr_to_cstr (meshname, meshname_size);
 
     if (buf1 != 0 && buf2 != 0)
-        adios_common_define_var_mesh ( *group_id, buf1, buf2, "");        
+        adios_common_define_var_mesh (*group_id, buf1, buf2, "");        
 
     free (buf1);
     free (buf2);
@@ -707,6 +737,194 @@ void FC_FUNC_(adios_define_mesh_file, ADIOS_DEFINE_MESH_FILE)
         adios_common_define_mesh_file (*group_id, buf1, buf2);
 
     free (buf1);
+    free (buf2);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void FC_FUNC_(adios_define_var_timesteps, ADIOS_DEFINE_VAR_TIMESTEPS)
+    (const char * timesteps, int64_t * group_id, const char * name
+    ,int timesteps_size, int name_size)
+{
+    char * buf1 = 0;
+    char * buf2 = 0;
+    buf1 = futils_fstr_to_cstr (timesteps, timesteps_size);
+    buf2 = futils_fstr_to_cstr (name, name_size);
+    struct adios_group_struct * g = (struct adios_group_struct *) *group_id;
+    adios_common_define_var_timesteps (buf1, g, buf2, ""); 
+    free (buf1);
+    free (buf2);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void FC_FUNC_(adios_define_var_timescale, ADIOS_DEFINE_VAR_TIMESCALE)
+    (const char * timescale, int64_t * group_id, const char * name
+    ,int timescale_size, int name_size)
+{
+    char * buf1 = 0;
+    char * buf2 = 0;
+    buf1 = futils_fstr_to_cstr (timescale, timescale_size);
+    buf2 = futils_fstr_to_cstr (name, name_size);
+    struct adios_group_struct * g = (struct adios_group_struct *) *group_id;
+    adios_common_define_var_timescale (buf1, g, buf2, "");
+    free (buf1);
+    free (buf2);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void FC_FUNC_(adios_define_var_timeseriesformat, ADIOS_DEFINE_VAR_TIMESERIESFORMAT)
+    (const char * timeseries, int64_t * group_id, const char * name
+    ,int timeseries_size, int name_size)
+{
+    char * buf1 = 0;
+    char * buf2 = 0;
+    buf1 = futils_fstr_to_cstr (timeseries, timeseries_size);
+    buf2 = futils_fstr_to_cstr (name, name_size);
+    struct adios_group_struct * g = (struct adios_group_struct *) *group_id;
+    adios_common_define_var_timeseriesformat (buf1, g, buf2, "");
+    free (buf1);
+    free (buf2);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void FC_FUNC_(adios_define_var_hyperslab, ADIOS_DEFINE_VAR_HYPERSLAB)
+    (const char * hyperslab, int64_t * group_id, const char * name
+    ,int hyperslab_size, int name_size)
+{
+    char * buf1 = 0;
+    char * buf2 = 0;
+    buf1 = futils_fstr_to_cstr (hyperslab, hyperslab_size);
+    buf2 = futils_fstr_to_cstr (name, name_size);
+    struct adios_group_struct * g = (struct adios_group_struct *) *group_id;
+    adios_common_define_var_hyperslab (buf1, g, buf2, "");
+    free (buf1);
+    free (buf2);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void FC_FUNC_(adios_define_mesh_timesteps, ADIOS_DEFINE_MESH_TIMESTEPS)
+    (const char * timesteps, int64_t * group_id, const char * name
+    ,int timesteps_size, int name_size)
+{
+    char * buf1 = 0;
+    char * buf2 = 0;
+    buf1 = futils_fstr_to_cstr (timesteps, timesteps_size);
+    buf2 = futils_fstr_to_cstr (name, name_size);
+    struct adios_group_struct * g = (struct adios_group_struct *) *group_id;
+    adios_common_define_mesh_timeSteps (buf1, g, buf2);
+    free (buf1);
+    free (buf2);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void FC_FUNC_(adios_define_mesh_timescale, ADIOS_DEFINE_MESH_TIMESCALE)
+    (const char * timescale, int64_t * group_id, const char * name
+    ,int timescale_size, int name_size)
+{
+    char * buf1 = 0;
+    char * buf2 = 0;
+    buf1 = futils_fstr_to_cstr (timescale, timescale_size);
+    buf2 = futils_fstr_to_cstr (name, name_size);
+    struct adios_group_struct * g = (struct adios_group_struct *) *group_id;
+    adios_common_define_mesh_timeScale (buf1, g, buf2);
+    free (buf1);
+    free (buf2);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void FC_FUNC_(adios_define_mesh_timeseriesformat, ADIOS_DEFINE_MESH_TIMESERIESFORMAT)
+    (const char * timeseries, int64_t * group_id, const char * name
+    ,int timeseries_size, int name_size)
+{
+    char * buf1 = 0;
+    char * buf2 = 0;
+    buf1 = futils_fstr_to_cstr (timeseries, timeseries_size);
+    buf2 = futils_fstr_to_cstr (name, name_size);
+    struct adios_group_struct * g = (struct adios_group_struct *) *group_id;
+    adios_common_define_mesh_timeSeriesFormat (buf1, g, buf2);
+    free (buf1);
+    free (buf2);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void FC_FUNC_(adios_define_mesh_group, ADIOS_DEFINE_MESH_GROUP)
+    (const char * group, int64_t * group_id, const char * name
+    ,int group_size, int name_size)
+{
+    char * buf1 = 0;
+    char * buf2 = 0;
+    buf1 = futils_fstr_to_cstr (group, group_size);
+    buf2 = futils_fstr_to_cstr (name, name_size);
+    adios_common_define_mesh_group (*group_id, buf2, buf1);
+    free (buf1);
+    free (buf2);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void FC_FUNC_(adios_define_mesh_uniform, ADIOS_DEFINE_MESH_UNIFROM)
+    (char * dimensions, char * origin, char * spacing, char * maximum, char * nspace
+    ,int64_t * group_id, const char * name, int dimensions_size, int origin_size
+    ,int spacing_size, int maximum_size, int nspace_size ,int name_size) 
+{
+    char * buf1 = 0;
+    char * buf2 = 0;
+    char * buf3 = 0;
+    char * buf4 = 0;
+    char * buf5 = 0;
+    char * buf6 = 0;
+    buf1 = futils_fstr_to_cstr (dimensions, dimensions_size);
+    buf2 = futils_fstr_to_cstr (origin, origin_size);
+    buf3 = futils_fstr_to_cstr (spacing, spacing_size);
+    buf4 = futils_fstr_to_cstr (maximum, maximum_size);
+    buf5 = futils_fstr_to_cstr (nspace, nspace_size);
+    buf6 = futils_fstr_to_cstr (name, name_size);
+    adios_common_define_mesh_uniform (buf1, buf2, buf3, buf4, buf5, buf6, *group_id);
+    free (buf1);
+    free (buf2);
+    free (buf3);
+    free (buf4);
+    free (buf5);
+    free (buf6);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void FC_FUNC_(adios_define_mesh_rectilinear, ADIOS_DEFINE_MESH_RECTILINEAR)
+    (char * dimensions, char * coordinates, char * nspace, int64_t * group_id
+    ,const char * name,  int dimensions_size, int coordinates_size, int nspace_size
+    ,int name_size)
+{
+    char * buf1 = 0;
+    char * buf2 = 0;
+    char * buf3 = 0;
+    char * buf4 = 0;
+    buf1 = futils_fstr_to_cstr (dimensions, dimensions_size);
+    buf2 = futils_fstr_to_cstr (coordinates, coordinates_size);
+    buf3 = futils_fstr_to_cstr (nspace, nspace_size);
+    buf4 = futils_fstr_to_cstr (name, name_size);
+    adios_common_define_mesh_rectilinear (buf1, buf2, buf3, buf4, *group_id);
+    free (buf1);
+    free (buf2);
+    free (buf3);
+    free (buf4);
+}
+
+///////////////////////////////////////////////////////////////////////////////
+void FC_FUNC_(adios_define_mesh_structured, ADIOS_DEFINE_MESH_STRUCTURED)
+    (char * dimensions, char * points, char * nspace, int64_t * group_id, const char * name
+    ,int dimensions_size, int points_size, int nspace_size, int name_size)
+{
+    char * buf1 = 0;
+    char * buf2 = 0;
+    char * buf3 = 0;
+    char * buf4 = 0;
+    buf1 = futils_fstr_to_cstr (dimensions, dimensions_size);
+    buf2 = futils_fstr_to_cstr (points, points_size);
+    buf3 = futils_fstr_to_cstr (nspace, nspace_size);
+    buf4 = futils_fstr_to_cstr (name, name_size);
+    adios_common_define_mesh_structured (buf1, buf3, buf2, buf4, *group_id);
+    free (buf1);
+    free (buf2);
+    free (buf3);
+    free (buf4);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

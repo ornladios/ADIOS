@@ -18,7 +18,6 @@
 #include <stdint.h>
 #include <string.h>
 #include <errno.h>
-#include "mpi.h"
 #include "adios.h"
 #include "adios_read.h"
 

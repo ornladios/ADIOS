@@ -5,7 +5,7 @@
  * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
  */
 
-#include "../config.h"
+#include "config.h"
 
 #include <stdlib.h>
 #include <math.h>
@@ -170,9 +170,6 @@ int common_adios_open (int64_t * fd, const char * group_name
     else
         fd_p->comm = MPI_COMM_NULL;
 
-#ifdef SKEL_TIMING
-    fd_p->timing_obj = 0;
-#endif
 
 #if 1
     /* Time index magic done here */
@@ -316,6 +313,11 @@ int common_adios_group_size (int64_t fd_p
         }
     }
 
+#ifdef SKEL_TIMING
+    int tv_size = adios_add_timing_variables (fd);
+    data_size += tv_size;
+#endif
+
     fd->write_size_bytes = data_size;
 
     uint64_t overhead = adios_calc_overhead_v1 (fd);
@@ -417,6 +419,11 @@ int common_adios_group_size (int64_t fd_p
             adios_write_open_vars_v1 (fd);
         }
     }
+
+#ifdef SKEL_TIMING
+    adios_write_timing_variables (fd);
+#endif
+
 
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop ("adios_group_size");
@@ -982,6 +989,10 @@ int common_adios_close (int64_t fd_p)
 #endif
         return 0;
     }
+
+//#ifdef SKEL_TIMING
+//    adios_write_timing_variables (fd);
+//#endif
 
     struct adios_attribute_struct * a = fd->group->attributes;
     struct adios_var_struct * v = fd->group->vars;

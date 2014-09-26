@@ -64,13 +64,13 @@ static int adios_mpi_amr_initialized = 0;
 
 
 #ifdef SKEL_TIMING
-#define START_TIMER(t) adios_timing_go (fd->timing_obj, (t) ) 
+#define START_TIMER(t) adios_timing_go (fd->group->timing_obj, (t) ) 
 #else
 #define START_TIMER(t) ; 
 #endif
 
 #ifdef SKEL_TIMING
-#define STOP_TIMER(t) adios_timing_stop (fd->timing_obj, (t) )
+#define STOP_TIMER(t) adios_timing_stop (fd->group->timing_obj, (t) )
 #else
 #define STOP_TIMER(t) ;
 #endif
@@ -1187,7 +1187,20 @@ int adios_mpi_amr_open (struct adios_file_struct * fd
     timer_names [4] = "ad_close";
     timer_names [5] = "ad_should_buffer";
 
-    fd->timing_obj = adios_timing_create (timer_count, timer_names);
+
+    // Ensure both timing objects exist
+    // timing_obj should get created at every open
+    // prev_timing_obj should only be created at the first open
+    if (fd->group)
+    {
+        if (!fd->group->timing_obj)
+            fd->group->timing_obj = adios_timing_create (timer_count, timer_names);
+
+        if (!fd->group->prev_timing_obj)
+            fd->group->prev_timing_obj = adios_timing_create (timer_count, timer_names);
+    }
+
+
 #endif
 
     // need to dealloc/realloc buffer because of supporting append mode
@@ -3626,6 +3639,19 @@ void adios_mpi_amr_close (struct adios_file_struct * fd
         return;
     }
     STOP_TIMER (ADIOS_TIMER_MPI_AMR_AD_CLOSE);
+
+#ifdef SKEL_TIMING
+
+    //Finished timing this cycle, swap the timing buffers
+    adios_timing_destroy(fd->group->prev_timing_obj);
+    fd->group->prev_timing_obj = fd->group->timing_obj;
+    fd->group->timing_obj = 0;
+
+    // prev_timing_obj points to unwritten timing info, timing_obj is
+    // ready to allocate at the next open
+
+#endif
+
 }
 
 void adios_mpi_amr_finalize (int mype, struct adios_method_struct * method)

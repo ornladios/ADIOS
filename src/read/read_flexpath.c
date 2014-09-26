@@ -50,19 +50,7 @@
 #include "dmalloc.h"
 #endif
 
-#define FP_BATCH_SIZE 32
-
-/*
- * Contains start & counts for each dimension for a writer_rank.
- */
-typedef struct _array_displ
-{
-    int writer_rank;
-    int ndims;
-    uint64_t pos;
-    uint64_t *start;
-    uint64_t *count;    
-}array_displacements;
+#define FP_BATCH_SIZE 4
 
 typedef struct _bridge_info
 {
@@ -78,6 +66,13 @@ typedef struct _bridge_info
     int scheduled;
 }bridge_info;
 
+typedef struct _flexpath_read_request
+{
+    int num_pending;
+    int num_completed;
+    int condition;
+}flexpath_read_request;
+
 typedef struct _flexpath_var_chunk
 {
     int has_data;
@@ -85,6 +80,18 @@ typedef struct _flexpath_var_chunk
     void *data;
     void *user_buf;
 } flexpath_var_chunk;
+
+/*
+ * Contains start & counts for each dimension for a writer_rank.
+ */
+typedef struct _array_displ
+{
+    int writer_rank;
+    int ndims;
+    uint64_t pos;
+    uint64_t *start;
+    uint64_t *count;    
+}array_displacements;
 
 typedef struct _flexpath_var
 {
@@ -123,28 +130,24 @@ typedef struct _flexpath_reader_file
     MPI_Comm comm;
     int rank;
     int size;
-    int valid;
 
     int num_bridges;
     bridge_info *bridges;
     int writer_coordinator;
 
     int num_vars;
-    flexpath_var * var_list;
-    int num_gp; 
-    evgroup * gp;
+    flexpath_var *var_list;
+    evgroup *gp;
 
     int writer_finalized;
     int last_writer_step;
     int mystep;
     int num_sendees;
     int *sendees;
-    int ackCondition;    
 
-    int pending_requests;
-    int completed_requests;
     uint64_t data_read; // for perf measurements.
     double time_in; // for perf measurements.
+    flexpath_read_request req;
     pthread_mutex_t data_mutex;
     pthread_cond_t data_condition;
 } flexpath_reader_file;
@@ -152,13 +155,12 @@ typedef struct _flexpath_reader_file
 typedef struct _local_read_data
 {
     // MPI stuff
-    MPI_Comm fp_comm;
-    int fp_comm_rank;
-    int fp_comm_size;
+    MPI_Comm comm;
+    int rank;
+    int size;
 
     // EVPath stuff
-    CManager fp_cm;
-    EVstone stone;
+    CManager cm;
     atom_t CM_TRANSPORT;
 } flexpath_read_data;
 
@@ -171,22 +173,22 @@ void build_bridge(bridge_info* bridge)
     attr_list contact_list = attr_list_from_string(bridge->contact);
     if(bridge->created == 0){
 	bridge->bridge_stone =
-	    EVcreate_bridge_action(fp_read_data->fp_cm,
+	    EVcreate_bridge_action(fp_read_data->cm,
 				   contact_list,
 				   (EVstone)bridge->their_num);
 
 	bridge->flush_source =
-	    EVcreate_submit_handle(fp_read_data->fp_cm,
+	    EVcreate_submit_handle(fp_read_data->cm,
 				   bridge->bridge_stone,
 				   flush_format_list);
 
 	bridge->var_source =
-	    EVcreate_submit_handle(fp_read_data->fp_cm,
+	    EVcreate_submit_handle(fp_read_data->cm,
 				   bridge->bridge_stone,
 				   var_format_list);
 
 	bridge->op_source =
-	    EVcreate_submit_handle(fp_read_data->fp_cm,
+	    EVcreate_submit_handle(fp_read_data->cm,
 				   bridge->bridge_stone,
 				   op_format_list);
 
@@ -210,7 +212,7 @@ free_displacements(array_displacements *displ, int num)
 void
 free_evgroup(evgroup *gp)
 {
-    EVreturn_event_buffer(fp_read_data->fp_cm, gp);
+    EVreturn_event_buffer(fp_read_data->cm, gp);
 }
 
 flexpath_var*
@@ -235,16 +237,15 @@ new_flexpath_var(const char *varname, int id, uint64_t type_size)
 flexpath_reader_file*
 new_flexpath_reader_file(const char *fname)
 {
-    flexpath_reader_file * fp = malloc(sizeof(flexpath_reader_file));
+    flexpath_reader_file *fp = calloc(1, sizeof(*fp));
     if(fp == NULL){
 	log_error("Cannot create data for new file.\n");
 	exit(1);
     }
-    memset(fp, 0, sizeof(flexpath_reader_file));
     fp->file_name = strdup(fname);
     fp->writer_coordinator = -1;
     fp->last_writer_step = -1;
-
+    fp->req = (flexpath_read_request){.num_pending = 0, .num_completed = 0, .condition = -1};
     pthread_mutex_init(&fp->data_mutex, NULL);
     pthread_cond_init(&fp->data_condition, NULL);
     return fp;        
@@ -642,11 +643,11 @@ send_open_msg(flexpath_reader_file *fp, int destination)
     msg.file_name = fp->file_name;
     msg.step = fp->mystep;
     msg.type = OPEN_MSG;
-    int cond = CMCondition_get(fp_read_data->fp_cm, NULL);
+    int cond = CMCondition_get(fp_read_data->cm, NULL);
     msg.condition = cond;
 
     EVsubmit(fp->bridges[destination].op_source, &msg, NULL);    
-    CMCondition_wait(fp_read_data->fp_cm, cond);
+    CMCondition_wait(fp_read_data->cm, cond);
     fp->bridges[destination].opened = 1;
 }
 
@@ -662,10 +663,10 @@ send_close_msg(flexpath_reader_file *fp, int destination)
     msg.step = fp->mystep;
     msg.type = CLOSE_MSG;
     //msg.condition = -1;
-    int cond = CMCondition_get(fp_read_data->fp_cm, NULL);
+    int cond = CMCondition_get(fp_read_data->cm, NULL);
     msg.condition = cond;
     EVsubmit(fp->bridges[destination].op_source, &msg, NULL);  
-    CMCondition_wait(fp_read_data->fp_cm, cond);  
+    CMCondition_wait(fp_read_data->cm, cond);  
     fp->bridges[destination].opened = 0;
 }
 
@@ -678,13 +679,13 @@ send_flush_msg(flexpath_reader_file *fp, int destination, Flush_type type, int u
     msg.id = fp->mystep;
 
     if(use_condition)
-	msg.condition = CMCondition_get(fp_read_data->fp_cm, NULL);
+	msg.condition = CMCondition_get(fp_read_data->cm, NULL);
     else
 	msg.condition = -1;
     // maybe check to see if the bridge is create first.
     EVsubmit(fp->bridges[destination].flush_source, &msg, NULL);
     if(use_condition){
-	CMCondition_wait(fp_read_data->fp_cm, msg.condition);
+	CMCondition_wait(fp_read_data->cm, msg.condition);
     }
 }
 
@@ -733,7 +734,7 @@ update_step_msg_handler(
     fp->last_writer_step = msg->step;
     fp->writer_finalized = msg->finalized;
     adiosfile->last_step = msg->step;
-    CMCondition_signal(fp_read_data->fp_cm, msg->condition);
+    CMCondition_signal(fp_read_data->cm, msg->condition);
     return 0;
 }
 
@@ -744,13 +745,13 @@ op_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     if(msg->type==ACK_MSG) {
 	if(msg->condition != -1){
-	    CMCondition_signal(fp_read_data->fp_cm, msg->condition);
+	    CMCondition_signal(fp_read_data->cm, msg->condition);
 	}
-        //ackCondition = CMCondition_get(fp_read_data->fp_cm, NULL);
+        //ackCondition = CMCondition_get(fp_read_data->cm, NULL);
     }
     if(msg->type == EOS_MSG){	
 	adios_errno = err_end_of_stream;
-	CMCondition_signal(fp_read_data->fp_cm, msg->condition);
+	CMCondition_signal(fp_read_data->cm, msg->condition);
     }       
     return 0;
 }
@@ -758,7 +759,7 @@ op_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs) {
 static int
 group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 {
-    EVtake_event_buffer(fp_read_data->fp_cm, vevent);
+    EVtake_event_buffer(fp_read_data->cm, vevent);
     evgroup *msg = (evgroup*)vevent;
     ADIOS_FILE *adiosfile = client_data;
     flexpath_reader_file * fp = (flexpath_reader_file*)adiosfile->fh;
@@ -770,7 +771,7 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
     for(i = 0; i<msg->num_vars; i++){
 	global_var *gblvar = &msg->vars[i];
 	flexpath_var *fpvar = find_fp_var(fp->var_list, gblvar->name);
-	if(fpvar){
+	if (fpvar) {
 	    offset_struct *offset = &gblvar->offsets[0];
 	    uint64_t *local_dimensions = offset->local_dimensions;
 	    uint64_t *local_offsets = offset->local_offsets;
@@ -786,7 +787,7 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 	    return err_corrupted_variable;
 	}
     }
-    CMCondition_signal(fp_read_data->fp_cm, msg->condition);    
+    CMCondition_signal(fp_read_data->cm, msg->condition);    
     return 0;
 }
 
@@ -796,13 +797,10 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 {
     ADIOS_FILE *adiosfile = client_data;
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
-
-    int condition;
     int writer_rank;          
     int flush_id;
     double data_start;
     get_double_attr(attrs, attr_atom_from_string("fp_starttime"), &data_start);
-    get_int_attr(attrs, attr_atom_from_string("fp_dst_condition"), &condition);   
     get_int_attr(attrs, attr_atom_from_string(FP_RANK_ATTR_NAME), &writer_rank); 
     get_int_attr(attrs, attr_atom_from_string("fp_flush_id"), &flush_id);
 
@@ -960,17 +958,12 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
         f++;
     }
  
-    if(condition == -1){
-	fp->completed_requests++;
-	if(fp->completed_requests == fp->pending_requests){
-	    pthread_mutex_lock(&fp->data_mutex);
-	    pthread_cond_signal(&fp->data_condition);
-	    pthread_mutex_unlock(&fp->data_mutex);
-	}
+    
+    fp->req.num_completed++;
+    if(fp->req.num_completed == fp->req.num_pending){
+        CMCondition_signal(fp_read_data->cm, fp->req.condition);
     }
-    else{
-	CMCondition_signal(fp_read_data->fp_cm, condition);
-    }
+    
 
     free_fmstructdesclist(struct_list);
     return 0; 
@@ -998,25 +991,25 @@ adios_read_flexpath_init_method (MPI_Comm comm, PairStruct* params)
     transport = getenv("CMTransport");
 
     // setup MPI stuffs
-    fp_read_data->fp_comm = comm;
-    MPI_Comm_size(fp_read_data->fp_comm, &(fp_read_data->fp_comm_size));
-    MPI_Comm_rank(fp_read_data->fp_comm, &(fp_read_data->fp_comm_rank));
+    fp_read_data->comm = comm;
+    MPI_Comm_size(fp_read_data->comm, &(fp_read_data->size));
+    MPI_Comm_rank(fp_read_data->comm, &(fp_read_data->rank));
 
-    fp_read_data->fp_cm = CManager_create();
+    fp_read_data->cm = CManager_create();
     if(transport == NULL){
-	if(CMlisten(fp_read_data->fp_cm) == 0) {
+	if(CMlisten(fp_read_data->cm) == 0) {
 	    fprintf(stderr, "Flexpath ERROR: reader %d unable to initialize connection manager.\n",
-		fp_read_data->fp_comm_rank);
+		fp_read_data->rank);
 	}
     }else{
 	listen_list = create_attr_list();
 	add_attr(listen_list, fp_read_data->CM_TRANSPORT, Attr_String, 
 		 (attr_value)strdup(transport));
-	CMlisten_specific(fp_read_data->fp_cm, listen_list);
+	CMlisten_specific(fp_read_data->cm, listen_list);
     }
-    int forked = CMfork_comm_thread(fp_read_data->fp_cm);
+    int forked = CMfork_comm_thread(fp_read_data->cm);
     if(!forked) {
-	fprintf(stderr, "reader %d failed to fork comm_thread.\n", fp_read_data->fp_comm_rank);
+	fprintf(stderr, "reader %d failed to fork comm_thread.\n", fp_read_data->rank);
 	/*log_debug( "forked\n");*/
     }
     return 0;
@@ -1061,32 +1054,32 @@ adios_read_flexpath_open(const char * fname,
     flexpath_reader_file *fp = new_flexpath_reader_file(fname);
 	
     adios_errno = 0;
-    fp->stone = EValloc_stone(fp_read_data->fp_cm);	
+    fp->stone = EValloc_stone(fp_read_data->cm);	
     fp->comm = comm;
 
     MPI_Comm_size(fp->comm, &(fp->size));
     MPI_Comm_rank(fp->comm, &(fp->rank));
 
-    EVassoc_terminal_action(fp_read_data->fp_cm,
+    EVassoc_terminal_action(fp_read_data->cm,
 			    fp->stone,
 			    op_format_list,
 			    op_msg_handler,
 			    adiosfile);       
 
-    EVassoc_terminal_action(fp_read_data->fp_cm,
+    EVassoc_terminal_action(fp_read_data->cm,
 			    fp->stone,
 			    update_step_msg_format_list,
 			    update_step_msg_handler,
 			    adiosfile);       
 
 
-    EVassoc_terminal_action(fp_read_data->fp_cm,
+    EVassoc_terminal_action(fp_read_data->cm,
 			    fp->stone,
 			    evgroup_format_list,
 			    group_msg_handler,
 			    adiosfile);
 
-    EVassoc_raw_terminal_action(fp_read_data->fp_cm,
+    EVassoc_raw_terminal_action(fp_read_data->cm,
 				fp->stone,
 				raw_handler,
 				adiosfile);
@@ -1106,7 +1099,7 @@ adios_read_flexpath_open(const char * fname,
 	
     char *string_list;
     char data_contact_info[CONTACT_LENGTH];
-    string_list = attr_list_to_string(CMget_contact_list(fp_read_data->fp_cm));
+    string_list = attr_list_to_string(CMget_contact_list(fp_read_data->cm));
     sprintf(&data_contact_info[0], "%d:%s", fp->stone, string_list);
     free(string_list);
 
@@ -1141,14 +1134,14 @@ adios_read_flexpath_open(const char * fname,
 
     FILE * fp_in = fopen(writer_ready_filename,"r");
     while(!fp_in) {
-	//CMsleep(fp_read_data->fp_cm, 1);
+	//CMsleep(fp_read_data->cm, 1);
 	fp_in = fopen(writer_ready_filename, "r");
     }
     fclose(fp_in);
 
     fp_in = fopen(writer_info_filename, "r");
     while(!fp_in){
-	//CMsleep(fp_read_data->fp_cm, 1);
+	//CMsleep(fp_read_data->cm, 1);
 	fp_in = fopen(writer_info_filename, "r");
     }
 
@@ -1205,7 +1198,11 @@ adios_read_flexpath_open(const char * fname,
     
 
     fp->data_read = 0;
-    send_flush_msg(fp, fp->writer_coordinator, DATA, 1);
+    fp->req.condition = CMCondition_get(fp_read_data->cm, NULL);
+    fp->req.num_pending = 1;
+    fp->req.num_completed = 0;
+    send_flush_msg(fp, fp->writer_coordinator, DATA, 0);
+    CMCondition_wait(fp_read_data->cm, fp->req.condition);
 
     send_flush_msg(fp, fp->writer_coordinator, EVGROUP, 1);
     fp->data_read = 0;
@@ -1290,7 +1287,7 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
 	    adios_errno = err_end_of_stream;
 	    return err_end_of_stream;
 	}
-	CMsleep(fp_read_data->fp_cm, 1);
+	CMsleep(fp_read_data->cm, 1);
 	send_flush_msg(fp, fp->writer_coordinator, STEP, 1);
     }
 
@@ -1314,8 +1311,11 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
         }
     }   
     // need to remove selectors from each var now.
-    send_flush_msg(fp, fp->writer_coordinator, DATA, 1);
-      
+    fp->req.num_completed = 0;
+    fp->req.num_pending = 1;
+    fp->req.condition = CMCondition_get(fp_read_data->cm, NULL);
+    send_flush_msg(fp, fp->writer_coordinator, DATA, 0);
+    CMCondition_wait(fp_read_data->cm, fp->req.condition);
     // should only happen if there are more steps available.
     // writer should have advanced.
     send_flush_msg(fp, fp->writer_coordinator, EVGROUP, 1);
@@ -1385,25 +1385,31 @@ int adios_read_flexpath_check_reads(const ADIOS_FILE* fp, ADIOS_VARCHUNK** chunk
 int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
 {
     fp_log("FUNC", "entering perform_reads.\n");
-    flexpath_reader_file * fp = (flexpath_reader_file*)adiosfile->fh;
+    flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
     fp->data_read = 0;
-    int i,j;
+    int i;
+    int batchcount = 0;
     int num_sendees = fp->num_sendees;
     int total_sent = 0;
     fp->time_in = 0.00;
-    for(i = 0; i<num_sendees; i++){
-	pthread_mutex_lock(&fp->data_mutex);
-	int sendee = fp->sendees[i];	
-	fp->pending_requests++;
+    fp->req.num_completed = 0;
+    fp->req.num_pending = FP_BATCH_SIZE;
+    fp->req.condition = CMCondition_get(fp_read_data->cm, NULL);
+
+    for(i = 0; i<num_sendees; i++){	
+	int sendee = fp->sendees[i];
+        batchcount++;
 	total_sent++;
 	send_flush_msg(fp, sendee, DATA, 0);
 
-	if((total_sent % FP_BATCH_SIZE == 0) || (total_sent = num_sendees)){
-	    pthread_cond_wait(&fp->data_condition, &fp->data_mutex);
-	    pthread_mutex_unlock(&fp->data_mutex);
-	    fp->completed_requests = 0;
-	    fp->pending_requests = 0;
+	if ((total_sent % FP_BATCH_SIZE == 0) || (total_sent == num_sendees)) {
+            fp->req.num_pending = batchcount;
+            CMCondition_wait(fp_read_data->cm, fp->req.condition);
+	    fp->req.num_completed = 0;
+	    fp->req.num_pending = 0;
 	    total_sent = 0;
+            batchcount = 0;
+            fp->req.condition = CMCondition_get(fp_read_data->cm, NULL);
 	}
 
     }

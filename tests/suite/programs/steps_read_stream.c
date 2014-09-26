@@ -15,7 +15,6 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
-#include "mpi.h"
 #include "adios_read.h"
 #include "adios_error.h"
 

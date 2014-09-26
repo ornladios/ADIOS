@@ -122,6 +122,12 @@ module adios_write_mod
             integer*8,      intent(out) :: id
         end subroutine
 
+        subroutine adios_delete_vardefs (group_id, err)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            integer,        intent(out) :: err
+        end subroutine
+
         subroutine adios_set_transform (var_id, transform_method, err)
             implicit none
             integer*8,      intent(in)  :: var_id
@@ -137,6 +143,12 @@ module adios_write_mod
             integer,        intent(in)  :: attrtype
             character(*),   intent(in)  :: value
             character(*),   intent(in)  :: varname
+            integer,        intent(out) :: err
+        end subroutine
+
+        subroutine adios_delete_attrdefs (group_id, err)
+            implicit none
+            integer*8,      intent(in)  :: group_id
             integer,        intent(out) :: err
         end subroutine
 
@@ -188,6 +200,91 @@ module adios_write_mod
             integer*8,      intent(in)  :: group_id
             character(*),   intent(in)  :: name
             character(*),   intent(in)  :: file
+        end subroutine
+
+        subroutine adios_define_var_timesteps (timesteps, group_id, name)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: timesteps
+            character(*),   intent(in)  :: name
+        end subroutine
+
+        subroutine adios_define_var_timescale (timescale, group_id, name)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: timescale
+            character(*),   intent(in)  :: name
+        end subroutine
+        
+        subroutine adios_define_var_timeseriesformat (timeseries, group_id, name)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: timeseries
+            character(*),   intent(in)  :: name
+        end subroutine
+
+        subroutine adios_define_var_hyperslab (hyperslab, group_id, name)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: hyperslab
+            character(*),   intent(in)  :: name
+        end subroutine
+
+        subroutine adios_define_mesh_timesteps (timesteps, group_id, name)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: timesteps
+            character(*),   intent(in)  :: name
+        end subroutine
+
+        subroutine adios_define_mesh_timescale (timescale, group_id, name)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: timescale
+            character(*),   intent(in)  :: name
+        end subroutine
+
+        subroutine adios_define_mesh_timeseriesformat (timeseries, group_id, name)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: timeseries
+            character(*),   intent(in)  :: name
+        end subroutine
+
+        subroutine adios_define_mesh_group (group, group_id, name)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: group
+            character(*),   intent(in)  :: name
+        end subroutine
+
+        subroutine adios_define_mesh_uniform (dimensions, origin, spacing, maximum, nspace, group_id, name)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: dimensions
+            character(*),   intent(in)  :: origin
+            character(*),   intent(in)  :: spacing
+            character(*),   intent(in)  :: maximum
+            character(*),   intent(in)  :: nspace
+            character(*),   intent(in)  :: name
+        end subroutine
+        
+        subroutine adios_define_mesh_rectilinear (dimensions, coordinates, nspace, group_id, name)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: dimensions
+            character(*),   intent(in)  :: coordinates
+            character(*),   intent(in)  :: nspace
+            character(*),   intent(in)  :: name
+        end subroutine
+
+        subroutine adios_define_mesh_structured (dimensions, points, nspace, group_id, name)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: dimensions
+            character(*),   intent(in)  :: points
+            character(*),   intent(in)  :: nspace
+            character(*),   intent(in)  :: name
         end subroutine
 
         subroutine adios_define_mesh_unstructured (points, data, count, cell_type, npoints, nspace, group_id, name)
