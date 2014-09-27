@@ -15,7 +15,7 @@
 #include <adios.h>
 #include <adios_types.h>
 
-typedef enum { DATASET_1 } DATASET_ID;
+typedef enum { DATASET_1, DATASET_2 } DATASET_ID;
 
 typedef struct {
 	const char *group_name;
@@ -173,7 +173,7 @@ void build_dataset_from_specs(
 
 			// Pin the timestep to allow multiple adios_open/adios_close cycles to write
 			// to the same timestep (this simulates a parallel file write with fewer core)
-			adios_pin_timestep(timestep);
+			adios_pin_timestep(timestep + 1); // +1 because we want the timesteps to be 1-based
 
 			const dataset_pg_spec_t *pg_spec = &pg_specs[timestep][pg_in_timestep];
 
@@ -307,8 +307,8 @@ void build_dataset_1(const char *filename_prefix, const char *transform_name) {
 	static const uint64_t PG_DIMS	  [NUM_TS][NUM_PGS_PER_TS][NUM_DIMS] = { { { 4, 4 } } };
 	static const uint64_t PG_OFFSETS  [NUM_TS][NUM_PGS_PER_TS][NUM_DIMS] = { { { 0, 0 } } };
 
-	// Variable data
-	static const float TEMP_DATA[16] = {
+	// Variable data (we can use [TS][PG][16] here because every PG is the same size, 16)
+	static const float TEMP_DATA[NUM_TS][NUM_PGS_PER_TS][16] = {
 		// Timestep 1
 		// PG 0 in timestep 1
 		//  1.00000000     1.00003052     2.00000000     2.00006104
@@ -348,69 +348,98 @@ void build_dataset_1(const char *filename_prefix, const char *transform_name) {
 	build_dataset_from_varblocks_by_var(filename_prefix, transform_name, &XML_SPEC, &GLOBAL_SPEC, PG_DIMS, PG_OFFSETS, (const void **)VARBLOCKS_BY_VAR);
 }
 
-//void build_dataset_2(const char *filename_prefix, const char *transform_name) {
-//	// Basic dataset information
-//	// NOTE: we have to use an anonymous enum here to define these constants, since
-//	// C is picky and doesn't consider a static const int "const enough" to use
-//	// as an array length (e.g., if these were static const ints, it would not compile)
-//	enum {
-//		NUM_DIMS = 2,
-//		NUM_TS = 1,
-//		NUM_PGS_PER_TS = 1,
-//		NUM_VARS = 1,
-//		NUM_PGS = NUM_TS * NUM_PGS_PER_TS,
-//	};
-//
-//	// Variable names/types
-//	static const char *VARNAMES[NUM_VARS]					= { "temp"     };
-//	static const enum ADIOS_DATATYPES VARTYPES[NUM_VARS]	= { adios_real };
-//
-//	// Global and PG dimensions/offsets
-//	static const uint64_t GLOBAL_DIMS                         [NUM_DIMS] = { 4, 4 };
-//	static const uint64_t PG_DIMS	  [NUM_TS][NUM_PGS_PER_TS][NUM_DIMS] = { { { 4, 4 } } };
-//	static const uint64_t PG_OFFSETS  [NUM_TS][NUM_PGS_PER_TS][NUM_DIMS] = { { { 0, 0 } } };
-//
-//	// Variable data
-//	static const float TEMP_DATA[NUM_TS][NUM_PGS_PER_TS][16] = {
-//		{ // Timestep 1
-//			{ // PG 0 in timestep 1
-//			//  1.00000000     1.00003052     2.00000000     2.00006104
-//				0x1.000000p+0, 0x1.000200p+0, 0x1.000000p+1, 0x1.000200p+1,
-//			//  2.00012207     30.00000000    30.00048828    30.00097656
-//				0x1.000400p+1, 0x1.e00000p+4, 0x1.e00200p+4, 0x1.e00400p+4,
-//			//  30.00146484    50.00000000    50.00097656    50.00195312
-//				0x1.e00600p+4, 0x1.900000p+5, 0x1.900200p+5, 0x1.900400p+5,
-//			//  50.00292969    50.00390625    50.00488281    50.00585938
-//				0x1.900600p+5, 0x1.900800p+5, 0x1.900a00p+5, 0x1.900c00p+5,
-//			}
-//		}
-//	};
-//
-//	static const void *VARBLOCKS_BY_VAR[NUM_VARS] = {
-//		TEMP_DATA,
-//	};
-//
-//	// Now, collect all this information into specification structs
-//	// File specification
-//	static const dataset_xml_spec_t XML_SPEC = {
-//		.group_name = "S3D",
-//		.buffer_size_mb = 128,
-//		.write_transport_method = "MPI",
-//		.ndim = NUM_DIMS,
-//		.varnames = VARNAMES,
-//		.vartypes = VARTYPES,
-//	};
-//
-//	// Global space specification
-//	static const dataset_global_spec_t GLOBAL_SPEC = {
-//		.num_timesteps = NUM_TS,
-//		.num_pgs_per_timestep = NUM_PGS_PER_TS,
-//		.global_dims = GLOBAL_DIMS,
-//	};
-//
-//	// Finally, invoke the dataset builder with this information
-//	build_dataset_from_varblocks_by_var(filename_prefix, &XML_SPEC, transform_name, &GLOBAL_SPEC, PG_DIMS, PG_OFFSETS, VARBLOCKS_BY_VAR);
-//}
+void build_dataset_2(const char *filename_prefix, const char *transform_name) {
+	// Basic dataset information
+	// NOTE: we have to use an anonymous enum here to define these constants, since
+	// C is picky and doesn't consider a static const int "const enough" to use
+	// as an array length (e.g., if these were static const ints, it would not compile)
+	enum {
+		NUM_DIMS = 3,
+		NUM_TS = 2,
+		NUM_PGS_PER_TS = 8,
+		NUM_VARS = 1,
+		NUM_PGS = NUM_TS * NUM_PGS_PER_TS,
+	};
+
+	// Variable names/types
+	static const char *VARNAMES[NUM_VARS]					= { "temp"     };
+	static const enum ADIOS_DATATYPES VARTYPES[NUM_VARS]	= { adios_real };
+
+	// Global and PG dimensions/offsets
+	static const uint64_t GLOBAL_DIMS                         [NUM_DIMS] = { 4, 4, 4 };
+	static const uint64_t PG_DIMS	  [NUM_TS][NUM_PGS_PER_TS][NUM_DIMS] = {
+		{ { 2, 2, 2 }, { 2, 2, 2 }, { 2, 2, 2 }, { 2, 2, 2 }, { 2, 2, 2 }, { 2, 2, 2 }, { 2, 2, 2 }, { 2, 2, 2 } }, // Timestep 1
+		{ { 2, 2, 2 }, { 2, 2, 2 }, { 2, 2, 2 }, { 2, 2, 2 }, { 2, 2, 2 }, { 2, 2, 2 }, { 2, 2, 2 }, { 2, 2, 2 } }, // Timestep 2
+	};
+	static const uint64_t PG_OFFSETS  [NUM_TS][NUM_PGS_PER_TS][NUM_DIMS] = {
+		{ { 0, 0, 0 }, { 0, 0, 2 }, { 0, 2, 0 }, { 0, 2, 2 }, { 2, 0, 0 }, { 2, 0, 2 }, { 2, 2, 0 }, { 2, 2, 2 } }, // Timestep 1
+		{ { 0, 0, 0 }, { 0, 0, 2 }, { 0, 2, 0 }, { 0, 2, 2 }, { 2, 0, 0 }, { 2, 0, 2 }, { 2, 2, 0 }, { 2, 2, 2 } }, // Timestep 2
+	};
+
+	// Variable data (we can use [TS][PG][8] here because every PG is the same size, 8)
+	static const float TEMP_DATA[NUM_TS][NUM_PGS_PER_TS][8] = {
+		// Timestep 1
+		// PG 0 in timestep 1
+		0x1.ac6a54p+1, 0x1.07f8acp+5, 0x1.144118p+6, 0x1.51fd46p+5, 0x1.4a0634p+4, 0x1.90349cp+4, 0x1.fd3f30p+5, 0x1.5972eep+6,
+		// PG 1 in timestep 1
+		0x1.e2a624p+4, 0x1.3f06c0p+1, 0x1.23fe82p+5, 0x1.322704p+6, 0x1.fc9392p+4, 0x1.b254b2p+3, 0x1.5595b8p+3, 0x1.3044c4p+6,
+		// PG 2 in timestep 1
+		0x1.0559eep+3, 0x1.b8c3d4p+5, 0x1.c3b8b6p+5, 0x1.294ee6p+6, 0x1.88b43ep+6, 0x1.5e28e0p+4, 0x1.6b8448p+5, 0x1.9eec5ap+5,
+		// PG 3 in timestep 1
+		0x1.cb12cap+5, 0x1.bc2f50p+5, 0x1.236b24p+6, 0x1.f71962p+5, 0x1.3e7386p+6, 0x1.d2f8fep+5, 0x1.b7a056p+4, 0x1.4bd6d8p+6,
+		// PG 4 in timestep 1
+		0x1.6d78d6p+6, 0x1.82292ep+6, 0x1.9355ecp+4, 0x1.7fd314p+3, 0x1.58d954p+4, 0x1.637512p+6, 0x1.896d50p+6, 0x1.9dbfbep+5,
+		// PG 5 in timestep 1
+		0x1.6d6d4ap+6, 0x1.16d924p+5, 0x1.c41b86p+4, 0x1.7248b2p+4, 0x1.836e50p+5, 0x1.377332p+5, 0x1.8cd6f2p+6, 0x1.c4c4cep+5,
+		// PG 6 in timestep 1
+		0x1.781b84p+6, 0x1.bd6698p+5, 0x1.eec532p+4, 0x1.70cfc0p+6, 0x1.363d84p+6, 0x1.317370p+6, 0x1.608bdap+5, 0x1.178dd0p+5,
+		// PG 7 in timestep 1
+		0x1.fe2c64p+4, 0x1.0ec43ep+4, 0x1.87539ap+6, 0x1.6ff4f6p+3, 0x1.2d2d90p+6, 0x1.94eebcp+4, 0x1.79d576p+6, 0x1.0aa666p+6,
+		// Timestep 2
+		// PG 0 in timestep 1
+		0x1.0aa666p+6, 0x1.79d576p+6, 0x1.94eebcp+4, 0x1.2d2d90p+6, 0x1.6ff4f6p+3, 0x1.87539ap+6, 0x1.0ec43ep+4, 0x1.fe2c64p+4,
+		// PG 1 in timestep 1
+		0x1.178dd0p+5, 0x1.608bdap+5, 0x1.317370p+6, 0x1.363d84p+6, 0x1.70cfc0p+6, 0x1.eec532p+4, 0x1.bd6698p+5, 0x1.781b84p+6,
+		// PG 2 in timestep 1
+		0x1.c4c4cep+5, 0x1.8cd6f2p+6, 0x1.377332p+5, 0x1.836e50p+5, 0x1.7248b2p+4, 0x1.c41b86p+4, 0x1.16d924p+5, 0x1.6d6d4ap+6,
+		// PG 3 in timestep 1
+		0x1.9dbfbep+5, 0x1.896d50p+6, 0x1.637512p+6, 0x1.58d954p+4, 0x1.7fd314p+3, 0x1.9355ecp+4, 0x1.82292ep+6, 0x1.6d78d6p+6,
+		// PG 4 in timestep 1
+		0x1.4bd6d8p+6, 0x1.b7a056p+4, 0x1.d2f8fep+5, 0x1.3e7386p+6, 0x1.f71962p+5, 0x1.236b24p+6, 0x1.bc2f50p+5, 0x1.cb12cap+5,
+		// PG 5 in timestep 1
+		0x1.9eec5ap+5, 0x1.6b8448p+5, 0x1.5e28e0p+4, 0x1.88b43ep+6, 0x1.294ee6p+6, 0x1.c3b8b6p+5, 0x1.b8c3d4p+5, 0x1.0559eep+3,
+		// PG 6 in timestep 1
+		0x1.3044c4p+6, 0x1.5595b8p+3, 0x1.b254b2p+3, 0x1.fc9392p+4, 0x1.322704p+6, 0x1.23fe82p+5, 0x1.3f06c0p+1, 0x1.e2a624p+4,
+		// PG 7 in timestep 1
+		0x1.5972eep+6, 0x1.fd3f30p+5, 0x1.90349cp+4, 0x1.4a0634p+4, 0x1.51fd46p+5, 0x1.144118p+6, 0x1.07f8acp+5, 0x1.ac6a54p+1,
+	};
+
+	static const void *VARBLOCKS_BY_VAR[NUM_VARS] = {
+		TEMP_DATA,
+	};
+
+	// Now, collect all this information into specification structs
+	// File specification
+	static const dataset_xml_spec_t XML_SPEC = {
+		.group_name = "S3D",
+		.buffer_size_mb = 128,
+		.write_transport_method = "MPI",
+		.ndim = NUM_DIMS,
+		.nvar = NUM_VARS,
+		.varnames = VARNAMES,
+		.vartypes = VARTYPES,
+	};
+
+	// Global space specification
+	static const dataset_global_spec_t GLOBAL_SPEC = {
+		.num_ts = NUM_TS,
+		.num_pgs_per_ts = NUM_PGS_PER_TS,
+		.global_dims = GLOBAL_DIMS,
+	};
+
+	// Finally, invoke the dataset builder with this information
+	build_dataset_from_varblocks_by_var(filename_prefix, transform_name, &XML_SPEC, &GLOBAL_SPEC, PG_DIMS, PG_OFFSETS, (const void **)VARBLOCKS_BY_VAR);
+}
 
 void usage_and_exit() {
 	fprintf(stderr, "Usage: build_indexed_dataset <dataset-id> <filename-prefix> [<transform-type>]\n");
@@ -438,6 +467,8 @@ int main(int argc, char **argv) {
 	// Select the dataset by dataset ID
 	if (strcasecmp(dataset_id, "DS1") == 0) {
 		dataset = DATASET_1;
+	} else if (strcasecmp(dataset_id, "DS2") == 0) {
+		dataset = DATASET_2;
 	} else {
 		fprintf(stderr, "Error: '%s' does not name a dataset packaged in this executable\n");
 		usage_and_exit();
@@ -448,6 +479,9 @@ int main(int argc, char **argv) {
 	switch (dataset) {
 	case DATASET_1:
 		build_dataset_1(path, transform_name);
+		break;
+	case DATASET_2:
+		build_dataset_2(path, transform_name);
 		break;
 	}
 
