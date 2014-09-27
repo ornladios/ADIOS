@@ -13,6 +13,7 @@
 
 #include <mpi.h>
 #include <adios.h>
+#include <adios_types.h>
 
 typedef enum { DATASET_1 } DATASET_ID;
 
@@ -22,8 +23,12 @@ typedef struct {
 	const char *write_transport_method;
 	int ndim;
 	const char **varnames;
-	const char **types;
+	const enum ADIOS_DATATYPES *vartypes;
 } dataset_xml_spec_t;
+
+// Imported from adios_internal.c
+extern const char * adios_type_to_string_int(int type);                    // converts enum ADIOS_DATATYPES to string
+extern uint64_t adios_get_type_size(enum ADIOS_DATATYPES type, void *var); // returns the size in bytes of a given enum ADIOS_DATATYPES
 
 static void build_dimension_var_list(int ndim, const char *dimvar_base, char *outbuf) {
 	int i;
@@ -75,24 +80,71 @@ static void produce_xml(
 	fprintf(outfile, GLOBALBOUNDS_HEADER_XML, dimvar_list_buf1, dimvar_list_buf2);
 
 	const char **varnames = xml_spec->varnames;
-	const char **types = xml_spec->types;
+	const enum ADIOS_DATATYPES *vartypes = xml_spec->vartypes;
 	while (*varnames) {
 		build_dimension_var_list(xml_spec->ndim, "D", dimvar_list_buf1);
-		fprintf(outfile, VAR_XML, *varnames, *types, dimvar_list_buf1, transform_name);
+		fprintf(outfile, VAR_XML, *varnames, adios_type_to_string_int(*vartypes), dimvar_list_buf1, transform_name);
 
 		++varnames;
-		++types;
+		++vartypes;
 	}
 
 	fprintf(outfile, GLOBALBOUNDS_FOOTER_XML);
 	fprintf(outfile, FOOTER_XML, xml_spec->group_name, xml_spec->write_transport_method, xml_spec->buffer_size_mb);
 }
 
+static void write_adios_dimension_scalars(int64_t fd, const char *dimvar_basename, int ndim, const uint64_t *dims) {
+	int i;
+	char dimvar_name[32];
+	for (i = 0; i < ndim; ++i) {
+		sprintf(dimvar_name, "%s%d", dimvar_basename, i);
+		adios_write(fd, dimvar_name, (void*)dims);
+		++dims;
+	}
+}
+
+typedef struct {
+	int num_timesteps;
+	int num_pgs_per_timestep;
+	const uint64_t *global_dims;
+} dataset_global_spec_t;
+
+typedef struct {
+	const uint64_t *pg_dim;
+	const uint64_t *pg_offset;
+	const void **vardata;
+} dataset_pg_spec_t;
+
+static uint64_t compute_groupsize(uint64_t base_groupsize, const dataset_xml_spec_t *xml_spec, const dataset_pg_spec_t *pg) {
+	int var, dim;
+
+	// Compute the number of points contained in this PG
+	uint64_t pg_gridsize = 1;
+	for (dim = 0; dim < xml_spec->ndim; ++dim)
+		pg_gridsize *= pg->pg_dim[dim];
+
+	// Compute the sum of the datatype sizes across all variables defined in this PG
+	uint64_t total_var_datatypes_size = 0;
+	for (var = 0; xml_spec->varnames[var] != NULL; ++var)
+		total_var_datatypes_size += adios_get_type_size(xml_spec->vartypes[var], NULL);
+
+	// The final group size is the product of the number of points and the number of bytes per point, plus the base groupsize
+	return base_groupsize + pg_gridsize * total_var_datatypes_size;
+}
+
 extern void adios_pin_timestep(uint32_t ts); // Not in the standard header, but accessible
-void build_dataset(const char *filename_prefix, const dataset_xml_spec_t *xml_spec, const char *transform_name, int num_timesteps, int num_pgs_per_timestep, const uint64_t *groupsizes, const void **vardatas) {
-	int timestep, pg_in_timestep;
+void build_dataset(
+		const char *filename_prefix,
+		const dataset_xml_spec_t *xml_spec, const char *transform_name,
+		//int num_timesteps, int num_pgs_per_timestep, const uint64_t *global_dims,
+		const dataset_global_spec_t *global_spec,
+		const dataset_pg_spec_t *pg_specs)
+		//const uint64_t **pg_dims, const uint64_t **pg_offsets, const uint64_t *groupsizes, const void **vardatas)
+{
 	char xml_filename[strlen(filename_prefix) + strlen(".xml") + 1];
 	char bp_filename[strlen(filename_prefix) + strlen(".bp") + 1];
+	int timestep, pg_in_timestep;
+	char dimvar[32];
 
 	// Construct the XML and BP filenames
 	sprintf(xml_filename, "%s.xml", filename_prefix);
@@ -112,8 +164,8 @@ void build_dataset(const char *filename_prefix, const dataset_xml_spec_t *xml_sp
 
 	// For each timestep, for each PG in that timestep, write out all variables using the provided vardata buffers
 	int64_t adios_file;
-	for (timestep = 0; timestep < num_timesteps; ++timestep) {
-		for (pg_in_timestep = 0; pg_in_timestep < num_pgs_per_timestep; ++pg_in_timestep) {
+	for (timestep = 0; timestep < global_spec->num_timesteps; ++timestep) {
+		for (pg_in_timestep = 0; pg_in_timestep < global_spec->num_pgs_per_timestep; ++pg_in_timestep) {
 			// (Re-)open the file in write or append mode, depending on whether or not this is the first PG written
 			const int is_first_pg = (timestep == 0 && pg_in_timestep == 0);
 			adios_open(&adios_file, xml_spec->group_name, bp_filename, is_first_pg ? "w" : "a", MPI_COMM_WORLD);
@@ -123,11 +175,17 @@ void build_dataset(const char *filename_prefix, const dataset_xml_spec_t *xml_sp
 			adios_pin_timestep(timestep);
 
 			// Compute the group size
+			uint64_t groupsize = compute_groupsize(base_groupsize, xml_spec, pg_specs);
 			uint64_t out_groupsize;
-			adios_group_size(adios_file, base_groupsize + *groupsizes, &out_groupsize);
+			adios_group_size(adios_file, groupsize, &out_groupsize);
+
+			write_adios_dimension_scalars(adios_file, "N", xml_spec->ndim, global_spec->global_dims);
+			write_adios_dimension_scalars(adios_file, "D", xml_spec->ndim, pg_specs->pg_dim);
+			write_adios_dimension_scalars(adios_file, "O", xml_spec->ndim, pg_specs->pg_offset);
 
 			// Write each variable
 			const char **varnames = xml_spec->varnames;
+			const void **vardatas = pg_specs->vardata;
 			while (*varnames != NULL) {
 				adios_write(adios_file, *varnames, (void*)*vardatas); // (void*) to get rid of compiler complaining about constness
 				++varnames;
@@ -137,25 +195,33 @@ void build_dataset(const char *filename_prefix, const dataset_xml_spec_t *xml_sp
 			// Close the file to commit it
 			adios_close(adios_file);
 
-			++groupsizes;
+			++pg_specs;
 		}
 	}
 }
 
 void build_dataset_1(const char *filename_prefix, const char *transform_name) {
-	static const char *VARNAMES[] = { "temp", NULL };
-	static const char *VARTYPES[] = { "float", NULL };
-
-	static const dataset_xml_spec_t XML_SPEC = {
-		.group_name = "S3D",
-		.buffer_size_mb = 128,
-		.write_transport_method = "MPI",
-		.ndim = 2,
-		.varnames = VARNAMES,
-		.types = VARTYPES,
+	// Basic dataset information
+	enum {
+		NDIM = 2,
+		NUM_TIMESTEPS = 1,
+		NUM_PGS_PER_TIMESTEP = 1,
+		NUM_VARS = 1,
+		NUM_PGS = NUM_TIMESTEPS * NUM_PGS_PER_TIMESTEP,
 	};
 
-	static const float TEMP_DATA[] = {
+
+	// Variable names/types
+	static const char *VARNAMES[] = { "temp", NULL };
+	static const enum ADIOS_DATATYPES VARTYPES[] = { adios_real };
+
+	// Global and PG dimensions/offsets
+	static const uint64_t GLOBAL_DIMS          [NDIM] = { 4, 4 };
+	static const uint64_t PG_DIMS	  [NUM_PGS][NDIM] = { { 4, 4 }, };
+	static const uint64_t PG_OFFSETS  [NUM_PGS][NDIM] = { { 0, 0 }, };
+
+	// Variable data
+	static const float TEMP_DATA[NUM_PGS][16] = {
 		//  1.00000000     1.00003052     2.00000000     2.00006104
 			0x1.000000p+0, 0x1.000200p+0, 0x1.000000p+1, 0x1.000200p+1,
 		//  2.00012207     30.00000000    30.00048828    30.00097656
@@ -166,17 +232,35 @@ void build_dataset_1(const char *filename_prefix, const char *transform_name) {
 			0x1.900600p+5, 0x1.900800p+5, 0x1.900a00p+5, 0x1.900c00p+5,
 	};
 
-	// DS1 is simple: it has just 1 PG
-	static const int NUM_TIMESTEPS = 1;
-	static const int NUM_PGS_PER_TIMESTEP = 1;
-	static const uint64_t PG_GROUPSIZES[] = {
-		sizeof(TEMP_DATA),
-	};
-	static const void *PG_DATAS[] = {
-		TEMP_DATA,
+	static const void *PG_DATAS[NUM_PGS][NUM_VARS] = { // 2D array of void* pointers (PG_DATAS[i][j] is the void* buffer of data for variable j in PG i)
+		{ TEMP_DATA[0], },
 	};
 
-	build_dataset(filename_prefix, &XML_SPEC, transform_name, NUM_TIMESTEPS, NUM_PGS_PER_TIMESTEP, PG_GROUPSIZES, PG_DATAS);
+	// Now, collect all this information into specification structs
+	// File specification
+	static const dataset_xml_spec_t XML_SPEC = {
+		.group_name = "S3D",
+		.buffer_size_mb = 128,
+		.write_transport_method = "MPI",
+		.ndim = NDIM,
+		.varnames = VARNAMES,
+		.vartypes = VARTYPES,
+	};
+
+	// Global space specification
+	static const dataset_global_spec_t GLOBAL_SPEC = {
+		.num_timesteps = 1,
+		.num_pgs_per_timestep = 1,
+		.global_dims = GLOBAL_DIMS,
+	};
+
+	// Per-PG specification
+	static const dataset_pg_spec_t PG_SPECS[NUM_PGS] = {
+		{ .pg_dim = PG_DIMS[0], .pg_offset = PG_OFFSETS[0], .vardata = PG_DATAS[0] },
+	};
+
+	// Finally, invoke the dataset builder with this information
+	build_dataset(filename_prefix, &XML_SPEC, transform_name, &GLOBAL_SPEC, PG_SPECS);
 }
 
 void usage_and_exit() {
