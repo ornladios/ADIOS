@@ -364,9 +364,9 @@ void build_dataset_2(const char *filename_prefix, const char *transform_name) {
 	// C is picky and doesn't consider a static const int "const enough" to use
 	// as an array length (e.g., if these were static const ints, it would not compile)
 	enum {
-		NUM_DIMS = 3,
+		NUM_DIMS = 2,
 		NUM_TS = 2,
-		NUM_PGS_PER_TS = 8,
+		NUM_PGS_PER_TS = 4,
 		NUM_VARS = 1,
 		NUM_PGS = NUM_TS * NUM_PGS_PER_TS,
 	};
@@ -376,53 +376,45 @@ void build_dataset_2(const char *filename_prefix, const char *transform_name) {
 	static const enum ADIOS_DATATYPES VARTYPES[NUM_VARS]	= { adios_real };
 
 	// Global and PG dimensions/offsets
-	static const uint64_t GLOBAL_DIMS                         [NUM_DIMS] = { 4, 4, 4 };
+	static const uint64_t GLOBAL_DIMS                         [NUM_DIMS] = { 8, 8 };
 	static const uint64_t PG_DIMS	  [NUM_TS][NUM_PGS_PER_TS][NUM_DIMS] = {
-		{ { 2, 2, 2 }, { 2, 2, 2 }, { 2, 2, 2 }, { 2, 2, 2 }, { 2, 2, 2 }, { 2, 2, 2 }, { 2, 2, 2 }, { 2, 2, 2 } }, // Timestep 1
-		{ { 2, 2, 2 }, { 2, 2, 2 }, { 2, 2, 2 }, { 2, 2, 2 }, { 2, 2, 2 }, { 2, 2, 2 }, { 2, 2, 2 }, { 2, 2, 2 } }, // Timestep 2
+		{ { 2, 8 }, { 2, 8 }, { 2, 8 }, { 2, 8 }, }, // Timestep 1
+		{ { 2, 8 }, { 2, 8 }, { 2, 8 }, { 2, 8 }, }, // Timestep 2
 	};
 	static const uint64_t PG_OFFSETS  [NUM_TS][NUM_PGS_PER_TS][NUM_DIMS] = {
-		{ { 0, 0, 0 }, { 0, 0, 2 }, { 0, 2, 0 }, { 0, 2, 2 }, { 2, 0, 0 }, { 2, 0, 2 }, { 2, 2, 0 }, { 2, 2, 2 } }, // Timestep 1
-		{ { 0, 0, 0 }, { 0, 0, 2 }, { 0, 2, 0 }, { 0, 2, 2 }, { 2, 0, 0 }, { 2, 0, 2 }, { 2, 2, 0 }, { 2, 2, 2 } }, // Timestep 2
+		{ { 0, 0 }, { 2, 0 }, { 4, 0 }, { 6, 0 }, }, // Timestep 1
+		{ { 0, 0 }, { 2, 0 }, { 4, 0 }, { 6, 0 }, }, // Timestep 2
 	};
 
 	// Variable data (we can use [TS][PG][8] here because every PG is the same size, 8)
-	static const float TEMP_DATA[NUM_TS][NUM_PGS_PER_TS][8] = {
+	static const float TEMP_DATA[NUM_TS][NUM_PGS_PER_TS][16] = {
 		{ // Timestep 1
-			// PG 0 in timestep 1
-			{ 0x1.122f92p-5, 0x1.4e8798p-4, 0x1.d3cddep-1, 0x1.e16ae6p-1, 0x1.554fdep-1, 0x1.21c5a2p-1, 0x1.a8c114p-1, 0x1.8576bep-1, },
-			// PG 1 in timestep 1
-			{ 0x1.51e224p-2, 0x1.1a16eep-1, 0x1.ee4930p-1, 0x1.1d0e76p-1, 0x1.e3a098p-1, 0x1.fbf468p-1, 0x1.195c60p-2, 0x1.b53a84p-4, },
-			// PG 2 in timestep 1
-			{ 0x1.619b00p-1, 0x1.211a0ep-1, 0x1.022282p-2, 0x1.3ca72ap-2, 0x1.032826p-2, 0x1.8ea7eep-2, 0x1.2adcccp-1, 0x1.15f8c4p-3, },
-			// PG 3 in timestep 1
-			{ 0x1.b0a05ap-2, 0x1.7c8df4p-1, 0x1.eb4ba0p-4, 0x1.d8142ap-1, 0x1.818200p-1, 0x1.efe95cp-2, 0x1.979e1cp-1, 0x1.457d2ap-2, },
-			// PG 4 in timestep 1
-			{ 0x1.a66e56p-3, 0x1.f6a944p-1, 0x1.b9681ap-3, 0x1.8d1b8ap-1, 0x1.d6fc1cp-4, 0x1.d9f6a6p-3, 0x1.41fbc4p-1, 0x1.87e004p-1, },
-			// PG 5 in timestep 1
-			{ 0x1.0021acp-2, 0x1.c03452p-3, 0x1.c6fc40p-1, 0x1.86fa2ap-1, 0x1.f4e5e4p-1, 0x1.21594cp-2, 0x1.750404p-1, 0x1.75c0a6p-2, },
-			// PG 6 in timestep 1
-			{ 0x1.45eb00p-1, 0x1.d14d2ap-2, 0x1.f7962ap-1, 0x1.c3425ep-2, 0x1.5a94cap-3, 0x1.64ecfap-2, 0x1.1c473ep-1, 0x1.985a90p-6, },
-			// PG 7 in timestep 1
-			{ 0x1.ba2cb6p-1, 0x1.098d06p-1, 0x1.08cca2p-1, 0x1.65d43ep-2, 0x1.4682d0p-2, 0x1.d3bf16p-1, 0x1.25ce96p-1, 0x1.34e536p-2, },
+			// PG 0
+			{ 0x1.122f92p-5, 0x1.4e8798p-4, 0x1.d3cddep-1, 0x1.e16ae6p-1, 0x1.554fdep-1, 0x1.21c5a2p-1, 0x1.a8c114p-1, 0x1.8576bep-1,
+			  0x1.51e224p-2, 0x1.1a16eep-1, 0x1.ee4930p-1, 0x1.1d0e76p-1, 0x1.e3a098p-1, 0x1.fbf468p-1, 0x1.195c60p-2, 0x1.b53a84p-4, },
+			// PG 1
+			{ 0x1.619b00p-1, 0x1.211a0ep-1, 0x1.022282p-2, 0x1.3ca72ap-2, 0x1.032826p-2, 0x1.8ea7eep-2, 0x1.2adcccp-1, 0x1.15f8c4p-3,
+			  0x1.b0a05ap-2, 0x1.7c8df4p-1, 0x1.eb4ba0p-4, 0x1.d8142ap-1, 0x1.818200p-1, 0x1.efe95cp-2, 0x1.979e1cp-1, 0x1.457d2ap-2, },
+			// PG 2
+			{ 0x1.a66e56p-3, 0x1.f6a944p-1, 0x1.b9681ap-3, 0x1.8d1b8ap-1, 0x1.d6fc1cp-4, 0x1.d9f6a6p-3, 0x1.41fbc4p-1, 0x1.87e004p-1,
+			  0x1.0021acp-2, 0x1.c03452p-3, 0x1.c6fc40p-1, 0x1.86fa2ap-1, 0x1.f4e5e4p-1, 0x1.21594cp-2, 0x1.750404p-1, 0x1.75c0a6p-2, },
+			// PG 3
+			{ 0x1.45eb00p-1, 0x1.d14d2ap-2, 0x1.f7962ap-1, 0x1.c3425ep-2, 0x1.5a94cap-3, 0x1.64ecfap-2, 0x1.1c473ep-1, 0x1.985a90p-6,
+			  0x1.ba2cb6p-1, 0x1.098d06p-1, 0x1.08cca2p-1, 0x1.65d43ep-2, 0x1.4682d0p-2, 0x1.d3bf16p-1, 0x1.25ce96p-1, 0x1.34e536p-2, },
 		},
 		{ // Timestep 2
-			// PG 0 in timestep 1
-			{ 0x1.34e536p-2, 0x1.25ce96p-1, 0x1.d3bf16p-1, 0x1.4682d0p-2, 0x1.65d43ep-2, 0x1.08cca2p-1, 0x1.098d06p-1, 0x1.ba2cb6p-1, },
-			// PG 1 in timestep 1
-			{ 0x1.985a90p-6, 0x1.1c473ep-1, 0x1.64ecfap-2, 0x1.5a94cap-3, 0x1.c3425ep-2, 0x1.f7962ap-1, 0x1.d14d2ap-2, 0x1.45eb00p-1, },
-			// PG 2 in timestep 1
-			{ 0x1.75c0a6p-2, 0x1.750404p-1, 0x1.21594cp-2, 0x1.f4e5e4p-1, 0x1.86fa2ap-1, 0x1.c6fc40p-1, 0x1.c03452p-3, 0x1.0021acp-2, },
-			// PG 3 in timestep 1
-			{ 0x1.87e004p-1, 0x1.41fbc4p-1, 0x1.d9f6a6p-3, 0x1.d6fc1cp-4, 0x1.8d1b8ap-1, 0x1.b9681ap-3, 0x1.f6a944p-1, 0x1.a66e56p-3, },
-			// PG 4 in timestep 1
-			{ 0x1.457d2ap-2, 0x1.979e1cp-1, 0x1.efe95cp-2, 0x1.818200p-1, 0x1.d8142ap-1, 0x1.eb4ba0p-4, 0x1.7c8df4p-1, 0x1.b0a05ap-2, },
-			// PG 5 in timestep 1
-			{ 0x1.15f8c4p-3, 0x1.2adcccp-1, 0x1.8ea7eep-2, 0x1.032826p-2, 0x1.3ca72ap-2, 0x1.022282p-2, 0x1.211a0ep-1, 0x1.619b00p-1, },
-			// PG 6 in timestep 1
-			{ 0x1.b53a84p-4, 0x1.195c60p-2, 0x1.fbf468p-1, 0x1.e3a098p-1, 0x1.1d0e76p-1, 0x1.ee4930p-1, 0x1.1a16eep-1, 0x1.51e224p-2, },
-			// PG 7 in timestep 1
-			{ 0x1.8576bep-1, 0x1.a8c114p-1, 0x1.21c5a2p-1, 0x1.554fdep-1, 0x1.e16ae6p-1, 0x1.d3cddep-1, 0x1.4e8798p-4, 0x1.122f92p-5, },
+			// PG 0
+			{ 0x1.34e536p-2, 0x1.25ce96p-1, 0x1.d3bf16p-1, 0x1.4682d0p-2, 0x1.65d43ep-2, 0x1.08cca2p-1, 0x1.098d06p-1, 0x1.ba2cb6p-1,
+			  0x1.985a90p-6, 0x1.1c473ep-1, 0x1.64ecfap-2, 0x1.5a94cap-3, 0x1.c3425ep-2, 0x1.f7962ap-1, 0x1.d14d2ap-2, 0x1.45eb00p-1, },
+			// PG 1
+			{ 0x1.75c0a6p-2, 0x1.750404p-1, 0x1.21594cp-2, 0x1.f4e5e4p-1, 0x1.86fa2ap-1, 0x1.c6fc40p-1, 0x1.c03452p-3, 0x1.0021acp-2,
+			  0x1.87e004p-1, 0x1.41fbc4p-1, 0x1.d9f6a6p-3, 0x1.d6fc1cp-4, 0x1.8d1b8ap-1, 0x1.b9681ap-3, 0x1.f6a944p-1, 0x1.a66e56p-3, },
+			// PG 2
+			{ 0x1.457d2ap-2, 0x1.979e1cp-1, 0x1.efe95cp-2, 0x1.818200p-1, 0x1.d8142ap-1, 0x1.eb4ba0p-4, 0x1.7c8df4p-1, 0x1.b0a05ap-2,
+			  0x1.15f8c4p-3, 0x1.2adcccp-1, 0x1.8ea7eep-2, 0x1.032826p-2, 0x1.3ca72ap-2, 0x1.022282p-2, 0x1.211a0ep-1, 0x1.619b00p-1, },
+			// PG 3
+			{ 0x1.b53a84p-4, 0x1.195c60p-2, 0x1.fbf468p-1, 0x1.e3a098p-1, 0x1.1d0e76p-1, 0x1.ee4930p-1, 0x1.1a16eep-1, 0x1.51e224p-2,
+			  0x1.8576bep-1, 0x1.a8c114p-1, 0x1.21c5a2p-1, 0x1.554fdep-1, 0x1.e16ae6p-1, 0x1.d3cddep-1, 0x1.4e8798p-4, 0x1.122f92p-5, },
 		},
 	};
 
