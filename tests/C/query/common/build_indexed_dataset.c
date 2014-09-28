@@ -139,7 +139,8 @@ void build_dataset_from_specs(
 		const char *transform_name,
 		const dataset_xml_spec_t *xml_spec,
 		const dataset_global_spec_t *global_spec,
-		/*const*/ dataset_pg_spec_t pg_specs[global_spec->num_ts][global_spec->num_pgs_per_ts]) // Not const because C has an corner case here (http://c-faq.com/ansi/constmismatch.html)
+		int num_ts, int num_pgs_per_ts,
+		dataset_pg_spec_t pg_specs[num_ts][num_pgs_per_ts]) // Not const because C has an corner case here (http://c-faq.com/ansi/constmismatch.html)
 {
 	int var;
 	char xml_filename[strlen(filename_prefix) + strlen(".xml") + 1];
@@ -161,7 +162,7 @@ void build_dataset_from_specs(
 	adios_init(xml_filename, MPI_COMM_WORLD);
 
 	// Compute the groupsize contribution of the dimension scalars
-	const base_groupsize = xml_spec->ndim * 3 * 4; // *3 for 3 scalars (N, D, O) *4 for sizeof(adios_integer) (not sure how what function in the User API to call to get this programatically
+	const uint64_t base_groupsize = xml_spec->ndim * 3 * 4; // *3 for 3 scalars (N, D, O) *4 for sizeof(adios_integer) (not sure how what function in the User API to call to get this programatically
 
 	// For each timestep, for each PG in that timestep, write out all variables using the provided vardata buffers
 	int64_t adios_file;
@@ -201,23 +202,20 @@ void build_dataset_from_specs(
 void collect_varblocks_by_pg(
 		const dataset_xml_spec_t *xml_spec,
 		const dataset_global_spec_t *global_spec,
-		const uint64_t pg_dims[global_spec->num_ts][global_spec->num_pgs_per_ts][xml_spec->ndim],
+		int num_ts, int num_pgs_per_ts, int ndim, int nvar,
+		const uint64_t pg_dims[num_ts][num_pgs_per_ts][ndim],
 		const void **varblocks_by_var,
-		const void *out_varblocks_by_pg[global_spec->num_ts][global_spec->num_pgs_per_ts][xml_spec->nvar])
+		const void *out_varblocks_by_pg[num_ts][num_pgs_per_ts][nvar])
 {
-	const int num_ts = global_spec->num_ts;
-	const int num_pgs_per_ts = global_spec->num_pgs_per_ts;
-	const int num_vars = xml_spec->nvar;
-	const int ndim = xml_spec->ndim;
 	int ts, pg, var;
 
 	// Some maths
-	const uint64_t varblocks_per_ts = num_vars * num_pgs_per_ts;
+	const uint64_t varblocks_per_ts = nvar * num_pgs_per_ts;
 
 	// Cache the datatype size for each variable, and create a data pointer that we can advance
-	int var_typesizes[num_vars];
-	const char *varblock_datas[num_vars];
-	for (var = 0; var < num_vars; ++var) {
+	int var_typesizes[nvar];
+	const char *varblock_datas[nvar];
+	for (var = 0; var < nvar; ++var) {
 		var_typesizes[var] = adios_get_type_size(xml_spec->vartypes[var], NULL);
 		varblock_datas[var] = (const char *)varblocks_by_var[var];
 	}
@@ -229,7 +227,7 @@ void collect_varblocks_by_pg(
 			// Compute the points per varblock in this PG
 			const uint64_t points_per_varblock = dim_prod(ndim, pg_dims[ts][pg]);
 
-			for (var = 0; var < num_vars; ++var) {
+			for (var = 0; var < nvar; ++var) {
 				const int var_typesize = var_typesizes[var];
 				const uint64_t varblock_size = points_per_varblock * var_typesize;
 
@@ -268,21 +266,30 @@ void build_dataset_from_varblocks_by_var(
 		const char *transform_name,
 		const dataset_xml_spec_t *xml_spec,
 		const dataset_global_spec_t *global_spec,
-		const uint64_t pg_dims[global_spec->num_ts][global_spec->num_pgs_per_ts][xml_spec->ndim],
-		const uint64_t pg_offsets[global_spec->num_ts][global_spec->num_pgs_per_ts][xml_spec->ndim],
-		const void *varblocks_by_var[xml_spec->nvar])
+		int num_ts, int num_pgs_per_ts, int ndim, int nvar,
+		const uint64_t pg_dims[num_ts][num_pgs_per_ts][ndim],
+		const uint64_t pg_offsets[num_ts][num_pgs_per_ts][ndim],
+		const void *varblocks_by_var[nvar])
 {
-	const uint64_t num_pgs = global_spec->num_ts * global_spec->num_pgs_per_ts;
+	const uint64_t num_pgs = num_ts * num_pgs_per_ts;
 
 	// Array for repackaging global per-variable data in per-PG data
-	const void *varblocks_by_pg[global_spec->num_ts][global_spec->num_pgs_per_ts][xml_spec->nvar];
+	const void *varblocks_by_pg[num_ts][num_pgs_per_ts][nvar];
 	// Array for repackaging pieces of per-PG inforamtion into an array of per-PG specification structs
-	dataset_pg_spec_t pg_specs[global_spec->num_ts][global_spec->num_pgs_per_ts];
+	dataset_pg_spec_t pg_specs[num_ts][num_pgs_per_ts];
 
-	collect_varblocks_by_pg(xml_spec, global_spec, pg_dims, varblocks_by_var, varblocks_by_pg);
-	collect_pg_specs(global_spec->num_ts, global_spec->num_pgs_per_ts, xml_spec->ndim, xml_spec->nvar, pg_dims, pg_offsets, varblocks_by_pg, pg_specs);
+	collect_varblocks_by_pg(
+			xml_spec, global_spec,
+			num_ts, num_pgs_per_ts, ndim, nvar,
+			pg_dims, varblocks_by_var, varblocks_by_pg);
 
-	build_dataset_from_specs(filename_prefix, transform_name, xml_spec, global_spec, pg_specs);
+	collect_pg_specs(
+			num_ts, num_pgs_per_ts, ndim, nvar,
+			pg_dims, pg_offsets, varblocks_by_pg, pg_specs);
+
+	build_dataset_from_specs(
+			filename_prefix, transform_name, xml_spec, global_spec,
+			num_ts, num_pgs_per_ts, pg_specs);
 }
 
 void build_dataset_1(const char *filename_prefix, const char *transform_name) {
@@ -345,7 +352,10 @@ void build_dataset_1(const char *filename_prefix, const char *transform_name) {
 	};
 
 	// Finally, invoke the dataset builder with this information
-	build_dataset_from_varblocks_by_var(filename_prefix, transform_name, &XML_SPEC, &GLOBAL_SPEC, PG_DIMS, PG_OFFSETS, (const void **)VARBLOCKS_BY_VAR);
+	build_dataset_from_varblocks_by_var(
+			filename_prefix, transform_name, &XML_SPEC, &GLOBAL_SPEC,
+			NUM_TS, NUM_PGS_PER_TS, NUM_DIMS, NUM_VARS,
+			PG_DIMS, PG_OFFSETS, (const void **)VARBLOCKS_BY_VAR);
 }
 
 void build_dataset_2(const char *filename_prefix, const char *transform_name) {
@@ -440,7 +450,10 @@ void build_dataset_2(const char *filename_prefix, const char *transform_name) {
 	};
 
 	// Finally, invoke the dataset builder with this information
-	build_dataset_from_varblocks_by_var(filename_prefix, transform_name, &XML_SPEC, &GLOBAL_SPEC, PG_DIMS, PG_OFFSETS, (const void **)VARBLOCKS_BY_VAR);
+	build_dataset_from_varblocks_by_var(
+			filename_prefix, transform_name, &XML_SPEC, &GLOBAL_SPEC,
+			NUM_TS, NUM_PGS_PER_TS, NUM_DIMS, NUM_VARS,
+			PG_DIMS, PG_OFFSETS, (const void **)VARBLOCKS_BY_VAR);
 }
 
 void usage_and_exit() {
