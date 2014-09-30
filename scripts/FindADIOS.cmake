@@ -186,7 +186,7 @@ if(ADIOS_FOUND)
         string(REPLACE "-l" "" _LIB ${_LIB})
 
         # find static lib: absolute path in -L then default
-        find_library(_LIB_DIR NAMES ${_LIB} PATHS ${ADIOS_LIBRARY_DIRS})
+        find_library(_LIB_DIR NAMES ${_LIB} PATHS ${ADIOS_LIBRARY_DIRS} CMAKE_FIND_ROOT_PATH_BOTH)
 
         # found?
         if(_LIB_DIR)

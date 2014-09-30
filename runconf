@@ -80,6 +80,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
     export CFLAGS="-g -fPIC" 
+    #export CFLAGS="-g -O0 -pg" 
     $SRCDIR/configure --prefix=/ccs/proj/e2e/$USER/ADIOS/sith.$TARGET \
         --config-cache \
         --enable-dependency-tracking \
@@ -461,11 +462,12 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         --enable-dependency-tracking \
         --with-cray-pmi=/opt/cray/pmi/default \
         --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
-        --with-cray-ugni-libdir=/opt/cray/ugni/default/lib \
+        --with-cray-ugni-libdir=/opt/cray/ugni/default/lib64 \
         --with-dataspaces=$DATASPACES_DIR \
         --with-dimes=$DATASPACES_DIR \
         $WITHFLEX \
-        --with-lustre
+        --with-lustre \
+        --with-zlib --with-bzip2
 
         #--with-fgr=/ccs/proj/e2e/qliu/tap \
         #--with-glib=/ccs/proj/e2e/qliu/glib \
@@ -525,7 +527,7 @@ elif [ `hostname | cut -c 1-4` == "eos-" ]; then
           --enable-dependency-tracking \
           --with-cray-pmi=/opt/cray/pmi/default \
           --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
-          --with-cray-ugni-libdir=/opt/cray/ugni/default/lib \
+          --with-cray-ugni-libdir=/opt/cray/ugni/default/lib64 \
             
 
 elif [ `hostname | cut -c 1-7` == "chester" ]; then
@@ -580,8 +582,8 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
       CFLAGS="-g -fPIC" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/chester.$TARGET \
           --enable-dependency-tracking \
           --with-cray-pmi=/opt/cray/pmi/default \
-          --with-cray-ugni-incdir=/opt/cray/gni-headers/2.1-1.0400.4351.3.1.gem/include \
-          --with-cray-ugni-libdir=/opt/cray/ugni/default/lib \
+          --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
+          --with-cray-ugni-libdir=/opt/cray/ugni/default/lib64 \
           --with-dataspaces=$DATASPACES_DIR \
           --with-dimes=$DATASPACES_DIR \
           $FLEXPATH \
@@ -595,6 +597,7 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
 #            --with-hdf5=/sw/xt5/hdf5/1.8.2/cnl2.1_gnu7.2.3 \
 #            --with-hdf5=/sw/xt5/hdf5/1.8.2/cnl2.1_gnu4.2.0 \
 #            --with-mxml=/ccs/proj/e2e/pnorbert/mxml.xt5.$TARGET \
+#          --with-cray-ugni-incdir=/opt/cray/gni-headers/2.1-1.0400.4351.3.1.gem/include \
             
 
 elif [ `hostname | cut -c 1-5` == "smoky" ]; then
@@ -1079,6 +1082,35 @@ elif [ `hostname | cut -c 1-4` == "qliu" ]; then
     --with-phdf5=/home/thkorde/local \
         #--with-hdf5=/home/thkorde/local \
         #--with-netcdf=/home/thkorde/local
+
+
+elif [ `hostname | cut -c 1-2` == "ln" ]; then
+    #######################
+    # Tianhe-1A           #
+    #######################
+    echo "Configure on Tianhe-1A."
+    #export MPICC=
+    #export MPICXX=
+    #export MPIFC=
+    export CC=icc
+    export CXX=icpc
+    export FC=ifort
+
+    ${SRCDIR}/configure --prefix=/vol6/home/Jeremy/adios-install \
+        --enable-dependency-tracking \
+        --with-mxml=/vol6/home/Jeremy/mxml-install \
+        --enable-skel-timing \
+        --disable-maintainer-mode 
+
+
+        #--with-phdf5=/opt/hdf5-1.8.12-parallel \
+        #--with-hdf5=/opt/hdf5-1.8.12 \
+        #--with-netcdf=/opt/netcdf-3.6.3 \
+        #--with-zlib=/opt/zlib  \
+        #--with-szip=/opt/szip-2.1 \
+        #--with-bzip2=/usr/lib/i386-linux-gnu \
+        #--with-isobar=/opt/isobar \
+        #--with-flexpath=/opt/chaos
 
 elif [ `hostname | cut -c 1-5` == "adios" ]; then
 

@@ -5,7 +5,6 @@ AUTOMAKE_OPTIONS = no-dependencies
 
 all-local:
 	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
-	test "$(srcdir)" = "$(builddir)" || cp -r $(srcdir)/S3D $(builddir)
 
 noinst_PROGRAMS = adios_global adios_read_subv adios_read_points adios_read_wb_subpg
 

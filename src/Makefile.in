@@ -2370,7 +2370,8 @@ include_HEADERS = public/adios.h public/adios_types.h \
 	public/mpidummy.h public/adios_read_v1.h \
 	public/adios_read_v1_defs.h public/adios_read_v2.h \
 	public/adios_read_v2_fwd.h public/adios_selection.h \
-	public/adios_read_ext.h public/adios_query.h
+	public/adios_schema.h public/adios_read_ext.h \
+	public/adios_query.h
 nodist_include_HEADERS = $(am__append_36) $(am__append_54)
 lib_LIBRARIES = $(am__append_4) $(am__append_6) libadiosread.a \
 	$(am__append_45) libadiosread_nompi.a $(am__append_63)

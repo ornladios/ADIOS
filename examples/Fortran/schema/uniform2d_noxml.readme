@@ -1,0 +1,40 @@
+REQUIREMENTS:
+    - ADIOS 1.5.0: http://www.olcf.ornl.gov/center-projects/adios
+    - C compiler
+    - MPI
+
+BUILD:
+    - Install ADIOS
+    - In Makefile, set ADIOS_DIR to the installation directory
+    - also set the MPI/C compiler name (e.g. mpicc or cc)
+    - run make
+
+This example is for writing a uniform 2D mesh and data on it. 
+2D mesh is decomposed in x and y direction by npx and npy, which are passed in from the command line following the executable.
+npx = number of processes in x direction
+npy = number of processes in y direction
+Processes write ndx*ndy points per process
+data is data on the points (value = rank)
+
+1. Run the writer 
+=================
+$ mpirun -np 12 ./uniform2d_f_noxml 4 3
+
+2. Check the output
+===================
+  integer  /nproc      scalar = 12 
+  integer  /nx_global  scalar = 260 
+  integer  /ny_global  scalar = 387 
+  integer  /offs_x     scalar = 0 
+  integer  /offs_y     scalar = 0 
+  integer  /nx_local   scalar = 65 
+  integer  /ny_local   scalar = 129 
+  integer  /O1         scalar = 0 
+  integer  /O2         scalar = 0 
+  integer  /S1         scalar = 1 
+  integer  /S2         scalar = 2 
+  double   /data         {260, 387} = 0 / 11 / 5.5 / 3.45205
+
+$ bpls -l uniform2d.bp
+
+

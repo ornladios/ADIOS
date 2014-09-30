@@ -11,7 +11,7 @@
 #ifndef __GLOBALS_H__
 #define __GLOBALS_H__
 
-#include "../config.h"
+#include "config.h"
 
 /** Set an application ID for this program. 
  *  This function is necessary for methods who needs a unique ID from each participating applications.

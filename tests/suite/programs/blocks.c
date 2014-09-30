@@ -37,12 +37,15 @@ int write_blocks ();
 void print_written_info();
 int read_all ();
 int read_stepbystep ();
+int read_scalar ();
+int read_scalar_stepbystep ();
 
 /* Remember (on rank 0) what was written (from all process) to check against it at reading */
 static int nblocks_per_step;
 static int nsteps;
 static uint64_t * block_offset;  // block_offset[ step*nblocks_per_step + i ] is i-th block offset written in "step".
 static uint64_t * block_count;   // block_count [ step*nblocks_per_step + i ] is i-th block size written in "step".
+static uint64_t * gdims;  // gdims[i] is the global dimension in i-th "step".
 
 
 int main (int argc, char ** argv) 
@@ -58,12 +61,14 @@ int main (int argc, char ** argv)
         read_all();
         read_stepbystep();
         read_scalar();
+        read_scalar_stepbystep ();
     }
 
     MPI_Barrier (comm);
     MPI_Finalize ();
     free (block_offset);
     free (block_count);
+    free (gdims);
     if (!rank) printf ("----------- Done. Found %d errors -------\n", nerrors);
     return nerrors;
 }
@@ -82,6 +87,7 @@ int write_blocks ()
     nblocks_per_step = 2;
     block_offset = (uint64_t*) malloc (sizeof(uint64_t) * nsteps * nblocks_per_step * size);
     block_count  = (uint64_t*) malloc (sizeof(uint64_t) * nsteps * nblocks_per_step * size);
+    gdims        = (uint64_t*) malloc (sizeof(uint64_t) * nsteps);
 
     adios_init_noxml (comm);
     adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 10);
@@ -155,6 +161,7 @@ int write_blocks ()
             block_count  [it*nblocks_per_step*size + nblocks_per_step*r + 1] = NX; 
             block_offset [it*nblocks_per_step*size + nblocks_per_step*r + 1] = r * nblocks_per_step * NX + NX; 
         }
+        gdims [it] = G;
 
         adios_close (m_adios_file);
         MPI_Barrier (comm);
@@ -170,12 +177,13 @@ int write_blocks ()
 void print_written_info()
 {
     int s, r, b;
-    printf ("\n------- Information on rank 0 --------\n");
+    printf ("\n------- Information recorded on rank 0 (read will compare to this info)  --------\n");
     for (s = 0; s < nsteps; s++) {
         printf ("Step %d:\n", s);
+        printf ("  Global dim = %d\n", gdims[s]);
         for (r = 0; r < size; r++) {
             for (b = 0; b < nblocks_per_step; b++) {
-                printf ("rank %d: block %d: size=%llu, offset=%llu\n", r, b+1, 
+                printf ("  rank %d: block %d: size=%llu, offset=%llu\n", r, b+1, 
                         block_count  [s*nblocks_per_step*size + nblocks_per_step*r + b],
                         block_offset [s*nblocks_per_step*size + nblocks_per_step*r + b]
                        );
@@ -193,7 +201,13 @@ int print_varinfo (ADIOS_FILE *f, int start_step)
     adios_inq_var_blockinfo (f, v);
 
     printf ("ndim = %d\n",  v->ndim);
-    printf ("dims[%llu]\n",  v->dims[0]);
+    printf ("dims[%llu]",  v->dims[0]);
+    if (v->dims[0] != gdims[start_step]) 
+    {
+        printf ("\tERROR: expected [%llu]", gdims[start_step]);
+        nerrors++;
+    }
+    printf("\n");
     printf ("nsteps = %d\n",  v->nsteps);
     printf ("sum_nblocks = %d\n",  v->sum_nblocks);
     k = 0; // blockinfo is a contigous 1D array of elements from 0 to v->sum_nblocks-1
@@ -440,5 +454,68 @@ int read_scalar ()
         adios_read_close (f);
     }
     adios_read_finalize_method (ADIOS_READ_METHOD_BP);
+    return retval;
+}
+
+int read_scalar_stepbystep ()
+{
+    ADIOS_FILE * f;
+    float timeout_sec = 0.0; 
+    int steps = 0;
+    int retval = 0;
+    MPI_Comm    comm = MPI_COMM_SELF;
+
+    adios_read_init_method (ADIOS_READ_METHOD_BP, comm, "verbose=3");
+    printf ("\n--------- Read scalar in stream using varinfo->value  ------------\n");
+    f = adios_read_open (fname, ADIOS_READ_METHOD_BP,
+                          comm, ADIOS_LOCKMODE_NONE, timeout_sec);
+    if (adios_errno == err_file_not_found)
+    {
+        printf ("Stream not found after waiting %f seconds: %s\n",
+                timeout_sec, adios_errmsg());
+        retval = adios_errno;
+    }
+    else if (adios_errno == err_end_of_stream)
+    {
+        printf ("Stream terminated before open. %s\n", adios_errmsg());
+        retval = adios_errno;
+    }
+    else if (f == NULL) {
+        printf ("Error at opening stream: %s\n", adios_errmsg());
+        retval = adios_errno;
+    }
+    else
+    {
+        /* Processing loop over the steps (we are already in the first one) */
+        while (adios_errno != err_end_of_stream) {
+            steps++; // steps start counting from 1
+            printf ("Step: %d\n", f->current_step);
+
+            /* Check the scalar O with varinfo->value */
+            ADIOS_VARINFO * v = adios_inq_var (f, "NX");
+            int value =  *(int*)v->value;
+            printf ("Scalar NX = %d", value);
+            if (value != 
+                    block_count [f->current_step*nblocks_per_step*size]) 
+            {
+                printf ("\tERROR expected = %d", 
+                        block_count [f->current_step*nblocks_per_step*size]);
+                nerrors++;
+            }
+            printf ("\n");
+
+            // advance to 1) next available step with 2) blocking wait
+            adios_advance_step (f, 0, timeout_sec);
+            if (adios_errno == err_step_notready)
+            {
+                //printf ("No new step arrived within the timeout. Quit. %s\n",
+                //        adios_errmsg());
+                break; // quit while loop
+            }
+        }
+        adios_read_close (f);
+    }
+    adios_read_finalize_method (ADIOS_READ_METHOD_BP);
+    //printf ("We have processed %d steps\n", steps);
     return retval;
 }
