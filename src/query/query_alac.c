@@ -1020,7 +1020,7 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 
 	double lb , hb ;
     resolveQueryBoundary(adiosQuery, &hb, &lb); // query constraints
-    printf("constraint: %s\n", adiosQuery->_condition);
+	//printf("constraint: %s\n", adiosQuery->_condition);
 
 	ADIOS_VARINFO * varInfo = adiosQuery->_var;
 
@@ -1553,7 +1553,7 @@ int  adios_query_alac_get_selection_method(ADIOS_QUERY* q,
 		(*queryResult) = NULL;
 		FreeALACBITMAP(b);
 		q->_onTimeStep = NO_EVAL_BEFORE;
-		printf(":: ==> no more results to fetch\n");
+		//printf(":: ==> no more results to fetch\n");
 		return 0;
 	}
 	if (retrievalSize > batchSize) {
