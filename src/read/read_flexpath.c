@@ -122,6 +122,7 @@ typedef struct _flexpath_reader_file
 {
     char *file_name;
     char *group_name; // assuming one group per file right now.
+    int host_language;
 
     EVstone stone;
 
@@ -165,6 +166,19 @@ typedef struct _local_read_data
 flexpath_read_data* fp_read_data = NULL;
 
 /********** Helper functions. **********/
+
+static void 
+reverse_dims(uint64_t *dims, int len)
+{
+    int i;
+    for (i = 0; i<(len/2); i++) {
+        uint64_t tmp = dims[i];
+        int end = len-1-i;
+        //printf("%d %d\n", dims[i], dims[end]);
+        dims[i] = dims[end];
+        dims[end] = tmp;
+    }
+}
 
 void build_bridge(bridge_info* bridge) 
 {
@@ -1040,7 +1054,6 @@ adios_read_flexpath_open(const char * fname,
 			 enum ADIOS_LOCKMODE lock_mode,
 			 float timeout_sec)
 {
-    //printf("fortran? %d\n", futils_is_called_from_fortran());
     fp_log("FUNC", "entering flexpath_open\n");
     ADIOS_FILE *adiosfile = malloc(sizeof(ADIOS_FILE));        
     if(!adiosfile){
@@ -1050,7 +1063,7 @@ adios_read_flexpath_open(const char * fname,
     }    
     
     flexpath_reader_file *fp = new_flexpath_reader_file(fname);
-	
+    fp->host_language = futils_is_called_from_fortran();
     adios_errno = 0;
     fp->stone = EValloc_stone(fp_read_data->cm);	
     fp->comm = comm;
@@ -1520,6 +1533,10 @@ adios_read_flexpath_schedule_read_byid(const ADIOS_FILE *adiosfile,
         if (fpvar->ndims == 0) {                        
             memcpy(data, chunk->data, fpvar->type_size);
         } else {
+            if (fp->host_language == FP_FORTRAN_MODE) {
+                reverse_dims(sel->u.bb.start, sel->u.bb.ndim);
+                reverse_dims(sel->u.bb.count, sel->u.bb.ndim);
+            }
             chunk->user_buf = data;
             fpvar->start_position = 0;
             free_displacements(fpvar->displ, fpvar->num_displ);
