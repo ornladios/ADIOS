@@ -3,12 +3,6 @@ INCLUDES += -I$(top_srcdir)/src/public -I$(top_srcdir)/src/query
 
 AUTOMAKE_OPTIONS = no-dependencies
 
-all-local:
-	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
-
-#all-local:
-#	test "$(srcdir)" = "$(builddir)" && $(MAKE) $(AM_MAKEFLAGS) all 
-	 
 noinst_PROGRAMS = adios_read_ext_test
 
 adios_read_ext_test_SOURCES = adios_read_ext_test.c
