@@ -9,9 +9,16 @@
 
 #include "adios_query.h"
 
+typedef struct {
+	ADIOS_QUERY *query;
+	ADIOS_SELECTION *outputSelection;
+	int fromStep;
+	int numSteps;
+} ADIOS_QUERY_TEST_INFO;
+
 /*
  * Parses the given XML file to extract the ADIOS_QUERY object described therein.
  */
-ADIOS_QUERY * parseXml(const char *inputxml, ADIOS_FILE* f);
+ADIOS_QUERY_TEST_INFO parseXml(const char *inputxml, ADIOS_FILE* f);
 
 #endif /* ADIOS_QUERY_XML_PARSE_H_ */

@@ -15,6 +15,8 @@
 #include <mxml.h>
 #include <sys/stat.h>
 
+#include "adios_query_xml_parse.h"
+
 #define MAXDIM    10
 #define MAXQUERY  1000
 
@@ -112,18 +114,6 @@ static void tokenize_dimensions2 (const char * str, char *** tokens, int * count
 }
 //end of stolen functions
 
-static ADIOS_QUERY * createQueryConstraints(ADIOS_FILE* bf, const char* varName,
-		ADIOS_SELECTION* box, const char * lb, const char * hb) {
-	/* lb <= x <= hb */
-	ADIOS_QUERY* q1 = adios_query_create(bf, varName, box, ADIOS_GTEQ, lb);
-	ADIOS_QUERY* q2 = adios_query_create(bf, varName, box, ADIOS_LTEQ, hb);
-	ADIOS_QUERY* q = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
-	return q;
-
-	/* x != lb
-	 * return adios_query_create(bf, varName, box, ADIOS_NE, lb);*/
-}
-
 #define CHECK_ERROR_DATA(data, num, check) {                     \
 		 uint64_t di = 0;                                        \
 		 for(di = 0; di < (num); di++){                          \
@@ -132,7 +122,7 @@ static ADIOS_QUERY * createQueryConstraints(ADIOS_FILE* bf, const char* varName,
 		 }                                                       \
 }
 
-ADIOS_QUERY * parseXml(char* inputxml, ADIOS_FILE* f) {
+ADIOS_QUERY_TEST_INFO parseXml(const char *inputxml, ADIOS_FILE* f) {
 	int i, j;
 	FILE * fp = fopen (inputxml,"r");
 	if (!fp){
@@ -177,16 +167,19 @@ ADIOS_QUERY * parseXml(char* inputxml, ADIOS_FILE* f) {
 
 	queryNode = mxmlFindElement(root, root, "query", NULL, NULL, MXML_DESCEND_FIRST);
 	const char *numVarS=NULL;
-	const char *timestepS=NULL;
+	const char *fromTimestepS=NULL;
+	const char *numTimestepsS=NULL;
 	const char *batchsizeS=NULL;
 
 	int numQuery = 0;
-	int timestep = 1;
+	int fromTimestep = 1;
+	int numTimesteps = 1;
 	uint64_t batchsize= 1;
 	for (i = 0; i < queryNode->value.element.num_attrs; i++) {
 		mxml_attr_t * attr = &queryNode->value.element.attrs [i];
 		GET_ATTR2("num",attr,numVarS,"query");
-		GET_ATTR2("timestep",attr,timestepS,"query");
+		GET_ATTR2("from-timestep",attr,fromTimestepS,"query");
+		GET_ATTR2("num-timesteps",attr,numTimestepsS,"query");
 		GET_ATTR2("batchsize",attr,batchsizeS,"query");
 	}
 	if ( !numVarS || !strcmp ( numVarS, "")) {
@@ -196,7 +189,8 @@ ADIOS_QUERY * parseXml(char* inputxml, ADIOS_FILE* f) {
 	}
 	else {
 		numQuery  = atoi(numVarS);
-		timestep  = atoi(timestepS);
+		fromTimestep  = atoi(fromTimestepS);
+		numTimesteps = atoi(numTimestepsS);
 		batchsize = strtoull(batchsizeS, NULL, 10);
 	}
 
@@ -462,5 +456,10 @@ ADIOS_QUERY * parseXml(char* inputxml, ADIOS_FILE* f) {
 
 	}
 
-	return queryPop(&queryStack);
+	return (ADIOS_QUERY_TEST_INFO){
+		.query = queryPop(&queryStack),
+		.outputSelection = outputBox,
+		.fromStep = fromTimestep,
+		.numSteps = numTimesteps,
+	};
 }
