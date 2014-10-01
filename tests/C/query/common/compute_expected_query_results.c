@@ -161,6 +161,9 @@ static int compareConstraintBoundValue(const void *bound, const void *value, enu
 	}
 }
 
+// Returns which points in the given buffer of data (buffer) for the given selection
+// (insel) match the constraint in the given query (query), returning a list of points
+// that are relative to (insel)
 static ADIOS_SELECTION * scanBufferForMatchingPoints(const char *buffer, enum ADIOS_DATATYPES datatype, ADIOS_SELECTION *insel, ADIOS_QUERY *query) {
 	assert(insel->type == ADIOS_SELECTION_BOUNDINGBOX); // For now, only support bounding boxes (and writeblocks, since they are converted to bounding boxes earlier)
 
@@ -178,10 +181,9 @@ static ADIOS_SELECTION * scanBufferForMatchingPoints(const char *buffer, enum AD
 
 	uint64_t npoints = 0;
 	uint64_t pointsCapacity = 1;
-	uint64_t *points = (uint64_t *)malloc(pointsCapacity * ndim * sizeof(uint64_t));
+	uint64_t *points = (uint64_t *)calloc(pointsCapacity, ndim * sizeof(uint64_t)); // First coordinate is at 0,0,0,...,0, since the results should be relative to the selection box
 	assert(points);
 	uint64_t *nextPoint = points;
-	memcpy(nextPoint, bb->start, ndim * sizeof(uint64_t));
 
 	int i;
 	while (elemsRemaining-- > 0) {
@@ -214,8 +216,8 @@ static ADIOS_SELECTION * scanBufferForMatchingPoints(const char *buffer, enum AD
 		// Increment the next point's coordinates
 		for (i = ndim - 1; i >= 0; --i) {
 			++nextPoint[i];
-			if (nextPoint[i] == (bb->start[i] + bb->count[i])) {
-				nextPoint[i] = bb->start[i];
+			if (nextPoint[i] == bb->count[i]) {
+				nextPoint[i] = 0;
 			} else {
 				break;
 			}
@@ -257,7 +259,7 @@ static void sortPointsLexOrder(ADIOS_SELECTION *pointsel) {
 }
 
 // Returns a point selection with points in lexicographical order
-static ADIOS_SELECTION * computeConstraintResults(ADIOS_QUERY *query) {
+static ADIOS_SELECTION * evaluateConstraint(ADIOS_QUERY *query, int timestep) {
 	assert(!query->_left && !query->_right);
 	assert(query->_var && query->_f && query->_sel);
 
@@ -265,7 +267,7 @@ static ADIOS_SELECTION * computeConstraintResults(ADIOS_QUERY *query) {
 	int free_insel = 0;
 
 	if (insel->type == ADIOS_SELECTION_WRITEBLOCK) {
-		insel = convertWBToBB(insel, query->_onTimeStep, query->_f, query->_var);
+		insel = convertWBToBB(insel, timestep, query->_f, query->_var);
 		free_insel = 1;
 	}
 
@@ -273,7 +275,7 @@ static ADIOS_SELECTION * computeConstraintResults(ADIOS_QUERY *query) {
 	char *buffer = (char *)malloc(buffersize);
 	assert(buffer);
 
-	adios_schedule_read_byid(query->_f, insel, query->_var->varid, query->_onTimeStep, 1, buffer);
+	adios_schedule_read_byid(query->_f, insel, query->_var->varid, timestep, 1, buffer);
 	adios_perform_reads(query->_f, 1);
 
 	ADIOS_SELECTION *results = scanBufferForMatchingPoints(buffer, query->_var->type, insel, query);
@@ -355,21 +357,56 @@ static ADIOS_SELECTION * computePointListCombination(enum ADIOS_CLAUSE_OP_MODE o
 	return adios_selection_points(ndim, newNPoints, newPoints);
 }
 
-static ADIOS_SELECTION * computeExpectedQueryResults(ADIOS_QUERY *query) {
+static ADIOS_SELECTION * evaluateQueryTree(ADIOS_QUERY *query, int timestep) {
 	if (!query->_left && !query->_right) {
-		return computeConstraintResults(query);
+		return evaluateConstraint(query, timestep);
 	} else if (query->_left && query->_right) {
 		const enum ADIOS_CLAUSE_OP_MODE op = query->_leftToRightOp;
-		ADIOS_SELECTION *leftsel = computeExpectedQueryResults(query->_left);
-		ADIOS_SELECTION *rightsel = computeExpectedQueryResults(query->_right);
+		ADIOS_SELECTION *leftsel = evaluateQueryTree(query->_left, timestep);
+		ADIOS_SELECTION *rightsel = evaluateQueryTree(query->_right, timestep);
 
 		ADIOS_SELECTION *combinedsel = computePointListCombination(op, leftsel, rightsel);
 		return combinedsel;
 	} else if (query->_left) {
-		return computeExpectedQueryResults(query->_left);
+		return evaluateQueryTree(query->_left, timestep);
 	} else if (query->_right) {
-		return computeExpectedQueryResults(query->_right);
+		return evaluateQueryTree(query->_right, timestep);
 	}
+}
+
+static ADIOS_SELECTION * derelativizePoints(ADIOS_SELECTION *inputPointsSel, ADIOS_SELECTION *outputSelection) {
+	ADIOS_SELECTION_POINTS_STRUCT *inputPoints = &inputPointsSel->u.points;
+	const int ndim = inputPoints->ndim;
+
+	assert(outputSelection->type == ADIOS_SELECTION_BOUNDINGBOX);
+	const uint64_t *outputOffset = outputSelection->u.bb.start;
+
+	uint64_t i, j;
+	uint64_t *curPoint = inputPoints->points;
+	for (i = 0; i < inputPoints->npoints; ++i)
+		for (j = 0; j < ndim; ++j)
+			*curPoint++ += outputOffset[j];
+
+	return inputPointsSel;
+}
+
+static ADIOS_SELECTION * computeExpectedQueryResults(ADIOS_QUERY *query, int timestep, ADIOS_SELECTION *outputSelection) {
+	ADIOS_SELECTION *resultPointsSel = evaluateQueryTree(query, timestep);
+
+	int freeOutputSelection = 0;
+	if (outputSelection->type == ADIOS_SELECTION_WRITEBLOCK) {
+		fprintf(stderr, "Writeblock output selections are currently not supported in compute_expected_query_results (at %s:%s)\n", __FILE__, __LINE__);
+		abort();
+		return NULL;
+		//outputSelection = convertWBToBB(outputSelection, timestep, query->_fp);
+	}
+
+	derelativizePoints(resultPointsSel, outputSelection);
+
+	if (freeOutputSelection)
+		adios_selection_delete(outputSelection);
+
+	return resultPointsSel;
 }
 
 static void printPointSelection(ADIOS_SELECTION *sel) {
@@ -413,13 +450,21 @@ int main(int argc, char **argv) {
 	adios_query_init(ADIOS_QUERY_TOOL_ALACRITY);
 
 	ADIOS_FILE *bp_file = adios_read_open_file(bp_filename, ADIOS_READ_METHOD_BP, comm);
-	ADIOS_QUERY *query = parseXml(inputxml_filename, bp_file);
-	ADIOS_SELECTION *result = computeExpectedQueryResults(query);
-	printPointSelection(result);
+	ADIOS_QUERY_TEST_INFO *testinfo = parseXml(inputxml_filename, bp_file);
 
-	free(result->u.points.points);
-	adios_selection_delete(result);
-	adios_query_free(query);
+	int timestep;
+	for (timestep = testinfo->fromStep; timestep < testinfo->fromStep + testinfo->numSteps; ++timestep) {
+		ADIOS_SELECTION *result = computeExpectedQueryResults(testinfo->query, timestep, testinfo->outputSelection);
+		printf("timestep %d\n", timestep);
+		printPointSelection(result);
+
+		free(result->u.points.points);
+		adios_selection_delete(result);
+	}
+
+	adios_selection_delete(testinfo->outputSelection); // TODO: leaks start[] and count[] if it's a BB
+	adios_query_free(testinfo->query);
+	free(testinfo);
 	adios_read_close(bp_file);
 
 	adios_query_clean();

@@ -50,7 +50,7 @@ static void queryPush(QueryStack* queryStack, ADIOS_QUERY *q)
 {
     if (queryStack->size>=MAXQUERY) {
         fprintf(stderr, "Query number exceeds MAXQUERY, exiting\n");
-        exit(-1);
+        abort();
     }
     queryStack->stack[queryStack->size++] = q;
 
@@ -65,7 +65,7 @@ static ADIOS_QUERY * queryPop(QueryStack* queryStack)
 {
     if (queryStackSize(queryStack)==0) {
         fprintf(stderr, "Error: popping empty query stack, exiting...\n");
-        exit(-1);
+        abort();
     }
     return queryStack->stack[--queryStack->size];
 }
@@ -122,12 +122,12 @@ static void tokenize_dimensions2 (const char * str, char *** tokens, int * count
 		 }                                                       \
 }
 
-ADIOS_QUERY_TEST_INFO parseXml(const char *inputxml, ADIOS_FILE* f) {
+ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 	int i, j;
 	FILE * fp = fopen (inputxml,"r");
 	if (!fp){
 		fprintf(stderr, "missing xml input file %s \n", inputxml);
-		exit(-1);
+		return NULL;
 	}
 	struct stat s;
 	char * buffer = NULL;
@@ -143,7 +143,7 @@ ADIOS_QUERY_TEST_INFO parseXml(const char *inputxml, ADIOS_FILE* f) {
 			fprintf(stderr, "error reading input xml file: %s. Expected %ld Got %ld\n"
 					,inputxml, s.st_size, bytes_read );
 			fclose(fp);
-			exit(-1);
+			return NULL;
 		}
 	}
 	fclose (fp);
@@ -159,7 +159,7 @@ ADIOS_QUERY_TEST_INFO parseXml(const char *inputxml, ADIOS_FILE* f) {
 		fprintf(stderr,  "unknown error parsing XML (probably structural)\n"
 				"Did you remember to start the file with\n"
 				"<?xml version=\"1.0\"?>\n");
-		exit(-1);
+		return NULL;
 	}
 	if (strcasecmp(doc->value.element.name, "adios-alac-test-inputs") != 0) {
 		root = mxmlFindElement(doc, doc, "adios-alac-test-inputs", NULL, NULL, MXML_DESCEND_FIRST);
@@ -185,7 +185,7 @@ ADIOS_QUERY_TEST_INFO parseXml(const char *inputxml, ADIOS_FILE* f) {
 	if ( !numVarS || !strcmp ( numVarS, "")) {
 		fprintf(stderr, "missing values for num attribute \n");
 		mxmlRelease(doc);
-		exit(-1);
+		return NULL;
 	}
 	else {
 		numQuery  = atoi(numVarS);
@@ -226,13 +226,13 @@ ADIOS_QUERY_TEST_INFO parseXml(const char *inputxml, ADIOS_FILE* f) {
 		if ( !outputTypeS || !outputDimS || !outputStartS || !outputCountS || !strcmp (outputTypeS, "")|| !strcmp (outputDimS, "") || !strcmp (outputStartS, "") || !strcmp (outputCountS, "") ) {
 			fprintf(stderr, "missing values for output attribute \n");
 			mxmlRelease(doc);
-			exit(-1);
+			return NULL;
 		}
 		else {
 			outputDim = atoi(outputDimS);
 			if (outputDim > MAXDIM) {
 				fprintf(stderr, "QueryDim exceeds 10, readjust MAXDIM to larger value, exiting...\n");
-				exit(-1);
+				abort();
 			}
 
 			tokenize_dimensions2(outputStartS, &outputStartTokens, &outputDim);
@@ -263,7 +263,7 @@ ADIOS_QUERY_TEST_INFO parseXml(const char *inputxml, ADIOS_FILE* f) {
 		if ( !outputWbIndexS || !strcmp (outputWbIndexS, "") ) {
 			fprintf(stderr, "missing values for selection attribute \n");
 			mxmlRelease(doc);
-			exit(-1);
+			return NULL;
 		}
 		else {
 			outputWbIndex = atoi(outputWbIndexS);
@@ -313,7 +313,7 @@ ADIOS_QUERY_TEST_INFO parseXml(const char *inputxml, ADIOS_FILE* f) {
 			// pop up two query and perform the op
 			if (queryStackSize(&queryStack)<2) {
 				fprintf(stderr, "Popping with less than 2 queries in query stack, exiting...\n");
-				exit(-1);
+				abort();
 			}
 
 			q1 = queryPop(&queryStack);
@@ -346,7 +346,7 @@ ADIOS_QUERY_TEST_INFO parseXml(const char *inputxml, ADIOS_FILE* f) {
 		if ( !varNameS || !opS || !constraintS || !strcmp (varNameS, "")|| !strcmp (opS, "") || !strcmp (constraintS, "") ) {
 			fprintf(stderr, "missing values for entry attribute \n");
 			mxmlRelease(doc);
-			exit(-1);
+			return NULL;
 		}
 
 		// Parse selection
@@ -371,13 +371,13 @@ ADIOS_QUERY_TEST_INFO parseXml(const char *inputxml, ADIOS_FILE* f) {
 			if ( !typeS || !dimS || !startS || !countS || !strcmp (typeS, "")|| !strcmp (dimS, "") || !strcmp (startS, "") || !strcmp (countS, "") ) {
 				fprintf(stderr, "missing values for selection attribute \n");
 				mxmlRelease(doc);
-				exit(-1);
+				return NULL;
 			}
 			else {
 				queryDim = atoi(dimS);
 				if (queryDim > MAXDIM) {
 					fprintf(stderr, "QueryDim exceeds 10, readjust MAXDIM to larger value, exiting...\n");
-					exit(-1);
+					abort();
 				}
 
 				tokenize_dimensions2(startS, &queryStartTokens, &queryDim);
@@ -400,7 +400,7 @@ ADIOS_QUERY_TEST_INFO parseXml(const char *inputxml, ADIOS_FILE* f) {
 					q = adios_query_create(f, varNameS, box, ADIOS_GT, constraintS);
 				else {
 					fprintf(stderr, "Unsupported entry op %s\n", opS);
-					exit(-1);
+					return NULL;
 				}
 
 				queryPush(&queryStack,q);
@@ -424,7 +424,7 @@ ADIOS_QUERY_TEST_INFO parseXml(const char *inputxml, ADIOS_FILE* f) {
 			if ( !wbIndexS || !strcmp (wbIndexS, "") ) {
 				fprintf(stderr, "missing values for selection attribute \n");
 				mxmlRelease(doc);
-				exit(-1);
+				return NULL;
 			}
 			else {
 				wbIndex = atoi(wbIndexS);
@@ -440,7 +440,7 @@ ADIOS_QUERY_TEST_INFO parseXml(const char *inputxml, ADIOS_FILE* f) {
 					q = adios_query_create(f, varNameS, block, ADIOS_GT, constraintS);
 				else {
 					fprintf(stderr, "Unsupported entry op %s\n", opS);
-					exit(-1);
+					return NULL;
 				}
 
 				queryPush(&queryStack,q);
@@ -456,10 +456,12 @@ ADIOS_QUERY_TEST_INFO parseXml(const char *inputxml, ADIOS_FILE* f) {
 
 	}
 
-	return (ADIOS_QUERY_TEST_INFO){
+	ADIOS_QUERY_TEST_INFO *retval = (ADIOS_QUERY_TEST_INFO *)malloc(sizeof(ADIOS_QUERY_TEST_INFO));
+	*retval = (ADIOS_QUERY_TEST_INFO){
 		.query = queryPop(&queryStack),
 		.outputSelection = outputBox,
 		.fromStep = fromTimestep,
 		.numSteps = numTimesteps,
 	};
+	return retval;
 }

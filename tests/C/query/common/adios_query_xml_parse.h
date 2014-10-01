@@ -19,6 +19,6 @@ typedef struct {
 /*
  * Parses the given XML file to extract the ADIOS_QUERY object described therein.
  */
-ADIOS_QUERY_TEST_INFO parseXml(const char *inputxml, ADIOS_FILE* f);
+ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f);
 
 #endif /* ADIOS_QUERY_XML_PARSE_H_ */
