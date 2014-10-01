@@ -199,8 +199,6 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 	int outputDim;
 	int outputWbIndex;
 	int selType;
-	uint64_t outputCount[MAXDIM];
-	uint64_t outputStart[MAXDIM];
 	char** outputCountTokens=NULL;
 	char** outputStartTokens=NULL;
 	ADIOS_SELECTION *outputBox;
@@ -238,10 +236,18 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 			tokenize_dimensions2(outputStartS, &outputStartTokens, &outputDim);
 			tokenize_dimensions2(outputCountS, &outputCountTokens, &outputDim);
 
+			// Allocate arrays to give to the bounding box constructor
+			uint64_t *outputStart = malloc(outputDim * sizeof(uint64_t));
+			uint64_t *outputCount = malloc(outputDim * sizeof(uint64_t));
+
 			for (j = 0; j < outputDim; j ++){
 				outputStart[j] = atoi(outputStartTokens[j]);
 				outputCount[j] = atoi(outputCountTokens[j]);
+				free(outputStartTokens[j]);
+				free(outputCountTokens[j]);
 			}
+			free(outputStartTokens);
+			free(outputCountTokens);
 
 			outputBox = adios_selection_boundingbox(outputDim, outputStart, outputCount);
 
@@ -282,8 +288,6 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 	int entryIter;
 	int queryDim;
 	int wbIndex;
-	uint64_t queryCount[MAXDIM];
-	uint64_t queryStart[MAXDIM];
 	ADIOS_SELECTION *box, *block;
 	ADIOS_QUERY *q, *q1, *q2, *qc;
 	char** queryCountTokens=NULL;
@@ -383,10 +387,18 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 				tokenize_dimensions2(startS, &queryStartTokens, &queryDim);
 				tokenize_dimensions2(countS, &queryCountTokens, &queryDim);
 
+				// Allocate arrays to give to the bounding box constructor
+				uint64_t *queryStart = malloc(queryDim * sizeof(uint64_t));
+				uint64_t *queryCount = malloc(queryDim * sizeof(uint64_t));
+
 				for (j = 0; j < queryDim; j ++){
 					queryStart[j] = atoi(queryStartTokens[j]);
 					queryCount[j] = atoi(queryCountTokens[j]);
+					free(queryStartTokens[j]);
+					free(queryCountTokens[j]);
 				}
+				free(queryStartTokens);
+				free(queryCountTokens);
 
 				box = adios_selection_boundingbox(queryDim, queryStart, queryCount);
 
