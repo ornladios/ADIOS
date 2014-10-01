@@ -15,6 +15,7 @@
 
 @SET_MAKE@
 
+
 VPATH = @srcdir@
 pkgdatadir = $(datadir)/@PACKAGE@
 pkgincludedir = $(includedir)/@PACKAGE@
@@ -34,7 +35,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = build_indexed_dataset$(EXEEXT)
+noinst_PROGRAMS = build_indexed_dataset$(EXEEXT) \
+	compute_expected_query_results$(EXEEXT)
 subdir = tests/C/query/common
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -82,6 +84,15 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
+LIBRARIES = $(noinst_LIBRARIES)
+ARFLAGS = cru
+libparse_test_query_xml_a_AR = $(AR) $(ARFLAGS)
+libparse_test_query_xml_a_DEPENDENCIES =  \
+	$(top_builddir)/src/libadios.a
+am_libparse_test_query_xml_a_OBJECTS =  \
+	adios_query_xml_parse.$(OBJEXT)
+libparse_test_query_xml_a_OBJECTS =  \
+	$(am_libparse_test_query_xml_a_OBJECTS)
 PROGRAMS = $(noinst_PROGRAMS)
 am_build_indexed_dataset_OBJECTS = build_indexed_dataset.$(OBJEXT)
 build_indexed_dataset_OBJECTS = $(am_build_indexed_dataset_OBJECTS)
@@ -91,6 +102,17 @@ build_indexed_dataset_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 build_indexed_dataset_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(build_indexed_dataset_LDFLAGS) $(LDFLAGS) -o $@
+am_compute_expected_query_results_OBJECTS =  \
+	compute_expected_query_results.$(OBJEXT)
+compute_expected_query_results_OBJECTS =  \
+	$(am_compute_expected_query_results_OBJECTS)
+compute_expected_query_results_DEPENDENCIES =  \
+	$(builddir)/libparse_test_query_xml.a \
+	$(top_builddir)/src/libadios.a $(am__DEPENDENCIES_1)
+compute_expected_query_results_LINK = $(LIBTOOL) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(AM_CFLAGS) $(CFLAGS) \
+	$(compute_expected_query_results_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -103,8 +125,12 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(build_indexed_dataset_SOURCES)
-DIST_SOURCES = $(build_indexed_dataset_SOURCES)
+SOURCES = $(libparse_test_query_xml_a_SOURCES) \
+	$(build_indexed_dataset_SOURCES) \
+	$(compute_expected_query_results_SOURCES)
+DIST_SOURCES = $(libparse_test_query_xml_a_SOURCES) \
+	$(build_indexed_dataset_SOURCES) \
+	$(compute_expected_query_results_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -365,9 +391,15 @@ top_srcdir = @top_srcdir@
 INCLUDES = $(all_includes) $(ADIOSLIB_CPPFLAGS) -I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/public
 AUTOMAKE_OPTIONS = no-dependencies
+noinst_LIBRARIES = libparse_test_query_xml.a
 build_indexed_dataset_SOURCES = build_indexed_dataset.c 
 build_indexed_dataset_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
 build_indexed_dataset_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+libparse_test_query_xml_a_SOURCES = adios_query_xml_parse.c adios_query_xml_parse.h
+libparse_test_query_xml_a_LIBADD = $(top_builddir)/src/libadios.a
+compute_expected_query_results_SOURCES = compute_expected_query_results.c
+compute_expected_query_results_LDADD = $(builddir)/libparse_test_query_xml.a $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
+compute_expected_query_results_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 CLEANFILES = *.bp
 all: all-am
 
@@ -404,6 +436,13 @@ $(ACLOCAL_M4): @MAINTAINER_MODE_TRUE@ $(am__aclocal_m4_deps)
 	cd $(top_builddir) && $(MAKE) $(AM_MAKEFLAGS) am--refresh
 $(am__aclocal_m4_deps):
 
+clean-noinstLIBRARIES:
+	-test -z "$(noinst_LIBRARIES)" || rm -f $(noinst_LIBRARIES)
+libparse_test_query_xml.a: $(libparse_test_query_xml_a_OBJECTS) $(libparse_test_query_xml_a_DEPENDENCIES) 
+	-rm -f libparse_test_query_xml.a
+	$(libparse_test_query_xml_a_AR) libparse_test_query_xml.a $(libparse_test_query_xml_a_OBJECTS) $(libparse_test_query_xml_a_LIBADD)
+	$(RANLIB) libparse_test_query_xml.a
+
 clean-noinstPROGRAMS:
 	@list='$(noinst_PROGRAMS)'; test -n "$$list" || exit 0; \
 	echo " rm -f" $$list; \
@@ -415,6 +454,9 @@ clean-noinstPROGRAMS:
 build_indexed_dataset$(EXEEXT): $(build_indexed_dataset_OBJECTS) $(build_indexed_dataset_DEPENDENCIES) 
 	@rm -f build_indexed_dataset$(EXEEXT)
 	$(build_indexed_dataset_LINK) $(build_indexed_dataset_OBJECTS) $(build_indexed_dataset_LDADD) $(LIBS)
+compute_expected_query_results$(EXEEXT): $(compute_expected_query_results_OBJECTS) $(compute_expected_query_results_DEPENDENCIES) 
+	@rm -f compute_expected_query_results$(EXEEXT)
+	$(compute_expected_query_results_LINK) $(compute_expected_query_results_OBJECTS) $(compute_expected_query_results_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -521,7 +563,7 @@ distdir: $(DISTFILES)
 	done
 check-am: all-am
 check: check-am
-all-am: Makefile $(PROGRAMS)
+all-am: Makefile $(LIBRARIES) $(PROGRAMS)
 installdirs:
 install: install-am
 install-exec: install-exec-am
@@ -551,8 +593,8 @@ maintainer-clean-generic:
 	@echo "it deletes files that may require special tools to rebuild."
 clean: clean-am
 
-clean-am: clean-generic clean-libtool clean-noinstPROGRAMS \
-	mostlyclean-am
+clean-am: clean-generic clean-libtool clean-noinstLIBRARIES \
+	clean-noinstPROGRAMS mostlyclean-am
 
 distclean: distclean-am
 	-rm -f Makefile
@@ -621,17 +663,18 @@ uninstall-am:
 .MAKE: install-am install-strip
 
 .PHONY: CTAGS GTAGS all all-am check check-am clean clean-generic \
-	clean-libtool clean-noinstPROGRAMS ctags distclean \
-	distclean-compile distclean-generic distclean-libtool \
-	distclean-tags distdir dvi dvi-am html html-am info info-am \
-	install install-am install-data install-data-am install-dvi \
-	install-dvi-am install-exec install-exec-am install-html \
-	install-html-am install-info install-info-am install-man \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	maintainer-clean maintainer-clean-generic mostlyclean \
-	mostlyclean-compile mostlyclean-generic mostlyclean-libtool \
-	pdf pdf-am ps ps-am tags uninstall uninstall-am
+	clean-libtool clean-noinstLIBRARIES clean-noinstPROGRAMS ctags \
+	distclean distclean-compile distclean-generic \
+	distclean-libtool distclean-tags distdir dvi dvi-am html \
+	html-am info info-am install install-am install-data \
+	install-data-am install-dvi install-dvi-am install-exec \
+	install-exec-am install-html install-html-am install-info \
+	install-info-am install-man install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-compile \
+	mostlyclean-generic mostlyclean-libtool pdf pdf-am ps ps-am \
+	tags uninstall uninstall-am
 
 #EXTRA_DIST = test_config_flex.xml 
 
