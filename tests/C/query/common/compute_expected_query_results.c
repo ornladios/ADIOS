@@ -14,7 +14,7 @@
 #include <adios_read.h>
 #include <adios_read_ext.h>
 #include <adios_query.h>
-#include <adios_logger.h>
+#include <core/adios_logger.h>
 #include "adios_query_xml_parse.h"
 
 #define max(a,b) ((a)>(b)?(a):(b))
