@@ -1572,8 +1572,8 @@ int common_read_complete_meshinfo (ADIOS_FILE *fp, ADIOS_FILE *mp, ADIOS_MESH * 
         }
         else
         {
-            printf ("Cannot get mesh %s type\n", meshinfo->name);
-            return;
+            log_error ("Cannot get mesh %s type\n", meshinfo->name);
+            return read_fail;
         }
     }
 //    if ( !strcmp((char *)data, "uniform") )
