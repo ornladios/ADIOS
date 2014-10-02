@@ -14,6 +14,7 @@
 #include <adios_read.h>
 #include <adios_read_ext.h>
 #include <adios_query.h>
+#include <adios_logger.h>
 #include "adios_query_xml_parse.h"
 
 #define max(a,b) ((a)>(b)?(a):(b))
@@ -451,9 +452,14 @@ int main(int argc, char **argv) {
 	adios_query_init(ADIOS_QUERY_TOOL_ALACRITY);
 
 	ADIOS_FILE *bp_file = adios_read_open_file(bp_filename, ADIOS_READ_METHOD_BP, comm);
+	if (bp_file == NULL) {
+		log_error("Error: could not read input dataset %s\n", bp_filename);
+		exit(1);
+	}
+
 	ADIOS_QUERY_TEST_INFO *testinfo = parseXml(inputxml_filename, bp_file);
 	if (testinfo == NULL) {
-		fprintf(stderr, "Error: could not read query XML file %s\n", inputxml_filename);
+		log_error("Error: could not read query XML file %s\n", inputxml_filename);
 		exit(1);
 	}
 
