@@ -452,6 +452,10 @@ int main(int argc, char **argv) {
 
 	ADIOS_FILE *bp_file = adios_read_open_file(bp_filename, ADIOS_READ_METHOD_BP, comm);
 	ADIOS_QUERY_TEST_INFO *testinfo = parseXml(inputxml_filename, bp_file);
+	if (testinfo == NULL) {
+		fprintf(stderr, "Error: could not read query XML file %s\n", inputxml_filename);
+		exit(1);
+	}
 
 	int timestep;
 	for (timestep = testinfo->fromStep; timestep < testinfo->fromStep + testinfo->numSteps; ++timestep) {
