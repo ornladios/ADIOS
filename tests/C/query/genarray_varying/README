@@ -1,0 +1,96 @@
+
+Generate some data with genarray_varying. Then execute a range query on the "xy" 2D array with test_range.
+The output file will have 3 arrays
+xy/original   the xy array from the output of genarray_varying
+xy/manual     Query is evaluated point by point in the test_range code, using xy/original.
+              It's a 2D array filled with nan at the non-hit points.
+xy/queried    Query is evaluated using adios_query, then read the point data from the output of genarray_varying
+              It's a 2D array filled with nan at the non-hit points. 
+
+BUILD
+=====
+
+make.settings should set the ADIOS_DIR and should set the MPI compilers and flags.
+
+This example is not built automatically with ADIOS. You need to install ADIOS first, then use the installation to build this code. 
+
+USAGE
+=====
+
+1. Run genarray_varying
+E.g. 12 processors in 3x2x2 domain decompostion, each writing a 3x5x4 block of data (in Fortran dimension ordering)
+     2 timesteps without any sleeptime in between.
+
+$ mpirun -np 12 ./genarray_varying   g1.bp   3 2 2   3 5 4   2 0
+
+ Usage: genarray  output N  M  K  [infile|nx  ny  nz timesteps sleeptime]
+ output: name of output file
+ N:      number of processes in X dimension
+ M:      number of processes in Y dimension
+ K:      number of processes in Z dimension
+ nx:     local array size in X dimension per processor
+ ny:     local array size in Y dimension per processor
+ nz:     local array size in Z dimension per processor
+ infile: file that describes nx ny nz for each processor
+ timesteps: the total number of timesteps to output
+ sleeptime: the time to sleep (s)
+
+
+It will produce a file which has a 3D array and three 2D arrays, which are three surface slices of the 3D array.
+Values in the arrays are that  -2.0 < x < 2.0
+
+$ bpls  g1.bp
+...
+  double   xyz   2*{8, 10, 9} = -1.99479 / 1.99426 
+  double   xy    2*{10, 9}    = -1.98982 / 1.96187 
+  double   yz    2*{8, 10}    = -1.96158 / 1.96736 
+  double   xz    2*{8, 9}     = -1.97488 / 1.98433 
+
+Note, here you see the dimensions in C ordering. 
+Note, the array size at each step is growing. bpls only shows the size at the first step. Use 
+$ bpls g1.bp -D xy
+to see the decomposition of xy in the file, for each output step.
+
+
+
+------------------------
+2. Run test_range
+E.g 2 processors, 2x1 domain decomposition, with a range query  1.0 <= x <= 2.0
+
+
+
+$ mpirun -np 2 ./test_range g1.bp q1.bp 1 2 NAN 2 1
+
+Usage: ./test_range input output min max fillvalue <decomposition>
+    input      Input file
+    output     Output file
+    min        Range query minimum value (float)
+    max        Range query maximum value (float)
+    fillvalue  Fill value (float)
+               NAN is allowed, its value in this actual executable is: nan
+    <decomposition>    list of numbers e.g. 32 8 4
+            Decomposition values in each dimension of an array
+            The product of these number must be less then the number
+            of processes. Processes whose rank is higher than the
+            product, will not write anything.
+               Arrays with less dimensions than the number of values,
+            will be decomposed with using the appropriate number of
+            values.
+
+
+
+------------------------------------------------------------------------
+3. The arrays xy/manual and xy/queried should be the same. 
+
+$ bpls -l  q1.bp
+... 
+  double     xy/original   2*{10, 9} = -1.98982 / 1.96187 / 0.00174898 / 0.964092 
+  double     xy/manual     2*{10, 9} = 1.05115 / 1.96187 / 1.47369 / 0.277045 
+  double     xy/queried    2*{10, 9} = 1.05115 / 1.96187 / 1.47369 / 0.277045 
+
+$ bpls q1.bp -d xy/manual xy/queried -n 9
+
+
+Note, plot_test.sh can plot this variables on Sith.
+
+
