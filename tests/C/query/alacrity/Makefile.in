@@ -91,7 +91,7 @@ am__adios_alac_query_SOURCES_DIST = adios_alac_query.c
 @HAVE_ALACRITY_TRUE@am_adios_alac_query_OBJECTS = adios_alac_query-adios_alac_query.$(OBJEXT)
 adios_alac_query_OBJECTS = $(am_adios_alac_query_OBJECTS)
 am__DEPENDENCIES_1 =
-@HAVE_ALACRITY_TRUE@adios_alac_query_DEPENDENCIES =  \
+@HAVE_ALACRITY_TRUE@adios_alac_query_DEPENDENCIES = $(top_builddir)/tests/C/query/common/libparse_test_query_xml.a \
 @HAVE_ALACRITY_TRUE@	$(top_builddir)/src/libadios.a \
 @HAVE_ALACRITY_TRUE@	$(am__DEPENDENCIES_1)
 adios_alac_query_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
@@ -412,7 +412,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 INCLUDES = $(all_includes) $(ADIOSLIB_CPPFLAGS) -I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/public -I$(srcdir)/../include
+	-I$(top_srcdir)/src/public -I$(srcdir)/../common/
 AUTOMAKE_OPTIONS = no-dependencies
 @HAVE_ALACRITY_TRUE@alac_internal_test_SOURCES = test_query_alac_internal.c 
 @HAVE_ALACRITY_TRUE@alac_internal_test_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
@@ -426,7 +426,7 @@ AUTOMAKE_OPTIONS = no-dependencies
 @HAVE_ALACRITY_TRUE@adios_build_alac_index_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 @HAVE_ALACRITY_TRUE@adios_build_alac_index_CPPFLAGS = $(ALACRITY_CPPFLAGS)
 @HAVE_ALACRITY_TRUE@adios_alac_query_SOURCES = adios_alac_query.c
-@HAVE_ALACRITY_TRUE@adios_alac_query_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
+@HAVE_ALACRITY_TRUE@adios_alac_query_LDADD = $(top_builddir)/tests/C/query/common/libparse_test_query_xml.a $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
 @HAVE_ALACRITY_TRUE@adios_alac_query_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 @HAVE_ALACRITY_TRUE@adios_alac_query_CPPFLAGS = $(ALACRITY_CPPFLAGS)
 @HAVE_ALACRITY_TRUE@adios_show_bp_file_SOURCES = adios_show_bp_file.c
