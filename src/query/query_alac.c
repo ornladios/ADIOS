@@ -1095,10 +1095,9 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 
 			srcstart = pgBB->start;
 			srccount = pgBB->count;
-			blockId = pg.blockidx;           //	blockId = pg.blockidx_in_timestep ;
-			int globalBlockId = getGlobalWriteBlockId(blockId, startStep, varInfo);
+			// blockId = pg.blockidx; // pg.blockidx is relative block id           //	blockId = pg.blockidx_in_timestep ;
 			if (ti->transform_type == adios_get_transform_type_by_uid("ncsu-alacrity")) {
-				proc_write_block(globalBlockId,isPGCovered,ti, adiosQuery,startStep,estimate,&alacQuery,lb,hb
+				proc_write_block(pg.blockidx,isPGCovered,ti, adiosQuery,startStep,estimate,&alacQuery,lb,hb
 						,srcstart, srccount, deststart, destcount,alacResultBitmap	);
 			}else {
 				char * blockData  = NULL;
@@ -1107,7 +1106,7 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 				for(t=0; t < ndim; t++){
 					totalElm *= pgBB->count[t];
 				}
-				readBlockData(globalBlockId, adiosQuery, startStep, varInfo,totalElm, (void**)&blockData );
+				readBlockData(pg.blockidx, adiosQuery, startStep, varInfo,totalElm, (void**)&blockData );
 				literallyCheckData(blockData, totalElm, varInfo->type,adiosQuery,hb, lb
 						, srcstart, srccount, deststart, destcount, ndim, isPGCovered
 						, alacResultBitmap);
