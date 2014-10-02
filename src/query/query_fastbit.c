@@ -311,7 +311,7 @@ ADIOS_SELECTION* getSpatialCoordinatesDefault(ADIOS_VARINFO* var, uint64_t* coor
     fillUp(var->ndim, spatialCoordinates, i, pointArray);
   }
   ADIOS_SELECTION* result =  adios_selection_points(var->ndim, retrivalSize, pointArray);
-  free(pointArray);
+  //free(pointArray); // cannot free here, adios_selection_points stores the array pointer
   return result;
 }
 
@@ -335,7 +335,7 @@ ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundary, uint64_t
 	   fillUp(bb->ndim, spatialCoordinates, i, pointArray);
       }
       ADIOS_SELECTION* result =  adios_selection_points(bb->ndim, retrivalSize, pointArray);    
-      free(pointArray);
+      //free(pointArray); // cannot free here, adios_selection_points stores the array pointer
       return result;
       break;
     }
@@ -359,7 +359,7 @@ ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundary, uint64_t
 	*/
       }
       ADIOS_SELECTION* result = adios_selection_points(points->ndim, retrivalSize, pointArray);	      
-      free(pointArray);
+      //free(pointArray); // cannot free here, adios_selection_points stores the array pointer
       return result;
       //printOneSpatialCoordinate(points->ndim, spatialCoordinates);      
       
@@ -382,7 +382,7 @@ ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundary, uint64_t
 	   fillUp(v->ndim, spatialCoordinates, i, pointArray);
       }
       ADIOS_SELECTION* result = adios_selection_points(v->ndim, retrivalSize, pointArray);
-      free(pointArray);
+      //free(pointArray); // cannot free here, adios_selection_points stores the array pointer
       return result;
       break;      
     }
@@ -747,6 +747,7 @@ void queryDetail(ADIOS_QUERY* q, int timeStep) {
       ADIOS_SELECTION* bound;
       adios_query_get_selection(q, batchSize, bound, &t);
 
+      free(t->u.points.points);
       adios_selection_delete(t);
       //printf("::\t      max=%llu _lastRead=%llu\n", q->_maxResultDesired, q->_lastRead);
     }
