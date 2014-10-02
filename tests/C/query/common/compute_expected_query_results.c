@@ -409,7 +409,7 @@ static ADIOS_SELECTION * computeExpectedQueryResults(ADIOS_QUERY *query, int tim
 	return resultPointsSel;
 }
 
-static void printPointSelection(ADIOS_SELECTION *sel) {
+static void printPointSelection(int timestep, ADIOS_SELECTION *sel) {
 	assert(sel->type == ADIOS_SELECTION_POINTS);
 
 	const ADIOS_SELECTION_POINTS_STRUCT *pstruct = &sel->u.points;
@@ -420,8 +420,9 @@ static void printPointSelection(ADIOS_SELECTION *sel) {
 	uint64_t i;
 	int j;
 	for (i = 0; i < npoints; ++i) {
+		printf("%d", timestep);
 		for (j = 0; j < ndim; ++j) {
-			printf((j == 0) ? "%llu" : " %llu", *points++);
+			printf(" %llu", *points++);
 		}
 		printf("\n");
 	}
@@ -455,8 +456,7 @@ int main(int argc, char **argv) {
 	int timestep;
 	for (timestep = testinfo->fromStep; timestep < testinfo->fromStep + testinfo->numSteps; ++timestep) {
 		ADIOS_SELECTION *result = computeExpectedQueryResults(testinfo->query, timestep, testinfo->outputSelection);
-		printf("timestep %d\n", timestep);
-		printPointSelection(result);
+		printPointSelection(timestep, result);
 
 		free(result->u.points.points);
 		adios_selection_delete(result);
