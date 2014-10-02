@@ -29,6 +29,10 @@ DATASET_BUILDER="$COMMON_QUERY/build_indexed_dataset"
 DATASET_SEQSCAN="$COMMON_QUERY/compute_expected_query_results"
 QUERY_XML_DIR="$COMMON_QUERY/query-xmls/"
 
+[ -x "$DATASET_BUILDER" ] || die "ERROR: $DATASET_BUILDER is not executable"
+[ -x "$DATASET_SEQSCAN" ] || die "ERROR: $DATASET_BUILDER is not executable"
+[ -d "$QUERY_XML_DIR" ] || die "ERROR: $QUERY_XML_DIR is not a directory"
+
 # mpirun for serial command
 MPIRUN_SERIAL="$MPIRUN $NP_MPIRUN 1 $EXEOPT"
 
@@ -45,7 +49,7 @@ for DSID in $ALL_DATASET_IDS; do
     die "ERROR: $DATASET_BUILDER did not produce expected output BP file $INDEXED_DS"
 
   # Iterate over all interesting queries:
-  for QUERY_XML in "$QUERY_XML_DIR/$DID/"/*; do
+  for QUERY_XML in "$QUERY_XML_DIR/$DSID/"/*; do
     QUERY_NAME="$QUERY_XML"
     QUERY_NAME="${QUERY_NAME##*/}"
     QUERY_NAME="${QUERY_NAME%%.xml}"
