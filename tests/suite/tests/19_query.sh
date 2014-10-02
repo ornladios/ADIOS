@@ -47,7 +47,7 @@ for DSID in $ALL_DATASET_IDS; do
     die "ERROR: $DATASET_BUILDER failed with exit code $?"
   
   INDEXED_DS="$DSID.bp"
-  [ ! -f "$INDEXED_DS" ] ||
+  [ -f "$INDEXED_DS" ] ||
     die "ERROR: $DATASET_BUILDER did not produce expected output BP file $INDEXED_DS"
 
   # Iterate over all interesting queries:
