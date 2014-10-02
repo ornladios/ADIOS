@@ -112,7 +112,7 @@ typedef struct _flexpath_write_file_data {
     MPI_Comm mpiComm;
     int rank;
     int size;
-
+    int host_language;
     // EVPath stuff
     EVstone multiStone;
     EVstone sinkStone;
@@ -175,6 +175,19 @@ FlexpathWriteData flexpathWriteData;
 
 /**************************** Function Definitions *********************************/
 
+static void 
+reverse_dims(uint64_t *dims, int len)
+{
+    int i;
+    for (i = 0; i<(len/2); i++) {
+        uint64_t tmp = dims[i];
+        int end = len-1-i;
+        //printf("%d %d\n", dims[i], dims[end]);
+        dims[i] = dims[end];
+        dims[end] = tmp;
+    }
+}
+
 char*
 resolve_path_name(char *path, char *name)
 {
@@ -197,7 +210,8 @@ resolve_path_name(char *path, char *name)
 }
 
 // add an attr for each dimension to an attr_list
-void set_attr_dimensions(char* varName, char* altName, int numDims, attr_list attrs) 
+void 
+set_attr_dimensions(char* varName, char* altName, int numDims, attr_list attrs) 
 {
     char atomName[200] = "";
     char dimNum[10];
@@ -429,7 +443,8 @@ add_var(FlexpathVarNode* queue, char* varName, FlexpathVarNode* dims, int rank)
 }
 
 // free a var list
-void free_vars(FlexpathVarNode* queue)
+void 
+free_vars(FlexpathVarNode* queue)
 {
     if(queue) {
         free_vars(queue->next);
@@ -1387,11 +1402,11 @@ adios_flexpath_open(struct adios_file_struct *fd,
 	
     //process group format
     struct adios_group_struct *t = method->group;
-    //printf("fortran? %d\n", t->adios_host_language_fortran);
     if(t == NULL){
 	adios_error(err_invalid_group, "Invalid group.\n");
 	return err_invalid_group;
     }
+    fileData->host_language = t->adios_host_language_fortran;
     struct adios_var_struct *fields = t->vars;
 	
     if(fields == NULL){
@@ -1626,7 +1641,13 @@ adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *m
 						    &local_offsets, 
 						    &local_dimensions, 
 						    &global_dimensions);
-	    
+	    // flip for fortran here.
+            if (fileData->host_language == FP_FORTRAN_MODE) {
+                reverse_dims(local_offsets, num_local_offsets);
+                reverse_dims(local_dimensions, num_local_offsets);
+                reverse_dims(global_dimensions, num_local_offsets);
+            }
+
 	    if(num_local_offsets > 0){
 		uint64_t *all_offsets = NULL;
 		uint64_t *all_local_dims = NULL;

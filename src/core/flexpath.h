@@ -21,6 +21,9 @@
 #define INIT_MSG 3
 #define EOS_MSG 4
 
+#define FP_FORTRAN_MODE 1
+#define FP_C_MODE 0
+
 #define perr(...) if(getenv("FP_DEBUG")) fprintf(stderr, __VA_ARGS__);
 
 #define fp_log(LOG, ...)                             \

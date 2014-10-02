@@ -13,7 +13,7 @@
 
 
 #define ADIOS_TIMING_MAX_USER_TIMERS 16
-#define ADIOS_TIMING_MAX_EVENTS 256 
+#define ADIOS_TIMING_MAX_EVENTS 1024 
 
 
 struct adios_timing_event_struct

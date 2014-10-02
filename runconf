@@ -469,6 +469,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         --with-lustre \
         --with-zlib --with-bzip2
 
+        #--enable-skel-timing
         #--with-fgr=/ccs/proj/e2e/qliu/tap \
         #--with-glib=/ccs/proj/e2e/qliu/glib \
         #--with-netcdf=/opt/cray/netcdf/3.6.2/netcdf-${TARGET} \
@@ -576,10 +577,12 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
       #module load xt-papi
       module load mxml
       module load pmi
+      module load rca
       # use the two lines below for openmpi
       #export CC=mpicc
       #export FC=mpif90
-      CFLAGS="-g -fPIC" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/chester.$TARGET \
+      CFLAGS="-g -fPIC" LDFLAGS="$CRAY_RCA_POST_LINK_OPTS" \
+      ${SRCDIR}/configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/chester.$TARGET \
           --enable-dependency-tracking \
           --with-cray-pmi=/opt/cray/pmi/default \
           --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
