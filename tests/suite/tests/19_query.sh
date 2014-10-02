@@ -23,11 +23,13 @@ function die() {
   exit $EC
 }
 
+QUERY_TEST_DIR="$TRUNKDIR/tests/C/query"
+QUERY_COMMON_DIR="$QUERY_TEST_DIR/common"
+
 # Some external tools to use
-COMMON_QUERY="$TRUNKDIR/tests/C/query/common"
-DATASET_BUILDER="$COMMON_QUERY/build_indexed_dataset"
-DATASET_SEQSCAN="$COMMON_QUERY/compute_expected_query_results"
-QUERY_XML_DIR="$COMMON_QUERY/query-xmls/"
+DATASET_BUILDER="$QUERY_COMMON_DIR/build_indexed_dataset"
+DATASET_SEQSCAN="$QUERY_COMMON_DIR/compute_expected_query_results"
+QUERY_XML_DIR="$QUERY_TEST_DIR/query-xmls/"
 
 [ -x "$DATASET_BUILDER" ] || die "ERROR: $DATASET_BUILDER is not executable"
 [ -x "$DATASET_SEQSCAN" ] || die "ERROR: $DATASET_BUILDER is not executable"
