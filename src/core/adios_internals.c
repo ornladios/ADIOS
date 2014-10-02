@@ -976,6 +976,7 @@ int adios_common_define_attribute (int64_t group, const char * name
     }
 
     attr->next = 0;
+    attr->write_offset = 0;
 
     adios_append_attribute (&g->attributes, attr, ++g->member_count);
 
@@ -1048,6 +1049,7 @@ int adios_common_define_attribute_byvalue (int64_t group, const char * name
     }
 
     attr->next = 0;
+    attr->write_offset = 0;
 
     adios_append_attribute (&g->attributes, attr, ++g->member_count);
 
