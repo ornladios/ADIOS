@@ -470,10 +470,12 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 
 	ADIOS_QUERY_TEST_INFO *retval = (ADIOS_QUERY_TEST_INFO *)malloc(sizeof(ADIOS_QUERY_TEST_INFO));
 	*retval = (ADIOS_QUERY_TEST_INFO){
-		.query = queryPop(&queryStack),
+		.query           = queryPop(&queryStack),
 		.outputSelection = outputBox,
-		.fromStep = fromTimestep,
-		.numSteps = numTimesteps,
+		.fromStep        = fromTimestep,
+		.numSteps        = numTimesteps,
+                .batchSize       = batchsize,
+                .varName         = varNameS,
 	};
 	return retval;
 }

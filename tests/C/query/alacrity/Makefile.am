@@ -1,6 +1,6 @@
 INCLUDES = $(all_includes)
 INCLUDES += $(ADIOSLIB_CPPFLAGS)
-INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public -I$(srcdir)/../include
+INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public -I$(srcdir)/../common/
 
 AUTOMAKE_OPTIONS = no-dependencies
 if HAVE_ALACRITY
@@ -24,12 +24,13 @@ adios_build_alac_index_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 adios_build_alac_index_CPPFLAGS = $(ALACRITY_CPPFLAGS)
 
 adios_alac_query_SOURCES = adios_alac_query.c
-adios_alac_query_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
+adios_alac_query_LDADD = $(top_builddir)/tests/C/query/common/libparse_test_query_xml.a $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
 adios_alac_query_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 adios_alac_query_CPPFLAGS = $(ALACRITY_CPPFLAGS)
 
 adios_show_bp_file_SOURCES = adios_show_bp_file.c
 adios_show_bp_file_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDFLAGS) 
+
 adios_show_bp_file_LDADD += $(ADIOSLIB_LDADD)
   
 
