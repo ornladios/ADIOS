@@ -283,21 +283,25 @@ void testOneBoundBoxForAllVar(ADIOS_FILE* f)
     uint64_t max = 10000;
     //int64_t hitSize = adios_query_evaluate(q, timestep, max);
     
-    int64_t batchSize = 50;
+    int64_t batchSize = 10;
     
     int i = 0;
     printf("times steps for variable is: %d \n",q1->_var->nsteps);
     for (i=0; i<q1->_var->nsteps; i++) {
       adios_query_set_timestep(i);
       
+      int nBatches = 1;
       while (1) {
 	ADIOS_SELECTION* currBatch = NULL;
 	int hasMore =  adios_query_get_selection(q, batchSize, box, &currBatch);
+        printf("Number of hits returned in batch %d = %lld \n",nBatches, currBatch->u.points.npoints);
+        free(currBatch->u.points.points);
 	adios_selection_delete(currBatch);
 	
 	if (hasMore <= 0) {
 	  break;
 	}
+        nBatches++;
       }
       
     }
@@ -403,13 +407,13 @@ int main (int argc, char ** argv)
 	return -1;
     }
     
-    testNoBoxOnSelection(f);
+    //testNoBoxOnSelection(f);
     // testDefaultBoundBox(f);
     //testMultiBoundBox(f);
     //testAllDifferentBoundBoxes(f);
     //testUseOneWriteBlock(f, 0); 
     
-    //testOneBoundBoxForAllVar(f); 
+    testOneBoundBoxForAllVar(f); 
     //testOnePointList(f);
 
     adios_query_clean();
