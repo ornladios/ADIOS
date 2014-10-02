@@ -516,7 +516,7 @@ int performQuery(ADIOS_FILE *f, ADIOS_QUERY* q, ADIOS_SELECTION* box, char* varn
     adios_query_free(q);
 }
 
-int parseXml(char* inputxml, ADIOS_FILE* f)
+int parseXml(const char *inputxml, ADIOS_FILE* f)
 {
     int i, j;
     FILE * fp = fopen (inputxml,"r");
