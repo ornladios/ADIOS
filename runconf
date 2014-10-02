@@ -861,6 +861,63 @@ elif [ `hostname | cut -c 1-4` == "euge" ]; then
             --with-hdf5-libs="$HDF5_CLIB" \
             --without-phdf5
 
+elif [ `hostname | cut -c 1-6` == "edison" ]; then
+    ##########
+    # EDISON #
+    ##########
+    TARGET=`module list 2>&1 | grep "PrgEnv"- | sed "s/^.*PrgEnv-\([a-z]*\).*/\1/"`
+    echo "Configure on EDISON for $TARGET env."
+    export MPICC=cc
+    export MPICXX=CC
+    export MPIFC=ftn
+    module unload hdf5
+    module unload netcdf
+    module unload hdf5-parallel
+    module unload netcdf-hdf5parallel
+    module unload PrgEnv-gnu
+    module unload PrgEnv-pgi
+    module unload PrgEnv-pathscale
+    module unload PrgEnv-cray
+    module load PrgEnv-$TARGET
+    module swap cray-libsci
+    module load python
+    WITHDART=""
+    if [ "$TARGET" == "pgi" ]; then
+        export CC=pgcc
+        export CXX=pgCC
+        export FC=pgf90
+        export LDFLAGS="-pgcpplibs"
+        #WITHDART="--with-dataspaces=/global/homes/p/pnorbert/dataspaces/1.1.0/$TARGET"
+    elif [ "$TARGET" == "gnu" ]; then
+        export CC=gcc
+        export CXX=g++
+        export FC=gfortran
+        export LDFLAGS=""
+        #WITHDART="--with-dataspaces=/global/homes/p/pnorbert/dataspaces/1.1.0/$TARGET"
+    elif [ "$TARGET" == "intel" ]; then
+        export CC=icc
+        export CXX=icpc
+        export FC=ifort
+        export LDFLAGS=""
+        WITHDART=""
+    else
+        echo "TARGET must be pgi or gnu or intel"
+        exit 1
+    fi
+    export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
+    export CFLAGS="-fPIC"
+    ${SRCDIR}/configure --prefix=/global/homes/p/pnorbert/adios/master/edison/$TARGET \
+        --enable-dependency-tracking \
+        --with-mxml=$HOME/mxml/mxml.edison \
+        --with-lustre=/usr \
+        $WITHDART \
+        --with-cray-pmi-incdir=/opt/cray/pmi/default/include \
+        --with-cray-pmi-libdir=/opt/cray/pmi/default/lib64 \
+        --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
+        --with-cray-ugni-libdir=/opt/cray/ugni/default/lib64 \
+	--without-infiniband \
+        --without-hdf5 --without-netcdf
+
     
 elif [ `hostname | cut -c 1-4` == "nid0" ]; then
     ############
@@ -901,7 +958,7 @@ elif [ `hostname | cut -c 1-6` == "hopper" ]; then
     ##########
     # Hopper #
     ##########
-    TARGET=pgi
+    TARGET=`module list 2>&1 | grep "PrgEnv"- | sed "s/^.*PrgEnv-\([a-z]*\).*/\1/"`
     echo "Configure on HOPPER for $TARGET env."
     export MPICC=cc
     export MPICXX=CC
@@ -910,12 +967,12 @@ elif [ `hostname | cut -c 1-6` == "hopper" ]; then
     module unload netcdf
     module unload hdf5-parallel
     module unload netcdf-hdf5parallel
-    module unload PrgEnv-gnu
-    module unload PrgEnv-pgi
-    module unload PrgEnv-pathscale
-    module unload PrgEnv-cray
-    TARGET=pgi
-    module load PrgEnv-$TARGET
+    #module unload PrgEnv-gnu
+    #module unload PrgEnv-pgi
+    #module unload PrgEnv-pathscale
+    #module unload PrgEnv-cray
+    #module load PrgEnv-$TARGET
+    #module swap cray-libsci
     module load python
     if [ "$TARGET" == "pgi" ]; then
         export CC=pgcc
@@ -941,7 +998,7 @@ elif [ `hostname | cut -c 1-6` == "hopper" ]; then
     fi
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
     export CFLAGS="-fPIC"
-    ${SRCDIR}/configure --prefix=/global/homes/p/pnorbert/adios/1.4.1/hopper/$TARGET \
+    ${SRCDIR}/configure --prefix=/project/projectdirs/m499/adios/devel-hopper-$TARGET \
         --enable-dependency-tracking \
         --with-mxml=$HOME/mxml/mxml.hopper \
         --with-lustre=/usr \
@@ -950,6 +1007,7 @@ elif [ `hostname | cut -c 1-6` == "hopper" ]; then
         --with-cray-pmi-libdir=/opt/cray/pmi/default/lib64 \
         --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
         --with-cray-ugni-libdir=/opt/cray/ugni/default/lib64 \
+	--without-infiniband \
         --without-hdf5 --without-netcdf
 
 
