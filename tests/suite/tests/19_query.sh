@@ -38,13 +38,13 @@ QUERY_SEQSCAN_EXE_BASENAME="compute_expected_query_results"
 QUERY_EXE_BASENAME="adios_query_test"
 
 DATASET_BUILDER_EXE_PATH="$QUERY_COMMON_DIR/$DATASET_BUILDER_EXE_BASENAME"
-QUERY_SEQSCAN_EXE_PATH="$QUERY_COMMON_DIR/$QUERY_SEQSCAN_EXE_PATH"
-QUERY_EXE_PATH="$QUERY_COMMON_DIR/$QUERY_EXE_PATH"
+QUERY_SEQSCAN_EXE_PATH="$QUERY_COMMON_DIR/$QUERY_SEQSCAN_EXE_BASENAME"
+QUERY_EXE_PATH="$QUERY_COMMON_DIR/$QUERY_EXE_BASENAME"
 
 # Check for the executability of all executables that we need
-[ -x "$DATASET_BUILDER_EXE_PATH" ] || die "ERROR: $DATASET_BUILDER_EXE_PATH is not executable"
-[ -x "$QUERY_SEQSCAN_EXE_PATH" ] || die "ERROR: $QUERY_SEQSCAN_EXE_PATH is not executable"
-[ -x "$QUERY_EXE_PATH" ] || die "ERROR: $QUERY_EXE_PATH is not executable"
+[ -f "$DATASET_BUILDER_EXE_PATH" -a -x "$DATASET_BUILDER_EXE_PATH" ] || die "ERROR: $DATASET_BUILDER_EXE_PATH is not executable"
+[ -f "$QUERY_SEQSCAN_EXE_PATH"   -a -x "$QUERY_SEQSCAN_EXE_PATH"   ] || die "ERROR: $QUERY_SEQSCAN_EXE_PATH is not executable"
+[ -f "$QUERY_EXE_PATH"           -a -x "$QUERY_EXE_PATH"           ] || die "ERROR: $QUERY_EXE_PATH is not executable"
 
 # Copy the external tools to the working directory for convenience
 DATASET_BUILDER_EXE_LOCAL="./$DATASET_BUILDER_EXE_BASENAME"
