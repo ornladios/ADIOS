@@ -47,14 +47,6 @@ static ALEncoderConfig parse_configuration(const struct adios_var_struct *var, c
     return config;
 }
 
-/*
-uint64_t ALGetBinLayoutSize(const ALBinLayout *binLayout, uint8_t significantBits) {
-    const uint8_t sigbytes = (significantBits + 0x07) >> 3;
-    return    sizeof(binLayout->numBins) +                      // Number of bins
-            (binLayout->numBins) * sizeof(bin_offset_t) +                   // Bin Values
-            (binLayout->numBins + 1) * sizeof(bin_offset_t);    // The Bin Offsets
-}
- */
 static void add_bin_layout_size_growth(
 		ALEncoderConfig *config,
 		const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec,
@@ -73,34 +65,11 @@ static void add_bin_layout_size_growth(
 	// already set in adios_transform_alacrity_transformed_size_growth).
 	const int metadata_bytes_per_bin = 2 * sizeof(bin_offset_t);
 	const int datatype_size = adios_get_type_size(var->pre_transform_type, NULL);
-	const double metadata_bytes_per_data_bytes = metadata_bytes_per_bin / datatype_size;
+	const double metadata_bytes_per_data_bytes = (double)metadata_bytes_per_bin / datatype_size;
 
 	*capped_linear_factor += metadata_bytes_per_data_bytes; // For every value under the cap, add the corresponding number of metadata bytes
 }
 
-/*
-uint64_t ALGetIndexMetadataSize(const ALIndexMetadata *indexMeta, const ALMetadata *metadata) {
-    uint64_t size = sizeof(indexMeta->indexForm);
-    switch (indexMeta->indexForm) {
-    case ALCompressionIndex:
-    case ALInvertedIndex:
-        break;
-    case ALCompressedInvertedIndex:
-        size += (metadata->binLayout.numBins + 1) * sizeof(indexMeta->u.ciim.indexBinStartOffsets[0]);
-        break;
-    case ALCompressedHybridInvertedIndex:
-    case ALCompressedSkipInvertedIndex:
-    case ALCompressedMixInvertedIndex:
-    case ALCompressedExpansionII:
-    	size += (metadata->binLayout.numBins + 1) * sizeof(indexMeta->u.ciim.indexBinStartOffsets[0]);
-    	break;
-    default:
-        abort();
-    }
-
-    return size;
-}
-*/
 static void add_index_size_growth(
 		ALEncoderConfig *config,
 		const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec,
@@ -121,11 +90,11 @@ static void add_index_size_growth(
     	*linear_factor += (double)sizeof(rid_t) / datatype_size; // RIDs
     	break;
     case ALCompressedInvertedIndex:
-    	break;
     	*constant_factor += sizeof(uint64_t) + // Ending index bin offset
     	                    sizeof(uint64_t); // PFOR-Delta adds this much overhead to the first chunk of compressed RIDs. If there
     	                                      // are >1 chunks in a bin, assume the compression makes up for the additional overhead
     	metadata_bytes_per_bin += sizeof(uint64_t); // Index bin offsets
+    	metadata_bytes_per_bin += 2 * sizeof(uint64_t); // Header of first PFOR-Delta block in each bin; assume later blocks are covered by the reduced index size
     	*linear_factor += (double)sizeof(rid_t) / datatype_size; // RIDs (assume 1x compression ratio as worst case)
     	break;
     case ALCompressedHybridInvertedIndex:
@@ -143,7 +112,7 @@ static void add_index_size_growth(
 	}
 
 	if (metadata_bytes_per_bin > 0) {
-		const double metadata_bytes_per_data_bytes = metadata_bytes_per_bin / datatype_size;
+		const double metadata_bytes_per_data_bytes = (double)metadata_bytes_per_bin / datatype_size;
 		*capped_linear_factor += metadata_bytes_per_data_bytes; // For every value under the cap, add the corresponding number of metadata bytes
 	}
 }
@@ -159,18 +128,6 @@ static void add_data_size_growth(
 	*linear_factor += (double)insigbytes / datatype_size; // insigbytes per data value
 }
 
-/*
-uint64_t ALGetMetadataSize(const ALMetadata *metadata) {
-    return  sizeof(global_rid_t) +                                                  // Global RID offset
-            sizeof(partition_length_t) +                                            // Partition length
-            ALGetBinLayoutSize(&metadata->binLayout, metadata->significantBits) +   // Bin layout metadata
-            ALGetIndexMetadataSize(&metadata->indexMeta, metadata) +                // Index metadata
-            sizeof(char) +                                                          // Significant bytes
-            sizeof(char) +                                                          // Element size
-            sizeof(ALDatatype) +                                                    // Datatype
-            sizeof(char);                                                           // Endianness
-}
-*/
 void adios_transform_alacrity_transformed_size_growth(
 		const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec,
 		uint64_t *constant_factor, double *linear_factor, double *capped_linear_factor, uint64_t *capped_linear_cap)
