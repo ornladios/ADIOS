@@ -71,7 +71,7 @@ void setQueryInternal(ADIOS_QUERY* q, FastBitCompareType compareOp, FastBitDataT
   char* endptr;
   double vv = strtod(q->_value, &endptr);
   q->_queryInternal = fastbit_selection_osr(arrayName, compareOp, vv);
-  checkNotNull(q->_queryInternal, arrayName);
+  fastbit_adios_util_checkNotNull(q->_queryInternal, arrayName);
 }
 
 
@@ -253,7 +253,7 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
       return -1;
     }
 
-    q->_queryInternal = fastbit_selection_combine(left->_queryInternal, getFastbitCompareType(q->_leftToRightOp), right->_queryInternal);
+    q->_queryInternal = fastbit_selection_combine(left->_queryInternal,  fastbit_adios_util_getFastbitCompareType(q->_leftToRightOp), right->_queryInternal);
   } else {
     // is a leaf
     int blockStart=0; // relative
@@ -275,12 +275,12 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
       if (v->blockinfo == NULL) {
 	adios_inq_var_blockinfo(q->_f, v);
       }
-      blockStart = getRelativeBlockNumForPoint(v,bb->start,timeStep);
+      blockStart = fastbit_adios_util_getRelativeBlockNumForPoint(v,bb->start,timeStep);
       uint64_t end[v->ndim];
       for (i=0; i<v->ndim; i++) {
 	end[i] = bb->start[i]+bb->count[i]-1;
       }
-      blockEnd = getRelativeBlockNumForPoint(v, end, timeStep);
+      blockEnd = fastbit_adios_util_getRelativeBlockNumForPoint(v, end, timeStep);
     }
 
     void* bitSlice = malloc(q->_rawDataSize * sizeof(uint16_t));
@@ -334,17 +334,17 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
     free(q->_dataSlice);
     q->_dataSlice = bitSlice;
     fastbit_iapi_register_array(bitsArrayName, FastBitDataTypeUShort, q->_dataSlice, q->_rawDataSize);
-    printData(q->_dataSlice, adios_unsigned_short, q->_rawDataSize); 
+    //printData(q->_dataSlice, adios_unsigned_short, q->_rawDataSize); 
     //fastbit_selection_free(q->_queryInternal);
     q->_queryInternal = fastbit_selection_osr(bitsArrayName, FastBitCompareGreater, 0.5);
-    checkNotNull(q->_queryInternal, bitsArrayName);
+    fastbit_adios_util_checkNotNull(q->_queryInternal, bitsArrayName);
   }
 }
 
 FastBitSelectionHandle createHandle(ADIOS_QUERY* q, const char* registeredArrayName)
 {
-  FastBitDataType  dataType = getFastbitDataType(q->_var->type);
-  FastBitCompareType compareOp = getFastbitCompareType(q->_op);
+  FastBitDataType  dataType = fastbit_adios_util_getFastbitDataType(q->_var->type);
+  FastBitCompareType compareOp = fastbit_adios_util_getFastbitCompareType(q->_op);
 
   uint64_t dataSize = q->_rawDataSize;
 
@@ -379,7 +379,7 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
     // read data from dataFile
     ADIOS_SELECTION* box = adios_selection_writeblock(blockIdx);
     adios_inq_var_blockinfo(dataFile, v);
-    uint64_t blockSize = getBlockSize(v, blockIdx);
+    uint64_t blockSize = fastbit_adios_util_getBlockSize(v, blockIdx);
 
     free(q->_dataSlice);
     q->_dataSlice = malloc(adios_type_size(v->type, v->value)*blockSize);
@@ -392,15 +392,15 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
     char blockDataName[40+strlen(q->_condition)];
     sprintf(blockDataName, "%d-%s-%d-%d-%ld", v->varid, q->_condition, timeStep, blockIdx, getMilliseconds());
 
-    if (readFromIndexFile(idxFile, v, timeStep, blockIdx, &keys, &nk, &offsets, &no, &bms, &nb) < 0) {
-      FastBitDataType  dataType = getFastbitDataType(q->_var->type);
-      FastBitCompareType compareOp = getFastbitCompareType(q->_op);
+    if (fastbit_adios_util_readFromIndexFile(idxFile, v, timeStep, blockIdx, &keys, &nk, &offsets, &no, &bms, &nb) < 0) {
+      FastBitDataType  dataType = fastbit_adios_util_getFastbitDataType(q->_var->type);
+      FastBitCompareType compareOp = fastbit_adios_util_getFastbitCompareType(q->_op);
 
       setQueryInternal(q, compareOp, dataType, blockSize, blockDataName);
       return;
     }
     
-    fastbit_iapi_register_array(blockDataName, getFastbitDataType(v->type), q->_dataSlice, blockSize);
+    fastbit_iapi_register_array(blockDataName, fastbit_adios_util_getFastbitDataType(v->type), q->_dataSlice, blockSize);
 
     //printData(bms, adios_unsigned_integer, nb);
 
@@ -411,7 +411,7 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
       //result = ierr;
     } else {
       q->_queryInternal = createHandle(q, blockDataName); //fastbit_selection_osr(blockDataName, getFastbitCompareType(q->_op), q->_value);
-      checkNotNull(q->_queryInternal, blockDataName);
+      fastbit_adios_util_checkNotNull(q->_queryInternal, blockDataName);
     }
 
     //free(bms);
@@ -462,8 +462,8 @@ void printQueryData(ADIOS_QUERY* q, FastBitDataType dataType, int timeStep) {
 
 
 int readWithTimeStepNoIdx(ADIOS_QUERY* q, int timeStep) {
-  FastBitDataType  dataType = getFastbitDataType(q->_var->type);
-  FastBitCompareType compareOp = getFastbitCompareType(q->_op);
+  FastBitDataType  dataType = fastbit_adios_util_getFastbitDataType(q->_var->type);
+  FastBitCompareType compareOp = fastbit_adios_util_getFastbitCompareType(q->_op);
 
   int errorCode = adios_schedule_read_byid (q->_f, q->_sel, q->_var->varid, timeStep, 1, q->_dataSlice);
   printf("      schedule read error code = %d adios_error=%d \n", errorCode, adios_errno);
@@ -602,7 +602,7 @@ int64_t  applyIndexIfExists (ADIOS_QUERY* q)
 
   int64_t result = -1;
   MPI_Comm comm_dummy = 0;
-  ADIOS_FILE* idxFile = getIndexFileToRead(basefileName, comm_dummy);
+  ADIOS_FILE* idxFile = fastbit_adios_util_getFastbitIndexFileToRead(basefileName, comm_dummy);
     
   if (idxFile != NULL) {
       if ((leaf->_sel == NULL) || (leaf->_sel->type == ADIOS_SELECTION_BOUNDINGBOX)) {

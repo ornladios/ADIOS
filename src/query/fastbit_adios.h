@@ -32,25 +32,26 @@ static int mybmreader(void *ctx, uint64_t start,uint64_t count, uint32_t *buf)
   return 0;
 }
 
-void checkNotNull(void* fastbitHandle, const char* arrayName);
+int fastbit_adios_util_getRelativeBlockNumForPoint(ADIOS_VARINFO* v,  uint64_t* point, int timestep);
+void fastbit_adios_util_checkNotNull(void* fastbitHandle, const char* arrayName);
   
-void getIndexFileName(const char* dataFileLoc, char* idxFileName);
-ADIOS_FILE* getIndexFileToRead(const char* dataFileLoc, MPI_Comm comm);
+void fastbit_adios_util_getFastbitIndexFileName(const char* dataFileLoc, char* idxFileName);
+ADIOS_FILE* fastbit_adios_util_getFastbitIndexFileToRead(const char* dataFileLoc, MPI_Comm comm);
 
-void printData(void* data, enum ADIOS_DATATYPES type, uint64_t size);
+void fastbit_adios_util_printData(void* data, enum ADIOS_DATATYPES type, uint64_t size);
 
-FastBitDataType getFastbitDataType(enum ADIOS_DATATYPES type);
+FastBitDataType fastbit_adios_util_getFastbitDataType(enum ADIOS_DATATYPES type);
 
-FastBitCompareType getFastbitCompareType(enum ADIOS_PREDICATE_MODE op);
+FastBitCompareType fastbit_adios_util_getFastbitCompareType(enum ADIOS_PREDICATE_MODE op);
 
-const char * value_to_string (enum ADIOS_DATATYPES type, void * data, int idx);
+const char * fastbit_adios_util_value_to_string (enum ADIOS_DATATYPES type, void * data, int idx);
 
-uint64_t getBlockSize(ADIOS_VARINFO* v, int k); // k = blockNumber;
+uint64_t fastbit_adios_util_getAdiosBlockSize(ADIOS_VARINFO* v, int k); // k = blockNumber;
 
-int readFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, int timestep, int blockNum, 
-		      double** keys, uint64_t* nkeys, int64_t** offsets, uint64_t* no,
-		      uint32_t** bms, uint64_t* nb);
-
+  
+int fastbit_adio_util_readFromFastbitIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, int timestep, int blockNum, 
+			     double** keys, uint64_t* nkeys, int64_t** offsets, uint64_t* no,
+			     uint32_t** bms, uint64_t* nb);
   
 #ifdef __cplusplus
 }

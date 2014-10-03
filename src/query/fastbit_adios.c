@@ -6,13 +6,13 @@
 
 #include "fastbit_adios.h"
 
-void checkNotNull(void* fastbitHandle, const char* arrayName) {
+void fastbit_adios_util_checkNotNull(void* fastbitHandle, const char* arrayName) {
   if (fastbitHandle == NULL) {
     printf(" >> Unable to create handle on fastbit, ref: %s\n", arrayName);
   }
 }
 
-int getRelativeBlockNumForPoint(ADIOS_VARINFO* v,  uint64_t* point, int timestep) 
+int fastbit_adios_util_getRelativeBlockNumForPoint(ADIOS_VARINFO* v,  uint64_t* point, int timestep) 
 {
   int i=0;
   int j=0;
@@ -48,7 +48,7 @@ int getRelativeBlockNumForPoint(ADIOS_VARINFO* v,  uint64_t* point, int timestep
 }
 
 
-void getIndexFileName(const char* dataFileLoc, char* idxFileName) 
+void fastbit_adios_util_getFastbitIndexFileName(const char* dataFileLoc, char* idxFileName) 
 {
   int lenOfDataFileLoc = strlen(dataFileLoc);			   
   char        idxFileNamePad [lenOfDataFileLoc];
@@ -59,7 +59,7 @@ void getIndexFileName(const char* dataFileLoc, char* idxFileName)
   sprintf(idxFileName, "%s.idx", idxFileNamePad); 
 }
 
-ADIOS_FILE* getIndexFileToRead(const char* dataFileLoc, MPI_Comm comm) 
+ADIOS_FILE* fastbit_adios_util_getFastbitIndexFileToRead(const char* dataFileLoc, MPI_Comm comm) 
 {
   int lenOfDataFileLoc = strlen(dataFileLoc);			   
   char        idxFileNamePad [lenOfDataFileLoc];
@@ -73,29 +73,9 @@ ADIOS_FILE* getIndexFileToRead(const char* dataFileLoc, MPI_Comm comm)
 }
 
 
-void printData(void* data, enum ADIOS_DATATYPES type, uint64_t size)
-{
-  /*
-see if blocks are read by bounding boxes as in blockinfo
-or is lined as 
-		timestep n (1,...nblocks)
-		do not see how i (in sum_nblocks) will reflect timestep...
-*/
-
-  int i=0;
-  int max = 10;
-  if (max > size) {
-    max = size;
-  }
-  printf("  \tfirst %d data out of %lld:[", max, size);
-  for (i=0; i<max; i++) {
-    printf("%s ", value_to_string(type, data, i));
-  }
-  printf("]\n");
-}
 
 
-FastBitDataType getFastbitDataType(enum ADIOS_DATATYPES type) 
+FastBitDataType fastbit_adios_util_getFastbitDataType(enum ADIOS_DATATYPES type) 
 {  
   switch (type)
     {
@@ -154,7 +134,7 @@ FastBitDataType getFastbitDataType(enum ADIOS_DATATYPES type)
 
 }
 
-FastBitCompareType getFastbitCompareType(enum ADIOS_PREDICATE_MODE op) 
+FastBitCompareType fastbit_adios_util_getFastbitCompareType(enum ADIOS_PREDICATE_MODE op) 
 {
     switch (op) 
     {
@@ -181,7 +161,7 @@ FastBitCompareType getFastbitCompareType(enum ADIOS_PREDICATE_MODE op)
 
 // k is numbered from 1 to sum_nblocks
 //uint64_t getBlockDataSize(ADIOS_VARINFO* v, int k) // k = blockNumber 
-uint64_t getBlockSize(ADIOS_VARINFO* v, int k) // k = blockNumber 
+uint64_t fastbit_adios_util_getBlockSize(ADIOS_VARINFO* v, int k) // k = blockNumber 
 {
   //uint64_t blockBytes = adios_type_size (v->type, v->value);
   uint64_t blockSize = 1;
@@ -207,7 +187,7 @@ uint64_t getBlockSize(ADIOS_VARINFO* v, int k) // k = blockNumber
 }
 
 
-const char * value_to_string (enum ADIOS_DATATYPES type, void * data, int idx)
+static const char * value_to_string (enum ADIOS_DATATYPES type, void * data, int idx)
 {
     static char s [100];
     s [0] = 0;
@@ -282,9 +262,9 @@ const char * value_to_string (enum ADIOS_DATATYPES type, void * data, int idx)
 // caller frees keys, offsets and bms.
 //
 //
-int readFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, int timestep, int blockNum, 
-		       double** keys, uint64_t* nk, int64_t** offsets, uint64_t* no,
-		       uint32_t** bms, uint64_t* nb)
+int fastbit_adios_util_readFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, int timestep, int blockNum, 
+					 double** keys, uint64_t* nk, int64_t** offsets, uint64_t* no,
+					 uint32_t** bms, uint64_t* nb)
 
 {
   char bmsVarName[100];
@@ -346,4 +326,25 @@ int readFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, int timestep, int b
   adios_free_varinfo(offsetV);
 
   return 0;
+}
+
+void fastbit_adios_util_printData(void* data, enum ADIOS_DATATYPES type, uint64_t size)
+{
+  /*
+see if blocks are read by bounding boxes as in blockinfo
+or is lined as 
+		timestep n (1,...nblocks)
+		do not see how i (in sum_nblocks) will reflect timestep...
+*/
+
+  int i=0;
+  int max = 10;
+  if (max > size) {
+    max = size;
+  }
+  printf("  \tfirst %d data out of %lld:[", max, size);
+  for (i=0; i<max; i++) {
+    printf("%s ", value_to_string(type, data, i));
+  }
+  printf("]\n");
 }
