@@ -4,7 +4,7 @@ INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public
 
 AUTOMAKE_OPTIONS = no-dependencies
 
-noinst_PROGRAMS = build_indexed_dataset compute_expected_query_results
+noinst_PROGRAMS = build_indexed_dataset compute_expected_query_results adios_query_test
 noinst_LIBRARIES = libparse_test_query_xml.a
 
 build_indexed_dataset_SOURCES = build_indexed_dataset.c 
@@ -17,6 +17,12 @@ libparse_test_query_xml_a_LIBADD = $(top_builddir)/src/libadios.a
 compute_expected_query_results_SOURCES = compute_expected_query_results.c
 compute_expected_query_results_LDADD = $(builddir)/libparse_test_query_xml.a $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
 compute_expected_query_results_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+
+adios_query_test_SOURCES = adios_query_test.c
+adios_query_test_LDADD = $(top_builddir)/tests/C/query/common/libparse_test_query_xml.a $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+adios_query_test_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+adios_query_test_CPPFLAGS = $(ALACRITY_CPPFLAGS)
+
 
 CLEANFILES = *.bp
 CC=$(MPICC)

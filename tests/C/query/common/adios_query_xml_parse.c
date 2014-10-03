@@ -147,25 +147,21 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 		}
 	}
 	fclose (fp);
-	mxml_node_t * doc = NULL;
 	mxml_node_t * root = NULL;
-	mxml_node_t * queryNode = NULL;
-	doc = mxmlLoadString (NULL, buffer, MXML_TEXT_CALLBACK);
+	root = mxmlLoadString (NULL, buffer, MXML_TEXT_CALLBACK);
 	free (buffer);
 	buffer = NULL;
-	root = doc;
 
-	if (!doc) {
+	if (!root) {
 		fprintf(stderr,  "unknown error parsing XML (probably structural)\n"
 				"Did you remember to start the file with\n"
 				"<?xml version=\"1.0\"?>\n");
 		return NULL;
 	}
-	if (strcasecmp(doc->value.element.name, "adios-alac-test-inputs") != 0) {
-		root = mxmlFindElement(doc, doc, "adios-alac-test-inputs", NULL, NULL, MXML_DESCEND_FIRST);
+	if (strcasecmp(root->value.element.name, "query") != 0) {
+		root = mxmlFindElement(root, root, "query", NULL, NULL, MXML_DESCEND_FIRST);
 	}
 
-	queryNode = mxmlFindElement(root, root, "query", NULL, NULL, MXML_DESCEND_FIRST);
 	const char *numVarS=NULL;
 	const char *fromTimestepS=NULL;
 	const char *numTimestepsS=NULL;
@@ -175,8 +171,8 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 	int fromTimestep = 1;
 	int numTimesteps = 1;
 	uint64_t batchsize= 1;
-	for (i = 0; i < queryNode->value.element.num_attrs; i++) {
-		mxml_attr_t * attr = &queryNode->value.element.attrs [i];
+	for (i = 0; i < root->value.element.num_attrs; i++) {
+		mxml_attr_t * attr = &root->value.element.attrs [i];
 		GET_ATTR2("num",attr,numVarS,"query");
 		GET_ATTR2("from-timestep",attr,fromTimestepS,"query");
 		GET_ATTR2("num-timesteps",attr,numTimestepsS,"query");
@@ -184,7 +180,7 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 	}
 	if ( !numVarS || !strcmp ( numVarS, "")) {
 		fprintf(stderr, "missing values for num attribute \n");
-		mxmlRelease(doc);
+		mxmlRelease(root);
 		return NULL;
 	}
 	else {
@@ -205,7 +201,7 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 
 	// Parse output selection info
 
-	outputNode = mxmlFindElement(queryNode, queryNode, "output", NULL, NULL, MXML_DESCEND_FIRST);
+	outputNode = mxmlFindElement(root, root, "output", NULL, NULL, MXML_DESCEND_FIRST);
 	for (i = 0; i < outputNode->value.element.num_attrs; i++) {
 		mxml_attr_t * attr = &outputNode->value.element.attrs [i];
 		GET_ATTR2("type",attr,outputTypeS,"output");
@@ -223,7 +219,7 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 	if ( selType == ADIOS_SELECTION_BOUNDINGBOX ) {
 		if ( !outputTypeS || !outputDimS || !outputStartS || !outputCountS || !strcmp (outputTypeS, "")|| !strcmp (outputDimS, "") || !strcmp (outputStartS, "") || !strcmp (outputCountS, "") ) {
 			fprintf(stderr, "missing values for output attribute \n");
-			mxmlRelease(doc);
+			mxmlRelease(root);
 			return NULL;
 		}
 		else {
@@ -268,7 +264,7 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 
 		if ( !outputWbIndexS || !strcmp (outputWbIndexS, "") ) {
 			fprintf(stderr, "missing values for selection attribute \n");
-			mxmlRelease(doc);
+			mxmlRelease(root);
 			return NULL;
 		}
 		else {
@@ -302,12 +298,12 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 
 		// Find entry node
 		if (entryIter == 0) {
-			entryNode = mxmlFindElement(queryNode, queryNode, "entry", NULL, NULL, MXML_DESCEND_FIRST);
+			entryNode = mxmlFindElement(root, root, "entry", NULL, NULL, MXML_DESCEND_FIRST);
 		}
 		else {
 			// this is the only way I found for getting the next <entry> or <combine> node
-			entryNode= mxmlWalkNext(entryNode, queryNode, MXML_NO_DESCEND);
-			entryNode= mxmlWalkNext(entryNode, queryNode, MXML_NO_DESCEND);
+			entryNode= mxmlWalkNext(entryNode, root, MXML_NO_DESCEND);
+			entryNode= mxmlWalkNext(entryNode, root, MXML_NO_DESCEND);
 		}
 
 		// check if current node is <combine>
@@ -349,7 +345,7 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 		}
 		if ( !varNameS || !opS || !constraintS || !strcmp (varNameS, "")|| !strcmp (opS, "") || !strcmp (constraintS, "") ) {
 			fprintf(stderr, "missing values for entry attribute \n");
-			mxmlRelease(doc);
+			mxmlRelease(root);
 			return NULL;
 		}
 
@@ -374,7 +370,7 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 
 			if ( !typeS || !dimS || !startS || !countS || !strcmp (typeS, "")|| !strcmp (dimS, "") || !strcmp (startS, "") || !strcmp (countS, "") ) {
 				fprintf(stderr, "missing values for selection attribute \n");
-				mxmlRelease(doc);
+				mxmlRelease(root);
 				return NULL;
 			}
 			else {
@@ -435,7 +431,7 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 
 			if ( !wbIndexS || !strcmp (wbIndexS, "") ) {
 				fprintf(stderr, "missing values for selection attribute \n");
-				mxmlRelease(doc);
+				mxmlRelease(root);
 				return NULL;
 			}
 			else {
