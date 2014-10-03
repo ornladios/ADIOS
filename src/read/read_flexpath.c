@@ -456,49 +456,6 @@ find_displacement(array_displacements *list, int rank, int num_displ)
     return NULL;
 }
 
-uint64_t
-linearize(uint64_t *sizes, int ndim)
-{
-    int size = 1;
-    int i;
-    for(i = 0; i<ndim - 1; i++){
-	size *= sizes[i];
-    }   
-    return size;
-}
-
-
-uint64_t
-copyarray(
-    uint64_t *sizes, 
-    uint64_t *sel_start, 
-    uint64_t *sel_count, 
-    int ndim,
-    int elem_size,
-    int writer_pos,
-    char *writer_array,
-    char *reader_array)
-{
-    if(ndim == 1){
-	int start = elem_size * (writer_pos + sel_start[ndim-1]);
-	int end = (start + (elem_size)*(sel_count[ndim-1]));
-	memcpy(reader_array, writer_array + start, end-start);
-	return end-start;
-    }
-    else{
-	int end = sel_start[ndim-1] + sel_count[ndim-1];
-	int i;
-	int amt_copied = 0;
-	for(i = sel_start[ndim-1]; i<end; i++){
-	    int pos = linearize(sizes, ndim);    
-	    pos *=i;    
-	    amt_copied += copyarray(sizes, sel_start, sel_count, ndim-1,
-				    elem_size, writer_pos+pos, writer_array, 
-				    reader_array+amt_copied);
-	}
-	return amt_copied;
-    }
-}
 
 array_displacements*
 get_writer_displacements(
@@ -804,6 +761,109 @@ group_msg_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 }
 
 
+
+int
+increment_index(int64_t ndim, uint64_t *dimen_array, uint64_t *index_array)
+{
+    ndim--;
+    while (ndim >= 0) {
+	index_array[ndim]++;
+	if (index_array[ndim] < dimen_array[ndim]) {
+	    return 1;
+	}
+	index_array[ndim] = 0;
+	ndim--;
+    }
+    return 0;
+}
+
+void
+map_local_to_global_index(uint64_t ndim, uint64_t *local_index, uint64_t *local_offsets, uint64_t *global_index)
+{
+    int i;
+    for (i=0; i < ndim; i++) {
+	global_index[i] = local_index[i] + local_offsets[i];
+    }
+}
+
+void
+map_global_to_local_index(uint64_t ndim, uint64_t *global_index, uint64_t *local_offsets, uint64_t *local_index)
+{
+    int i;
+    for (i=0; i < ndim; i++) {
+	local_index[i] = global_index[i] - local_offsets[i];
+    }
+}
+
+int
+index_in_selection(uint64_t ndim, uint64_t *global_index, uint64_t *selection_offsets, uint64_t *selection_counts)
+{
+    int i;
+    for (i=0; i < ndim; i++) {
+	if ((global_index[i] < selection_offsets[i]) || 
+	    (global_index[i] >= selection_offsets[i] + selection_counts[i])) {
+	    return 0;
+	}
+    }
+    return 1;
+}
+
+int 
+find_offset(uint64_t ndim, uint64_t *size, uint64_t *index)
+{
+    int offset = 0;
+    int i;
+    for (i=0; i< ndim; i++) {
+	offset = index[i] + (size[i] * offset);
+    }
+    return offset;
+}
+
+/*
+ *  element_size is the byte size of the array elements
+ *  ndim is the number of dimensions in the variable
+ *  global_dimens is an array, ndim long, giving the size of each dimension
+ *  partial_offsets is an array, ndim long, giving the starting offsets per dimension
+ *      of this data block in the global array
+ *  partial_counts is an array, ndim long, giving the size per dimension
+ *      of this data block in the global array
+ *  selection_offsets is an array, ndim long, giving the starting offsets in the global array 
+ *      of the output selection.
+ *  selection_counts is an array, ndim long, giving the size per dimension
+ *      of the output selection.
+ *  data is the input, a slab of the global array
+ *  selection is the output, to be filled with the selection array.
+ */
+void
+extract_selection_from_partial(int element_size, int ndim, uint64_t *global_dimens, 
+			       uint64_t *partial_offsets, uint64_t *partial_counts,
+			       uint64_t *selection_offsets, uint64_t *selection_counts,
+			       char *data, char *selection)
+{
+    uint64_t *partial_index = malloc(ndim * sizeof(partial_index[0]));
+    uint64_t *global_index = malloc(ndim * sizeof(global_index[0]));
+    uint64_t *selection_index = malloc(ndim * sizeof(selection_index[0]));
+    memset(partial_index, 0, ndim * sizeof(partial_index[0]));
+    memset(selection_index, 0, ndim * sizeof(selection_index[0]));
+    do {
+	/* walk through incoming (partial) element by element, keeping partial_index up to date */
+	map_local_to_global_index(ndim, partial_index, partial_offsets, global_index);
+	/* find the global index for the incoming one */
+	if (index_in_selection(ndim, global_index, selection_offsets, selection_counts)) {
+	    int offset;
+	    /* if it's in the selection, map it to the local index of the selection */
+	    map_global_to_local_index(ndim, global_index, selection_offsets, selection_index);
+	    /* find location in selection*/
+	    offset = find_offset(ndim, selection_counts, selection_index);
+	    memcpy(selection + offset * element_size, data, element_size);
+	}
+	data += element_size;
+    } while (increment_index(ndim, partial_counts, partial_index));
+    free(partial_index);
+    free(global_index);
+    free(selection_index);
+}
+
 static int
 raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list attrs)
 {
@@ -930,28 +990,26 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 								  var->num_displ);
 		    if (disp) { // does this writer hold a chunk we've asked for
 
-		      //print_displacement(disp, fp->rank);
+			//print_displacement(disp, fp->rank);
 
+			uint64_t *global_sel_start = var->sel->u.bb.start;
+			uint64_t *global_sel_count = var->sel->u.bb.count;
 			uint64_t *temp = gv->offsets[0].local_dimensions;
+			uint64_t *temp2 = gv->offsets[0].local_offsets;
+			uint64_t *global_dimensions = gv->offsets[0].global_dimensions;
 			int offsets_per_rank = gv->offsets[0].offsets_per_rank;
 			uint64_t *writer_sizes = &temp[offsets_per_rank * writer_rank];
-			uint64_t *sel_start = disp->start;
-			uint64_t *sel_count = disp->count;
+			uint64_t *writer_offsets = &temp2[offsets_per_rank * writer_rank];
 	
 			char *writer_array = (char*)get_FMPtrField_by_name(f, 
 									   f->field_name, 
 									   base_data, 1);
 			char *reader_array = (char*)var->chunks[0].user_buf;
-			uint64_t reader_start_pos = disp->pos;
 
-			var->start_position += copyarray(writer_sizes,
-							 sel_start,
-							 sel_count,
-							 disp->ndims,
-							 f->field_size,
-							 0,
-							 writer_array,
-							 reader_array+reader_start_pos);
+			extract_selection_from_partial(f->field_size, disp->ndims, global_dimensions,
+						       writer_offsets, writer_sizes,
+						       global_sel_start, global_sel_count,
+						       writer_array, reader_array);
 		    }
 		}
 	    }
