@@ -79,10 +79,10 @@ for DSID in $ALL_DATASET_IDS; do
       OUTPUT_POINTS_FILE="$QUERY_NAME.$QUERY_ENGINE-points.txt"
     
       # Run the query through ADIOS Query to get actual results
-      QUERY_CMD="$MPIRUN_SERIAL '$QUERY_EXE' '$INDEXED_DS' '$QUERY_XML_LOCAL' '$QUERY_ENGINE' > '$OUTPUT_POINTS_FILE'"
-      echo "[Test $QUERY_NAME - $QUERY_ENGINE] $QUERY_CMD"
-      $QUERY_CMD ||
-        die "ERROR: $QUERY_EXE failed with exit code $?"
+      echo \
+      $MPIRUN_SERIAL '$QUERY_EXE' '$INDEXED_DS' '$QUERY_XML_LOCAL' '$QUERY_ENGINE' \> '$OUTPUT_POINTS_FILE'
+      $MPIRUN_SERIAL '$QUERY_EXE' '$INDEXED_DS' '$QUERY_XML_LOCAL' '$QUERY_ENGINE'  > '$OUTPUT_POINTS_FILE' ||
+        die "ERROR: $QUERY_EXE failed with exit code $RET"
 
       # Sort the output points in C array order, since the query engine makes no guarantee as to the ordering of the results
       sort -n "$OUTPUT_POINTS_FILE" -o "$OUTPUT_POINTS_FILE"  # Sort file in place (-o FILE) with numerical sort order (-n)
