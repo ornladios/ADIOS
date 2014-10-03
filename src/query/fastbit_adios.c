@@ -6,6 +6,95 @@
 
 #include "fastbit_adios.h"
 
+void checkNotNull(void* fastbitHandle, const char* arrayName) {
+  if (fastbitHandle == NULL) {
+    printf(" >> Unable to create handle on fastbit, ref: %s\n", arrayName);
+  }
+}
+
+int getRelativeBlockNumForPoint(ADIOS_VARINFO* v,  uint64_t* point, int timestep) 
+{
+  int i=0;
+  int j=0;
+  int totalBlocksInTimeStep = v->nblocks[timestep];
+  int sum=0;
+
+  for (i=0;i<timestep; i++) {
+    sum += v->nblocks[i];
+  }
+
+  int result = -1;
+  for (i=0; i<totalBlocksInTimeStep; i++) {
+    if (result >= 0) {
+      break;
+    }
+    ADIOS_VARBLOCK curr = v->blockinfo[sum];
+    for (j=0; j<v->ndim; j++) {
+      int begin = curr.start[j];
+      int end   = curr.start[j]+curr.count[j];
+
+      if ((begin <= point[j]) && (point[j] < end)) {
+	result = i; // relative to the timestep
+	//result = sum; //if want to return abs block number
+      } else {
+	result = -1;
+	break;
+      }
+    }
+    sum++;
+  }
+
+  return result;
+}
+
+
+void getIndexFileName(const char* dataFileLoc, char* idxFileName) 
+{
+  int lenOfDataFileLoc = strlen(dataFileLoc);			   
+  char        idxFileNamePad [lenOfDataFileLoc];
+  //char        idxFileName    [lenOfDataFileLoc+20];			   
+  
+  strncpy(idxFileNamePad, dataFileLoc, lenOfDataFileLoc-3);
+  idxFileNamePad[lenOfDataFileLoc-3]=0;
+  sprintf(idxFileName, "%s.idx", idxFileNamePad); 
+}
+
+ADIOS_FILE* getIndexFileToRead(const char* dataFileLoc, MPI_Comm comm) 
+{
+  int lenOfDataFileLoc = strlen(dataFileLoc);			   
+  char        idxFileNamePad [lenOfDataFileLoc];
+  char        idxFileName    [lenOfDataFileLoc+20];			   
+  
+  strncpy(idxFileNamePad, dataFileLoc, lenOfDataFileLoc-3);
+  idxFileNamePad[lenOfDataFileLoc-3]=0;
+  sprintf(idxFileName, "%s.idx", idxFileNamePad); 
+
+  return adios_read_open_file (idxFileName, ADIOS_READ_METHOD_BP, comm);
+}
+
+
+void printData(void* data, enum ADIOS_DATATYPES type, uint64_t size)
+{
+  /*
+see if blocks are read by bounding boxes as in blockinfo
+or is lined as 
+		timestep n (1,...nblocks)
+		do not see how i (in sum_nblocks) will reflect timestep...
+*/
+
+  int i=0;
+  int max = 10;
+  if (max > size) {
+    max = size;
+  }
+  printf("  \tfirst %d data out of %lld:[", max, size);
+  for (i=0; i<max; i++) {
+    printf("%s ", value_to_string(type, data, i));
+  }
+  printf("]\n");
+}
+
+
 FastBitDataType getFastbitDataType(enum ADIOS_DATATYPES type) 
 {  
   switch (type)
@@ -88,4 +177,173 @@ FastBitCompareType getFastbitCompareType(enum ADIOS_PREDICATE_MODE op)
       return FastBitCompareNotEqual;
       break;
     }
+}
+
+// k is numbered from 1 to sum_nblocks
+//uint64_t getBlockDataSize(ADIOS_VARINFO* v, int k) // k = blockNumber 
+uint64_t getBlockSize(ADIOS_VARINFO* v, int k) // k = blockNumber 
+{
+  //uint64_t blockBytes = adios_type_size (v->type, v->value);
+  uint64_t blockSize = 1;
+  int j=0;
+
+  if (v->ndim <= 0) {
+    return blockSize;
+  }
+  
+  printf("\n blockinfo[%d]: [ ", k);
+  
+  for (j=0; j<v->ndim; j++) 
+    {  
+      blockSize *= v->blockinfo[k].count[j];
+      printf("%llu:%llu ", v->blockinfo[k].start[j], v->blockinfo[k].count[j]);
+    }
+  
+  printf("]\n");
+  
+  //  printf("\t\t   block %d, bytes: %llu \n", k, blockBytes);      
+  
+  return blockSize;
+}
+
+
+const char * value_to_string (enum ADIOS_DATATYPES type, void * data, int idx)
+{
+    static char s [100];
+    s [0] = 0;
+
+
+  switch (type)
+    {
+    case adios_unsigned_byte:
+      sprintf (s, "%u", ((uint8_t *) data)[idx]);
+      break;
+
+    case adios_byte:
+      sprintf (s, "%d", ((int8_t *) data)[idx]);
+      break;
+
+    case adios_short:
+      sprintf (s, "%hd", ((int16_t *) data)[idx]);
+      break;
+
+    case adios_unsigned_short:
+      sprintf (s, "%hu", ((uint16_t *) data)[idx]);
+      break;
+
+    case adios_integer:
+      sprintf (s, "%d", ((int32_t *) data)[idx]);
+      break;
+
+    case adios_unsigned_integer:
+      sprintf (s, "%u", ((uint32_t *) data)[idx]);
+      break;
+      
+    case adios_long:
+      sprintf (s, "%lld", ((int64_t *) data)[idx]);
+      break;
+      
+    case adios_unsigned_long:
+      sprintf (s, "%llu", ((uint64_t *) data)[idx]);
+      break;
+      
+    case adios_real:
+      sprintf (s, "%g", ((float *) data)[idx]);
+      break;
+      
+    case adios_double:
+      sprintf (s, "%lg", ((double *) data)[idx]);
+      break;
+      
+    case adios_long_double:
+      sprintf (s, "%Lg", ((long double *) data)[idx]);
+      break;
+      
+    case adios_string:
+      return (char*) ((char *)data+idx);
+      break;
+
+    case adios_complex:
+      sprintf (s, "(%g, %g)",
+	       ((float *) data)[2*idx], ((float *) data)[2*idx+1]);
+      break;
+      
+    case adios_double_complex:
+      sprintf (s, "(%lg, %lg)",
+	       ((double *) data)[2*idx], ((double *) data)[2*idx+1]);
+      break;
+    }
+
+  return s;
+}
+
+//
+//
+// caller frees keys, offsets and bms.
+//
+//
+int readFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, int timestep, int blockNum, 
+		       double** keys, uint64_t* nk, int64_t** offsets, uint64_t* no,
+		       uint32_t** bms, uint64_t* nb)
+
+{
+  char bmsVarName[100];
+  char keyVarName[100];
+  char offsetName[100];
+
+  sprintf(bmsVarName, "bms-%d-%d-%d", v->varid, timestep, blockNum);
+  sprintf(keyVarName, "key-%d-%d-%d", v->varid, timestep, blockNum);
+  sprintf(offsetName, "offset-%d-%d-%d", v->varid, timestep, blockNum);
+
+  printf("reading from index file: %s for variables: %s %s %s \n", idxFile->path, bmsVarName, keyVarName, offsetName);
+
+  ADIOS_VARINFO * bmsV = adios_inq_var (idxFile, bmsVarName);
+  ADIOS_VARINFO * keyV = adios_inq_var (idxFile, keyVarName);
+  ADIOS_VARINFO * offsetV = adios_inq_var (idxFile, offsetName);
+
+  if ((bmsV == 0) || (keyV == 0) || (offsetV == 0)) {
+    return -1;
+  }
+
+  int64_t bms_byte_size = adios_type_size (bmsV->type, bmsV->value);
+  int64_t key_byte_size = adios_type_size (keyV->type, keyV->value);
+  int64_t offset_byte_size = adios_type_size (offsetV->type, offsetV->value);
+
+  *bms     = malloc((bmsV->dims[0])*bms_byte_size);
+  *keys    = malloc((keyV->dims[0])*key_byte_size);
+  *offsets = malloc((offsetV->dims[0])*offset_byte_size);
+
+  uint64_t start[] = {0};
+  uint64_t count_bms[] = {bmsV->dims[0]};
+  uint64_t count_key[] = {keyV->dims[0]};
+  uint64_t count_offset[] = {offsetV->dims[0]};
+
+  ADIOS_SELECTION* bmsSel = adios_selection_boundingbox(bmsV->ndim, start, count_bms);
+  ADIOS_SELECTION* keySel = adios_selection_boundingbox(keyV->ndim, start, count_key);
+  ADIOS_SELECTION* offsetSel = adios_selection_boundingbox(offsetV->ndim, start, count_offset);
+
+  // idx file has one timestep
+  adios_schedule_read(idxFile, bmsSel, bmsVarName, 0, 1, *bms);
+  adios_schedule_read(idxFile, keySel, keyVarName, 0, 1, *keys);
+  adios_schedule_read(idxFile, offsetSel, offsetName, 0, 1, *offsets);
+
+  adios_perform_reads(idxFile,1);
+
+  *nk = keyV->dims[0];
+  *no = offsetV->dims[0];
+  *nb = bmsV->dims[0];
+
+  printf(" bms/key/offset data: length=%lld/%lld/%lld\n", *nb, *nk, *no);
+  
+  //printData(*bms, bmsV->type, *nb);
+  adios_selection_delete(bmsSel);
+  adios_free_varinfo(bmsV);
+
+  adios_selection_delete(keySel);
+  adios_free_varinfo(keyV);
+
+  adios_selection_delete(offsetSel);
+  adios_free_varinfo(offsetV);
+
+  return 0;
 }

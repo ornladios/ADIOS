@@ -7,6 +7,7 @@ extern "C" {
 
 #include "adios_read.h"
 
+#define ADIOS_QUERY_TOOL_COUNT  2
 
 int gCurrentTimeStep;
 
@@ -14,7 +15,7 @@ enum ADIOS_QUERY_TOOL
 {
         ADIOS_QUERY_TOOL_FASTBIT = 0,
         ADIOS_QUERY_TOOL_ALACRITY = 1,
-        ADIOS_QUERY_TOOL_COUNT = 2
+        ADIOS_QUERY_TOOL_OTHER = 2
 };
     
 
@@ -60,7 +61,7 @@ typedef struct {
     uint64_t _lastRead;
 
     int _hasParent;
-    int _deleteSelectionWhenFreed;
+  int _deleteSelectionWhenFreed;
 } ADIOS_QUERY;
    
 
