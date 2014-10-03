@@ -430,7 +430,7 @@ static void printPointSelection(int timestep, ADIOS_SELECTION *sel) {
 }
 
 static void usage(const char *cmd) {
-	fprintf(stderr, "Usage: %s <query XML file> <input BP file>", cmd);
+	fprintf(stderr, "Usage: %s <input BP file> <query XML file>", cmd);
 }
 
 #define SHIFT_N(n) { argc -= (n); argv += (n); }
@@ -442,8 +442,8 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
-	const char *inputxml_filename = *argv; SHIFT;
 	const char *bp_filename = *argv; SHIFT;
+	const char *inputxml_filename = *argv; SHIFT;
 
 	const MPI_Comm comm = MPI_COMM_WORLD;
 
