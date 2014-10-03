@@ -170,9 +170,11 @@ function query_datasets() {
       
       # Compute the expected results
       local EXPECTED_POINTS_FILE="$QUERY_NAME.expected-points.txt"
+      set -o xtrace
       $MPIRUN_SERIAL "$QUERY_SEQSCAN_EXE_LOCAL" "$NOINDEX_DS" "$QUERY_XML" > "$EXPECTED_POINTS_FILE" ||
         die "ERROR: $QUERY_SEQSCAN_EXE_LOCAL failed with exit code $?"
-
+      set +o xtrace
+      
       # NOTE: the sequential scan program produces a point list that is guaranteed to be sorted in C array order, so no need to sort it here
 
       # Run the query for each query engine implementation and compare to the expected results
@@ -189,10 +191,10 @@ function query_datasets() {
           echo
           echo "====== RUNNING TEST $QUERY_NAME USING QUERY ENGINE $QUERY_ENGINE ON DATASET $INDEXED_DS ======"
           echo
-          echo \
-          $MPIRUN_SERIAL "$QUERY_EXE_LOCAL" "$INDEXED_DS" "$QUERY_XML_LOCAL" "$QUERY_ENGINE" \> "$OUTPUT_POINTS_FILE"
+          set -o xtrace
           $MPIRUN_SERIAL "$QUERY_EXE_LOCAL" "$INDEXED_DS" "$QUERY_XML_LOCAL" "$QUERY_ENGINE"  > "$OUTPUT_POINTS_FILE" ||
             die "ERROR: $QUERY_EXE_LOCAL failed with exit code $?"
+          set +o xtrace
 
           # Sort the output points in C array order, since the query engine makes no guarantee as to the ordering of the results
           # Sort file in place (-o FILE) with numerical sort order (-n) on each of the first 9 fields (-k1,1 ...)
