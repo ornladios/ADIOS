@@ -43,6 +43,9 @@ MPIRUN_SERIAL="$MPIRUN $NP_MPIRUN 1 $EXEOPT"
 # All pre-defined dataset IDs (which can be extracted from build_indexed_dataset)
 ALL_DATASET_IDS="DS1 DS2 DS3"
 
+# All query engine implementations to test
+ALL_QUERY_ENGINES="alacrity" # TODO: Expand to FastBit once we understand it properly
+
 for DSID in $ALL_DATASET_IDS; do
   # Build the pre-defined dataset with index (TODO: generalize for ALACRITY)
   $DATASET_BUILDER_EXE $DSID $DSID alacrity ||
@@ -59,21 +62,25 @@ for DSID in $ALL_DATASET_IDS; do
     QUERY_NAME="${QUERY_NAME%%.xml}"
     
     EXPECTED_POINTS_FILE="$QUERY_NAME.expected-points.txt"
-    OUTPUT_POINTS_FILE="$QUERY_NAME.output-points.txt"
     
     # Compute the expected results
     $MPIRUN_SERIAL "$QUERY_SEQSCAN_EXE" "$QUERY_XML" "$INDEXED_DS" > "$EXPECTED_POINTS_FILE" ||
       die "ERROR: $QUERY_SEQSCAN_EXE failed with exit code $?"
-    
-    # Run the query through ADIOS Query to get actual results
-    $MPIRUN_SERIAL "$QUERY_EXE" "$INDEXED_DS" "$QUERY_XML" > "$OUTPUT_POINTS_FILE" ||
-      die "ERROR: $QUERY_EXE failed with exit code $?"
 
-    if ! diff -q "$EXPECTED_POINTS_FILE" "$OUTPUT_POINTS_FILE"; then
-      echo "ERROR: ADIOS Query does not return the expected points matching query $QUERY_NAME on dataset $DSID"
-      echo "Compare \"$PWD/$EXPECTED_POINTS_FILE\" (expected points) vs. \"$PWD/$OUTPUT_POINTS_FILE\" (returned points)"
-      echo "The BP file queried is at \"$INDEXED_DS\" and the query is specified by \"$QUERY_XML\""
-      exit 1  
-    fi
+    # Run the query for each query engine implementation and compare to the expected results
+    for QUERY_ENGINE in $ALL_QUERY_ENGINES; do
+      OUTPUT_POINTS_FILE="$QUERY_NAME.$QUERY_ENGINE.output-points.txt"
+    
+      # Run the query through ADIOS Query to get actual results
+      $MPIRUN_SERIAL "$QUERY_EXE" "$INDEXED_DS" "$QUERY_XML" "$QUERY_ENGINE" > "$OUTPUT_POINTS_FILE" ||
+        die "ERROR: $QUERY_EXE failed with exit code $?"
+
+      if ! diff -q "$EXPECTED_POINTS_FILE" "$OUTPUT_POINTS_FILE"; then
+        echo "ERROR: ADIOS Query does not return the expected points matching query $QUERY_NAME on dataset $DSID using query engine $QUERY_ENGINE"
+        echo "Compare \"$PWD/$EXPECTED_POINTS_FILE\" (expected points) vs. \"$PWD/$OUTPUT_POINTS_FILE\" (returned points)"
+        echo "The BP file queried is at \"$INDEXED_DS\" and the query is specified by \"$QUERY_XML\""
+        exit 1  
+      fi
+    done
   done
 done
