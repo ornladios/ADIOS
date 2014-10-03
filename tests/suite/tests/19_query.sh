@@ -53,6 +53,9 @@ for DSID in $ALL_DATASET_IDS; do
   $DATASET_BUILDER_EXE $DSID $DSID alacrity ||
     die "ERROR: $DATASET_BUILDER_EXE failed with exit code $?"
   
+  # Rename the ADIOS XML used for writing so it's more clear what it is for
+  mv "$DSID.xml" "$DSID.create.xml"
+  
   # Ensure the dataset was actually produced
   INDEXED_DS="$DSID.bp"
   [ -f "$INDEXED_DS" ] ||
