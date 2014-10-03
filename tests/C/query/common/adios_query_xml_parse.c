@@ -247,15 +247,15 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 
 			outputBox = adios_selection_boundingbox(outputDim, outputStart, outputCount);
 
-			fprintf(stderr, "Selected output boundingbox: dim:%d start:", outputDim);
-			for (j = 0; j < outputDim; j ++){
-				fprintf(stderr, " %d", outputStart[j]);
-			}
-			fprintf(stderr, "\t count:");
-			for (j = 0; j < outputDim; j ++){
-				fprintf(stderr, " %d", outputCount[j]);
-			}
-			fprintf(stderr, "\n");
+			/* fprintf(stderr, "Selected output boundingbox: dim:%d start:", outputDim); */
+			/* for (j = 0; j < outputDim; j ++){ */
+			/* 	fprintf(stderr, " %d", outputStart[j]); */
+			/* } */
+			/* fprintf(stderr, "\t count:"); */
+			/* for (j = 0; j < outputDim; j ++){ */
+			/* 	fprintf(stderr, " %d", outputCount[j]); */
+			/* } */
+			/* fprintf(stderr, "\n"); */
 
 		}
 
@@ -271,7 +271,7 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 			outputWbIndex = atoi(outputWbIndexS);
 			outputBox = adios_selection_writeblock(outputWbIndex);
 
-			fprintf(stderr, "Selected output writeblock: %d\n", outputWbIndex);
+			/* fprintf(stderr, "Selected output writeblock: %d\n", outputWbIndex); */
 		}
 	}
 
@@ -309,7 +309,7 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 		// check if current node is <combine>
 		if ( strcmp( (&(entryNode->value.element.attrs[0]))->name, "op") == 0 ) {
 			queryCombineOp = (&(entryNode->value.element.attrs[0]))->value;
-			fprintf(stderr, "Found combine op %s\n", queryCombineOp);
+			/* fprintf(stderr, "Found combine op %s\n", queryCombineOp); */
 			// pop up two query and perform the op
 			if (queryStackSize(&queryStack)<2) {
 				fprintf(stderr, "Popping with less than 2 queries in query stack, exiting...\n");
@@ -413,15 +413,15 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 
 				queryPush(&queryStack,q);
 
-				fprintf(stderr, "Selected input bounding box:  dim:%d start:", queryDim);
-				for (j = 0; j < queryDim; j ++){
-					fprintf(stderr, " %d", queryStart[j]);
-				}
-				fprintf(stderr, "\t count:");
-				for (j = 0; j < queryDim; j ++){
-					fprintf(stderr, " %d", queryCount[j]);
-				}
-				fprintf(stderr, "\n");
+				/* fprintf(stderr, "Selected input bounding box:  dim:%d start:", queryDim); */
+				/* for (j = 0; j < queryDim; j ++){ */
+				/* 	fprintf(stderr, " %d", queryStart[j]); */
+				/* } */
+				/* fprintf(stderr, "\t count:"); */
+				/* for (j = 0; j < queryDim; j ++){ */
+				/* 	fprintf(stderr, " %d", queryCount[j]); */
+				/* } */
+				/* fprintf(stderr, "\n"); */
 
 
 
@@ -459,7 +459,7 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 		}
 
 
-		fprintf(stderr, "Parsed entry: var=%s op=%s constraint=%s\n", varNameS, opS, constraintS);
+		/* fprintf(stderr, "Parsed entry: var=%s op=%s constraint=%s\n", varNameS, opS, constraintS); */
 
 
 	}

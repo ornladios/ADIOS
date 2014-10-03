@@ -63,7 +63,7 @@ int performQuery(ADIOS_QUERY_TEST_INFO *queryInfo, ADIOS_FILE *f)
 
             assert(currBatch->type ==ADIOS_SELECTION_POINTS);
             const ADIOS_SELECTION_POINTS_STRUCT * retrievedPts = &(currBatch->u.points);
-            fprintf(stderr,"retrieved points %" PRIu64 " \n", retrievedPts->npoints);
+            /* fprintf(stderr,"retrieved points %" PRIu64 " \n", retrievedPts->npoints); */
 
             printPoints(retrievedPts, timestep);
 
