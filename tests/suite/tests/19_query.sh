@@ -85,7 +85,10 @@ for DSID in $ALL_DATASET_IDS; do
         die "ERROR: $QUERY_EXE failed with exit code $RET"
 
       # Sort the output points in C array order, since the query engine makes no guarantee as to the ordering of the results
-      sort -n "$OUTPUT_POINTS_FILE" -o "$OUTPUT_POINTS_FILE"  # Sort file in place (-o FILE) with numerical sort order (-n)
+      # Sort file in place (-o FILE) with numerical sort order (-n) on each of the first 9 fields (-k1,1 ...)
+      # Assumes the output will have at most 8 dimensions (+ 1 timestep column == 9), add more if needed (or a generalized column counter)
+      sort -n -k1,1 -k2,2 -k3,3 -k4,4 -k5,5 -k6,6 -k7,7 -k8,8 -k9,9 \
+        "$OUTPUT_POINTS_FILE" -o "$OUTPUT_POINTS_FILE"
 
       # Compare the actual and expected results via diff (the matching points are sorted lexicographically
       if ! diff -q "$EXPECTED_POINTS_FILE" "$OUTPUT_POINTS_FILE"; then
