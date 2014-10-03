@@ -11,3 +11,7 @@ endif
 #if HAVE_ALACRITY && HAVE_FASTBIT
 #SUBDIRS=alacrity fastbit
 #endif
+
+all-local:
+	test "$(srcdir)" = "$(builddir)" || cp -r $(srcdir)/query-xmls $(builddir)
+
