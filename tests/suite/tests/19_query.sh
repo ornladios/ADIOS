@@ -27,12 +27,14 @@ QUERY_TEST_DIR="$TRUNKDIR/tests/C/query"
 QUERY_COMMON_DIR="$QUERY_TEST_DIR/common"
 
 # Some external tools to use
-DATASET_BUILDER="$QUERY_COMMON_DIR/build_indexed_dataset"
-DATASET_SEQSCAN="$QUERY_COMMON_DIR/compute_expected_query_results"
+DATASET_BUILDER_EXE="$QUERY_COMMON_DIR/build_indexed_dataset"
+QUERY_SEQSCAN_EXE="$QUERY_COMMON_DIR/compute_expected_query_results"
+QUERY_EXE="$QUERY_COMMON_DIR/adios_query_test"
 QUERY_XML_DIR="$QUERY_TEST_DIR/query-xmls/"
 
-[ -x "$DATASET_BUILDER" ] || die "ERROR: $DATASET_BUILDER is not executable"
-[ -x "$DATASET_SEQSCAN" ] || die "ERROR: $DATASET_BUILDER is not executable"
+[ -x "$DATASET_BUILDER_EXE" ] || die "ERROR: $DATASET_BUILDER_EXE is not executable"
+[ -x "$QUERY_SEQSCAN_EXE" ] || die "ERROR: $QUERY_SEQSCAN_EXE is not executable"
+[ -x "$QUERY_EXE" ] || die "ERROR: $QUERY_EXE is not executable"
 [ -d "$QUERY_XML_DIR" ] || die "ERROR: $QUERY_XML_DIR is not a directory"
 
 # mpirun for serial command
@@ -43,12 +45,12 @@ ALL_DATASET_IDS="DS1 DS2 DS3"
 
 for DSID in $ALL_DATASET_IDS; do
   # Build the pre-defined dataset with index (TODO: generalize for ALACRITY)
-  $DATASET_BUILDER $DSID $DSID alacrity ||
-    die "ERROR: $DATASET_BUILDER failed with exit code $?"
+  $DATASET_BUILDER_EXE $DSID $DSID alacrity ||
+    die "ERROR: $DATASET_BUILDER_EXE failed with exit code $?"
   
   INDEXED_DS="$DSID.bp"
   [ -f "$INDEXED_DS" ] ||
-    die "ERROR: $DATASET_BUILDER did not produce expected output BP file $INDEXED_DS"
+    die "ERROR: $DATASET_BUILDER_EXE did not produce expected output BP file \"$INDEXED_DS\""
 
   # Iterate over all interesting queries:
   for QUERY_XML in "$QUERY_XML_DIR/$DSID/"/*; do
@@ -60,17 +62,18 @@ for DSID in $ALL_DATASET_IDS; do
     OUTPUT_POINTS_FILE="$QUERY_NAME.output-points.txt"
     
     # Compute the expected results
-    $MPIRUN_SERIAL "$DATASET_SEQSCAN" "$QUERY_XML" "$INDEXED_DS" > "$EXPECTED_POINTS_FILE" ||
-      die "ERROR: $DATASET_SEQSCAN failed with exit code $?"
+    $MPIRUN_SERIAL "$QUERY_SEQSCAN_EXE" "$QUERY_XML" "$INDEXED_DS" > "$EXPECTED_POINTS_FILE" ||
+      die "ERROR: $QUERY_SEQSCAN_EXE failed with exit code $?"
     
     # Run the query through ADIOS Query to get actual results
-    # $MPIRUN_SERIAL > "$OUTPUT_POINTS_FILE" #TODO
+    $MPIRUN_SERIAL "$QUERY_EXE" "$INDEXED_DS" "$QUERY_XML" > "$OUTPUT_POINTS_FILE" ||
+      die "ERROR: $QUERY_EXE failed with exit code $?"
 
-#    if ! diff -q "$EXPECTED_POINTS_FILE" "$OUTPUT_POINTS_FILE"; then
-#      echo "ERROR: ADIOS Query does not return the expected points matching query $QUERY_NAME on dataset $DSID"
-#      echo "Compare \"$PWD/$EXPECTED_POINTS_FILE\" (expected points) vs. \"$PWD/$OUTPUT_POINTS_FILE\" (returned points)"
-#      echo "The BP file queried is at \"$INDEXED_DS\" and the query is specified by \"$QUERY_XML\""
-#      exit 1  
-#    fi
+    if ! diff -q "$EXPECTED_POINTS_FILE" "$OUTPUT_POINTS_FILE"; then
+      echo "ERROR: ADIOS Query does not return the expected points matching query $QUERY_NAME on dataset $DSID"
+      echo "Compare \"$PWD/$EXPECTED_POINTS_FILE\" (expected points) vs. \"$PWD/$OUTPUT_POINTS_FILE\" (returned points)"
+      echo "The BP file queried is at \"$INDEXED_DS\" and the query is specified by \"$QUERY_XML\""
+      exit 1  
+    fi
   done
 done
