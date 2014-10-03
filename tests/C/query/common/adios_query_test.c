@@ -117,24 +117,23 @@ int main(int argc, char ** argv) {
 
     if (argc != 4) {
         fprintf(stderr," usage: %s {input bp file} {xml file} {query engine (ALACRITY/FASTBIT)}\n", argv[0]);
-        MPI_Finalize();
-        exit(-1);
+        MPI_Abort();
     }
     else {
         strcpy(xmlFileName,  argv[2]);
     }
 
-    if (strcmp(argv[3], "ALACRITY") == 0) {
+    if (strcasecmp(argv[3], "ALACRITY") == 0) {
         // init with ALACRITY
         adios_query_init(ADIOS_QUERY_TOOL_ALACRITY);
     }
-    else if (strcmp(argv[3], "FASTBIT") == 0) {
+    else if (strcasecmp(argv[3], "FASTBIT") == 0) {
         // init with FastBit
+    	MPI_Abort();
     }
     else {
         printf("Unsupported query engine, exiting...\n");
-        MPI_Finalize();
-        exit(-1);
+        MPI_Abort();
     }
 
     // ADIOS init
@@ -142,9 +141,8 @@ int main(int argc, char ** argv) {
 
     f = adios_read_open_file(argv[1], method, comm);
     if (f == NULL) {
-        MPI_Finalize();
         fprintf(stderr," can not open file %s \n", argv[1]);
-        exit(-1);
+        MPI_Abort();
     }
 
     // Parse the xml file to generate query info
