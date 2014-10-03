@@ -1694,6 +1694,65 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                     free (meshtime);
                     free (meshfile);
                     free (meshgroup);
+                } else if (!strcasecmp (n->value.element.name, "link"))
+                {
+                    char * ref;
+                    char * type;
+                    char * objref;
+                    char * extref;
+                    // Get the var name
+                    ref = mxmlElementGetAttr (n, "ref");
+                    // Get the ref type
+                    type = mxmlElementGetAttr (n, "type");
+                    // Get the ref var name in external file
+                    objref = mxmlElementGetAttr(n, "objref");
+                    // Get the ref link
+                    extref = mxmlElementGetAttr(n, "extref");
+                    if (!ref)
+                        ref = ""; 
+                    if (!type)
+                        type = "var";
+                    if (!objref)
+                        objref = "";
+                    if (!extref)
+                        extref = "";
+                        
+                    const char * linkvar = 0;
+                    const char * linktype = 0;
+                    const char * linkobjref = 0;
+                    const char * linkextref = 0;
+
+                    if ( ref[0]=='\0' && objref[0]=='\0' )
+                    {
+                        log_warn ("config.xml: invalid var link, "
+                                "requires either ref OR objref.\n"
+                                );
+                        return 0;
+                    }
+                    else if ( ref[0]=='\0')
+                        strcpy (ref, objref);
+                     
+                    if (ref)
+                    {
+                        adios_conca_link_att_nam (&linkvar, ref, "ref");
+                        adios_common_define_attribute (ptr_new_group, linkvar, "/",adios_string, ref, "");
+                    }
+                    if (objref)
+                    {
+                        adios_conca_link_att_nam (&linkobjref, ref, "objref");
+                        adios_common_define_attribute (ptr_new_group, linkobjref, "/",adios_string, objref,  "");
+                    }
+                    if (type)
+                    {
+                        adios_conca_link_att_nam (&linktype, ref, "type");
+                        adios_common_define_attribute (ptr_new_group, linktype, "/",adios_string, type,  "");
+                    }
+                    if (extref)
+                    {
+                        adios_conca_link_att_nam (&linkextref, ref, "extref");
+                        adios_common_define_attribute (ptr_new_group, linkextref, "/",adios_string, extref,  "");
+                    }
+
                 } else if (!strcasecmp (n->value.element.name, "gwrite"))
                 {
                     const char * src = 0;

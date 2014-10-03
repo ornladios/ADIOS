@@ -141,7 +141,7 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
     // Write the events to a file
     if (rank == 0)
     {
-        FILE* f = fopen (filename, "w");
+        FILE* f = fopen (filename, "a");
         int event_rank;
 
         for (i = 0; i < size; i++)

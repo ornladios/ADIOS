@@ -17,7 +17,7 @@
 ! (c) Oak Ridge National Laboratory, 2009
 ! Author: Norbert Podhorszki
 !
-module genarray_comm
+module copyarray_comm
     ! arguments
     character(len=256) :: outputfile, inputfile
     integer :: npx, npy, npz  ! # of processors in x-y-z direction
@@ -46,11 +46,11 @@ module genarray_comm
     real*8 :: cache_start_time, cache_end_time, cache_total_time
 
 
-end module genarray_comm
+end module copyarray_comm
 
 
 program genarray
-    use genarray_comm
+    use copyarray_comm
     use adios_write_mod
     implicit none
     include 'mpif.h'
@@ -123,7 +123,7 @@ end program genarray
 
 !!***************************
 subroutine determineLocalSize()
-    use genarray_comm
+    use copyarray_comm
     implicit none
     if (common_size) then
        ! we are done since we know them from argument
@@ -136,7 +136,7 @@ end subroutine determineLocalSize
 
 !!***************************
 subroutine determineGlobalSize()
-    use genarray_comm
+    use copyarray_comm
     implicit none
     if (common_size) then
         gndx = npx * ndx
@@ -151,7 +151,7 @@ end subroutine determineGlobalSize
 
 !!***************************
 subroutine determineOffsets()
-    use genarray_comm
+    use copyarray_comm
     implicit none
     integer :: posx, posy, posz ! position index in the array
     if (common_size) then
@@ -171,7 +171,7 @@ end subroutine determineOffsets
 
 !!***************************
 subroutine generateLocalArray()
-    use genarray_comm
+    use copyarray_comm
     implicit none
     integer :: i,j,k
     allocate( double_xyz(1:ndx, 1:ndy, 1:ndz) )
@@ -187,7 +187,7 @@ end subroutine generateLocalArray
 
 !!***************************
 subroutine readArray()
-    use genarray_comm
+    use copyarray_comm
     use adios_write_mod
     use adios_read_mod
     implicit none
@@ -222,7 +222,7 @@ end subroutine readArray
 
 !!***************************
 subroutine writeArray()
-    use genarray_comm
+    use copyarray_comm
     use adios_write_mod
     implicit none
     integer*8 adios_handle, adios_groupsize
@@ -270,7 +270,7 @@ end subroutine usage
 
 !!***************************
 subroutine processArgs()
-    use genarray_comm
+    use copyarray_comm
 
 #ifndef __GFORTRAN__
 #ifndef __GNUC__

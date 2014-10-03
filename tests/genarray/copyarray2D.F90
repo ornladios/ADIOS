@@ -29,7 +29,7 @@
 ! (c) Oak Ridge National Laboratory, 2009
 ! Author: Norbert Podhorszki
 !
-module genarray2D_comm
+module copyarray2D_comm
     ! arguments
     character(len=256) :: outputfile, inputfile
     integer :: npx, npy    ! # of processors in x-y direction
@@ -59,11 +59,11 @@ module genarray2D_comm
     real*8 :: start_time, end_time, total_time,gbs,sz
     real*8 :: cache_start_time, cache_end_time, cache_total_time
 
-end module genarray2D_comm
+end module copyarray2D_comm
 
 
 program genarray
-    use genarray2D_comm
+    use copyarray2D_comm
     use adios_write_mod
     implicit none
     include 'mpif.h'
@@ -133,7 +133,7 @@ end program genarray
 
 !!***************************
 subroutine determineLocalSize()
-    use genarray2D_comm
+    use copyarray2D_comm
     implicit none
     if (common_size) then
        ! we are done since we know them from argument
@@ -146,7 +146,7 @@ end subroutine determineLocalSize
 
 !!***************************
 subroutine determineGlobalSize()
-    use genarray2D_comm
+    use copyarray2D_comm
     implicit none
     if (common_size) then
         gndx = npx * ndx
@@ -160,7 +160,7 @@ end subroutine determineGlobalSize
 
 !!***************************
 subroutine determineOffsets()
-    use genarray2D_comm
+    use copyarray2D_comm
     implicit none
     if (common_size) then
         posx = mod(rank, npx)     ! 1st dim easy: 0, npx, 2npx... are in the same X position
@@ -179,7 +179,7 @@ end subroutine determineOffsets
 
 !!***************************
 subroutine generateLocalArray()
-    use genarray2D_comm
+    use copyarray2D_comm
     implicit none
     integer :: i,j,k, startv
     allocate( int_xy(1:ndx, 1:ndy) )
@@ -196,7 +196,7 @@ end subroutine generateLocalArray
 
 !!***************************
 subroutine readArray()
-    use genarray2D_comm
+    use copyarray2D_comm
     use adios_write_mod
     use adios_read_mod
     implicit none
@@ -263,7 +263,7 @@ end subroutine readArray
 
 !!***************************
 subroutine writeArray()
-    use genarray2D_comm
+    use copyarray2D_comm
     use adios_write_mod
     implicit none
     integer :: tstep
@@ -338,7 +338,7 @@ end subroutine usage
 
 !!***************************
 subroutine processArgs()
-    use genarray2D_comm
+    use copyarray2D_comm
 
 #ifndef __GFORTRAN__
 #ifndef __GNUC__
