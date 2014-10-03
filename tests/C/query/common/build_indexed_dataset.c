@@ -298,7 +298,7 @@ void build_dataset_1(const char *filename_prefix, const char *transform_name) {
 	// C is picky and doesn't consider a static const int "const enough" to use
 	// as an array length (e.g., if these were static const ints, it would not compile)
 	enum {
-		NUM_DIMS = 2,
+		NUM_DIMS = 1,
 		NUM_TS = 1,
 		NUM_PGS_PER_TS = 1,
 		NUM_VARS = 1,
@@ -310,9 +310,9 @@ void build_dataset_1(const char *filename_prefix, const char *transform_name) {
 	static const enum ADIOS_DATATYPES VARTYPES[NUM_VARS]	= { adios_real };
 
 	// Global and PG dimensions/offsets
-	static const uint64_t GLOBAL_DIMS                         [NUM_DIMS] = { 4, 4 };
-	static const uint64_t PG_DIMS	  [NUM_TS][NUM_PGS_PER_TS][NUM_DIMS] = { { { 4, 4 } } };
-	static const uint64_t PG_OFFSETS  [NUM_TS][NUM_PGS_PER_TS][NUM_DIMS] = { { { 0, 0 } } };
+	static const uint64_t GLOBAL_DIMS                         [NUM_DIMS] = { 16 };
+	static const uint64_t PG_DIMS	  [NUM_TS][NUM_PGS_PER_TS][NUM_DIMS] = { { { 16 } } };
+	static const uint64_t PG_OFFSETS  [NUM_TS][NUM_PGS_PER_TS][NUM_DIMS] = { { { 0 } } };
 
 	// Variable data (we can use [TS][PG][16] here because every PG is the same size, 16)
 	static const float TEMP_DATA[NUM_TS][NUM_PGS_PER_TS][16] = {
