@@ -109,6 +109,9 @@ for DSID in $ALL_DATASET_IDS; do
       OUTPUT_POINTS_FILE="$QUERY_NAME.$QUERY_ENGINE-points.txt"
     
       # Run the query through ADIOS Query to get actual results
+      echo
+      echo "====== RUNNING TEST $QUERY_NAME USING QUERY ENGINE $QUERY_ENGINE ======"
+      echo
       echo \
       $MPIRUN_SERIAL "$QUERY_EXE_LOCAL" "$INDEXED_DS" "$QUERY_XML_LOCAL" "$QUERY_ENGINE" \> "$OUTPUT_POINTS_FILE"
       $MPIRUN_SERIAL "$QUERY_EXE_LOCAL" "$INDEXED_DS" "$QUERY_XML_LOCAL" "$QUERY_ENGINE"  > "$OUTPUT_POINTS_FILE" ||
