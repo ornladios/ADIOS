@@ -32,6 +32,8 @@ QUERY_SEQSCAN_EXE="$QUERY_COMMON_DIR/compute_expected_query_results"
 QUERY_EXE="$QUERY_COMMON_DIR/adios_query_test"
 QUERY_XML_DIR="$QUERY_TEST_DIR/query-xmls/"
 
+# Check for the executability of all executables and the "directory"-ness
+# of all directories that we need
 [ -x "$DATASET_BUILDER_EXE" ] || die "ERROR: $DATASET_BUILDER_EXE is not executable"
 [ -x "$QUERY_SEQSCAN_EXE" ] || die "ERROR: $QUERY_SEQSCAN_EXE is not executable"
 [ -x "$QUERY_EXE" ] || die "ERROR: $QUERY_EXE is not executable"
@@ -51,30 +53,41 @@ for DSID in $ALL_DATASET_IDS; do
   $DATASET_BUILDER_EXE $DSID $DSID alacrity ||
     die "ERROR: $DATASET_BUILDER_EXE failed with exit code $?"
   
+  # Ensure the dataset was actually produced
   INDEXED_DS="$DSID.bp"
   [ -f "$INDEXED_DS" ] ||
     die "ERROR: $DATASET_BUILDER_EXE did not produce expected output BP file \"$INDEXED_DS\""
 
-  # Iterate over all interesting queries:
+  # Iterate over all pre-defined queries
   for QUERY_XML in "$QUERY_XML_DIR/$DSID/"/*; do
-    QUERY_NAME="$QUERY_XML"
-    QUERY_NAME="${QUERY_NAME##*/}"
-    QUERY_NAME="${QUERY_NAME%%.xml}"
+    QUERY_XML_BASENAME="${QUERY_NAME##*/}"    # Strip the path
+    QUERY_NAME="${QUERY_XML_BASENAME%%.xml}"  # Strip the .xml suffix
     
-    EXPECTED_POINTS_FILE="$QUERY_NAME.expected-points.txt"
+    # Copy the query XML into our working directory for easy access
+    QUERY_XML_LOCAL="${QUERY_XML_BASENAME}"
+    cp "$QUERY_XML" "$QUERY_XML_LOCAL" 
     
     # Compute the expected results
-    $MPIRUN_SERIAL "$QUERY_SEQSCAN_EXE" "$QUERY_XML" "$INDEXED_DS" > "$EXPECTED_POINTS_FILE" ||
+    EXPECTED_POINTS_FILE="$QUERY_NAME.expected-points.txt"
+    $MPIRUN_SERIAL "$QUERY_SEQSCAN_EXE" "$INDEXED_DS" "$QUERY_XML" > "$EXPECTED_POINTS_FILE" ||
       die "ERROR: $QUERY_SEQSCAN_EXE failed with exit code $?"
+
+    # NOTE: the sequential scan program produces a point list that is guaranteed to be sorted in C array order, so no need to sort it here
 
     # Run the query for each query engine implementation and compare to the expected results
     for QUERY_ENGINE in $ALL_QUERY_ENGINES; do
-      OUTPUT_POINTS_FILE="$QUERY_NAME.$QUERY_ENGINE.output-points.txt"
+      OUTPUT_POINTS_FILE="$QUERY_NAME.$QUERY_ENGINE-points.txt"
     
       # Run the query through ADIOS Query to get actual results
-      $MPIRUN_SERIAL "$QUERY_EXE" "$INDEXED_DS" "$QUERY_XML" "$QUERY_ENGINE" > "$OUTPUT_POINTS_FILE" ||
+      QUERY_CMD="$MPIRUN_SERIAL '$QUERY_EXE' '$INDEXED_DS' '$QUERY_XML_LOCAL' '$QUERY_ENGINE' > '$OUTPUT_POINTS_FILE'"
+      echo "[Test $QUERY_NAME - $QUERY_ENGINE] $QUERY_CMD"
+      $QUERY_CMD ||
         die "ERROR: $QUERY_EXE failed with exit code $?"
 
+      # Sort the output points in C array order, since the query engine makes no guarantee as to the ordering of the results
+      sort -n "$OUTPUT_POINTS_FILE" -o "$OUTPUT_POINTS_FILE"  # Sort file in place (-o FILE) with numerical sort order (-n)
+
+      # Compare the actual and expected results via diff (the matching points are sorted lexicographically
       if ! diff -q "$EXPECTED_POINTS_FILE" "$OUTPUT_POINTS_FILE"; then
         echo "ERROR: ADIOS Query does not return the expected points matching query $QUERY_NAME on dataset $DSID using query engine $QUERY_ENGINE"
         echo "Compare \"$PWD/$EXPECTED_POINTS_FILE\" (expected points) vs. \"$PWD/$OUTPUT_POINTS_FILE\" (returned points)"
