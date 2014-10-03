@@ -80,8 +80,8 @@ for DSID in $ALL_DATASET_IDS; do
     
       # Run the query through ADIOS Query to get actual results
       echo \
-      $MPIRUN_SERIAL '$QUERY_EXE' '$INDEXED_DS' '$QUERY_XML_LOCAL' '$QUERY_ENGINE' \> '$OUTPUT_POINTS_FILE'
-      $MPIRUN_SERIAL '$QUERY_EXE' '$INDEXED_DS' '$QUERY_XML_LOCAL' '$QUERY_ENGINE'  > '$OUTPUT_POINTS_FILE' ||
+      $MPIRUN_SERIAL "$QUERY_EXE" "$INDEXED_DS" "$QUERY_XML_LOCAL" "$QUERY_ENGINE" \> "$OUTPUT_POINTS_FILE"
+      $MPIRUN_SERIAL "$QUERY_EXE" "$INDEXED_DS" "$QUERY_XML_LOCAL" "$QUERY_ENGINE"  > "$OUTPUT_POINTS_FILE" ||
         die "ERROR: $QUERY_EXE failed with exit code $RET"
 
       # Sort the output points in C array order, since the query engine makes no guarantee as to the ordering of the results
