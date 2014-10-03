@@ -1,14 +1,10 @@
 /*
- * ADIOS is freely available under the terms of the BSD license described
- * in the COPYING file in the top level directory of this source distribution.
+ * adios_query_test.c
  *
- * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
+ *  Created on: Oct 2, 2014
+ *      Author: Houjun Tang
  */
 
-/* ADIOS C Example: read global arrays from a BP file
- *
- *
- */
 #include <stdio.h>
 #include <stdlib.h>
 #include <inttypes.h>
