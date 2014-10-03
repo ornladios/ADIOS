@@ -60,7 +60,7 @@ for DSID in $ALL_DATASET_IDS; do
 
   # Iterate over all pre-defined queries
   for QUERY_XML in "$QUERY_XML_DIR/$DSID/"/*; do
-    QUERY_XML_BASENAME="${QUERY_NAME##*/}"    # Strip the path
+    QUERY_XML_BASENAME="${QUERY_XML##*/}"     # Strip the path
     QUERY_NAME="${QUERY_XML_BASENAME%%.xml}"  # Strip the .xml suffix
     
     # Copy the query XML into our working directory for easy access
