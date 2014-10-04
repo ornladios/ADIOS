@@ -8,5 +8,7 @@ endif
 if HAVE_NETCDF
 SUBDIRS +=bp2ncd
 endif
-
+if HAVE_FASTBIT
+SUBDIRS +=query
+endif
 SUBDIRS +=skel
