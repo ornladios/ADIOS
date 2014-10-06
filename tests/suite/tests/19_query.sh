@@ -59,7 +59,7 @@ QUERY_XML_DIR="$QUERY_TEST_DIR/query-xmls/"
 [ -d "$QUERY_XML_DIR" ] || die "ERROR: $QUERY_XML_DIR is not a directory"
 
 # All pre-defined dataset IDs (which can be extracted from build_indexed_dataset)
-ALL_DATASET_IDS="DS1 DS2 DS3"
+ALL_DATASET_IDS="DS1 DS2 DS3 DS-particle"
 
 # Check that query XML subdirectories exist for all datasets we're testing 
 for DSID in $ALL_DATASET_IDS; do
@@ -117,7 +117,7 @@ function build_indexed_datasets_alacrity() {
   [[ $# -eq 2 ]] || die "ERROR: Internal testing error, invalid parameters to build_indexed_datasets_alacrity: $@"
   
   invoke_dataset_builder "$DSID" "$DSOUTPUT.ii" "alacrity:indexForm=ALInvertedIndex"
-  invoke_dataset_builder "$DSID" "$DSOUTPUT.cii" "alacrity:indexForm=ALCompressedInvertedIndex"
+#  invoke_dataset_builder "$DSID" "$DSOUTPUT.cii" "alacrity:indexForm=ALCompressedInvertedIndex"
 }
 
 function build_datasets() {
