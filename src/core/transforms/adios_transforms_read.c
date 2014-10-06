@@ -395,6 +395,8 @@ static ADIOS_VARCHUNK * apply_datablock_to_chunk_and_free(adios_datablock *resul
                          result->elem_type, reqgroup->swap_endianness);
 
         // Populate the chunk struct
+        chunk->from_steps = result->timestep;
+        chunk->nsteps = 1;
         chunk->varid = reqgroup->raw_varinfo->varid;
         chunk->type = result->elem_type;
 
@@ -412,6 +414,8 @@ static ADIOS_VARCHUNK * extract_chunk_from_finished_read_reqgroup(adios_transfor
     ADIOS_VARCHUNK *chunk = malloc(sizeof(ADIOS_VARCHUNK));
     chunk->varid = reqgroup->raw_varinfo->varid;
     chunk->type = reqgroup->transinfo->orig_type;
+    chunk->from_steps = reqgroup->from_steps;
+    chunk->nsteps = reqgroup->nsteps;
 
     // Transfer ownership of orig_data
     chunk->data = reqgroup->orig_data;
