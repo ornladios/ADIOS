@@ -510,7 +510,7 @@ void build_dataset_particle(const char *filename_prefix, const char *transform_n
 	enum {
 		NUM_DIMS = 2,
 		NUM_TS = 2,
-		NUM_PGS_PER_TS = 1,
+		NUM_PGS_PER_TS = 2,
 		NUM_VARS = 1,
 		NUM_PGS = NUM_TS * NUM_PGS_PER_TS,
 	};
@@ -521,11 +521,17 @@ void build_dataset_particle(const char *filename_prefix, const char *transform_n
 
 	// Global and PG dimensions/offsets
 	static const uint64_t GLOBAL_DIMS                         [NUM_DIMS] = { 3, 64 };
-	static const uint64_t PG_DIMS	  [NUM_TS][NUM_PGS_PER_TS][NUM_DIMS] = { { { 3, 64 } }, { { 3, 64 } } };
-	static const uint64_t PG_OFFSETS  [NUM_TS][NUM_PGS_PER_TS][NUM_DIMS] = { { { 0, 0 } }, { { 0, 0 } } };
+	static const uint64_t PG_DIMS	  [NUM_TS][NUM_PGS_PER_TS][NUM_DIMS] = { 
+            { { 3, 32} }, { { 3, 32 } }, 
+            { { 3, 32} }, { { 3, 32 } }
+        };
+        static const uint64_t PG_OFFSETS  [NUM_TS][NUM_PGS_PER_TS][NUM_DIMS] = { 
+            { { 0, 0 }, { 0, 32 }, }, 
+            { { 0, 0 }, { 0, 32 }, }, 
+        };
 
 	// Variable data (we can use [TS][PG][16] here because every PG is the same size, 16)
-	static const float TEMP_DATA[NUM_TS][NUM_PGS_PER_TS][192] = {
+	static const float TEMP_DATA[NUM_TS][NUM_PGS_PER_TS][96] = {
 		// Timestep 1
 		// PG 0 in timestep 1
                 10.033470,   10.329965,   10.690636,   10.422486,   10.206265,   10.250129,   10.636559,   10.863623,
