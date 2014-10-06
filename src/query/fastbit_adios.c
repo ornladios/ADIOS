@@ -2,13 +2,14 @@
 #include <stdlib.h>
 #include <string.h>
 #include "public/adios_read.h"
+#include "core/adios_logger.h"
 #include <iapi.h>
 
 #include "fastbit_adios.h"
 
 void fastbit_adios_util_checkNotNull(void* fastbitHandle, const char* arrayName) {
   if (fastbitHandle == NULL) {
-    printf(" >> Unable to create handle on fastbit, ref: %s\n", arrayName);
+     log_error(" >> Unable to create handle on fastbit, ref: %s\n", arrayName);
   }
 }
 
@@ -69,7 +70,20 @@ ADIOS_FILE* fastbit_adios_util_getFastbitIndexFileToRead(const char* dataFileLoc
   idxFileNamePad[lenOfDataFileLoc-3]=0;
   sprintf(idxFileName, "%s.idx", idxFileNamePad); 
 
-  return adios_read_open_file (idxFileName, ADIOS_READ_METHOD_BP, comm);
+  // turn off logging
+  int log_level = adios_verbose_level;
+  adios_verbose_level = 0;
+  ADIOS_FILE *f = adios_read_open_file (idxFileName, ADIOS_READ_METHOD_BP, comm);
+  // turn back on logging
+  adios_verbose_level = log_level;
+  // reset possible error
+  adios_clear_error();
+  if (!f) {
+      log_warn ("No FastBit index file '%s' was found. "
+                "Will use FastBit evaluation on data directly\n",
+                idxFileName);
+  }
+  return f;
 }
 
 
@@ -171,17 +185,17 @@ uint64_t fastbit_adios_util_getBlockSize(ADIOS_VARINFO* v, int k) // k = blockNu
     return blockSize;
   }
   
-  printf("\n blockinfo[%d]: [ ", k);
+  log_debug("\n blockinfo[%d]: [ ", k);
   
   for (j=0; j<v->ndim; j++) 
     {  
       blockSize *= v->blockinfo[k].count[j];
-      printf("%llu:%llu ", v->blockinfo[k].start[j], v->blockinfo[k].count[j]);
+      log_debug("%llu:%llu ", v->blockinfo[k].start[j], v->blockinfo[k].count[j]);
     }
   
-  printf("]\n");
+  log_debug("]\n");
   
-  //  printf("\t\t   block %d, bytes: %llu \n", k, blockBytes);      
+  //  log_debug("\t\t   block %d, bytes: %llu \n", k, blockBytes);      
   
   return blockSize;
 }
@@ -275,7 +289,7 @@ int fastbit_adios_util_readFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, 
   sprintf(keyVarName, "key-%d-%d-%d", v->varid, timestep, blockNum);
   sprintf(offsetName, "offset-%d-%d-%d", v->varid, timestep, blockNum);
 
-  printf("reading from index file: %s for variables: %s %s %s \n", idxFile->path, bmsVarName, keyVarName, offsetName);
+  log_debug("reading from index file: %s for variables: %s %s %s \n", idxFile->path, bmsVarName, keyVarName, offsetName);
 
   ADIOS_VARINFO * bmsV = adios_inq_var (idxFile, bmsVarName);
   ADIOS_VARINFO * keyV = adios_inq_var (idxFile, keyVarName);
@@ -313,7 +327,7 @@ int fastbit_adios_util_readFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, 
   *no = offsetV->dims[0];
   *nb = bmsV->dims[0];
 
-  printf(" bms/key/offset data: length=%lld/%lld/%lld\n", *nb, *nk, *no);
+  log_debug(" bms/key/offset data: length=%lld/%lld/%lld\n", *nb, *nk, *no);
   
   //printData(*bms, bmsV->type, *nb);
   adios_selection_delete(bmsSel);
@@ -342,9 +356,9 @@ or is lined as
   if (max > size) {
     max = size;
   }
-  printf("  \tfirst %d data out of %lld:[", max, size);
+  log_debug("  \tfirst %d data out of %lld:[", max, size);
   for (i=0; i<max; i++) {
-    printf("%s ", value_to_string(type, data, i));
+    log_debug("%s ", value_to_string(type, data, i));
   }
-  printf("]\n");
+  log_debug("]\n");
 }

@@ -6,6 +6,7 @@
 
 #include "common_query.h"
 #include "adios_query_hooks.h"
+#include "core/adios_logger.h"
 
 static struct adios_query_hooks_struct * gAdios_query_hooks = 0;
 
@@ -70,7 +71,7 @@ int getTotalByteSize(ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* sel, uint
     for (s=0; s<v->ndim; s++) {
          *total_byte_size *=v->dims[s];
          *dataSize *= v->dims[s];
-         //	printf(" dim %" PRIu64 "default count %" PRIu64 "\n", s, v->dims[s]);
+         //	log_debug(" dim %" PRIu64 "default count %" PRIu64 "\n", s, v->dims[s]);
     }
     return 0;
   }
@@ -86,15 +87,15 @@ int getTotalByteSize(ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* sel, uint
 
       for (s=0; s<v->ndim; s++) {
 	   if (start[s]+count[s] > v->dims[s]) {
-	     printf(" Invalid bounding box start %" PRIu64 " + count %" PRIu64 " exceeds dim size: %" PRIu64 "\n", start[s], count[s], v->dims[s]);
+	     log_error(" Invalid bounding box start %" PRIu64 " + count %" PRIu64 " exceeds dim size: %" PRIu64 "\n", start[s], count[s], v->dims[s]);
 	     return -1;
 	   }
 	   *total_byte_size *=count[s];
 	   *dataSize *= count[s];
-//	   printf(" dim %" PRIu64 "count %" PRIu64 " \n", s, count[s]);
+//	   log_debug(" dim %" PRIu64 "count %" PRIu64 " \n", s, count[s]);
       }
       
-//	   printf("\tThe data size is = %" PRIu64 " \n", *dataSize);
+//	   log_debug("\tThe data size is = %" PRIu64 " \n", *dataSize);
       break;
     }
   case ADIOS_SELECTION_POINTS:
@@ -118,14 +119,14 @@ int getTotalByteSize(ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* sel, uint
 	  if (nBlocksAtStep < min) {
 	     min = nBlocksAtStep;
 	  }
-	  printf("\t\t   currstep=%d nblocks=%d\n", i, nBlocksAtStep);
+	  log_debug("\t\t   currstep=%d nblocks=%d\n", i, nBlocksAtStep);
 	  if (i < gCurrentTimeStep) {
 	    absBlockCounter += nBlocksAtStep;
 	  }
 	}
 
       if (wb->index > min) {
-	  printf("Error: Unable to handle this block index %d over all the timesteps. Stop.\n", wb->index);
+	  log_error("Error: Unable to handle this block index %d over all the timesteps. Stop.\n", wb->index);
 	  return -1;
       }
 
@@ -136,7 +137,7 @@ int getTotalByteSize(ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* sel, uint
           *dataSize *= v->blockinfo[absBlockCounter].count[j];
 	}
 
-      printf("\t\t   block %d, abs id:%d, bytes: %" PRIu64 ", size =  %" PRIu64 " \n", wb->index, absBlockCounter, *total_byte_size, *dataSize);
+      log_debug("\t\t   block %d, abs id:%d, bytes: %" PRIu64 ", size =  %" PRIu64 " \n", wb->index, absBlockCounter, *total_byte_size, *dataSize);
 
       break;
     }
@@ -162,7 +163,7 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f,
 				 const char* value)
 {
   if (gAdios_query_hooks == NULL) {
-    printf("Error: Query environment is not initialized. Call adios_query_init() first.\n");
+    log_error("Error: Query environment is not initialized. Call adios_query_init() first.\n");
     exit(EXIT_FAILURE);
   }
 
@@ -174,21 +175,21 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f,
 	  && (queryBoundary->type != ADIOS_SELECTION_POINTS)
 	  && (queryBoundary->type != ADIOS_SELECTION_WRITEBLOCK)) 
       {
-	printf("Error: selection type is not supported by fastbit or alacrity. Choose either boundingbox, points or writeBlock \n");	       
+	log_error("Error: selection type is not supported by fastbit or alacrity. Choose either boundingbox, points or writeBlock \n");	       
 	exit(EXIT_FAILURE);
       }
     }
   }
  
   if ((value == NULL) || (f == NULL) || (varName == NULL)) {
-    printf("Error:No valid input is provided when creating query.\n");
+    log_error("Error:No valid input is provided when creating query.\n");
     exit(EXIT_FAILURE);
   }
 
   // get data from bp file
   ADIOS_VARINFO* v = adios_inq_var(f, varName);
   if (v == NULL) {
-    printf(" Error! no such var:%s \n", varName);
+    log_error(" Error! no such var:%s \n", varName);
     exit(EXIT_FAILURE);
   }
 
@@ -261,14 +262,14 @@ int isSelectionCompatible(ADIOS_SELECTION* first, ADIOS_SELECTION* second)
   switch (first->type) {
   case  ADIOS_SELECTION_BOUNDINGBOX:    
     if (second->type != ADIOS_SELECTION_BOUNDINGBOX) {
-        printf("Error! Not supported: comparing bounding box to another type \n");
+        log_error("Error! Not supported: comparing bounding box to another type \n");
 	return 0;
     }
     
     return 1;
   case ADIOS_SELECTION_POINTS:
     if (second->type != ADIOS_SELECTION_POINTS) {
-        printf("Error! Not supported: comparing adios points to another type \n");
+        log_error("Error! Not supported: comparing adios points to another type \n");
 	return 0;
     }
     const ADIOS_SELECTION_POINTS_STRUCT *pt1 = &(first->u.points);
@@ -280,7 +281,7 @@ int isSelectionCompatible(ADIOS_SELECTION* first, ADIOS_SELECTION* second)
     return 1;
   case ADIOS_SELECTION_WRITEBLOCK:
     if (second->type != ADIOS_SELECTION_WRITEBLOCK) {
-        printf("Error! Not supported: comparing adios blocks to another type \n");
+        log_error("Error! Not supported: comparing adios blocks to another type \n");
 	return 0;
     }      
     return 1;
@@ -304,7 +305,7 @@ uint64_t getVariableSize(ADIOS_VARINFO* v)
 //
 int isCompatible(ADIOS_QUERY* q1, ADIOS_QUERY* q2) {
   if (q1->_rawDataSize != q2->_rawDataSize) {
-    printf("Error! Not supported: combining query with different sizes!\n");
+    log_error("Error! Not supported: combining query with different sizes!\n");
     return 0;
   }
   
@@ -325,7 +326,7 @@ ADIOS_QUERY* common_query_combine(ADIOS_QUERY* q1,
   //ADIOS_QUERY* result = (ADIOS_QUERY*)malloc(sizeof(ADIOS_QUERY));
 
   if ((q1 == NULL) || (q2 == NULL)) {
-    printf("Error: detected NULL query when combining.\n");
+    log_error("Error: detected NULL query when combining.\n");
     return NULL;
   }
 
@@ -385,10 +386,10 @@ void updateBlockSize(const ADIOS_SELECTION_WRITEBLOCK_STRUCT* wb, ADIOS_QUERY* l
       dataSize *= v->blockinfo[serializedBlockNum].count[j];
     }
 
-  printf("\t\t   block %d (linedup as %d), bytes: %" PRIu64 ", size = %" PRIu64 " \n", wb->index, serializedBlockNum, total_byte_size, dataSize);
+  log_debug("\t\t   block %d (linedup as %d), bytes: %" PRIu64 ", size = %" PRIu64 " \n", wb->index, serializedBlockNum, total_byte_size, dataSize);
 
   if (dataSize != leaf->_rawDataSize) {
-    printf("\t\t reallocate dataSlice due to block size change\n");
+    log_debug("\t\t reallocate dataSlice due to block size change\n");
 
     leaf->_rawDataSize = dataSize;
     if (leaf->_dataSlice != NULL) {
@@ -404,17 +405,17 @@ int updateBlockSizeIfNeeded(ADIOS_QUERY* q)
   if ((q->_left == NULL) && (q->_right == NULL)) 
     {
       if (q->_sel == NULL) {
-	printf("No selections detected. \n");
+	log_error("No selections detected. \n");
 	return -1;
       }
 
       if (q->_var == NULL) {
-	printf("No variable recorded. \n");
+	log_error("No variable recorded. \n");
 	return -1;
       }
 	
       if (gCurrentTimeStep > q->_var->nsteps) {
-	printf("The given timestep %d exceeds variable (id %d)'s nsteps. \n", gCurrentTimeStep, q->_var->varid);
+	log_error("The given timestep %d exceeds variable (id %d)'s nsteps. \n", gCurrentTimeStep, q->_var->varid);
 	return -1;
       }
 	 
@@ -545,7 +546,7 @@ int common_query_get_selection(ADIOS_QUERY* q,
 	if ((q->_onTimeStep >= 0) && (q->_onTimeStep != gCurrentTimeStep)) {
 		int updateResult = updateBlockSizeIfNeeded(q);
 		if (updateResult < 0) {
-			printf("Error with this timestep %d. Can not proceed. \n", gCurrentTimeStep);
+			log_error("Error with this timestep %d. Can not proceed. \n", gCurrentTimeStep);
 			return -1;
 		}
 		if (updateResult > 0) { // blocks were updated. check compatitibity

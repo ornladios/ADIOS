@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include "public/adios_read.h"
+#include "core/adios_logger.h"
 #include "fastbit_adios.h"
 #include <iapi.h>
 #include <math.h>
@@ -86,7 +87,7 @@ void getCoordinateFromPoints(uint64_t pos, const ADIOS_SELECTION_POINTS_STRUCT* 
 
 void getCoordinateFromBlock(uint64_t pos, const ADIOS_VARBLOCK* sel, int n, uint64_t* coordinates) 
 {
-  //printf("pos = %ld, n=%d \n", pos, n);
+  //log_debug("pos = %ld, n=%d \n", pos, n);
   if (n == 1) {
       coordinates[n-1] = pos + sel->start[n-1];
       return ;
@@ -95,11 +96,11 @@ void getCoordinateFromBlock(uint64_t pos, const ADIOS_VARBLOCK* sel, int n, uint
   uint64_t lastDimSize= sel->count[n-1];     
   uint64_t res  = pos % lastDimSize;
 
-  //printf("      lastDim = %ld, res=%d \n", lastDimSize, res);
+  //log_debug("      lastDim = %ld, res=%d \n", lastDimSize, res);
   coordinates[n-1] = res + sel->start[n-1];
   uint64_t stepUp = (pos - res)/lastDimSize;
 
-  //printf("      coordinate[%d]=%ld\n", n-1, coordinates[n-1]);
+  //log_debug("      coordinate[%d]=%ld\n", n-1, coordinates[n-1]);
 
   getCoordinateFromBlock(stepUp, sel, n-1, coordinates);  
 }
@@ -108,7 +109,7 @@ void getCoordinateFromBlock(uint64_t pos, const ADIOS_VARBLOCK* sel, int n, uint
 //offset in the bounding box needs to be taken account
 void getCoordinateFromBox(uint64_t pos, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT* sel, int n, uint64_t* coordinates) 
 {
-  //printf("pos = %ld, n=%d \n", pos, n);
+  //log_debug("pos = %ld, n=%d \n", pos, n);
   if (n == 1) {
       coordinates[n-1] = pos + sel->start[n-1];
       return ;
@@ -117,11 +118,11 @@ void getCoordinateFromBox(uint64_t pos, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT
   uint64_t lastDimSize= sel->count[n-1];     
   uint64_t res  = pos % lastDimSize;
 
-  //printf("      lastDim = %ld, res=%d \n", lastDimSize, res);
+  //log_debug("      lastDim = %ld, res=%d \n", lastDimSize, res);
   coordinates[n-1] = res + sel->start[n-1];
   uint64_t stepUp = (pos - res)/lastDimSize;
 
-  //printf("      coordinate[%d]=%ld\n", n-1, coordinates[n-1]);
+  //log_debug("      coordinate[%d]=%ld\n", n-1, coordinates[n-1]);
 
   getCoordinateFromBox(stepUp, sel, n-1, coordinates);  
 }
@@ -148,7 +149,7 @@ ADIOS_VARINFO* getAdiosVariable(ADIOS_FILE* f, const char* varName)
   ADIOS_VARINFO * v = adios_inq_var(f, varName);
 
   if (v != NULL) {
-    printf("  found variable [%s] in file\n", varName);
+    log_debug("  found variable [%s] in file\n", varName);
     return v;
   } 
 
@@ -171,7 +172,7 @@ void adios_query_fastbit_init_method()
   fastbit_init(conffile);
   fastbit_set_verbose_level(msglvl);
 
-  printf("[fastbit has initialized with msglvl = %d]\n", msglvl);
+  log_debug("[fastbit has initialized with msglvl = %d]\n", msglvl);
 }
  
 
@@ -212,12 +213,12 @@ int64_t getPosInVariable(const ADIOS_VARINFO* v, int n, uint64_t* spatialCoordin
   int i=0;
 
   if (n == 1) {
-    //printf("\n.....n=1 => %lld\n", spatialCoordinates[0]);
+    //log_debug("\n.....n=1 => %lld\n", spatialCoordinates[0]);
     return spatialCoordinates[0];
   }
 
   int64_t result =  spatialCoordinates[n-1] + v->dims[n-1]*getPosInVariable(v, n-1, spatialCoordinates); 
-  //printf(".... n=%d, %lld + %ld * f[%d]\n", n, spatialCoordinates[n-1],v->dims[n-2], n-1);
+  //log_debug(".... n=%d, %lld + %ld * f[%d]\n", n, spatialCoordinates[n-1],v->dims[n-2], n-1);
   return result;
 }
 
@@ -233,7 +234,7 @@ int64_t getRelativeIdxInVariable(uint64_t currPosInBlock, const ADIOS_VARINFO* v
 {
     uint64_t spatialCoordinates[v->ndim];
     getCoordinateFromBlock(currPosInBlock, blockSel, v->ndim, spatialCoordinates);
-    //printf("   spatial=[%lld, %lld, %lld]    ", spatialCoordinates[0],spatialCoordinates[1],spatialCoordinates[2]);
+    //log_debug("   spatial=[%lld, %lld, %lld]    ", spatialCoordinates[0],spatialCoordinates[1],spatialCoordinates[2]);
     return getPosInVariable(v, v->ndim, spatialCoordinates);
 }
 
@@ -295,13 +296,13 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
     for (currBlockIdx=blockStart; currBlockIdx <= blockEnd; currBlockIdx++) {
       getHandle(timeStep, currBlockIdx, idxFile, q);	      
       if (q->_queryInternal == 0) {
-	printf(">> Unable to construct fastbit query with NULL \n");
+	log_error(">> Unable to construct fastbit query with NULL \n");
 	return -1;
       }
       uint64_t count = fastbit_selection_evaluate(q->_queryInternal); 
       
       junk += count;
-      printf("block: %d hits = %lld, sum of hits so far: %lld\n", currBlockIdx, count, junk);
+      log_debug("block: %d hits = %lld, sum of hits so far: %lld\n", currBlockIdx, count, junk);
       //i = currBlockIdx-blockStart;
       uint64_t  coordinateArray[count];
       fastbit_selection_get_coordinates(q->_queryInternal, coordinateArray, count, 0);      
@@ -317,14 +318,14 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
 	  currPos = getRelativeIdxInVariable(currPosInBlock, v,  &(v->blockinfo[currBlockIdx]));
 	}
 
-	//printf("%lld th in block[%d],   =>  in actual %lld \n", currPosInBlock, currBlockIdx, currPos);
+	//log_debug("%lld th in block[%d],   =>  in actual %lld \n", currPosInBlock, currBlockIdx, currPos);
 	if (currPos >= 0) {
 	  //bits[currPos] = 1;
 	  ((uint16_t *)(bitSlice))[currPos] = 1;
 	} 
       }
 
-      printf("----\n");
+      log_debug("----\n");
     }
 
     char bitsArrayName[50+strlen(q->_condition)];
@@ -407,7 +408,7 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
     int ierr = fastbit_iapi_attach_index (blockDataName, keys, nk, offsets, no, bms, mybmreader);
     
     if (ierr < 0) {
-      printf(" reattaching index failed. fastbit err code = %ld\n", ierr);
+      log_error(" reattaching index failed. fastbit err code = %ld\n", ierr);
       //result = ierr;
     } else {
       q->_queryInternal = createHandle(q, blockDataName); //fastbit_selection_osr(blockDataName, getFastbitCompareType(q->_op), q->_value);
@@ -429,33 +430,33 @@ void printQueryData(ADIOS_QUERY* q, FastBitDataType dataType, int timeStep) {
   uint64_t dataSize = q->_rawDataSize;
   int j;
   int batchSize = 31;
-  printf ("::\t %s At timestep: %llu datasize=%llu \n\t\t   raw data:  [", q->_condition, timeStep, dataSize);
+  log_debug ("::\t %s At timestep: %llu datasize=%llu \n\t\t   raw data:  [", q->_condition, timeStep, dataSize);
   for (j = 0; j < dataSize; j++) {
     if ((j < batchSize) || ((dataSize -j) < batchSize)) {
       if ((j % 10) == 0) {
-	printf(" \n\t\t           ");
+	log_debug(" \n\t\t           ");
       }
       if (dataType == FastBitDataTypeDouble) {
-	printf(" %lg ", ((double *)(q->_dataSlice))[j]);
+	log_debug(" %lg ", ((double *)(q->_dataSlice))[j]);
       } else if (dataType == FastBitDataTypeFloat) {
-	printf(" %g ", ((float *)(q->_dataSlice))[j]);
+	log_debug(" %g ", ((float *)(q->_dataSlice))[j]);
       } else if (dataType == FastBitDataTypeUInt) {
-	printf("%d ", ((uint32_t  *)(q->_dataSlice))[j]);
+	log_debug("%d ", ((uint32_t  *)(q->_dataSlice))[j]);
       } else if (dataType == FastBitDataTypeULong) {
-	printf("%d ", ((uint64_t  *)(q->_dataSlice))[j]);
+	log_debug("%d ", ((uint64_t  *)(q->_dataSlice))[j]);
       } else {
-	//printf("\t%g ", ((uint32_t *)(q->_dataSlice))[j]);
-	printf(" *  ");
+	//log_debug("\t%g ", ((uint32_t *)(q->_dataSlice))[j]);
+	log_debug(" *  ");
       }
     } else {
       if (j == batchSize) {
-	printf(" ... ");
+	log_debug(" ... ");
       }
       continue;
       //break;
     }
   }
-  printf ("]\n");
+  log_debug ("]\n");
   
 
 }
@@ -466,13 +467,13 @@ int readWithTimeStepNoIdx(ADIOS_QUERY* q, int timeStep) {
   FastBitCompareType compareOp = fastbit_adios_util_getFastbitCompareType(q->_op);
 
   int errorCode = adios_schedule_read_byid (q->_f, q->_sel, q->_var->varid, timeStep, 1, q->_dataSlice);
-  printf("      schedule read error code = %d adios_error=%d \n", errorCode, adios_errno);
+  log_debug("      schedule read error code = %d adios_error=%d \n", errorCode, adios_errno);
   if (errorCode != 0) {
     return errorCode;
   }
 
   adios_perform_reads (q->_f, 1); // return 0 regardless whether data is valid, so donnt need to check return value     
-  printf("      perform read got error code = %d adios_errno=%d\n", errorCode, adios_errno);
+  log_debug("      perform read got error code = %d adios_errno=%d\n", errorCode, adios_errno);
   if (adios_errno != 0) {
     return -1;
   }
@@ -501,7 +502,7 @@ int readWithTimeStep(ADIOS_QUERY* q, int timeStep, ADIOS_FILE* idxFile) {
 int prepareData(ADIOS_QUERY* q, int timeStep) 
 {
   if (q->_onTimeStep == timeStep) {
-    printf("::\t query data has been read for timestep: %d\n", timeStep);
+    log_debug("::\t query data has been read for timestep: %d\n", timeStep);
     return 0;
   } 
 
@@ -591,7 +592,7 @@ void getHandle(int timeStep, int blockIdx, ADIOS_FILE* idxFile, ADIOS_QUERY* q)
 int64_t  applyIndexIfExists (ADIOS_QUERY* q) 
 {
   if (q->_onTimeStep == gCurrentTimeStep) {
-    //printf("::\t query index data has been read for timestep: %d\n", gCurrentTimeStep);
+    //log_debug("::\t query index data has been read for timestep: %d\n", gCurrentTimeStep);
     return 0;
   } 
 
@@ -670,15 +671,15 @@ int64_t adios_query_fastbit_evaluate_method(ADIOS_QUERY* q, int timeStep, uint64
          q->_maxResultDesired = _maxResult;
 	 return q->_maxResultDesired;
      }
-     printf(":: user required more results. will evaluate again. \n");
+     log_debug(":: user required more results. will evaluate again. \n");
   }
 
   if (q->_queryInternal == 0) {
-    printf(">>  Unable to use fastbit to evaluate NULL query.\n"); 
+    log_error(">>  Unable to use fastbit to evaluate NULL query.\n"); 
     return -1;
   }
   int64_t numHits = fastbit_selection_evaluate(q->_queryInternal); 
-  printf(":: ==> fastbit_evaluate() num of hits found for [%s] = %lld, at timestep %d \n", q->_condition, numHits, timeStep);  
+  log_debug(":: ==> fastbit_evaluate() num of hits found for [%s] = %lld, at timestep %d \n", q->_condition, numHits, timeStep);  
 
   if (numHits < 0) {
     return 0;
@@ -700,11 +701,11 @@ int64_t adios_query_fastbit_evaluate_method(ADIOS_QUERY* q, int timeStep, uint64
 void printOneSpatialCoordinate(int dim, uint64_t* spatialCoordinates)
 {
       int k;
-      printf(" spatial = [");
+      log_debug(" spatial = [");
       for (k=0; k<dim; k++) {
-	printf("%d ", spatialCoordinates[k]);
+	log_debug("%d ", spatialCoordinates[k]);
       }
-      printf("]\n");
+      log_debug("]\n");
 
 }
 
@@ -714,10 +715,10 @@ void fillUp(int dimSize, uint64_t* spatialCoordinates, uint64_t i, uint64_t* poi
 
   for (k = 0; k < dimSize; k++) {	  
     uint64_t idx = i * dimSize + k;
-    //printf(" points[%d] = %lld ", idx, spatialCoordinates[k]);
+    //log_debug(" points[%d] = %lld ", idx, spatialCoordinates[k]);
     pointArray[idx] = spatialCoordinates[k];
   }	
-  //printf("\n");
+  //log_debug("\n");
 }
 
 ADIOS_SELECTION* getSpatialCoordinatesDefault(ADIOS_VARINFO* var, uint64_t* coordinates, uint64_t retrivalSize)
@@ -775,7 +776,7 @@ ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundary, uint64_t
 	/*
 	for (k=0; k<points->ndim; k++) {	  
 	  uint64_t idx = i*(points->ndim)+k;
-	  printf(" points[%d] = %lld \n", idx, spatialCoordinates[k]);
+	  log_debug(" points[%d] = %lld \n", idx, spatialCoordinates[k]);
 	  pointArray[idx] = spatialCoordinates[k];
 	}	
 	*/
@@ -809,7 +810,7 @@ ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundary, uint64_t
       break;      
     }
   default:
-    printf("Error: Type of selection is not supported!\n\n");
+    log_error("Error: Type of selection is not supported!\n\n");
     return NULL;
   }
 }
@@ -832,21 +833,21 @@ int  adios_query_fastbit_get_selection_method(ADIOS_QUERY* q,
 {
   /*
   if (q->_onTimeStep < 0) {
-    printf(":: Error: need to call evaluate first! Exit.\n");
+    log_error(":: Error: need to call evaluate first! Exit.\n");
     return -1;
   }
   */
   adios_query_fastbit_evaluate_method(q, gCurrentTimeStep, 0);
-  //printf("::\t max=%llu _lastRead=%llu\n", q->_maxResultDesired, q->_lastRead);
+  //log_debug("::\t max=%llu _lastRead=%llu\n", q->_maxResultDesired, q->_lastRead);
   if (batchSize == 0) {
-    printf(":: ==> will not fetch. batchsize=0\n");
+    log_debug(":: ==> will not fetch. batchsize=0\n");
     return 0;
   }
 
   uint64_t retrivalSize = q->_maxResultDesired - q->_lastRead;
   if (retrivalSize == 0) {
      result = 0;
-     printf(":: ==> no more results to fetch\n");
+     log_debug(":: ==> no more results to fetch\n");
      return 0;
   }
 
@@ -863,7 +864,7 @@ int  adios_query_fastbit_get_selection_method(ADIOS_QUERY* q,
   if (outputBoundary == 0) {
     ADIOS_QUERY* firstLeaf = getFirstLeaf(q);
     if ((firstLeaf == NULL) || (firstLeaf->_var == NULL)) {
-	printf(":: Error: unable to get a valid first leaf! Exit. \n");
+	log_error(":: Error: unable to get a valid first leaf! Exit. \n");
 	return -1;
       }
     if (firstLeaf->_sel == NULL) {
@@ -884,15 +885,15 @@ int  adios_query_fastbit_get_selection_method(ADIOS_QUERY* q,
   // print results
   /*
   int i=0; 
-  printf("\n:: coordinates: [\n");
+  log_debug("\n:: coordinates: [\n");
   for (i=0; i<retrivalSize; i++) {  
     if (i<100) {
-      printf("%lld ", coordinates[i]);
+      log_debug("%lld ", coordinates[i]);
     } else {
       break;
     }
   }
-  printf("]\n\n");
+  log_debug("]\n\n");
   */
   if (q->_lastRead == q->_maxResultDesired) {
     return 0;
@@ -908,7 +909,7 @@ int  adios_query_fastbit_free_method(ADIOS_QUERY* query)
     return;
   }
 
-  printf(":: free %s  has parent? %d\n", query->_condition, query->_hasParent);
+  log_debug(":: free %s  has parent? %d\n", query->_condition, query->_hasParent);
   
   free(query->_value);
   free(query->_condition);
@@ -985,7 +986,7 @@ void createBox(ADIOS_VARINFO* v, char* dimDef, uint64_t* start, uint64_t* count)
   }
 
  if ((dimDef == NULL) || (strlen(dimDef) == 0)) {
-    printf("::\t There is no restriction on dimention.\n");
+    log_debug("::\t There is no restriction on dimension.\n");
     //use default 
     return;
   }
@@ -1042,7 +1043,7 @@ void createBox(ADIOS_VARINFO* v, char* dimDef, uint64_t* start, uint64_t* count)
 {
   int column=-1, columnStarts=-1, columnEnds=0;
   parseSlice(dimDef, &column, &columnStarts, &columnEnds);
-  printf(" column= %d, %d:%d \n\n", column, columnStarts, columnEnds);
+  log_debug(" column= %d, %d:%d \n\n", column, columnStarts, columnEnds);
 
   int j;
   for (j = 0; j < v->ndim; j++) {
@@ -1156,28 +1157,28 @@ ADIOS_QUERY* getQuery(const char* condition, ADIOS_FILE* f)
     if (dimDef != NULL) 
       {free(dimDef);}
 
-    printf("::\t query created for: %s\n", condition);
+    log_debug("::\t query created for: %s\n", condition);
     return q;
 }
 */
  /*
 void queryDetail(ADIOS_QUERY* q, int timeStep) {
     int64_t estimated = adios_query_estimate(q);
-    printf("::\t query estimated = %llu \n", estimated);
+    log_debug("::\t query estimated = %llu \n", estimated);
 
     int64_t numHits = adios_query_fastbit_evaluate_method(q, timeStep, 100000);
-    printf("::\t query evaluated = %llu \n", numHits);
+    log_debug("::\t query evaluated = %llu \n", numHits);
 
     uint64_t batchSize = 50;
     
     while (q->_maxResultDesired - q->_lastRead > 0) {      
-      //printf("::\t max=%llu _lastRead=%llu\n", q->_maxResultDesired, q->_lastRead);
+      //log_debug("::\t max=%llu _lastRead=%llu\n", q->_maxResultDesired, q->_lastRead);
       ADIOS_SELECTION* t;
       ADIOS_SELECTION* bound;
       adios_query_get_selection(q, batchSize, bound, &t);
       free(t->u.points.points);
       adios_selection_delete(t);
-      //printf("::\t      max=%llu _lastRead=%llu\n", q->_maxResultDesired, q->_lastRead);
+      //log_debug("::\t      max=%llu _lastRead=%llu\n", q->_maxResultDesired, q->_lastRead);
     }
 }
  */
