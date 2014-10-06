@@ -74,7 +74,7 @@ class var:
 
         if self.is_scalar():
             # This is a scalar
-            print "%s is a scalar" % name
+            #print "%s is a scalar" % name
             return
 
         # If we're writing fortran, we need to flip the order of the dimensions, as they were reported by the C API
