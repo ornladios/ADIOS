@@ -15,7 +15,7 @@
 #include <adios.h>
 #include <adios_types.h>
 
-typedef enum { DATASET_1, DATASET_2, DATASET_3 } DATASET_ID;
+typedef enum { DATASET_1, DATASET_2, DATASET_3, DATASET_PARTICLE } DATASET_ID;
 
 typedef struct {
 	const char *group_name;
@@ -292,6 +292,12 @@ void build_dataset_from_varblocks_by_var(
 			num_ts, num_pgs_per_ts, pg_specs);
 }
 
+
+
+
+
+
+
 void build_dataset_1(const char *filename_prefix, const char *transform_name) {
 	// Basic dataset information
 	// NOTE: we have to use an anonymous enum here to define these constants, since
@@ -496,6 +502,79 @@ void build_dataset_3(const char *filename_prefix, const char *transform_name) {
 			PG_DIMS, PG_OFFSETS, (const void **)VARBLOCKS_BY_VAR);
 }
 
+void build_dataset_particle(const char *filename_prefix, const char *transform_name) {
+	// Basic dataset information
+	// NOTE: we have to use an anonymous enum here to define these constants, since
+	// C is picky and doesn't consider a static const int "const enough" to use
+	// as an array length (e.g., if these were static const ints, it would not compile)
+	enum {
+		NUM_DIMS = 2,
+		NUM_TS = 2,
+		NUM_PGS_PER_TS = 1,
+		NUM_VARS = 1,
+		NUM_PGS = NUM_TS * NUM_PGS_PER_TS,
+	};
+
+	// Variable names/types
+	static const char *VARNAMES[NUM_VARS]					= { "temp"     };
+	static const enum ADIOS_DATATYPES VARTYPES[NUM_VARS]	= { adios_real };
+
+	// Global and PG dimensions/offsets
+	static const uint64_t GLOBAL_DIMS                         [NUM_DIMS] = { 3, 64 };
+	static const uint64_t PG_DIMS	  [NUM_TS][NUM_PGS_PER_TS][NUM_DIMS] = { { { 3, 64 } }, { { 3, 64 } } };
+	static const uint64_t PG_OFFSETS  [NUM_TS][NUM_PGS_PER_TS][NUM_DIMS] = { { { 0, 0 } }, { { 0, 0 } } };
+
+	// Variable data (we can use [TS][PG][16] here because every PG is the same size, 16)
+	static const float TEMP_DATA[NUM_TS][NUM_PGS_PER_TS][192] = {
+		// Timestep 1
+		{
+		// PG 0 in timestep 1
+		//  1.00000000     1.00003052     2.00000000     2.00006104
+			0x1.000000p+0, 0x1.000200p+0, 0x1.000000p+1, 0x1.000200p+1,
+		//  2.00012207     30.00000000    30.00048828    30.00097656
+			0x1.000400p+1, 0x1.e00000p+4, 0x1.e00200p+4, 0x1.e00400p+4,
+		//  30.00146484    50.00000000    50.00097656    50.00195312
+			0x1.e00600p+4, 0x1.900000p+5, 0x1.900200p+5, 0x1.900400p+5,
+		//  50.00292969    50.00390625    50.00488281    50.00585938
+			0x1.900600p+5, 0x1.900800p+5, 0x1.900a00p+5, 0x1.900c00p+5,
+		}
+	};
+
+	static const void *VARBLOCKS_BY_VAR[NUM_VARS] = {
+		TEMP_DATA
+	};
+
+	// Now, collect all this information into specification structs
+	// File specification
+	static const dataset_xml_spec_t XML_SPEC = {
+		.group_name = "S3D",
+		.buffer_size_mb = 128,
+		.write_transport_method = "MPI",
+		.ndim = NUM_DIMS,
+		.nvar = NUM_VARS,
+		.varnames = VARNAMES,
+		.vartypes = VARTYPES,
+	};
+
+	// Global space specification
+	static const dataset_global_spec_t GLOBAL_SPEC = {
+		.num_ts = NUM_TS,
+		.num_pgs_per_ts = NUM_PGS_PER_TS,
+		.global_dims = GLOBAL_DIMS,
+	};
+
+	// Finally, invoke the dataset builder with this information
+	build_dataset_from_varblocks_by_var(
+			filename_prefix, transform_name, &XML_SPEC, &GLOBAL_SPEC,
+			NUM_TS, NUM_PGS_PER_TS, NUM_DIMS, NUM_VARS,
+			PG_DIMS, PG_OFFSETS, (const void **)VARBLOCKS_BY_VAR);
+}
+
+
+
+
+
+
 void usage_and_exit() {
 	fprintf(stderr, "Usage: build_indexed_dataset <dataset-id> <filename-prefix> [<transform-type>]\n");
 	fprintf(stderr, "\n");
@@ -526,6 +605,8 @@ int main(int argc, char **argv) {
 		dataset = DATASET_2;
 	} else if (strcasecmp(dataset_id, "DS3") == 0) {
 		dataset = DATASET_3;
+	} else if (strcasecmp(dataset_id, "DS-particle") == 0) {
+		dataset = DATASET_PARTICLE;
 	} else {
 		fprintf(stderr, "Error: '%s' does not name a dataset packaged in this executable\n");
 		usage_and_exit();
@@ -542,6 +623,9 @@ int main(int argc, char **argv) {
 		break;
 	case DATASET_3:
 		build_dataset_3(path, transform_name);
+		break;
+	case DATASET_PARTICLE:
+		build_dataset_particle(path, transform_name);
 		break;
 	}
 
