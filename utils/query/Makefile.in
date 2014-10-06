@@ -83,10 +83,11 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_index_fastbit_OBJECTS = indexByFastbit.$(OBJEXT)
+am_index_fastbit_OBJECTS = index_fastbit-indexByFastbit.$(OBJEXT)
 index_fastbit_OBJECTS = $(am_index_fastbit_OBJECTS)
-index_fastbit_DEPENDENCIES = $(top_builddir)/src/libadiosread.a \
-	$(top_builddir)/src/libadios.a
+am__DEPENDENCIES_1 =
+index_fastbit_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
 index_fastbit_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(index_fastbit_LDFLAGS) $(LDFLAGS) -o $@
@@ -366,8 +367,9 @@ INCLUDES = $(all_includes) -I$(top_srcdir)/src/public \
 	${ADIOSREADLIB_CPPFLAGS}
 AUTOMAKE_OPTIONS = no-dependencies
 index_fastbit_SOURCES = indexByFastbit.c #fastbit_adios.c fastbit_adios.h
-index_fastbit_LDADD = $(top_builddir)/src/libadiosread.a $(top_builddir)/src/libadios.a  -lmxml -lfastbit
-index_fastbit_LDFLAGS = $(ADIOSREADLIB_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+index_fastbit_CPPFLAGS = $(ADIOSLIB_CPPFLAGS) $(ADIOSLIB_CFLAGS) $(ADIOSLIB_EXTRA_CPPFLAGS)
+index_fastbit_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+index_fastbit_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 CLEANFILES = *.idx
 all: all-am
 
@@ -430,6 +432,12 @@ distclean-compile:
 
 .c.lo:
 	$(LTCOMPILE) -c -o $@ $<
+
+index_fastbit-indexByFastbit.o: indexByFastbit.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(index_fastbit_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o index_fastbit-indexByFastbit.o `test -f 'indexByFastbit.c' || echo '$(srcdir)/'`indexByFastbit.c
+
+index_fastbit-indexByFastbit.obj: indexByFastbit.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(index_fastbit_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o index_fastbit-indexByFastbit.obj `if test -f 'indexByFastbit.c'; then $(CYGPATH_W) 'indexByFastbit.c'; else $(CYGPATH_W) '$(srcdir)/indexByFastbit.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo

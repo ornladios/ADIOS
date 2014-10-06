@@ -9,8 +9,9 @@ noinst_PROGRAMS = index_fastbit
 
 index_fastbit_SOURCES = indexByFastbit.c #fastbit_adios.c fastbit_adios.h
 
-index_fastbit_LDADD = $(top_builddir)/src/libadiosread.a $(top_builddir)/src/libadios.a  -lmxml -lfastbit
-index_fastbit_LDFLAGS = $(ADIOSREADLIB_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+index_fastbit_CPPFLAGS = $(ADIOSLIB_CPPFLAGS) $(ADIOSLIB_CFLAGS) $(ADIOSLIB_EXTRA_CPPFLAGS)
+index_fastbit_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+index_fastbit_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 
 
 
