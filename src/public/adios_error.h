@@ -158,6 +158,7 @@ void adios_error (enum ADIOS_ERRCODES errcode, char *fmt, ...);
 void adios_error_at_line (enum ADIOS_ERRCODES errcode, const char* filename, unsigned int linenum, char *fmt, ...);
 
 const char* adios_get_last_errmsg (void);
+void adios_clear_error(void); // reset adios_errno to err_no_err and clear last errmsg
 
 #ifdef __cplusplus
 }

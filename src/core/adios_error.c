@@ -30,6 +30,12 @@ const char *adios_get_last_errmsg (void)
     return aerr; 
 }
 
+void adios_clear_error(void)
+{
+    memset (aerr, 0, ERRMSG_MAXLEN);
+    adios_errno = err_no_error;
+}
+
 void adios_error (enum ADIOS_ERRCODES errcode, char *fmt, ...) 
 {
     va_list ap;
