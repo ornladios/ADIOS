@@ -601,7 +601,7 @@ int64_t  applyIndexIfExists (ADIOS_QUERY* q)
   const char* basefileName = f->path;
 
   int64_t result = -1;
-  MPI_Comm comm_dummy = 0;
+  MPI_Comm comm_dummy = MPI_COMM_SELF;
   ADIOS_FILE* idxFile = fastbit_adios_util_getFastbitIndexFileToRead(basefileName, comm_dummy);
     
   if (idxFile != NULL) {
@@ -620,9 +620,9 @@ int64_t  applyIndexIfExists (ADIOS_QUERY* q)
 
 	//return result;
       } // otherwise, use no idx method
+      adios_read_close(idxFile);
   }
   
-  adios_read_close(idxFile);
   
   //free(idxFile); //causes crash
   return result;
