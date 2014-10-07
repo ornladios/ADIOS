@@ -75,6 +75,16 @@ void setQueryInternal(ADIOS_QUERY* q, FastBitCompareType compareOp, FastBitDataT
   fastbit_adios_util_checkNotNull(q->_queryInternal, arrayName);
 }
 
+void combineQueryInternal(ADIOS_QUERY* q) {
+    ADIOS_QUERY* left = (ADIOS_QUERY*)(q->_left);
+    ADIOS_QUERY* right = (ADIOS_QUERY*)(q->_right);
+
+    if (q->_leftToRightOp == ADIOS_QUERY_OP_AND) {
+        q->_queryInternal = fastbit_selection_combine(left->_queryInternal, FastBitCombineAnd, right->_queryInternal);
+    } else {
+        q->_queryInternal = fastbit_selection_combine(left->_queryInternal, FastBitCombineOr, right->_queryInternal);
+    }    
+}
 
 void getCoordinateFromPoints(uint64_t pos, const ADIOS_SELECTION_POINTS_STRUCT* sel, uint64_t* coordinates) 
 {
@@ -538,14 +548,7 @@ int prepareData(ADIOS_QUERY* q, int timeStep)
       return errorCode2;
     }
 
-    ADIOS_QUERY* _left = (ADIOS_QUERY*)(q->_left);
-    ADIOS_QUERY* _right = (ADIOS_QUERY*)(q->_right);
-
-    if (q->_leftToRightOp == ADIOS_QUERY_OP_AND) {
-        q->_queryInternal = fastbit_selection_combine(_left->_queryInternal, FastBitCombineAnd, _right->_queryInternal);
-    } else {
-        q->_queryInternal = fastbit_selection_combine(_left->_queryInternal, FastBitCombineOr, _right->_queryInternal);
-    }    
+    combineQueryInternal(q);
   }
   q->_onTimeStep = timeStep;
   q->_maxResultDesired = 0;
