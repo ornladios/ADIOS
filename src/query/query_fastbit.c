@@ -75,14 +75,26 @@ void setQueryInternal(ADIOS_QUERY* q, FastBitCompareType compareOp, FastBitDataT
   fastbit_adios_util_checkNotNull(q->_queryInternal, arrayName);
 }
 
-void combineQueryInternal(ADIOS_QUERY* q) {
+
+FastBitSelectionHandle combineQueryInternal(ADIOS_QUERY* q) {
     ADIOS_QUERY* left = (ADIOS_QUERY*)(q->_left);
     ADIOS_QUERY* right = (ADIOS_QUERY*)(q->_right);
 
     if (q->_leftToRightOp == ADIOS_QUERY_OP_AND) {
-        q->_queryInternal = fastbit_selection_combine(left->_queryInternal, FastBitCombineAnd, right->_queryInternal);
+       return fastbit_selection_combine(left->_queryInternal, FastBitCombineAnd, right->_queryInternal);
     } else {
-        q->_queryInternal = fastbit_selection_combine(left->_queryInternal, FastBitCombineOr, right->_queryInternal);
+       return fastbit_selection_combine(left->_queryInternal, FastBitCombineOr, right->_queryInternal);
+    }    
+}
+
+void setCombinedQueryInternal(ADIOS_QUERY* q) {
+    ADIOS_QUERY* left = (ADIOS_QUERY*)(q->_left);
+    ADIOS_QUERY* right = (ADIOS_QUERY*)(q->_right);
+
+    if (q->_leftToRightOp == ADIOS_QUERY_OP_AND) {
+      q->_queryInternal =  fastbit_selection_combine(left->_queryInternal, FastBitCombineAnd, right->_queryInternal);
+    } else {
+      q->_queryInternal =  fastbit_selection_combine(left->_queryInternal, FastBitCombineOr, right->_queryInternal);
     }    
 }
 
@@ -277,7 +289,8 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
       return -1;
     }
 
-    q->_queryInternal = fastbit_selection_combine(left->_queryInternal,  fastbit_adios_util_getFastbitCompareType(q->_leftToRightOp), right->_queryInternal);
+    //q->_queryInternal = fastbit_selection_combine(left->_queryInternal,  fastbit_adios_util_getFastbitCompareType(q->_leftToRightOp), right->_queryInternal);
+    setCombinedQueryInternal(q);
   } else {
     // is a leaf
     int blockStart=0; // relative
@@ -576,6 +589,7 @@ int prepareData(ADIOS_QUERY* q, int timeStep)
 //
 // selections in q are all block(same or different)
 //
+/*
 FastBitSelectionHandle blockSelectionFastbitHandle(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeStep)
 {
   if (q->_var != NULL) {
@@ -593,6 +607,21 @@ FastBitSelectionHandle blockSelectionFastbitHandle(ADIOS_FILE* idxFile, ADIOS_QU
     }        
   }
 }
+*/
+void blockSelectionFastbitHandle(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeStep)
+{
+  if (q->_var != NULL) {
+    const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb = &(q->_sel->u.block);
+    //int absBlockCounter = query_utils_getGlobalWriteBlockId(wb->index, timeStep, q->_var);    
+    getHandleFromBlockAtLeafQuery(timeStep, wb->index, idxFile, q);
+  } else {
+    blockSelectionFastbitHandle(idxFile, q->_left, timeStep);
+    blockSelectionFastbitHandle(idxFile, q->_right, timeStep);
+
+    setCombinedQueryInternal(q);
+  }
+}
+
 
 void getHandle(int timeStep, int blockIdx, ADIOS_FILE* idxFile, ADIOS_QUERY* q) 
 {
@@ -604,6 +633,8 @@ void getHandle(int timeStep, int blockIdx, ADIOS_FILE* idxFile, ADIOS_QUERY* q)
     getHandle(timeStep, blockIdx, idxFile, q->_left);
     getHandle(timeStep, blockIdx, idxFile, q->_right);
 
+    setCombinedQueryInternal(q);
+    /*
     ADIOS_QUERY* left  = (ADIOS_QUERY*)(q->_left);
     ADIOS_QUERY* right = (ADIOS_QUERY*)(q->_right);
 
@@ -611,7 +642,7 @@ void getHandle(int timeStep, int blockIdx, ADIOS_FILE* idxFile, ADIOS_QUERY* q)
       q->_queryInternal = fastbit_selection_combine(left->_queryInternal, FastBitCombineAnd, right->_queryInternal);
     } else {
       q->_queryInternal = fastbit_selection_combine(left->_queryInternal, FastBitCombineOr, right->_queryInternal);
-    }    
+      } */   
   } else {
     getHandleFromBlockAtLeafQuery(timeStep, blockIdx, idxFile, q);
   }
