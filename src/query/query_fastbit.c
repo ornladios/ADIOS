@@ -308,6 +308,9 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
       fastbit_selection_get_coordinates(q->_queryInternal, coordinateArray, count, 0);      
 
       fastbit_selection_free(q->_queryInternal);
+      //fastbit_iapi_free_array_by_addr(q->_dataSlice); // if attached index    
+      fastbit_iapi_free_array(q->_dataSlice); // if attached index       
+
       int k=0;
       for (k=0; k<count; k++) {
 	uint64_t currPosInBlock = coordinateArray[k];
@@ -377,18 +380,22 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
     
     ADIOS_FILE* dataFile = q->_f;
 
+    /*
     // read data from dataFile
     ADIOS_SELECTION* box = adios_selection_writeblock(blockIdx);
     adios_inq_var_blockinfo(dataFile, v);
+    */
     uint64_t blockSize = fastbit_adios_util_getBlockSize(v, blockIdx);
 
+    /*
     free(q->_dataSlice);
     q->_dataSlice = malloc(adios_type_size(v->type, v->value)*blockSize);
-  
+
     adios_schedule_read_byid(dataFile, box, v->varid, timeStep, 1, q->_dataSlice);
     adios_perform_reads(dataFile,1);
     
     //printData(q->_dataSlice, v->type, blockSize);
+    */
 
     char blockDataName[40+strlen(q->_condition)];
     sprintf(blockDataName, "%d-%s-%d-%d-%ld", v->varid, q->_condition, timeStep, blockIdx, getMilliseconds());
@@ -401,12 +408,18 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
       return;
     }
     
-    fastbit_iapi_register_array(blockDataName, fastbit_adios_util_getFastbitDataType(v->type), q->_dataSlice, blockSize);
+    //int err = fastbit_iapi_register_array(blockDataName, fastbit_adios_util_getFastbitDataType(v->type), q->_dataSlice, blockSize);
+    uint64_t nv = blockSize;
+    int ierr = fastbit_iapi_register_array_index_only(blockDataName, fastbit_adios_util_getFastbitDataType(v->type), &nv, 1 , keys, nk, offsets, no, bms, mybmreader);
 
+      /*
+    if (ierr != 0) {
+      log_error(" registering array failed. fastbit err code = %ld\n", ierr);
+    }
     //printData(bms, adios_unsigned_integer, nb);
 
-    int ierr = fastbit_iapi_attach_index (blockDataName, keys, nk, offsets, no, bms, mybmreader);
-    
+    ierr = fastbit_iapi_attach_index (blockDataName, keys, nk, offsets, no, bms, mybmreader);
+      */
     if (ierr < 0) {
       log_error(" reattaching index failed. fastbit err code = %ld\n", ierr);
       //result = ierr;
