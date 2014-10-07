@@ -9,7 +9,10 @@ extern "C" {
 
 #define NO_EVAL_BEFORE -1
 
-void common_query_init(enum ADIOS_QUERY_TOOL tool);
+// called from Read init only; it does NOT call methods' init
+void common_query_init();
+
+//void common_query_set_method(enum ADIOS_QUERY_METHOD method);
 
 ADIOS_QUERY* common_query_create(ADIOS_FILE* f, 				 
 				 const char* varName,
@@ -32,10 +35,13 @@ int common_query_get_selection(ADIOS_QUERY* q,
 				ADIOS_SELECTION** result);
 
 void common_query_free(ADIOS_QUERY* q);
-void common_query_clean();
+
+// called from Read finalize only; 
+// this function then calls all query methods' finalize
+void common_query_finalize();
   
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* __ADIOS_QUERY_H__ */
+#endif /* __COMMON_QUERY_H__ */

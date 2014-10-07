@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "public/adios_read.h"
+#include "core/common_read.h"
 #include "core/adios_logger.h"
 #include <iapi.h>
 
@@ -49,45 +49,52 @@ int fastbit_adios_util_getRelativeBlockNumForPoint(ADIOS_VARINFO* v,  uint64_t* 
 }
 
 
-void fastbit_adios_util_getFastbitIndexFileName(const char* dataFileLoc, char* idxFileName) 
+char *fastbit_adios_util_getFastbitIndexFileName(const char* dataFileLoc) 
 {
-  int lenOfDataFileLoc = strlen(dataFileLoc);			   
-  char        idxFileNamePad [lenOfDataFileLoc];
-  //char        idxFileName    [lenOfDataFileLoc+20];			   
+  int len = strlen(dataFileLoc);			   
+  char  idxFileNamePad [len];
+  char *idxFileName = malloc (len*sizeof(char));
   
-  strncpy(idxFileNamePad, dataFileLoc, lenOfDataFileLoc-3);
-  idxFileNamePad[lenOfDataFileLoc-3]=0;
+  strncpy(idxFileNamePad, dataFileLoc, len-3);
+  idxFileNamePad[len-3]=0;
   sprintf(idxFileName, "%s.idx", idxFileNamePad); 
+  return idxFileName;
+}
+
+int fastbit_adios_util_FastbitIndexFileExists(const char* dataFileLoc)
+{
+    char *idxFileName = fastbit_adios_util_getFastbitIndexFileName (dataFileLoc);
+    int retval = query_utils_file_exists (idxFileName);
+    free (idxFileName);
+    return retval;
 }
 
 ADIOS_FILE* fastbit_adios_util_getFastbitIndexFileToRead(const char* dataFileLoc, MPI_Comm comm) 
 {
-  int lenOfDataFileLoc = strlen(dataFileLoc);			   
-  char        idxFileNamePad [lenOfDataFileLoc];
-  char        idxFileName    [lenOfDataFileLoc+20];			   
-  
-  strncpy(idxFileNamePad, dataFileLoc, lenOfDataFileLoc-3);
-  idxFileNamePad[lenOfDataFileLoc-3]=0;
-  sprintf(idxFileName, "%s.idx", idxFileNamePad); 
+  char *idxFileName = fastbit_adios_util_getFastbitIndexFileName (dataFileLoc);
+  ADIOS_FILE* f = NULL;
 
-  FILE* f0 = fopen(idxFileName, "r");
-  if (f0 == NULL) {
-    return NULL;
-  }
-  fclose(f0);
-  // turn off logging
-  int log_level = adios_verbose_level;
-  adios_verbose_level = 0;
-  ADIOS_FILE *f = adios_read_open_file (idxFileName, ADIOS_READ_METHOD_BP, comm);
-  // turn back on logging
-  adios_verbose_level = log_level;
-  // reset possible error
-  adios_clear_error();
-  if (!f) {
+  if (query_utils_file_exists(idxFileName)) 
+  {
+      // turn off logging
+      //int log_level = adios_verbose_level;
+      //adios_verbose_level = 0;
+      f = common_read_open_file (idxFileName, ADIOS_READ_METHOD_BP, comm);
+      // turn back on logging
+      //adios_verbose_level = log_level;
+      // reset possible error
+      //adios_clear_error();
+      if (!f) {
+          log_warn ("Could not open FastBit index file '%s'. "
+                  "Will use FastBit evaluation on data directly\n",
+                  idxFileName);
+      }
+  } else {
       log_warn ("No FastBit index file '%s' was found. "
-                "Will use FastBit evaluation on data directly\n",
-                idxFileName);
+              "Will use FastBit evaluation on data directly\n",
+              idxFileName);
   }
+  free (idxFileName);
   return f;
 }
 
@@ -182,7 +189,7 @@ FastBitCompareType fastbit_adios_util_getFastbitCompareType(enum ADIOS_PREDICATE
 //uint64_t getBlockDataSize(ADIOS_VARINFO* v, int k) // k = blockNumber 
 uint64_t fastbit_adios_util_getBlockSize(ADIOS_VARINFO* v, int k) // k = blockNumber 
 {
-  //uint64_t blockBytes = adios_type_size (v->type, v->value);
+  //uint64_t blockBytes = common_read_type_size (v->type, v->value);
   uint64_t blockSize = 1;
   int j=0;
 
@@ -296,17 +303,17 @@ int fastbit_adios_util_readFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, 
 
   log_debug("reading from index file: %s for variables: %s %s %s \n", idxFile->path, bmsVarName, keyVarName, offsetName);
 
-  ADIOS_VARINFO * bmsV = adios_inq_var (idxFile, bmsVarName);
-  ADIOS_VARINFO * keyV = adios_inq_var (idxFile, keyVarName);
-  ADIOS_VARINFO * offsetV = adios_inq_var (idxFile, offsetName);
+  ADIOS_VARINFO * bmsV = common_read_inq_var (idxFile, bmsVarName);
+  ADIOS_VARINFO * keyV = common_read_inq_var (idxFile, keyVarName);
+  ADIOS_VARINFO * offsetV = common_read_inq_var (idxFile, offsetName);
 
   if ((bmsV == 0) || (keyV == 0) || (offsetV == 0)) {
     return -1;
   }
 
-  int64_t bms_byte_size = adios_type_size (bmsV->type, bmsV->value);
-  int64_t key_byte_size = adios_type_size (keyV->type, keyV->value);
-  int64_t offset_byte_size = adios_type_size (offsetV->type, offsetV->value);
+  int64_t bms_byte_size = common_read_type_size (bmsV->type, bmsV->value);
+  int64_t key_byte_size = common_read_type_size (keyV->type, keyV->value);
+  int64_t offset_byte_size = common_read_type_size (offsetV->type, offsetV->value);
 
   *bms     = malloc((bmsV->dims[0])*bms_byte_size);
   *keys    = malloc((keyV->dims[0])*key_byte_size);
@@ -317,16 +324,16 @@ int fastbit_adios_util_readFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, 
   uint64_t count_key[] = {keyV->dims[0]};
   uint64_t count_offset[] = {offsetV->dims[0]};
 
-  ADIOS_SELECTION* bmsSel = adios_selection_boundingbox(bmsV->ndim, start, count_bms);
-  ADIOS_SELECTION* keySel = adios_selection_boundingbox(keyV->ndim, start, count_key);
-  ADIOS_SELECTION* offsetSel = adios_selection_boundingbox(offsetV->ndim, start, count_offset);
+  ADIOS_SELECTION* bmsSel = common_read_selection_boundingbox(bmsV->ndim, start, count_bms);
+  ADIOS_SELECTION* keySel = common_read_selection_boundingbox(keyV->ndim, start, count_key);
+  ADIOS_SELECTION* offsetSel = common_read_selection_boundingbox(offsetV->ndim, start, count_offset);
 
   // idx file has one timestep
-  adios_schedule_read(idxFile, bmsSel, bmsVarName, 0, 1, *bms);
-  adios_schedule_read(idxFile, keySel, keyVarName, 0, 1, *keys);
-  adios_schedule_read(idxFile, offsetSel, offsetName, 0, 1, *offsets);
+  common_read_schedule_read(idxFile, bmsSel, bmsVarName, 0, 1, NULL, *bms);
+  common_read_schedule_read(idxFile, keySel, keyVarName, 0, 1, NULL, *keys);
+  common_read_schedule_read(idxFile, offsetSel, offsetName, 0, 1, NULL, *offsets);
 
-  adios_perform_reads(idxFile,1);
+  common_read_perform_reads(idxFile,1);
 
   *nk = keyV->dims[0];
   *no = offsetV->dims[0];
@@ -335,14 +342,14 @@ int fastbit_adios_util_readFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, 
   log_debug(" bms/key/offset data: length=%lld/%lld/%lld\n", *nb, *nk, *no);
   
   //printData(*bms, bmsV->type, *nb);
-  adios_selection_delete(bmsSel);
-  adios_free_varinfo(bmsV);
+  common_read_selection_delete(bmsSel);
+  common_read_free_varinfo(bmsV);
 
-  adios_selection_delete(keySel);
-  adios_free_varinfo(keyV);
+  common_read_selection_delete(keySel);
+  common_read_free_varinfo(keyV);
 
-  adios_selection_delete(offsetSel);
-  adios_free_varinfo(offsetV);
+  common_read_selection_delete(offsetSel);
+  common_read_free_varinfo(offsetV);
 
   return 0;
 }

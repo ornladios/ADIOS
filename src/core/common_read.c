@@ -17,6 +17,7 @@
 #include "core/futils.h"
 #include "core/bp_utils.h" // struct namelists_struct
 #include "core/qhashtbl.h"
+#include "query/common_query.h"  // finalize query methods
 #include "public/adios_schema.h"
 
 // NCSU ALACRITY-ADIOS
@@ -160,6 +161,10 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
     // call method specific init 
     retval = adios_read_hooks[method].adios_read_init_method_fn (comm, params);
     free_name_value_pairs (params);
+
+    // init the query API; may call it multiple times here in multiple read methods' init;
+    common_query_init(); 
+
     return retval;
 }
 
@@ -177,18 +182,23 @@ static int calc_hash_size(unsigned int nvars)
 int common_read_finalize_method(enum ADIOS_READ_METHOD method)
 {
     adios_errno = err_no_error;
+    int retval;
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
         adios_error (err_invalid_read_method, 
             "Invalid read method (=%d) passed to adios_read_finalize_method().\n", (int)method);
-        return err_invalid_read_method;
+        retval = err_invalid_read_method;
     } else if (!adios_read_hooks[method].adios_read_finalize_method_fn) {
         adios_error (err_invalid_read_method, 
             "Read method (=%d) passed to adios_read_finalize_method() is not provided "
             "by this build of ADIOS.\n", (int)method);
-        return err_invalid_read_method;
+        retval = err_invalid_read_method;
+    } else {
+        retval = adios_read_hooks[method].adios_read_finalize_method_fn ();
     }
 
-    return adios_read_hooks[method].adios_read_finalize_method_fn ();
+    // finalize the query API; may call it multiple times here in multiple read methods' finalize;
+    common_query_finalize(); 
+    return retval;
 }
 
 static ADIOS_FILE * common_read_mesh (ADIOS_FILE * fp)

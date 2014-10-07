@@ -35,7 +35,8 @@ static int mybmreader(void *ctx, uint64_t start,uint64_t count, uint32_t *buf)
 int fastbit_adios_util_getRelativeBlockNumForPoint(ADIOS_VARINFO* v,  uint64_t* point, int timestep);
 void fastbit_adios_util_checkNotNull(void* fastbitHandle, const char* arrayName);
   
-void fastbit_adios_util_getFastbitIndexFileName(const char* dataFileLoc, char* idxFileName);
+char* fastbit_adios_util_getFastbitIndexFileName(const char* dataFileLoc);
+int fastbit_adios_util_FastbitIndexFileExists(const char* dataFileLoc);
 ADIOS_FILE* fastbit_adios_util_getFastbitIndexFileToRead(const char* dataFileLoc, MPI_Comm comm);
 
 void fastbit_adios_util_printData(void* data, enum ADIOS_DATATYPES type, uint64_t size);

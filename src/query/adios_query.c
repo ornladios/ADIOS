@@ -1,10 +1,6 @@
 #include "public/adios_read.h"
 #include "common_query.h"
 
-void adios_query_init(enum ADIOS_QUERY_TOOL tool) 
-{
-  common_query_init(tool);
-}
 
 ADIOS_QUERY* adios_query_create(ADIOS_FILE* f, 
 				const char* varName,
@@ -21,6 +17,11 @@ ADIOS_QUERY* adios_query_combine(ADIOS_QUERY* q1,
 				 ADIOS_QUERY* q2)
 {
   return common_query_combine(q1, operator, q2);
+}
+
+void adios_query_set_method (ADIOS_QUERY* q, enum ADIOS_QUERY_METHOD method) 
+{
+    return common_query_set_method (q, method);
 }
 
 int64_t adios_query_estimate(ADIOS_QUERY* q)
@@ -49,8 +50,4 @@ void adios_query_free(ADIOS_QUERY* q)
   common_query_free(q);
 }
 
-void adios_query_clean()
-{
-  common_query_clean();
-}
 

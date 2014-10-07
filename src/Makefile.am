@@ -100,11 +100,12 @@ transforms_write_SOURCES = $(transforms_write_HDRS) \
 
 #######Query source files 
 
-query_common_HDRS = query/common_query.h query/adios_query_hooks.h
+query_common_HDRS = query/common_query.h query/adios_query_hooks.h query/query_utils.h
 query_common_SOURCES = $(query_common_HDRS) \
                        query/adios_query.c \
                        query/common_query.c  \
-                       query/adios_query_hooks.c
+                       query/adios_query_hooks.c \
+                       query/query_utils.c
 
 # Include source files that are specific to each query plugin
 query_method_HDRS =

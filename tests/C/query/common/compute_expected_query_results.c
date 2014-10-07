@@ -449,7 +449,6 @@ int main(int argc, char **argv) {
 
 	MPI_Init(&argc, &argv);
 	adios_read_init_method(ADIOS_READ_METHOD_BP, comm, "");
-	adios_query_init(ADIOS_QUERY_TOOL_ALACRITY);
 
 	ADIOS_FILE *bp_file = adios_read_open_file(bp_filename, ADIOS_READ_METHOD_BP, comm);
 	if (bp_file == NULL) {
@@ -477,7 +476,6 @@ int main(int argc, char **argv) {
 	free(testinfo);
 	adios_read_close(bp_file);
 
-	adios_query_clean();
 	adios_read_finalize_method(ADIOS_READ_METHOD_BP);
 	MPI_Finalize();
 }
