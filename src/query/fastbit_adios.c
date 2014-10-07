@@ -70,6 +70,11 @@ ADIOS_FILE* fastbit_adios_util_getFastbitIndexFileToRead(const char* dataFileLoc
   idxFileNamePad[lenOfDataFileLoc-3]=0;
   sprintf(idxFileName, "%s.idx", idxFileNamePad); 
 
+  FILE* f0 = fopen(idxFileName, "r");
+  if (f0 == NULL) {
+    return NULL;
+  }
+  fclose(f0);
   // turn off logging
   int log_level = adios_verbose_level;
   adios_verbose_level = 0;
