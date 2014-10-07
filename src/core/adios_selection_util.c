@@ -185,7 +185,7 @@ inline static ADIOS_SELECTION * adios_selection_intersect_pts(const ADIOS_SELECT
 // Any-on-any global intersection function
 //
 
-static int is_global_selection(ADIOS_SELECTION *sel) {
+static int is_global_selection(const ADIOS_SELECTION *sel) {
 	return sel->type == ADIOS_SELECTION_BOUNDINGBOX || sel->type == ADIOS_SELECTION_POINTS;
 }
 
@@ -250,7 +250,7 @@ ADIOS_SELECTION * adios_selection_intersect_wb_wb(const ADIOS_SELECTION_WRITEBLO
 
 	if (!wb1->is_sub_pg_selection && !wb2->is_sub_pg_selection) {
 		// If neither selection is a sub-PG selection, the result is easy, and we can return immediately
-		ADIOS_SELECTION *inter_sel = adios_selection_writeblock(wbindex);
+		ADIOS_SELECTION *inter_sel = common_read_selection_writeblock(wbindex);
 		inter_sel->u.block.is_absolute_index = is_abs_idx;
 		return inter_sel;
 	} else if (wb1->is_sub_pg_selection && wb2->is_sub_pg_selection) {
@@ -264,7 +264,7 @@ ADIOS_SELECTION * adios_selection_intersect_wb_wb(const ADIOS_SELECTION_WRITEBLO
 		);
 
 		if (intersects) {
-			ADIOS_SELECTION *inter_sel = adios_selection_writeblock(wbindex);
+			ADIOS_SELECTION *inter_sel = common_read_selection_writeblock(wbindex);
 			inter_sel->u.block.is_absolute_index = is_abs_idx;
 			inter_sel->u.block.is_sub_pg_selection = 1;
 			inter_sel->u.block.element_offset = inter_elem_offset;

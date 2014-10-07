@@ -354,8 +354,12 @@ adios_transform_read_request * adios_transform_read_request_new(
     new_reqgroup->orig_data = data;
     new_reqgroup->swap_endianness = swap_endianness;
 
-    new_reqgroup->orig_sel_timestep_size = compute_selection_size(sel) *
-                                           common_read_type_size(transinfo->orig_type, NULL);
+    // orig_sel_timestep_size is not meaningful for a writeblock selection, since a
+    // writeblock selection may "change size" depending on which timestep is considered
+    if (sel->type != ADIOS_SELECTION_WRITEBLOCK) {
+		new_reqgroup->orig_sel_timestep_size = compute_selection_size(sel) *
+											   common_read_type_size(transinfo->orig_type, NULL);
+    }
 
     // Other fields are 0'd
 

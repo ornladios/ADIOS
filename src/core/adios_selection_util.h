@@ -10,6 +10,7 @@
 
 #include <public/adios_selection.h>
 #include <public/adios_read_v2.h>
+#include <core/transforms/adios_transforms_transinfo.h>
 
 ADIOS_SELECTION * adios_selection_intersect_bb_bb(const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb1,
                                                   const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb2);
@@ -17,8 +18,7 @@ ADIOS_SELECTION * adios_selection_intersect_bb_pts(const ADIOS_SELECTION_BOUNDIN
                                                    const ADIOS_SELECTION_POINTS_STRUCT *pts2);
 ADIOS_SELECTION * adios_selection_intersect_pts_pts(const ADIOS_SELECTION_POINTS_STRUCT *pts1,
                                                     const ADIOS_SELECTION_POINTS_STRUCT *pts2);
-ADIOS_SELECTION * adios_selection_intersect_wb_wb(const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb1,
-                                                  const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb2);
+
 /*
  * Takes the intersection between two given ADIOS selections of any type.
  * Only certain combinations of intersections are supported, as listed below.

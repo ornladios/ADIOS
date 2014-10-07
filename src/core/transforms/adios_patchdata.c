@@ -250,7 +250,7 @@ inline static uint64_t adios_patch_data_to_pts(void *dst, uint64_t dst_ragged_of
 // Any-on-any global patch function
 //
 
-static int is_global_selection(ADIOS_SELECTION *sel) {
+static int is_global_selection(const ADIOS_SELECTION *sel) {
 	return sel->type == ADIOS_SELECTION_BOUNDINGBOX || sel->type == ADIOS_SELECTION_POINTS;
 }
 
@@ -289,12 +289,10 @@ uint64_t adios_patch_data_to_global(void *dst, uint64_t dst_ragged_offset, const
 
 inline static uint64_t adios_patch_data_bb_to_wb(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_WRITEBLOCK_STRUCT *dst_wb,
                                                  void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *src_bb,
-                                                 const ADIOS_SELECTION *vb_bounds_sel,
+                                                 const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *vb_bounds,
                                                  enum ADIOS_DATATYPES datum_type,
                                                  enum ADIOS_FLAG swap_endianness)
 {
-	assert(vb_bounds_sel->type == ADIOS_SELECTION_BOUNDINGBOX);
-
 	// If this is a sub-PG selection, it refers only to a range of
 	// elements positions in C array order. Thus, element 0 of the
 	// output buffer corresponds to element dst_wb->element_offset
@@ -309,19 +307,17 @@ inline static uint64_t adios_patch_data_bb_to_wb(void *dst, uint64_t dst_ragged_
 
 	// Use the existing BB to BB patching function
 	return adios_patch_data_bb_to_bb(
-		dst, dst_ragged_offset, vb_bounds_sel, // Patch into the output buffer, which is bounded by this varblock's bounds
-		src, src_ragged_offset, src_bb,        // Patch from the input selection as usual
-		datum_type, swap_endianness);          // Pass other info along
+		dst, dst_ragged_offset, vb_bounds, // Patch into the output buffer, which is bounded by this varblock's bounds
+		src, src_ragged_offset, src_bb,    // Patch from the input selection as usual
+		datum_type, swap_endianness);      // Pass other info along
 }
 
 inline static uint64_t adios_patch_data_pts_to_wb(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_WRITEBLOCK_STRUCT *dst_wb,
                                                   void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION_POINTS_STRUCT *src_pts,
-                                                  const ADIOS_SELECTION *vb_bounds_sel,
+                                                  const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *vb_bounds,
                                                   enum ADIOS_DATATYPES datum_type,
                                                   enum ADIOS_FLAG swap_endianness)
 {
-	assert(vb_bounds_sel->type == ADIOS_SELECTION_BOUNDINGBOX);
-
 	// If this is a sub-PG selection, it refers only to a range of
 	// elements positions in C array order. Thus, element 0 of the
 	// output buffer corresponds to element dst_wb->element_offset
@@ -336,19 +332,19 @@ inline static uint64_t adios_patch_data_pts_to_wb(void *dst, uint64_t dst_ragged
 
 	// Use the existing PTS to BB patching function
 	return adios_patch_data_pts_to_bb(
-		dst, dst_ragged_offset, vb_bounds_sel, // Patch into the output buffer, which is bounded by this varblock's bounds
-		src, src_ragged_offset, src_pts,       // Patch from the input selection as usual
-		datum_type, swap_endianness);          // Pass other info along
+		dst, dst_ragged_offset, vb_bounds, // Patch into the output buffer, which is bounded by this varblock's bounds
+		src, src_ragged_offset, src_pts,   // Patch from the input selection as usual
+		datum_type, swap_endianness);      // Pass other info along
 }
 
 inline static uint64_t adios_patch_data_wb_to_wb(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_WRITEBLOCK_STRUCT *dst_wb,
                                                  void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION_WRITEBLOCK_STRUCT *src_wb,
-                                                 const ADIOS_SELECTION *vb_bounds_sel,
+                                                 const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *vb_bounds,
                                                  enum ADIOS_DATATYPES datum_type,
                                                  enum ADIOS_FLAG swap_endianness)
 {
 	uint64_t copy_elem_offset, copy_nelems;
-	const uint64_t vb_size_in_elements = compute_selection_size(vb_bounds_sel);
+	const uint64_t vb_size_in_elements = compute_volume(vb_bounds->ndim, vb_bounds->count);
 
 	const uint64_t dst_elem_offset = dst_wb->is_sub_pg_selection ? dst_wb->element_offset : 0;
 	const uint64_t dst_nelems = dst_wb->is_sub_pg_selection ? dst_wb->nelements : vb_size_in_elements;
@@ -373,7 +369,7 @@ inline static uint64_t adios_patch_data_wb_to_wb(void *dst, uint64_t dst_ragged_
 		void *copy_src = (char*)src + (copy_elem_offset - src_elem_offset) * typesize;
 
 		memcpy(copy_dst, copy_src, copy_nelems * typesize);
-		if (swap_endianness)
+		if (swap_endianness == adios_flag_yes)
 			change_endianness(copy_dst, copy_nelems * typesize, datum_type);
 
 		return copy_nelems;
@@ -386,24 +382,24 @@ inline static uint64_t adios_patch_data_wb_to_wb(void *dst, uint64_t dst_ragged_
 
 inline static uint64_t adios_patch_data_to_wb(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION_WRITEBLOCK_STRUCT *dst_wb,
                                               void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION *src_sel,
-                                              const ADIOS_SELECTION *vb_bounds_sel,
+                                              const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *vb_bounds,
                                               enum ADIOS_DATATYPES datum_type,
                                               enum ADIOS_FLAG swap_endianness) {
     switch (src_sel->type) {
     case ADIOS_SELECTION_BOUNDINGBOX:
     {
         const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *src_bb = &src_sel->u.bb;
-        return adios_patch_data_bb_to_wb(dst, dst_ragged_offset, dst_wb, src, src_ragged_offset, src_bb, vb_bounds_sel, datum_type, swap_endianness);
+        return adios_patch_data_bb_to_wb(dst, dst_ragged_offset, dst_wb, src, src_ragged_offset, src_bb, vb_bounds, datum_type, swap_endianness);
     }
     case ADIOS_SELECTION_POINTS:
     {
         const ADIOS_SELECTION_POINTS_STRUCT *src_pts = &src_sel->u.points;
-        return adios_patch_data_pts_to_wb(dst, dst_ragged_offset, dst_wb, src, src_ragged_offset, src_pts, vb_bounds_sel, datum_type, swap_endianness);
+        return adios_patch_data_pts_to_wb(dst, dst_ragged_offset, dst_wb, src, src_ragged_offset, src_pts, vb_bounds, datum_type, swap_endianness);
     }
     case ADIOS_SELECTION_WRITEBLOCK:
     {
         const ADIOS_SELECTION_WRITEBLOCK_STRUCT *src_wb = &src_sel->u.block;
-        return adios_patch_data_wb_to_wb(dst, dst_ragged_offset, dst_wb, src, src_ragged_offset, src_wb, vb_bounds_sel, datum_type, swap_endianness);
+        return adios_patch_data_wb_to_wb(dst, dst_ragged_offset, dst_wb, src, src_ragged_offset, src_wb, vb_bounds, datum_type, swap_endianness);
     }
     case ADIOS_SELECTION_AUTO:
         adios_error_at_line(err_invalid_argument, __FILE__, __LINE__, "Incompatible selection types %d, %d were used while patching decoded "
@@ -424,7 +420,7 @@ inline static uint64_t adios_patch_data_to_wb(void *dst, uint64_t dst_ragged_off
 // NOTE: vb_bounds_sel is the bounding box of the varblock to which dst_sel (a writeblock selection) corresponds
 uint64_t adios_patch_data_to_local(void *dst, uint64_t dst_ragged_offset, const ADIOS_SELECTION *dst_sel,
                                    void *src, uint64_t src_ragged_offset, const ADIOS_SELECTION *src_sel,
-                                   const ADIOS_SELECTION *vb_bounds_sel,
+                                   const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *vb_bounds,
                                    enum ADIOS_DATATYPES datum_type, enum ADIOS_FLAG swap_endianness)
 {
 	if (is_global_selection(dst_sel)) {
@@ -436,7 +432,7 @@ uint64_t adios_patch_data_to_local(void *dst, uint64_t dst_ragged_offset, const 
     case ADIOS_SELECTION_WRITEBLOCK:
     {
         const ADIOS_SELECTION_WRITEBLOCK_STRUCT *dst_wb = &dst_sel->u.block;
-        return adios_patch_data_to_wb(dst, dst_ragged_offset, dst_wb, src, src_ragged_offset, vb_bounds_sel, src_sel, datum_type, swap_endianness);
+        return adios_patch_data_to_wb(dst, dst_ragged_offset, dst_wb, src, src_ragged_offset, src_sel, vb_bounds, datum_type, swap_endianness);
     }
     default:
         adios_error_at_line(err_invalid_argument, __FILE__, __LINE__, "Unknown selection type %d", dst_sel->type);

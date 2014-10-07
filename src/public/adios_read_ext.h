@@ -64,7 +64,7 @@ typedef struct {
 	int timestep;
 	int blockidx;
 	int blockidx_in_timestep;
-	ADIOS_SELECTION *pg_bounds_sel;    // it is a global box (offset/start is global)
+	const ADIOS_SELECTION *pg_bounds_sel;    // it is a global box (offset/start is global)
 	ADIOS_SELECTION *intersection_sel; // it is a global box (offset/start is global)
 } ADIOS_PG_INTERSECTION ;
 
@@ -107,10 +107,10 @@ adios_transform_type_t adios_get_transform_type_by_uid(const char *transform_uid
 ADIOS_SELECTION * adios_selection_writeblock_bounded(int index, uint64_t start_elem, uint64_t num_elems, int is_timestep_relative);
 
 ADIOS_PG_INTERSECTIONS * adios_find_intersecting_pgs(
-		const ADIOS_FILE *fp, int varid, const ADIOS_SELECTION *sel
-		, const int from_step, const int nsteps);
+		const ADIOS_FILE *fp, int varid, const ADIOS_SELECTION *sel,
+		const int from_step, const int nsteps);
 
-int adios_get_absolute_writeblock_index(ADIOS_VARINFO *varinfo, int timestep_relative_idx, int timestep);
+int adios_get_absolute_writeblock_index(const ADIOS_VARINFO *varinfo, int timestep_relative_idx, int timestep);
 
 void adios_free_pg_intersections(ADIOS_PG_INTERSECTIONS **intersections);
 
