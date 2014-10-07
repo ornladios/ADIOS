@@ -52,6 +52,7 @@ typedef struct _adios_transform_pg_read_request {
     // Various selections to aid in datablock construction
     const ADIOS_SELECTION *pg_intersection_sel;
     const ADIOS_SELECTION *pg_bounds_sel;
+    const ADIOS_SELECTION *pg_writeblock_sel;
 
     // Subrequests
     int num_subreqs;

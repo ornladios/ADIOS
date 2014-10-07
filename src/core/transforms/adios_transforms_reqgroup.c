@@ -278,6 +278,10 @@ adios_transform_pg_read_request * adios_transform_pg_read_request_new(
     new_pg_reqgroup->pg_bounds_sel = pg_bounds_sel;
     new_pg_reqgroup->transform_metadata = transform_metadata;
     new_pg_reqgroup->transform_metadata_len = transform_metadata_len;
+
+    ADIOS_SELECTION *wbsel = common_read_selection_writeblock(blockidx);
+    wbsel->u.block.is_absolute_index = 1;
+    new_pg_reqgroup->pg_writeblock_sel = wbsel;
     // Other fields are 0'd
 
     return new_pg_reqgroup;
@@ -320,6 +324,8 @@ void adios_transform_pg_read_request_free(adios_transform_pg_read_request **pg_r
         common_read_selection_delete((ADIOS_SELECTION*)pg_reqgroup->pg_intersection_sel);
     if (pg_reqgroup->pg_bounds_sel)
         common_read_selection_delete((ADIOS_SELECTION*)pg_reqgroup->pg_bounds_sel);
+    if (pg_reqgroup->pg_writeblock_sel)
+    	common_read_selection_delete((ADIOS_SELECTION*)pg_reqgroup->pg_writeblock_sel);
     MYFREE(pg_reqgroup->transform_internal);
 
     // Clear all data to 0's for safety

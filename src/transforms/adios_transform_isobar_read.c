@@ -113,10 +113,7 @@ adios_datablock * adios_transform_isobar_pg_reqgroup_completed(adios_transform_r
         memcpy(uncompressed_data, compressed_data, compressed_size);
     }
 
-    return adios_datablock_new(reqgroup->transinfo->orig_type,
-                               completed_pg_reqgroup->timestep,
-                               completed_pg_reqgroup->pg_bounds_sel,
-                               uncompressed_data);
+    return adios_datablock_new_whole_pg(reqgroup, completed_pg_reqgroup, uncompressed_data);
 }
 
 adios_datablock * adios_transform_isobar_reqgroup_completed(adios_transform_read_request *completed_reqgroup)

@@ -182,7 +182,7 @@ adios_datablock * adios_transform_aplod_pg_reqgroup_completed(adios_transform_re
 
     return adios_datablock_new_ragged_offset(reqgroup->transinfo->orig_type,
                                              completed_pg_reqgroup->timestep,
-                                             completed_pg_reqgroup->pg_bounds_sel,
+                                             completed_pg_reqgroup->pg_writeblock_sel,
                                              raggedOffset,
                                              decompressed_buff);
 }

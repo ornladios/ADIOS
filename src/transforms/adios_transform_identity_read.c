@@ -33,6 +33,17 @@ void compute_sieving_offsets_for_pg_selection(const ADIOS_SELECTION *intersect_s
 
     uint64_t start_off, end_off; // Start/end byte offsets to read between
     switch (intersect_sel->type) {
+    case ADIOS_SELECTION_WRITEBLOCK:
+    {
+    	if (intersect_sel->u.block.is_sub_pg_selection) {
+    		start_off = intersect_sel->u.block.element_offset;
+    		end_off = intersect_sel->u.block.element_offset + intersect_sel->u.block.nelements;
+    	} else {
+    		start_off = 0;
+    		end_off = compute_volume(pgbb->ndim, pgbb->count);
+    	}
+   		break;
+    }
     case ADIOS_SELECTION_BOUNDINGBOX:
     {
         const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &intersect_sel->u.bb;
@@ -68,9 +79,8 @@ void compute_sieving_offsets_for_pg_selection(const ADIOS_SELECTION *intersect_s
         break;
     }
 
-    case ADIOS_SELECTION_WRITEBLOCK:
     case ADIOS_SELECTION_AUTO:
-        /* These are unsupported */
+        /* Unsupported */
         break;
     }
 
@@ -156,7 +166,7 @@ adios_datablock * adios_transform_pg_reqgroup_completed_over_original_data(
 
         db = adios_datablock_new_ragged_offset(reqgroup->transinfo->orig_type,
                 completed_pg_reqgroup->timestep,
-                completed_pg_reqgroup->pg_bounds_sel,
+                completed_pg_reqgroup->pg_writeblock_sel,
                 ragged_offset,
                 pg_data);
 
