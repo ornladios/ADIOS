@@ -76,16 +76,7 @@ void setQueryInternal(ADIOS_QUERY* q, FastBitCompareType compareOp, FastBitDataT
 }
 
 
-FastBitSelectionHandle combineQueryInternal(ADIOS_QUERY* q) {
-    ADIOS_QUERY* left = (ADIOS_QUERY*)(q->_left);
-    ADIOS_QUERY* right = (ADIOS_QUERY*)(q->_right);
 
-    if (q->_leftToRightOp == ADIOS_QUERY_OP_AND) {
-       return fastbit_selection_combine(left->_queryInternal, FastBitCombineAnd, right->_queryInternal);
-    } else {
-       return fastbit_selection_combine(left->_queryInternal, FastBitCombineOr, right->_queryInternal);
-    }    
-}
 
 void setCombinedQueryInternal(ADIOS_QUERY* q) {
     ADIOS_QUERY* left = (ADIOS_QUERY*)(q->_left);
@@ -575,7 +566,7 @@ int prepareData(ADIOS_QUERY* q, int timeStep)
       return errorCode2;
     }
 
-    combineQueryInternal(q);
+    setCombinedQueryInternal(q);
   }
   q->_onTimeStep = timeStep;
   q->_maxResultDesired = 0;
