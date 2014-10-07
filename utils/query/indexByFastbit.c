@@ -257,7 +257,7 @@ int main (int argc, char** argv)
 
   adios_init_noxml (comm_dummy);
 
-  char        idxFileName    [strlen(argv[1])+20];			   
+  char *idxFileName;
   
   f = adios_read_open_file (argv[1], ADIOS_READ_METHOD_BP, comm_dummy);
   if (f == NULL) {
@@ -270,7 +270,7 @@ int main (int argc, char** argv)
   adios_select_method (gAdios_group, "MPI", "", "");
 
   
-  fastbit_adios_util_getFastbitIndexFileName(argv[1], idxFileName);
+  idxFileName = fastbit_adios_util_getFastbitIndexFileName(argv[1]);
 
   unlink(idxFileName);
   adios_open (&gAdios_write_file, gGroupNameFastbitIdx, idxFileName, "w", comm_dummy);
@@ -341,6 +341,7 @@ int main (int argc, char** argv)
   MPI_Barrier (comm_dummy);
   adios_finalize (rank);
   MPI_Finalize ();
+  free (idxFileName);
 
   printf(" ==>  index file is at: %s\n", idxFileName);
   return 0;

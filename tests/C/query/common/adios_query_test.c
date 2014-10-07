@@ -125,7 +125,7 @@ int main(int argc, char ** argv) {
 
     if (strcasecmp(argv[3], "ALACRITY") == 0) {
         // init with ALACRITY
-        adios_query_init(ADIOS_QUERY_TOOL_ALACRITY);
+        //adios_query_init(ADIOS_QUERY_TOOL_ALACRITY);
     }
     else if (strcasecmp(argv[3], "FASTBIT") == 0) {
         // init with FastBit

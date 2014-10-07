@@ -1117,7 +1117,7 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	else if (adiosQuery->_sel->type == ADIOS_SELECTION_WRITEBLOCK){
 		const ADIOS_SELECTION_WRITEBLOCK_STRUCT *writeBlock = &(adiosQuery->_sel->u.block);
 		int blockId= writeBlock->index; //relative block id
-		int globalBlockId = getGlobalWriteBlockId(blockId, startStep, varInfo);
+		int globalBlockId = query_utils_getGlobalWriteBlockId(blockId, startStep, varInfo);
 		adios_inq_var_blockinfo(adiosQuery->_f, varInfo);
 		ADIOS_VARBLOCK block = varInfo->blockinfo[globalBlockId];
 		// since user supplies the query with block id, in this case, the start and destination(querying) bounding box are the block itself
@@ -1220,7 +1220,7 @@ ADIOS_ALAC_BITMAP * adios_alac_process(ADIOS_QUERY* q, int timestep,
 }
 
 
-void adios_query_alac_init_method() {}
+//void adios_query_alac_init() {} // not used
 
 
 
@@ -1494,7 +1494,15 @@ void adios_query_alac_build_results(
 }
 
 
-int64_t adios_query_alac_estimate_method(ADIOS_QUERY* q) {
+int adios_query_alac_can_evaluate(ADIOS_QUERY* q)
+{
+    /* Return 1 if alacrity index is avaiable for this query */
+    return 0;
+}
+
+
+
+int64_t adios_query_alac_estimate(ADIOS_QUERY* q) {
 	ADIOS_ALAC_BITMAP* b = adios_alac_process(q, gCurrentTimeStep, true);
 	return calSetBitsNum(b);
 }
@@ -1530,7 +1538,7 @@ void convertMemstreamToALACBitmap( void *mem , ADIOS_ALAC_BITMAP * bout /*OUT*/)
 	memcpy(bout->bits, ptr+4, sizeof(uint64_t)*(bout->length));
 }
 
-int  adios_query_alac_get_selection_method(ADIOS_QUERY* q,
+int  adios_query_alac_get_selection(ADIOS_QUERY* q,
 			       uint64_t batchSize, // limited by maxResult
 			       ADIOS_SELECTION* outputBoundry,
 			       ADIOS_SELECTION** queryResult) {
@@ -1600,21 +1608,21 @@ int adios_query_alac_free_one_node(ADIOS_QUERY* query){
 
 }
 
-int adios_query_alac_free_method(ADIOS_QUERY* query) {
+int adios_query_alac_free(ADIOS_QUERY* query) {
 
 	// free the tree in a bottom-to-up manner
 	if (query->_left == NULL && query->_right == NULL) {
 		return adios_query_alac_free_one_node(query);
 	}else if  (query->_right){
-		return adios_query_alac_free_method(query->_right);
+		return adios_query_alac_free(query->_right);
 	}else if (query->_left) {
-		return adios_query_alac_free_method(query->_left);
+		return adios_query_alac_free(query->_left);
 	}
 
 	return 1;
 }
 
-void adios_query_alac_clean_method() { }
+void adios_query_alac_finalize() { //there is nothing to finalize }
 
 
 #endif

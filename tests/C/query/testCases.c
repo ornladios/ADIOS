@@ -393,9 +393,9 @@ int main (int argc, char ** argv)
     }
 
 #ifdef ALACRITY
-    adios_query_init(ADIOS_QUERY_TOOL_ALACRITY);
+//    adios_query_init(ADIOS_QUERY_TOOL_ALACRITY);
 #else
-    adios_query_init(ADIOS_QUERY_TOOL_FASTBIT);
+//    adios_query_init(ADIOS_QUERY_TOOL_FASTBIT);
 #endif
 
     ADIOS_FILE * f;
@@ -416,8 +416,8 @@ int main (int argc, char ** argv)
     testOneBoundBoxForAllVar(f); 
     //testOnePointList(f);
 
-    adios_query_clean();
     adios_read_close(f);
+    adios_read_finalize_method (ADIOS_READ_METHOD_BP);
     return 1;
     
 }

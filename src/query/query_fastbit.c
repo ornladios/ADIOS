@@ -3,7 +3,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "public/adios_read.h"
+#include "core/common_read.h"
 #include "core/adios_logger.h"
 #include "fastbit_adios.h"
 #include <iapi.h>
@@ -144,9 +144,9 @@ void getCoordinateFromVariable(uint64_t pos, const ADIOS_VARINFO* var, int n, ui
 }
 
 
-ADIOS_VARINFO* getAdiosVariable(ADIOS_FILE* f, const char* varName)
+/* static ADIOS_VARINFO* getAdiosVariable(ADIOS_FILE* f, const char* varName)
 {
-  ADIOS_VARINFO * v = adios_inq_var(f, varName);
+  ADIOS_VARINFO * v = common_read_inq_var(f, varName);
 
   if (v != NULL) {
     log_debug("  found variable [%s] in file\n", varName);
@@ -154,14 +154,15 @@ ADIOS_VARINFO* getAdiosVariable(ADIOS_FILE* f, const char* varName)
   } 
 
   return NULL;
-}
+}*/
 
 
 
 //
+// Initialization is private business, Finalize is called by ADIOS when read is finalized
 //
-//
-void adios_query_fastbit_init_method() 
+static int is_method_initialized = 0;
+static void adios_query_fastbit_init() 
 {
   const char* conffile = 0;
 #ifdef DEBUG
@@ -169,11 +170,23 @@ void adios_query_fastbit_init_method()
 #else
   int msglvl = 0;
 #endif
-  fastbit_init(conffile);
-  fastbit_set_verbose_level(msglvl);
-
-  log_debug("[fastbit has initialized with msglvl = %d]\n", msglvl);
+  if (!is_method_initialized) {
+      fastbit_init(conffile);
+      fastbit_set_verbose_level(msglvl);
+      log_debug("[fastbit has initialized with verbosity level = %d]\n", msglvl);
+      is_method_initialized = 1;
+  }
 }
+
+void adios_query_fastbit_finalize()
+{
+  if (is_method_initialized) {
+      fastbit_iapi_free_all();
+      fastbit_cleanup();
+      is_method_initialized = 0;
+  }
+}
+
  
 
 int64_t getPosInBox(const ADIOS_SELECTION_BOUNDINGBOX_STRUCT* sel, int n, uint64_t* spatialCoordinates) 
@@ -274,7 +287,7 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
     } else {
       bb = &(sel->u.bb);      
       if (v->blockinfo == NULL) {
-	adios_inq_var_blockinfo(q->_f, v);
+	common_read_inq_var_blockinfo(q->_f, v);
       }
       blockStart = fastbit_adios_util_getRelativeBlockNumForPoint(v,bb->start,timeStep);
       uint64_t end[v->ndim];
@@ -383,7 +396,7 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
     /*
     // read data from dataFile
     ADIOS_SELECTION* box = adios_selection_writeblock(blockIdx);
-    adios_inq_var_blockinfo(dataFile, v);
+    common_read_inq_var_blockinfo(dataFile, v);
     */
     uint64_t blockSize = fastbit_adios_util_getBlockSize(v, blockIdx);
 
@@ -391,8 +404,8 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
     free(q->_dataSlice);
     q->_dataSlice = malloc(adios_type_size(v->type, v->value)*blockSize);
 
-    adios_schedule_read_byid(dataFile, box, v->varid, timeStep, 1, q->_dataSlice);
-    adios_perform_reads(dataFile,1);
+    common_read_schedule_read_byid(dataFile, box, v->varid, timeStep, 1, NULL, q->_dataSlice);
+    common_read_perform_reads(dataFile,1);
     
     //printData(q->_dataSlice, v->type, blockSize);
     */
@@ -479,13 +492,14 @@ int readWithTimeStepNoIdx(ADIOS_QUERY* q, int timeStep) {
   FastBitDataType  dataType = fastbit_adios_util_getFastbitDataType(q->_var->type);
   FastBitCompareType compareOp = fastbit_adios_util_getFastbitCompareType(q->_op);
 
-  int errorCode = adios_schedule_read_byid (q->_f, q->_sel, q->_var->varid, timeStep, 1, q->_dataSlice);
+  int errorCode = common_read_schedule_read_byid (q->_f, q->_sel, q->_var->varid, 
+                                                  timeStep, 1, NULL,  q->_dataSlice);
   log_debug("      schedule read error code = %d adios_error=%d \n", errorCode, adios_errno);
   if (errorCode != 0) {
     return errorCode;
   }
 
-  adios_perform_reads (q->_f, 1); // return 0 regardless whether data is valid, so donnt need to check return value     
+  common_read_perform_reads (q->_f, 1); // return 0 regardless whether data is valid, so donnt need to check return value     
   log_debug("      perform read got error code = %d adios_errno=%d\n", errorCode, adios_errno);
   if (adios_errno != 0) {
     return -1;
@@ -563,7 +577,7 @@ FastBitSelectionHandle blockSelectionFastbitHandle(ADIOS_FILE* idxFile, ADIOS_QU
 {
   if (q->_var != NULL) {
     const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb = &(q->_sel->u.block);
-    //int absBlockCounter = getGlobalWriteBlockId(wb->index, timeStep, q->_var);    
+    //int absBlockCounter = query_utils_getGlobalWriteBlockId(wb->index, timeStep, q->_var);    
     getHandleFromBlockAtLeafQuery(timeStep, wb->index, idxFile, q);
   } else {
     FastBitSelectionHandle left = blockSelectionFastbitHandle(idxFile, q->_left, timeStep);
@@ -634,7 +648,7 @@ int64_t  applyIndexIfExists (ADIOS_QUERY* q)
 
 	//return result;
       } // otherwise, use no idx method
-      adios_read_close(idxFile);
+      common_read_close(idxFile);
   }
   
   
@@ -642,10 +656,25 @@ int64_t  applyIndexIfExists (ADIOS_QUERY* q)
   return result;
 }
 
-int64_t adios_query_fastbit_estimate_method(ADIOS_QUERY* q) //, int timeStep) 
+
+int adios_query_fastbit_can_evaluate(ADIOS_QUERY* q) 
+{
+    /* Return 1 if fastbit index file exists.
+       Even though Fastbit library works without index
+       we return 0 here, so that other query methods may pick up
+       this query.
+       If no method is found, the common layer may still call 
+       the fastbit method (as default) to evaluate the query.
+     */
+   ADIOS_QUERY* leaf = getFirstLeaf(q);
+   return fastbit_adios_util_FastbitIndexFileExists (leaf->_f->path);
+ }
+
+int64_t adios_query_fastbit_estimate(ADIOS_QUERY* q) //, int timeStep) 
 {
   int timeStep = gCurrentTimeStep;
 
+  adios_query_fastbit_init();
   int64_t estimate = applyIndexIfExists(q);
   if (estimate > 0) {
     return estimate;
@@ -664,7 +693,7 @@ int64_t adios_query_fastbit_estimate_method(ADIOS_QUERY* q) //, int timeStep)
 }
  
 
-int64_t adios_query_fastbit_evaluate_method(ADIOS_QUERY* q, int timeStep, uint64_t _maxResult) 
+int64_t adios_query_fastbit_evaluate(ADIOS_QUERY* q, int timeStep, uint64_t _maxResult) 
 {  
   int64_t estimate = applyIndexIfExists(q);
   if (estimate < 0) {   // use no idx
@@ -746,7 +775,7 @@ ADIOS_SELECTION* getSpatialCoordinatesDefault(ADIOS_VARINFO* var, uint64_t* coor
     
     fillUp(var->ndim, spatialCoordinates, i, pointArray);
   }
-  ADIOS_SELECTION* result =  adios_selection_points(var->ndim, retrivalSize, pointArray);
+  ADIOS_SELECTION* result =  common_read_selection_points(var->ndim, retrivalSize, pointArray);
   //free(pointArray); // user has to free this
   return result;
 }
@@ -770,7 +799,7 @@ ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundary, uint64_t
 
 	   fillUp(bb->ndim, spatialCoordinates, i, pointArray);
       }
-      ADIOS_SELECTION* result =  adios_selection_points(bb->ndim, retrivalSize, pointArray);    
+      ADIOS_SELECTION* result =  common_read_selection_points(bb->ndim, retrivalSize, pointArray);    
       //free(pointArray); // user has to free this
       return result;
       break;
@@ -794,7 +823,7 @@ ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundary, uint64_t
 	}	
 	*/
       }
-      ADIOS_SELECTION* result = adios_selection_points(points->ndim, retrivalSize, pointArray);	      
+      ADIOS_SELECTION* result = common_read_selection_points(points->ndim, retrivalSize, pointArray);	      
       //free(pointArray); // user has to free this
       return result;
       //printOneSpatialCoordinate(points->ndim, spatialCoordinates);      
@@ -812,12 +841,12 @@ ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundary, uint64_t
       for (i=0; i<retrivalSize; i++) {
 	   uint64_t spatialCoordinates[v->ndim];
 	   //create bb from block;
-	   int absBlockCounter = getGlobalWriteBlockId(wb->index, gCurrentTimeStep, v);
+	   int absBlockCounter = query_utils_getGlobalWriteBlockId(wb->index, gCurrentTimeStep, v);
 	   getCoordinateFromBlock(coordinates[i], &(v->blockinfo[absBlockCounter]), v->ndim, spatialCoordinates);
 
 	   fillUp(v->ndim, spatialCoordinates, i, pointArray);
       }
-      ADIOS_SELECTION* result = adios_selection_points(v->ndim, retrivalSize, pointArray);
+      ADIOS_SELECTION* result = common_read_selection_points(v->ndim, retrivalSize, pointArray);
       //free(pointArray); // user has to free this
       return result;
       break;      
@@ -839,10 +868,10 @@ ADIOS_QUERY* getFirstLeaf(ADIOS_QUERY* q) {
   return getFirstLeaf(q->_left);
 }
 
-int  adios_query_fastbit_get_selection_method(ADIOS_QUERY* q, 
-					      uint64_t batchSize, 
-					      ADIOS_SELECTION* outputBoundary, 
-					      ADIOS_SELECTION** result)
+int  adios_query_fastbit_get_selection(ADIOS_QUERY* q, 
+				      uint64_t batchSize, 
+				      ADIOS_SELECTION* outputBoundary, 
+				      ADIOS_SELECTION** result)
 {
   /*
   if (q->_onTimeStep < 0) {
@@ -850,7 +879,8 @@ int  adios_query_fastbit_get_selection_method(ADIOS_QUERY* q,
     return -1;
   }
   */
-  adios_query_fastbit_evaluate_method(q, gCurrentTimeStep, 0);
+  adios_query_fastbit_init();
+  adios_query_fastbit_evaluate(q, gCurrentTimeStep, 0);
   //log_debug("::\t max=%llu _lastRead=%llu\n", q->_maxResultDesired, q->_lastRead);
   if (batchSize == 0) {
     log_debug(":: ==> will not fetch. batchsize=0\n");
@@ -916,7 +946,7 @@ int  adios_query_fastbit_get_selection_method(ADIOS_QUERY* q,
 }
 
 //void adios_fastbit_free_query(ADIOS_QUERY* query) 
-int  adios_query_fastbit_free_method(ADIOS_QUERY* query) 
+int  adios_query_fastbit_free(ADIOS_QUERY* query) 
 {  
   if (query == NULL) {
     return;
@@ -928,7 +958,7 @@ int  adios_query_fastbit_free_method(ADIOS_QUERY* query)
   free(query->_condition);
   
   //adios_selection_delete(query->_sel);
-  adios_free_varinfo(query->_var);
+  common_read_free_varinfo(query->_var);
 
   // can free _queryInternal only once
   if(query->_hasParent == 0) {
@@ -940,12 +970,6 @@ int  adios_query_fastbit_free_method(ADIOS_QUERY* query)
   free(query);
   query = 0;
 
-}
-
-void adios_query_fastbit_clean_method()
-{
-  fastbit_iapi_free_all();
-  fastbit_cleanup();
 }
 
 
@@ -1143,7 +1167,7 @@ ADIOS_QUERY* getQuery(const char* condition, ADIOS_FILE* f)
     getVarName(varStr, &varName, &dimDef);
 
 
-    ADIOS_VARINFO* v = adios_inq_var(f, varName);
+    ADIOS_VARINFO* v = common_read_inq_var(f, varName);
     //ADIOS_VARINFO* v = getAdiosVariable(f, varName);
     
     if (v == NULL) {
@@ -1179,7 +1203,7 @@ void queryDetail(ADIOS_QUERY* q, int timeStep) {
     int64_t estimated = adios_query_estimate(q);
     log_debug("::\t query estimated = %llu \n", estimated);
 
-    int64_t numHits = adios_query_fastbit_evaluate_method(q, timeStep, 100000);
+    int64_t numHits = adios_query_fastbit_evaluate(q, timeStep, 100000);
     log_debug("::\t query evaluated = %llu \n", numHits);
 
     uint64_t batchSize = 50;

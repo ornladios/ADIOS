@@ -1,7 +1,7 @@
 TARGET=gnu
 
 ## Set ADIOS_DIR here or before doing make
-override ADIOS_DIR=/ccs/proj/e2e/${USER}/ADIOS/query.sith.${TARGET}
+override ADIOS_DIR=/opt/adios/query
 
 ## mpicc and mpif90 SETTINGS
 CC=mpicc
