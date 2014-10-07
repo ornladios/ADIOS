@@ -829,7 +829,7 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 		, ADIOS_ALAC_BITMAP * alacResultBitmap /*OUT*/ ){
 
 #ifdef RIDBUG
-	printf("PG [%d], RIDs relative to PG converted to RIDs relative to output BoundingBox: ", blockId);
+	printf("PG [%d], RIDs relative to PG converted to RIDs relative to output BoundingBox: ", gBlockId);
 #endif
 
 	int numStep = 1; // only deal with one timestep
