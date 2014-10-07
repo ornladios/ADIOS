@@ -208,7 +208,7 @@ ADIOS_PG_INTERSECTIONS * adios_find_intersecting_pgs(const ADIOS_FILE *fp, int v
         pg_bounds_sel = create_pg_bounds(transinfo->orig_ndim, orig_vb);
 
         // Find the intersection, if any
-        pg_intersection_sel = adios_selection_intersect(pg_bounds_sel, sel);
+        pg_intersection_sel = adios_selection_intersect_global(pg_bounds_sel, sel);
         if (pg_intersection_sel) {
         	// Expand the PG intersection array, if needed
         	if (resulting_intersections->npg == intersection_capacity) {
