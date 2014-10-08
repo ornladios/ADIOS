@@ -6,6 +6,7 @@
 
 #include "common_query.h"
 #include "adios_query_hooks.h"
+#include "public/adios_error.h"
 #include "core/common_read.h"
 #include "core/adios_logger.h"
 
@@ -587,6 +588,8 @@ static ADIOS_SELECTION * convertWriteblockToBoundingBox(
 
     int pg_ndim;
     ADIOS_VARBLOCK *pg_bounds = computePGBounds(q, wb->index, timestep, &pg_ndim);
+    if (!pg_bounds)
+    	return NULL;
 
     ADIOS_SELECTION *bb = common_read_selection_boundingbox(
                         pg_ndim, pg_bounds->start, pg_bounds->count);
@@ -616,6 +619,14 @@ int common_query_get_selection(ADIOS_QUERY* q,
     int freeOutputBoundary = 0;
     if (outputBoundary->type == ADIOS_SELECTION_WRITEBLOCK) {
         outputBoundary = convertWriteblockToBoundingBox(q, &outputBoundary->u.block, gCurrentTimeStep);
+        if (!outputBoundary) {
+        	adios_error(err_invalid_argument,
+        			    "Attempt to use writeblock output selection on a query where not "
+        			    "all variables participating have the same varblock bounding box "
+        			    "at that writeblock index (index = %d)\n",
+        			    outputBoundary->u.block.index);
+        	return -1;
+        }
         freeOutputBoundary = 1;
     }
 
