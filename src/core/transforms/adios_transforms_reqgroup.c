@@ -427,8 +427,8 @@ void adios_transform_read_request_free(adios_transform_read_request **reqgroup_p
 
     // Free any data buffer lent to the user, but don't free the VARCHUNK; that
     // should have been done already by the user
-    if (reqgroup->lent_varchunk)
-        MYFREE(reqgroup->lent_varchunk->data);
+    if (reqgroup->lent_varchunk_data)
+        MYFREE(reqgroup->lent_varchunk_data);
 
     common_read_selection_delete((ADIOS_SELECTION*)reqgroup->orig_sel); // Remove const
     common_read_free_transinfo(reqgroup->raw_varinfo,

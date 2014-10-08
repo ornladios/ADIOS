@@ -792,11 +792,11 @@ void adios_transform_cleanup_from_previous_check_reads(adios_transform_read_requ
 			// If the read request is totally completed, free the whole thing
 			adios_transform_read_request_remove(readreqs_head, readreq);
 			adios_transform_read_request_free(readreq);
-		} else if (readreq->lent_varchunk) {
+		} else if (readreq->lent_varchunk_data) {
 			// Otherwise, free any internal data buffer that was previously given
 			// to the user via an ADIOS_VARCHUNK, but which now may be freed since
 			// the user has called adios_check_reads again
-			FREE(readreq->lent_varchunk->data);
+			FREE(readreq->lent_varchunk_data);
 		}
 
 		readreq = next_readreq;
@@ -850,7 +850,10 @@ void adios_transform_process_read_chunk(adios_transform_read_request **reqgroups
             // Apply this VARCHUNK
             *chunk = apply_datablock_to_chunk_and_free(result, reqgroup);
 
-            reqgroup->lent_varchunk = *chunk;
+            // (*chunk)->data points to a buffer allocated by the transform plugin, and which
+            // is now given to us to own. Record it here so we can free it once the user is done
+            // accessing it (i.e., at the next check_reads or on file close).
+            reqgroup->lent_varchunk_data = (*chunk)->data;
             break;
         case FULL_RESULT_MODE:
             apply_datablock_to_result_and_free(result, reqgroup);
