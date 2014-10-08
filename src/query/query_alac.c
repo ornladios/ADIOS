@@ -150,12 +150,11 @@ void readTransformedElms(ADIOS_FILE* fp,ADIOS_VARINFO* vi
 		, int startStep, int numStep
 		, int blockId, uint64_t start_elem, uint64_t num_elems, int is_timestep_relative, void * outputData/*out*/){
 	ADIOS_SELECTION *sel = adios_selection_writeblock_bounded(blockId, start_elem, num_elems, is_timestep_relative);
-	adios_schedule_read_byid(fp, sel, vi->varid, startStep, numStep, outputData);
-	adios_perform_reads(fp, 1);
+	common_read_schedule_read_byid(fp, sel, vi->varid, startStep, numStep, outputData);
+	common_read_perform_reads(fp, 1);
 	// adios_selection_writeblock_bounded internally malloc data for adios_selection
 	// so I need to free it before the next usage
-	adios_selection_delete(sel);
-
+	common_read_selection_delete(sel);
 }
 
 void readBlockData(int gBlockId /*global block id */, ADIOS_QUERY * adiosQuery, int startStep,
@@ -165,7 +164,7 @@ void readBlockData(int gBlockId /*global block id */, ADIOS_QUERY * adiosQuery, 
 	char * blockData = (char*) (*data);
 	blockData = (char *) malloc(sizeof(char) * dataElmSize * dataElmNum);
 	ADIOS_SELECTION *sel = adios_selection_writeblock_bounded(gBlockId, 0, dataElmNum, 0); // entire PG selection
-	adios_schedule_read_byid(adiosQuery->_f, sel, varInfo->varid, startStep, 1, blockData);
+	common_read_schedule_read_byid(adiosQuery->_f, sel, varInfo->varid, startStep, 1, blockData);
 }
 void readIndexData(int blockId, uint64_t offsetSize /*in bytes*/
 		,uint64_t length /*in bytes*/, ADIOS_FILE* fp,ADIOS_VARINFO* vi
