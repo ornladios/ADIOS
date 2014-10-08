@@ -435,7 +435,7 @@ int do_queries(int step)
 
     // FIXME: Gather all npoints to rank 0
     xy_nhits_total = 0; 
-    MPI_Allreduce (&xy_nhits, &xy_nhits_total, 1, MPI_UNSIGNED_LONG, MPI_SUM, comm);
+    MPI_Allreduce (&xy_nhits, &xy_nhits_total, 1, MPI_LONG_LONG, MPI_SUM, comm);
 
     if (rank==0) printf ("rank %d: Global number of hits: %lld\n", rank, xy_nhits_total);
 
