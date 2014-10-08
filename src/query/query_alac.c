@@ -160,7 +160,7 @@ void readTransformedElms(ADIOS_FILE* fp,ADIOS_VARINFO* vi
 void readBlockData(int gBlockId /*global block id */, ADIOS_QUERY * adiosQuery, int startStep,
 		ADIOS_VARINFO * varInfo, uint64_t dataElmNum, void ** data){
 	adios_read_set_data_view(adiosQuery->_f, LOGICAL_DATA_VIEW); // switch to the transform view,
-	int dataElmSize = adios_type_size(varInfo->type, NULL); // data element size, in bytes
+	int dataElmSize = common_read_type_size(varInfo->type, NULL); // data element size, in bytes
 	char * blockData = (char*) (*data);
 	blockData = (char *) malloc(sizeof(char) * dataElmSize * dataElmNum);
 	ADIOS_SELECTION *sel = adios_selection_writeblock_bounded(gBlockId, 0, dataElmNum, 0); // entire PG selection
@@ -1117,7 +1117,7 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 		const ADIOS_SELECTION_WRITEBLOCK_STRUCT *writeBlock = &(adiosQuery->_sel->u.block);
 		int blockId= writeBlock->index; //relative block id
 		int globalBlockId = query_utils_getGlobalWriteBlockId(blockId, startStep, varInfo);
-		adios_inq_var_blockinfo(adiosQuery->_f, varInfo);
+		common_read_inq_var_blockinfo(adiosQuery->_f, varInfo);
 		ADIOS_VARBLOCK block = varInfo->blockinfo[globalBlockId];
 		// since user supplies the query with block id, in this case, the start and destination(querying) bounding box are the block itself
 		srcstart = block.start; srccount = block.count;
@@ -1456,7 +1456,7 @@ static ADIOS_SELECTION * adios_query_build_results_boundingbox(ADIOS_ALAC_BITMAP
 	} else if (bb->ndim >= 4) {
 		adios_query_alac_retrieval_pointsNd(b,retrieval_size, bb, points);
 	}
-	return adios_selection_points(bb->ndim, retrieval_size, points);
+	return common_read_selection_points(bb->ndim, retrieval_size, points);
 }
 
 void adios_query_alac_build_results(
