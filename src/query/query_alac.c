@@ -1622,7 +1622,7 @@ int adios_query_alac_free(ADIOS_QUERY* query) {
 	return 1;
 }
 
-void adios_query_alac_finalize() { //there is nothing to finalize }
+void adios_query_alac_finalize() { /* there is nothing to finalize */ }
 
 
 #endif
