@@ -10,7 +10,7 @@ noinst_PROGRAMS = alac_internal_test adios_read_ext_test adios_build_alac_index 
 alac_internal_test_SOURCES = test_query_alac_internal.c 
 alac_internal_test_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
 alac_internal_test_LDFLAGS = $(ADIOSLIB_LDFLAGS)
-
+alac_internal_test_CPPFLAGS = $(ALACRITY_CPPFLAGS) -I$(top_srcdir)/src/core
 
 adios_read_ext_test_SOURCES = adios_read_ext_test.c
 adios_read_ext_test_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 

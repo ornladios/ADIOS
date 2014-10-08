@@ -124,8 +124,7 @@ adios_show_bp_file_OBJECTS = $(am_adios_show_bp_file_OBJECTS)
 @HAVE_ALACRITY_TRUE@	$(am__DEPENDENCIES_1) \
 @HAVE_ALACRITY_TRUE@	$(am__DEPENDENCIES_1)
 am__alac_internal_test_SOURCES_DIST = test_query_alac_internal.c
-@HAVE_ALACRITY_TRUE@am_alac_internal_test_OBJECTS =  \
-@HAVE_ALACRITY_TRUE@	test_query_alac_internal.$(OBJEXT)
+@HAVE_ALACRITY_TRUE@am_alac_internal_test_OBJECTS = alac_internal_test-test_query_alac_internal.$(OBJEXT)
 alac_internal_test_OBJECTS = $(am_alac_internal_test_OBJECTS)
 @HAVE_ALACRITY_TRUE@alac_internal_test_DEPENDENCIES =  \
 @HAVE_ALACRITY_TRUE@	$(top_builddir)/src/libadios.a \
@@ -419,6 +418,7 @@ AUTOMAKE_OPTIONS = no-dependencies
 @HAVE_ALACRITY_TRUE@alac_internal_test_SOURCES = test_query_alac_internal.c 
 @HAVE_ALACRITY_TRUE@alac_internal_test_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
 @HAVE_ALACRITY_TRUE@alac_internal_test_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+@HAVE_ALACRITY_TRUE@alac_internal_test_CPPFLAGS = $(ALACRITY_CPPFLAGS) -I$(top_srcdir)/src/core
 @HAVE_ALACRITY_TRUE@adios_read_ext_test_SOURCES = adios_read_ext_test.c
 @HAVE_ALACRITY_TRUE@adios_read_ext_test_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
 @HAVE_ALACRITY_TRUE@adios_read_ext_test_LDFLAGS = $(ADIOSLIB_LDFLAGS)
@@ -527,6 +527,12 @@ adios_read_ext_test-adios_read_ext_test.o: adios_read_ext_test.c
 
 adios_read_ext_test-adios_read_ext_test.obj: adios_read_ext_test.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_read_ext_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_read_ext_test-adios_read_ext_test.obj `if test -f 'adios_read_ext_test.c'; then $(CYGPATH_W) 'adios_read_ext_test.c'; else $(CYGPATH_W) '$(srcdir)/adios_read_ext_test.c'; fi`
+
+alac_internal_test-test_query_alac_internal.o: test_query_alac_internal.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alac_internal_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o alac_internal_test-test_query_alac_internal.o `test -f 'test_query_alac_internal.c' || echo '$(srcdir)/'`test_query_alac_internal.c
+
+alac_internal_test-test_query_alac_internal.obj: test_query_alac_internal.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(alac_internal_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o alac_internal_test-test_query_alac_internal.obj `if test -f 'test_query_alac_internal.c'; then $(CYGPATH_W) 'test_query_alac_internal.c'; else $(CYGPATH_W) '$(srcdir)/test_query_alac_internal.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
