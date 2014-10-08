@@ -13,6 +13,7 @@
 #include "public/adios_error.h"
 #include "public/adios_read_ext.h"
 #include "public/adios_query.h"
+#include "public/adios_selection.h"
 #include "common_query.h"
 //#include <alacrity.h>
 
