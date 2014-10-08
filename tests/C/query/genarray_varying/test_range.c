@@ -35,6 +35,7 @@ char   maxstr[32];
 double minval;
 double maxval;
 double fillval;
+enum ADIOS_QUERY_METHOD query_method = ADIOS_QUERY_METHOD_UNKNOWN;
 
 double mynan;
 
@@ -65,13 +66,15 @@ int write_vars(int step);
 
 void printUsage(char *prgname)
 {
-    print0("Usage: %s input output min max fillvalue <decomposition>\n"
+    print0("Usage: %s input output min max fillvalue querymethod <decomposition>\n"
            "    input      Input file\n"
            "    output     Output file\n"
            "    min        Range query minimum value (float)\n"
            "    max        Range query maximum value (float)\n"
            "    fillvalue  Fill value (float)\n"
            "               NAN is allowed, its value in this actual executable is: %g\n"
+           "    querymethod   [fastbit|alacrity|unknown]\n"
+           "               Which query method to use (unknown uses default available\n"
            "    <decomposition>    list of numbers e.g. 32 8 4\n"
            "            Decomposition values in each dimension of an array\n"
            "            The product of these number must be less then the number\n"
@@ -113,9 +116,22 @@ int processArgs(int argc, char ** argv)
     strncpy(maxstr,    argv[4], sizeof(maxstr)); // save it as string too
     if (get_double_arg (5, argv, &fillval)) return 1;
     
+    if (argc > 6) {
+        if (!strcmp (argv[6], "alacrity")) {
+            query_method = ADIOS_QUERY_METHOD_ALACRITY;
+        }
+        else if (!strcmp (argv[6], "fastbit")) {
+            query_method = ADIOS_QUERY_METHOD_FASTBIT;
+        }
+        else {
+            query_method = ADIOS_QUERY_METHOD_UNKNOWN;
+        }
+    }
+
+
     nd = 0;
-    j = 6;
-    while (argc > j && j<13) { // get max 6 dimensions
+    j = 7;
+    while (argc > j && j<14) { // get max 6 dimensions
         errno = 0; 
         decomp_values[nd] = strtol(argv[j], &end, 10); 
         if (errno || (end != 0 && *end != '\0')) { 
@@ -186,9 +202,9 @@ int main (int argc, char ** argv)
     print0("Min value               = %g\n", minval);
     print0("Max value               = %g\n", maxval);
     print0("Fill value              = %g\n", fillval);
+    print0("Query method id         = %d\n", query_method);
     
 
-    adios_query_init(ADIOS_QUERY_TOOL_FASTBIT);
     adios_init ("test_range.xml", comm);
     err = adios_read_init_method(read_method, comm, "verbose=2");
 
@@ -379,6 +395,10 @@ int do_queries(int step)
     ADIOS_QUERY *q2 = adios_query_create (f, "xy", boxsel, ADIOS_LTEQ, maxstr);
     ADIOS_QUERY* q = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
 
+    // We can call this with unknown too, just testing the default behavior here
+    if (query_method != ADIOS_QUERY_METHOD_UNKNOWN)
+        adios_query_set_method (q, query_method);
+
     if (q == NULL)  {
         print ("rank %d: ERROR: Query creation failed: %s\n", rank, adios_errmsg());
         return 1;
@@ -404,7 +424,7 @@ int do_queries(int step)
     if (hasMore) {
         print ("rank %d: ERROR: Query retrieval failure: "
                "it says it has more results to retrieve, although we "
-               "tried to get all at once\n");
+               "tried to get all at once\n", rank);
         return 1;
     }
 
