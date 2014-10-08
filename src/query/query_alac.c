@@ -14,6 +14,7 @@
 #include "public/adios_read_ext.h"
 #include "public/adios_query.h"
 #include "public/adios_selection.h"
+#include "core/common_read.h"
 #include "common_query.h"
 //#include <alacrity.h>
 
