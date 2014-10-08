@@ -129,11 +129,15 @@ int main(int argc, char ** argv) {
     }
 
     if (strcmp(argv[3], "ALACRITY") == 0) {
-        // init with ALACRITY
-        adios_query_init(ADIOS_QUERY_METHOD_ALACRITY);
+    	// TODO: we no longer select query methods via adios_query_init, so replace this
+    	// with the proper method for selecting a query method once it has been decided
+        //adios_query_init(ADIOS_QUERY_METHOD_ALACRITY);
+    	abort();
     }
     else if (strcmp(argv[3], "FASTBIT") == 0) {
-        // init with FastBit
+    	// TODO: we no longer select query methods via adios_query_init, so replace this
+    	// with the proper method for selecting a query method once it has been decided
+    	abort();
     }
     else {
         printf("Unsupported query engine, exiting...\n");
