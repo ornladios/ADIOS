@@ -260,8 +260,8 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF) {
 	int64_t batchSize = 1220;
 
 	int i = 0;
-	printf("times steps for variable is: %d \n", q1->_var->nsteps);
-	for (i = 0; i < q1->_var->nsteps; i++) {
+	printf("times steps for variable is: %d \n", q1->varinfo->nsteps);
+	for (i = 0; i < q1->varinfo->nsteps; i++) {
 		printf("querying on timestep %d \n", i);
 		adios_query_set_timestep(i);
 

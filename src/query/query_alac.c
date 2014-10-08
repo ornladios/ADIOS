@@ -161,12 +161,12 @@ void readTransformedElms(ADIOS_FILE* fp,ADIOS_VARINFO* vi
 
 void readBlockData(int gBlockId /*global block id */, ADIOS_QUERY * adiosQuery, int startStep,
 		ADIOS_VARINFO * varInfo, uint64_t dataElmNum, void ** data){
-	adios_read_set_data_view(adiosQuery->_f, LOGICAL_DATA_VIEW); // switch to the transform view,
+	adios_read_set_data_view(adiosQuery->file, LOGICAL_DATA_VIEW); // switch to the transform view,
 	int dataElmSize = common_read_type_size(varInfo->type, NULL); // data element size, in bytes
 	char * blockData = (char*) (*data);
 	blockData = (char *) malloc(sizeof(char) * dataElmSize * dataElmNum);
 	ADIOS_SELECTION *sel = adios_selection_writeblock_bounded(gBlockId, 0, dataElmNum, 0); // entire PG selection
-	common_read_schedule_read_byid(adiosQuery->_f, sel, varInfo->varid, startStep, 1, NULL, blockData);
+	common_read_schedule_read_byid(adiosQuery->file, sel, varInfo->varid, startStep, 1, NULL, blockData);
 }
 void readIndexData(int blockId, uint64_t offsetSize /*in bytes*/
 		,uint64_t length /*in bytes*/, ADIOS_FILE* fp,ADIOS_VARINFO* vi
@@ -638,7 +638,7 @@ int adios_alac_check_candidate(ALMetadata *partitionMeta, bin_id_t startBin, bin
 										 lowOrderBytes, data);
 	//Following variables are needed for the micros definition
 	rid_t newRid;
-	enum ADIOS_PREDICATE_MODE op = adiosQuery->_op;
+	enum ADIOS_PREDICATE_MODE op = adiosQuery->predicateOp;
 	bin_offset_t el = 0;   rid_t rid ;
 
 	switch(dataType){
@@ -694,7 +694,7 @@ int literallyCheckData(void *data, uint64_t totalElm , enum ADIOS_DATATYPES data
 		,ADIOS_ALAC_BITMAP * alacResultBitmap /*OUT*/){
 	uint32_t newRid ;
 	uint64_t el = 0;
-	enum ADIOS_PREDICATE_MODE op = adiosQuery->_op;
+	enum ADIOS_PREDICATE_MODE op = adiosQuery->predicateOp;
 //	GENERIC_DATA_CONV(data, CHECK_NODECODE_ELEMENT );
 	switch(dataType){
 		case adios_unsigned_byte:
@@ -776,20 +776,20 @@ void resolveQueryBoundary(ADIOS_QUERY *adiosQuery, double *hb, double *lb)
 {
 	(*hb)= DBL_MAX;
 	(*lb)= DBL_MIN;
-    if(adiosQuery->_op == ADIOS_LT || adiosQuery->_op == ADIOS_LTEQ){
-    	*hb = atof(adiosQuery->_value);
-    }else if(adiosQuery->_op == ADIOS_GT || adiosQuery->_op == ADIOS_GTEQ){
-    	*lb = atof(adiosQuery->_value);
-	}else if(adiosQuery->_op == ADIOS_EQ){
+    if(adiosQuery->predicateOp == ADIOS_LT || adiosQuery->predicateOp == ADIOS_LTEQ){
+    	*hb = atof(adiosQuery->predicateValue);
+    }else if(adiosQuery->predicateOp == ADIOS_GT || adiosQuery->predicateOp == ADIOS_GTEQ){
+    	*lb = atof(adiosQuery->predicateValue);
+	}else if(adiosQuery->predicateOp == ADIOS_EQ){
 		//following two cases are tricky to ALACRITY
-		*hb = atof(adiosQuery->_value);
+		*hb = atof(adiosQuery->predicateValue);
 		*lb = *hb;
-	}else if(adiosQuery->_op == ADIOS_NE){
+	}else if(adiosQuery->predicateOp == ADIOS_NE){
 		//TODO: flip the bits once the evaluation is done
-		*hb = atof(adiosQuery->_value);
+		*hb = atof(adiosQuery->predicateValue);
 		*lb = *hb;
 	}else{
-			printf("Unsupported predicate type[%d] \n", adiosQuery->_op);
+			printf("Unsupported predicate type[%d] \n", adiosQuery->predicateOp);
 	}
 
 }
@@ -806,7 +806,7 @@ char * readLowDataAmongBins(ALMetadata *partitionMeta, bin_id_t low_bin , bin_id
 	// low order bytes from low_bin to hi_bin, ITS NOT entire low order byte
 	char * readData= (char *) calloc(bin_read_len, sizeof(char));
 	readLowOrderBytes(blockId,lowDataBinOffset, bin_read_len
-	         , adiosQuery->_f, adiosQuery->_var, startStep, numStep, (void *)readData);
+	         , adiosQuery->file, adiosQuery->varinfo, startStep, numStep, (void *)readData);
 	return readData;
 }
 
@@ -819,7 +819,7 @@ char * readIndexAmongBins(ALMetadata *partitionMeta, bin_id_t low_bin , bin_id_t
 	// low order bytes from low_bin to hi_bin, ITS NOT entire low order byte
 	char * readData= (char *) calloc(bin_read_len, sizeof(char));
 	readLowOrderBytes(blockId,lowDataBinOffset, bin_read_len
-	         , adiosQuery->_f, adiosQuery->_var, startStep, numStep, (void *)readData);
+	         , adiosQuery->file, adiosQuery->varinfo, startStep, numStep, (void *)readData);
 	return readData;
 }
 
@@ -835,7 +835,7 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 
 	int numStep = 1; // only deal with one timestep
 	uint64_t metaSize, indexSize, dataSize;
-	ADIOS_VARINFO * varInfo = adiosQuery->_var;
+	ADIOS_VARINFO * varInfo = adiosQuery->varinfo;
 	int ndim = varInfo->ndim;
 	ADIOS_TRANSFORM_METADATA * tmetas = ti->transform_metadatas;
 	ADIOS_TRANSFORM_METADATA tmeta = tmetas[gBlockId];
@@ -852,7 +852,7 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 	// 1. load partition Metadata
 	// NOTE: One ALACRITY PG Data is written in the below format:  [meta data] | [low order bytes data] | [ index data]
 	ALMetadata partitionMeta;
-	readPartitionMeta(gBlockId, metaSize,adiosQuery->_f, varInfo
+	readPartitionMeta(gBlockId, metaSize,adiosQuery->file, varInfo
 					,startStep,numStep,&partitionMeta);
 	const uint8_t insigbytes = insigBytesCeil(&partitionMeta);
 
@@ -1014,8 +1014,8 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
  */
 ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, bool estimate) {
 
-	if (checkUnsupportedDataType(adiosQuery->_var->type)){
-		printf("unsupported data type [%d] at this point \n", adiosQuery->_var->type);
+	if (checkUnsupportedDataType(adiosQuery->varinfo->type)){
+		printf("unsupported data type [%d] at this point \n", adiosQuery->varinfo->type);
 		exit(EXIT_FAILURE);
 	}
 
@@ -1023,12 +1023,12 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
     resolveQueryBoundary(adiosQuery, &hb, &lb); // query constraints
 	//printf("constraint: %s\n", adiosQuery->_condition);
 
-	ADIOS_VARINFO * varInfo = adiosQuery->_var;
+	ADIOS_VARINFO * varInfo = adiosQuery->varinfo;
 
-	adios_read_set_data_view(adiosQuery->_f, LOGICAL_DATA_VIEW); // switch to the transform view,
- 	ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->_f, varInfo); // this func. will fill the blockinfo field
+	adios_read_set_data_view(adiosQuery->file, LOGICAL_DATA_VIEW); // switch to the transform view,
+ 	ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->file, varInfo); // this func. will fill the blockinfo field
 	int startStep = timeStep, numStep = 1;
-	uint64_t totalElm = adiosQuery->_rawDataSize; // no matter bounding box or writeblock selection, the rawDataSize has been calculated in the common query layer
+	uint64_t totalElm = adiosQuery->rawDataSize; // no matter bounding box or writeblock selection, the rawDataSize has been calculated in the common query layer
 	ADIOS_ALAC_BITMAP *alacResultBitmap =  (ADIOS_ALAC_BITMAP *) malloc(sizeof(ADIOS_ALAC_BITMAP ));
 	alacResultBitmap->length = BITNSLOTS64(totalElm);
 	//initially, no 1s at all
@@ -1040,9 +1040,9 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	ALQueryEngine qe;
 	ALUnivariateQuery alacQuery;
 	if (ti->transform_type == adios_get_transform_type_by_uid("ncsu-alacrity")) { // if it is not alacrity type, do not initialize this query engine
-		if ( adiosQuery->_var->type == adios_double){
+		if ( adiosQuery->varinfo->type == adios_double){
 			ALQueryEngineStartUnivariateDoubleQuery(&qe, lb, hb, REGION_RETRIEVAL_INDEX_ONLY_QUERY_TYPE, &alacQuery);
-		}else if (adiosQuery->_var->type == adios_real){
+		}else if (adiosQuery->varinfo->type == adios_real){
 			ALQueryEngineStartUnivariateFloatQuery(&qe, lb, hb, REGION_RETRIEVAL_INDEX_ONLY_QUERY_TYPE, &alacQuery);
 		}
 	}
@@ -1058,8 +1058,8 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	uint64_t* deststart ;  uint64_t* destcount ;// current variables selection box
 	uint64_t * srcstart;  	uint64_t * srccount; // PG's bounding box is the global bounding box
 	int ndim = varInfo->ndim;
-	if (adiosQuery->_sel->type == ADIOS_SELECTION_BOUNDINGBOX) {
-		const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(adiosQuery->_sel->u.bb);
+	if (adiosQuery->sel->type == ADIOS_SELECTION_BOUNDINGBOX) {
+		const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(adiosQuery->sel->u.bb);
 		destcount = bb->count;   deststart = bb->start;
 #ifdef RIDBUG
 		printf("Output Bounding box, start: [");
@@ -1074,9 +1074,9 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 		printf("]\n");
 
 #endif
-		adios_read_set_data_view(adiosQuery->_f, PHYSICAL_DATA_VIEW);
-		ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->_f, varInfo);
-		ADIOS_PG_INTERSECTIONS* intersectedPGs = adios_find_intersecting_pgs( adiosQuery->_f, varInfo->varid, adiosQuery->_sel, timeStep, numStep);
+		adios_read_set_data_view(adiosQuery->file, PHYSICAL_DATA_VIEW);
+		ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->file, varInfo);
+		ADIOS_PG_INTERSECTIONS* intersectedPGs = adios_find_intersecting_pgs( adiosQuery->file, varInfo->varid, adiosQuery->sel, timeStep, numStep);
 		int totalPG = intersectedPGs->npg;
 		int blockId, j;
 
@@ -1115,11 +1115,11 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 		}
 		adios_free_pg_intersections(&intersectedPGs);
 	}
-	else if (adiosQuery->_sel->type == ADIOS_SELECTION_WRITEBLOCK){
-		const ADIOS_SELECTION_WRITEBLOCK_STRUCT *writeBlock = &(adiosQuery->_sel->u.block);
+	else if (adiosQuery->sel->type == ADIOS_SELECTION_WRITEBLOCK){
+		const ADIOS_SELECTION_WRITEBLOCK_STRUCT *writeBlock = &(adiosQuery->sel->u.block);
 		int blockId= writeBlock->index; //relative block id
 		int globalBlockId = query_utils_getGlobalWriteBlockId(blockId, startStep, varInfo);
-		common_read_inq_var_blockinfo(adiosQuery->_f, varInfo);
+		common_read_inq_var_blockinfo(adiosQuery->file, varInfo);
 		ADIOS_VARBLOCK block = varInfo->blockinfo[globalBlockId];
 		// since user supplies the query with block id, in this case, the start and destination(querying) bounding box are the block itself
 		srcstart = block.start; srccount = block.count;
@@ -1127,19 +1127,19 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 		bool isPGCovered = true; // because they are same bounding boxes, they are fully contained
 
 		if (ti->transform_type == adios_get_transform_type_by_uid("ncsu-alacrity")){
-			adios_read_set_data_view(adiosQuery->_f, PHYSICAL_DATA_VIEW); // switch to the transform view,
-			ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->_f, varInfo); // this func. will fill the blockinfo field
+			adios_read_set_data_view(adiosQuery->file, PHYSICAL_DATA_VIEW); // switch to the transform view,
+			ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->file, varInfo); // this func. will fill the blockinfo field
 			proc_write_block(globalBlockId,isPGCovered,ti, adiosQuery,startStep,estimate,&alacQuery,lb,hb
 					,srcstart, srccount, deststart, destcount,alacResultBitmap	);
 		}else {
 			char * blockData  = NULL;
-			readBlockData(globalBlockId, adiosQuery, startStep, varInfo,adiosQuery->_rawDataSize, (void**) &blockData );
-			literallyCheckData(blockData, adiosQuery->_rawDataSize,  varInfo->type,adiosQuery,hb, lb
+			readBlockData(globalBlockId, adiosQuery, startStep, varInfo,adiosQuery->rawDataSize, (void**) &blockData );
+			literallyCheckData(blockData, adiosQuery->rawDataSize,  varInfo->type,adiosQuery,hb, lb
 					, srcstart, srccount, deststart, destcount, ndim, isPGCovered
 					, alacResultBitmap);
 		}
 
-	} else if (adiosQuery->_sel->type == ADIOS_SELECTION_POINTS){
+	} else if (adiosQuery->sel->type == ADIOS_SELECTION_POINTS){
 		// TODO: at this point, this type of querying is took careful by the common query layer
 	} else {
 		printf("not supported selection typed in alacrity \n");
@@ -1147,14 +1147,14 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	}
 
 
-	if (adiosQuery->_op == ADIOS_NE){ // we flip the bits, since we treat it "=" before
+	if (adiosQuery->predicateOp == ADIOS_NE){ // we flip the bits, since we treat it "=" before
 		uint64_t i  = 0;
 		for (; i < alacResultBitmap->length; i++) {
 			alacResultBitmap->bits[i]  = ~(alacResultBitmap->bits[i]);
 		}
 	}
 	// NOTE: this is for correctness of reading info later. We switch back to ensure the end-use are not affected
-	adios_read_set_data_view(adiosQuery->_f, LOGICAL_DATA_VIEW);
+	adios_read_set_data_view(adiosQuery->file, LOGICAL_DATA_VIEW);
 	return alacResultBitmap;
 }
 
@@ -1193,27 +1193,27 @@ ADIOS_ALAC_BITMAP * adios_alac_process(ADIOS_QUERY* q, int timestep,
 	ADIOS_ALAC_BITMAP *result;
 	//LEAF NODE
 	ADIOS_ALAC_BITMAP * rbitmap, *lbitmap;
-	if (q ->_left == NULL && q->_right == NULL) {
+	if (q ->left == NULL && q->right == NULL) {
 		result = adios_alac_uniengine(q, timestep, estimate);
 
 #ifdef ADIOS_ALAC_QUERY_DEBUG
-		fprintf(stderr, "constraint %s = ", q->_condition);
+		fprintf(stderr, "constraint %s = ", q->condition);
 		dump_bitmap(stderr, result);
 		fprintf(stderr, "\n");
 #endif
 		return result;
 	}
 
-	if (q->_left)
-		lbitmap = adios_alac_process((ADIOS_QUERY*) q->_left, timestep, estimate);
+	if (q->left)
+		lbitmap = adios_alac_process((ADIOS_QUERY*) q->left, timestep, estimate);
 
-	if (q->_right)
-		rbitmap = adios_alac_process((ADIOS_QUERY*) q->_right, timestep, estimate);
+	if (q->right)
+		rbitmap = adios_alac_process((ADIOS_QUERY*) q->right, timestep, estimate);
 
-	result = adios_alac_bitsOp(lbitmap, rbitmap, q->_leftToRightOp);
+	result = adios_alac_bitsOp(lbitmap, rbitmap, q->combineOp);
 
 #ifdef ADIOS_ALAC_QUERY_DEBUG
-	fprintf(stderr, "op %s = ", (q->_leftToRightOp == ADIOS_QUERY_OP_AND ? "AND" : "OR"));
+	fprintf(stderr, "op %s = ", (q->combineOp == ADIOS_QUERY_OP_AND ? "AND" : "OR"));
 	dump_bitmap(stderr, result);
 	fprintf(stderr, "\n");
 #endif
@@ -1498,10 +1498,10 @@ void adios_query_alac_build_results(
 int adios_query_alac_can_evaluate(ADIOS_QUERY* q)
 {
 	int is_alac = 0;
-	if (!q->_left && !q->_right) {
+	if (!q->left && !q->right) {
 		// If this is a query leaf node, we support ALACRITY query iff
 		// that variable is transformed using the ALACRITY indexing method
-		ADIOS_VARTRANSFORM *vartrans = adios_inq_var_transform(q->_f, q->_var);
+		ADIOS_VARTRANSFORM *vartrans = adios_inq_var_transform(q->file, q->varinfo);
 		is_alac = (vartrans->transform_type == adios_get_transform_type_by_uid("ncsu-alacrity"));
 		adios_free_var_transform(vartrans);
 	} else {
@@ -1509,10 +1509,10 @@ int adios_query_alac_can_evaluate(ADIOS_QUERY* q)
 		// any descendent node supports ALACRITY (since ALACRITY query is
 		// capable of processing indexed and non-indexed variables in the
 		// same query)
-		if (q->_left)
-			is_alac |= adios_query_alac_can_evaluate((ADIOS_QUERY *)q->_left);
-		if (q->_right)
-			is_alac |= adios_query_alac_can_evaluate((ADIOS_QUERY *)q->_right);
+		if (q->left)
+			is_alac |= adios_query_alac_can_evaluate((ADIOS_QUERY *)q->left);
+		if (q->right)
+			is_alac |= adios_query_alac_can_evaluate((ADIOS_QUERY *)q->right);
 	}
     return is_alac;
 }
@@ -1561,22 +1561,22 @@ int  adios_query_alac_get_selection(ADIOS_QUERY* q,
 			       ADIOS_SELECTION** queryResult) {
 	// first time, we have to evaluate it
 	ADIOS_ALAC_BITMAP* b ;
-	if (q->_onTimeStep == NO_EVAL_BEFORE ) { // negative number is not evaluated
+	if (q->onTimeStep == NO_EVAL_BEFORE ) { // negative number is not evaluated
 		create_lookup(set_bit_count, set_bit_position);
 		b = adios_alac_process(q, gCurrentTimeStep, false);
 		initLastConvRid(b);
-		q->_maxResultDesired =  calSetBitsNum(b);
-		q->_lastRead = 0;
-		q->_onTimeStep = gCurrentTimeStep;
+		q->maxResultsDesired =  calSetBitsNum(b);
+		q->resultsReadSoFar = 0;
+		q->onTimeStep = gCurrentTimeStep;
 	}else { //convert void* _internal to ADIOS_ALAC_BITMAP
 		b = (ADIOS_ALAC_BITMAP*) malloc(sizeof(ADIOS_ALAC_BITMAP));
-		convertMemstreamToALACBitmap(q->_queryInternal, b);
+		convertMemstreamToALACBitmap(q->queryInternal, b);
 	}
-	uint64_t retrievalSize = q->_maxResultDesired - q->_lastRead;
+	uint64_t retrievalSize = q->maxResultsDesired - q->resultsReadSoFar;
 	if (retrievalSize <= 0) {
 		(*queryResult) = NULL;
 		FreeALACBITMAP(b);
-		q->_onTimeStep = NO_EVAL_BEFORE;
+		q->onTimeStep = NO_EVAL_BEFORE;
 		//printf(":: ==> no more results to fetch\n");
 		return 0;
 	}
@@ -1584,16 +1584,16 @@ int  adios_query_alac_get_selection(ADIOS_QUERY* q,
 			retrievalSize = batchSize;
 	}
 
-	adios_query_alac_build_results(retrievalSize, outputBoundry, b, q->_var, queryResult);
+	adios_query_alac_build_results(retrievalSize, outputBoundry, b, q->varinfo, queryResult);
 	// b->lastConvRid is updated in the above func., so the bitmap serializing function has to wait until the above function is finished
-	q->_queryInternal = convertALACBitmapTomemstream(b);
+	q->queryInternal = convertALACBitmapTomemstream(b);
 
 	/*if (q->_maxResultDesired >= 0) {
 		FREE(b->bits); // these data is copied to q->_queryInternal
 	}
 	FREE(b); // NOTE: only free the structure*/
 	FreeALACBITMAP(b);
-	q->_lastRead += retrievalSize;
+	q->resultsReadSoFar += retrievalSize;
 	/*if (q->_lastRead > q->_maxResultDesired) {
 		q->_onTimeStep = NO_EVAL_BEFORE;
 		return 0;
@@ -1609,11 +1609,11 @@ int adios_query_alac_free_one_node(ADIOS_QUERY* query){
 
 	//TODO: confirm, SHOULD WE DO free here?
 	//ADIOS_VARINFO* v = adios_inq_var(f, varName);
-	common_read_free_varinfo(query->_var);
+	common_read_free_varinfo(query->varinfo);
 
-	FREE(query->_condition);
-	FREE(query->_dataSlice);
-	FREE(query->_value);
+	FREE(query->condition);
+	FREE(query->dataSlice);
+	FREE(query->predicateValue);
 
 	//TODO: confirm: adios_selection_delete(query->_sel);
 	//RIGHT NOW, user will free this box
@@ -1628,12 +1628,12 @@ int adios_query_alac_free_one_node(ADIOS_QUERY* query){
 int adios_query_alac_free(ADIOS_QUERY* query) {
 
 	// free the tree in a bottom-to-up manner
-	if (query->_left == NULL && query->_right == NULL) {
+	if (query->left == NULL && query->right == NULL) {
 		return adios_query_alac_free_one_node(query);
-	}else if  (query->_right){
-		return adios_query_alac_free(query->_right);
-	}else if (query->_left) {
-		return adios_query_alac_free(query->_left);
+	}else if  (query->right){
+		return adios_query_alac_free(query->right);
+	}else if (query->left) {
+		return adios_query_alac_free(query->left);
 	}
 
 	return 1;

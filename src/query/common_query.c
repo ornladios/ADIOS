@@ -96,8 +96,8 @@ static enum ADIOS_QUERY_METHOD get_method (ADIOS_QUERY* q)
 
 void common_query_free(ADIOS_QUERY* q)
 {
-  if (q->_deleteSelectionWhenFreed) {
-    common_read_selection_delete(q->_sel);
+  if (q->deleteSelectionWhenFreed) {
+    common_read_selection_delete(q->sel);
   }
   if (q->method < ADIOS_QUERY_METHOD_COUNT) {
       query_hooks[q->method].adios_query_free_fn(q);
@@ -193,11 +193,11 @@ static int getTotalByteSize (ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* s
 
 static void initialize(ADIOS_QUERY* result)
 {
-  result->_onTimeStep = -1; // no data recorded
-  result->_maxResultDesired = 0; // init
-  result->_lastRead = 0; // init
-  result->_hasParent = 0;
-  result->_deleteSelectionWhenFreed = 0;
+  result->onTimeStep = -1; // no data recorded
+  result->maxResultsDesired = 0; // init
+  result->resultsReadSoFar = 0; // init
+  result->hasParent = 0;
+  result->deleteSelectionWhenFreed = 0;
   result->method = ADIOS_QUERY_METHOD_UNKNOWN;
 }
 
@@ -263,40 +263,40 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f,
     // create selection string for fastbit
     //
     ADIOS_QUERY* result = (ADIOS_QUERY*)calloc(1, sizeof(ADIOS_QUERY));
-    result->_condition = malloc(strlen(varName)+strlen(value)+ 10); // 10 is enough for op and spaces 
+    result->condition = malloc(strlen(varName)+strlen(value)+ 10); // 10 is enough for op and spaces 
     if (op == ADIOS_LT) {
-        sprintf(result->_condition, "(%s < %s)", varName, value);
+        sprintf(result->condition, "(%s < %s)", varName, value);
     } else if (op == ADIOS_LTEQ) {
-        sprintf(result->_condition, "(%s <= %s)", varName, value);
+        sprintf(result->condition, "(%s <= %s)", varName, value);
     } else if (op == ADIOS_GT) {
-        sprintf(result->_condition, "(%s > %s)", varName, value);
+        sprintf(result->condition, "(%s > %s)", varName, value);
     } else if (op == ADIOS_GTEQ) {
-        sprintf(result->_condition, "(%s >= %s)", varName, value);
+        sprintf(result->condition, "(%s >= %s)", varName, value);
     } else if (op == ADIOS_EQ) {
-        sprintf(result->_condition, "(%s = %s)", varName, value);
+        sprintf(result->condition, "(%s = %s)", varName, value);
     } else {
-        sprintf(result->_condition, "(%s != %s)", varName, value);
+        sprintf(result->condition, "(%s != %s)", varName, value);
     }
 
-    (result->_condition)[strlen(result->_condition)] = 0;
+    (result->condition)[strlen(result->condition)] = 0;
 
     initialize(result);
 
-    result->_var = v;
-    result->_f = f;
+    result->varinfo = v;
+    result->file = f;
 
-    result->_dataSlice = malloc(total_byte_size);
-    result->_rawDataSize = dataSize;
+    result->dataSlice = malloc(total_byte_size);
+    result->rawDataSize = dataSize;
 
-    result->_sel = queryBoundary;
-    result->_deleteSelectionWhenFreed = defaultBoundaryUsed;
+    result->sel = queryBoundary;
+    result->deleteSelectionWhenFreed = defaultBoundaryUsed;
 
-    result->_op = op;
-    result->_value = strdup(value);
+    result->predicateOp = op;
+    result->predicateValue = strdup(value);
 
     //initialize two pointers
-    result->_left = NULL;
-    result->_right = NULL;
+    result->left = NULL;
+    result->right = NULL;
 
     return result;
 }
@@ -352,13 +352,13 @@ static int isSelectionCompatible(ADIOS_SELECTION* first, ADIOS_SELECTION* second
 // return 1 if yes.
 //
 static int isCompatible(ADIOS_QUERY* q1, ADIOS_QUERY* q2) {
-  if (q1->_rawDataSize != q2->_rawDataSize) {
+  if (q1->rawDataSize != q2->rawDataSize) {
     log_error("Error! Not supported: combining query with different sizes!\n");
     return 0;
   }
   
-  if ((q1->_sel != NULL) && (q2->_sel != NULL)) {
-    return isSelectionCompatible(q1->_sel, q2->_sel);
+  if ((q1->sel != NULL) && (q2->sel != NULL)) {
+    return isSelectionCompatible(q1->sel, q2->sel);
   } 
 
   // all other cases, as long as data sizes match, fastbit can work on it.
@@ -386,20 +386,20 @@ ADIOS_QUERY* common_query_combine(ADIOS_QUERY* q1,
     }
 
     ADIOS_QUERY* result = (ADIOS_QUERY*)calloc(1, sizeof(ADIOS_QUERY));
-    result->_condition = malloc(strlen(q1->_condition)+strlen(q2->_condition)+10);
+    result->condition = malloc(strlen(q1->condition)+strlen(q2->condition)+10);
 
     if (operator == ADIOS_QUERY_OP_AND) {
-        sprintf(result->_condition, "(%s and %s)", q1->_condition, q2->_condition);
+        sprintf(result->condition, "(%s and %s)", q1->condition, q2->condition);
     } else {
-        sprintf(result->_condition, "(%s or %s)", q1->_condition, q2->_condition);
+        sprintf(result->condition, "(%s or %s)", q1->condition, q2->condition);
     }
-    result->_condition[strlen(result->_condition)]=0; 
+    result->condition[strlen(result->condition)]=0; 
 
-    q1->_hasParent = 1;
-    q2->_hasParent = 1;
-    result->_left = q1;
-    result->_right = q2;
-    result->_leftToRightOp = operator;
+    q1->hasParent = 1;
+    q2->hasParent = 1;
+    result->left = q1;
+    result->right = q2;
+    result->combineOp = operator;
 
     initialize(result);
     return result;
@@ -422,7 +422,7 @@ static void updateBlockSize(const ADIOS_SELECTION_WRITEBLOCK_STRUCT* wb, ADIOS_Q
     int i=0;
     int serializedBlockNum = 0;
 
-    ADIOS_VARINFO* v = leaf->_var;
+    ADIOS_VARINFO* v = leaf->varinfo;
     uint64_t total_byte_size = common_read_type_size (v->type, v->value); ;
     uint64_t dataSize=0;
 
@@ -442,55 +442,55 @@ static void updateBlockSize(const ADIOS_SELECTION_WRITEBLOCK_STRUCT* wb, ADIOS_Q
     log_debug("\t\t   block %d (linedup as %d), bytes: %" PRIu64 ", size = %" PRIu64 " \n", 
             wb->index, serializedBlockNum, total_byte_size, dataSize);
 
-    if (dataSize != leaf->_rawDataSize) {
+    if (dataSize != leaf->rawDataSize) {
         log_debug("\t\t reallocate dataSlice due to block size change\n");
 
-        leaf->_rawDataSize = dataSize;
-        if (leaf->_dataSlice != NULL) {
-            free(leaf->_dataSlice);
+        leaf->rawDataSize = dataSize;
+        if (leaf->dataSlice != NULL) {
+            free(leaf->dataSlice);
         }
-        leaf->_dataSlice = malloc(total_byte_size);
+        leaf->dataSlice = malloc(total_byte_size);
     }
 }
 
 static int updateBlockSizeIfNeeded(ADIOS_QUERY* q) 
 {
     // leaf query
-    if ((q->_left == NULL) && (q->_right == NULL)) 
+    if ((q->left == NULL) && (q->right == NULL)) 
     {
-        if (q->_sel == NULL) {
+        if (q->sel == NULL) {
             log_error("No selections detected. \n");
             return -1;
         }
 
-        if (q->_var == NULL) {
+        if (q->varinfo == NULL) {
             log_error("No variable recorded. \n");
             return -1;
         }
 
-        if (gCurrentTimeStep > q->_var->nsteps) {
-            log_error("The given timestep %d exceeds variable (id %d)'s nsteps. \n", gCurrentTimeStep, q->_var->varid);
+        if (gCurrentTimeStep > q->varinfo->nsteps) {
+            log_error("The given timestep %d exceeds variable (id %d)'s nsteps. \n", gCurrentTimeStep, q->varinfo->varid);
             return -1;
         }
 
-        if (q->_sel->type != ADIOS_SELECTION_WRITEBLOCK) {
+        if (q->sel->type != ADIOS_SELECTION_WRITEBLOCK) {
             return 0;
         }
-        const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb = &(q->_sel->u.block);
+        const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb = &(q->sel->u.block);
         updateBlockSize(wb, q);      
         return 1;
     }
 
     int result = 0;
-    if (q->_left != NULL) {
-        int leftUpdate = updateBlockSizeIfNeeded(q->_left);
+    if (q->left != NULL) {
+        int leftUpdate = updateBlockSizeIfNeeded(q->left);
         if (leftUpdate < 0) {
             return -1;
         }
         result += leftUpdate;
     } 
-    if (q->_right != NULL) {
-        int rightUpdate = updateBlockSizeIfNeeded(q->_right);
+    if (q->right != NULL) {
+        int rightUpdate = updateBlockSizeIfNeeded(q->right);
         if (rightUpdate < 0) {
             return -1;
         }
@@ -502,48 +502,48 @@ static int updateBlockSizeIfNeeded(ADIOS_QUERY* q)
 
 static int checkCompatibility(ADIOS_QUERY* q) 
 {
-    if ((q->_left != NULL) && (q->_right != NULL)) {
-        return isCompatible(q->_left, q->_right); 
+    if ((q->left != NULL) && (q->right != NULL)) {
+        return isCompatible(q->left, q->right); 
     }
     return 1; // ok, no need to check  
 }
 
 static ADIOS_VARBLOCK * computePGBounds(ADIOS_QUERY *q, int wbindex, int timestep, int *out_ndim) 
 {
-    if (!q->_left && !q->_right) {
+    if (!q->left && !q->right) {
         // In this case, we have reached a leaf query node, so directly
         // retrieve the varblock from the varinfo
-        assert(q->_var);
+        assert(q->varinfo);
 
         // Read the blockinfo if not already present
-        if (!q->_var->blockinfo) {
-            adios_read_set_data_view(q->_f, LOGICAL_DATA_VIEW);
-            common_read_inq_var_blockinfo(q->_f, q->_var);
+        if (!q->varinfo->blockinfo) {
+            adios_read_set_data_view(q->file, LOGICAL_DATA_VIEW);
+            common_read_inq_var_blockinfo(q->file, q->varinfo);
         }
 
         // Note: adios_get_absolute_writeblock_index ensures that timestep and wbindex
         // are both in bounds, signalling an adios_error if not. However, there will be
         // no variable name cited in the error, so perhaps better error handling would
         // be desirable in the future
-        const int abs_wbindex = adios_get_absolute_writeblock_index(q->_var, wbindex, timestep);
+        const int abs_wbindex = adios_get_absolute_writeblock_index(q->varinfo, wbindex, timestep);
 
         // Finally, return ndim and the varblock
-        *out_ndim = q->_var->ndim;
-        return &q->_var->blockinfo[abs_wbindex];
-    } else if (!q->_left || !q->_right) {
+        *out_ndim = q->varinfo->ndim;
+        return &q->varinfo->blockinfo[abs_wbindex];
+    } else if (!q->left || !q->right) {
         // In this case, we have only one subtree, so just return the
         // ndim and varblock from that subtree directly, since there's
         // nothing to compare against
 
-        ADIOS_QUERY *present_subtree = q->_left ? (ADIOS_QUERY*)q->_left : (ADIOS_QUERY*)q->_right;
+        ADIOS_QUERY *present_subtree = q->left ? (ADIOS_QUERY*)q->left : (ADIOS_QUERY*)q->right;
         return computePGBounds(present_subtree, wbindex, timestep, out_ndim);
     } else {
         // In this final case, we have two subtrees, and we must compare
         // the resultant varblock from each one to ensure they are equal
         // before returning
 
-        ADIOS_QUERY *left = (ADIOS_QUERY *)q->_left;
-        ADIOS_QUERY *right = (ADIOS_QUERY *)q->_right;
+        ADIOS_QUERY *left = (ADIOS_QUERY *)q->left;
+        ADIOS_QUERY *right = (ADIOS_QUERY *)q->right;
 
         // Next, retrieve the ndim and varblock for each subtree
         int left_ndim, right_ndim;
@@ -603,7 +603,7 @@ int common_query_get_selection(ADIOS_QUERY* q,
 				ADIOS_SELECTION* outputBoundary, 
 				ADIOS_SELECTION** result)
 {
-    if ((q->_onTimeStep >= 0) && (q->_onTimeStep != gCurrentTimeStep)) {
+    if ((q->onTimeStep >= 0) && (q->onTimeStep != gCurrentTimeStep)) {
         int updateResult = updateBlockSizeIfNeeded(q);
         if (updateResult < 0) {
             log_error("Error with this timestep %d. Can not proceed. \n", gCurrentTimeStep);

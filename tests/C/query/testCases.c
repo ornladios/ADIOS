@@ -286,8 +286,8 @@ void testOneBoundBoxForAllVar(ADIOS_FILE* f)
     int64_t batchSize = 10;
     
     int i = 0;
-    printf("times steps for variable is: %d \n",q1->_var->nsteps);
-    for (i=0; i<q1->_var->nsteps; i++) {
+    printf("times steps for variable is: %d \n",q1->varinfo->nsteps);
+    for (i=0; i<q1->varinfo->nsteps; i++) {
       adios_query_set_timestep(i);
       
       int nBatches = 1;
@@ -355,8 +355,8 @@ void testUseOneWriteBlock(ADIOS_FILE* f, int blockNum)
     int64_t batchSize = 50;
     
     int i = 0;
-    printf("time steps for variable is: %d \n",q1->_var->nsteps);
-    for (i=0; i<q1->_var->nsteps; i++) {
+    printf("time steps for variable is: %d \n",q1->varinfo->nsteps);
+    for (i=0; i<q1->varinfo->nsteps; i++) {
       adios_query_set_timestep(i);
       
       while (1) {

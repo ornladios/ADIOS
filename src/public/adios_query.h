@@ -37,33 +37,33 @@ enum ADIOS_CLAUSE_OP_MODE
 };
 
 typedef struct {
-    char* _condition;
-    void* _queryInternal;
+    char* condition;
+    void* queryInternal;
 
     // keeping start/count to map 1d results from fastbit to N-d
 
-    ADIOS_SELECTION* _sel;
-    void* _dataSlice;
+    ADIOS_SELECTION* sel;
+    void* dataSlice;
 
-    ADIOS_VARINFO* _var;
-    ADIOS_FILE* _f;
+    ADIOS_VARINFO* varinfo;
+    ADIOS_FILE* file;
     enum ADIOS_QUERY_METHOD method;
 
-    enum ADIOS_PREDICATE_MODE _op;
-    char* _value;
-    uint64_t _rawDataSize; // this is the result of dim/start+count
+    enum ADIOS_PREDICATE_MODE predicateOp;
+    char* predicateValue;
+    uint64_t rawDataSize; // this is the result of dim/start+count
 
-    void* _left;
-    void* _right;
-    enum ADIOS_CLAUSE_OP_MODE _leftToRightOp;
+    void* left;
+    void* right;
+    enum ADIOS_CLAUSE_OP_MODE combineOp;
 
-    int _onTimeStep; // dataSlice is obtained with this timeStep 
+    int onTimeStep; // dataSlice is obtained with this timeStep 
 
-    uint64_t _maxResultDesired;
-    uint64_t _lastRead;
+    uint64_t maxResultsDesired;
+    uint64_t resultsReadSoFar;
 
-    int _hasParent;
-    int _deleteSelectionWhenFreed;
+    int hasParent;
+    int deleteSelectionWhenFreed;
 } ADIOS_QUERY;
    
 

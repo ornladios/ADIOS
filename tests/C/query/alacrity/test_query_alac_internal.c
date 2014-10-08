@@ -161,8 +161,8 @@ void  testBitsCal(){
 
 void testResolveBoundary(){
 	ADIOS_QUERY q;
-	q._value = "0.651";
-	q._op = ADIOS_LT;
+	q.predicateValue = "0.651";
+	q.predicateOp = ADIOS_LT;
 	double lb , hb;
 	resolveQueryBoundary(&q, &hb, &lb);
 	assert(hb == 0.651);

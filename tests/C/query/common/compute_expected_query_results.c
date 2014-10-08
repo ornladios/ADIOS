@@ -168,14 +168,14 @@ static int compareConstraintBoundValue(const void *bound, const void *value, enu
 static ADIOS_SELECTION * scanBufferForMatchingPoints(const char *buffer, enum ADIOS_DATATYPES datatype, ADIOS_SELECTION *insel, ADIOS_QUERY *query) {
 	assert(insel->type == ADIOS_SELECTION_BOUNDINGBOX); // For now, only support bounding boxes (and writeblocks, since they are converted to bounding boxes earlier)
 
-	const int ndim = query->_var->ndim;
+	const int ndim = query->varinfo->ndim;
 	const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &insel->u.bb;
 
 	const int datatypeSize = adios_type_size(datatype, NULL);
 	const enum REDUCED_DATATYPE reducedDatatype = getReducedDatatype(datatype);
-	const enum ADIOS_PREDICATE_MODE comparison = query->_op;
+	const enum ADIOS_PREDICATE_MODE comparison = query->predicateOp;
 
-	const void *boundValue = parseStringAsReducedDatatype(query->_value, reducedDatatype);
+	const void *boundValue = parseStringAsReducedDatatype(query->predicateValue, reducedDatatype);
 	void *pointValue = allocateReducedDatatype(reducedDatatype, 0);
 
 	uint64_t elemsRemaining = computeSelectionSizeInElements(insel);
@@ -261,25 +261,25 @@ static void sortPointsLexOrder(ADIOS_SELECTION *pointsel) {
 
 // Returns a point selection with points in lexicographical order
 static ADIOS_SELECTION * evaluateConstraint(ADIOS_QUERY *query, int timestep) {
-	assert(!query->_left && !query->_right);
-	assert(query->_var && query->_f && query->_sel);
+	assert(!query->left && !query->right);
+	assert(query->varinfo && query->file && query->sel);
 
-	ADIOS_SELECTION *insel = query->_sel;
+	ADIOS_SELECTION *insel = query->sel;
 	int free_insel = 0;
 
 	if (insel->type == ADIOS_SELECTION_WRITEBLOCK) {
-		insel = convertWBToBB(insel, timestep, query->_f, query->_var);
+		insel = convertWBToBB(insel, timestep, query->file, query->varinfo);
 		free_insel = 1;
 	}
 
-	const uint64_t buffersize = computeSelectionSizeInElements(insel) * adios_type_size(query->_var->type, NULL);
+	const uint64_t buffersize = computeSelectionSizeInElements(insel) * adios_type_size(query->varinfo->type, NULL);
 	char *buffer = (char *)malloc(buffersize);
 	assert(buffer);
 
-	adios_schedule_read_byid(query->_f, insel, query->_var->varid, timestep, 1, buffer);
-	adios_perform_reads(query->_f, 1);
+	adios_schedule_read_byid(query->file, insel, query->varinfo->varid, timestep, 1, buffer);
+	adios_perform_reads(query->file, 1);
 
-	ADIOS_SELECTION *results = scanBufferForMatchingPoints(buffer, query->_var->type, insel, query);
+	ADIOS_SELECTION *results = scanBufferForMatchingPoints(buffer, query->varinfo->type, insel, query);
 	sortPointsLexOrder(results); // Sort the matching points in lexicographical order
 
 	if (free_insel)
@@ -359,19 +359,19 @@ static ADIOS_SELECTION * computePointListCombination(enum ADIOS_CLAUSE_OP_MODE o
 }
 
 static ADIOS_SELECTION * evaluateQueryTree(ADIOS_QUERY *query, int timestep) {
-	if (!query->_left && !query->_right) {
+	if (!query->left && !query->right) {
 		return evaluateConstraint(query, timestep);
-	} else if (query->_left && query->_right) {
-		const enum ADIOS_CLAUSE_OP_MODE op = query->_leftToRightOp;
-		ADIOS_SELECTION *leftsel = evaluateQueryTree(query->_left, timestep);
-		ADIOS_SELECTION *rightsel = evaluateQueryTree(query->_right, timestep);
+	} else if (query->left && query->right) {
+		const enum ADIOS_CLAUSE_OP_MODE op = query->combineOp;
+		ADIOS_SELECTION *leftsel = evaluateQueryTree(query->left, timestep);
+		ADIOS_SELECTION *rightsel = evaluateQueryTree(query->right, timestep);
 
 		ADIOS_SELECTION *combinedsel = computePointListCombination(op, leftsel, rightsel);
 		return combinedsel;
-	} else if (query->_left) {
-		return evaluateQueryTree(query->_left, timestep);
-	} else if (query->_right) {
-		return evaluateQueryTree(query->_right, timestep);
+	} else if (query->left) {
+		return evaluateQueryTree(query->left, timestep);
+	} else if (query->right) {
+		return evaluateQueryTree(query->right, timestep);
 	}
 }
 
