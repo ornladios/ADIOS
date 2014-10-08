@@ -131,6 +131,7 @@ static void compute_blockidx_range(const ADIOS_VARINFO *raw_varinfo, int from_st
     }
 }
 
+// Converts absolute varblock indexes to timestep-relative varblock indexes
 static int compute_absolute_blockidx_from_relative_blockidx(const ADIOS_VARINFO *raw_varinfo, int timestep, int timestep_blockidx, int *blockidx_out) {
 	if (timestep < 0 || timestep >= raw_varinfo->nsteps) {
 		return 0;
@@ -149,6 +150,7 @@ static int compute_absolute_blockidx_from_relative_blockidx(const ADIOS_VARINFO 
     return 1;
 }
 
+// Converts rimestep-relative varblock indexes to absolute varblock indexes
 static int compute_relative_blockidx_from_absolute_blockidx(const ADIOS_VARINFO *raw_varinfo, int blockidx, int *timestep_out, int *timestep_blockidx_out) {
     // Find the block index for the start and end timestep
     int timestep;
@@ -171,6 +173,7 @@ inline static int is_global_selection(const ADIOS_SELECTION *sel) {
 	return sel->type != ADIOS_SELECTION_WRITEBLOCK;
 }
 
+// Creates a bounding box from a given ADIOS_VARBLOCK
 inline static const ADIOS_SELECTION * create_pg_bounds_from_varblock(int ndim, const ADIOS_VARBLOCK *orig_vb) {
     // Commented out for performance
     //const uint64_t *new_start = (uint64_t*)bufdup(orig_vb->start, sizeof(uint64_t), ndim);
@@ -180,6 +183,8 @@ inline static const ADIOS_SELECTION * create_pg_bounds_from_varblock(int ndim, c
     return common_read_selection_boundingbox(ndim, orig_vb->start, orig_vb->count);
 }
 
+// Creates a bounding box for a the varblock specified by a given writeblock
+// selection (which may be absolute or timestep-relative)
 inline static const ADIOS_SELECTION * create_writeblock_bounds(const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb, int timestep, const ADIOS_VARINFO *raw_varinfo, const ADIOS_TRANSINFO *transinfo) {
     int blockidx;
     if (wb->is_absolute_index) {
@@ -288,7 +293,6 @@ static void populate_read_request_for_local_selection(
 
 			// Convert blockidx to timestep and timestep_blockidx
 			int valid_blockidx = compute_relative_blockidx_from_absolute_blockidx(raw_varinfo, blockidx, &timestep, &timestep_blockidx);
-
 			if (valid_blockidx) {
 				generate_read_request_for_pg(raw_varinfo, transinfo, sel, timestep, timestep_blockidx, blockidx, readreq);
 			} else {
@@ -298,11 +302,9 @@ static void populate_read_request_for_local_selection(
 		} else {
 			// For a relative writeblock, one PG may be touched per timestep in the user's timestep range
 			timestep_blockidx = wb->index;
-
 			for (timestep = from_steps; timestep < from_steps + nsteps; timestep++) {
 				// Convert timestep (loop iterator variable) and timestep_blockidx to blockidx
 				int valid_blockidx = compute_absolute_blockidx_from_relative_blockidx(raw_varinfo, timestep, timestep_blockidx, &blockidx);
-
 				if (valid_blockidx) {
 					generate_read_request_for_pg(raw_varinfo, transinfo, sel, timestep, timestep_blockidx, blockidx, readreq);
 				} else {
@@ -366,8 +368,8 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
 }
 
 /*
- * Called whenever a subreq has been served by the read layer. Marks
- * all subreqs, pg_reqgroups and read_reqgroups as completed as necessary,
+ * Called whenever a raw read request has been served by the read layer. Marks
+ * all raw_read_requests, pg_read_requests and read_requests as completed as necessary,
  * calls the appropriate hooks in the transform method, and returns an
  * adios_datablock if the transform method produces one.
  */
@@ -632,7 +634,6 @@ static int apply_datablock_to_result_and_free(adios_datablock *datablock,
     	// For writeblock selections, computing the output buffer position for
     	// the current timestep is a bit trickier, since varblocks may be
     	// different sizes in different timesteps
-
     	const ADIOS_SELECTION_WRITEBLOCK_STRUCT *orig_sel_wb = &reqgroup->orig_sel->u.block;
 
     	// Compute the offset into the output buffer at which the current timestep's output should go
