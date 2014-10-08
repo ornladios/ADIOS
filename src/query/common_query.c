@@ -89,6 +89,7 @@ static enum ADIOS_QUERY_METHOD get_method (ADIOS_QUERY* q)
         }
     }
     // return default that always works
+    q->method = ADIOS_QUERY_METHOD_FASTBIT;
     return ADIOS_QUERY_METHOD_FASTBIT;
 }
 
