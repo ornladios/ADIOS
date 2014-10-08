@@ -77,7 +77,12 @@ static enum ADIOS_QUERY_METHOD get_method (ADIOS_QUERY* q)
         return q->method;
     }
     // Look for a method that can evaluate this query
-    for (m=0; m < ADIOS_QUERY_METHOD_COUNT; m++) {
+    for (m=0; m < ADIOS_QUERY_METHOD_COUNT; m++) {      
+        // without checking whether *evaluate_fn is defined, 
+        // it causes crash when idx is not used for fastbit. (i.e. m=0, returns 0, m=1, crashes at "found = nullpoiint(q)"
+        if (query_hooks[m].adios_query_can_evaluate_fn == NULL) {
+	   continue;
+	}
         int found = query_hooks[m].adios_query_can_evaluate_fn(q);
         if (found) {
             return m;
