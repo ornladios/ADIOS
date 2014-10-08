@@ -13,6 +13,8 @@
 #include "public/adios_error.h"
 #include "public/adios_read_ext.h"
 #include "public/adios_query.h"
+#include "public/adios_selection.h"
+#include "core/common_read.h"
 #include "common_query.h"
 //#include <alacrity.h>
 
@@ -150,22 +152,21 @@ void readTransformedElms(ADIOS_FILE* fp,ADIOS_VARINFO* vi
 		, int startStep, int numStep
 		, int blockId, uint64_t start_elem, uint64_t num_elems, int is_timestep_relative, void * outputData/*out*/){
 	ADIOS_SELECTION *sel = adios_selection_writeblock_bounded(blockId, start_elem, num_elems, is_timestep_relative);
-	adios_schedule_read_byid(fp, sel, vi->varid, startStep, numStep, outputData);
-	adios_perform_reads(fp, 1);
+	common_read_schedule_read_byid(fp, sel, vi->varid, startStep, numStep, NULL, outputData);
+	common_read_perform_reads(fp, 1);
 	// adios_selection_writeblock_bounded internally malloc data for adios_selection
 	// so I need to free it before the next usage
-	adios_selection_delete(sel);
-
+	common_read_selection_delete(sel);
 }
 
 void readBlockData(int gBlockId /*global block id */, ADIOS_QUERY * adiosQuery, int startStep,
 		ADIOS_VARINFO * varInfo, uint64_t dataElmNum, void ** data){
 	adios_read_set_data_view(adiosQuery->_f, LOGICAL_DATA_VIEW); // switch to the transform view,
-	int dataElmSize = adios_type_size(varInfo->type, NULL); // data element size, in bytes
+	int dataElmSize = common_read_type_size(varInfo->type, NULL); // data element size, in bytes
 	char * blockData = (char*) (*data);
 	blockData = (char *) malloc(sizeof(char) * dataElmSize * dataElmNum);
 	ADIOS_SELECTION *sel = adios_selection_writeblock_bounded(gBlockId, 0, dataElmNum, 0); // entire PG selection
-	adios_schedule_read_byid(adiosQuery->_f, sel, varInfo->varid, startStep, 1, blockData);
+	common_read_schedule_read_byid(adiosQuery->_f, sel, varInfo->varid, startStep, 1, NULL, blockData);
 }
 void readIndexData(int blockId, uint64_t offsetSize /*in bytes*/
 		,uint64_t length /*in bytes*/, ADIOS_FILE* fp,ADIOS_VARINFO* vi
@@ -829,7 +830,7 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 		, ADIOS_ALAC_BITMAP * alacResultBitmap /*OUT*/ ){
 
 #ifdef RIDBUG
-	printf("PG [%d], RIDs relative to PG converted to RIDs relative to output BoundingBox: ", blockId);
+	printf("PG [%d], RIDs relative to PG converted to RIDs relative to output BoundingBox: ", gBlockId);
 #endif
 
 	int numStep = 1; // only deal with one timestep
@@ -1118,7 +1119,7 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 		const ADIOS_SELECTION_WRITEBLOCK_STRUCT *writeBlock = &(adiosQuery->_sel->u.block);
 		int blockId= writeBlock->index; //relative block id
 		int globalBlockId = query_utils_getGlobalWriteBlockId(blockId, startStep, varInfo);
-		adios_inq_var_blockinfo(adiosQuery->_f, varInfo);
+		common_read_inq_var_blockinfo(adiosQuery->_f, varInfo);
 		ADIOS_VARBLOCK block = varInfo->blockinfo[globalBlockId];
 		// since user supplies the query with block id, in this case, the start and destination(querying) bounding box are the block itself
 		srcstart = block.start; srccount = block.count;
@@ -1457,7 +1458,7 @@ static ADIOS_SELECTION * adios_query_build_results_boundingbox(ADIOS_ALAC_BITMAP
 	} else if (bb->ndim >= 4) {
 		adios_query_alac_retrieval_pointsNd(b,retrieval_size, bb, points);
 	}
-	return adios_selection_points(bb->ndim, retrieval_size, points);
+	return common_read_selection_points(bb->ndim, retrieval_size, points);
 }
 
 void adios_query_alac_build_results(
@@ -1496,8 +1497,24 @@ void adios_query_alac_build_results(
 
 int adios_query_alac_can_evaluate(ADIOS_QUERY* q)
 {
-    /* Return 1 if alacrity index is avaiable for this query */
-    return 0;
+	int is_alac = 0;
+	if (!q->_left && !q->_right) {
+		// If this is a query leaf node, we support ALACRITY query iff
+		// that variable is transformed using the ALACRITY indexing method
+		ADIOS_VARTRANSFORM *vartrans = adios_inq_var_transform(q->_f, q->_var);
+		is_alac = (vartrans->transform_type == adios_get_transform_type_by_uid("ncsu-alacrity"));
+		adios_free_var_transform(vartrans);
+	} else {
+		// Else, this is an internal node, and we support ALACRITY query if
+		// any descendent node supports ALACRITY (since ALACRITY query is
+		// capable of processing indexed and non-indexed variables in the
+		// same query)
+		if (q->_left)
+			is_alac |= adios_query_alac_can_evaluate((ADIOS_QUERY *)q->_left);
+		if (q->_right)
+			is_alac |= adios_query_alac_can_evaluate((ADIOS_QUERY *)q->_right);
+	}
+    return is_alac;
 }
 
 
@@ -1592,7 +1609,7 @@ int adios_query_alac_free_one_node(ADIOS_QUERY* query){
 
 	//TODO: confirm, SHOULD WE DO free here?
 	//ADIOS_VARINFO* v = adios_inq_var(f, varName);
-	adios_free_varinfo(query->_var);
+	common_read_free_varinfo(query->_var);
 
 	FREE(query->_condition);
 	FREE(query->_dataSlice);
@@ -1622,7 +1639,7 @@ int adios_query_alac_free(ADIOS_QUERY* query) {
 	return 1;
 }
 
-void adios_query_alac_finalize() { //there is nothing to finalize }
+void adios_query_alac_finalize() { /* there is nothing to finalize */ }
 
 
 #endif

@@ -128,12 +128,13 @@ int main(int argc, char ** argv) {
         strcpy(xmlFileName,  argv[2]);
     }
 
+    enum ADIOS_QUERY_METHOD query_method = ADIOS_QUERY_METHOD_UNKNOWN;
     if (strcmp(argv[3], "ALACRITY") == 0) {
-        // init with ALACRITY
-        adios_query_init(ADIOS_QUERY_TOOL_ALACRITY);
+    	query_method = ADIOS_QUERY_METHOD_ALACRITY;
+    	abort();
     }
     else if (strcmp(argv[3], "FASTBIT") == 0) {
-        // init with FastBit
+    	query_method = ADIOS_QUERY_METHOD_FASTBIT;
     }
     else {
         printf("Unsupported query engine, exiting...\n");
@@ -155,6 +156,7 @@ int main(int argc, char ** argv) {
     queryInfo = parseXml(xmlFileName, f);
 
     // perform query
+    adios_query_set_method(queryInfo->query, query_method);
     performQuery(queryInfo, f);
 
 

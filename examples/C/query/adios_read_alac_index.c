@@ -267,6 +267,7 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF) {
 
 		while (1) {
 			ADIOS_SELECTION* currBatch = NULL;
+			adios_query_set_method(q, ADIOS_QUERY_METHOD_ALACRITY);
 			int hasMore = adios_query_get_selection(q, batchSize, box,
 					&currBatch);
 
@@ -354,8 +355,6 @@ int main(int argc, char ** argv) {
 		printf(" can not open file %s \n", dataFileName);
 		return 1;
 	}
-
-	adios_query_init(ADIOS_QUERY_TOOL_ALACRITY);
 
 	//====================== start to test ===================//
 //	    oneDefinedBox(f , lbstr, hbstr, dataF);
