@@ -1497,8 +1497,24 @@ void adios_query_alac_build_results(
 
 int adios_query_alac_can_evaluate(ADIOS_QUERY* q)
 {
-    /* Return 1 if alacrity index is avaiable for this query */
-    return 0;
+	int is_alac = 0;
+	if (!q->_left && !q->_right) {
+		// If this is a query leaf node, we support ALACRITY query iff
+		// that variable is transformed using the ALACRITY indexing method
+		ADIOS_VARTRANSFORM *vartrans = adios_inq_var_transform(q->_f, q->_var);
+		is_alac = (vartrans->transform_type == adios_get_transform_type_by_uid("ncsu-alacrity"));
+		adios_free_var_transform(vartrans);
+	} else {
+		// Else, this is an internal node, and we support ALACRITY query if
+		// any descendent node supports ALACRITY (since ALACRITY query is
+		// capable of processing indexed and non-indexed variables in the
+		// same query)
+		if (q->_left)
+			is_alac |= adios_query_alac_can_evaluate((ADIOS_QUERY *)q->_left);
+		if (q->_right)
+			is_alac |= adios_query_alac_can_evaluate((ADIOS_QUERY *)q->_right);
+	}
+    return is_alac;
 }
 
 
