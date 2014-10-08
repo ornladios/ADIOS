@@ -282,6 +282,7 @@ adios_transform_pg_read_request * adios_transform_pg_read_request_new(
     ADIOS_SELECTION *wbsel = common_read_selection_writeblock(blockidx);
     wbsel->u.block.is_absolute_index = 1;
     new_pg_reqgroup->pg_writeblock_sel = wbsel;
+
     // Other fields are 0'd
 
     return new_pg_reqgroup;

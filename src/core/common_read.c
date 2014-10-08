@@ -3347,11 +3347,21 @@ int common_read_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
         // NCSU ALACRITY-ADIOS - Handle those VARCHUNKs that correspond to
         //   subrequests; don't return until we get a completed one
         do {
-            // Read some chunk
-        retval = internals->read_hooks[internals->method].adios_check_reads_fn (fp, chunk);
-            if (!*chunk) break; // If no more chunks are available, stop now
+        	// First, allow the transform layer to clean up any resources
+        	// remaining from the previous check_reads (e.g., internal
+        	// buffers that were passed to the user via varchunks)
+        	adios_transform_cleanup_from_previous_check_reads(&internals->transform_reqgroups);
 
-            // Process the chunk through a transform method, if necessary
+        	// Read a chunk of (potentially transformed) data from the transport layer
+        	retval = internals->read_hooks[internals->method].adios_check_reads_fn (fp, chunk);
+
+        	// If no more chunks are available, stop now
+            if (!*chunk) break;
+
+            // Give the transform layer a chance to attempt to process the chunk
+            // If the chunk does not contain transformed data, it will remain untouched
+            // If it does contain transformed data, it will be replaced with a
+            // new, de-transformed chunk
             adios_transform_process_read_chunk(&internals->transform_reqgroups, chunk);
         } while (!*chunk); // Keep reading until we have a chunk to return
     } else {
@@ -3360,7 +3370,6 @@ int common_read_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
     }
     return retval;
 }
-
 
 void common_read_free_chunk (ADIOS_VARCHUNK *chunk)
 {

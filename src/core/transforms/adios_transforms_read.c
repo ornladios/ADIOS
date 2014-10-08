@@ -782,6 +782,26 @@ static ADIOS_VARCHUNK * extract_chunk_from_finished_read_reqgroup(adios_transfor
     return chunk;
 }
 
+void adios_transform_cleanup_from_previous_check_reads(adios_transform_read_request **readreqs_head) {
+	adios_transform_read_request *readreq = *readreqs_head;
+	while (readreq) {
+		adios_transform_read_request *next_readreq = readreq->next;
+
+		if (readreq->completed) {
+			// If the read request is totally completed, free the whole thing
+			adios_transform_read_request_remove(readreqs_head, readreq);
+			adios_transform_read_request_free(readreq);
+		} else if (readreq->lent_varchunk) {
+			// Otherwise, free any internal data buffer that was previously given
+			// to the user via an ADIOS_VARCHUNK, but which now may be freed since
+			// the user has called adios_check_reads again
+			FREE(readreq->lent_varchunk->data);
+		}
+
+		readreq = next_readreq;
+	}
+}
+
 // Take an ADIOS_VARCHUNK that was just read and process it with the transform
 // system. If it was part of a read request corresponding to a transformed
 // variable, consume it, and (optionally) replace it with a detransformed chunk.
@@ -803,16 +823,13 @@ void adios_transform_process_read_chunk(adios_transform_read_request **reqgroups
     // Otherwise, this VARCHUNK corresponds to a subrequest.
     // Therefore, consume it, and perhaps replace it with a detransformed chunk.
 
-    // Consume the chunk, as it will be passed to a transform method and should
-    // not be processed by the caller.
-    // (NOTE: Freeing this does not free the memory it points to)
+    // Consume the chunk, as the data will be proceessed by a transform method to
+    // produce a new varchunk, so this varchunk should not be processed by the caller.
+    // (NOTE: Freeing this does not free the memory it points to, which we ASSUME
+    //  is also pointed to by subreq->data, since currently we REQUIRE transform
+    //  plugins to supply their own data buffers when submitting read requests)
     common_read_free_chunk(*chunk);
     *chunk = NULL;
-
-    // Next, free any buffers held by the last-returned VARCHUNK, as they are now invalidated
-    // by the user's call to check_reads (which in turn is the caller of this function)
-    if (reqgroup->lent_varchunk && reqgroup->lent_varchunk->data)
-        free(reqgroup->lent_varchunk->data);
 
     // Next, update the subreq that corresponds to this VARCHUNK as completed, retrieving any
     // produced result
@@ -848,16 +865,6 @@ void adios_transform_process_read_chunk(adios_transform_read_request **reqgroups
         }
     } else {
         assert(!*chunk); // No chunk to return, and *chunk is already NULL
-    }
-
-    // WARNING: BUG: THESE FREE FUNCTIONS WILL FREE reqgroup->lent_chunk, SO THE
-    // LAST adios_check_reads CALL WILL RETURN AN INVALID ADIOS_VARCHUNK POINTER!
-    // A fix must involve moving these free calls somewhere later.
-
-    // Free the read request group if it was completed
-    if (reqgroup->completed) {
-        adios_transform_read_request_remove(reqgroups_head, reqgroup);
-        adios_transform_read_request_free(&reqgroup);
     }
 }
 
