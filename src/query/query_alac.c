@@ -1591,7 +1591,7 @@ int adios_query_alac_free_one_node(ADIOS_QUERY* query){
 
 	//TODO: confirm, SHOULD WE DO free here?
 	//ADIOS_VARINFO* v = adios_inq_var(f, varName);
-	adios_free_varinfo(query->_var);
+	common_read_free_varinfo(query->_var);
 
 	FREE(query->_condition);
 	FREE(query->_dataSlice);
