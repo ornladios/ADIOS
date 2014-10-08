@@ -129,9 +129,9 @@ subroutine determineLocalSize()
        ! tstep=1: we are done since we know them from argument
        ! after that: always increase them by 1
        if (tstep>1) then
-          ndx = ndx+1
-          ndy = ndy+1
-          ndz = ndz+1
+          ndx = ndx!+1
+          ndy = ndy!+1
+          ndz = ndz!+1
        endif
     else
        ! have to read from file
