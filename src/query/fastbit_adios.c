@@ -17,6 +17,37 @@ int fastbit_adios_util_getRelativeBlockNumForPoint(ADIOS_VARINFO* v,  uint64_t* 
 {
   int i=0;
   int j=0;
+
+  if (v->nsteps = 1) {
+    // 
+    // if file is read through adios_read_open(), knows only about the current time step
+    //
+    int result = -1;    
+    for (i=0; i<v->sum_nblocks; i++) {      
+      if (result >=0 ) {	
+	break;
+      }
+	
+      ADIOS_VARBLOCK curr = v->blockinfo[i];
+      for (j=0; j<v->ndim; j++) {
+	int begin = curr.start[j];
+	int end   = curr.start[j]+curr.count[j];
+
+	if ((begin <= point[j]) && (point[j] < end)) {
+	  result = i; // relative to the timestep                                                                                                                                      
+	  //result = sum; //if want to return abs block number                                                                                                                         
+	} else {
+	  result = -1;
+	  break;
+	}
+      }
+    }
+    return result;
+  }
+
+  //
+  // if v has info of all time steps;
+  //
   int totalBlocksInTimeStep = v->nblocks[timestep];
   int sum=0;
 
