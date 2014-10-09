@@ -68,6 +68,7 @@ void setQueryInternal(ADIOS_QUERY* q, FastBitCompareType compareOp, FastBitDataT
   */
 
  
+  fastbit_iapi_free_array_by_addr(q->dataSlice);
   fastbit_iapi_register_array(arrayName, dataType, q->dataSlice, dataSize);
   char* endptr;
   double vv = strtod(q->predicateValue, &endptr);
@@ -694,13 +695,26 @@ int adios_query_fastbit_can_evaluate(ADIOS_QUERY* q)
    return fastbit_adios_util_FastbitIndexFileExists (leaf->file->path);
  }
 
-int assertTimeStepValidWithQuery(int timestep, ADIOS_QUERY* q)
+int assertTimeStepValidWithQuery(ADIOS_QUERY* q)
 {
   ADIOS_QUERY* leaf = getFirstLeaf(q);
   if (leaf->varinfo == NULL) {
     log_debug("No variable on query leaf. Can not continue. Exiting.\n");
     return -1;
   }
+
+  int timestep = gCurrentTimeStep;
+
+  int currentFileStep = leaf->file->current_step;
+  if (currentFileStep > 0) {
+    if (timestep != currentFileStep) {
+      log_debug("timestep given %d is different from files: %d, correct to file time step.\n", timestep, currentFileStep);
+      adios_query_set_timestep(currentFileStep);
+      return 0;
+    }
+    return 0;
+  } // == 0, can either be from read_open() or read_open_file(), cann't not distinguish
+
   if (leaf->varinfo->nsteps <= timestep) {
     log_debug("timestep %d is more than variables limit: %d, can not evaluate.\n", timestep, leaf->varinfo->nsteps);
     return -1;
@@ -713,7 +727,7 @@ int64_t adios_query_fastbit_estimate(ADIOS_QUERY* q) //, int timeStep)
   int timeStep = gCurrentTimeStep;
 
   adios_query_fastbit_init();
-  if (assertTimeStepValidWithQuery(timeStep, q) != 0) {
+  if (assertTimeStepValidWithQuery(q) != 0) {
     return -1;
   }
 
@@ -916,7 +930,7 @@ int  adios_query_fastbit_get_selection(ADIOS_QUERY* q,
   */
   adios_query_fastbit_init();
 
-  if (assertTimeStepValidWithQuery(gCurrentTimeStep, q) != 0) {
+  if (assertTimeStepValidWithQuery(q) != 0) {
     return -1;
   }
 
