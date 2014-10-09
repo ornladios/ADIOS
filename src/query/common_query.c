@@ -12,6 +12,15 @@
 
 static struct adios_query_hooks_struct * query_hooks = 0;
 
+void syncTimeStep(ADIOS_FILE* f) {
+  if (f == NULL) {
+    return;
+  }
+
+  if (f->current_step != gCurrentTimeStep) {
+    gCurrentTimeStep = 1;
+  }
+}
 
 ADIOS_SELECTION* getAdiosDefaultBoundingBox(ADIOS_VARINFO* v) 
 {
@@ -207,6 +216,7 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f,
         enum ADIOS_PREDICATE_MODE op,
         const char* value)
 {
+    syncTimeStep(f);
     if (query_hooks == NULL) {
         log_error("ADIOS Query Library Error: Query environment is not initialized.\n");
         exit(EXIT_FAILURE);
@@ -468,11 +478,12 @@ static int updateBlockSizeIfNeeded(ADIOS_QUERY* q)
             return -1;
         }
 
+	/* // this is removed b/c if using read_open() instead of read_open_file(), then var->nstep will always be 1
         if (gCurrentTimeStep > q->varinfo->nsteps) {
             log_error("The given timestep %d exceeds variable (id %d)'s nsteps. \n", gCurrentTimeStep, q->varinfo->varid);
             return -1;
         }
-
+	*/
         if (q->sel->type != ADIOS_SELECTION_WRITEBLOCK) {
             return 0;
         }
