@@ -114,7 +114,6 @@ void getCoordinateFromBlock(uint64_t pos, const ADIOS_VARBLOCK* sel, int n, uint
   uint64_t stepUp = (pos - res)/lastDimSize;
 
   //log_debug("      coordinate[%d]=%ld\n", n-1, coordinates[n-1]);
-
   getCoordinateFromBlock(stepUp, sel, n-1, coordinates);  
 }
 
@@ -695,11 +694,29 @@ int adios_query_fastbit_can_evaluate(ADIOS_QUERY* q)
    return fastbit_adios_util_FastbitIndexFileExists (leaf->file->path);
  }
 
+int assertTimeStepValidWithQuery(int timestep, ADIOS_QUERY* q)
+{
+  ADIOS_QUERY* leaf = getFirstLeaf(q);
+  if (leaf->varinfo == NULL) {
+    log_debug("No variable on query leaf. Can not continue. Exiting.\n");
+    return -1;
+  }
+  if (leaf->varinfo->nsteps <= timestep) {
+    log_debug("timestep %d is more than variables limit: %d, can not evaluate.\n", timestep, leaf->varinfo->nsteps);
+    return -1;
+  }
+  return 0;
+}
+
 int64_t adios_query_fastbit_estimate(ADIOS_QUERY* q) //, int timeStep) 
 {
   int timeStep = gCurrentTimeStep;
 
   adios_query_fastbit_init();
+  if (assertTimeStepValidWithQuery(timeStep, q) != 0) {
+    return -1;
+  }
+
   int64_t estimate = applyIndexIfExists(q);
   if (estimate > 0) {
     return estimate;
@@ -840,13 +857,6 @@ ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundary, uint64_t
 	uint64_t spatialCoordinates[points->ndim];
 	getCoordinateFromPoints(coordinates[i], points, spatialCoordinates);
 	fillUp(points->ndim, spatialCoordinates, i, pointArray);
-	/*
-	for (k=0; k<points->ndim; k++) {	  
-	  uint64_t idx = i*(points->ndim)+k;
-	  log_debug(" points[%d] = %lld \n", idx, spatialCoordinates[k]);
-	  pointArray[idx] = spatialCoordinates[k];
-	}	
-	*/
       }
       ADIOS_SELECTION* result = common_read_selection_points(points->ndim, retrivalSize, pointArray);	      
       //free(pointArray); // user has to free this
@@ -905,6 +915,11 @@ int  adios_query_fastbit_get_selection(ADIOS_QUERY* q,
   }
   */
   adios_query_fastbit_init();
+
+  if (assertTimeStepValidWithQuery(gCurrentTimeStep, q) != 0) {
+    return -1;
+  }
+
   adios_query_fastbit_evaluate(q, gCurrentTimeStep, 0);
   //log_debug("::\t max=%llu _lastRead=%llu\n", q->_maxResultDesired, q->_lastRead);
   if (batchSize == 0) {
