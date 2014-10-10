@@ -108,6 +108,7 @@ void common_query_free(ADIOS_QUERY* q)
   if (q->deleteSelectionWhenFreed) {
     common_read_selection_delete(q->sel);
   }
+  enum ADIOS_QUERY_METHOD m = get_method (q);
   if (q->method < ADIOS_QUERY_METHOD_COUNT) {
       query_hooks[q->method].adios_query_free_fn(q);
   }
