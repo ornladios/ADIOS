@@ -1570,7 +1570,7 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
             buffer_offset = 0;
 
             adios_clear_index_v1 (md->index);
-            md->index = 0;
+            //md->index = 0;
             md->g_num_aggregators = 0;
             md->g_color2 = 0;
 
@@ -2793,7 +2793,10 @@ void adios_mpi_bgq_close (struct adios_file_struct * fd
 
 void adios_mpi_bgq_finalize (int mype, struct adios_method_struct * method)
 {
-// nothing to do here
+    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
+                                                    method->method_data;
+    adios_free_index_v1 (md->index);
+
     if (adios_mpi_bgq_initialized)
         adios_mpi_bgq_initialized = 0;
 }
