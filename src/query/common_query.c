@@ -166,17 +166,20 @@ static int getTotalByteSize (ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* s
       int i=0;
       int min = v->nblocks[0];
       int absBlockCounter = wb->index;
-      for (i=0; i<v->nsteps; i++) 
-	{
-	  int nBlocksAtStep = v->nblocks[i];	  
-	  if (nBlocksAtStep < min) {
-	     min = nBlocksAtStep;
+
+      if (v->nsteps > 1) {	// all timesteps are known, can get abs
+	for (i=0; i<v->nsteps; i++) 
+	  {
+	    int nBlocksAtStep = v->nblocks[i];	  
+	    if (nBlocksAtStep < min) {
+	      min = nBlocksAtStep;
+	    }
+	    log_debug("\t\t   currstep=%d nblocks=%d\n", i, nBlocksAtStep);
+	    if (i < gCurrentTimeStep) {
+	      absBlockCounter += nBlocksAtStep;
+	    }
 	  }
-	  log_debug("\t\t   currstep=%d nblocks=%d\n", i, nBlocksAtStep);
-	  if (i < gCurrentTimeStep) {
-	    absBlockCounter += nBlocksAtStep;
-	  }
-	}
+      }
 
       if (wb->index > min) {
 	  log_error("Error: Unable to handle this block index %d over all the timesteps. Stop.\n", wb->index);
@@ -536,7 +539,11 @@ static ADIOS_VARBLOCK * computePGBounds(ADIOS_QUERY *q, int wbindex, int timeste
         // are both in bounds, signalling an adios_error if not. However, there will be
         // no variable name cited in the error, so perhaps better error handling would
         // be desirable in the future
-        const int abs_wbindex = adios_get_absolute_writeblock_index(q->varinfo, wbindex, timestep);
+        //const int abs_wbindex = adios_get_absolute_writeblock_index(q->varinfo, wbindex, timestep);
+	int abs_wbindex = wbindex;
+	if (q->varinfo->nsteps > 1) { // varinfo contains ALL timesteps, not just one step
+	  abs_wbindex = adios_get_absolute_writeblock_index(q->varinfo, wbindex, timestep);
+	}
 
         // Finally, return ndim and the varblock
         *out_ndim = q->varinfo->ndim;
