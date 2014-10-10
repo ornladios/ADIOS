@@ -223,7 +223,9 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
                                                                   transinfo->orig_ndim, raw_varinfo->ndim,
                                                                   orig_vb, raw_vb,
                                                                   pg_intersection_sel,
-                                                                  pg_bounds_sel);
+                                                                  pg_bounds_sel,
+                                                                  transinfo->transform_metadatas[blockidx].content,
+                                                                  (uint16_t)transinfo->transform_metadatas[blockidx].length);
 
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
     timer_start ("adios_transform_plugin_generate_read_requests");

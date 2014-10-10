@@ -46,6 +46,8 @@ typedef struct _adios_transform_pg_read_request {
     int orig_ndim;                       // Number of dimensions in the original (user-view) dimensions
     const ADIOS_VARBLOCK *raw_varblock;  // Points into adios_transform_read_reqgroup->varinfo->blockinfo; do not free here
     const ADIOS_VARBLOCK *orig_varblock; // Points into adios_transform_read_reqgroup->transinfo->orig_blockinfo; do not free here
+    const void *transform_metadata;      // Transform metadata associated with this PG
+    uint16_t transform_metadata_len;     // Length of the transform metadata associated with this PG
 
     // Various selections to aid in datablock construction
     const ADIOS_SELECTION *pg_intersection_sel;
@@ -119,7 +121,9 @@ adios_transform_pg_read_request * adios_transform_pg_read_request_new(int timest
                                                                       const ADIOS_VARBLOCK *orig_varblock,
                                                                       const ADIOS_VARBLOCK *raw_varblock,
                                                                       const ADIOS_SELECTION *pg_intersection_sel,
-                                                                      const ADIOS_SELECTION *pg_bounds_sel);
+                                                                      const ADIOS_SELECTION *pg_bounds_sel,
+                                                                      const void *transform_metadata,
+                                                                      uint16_t transform_metadata_len);
 void adios_transform_pg_read_request_free(adios_transform_pg_read_request **pg_reqgroup_ptr);
 
 void adios_transform_pg_read_request_append(adios_transform_read_request *reqgroup, adios_transform_pg_read_request *pg_reqgroup);

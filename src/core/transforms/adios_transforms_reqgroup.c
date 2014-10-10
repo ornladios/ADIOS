@@ -256,7 +256,9 @@ adios_transform_pg_read_request * adios_transform_pg_read_request_new(
         const ADIOS_VARBLOCK *orig_varblock,
         const ADIOS_VARBLOCK *raw_varblock,
         const ADIOS_SELECTION *pg_intersection_sel,
-        const ADIOS_SELECTION *pg_bounds_sel) {
+        const ADIOS_SELECTION *pg_bounds_sel,
+        const void *transform_metadata,
+        uint16_t transform_metadata_len) {
 
     adios_transform_pg_read_request *new_pg_reqgroup;
 
@@ -274,6 +276,8 @@ adios_transform_pg_read_request * adios_transform_pg_read_request_new(
     new_pg_reqgroup->orig_varblock = orig_varblock;
     new_pg_reqgroup->pg_intersection_sel = pg_intersection_sel;
     new_pg_reqgroup->pg_bounds_sel = pg_bounds_sel;
+    new_pg_reqgroup->transform_metadata = transform_metadata;
+    new_pg_reqgroup->transform_metadata_len = transform_metadata_len;
     // Other fields are 0'd
 
     return new_pg_reqgroup;
