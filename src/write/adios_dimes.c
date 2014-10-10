@@ -25,20 +25,20 @@
 #include "dimes_interface.h"
 #include "dataspaces.h"
 
-#ifdef SKEL_TIMING
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
 #  define START_TIMER(t) adios_timing_go (fd->group->timing_obj, (t) ) 
 #else
 #  define START_TIMER(t) ; 
 #endif
 
-#ifdef SKEL_TIMING
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
 #  define STOP_TIMER(t) adios_timing_stop (fd->group->timing_obj, (t) )
 #else
 #  define STOP_TIMER(t) ;
 #endif
 
 // Indices for the timer object
-#ifdef SKEL_TIMING
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
 static int T_DIMES_PUT   = ADIOS_TIMING_MAX_USER_TIMERS + 0;
 static int T_GETLOCK     = ADIOS_TIMING_MAX_USER_TIMERS + 1;
 static int T_MPI_BARRIER = ADIOS_TIMING_MAX_USER_TIMERS + 2;
@@ -351,7 +351,7 @@ int adios_dimes_open (struct adios_file_struct * fd,
         return adios_errno;
     }
 
-#ifdef SKEL_TIMING
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
     // Ensure both timing objects exist
     // timing_obj should get created at every open for the same file
     // prev_timing_obj should only be created at the first open 
@@ -1102,7 +1102,7 @@ void adios_dimes_close (struct adios_file_struct * fd
 
     STOP_TIMER (T_AD_CLOSE);
 
-#ifdef SKEL_TIMING
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
     //Finished timing this cycle, swap the timing buffers
     adios_timing_destroy(fd->group->prev_timing_obj);
     fd->group->prev_timing_obj = fd->group->timing_obj;

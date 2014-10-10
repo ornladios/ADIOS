@@ -27,7 +27,7 @@
 */
 void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
 {
-#if defined SKEL_TIMING && !defined _NOMPI //No timing information on single process
+#if defined ADIOS_TIMER_EVENTS && !defined _NOMPI //No timing information on single process
 
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     if (!fd)
@@ -178,15 +178,15 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
     }
 
 #else
-    log_warn ("Timing information is not currently available.\n"
-              "To use the Skel timing functions, you must enable them when building ADIOS.\n"
-              "Use --enable-skel-timing during the configuration step.\n");
+    log_warn ("Timing events are not currently available.\n"
+              "To use the timing events, you must enable them when building ADIOS.\n"
+              "Use --enable-timer-events during the configuration step.\n");
 #endif
 
 }
 
 //Build the internal functions only when timing is enabled.
-#ifdef SKEL_TIMING
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
 
 
 
@@ -499,6 +499,6 @@ void adios_timing_destroy (struct adios_timing_struct * timing_obj)
     }
 }
 
-#endif // ifdef SKEL_TIMING
+#endif // ifdef ADIOS_TIMERS
 
 

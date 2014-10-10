@@ -111,14 +111,14 @@ AM_CONDITIONAL([RESEARCH_TRANSPORTS], [test "x$enable_research_transports" == "x
 AC_LANG(C)
 
 
-AC_ARG_ENABLE(skel-timing,
-    [AS_HELP_STRING([--enable-skel-timing],
-        [Include the skel timing mechanism. By default this is not included])])
-AM_CONDITIONAL([SKEL_TIMING], [test "x$enable_skel_timing" == "xyes"])
+AC_ARG_ENABLE(timers,
+    [AS_HELP_STRING([--disable-timers],
+        [Disable the adios timing mechanism. By default the timers are used.])])
+AM_CONDITIONAL([ADIOS_TIMERS], [test "x$enable_timers" != "xno"])
 
 
-if test "x$enable_skel_timing" == "xyes"; then
-    AC_DEFINE(SKEL_TIMING, 1, [Skel timing is enabled])
+if test "x$enable_timers" != "xno"; then
+    AC_DEFINE(ADIOS_TIMERS, 1, [Adios timing is enabled])
     AC_SUBST(SKEL_HAVE_ADIOS_TIMING,True)
     dnl The macro AM_SUBST_NOTMAKE does not work on Hopper with automake 10.1
     dnl AM_SUBST_NOTMAKE(SKEL_HAVE_ADIOS_TIMING,true)
@@ -126,7 +126,19 @@ else
     AC_SUBST(SKEL_HAVE_ADIOS_TIMING,False)
     dnl AM_SUBST_NOTMAKE(SKEL_HAVE_ADIOS_TIMING,false)
 fi
-AC_SUBST(SKEL_TIMING)
+AC_SUBST(ADIOS_TIMERS)
+
+
+AC_ARG_ENABLE(timer-events,
+    [AS_HELP_STRING([--enable-timer-events],
+        [Enable adios timing events. By default the events are not used.])])
+AM_CONDITIONAL([ADIOS_TIMER_EVENTS], [test "x$enable_timer_events" == "xyes"])
+
+
+if test "x$enable_timer_events" == "xyes"; then
+    AC_DEFINE(ADIOS_TIMER_EVENTS, 1, [Adios timing events are enabled])
+fi
+AC_SUBST(ADIOS_TIMER_EVENTS)
 
 
 AC_LANG(C)
@@ -793,11 +805,11 @@ else
     echo "  - No research transport methods";
 fi
 
-if test "x$enable_skel_timing" == "xyes"; then
-    echo "  - Skel Timing Mechanism Enabled";
+if test "x$enable_timers" == "xyes"; then
+    echo "  - ADIOS Timing Mechanism Enabled";
 
 else
-    echo "  - Skel Timing Mechanism Disabled";
+    echo "  - ADIOS Timing Mechanism Disabled";
 fi
 
 if test -z "${HAVE_MXML_TRUE}"; then
