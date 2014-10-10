@@ -775,7 +775,7 @@ void setRidToBits(bool isPGCovered
 void resolveQueryBoundary(ADIOS_QUERY *adiosQuery, double *hb, double *lb)
 {
 	(*hb)= DBL_MAX;
-	(*lb)= DBL_MIN;
+	(*lb)= -DBL_MAX;
     if(adiosQuery->predicateOp == ADIOS_LT || adiosQuery->predicateOp == ADIOS_LTEQ){
     	*hb = atof(adiosQuery->predicateValue);
     }else if(adiosQuery->predicateOp == ADIOS_GT || adiosQuery->predicateOp == ADIOS_GTEQ){
