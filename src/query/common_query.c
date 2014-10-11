@@ -95,6 +95,7 @@ static enum ADIOS_QUERY_METHOD get_method (ADIOS_QUERY* q)
 	}
         int found = query_hooks[m].adios_query_can_evaluate_fn(q);
         if (found) {
+	    q->method = m;
             return m;
         }
     }
