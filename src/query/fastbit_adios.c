@@ -84,7 +84,7 @@ char *fastbit_adios_util_getFastbitIndexFileName(const char* dataFileLoc)
 {
   int len = strlen(dataFileLoc);			   
   char  idxFileNamePad [len];
-  char *idxFileName = malloc (len*sizeof(char));
+  char *idxFileName = malloc (len*sizeof(char)+2); // .idx is 1 more than .bp
   
   strncpy(idxFileNamePad, dataFileLoc, len-3);
   idxFileNamePad[len-3]=0;
@@ -339,6 +339,7 @@ int fastbit_adios_util_readFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, 
   ADIOS_VARINFO * offsetV = common_read_inq_var (idxFile, offsetName);
 
   if ((bmsV == 0) || (keyV == 0) || (offsetV == 0)) {
+    log_warn("WARN: no index for this variable.\n");
     return -1;
   }
 
