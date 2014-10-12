@@ -41,31 +41,52 @@ void create_fastbit_internal(ADIOS_QUERY* q)
 }
 
 
+
 void clear_fastbit_internal(ADIOS_QUERY* query) 
 {
   FASTBIT_INTERNAL* s = (FASTBIT_INTERNAL*)(query->queryInternal);
 
-  free(s->_keys); 
-  free(s->_offsets); 
-  free(s->_bms); 
+  if (s->_keys != NULL) {
+    free(s->_keys); 
+  }
+  if (s->_offsets != NULL) {
+    free(s->_offsets); 
+  }
+  if (s->_bms != NULL) {
+    free(s->_bms); 
+  }
 
+  s->_keys = NULL; s->_bms = NULL; s->_offsets = NULL;
+  
   fastbit_iapi_free_array_by_addr(query->dataSlice);
 
   if (s->_arrayName != NULL) {
     fastbit_iapi_free_array(s->_arrayName);
     free(s->_arrayName);
+    s->_arrayName = NULL;
   }
-
+  
   if (query->hasParent == 0) {
     fastbit_selection_free(s->_handle); 
   }   
 
-  //free(s);
   //s = NULL;
-
   //free(s);
 }
 
+
+void clear_fastbit_internal_recursive(ADIOS_QUERY* query) 
+{
+  clear_fastbit_internal(query);
+  fastbit_selection_free( ((FASTBIT_INTERNAL*)(query->queryInternal))->_handle); 
+
+  if (query->left != NULL) {
+    clear_fastbit_internal(query->left);
+  }
+  if (query->right != NULL) {
+    clear_fastbit_internal(query->right);
+  }
+}
 
 ADIOS_QUERY* getFirstLeaf(ADIOS_QUERY* q);
 void getHandle(int timeStep, int blockIdx, ADIOS_FILE* idxFile, ADIOS_QUERY* q);
@@ -250,13 +271,14 @@ static void adios_query_fastbit_init()
   }
 }
 
-void adios_query_fastbit_finalize()
+int adios_query_fastbit_finalize()
 {
   if (is_method_initialized) {
       fastbit_iapi_free_all();
       fastbit_cleanup();
       is_method_initialized = 0;
   }
+  return 0;
 }
 
  
@@ -394,9 +416,10 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
       uint64_t  coordinateArray[count];
       fastbit_selection_get_coordinates(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, coordinateArray, count, 0);      
 
-      fastbit_selection_free(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle);
-      //fastbit_iapi_free_array_by_addr(q->_dataSlice); // if attached index    
-      fastbit_iapi_free_array_by_addr(q->dataSlice); // if attached index       
+      //fastbit_selection_free(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle);
+      ////fastbit_iapi_free_array_by_addr(q->_dataSlice); // if attached index    
+      //fastbit_iapi_free_array_by_addr(q->dataSlice); // if attached index       
+      clear_fastbit_internal_recursive(q);
 
       int k=0;
       for (k=0; k<count; k++) {
@@ -625,7 +648,6 @@ int prepareData(ADIOS_QUERY* q, int timeStep)
   if (q->varinfo != NULL) {
     if (q->queryInternal != NULL) {
       //fastbit_selection_free(q->queryInternal);
-      //CLEAR_FASTBIT_INTERNAL((FASTBIT_INTERNAL*)(q->queryInternal));
       clear_fastbit_internal(q);
     }
     
@@ -810,6 +832,10 @@ int assertTimeStepValidWithQuery(ADIOS_QUERY* q)
 
 int64_t adios_query_fastbit_estimate(ADIOS_QUERY* q) //, int timeStep) 
 {
+  if (q == NULL) {
+    return -1;
+  }
+
   int timeStep = gCurrentTimeStep;
 
   adios_query_fastbit_init();
