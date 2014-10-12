@@ -25,6 +25,15 @@ void adios_query_hooks_init (struct adios_query_hooks_struct ** t)
  
     *t = (struct adios_query_hooks_struct *) calloc (ADIOS_QUERY_METHOD_COUNT, sizeof (struct adios_query_hooks_struct));
 
+    int i=0;
+    for (i=0; i<ADIOS_QUERY_METHOD_COUNT; i++) {
+      (*t) [i].adios_query_free_fn = 0;
+      (*t) [i].adios_query_estimate_fn = 0;
+      (*t) [i].adios_query_can_evaluate_fn = 0;
+      (*t) [i].adios_query_get_selection_fn = 0;
+      (*t) [i].adios_query_finalize_fn = 0;
+    }
+
 #ifdef ALACRITY
     ASSIGN_FNS(alac, ADIOS_QUERY_METHOD_ALACRITY);
 #endif
