@@ -337,6 +337,7 @@ ADIOS_FILE * common_read_open (const char * fname,
     // NCSU ALACRITY-ADIOS - Added a data view field, which by default starts in logical view mode
     internals->data_view = LOGICAL_DATA_VIEW;
 
+	fp->is_streaming = 1; // Mark file handle as streaming
     fp = adios_read_hooks[internals->method].adios_read_open_fn (fname, comm, lock_mode, timeout_sec);
     if (!fp)
         return fp;
@@ -402,6 +403,8 @@ ADIOS_FILE * common_read_open_file (const char * fname,
             "by this build of ADIOS.\n", (int)method);
         return NULL;
     }
+	
+	fp->is_streaming = 0; // Mark file handle as not streaming
     fp = adios_read_hooks[internals->method].adios_read_open_file_fn (fname, comm);
     if (!fp)
         return fp;
