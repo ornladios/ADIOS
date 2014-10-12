@@ -62,13 +62,15 @@ void common_query_init()
 void common_query_finalize()
 {
     static int did_finalize = 0;
-    if (did_finalize) {
+    if (!did_finalize) {
         enum ADIOS_QUERY_METHOD m;
         for (m=0; m < ADIOS_QUERY_METHOD_COUNT; m++) {
-            query_hooks[m].adios_query_finalize_fn();
+	  if (query_hooks[m].adios_query_finalize_fn != NULL) {
+	    query_hooks[m].adios_query_finalize_fn();
+	  }
         }
         free(query_hooks);
-        did_finalize = 0;
+        did_finalize = 1;
     }
 }
 
@@ -106,6 +108,10 @@ static enum ADIOS_QUERY_METHOD get_method (ADIOS_QUERY* q)
 
 void common_query_free(ADIOS_QUERY* q)
 {
+  if (q == NULL) {
+    return;
+  }
+
   if (q->deleteSelectionWhenFreed) {
     common_read_selection_delete(q->sel);
   }
@@ -422,6 +428,9 @@ ADIOS_QUERY* common_query_combine(ADIOS_QUERY* q1,
 
 int64_t common_query_estimate(ADIOS_QUERY* q)
 {
+    if (q == NULL) {
+      return -1;
+    }
     enum ADIOS_QUERY_METHOD m = get_method (q);
     return query_hooks[m].adios_query_estimate_fn(q);
 }
