@@ -18,7 +18,7 @@ typedef int      (* ADIOS_QUERY_FREE_FN) (ADIOS_QUERY* q);
 typedef int      (* ADIOS_QUERY_FINALIZE_FN) ();
 typedef int      (* ADIOS_QUERY_GET_SELECTION_FN) (ADIOS_QUERY* q,  uint64_t batchSize, ADIOS_SELECTION* o, ADIOS_SELECTION** result);
 typedef int64_t  (* ADIOS_QUERY_ESTIMATE_FN) (ADIOS_QUERY* q);
-typedef int64_t  (* ADIOS_QUERY_CAN_EVALUATE_FN) (ADIOS_QUERY* q);
+typedef int  (* ADIOS_QUERY_CAN_EVALUATE_FN) (ADIOS_QUERY* q);
 
 struct adios_query_hooks_struct
 {
