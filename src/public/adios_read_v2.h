@@ -42,6 +42,7 @@ struct _ADIOS_FILE {
         /* Stream step information */
         int      current_step;      /* The current step in a stream. For a file, it is always 0.      */
         int      last_step;         /* The currently available latest step in the stream/file.        */
+        int      is_streaming;      /* Non-zero if in streaming mode, zero if in non-streaming mode   */
 
         /* Information about file/stream */
         char     *path;             /* Full path file name (as passed at open)                        */
