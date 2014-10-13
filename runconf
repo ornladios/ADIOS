@@ -28,8 +28,9 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     module unload PE-pathscale
     module unload pgi gcc intel pathscale
     module unload python
+    module unload mxml
     module load PE-$TARGET
-    module load mxml
+    module load mxml/2.6
     MXMLDIR=$MXML_DIR
     module unload mxml
     module load python
@@ -460,6 +461,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         export CFLAGS="-fPIC -g -O0" 
         ${SRCDIR}/configure --prefix=/ccs/proj/e2e/$USER/ADIOS/xk6.$TARGET \
         --enable-dependency-tracking \
+        --disable-maintainer-mode \
         --with-cray-pmi=/opt/cray/pmi/default \
         --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
         --with-cray-ugni-libdir=/opt/cray/ugni/default/lib64 \
@@ -467,7 +469,8 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         --with-dimes=$DATASPACES_DIR \
         $WITHFLEX \
         --with-lustre \
-        --with-zlib --with-bzip2
+        --disable-timers --disable-timer-events \
+        --with-zlib --with-bzip2 
 
         #--enable-skel-timing
         #--with-fgr=/ccs/proj/e2e/qliu/tap \
