@@ -301,7 +301,7 @@ int adios_add_timing_variables (struct adios_file_struct * fd)
     if (!fd->group || !fd->group->prev_timing_obj)
     {
         // No timing info, don't write anything.
-        return;
+        return 0;
     }
 
 
