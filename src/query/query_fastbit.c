@@ -813,6 +813,14 @@ int assertTimeStepValidWithQuery(ADIOS_QUERY* q)
 
   int timestep = gCurrentTimeStep;
 
+  if (leaf->file->is_streaming) {
+    int currentFileStep = leaf->file->current_step;
+    if (timestep != currentFileStep) {
+      adios_query_set_timestep(currentFileStep);
+    }
+    return 0;
+  }
+  /*
   int currentFileStep = leaf->file->current_step;
   if (currentFileStep > 0) {
     if (timestep != currentFileStep) {
@@ -822,6 +830,7 @@ int assertTimeStepValidWithQuery(ADIOS_QUERY* q)
     }
     return 0;
   } // == 0, can either be from read_open() or read_open_file(), cann't not distinguish
+  */
 
   if (leaf->varinfo->nsteps <= timestep) {
     log_debug("timestep %d is more than variables limit: %d, can not evaluate.\n", timestep, leaf->varinfo->nsteps);

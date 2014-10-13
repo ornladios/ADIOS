@@ -17,9 +17,14 @@ void syncTimeStep(ADIOS_FILE* f) {
     return;
   }
 
-  if (f->current_step != gCurrentTimeStep) {
-    gCurrentTimeStep = 1;
+  if (f->is_streaming) {
+    gCurrentTimeStep = f->current_step;
   }
+  /*
+  if (f->current_step != gCurrentTimeStep) {
+    gCurrentTimeStep = f->current_step;
+  }
+  */
 }
 
 ADIOS_SELECTION* getAdiosDefaultBoundingBox(ADIOS_VARINFO* v) 
@@ -552,7 +557,7 @@ static ADIOS_VARBLOCK * computePGBounds(ADIOS_QUERY *q, int wbindex, int timeste
         // be desirable in the future
         //const int abs_wbindex = adios_get_absolute_writeblock_index(q->varinfo, wbindex, timestep);
 	int abs_wbindex = wbindex;
-	if (q->varinfo->nsteps > 1) { // varinfo contains ALL timesteps, not just one step
+	if (q->varinfo->nsteps > 1) { // varinfo contains ALL timesteps, not just one step, so streaming mode files will not need call this func
 	  abs_wbindex = adios_get_absolute_writeblock_index(q->varinfo, wbindex, timestep);
 	}
 
