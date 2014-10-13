@@ -192,6 +192,20 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
 
 void adios_write_timing_variables (struct adios_file_struct * fd)
 {
+
+    if (!fd)
+    {
+        adios_error (err_invalid_file_pointer,
+                     "Invalid handle passed to adios_write_timing_variables\n");
+        return;
+    }
+
+    if (!fd->group || !fd->group->prev_timing_obj)
+    {
+        // No timing info, don't write anything.
+        return;
+    }
+
     struct adios_group_struct * g = fd->group;
     int timer_count = g->prev_timing_obj->user_count + g->prev_timing_obj->internal_count;
     
@@ -276,6 +290,20 @@ void adios_write_timing_variables (struct adios_file_struct * fd)
 
 int adios_add_timing_variables (struct adios_file_struct * fd)
 {
+
+    if (!fd)
+    {
+        adios_error (err_invalid_file_pointer,
+                     "Invalid handle passed to adios_add_timing_variables\n");
+        return;
+    }
+
+    if (!fd->group || !fd->group->prev_timing_obj)
+    {
+        // No timing info, don't write anything.
+        return;
+    }
+
 
     struct adios_group_struct * g = fd->group;
 
