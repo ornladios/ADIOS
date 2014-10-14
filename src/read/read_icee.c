@@ -438,20 +438,18 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
 {   
     log_debug ("%s\n", __FUNCTION__);
 
-    int remote_port = 59999;
-    char *remote_host = "localhost";
     int cm_port = 59997;
     char *cm_host = "localhost";
+    int remote_port = 59999;
+    char *remote_host = "localhost";
     char *cm_attr = NULL;
     attr_list contact_list;
 
     icee_clientinfo_rec_t *remote_server;
-    int num_remote_server = 1;
+    int num_remote_server = 0;
     int i;
 
-    remote_server = calloc(1, sizeof(icee_clientinfo_rec_t));
-    remote_server[0].client_host = remote_host;
-    remote_server[0].client_port = remote_port;
+    int use_single_remote_server = 1;
 
     PairStruct * p = params;
 
@@ -469,7 +467,6 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         {
             cm_port = atoi(p->value);
         }
-        /*
         else if (!strcasecmp (p->name, "remote_host"))
         {
             remote_host = p->value;
@@ -478,9 +475,10 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         {
             remote_port = atoi(p->value);
         }
-        */
         else if (!strcasecmp (p->name, "remote_list"))
         {
+            use_single_remote_server = 0;
+
             char **plist;
             int plen = 8;
 
@@ -502,11 +500,8 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
                 }
             }
 
-            if (len > num_remote_server)
-            {
-                realloc (remote_server, len * sizeof(icee_clientinfo_rec_t));
-                num_remote_server = len;
-            }
+            num_remote_server = len;
+            remote_server = calloc(len, sizeof(icee_clientinfo_rec_t));
             
             for (i=0; i<len; i++)
             {
@@ -541,6 +536,14 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         contact_list = create_attr_list();
         add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), cm_port);
         add_string_attr(contact_list, attr_atom_from_string("IP_HOST"), cm_host);
+    }
+
+    if (use_single_remote_server)
+    {
+        num_remote_server = 1;
+        remote_server = calloc(1, sizeof(icee_clientinfo_rec_t));
+        remote_server[0].client_host = remote_host;
+        remote_server[0].client_port = remote_port;
     }
 
     //log_info ("cm_attr : %s\n", cm_attr);
