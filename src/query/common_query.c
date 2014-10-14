@@ -382,16 +382,26 @@ static int isSelectionCompatible(ADIOS_SELECTION* first, ADIOS_SELECTION* second
 // return 1 if yes.
 //
 static int isCompatible(ADIOS_QUERY* q1, ADIOS_QUERY* q2) {
-  if (q1->rawDataSize != q2->rawDataSize) {
-    log_error("Error! Not supported: combining query with different sizes!\n");
-    return 0;
+  if ((q1->left == 0) && (q2->left == 0)) { // both are leaves
+    if (q1->rawDataSize != q2->rawDataSize) {
+      log_error("Error! Not supported: combining query with different sizes!\n");
+      return 0;
+    }
+    if ((q1->sel != NULL) && (q2->sel != NULL)) {
+      return isSelectionCompatible(q1->sel, q2->sel);
+    } 
+    // all other cases, as long as data sizes match, fastbit can work on it.
+    return 1;
   }
-  
-  if ((q1->sel != NULL) && (q2->sel != NULL)) {
-    return isSelectionCompatible(q1->sel, q2->sel);
+
+  if (q1->left != NULL) {
+    return isCompatible(q1->left, q2);
   } 
 
-  // all other cases, as long as data sizes match, fastbit can work on it.
+  if (q2->left != NULL) {
+    return isCompatible(q1, q2->left);
+  }
+  
   return 1;
 }
 
