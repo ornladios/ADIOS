@@ -116,8 +116,8 @@ function build_indexed_datasets_alacrity() {
   local DSOUTPUT="$2"
   [[ $# -eq 2 ]] || die "ERROR: Internal testing error, invalid parameters to build_indexed_datasets_alacrity: $@"
   
-  invoke_dataset_builder "$DSID" "$DSOUTPUT.ii" "alacrity:indexForm=ALInvertedIndex"
-  invoke_dataset_builder "$DSID" "$DSOUTPUT.cii" "alacrity:indexForm=ALCompressedInvertedIndex"
+  invoke_dataset_builder "$DSID" "$DSOUTPUT.ii-16" "alacrity:indexForm=ALInvertedIndex"
+  invoke_dataset_builder "$DSID" "$DSOUTPUT.cii-16" "alacrity:indexForm=ALCompressedInvertedIndex"
   invoke_dataset_builder "$DSID" "$DSOUTPUT.ii-12" "alacrity:indexForm=ALInvertedIndex,sigBits=12"
   invoke_dataset_builder "$DSID" "$DSOUTPUT.cii-12" "alacrity:indexForm=ALCompressedInvertedIndex,sigBits=12"
 }
