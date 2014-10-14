@@ -86,29 +86,29 @@ void common_query_set_method (ADIOS_QUERY* q, enum ADIOS_QUERY_METHOD method)
 }
 
 // Choose a query method which can work on this query
-static enum ADIOS_QUERY_METHOD get_method (ADIOS_QUERY* q) 
+static enum ADIOS_QUERY_METHOD detect_and_set_query_method(ADIOS_QUERY* q)
 {
-    enum ADIOS_QUERY_METHOD m;
-    if (q->method != ADIOS_QUERY_METHOD_UNKNOWN) {
-        // Was set by user manually
-        return q->method;
-    }
-    // Look for a method that can evaluate this query
-    for (m=0; m < ADIOS_QUERY_METHOD_COUNT; m++) {      
-        // without checking whether *evaluate_fn is defined, 
-        // it causes crash when idx is not used for fastbit. (i.e. m=0, returns 0, m=1, crashes at "found = nullpoiint(q)"
-        if (query_hooks[m].adios_query_can_evaluate_fn == NULL) {
-	   continue;
+	enum ADIOS_QUERY_METHOD m;
+	if (q->method != ADIOS_QUERY_METHOD_UNKNOWN) {
+		// Was set by user manually
+		return q->method;
 	}
-        int found = query_hooks[m].adios_query_can_evaluate_fn(q);
-        if (found) {
-	    q->method = m;
-            return m;
-        }
-    }
-    // return default that always works
-    q->method = ADIOS_QUERY_METHOD_FASTBIT;
-    return ADIOS_QUERY_METHOD_FASTBIT;
+	// Look for a method that can evaluate this query
+	for (m=0; m < ADIOS_QUERY_METHOD_COUNT; m++) {
+		// without checking whether *evaluate_fn is defined,
+		// it causes crash when idx is not used for fastbit. (i.e. m=0, returns 0, m=1, crashes at "found = nullpoiint(q)"
+		if (query_hooks[m].adios_query_can_evaluate_fn == NULL) {
+			continue;
+		}
+		int found = query_hooks[m].adios_query_can_evaluate_fn(q);
+		if (found) {
+			q->method = m;
+			return m;
+		}
+	}
+	// return default that always works
+	q->method = ADIOS_QUERY_METHOD_FASTBIT;
+	return ADIOS_QUERY_METHOD_FASTBIT;
 }
 
 void common_query_free(ADIOS_QUERY* q)
@@ -120,8 +120,12 @@ void common_query_free(ADIOS_QUERY* q)
   if (q->deleteSelectionWhenFreed) {
     common_read_selection_delete(q->sel);
   }
-  enum ADIOS_QUERY_METHOD m = get_method (q);
-  if (q->method < ADIOS_QUERY_METHOD_COUNT) {
+
+  // Only call a specialized free method if this query has been evaluated using
+  // a particular query engine! Otherwise, if a query is created but never
+  // evaluated, this will cause segfaults since no query method initialized the query
+  if (q->method != ADIOS_QUERY_METHOD_UNKNOWN) {
+	  assert(q->method < ADIOS_QUERY_METHOD_COUNT);
       query_hooks[q->method].adios_query_free_fn(q);
   }
 }
@@ -436,7 +440,7 @@ int64_t common_query_estimate(ADIOS_QUERY* q)
     if (q == NULL) {
       return -1;
     }
-    enum ADIOS_QUERY_METHOD m = get_method (q);
+    enum ADIOS_QUERY_METHOD m = detect_and_set_query_method (q);
     return query_hooks[m].adios_query_estimate_fn(q);
 }
 
@@ -664,7 +668,7 @@ int common_query_get_selection(ADIOS_QUERY* q,
         freeOutputBoundary = 1;
     }
 
-    enum ADIOS_QUERY_METHOD m = get_method (q);
+    enum ADIOS_QUERY_METHOD m = detect_and_set_query_method (q);
 
     int retval = query_hooks[m].adios_query_get_selection_fn(
                                q,  batchSize, outputBoundary, result);
