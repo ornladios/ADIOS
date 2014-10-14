@@ -294,7 +294,7 @@ int64_t getPosInBox(const ADIOS_SELECTION_BOUNDINGBOX_STRUCT* sel, int n, uint64
     for (i=0; i<sel->ndim; i++) {
       uint64_t min = sel->start[i];
       uint64_t max = sel->count[i] + min;
-      if (spatialCoordinates[i] > max) {
+      if (spatialCoordinates[i] >= max) {
 	return -1;
       }
       if (spatialCoordinates[i] < min) {
@@ -370,12 +370,6 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
     int blockEnd = 0; // relative
     int i=0;
 
-    //uint64_t* results = malloc(sizeof(uint64_t) * v->ndim * q->_rawDataSize); // allocate max size first
-    //uint64_t hitCounter=0;
-
-    //int bits[q->_rawDataSize];    
-    //free(q->_dataSlice);
-
     const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = NULL;
     if (sel == NULL) {
       blockStart=0;
@@ -393,10 +387,10 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
       blockEnd = fastbit_adios_util_getRelativeBlockNumForPoint(v, end, timeStep);
     }
 
-    void* bitSlice = malloc(q->rawDataSize * sizeof(uint16_t));
+    uint16_t* bitSlice = malloc((q->rawDataSize)* sizeof(uint16_t));
 
     for (i=0; i<q->rawDataSize; i++) {
-      ((uint16_t *)(bitSlice))[i] = 0;
+      bitSlice[i] = 0;
     }
 
     uint64_t currBlockIdx = blockStart;
@@ -431,11 +425,10 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
 	  currPos = getRelativeIdxInVariable(currPosInBlock, v,  &(v->blockinfo[currBlockIdx]));
 	}
 
-	//log_debug("%lld th in block[%d],   =>  in actual %lld \n", currPosInBlock, currBlockIdx, currPos);
-	if (currPos >= 0) {
-	  //bits[currPos] = 1;
-	  ((uint16_t *)(bitSlice))[currPos] = 1;
-	} 
+	//log_warn("%lld th in block[%d],   =>  in actual %lld \n", currPosInBlock, currBlockIdx, currPos);
+	//if ((currPos >= 0) && (currPos < q->rawDataSize)) {
+	bitSlice[currPos] = 1;
+	//} 
       }
 
       log_debug("----\n");
