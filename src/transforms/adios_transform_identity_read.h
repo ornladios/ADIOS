@@ -24,4 +24,35 @@ void compute_sieving_offsets_for_pg_selection(const ADIOS_SELECTION *intersect_s
                                               const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *pgbb,
                                               uint64_t *start_off_ptr, uint64_t *end_off_ptr);
 
+// This function is shared with ALACRITY, and is available to aid any data transform that stores
+// the original data unchanged as part of the transformed data.
+/*
+ * Schedules raw read requests over a copy of the user's original data. This function is expected
+ * to be paired with a calls to adios_transform_handle_pg_reqgroup_completed().
+ *
+ * This original data is assumed to be contiguous at some location within the PG (specified via
+ * original_data_offset_in_pg). If should_sieve_points is true, point selections will be serviced
+ * using a single read request, rather than reading each point individually.
+ *
+ * Note: in addition to submitting adios_transform_raw_read_requests, this function also requires
+ * full use of the pg_reqgroup->transform_internal field. If the calling data transform needs this
+ * field, it should be wrapped after calling this function, then restored before calling
+ * adios_transform_handle_pg_reqgroup_completed().
+ */
+int adios_transform_generate_read_subrequests_over_original_data(
+		uint64_t original_data_offset_in_pg,
+		int should_sieve_points,
+		adios_transform_read_request *reqgroup,
+        adios_transform_pg_read_request *pg_reqgroup);
+
+/*
+ * Processes raw read requests submitted earlier by
+ * adios_transform_generate_read_subrequests_over_original_data(). Should be called on every
+ * completed raw read request that was scheduled by
+ * adios_transform_generate_read_subrequests_over_original_data().
+ */
+adios_datablock * adios_transform_pg_reqgroup_completed_over_original_data(
+        adios_transform_read_request *reqgroup,
+        adios_transform_pg_read_request *completed_pg_reqgroup);
+
 #endif /* ADIOS_TRANSFORM_IDENTITY_READ_H_ */

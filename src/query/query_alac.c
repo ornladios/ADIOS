@@ -14,6 +14,7 @@
 #include "public/adios_read_ext.h"
 #include "public/adios_query.h"
 #include "public/adios_selection.h"
+#include "transforms/adios_transform_alacrity_common.h"
 #include "core/common_read.h"
 #include "common_query.h"
 //#include <alacrity.h>
@@ -812,10 +813,10 @@ char * readLowDataAmongBins(ALMetadata *partitionMeta, bin_id_t low_bin , bin_id
 
 
 char * readIndexAmongBins(ALMetadata *partitionMeta, bin_id_t low_bin , bin_id_t hi_bin
-		, uint64_t lowDataByteStartPos,  ADIOS_QUERY * adiosQuery
+		, uint64_t indexStartPos,  ADIOS_QUERY * adiosQuery
 		, int blockId, int startStep, int numStep){
 	const uint64_t bin_read_len = ALGetIndexBinOffset( partitionMeta, hi_bin) - ALGetIndexBinOffset( partitionMeta, low_bin); // in bytes
-	uint64_t lowDataBinOffset = lowDataByteStartPos+ ALGetIndexBinOffset( partitionMeta, low_bin); /*element offset*/;
+	uint64_t lowDataBinOffset = indexStartPos+ ALGetIndexBinOffset( partitionMeta, low_bin); /*element offset*/;
 	// low order bytes from low_bin to hi_bin, ITS NOT entire low order byte
 	char * readData= (char *) calloc(bin_read_len, sizeof(char));
 	readLowOrderBytes(blockId,lowDataBinOffset, bin_read_len
@@ -834,16 +835,18 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 #endif
 
 	int numStep = 1; // only deal with one timestep
-	uint64_t metaSize, indexSize, dataSize;
+//	uint64_t metaSize, indexSize, dataSize;
 	ADIOS_VARINFO * varInfo = adiosQuery->varinfo;
 	int ndim = varInfo->ndim;
 	ADIOS_TRANSFORM_METADATA * tmetas = ti->transform_metadatas;
 	ADIOS_TRANSFORM_METADATA tmeta = tmetas[gBlockId];
 	//	assert(tmeta->length == 24);
-	uint64_t * threeData = (uint64_t *) tmeta.content;
-	metaSize   = threeData[0];
-	indexSize  = threeData[1];
-	dataSize   = threeData[2];
+
+	adios_transform_alacrity_metadata *alac_metadata = (adios_transform_alacrity_metadata *) malloc(sizeof(adios_transform_alacrity_metadata));
+	//the metadata order is alacrity meta, alacrity index, alacrity LoB, raw data (original data)
+	read_alacrity_transform_metadata(tmeta.length, tmeta.content, alac_metadata);
+	//It now assumes LoB along with OD (original data)
+
 
 	//TODO: offset of each PG should be included
 //	printf("PG[%d] has meta size[ %" PRIu64 "], index size[ %" PRIu64 "], and data size[ %" PRIu64 "] \n", blockId, metaSize,  indexSize, dataSize);
@@ -852,7 +855,7 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 	// 1. load partition Metadata
 	// NOTE: One ALACRITY PG Data is written in the below format:  [meta data] | [low order bytes data] | [ index data]
 	ALMetadata partitionMeta;
-	readPartitionMeta(gBlockId, metaSize,adiosQuery->file, varInfo
+	readPartitionMeta(gBlockId, alac_metadata->meta_size,adiosQuery->file, varInfo
 					,startStep,numStep,&partitionMeta);
 	const uint8_t insigbytes = insigBytesCeil(&partitionMeta);
 
@@ -864,7 +867,7 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 	if (are_bins_touched) {
 
 		//3. load index size
-		uint64_t indexStartPos = metaSize + dataSize;
+		uint64_t indexStartPos =  alac_metadata->index_offset ;
 		char * index = readIndexAmongBins(&partitionMeta
 									, low_bin,  hi_bin, indexStartPos, adiosQuery, gBlockId, startStep, numStep);
 		char * input_index = index;
@@ -882,7 +885,7 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 						, (rid_t *)index, resultCount, alacResultBitmap);
 
 			} else {
-				uint64_t lowByteStartPos2 = metaSize;
+				uint64_t lowByteStartPos2 = alac_metadata->lob_offset;
 				char * lowOrderBytes2  = readLowDataAmongBins(&partitionMeta
 										,low_bin, hi_bin,  lowByteStartPos2, adiosQuery, gBlockId, startStep, numStep);
 				char *lowOrderPtr2 = lowOrderBytes2; // temporary pointer
@@ -941,7 +944,7 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 
 			}else{
 				// element count of touched bins, which is also the count of low order data
-				uint64_t lowByteStartPos = metaSize;
+				uint64_t lowByteStartPos = alac_metadata->lob_offset;
 				char * lowOrderBytes  = readLowDataAmongBins(&partitionMeta
 						, low_bin,  hi_bin, lowByteStartPos , adiosQuery, gBlockId, startStep, numStep);
 				char *lowOrderPtr = lowOrderBytes; // temporary pointer
@@ -1001,6 +1004,8 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 	}else {
 //		printf("there is no touched bin for constraint \n");
 	}
+
+	FREE(alac_metadata);
 
 #ifdef RIDBUG
 	printf("\n");
