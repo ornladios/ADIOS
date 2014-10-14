@@ -425,10 +425,11 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
 	  currPos = getRelativeIdxInVariable(currPosInBlock, v,  &(v->blockinfo[currBlockIdx]));
 	}
 
-	//log_warn("%lld th in block[%d],   =>  in actual %lld \n", currPosInBlock, currBlockIdx, currPos);
+	//log_warn("%lld th in block[%d],   =>  in actual %lld, limit: %ld \n", currPosInBlock, currBlockIdx, currPos, q->rawDataSize);
 	//if ((currPos >= 0) && (currPos < q->rawDataSize)) {
-	bitSlice[currPos] = 1;
-	//} 
+	if (currPos >= 0) {
+	  bitSlice[currPos] = 1;
+	}
       }
 
       log_debug("----\n");
