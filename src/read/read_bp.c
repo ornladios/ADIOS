@@ -2487,6 +2487,7 @@ uint64_t get_req_datasize (const ADIOS_FILE * fp, read_request * r, struct adios
     ADIOS_SELECTION * sel = r->sel;
     uint64_t datasize = bp_get_type_size (v->type, "");
     int i, pgidx, ndims;
+    const struct BP_PROC * p = (struct BP_PROC *) fp->fh;
 
     if (sel->type == ADIOS_SELECTION_BOUNDINGBOX)
     {
@@ -2502,10 +2503,12 @@ uint64_t get_req_datasize (const ADIOS_FILE * fp, read_request * r, struct adios
     else if (sel->type == ADIOS_SELECTION_WRITEBLOCK)
     {
         //pgidx = adios_wbidx_to_pgidx (fp, r);
-        // NCSU ALACRITY-ADIOS: Adding absoluet PG indexing
-        pgidx = sel->u.block.is_absolute_index ?
+        // NCSU ALACRITY-ADIOS: Adding absolute PG indexing, but *only* in non-streaming
+    	// mode (absolute writeblocks are interpreted as timestep-relative when in
+    	// streaming mode)
+        pgidx = sel->u.block.is_absolute_index && !p->streaming ?
                     sel->u.block.index :
-                adios_wbidx_to_pgidx (fp, r, 0);
+                    adios_wbidx_to_pgidx (fp, r, 0);
         // NCSU ALACRITY-ADIOS: Adding sub-PG writeblock read support
         if (sel->u.block.is_sub_pg_selection) {
             datasize = sel->u.block.nelements;
@@ -3521,7 +3524,12 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
 
     for (i = 0; i < r->nsteps; i++)
     {
-        idx = wb->is_absolute_index ? wb->index : adios_wbidx_to_pgidx (fp, r, i);
+        // NCSU ALACRITY-ADIOS: Adding absolute PG indexing, but *only* in non-streaming
+    	// mode (absolute writeblocks are interpreted as timestep-relative when in
+    	// streaming mode)
+        idx = wb->is_absolute_index && !p->streaming ?
+                  wb->index :
+                  adios_wbidx_to_pgidx (fp, r, i);
         //if (!wb->is_absolute_index) printf("Timestep-relative writeblock index used!\n");
         assert (idx >= 0);
 
