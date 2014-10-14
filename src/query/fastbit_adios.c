@@ -343,13 +343,14 @@ int fastbit_adios_util_readFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, 
     return -1;
   }
 
-  int64_t bms_byte_size = common_read_type_size (bmsV->type, bmsV->value);
-  int64_t key_byte_size = common_read_type_size (keyV->type, keyV->value);
-  int64_t offset_byte_size = common_read_type_size (offsetV->type, offsetV->value);
+  uint64_t bmsSize    = (uint64_t)(bmsV->dims[0] * common_read_type_size (bmsV->type, bmsV->value));
+  uint64_t keySize    = (uint64_t)(keyV->dims[0] * common_read_type_size (keyV->type, keyV->value));
+  uint64_t offsetSize = (uint64_t)(offsetV->dims[0] * common_read_type_size (offsetV->type, offsetV->value));
+    
+  *offsets = malloc(offsetSize);
+  *keys    = malloc(keySize);
+  *bms     = malloc(bmsSize);
 
-  *bms     = malloc((bmsV->dims[0])*bms_byte_size);
-  *keys    = malloc((keyV->dims[0])*key_byte_size);
-  *offsets = malloc((offsetV->dims[0])*offset_byte_size);
 
   uint64_t start[] = {0};
   uint64_t count_bms[] = {bmsV->dims[0]};
