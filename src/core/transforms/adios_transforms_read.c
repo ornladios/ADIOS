@@ -148,9 +148,14 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
     int blockidx, timestep, timestep_blockidx;
     int start_blockidx, end_blockidx;
     ADIOS_VARBLOCK *raw_vb, *orig_vb;
-
     enum ADIOS_FLAG swap_endianness = (fp->endianness == get_system_endianness()) ? adios_flag_no : adios_flag_yes;
-    int to_steps = from_steps + nsteps;
+    int to_steps;
+
+    if (fp->is_streaming) {
+    	from_steps = 0;
+    	nsteps = 1;
+    }
+    to_steps = from_steps + nsteps;
 
     // Precondition checking
     assert(is_transform_type_valid(transinfo->transform_type));
