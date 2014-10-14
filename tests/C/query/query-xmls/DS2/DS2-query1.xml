@@ -3,10 +3,10 @@
 
     <output type="ADIOS_SELECTION_BOUNDINGBOX" dim="2" start="3,3" count="4,4"/>
 
-    <entry var="temp" op=">=" constraint="0.9"> 
+    <entry var="temp" op=">=" constraint="-0.2"> 
         <selection type="ADIOS_SELECTION_BOUNDINGBOX" dim="2" start="3,3" count="4,4"/>
     </entry>
-    <entry var="temp" op="<=" constraint="1.0"> 
+    <entry var="temp" op="<=" constraint="0.2"> 
         <selection type="ADIOS_SELECTION_BOUNDINGBOX" dim="2" start="3,3" count="4,4"/>
     </entry>
 
