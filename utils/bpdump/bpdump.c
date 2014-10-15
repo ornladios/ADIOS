@@ -67,7 +67,7 @@ int main (int argc, char ** argv)
     int rc = 0;
     struct dump_struct dump;
 
-    if (argc < 2)
+    if (argc < 2 || argc > 4)
     {
         fprintf (stderr, "usage: %s [-d [var]|--dump [var]] <filename>\n"
                 ,argv [0]
@@ -83,7 +83,7 @@ int main (int argc, char ** argv)
            )
         {
             dump.do_dump = 1;
-            if (argc > 2)
+            if (argc > 3)
             {
                 dump.dump_var = argv [2];
                 filename = argv [3];
