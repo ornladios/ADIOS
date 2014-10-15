@@ -86,6 +86,8 @@ static void test_file_mode_reads(const char *bp_filename) {
 	ADIOS_FILE *fp = adios_read_open_file(bp_filename, ADIOS_READ_METHOD_BP, COMM);
 	MPI_Assert(COMM, fp);
 
+	fprintf(stderr, "[rank %d/%d] Starting file-mode writeblock reads on file %s\n", rank, size, bp_filename);
+
 	for (i = 0; i < fp->nvars; ++i) {
 		const char *varname = fp->var_namelist[i];
 		fprintf(stderr, "[rank %d/%d] Starting file-mode writeblock reads on %s:/%s\n", rank, size, bp_filename, varname);
@@ -96,7 +98,7 @@ static void test_file_mode_reads(const char *bp_filename) {
 
 	adios_read_close(fp);
 
-	fprintf(stderr, "[rank %d/%d] Passed file-mode writeblock reads\n", rank, size);
+	fprintf(stderr, "[rank %d/%d] Passed file-mode writeblock reads on file %s\n", rank, size, bp_filename);
 }
 
 int main(int argc, char **argv) {
