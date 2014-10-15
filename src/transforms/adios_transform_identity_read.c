@@ -78,13 +78,15 @@ void compute_sieving_offsets_for_pg_selection(const ADIOS_SELECTION *intersect_s
     *end_off_ptr = end_off;
 }
 
-int adios_transform_identity_generate_read_subrequests(adios_transform_read_request *reqgroup,
-                                                       adios_transform_pg_read_request *pg_reqgroup) {
-
-    int sieve_points = (reqgroup->read_param && strcmp(reqgroup->read_param, "sieve") == 0);
+int adios_transform_generate_read_subrequests_over_original_data(
+		uint64_t original_data_offset_in_pg,
+		int should_sieve_points,
+		adios_transform_read_request *reqgroup,
+        adios_transform_pg_read_request *pg_reqgroup)
+{
     int is_point_selection = (pg_reqgroup->pg_intersection_sel->type == ADIOS_SELECTION_POINTS);
 
-    if (!is_point_selection || sieve_points) {
+    if (!is_point_selection || should_sieve_points) {
         pg_reqgroup->transform_internal = NULL; // Is sieving
 
         uint64_t start_off, end_off; // Start/end byte offsets to read between
@@ -96,7 +98,7 @@ int adios_transform_identity_generate_read_subrequests(adios_transform_read_requ
         const uint64_t buflen = (end_off - start_off) * datum_size;
         void *buf = malloc(buflen);
         adios_transform_raw_read_request *subreq =
-                adios_transform_raw_read_request_new_byte_segment(pg_reqgroup, start_off * datum_size, buflen, buf);
+                adios_transform_raw_read_request_new_byte_segment(pg_reqgroup, original_data_offset_in_pg + start_off * datum_size, buflen, buf);
 
         // Store the ragged start offset
         subreq->transform_internal = malloc(sizeof(uint64_t));
@@ -120,7 +122,7 @@ int adios_transform_identity_generate_read_subrequests(adios_transform_read_requ
             const uint64_t offset = compute_linear_offset_in_volume(ndim, point, &pg_reqgroup->pg_bounds_sel->u.bb);
 
             const adios_transform_raw_read_request *subreq =
-                    adios_transform_raw_read_request_new_byte_segment(pg_reqgroup, offset * datum_size, 1, buf + p * datum_size);
+                    adios_transform_raw_read_request_new_byte_segment(pg_reqgroup, original_data_offset_in_pg + offset * datum_size, 1, buf + p * datum_size);
             adios_transform_raw_read_request_append(pg_reqgroup, subreq);
         }
 
@@ -130,18 +132,11 @@ int adios_transform_identity_generate_read_subrequests(adios_transform_read_requ
     return 0;
 }
 
-// Do nothing for individual subrequest
-adios_datablock * adios_transform_identity_subrequest_completed(
-                    adios_transform_read_request *reqgroup,
-                    adios_transform_pg_read_request *pg_reqgroup,
-                    adios_transform_raw_read_request *completed_subreq) {
-    return NULL;
-}
 
-adios_datablock * adios_transform_identity_pg_reqgroup_completed(
+adios_datablock * adios_transform_pg_reqgroup_completed_over_original_data(
         adios_transform_read_request *reqgroup,
-        adios_transform_pg_read_request *completed_pg_reqgroup) {
-
+        adios_transform_pg_read_request *completed_pg_reqgroup)
+{
     adios_datablock *db;
     if (completed_pg_reqgroup->transform_internal) {
         void *data = completed_pg_reqgroup->transform_internal;
@@ -164,10 +159,32 @@ adios_datablock * adios_transform_identity_pg_reqgroup_completed(
                 completed_pg_reqgroup->pg_bounds_sel,
                 ragged_offset,
                 pg_data);
+
+        FREE(completed_pg_reqgroup->subreqs->transform_internal);
     }
 
-    FREE(completed_pg_reqgroup->subreqs->transform_internal);
     return db;
+}
+
+int adios_transform_identity_generate_read_subrequests(adios_transform_read_request *reqgroup,
+                                                       adios_transform_pg_read_request *pg_reqgroup) {
+
+    int sieve_points = (reqgroup->read_param && strcmp(reqgroup->read_param, "sieve") == 0);
+    return adios_transform_generate_read_subrequests_over_original_data(0, sieve_points, reqgroup, pg_reqgroup);
+}
+
+// Do nothing for individual subrequest
+adios_datablock * adios_transform_identity_subrequest_completed(
+                    adios_transform_read_request *reqgroup,
+                    adios_transform_pg_read_request *pg_reqgroup,
+                    adios_transform_raw_read_request *completed_subreq) {
+    return NULL;
+}
+
+adios_datablock * adios_transform_identity_pg_reqgroup_completed(
+        adios_transform_read_request *reqgroup,
+        adios_transform_pg_read_request *completed_pg_reqgroup) {
+	return adios_transform_pg_reqgroup_completed_over_original_data(reqgroup, completed_pg_reqgroup);
 }
 
 adios_datablock * adios_transform_identity_reqgroup_completed(

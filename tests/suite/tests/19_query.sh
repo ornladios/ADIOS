@@ -31,13 +31,14 @@ MPIRUN_SERIAL="$MPIRUN $NP_MPIRUN 1 $EXEOPT"
 # Basic directory structure
 QUERY_TEST_DIR="$TRUNKDIR/tests/C/query"
 QUERY_COMMON_DIR="$QUERY_TEST_DIR/common"
+TEST_PROGRAMS_DIR="$TRUNKDIR/tests/suite/programs"
 
 # Some external tools to use
-DATASET_BUILDER_EXE_BASENAME="build_indexed_dataset"
+DATASET_BUILDER_EXE_BASENAME="build_standard_dataset"
 QUERY_SEQSCAN_EXE_BASENAME="compute_expected_query_results"
 QUERY_EXE_BASENAME="adios_query_test"
 
-DATASET_BUILDER_EXE_PATH="$QUERY_COMMON_DIR/$DATASET_BUILDER_EXE_BASENAME"
+DATASET_BUILDER_EXE_PATH="$TEST_PROGRAMS_DIR/$DATASET_BUILDER_EXE_BASENAME"
 QUERY_SEQSCAN_EXE_PATH="$QUERY_COMMON_DIR/$QUERY_SEQSCAN_EXE_BASENAME"
 QUERY_EXE_PATH="$QUERY_COMMON_DIR/$QUERY_EXE_BASENAME"
 
@@ -59,7 +60,12 @@ QUERY_XML_DIR="$QUERY_TEST_DIR/query-xmls/"
 [ -d "$QUERY_XML_DIR" ] || die "ERROR: $QUERY_XML_DIR is not a directory"
 
 # All pre-defined dataset IDs (which can be extracted from build_indexed_dataset)
-ALL_DATASET_IDS="DS1 DS2 DS3 DS-particle"
+ALL_DATASET_IDS=" \
+  DS-1D \
+  DS-2D \
+  DS-3D \
+  DS-particle \
+"
 
 # Check that query XML subdirectories exist for all datasets we're testing 
 for DSID in $ALL_DATASET_IDS; do
@@ -116,8 +122,8 @@ function build_indexed_datasets_alacrity() {
   local DSOUTPUT="$2"
   [[ $# -eq 2 ]] || die "ERROR: Internal testing error, invalid parameters to build_indexed_datasets_alacrity: $@"
   
-  invoke_dataset_builder "$DSID" "$DSOUTPUT.ii" "alacrity:indexForm=ALInvertedIndex"
-  invoke_dataset_builder "$DSID" "$DSOUTPUT.cii" "alacrity:indexForm=ALCompressedInvertedIndex"
+  invoke_dataset_builder "$DSID" "$DSOUTPUT.ii-16" "alacrity:indexForm=ALInvertedIndex"
+  invoke_dataset_builder "$DSID" "$DSOUTPUT.cii-16" "alacrity:indexForm=ALCompressedInvertedIndex"
   invoke_dataset_builder "$DSID" "$DSOUTPUT.ii-12" "alacrity:indexForm=ALInvertedIndex,sigBits=12"
   invoke_dataset_builder "$DSID" "$DSOUTPUT.cii-12" "alacrity:indexForm=ALCompressedInvertedIndex,sigBits=12"
 }
@@ -171,7 +177,11 @@ function query_datasets() {
       cp "$QUERY_XML" "$QUERY_XML_LOCAL" 
       
       # Compute the expected results
-      local EXPECTED_POINTS_FILE="$QUERY_NAME.expected-points.txt"
+      local EXPECTED_POINTS_FILE="$DSID.$QUERY_NAME.expected-points.txt"
+
+      echo
+      echo "====== COMPUTING EXPECTED OUTPUT OF QUERY $QUERY_NAME ON DATASET $INDEXED_DS ======"
+      echo
       set -o xtrace
       $MPIRUN_SERIAL "$QUERY_SEQSCAN_EXE_LOCAL" "$NOINDEX_DS" "$QUERY_XML" > "$EXPECTED_POINTS_FILE" ||
         die "ERROR: $QUERY_SEQSCAN_EXE_LOCAL failed with exit code $?"
@@ -187,11 +197,11 @@ function query_datasets() {
           INDEXING_NAME=${INDEXED_DS##*/$DSID.$QUERY_ENGINE.}
           INDEXING_NAME=${INDEXING_NAME%.bp}
 
-          local OUTPUT_POINTS_FILE="$QE_WORKDIR/$QUERY_NAME.$QUERY_ENGINE-$INDEXING_NAME-points.txt"
+          local OUTPUT_POINTS_FILE="$QE_WORKDIR/$DSID.$QUERY_NAME.$QUERY_ENGINE-$INDEXING_NAME-points.txt"
 
           # Run the query through ADIOS Query to get actual results
           echo
-          echo "====== RUNNING TEST $QUERY_NAME USING QUERY ENGINE $QUERY_ENGINE ON DATASET $INDEXED_DS ======"
+          echo "====== RUNNING QUERY $QUERY_NAME USING QUERY ENGINE $QUERY_ENGINE ON DATASET $INDEXED_DS ======"
           echo
           set -o xtrace
           $MPIRUN_SERIAL "$QUERY_EXE_LOCAL" "$INDEXED_DS" "$QUERY_XML_LOCAL" "$QUERY_ENGINE"  > "$OUTPUT_POINTS_FILE" ||

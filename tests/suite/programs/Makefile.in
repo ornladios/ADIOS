@@ -98,7 +98,8 @@ CONFIG_CLEAN_VPATH_FILES =
 @BUILD_WRITE_TRUE@	big_file$(EXEEXT) set_path$(EXEEXT) \
 @BUILD_WRITE_TRUE@	set_path_var$(EXEEXT) steps_write$(EXEEXT) \
 @BUILD_WRITE_TRUE@	steps_read_file$(EXEEXT) \
-@BUILD_WRITE_TRUE@	steps_read_stream$(EXEEXT) blocks$(EXEEXT)
+@BUILD_WRITE_TRUE@	steps_read_stream$(EXEEXT) blocks$(EXEEXT) \
+@BUILD_WRITE_TRUE@	build_standard_dataset$(EXEEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__EXEEXT_2 =  \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	posix_method$(EXEEXT)
 am__EXEEXT_3 =
@@ -169,6 +170,13 @@ blocks_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 blocks_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(blocks_LDFLAGS) \
 	$(LDFLAGS) -o $@
+am_build_standard_dataset_OBJECTS = build_standard_dataset.$(OBJEXT)
+build_standard_dataset_OBJECTS = $(am_build_standard_dataset_OBJECTS)
+build_standard_dataset_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+	$(am__DEPENDENCIES_1)
+build_standard_dataset_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(build_standard_dataset_LDFLAGS) $(LDFLAGS) -o $@
 am_connect_to_space_subset_OBJECTS =  \
 	connect_to_space_subset.$(OBJEXT)
 connect_to_space_subset_OBJECTS =  \
@@ -329,12 +337,12 @@ SOURCES = $(adios_amr_write_SOURCES) $(adios_amr_write_2vars_SOURCES) \
 	$(adios_staged_read_2vars_SOURCES) \
 	$(adios_staged_read_v2_SOURCES) \
 	$(adios_transforms_read_write_SOURCES) $(big_file_SOURCES) \
-	$(blocks_SOURCES) $(connect_to_space_subset_SOURCES) \
-	$(copy_subvolume_SOURCES) $(group_free_test_SOURCES) \
-	$(hashtest_SOURCES) $(local_array_time_SOURCES) \
-	$(many_vars_SOURCES) $(path_test_SOURCES) \
-	$(posix_method_SOURCES) $(reuse_dim_SOURCES) \
-	$(selections_SOURCES) $(set_path_SOURCES) \
+	$(blocks_SOURCES) $(build_standard_dataset_SOURCES) \
+	$(connect_to_space_subset_SOURCES) $(copy_subvolume_SOURCES) \
+	$(group_free_test_SOURCES) $(hashtest_SOURCES) \
+	$(local_array_time_SOURCES) $(many_vars_SOURCES) \
+	$(path_test_SOURCES) $(posix_method_SOURCES) \
+	$(reuse_dim_SOURCES) $(selections_SOURCES) $(set_path_SOURCES) \
 	$(set_path_var_SOURCES) $(steps_read_file_SOURCES) \
 	$(steps_read_stream_SOURCES) $(steps_write_SOURCES) \
 	$(transforms_specparse_SOURCES) $(two_groups_SOURCES) \
@@ -344,12 +352,12 @@ DIST_SOURCES = $(adios_amr_write_SOURCES) \
 	$(adios_staged_read_2vars_SOURCES) \
 	$(adios_staged_read_v2_SOURCES) \
 	$(adios_transforms_read_write_SOURCES) $(big_file_SOURCES) \
-	$(blocks_SOURCES) $(connect_to_space_subset_SOURCES) \
-	$(copy_subvolume_SOURCES) $(group_free_test_SOURCES) \
-	$(hashtest_SOURCES) $(local_array_time_SOURCES) \
-	$(many_vars_SOURCES) $(path_test_SOURCES) \
-	$(posix_method_SOURCES) $(reuse_dim_SOURCES) \
-	$(selections_SOURCES) $(set_path_SOURCES) \
+	$(blocks_SOURCES) $(build_standard_dataset_SOURCES) \
+	$(connect_to_space_subset_SOURCES) $(copy_subvolume_SOURCES) \
+	$(group_free_test_SOURCES) $(hashtest_SOURCES) \
+	$(local_array_time_SOURCES) $(many_vars_SOURCES) \
+	$(path_test_SOURCES) $(posix_method_SOURCES) \
+	$(reuse_dim_SOURCES) $(selections_SOURCES) $(set_path_SOURCES) \
 	$(set_path_var_SOURCES) $(steps_read_file_SOURCES) \
 	$(steps_read_stream_SOURCES) $(steps_write_SOURCES) \
 	$(transforms_specparse_SOURCES) $(two_groups_SOURCES) \
@@ -647,7 +655,8 @@ check_readonly_C =
 @BUILD_WRITE_TRUE@	steps_write \
 @BUILD_WRITE_TRUE@	steps_read_file \
 @BUILD_WRITE_TRUE@	steps_read_stream \
-@BUILD_WRITE_TRUE@	blocks
+@BUILD_WRITE_TRUE@	blocks \
+@BUILD_WRITE_TRUE@	build_standard_dataset
 
 @BUILD_WRITE_TRUE@test_C = hashtest copy_subvolume transforms_specparse group_free_test
 @BUILD_FORTRAN_TRUE@check_readonly_Fortran = 
@@ -729,6 +738,9 @@ steps_read_stream_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
 blocks_SOURCES = blocks.c
 blocks_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 blocks_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+build_standard_dataset_SOURCES = build_standard_dataset.c 
+build_standard_dataset_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
+build_standard_dataset_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 
 #transforms_SOURCES=transforms.c
 #transforms_CPPFLAGS = -DADIOS_USE_READ_API_1
@@ -830,6 +842,9 @@ big_file$(EXEEXT): $(big_file_OBJECTS) $(big_file_DEPENDENCIES)
 blocks$(EXEEXT): $(blocks_OBJECTS) $(blocks_DEPENDENCIES) 
 	@rm -f blocks$(EXEEXT)
 	$(blocks_LINK) $(blocks_OBJECTS) $(blocks_LDADD) $(LIBS)
+build_standard_dataset$(EXEEXT): $(build_standard_dataset_OBJECTS) $(build_standard_dataset_DEPENDENCIES) 
+	@rm -f build_standard_dataset$(EXEEXT)
+	$(build_standard_dataset_LINK) $(build_standard_dataset_OBJECTS) $(build_standard_dataset_LDADD) $(LIBS)
 connect_to_space_subset$(EXEEXT): $(connect_to_space_subset_OBJECTS) $(connect_to_space_subset_DEPENDENCIES) 
 	@rm -f connect_to_space_subset$(EXEEXT)
 	$(connect_to_space_subset_LINK) $(connect_to_space_subset_OBJECTS) $(connect_to_space_subset_LDADD) $(LIBS)
@@ -902,6 +917,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/adios_transforms_read_write.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/big_file.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/blocks.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/build_standard_dataset.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/connect_to_space_subset.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/copy_subvolume-copy_subvolume.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/group_free_test-group_free_test.Po@am__quote@

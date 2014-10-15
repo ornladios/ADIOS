@@ -13,34 +13,54 @@
 #include "alacrity.h"
 #include "alacrity-serialization-debug.h"
 
+#include "adios_transform_alacrity_common.h"
+
+typedef struct {
+	ALEncoderConfig alac_config;
+	int has_original_data;
+	int has_low_order_bytes;
+} alac_transform_conf_t;
+
 uint64_t adios_get_type_size(enum ADIOS_DATATYPES type, void *var);
 
 uint16_t adios_transform_alacrity_get_metadata_size(struct adios_transform_spec *transform_spec)
 {
-    return (3 * sizeof(uint64_t));
+    return sizeof(uint8_t) + (4 * sizeof(uint64_t));
 }
 
-static ALEncoderConfig parse_configuration(const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec) {
-    ALEncoderConfig config;
+static alac_transform_conf_t parse_configuration(const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec) {
+    alac_transform_conf_t config;
+    config.has_low_order_bytes = 1;
+    config.has_original_data = 1;
 
     if (var->pre_transform_type == adios_real) {
-        ALEncoderConfigure(&config, 16, DATATYPE_FLOAT32, ALInvertedIndex);
+        ALEncoderConfigure(&config.alac_config, 16, DATATYPE_FLOAT32, ALInvertedIndex);
     } else if (var->pre_transform_type == adios_double) {
-        ALEncoderConfigure(&config, 16, DATATYPE_FLOAT64, ALInvertedIndex);
+        ALEncoderConfigure(&config.alac_config, 16, DATATYPE_FLOAT64, ALInvertedIndex);
     } else {
-        log_error("Can index only real datatypes. \n");
+        log_error("The ALACRITY transform can index only real datatypes.\n");
     }
 
     int i;
     for (i = 0; i < transform_spec->param_count; i++) {
         const struct adios_transform_spec_kv_pair * const param = &transform_spec->params[i];
         if (strcmp(param->key, "indexForm") == 0) {
-            if (strcmp(param->value, "ALCompressedInvertedIndex") == 0)
-                config.indexForm = ALCompressedInvertedIndex;
-            else if (strcmp (param->value, "ALInvertedIndex") == 0)
-                config.indexForm = ALInvertedIndex;
-        } else if (strcmp(param->key, "sigBits") == 0) {
-            config.significantBits = atoi(param->value);
+            if (strcasecmp(param->value, "ALCompressedInvertedIndex") == 0)
+                config.alac_config.indexForm = ALCompressedInvertedIndex;
+            else if (strcasecmp(param->value, "ALInvertedIndex") == 0)
+                config.alac_config.indexForm = ALInvertedIndex;
+        } else if (strcasecmp(param->key, "sigBits") == 0) {
+            config.alac_config.significantBits = atoi(param->value);
+        } else if (strcasecmp(param->key, "loBytes") == 0) {
+        	if (strcasecmp(param->value, "no") == 0 || strcasecmp(param->value, "false") == 0)
+        		config.has_low_order_bytes = 0;
+        	else
+        		config.has_low_order_bytes = 1;
+        } else if (strcasecmp(param->key, "origData") == 0) {
+        	if (strcasecmp(param->value, "no") == 0 || strcasecmp(param->value, "false") == 0)
+        		config.has_original_data = 0;
+        	else
+        		config.has_original_data = 1;
         }
     }
 
@@ -48,11 +68,11 @@ static ALEncoderConfig parse_configuration(const struct adios_var_struct *var, c
 }
 
 static void add_bin_layout_size_growth(
-		ALEncoderConfig *config,
+		alac_transform_conf_t *config,
 		const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec,
 		uint64_t *constant_factor, double *linear_factor, double *capped_linear_factor, uint64_t *capped_linear_cap)
 {
-	const int sigbytes = (config->significantBits + 0x07) >> 3;
+	const int sigbytes = (config->alac_config.significantBits + 0x07) >> 3;
 
 	*constant_factor += sizeof(bin_id_t) + // Number of bins
 						sizeof(bin_offset_t); // Ending bin offset
@@ -71,7 +91,7 @@ static void add_bin_layout_size_growth(
 }
 
 static void add_index_size_growth(
-		ALEncoderConfig *config,
+		alac_transform_conf_t *config,
 		const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec,
 		uint64_t *constant_factor, double *linear_factor, double *capped_linear_factor, uint64_t *capped_linear_cap)
 {
@@ -80,7 +100,7 @@ static void add_index_size_growth(
 
 	*constant_factor += sizeof(ALIndexForm); // Index form
 
-	switch (config->indexForm) {
+	switch (config->alac_config.indexForm) {
     case ALCompressionIndex:
     	fprintf(stderr, "ALCompressionIndex is UNSUPPORTED in the ALACRITY transform plugin (it should not be possible to reach this error; something has gone very, very wrong)\n");
     	abort();
@@ -118,21 +138,24 @@ static void add_index_size_growth(
 }
 
 static void add_data_size_growth(
-		ALEncoderConfig *config,
+		alac_transform_conf_t *config,
 		const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec,
 		uint64_t *constant_factor, double *linear_factor, double *capped_linear_factor, uint64_t *capped_linear_cap)
 {
 	const int datatype_size = adios_get_type_size(var->pre_transform_type, NULL);
-	const int insigbytes = ((datatype_size << 3) - config->significantBits + 0x07) >> 3;
+	const int insigbytes = ((datatype_size << 3) - config->alac_config.significantBits + 0x07) >> 3;
 
-	*linear_factor += (double)insigbytes / datatype_size; // insigbytes per data value
+	if (config->has_low_order_bytes)
+		*linear_factor += (double)insigbytes / datatype_size; // insigbytes per data value
+	if (config->has_original_data)
+		*linear_factor += 1.0; // data value per data value
 }
 
 void adios_transform_alacrity_transformed_size_growth(
 		const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec,
 		uint64_t *constant_factor, double *linear_factor, double *capped_linear_factor, uint64_t *capped_linear_cap)
 {
-	ALEncoderConfig config = parse_configuration(var, transform_spec);
+	alac_transform_conf_t config = parse_configuration(var, transform_spec);
 
 	// ALACRITY metadata (not counting bin layout metadata and index-specific metadata, added in below)
 	*constant_factor =
@@ -150,7 +173,7 @@ void adios_transform_alacrity_transformed_size_growth(
 	// These bounds will all use the same capped linear cap (bytes corresponding to number of
 	// values equal to max possible bins), so compute it here, and let each function add to
 	// the capped linear factor assuming this cap is in place.
-	const uint64_t max_possible_bins = (1ULL << config.significantBits);
+	const uint64_t max_possible_bins = (1ULL << config.alac_config.significantBits);
 	const int datatype_size = adios_get_type_size(var->pre_transform_type, NULL);
 	*capped_linear_cap = max_possible_bins * datatype_size; // There can be at most one bin per value, so stop adding this factor after (max bins) * (bytes per value) bytes
 	*capped_linear_factor = 0;
@@ -184,28 +207,34 @@ int adios_transform_alacrity_apply(struct adios_file_struct *fd,
     const void *input_buff = var->data;
 
     // Determine the ALACRITY encoder configuration to use
-    ALEncoderConfig config = parse_configuration(var, var->transform_spec);
+    alac_transform_conf_t config = parse_configuration(var, var->transform_spec);
 
     uint32_t numElements = 0;
     numElements = input_size / adios_get_type_size(var->pre_transform_type, NULL);
 
     // decide the output buffer
-    uint64_t output_size = 0;
+    uint64_t output_size;
     void* output_buff = NULL;
     ALPartitionData output_partition;
 
-    if (config.indexForm == ALInvertedIndex) {
-        ALEncode (&config, input_buff, numElements, &output_partition);
-    } else if (config.indexForm == ALCompressedInvertedIndex) {
-        config.indexForm = ALInvertedIndex;
-        ALEncode (&config, input_buff, numElements, &output_partition);
-        ALConvertIndexForm (&output_partition.metadata, &output_partition.index, ALCompressedInvertedIndex);
+    if (config.alac_config.indexForm == ALInvertedIndex) {
+        ALEncode(&config.alac_config, input_buff, numElements, &output_partition);
+    } else if (config.alac_config.indexForm == ALCompressedInvertedIndex) {
+        config.alac_config.indexForm = ALInvertedIndex;
+        ALEncode(&config.alac_config, input_buff, numElements, &output_partition);
+        ALConvertIndexForm(&output_partition.metadata, &output_partition.index, ALCompressedInvertedIndex);
     } else {
         log_error("Error on indexing %s\n", var->name);
         return 0;
     }
 
-    output_size = ALGetPartitionDataSize(&output_partition);
+    output_size = 0;
+    output_size += ALGetMetadataSize(&output_partition.metadata);
+    output_size += ALGetIndexSize(&output_partition.index, &output_partition.metadata);
+    if (config.has_low_order_bytes)
+    	output_size += ALGetDataSize(&output_partition.data, &output_partition.metadata);
+    if (config.has_original_data)
+    	output_size += input_size;
 
 #ifdef ALACRITY_DEBUG
     fprintf(stderr, "ALGetPartitionDataSize: %llu\n", output_size);
@@ -223,20 +252,34 @@ int adios_transform_alacrity_apply(struct adios_file_struct *fd,
     }
     *wrote_to_shared_buffer = use_shared_buffer;
 
-    memstream_t ms = memstreamInitReturn (output_buff);
-    ALSerializePartitionData (&output_partition, &ms);
+    memstream_t ms = memstreamInitReturn(output_buff);
+    ALSerializeMetadata(&output_partition.metadata, &ms);
+    ALSerializeIndex(&output_partition.index, &output_partition.metadata, &ms);
+    if (config.has_low_order_bytes)
+    	ALSerializeData(&output_partition.data, &output_partition.metadata, &ms);
+    if (config.has_original_data)
+    	memstreamAppendArray(&ms, input_buff, 1, input_size);
 
     // Check this for later. What do you intend to add in the metadata
     if(var->transform_metadata && var->transform_metadata_len > 0) {
-        ((uint64_t * ) (var->transform_metadata)) [0] = ALGetMetadataSize (& (output_partition.metadata));
-        ((uint64_t * ) (var->transform_metadata)) [1] = ALGetIndexSize (& (output_partition.index), & (output_partition.metadata));
-        ((uint64_t * ) (var->transform_metadata)) [2] = ALGetDataSize  (& (output_partition.data), & (output_partition.metadata));
+    	adios_transform_alacrity_metadata alac_meta = {
+    		.meta_size     = ALGetMetadataSize(&output_partition.metadata),
+    		.index_size    = ALGetIndexSize(&output_partition.index, &output_partition.metadata),
+    		.lob_size      = (config.has_low_order_bytes) ? ALGetDataSize(&output_partition.data, &output_partition.metadata) : 0,
+    		.origdata_size = (config.has_original_data)   ? input_size                                                        : 0,
+    	};
+    	write_alacrity_transform_metadata(var->transform_metadata_len, var->transform_metadata, &alac_meta);
+    } else {
+    	adios_error_at_line(err_unspecified, __FILE__, __LINE__,
+                            "Internal error: data transform metadata buffer was not allocated "
+    			            "by the transform framework for some reason, cannot continue\n");
+    	return 0;
     }
 
     assert(output_size == ((char*)ms.ptr - (char*)ms.buf)); // Make sure we computed the output size right
 
-    ALPartitionDataDestroy (&output_partition);
-    memstreamDestroy(&ms, false);
+    ALPartitionDataDestroy(&output_partition);
+    memstreamDestroy(&ms, false /* don't free buffer, it's either our return value or the ADIOS shared buffer! */);
 
     // Wrap up, depending on buffer mode
     if (*wrote_to_shared_buffer) {

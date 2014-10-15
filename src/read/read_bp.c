@@ -2296,12 +2296,11 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
     blockinfo = (ADIOS_VARBLOCK *) malloc (nblks * sizeof (ADIOS_VARBLOCK));
     assert (blockinfo);
 
-    if (use_pretransform_dimensions)
-        assert(var_root->characteristics[0].transform.transform_type != adios_transform_none);
+    const struct adios_index_characteristic_struct_v1 *root_characteristic = &var_root->characteristics[0];
 
     // NCSU ALACRITY-ADIOS - Use pre-transform dimensions if instructed to do so
     int dimcount;
-    if (use_pretransform_dimensions) {
+    if (use_pretransform_dimensions && root_characteristic->transform.transform_type != adios_transform_none) {
         dimcount = var_root->characteristics[0].transform.pre_transform_dimensions.count;
     } else {
         dimcount = var_root->characteristics[0].dims.count;
@@ -2323,11 +2322,17 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
 
         if (!p->streaming)
         {
-            bp_get_dimension_generic_notime (use_pretransform_dimensions ?
-                                             &var_root->characteristics[i].transform.pre_transform_dimensions :
-                                             &var_root->characteristics[i].dims,
-                                             ldims, gdims, offsets, file_is_fortran
-                                            );
+            // NCSU ALACRITY-ADIOS
+            const struct adios_index_characteristic_struct_v1 *blk_characteristic = &var_root->characteristics[i];
+        	// Only use pre-transform dimensions if A) pre-transform dimensions were
+        	// requested, and B) this varblock is actually transformed. Use normal
+        	// dimensions otherwise
+            const struct adios_index_characteristic_dims_struct_v1 *blk_dims =
+            		use_pretransform_dimensions && blk_characteristic->transform.transform_type != adios_transform_none ?
+            				&blk_characteristic->transform.pre_transform_dimensions :
+            				&blk_characteristic->dims;
+
+            bp_get_dimension_generic_notime(blk_dims, ldims, gdims, offsets, file_is_fortran);
         }
         else
         {
@@ -2338,11 +2343,17 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
 
             if (j < var_root->characteristics_count)
             {
-                bp_get_dimension_generic_notime (use_pretransform_dimensions ?
-                                                 &var_root->characteristics[j].transform.pre_transform_dimensions :
-                                                 &var_root->characteristics[j].dims,
-                                                 ldims, gdims, offsets, file_is_fortran
-                                                );
+                // NCSU ALACRITY-ADIOS
+                const struct adios_index_characteristic_struct_v1 *blk_characteristic = &var_root->characteristics[j];
+                // Only use pre-transform dimensions if A) pre-transform dimensions were
+            	// requested, and B) this varblock is actually transformed. Use normal
+            	// dimensions otherwise
+                const struct adios_index_characteristic_dims_struct_v1 *blk_dims =
+                		use_pretransform_dimensions && blk_characteristic->transform.transform_type != adios_transform_none ?
+                				&blk_characteristic->transform.pre_transform_dimensions :
+                				&blk_characteristic->dims;
+
+                bp_get_dimension_generic_notime(blk_dims, ldims, gdims, offsets, file_is_fortran);
                 j++;
             }
             else
