@@ -46,6 +46,10 @@ void clear_fastbit_internal(ADIOS_QUERY* query)
 {
   FASTBIT_INTERNAL* s = (FASTBIT_INTERNAL*)(query->queryInternal);
 
+  if (s == NULL) {
+    return;
+  }
+
   if (s->_keys != NULL) {
     free(s->_keys); 
   }
@@ -489,6 +493,9 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
     ADIOS_SELECTION* box = adios_selection_writeblock(blockIdx);
     common_read_inq_var_blockinfo(dataFile, v);
     */
+    if (v->blockinfo == NULL) {
+      common_read_inq_var_blockinfo(dataFile, v);
+    }
     uint64_t blockSize = fastbit_adios_util_getBlockSize(v, blockIdx);
 
     /*
