@@ -15,7 +15,38 @@
 #include <adios.h>
 #include <adios_types.h>
 
-typedef enum { DATASET_1, DATASET_2, DATASET_3, DATASET_PARTICLE } DATASET_ID;
+// Declaration of all datasets available from this program
+
+typedef void (*dataset_builder_fn)(const char *filename_prefix, const char *transform_name);
+
+typedef struct {
+	const char *name;
+	const char *desc;
+	dataset_builder_fn builder_fn;
+} dataset_info_t;
+
+// Forward declaration of dataset builder functions
+static void build_dataset_1(const char *filename_prefix, const char *transform_name);
+static void build_dataset_2(const char *filename_prefix, const char *transform_name);
+static void build_dataset_3(const char *filename_prefix, const char *transform_name);
+static void build_dataset_particle(const char *filename_prefix, const char *transform_name);
+
+static const dataset_info_t DATASETS[] = {
+    { .name = "DS1", .builder_fn = build_dataset_1,
+      .desc = "Dataset 1" },
+
+    { .name = "DS2", .builder_fn = build_dataset_2,
+      .desc = "Dataset 2", },
+
+    { .name = "DS3", .builder_fn = build_dataset_3,
+      .desc = "Dataset 3", },
+
+    { .name = "DS-particle", .desc = "Dataset Particle",
+	  .builder_fn = build_dataset_particle },
+};
+static const int NUM_DATASETS = sizeof(DATASETS)/sizeof(DATASETS[0]);
+
+// Dataset description/writing code
 
 typedef struct {
 	const char *group_name;
@@ -134,7 +165,7 @@ static uint64_t compute_groupsize(uint64_t base_groupsize, const dataset_xml_spe
 }
 
 extern void adios_pin_timestep(uint32_t ts); // Not in the standard header, but accessible
-void build_dataset_from_specs(
+static void build_dataset_from_specs(
 		const char *filename_prefix,
 		const char *transform_name,
 		const dataset_xml_spec_t *xml_spec,
@@ -199,7 +230,7 @@ void build_dataset_from_specs(
 }
 
 // NOTE: varblocks_by_var is actually a 1D array varblocks_by_var[var] of 3D "arrays" varblockdata[ts][pg][point_in_pg] of type xml_spec->vartypes[var] (however, points per PG varies)
-void collect_varblocks_by_pg(
+static void collect_varblocks_by_pg(
 		const dataset_xml_spec_t *xml_spec,
 		const dataset_global_spec_t *global_spec,
 		int num_ts, int num_pgs_per_ts, int ndim, int nvar,
@@ -245,7 +276,7 @@ void collect_varblocks_by_pg(
 // NOTE: pg_dims and pg_offsets are really a 2D arrays pd_dims[pg][dim] of dimension lengths
 // NOTE: pg_datas is really a 2D array pg_datas[pg][var] of varblock buffers
 // NOTE: pg_specs is really a 1D array of pg_specs[pg] of dataset_pg_spec_t's
-void collect_pg_specs(
+static void collect_pg_specs(
 		int num_ts, int num_pgs_per_ts, int ndim, int nvar,
 		const uint64_t pg_dims[num_ts][num_pgs_per_ts][ndim],
 		const uint64_t pg_offsets[num_ts][num_pgs_per_ts][ndim],
@@ -261,7 +292,7 @@ void collect_pg_specs(
 	}
 }
 
-void build_dataset_from_varblocks_by_var(
+static void build_dataset_from_varblocks_by_var(
 		const char *filename_prefix,
 		const char *transform_name,
 		const dataset_xml_spec_t *xml_spec,
@@ -298,7 +329,7 @@ void build_dataset_from_varblocks_by_var(
 
 
 
-void build_dataset_1(const char *filename_prefix, const char *transform_name) {
+static void build_dataset_1(const char *filename_prefix, const char *transform_name) {
 	// Basic dataset information
 	// NOTE: we have to use an anonymous enum here to define these constants, since
 	// C is picky and doesn't consider a static const int "const enough" to use
@@ -386,7 +417,7 @@ static const float TEMP_DATA_FOR_DS2_AND_DS3[] = {
 	-0x1.ba2cb6p-1, 0x1.45eb00p-1, -0x1.0021acp-2, 0x1.a66e56p-3, -0x1.b0a05ap-2, 0x1.619b00p-1, -0x1.51e224p-2, 0x1.122f92p-5,
 };
 
-void build_dataset_2(const char *filename_prefix, const char *transform_name) {
+static void build_dataset_2(const char *filename_prefix, const char *transform_name) {
 	// Basic dataset information
 	// NOTE: we have to use an anonymous enum here to define these constants, since
 	// C is picky and doesn't consider a static const int "const enough" to use
@@ -444,7 +475,7 @@ void build_dataset_2(const char *filename_prefix, const char *transform_name) {
 			PG_DIMS, PG_OFFSETS, (const void **)VARBLOCKS_BY_VAR);
 }
 
-void build_dataset_3(const char *filename_prefix, const char *transform_name) {
+static void build_dataset_3(const char *filename_prefix, const char *transform_name) {
 	// Basic dataset information
 	// NOTE: we have to use an anonymous enum here to define these constants, since
 	// C is picky and doesn't consider a static const int "const enough" to use
@@ -502,7 +533,7 @@ void build_dataset_3(const char *filename_prefix, const char *transform_name) {
 			PG_DIMS, PG_OFFSETS, (const void **)VARBLOCKS_BY_VAR);
 }
 
-void build_dataset_particle(const char *filename_prefix, const char *transform_name) {
+static void build_dataset_particle(const char *filename_prefix, const char *transform_name) {
 	// Basic dataset information
 	// NOTE: we have to use an anonymous enum here to define these constants, since
 	// C is picky and doesn't consider a static const int "const enough" to use
@@ -625,6 +656,7 @@ void build_dataset_particle(const char *filename_prefix, const char *transform_n
 
 
 static void usage_and_exit() {
+	int i;
 	fprintf(stderr, "Usage: build_standard_dataset <dataset-id> <filename-prefix> [<transform-type>]\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "  dataset-id: the ID of a standard dataset packaged in this executable:\n");
@@ -634,7 +666,12 @@ static void usage_and_exit() {
 	fprintf(stderr, "    - Example: filename-prefix = 'some/path/myfile':\n");
 	fprintf(stderr, "            -> produces some/path/myfile.xml, some/path/myfile.bp:\n");
 	fprintf(stderr, "\n");
-	fprintf(stderr, "  transform-type: the data transform to apply (default: none)\n");
+	fprintf(stderr, "  transform-type: the data transform to apply (default: none). May include\n");
+	fprintf(stderr, "                  transform parameters, just like in an ADIOS XML file.");
+	fprintf(stderr, "\n");
+	fprintf(stderr, "Available datasets:\n");
+	for (i = 0; i < NUM_DATASETS; ++i)
+		fprintf(stderr, "- \"%s\": %s\n", DATASETS[i].name, DATASETS[i].desc);
 	exit(1);
 }
 
@@ -646,37 +683,21 @@ int main(int argc, char **argv) {
 	const char *path = argv[2];
 	const char *transform_name = (argc >= 4) ? argv[3] : "none";
 
-	DATASET_ID dataset;
-	// Select the dataset by dataset ID
-	if (strcasecmp(dataset_id, "DS1") == 0) {
-		dataset = DATASET_1;
-	} else if (strcasecmp(dataset_id, "DS2") == 0) {
-		dataset = DATASET_2;
-	} else if (strcasecmp(dataset_id, "DS3") == 0) {
-		dataset = DATASET_3;
-	} else if (strcasecmp(dataset_id, "DS-particle") == 0) {
-		dataset = DATASET_PARTICLE;
-	} else {
+	int i;
+	const dataset_info_t *dataset = NULL;
+	for (i = 0; i < NUM_DATASETS; ++i)
+		if (strcasecmp(dataset_id, DATASETS[i].name) == 0)
+			dataset = &DATASETS[i];
+
+	if (dataset == NULL) {
 		fprintf(stderr, "Error: '%s' does not name a dataset packaged in this executable\n");
 		usage_and_exit();
 	}
 
 	MPI_Init(&argc, &argv);
 
-	switch (dataset) {
-	case DATASET_1:
-		build_dataset_1(path, transform_name);
-		break;
-	case DATASET_2:
-		build_dataset_2(path, transform_name);
-		break;
-	case DATASET_3:
-		build_dataset_3(path, transform_name);
-		break;
-	case DATASET_PARTICLE:
-		build_dataset_particle(path, transform_name);
-		break;
-	}
+	// Invoke the builder function for the selected dataset
+	(*dataset->builder_fn)(path, transform_name);
 
 	MPI_Finalize();
 	return 0;
