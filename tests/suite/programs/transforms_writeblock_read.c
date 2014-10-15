@@ -59,9 +59,9 @@ static void test_file_mode_reads_on_var(ADIOS_FILE *fp, const char *varname) {
 			void *buf_bb = malloc(blocksize);
 			void *buf_wb = malloc(blocksize);
 			void *buf_abs_wb = malloc(blocksize);
-			memset(buf_bb, 0, blocksize);
-			memset(buf_wb, 0, blocksize);
-			memset(buf_abs_wb, 0, blocksize);
+			memset(buf_bb,     0, blocksize);
+			memset(buf_wb,     1, blocksize);
+			memset(buf_abs_wb, 2, blocksize);
 			MPI_Assert(COMM, buf_bb && buf_wb && buf_abs_wb);
 
 			adios_schedule_read(fp, block_bb,     varname, timestep, 1, buf_bb    );
