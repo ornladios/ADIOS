@@ -1,5 +1,5 @@
 /*
- * generate_indexed_dataset.c
+ * build_standard_dataset.c
  *
  *  Created on: Sep 26, 2014
  *      Author: David A. Boyuka II
@@ -624,8 +624,8 @@ void build_dataset_particle(const char *filename_prefix, const char *transform_n
 
 
 
-void usage_and_exit() {
-	fprintf(stderr, "Usage: build_indexed_dataset <dataset-id> <filename-prefix> [<transform-type>]\n");
+static void usage_and_exit() {
+	fprintf(stderr, "Usage: build_standard_dataset <dataset-id> <filename-prefix> [<transform-type>]\n");
 	fprintf(stderr, "\n");
 	fprintf(stderr, "  dataset-id: the ID of a standard dataset packaged in this executable:\n");
 	fprintf(stderr, "    - 'DS1': 1 variable, 2D array of floats\n");
