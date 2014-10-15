@@ -32,17 +32,18 @@ static void build_dataset_3(const char *filename_prefix, const char *transform_n
 static void build_dataset_particle(const char *filename_prefix, const char *transform_name);
 
 static const dataset_info_t DATASETS[] = {
-    { .name = "DS1", .builder_fn = build_dataset_1,
-      .desc = "Dataset 1" },
+    { .name = "DS-1D", .builder_fn = build_dataset_1,
+      .desc = "A simple, small dataset with a 1D variable 'temp' consisting of 1 PG and 1 timestep" },
 
-    { .name = "DS2", .builder_fn = build_dataset_2,
-      .desc = "Dataset 2", },
+    { .name = "DS-2D", .builder_fn = build_dataset_2,
+      .desc = "A simple, small dataset with a 2D (8x8) variable 'temp' decomposed in to 2x8 slices across 2 timesteps (8 PGs total)" },
 
-    { .name = "DS3", .builder_fn = build_dataset_3,
-      .desc = "Dataset 3", },
+    { .name = "DS-3D", .builder_fn = build_dataset_3,
+      .desc = "A simple, small dataset with a 3D (4x4x4) variable 'temp' decomposed in to 2x2x2 blocks across 2 timesteps (16 PGs total)" },
 
-    { .name = "DS-particle", .desc = "Dataset Particle",
-	  .builder_fn = build_dataset_particle },
+    { .name = "DS-particle", .builder_fn = build_dataset_particle,
+      .desc = "A dataset simulating particle data, with a 2D (3x64) 1 variable 'temp' decomposed in 3x32 slices across 2 timesteps (4 PGs total). "
+    		  "A given X coordinate represents a 'variable', as 'variables' in particle datasets are often packed as tuples." },
 };
 static const int NUM_DATASETS = sizeof(DATASETS)/sizeof(DATASETS[0]);
 
