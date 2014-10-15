@@ -31,7 +31,8 @@ check_C=local_array_time \
 	steps_read_file \
 	steps_read_stream \
 	blocks \
-	build_standard_dataset
+	build_standard_dataset \
+	transforms_writeblock_read
 
 test_C=hashtest copy_subvolume transforms_specparse group_free_test
 
@@ -180,6 +181,10 @@ blocks.o: blocks.c
 build_standard_dataset_SOURCES = build_standard_dataset.c 
 build_standard_dataset_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
 build_standard_dataset_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+
+transforms_writeblock_read_SOURCES = transforms_writeblock_read.c 
+transforms_writeblock_read_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
+transforms_writeblock_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 
 #transforms_SOURCES=transforms.c
 #transforms_CPPFLAGS = -DADIOS_USE_READ_API_1
