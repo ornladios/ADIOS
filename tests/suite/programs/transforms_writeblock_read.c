@@ -29,7 +29,7 @@ static void test_file_mode_reads_on_var(ADIOS_FILE *fp, const char *bp_filename,
 	MPI_Assert(COMM, varinfo);
 
 	if (varinfo->value != NULL) {
-		if (rank == 0) fprintf(stderr, "(skipping scalar variable '%s')\n", varname);
+		//if (rank == 0) fprintf(stderr, "(skipping scalar variable '%s')\n", varname);
 		adios_free_varinfo(varinfo);
 		return;
 	}
