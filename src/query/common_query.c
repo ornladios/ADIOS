@@ -111,6 +111,23 @@ static enum ADIOS_QUERY_METHOD detect_and_set_query_method(ADIOS_QUERY* q)
 	return ADIOS_QUERY_METHOD_FASTBIT;
 }
 
+ADIOS_QUERY* freeQuery(ADIOS_QUERY* query) {
+  log_debug("common_free() query: %s \n", query->condition);
+
+  free(query->predicateValue);
+  free(query->condition);
+
+  //adios_selection_delete(query->_sel);
+  adios_free_varinfo(query->varinfo);
+
+  free(query->dataSlice);
+  query->dataSlice = 0;
+
+  free(query);
+  query = 0;
+}
+
+
 void common_query_free(ADIOS_QUERY* q)
 {
   if (q == NULL) {
@@ -132,6 +149,8 @@ void common_query_free(ADIOS_QUERY* q)
 	query_hooks[q->method].adios_query_free_fn(q);
       }
   }
+
+  freeQuery(q);
 }
 
 static int getTotalByteSize (ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* sel, 
@@ -234,11 +253,12 @@ static void initialize(ADIOS_QUERY* result)
   result->method = ADIOS_QUERY_METHOD_UNKNOWN;
 }
 
+
 ADIOS_QUERY* common_query_create(ADIOS_FILE* f, 
-        const char* varName,
-        ADIOS_SELECTION* queryBoundary,
-        enum ADIOS_PREDICATE_MODE op,
-        const char* value)
+				 const char* varName,
+				 ADIOS_SELECTION* queryBoundary,
+				 enum ADIOS_PREDICATE_MODE op,
+				 const char* value)
 {
     syncTimeStep(f);
     if (query_hooks == NULL) {
