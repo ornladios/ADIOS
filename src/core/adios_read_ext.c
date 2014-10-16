@@ -14,6 +14,7 @@
 #include "core/transforms/adios_transforms_common.h"
 #include "core/transforms/adios_transforms_transinfo.h"
 #include "core/transforms/adios_transforms_read.h"
+#include "core/adios_selection_util.h"
 
 // Ensure unique pointer-based values for each one
 const data_view_t LOGICAL_DATA_VIEW = &LOGICAL_DATA_VIEW;
@@ -133,9 +134,11 @@ inline static const ADIOS_SELECTION * create_pg_bounds(int ndim, ADIOS_VARBLOCK 
     return common_read_selection_boundingbox(ndim, orig_vb->start, orig_vb->count);
 }
 
-int adios_get_absolute_writeblock_index(ADIOS_VARINFO *varinfo, int timestep_relative_idx, int timestep) {
+int adios_get_absolute_writeblock_index(const ADIOS_VARINFO *varinfo, int timestep_relative_idx, int timestep) {
 	int i;
 	int absolute_idx = timestep_relative_idx;
+
+	assert(varinfo->blockinfo);
 
 	if (timestep < 0 || timestep >= varinfo->nsteps) {
 		adios_error(err_invalid_timestep,
@@ -190,9 +193,9 @@ ADIOS_PG_INTERSECTIONS * adios_find_intersecting_pgs(const ADIOS_FILE *fp, int v
     compute_blockidx_range(raw_varinfo, from_step, to_steps, &start_blockidx, &end_blockidx);
     // Retrieve blockinfos, if they haven't been done retrieved
     if (!raw_varinfo->blockinfo)
-        common_read_inq_var_blockinfo_raw(fp, raw_varinfo);
+        common_read_inq_var_blockinfo_raw(fp, (ADIOS_VARINFO *)raw_varinfo);
     if (!transinfo->orig_blockinfo)
-        common_read_inq_trans_blockinfo(fp, raw_varinfo, transinfo);
+        common_read_inq_trans_blockinfo(fp, raw_varinfo, (ADIOS_TRANSINFO *)transinfo);
 
     // Assemble read requests for each varblock
     blockidx = start_blockidx;
@@ -208,7 +211,7 @@ ADIOS_PG_INTERSECTIONS * adios_find_intersecting_pgs(const ADIOS_FILE *fp, int v
         pg_bounds_sel = create_pg_bounds(transinfo->orig_ndim, orig_vb);
 
         // Find the intersection, if any
-        pg_intersection_sel = adios_selection_intersect(pg_bounds_sel, sel);
+        pg_intersection_sel = adios_selection_intersect_global(pg_bounds_sel, sel);
         if (pg_intersection_sel) {
         	// Expand the PG intersection array, if needed
         	if (resulting_intersections->npg == intersection_capacity) {

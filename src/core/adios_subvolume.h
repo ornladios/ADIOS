@@ -55,6 +55,25 @@ void vector_sub(int ndim, uint64_t *dst, const uint64_t *vec1, const uint64_t *v
 uint64_t compute_volume(int ndim, const uint64_t *dims);
 
 /*
+ * Calculates the intersection, if any, between two line segments in a 1D space.
+
+ * If the line segments intersect, this function will return a non-zero value, and
+ * the output arguments (inter_start, inter_len) will be populated with the offset
+ * and length of the intersection region, respectively.
+ *
+ * If the volumes are disjoint, this function will return 0, and the content of
+ * the output arguments is undefined.
+ *
+ * @param start1 the offset of the first line segment
+ * @param len1 the length of the first line segment
+ * @param start2 the offset of the second line segment
+ * @param len2 the length of the second line segment
+ * @param inter_start a pointer to a uint64_t to hold the intersection region's offset
+ * @param inter_len a pointer to a uint64_t to hold the intersection region's length
+ */
+int intersect_segments(uint64_t start1, uint64_t len1, uint64_t start2, uint64_t len2,
+                       uint64_t *inter_start, uint64_t *inter_len);
+/*
  * Calculates the intersection, if any, between two volumes. For each volume,
  * dimensions and global offsets must be specified. If the volumes do
  * intersect, the size dimensions of the intersection are returned, as well as

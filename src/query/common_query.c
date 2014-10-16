@@ -98,12 +98,12 @@ static enum ADIOS_QUERY_METHOD detect_and_set_query_method(ADIOS_QUERY* q)
 		// without checking whether *evaluate_fn is defined,
 		// it causes crash when idx is not used for fastbit. (i.e. m=0, returns 0, m=1, crashes at "found = nullpoiint(q)"
 		if (query_hooks[m].adios_query_can_evaluate_fn == NULL) {
-			continue;
+		  continue;
 		}
 		int found = query_hooks[m].adios_query_can_evaluate_fn(q);
 		if (found) {
-			q->method = m;
-			return m;
+		  q->method = m;
+		  return m;
 		}
 	}
 	// return default that always works
@@ -127,8 +127,10 @@ void common_query_free(ADIOS_QUERY* q)
   // a particular query engine! Otherwise, if a query is created but never
   // evaluated, this will cause segfaults since no query method initialized the query
   if (q->method != ADIOS_QUERY_METHOD_UNKNOWN) {
-	  assert(q->method < ADIOS_QUERY_METHOD_COUNT);
-      query_hooks[q->method].adios_query_free_fn(q);
+      assert(q->method < ADIOS_QUERY_METHOD_COUNT);
+      if (query_hooks[q->method].adios_query_free_fn != NULL) {
+	query_hooks[q->method].adios_query_free_fn(q);
+      }
   }
 }
 
@@ -453,7 +455,12 @@ int64_t common_query_estimate(ADIOS_QUERY* q)
       return -1;
     }
     enum ADIOS_QUERY_METHOD m = detect_and_set_query_method (q);
-    return query_hooks[m].adios_query_estimate_fn(q);
+    if (query_hooks[m].adios_query_estimate_fn != NULL) {
+      return query_hooks[m].adios_query_estimate_fn(q);
+    }		
+
+    log_debug("No estimate function was supported for method %d\n", m);
+    return -1;
 }
 
 void common_query_set_timestep(int timeStep)
@@ -682,11 +689,13 @@ int common_query_get_selection(ADIOS_QUERY* q,
 
     enum ADIOS_QUERY_METHOD m = detect_and_set_query_method (q);
 
-    int retval = query_hooks[m].adios_query_get_selection_fn(
-                               q,  batchSize, outputBoundary, result);
-
-    if (freeOutputBoundary) common_read_selection_delete(outputBoundary);
-    return retval;
+    if (query_hooks[m].adios_query_get_selection_fn != NULL) {
+      int retval = query_hooks[m].adios_query_get_selection_fn(q,  batchSize, outputBoundary, result);	      
+      if (freeOutputBoundary) common_read_selection_delete(outputBoundary);
+      return retval;
+    } 
+    log_debug ("No selection method is supported for method: %d\n", m);
+    return -1;
 }
 
 
