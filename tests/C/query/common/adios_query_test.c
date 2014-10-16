@@ -71,7 +71,6 @@ int performQuery(ADIOS_QUERY_TEST_INFO *queryInfo, ADIOS_FILE *f)
             void *data = malloc(retrievedPts->npoints * elmSize);
 
             // check returned temp data
-            adios_schedule_read_byid(f, currBatch, tempVar->varid, timestep , 1, data);
             adios_schedule_read (f, currBatch, queryInfo->varName, timestep , 1, data);
             adios_perform_reads(f, 1);
 
