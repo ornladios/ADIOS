@@ -79,7 +79,8 @@ ALL_TRANSFORMS=$( \
         }
       }
     }
-  '
+  ' |
+  grep -v -eisobar -eszip
 )
 
 echo "NOTE: Testing with the following installed data transformations: $ALL_TRANSFORMS" 
