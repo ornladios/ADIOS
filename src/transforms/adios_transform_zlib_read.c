@@ -62,8 +62,8 @@ adios_datablock * adios_transform_zlib_pg_reqgroup_completed(adios_transform_rea
     uint64_t compressed_size = (uint64_t)completed_pg_reqgroup->raw_var_length;
     void* compressed_data = completed_pg_reqgroup->subreqs->data;
     
-    uint64_t uncompressed_size_meta = *((uint64_t*)reqgroup->transinfo->transform_metadata);
-    char compress_ok = *((char*)(reqgroup->transinfo->transform_metadata + sizeof(uint64_t)));
+    uint64_t uncompressed_size_meta = *((uint64_t*)completed_pg_reqgroup->transform_metadata);
+    char compress_ok = *((char*)(completed_pg_reqgroup->transform_metadata + sizeof(uint64_t)));
 
     uint64_t uncompressed_size = adios_get_type_size(reqgroup->transinfo->orig_type, "");
     int d = 0;

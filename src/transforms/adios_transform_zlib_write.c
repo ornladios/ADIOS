@@ -162,8 +162,8 @@ int adios_transform_zlib_apply(struct adios_file_struct *fd,
     // copy the metadata, simply the original size before compression
     if(var->transform_metadata && var->transform_metadata_len > 0)
     {
-        memcpy(var->transform_metadata, &input_size, sizeof(uint64_t));
-        memcpy(var->transform_metadata + sizeof(uint64_t), &compress_ok, sizeof(char));
+        memcpy((char*)var->transform_metadata, &input_size, sizeof(uint64_t));
+        memcpy((char*)var->transform_metadata + sizeof(uint64_t), &compress_ok, sizeof(char));
     }
 
     *transformed_len = actual_output_size; // Return the size of the data buffer

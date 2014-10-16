@@ -50,7 +50,7 @@ int adios_transform_aplod_generate_read_subrequests(adios_transform_read_request
 
     // Retrieve APLOD metadata, determine how many components to use
     aplod_meta_t aplodmeta;
-    parse_aplod_meta(reqgroup->transinfo->transform_metadata, &aplodmeta);
+    parse_aplod_meta(pg_reqgroup->transform_metadata, &aplodmeta);
 
     int numComponentsToUse;
     if (!reqgroup->read_param || strcmp(reqgroup->read_param, "") == 0)
@@ -145,7 +145,7 @@ adios_datablock * adios_transform_aplod_pg_reqgroup_completed(adios_transform_re
     int32_t *componentVector = 0;
 
     aplod_meta_t aplodmeta;
-    parse_aplod_meta(reqgroup->transinfo->transform_metadata, &aplodmeta);
+    parse_aplod_meta(completed_pg_reqgroup->transform_metadata, &aplodmeta);
 
     APLODConfig_t *config;
 
