@@ -265,25 +265,26 @@ static ADIOS_SELECTION * evaluateConstraint(ADIOS_QUERY *query, int timestep) {
 	assert(query->varinfo && query->file && query->sel);
 
 	ADIOS_SELECTION *insel = query->sel;
-	int free_insel = 0;
+	ADIOS_SELECTION *globalInsel;
 
 	if (insel->type == ADIOS_SELECTION_WRITEBLOCK) {
-		insel = convertWBToBB(insel, timestep, query->file, query->varinfo);
-		free_insel = 1;
+		globalInsel = convertWBToBB(insel, timestep, query->file, query->varinfo);
+	} else {
+		globalInsel = insel;
 	}
 
-	const uint64_t buffersize = computeSelectionSizeInElements(insel) * adios_type_size(query->varinfo->type, NULL);
+	const uint64_t buffersize = computeSelectionSizeInElements(globalInsel) * adios_type_size(query->varinfo->type, NULL);
 	char *buffer = (char *)malloc(buffersize);
 	assert(buffer);
 
 	adios_schedule_read_byid(query->file, insel, query->varinfo->varid, timestep, 1, buffer);
 	adios_perform_reads(query->file, 1);
 
-	ADIOS_SELECTION *results = scanBufferForMatchingPoints(buffer, query->varinfo->type, insel, query);
+	ADIOS_SELECTION *results = scanBufferForMatchingPoints(buffer, query->varinfo->type, globalInsel, query);
 	sortPointsLexOrder(results); // Sort the matching points in lexicographical order
 
-	if (free_insel)
-		adios_selection_delete(insel);
+	if (globalInsel != insel)
+		adios_selection_delete(globalInsel);
 
 	return results;
 }
@@ -391,21 +392,116 @@ static ADIOS_SELECTION * derelativizePoints(ADIOS_SELECTION *inputPointsSel, ADI
 	return inputPointsSel;
 }
 
-static ADIOS_SELECTION * computeExpectedQueryResults(ADIOS_QUERY *query, int timestep, ADIOS_SELECTION *outputSelection) {
+static ADIOS_VARBLOCK * computePGBounds(ADIOS_QUERY *q, ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb, int timestep, int *out_ndim)
+{
+	if (!q->left && !q->right) {
+		// In this case, we have reached a leaf query node, so directly
+		// retrieve the varblock from the varinfo
+		assert(q->varinfo);
+
+		// Read the blockinfo if not already present
+		if (!q->varinfo->blockinfo) {
+			adios_read_set_data_view(q->file, LOGICAL_DATA_VIEW);
+			common_read_inq_var_blockinfo(q->file, q->varinfo);
+		}
+
+		// Note: adios_get_absolute_writeblock_index ensures that timestep and wbindex
+		// are both in bounds, signalling an adios_error if not. However, there will be
+		// no variable name cited in the error, so perhaps better error handling would
+		// be desirable in the future
+		//const int abs_wbindex = adios_get_absolute_writeblock_index(q->varinfo, wbindex, timestep);
+
+		int abs_wbindex;
+		if (wb->is_absolute_index) {
+			abs_wbindex = wb->index;
+		} else {
+			if (q->file->is_streaming) {
+				// In streaming mode, absolute == relative, so just use the index directly
+				abs_wbindex = wb->index;
+			} else {
+				abs_wbindex = adios_get_absolute_writeblock_index(q->varinfo, wb->index, timestep);
+			}
+		}
+
+		// Finally, return ndim and the varblock
+		*out_ndim = q->varinfo->ndim;
+		return &q->varinfo->blockinfo[abs_wbindex];
+	} else if (!q->left || !q->right) {
+		// In this case, we have only one subtree, so just return the
+		// ndim and varblock from that subtree directly, since there's
+		// nothing to compare against
+
+		ADIOS_QUERY *present_subtree = q->left ? (ADIOS_QUERY*)q->left : (ADIOS_QUERY*)q->right;
+		return computePGBounds(present_subtree, wb, timestep, out_ndim);
+	} else {
+		// In this final case, we have two subtrees, and we must compare
+		// the resultant varblock from each one to ensure they are equal
+		// before returning
+
+		ADIOS_QUERY *left = (ADIOS_QUERY *)q->left;
+		ADIOS_QUERY *right = (ADIOS_QUERY *)q->right;
+
+		// Next, retrieve the ndim and varblock for each subtree
+		int left_ndim, right_ndim;
+		ADIOS_VARBLOCK *left_vb = computePGBounds(left, wb, timestep, &left_ndim);
+		ADIOS_VARBLOCK *right_vb = computePGBounds(right, wb, timestep, &right_ndim);
+
+		// If either subtree returns an invalid (NULL) varblock, fail immediately
+		if (!left_vb || !right_vb) {
+			return NULL;
+		}
+
+		// Check that the ndims are equal, failing if not
+		int ndim;
+		if (left_ndim != right_ndim) {
+			return NULL;
+		} else {
+			ndim = left_ndim;
+		}
+
+		// Check the start/count coordinate in each dimension for equality,
+		// failing if any coordinate is not equal between the subtrees
+		int i;
+		for (i = 0; i < ndim; i++) {
+			if (left_vb->start[i] != right_vb->start[i] ||
+					left_vb->count[i] != right_vb->count[i]) {
+				return NULL;
+			}
+		}
+
+		// Finally, we have ensured that both subtrees yield valid and equal
+		// varblocks, so return the common ndim and varblock (arbitrarily use
+		// left_vb, since right and left equal)
+		*out_ndim = ndim;
+		return left_vb;
+	}
+}
+
+static ADIOS_SELECTION * convertOutputWBToBB(ADIOS_QUERY *query, ADIOS_SELECTION_WRITEBLOCK_STRUCT *outputWB, int timestep) {
+	int ndim;
+	const ADIOS_VARBLOCK *outputWBBounds = computePGBounds(query, outputWB, timestep, &ndim);
+
+	if (outputWBBounds) {
+		return adios_selection_boundingbox(ndim, outputWBBounds->start, outputWBBounds->count);
+	} else {
+		return NULL;
+	}
+}
+
+static ADIOS_SELECTION * computeExpectedQueryResults(ADIOS_QUERY *query, ADIOS_SELECTION *outputSelection, int timestep) {
 	ADIOS_SELECTION *resultPointsSel = evaluateQueryTree(query, timestep);
 
-	int freeOutputSelection = 0;
+	ADIOS_SELECTION *globalOutputSelection;
 	if (outputSelection->type == ADIOS_SELECTION_WRITEBLOCK) {
-		fprintf(stderr, "Writeblock output selections are currently not supported in compute_expected_query_results (at %s:%s)\n", __FILE__, __LINE__);
-		abort();
-		return NULL;
-		//outputSelection = convertWBToBB(outputSelection, timestep, query->_fp);
+		globalOutputSelection = convertOutputWBToBB(query, &outputSelection->u.block, timestep);
+	} else {
+		globalOutputSelection = outputSelection;
 	}
 
-	derelativizePoints(resultPointsSel, outputSelection);
+	derelativizePoints(resultPointsSel, globalOutputSelection);
 
-	if (freeOutputSelection)
-		adios_selection_delete(outputSelection);
+	if (globalOutputSelection != outputSelection)
+		adios_selection_delete(globalOutputSelection);
 
 	return resultPointsSel;
 }
@@ -464,7 +560,7 @@ int main(int argc, char **argv) {
 
 	int timestep;
 	for (timestep = testinfo->fromStep; timestep < testinfo->fromStep + testinfo->numSteps; ++timestep) {
-		ADIOS_SELECTION *result = computeExpectedQueryResults(testinfo->query, timestep, testinfo->outputSelection);
+		ADIOS_SELECTION *result = computeExpectedQueryResults(testinfo->query, testinfo->outputSelection, timestep);
 		printPointSelection(timestep, result);
 
 		free(result->u.points.points);
