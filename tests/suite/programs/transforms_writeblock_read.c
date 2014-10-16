@@ -22,7 +22,7 @@
 static const MPI_Comm COMM = MPI_COMM_WORLD;
 static int rank, size;
 
-static void test_file_mode_reads_on_var(ADIOS_FILE *fp, const char *varname) {
+static void test_file_mode_reads_on_var(ADIOS_FILE *fp, const char *bp_filename, const char *varname) {
 	int i;
 
 	ADIOS_VARINFO *varinfo = adios_inq_var(fp, varname);
@@ -33,6 +33,8 @@ static void test_file_mode_reads_on_var(ADIOS_FILE *fp, const char *varname) {
 		adios_free_varinfo(varinfo);
 		return;
 	}
+
+	fprintf(stderr, "[rank %d/%d] Starting file-mode writeblock reads on %s:/%s\n", rank, size, bp_filename, varname);
 
 	adios_inq_var_blockinfo(fp, varinfo);
 	MPI_Assert(COMM, varinfo->blockinfo);
@@ -82,6 +84,8 @@ static void test_file_mode_reads_on_var(ADIOS_FILE *fp, const char *varname) {
 	}
 
 	adios_free_varinfo(varinfo);
+
+	fprintf(stderr, "[rank %d/%d] Finished file-mode writeblock reads on %s:/%s\n", rank, size, bp_filename, varname);
 }
 
 static void test_file_mode_reads(const char *bp_filename) {
@@ -93,8 +97,7 @@ static void test_file_mode_reads(const char *bp_filename) {
 
 	for (i = 0; i < fp->nvars; ++i) {
 		const char *varname = fp->var_namelist[i];
-		fprintf(stderr, "[rank %d/%d] Starting file-mode writeblock reads on %s:/%s\n", rank, size, bp_filename, varname);
-		test_file_mode_reads_on_var(fp, varname);
+		test_file_mode_reads_on_var(fp, bp_filename, varname);
 
 		MPI_Barrier(COMM);
 	}
