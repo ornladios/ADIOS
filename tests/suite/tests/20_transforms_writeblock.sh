@@ -33,17 +33,21 @@ MPIRUN_CMD="$MPIRUN $NP_MPIRUN $USEPROCS"
 
 # Basic directory structure
 TEST_PROGRAMS_DIR="$TRUNKDIR/tests/suite/programs"
+UTILS_DIR="$TRUNKDIR/utils"
 
 # Some external tools to use
 DATASET_BUILDER_EXE_BASENAME="build_standard_dataset"
 DATASET_TESTER_EXE_BASENAME="transforms_writeblock_read"
+LIST_METHODS_EXE_BASENAME="list_methods"
 
 DATASET_BUILDER_EXE_PATH="$TEST_PROGRAMS_DIR/$DATASET_BUILDER_EXE_BASENAME"
 DATASET_TESTER_EXE_PATH="$TEST_PROGRAMS_DIR/$DATASET_TESTER_EXE_BASENAME"
+LIST_METHODS_EXE_PATH="$UTILS_DIR/list_methods/$LIST_METHODS_EXE_BASENAME"
 
 # Check for the executability of all executables that we need
 [ -f "$DATASET_BUILDER_EXE_PATH" -a -x "$DATASET_BUILDER_EXE_PATH" ] || die "ERROR: $DATASET_BUILDER_EXE_PATH is not executable"
 [ -f "$DATASET_TESTER_EXE_PATH"  -a -x "$DATASET_TESTER_EXE_PATH"  ] || die "ERROR: $DATASET_TESTER_EXE_PATH is not executable"
+[ -f "$LIST_METHODS_EXE_PATH"    -a -x "$LIST_METHODS_EXE_PATH"    ] || die "ERROR: $LIST_METHODS_EXE_PATH is not executable"
 
 # Copy the external tools to the working directory for convenience
 DATASET_BUILDER_EXE_LOCAL="./$DATASET_BUILDER_EXE_BASENAME"
@@ -59,11 +63,26 @@ ALL_DATASET_IDS=" \
   DS-particle \
 "
 
-ALL_TRANSFORMS=" \
-  identity \
-  zlib \
-"
+ALL_TRANSFORMS=$( \
+  $LIST_METHODS_EXE_PATH |
+  awk '
+    /^Available/{
+      transforms = ($2 == "data")
+    }
+    {
+      if (transforms) {
+        if (skippedheader) {
+          gsub("\"","",$1)
+          print $1
+        } else {
+          skippedheader = true
+        }
+      }
+    }
+  '
+)
 
+echo "NOTE: Testing with the following installed data transformations: $ALL_TRANSFORMS" 
 
 function invoke_dataset_builder() {
   local DSID="$1"
