@@ -23,7 +23,7 @@
 //
 
 //
-// One-on-one intersection functions
+// One-on-one global intersection functions
 //
 ADIOS_SELECTION * adios_selection_intersect_bb_bb(const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb1,
                                                   const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb2) {
@@ -142,15 +142,8 @@ ADIOS_SELECTION * adios_selection_intersect_pts_pts(const ADIOS_SELECTION_POINTS
     }
 }
 
-ADIOS_SELECTION * adios_selection_intersect_wb_wb(const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb1,
-                                                  const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb2) {
-    return wb1->index == wb2->index ?
-           common_read_selection_writeblock(wb1->index):
-           NULL;
-}
-
 //
-// One-on-any intersection functions
+// One-on-any global intersection functions
 //
 
 // s2 can be selection type
@@ -167,12 +160,6 @@ inline static ADIOS_SELECTION * adios_selection_intersect_bb(const ADIOS_SELECTI
         const ADIOS_SELECTION_POINTS_STRUCT *pts2 = &s2->u.points;
         return adios_selection_intersect_bb_pts(bb1, pts2);
     }
-    case ADIOS_SELECTION_WRITEBLOCK:
-        adios_error_at_line(err_invalid_argument, __FILE__, __LINE__, "Intersection of selection type BOUNDINGBOX and WRITEBLOCK not currently supported");
-        return NULL;
-    case ADIOS_SELECTION_AUTO:
-        adios_error_at_line(err_invalid_argument, __FILE__, __LINE__, "Intersection of selection type BOUNDINGBOX and AUTO not currently supported");
-        return NULL;
     default:
         adios_error_at_line(err_invalid_argument, __FILE__, __LINE__, "Unknown selection type %d", s2->type);
         return NULL;
@@ -188,50 +175,30 @@ inline static ADIOS_SELECTION * adios_selection_intersect_pts(const ADIOS_SELECT
         const ADIOS_SELECTION_POINTS_STRUCT *pts2 = &s2->u.points;
         return adios_selection_intersect_pts_pts(pts1, pts2);
     }
-    case ADIOS_SELECTION_WRITEBLOCK:
-        adios_error_at_line(err_invalid_argument, __FILE__, __LINE__, "Intersection of selection type POINTS and WRITEBLOCK not currently supported");
-        return NULL;
-    case ADIOS_SELECTION_AUTO:
-        adios_error_at_line(err_invalid_argument, __FILE__, __LINE__, "Intersection of selection type POINTS and AUTO not currently supported");
-        return NULL;
     default:
         adios_error_at_line(err_invalid_argument, __FILE__, __LINE__, "Unknown selection type %d", s2->type);
         return NULL;
     }
 }
 
-// s2 can be any selection except boundingbox and points
-inline static ADIOS_SELECTION * adios_selection_intersect_wb(const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb1,
-                                                             const ADIOS_SELECTION *s2) {
-    switch (s2->type) {
-    case ADIOS_SELECTION_WRITEBLOCK:
-    {
-        const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb2 = &s2->u.block;
-        return adios_selection_intersect_wb_wb(wb1, wb2);
-    }
-    case ADIOS_SELECTION_AUTO:
-        adios_error_at_line(err_invalid_argument, __FILE__, __LINE__, "Intersection of selection type WRITEBLOCK and AUTO not currently supported");
-        return NULL;
-    default:
-        adios_error_at_line(err_invalid_argument, __FILE__, __LINE__, "Unknown selection type %d", s2->type);
-        return NULL;
-    }
-}
-
-// s2 can only be auto
-inline static ADIOS_SELECTION * adios_selection_intersect_auto(const ADIOS_SELECTION_AUTO_STRUCT *as1,
-                                                               const ADIOS_SELECTION *s2) {
-    return copy_selection(s2);
-}
-
 //
-// Any-on-any intersection function
+// Any-on-any global intersection function
 //
+
+static int is_global_selection(const ADIOS_SELECTION *sel) {
+	return sel->type == ADIOS_SELECTION_BOUNDINGBOX || sel->type == ADIOS_SELECTION_POINTS;
+}
 
 // The if statements impose a total order on the selection types, and call this function
-// with arguments swapped if they are out of this order.
-ADIOS_SELECTION * adios_selection_intersect(const ADIOS_SELECTION *s1, const ADIOS_SELECTION *s2) {
-    switch (s1->type) {
+// with arguments swapped if they are out of this order. This simplifies the above helper
+// functions.
+ADIOS_SELECTION * adios_selection_intersect_global(const ADIOS_SELECTION *s1, const ADIOS_SELECTION *s2) {
+	if (!is_global_selection(s1) || !is_global_selection(s2)) {
+    	adios_error_at_line(err_invalid_argument, __FILE__, __LINE__, "Internal error: adios_selection_intersect_global called on non-global selection(s)");
+    	return NULL;
+	}
+
+	switch (s1->type) {
     case ADIOS_SELECTION_BOUNDINGBOX:
     {
         const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb1 = &s1->u.bb;
@@ -241,29 +208,9 @@ ADIOS_SELECTION * adios_selection_intersect(const ADIOS_SELECTION *s1, const ADI
     {
         const ADIOS_SELECTION_POINTS_STRUCT *pts1 = &s1->u.points;
         if (s1->type == ADIOS_SELECTION_BOUNDINGBOX) {
-            return adios_selection_intersect(s2, s1);
+            return adios_selection_intersect_global(s2, s1);
         } else {
             return adios_selection_intersect_pts(pts1, s2);
-        }
-    }
-    case ADIOS_SELECTION_WRITEBLOCK:
-    {
-        const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb1 = &s1->u.block;
-        if (s1->type == ADIOS_SELECTION_BOUNDINGBOX ||
-            s1->type == ADIOS_SELECTION_POINTS) {
-            return adios_selection_intersect(s2, s1);
-        } else {
-            return adios_selection_intersect_wb(wb1, s2);
-        }
-    }
-    case ADIOS_SELECTION_AUTO: {
-        const ADIOS_SELECTION_AUTO_STRUCT *as1 = &s1->u.autosel;
-        if (s1->type == ADIOS_SELECTION_BOUNDINGBOX ||
-            s1->type == ADIOS_SELECTION_POINTS ||
-            s1->type == ADIOS_SELECTION_WRITEBLOCK) {
-            return adios_selection_intersect(s2, s1);
-        } else {
-            return adios_selection_intersect_auto(as1, s2);
         }
     }
     default:
@@ -272,3 +219,117 @@ ADIOS_SELECTION * adios_selection_intersect(const ADIOS_SELECTION *s1, const ADI
     }
 }
 
+
+//
+// One-on-one global intersection functions
+//
+ADIOS_SELECTION * adios_selection_intersect_wb_wb(const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb1,
+                                                  const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb2,
+                                                  int timestep,
+                                                  const ADIOS_VARINFO *raw_varinfo, const ADIOS_TRANSINFO *transinfo)
+{
+	int is_abs_idx;
+	int wbindex;
+	if (wb1->is_absolute_index == wb2->is_absolute_index) {
+		const int index1 = wb1->index;
+		const int index2 = wb2->index;
+		if (index1 != index2)
+			return NULL;
+
+		wbindex = index1;
+		is_abs_idx = wb1->is_absolute_index;
+	} else {
+		const int index1 = wb1->is_absolute_index ? wb1->index : adios_get_absolute_writeblock_index(raw_varinfo, wb1->index, timestep);
+		const int index2 = wb2->is_absolute_index ? wb2->index : adios_get_absolute_writeblock_index(raw_varinfo, wb2->index, timestep);
+		if (index1 != index2)
+			return NULL;
+
+		wbindex = index1;
+		is_abs_idx = 1;
+	}
+
+	if (!wb1->is_sub_pg_selection && !wb2->is_sub_pg_selection) {
+		// If neither selection is a sub-PG selection, the result is easy, and we can return immediately
+		ADIOS_SELECTION *inter_sel = common_read_selection_writeblock(wbindex);
+		inter_sel->u.block.is_absolute_index = is_abs_idx;
+		return inter_sel;
+	} else if (wb1->is_sub_pg_selection && wb2->is_sub_pg_selection) {
+		// Else, if both selections are sub-PG selections, take the overlapping portion (if any)
+		uint64_t inter_elem_offset, inter_nelems;
+
+		int intersects = intersect_segments(
+				wb1->element_offset, wb1->nelements,
+				wb2->element_offset, wb2->nelements,
+				&inter_elem_offset, &inter_nelems
+		);
+
+		if (intersects) {
+			ADIOS_SELECTION *inter_sel = common_read_selection_writeblock(wbindex);
+			inter_sel->u.block.is_absolute_index = is_abs_idx;
+			inter_sel->u.block.is_sub_pg_selection = 1;
+			inter_sel->u.block.element_offset = inter_elem_offset;
+			inter_sel->u.block.nelements = inter_nelems;
+			return inter_sel;
+		} else {
+			return NULL;
+		}
+	} else if (wb1->is_sub_pg_selection) {
+		// Else, if only the first selection is sub-PG, so just use its range
+		return copy_selection(wb1);
+	} else if (wb2->is_sub_pg_selection) {
+		// Else, only the second selection is sub-PG, so just use its range
+		return copy_selection(wb2);
+	} else {
+		abort(); // Should not be possible'
+		return NULL;
+	}
+}
+
+//
+// One-on-any local intersection functions
+//
+
+// s2 can be selection type
+inline static ADIOS_SELECTION * adios_selection_intersect_wb(const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb1,
+                                                             const ADIOS_SELECTION *s2,
+                                                             int timestep,
+                                                             const ADIOS_VARINFO *raw_varinfo, const ADIOS_TRANSINFO *transinfo)
+{
+    switch (s2->type) {
+    case ADIOS_SELECTION_WRITEBLOCK:
+    {
+        const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb2 = &s2->u.block;
+        return adios_selection_intersect_wb_wb(wb1, wb2, timestep, raw_varinfo, transinfo);
+    }
+    default:
+        adios_error_at_line(err_invalid_argument, __FILE__, __LINE__, "Unknown selection type %d", s2->type);
+        return NULL;
+    }
+}
+
+//
+// Any-on-any local intersection function
+//
+ADIOS_SELECTION * adios_selection_intersect_local(const ADIOS_SELECTION *s1, const ADIOS_SELECTION *s2, int timestep, const ADIOS_VARINFO *raw_varinfo, const ADIOS_TRANSINFO *transinfo)
+{
+	if (is_global_selection(s1) || is_global_selection(s2)) {
+    	adios_error_at_line(err_invalid_argument, __FILE__, __LINE__, "Internal error: adios_selection_intersect_local called on non-local selection(s)");
+    	return NULL;
+	}
+
+	switch (s1->type) {
+    case ADIOS_SELECTION_WRITEBLOCK:
+    {
+        const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb1 = &s1->u.block;
+        return adios_selection_intersect_wb(wb1, s2, timestep, raw_varinfo, transinfo);
+    }
+    case ADIOS_SELECTION_AUTO:
+    {
+    	adios_error_at_line(err_invalid_argument, __FILE__, __LINE__, "Unsupported selection type AUTO in adios_selection_intersect_local");
+    	return NULL;
+    }
+    default:
+        adios_error_at_line(err_invalid_argument, __FILE__, __LINE__, "Unknown selection type %d", s1->type);
+        return NULL;
+    }
+}

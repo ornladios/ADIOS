@@ -179,9 +179,9 @@ int adios_transform_aplod_apply(struct adios_file_struct *fd,
     // Do I copy the PLODHandle_t object as the metadata or do I serialize it into the buffer as well
     if(var->transform_metadata && var->transform_metadata_len > 0)
     {
-        memcpy (var->transform_metadata, &input_size, sizeof(uint64_t));
-        memcpy (var->transform_metadata + sizeof (uint64_t), &numComponents, sizeof (numComponents));
-        memcpy (var->transform_metadata + sizeof (uint64_t) + sizeof (numComponents), componentVector, numComponents * sizeof (int32_t));
+        memcpy ((char*)var->transform_metadata, &input_size, sizeof(uint64_t));
+        memcpy ((char*)var->transform_metadata + sizeof (uint64_t), &numComponents, sizeof (numComponents));
+        memcpy ((char*)var->transform_metadata + sizeof (uint64_t) + sizeof (numComponents), componentVector, numComponents * sizeof (int32_t));
 
     }
 

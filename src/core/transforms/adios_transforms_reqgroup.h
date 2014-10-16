@@ -52,6 +52,7 @@ typedef struct _adios_transform_pg_read_request {
     // Various selections to aid in datablock construction
     const ADIOS_SELECTION *pg_intersection_sel;
     const ADIOS_SELECTION *pg_bounds_sel;
+    const ADIOS_SELECTION *pg_writeblock_sel;
 
     // Subrequests
     int num_subreqs;
@@ -67,8 +68,10 @@ typedef struct _adios_transform_pg_read_request {
 typedef struct _adios_transform_read_request {
     int completed; // Whether this request has been completed
 
-    ADIOS_VARCHUNK *lent_varchunk;    // varchunk owned by the common read layer (the transform code,
-                                      // specifically), which was lent to the user as a VARCHUNK.
+    ADIOS_VARCHUNK *lent_varchunk_data; // The data buffer of the last ADIOS_VARCHUNK passed to the user.
+                                        // The user is responsible for cleaning up the VARCHUNK itself, but
+                                        // we must free this buffer ourselves each time a new check_reads is
+                                        // called (or the file is closed)
 
     const ADIOS_FILE        *fp;
 

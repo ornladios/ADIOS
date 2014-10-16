@@ -99,7 +99,8 @@ CONFIG_CLEAN_VPATH_FILES =
 @BUILD_WRITE_TRUE@	set_path_var$(EXEEXT) steps_write$(EXEEXT) \
 @BUILD_WRITE_TRUE@	steps_read_file$(EXEEXT) \
 @BUILD_WRITE_TRUE@	steps_read_stream$(EXEEXT) blocks$(EXEEXT) \
-@BUILD_WRITE_TRUE@	build_standard_dataset$(EXEEXT)
+@BUILD_WRITE_TRUE@	build_standard_dataset$(EXEEXT) \
+@BUILD_WRITE_TRUE@	transforms_writeblock_read$(EXEEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@am__EXEEXT_2 =  \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	posix_method$(EXEEXT)
 am__EXEEXT_3 =
@@ -292,6 +293,16 @@ transforms_specparse_DEPENDENCIES =  \
 transforms_specparse_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(transforms_specparse_LDFLAGS) $(LDFLAGS) -o $@
+am_transforms_writeblock_read_OBJECTS =  \
+	transforms_writeblock_read.$(OBJEXT)
+transforms_writeblock_read_OBJECTS =  \
+	$(am_transforms_writeblock_read_OBJECTS)
+transforms_writeblock_read_DEPENDENCIES =  \
+	$(top_builddir)/src/libadios.a $(am__DEPENDENCIES_1)
+transforms_writeblock_read_LINK = $(LIBTOOL) --tag=CC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
+	$(AM_CFLAGS) $(CFLAGS) $(transforms_writeblock_read_LDFLAGS) \
+	$(LDFLAGS) -o $@
 am_two_groups_OBJECTS = two_groups.$(OBJEXT)
 two_groups_OBJECTS = $(am_two_groups_OBJECTS)
 two_groups_DEPENDENCIES = $(top_builddir)/src/libadios.a \
@@ -345,7 +356,8 @@ SOURCES = $(adios_amr_write_SOURCES) $(adios_amr_write_2vars_SOURCES) \
 	$(reuse_dim_SOURCES) $(selections_SOURCES) $(set_path_SOURCES) \
 	$(set_path_var_SOURCES) $(steps_read_file_SOURCES) \
 	$(steps_read_stream_SOURCES) $(steps_write_SOURCES) \
-	$(transforms_specparse_SOURCES) $(two_groups_SOURCES) \
+	$(transforms_specparse_SOURCES) \
+	$(transforms_writeblock_read_SOURCES) $(two_groups_SOURCES) \
 	$(write_alternate_SOURCES) $(write_read_SOURCES)
 DIST_SOURCES = $(adios_amr_write_SOURCES) \
 	$(adios_amr_write_2vars_SOURCES) $(adios_staged_read_SOURCES) \
@@ -360,7 +372,8 @@ DIST_SOURCES = $(adios_amr_write_SOURCES) \
 	$(reuse_dim_SOURCES) $(selections_SOURCES) $(set_path_SOURCES) \
 	$(set_path_var_SOURCES) $(steps_read_file_SOURCES) \
 	$(steps_read_stream_SOURCES) $(steps_write_SOURCES) \
-	$(transforms_specparse_SOURCES) $(two_groups_SOURCES) \
+	$(transforms_specparse_SOURCES) \
+	$(transforms_writeblock_read_SOURCES) $(two_groups_SOURCES) \
 	$(write_alternate_SOURCES) $(write_read_SOURCES)
 ETAGS = etags
 CTAGS = ctags
@@ -656,7 +669,8 @@ check_readonly_C =
 @BUILD_WRITE_TRUE@	steps_read_file \
 @BUILD_WRITE_TRUE@	steps_read_stream \
 @BUILD_WRITE_TRUE@	blocks \
-@BUILD_WRITE_TRUE@	build_standard_dataset
+@BUILD_WRITE_TRUE@	build_standard_dataset \
+@BUILD_WRITE_TRUE@	transforms_writeblock_read
 
 @BUILD_WRITE_TRUE@test_C = hashtest copy_subvolume transforms_specparse group_free_test
 @BUILD_FORTRAN_TRUE@check_readonly_Fortran = 
@@ -741,6 +755,9 @@ blocks_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 build_standard_dataset_SOURCES = build_standard_dataset.c 
 build_standard_dataset_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
 build_standard_dataset_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+transforms_writeblock_read_SOURCES = transforms_writeblock_read.c 
+transforms_writeblock_read_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
+transforms_writeblock_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 
 #transforms_SOURCES=transforms.c
 #transforms_CPPFLAGS = -DADIOS_USE_READ_API_1
@@ -893,6 +910,9 @@ steps_write$(EXEEXT): $(steps_write_OBJECTS) $(steps_write_DEPENDENCIES)
 transforms_specparse$(EXEEXT): $(transforms_specparse_OBJECTS) $(transforms_specparse_DEPENDENCIES) 
 	@rm -f transforms_specparse$(EXEEXT)
 	$(transforms_specparse_LINK) $(transforms_specparse_OBJECTS) $(transforms_specparse_LDADD) $(LIBS)
+transforms_writeblock_read$(EXEEXT): $(transforms_writeblock_read_OBJECTS) $(transforms_writeblock_read_DEPENDENCIES) 
+	@rm -f transforms_writeblock_read$(EXEEXT)
+	$(transforms_writeblock_read_LINK) $(transforms_writeblock_read_OBJECTS) $(transforms_writeblock_read_LDADD) $(LIBS)
 two_groups$(EXEEXT): $(two_groups_OBJECTS) $(two_groups_DEPENDENCIES) 
 	@rm -f two_groups$(EXEEXT)
 	$(two_groups_LINK) $(two_groups_OBJECTS) $(two_groups_LDADD) $(LIBS)
@@ -933,6 +953,7 @@ distclean-compile:
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/steps_read_stream.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/steps_write.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transforms_specparse-transforms_specparse.Po@am__quote@
+@AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/transforms_writeblock_read.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/two_groups.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/write_alternate.Po@am__quote@
 @AMDEP_TRUE@@am__include@ @am__quote@./$(DEPDIR)/write_read.Po@am__quote@

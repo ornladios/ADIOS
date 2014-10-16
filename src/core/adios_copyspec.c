@@ -16,10 +16,11 @@
 #include "core/common_read.h"
 #include "public/adios_selection.h"
 
+#define MYFREE(x) {if (x) free((void*)x);}
+
 //
 // Init and free
 //
-
 static void adios_copyspec_init_from_bufs(adios_subvolume_copy_spec *copy_spec,
                                           int ndim, const uint64_t *subv_dims,
                                           const uint64_t *dst_dims,
@@ -63,11 +64,25 @@ int adios_copyspec_init_from_intersection(adios_subvolume_copy_spec *copy_spec, 
                                   dst_dims, NULL,
                                   src_dims, NULL);
 
-    // Compute the intersection to fill in the rest of the information
+    uint64_t *subv_dims = malloc(ndim * sizeof(uint64_t));
+    uint64_t *dst_subv_offsets = malloc(ndim * sizeof(uint64_t));
+    uint64_t *src_subv_offsets = malloc(ndim * sizeof(uint64_t));
+
+    // Compute the intersection to compute in the rest of the information
     const int intersects =
         intersect_volumes(ndim, dst_dims, dst_goffsets, src_dims, src_goffsets,
-                          copy_spec->subv_dims, NULL,
-                          copy_spec->dst_subv_offsets, copy_spec->src_subv_offsets);
+                          subv_dims, NULL,
+                          dst_subv_offsets, src_subv_offsets);
+
+    if (intersects) {
+    	copy_spec->subv_dims = subv_dims;
+    	copy_spec->dst_subv_offsets = dst_subv_offsets;
+    	copy_spec->src_subv_offsets = src_subv_offsets;
+    } else {
+    	MYFREE(subv_dims);
+    	MYFREE(dst_subv_offsets);
+    	MYFREE(src_subv_offsets);
+    }
 
     return intersects;
 }
@@ -93,7 +108,6 @@ int adios_copyspec_init_from_2bb_intersection(adios_subvolume_copy_spec *copy_sp
 }
 
 
-#define MYFREE(x) {if (x) free((void*)x);}
 void adios_copyspec_free(adios_subvolume_copy_spec **copy_spec_ptr, int free_buffers) {
     adios_subvolume_copy_spec *copy_spec = *copy_spec_ptr;
     if (free_buffers) {
@@ -107,7 +121,6 @@ void adios_copyspec_free(adios_subvolume_copy_spec **copy_spec_ptr, int free_buf
 
     MYFREE(*copy_spec_ptr);
 }
-#undef MYFREE
 
 //
 // Derivative copyspec functions

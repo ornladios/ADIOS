@@ -149,10 +149,7 @@ adios_datablock * adios_transform_alacrity_pg_reqgroup_completed(adios_transform
 
 		ALPartitionDataDestroy(&output_partition);
 
-		return adios_datablock_new(reqgroup->transinfo->orig_type,
-				completed_pg_reqgroup->timestep,
-				completed_pg_reqgroup->pg_bounds_sel,
-				orig_data_buff);
+		return adios_datablock_new_whole_pg(reqgroup, completed_pg_reqgroup, orig_data_buff);
 	} else {
 		abort(); // Should not happen, since no reads should be scheduled in such a case
 		return NULL;

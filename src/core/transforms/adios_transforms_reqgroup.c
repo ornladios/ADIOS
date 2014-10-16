@@ -278,6 +278,11 @@ adios_transform_pg_read_request * adios_transform_pg_read_request_new(
     new_pg_reqgroup->pg_bounds_sel = pg_bounds_sel;
     new_pg_reqgroup->transform_metadata = transform_metadata;
     new_pg_reqgroup->transform_metadata_len = transform_metadata_len;
+
+    ADIOS_SELECTION *wbsel = common_read_selection_writeblock(blockidx);
+    wbsel->u.block.is_absolute_index = 1;
+    new_pg_reqgroup->pg_writeblock_sel = wbsel;
+
     // Other fields are 0'd
 
     return new_pg_reqgroup;
@@ -320,6 +325,8 @@ void adios_transform_pg_read_request_free(adios_transform_pg_read_request **pg_r
         common_read_selection_delete((ADIOS_SELECTION*)pg_reqgroup->pg_intersection_sel);
     if (pg_reqgroup->pg_bounds_sel)
         common_read_selection_delete((ADIOS_SELECTION*)pg_reqgroup->pg_bounds_sel);
+    if (pg_reqgroup->pg_writeblock_sel)
+    	common_read_selection_delete((ADIOS_SELECTION*)pg_reqgroup->pg_writeblock_sel);
     MYFREE(pg_reqgroup->transform_internal);
 
     // Clear all data to 0's for safety
@@ -354,8 +361,12 @@ adios_transform_read_request * adios_transform_read_request_new(
     new_reqgroup->orig_data = data;
     new_reqgroup->swap_endianness = swap_endianness;
 
-    new_reqgroup->orig_sel_timestep_size = compute_selection_size(sel) *
-                                           common_read_type_size(transinfo->orig_type, NULL);
+    // orig_sel_timestep_size is not meaningful for a writeblock selection, since a
+    // writeblock selection may "change size" depending on which timestep is considered
+    if (sel->type != ADIOS_SELECTION_WRITEBLOCK) {
+		new_reqgroup->orig_sel_timestep_size = compute_selection_size(sel) *
+											   common_read_type_size(transinfo->orig_type, NULL);
+    }
 
     // Other fields are 0'd
 
@@ -416,8 +427,8 @@ void adios_transform_read_request_free(adios_transform_read_request **reqgroup_p
 
     // Free any data buffer lent to the user, but don't free the VARCHUNK; that
     // should have been done already by the user
-    if (reqgroup->lent_varchunk)
-        MYFREE(reqgroup->lent_varchunk->data);
+    if (reqgroup->lent_varchunk_data)
+        MYFREE(reqgroup->lent_varchunk_data);
 
     common_read_selection_delete((ADIOS_SELECTION*)reqgroup->orig_sel); // Remove const
     common_read_free_transinfo(reqgroup->raw_varinfo,
