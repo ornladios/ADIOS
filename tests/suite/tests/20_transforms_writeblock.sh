@@ -75,7 +75,7 @@ ALL_TRANSFORMS=$( \
           gsub("\"","",$1)
           print $1
         } else {
-          skippedheader = true
+          skippedheader = 1
         }
       }
     }
