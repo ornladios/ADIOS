@@ -28,7 +28,7 @@ void testNoBoxOnSelection(ADIOS_FILE* f)
     int64_t batchSize = 50;
     while (1) {
       ADIOS_SELECTION* currBatch = NULL;
-      int hasMore =  adios_query_get_selection(q, batchSize, noBox, &currBatch);
+      int hasMore =  adios_query_evaluate(q, batchSize, noBox, &currBatch);
       adios_selection_delete(currBatch);
       
       if (hasMore <= 0) {
@@ -85,7 +85,7 @@ void testAllDifferentBoundBoxes(ADIOS_FILE* f)
     while (1) {
       ADIOS_SELECTION* currBatch = NULL;
       //ADIOS_SELECTION* box3 = adios_selection_boundingbox(3, start3, count3);                                                                                                    
-      int hasMore =  adios_query_get_selection(q, batchSize, box3, &currBatch);
+      int hasMore =  adios_query_evaluate(q, batchSize, box3, &currBatch);
       adios_selection_delete(currBatch);
       if (hasMore <= 0) {
         break;
@@ -143,7 +143,7 @@ void testMultiBoundBox(ADIOS_FILE* f)
     while (1) {
       ADIOS_SELECTION* currBatch = NULL;
       //ADIOS_SELECTION* box3 = adios_selection_boundingbox(3, start3, count3);
-      int hasMore =  adios_query_get_selection(q, batchSize, box1, &currBatch);
+      int hasMore =  adios_query_evaluate(q, batchSize, box1, &currBatch);
       adios_selection_delete(currBatch);
       
       if (hasMore <= 0) {
@@ -189,7 +189,7 @@ void testDefaultBoundBox(ADIOS_FILE* f)
     int64_t batchSize = 50;
     while (1) {
       ADIOS_SELECTION* currBatch = NULL;
-      int hasMore =  adios_query_get_selection(q, batchSize, box, &currBatch);
+      int hasMore =  adios_query_evaluate(q, batchSize, box, &currBatch);
       adios_selection_delete(currBatch);
       
       if (hasMore <= 0) {
@@ -239,7 +239,7 @@ void testOnePointList(ADIOS_FILE* f)
     int64_t batchSize = 50;
     while (1) {
       ADIOS_SELECTION* currBatch = NULL;
-      int hasMore =  adios_query_get_selection(q, batchSize, box, &currBatch);
+      int hasMore =  adios_query_evaluate(q, batchSize, box, &currBatch);
       adios_selection_delete(currBatch);
       
       if (hasMore == 0) {
@@ -293,7 +293,7 @@ void testOneBoundBoxForAllVar(ADIOS_FILE* f)
       int nBatches = 1;
       while (1) {
 	ADIOS_SELECTION* currBatch = NULL;
-	int hasMore =  adios_query_get_selection(q, batchSize, box, &currBatch);
+	int hasMore =  adios_query_evaluate(q, batchSize, box, &currBatch);
         printf("Number of hits returned in batch %d = %lld \n",nBatches, currBatch->u.points.npoints);
         free(currBatch->u.points.points);
 	adios_selection_delete(currBatch);
@@ -361,7 +361,7 @@ void testUseOneWriteBlock(ADIOS_FILE* f, int blockNum)
       
       while (1) {
 	ADIOS_SELECTION* currBatch = NULL;
-	int hasMore =  adios_query_get_selection(q, batchSize, box, &currBatch);
+	int hasMore =  adios_query_evaluate(q, batchSize, box, &currBatch);
 	adios_selection_delete(currBatch);
 	
 	if (hasMore <= 0) {

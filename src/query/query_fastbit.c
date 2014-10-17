@@ -1047,7 +1047,7 @@ ADIOS_QUERY* getFirstLeaf(ADIOS_QUERY* q) {
   return getFirstLeaf(q->left);
 }
 
-int  adios_query_fastbit_get_selection(ADIOS_QUERY* q, 
+int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
 				      uint64_t batchSize, 
 				      ADIOS_SELECTION* outputBoundary, 
 				      ADIOS_SELECTION** result)
@@ -1402,7 +1402,7 @@ void queryDetail(ADIOS_QUERY* q, int timeStep) {
       //log_debug("::\t max=%llu _lastRead=%llu\n", q->_maxResultDesired, q->_lastRead);
       ADIOS_SELECTION* t;
       ADIOS_SELECTION* bound;
-      adios_query_get_selection(q, batchSize, bound, &t);
+      adios_query_evaluate(q, batchSize, bound, &t);
       free(t->u.points.points);
       adios_selection_delete(t);
       //log_debug("::\t      max=%llu _lastRead=%llu\n", q->_maxResultDesired, q->_lastRead);

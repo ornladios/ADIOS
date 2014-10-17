@@ -90,7 +90,7 @@ int64_t adios_query_estimate (ADIOS_QUERY* q);
 
 void adios_query_set_timestep (int timeStep);
 
-int  adios_query_get_selection (ADIOS_QUERY* q, 
+int  adios_query_evaluate (ADIOS_QUERY* q, 
                                 uint64_t batchSize, // limited by maxResult
                                 ADIOS_SELECTION* outputBoundary,// must supply to get results
                                 ADIOS_SELECTION** queryResult);
