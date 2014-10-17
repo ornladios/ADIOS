@@ -82,8 +82,10 @@ void clear_fastbit_internal(ADIOS_QUERY* query)
 void clear_fastbit_internal_recursive(ADIOS_QUERY* query) 
 {
   clear_fastbit_internal(query);
-  fastbit_selection_free( ((FASTBIT_INTERNAL*)(query->queryInternal))->_handle); 
-
+  if (query->hasParent != 0) {
+    fastbit_selection_free( ((FASTBIT_INTERNAL*)(query->queryInternal))->_handle); 
+  }
+ 
   if (query->left != NULL) {
     clear_fastbit_internal(query->left);
   }
@@ -100,7 +102,7 @@ void assertValue(char* input, char* endptr) {
   if (*endptr != '\0')  
     if ((errno == ERANGE) || (errno != 0) || (endptr == input) || (*endptr != '\0')) {
       //perror("strtol");
-        printf("Exit due to :invalid integer value: %s\n", input);
+        printf("FastbitQueryEvaluation Exit due to :invalid type value: %s\n", input);
 	exit(EXIT_FAILURE);
     }
 }
@@ -461,16 +463,18 @@ FastBitSelectionHandle createHandle(ADIOS_QUERY* q, const char* registeredArrayN
   uint64_t dataSize = q->rawDataSize;
 
   char* endptr;
+  double vv = strtod(q->predicateValue, &endptr);
+
   if (dataType == FastBitDataTypeDouble) {
-    double vv = strtod(q->predicateValue, &endptr);
+    //double vv = strtod(q->predicateValue, &endptr);
     assertValue(q->predicateValue, endptr);
     return fastbit_selection_osr(registeredArrayName, compareOp, vv);
   } else if ((dataType == FastBitDataTypeInt) || (dataType == FastBitDataTypeLong) || (dataType == FastBitDataTypeUInt) || (dataType == FastBitDataTypeULong)) {
-    long vv = strtol(q->predicateValue, &endptr, 10);    
+    //long vv = strtol(q->predicateValue, &endptr, 10);    
     assertValue(q->predicateValue, endptr);
     return fastbit_selection_osr(registeredArrayName, compareOp, (double)vv);
   } else if (dataType == FastBitDataTypeFloat) {
-    float vv = strtof(q->predicateValue, &endptr);
+    //float vv = strtof(q->predicateValue, &endptr);
     assertValue(q->predicateValue, endptr);
     return fastbit_selection_osr(registeredArrayName, compareOp, (double)vv);
   } else {
@@ -1132,6 +1136,7 @@ int  adios_query_fastbit_free(ADIOS_QUERY* query)
     return;
   }
 
+  /*
   log_debug(":: free %s  has parent? %d\n", query->condition, query->hasParent);
   
   free(query->predicateValue);
@@ -1151,6 +1156,9 @@ int  adios_query_fastbit_free(ADIOS_QUERY* query)
 
   free(query);
   query = 0;
+  */
+  clear_fastbit_internal(query);
+  free(query->queryInternal);
 
 }
 
