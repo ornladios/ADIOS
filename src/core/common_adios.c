@@ -313,7 +313,7 @@ int common_adios_group_size (int64_t fd_p
         }
     }
 
-#ifdef SKEL_TIMING
+#ifdef ADIOS_TIMERS
     int tv_size = adios_add_timing_variables (fd);
     data_size += tv_size;
 #endif
@@ -420,7 +420,7 @@ int common_adios_group_size (int64_t fd_p
         }
     }
 
-#ifdef SKEL_TIMING
+#ifdef ADIOS_TIMERS
     adios_write_timing_variables (fd);
 #endif
 
@@ -990,10 +990,6 @@ int common_adios_close (int64_t fd_p)
         return 0;
     }
 
-//#ifdef SKEL_TIMING
-//    adios_write_timing_variables (fd);
-//#endif
-
     struct adios_attribute_struct * a = fd->group->attributes;
     struct adios_var_struct * v = fd->group->vars;
 
@@ -1117,7 +1113,7 @@ int common_adios_close (int64_t fd_p)
     }
 
 
-#ifdef SKEL_TIMING
+#ifdef ADIOS_TIMER_EVENTS
     char* extension = ".perf";
     int name_len = strlen (fd->name);
     int fn_len = name_len + strlen (extension) + 1;

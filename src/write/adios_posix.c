@@ -32,13 +32,13 @@
 #    define O_LARGEFILE 0
 #endif
 
-#ifdef SKEL_TIMING
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
 #define START_TIMER(t) adios_timing_go (fd->group->timing_obj, (t) ) 
 #else
 #define START_TIMER(t) ; 
 #endif
 
-#ifdef SKEL_TIMING
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
 #define STOP_TIMER(t) adios_timing_stop (fd->group->timing_obj, (t) )
 #else
 #define STOP_TIMER(t) ;
@@ -94,7 +94,7 @@ void adios_posix_init (const PairStruct * parameters
 
 
 // Indices for the timer object
-#ifdef SKEL_TIMING
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
 int ADIOS_TIMER_POSIX_COMM = ADIOS_TIMING_MAX_USER_TIMERS + 0;
 int ADIOS_TIMER_POSIX_IO = ADIOS_TIMING_MAX_USER_TIMERS + 1;
 int ADIOS_TIMER_POSIX_MD = ADIOS_TIMING_MAX_USER_TIMERS + 2;
@@ -114,7 +114,7 @@ int adios_posix_open (struct adios_file_struct * fd
     struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
                                                           method->method_data;
 
-#ifdef SKEL_TIMING
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
     int timer_count = 7;
     char ** timer_names = (char**) malloc (timer_count * sizeof (char*) );
     timer_names [0] = "Communication";
@@ -1361,7 +1361,7 @@ void adios_posix_close (struct adios_file_struct * fd
 
     STOP_TIMER (ADIOS_TIMER_POSIX_AD_CLOSE);
 
-#ifdef SKEL_TIMING
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
 
     //Finished timing this cycle, swap the timing buffers
     adios_timing_destroy(fd->group->prev_timing_obj);

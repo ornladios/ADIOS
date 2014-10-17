@@ -36,7 +36,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     export GLIB_DIR="/ccs/proj/e2e/qliu/glib"
     export BUILD_WRITE=ON
     export BUILD_FORTRAN=ON
-    export skel_timing=ON
+    export adios_timers=ON
     export research_transports=ON
     export CC=mpicc
     export CXX=mpiCC
@@ -233,7 +233,7 @@ elif [ `hostname | cut -c 1-4` == "lens" ]; then
 
     export BUILD_WRITE=ON
     export BUILD_FORTRAN=ON
-    export skel_timing=ON
+    export adios_timers=ON
     export INSTALL_PREFIX="/ccs/home/jya/ADIOS/lens.$TARGET"
     export CC=mpicc
     export CXX=mpiCC
@@ -304,7 +304,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         export CFLAGS="-g -fPIC -O0" 
     	export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET-1.3.0"
         export FLEXPATH_DIR="/ccs/proj/e2e/chaos/titan/$TARGET"
-    	export skel_timing=ON
+    	export adios_timers=ON
     	export INSTALL_PREFIX="/ccs/home/jya/ADIOS/titan.$TARGET"
             
     else 
@@ -422,7 +422,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         export CXX=CC
         export CFLAGS="-g -fPIC -O0"
         export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK -DDART_DO_VERSIONING"
-        export skel_timing=ON
+        export adios_timers=ON
         export INSTALL_PREFIX="/ccs/home/jya/ADIOS/titan.$TARGET" 
     fi
     
@@ -922,7 +922,7 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
     CFLAGS="-g -DO_LARGEFILE=0 -fno-common" 
     export BUILD_WRITE=ON
     export BUILD_FORTRAN=ON
-    export skel_timing=ON
+    export adios_timers=ON
     export INSTALL_PREFIX="/opt/adios"
 #    ./configure --prefix=/opt/adios \
 #        --with-mxml=/opt/mxml \
@@ -984,7 +984,7 @@ elif [ `hostname | cut -c 1-7` == "esimmon" ]; then
     echo "Configure on ESIMMON VirtualBox ."
     export BUILD_WRITE=ON
     export BUILD_FORTRAN=ON
-    export skel_timing=ON
+    export adios_timers=ON
     export CC=mpicc
     export CXX=mpicxx
     export FC=mpif90
@@ -1009,7 +1009,7 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
     echo "Configure on adiosVM VirtualBox ."
     export BUILD_WRITE=ON
     export BUILD_FORTRAN=ON
-    export skel_timing=ON
+    export adios_timers=ON
     export CC=mpicc
     export CXX=mpicxx
     export FC=mpif90

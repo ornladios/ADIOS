@@ -21,7 +21,7 @@
 // NCSU ALACRITY-ADIOS: Include needed for the transform spec struct
 #include "core/transforms/adios_transforms_specparse.h"
 
-#ifdef SKEL_TIMING
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
 #include "core/adios_timing.h"
 #endif
 
@@ -158,7 +158,7 @@ struct adios_group_struct
 
     int attrid_update_epoch; // ID of special attribute "/__adios__/update_time_epoch" to find it fast
 
-#ifdef SKEL_TIMING
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
     // Using a "double buffering" approach. Current write cycle stored in timing_obj, while timing info from
     // previous cycle is kept in prev_timing_obj, and is written before close
     struct adios_timing_struct * timing_obj;
