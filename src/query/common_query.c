@@ -118,7 +118,7 @@ ADIOS_QUERY* freeQuery(ADIOS_QUERY* query) {
   free(query->condition);
 
   //adios_selection_delete(query->_sel);
-  adios_free_varinfo(query->varinfo);
+  common_free_varinfo(query->varinfo);
 
   free(query->dataSlice);
   query->dataSlice = 0;
