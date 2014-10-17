@@ -128,7 +128,7 @@ void multiSelection(ADIOS_FILE* bf, const char * b1, const char * b2,
 	ADIOS_SELECTION* outBox = box1;
 	while (1) {
 		ADIOS_SELECTION* currBatch = NULL;
-		int hasMore = adios_query_get_selection(q, batchSize, outBox,
+		int hasMore = adios_query_evaluate(q, batchSize, outBox,
 				&currBatch);
 		if (currBatch == NULL) // there is no results at all
 			break;
@@ -206,7 +206,7 @@ void oneDefinedBox(ADIOS_FILE* bf, const char * lb, const char * hb,
 
 	while (1) {
 		ADIOS_SELECTION* currBatch = NULL;
-		int hasMore = adios_query_get_selection(q, batchSize, box1, &currBatch);
+		int hasMore = adios_query_evaluate(q, batchSize, box1, &currBatch);
 		if (hasMore == 0) { // there is no left results to retrieve
 			break;
 		}
@@ -268,7 +268,7 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF) {
 		while (1) {
 			ADIOS_SELECTION* currBatch = NULL;
 			adios_query_set_method(q, ADIOS_QUERY_METHOD_ALACRITY);
-			int hasMore = adios_query_get_selection(q, batchSize, box,
+			int hasMore = adios_query_evaluate(q, batchSize, box,
 					&currBatch);
 
 			if (hasMore == 0) { // there is no left results to retrieve

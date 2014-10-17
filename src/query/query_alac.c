@@ -1560,7 +1560,7 @@ void convertMemstreamToALACBitmap( void *mem , ADIOS_ALAC_BITMAP * bout /*OUT*/)
 	memcpy(bout->bits, ptr+4, sizeof(uint64_t)*(bout->length));
 }
 
-int  adios_query_alac_get_selection(ADIOS_QUERY* q,
+int  adios_query_alac_evaluate(ADIOS_QUERY* q,
 			       uint64_t batchSize, // limited by maxResult
 			       ADIOS_SELECTION* outputBoundry,
 			       ADIOS_SELECTION** queryResult) {

@@ -673,7 +673,7 @@ static ADIOS_SELECTION * convertWriteblockToBoundingBox(
     return bb;
 }
 
-int common_query_get_selection(ADIOS_QUERY* q, 
+int common_query_evaluate(ADIOS_QUERY* q, 
 			       //const char* varName,
 			       //int timeStep, 
 			        uint64_t batchSize, // limited by maxResult
@@ -709,8 +709,8 @@ int common_query_get_selection(ADIOS_QUERY* q,
 
     enum ADIOS_QUERY_METHOD m = detect_and_set_query_method (q);
 
-    if (query_hooks[m].adios_query_get_selection_fn != NULL) {
-      int retval = query_hooks[m].adios_query_get_selection_fn(q,  batchSize, outputBoundary, result);	      
+    if (query_hooks[m].adios_query_evaluate_fn != NULL) {
+      int retval = query_hooks[m].adios_query_evaluate_fn(q,  batchSize, outputBoundary, result);	      
       if (freeOutputBoundary) common_read_selection_delete(outputBoundary);
       return retval;
     } 

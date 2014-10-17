@@ -9,7 +9,7 @@
   (*t) [b].adios_query_free_fn          = adios_query_##a##_free; \
   (*t) [b].adios_query_estimate_fn      = adios_query_##a##_estimate; \
   (*t) [b].adios_query_can_evaluate_fn  = adios_query_##a##_can_evaluate;  \
-  (*t) [b].adios_query_get_selection_fn = adios_query_##a##_get_selection; \
+  (*t) [b].adios_query_evaluate_fn      = adios_query_##a##_evaluate; \
   (*t) [b].adios_query_finalize_fn      = adios_query_##a##_finalize; 
 
 
@@ -30,7 +30,7 @@ void adios_query_hooks_init (struct adios_query_hooks_struct ** t)
       (*t) [i].adios_query_free_fn = 0;
       (*t) [i].adios_query_estimate_fn = 0;
       (*t) [i].adios_query_can_evaluate_fn = 0;
-      (*t) [i].adios_query_get_selection_fn = 0;
+      (*t) [i].adios_query_evaluate_fn = 0;
       (*t) [i].adios_query_finalize_fn = 0;
     }
 

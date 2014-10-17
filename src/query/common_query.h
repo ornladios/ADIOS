@@ -29,7 +29,7 @@ int64_t common_query_estimate(ADIOS_QUERY* q);
 
 void common_query_set_timestep(int timeStep);
 
-int common_query_get_selection(ADIOS_QUERY* q, 
+int common_query_evaluate(ADIOS_QUERY* q, 
 				uint64_t batchSize, 
 				ADIOS_SELECTION* outputBoundry,
 				ADIOS_SELECTION** result);
