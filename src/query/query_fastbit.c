@@ -624,7 +624,7 @@ int readWithTimeStepNoIdx(ADIOS_QUERY* q, int timeStep) {
   
   printQueryData(q, dataType, timeStep);
   uint64_t dataSize = q->rawDataSize;
-  //adios_free_varinfo(q->_var);
+  //common_free_varinfo(q->_var);
 
   char datasetName[strlen(q->condition) + 40];
   sprintf(datasetName, "%s-%d-%ld", q->condition, timeStep, getMilliseconds());  
@@ -1374,7 +1374,7 @@ ADIOS_QUERY* getQuery(const char* condition, ADIOS_FILE* f)
 
     ADIOS_SELECTION* sel =adios_selection_boundingbox (v->ndim, start, count);
     
-    adios_free_varinfo(v);
+    common_read_free_varinfo(v);
 
     ADIOS_QUERY* q = adios_query_create(f, varName, sel, getOp(opStr), valueStr);
 
