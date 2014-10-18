@@ -9,7 +9,7 @@ extern "C" {
 
 //#define ADIOS_QUERY_METHOD_COUNT  2
 
-int gCurrentTimeStep;
+//int gCurrentTimeStep;
 
 enum ADIOS_QUERY_METHOD 
 {
@@ -46,6 +46,8 @@ typedef struct {
     void* dataSlice;
 
     ADIOS_VARINFO* varinfo;
+    char* varName;
+
     ADIOS_FILE* file;
     enum ADIOS_QUERY_METHOD method;
 
@@ -86,14 +88,16 @@ ADIOS_QUERY* adios_query_combine (ADIOS_QUERY* q1,
 */
 void adios_query_set_method (ADIOS_QUERY* q, enum ADIOS_QUERY_METHOD method);
 
-int64_t adios_query_estimate (ADIOS_QUERY* q);
+int64_t adios_query_estimate (ADIOS_QUERY* q, int timeStep);
 
-void adios_query_set_timestep (int timeStep);
+// obsolete. time_steps for non-streaming files should show up in estimate/evalute
+//void adios_query_set_timestep (int timeStep);
 
 int  adios_query_evaluate (ADIOS_QUERY* q, 
-                                uint64_t batchSize, // limited by maxResult
-                                ADIOS_SELECTION* outputBoundary,// must supply to get results
-                                ADIOS_SELECTION** queryResult);
+			   int timestep,
+			   uint64_t batchSize, // limited by maxResult
+			   ADIOS_SELECTION* outputBoundary,// must supply to get results
+			   ADIOS_SELECTION** queryResult);
 
 
 void adios_query_free(ADIOS_QUERY* q);
