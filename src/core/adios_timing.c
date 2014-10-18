@@ -27,7 +27,7 @@
 */
 void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
 {
-#if defined SKEL_TIMING && !defined _NOMPI //No timing information on single process
+#if defined ADIOS_TIMER_EVENTS && !defined _NOMPI //No timing information on single process
 
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     if (!fd)
@@ -178,20 +178,34 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
     }
 
 #else
-    log_warn ("Timing information is not currently available.\n"
-              "To use the Skel timing functions, you must enable them when building ADIOS.\n"
-              "Use --enable-skel-timing during the configuration step.\n");
+    log_warn ("Timing events are not currently available.\n"
+              "To use the timing events, you must enable them when building ADIOS.\n"
+              "Use --enable-timer-events during the configuration step.\n");
 #endif
 
 }
 
 //Build the internal functions only when timing is enabled.
-#ifdef SKEL_TIMING
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
 
 
 
 void adios_write_timing_variables (struct adios_file_struct * fd)
 {
+
+    if (!fd)
+    {
+        adios_error (err_invalid_file_pointer,
+                     "Invalid handle passed to adios_write_timing_variables\n");
+        return;
+    }
+
+    if (!fd->group || !fd->group->prev_timing_obj)
+    {
+        // No timing info, don't write anything.
+        return;
+    }
+
     struct adios_group_struct * g = fd->group;
     int timer_count = g->prev_timing_obj->user_count + g->prev_timing_obj->internal_count;
     
@@ -276,6 +290,20 @@ void adios_write_timing_variables (struct adios_file_struct * fd)
 
 int adios_add_timing_variables (struct adios_file_struct * fd)
 {
+
+    if (!fd)
+    {
+        adios_error (err_invalid_file_pointer,
+                     "Invalid handle passed to adios_add_timing_variables\n");
+        return;
+    }
+
+    if (!fd->group || !fd->group->prev_timing_obj)
+    {
+        // No timing info, don't write anything.
+        return 0;
+    }
+
 
     struct adios_group_struct * g = fd->group;
 
@@ -499,6 +527,6 @@ void adios_timing_destroy (struct adios_timing_struct * timing_obj)
     }
 }
 
-#endif // ifdef SKEL_TIMING
+#endif // ifdef ADIOS_TIMERS
 
 

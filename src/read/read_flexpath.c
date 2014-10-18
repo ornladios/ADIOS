@@ -50,7 +50,7 @@
 #include "dmalloc.h"
 #endif
 
-#define FP_BATCH_SIZE 4
+#define FP_BATCH_SIZE 1
 
 typedef struct _bridge_info
 {
@@ -1306,6 +1306,7 @@ int adios_read_flexpath_finalize_method ()
 void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
     int i;
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
+    MPI_Barrier(fp->comm);
     for(i=0; i<fp->num_bridges; i++) {
         if(fp->bridges[i].created && !fp->bridges[i].opened) {
 	    send_open_msg(fp, i);

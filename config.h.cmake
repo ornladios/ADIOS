@@ -291,8 +291,8 @@
    your system. */
 #cmakedefine PTHREAD_CREATE_JOINABLE ${PTHREAD_CREATE_JOINABLE}
 
-/* Skel timing is enabled */
-#cmakedefine SKEL_TIMING 1
+/* ADIOS timing is enabled */
+#cmakedefine ADIOS_TIMERS 1
 
 /* research_transports is enabled */
 #define RESEARCH_TRANSPORTS ${RESEARCH_TRANSPORTS}

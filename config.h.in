@@ -1,5 +1,11 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Adios timing is enabled */
+#undef ADIOS_TIMERS
+
+/* Adios timing events are enabled */
+#undef ADIOS_TIMER_EVENTS
+
 /* Define to dummy `main' function (if any) required to link to the Fortran
    libraries. */
 #undef FC_DUMMY_MAIN
@@ -306,9 +312,6 @@
 /* Define to the necessary symbol if this constant uses a non-standard name on
    your system. */
 #undef PTHREAD_CREATE_JOINABLE
-
-/* Skel timing is enabled */
-#undef SKEL_TIMING
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS
