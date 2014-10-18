@@ -12,20 +12,9 @@
 
 static struct adios_query_hooks_struct * query_hooks = 0;
 
-void syncTimeStep(ADIOS_FILE* f) {
-  if (f == NULL) {
-    return;
-  }
+static int getTotalByteSize (ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* sel, 
+			     uint64_t* total_byte_size, uint64_t* dataSize, int timestep);
 
-  if (f->is_streaming) {
-    gCurrentTimeStep = f->current_step;
-  }
-  /*
-  if (f->current_step != gCurrentTimeStep) {
-    gCurrentTimeStep = f->current_step;
-  }
-  */
-}
 
 ADIOS_SELECTION* getAdiosDefaultBoundingBox(ADIOS_VARINFO* v) 
 {
@@ -111,13 +100,66 @@ static enum ADIOS_QUERY_METHOD detect_and_set_query_method(ADIOS_QUERY* q)
 	return ADIOS_QUERY_METHOD_FASTBIT;
 }
 
+int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
+{
+    // get data from bp file
+    if (q == NULL) {
+      return 0;
+    }
+
+    if ((q->left == NULL) && (q->right == NULL)) 
+    {      // leaf 
+      if ((q->file == NULL) || (q->varName == NULL)) {
+	  log_error ("Query has no file or var info\n");	
+	  return -1;
+      }
+     
+      if ((q->file->is_streaming == 1) && (timeStep != 0)) {
+	adios_error(err_invalid_query_value, "TimeStep for streaming file should always be 0.\n");
+	return -1;
+      }
+
+      ADIOS_VARINFO* v = common_read_inq_var(q->file, q->varName);
+      if (v == NULL) {
+	adios_error (err_invalid_varname, "Query Invalid variable '%s':\n%s", 
+		     q->varName, adios_get_last_errmsg());
+	return -1;
+      }
+      if (q->varinfo != NULL) {
+	common_read_free_varinfo(q->varinfo);
+      }
+      q->varinfo = v;
+	
+      free(q->dataSlice);
+
+      uint64_t total_byte_size, dataSize;
+      
+      if (getTotalByteSize(q->file, v, q->sel, &total_byte_size, &dataSize, timeStep) < 0) {
+        adios_error(err_incompatible_queries, "Unable to create query.");
+	return -1;
+      }   
+
+      q->dataSlice = malloc(total_byte_size);
+      q->rawDataSize = dataSize;
+      
+      return 0;
+    } else {
+      if (adios_check_query_at_timestep(q->left, timeStep) == -1) {
+	return -1;
+      }
+      if (adios_check_query_at_timestep(q->right, timeStep) == -1) {
+	return -1;
+      }
+    }
+    return 0; 
+}
+
 ADIOS_QUERY* freeQuery(ADIOS_QUERY* query) {
   log_debug("common_free() query: %s \n", query->condition);
 
   free(query->predicateValue);
   free(query->condition);
-
-  //adios_selection_delete(query->_sel);
+        
   common_read_free_varinfo(query->varinfo);
 
   free(query->dataSlice);
@@ -154,7 +196,7 @@ void common_query_free(ADIOS_QUERY* q)
 }
 
 static int getTotalByteSize (ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* sel, 
-                             uint64_t* total_byte_size, uint64_t* dataSize)
+			     uint64_t* total_byte_size, uint64_t* dataSize, int timestep)                             
 {
   *total_byte_size = common_read_type_size (v->type, v->value);    
   *dataSize = 1; 
@@ -215,7 +257,7 @@ static int getTotalByteSize (ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* s
 	      min = nBlocksAtStep;
 	    }
 	    log_debug("\t\t   currstep=%d nblocks=%d\n", i, nBlocksAtStep);
-	    if (i < gCurrentTimeStep) {
+	    if (i < timestep) {
 	      absBlockCounter += nBlocksAtStep;
 	    }
 	  }
@@ -251,6 +293,10 @@ static void initialize(ADIOS_QUERY* result)
   result->hasParent = 0;
   result->deleteSelectionWhenFreed = 0;
   result->method = ADIOS_QUERY_METHOD_UNKNOWN;
+  result->varName = 0;
+  result->condition = 0;
+  result->left = 0;
+  result->right = 0;
 }
 
 
@@ -260,10 +306,12 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f,
 				 enum ADIOS_PREDICATE_MODE op,
 				 const char* value)
 {
-    syncTimeStep(f);
+  //syncTimeStep(f);
     if (query_hooks == NULL) {
-        log_error("ADIOS Query Library Error: Query environment is not initialized.\n");
-        exit(EXIT_FAILURE);
+	adios_error(err_operation_not_supported,
+		    "ADIOS Query Library Error: Query environment is not initialized.\n");
+	return NULL;
+        //exit(EXIT_FAILURE);
     }
 
     if (queryBoundary != NULL) {
@@ -287,16 +335,6 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f,
         return NULL;
     }
 
-    // get data from bp file
-    ADIOS_VARINFO* v = common_read_inq_var(f, varName);
-    if (v == NULL) {
-        adios_error (err_invalid_varname, "Query create: Invalid variable '%s':\n%s", 
-                     varName, adios_get_last_errmsg());
-        return NULL;
-    }
-
-    uint64_t total_byte_size, dataSize;
-
     int defaultBoundaryUsed = 0;
     if (queryBoundary == NULL) {
 #ifdef ALACRITY
@@ -305,18 +343,12 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f,
 #endif
     }
 
-    if (getTotalByteSize(f, v, queryBoundary, &total_byte_size, &dataSize) < 0) {
-        if (defaultBoundaryUsed) {
-            common_read_selection_delete(queryBoundary);
-        }
-        exit(EXIT_FAILURE);
-    }   
-
-
     //
     // create selection string for fastbit
     //
     ADIOS_QUERY* result = (ADIOS_QUERY*)calloc(1, sizeof(ADIOS_QUERY));
+    initialize(result);
+
     result->condition = malloc(strlen(varName)+strlen(value)+ 10); // 10 is enough for op and spaces 
     if (op == ADIOS_LT) {
         sprintf(result->condition, "(%s < %s)", varName, value);
@@ -334,13 +366,11 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f,
 
     (result->condition)[strlen(result->condition)] = 0;
 
-    initialize(result);
+    result->varName = malloc(strlen(varName)+1);
+    sprintf(result->varName, "%s", varName);
+    result->varName[strlen(varName)] = 0;
 
-    result->varinfo = v;
     result->file = f;
-
-    result->dataSlice = malloc(total_byte_size);
-    result->rawDataSize = dataSize;
 
     result->sel = queryBoundary;
     result->deleteSelectionWhenFreed = defaultBoundaryUsed;
@@ -354,7 +384,7 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f,
 
     return result;
 }
-					
+			
 static int isSelectionCompatible(ADIOS_SELECTION* first, ADIOS_SELECTION* second)			  
 {
   if ((first == NULL) || (second == NULL)) {
@@ -450,6 +480,8 @@ ADIOS_QUERY* common_query_combine(ADIOS_QUERY* q1,
     }
 
     ADIOS_QUERY* result = (ADIOS_QUERY*)calloc(1, sizeof(ADIOS_QUERY));
+    initialize(result);
+
     result->condition = malloc(strlen(q1->condition)+strlen(q2->condition)+10);
 
     if (operator == ADIOS_QUERY_OP_AND) {
@@ -465,31 +497,33 @@ ADIOS_QUERY* common_query_combine(ADIOS_QUERY* q1,
     result->right = q2;
     result->combineOp = operator;
 
-    initialize(result);
+    //initialize(result);
     return result;
 }
 
-int64_t common_query_estimate(ADIOS_QUERY* q)
+int64_t common_query_estimate(ADIOS_QUERY* q, int timestep)
 {
     if (q == NULL) {
       return -1;
     }
     enum ADIOS_QUERY_METHOD m = detect_and_set_query_method (q);
     if (query_hooks[m].adios_query_estimate_fn != NULL) {
-      return query_hooks[m].adios_query_estimate_fn(q);
+      return query_hooks[m].adios_query_estimate_fn(q, timestep);
     }		
 
     log_debug("No estimate function was supported for method %d\n", m);
     return -1;
 }
 
+/*
 void common_query_set_timestep(int timeStep)
 {  
     gCurrentTimeStep = timeStep;
 }
+*/
 
-
-static void updateBlockSize(const ADIOS_SELECTION_WRITEBLOCK_STRUCT* wb, ADIOS_QUERY* leaf) 
+ /*
+static void updateBlockSize(const ADIOS_SELECTION_WRITEBLOCK_STRUCT* wb, ADIOS_QUERY* leaf, int timeStep) 
 {
     int i=0;
     int serializedBlockNum = 0;
@@ -498,7 +532,7 @@ static void updateBlockSize(const ADIOS_SELECTION_WRITEBLOCK_STRUCT* wb, ADIOS_Q
     uint64_t total_byte_size = common_read_type_size (v->type, v->value); ;
     uint64_t dataSize=0;
 
-    for (i=0; i<gCurrentTimeStep; i++) 
+    for (i=0; i<timeStep; i++) 
     {
         int nBlocksAtStep = v->nblocks[i];  
         serializedBlockNum += nBlocksAtStep;     
@@ -525,14 +559,14 @@ static void updateBlockSize(const ADIOS_SELECTION_WRITEBLOCK_STRUCT* wb, ADIOS_Q
     }
 }
 
-static int updateBlockSizeIfNeeded(ADIOS_QUERY* q) 
+static int updateBlockSizeIfNeeded(ADIOS_QUERY* q, int timeStep) 
 {
     // leaf query
     if ((q->left == NULL) && (q->right == NULL)) 
     {
         if (q->sel == NULL) {
             log_error("No selections detected. \n");
-            return -1;
+            return 0; // no need to -1, not a block selection.
         }
 
         if (q->varinfo == NULL) {
@@ -540,30 +574,30 @@ static int updateBlockSizeIfNeeded(ADIOS_QUERY* q)
             return -1;
         }
 
-	/* // this is removed b/c if using read_open() instead of read_open_file(), then var->nstep will always be 1
-        if (gCurrentTimeStep > q->varinfo->nsteps) {
-            log_error("The given timestep %d exceeds variable (id %d)'s nsteps. \n", gCurrentTimeStep, q->varinfo->varid);
-            return -1;
-        }
-	*/
+	// // this is removed b/c if using read_open() instead of read_open_file(), then var->nstep will always be 1
+        //if (gCurrentTimeStep > q->varinfo->nsteps) {
+	//  log_error("The given timestep %d exceeds variable (id %d)'s nsteps. \n", gCurrentTimeStep, q->varinfo->varid);
+	//  return -1;
+        //}
+	//
         if (q->sel->type != ADIOS_SELECTION_WRITEBLOCK) {
             return 0;
         }
         const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb = &(q->sel->u.block);
-        updateBlockSize(wb, q);      
+        updateBlockSize(wb, q, timeStep);      
         return 1;
     }
 
     int result = 0;
     if (q->left != NULL) {
-        int leftUpdate = updateBlockSizeIfNeeded(q->left);
+        int leftUpdate = updateBlockSizeIfNeeded(q->left, timeStep);
         if (leftUpdate < 0) {
             return -1;
         }
         result += leftUpdate;
     } 
     if (q->right != NULL) {
-        int rightUpdate = updateBlockSizeIfNeeded(q->right);
+        int rightUpdate = updateBlockSizeIfNeeded(q->right, timeStep);
         if (rightUpdate < 0) {
             return -1;
         }
@@ -572,7 +606,7 @@ static int updateBlockSizeIfNeeded(ADIOS_QUERY* q)
 
     return result;
 }
-
+*/
 static int checkCompatibility(ADIOS_QUERY* q) 
 {
     if ((q->left != NULL) && (q->right != NULL)) {
@@ -658,8 +692,7 @@ static ADIOS_VARBLOCK * computePGBounds(ADIOS_QUERY *q, int wbindex, int timeste
     }
 }
 
-static ADIOS_SELECTION * convertWriteblockToBoundingBox(
-        ADIOS_QUERY *q, ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb, int timestep) 
+static ADIOS_SELECTION * convertWriteblockToBoundingBox(ADIOS_QUERY *q, ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb, int timestep) 
 {
     assert(!wb->is_absolute_index && !wb->is_sub_pg_selection); // The user should not be using the internal ADIOS writeblock flags
 
@@ -674,16 +707,21 @@ static ADIOS_SELECTION * convertWriteblockToBoundingBox(
 }
 
 int common_query_evaluate(ADIOS_QUERY* q, 
-			       //const char* varName,
-			       //int timeStep, 
-			        uint64_t batchSize, // limited by maxResult
-				ADIOS_SELECTION* outputBoundary, 
-				ADIOS_SELECTION** result)
-{
-    if ((q->onTimeStep >= 0) && (q->onTimeStep != gCurrentTimeStep)) {
-        int updateResult = updateBlockSizeIfNeeded(q);
+			  int timeStep, 
+			  uint64_t batchSize, // limited by maxResult
+			  ADIOS_SELECTION* outputBoundary, 
+			  ADIOS_SELECTION** result)
+{  
+    if (adios_check_query_at_timestep(q, timeStep) == -1) {
+      return -1;
+    }
+
+    checkCompatibility(q);
+    /*
+    if ((q->onTimeStep >= 0) && (q->onTimeStep != timeStep)) {
+        int updateResult = updateBlockSizeIfNeeded(q, timeStep);
         if (updateResult < 0) {
-            log_error("Error with this timestep %d. Can not proceed. \n", gCurrentTimeStep);
+            log_error("Error with this timestep %d. Can not proceed. \n", timeStep);
             return -1;
         }
         if (updateResult > 0) { // blocks were updated. check compatitibity
@@ -692,17 +730,17 @@ int common_query_evaluate(ADIOS_QUERY* q,
             }
         }
     }
-
+    */
     int freeOutputBoundary = 0;
     if (outputBoundary->type == ADIOS_SELECTION_WRITEBLOCK) {
-        outputBoundary = convertWriteblockToBoundingBox(q, &outputBoundary->u.block, gCurrentTimeStep);
+        outputBoundary = convertWriteblockToBoundingBox(q, &outputBoundary->u.block, timeStep);
         if (!outputBoundary) {
-        	adios_error(err_invalid_argument,
-        			    "Attempt to use writeblock output selection on a query where not "
-        			    "all variables participating have the same varblock bounding box "
-        			    "at that writeblock index (index = %d)\n",
-        			    outputBoundary->u.block.index);
-        	return -1;
+	  adios_error(err_invalid_argument,
+		      "Attempt to use writeblock output selection on a query where not "
+		      "all variables participating have the same varblock bounding box "
+		      "at that writeblock index (index = %d)\n",
+		      outputBoundary->u.block.index);
+	  return -1;
         }
         freeOutputBoundary = 1;
     }
@@ -710,7 +748,7 @@ int common_query_evaluate(ADIOS_QUERY* q,
     enum ADIOS_QUERY_METHOD m = detect_and_set_query_method (q);
 
     if (query_hooks[m].adios_query_evaluate_fn != NULL) {
-      int retval = query_hooks[m].adios_query_evaluate_fn(q,  batchSize, outputBoundary, result);	      
+      int retval = query_hooks[m].adios_query_evaluate_fn(q, timeStep, batchSize, outputBoundary, result);	      
       if (freeOutputBoundary) common_read_selection_delete(outputBoundary);
       return retval;
     } 
