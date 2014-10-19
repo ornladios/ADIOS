@@ -928,7 +928,7 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
                 adios_error(err_invalid_dimension,
                             "Dimension mismatch\n");
 
-            if (fp->comm_size > 1)
+            if (true /*fp->comm_size > 1*/)
             {
                 log_debug("Merging operation (comm. size: %d).\n", fp->comm_size);
                 
@@ -1018,10 +1018,31 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
                             {
                                 o1 = (i + vp->offsets[0]) * vp->gdims[1] + vp->offsets[1];
                                 o2 = (i * vp->ldims[0]);
-                                memcpy(data + o1 * vp->typesize, vp->data + o2 * vp->typesize, vp->ldims[1] * vp->typesize);
+                                memcpy(data + o1 * vp->typesize, 
+                                       vp->data + o2 * vp->typesize, 
+                                       vp->ldims[1] * vp->typesize);
                             }
-                        }
                             break;
+                        }
+                        case 3:
+                        {
+                            int i, j, o1, o2;
+                            for (i=0; i<vp->ldims[0]; i++)
+                            {
+                                for (j=0; j<vp->ldims[1]; j++)
+                                {
+                                    o1 = (i + vp->offsets[0]) * vp->gdims[1] * vp->gdims[2] 
+                                        + (j + vp->offsets[1]) * vp->gdims[2] 
+                                        + vp->offsets[2];
+                                    o2 = i * vp->ldims[1] * vp->ldims[2] 
+                                        + j * vp->ldims[2];
+                                    memcpy(data + o1 * vp->typesize, 
+                                           vp->data + o2 * vp->typesize, 
+                                           vp->ldims[2] * vp->typesize);
+                                }
+                            }
+                            break;
+                        }
                         default:
                             adios_error(err_expected_read_size_mismatch,
                                         "The variable dimension is out of the range. ",
