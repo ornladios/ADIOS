@@ -49,8 +49,12 @@ static int adios_mpi_bgq_initialized = 0;
   }             \
 
 #define MAX_AGG_BUF      704643072
-// BLOCK_UNIT is set 8 MiB
-#define BLOCK_UNIT       8000000
+// Temporarily change BLOCK_UNIT to 1, which disable write aligment.
+// GPFS doesn't seem to support holes in a file
+// in the same way as Lustre. Setting BLOCK_UNIT to 8 MiB
+// which is GPFS block size, will inflate the file size and
+// that concerns large runs. Q. Liu, 10/19/2014
+#define BLOCK_UNIT     1
 
 struct adios_MPI_data_struct
 {
