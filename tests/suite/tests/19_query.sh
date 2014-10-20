@@ -193,7 +193,7 @@ function query_datasets() {
         done
         
         # Ensure results computed for both FILE and STREAM modes match
-        local ALL_EXPECTED_POITNS_FILES="$DSID.$QUERY_NAME."*"-mode.expected-points.txt"
+        local ALL_EXPECTED_POINTS_FILES="$DSID.$QUERY_NAME."*"-mode.expected-points.txt"
         diff -q $ALL_EXPECTED_POINTS_FILES ||
           die "ERROR: Computed expected query results for query $QUERY_NAME on dataset $DSID did not match between file mode and stream mode. This is either a bug in compute_expected_query_results, or in ADIOS itself."
 
