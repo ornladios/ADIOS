@@ -108,7 +108,6 @@ void multiSelection(ADIOS_FILE* bf, const char * b1, const char * b2,
 	double lb1v = atof(b1);
 	double lb2v = atof(b2);
 	int timestep = 0;
-	adios_query_set_timestep(timestep);
 	ADIOS_QUERY* q1, *q2;
 	int64_t batchSize = 1000;
     if (sel_type == ADIOS_SELECTION_BOUNDINGBOX){
@@ -128,8 +127,7 @@ void multiSelection(ADIOS_FILE* bf, const char * b1, const char * b2,
 	ADIOS_SELECTION* outBox = box1;
 	while (1) {
 		ADIOS_SELECTION* currBatch = NULL;
-		int hasMore = adios_query_evaluate(q, batchSize, outBox,
-				&currBatch);
+		int hasMore = adios_query_evaluate(q, timestep, batchSize, outBox, &currBatch);
 		if (currBatch == NULL) // there is no results at all
 			break;
 
