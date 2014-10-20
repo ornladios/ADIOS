@@ -593,8 +593,14 @@ int main(int argc, char **argv) {
 		adios_selection_delete(result);
 
 		// If we are in streaming mode, advance to the next step
-		if (use_streaming)
-			assert(adios_advance_step(bp_file, 0, 0) == 0);
+		if (use_streaming) {
+			const int err = adios_advance_step(bp_file, 0, 0);
+			if (timestep < testinfo->fromStep + testinfo->numSteps - 1) {
+				assert(err == 0);
+			} else {
+				assert(err == err_end_of_stream);
+			}
+		}
 	}
 
 	adios_selection_delete(testinfo->outputSelection); // TODO: leaks start[] and count[] if it's a BB

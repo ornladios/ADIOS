@@ -99,8 +99,14 @@ int performQuery(ADIOS_QUERY_TEST_INFO *queryInfo, ADIOS_FILE *f, int use_stream
 
         }
 
-        if (use_streaming)
-        	assert(adios_advance_step(f, 0, 0) == 0);
+        if (use_streaming) {
+			const int err = adios_advance_step(f, 0, 0);
+			if (timestep < queryInfo->fromStep + queryInfo->numSteps - 1) {
+				assert(err == 0);
+			} else {
+				assert(err == err_end_of_stream);
+			}
+        }
     }
 
     adios_query_free(queryInfo->query);
