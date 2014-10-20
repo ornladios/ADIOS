@@ -378,11 +378,7 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f,
         sprintf(result->condition, "(%s != %s)", varName, value);
     }
 
-    (result->condition)[strlen(result->condition)] = 0;
-
-    result->varName = malloc(strlen(varName)+1);
-    sprintf(result->varName, "%s", varName);
-    result->varName[strlen(varName)] = 0;
+    result->varName = strdup(varName);
 
     result->file = f;
 
@@ -497,13 +493,11 @@ ADIOS_QUERY* common_query_combine(ADIOS_QUERY* q1,
     initialize(result);
 
     result->condition = malloc(strlen(q1->condition)+strlen(q2->condition)+10);
-
     if (operator == ADIOS_QUERY_OP_AND) {
         sprintf(result->condition, "(%s and %s)", q1->condition, q2->condition);
     } else {
         sprintf(result->condition, "(%s or %s)", q1->condition, q2->condition);
     }
-    result->condition[strlen(result->condition)]=0; 
 
     q1->hasParent = 1;
     q2->hasParent = 1;
