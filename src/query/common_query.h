@@ -25,14 +25,15 @@ ADIOS_QUERY* common_query_combine(ADIOS_QUERY* q1,
 				   enum ADIOS_CLAUSE_OP_MODE operator,		    
 				   ADIOS_QUERY* q2);
 
-int64_t common_query_estimate(ADIOS_QUERY* q);
+int64_t common_query_estimate(ADIOS_QUERY* q, int timestep);
 
-void common_query_set_timestep(int timeStep);
+//void common_query_set_timestep(int timeStep);
 
 int common_query_evaluate(ADIOS_QUERY* q, 
-				uint64_t batchSize, 
-				ADIOS_SELECTION* outputBoundry,
-				ADIOS_SELECTION** result);
+			  int timestep,
+			  uint64_t batchSize, 
+			  ADIOS_SELECTION* outputBoundry,
+			  ADIOS_SELECTION** result);
 
 void common_query_free(ADIOS_QUERY* q);
 
