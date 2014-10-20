@@ -754,9 +754,9 @@ void getHandle(int timeStep, int blockIdx, ADIOS_FILE* idxFile, ADIOS_QUERY* q)
 }
 
 
-int64_t  applyIndexIfExists (ADIOS_QUERY* q) 
+int64_t  applyIndexIfExists (ADIOS_QUERY* q, int timeStep) 
 {
-  if (q->onTimeStep == gCurrentTimeStep) {
+  if (q->onTimeStep == timeStep) {
     //log_debug("::\t query index data has been read for timestep: %d\n", gCurrentTimeStep);
     return 0;
   } 
@@ -772,15 +772,15 @@ int64_t  applyIndexIfExists (ADIOS_QUERY* q)
     
   if (idxFile != NULL) {
       if ((leaf->sel == NULL) || (leaf->sel->type == ADIOS_SELECTION_BOUNDINGBOX)) {
-	  evaluateWithIdxOnBoundingBox(idxFile,  q, gCurrentTimeStep);
+	  evaluateWithIdxOnBoundingBox(idxFile,  q, timeStep);
 	  result = fastbit_selection_estimate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle);	
       } else if (leaf->sel->type == ADIOS_SELECTION_WRITEBLOCK) {
-	  blockSelectionFastbitHandle(idxFile, q, gCurrentTimeStep);
+	  blockSelectionFastbitHandle(idxFile, q, timeStep);
 	  result= fastbit_selection_estimate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle);       
       } 
 
       if (result > -1) {
-	q->onTimeStep = gCurrentTimeStep;
+	q->onTimeStep = timeStep;
 	q->maxResultsDesired = 0;
 	q->resultsReadSoFar = 0;
 
@@ -808,6 +808,7 @@ int adios_query_fastbit_can_evaluate(ADIOS_QUERY* q)
    return fastbit_adios_util_FastbitIndexFileExists (leaf->file->path);
  }
 
+/*
 int assertTimeStepValidWithQuery(ADIOS_QUERY* q)
 {
   ADIOS_QUERY* leaf = getFirstLeaf(q);
@@ -825,17 +826,6 @@ int assertTimeStepValidWithQuery(ADIOS_QUERY* q)
     }
     return 0;
   }
-  /*
-  int currentFileStep = leaf->file->current_step;
-  if (currentFileStep > 0) {
-    if (timestep != currentFileStep) {
-      log_debug("timestep given %d is different from files: %d, correct to file time step.\n", timestep, currentFileStep);
-      adios_query_set_timestep(currentFileStep);
-      return 0;
-    }
-    return 0;
-  } // == 0, can either be from read_open() or read_open_file(), cann't not distinguish
-  */
 
   if (leaf->varinfo->nsteps <= timestep) {
     log_debug("timestep %d is more than variables limit: %d, can not evaluate.\n", timestep, leaf->varinfo->nsteps);
@@ -843,23 +833,23 @@ int assertTimeStepValidWithQuery(ADIOS_QUERY* q)
   }
   return 0;
 }
-
-int64_t adios_query_fastbit_estimate(ADIOS_QUERY* q) //, int timeStep) 
+*/
+int64_t adios_query_fastbit_estimate(ADIOS_QUERY* q, int timeStep) 
 {
   if (q == NULL) {
     return -1;
   }
 
-  int timeStep = gCurrentTimeStep;
+  //int timeStep = gCurrentTimeStep;
 
   adios_query_fastbit_init();
-  if (assertTimeStepValidWithQuery(q) != 0) {
+  /*  if (assertTimeStepValidWithQuery(q) != 0) {
     return -1;
-  }
+    }*/
 
   create_fastbit_internal(q);
 
-  int64_t estimate = applyIndexIfExists(q);
+  int64_t estimate = applyIndexIfExists(q, timeStep);
   if (estimate > 0) {
     return estimate;
   } else if (estimate == 0) { // estimated was called before
@@ -877,11 +867,11 @@ int64_t adios_query_fastbit_estimate(ADIOS_QUERY* q) //, int timeStep)
 }
  
 
-int64_t adios_query_fastbit_evaluate(ADIOS_QUERY* q, int timeStep, uint64_t _maxResult) 
+int64_t call_fastbit_evaluate(ADIOS_QUERY* q, int timeStep, uint64_t _maxResult) 
 {
   create_fastbit_internal(q);
   
-  int64_t estimate = applyIndexIfExists(q);
+  int64_t estimate = applyIndexIfExists(q, timeStep);
   if (estimate < 0) {   // use no idx
     int errorCode = prepareData(q, timeStep);
     if (errorCode != 0) {
@@ -949,7 +939,7 @@ void fillUp(int dimSize, uint64_t* spatialCoordinates, uint64_t i, uint64_t* poi
   //log_debug("\n");
 }
 
-ADIOS_SELECTION* getSpatialCoordinatesDefault(ADIOS_VARINFO* var, uint64_t* coordinates, uint64_t retrivalSize)
+ADIOS_SELECTION* getSpatialCoordinatesDefault(ADIOS_VARINFO* var, uint64_t* coordinates, uint64_t retrivalSize, int timeStep)
 {
   uint64_t arraySize = retrivalSize * (var->ndim);
   uint64_t* pointArray = (uint64_t*) (malloc(arraySize  * sizeof(uint64_t)));
@@ -966,7 +956,7 @@ ADIOS_SELECTION* getSpatialCoordinatesDefault(ADIOS_VARINFO* var, uint64_t* coor
   return result;
 }
 
-ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundary, uint64_t* coordinates, uint64_t retrivalSize, ADIOS_VARINFO* v)
+ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundary, uint64_t* coordinates, uint64_t retrivalSize, ADIOS_VARINFO* v, int timeStep)
 {
   int k = 0;
   uint64_t i=0;
@@ -1020,7 +1010,7 @@ ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundary, uint64_t
       for (i=0; i<retrivalSize; i++) {
 	   uint64_t spatialCoordinates[v->ndim];
 	   //create bb from block;
-	   int absBlockCounter = query_utils_getGlobalWriteBlockId(wb->index, gCurrentTimeStep, v);
+	   int absBlockCounter = query_utils_getGlobalWriteBlockId(wb->index, timeStep, v);
 	   getCoordinateFromBlock(coordinates[i], &(v->blockinfo[absBlockCounter]), v->ndim, spatialCoordinates);
 
 	   fillUp(v->ndim, spatialCoordinates, i, pointArray);
@@ -1041,16 +1031,17 @@ ADIOS_QUERY* getFirstLeaf(ADIOS_QUERY* q) {
     return NULL;
   }
 
-  if (q->varinfo != NULL) {
+  if ((q->left == NULL) && (q->right == NULL)) {
     return q;
   }
   return getFirstLeaf(q->left);
 }
 
 int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
-				      uint64_t batchSize, 
-				      ADIOS_SELECTION* outputBoundary, 
-				      ADIOS_SELECTION** result)
+				  int timeStep,
+				  uint64_t batchSize, 
+				  ADIOS_SELECTION* outputBoundary, 
+				  ADIOS_SELECTION** result)
 {
   /*
   if (q->_onTimeStep < 0) {
@@ -1060,11 +1051,11 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
   */
   adios_query_fastbit_init();
 
-  if (assertTimeStepValidWithQuery(q) != 0) {
+  /*if (assertTimeStepValidWithQuery(q) != 0) {
     return -1;
-  }
+    }*/
 
-  adios_query_fastbit_evaluate(q, gCurrentTimeStep, 0);
+  call_fastbit_evaluate(q, timeStep, 0);
   //log_debug("::\t max=%llu _lastRead=%llu\n", q->_maxResultDesired, q->_lastRead);
   if (batchSize == 0) {
     log_debug(":: ==> will not fetch. batchsize=0\n");
@@ -1095,15 +1086,15 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
 	return -1;
       }
     if (firstLeaf->sel == NULL) {
-      *result = getSpatialCoordinatesDefault(firstLeaf->varinfo, coordinates, retrivalSize);
+      *result = getSpatialCoordinatesDefault(firstLeaf->varinfo, coordinates, retrivalSize, timeStep);
     } else {
-      *result = getSpatialCoordinates(firstLeaf->sel, coordinates, retrivalSize, firstLeaf->varinfo);
+      *result = getSpatialCoordinates(firstLeaf->sel, coordinates, retrivalSize, firstLeaf->varinfo, timeStep);
     }
   } else {
     //*result = getSpatialCoordinates(outputBoundary, coordinates, retrivalSize);
     // variable needs to be in place to handle the block information
     // not sure wheather this is well defined case of combined query?! but the first varibale will be used for block information calculation
-    *result = getSpatialCoordinates(outputBoundary, coordinates, retrivalSize, getFirstLeaf(q)->varinfo);
+    *result = getSpatialCoordinates(outputBoundary, coordinates, retrivalSize, getFirstLeaf(q)->varinfo, timeStep);
 
     if (*result == 0) {
       return -1;
@@ -1388,27 +1379,6 @@ ADIOS_QUERY* getQuery(const char* condition, ADIOS_FILE* f)
     return q;
 }
 */
- /*
-void queryDetail(ADIOS_QUERY* q, int timeStep) {
-    int64_t estimated = adios_query_estimate(q);
-    log_debug("::\t query estimated = %llu \n", estimated);
-
-    int64_t numHits = adios_query_fastbit_evaluate(q, timeStep, 100000);
-    log_debug("::\t query evaluated = %llu \n", numHits);
-
-    uint64_t batchSize = 50;
-    
-    while (q->_maxResultDesired - q->_lastRead > 0) {      
-      //log_debug("::\t max=%llu _lastRead=%llu\n", q->_maxResultDesired, q->_lastRead);
-      ADIOS_SELECTION* t;
-      ADIOS_SELECTION* bound;
-      adios_query_evaluate(q, batchSize, bound, &t);
-      free(t->u.points.points);
-      adios_selection_delete(t);
-      //log_debug("::\t      max=%llu _lastRead=%llu\n", q->_maxResultDesired, q->_lastRead);
-    }
-}
- */
 
 
 
