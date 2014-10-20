@@ -115,10 +115,10 @@ int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
     if ((q->left == NULL) && (q->right == NULL)) 
     {      // leaf 
       if ((q->file == NULL) || (q->varName == NULL)) {
-	  log_error ("Query has no file or var info\n");	
+	  log_error ("Query has no file or var info\n");
 	  return -1;
       }
-     
+
       if ((q->file->is_streaming == 1) && (timeStep != 0)) {
 	adios_error(err_invalid_query_value, "TimeStep for streaming file should always be 0.\n");
 	return -1;
@@ -130,7 +130,7 @@ int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
 
       ADIOS_VARINFO* v = common_read_inq_var(q->file, q->varName);
       if (v == NULL) {
-	adios_error (err_invalid_varname, "Query Invalid variable '%s':\n%s", 
+	adios_error (err_invalid_varname, "Query Invalid variable '%s':\n%s",
 		     q->varName, adios_get_last_errmsg());
 	return -1;
       }
@@ -138,19 +138,19 @@ int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
 	common_read_free_varinfo(q->varinfo);
       }
       q->varinfo = v;
-	
+
       free(q->dataSlice);
 
       uint64_t total_byte_size, dataSize;
-      
+
       if (getTotalByteSize(q->file, v, q->sel, &total_byte_size, &dataSize, timeStep) < 0) {
         adios_error(err_incompatible_queries, "Unable to create query.");
 	return -1;
-      }   
+      }
 
       q->dataSlice = malloc(total_byte_size);
       q->rawDataSize = dataSize;
-      
+
       return timeStep;
     } else {
       int leftTimeStep = adios_check_query_at_timestep(q->left, timeStep);
@@ -345,13 +345,17 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f,
         return NULL;
     }
 
-    int defaultBoundaryUsed = 0;
-    if (queryBoundary == NULL) {
-#ifdef ALACRITY
-        queryBoundary = getAdiosDefaultBoundingBox(v);
-        defaultBoundaryUsed = 1;
-#endif
-    }
+	// NOTE: No longer replacing default bounding box here; each query engine
+	// should handle q->sel == NULL by themselves, as this is a clearer indication
+    // to the query engine that the user is query the whole dataset rather than some
+    // subset
+	//    int defaultBoundaryUsed = 0;
+	//    if (queryBoundary == NULL) {
+	//#ifdef ALACRITY
+	//        queryBoundary = getAdiosDefaultBoundingBox(v);
+	//        defaultBoundaryUsed = 1;
+	//#endif
+	//    }
 
     //
     // create selection string for fastbit
@@ -383,7 +387,7 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f,
     result->file = f;
 
     result->sel = queryBoundary;
-    result->deleteSelectionWhenFreed = defaultBoundaryUsed;
+    result->deleteSelectionWhenFreed = 0;
 
     result->predicateOp = op;
     result->predicateValue = strdup(value);
