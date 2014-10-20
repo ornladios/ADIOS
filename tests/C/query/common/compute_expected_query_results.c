@@ -269,6 +269,7 @@ static ADIOS_SELECTION * evaluateConstraint(ADIOS_QUERY *query, int timestep) {
 
 	if (!query->varinfo) {
 		query->varinfo = adios_inq_var(query->file, query->varName);
+		adios_inq_var_blockinfo(query->file, query->varinfo);
 	}
 	if (!query->sel) {
 		query->sel = adios_selection_boundingbox(query->varinfo->ndim, ZERO, query->varinfo->dims);
