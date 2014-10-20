@@ -263,13 +263,11 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF) {
 	printf("times steps for variable is: %d \n", q1->varinfo->nsteps);
 	for (i = 0; i < q1->varinfo->nsteps; i++) {
 		printf("querying on timestep %d \n", i);
-		adios_query_set_timestep(i);
 
 		while (1) {
 			ADIOS_SELECTION* currBatch = NULL;
 			adios_query_set_method(q, ADIOS_QUERY_METHOD_ALACRITY);
-			int hasMore = adios_query_evaluate(q, batchSize, box,
-					&currBatch);
+			int hasMore = adios_query_evaluate(q, i, batchSize, box, &currBatch);
 
 			if (hasMore == 0) { // there is no left results to retrieve
 				break;
