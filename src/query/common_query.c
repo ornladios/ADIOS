@@ -222,7 +222,7 @@ static int getTotalByteSize (ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* s
 
       for (s=0; s<v->ndim; s++) {
 	   if (start[s]+count[s] > v->dims[s]) {
-	     log_error(" Invalid bounding box start %" PRIu64 " + count %" PRIu64 " exceeds dim size: %" PRIu64 "\n", start[s], count[s], v->dims[s]);
+	     log_error(" Invalid bounding box at %dth dim: start %" PRIu64 " + count %" PRIu64 " exceeds dim size: %" PRIu64 "\n", s, start[s], count[s], v->dims[s]);
 	     return -1;
 	   }
 	   *total_byte_size *=count[s];
@@ -508,6 +508,10 @@ int64_t common_query_estimate(ADIOS_QUERY* q, int timestep)
     }
     enum ADIOS_QUERY_METHOD m = detect_and_set_query_method (q);
     if (query_hooks[m].adios_query_estimate_fn != NULL) {
+      if (adios_check_query_at_timestep(q, timestep) == -1) {
+	return -1;
+      }
+
       return query_hooks[m].adios_query_estimate_fn(q, timestep);
     }		
 
