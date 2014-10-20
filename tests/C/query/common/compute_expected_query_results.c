@@ -526,27 +526,32 @@ static void printPointSelection(int timestep, ADIOS_SELECTION *sel) {
 }
 
 static void usage(const char *cmd) {
-	fprintf(stderr, "Usage: %s <input BP file> <query XML file>", cmd);
+	fprintf(stderr, "Usage: %s <input BP file> <query XML file> [stream]", cmd);
 }
 
 #define SHIFT_N(n) { argc -= (n); argv += (n); }
 #define SHIFT SHIFT_N(1)
 int main(int argc, char **argv) {
 	const char *cmd = *argv; SHIFT;
-	if (argc != 2) {
+	if (argc < 2 || argc > 3) {
 		usage(cmd);
 		exit(1);
 	}
 
 	const char *bp_filename = *argv; SHIFT;
 	const char *inputxml_filename = *argv; SHIFT;
+	const int use_streaming = argc && (strcasecmp(argv, "stream") == 0);
 
 	const MPI_Comm comm = MPI_COMM_WORLD;
 
 	MPI_Init(&argc, &argv);
 	adios_read_init_method(ADIOS_READ_METHOD_BP, comm, "");
 
-	ADIOS_FILE *bp_file = adios_read_open_file(bp_filename, ADIOS_READ_METHOD_BP, comm);
+	ADIOS_FILE *bp_file =
+			use_streaming ?
+					adios_read_open(bp_filename, ADIOS_READ_METHOD_BP, comm, ADIOS_LOCKMODE_ALL, -1) :
+					adios_read_open_file(bp_filename, ADIOS_READ_METHOD_BP, comm);
+
 	if (bp_file == NULL) {
 		log_error("Error: could not read input dataset %s\n", bp_filename);
 		exit(1);
@@ -558,13 +563,22 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
+	// If we are in streaming mode, skip to the desired timestep
+	if (use_streaming)
+		for (timestep = 0; timestep < testinfo->fromStep; ++timestep)
+			assert(adios_advance_step(bp_file, 0, 0) == 0);
+
 	int timestep;
 	for (timestep = testinfo->fromStep; timestep < testinfo->fromStep + testinfo->numSteps; ++timestep) {
-		ADIOS_SELECTION *result = computeExpectedQueryResults(testinfo->query, testinfo->outputSelection, timestep);
+		ADIOS_SELECTION *result = computeExpectedQueryResults(testinfo->query, testinfo->outputSelection, use_streaming ? 0 : timestep);
 		printPointSelection(timestep, result);
 
 		free(result->u.points.points);
 		adios_selection_delete(result);
+
+		// If we are in streaming mode, advance to the next step
+		if (use_streaming)
+			assert(adios_advance_step(bp_file, 0, 0) == 0);
 	}
 
 	adios_selection_delete(testinfo->outputSelection); // TODO: leaks start[] and count[] if it's a BB
