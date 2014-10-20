@@ -540,7 +540,7 @@ int main(int argc, char **argv) {
 
 	const char *bp_filename = *argv; SHIFT;
 	const char *inputxml_filename = *argv; SHIFT;
-	const int use_streaming = argc && (strcasecmp(argv, "stream") == 0);
+	const int use_streaming = argc && (strcasecmp(*argv, "stream") == 0);
 
 	const MPI_Comm comm = MPI_COMM_WORLD;
 
@@ -564,11 +564,11 @@ int main(int argc, char **argv) {
 	}
 
 	// If we are in streaming mode, skip to the desired timestep
+	int timestep;
 	if (use_streaming)
 		for (timestep = 0; timestep < testinfo->fromStep; ++timestep)
 			assert(adios_advance_step(bp_file, 0, 0) == 0);
 
-	int timestep;
 	for (timestep = testinfo->fromStep; timestep < testinfo->fromStep + testinfo->numSteps; ++timestep) {
 		ADIOS_SELECTION *result = computeExpectedQueryResults(testinfo->query, testinfo->outputSelection, use_streaming ? 0 : timestep);
 		printPointSelection(timestep, result);
