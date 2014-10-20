@@ -147,6 +147,8 @@ int main(int argc, char ** argv) {
 
     const int use_streaming = (argc >= 5) && (strcasecmp(argv, "stream") == 0);
 
+    fprintf(stderr, "NOTE: Running the query in %s mode\n", use_streaming ? "STREAM" : "FILE");
+
     // ADIOS init
     adios_read_init_method(method, comm, NULL);
 
