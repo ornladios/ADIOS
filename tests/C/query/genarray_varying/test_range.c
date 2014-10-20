@@ -407,7 +407,7 @@ int do_queries(int step)
     // retrieve the whole query result at once
     int64_t batchSize = xyinfo->dims[0] * xyinfo->dims[1];
     print ("rank %d: set upper limit to number of hits = %lld\n", rank, batchSize); 
-    int hasMore =  adios_query_evaluate(q, batchSize, boxsel, &xy_hitlist);
+    int hasMore =  adios_query_evaluate(q, 0, batchSize, boxsel, &xy_hitlist);
 
     // FIXME: How do we check for errors?
     // NULL is not error: if (!xy_hitlist)  print ("rank %d: Query failed. It returned a NULL list: %s\n", rank, adios_errmsg());
