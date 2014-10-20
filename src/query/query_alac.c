@@ -1524,8 +1524,8 @@ int adios_query_alac_can_evaluate(ADIOS_QUERY* q)
 
 
 
-int64_t adios_query_alac_estimate(ADIOS_QUERY* q) {
-	ADIOS_ALAC_BITMAP* b = adios_alac_process(q, gCurrentTimeStep, true);
+int64_t adios_query_alac_estimate(ADIOS_QUERY* q, int timestep) {
+	ADIOS_ALAC_BITMAP* b = adios_alac_process(q, timestep, true);
 	return calSetBitsNum(b);
 }
 
@@ -1560,7 +1560,8 @@ void convertMemstreamToALACBitmap( void *mem , ADIOS_ALAC_BITMAP * bout /*OUT*/)
 	memcpy(bout->bits, ptr+4, sizeof(uint64_t)*(bout->length));
 }
 
-int  adios_query_alac_evaluate(ADIOS_QUERY* q,
+int adios_query_alac_evaluate(ADIOS_QUERY* q,
+                   int timestep,
 			       uint64_t batchSize, // limited by maxResult
 			       ADIOS_SELECTION* outputBoundry,
 			       ADIOS_SELECTION** queryResult) {
@@ -1568,11 +1569,11 @@ int  adios_query_alac_evaluate(ADIOS_QUERY* q,
 	ADIOS_ALAC_BITMAP* b ;
 	if (q->onTimeStep == NO_EVAL_BEFORE ) { // negative number is not evaluated
 		create_lookup(set_bit_count, set_bit_position);
-		b = adios_alac_process(q, gCurrentTimeStep, false);
+		b = adios_alac_process(q, timestep, false);
 		initLastConvRid(b);
 		q->maxResultsDesired =  calSetBitsNum(b);
 		q->resultsReadSoFar = 0;
-		q->onTimeStep = gCurrentTimeStep;
+		q->onTimeStep = timestep;
 	}else { //convert void* _internal to ADIOS_ALAC_BITMAP
 		b = (ADIOS_ALAC_BITMAP*) malloc(sizeof(ADIOS_ALAC_BITMAP));
 		convertMemstreamToALACBitmap(q->queryInternal, b);
