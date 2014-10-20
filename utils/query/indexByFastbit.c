@@ -336,6 +336,7 @@ int main (int argc, char** argv)
   adios_read_close(f);
 
 
+  printf(" ==>  index file is at: %s\n", idxFileName);
 
   // clean up
   MPI_Barrier (comm_dummy);
@@ -343,7 +344,6 @@ int main (int argc, char** argv)
   MPI_Finalize ();
   free (idxFileName);
 
-  printf(" ==>  index file is at: %s\n", idxFileName);
   return 0;
 }
 
