@@ -577,6 +577,8 @@ int main(int argc, char **argv) {
 		exit(1);
 	}
 
+	fprintf(stderr, "NOTE: Running the query in %s mode\n", use_streaming ? "STREAM" : "FILE");
+
 	// If we are in streaming mode, skip to the desired timestep
 	int timestep;
 	if (use_streaming)

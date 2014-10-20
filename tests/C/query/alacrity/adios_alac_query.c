@@ -141,6 +141,8 @@ int main(int argc, char ** argv) {
         exit(-1);
     }
 
+    fprintf(stderr, "NOTE: Running the query in %s mode\n", use_streaming ? "STREAM" : "FILE");
+
     // ADIOS init
     adios_read_init_method(method, comm, NULL);
 

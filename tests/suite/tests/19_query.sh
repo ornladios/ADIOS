@@ -167,60 +167,62 @@ function query_datasets() {
   for DSID in $ALL_DATASET_IDS; do
     local NOINDEX_DS="$DSID.noindex.bp"
   
-    # Iterate over all pre-defined queries
-    for QUERY_XML in "$QUERY_XML_DIR/$DSID"/*.xml; do
-      local QUERY_XML_BASENAME="${QUERY_XML##*/}"     # Strip the path
-      local QUERY_NAME="${QUERY_XML_BASENAME%%.xml}"  # Strip the .xml suffix
+    for FILEMODE in file stream; do 
+        # Iterate over all pre-defined queries
+      for QUERY_XML in "$QUERY_XML_DIR/$DSID"/*.xml; do
+        local QUERY_XML_BASENAME="${QUERY_XML##*/}"     # Strip the path
+        local QUERY_NAME="${QUERY_XML_BASENAME%%.xml}"  # Strip the .xml suffix
       
-      # Copy the query XML into our working directory for easy access
-      local QUERY_XML_LOCAL="${QUERY_XML_BASENAME}"
-      cp "$QUERY_XML" "$QUERY_XML_LOCAL" 
+        # Copy the query XML into our working directory for easy access
+        local QUERY_XML_LOCAL="${QUERY_XML_BASENAME}"
+        cp "$QUERY_XML" "$QUERY_XML_LOCAL" 
       
-      # Compute the expected results
-      local EXPECTED_POINTS_FILE="$DSID.$QUERY_NAME.expected-points.txt"
+        # Compute the expected results
+        local EXPECTED_POINTS_FILE="$DSID.$QUERY_NAME.$FILEMODE-mode.expected-points.txt"
 
-      echo
-      echo "====== COMPUTING EXPECTED OUTPUT OF QUERY $QUERY_NAME ON DATASET $INDEXED_DS ======"
-      echo
-      set -o xtrace
-      $MPIRUN_SERIAL "$QUERY_SEQSCAN_EXE_LOCAL" "$NOINDEX_DS" "$QUERY_XML" > "$EXPECTED_POINTS_FILE" ||
-        die "ERROR: $QUERY_SEQSCAN_EXE_LOCAL failed with exit code $?"
-      set +o xtrace
+        echo
+        echo "====== COMPUTING EXPECTED OUTPUT OF QUERY $QUERY_NAME ON DATASET $INDEXED_DS IN $FILEMODE MODE ======"
+        echo
+        set -o xtrace
+        $MPIRUN_SERIAL "$QUERY_SEQSCAN_EXE_LOCAL" "$NOINDEX_DS" "$QUERY_XML" "$FILEMODE" > "$EXPECTED_POINTS_FILE" ||
+          die "ERROR: $QUERY_SEQSCAN_EXE_LOCAL failed with exit code $?"
+        set +o xtrace
       
-      # NOTE: the sequential scan program produces a point list that is guaranteed to be sorted in C array order, so no need to sort it here
+        # NOTE: the sequential scan program produces a point list that is guaranteed to be sorted in C array order, so no need to sort it here
 
-      # Run the query for each query engine implementation and compare to the expected results
-      for QUERY_ENGINE in $ALL_QUERY_ENGINES; do
-        local QE_WORKDIR="./$QUERY_ENGINE"
+        # Run the query for each query engine implementation and compare to the expected results
+        for QUERY_ENGINE in $ALL_QUERY_ENGINES; do
+          local QE_WORKDIR="./$QUERY_ENGINE"
 
-        for INDEXED_DS in "$QE_WORKDIR/$DSID.$QUERY_ENGINE".*.bp; do
-          INDEXING_NAME=${INDEXED_DS##*/$DSID.$QUERY_ENGINE.}
-          INDEXING_NAME=${INDEXING_NAME%.bp}
+          for INDEXED_DS in "$QE_WORKDIR/$DSID.$QUERY_ENGINE".*.bp; do
+            INDEXING_NAME=${INDEXED_DS##*/$DSID.$QUERY_ENGINE.}
+            INDEXING_NAME=${INDEXING_NAME%.bp}
 
-          local OUTPUT_POINTS_FILE="$QE_WORKDIR/$DSID.$QUERY_NAME.$QUERY_ENGINE-$INDEXING_NAME-points.txt"
+            local OUTPUT_POINTS_FILE="$QE_WORKDIR/$DSID.$QUERY_NAME.$FILEMODE-mode.$QUERY_ENGINE-$INDEXING_NAME-points.txt"
 
-          # Run the query through ADIOS Query to get actual results
-          echo
-          echo "====== RUNNING QUERY $QUERY_NAME USING QUERY ENGINE $QUERY_ENGINE ON DATASET $INDEXED_DS ======"
-          echo
-          set -o xtrace
-          $MPIRUN_SERIAL "$QUERY_EXE_LOCAL" "$INDEXED_DS" "$QUERY_XML_LOCAL" "$QUERY_ENGINE"  > "$OUTPUT_POINTS_FILE" ||
-            die "ERROR: $QUERY_EXE_LOCAL failed with exit code $?"
-          set +o xtrace
+            # Run the query through ADIOS Query to get actual results
+            echo
+            echo "====== RUNNING QUERY $QUERY_NAME USING QUERY ENGINE $QUERY_ENGINE ON DATASET $INDEXED_DS IN $FILEMODE MODE ======"
+            echo
+            set -o xtrace
+            $MPIRUN_SERIAL "$QUERY_EXE_LOCAL" "$INDEXED_DS" "$QUERY_XML_LOCAL" "$QUERY_ENGINE" "$FILEMODE" > "$OUTPUT_POINTS_FILE" ||
+              die "ERROR: $QUERY_EXE_LOCAL failed with exit code $?"
+            set +o xtrace
 
-          # Sort the output points in C array order, since the query engine makes no guarantee as to the ordering of the results
-          # Sort file in place (-o FILE) with numerical sort order (-n) on each of the first 9 fields (-k1,1 ...)
-          # Assumes the output will have at most 8 dimensions (+ 1 timestep column == 9), add more if needed (or a generalized column counter)
-          sort -n -k1,1 -k2,2 -k3,3 -k4,4 -k5,5 -k6,6 -k7,7 -k8,8 -k9,9 \
-            "$OUTPUT_POINTS_FILE" -o "$OUTPUT_POINTS_FILE"
+            # Sort the output points in C array order, since the query engine makes no guarantee as to the ordering of the results
+            # Sort file in place (-o FILE) with numerical sort order (-n) on each of the first 9 fields (-k1,1 ...)
+            # Assumes the output will have at most 8 dimensions (+ 1 timestep column == 9), add more if needed (or use a generalized column counter)
+            sort -n -k1,1 -k2,2 -k3,3 -k4,4 -k5,5 -k6,6 -k7,7 -k8,8 -k9,9 \
+              "$OUTPUT_POINTS_FILE" -o "$OUTPUT_POINTS_FILE"
 
-          # Compare the actual and expected results via diff (the matching points are sorted lexicographically
-          if ! diff -q "$EXPECTED_POINTS_FILE" "$OUTPUT_POINTS_FILE"; then
-            echo "ERROR: ADIOS Query does not return the expected points matching query $QUERY_NAME on dataset $DSID using query engine $QUERY_ENGINE"
-            echo "Compare \"$EXPECTED_POINTS_FILE\" (expected points) vs. \"$OUTPUT_POINTS_FILE\" (returned points) in \"$PWD\""
-            echo "The BP file queried is \"$INDEXED_DS\" and the query is specified by \"$QUERY_XML_LOCAL\""
-            exit 1  
-          fi
+            # Compare the actual and expected results via diff (the matching points are sorted by tuple components)
+            if ! diff -q "$EXPECTED_POINTS_FILE" "$OUTPUT_POINTS_FILE"; then
+              echo "ERROR: ADIOS Query does not return the expected points matching query $QUERY_NAME on dataset $DSID in $FILEMODE mode using query engine $QUERY_ENGINE"
+              echo "Compare \"$EXPECTED_POINTS_FILE\" (expected points) vs. \"$OUTPUT_POINTS_FILE\" (returned points) in \"$PWD\""
+              echo "The BP file queried is \"$INDEXED_DS\" and the query is specified by \"$QUERY_XML_LOCAL\""
+              exit 1  
+            fi
+          done
         done
       done
     done
