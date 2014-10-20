@@ -197,7 +197,6 @@ void oneDefinedBox(ADIOS_FILE* bf, const char * lb, const char * hb,
 	double lbv = atof(lb);
 	double hbv = atof(hb);
 	int timestep = 0;
-	adios_query_set_timestep(timestep);
 	int64_t batchSize = 10000;
 
 	ADIOS_QUERY * q = createQueryConstraints(bf, varName1, box1, lb, hb);
@@ -206,7 +205,7 @@ void oneDefinedBox(ADIOS_FILE* bf, const char * lb, const char * hb,
 
 	while (1) {
 		ADIOS_SELECTION* currBatch = NULL;
-		int hasMore = adios_query_evaluate(q, batchSize, box1, &currBatch);
+		int hasMore = adios_query_evaluate(q, timestep, batchSize, box1, &currBatch);
 		if (hasMore == 0) { // there is no left results to retrieve
 			break;
 		}
