@@ -103,6 +103,11 @@ static enum ADIOS_QUERY_METHOD detect_and_set_query_method(ADIOS_QUERY* q)
 int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
 {
     // get data from bp file
+    if (timeStep < 0) {
+      log_error("Invalid timestep\n");
+      return -1;
+    }
+
     if (q == NULL) {
       return 0;
     }
@@ -117,6 +122,10 @@ int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
       if ((q->file->is_streaming == 1) && (timeStep != 0)) {
 	adios_error(err_invalid_query_value, "TimeStep for streaming file should always be 0.\n");
 	return -1;
+      }
+
+      if (q->file->is_streaming == 1) {
+	  timeStep = q->file->current_step;
       }
 
       ADIOS_VARINFO* v = common_read_inq_var(q->file, q->varName);
@@ -142,16 +151,16 @@ int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
       q->dataSlice = malloc(total_byte_size);
       q->rawDataSize = dataSize;
       
-      return 0;
+      return timeStep;
     } else {
-      if (adios_check_query_at_timestep(q->left, timeStep) == -1) {
+      int leftTimeStep = adios_check_query_at_timestep(q->left, timeStep);
+      int rightTimeStep = adios_check_query_at_timestep(q->right, timeStep);
+
+      if ((rightTimeStep == -1) || (leftTimeStep == -1)) {
 	return -1;
       }
-      if (adios_check_query_at_timestep(q->right, timeStep) == -1) {
-	return -1;
-      }
+      return leftTimeStep;
     }
-    return 0; 
 }
 
 ADIOS_QUERY* freeQuery(ADIOS_QUERY* query) {
@@ -508,11 +517,12 @@ int64_t common_query_estimate(ADIOS_QUERY* q, int timestep)
     }
     enum ADIOS_QUERY_METHOD m = detect_and_set_query_method (q);
     if (query_hooks[m].adios_query_estimate_fn != NULL) {
-      if (adios_check_query_at_timestep(q, timestep) == -1) {
+      int actualTimeStep = adios_check_query_at_timestep(q, timestep);
+      if (actualTimeStep == -1) {
 	return -1;
       }
 
-      return query_hooks[m].adios_query_estimate_fn(q, timestep);
+      return query_hooks[m].adios_query_estimate_fn(q, actualTimeStep);
     }		
 
     log_debug("No estimate function was supported for method %d\n", m);
@@ -705,8 +715,8 @@ static ADIOS_SELECTION * convertWriteblockToBoundingBox(ADIOS_QUERY *q, ADIOS_SE
     if (!pg_bounds)
     	return NULL;
 
-    ADIOS_SELECTION *bb = common_read_selection_boundingbox(
-                        pg_ndim, pg_bounds->start, pg_bounds->count);
+    ADIOS_SELECTION *bb = common_read_selection_boundingbox(pg_ndim, pg_bounds->start, pg_bounds->count);
+							    
     return bb;
 }
 
@@ -716,7 +726,8 @@ int common_query_evaluate(ADIOS_QUERY* q,
 			  ADIOS_SELECTION* outputBoundary, 
 			  ADIOS_SELECTION** result)
 {  
-    if (adios_check_query_at_timestep(q, timeStep) == -1) {
+    int actualTimeStep = adios_check_query_at_timestep(q, timeStep);
+    if (actualTimeStep == -1) {
       return -1;
     }
 
@@ -737,7 +748,7 @@ int common_query_evaluate(ADIOS_QUERY* q,
     */
     int freeOutputBoundary = 0;
     if (outputBoundary->type == ADIOS_SELECTION_WRITEBLOCK) {
-        outputBoundary = convertWriteblockToBoundingBox(q, &outputBoundary->u.block, timeStep);
+        outputBoundary = convertWriteblockToBoundingBox(q, &outputBoundary->u.block, actualTimeStep);
         if (!outputBoundary) {
 	  adios_error(err_invalid_argument,
 		      "Attempt to use writeblock output selection on a query where not "
@@ -752,7 +763,7 @@ int common_query_evaluate(ADIOS_QUERY* q,
     enum ADIOS_QUERY_METHOD m = detect_and_set_query_method (q);
 
     if (query_hooks[m].adios_query_evaluate_fn != NULL) {
-      int retval = query_hooks[m].adios_query_evaluate_fn(q, timeStep, batchSize, outputBoundary, result);	      
+      int retval = query_hooks[m].adios_query_evaluate_fn(q, actualTimeStep, batchSize, outputBoundary, result);	      
       if (freeOutputBoundary) common_read_selection_delete(outputBoundary);
       return retval;
     } 
