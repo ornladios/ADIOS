@@ -440,8 +440,8 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
 
     int cm_port = 59997;
     char *cm_host = "localhost";
-    int remote_port = 59999;
-    char *remote_host = "localhost";
+    int cm_remote_port = 59999;
+    char *cm_remote_host = "localhost";
     char *cm_attr = NULL;
     attr_list contact_list;
 
@@ -467,13 +467,13 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         {
             cm_port = atoi(p->value);
         }
-        else if (!strcasecmp (p->name, "remote_host"))
+        else if (!strcasecmp (p->name, "cm_remote_host"))
         {
-            remote_host = p->value;
+            cm_remote_host = p->value;
         }
-        else if (!strcasecmp (p->name, "remote_port"))
+        else if (!strcasecmp (p->name, "cm_remote_port"))
         {
-            remote_port = atoi(p->value);
+            cm_remote_port = atoi(p->value);
         }
         else if (!strcasecmp (p->name, "remote_list"))
         {
@@ -542,8 +542,8 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
     {
         num_remote_server = 1;
         remote_server = calloc(1, sizeof(icee_clientinfo_rec_t));
-        remote_server[0].client_host = remote_host;
-        remote_server[0].client_port = remote_port;
+        remote_server[0].client_host = cm_remote_host;
+        remote_server[0].client_port = cm_remote_port;
     }
 
     //log_info ("cm_attr : %s\n", cm_attr);
