@@ -168,6 +168,7 @@ ADIOS_QUERY* freeQuery(ADIOS_QUERY* query) {
 
   free(query->predicateValue);
   free(query->condition);
+  free(query->varName);
         
   common_read_free_varinfo(query->varinfo);
 
