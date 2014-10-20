@@ -261,7 +261,20 @@ static void sortPointsLexOrder(ADIOS_SELECTION *pointsel) {
 
 // Returns a point selection with points in lexicographical order
 static ADIOS_SELECTION * evaluateConstraint(ADIOS_QUERY *query, int timestep) {
+	enum { MAX_DIMS = 32 };
+	static const uint64_t ZERO[MAX_DIMS] = { 0 }; // Initializes all elements to 0 as per C standard
+
 	assert(!query->left && !query->right);
+	assert(query->file && query->varName);
+
+	if (!query->varinfo) {
+		query->varinfo = adios_inq_var(query->file, query->varName);
+	}
+	if (!query->sel) {
+		query->sel = adios_selection_boundingbox(query->varinfo->ndim, ZERO, query->varinfo->dims);
+		query->deleteSelectionWhenFreed = 1;
+	}
+
 	assert(query->varinfo && query->file && query->sel);
 
 	ADIOS_SELECTION *insel = query->sel;
