@@ -186,8 +186,6 @@ void common_query_free(ADIOS_QUERY* q)
     return;
   }
 
-  detect_and_set_query_method(q);
-
   if (q->deleteSelectionWhenFreed) {
     common_read_selection_delete(q->sel);
   }
