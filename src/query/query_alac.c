@@ -1063,7 +1063,57 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	uint64_t* deststart ;  uint64_t* destcount ;// current variables selection box
 	uint64_t * srcstart;  	uint64_t * srccount; // PG's bounding box is the global bounding box
 	int ndim = varInfo->ndim;
-	if (adiosQuery->sel->type == ADIOS_SELECTION_BOUNDINGBOX) {
+
+        if (adiosQuery->sel == NULL) {
+                static uint64_t ZERO[32] = { 0 };
+
+		destcount = varInfo->dims;   deststart = ZERO;
+
+                if (varInfo->blockinfo == NULL) {
+		    adios_read_set_data_view(adiosQuery->file, LOGICAL_DATA_VIEW);
+                    common_read_inq_var_blockinfo(adiosQuery->file, varInfo);
+                }
+
+		adios_read_set_data_view(adiosQuery->file, PHYSICAL_DATA_VIEW);
+		ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->file, varInfo);
+
+		int totalPG = varInfo->nblocks[timeStep];
+		int blockId, j;
+
+                // global block id
+                int startBlkId = 0;
+                int blkIter;
+                for (blkIter = 0; blkIter < timeStep; blkIter++) {
+                    startBlkId += varInfo->nblocks[blkIter]; 
+                }
+
+		for (j = startBlkId; j < startBlkId + totalPG; j++) {
+			// false: PG selection box is intersecting with variable's selection box
+			// true : PG selection box is fully contained within variable's selection box
+                        // isPGCovered is alwasy true for selection is NULL
+			bool isPGCovered = true;
+
+			srcstart = varInfo->blockinfo[j].start;
+			srccount = varInfo->blockinfo[j].count;
+
+			if (ti->transform_type == adios_get_transform_type_by_uid("ncsu-alacrity")) {
+				proc_write_block(j,isPGCovered,ti, adiosQuery,startStep,estimate,&alacQuery,lb,hb
+						,srcstart, srccount, deststart, destcount,alacResultBitmap	);
+			}else {
+				char * blockData  = NULL;
+				uint64_t totalElm = 1;
+				int t = 0;
+				for(t=0; t < ndim; t++){
+					totalElm *= srccount[t];
+				}
+				readBlockData(j, adiosQuery, startStep, varInfo,totalElm, (void**)&blockData );
+				literallyCheckData(blockData, totalElm, varInfo->type,adiosQuery,hb, lb
+						, srcstart, srccount, deststart, destcount, ndim, isPGCovered
+						, alacResultBitmap);
+			}
+		}
+	}
+        else if (adiosQuery->sel->type == ADIOS_SELECTION_BOUNDINGBOX) {
 		const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(adiosQuery->sel->u.bb);
 		destcount = bb->count;   deststart = bb->start;
 #ifdef RIDBUG

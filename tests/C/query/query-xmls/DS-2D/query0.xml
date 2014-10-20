@@ -4,10 +4,8 @@
     <output type="ADIOS_SELECTION_BOUNDINGBOX" dim="2" start="0,0" count="8,8"/>
 
     <entry var="temp" op=">=" constraint="0.9"> 
-        <selection type="ADIOS_SELECTION_BOUNDINGBOX" dim="2" start="0,0" count="8,8"/>
     </entry>
     <entry var="temp" op="<=" constraint="1.0"> 
-        <selection type="ADIOS_SELECTION_BOUNDINGBOX" dim="2" start="0,0" count="8,8"/>
     </entry>
 
     <combine op="AND"/>
