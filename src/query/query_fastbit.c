@@ -494,7 +494,7 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
 
     /*
     // read data from dataFile
-    ADIOS_SELECTION* box = adios_selection_writeblock(blockIdx);
+    ADIOS_SELECTION* box = common_read_selection_writeblock(blockIdx);
     common_read_inq_var_blockinfo(dataFile, v);
     */
     if (v->blockinfo == NULL) {
@@ -504,7 +504,7 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
 
     /*
     free(q->_dataSlice);
-    q->_dataSlice = malloc(adios_type_size(v->type, v->value)*blockSize);
+    q->_dataSlice = malloc(common_read_type_size(v->type, v->value)*blockSize);
 
     common_read_schedule_read_byid(dataFile, box, v->varid, timeStep, 1, NULL, q->_dataSlice);
     common_read_perform_reads(dataFile,1);
@@ -520,9 +520,9 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
     {
       // no idx for this variable, read from file:
       free(q->dataSlice);
-      q->dataSlice = malloc(adios_type_size(v->type, v->value)*blockSize);
+      q->dataSlice = malloc(common_read_type_size(v->type, v->value)*blockSize);
       
-      ADIOS_SELECTION* box = adios_selection_writeblock(blockIdx);   
+      ADIOS_SELECTION* box = common_read_selection_writeblock(blockIdx);   
       common_read_inq_var_blockinfo(dataFile, v);        
       common_read_schedule_read_byid(dataFile, box, v->varid, timeStep, 1, NULL, q->dataSlice);
       common_read_perform_reads(dataFile,1);
@@ -531,7 +531,7 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
       FastBitCompareType compareOp = fastbit_adios_util_getFastbitCompareType(q->predicateOp);
 
       setQueryInternal(q, compareOp, dataType, blockSize, blockDataName);
-      adios_selection_delete(box);
+      common_read_selection_delete(box);
       return;
     }
     
