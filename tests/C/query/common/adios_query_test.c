@@ -12,6 +12,7 @@
 #include <assert.h>
 #include "adios_selection.h"
 #include "adios_query.h"
+#include "adios_error.h"
 #include <mxml.h>
 #include <sys/stat.h>
 #include "adios_query_xml_parse.h"
