@@ -6,8 +6,8 @@
 
 #define FORWARD_DECLARE(a) \
   int     adios_query_##a##_can_evaluate(ADIOS_QUERY* q); \
-  int64_t adios_query_##a##_estimate(ADIOS_QUERY* q); \
-  int     adios_query_##a##_evaluate(ADIOS_QUERY* q, uint64_t batchSize, ADIOS_SELECTION* outputBoundry, ADIOS_SELECTION** result); \
+  int64_t adios_query_##a##_estimate(ADIOS_QUERY* q, int timeStep);			\
+  int     adios_query_##a##_evaluate(ADIOS_QUERY* q, int timeStep, uint64_t batchSize, ADIOS_SELECTION* outputBoundry, ADIOS_SELECTION** result); \
   int     adios_query_##a##_free(ADIOS_QUERY* q); \
   int     adios_query_##a##_finalize();
 
@@ -16,8 +16,8 @@ FORWARD_DECLARE(alac)
 
 typedef int      (* ADIOS_QUERY_FREE_FN) (ADIOS_QUERY* q);
 typedef int      (* ADIOS_QUERY_FINALIZE_FN) ();
-typedef int      (* ADIOS_QUERY_EVALUATE_FN) (ADIOS_QUERY* q,  uint64_t batchSize, ADIOS_SELECTION* o, ADIOS_SELECTION** result);
-typedef int64_t  (* ADIOS_QUERY_ESTIMATE_FN) (ADIOS_QUERY* q);
+typedef int      (* ADIOS_QUERY_EVALUATE_FN) (ADIOS_QUERY* q, int timeStep, uint64_t batchSize, ADIOS_SELECTION* o, ADIOS_SELECTION** result);
+typedef int64_t  (* ADIOS_QUERY_ESTIMATE_FN) (ADIOS_QUERY* q, int timeStep);
 typedef int  (* ADIOS_QUERY_CAN_EVALUATE_FN) (ADIOS_QUERY* q);
 
 struct adios_query_hooks_struct
