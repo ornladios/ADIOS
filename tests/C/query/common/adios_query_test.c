@@ -105,7 +105,7 @@ int performQuery(ADIOS_QUERY_TEST_INFO *queryInfo, ADIOS_FILE *f, int use_stream
 			if (timestep < queryInfo->fromStep + queryInfo->numSteps - 1) {
 				assert(err == 0);
 			} else {
-				assert(err == err_end_of_stream);
+				assert(err == err_end_of_stream || err == err_step_notready);
 			}
         }
     }

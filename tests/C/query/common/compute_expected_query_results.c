@@ -599,7 +599,7 @@ int main(int argc, char **argv) {
 			if (timestep < testinfo->fromStep + testinfo->numSteps - 1) {
 				assert(err == 0);
 			} else {
-				assert(err == err_end_of_stream);
+				assert(err == err_end_of_stream || err == err_step_notready);
 			}
 		}
 	}
