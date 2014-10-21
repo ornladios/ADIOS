@@ -91,6 +91,7 @@ void adios_init_transports (struct adios_transport_struct ** t)
 
     ASSIGN_FNS(posix,ADIOS_METHOD_POSIX,"POSIX")
     ASSIGN_FNS(posix1,ADIOS_METHOD_POSIX1,"POSIX1")
+	ASSIGN_FNS(xpmem,ADIOS_METHOD_XPMEM,"XPMEM")
 
 #  if HAVE_DATASPACES
     ASSIGN_FNS(dataspaces,ADIOS_METHOD_DATASPACES,"DATASPACES")
@@ -99,6 +100,7 @@ void adios_init_transports (struct adios_transport_struct ** t)
 #  if HAVE_DIMES
     ASSIGN_FNS(dimes,ADIOS_METHOD_DIMES,"DIMES")
 #  endif
+
 
 #  ifndef NO_RESEARCH_TRANSPORTS
     //ASSIGN_FNS(provenance,ADIOS_METHOD_PROVENANCE)
@@ -151,6 +153,8 @@ int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
 #if HAVE_DIMES
     MATCH_STRING_TO_METHOD("DIMES",ADIOS_METHOD_DIMES,1)
 #endif
+
+	        MATCH_STRING_TO_METHOD("XPMEM",ADIOS_METHOD_XPMEM,0)
 
 #if HAVE_PHDF5
     MATCH_STRING_TO_METHOD("PHDF5",ADIOS_METHOD_PHDF5,1)

@@ -132,7 +132,10 @@ libadios_a_SOURCES = core/adios.c \
                      write/adios_mpi_amr.c \
                      write/adios_posix.c \
                      write/adios_posix1.c \
-                     write/adios_var_merge.c 
+                     write/adios_var_merge.c \
+					read/read_xpmem.c\
+					write/adios_xpmem.c
+
 if HAVE_BGQ
 libadios_a_SOURCES += write/adios_mpi_bgq.c 
 endif
@@ -165,7 +168,9 @@ libadios_nompi_a_SOURCES = core/adios.c \
                      read/read_bp_staged.c \
                      read/read_bp_staged1.c \
                      write/adios_posix.c \
-                     write/adios_posix1.c 
+                     write/adios_posix1.c \
+					read/read_xpmem.c\
+					write/adios_xpmem.c
 
 
 
@@ -197,7 +202,9 @@ FortranLibSources = core/adiosf.c \
                      read/read_bp_staged.c \
                      read/read_bp_staged1.c \
                      write/adios_posix.c \
-                     write/adios_posix1.c 
+                     write/adios_posix1.c \
+					read/read_xpmem.c\
+					write/adios_xpmem.c
 
 FortranLibMPISources =  write/adios_mpi.c \
                      write/adios_mpi_lustre.c \
@@ -211,13 +218,13 @@ FortranLibSEQSources = core/mpidummy.c
 endif # BUILD_FORTRAN
 
 libadios_a_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS) # $(MACRODEFFLAG)USE_TIMERS
-libadios_a_CFLAGS = $(ADIOSLIB_CFLAGS) 
+libadios_a_CFLAGS = $(ADIOSLIB_CFLAGS) $(CRAY_XPMEM_INCLUDE_OPTS)
 libadios_nompi_a_CPPFLAGS = $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_SEQ_CPPFLAGS) # $(MACRODEFFLAG)USE_TIMERS
-libadios_nompi_a_CFLAGS = $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_SEQ_CFLAGS) 
+libadios_nompi_a_CFLAGS = $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_SEQ_CFLAGS) $(CRAY_XPMEM_INCLUDE_OPTS)
 libadiosf_a_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS) # $(MACRODEFFLAG)USE_TIMERS
-libadiosf_a_CFLAGS = $(ADIOSLIB_CFLAGS) 
+libadiosf_a_CFLAGS = $(ADIOSLIB_CFLAGS) $(CRAY_XPMEM_INCLUDE_OPTS) 
 libadiosf_nompi_a_CPPFLAGS = $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_SEQ_CPPFLAGS) # $(MACRODEFFLAG)USE_TIMERS
-libadiosf_nompi_a_CFLAGS = $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_SEQ_CFLAGS) 
+libadiosf_nompi_a_CFLAGS = $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_SEQ_CFLAGS)  $(CRAY_XPMEM_INCLUDE_OPTS)
 
 if HAVE_DATASPACES
 libadios_a_SOURCES += write/adios_dataspaces.c read/read_dataspaces.c

@@ -267,11 +267,11 @@ am__libadios_a_SOURCES_DIST = core/adios.c core/common_adios.c \
 	read/read_bp_staged.c read/read_bp_staged1.c write/adios_mpi.c \
 	write/adios_mpi_lustre.c write/adios_mpi_amr.c \
 	write/adios_posix.c write/adios_posix1.c \
-	write/adios_var_merge.c write/adios_mpi_bgq.c \
-	write/adios_dataspaces.c read/read_dataspaces.c \
-	write/adios_dimes.c read/read_dimes.c write/adios_datatap.c \
-	read/read_datatap.c write/adios_phdf5.c write/adios_nc4.c \
-	write/adios_flexpath.c read/read_flexpath.c \
+	write/adios_var_merge.c read/read_xpmem.c write/adios_xpmem.c \
+	write/adios_mpi_bgq.c write/adios_dataspaces.c \
+	read/read_dataspaces.c write/adios_dimes.c read/read_dimes.c \
+	write/adios_datatap.c read/read_datatap.c write/adios_phdf5.c \
+	write/adios_nc4.c write/adios_flexpath.c read/read_flexpath.c \
 	nssi/adios_nssi_config.c write/adios_nssi.c \
 	nssi/adios_nssi_filter.c read/read_nssi.c
 am__objects_1 =
@@ -354,6 +354,8 @@ am__objects_6 = $(am__objects_1) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_posix.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_posix1.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_var_merge.$(OBJEXT) \
+@BUILD_WRITE_TRUE@	libadios_a-read_xpmem.$(OBJEXT) \
+@BUILD_WRITE_TRUE@	libadios_a-adios_xpmem.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	$(am__objects_7) $(am__objects_8) \
 @BUILD_WRITE_TRUE@	$(am__objects_9) $(am__objects_10) \
 @BUILD_WRITE_TRUE@	$(am__objects_11) $(am__objects_12) \
@@ -492,11 +494,11 @@ am__libadios_nompi_a_SOURCES_DIST = core/adios.c core/common_adios.c \
 	core/adios_transport_hooks.c core/adios_socket.c \
 	core/adios_logger.c core/util.c core/qhashtbl.c read/read_bp.c \
 	read/read_bp_staged.c read/read_bp_staged1.c \
-	write/adios_posix.c write/adios_posix1.c \
-	write/adios_dataspaces.c read/read_dataspaces.c \
-	write/adios_dimes.c read/read_dimes.c write/adios_datatap.c \
-	read/read_datatap.c write/adios_flexpath.c \
-	read/read_flexpath.c
+	write/adios_posix.c write/adios_posix1.c read/read_xpmem.c \
+	write/adios_xpmem.c write/adios_dataspaces.c \
+	read/read_dataspaces.c write/adios_dimes.c read/read_dimes.c \
+	write/adios_datatap.c read/read_datatap.c \
+	write/adios_flexpath.c read/read_flexpath.c
 am__objects_19 = $(am__objects_1) \
 	libadios_nompi_a-adios_transforms_common.$(OBJEXT) \
 	libadios_nompi_a-adios_transforms_hooks.$(OBJEXT) \
@@ -570,6 +572,8 @@ am__objects_23 = $(am__objects_1) \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-read_bp_staged1.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-adios_posix.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-adios_posix1.$(OBJEXT) \
+@BUILD_WRITE_TRUE@	libadios_nompi_a-read_xpmem.$(OBJEXT) \
+@BUILD_WRITE_TRUE@	libadios_nompi_a-adios_xpmem.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	$(am__objects_24) $(am__objects_25) \
 @BUILD_WRITE_TRUE@	$(am__objects_26) $(am__objects_27)
 libadios_nompi_a_OBJECTS = $(am_libadios_nompi_a_OBJECTS)
@@ -630,17 +634,18 @@ am__libadiosf_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	core/adios_transport_hooks.c core/adios_socket.c \
 	core/adios_logger.c core/util.c core/qhashtbl.c read/read_bp.c \
 	read/read_bp_staged.c read/read_bp_staged1.c \
-	write/adios_posix.c write/adios_posix1.c \
-	write/adios_dataspaces.c read/read_dataspaces.c \
-	write/adios_dimes.c read/read_dimes.c write/adios_datatap.c \
-	read/read_datatap.c write/adios_flexpath.c \
-	read/read_flexpath.c nssi/adios_nssi_config.c \
-	write/adios_nssi.c nssi/adios_nssi_filter.c read/read_nssi.c \
-	write/adios_mpi.c write/adios_mpi_lustre.c \
-	write/adios_mpi_amr.c write/adios_var_merge.c \
-	write/adios_mpi_bgq.c write/adios_phdf5.c write/adios_nc4.c \
-	core/adiosf_read.c core/adiosf_defs_mod.f90 \
-	core/adiosf_write_mod.f90 core/adiosf_read_mod.f90
+	write/adios_posix.c write/adios_posix1.c read/read_xpmem.c \
+	write/adios_xpmem.c write/adios_dataspaces.c \
+	read/read_dataspaces.c write/adios_dimes.c read/read_dimes.c \
+	write/adios_datatap.c read/read_datatap.c \
+	write/adios_flexpath.c read/read_flexpath.c \
+	nssi/adios_nssi_config.c write/adios_nssi.c \
+	nssi/adios_nssi_filter.c read/read_nssi.c write/adios_mpi.c \
+	write/adios_mpi_lustre.c write/adios_mpi_amr.c \
+	write/adios_var_merge.c write/adios_mpi_bgq.c \
+	write/adios_phdf5.c write/adios_nc4.c core/adiosf_read.c \
+	core/adiosf_defs_mod.f90 core/adiosf_write_mod.f90 \
+	core/adiosf_read_mod.f90
 am__objects_28 = $(am__objects_1) \
 	libadiosf_a-adios_transforms_common.$(OBJEXT) \
 	libadiosf_a-adios_transforms_hooks.$(OBJEXT) \
@@ -712,6 +717,8 @@ am__objects_32 = $(am__objects_1) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-read_bp_staged1.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_posix.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_posix1.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-read_xpmem.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_xpmem.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_33) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_34) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_35) \
@@ -796,13 +803,14 @@ am__libadiosf_nompi_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	core/adios_transport_hooks.c core/adios_socket.c \
 	core/adios_logger.c core/util.c core/qhashtbl.c read/read_bp.c \
 	read/read_bp_staged.c read/read_bp_staged1.c \
-	write/adios_posix.c write/adios_posix1.c \
-	write/adios_dataspaces.c read/read_dataspaces.c \
-	write/adios_dimes.c read/read_dimes.c write/adios_datatap.c \
-	read/read_datatap.c write/adios_flexpath.c \
-	read/read_flexpath.c nssi/adios_nssi_config.c \
-	write/adios_nssi.c nssi/adios_nssi_filter.c read/read_nssi.c \
-	core/mpidummy.c core/adiosf_read.c core/adiosf_defs_mod.f90 \
+	write/adios_posix.c write/adios_posix1.c read/read_xpmem.c \
+	write/adios_xpmem.c write/adios_dataspaces.c \
+	read/read_dataspaces.c write/adios_dimes.c read/read_dimes.c \
+	write/adios_datatap.c read/read_datatap.c \
+	write/adios_flexpath.c read/read_flexpath.c \
+	nssi/adios_nssi_config.c write/adios_nssi.c \
+	nssi/adios_nssi_filter.c read/read_nssi.c core/mpidummy.c \
+	core/adiosf_read.c core/adiosf_defs_mod.f90 \
 	core/adiosf_write_mod.f90 core/adiosf_read_mod.f90
 am__objects_43 = $(am__objects_1) \
 	libadiosf_nompi_a-adios_transforms_common.$(OBJEXT) \
@@ -878,6 +886,8 @@ am__objects_47 = $(am__objects_1) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_a-read_bp_staged1.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_a-adios_posix.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_a-adios_posix1.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_a-read_xpmem.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_a-adios_xpmem.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_48) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_49) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_50) \
@@ -949,13 +959,14 @@ am__libadiosf_nompi_v1_a_SOURCES_DIST = core/adiosf.c \
 	core/adios_transport_hooks.c core/adios_socket.c \
 	core/adios_logger.c core/util.c core/qhashtbl.c read/read_bp.c \
 	read/read_bp_staged.c read/read_bp_staged1.c \
-	write/adios_posix.c write/adios_posix1.c \
-	write/adios_dataspaces.c read/read_dataspaces.c \
-	write/adios_dimes.c read/read_dimes.c write/adios_datatap.c \
-	read/read_datatap.c write/adios_flexpath.c \
-	read/read_flexpath.c nssi/adios_nssi_config.c \
-	write/adios_nssi.c nssi/adios_nssi_filter.c read/read_nssi.c \
-	core/mpidummy.c core/adiosf_read_v1.c core/adiosf_defs_mod.f90 \
+	write/adios_posix.c write/adios_posix1.c read/read_xpmem.c \
+	write/adios_xpmem.c write/adios_dataspaces.c \
+	read/read_dataspaces.c write/adios_dimes.c read/read_dimes.c \
+	write/adios_datatap.c read/read_datatap.c \
+	write/adios_flexpath.c read/read_flexpath.c \
+	nssi/adios_nssi_config.c write/adios_nssi.c \
+	nssi/adios_nssi_filter.c read/read_nssi.c core/mpidummy.c \
+	core/adiosf_read_v1.c core/adiosf_defs_mod.f90 \
 	core/adiosf_write_mod.f90
 am__objects_55 = $(am__objects_1) \
 	libadiosf_nompi_v1_a-adios_transforms_common.$(OBJEXT) \
@@ -1031,6 +1042,8 @@ am__objects_59 = $(am__objects_1) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_v1_a-read_bp_staged1.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_v1_a-adios_posix.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_v1_a-adios_posix1.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_v1_a-read_xpmem.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_v1_a-adios_xpmem.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_60) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_61) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_62) \
@@ -1101,17 +1114,17 @@ am__libadiosf_v1_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	core/adios_transport_hooks.c core/adios_socket.c \
 	core/adios_logger.c core/util.c core/qhashtbl.c read/read_bp.c \
 	read/read_bp_staged.c read/read_bp_staged1.c \
-	write/adios_posix.c write/adios_posix1.c \
-	write/adios_dataspaces.c read/read_dataspaces.c \
-	write/adios_dimes.c read/read_dimes.c write/adios_datatap.c \
-	read/read_datatap.c write/adios_flexpath.c \
-	read/read_flexpath.c nssi/adios_nssi_config.c \
-	write/adios_nssi.c nssi/adios_nssi_filter.c read/read_nssi.c \
-	write/adios_mpi.c write/adios_mpi_lustre.c \
-	write/adios_mpi_amr.c write/adios_var_merge.c \
-	write/adios_mpi_bgq.c write/adios_phdf5.c write/adios_nc4.c \
-	core/adiosf_read_v1.c core/adiosf_defs_mod.f90 \
-	core/adiosf_write_mod.f90
+	write/adios_posix.c write/adios_posix1.c read/read_xpmem.c \
+	write/adios_xpmem.c write/adios_dataspaces.c \
+	read/read_dataspaces.c write/adios_dimes.c read/read_dimes.c \
+	write/adios_datatap.c read/read_datatap.c \
+	write/adios_flexpath.c read/read_flexpath.c \
+	nssi/adios_nssi_config.c write/adios_nssi.c \
+	nssi/adios_nssi_filter.c read/read_nssi.c write/adios_mpi.c \
+	write/adios_mpi_lustre.c write/adios_mpi_amr.c \
+	write/adios_var_merge.c write/adios_mpi_bgq.c \
+	write/adios_phdf5.c write/adios_nc4.c core/adiosf_read_v1.c \
+	core/adiosf_defs_mod.f90 core/adiosf_write_mod.f90
 am__objects_67 = $(am__objects_1) \
 	libadiosf_v1_a-adios_transforms_common.$(OBJEXT) \
 	libadiosf_v1_a-adios_transforms_hooks.$(OBJEXT) \
@@ -1186,6 +1199,8 @@ am__objects_71 = $(am__objects_1) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-read_bp_staged1.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-adios_posix.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-adios_posix1.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-read_xpmem.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-adios_xpmem.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_72) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_73) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_74) \
@@ -2251,6 +2266,7 @@ transforms_write_SOURCES = $(transforms_write_HDRS) \
 @BUILD_WRITE_TRUE@	write/adios_mpi.c write/adios_mpi_lustre.c \
 @BUILD_WRITE_TRUE@	write/adios_mpi_amr.c write/adios_posix.c \
 @BUILD_WRITE_TRUE@	write/adios_posix1.c write/adios_var_merge.c \
+@BUILD_WRITE_TRUE@	read/read_xpmem.c write/adios_xpmem.c \
 @BUILD_WRITE_TRUE@	$(am__append_3) $(am__append_6) \
 @BUILD_WRITE_TRUE@	$(am__append_9) $(am__append_12) \
 @BUILD_WRITE_TRUE@	$(am__append_15) $(am__append_20) \
@@ -2272,6 +2288,7 @@ transforms_write_SOURCES = $(transforms_write_HDRS) \
 @BUILD_WRITE_TRUE@	core/util.c core/qhashtbl.c read/read_bp.c \
 @BUILD_WRITE_TRUE@	read/read_bp_staged.c read/read_bp_staged1.c \
 @BUILD_WRITE_TRUE@	write/adios_posix.c write/adios_posix1.c \
+@BUILD_WRITE_TRUE@	read/read_xpmem.c write/adios_xpmem.c \
 @BUILD_WRITE_TRUE@	$(am__append_7) $(am__append_10) \
 @BUILD_WRITE_TRUE@	$(am__append_13) $(am__append_23)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@FortranLibSources =  \
@@ -2302,6 +2319,8 @@ transforms_write_SOURCES = $(transforms_write_HDRS) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	read/read_bp_staged1.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	write/adios_posix.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	write/adios_posix1.c \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	read/read_xpmem.c \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	write/adios_xpmem.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_8) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_11) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_14) \
@@ -2319,19 +2338,19 @@ transforms_write_SOURCES = $(transforms_write_HDRS) \
 @BUILD_WRITE_TRUE@libadios_a_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) \
 @BUILD_WRITE_TRUE@	$(ADIOSLIB_CPPFLAGS) $(am__append_17) \
 @BUILD_WRITE_TRUE@	$(am__append_26) $(am__append_30)
-@BUILD_WRITE_TRUE@libadios_a_CFLAGS = $(ADIOSLIB_CFLAGS) 
+@BUILD_WRITE_TRUE@libadios_a_CFLAGS = $(ADIOSLIB_CFLAGS) $(CRAY_XPMEM_INCLUDE_OPTS)
 @BUILD_WRITE_TRUE@libadios_nompi_a_CPPFLAGS = $(MACRODEFFLAG)_NOMPI \
 @BUILD_WRITE_TRUE@	$(ADIOSLIB_EXTRA_CPPFLAGS) \
 @BUILD_WRITE_TRUE@	$(ADIOSLIB_SEQ_CPPFLAGS) $(am__append_31)
-@BUILD_WRITE_TRUE@libadios_nompi_a_CFLAGS = $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_SEQ_CFLAGS) 
+@BUILD_WRITE_TRUE@libadios_nompi_a_CFLAGS = $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_SEQ_CFLAGS) $(CRAY_XPMEM_INCLUDE_OPTS)
 @BUILD_WRITE_TRUE@libadiosf_a_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) \
 @BUILD_WRITE_TRUE@	$(ADIOSLIB_CPPFLAGS) $(am__append_19) \
 @BUILD_WRITE_TRUE@	$(am__append_28) $(am__append_32)
-@BUILD_WRITE_TRUE@libadiosf_a_CFLAGS = $(ADIOSLIB_CFLAGS) 
+@BUILD_WRITE_TRUE@libadiosf_a_CFLAGS = $(ADIOSLIB_CFLAGS) $(CRAY_XPMEM_INCLUDE_OPTS) 
 @BUILD_WRITE_TRUE@libadiosf_nompi_a_CPPFLAGS = $(MACRODEFFLAG)_NOMPI \
 @BUILD_WRITE_TRUE@	$(ADIOSLIB_EXTRA_CPPFLAGS) \
 @BUILD_WRITE_TRUE@	$(ADIOSLIB_SEQ_CPPFLAGS) $(am__append_33)
-@BUILD_WRITE_TRUE@libadiosf_nompi_a_CFLAGS = $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_SEQ_CFLAGS) 
+@BUILD_WRITE_TRUE@libadiosf_nompi_a_CFLAGS = $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_SEQ_CFLAGS)  $(CRAY_XPMEM_INCLUDE_OPTS)
 @BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@dist_libadios_a_SOURCES = nssi/adios_nssi_args.x
 @BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@nodist_libadios_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@nodist_libadiosf_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
@@ -3004,6 +3023,18 @@ libadios_a-adios_var_merge.o: write/adios_var_merge.c
 libadios_a-adios_var_merge.obj: write/adios_var_merge.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_var_merge.obj `if test -f 'write/adios_var_merge.c'; then $(CYGPATH_W) 'write/adios_var_merge.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_var_merge.c'; fi`
 
+libadios_a-read_xpmem.o: read/read_xpmem.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-read_xpmem.o `test -f 'read/read_xpmem.c' || echo '$(srcdir)/'`read/read_xpmem.c
+
+libadios_a-read_xpmem.obj: read/read_xpmem.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-read_xpmem.obj `if test -f 'read/read_xpmem.c'; then $(CYGPATH_W) 'read/read_xpmem.c'; else $(CYGPATH_W) '$(srcdir)/read/read_xpmem.c'; fi`
+
+libadios_a-adios_xpmem.o: write/adios_xpmem.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_xpmem.o `test -f 'write/adios_xpmem.c' || echo '$(srcdir)/'`write/adios_xpmem.c
+
+libadios_a-adios_xpmem.obj: write/adios_xpmem.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_xpmem.obj `if test -f 'write/adios_xpmem.c'; then $(CYGPATH_W) 'write/adios_xpmem.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_xpmem.c'; fi`
+
 libadios_a-adios_mpi_bgq.o: write/adios_mpi_bgq.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_mpi_bgq.o `test -f 'write/adios_mpi_bgq.c' || echo '$(srcdir)/'`write/adios_mpi_bgq.c
 
@@ -3604,6 +3635,18 @@ libadios_nompi_a-adios_posix1.o: write/adios_posix1.c
 libadios_nompi_a-adios_posix1.obj: write/adios_posix1.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-adios_posix1.obj `if test -f 'write/adios_posix1.c'; then $(CYGPATH_W) 'write/adios_posix1.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_posix1.c'; fi`
 
+libadios_nompi_a-read_xpmem.o: read/read_xpmem.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-read_xpmem.o `test -f 'read/read_xpmem.c' || echo '$(srcdir)/'`read/read_xpmem.c
+
+libadios_nompi_a-read_xpmem.obj: read/read_xpmem.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-read_xpmem.obj `if test -f 'read/read_xpmem.c'; then $(CYGPATH_W) 'read/read_xpmem.c'; else $(CYGPATH_W) '$(srcdir)/read/read_xpmem.c'; fi`
+
+libadios_nompi_a-adios_xpmem.o: write/adios_xpmem.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-adios_xpmem.o `test -f 'write/adios_xpmem.c' || echo '$(srcdir)/'`write/adios_xpmem.c
+
+libadios_nompi_a-adios_xpmem.obj: write/adios_xpmem.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-adios_xpmem.obj `if test -f 'write/adios_xpmem.c'; then $(CYGPATH_W) 'write/adios_xpmem.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_xpmem.c'; fi`
+
 libadios_nompi_a-adios_dataspaces.o: write/adios_dataspaces.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-adios_dataspaces.o `test -f 'write/adios_dataspaces.c' || echo '$(srcdir)/'`write/adios_dataspaces.c
 
@@ -3963,6 +4006,18 @@ libadiosf_a-adios_posix1.o: write/adios_posix1.c
 
 libadiosf_a-adios_posix1.obj: write/adios_posix1.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_posix1.obj `if test -f 'write/adios_posix1.c'; then $(CYGPATH_W) 'write/adios_posix1.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_posix1.c'; fi`
+
+libadiosf_a-read_xpmem.o: read/read_xpmem.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-read_xpmem.o `test -f 'read/read_xpmem.c' || echo '$(srcdir)/'`read/read_xpmem.c
+
+libadiosf_a-read_xpmem.obj: read/read_xpmem.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-read_xpmem.obj `if test -f 'read/read_xpmem.c'; then $(CYGPATH_W) 'read/read_xpmem.c'; else $(CYGPATH_W) '$(srcdir)/read/read_xpmem.c'; fi`
+
+libadiosf_a-adios_xpmem.o: write/adios_xpmem.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_xpmem.o `test -f 'write/adios_xpmem.c' || echo '$(srcdir)/'`write/adios_xpmem.c
+
+libadiosf_a-adios_xpmem.obj: write/adios_xpmem.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_xpmem.obj `if test -f 'write/adios_xpmem.c'; then $(CYGPATH_W) 'write/adios_xpmem.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_xpmem.c'; fi`
 
 libadiosf_a-adios_dataspaces.o: write/adios_dataspaces.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_dataspaces.o `test -f 'write/adios_dataspaces.c' || echo '$(srcdir)/'`write/adios_dataspaces.c
@@ -4402,6 +4457,18 @@ libadiosf_nompi_a-adios_posix1.o: write/adios_posix1.c
 libadiosf_nompi_a-adios_posix1.obj: write/adios_posix1.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_a-adios_posix1.obj `if test -f 'write/adios_posix1.c'; then $(CYGPATH_W) 'write/adios_posix1.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_posix1.c'; fi`
 
+libadiosf_nompi_a-read_xpmem.o: read/read_xpmem.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_a-read_xpmem.o `test -f 'read/read_xpmem.c' || echo '$(srcdir)/'`read/read_xpmem.c
+
+libadiosf_nompi_a-read_xpmem.obj: read/read_xpmem.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_a-read_xpmem.obj `if test -f 'read/read_xpmem.c'; then $(CYGPATH_W) 'read/read_xpmem.c'; else $(CYGPATH_W) '$(srcdir)/read/read_xpmem.c'; fi`
+
+libadiosf_nompi_a-adios_xpmem.o: write/adios_xpmem.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_a-adios_xpmem.o `test -f 'write/adios_xpmem.c' || echo '$(srcdir)/'`write/adios_xpmem.c
+
+libadiosf_nompi_a-adios_xpmem.obj: write/adios_xpmem.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_a-adios_xpmem.obj `if test -f 'write/adios_xpmem.c'; then $(CYGPATH_W) 'write/adios_xpmem.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_xpmem.c'; fi`
+
 libadiosf_nompi_a-adios_dataspaces.o: write/adios_dataspaces.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_a-adios_dataspaces.o `test -f 'write/adios_dataspaces.c' || echo '$(srcdir)/'`write/adios_dataspaces.c
 
@@ -4798,6 +4865,18 @@ libadiosf_nompi_v1_a-adios_posix1.o: write/adios_posix1.c
 libadiosf_nompi_v1_a-adios_posix1.obj: write/adios_posix1.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_v1_a-adios_posix1.obj `if test -f 'write/adios_posix1.c'; then $(CYGPATH_W) 'write/adios_posix1.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_posix1.c'; fi`
 
+libadiosf_nompi_v1_a-read_xpmem.o: read/read_xpmem.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_v1_a-read_xpmem.o `test -f 'read/read_xpmem.c' || echo '$(srcdir)/'`read/read_xpmem.c
+
+libadiosf_nompi_v1_a-read_xpmem.obj: read/read_xpmem.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_v1_a-read_xpmem.obj `if test -f 'read/read_xpmem.c'; then $(CYGPATH_W) 'read/read_xpmem.c'; else $(CYGPATH_W) '$(srcdir)/read/read_xpmem.c'; fi`
+
+libadiosf_nompi_v1_a-adios_xpmem.o: write/adios_xpmem.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_v1_a-adios_xpmem.o `test -f 'write/adios_xpmem.c' || echo '$(srcdir)/'`write/adios_xpmem.c
+
+libadiosf_nompi_v1_a-adios_xpmem.obj: write/adios_xpmem.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_v1_a-adios_xpmem.obj `if test -f 'write/adios_xpmem.c'; then $(CYGPATH_W) 'write/adios_xpmem.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_xpmem.c'; fi`
+
 libadiosf_nompi_v1_a-adios_dataspaces.o: write/adios_dataspaces.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_v1_a-adios_dataspaces.o `test -f 'write/adios_dataspaces.c' || echo '$(srcdir)/'`write/adios_dataspaces.c
 
@@ -5193,6 +5272,18 @@ libadiosf_v1_a-adios_posix1.o: write/adios_posix1.c
 
 libadiosf_v1_a-adios_posix1.obj: write/adios_posix1.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_posix1.obj `if test -f 'write/adios_posix1.c'; then $(CYGPATH_W) 'write/adios_posix1.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_posix1.c'; fi`
+
+libadiosf_v1_a-read_xpmem.o: read/read_xpmem.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-read_xpmem.o `test -f 'read/read_xpmem.c' || echo '$(srcdir)/'`read/read_xpmem.c
+
+libadiosf_v1_a-read_xpmem.obj: read/read_xpmem.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-read_xpmem.obj `if test -f 'read/read_xpmem.c'; then $(CYGPATH_W) 'read/read_xpmem.c'; else $(CYGPATH_W) '$(srcdir)/read/read_xpmem.c'; fi`
+
+libadiosf_v1_a-adios_xpmem.o: write/adios_xpmem.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_xpmem.o `test -f 'write/adios_xpmem.c' || echo '$(srcdir)/'`write/adios_xpmem.c
+
+libadiosf_v1_a-adios_xpmem.obj: write/adios_xpmem.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_xpmem.obj `if test -f 'write/adios_xpmem.c'; then $(CYGPATH_W) 'write/adios_xpmem.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_xpmem.c'; fi`
 
 libadiosf_v1_a-adios_dataspaces.o: write/adios_dataspaces.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_dataspaces.o `test -f 'write/adios_dataspaces.c' || echo '$(srcdir)/'`write/adios_dataspaces.c
