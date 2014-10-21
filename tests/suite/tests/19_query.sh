@@ -65,6 +65,7 @@ ALL_DATASET_IDS=" \
   DS-2D \
   DS-3D \
   DS-particle \
+  DS-unevenpg \
 "
 
 # Check that query XML subdirectories exist for all datasets we're testing 

@@ -29,6 +29,7 @@ typedef struct {
 static void build_dataset_1(const char *filename_prefix, const char *transform_name);
 static void build_dataset_2(const char *filename_prefix, const char *transform_name);
 static void build_dataset_3(const char *filename_prefix, const char *transform_name);
+static void build_dataset_unevenpg(const char *filename_prefix, const char *transform_name);
 static void build_dataset_particle(const char *filename_prefix, const char *transform_name);
 
 static const dataset_info_t DATASETS[] = {
@@ -44,6 +45,8 @@ static const dataset_info_t DATASETS[] = {
     { .name = "DS-particle", .builder_fn = build_dataset_particle,
       .desc = "A dataset simulating particle data, with a 2D (3x64) 1 variable 'temp' decomposed in 3x32 slices across 2 timesteps (4 PGs total). "
     		  "A given X coordinate represents a 'variable', as 'variables' in particle datasets are often packed as tuples." },
+    { .name = "DS-unevenpg", .builder_fn = build_dataset_unevenpg,
+      .desc = "A simple, small dataset with a 2D (8x8) variable 'temp' decomposed in to 2x8 slices in the first timestep, and 8x2 slices in the second timestep (8 PGs total)" },
 };
 static const int NUM_DATASETS = sizeof(DATASETS)/sizeof(DATASETS[0]);
 
@@ -623,6 +626,65 @@ static void build_dataset_particle(const char *filename_prefix, const char *tran
 
 	static const void *VARBLOCKS_BY_VAR[NUM_VARS] = {
 		TEMP_DATA
+	};
+
+	// Now, collect all this information into specification structs
+	// File specification
+	static const dataset_xml_spec_t XML_SPEC = {
+		.group_name = "S3D",
+		.buffer_size_mb = 128,
+		.write_transport_method = "MPI",
+		.ndim = NUM_DIMS,
+		.nvar = NUM_VARS,
+		.varnames = VARNAMES,
+		.vartypes = VARTYPES,
+	};
+
+	// Global space specification
+	static const dataset_global_spec_t GLOBAL_SPEC = {
+		.num_ts = NUM_TS,
+		.num_pgs_per_ts = NUM_PGS_PER_TS,
+		.global_dims = GLOBAL_DIMS,
+	};
+
+	// Finally, invoke the dataset builder with this information
+	build_dataset_from_varblocks_by_var(
+			filename_prefix, transform_name, &XML_SPEC, &GLOBAL_SPEC,
+			NUM_TS, NUM_PGS_PER_TS, NUM_DIMS, NUM_VARS,
+			PG_DIMS, PG_OFFSETS, (const void **)VARBLOCKS_BY_VAR);
+}
+
+static void build_dataset_unevenpg(const char *filename_prefix, const char *transform_name) {
+        // Copied with only pg dim and offset  modification from ds2
+	// Basic dataset information
+	// NOTE: we have to use an anonymous enum here to define these constants, since
+	// C is picky and doesn't consider a static const int "const enough" to use
+	// as an array length (e.g., if these were static const ints, it would not compile)
+	enum {
+		NUM_DIMS = 2,
+		NUM_TS = 2,
+		NUM_PGS_PER_TS = 4,
+		NUM_VARS = 1,
+		NUM_PGS = NUM_TS * NUM_PGS_PER_TS,
+	};
+
+	// Variable names/types
+	static const char *VARNAMES[NUM_VARS]					= { "temp"     };
+	static const enum ADIOS_DATATYPES VARTYPES[NUM_VARS]	= { adios_real };
+
+	// Global and PG dimensions/offsets
+	static const uint64_t GLOBAL_DIMS                         [NUM_DIMS] = { 8, 8 };
+	static const uint64_t PG_DIMS	  [NUM_TS][NUM_PGS_PER_TS][NUM_DIMS] = {
+		{ { 2, 8 }, { 2, 8 }, { 2, 8 }, { 2, 8 }, }, // Timestep 1
+		{ { 8, 2 }, { 8, 2 }, { 8, 2 }, { 8, 2 }, }, // Timestep 2
+	};
+	static const uint64_t PG_OFFSETS  [NUM_TS][NUM_PGS_PER_TS][NUM_DIMS] = {
+		{ { 0, 0 }, { 2, 0 }, { 4, 0 }, { 6, 0 }, }, // Timestep 1
+		{ { 0, 0 }, { 0, 2 }, { 0, 4 }, { 0, 6 }, }, // Timestep 2
+	};
+
+	static const void *VARBLOCKS_BY_VAR[NUM_VARS] = {
+		TEMP_DATA_FOR_DS2_AND_DS3,
 	};
 
 	// Now, collect all this information into specification structs

@@ -152,7 +152,7 @@ int main(int argc, char ** argv) {
         MPI_Abort(comm, 1);
     }
 
-    const int use_streaming = (argc >= 5) && (strcasecmp(argv, "stream") == 0);
+    const int use_streaming = (argc >= 5) && (strcasecmp(argv[4], "stream") == 0);
 
     fprintf(stderr, "NOTE: Running the query in %s mode\n", use_streaming ? "STREAM" : "FILE");
 
