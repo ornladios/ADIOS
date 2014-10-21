@@ -37,7 +37,7 @@ host_triplet = @host@
 noinst_PROGRAMS = $(am__EXEEXT_1)
 
 # Only compile these test programs if we have FastBit, since they rely on FastBit
-@HAVE_FASTBIT_TRUE@am__append_1 = query_fastbit
+@HAVE_FASTBIT_TRUE@am__append_1 = fastbit_tests
 subdir = tests/C/query/fastbit
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -85,19 +85,19 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-@HAVE_FASTBIT_TRUE@am__EXEEXT_1 = query_fastbit$(EXEEXT)
+@HAVE_FASTBIT_TRUE@am__EXEEXT_1 = fastbit_tests$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am__query_fastbit_SOURCES_DIST = ../testCases.c
-@HAVE_FASTBIT_TRUE@am_query_fastbit_OBJECTS =  \
-@HAVE_FASTBIT_TRUE@	query_fastbit-testCases.$(OBJEXT)
-query_fastbit_OBJECTS = $(am_query_fastbit_OBJECTS)
+am__fastbit_tests_SOURCES_DIST = fastbit_tests.c
+@HAVE_FASTBIT_TRUE@am_fastbit_tests_OBJECTS =  \
+@HAVE_FASTBIT_TRUE@	fastbit_tests-testCases.$(OBJEXT)
+fastbit_tests_OBJECTS = $(am_fastbit_tests_OBJECTS)
 am__DEPENDENCIES_1 =
-@HAVE_FASTBIT_TRUE@query_fastbit_DEPENDENCIES =  \
+@HAVE_FASTBIT_TRUE@fastbit_tests_DEPENDENCIES =  \
 @HAVE_FASTBIT_TRUE@	$(top_builddir)/src/libadiosread_nompi.a \
 @HAVE_FASTBIT_TRUE@	$(am__DEPENDENCIES_1)
-query_fastbit_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+fastbit_tests_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(query_fastbit_LDFLAGS) $(LDFLAGS) -o $@
+	$(fastbit_tests_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -110,8 +110,8 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(query_fastbit_SOURCES)
-DIST_SOURCES = $(am__query_fastbit_SOURCES_DIST)
+SOURCES = $(fastbit_tests_SOURCES)
+DIST_SOURCES = $(am__fastbit_tests_SOURCES_DIST)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -154,7 +154,7 @@ AWK = @AWK@
 BZIP2_CPPFLAGS = @BZIP2_CPPFLAGS@
 BZIP2_LDFLAGS = @BZIP2_LDFLAGS@
 BZIP2_LIBS = @BZIP2_LIBS@
-CC = @CC@
+CC = ${MPICC}
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
@@ -376,12 +376,12 @@ top_srcdir = @top_srcdir@
 # ${ADIOSREADLIB_CPPFLAGS} has all the flags like -DFASTBIT -DALACRITY
 # as well as related includes, so it is needed here
 # 
-INCLUDES = $(all_includes) -I$(top_srcdir)/src/
+INCLUDES = $(all_includes) -I$(top_srcdir)/src/ -I$(top_srcdir)/src/public/ $(MXML_CPPFLAGS)
 AUTOMAKE_OPTIONS = no-dependencies
-@HAVE_FASTBIT_TRUE@query_fastbit_SOURCES = ../testCases.c
-@HAVE_FASTBIT_TRUE@query_fastbit_CPPFLAGS = ${MACRODEFFLAG}_NOMPI 
-@HAVE_FASTBIT_TRUE@query_fastbit_LDADD = $(top_builddir)/src/libadiosread_nompi.a $(ADIOSREADLIB_LDADD)
-@HAVE_FASTBIT_TRUE@query_fastbit_LDFLAGS = $(ADIOSREADLIB_LDFLAGS)
+@HAVE_FASTBIT_TRUE@fastbit_tests_SOURCES = fastbit_tests.c
+@HAVE_FASTBIT_TRUE@fastbit_tests_CPPFLAGS = ${MACRODEFFLAG}_NOMPI 
+@HAVE_FASTBIT_TRUE@fastbit_tests_LDADD = $(top_builddir)/src/libadiosread_nompi.a $(top_builddir)/src/libadios_nompi.a $(ADIOSREADLIB_LDADD) ${MXML_LIBS}
+@HAVE_FASTBIT_TRUE@fastbit_tests_LDFLAGS = $(ADIOSREADLIB_LDFLAGS) ${MXML_LDFLAGS}
 all: all-am
 
 .SUFFIXES:
@@ -425,9 +425,9 @@ clean-noinstPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
-query_fastbit$(EXEEXT): $(query_fastbit_OBJECTS) $(query_fastbit_DEPENDENCIES) 
-	@rm -f query_fastbit$(EXEEXT)
-	$(query_fastbit_LINK) $(query_fastbit_OBJECTS) $(query_fastbit_LDADD) $(LIBS)
+fastbit_tests$(EXEEXT): $(fastbit_tests_OBJECTS) $(fastbit_tests_DEPENDENCIES) 
+	@rm -f fastbit_tests$(EXEEXT)
+	$(fastbit_tests_LINK) $(fastbit_tests_OBJECTS) $(fastbit_tests_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -444,11 +444,11 @@ distclean-compile:
 .c.lo:
 	$(LTCOMPILE) -c -o $@ $<
 
-query_fastbit-testCases.o: ../testCases.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(query_fastbit_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o query_fastbit-testCases.o `test -f '../testCases.c' || echo '$(srcdir)/'`../testCases.c
+fastbit_tests-testCases.o: fastbit_tests.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(fastbit_tests_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o fastbit_tests-testCases.o `test -f 'fastbit_tests.c' || echo '$(srcdir)/'`fastbit_tests.c
 
-query_fastbit-testCases.obj: ../testCases.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(query_fastbit_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o query_fastbit-testCases.obj `if test -f '../testCases.c'; then $(CYGPATH_W) '../testCases.c'; else $(CYGPATH_W) '$(srcdir)/../testCases.c'; fi`
+fastbit_tests-testCases.obj: fastbit_tests.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(fastbit_tests_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o fastbit_tests-testCases.obj `if test -f 'fastbit_tests.c'; then $(CYGPATH_W) 'fastbit_tests.c'; else $(CYGPATH_W) '$(srcdir)/fastbit_tests.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
