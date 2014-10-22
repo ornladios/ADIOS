@@ -48,35 +48,35 @@ void adios_read_hooks_init (struct adios_read_hooks_struct ** t)
         *t = (struct adios_read_hooks_struct *)
                calloc (ADIOS_READ_METHOD_COUNT, sizeof (struct adios_read_hooks_struct));
 
-        ASSIGN_FNS(bp,ADIOS_READ_METHOD_BP)
-#ifndef __MPI_DUMMY_H__
-        ASSIGN_FNS(bp_staged,ADIOS_READ_METHOD_BP_AGGREGATE)
-#endif
-#if HAVE_DATASPACES
-        ASSIGN_FNS(dataspaces,ADIOS_READ_METHOD_DATASPACES)
-#endif
+//         ASSIGN_FNS(bp,ADIOS_READ_METHOD_BP)
+// #ifndef __MPI_DUMMY_H__
+//         ASSIGN_FNS(bp_staged,ADIOS_READ_METHOD_BP_AGGREGATE)
+// #endif
+// #if HAVE_DATASPACES
+//         ASSIGN_FNS(dataspaces,ADIOS_READ_METHOD_DATASPACES)
+// #endif
 
-#if HAVE_DIMES
-        ASSIGN_FNS(dimes,ADIOS_READ_METHOD_DIMES)
-#endif
+// #if HAVE_DIMES
+//         ASSIGN_FNS(dimes,ADIOS_READ_METHOD_DIMES)
+// #endif
 
-#  ifndef _NOMPI
-#if HAVE_FLEXPATH
-       ASSIGN_FNS(flexpath, ADIOS_READ_METHOD_FLEXPATH);
-#endif
-#endif
+// #  ifndef _NOMPI
+// #if HAVE_FLEXPATH
+//        ASSIGN_FNS(flexpath, ADIOS_READ_METHOD_FLEXPATH);
+// #endif
+// #endif
 
-#if HAVE_PHDF5
-        //ASSIGN_FNS(hdf5,ADIOS_READ_METHOD_HDF5)
-#endif
+// #if HAVE_PHDF5
+//         //ASSIGN_FNS(hdf5,ADIOS_READ_METHOD_HDF5)
+// #endif
 
-#if HAVE_NSSI
-        //ASSIGN_FNS(nssi,ADIOS_READ_METHOD_NSSI)
-#endif
+// #if HAVE_NSSI
+//         //ASSIGN_FNS(nssi,ADIOS_READ_METHOD_NSSI)
+// #endif
 
-#if HAVE_DATATAP
-        ASSIGN_FNS(datatap,ADIOS_READ_METHOD_DATATAP)
-#endif
+// #if HAVE_DATATAP
+//         ASSIGN_FNS(datatap,ADIOS_READ_METHOD_DATATAP)
+// #endif
 
         //printf("%s: adios_read_hooks = %x\n",__func__,*t);
         did_init = 1;
