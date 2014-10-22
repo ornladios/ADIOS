@@ -231,7 +231,7 @@ function query_datasets() {
           local EXPECTED_POINTS_FILE="$DSID.$QUERY_NAME.$FILEMODE-mode.expected-points.txt"
 
           echo
-          echo "====== COMPUTING EXPECTED OUTPUT OF QUERY $QUERY_NAME ON DATASET $INDEXED_DS IN $FILEMODE MODE ======"
+          echo "====== COMPUTING EXPECTED OUTPUT OF QUERY $QUERY_NAME ON DATASET $DSID IN $FILEMODE MODE ======"
           echo
           set -o xtrace
           $MPIRUN_SERIAL "$QUERY_SEQSCAN_EXE_LOCAL" "$NOINDEX_DS" "$QUERY_XML" "$FILEMODE" > "$EXPECTED_POINTS_FILE" ||
@@ -259,7 +259,7 @@ function query_datasets() {
 
               # Run the query through ADIOS Query to get actual results
               echo
-              echo "====== RUNNING QUERY $QUERY_NAME USING QUERY ENGINE $QUERY_ENGINE ON DATASET $INDEXED_DS IN $FILEMODE MODE ======"
+              echo "====== RUNNING QUERY $QUERY_NAME USING QUERY ENGINE $QUERY_ENGINE ON DATASET $DSID IN $FILEMODE MODE ======"
               echo
               set -o xtrace
               $MPIRUN_SERIAL "$QUERY_EXE_LOCAL" "$INDEXED_DS" "$QUERY_XML_LOCAL" "$QUERY_ENGINE" "$FILEMODE" > "$OUTPUT_POINTS_FILE" ||
