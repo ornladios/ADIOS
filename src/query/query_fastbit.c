@@ -834,7 +834,7 @@ int assertTimeStepValidWithQuery(ADIOS_QUERY* q)
   return 0;
 }
 */
-int64_t adios_query_fastbit_estimate(ADIOS_QUERY* q, int timeStep) 
+int64_t adios_query_fastbit_estimate(ADIOS_QUERY* q, int incomingTimestep) 
 {
   if (q == NULL) {
     return -1;
@@ -849,6 +849,7 @@ int64_t adios_query_fastbit_estimate(ADIOS_QUERY* q, int timeStep)
 
   create_fastbit_internal(q);
 
+  int timeStep = adios_get_actual_timestep(q, incomingTimestep);
   int64_t estimate = applyIndexIfExists(q, timeStep);
   if (estimate > 0) {
     return estimate;
@@ -1038,7 +1039,7 @@ ADIOS_QUERY* getFirstLeaf(ADIOS_QUERY* q) {
 }
 
 int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
-				  int timeStep,
+				  int incomingTimestep,
 				  uint64_t batchSize, 
 				  ADIOS_SELECTION* outputBoundary, 
 				  ADIOS_SELECTION** result)
@@ -1054,6 +1055,8 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
   /*if (assertTimeStepValidWithQuery(q) != 0) {
     return -1;
     }*/
+
+  int timeStep = adios_get_actual_timestep(q, incomingTimestep);
 
   call_fastbit_evaluate(q, timeStep, 0);
   //log_debug("::\t max=%llu _lastRead=%llu\n", q->_maxResultDesired, q->_lastRead);

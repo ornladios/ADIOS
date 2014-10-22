@@ -100,6 +100,26 @@ static enum ADIOS_QUERY_METHOD detect_and_set_query_method(ADIOS_QUERY* q)
 	return ADIOS_QUERY_METHOD_FASTBIT;
 }
 
+int adios_get_actual_timestep(ADIOS_QUERY* q, int timeStep)
+{
+  if (q == NULL) {
+    return -1;
+  }
+
+
+  if ((q->left == NULL) && (q->right == NULL)) 
+  {
+    if ((q->file != NULL) && (q->file->is_streaming == 1)) 
+    {
+      return q->file->current_step;
+    }  
+  } else {
+    return adios_get_actual_timestep(q->left, timeStep);
+  }
+  return timeStep;
+}
+
+
 int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
 {
     // get data from bp file
@@ -519,7 +539,7 @@ int64_t common_query_estimate(ADIOS_QUERY* q, int timestep)
 	return -1;
       }
 
-      return query_hooks[m].adios_query_estimate_fn(q, actualTimeStep);
+      return query_hooks[m].adios_query_estimate_fn(q, timestep);
     }		
 
     log_debug("No estimate function was supported for method %d\n", m);
@@ -760,7 +780,7 @@ int common_query_evaluate(ADIOS_QUERY* q,
     enum ADIOS_QUERY_METHOD m = detect_and_set_query_method (q);
 
     if (query_hooks[m].adios_query_evaluate_fn != NULL) {
-      int retval = query_hooks[m].adios_query_evaluate_fn(q, actualTimeStep, batchSize, outputBoundary, result);	      
+      int retval = query_hooks[m].adios_query_evaluate_fn(q, timeStep, batchSize, outputBoundary, result);	      
       if (freeOutputBoundary) common_read_selection_delete(outputBoundary);
       return retval;
     } 
