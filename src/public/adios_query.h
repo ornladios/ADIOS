@@ -72,6 +72,8 @@ typedef struct {
 
 /* functions */
 
+int adios_query_is_method_available(enum ADIOS_QUERY_METHOD method);
+
 ADIOS_QUERY* adios_query_create (ADIOS_FILE* f, 
                                  const char* varName,
                                  ADIOS_SELECTION* queryBoundary,
