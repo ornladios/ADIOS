@@ -124,15 +124,15 @@ libadios_a_SOURCES = core/adios.c \
                      $(transforms_common_SOURCES) \
                      $(transforms_read_SOURCES) \
                      $(transforms_write_SOURCES) \
-                     read/read_bp.c \
-                     read/read_bp_staged.c \
-                     read/read_bp_staged1.c \
-                     write/adios_mpi.c \
-                     write/adios_mpi_lustre.c \
-                     write/adios_mpi_amr.c \
-                     write/adios_posix.c \
-                     write/adios_posix1.c \
-                     write/adios_var_merge.c \
+                     # read/read_bp.c \
+                     # read/read_bp_staged.c \
+                     # read/read_bp_staged1.c \
+                     # write/adios_mpi.c \
+                     # write/adios_mpi_lustre.c \
+                     # write/adios_mpi_amr.c \
+                     # write/adios_posix.c \
+                     # write/adios_posix1.c \
+                     # write/adios_var_merge.c \
 					read/read_xpmem.c\
 					write/adios_xpmem.c
 
@@ -164,11 +164,11 @@ libadios_nompi_a_SOURCES = core/adios.c \
                      core/adios_logger.c \
                      core/util.c \
                      core/qhashtbl.c \
-                     read/read_bp.c \
-                     read/read_bp_staged.c \
-                     read/read_bp_staged1.c \
-                     write/adios_posix.c \
-                     write/adios_posix1.c \
+                     # read/read_bp.c \
+                     # read/read_bp_staged.c \
+                     # read/read_bp_staged1.c \
+                     # write/adios_posix.c \
+                     # write/adios_posix1.c \
 					read/read_xpmem.c\
 					write/adios_xpmem.c
 
@@ -198,11 +198,11 @@ FortranLibSources = core/adiosf.c \
                      core/adios_logger.c \
                      core/util.c \
                      core/qhashtbl.c \
-                     read/read_bp.c \
-                     read/read_bp_staged.c \
-                     read/read_bp_staged1.c \
-                     write/adios_posix.c \
-                     write/adios_posix1.c \
+                     # read/read_bp.c \
+                     # read/read_bp_staged.c \
+                     # read/read_bp_staged1.c \
+                     # write/adios_posix.c \
+                     # write/adios_posix1.c \
 					read/read_xpmem.c\
 					write/adios_xpmem.c
 

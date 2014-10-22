@@ -38,19 +38,13 @@
 
 #include <xpmem.h>
 
+#include "public/adios_xpmem.h"
+
 // conditional libraries
 #ifdef DMALLOC
 #include "dmalloc.h"
 #endif
 
-typedef struct _shared_data
-{
-	uint32_t version;
-	uint64_t size;
-	uint32_t readcount;
-	uint32_t offset;
-	char buffer[1];
-}shared_data;
 
 typedef struct _xpmem_read_file
 {
@@ -64,7 +58,7 @@ typedef struct _xpmem_read_file
 	
 }xpmem_read_file, xpmem_read_data;
 
-xpmem_read_data* fp_read_data = NULL;
+xpmem_read_data* xp_read_data = NULL;
 
 
 /********** Core ADIOS Read functions. **********/
@@ -74,7 +68,23 @@ xpmem_read_data* fp_read_data = NULL;
  */
 int
 adios_read_xpmem_init_method (MPI_Comm comm, PairStruct* params)
-{    
+{
+	fp = (xpmem_read_data*)malloc(sizeof(xpmem_read_data));
+	char *buffer;
+	char *index;
+	
+	//read the segid
+	read_segid(&fp->data_segid, "xpmem.data");
+	read_segid(&fp->index_segid, "xpmem.index");
+
+	buffer = attach_segid(fp->data_segid, share_size, &f->data_apid);
+	index = attach_segid(fd->index_apid, index_share_size, &f->index_apid);
+
+	fp->pg = (shared_data*)pg;
+	fp->index = (shared_data*)index;
+	
+	
+
     return 0;
 }
 

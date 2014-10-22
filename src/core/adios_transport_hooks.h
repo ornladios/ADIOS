@@ -102,76 +102,77 @@ struct adios_var_struct;
 // VTK and POSIX_ASCII are placeholders reserved for future use
 enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
               ,ADIOS_METHOD_NULL        = -1
-              ,ADIOS_METHOD_MPI         = 0
-              ,ADIOS_METHOD_DATATAP     = 1
-              ,ADIOS_METHOD_POSIX       = 2
-              ,ADIOS_METHOD_DATASPACES  = 3
-              ,ADIOS_METHOD_VTK         = 4
-              ,ADIOS_METHOD_POSIX_ASCII = 5
-              ,ADIOS_METHOD_MPI_CIO     = 6
-              ,ADIOS_METHOD_PHDF5       = 7
-              ,ADIOS_METHOD_PROVENANCE  = 8
-              ,ADIOS_METHOD_MPI_STRIPE  = 9
-              ,ADIOS_METHOD_MPI_LUSTRE  = 10
-              ,ADIOS_METHOD_MPI_STAGGER = 11
-              ,ADIOS_METHOD_MPI_AGG     = 12
-              ,ADIOS_METHOD_ADAPTIVE    = 13
-              ,ADIOS_METHOD_POSIX1      = 14
-              ,ADIOS_METHOD_NC4         = 15
-              ,ADIOS_METHOD_MPI_AMR     = 16
-              ,ADIOS_METHOD_MPI_AMR1    = 17
-              ,ADIOS_METHOD_FLEXPATH    = 18
-              ,ADIOS_METHOD_NSSI_STAGING = 19
-              ,ADIOS_METHOD_NSSI_FILTER  = 20
-              ,ADIOS_METHOD_DIMES        = 21
-              ,ADIOS_METHOD_VAR_MERGE   = 22
-              ,ADIOS_METHOD_MPI_BGQ     = 23
-                      ,ADIOS_METHOD_XPMEM = 24
-              ,ADIOS_METHOD_COUNT       = 25
+                      ,ADIOS_METHOD_XPMEM = 0,
+              // ,ADIOS_METHOD_MPI         = 0
+              // ,ADIOS_METHOD_DATATAP     = 1
+              // ,ADIOS_METHOD_POSIX       = 2
+              // ,ADIOS_METHOD_DATASPACES  = 3
+              // ,ADIOS_METHOD_VTK         = 4
+              // ,ADIOS_METHOD_POSIX_ASCII = 5
+              // ,ADIOS_METHOD_MPI_CIO     = 6
+              // ,ADIOS_METHOD_PHDF5       = 7
+              // ,ADIOS_METHOD_PROVENANCE  = 8
+              // ,ADIOS_METHOD_MPI_STRIPE  = 9
+              // ,ADIOS_METHOD_MPI_LUSTRE  = 10
+              // ,ADIOS_METHOD_MPI_STAGGER = 11
+              // ,ADIOS_METHOD_MPI_AGG     = 12
+              // ,ADIOS_METHOD_ADAPTIVE    = 13
+              // ,ADIOS_METHOD_POSIX1      = 14
+              // ,ADIOS_METHOD_NC4         = 15
+              // ,ADIOS_METHOD_MPI_AMR     = 16
+              // ,ADIOS_METHOD_MPI_AMR1    = 17
+              // ,ADIOS_METHOD_FLEXPATH    = 18
+              // ,ADIOS_METHOD_NSSI_STAGING = 19
+              // ,ADIOS_METHOD_NSSI_FILTER  = 20
+              // ,ADIOS_METHOD_DIMES        = 21
+              // ,ADIOS_METHOD_VAR_MERGE   = 22
+              // ,ADIOS_METHOD_MPI_BGQ     = 23
+              //         ,ADIOS_METHOD_XPMEM = 24
+              ,ADIOS_METHOD_COUNT       = 1
 };
 
 // forward declare the functions (or dummies for internals use)
 #if !defined(_NOMPI) || !defined (ADIOS_EMPTY_TRANSPORTS)
-     FORWARD_DECLARE(mpi)
-     FORWARD_DECLARE(mpi_lustre)
+     // FORWARD_DECLARE(mpi)
+     // FORWARD_DECLARE(mpi_lustre)
      //FORWARD_DECLARE(mpi_cio)
      //FORWARD_DECLARE(mpi_stripe)
      //FORWARD_DECLARE(mpi_stagger)
      //FORWARD_DECLARE(mpi_aggregate)
-     FORWARD_DECLARE(mpi_amr)
-#if HAVE_BGQ
-     FORWARD_DECLARE(mpi_bgq)
-#endif
-     //FORWARD_DECLARE(mpi_amr1)
-     FORWARD_DECLARE(phdf5)
-     FORWARD_DECLARE(nc4)
-     FORWARD_DECLARE(nssi)
-     FORWARD_DECLARE(nssi_filter)
-     FORWARD_DECLARE(flexpath)
-     FORWARD_DECLARE(var_merge)
-#endif
+     // FORWARD_DECLARE(mpi_amr)
+// #if HAVE_BGQ
+//      FORWARD_DECLARE(mpi_bgq)
+// #endif
+//      //FORWARD_DECLARE(mpi_amr1)
+//      FORWARD_DECLARE(phdf5)
+//      FORWARD_DECLARE(nc4)
+//      FORWARD_DECLARE(nssi)
+//      FORWARD_DECLARE(nssi_filter)
+//      FORWARD_DECLARE(flexpath)
+//      FORWARD_DECLARE(var_merge)
+// #endif
 
-#ifdef ADIOS_EMPTY_TRANSPORTS
-     //FORWARD_DECLARE_EMPTY(datatap)
-     FORWARD_DECLARE_EMPTY(posix)
-     FORWARD_DECLARE_EMPTY(posix1)
-     //FORWARD_DECLARE_EMPTY(provenance)
-     //FORWARD_DECLARE_EMPTY(adaptive)
-#else
-     FORWARD_DECLARE(datatap)
-     FORWARD_DECLARE(posix)
-     FORWARD_DECLARE(posix1)
-     FORWARD_DECLARE(provenance)
-     FORWARD_DECLARE(adaptive)
-#endif
+// #ifdef ADIOS_EMPTY_TRANSPORTS
+//      //FORWARD_DECLARE_EMPTY(datatap)
+//      FORWARD_DECLARE_EMPTY(posix)
+//      FORWARD_DECLARE_EMPTY(posix1)
+//      //FORWARD_DECLARE_EMPTY(provenance)
+//      //FORWARD_DECLARE_EMPTY(adaptive)
+// #else
+//      FORWARD_DECLARE(datatap)
+//      FORWARD_DECLARE(posix)
+//      FORWARD_DECLARE(posix1)
+//      FORWARD_DECLARE(provenance)
+//      FORWARD_DECLARE(adaptive)
+// #endif
 
-#if defined(HAVE_DATASPACES) && !defined(ADIOS_EMPTY_TRANSPORTS) 
-FORWARD_DECLARE(dataspaces)
-#endif
+// #if defined(HAVE_DATASPACES) && !defined(ADIOS_EMPTY_TRANSPORTS) 
+// FORWARD_DECLARE(dataspaces)
+// #endif
 
-#if defined(HAVE_DIMES) && !defined(ADIOS_EMPTY_TRANSPORTS) 
-FORWARD_DECLARE(dimes)
-#endif
+// #if defined(HAVE_DIMES) && !defined(ADIOS_EMPTY_TRANSPORTS) 
+// FORWARD_DECLARE(dimes)
+// #endif
 
      FORWARD_DECLARE(xpmem)
 
