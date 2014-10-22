@@ -1,4 +1,4 @@
-HOST=adiosvm
+HOST=sith
 
 # Do not modify below. Add your settings in make.settings.XXXX
 
