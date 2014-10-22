@@ -4,17 +4,17 @@
 #include <string.h>
 #include <assert.h>
 
-#include "adios_bp_v1.h"
-#include "common_adios.h"
-#include "adios_logger.h"
-#include "adios_internals.h"
+#include "core/adios_bp_v1.h"
+#include "core/common_adios.h"
+#include "core/adios_logger.h"
+#include "core/adios_internals.h"
 #include "public/adios_types.h"
-#include "util.h"
+#include "core/util.h"
 
-#include "adios_transforms_hooks_write.h"
-#include "adios_transforms_common.h"
-#include "adios_transforms_write.h"
-#include "adios_transforms_specparse.h"
+#include "core/transforms/adios_transforms_hooks_write.h"
+#include "core/transforms/adios_transforms_common.h"
+#include "core/transforms/adios_transforms_write.h"
+#include "core/transforms/adios_transforms_specparse.h"
 
 ////////////////////////////////////////
 // adios_group_size support

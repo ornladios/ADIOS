@@ -40,6 +40,7 @@
 #include "core/adios_read_hooks.h"
 #include "core/adios_logger.h"
 #include "public/adios_error.h"
+//#include "core/adios_icee.h"
 
 // conditional libraries
 #ifdef DMALLOC
@@ -65,7 +66,7 @@
 ///////////////////////////
 // Global Variables
 ///////////////////////////
-#include "adios_icee.h"
+#include "core/adios_icee.h"
 
 #define DUMP(fmt, ...) fprintf(stderr, ">>> "fmt"\n", ## __VA_ARGS__); 
 

@@ -8,9 +8,9 @@
 #ifndef ADIOS_TRANSFORMS_WRITE_H_
 #define ADIOS_TRANSFORMS_WRITE_H_
 
-#include "adios_bp_v1.h"
-#include "adios_internals.h"
-#include "adios_transforms_common.h"
+#include "core/adios_bp_v1.h"
+#include "core/adios_internals.h"
+#include "core/transforms/adios_transforms_common.h"
 
 /*
  * Returns the pre-transform size, in bytes, of a variable. Note: only works on

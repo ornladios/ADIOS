@@ -1,5 +1,8 @@
 /* Auto-generated on Sat Sep 13 16:09:17 EDT 2014 */
 
+#ifndef ADIOS_ICEE_H
+#define ADIOS_ICEE_H
+
 typedef struct icee_varinfo_rec {
     char* varname;
     int varid;
@@ -89,3 +92,4 @@ static FMStructDescRec icee_clientinfo_format_list[] =
     {NULL, NULL}
 };
 
+#endif
