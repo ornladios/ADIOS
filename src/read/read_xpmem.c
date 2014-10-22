@@ -46,7 +46,7 @@
 #endif
 
 
-typedef struct _xpmem_read_file
+typedef struct _xpmem_read_data
 {
 	xpmem_segid_t data_segid;
 	xpmem_segid_t index_segid;
@@ -56,7 +56,15 @@ typedef struct _xpmem_read_file
 	shared_data *pg;
 	shared_data *index;
 	
-}xpmem_read_file, xpmem_read_data;
+}xpmem_read_data;
+
+typedef struct _xpmem_read_file
+{
+	uint32_t timestep;
+	xpmem_read_data *fp;
+	
+	
+}xpmem_read_file;
 
 xpmem_read_data* fp = NULL;
 
@@ -83,7 +91,6 @@ adios_read_xpmem_init_method (MPI_Comm comm, PairStruct* params)
 	fp->pg = (shared_data*)buffer;
 	fp->index = (shared_data*)index;
 	
-	
 
     return 0;
 }
@@ -91,10 +98,21 @@ adios_read_xpmem_init_method (MPI_Comm comm, PairStruct* params)
 ADIOS_FILE*
 adios_read_xpmem_open_file(const char * fname, MPI_Comm comm)
 {
-    adios_error (err_operation_not_supported,
-                 "Xpmem staging method does not support file mode for reading. "
-                 "Use adios_read_open() to open a staged dataset.\n");
-    return NULL;
+	ADIOS_FILE *af = (ADIOS_FILE*)malloc(sizeof(ADIOS_FILE));
+	if(!af){
+		adios_error (err_no_memory, 
+		             "Cannot allocate memory for file info.\n");
+		return NULL;
+	}
+
+	xpmem_read_file *f = (xpmem_read_file*)malloc(sizeof(xpmem_read_file));
+	f->fp = fp;
+
+	af->fh = (uint64_t)fp;
+	adiosfile->current_step = 0;
+
+
+	return af;  
 }
 
 /*
@@ -115,14 +133,31 @@ adios_read_xpmem_open(const char * fname,
 			 enum ADIOS_LOCKMODE lock_mode,
 			 float timeout_sec)
 {
-	ADIOS_FILE *fp = (ADIOS_FILE *)malloc(sizeof(ADIOS_FILE));
-	if(fp == NULL)
+	ADIOS_FILE *af = (ADIOS_FILE *)malloc(sizeof(ADIOS_FILE));
+	if(af == NULL)
 	{
 		adios_error(err_no_memory, "adios_read_xpmem_open");
 		return NULL;
 	}
+
+	xpmem_read_file *f = (xpmem_read_file*)malloc(sizeof(xpmem_read_file));
+	f->fp = fp;
+
+	af->fh = (uint64_t)fp;
+	af->current_step = 0;
+	fp->last_step = 0;
+	fp->path = strdup("xpmem");
+
+	while(fp->pg->version != 0)
+	    adios_nanosleep(0, 100000000);
+
+	while(fp->index->version != 0)
+	    adios_nanosleep(0, 100000000);
+
+	//now the buffer has some data
 	
-    return fp;
+
+    return af;
 }
 
 int adios_read_xpmem_finalize_method ()
@@ -130,7 +165,23 @@ int adios_read_xpmem_finalize_method ()
     return 0;
 }
 
-void adios_read_xpmem_release_step(ADIOS_FILE *adiosfile) {
+void adios_read_xpmem_release_step(ADIOS_FILE *adiosfile)
+{
+
+	xpmem_read_file *f = (xpmem_read_file*)adiosfile->fh;
+	xpmem_read_data *fp = f->fp;
+
+	if(fp->pg->version != 0)
+		fp->pg->version = 0;
+	if(fp->index->version != 0)
+		fp->index->version = 0;
+
+	if(fp->pg->readcount < 1)
+		fp->pg->readcount = 1;
+	if(fp->index->readcount < 1)
+		fp->index->readcount = 1;
+
+	
 }
 
 int 

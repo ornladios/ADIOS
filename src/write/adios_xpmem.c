@@ -117,10 +117,14 @@ int adios_xpmem_open (struct adios_file_struct * fd
 	    return 0;
     }
 
+    //check if there is a reader attached
+
     //wait for readcount to be 1
+    if(p->data.d->version != 0)
     while(p->data.d->readcount != 1)
 	    adios_nanosleep(0, 100000000);
-    
+
+    if(p->index.d->version != 0)
     while(p->index.d->readcount != 1)
 	    adios_nanosleep(0, 100000000);
 
@@ -288,6 +292,13 @@ void adios_xpmem_close (struct adios_file_struct * fd
             log_debug("xpmem copied data into %p index into %p\n",
                       data_buffer, index_buffer);
 
+            //set the sizes for the data
+            p->data.d->size = fd->bytes_written;
+            p->index.d->size = buffer_offset;
+
+            log_debug("xpmem sizes = %d, %d\n",
+                      fd->bytes_written, buffer_offset);
+            
             //now set the version to 1
             p->data.d->version = 1;
             p->index.d->version = 1;
