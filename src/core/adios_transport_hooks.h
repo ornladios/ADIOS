@@ -102,7 +102,7 @@ struct adios_var_struct;
 // VTK and POSIX_ASCII are placeholders reserved for future use
 enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
               ,ADIOS_METHOD_NULL        = -1
-                      ,ADIOS_METHOD_XPMEM = 0,
+                      ,ADIOS_METHOD_XPMEM = 0
               // ,ADIOS_METHOD_MPI         = 0
               // ,ADIOS_METHOD_DATATAP     = 1
               // ,ADIOS_METHOD_POSIX       = 2
@@ -150,7 +150,7 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
 //      FORWARD_DECLARE(nssi_filter)
 //      FORWARD_DECLARE(flexpath)
 //      FORWARD_DECLARE(var_merge)
-// #endif
+#endif
 
 // #ifdef ADIOS_EMPTY_TRANSPORTS
 //      //FORWARD_DECLARE_EMPTY(datatap)
