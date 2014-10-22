@@ -110,7 +110,9 @@ libadios_a_SOURCES = core/adios.c \
                      write/adios_mpi_amr.c \
                      write/adios_posix.c \
                      write/adios_posix1.c \
-                     write/adios_var_merge.c 
+                     read/read_xpmem.c\
+                     write/adios_xpmem.c 
+
 
 libadios_nompi_a_SOURCES = core/adios.c \
                      core/common_adios.c \
@@ -137,11 +139,8 @@ libadios_nompi_a_SOURCES = core/adios.c \
                      core/adios_logger.c \
                      core/util.c \
                      core/qhashtbl.c \
-                     read/read_bp.c \
-                     read/read_bp_staged.c \
-                     read/read_bp_staged1.c \
-                     write/adios_posix.c \
-                     write/adios_posix1.c 
+                     read/read_xpmem.c\
+                     write/adios_xpmem.c 
 
 
 lib_LIBRARIES += libadiosf.a libadiosf_v1.a libadiosf_nompi.a libadiosf_nompi_v1.a
@@ -167,11 +166,8 @@ FortranLibSources = core/adiosf.c \
                      core/adios_logger.c \
                      core/util.c \
                      core/qhashtbl.c \
-                     read/read_bp.c \
-                     read/read_bp_staged.c \
-                     read/read_bp_staged1.c \
-                     write/adios_posix.c \
-                     write/adios_posix1.c 
+                     read/read_xpmem.c\
+                     write/adios_xpmem.c 
 
 FortranLibMPISources =  write/adios_mpi.c \
                      write/adios_mpi_lustre.c \
@@ -262,9 +258,7 @@ libadiosread_a_SOURCES = core/adios_bp_v1.c \
                       core/adios_logger.c \
                       core/util.c \
                       core/qhashtbl.c \
-                      read/read_bp.c \
-                      read/read_bp_staged.c \
-                      read/read_bp_staged1.c 
+                      read/read_xpmem.c
 
 libadiosread_a_CPPFLAGS += $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
 
@@ -282,9 +276,7 @@ FortranReadLibSource = core/adios_bp_v1.c \
                       core/adios_logger.c \
                       core/util.c \
                       core/qhashtbl.c \
-                      read/read_bp.c \
-                      read/read_bp_staged.c \
-                      read/read_bp_staged1.c 
+                      read/read_xpmem.c
 
 libadiosreadf_a_CPPFLAGS += $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
 
@@ -325,7 +317,7 @@ libadiosread_nompi_a_SOURCES = core/mpidummy.c\
                       core/adios_read_hooks.c \
                       core/util.c \
                       core/qhashtbl.c \
-                      read/read_bp.c 
+                      read/read_xpmem.c 
 
 					  
 
@@ -348,7 +340,7 @@ FortranReadSeqLibSource = core/mpidummy.c\
                           core/adios_read_hooks.c \
                           core/util.c \
                           core/qhashtbl.c \
-                          read/read_bp.c 
+                          read/read_xpmem.c
 
 libadiosreadf_nompi_a_CPPFLAGS += $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS)
 libadiosreadf_nompi_a_SOURCES = $(FortranReadSeqLibSource) core/adiosf_read.c

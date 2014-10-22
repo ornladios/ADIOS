@@ -64,7 +64,7 @@ void adios_init_transports (struct adios_transport_struct ** t)
 //     //ASSIGN_FNS(mpi_amr1,ADIOS_METHOD_MPI_AMR1)
 //     //ASSIGN_FNS(adaptive,ADIOS_METHOD_ADAPTIVE)
 // #      endif
-// #    endif
+//#    endif
 
 // #    if HAVE_PHDF5
 //     ASSIGN_FNS(phdf5,ADIOS_METHOD_PHDF5,"PHDF5")
@@ -79,7 +79,7 @@ void adios_init_transports (struct adios_transport_struct ** t)
 //     ASSIGN_FNS(nssi_filter,ADIOS_METHOD_NSSI_FILTER,"NSSI_FILTER")
 // #    endif
 
-// #  endif /* _NOMPI */
+#  endif /* _NOMPI */
 
 // #  if HAVE_DATATAP
 //     ASSIGN_FNS(datatap,ADIOS_METHOD_DATATAP,"DATATAP")
