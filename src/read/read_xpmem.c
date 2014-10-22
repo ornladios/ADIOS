@@ -109,7 +109,7 @@ adios_read_xpmem_open_file(const char * fname, MPI_Comm comm)
 	f->fp = fp;
 
 	af->fh = (uint64_t)fp;
-	adiosfile->current_step = 0;
+	af->current_step = 0;
 
 
 	return af;  
@@ -146,7 +146,6 @@ adios_read_xpmem_open(const char * fname,
 	af->fh = (uint64_t)fp;
 	af->current_step = 0;
 	fp->last_step = 0;
-	fp->path = strdup("xpmem");
 
 	while(fp->pg->version != 0)
 	    adios_nanosleep(0, 100000000);
