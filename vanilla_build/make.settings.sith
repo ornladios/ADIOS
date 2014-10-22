@@ -1,0 +1,18 @@
+CC=gcc
+CFLAGS=-g -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast
+FC=gfortran
+FFLAGS=-g
+CPPFLAGS=-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_GNU_SOURCE
+
+# installation directory
+PREFIX=/ccs/proj/e2e/adios/vanilla
+INSTALLCMD=install
+
+# required dependencies
+MXML_INC=-I/sw/redhat6/mxml/2.7/rhel6_gnu4.7.1/include
+MXML_LDFLAGS=-L/sw/redhat6/mxml/2.7/rhel6_gnu4.7.1/lib
+MXML_LIBS= -lmxml -pthread
+
+
+
+

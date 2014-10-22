@@ -5,7 +5,7 @@
 #include <errno.h>
 #include <assert.h>
 
-#include "../config.h"
+#include "config.h"
 #include "core/util.h"
 #include "core/bp_utils.h"
 #include "core/adios_endianness.h"

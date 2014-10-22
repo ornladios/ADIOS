@@ -1,0 +1,23 @@
+This directory is for building a sequential libadios.a and libadiosf.a, without MPI, without MPI-based methods, without external libraries (except for mxml).
+
+Required:
+    C compiler
+    Fortran 90 compiler
+    MXML 2.7
+
+It builds:
+    libadios.a   (for C applications)
+    libadiosf.a  (for Fortran applications)
+    bpls and bpdump tools to examine ADIOS output files
+    write_read test code to check if the library works correctly
+
+Use 'make help' to print 
+  - the flags used to build this libary
+  - the build steps
+  - the flags for building an application after installing this library.
+
+Create a 'make.settings.<host>' file, where <host> is any string, which defines the build flags and the mxml dependency.  Then call 'make HOST=<host>' to build for your system, or edit the HOST variable in the Makefile.
+
+
+To remove all generated files, run 'make clean'.
+

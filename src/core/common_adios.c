@@ -5,7 +5,7 @@
  * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
  */
 
-#include "../config.h"
+#include "config.h"
 
 #include <stdlib.h>
 #include <math.h>
