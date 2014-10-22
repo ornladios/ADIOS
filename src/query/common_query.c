@@ -745,7 +745,7 @@ int common_query_evaluate(ADIOS_QUERY* q,
     */
     int freeOutputBoundary = 0;
     if (outputBoundary->type == ADIOS_SELECTION_WRITEBLOCK) {
-        outputBoundary = convertWriteblockToBoundingBox(q, &outputBoundary->u.block, actualTimeStep);
+        outputBoundary = convertWriteblockToBoundingBox(q, &outputBoundary->u.block, timeStep);
         if (!outputBoundary) {
 	  adios_error(err_invalid_argument,
 		      "Attempt to use writeblock output selection on a query where not "
