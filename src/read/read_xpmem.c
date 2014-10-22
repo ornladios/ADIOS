@@ -1,7 +1,7 @@
 /*
     read_xpmem.c       
     Goal: to create evpath io connection layer in conjunction with 
-    write/adios_xpmem.c
+    write/adios_xpmem.g
 
 */
 // system libraries
@@ -48,8 +48,8 @@
 
 typedef struct _xpmem_read_file
 {
-	xpmem_segid_t data_seg_id;
-	xpmem_segid_t index_seg_id;
+	xpmem_segid_t data_segid;
+	xpmem_segid_t index_segid;
 	xpmem_apid_t data_apid;
 	xpmem_apid_t index_apid;
 
@@ -58,7 +58,7 @@ typedef struct _xpmem_read_file
 	
 }xpmem_read_file, xpmem_read_data;
 
-xpmem_read_data* xp_read_data = NULL;
+xpmem_read_data* fp = NULL;
 
 
 /********** Core ADIOS Read functions. **********/
@@ -77,10 +77,10 @@ adios_read_xpmem_init_method (MPI_Comm comm, PairStruct* params)
 	read_segid(&fp->data_segid, "xpmem.data");
 	read_segid(&fp->index_segid, "xpmem.index");
 
-	buffer = attach_segid(fp->data_segid, share_size, &f->data_apid);
-	index = attach_segid(fd->index_apid, index_share_size, &f->index_apid);
+	buffer = attach_segid(fp->data_segid, share_size, &fp->data_apid);
+	index = attach_segid(fp->index_apid, index_share_size, &fp->index_apid);
 
-	fp->pg = (shared_data*)pg;
+	fp->pg = (shared_data*)buffer;
 	fp->index = (shared_data*)index;
 	
 	

@@ -1,3 +1,5 @@
+#include <errno.h>
+#include <stdio.h>
 #include <xpmem.h>
 
 static int lerror;

@@ -9,7 +9,7 @@ PREFIX=/ccs/proj/e2e/adios/vanilla
 INSTALLCMD=install
 
 # required dependencies
-MXML_INC=-I/sw/xk6/mxml/2.6/cle4.0_pgi11.8.0/includee
+MXML_INC=-I/sw/xk6/mxml/2.6/cle4.0_pgi11.8.0/include
 MXML_LDFLAGS=-L/sw/xk6/mxml/2.6/cle4.0_pgi11.8.0/lib -L/opt/cray/xpmem/0.1-2.0402.45248.1.5.gem/lib64
 MXML_LIBS= -lmxml -pthread -lxpmem
 
