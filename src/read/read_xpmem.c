@@ -145,7 +145,7 @@ adios_read_xpmem_open(const char * fname,
 
 	af->fh = (uint64_t)fp;
 	af->current_step = 0;
-	fp->last_step = 0;
+	af->last_step = 0;
 
 	while(fp->pg->version != 0)
 	    adios_nanosleep(0, 100000000);
