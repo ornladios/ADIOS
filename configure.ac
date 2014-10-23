@@ -1,11 +1,12 @@
 
-AC_INIT(configure.ac)
+AC_INIT([adios], [1.7.0])
+AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR(config)
 AC_REVISION($Revision$)
 
 AC_CONFIG_HEADERS(config.h)
-AM_INIT_AUTOMAKE(adios,1.7.0)
+AM_INIT_AUTOMAKE
 
 AM_MAINTAINER_MODE([enable])
 
