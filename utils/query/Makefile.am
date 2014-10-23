@@ -1,3 +1,4 @@
+if HAVE_FASTBIT
 INCLUDES = $(all_includes)
 #
 
@@ -18,3 +19,4 @@ index_fastbit_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 
 CLEANFILES = *.idx
 CC=$(MPICC)
+endif
