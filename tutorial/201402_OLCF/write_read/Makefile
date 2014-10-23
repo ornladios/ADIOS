@@ -2,17 +2,22 @@
 FC=ftn
 ## Rhea, Sith
 #FC=mpif90
-
-LINKER=${FC}
+CC=cc
+LINKER=${CC}
 #ADIOS_DIR = /opt/adios/1.6.0
-ADIOS_INC := $(shell ${ADIOS_DIR}/bin/adios_config -c -f)
-ADIOS_FLIB := $(shell ${ADIOS_DIR}/bin/adios_config -l -f)
-ADIOSREAD_FLIB := $(shell ${ADIOS_DIR}/bin/adios_config -l -f -r)
+ADIOS_INC := -I/ccs/home/habbasi/work/ADIOS/src/public -I/ccs/home/habbasi/work/ADIOS/vanilla_build/
+ADIOS_FLIB := -L/ccs/home/habbasi/work/ADIOS/vanilla_build -ladiosf ${MXML_LIB} 
+ADIOS_LIB := -L/ccs/home/habbasi/work/ADIOS/vanilla_build -ladios ${MXML_LIB} 
+ADIOSREAD_FLIB := -L/ccs/home/habbasi/work/ADIOS/vanilla_build -ladiosf ${MXML_LIB}
 GPP = ${ADIOS_DIR}/bin/gpp.py
 
 
 default: all
-all: writer reader
+all: write
+
+write: writer.c
+	${CC} -g -c -o writer.o ${ADIOS_INC} writer.c
+	${LINKER} -g -o writer writer.o ${ADIOS_LIB}
 
 writer: writer.F90 gwrite_writer.fh
 	${FC}   -g -c -o writer.o ${ADIOS_INC} writer.F90

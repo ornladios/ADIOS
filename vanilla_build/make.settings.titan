@@ -1,6 +1,6 @@
-CC=gcc
+CC=cc
 CFLAGS=-g -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast -I/opt/cray/xpmem/0.1-2.0402.45248.1.5.gem/include
-FC=gfortran
+FC=ftn
 FFLAGS=-g
 CPPFLAGS=-D_FILE_OFFSET_BITS=64 -D_LARGEFILE_SOURCE -D_LARGEFILE64_SOURCE -D_GNU_SOURCE
 
