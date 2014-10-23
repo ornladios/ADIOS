@@ -1023,6 +1023,7 @@ elif [ `hostname | cut -c 1-12` == "service-ulam" ]; then
     export CFLAGS="-g -fPIC"
     export CXXFLAGS="-g -fPIC"
     export FCFLAGS="-g -fPIC"
+    export LDFLAGS="-ldl -lpthread"
 
     ${SRCDIR}/configure \
     --prefix=/home/sc14demo/common-apps/adios/devel-icee/gcc4.8.3 \
