@@ -146,6 +146,8 @@ enum ADIOS_FLAG adios_xpmem_should_buffer (struct adios_file_struct * fd
      adios_xpmem_data_struct * p = ( adios_xpmem_data_struct *)
                                                           method->method_data;
 
+     log_debug("xpmem should buffer\n");
+     
     //we alwasy return yes so we don't have to deal with the buffering shit
     return adios_flag_yes;
     
@@ -166,10 +168,10 @@ void adios_xpmem_write (struct adios_file_struct * fd
 	    log_error("xpmem relys on shared buffer\n");	    
     }
 
-    if(v->got_buffer != adios_flag_yes)
-    {
-	    log_error("xpmem relys on shared buffer\n");
-    }
+    // if(v->got_buffer != adios_flag_yes)
+    // {
+	//     log_error("xpmem relys on shared buffer\n");
+    // }
     
 }
 

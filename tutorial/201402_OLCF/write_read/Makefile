@@ -5,7 +5,7 @@ FC=ftn
 CC=cc
 LINKER=${CC}
 #ADIOS_DIR = /opt/adios/1.6.0
-ADIOS_INC := -I/ccs/home/habbasi/work/ADIOS/src/public -I/ccs/home/habbasi/work/ADIOS/vanilla_build/
+ADIOS_INC := -I/ccs/home/habbasi/work/ADIOS/src/ -I/ccs/home/habbasi/work/ADIOS/src/public -I/ccs/home/habbasi/work/ADIOS/vanilla_build/
 ADIOS_FLIB := -L/ccs/home/habbasi/work/ADIOS/vanilla_build -ladiosf ${MXML_LIB} 
 ADIOS_LIB := -L/ccs/home/habbasi/work/ADIOS/vanilla_build -ladios ${MXML_LIB} 
 ADIOSREAD_FLIB := -L/ccs/home/habbasi/work/ADIOS/vanilla_build -ladiosf ${MXML_LIB}
@@ -15,9 +15,11 @@ GPP = ${ADIOS_DIR}/bin/gpp.py
 default: all
 all: write
 
-write: writer.c
+write: writer.c read.c
 	${CC} -g -c -o writer.o ${ADIOS_INC} writer.c
 	${LINKER} -g -o writer writer.o ${ADIOS_LIB}
+#	${CC} -g -c -o read.o ${ADIOS_INC} read.c
+##############	${LINKER} -g -o reader read.o ${ADIOS_LIB}
 
 writer: writer.F90 gwrite_writer.fh
 	${FC}   -g -c -o writer.o ${ADIOS_INC} writer.F90

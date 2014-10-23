@@ -1,6 +1,10 @@
+#ifndef _ADIOS_XPMEM_H_
+#define _ADIOS_XPMEM_H_
+
 #include <errno.h>
 #include <stdio.h>
 #include <xpmem.h>
+
 
 static int lerror;
 
@@ -16,7 +20,7 @@ static int lerror;
 static uint64_t share_size = 10*1024*1024;
 static uint64_t index_share_size = 1*1024*1024;
 
-xpmem_segid_t make_share(char **data, size_t size)
+static xpmem_segid_t make_share(char **data, size_t size)
 {
 	xpmem_segid_t segid;
 	int ret;
@@ -44,7 +48,7 @@ xpmem_segid_t make_share(char **data, size_t size)
 	return segid;
 }
 
-int unmake_share(xpmem_segid_t segid, char *data)
+static int unmake_share(xpmem_segid_t segid, char *data)
 {
 	int ret;
 
@@ -54,20 +58,20 @@ int unmake_share(xpmem_segid_t segid, char *data)
 	return ret;
 }
 
-char *attach_segid(xpmem_segid_t segid, int size, xpmem_apid_t *apid)
+static char *attach_segid(xpmem_segid_t segid, int size, xpmem_apid_t *apid)
 {
 	struct xpmem_addr addr;
 	char *buff;
 
-	if(*apid <= 0)
-	{
+	// if(*apid <= 0)
+	// {
 		*apid = xpmem_get(segid, XPMEM_RDWR, XPMEM_PERMIT_MODE, NULL);
 		if(*apid == -1)
 		{
 			lerror = errno;
 			return NULL;
 		}
-	}
+	// }
 	addr.apid = *apid;
 	addr.offset = 0;
 	buff = xpmem_attach(addr, size, NULL);
@@ -80,7 +84,7 @@ char *attach_segid(xpmem_segid_t segid, int size, xpmem_apid_t *apid)
 	return buff;
 }
 
-int write_segid(xpmem_segid_t segid, char *fname)
+static int write_segid(xpmem_segid_t segid, char *fname)
 {
 	int fd = open (fname, O_CREAT | O_RDWR | O_TRUNC, 0666);	
 	if(fd <= 0)
@@ -94,7 +98,7 @@ int write_segid(xpmem_segid_t segid, char *fname)
 	return 0;
 }
 
-int read_segid(xpmem_segid_t *segid, char *fname)
+static int read_segid(xpmem_segid_t *segid, char *fname)
 {
 	int fd = open (fname, O_RDONLY, 0666);
 	if(fd < 0)
@@ -103,8 +107,8 @@ int read_segid(xpmem_segid_t *segid, char *fname)
 		return -1;
 	}
 	lseek(fd, 0, SEEK_SET);
-	read(fd, segid, sizeof(xpmem_segid_t));	
-	printf("segid = %llx\n", *segid);
+	read(fd, segid, sizeof(xpmem_segid_t));
+	fprintf(stderr, "segid = %llu\n", segid);
 	close(fd);
 	return 0;
 }
@@ -119,3 +123,4 @@ typedef struct _shared_data
 	char buffer[1];
 }shared_data;
 
+#endif //adios_xpmem_h

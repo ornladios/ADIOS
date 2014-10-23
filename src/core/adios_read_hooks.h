@@ -64,6 +64,7 @@ FORWARD_DECLARE(dimes)
 #if HAVE_NSSI
 FORWARD_DECLARE(nssi)
 #endif
+FORWARD_DECLARE(xpmem)
 #if HAVE_DATATAP
 FORWARD_DECLARE(datatap)
 #endif
