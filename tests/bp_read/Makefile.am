@@ -48,9 +48,9 @@ FCLINK = \
         $(AM_FCFLAGS) $(FCFLAGS) $(LDFLAGS) -o $@
 
 if BUILD_FORTRAN
-CLEANFILES = *.o bp_read_c bp_read_f genbp read_coords read_phi read_parts_global
+CLEANFILES = bp_read_c bp_read_f genbp read_coords read_phi read_parts_global
 else
-CLEANFILES = *.o bp_read_c genbp read_coords read_phi read_parts_global
+CLEANFILES = bp_read_c genbp read_coords read_phi read_parts_global
 endif
 
 EXTRA_DIST = testbp_c.xml
