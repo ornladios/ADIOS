@@ -422,9 +422,9 @@ icee_fileinfo_handler(CManager cm, void *vevent, void *client_data, attr_list at
 static int adios_read_icee_initialized = 0;
 
 CManager cm;
-EVstone stone;
-EVstone remote_stone;
-EVstone stone_r;
+//EVstone stone;
+//EVstone remote_stone;
+//EVstone stone_r;
 EVstone split_stone;
 EVaction split_action;
 EVsource source;
@@ -557,6 +557,9 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
 
     if (!adios_read_icee_initialized)
     {
+        EVstone stone, remote_stone;
+        attr_list contact_list;
+
         cm = CManager_create();
 
         // Listen first
@@ -573,8 +576,8 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
 
             log_debug("Contact list \"%s\"\n", attr_list_to_string(contact_list_r));
 
-            stone_r = EValloc_stone(cm);
-            EVassoc_terminal_action(cm, stone_r, icee_fileinfo_format_list, icee_fileinfo_handler, NULL);
+            stone = EValloc_stone(cm);
+            EVassoc_terminal_action(cm, stone, icee_fileinfo_format_list, icee_fileinfo_handler, NULL);
 
             if (!CMfork_comm_thread(cm)) 
             {
@@ -589,6 +592,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         {
             //attr_list contact_list;
             EVstone remote_stone, output_stone;
+            remote_stone = 0;
             output_stone = EValloc_stone(cm);
 
             contact_list = create_attr_list();

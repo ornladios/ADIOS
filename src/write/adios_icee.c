@@ -223,6 +223,7 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
         for (i=0; i<max_client; i++)
         {
             //EVstone stone_w = EValloc_stone(cm);
+            remote_stone = 0;
             stone = EValloc_stone(cm);
             contact_list = create_attr_list();
             add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), client_info[i].client_port);
