@@ -108,8 +108,8 @@ int adios_posix_open (struct adios_file_struct * fd
                      ,struct adios_method_struct * method, MPI_Comm comm
                      )
 {
-    char * subfile_name;
-    char * mdfile_name;
+    char * subfile_name = 0;
+    char * mdfile_name = 0;
     char * name_with_rank, rank_string[16];
     struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
                                                           method->method_data;
@@ -453,9 +453,16 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
         }
     }
 
-    free (subfile_name);
-    free (mdfile_name);
-    
+    if (subfile_name) 
+    {
+        free (subfile_name);
+    }
+
+    if (mdfile_name)
+    {
+        free (mdfile_name);
+    }
+
     STOP_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
 
     return 1;

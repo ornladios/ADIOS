@@ -43,14 +43,17 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
         return;
     }
 
-    int size, rank, i, global_event_count, count_to_send;
+    int size=1, rank=0, i, global_event_count, count_to_send;
  
     int * counts;
     int * displs;
     struct adios_timing_event_struct* events;
     MPI_Datatype event_type;
-    MPI_Comm_size (MPI_COMM_WORLD, &size);
-    MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+    if (fd->comm != MPI_COMM_NULL)
+    {
+        MPI_Comm_size (fd->comm, &size);
+        MPI_Comm_rank (fd->comm, &rank);
+    }
 
     if (rank == 0)
     {
@@ -72,7 +75,7 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
         1,           // recvcount
         MPI_INT,        // recvtype
         0,              // root
-        MPI_COMM_WORLD  // comm
+        fd->comm  // comm
     );
 
     if (rank == 0)
@@ -117,7 +120,7 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
         displs, // displacements
         event_type, // recvtype
         0, // root
-        MPI_COMM_WORLD // comm
+        fd->comm // comm
     );
 
     // Gather the write sizes
@@ -135,7 +138,7 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
         1, //recvcount
         MPI_INT, //recvtype
         0, //root
-        MPI_COMM_WORLD //comm
+        fd->comm //comm
     );
 
     // Write the events to a file
@@ -209,8 +212,11 @@ void adios_write_timing_variables (struct adios_file_struct * fd)
     struct adios_group_struct * g = fd->group;
     int timer_count = g->prev_timing_obj->user_count + g->prev_timing_obj->internal_count;
     
-    int rank, i, ct=0;
-    MPI_Comm_rank (fd->comm, &rank);
+    int rank=0, i, ct=0;
+    if (fd->comm != MPI_COMM_NULL)
+    {
+        MPI_Comm_rank (fd->comm, &rank);
+    }
 
     struct adios_var_struct * v; 
 
@@ -309,9 +315,11 @@ int adios_add_timing_variables (struct adios_file_struct * fd)
 
     int i, tv_size = 0; // size of the extra timing variables to be written
 
-    int rank, size;
-    MPI_Comm_rank (fd->comm, &rank);
-    MPI_Comm_size (fd->comm, &size);
+    int rank=0, size=1;
+    if (fd->comm != MPI_COMM_NULL) {
+        MPI_Comm_rank (fd->comm, &rank);
+        MPI_Comm_size (fd->comm, &size);
+    }
 
     char dim_str[256];
     char glob_dim_str[256];
