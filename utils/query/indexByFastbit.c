@@ -326,7 +326,7 @@ int main (int argc, char** argv)
       ADIOS_VARINFO * v = adios_inq_var(f, varName);
       if (v == NULL) {
 	printf("No such variable: %s\n", varName);
-	return;
+	return 0;
       }
       printf("building fastbit index on  variable: %s\n", varName);
       buildIndex(f, v);
