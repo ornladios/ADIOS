@@ -16,7 +16,7 @@ static int getTotalByteSize (ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* s
 			     uint64_t* total_byte_size, uint64_t* dataSize, int timestep);
 
 
-ADIOS_SELECTION* getAdiosDefaultBoundingBox(ADIOS_VARINFO* v) 
+static ADIOS_SELECTION* getAdiosDefaultBoundingBox(ADIOS_VARINFO* v) 
 {
   if (v->ndim == 0) {
     return NULL;
@@ -120,7 +120,7 @@ int adios_get_actual_timestep(ADIOS_QUERY* q, int timeStep)
 }
 
 
-int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
+static int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
 {
     // get data from bp file
     if (timeStep < 0) {
@@ -177,6 +177,12 @@ int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
       int rightTimeStep = adios_check_query_at_timestep(q->right, timeStep);
 
       if ((rightTimeStep == -1) || (leftTimeStep == -1)) {
+	return -1;
+      }
+      if (isCompatible(q->left, q->right) != 0) {
+        adios_error (err_incompatible_queries, 
+		     "Found queries' selections are not compatible actual timestep: %d.\n", leftTimeStep);
+
 	return -1;
       }
       return leftTimeStep;
@@ -416,37 +422,38 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f,
 static int isSelectionCompatible(ADIOS_SELECTION* first, ADIOS_SELECTION* second)			  
 {
   if ((first == NULL) || (second == NULL)) {
-    return 1;
+    return 0;
   }
 
   switch (first->type) {
   case  ADIOS_SELECTION_BOUNDINGBOX:    
     if (second->type != ADIOS_SELECTION_BOUNDINGBOX) {
         log_error("Error! Not supported: comparing bounding box to another type \n");
-	return 0;
+	return -1;
     }
     
-    return 1;
+    return 0;
   case ADIOS_SELECTION_POINTS:
     if (second->type != ADIOS_SELECTION_POINTS) {
         log_error("Error! Not supported: comparing adios points to another type \n");
-	return 0;
+	return -1;
     }
     const ADIOS_SELECTION_POINTS_STRUCT *pt1 = &(first->u.points);
     const ADIOS_SELECTION_POINTS_STRUCT *pt2 = &(second->u.points);
     
     if (pt1 -> npoints != pt2->npoints) {
-      return 0;
+      log_error("Error! point selections have different size. %ld != %ld\n", pt1->npoints, pt2->npoints);
+      return -1;
     }
     return 1;
   case ADIOS_SELECTION_WRITEBLOCK:
     if (second->type != ADIOS_SELECTION_WRITEBLOCK) {
         log_error("Error! Not supported: comparing adios blocks to another type \n");
-	return 0;
+	return -1;
     }      
-    return 1;
+    return 0;
   default:
-    return 1;
+    return 0;
   }    
 }
 
@@ -461,19 +468,19 @@ static int isSelectionCompatible(ADIOS_SELECTION* first, ADIOS_SELECTION* second
 }*/
 
 //
-// return 1 if yes.
+// return 0 if yes.
 //
-static int isCompatible(ADIOS_QUERY* q1, ADIOS_QUERY* q2) {
+int isCompatible(ADIOS_QUERY* q1, ADIOS_QUERY* q2) {
   if ((q1->left == 0) && (q2->left == 0)) { // both are leaves
     if (q1->rawDataSize != q2->rawDataSize) {
       log_error("Error! Not supported: combining query with different sizes!\n");
-      return 0;
+      return -1;
     }
     if ((q1->sel != NULL) && (q2->sel != NULL)) {
       return isSelectionCompatible(q1->sel, q2->sel);
     } 
     // all other cases, as long as data sizes match, fastbit can work on it.
-    return 1;
+    return 0;
   }
 
   if (q1->left != NULL) {
@@ -484,7 +491,7 @@ static int isCompatible(ADIOS_QUERY* q1, ADIOS_QUERY* q2) {
     return isCompatible(q1, q2->left);
   }
   
-  return 1;
+  return 0;
 }
 
 ADIOS_QUERY* common_query_combine(ADIOS_QUERY* q1, 
@@ -501,9 +508,9 @@ ADIOS_QUERY* common_query_combine(ADIOS_QUERY* q1,
         return NULL;
     }
 
-    if (isCompatible(q1, q2) != 1) {
+    if (isCompatible(q1, q2) != 0) {
         adios_error (err_incompatible_queries, 
-                "Query combine: the two queries' selections are not compatible.\n");
+		     "Query combine: the two queries' selections are not compatible.\n");
         return NULL;
     }
 
@@ -638,14 +645,15 @@ static int updateBlockSizeIfNeeded(ADIOS_QUERY* q, int timeStep)
     return result;
 }
 */
+/*
 static int checkCompatibility(ADIOS_QUERY* q) 
 {
     if ((q->left != NULL) && (q->right != NULL)) {
         return isCompatible(q->left, q->right); 
     }
-    return 1; // ok, no need to check  
+    return 0; // ok, no need to check  
 }
-
+*/
 static ADIOS_VARBLOCK * computePGBounds(ADIOS_QUERY *q, int wbindex, int timestep, int *out_ndim) 
 {
     if (!q->left && !q->right) {
@@ -748,7 +756,12 @@ int common_query_evaluate(ADIOS_QUERY* q,
       return -1;
     }
 
-    checkCompatibility(q);
+    /*
+    if (checkCompatibility(q) != 0) {
+      log_error("query components are not compatible at this time step.\n");
+      return -1;
+    }
+    */
     /*
     if ((q->onTimeStep >= 0) && (q->onTimeStep != timeStep)) {
         int updateResult = updateBlockSizeIfNeeded(q, timeStep);
