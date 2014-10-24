@@ -2,7 +2,7 @@ if HAVE_FASTBIT
 INCLUDES = $(all_includes)
 #
 
-INCLUDES += -I$(top_srcdir)/src/public ${ADIOSREADLIB_CPPFLAGS}
+INCLUDES += -I$(top_srcdir)/src/ ${ADIOSREADLIB_CPPFLAGS}
 
 AUTOMAKE_OPTIONS = no-dependencies
 

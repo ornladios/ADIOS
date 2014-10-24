@@ -1,10 +1,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "adios_read.h"
+#include "public/adios_read.h"
 #include <iapi.h>
 
-
+#include "../../src/query/fastbit_adios.h"
 
   char gVarNameFastbitIdxKey[10] = "key";
   char gVarNameFastbitIdxOffset[10] = "offsets";
@@ -16,6 +16,9 @@
   int64_t       gAdios_group;
   int64_t       gAdios_write_file;
 
+  time_t        lastMeasured;
+  time_t        indexRefresh;
+  time_t        fileStarted;
 
 //void printData(void* data, enum ADIOS_DATATYPES type, uint64_t size);
 
@@ -75,6 +78,7 @@ void assertErr(long int errCode, const char* exp, const char* refName)
 {
   if (errCode < 0) {
     printf("errCode=%d %s %s\n", errCode, exp, refName);
+    exit(EXIT_FAILURE);
   } 
 }
 
@@ -106,6 +110,40 @@ void fastbitIndex(const char* datasetName, void* data, uint64_t blockSize, FastB
   */
 }
 
+void logTime(const char* notes) {
+  char buff[300];
+  struct tm * timeinfo;
+  time_t now= time(0);
+  timeinfo = localtime (&now);
+  strftime(buff, 30, "%b %d %H:%M:%S", timeinfo); 
+
+  if (notes == NULL) {
+    //printf("\n  ====== %s\n", buff); 
+    printf("\n");
+    indexRefresh = now;
+  } else {
+    double d = difftime(now, lastMeasured);
+    printf("%s elapsed (sec) %4.0f %s\n", buff, d, notes); 
+  }
+  lastMeasured = now;
+}
+
+void sumLogTime(int stage) {
+  time_t now = time(0);
+  struct tm* timeinfo = localtime(&now);
+  if (stage == -1) { // init
+    lastMeasured = now;
+    indexRefresh = now;
+    fileStarted = now;
+  } else if (stage == 0) { // whole program    
+    double d = difftime(now, fileStarted);
+    printf("==> total time spent to process this FILE: %4.0f seconds.\n", d);    
+  } else { // block
+    double d = difftime(now, indexRefresh);
+    printf("==>  total time spent to process this block: %4.0f seconds. \n", d);
+    indexRefresh = now;
+  }
+}
 void buildIndex(ADIOS_FILE* f, ADIOS_VARINFO* v) 
 {
       char bmsVarName[100];
@@ -118,6 +156,7 @@ void buildIndex(ADIOS_FILE* f, ADIOS_VARINFO* v)
   int j=0;
   int k=0;
 
+  sumLogTime(-1);
   //printf("  nsteps=%d, ndim=%d\n", v->nsteps, v->ndim);
   for (i=0; i<v->nsteps; i++) 
   {
@@ -135,25 +174,8 @@ void buildIndex(ADIOS_FILE* f, ADIOS_VARINFO* v)
       {  
 	  blockBytes *= v->blockinfo[k].count[j];
 	  blockSize *= v->blockinfo[k].count[j];
-      }
-    
-      //printf("\t\t   block %d, bytes: %llu, size = %llu \n", k, blockBytes, blockSize);      
-      /*
-      // read out the data in the block
-      
-      ADIOS_SELECTION* blockSel = adios_selection_writeblock(k);
-      
-      ...
-      adios_schedule_read (f, blockSel, v->varid, timestep, 1, data);
-      */
-      // register to fastbit array
-      // build index
-      // serialize index
-      // write out 
-      // clean up in fastbit
-      // clean up in adios
+      }    
   }
-
 
 
   int blockCounter = -1;
@@ -161,7 +183,6 @@ void buildIndex(ADIOS_FILE* f, ADIOS_VARINFO* v)
 
   for (i=0; i < v->nsteps; i++) {
     //printf ("==> step %d: ",  i);
-
        int nblocks = v->nblocks[i];
        int64_t       var_ids_bms[nblocks];
        int64_t       var_ids_key[nblocks];
@@ -172,10 +193,16 @@ void buildIndex(ADIOS_FILE* f, ADIOS_VARINFO* v)
 	 sprintf(keyVarName, "key-%d-%d-%d", v->varid, i, j);
 	 sprintf(offsetName, "offset-%d-%d-%d", v->varid, i, j);
 
+	 blockCounter++;
+	 uint64_t blockSize = fastbit_adios_util_getBlockSize(v, blockCounter);
+	 uint64_t blockDataByteSize = adios_type_size (v->type, v->value) * blockSize; 
 
-	    blockCounter++;
-	    uint64_t blockSize = fastbit_adios_util_getBlockSize(v, blockCounter);
-	    uint64_t blockDataByteSize = adios_type_size (v->type, v->value) * blockSize; 
+	 char notes[100];
+	 logTime(NULL);
+	 sprintf(notes, "  => reading data from adios  on varid=%d, time=%d, block: %d, size=%ld", v->varid, i, j, blockSize);
+	 logTime(notes);
+	 localtime(&indexRefresh);
+
 	    //printf("   %d th block / (%d), size= %llu bytes=%llu", j, blockSize, blockCounter, blockDataByteSize);
 	    
 	    void* data = malloc (blockDataByteSize);
@@ -198,8 +225,9 @@ void buildIndex(ADIOS_FILE* f, ADIOS_VARINFO* v)
 	    uint64_t nk=0, no=0, nb=0;
 	    
 	    const char* datasetName = "test";
+	    logTime("  data collected, fastbit start indexing");
 	    fastbitIndex(datasetName, data, blockSize, ft, &keys, &nk, &offsets, &no, &bms, &nb);
-
+	    logTime("  indexed on block");
 	    char nbStr[20], noStr[20], nkStr[20];
 	    sprintf(nbStr, "%ld", nb); 
 	    sprintf(nkStr, "%ld", nk); 
@@ -209,9 +237,12 @@ void buildIndex(ADIOS_FILE* f, ADIOS_VARINFO* v)
 	    defineFastbitVar(1, keyVarName, &var_ids_key[j], adios_double, &nk, 0, 0);
 	    defineFastbitVar(1, offsetName, &var_ids_offset[j], adios_long, &no, 0, 0); 
 
+	    logTime("  write starts");
 	    adios_write_byid(gAdios_write_file, var_ids_bms[j], bms);
 	    adios_write_byid(gAdios_write_file, var_ids_key[j], keys);
 	    adios_write_byid(gAdios_write_file, var_ids_offset[j], offsets);
+	    logTime("  write ends\n");
+	    sumLogTime(1);
 
 	    adios_selection_delete(blockSel);
 	    free(data);	 
@@ -220,9 +251,11 @@ void buildIndex(ADIOS_FILE* f, ADIOS_VARINFO* v)
        }
 
        fastbit_cleanup();
-
        printf("\n");
-  }  
+  }
+
+  //
+  sumLogTime(0);
 }
 
 void buildIndexOnAllVar(ADIOS_FILE* f) 
@@ -233,11 +266,12 @@ void buildIndexOnAllVar(ADIOS_FILE* f)
   for (i=0; i<numVars; i++) {
     char* varName = f->var_namelist[i];
     ADIOS_VARINFO* v = adios_inq_var(f, varName);
-    printf("\n... building fastbit index on  %dth variable: %s, ", i, varName);
+    printf("\n => building fastbit index on  %dth variable: %s, ", i, varName);
     if (v->ndim > 0) {
       buildIndex(f, v);
+      printf("\t built \n");
     } else {
-      printf("\t skipping scalar..\n");
+      printf("\t ... skipping scalar ...\n");
     }
     adios_free_varinfo(v);
   }
@@ -245,6 +279,10 @@ void buildIndexOnAllVar(ADIOS_FILE* f)
 
 int main (int argc, char** argv) 
 {
+
+  fastbit_init(0);
+  fastbit_set_verbose_level(2);
+
   ADIOS_FILE * f;
   //MPI_Comm    comm_dummy = 0;  // MPI_Comm is defined through adios_read.h 
   MPI_Comm comm_dummy = MPI_COMM_WORLD;
@@ -278,9 +316,9 @@ int main (int argc, char** argv)
   uint64_t adios_totalsize;
   adios_group_size (gAdios_write_file, 2*(f->file_size), &adios_totalsize);     
 
+
   printf("=> adios open output file: %s, totalsize allocated %llu bytes... \n", idxFileName, adios_totalsize); 
 
-  printf("argc= %d\n", argc);
   if (argc >= 3) {
     int i=2;
     while (i<argc) {
@@ -344,6 +382,7 @@ int main (int argc, char** argv)
   MPI_Finalize ();
   free (idxFileName);
 
+  fastbit_cleanup();
   return 0;
 }
 
