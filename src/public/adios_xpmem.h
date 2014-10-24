@@ -38,7 +38,7 @@ static xpmem_segid_t make_share(char **data, size_t size)
 
 	memset((void*)*data, 0, size);
 	
-	segid = xpmem_make(*data, size, XPMEM_PERMIT_MODE, (void *)0666);
+	segid = xpmem_make(*data, size, XPMEM_PERMIT_MODE, (void *)0600);
 	if(segid == -1)
 	{
 		fprintf(stderr, "error in xpmem_make size = %u data = %p\n",
@@ -93,6 +93,7 @@ static int write_segid(xpmem_segid_t segid, char *fname)
 		return -1;
 	}
 	lseek(fd, 0, SEEK_SET);
+	fprintf(stderr, "segid = %lli\n", segid);
 	write(fd, &segid, sizeof(xpmem_segid_t));
 	close(fd);
 	return 0;
@@ -108,7 +109,7 @@ static int read_segid(xpmem_segid_t *segid, char *fname)
 	}
 	lseek(fd, 0, SEEK_SET);
 	read(fd, segid, sizeof(xpmem_segid_t));
-	fprintf(stderr, "segid = %llu\n", segid);
+	fprintf(stderr, "segid = %lli\n", *segid);
 	close(fd);
 	return 0;
 }

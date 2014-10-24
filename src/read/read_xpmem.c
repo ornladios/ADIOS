@@ -118,20 +118,25 @@ adios_read_xpmem_init_method (MPI_Comm comm, PairStruct* params)
 	{
 		read_segid(&fp->data_segid, "xpmem.data");
 		buffer = attach_segid(fp->data_segid, share_size, &fp->data_apid);
-		sleep(1);
 	}while(buffer == NULL);
 	
 	do
 	{
 		read_segid(&fp->index_segid, "xpmem.index");
-		index = attach_segid(fp->index_apid, index_share_size, &fp->index_apid);
-		sleep(1);
+		index = attach_segid(fp->index_segid, index_share_size, &fp->index_apid);
 	}while(index == NULL);
 
-	fprintf(stderr, "opened the segments\n");
+	
+	fprintf(stderr, "opened the segments %p %p \n", buffer, index);
 	fp->pg = (shared_data*)buffer;
 	fp->index = (shared_data*)index;
-	
+
+	fprintf(stderr, "version %u size = %ll readcount = %u offset = %u reader = %u buffer=%p\n", fp->pg->version,
+	        fp->pg->size,
+	        fp->pg->readcount,
+	        fp->pg->offset,
+	        fp->pg->reader,
+	        fp->pg->buffer);
 
 	log_info("read init completed\n");
 	
@@ -156,7 +161,7 @@ adios_read_xpmem_open_file(const char * fname, MPI_Comm comm)
 
 	struct bp_minifooter * mh = &f->mfooter;
     struct adios_bp_buffer_struct_v1 *b = f->b;
-    uint64_t attrs_end = f->isize - MINIFOOTER_SIZE;
+    uint64_t attrs_end;
 
 
 	af->fh = (uint64_t)fp;
@@ -166,10 +171,10 @@ adios_read_xpmem_open_file(const char * fname, MPI_Comm comm)
 
 	log_info("spinning on version\n");
 	
-	while(f->fp->pg->version != 0)
+	while(f->fp->pg->version == 0)
 	    adios_nanosleep(0, 100000000);
 
-	while(f->fp->index->version != 0)
+	while(f->fp->index->version == 0)
 	    adios_nanosleep(0, 100000000);
 
 	//now the buffer has some data
@@ -184,16 +189,17 @@ adios_read_xpmem_open_file(const char * fname, MPI_Comm comm)
 	//index size is fp-index->size
 	//copy the buffer out
 	
-	f->index = (char*)malloc(sizeof(f->fp->index->size));
-	f->data = (char*)malloc(sizeof(f->fp->pg->size));
+	f->index = (char*)malloc(f->fp->index->size);
+	f->data = (char*)malloc(f->fp->pg->size);
 
 	f->isize = f->fp->index->size;
 	f->dsize = f->fp->pg->size;
 	
 	memcpy(f->index, f->fp->index->buffer, f->isize);
 	memcpy(f->data, f->fp->pg->buffer, f->dsize);
-	f->b->file_size = f->dsize + f->isize;
-	f->mfooter.file_size = f->dsize + f->isize;
+	
+	f->b->file_size = f->dsize;
+	f->mfooter.file_size = f->dsize;
 
 	if(!f->b->buff)
 	{
@@ -202,7 +208,7 @@ adios_read_xpmem_open_file(const char * fname, MPI_Comm comm)
 		f->b->offset = 0;
 	}
 
-	memcpy(f->b->buff, &f->index[f->isize - MINIFOOTER_SIZE],
+	memcpy(f->b->buff, &f->data[f->dsize - MINIFOOTER_SIZE],
 	       MINIFOOTER_SIZE);
 	b->offset = MINIFOOTER_SIZE - 4;
 	adios_parse_version(b, &mh->version);
@@ -246,6 +252,7 @@ adios_read_xpmem_open_file(const char * fname, MPI_Comm comm)
                 b->attrs_index_offset, b->file_size);
         return NULL;
     }
+    
     if (b->attrs_index_offset < b->vars_index_offset) {
         adios_error (err_file_open_error,
                 "Invalid BP file detected. Attribute index offset (%lld) < Variable index offset (%lld)\n",
@@ -256,16 +263,19 @@ adios_read_xpmem_open_file(const char * fname, MPI_Comm comm)
     b->end_of_pgs = b->pg_index_offset;
     b->pg_size = b->vars_index_offset - b->pg_index_offset;
     b->vars_size = b->attrs_index_offset - b->vars_index_offset;
+    attrs_end = b->file_size - MINIFOOTER_SIZE;
     b->attrs_size = attrs_end - b->attrs_index_offset;
 
-    log_debug("offsets are %llu, %llu %llu",
+    log_debug("offsets are %llu, %llu %llu\n",
               b->pg_index_offset, b->vars_index_offset,
               b->attrs_index_offset);
     
     uint64_t footer_size = mh->file_size - mh->pgs_index_offset;
     bp_realloc_aligned (b, footer_size);
 
-	
+    memcpy(b->buff, &f->data[mh->pgs_index_offset], footer_size);
+    b->offset = 0;
+    
 	   
 	
 	return af;  

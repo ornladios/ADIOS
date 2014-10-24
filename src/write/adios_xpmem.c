@@ -78,6 +78,9 @@ void adios_xpmem_init (const PairStruct * parameters
     p->data.buffer_id = make_share(&p->data.buffer, share_size);
     p->index.buffer_id = make_share(&p->index.buffer, index_share_size);
 
+    memset(p->data.buffer, 0, share_size);
+    memset(p->index.buffer, 0, index_share_size);
+
     p->data.size = share_size;
     p->index.size = index_share_size;
 
@@ -284,18 +287,20 @@ void adios_xpmem_close (struct adios_file_struct * fd
             adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 
             //now copy the data buffer into the shared memory area
-            data_buffer = &p->data.buffer[p->data.d->offset];
+            data_buffer = &p->data.d->buffer[p->data.d->offset];
             memcpy(data_buffer, fd->buffer, fd->bytes_written);
+            memcpy(&data_buffer[fd->bytes_written], buffer,
+                   buffer_offset);
 
             //copy the index into the index area
-            index_buffer = &p->index.buffer[p->index.d->offset];           
+            index_buffer = &p->index.d->buffer[p->index.d->offset];           
             memcpy(index_buffer, buffer, buffer_offset);
 
             log_debug("xpmem copied data into %p index into %p\n",
                       data_buffer, index_buffer);
 
             //set the sizes for the data
-            p->data.d->size = fd->bytes_written;
+            p->data.d->size = fd->bytes_written + buffer_offset;
             p->index.d->size = buffer_offset;
 
             log_debug("xpmem sizes = %d, %d\n",
@@ -304,7 +309,14 @@ void adios_xpmem_close (struct adios_file_struct * fd
             //now set the version to 1
             p->data.d->version = 1;
             p->index.d->version = 1;
-            
+
+            fprintf(stderr, "version %u size = %ll readcount = %u offset = %u reader = %u buffer=%p\n", p->data.d->version,
+	        p->data.d->size,
+	        p->data.d->readcount,
+	        p->data.d->offset,
+	        p->data.d->reader,
+	        p->data.d->buffer);
+
             adios_free_index_v1(index);
             free (buffer);
 
