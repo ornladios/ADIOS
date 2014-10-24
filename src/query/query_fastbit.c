@@ -1141,7 +1141,7 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
 }
 
 //void adios_fastbit_free_query(ADIOS_QUERY* query) 
-int  adios_query_fastbit_free(ADIOS_QUERY* query) 
+void  adios_query_fastbit_free(ADIOS_QUERY* query) 
 {  
   if (query == NULL) {
     return;
