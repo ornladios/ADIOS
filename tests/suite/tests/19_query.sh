@@ -32,32 +32,39 @@ MPIRUN_SERIAL="$MPIRUN $NP_MPIRUN 1 $EXEOPT"
 QUERY_TEST_DIR="$TRUNKDIR/tests/C/query"
 QUERY_COMMON_DIR="$QUERY_TEST_DIR/common"
 TEST_PROGRAMS_DIR="$TRUNKDIR/tests/suite/programs"
+UTILS_DIR="$TRUNKDIR/utils"
+QUERY_UTILS_DIR="$UTILS_DIR/query"
 
 # Some external tools to use
 DATASET_BUILDER_EXE_BASENAME="build_standard_dataset"
 QUERY_SEQSCAN_EXE_BASENAME="compute_expected_query_results"
 QUERY_EXE_BASENAME="adios_query_test"
+LIST_METHODS_EXE_BASENAME="list_methods"
 
 DATASET_BUILDER_EXE_PATH="$TEST_PROGRAMS_DIR/$DATASET_BUILDER_EXE_BASENAME"
 QUERY_SEQSCAN_EXE_PATH="$QUERY_COMMON_DIR/$QUERY_SEQSCAN_EXE_BASENAME"
 QUERY_EXE_PATH="$QUERY_COMMON_DIR/$QUERY_EXE_BASENAME"
+LIST_METHODS_EXE_PATH="$UTILS_DIR/$LIST_METHODS_EXE_BASENAME/$LIST_METHODS_EXE_BASENAME"
 
 # Check for the executability of all executables that we need
 [ -f "$DATASET_BUILDER_EXE_PATH" -a -x "$DATASET_BUILDER_EXE_PATH" ] || die "ERROR: $DATASET_BUILDER_EXE_PATH is not executable"
 [ -f "$QUERY_SEQSCAN_EXE_PATH"   -a -x "$QUERY_SEQSCAN_EXE_PATH"   ] || die "ERROR: $QUERY_SEQSCAN_EXE_PATH is not executable"
 [ -f "$QUERY_EXE_PATH"           -a -x "$QUERY_EXE_PATH"           ] || die "ERROR: $QUERY_EXE_PATH is not executable"
+[ -f "$LIST_METHODS_EXE_PATH"    -a -x "$LIST_METHODS_EXE_PATH"    ] || die "ERROR: $LIST_METHODS_EXE_PATH is not executable"
 
 # Copy the external tools to the working directory for convenience
 DATASET_BUILDER_EXE_LOCAL="./$DATASET_BUILDER_EXE_BASENAME"
 QUERY_SEQSCAN_EXE_LOCAL="./$QUERY_SEQSCAN_EXE_BASENAME"
 QUERY_EXE_LOCAL="./$QUERY_EXE_BASENAME"
-cp $DATASET_BUILDER_EXE_PATH $DATASET_BUILDER_EXE_LOCAL
-cp $QUERY_SEQSCAN_EXE_PATH   $QUERY_SEQSCAN_EXE_LOCAL
-cp $QUERY_EXE_PATH           $QUERY_EXE_LOCAL
+cp $DATASET_BUILDER_EXE_PATH  $DATASET_BUILDER_EXE_LOCAL
+cp $QUERY_SEQSCAN_EXE_PATH    $QUERY_SEQSCAN_EXE_LOCAL
+cp $QUERY_EXE_PATH            $QUERY_EXE_LOCAL
 
 # Check for the "directory"-ness of the query XML dir
 QUERY_XML_DIR="$QUERY_TEST_DIR/query-xmls/"
 [ -d "$QUERY_XML_DIR" ] || die "ERROR: $QUERY_XML_DIR is not a directory"
+
+
 
 # All pre-defined dataset IDs (which can be extracted from build_indexed_dataset)
 ALL_DATASET_IDS=" \
@@ -74,12 +81,46 @@ for DSID in $ALL_DATASET_IDS; do
     die "ERROR: $QUERY_XML_DIR/$DSID is not a directory"
 done
 
+
+
 # All query engine implementations to test
-# TODO: Expand to FastBit once we understand it properly
-# TODO: Detect which query engines are built with this install of ADIOS, and only test those
-ALL_QUERY_ENGINES="alacrity"
+ALL_QUERY_ENGINES=$( \
+  $LIST_METHODS_EXE_PATH |
+  awk '
+    /^Available/{
+      transforms = ($2 == "query")
+    }
+    {
+      if (transforms) {
+        if (skippedheader) {
+          gsub("ADIOS_QUERY_METHOD_","",$1)
+          print $1
+        } else {
+          skippedheader = 1
+        }
+      }
+    }
+  ' |
+  tr "A-Z\n" 'a-z '
+)
+
+# Specially detect the FastBit indexing method, since it needs
+# an external program to build its indexes 
+case $ALL_QUERY_ENGINES in *fastbit*) HAS_FASTBIT=1 ;; esac
+if [ "$HAS_FASTBIT" ]; then
+  FASTBIT_INDEXER_EXE_BASENAME="index_fastbit"
+  FASTBIT_INDEXER_EXE_PATH="$QUERY_UTILS_DIR/$FASTBIT_INDEXER_EXE_BASENAME"
+  [ -f "$FASTBIT_INDEXER_EXE_PATH" -a -x "$FASTBIT_INDEXER_EXE_PATH" ] || die "ERROR: $FASTBIT_INDEXER_EXE_PATH is not executable"
+
+  FASTBIT_INDEXER_EXE_LOCAL="./$FASTBIT_INDEXER_EXE_BASENAME"
+  cp $FASTBIT_INDEXER_EXE_PATH  $FASTBIT_INDEXER_EXE_LOCAL
+fi
 
 
+
+#
+# NO FURTHER CONFIGURATION VARIABLES BELOW THIS POINT
+#
 
 function init_work_directory() {
   echo "STEP 1: INITIALIZING THE TEST WORKING DIRECTORY..."
@@ -92,8 +133,6 @@ function init_work_directory() {
     mkdir -p ./$QUERY_ENGINE
   done
 }
-
-
 
 function invoke_dataset_builder() {
   local DSID="$1"
@@ -127,6 +166,15 @@ function build_indexed_datasets_alacrity() {
   invoke_dataset_builder "$DSID" "$DSOUTPUT.cii-16" "alacrity:indexForm=ALCompressedInvertedIndex"
   invoke_dataset_builder "$DSID" "$DSOUTPUT.ii-12" "alacrity:indexForm=ALInvertedIndex,sigBits=12"
   invoke_dataset_builder "$DSID" "$DSOUTPUT.cii-12" "alacrity:indexForm=ALCompressedInvertedIndex,sigBits=12"
+}
+
+function build_indexed_datasets_fastbit() {
+  local DSID="$1"
+  local DSOUTPUT="$2"
+  [[ $# -eq 2 ]] || die "ERROR: Internal testing error, invalid parameters to build_indexed_datasets_fastbit: $@"
+  
+  invoke_dataset_builder "$DSID" "$DSOUTPUT" "none"
+  $FASTBIT_INDEXER_EXE_PATH "$DSOUTPUT"
 }
 
 function build_datasets() {
@@ -183,7 +231,7 @@ function query_datasets() {
           local EXPECTED_POINTS_FILE="$DSID.$QUERY_NAME.$FILEMODE-mode.expected-points.txt"
 
           echo
-          echo "====== COMPUTING EXPECTED OUTPUT OF QUERY $QUERY_NAME ON DATASET $INDEXED_DS IN $FILEMODE MODE ======"
+          echo "====== COMPUTING EXPECTED OUTPUT OF QUERY $QUERY_NAME ON DATASET $DSID IN $FILEMODE MODE ======"
           echo
           set -o xtrace
           $MPIRUN_SERIAL "$QUERY_SEQSCAN_EXE_LOCAL" "$NOINDEX_DS" "$QUERY_XML" "$FILEMODE" > "$EXPECTED_POINTS_FILE" ||
@@ -211,7 +259,7 @@ function query_datasets() {
 
               # Run the query through ADIOS Query to get actual results
               echo
-              echo "====== RUNNING QUERY $QUERY_NAME USING QUERY ENGINE $QUERY_ENGINE ON DATASET $INDEXED_DS IN $FILEMODE MODE ======"
+              echo "====== RUNNING QUERY $QUERY_NAME USING QUERY ENGINE $QUERY_ENGINE ON DATASET $DSID IN $FILEMODE MODE ======"
               echo
               set -o xtrace
               $MPIRUN_SERIAL "$QUERY_EXE_LOCAL" "$INDEXED_DS" "$QUERY_XML_LOCAL" "$QUERY_ENGINE" "$FILEMODE" > "$OUTPUT_POINTS_FILE" ||
@@ -239,6 +287,8 @@ function query_datasets() {
 }
 
 # FINALLY, CALL THE FUNCTIONS IN SEQUENCE
+echo "NOTE: Testing query methods: $ALL_QUERY_METHODS"
+echo "NOTE: Testing on datasets: $ALL_DATASETS"
 init_work_directory
 build_datasets
 query_datasets

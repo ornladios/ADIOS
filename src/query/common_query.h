@@ -14,6 +14,8 @@ void common_query_init();
 
 //void common_query_set_method(enum ADIOS_QUERY_METHOD method);
 
+int common_query_is_method_available(enum ADIOS_QUERY_METHOD method);
+
 ADIOS_QUERY* common_query_create(ADIOS_FILE* f, 				 
 				 const char* varName,
 				 ADIOS_SELECTION* queryBoundry,

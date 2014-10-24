@@ -22,7 +22,8 @@ typedef int  (* ADIOS_QUERY_CAN_EVALUATE_FN) (ADIOS_QUERY* q);
 
 struct adios_query_hooks_struct
 {
-  ADIOS_QUERY_EVALUATE_FN  adios_query_evaluate_fn;
+  const char *                  method_name;
+  ADIOS_QUERY_EVALUATE_FN       adios_query_evaluate_fn;
   ADIOS_QUERY_FINALIZE_FN       adios_query_finalize_fn;
   ADIOS_QUERY_FREE_FN           adios_query_free_fn;
   ADIOS_QUERY_ESTIMATE_FN       adios_query_estimate_fn;
