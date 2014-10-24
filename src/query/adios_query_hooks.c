@@ -6,6 +6,7 @@
 #include "public/adios_query.h"
 
 #define ASSIGN_FNS(a,b) \
+  (*t) [b].method_name = #b; /* stringify the enum constant's name */ \
   (*t) [b].adios_query_free_fn          = adios_query_##a##_free; \
   (*t) [b].adios_query_estimate_fn      = adios_query_##a##_estimate; \
   (*t) [b].adios_query_can_evaluate_fn  = adios_query_##a##_can_evaluate;  \

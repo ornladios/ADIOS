@@ -68,6 +68,12 @@ void common_query_finalize()
     }
 }
 
+int common_query_is_method_available(enum ADIOS_QUERY_METHOD method) {
+	if (method < 0 || method >= ADIOS_QUERY_METHOD_COUNT)
+		return 0;
+	else
+		return (query_hooks[method].adios_query_evaluate_fn != 0);
+}
 
 void common_query_set_method (ADIOS_QUERY* q, enum ADIOS_QUERY_METHOD method) 
 {

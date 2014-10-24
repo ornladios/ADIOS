@@ -1,6 +1,9 @@
 #include "public/adios_read.h"
 #include "common_query.h"
 
+int adios_query_is_method_available(enum ADIOS_QUERY_METHOD method) {
+	return common_query_is_method_available(method);
+}
 
 ADIOS_QUERY* adios_query_create(ADIOS_FILE* f, 
 				const char* varName,
