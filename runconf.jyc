@@ -1035,6 +1035,32 @@ elif [ `hostname | cut -c 1-12` == "service-ulam" ]; then
     --without-datatap \
     --with-icee=/home/sc14demo/common-apps/evpath/devel/gcc4.8.3
 
+elif [ `hostname | cut -c 1-7` == "maquis1" ]; then
+
+    #######################
+    # MAQUIS (GATech)
+    #######################
+    echo "Configure on MAQUIS"
+    export MPICC=mpicc
+    export MPICXX=mpicxx
+    export MPIFC=mpif90
+    export CC=gcc
+    export CXX=g++
+    export FC=gfortran
+    export CFLAGS="-g -fPIC"
+    export CXXFLAGS="-g -fPIC"
+    export FCFLAGS="-g -fPIC"
+
+    ${SRCDIR}/configure \
+    --prefix=/net/hp101/ihpcsc/jchoi446/sw/adios/1.7.0/gcc4.4.7 \
+    --with-mxml=/net/hp101/ihpcsc/jchoi446/sw/mxml/2.7/gcc4.4.7 \
+    --enable-dependency-tracking \
+    --without-hdf5 \
+    --without-netcdf \
+    --without-infiniband \
+    --without-datatap \
+    --with-icee=/net/hp101/ihpcsc/jchoi446/sw/evpath/devel/gcc4.4.7
+
 else
     echo "Could not determine what machine is this."
     echo "This script is for configuring adios on the authors' machines."
