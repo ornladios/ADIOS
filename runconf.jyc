@@ -1052,7 +1052,7 @@ elif [ `hostname | cut -c 1-7` == "maquis1" ]; then
     export FCFLAGS="-g -fPIC"
 
     ${SRCDIR}/configure \
-    --prefix=/net/hp101/ihpcsc/jchoi446/sw/adios/1.7.0/gcc4.4.7 \
+    --prefix=/net/hp101/ihpcsc/jchoi446/sw/adios/devel-icee/gcc4.4.7 \
     --with-mxml=/net/hp101/ihpcsc/jchoi446/sw/mxml/2.7/gcc4.4.7 \
     --enable-dependency-tracking \
     --without-hdf5 \
