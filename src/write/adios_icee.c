@@ -53,13 +53,9 @@
 
 static int adios_icee_initialized = 0;
 
-CManager cm;
-//EVstone stone;
-//EVstone remote_stone;
-EVsource source;
+CManager icee_write_cm;
+EVsource icee_write_source;
 
-EVstone split_stone;
-EVaction split_action;
 
 int n_client = 0;
 int max_client = 1;
@@ -88,12 +84,16 @@ int get_ndims(struct adios_var_struct *f)
 static int
 icee_clientinfo_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 {
+    log_debug ("%s\n", __FUNCTION__);
+
     icee_clientinfo_rec_ptr_t event = vevent;
-    log_debug("%s (%s)\n", __FUNCTION__, event->client_host);
-    log_debug("%s (%d)\n", __FUNCTION__, event->client_port);
+    log_debug ("%s (%s)\n", "client_host", event->client_host);
+    log_debug ("%s (%d)\n", "client_port", event->client_port);
+    log_debug ("%s (%d)\n", "stone_id", event->stone_id);
 
     client_info[n_client].client_host = strdup(event->client_host);
     client_info[n_client].client_port = event->client_port;
+    client_info[n_client].stone_id = event->stone_id;
     n_client++;
 
     return 1;
@@ -190,13 +190,13 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
         EVstone stone, remote_stone;
         attr_list contact_list;
 
-        cm = CManager_create();
-        CMlisten(cm);
+        icee_write_cm = CManager_create();
+        CMlisten(icee_write_cm);
 
         contact_list = create_attr_list();
         add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), cm_port);
 
-        if (CMlisten_specific(cm, contact_list) == 0) 
+        if (CMlisten_specific(icee_write_cm, contact_list) == 0) 
         {
             fprintf(stderr, "error: unable to initialize connection manager.\n");
             exit(-1);
@@ -204,63 +204,44 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
 
         log_debug("Contact list \"%s\"\n", attr_list_to_string(contact_list));
 
-        stone = EValloc_stone(cm);
-        EVassoc_terminal_action(cm, stone, icee_clientinfo_format_list, icee_clientinfo_handler, NULL);
+        stone = EValloc_stone(icee_write_cm);
+        log_debug("Stone ID: %d\n", stone);
+        EVassoc_terminal_action(icee_write_cm, stone, icee_clientinfo_format_list, icee_clientinfo_handler, NULL);
 
         client_info = calloc(max_client, sizeof(icee_clientinfo_rec_t));
 
         while (n_client < max_client) {
             /* do some work here */
             usleep(0.1*1E7);
-            CMpoll_network(cm);
+            CMpoll_network(icee_write_cm);
             log_debug("Num. of client: %d\n", n_client);
         }
 
-        split_stone = EValloc_stone(cm);
-        split_action = EVassoc_split_action(cm, split_stone, NULL);
+        EVstone split_stone;
+        EVaction split_action;
+        split_stone = EValloc_stone(icee_write_cm);
+        split_action = EVassoc_split_action(icee_write_cm, split_stone, NULL);
 
         int i;
         for (i=0; i<max_client; i++)
         {
-            //EVstone stone_w = EValloc_stone(cm);
-            remote_stone = 0;
-            stone = EValloc_stone(cm);
+            remote_stone = client_info[i].stone_id;
+            stone = EValloc_stone(icee_write_cm);
             contact_list = create_attr_list();
             add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), client_info[i].client_port);
             add_string_attr(contact_list, attr_atom_from_string("IP_HOST"), client_info[i].client_host);
 
-            EVaction evaction = EVassoc_bridge_action(cm, stone, contact_list, remote_stone);
+            EVaction evaction = EVassoc_bridge_action(icee_write_cm, stone, contact_list, remote_stone);
             if (evaction == -1)
             {
                 fprintf(stderr, "No connection. Exit.\n");
                 exit(1);
             }
 
-            //source = EVcreate_submit_handle(cm, stone, icee_fileinfo_format_list);
-            EVaction_add_split_target(cm, split_stone, split_action, stone);
+            EVaction_add_split_target(icee_write_cm, split_stone, split_action, stone);
 
         }
-        source = EVcreate_submit_handle(cm, split_stone, icee_fileinfo_format_list);
-
-        /*
-        cm = CManager_create();
-        CMlisten(cm);
-        
-        stone = EValloc_stone(cm);
-
-        contact_list = create_attr_list();
-        add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), cm_port);
-        add_string_attr(contact_list, attr_atom_from_string("IP_HOST"), cm_host);
-
-        EVaction evaction = EVassoc_bridge_action(cm, stone, contact_list, remote_stone);
-        if (evaction == -1)
-        {
-            fprintf(stderr, "No connection. Exit.\n");
-            exit(1);
-        }
-
-        source = EVcreate_submit_handle(cm, stone, icee_fileinfo_format_list);
-        */
+        icee_write_source = EVcreate_submit_handle(icee_write_cm, split_stone, icee_fileinfo_format_list);
 
         adios_icee_initialized = 1;
     }
@@ -388,7 +369,7 @@ adios_icee_close(struct adios_file_struct *fd, struct adios_method_struct *metho
     }
 
     // Write data to the network
-    EVsubmit(source, fp, NULL);
+    EVsubmit(icee_write_source, fp, NULL);
 
     // Free
     icee_varinfo_rec_ptr_t vp = fp->varinfo;
@@ -417,7 +398,7 @@ adios_icee_finalize(int mype, struct adios_method_struct *method)
 
     if (adios_icee_initialized)
     {
-        CManager_close(cm);
+        CManager_close(icee_write_cm);
         adios_icee_initialized = 0;
     }
 }

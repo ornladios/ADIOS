@@ -77,12 +77,14 @@ static FMStructDescRec icee_fileinfo_format_list[] =
 typedef struct icee_clientinfo_rec {
     char* client_host;
     int client_port;
+    int stone_id;
 } icee_clientinfo_rec_t, *icee_clientinfo_rec_ptr_t;
 
 static FMField icee_clientinfo_field_list[] =
 {
     {"client_host", "string", sizeof(char*), FMOffset(icee_clientinfo_rec_ptr_t, client_host)},
     {"client_port", "integer", sizeof(int), FMOffset(icee_clientinfo_rec_ptr_t, client_port)},
+    {"stone_id", "integer", sizeof(int), FMOffset(icee_clientinfo_rec_ptr_t, stone_id)},
     {NULL, NULL, 0, 0}
 };
 

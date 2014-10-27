@@ -421,13 +421,7 @@ icee_fileinfo_handler(CManager cm, void *vevent, void *client_data, attr_list at
 
 static int adios_read_icee_initialized = 0;
 
-CManager cm;
-//EVstone stone;
-//EVstone remote_stone;
-//EVstone stone_r;
-EVstone split_stone;
-EVaction split_action;
-EVsource source;
+CManager icee_read_cm;
 
 /********** Core ADIOS Read functions. **********/
 
@@ -558,9 +552,10 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
     if (!adios_read_icee_initialized)
     {
         EVstone stone, remote_stone;
+        EVsource source;
         attr_list contact_list;
 
-        cm = CManager_create();
+        icee_read_cm = CManager_create();
 
         // Listen first
         {
@@ -568,7 +563,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
             attr_list contact_list_r;
             contact_list_r = create_attr_list();
             add_int_attr(contact_list_r, attr_atom_from_string("IP_PORT"), cm_port);
-            if (CMlisten_specific(cm, contact_list_r) == 0) 
+            if (CMlisten_specific(icee_read_cm, contact_list_r) == 0) 
             {
                 fprintf(stderr, "error: unable to initialize connection manager.\n");
                 exit(-1);
@@ -576,88 +571,42 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
 
             log_debug("Contact list \"%s\"\n", attr_list_to_string(contact_list_r));
 
-            stone = EValloc_stone(cm);
-            EVassoc_terminal_action(cm, stone, icee_fileinfo_format_list, icee_fileinfo_handler, NULL);
+            stone = EValloc_stone(icee_read_cm);
+            log_debug("Stone ID: %d\n", stone);
+            EVassoc_terminal_action(icee_read_cm, stone, icee_fileinfo_format_list, icee_fileinfo_handler, NULL);
 
-            if (!CMfork_comm_thread(cm)) 
+            if (!CMfork_comm_thread(icee_read_cm)) 
             {
                 printf("Fork of communication thread failed, exiting\n");
                 exit(-1);
             }
         }
 
-        split_stone = EValloc_stone(cm);
-        split_action = EVassoc_split_action(cm, split_stone, NULL);
+        EVstone split_stone;
+        EVaction split_action;
+        split_stone = EValloc_stone(icee_read_cm);
+        split_action = EVassoc_split_action(icee_read_cm, split_stone, NULL);
         for (i = 0; i < num_remote_server; i++) 
         {
             //attr_list contact_list;
             EVstone remote_stone, output_stone;
             remote_stone = 0;
-            output_stone = EValloc_stone(cm);
+            output_stone = EValloc_stone(icee_read_cm);
 
             contact_list = create_attr_list();
             add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), remote_server[i].client_port);
             add_string_attr(contact_list, attr_atom_from_string("IP_HOST"), remote_server[i].client_host);
-            EVassoc_bridge_action(cm, output_stone, contact_list, remote_stone);
-            EVaction_add_split_target(cm, split_stone, split_action, output_stone);
+            EVassoc_bridge_action(icee_read_cm, output_stone, contact_list, remote_stone);
+            EVaction_add_split_target(icee_read_cm, split_stone, split_action, output_stone);
         }
-        source = EVcreate_submit_handle(cm, split_stone, icee_clientinfo_format_list);
+        source = EVcreate_submit_handle(icee_read_cm, split_stone, icee_clientinfo_format_list);
         icee_clientinfo_rec_t info;
         info.client_host = cm_host;
         info.client_port = cm_port;
+        info.stone_id = stone;
         
         EVsubmit(source, &info, NULL);
 
-        /*
-        // Send client info
-        stone = EValloc_stone(cm);
-
-        contact_list = create_attr_list();
-        add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), remote_port);
-        add_string_attr(contact_list, attr_atom_from_string("IP_HOST"), remote_host);
-
-        EVaction evaction = EVassoc_bridge_action(cm, stone, contact_list, remote_stone);
-        if (evaction == -1)
-        {
-            fprintf(stderr, "No connection. Exit.\n");
-            exit(1);
-        }
-
-        EVsource source = EVcreate_submit_handle(cm, stone, icee_clientinfo_format_list);
-        
-        icee_clientinfo_rec_t info;
-        info.client_host = cm_host;
-        info.client_port = cm_port;
-        
-        EVsubmit(source, &info, NULL);
-        //CManager_close(cm);
-        */
-
-        /*
-        cm = CManager_create();
-        contact_list = create_attr_list();
-        add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), cm_port);
-
-        if (CMlisten_specific(cm, contact_list) == 0) 
-        {
-            fprintf(stderr, "error: unable to initialize connection manager.\n");
-            exit(-1);
-        }
-
-        log_debug("Contact list \"%s\"\n", attr_list_to_string(contact_list));
-
-        stone = EValloc_stone(cm);
-        EVassoc_terminal_action(cm, stone, icee_fileinfo_format_list, icee_fileinfo_handler, NULL);
-
-        //CMrun_network(cm);
-        //CMlisten(cm);
-        if (!CMfork_comm_thread(cm)) 
-        {
-            printf("Fork of communication thread failed, exiting\n");
-            exit(-1);
-        }
-        */
-        
         adios_read_icee_initialized = 1;
     }
 
@@ -742,7 +691,7 @@ adios_read_icee_finalize_method ()
 
     if (adios_read_icee_initialized)
     {
-        CManager_close(cm);
+        CManager_close(icee_read_cm);
         adios_read_icee_initialized = 0;
     }
 
