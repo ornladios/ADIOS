@@ -14,7 +14,10 @@ link_directories(${PROJECT_BINARY_DIR})
 
 #set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} ${PROJECT_SOURCE_DIR})
 
-set(CMAKE_INSTALL_PREFIX $ENV{INSTALL_PREFIX} CACHE PATH "Prefix prepended to install directories" FORCE)
+if(NOT CMAKE_INSTALL_PREFIX)
+  # if CMAKE_INSTALL_PREFIX isn't set, try to get it from the INSTALL_PREFIX environment variable
+  set(CMAKE_INSTALL_PREFIX $ENV{INSTALL_PREFIX} CACHE PATH "Prefix prepended to install directories" FORCE)
+endif()
 set(prefix ${CMAKE_INSTALL_PREFIX})
 set(exec_prefix ${prefix})
 set(bindir ${exec_prefix}/bin)
