@@ -1086,7 +1086,7 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
   if (retrivalSize == 0) {
      result = 0;
      log_debug(":: ==> no more results to fetch\n");
-     return 0;
+     return -1;
   }
 
   if (retrivalSize > batchSize) {
