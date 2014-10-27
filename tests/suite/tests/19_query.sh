@@ -250,7 +250,7 @@ function query_datasets() {
         for QUERY_ENGINE in $ALL_QUERY_ENGINES; do
           local QE_WORKDIR="./$QUERY_ENGINE"
 
-          for INDEXED_DS in "$QE_WORKDIR/$DSID.$QUERY_ENGINE".*.bp; do
+          for INDEXED_DS in "$QE_WORKDIR/$DSID.$QUERY_ENGINE".*bp; do
             INDEXING_NAME=${INDEXED_DS##*/$DSID.$QUERY_ENGINE.}
             INDEXING_NAME=${INDEXING_NAME%.bp}
 
