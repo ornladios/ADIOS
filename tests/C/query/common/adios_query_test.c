@@ -64,8 +64,11 @@ int performQuery(ADIOS_QUERY_TEST_INFO *queryInfo, ADIOS_FILE *f, int use_stream
         fprintf(stderr, "querying on timestep %d \n", timestep);
 
         ADIOS_SELECTION* currBatch = NULL;
-        while ( adios_query_evaluate(queryInfo->query, use_streaming ? 0 : timestep, queryInfo->batchSize, queryInfo->outputSelection, &currBatch)) {
-
+ 
+	while (adios_query_evaluate(queryInfo->query, use_streaming ? 0 : timestep, queryInfo->batchSize, queryInfo->outputSelection, &currBatch) >= 0) { 
+	    if (currBatch == NULL) {
+	        break;
+	    } 
             assert(currBatch->type ==ADIOS_SELECTION_POINTS);
             const ADIOS_SELECTION_POINTS_STRUCT * retrievedPts = &(currBatch->u.points);
             /* fprintf(stderr,"retrieved points %" PRIu64 " \n", retrievedPts->npoints); */
@@ -97,7 +100,6 @@ int performQuery(ADIOS_QUERY_TEST_INFO *queryInfo, ADIOS_FILE *f, int use_stream
             free(data);
             adios_selection_delete(currBatch);
             currBatch = NULL;
-
         }
 
         if (use_streaming) {
@@ -144,8 +146,8 @@ int main(int argc, char ** argv) {
     else if (strcasecmp(argv[3], "FASTBIT") == 0) {
         // init with FastBit
     	query_method = ADIOS_QUERY_METHOD_FASTBIT;
-    	fprintf(stderr,"FastBit not supported in this test yet, exiting...\n");
-    	MPI_Abort(comm, 1);
+    	//fprintf(stderr,"FastBit not supported in this test yet, exiting...\n");
+    	//MPI_Abort(comm, 1);
     }
     else {
     	fprintf(stderr,"Unsupported query engine %s, exiting...\n", argv[3]);
