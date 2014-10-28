@@ -164,6 +164,7 @@ void icee_fileinfo_print(const void* item)
     {
         fprintf(stderr, "%10s : %s\n", "fname", fp->fname);
         fprintf(stderr, "%10s : %d\n", "nvars", fp->nvars);
+        fprintf(stderr, "%10s : %d\n", "nchunks", fp->nchunks);
         fprintf(stderr, "%10s : %d\n", "comm_size", fp->comm_size);
         fprintf(stderr, "%10s : %d\n", "comm_rank", fp->comm_rank);
         fprintf(stderr, "%10s : %d\n", "merge_count", fp->merge_count);
@@ -413,8 +414,8 @@ icee_fileinfo_handler(CManager cm, void *vevent, void *client_data, attr_list at
             icee_fileinfo_append((icee_fileinfo_rec_ptr_t)head->item, lfp);
     }
 
-    // Debugging ...
-    //icee_llist_map(icee_filelist, icee_fileinfo_print);
+    if (adios_verbose_level > 5)
+        icee_llist_map(icee_filelist, icee_fileinfo_print);
 
     return 1;
 }
@@ -653,6 +654,13 @@ adios_read_icee_open(const char * fname,
     
     icee_fileinfo_rec_ptr_t fp = (icee_fileinfo_rec_ptr_t)head->item;
     
+    while (fp->merge_count != fp->nchunks)
+    {
+        log_debug("Waiting the rest of blocks (%d/%d)\n", fp->merge_count, fp->nchunks);
+        
+        usleep(0.1*1E6);
+    }
+
     ADIOS_FILE *adiosfile = malloc(sizeof(ADIOS_FILE));
 
     adiosfile->fh = (uint64_t)fp;
@@ -847,15 +855,12 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
         return adios_errno;
     }
 
-    //DUMP("fp->merge_count: %d", fp->merge_count);
-
-    while (fp->merge_count != fp->comm_size)
+    while (fp->merge_count != fp->nchunks)
     {
-        log_debug("Waiting the rest of blocks\n");
+        log_debug("Waiting the rest of blocks (%d/%d)\n", fp->merge_count, fp->nchunks);
         
         usleep(0.1*1E6);
     }
-    
 
     if (sel==0)
         memcpy(data, vp->data, vp->varlen);
@@ -884,7 +889,7 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
 
             if (true /*fp->comm_size > 1*/)
             {
-                log_debug("Merging operation (comm. size: %d).\n", fp->comm_size);
+                log_debug("Merging operation (total nvars: %d).\n", fp->nchunks);
                 
                 while (vp != NULL)
                 {
@@ -893,14 +898,20 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
                     for (i=0; i<vp->ndims; i++)
                     {
                         if (sel->u.bb.start[i] != 0)
+                        {
                             adios_error(err_expected_read_size_mismatch,
                                         "Requested range is out of the global size. "
                                         "Not yet supported by ICEE\n");
+                            goto next;
+                        }
                         
                         if (sel->u.bb.start[i] + sel->u.bb.count[i] != vp->gdims[i])
+                        {
                             adios_error(err_expected_read_size_mismatch,
                                         "Requested range is out of the global size. "
                                         "Not yet supported by ICEE\n");
+                            goto next;
+                        }
                     }
 
                     /*
@@ -1004,7 +1015,7 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
                             break;
                         }
                     }
-
+                next:
                     vp = icee_varinfo_search_byname(vp->next, adiosfile->var_namelist[varid]);
                 }
             }
