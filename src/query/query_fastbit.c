@@ -9,22 +9,6 @@
 #include <iapi.h>
 #include <math.h>
 
-#ifdef __MACH__
-#include <mach/mach_time.h>
-#define CLOCK_REALTIME 0
-#define CLOCK_MONOTONIC 0
-int clock_gettime(int clk_id, struct timespec *t){
-  mach_timebase_info_data_t timebase;
-  mach_timebase_info(&timebase);
-  uint64_t time;
-  time = mach_absolute_time();
-  double nseconds = ((double)time * (double)timebase.numer)/((double)timebase.denom);
-  double seconds = ((double)time * (double)timebase.numer)/((double)timebase.denom * 1e9);
-  t->tv_sec = seconds;
-  t->tv_nsec = nseconds;
-  return 0;
-}
-#endif
 
 typedef struct {
   double* _keys; 
@@ -122,18 +106,6 @@ void assertValue(char* input, char* endptr) {
         printf("FastbitQueryEvaluation Exit due to :invalid type value: %s\n", input);
 	exit(EXIT_FAILURE);
     }
-}
-
-long getMilliseconds() {
-  time_t          s;  // Seconds
-  struct timespec spec;
-
-  clock_gettime(CLOCK_REALTIME, &spec);
-
-  s  = spec.tv_sec;
-  long ms = round(spec.tv_nsec / 1.0e6); // Convert nanoseconds to milliseconds
-
-  return ms;
 }
 
 void assert(void* ptr, const char* notes) 
@@ -459,7 +431,7 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
     }
 
     char bitsArrayName[50+strlen(q->condition)];
-    sprintf(bitsArrayName, "%ld-%d-%s-%d", getMilliseconds(), v->varid, q->condition, timeStep);
+    sprintf(bitsArrayName, "%ld-%d-%s-%d", fastbit_adios_getCurrentTimeMillis(), v->varid, q->condition, timeStep);
     //return fastbit_selection_create(dataType, dataOfInterest, dataSize, compareOp, &vv);
 
     free(q->dataSlice);
@@ -530,7 +502,7 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
     */
 
     char blockDataName[40+strlen(q->condition)];
-    sprintf(blockDataName, "%d-%s-%d-%d-%ld", v->varid, q->condition, timeStep, blockIdx, getMilliseconds());
+    sprintf(blockDataName, "%d-%s-%d-%d-%ld", v->varid, q->condition, timeStep, blockIdx, fastbit_adios_getCurrentTimeMillis());
 
     FASTBIT_INTERNAL* itn = (FASTBIT_INTERNAL*)(q->queryInternal);
     if (fastbit_adios_util_readFromIndexFile(idxFile, v, timeStep, blockIdx, &(itn->_keys), &nk, &(itn->_offsets), &no, &(itn->_bms), &nb) < 0) 
@@ -644,7 +616,7 @@ int readWithTimeStepNoIdx(ADIOS_QUERY* q, int timeStep) {
   //common_free_varinfo(q->_var);
 
   char datasetName[strlen(q->condition) + 40];
-  sprintf(datasetName, "%s-%d-%ld", q->condition, timeStep, getMilliseconds());  
+  sprintf(datasetName, "%s-%d-%ld", q->condition, timeStep, fastbit_adios_getCurrentTimeMillis());  
   setQueryInternal(q, compareOp, dataType, dataSize, datasetName);
 
   return 0;
