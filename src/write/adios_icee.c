@@ -159,8 +159,8 @@ worker_cleanup(thr_pool_t *pool)
 		if (pool->pool_nthreads == 0)
 			(void) pthread_cond_broadcast(&pool->pool_busycv);
 	} else if (pool->pool_head != NULL &&
-	    pool->pool_nthreads < pool->pool_maximum &&
-	    create_worker(pool) == 0) {
+               pool->pool_nthreads < pool->pool_maximum &&
+               create_worker(pool) == 0) {
 		pool->pool_nthreads++;
 	}
 	(void) pthread_mutex_unlock(&pool->pool_mutex);
@@ -187,8 +187,8 @@ job_cleanup(thr_pool_t *pool)
 
 	(void) pthread_mutex_lock(&pool->pool_mutex);
 	for (activepp = &pool->pool_active;
-	    (activep = *activepp) != NULL;
-	    activepp = &activep->active_next) {
+         (activep = *activepp) != NULL;
+         activepp = &activep->active_next) {
 		if (activep->active_tid == my_tid) {
 			*activepp = activep->active_next;
 			break;
@@ -230,10 +230,10 @@ worker_thread(void *arg)
 		if (pool->pool_flags & POOL_WAIT)
 			notify_waiters(pool);
 		while (pool->pool_head == NULL &&
-		    !(pool->pool_flags & POOL_DESTROY)) {
+               !(pool->pool_flags & POOL_DESTROY)) {
 			if (pool->pool_nthreads <= pool->pool_minimum) {
 				(void) pthread_cond_wait(&pool->pool_workcv,
-				    &pool->pool_mutex);
+                                         &pool->pool_mutex);
 			} else {
 #ifdef __MACH__ // OS X does not have clock_gettime, use clock_get_time
                 clock_serv_t cclock;
@@ -249,7 +249,7 @@ worker_thread(void *arg)
 				ts.tv_sec += pool->pool_linger;
 				if (pool->pool_linger == 0 ||
 				    pthread_cond_timedwait(&pool->pool_workcv,
-				    &pool->pool_mutex, &ts) == ETIMEDOUT) {
+                                           &pool->pool_mutex, &ts) == ETIMEDOUT) {
 					timedout = 1;
 					break;
 				}
@@ -331,7 +331,7 @@ clone_attributes(pthread_attr_t *new_attr, pthread_attr_t *old_attr)
 
 thr_pool_t *
 thr_pool_create(uint_t min_threads, uint_t max_threads, uint_t linger,
-	pthread_attr_t *attr)
+                pthread_attr_t *attr)
 {
 	thr_pool_t	*pool;
 
@@ -410,7 +410,7 @@ thr_pool_queue(thr_pool_t *pool, void *(*func)(void *), void *arg)
 	if (pool->pool_idle > 0)
 		(void) pthread_cond_signal(&pool->pool_workcv);
 	else if (pool->pool_nthreads < pool->pool_maximum &&
-	    create_worker(pool) == 0)
+             create_worker(pool) == 0)
 		pool->pool_nthreads++;
 
 	(void) pthread_mutex_unlock(&pool->pool_mutex);
@@ -444,8 +444,8 @@ thr_pool_destroy(thr_pool_t *pool)
 
 	/* cancel all active workers */
 	for (activep = pool->pool_active;
-	    activep != NULL;
-	    activep = activep->active_next)
+         activep != NULL;
+         activep = activep->active_next)
 		(void) pthread_cancel(activep->active_tid);
 
 	/* wait for all active workers to finish */

@@ -63,6 +63,11 @@
         __typeof__ (b) _b = (b); \
         _a < _b ? _a : _b; })
 
+#define MYMAX(a,b)               \
+    ({ __typeof__ (a) _a = (a);  \
+        __typeof__ (b) _b = (b); \
+        _a > _b ? _a : _b; })
+
 ///////////////////////////
 // Global Variables
 ///////////////////////////
@@ -378,6 +383,40 @@ void icee_varinfo_print(const icee_varinfo_rec_ptr_t vp)
     }
 }
 
+void icee_sel_bb_print(const ADIOS_SELECTION *sel)
+{
+    fprintf(stderr, "===== selection (%p) =====\n", sel);
+
+    if (sel)
+    {
+        switch(sel->type)
+        {
+        case ADIOS_SELECTION_WRITEBLOCK:
+            fprintf(stderr, "%10s : %s\n", "type", "writeblock");
+            break;
+        case ADIOS_SELECTION_BOUNDINGBOX:
+            fprintf(stderr, "%10s : %s\n", "type", "boundingbox");
+            fprintf(stderr, "%10s : %d\n", "ndims", sel->u.bb.ndim);
+            icee_dims_print("start", sel->u.bb.ndim, sel->u.bb.start);
+            icee_dims_print("count", sel->u.bb.ndim, sel->u.bb.count);
+            break;
+        case ADIOS_SELECTION_AUTO:
+            fprintf(stderr, "%10s : %s\n", "type", "auto");
+            break;
+        case ADIOS_SELECTION_POINTS:
+            fprintf(stderr, "%10s : %s\n", "type", "points");
+            break;
+        default:
+            fprintf(stderr, "%10s : %s\n", "type", "undefined");
+            break;
+        }
+    }
+    else
+    {
+        fprintf(stderr, "selection is invalid\n");
+    }
+}
+
 static int
 icee_fileinfo_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 {
@@ -423,6 +462,144 @@ icee_fileinfo_handler(CManager cm, void *vevent, void *client_data, attr_list at
 static int adios_read_icee_initialized = 0;
 
 CManager icee_read_cm;
+
+/* Row-ordered matrix representatin */
+typedef struct {
+    int      typesize;
+    int      ndims;
+    uint64_t dims[10];
+    uint64_t accumdims[10];
+    void*    data;
+} icee_matrix_t;
+
+/* View (subset) representation */
+typedef struct {
+    uint64_t vdims[10];
+    uint64_t offsets[10];
+    int      leastcontiguousdim;
+    icee_matrix_t* mat;
+} icee_matrix_view_t;
+
+void 
+init_mat (icee_matrix_t *m, 
+          int typesize,
+          int ndims,
+          const uint64_t *dims,
+          void *data)
+{
+    assert(ndims <= 10);
+    m->typesize = typesize;
+    m->ndims = ndims;
+    memcpy(m->dims, dims, ndims * sizeof(uint64_t));
+
+    int i;
+    uint64_t p = 1;
+    for (i=ndims-1; i>=0; i--)
+    {
+        m->accumdims[i] = p;
+        p *= dims[i];
+    }
+
+    m->data = data;
+}
+
+void 
+init_view (icee_matrix_view_t *v,
+           icee_matrix_t *m,
+           const uint64_t *vdims,
+           const uint64_t *offsets)
+{
+    v->mat = m;
+    memcpy(v->vdims, vdims, m->ndims * sizeof(uint64_t));
+    memcpy(v->offsets, offsets, m->ndims * sizeof(uint64_t));
+
+    int i;
+    for (i=m->ndims-1; i>=0; i--)
+    {
+        v->leastcontiguousdim = i;
+        if (vdims[i] + offsets[i] == m->dims[i])
+            break;
+    }
+}
+
+/* Copy data between two views. Dimension and size should match */
+void
+copy_view (icee_matrix_view_t *dest, icee_matrix_view_t *src)
+{
+    assert(dest->mat->ndims == src->mat->ndims);
+    
+    int i;
+    for (i=0; i<dest->mat->ndims; i++)
+        assert(dest->vdims[i] == src->vdims[i]);
+
+    // Contiguous merging
+    if ((dest->leastcontiguousdim == 1) && (src->leastcontiguousdim==1))
+    {
+        int s, d;
+        d = dest->offsets[0];
+        s = src->offsets[0];
+        memcpy(dest->mat->data + d * dest->mat->typesize, 
+               src->mat->data + s * dest->mat->typesize, 
+               dest->vdims[0] * dest->mat->accumdims[0] * dest->mat->typesize);
+
+        return;
+    }
+    
+    // Non-contiguous merging
+    switch (dest->mat->ndims)
+    {
+    case 1:
+    {
+        int s, d;
+        d = dest->offsets[0];
+        s = src->offsets[0];
+        memcpy(dest->mat->data + d * dest->mat->typesize, 
+               src->mat->data + s * dest->mat->typesize, 
+               dest->vdims[0] * dest->mat->typesize);
+        break;
+    }
+    case 2:
+    {
+        int i, s, d;
+        for (i=0; i<dest->vdims[0]; i++)
+        {
+            d = (i + dest->offsets[0]) * dest->mat->accumdims[0] 
+                + dest->offsets[1];
+            s = (i + src->offsets[0]) * src->mat->accumdims[0] 
+                + src->offsets[1];
+            memcpy(dest->mat->data + d * dest->mat->typesize, 
+                   src->mat->data + s * dest->mat->typesize, 
+                   dest->vdims[1] * dest->mat->typesize);
+        }
+        break;
+    }
+    case 3:
+    {
+        int i, j, s, d;
+        for (i=0; i<dest->vdims[0]; i++)
+        {
+            for (j=0; j<dest->vdims[1]; j++)
+            {
+                d = (i + dest->offsets[0]) * dest->mat->accumdims[0] 
+                    + (j + dest->offsets[1]) * dest->mat->accumdims[1]
+                    + dest->offsets[2];
+                s = (i + src->offsets[0]) * src->mat->accumdims[0] 
+                    + (j + src->offsets[1]) * src->mat->accumdims[1] 
+                    + src->offsets[2];
+                memcpy(dest->mat->data + d * dest->mat->typesize, 
+                       src->mat->data + s * dest->mat->typesize, 
+                       dest->vdims[2] * dest->mat->typesize);
+            }
+        }
+        break;
+    }
+    default:
+        adios_error(err_expected_read_size_mismatch,
+                    "The variable dimension is out of the range. ",
+                    "Not yet supported by ICEE\n");
+        break;
+    }
+}
 
 /********** Core ADIOS Read functions. **********/
 
@@ -836,7 +1013,8 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
     log_debug("%s (%d:%s)\n", __FUNCTION__, varid, fp->fname);
     assert(varid < fp->nvars);
 
-    if(nsteps != 1){
+    if (nsteps != 1)
+    {
         adios_error (err_invalid_timestep,
                      "Only one step can be read from a stream at a time. "
                      "You requested % steps in adios_schedule_read()\n", 
@@ -848,7 +1026,8 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
     vp = icee_varinfo_search_byname(fp->varinfo, adiosfile->var_namelist[varid]);
     if (adios_verbose_level > 3) icee_varinfo_print(vp);
 
-    if(!vp){
+    if (!vp)
+    {
         adios_error(err_invalid_varid,
                     "Invalid variable id: %d\n",
                     varid);
@@ -887,158 +1066,56 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
                 adios_error(err_invalid_dimension,
                             "Dimension mismatch\n");
 
-            if (true /*fp->comm_size > 1*/)
+            log_debug("Merging operation (total nvars: %d).\n", fp->nchunks);
+            if (adios_verbose_level > 3) icee_sel_bb_print(sel);
+
+            while (vp != NULL)
             {
-                log_debug("Merging operation (total nvars: %d).\n", fp->nchunks);
-                
-                while (vp != NULL)
-                {
-                    if (adios_verbose_level > 3) icee_varinfo_print(vp);
+                icee_matrix_t m_sel = {};
+                icee_matrix_t m_var = {};
+                icee_matrix_view_t v_sel = {};
+                icee_matrix_view_t v_var = {};
+                uint64_t start[10] = {}, count[10] = {};
+                uint64_t s_offsets[10] = {}, v_offsets[10] = {};
+                int i;
+
+                if (adios_verbose_level > 3) icee_varinfo_print(vp);
                     
-                    for (i=0; i<vp->ndims; i++)
-                    {
-                        if (sel->u.bb.start[i] != 0)
-                        {
-                            adios_error(err_expected_read_size_mismatch,
-                                        "Requested range is out of the global size. "
-                                        "Not yet supported by ICEE\n");
-                            goto next;
-                        }
-                        
-                        if (sel->u.bb.start[i] + sel->u.bb.count[i] != vp->gdims[i])
-                        {
-                            adios_error(err_expected_read_size_mismatch,
-                                        "Requested range is out of the global size. "
-                                        "Not yet supported by ICEE\n");
-                            goto next;
-                        }
-                    }
+                init_mat(&m_sel, vp->typesize, vp->ndims, sel->u.bb.count, data);
+                init_mat(&m_var, vp->typesize, vp->ndims, vp->ldims, vp->data);
 
-                    /*
-                    // Check continuous
-                    uint64_t offset = vp->typesize;
-                    for (i=vp->ndims; i>1; i--)
-                    {
-                        if (sel->u.bb.count[i-1] != vp->ldims[i-1])
-                            adios_error(err_expected_read_size_mismatch,
-                                        "Received data is not contiguous in memory (dim=%d). "
-                                        "Not yet supported by ICEE\n", i);
-                        else
-                            offset *= vp->ldims[i-1];
-                    }
-                    offset *= vp->offsets[0];
+                for (i=0; i<vp->ndims; i++)
+                    start[i] = MYMAX(sel->u.bb.start[i], vp->offsets[i]);
 
-                    memcpy(data + offset, vp->data, vp->varlen);
-                    */
-
-                    // debugging: force to false
-                    //int is_contiguous = 0;
-                    int is_contiguous = 1;
-
-                    for (i=vp->ndims; i>1; i--)
-                    {
-                        if (sel->u.bb.count[i-1] != vp->ldims[i-1])
-                        {
-                            is_contiguous = 0;
-                            break;
-                        }
-                    }
-
-                    if (is_contiguous)
-                    {
-                        log_debug("Performing contignuous memory merging\n");
-                        uint64_t offset = vp->typesize;
-                        for (i=vp->ndims; i>1; i--)
-                        {
-                            offset *= vp->ldims[i-1];
-                        }
-                        offset *= vp->offsets[0];
-
-                        memcpy(data + offset, vp->data, vp->varlen);
-                    }
-                    else
-                    {
-                        log_debug("Performing non-contignuous memory merging\n");
-
-                        switch (vp->ndims)
-                        {
-                        case 2:
-                        {
-                            /*
-                            int i, j, ol2a, ol2b, ol1a, ol1b;
-                            for (j=0; j<vp->ldims[0]; j++)
-                            {
-                                ol2a = (j + vp->offsets[0]) * vp->gdims[1];
-                                ol2b = j * vp->ldims[0];
-                                for (i=0; i<vp->ldims[1]; i++)
-                                {
-                                    ol1a = (ol2a + i + vp->offsets[1]) * vp->typesize;
-                                    ol1b = (ol2b + i) * vp->typesize;
-                                    memcpy(data + ol1a, vp->data + ol1b, vp->typesize);
-                                }
-                            }
-                            */
-                            int i, o1, o2;
-                            for (i=0; i<vp->ldims[0]; i++)
-                            {
-                                o1 = (i + vp->offsets[0]) * vp->gdims[1] + vp->offsets[1];
-                                o2 = (i * vp->ldims[0]);
-                                memcpy(data + o1 * vp->typesize, 
-                                       vp->data + o2 * vp->typesize, 
-                                       vp->ldims[1] * vp->typesize);
-                            }
-                            break;
-                        }
-                        case 3:
-                        {
-                            int i, j, o1, o2;
-                            for (i=0; i<vp->ldims[0]; i++)
-                            {
-                                for (j=0; j<vp->ldims[1]; j++)
-                                {
-                                    o1 = (i + vp->offsets[0]) * vp->gdims[1] * vp->gdims[2] 
-                                        + (j + vp->offsets[1]) * vp->gdims[2] 
-                                        + vp->offsets[2];
-                                    o2 = i * vp->ldims[1] * vp->ldims[2] 
-                                        + j * vp->ldims[2];
-                                    memcpy(data + o1 * vp->typesize, 
-                                           vp->data + o2 * vp->typesize, 
-                                           vp->ldims[2] * vp->typesize);
-                                }
-                            }
-                            break;
-                        }
-                        default:
-                            adios_error(err_expected_read_size_mismatch,
-                                        "The variable dimension is out of the range. ",
-                                        "Not yet supported by ICEE\n");
-                            break;
-                        }
-                    }
-                next:
-                    vp = icee_varinfo_search_byname(vp->next, adiosfile->var_namelist[varid]);
-                }
-            }
-            else
-            {
-                for (i = 0; i < vp->ndims; i++)
+                for (i=0; i<vp->ndims; i++)
                 {
-                    //DUMP("g,l,o = %llu,%llu,%llu", vp->gdims[i], vp->ldims[i], vp->offsets[i]);
-                    //DUMP("start,count = %llu,%llu", sel->u.bb.start[i], sel->u.bb.count[i]);
-                    if (sel->u.bb.start[i] != vp->offsets[i])
-                        adios_error(err_expected_read_size_mismatch,
-                                    "Requested data is out of the local size. "
-                                    "Not yet supported by ICEE\n");
-
-                    if (sel->u.bb.start[i] + sel->u.bb.count[i] != vp->offsets[i] + vp->ldims[i])
-                        adios_error(err_expected_read_size_mismatch,
-                                    "Requested data is out of the local size. "
-                                    "Not yet supported by ICEE\n");
+                    count[i] = 
+                        MYMIN(sel->u.bb.start[i]+sel->u.bb.count[i],
+                              vp->offsets[i]+vp->ldims[i]) - start[i];
+                }
+                    
+                for (i=0; i<vp->ndims; i++)
+                {
+                    if (count[i] <= 0)
+                    {
+                        log_debug("No ROI. Skip\n");
+                        goto next;
+                    }
                 }
 
-                memcpy(data, vp->data, vp->varlen);
-            }
+                for (i=0; i<vp->ndims; i++)
+                    s_offsets[i] = start[i] - sel->u.bb.start[i];
 
+                for (i=0; i<vp->ndims; i++)
+                    v_offsets[i] = start[i] - vp->offsets[i];
+
+                init_view (&v_sel, &m_sel, count, s_offsets);
+                init_view (&v_var, &m_var, count, v_offsets);
+                copy_view (&v_sel, &v_var);
+                    
+            next:
+                vp = icee_varinfo_search_byname(vp->next, adiosfile->var_namelist[varid]);
+            }
             break;
         }
         case ADIOS_SELECTION_AUTO:
