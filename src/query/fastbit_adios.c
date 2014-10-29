@@ -7,6 +7,22 @@
 
 #include "fastbit_adios.h"
 
+long fastbit_adios_getCurrentTimeMillis() 
+{
+  time_t          s;  // Seconds
+  struct timespec spec;
+
+#ifdef CLOCK_MONOTONIC
+  clock_gettime(CLOCK_MONOTONIC, &spec);
+#else
+  clock_gettime(CLOCK_REALTIME, &spec);
+#endif
+  s  = spec.tv_sec;
+  long ms = round(spec.tv_nsec/1.0e6) + s*1000; // Convert nanoseconds to milliseconds
+  return ms;
+}
+
+
 void fastbit_adios_util_checkNotNull(void* fastbitHandle, const char* arrayName) {
   if (fastbitHandle == NULL) {
      log_error(" >> Unable to create handle on fastbit, ref: %s\n", arrayName);

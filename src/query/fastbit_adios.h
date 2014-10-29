@@ -14,6 +14,27 @@ extern "C" {
 
 #include "public/adios_query.h"
 
+#ifdef __MACH__
+#include <mach/mach_time.h>
+#define CLOCK_REALTIME 0
+#define CLOCK_MONOTONIC 0
+int clock_gettime(int clk_id, struct timespec *t){
+  mach_timebase_info_data_t timebase;
+  mach_timebase_info(&timebase);
+  uint64_t time;
+  time = mach_absolute_time();
+  double nseconds = ((double)time * (double)timebase.numer)/((double)timebase.denom);
+  double seconds = ((double)time * (double)timebase.numer)/((double)timebase.denom * 1e9);
+  t->tv_sec = seconds;
+  t->tv_nsec = nseconds;
+  return 0;
+}
+#else
+#include <time.h>
+#endif
+
+#include <math.h>
+
 /** A simple reader to be used by FastBit for index reconstruction.  In
     this simple case, the first argument is the whole array storing all the
     serialized bitmaps.  This first argument can be used to point to a data
@@ -31,6 +52,8 @@ static int mybmreader(void *ctx, uint64_t start,uint64_t count, uint32_t *buf)
   }
   return 0;
 }
+
+long fastbit_adios_getCurrentTimeMillis();
 
 int fastbit_adios_util_getRelativeBlockNumForPoint(ADIOS_VARINFO* v,  uint64_t* point, int timestep);
 void fastbit_adios_util_checkNotNull(void* fastbitHandle, const char* arrayName);
@@ -51,8 +74,8 @@ uint64_t fastbit_adios_util_getAdiosBlockSize(ADIOS_VARINFO* v, int k); // k = b
 
   
 int fastbit_adio_util_readFromFastbitIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, int timestep, int blockNum, 
-			     double** keys, uint64_t* nkeys, int64_t** offsets, uint64_t* no,
-			     uint32_t** bms, uint64_t* nb);
+					       double** keys, uint64_t* nkeys, int64_t** offsets, uint64_t* no,
+					       uint32_t** bms, uint64_t* nb);
   
 #ifdef __cplusplus
 }
