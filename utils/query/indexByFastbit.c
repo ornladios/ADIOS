@@ -35,11 +35,11 @@ void defineFastbitVar(int nblocks, const char* name, int64_t* ids, int adiosType
     //int offset= i*5;
     char offsetStr[100] = "";
     if (offset != NULL) {
-      sprintf(offsetStr, "%ld", offset[i]);
+      sprintf(offsetStr, "%llu", offset[i]);
     } 
 
     char dimStr[100];
-    sprintf(dimStr, "%ld", localDim[i]);
+    sprintf(dimStr, "%llu", localDim[i]);
     ids[i] = adios_define_var (gAdios_group, name, "", adiosType, dimStr, globalStr, offsetStr);
     adios_set_transform (ids[i], "identity");
   }
@@ -82,7 +82,7 @@ void verifyData(ADIOS_FILE* f, ADIOS_VARINFO* v, int k, int timestep)
 void assertErr(long int errCode, const char* exp, const char* refName) 
 {
   if (errCode < 0) {
-    printf("errCode=%d %s %s\n", errCode, exp, refName);
+    printf("errCode=%ld %s %s\n", errCode, exp, refName);
     exit(EXIT_FAILURE);
   } 
 }
@@ -253,7 +253,7 @@ void buildIndex(ADIOS_FILE* f, ADIOS_VARINFO* v)
 
 	 char notes[100];
 	 logTime(NULL); logTimeMillis(NULL);
-	 sprintf(notes, "  reading data from adios  on varid=%d, time=%d, block: %d, size=%ld", v->varid, i, j, blockSize);
+	 sprintf(notes, "  reading data from adios  on varid=%d, time=%d, block: %d, size=%llu", v->varid, i, j, blockSize);
 	 logTime(notes); logTimeMillis(notes);
 	 localtime(&indexRefresh);
 
@@ -285,9 +285,9 @@ void buildIndex(ADIOS_FILE* f, ADIOS_VARINFO* v)
 	    logTime("  indexed on block");
 	    logTimeMillis("  indexed on block");
 	    char nbStr[20], noStr[20], nkStr[20];
-	    sprintf(nbStr, "%ld", nb); 
-	    sprintf(nkStr, "%ld", nk); 
-	    sprintf(noStr, "%ld", no); 
+	    sprintf(nbStr, "%llu", nb); 
+	    sprintf(nkStr, "%llu", nk); 
+	    sprintf(noStr, "%llu", no); 
 
 	    defineFastbitVar(1,bmsVarName, &var_ids_bms[j], adios_unsigned_integer, &nb,0,0);    			    
 	    defineFastbitVar(1, keyVarName, &var_ids_key[j], adios_double, &nk, 0, 0);

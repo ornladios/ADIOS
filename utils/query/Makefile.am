@@ -1,11 +1,11 @@
-if HAVE_FASTBIT
-INCLUDES = $(all_includes)
-#
-
-INCLUDES += -I$(top_srcdir)/src/ ${ADIOSREADLIB_CPPFLAGS}
-
 AUTOMAKE_OPTIONS = no-dependencies
 
+INCLUDES = $(all_includes)
+
+INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/core
+
+
+if HAVE_FASTBIT
 noinst_PROGRAMS = index_fastbit
 
 index_fastbit_SOURCES = indexByFastbit.c #fastbit_adios.c fastbit_adios.h
@@ -14,9 +14,9 @@ index_fastbit_CPPFLAGS = $(ADIOSLIB_CPPFLAGS) $(ADIOSLIB_CFLAGS) $(ADIOSLIB_EXTR
 index_fastbit_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 index_fastbit_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 
-
-
-
 CLEANFILES = *.idx
-CC=$(MPICC)
+
 endif
+
+
+CC=$(MPICC)
