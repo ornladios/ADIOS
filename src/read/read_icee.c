@@ -1011,7 +1011,7 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
     int i;
     icee_fileinfo_rec_ptr_t fp = (icee_fileinfo_rec_ptr_t) adiosfile->fh;
     log_debug("%s (%d:%s)\n", __FUNCTION__, varid, fp->fname);
-    assert(varid < fp->nvars);
+    assert((varid < fp->nvars) || (fp->nvars == 0));
 
     if (nsteps != 1)
     {
@@ -1028,9 +1028,7 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
 
     if (!vp)
     {
-        adios_error(err_invalid_varid,
-                    "Invalid variable id: %d\n",
-                    varid);
+        adios_error(err_invalid_varid, "Invalid variable id: %d\n", varid);
         return adios_errno;
     }
 
@@ -1179,7 +1177,7 @@ adios_read_icee_inq_var_byid (const ADIOS_FILE * adiosfile, int varid)
     log_debug("%s (%d)\n", __FUNCTION__, varid);
 
     icee_fileinfo_rec_ptr_t fp = (icee_fileinfo_rec_ptr_t) adiosfile->fh;
-    assert(varid < fp->nvars);
+    assert((varid < fp->nvars) || (fp->nvars == 0));
 
     ADIOS_VARINFO *a = calloc(1, sizeof(ADIOS_VARINFO));
     
