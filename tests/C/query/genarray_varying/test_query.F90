@@ -18,7 +18,7 @@ program test_query
     implicit none
     include 'mpif.h'
     integer :: rank, nproc, comm
-    integer :: ierr
+    integer :: ierr, j
     type(ADIOS_QUERY) :: q1, q2, q
 
     character(len=256) :: filename, errmsg
@@ -29,6 +29,7 @@ program test_query
     integer             :: gndx,gndy
     integer             :: ts=0 ! timestep
     real*8, dimension(:,:),   allocatable :: xy
+    real*8, dimension(:),     allocatable :: xy1D
     integer*8           :: batchsize = 10000000
 
 
@@ -59,15 +60,27 @@ program test_query
         endif
 
         allocate( xy  (readsize(1), readsize(2)) )
+        allocate( xy1D  (readsize(1)*readsize(2)) )
+        xy1D = 0
 
         ! Create a 2D selection for the subset
         call adios_selection_boundingbox (boxsel, 2, offset, readsize)
 
-        call adios_query_create (fh, "xy", boxsel, ADIOS_GT, "1.0", q1)
-        call adios_query_create (fh, "xy", boxsel, ADIOS_LT, "2.0", q2)
-        call adios_query_combine (q1, ADIOS_QUERY_OP_AND, q1, q)
+        call adios_query_create (fh, "xy", boxsel, ADIOS_GT, "1.0", q)
+        !call adios_query_create (fh, "xy", boxsel, ADIOS_GT, "1.0", q1)
+        !call adios_query_create (fh, "xy", boxsel, ADIOS_LT, "2.0", q2)
+        !call adios_query_combine (q1, ADIOS_QUERY_OP_AND, q2, q)
 
-        call  adios_query_evaluate (q, ts, batchsize, boxsel, pointsel, ierr)
+        call adios_query_evaluate (q, ts, batchsize, boxsel, pointsel, ierr)
+
+        write (*, '("Evaluate return value = ",i0)') ierr 
+        write (*, '("Selection pointer of the result = ",i0)') pointsel
+
+        call adios_schedule_read (fh, pointsel, "xy", 0, 1, xy1D, ierr)
+        call adios_perform_reads (fh, ierr)
+
+        write (*, '("Points = ",100g12.6)') ( xy1D(j), j=1,readsize(1)*readsize(2))
+        write (*, '("Number of points = ",i0)') 
 
         call adios_query_free (q)
         call adios_selection_delete (boxsel)
