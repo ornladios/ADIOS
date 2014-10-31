@@ -102,7 +102,6 @@ transforms_write_SOURCES = $(transforms_write_HDRS) \
 
 query_common_HDRS = query/common_query.h query/adios_query_hooks.h query/query_utils.h
 query_common_SOURCES = $(query_common_HDRS) \
-                       query/adios_query.c \
                        query/common_query.c  \
                        query/adios_query_hooks.c \
                        query/query_utils.c
@@ -114,8 +113,11 @@ include query/Makefile.plugins
 
 query_method_SOURCES += $(query_method_HDRS) 
 
-query_read_SOURCES = $(query_common_SOURCES) \
-                     $(query_method_SOURCES) 				  
+query_SOURCES      = $(query_common_SOURCES) \
+                     $(query_method_SOURCES)
+
+query_C_SOURCES    = $(query_SOURCES) query/adios_query.c
+query_F_SOURCES    = $(query_SOURCES) query/adiosf_query.c
 
 if BUILD_WRITE
 lib_LIBRARIES += libadios.a libadios_nompi.a
@@ -144,7 +146,7 @@ libadios_a_SOURCES = core/adios.c \
                      $(transforms_common_SOURCES) \
                      $(transforms_read_SOURCES) \
                      $(transforms_write_SOURCES) \
-                     $(query_read_SOURCES) \
+                     $(query_C_SOURCES) \
                      read/read_bp.c \
                      read/read_bp_staged.c \
                      read/read_bp_staged1.c \
@@ -164,7 +166,7 @@ libadios_nompi_a_SOURCES = core/adios.c \
                      $(transforms_common_SOURCES) \
                      $(transforms_read_SOURCES) \
                      $(transforms_write_SOURCES) \
-                     $(query_read_SOURCES) \
+                     $(query_C_SOURCES) \
                      core/buffer.c \
                      core/adios_bp_v1.c  \
                      core/adios_endianness.c \
@@ -201,7 +203,7 @@ FortranLibSources = core/adiosf.c \
                      $(transforms_common_SOURCES) \
                      $(transforms_read_SOURCES) \
                      $(transforms_write_SOURCES) \
-                     $(query_read_SOURCES) \
+                     $(query_F_SOURCES) \
                      core/buffer.c \
                      core/adios_bp_v1.c  \
                      core/adios_endianness.c\
@@ -369,11 +371,13 @@ libadiosf_nompi_v1_a_CFLAGS = $(libadiosf_nompi_a_CFLAGS)
 
 libadiosf_a_SOURCES += core/adiosf_defs_mod.f90 \
                        core/adiosf_write_mod.f90 \
-                       core/adiosf_read_mod.f90 
+                       core/adiosf_read_mod.f90 \
+                       query/adios_query_mod.f90
 
 libadiosf_nompi_a_SOURCES += core/adiosf_defs_mod.f90 \
                              core/adiosf_write_mod.f90 \
-                             core/adiosf_read_mod.f90 
+                             core/adiosf_read_mod.f90  \
+                             query/adios_query_mod.f90
 
 libadiosf_v1_a_SOURCES += core/adiosf_defs_mod.f90 \
                           core/adiosf_write_mod.f90 
@@ -420,7 +424,7 @@ libadiosread_a_SOURCES = core/adios_bp_v1.c \
                       core/adios_read_ext.c \
                       $(transforms_common_SOURCES) \
                       $(transforms_read_SOURCES) \
-                      $(query_read_SOURCES) \
+                      $(query_C_SOURCES) \
                       core/globals.c \
                       core/adios_read_hooks.c \
                       core/adios_logger.c \
@@ -463,7 +467,7 @@ FortranReadLibSource = core/adios_bp_v1.c \
                       core/adios_read_ext.c \
                       $(transforms_common_SOURCES) \
                       $(transforms_read_SOURCES) \
-                      $(query_read_SOURCES) \
+                      $(query_F_SOURCES) \
                       core/globals.c \
                       core/adios_read_hooks.c \
                       core/adios_logger.c \
@@ -503,14 +507,17 @@ libadiosreadf_a_SOURCES += core/adiosf_defs_mod.f90 \
                            core/adiosf_read_mod.f90
 
 #nodist_libadiosreadf_a_SOURCES += adios_read_mod.mod
-nodist_include_HEADERS += adios_read_mod.mod adios_defs_mod.mod
-CLEANFILES += adios_read_mod.mod adios_defs_mod.mod
+nodist_include_HEADERS += adios_read_mod.mod adios_defs_mod.mod adios_query_mod.mod
+CLEANFILES += adios_read_mod.mod adios_defs_mod.mod adios_query_mod.mod
 
 adios_read_mod.mod: core/adiosf_read_mod.f90 adios_defs_mod.mod 
 	$(FC) -c core/adiosf_read_mod.f90
 
 adios_defs_mod.mod: core/adiosf_defs_mod.f90
 	$(FC) -c core/adiosf_defs_mod.f90
+
+adios_query_mod.mod: query/adios_query_mod.f90 
+	$(FC) -c query/adios_query_mod.f90
 
 endif
 
@@ -527,7 +534,7 @@ libadiosread_nompi_a_SOURCES = core/mpidummy.c\
                       core/adios_read_ext.c \
                       $(transforms_common_SOURCES) \
                       $(transforms_read_SOURCES) \
-                      $(query_read_SOURCES) \
+                      $(query_C_SOURCES) \
                       core/adios_logger.c \
                       core/buffer.c \
                       core/globals.c \
@@ -575,7 +582,7 @@ FortranReadSeqLibSource = core/mpidummy.c\
                           core/adios_read_ext.c \
                           $(transforms_common_SOURCES) \
                           $(transforms_read_SOURCES) \
-                          $(query_read_SOURCES) \
+                          $(query_F_SOURCES) \
                           core/globals.c \
                           core/adios_read_hooks.c \
                           core/util.c \
@@ -618,7 +625,7 @@ libadios_internal_nompi_a_SOURCES = core/mpidummy.c \
                                     core/adios_internals.c \
                                     $(transforms_common_SOURCES) \
                                     $(transforms_write_SOURCES) \
-                                    $(query_read_SOURCES) \
+                                    $(query_C_SOURCES) \
                                     core/buffer.c \
                                     core/adios_error.c \
                                     core/adios_logger.c \

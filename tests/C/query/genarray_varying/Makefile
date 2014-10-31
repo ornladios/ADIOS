@@ -7,7 +7,7 @@ all: default
 tests:
 	make -f Makefile.tests
 
-genarray_varying: genarray_varying.F90
+genarray_varying: genarray_varying.F90 test_query.F90
 	make -f Makefile.genarray_varying
 
 clean:
