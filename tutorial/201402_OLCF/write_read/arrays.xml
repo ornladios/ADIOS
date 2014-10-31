@@ -8,7 +8,7 @@
         <var name="var_int_1Darray"     gwrite="p"  type="integer" dimensions="NX"/>
     </adios-group>
 
-    <method group="arrays"  method="MPI"/>
+    <method group="arrays"  method="XPMEM"/>
 
     <buffer size-MB="20" allocate-time="now"/>
 

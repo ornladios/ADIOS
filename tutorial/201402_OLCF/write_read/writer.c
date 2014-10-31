@@ -7,9 +7,11 @@
 
 #include <stdio.h>
 #include <string.h>
-#include "mpi.h"
 #include <sys/stat.h>
 #include <fcntl.h>
+
+
+#define _NOMPI
 
 #include "adios.h"
 #include "core/adios_logger.h"
@@ -58,6 +60,7 @@ int main (int argc, char ** argv)
 
 		MPI_Barrier (comm);
 
+		sleep(1000);
 		adios_finalize (rank);
 
 		MPI_Finalize ();

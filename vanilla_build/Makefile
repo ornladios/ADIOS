@@ -1,4 +1,4 @@
-HOST=titan
+HOST=adiosvm
 
 # Do not modify below. Add your settings in make.settings.XXXX
 

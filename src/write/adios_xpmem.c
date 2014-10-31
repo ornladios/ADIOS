@@ -41,15 +41,14 @@ typedef struct _xmeminfo
 {
 	xpmem_segid_t buffer_id;
 	uint64_t size;
-	shared_data *d;
-	char *buffer;
+	shared_data *d; //pointer to the shared data
+	shared_data *buffer; //buffer that contains a copy of the shared data
 }xmeminfo;
 
 
 typedef struct _adios_xpmem_data_struct
 {
 	xmeminfo data;
-	xmeminfo index;
 }adios_xpmem_data_struct;
 
 

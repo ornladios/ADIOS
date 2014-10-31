@@ -4,11 +4,18 @@ FC=ftn
 #FC=mpif90
 CC=cc
 LINKER=${CC}
-#ADIOS_DIR = /opt/adios/1.6.0
-ADIOS_INC := -I/ccs/home/habbasi/work/ADIOS/src/ -I/ccs/home/habbasi/work/ADIOS/src/public -I/ccs/home/habbasi/work/ADIOS/vanilla_build/
-ADIOS_FLIB := -L/ccs/home/habbasi/work/ADIOS/vanilla_build -ladiosf ${MXML_LIB} 
-ADIOS_LIB := -L/ccs/home/habbasi/work/ADIOS/vanilla_build -ladios ${MXML_LIB} 
-ADIOSREAD_FLIB := -L/ccs/home/habbasi/work/ADIOS/vanilla_build -ladiosf ${MXML_LIB}
+HOME=/home/hobbes/hobbes/ADIOS
+
+# required dependencies
+MXML_INC=-I/home/hobbes/hobbes/nvl/src/nvl/pisces/xpmem/include
+MXML_LDFLAGS=-L/home/hobbes/hobbes/nvl/src/nvl/pisces/xpmem/lib
+MXML_LIBS= -lmxml -lxpmem -lpthread -lm
+
+ADIOS_DIR = ${HOME}
+ADIOS_INC := -I${HOME}/src/ -I${HOME}/src/public -I${HOME}/vanilla_build ${MXML_INC}
+ADIOS_FLIB := -L{HOME}/vanilla_build ${MXML_LDFLAGS} -ladiosf ${MXML_LIBS}
+ADIOS_LIB := -L${HOME}/vanilla_build ${MXML_LDFLAGS} -ladios ${MXML_LIBS} 
+ADIOSREAD_FLIB := -L${HOME} ${MXML_LDFLAGS} -ladiosf ${MXML_LIBS}
 GPP = ${ADIOS_DIR}/bin/gpp.py
 
 
@@ -17,7 +24,7 @@ all: write
 
 write: writer.c read.c
 	${CC} -g -c -o writer.o ${ADIOS_INC} writer.c
-	${LINKER} -g -o writer writer.o ${ADIOS_LIB}
+	${LINKER} -static -g -o writer writer.o ${ADIOS_LIB}
 #	${CC} -g -c -o read.o ${ADIOS_INC} read.c
 ##############	${LINKER} -g -o reader read.o ${ADIOS_LIB}
 
