@@ -1087,6 +1087,32 @@ elif [ `hostname | cut -c 1-5` == "stark" ]; then
     --without-datatap \
     --with-icee=/pwork01/ekbyun/sw/evpath/devel
 
+elif [ `hostname | cut -c 1-10` == "jychoi-air" ]; then
+
+    #######################
+    # jychoi-air
+    #######################
+    echo "Configure on jychoi-air"
+    export MPICC=mpicc
+    export MPICXX=mpicxx
+    export MPIFC=mpif90
+    export CC=mpicc
+    export CXX=mpicxx
+    export FC=mpif90
+    export CFLAGS="-g -fPIC"
+    export CXXFLAGS="-g -fPIC"
+    export FCFLAGS="-g -fPIC"
+
+    ${SRCDIR}/configure \
+    --prefix=/Users/jyc/sw/adios/devel-icee \
+    --with-mxml=/Users/jyc/sw/mxml/2.7 \
+    --enable-dependency-tracking \
+    --without-hdf5 \
+    --without-netcdf \
+    --without-infiniband \
+    --without-datatap \
+    --with-icee=/Users/jyc/sw/evpath/devel
+
 else
     echo "Could not determine what machine is this."
     echo "This script is for configuring adios on the authors' machines."
