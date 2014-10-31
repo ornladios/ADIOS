@@ -253,7 +253,7 @@ void buildIndex(ADIOS_FILE* f, ADIOS_VARINFO* v)
 
 	 char notes[100];
 	 logTime(NULL); logTimeMillis(NULL);
-	 sprintf(notes, "  reading data from adios  on varid=%d, time=%d, block: %d, size=%ld", v->varid, i, j, blockSize);
+	 sprintf(notes, "  reading data from adios  on varid=%d, time=%d, block: %d, size=%ld bytes=%ld", v->varid, i, j, blockSize, blockDataByteSize);
 	 logTime(notes); logTimeMillis(notes);
 	 localtime(&indexRefresh);
 
