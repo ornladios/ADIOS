@@ -78,7 +78,7 @@ ADIOS_QUERY* adios_query_create (ADIOS_FILE* f,
                                  const char* varName,
                                  ADIOS_SELECTION* queryBoundary,
                                  enum ADIOS_PREDICATE_MODE op,
-                                 const char* value); //this value needs to be &int &double etc, not a string!
+                                 const char* value); 
 
 
 ADIOS_QUERY* adios_query_combine (ADIOS_QUERY* q1, 
@@ -90,11 +90,21 @@ ADIOS_QUERY* adios_query_combine (ADIOS_QUERY* q1,
 */
 void adios_query_set_method (ADIOS_QUERY* q, enum ADIOS_QUERY_METHOD method);
 
+//
+// returns estimated query result size. 
+// -1 if error.
+//
 int64_t adios_query_estimate (ADIOS_QUERY* q, int timeStep);
 
 // obsolete. time_steps for non-streaming files should show up in estimate/evalute
 //void adios_query_set_timestep (int timeStep);
 
+//
+// evaluate and return result of the query.
+// returns -1 if error
+// returns 1 if more results to follow, keep calling evaluate() to find out
+// returns 0 of no more results to fetch 
+//
 int  adios_query_evaluate (ADIOS_QUERY* q, 
 			   int timestep,
 			   uint64_t batchSize, // limited by maxResult
