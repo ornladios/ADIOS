@@ -536,8 +536,8 @@ copy_view (icee_matrix_view_t *dest, icee_matrix_view_t *src)
     if ((dest->leastcontiguousdim == 1) && (src->leastcontiguousdim==1))
     {
         int s, d;
-        d = dest->offsets[0];
-        s = src->offsets[0];
+        d = dest->offsets[0] * dest->mat->accumdims[0];
+        s = src->offsets[0] * src->mat->accumdims[0];
         memcpy(dest->mat->data + d * dest->mat->typesize, 
                src->mat->data + s * dest->mat->typesize, 
                dest->vdims[0] * dest->mat->accumdims[0] * dest->mat->typesize);
