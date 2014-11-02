@@ -481,7 +481,7 @@ typedef struct {
 } icee_matrix_view_t;
 
 void 
-init_mat (icee_matrix_t *m, 
+mat_init (icee_matrix_t *m, 
           int typesize,
           int ndims,
           const uint64_t *dims,
@@ -504,9 +504,9 @@ init_mat (icee_matrix_t *m,
 }
 
 void 
-init_view (icee_matrix_view_t *v,
+view_init (icee_matrix_view_t *v,
            icee_matrix_t *m,
-           const uint64_t *vdims,
+           const int64_t *vdims,
            const uint64_t *offsets)
 {
     v->mat = m;
@@ -517,14 +517,14 @@ init_view (icee_matrix_view_t *v,
     for (i=m->ndims-1; i>=0; i--)
     {
         v->leastcontiguousdim = i;
-        if (vdims[i] + offsets[i] == m->dims[i])
+        if ((offsets[i] != 0) || (vdims[i] != m->dims[i]))
             break;
     }
 }
 
 /* Copy data between two views. Dimension and size should match */
 void
-copy_view (icee_matrix_view_t *dest, icee_matrix_view_t *src)
+view_copy (icee_matrix_view_t *dest, icee_matrix_view_t *src)
 {
     assert(dest->mat->ndims == src->mat->ndims);
     
@@ -533,7 +533,7 @@ copy_view (icee_matrix_view_t *dest, icee_matrix_view_t *src)
         assert(dest->vdims[i] == src->vdims[i]);
 
     // Contiguous merging
-    if ((dest->leastcontiguousdim == 1) && (src->leastcontiguousdim==1))
+    if ((dest->leastcontiguousdim == 0) && (src->leastcontiguousdim == 0))
     {
         int s, d;
         d = dest->offsets[0] * dest->mat->accumdims[0];
@@ -1069,18 +1069,19 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
 
             while (vp != NULL)
             {
-                icee_matrix_t m_sel = {};
-                icee_matrix_t m_var = {};
-                icee_matrix_view_t v_sel = {};
-                icee_matrix_view_t v_var = {};
-                uint64_t start[10] = {}, count[10] = {};
-                uint64_t s_offsets[10] = {}, v_offsets[10] = {};
+                icee_matrix_t m_sel;
+                icee_matrix_t m_var;
+                icee_matrix_view_t v_sel;
+                icee_matrix_view_t v_var;
+                uint64_t start[10];
+                int64_t count[10]; // should be signed to check validity
+                uint64_t s_offsets[10], v_offsets[10];
                 int i;
 
                 if (adios_verbose_level > 3) icee_varinfo_print(vp);
                     
-                init_mat(&m_sel, vp->typesize, vp->ndims, sel->u.bb.count, data);
-                init_mat(&m_var, vp->typesize, vp->ndims, vp->ldims, vp->data);
+                mat_init(&m_sel, vp->typesize, vp->ndims, sel->u.bb.count, data);
+                mat_init(&m_var, vp->typesize, vp->ndims, vp->ldims, vp->data);
 
                 for (i=0; i<vp->ndims; i++)
                     start[i] = MYMAX(sel->u.bb.start[i], vp->offsets[i]);
@@ -1107,9 +1108,9 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
                 for (i=0; i<vp->ndims; i++)
                     v_offsets[i] = start[i] - vp->offsets[i];
 
-                init_view (&v_sel, &m_sel, count, s_offsets);
-                init_view (&v_var, &m_var, count, v_offsets);
-                copy_view (&v_sel, &v_var);
+                view_init (&v_sel, &m_sel, count, s_offsets);
+                view_init (&v_var, &m_var, count, v_offsets);
+                view_copy (&v_sel, &v_var);
                     
             next:
                 vp = icee_varinfo_search_byname(vp->next, adiosfile->var_namelist[varid]);
