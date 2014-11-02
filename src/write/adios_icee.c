@@ -213,7 +213,7 @@ worker_thread(void *arg)
 	 * if a timeout occurs or if the pool is being destroyed.
 	 */
 	(void) pthread_mutex_lock(&pool->pool_mutex);
-	pthread_cleanup_push(worker_cleanup, pool);
+	pthread_cleanup_push((void *)worker_cleanup, pool);
 	active.active_tid = pthread_self();
 	for (;;) {
 		/*
@@ -268,7 +268,7 @@ worker_thread(void *arg)
 			active.active_next = pool->pool_active;
 			pool->pool_active = &active;
 			(void) pthread_mutex_unlock(&pool->pool_mutex);
-			pthread_cleanup_push(job_cleanup, pool);
+			pthread_cleanup_push((void *)job_cleanup, pool);
 			free(job);
 			/*
 			 * Call the specified job function.
@@ -421,7 +421,7 @@ void
 thr_pool_wait(thr_pool_t *pool)
 {
 	(void) pthread_mutex_lock(&pool->pool_mutex);
-	pthread_cleanup_push(pthread_mutex_unlock, &pool->pool_mutex);
+	pthread_cleanup_push((void *)pthread_mutex_unlock, &pool->pool_mutex);
 	while (pool->pool_head != NULL || pool->pool_active != NULL) {
 		pool->pool_flags |= POOL_WAIT;
 		(void) pthread_cond_wait(&pool->pool_waitcv, &pool->pool_mutex);
@@ -436,7 +436,7 @@ thr_pool_destroy(thr_pool_t *pool)
 	job_t *job;
 
 	(void) pthread_mutex_lock(&pool->pool_mutex);
-	pthread_cleanup_push(pthread_mutex_unlock, &pool->pool_mutex);
+	pthread_cleanup_push((void *)pthread_mutex_unlock, &pool->pool_mutex);
 
 	/* mark the pool as being destroyed; wakeup idle workers */
 	pool->pool_flags |= POOL_DESTROY;
@@ -510,13 +510,11 @@ icee_clientinfo_handler(CManager cm, void *vevent, void *client_data, attr_list 
     return 1;
 }
 
-void *dosubmit(void *arg)  
+void *dosubmit(icee_fileinfo_rec_t *fp)  
 {
-    icee_fileinfo_rec_ptr_t fp = (icee_fileinfo_rec_ptr_t) arg;
-
     if (adios_verbose_level > 3) 
         DUMP("threadid is %lu, submitting %d(%s)", 
-             pthread_self(), fp->varinfo->varid, fp->varinfo->varname);
+             (unsigned long)pthread_self(), fp->varinfo->varid, fp->varinfo->varname);
 
     EVsubmit(icee_write_source, fp, NULL);
     
@@ -835,7 +833,7 @@ adios_icee_close(struct adios_file_struct *fd, struct adios_method_struct *metho
             p->varinfo = prev;
             prev->next = NULL;
 
-            thr_pool_queue(icee_pool, dosubmit, (void*) p);
+            thr_pool_queue(icee_pool, (void*)dosubmit, (void*) p);
         }
 
         thr_pool_wait(icee_pool);
