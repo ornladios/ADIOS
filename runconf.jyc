@@ -1133,17 +1133,14 @@ elif [ `hostname | cut -c 1-4` == "sith" ]; then
         export CC=pgcc
         export CXX=pgCC
         export FC=pgf90
-        MXML_DIR=/sw/redhat6/mxml/2.7/rhel6_pgi12.8
     elif [ "$TARGET" == "gnu" ]; then
         export CC=gcc
         export CXX=g++
         export FC=gfortran
-        MXML_DIR=/sw/redhat6/mxml/2.7/rhel6_gnu4.7.1
     elif [ "$TARGET" == "intel" ]; then
         export CC=icc
         export CXX=icpc
         export FC=ifort
-        MXML_DIR=/sw/redhat6/mxml/2.7/rhel6_intel11.1.072
     else
         echo "TARGET must be pgi or gnu or intel"
         exit 1
@@ -1158,7 +1155,7 @@ elif [ `hostname | cut -c 1-4` == "sith" ]; then
 
     ${SRCDIR}/configure \
     --prefix=/ccs/home/jyc/sith/sw/adios/devel-icee/rhel6_${TARGET}${VER} \
-    --with-mxml=${MXML_DIR} \
+    --with-mxml=/ccs/home/jyc/sith/sw/mxml/2.7/rhel6_${TARGET}${VER} \
     --enable-dependency-tracking \
     --without-hdf5 \
     --without-netcdf \
