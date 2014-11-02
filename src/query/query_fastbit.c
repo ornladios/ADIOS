@@ -17,10 +17,36 @@ typedef struct {
   char* _arrayName;
   //void* _rawData;
   FastBitSelectionHandle _handle;
+  
+  ADIOS_FILE* _idxFile;
 } FASTBIT_INTERNAL;
  
 
-void create_fastbit_internal(ADIOS_QUERY* q) 
+ADIOS_QUERY* getFirstLeaf(ADIOS_QUERY* q);
+void getHandle(int timeStep, int blockIdx, ADIOS_FILE* idxFile, ADIOS_QUERY* q);
+
+
+
+/** A simple reader to be used by FastBit for index reconstruction.  In
+    this simple case, the first argument is the whole array storing all the
+    serialized bitmaps.  This first argument can be used to point to a data
+    structure pointing to any complex object type necassary.
+*/
+//
+// this static function is from fastbit example/tiapi.c
+//
+static int adios_bmreader(void *ctx, uint64_t start,uint64_t count, uint32_t *buf)
+{
+  const uint32_t *bms = (uint32_t*)ctx + start;
+  unsigned j;
+  for (j = 0; j < count; ++ j) {
+    buf[j] = bms[j];
+  }
+  return 0;
+}
+
+
+void create_fastbit_internal_idxFile (ADIOS_QUERY* q, ADIOS_FILE* idxFile) 
 {
   if (q->queryInternal == NULL) {
      FASTBIT_INTERNAL* internal = malloc(sizeof(FASTBIT_INTERNAL));
@@ -30,17 +56,30 @@ void create_fastbit_internal(ADIOS_QUERY* q)
      internal->_arrayName = NULL;
      internal->_handle = NULL;
 
+     internal->_idxFile = idxFile;
      q->queryInternal = internal;
   }
   
   if (q->left != NULL) {
-    create_fastbit_internal(q->left);
+    create_fastbit_internal_idxFile(q->left, idxFile);
   } 
   if (q->right != NULL) {
-    create_fastbit_internal(q->right);
+    create_fastbit_internal_idxFile(q->right, idxFile);
   }
 }
 
+void create_fastbit_internal (ADIOS_QUERY* q) 
+{
+  if (q->queryInternal == NULL) {
+      ADIOS_QUERY* leaf = getFirstLeaf(q);
+      ADIOS_FILE* f = leaf->file;
+      const char* basefileName = f->path;
+
+      MPI_Comm comm_dummy = MPI_COMM_SELF;
+      ADIOS_FILE* idxFile = fastbit_adios_util_getFastbitIndexFileToRead(basefileName, comm_dummy);
+      create_fastbit_internal_idxFile (q, idxFile);
+  }
+}
 
 
 void clear_fastbit_internal(ADIOS_QUERY* query) 
@@ -94,9 +133,6 @@ void clear_fastbit_internal_recursive(ADIOS_QUERY* query)
     clear_fastbit_internal(query->right);
   }
 }
-
-ADIOS_QUERY* getFirstLeaf(ADIOS_QUERY* q);
-void getHandle(int timeStep, int blockIdx, ADIOS_FILE* idxFile, ADIOS_QUERY* q);
 
 
 void assertValue(char* input, char* endptr) {
@@ -382,6 +418,10 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
       blockEnd = fastbit_adios_util_getRelativeBlockNumForPoint(v, end, timeStep);
     }
 
+    if ((blockStart < 0) || (blockEnd < 0) || (blockStart > blockEnd)) {
+      adios_error (err_invalid_query_value, "Query processing failed. Unable to continue using index. vid=%d, dim[0]=%ld", v->varid, v->dims[0]);
+      return -1;
+    }
     uint16_t* bitSlice = malloc((q->rawDataSize)* sizeof(uint16_t));
 
     for (i=0; i<q->rawDataSize; i++) {
@@ -505,7 +545,11 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
     sprintf(blockDataName, "%d-%s-%d-%d-%ld", v->varid, q->condition, timeStep, blockIdx, fastbit_adios_getCurrentTimeMillis());
 
     FASTBIT_INTERNAL* itn = (FASTBIT_INTERNAL*)(q->queryInternal);
+#ifdef _READ_BMS_AS_NEEDED
+    if (fastbit_adios_util_readNoBMSFromIndexFile(idxFile, v, timeStep, blockIdx, &(itn->_keys), &nk, &(itn->_offsets)) < 0)     
+#else
     if (fastbit_adios_util_readFromIndexFile(idxFile, v, timeStep, blockIdx, &(itn->_keys), &nk, &(itn->_offsets), &no, &(itn->_bms), &nb) < 0) 
+#endif
     {
       // no idx for this variable, read from file:
       free(q->dataSlice);
@@ -529,8 +573,8 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
     itn->_arrayName = malloc(strlen(blockDataName)+2);
     sprintf(itn->_arrayName, "%s", blockDataName);
     
-    int ierr = fastbit_iapi_register_array_index_only(blockDataName, fastbit_adios_util_getFastbitDataType(v->type), &nv, 1 , itn->_keys, nk, itn->_offsets, no, itn->_bms, mybmreader);
-
+    int ierr = fastbit_iapi_register_array_index_only(blockDataName, fastbit_adios_util_getFastbitDataType(v->type), &nv, 1 , 
+						      itn->_keys, nk, itn->_offsets, no, itn->_bms, adios_bmreader);
       /*
     if (ierr != 0) {
       log_error(" registering array failed. fastbit err code = %ld\n", ierr);
@@ -738,10 +782,8 @@ void getHandle(int timeStep, int blockIdx, ADIOS_FILE* idxFile, ADIOS_QUERY* q)
       } */   
   } else {
     getHandleFromBlockAtLeafQuery(timeStep, blockIdx, idxFile, q);
-  }
-      
+  }     
 }
-
 
 int64_t  applyIndexIfExists (ADIOS_QUERY* q, int timeStep) 
 {
@@ -756,8 +798,11 @@ int64_t  applyIndexIfExists (ADIOS_QUERY* q, int timeStep)
   const char* basefileName = f->path;
 
   int64_t result = -1;
-  MPI_Comm comm_dummy = MPI_COMM_SELF;
-  ADIOS_FILE* idxFile = fastbit_adios_util_getFastbitIndexFileToRead(basefileName, comm_dummy);
+
+  ADIOS_FILE* idxFile = ((FASTBIT_INTERNAL*)(q->queryInternal))->_idxFile;
+
+  //MPI_Comm comm_dummy = MPI_COMM_SELF;
+  //ADIOS_FILE* idxFile = fastbit_adios_util_getFastbitIndexFileToRead(basefileName, comm_dummy);
     
   if (idxFile != NULL) {
       if ((leaf->sel == NULL) || (leaf->sel->type == ADIOS_SELECTION_BOUNDINGBOX)) {
@@ -775,7 +820,7 @@ int64_t  applyIndexIfExists (ADIOS_QUERY* q, int timeStep)
 
 	//return result;
       } // otherwise, use no idx method
-      common_read_close(idxFile);      
+      //common_read_close(idxFile);      
   }
   
   
@@ -1045,18 +1090,18 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
     return -1;
     }*/
 
+  if (batchSize == 0) {
+    log_debug(":: ==> will not fetch. batchsize=0\n");
+    return -1;
+  }
+
   int timeStep = adios_get_actual_timestep(q, incomingTimestep);
 
   call_fastbit_evaluate(q, timeStep, 0);
   //log_debug("::\t max=%llu _lastRead=%llu\n", q->_maxResultDesired, q->_lastRead);
-  if (batchSize == 0) {
-    log_debug(":: ==> will not fetch. batchsize=0\n");
-    return 0;
-  }
 
   uint64_t retrivalSize = q->maxResultsDesired - q->resultsReadSoFar;
   if (retrivalSize == 0) {
-     result = 0;
      log_debug(":: ==> no more results to fetch\n");
      return -1;
   }
@@ -1140,6 +1185,14 @@ void  adios_query_fastbit_free(ADIOS_QUERY* query)
   free(query);
   query = 0;
   */
+
+  FASTBIT_INTERNAL* s = (FASTBIT_INTERNAL*)(query->queryInternal);  
+  if (query->hasParent == 0) {
+    if (s->_idxFile != NULL) {
+      common_read_close(s->_idxFile);
+    }
+  }
+
   clear_fastbit_internal(query);
   free(query->queryInternal);
 
