@@ -6,7 +6,7 @@
 
 SRCDIR=`dirname ${BASH_SOURCE[0]}`
 
-if [ `hostname | cut -c 1-4` == "sith" ]; then
+if [ `hostname | cut -c 1-4` == "xsith" ]; then
 
     ########
     # Sith #
@@ -1113,6 +1113,55 @@ elif [ `hostname | cut -c 1-10` == "jychoi-air" ]; then
     --without-infiniband \
     --without-datatap \
     --with-icee=/Users/jyc/sw/evpath/devel
+
+elif [ `hostname | cut -c 1-4` == "sith" ]; then
+
+    #######################
+    # sith
+    #######################
+    echo "Configure on sith"
+    TARGET=`module -l list 2>&1 | grep "PE"- | sed "s/^.*PE-\([a-z]*\).*/\1/"`
+    VER=`module -l list 2>&1 | grep "PE"- | sed "s/^.*PE-\([a-z]*\)\/\([0-9.]*\).*/\2/"`
+
+    if [ -z "$TARGET" ]; then
+        echo "Cannot determine Programming environment. Exit"
+        exit 1
+    fi
+    echo "Configure on SITH for $TARGET env. for user $USER"
+
+    if [ "$TARGET" == "pgi" ]; then
+        export CC=pgcc
+        export CXX=pgCC
+        export FC=pgf90
+    elif [ "$TARGET" == "gnu" ]; then
+        export CC=gcc
+        export CXX=g++
+        export FC=gfortran
+    elif [ "$TARGET" == "intel" ]; then
+        export CC=icc
+        export CXX=icpc
+        export FC=ifort
+    else
+        echo "TARGET must be pgi or gnu or intel"
+        exit 1
+    fi
+
+    export MPICC=mpicc
+    export MPICXX=mpicxx
+    export MPIFC=mpif90
+    export CFLAGS="-g -fPIC"
+    export CXXFLAGS="-g -fPIC"
+    export FCFLAGS="-g -fPIC"
+
+    ${SRCDIR}/configure \
+    --prefix=/ccs/home/jyc/sith/sw/adios/devel-icee/rhel6_${TARGET}${VER} \
+    --with-mxml=/sw/redhat6/mxml/2.7/rhel6_${TARGET}${VER} \
+    --enable-dependency-tracking \
+    --without-hdf5 \
+    --without-netcdf \
+    --without-infiniband \
+    --without-datatap \
+    --with-icee=/sw/redhat6/flexpath/adios-1.7/rhel6_${TARGET}${VER}
 
 else
     echo "Could not determine what machine is this."
