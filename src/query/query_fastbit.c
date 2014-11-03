@@ -471,7 +471,7 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
     }
 
     char bitsArrayName[50+strlen(q->condition)];
-    sprintf(bitsArrayName, "%lld-%d-%s-%d", fastbit_adios_getCurrentTimeMillis(), v->varid, q->condition, timeStep);
+    sprintf(bitsArrayName, "%ld-%d-%s-%d", fastbit_adios_getCurrentTimeMillis(), v->varid, q->condition, timeStep);
     //return fastbit_selection_create(dataType, dataOfInterest, dataSize, compareOp, &vv);
 
     free(q->dataSlice);
@@ -542,7 +542,7 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
     */
 
     char blockDataName[40+strlen(q->condition)];
-    sprintf(blockDataName, "%d-%s-%d-%d-%lld", v->varid, q->condition, timeStep, blockIdx, fastbit_adios_getCurrentTimeMillis());
+    sprintf(blockDataName, "%d-%s-%d-%d-%ld", v->varid, q->condition, timeStep, blockIdx, fastbit_adios_getCurrentTimeMillis());
 
     FASTBIT_INTERNAL* itn = (FASTBIT_INTERNAL*)(q->queryInternal);
 #ifdef _READ_BMS_AS_NEEDED
@@ -584,7 +584,7 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
     ierr = fastbit_iapi_attach_index (blockDataName, keys, nk, offsets, no, bms, mybmreader);
       */
     if (ierr < 0) {
-      log_error(" reattaching index failed. fastbit err code = %lld\n", ierr);
+      log_error(" reattaching index failed. fastbit err code = %d\n", ierr);
       //result = ierr;
     } else {
       ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle = createHandle(q, blockDataName); //fastbit_selection_osr(blockDataName, getFastbitCompareType(q->_op), q->_value);
@@ -606,7 +606,7 @@ void printQueryData(ADIOS_QUERY* q, FastBitDataType dataType, int timeStep) {
   uint64_t dataSize = q->rawDataSize;
   int j;
   int batchSize = 31;
-  log_debug ("::\t %s At timestep: %llu datasize=%llu \n\t\t   raw data:  [", q->condition, timeStep, dataSize);
+  log_debug ("::\t %s At timestep: %d datasize=%llu \n\t\t   raw data:  [", q->condition, timeStep, dataSize);
   for (j = 0; j < dataSize; j++) {
     if ((j < batchSize) || ((dataSize -j) < batchSize)) {
       if ((j % 10) == 0) {
@@ -660,7 +660,7 @@ int readWithTimeStepNoIdx(ADIOS_QUERY* q, int timeStep) {
   //common_free_varinfo(q->_var);
 
   char datasetName[strlen(q->condition) + 40];
-  sprintf(datasetName, "%s-%d-%lld", q->condition, timeStep, fastbit_adios_getCurrentTimeMillis());  
+  sprintf(datasetName, "%s-%d-%ld", q->condition, timeStep, fastbit_adios_getCurrentTimeMillis());  
   setQueryInternal(q, compareOp, dataType, dataSize, datasetName);
 
   return 0;
