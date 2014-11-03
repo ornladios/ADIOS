@@ -49,7 +49,7 @@
 ///////////////////////////
 // Global Variables
 ///////////////////////////
-#include "core/adios_icee.h"
+#include "core/globals.h"
 
 #define DUMP(fmt, ...) fprintf(stderr, ">>> "fmt"\n", ## __VA_ARGS__); 
 
@@ -562,7 +562,7 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
         else if (!strcasecmp (p->name, "cm_list"))
         {
             char **plist;
-            int plen = 8;
+            int plen = 16;
 
             plist = malloc(plen * sizeof(char *));
 
@@ -578,7 +578,7 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
                 if (len > plen)
                 {
                     plen = plen*2;
-                    realloc (plist, plen * sizeof(char *));
+                    plist = realloc (plist, plen * sizeof(char *));
                 }
             }
 
@@ -753,7 +753,9 @@ adios_icee_write(
     }
 
     vp->varid = f->id;
-    if (adios_verbose_level > 3) DUMP("id,name = %d,%s", vp->varid, vp->varname);
+    if (adios_verbose_level > 3) DUMP("id,name = %d,%s", vp->varid, vp->varname)
+;
+
     vp->type = f->type;
     vp->typesize = adios_get_type_size(f->type, ""); 
 
@@ -799,6 +801,7 @@ adios_icee_write(
     }
     
     vp->data = f->data;
+    if (adios_verbose_level > 3) icee_varinfo_print(vp);
 
     fp->nvars++;
 }
@@ -818,8 +821,10 @@ adios_icee_close(struct adios_file_struct *fd, struct adios_method_struct *metho
         icee_varinfo_rec_ptr_t vp = fp->varinfo;
         icee_varinfo_rec_ptr_t prev = NULL;
 
-        int comm_nvars = 0;
-        MPI_Allreduce(&fp->nvars, &comm_nvars, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+        int comm_nvars = fp->nvars;
+#ifndef _NOMPI
+        MPI_Allreduce(MPI_IN_PLACE, &comm_nvars, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+#endif
 
         while (vp != NULL)
         {
