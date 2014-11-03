@@ -59,4 +59,10 @@ char *get_full_path_name(char *name, char *path);
 
 #endif
 
+#ifdef HAVE_ICEE
+#include "core/adios_icee.h"
+void icee_varinfo_print(const icee_varinfo_rec_ptr_t vp);
+void icee_fileinfo_print(const void* item);
+#endif
+
 #endif  /*__GLOBALS_H__*/

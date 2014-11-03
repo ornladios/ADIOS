@@ -3,6 +3,9 @@
 #ifndef ADIOS_ICEE_H
 #define ADIOS_ICEE_H
 
+#include <stdint.h>
+#include <evpath.h>
+
 typedef struct icee_varinfo_rec {
     char* varname;
     int varid;
