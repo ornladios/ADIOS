@@ -61,6 +61,16 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r, int st
     }\
 }\
 
+inline BP_PROC * GET_BP_PROC (const ADIOS_FILE * fp)
+{
+    return (BP_PROC *) fp->fh;
+}
+
+inline BP_FILE * GET_BP_FILE (const ADIOS_FILE * fp)
+{
+    return (BP_FILE *) ((BP_PROC *) fp->fh)->fh;
+}
+
 #define MPI_FILE_READ_OPS1                          \
         bp_realloc_aligned(fh->b, slice_size);      \
         fh->b->offset = 0;                          \
