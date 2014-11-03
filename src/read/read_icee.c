@@ -842,6 +842,47 @@ adios_read_icee_open(const char * fname,
 
     adiosfile->fh = (uint64_t)fp;
 
+    int hashsize = 10;
+    qhashtbl_t *tbl = qhashtbl(hashsize);
+    
+    icee_varinfo_rec_ptr_t vp = fp->varinfo;
+    while (vp != NULL)
+    {
+        tbl->put(tbl, vp->varname, NULL);
+        vp = vp->next;
+    }
+
+    adiosfile->nvars = tbl->size(tbl);
+	adiosfile->var_namelist = malloc(tbl->num * sizeof(char *));
+
+    int i;
+    size_t idx = 0;
+    for (i=0; i<hashsize; i++)
+    {
+        qhnobj_t *qhobj = tbl->slots[i].head;
+        while (qhobj != NULL)
+        {
+            //DUMP("%lu:%s", idx, qhobj->key);
+            adiosfile->var_namelist[idx] = strdup(qhobj->key);
+            qhobj->value = (void*) idx;
+            idx++;
+            qhobj = qhobj->next;
+        }
+    }
+
+    /*
+    // Update back to varinfo
+    vp = fp->varinfo;
+    while (vp != NULL)
+    {
+        vp->varid = (int) tbl->get(tbl, vp->varname);
+        vp = vp->next;
+    }
+    */
+
+    tbl->free(tbl);
+
+    /*
     adiosfile->nvars = fp->nvars;
 	adiosfile->var_namelist = malloc(fp->nvars * sizeof(char *));
 
@@ -853,6 +894,7 @@ adios_read_icee_open(const char * fname,
         adiosfile->var_namelist[i] = strdup(vp->varname);
         vp = vp->next;
     }
+    */
 
     adiosfile->nattrs = 0;
     adiosfile->attr_namelist = NULL;
@@ -1011,7 +1053,7 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
     int i;
     icee_fileinfo_rec_ptr_t fp = (icee_fileinfo_rec_ptr_t) adiosfile->fh;
     log_debug("%s (%d:%s)\n", __FUNCTION__, varid, fp->fname);
-    assert((varid < fp->nvars) || (fp->nvars == 0));
+    //assert((varid < fp->nvars) || (fp->nvars == 0));
 
     if (nsteps != 1)
     {
@@ -1178,7 +1220,7 @@ adios_read_icee_inq_var_byid (const ADIOS_FILE * adiosfile, int varid)
     log_debug("%s (%d)\n", __FUNCTION__, varid);
 
     icee_fileinfo_rec_ptr_t fp = (icee_fileinfo_rec_ptr_t) adiosfile->fh;
-    assert((varid < fp->nvars) || (fp->nvars == 0));
+    //assert((varid < fp->nvars) || (fp->nvars == 0));
 
     ADIOS_VARINFO *a = calloc(1, sizeof(ADIOS_VARINFO));
     
