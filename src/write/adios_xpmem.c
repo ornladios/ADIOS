@@ -41,15 +41,10 @@ typedef struct _xmeminfo
 {
 	xpmem_segid_t buffer_id;
 	uint64_t size;
-	shared_data *d; //pointer to the shared data
-	shared_data *buffer; //buffer that contains a copy of the shared data
-}xmeminfo;
-
-
-typedef struct _adios_xpmem_data_struct
-{
-	xmeminfo data;
+	shared_data *sp; //pointer to the shared data
+	char *b; //buffer that contains a copy of the shared data
 }adios_xpmem_data_struct;
+
 
 
 
@@ -70,39 +65,34 @@ void adios_xpmem_init (const PairStruct * parameters
     method->method_data = malloc (sizeof (adios_xpmem_data_struct));
     memset(method->method_data, 0, sizeof(adios_xpmem_data_struct));
 
+    //store the data struct in the method 
     p = (adios_xpmem_data_struct*)method->method_data;
     
     //now create the shared memory space
     //fake the buffer size to 10 MB
-    p->data.buffer_id = make_share(&p->data.buffer, share_size);
-    p->index.buffer_id = make_share(&p->index.buffer, index_share_size);
+    p->buffer_id = make_share(&p->b, share_size);
+    memset(p->b, 0, share_size);
+    p->size = share_size;
 
-    memset(p->data.buffer, 0, share_size);
-    memset(p->index.buffer, 0, index_share_size);
+    log_debug("xpmem initialized\tbuffer_id = %llu \t writing to disk",
+              p->buffer_id);
 
-    p->data.size = share_size;
-    p->index.size = index_share_size;
+    p->sp = (shared_data*)p->b;
 
-    log_debug("xpmem initialized\tbuffer_id = %llu index_id = %llu\nwriting to disk",
-              p->data.buffer_id, p->index.buffer_id);
+   
+    memset(p->sp, 0, sizeof(shared_data));
 
-    p->data.d = (shared_data*)p->data.buffer;
-    p->index.d = (shared_data*)p->index.buffer;
+    p->sp->offset = (uint64_t)p->sp->buffer - (uint64_t)p->b;
+        
 
-    p->data.d->offset = (uint64_t)p->data.d->buffer - (uint64_t)p->data.buffer;
-    p->index.d->offset = (uint64_t)p->index.d->buffer - (uint64_t)p->index.buffer;
-
-    memset(p->data.d, 0, sizeof(shared_data));
-    memset(p->index.d, 0, sizeof(shared_data));
-
-    log_debug("xpmem data offset = %d\t index offset = %d\n",
-              p->data.d->offset, p->index.d->offset);
-    
-    
-    write_segid(p->data.buffer_id, "xpmem.data");
-    write_segid(p->index.buffer_id, "xpmem.index");
+    log_debug("xpmem data offset = %d",
+              p->sp->offset);
+        
+    write_segid(p->buffer_id, "xpmem.data");
 
 }
+
+
 
 int adios_xpmem_open (struct adios_file_struct * fd
                      ,struct adios_method_struct * method, MPI_Comm comm
@@ -122,20 +112,13 @@ int adios_xpmem_open (struct adios_file_struct * fd
     //check if there is a reader attached
 
     //wait for readcount to be 1
-    if(p->data.d->version != 0)
-    while(p->data.d->readcount != 1)
-	    adios_nanosleep(0, 100000000);
+    if(p->sp->version != 0)
+	    while(p->sp->readcount != 1)
+		    adios_nanosleep(0, 100000000);
 
-    if(p->index.d->version != 0)
-    while(p->index.d->readcount != 1)
-	    adios_nanosleep(0, 100000000);
+    p->sp->readcount = 0;
+    p->sp->version = 0;
 
-    p->data.d->readcount = 0;
-    p->index.d->readcount = 0;
-
-    p->data.d->version = 0;
-    p->index.d->version = 0;
-    
     log_debug("xpmem_open completed\n");
 
     return 1;
@@ -202,136 +185,73 @@ void adios_xpmem_read (struct adios_file_struct * fd
 	            "xpmem does not support old read api\n");
 }
 
-// static void adios_xpmem_do_write (struct adios_file_struct * fd
-//                                  ,struct adios_method_struct * method
-//                                  ,char * buffer
-//                                  ,uint64_t buffer_size
-//                                  )
-// {
-//     struct adios_XPMEM_data_struct * p = (struct adios_XPMEM_data_struct *)
-//                                                           method->method_data;
-//     int32_t to_write;
-//     uint64_t bytes_written = 0;
-
-//     if (fd->shared_buffer == adios_flag_yes)
-//     {
-//         lseek (p->b.f, p->b.end_of_pgs, SEEK_SET);
-//         if (p->b.end_of_pgs + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
-//             fprintf (stderr, "adios_xpmem_write exceeds pg bound. File is corrupted. "
-//                              "Need to enlarge group size. \n");
-
-//         if (fd->bytes_written > MAX_MPIWRITE_SIZE)
-//         {
-//             to_write = MAX_MPIWRITE_SIZE;
-//         }
-//         else
-//         {
-//             to_write = (int32_t) fd->bytes_written;
-//         }
-
-//         while (bytes_written < fd->bytes_written)
-//         {
-//             write (p->b.f, fd->buffer, to_write);
-//             bytes_written += to_write;
-//             if (fd->bytes_written > bytes_written)
-//             {
-//                 if (fd->bytes_written - bytes_written > MAX_MPIWRITE_SIZE)
-//                 {
-//                     to_write = MAX_MPIWRITE_SIZE;
-//                 }
-//                 else
-//                 {
-//                     to_write = fd->bytes_written - bytes_written;
-//                 }
-//             }
-//         }
-//     }
-
-//     // index location calculation:
-//     // for buffered, base_offset = 0, fd->offset = write loc
-//     // for unbuffered, base_offset = write loc, fd->offset = 0
-//     // for append buffered, base_offset = start, fd->offset = size
-//     lseek (p->b.f, fd->base_offset + fd->offset, SEEK_SET);
-//     write (p->b.f, buffer, buffer_size);
-// }
-
 
 void adios_xpmem_close (struct adios_file_struct * fd
-                       ,struct adios_method_struct * method
-                       )
+                        ,struct adios_method_struct *method )
 {
-     adios_xpmem_data_struct * p = ( adios_xpmem_data_struct *)
-                                                          method->method_data;
-    struct adios_attribute_struct * a = fd->group->attributes;
-    struct adios_index_struct_v1 * index;
+	adios_xpmem_data_struct * p = ( adios_xpmem_data_struct *)
+		method->method_data;
+	struct adios_attribute_struct * a = fd->group->attributes;
+	struct adios_index_struct_v1 * index;
     
-    switch (fd->mode)
-    {
-        case adios_mode_write:
-        {
+	switch (fd->mode)
+	{
+	case adios_mode_write:
+	{
+		// buffering or not, write the index
+		char * buffer = 0;
+		uint64_t buffer_size = 0;
+		uint64_t buffer_offset = 0;
+		uint64_t index_start = fd->base_offset + fd->offset;
+		char *data_buffer;
+		char *index_buffer;
 
-            // buffering or not, write the index
-            char * buffer = 0;
-            uint64_t buffer_size = 0;
-            uint64_t buffer_offset = 0;
-            uint64_t index_start = fd->base_offset + fd->offset;
-            char *data_buffer;
-            char *index_buffer;
+		// build index
+		index = adios_alloc_index_v1(1); // with hashtables
+		adios_build_index_v1 (fd, index);
+		adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset,
+		                      index_start, index);
+		adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 
-            // build index
-            index = adios_alloc_index_v1(1); // with hashtables
-            adios_build_index_v1 (fd, index);
-            adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset,
-                                  index_start, index);
-            adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
+		//now copy the data buffer into the shared memory area
+		data_buffer = &p->sp->buffer[0];
+		//we can do a sanity check here
+		log_info("data_buffer = %p\tb+offset = %p\n",
+		         data_buffer, &p->b[p->sp->offset]);
 
-            //now copy the data buffer into the shared memory area
-            data_buffer = &p->data.d->buffer[p->data.d->offset];
-            memcpy(data_buffer, fd->buffer, fd->bytes_written);
-            memcpy(&data_buffer[fd->bytes_written], buffer,
-                   buffer_offset);
+		//copy the raw data
+		memcpy(data_buffer, fd->buffer, fd->bytes_written);
+		//copy the built index
+		memcpy(&data_buffer[fd->bytes_written], buffer,
+		       buffer_offset);
 
-            //copy the index into the index area
-            index_buffer = &p->index.d->buffer[p->index.d->offset];           
-            memcpy(index_buffer, buffer, buffer_offset);
-
-            log_debug("xpmem copied data into %p index into %p\n",
-                      data_buffer, index_buffer);
-
-            //set the sizes for the data
-            p->data.d->size = fd->bytes_written + buffer_offset;
-            p->index.d->size = buffer_offset;
-
-            log_debug("xpmem sizes = %d, %d\n",
-                      fd->bytes_written, buffer_offset);
+		//confirm buffer locations
+		log_debug("bytes_writter = %d, buffer_offset = %d, total = %d\n",
+		          fd->bytes_written, buffer_offset, 
+		          fd->bytes_written + buffer_offset);
+		
+		//set the sizes for the data
+		p->sp->size = fd->bytes_written + buffer_offset;
             
-            //now set the version to 1
-            p->data.d->version = 1;
-            p->index.d->version = 1;
+		//now set the version to 1
+		ATOMIC_INCREMENT(p->sp->version);
+		
+		adios_free_index_v1(index);
+		free (buffer);
 
-            fprintf(stderr, "version %u size = %ll readcount = %u offset = %u reader = %u buffer=%p\n", p->data.d->version,
-	        p->data.d->size,
-	        p->data.d->readcount,
-	        p->data.d->offset,
-	        p->data.d->reader,
-	        p->data.d->buffer);
-
-            adios_free_index_v1(index);
-            free (buffer);
-
-            //now update the version variable
+		//now update the version variable
             
 
-            break;
-        }
+		break;
+	}
 
-        default:
-        {
-            fprintf (stderr, "Unsupported file mode: %d\n", fd->mode);
+	default:
+	{
+		fprintf (stderr, "Unsupported file mode: %d\n", fd->mode);
 
-            return;
-        }
-    }
+		return;
+	}
+	}
 
 }
 
