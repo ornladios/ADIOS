@@ -124,4 +124,8 @@ typedef struct _shared_data
 	char buffer[1];
 }shared_data;
 
+#define ATOMIC_INCREMENT(X) X++;
+#define ATOMIC_TEST_INCREMENT(X) if(X==0) X++;
+#define ATOMIC_TEST_RESET(X) if(X!=0) X=0;
+
 #endif //adios_xpmem_h
