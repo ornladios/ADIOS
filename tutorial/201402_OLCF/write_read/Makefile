@@ -22,11 +22,11 @@ GPP = ${ADIOS_DIR}/bin/gpp.py
 default: all
 all: write
 
-write: writer.c read.c
+write:
 	${CC} -g -c -o writer.o ${ADIOS_INC} writer.c
 	${LINKER} -static -g -o writer writer.o ${ADIOS_LIB}
-#	${CC} -g -c -o read.o ${ADIOS_INC} read.c
-##############	${LINKER} -g -o reader read.o ${ADIOS_LIB}
+	${CC} -g -c -o read.o ${ADIOS_INC} read.c
+	${LINKER} -static -g -o reader read.o ${ADIOS_LIB}
 
 writer: writer.F90 gwrite_writer.fh
 	${FC}   -g -c -o writer.o ${ADIOS_INC} writer.F90
