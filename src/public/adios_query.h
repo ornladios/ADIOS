@@ -85,26 +85,49 @@ ADIOS_QUERY* adios_query_combine (ADIOS_QUERY* q1,
                                   enum ADIOS_CLAUSE_OP_MODE operator,		    
                                   ADIOS_QUERY* q2);
 
-/* Select a query method manually for a query evaluation. 
-   If not set by the user, a suitable query method is chosen at evaluation
+/* 
+ *  Select a query method manually for a query evaluation. 
+ *  If not set by the user, a suitable query method is chosen at evaluation
 */
 void adios_query_set_method (ADIOS_QUERY* q, enum ADIOS_QUERY_METHOD method);
 
-//
-// returns estimated query result size. 
-// -1 if error.
-//
+
+/*
+ * Estimate the number of hits of the query at "timestep"
+ * 
+ * 
+ * IN:  q               query
+ *      timestep        timestep of interest
+ *
+ * RETURN:  -1 : error
+ *          >=0: estimated hits
+ *
+ */
+
 int64_t adios_query_estimate (ADIOS_QUERY* q, int timeStep);
 
 // obsolete. time_steps for non-streaming files should show up in estimate/evalute
 //void adios_query_set_timestep (int timeStep);
 
-//
-// evaluate and return result of the query.
-// returns -1 if error
-// returns 1 if more results to follow, keep calling evaluate() to find out
-// returns 0 of no more results to fetch 
-//
+/*
+ * Evaluate and return result of the query at the "timestep"
+ * result will be limited to "batchSize". May need to call Multiple times
+ * to get all the result.
+ * 
+ * IN:  q               query
+ *      timestep        timestep of interest
+ *	batchSize       max size of results to return of this call
+ *      outputBoundary  query results will be mapped to this selection
+ *	                outputBoundary must match the selections used when construct the query
+ *			if NULL, then will use the first selection used in query
+ * OUT: queryResult     list of points
+ *                      NULL if no result      
+ * RETURN:  -1: error
+ *           1: if more results to follow, keep calling evaluate() to find out
+ *           0: of no more results to fetch 
+ *
+ */
+
 int  adios_query_evaluate (ADIOS_QUERY* q, 
 			   int timestep,
 			   uint64_t batchSize, // limited by maxResult
