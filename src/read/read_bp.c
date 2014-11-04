@@ -2629,7 +2629,7 @@ int adios_read_bp_perform_reads (const ADIOS_FILE *fp, int blocking)
         // remove head from list
         r = p->local_read_request_list;
         p->local_read_request_list = p->local_read_request_list->next;
-        common_read_selection_delete (r->sel);
+        free_selection (r->sel); //common_read_selection_delete (r->sel);
         r->sel = NULL;
         free(r);
 
@@ -2893,6 +2893,8 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
             // remove head from list
             r = p->local_read_request_list;
             p->local_read_request_list = p->local_read_request_list->next;
+            free_selection (r->sel); //common_read_selection_delete (r->sel);
+            r->sel = NULL;
             free(r);
 
             * chunk = varchunk;
@@ -2922,6 +2924,8 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
                 // remove head from list
                 r = p->local_read_request_list;
                 p->local_read_request_list = p->local_read_request_list->next;
+                free_selection (r->sel); //common_read_selection_delete (r->sel);
+                r->sel = NULL;
                 free(r);
 
                 * chunk = varchunk;
@@ -2942,6 +2946,8 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
             // remove head from list
             r = p->local_read_request_list;
             p->local_read_request_list = p->local_read_request_list->next;
+            free_selection (r->sel); //common_read_selection_delete (r->sel);
+            r->sel = NULL;
             free(r);
 
             r = subreqs;
@@ -2963,6 +2969,8 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
                 // remove head from list
                 r = p->local_read_request_list;
                 p->local_read_request_list = p->local_read_request_list->next;
+                free_selection (r->sel); //common_read_selection_delete (r->sel);
+                r->sel = NULL;
                 free(r);
 
                 * chunk = varchunk;

@@ -3309,7 +3309,8 @@ void common_read_free_chunk (ADIOS_VARCHUNK *chunk)
      */
      if (chunk) {
         if (chunk->sel) {
-            free(chunk->sel);
+            free_selection(chunk->sel);
+            //free(chunk->sel);
             chunk->sel = NULL;
         }
         free(chunk);
