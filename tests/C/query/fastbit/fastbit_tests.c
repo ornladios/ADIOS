@@ -372,6 +372,7 @@ void manualCheck(ADIOS_QUERY* q, int timestep) {
 	}	  
       }
       printf("... double check found %d hits\n", hits);
+      free(output);
       return;
   }
   printf("Skip manual check on composite query\n");
@@ -460,6 +461,18 @@ int parseQueryXml(const char* xmlQueryFileName)
       while (timestep <= f->last_step) {
 	int64_t est = adios_query_estimate(q, timestep);
 	printf("\n=> query %s: %s, \n\t estimated  %ld hits on timestep: %d\n", queryName, q->condition, est, timestep);
+
+	ADIOS_SELECTION* result = NULL;
+	int ev = adios_query_evaluate(q, timestep, 10000000, NULL, &result);
+	if (result != NULL) {
+	  printf("\t evaluated  %ld hits on timestep: %d\n", result->u.points.npoints, timestep);
+	  free (result->u.points.points);
+	  adios_selection_delete(result);
+	  result = NULL;
+	} else {
+	  printf("\t evaluate returned 0 hits.\n");
+	}
+
 	manualCheck(q, timestep);
 	
 	timestep ++;
