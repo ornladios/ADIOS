@@ -592,489 +592,401 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
  */
 static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
 {
-//     BP_PROC * p = GET_BP_PROC (fp);
-//     BP_FILE * fh = GET_BP_FILE (fp);
+	xpmem_read_file *xf = (xpmem_read_file *)fp->fh;	
+	BP_PROC * p = GET_BP_PROC (fp);
+	BP_FILE * fh = GET_BP_FILE (fp);
+	xpmem_read_data *xd = xf->fp;
 
-//     ADIOS_SELECTION * sel;
-//     struct adios_index_var_struct_v1 * v;
-//     int i, j, t, time, nsteps;
-//     int64_t start_idx, stop_idx, idx;
-//     int ndim, has_subfile, file_is_fortran;
-//     uint64_t * dims, tmpcount;
-//     uint64_t ldims[32], gdims[32], offsets[32];
-//     uint64_t datasize, dset_stride,var_stride, total_size=0, items_read;
-//     uint64_t * count, * start;
-//     void * data;
-//     int dummy = -1, is_global = 0, size_of_type;
-//     uint64_t slice_offset, slice_size;
-//     MPI_Status status;
-    ADIOS_VARCHUNK * chunk;
-//     struct adios_var_header_struct_v1 var_header;
-//     //struct adios_var_payload_struct_v1 var_payload;
+	ADIOS_SELECTION * sel;
+	struct adios_index_var_struct_v1 * v;
+	int i, j, t, time, nsteps;
+	int64_t start_idx, stop_idx, idx;
+	int ndim, file_is_fortran;
+	uint64_t * dims, tmpcount;
+	uint64_t ldims[32], gdims[32], offsets[32];
+	uint64_t datasize, dset_stride,var_stride, total_size=0, items_read;
+	uint64_t * count, * start;
+	void * data;
+	int dummy = -1, is_global = 0, size_of_type;
+	uint64_t slice_offset, slice_size;
+	MPI_Status status;
+	ADIOS_VARCHUNK * chunk;
+	struct adios_var_header_struct_v1 var_header;
+	//struct adios_var_payload_struct_v1 var_payload;
 
-// //    log_debug ("read_var_bb()\n");
-//     file_is_fortran = is_fortran_file (fh);
-//     has_subfile = has_subfiles (fh);
+//    log_debug ("read_var_bb()\n");
+	file_is_fortran = is_fortran_file (fh);
 
-//     sel = r->sel;
-//     start = sel->u.bb.start;
-//     count = sel->u.bb.count;
-//     data = r->data;
+	sel = r->sel;
+	start = sel->u.bb.start;
+	count = sel->u.bb.count;
+	data = r->data;
 
-//     v = bp_find_var_byid (fh, r->varid);
+	v = bp_find_var_byid (fh, r->varid);
 
-//     /* Get dimensions and flip if caller != writer language */
-//     /* Note: ndim below doesn't include time if there is any */
-//     // NCSU ALACRITY-ADIOS - Note: this function has been modified to return
-//     //   the "raw" dimensions (i.e., 1D byte array)
-//     bp_get_and_swap_dimensions (fp, v, file_is_fortran, &ndim, &dims, &nsteps, file_is_fortran);
+	/* Get dimensions and flip if caller != writer language */
+	/* Note: ndim below doesn't include time if there is any */
+	// NCSU ALACRITY-ADIOS - Note: this function has been modified to return
+	//   the "raw" dimensions (i.e., 1D byte array)
+	bp_get_and_swap_dimensions (fp, v, file_is_fortran, &ndim, &dims, &nsteps, file_is_fortran);
 
-//     assert (ndim == sel->u.bb.ndim);
-//     ndim = sel->u.bb.ndim;
+	assert (ndim == sel->u.bb.ndim);
+	ndim = sel->u.bb.ndim;
 
-//     /* Fortran reader was reported of Fortran dimension order so it gives counts and starts in that order.
-//        We need to swap them here to read correctly in C order */
-//     if (futils_is_called_from_fortran ())
-//     {
-//         swap_order (ndim, start, &dummy);
-//         swap_order (ndim, count, &dummy);
-//     }
-// /*
-//     log_debug ("read_var_bb(): start(");
-//     for (i = 0; i < ndim; i++)
-//     {
-//         log_debug_cont ("%lu", start[i]);
-//         if (i != ndim - 1)
-//         {
-//             log_debug_cont (",");
-//         }
-//     }
-//     log_debug_cont (")\n");
+	/* Fortran reader was reported of Fortran dimension order so it gives counts and starts in that order.
+	   We need to swap them here to read correctly in C order */
+	if (futils_is_called_from_fortran ())
+	{
+		swap_order (ndim, start, &dummy);
+		swap_order (ndim, count, &dummy);
+	}
 
-//     log_debug ("read_var_bb(): count(");
-//     for (i = 0; i < ndim; i++)
-//     {
-//         log_debug_cont ("%lu", count[i]);
-//         if (i != ndim - 1)
-//         {
-//             log_debug_cont (",");
-//         }
-//     }
-//     log_debug_cont (")\n");
-// */
-//     /* items_read = how many data elements are we going to read in total (per timestep) */
-//     items_read = 1;
-//     for (i = 0; i < ndim; i++)
-//     {
-//         items_read *= count[i];
-//     }
+	/* items_read = how many data elements are we going to read in total (per timestep) */
+	items_read = 1;
+	for (i = 0; i < ndim; i++)
+	{
+		items_read *= count[i];
+	}
 
-//     size_of_type = bp_get_type_size (v->type, v->characteristics [0].value);
+	size_of_type = bp_get_type_size (v->type, v->characteristics [0].value);
 
-// //    log_debug ("read_var_bb: from_steps = %d, nsteps = %d\n", r->from_steps, r->nsteps);
+//    log_debug ("read_var_bb: from_steps = %d, nsteps = %d\n", r->from_steps, r->nsteps);
 
-//     /* Note fp->current_step is always 0 for file mode. */
-//     for (t = fp->current_step + r->from_steps; t < fp->current_step + r->from_steps + r->nsteps; t++)
-//     {
+	/* Note fp->current_step is always 0 for file mode. */
+	for (t = fp->current_step + r->from_steps; t < fp->current_step + r->from_steps + r->nsteps; t++)
+	{
 
-//         if (!p->streaming)
-//         {
-//             time = get_time (v, t);
-//         }
-//         else
-//         {
-//             // Fix: the assumption that for streaming mode, the time in file
-//             // always starts from 1 is not correct. So here we add fh->tidx_start to adjust
-//             // Q. Liu, 06/2013
-//             time = fh->tidx_start + t;
-//         }
+		if (!p->streaming)
+		{
+			time = get_time (v, t);
+		}
+		else
+		{
+			// Fix: the assumption that for streaming mode, the time in file
+			// always starts from 1 is not correct. So here we add fh->tidx_start to adjust
+			// Q. Liu, 06/2013
+			time = fh->tidx_start + t;
+		}
 
-// //printf ("t = %d(%d,%d), time = %d\n", t, fp->current_step, r->from_steps, time);
-// //printf ("c = %d, f = %d, time = %d\n", fp->current_step, r->from_steps, time);
-//         start_idx = get_var_start_index (v, time);
-//         stop_idx = get_var_stop_index (v, time);
+		start_idx = get_var_start_index (v, time);
+		stop_idx = get_var_stop_index (v, time);
 
-//         if (start_idx < 0 || stop_idx < 0)
-//         {
-//             adios_error (err_no_data_at_timestep,"Variable %s has no data at %d time step\n",
-//                          v->var_name, t);
-//             continue;
-//         }
+		if (start_idx < 0 || stop_idx < 0)
+		{
+			adios_error (err_no_data_at_timestep,"Variable %s has no data at %d time step\n",
+			             v->var_name, t);
+			continue;
+		}
 
-//         if (ndim == 0)
-//         {
-//             /* READ A SCALAR VARIABLE */
-//             /* Prepare slice_offset, slice_size and idx for the later macro:
-//                MPI_FILE_READ_OPS1 and MPI_FILE_READ_OPS2
-//             */
-//             idx = 0;
-//             slice_offset = v->characteristics[start_idx + idx].payload_offset;
-//             slice_size = size_of_type;
+		if (ndim == 0)
+		{
+			/* READ A SCALAR VARIABLE */
+			/* Prepare slice_offset, slice_size and idx for the later macro:
+			   MPI_FILE_READ_OPS1 and MPI_FILE_READ_OPS2
+			*/
+			idx = 0;
+			slice_offset = v->characteristics[start_idx + idx].payload_offset;
+			slice_size = size_of_type;
 
-//             if (v->type == adios_string)
-//             {
-//                 // Note: strings are stored without \0 in file
-//                 // size_of_type above includes \0 so decrease by one
-//                 size_of_type--;
-//             }
+			if (v->type == adios_string)
+			{
+				// Note: strings are stored without \0 in file
+				// size_of_type above includes \0 so decrease by one
+				size_of_type--;
+			}
 
-//             if (v->characteristics[start_idx + idx].payload_offset > 0)
-//             {
-//                 if (!has_subfile)
-//                 {
-//                     MPI_FILE_READ_OPS1
-//                 }
-//                 else
-//                 {
-//                     MPI_FILE_READ_OPS2
-//                 }
-//             }
-//             else
-//             {
-//                 slice_offset = 0;
-//                 MPI_FILE_READ_OPS3
-//             }
+			//copy the data
+            
+			memcpy ((char *)data, &xd->data[slice_offset], slice_size);
 
-//             memcpy ((char *)data, fh->b->buff + fh->b->offset, size_of_type);
+			if (fh->mfooter.change_endianness == adios_flag_yes)
+			{
+				log_error("endianness should not be changed\n");
+			}
 
-//             if (fh->mfooter.change_endianness == adios_flag_yes)
-//             {
-//                 change_endianness ((char *)data, size_of_type, v->type);
-//             }
+			if (v->type == adios_string)
+			{
+				// add \0 to the end of string
+				// size_of_type here is the length of string
+				// FIXME: how would this work for strings written over time?
+				((char*)data)[size_of_type] = '\0';
+			}
 
-//             if (v->type == adios_string)
-//             {
-//                 // add \0 to the end of string
-//                 // size_of_type here is the length of string
-//                 // FIXME: how would this work for strings written over time?
-//                 ((char*)data)[size_of_type] = '\0';
-//             }
+			//FIXME: Not clear why we read multiple timesteps like this. Ask norbert.
+			//for scalars does it even make sense to do this?
+			//and chunks will then point to the wrong pointer
+			data = (char *)data + (v->type == adios_string?  size_of_type + 1 : size_of_type);
+		}
+		else
+		{
+			/* READ AN ARRAY VARIABLE */
+			int * idx_table = (int *) malloc (sizeof (int) * (stop_idx - start_idx + 1));
+			uint64_t write_offset = 0;
 
-//             data = (char *)data + (v->type == adios_string?  size_of_type + 1 : size_of_type);
-//         }
-//         else
-//         {
-//             /* READ AN ARRAY VARIABLE */
-//             int * idx_table = (int *) malloc (sizeof (int) * (stop_idx - start_idx + 1));
-//             uint64_t write_offset = 0;
-// /*
-//                 printf ("count   = "); for (j = 0; j<ndim; j++) printf ("%d ",count[j]); printf ("\n");
-//                 printf ("start   = "); for (j = 0; j<ndim; j++) printf ("%d ",start[j]); printf ("\n");
-// */
-//             // loop over the list of pgs to read from one-by-one
-//             for (idx = 0; idx < stop_idx - start_idx + 1; idx++)
-//             {
-//                 int flag;
-//                 datasize = 1;
-//                 var_stride = 1;
-//                 dset_stride = 1;
-//                 idx_table[idx] = 1;
-//                 uint64_t payload_size = size_of_type;
+			// loop over the list of pgs to read from one-by-one
+			for (idx = 0; idx < stop_idx - start_idx + 1; idx++)
+			{
+				int flag;
+				datasize = 1;
+				var_stride = 1;
+				dset_stride = 1;
+				idx_table[idx] = 1;
+				uint64_t payload_size = size_of_type;
 
-//                 is_global = bp_get_dimension_characteristics_notime (&(v->characteristics[start_idx + idx]),
-//                                                                     ldims, gdims, offsets, file_is_fortran);
-//                 if (!is_global)
-//                 {
-//                     // we use gdims below, which is 0 for a local array; set to ldims here
-//                     for (j = 0; j < ndim; j++)
-//                     {
-//                         gdims[j] = ldims[j];
-//                     }
-//                     // we need to read only the first PG, not all, so let's prevent a second loop
-//                     stop_idx = start_idx;
-//                 }
-// /*
-//                 printf ("ldims   = "); for (j = 0; j<ndim; j++) printf ("%d ",ldims[j]); printf ("\n");
-//                 printf ("gdims   = "); for (j = 0; j<ndim; j++) printf ("%d ",gdims[j]); printf ("\n");
-//                 printf ("offsets = "); for (j = 0; j<ndim; j++) printf ("%d ",offsets[j]); printf ("\n");
-// */
-//                 for (j = 0; j < ndim; j++)
-//                 {
-//                     payload_size *= ldims [j];
+				is_global = bp_get_dimension_characteristics_notime (&(v->characteristics[start_idx + idx]),
+				                                                     ldims, gdims, offsets, file_is_fortran);
+				if (!is_global)
+				{
+					// we use gdims below, which is 0 for a local array; set to ldims here
+					for (j = 0; j < ndim; j++)
+					{
+						gdims[j] = ldims[j];
+					}
+					// we need to read only the first PG, not all, so let's prevent a second loop
+					stop_idx = start_idx;
+				}
+/*
+  printf ("ldims   = "); for (j = 0; j<ndim; j++) printf ("%d ",ldims[j]); printf ("\n");
+  printf ("gdims   = "); for (j = 0; j<ndim; j++) printf ("%d ",gdims[j]); printf ("\n");
+  printf ("offsets = "); for (j = 0; j<ndim; j++) printf ("%d ",offsets[j]); printf ("\n");
+*/
+				for (j = 0; j < ndim; j++)
+				{
+					payload_size *= ldims [j];
 
-//                     if ( (count[j] > gdims[j])
-//                       || (start[j] > gdims[j])
-//                       || (start[j] + count[j] > gdims[j]))
-//                     {
-//                         adios_error ( err_out_of_bound, "Error: Variable (id=%d) out of bound 1("
-//                             "the data in dimension %d to read is %llu elements from index %llu"
-//                             " but the actual data is [0,%llu])\n",
-//                             r->varid, j + 1, count[j], start[j], gdims[j] - 1);
-//                         return 0;
-//                     }
+					if ( (count[j] > gdims[j])
+					     || (start[j] > gdims[j])
+					     || (start[j] + count[j] > gdims[j]))
+					{
+						adios_error ( err_out_of_bound, "Error: Variable (id=%d) out of bound 1("
+						              "the data in dimension %d to read is %llu elements from index %llu"
+						              " but the actual data is [0,%llu])\n",
+						              r->varid, j + 1, count[j], start[j], gdims[j] - 1);
+						return 0;
+					}
 
-//                     /* check if there is any data in this pg and this dimension to read in */
-//                     flag = (offsets[j] >= start[j]
-//                             && offsets[j] < start[j] + count[j])
-//                         || (offsets[j] < start[j]
-//                             && offsets[j] + ldims[j] > start[j] + count[j])
-//                         || (offsets[j] + ldims[j] > start[j]
-//                             && offsets[j] + ldims[j] <= start[j] + count[j]);
-//                     idx_table [idx] = idx_table[idx] && flag;
-//                 }
+					/* check if there is any data in this pg and this dimension to read in */
+					flag = (offsets[j] >= start[j]
+					        && offsets[j] < start[j] + count[j])
+						|| (offsets[j] < start[j]
+						    && offsets[j] + ldims[j] > start[j] + count[j])
+						|| (offsets[j] + ldims[j] > start[j]
+						    && offsets[j] + ldims[j] <= start[j] + count[j]);
+					idx_table [idx] = idx_table[idx] && flag;
+				}
 
-//                 if (!idx_table[idx])
-//                 {
-//                     continue;
-//                 }
+				if (!idx_table[idx])
+				{
+					continue;
+				}
 
-//                 /* determined how many (fastest changing) dimensions can we read in in one read */
-//                 int hole_break;
-//                 for (i = ndim - 1; i > -1; i--)
-//                 {
-//                     if (offsets[i] == start[i] && ldims[i] == count[i])
-//                     {
-//                         datasize *= ldims[i];
-//                     }
-//                     else
-//                         break;
-//                 }
+				/* determined how many (fastest changing) dimensions can we read in in one read */
+				int hole_break;
+				for (i = ndim - 1; i > -1; i--)
+				{
+					if (offsets[i] == start[i] && ldims[i] == count[i])
+					{
+						datasize *= ldims[i];
+					}
+					else
+						break;
+				}
 
-//                 hole_break = i;
-//                 slice_offset = 0;
-//                 slice_size = 0;
+				hole_break = i;
+				slice_offset = 0;
+				slice_size = 0;
 
-//                 if (hole_break == -1)
-//                 {
-//                     /* The complete read happens to be exactly one pg, and the entire pg */
-//                     /* This means we enter this only once, and npg=1 at the end */
-//                     /* This is a rare case. FIXME: cannot eliminate this? */
-//                     slice_size = payload_size;
+				if (hole_break == -1)
+				{
+					/* The complete read happens to be exactly one pg, and the entire pg */
+					/* This means we enter this only once, and npg=1 at the end */
+					/* This is a rare case. FIXME: cannot eliminate this? */
+					slice_size = payload_size;
 
-//                     slice_offset = v->characteristics[start_idx + idx].payload_offset;
-//                     if (v->characteristics[start_idx + idx].payload_offset > 0)
-//                     {
-//                         if (!has_subfile)
-//                         {
-//                             MPI_FILE_READ_OPS1
-//                         }
-//                         else
-//                         {
-//                             MPI_FILE_READ_OPS2
-//                         }
-//                     }
-//                     else
-//                     {
-//                          slice_offset = 0;
-//                          MPI_FILE_READ_OPS3
-//                     }
+					slice_offset = v->characteristics[start_idx + idx].payload_offset;
 
-//                     memcpy ((char *)data, fh->b->buff + fh->b->offset, slice_size);
-//                     if (fh->mfooter.change_endianness == adios_flag_yes)
-//                     {
-//                         change_endianness (data, slice_size, v->type);
-//                     }
-//                 }
-//                 else if (hole_break == 0)
-//                 {
-//                     /* The slowest changing dimensions should not be read completely but
-//                        we still need to read only one block */
-//                     uint64_t isize;
-//                     uint64_t size_in_dset = 0;
-//                     uint64_t offset_in_dset = 0;
-//                     uint64_t offset_in_var = 0;
+					memcpy ((char *)data, &xd->data[slice_offset], slice_size);
+					if (fh->mfooter.change_endianness == adios_flag_yes)
+					{
+						log_error("endianness change not needed\n");
+					}
+				}
+				else if (hole_break == 0)
+				{
+					/* The slowest changing dimensions should not be read completely but
+					   we still need to read only one block */
+					uint64_t isize;
+					uint64_t size_in_dset = 0;
+					uint64_t offset_in_dset = 0;
+					uint64_t offset_in_var = 0;
 
-//                     isize = offsets[0] + ldims[0];
-//                     if (start[0] >= offsets[0])
-//                     {
-//                         // head is in
-//                         if (start[0]<isize)
-//                         {
-//                             if (start[0] + count[0] > isize)
-//                                 size_in_dset = isize - start[0];
-//                             else
-//                                 size_in_dset = count[0];
-//                             offset_in_dset = start[0] - offsets[0];
-//                             offset_in_var = 0;
-//                         }
-//                     }
-//                     else
-//                     {
-//                         // middle is in
-//                         if (isize < start[0] + count[0])
-//                             size_in_dset = ldims[0];
-//                         else
-//                         // tail is in
-//                             size_in_dset = count[0] + start[0] - offsets[0];
-//                         offset_in_dset = 0;
-//                         offset_in_var = offsets[0] - start[0];
-//                     }
+					isize = offsets[0] + ldims[0];
+					if (start[0] >= offsets[0])
+					{
+						// head is in
+						if (start[0]<isize)
+						{
+							if (start[0] + count[0] > isize)
+								size_in_dset = isize - start[0];
+							else
+								size_in_dset = count[0];
+							offset_in_dset = start[0] - offsets[0];
+							offset_in_var = 0;
+						}
+					}
+					else
+					{
+						// middle is in
+						if (isize < start[0] + count[0])
+							size_in_dset = ldims[0];
+						else
+							// tail is in
+							size_in_dset = count[0] + start[0] - offsets[0];
+						offset_in_dset = 0;
+						offset_in_var = offsets[0] - start[0];
+					}
 
-//                     slice_size = size_in_dset * datasize * size_of_type;
-//                     write_offset = offset_in_var * datasize * size_of_type;
+					slice_size = size_in_dset * datasize * size_of_type;
+					write_offset = offset_in_var * datasize * size_of_type;
 
-//                     if (v->characteristics[start_idx + idx].payload_offset > 0)
-//                     {
-//                         slice_offset = v->characteristics[start_idx + idx].payload_offset
-//                                      + offset_in_dset * datasize * size_of_type;
-//                         if (!has_subfile)
-//                         {
-//                             MPI_FILE_READ_OPS1
-//                         }
-//                         else
-//                         {
-//                             MPI_FILE_READ_OPS2
-//                         }
-//                     }
-//                     else
-//                     {
-//                         slice_offset = 0;
-//                         MPI_FILE_READ_OPS3
-//                     }
+					slice_offset = v->characteristics[start_idx + idx].payload_offset
+						+ offset_in_dset * datasize * size_of_type;
+                    
+					memcpy ((char *)data + write_offset, &xd->data[slice_offset], slice_size);
 
-//                     memcpy ((char *)data + write_offset, fh->b->buff + fh->b->offset, slice_size);
-//                     if (fh->mfooter.change_endianness == adios_flag_yes)
-//                     {
-//                         change_endianness((char *)data + write_offset, slice_size, v->type);
-//                     }
+					if (fh->mfooter.change_endianness == adios_flag_yes)
+					{
+						log_error("endianness should not be changed\n");
+					}
 
-//                     //write_offset +=  slice_size;
-//                 }
-//                 else
-//                 {
-//                     uint64_t isize;
-//                     uint64_t size_in_dset[10];
-//                     uint64_t offset_in_dset[10];
-//                     uint64_t offset_in_var[10];
+					//write_offset +=  slice_size;
+				}
+				else
+				{
+					uint64_t isize;
+					uint64_t size_in_dset[10];
+					uint64_t offset_in_dset[10];
+					uint64_t offset_in_var[10];
 
-//                     memset(size_in_dset, 0 , 10 * 8);
-//                     memset(offset_in_dset, 0 , 10 * 8);
-//                     memset(offset_in_var, 0 , 10 * 8);
+					memset(size_in_dset, 0 , 10 * 8);
+					memset(offset_in_dset, 0 , 10 * 8);
+					memset(offset_in_var, 0 , 10 * 8);
 
-//                     for (i = 0; i < ndim; i++)
-//                     {
-//                         isize = offsets[i] + ldims[i];
-//                         if (start[i] >= offsets[i])
-//                         {
-//                             // head is in
-//                             if (start[i]<isize)
-//                             {
-//                                 if (start[i] + count[i] > isize)
-//                                     size_in_dset[i] = isize - start[i];
-//                                 else
-//                                     size_in_dset[i] = count[i];
-//                                 offset_in_dset[i] = start[i] - offsets[i];
-//                                 offset_in_var[i] = 0;
-//                             }
-//                             else
-//                             {
-//                             }
-//                         }
-//                         else
-//                         {
-//                             // middle is in
-//                             if (isize < start[i] + count[i])
-//                             {
-//                                 size_in_dset[i] = ldims[i];
-//                             }
-//                             else
-//                             {
-//                                 // tail is in
-//                                 size_in_dset[i] = count[i] + start[i] - offsets[i];
-//                             }
-//                             offset_in_dset[i] = 0;
-//                             offset_in_var[i] = offsets[i] - start[i];
-//                         }
-//                     }
-//                     datasize = 1;
-//                     var_stride = 1;
+					for (i = 0; i < ndim; i++)
+					{
+						isize = offsets[i] + ldims[i];
+						if (start[i] >= offsets[i])
+						{
+							// head is in
+							if (start[i]<isize)
+							{
+								if (start[i] + count[i] > isize)
+									size_in_dset[i] = isize - start[i];
+								else
+									size_in_dset[i] = count[i];
+								offset_in_dset[i] = start[i] - offsets[i];
+								offset_in_var[i] = 0;
+							}
+							else
+							{
+							}
+						}
+						else
+						{
+							// middle is in
+							if (isize < start[i] + count[i])
+							{
+								size_in_dset[i] = ldims[i];
+							}
+							else
+							{
+								// tail is in
+								size_in_dset[i] = count[i] + start[i] - offsets[i];
+							}
+							offset_in_dset[i] = 0;
+							offset_in_var[i] = offsets[i] - start[i];
+						}
+					}
+					datasize = 1;
+					var_stride = 1;
 
-//                     for (i = ndim - 1; i >= hole_break; i--)
-//                     {
-//                         datasize *= size_in_dset[i];
-//                         dset_stride *= ldims[i];
-//                         var_stride *= count[i];
-//                     }
+					for (i = ndim - 1; i >= hole_break; i--)
+					{
+						datasize *= size_in_dset[i];
+						dset_stride *= ldims[i];
+						var_stride *= count[i];
+					}
 
-//                     uint64_t start_in_payload = 0, end_in_payload = 0, s = 1;
-//                     for (i = ndim - 1; i > -1; i--)
-//                     {
-//                         start_in_payload += s * offset_in_dset[i] * size_of_type;
-//                         end_in_payload += s * (offset_in_dset[i] + size_in_dset[i] - 1) * size_of_type;
-//                         s *= ldims[i];
-//                     }
+					uint64_t start_in_payload = 0, end_in_payload = 0, s = 1;
+					for (i = ndim - 1; i > -1; i--)
+					{
+						start_in_payload += s * offset_in_dset[i] * size_of_type;
+						end_in_payload += s * (offset_in_dset[i] + size_in_dset[i] - 1) * size_of_type;
+						s *= ldims[i];
+					}
 
-//                     slice_size = end_in_payload - start_in_payload + 1 * size_of_type;
-//                     if (v->characteristics[start_idx + idx].payload_offset > 0)
-//                     {
-//                         slice_offset =  v->characteristics[start_idx + idx].payload_offset
-//                                   + start_in_payload;
-//                         if (!has_subfile)
-//                         {
-//                             MPI_FILE_READ_OPS1
-//                         }
-//                         else
-//                         {
-//                            MPI_FILE_READ_OPS2
-//                         }
-//                     }
-//                     else
-//                     {
-//                         slice_offset =  start_in_payload;
-//                         MPI_FILE_READ_OPS3
-//                     }
+					slice_size = end_in_payload - start_in_payload + 1 * size_of_type;
+					slice_offset =  v->characteristics[start_idx + idx].payload_offset
+						+ start_in_payload;
 
-//                     for (i = 0; i < ndim; i++)
-//                     {
-//                         offset_in_dset[i] = 0;
-//                     }
+					memcpy ((char *)data, &xd->data[slice_offset], slice_size);
+						
+					for (i = 0; i < ndim; i++)
+					{
+						offset_in_dset[i] = 0;
+					}
 
-//                     uint64_t var_offset = 0;
-//                     uint64_t dset_offset = 0;
+					uint64_t var_offset = 0;
+					uint64_t dset_offset = 0;
 
-//                     for (i = 0; i < ndim; i++)
-//                     {
-//                         var_offset = offset_in_var[i] + var_offset * count[i];
-//                         dset_offset = offset_in_dset[i] + dset_offset * ldims[i];
-//                     }
+					for (i = 0; i < ndim; i++)
+					{
+						var_offset = offset_in_var[i] + var_offset * count[i];
+						dset_offset = offset_in_dset[i] + dset_offset * ldims[i];
+					}
 
-//                     copy_data (data
-//                               ,fh->b->buff + fh->b->offset
-//                               ,0
-//                               ,hole_break
-//                               ,size_in_dset
-//                               ,ldims
-//                               ,count
-//                               ,var_stride
-//                               ,dset_stride
-//                               ,var_offset
-//                               ,dset_offset
-//                               ,datasize
-//                               ,size_of_type
-//                               ,fh->mfooter.change_endianness
-//                               ,v->type
-//                               );
-//                 }
-//             }  // end for (idx ... loop over pgs
+					//FIXME find out what the heck is going on here
+					copy_data (data
+					           ,fh->b->buff + fh->b->offset
+					           ,0
+					           ,hole_break
+					           ,size_in_dset
+					           ,ldims
+					           ,count
+					           ,var_stride
+					           ,dset_stride
+					           ,var_offset
+					           ,dset_offset
+					           ,datasize
+					           ,size_of_type
+					           ,fh->mfooter.change_endianness
+					           ,v->type
+						);
+				}
+			}  // end for (idx ... loop over pgs
 
-//             free (idx_table);
+			free (idx_table);
 
-//             total_size += items_read * size_of_type;
-//             // shift target pointer for next read in
-//             data = (char *)data + (items_read * size_of_type);
+			total_size += items_read * size_of_type;
+			// shift target pointer for next read in
+			data = (char *)data + (items_read * size_of_type);
 
-// //FIXME
-// /*
-//         if (timedim == -1)
-//             break;
-// */
-//         }
-//     } // end for t
+		}
+	} // end for t
 
-//     free (dims);
+	free (dims);
 
-// //    log_debug ("read_var_bb(): build ADIOS_VARCHUNK\n");
-//     chunk = (ADIOS_VARCHUNK *) malloc (sizeof (ADIOS_VARCHUNK));
-//     assert (chunk);
+	chunk = (ADIOS_VARCHUNK *) malloc (sizeof (ADIOS_VARCHUNK));
+	assert (chunk);
 
-//     chunk->varid = r->varid;
-//     chunk->type = v->type;
-//     // NCSU ALACRITY-ADIOS - Added timestep information into varchunks
-//     chunk->from_steps = r->from_steps;
-//     chunk->nsteps = r->nsteps;
-//     chunk->sel = copy_selection (r->sel);
-//     chunk->data = r->data;
-    return chunk;
+	chunk->varid = r->varid;
+	chunk->type = v->type;
+	// NCSU ALACRITY-ADIOS - Added timestep information into varchunks
+	chunk->from_steps = r->from_steps;
+	chunk->nsteps = r->nsteps;
+	chunk->sel = copy_selection (r->sel);
+	chunk->data = r->data;
+	return chunk;
 }
 
 /* This routine reads a write block. The 'index' value in the selection is
