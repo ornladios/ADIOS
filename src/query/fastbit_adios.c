@@ -26,6 +26,8 @@ long fastbit_adios_getCurrentTimeMillis()
 void fastbit_adios_util_checkNotNull(void* fastbitHandle, const char* arrayName) {
   if (fastbitHandle == NULL) {
      log_error(" >> Unable to create handle on fastbit, ref: %s\n", arrayName);
+  } else {
+     log_debug(" >> created handle on fastbit, ref: %s\n", arrayName);
   }
 }
 
@@ -34,7 +36,7 @@ int fastbit_adios_util_getRelativeBlockNumForPoint(ADIOS_VARINFO* v,  uint64_t* 
   int i=0;
   int j=0;
 
-  if (v->nsteps = 1) {
+  if (v->nsteps == 1) {
     // 
     // if file is read through adios_read_open(), knows only about the current time step
     //
@@ -335,6 +337,62 @@ static const char * value_to_string (enum ADIOS_DATATYPES type, void * data, int
 // caller frees keys, offsets and bms.
 //
 //
+int fastbit_adios_util_readNoBMSFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, int timestep, int blockNum, 
+					      double** keys, uint64_t* nk, int64_t** offsets, uint64_t* no,
+					      char** bmsVarName)
+{
+  char keyVarName[100];
+  char offsetName[100];
+
+  *bmsVarName = malloc(100);
+  sprintf(*bmsVarName, "bms-%d-%d-%d", v->varid, timestep, blockNum);
+  sprintf(keyVarName, "key-%d-%d-%d", v->varid, timestep, blockNum);
+  sprintf(offsetName, "offset-%d-%d-%d", v->varid, timestep, blockNum);
+
+  log_debug("reading from index file: %s for variables: %s %s %s \n", idxFile->path, bmsVarName, keyVarName, offsetName);
+
+  ADIOS_VARINFO * keyV = common_read_inq_var (idxFile, keyVarName);
+  ADIOS_VARINFO * offsetV = common_read_inq_var (idxFile, offsetName);
+
+  if ((keyV == 0) || (offsetV == 0)) {
+    log_warn("WARN: no index for this variable.\n");
+    return -1;
+  }
+
+  uint64_t keySize    = (uint64_t)(keyV->dims[0] * common_read_type_size (keyV->type, keyV->value));
+  uint64_t offsetSize = (uint64_t)(offsetV->dims[0] * common_read_type_size (offsetV->type, offsetV->value));
+    
+  *offsets = malloc(offsetSize);
+  *keys    = malloc(keySize);
+
+  uint64_t start[] = {0};
+  uint64_t count_key[] = {keyV->dims[0]};
+  uint64_t count_offset[] = {offsetV->dims[0]};
+
+  ADIOS_SELECTION* keySel = common_read_selection_boundingbox(keyV->ndim, start, count_key);
+  ADIOS_SELECTION* offsetSel = common_read_selection_boundingbox(offsetV->ndim, start, count_offset);
+
+  // idx file has one timestep
+  common_read_schedule_read(idxFile, keySel, keyVarName, 0, 1, NULL, *keys);
+  common_read_schedule_read(idxFile, offsetSel, offsetName, 0, 1, NULL, *offsets);
+
+  common_read_perform_reads(idxFile,1);
+
+  *nk = keyV->dims[0];
+  *no = offsetV->dims[0];
+
+  log_debug(" /key/offset data: length=%lld/%lld\n", *nk, *no);
+  
+  //printData(*bms, bmsV->type, *nb);
+  common_read_selection_delete(keySel);
+  common_read_free_varinfo(keyV);
+
+  common_read_selection_delete(offsetSel);
+  common_read_free_varinfo(offsetV);
+
+  return 0;
+}
+
 int fastbit_adios_util_readFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, int timestep, int blockNum, 
 					 double** keys, uint64_t* nk, int64_t** offsets, uint64_t* no,
 					 uint32_t** bms, uint64_t* nb)
@@ -366,7 +424,6 @@ int fastbit_adios_util_readFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, 
   *offsets = malloc(offsetSize);
   *keys    = malloc(keySize);
   *bms     = malloc(bmsSize);
-
 
   uint64_t start[] = {0};
   uint64_t count_bms[] = {bmsV->dims[0]};
@@ -402,7 +459,7 @@ int fastbit_adios_util_readFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, 
 
   return 0;
 }
-
+ 
 void fastbit_adios_util_printData(void* data, enum ADIOS_DATATYPES type, uint64_t size)
 {
   /*
