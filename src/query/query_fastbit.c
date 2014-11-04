@@ -1221,7 +1221,7 @@ void  adios_query_fastbit_free(ADIOS_QUERY* query)
 
   FASTBIT_INTERNAL* s = (FASTBIT_INTERNAL*)(query->queryInternal);  
   if (query->hasParent == 0) {
-    if (s->_idxFile != NULL) {
+    if ((s!= NULL) && (s->_idxFile != NULL)) {
       common_read_close(s->_idxFile);
     }
   }
