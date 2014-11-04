@@ -15,6 +15,7 @@ typedef struct {
   int64_t* _offsets; 
   uint32_t* _bms;
   char* _arrayName;
+  char* _bmsVarName;
   //void* _rawData;
   FastBitSelectionHandle _handle;
   
@@ -37,12 +38,29 @@ void getHandle(int timeStep, int blockIdx, ADIOS_FILE* idxFile, ADIOS_QUERY* q);
 //
 static int adios_bmreader(void *ctx, uint64_t start,uint64_t count, uint32_t *buf)
 {
+#ifndef _READ_BMS_AS_NEEDED
+  FASTBIT_INTERNAL* itn = (FASTBIT_INTERNAL*)ctx;
+  // read bms from start to count:
+  ADIOS_VARINFO * bmsV = common_read_inq_var (itn->_idxFile, itn->_bmsVarName);
+  uint64_t bms_start[] = {start};
+  uint64_t bms_count[] = {count};
+
+  ADIOS_SELECTION* bmsSel = common_read_selection_boundingbox(bmsV->ndim, bms_start, bms_count);
+  // idx file has one timestep
+  common_read_schedule_read(itn->_idxFile, bmsSel, itn->_bmsVarName, 0, 1, NULL, buf);
+  common_read_perform_reads(itn->_idxFile,1);
+  common_read_free_varinfo(bmsV);
+  common_read_selection_delete(bmsSel);
+
+  return 0;
+#else
   const uint32_t *bms = (uint32_t*)ctx + start;
   unsigned j;
   for (j = 0; j < count; ++ j) {
     buf[j] = bms[j];
   }
   return 0;
+#endif
 }
 
 
@@ -54,6 +72,7 @@ void create_fastbit_internal_idxFile (ADIOS_QUERY* q, ADIOS_FILE* idxFile)
      internal->_offsets = NULL;
      internal->_bms = NULL;
      internal->_arrayName = NULL;
+     internal->_bmsVarName = NULL;
      internal->_handle = NULL;
 
      internal->_idxFile = idxFile;
@@ -94,10 +113,15 @@ void clear_fastbit_internal(ADIOS_QUERY* query)
     free(s->_keys); 
   }
   if (s->_offsets != NULL) {
-    free(s->_offsets); 
+    free(s->_offsets);     
   }
   if (s->_bms != NULL) {
     free(s->_bms); 
+  }
+
+  if (s->_bmsVarName != NULL) {
+    free(s->_bmsVarName);
+    s->_bmsVarName = NULL;
   }
 
   s->_keys = NULL; s->_bms = NULL; s->_offsets = NULL;
@@ -179,10 +203,13 @@ void setQueryInternal(ADIOS_QUERY* q, FastBitCompareType compareOp, FastBitDataT
  
   fastbit_iapi_free_array_by_addr(q->dataSlice);
   fastbit_iapi_register_array(arrayName, dataType, q->dataSlice, dataSize);
+
   char* endptr;
   double vv = strtod(q->predicateValue, &endptr);
-  ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle = fastbit_selection_osr(arrayName, compareOp, vv);
-  fastbit_adios_util_checkNotNull(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, arrayName);
+  FastBitSelectionHandle h = fastbit_selection_osr(arrayName, compareOp, vv);
+  fastbit_adios_util_checkNotNull(h, arrayName);
+  ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle = h;
+  //fastbit_adios_util_checkNotNull(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, arrayName);
 }
 
 
@@ -476,11 +503,17 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
 
     free(q->dataSlice);
     q->dataSlice = bitSlice;
+
+    fastbit_iapi_free_array_by_addr(q->dataSlice);
     fastbit_iapi_register_array(bitsArrayName, FastBitDataTypeUShort, q->dataSlice, q->rawDataSize);
+
     //printData(q->_dataSlice, adios_unsigned_short, q->_rawDataSize); 
     //fastbit_selection_free(q->_queryInternal);
-    ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle = fastbit_selection_osr(bitsArrayName, FastBitCompareGreater, 0.5);
-    fastbit_adios_util_checkNotNull(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, bitsArrayName);
+    FastBitSelectionHandle h = fastbit_selection_osr(bitsArrayName, FastBitCompareGreater, 0.5);
+    fastbit_adios_util_checkNotNull(h, bitsArrayName);    
+    ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle = h;
+ 
+    //fastbit_adios_util_checkNotNull(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, bitsArrayName);
   }
 }
 
@@ -545,8 +578,9 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
     sprintf(blockDataName, "%d-%s-%d-%d-%ld", v->varid, q->condition, timeStep, blockIdx, fastbit_adios_getCurrentTimeMillis());
 
     FASTBIT_INTERNAL* itn = (FASTBIT_INTERNAL*)(q->queryInternal);
-#ifdef _READ_BMS_AS_NEEDED
-    if (fastbit_adios_util_readNoBMSFromIndexFile(idxFile, v, timeStep, blockIdx, &(itn->_keys), &nk, &(itn->_offsets)) < 0)     
+#ifndef _READ_BMS_AS_NEEDED
+    log_debug("FastBit will get bms as needed, not at the same time as key/offsets\n");
+    if (fastbit_adios_util_readNoBMSFromIndexFile(idxFile, v, timeStep, blockIdx, &(itn->_keys), &nk, &(itn->_offsets), &no, &(itn->_bmsVarName)) < 0)     
 #else
     if (fastbit_adios_util_readFromIndexFile(idxFile, v, timeStep, blockIdx, &(itn->_keys), &nk, &(itn->_offsets), &no, &(itn->_bms), &nb) < 0) 
 #endif
@@ -573,8 +607,12 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
     itn->_arrayName = malloc(strlen(blockDataName)+2);
     sprintf(itn->_arrayName, "%s", blockDataName);
     
-    int ierr = fastbit_iapi_register_array_index_only(blockDataName, fastbit_adios_util_getFastbitDataType(v->type), &nv, 1 , 
+    int ierr = fastbit_iapi_register_array_index_only(itn->_arrayName, fastbit_adios_util_getFastbitDataType(v->type), &nv, 1 , 
+#ifndef _READ_BMS_AS_NEEDED
+						      itn->_keys, nk, itn->_offsets, no, itn, adios_bmreader);
+#else
 						      itn->_keys, nk, itn->_offsets, no, itn->_bms, adios_bmreader);
+#endif
       /*
     if (ierr != 0) {
       log_error(" registering array failed. fastbit err code = %lld\n", ierr);
@@ -587,17 +625,11 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
       log_error(" reattaching index failed. fastbit err code = %d\n", ierr);
       //result = ierr;
     } else {
-      ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle = createHandle(q, blockDataName); //fastbit_selection_osr(blockDataName, getFastbitCompareType(q->_op), q->_value);
-      fastbit_adios_util_checkNotNull(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, blockDataName);
+      FastBitSelectionHandle h = createHandle(q, blockDataName); //fastbit_selection_osr(blockDataName, getFastbitCompareType(q->_op), q->_value);
+      fastbit_adios_util_checkNotNull(h, blockDataName);
+      ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle = h;      
+      //fastbit_adios_util_checkNotNull(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, blockDataName);
     }
-
-    //free(bms);
-    //free(keys);
-    //free(offsets);    
-
-    //q->_queryInternal = result;
-    //int64_t doubleC = fastbit_selection_evaluate(q->_queryInternal);
-    //no need to return result here as we are using query internal to store
 }
 
 
@@ -660,7 +692,7 @@ int readWithTimeStepNoIdx(ADIOS_QUERY* q, int timeStep) {
   //common_free_varinfo(q->_var);
 
   char datasetName[strlen(q->condition) + 40];
-  sprintf(datasetName, "%s-%d-%ld", q->condition, timeStep, fastbit_adios_getCurrentTimeMillis());  
+  sprintf(datasetName, "noidx-%s-%d-%ld", q->condition, timeStep, fastbit_adios_getCurrentTimeMillis());  
   setQueryInternal(q, compareOp, dataType, dataSize, datasetName);
 
   return 0;
@@ -805,6 +837,7 @@ int64_t  applyIndexIfExists (ADIOS_QUERY* q, int timeStep)
   //ADIOS_FILE* idxFile = fastbit_adios_util_getFastbitIndexFileToRead(basefileName, comm_dummy);
     
   if (idxFile != NULL) {
+    //clear_fastbit_internal(q);
       if ((leaf->sel == NULL) || (leaf->sel->type == ADIOS_SELECTION_BOUNDINGBOX)) {
 	  evaluateWithIdxOnBoundingBox(idxFile,  q, timeStep);
 	  result = fastbit_selection_estimate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle);	
