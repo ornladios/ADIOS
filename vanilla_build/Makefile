@@ -61,7 +61,7 @@ makeobjdirs:
 	@echo "================================================================="
 	@echo "Create subdirectories to store object files"
 	mkdir -p $(OBJDIRS)
-	
+
 
 libadios.a: $(libadios_nompi_a_COBJS) $(libadios_nompi_a_FOBJS)
 	@echo "================================================================="
@@ -107,7 +107,6 @@ write_read: libadios.a ../tests/suite/programs/write_read.c write_read.xml
 
 test:   write_read
 	./write_read
-	
 
 check:  test
 

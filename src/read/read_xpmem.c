@@ -126,8 +126,6 @@ adios_read_xpmem_open_file(const char * fname, MPI_Comm comm)
 	//initialize some of the stuff in the BP_FILE
 	
     af->fh = (uint64_t)f; 
-	af->current_step = 0;
-	af->last_step = 0;
 	af->path = strdup("xpmem.data");
 	
 	//at this point af->fh is the xpmem_read_file
@@ -161,6 +159,8 @@ adios_read_xpmem_open_file(const char * fname, MPI_Comm comm)
 
     af->endianness =  bp_get_endianness (f->fh->mfooter.change_endianness);
 	af->version =  f->fh->mfooter.version & ADIOS_VERSION_NUM_MASK;
+	af->current_step = 0;
+	af->last_step = 0;
 
 	//just check to make sure that readcount is 0
 	log_debug("xpmem readcount = %d\n",
@@ -201,35 +201,35 @@ int adios_read_xpmem_finalize_method ()
     return 0;
 }
 
-void adios_read_xpmem_release_step(ADIOS_FILE *adiosfile)
+void adios_read_xpmem_release_step(ADIOS_FILE *fp)
 {
 
-	xpmem_read_file *f = (xpmem_read_file*)adiosfile->fh;
-	xpmem_read_data *fp = f->fp;
+	xpmem_read_file *xf = (xpmem_read_file*)fp->fh;
+	xpmem_read_data *xd = xf->fp;
 
 	// if(fp->pg->version != 0)
 	// 	fp->pg->version = 0;
 	// if(fp->index->version != 0)
 	// 	fp->index->version = 0;
 
-	if(fp->pg->readcount < 1)
-		fp->pg->readcount = 1;
+	if(xd->pg->readcount < 1)
+		xd->pg->readcount = 1;
 
 }
 
 int 
-adios_read_xpmem_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_sec) 
+adios_read_xpmem_advance_step(ADIOS_FILE *fp, int last, float timeout_sec) 
 {
-	xpmem_read_file *f = (xpmem_read_file*)adiosfile->fh;
-	xpmem_read_data *fp = f->fp;
+	xpmem_read_file *xf = (xpmem_read_file*)fp->fh;
+	xpmem_read_data *xd = xf->fp;
 
 	// if(fp->pg->version != 0)
 	// 	fp->pg->version = 0;
 	// if(fp->index->version != 0)
 	// 	fp->index->version = 0;
 
-	if(fp->pg->readcount < 1)
-		fp->pg->readcount = 1;
+	if(xd->pg->readcount < 1)
+		xd->pg->readcount = 1;
     return 0;
 }
 
@@ -245,13 +245,13 @@ ADIOS_FILE *adios_read_xpmem_fopen(const char *fname, MPI_Comm comm) {
 int adios_read_xpmem_is_var_timed(const ADIOS_FILE* fp, int varid) { return 0; }
 
 void adios_read_xpmem_get_groupinfo(
-    const ADIOS_FILE *adiosfile, 
+    const ADIOS_FILE *fp, 
     int *ngroups, 
     char ***group_namelist, 
     uint32_t **nvars_per_group, 
     uint32_t **nattrs_per_group) 
 {
-	xpmem_read_file *xf = (xpmem_read_file*)adiosfile->fh;
+	xpmem_read_file *xf = (xpmem_read_file*)fp->fh;
 	BP_FILE *fh = xf->fh;
 	BP_PROC *p = xf->bp;
 	
@@ -306,9 +306,54 @@ void adios_read_xpmem_get_groupinfo(
 
 int adios_read_xpmem_check_reads(const ADIOS_FILE* fp, ADIOS_VARCHUNK** chunk) { log_debug( "xpmem:adios function check reads\n"); return 0; }
 
-int adios_read_xpmem_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
+int adios_read_xpmem_perform_reads(const ADIOS_FILE *fp, int blocking)
 {
-    return 0;
+	BP_PROC * p = GET_BP_PROC (fp);
+	read_request * r;
+	ADIOS_VARCHUNK * chunk;
+
+	/* 1. prepare all reads */
+	// check if all user memory is provided for blocking read
+	if (blocking)
+	{
+		r = p->local_read_request_list;
+		while (r)
+		{
+			if (!r->data)
+			{
+				adios_error (err_operation_not_supported,
+				             "Blocking mode at adios_perform_reads() requires that user "
+				             "provides the memory for each read request. Request for "
+				             "variable %d was scheduled without user-allocated memory\n",
+				             r->varid);
+				return err_operation_not_supported;
+			}
+
+			r = r->next;
+		}
+	}
+	else
+	{
+		adios_error(err_operation_not_supported, "xpmem does not support non-blocking reads\n");
+		return adios_errno;
+	}
+
+	//read the variable
+	while (p->local_read_request_list)
+    {
+        chunk = read_var (fp, p->local_read_request_list);
+
+        // remove head from list
+        r = p->local_read_request_list;
+        p->local_read_request_list = p->local_read_request_list->next;
+        common_read_selection_delete (r->sel);
+        r->sel = NULL;
+        free(r);
+
+        common_read_free_chunk (chunk);
+    }
+
+	return 0;
 }
 
 int
@@ -402,7 +447,7 @@ adios_read_xpmem_schedule_read_byid(const ADIOS_FILE *fp,
 }
 
 int 
-adios_read_xpmem_schedule_read(const ADIOS_FILE *adiosfile,
+adios_read_xpmem_schedule_read(const ADIOS_FILE *fp,
 			const ADIOS_SELECTION * sel,
 			const char * varname,
 			int from_steps,
@@ -423,7 +468,7 @@ adios_read_xpmem_get_attr (int *gp, const char *attrname,
 }
 
 int 
-adios_read_xpmem_get_attr_byid (const ADIOS_FILE *adiosfile, int attrid,
+adios_read_xpmem_get_attr_byid (const ADIOS_FILE *fp, int attrid,
 				   enum ADIOS_DATATYPES *type,
 				   int *size, void **data)
 {
@@ -432,7 +477,7 @@ adios_read_xpmem_get_attr_byid (const ADIOS_FILE *adiosfile, int attrid,
 }
 
 ADIOS_VARINFO* 
-adios_read_xpmem_inq_var(const ADIOS_FILE * adiosfile, const char* varname)
+adios_read_xpmem_inq_var(const ADIOS_FILE * fp, const char* varname)
 {
 	log_debug("xpmem:adios function inq var\n");
     return NULL;
@@ -474,7 +519,7 @@ adios_read_xpmem_inq_var_trans_blockinfo(const ADIOS_FILE *gp, const ADIOS_VARIN
 }
 
 void 
-adios_read_xpmem_reset_dimension_order (const ADIOS_FILE *adiosfile, int is_fortran)
+adios_read_xpmem_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
 {
     //log_debug( "debug: adios_read_xpmem_reset_dimension_order\n");
     adios_error(err_invalid_read_method, "adios_read_xpmem_reset_dimension_order is not implemented.");
