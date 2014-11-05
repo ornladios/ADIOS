@@ -61,6 +61,13 @@ inline BP_FILE * GET_BP_FILE (const ADIOS_FILE * fp)
 }
 
 
+static int map_req_varid (const ADIOS_FILE * fp, int varid)
+{
+    BP_PROC * p = GET_BP_PROC (fp);
+
+    return p->varid_mapping[varid];
+}
+
 /********** Core ADIOS Read functions. **********/
 
 /*
@@ -192,12 +199,13 @@ adios_read_xpmem_open(const char * fname,
 			 float timeout_sec)
 {
 
-	log_info("in read_open");
+	log_info("in read_open. xpmem treats everything like a file right now");
 	return adios_read_xpmem_open_file(fname, comm);
 }
 
 int adios_read_xpmem_finalize_method ()
 {
+	
     return 0;
 }
 
@@ -235,7 +243,54 @@ adios_read_xpmem_advance_step(ADIOS_FILE *fp, int last, float timeout_sec)
 
 int adios_read_xpmem_close(ADIOS_FILE * fp)
 {
-    return 0;
+	BP_PROC * p = GET_BP_PROC (fp);
+	BP_FILE * fh = GET_BP_FILE (fp);
+	xpmem_read_file *xf = (xpmem_read_file*)fp->fh;
+	xpmem_read_data *xd = xf->fp;
+
+	if (p->fh)
+	{
+		bp_close (fh);
+		p->fh = 0;
+	}
+
+	if (p->varid_mapping)
+	{
+		free (p->varid_mapping);
+		p->varid_mapping = 0;
+	}
+
+	if (p->local_read_request_list)
+	{
+		list_free_read_request (p->local_read_request_list);
+		p->local_read_request_list = 0;
+	}
+
+	free (p);
+
+	if (fp->var_namelist)
+	{
+		free_namelist (fp->var_namelist, fp->nvars);
+		fp->var_namelist = 0;
+	}
+
+	if (fp->attr_namelist)
+	{
+		free_namelist (fp->attr_namelist, fp->nattrs);
+		fp->attr_namelist = 0;
+	}
+
+	if (fp->path)
+	{
+		free (fp->path);
+		fp->path = 0;
+	}
+	// internal_data field is taken care of by common reader layer
+	free (fp);
+
+	
+
+	return 0;
 }
 
 ADIOS_FILE *adios_read_xpmem_fopen(const char *fname, MPI_Comm comm) {
@@ -446,53 +501,308 @@ adios_read_xpmem_schedule_read_byid(const ADIOS_FILE *fp,
     return 0;
 }
 
-int 
-adios_read_xpmem_schedule_read(const ADIOS_FILE *fp,
-			const ADIOS_SELECTION * sel,
-			const char * varname,
-			int from_steps,
-			int nsteps,
-			void * data)
-{
-	log_debug("xpmem:adios function schedule read\n");
-    return 0;
-}
-
-int 
-adios_read_xpmem_get_attr (int *gp, const char *attrname,
-                                 enum ADIOS_DATATYPES *type,
-                                 int *size, void **data)
-{
-	log_debug("xpmem:adios function get attr\n");
-    return adios_errno;
-}
 
 int 
 adios_read_xpmem_get_attr_byid (const ADIOS_FILE *fp, int attrid,
 				   enum ADIOS_DATATYPES *type,
 				   int *size, void **data)
 {
-	log_debug("xpmem:adios function get attr by id\n");
-    return adios_errno;
-}
+    int i;
+    BP_PROC * p = GET_BP_PROC (fp);
+    BP_FILE * fh = GET_BP_FILE (fp);
+    struct adios_index_attribute_struct_v1 * attr_root;
+    struct adios_index_var_struct_v1 * var_root, * v1;
+    int file_is_fortran, last_step = fp->last_step, show_hidden_attrs;
+    uint64_t k, attr_c_index, var_c_index;
 
-ADIOS_VARINFO* 
-adios_read_xpmem_inq_var(const ADIOS_FILE * fp, const char* varname)
-{
-	log_debug("xpmem:adios function inq var\n");
-    return NULL;
+    adios_errno = 0;
+
+    show_hidden_attrs = 0;
+    for (i = 0; i < fp->nattrs; i++)
+    {
+        if (strstr (fp->attr_namelist[i], "__adios__"))
+        {
+            show_hidden_attrs = 1;
+            break;
+        }
+    }
+
+    attr_root = fh->attrs_root; /* need to traverse the attribute list of the group */
+    i = 0;
+
+    if (show_hidden_attrs)
+    {
+        while (i < attrid && attr_root)
+        {
+            i++;
+            attr_root = attr_root->next;
+        }
+    }
+    else
+    {
+        while (i < attrid && attr_root)
+        {
+            if (strstr (attr_root->attr_path, "__adios__"))
+            {
+            }
+            else
+            {
+                i++;
+            }
+
+            attr_root = attr_root->next;
+        }
+
+        while (attr_root && strstr (attr_root->attr_path, "__adios__"))
+        {
+            attr_root = attr_root->next;
+        }
+    }
+
+    assert (attr_root);
+
+    if (i != attrid)
+    {
+        adios_error (err_corrupted_attribute, "Attribute id=%d is valid but was not found in internal data structures!\n",attrid);
+        return adios_errno;
+    }
+
+    /* Look for the last step because some of the hidden attributes, such as last update time,
+     * make sense for the most recent value. 07/2011 - Q.Liu
+     */
+
+    attr_c_index = -1;
+    for (k = 0; k < attr_root->characteristics_count; k++)
+    {
+        if (attr_root->characteristics[k].time_index - 1 == last_step)
+        {
+            attr_c_index = k;
+            break;
+        }
+    }
+
+    if (attr_c_index == -1)
+    {
+        log_debug ("adios_read_xpmemget_attr_byid: cannot find step : %d\n", last_step);
+        attr_c_index = 0;
+    }
+
+    file_is_fortran = is_fortran_file (fh);
+
+    // check the last version
+    if (attr_root->characteristics[attr_c_index].value)
+    {
+        /* Attribute has its own value */
+        *size = bp_get_type_size (attr_root->type, attr_root->characteristics[attr_c_index].value);
+        *type = attr_root->type;
+        *data = (void *) malloc (*size);
+        assert (*data);
+
+        memcpy(*data, attr_root->characteristics[attr_c_index].value, *size);
+    }
+    else if (attr_root->characteristics[attr_c_index].var_id)
+    {
+        /* Attribute is a reference to a variable */
+        /* FIXME: var ids are not unique in BP. If a group of variables are written several
+           times under different path using adios_set_path(), the id of a variable is always
+           the same (should be different). As a temporary fix, we look first for a matching
+           id plus path between an attribute and a variable. If not found, then we look for
+           a match on the ids only.*/
+        var_root = fh->vars_root;
+        while (var_root)
+        {
+            if (var_root->id == attr_root->characteristics[attr_c_index].var_id
+               && !strcmp(var_root->var_path, attr_root->attr_path)
+               && !strcmp(var_root->group_name, attr_root->group_name)
+               )
+                break;
+            var_root = var_root->next;
+        }
+
+        if (!var_root)
+        {
+            var_root = fh->vars_root;
+            while (var_root)
+            {
+                if (var_root->id == attr_root->characteristics[attr_c_index].var_id
+                   && !strcmp(var_root->group_name, attr_root->group_name))
+                    break;
+                var_root = var_root->next;
+            }
+        }
+
+        if (!var_root)
+        {
+            var_root = fh->vars_root;
+            while (var_root)
+            {
+                if (var_root->id == attr_root->characteristics[attr_c_index].var_id)
+                    break;
+                var_root = var_root->next;
+            }
+        }
+
+        if (!var_root)
+        {
+            adios_error (err_invalid_attribute_reference,
+                   "Attribute %s/%s in group %s is a reference to variable ID %d, which is not found\n",
+                   attr_root->attr_path, attr_root->attr_name, attr_root->group_name,
+                   attr_root->characteristics[attr_c_index].var_id);
+            return adios_errno;
+        }
+
+        /* default values in case of error */
+        *data = NULL;
+        *size = 0;
+        *type = attr_root->type;
+
+        var_c_index = -1;
+        for (k = 0; k < var_root->characteristics_count; k++)
+        {
+            if (var_root->characteristics[k].time_index - 1 == last_step)
+            {
+                var_c_index = k;
+                break;
+            }
+        }
+
+        if (var_c_index == -1)
+        {
+            var_c_index = 0;
+            log_debug ("adios_read_xpmem_get_attr_byid: cannot find step : %d\n", last_step);
+        }
+        /* FIXME: variable and attribute type may not match, then a conversion is needed. */
+        /* Cases:
+                1. attr has no type, var is byte array     ==> string
+                2. attr has no type, var is not byte array ==> var type
+                3. attr is string, var is byte array       ==> string
+                4. attr type == var type                   ==> var type
+                5. attr type != var type                   ==> attr type and conversion needed
+        */
+        /* Error check: attr cannot reference an array in general */
+        if (var_root->characteristics[var_c_index].dims.count > 0)
+        {
+            if ( (var_root->type == adios_byte || var_root->type == adios_unsigned_byte) &&
+                 (attr_root->type == adios_unknown || attr_root->type == adios_string) &&
+                 (var_root->characteristics[var_c_index].dims.count == 1))
+            {
+                 ; // this conversions are allowed
+            }
+            else
+            {
+                adios_error (err_invalid_attribute_reference,
+                    "Attribute %s/%s in group %s, typeid=%d is a reference to an %d-dimensional array variable "
+                    "%s/%s of type %s, which is not supported in ADIOS\n",
+                    attr_root->attr_path, attr_root->attr_name, attr_root->group_name, attr_root->type,
+                    var_root->characteristics[var_c_index].dims.count,
+                    var_root->var_path, var_root->var_name, common_read_type_to_string(var_root->type));
+                return adios_errno;
+            }
+        }
+
+        if ( (attr_root->type == adios_unknown || attr_root->type == adios_string) &&
+             (var_root->type == adios_byte || var_root->type == adios_unsigned_byte) &&
+             (var_root->characteristics[var_c_index].dims.count == 1) )
+        {
+            /* 1D byte arrays are converted to string */
+            /* 1. read in variable */
+            char varname[512];
+            char *tmpdata;
+            ADIOS_VARCHUNK *vc;
+            read_request * r;
+            uint64_t start, count;
+            int varid = 0;
+            v1 = fh->vars_root;
+            while (v1 && v1 != var_root)
+            {
+                v1 = v1->next;
+                varid++;
+            }
+
+            start = 0;
+            count = var_root->characteristics[var_c_index].dims.dims[0];
+            snprintf(varname, 512, "%s/%s", var_root->var_path, var_root->var_name);
+            tmpdata = (char *) malloc (count+1);
+            assert (tmpdata);
+
+            r = (read_request *) malloc (sizeof (read_request));
+            assert (r);
+
+            r->sel = (ADIOS_SELECTION *) malloc (sizeof (ADIOS_SELECTION));
+            r->sel->type = ADIOS_SELECTION_BOUNDINGBOX;
+            r->sel->u.bb.ndim = 1;
+            r->sel->u.bb.start = &start;
+            r->sel->u.bb.count = &count;
+            r->varid = varid;
+            r->from_steps = fp->last_step;
+            r->nsteps = 1;
+            r->data = tmpdata;
+            r->datasize = count;
+            r->priv = 0;
+            r->next = 0;
+
+            vc = read_var_bb (fp, r);
+
+            free (r->sel);
+            free (r);
+
+            if (vc == 0)
+            {
+                char *msg = strdup(adios_get_last_errmsg());
+                adios_error ((enum ADIOS_ERRCODES) adios_errno,
+                      "Cannot read data of variable %s/%s for attribute %s/%s of group %s: %s\n",
+                      var_root->var_path, var_root->var_name,
+                      attr_root->attr_path, attr_root->attr_name, attr_root->group_name,
+                      msg);
+                free(tmpdata);
+                free(msg);
+                return adios_errno;
+            }
+
+            *type = adios_string;
+            if (file_is_fortran)
+            {
+                /* Fortran byte array to C string */
+	            *data = (void*)futils_fstr_to_cstr( tmpdata, (int)count); /* FIXME: supports only 2GB strings... */
+                *size = strlen( (char *)data );
+                free(tmpdata);
+            }
+            else
+            {
+                /* C array to C string */
+                tmpdata[count] = '\0';
+                *size = count+1;
+                *data = tmpdata;
+            }
+
+            free (vc->sel);
+            free (vc);
+        }
+        else
+        {
+            /* other types are inherited */
+            *type = var_root->type;
+            *size = bp_get_type_size (var_root->type, var_root->characteristics[var_c_index].value);
+            *data = (void *) malloc (*size);
+            assert (*data);
+            memcpy(*data, var_root->characteristics[var_c_index].value, *size);
+        }
+    }
+
+    return 0;
 }
 
 ADIOS_VARINFO* 
 adios_read_xpmem_inq_var_byid (const ADIOS_FILE * fp, int varid)
 {
 	ADIOS_VARINFO *varinfo;
-
+	int mapped_id = map_req_varid(fp, varid);
 	adios_errno = 0;
 
-	varinfo = bp_inq_var_byid(fp, varid);
-
-	return varinfo;
+	varinfo = bp_inq_var_byid(fp, mapped_id);
+	varinfo->varid = varid;
+	
+    return varinfo;
 }
 
 void 

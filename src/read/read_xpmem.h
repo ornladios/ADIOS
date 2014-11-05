@@ -45,8 +45,6 @@ typedef struct _xpmem_read_data
 typedef struct _xpmem_read_file
 {
 	uint32_t timestep;
-	struct adios_bp_buffer_struct_v1 *b;
-	struct bp_minifooter mfooter; 
 	xpmem_read_data *fp;
 	BP_PROC *bp;
 	BP_FILE *fh;
