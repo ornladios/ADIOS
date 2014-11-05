@@ -537,6 +537,7 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
     int cm_port = 59999;
     char *cm_host = "localhost";
     char *cm_attr = NULL;
+    icee_transport_t icee_transport = TCP;
 
     int rank;
     MPI_Comm_rank(method->init_comm, &rank);
@@ -610,6 +611,19 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
         {
             icee_num_parallel = atoi(p->value);
         }
+        else if (!strcasecmp (p->name, "transport"))
+        {
+            if (strcasecmp(p->value, "TCP") == 0)
+                icee_transport = TCP;
+            else if (strcasecmp(p->value, "ENET") == 0)
+                icee_transport = ENET;
+            else if (strcasecmp(p->value, "NNTI") == 0)
+                icee_transport = NNTI;
+            else if (strcasecmp(p->value, "IB") == 0)
+                icee_transport = IB;
+            else
+                log_error ("No support: %s\n", p->value);
+        }
 
         p = p->next;
     }
@@ -618,6 +632,7 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
     //log_info ("cm_host : %s\n", cm_host);
     log_info ("cm_port : %d\n", cm_port);
     log_debug ("parallel writing : %d\n", icee_num_parallel);
+    log_debug ("transport : %s\n", icee_transport_name[icee_transport]);
 
     if (!adios_icee_initialized)
     {
@@ -638,7 +653,19 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
         CMlisten(icee_write_cm);
 
         contact_list = create_attr_list();
-        add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), cm_port);
+        switch (icee_transport)
+        {
+        case ENET:
+            add_string_attr(contact_list, attr_atom_from_string("CM_TRANSPORT"), 
+                            strdup("enet"));
+            add_int_attr(contact_list, attr_atom_from_string("CM_ENET_PORT"), 
+                         cm_port);
+            break;
+        default:
+            add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), 
+                         cm_port);
+            break;
+        }
 
         if (CMlisten_specific(icee_write_cm, contact_list) == 0) 
         {
@@ -672,8 +699,25 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
             remote_stone = client_info[i].stone_id;
             stone = EValloc_stone(icee_write_cm);
             contact_list = create_attr_list();
-            add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), client_info[i].client_port);
-            add_string_attr(contact_list, attr_atom_from_string("IP_HOST"), client_info[i].client_host);
+
+            switch (icee_transport)
+            {
+            case ENET:
+                add_string_attr(contact_list, attr_atom_from_string("CM_TRANSPORT"), 
+                                strdup("enet"));
+                add_string_attr(contact_list, attr_atom_from_string("CM_ENET_HOST"), 
+                                client_info[i].client_host);
+                add_int_attr(contact_list, attr_atom_from_string("CM_ENET_PORT"), 
+                             client_info[i].client_port);
+
+                break;
+            default:
+                add_string_attr(contact_list, attr_atom_from_string("IP_HOST"), 
+                                client_info[i].client_host);
+                add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), 
+                             client_info[i].client_port);
+                break;
+            }
 
             EVaction evaction = EVassoc_bridge_action(icee_write_cm, stone, contact_list, remote_stone);
             if (evaction == -1)

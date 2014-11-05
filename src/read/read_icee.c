@@ -498,6 +498,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
     char *cm_remote_host = "localhost";
     char *cm_attr = NULL;
     attr_list contact_list;
+    icee_transport_t icee_transport = TCP;
 
     icee_clientinfo_rec_t *remote_server;
     int num_remote_server = 0;
@@ -577,10 +578,24 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
 
             free(plist);
         }
+        else if (!strcasecmp (p->name, "transport"))
+        {
+            if (strcasecmp(p->value, "TCP") == 0)
+                icee_transport = TCP;
+            else if (strcasecmp(p->value, "ENET") == 0)
+                icee_transport = ENET;
+            else if (strcasecmp(p->value, "NNTI") == 0)
+                icee_transport = NNTI;
+            else if (strcasecmp(p->value, "IB") == 0)
+                icee_transport = IB;
+            else
+                log_error ("No support: %s\n", p->value);
+        }
 
         p = p->next;
     }
 
+    /*
     if (cm_attr)
     {
         contact_list = attr_list_from_string(cm_attr);
@@ -591,6 +606,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), cm_port);
         add_string_attr(contact_list, attr_atom_from_string("IP_HOST"), cm_host);
     }
+    */
 
     if (use_single_remote_server)
     {
@@ -607,6 +623,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
     {
         log_info ("remote_list : %s:%d\n", remote_server[i].client_host, remote_server[i].client_port);
     }
+    log_debug ("transport : %s\n", icee_transport_name[icee_transport]);
 
     if (!adios_read_icee_initialized)
     {
@@ -617,28 +634,37 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         icee_read_cm = CManager_create();
 
         // Listen first
+        contact_list = create_attr_list();
+        switch (icee_transport)
         {
-            //cm = CManager_create();
-            attr_list contact_list_r;
-            contact_list_r = create_attr_list();
-            add_int_attr(contact_list_r, attr_atom_from_string("IP_PORT"), cm_port);
-            if (CMlisten_specific(icee_read_cm, contact_list_r) == 0) 
-            {
-                fprintf(stderr, "error: unable to initialize connection manager.\n");
-                exit(-1);
-            }
+        case ENET:
+            add_string_attr(contact_list, attr_atom_from_string("CM_TRANSPORT"), 
+                            strdup("enet"));
+            add_int_attr(contact_list, attr_atom_from_string("CM_ENET_PORT"), 
+                         cm_port);
+            break;
+        default:
+            add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), 
+                         cm_port);
+            break;
+        }
 
-            log_debug("Contact list \"%s\"\n", attr_list_to_string(contact_list_r));
-
-            stone = EValloc_stone(icee_read_cm);
-            log_debug("Stone ID: %d\n", stone);
-            EVassoc_terminal_action(icee_read_cm, stone, icee_fileinfo_format_list, icee_fileinfo_handler, NULL);
-
-            if (!CMfork_comm_thread(icee_read_cm)) 
-            {
-                printf("Fork of communication thread failed, exiting\n");
-                exit(-1);
-            }
+        if (CMlisten_specific(icee_read_cm, contact_list) == 0) 
+        {
+            fprintf(stderr, "error: unable to initialize connection manager.\n");
+            exit(-1);
+        }
+        
+        log_debug("Contact list \"%s\"\n", attr_list_to_string(contact_list));
+        
+        stone = EValloc_stone(icee_read_cm);
+        log_debug("Stone ID: %d\n", stone);
+        EVassoc_terminal_action(icee_read_cm, stone, icee_fileinfo_format_list, icee_fileinfo_handler, NULL);
+        
+        if (!CMfork_comm_thread(icee_read_cm)) 
+        {
+            printf("Fork of communication thread failed, exiting\n");
+            exit(-1);
         }
 
         EVstone split_stone;
@@ -653,8 +679,26 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
             output_stone = EValloc_stone(icee_read_cm);
 
             contact_list = create_attr_list();
-            add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), remote_server[i].client_port);
-            add_string_attr(contact_list, attr_atom_from_string("IP_HOST"), remote_server[i].client_host);
+            
+            switch (icee_transport)
+            {
+            case ENET:
+                add_string_attr(contact_list, attr_atom_from_string("CM_TRANSPORT"), 
+                                strdup("enet"));
+                add_string_attr(contact_list, attr_atom_from_string("CM_ENET_HOST"), 
+                                remote_server[i].client_host);
+                add_int_attr(contact_list, attr_atom_from_string("CM_ENET_PORT"), 
+                             remote_server[i].client_port);
+
+                break;
+            default:
+                add_string_attr(contact_list, attr_atom_from_string("IP_HOST"), 
+                                remote_server[i].client_host);
+                add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), 
+                             remote_server[i].client_port);
+                break;
+            }
+
             EVassoc_bridge_action(icee_read_cm, output_stone, contact_list, remote_stone);
             EVaction_add_split_target(icee_read_cm, split_stone, split_action, output_stone);
         }
