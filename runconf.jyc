@@ -1088,6 +1088,33 @@ elif [ `hostname | cut -c 1-5` == "stark" ]; then
     --without-datatap \
     --with-icee=/pwork01/ekbyun/sw/evpath/devel
 
+elif [ `hostname | cut -c 1-7` == "eceiana" ]; then
+
+    #######################
+    # ECEIANA (POSTECH)
+    #######################
+    echo "Configure on ECEIANA"
+    export MPICC=mpicc
+    export MPICXX=mpicxx
+    export MPIFC=mpif90
+    export CC=gcc
+    export CXX=g++
+    export FC=gfortran
+    export CFLAGS="-g -fPIC"
+    export CXXFLAGS="-g -fPIC"
+    export FCFLAGS="-g -fPIC"
+    export LIBS="-ldl -lpthread -lrt"
+
+    ${SRCDIR}/configure \
+    --prefix=$HOME/sw/adios/1.7.0-icee \
+    --with-mxml=$HOME/sw/mxml/2.7 \
+    --enable-dependency-tracking \
+    --without-hdf5 \
+    --without-netcdf \
+    --without-infiniband \
+    --without-datatap \
+    --with-icee=$HOME/sw/evpath/devel
+
 elif [ `hostname | cut -c 1-10` == "jychoi-air" ]; then
 
     #######################
