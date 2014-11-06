@@ -783,7 +783,7 @@ int common_query_evaluate(ADIOS_QUERY* q,
     }
     */
     int freeOutputBoundary = 0;
-    if (outputBoundary->type == ADIOS_SELECTION_WRITEBLOCK) {
+    if ((outputBoundary != NULL) && (outputBoundary->type == ADIOS_SELECTION_WRITEBLOCK)) {
         outputBoundary = convertWriteblockToBoundingBox(q, &outputBoundary->u.block, timeStep);
         if (!outputBoundary) {
 	  adios_error(err_invalid_argument,
