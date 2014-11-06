@@ -77,19 +77,21 @@ static FMStructDescRec icee_fileinfo_format_list[] =
     {NULL, NULL}
 };
 
-/* Auto-generated on Sat Sep 13 16:09:17 EDT 2014 */
+/* Auto-generated on Thu Nov  6 14:06:32 EST 2014 */
 
 typedef struct icee_clientinfo_rec {
     char* client_host;
+    int num_parallel;
     int client_port;
-    int stone_id;
+    int* stone_id;
 } icee_clientinfo_rec_t, *icee_clientinfo_rec_ptr_t;
 
 static FMField icee_clientinfo_field_list[] =
 {
     {"client_host", "string", sizeof(char*), FMOffset(icee_clientinfo_rec_ptr_t, client_host)},
+    {"num_parallel", "integer", sizeof(int), FMOffset(icee_clientinfo_rec_ptr_t, num_parallel)},
     {"client_port", "integer", sizeof(int), FMOffset(icee_clientinfo_rec_ptr_t, client_port)},
-    {"stone_id", "integer", sizeof(int), FMOffset(icee_clientinfo_rec_ptr_t, stone_id)},
+    {"stone_id", "integer[num_parallel]", sizeof(int), FMOffset(icee_clientinfo_rec_ptr_t, stone_id)},
     {NULL, NULL, 0, 0}
 };
 

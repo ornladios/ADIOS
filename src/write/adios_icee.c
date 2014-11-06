@@ -59,6 +59,9 @@ static int icee_num_parallel = 0;
 CManager icee_write_cm;
 EVsource icee_write_source;
 
+CManager (*cm)[ICEE_MAX_PARALLEL];
+EVsource (*source)[ICEE_MAX_PARALLEL];
+
 int n_client = 0;
 int max_client = 1;
 icee_clientinfo_rec_t *client_info;
@@ -499,12 +502,20 @@ icee_clientinfo_handler(CManager cm, void *vevent, void *client_data, attr_list 
 
     icee_clientinfo_rec_ptr_t event = vevent;
     log_debug ("%s (%s)\n", "client_host", event->client_host);
+    log_debug ("%s (%d)\n", "num_parallel", event->num_parallel);
     log_debug ("%s (%d)\n", "client_port", event->client_port);
-    log_debug ("%s (%d)\n", "stone_id", event->stone_id);
+    int i;
+    for (i=0; i<event->num_parallel; i++)
+        log_debug ("%s (%d:%d)\n", "stone_id", i, event->stone_id[i]);
 
     client_info[n_client].client_host = strdup(event->client_host);
+    client_info[n_client].num_parallel = event->num_parallel;
     client_info[n_client].client_port = event->client_port;
-    client_info[n_client].stone_id = event->stone_id;
+
+    size_t len = event->num_parallel * sizeof(int);
+    client_info[n_client].stone_id = malloc(len);
+    memcpy(client_info[n_client].stone_id, event->stone_id, len);
+
     n_client++;
 
     return 1;
@@ -512,11 +523,17 @@ icee_clientinfo_handler(CManager cm, void *vevent, void *client_data, attr_list 
 
 void *dosubmit(icee_fileinfo_rec_t *fp)  
 {
-    if (adios_verbose_level > 3) 
+    if (adios_verbose_level > 5) 
         DUMP("threadid is %lu, submitting %d(%s)", 
              (unsigned long)pthread_self(), fp->varinfo->varid, fp->varinfo->varname);
 
-    EVsubmit(icee_write_source, fp, NULL);
+    int i;
+    for (i=0; i<max_client; i++)
+    {
+        int k = rand() % client_info[i].num_parallel;
+        EVsubmit(source[i][k], fp, NULL);
+    }
+
     
     icee_varinfo_rec_ptr_t vp = fp->varinfo;
     free(vp->varname);
@@ -696,7 +713,7 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
         int i;
         for (i=0; i<max_client; i++)
         {
-            remote_stone = client_info[i].stone_id;
+            remote_stone = client_info[i].stone_id[0];
             stone = EValloc_stone(icee_write_cm);
             contact_list = create_attr_list();
 
@@ -731,6 +748,56 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
         }
         icee_write_source = EVcreate_submit_handle(icee_write_cm, split_stone, icee_fileinfo_format_list);
 
+        // Initialization for parallel submit
+        if (icee_num_parallel > 1)
+        {
+            srand(time(NULL));
+
+            cm = malloc(max_client * sizeof(CManager[ICEE_MAX_PARALLEL]));
+            source = malloc(max_client * sizeof(EVsource[ICEE_MAX_PARALLEL]));
+
+            for (i=0; i<max_client; i++)
+            {
+                int k;
+                for (k=0; k<client_info[i].num_parallel; k++)
+                {
+                    cm[i][k] = CManager_create();
+                    CMlisten(cm[i][k]);
+                    
+                    contact_list = create_attr_list();
+
+                    switch (icee_transport)
+                    {
+                    case ENET:
+                        add_string_attr(contact_list, 
+                                        attr_atom_from_string("CM_TRANSPORT"), 
+                                        strdup("enet"));
+                        add_string_attr(contact_list, 
+                                        attr_atom_from_string("CM_ENET_HOST"), 
+                                        client_info[i].client_host);
+                        add_int_attr(contact_list, 
+                                     attr_atom_from_string("CM_ENET_PORT"), 
+                                     client_info[i].client_port + k);
+                        
+                        break;
+                    default:
+                        add_string_attr(contact_list, 
+                                        attr_atom_from_string("IP_HOST"), 
+                                        client_info[i].client_host);
+                        add_int_attr(contact_list, 
+                                     attr_atom_from_string("IP_PORT"), 
+                                     client_info[i].client_port + k);
+                        break;
+                    }
+
+                    stone = EValloc_stone(cm[i][k]);
+                    remote_stone = client_info[i].stone_id[k];
+                    EVassoc_bridge_action(cm[i][k], stone, contact_list, remote_stone);
+                    source[i][k] = EVcreate_submit_handle(cm[i][k], stone, icee_fileinfo_format_list);
+                }
+            }
+        }
+        
         adios_icee_initialized = 1;
     }
 }
@@ -797,9 +864,6 @@ adios_icee_write(
     }
 
     vp->varid = f->id;
-    if (adios_verbose_level > 3) DUMP("id,name = %d,%s", vp->varid, vp->varname)
-;
-
     vp->type = f->type;
     vp->typesize = adios_get_type_size(f->type, ""); 
 
@@ -845,7 +909,7 @@ adios_icee_write(
     }
     
     vp->data = f->data;
-    if (adios_verbose_level > 3) icee_varinfo_print(vp);
+    if (adios_verbose_level > 5) icee_varinfo_print(vp);
 
     fp->nvars++;
 }
@@ -921,6 +985,17 @@ adios_icee_finalize(int mype, struct adios_method_struct *method)
     if (adios_icee_initialized)
     {
         CManager_close(icee_write_cm);
+
+        if (icee_num_parallel > 1)
+        {
+            int i, k;
+            for (i=0; i<max_client; i++)
+                for (k=0; k<client_info[i].num_parallel; k++)
+                    CManager_close(cm[i][k]);
+            
+            free(cm);
+            free(source);
+        }
         adios_icee_initialized = 0;
     }
 }

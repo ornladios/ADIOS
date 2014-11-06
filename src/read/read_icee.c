@@ -315,7 +315,7 @@ icee_fileinfo_handler(CManager cm, void *vevent, void *client_data, attr_list at
     {
         *lvpp = malloc(sizeof(icee_varinfo_rec_t));
         icee_varinfo_copy(*lvpp, eventvp);
-        if (adios_verbose_level > 3) DUMP("id,name = %d,%s", (*lvpp)->varid, (*lvpp)->varname);
+        if (adios_verbose_level > 5) DUMP("id,name = %d,%s", (*lvpp)->varid, (*lvpp)->varname);
         
         lvpp = &(*lvpp)->next;
         eventvp = eventvp->next;
@@ -342,7 +342,9 @@ icee_fileinfo_handler(CManager cm, void *vevent, void *client_data, attr_list at
 
 static int adios_read_icee_initialized = 0;
 
-CManager icee_read_cm;
+//CManager icee_read_cm;
+CManager icee_read_cm[ICEE_MAX_PARALLEL];
+static int icee_read_num_parallel = 1;
 
 /* Row-ordered matrix representatin */
 typedef struct {
@@ -497,7 +499,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
     int cm_remote_port = 59999;
     char *cm_remote_host = "localhost";
     char *cm_attr = NULL;
-    attr_list contact_list;
+    //attr_list contact_list;
     icee_transport_t icee_transport = TCP;
 
     icee_clientinfo_rec_t *remote_server;
@@ -591,22 +593,13 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
             else
                 log_error ("No support: %s\n", p->value);
         }
+        else if (!strcasecmp (p->name, "num_parallel"))
+        {
+            icee_read_num_parallel = atoi(p->value);
+        }
 
         p = p->next;
     }
-
-    /*
-    if (cm_attr)
-    {
-        contact_list = attr_list_from_string(cm_attr);
-    }
-    else
-    {
-        contact_list = create_attr_list();
-        add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), cm_port);
-        add_string_attr(contact_list, attr_atom_from_string("IP_HOST"), cm_host);
-    }
-    */
 
     if (use_single_remote_server)
     {
@@ -616,7 +609,13 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         remote_server[0].client_port = cm_remote_port;
     }
 
-    //log_info ("cm_attr : %s\n", cm_attr);
+    if (icee_read_num_parallel > ICEE_MAX_PARALLEL)
+    {
+        icee_read_num_parallel = ICEE_MAX_PARALLEL;
+        log_info ("Max. number of threads is set to %d\n", icee_read_num_parallel);
+    }
+
+
     log_info ("cm_host : %s\n", cm_host);
     log_info ("cm_port : %d\n", cm_port);
     for (i = 0; i < num_remote_server; i++) 
@@ -627,56 +626,56 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
 
     if (!adios_read_icee_initialized)
     {
-        EVstone stone, remote_stone;
-        EVsource source;
-        attr_list contact_list;
+        EVstone   stone[ICEE_MAX_PARALLEL], remote_stone;
+        EVsource  source;
+        attr_list contact[ICEE_MAX_PARALLEL];
 
-        icee_read_cm = CManager_create();
-
-        // Listen first
-        contact_list = create_attr_list();
-        switch (icee_transport)
+        for (i=0; i<icee_read_num_parallel; i++)
         {
-        case ENET:
-            add_string_attr(contact_list, attr_atom_from_string("CM_TRANSPORT"), 
-                            strdup("enet"));
-            add_int_attr(contact_list, attr_atom_from_string("CM_ENET_PORT"), 
-                         cm_port);
-            break;
-        default:
-            add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), 
-                         cm_port);
-            break;
-        }
+            icee_read_cm[i] = CManager_create();
 
-        if (CMlisten_specific(icee_read_cm, contact_list) == 0) 
-        {
-            fprintf(stderr, "error: unable to initialize connection manager.\n");
-            exit(-1);
+            contact[i] = create_attr_list();
+
+            switch (icee_transport)
+            {
+            case ENET:
+                add_string_attr(contact[i], 
+                                attr_atom_from_string("CM_TRANSPORT"), 
+                                strdup("enet"));
+                add_int_attr(contact[i], 
+                             attr_atom_from_string("CM_ENET_PORT"), 
+                             cm_port + i);
+                break;
+            default:
+                add_int_attr(contact[i], 
+                             attr_atom_from_string("IP_PORT"), 
+                             cm_port + i);
+                break;
+            }
+
+            stone[i] = EValloc_stone(icee_read_cm[i]);
+            DUMP("port,stone = %d,%d", cm_port + i, stone[i]);
+
+            EVassoc_terminal_action(icee_read_cm[i], stone[i], icee_fileinfo_format_list, icee_fileinfo_handler, NULL);
+
+            if (CMlisten_specific(icee_read_cm[i], contact[i]) == 0)
+                printf("Error: unable to initialize connection manager[%d].\n", i);
+
+            if (!CMfork_comm_thread(icee_read_cm[i])) 
+                printf("Fork of communication thread[%d] failed.\n", i);
         }
         
-        log_debug("Contact list \"%s\"\n", attr_list_to_string(contact_list));
-        
-        stone = EValloc_stone(icee_read_cm);
-        log_debug("Stone ID: %d\n", stone);
-        EVassoc_terminal_action(icee_read_cm, stone, icee_fileinfo_format_list, icee_fileinfo_handler, NULL);
-        
-        if (!CMfork_comm_thread(icee_read_cm)) 
-        {
-            printf("Fork of communication thread failed, exiting\n");
-            exit(-1);
-        }
-
         EVstone split_stone;
         EVaction split_action;
-        split_stone = EValloc_stone(icee_read_cm);
-        split_action = EVassoc_split_action(icee_read_cm, split_stone, NULL);
+
+        split_stone = EValloc_stone(icee_read_cm[0]);
+        split_action = EVassoc_split_action(icee_read_cm[0], split_stone, NULL);
         for (i = 0; i < num_remote_server; i++) 
         {
-            //attr_list contact_list;
+            attr_list contact_list;
             EVstone remote_stone, output_stone;
             remote_stone = 0;
-            output_stone = EValloc_stone(icee_read_cm);
+            output_stone = EValloc_stone(icee_read_cm[0]);
 
             contact_list = create_attr_list();
             
@@ -699,12 +698,14 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
                 break;
             }
 
-            EVassoc_bridge_action(icee_read_cm, output_stone, contact_list, remote_stone);
-            EVaction_add_split_target(icee_read_cm, split_stone, split_action, output_stone);
+            EVassoc_bridge_action(icee_read_cm[0], output_stone, contact_list, remote_stone);
+            EVaction_add_split_target(icee_read_cm[0], split_stone, split_action, output_stone);
+            //free_attr_list(contact_list);
         }
-        source = EVcreate_submit_handle(icee_read_cm, split_stone, icee_clientinfo_format_list);
+        source = EVcreate_submit_handle(icee_read_cm[0], split_stone, icee_clientinfo_format_list);
         icee_clientinfo_rec_t info;
         info.client_host = cm_host;
+        info.num_parallel = icee_read_num_parallel;
         info.client_port = cm_port;
         info.stone_id = stone;
         
@@ -843,7 +844,10 @@ adios_read_icee_finalize_method ()
 
     if (adios_read_icee_initialized)
     {
-        CManager_close(icee_read_cm);
+        int i;
+        for (i=0; i<icee_read_num_parallel; i++)
+            CManager_close(icee_read_cm[i]);
+
         adios_read_icee_initialized = 0;
     }
 
@@ -991,7 +995,7 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
     
     icee_varinfo_rec_ptr_t vp = NULL;
     vp = icee_varinfo_search_byname(fp->varinfo, adiosfile->var_namelist[varid]);
-    if (adios_verbose_level > 3) icee_varinfo_print(vp);
+    if (adios_verbose_level > 5) icee_varinfo_print(vp);
 
     if (!vp)
     {
@@ -1032,7 +1036,7 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
                             "Dimension mismatch\n");
 
             log_debug("Merging operation (total nvars: %d).\n", fp->nchunks);
-            if (adios_verbose_level > 3) icee_sel_bb_print(sel);
+            if (adios_verbose_level > 5) icee_sel_bb_print(sel);
 
             while (vp != NULL)
             {
@@ -1045,7 +1049,7 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
                 uint64_t s_offsets[10], v_offsets[10];
                 int i;
 
-                if (adios_verbose_level > 3) icee_varinfo_print(vp);
+                if (adios_verbose_level > 5) icee_varinfo_print(vp);
                     
                 mat_init(&m_sel, vp->typesize, vp->ndims, sel->u.bb.count, data);
                 mat_init(&m_var, vp->typesize, vp->ndims, vp->ldims, vp->data);
