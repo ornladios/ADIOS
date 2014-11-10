@@ -35,8 +35,6 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = $(am__EXEEXT_1)
-
-# Only compile these test programs if we have FastBit, since they rely on FastBit
 @HAVE_FASTBIT_TRUE@am__append_1 = fastbit_tests
 subdir = tests/C/query/fastbit
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
@@ -89,12 +87,13 @@ CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
 am__fastbit_tests_SOURCES_DIST = fastbit_tests.c
 @HAVE_FASTBIT_TRUE@am_fastbit_tests_OBJECTS =  \
-@HAVE_FASTBIT_TRUE@	fastbit_tests-testCases.$(OBJEXT)
+@HAVE_FASTBIT_TRUE@	fastbit_tests-fastbit_tests.$(OBJEXT)
 fastbit_tests_OBJECTS = $(am_fastbit_tests_OBJECTS)
 am__DEPENDENCIES_1 =
 @HAVE_FASTBIT_TRUE@fastbit_tests_DEPENDENCIES =  \
 @HAVE_FASTBIT_TRUE@	$(top_builddir)/src/libadiosread_nompi.a \
-@HAVE_FASTBIT_TRUE@	$(am__DEPENDENCIES_1)
+@HAVE_FASTBIT_TRUE@	$(top_builddir)/src/libadios_nompi.a \
+@HAVE_FASTBIT_TRUE@	$(am__DEPENDENCIES_1) $(am__DEPENDENCIES_1)
 fastbit_tests_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(fastbit_tests_LDFLAGS) $(LDFLAGS) -o $@
@@ -154,7 +153,10 @@ AWK = @AWK@
 BZIP2_CPPFLAGS = @BZIP2_CPPFLAGS@
 BZIP2_LDFLAGS = @BZIP2_LDFLAGS@
 BZIP2_LIBS = @BZIP2_LIBS@
-CC = ${MPICC}
+
+# Only compile these test programs if we have FastBit, since they rely on FastBit
+@HAVE_FASTBIT_TRUE@CC = $(MPICC)
+CC = $(MPICC)
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
 CPP = @CPP@
@@ -376,7 +378,8 @@ top_srcdir = @top_srcdir@
 # ${ADIOSREADLIB_CPPFLAGS} has all the flags like -DFASTBIT -DALACRITY
 # as well as related includes, so it is needed here
 # 
-INCLUDES = $(all_includes) -I$(top_srcdir)/src/ -I$(top_srcdir)/src/public/ $(MXML_CPPFLAGS)
+INCLUDES = $(all_includes) -I$(top_srcdir)/src/ \
+	-I$(top_srcdir)/src/public/ $(MXML_CPPFLAGS)
 AUTOMAKE_OPTIONS = no-dependencies
 @HAVE_FASTBIT_TRUE@fastbit_tests_SOURCES = fastbit_tests.c
 @HAVE_FASTBIT_TRUE@fastbit_tests_CPPFLAGS = ${MACRODEFFLAG}_NOMPI 
@@ -444,11 +447,11 @@ distclean-compile:
 .c.lo:
 	$(LTCOMPILE) -c -o $@ $<
 
-fastbit_tests-testCases.o: fastbit_tests.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(fastbit_tests_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o fastbit_tests-testCases.o `test -f 'fastbit_tests.c' || echo '$(srcdir)/'`fastbit_tests.c
+fastbit_tests-fastbit_tests.o: fastbit_tests.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(fastbit_tests_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o fastbit_tests-fastbit_tests.o `test -f 'fastbit_tests.c' || echo '$(srcdir)/'`fastbit_tests.c
 
-fastbit_tests-testCases.obj: fastbit_tests.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(fastbit_tests_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o fastbit_tests-testCases.obj `if test -f 'fastbit_tests.c'; then $(CYGPATH_W) 'fastbit_tests.c'; else $(CYGPATH_W) '$(srcdir)/fastbit_tests.c'; fi`
+fastbit_tests-fastbit_tests.obj: fastbit_tests.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(fastbit_tests_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o fastbit_tests-fastbit_tests.obj `if test -f 'fastbit_tests.c'; then $(CYGPATH_W) 'fastbit_tests.c'; else $(CYGPATH_W) '$(srcdir)/fastbit_tests.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
