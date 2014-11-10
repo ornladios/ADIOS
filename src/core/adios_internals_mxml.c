@@ -2585,8 +2585,10 @@ int adios_common_select_method_by_group_id (int priority, const char * method
 void adios_cleanup ()
 {
     adios_transports_initialized = 0;
-    if (adios_transports)
+    if (adios_transports) {
+        adios_free_transports (adios_transports);
         free (adios_transports);
+    }
     adios_transports = 0;
 
     while (adios_methods)

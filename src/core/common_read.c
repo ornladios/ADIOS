@@ -530,6 +530,9 @@ int common_read_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
             }
 
             /* Update group information too */
+            free_namelist (internals->group_namelist, internals->ngroups);
+            free (internals->nvars_per_group);
+            free (internals->nattrs_per_group);
             adios_read_hooks[internals->method].adios_get_groupinfo_fn (fp, &internals->ngroups, 
                     &internals->group_namelist, &internals->nvars_per_group, &internals->nattrs_per_group);
             if (internals->group_in_view > -1) {
@@ -3380,7 +3383,8 @@ void common_read_free_chunk (ADIOS_VARCHUNK *chunk)
      */
      if (chunk) {
         if (chunk->sel) {
-            free(chunk->sel);
+            free_selection(chunk->sel);
+            //free(chunk->sel);
             chunk->sel = NULL;
         }
         free(chunk);

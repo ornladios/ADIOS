@@ -194,6 +194,7 @@ int main (int argc, char ** argv)
                 sleep(1);
             }
         }
+        adios_free_group (m_adios_group);
     }
 
     if (!err && do_read)
@@ -477,6 +478,10 @@ endread:
     adios_selection_delete (sel1);
     adios_selection_delete (sel2);
     adios_selection_delete (sel3);
+
+    free(pts1);
+    free(pts2);
+    free(pts3);
 
     adios_read_close(f);
     MPI_Barrier (comm);

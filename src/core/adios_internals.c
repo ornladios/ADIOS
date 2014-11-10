@@ -2894,7 +2894,6 @@ void adios_copy_var_written (struct adios_group_struct * g, struct adios_var_str
     var_new->data_size = var->data_size;
             var_new->write_count = var->write_count;
     var_new->next = 0;
-            adios_transform_init_transform_var(var_new);
 
     uint64_t size = adios_get_type_size (var->type, var->data);
     switch (var->type)
@@ -3004,6 +3003,7 @@ void adios_copy_var_written (struct adios_group_struct * g, struct adios_var_str
             }
             else
             {
+                adios_transform_init_transform_var(var_new);
                 var_new->stats = 0;
                 var_new->data = malloc (size);
                 memcpy (var_new->data, var->data, size);
