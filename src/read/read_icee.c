@@ -48,24 +48,24 @@
 #endif
 
 #define MALLOC0(type_t, var) var = malloc(sizeof(type_t)); memset(var, '\0', sizeof(type_t));
-#define MYALLOC(var, nbyte)       \
-    if (nbyte) {                  \
-        var = malloc(nbyte);      \
-        assert((var != NULL) && "malloc failure");      \
-        memset(var, '\0', nbyte); \
-    } else                        \
+#define MYALLOC(var, nbyte)                         \
+    if (nbyte) {                                    \
+        var = malloc(nbyte);                        \
+        assert((var != NULL) && "malloc failure");  \
+        memset(var, '\0', nbyte);                   \
+    } else                                          \
         var = NULL;
 
 #define MYFREE(var) free(var); var = NULL;
 
-#define MYMIN(a,b)               \
-    ({ __typeof__ (a) _a = (a);  \
-        __typeof__ (b) _b = (b); \
+#define MYMIN(a,b)                              \
+    ({ __typeof__ (a) _a = (a);                 \
+        __typeof__ (b) _b = (b);                \
         _a < _b ? _a : _b; })
 
-#define MYMAX(a,b)               \
-    ({ __typeof__ (a) _a = (a);  \
-        __typeof__ (b) _b = (b); \
+#define MYMAX(a,b)                              \
+    ({ __typeof__ (a) _a = (a);                 \
+        __typeof__ (b) _b = (b);                \
         _a > _b ? _a : _b; })
 
 ///////////////////////////
@@ -77,14 +77,14 @@
 
 
 /* Data Structure
-+ fileinfo 1.1 - fileinfo 1.2 - ...
-|    + var 1.1      + var 1.2 
-|    + var 2.1      + var 2.2
-|    + ...          + ...
-+ fileinfo 2.1 - fileinfo 2.2 - ...
+   + fileinfo 1.1 - fileinfo 1.2 - ...
+   |    + var 1.1      + var 1.2 
+   |    + var 2.1      + var 2.2
+   |    + ...          + ...
+   + fileinfo 2.1 - fileinfo 2.2 - ...
 
-x.y (x=filename, y=version)
- */
+   x.y (x=filename, y=version)
+*/
 
 typedef struct icee_llist
 {
@@ -189,12 +189,12 @@ void icee_fileinfo_append(const icee_fileinfo_rec_ptr_t root, icee_fileinfo_rec_
     }
 
     /*
-    while (p->next != NULL)
-    {
-        p = p->next;
-    }
+      while (p->next != NULL)
+      {
+      p = p->next;
+      }
 
-    p->next = fp;
+      p->next = fp;
     */
 }
 
@@ -340,11 +340,26 @@ icee_fileinfo_handler(CManager cm, void *vevent, void *client_data, attr_list at
     return 1;
 }
 
+void on_icee_passivecheckin_reply (CManager cm, CMConnection conn, icee_passivecheckin_rec_t *m)
+{
+    log_debug("%s\n", __FUNCTION__);
+}
+
+void on_icee_fileinfo_recv (CManager cm, CMConnection conn, icee_fileinfo_rec_t *m)
+{
+    log_debug("%s\n", __FUNCTION__);
+    icee_fileinfo_handler(cm, (void *)m, NULL, NULL);
+}
+
 static int adios_read_icee_initialized = 0;
 
 //CManager icee_read_cm;
 CManager icee_read_cm[ICEE_MAX_PARALLEL];
 static int icee_read_num_parallel = 1;
+
+static int is_read_cm_passive = 1;
+static int num_remote_server = 0;
+CManager pcm[ICEE_MAX_REMOTE];
 
 /* Row-ordered matrix representatin */
 typedef struct {
@@ -503,7 +518,6 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
     icee_transport_t icee_transport = TCP;
 
     icee_clientinfo_rec_t *remote_server;
-    int num_remote_server = 0;
     int i;
 
     int use_single_remote_server = 1;
@@ -597,6 +611,10 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         {
             icee_read_num_parallel = atoi(p->value);
         }
+        else if (!strcasecmp (p->name, "passive"))
+        {
+            is_read_cm_passive = 1;
+        }
 
         p = p->next;
     }
@@ -626,6 +644,47 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
 
     if (!adios_read_icee_initialized)
     {
+        if (is_read_cm_passive)
+        {
+            for (i = 0; i < num_remote_server; i++)
+            {
+                pcm[i] = CManager_create();
+
+                if (!CMfork_comm_thread(pcm[i]))
+                    printf("Fork of communication thread[%d] failed.\n", i);
+
+                attr_list contact_list  = create_attr_list();
+                add_string_attr(contact_list, attr_atom_from_string("IP_HOST"),
+                                remote_server[i].client_host);
+                add_int_attr(contact_list, attr_atom_from_string("IP_PORT"),
+                             remote_server[i].client_port);
+
+                CMConnection conn = CMinitiate_conn(pcm[i], contact_list);
+                if (conn == NULL)
+                    log_error ("Initializing passive connection failed (%d)\n", i);
+
+                CMFormat fm_checkin, fm_fileinfo;
+                fm_checkin = CMregister_format(pcm[i], icee_passivecheckin_format_list);
+
+                CMregister_handler(fm_checkin, icee_passivecheckin_reply_handler, on_icee_passivecheckin_reply);
+
+                fm_fileinfo = CMregister_format(pcm[i], icee_fileinfo_format_list);
+                CMregister_handler(fm_fileinfo, icee_fileinfo_recv_handler, on_icee_fileinfo_recv);
+
+                icee_passivecheckin_rec_t m;
+
+                int condition = CMCondition_get(pcm[i], conn);
+                CMCondition_set_client_data(pcm[i], condition, NULL);
+                m.condition = condition;
+
+                if (CMwrite(conn, fm_checkin, (void*)&m) != 1)
+                    log_error ("Passive check-in failed (%d)\n", i);
+
+            }
+            log_debug("Passive connection established");
+            goto done;
+        }
+
         EVstone   stone[ICEE_MAX_PARALLEL], remote_stone;
         EVsource  source;
         attr_list contact[ICEE_MAX_PARALLEL];
@@ -711,6 +770,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         
         EVsubmit(source, &info, NULL);
 
+    done:
         adios_read_icee_initialized = 1;
     }
 
@@ -780,7 +840,7 @@ adios_read_icee_open(const char * fname,
     }
 
     adiosfile->nvars = tbl->size(tbl);
-	adiosfile->var_namelist = malloc(tbl->num * sizeof(char *));
+    adiosfile->var_namelist = malloc(tbl->num * sizeof(char *));
 
     int i;
     size_t idx = 0;
@@ -802,8 +862,8 @@ adios_read_icee_open(const char * fname,
     vp = fp->varinfo;
     while (vp != NULL)
     {
-        vp->varid = (int) tbl->get(tbl, vp->varname);
-        vp = vp->next;
+    vp->varid = (int) tbl->get(tbl, vp->varname);
+    vp = vp->next;
     }
     */
 
@@ -811,7 +871,7 @@ adios_read_icee_open(const char * fname,
 #endif
 
     adiosfile->nvars = fp->nvars;
-	adiosfile->var_namelist = malloc(fp->nvars * sizeof(char *));
+    adiosfile->var_namelist = malloc(fp->nvars * sizeof(char *));
 
     icee_varinfo_rec_ptr_t vp = fp->varinfo;
 
@@ -845,8 +905,12 @@ adios_read_icee_finalize_method ()
     if (adios_read_icee_initialized)
     {
         int i;
-        for (i=0; i<icee_read_num_parallel; i++)
-            CManager_close(icee_read_cm[i]);
+        if (is_read_cm_passive == 1)
+            for (i = 0; i < num_remote_server; i++) 
+                CManager_close(pcm[i]);
+        else
+            for (i=0; i<icee_read_num_parallel; i++)
+                CManager_close(icee_read_cm[i]);
 
         adios_read_icee_initialized = 0;
     }
@@ -954,7 +1018,7 @@ int adios_read_icee_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
 
 int
 adios_read_icee_inq_var_blockinfo(const ADIOS_FILE* fp,
-				      ADIOS_VARINFO* varinfo)
+                                  ADIOS_VARINFO* varinfo)
 {
     log_error("No support yet: %s\n", __FUNCTION__);
     return 0; 
@@ -962,9 +1026,9 @@ adios_read_icee_inq_var_blockinfo(const ADIOS_FILE* fp,
 
 int
 adios_read_icee_inq_var_stat(const ADIOS_FILE* fp,
-				 ADIOS_VARINFO* varinfo,
-				 int per_step_stat,
-				 int per_block_stat)
+                             ADIOS_VARINFO* varinfo,
+                             int per_step_stat,
+                             int per_block_stat)
 {
     log_error("No support yet: %s\n", __FUNCTION__);
     return 0; 
@@ -973,11 +1037,11 @@ adios_read_icee_inq_var_stat(const ADIOS_FILE* fp,
 
 int 
 adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
-				       const ADIOS_SELECTION *sel,
-				       int varid,
-				       int from_steps,
-				       int nsteps,
-				       void *data)
+                                   const ADIOS_SELECTION *sel,
+                                   int varid,
+                                   int from_steps,
+                                   int nsteps,
+                                   void *data)
 {   
     int i;
     icee_fileinfo_rec_ptr_t fp = (icee_fileinfo_rec_ptr_t) adiosfile->fh;
@@ -1107,11 +1171,11 @@ adios_read_icee_schedule_read_byid(const ADIOS_FILE *adiosfile,
 
 int 
 adios_read_icee_schedule_read(const ADIOS_FILE *adiosfile,
-			const ADIOS_SELECTION * sel,
-			const char * varname,
-			int from_steps,
-			int nsteps,
-			void * data)
+                              const ADIOS_SELECTION * sel,
+                              const char * varname,
+                              int from_steps,
+                              int nsteps,
+                              void * data)
 {
     log_error("No support yet: %s\n", __FUNCTION__);
     return 0;
@@ -1119,8 +1183,8 @@ adios_read_icee_schedule_read(const ADIOS_FILE *adiosfile,
 
 int 
 adios_read_icee_get_attr (int *gp, const char *attrname,
-                                 enum ADIOS_DATATYPES *type,
-                                 int *size, void **data)
+                          enum ADIOS_DATATYPES *type,
+                          int *size, void **data)
 {
     log_error("No support yet: %s\n", __FUNCTION__);
     return 0;
@@ -1128,8 +1192,8 @@ adios_read_icee_get_attr (int *gp, const char *attrname,
 
 int 
 adios_read_icee_get_attr_byid (const ADIOS_FILE *adiosfile, int attrid,
-				   enum ADIOS_DATATYPES *type,
-				   int *size, void **data)
+                               enum ADIOS_DATATYPES *type,
+                               int *size, void **data)
 {
     log_error("No support yet: %s\n", __FUNCTION__);
     return 0;

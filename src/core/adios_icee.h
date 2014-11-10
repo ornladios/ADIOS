@@ -101,6 +101,84 @@ static FMStructDescRec icee_clientinfo_format_list[] =
     {NULL, NULL}
 };
 
+/* Auto-generated on Sat Nov  8 14:27:48 EST 2014 */
+
+typedef struct icee_passivecheckin_rec {
+    int condition;
+} icee_passivecheckin_rec_t, *icee_passivecheckin_rec_ptr_t;
+
+static FMField icee_passivecheckin_field_list[] =
+{
+    {"condition", "integer", sizeof(int), FMOffset(icee_passivecheckin_rec_ptr_t, condition)},
+    {NULL, NULL, 0, 0}
+};
+
+static FMStructDescRec icee_passivecheckin_format_list[] =
+{
+    {"icee_passivecheckin", icee_passivecheckin_field_list, sizeof(icee_passivecheckin_rec_t), NULL},
+    {NULL, NULL}
+};
+
+typedef void (*icee_passivecheckin_callback_t)(CManager cm, CMConnection conn, icee_passivecheckin_rec_t *m);
+
+typedef void (*icee_fileinfo_callback_t)(CManager cm, CMConnection conn, icee_fileinfo_rec_t *m);
+
+static void
+icee_passivecheckin_request_handler(CManager cm, CMConnection conn, void *msg, void *client_data, attr_list attrs)
+{
+    icee_passivecheckin_rec_t *m = (icee_passivecheckin_rec_t*) msg;
+    icee_passivecheckin_callback_t cb;
+
+    if (client_data)
+    {
+        cb = (icee_passivecheckin_callback_t) client_data;
+        (*cb)(cm, conn, m);
+    }
+
+    CMFormat format = CMlookup_format(cm, icee_passivecheckin_format_list);
+    CMwrite(conn, format, (icee_passivecheckin_rec_t*) m);
+}
+
+static void
+icee_passivecheckin_reply_handler(CManager cm, CMConnection conn, void *msg, void *client_data, attr_list attrs)
+{
+    icee_passivecheckin_rec_t *m = (icee_passivecheckin_rec_t*) msg;
+    icee_passivecheckin_callback_t cb;
+
+    if (client_data)
+    {
+        cb = (icee_passivecheckin_callback_t) client_data;
+        (*cb)(cm, conn, m);
+    }
+
+    int condition = m->condition;
+    if (condition)
+    {
+        CMCondition_signal(cm, condition);
+    }
+}
+
+static void
+icee_fileinfo_recv_handler(CManager cm, CMConnection conn, void *msg, void *client_data, attr_list attrs)
+{
+    icee_fileinfo_rec_t *m = (icee_fileinfo_rec_t*) msg;
+    icee_fileinfo_callback_t cb;
+
+    if (client_data)
+    {
+        cb = (icee_fileinfo_callback_t) client_data;
+        (*cb)(cm, conn, m);
+    }
+
+    /*
+      int condition = m->condition;
+      if (condition)
+      {
+      CMCondition_signal(cm, condition);
+      }
+    */
+}
+
 /*
  * Thread pool implementation
  * Credit: Multithreaded Programming Guide by Oracle
@@ -136,7 +214,7 @@ typedef	struct thr_pool	thr_pool_t;
  * On error, thr_pool_create() returns NULL with errno set to the error code.
  */
 extern	thr_pool_t	*thr_pool_create(uint_t min_threads, uint_t max_threads,
-				uint_t linger, pthread_attr_t *attr);
+                                     uint_t linger, pthread_attr_t *attr);
 
 /*
  * Enqueue a work request to the thread pool job queue.
@@ -153,7 +231,7 @@ extern	thr_pool_t	*thr_pool_create(uint_t min_threads, uint_t max_threads,
  * On error, thr_pool_queue() returns -1 with errno set to the error code.
  */
 extern	int	thr_pool_queue(thr_pool_t *pool,
-			void *(*func)(void *), void *arg);
+                           void *(*func)(void *), void *arg);
 
 /*
  * Wait for all queued jobs to complete.

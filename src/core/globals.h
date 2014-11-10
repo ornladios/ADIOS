@@ -65,6 +65,10 @@ char *get_full_path_name(char *name, char *path);
 #define ICEE_MAX_PARALLEL 32
 #endif
 
+#ifndef ICEE_MAX_REMOTE
+#define ICEE_MAX_REMOTE 32
+#endif
+
 #include "core/adios_icee.h"
 
 typedef enum {TCP, UDP, ENET, NNTI, IB} icee_transport_t;
