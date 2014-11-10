@@ -68,7 +68,7 @@ EVsource (*source)[ICEE_MAX_PARALLEL];
 
 int n_client = 0;
 int max_client = 1;
-int is_cm_passive = 1;
+int is_cm_passive = 0;
 icee_clientinfo_rec_t *client_info;
 
 icee_fileinfo_rec_ptr_t fp = NULL;
@@ -867,6 +867,21 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
                         add_int_attr(contact_list, 
                                      attr_atom_from_string("CM_ENET_PORT"), 
                                      client_info[i].client_port + k);
+                        
+                        break;
+                    case NNTI:
+                        add_string_attr(contact_list, 
+                                        attr_atom_from_string("CM_TRANSPORT"), 
+                                        "nnti");
+                        add_string_attr(contact_list, 
+                                        attr_atom_from_string("IP_HOST"), 
+                                        client_info[i].client_host);
+                        add_int_attr(contact_list, 
+                                     attr_atom_from_string("NNTI_PORT"), 
+                                     client_info[i].client_port + k);
+                        add_string_attr(contact_list, 
+                                        attr_atom_from_string("CM_NNTI_TRANSPORT"), 
+                                        "ib");
                         
                         break;
                     default:

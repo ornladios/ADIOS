@@ -357,7 +357,7 @@ static int adios_read_icee_initialized = 0;
 CManager icee_read_cm[ICEE_MAX_PARALLEL];
 static int icee_read_num_parallel = 1;
 
-static int is_read_cm_passive = 1;
+static int is_read_cm_passive = 0;
 static int num_remote_server = 0;
 CManager pcm[ICEE_MAX_REMOTE];
 
