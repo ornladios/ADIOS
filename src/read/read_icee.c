@@ -700,10 +700,21 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
             case ENET:
                 add_string_attr(contact[i], 
                                 attr_atom_from_string("CM_TRANSPORT"), 
-                                strdup("enet"));
+                                "enet");
                 add_int_attr(contact[i], 
                              attr_atom_from_string("CM_ENET_PORT"), 
                              cm_port + i);
+                break;
+            case NNTI:
+                add_string_attr(contact[i], 
+                                attr_atom_from_string("CM_TRANSPORT"), 
+                                "nnti");
+                add_int_attr(contact[i], 
+                             attr_atom_from_string("NNTI_PORT"), 
+                             cm_port + i);
+                add_string_attr(contact[i], 
+                                attr_atom_from_string("CM_NNTI_TRANSPORT"), 
+                                "ib");
                 break;
             default:
                 add_int_attr(contact[i], 
@@ -741,13 +752,30 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
             switch (icee_transport)
             {
             case ENET:
-                add_string_attr(contact_list, attr_atom_from_string("CM_TRANSPORT"), 
-                                strdup("enet"));
-                add_string_attr(contact_list, attr_atom_from_string("CM_ENET_HOST"), 
+                add_string_attr(contact_list, 
+                                attr_atom_from_string("CM_TRANSPORT"), 
+                                "enet");
+                add_string_attr(contact_list, 
+                                attr_atom_from_string("CM_ENET_HOST"), 
                                 remote_server[i].client_host);
-                add_int_attr(contact_list, attr_atom_from_string("CM_ENET_PORT"), 
+                add_int_attr(contact_list, 
+                             attr_atom_from_string("CM_ENET_PORT"), 
                              remote_server[i].client_port);
 
+                break;
+            case NNTI:
+                add_string_attr(contact_list, 
+                                attr_atom_from_string("CM_TRANSPORT"), 
+                                "nnti");
+                add_string_attr(contact_list, 
+                                attr_atom_from_string("IP_HOST"), 
+                                remote_server[i].client_host);
+                add_int_attr(contact_list, 
+                             attr_atom_from_string("NNTI_PORT"), 
+                             remote_server[i].client_port);
+                add_string_attr(contact_list, 
+                                attr_atom_from_string("CM_NNTI_TRANSPORT"), 
+                                "ib");
                 break;
             default:
                 add_string_attr(contact_list, attr_atom_from_string("IP_HOST"), 

@@ -720,13 +720,27 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
         switch (icee_transport)
         {
         case ENET:
-            add_string_attr(contact_list, attr_atom_from_string("CM_TRANSPORT"), 
-                            strdup("enet"));
-            add_int_attr(contact_list, attr_atom_from_string("CM_ENET_PORT"), 
+            add_string_attr(contact_list, 
+                            attr_atom_from_string("CM_TRANSPORT"), 
+                            "enet");
+            add_int_attr(contact_list, 
+                         attr_atom_from_string("CM_ENET_PORT"), 
                          cm_port);
             break;
+        case NNTI:
+            add_string_attr(contact_list, 
+                            attr_atom_from_string("CM_TRANSPORT"), 
+                            "nnti");
+            add_int_attr(contact_list, 
+                         attr_atom_from_string("NNTI_PORT"), 
+                         cm_port);
+            add_string_attr(contact_list, 
+                            attr_atom_from_string("CM_NNTI_TRANSPORT"), 
+                            "ib");
+            break;
         default:
-            add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), 
+            add_int_attr(contact_list, 
+                         attr_atom_from_string("IP_PORT"), 
                          cm_port);
             break;
         }
@@ -779,13 +793,29 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
             switch (icee_transport)
             {
             case ENET:
-                add_string_attr(contact_list, attr_atom_from_string("CM_TRANSPORT"), 
-                                strdup("enet"));
-                add_string_attr(contact_list, attr_atom_from_string("CM_ENET_HOST"), 
+                add_string_attr(contact_list, 
+                                attr_atom_from_string("CM_TRANSPORT"), 
+                                "enet");
+                add_string_attr(contact_list, 
+                                attr_atom_from_string("CM_ENET_HOST"), 
                                 client_info[i].client_host);
-                add_int_attr(contact_list, attr_atom_from_string("CM_ENET_PORT"), 
+                add_int_attr(contact_list, 
+                             attr_atom_from_string("CM_ENET_PORT"), 
                              client_info[i].client_port);
-
+                break;
+            case NNTI:
+                add_string_attr(contact_list, 
+                                attr_atom_from_string("CM_TRANSPORT"), 
+                                "nnti");
+                add_string_attr(contact_list, 
+                                attr_atom_from_string("IP_HOST"), 
+                                client_info[i].client_host);
+                add_int_attr(contact_list, 
+                             attr_atom_from_string("NNTI_PORT"), 
+                             client_info[i].client_port);
+                add_string_attr(contact_list, 
+                                attr_atom_from_string("CM_NNTI_TRANSPORT"), 
+                                "ib");
                 break;
             default:
                 add_string_attr(contact_list, attr_atom_from_string("IP_HOST"), 
@@ -830,7 +860,7 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
                     case ENET:
                         add_string_attr(contact_list, 
                                         attr_atom_from_string("CM_TRANSPORT"), 
-                                        strdup("enet"));
+                                        "enet");
                         add_string_attr(contact_list, 
                                         attr_atom_from_string("CM_ENET_HOST"), 
                                         client_info[i].client_host);
