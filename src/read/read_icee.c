@@ -807,12 +807,15 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
                 add_string_attr(contact[i], 
                                 attr_atom_from_string("CM_TRANSPORT"), 
                                 "nnti");
-                add_int_attr(contact[i], 
-                             attr_atom_from_string("NNTI_PORT"), 
-                             cm_port + i);
+                //add_int_attr(contact[i], 
+                //             attr_atom_from_string("NNTI_PORT"), 
+                //             cm_port + i);
                 add_string_attr(contact[i], 
                                 attr_atom_from_string("CM_NNTI_TRANSPORT"), 
                                 "ib");
+                add_int_attr(contact[i], 
+                             attr_atom_from_string("NNTI_ENET_CONTROL"), 
+                             1);
                 break;
             default:
                 add_int_attr(contact[i], 
