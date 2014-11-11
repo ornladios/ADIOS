@@ -769,7 +769,9 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
             exit(-1);
         }
 
-        log_debug("Contact list \"%s\"\n", attr_list_to_string(contact_list));
+        log_debug("Contact list \"%s\"\n", attr_list_to_string(CMget_contact_list(icee_write_cm)));
+        if (adios_verbose_level > 5) 
+            icee_contactinfo_print(CMget_contact_list(icee_write_cm));
 
         stone = EValloc_stone(icee_write_cm);
         log_debug("Stone ID: %d\n", stone);
