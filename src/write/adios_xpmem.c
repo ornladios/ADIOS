@@ -5,7 +5,6 @@
  * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
  */
 
-#if HAVE_XPMEM	        
 #include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -20,6 +19,8 @@
 
 // xml parser
 #include <mxml.h>
+
+#ifdef HAVE_XPMEM	        
 
 //xpmem headers
 #include "public/adios_xpmem.h"

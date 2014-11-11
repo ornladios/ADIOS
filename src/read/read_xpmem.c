@@ -5,7 +5,6 @@
 
 */
 // system libraries
-#if HAVE_XPMEM	        
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -46,6 +45,7 @@
 #include "core/bp_types.h"
 #include "core/bp_utils.h"
 
+
 #include <xpmem.h>
 
 #include "public/adios_xpmem.h"
@@ -62,6 +62,7 @@ inline BP_PROC * GET_BP_PROC_XP (const ADIOS_FILE * fp)
 {
 	return (BP_PROC*)((xpmem_read_file*)fp->fh)->bp;
 }
+
 
 inline BP_FILE * GET_BP_FILE_XP (const ADIOS_FILE * fp)
 {
@@ -842,4 +843,3 @@ adios_read_xpmem_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
     adios_error(err_invalid_read_method, "adios_read_xpmem_reset_dimension_order is not implemented.");
 }
 
-#endif	        

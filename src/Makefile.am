@@ -262,10 +262,10 @@ endif
 endif
 
 if HAVE_XPMEM
-libadios_a_SOURCES += write/adios_xpmem.c 
+libadios_a_SOURCES += write/adios_xpmem.c read/read_xpmem.c
 libadios_nompi_a_SOURCES += write/adios_xpmem.c  read/read_xpmem.c
 if BUILD_FORTRAN
-FortranLibMPISources += write/adios_xpmem.c  read/read_xpmem.c
+FortranLibSources += write/adios_xpmem.c  read/read_xpmem.c
 endif
 endif
 
