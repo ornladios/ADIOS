@@ -35,7 +35,7 @@ int main (int argc, char ** argv)
     adios_read_init_method (method, comm, "verbose=3");
 
     strcpy (filename, "arrays.bp");
-    ADIOS_FILE * f = adios_read_open_file (filename, method, comm, ADIOS_LOCKMODE_NONE, 0);
+    ADIOS_FILE * f = adios_read_open(filename, method, comm, ADIOS_LOCKMODE_NONE, 0);
 
     /* Specify a selection that points to a specific writer's block */
     sel = adios_selection_writeblock (rank);

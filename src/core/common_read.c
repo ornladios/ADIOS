@@ -37,11 +37,11 @@
 static struct adios_read_hooks_struct * adios_read_hooks = 0;
 
 struct common_read_internals_struct {
-    enum ADIOS_READ_METHOD method;
-    struct adios_read_hooks_struct * read_hooks; /* Save adios_read_hooks for each fopen for Matlab */
-    
-    /* Group view information *//* Actual method provides the group names */
-    int         ngroups;
+	enum ADIOS_READ_METHOD method;
+	struct adios_read_hooks_struct * read_hooks; /* Save adios_read_hooks for each fopen for Matlab */
+	
+	/* Group view information *//* Actual method provides the group names */
+	int         ngroups;
     char     ** group_namelist;
     uint32_t  * nvars_per_group;     /* # of variables per each group */
     uint32_t  * nattrs_per_group;    /* # of attributes per each group */

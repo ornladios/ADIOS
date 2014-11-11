@@ -5,6 +5,7 @@
  * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
  */
 
+#if HAVE_XPMEM	        
 #include <sys/types.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -274,3 +275,4 @@ void adios_xpmem_start_calculation (struct adios_method_struct * method)
 void adios_xpmem_stop_calculation (struct adios_method_struct * method)
 {
 }
+#endif	        

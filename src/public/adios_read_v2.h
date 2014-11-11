@@ -147,6 +147,7 @@ enum ADIOS_READ_METHOD {
         ADIOS_READ_METHOD_XPMEM = 6,
 };
 
+
 /** Locking mode for streams. 
  *  In case of real streams, a step may need to be locked in memory to be able
  *  to read all data of the step completely.

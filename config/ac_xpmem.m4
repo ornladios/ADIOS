@@ -43,11 +43,6 @@ if test -z "${HAVE_XPMEM_TRUE}"; then
 		[AM_CONDITIONAL(HAVE_XPMEM,false)])
 fi
 
-# Check for the Xpmem library and headers for SDDF
-AC_TRY_COMPILE([#include <Attributes.h>],
-	[Attributes attr;attr.clearEntries();],
-	[XPMEM_LIBS="-lXpmem"],
-	[AM_CONDITIONAL(HAVE_XPMEM,false)])
 
 LIBS="$save_LIBS"
 LDFLAGS="$save_LDFLAGS"

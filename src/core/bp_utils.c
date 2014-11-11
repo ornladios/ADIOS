@@ -48,6 +48,16 @@
                              swap_64(var); \
                          b->offset += 8;
 
+inline BP_PROC * GET_BP_PROC_BP (const ADIOS_FILE * fp)
+{
+	return (BP_PROC *) fp->fh;
+}
+
+inline BP_FILE * GET_BP_FILE_BP (const ADIOS_FILE * fp)
+{
+	return (BP_FILE *) ((BP_PROC *) fp->fh)->fh;
+}
+
 
 /* prototypes */
 void * bp_read_data_from_buffer(struct adios_bp_buffer_struct_v1 *b, enum ADIOS_DATATYPES type);

@@ -124,17 +124,15 @@ libadios_a_SOURCES = core/adios.c \
                      $(transforms_common_SOURCES) \
                      $(transforms_read_SOURCES) \
                      $(transforms_write_SOURCES) \
-                     # read/read_bp.c \
-                     # read/read_bp_staged.c \
-                     # read/read_bp_staged1.c \
-                     # write/adios_mpi.c \
-                     # write/adios_mpi_lustre.c \
-                     # write/adios_mpi_amr.c \
-                     # write/adios_posix.c \
-                     # write/adios_posix1.c \
-                     # write/adios_var_merge.c \
-					read/read_xpmem.c\
-					write/adios_xpmem.c
+                     read/read_bp.c \
+                     read/read_bp_staged.c \
+                     read/read_bp_staged1.c \
+                     write/adios_mpi.c \
+                     write/adios_mpi_lustre.c \
+                     write/adios_mpi_amr.c \
+                     write/adios_posix.c \
+                     write/adios_posix1.c \
+                     write/adios_var_merge.c 
 
 if HAVE_BGQ
 libadios_a_SOURCES += write/adios_mpi_bgq.c 
@@ -164,14 +162,11 @@ libadios_nompi_a_SOURCES = core/adios.c \
                      core/adios_logger.c \
                      core/util.c \
                      core/qhashtbl.c \
-                     # read/read_bp.c \
-                     # read/read_bp_staged.c \
-                     # read/read_bp_staged1.c \
-                     # write/adios_posix.c \
-                     # write/adios_posix1.c \
-					read/read_xpmem.c\
-					write/adios_xpmem.c
-
+                     read/read_bp.c \
+                     read/read_bp_staged.c \
+                     read/read_bp_staged1.c \
+                     write/adios_posix.c \
+                     write/adios_posix1.c 
 
 
 if BUILD_FORTRAN
@@ -198,13 +193,11 @@ FortranLibSources = core/adiosf.c \
                      core/adios_logger.c \
                      core/util.c \
                      core/qhashtbl.c \
-                     # read/read_bp.c \
-                     # read/read_bp_staged.c \
-                     # read/read_bp_staged1.c \
-                     # write/adios_posix.c \
-                     # write/adios_posix1.c \
-					read/read_xpmem.c\
-					write/adios_xpmem.c
+                     read/read_bp.c \
+                     read/read_bp_staged.c \
+                     read/read_bp_staged1.c \
+                     write/adios_posix.c \
+                     write/adios_posix1.c
 
 FortranLibMPISources =  write/adios_mpi.c \
                      write/adios_mpi_lustre.c \
@@ -267,6 +260,15 @@ if BUILD_FORTRAN
 FortranLibMPISources += write/adios_nc4.c 
 endif
 endif
+
+if HAVE_XPMEM
+libadios_a_SOURCES += write/adios_xpmem.c 
+libadios_nompi_a_SOURCES += write/adios_xpmem.c  read/read_xpmem.c
+if BUILD_FORTRAN
+FortranLibMPISources += write/adios_xpmem.c  read/read_xpmem.c
+endif
+endif
+
 
 if HAVE_FLEXPATH
 libadios_a_SOURCES += write/adios_flexpath.c  read/read_flexpath.c
@@ -420,6 +422,9 @@ endif
 if HAVE_FLEXPATH
 libadiosread_a_SOURCES += read/read_flexpath.c
 endif
+if HAVE_XPMEM
+libadiosread_a_SOURCES += read/read_xpmem.c
+endif
 if HAVE_NSSI
 dist_libadiosread_a_SOURCES = nssi/adios_nssi_args.x
 nodist_libadiosread_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
@@ -460,6 +465,9 @@ FortranReadLibSource += read/read_datatap.c
 endif
 if HAVE_FLEXPATH 
 FortranReadLibSource += read/read_flexpath.c
+endif
+if HAVE_XPMEM 
+FortranReadLibSource += read/read_xpmem.c
 endif
 if HAVE_NSSI
 dist_libadiosreadf_a_SOURCES = nssi/adios_nssi_args.x
@@ -524,6 +532,9 @@ endif
 if HAVE_FLEXPATH
 libadiosread_nompi_a_SOURCES += read/read_flexpath.c
 endif
+if HAVE_XPMEM
+libadiosread_nompi_a_SOURCES += read/read_xpmem.c
+endif
 if HAVE_NSSI
 dist_libadiosread_nompi_a_SOURCES = nssi/adios_nssi_args.x
 nodist_libadiosread_nompi_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
@@ -565,6 +576,9 @@ FortranReadSeqLibSource += read/read_datatap.c
 endif
 if HAVE_FLEXPATH
 FortranReadSeqLibSource += read/read_flexpath.c
+endif
+if HAVE_XPMEM
+FortranReadSeqLibSource += read/read_xpmem.c
 endif
 if HAVE_NSSI
 dist_libadiosreadf_nompi_a_SOURCES = nssi/adios_nssi_args.x
@@ -650,5 +664,6 @@ EXTRA_DIST = core/adios_bp_v1.h core/adios_endianness.h \
              core/bp_types.h core/bp_utils.h core/buffer.h core/common_adios.h \
              core/common_read.h core/futils.h core/globals.h core/ds_metadata.h \
              core/util.h core/flexpath.h core/qhashtbl.h \
+			 public/adios_xpmem.h read/read_xpmem.h \
              nssi/adios_nssi_config.h nssi/aggregation.h nssi/io_timer.h
 
