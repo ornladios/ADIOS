@@ -636,6 +636,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         p = malloc(sizeof(icee_contactinfo_rec_t));
         char *contact_string = attr_list_to_string(contact_list);
         p->contact_string = contact_string;
+        p->stone_id = 0; // we assume. it can be wrong.
         p->next = NULL;
 
         remote_contact = p;
@@ -669,6 +670,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
             contact_list = create_attr_list();
             set_contact_list(contact_list, icee_transport, host, port);
             p->contact_string = attr_list_to_string(contact_list);
+            p->stone_id = 0; // we assume. it can be wrong.
             p->next = NULL;
 
             if (num_remote_server == 0)
@@ -807,6 +809,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
                 add_string_attr(contact[i], 
                                 attr_atom_from_string("CM_TRANSPORT"), 
                                 "nnti");
+                                /*
                 //add_int_attr(contact[i], 
                 //             attr_atom_from_string("NNTI_PORT"), 
                 //             cm_port + i);
@@ -816,6 +819,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
                 add_int_attr(contact[i], 
                              attr_atom_from_string("NNTI_ENET_CONTROL"), 
                              1);
+                             */
                 break;
             default:
                 add_int_attr(contact[i], 
