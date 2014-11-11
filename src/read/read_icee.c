@@ -804,6 +804,9 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
                 add_int_attr(contact[i], 
                              attr_atom_from_string("CM_ENET_PORT"), 
                              cm_port + i);
+            add_string_attr(contact[i], 
+                            attr_atom_from_string("CM_ENET_HOST"), 
+                            cm_host);
                 break;
             case NNTI:
                 add_string_attr(contact[i], 
@@ -820,11 +823,17 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
                              attr_atom_from_string("NNTI_ENET_CONTROL"), 
                              1);
                              */
+            add_string_attr(contact[i], 
+                            attr_atom_from_string("IP_HOST"), 
+                            cm_host);
                 break;
             default:
                 add_int_attr(contact[i], 
                              attr_atom_from_string("IP_PORT"), 
                              cm_port + i);
+            add_string_attr(contact[i], 
+                            attr_atom_from_string("IP_HOST"), 
+                            cm_host);
                 break;
             }
 

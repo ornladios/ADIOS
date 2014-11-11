@@ -744,6 +744,9 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
             add_int_attr(contact_list, 
                          attr_atom_from_string("CM_ENET_PORT"), 
                          cm_port);
+            add_string_attr(contact_list, 
+                            attr_atom_from_string("CM_ENET_HOST"), 
+                            cm_host);
             break;
         case NNTI:
             add_string_attr(contact_list, 
@@ -755,11 +758,17 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
             add_string_attr(contact_list, 
                             attr_atom_from_string("CM_NNTI_TRANSPORT"), 
                             "ib");
+            add_string_attr(contact_list, 
+                            attr_atom_from_string("IP_HOST"), 
+                            cm_host);
             break;
         default:
             add_int_attr(contact_list, 
                          attr_atom_from_string("IP_PORT"), 
                          cm_port);
+            add_string_attr(contact_list, 
+                            attr_atom_from_string("IP_HOST"), 
+                            cm_host);
             break;
         }
 
