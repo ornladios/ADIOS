@@ -517,7 +517,8 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
     //attr_list contact_list;
     icee_transport_t icee_transport = TCP;
 
-    icee_clientinfo_rec_t *remote_server;
+    //icee_clientinfo_rec_t *remote_server;
+    icee_contactinfo_rec_t *remote_contact = NULL;
     int i;
 
     int use_single_remote_server = 1;
@@ -550,6 +551,19 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         {
             use_single_remote_server = 0;
 
+            char* token = strtok(p->value, ",");
+            remote_contact = calloc(1, sizeof(icee_contactinfo_rec_t));
+
+            icee_contactinfo_rec_t *cinfo = remote_contact;
+
+            while (token)
+            {
+                cinfo
+                
+                token = strtok(NULL, ",");
+            }
+
+            /*
             char **plist;
             int plen = 16;
 
@@ -593,6 +607,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
             }
 
             free(plist);
+            */
         }
         else if (!strcasecmp (p->name, "transport"))
         {
@@ -689,6 +704,8 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         EVsource  source;
         attr_list contact[ICEE_MAX_PARALLEL];
 
+        icee_contactinfo_rec_t contact_msg[ICEE_MAX_PARALLEL];
+
         for (i=0; i<icee_read_num_parallel; i++)
         {
             icee_read_cm[i] = CManager_create();
@@ -733,6 +750,13 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
 
             if (!CMfork_comm_thread(icee_read_cm[i])) 
                 printf("Fork of communication thread[%d] failed.\n", i);
+
+            contact_msg[i].stone_id = stone[i];
+            contact_msg[i].contact_string = attr_list_to_string(CMget_contact_list(icee_read_cm[i]));
+            contact_msg[i].next = NULL;
+
+            if (i>0)
+                contact_msg[i-1].next = &contact_msg[i];
         }
         
         EVstone split_stone;
@@ -789,14 +813,17 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
             EVaction_add_split_target(icee_read_cm[0], split_stone, split_action, output_stone);
             //free_attr_list(contact_list);
         }
-        source = EVcreate_submit_handle(icee_read_cm[0], split_stone, icee_clientinfo_format_list);
-        icee_clientinfo_rec_t info;
-        info.client_host = cm_host;
-        info.num_parallel = icee_read_num_parallel;
-        info.client_port = cm_port;
-        info.stone_id = stone;
+
+        source = EVcreate_submit_handle(icee_read_cm[0], split_stone, icee_contactinfo_format_list);
         
-        EVsubmit(source, &info, NULL);
+        //icee_clientinfo_rec_t info;
+        //info.client_host = cm_host;
+        //info.num_parallel = icee_read_num_parallel;
+        //info.client_port = cm_port;
+        //info.stone_id = stone;
+        if (adios_verbose_level > 5) icee_contactinfo_print(contact_msg);
+        
+        EVsubmit(source, contact_msg, NULL);
 
     done:
         adios_read_icee_initialized = 1;

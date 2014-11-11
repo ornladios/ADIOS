@@ -4,6 +4,7 @@
   uses evpath for io in conjunction with read/read_icee.c
 */
 
+#include <assert.h>
 #include <stdio.h>
 #include <unistd.h>
 #include <fcntl.h>
@@ -500,6 +501,50 @@ thr_pool_destroy(thr_pool_t *pool)
 
 thr_pool_t *icee_pool;
 
+typedef struct icee_remoteinfo_rec
+{
+    icee_contactinfo_rec_t *contact;
+    int num_parallel;
+} icee_remoteinfo_rec_t;
+
+icee_remoteinfo_rec_t *remote_info;
+
+static int
+icee_contactinfo_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
+{
+    log_debug ("%s\n", __FUNCTION__);
+
+    icee_contactinfo_rec_ptr_t event = vevent;
+    if (adios_verbose_level > 5) 
+        icee_contactinfo_print(event);
+
+    icee_contactinfo_rec_ptr_t prev = NULL;
+    int num_parallel = 0;    
+    while (event != NULL)
+    {
+        icee_contactinfo_rec_t *c = malloc(sizeof(icee_contactinfo_rec_t));
+        c->stone_id = event->stone_id;
+        c->contact_string = strdup(event->contact_string);
+        c->next = NULL;
+
+        if (num_parallel == 0)
+            remote_info[n_client].contact = c;
+        else
+            prev->next = c;
+
+        prev = c;
+        num_parallel++;
+        event = event->next;
+    }
+
+    remote_info[n_client].num_parallel = num_parallel;
+    log_debug ("%s (%d)\n", "num_parallel", num_parallel);
+
+    n_client++;
+
+    return 1;
+}
+
 static int
 icee_clientinfo_handler(CManager cm, void *vevent, void *client_data, attr_list attrs)
 {
@@ -755,9 +800,11 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
 
         stone = EValloc_stone(icee_write_cm);
         log_debug("Stone ID: %d\n", stone);
-        EVassoc_terminal_action(icee_write_cm, stone, icee_clientinfo_format_list, icee_clientinfo_handler, NULL);
+        //EVassoc_terminal_action(icee_write_cm, stone, icee_clientinfo_format_list, icee_clientinfo_handler, NULL);
+        EVassoc_terminal_action(icee_write_cm, stone, icee_contactinfo_format_list, icee_contactinfo_handler, NULL);
 
-        client_info = calloc(max_client, sizeof(icee_clientinfo_rec_t));
+        //client_info = calloc(max_client, sizeof(icee_clientinfo_rec_t));
+        remote_info = calloc(max_client, sizeof(icee_remoteinfo_rec_t));
 
         if (is_cm_passive == 1)
         {
@@ -786,54 +833,29 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
         int i;
         for (i=0; i<max_client; i++)
         {
-            remote_stone = client_info[i].stone_id[0];
-            stone = EValloc_stone(icee_write_cm);
-            contact_list = create_attr_list();
+            icee_contactinfo_rec_t *cinfo = remote_info[i].contact;
 
-            switch (icee_transport)
+            int k = 0;
+            while (cinfo != NULL)
             {
-            case ENET:
-                add_string_attr(contact_list, 
-                                attr_atom_from_string("CM_TRANSPORT"), 
-                                "enet");
-                add_string_attr(contact_list, 
-                                attr_atom_from_string("CM_ENET_HOST"), 
-                                client_info[i].client_host);
-                add_int_attr(contact_list, 
-                             attr_atom_from_string("CM_ENET_PORT"), 
-                             client_info[i].client_port);
-                break;
-            case NNTI:
-                add_string_attr(contact_list, 
-                                attr_atom_from_string("CM_TRANSPORT"), 
-                                "nnti");
-                add_string_attr(contact_list, 
-                                attr_atom_from_string("IP_HOST"), 
-                                client_info[i].client_host);
-                add_int_attr(contact_list, 
-                             attr_atom_from_string("NNTI_PORT"), 
-                             client_info[i].client_port);
-                add_string_attr(contact_list, 
-                                attr_atom_from_string("CM_NNTI_TRANSPORT"), 
-                                "ib");
-                break;
-            default:
-                add_string_attr(contact_list, attr_atom_from_string("IP_HOST"), 
-                                client_info[i].client_host);
-                add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), 
-                             client_info[i].client_port);
-                break;
+                stone = EValloc_stone(icee_write_cm);
+                remote_stone = cinfo->stone_id;
+                contact_list = attr_list_from_string(cinfo->contact_string);
+
+                EVaction evaction;
+                evaction = EVassoc_bridge_action(icee_write_cm, stone, 
+                                                 contact_list, remote_stone);
+                if (evaction == -1)
+                {
+                    fprintf(stderr, "No connection. Exit.\n");
+                    exit(1);
+                }
+
+                EVaction_add_split_target(icee_write_cm, split_stone, split_action, stone);
+                cinfo = cinfo->next;
+                k++;
             }
-
-            EVaction evaction = EVassoc_bridge_action(icee_write_cm, stone, contact_list, remote_stone);
-            if (evaction == -1)
-            {
-                fprintf(stderr, "No connection. Exit.\n");
-                exit(1);
-            }
-
-            EVaction_add_split_target(icee_write_cm, split_stone, split_action, stone);
-
+            assert(k == remote_info[i].num_parallel);
         }
         icee_write_source = EVcreate_submit_handle(icee_write_cm, split_stone, icee_fileinfo_format_list);
 
@@ -847,6 +869,26 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
 
             for (i=0; i<max_client; i++)
             {
+                icee_contactinfo_rec_t *cinfo = remote_info[i].contact;
+
+                int k = 0;
+                while (cinfo != NULL)
+                {
+                    cm[i][k] = CManager_create();
+                    CMlisten(cm[i][k]);
+
+                    stone = EValloc_stone(cm[i][k]);
+                    remote_stone = cinfo->stone_id;
+                    contact_list = attr_list_from_string(cinfo->contact_string);
+                    
+                    EVassoc_bridge_action(cm[i][k], stone, contact_list, remote_stone);
+                    source[i][k] = EVcreate_submit_handle(cm[i][k], stone, icee_fileinfo_format_list);
+
+                    cinfo = cinfo->next;
+                    k++;
+                }
+                assert(k == remote_info[i].num_parallel);
+                /*
                 int k;
                 for (k=0; k<client_info[i].num_parallel; k++)
                 {
@@ -899,6 +941,7 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
                     EVassoc_bridge_action(cm[i][k], stone, contact_list, remote_stone);
                     source[i][k] = EVcreate_submit_handle(cm[i][k], stone, icee_fileinfo_format_list);
                 }
+                */
             }
         }
     done:

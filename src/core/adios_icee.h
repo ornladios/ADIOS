@@ -101,6 +101,28 @@ static FMStructDescRec icee_clientinfo_format_list[] =
     {NULL, NULL}
 };
 
+/* Auto-generated on Mon Nov 10 16:24:37 EST 2014 */
+
+typedef struct icee_contactinfo_rec {
+    int stone_id;
+    char* contact_string;
+    struct icee_contactinfo_rec * next;
+} icee_contactinfo_rec_t, *icee_contactinfo_rec_ptr_t;
+
+static FMField icee_contactinfo_field_list[] =
+{
+    {"stone_id", "integer", sizeof(int), FMOffset(icee_contactinfo_rec_ptr_t, stone_id)},
+    {"contact_string", "string", sizeof(char*), FMOffset(icee_contactinfo_rec_ptr_t, contact_string)},
+    {"next", "*icee_contactinfo", sizeof(struct icee_contactinfo_rec ), FMOffset(icee_contactinfo_rec_ptr_t, next)},
+    {NULL, NULL, 0, 0}
+};
+
+static FMStructDescRec icee_contactinfo_format_list[] =
+{
+    {"icee_contactinfo", icee_contactinfo_field_list, sizeof(icee_contactinfo_rec_t), NULL},
+    {NULL, NULL}
+};
+
 /* Auto-generated on Sat Nov  8 14:27:48 EST 2014 */
 
 typedef struct icee_passivecheckin_rec {

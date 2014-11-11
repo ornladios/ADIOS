@@ -79,6 +79,7 @@ static const char *icee_transport_name[] = {
 void icee_dims_print(const char* name, const int ndims, const uint64_t *dims);
 void icee_varinfo_print(const icee_varinfo_rec_ptr_t vp);
 void icee_fileinfo_print(const void* item);
+void icee_contactinfo_print(const icee_contactinfo_rec_ptr_t cp);
 #endif
 
 #endif  /*__GLOBALS_H__*/

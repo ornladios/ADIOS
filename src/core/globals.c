@@ -319,4 +319,23 @@ void icee_fileinfo_print(const void* item)
     }
 }
 
+void icee_contactinfo_print(const icee_contactinfo_rec_ptr_t cp)
+{
+    fprintf(stderr, "===== contactinfo (%p) =====\n", cp);
+
+    if (cp)
+    {
+        fprintf(stderr, "%10s : %d\n", "stone_id", cp->stone_id);
+        fprintf(stderr, "%10s : %s\n", "contact_string", cp->contact_string);
+        fdump_attr_list(stderr, attr_list_from_string(cp->contact_string));
+        fprintf(stderr, "%10s : %p\n", "next", cp->next);
+        if (cp->next != NULL)
+            icee_contactinfo_print(cp->next);
+    }
+    else
+    {
+        fprintf(stderr, "contactinfo is invalid\n");
+    }
+}
+
 #endif
