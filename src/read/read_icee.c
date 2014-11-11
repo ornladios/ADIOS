@@ -722,8 +722,6 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
     }
 
     log_debug ("transport : %s\n", icee_transport_name[icee_transport]);
-    if (adios_verbose_level > 5) 
-        icee_contactinfo_print(remote_contact);
 
     /*
       log_info ("cm_host : %s\n", cm_host);
@@ -830,9 +828,11 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
                 printf("Fork of communication thread[%d] failed.\n", i);
 
             stone[i] = EValloc_stone(icee_read_cm[i]);
-            log_info("Contact list \"%d:%s\"\n", stone[i], attr_list_to_string(CMget_contact_list(icee_read_cm[i])));
             if (adios_verbose_level > 5) 
+            {
+                log_debug("Reader contact: \"%d:%s\"\n", stone[i], attr_list_to_string(CMget_contact_list(icee_read_cm[i])));
                 dump_attr_list(CMget_contact_list(icee_read_cm[i]));
+            }
 
             EVassoc_terminal_action(icee_read_cm[i], stone[i], icee_fileinfo_format_list, icee_fileinfo_handler, NULL);
 
@@ -855,27 +855,24 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
             attr_list contact_list;
             EVstone remote_stone, output_stone;
             output_stone = EValloc_stone(icee_read_cm[0]);
+            icee_contactinfo_rec_t *p = (i == 0)? remote_contact : prev->next;
             
-            if (i == 0)
-            {
-                remote_stone = remote_contact->stone_id;
-                contact_list = attr_list_from_string(remote_contact->contact_string);
-            }
-            else
-            {
-                remote_stone = prev->next->stone_id;
-                contact_list = attr_list_from_string(prev->next->contact_string);
-            }
+            remote_stone = p->stone_id;
+            contact_list = attr_list_from_string(p->contact_string);
 
             EVassoc_bridge_action(icee_read_cm[0], output_stone, contact_list, remote_stone);
             EVaction_add_split_target(icee_read_cm[0], split_stone, split_action, output_stone);
 
             prev = remote_contact;
+
+            log_debug("Remote contact: \"%d:%s\"\n", remote_stone, attr_list_to_string(contact_list));
+            if (adios_verbose_level > 5) dump_attr_list(contact_list);
+
         }
 
         source = EVcreate_submit_handle(icee_read_cm[0], split_stone, icee_contactinfo_format_list);
         
-        if (adios_verbose_level > 5) icee_contactinfo_print(contact_msg);
+        //if (adios_verbose_level > 5) icee_contactinfo_print(contact_msg);
         
         EVsubmit(source, contact_msg, NULL);
 
