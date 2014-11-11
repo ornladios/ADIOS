@@ -26,16 +26,11 @@ AM_CONDITIONAL(HAVE_XPMEM,true)
 AC_ARG_WITH(xpmem,
 	[  --with-xpmem=DIR      Location of xpmem library],
 	[XPMEM_LDFLAGS="-L$withval/lib";
-	 XPMEM_CPPFLAGS="-I$withval/include";])
+	 XPMEM_CFLAGS="-I$withval/include";])
 
+XPMEM_LIBS="-lxpmem"
 dnl AC_LANG_PUSH([C++])
 
-save_CPPFLAGS="$CPPFLAGS"
-save_LIBS="$LIBS"
-save_LDFLAGS="$LDFLAGS"
-LIBS="$LIBS -lxpmem"
-LDFLAGS="$LDFLAGS $XPMEM_LDFLAGS"
-CPPFLAGS="$CPPFLAGS $XPMEM_CPPFLAGS"
 
 if test -z "${HAVE_XPMEM_TRUE}"; then
         AC_CHECK_HEADERS(xpmem.h,
@@ -44,13 +39,10 @@ if test -z "${HAVE_XPMEM_TRUE}"; then
 fi
 
 
-LIBS="$save_LIBS"
-LDFLAGS="$save_LDFLAGS"
-CPPFLAGS="$save_CPPFLAGS"
-
 AC_SUBST(XPMEM_LIBS)
 AC_SUBST(XPMEM_LDFLAGS)
 AC_SUBST(XPMEM_CPPFLAGS)
+AC_SUBST(XPMEM_CFLAGS)
 
 dnl AC_LANG_POP([C++])
 
