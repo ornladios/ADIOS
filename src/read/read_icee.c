@@ -591,12 +591,14 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         else if (!strcasecmp (p->name, "remote_list"))
         {
             use_single_remote_server = 0;
-            remote_list_str = strdup(p->value);
+            if (p->value)
+                remote_list_str = strdup(p->value);
         }
         else if (!strcasecmp (p->name, "attr_list"))
         {
             use_single_remote_server = 0;
-            attr_list_str = strdup(p->value);
+            if (p->value)
+                attr_list_str = strdup(p->value);
         }
         else if (!strcasecmp (p->name, "transport"))
         {
@@ -687,7 +689,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         icee_contactinfo_rec_t *p;
         icee_contactinfo_rec_t *prev;
 
-        char* token = strtok(remote_list_str, ",");
+        char* token = strtok(attr_list_str, ",");
         while (token)
         {
             int remote_stone = 0;
@@ -821,16 +823,18 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
                 break;
             }
 
-            stone[i] = EValloc_stone(icee_read_cm[i]);
-            DUMP("port,stone = %d,%d", cm_port + i, stone[i]);
-
-            EVassoc_terminal_action(icee_read_cm[i], stone[i], icee_fileinfo_format_list, icee_fileinfo_handler, NULL);
-
             if (CMlisten_specific(icee_read_cm[i], contact[i]) == 0)
                 printf("Error: unable to initialize connection manager[%d].\n", i);
-
+            
             if (!CMfork_comm_thread(icee_read_cm[i])) 
                 printf("Fork of communication thread[%d] failed.\n", i);
+
+            stone[i] = EValloc_stone(icee_read_cm[i]);
+            log_info("Contact list \"%d:%s\"\n", stone[i], attr_list_to_string(CMget_contact_list(icee_read_cm[i])));
+            if (adios_verbose_level > 5) 
+                dump_attr_list(CMget_contact_list(icee_read_cm[i]));
+
+            EVassoc_terminal_action(icee_read_cm[i], stone[i], icee_fileinfo_format_list, icee_fileinfo_handler, NULL);
 
             contact_msg[i].stone_id = stone[i];
             contact_msg[i].contact_string = attr_list_to_string(CMget_contact_list(icee_read_cm[i]));
@@ -850,13 +854,18 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         {
             attr_list contact_list;
             EVstone remote_stone, output_stone;
-            remote_stone = 0;
             output_stone = EValloc_stone(icee_read_cm[0]);
-
+            
             if (i == 0)
+            {
+                remote_stone = remote_contact->stone_id;
                 contact_list = attr_list_from_string(remote_contact->contact_string);
+            }
             else
+            {
+                remote_stone = prev->next->stone_id;
                 contact_list = attr_list_from_string(prev->next->contact_string);
+            }
 
             EVassoc_bridge_action(icee_read_cm[0], output_stone, contact_list, remote_stone);
             EVaction_add_split_target(icee_read_cm[0], split_stone, split_action, output_stone);

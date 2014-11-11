@@ -705,7 +705,7 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
         attr_list contact_list;
 
         icee_write_cm = CManager_create();
-        CMlisten(icee_write_cm);
+        //CMlisten(icee_write_cm);
 
 #if 0
         if (is_cm_passive == 1)
@@ -769,12 +769,11 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
             exit(-1);
         }
 
-        log_debug("Contact list \"%s\"\n", attr_list_to_string(CMget_contact_list(icee_write_cm)));
+        stone = EValloc_stone(icee_write_cm);
+        log_info("Contact list \"%d:%s\"\n", stone, attr_list_to_string(CMget_contact_list(icee_write_cm)));
         if (adios_verbose_level > 5) 
             dump_attr_list(CMget_contact_list(icee_write_cm));
 
-        stone = EValloc_stone(icee_write_cm);
-        log_debug("Stone ID: %d\n", stone);
 
         EVassoc_terminal_action(icee_write_cm, stone, icee_contactinfo_format_list, icee_contactinfo_handler, NULL);
 
