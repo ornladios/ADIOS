@@ -79,6 +79,7 @@ static FMStructDescRec icee_fileinfo_format_list[] =
 
 /* Auto-generated on Thu Nov  6 14:06:32 EST 2014 */
 
+/*
 typedef struct icee_clientinfo_rec {
     char* client_host;
     int num_parallel;
@@ -100,6 +101,7 @@ static FMStructDescRec icee_clientinfo_format_list[] =
     {"icee_clientinfo", icee_clientinfo_field_list, sizeof(icee_clientinfo_rec_t), NULL},
     {NULL, NULL}
 };
+*/
 
 /* Auto-generated on Mon Nov 10 16:24:37 EST 2014 */
 

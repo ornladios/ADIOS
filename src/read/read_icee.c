@@ -499,11 +499,51 @@ view_copy (icee_matrix_view_t *dest, icee_matrix_view_t *src)
     }
 }
 
+void 
+set_contact_list (attr_list contact_list, 
+                  const icee_transport_t icee_transport, 
+                  char *host, int port)
+{
+    switch (icee_transport)
+    {
+    case ENET:
+        add_string_attr(contact_list, 
+                        attr_atom_from_string("CM_TRANSPORT"), 
+                        "enet");
+        add_string_attr(contact_list, 
+                        attr_atom_from_string("CM_ENET_HOST"), 
+                        host);
+        add_int_attr(contact_list, 
+                     attr_atom_from_string("CM_ENET_PORT"), 
+                     port);
+        break;
+    case NNTI:
+        add_string_attr(contact_list, 
+                        attr_atom_from_string("CM_TRANSPORT"), 
+                        "nnti");
+        add_string_attr(contact_list, 
+                        attr_atom_from_string("IP_HOST"), 
+                        host);
+        add_int_attr(contact_list, 
+                     attr_atom_from_string("NNTI_PORT"), 
+                     port);
+        add_string_attr(contact_list, 
+                        attr_atom_from_string("CM_NNTI_TRANSPORT"), 
+                        "ib");
+        break;
+    default:
+        add_string_attr(contact_list, attr_atom_from_string("IP_HOST"), 
+                        host);
+        add_int_attr(contact_list, 
+                     attr_atom_from_string("IP_PORT"), 
+                     port);
+        break;
+            
+    }
+}
+
 /********** Core ADIOS Read functions. **********/
 
-/*
- * Gathers basic MPI information; sets up reader CM.
- */
 int
 adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
 {   
@@ -517,11 +557,12 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
     //attr_list contact_list;
     icee_transport_t icee_transport = TCP;
 
-    //icee_clientinfo_rec_t *remote_server;
     icee_contactinfo_rec_t *remote_contact = NULL;
     int i;
 
     int use_single_remote_server = 1;
+    char *remote_list_str = NULL;
+    char *attr_list_str = NULL;
 
     PairStruct * p = params;
 
@@ -550,64 +591,12 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         else if (!strcasecmp (p->name, "remote_list"))
         {
             use_single_remote_server = 0;
-
-            char* token = strtok(p->value, ",");
-            remote_contact = calloc(1, sizeof(icee_contactinfo_rec_t));
-
-            icee_contactinfo_rec_t *cinfo = remote_contact;
-
-            while (token)
-            {
-                cinfo
-                
-                token = strtok(NULL, ",");
-            }
-
-            /*
-            char **plist;
-            int plen = 16;
-
-            plist = malloc(plen * sizeof(char *));
-
-            char* token = strtok(p->value, ",");
-            int len = 0;
-            while (token) 
-            {
-                plist[len] = token;
-
-                token = strtok(NULL, ",");
-                len++;
-                
-                if (len > plen)
-                {
-                    plen = plen*2;
-                    realloc (plist, plen * sizeof(char *));
-                }
-            }
-
-            num_remote_server = len;
-            remote_server = calloc(len, sizeof(icee_clientinfo_rec_t));
-            
-            for (i=0; i<len; i++)
-            {
-                char *myparam = plist[i];
-                token = strtok(myparam, ":");
-                
-                if (myparam[0] == ':')
-                {
-                    remote_server[i].client_host = "localhost";
-                    remote_server[i].client_port = atoi(token);
-                }
-                else
-                {
-                    remote_server[i].client_host = token;
-                    token = strtok(NULL, ":");
-                    remote_server[i].client_port = atoi(token);
-                }
-            }
-
-            free(plist);
-            */
+            remote_list_str = strdup(p->value);
+        }
+        else if (!strcasecmp (p->name, "attr_list"))
+        {
+            use_single_remote_server = 0;
+            attr_list_str = strdup(p->value);
         }
         else if (!strcasecmp (p->name, "transport"))
         {
@@ -637,9 +626,91 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
     if (use_single_remote_server)
     {
         num_remote_server = 1;
-        remote_server = calloc(1, sizeof(icee_clientinfo_rec_t));
-        remote_server[0].client_host = cm_remote_host;
-        remote_server[0].client_port = cm_remote_port;
+
+        attr_list contact_list = create_attr_list();
+        set_contact_list(contact_list, icee_transport, cm_remote_host, cm_remote_port);
+
+        icee_contactinfo_rec_t *p;
+        p = malloc(sizeof(icee_contactinfo_rec_t));
+        char *contact_string = attr_list_to_string(contact_list);
+        p->contact_string = contact_string;
+        p->next = NULL;
+
+        remote_contact = p;
+    }
+    else
+    {
+        num_remote_server = 0;
+
+        icee_contactinfo_rec_t *p;
+        icee_contactinfo_rec_t *prev;
+
+        char* token = strtok(remote_list_str, ",");
+        while (token)
+        {
+            char host[256];
+            int port = 0;
+
+            if (token[0] == ':')
+            {
+                strcpy(host, "localhost");
+                port = atoi(token+1);
+            }
+            else
+            {
+                sscanf(token, "%s:%d", &host[0], &port);
+            }
+
+            p = malloc(sizeof(icee_contactinfo_rec_t));
+            attr_list contact_list;
+            
+            contact_list = create_attr_list();
+            set_contact_list(contact_list, icee_transport, host, port);
+            p->contact_string = attr_list_to_string(contact_list);
+            p->next = NULL;
+
+            if (num_remote_server == 0)
+                remote_contact = p;
+            else
+                prev->next = p;
+
+            prev = p;
+            num_remote_server++;
+            token = strtok(NULL, ",");
+        }
+    }
+
+    if (attr_list_str != NULL)
+    {
+        num_remote_server = 0;
+
+        icee_contactinfo_rec_t *p;
+        icee_contactinfo_rec_t *prev;
+
+        char* token = strtok(remote_list_str, ",");
+        while (token)
+        {
+            int remote_stone = 0;
+            char string_list[256];
+
+            sscanf(token, "%d:%s", &remote_stone, &string_list[0]);
+
+            p = malloc(sizeof(icee_contactinfo_rec_t));
+            attr_list contact_list;
+            
+            p->stone_id = remote_stone;
+            p->contact_string = strdup(string_list);
+            p->next = NULL;
+
+            if (num_remote_server == 0)
+                remote_contact = p;
+            else
+                prev->next = p;
+
+            prev = p;
+            num_remote_server++;
+            token = strtok(NULL, ",");
+        }
     }
 
     if (icee_read_num_parallel > ICEE_MAX_PARALLEL)
@@ -648,14 +719,19 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         log_info ("Max. number of threads is set to %d\n", icee_read_num_parallel);
     }
 
-
-    log_info ("cm_host : %s\n", cm_host);
-    log_info ("cm_port : %d\n", cm_port);
-    for (i = 0; i < num_remote_server; i++) 
-    {
-        log_info ("remote_list : %s:%d\n", remote_server[i].client_host, remote_server[i].client_port);
-    }
     log_debug ("transport : %s\n", icee_transport_name[icee_transport]);
+    if (adios_verbose_level > 5) 
+        icee_contactinfo_print(remote_contact);
+
+    /*
+      log_info ("cm_host : %s\n", cm_host);
+      log_info ("cm_port : %d\n", cm_port);
+
+      for (i = 0; i < num_remote_server; i++) 
+      {
+      log_info ("remote_list : %s:%d\n", remote_server[i].client_host, remote_server[i].client_port);
+      }
+    */
 
     if (!adios_read_icee_initialized)
     {
@@ -668,11 +744,16 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
                 if (!CMfork_comm_thread(pcm[i]))
                     printf("Fork of communication thread[%d] failed.\n", i);
 
-                attr_list contact_list  = create_attr_list();
-                add_string_attr(contact_list, attr_atom_from_string("IP_HOST"),
-                                remote_server[i].client_host);
-                add_int_attr(contact_list, attr_atom_from_string("IP_PORT"),
-                             remote_server[i].client_port);
+                attr_list contact_list;
+                contact_list = attr_list_from_string(remote_contact->contact_string);
+
+                /*
+                  attr_list contact_list  = create_attr_list();
+                  add_string_attr(contact_list, attr_atom_from_string("IP_HOST"),
+                  remote_server[i].client_host);
+                  add_int_attr(contact_list, attr_atom_from_string("IP_PORT"),
+                  remote_server[i].client_port);
+                */
 
                 CMConnection conn = CMinitiate_conn(pcm[i], contact_list);
                 if (conn == NULL)
@@ -764,6 +845,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
 
         split_stone = EValloc_stone(icee_read_cm[0]);
         split_action = EVassoc_split_action(icee_read_cm[0], split_stone, NULL);
+        icee_contactinfo_rec_t *prev;
         for (i = 0; i < num_remote_server; i++) 
         {
             attr_list contact_list;
@@ -771,56 +853,19 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
             remote_stone = 0;
             output_stone = EValloc_stone(icee_read_cm[0]);
 
-            contact_list = create_attr_list();
-            
-            switch (icee_transport)
-            {
-            case ENET:
-                add_string_attr(contact_list, 
-                                attr_atom_from_string("CM_TRANSPORT"), 
-                                "enet");
-                add_string_attr(contact_list, 
-                                attr_atom_from_string("CM_ENET_HOST"), 
-                                remote_server[i].client_host);
-                add_int_attr(contact_list, 
-                             attr_atom_from_string("CM_ENET_PORT"), 
-                             remote_server[i].client_port);
-
-                break;
-            case NNTI:
-                add_string_attr(contact_list, 
-                                attr_atom_from_string("CM_TRANSPORT"), 
-                                "nnti");
-                add_string_attr(contact_list, 
-                                attr_atom_from_string("IP_HOST"), 
-                                remote_server[i].client_host);
-                add_int_attr(contact_list, 
-                             attr_atom_from_string("NNTI_PORT"), 
-                             remote_server[i].client_port);
-                add_string_attr(contact_list, 
-                                attr_atom_from_string("CM_NNTI_TRANSPORT"), 
-                                "ib");
-                break;
-            default:
-                add_string_attr(contact_list, attr_atom_from_string("IP_HOST"), 
-                                remote_server[i].client_host);
-                add_int_attr(contact_list, attr_atom_from_string("IP_PORT"), 
-                             remote_server[i].client_port);
-                break;
-            }
+            if (i == 0)
+                contact_list = attr_list_from_string(remote_contact->contact_string);
+            else
+                contact_list = attr_list_from_string(prev->next->contact_string);
 
             EVassoc_bridge_action(icee_read_cm[0], output_stone, contact_list, remote_stone);
             EVaction_add_split_target(icee_read_cm[0], split_stone, split_action, output_stone);
-            //free_attr_list(contact_list);
+
+            prev = remote_contact;
         }
 
         source = EVcreate_submit_handle(icee_read_cm[0], split_stone, icee_contactinfo_format_list);
         
-        //icee_clientinfo_rec_t info;
-        //info.client_host = cm_host;
-        //info.num_parallel = icee_read_num_parallel;
-        //info.client_port = cm_port;
-        //info.stone_id = stone;
         if (adios_verbose_level > 5) icee_contactinfo_print(contact_msg);
         
         EVsubmit(source, contact_msg, NULL);
@@ -829,7 +874,6 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         adios_read_icee_initialized = 1;
     }
 
-    free(remote_server);
     return 0;
 }
 
