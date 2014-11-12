@@ -746,15 +746,21 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
     {
         if (is_read_cm_passive)
         {
+            icee_contactinfo_rec_t *prev;
             for (i = 0; i < num_remote_server; i++)
             {
+                attr_list contact_list;
+                icee_contactinfo_rec_t *p = (i == 0)? remote_contact : prev->next;
+
                 pcm[i] = CManager_create();
 
                 if (!CMfork_comm_thread(pcm[i]))
                     printf("Fork of communication thread[%d] failed.\n", i);
 
-                attr_list contact_list;
-                contact_list = attr_list_from_string(remote_contact->contact_string);
+                contact_list = attr_list_from_string(p->contact_string);
+
+                log_debug("Passive remote contact: \"%s\"\n", attr_list_to_string(contact_list));
+                if (adios_verbose_level > 5) dump_attr_list(contact_list);
 
                 /*
                   attr_list contact_list  = create_attr_list();
@@ -785,6 +791,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
                 if (CMwrite(conn, fm_checkin, (void*)&m) != 1)
                     log_error ("Passive check-in failed (%d)\n", i);
 
+                prev = p;
             }
             log_debug("Passive connection established");
             goto done;
@@ -851,7 +858,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
             EVassoc_bridge_action(icee_read_cm[0], output_stone, contact_list, remote_stone);
             EVaction_add_split_target(icee_read_cm[0], split_stone, split_action, output_stone);
 
-            prev = remote_contact;
+            prev = p;
 
             log_debug("Remote contact: \"%d:%s\"\n", remote_stone, attr_list_to_string(contact_list));
             if (adios_verbose_level > 5) dump_attr_list(contact_list);
