@@ -20,6 +20,8 @@
 // xml parser
 #include <mxml.h>
 
+#ifdef HAVE_XPMEM	        
+
 //xpmem headers
 #include "public/adios_xpmem.h"
 
@@ -274,3 +276,4 @@ void adios_xpmem_start_calculation (struct adios_method_struct * method)
 void adios_xpmem_stop_calculation (struct adios_method_struct * method)
 {
 }
+#endif	        

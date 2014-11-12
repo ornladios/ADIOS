@@ -297,6 +297,9 @@
 /* research_transports is enabled */
 #define RESEARCH_TRANSPORTS ${RESEARCH_TRANSPORTS}
 
+/* research_transports is enabled */
+#define XPMEM ${XPMEM}
+
 /* Define to 1 if you have the ANSI C header files. */
 #cmakedefine STDC_HEADERS 1
 

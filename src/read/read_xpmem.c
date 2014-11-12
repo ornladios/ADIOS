@@ -45,21 +45,29 @@
 #include "core/bp_types.h"
 #include "core/bp_utils.h"
 
+
 #include <xpmem.h>
 
 #include "public/adios_xpmem.h"
 #include "read/read_xpmem.h"
 
-inline BP_PROC * GET_BP_PROC (const ADIOS_FILE * fp)
+#undef GET_BP_PROC
+#undef GET_BP_FILE
+
+#define GET_BP_PROC(fp) GET_BP_PROC_XP(fp);
+#define GET_BP_FILE(fp) GET_BP_FILE_XP(fp);
+
+
+inline BP_PROC * GET_BP_PROC_XP (const ADIOS_FILE * fp)
 {
 	return (BP_PROC*)((xpmem_read_file*)fp->fh)->bp;
 }
 
-inline BP_FILE * GET_BP_FILE (const ADIOS_FILE * fp)
-{
-    return (BP_FILE *) ((xpmem_read_file *) fp->fh)->fh;
-}
 
+inline BP_FILE * GET_BP_FILE_XP (const ADIOS_FILE * fp)
+{
+	return (BP_FILE *) ((xpmem_read_file *) fp->fh)->fh;		
+}
 
 static int map_req_varid (const ADIOS_FILE * fp, int varid)
 {

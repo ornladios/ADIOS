@@ -1,5 +1,5 @@
 aclocal -I config
-#libtoolize --force --copy
+libtoolize --force --copy
 autoconf
 autoheader
 automake --add-missing --copy
