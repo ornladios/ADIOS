@@ -47,6 +47,11 @@ int main (int argc, char ** argv)
 	strcpy (filename, "arrays.bp");
 	ADIOS_FILE * f = adios_read_open_file (filename, method, comm);
 
+	adios_get_scalar(f, "NX", &NX);
+	adios_get_scalar(f, "NY", &NY);
+
+	fprintf(stderr, "NX = %d\tNY=%d\n", NX, NY);
+
 	/* Specify a selection that points to a specific writer's block */
 	sel = adios_selection_writeblock (rank);
 
