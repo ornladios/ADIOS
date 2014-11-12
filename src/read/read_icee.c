@@ -532,7 +532,8 @@ set_contact_list (attr_list contact_list,
                         "ib");
         break;
     default:
-        add_string_attr(contact_list, attr_atom_from_string("IP_HOST"), 
+        add_string_attr(contact_list, 
+                        attr_atom_from_string("IP_HOST"), 
                         host);
         add_int_attr(contact_list, 
                      attr_atom_from_string("IP_PORT"), 
@@ -563,6 +564,8 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
     int use_single_remote_server = 1;
     char *remote_list_str = NULL;
     char *attr_list_str = NULL;
+
+    int use_native_contact = 0;
 
     PairStruct * p = params;
 
@@ -617,9 +620,13 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         {
             icee_read_num_parallel = atoi(p->value);
         }
-        else if (!strcasecmp (p->name, "passive"))
+        else if (!strcasecmp (p->name, "is_passive"))
         {
-            is_read_cm_passive = 1;
+            is_read_cm_passive = atoi(p->value);
+        }
+        else if (!strcasecmp (p->name, "use_native_contact"))
+        {
+            use_native_contact = atoi(p->value);
         }
 
         p = p->next;
@@ -794,48 +801,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
             icee_read_cm[i] = CManager_create();
 
             contact[i] = create_attr_list();
-
-            switch (icee_transport)
-            {
-            case ENET:
-                add_string_attr(contact[i], 
-                                attr_atom_from_string("CM_TRANSPORT"), 
-                                "enet");
-                add_int_attr(contact[i], 
-                             attr_atom_from_string("CM_ENET_PORT"), 
-                             cm_port + i);
-            add_string_attr(contact[i], 
-                            attr_atom_from_string("CM_ENET_HOST"), 
-                            cm_host);
-                break;
-            case NNTI:
-                add_string_attr(contact[i], 
-                                attr_atom_from_string("CM_TRANSPORT"), 
-                                "nnti");
-                                /*
-                //add_int_attr(contact[i], 
-                //             attr_atom_from_string("NNTI_PORT"), 
-                //             cm_port + i);
-                add_string_attr(contact[i], 
-                                attr_atom_from_string("CM_NNTI_TRANSPORT"), 
-                                "ib");
-                add_int_attr(contact[i], 
-                             attr_atom_from_string("NNTI_ENET_CONTROL"), 
-                             1);
-                             */
-            add_string_attr(contact[i], 
-                            attr_atom_from_string("IP_HOST"), 
-                            cm_host);
-                break;
-            default:
-                add_int_attr(contact[i], 
-                             attr_atom_from_string("IP_PORT"), 
-                             cm_port + i);
-            add_string_attr(contact[i], 
-                            attr_atom_from_string("IP_HOST"), 
-                            cm_host);
-                break;
-            }
+            set_contact_list(contact[i], icee_transport, cm_host, cm_port+i);
 
             if (CMlisten_specific(icee_read_cm[i], contact[i]) == 0)
                 printf("Error: unable to initialize connection manager[%d].\n", i);
@@ -853,7 +819,13 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
             EVassoc_terminal_action(icee_read_cm[i], stone[i], icee_fileinfo_format_list, icee_fileinfo_handler, NULL);
 
             contact_msg[i].stone_id = stone[i];
-            contact_msg[i].contact_string = attr_list_to_string(CMget_contact_list(icee_read_cm[i]));
+            attr_list contact_list;
+            if (use_native_contact)
+                contact_list = CMget_contact_list(icee_read_cm[i]);
+            else
+                contact_list = contact[i];
+                
+            contact_msg[i].contact_string = attr_list_to_string(contact_list);
             contact_msg[i].next = NULL;
 
             if (i>0)

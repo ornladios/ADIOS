@@ -675,9 +675,9 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
             else
                 log_error ("No support: %s\n", p->value);
         }
-        else if (!strcasecmp (p->name, "passive"))
+        else if (!strcasecmp (p->name, "is_passive"))
         {
-            is_cm_passive = 1;
+            is_cm_passive = atoi(p->value);
         }
 
         p = p->next;
