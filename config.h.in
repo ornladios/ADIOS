@@ -257,7 +257,7 @@
 /* Define to 1 if you have the <unistd.h> header file. */
 #undef HAVE_UNISTD_H
 
-/* Define if you have the Xpmem. */
+/* Define if you have XPMEM. */
 #undef HAVE_XPMEM
 
 /* Define to 1 if you have the <xpmem.h> header file. */
@@ -278,6 +278,9 @@
 
 /* Flexpath is disabled */
 #undef NO_FLEXPATH
+
+/* Define to 1 if your C compiler doesn't accept -c and -o together. */
+#undef NO_MINUS_C_MINUS_O
 
 /* Name of package */
 #undef PACKAGE
