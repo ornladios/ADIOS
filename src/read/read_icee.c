@@ -159,6 +159,7 @@ int icee_fileinfo_checkname(const void* item, const void* fname)
 }
 
 icee_llist_ptr_t icee_filelist = NULL;
+pthread_mutex_t fileinfo_lock;
 
 void icee_fileinfo_append(const icee_fileinfo_rec_ptr_t root, icee_fileinfo_rec_ptr_t fp)
 {
@@ -321,6 +322,7 @@ icee_fileinfo_handler(CManager cm, void *vevent, void *client_data, attr_list at
         eventvp = eventvp->next;
     }
 
+    pthread_mutex_lock (&fileinfo_lock);
     if (icee_filelist == NULL)
         icee_filelist = icee_llist_create((void *)lfp);
     else
@@ -333,6 +335,7 @@ icee_fileinfo_handler(CManager cm, void *vevent, void *client_data, attr_list at
         else
             icee_fileinfo_append((icee_fileinfo_rec_ptr_t)head->item, lfp);
     }
+    pthread_mutex_unlock (&fileinfo_lock);
 
     if (adios_verbose_level > 5)
         icee_llist_map(icee_filelist, icee_fileinfo_print);
@@ -631,6 +634,8 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
 
         p = p->next;
     }
+
+    pthread_mutex_init(&fileinfo_lock, NULL);
 
     if (use_single_remote_server)
     {
