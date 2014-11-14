@@ -43,13 +43,15 @@ struct adios_transform_spec * adios_transform_parse_spec(const char *spec_str,
 {
     //struct adios_transform_spec *spec = (struct adios_transform_spec *)malloc(sizeof(struct adios_transform_spec));
     struct adios_transform_spec *spec = spec_in;
-    if (!spec_in) {
+    if (spec) {
+    	adios_transform_clear_spec(spec);
+    } else {
         MALLOC_VAR(spec, struct adios_transform_spec);
     }
 
     *spec = (struct adios_transform_spec){
         .transform_type = adios_transform_none,
-        .transform_type_str = "",
+        .transform_type_str = NULL,
         .param_count = 0,
         .params = NULL,
         .backing_str = NULL,
@@ -160,9 +162,10 @@ struct adios_transform_spec * adios_transform_spec_copy(const struct adios_trans
 }
 
 #define FREE(x) {if(x)free((void*)(x));(x)=NULL;}
-void adios_transform_free_spec(struct adios_transform_spec **spec_ptr) {
-    struct adios_transform_spec *spec = *spec_ptr;
-    if (!spec->backing_str) {
+void adios_transform_clear_spec(struct adios_transform_spec *spec) {
+	spec->transform_type = adios_transform_none;
+
+	if (!spec->backing_str) {
     	int i;
     	FREE(spec->transform_type_str);
     	for (i = 0; i < spec->param_count; ++i) {
@@ -170,9 +173,19 @@ void adios_transform_free_spec(struct adios_transform_spec **spec_ptr) {
     		FREE(kv->key);
     		FREE(kv->value);
     	}
+    } else {
+    	spec->transform_type_str = NULL;
     }
+    spec->param_count = 0;
     FREE(spec->params);
+
+    spec->backing_str_len = 0;
     FREE(spec->backing_str);
+}
+
+void adios_transform_free_spec(struct adios_transform_spec **spec_ptr) {
+    struct adios_transform_spec *spec = *spec_ptr;
+    adios_transform_clear_spec(spec);
     FREE(*spec_ptr)
 }
 #undef FREE

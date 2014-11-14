@@ -301,18 +301,14 @@ static int is_timed_scalar(const struct adios_var_struct *var) {
 
 /*
  * Modifies the given variable's metadata to support the data transform specified by
- * the given transform spec. Also handles error conditions, such as the variable
+ * orig_var->transform_spec. Also handles error conditions, such as the variable
  * being a scalar (which disallows any data transform).
  */
-struct adios_var_struct * adios_transform_define_var(struct adios_var_struct *orig_var,
-                                                     struct adios_transform_spec *transform_spec) {
+struct adios_var_struct * adios_transform_define_var(struct adios_var_struct *orig_var) {
     // First detect error conditions that prevent the transform from being applied
 
+	struct adios_transform_spec *transform_spec = orig_var->transform_spec;
     if (!transform_spec) return orig_var;
-
-    // Free (and set to NULL) any old transform spec
-    if (orig_var->transform_spec)
-    	adios_transform_free_spec(&orig_var->transform_spec);
 
     // If the variable has a transform, but is a scalar: remove the transform, warn the user, and continue as usual
     if (transform_spec->transform_type != adios_transform_none &&
@@ -321,7 +317,6 @@ struct adios_var_struct * adios_transform_define_var(struct adios_var_struct *or
                  orig_var->path, orig_var->name, transform_spec->transform_type_str);
 
         orig_var->transform_type = adios_transform_none;
-        orig_var->transform_spec = transform_spec;
         orig_var->transform_spec->transform_type = adios_transform_none;
         return orig_var;
     }
@@ -332,7 +327,6 @@ struct adios_var_struct * adios_transform_define_var(struct adios_var_struct *or
 
     // Set transform type and spec
     orig_var->transform_type = transform_spec->transform_type;
-    orig_var->transform_spec = transform_spec;
 
     // If there is no transform, nothing else to do
     if (transform_spec->transform_type == adios_transform_none)
@@ -482,7 +476,7 @@ static void buffer_write (char ** buffer, uint64_t * buffer_size
 // Init
 int adios_transform_init_transform_var(struct adios_var_struct *var) {
     var->transform_type = adios_transform_none;
-    var->transform_spec = adios_transform_parse_spec ("none", NULL);
+    var->transform_spec = adios_transform_parse_spec("none", NULL);
     var->pre_transform_dimensions = 0;
     var->pre_transform_type = adios_unknown;
     //var->transform_type_param_len = 0;
