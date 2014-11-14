@@ -341,8 +341,8 @@ static void initialize(ADIOS_QUERY* result)
 
 
 ADIOS_QUERY* common_query_create(ADIOS_FILE* f, 
-				 const char* varName,
 				 ADIOS_SELECTION* queryBoundary,
+				 const char* varName,
 				 enum ADIOS_PREDICATE_MODE op,
 				 const char* value)
 {
@@ -752,9 +752,9 @@ static ADIOS_SELECTION * convertWriteblockToBoundingBox(ADIOS_QUERY *q, ADIOS_SE
 }
 
 int common_query_evaluate(ADIOS_QUERY* q, 
+			  ADIOS_SELECTION* outputBoundary, 
 			  int timeStep, 
 			  uint64_t batchSize, // limited by maxResult
-			  ADIOS_SELECTION* outputBoundary, 
 			  ADIOS_SELECTION** result)
 {  
     int actualTimeStep = adios_check_query_at_timestep(q, timeStep);

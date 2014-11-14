@@ -75,8 +75,8 @@ typedef struct {
 int adios_query_is_method_available(enum ADIOS_QUERY_METHOD method);
 
 ADIOS_QUERY* adios_query_create (ADIOS_FILE* f, 
-                                 const char* varName,
                                  ADIOS_SELECTION* queryBoundary,
+                                 const char* varName,
                                  enum ADIOS_PREDICATE_MODE op,
                                  const char* value); 
 
@@ -129,9 +129,9 @@ int64_t adios_query_estimate (ADIOS_QUERY* q, int timeStep);
  */
 
 int  adios_query_evaluate (ADIOS_QUERY* q, 
+			   ADIOS_SELECTION* outputBoundary,// must supply to get results
 			   int timestep,
 			   uint64_t batchSize, // limited by maxResult
-			   ADIOS_SELECTION* outputBoundary,// must supply to get results
 			   ADIOS_SELECTION** queryResult);
 
 
