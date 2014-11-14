@@ -309,6 +309,11 @@ struct adios_var_struct * adios_transform_define_var(struct adios_var_struct *or
     // First detect error conditions that prevent the transform from being applied
 
     if (!transform_spec) return orig_var;
+
+    // Free (and set to NULL) any old transform spec
+    if (orig_var->transform_spec)
+    	adios_transform_free_spec(&orig_var->transform_spec);
+
     // If the variable has a transform, but is a scalar: remove the transform, warn the user, and continue as usual
     if (transform_spec->transform_type != adios_transform_none &&
         (is_scalar(orig_var) || is_timed_scalar(orig_var))) {
