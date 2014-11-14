@@ -108,10 +108,9 @@ struct adios_transform_spec * adios_transform_parse_spec(const char *spec_str,
     return spec;
 }
 
-struct adios_transform_spec * adios_transform_spec_copy(const struct adios_transform_spec *src) {
-	// Allocate a new transform spec struct
-	struct adios_transform_spec *dst;
-	MALLOC_VAR(dst, struct adios_transform_spec);
+void adios_transform_spec_copy(struct adios_transform_spec *dst, const struct adios_transform_spec *src) {
+	// First, free any previously-held memory in the dst struct
+	adios_transform_clear_spec(dst);
 
 	// Copy some non-pointer fields
 	dst->transform_type = src->transform_type;
@@ -157,8 +156,6 @@ struct adios_transform_spec * adios_transform_spec_copy(const struct adios_trans
 #undef REBASE_OR_DUP
 #undef REBASE_OR_DUP_OR_NULL
 
-	// Finally, return the copied structure
-    return dst;
 }
 
 #define FREE(x) {if(x)free((void*)(x));(x)=NULL;}

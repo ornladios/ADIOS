@@ -702,6 +702,7 @@ int adios_transform_copy_var_transform(struct adios_var_struct *dst_var, const s
 	if (dst_var->transform_spec)
     	adios_transform_free_spec(&dst_var->transform_spec);
 
+	// Copy simple fields
     dst_var->transform_type = src_var->transform_type;
     dst_var->pre_transform_type = src_var->pre_transform_type;
 
@@ -709,9 +710,12 @@ int adios_transform_copy_var_transform(struct adios_var_struct *dst_var, const s
     // required by the function that calls this, adios_copy_var_written().
     dereference_dimensions_var(&dst_var->pre_transform_dimensions, src_var->pre_transform_dimensions);
 
-    // for parameter
-    dst_var->transform_spec = adios_transform_spec_copy(src_var->transform_spec);
+    // Copy transform spec structure
+    if (!dst_var->transform_spec)
+    	dst_var->transform_spec = adios_transform_parse_spec("none", NULL);
+    adios_transform_spec_copy(dst_var->transform_spec, src_var->transform_spec);
 
+    // Copy any transform-specific metadata
     dst_var->transform_metadata_len = src_var->transform_metadata_len;
     if (src_var->transform_metadata_len && src_var->transform_metadata) {
         dst_var->transform_metadata = bufdup(src_var->transform_metadata, 1, src_var->transform_metadata_len);
