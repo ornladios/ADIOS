@@ -32,9 +32,9 @@ inline static int strcount(char *input, char chr) {
 }
 
 // var is a pointer type
-#define MALLOC_ARRAY(var, type, count) ((var) = (type)malloc(sizeof(type) * (count)))
+#define MALLOC_ARRAY(var, type, count) ((var) = (type *)malloc(sizeof(type) * (count)))
 #define MALLOC_VAR(var, type) MALLOC_ARRAY(var, type, 1)
-#define CALLOC_ARRAY(var, type, count) ((var) = (type)calloc((count), sizeof(type)))
+#define CALLOC_ARRAY(var, type, count) ((var) = (type *)calloc((count), sizeof(type)))
 #define CALLOC_VAR(var, type) CALLOC_ARRAY(var, type, 1)
 
 //struct adios_transform_spec * adios_transform_parse_spec(const char *spec_str) {
@@ -117,7 +117,7 @@ struct adios_transform_spec * adios_transform_spec_copy(const struct adios_trans
 
 	// If there is a "backing string" field, copy it according to its recorded length
 	// (note: strlen/strcpy won't work, as it probably contains \0s in the middle)
-	dst->backing_str = src->backing_str ? bufdup(src->backing_str, 1, src->backing_str_len + 1) : NULL;
+	dst->backing_str = src->backing_str ? (char*)bufdup(src->backing_str, 1, src->backing_str_len + 1) : NULL;
 
 	// REBASE_STR: return a pointer into dst->backing_str with the same offset as the old pointer had into src->backing_str
 	#define REBASE_STR(str) ((str) - src->backing_str + dst->backing_str)
