@@ -668,7 +668,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
 
             if (token[0] == ':')
             {
-                strcpy(host, "localhost");
+                strcpy(host, cm_remote_host);
                 port = atoi(token+1);
             }
             else
@@ -682,9 +682,10 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
                 else
                 {
                     strncpy(host, token, strlen(token));
-                    port = cm_port;
+                    port = cm_remote_port;
                 }
             }
+            log_debug("Remote server list: (%d) %s:%d\n", num_remote_server, host, port);
 
             p = malloc(sizeof(icee_contactinfo_rec_t));
             attr_list contact_list;
@@ -786,8 +787,25 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
                 */
 
                 CMConnection conn = CMinitiate_conn(pcm[i], contact_list);
+
+                int n = 0;
+                while (conn == NULL)
+                {
+                    log_error ("Passive connection failed (%d). Try again ...\n", i);
+                    dump_attr_list(contact_list);
+
+                    sleep(2);
+                    conn = CMinitiate_conn(pcm[i], contact_list);
+                    
+                    if (n > 5) break;
+                    n++;
+                }
+
                 if (conn == NULL)
+                {
                     log_error ("Initializing passive connection failed (%d)\n", i);
+                    
+                }
 
                 CMFormat fm_checkin, fm_fileinfo;
                 fm_checkin = CMregister_format(pcm[i], icee_passivecheckin_format_list);
