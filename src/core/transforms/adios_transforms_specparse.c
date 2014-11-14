@@ -11,6 +11,7 @@
 #include <assert.h>
 #include "core/transforms/adios_transforms_specparse.h"
 #include "core/transforms/adios_transforms_hooks.h"
+#include "core/util.h"
 
 inline static char * strsplit(char *input, char split) {
     char *pos = strchr(input, split);
@@ -31,10 +32,10 @@ inline static int strcount(char *input, char chr) {
 }
 
 // var is a pointer type
-#define MALLOC_ARRAY(var, count) ((var) = (__typeof__(var))malloc(sizeof(*var) * (count)))
-#define MALLOC_VAR(var) MALLOC_ARRAY(var, 1)
-#define CALLOC_ARRAY(var, count) ((var) = (__typeof__(var))calloc((count), sizeof(*var)))
-#define CALLOC_VAR(var) CALLOC_ARRAY(var, 1)
+#define MALLOC_ARRAY(var, type, count) ((var) = (type)malloc(sizeof(type) * (count)))
+#define MALLOC_VAR(var, type) MALLOC_ARRAY(var, type, 1)
+#define CALLOC_ARRAY(var, type, count) ((var) = (type)calloc((count), sizeof(type)))
+#define CALLOC_VAR(var, type) CALLOC_ARRAY(var, type, 1)
 
 //struct adios_transform_spec * adios_transform_parse_spec(const char *spec_str) {
 struct adios_transform_spec * adios_transform_parse_spec(const char *spec_str, 
@@ -43,7 +44,7 @@ struct adios_transform_spec * adios_transform_parse_spec(const char *spec_str,
     //struct adios_transform_spec *spec = (struct adios_transform_spec *)malloc(sizeof(struct adios_transform_spec));
     struct adios_transform_spec *spec = spec_in;
     if (!spec_in) {
-        MALLOC_VAR(spec);
+        MALLOC_VAR(spec, struct adios_transform_spec);
     }
 
     *spec = (struct adios_transform_spec){
@@ -87,7 +88,7 @@ struct adios_transform_spec * adios_transform_parse_spec(const char *spec_str,
     assert(param_list);
 
     spec->param_count = strcount(param_list, ',') + 1;
-    MALLOC_ARRAY(spec->params, spec->param_count);
+    MALLOC_ARRAY(spec->params, struct adios_transform_spec_kv_pair, spec->param_count);
     //spec->params = (typeof(spec->params))malloc(sizeof(*spec->params));
 
     struct adios_transform_spec_kv_pair *cur_kv = spec->params;
@@ -105,52 +106,56 @@ struct adios_transform_spec * adios_transform_parse_spec(const char *spec_str,
     return spec;
 }
 
-struct adios_transform_spec * adios_transform_spec_copy(struct adios_transform_spec *src) {
-    struct adios_transform_spec *dst;
-    CALLOC_VAR(dst);
+struct adios_transform_spec * adios_transform_spec_copy(const struct adios_transform_spec *src) {
+	// Allocate a new transform spec struct
+	struct adios_transform_spec *dst;
+	MALLOC_VAR(dst, struct adios_transform_spec);
 
-    dst->transform_type = src->transform_type;
+	// Copy some non-pointer fields
+	dst->transform_type = src->transform_type;
+	dst->backing_str_len = src->backing_str_len;
 
-    // Duplicate the backing string if needed, then rebase all strings pointing into it
-    if (src->backing_str) {
-        // Duplicate the backing string
-        dst->backing_str_len = src->backing_str_len;
-        dst->backing_str = (char *)malloc(dst->backing_str_len + 1);
-        memcpy(dst->backing_str, src->backing_str, src->backing_str_len + 1); // memcpy because it may have several \0's in it
+	// If there is a "backing string" field, copy it according to its recorded length
+	// (note: strlen/strcpy won't work, as it probably contains \0s in the middle)
+	dst->backing_str = src->backing_str ? bufdup(src->backing_str, 1, src->backing_str_len + 1) : NULL;
 
-        // Rebase the transform type string
-        if (src->transform_type_str)
-            dst->transform_type_str = src->transform_type_str - src->backing_str + dst->backing_str;
-        else
-            dst->transform_type_str = NULL;
+	// REBASE_STR: return a pointer into dst->backing_str with the same offset as the old pointer had into src->backing_str
+	#define REBASE_STR(str) ((str) - src->backing_str + dst->backing_str)
+	// REBASE_OR_DUP: if src->backing_str exists, return a REBASE_STR pointer; otherwise, duplicate the string and return that
+	#define REBASE_OR_DUP(str) ((src->backing_str) ? REBASE_STR(str) : strdup(str))
+	// REBASE_OR_DUP_OR_NULL: if str is non-NULL, same as REBASE_OR_DUP(str); otherwise, returns NULL
+	#define REBASE_OR_DUP_OR_NULL(str) ((str) ? REBASE_OR_DUP(str) : NULL)
 
-        // Rebase all the parameters, if present
-        if (src->params) {
-            int i;
-            dst->param_count = src->param_count;
-            MALLOC_ARRAY(dst->params, dst->param_count);
+	// Copy the content of transform_type_str (either pointer-into-backing-str, a
+	// duplicated string when no backing string exists, or NULL if it was NULL)
+	dst->transform_type_str = REBASE_OR_DUP_OR_NULL(src->transform_type_str);
 
-            for (i = 0; i < dst->param_count; i++) {
-                const struct adios_transform_spec_kv_pair *src_kv = &src->params[i];
-                struct adios_transform_spec_kv_pair *dst_kv = &dst->params[i];
+	// Copy transform user parameters if they exist
+	if (src->params) {
+        int i;
 
-                if (src_kv->key)
-                    dst_kv->key = src_kv->key - src->backing_str + dst->backing_str;
-                else
-                    dst_kv->key = NULL;
+        // Initialize the key-value pair array
+        dst->param_count = src->param_count;
+        MALLOC_ARRAY(dst->params, struct adios_transform_spec_kv_pair, dst->param_count);
 
-                if (src_kv->value)
-                    dst_kv->value = src_kv->value - src->backing_str + dst->backing_str;
-                else
-                    dst_kv->value = NULL;
-            }
-        } else {
-            dst->params = NULL;
+        // Copy each key-value pair
+        for (i = 0; i < dst->param_count; i++) {
+            const struct adios_transform_spec_kv_pair *src_kv = &src->params[i];
+            struct adios_transform_spec_kv_pair *dst_kv = &dst->params[i];
+
+            // Copy the key and/or value content
+            dst_kv->key = REBASE_OR_DUP_OR_NULL(src_kv->key);
+            dst_kv->value = REBASE_OR_DUP_OR_NULL(src_kv->value);
         }
-    } else {
-        dst->backing_str = NULL;
-    }
+	} else {
+		dst->params = NULL;
+	}
 
+#undef REBASE_STR
+#undef REBASE_OR_DUP
+#undef REBASE_OR_DUP_OR_NULL
+
+	// Finally, return the copied structure
     return dst;
 }
 
