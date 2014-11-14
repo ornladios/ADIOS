@@ -159,9 +159,18 @@ struct adios_transform_spec * adios_transform_spec_copy(const struct adios_trans
     return dst;
 }
 
-#define FREE(x) {if(x)free(x);(x)=NULL;}
+#define FREE(x) {if(x)free((void*)(x));(x)=NULL;}
 void adios_transform_free_spec(struct adios_transform_spec **spec_ptr) {
     struct adios_transform_spec *spec = *spec_ptr;
+    if (!spec->backing_str) {
+    	int i;
+    	FREE(spec->transform_type_str);
+    	for (i = 0; i < spec->param_count; ++i) {
+    		struct adios_transform_spec_kv_pair *kv = &spec->params[i];
+    		FREE(kv->key);
+    		FREE(kv->value);
+    	}
+    }
     FREE(spec->params);
     FREE(spec->backing_str);
     FREE(*spec_ptr)
