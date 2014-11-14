@@ -698,7 +698,10 @@ int adios_transform_copy_transform_characteristic(struct adios_index_characteris
 }
 
 int adios_transform_copy_var_transform(struct adios_var_struct *dst_var, const struct adios_var_struct *src_var) {
-    adios_transform_init_transform_var(dst_var);
+	adios_transform_init_transform_var(dst_var);
+	// Clean out the "none" transform spec added in adios_transform_init_transform_var
+	if (dst_var->transform_spec)
+    	adios_transform_free_spec(&dst_var->transform_spec);
 
     dst_var->transform_type = src_var->transform_type;
     dst_var->pre_transform_type = src_var->pre_transform_type;
@@ -711,9 +714,8 @@ int adios_transform_copy_var_transform(struct adios_var_struct *dst_var, const s
     dst_var->transform_spec = adios_transform_spec_copy(src_var->transform_spec);
 
     dst_var->transform_metadata_len = src_var->transform_metadata_len;
-    if (src_var->transform_metadata_len) {
-        dst_var->transform_metadata = malloc(src_var->transform_metadata_len);
-        memcpy(dst_var->transform_metadata, src_var->transform_metadata, src_var->transform_metadata_len);
+    if (src_var->transform_metadata_len && src_var->transform_metadata) {
+        dst_var->transform_metadata = bufdup(src_var->transform_metadata, 1, src_var->transform_metadata_len);
     } else {
         dst_var->transform_metadata = 0;
     }
