@@ -41,7 +41,7 @@ struct adios_transform_spec * adios_transform_parse_spec(const char *transform_s
  * Copies a transform spec struct, creating a new, independent instance
  * with the same contents.
  */
-struct adios_transform_spec * adios_transform_spec_copy(struct adios_transform_spec *src);
+struct adios_transform_spec * adios_transform_spec_copy(const struct adios_transform_spec *src);
 
 /*
  * Frees an adios_transform_spec struct.
