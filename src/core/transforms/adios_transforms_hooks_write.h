@@ -57,7 +57,7 @@ typedef struct {
 	//
 	// Note: any or all of these factors may remain unset. In this case, constant_factor, capped_linear_factor, and
 	// capped_linear_cap all default to 0, and linear_factor defaults to 1.
-    uint64_t (*transform_transformed_size_growth)(
+    void (*transform_transformed_size_growth)(
     		const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec,
     		uint64_t *constant_factor, double *linear_factor, double *capped_linear_factor, uint64_t *capped_linear_cap);
 

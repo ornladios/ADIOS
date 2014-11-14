@@ -579,6 +579,7 @@ const char * adios_file_mode_to_string (int mode);
 
 // the following are defined in adios_transport_hooks.c
 void adios_init_transports (struct adios_transport_struct ** transports);
+void adios_free_transports (struct adios_transport_struct * transports);
 int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
                        ,int * requires_group_comm
                        );

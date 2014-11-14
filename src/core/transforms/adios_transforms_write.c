@@ -301,14 +301,15 @@ static int is_timed_scalar(const struct adios_var_struct *var) {
 
 /*
  * Modifies the given variable's metadata to support the data transform specified by
- * the given transform spec. Also handles error conditions, such as the variable
+ * orig_var->transform_spec. Also handles error conditions, such as the variable
  * being a scalar (which disallows any data transform).
  */
-struct adios_var_struct * adios_transform_define_var(struct adios_var_struct *orig_var,
-                                                     struct adios_transform_spec *transform_spec) {
+struct adios_var_struct * adios_transform_define_var(struct adios_var_struct *orig_var) {
     // First detect error conditions that prevent the transform from being applied
 
+	struct adios_transform_spec *transform_spec = orig_var->transform_spec;
     if (!transform_spec) return orig_var;
+
     // If the variable has a transform, but is a scalar: remove the transform, warn the user, and continue as usual
     if (transform_spec->transform_type != adios_transform_none &&
         (is_scalar(orig_var) || is_timed_scalar(orig_var))) {
@@ -316,7 +317,6 @@ struct adios_var_struct * adios_transform_define_var(struct adios_var_struct *or
                  orig_var->path, orig_var->name, transform_spec->transform_type_str);
 
         orig_var->transform_type = adios_transform_none;
-        orig_var->transform_spec = transform_spec;
         orig_var->transform_spec->transform_type = adios_transform_none;
         return orig_var;
     }
@@ -327,7 +327,6 @@ struct adios_var_struct * adios_transform_define_var(struct adios_var_struct *or
 
     // Set transform type and spec
     orig_var->transform_type = transform_spec->transform_type;
-    orig_var->transform_spec = transform_spec;
 
     // If there is no transform, nothing else to do
     if (transform_spec->transform_type == adios_transform_none)
@@ -477,7 +476,7 @@ static void buffer_write (char ** buffer, uint64_t * buffer_size
 // Init
 int adios_transform_init_transform_var(struct adios_var_struct *var) {
     var->transform_type = adios_transform_none;
-    var->transform_spec = adios_transform_parse_spec ("none", NULL);
+    var->transform_spec = adios_transform_parse_spec("none", NULL);
     var->pre_transform_dimensions = 0;
     var->pre_transform_type = adios_unknown;
     //var->transform_type_param_len = 0;
@@ -698,8 +697,12 @@ int adios_transform_copy_transform_characteristic(struct adios_index_characteris
 }
 
 int adios_transform_copy_var_transform(struct adios_var_struct *dst_var, const struct adios_var_struct *src_var) {
-    adios_transform_init_transform_var(dst_var);
+	adios_transform_init_transform_var(dst_var);
+	// Clean out the "none" transform spec added in adios_transform_init_transform_var
+	if (dst_var->transform_spec)
+    	adios_transform_free_spec(&dst_var->transform_spec);
 
+	// Copy simple fields
     dst_var->transform_type = src_var->transform_type;
     dst_var->pre_transform_type = src_var->pre_transform_type;
 
@@ -707,13 +710,15 @@ int adios_transform_copy_var_transform(struct adios_var_struct *dst_var, const s
     // required by the function that calls this, adios_copy_var_written().
     dereference_dimensions_var(&dst_var->pre_transform_dimensions, src_var->pre_transform_dimensions);
 
-    // for parameter
-    dst_var->transform_spec = adios_transform_spec_copy(src_var->transform_spec);
+    // Copy transform spec structure
+    if (!dst_var->transform_spec)
+    	dst_var->transform_spec = adios_transform_parse_spec("none", NULL);
+    adios_transform_spec_copy(dst_var->transform_spec, src_var->transform_spec);
 
+    // Copy any transform-specific metadata
     dst_var->transform_metadata_len = src_var->transform_metadata_len;
-    if (src_var->transform_metadata_len) {
-        dst_var->transform_metadata = malloc(src_var->transform_metadata_len);
-        memcpy(dst_var->transform_metadata, src_var->transform_metadata, src_var->transform_metadata_len);
+    if (src_var->transform_metadata_len && src_var->transform_metadata) {
+        dst_var->transform_metadata = bufdup(src_var->transform_metadata, 1, src_var->transform_metadata_len);
     } else {
         dst_var->transform_metadata = 0;
     }

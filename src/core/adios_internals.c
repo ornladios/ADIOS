@@ -1845,17 +1845,17 @@ int adios_common_set_transform (int64_t var_id, const char *transform_type_str)
     assert (v);
     // NCSU ALACRITY-ADIOS - parse transform type string, and call the transform layer to
     //   set up the variable as needed
-    struct adios_transform_spec *transform_spec = adios_transform_parse_spec(transform_type_str, v->transform_spec);
-    if (transform_spec->transform_type == adios_transform_unknown) {
+    adios_transform_parse_spec(transform_type_str, v->transform_spec);
+    if (v->transform_spec->transform_type == adios_transform_unknown) {
         adios_error(err_invalid_transform_type, 
                   "Unknown transform type \"%s\" specified for variable \"%s\", ignoring it...\n",
-                  transform_spec->transform_type_str, v->name);
-        transform_spec->transform_type = adios_transform_none;
+                  v->transform_spec->transform_type_str ? v->transform_spec->transform_type_str : "<null>", v->name);
+        v->transform_spec->transform_type = adios_transform_none;
     }
 
     // This function sets the transform_type field. It does nothing if transform_type is none.
     // Note: ownership of the transform_spec struct is given to this function
-    v = adios_transform_define_var(v, transform_spec);
+    v = adios_transform_define_var(v);
     return adios_errno;
 }
 
@@ -2894,7 +2894,6 @@ void adios_copy_var_written (struct adios_group_struct * g, struct adios_var_str
     var_new->data_size = var->data_size;
             var_new->write_count = var->write_count;
     var_new->next = 0;
-            adios_transform_init_transform_var(var_new);
 
     uint64_t size = adios_get_type_size (var->type, var->data);
     switch (var->type)
@@ -3004,6 +3003,7 @@ void adios_copy_var_written (struct adios_group_struct * g, struct adios_var_str
             }
             else
             {
+                adios_transform_init_transform_var(var_new);
                 var_new->stats = 0;
                 var_new->data = malloc (size);
                 memcpy (var_new->data, var->data, size);
