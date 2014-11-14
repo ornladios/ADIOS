@@ -673,7 +673,17 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
             }
             else
             {
-                sscanf(token, "%s:%d", &host[0], &port);
+                char *pch = strchr(token, ':');
+                if (pch != NULL)
+                {
+                    strncpy(host, token, pch - token);
+                    port = atoi(pch+1);
+                }
+                else
+                {
+                    strncpy(host, token, strlen(token));
+                    port = cm_port;
+                }
             }
 
             p = malloc(sizeof(icee_contactinfo_rec_t));
