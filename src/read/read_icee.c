@@ -677,11 +677,15 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
                 if (pch != NULL)
                 {
                     strncpy(host, token, pch - token);
+                    host[pch-token] = '\0';
                     port = atoi(pch+1);
                 }
                 else
                 {
-                    strncpy(host, token, strlen(token));
+                    int len = strlen(token);
+                    strncpy(host, token, len);
+                    assert(len < 256);
+                    host[len] = '\0';
                     port = cm_remote_port;
                 }
             }
