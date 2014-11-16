@@ -892,7 +892,22 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
             remote_stone = p->stone_id;
             contact_list = attr_list_from_string(p->contact_string);
 
-            EVassoc_bridge_action(icee_read_cm[0], output_stone, contact_list, remote_stone);
+            EVaction action;
+            action = EVassoc_bridge_action(icee_read_cm[0], output_stone, contact_list, remote_stone);
+
+            int n = 0;
+            while (action == -1)
+            {
+                log_error ("Connection failed (%d). Try again ...\n", i);
+                dump_attr_list(contact_list);
+                
+                sleep(2);
+                action = EVassoc_bridge_action(icee_read_cm[0], output_stone, contact_list, remote_stone);
+                
+                if (n > 5) break;
+                n++;
+            }
+
             EVaction_add_split_target(icee_read_cm[0], split_stone, split_action, output_stone);
 
             prev = p;
