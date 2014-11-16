@@ -534,6 +534,17 @@ set_contact_list (attr_list contact_list,
                         attr_atom_from_string("CM_NNTI_TRANSPORT"), 
                         "ib");
         break;
+    case IB:
+        add_string_attr(contact_list, 
+                        attr_atom_from_string("CM_TRANSPORT"), 
+                        "ib");
+        add_string_attr(contact_list, 
+                        attr_atom_from_string("IP_HOST"), 
+                        host);
+        add_int_attr(contact_list, 
+                     attr_atom_from_string("IP_PORT"), 
+                     port);
+        break;
     default:
         add_string_attr(contact_list, 
                         attr_atom_from_string("IP_HOST"), 

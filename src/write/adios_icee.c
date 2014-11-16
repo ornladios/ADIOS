@@ -762,6 +762,17 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
                             attr_atom_from_string("IP_HOST"), 
                             cm_host);
             break;
+        case IB:
+            add_string_attr(contact_list, 
+                            attr_atom_from_string("CM_TRANSPORT"), 
+                            "ib");
+            add_int_attr(contact_list, 
+                         attr_atom_from_string("IP_PORT"), 
+                         cm_port);
+            add_string_attr(contact_list, 
+                            attr_atom_from_string("IP_HOST"), 
+                            cm_host);
+            break;
         default:
             add_int_attr(contact_list, 
                          attr_atom_from_string("IP_PORT"), 
