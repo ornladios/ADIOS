@@ -1179,16 +1179,17 @@ elif [ `hostname | cut -c 1-4` == "sith" ]; then
     export CFLAGS="-g -fPIC"
     export CXXFLAGS="-g -fPIC"
     export FCFLAGS="-g -fPIC"
+    export LIBS="-ldl -lpthread -lrt"
 
     ${SRCDIR}/configure \
-    --prefix=/ccs/home/jyc/sith/sw/adios/devel-icee/rhel6_${TARGET}${VER} \
+    --prefix=/ccs/home/jyc/sith/sw/adios/devel-icee-evpath.r19249/rhel6_${TARGET}${VER} \
     --with-mxml=/ccs/home/jyc/sith/sw/mxml/2.7/rhel6_${TARGET}${VER} \
     --enable-dependency-tracking \
     --without-hdf5 \
     --without-netcdf \
     --without-infiniband \
     --without-datatap \
-    --with-icee=/sw/redhat6/flexpath/adios-1.7/rhel6_${TARGET}${VER}
+    --with-icee=$EVPATH_DIR
 
 else
     echo "Could not determine what machine is this."

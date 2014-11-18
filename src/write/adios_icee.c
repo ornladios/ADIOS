@@ -54,6 +54,16 @@
 
 #define DUMP(fmt, ...) fprintf(stderr, ">>> "fmt"\n", ## __VA_ARGS__); 
 
+#define MYMALLOC(var, size) {                       \
+        var = malloc(size);                         \
+        assert((var != NULL) && "calloc failed.");  \
+    }
+
+#define MYCALLOC(var, num, size) {                  \
+        var = calloc(num, size);                    \
+        assert((var != NULL) && "calloc failed.");  \
+    }
+
 static int adios_icee_initialized = 0;
 static int icee_num_parallel = 0;
 
@@ -791,14 +801,14 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
 
         stone = EValloc_stone(icee_write_cm);
         log_info("Contact list \"%d:%s\"\n", stone, attr_list_to_string(CMget_contact_list(icee_write_cm)));
-        if (adios_verbose_level > 5) 
+        if ((adios_verbose_level > 5) || (icee_transport == NNTI))
             dump_attr_list(CMget_contact_list(icee_write_cm));
 
 
         EVassoc_terminal_action(icee_write_cm, stone, icee_contactinfo_format_list, icee_contactinfo_handler, NULL);
 
-        remote_info = calloc(max_client, sizeof(icee_remoteinfo_rec_t));
-
+        MYCALLOC(remote_info, max_client, sizeof(icee_remoteinfo_rec_t));
+        
         if (is_cm_passive == 1)
         {
             CMFormat fm;
@@ -900,7 +910,8 @@ adios_icee_open(struct adios_file_struct *fd,
         return -1;
     }
 
-    if (fp == NULL) fp = calloc(1, sizeof(icee_fileinfo_rec_t));
+    if (fp == NULL)
+        MYCALLOC(fp, 1, sizeof(icee_fileinfo_rec_t));
     
     fp->fname = fd->name;
     MPI_Comm_size(comm, &(fp->comm_size));
@@ -933,7 +944,7 @@ adios_icee_write(
         vp = vp->next;
     }
 
-    vp = calloc(1, sizeof(icee_varinfo_rec_t));
+    MYCALLOC(vp, 1, sizeof(icee_varinfo_rec_t));
 
     if (prev == NULL)
         fp->varinfo = vp;
