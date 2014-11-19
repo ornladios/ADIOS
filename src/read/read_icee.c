@@ -570,6 +570,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
     char *cm_remote_host = "localhost";
     char *cm_attr = NULL;
     //attr_list contact_list;
+    icee_transport_t icee_transport_init = TCP;
     icee_transport_t icee_transport = TCP;
 
     icee_contactinfo_rec_t *remote_contact = NULL;
@@ -630,6 +631,19 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
             else
                 log_error ("No support: %s\n", p->value);
         }
+        else if (!strcasecmp (p->name, "transport_init"))
+        {
+            if (strcasecmp(p->value, "TCP") == 0)
+                icee_transport_init = TCP;
+            else if (strcasecmp(p->value, "ENET") == 0)
+                icee_transport_init = ENET;
+            else if (strcasecmp(p->value, "NNTI") == 0)
+                icee_transport_init = NNTI;
+            else if (strcasecmp(p->value, "IB") == 0)
+                icee_transport_init = IB;
+            else
+                log_error ("No support: %s\n", p->value);
+        }
         else if (!strcasecmp (p->name, "num_parallel"))
         {
             icee_read_num_parallel = atoi(p->value);
@@ -653,7 +667,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
         num_remote_server = 1;
 
         attr_list contact_list = create_attr_list();
-        set_contact_list(contact_list, icee_transport, cm_remote_host, cm_remote_port);
+        set_contact_list(contact_list, icee_transport_init, cm_remote_host, cm_remote_port);
 
         icee_contactinfo_rec_t *p;
         p = malloc(sizeof(icee_contactinfo_rec_t));
@@ -706,7 +720,7 @@ adios_read_icee_init_method (MPI_Comm comm, PairStruct* params)
             attr_list contact_list;
             
             contact_list = create_attr_list();
-            set_contact_list(contact_list, icee_transport, host, port);
+            set_contact_list(contact_list, icee_transport_init, host, port);
             p->contact_string = attr_list_to_string(contact_list);
             p->stone_id = 0; // we assume. it can be wrong.
             p->next = NULL;
