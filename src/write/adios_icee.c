@@ -798,9 +798,14 @@ adios_icee_init(const PairStruct *params, struct adios_method_struct *method)
             fprintf(stderr, "error: unable to initialize connection manager.\n");
             exit(-1);
         }
+        //free_attr_list(contact_list);
 
         stone = EValloc_stone(icee_write_cm);
-        log_info("Contact list \"%d:%s\"\n", stone, attr_list_to_string(CMget_contact_list(icee_write_cm)));
+        char *string_list;
+        string_list = attr_list_to_string(CMget_contact_list(icee_write_cm));
+        log_info("Contact list \"%d:%s\"\n", stone, string_list);
+        free(string_list);
+
         if ((adios_verbose_level > 5) || (icee_transport == NNTI))
             dump_attr_list(CMget_contact_list(icee_write_cm));
 
