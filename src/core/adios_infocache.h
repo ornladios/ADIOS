@@ -7,16 +7,20 @@
  *   ADIOS_VARINFO *raw_varinfo = adios_infocache_inq_varinfo(fp, internals->infocache, varid); //common_read_inq_var_raw_byid(fp, varid);        // Get the *raw* varinfo
  *   ADIOS_TRANSINFO *transinfo = adios_infocache_inq_transinfo(fp, internals->infocache, varid); //common_read_inq_transinfo(fp, raw_varinfo);    // Get the transform info (i.e. original var info)
  *
- *
  *  Created on: Nov 21, 2014
  *      Author: David A. Boyuka II
  */
 #ifndef ADIOS_INFOCACHE_H_
 #define ADIOS_INFOCACHE_H_
 
+#include "public/adios_types.h"
+#include "public/adios_read_v2.h"
+#include "transforms/adios_transforms_transinfo.h"
+
 typedef struct {
     int capacity;
-    ADIOS_VARINFO **varinfos;
+    ADIOS_VARINFO **physical_varinfos;
+    ADIOS_VARINFO **logical_varinfos;
     ADIOS_TRANSINFO **transinfos;
 } adios_infocache;
 
