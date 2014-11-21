@@ -59,14 +59,15 @@ typedef struct {
     int capacity;
     ADIOS_VARINFO **varinfos;
     ADIOS_TRANSINFO **transinfos;
-} adios_transform_infocache;
+} adios_infocache;
 
 
-adios_transform_infocache * adios_transform_infocache_new();
-void adios_transform_infocache_free(adios_transform_infocache **cache_ptr);
+adios_infocache * adios_infocache_new();
+void adios_infocache_invalidate(adios_infocache *cache);
+void adios_infocache_free(adios_infocache **cache_ptr);
 
-ADIOS_VARINFO * adios_transforms_infocache_inq_varinfo(const ADIOS_FILE *fp, adios_transform_infocache *cache, int varid);
-ADIOS_TRANSINFO * adios_transforms_infocache_inq_transinfo(const ADIOS_FILE *fp, adios_transform_infocache *cache, int varid);
+ADIOS_VARINFO * adios_infocache_inq_varinfo(const ADIOS_FILE *fp, adios_infocache *cache, int varid);
+ADIOS_TRANSINFO * adios_infocache_inq_transinfo(const ADIOS_FILE *fp, adios_infocache *cache, int varid);
 
 //
 // Read request handling

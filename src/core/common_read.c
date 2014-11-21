@@ -63,8 +63,8 @@ struct common_read_internals_struct {
     // NCSU ALACRITY-ADIOS - The view mode of this file
     data_view_t data_view;
 
-    // NCSU ALACRITY-ADIOS - Cache of VARINFOs and TRANSINFOs
-    adios_transform_infocache *infocache;
+    // Cache of VARINFOs and TRANSINFOs, only used internally by ADIOS at the moment
+    adios_infocache *infocache;
 };
 
 // NCSU ALACRITY-ADIOS - Forward declaration/function prototypes
@@ -341,7 +341,7 @@ ADIOS_FILE * common_read_open (const char * fname,
     internals->data_view = LOGICAL_DATA_VIEW;
 
 	// NCSU ALACRITY-ADIOS - Added allocation of infocache for more efficient read processing with transforms
-	internals->infocache = adios_transform_infocache_new();
+	internals->infocache = adios_infocache_new();
 
     fp = adios_read_hooks[internals->method].adios_read_open_fn (fname, comm, lock_mode, timeout_sec);
     if (!fp)
@@ -404,7 +404,7 @@ ADIOS_FILE * common_read_open_file (const char * fname,
     internals->data_view = LOGICAL_DATA_VIEW;
 
     // NCSU ALACRITY-ADIOS - Added allocation of infocache for more efficient read processing with transforms
-    internals->infocache = adios_transform_infocache_new();
+    internals->infocache = adios_infocache_new();
 
     if (!adios_read_hooks[internals->method].adios_read_open_file_fn) {
         adios_error (err_invalid_read_method, 
@@ -481,7 +481,7 @@ int common_read_close (ADIOS_FILE *fp)
         // NCSU ALACRITY-ADIOS - Cleanup read request groups and infocache
         clean_up_read_reqgroups(&internals->transform_reqgroups);
 
-        adios_transform_infocache_free(&internals->infocache);
+        adios_infocache_free(&internals->infocache);
 
         if (internals->hashtbl_vars)
             internals->hashtbl_vars->free (internals->hashtbl_vars);
@@ -560,6 +560,9 @@ int common_read_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
                 internals->hashtbl_vars->put (internals->hashtbl_vars, fp->var_namelist[i], 
                         (void *)(i+1)); // avoid 0 for error checking later
             }
+
+            // Invalidate infocache, since all varinfos may have changed now
+            adios_infocache_invalidate(internals->infocache);
 
             /* Update group information too */
             free_namelist (internals->group_namelist, internals->ngroups);
@@ -3265,9 +3268,12 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
     if (fp) {
         if (varid >=0 && varid < fp->nvars) {
             // NCSU ALACRITY-ADIOS - If the variable is transformed, intercept
-            //   the read scheduling and schedule our own reads
-            ADIOS_VARINFO *raw_varinfo = adios_transforms_infocache_inq_varinfo(fp, internals->infocache, varid); //common_read_inq_var_raw_byid(fp, varid);        // Get the *raw* varinfo
-            ADIOS_TRANSINFO *transinfo = adios_transforms_infocache_inq_transinfo(fp, internals->infocache, varid); //common_read_inq_transinfo(fp, raw_varinfo);    // Get the transform info (i.e. original var info)
+            //   the read scheduling and schedule our own reads.
+        	// Note: Use the infocache to save varinfos across calls, since otherwise
+        	//   a large number of schedule_reads will have bad performance due to
+        	//   expensive inq_var calls.
+            ADIOS_VARINFO *raw_varinfo = adios_infocache_inq_varinfo(fp, internals->infocache, varid); //common_read_inq_var_raw_byid(fp, varid);        // Get the *raw* varinfo
+            ADIOS_TRANSINFO *transinfo = adios_infocache_inq_transinfo(fp, internals->infocache, varid); //common_read_inq_transinfo(fp, raw_varinfo);    // Get the transform info (i.e. original var info)
             assert(raw_varinfo && transinfo);
 
             // If this variable is transformed and we are in logical view mode,

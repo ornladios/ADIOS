@@ -51,7 +51,7 @@ uint64_t adios_transform_get_transformed_var_size_from_blockinfo(int raw_ndim, c
 
 #define INITIAL_INFOCACHE_SIZE 16
 
-static void expand_infocache(adios_transform_infocache *cache, int var_capacity) {
+static void expand_infocache(adios_infocache *cache, int var_capacity) {
     int i;
     const int oldcap = cache->capacity;
     const int newcap = max(max(oldcap * 2, var_capacity), INITIAL_INFOCACHE_SIZE);
@@ -72,8 +72,8 @@ static void expand_infocache(adios_transform_infocache *cache, int var_capacity)
     cache->capacity = newcap;
 }
 
-adios_transform_infocache * adios_transform_infocache_new() {
-    MALLOC(adios_transform_infocache *, cache);
+adios_infocache * adios_infocache_new() {
+    MALLOC(adios_infocache *, cache);
     cache->capacity = 0;
     cache->varinfos = NULL;
     cache->transinfos = NULL;
@@ -82,25 +82,31 @@ adios_transform_infocache * adios_transform_infocache_new() {
     return cache;
 }
 
-void adios_transform_infocache_free(adios_transform_infocache **cache_ptr) {
-    adios_transform_infocache *cache = *cache_ptr;
+void adios_infocache_invalidate(adios_infocache *cache) {
     int i;
-
     for (i = 0; i < cache->capacity; i++) {
         if (cache->varinfos[i]) {
-            if (cache->transinfos[i])
+            if (cache->transinfos[i]) {
                 common_read_free_transinfo(cache->varinfos[i], cache->transinfos[i]);
+                cache->transinfos[i] = NULL;
+            }
             common_read_free_varinfo(cache->varinfos[i]);
+            cache->varinfos[i] = NULL;
         }
     }
+}
 
+void adios_infocache_free(adios_infocache **cache_ptr) {
+    adios_infocache *cache = *cache_ptr;
+
+    adios_infocache_invalidate(cache); // Frees all varinfos/transinfos
     FREE(cache->varinfos);
     FREE(cache->transinfos);
     cache->capacity = 0;
     FREE(*cache_ptr);
 }
 
-ADIOS_VARINFO * adios_transforms_infocache_inq_varinfo(const ADIOS_FILE *fp, adios_transform_infocache *cache, int varid) {
+ADIOS_VARINFO * adios_infocache_inq_varinfo(const ADIOS_FILE *fp, adios_infocache *cache, int varid) {
     if (varid >= cache->capacity)
         expand_infocache(cache, varid);
 
@@ -110,14 +116,14 @@ ADIOS_VARINFO * adios_transforms_infocache_inq_varinfo(const ADIOS_FILE *fp, adi
         return cache->varinfos[varid] = common_read_inq_var_raw_byid(fp, varid);
 }
 
-ADIOS_TRANSINFO * adios_transforms_infocache_inq_transinfo(const ADIOS_FILE *fp, adios_transform_infocache *cache, int varid) {
+ADIOS_TRANSINFO * adios_infocache_inq_transinfo(const ADIOS_FILE *fp, adios_infocache *cache, int varid) {
     if (varid >= cache->capacity)
         expand_infocache(cache, varid);
 
     if (cache->transinfos[varid]) {
         return cache->transinfos[varid];
     } else {
-        ADIOS_VARINFO * vi = adios_transforms_infocache_inq_varinfo(fp, cache, varid);
+        ADIOS_VARINFO * vi = adios_infocache_inq_varinfo(fp, cache, varid);
         return cache->transinfos[varid] = common_read_inq_transinfo(fp, vi);
     }
 }
