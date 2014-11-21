@@ -134,6 +134,7 @@ libadios_a_SOURCES = core/adios.c \
                      core/adios_read.c \
                      core/adios_read_v1.c \
                      core/common_read.c \
+                     core/adios_infocache.c \
                      core/adios_read_ext.c \
                      core/globals.c \
                      core/adios_timing.c \
@@ -176,6 +177,7 @@ libadios_nompi_a_SOURCES = core/adios.c \
                      core/adios_read.c \
                      core/adios_read_v1.c \
                      core/common_read.c \
+                     core/adios_infocache.c \
                      core/adios_read_ext.c \
                      core/globals.c \
                      core/mpidummy.c \
@@ -211,6 +213,7 @@ FortranLibSources = core/adiosf.c \
                      core/adios_error.c \
                      core/bp_utils.c \
                      core/common_read.c \
+                     core/adios_infocache.c \
                      core/adios_read_ext.c \
                      core/globals.c \
                      core/adios_timing.c \
@@ -421,6 +424,7 @@ libadiosread_a_SOURCES = core/adios_bp_v1.c \
                       core/adios_read.c \
                       core/adios_read_v1.c \
                       core/common_read.c \
+                      core/adios_infocache.c \
                       core/adios_read_ext.c \
                       $(transforms_common_SOURCES) \
                       $(transforms_read_SOURCES) \
@@ -464,6 +468,7 @@ FortranReadLibSource = core/adios_bp_v1.c \
                       core/futils.c \
                       core/adios_error.c \
                       core/common_read.c \
+                      core/adios_infocache.c \
                       core/adios_read_ext.c \
                       $(transforms_common_SOURCES) \
                       $(transforms_read_SOURCES) \
@@ -531,6 +536,7 @@ libadiosread_nompi_a_SOURCES = core/mpidummy.c\
                       core/adios_read.c \
                       core/adios_read_v1.c \
                       core/common_read.c \
+                      core/adios_infocache.c \
                       core/adios_read_ext.c \
                       $(transforms_common_SOURCES) \
                       $(transforms_read_SOURCES) \
@@ -579,6 +585,7 @@ FortranReadSeqLibSource = core/mpidummy.c\
                           core/adios_error.c \
                           core/adios_logger.c \
                           core/common_read.c \
+                          core/adios_infocache.c \
                           core/adios_read_ext.c \
                           $(transforms_common_SOURCES) \
                           $(transforms_read_SOURCES) \
@@ -684,7 +691,7 @@ EXTRA_DIST = core/adios_bp_v1.h core/adios_endianness.h \
 	     transforms/adios_transform_szip.h \
              core/adios_socket.h core/adios_transport_hooks.h \
              core/bp_types.h core/bp_utils.h core/buffer.h core/common_adios.h \
-             core/common_read.h core/futils.h core/globals.h core/ds_metadata.h \
+             core/common_read.h core/adios_infocache.h core/futils.h core/globals.h core/ds_metadata.h \
              core/util.h core/flexpath.h core/qhashtbl.h \
              nssi/adios_nssi_config.h nssi/aggregation.h nssi/io_timer.h
 
