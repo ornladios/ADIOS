@@ -3316,9 +3316,9 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
 #endif
             } else {
                 // Old functionality
-            	// CHECKTHIS - Should we free if we use infocache??
-                common_read_free_transinfo (raw_varinfo, transinfo);
-                common_read_free_varinfo (raw_varinfo);
+            	// DON'T FREE varinfo/transinfo, since they are stored in the infocached
+                // common_read_free_transinfo (raw_varinfo, transinfo);
+                // common_read_free_varinfo (raw_varinfo);
 
                 retval = internals->read_hooks[internals->method].adios_schedule_read_byid_fn (fp, sel, varid+internals->group_varid_offset, from_steps, nsteps, data);
             }
