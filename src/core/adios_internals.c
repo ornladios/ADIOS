@@ -3013,6 +3013,7 @@ void adios_copy_var_written (struct adios_group_struct * g, struct adios_var_str
 
         case adios_string:
             {
+                adios_transform_init_transform_var(var_new);
                 var_new->data = malloc (size + 1);
                 memcpy (var_new->data, var->data, size);
                 ((char *) (var_new->data)) [size] = 0;
