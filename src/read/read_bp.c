@@ -2278,6 +2278,7 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
     BP_FILE * fh = GET_BP_FILE (fp);
     int i, j, file_is_fortran, nblks, time;
     uint64_t * ldims, * gdims, * offsets;
+    int dummy = -1;
     struct adios_index_var_struct_v1 * var_root;
     ADIOS_VARBLOCK *blockinfo;
 
@@ -2366,6 +2367,14 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
         // dimcount so that dimension copy/swapping works below
         if (ldims[dimcount - 1] == 0)
             dimcount--;
+
+        /*Fix: the function above swaps the dimensions to C order in any case. 
+         * For Fortran callers, we have to swap it back here */
+        if (futils_is_called_from_fortran ())
+        {
+            swap_order (dimcount, ldims, &dummy);
+            swap_order (dimcount, offsets, &dummy);
+        }
 
         memcpy (blockinfo[i].start, offsets, dimcount * 8);
         memcpy (blockinfo[i].count, ldims, dimcount * 8);

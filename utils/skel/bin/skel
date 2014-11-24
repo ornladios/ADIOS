@@ -3,13 +3,11 @@
 import sys
 import os.path
 
-# Make sure that the skel modules are available
-os.path.dirname(sys.argv[1])
-
-# For the installed skel
+# Make sure that the skel modules are available...
+# ...for the installed skel
 sys.path.insert (0, os.path.dirname(sys.argv[0]) + '/../lib/python')
 
-# For the skel in the utils dir of the adios source
+# ...for the skel in the utils dir of the adios source
 sys.path.insert (0, os.path.dirname(sys.argv[0]) + '/../lib')
 
 import argparse
@@ -58,27 +56,27 @@ def main(argv=None):
     skel_settings.create_settings_dir_if_needed()
     parser = get_parser()
 
-    # install does not require a project, so let's just check for it directly
-    if sys.argv[1] == 'install':
+    # Look for skel help (or no args), and print the list of subcommands...
+    if (len(sys.argv) == 1) or (sys.argv[1] == 'help' and len(sys.argv) == 2):
+        print parser.description 
         return 0
 
-    # Also look for skel help, and print the list of subcommands...
-    if sys.argv[1] == 'help' and len(sys.argv) == 2:
-        print parser.description 
+    # install does not require a project, so let's just check for it directly
+    if sys.argv[1] == 'install':
         return 0
 
     if sys.argv[1] == 'help':
         if sys.argv[2] == 'makefile':
             sys.argv = ["skel", "makefile", "junk", "-h"]
-            skel_makefile.generate_makefiles_with_args (None, parser)
+            skel_makefile.generate_makefiles_with_args (parser)
         elif sys.argv[2] == 'params':
             sys.argv = ["skel", "params", "junk", "-h"]
-            skel_params.generate_param_file_with_args (None, parser)
+            skel_params.generate_param_file_with_args (parser)
         elif sys.argv[2] == 'replay':
             sys.argv = ["skel", "replay", "junk", "-h"]
         elif sys.argv[2] == 'source':
             sys.argv = ["skel", "source", "junk", "-h"]
-            skel_source.create_sources_with_args (None, parser)
+            skel_source.create_sources_with_args (parser)
         elif sys.argv[2] == 'submit':
             sys.argv = ["skel", "submit", "junk", "-h"]
             skel_submit.generate_submit_scripts_with_args (parser)
@@ -86,6 +84,7 @@ def main(argv=None):
             sys.argv = ["skel", "xml", "junk", "-h"]
         else:
             print "Unknown help topic" 
+            print parser.description 
             exit(1)
 
     #args = parse_command_line()
@@ -154,7 +153,9 @@ def main(argv=None):
         skel_submit.generate_submit_scripts_with_args (parser)
         return 0
 
-    print 'Unknown subcommand, exiting.'
+    # Unrecognized subcommand, print the help message
+    print parser.description
+    return 0
 
 
 if __name__ == "__main__":
