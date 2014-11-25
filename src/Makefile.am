@@ -1,4 +1,4 @@
-INCLUDES=-I$(top_srcdir) -I$(top_srcdir)/src/core -I$(top_srcdir)/src/core/transforms
+AM_CPPFLAGS=-I$(top_srcdir) -I$(top_srcdir)/src/core -I$(top_srcdir)/src/core/transforms
 
 AUTOMAKE_OPTIONS = no-dependencies
 METASOURCES=AUTO

@@ -1,5 +1,5 @@
-INCLUDES = $(all_includes)
-INCLUDES += -I$(top_builddir)/src -I$(top_srcdir)/src/public
+AM_CPPFLAGS = $(all_includes)
+AM_CPPFLAGS += -I$(top_builddir)/src -I$(top_srcdir)/src/public
 
 AUTOMAKE_OPTIONS = no-dependencies
 
@@ -48,9 +48,9 @@ FCLINK = \
         $(AM_FCFLAGS) $(FCFLAGS) $(LDFLAGS) -o $@
 
 if BUILD_FORTRAN
-CLEANFILES = *.o bp_read_c bp_read_f genbp read_coords read_phi read_parts_global
+CLEANFILES = bp_read_c bp_read_f genbp read_coords read_phi read_parts_global
 else
-CLEANFILES = *.o bp_read_c genbp read_coords read_phi read_parts_global
+CLEANFILES = bp_read_c genbp read_coords read_phi read_parts_global
 endif
 
 EXTRA_DIST = testbp_c.xml

@@ -49,8 +49,8 @@ check_PROGRAMS=$(check_C) $(check_Fortran) $(check_readonly_C) $(check_readonly_
 # Parallel tests should be defined in ../tests/*.sh and executed by ../test.sh
 TESTS=$(test_C)
 
-INCLUDES = $(all_includes)
-INCLUDES += -I$(top_builddir)/src -I$(top_srcdir)/src/public
+AM_CPPFLAGS = $(all_includes)
+AM_CPPFLAGS += -I$(top_builddir)/src -I$(top_srcdir)/src/public
 
 all-local:
 	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)

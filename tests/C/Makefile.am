@@ -1,5 +1,5 @@
-INCLUDES = $(all_includes)
-INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public
+AM_CPPFLAGS = $(all_includes)
+AM_CPPFLAGS += -I$(top_srcdir)/src -I$(top_srcdir)/src/public
 
 SUBDIRS=flexpath_tests fgr_tests
 
