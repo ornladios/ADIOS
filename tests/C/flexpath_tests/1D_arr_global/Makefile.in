@@ -358,7 +358,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-INCLUDES = $(all_includes) -I$(top_srcdir)/src \
+AM_CPPFLAGS = $(all_includes) -I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/public -I$(srcdir)/../include
 AUTOMAKE_OPTIONS = no-dependencies
 writer_global_SOURCES = writer.c ../common/utils.c
