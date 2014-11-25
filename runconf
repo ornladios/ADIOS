@@ -1176,7 +1176,7 @@ elif [ `hostname | cut -c 1-2` == "ln" ]; then
         #--with-isobar=/opt/isobar \
         #--with-flexpath=/opt/chaos
 
-elif [ `hostname | cut -c 1-5` == "adios" ]; then
+elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
 
     #######################
     # ADIOS Virtual Box #
@@ -1190,17 +1190,21 @@ elif [ `hostname | cut -c 1-5` == "adios" ]; then
     export FC=gfortran
 
     export CFLAGS="-g -O0 -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast"
-    ${SRCDIR}/configure --prefix=/opt/adios/1.6 \
+    ${SRCDIR}/configure --prefix=/opt/adios/1.8 \
+        --disable-maintainer-mode \
         --enable-dependency-tracking \
         --with-mxml=/opt/mxml \
-        --with-phdf5=/opt/hdf5-1.8.12-parallel \
-        --with-hdf5=/opt/hdf5-1.8.12 \
-        --with-netcdf=/opt/netcdf-3.6.3 \
-        --with-zlib=/opt/zlib  \
-        --with-szip=/opt/szip-2.1 \
-        --with-bzip2=/usr/lib/i386-linux-gnu \
+        --with-zlib \
+        --with-bzip2 \
+        --with-szip=/opt/szip \
         --with-isobar=/opt/isobar \
-        --with-flexpath=/opt/chaos
+        --with-flexpath=/opt/chaos \
+        --with-hdf5=/opt/hdf5-1.8.12 \
+        --with-phdf5=/opt/hdf5-1.8.12-parallel \
+        --with-netcdf=/opt/netcdf-4.3.0 \
+        --enable-timers \
+        --disable-timer-events
+
 
 
 else
