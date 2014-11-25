@@ -81,8 +81,8 @@ int main (int argc, char ** argv)
 		p = (int *) malloc (NX*sizeof(int));
 
 		sel = adios_selection_boundingbox(2, start, count);
-		adios_schedule_read(f, sel, "var_double2Darray", 0, 1, t);
-		adios_perform_read(f, 1);
+		adios_schedule_read(f, sel, "var_double_2Darray", 0, 1, t);
+		adios_perform_reads(f, 1);
 	}
 	
 	/* At this point, we have the data in memory */
