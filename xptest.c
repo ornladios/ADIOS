@@ -30,6 +30,170 @@ typedef struct _data
 	char name[1];
 }data;
 
+typedef struct _memory
+{
+    int size;
+    int req_size;
+    int offset;
+    short childcount;
+    short ref;    
+    unsigned char* buffer;
+    struct _memory *parent;
+    struct _memory *prev;
+    struct _memory *next;
+    struct _memory *child;
+    LIST_ENTRY(_memory) entries;
+}memory;
+
+
+static memory* findMemory(IOhandle *h, int req_size, int check_size)
+{
+
+	memory *memtemp = NULL;
+	memory *current = NULL;
+	memory *prov = NULL;
+	memory *tb = NULL;
+	memory *next = NULL;
+    
+
+	int page_size = sysconf(_SC_PAGESIZE);
+
+		
+    
+	for(memtemp = h->memlist.lh_first; memtemp != NULL;
+	    memtemp = memtemp->entries.le_next)
+	{
+
+		if(memtemp && (memtemp->size - memtemp->offset) >= req_size)	
+		{
+			if(!prov || (prov->size - prov->offset) >= (memtemp->size - memtemp->offset))
+			{
+				prov = memtemp;		
+			}
+		
+		}	
+	}
+
+	if(prov)
+	{
+		//we found a memory region
+		//allign req size to 8 bits
+		int aligned = req_size + (8-1)&~(8-1);
+		//prov is hte parent
+		tb = (memory*)malloc(sizeof(memory));
+		memset(tb, 0, sizeof(memory));
+	
+		tb->parent = prov;
+		if(prov->child == NULL)
+		{
+			prov->child = tb;	    
+		}
+		else
+		{
+			current = prov->child;
+			while(current->next != NULL)
+				current = current->next;
+			current->next = tb;
+			tb->prev = current;	    
+			tb->next = NULL;	    
+		}
+		prov->childcount ++;
+		tb->buffer = ptr_from_int64(prov->offset + int64_from_ptr(prov->buffer));
+		tb->offset = aligned;
+		tb->size = aligned;	
+		prov->offset += aligned;
+
+		LIST_INSERT_HEAD(&h->memlist, tb, entries);	
+
+		tb->mr = prov->mr;	
+		tb->ref ++;	
+		return tb;
+
+	}
+	else
+	{
+		//no memory region suitable - allocate more memory if we can otherwise
+		fprintf(stderr, "no suitable buffer found\n  - Allocating more\n");
+		return NULL;	
+	}
+    
+	fprintf(stderr, "\n");
+    
+	return NULL ;
+	
+}
+
+
+static void free_func(void *cbd)
+{
+
+	memory *tb = (memory*)cbd;
+	memory *temp;
+
+
+	memory *memtemp = NULL;
+
+	if(tb->childcount == 0)
+	{
+		//no children we can merge to the left
+		if(tb->prev != NULL)
+		{
+			//we have a left!
+			temp = tb->prev;
+			temp->next = tb->next;
+			temp->size += tb->size;
+			LIST_REMOVE(tb, entries);
+			if(tb->parent != NULL)
+			{
+				tb->parent->childcount --;	    
+			}
+			free(tb);	 
+			return;	    
+		}	
+		else
+		{
+			tb->offset = 0;
+			while(tb->next)
+			{
+				temp = tb->next;
+				if(temp->childcount == 0 && temp->ref == 0)
+				{
+					//we can merge temp into tb also
+					tb->next = temp->next;
+					tb->size += temp->size;
+					LIST_REMOVE(temp, entries);
+					if(tb->parent)
+					{
+						tb->parent->childcount --;
+					}
+		    
+					free(temp);		    
+				}
+				else 
+					break;
+		
+			}	    
+			if(tb->parent && tb->parent->childcount == 1)
+			{
+				//we have exhausted all the children
+				//we merge upwards now
+				memory *parent = tb->parent;
+				parent->offset = 0;
+				parent->child = NULL;
+				parent->childcount = 0;
+				LIST_REMOVE(tb, entries);
+				free(tb);
+			}
+	    
+		}
+	
+	}
+    
+    
+
+}
+
+
 
 xpmem_segid_t make_share(char **data, size_t size)
 {

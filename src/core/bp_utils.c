@@ -48,21 +48,26 @@
                              swap_64(var); \
                          b->offset += 8;
 
-inline BP_PROC * GET_BP_PROC_BP (const ADIOS_FILE * fp)
-{
-	return (BP_PROC *) fp->fh;
-}
+BP_PROC* (*GET_BP_PROC)(const ADIOS_FILE *);
+BP_FILE* (*GET_BP_FILE)(const ADIOS_FILE *);
 
-inline BP_FILE * GET_BP_FILE_BP (const ADIOS_FILE * fp)
-{
-	return (BP_FILE *) ((BP_PROC *) fp->fh)->fh;
-}
+
 
 
 /* prototypes */
 void * bp_read_data_from_buffer(struct adios_bp_buffer_struct_v1 *b, enum ADIOS_DATATYPES type);
 int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b, struct adios_index_var_struct_v1 ** root, uint64_t j);
 
+
+inline BP_PROC * GET_BP_PROC_FILE (const ADIOS_FILE * fp)
+{
+	return (BP_PROC *) fp->fh;
+}
+
+inline BP_FILE * GET_BP_FILE_FILE (const ADIOS_FILE * fp)
+{
+	return (BP_FILE *) ((BP_PROC *) fp->fh)->fh;
+}
 
 
 void bp_alloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size)
@@ -247,6 +252,9 @@ int bp_open (const char * fname,
     {
         return -1;
     }
+
+    GET_BP_PROC = GET_BP_PROC_FILE;
+    GET_BP_FILE = GET_BP_FILE_FILE;    
 
     /* Only rank 0 reads the footer and it broadcasts to all other processes */
     if (rank == 0)
