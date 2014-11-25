@@ -7040,14 +7040,13 @@ uninstall-am: uninstall-binPROGRAMS uninstall-includeHEADERS \
 @BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@	rpcgen -c $(srcdir)/nssi/adios_nssi_args.x \
 @BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@		| grep -v "include \"\.\." > adios_nssi_args.c
 
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@adios_write_mod.mod: core/adiosf_write_mod.f90 adios_defs_mod.mod
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(FC) -c core/adiosf_write_mod.f90
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@adiosf_write_mod.$(OBJEXT): adiosf_defs_mod.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@adios_write_mod.mod: adiosf_write_mod.$(OBJEXT)
 
-@BUILD_FORTRAN_TRUE@adios_read_mod.mod: core/adiosf_read_mod.f90 adios_defs_mod.mod 
-@BUILD_FORTRAN_TRUE@	$(FC) -c core/adiosf_read_mod.f90
+@BUILD_FORTRAN_TRUE@adiosf_read_mod.$(OBJEXT): adiosf_defs_mod.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@adios_read_mod.mod: adiosf_read_mod.$(OBJEXT)
 
-@BUILD_FORTRAN_TRUE@adios_defs_mod.mod: core/adiosf_defs_mod.f90
-@BUILD_FORTRAN_TRUE@	$(FC) -c core/adiosf_defs_mod.f90
+@BUILD_FORTRAN_TRUE@adios_defs_mod.mod: adiosf_defs_mod.$(OBJEXT)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.
