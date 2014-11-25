@@ -51,12 +51,6 @@
 #include "public/adios_xpmem.h"
 #include "read/read_xpmem.h"
 
-#undef GET_BP_PROC
-#undef GET_BP_FILE
-
-#define GET_BP_PROC(fp) GET_BP_PROC_XP(fp);
-#define GET_BP_FILE(fp) GET_BP_FILE_XP(fp);
-
 
 inline BP_PROC * GET_BP_PROC_XP (const ADIOS_FILE * fp)
 {
@@ -176,6 +170,9 @@ adios_read_xpmem_open_file(const char * fname, MPI_Comm comm)
 	af->version =  f->fh->mfooter.version & ADIOS_VERSION_NUM_MASK;
 	af->current_step = 0;
 	af->last_step = 0;
+
+	GET_BP_PROC = GET_BP_PROC_XP;
+    GET_BP_FILE = GET_BP_FILE_XP;    
 
 	//just check to make sure that readcount is 0
 	log_debug("xpmem readcount = %d\n",
