@@ -175,8 +175,9 @@ adios_read_xpmem_open_file(const char * fname, MPI_Comm comm)
     GET_BP_FILE = GET_BP_FILE_XP;    
 
 	//just check to make sure that readcount is 0
-	log_debug("xpmem readcount = %d\n",
-	          f->fp->pg->readcount);
+	log_debug("xpmem readcount = %d proc = %p file=%p\n",
+	          f->fp->pg->readcount,
+	          GET_BP_PROC, GET_BP_FILE);
 
 	//now fp->index contains the index
 	//index size is fp-index->size
