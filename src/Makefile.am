@@ -360,8 +360,8 @@ libadiosf_nompi_v1_a_SOURCES += core/adiosf_defs_mod.f90 \
 nodist_include_HEADERS += adios_write_mod.mod 
 CLEANFILES += adios_write_mod.mod
 
-adios_write_mod.mod: core/adiosf_write_mod.f90 adios_defs_mod.mod
-	$(FC) -c core/adiosf_write_mod.f90
+adiosf_write_mod.$(OBJEXT): adiosf_defs_mod.$(OBJEXT)
+adios_write_mod.mod: adiosf_write_mod.$(OBJEXT)
 
 endif
 
@@ -476,11 +476,10 @@ libadiosreadf_a_SOURCES += core/adiosf_defs_mod.f90 \
 nodist_include_HEADERS += adios_read_mod.mod adios_defs_mod.mod
 CLEANFILES += adios_read_mod.mod adios_defs_mod.mod
 
-adios_read_mod.mod: core/adiosf_read_mod.f90 adios_defs_mod.mod 
-	$(FC) -c core/adiosf_read_mod.f90
+adiosf_read_mod.$(OBJEXT): adiosf_defs_mod.$(OBJEXT)
+adios_read_mod.mod: adiosf_read_mod.$(OBJEXT)
 
-adios_defs_mod.mod: core/adiosf_defs_mod.f90
-	$(FC) -c core/adiosf_defs_mod.f90
+adios_defs_mod.mod: adiosf_defs_mod.$(OBJEXT)
 
 endif
 
