@@ -78,7 +78,6 @@ int main (int argc, char ** argv)
 		adios_perform_read(f, 1);
 	}
 	
-
 	/* At this point, we have the data in memory */
 	// printf("rank=%d: p = [%d", rank, p[0]);
 	// for (i = 1; i < NX; i++)
