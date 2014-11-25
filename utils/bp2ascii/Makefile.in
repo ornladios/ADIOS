@@ -357,7 +357,7 @@ AM_CPPFLAGS = $(all_includes) -I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/public -I$(top_srcdir)/src/core
 AUTOMAKE_OPTIONS = no-dependencies
 bp2ascii_SOURCES = bp2ascii.c 
-bp2ascii_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_INT_CPPFLAGS) $(ADIOSLIB_INT_CFLAGS)
+bp2ascii_CPPFLAGS = $(AM_CPPFLAGS) $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_INT_CPPFLAGS) $(ADIOSLIB_INT_CFLAGS)
 bp2ascii_LDFLAGS = $(ADIOSLIB_INT_LDFLAGS)
 bp2ascii_LDADD = $(top_builddir)/src/libadios_internal_nompi.a \
 	$(ADIOSLIB_INT_LDADD)

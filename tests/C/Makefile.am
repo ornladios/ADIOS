@@ -11,7 +11,7 @@ all-local:
 noinst_PROGRAMS=adios_test_c
 
 adios_test_c_SOURCES = adios_test_c.c
-adios_test_c_CPPFLAGS = $(ADIOSLIB_CPPFLAGS)
+adios_test_c_CPPFLAGS = $(AM_CPPFLAGS) $(ADIOSLIB_CPPFLAGS)
 adios_test_c_CFLAGS = $(ADIOSLIB_CFLAGS)
 adios_test_c_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 adios_test_c_LDFLAGS = $(ADIOSLIB_LDFLAGS) 
