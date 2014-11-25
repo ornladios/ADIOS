@@ -127,7 +127,7 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
               ,ADIOS_METHOD_VAR_MERGE   = 22
               ,ADIOS_METHOD_MPI_BGQ     = 23
                       ,ADIOS_METHOD_XPMEM = 24
-              ,ADIOS_METHOD_COUNT       = 1
+              ,ADIOS_METHOD_COUNT       = 25
 };
 
 // forward declare the functions (or dummies for internals use)

@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#define _NOMPI
+//#define _NOMPI
 
 #include "adios.h"
 #include "core/adios_logger.h"
@@ -25,7 +25,6 @@
 int main (int argc, char ** argv) 
 {
 	char        filename [256];
-	int         NX, NY; 
 	double      *t;
 	int         *p;
 	enum ADIOS_READ_METHOD method = ADIOS_READ_METHOD_XPMEM;
@@ -47,8 +46,7 @@ int main (int argc, char ** argv)
 	strcpy (filename, "arrays.bp");
 	ADIOS_FILE * f = adios_read_open_file (filename, method, comm);
 
-	adios_get_scalar(f, "NX", &NX);
-	adios_get_scalar(f, "NY", &NY);
+	int         NX = 10, NY = 100; 
 
 	fprintf(stderr, "NX = %d\tNY=%d\n", NX, NY);
 

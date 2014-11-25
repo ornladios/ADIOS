@@ -11,7 +11,7 @@
 #include <fcntl.h>
 
 
-#define _NOMPI
+//#define _NOMPI
 
 #include "adios.h"
 #include "core/adios_logger.h"
