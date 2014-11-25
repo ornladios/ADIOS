@@ -360,7 +360,6 @@ posix_fgr_CFLAGS = $(ADIOSLIB_CFLAGS)
 posix_fgr_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 posix_fgr_LDFLAGS = $(ADIOSLIB_LDFLAGS) 
 CLEANFILES = posix_fgr.bp
-EXTRA_DIST = posix_fgr.xml
 all: all-am
 
 .SUFFIXES:

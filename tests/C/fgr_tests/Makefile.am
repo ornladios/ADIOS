@@ -14,4 +14,3 @@ posix_fgr_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 CLEANFILES = posix_fgr.bp
 CC=$(MPICC)
 
-EXTRA_DIST = posix_fgr.xml
