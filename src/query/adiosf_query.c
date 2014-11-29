@@ -26,8 +26,8 @@ int FC_FUNC_(adios_query_is_method_available_f2c,ADIOS_QUERY_IS_METHOD_AVAILABLE
 
 void FC_FUNC_(adios_query_create,ADIOS_QUERY_CREATE) (
         int64_t     * fp, 
-        const char  * varName,
         int64_t     * queryBoundary,
+        const char  * varName,
         int         * op,
         const char  * value, 
         int64_t     * q,
@@ -43,8 +43,8 @@ void FC_FUNC_(adios_query_create,ADIOS_QUERY_CREATE) (
     buf2 = futils_fstr_to_cstr (value, value_size);
     if (buf1 != 0 && buf2 != 0) {
         query = common_query_create( (ADIOS_FILE*) *fp, 
-                                     buf1, 
                                      (ADIOS_SELECTION*) *queryBoundary, 
+                                     buf1, 
                                      (enum ADIOS_PREDICATE_MODE) *op, 
                                      buf2);
         free (buf1);
@@ -81,17 +81,20 @@ int64_t FC_FUNC_(adios_query_estimate,ADIOS_QUERY_ESTIMATE) (int64_t * q, int * 
  
 void FC_FUNC_(adios_query_evaluate,ADIOS_QUERY_EVALUATE) (
         int64_t  * q, 
+        int64_t  * sel_outputboundary,
         int      * timestep, 
         uint64_t * batchsize, 
-        int64_t  * sel_outputboundary,
         int64_t  * sel_result,
         int      * err
         )
 {
     ADIOS_SELECTION * result;
     int ret;
-    *err = common_query_evaluate( (ADIOS_QUERY*)*q, *timestep, *batchsize, 
-                                 (ADIOS_SELECTION*) *sel_outputboundary, &result);
+    *err = common_query_evaluate( (ADIOS_QUERY*)*q, 
+                                  (ADIOS_SELECTION*) *sel_outputboundary,
+                                  *timestep, 
+                                  *batchsize, 
+                                  &result);
     if (!*err) {
         *sel_result = (int64_t)result;
     } else {

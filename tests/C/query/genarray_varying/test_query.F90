@@ -66,12 +66,12 @@ program test_query
         ! Create a 2D selection for the subset
         call adios_selection_boundingbox (boxsel, 2, offset, readsize)
 
-        call adios_query_create (fh, "xy", boxsel, ADIOS_GT, "1.0", q)
-        !call adios_query_create (fh, "xy", boxsel, ADIOS_GT, "1.0", q1)
-        !call adios_query_create (fh, "xy", boxsel, ADIOS_LT, "2.0", q2)
+        call adios_query_create (fh, boxsel, "xy", ADIOS_GT, "1.0", q)
+        !call adios_query_create (fh, boxsel, "xy", ADIOS_GT, "1.0", q1)
+        !call adios_query_create (fh, boxsel, "xy", ADIOS_LT, "2.0", q2)
         !call adios_query_combine (q1, ADIOS_QUERY_OP_AND, q2, q)
 
-        call adios_query_evaluate (q, ts, batchsize, boxsel, pointsel, ierr)
+        call adios_query_evaluate (q, boxsel, ts, batchsize, pointsel, ierr)
 
         write (*, '("Evaluate return value = ",i0)') ierr 
         write (*, '("Selection pointer of the result = ",i0)') pointsel

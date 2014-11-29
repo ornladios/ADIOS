@@ -391,8 +391,8 @@ int do_queries(int step)
 {
     // limit the query to the bounding box of this process
     ADIOS_SELECTION *boxsel = adios_selection_boundingbox (xyinfo->ndim, xy_offs, xy_ldims);
-    ADIOS_QUERY *q1 = adios_query_create (f, "xy", boxsel, ADIOS_GTEQ, minstr);
-    ADIOS_QUERY *q2 = adios_query_create (f, "xy", boxsel, ADIOS_LTEQ, maxstr);
+    ADIOS_QUERY *q1 = adios_query_create (f, boxsel, "xy", ADIOS_GTEQ, minstr);
+    ADIOS_QUERY *q2 = adios_query_create (f, boxsel, "xy", ADIOS_LTEQ, maxstr);
     ADIOS_QUERY* q = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
 
     // We can call this with unknown too, just testing the default behavior here
@@ -407,7 +407,7 @@ int do_queries(int step)
     // retrieve the whole query result at once
     int64_t batchSize = xyinfo->dims[0] * xyinfo->dims[1];
     print ("rank %d: set upper limit to number of hits = %lld\n", rank, batchSize); 
-    int hasMore =  adios_query_evaluate(q, 0, batchSize, boxsel, &xy_hitlist);
+    int hasMore =  adios_query_evaluate(q, boxsel, 0, batchSize, &xy_hitlist);
 
     // FIXME: How do we check for errors?
     // NULL is not error: if (!xy_hitlist)  print ("rank %d: Query failed. It returned a NULL list: %s\n", rank, adios_errmsg());

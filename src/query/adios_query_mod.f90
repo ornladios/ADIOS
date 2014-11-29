@@ -46,12 +46,12 @@ module adios_query_mod
 
 interface
 
-    subroutine adios_query_create (f, varname, sel, pred, value, q)
+    subroutine adios_query_create (f, sel, varname, pred, value, q)
         import :: ADIOS_QUERY
         implicit none
         integer*8,         intent(in)  :: f       ! ADIOS FILE (from adios_read_open())
-        character(*),      intent(in)  :: varname
         integer*8,         intent(in)  :: sel     ! ADIOS_SELECTION from read API
+        character(*),      intent(in)  :: varname
         integer,           intent(in)  :: pred    ! PREDICATE like ADIOS_GT
         character(*),      intent(in)  :: value   ! comparison value (integer or real)
         type(ADIOS_QUERY), intent(out) :: q       ! output variable, 0 on error
@@ -81,13 +81,13 @@ interface
         integer,           intent(in)  :: timestep ! must be 0 in case of streaming
     end function
 
-    subroutine adios_query_evaluate (q, timestep, batchsize, sel_outboundary, sel_result, err)
+    subroutine adios_query_evaluate (q, sel_outboundary, timestep, batchsize, sel_result, err)
         import :: ADIOS_QUERY
         implicit none
         type(ADIOS_QUERY), intent(in)  :: q           ! Query 
+        integer*8,         intent(in)  :: sel_outboundary  ! apply hits on this selection
         integer,           intent(in)  :: timestep    ! must be 0 in case of streaming
         integer*8,         intent(in)  :: batchsize   ! limit result size for one call
-        integer*8,         intent(in)  :: sel_outboundary  ! apply hits on this selection
         integer*8,         intent(out) :: sel_result  ! result selection (ADIOS point selection)
         integer,           intent(out) :: err         ! 0 on OK
     end subroutine
