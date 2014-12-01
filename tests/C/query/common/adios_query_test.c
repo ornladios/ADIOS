@@ -65,7 +65,7 @@ int performQuery(ADIOS_QUERY_TEST_INFO *queryInfo, ADIOS_FILE *f, int use_stream
 
         ADIOS_SELECTION* currBatch = NULL;
  
-	while (adios_query_evaluate(queryInfo->query, queryInfo->outputSelection, use_streaming ? 0 : timestep, queryInfo->outputSelection, &currBatch) >= 0) { 
+	while (adios_query_evaluate(queryInfo->query, queryInfo->outputSelection, use_streaming ? 0 : timestep, queryInfo->batchSize, &currBatch) >= 0) { 
 	    if (currBatch == NULL) {
 	        break;
 	    } 
@@ -83,18 +83,18 @@ int performQuery(ADIOS_QUERY_TEST_INFO *queryInfo, ADIOS_FILE *f, int use_stream
             adios_perform_reads(f, 1);
 
             fprintf(stderr,"Total data retrieved:%"PRIu64"\n", retrievedPts->npoints);
-            if (tempVar->type == adios_double) {
-                for (i = 0; i < retrievedPts->npoints; i++) {
-                    fprintf(stderr,"%.6f\t", ((double*)data)[i]);
-                }
-                fprintf(stderr,"\n");
-            }
-            else if (tempVar->type == adios_real) {
-                for (i = 0; i < retrievedPts->npoints; i++) {
-                    fprintf(stderr,"%.6f\t", ((float*)data)[i]);
-                }
-                fprintf(stderr,"\n");
-            }
+            /* if (tempVar->type == adios_double) { */
+            /*     for (i = 0; i < retrievedPts->npoints; i++) { */
+            /*         fprintf(stderr,"%.6f\t", ((double*)data)[i]); */
+            /*     } */
+            /*     fprintf(stderr,"\n"); */
+            /* } */
+            /* else if (tempVar->type == adios_real) { */
+            /*     for (i = 0; i < retrievedPts->npoints; i++) { */
+            /*         fprintf(stderr,"%.6f\t", ((float*)data)[i]); */
+            /*     } */
+            /*     fprintf(stderr,"\n"); */
+            /* } */
 
 
             free(data);
