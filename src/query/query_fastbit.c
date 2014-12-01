@@ -898,7 +898,7 @@ int64_t  applyIndexIfExists (ADIOS_QUERY* q, int timeStep)
 	  result= fastbit_selection_estimate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle);       
       } 
 
-      log_debug("idx evaluated with result=%ld\n", result);
+      log_debug("idx evaluated with result=%" PRId64 "\n", result);
       if (result > -1) {
 	q->onTimeStep = timeStep;
 	q->maxResultsDesired = 0;
@@ -992,7 +992,7 @@ int64_t call_fastbit_evaluate(ADIOS_QUERY* q, int timeStep, uint64_t _maxResult)
 {
   create_fastbit_internal(q);
   
-  log_debug("raw data size = %ld, %s\n", q->rawDataSize, q->condition);
+  log_debug("raw data size = %" PRId64 ", %s\n", q->rawDataSize, q->condition);
     
   int64_t estimate = applyIndexIfExists(q, timeStep);
   if (estimate < 0) {   // use no idx
@@ -1062,7 +1062,7 @@ void fillUp(int dimSize, uint64_t* spatialCoordinates, uint64_t i, uint64_t* poi
 
     if (fortran_order == 1) {
       pointArray[idx] = spatialCoordinates[dimSize-1-k];
-      printf(" points[%d] = %lld dimSize=%d k=%d sp=%lld", idx, pointArray[idx], dimSize, k, spatialCoordinates[k]); 
+      printf(" points[%lld] = %lld dimSize=%d k=%d sp=%lld", idx, pointArray[idx], dimSize, k, spatialCoordinates[k]); 
     } else {
       pointArray[idx] = spatialCoordinates[k];
     }

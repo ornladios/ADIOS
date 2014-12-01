@@ -349,7 +349,7 @@ int fastbit_adios_util_readNoBMSFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO
   sprintf(keyVarName, "key-%d-%d-%d", v->varid, timestep, blockNum);
   sprintf(offsetName, "offset-%d-%d-%d", v->varid, timestep, blockNum);
 
-  log_debug("reading from index file: %s for variables: %s %s %s \n", idxFile->path, bmsVarName, keyVarName, offsetName);
+  log_debug("reading from index file: %s for variables: %s %s %s \n", idxFile->path, *bmsVarName, keyVarName, offsetName);
 
   ADIOS_VARINFO * keyV = common_read_inq_var (idxFile, keyVarName);
   ADIOS_VARINFO * offsetV = common_read_inq_var (idxFile, offsetName);
