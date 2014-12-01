@@ -38,6 +38,10 @@ typedef struct{
 
 #define FreeALACBITMAP(b) { FREE(b->bits); FREE(b) }
 
+
+#define MAX_DIMS 32
+
+
 /**** Funcs. that are internal funcs. ********/
 
 uint64_t * convertALACBitmapTomemstream( ADIOS_ALAC_BITMAP * b);
@@ -58,16 +62,18 @@ void initLastConvRid (ADIOS_ALAC_BITMAP *b);
 
 bool isLastConvRidInit(const ADIOS_ALAC_BITMAP *b);
 
-int coordinateConversionWithCheck(uint64_t * coordinates, const  int dim
+static inline  int coordinateConversionWithCheck(uint64_t * coordinates, const  int dim
 		, const  uint64_t *srcstart, const  uint64_t *deststart, const  uint64_t *destend);
 
-bool ridConversionWithCheck(rid_t rid/*relative to local src selectoin*/
+static inline bool ridConversionWithCheck(rid_t rid/*relative to local src selectoin*/
 		, uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount,
-		int dim, rid_t *relativeRid  );
+		int dim, rid_t *relativeRid , int Corder );
 
-rid_t ridConversionWithoutCheck(rid_t rid/*relative to local src selectoin*/,
+static rid_t ridConversionWithoutCheck(rid_t rid/*relative to local src selectoin*/,
 		uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount,
-		int dim);
+		int dim, int Corder);
+
+static inline void ridToCoordinates(const int dim, const int Corder, const rid_t rid, const uint64_t * const dimSize , uint64_t * const coordinates /*OUT*/);
 
 void create_lookup(unsigned char set_bit_count[],
 		unsigned char set_bit_position[][16]);
@@ -95,22 +101,15 @@ void readLowOrderBytes(int blockId, uint64_t offsetSize /*in bytes*/
 
 void resolveQueryBoundary(ADIOS_QUERY *adiosQuery, double *hb, double *lb);
 
-void setRidToBits(bool isPGCovered ,uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount,
+static inline void setRidToBits(bool isPGCovered ,uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount,
 		int ndim, rid_t * idx, uint64_t totalRids,
-		ADIOS_ALAC_BITMAP *alacResultBitmap /*IN&OUT*/);
-
-
-void adios_query_alac_retrieval_points2d( ADIOS_ALAC_BITMAP *b, uint64_t retrieval_size
-		, ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb , uint64_t *points /*OUT*/ );
-
-void adios_query_alac_retrieval_points3d( ADIOS_ALAC_BITMAP *b, uint64_t retrieval_size
-		, ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb , uint64_t *points /*OUT*/ );
+		ADIOS_ALAC_BITMAP *alacResultBitmap /*IN&OUT*/, int Corder);
 
 
 void proc_write_block(int blockId, bool isPGCovered, ADIOS_VARTRANSFORM *ti, ADIOS_QUERY * adiosQuery, int startStep, bool estimate
 		, ALUnivariateQuery * alacQuery , double lb , double hb
 		,uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount
-		, ADIOS_ALAC_BITMAP * alacResultBitmap /*OUT*/ );
+		, ADIOS_ALAC_BITMAP * alacResultBitmap /*OUT*/ , int Corder);
 
 
 inline void setBitsinBitMap(rid_t rid, ADIOS_ALAC_BITMAP * alacResultBitmap){
@@ -287,7 +286,7 @@ ADIOS_ALAC_BITMAP * adios_alac_bitsOp(ADIOS_ALAC_BITMAP * op1,
 }
 
 
-int coordinateConversionWithCheck(uint64_t * coordinates, const  int dim, const  uint64_t *srcstart, const  uint64_t *deststart, const  uint64_t *destend){
+static inline int coordinateConversionWithCheck(uint64_t * coordinates, const  int dim, const  uint64_t *srcstart, const  uint64_t *deststart, const  uint64_t *destend){
 
 	int i = 0;
 	for (i = 0; i < dim; i++) {
@@ -310,180 +309,95 @@ int coordinateConversionWithCheck(uint64_t * coordinates, const  int dim, const 
  * Assume all the start & count array has slowest dimension at first position
  * NOTE: some redundant codes are for performance sake
  */
-bool ridConversionWithCheck(rid_t rid/*relative to local src selectoin*/, uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount,
-		int dim, rid_t *relativeRid  ){
+static inline bool ridConversionWithCheck(rid_t rid/*relative to local src selectoin*/, uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount,
+		int dim, rid_t *relativeRid , int Corder ){
 
 	int i = 0;
-	*relativeRid = 0;
+	uint64_t coordinates[MAX_DIMS];
+	uint64_t destend[MAX_DIMS];
 
-	if (dim == 3) {
-		uint64_t coordinates[3]= {0}, destend[3]={0};
-		destend[0] = deststart[0] + destcount[0] -1 ;
-		destend[1] = deststart[1] + destcount[1] -1 ;
-		destend[2] = deststart[2] + destcount[2] -1 ;
-
-		coordinates[0] = rid / (srccount[1] * srccount[2]) ;
-		coordinates[1] = (rid % (srccount[1] * srccount[2])) / srccount[2];
-		coordinates[2] = (rid % (srccount[1] * srccount[2])) % srccount[2] ;
-
-		coordinates[0] += (srcstart[0] /*global coordinate*/ );
-		if ( coordinates[0] < deststart[0] || coordinates[0] > destend[0])
-			return false;
-
-		coordinates[1] += (srcstart[1] /*global coordinate*/ );
-		if ( coordinates[1] < deststart[1] || coordinates[1] > destend[1])
-			return false;
-
-		coordinates[2] += (srcstart[2] /*global coordinate*/ );
-		if ( coordinates[2] < deststart[2] || coordinates[2] > destend[2])
-			return false;
-
-		/*change coordinate to the destination box*/
-		coordinates[0] -=  deststart[0];
-		coordinates[1] -=  deststart[1];
-		coordinates[2] -=  deststart[2];
-		*relativeRid = coordinates[2] + coordinates[1] * destcount[2] + coordinates[0]* destcount[1] * destcount[2];
-
-	}else if (dim == 2){
-		uint64_t coordinates[2]= {0}, destend[2]={0};
-		destend[0] = deststart[0] + destcount[0] -1 ;
-		destend[1] = deststart[1] + destcount[1] -1 ;
-
-		coordinates[0] = rid / (srccount[1]);
-		coordinates[1] = rid % (srccount[1] );
-
-		coordinates[0] += (srcstart[0] /*global coordinate*/ );
-		if ( coordinates[0] < deststart[0] || coordinates[0] > destend[0])
-			return false;
-
-		coordinates[1] += (srcstart[1] /*global coordinate*/ );
-		if ( coordinates[1] < deststart[1] || coordinates[1] > destend[1])
-			return false;
-
-		/*change coordinate to the destination box*/
-		coordinates[0] -=  deststart[0];
-		coordinates[1] -=  deststart[1];
-		*relativeRid = coordinates[1] + coordinates[0] * destcount[1] ;
-
-	}else if (dim == 1){
-		uint64_t coordinates, destend;
-		destend = deststart[0] + destcount[0] -1 ;
-		coordinates =  rid + srcstart[0]; /*global coordinate*/
-		if (coordinates < deststart[0] || coordinates > destend ){
-			return false;
-		}
-		*relativeRid = coordinates - deststart[0];
-
-	}else if (dim >= 4){
-		uint64_t * coordinates = (uint64_t *) malloc(sizeof(uint64_t) * dim);
-		uint64_t * destend = (uint64_t *) malloc(sizeof(uint64_t) * dim);
-		for(i=0; i < dim ; i ++){
-			destend[i] = deststart[i] + destcount[i] -1;
-		}
-
-		//calculate coordinates
-		int j = 0, k;
-		uint64_t tmpSize = 1;
-		rid_t remain = rid;
-		while ( j < dim){ // j is the dimension to been set
-			k = j + 1;
-			tmpSize = 1;
-			while ( k < dim){
-				tmpSize *= srccount[k];
-				k++;
-			}
-			coordinates[j] = remain / tmpSize ;
-			remain = remain  %  tmpSize;
-			j ++;
-		}
-
-		if (coordinateConversionWithCheck(coordinates, dim, srcstart, deststart, destend)< 0 ){
-			return false;
-		}
-
-		*relativeRid = 0;
-		for (i = 0; i < dim; i ++){
-			tmpSize = coordinates[i];
-			for ( j = i + 1; j < dim ; j ++ ){
-				tmpSize = tmpSize * destcount[j];
-			}
-			*relativeRid = *relativeRid + tmpSize;
-		}
-
-		free(coordinates);
-		free(destend);
+	for(i=0; i < dim ; i ++){
+		destend[i] = deststart[i] + destcount[i] -1;
 	}
 
+	ridToCoordinates(dim, Corder, rid, srccount, coordinates);
+
+	if (coordinateConversionWithCheck(coordinates, dim, srcstart, deststart, destend)< 0 ){
+			return false;
+	}
+
+
+	*relativeRid = 0;
+	if (Corder) {
+		for (i = 0; i < dim; i++){
+			(*relativeRid) *= destcount[i];
+			(*relativeRid) += coordinates[i];
+		}
+	} else {
+		for (i = dim-1; i >= 0; i--){
+			(*relativeRid) *= destcount[i];
+			(*relativeRid) += coordinates[i];
+		}
+	}
 	return true;
 }
 
-void ridToCoordinates(int dim, rid_t rid,  uint64_t * dimSize , uint64_t * coordinates /*OUT*/ ){
-	int j = 0, k;
-	uint64_t tmpSize = 1;
+
+/*
+ * TODO:
+ * handle with c-order and fortran order
+ */
+static inline void ridToCoordinates(const int dim, const int Corder, const rid_t rid, const uint64_t * const dimSize , uint64_t * const coordinates /*OUT*/) {
+	int i;
 	rid_t remain = rid;
-	while ( j < dim){ // j is the dimension to been set
-		k = j + 1;
-		tmpSize = 1;
-		while ( k < dim){
-			tmpSize *= dimSize[k];
-			k++;
+	if (Corder) {	// c-order
+		for (i = dim - 1; i >= 0; i--) {
+			coordinates[i] = remain % dimSize[i];
+			remain /= dimSize[i];
 		}
-		coordinates[j] = remain / tmpSize ;
-		remain = remain  %  tmpSize;
-		j ++;
+	} else { //f-order
+		for (i = 0; i < dim; i++) {
+			coordinates[i] = remain % dimSize[i];
+			remain /= dimSize[i];
+		}
 	}
 }
 
-rid_t ridConversionWithoutCheck(rid_t rid/*relative to local src selectoin*/,
+/*
+ * Corder: 1 => c-order , 0=> fortran-order
+		count={2,5, 7}
+		coord= {1,3,4}
+		c-order :    1 * 5 * 7 + 3 * 7 + 4 = 35 + 21 + 4 =
+		expected RID: 4 + 3*7 + 1*35 = 4 + 21 + 35 = 60
+		relativeRID = 0	(0)
+		relativeRID *= 2	(0)
+		relativeRID += 1	(1)
+		relativeRID *= 5	(5)
+		relativeRID += 3	(8)
+		relativeRID *= 7	(56)
+		relativeRID += 4	(60)
+
+	( (0*2 + 1 ) *5 + 3 )* 7 + 4 = 1*5*7 + 3*7 + 4
+ */
+
+static inline rid_t ridConversionWithoutCheck(rid_t rid/*relative to local src selectoin*/,
 		uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount,
-		int dim){
+		int dim, int Corder){
 
+	int i;
+	uint64_t coordinates[MAX_DIMS];
+	rid_t remain = rid;
 	uint64_t relativeRid = 0;
-
-	if ( dim == 3 ) {
-		int coordinates[3];
-		coordinates[0] = rid / (srccount[1] * srccount[2]);
-		coordinates[1] = (rid % (srccount[1] * srccount[2])) / srccount[2];
-		coordinates[2] = (rid % (srccount[1] * srccount[2])) % srccount[2] ;
-
-		coordinates[0] += (srcstart[0] - deststart[0] /*global coordinate*/ );
-		coordinates[1] += (srcstart[1] - deststart[1] /*global coordinate*/ );
-		coordinates[2] += (srcstart[2] - deststart[2] /*global coordinate*/ );
-
-		relativeRid = coordinates[2] + coordinates[1] * destcount[2] + coordinates[0]* destcount[1] * destcount[2];
-	}else if (dim == 2){
-		int coordinates[2];
-		coordinates[0] = rid / (srccount[1]);
-		coordinates[1] = rid % (srccount[1] );
-
-		coordinates[0] += (srcstart[0] - deststart[0] /*global coordinate*/ );
-		coordinates[1] += (srcstart[1] - deststart[1] /*global coordinate*/ );
-
-		relativeRid = coordinates[1] + coordinates[0] * destcount[1] ;
-	}else if ( dim == 1) {
-		relativeRid = rid + srcstart[0] - deststart[0];  // rid + srcstart[0] -> global rid ( - deststart[0] ) -> relativeRid
-	}else if (dim >= 4){
-
-		uint64_t * coordinates = (uint64_t *) malloc(sizeof(uint64_t) * dim);
-		int i = 0;
-		//calculate coordinates
-		ridToCoordinates(dim, rid, srccount, coordinates);
-
-		for(i = 0; i < dim ; i ++){
-			coordinates[i] += (srcstart[i] - deststart[i]);
+	if (Corder) {
+		for (i = 0; i < dim; i++){
+			relativeRid *= destcount[i];
+			relativeRid += coordinates[i];
 		}
-		int j = 0;
-		uint64_t tmpSize = 1;
-		relativeRid = 0;
-		for (i = 0; i < dim; i ++){
-			tmpSize = coordinates[i];
-			for ( j = i + 1; j < dim ; j ++ ){
-				tmpSize = tmpSize * destcount[j];
-			}
-			relativeRid = relativeRid + tmpSize;
+	} else {
+		for (i = dim-1; i >= 0; i--){
+			relativeRid *= destcount[i];
+			relativeRid += coordinates[i];
 		}
-
-		free(coordinates);
 	}
 
 	return relativeRid;
@@ -497,7 +411,7 @@ rid_t ridConversionWithoutCheck(rid_t rid/*relative to local src selectoin*/,
 		for(el= 0; el < totalElm; el ++){              \
 			if ((code)){                               \
 				rid = decodeRids[el];                  \
-				if (ridConversionWithCheck(rid, srcstart,srccount, deststart,destcount, dim, &newRid)){  \
+				if (ridConversionWithCheck(rid, srcstart,srccount, deststart,destcount, dim, &newRid, Corder)){  \
 					setBitsinBitMap(newRid, alacResultBitmap);       \
 					alacResultBitmap->numSetBits ++;   \
 				}                                      \
@@ -509,13 +423,13 @@ rid_t ridConversionWithoutCheck(rid_t rid/*relative to local src selectoin*/,
 
 /*
  * NOTE : relies on  a lots of variables:
- * isPGCovered, el, srcstart, srcount, deststart, destcount, ndim, newRid, totalElm, op
+ * isPGCovered, el, srcstart, srcount, deststart, destcount, ndim, newRid, totalElm, op, Corder
  */
 #define CHECK_NODECODE_ELEMENT(code) {                         \
 		if (isPGCovered){                             \
 			for(el= 0; el < totalElm; el ++){         \
 				if (code) {                           \
-					newRid = ridConversionWithoutCheck(el, srcstart,srccount, deststart,destcount, ndim);   \
+					newRid = ridConversionWithoutCheck(el, srcstart,srccount, deststart,destcount, ndim,Corder);   \
 					setBitsinBitMap(newRid, alacResultBitmap);    \
 					alacResultBitmap->numSetBits ++;              \
 				}                                                 \
@@ -523,7 +437,7 @@ rid_t ridConversionWithoutCheck(rid_t rid/*relative to local src selectoin*/,
 		}else {                                                   \
 			for(el= 0; el < totalElm; el ++){                     \
 				if (code) {                                       \
-					if (ridConversionWithCheck(el,	srcstart,srccount, deststart,destcount, ndim, &newRid)){  \
+					if (ridConversionWithCheck(el,	srcstart,srccount, deststart,destcount, ndim, &newRid,Corder)){  \
 						setBitsinBitMap(newRid, alacResultBitmap); \
 						alacResultBitmap->numSetBits ++;           \
 					}                                              \
@@ -561,46 +475,6 @@ rid_t ridConversionWithoutCheck(rid_t rid/*relative to local src selectoin*/,
 	}                                                    \
 }
 
-/*
- * TODO : GOT compile errors using following codes
- */
-/*#define GENERIC_DATA_CONV(data, FUNC)  {                                             \
-	switch(dataType){                                                                \
-		case adios_unsigned_byte:                                                    \
-			CHECK_GENERIC_DATA((unsigned char  *)data, (FUNC) );           \
-			break;                                                                   \
-		case adios_byte:                                                             \
-			CHECK_GENERIC_DATA((signed char  *)data, (FUNC) );             \
-			break;                                                                   \
-		case adios_string:                                                           \
-			CHECK_GENERIC_DATA((char *)data, (FUNC) );                   \
-			break;                                                                   \
-		case adios_unsigned_short:                                                   \
-			CHECK_GENERIC_DATA((unsigned short  *)data, (FUNC) );          \
-			break;                                                                   \
-		case adios_short:                                                            \
-			CHECK_GENERIC_DATA((signed short  *)data, (FUNC) );            \
-			break;                                                                   \
-		case adios_unsigned_integer:                                                 \
-			CHECK_GENERIC_DATA((unsigned int *)data, (FUNC) );            \
-			break;                                                                   \
-		case adios_integer:                                                          \
-			CHECK_GENERIC_DATA((signed int *)data, (FUNC) );              \
-			break;                                                                   \
-		case adios_unsigned_long:                                                    \
-			CHECK_GENERIC_DATA((unsigned long long  *)data, (FUNC) );       \
-			break;                                                                   \
-		case adios_long:                                                             \
-			CHECK_GENERIC_DATA((signed long long  *)data, (FUNC) );         \
-			break;                                                                   \
-		case adios_real:                                                             \
-			CHECK_GENERIC_DATA((float *)data, (FUNC) );                  \
-			break;                                                                   \
-		case adios_double:                                                           \
-			CHECK_GENERIC_DATA((double *)data, (FUNC) );                 \
-			break;                                                                   \
-	}                                                                                \
-}*/
 
 
 /*
@@ -617,7 +491,7 @@ int adios_alac_check_candidate(ALMetadata *partitionMeta, bin_id_t startBin, bin
 		, ADIOS_QUERY * adiosQuery , const char *inputCurPtr /*index bytes of entire PG*/
 		, bool decoded  /*true: need decoding */ , char * lowOrderBytes /*low order bytes of from startBin to endBin*/
 		, enum ADIOS_DATATYPES dataType
-		,ADIOS_ALAC_BITMAP * alacResultBitmap /*OUT*/){
+		,ADIOS_ALAC_BITMAP * alacResultBitmap /*OUT*/, int Corder){
 	const ALBinLayout * bl = &(partitionMeta->binLayout);
 	/*assert(adiosQuery->_sel->type == ADIOS_SELECTION_BOUNDINGBOX);
 	const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(adiosQuery->_sel->u.bb);
@@ -694,7 +568,7 @@ int adios_alac_check_candidate(ALMetadata *partitionMeta, bin_id_t startBin, bin
  */
 int literallyCheckData(void *data, uint64_t totalElm , enum ADIOS_DATATYPES dataType, ADIOS_QUERY * adiosQuery, double hb, double lb
 		, uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount, int ndim, bool isPGCovered
-		,ADIOS_ALAC_BITMAP * alacResultBitmap /*OUT*/){
+		,ADIOS_ALAC_BITMAP * alacResultBitmap /*OUT*/,int Corder){
 	uint32_t newRid ;
 	uint64_t el = 0;
 	enum ADIOS_PREDICATE_MODE op = adiosQuery->predicateOp;
@@ -745,13 +619,13 @@ int literallyCheckData(void *data, uint64_t totalElm , enum ADIOS_DATATYPES data
 void setRidToBits(bool isPGCovered
 		,uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount,
 		int ndim, rid_t * idx, uint64_t totalRids,
-		ADIOS_ALAC_BITMAP *alacResultBitmap /*IN&OUT*/){
+		ADIOS_ALAC_BITMAP *alacResultBitmap /*IN&OUT*/, int Corder){
 	uint32_t newRid ;
 	if (isPGCovered){ // if PG is fully covered by the user bounding box, we dont need to check the new location(position) of converted point
 		uint64_t ni;
 		for ( ni = 0; ni < totalRids; ni++) {
 			rid_t rid_val = idx[ni];
-			newRid = ridConversionWithoutCheck(rid_val, srcstart,srccount, deststart,destcount, ndim);
+			newRid = ridConversionWithoutCheck(rid_val, srcstart,srccount, deststart,destcount, ndim, Corder);
 #ifdef RIDBUG
 			printf("%"PRIu32"->%"PRIu32",", rid_val, newRid);
 #endif
@@ -762,7 +636,7 @@ void setRidToBits(bool isPGCovered
 		uint64_t ni;
 		for ( ni = 0; ni < totalRids; ni++) {
 			rid_t rid_val = idx[ni];
-			if (ridConversionWithCheck(rid_val,	srcstart,srccount, deststart,destcount, ndim, &newRid)){
+			if (ridConversionWithCheck(rid_val,	srcstart,srccount, deststart,destcount, ndim, &newRid, Corder)){
 #ifdef RIDBUG
 			printf("%"PRIu32"->%"PRIu32",", rid_val, newRid);
 #endif
@@ -830,7 +704,7 @@ char * readIndexAmongBins(ALMetadata *partitionMeta, bin_id_t low_bin , bin_id_t
 void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, ADIOS_VARTRANSFORM *ti, ADIOS_QUERY * adiosQuery, int startStep, bool estimate
 		, ALUnivariateQuery * alacQuery , double lb , double hb
 		,uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount
-		, ADIOS_ALAC_BITMAP * alacResultBitmap /*OUT*/ ){
+		, ADIOS_ALAC_BITMAP * alacResultBitmap /*OUT*/ , int Corder){
 
 #ifdef RIDBUG
 	printf("PG [%d], RIDs relative to PG converted to RIDs relative to output BoundingBox: ", gBlockId);
@@ -884,7 +758,7 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 
 			if (estimate) {
 				setRidToBits(isPGCovered, srcstart, srccount, deststart, destcount, ndim
-						, (rid_t *)index, resultCount, alacResultBitmap);
+						, (rid_t *)index, resultCount, alacResultBitmap,Corder);
 
 			} else {
 				uint64_t lowByteStartPos2 = alac_metadata->lob_offset;
@@ -901,12 +775,12 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 					adios_alac_check_candidate(&partitionMeta, low_bin, low_bin+1 , hb, lb
 							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , (char*) decodedRid /*index bytes of entire PG*/
 							, false  /*don't need decoding*/ , lowOrderPtr2, varInfo->type
-							,alacResultBitmap /*OUT*/);
+							,alacResultBitmap /*OUT*/,Corder);
 					decodedRid += lowBinElm;
 
 					uint64_t innerElm = resultCount- lowBinElm - hiBinElm;
 					setRidToBits(isPGCovered, srcstart, srccount, deststart, destcount, ndim
-												, decodedRid, innerElm, alacResultBitmap);
+												, decodedRid, innerElm, alacResultBitmap,Corder);
 					decodedRid  +=  innerElm;
 
 					lowOrderPtr2 += (( bl->binStartOffsets[hi_bin-1] - bl->binStartOffsets[low_bin]) * insigbytes);
@@ -914,13 +788,13 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 					adios_alac_check_candidate(&partitionMeta, hi_bin-1, hi_bin , hb, lb
 							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , (char *)decodedRid
 							, false , lowOrderPtr2, varInfo->type
-							,alacResultBitmap /*OUT*/);
+							,alacResultBitmap /*OUT*/,Corder);
 
 				} else { // for 1 or 2 bins touched, we need to check all RIDs
 					adios_alac_check_candidate(&partitionMeta, low_bin, hi_bin  , hb, lb
 							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , (char*)decodedRid
 							, false , lowOrderPtr2, varInfo->type
-							,alacResultBitmap /*OUT*/);
+							,alacResultBitmap /*OUT*/,Corder);
 				}
 
 				FREE(lowOrderBytes2);
@@ -959,7 +833,7 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 					adios_alac_check_candidate(&partitionMeta, low_bin, low_bin+1 , hb, lb
 							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery  , inputCurPtr /*index bytes of entire PG*/
 							, true  /*need decoding*/ , lowOrderPtr /*it points to the start of `low_bin` */, varInfo->type
-							,alacResultBitmap /*OUT*/);
+							,alacResultBitmap /*OUT*/,Corder);
 					inputCurPtr += binCompressedLen;
 
 					bin_id_t innerlowBin = low_bin + 1;
@@ -985,7 +859,7 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 					adios_alac_check_candidate(&partitionMeta, hi_bin-1, hi_bin , hb, lb
 							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , inputCurPtr /*index bytes of entire PG*/
 							, true  /*need decoding*/ , lowOrderPtr /*low order bytes of entire PG*/, varInfo->type
-							,alacResultBitmap /*OUT*/);
+							,alacResultBitmap /*OUT*/,Corder);
 					inputCurPtr += binCompressedLen;
 
 				} else { // for 1 or 2 bins touched, we need to check all RIDs
@@ -993,7 +867,7 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 					adios_alac_check_candidate(&partitionMeta, low_bin, hi_bin , hb, lb
 							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , inputCurPtr /*index bytes of entire PG*/
 							, true , lowOrderPtr, varInfo->type
-							,alacResultBitmap /*OUT*/);
+							,alacResultBitmap /*OUT*/,Corder);
 				}
 
 				FREE(lowOrderBytes);
@@ -1054,6 +928,8 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 		}
 	}
 
+	/*TODO: */ int Corder = 1;  /*1: C order; 0: fortran order*/
+
 	/*********** doQuery ***************
 	 *
 	 * 1. Open partition  [locate offsets of meta, data, and index for the partition]
@@ -1066,15 +942,14 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	uint64_t * srcstart;  	uint64_t * srccount; // PG's bounding box is the global bounding box
 	int ndim = varInfo->ndim;
 
-        if (adiosQuery->sel == NULL) {
-                static uint64_t ZERO[32] = { 0 };
+    if (adiosQuery->sel == NULL) {
+         static uint64_t ZERO[32] = { 0 };
+		 destcount = varInfo->dims;   deststart = ZERO;
 
-		destcount = varInfo->dims;   deststart = ZERO;
-
-                if (varInfo->blockinfo == NULL) {
-		    adios_read_set_data_view(adiosQuery->file, LOGICAL_DATA_VIEW);
-                    common_read_inq_var_blockinfo(adiosQuery->file, varInfo);
-                }
+         if (varInfo->blockinfo == NULL) {
+        	 adios_read_set_data_view(adiosQuery->file, LOGICAL_DATA_VIEW);
+             common_read_inq_var_blockinfo(adiosQuery->file, varInfo);
+         }
 
 		adios_read_set_data_view(adiosQuery->file, PHYSICAL_DATA_VIEW);
 		ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->file, varInfo);
@@ -1082,12 +957,12 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 		int totalPG = varInfo->nblocks[timeStep];
 		int blockId, j;
 
-                // global block id
-                int startBlkId = 0;
-                int blkIter;
-                for (blkIter = 0; blkIter < timeStep; blkIter++) {
-                    startBlkId += varInfo->nblocks[blkIter]; 
-                }
+		// global block id
+		int startBlkId = 0;
+		int blkIter;
+		for (blkIter = 0; blkIter < timeStep; blkIter++) {
+			startBlkId += varInfo->nblocks[blkIter];
+		}
 
 		for (j = startBlkId; j < startBlkId + totalPG; j++) {
 			// false: PG selection box is intersecting with variable's selection box
@@ -1100,7 +975,7 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 
 			if (ti->transform_type == adios_get_transform_type_by_uid("ncsu-alacrity")) {
 				proc_write_block(j,isPGCovered,ti, adiosQuery,startStep,estimate,&alacQuery,lb,hb
-						,srcstart, srccount, deststart, destcount,alacResultBitmap	);
+						,srcstart, srccount, deststart, destcount,alacResultBitmap	,Corder);
 			}else {
 				char * blockData  = NULL;
 				uint64_t totalElm = 1;
@@ -1111,11 +986,12 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 				readBlockData(j, adiosQuery, startStep, varInfo,totalElm, (void**)&blockData );
 				literallyCheckData(blockData, totalElm, varInfo->type,adiosQuery,hb, lb
 						, srcstart, srccount, deststart, destcount, ndim, isPGCovered
-						, alacResultBitmap);
+						, alacResultBitmap,Corder);
 			}
 		}
-	}
-        else if (adiosQuery->sel->type == ADIOS_SELECTION_BOUNDINGBOX) {
+
+	}else if (adiosQuery->sel->type == ADIOS_SELECTION_BOUNDINGBOX) {
+
 		const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(adiosQuery->sel->u.bb);
 		destcount = bb->count;   deststart = bb->start;
 #ifdef RIDBUG
@@ -1144,7 +1020,7 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 			// false: PG selection box is intersecting with variable's selection box
 			// true : PG selection box is fully contained within variable's selection box
 			bool isPGCovered = false;
-			ADIOS_SELECTION * pgSelBox = pg.pg_bounds_sel;
+			const ADIOS_SELECTION * pgSelBox = pg.pg_bounds_sel;
 			assert(pgSelBox->type == ADIOS_SELECTION_BOUNDINGBOX );
 			assert(pgSelBox->type == interSelBox->type );
 			const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *pgBB = &(pgSelBox->u.bb);
@@ -1156,7 +1032,7 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 			// blockId = pg.blockidx; // pg.blockidx is relative block id           //	blockId = pg.blockidx_in_timestep ;
 			if (ti->transform_type == adios_get_transform_type_by_uid("ncsu-alacrity")) {
 				proc_write_block(pg.blockidx,isPGCovered,ti, adiosQuery,startStep,estimate,&alacQuery,lb,hb
-						,srcstart, srccount, deststart, destcount,alacResultBitmap	);
+						,srcstart, srccount, deststart, destcount,alacResultBitmap,Corder	);
 			}else {
 				char * blockData  = NULL;
 				uint64_t totalElm = 1;
@@ -1167,12 +1043,13 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 				readBlockData(pg.blockidx, adiosQuery, startStep, varInfo,totalElm, (void**)&blockData );
 				literallyCheckData(blockData, totalElm, varInfo->type,adiosQuery,hb, lb
 						, srcstart, srccount, deststart, destcount, ndim, isPGCovered
-						, alacResultBitmap);
+						, alacResultBitmap,Corder);
 			}
 		}
 		adios_free_pg_intersections(&intersectedPGs);
-	}
-	else if (adiosQuery->sel->type == ADIOS_SELECTION_WRITEBLOCK){
+
+	} else if (adiosQuery->sel->type == ADIOS_SELECTION_WRITEBLOCK){
+
 		const ADIOS_SELECTION_WRITEBLOCK_STRUCT *writeBlock = &(adiosQuery->sel->u.block);
 		int blockId= writeBlock->index; //relative block id
 		int globalBlockId = query_utils_getGlobalWriteBlockId(blockId, startStep, varInfo);
@@ -1187,13 +1064,13 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 			adios_read_set_data_view(adiosQuery->file, PHYSICAL_DATA_VIEW); // switch to the transform view,
 			ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->file, varInfo); // this func. will fill the blockinfo field
 			proc_write_block(globalBlockId,isPGCovered,ti, adiosQuery,startStep,estimate,&alacQuery,lb,hb
-					,srcstart, srccount, deststart, destcount,alacResultBitmap	);
+					,srcstart, srccount, deststart, destcount,alacResultBitmap,Corder	);
 		}else {
 			char * blockData  = NULL;
 			readBlockData(globalBlockId, adiosQuery, startStep, varInfo,adiosQuery->rawDataSize, (void**) &blockData );
 			literallyCheckData(blockData, adiosQuery->rawDataSize,  varInfo->type,adiosQuery,hb, lb
 					, srcstart, srccount, deststart, destcount, ndim, isPGCovered
-					, alacResultBitmap);
+					, alacResultBitmap,Corder);
 		}
 
 	} else if (adiosQuery->sel->type == ADIOS_SELECTION_POINTS){
@@ -1280,13 +1157,9 @@ ADIOS_ALAC_BITMAP * adios_alac_process(ADIOS_QUERY* q, int timestep,
 
 //void adios_query_alac_init() {} // not used
 
-
-
-void adios_query_alac_retrieval_points1d(
-		ADIOS_ALAC_BITMAP *b, uint64_t retrieval_size
-		, ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb
-		, uint64_t *points /*OUT*/ ){
-
+void adios_query_alac_retrieval_pointsNd( ADIOS_ALAC_BITMAP *b, uint64_t retrieval_size
+		, ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb , uint64_t *points /*OUT*/, int Corder ){
+	int d = 0, td;
 	uint64_t start_pos = 0;
 	if (!isLastConvRidInit(b))
 		start_pos =	b->lastConvRid  / 64;
@@ -1294,53 +1167,7 @@ void adios_query_alac_retrieval_points1d(
 	uint64_t * p_bitmap = b->bits;
 	uint64_t pidx = 0, off = start_pos, retrieveCount = 0;
 	uint64_t reconstct_rid;
-	while (off < b->length ){
-		uint16_t * temp = (uint16_t *) &(p_bitmap[off]); // 2 bytes (unsigned short int)  = 16 bits
-		uint64_t offset_long_int = off * 64; // original index offset ; // 4 bytes (unsigned long int )= 64 bit
-		uint64_t offset;
-		int j , m;
-		for (j = 0; j < 4; j++) {
-			offset = offset_long_int + j * 16; // here, 16 is used because temp is 16bits (unsigned short int) pointer
-			// set_bit_count for each 2 bytes, the number of 1
-			/*
-			 * *******|               64 bits                 | => final_result_bitmap []
-			 * *******| 16 bits | 16 bits | 16 bits | 16 bits | => temp[]
-			 */
-			for (m = 0; m < set_bit_count[temp[j]]  ; m++) {
-				reconstct_rid = offset+ set_bit_position[temp[j]][m];
-				if (!isLastConvRidInit(b)) {
-					if (reconstct_rid > b->lastConvRid) { // skip the RIDs in the 16-bits part
-						points[pidx++] = bb->start[0] + reconstct_rid ;
-						retrieveCount++;
-					}
-				}else { // lastConvRid == realElmSize+1 represents the initial state
-					// in which the RID recovering has not started yet
-					points[pidx++] = bb->start[0] + reconstct_rid ;
-					retrieveCount++;
-				}
-
-				if (retrieveCount == retrieval_size){
-					b->lastConvRid = reconstct_rid; 					 // updated the status
-					return ;
-				}
-			}
-		}
-		off ++;
-	}
-}
-
-void adios_query_alac_retrieval_points2d(
-		ADIOS_ALAC_BITMAP *b, uint64_t retrieval_size
-		, ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb
-		, uint64_t *points /*OUT*/ ){
-
-	uint64_t start_pos = 0;
-	if (!isLastConvRidInit(b))
-		start_pos =	b->lastConvRid  / 64;
-
-	uint64_t * p_bitmap = b->bits;
-	uint64_t pidx = 0, off = start_pos, retrieveCount = 0;
-	uint64_t reconstct_rid;
+	uint64_t coordinates[MAX_DIMS];
 #ifdef RIDBUG
 	printf("reconstrcuted RID relative to timestep : ");
 #endif
@@ -1356,6 +1183,7 @@ void adios_query_alac_retrieval_points2d(
 			 * *******|               64 bits                 | => final_result_bitmap []
 			 * *******| 16 bits | 16 bits | 16 bits | 16 bits | => temp[]
 			 */
+
 			for (m = 0; m < set_bit_count[temp[j]]  ; m++) {
 				reconstct_rid = offset+ set_bit_position[temp[j]][m];
 #ifdef RIDBUG
@@ -1363,119 +1191,7 @@ void adios_query_alac_retrieval_points2d(
 #endif
 				if (!isLastConvRidInit(b)) {
 					if (reconstct_rid > b->lastConvRid) { // skip the RIDs in the 16-bits part
-//						printf("recovered RID %"PRIu64"\n", reconstct_rid);
-						points[pidx++] = bb->start[0] + reconstct_rid / bb->count[1];
-						points[pidx++] = bb->start[1] + reconstct_rid % bb->count[1];
-						retrieveCount++;
-					}
-				}else { // lastConvRid == realElmSize+1 represents the initial state
-					// in which the RID recovering has not started yet
-//					printf("recovered RID %"PRIu64"\n", reconstct_rid);
-					points[pidx++] = bb->start[0] + reconstct_rid / bb->count[1];
-					points[pidx++] = bb->start[1] + reconstct_rid % bb->count[1];
-					retrieveCount++;
-				}
-
-				if (retrieveCount == retrieval_size){
-					b->lastConvRid = reconstct_rid; 					 // updated the status
-
-#ifdef RIDBUG
-		printf("\n");
-#endif
-					return ;
-				}
-			}
-		}
-		off ++;
-	}
-
-#ifdef RIDBUG
-		printf("\n");
-#endif
-}
-
-void adios_query_alac_retrieval_points3d( ADIOS_ALAC_BITMAP *b/*OUT*/, uint64_t retrieval_size
-		, ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb , uint64_t *points /*OUT*/ ){
-
-	uint64_t start_pos = 0;
-	if (!isLastConvRidInit(b))
-		start_pos =	b->lastConvRid  / 64;
-
-	uint64_t * p_bitmap = b->bits;
-	uint64_t pidx = 0, off = start_pos, retrieveCount = 0;
-	uint64_t reconstct_rid;
-	while (off < b->length ){
-		uint16_t * temp = (uint16_t *) &(p_bitmap[off]); // 2 bytes (unsigned short int)  = 16 bits
-		uint64_t offset_long_int = off * 64; // original index offset ; // 4 bytes (unsigned long int )= 64 bit
-		uint64_t offset;
-		int j , m;
-		for (j = 0; j < 4; j++) {
-			offset = offset_long_int + j * 16; // here, 16 is used because temp is 16bits (unsigned short int) pointer
-			// set_bit_count for each 2 bytes, the number of 1
-			/*
-			 * *******|               64 bits                 | => final_result_bitmap []
-			 * *******| 16 bits | 16 bits | 16 bits | 16 bits | => temp[]
-			 */
-			for (m = 0; m < set_bit_count[temp[j]]  ; m++) {
-				reconstct_rid = offset+ set_bit_position[temp[j]][m];
-				if (!isLastConvRidInit(b)) {
-					if (reconstct_rid > b->lastConvRid) { // skip the RIDs in the 16-bits part
-//						printf("recovered RID %"PRIu64"\n", reconstct_rid);
-						points[pidx++] = bb->start[0] + reconstct_rid / (bb->count[1] * bb->count[2]) ;
-						points[pidx++] = bb->start[1] + (reconstct_rid % (bb->count[1] * bb->count[2])) / bb->count[2];
-						points[pidx++] = bb->start[2] + (reconstct_rid % (bb->count[1] * bb->count[2])) % bb->count[2] ;
-						retrieveCount++;
-					}
-				}else { // lastConvRid == realElmSize+1 represents the initial state
-					// in which the RID recovering has not started yet
-//					printf("recovered RID %"PRIu64"\n", reconstct_rid);
-					points[pidx++] = bb->start[0] + reconstct_rid / (bb->count[1] * bb->count[2]) ;
-					points[pidx++] = bb->start[1] + (reconstct_rid % (bb->count[1] * bb->count[2])) / bb->count[2];
-					points[pidx++] = bb->start[2] + (reconstct_rid % (bb->count[1] * bb->count[2])) % bb->count[2] ;
-					retrieveCount++;
-				}
-
-				if (retrieveCount == retrieval_size){
-					b->lastConvRid = reconstct_rid; 					 // updated the status
-					return ;
-				}
-			}
-		}
-		off ++;
-	}
-
-}
-
-
-void adios_query_alac_retrieval_pointsNd( ADIOS_ALAC_BITMAP *b, uint64_t retrieval_size
-		, ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb , uint64_t *points /*OUT*/ ){
-	int d = 0, td;
-	uint64_t start_pos = 0;
-	if (!isLastConvRidInit(b))
-		start_pos =	b->lastConvRid  / 64;
-
-	uint64_t * p_bitmap = b->bits;
-	uint64_t pidx = 0, off = start_pos, retrieveCount = 0;
-	uint64_t reconstct_rid;
-	uint64_t * coordinates = (uint64_t *) malloc(sizeof(uint64_t) * (bb->ndim));
-	while (off < b->length ){
-		uint16_t * temp = (uint16_t *) &(p_bitmap[off]); // 2 bytes (unsigned short int)  = 16 bits
-		uint64_t offset_long_int = off * 64; // original index offset ; // 4 bytes (unsigned long int )= 64 bit
-		uint64_t offset;
-		int j , m;
-		for (j = 0; j < 4; j++) {
-			offset = offset_long_int + j * 16; // here, 16 is used because temp is 16bits (unsigned short int) pointer
-			// set_bit_count for each 2 bytes, the number of 1
-			/*
-			 * *******|               64 bits                 | => final_result_bitmap []
-			 * *******| 16 bits | 16 bits | 16 bits | 16 bits | => temp[]
-			 */
-
-			for (m = 0; m < set_bit_count[temp[j]]  ; m++) {
-				reconstct_rid = offset+ set_bit_position[temp[j]][m];
-				if (!isLastConvRidInit(b)) {
-					if (reconstct_rid > b->lastConvRid) { // skip the RIDs in the 16-bits part
-						ridToCoordinates(bb->ndim, reconstct_rid, bb->count, coordinates);
+						ridToCoordinates(bb->ndim, reconstct_rid, bb->count, coordinates, Corder);
 						for (d = 0; d < bb->ndim; d ++){
 							points[pidx++] = bb->start[d] + coordinates[d];
 						}
@@ -1483,7 +1199,7 @@ void adios_query_alac_retrieval_pointsNd( ADIOS_ALAC_BITMAP *b, uint64_t retriev
 					}
 				}else { // lastConvRid == realElmSize+1 represents the initial state
 					// in which the RID recovering has not started yet
-					ridToCoordinates(bb->ndim, reconstct_rid, bb->count, coordinates);
+					ridToCoordinates(bb->ndim, reconstct_rid, bb->count, coordinates, Corder);
 					for (d = 0; d < bb->ndim; d ++){
 						points[pidx++] = bb->start[d] + coordinates[d];
 					}
@@ -1492,42 +1208,40 @@ void adios_query_alac_retrieval_pointsNd( ADIOS_ALAC_BITMAP *b, uint64_t retriev
 
 				if (retrieveCount == retrieval_size){
 					b->lastConvRid = reconstct_rid; 					 // updated the status
-					free(coordinates);
+
+#ifdef RIDBUG
+		printf("\n");
+#endif
 					return ;
 				}
 			}
 		}
 		off ++;
 	}
-	free(coordinates);
 
+#ifdef RIDBUG
+		printf("\n");
+#endif
 }
 
-static ADIOS_SELECTION * adios_query_build_results_boundingbox(ADIOS_ALAC_BITMAP *b, uint64_t retrieval_size, ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb) {
+static ADIOS_SELECTION * adios_query_build_results_boundingbox(ADIOS_ALAC_BITMAP *b, uint64_t retrieval_size, ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb, int Corder) {
 	const uint64_t dataSize = retrieval_size * (bb->ndim);
 	uint64_t *points = (uint64_t *)(malloc(dataSize * sizeof(uint64_t)));
-	if (bb->ndim == 1) {
-		adios_query_alac_retrieval_points1d(b,retrieval_size, bb, points);
-	} else if (bb -> ndim == 2) {
-		adios_query_alac_retrieval_points2d(b,retrieval_size, bb, points);
-	} else if (bb->ndim == 3) {
-		adios_query_alac_retrieval_points3d(b,retrieval_size, bb, points);
-	} else if (bb->ndim >= 4) {
-		adios_query_alac_retrieval_pointsNd(b,retrieval_size, bb, points);
-	}
+	adios_query_alac_retrieval_pointsNd(b,retrieval_size, bb, points,Corder);
+
 	return common_read_selection_points(bb->ndim, retrieval_size, points);
 }
 
 void adios_query_alac_build_results(
 		uint64_t retrieval_size, ADIOS_SELECTION* outputBoundry, ADIOS_ALAC_BITMAP *b,
-		ADIOS_VARINFO *varinfo, ADIOS_SELECTION ** queryResult)
+		ADIOS_VARINFO *varinfo, ADIOS_SELECTION ** queryResult, int Corder)
 {
 
 	//last bounding box / points supplied by user
 	switch (outputBoundry->type) {
 	case ADIOS_SELECTION_BOUNDINGBOX: {
 		ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(outputBoundry->u.bb);
-		*queryResult = adios_query_build_results_boundingbox(b, retrieval_size, bb);
+		*queryResult = adios_query_build_results_boundingbox(b, retrieval_size, bb,Corder);
 		break;
 	}
 	case ADIOS_SELECTION_WRITEBLOCK : {
@@ -1642,7 +1356,8 @@ int adios_query_alac_evaluate(ADIOS_QUERY* q,
 			retrievalSize = batchSize;
 	}
 
-	adios_query_alac_build_results(retrievalSize, outputBoundry, b, q->varinfo, queryResult);
+	/*TODO: */int Corder =1 ;
+	adios_query_alac_build_results(retrievalSize, outputBoundry, b, q->varinfo, queryResult, Corder);
 	// b->lastConvRid is updated in the above func., so the bitmap serializing function has to wait until the above function is finished
 	q->queryInternal = convertALACBitmapTomemstream(b);
 

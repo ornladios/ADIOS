@@ -77,11 +77,11 @@ void printBB(const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *olBB)
     printf("\n");
 }
 
-void checkRidConversion(rid_t rid, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *pgBB, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *userBB)
+void checkRidConversion(rid_t rid, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *pgBB, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *userBB, int Corder)
 {
     rid_t newRid = 0;
     if (ridConversionWithCheck(rid, pgBB->start, pgBB->count
-				, userBB->start, userBB->count, userBB->ndim, &newRid)) {
+				, userBB->start, userBB->count, userBB->ndim, &newRid, Corder)) {
 			printf("rid %"PRIu32" is converted to %" PRIu32 " \n"
 					,rid, newRid);
 		}else{
@@ -114,7 +114,7 @@ void testContainingAndRidConversion(ADIOS_FILE *fp, ADIOS_VARINFO *v){
 	for(j= 0; j < totalnpg; j ++){
 		pg = PGs[j];
 		printf("PG[%d], timestep[%d], PG id in TS[%d]\n", pg.blockidx, pg.timestep, pg.blockidx_in_timestep);
-		ADIOS_SELECTION * pgSelBox = pg.pg_bounds_sel;
+		const ADIOS_SELECTION * pgSelBox = pg.pg_bounds_sel;
 		assert (pgSelBox->type == ADIOS_SELECTION_BOUNDINGBOX );
 		printf("touched PG bounding box : ");
 		const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *pgBB = &(pgSelBox->u.bb);
@@ -130,9 +130,10 @@ void testContainingAndRidConversion(ADIOS_FILE *fp, ADIOS_VARINFO *v){
 		printf("does user input bounding box contain the PG box: %d \n", boxEqual(pgBB, interBB));
 
 		rid_t rid = 0;
-		checkRidConversion(rid, pgBB, userBB);
+		int Corder =1;
+		checkRidConversion(rid, pgBB, userBB, Corder);
 		rid = 13;
-		checkRidConversion(rid, pgBB, userBB);
+		checkRidConversion(rid, pgBB, userBB, Corder);
 	}
 
 	adios_selection_delete(userSelection);
@@ -254,6 +255,7 @@ void test_adios_query_alac_retrieval_points3d(){
 	uint64_t start1[] = {0, 0, 0};
 	uint64_t count1[] = {64, 32,32};
 	int ndim = 3;
+	int Corder =1;
 	ADIOS_SELECTION* box1 = adios_selection_boundingbox(ndim, start1, count1);
 	int retrieveTimes =2, p = 0;
 	switch (box1->type) {
@@ -263,7 +265,7 @@ void test_adios_query_alac_retrieval_points3d(){
 			for (p = 0; p < retrieveTimes ; p ++ ){
 				uint64_t dataSize = retrieval_size * (bb->ndim);
 				uint64_t* points = (uint64_t*) (malloc(dataSize * sizeof(uint64_t)));
-				adios_query_alac_retrieval_points3d( b,  retrieval_size, bb , points /*OUT*/ );
+				adios_query_alac_retrieval_pointsNd( b,  retrieval_size, bb , points /*OUT*/ , Corder);
 				printf("[%d] retrieved points: ", p);
 				for(i = 0; i < retrieval_size ; i ++){
 					printf("[%"PRIu64", %"PRIu64",%"PRIu64"] , ", points[i*3], points[i*3+1], points[i*3+2]);
