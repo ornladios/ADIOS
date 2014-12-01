@@ -62,16 +62,16 @@ void initLastConvRid (ADIOS_ALAC_BITMAP *b);
 
 bool isLastConvRidInit(const ADIOS_ALAC_BITMAP *b);
 
-static inline  int coordinateConversionWithCheck(uint64_t * coordinates, const  int dim
+static inline int coordinateConversionWithCheck(uint64_t * coordinates, const  int dim
 		, const  uint64_t *srcstart, const  uint64_t *deststart, const  uint64_t *destend);
 
-static inline bool ridConversionWithCheck(rid_t rid/*relative to local src selectoin*/
-		, uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount,
-		int dim, rid_t *relativeRid , int Corder );
+static inline bool ridConversionWithCheck(const rid_t rid/*relative to local src selectoin*/
+		, const uint64_t *srcstart, const uint64_t *srccount, const uint64_t *deststart, const uint64_t *destcount,
+		const int dim, rid_t *relativeRid , const int Corder);
 
-static rid_t ridConversionWithoutCheck(rid_t rid/*relative to local src selectoin*/,
-		uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount,
-		int dim, int Corder);
+static rid_t ridConversionWithoutCheck(const rid_t rid/*relative to local src selectoin*/,
+		const uint64_t *srcstart, const uint64_t *srccount, const uint64_t *deststart, const uint64_t *destcount,
+		const int dim, const int Corder);
 
 static inline void ridToCoordinates(const int dim, const int Corder, const rid_t rid, const uint64_t * const dimSize , uint64_t * const coordinates /*OUT*/);
 
@@ -309,8 +309,8 @@ static inline int coordinateConversionWithCheck(uint64_t * coordinates, const  i
  * Assume all the start & count array has slowest dimension at first position
  * NOTE: some redundant codes are for performance sake
  */
-static inline bool ridConversionWithCheck(rid_t rid/*relative to local src selectoin*/, uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount,
-		int dim, rid_t *relativeRid , int Corder ){
+static inline bool ridConversionWithCheck(const rid_t rid/*relative to local src selectoin*/, const uint64_t *srcstart, const uint64_t *srccount, const uint64_t *deststart, const uint64_t *destcount,
+		const int dim, rid_t *relativeRid , const int Corder ){
 
 	int i = 0;
 	uint64_t coordinates[MAX_DIMS];
@@ -322,23 +322,24 @@ static inline bool ridConversionWithCheck(rid_t rid/*relative to local src selec
 
 	ridToCoordinates(dim, Corder, rid, srccount, coordinates);
 
-	if (coordinateConversionWithCheck(coordinates, dim, srcstart, deststart, destend)< 0 ){
+	if (coordinateConversionWithCheck(coordinates, dim, srcstart, deststart, destend) < 0) {
 			return false;
 	}
 
-
-	*relativeRid = 0;
+	rid_t tmpRelativeRid = 0;
 	if (Corder) {
 		for (i = 0; i < dim; i++){
-			(*relativeRid) *= destcount[i];
-			(*relativeRid) += coordinates[i];
+			tmpRelativeRid *= destcount[i];
+			tmpRelativeRid += coordinates[i];
 		}
 	} else {
 		for (i = dim-1; i >= 0; i--){
-			(*relativeRid) *= destcount[i];
-			(*relativeRid) += coordinates[i];
+			tmpRelativeRid *= destcount[i];
+			tmpRelativeRid += coordinates[i];
 		}
 	}
+
+	*relativeRid = tmpRelativeRid;
 	return true;
 }
 
@@ -380,9 +381,9 @@ static inline void ridToCoordinates(const int dim, const int Corder, const rid_t
 	( (0*2 + 1 ) *5 + 3 )* 7 + 4 = 1*5*7 + 3*7 + 4
  */
 
-static inline rid_t ridConversionWithoutCheck(rid_t rid/*relative to local src selectoin*/,
-		uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount,
-		int dim, int Corder){
+static inline rid_t ridConversionWithoutCheck(const rid_t rid/*relative to local src selectoin*/,
+		const uint64_t *srcstart, const uint64_t *srccount, const uint64_t *deststart, const uint64_t *destcount,
+		const int dim, const int Corder){
 
 	int i;
 	uint64_t coordinates[MAX_DIMS];
