@@ -30,6 +30,7 @@ int adios_read_##a##_schedule_read_byid (const ADIOS_FILE * fp, const ADIOS_SELE
 int adios_read_##a##_perform_reads (const ADIOS_FILE *fp, int blocking); \
 int adios_read_##a##_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk); \
 int adios_read_##a##_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_DATATYPES * type, int * size, void ** data); \
+int adios_read_##a##_get_dimension_order (const ADIOS_FILE *fp); \
 void adios_read_##a##_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran); \
 void adios_read_##a##_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, uint32_t **nvars_per_group, uint32_t **nattrs_per_group); \
 int adios_read_##a##_is_var_timed (const ADIOS_FILE *fp, int varid); \
@@ -88,6 +89,7 @@ typedef int  (* ADIOS_PERFORM_READS_FN) (const ADIOS_FILE *fp, int blocking);
 typedef int  (* ADIOS_CHECK_READS_FN) (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk);
 typedef int  (* ADIOS_GET_ATTR_BYID_FN) (const ADIOS_FILE * fp, int attrid, 
                                  enum ADIOS_DATATYPES * type, int * size, void ** data);
+typedef int  (* ADIOS_GET_DIMENSION_ORDER_FN) (const ADIOS_FILE *fp);
 typedef void (* ADIOS_RESET_DIMENSION_ORDER_FN) (const ADIOS_FILE *fp, int is_fortran);
 typedef void (* ADIOS_GET_GROUPINFO_FN) (const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, uint32_t **nvars_per_group, uint32_t **nattrs_per_group); 
 typedef int  (* ADIOS_IS_VAR_TIMED_FN) (const ADIOS_FILE *fp, int varid); 
@@ -111,6 +113,7 @@ struct adios_read_hooks_struct
     ADIOS_PERFORM_READS_FN          adios_perform_reads_fn;
     ADIOS_CHECK_READS_FN            adios_check_reads_fn;
     ADIOS_GET_ATTR_BYID_FN          adios_get_attr_byid_fn;
+    ADIOS_GET_DIMENSION_ORDER_FN    adios_get_dimension_order_fn;
     ADIOS_RESET_DIMENSION_ORDER_FN  adios_reset_dimension_order_fn;
     ADIOS_GET_GROUPINFO_FN          adios_get_groupinfo_fn;
     ADIOS_IS_VAR_TIMED_FN           adios_is_var_timed_fn;

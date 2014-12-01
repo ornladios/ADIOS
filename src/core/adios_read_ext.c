@@ -250,6 +250,14 @@ ADIOS_PG_INTERSECTIONS * adios_find_intersecting_pgs(const ADIOS_FILE *fp, int v
 }
 
 
+// What is the dimension order of arrays in the file?
+// 0: C ordering (row-major), last dimension is the fastest dimension
+// 1: Fortran ordering (column-major), first dimension is the fastest dimension
+int adios_read_get_dimension_order (ADIOS_FILE * fp)
+{
+    return common_read_get_dimension_order (fp);
+}
+
 
 
 

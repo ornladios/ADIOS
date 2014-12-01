@@ -493,6 +493,25 @@ data_view_t common_read_set_data_view(ADIOS_FILE *fp, data_view_t data_view) {
 	return old_data_view;
 }
 
+// What is the dimension order of arrays in the file?
+// 0: C ordering (row-major), last dimension is the fastest dimension
+// 1: Fortran ordering (column-major), first dimension is the fastest dimension
+int common_read_get_dimension_order (ADIOS_FILE * fp)
+{
+    struct common_read_internals_struct * internals;
+    int retval;
+    adios_errno = err_no_error;
+    if (fp) {
+        internals = (struct common_read_internals_struct *) fp->internal_data;
+        retval = internals->read_hooks[internals->method].adios_get_dimension_order_fn (fp);
+    } else {
+        adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_get_dimension_ordering()\n");
+        retval = err_invalid_file_pointer;
+    }
+    return retval;
+}
+
+
 void common_read_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
 {
     struct common_read_internals_struct * internals;

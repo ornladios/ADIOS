@@ -1721,6 +1721,13 @@ int adios_read_dimes_get_attr_byid (const ADIOS_FILE * fp, int attrid,
     return 0; 
 }
 
+
+int adios_read_dimes_get_dimension_order (const ADIOS_FILE *fp)
+{
+    return 0;
+}
+
+
 void adios_read_dimes_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
 {
     /* not implemented */

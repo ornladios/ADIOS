@@ -114,4 +114,9 @@ int adios_get_absolute_writeblock_index(const ADIOS_VARINFO *varinfo, int timest
 
 void adios_free_pg_intersections(ADIOS_PG_INTERSECTIONS **intersections);
 
+// What is the dimension order of arrays in the file?
+// 0: C ordering (row-major), last dimension is the fastest dimension
+// 1: Fortran ordering (column-major), first dimension is the fastest dimension
+int adios_read_get_dimension_order (ADIOS_FILE *);
+
 #endif /* ADIOS_READ_EXT_H_ */

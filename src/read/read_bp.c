@@ -3324,6 +3324,12 @@ int adios_read_bp_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_D
     return 0;
 }
 
+int  adios_read_bp_get_dimension_order (const ADIOS_FILE *fp)
+{
+    BP_FILE * fh = GET_BP_FILE (fp);
+    return is_fortran_file (fh);
+}
+
 void adios_read_bp_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
 {
     BP_PROC * p = GET_BP_PROC (fp);

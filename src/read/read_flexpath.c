@@ -1758,6 +1758,12 @@ adios_read_flexpath_inq_var_trans_blockinfo(const ADIOS_FILE *gp, const ADIOS_VA
     return (int64_t)0;
 }
 
+int  adios_read_flexpath_get_dimension_order (const ADIOS_FILE *adiosfile)
+{
+    flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
+    return (fp->host_language == FP_FORTRAN_MODE);
+}
+
 void 
 adios_read_flexpath_reset_dimension_order (const ADIOS_FILE *adiosfile, int is_fortran)
 {

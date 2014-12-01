@@ -94,6 +94,7 @@ int common_read_get_attr_byid (const ADIOS_FILE  * fp, int attrid, enum ADIOS_DA
 const char * common_read_type_to_string (enum ADIOS_DATATYPES type);
 int common_read_type_size(enum ADIOS_DATATYPES type, void *data);
 
+
 int common_read_get_grouplist (const ADIOS_FILE  *fp, char ***group_namelist);
 int common_read_group_view (ADIOS_FILE  *fp, int groupid);
 
@@ -102,6 +103,7 @@ int common_read_group_view (ADIOS_FILE  *fp, int groupid);
 */
 int common_read_is_var_timed (const ADIOS_FILE *fp, int varid);
 
+int common_read_get_dimension_order (ADIOS_FILE * fp);
 void common_read_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran);
 void common_read_print_fileinfo (const ADIOS_FILE *fp);
 
