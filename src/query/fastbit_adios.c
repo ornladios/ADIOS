@@ -25,9 +25,9 @@ long fastbit_adios_getCurrentTimeMillis()
 
 void fastbit_adios_util_checkNotNull(void* fastbitHandle, const char* arrayName) {
   if (fastbitHandle == NULL) {
-     log_error(" >> Unable to create handle on fastbit, ref: %s\n", arrayName);
+    log_error(" >> Unable to create handle on fastbit, ref: %s\n", arrayName);
   } else {
-     log_debug(" >> created handle on fastbit, ref: %s\n", arrayName);
+    log_debug(" >> created handle on fastbit, ref: %s\n", arrayName);
   }
 }
 

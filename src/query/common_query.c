@@ -174,6 +174,7 @@ static int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
 	return -1;
       }
 
+      log_debug("%s, raw data size=%ld\n", q->condition, dataSize);
       q->dataSlice = malloc(total_byte_size);
       q->rawDataSize = dataSize;
 
@@ -346,6 +347,7 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f,
 				 enum ADIOS_PREDICATE_MODE op,
 				 const char* value)
 {
+    log_debug("[Is caller using Fortran?] %d\n", futils_is_called_from_fortran());
   //syncTimeStep(f);
     if (query_hooks == NULL) {
 	adios_error(err_operation_not_supported,
@@ -757,6 +759,10 @@ int common_query_evaluate(ADIOS_QUERY* q,
 			  uint64_t batchSize, // limited by maxResult
 			  ADIOS_SELECTION** result)
 {  
+  if (q == 0) {
+    log_debug("Error: empty query will not be evaluated!");
+    return -1;
+  }
     int actualTimeStep = adios_check_query_at_timestep(q, timeStep);
     if (actualTimeStep == -1) {
       return -1;
