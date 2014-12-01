@@ -140,8 +140,8 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 		size_t bytes_read = fread (buffer, 1, s.st_size, fp);
 
 		if (bytes_read != s.st_size) {
-			fprintf(stderr, "error reading input xml file: %s. Expected %ld Got %ld\n"
-					,inputxml, s.st_size, bytes_read );
+			fprintf(stderr, "error reading input xml file: %s. Expected %ld Got %lld\n"
+					,inputxml, s.st_size, (long long int)bytes_read );
 			fclose(fp);
 			return NULL;
 		}
@@ -433,13 +433,13 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
         
 
 		if( strcmp(opS, "<=") == 0 )
-	                q = adios_query_create(f, varNameS, inputSelection, ADIOS_LTEQ, constraintS);
+	                q = adios_query_create(f, inputSelection, varNameS, ADIOS_LTEQ, constraintS);
 		else if( strcmp(opS, "<") == 0 )
-		        q = adios_query_create(f, varNameS, inputSelection, ADIOS_LT, constraintS);
+		        q = adios_query_create(f, inputSelection, varNameS, ADIOS_LT, constraintS);
 		else if( strcmp(opS, ">=") == 0 )
-			q = adios_query_create(f, varNameS, inputSelection, ADIOS_GTEQ, constraintS);
+			q = adios_query_create(f, inputSelection, varNameS, ADIOS_GTEQ, constraintS);
 		else if( strcmp(opS, ">") == 0 )
-			q = adios_query_create(f, varNameS, inputSelection, ADIOS_GT, constraintS);
+			q = adios_query_create(f, inputSelection, varNameS, ADIOS_GT, constraintS);
 		else {
 			fprintf(stderr, "Unsupported entry op %s\n", opS);
 			return NULL;

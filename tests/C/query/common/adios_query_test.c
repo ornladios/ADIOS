@@ -65,7 +65,7 @@ int performQuery(ADIOS_QUERY_TEST_INFO *queryInfo, ADIOS_FILE *f, int use_stream
 
         ADIOS_SELECTION* currBatch = NULL;
  
-	while (adios_query_evaluate(queryInfo->query, use_streaming ? 0 : timestep, queryInfo->batchSize, queryInfo->outputSelection, &currBatch) >= 0) { 
+	while (adios_query_evaluate(queryInfo->query, queryInfo->outputSelection, use_streaming ? 0 : timestep, queryInfo->outputSelection, &currBatch) >= 0) { 
 	    if (currBatch == NULL) {
 	        break;
 	    } 
