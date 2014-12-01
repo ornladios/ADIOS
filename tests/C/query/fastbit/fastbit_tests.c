@@ -261,7 +261,7 @@ ADIOS_QUERY* getEntryQuery(mxml_node_t* queryNode, const char* entryName, ADIOS_
     
     ADIOS_SELECTION* sel = getSel(entryNode);
 
-    ADIOS_QUERY* q = adios_query_create(f, varName, sel, op, value);
+    ADIOS_QUERY* q = adios_query_create(f, sel, varName, op, value);
     return q;
   }
       
@@ -372,7 +372,6 @@ void manualCheck(ADIOS_QUERY* q, int timestep) {
 	}	  
       }
       printf("... double check found %d hits\n", hits);
-      free(output);
       return;
   }
   printf("Skip manual check on composite query\n");
@@ -461,18 +460,6 @@ int parseQueryXml(const char* xmlQueryFileName)
       while (timestep <= f->last_step) {
 	int64_t est = adios_query_estimate(q, timestep);
 	printf("\n=> query %s: %s, \n\t estimated  %ld hits on timestep: %d\n", queryName, q->condition, est, timestep);
-
-	ADIOS_SELECTION* result = NULL;
-	int ev = adios_query_evaluate(q, timestep, 10000000, NULL, &result);
-	if (result != NULL) {
-	  printf("\t evaluated  %ld hits on timestep: %d\n", result->u.points.npoints, timestep);
-	  free (result->u.points.points);
-	  adios_selection_delete(result);
-	  result = NULL;
-	} else {
-	  printf("\t evaluate returned 0 hits.\n");
-	}
-
 	manualCheck(q, timestep);
 	
 	timestep ++;
@@ -504,8 +491,8 @@ void testDefaultBoundBox(ADIOS_FILE* f, const char* varName1, const char* varNam
   enum ADIOS_PREDICATE_MODE op2 = ADIOS_GT;
   //const char* value2 = "0.96874";
 
-  ADIOS_QUERY* q1 = adios_query_create(f, varName1, noBox, op1, value1);
-  ADIOS_QUERY* q2 = adios_query_create(f, varName2, noBox, op2, value2);
+  ADIOS_QUERY* q1 = adios_query_create(f, noBox, varName1, op1, value1);
+  ADIOS_QUERY* q2 = adios_query_create(f, noBox, varName2, op2, value2);
 
   ADIOS_QUERY* q = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
 
@@ -517,7 +504,7 @@ void testDefaultBoundBox(ADIOS_FILE* f, const char* varName1, const char* varNam
     int64_t batchSize = 50;
     while (1) {
       ADIOS_SELECTION* currBatch = NULL;
-      int hasMore =  adios_query_evaluate(q, timestep, batchSize, noBox, &currBatch);
+      int hasMore =  adios_query_evaluate(q, noBox, timestep, batchSize, &currBatch);
       adios_selection_delete(currBatch);
       
       if (hasMore <= 0) {
@@ -556,7 +543,7 @@ void testNoBoxOnSelection(ADIOS_FILE* f, const char* varName1, const char* lessT
   //enum ADIOS_PREDICATE_MODE op1 = ADIOS_LT;
   //const char* value1 = "0.96874";
 
-  ADIOS_QUERY* q = adios_query_create(f, varName1, noBox, op1, lessThanValue);
+  ADIOS_QUERY* q = adios_query_create(f, noBox, varName1, op1, lessThanValue);
 
   if (q != NULL) {
     //int timestep = 0;
@@ -569,7 +556,7 @@ void testNoBoxOnSelection(ADIOS_FILE* f, const char* varName1, const char* lessT
     int64_t batchSize = 50;
     while (1) {
       ADIOS_SELECTION* currBatch = NULL;
-      int hasMore =  adios_query_evaluate(q, timestep, batchSize, noBox, &currBatch);
+      int hasMore =  adios_query_evaluate(q, noBox, timestep, batchSize, &currBatch);
       adios_selection_delete(currBatch);
       
       if (hasMore <= 0) {
@@ -599,7 +586,7 @@ void testOneBoundBox(ADIOS_FILE* f, const char* varName1, const char* value1, in
   enum ADIOS_PREDICATE_MODE op2 = ADIOS_GT;
   const char* value2 = "0.96874";
 
-  ADIOS_QUERY* q1 = adios_query_create(f, varName1, box, op1, value1);
+  ADIOS_QUERY* q1 = adios_query_create(f, box, varName1, op1, value1);
   //ADIOS_QUERY* q2 = adios_query_create(f, varName2, box, op2, value2);
 
   //ADIOS_QUERY* q = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
@@ -613,7 +600,7 @@ void testOneBoundBox(ADIOS_FILE* f, const char* varName1, const char* value1, in
     int64_t batchSize = 50;
     while (1) {
       ADIOS_SELECTION* currBatch = NULL;
-      int hasMore =  adios_query_evaluate(q1, timestep, batchSize, box, &currBatch);
+      int hasMore =  adios_query_evaluate(q1, box, timestep, batchSize, &currBatch);
       adios_selection_delete(currBatch);
       
       if (hasMore <= 0) {
@@ -652,8 +639,8 @@ void testTwoBoundBoxes(ADIOS_FILE* f, const char* varName1, const char* value1, 
   enum ADIOS_PREDICATE_MODE op2 = ADIOS_GT;
   //const char* value2 = "0.96874";
 
-  ADIOS_QUERY* q1 = adios_query_create(f, varName1, box1, op1, value1);
-  ADIOS_QUERY* q2 = adios_query_create(f, varName1, box2, op2, value2);
+  ADIOS_QUERY* q1 = adios_query_create(f, box1, varName1, op1, value1);
+  ADIOS_QUERY* q2 = adios_query_create(f, box2, varName1, op2, value2);
 
   ADIOS_QUERY* q = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
 
@@ -666,7 +653,7 @@ void testTwoBoundBoxes(ADIOS_FILE* f, const char* varName1, const char* value1, 
     int64_t batchSize = 50;
     while (1) {
       ADIOS_SELECTION* currBatch = NULL;
-      int hasMore =  adios_query_evaluate(q, timestep, batchSize, box1, &currBatch);
+      int hasMore =  adios_query_evaluate(q, box1, timestep, batchSize, &currBatch);
       adios_selection_delete(currBatch);
       
       if (hasMore <= 0) {
@@ -695,7 +682,7 @@ void testUseOneWriteBlockSimpleLessThan(ADIOS_FILE* f, int blockNum, const char*
   enum ADIOS_PREDICATE_MODE op1 = ADIOS_LT;
   // const char* value1 = "0.96874";
 
-  ADIOS_QUERY* q = adios_query_create(f, varName1, box, op1, lessThanValue1);
+  ADIOS_QUERY* q = adios_query_create(f, box, varName1, op1, lessThanValue1);
 
   if (q!= NULL) {
     //int timestep = 0;
@@ -714,7 +701,7 @@ void testUseOneWriteBlockSimpleLessThan(ADIOS_FILE* f, int blockNum, const char*
 
       while (1) {
 	ADIOS_SELECTION* currBatch = NULL;
-	int hasMore =  adios_query_evaluate(q, timestep, batchSize, box, &currBatch);
+	int hasMore =  adios_query_evaluate(q, box, timestep, batchSize, &currBatch);
 	adios_selection_delete(currBatch);
 	
 	if (hasMore <= 0) {
@@ -744,8 +731,8 @@ void testUseOneWriteBlock(ADIOS_FILE* f, int blockNum, const char* varName1, con
   enum ADIOS_PREDICATE_MODE op2 = ADIOS_GT;
   const char* value2 = "0.96874";
 
-  ADIOS_QUERY* q1 = adios_query_create(f, varName1, box, op1, value2);
-  ADIOS_QUERY* q2 = adios_query_create(f, varName2, box, op2, value2);
+  ADIOS_QUERY* q1 = adios_query_create(f, box, varName1, op1, value2);
+  ADIOS_QUERY* q2 = adios_query_create(f, box, varName2, op2, value2);
 
   ADIOS_QUERY* q = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
 
@@ -762,7 +749,7 @@ void testUseOneWriteBlock(ADIOS_FILE* f, int blockNum, const char* varName1, con
       
       while (1) {
 	ADIOS_SELECTION* currBatch = NULL;
-	int hasMore =  adios_query_evaluate(q, timestep, batchSize, box, &currBatch);
+	int hasMore =  adios_query_evaluate(q, box, timestep, batchSize, &currBatch);
 	adios_selection_delete(currBatch);
 	
 	if (hasMore <= 0) {
