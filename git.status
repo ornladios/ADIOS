@@ -1,62 +1,29 @@
-GITLOG="Last commit on Tue Apr 29 19:55:31 2014 -0400 hash 12976e1"
+GITLOG="Last commit on Mon Dec 1 15:09:58 2014 -0500 hash 01a0e25"
 read -d '' GITSTAT <<'_EOF_'
-# On branch ncsu-alac-integ
+# On branch adios-query
+# Changes to be committed:
+#   (use "git reset HEAD <file>..." to unstage)
+#
+#	deleted:    git.status
+#
 # Changes not staged for commit:
 #   (use "git add <file>..." to update what will be committed)
 #   (use "git checkout -- <file>..." to discard changes in working directory)
 #
-#	modified:   Makefile.in
-#	modified:   aclocal.m4
-#	modified:   config.h.in
-#	modified:   configure
-#	modified:   examples/C/Makefile.in
-#	modified:   examples/C/arrays/Makefile.in
-#	modified:   examples/C/attributes/Makefile.in
-#	modified:   examples/C/flexpath_arrays/Makefile.in
-#	modified:   examples/C/flexpath_arrays/global_range_select/Makefile.in
-#	modified:   examples/C/flexpath_arrays/process_select/Makefile.in
-#	modified:   examples/C/global-array-time/Makefile.in
-#	modified:   examples/C/global-array/Makefile.in
-#	modified:   examples/C/manual/Makefile.in
-#	modified:   examples/C/read_all/Makefile.in
-#	modified:   examples/C/scalars/Makefile.in
-#	modified:   examples/C/schema/Makefile.in
-#	modified:   examples/C/stat/Makefile.in
-#	modified:   examples/C/transforms/Makefile.in
-#	modified:   examples/Fortran/Makefile.in
-#	modified:   examples/Fortran/arrays/Makefile.in
-#	modified:   examples/Fortran/global-array-time/Makefile.in
-#	modified:   examples/Fortran/global-array/Makefile.in
-#	modified:   examples/Fortran/scalars/Makefile.in
-#	modified:   examples/Makefile.in
-#	modified:   src/Makefile.in
-#	modified:   tests/C/Makefile.in
-#	modified:   tests/C/flexpath_tests/1D_arr_global/Makefile.in
-#	modified:   tests/C/flexpath_tests/1D_arr_global_noxml/Makefile.in
-#	modified:   tests/C/flexpath_tests/Makefile.in
-#	modified:   tests/C/flexpath_tests/global_range_select/Makefile.in
-#	modified:   tests/C/flexpath_tests/maya_append/Makefile.in
-#	modified:   tests/C/flexpath_tests/maya_noxml/Makefile.in
-#	modified:   tests/C/flexpath_tests/scalar/Makefile.in
-#	modified:   tests/Fortran/Makefile.in
-#	modified:   tests/Makefile.in
-#	modified:   tests/bp_read/Makefile.in
-#	modified:   tests/genarray/Makefile.in
-#	modified:   tests/suite/Makefile.in
-#	modified:   tests/suite/programs/Makefile.in
-#	modified:   utils/Makefile.in
-#	modified:   utils/adios_lint/Makefile.in
-#	modified:   utils/bp2ascii/Makefile.in
-#	modified:   utils/bp2bp/Makefile.in
-#	modified:   utils/bp2h5/Makefile.in
-#	modified:   utils/bp2ncd/Makefile.in
-#	modified:   utils/bpdump/Makefile.in
-#	modified:   utils/bpls/Makefile.in
-#	modified:   utils/bpsplit/Makefile.in
-#	modified:   utils/gpp/Makefile.in
-#	modified:   utils/skel/Makefile.in
-#	modified:   utils/skel/etc/Makefile.in
-#	modified:   utils/skel/src/Makefile.in
+#	modified:   src/core/adios_read_ext.c
+#	modified:   src/core/adios_read_hooks.c
+#	modified:   src/core/adios_read_hooks.h
+#	modified:   src/core/common_read.c
+#	modified:   src/core/common_read.h
+#	modified:   src/public/adios_read_ext.h
+#	modified:   src/read/read_bp.c
+#	modified:   src/read/read_bp_staged.c
+#	modified:   src/read/read_bp_staged1.c
+#	modified:   src/read/read_dataspaces.c
+#	modified:   src/read/read_datatap.c
+#	modified:   src/read/read_dimes.c
+#	modified:   src/read/read_flexpath.c
+#	modified:   src/read/read_nssi.c
 #
-no changes added to commit (use "git add" and/or "git commit -a")
+# Untracked files not listed (use -u option to show untracked files)
 _EOF_
