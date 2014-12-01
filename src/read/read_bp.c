@@ -2471,11 +2471,25 @@ int adios_read_bp_inq_var_trans_blockinfo(const ADIOS_FILE *fp, const ADIOS_VARI
     ti->orig_blockinfo = inq_var_blockinfo(fp, vi, 1); // 1 -> use original, pretransform dimensions
     assert(ti->orig_blockinfo);
 
+    // In streaming mode, we need to offset the transform metadata and length
+    // arrays to start at the current timestep. For file mode, no such translation
+    // is needed.
+    int streaming_block_offset;
+    if (p->streaming) {
+    	int time = _adios_step_to_time(fp, var_root, 0);
+    	streaming_block_offset = get_var_start_index(var_root, time);
+    } else {
+    	streaming_block_offset = 0;
+    }
+
+    assert(streaming_block_offset < var_root->characteristics_count);
+    assert(streaming_block_offset + vi->sum_nblocks <= var_root->characteristics_count);
+
     // Allocate and fill the transform_metadatas array
     ti->transform_metadatas = (ADIOS_TRANSFORM_METADATA*)malloc(vi->sum_nblocks * sizeof(ADIOS_TRANSFORM_METADATA));
     assert(ti->transform_metadatas);
     for (i = 0; i < vi->sum_nblocks; i++) {
-    	const struct adios_index_characteristic_transform_struct *transform_char = &var_root->characteristics[i].transform;
+    	const struct adios_index_characteristic_transform_struct *transform_char = &var_root->characteristics[streaming_block_offset + i].transform;
 
     	ti->transform_metadatas[i] = (ADIOS_TRANSFORM_METADATA){
     		.length = transform_char->transform_metadata_len,

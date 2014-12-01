@@ -173,23 +173,25 @@ void readIndexData(int blockId, uint64_t offsetSize /*in bytes*/
 		,uint64_t length /*in bytes*/, ADIOS_FILE* fp,ADIOS_VARINFO* vi
 		, int startStep, int numStep
 		, void *idxBytes /*OUT*/){
-
-	readTransformedElms(fp, vi, startStep, numStep, blockId, offsetSize, length, 0, idxBytes);
+	const int is_streaming = fp->is_streaming;
+	readTransformedElms(fp, vi, startStep, numStep, blockId, offsetSize, length, is_streaming, idxBytes);
 }
 
-void readLowOrderBytes(int gBlockId/*global block id */, uint64_t offsetSize /*in bytes*/
+void readLowOrderBytes(int blockId/*if file, global block id; if streaming, block id relative to current step*/, uint64_t offsetSize /*in bytes*/
 		,uint64_t length /*in bytes*/, ADIOS_FILE* fp,ADIOS_VARINFO* vi
 		, int startStep, int numStep
 		, void *idxBytes /*OUT*/){
-	readTransformedElms(fp, vi, startStep, numStep, gBlockId, offsetSize,length, 0, idxBytes);
+	const int is_streaming = fp->is_streaming;
+	readTransformedElms(fp, vi, startStep, numStep, blockId, offsetSize,length, is_streaming, idxBytes);
 }
 
-void readPartitionMeta( int gBlockId /*global block id*/, uint64_t metaSize, ADIOS_FILE* fp,ADIOS_VARINFO* vi
+void readPartitionMeta( int blockId /*if file, global block id; if streaming, block id relative to current step*/, uint64_t metaSize, ADIOS_FILE* fp,ADIOS_VARINFO* vi
 		, int startStep, int numStep
 		, ALMetadata *pm /*OUT*/){
+	const int is_streaming = fp->is_streaming;
 	memstream_t ms = memstreamInitReturn(malloc(metaSize));
 	uint64_t metaStartPos= 0;
-	readTransformedElms(fp, vi, startStep,numStep,gBlockId, metaStartPos, metaSize, 0, ms.buf);
+	readTransformedElms(fp, vi, startStep,numStep,blockId, metaStartPos, metaSize, is_streaming, ms.buf);
 	ALDeserializeMetadata(pm, &ms);
 	memstreamDestroy(&ms, true);
 
