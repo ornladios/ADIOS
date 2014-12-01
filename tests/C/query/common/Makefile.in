@@ -98,7 +98,7 @@ am_adios_query_test_OBJECTS =  \
 	adios_query_test-adios_query_test.$(OBJEXT)
 adios_query_test_OBJECTS = $(am_adios_query_test_OBJECTS)
 am__DEPENDENCIES_1 =
-adios_query_test_DEPENDENCIES = $(top_builddir)/tests/C/query/common/libparse_test_query_xml.a \
+adios_query_test_DEPENDENCIES = libparse_test_query_xml.a \
 	$(top_builddir)/src/libadios.a $(am__DEPENDENCIES_1)
 adios_query_test_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
@@ -402,7 +402,7 @@ compute_expected_query_results_SOURCES = compute_expected_query_results.c
 compute_expected_query_results_LDADD = $(builddir)/libparse_test_query_xml.a $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
 compute_expected_query_results_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 adios_query_test_SOURCES = adios_query_test.c
-adios_query_test_LDADD = $(top_builddir)/tests/C/query/common/libparse_test_query_xml.a $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
+adios_query_test_LDADD = libparse_test_query_xml.a $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 adios_query_test_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 adios_query_test_CPPFLAGS = $(ALACRITY_CPPFLAGS)
 CLEANFILES = *.bp
