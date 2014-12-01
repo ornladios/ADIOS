@@ -1191,7 +1191,7 @@ void adios_query_alac_retrieval_pointsNd( ADIOS_ALAC_BITMAP *b, uint64_t retriev
 #endif
 				if (!isLastConvRidInit(b)) {
 					if (reconstct_rid > b->lastConvRid) { // skip the RIDs in the 16-bits part
-						ridToCoordinates(bb->ndim, reconstct_rid, bb->count, coordinates, Corder);
+						ridToCoordinates(bb->ndim, Corder, reconstct_rid, bb->count, coordinates );
 						for (d = 0; d < bb->ndim; d ++){
 							points[pidx++] = bb->start[d] + coordinates[d];
 						}
@@ -1199,7 +1199,7 @@ void adios_query_alac_retrieval_pointsNd( ADIOS_ALAC_BITMAP *b, uint64_t retriev
 					}
 				}else { // lastConvRid == realElmSize+1 represents the initial state
 					// in which the RID recovering has not started yet
-					ridToCoordinates(bb->ndim, reconstct_rid, bb->count, coordinates, Corder);
+					ridToCoordinates(bb->ndim, Corder, reconstct_rid, bb->count, coordinates);
 					for (d = 0; d < bb->ndim; d ++){
 						points[pidx++] = bb->start[d] + coordinates[d];
 					}
