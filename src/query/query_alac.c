@@ -75,9 +75,7 @@ static rid_t ridConversionWithoutCheck(const rid_t rid/*relative to local src se
 
 static inline void ridToCoordinates(const int dim, const int Corder, const rid_t rid, const uint64_t * const dimSize , uint64_t * const coordinates /*OUT*/);
 
-void create_lookup(unsigned char set_bit_count[],
-		unsigned char set_bit_position[][16]);
-
+static void init_lookup();
 
 bool boxEqual(const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *pgBB, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *interBB);
 
