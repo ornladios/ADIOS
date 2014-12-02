@@ -1374,12 +1374,8 @@ int adios_query_alac_evaluate(ADIOS_QUERY* q,
 	FREE(b); // NOTE: only free the structure*/
 	FreeALACBITMAP(b);
 	q->resultsReadSoFar += retrievalSize;
-	/*if (q->_lastRead > q->_maxResultDesired) {
-		q->_onTimeStep = NO_EVAL_BEFORE;
-		return 0;
-	}*/
 
-	return 1;
+	return q->resultsReadSoFar < q->maxResultsDesired;
 }
 
 int adios_query_alac_free_one_node(ADIOS_QUERY* query){
