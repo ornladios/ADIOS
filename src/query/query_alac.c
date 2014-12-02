@@ -929,7 +929,7 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 		}
 	}
 
-	/*TODO: */ int Corder = 1;  /*1: C order; 0: fortran order*/
+	const int Corder = !futils_is_called_from_fortran(); // Use the dimension order of the caller; the common read layer will also mimic this order
 
 	/*********** doQuery ***************
 	 *
@@ -1357,7 +1357,7 @@ int adios_query_alac_evaluate(ADIOS_QUERY* q,
 			retrievalSize = batchSize;
 	}
 
-	/*TODO: */int Corder =1 ;
+	const int Corder = !futils_is_called_from_fortran(); // Use the dimension order of the caller; the common read layer will also mimic this order
 	adios_query_alac_build_results(retrievalSize, outputBoundry, b, q->varinfo, queryResult, Corder);
 	// b->lastConvRid is updated in the above func., so the bitmap serializing function has to wait until the above function is finished
 	q->queryInternal = convertALACBitmapTomemstream(b);
@@ -1381,22 +1381,11 @@ int adios_query_alac_free_one_node(ADIOS_QUERY* query){
 		return 0;
 	}
 
-	//TODO: confirm, SHOULD WE DO free here?
-	//ADIOS_VARINFO* v = adios_inq_var(f, varName);
-	common_read_free_varinfo(query->varinfo);
+	// Currently, no ALAC-specific information to free...
+	// Note: the common layer frees non-plugin-specific stuff
+	// like query->predicateValue and query->dataSlice
 
-	FREE(query->condition);
-	FREE(query->dataSlice);
-	FREE(query->predicateValue);
-
-	//TODO: confirm: adios_selection_delete(query->_sel);
-	//RIGHT NOW, user will free this box
-
-
-	//fastbit_selection_free(query->_queryInternal);
-	FREE(query);
 	return 1;
-
 }
 
 int adios_query_alac_free(ADIOS_QUERY* query) {
