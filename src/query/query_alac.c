@@ -130,8 +130,10 @@ static uint8_t bits_in_char[256] = {
 #   define B6(n) B4(n), B4(n+1), B4(n+1), B4(n+2)
 		B6(0), B6(1), B6(1), B6(2)};
 
-unsigned char set_bit_count[65536];
-unsigned char set_bit_position[65536][16];
+static isInitialized = 0; // 0: the lookup table is not initialized ; 1 : the lookup table is initialized
+static unsigned char set_bit_count[65536];
+static unsigned char set_bit_position[65536][16];
+
 
 /**** END -- Funcs. that are internal funcs. ********/
 
@@ -212,8 +214,7 @@ bool boxEqual(const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *pgBB, const ADIOS_SELECT
 }
 
 
-void create_lookup(unsigned char set_bit_count[],
-		unsigned char set_bit_position[][16]) {
+static void init_lookup() {
 	memset(set_bit_count, 0, 256);
 	int i = 0, j;
 	for (i = 0; i < 65536; i++) {
@@ -1339,12 +1340,15 @@ int adios_query_alac_evaluate(ADIOS_QUERY* q,
 			       ADIOS_SELECTION* outputBoundry,
 			       ADIOS_SELECTION** queryResult)
 {
+
+	if (!isInitialized){ // if this is the very first time of calling the queries, we initialize the lookup tables
+		init_lookup();
+		isInitialized= 1;
+	}
 	const int absoluteTimestep = adios_get_actual_timestep(q, timestep);
 
 	ADIOS_ALAC_BITMAP* b;
-	if (q->onTimeStep != absoluteTimestep) {
-		// if this is the first call to evaluate this timestep, evaluate the query
-		create_lookup(set_bit_count, set_bit_position);
+	if (q->onTimeStep != absoluteTimestep) { // if this is the first call to evaluate the query for a new timestep
 		b = adios_alac_process(q, timestep, false);
 		initLastConvRid(b);
 		q->maxResultsDesired =  calSetBitsNum(b);
