@@ -391,7 +391,6 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-CLEANFILES = *.o
 lib_LIBRARIES = libskel.a
 libskel_a_SOURCES = skel_xml_output.c $(am__append_1)
 library_includedir = $(includedir)/skel
@@ -629,7 +628,6 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
-	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)

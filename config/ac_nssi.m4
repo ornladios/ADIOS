@@ -129,12 +129,12 @@ if test x"$ac_nssi_ok" = xyes; then
                 dnl AC_MSG_CHECKING([LIBS=$LIBS])
 
                 dnl Check for various functions.
-                AC_LINK_IFELSE(AC_LANG_PROGRAM(
+                AC_LINK_IFELSE([AC_LANG_PROGRAM(
                             [[#include "nssi_client.h"]],
                             [[nssi_remote_pid server_id;]
                              [uint64_t timeout;]
                              [nssi_service svc;]
-                             [nssi_get_service(server_id, timeout, &svc);]]),
+                             [nssi_get_service(server_id, timeout, &svc);]])],
                         [ac_nssi_ok=yes;],
                         [ac_nssi_ok=no;])
 

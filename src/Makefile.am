@@ -1,4 +1,4 @@
-INCLUDES=-I$(top_srcdir) -I$(top_srcdir)/src/core -I$(top_srcdir)/src/core/transforms -I$(top_srcdir)/src/core/query
+AM_CPPFLAGS=-I$(top_srcdir) -I$(top_srcdir)/src/core -I$(top_srcdir)/src/core/transforms -I$(top_srcdir)/src/core/query
 
 AUTOMAKE_OPTIONS = no-dependencies
 METASOURCES=AUTO
@@ -31,10 +31,10 @@ include_HEADERS=
 nodist_include_HEADERS=
 lib_LIBRARIES=
 
-libadiosread_a_CPPFLAGS=
-libadiosreadf_a_CPPFLAGS=
-libadiosread_nompi_a_CPPFLAGS=
-libadiosreadf_nompi_a_CPPFLAGS=
+libadiosread_a_CPPFLAGS=$(AM_CPPFLAGS)
+libadiosreadf_a_CPPFLAGS=$(AM_CPPFLAGS)
+libadiosread_nompi_a_CPPFLAGS=$(AM_CPPFLAGS)
+libadiosreadf_nompi_a_CPPFLAGS=$(AM_CPPFLAGS)
 
 libadiosread_a_CFLAGS= 
 libadiosreadf_a_CFLAGS= 
@@ -240,13 +240,13 @@ FortranLibSEQSources = core/mpidummy.c
 
 endif # BUILD_FORTRAN
 
-libadios_a_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS) # $(MACRODEFFLAG)USE_TIMERS
+libadios_a_CPPFLAGS = $(AM_CPPFLAGS) $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS) # $(MACRODEFFLAG)USE_TIMERS
 libadios_a_CFLAGS = $(ADIOSLIB_CFLAGS) 
-libadios_nompi_a_CPPFLAGS = $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_SEQ_CPPFLAGS) # $(MACRODEFFLAG)USE_TIMERS
+libadios_nompi_a_CPPFLAGS = $(AM_CPPFLAGS) $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_SEQ_CPPFLAGS) # $(MACRODEFFLAG)USE_TIMERS
 libadios_nompi_a_CFLAGS = $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_SEQ_CFLAGS) 
-libadiosf_a_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS) # $(MACRODEFFLAG)USE_TIMERS
+libadiosf_a_CPPFLAGS = $(AM_CPPFLAGS) $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS) # $(MACRODEFFLAG)USE_TIMERS
 libadiosf_a_CFLAGS = $(ADIOSLIB_CFLAGS) 
-libadiosf_nompi_a_CPPFLAGS = $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_SEQ_CPPFLAGS) # $(MACRODEFFLAG)USE_TIMERS
+libadiosf_nompi_a_CPPFLAGS = $(AM_CPPFLAGS) $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_SEQ_CPPFLAGS) # $(MACRODEFFLAG)USE_TIMERS
 libadiosf_nompi_a_CFLAGS = $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_SEQ_CFLAGS) 
 
 if HAVE_DATASPACES
@@ -392,8 +392,8 @@ libadiosf_nompi_v1_a_SOURCES += core/adiosf_defs_mod.f90 \
 nodist_include_HEADERS += adios_write_mod.mod 
 CLEANFILES += adios_write_mod.mod
 
-adios_write_mod.mod: core/adiosf_write_mod.f90 adios_defs_mod.mod
-	$(FC) -c core/adiosf_write_mod.f90
+adiosf_write_mod.$(OBJEXT): adiosf_defs_mod.$(OBJEXT)
+adios_write_mod.mod: adiosf_write_mod.$(OBJEXT)
 
 endif
 
@@ -515,11 +515,10 @@ libadiosreadf_a_SOURCES += core/adiosf_defs_mod.f90 \
 nodist_include_HEADERS += adios_read_mod.mod adios_defs_mod.mod adios_query_mod.mod
 CLEANFILES += adios_read_mod.mod adios_defs_mod.mod adios_query_mod.mod
 
-adios_read_mod.mod: core/adiosf_read_mod.f90 adios_defs_mod.mod 
-	$(FC) -c core/adiosf_read_mod.f90
+adiosf_read_mod.$(OBJEXT): adiosf_defs_mod.$(OBJEXT)
+adios_read_mod.mod: adiosf_read_mod.$(OBJEXT)
 
-adios_defs_mod.mod: core/adiosf_defs_mod.f90
-	$(FC) -c core/adiosf_defs_mod.f90
+adios_defs_mod.mod: adiosf_defs_mod.$(OBJEXT)
 
 adios_query_mod.mod: query/adios_query_mod.f90 
 	$(FC) -c query/adios_query_mod.f90
@@ -646,7 +645,7 @@ libadios_internal_nompi_a_SOURCES += core/adios_internals_mxml.c
 endif
 
 
-libadios_internal_nompi_a_CPPFLAGS = $(MACRODEFFLAG)_INTERNAL $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_INT_CPPFLAGS) $(ADIOSLIB_CPPFLAGS)
+libadios_internal_nompi_a_CPPFLAGS = $(AM_CPPFLAGS) $(MACRODEFFLAG)_INTERNAL $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_INT_CPPFLAGS) $(ADIOSLIB_CPPFLAGS)
 #Note: $(MACRODEFFLAG)NOMPI chokes IBM's bgxlf compiler but it can pass $(MACRODEFFLAG)_NOMPI. 
 
 if HAVE_DMALLOC

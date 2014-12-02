@@ -1013,7 +1013,7 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
     export CC=mpicc
     export CXX=mpicxx
     export FC=mpif90
-    export INSTALL_PREFIX="/opt/adios/1.7"
+    export INSTALL_PREFIX="/opt/adios/1.8"
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
     export CFLAGS="-g -O0 -fPIC -Wno-int-to-pointer-cast -Wno-pointer-to-int-cast"
     export MXML_DIR=/opt/mxml/2.8
