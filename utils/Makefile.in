@@ -95,7 +95,7 @@ AM_RECURSIVE_TARGETS = $(RECURSIVE_TARGETS:-recursive=) \
 ETAGS = etags
 CTAGS = ctags
 DIST_SUBDIRS = gpp bpdump bp2ascii bpsplit bpls bpdiff skeldump \
-	list_methods adios_lint bp2bp bp2h5 bp2ncd skel
+	list_methods bpmeta adios_lint bp2bp bp2h5 bp2ncd skel
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
 am__relativize = \
   dir0=`pwd`; \
@@ -144,6 +144,8 @@ ADIOSREADLIB_SEQ_CFLAGS = @ADIOSREADLIB_SEQ_CFLAGS@
 ADIOSREADLIB_SEQ_CPPFLAGS = @ADIOSREADLIB_SEQ_CPPFLAGS@
 ADIOSREADLIB_SEQ_LDADD = @ADIOSREADLIB_SEQ_LDADD@
 ADIOSREADLIB_SEQ_LDFLAGS = @ADIOSREADLIB_SEQ_LDFLAGS@
+ADIOS_TIMERS = @ADIOS_TIMERS@
+ADIOS_TIMER_EVENTS = @ADIOS_TIMER_EVENTS@
 ALACRITY_CPPFLAGS = @ALACRITY_CPPFLAGS@
 ALACRITY_LDFLAGS = @ALACRITY_LDFLAGS@
 ALACRITY_LIBS = @ALACRITY_LIBS@
@@ -304,7 +306,6 @@ SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SKEL_HAVE_ADIOS_TIMING = @SKEL_HAVE_ADIOS_TIMING@
-SKEL_TIMING = @SKEL_TIMING@
 STRIP = @STRIP@
 SZIP_CPPFLAGS = @SZIP_CPPFLAGS@
 SZIP_LDFLAGS = @SZIP_LDFLAGS@
@@ -371,8 +372,8 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = gpp bpdump bp2ascii bpsplit bpls bpdiff skeldump \
-	list_methods $(am__append_1) $(am__append_2) $(am__append_3) \
-	skel
+	list_methods bpmeta $(am__append_1) $(am__append_2) \
+	$(am__append_3) skel
 all: all-recursive
 
 .SUFFIXES:

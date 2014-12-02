@@ -72,7 +72,7 @@ typedef struct BP_FILE {
 
 // save per proc info
 typedef struct BP_PROC {
-    struct BP_FILE * fh;
+    BP_FILE * fh;
     int streaming;
     int * varid_mapping;
     read_request * local_read_request_list;

@@ -21,7 +21,7 @@
 // NCSU ALACRITY-ADIOS: Include needed for the transform spec struct
 #include "core/transforms/adios_transforms_specparse.h"
 
-#ifdef SKEL_TIMING
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
 #include "core/adios_timing.h"
 #endif
 
@@ -157,6 +157,13 @@ struct adios_group_struct
     enum ADIOS_FLAG all_unique_mesh_names;
 
     int attrid_update_epoch; // ID of special attribute "/__adios__/update_time_epoch" to find it fast
+
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
+    // Using a "double buffering" approach. Current write cycle stored in timing_obj, while timing info from
+    // previous cycle is kept in prev_timing_obj, and is written before close
+    struct adios_timing_struct * timing_obj;
+    struct adios_timing_struct * prev_timing_obj;
+#endif
 };
 
 struct adios_group_list_struct
@@ -189,9 +196,6 @@ struct adios_file_struct
     uint64_t vars_start;    // offset for where to put the var/attr count
     uint32_t vars_written;  // count of vars/attrs to write
 
-#ifdef SKEL_TIMING
-    struct adios_timing_struct * timing_obj;
-#endif
     MPI_Comm comm;          // duplicate of comm received in adios_open()
 };
 
@@ -480,6 +484,7 @@ int adios_common_define_var_characteristics  (struct adios_group_struct * g
                                              );
 
 void adios_common_get_group (int64_t * group_id, const char * name);
+int adios_common_delete_vardefs (struct adios_group_struct * g);
 int adios_common_free_group (int64_t id);
 
 // ADIOS file format functions
@@ -574,6 +579,7 @@ const char * adios_file_mode_to_string (int mode);
 
 // the following are defined in adios_transport_hooks.c
 void adios_init_transports (struct adios_transport_struct ** transports);
+void adios_free_transports (struct adios_transport_struct * transports);
 int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
                        ,int * requires_group_comm
                        );

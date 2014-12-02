@@ -244,9 +244,9 @@ static void copy_buffer (ADIOS_GROUP * gp
                         ,candidate_reader * parent
                         ,candidate_reader * child
                         );
-static ADIOS_VARINFO * _inq_var_byid (struct BP_FILE * fh, int varid);
+static ADIOS_VARINFO * _inq_var_byid (BP_FILE * fh, int varid);
 void adios_read_bp_staged1_free_varinfo (ADIOS_VARINFO *vp);
-static int get_num_subfiles (struct BP_FILE * fh);
+static int get_num_subfiles (BP_FILE * fh);
 static candidate_reader * parse_buffer (struct proc_struct * p, void * b, int len);
 
 static void split_read_request (ADIOS_GROUP * gp
@@ -1906,7 +1906,7 @@ static void split_read_request (ADIOS_GROUP * gp
                                )
 {
     struct BP_GROUP * gh;
-    struct BP_FILE * fh;
+    BP_FILE * fh;
     struct adios_index_var_struct_v1 * v;
     int i, j, k, idx, t, varid;
     int start_time, stop_time, start_idx, stop_idx, f_idx;
@@ -2443,7 +2443,7 @@ c++;
 //    printf ("[%3d] count = %d\n", p->rank, c);
 }
 
-int get_num_subfiles (struct BP_FILE * fh)
+int get_num_subfiles (BP_FILE * fh)
 {
     struct adios_bp_buffer_struct_v1 * b = fh->b;
     struct adios_index_var_struct_v1 ** vars_root = &(fh->vars_root);
@@ -2470,7 +2470,7 @@ int get_num_subfiles (struct BP_FILE * fh)
 int is_fortran_file (ADIOS_GROUP * gp)
 {
     struct BP_GROUP * gh;
-    struct BP_FILE * fh;
+    BP_FILE * fh;
 
     gh = (struct BP_GROUP *) gp->gh;
     fh = gh->fh;
@@ -2481,7 +2481,7 @@ int is_fortran_file (ADIOS_GROUP * gp)
 int has_subfiles (ADIOS_GROUP * gp)
 {
     struct BP_GROUP * gh;
-    struct BP_FILE * fh;
+    BP_FILE * fh;
 
     gh = (struct BP_GROUP *) gp->gh;
     fh = gh->fh;
@@ -2698,7 +2698,7 @@ void adios_read_bp_staged1_read_buffer (ADIOS_GROUP * gp
                                       )
 {
     struct BP_GROUP * gh;
-    struct BP_FILE * fh;
+    BP_FILE * fh;
     struct adios_index_var_struct_v1 * v;
     uint64_t * r_start, * r_count, * s_start, * s_count; 
     int i, j, k, idx, t;
@@ -3178,7 +3178,7 @@ while (1);
 void adios_read_bp_staged1_read_chunk (ADIOS_GROUP * gp, int file_idx, uint64_t chunk_offset, uint64_t size)
 {
     struct BP_GROUP * gh;
-    struct BP_FILE * fh;
+    BP_FILE * fh;
     MPI_File * sfh;
     MPI_Status status;
     int has_subfile;
@@ -3493,7 +3493,7 @@ static void free_proc_struct (struct proc_struct * p)
     }
 }
 
-static void init_read (struct BP_FILE * fh)
+static void init_read (BP_FILE * fh)
 {
     int thread_level, i, remain;
     int color1, color2;
@@ -3690,7 +3690,7 @@ static int getNumSubfiles (const char * fname)
 int adios_read_bp_staged1_init (MPI_Comm comm) { return 0; }
 int adios_read_bp_staged1_finalize () { return 0; }
 
-static void broadcast_fh_buffer (struct BP_FILE * fh)
+static void broadcast_fh_buffer (BP_FILE * fh)
 {
     struct bp_index_pg_struct_v1 * pgs_root = fh->pgs_root, * pg;
     struct adios_index_var_struct_v1 * vars_root = fh->vars_root, * v;
@@ -4048,7 +4048,7 @@ fprintf (stderr, "bc 1 v->id = %d, bo 1 = %llu, bo 2 = %llu, v->var_name = %s\n"
 ADIOS_FILE * adios_read_bp_staged1_fopen (const char * fname, MPI_Comm comm)
 {
     int i, rank, remain;
-    struct BP_FILE * fh;
+    BP_FILE * fh;
     ADIOS_FILE * fp;
     uint64_t header_size;
     struct proc_struct * p;
@@ -4056,7 +4056,7 @@ ADIOS_FILE * adios_read_bp_staged1_fopen (const char * fname, MPI_Comm comm)
 
     adios_errno = 0;
 
-    fh = (struct BP_FILE *) malloc (sizeof (struct BP_FILE));
+    fh = (BP_FILE *) malloc (sizeof (BP_FILE));
     assert (fh);
 
     fh->fname = (fname ? strdup (fname) : 0L);
@@ -4182,7 +4182,7 @@ ADIOS_FILE * adios_read_bp_staged1_fopen (const char * fname, MPI_Comm comm)
 */   
 void adios_read_bp_staged1_reset_dimension_order (ADIOS_FILE *fp, int is_fortran)
 {
-    struct BP_FILE * fh = (struct BP_FILE *)(fp->fh);
+    BP_FILE * fh = (BP_FILE *)(fp->fh);
     struct bp_index_pg_struct_v1 ** root = &(fh->pgs_root);
     struct bp_minifooter * mh = &(fh->mfooter);
     uint64_t i;
@@ -4196,7 +4196,7 @@ void adios_read_bp_staged1_reset_dimension_order (ADIOS_FILE *fp, int is_fortran
 
 int adios_read_bp_staged1_fclose (ADIOS_FILE *fp) 
 {
-    struct BP_FILE * fh = (struct BP_FILE *) fp->fh;
+    BP_FILE * fh = (BP_FILE *) fp->fh;
     struct BP_GROUP_VAR * gh = fh->gvar_h;
     struct BP_GROUP_ATTR * ah = fh->gattr_h;
     struct adios_index_var_struct_v1 * vars_root = fh->vars_root, *vr;
@@ -4393,7 +4393,7 @@ int adios_read_bp_staged1_fclose (ADIOS_FILE *fp)
 
 ADIOS_GROUP * adios_read_bp_staged1_gopen (ADIOS_FILE *fp, const char * grpname)
 {
-    struct BP_FILE * fh = (struct BP_FILE *) fp->fh;
+    BP_FILE * fh = (BP_FILE *) fp->fh;
     int grpid, rank, nproc; 
     ADIOS_GROUP * gp;
     struct proc_struct * p = (struct proc_struct *) fh->priv;
@@ -4418,7 +4418,7 @@ ADIOS_GROUP * adios_read_bp_staged1_gopen (ADIOS_FILE *fp, const char * grpname)
 
 ADIOS_GROUP * adios_read_bp_staged1_gopen_byid (ADIOS_FILE *fp, int grpid)
 {
-    struct BP_FILE * fh = (struct BP_FILE *) fp->fh;
+    BP_FILE * fh = (BP_FILE *) fp->fh;
     struct BP_GROUP * gh;
     ADIOS_GROUP * gp;
     int i, offset;
@@ -4510,7 +4510,7 @@ ADIOS_GROUP * adios_read_bp_staged1_gopen_byid (ADIOS_FILE *fp, int grpid)
 int adios_read_bp_staged1_gclose (ADIOS_GROUP * gp)
 {
     struct BP_GROUP * gh = (struct BP_GROUP *) gp->gh;
-    struct BP_FILE * fh = gh->fh;
+    BP_FILE * fh = gh->fh;
     struct proc_struct * p = (struct proc_struct *) fh->priv;
     candidate_reader * h = p->local_read_request_list, * t = 0;
     int i, type, count, varid, ndims, total_size, size = calc_data_size (p);
@@ -4725,7 +4725,7 @@ int adios_read_bp_staged1_get_attr_byid (ADIOS_GROUP * gp, int attrid,
 {
     int    i, offset, count;
     struct BP_GROUP * gh;
-    struct BP_FILE * fh;
+    BP_FILE * fh;
     struct adios_index_attribute_struct_v1 * attr_root;
     struct adios_index_var_struct_v1 * var_root;
     int    file_is_fortran;
@@ -5603,7 +5603,7 @@ ADIOS_VARINFO * adios_read_bp_staged1_inq_var (ADIOS_GROUP *gp, const char * var
     return adios_read_bp_staged1_inq_var_byid(gp, varid);
 }
 
-static ADIOS_VARINFO * _inq_var_byid (struct BP_FILE * fh, int varid)
+static ADIOS_VARINFO * _inq_var_byid (BP_FILE * fh, int varid)
 {
     ADIOS_VARINFO * vi;
     int file_is_fortran;
@@ -5661,7 +5661,7 @@ static ADIOS_VARINFO * _inq_var_byid (struct BP_FILE * fh, int varid)
 ADIOS_VARINFO * adios_read_bp_staged1_inq_var_byid (ADIOS_GROUP *gp, int varid)
 {
     struct BP_GROUP      * gh;
-    struct BP_FILE       * fh;
+    BP_FILE       * fh;
     ADIOS_VARINFO * vi;
     int file_is_fortran;
     struct adios_index_var_struct_v1 * var_root;
@@ -5916,7 +5916,7 @@ static void getReadInfo (ADIOS_GROUP * gp
                         )
 {
     struct BP_GROUP * gh;
-    struct BP_FILE * fh;
+    BP_FILE * fh;
     struct adios_index_var_struct_v1 * v;
     int i, j, k, idx, t;
     int start_idx, stop_idx, f_idx;
@@ -6021,7 +6021,7 @@ static void getDataAddress (ADIOS_GROUP * gp, int varid
                            )
 {
     struct BP_GROUP * gh;
-    struct BP_FILE * fh;
+    BP_FILE * fh;
     struct adios_index_var_struct_v1 * v;
     int i, j, k, idx, t;
     int start_time, stop_time, start_idx, stop_idx, f_idx;
@@ -6212,7 +6212,7 @@ int64_t adios_read_bp_staged1_read_var (ADIOS_GROUP * gp
                                        )
 {
     struct BP_GROUP * gh;
-    struct BP_FILE * fh;
+    BP_FILE * fh;
     int i, varid, has_subfile, rank, nproc;
     uint64_t ds, payload_size;
     struct proc_struct * p;
@@ -6289,7 +6289,7 @@ int64_t adios_read_bp_staged1_read_local_var (ADIOS_GROUP * gp, const char * var
                                       const uint64_t * count, void * data)
 {
     struct BP_GROUP      * gh;
-    struct BP_FILE       * fh;
+    BP_FILE       * fh;
     struct adios_index_var_struct_v1 * var_root;
     struct adios_var_header_struct_v1 var_header;
     struct adios_var_payload_struct_v1 var_payload;
@@ -6660,7 +6660,7 @@ int64_t adios_read_bp_staged1_read_var_byid1 (ADIOS_GROUP    * gp,
                              void           * data)
 {
     struct BP_GROUP      * gh;
-    struct BP_FILE       * fh;
+    BP_FILE       * fh;
     int file_is_fortran;
     struct adios_index_var_struct_v1 * var_root;
     struct adios_var_header_struct_v1 var_header;
@@ -7279,7 +7279,7 @@ int64_t adios_read_bp_staged1_read_var_byid2 (ADIOS_GROUP    * gp,
                                       void           * data)
 {
     struct BP_GROUP      * gh;
-    struct BP_FILE       * fh;
+    BP_FILE       * fh;
     struct adios_index_var_struct_v1 * var_root;
     struct adios_var_header_struct_v1 var_header;
     struct adios_var_payload_struct_v1 var_payload;
@@ -7735,7 +7735,7 @@ int64_t adios_read_bp_staged1_read_var_byid (ADIOS_GROUP    * gp,
                                      void            * data)
 {
     struct BP_GROUP      * gh;
-    struct BP_FILE       * fh;
+    BP_FILE       * fh;
     int has_time_index_characteristic;
 
     adios_errno = 0;

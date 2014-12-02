@@ -38,6 +38,17 @@ if (!strcasecmp (buf,b)) \
 (*t) [b].adios_start_calculation_fn = adios_##a##_start_calculation; \
 (*t) [b].adios_stop_calculation_fn = adios_##a##_stop_calculation;
 
+void adios_free_transports (struct adios_transport_struct * t)
+{
+    int i;
+    for (i=0; i<ADIOS_METHOD_COUNT; i++) {
+        if (t[i].method_name) {
+            free (t[i].method_name);
+            t[i].method_name = 0;
+        }
+    }
+}
+
 void adios_init_transports (struct adios_transport_struct ** t)
 {
     *t = (struct adios_transport_struct *)

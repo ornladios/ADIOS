@@ -60,7 +60,7 @@ program skel
 #if $noxml
   call adios_init_noxml (MPI_COMM_WORLD, error)
 #else
-  call adios_init ("${project}_skel.xml", MPI_COMM_WORLD, adios_error)
+  call adios_init ("${project}_skel.xml", MPI_COMM_WORLD, error)
 #end if
 
   skel_init_timer = skel_init_timer + MPI_WTIME();
@@ -198,7 +198,7 @@ call adios_define_var (skel_adios_group, &
   call MPI_Reduce (skel_total_timer, skel_total_total, 1, MPI_DOUBLE_PRECISION, MPI_MAX, 0, MPI_COMM_WORLD, error)
 
   if (skel_mpi_rank == 0) then
-    write (*,*) '\n'
+!    write (*,*) '\n'
     write (*,*) '**************************'
     write (*,*) '  Groupsize: ', adios_groupsize
     write (*,*) '  Open Time: ', skel_total_open
@@ -206,7 +206,7 @@ call adios_define_var (skel_adios_group, &
     write (*,*) ' Close Time: ', skel_total_close
     write (*,*) ' Total Time: ', skel_total_total
     write (*,*) '**************************'
-    write (*,*) '\n'
+!    write (*,*) '\n'
   endif
 
 ! Clean up

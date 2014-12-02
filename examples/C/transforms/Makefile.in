@@ -35,8 +35,7 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 noinst_PROGRAMS = adios_global$(EXEEXT) adios_read_subv$(EXEEXT) \
-	adios_read_points$(EXEEXT) adios_read_wb_subpg$(EXEEXT) \
-	adios_read_all_3D$(EXEEXT) adios_write_all_3D$(EXEEXT)
+	adios_read_points$(EXEEXT) adios_read_wb_subpg$(EXEEXT)
 subdir = examples/C/transforms
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -88,13 +87,6 @@ adios_global_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 adios_global_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(adios_global_LDFLAGS) $(LDFLAGS) -o $@
-am_adios_read_all_3D_OBJECTS = adios_read_all_3D.$(OBJEXT)
-adios_read_all_3D_OBJECTS = $(am_adios_read_all_3D_OBJECTS)
-adios_read_all_3D_DEPENDENCIES = $(top_builddir)/src/libadiosread.a \
-	$(am__DEPENDENCIES_1)
-adios_read_all_3D_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(adios_read_all_3D_LDFLAGS) $(LDFLAGS) -o $@
 am_adios_read_points_OBJECTS = adios_read_points.$(OBJEXT)
 adios_read_points_OBJECTS = $(am_adios_read_points_OBJECTS)
 adios_read_points_DEPENDENCIES = $(top_builddir)/src/libadiosread.a \
@@ -116,13 +108,6 @@ adios_read_wb_subpg_DEPENDENCIES = $(top_builddir)/src/libadiosread.a \
 adios_read_wb_subpg_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(adios_read_wb_subpg_LDFLAGS) $(LDFLAGS) -o $@
-am_adios_write_all_3D_OBJECTS = adios_write_all_3D.$(OBJEXT)
-adios_write_all_3D_OBJECTS = $(am_adios_write_all_3D_OBJECTS)
-adios_write_all_3D_DEPENDENCIES = $(top_builddir)/src/libadios.a \
-	$(am__DEPENDENCIES_1)
-adios_write_all_3D_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(adios_write_all_3D_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -135,12 +120,10 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(adios_global_SOURCES) $(adios_read_all_3D_SOURCES) \
-	$(adios_read_points_SOURCES) $(adios_read_subv_SOURCES) \
-	$(adios_read_wb_subpg_SOURCES) $(adios_write_all_3D_SOURCES)
-DIST_SOURCES = $(adios_global_SOURCES) $(adios_read_all_3D_SOURCES) \
-	$(adios_read_points_SOURCES) $(adios_read_subv_SOURCES) \
-	$(adios_read_wb_subpg_SOURCES) $(adios_write_all_3D_SOURCES)
+SOURCES = $(adios_global_SOURCES) $(adios_read_points_SOURCES) \
+	$(adios_read_subv_SOURCES) $(adios_read_wb_subpg_SOURCES)
+DIST_SOURCES = $(adios_global_SOURCES) $(adios_read_points_SOURCES) \
+	$(adios_read_subv_SOURCES) $(adios_read_wb_subpg_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -166,6 +149,8 @@ ADIOSREADLIB_SEQ_CFLAGS = @ADIOSREADLIB_SEQ_CFLAGS@
 ADIOSREADLIB_SEQ_CPPFLAGS = @ADIOSREADLIB_SEQ_CPPFLAGS@
 ADIOSREADLIB_SEQ_LDADD = @ADIOSREADLIB_SEQ_LDADD@
 ADIOSREADLIB_SEQ_LDFLAGS = @ADIOSREADLIB_SEQ_LDFLAGS@
+ADIOS_TIMERS = @ADIOS_TIMERS@
+ADIOS_TIMER_EVENTS = @ADIOS_TIMER_EVENTS@
 ALACRITY_CPPFLAGS = @ALACRITY_CPPFLAGS@
 ALACRITY_LDFLAGS = @ALACRITY_LDFLAGS@
 ALACRITY_LIBS = @ALACRITY_LIBS@
@@ -326,7 +311,6 @@ SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SKEL_HAVE_ADIOS_TIMING = @SKEL_HAVE_ADIOS_TIMING@
-SKEL_TIMING = @SKEL_TIMING@
 STRIP = @STRIP@
 SZIP_CPPFLAGS = @SZIP_CPPFLAGS@
 SZIP_LDFLAGS = @SZIP_LDFLAGS@
@@ -398,10 +382,6 @@ AUTOMAKE_OPTIONS = no-dependencies
 adios_global_SOURCES = adios_global.c
 adios_global_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 adios_global_LDFLAGS = $(ADIOSLIB_LDFLAGS)
-adios_write_all_3D_SOURCES = adios_write_all_3D.c
-adios_write_all_3D_LDADD = $(top_builddir)/src/libadios.a \
-	$(ADIOSLIB_LDADD)
-adios_write_all_3D_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 adios_read_subv_SOURCES = adios_read_subv.c
 adios_read_subv_LDADD = $(top_builddir)/src/libadiosread.a \
 	$(ADIOSLIB_LDADD)
@@ -414,10 +394,6 @@ adios_read_wb_subpg_SOURCES = adios_read_wb_subpg.c
 adios_read_wb_subpg_LDADD = $(top_builddir)/src/libadiosread.a \
 	$(ADIOSLIB_LDADD)
 adios_read_wb_subpg_LDFLAGS = $(ADIOSLIB_LDFLAGS)
-adios_read_all_3D_SOURCES = adios_read_all_3D.c
-adios_read_all_3D_LDADD = $(top_builddir)/src/libadiosread.a \
-	$(ADIOSLIB_LDADD)
-adios_read_all_3D_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 CLEANFILES = *.bp
 EXTRA_DIST = adios_global.xml gread_temperature.ch gwrite_temperature.ch S3D
 all: all-am
@@ -466,9 +442,6 @@ clean-noinstPROGRAMS:
 adios_global$(EXEEXT): $(adios_global_OBJECTS) $(adios_global_DEPENDENCIES) 
 	@rm -f adios_global$(EXEEXT)
 	$(adios_global_LINK) $(adios_global_OBJECTS) $(adios_global_LDADD) $(LIBS)
-adios_read_all_3D$(EXEEXT): $(adios_read_all_3D_OBJECTS) $(adios_read_all_3D_DEPENDENCIES) 
-	@rm -f adios_read_all_3D$(EXEEXT)
-	$(adios_read_all_3D_LINK) $(adios_read_all_3D_OBJECTS) $(adios_read_all_3D_LDADD) $(LIBS)
 adios_read_points$(EXEEXT): $(adios_read_points_OBJECTS) $(adios_read_points_DEPENDENCIES) 
 	@rm -f adios_read_points$(EXEEXT)
 	$(adios_read_points_LINK) $(adios_read_points_OBJECTS) $(adios_read_points_LDADD) $(LIBS)
@@ -478,9 +451,6 @@ adios_read_subv$(EXEEXT): $(adios_read_subv_OBJECTS) $(adios_read_subv_DEPENDENC
 adios_read_wb_subpg$(EXEEXT): $(adios_read_wb_subpg_OBJECTS) $(adios_read_wb_subpg_DEPENDENCIES) 
 	@rm -f adios_read_wb_subpg$(EXEEXT)
 	$(adios_read_wb_subpg_LINK) $(adios_read_wb_subpg_OBJECTS) $(adios_read_wb_subpg_LDADD) $(LIBS)
-adios_write_all_3D$(EXEEXT): $(adios_write_all_3D_OBJECTS) $(adios_write_all_3D_DEPENDENCIES) 
-	@rm -f adios_write_all_3D$(EXEEXT)
-	$(adios_write_all_3D_LINK) $(adios_write_all_3D_OBJECTS) $(adios_write_all_3D_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -703,7 +673,6 @@ uninstall-am:
 
 all-local:
 	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
-	test "$(srcdir)" = "$(builddir)" || cp -r $(srcdir)/S3D $(builddir)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

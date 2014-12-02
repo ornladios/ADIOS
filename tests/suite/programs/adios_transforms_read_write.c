@@ -15,7 +15,6 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include "mpi.h"
 #include "adios.h"
 #include "adios_read.h"
 #include <stdint.h>
@@ -37,7 +36,7 @@ int find_var (ADIOS_FILE *f, char *name)
     for (i=0; i<f->nvars; i++)
     {
         // skip the leading / in the file's varname list in the comparison
-        if (!strcmp(name, f->var_namelist[i]+1))
+        if (!strcmp(name, f->var_namelist[i]))
             return 1;
     }
     return 0;

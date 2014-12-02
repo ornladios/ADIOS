@@ -33,8 +33,10 @@ struct _ADIOS_FILE {
         char     ** var_namelist;   /* Variable names in a char* array                                */
         int      nattrs;            /* Number of attributes in all groups                             */
         char     ** attr_namelist;  /* Attribute names in a char* array                               */
-        int      nmeshes;            /* Number of attributes in all groups                            */
-        char     ** mesh_namelist;  /* Attribute names in a char* array                               */
+        int      nmeshes;           /* Number of meshes in all groups                                 */
+        char     ** mesh_namelist;  /* Mesh names in a char* array                                    */
+        int      nlinks;            /* Number of links in all groups                                  */
+        char     ** link_namelist;  /* link names in a char* array                                    */
 
         /* Stream step information */
         int      current_step;      /* The current step in a stream. For a file, it is always 0.      */

@@ -140,6 +140,8 @@ ADIOSREADLIB_SEQ_CFLAGS = @ADIOSREADLIB_SEQ_CFLAGS@
 ADIOSREADLIB_SEQ_CPPFLAGS = @ADIOSREADLIB_SEQ_CPPFLAGS@
 ADIOSREADLIB_SEQ_LDADD = @ADIOSREADLIB_SEQ_LDADD@
 ADIOSREADLIB_SEQ_LDFLAGS = @ADIOSREADLIB_SEQ_LDFLAGS@
+ADIOS_TIMERS = @ADIOS_TIMERS@
+ADIOS_TIMER_EVENTS = @ADIOS_TIMER_EVENTS@
 ALACRITY_CPPFLAGS = @ALACRITY_CPPFLAGS@
 ALACRITY_LDFLAGS = @ALACRITY_LDFLAGS@
 ALACRITY_LIBS = @ALACRITY_LIBS@
@@ -300,7 +302,6 @@ SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SKEL_HAVE_ADIOS_TIMING = @SKEL_HAVE_ADIOS_TIMING@
-SKEL_TIMING = @SKEL_TIMING@
 STRIP = @STRIP@
 SZIP_CPPFLAGS = @SZIP_CPPFLAGS@
 SZIP_LDFLAGS = @SZIP_LDFLAGS@
@@ -366,7 +367,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = scalars arrays attributes manual global-array global-array-time read_all stat schema flexpath_arrays transforms compression_test icee_arrays
+SUBDIRS = scalars arrays attributes manual global-array global-array-time read_all stat schema flexpath_arrays transforms
 all: all-recursive
 
 .SUFFIXES:

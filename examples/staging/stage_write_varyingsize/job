@@ -1,0 +1,74 @@
+#!/bin/bash
+#PBS -A STF006
+#PBS -N genarray
+#PBS -j oe
+#PBS -q debug
+#PBS -l walltime=0:10:00,nodes=3
+## On the Cray, you need at least 3 nodes for 3 separate application runs
+
+#cd $PBS_O_WORKDIR
+
+if [ `hostname | cut -c 1-4` == "sith" ]; then
+    source /etc/profile.d/modules.sh
+    module unload PE-pgi PE-intel PE-gnu
+    module load PE-gnu
+    module load szip
+    module load dataspaces/1.4.0
+    module load mxml/2.7
+    module load flexpath/adios-1.7
+    #DATASPACES_DIR=/ccs/proj/e2e/dataspaces/sith/pgi
+fi
+
+RUNCMD="mpirun -np"
+#RUNCMD="aprun -n"
+SERVER=$DATASPACES_DIR/bin/dataspaces_server
+
+WRITEPROC=1
+STAGINGPROC=1
+READPROC=1
+let "PROCALL=WRITEPROC+READPROC"
+
+# clean-up previous run
+rm -f log.* core* conf dataspaces.conf 
+rm staged.bp genarray.bp
+
+# Prepare config file for DataSpaces
+echo "## Config file for DataSpaces
+ndim = 3
+dims = 20,40,70
+max_versions = 10
+#max_readers =" $READPROC " 
+#lock_type = 2
+" > dataspaces.conf
+
+# Run DataSpaces
+echo "-- Start DataSpaces server "$SERVER" on $STAGINGPROC PEs, -s$STAGINGPROC -c$PROCALL"
+$RUNCMD $STAGINGPROC $SERVER -s$STAGINGPROC -c$PROCALL &> log.server &
+
+## Give some time for the servers to load and startup
+sleep 1s
+while [ ! -f conf ]; do
+    echo "-- File conf is not yet available from server. Sleep more"
+    sleep 1s
+done
+sleep 3s  # wait server to fill up the conf file
+
+## Export the main server config to the environment
+while read line; do
+    export set "${line}"
+done < conf
+
+echo "-- DataSpaces IDs: P2TNID = $P2TNID   P2TPID = $P2TPID"
+
+# Start STAGE_WRITE
+#echo "-- Start STAGE_WRITE on $READPROC PEs"
+#$RUNCMD $READPROC ./stage_write genarray.bp staged.bp DATASPACES "verbose=4;poll_interval=100" MPI "" $READPROC 1 1 >& log.stage_write &
+
+# Start GENARRAY
+#echo "-- Start GENARRAY on $WRITEPROC PEs"
+#$RUNCMD $WRITEPROC ./genarray_varying genarray.bp $WRITEPROC 1 1 16 32 64 5 10 >& log.genarray
+
+#echo "-- Wait until all applications exit. Run ./check.sh to see status"
+wait
+rm -f conf
+

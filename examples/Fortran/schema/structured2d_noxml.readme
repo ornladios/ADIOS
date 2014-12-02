@@ -1,0 +1,41 @@
+REQUIREMENTS:
+    - ADIOS 1.5.0: http://www.olcf.ornl.gov/center-projects/adios
+    - C compiler
+    - MPI
+
+BUILD:
+    - Install ADIOS
+    - In Makefile, set ADIOS_DIR to the installation directory
+    - also set the MPI/C compiler name (e.g. mpicc or cc)
+    - run make
+
+This example is for writing a uniform 2D mesh and data on it. 
+2D mesh is decomposed in x and y direction by npx and npy, which are passed in from the command line following the executable.
+npx = number of processes in x direction
+npy = number of processes in y direction
+X = coordinates of data in x direction
+Y = coordinates of data in y direction
+
+Processes write ndx*ndy points per process
+data is data on the points (value = rank)
+
+1. Run the writer 
+=================
+$ mpirun -np 12 ./structured2d_f_noxml 4 3
+
+2. Check the output
+===================
+  integer  /nproc      scalar = 12 
+  integer  /nx_global  scalar = 260 
+  integer  /ny_global  scalar = 387 
+  integer  /offs_x     scalar = 0 
+  integer  /offs_y     scalar = 0 
+  integer  /nx_local   scalar = 65 
+  integer  /ny_local   scalar = 129 
+  double   /X          {260, 387} = 0 / 453.496 / 226.748 / 93.8189 
+  double   /Y          {260, 387} = 0 / 386 / 193 / 111.717 
+  double   /data       {260, 387} = 0 / 11 / 5.5 / 3.45205 
+
+$ bpls -l structured2d.bp
+
+strctured2d.png is a plot of how the data over the nx_global*ny_global points should look like if visualized.

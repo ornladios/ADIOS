@@ -11,7 +11,6 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
-#include "mpi.h"
 
 #include "adios_read.h"
 

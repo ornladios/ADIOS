@@ -2,4 +2,4 @@ add_subdirectory(scalars)
 add_subdirectory(arrays)
 add_subdirectory(global-array)
 add_subdirectory(global-array-time)
-
+add_subdirectory(schema)

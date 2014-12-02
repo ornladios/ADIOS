@@ -9,3 +9,4 @@ adios_read_writeblock
 no_xml_write_byid
 read_no_xml_write_byid
 
+adios_global.bp.dir/

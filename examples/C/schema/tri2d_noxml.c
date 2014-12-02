@@ -5,7 +5,7 @@
  * Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
  */
 
-/* ADIOS C Example: write variables along with an rectilinear mesh. 
+/* ADIOS C Example: write variables along with an unstructured mesh. 
  */
 #include <stdio.h>
 #include <stdlib.h>

@@ -1,0 +1,19 @@
+TARGET=gnu
+
+## Set ADIOS_DIR here or before doing make
+override ADIOS_DIR=/ccs/proj/e2e/${USER}/ADIOS/sith.${TARGET}
+#override ADIOS_DIR=/sw/redhat6/adios/1.7.0/rhel6_pgi13.4
+#override ADIOS_DIR=/sw/redhat6/adios/1.6.0/rhel6_pgi13.4
+
+## mpicc and mpif90 SETTINGS
+CC=mpicc
+FC=mpif90
+CFLAGS=-g
+LDFLAGS=-g
+
+## cc/ftn SETTINGS
+#CC=cc
+#FC=ftn
+#CFLAGS = -O3
+#LDFLAGS =
+
