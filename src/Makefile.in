@@ -1626,7 +1626,7 @@ am__libadiosreadf_a_SOURCES_DIST = core/adios_bp_v1.c \
 	read/read_dataspaces.c read/read_dimes.c read/read_datatap.c \
 	read/read_flexpath.c nssi/adios_nssi_config.c read/read_nssi.c \
 	core/adiosf_read.c core/adiosf_defs_mod.f90 \
-	core/adiosf_read_mod.f90
+	core/adiosf_read_mod.f90 query/adios_query_mod.f90
 am__objects_152 = $(am__objects_1) \
 	libadiosreadf_a-adios_transforms_common.$(OBJEXT) \
 	libadiosreadf_a-adios_transforms_hooks.$(OBJEXT) \
@@ -1692,7 +1692,8 @@ am__objects_160 = $(am__objects_159) \
 @BUILD_FORTRAN_TRUE@am_libadiosreadf_a_OBJECTS = $(am__objects_166) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_a-adiosf_read.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	adiosf_defs_mod.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@	adiosf_read_mod.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@	adiosf_read_mod.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@	adios_query_mod.$(OBJEXT)
 am__dist_libadiosreadf_a_SOURCES_DIST = nssi/adios_nssi_args.x
 dist_libadiosreadf_a_OBJECTS =
 @BUILD_FORTRAN_TRUE@@HAVE_NSSI_TRUE@nodist_libadiosreadf_a_OBJECTS = libadiosreadf_a-adios_nssi_args.$(OBJEXT)
@@ -2703,7 +2704,8 @@ libadiosread_a_SOURCES = core/adios_bp_v1.c core/adios_endianness.c \
 @BUILD_FORTRAN_TRUE@libadiosreadf_a_SOURCES = $(FortranReadLibSource) \
 @BUILD_FORTRAN_TRUE@	core/adiosf_read.c \
 @BUILD_FORTRAN_TRUE@	core/adiosf_defs_mod.f90 \
-@BUILD_FORTRAN_TRUE@	core/adiosf_read_mod.f90
+@BUILD_FORTRAN_TRUE@	core/adiosf_read_mod.f90 \
+@BUILD_FORTRAN_TRUE@	query/adios_query_mod.f90
 @BUILD_FORTRAN_TRUE@libadiosreadf_v1_a_SOURCES = $(FortranReadLibSource) core/adiosf_read_v1.c
 @BUILD_FORTRAN_TRUE@libadiosreadf_v1_a_CPPFLAGS = $(libadiosreadf_a_CPPFLAGS)
 @BUILD_FORTRAN_TRUE@libadiosreadf_v1_a_CFLAGS = $(libadiosreadf_a_CFLAGS)
@@ -7972,9 +7974,6 @@ uninstall-am: uninstall-binPROGRAMS uninstall-includeHEADERS \
 @BUILD_FORTRAN_TRUE@adios_read_mod.mod: adiosf_read_mod.$(OBJEXT)
 
 @BUILD_FORTRAN_TRUE@adios_defs_mod.mod: adiosf_defs_mod.$(OBJEXT)
-
-@BUILD_FORTRAN_TRUE@adios_query_mod.mod: query/adios_query_mod.f90 
-@BUILD_FORTRAN_TRUE@	$(FC) -c query/adios_query_mod.f90
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

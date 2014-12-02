@@ -504,7 +504,8 @@ libadiosreadf_v1_a_CPPFLAGS = $(libadiosreadf_a_CPPFLAGS)
 libadiosreadf_v1_a_CFLAGS = $(libadiosreadf_a_CFLAGS)
 
 libadiosreadf_a_SOURCES += core/adiosf_defs_mod.f90 \
-                           core/adiosf_read_mod.f90
+                           core/adiosf_read_mod.f90 \
+                           query/adios_query_mod.f90
 
 #nodist_libadiosreadf_a_SOURCES += adios_read_mod.mod
 nodist_include_HEADERS += adios_read_mod.mod adios_defs_mod.mod adios_query_mod.mod
@@ -514,9 +515,6 @@ adiosf_read_mod.$(OBJEXT): adiosf_defs_mod.$(OBJEXT)
 adios_read_mod.mod: adiosf_read_mod.$(OBJEXT)
 
 adios_defs_mod.mod: adiosf_defs_mod.$(OBJEXT)
-
-adios_query_mod.mod: query/adios_query_mod.f90 
-	$(FC) -c query/adios_query_mod.f90
 
 endif
 
