@@ -4,7 +4,7 @@
 #include <string.h>
 #include <assert.h>
 
-#include "adios_types.h"
+#include "public/adios_types.h"
 #include "core/adios_subvolume.h"
 
 // Uncomment to print all data volumes (original, intermediate, and final)
