@@ -387,7 +387,13 @@ static inline rid_t ridConversionWithoutCheck(const rid_t rid/*relative to local
 
 	int i;
 	uint64_t coordinates[MAX_DIMS];
-	rid_t remain = rid;
+
+	// First convert the RID in the src box to coordinates in the dest box
+	ridToCoordinates(dim, Corder, rid, srccount, coordinates);
+	for (i = 0; i < dim; i++)
+		coordinates[i] = coordinates[i] + srcstart[i] - deststart[i];
+
+	// Then, convert the coordinates in the dest box back to an RID
 	uint64_t relativeRid = 0;
 	if (Corder) {
 		for (i = 0; i < dim; i++){
