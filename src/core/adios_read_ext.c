@@ -15,6 +15,7 @@
 #include "core/transforms/adios_transforms_transinfo.h"
 #include "core/transforms/adios_transforms_read.h"
 #include "core/adios_selection_util.h"
+#include "core/adios_infocache.h"
 
 // Ensure unique pointer-based values for each one
 const data_view_t LOGICAL_DATA_VIEW = &LOGICAL_DATA_VIEW;
@@ -166,13 +167,12 @@ ADIOS_PG_INTERSECTIONS * adios_find_intersecting_pgs(const ADIOS_FILE *fp, int v
     int blockidx, timestep, timestep_blockidx;
     int curblocks, start_blockidx, end_blockidx;
     int intersects;
-    ADIOS_VARBLOCK *raw_vb, *orig_vb;
+    ADIOS_VARBLOCK *raw_vb, *vb;
 
     enum ADIOS_FLAG swap_endianness = (fp->endianness == get_system_endianness()) ? adios_flag_no : adios_flag_yes;
     int to_steps = from_step + nsteps;
 
-    const ADIOS_VARINFO *raw_varinfo = common_read_inq_var_raw_byid(fp, varid); // Bypasses data view
-    const ADIOS_TRANSINFO* transinfo = common_read_inq_transinfo(fp, raw_varinfo); // Bypasses data view
+    adios_infocache *infocache = common_read_get_file_infocache(fp);
 
     ADIOS_PG_INTERSECTIONS *resulting_intersections = (ADIOS_PG_INTERSECTIONS *)calloc(1, sizeof(ADIOS_PG_INTERSECTIONS));
     resulting_intersections->npg = 0;
@@ -181,21 +181,24 @@ ADIOS_PG_INTERSECTIONS * adios_find_intersecting_pgs(const ADIOS_FILE *fp, int v
     resulting_intersections->intersections = (ADIOS_PG_INTERSECTION *)calloc(intersection_capacity, sizeof(ADIOS_PG_INTERSECTION));
 
     // Precondition checking
-    assert(is_transform_type_valid(transinfo->transform_type));
-    assert(from_step >= 0 && to_steps <= raw_varinfo->nsteps);
-
     if (sel->type != ADIOS_SELECTION_BOUNDINGBOX &&
         sel->type != ADIOS_SELECTION_POINTS) {
         adios_error(err_operation_not_supported, "Only bounding box and point selections are currently supported during read on transformed variables.");
     }
 
+    const data_view_t old_view = adios_read_set_data_view(fp, LOGICAL_DATA_VIEW); // Temporarily go to logical data view
+
+    const ADIOS_VARINFO *varinfo = adios_infocache_inq_varinfo(fp, infocache, varid);
+    assert(from_step >= 0 && to_steps <= varinfo->nsteps);
+
     // Compute the blockidx range, given the timesteps
-    compute_blockidx_range(raw_varinfo, from_step, to_steps, &start_blockidx, &end_blockidx);
+    compute_blockidx_range(varinfo, from_step, to_steps, &start_blockidx, &end_blockidx);
+
     // Retrieve blockinfos, if they haven't been done retrieved
-    if (!raw_varinfo->blockinfo)
-        common_read_inq_var_blockinfo_raw(fp, (ADIOS_VARINFO *)raw_varinfo);
-    if (!transinfo->orig_blockinfo)
-        common_read_inq_trans_blockinfo(fp, raw_varinfo, (ADIOS_TRANSINFO *)transinfo);
+    if (!varinfo->blockinfo)
+    	common_read_inq_var_blockinfo(fp, (ADIOS_VARINFO *)varinfo);
+
+    adios_read_set_data_view(fp, old_view); // Reset the data view to whatever it was before
 
     // Assemble read requests for each varblock
     blockidx = start_blockidx;
@@ -206,9 +209,8 @@ ADIOS_PG_INTERSECTIONS * adios_find_intersecting_pgs(const ADIOS_FILE *fp, int v
         const ADIOS_SELECTION *pg_bounds_sel;
         ADIOS_SELECTION *pg_intersection_sel;
 
-        raw_vb = &raw_varinfo->blockinfo[blockidx];
-        orig_vb = &transinfo->orig_blockinfo[blockidx];
-        pg_bounds_sel = create_pg_bounds(transinfo->orig_ndim, orig_vb);
+        vb = &varinfo->blockinfo[blockidx];
+        pg_bounds_sel = create_pg_bounds(varinfo->ndim, vb);
 
         // Find the intersection, if any
         pg_intersection_sel = adios_selection_intersect_global(pg_bounds_sel, sel);
@@ -240,7 +242,7 @@ ADIOS_PG_INTERSECTIONS * adios_find_intersecting_pgs(const ADIOS_FILE *fp, int v
         // Increment block indexes
         blockidx++;
         timestep_blockidx++;
-        if (timestep_blockidx == raw_varinfo->nblocks[timestep]) {
+        if (timestep_blockidx == varinfo->nblocks[timestep]) {
             timestep_blockidx = 0;
             timestep++;
         }

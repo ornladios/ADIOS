@@ -13,6 +13,7 @@
 
 #include "public/adios_types.h"
 #include "public/adios_read_v2.h"  /* C API's struct's are used here */
+#include "core/adios_infocache.h"
 #include "core/transforms/adios_transforms_read.h" // NCSU ALACRITY-ADIOS
 #include "core/transforms/adios_transforms_transinfo.h" // NCSU ALACRITY-ADIOS
 
@@ -34,7 +35,13 @@ ADIOS_FILE * common_read_open_file   (const char * fname,
                                      enum ADIOS_READ_METHOD method,
                                      MPI_Comm comm);
 
-int common_read_close (ADIOS_FILE *fp);
+int common_read_close(ADIOS_FILE *fp);
+
+// Return the infocache associated with the given file
+// WARNING: varinfos/transinfos will be invalidated upon advance_step or close,
+// so users of this infocache should be careful not to use its returned infos
+// beyond the current timestep or after close.
+adios_infocache * common_read_get_file_infocache(ADIOS_FILE *fp);
 
 data_view_t common_read_set_data_view(ADIOS_FILE *fp, data_view_t data_view); // NCSU ALACRITY-ADIOS
 data_view_t common_read_get_data_view(const ADIOS_FILE *fp);

@@ -495,6 +495,11 @@ int common_read_close (ADIOS_FILE *fp)
     return retval;
 }
 
+adios_infocache * common_read_get_file_infocache(ADIOS_FILE *fp) {
+	struct common_read_internals_struct *internals = (struct common_read_internals_struct *)fp->internal_data;
+	return internals->infocache;
+}
+
 // NCSU ALACRITY-ADIOS
 data_view_t common_read_get_data_view(const ADIOS_FILE *fp) {
 	const struct common_read_internals_struct *internals = (const struct common_read_internals_struct *) fp->internal_data;
