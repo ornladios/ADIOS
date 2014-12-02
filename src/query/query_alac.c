@@ -1337,30 +1337,33 @@ int adios_query_alac_evaluate(ADIOS_QUERY* q,
                    int timestep,
 			       uint64_t batchSize, // limited by maxResult
 			       ADIOS_SELECTION* outputBoundry,
-			       ADIOS_SELECTION** queryResult) {
-	// first time, we have to evaluate it
-	ADIOS_ALAC_BITMAP* b ;
-	if (q->onTimeStep == NO_EVAL_BEFORE ) { // negative number is not evaluated
+			       ADIOS_SELECTION** queryResult)
+{
+	const int absoluteTimestep = adios_get_actual_timestep(q, timestep);
+
+	ADIOS_ALAC_BITMAP* b;
+	if (q->onTimeStep != absoluteTimestep) {
+		// if this is the first call to evaluate this timestep, evaluate the query
 		create_lookup(set_bit_count, set_bit_position);
 		b = adios_alac_process(q, timestep, false);
 		initLastConvRid(b);
 		q->maxResultsDesired =  calSetBitsNum(b);
 		q->resultsReadSoFar = 0;
-		q->onTimeStep = timestep;
-	}else { //convert void* _internal to ADIOS_ALAC_BITMAP
-		b = (ADIOS_ALAC_BITMAP*) malloc(sizeof(ADIOS_ALAC_BITMAP));
+		q->onTimeStep = absoluteTimestep;
+	} else { //convert void* _internal to ADIOS_ALAC_BITMAP
+		b = (ADIOS_ALAC_BITMAP*)malloc(sizeof(ADIOS_ALAC_BITMAP));
 		convertMemstreamToALACBitmap(q->queryInternal, b);
 	}
 	uint64_t retrievalSize = q->maxResultsDesired - q->resultsReadSoFar;
 	if (retrievalSize <= 0) {
 		(*queryResult) = NULL;
 		FreeALACBITMAP(b);
-		q->onTimeStep = NO_EVAL_BEFORE;
+		//q->onTimeStep = NO_EVAL_BEFORE;
 		//printf(":: ==> no more results to fetch\n");
 		return 0;
 	}
 	if (retrievalSize > batchSize) {
-			retrievalSize = batchSize;
+		retrievalSize = batchSize;
 	}
 
 	const int Corder = !futils_is_called_from_fortran(); // Use the dimension order of the caller; the common read layer will also mimic this order
