@@ -1,1 +1,1 @@
-SUBDIRS=global_range_select
+SUBDIRS=array
