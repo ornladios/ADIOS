@@ -1542,12 +1542,23 @@ adios_flexpath_write(
 	    }
 	} else {
 	    //vector quantity
-	    if (data)
-	    {
-		//we just need to copy the pointer stored in f->data
-                // calculate size
-                memcpy(&fm->buffer[field->field_offset], &data, sizeof(void *));
-
+	    if (data) {	    
+                struct adios_dimension_struct *dims = f->dimensions;
+                int arraysize = 0;
+                while (dims) {
+                    int size = adios_get_dim_value(&dims->dimension);
+                    if (arraysize) {
+                        arraysize *= size;
+                        dims = dims->next;
+                    }
+                    else
+                        arraysize = size;
+                }
+                arraysize *= field->field_size;
+                void *datacpy = malloc(arraysize);
+                //void *temp = get_FMPtrField_by_name(flist, fullname, fm->buffer, 0);
+                memcpy(datacpy, data, arraysize);
+                set_FMPtrField_by_name(flist, fullname, fm->buffer, datacpy);
 	    } else {
 		log_error("adios_flexpath_write: no array data found for var: %s. Bad.\n", f->name);	
 	    }
@@ -1559,44 +1570,7 @@ extern void
 adios_flexpath_close(struct adios_file_struct *fd, struct adios_method_struct *method) 
 {
     FlexpathWriteFileData* fileData = find_open_file(method->group->name);
-    void* buffer = malloc(fileData->fm->size);
-
-    struct adios_group_struct * g2 = fd->group;
-    struct adios_var_struct * fields = g2->vars;
-    while(fields) {       
-        if(fields->dimensions) {
-            struct adios_dimension_struct* dims = fields->dimensions;
-            int total_size = 1;
-            //for each dimension
-            while(dims) {    
-                int size = adios_get_dim_value (&dims->dimension);
-                total_size *= size;
-                dims = dims->next;
-            }		
-            FMFieldList flist = fileData->fm->format->field_list;
-            FMField *field = NULL;
-	    char *fullname = resolve_path_name(fields->path, fields->name);
-            field = internal_find_field(fullname, flist);
-            //perr( "field offset %d size %d\n", field->field_offset, field->field_size);
-
-            total_size*=field->field_size;
-            // malloc size
-            void* pointer_data_copy = malloc(total_size);
-            // while null
-            while(pointer_data_copy==NULL) { 
-                sleep(1);
-                void* pointer_data_copy = malloc(total_size);
-                //block
-            }
-            
-            char *resolved_name = resolve_path_name(fields->path, fields->name);
-            void *temp = get_FMPtrField_by_name(flist, resolved_name, fileData->fm->buffer, 0);
-            memcpy(pointer_data_copy, temp, total_size);
-            set_FMPtrField_by_name(flist, resolved_name, fileData->fm->buffer, pointer_data_copy);
-        }    
-        fields = fields->next;
-    }
-    
+    void* buffer = malloc(fileData->fm->size);    
     memcpy(buffer, fileData->fm->buffer, fileData->fm->size);
 
     threaded_enqueue(&fileData->dataQueue, buffer, 
