@@ -224,10 +224,11 @@ am__libadios_a_SOURCES_DIST = core/adios.c core/common_adios.c \
 	core/buffer.c core/adios_bp_v1.c core/adios_endianness.c \
 	core/bp_utils.c core/futils.c core/adios_error.c \
 	core/adios_read.c core/adios_read_v1.c core/common_read.c \
-	core/adios_read_ext.c core/globals.c core/adios_timing.c \
-	core/adios_read_hooks.c core/adios_transport_hooks.c \
-	core/adios_socket.c core/adios_logger.c core/util.c \
-	core/qhashtbl.c core/adios_copyspec.h core/adios_subvolume.h \
+	core/adios_infocache.c core/adios_read_ext.c core/globals.c \
+	core/adios_timing.c core/adios_read_hooks.c \
+	core/adios_transport_hooks.c core/adios_socket.c \
+	core/adios_logger.c core/util.c core/qhashtbl.c \
+	core/adios_copyspec.h core/adios_subvolume.h \
 	core/adios_selection_util.h \
 	core/transforms/adios_transforms_common.h \
 	core/transforms/adios_transforms_hooks.h \
@@ -359,6 +360,7 @@ am__objects_12 = $(am__objects_11) libadios_a-adios_query.$(OBJEXT)
 @BUILD_WRITE_TRUE@	libadios_a-adios_read.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_read_v1.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-common_read.$(OBJEXT) \
+@BUILD_WRITE_TRUE@	libadios_a-adios_infocache.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_read_ext.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-globals.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_timing.$(OBJEXT) \
@@ -533,8 +535,8 @@ am__libadios_nompi_a_SOURCES_DIST = core/adios.c core/common_adios.c \
 	query/adios_query.c core/buffer.c core/adios_bp_v1.c \
 	core/adios_endianness.c core/bp_utils.c core/futils.c \
 	core/adios_error.c core/adios_read.c core/adios_read_v1.c \
-	core/common_read.c core/globals.c core/mpidummy.c \
-	core/adios_timing.c core/adios_read_hooks.c \
+	core/common_read.c core/adios_infocache.c core/globals.c \
+	core/mpidummy.c core/adios_timing.c core/adios_read_hooks.c \
 	core/adios_transport_hooks.c core/adios_socket.c \
 	core/adios_logger.c core/util.c core/qhashtbl.c read/read_bp.c \
 	read/read_bp_staged.c read/read_bp_staged1.c \
@@ -615,6 +617,7 @@ am__objects_41 = $(am__objects_40) \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-adios_read.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-adios_read_v1.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-common_read.$(OBJEXT) \
+@BUILD_WRITE_TRUE@	libadios_nompi_a-adios_infocache.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-adios_read_ext.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-globals.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-mpidummy.$(OBJEXT) \
@@ -690,8 +693,8 @@ am__libadiosf_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	query/query_fastbit.c query/fastbit_adios.c query/query_alac.c \
 	query/adiosf_query.c core/buffer.c core/adios_bp_v1.c \
 	core/adios_endianness.c core/futils.c core/adios_error.c \
-	core/bp_utils.c core/common_read.c core/globals.c \
-	core/adios_timing.c core/adios_read_hooks.c \
+	core/bp_utils.c core/common_read.c core/adios_infocache.c \
+	core/globals.c core/adios_timing.c core/adios_read_hooks.c \
 	core/adios_transport_hooks.c core/adios_socket.c \
 	core/adios_logger.c core/util.c core/qhashtbl.c read/read_bp.c \
 	read/read_bp_staged.c read/read_bp_staged1.c \
@@ -777,6 +780,7 @@ am__objects_56 = $(am__objects_55) libadiosf_a-adiosf_query.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_error.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-bp_utils.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-common_read.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_infocache.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_read_ext.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-globals.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_timing.$(OBJEXT) \
@@ -876,8 +880,8 @@ am__libadiosf_nompi_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	query/query_fastbit.c query/fastbit_adios.c query/query_alac.c \
 	query/adiosf_query.c core/buffer.c core/adios_bp_v1.c \
 	core/adios_endianness.c core/futils.c core/adios_error.c \
-	core/bp_utils.c core/common_read.c core/globals.c \
-	core/adios_timing.c core/adios_read_hooks.c \
+	core/bp_utils.c core/common_read.c core/adios_infocache.c \
+	core/globals.c core/adios_timing.c core/adios_read_hooks.c \
 	core/adios_transport_hooks.c core/adios_socket.c \
 	core/adios_logger.c core/util.c core/qhashtbl.c read/read_bp.c \
 	read/read_bp_staged.c read/read_bp_staged1.c \
@@ -965,6 +969,7 @@ am__objects_77 = $(am__objects_76) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_a-adios_error.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_a-bp_utils.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_a-common_read.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_a-adios_infocache.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_a-adios_read_ext.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_a-globals.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_a-adios_timing.$(OBJEXT) \
@@ -1051,8 +1056,8 @@ am__libadiosf_nompi_v1_a_SOURCES_DIST = core/adiosf.c \
 	query/query_fastbit.c query/fastbit_adios.c query/query_alac.c \
 	query/adiosf_query.c core/buffer.c core/adios_bp_v1.c \
 	core/adios_endianness.c core/futils.c core/adios_error.c \
-	core/bp_utils.c core/common_read.c core/globals.c \
-	core/adios_timing.c core/adios_read_hooks.c \
+	core/bp_utils.c core/common_read.c core/adios_infocache.c \
+	core/globals.c core/adios_timing.c core/adios_read_hooks.c \
 	core/adios_transport_hooks.c core/adios_socket.c \
 	core/adios_logger.c core/util.c core/qhashtbl.c read/read_bp.c \
 	read/read_bp_staged.c read/read_bp_staged1.c \
@@ -1139,6 +1144,7 @@ am__objects_95 = $(am__objects_94) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_v1_a-adios_error.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_v1_a-bp_utils.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_v1_a-common_read.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_v1_a-adios_infocache.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_v1_a-adios_read_ext.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_v1_a-globals.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_v1_a-adios_timing.$(OBJEXT) \
@@ -1223,8 +1229,8 @@ am__libadiosf_v1_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	query/query_fastbit.c query/fastbit_adios.c query/query_alac.c \
 	query/adiosf_query.c core/buffer.c core/adios_bp_v1.c \
 	core/adios_endianness.c core/futils.c core/adios_error.c \
-	core/bp_utils.c core/common_read.c core/globals.c \
-	core/adios_timing.c core/adios_read_hooks.c \
+	core/bp_utils.c core/common_read.c core/adios_infocache.c \
+	core/globals.c core/adios_timing.c core/adios_read_hooks.c \
 	core/adios_transport_hooks.c core/adios_socket.c \
 	core/adios_logger.c core/util.c core/qhashtbl.c read/read_bp.c \
 	read/read_bp_staged.c read/read_bp_staged1.c \
@@ -1315,6 +1321,7 @@ am__objects_113 = $(am__objects_112) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-adios_error.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-bp_utils.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-common_read.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-adios_infocache.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-adios_read_ext.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-globals.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-adios_timing.$(OBJEXT) \
@@ -1356,7 +1363,8 @@ libadiosread_a_LIBADD =
 am__libadiosread_a_SOURCES_DIST = core/adios_bp_v1.c \
 	core/adios_endianness.c core/bp_utils.c core/futils.c \
 	core/adios_error.c core/adios_read.c core/adios_read_v1.c \
-	core/common_read.c core/adios_read_ext.c core/adios_copyspec.h \
+	core/common_read.c core/adios_infocache.c \
+	core/adios_read_ext.c core/adios_copyspec.h \
 	core/adios_subvolume.h core/adios_selection_util.h \
 	core/transforms/adios_transforms_common.h \
 	core/transforms/adios_transforms_hooks.h \
@@ -1448,6 +1456,7 @@ am_libadiosread_a_OBJECTS = libadiosread_a-adios_bp_v1.$(OBJEXT) \
 	libadiosread_a-adios_read.$(OBJEXT) \
 	libadiosread_a-adios_read_v1.$(OBJEXT) \
 	libadiosread_a-common_read.$(OBJEXT) \
+	libadiosread_a-adios_infocache.$(OBJEXT) \
 	libadiosread_a-adios_read_ext.$(OBJEXT) $(am__objects_124) \
 	$(am__objects_126) $(am__objects_132) \
 	libadiosread_a-globals.$(OBJEXT) \
@@ -1472,9 +1481,9 @@ libadiosread_nompi_a_LIBADD =
 am__libadiosread_nompi_a_SOURCES_DIST = core/mpidummy.c \
 	core/adios_bp_v1.c core/adios_endianness.c core/bp_utils.c \
 	core/futils.c core/adios_error.c core/adios_read.c \
-	core/adios_read_v1.c core/common_read.c core/adios_read_ext.c \
-	core/adios_copyspec.h core/adios_subvolume.h \
-	core/adios_selection_util.h \
+	core/adios_read_v1.c core/common_read.c core/adios_infocache.c \
+	core/adios_read_ext.c core/adios_copyspec.h \
+	core/adios_subvolume.h core/adios_selection_util.h \
 	core/transforms/adios_transforms_common.h \
 	core/transforms/adios_transforms_hooks.h \
 	core/transforms/adios_transforms_util.h \
@@ -1564,6 +1573,7 @@ am_libadiosread_nompi_a_OBJECTS =  \
 	libadiosread_nompi_a-adios_read.$(OBJEXT) \
 	libadiosread_nompi_a-adios_read_v1.$(OBJEXT) \
 	libadiosread_nompi_a-common_read.$(OBJEXT) \
+	libadiosread_nompi_a-adios_infocache.$(OBJEXT) \
 	libadiosread_nompi_a-adios_read_ext.$(OBJEXT) \
 	$(am__objects_138) $(am__objects_140) $(am__objects_146) \
 	libadiosread_nompi_a-adios_logger.$(OBJEXT) \
@@ -1585,9 +1595,9 @@ libadiosreadf_a_AR = $(AR) $(ARFLAGS)
 libadiosreadf_a_LIBADD =
 am__libadiosreadf_a_SOURCES_DIST = core/adios_bp_v1.c \
 	core/adios_endianness.c core/bp_utils.c core/futils.c \
-	core/adios_error.c core/common_read.c core/adios_read_ext.c \
-	core/adios_copyspec.h core/adios_subvolume.h \
-	core/adios_selection_util.h \
+	core/adios_error.c core/common_read.c core/adios_infocache.c \
+	core/adios_read_ext.c core/adios_copyspec.h \
+	core/adios_subvolume.h core/adios_selection_util.h \
 	core/transforms/adios_transforms_common.h \
 	core/transforms/adios_transforms_hooks.h \
 	core/transforms/adios_transforms_util.h \
@@ -1675,6 +1685,7 @@ am__objects_160 = $(am__objects_159) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_a-futils.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_a-adios_error.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_a-common_read.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@	libadiosreadf_a-adios_infocache.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_a-adios_read_ext.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	$(am__objects_152) $(am__objects_154) \
 @BUILD_FORTRAN_TRUE@	$(am__objects_160) \
@@ -1705,7 +1716,8 @@ libadiosreadf_nompi_a_LIBADD =
 am__libadiosreadf_nompi_a_SOURCES_DIST = core/mpidummy.c \
 	core/adios_bp_v1.c core/adios_endianness.c core/bp_utils.c \
 	core/futils.c core/adios_error.c core/adios_logger.c \
-	core/common_read.c core/adios_read_ext.c core/adios_copyspec.h \
+	core/common_read.c core/adios_infocache.c \
+	core/adios_read_ext.c core/adios_copyspec.h \
 	core/adios_subvolume.h core/adios_selection_util.h \
 	core/transforms/adios_transforms_common.h \
 	core/transforms/adios_transforms_hooks.h \
@@ -1793,6 +1805,7 @@ am__objects_175 = $(am__objects_174) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-adios_error.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-adios_logger.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-common_read.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-adios_infocache.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_a-adios_read_ext.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	$(am__objects_167) $(am__objects_169) \
 @BUILD_FORTRAN_TRUE@	$(am__objects_175) \
@@ -1818,7 +1831,8 @@ libadiosreadf_nompi_v1_a_LIBADD =
 am__libadiosreadf_nompi_v1_a_SOURCES_DIST = core/mpidummy.c \
 	core/adios_bp_v1.c core/adios_endianness.c core/bp_utils.c \
 	core/futils.c core/adios_error.c core/adios_logger.c \
-	core/common_read.c core/adios_read_ext.c core/adios_copyspec.h \
+	core/common_read.c core/adios_infocache.c \
+	core/adios_read_ext.c core/adios_copyspec.h \
 	core/adios_subvolume.h core/adios_selection_util.h \
 	core/transforms/adios_transforms_common.h \
 	core/transforms/adios_transforms_hooks.h \
@@ -1904,6 +1918,7 @@ am__objects_190 = $(am__objects_189) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_v1_a-adios_error.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_v1_a-adios_logger.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_v1_a-common_read.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_v1_a-adios_infocache.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_nompi_v1_a-adios_read_ext.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	$(am__objects_182) $(am__objects_184) \
 @BUILD_FORTRAN_TRUE@	$(am__objects_190) \
@@ -1924,9 +1939,9 @@ libadiosreadf_v1_a_AR = $(AR) $(ARFLAGS)
 libadiosreadf_v1_a_LIBADD =
 am__libadiosreadf_v1_a_SOURCES_DIST = core/adios_bp_v1.c \
 	core/adios_endianness.c core/bp_utils.c core/futils.c \
-	core/adios_error.c core/common_read.c core/adios_read_ext.c \
-	core/adios_copyspec.h core/adios_subvolume.h \
-	core/adios_selection_util.h \
+	core/adios_error.c core/common_read.c core/adios_infocache.c \
+	core/adios_read_ext.c core/adios_copyspec.h \
+	core/adios_subvolume.h core/adios_selection_util.h \
 	core/transforms/adios_transforms_common.h \
 	core/transforms/adios_transforms_hooks.h \
 	core/transforms/adios_transforms_util.h \
@@ -2013,6 +2028,7 @@ am__objects_205 = $(am__objects_204) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_v1_a-futils.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_v1_a-adios_error.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_v1_a-common_read.$(OBJEXT) \
+@BUILD_FORTRAN_TRUE@	libadiosreadf_v1_a-adios_infocache.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	libadiosreadf_v1_a-adios_read_ext.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@	$(am__objects_197) $(am__objects_199) \
 @BUILD_FORTRAN_TRUE@	$(am__objects_205) \
@@ -2533,8 +2549,9 @@ query_F_SOURCES = $(query_SOURCES) query/adiosf_query.c
 @BUILD_WRITE_TRUE@	core/bp_utils.c core/futils.c \
 @BUILD_WRITE_TRUE@	core/adios_error.c core/adios_read.c \
 @BUILD_WRITE_TRUE@	core/adios_read_v1.c core/common_read.c \
-@BUILD_WRITE_TRUE@	core/adios_read_ext.c core/globals.c \
-@BUILD_WRITE_TRUE@	core/adios_timing.c core/adios_read_hooks.c \
+@BUILD_WRITE_TRUE@	core/adios_infocache.c core/adios_read_ext.c \
+@BUILD_WRITE_TRUE@	core/globals.c core/adios_timing.c \
+@BUILD_WRITE_TRUE@	core/adios_read_hooks.c \
 @BUILD_WRITE_TRUE@	core/adios_transport_hooks.c \
 @BUILD_WRITE_TRUE@	core/adios_socket.c core/adios_logger.c \
 @BUILD_WRITE_TRUE@	core/util.c core/qhashtbl.c \
@@ -2561,9 +2578,9 @@ query_F_SOURCES = $(query_SOURCES) query/adiosf_query.c
 @BUILD_WRITE_TRUE@	core/bp_utils.c core/futils.c \
 @BUILD_WRITE_TRUE@	core/adios_error.c core/adios_read.c \
 @BUILD_WRITE_TRUE@	core/adios_read_v1.c core/common_read.c \
-@BUILD_WRITE_TRUE@	core/adios_read_ext.c core/globals.c \
-@BUILD_WRITE_TRUE@	core/mpidummy.c core/adios_timing.c \
-@BUILD_WRITE_TRUE@	core/adios_read_hooks.c \
+@BUILD_WRITE_TRUE@	core/adios_infocache.c core/adios_read_ext.c \
+@BUILD_WRITE_TRUE@	core/globals.c core/mpidummy.c \
+@BUILD_WRITE_TRUE@	core/adios_timing.c core/adios_read_hooks.c \
 @BUILD_WRITE_TRUE@	core/adios_transport_hooks.c \
 @BUILD_WRITE_TRUE@	core/adios_socket.c core/adios_logger.c \
 @BUILD_WRITE_TRUE@	core/util.c core/qhashtbl.c read/read_bp.c \
@@ -2587,6 +2604,7 @@ query_F_SOURCES = $(query_SOURCES) query/adiosf_query.c
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	core/adios_error.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	core/bp_utils.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	core/common_read.c \
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	core/adios_infocache.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	core/adios_read_ext.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	core/globals.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	core/adios_timing.c \
@@ -2677,18 +2695,20 @@ query_F_SOURCES = $(query_SOURCES) query/adiosf_query.c
 libadiosread_a_SOURCES = core/adios_bp_v1.c core/adios_endianness.c \
 	core/bp_utils.c core/futils.c core/adios_error.c \
 	core/adios_read.c core/adios_read_v1.c core/common_read.c \
-	core/adios_read_ext.c $(transforms_common_SOURCES) \
-	$(transforms_read_SOURCES) $(query_C_SOURCES) core/globals.c \
-	core/adios_read_hooks.c core/adios_logger.c core/util.c \
-	core/qhashtbl.c read/read_bp.c read/read_bp_staged.c \
-	read/read_bp_staged1.c $(am__append_38) $(am__append_39) \
-	$(am__append_40) $(am__append_41) $(am__append_42)
+	core/adios_infocache.c core/adios_read_ext.c \
+	$(transforms_common_SOURCES) $(transforms_read_SOURCES) \
+	$(query_C_SOURCES) core/globals.c core/adios_read_hooks.c \
+	core/adios_logger.c core/util.c core/qhashtbl.c read/read_bp.c \
+	read/read_bp_staged.c read/read_bp_staged1.c $(am__append_38) \
+	$(am__append_39) $(am__append_40) $(am__append_41) \
+	$(am__append_42)
 @HAVE_NSSI_TRUE@dist_libadiosread_a_SOURCES = nssi/adios_nssi_args.x
 @HAVE_NSSI_TRUE@nodist_libadiosread_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
 @BUILD_FORTRAN_TRUE@FortranReadLibSource = core/adios_bp_v1.c \
 @BUILD_FORTRAN_TRUE@	core/adios_endianness.c core/bp_utils.c \
 @BUILD_FORTRAN_TRUE@	core/futils.c core/adios_error.c \
-@BUILD_FORTRAN_TRUE@	core/common_read.c core/adios_read_ext.c \
+@BUILD_FORTRAN_TRUE@	core/common_read.c core/adios_infocache.c \
+@BUILD_FORTRAN_TRUE@	core/adios_read_ext.c \
 @BUILD_FORTRAN_TRUE@	$(transforms_common_SOURCES) \
 @BUILD_FORTRAN_TRUE@	$(transforms_read_SOURCES) \
 @BUILD_FORTRAN_TRUE@	$(query_F_SOURCES) core/globals.c \
@@ -2712,20 +2732,21 @@ libadiosread_a_SOURCES = core/adios_bp_v1.c core/adios_endianness.c \
 libadiosread_nompi_a_SOURCES = core/mpidummy.c core/adios_bp_v1.c \
 	core/adios_endianness.c core/bp_utils.c core/futils.c \
 	core/adios_error.c core/adios_read.c core/adios_read_v1.c \
-	core/common_read.c core/adios_read_ext.c \
-	$(transforms_common_SOURCES) $(transforms_read_SOURCES) \
-	$(query_C_SOURCES) core/adios_logger.c core/buffer.c \
-	core/globals.c core/adios_read_hooks.c core/util.c \
-	core/qhashtbl.c read/read_bp.c $(am__append_56) \
-	$(am__append_57) $(am__append_58) $(am__append_59) \
-	$(am__append_60)
+	core/common_read.c core/adios_infocache.c \
+	core/adios_read_ext.c $(transforms_common_SOURCES) \
+	$(transforms_read_SOURCES) $(query_C_SOURCES) \
+	core/adios_logger.c core/buffer.c core/globals.c \
+	core/adios_read_hooks.c core/util.c core/qhashtbl.c \
+	read/read_bp.c $(am__append_56) $(am__append_57) \
+	$(am__append_58) $(am__append_59) $(am__append_60)
 @HAVE_NSSI_TRUE@dist_libadiosread_nompi_a_SOURCES = nssi/adios_nssi_args.x
 @HAVE_NSSI_TRUE@nodist_libadiosread_nompi_a_SOURCES = adios_nssi_args.c adios_nssi_args.h
 @BUILD_FORTRAN_TRUE@FortranReadSeqLibSource = core/mpidummy.c \
 @BUILD_FORTRAN_TRUE@	core/adios_bp_v1.c core/adios_endianness.c \
 @BUILD_FORTRAN_TRUE@	core/bp_utils.c core/futils.c \
 @BUILD_FORTRAN_TRUE@	core/adios_error.c core/adios_logger.c \
-@BUILD_FORTRAN_TRUE@	core/common_read.c core/adios_read_ext.c \
+@BUILD_FORTRAN_TRUE@	core/common_read.c core/adios_infocache.c \
+@BUILD_FORTRAN_TRUE@	core/adios_read_ext.c \
 @BUILD_FORTRAN_TRUE@	$(transforms_common_SOURCES) \
 @BUILD_FORTRAN_TRUE@	$(transforms_read_SOURCES) \
 @BUILD_FORTRAN_TRUE@	$(query_F_SOURCES) core/globals.c \
@@ -2777,7 +2798,7 @@ EXTRA_DIST = core/adios_bp_v1.h core/adios_endianness.h \
 	     transforms/adios_transform_szip.h \
              core/adios_socket.h core/adios_transport_hooks.h \
              core/bp_types.h core/bp_utils.h core/buffer.h core/common_adios.h \
-             core/common_read.h core/futils.h core/globals.h core/ds_metadata.h \
+             core/common_read.h core/adios_infocache.h core/futils.h core/globals.h core/ds_metadata.h \
              core/util.h core/flexpath.h core/qhashtbl.h \
              nssi/adios_nssi_config.h nssi/aggregation.h nssi/io_timer.h
 
@@ -3044,6 +3065,12 @@ libadios_a-common_read.o: core/common_read.c
 
 libadios_a-common_read.obj: core/common_read.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-common_read.obj `if test -f 'core/common_read.c'; then $(CYGPATH_W) 'core/common_read.c'; else $(CYGPATH_W) '$(srcdir)/core/common_read.c'; fi`
+
+libadios_a-adios_infocache.o: core/adios_infocache.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_infocache.o `test -f 'core/adios_infocache.c' || echo '$(srcdir)/'`core/adios_infocache.c
+
+libadios_a-adios_infocache.obj: core/adios_infocache.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_infocache.obj `if test -f 'core/adios_infocache.c'; then $(CYGPATH_W) 'core/adios_infocache.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_infocache.c'; fi`
 
 libadios_a-adios_read_ext.o: core/adios_read_ext.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_read_ext.o `test -f 'core/adios_read_ext.c' || echo '$(srcdir)/'`core/adios_read_ext.c
@@ -3969,6 +3996,12 @@ libadios_nompi_a-common_read.o: core/common_read.c
 libadios_nompi_a-common_read.obj: core/common_read.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-common_read.obj `if test -f 'core/common_read.c'; then $(CYGPATH_W) 'core/common_read.c'; else $(CYGPATH_W) '$(srcdir)/core/common_read.c'; fi`
 
+libadios_nompi_a-adios_infocache.o: core/adios_infocache.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-adios_infocache.o `test -f 'core/adios_infocache.c' || echo '$(srcdir)/'`core/adios_infocache.c
+
+libadios_nompi_a-adios_infocache.obj: core/adios_infocache.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-adios_infocache.obj `if test -f 'core/adios_infocache.c'; then $(CYGPATH_W) 'core/adios_infocache.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_infocache.c'; fi`
+
 libadios_nompi_a-globals.o: core/globals.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-globals.o `test -f 'core/globals.c' || echo '$(srcdir)/'`core/globals.c
 
@@ -4382,6 +4415,12 @@ libadiosf_a-common_read.o: core/common_read.c
 
 libadiosf_a-common_read.obj: core/common_read.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-common_read.obj `if test -f 'core/common_read.c'; then $(CYGPATH_W) 'core/common_read.c'; else $(CYGPATH_W) '$(srcdir)/core/common_read.c'; fi`
+
+libadiosf_a-adios_infocache.o: core/adios_infocache.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_infocache.o `test -f 'core/adios_infocache.c' || echo '$(srcdir)/'`core/adios_infocache.c
+
+libadiosf_a-adios_infocache.obj: core/adios_infocache.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_infocache.obj `if test -f 'core/adios_infocache.c'; then $(CYGPATH_W) 'core/adios_infocache.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_infocache.c'; fi`
 
 libadiosf_a-globals.o: core/globals.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-globals.o `test -f 'core/globals.c' || echo '$(srcdir)/'`core/globals.c
@@ -4869,6 +4908,12 @@ libadiosf_nompi_a-common_read.o: core/common_read.c
 libadiosf_nompi_a-common_read.obj: core/common_read.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_a-common_read.obj `if test -f 'core/common_read.c'; then $(CYGPATH_W) 'core/common_read.c'; else $(CYGPATH_W) '$(srcdir)/core/common_read.c'; fi`
 
+libadiosf_nompi_a-adios_infocache.o: core/adios_infocache.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_a-adios_infocache.o `test -f 'core/adios_infocache.c' || echo '$(srcdir)/'`core/adios_infocache.c
+
+libadiosf_nompi_a-adios_infocache.obj: core/adios_infocache.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_a-adios_infocache.obj `if test -f 'core/adios_infocache.c'; then $(CYGPATH_W) 'core/adios_infocache.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_infocache.c'; fi`
+
 libadiosf_nompi_a-globals.o: core/globals.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_a-globals.o `test -f 'core/globals.c' || echo '$(srcdir)/'`core/globals.c
 
@@ -5312,6 +5357,12 @@ libadiosf_nompi_v1_a-common_read.o: core/common_read.c
 
 libadiosf_nompi_v1_a-common_read.obj: core/common_read.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_v1_a-common_read.obj `if test -f 'core/common_read.c'; then $(CYGPATH_W) 'core/common_read.c'; else $(CYGPATH_W) '$(srcdir)/core/common_read.c'; fi`
+
+libadiosf_nompi_v1_a-adios_infocache.o: core/adios_infocache.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_v1_a-adios_infocache.o `test -f 'core/adios_infocache.c' || echo '$(srcdir)/'`core/adios_infocache.c
+
+libadiosf_nompi_v1_a-adios_infocache.obj: core/adios_infocache.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_v1_a-adios_infocache.obj `if test -f 'core/adios_infocache.c'; then $(CYGPATH_W) 'core/adios_infocache.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_infocache.c'; fi`
 
 libadiosf_nompi_v1_a-globals.o: core/globals.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_v1_a-globals.o `test -f 'core/globals.c' || echo '$(srcdir)/'`core/globals.c
@@ -5757,6 +5808,12 @@ libadiosf_v1_a-common_read.o: core/common_read.c
 libadiosf_v1_a-common_read.obj: core/common_read.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-common_read.obj `if test -f 'core/common_read.c'; then $(CYGPATH_W) 'core/common_read.c'; else $(CYGPATH_W) '$(srcdir)/core/common_read.c'; fi`
 
+libadiosf_v1_a-adios_infocache.o: core/adios_infocache.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_infocache.o `test -f 'core/adios_infocache.c' || echo '$(srcdir)/'`core/adios_infocache.c
+
+libadiosf_v1_a-adios_infocache.obj: core/adios_infocache.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_infocache.obj `if test -f 'core/adios_infocache.c'; then $(CYGPATH_W) 'core/adios_infocache.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_infocache.c'; fi`
+
 libadiosf_v1_a-globals.o: core/globals.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-globals.o `test -f 'core/globals.c' || echo '$(srcdir)/'`core/globals.c
 
@@ -6002,6 +6059,12 @@ libadiosread_a-common_read.o: core/common_read.c
 
 libadiosread_a-common_read.obj: core/common_read.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_a_CFLAGS) $(CFLAGS) -c -o libadiosread_a-common_read.obj `if test -f 'core/common_read.c'; then $(CYGPATH_W) 'core/common_read.c'; else $(CYGPATH_W) '$(srcdir)/core/common_read.c'; fi`
+
+libadiosread_a-adios_infocache.o: core/adios_infocache.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_a_CFLAGS) $(CFLAGS) -c -o libadiosread_a-adios_infocache.o `test -f 'core/adios_infocache.c' || echo '$(srcdir)/'`core/adios_infocache.c
+
+libadiosread_a-adios_infocache.obj: core/adios_infocache.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_a_CFLAGS) $(CFLAGS) -c -o libadiosread_a-adios_infocache.obj `if test -f 'core/adios_infocache.c'; then $(CYGPATH_W) 'core/adios_infocache.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_infocache.c'; fi`
 
 libadiosread_a-adios_read_ext.o: core/adios_read_ext.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_a_CFLAGS) $(CFLAGS) -c -o libadiosread_a-adios_read_ext.o `test -f 'core/adios_read_ext.c' || echo '$(srcdir)/'`core/adios_read_ext.c
@@ -6297,6 +6360,12 @@ libadiosread_nompi_a-common_read.o: core/common_read.c
 libadiosread_nompi_a-common_read.obj: core/common_read.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-common_read.obj `if test -f 'core/common_read.c'; then $(CYGPATH_W) 'core/common_read.c'; else $(CYGPATH_W) '$(srcdir)/core/common_read.c'; fi`
 
+libadiosread_nompi_a-adios_infocache.o: core/adios_infocache.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-adios_infocache.o `test -f 'core/adios_infocache.c' || echo '$(srcdir)/'`core/adios_infocache.c
+
+libadiosread_nompi_a-adios_infocache.obj: core/adios_infocache.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-adios_infocache.obj `if test -f 'core/adios_infocache.c'; then $(CYGPATH_W) 'core/adios_infocache.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_infocache.c'; fi`
+
 libadiosread_nompi_a-adios_read_ext.o: core/adios_read_ext.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosread_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosread_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosread_nompi_a-adios_read_ext.o `test -f 'core/adios_read_ext.c' || echo '$(srcdir)/'`core/adios_read_ext.c
 
@@ -6566,6 +6635,12 @@ libadiosreadf_a-common_read.o: core/common_read.c
 
 libadiosreadf_a-common_read.obj: core/common_read.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_a-common_read.obj `if test -f 'core/common_read.c'; then $(CYGPATH_W) 'core/common_read.c'; else $(CYGPATH_W) '$(srcdir)/core/common_read.c'; fi`
+
+libadiosreadf_a-adios_infocache.o: core/adios_infocache.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_a-adios_infocache.o `test -f 'core/adios_infocache.c' || echo '$(srcdir)/'`core/adios_infocache.c
+
+libadiosreadf_a-adios_infocache.obj: core/adios_infocache.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_a-adios_infocache.obj `if test -f 'core/adios_infocache.c'; then $(CYGPATH_W) 'core/adios_infocache.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_infocache.c'; fi`
 
 libadiosreadf_a-adios_read_ext.o: core/adios_read_ext.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_a-adios_read_ext.o `test -f 'core/adios_read_ext.c' || echo '$(srcdir)/'`core/adios_read_ext.c
@@ -6861,6 +6936,12 @@ libadiosreadf_nompi_a-common_read.o: core/common_read.c
 libadiosreadf_nompi_a-common_read.obj: core/common_read.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-common_read.obj `if test -f 'core/common_read.c'; then $(CYGPATH_W) 'core/common_read.c'; else $(CYGPATH_W) '$(srcdir)/core/common_read.c'; fi`
 
+libadiosreadf_nompi_a-adios_infocache.o: core/adios_infocache.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-adios_infocache.o `test -f 'core/adios_infocache.c' || echo '$(srcdir)/'`core/adios_infocache.c
+
+libadiosreadf_nompi_a-adios_infocache.obj: core/adios_infocache.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-adios_infocache.obj `if test -f 'core/adios_infocache.c'; then $(CYGPATH_W) 'core/adios_infocache.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_infocache.c'; fi`
+
 libadiosreadf_nompi_a-adios_read_ext.o: core/adios_read_ext.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_a-adios_read_ext.o `test -f 'core/adios_read_ext.c' || echo '$(srcdir)/'`core/adios_read_ext.c
 
@@ -7137,6 +7218,12 @@ libadiosreadf_nompi_v1_a-common_read.o: core/common_read.c
 libadiosreadf_nompi_v1_a-common_read.obj: core/common_read.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_v1_a-common_read.obj `if test -f 'core/common_read.c'; then $(CYGPATH_W) 'core/common_read.c'; else $(CYGPATH_W) '$(srcdir)/core/common_read.c'; fi`
 
+libadiosreadf_nompi_v1_a-adios_infocache.o: core/adios_infocache.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_v1_a-adios_infocache.o `test -f 'core/adios_infocache.c' || echo '$(srcdir)/'`core/adios_infocache.c
+
+libadiosreadf_nompi_v1_a-adios_infocache.obj: core/adios_infocache.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_v1_a-adios_infocache.obj `if test -f 'core/adios_infocache.c'; then $(CYGPATH_W) 'core/adios_infocache.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_infocache.c'; fi`
+
 libadiosreadf_nompi_v1_a-adios_read_ext.o: core/adios_read_ext.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_nompi_v1_a-adios_read_ext.o `test -f 'core/adios_read_ext.c' || echo '$(srcdir)/'`core/adios_read_ext.c
 
@@ -7394,6 +7481,12 @@ libadiosreadf_v1_a-common_read.o: core/common_read.c
 
 libadiosreadf_v1_a-common_read.obj: core/common_read.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_v1_a-common_read.obj `if test -f 'core/common_read.c'; then $(CYGPATH_W) 'core/common_read.c'; else $(CYGPATH_W) '$(srcdir)/core/common_read.c'; fi`
+
+libadiosreadf_v1_a-adios_infocache.o: core/adios_infocache.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_v1_a-adios_infocache.o `test -f 'core/adios_infocache.c' || echo '$(srcdir)/'`core/adios_infocache.c
+
+libadiosreadf_v1_a-adios_infocache.obj: core/adios_infocache.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_v1_a-adios_infocache.obj `if test -f 'core/adios_infocache.c'; then $(CYGPATH_W) 'core/adios_infocache.c'; else $(CYGPATH_W) '$(srcdir)/core/adios_infocache.c'; fi`
 
 libadiosreadf_v1_a-adios_read_ext.o: core/adios_read_ext.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosreadf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosreadf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosreadf_v1_a-adios_read_ext.o `test -f 'core/adios_read_ext.c' || echo '$(srcdir)/'`core/adios_read_ext.c

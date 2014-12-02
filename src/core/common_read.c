@@ -1,4 +1,4 @@
-/* 
+/*
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
@@ -14,6 +14,7 @@
 #include "public/adios_error.h"
 #include "core/adios_logger.h"
 #include "core/common_read.h"
+#include "core/adios_infocache.h"
 #include "core/futils.h"
 #include "core/bp_utils.h" // struct namelists_struct
 #include "core/qhashtbl.h"
@@ -40,7 +41,7 @@ static struct adios_read_hooks_struct * adios_read_hooks = 0;
 struct common_read_internals_struct {
     enum ADIOS_READ_METHOD method;
     struct adios_read_hooks_struct * read_hooks; /* Save adios_read_hooks for each fopen for Matlab */
-    
+
     /* Group view information *//* Actual method provides the group names */
     int         ngroups;
     char     ** group_namelist;
@@ -62,6 +63,9 @@ struct common_read_internals_struct {
 
     // NCSU ALACRITY-ADIOS - The view mode of this file
     data_view_t data_view;
+
+    // Cache of VARINFOs and TRANSINFOs, only used internally by ADIOS at the moment
+    adios_infocache *infocache;
 };
 
 // NCSU ALACRITY-ADIOS - Forward declaration/function prototypes
@@ -75,17 +79,17 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
 {
     PairStruct *params, *p, *prev_p;
     int verbose_level, removeit, save;
-    int retval; 
+    int retval;
     char *end;
 
     adios_errno = err_no_error;
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
-        adios_error (err_invalid_read_method, 
+        adios_error (err_invalid_read_method,
             "Invalid read method (=%d) passed to adios_read_init_method().\n", (int)method);
         return err_invalid_read_method;
-    } 
-    // init the adios_read_hooks_struct if not yet initialized  
-    adios_read_hooks_init (&adios_read_hooks); 
+    }
+    // init the adios_read_hooks_struct if not yet initialized
+    adios_read_hooks_init (&adios_read_hooks);
     // NCSU ALACRITY-ADIOS - Initialize transform methods
     adios_transform_read_init();
 
@@ -102,7 +106,7 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
     prev_p = NULL;
     while (p) {
         removeit = 0;
-        if (!strcasecmp (p->name, "verbose")) 
+        if (!strcasecmp (p->name, "verbose"))
         {
             if (p->value) {
                 errno = 0;
@@ -117,19 +121,19 @@ int common_read_init_method (enum ADIOS_READ_METHOD method,
             adios_verbose_level = verbose_level;
             removeit = 1;
         }
-        else if (!strcasecmp (p->name, "quiet")) 
+        else if (!strcasecmp (p->name, "quiet"))
         {
             adios_verbose_level = 0; //don't print errors
             removeit = 1;
         }
-        else if (!strcasecmp (p->name, "logfile")) 
+        else if (!strcasecmp (p->name, "logfile"))
         {
             if (p->value) {
                 adios_logger_open (p->value, -1);
             }
             removeit = 1;
         }
-        else if (!strcasecmp (p->name, "abort_on_error")) 
+        else if (!strcasecmp (p->name, "abort_on_error"))
         {
             adios_abort_on_error = 1;
             save = adios_verbose_level;
@@ -184,7 +188,7 @@ int common_read_finalize_method(enum ADIOS_READ_METHOD method)
     adios_errno = err_no_error;
     int retval;
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
-        adios_error (err_invalid_read_method, 
+        adios_error (err_invalid_read_method,
             "Invalid read method (=%d) passed to adios_read_finalize_method().\n", (int)method);
         retval = err_invalid_read_method;
     } else if (!adios_read_hooks[method].adios_read_finalize_method_fn) {
@@ -300,10 +304,10 @@ static ADIOS_FILE * common_read_mesh (ADIOS_FILE * fp)
     return fp;
 }
 
-ADIOS_FILE * common_read_open (const char * fname, 
-                               enum ADIOS_READ_METHOD method, 
-                               MPI_Comm comm, 
-                               enum ADIOS_LOCKMODE lock_mode, 
+ADIOS_FILE * common_read_open (const char * fname,
+                               enum ADIOS_READ_METHOD method,
+                               MPI_Comm comm,
+                               enum ADIOS_LOCKMODE lock_mode,
                                float timeout_sec)
 {
     ADIOS_FILE * fp;
@@ -311,16 +315,16 @@ ADIOS_FILE * common_read_open (const char * fname,
     long i;
 
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
-        adios_error (err_invalid_read_method, 
+        adios_error (err_invalid_read_method,
             "Invalid read method (=%d) passed to adios_read_open().\n", (int)method);
         return NULL;
-    } 
+    }
 
     adios_errno = err_no_error;
-    internals = (struct common_read_internals_struct *) 
+    internals = (struct common_read_internals_struct *)
                     calloc(1,sizeof(struct common_read_internals_struct));
-    // init the adios_read_hooks_struct if not yet initialized 
-    adios_read_hooks_init (&adios_read_hooks); 
+    // init the adios_read_hooks_struct if not yet initialized
+    adios_read_hooks_init (&adios_read_hooks);
     // NCSU ALACRITY-ADIOS - Initialize transform methods
     adios_transform_read_init();
 
@@ -336,6 +340,9 @@ ADIOS_FILE * common_read_open (const char * fname,
 
     // NCSU ALACRITY-ADIOS - Added a data view field, which by default starts in logical view mode
     internals->data_view = LOGICAL_DATA_VIEW;
+
+	// NCSU ALACRITY-ADIOS - Added allocation of infocache for more efficient read processing with transforms
+	internals->infocache = adios_infocache_new();
 
     fp = adios_read_hooks[internals->method].adios_read_open_fn (fname, comm, lock_mode, timeout_sec);
     if (!fp)
@@ -353,7 +360,7 @@ ADIOS_FILE * common_read_open (const char * fname,
 
     // save the method and group information in fp->internal_data
     if (fp){
-        adios_read_hooks[internals->method].adios_get_groupinfo_fn (fp, &internals->ngroups, 
+        adios_read_hooks[internals->method].adios_get_groupinfo_fn (fp, &internals->ngroups,
                 &internals->group_namelist, &internals->nvars_per_group, &internals->nattrs_per_group);
         internals->group_in_view = -1;
         internals->group_varid_offset = 0;
@@ -369,7 +376,7 @@ ADIOS_FILE * common_read_open (const char * fname,
 }
 
 
-ADIOS_FILE * common_read_open_file (const char * fname, 
+ADIOS_FILE * common_read_open_file (const char * fname,
                                     enum ADIOS_READ_METHOD method,
                                     MPI_Comm comm)
 {
@@ -378,17 +385,16 @@ ADIOS_FILE * common_read_open_file (const char * fname,
     long i;
 
     if ((int)method < 0 || (int)method >= ADIOS_READ_METHOD_COUNT) {
-        adios_error (err_invalid_read_method, 
+        adios_error (err_invalid_read_method,
             "Invalid read method (=%d) passed to adios_read_open_file().\n", (int)method);
         return NULL;
     }
 
-
     adios_errno = err_no_error;
-    internals = (struct common_read_internals_struct *) 
+    internals = (struct common_read_internals_struct *)
                     calloc(1,sizeof(struct common_read_internals_struct));
-    // init the adios_read_hooks_struct if not yet initialized 
-    adios_read_hooks_init (&adios_read_hooks); 
+    // init the adios_read_hooks_struct if not yet initialized
+    adios_read_hooks_init (&adios_read_hooks);
     // NCSU ALACRITY-ADIOS - Initialize transform methods
     adios_transform_read_init();
 
@@ -397,6 +403,9 @@ ADIOS_FILE * common_read_open_file (const char * fname,
 
     // NCSU ALACRITY-ADIOS - Added a data view field, which by default starts in logical view mode
     internals->data_view = LOGICAL_DATA_VIEW;
+
+    // NCSU ALACRITY-ADIOS - Added allocation of infocache for more efficient read processing with transforms
+    internals->infocache = adios_infocache_new();
 
     if (!adios_read_hooks[internals->method].adios_read_open_file_fn) {
         adios_error (err_invalid_read_method, 
@@ -421,7 +430,7 @@ ADIOS_FILE * common_read_open_file (const char * fname,
 
     // save the method and group information in fp->internal_data
     if (fp){
-        adios_read_hooks[internals->method].adios_get_groupinfo_fn (fp, &internals->ngroups, 
+        adios_read_hooks[internals->method].adios_get_groupinfo_fn (fp, &internals->ngroups,
                 &internals->group_namelist, &internals->nvars_per_group, &internals->nattrs_per_group);
         internals->group_in_view = -1;
         internals->group_varid_offset = 0;
@@ -446,7 +455,7 @@ static void clean_up_read_reqgroups(adios_transform_read_request **reqgroups_hea
 }
 #undef MYFREE
 
-int common_read_close (ADIOS_FILE *fp) 
+int common_read_close (ADIOS_FILE *fp)
 {
     struct common_read_internals_struct * internals;
     int retval;
@@ -469,10 +478,15 @@ int common_read_close (ADIOS_FILE *fp)
         free_namelist (internals->group_namelist, internals->ngroups);
         free (internals->nvars_per_group);
         free (internals->nattrs_per_group);
-        // NCSU ALACRITY-ADIOS - Cleanup read request groups
+
+        // NCSU ALACRITY-ADIOS - Cleanup read request groups and infocache
         clean_up_read_reqgroups(&internals->transform_reqgroups);
+
+        adios_infocache_free(&internals->infocache);
+
         if (internals->hashtbl_vars)
             internals->hashtbl_vars->free (internals->hashtbl_vars);
+
         free (internals);
     } else {
         adios_error ( err_invalid_file_pointer, "Invalid file pointer at adios_read_close()\n");
@@ -482,8 +496,8 @@ int common_read_close (ADIOS_FILE *fp)
 }
 
 // NCSU ALACRITY-ADIOS
-data_view_t common_read_get_data_view(ADIOS_FILE *fp) {
-	struct common_read_internals_struct *internals = (struct common_read_internals_struct *) fp->internal_data;
+data_view_t common_read_get_data_view(const ADIOS_FILE *fp) {
+	const struct common_read_internals_struct *internals = (const struct common_read_internals_struct *) fp->internal_data;
 	return internals->data_view;
 }
 data_view_t common_read_set_data_view(ADIOS_FILE *fp, data_view_t data_view) {
@@ -548,6 +562,9 @@ int common_read_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
                         (void *)(i+1)); // avoid 0 for error checking later
             }
 
+            // Invalidate infocache, since all varinfos may have changed now
+            adios_infocache_invalidate(internals->infocache);
+
             /* Update group information too */
             free_namelist (internals->group_namelist, internals->ngroups);
             free (internals->nvars_per_group);
@@ -558,7 +575,7 @@ int common_read_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
                 /* if we have a group view, we need to update the presented list again */
                 /* advance_step updated fp->nvars, nattrs, var_namelist, attr_namelist */
                 int groupid = internals->group_in_view;
-                internals->group_in_view = -1; // we have the full view at this moment 
+                internals->group_in_view = -1; // we have the full view at this moment
                 common_read_group_view (fp, groupid);
             }
         }
@@ -570,7 +587,7 @@ int common_read_advance_step (ADIOS_FILE *fp, int last, float timeout_sec)
 }
 
 
-void common_read_release_step (ADIOS_FILE *fp) 
+void common_read_release_step (ADIOS_FILE *fp)
 {
     struct common_read_internals_struct * internals;
 
@@ -623,7 +640,7 @@ static int common_read_find_var (const ADIOS_FILE *fp, const char *name, int qui
 
 static int common_read_find_attr (int n, char ** namelist, const char *name, int quiet)
 {
-    /** Find a string name in a list of names and return the index. 
+    /** Find a string name in a list of names and return the index.
         Search should work with starting / characters and without.
         Create adios error and return -1 if name is null or
           if name is not found in the list.
@@ -663,10 +680,10 @@ static int common_read_find_attr (int n, char ** namelist, const char *name, int
 }
 
 
-ADIOS_VARINFO * common_read_inq_var (const ADIOS_FILE *fp, const char * varname) 
+ADIOS_VARINFO * common_read_inq_var (const ADIOS_FILE *fp, const char * varname)
 {
     ADIOS_VARINFO * retval;
- 
+
     adios_errno = err_no_error;
     if (fp) {
         int varid = common_read_find_var (fp, varname, 0);
@@ -737,13 +754,13 @@ ADIOS_VARINFO * common_read_inq_var_raw_byid (const ADIOS_FILE *fp, int varid)
 {
     struct common_read_internals_struct * internals;
     ADIOS_VARINFO * retval;
-    
+
     adios_errno = err_no_error;
     if (fp) {
         if (varid >= 0 && varid < fp->nvars) {
             internals = (struct common_read_internals_struct *) fp->internal_data;
-            /* Translate varid to varid in global varlist if a selected group is in view */ 
-            retval = internals->read_hooks[internals->method].adios_inq_var_byid_fn 
+            /* Translate varid to varid in global varlist if a selected group is in view */
+            retval = internals->read_hooks[internals->method].adios_inq_var_byid_fn
                                             (fp, varid+internals->group_varid_offset);
             if (retval) {
                 /* Translate real varid to the group varid presented to the user */
@@ -751,7 +768,7 @@ ADIOS_VARINFO * common_read_inq_var_raw_byid (const ADIOS_FILE *fp, int varid)
                 retval->meshinfo = NULL; // initialize here because it's a common layer addition
             }
         } else {
-            adios_error (err_invalid_varid, 
+            adios_error (err_invalid_varid,
                          "Variable ID %d is not valid adios_inq_var_byid(). "
                          "Available 0..%d\n", varid, fp->nvars-1);
             retval = NULL;
@@ -819,7 +836,7 @@ int common_read_inq_var_stat (const ADIOS_FILE *fp, ADIOS_VARINFO * varinfo,
     struct common_read_internals_struct * internals;
     int retval;
     int group_varid;
-    
+
     adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
@@ -885,7 +902,7 @@ int common_read_inq_var_blockinfo_raw (const ADIOS_FILE *fp, ADIOS_VARINFO * var
     struct common_read_internals_struct * internals;
     int retval;
     int group_varid;
-    
+
     adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
@@ -3213,7 +3230,7 @@ int common_read_schedule_read (const ADIOS_FILE      * fp,
 
 {
     int retval;
-    
+
     adios_errno = err_no_error;
     if (fp) {
         int varid = common_read_find_var (fp, varname,0);
@@ -3240,21 +3257,25 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
         void                  * data)
 
 {
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
-    timer_start ("adios_schedule_read");
-#endif
     struct common_read_internals_struct * internals = (struct common_read_internals_struct *) fp->internal_data;
     int retval;
-    
+
+    internals = (struct common_read_internals_struct *) fp->internal_data;
+
     adios_errno = err_no_error;
     if (fp) {
         if (varid >=0 && varid < fp->nvars) {
             // NCSU ALACRITY-ADIOS - If the variable is transformed, intercept
-            //   the read scheduling and schedule our own reads
-            ADIOS_VARINFO *raw_varinfo = common_read_inq_var_raw_byid(fp, varid);        // Get the *raw* varinfo
-            ADIOS_TRANSINFO *transinfo = common_read_inq_transinfo(fp, raw_varinfo);    // Get the transform info (i.e. original var info)
-            //assert(vi);
-            //assert(ti);
+            //   the read scheduling and schedule our own reads.
+        	// Note: Use the infocache to save varinfos across calls, since otherwise
+        	//   a large number of schedule_reads will have bad performance due to
+        	//   expensive inq_var calls.
+        	const data_view_t old_view = common_read_set_data_view((ADIOS_FILE *)fp, PHYSICAL_DATA_VIEW); // const-ness cheat, since we're going to set it right back
+            ADIOS_VARINFO *raw_varinfo = adios_infocache_inq_varinfo(fp, internals->infocache, varid); //common_read_inq_var_raw_byid(fp, varid);        // Get the *raw* varinfo
+            common_read_set_data_view((ADIOS_FILE *)fp, old_view); // const-ness cheat, since we're now setting it back
+
+            ADIOS_TRANSINFO *transinfo = adios_infocache_inq_transinfo(fp, internals->infocache, varid); //common_read_inq_transinfo(fp, raw_varinfo);    // Get the transform info (i.e. original var info)
+            assert(raw_varinfo && transinfo);
 
             // If this variable is transformed and we are in logical view mode,
             // delegate to the transform method to generate subrequests
@@ -3264,21 +3285,12 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
                 adios_transform_pg_read_request *pg_reqgroup;
                 adios_transform_read_request *new_reqgroup;
 
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
-    timer_start ("adios_transform_generate_read_requests");
-#endif
                 // Generate the read request group and append it to the list
                 new_reqgroup = adios_transform_generate_read_reqgroup(raw_varinfo, transinfo, fp, sel, from_steps, nsteps, param, data);
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
-    timer_stop ("adios_transform_generate_read_requests");
-#endif
 
                 // Proceed to register the read request and schedule all of its grandchild raw
                 // read requests ONLY IF a non-NULL reqgroup was returned (i.e., the user's
                 // selection intersected at least one PG).
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
-    timer_start ("adios_transform_submit_read_requests");
-#endif
                 if (new_reqgroup) {
                     adios_transform_read_request_append(&internals->transform_reqgroups, new_reqgroup);
 
@@ -3291,18 +3303,16 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
                         }
                     }
                 }
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
-    timer_stop ("adios_transform_submit_read_requests");
-#endif
             } else {
                 // Old functionality
-                common_read_free_transinfo (raw_varinfo, transinfo);
-                common_read_free_varinfo (raw_varinfo);
+            	// DON'T FREE varinfo/transinfo, since they are stored in the infocached
+                // common_read_free_transinfo (raw_varinfo, transinfo);
+                // common_read_free_varinfo (raw_varinfo);
 
                 retval = internals->read_hooks[internals->method].adios_schedule_read_byid_fn (fp, sel, varid+internals->group_varid_offset, from_steps, nsteps, data);
             }
         } else {
-            adios_error (err_invalid_varid, 
+            adios_error (err_invalid_varid,
                          "Variable ID %d is not valid in adios_schedule_read_byid(). "
                          "Available 0..%d\n", varid, fp->nvars-1);
             retval = err_invalid_varid;
@@ -3312,9 +3322,6 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
         retval = err_invalid_file_pointer;
     }
 
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
-    timer_stop ("adios_schedule_read");
-#endif
     return retval;
 }
 
@@ -3322,12 +3329,9 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
 //  read subrequests to answer original requests
 int common_read_perform_reads (const ADIOS_FILE *fp, int blocking)
 {
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
-    timer_start ("adios_perform_reads");
-#endif
     struct common_read_internals_struct * internals;
     int retval;
-    
+
     adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
@@ -3337,13 +3341,7 @@ int common_read_perform_reads (const ADIOS_FILE *fp, int blocking)
         //   request groups completed, and reassemble via the transform method.
         //   Otherwise, do nothing.
         if (blocking) {
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
-    timer_start ("adios_perform_reads_transform");
-#endif
             adios_transform_process_all_reads(&internals->transform_reqgroups);
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
-    timer_stop ("adios_perform_reads_transform");
-#endif
         } else {
             // Do nothing; reads will be performed by check_reads
         }
@@ -3351,9 +3349,6 @@ int common_read_perform_reads (const ADIOS_FILE *fp, int blocking)
         adios_error (err_invalid_file_pointer, "Null pointer passed as file to adios_perform_reads()\n");
         retval = err_invalid_file_pointer;
     }
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 2)
-    timer_stop ("adios_perform_reads");
-#endif
     return retval;
 }
 
@@ -3361,7 +3356,7 @@ int common_read_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
 {
     struct common_read_internals_struct * internals;
     int retval;
-    
+
     adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
@@ -3411,14 +3406,14 @@ void common_read_free_chunk (ADIOS_VARCHUNK *chunk)
 }
 
 
-int common_read_get_attr (const ADIOS_FILE * fp, 
-                          const char * attrname, 
+int common_read_get_attr (const ADIOS_FILE * fp,
+                          const char * attrname,
                           enum ADIOS_DATATYPES * type,
-                          int * size, 
+                          int * size,
                           void ** data)
 {
     int retval;
-    
+
     adios_errno = err_no_error;
     if (fp) {
         int attrid = common_read_find_attr (fp->nattrs, fp->attr_namelist, attrname, 0);
@@ -3435,22 +3430,22 @@ int common_read_get_attr (const ADIOS_FILE * fp,
 }
 
 
-int common_read_get_attr_byid (const ADIOS_FILE * fp, 
-                               int attrid, 
-                               enum ADIOS_DATATYPES * type, 
-                               int * size, 
+int common_read_get_attr_byid (const ADIOS_FILE * fp,
+                               int attrid,
+                               enum ADIOS_DATATYPES * type,
+                               int * size,
                                void ** data)
 {
     struct common_read_internals_struct * internals;
     int retval;
-    
+
     adios_errno = err_no_error;
     if (fp) {
         if (attrid >= 0 && attrid < fp->nattrs) {
             internals = (struct common_read_internals_struct *) fp->internal_data;
             retval = internals->read_hooks[internals->method].adios_get_attr_byid_fn (fp, attrid+internals->group_attrid_offset, type, size, data);
         } else {
-            adios_error (err_invalid_attrid, 
+            adios_error (err_invalid_attrid,
                          "Attribute ID %d is not valid in adios_get_attr_byid(). "
                          "Available 0..%d\n", attrid, fp->nattrs-1);
             retval = err_invalid_attrid;
@@ -3505,7 +3500,7 @@ int common_read_get_grouplist (const ADIOS_FILE  *fp, char ***group_namelist)
 {
     struct common_read_internals_struct * internals;
     int retval;
-    
+
     adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
@@ -3527,7 +3522,7 @@ int common_read_group_view (ADIOS_FILE  *fp, int groupid)
 {
     struct common_read_internals_struct * internals;
     int retval, i;
-    
+
     adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
@@ -3576,13 +3571,13 @@ int common_read_group_view (ADIOS_FILE  *fp, int groupid)
 }
 
 /* internal function to support version 1 time-dimension reads
-   called from adios_read_v1.c and adiosf_read_v1.c 
+   called from adios_read_v1.c and adiosf_read_v1.c
 */
 int common_read_is_var_timed (const ADIOS_FILE *fp, int varid)
 {
     struct common_read_internals_struct * internals;
     int retval;
-    
+
     adios_errno = err_no_error;
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
@@ -3594,7 +3589,7 @@ int common_read_is_var_timed (const ADIOS_FILE *fp, int varid)
     return retval;
 }
 
-void common_read_print_fileinfo (const ADIOS_FILE *fp) 
+void common_read_print_fileinfo (const ADIOS_FILE *fp)
 {
     int i;
     int ngroups;
@@ -3643,9 +3638,9 @@ void common_read_print_fileinfo (const ADIOS_FILE *fp)
 }
 
 
-/**    SELECTIONS   **/ 
+/**    SELECTIONS   **/
 ADIOS_SELECTION * common_read_selection_boundingbox (int ndim, const uint64_t *start, const uint64_t *count)
-{   
+{
     adios_errno = err_no_error;
     ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
     if (sel) {
@@ -3661,7 +3656,7 @@ ADIOS_SELECTION * common_read_selection_boundingbox (int ndim, const uint64_t *s
 
 
 ADIOS_SELECTION * common_read_selection_points (int ndim, uint64_t npoints, const uint64_t *points)
-{   
+{
     adios_errno = err_no_error;
     ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
     if (sel) {
@@ -3676,7 +3671,7 @@ ADIOS_SELECTION * common_read_selection_points (int ndim, uint64_t npoints, cons
 }
 
 ADIOS_SELECTION * common_read_selection_writeblock (int index)
-{   
+{
     adios_errno = err_no_error;
     ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
     if (sel) {
@@ -3692,7 +3687,7 @@ ADIOS_SELECTION * common_read_selection_writeblock (int index)
 }
 
 ADIOS_SELECTION * common_read_selection_auto (char *hints)
-{   
+{
     adios_errno = err_no_error;
     ADIOS_SELECTION * sel = (ADIOS_SELECTION *) malloc (sizeof(ADIOS_SELECTION));
     if (sel) {

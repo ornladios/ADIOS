@@ -37,7 +37,7 @@ ADIOS_FILE * common_read_open_file   (const char * fname,
 int common_read_close (ADIOS_FILE *fp);
 
 data_view_t common_read_set_data_view(ADIOS_FILE *fp, data_view_t data_view); // NCSU ALACRITY-ADIOS
-data_view_t common_read_get_data_view(ADIOS_FILE *fp);
+data_view_t common_read_get_data_view(const ADIOS_FILE *fp);
 
 int common_read_advance_step (ADIOS_FILE *fp, int last, float timeout_sec);
 void common_read_release_step (ADIOS_FILE *fp);
