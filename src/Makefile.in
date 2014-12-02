@@ -2388,7 +2388,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-INCLUDES = -I$(top_srcdir) -I$(top_srcdir)/src/core -I$(top_srcdir)/src/core/transforms -I$(top_srcdir)/src/core/query
+AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/src/core -I$(top_srcdir)/src/core/transforms -I$(top_srcdir)/src/core/query
 AUTOMAKE_OPTIONS = no-dependencies
 METASOURCES = AUTO
 @HAVE_NSSI_TRUE@nssi_staging_server_SOURCES = nssi/nssi_staging_server.cpp nssi/aggregation.cpp
@@ -2416,13 +2416,16 @@ include_HEADERS = public/adios.h public/adios_types.h \
 nodist_include_HEADERS = $(am__append_36) $(am__append_54)
 lib_LIBRARIES = $(am__append_4) $(am__append_6) libadiosread.a \
 	$(am__append_45) libadiosread_nompi.a $(am__append_63)
-libadiosread_a_CPPFLAGS = $(am__append_43) $(ADIOSLIB_EXTRA_CPPFLAGS) \
-	$(ADIOSREADLIB_CPPFLAGS) $(am__append_73)
-libadiosreadf_a_CPPFLAGS = $(am__append_51) $(am__append_53)
-libadiosread_nompi_a_CPPFLAGS = $(am__append_61) $(MACRODEFFLAG)_NOMPI \
+libadiosread_a_CPPFLAGS = $(AM_CPPFLAGS) $(am__append_43) \
 	$(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSREADLIB_CPPFLAGS) \
-	$(am__append_74)
-libadiosreadf_nompi_a_CPPFLAGS = $(am__append_69) $(am__append_71)
+	$(am__append_73)
+libadiosreadf_a_CPPFLAGS = $(AM_CPPFLAGS) $(am__append_51) \
+	$(am__append_53)
+libadiosread_nompi_a_CPPFLAGS = $(AM_CPPFLAGS) $(am__append_61) \
+	$(MACRODEFFLAG)_NOMPI $(ADIOSLIB_EXTRA_CPPFLAGS) \
+	$(ADIOSREADLIB_CPPFLAGS) $(am__append_74)
+libadiosreadf_nompi_a_CPPFLAGS = $(AM_CPPFLAGS) $(am__append_69) \
+	$(am__append_71)
 libadiosread_a_CFLAGS = $(am__append_44)
 libadiosreadf_a_CFLAGS = $(am__append_52)
 libadiosread_nompi_a_CFLAGS = $(am__append_62)
@@ -2611,19 +2614,23 @@ query_F_SOURCES = $(query_SOURCES) query/adiosf_query.c
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_20) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_23)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@FortranLibSEQSources = core/mpidummy.c
-@BUILD_WRITE_TRUE@libadios_a_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) \
+@BUILD_WRITE_TRUE@libadios_a_CPPFLAGS = $(AM_CPPFLAGS) \
+@BUILD_WRITE_TRUE@	$(ADIOSLIB_EXTRA_CPPFLAGS) \
 @BUILD_WRITE_TRUE@	$(ADIOSLIB_CPPFLAGS) $(am__append_19) \
 @BUILD_WRITE_TRUE@	$(am__append_28) $(am__append_32)
 @BUILD_WRITE_TRUE@libadios_a_CFLAGS = $(ADIOSLIB_CFLAGS) 
-@BUILD_WRITE_TRUE@libadios_nompi_a_CPPFLAGS = $(MACRODEFFLAG)_NOMPI \
+@BUILD_WRITE_TRUE@libadios_nompi_a_CPPFLAGS = $(AM_CPPFLAGS) \
+@BUILD_WRITE_TRUE@	$(MACRODEFFLAG)_NOMPI \
 @BUILD_WRITE_TRUE@	$(ADIOSLIB_EXTRA_CPPFLAGS) \
 @BUILD_WRITE_TRUE@	$(ADIOSLIB_SEQ_CPPFLAGS) $(am__append_33)
 @BUILD_WRITE_TRUE@libadios_nompi_a_CFLAGS = $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_SEQ_CFLAGS) 
-@BUILD_WRITE_TRUE@libadiosf_a_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) \
+@BUILD_WRITE_TRUE@libadiosf_a_CPPFLAGS = $(AM_CPPFLAGS) \
+@BUILD_WRITE_TRUE@	$(ADIOSLIB_EXTRA_CPPFLAGS) \
 @BUILD_WRITE_TRUE@	$(ADIOSLIB_CPPFLAGS) $(am__append_21) \
 @BUILD_WRITE_TRUE@	$(am__append_30) $(am__append_34)
 @BUILD_WRITE_TRUE@libadiosf_a_CFLAGS = $(ADIOSLIB_CFLAGS) 
-@BUILD_WRITE_TRUE@libadiosf_nompi_a_CPPFLAGS = $(MACRODEFFLAG)_NOMPI \
+@BUILD_WRITE_TRUE@libadiosf_nompi_a_CPPFLAGS = $(AM_CPPFLAGS) \
+@BUILD_WRITE_TRUE@	$(MACRODEFFLAG)_NOMPI \
 @BUILD_WRITE_TRUE@	$(ADIOSLIB_EXTRA_CPPFLAGS) \
 @BUILD_WRITE_TRUE@	$(ADIOSLIB_SEQ_CPPFLAGS) $(am__append_35)
 @BUILD_WRITE_TRUE@libadiosf_nompi_a_CFLAGS = $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_SEQ_CFLAGS) 
@@ -2739,7 +2746,7 @@ libadios_internal_nompi_a_SOURCES = core/mpidummy.c core/adios_bp_v1.c \
 	core/adios_logger.c core/adios_timing.c core/util.c \
 	core/qhashtbl.c core/futils.c core/adios_transport_hooks.c \
 	$(am__append_72)
-libadios_internal_nompi_a_CPPFLAGS = $(MACRODEFFLAG)_INTERNAL $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_INT_CPPFLAGS) $(ADIOSLIB_CPPFLAGS)
+libadios_internal_nompi_a_CPPFLAGS = $(AM_CPPFLAGS) $(MACRODEFFLAG)_INTERNAL $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_INT_CPPFLAGS) $(ADIOSLIB_CPPFLAGS)
 
 #bin_PROGRAMS+=adios_flags
 #nodist_adios_flags_SOURCES = adios_flags.h 
@@ -7958,14 +7965,13 @@ uninstall-am: uninstall-binPROGRAMS uninstall-includeHEADERS \
 @BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@	rpcgen -c $(srcdir)/nssi/adios_nssi_args.x \
 @BUILD_WRITE_TRUE@@HAVE_NSSI_TRUE@		| grep -v "include \"\.\." > adios_nssi_args.c
 
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@adios_write_mod.mod: core/adiosf_write_mod.f90 adios_defs_mod.mod
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(FC) -c core/adiosf_write_mod.f90
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@adiosf_write_mod.$(OBJEXT): adiosf_defs_mod.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@adios_write_mod.mod: adiosf_write_mod.$(OBJEXT)
 
-@BUILD_FORTRAN_TRUE@adios_read_mod.mod: core/adiosf_read_mod.f90 adios_defs_mod.mod 
-@BUILD_FORTRAN_TRUE@	$(FC) -c core/adiosf_read_mod.f90
+@BUILD_FORTRAN_TRUE@adiosf_read_mod.$(OBJEXT): adiosf_defs_mod.$(OBJEXT)
+@BUILD_FORTRAN_TRUE@adios_read_mod.mod: adiosf_read_mod.$(OBJEXT)
 
-@BUILD_FORTRAN_TRUE@adios_defs_mod.mod: core/adiosf_defs_mod.f90
-@BUILD_FORTRAN_TRUE@	$(FC) -c core/adiosf_defs_mod.f90
+@BUILD_FORTRAN_TRUE@adios_defs_mod.mod: adiosf_defs_mod.$(OBJEXT)
 
 @BUILD_FORTRAN_TRUE@adios_query_mod.mod: query/adios_query_mod.f90 
 @BUILD_FORTRAN_TRUE@	$(FC) -c query/adios_query_mod.f90
