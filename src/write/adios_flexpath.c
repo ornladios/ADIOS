@@ -1549,10 +1549,10 @@ adios_flexpath_write(
                     int size = adios_get_dim_value(&dims->dimension);
                     if (arraysize) {
                         arraysize *= size;
-                        dims = dims->next;
                     }
                     else
                         arraysize = size;
+                    dims = dims->next;
                 }
                 arraysize *= field->field_size;
                 void *datacpy = malloc(arraysize);
