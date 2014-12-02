@@ -4,7 +4,7 @@ SUBDIRS=src utils tests examples
 
 EXTRA_DIST = runconf \
              KNOWN_BUGS \
-             adios_config \
+             adios_config.in \
              scripts/create.nssi.config.sh \
              scripts/kill.nssi.staging.sh \
              scripts/start.nssi.staging.sh \
@@ -42,15 +42,15 @@ sysconf_DATA = scripts/FindADIOS.cmake
 install-data-hook:
 	echo "SRCDIR=\"$(PWD)\"" >> adios_config.flags; \
 	if git rev-parse --git-dir &>/dev/null; then \
-	    echo "GITLOG=\"`git log -n 1 --format=\"Last commit on %ad hash %h\"`\"" > git.status; \
-	    echo "read -d '' GITSTAT <<'_EOF_'" >> git.status; \
-	    git status -uno >> git.status; \
-	    echo "_EOF_" >> git.status; \
+	    echo "GITLOG=\"`git log -n 1 --format=\"Last commit on %ad hash %h\"`\"" > adios_git_status; \
+	    echo "read -d '' GITSTAT <<'_EOF_'" >> adios_git_status; \
+	    git status -uno >> adios_git_status; \
+	    echo "_EOF_" >> adios_git_status; \
 	else \
-	    echo "GITLOG=\"git log not available\"" >> git.status; \
-	    echo "GITSTAT=\"git status not available\"" >> git.status; \
+	    echo "GITLOG=\"git log not available\"" >> adios_git_status; \
+	    echo "GITSTAT=\"git status not available\"" >> adios_git_status; \
 	    echo "Note: git command not found or $(PWD) is not a git repository."; \
 	fi 
-	cp adios_config.flags $(DESTDIR)$(bindir)
-	cp git.status $(DESTDIR)$(bindir)
+	$(INSTALL_DATA) adios_config.flags $(DESTDIR)$(sysconfdir)
+	$(INSTALL_DATA) adios_git_status $(DESTDIR)$(sysconfdir)
         

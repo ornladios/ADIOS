@@ -676,7 +676,7 @@ check_readonly_C =
 @BUILD_WRITE_TRUE@test_C = hashtest copy_subvolume transforms_specparse group_free_test
 @BUILD_FORTRAN_TRUE@check_readonly_Fortran = 
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@check_Fortran = posix_method
-INCLUDES = $(all_includes) -I$(top_builddir)/src \
+AM_CPPFLAGS = $(all_includes) -I$(top_builddir)/src \
 	-I$(top_srcdir)/src/public
 
 #############################
