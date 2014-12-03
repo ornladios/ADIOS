@@ -372,15 +372,21 @@ if(BUILD_WRITE)
 #           )
 
         add_custom_command(
+            OUTPUT adios_write_mod.o
+#            COMMAND  $(FC) -c core/adiosf_write_mod.f90
+            DEPENDS adios_defs_mod.o
+        )
+
+        
+        add_custom_command(
             OUTPUT adios_write_mod.mod
-            COMMAND  $(FC) -c core/adiosf_write_mod.f90
-            DEPENDS core/adiosf_write_mod.f90 adios_defs_mod.mod
+            DEPENDS adios_defs_mod.o
         )
 
         add_custom_command(
             OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/adios_write_mod.mod
             COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/adios_write_mod.mod ${CMAKE_CURRENT_SOURCE_DIR}
-        DEPENDS adios_write_mod.mod
+            DEPENDS adios_write_mod.mod
         )
 #       file(COPY ${CMAKE_CURRENT_BINARY_DIR}/adios_write_mod.mod DESTINATION ${CMAKE_CURRENT_SOURCE_DIR})
 
@@ -527,10 +533,14 @@ if(BUILD_FORTRAN)
     set(CLEANFILES ${CLEANFILES} adios_read_mod.mod adios_defs_mod.mod)
   
     ADD_CUSTOM_COMMAND(
-        OUTPUT adios_read_mod.mod
-        COMMAND $(FC) -c core/adiosf_read_mod.f90
-        DEPENDS core/adiosf_read_mod.f90 adios_defs_mod.mod
+        OUTPUT adios_read_mod.o
+#        COMMAND $(FC) -c core/adiosf_read_mod.f90
+        DEPENDS adios_defs_mod.o
         )  
+    ADD_CUSTOM_COMMAND(
+        OUTPUT adios_read_mod.mod
+        DEPENDS adios_read_mod.o
+    )
     add_custom_command(
         OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/adios_read_mod.mod
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/adios_read_mod.mod ${CMAKE_CURRENT_SOURCE_DIR}
@@ -538,10 +548,14 @@ if(BUILD_FORTRAN)
         )
 
     ADD_CUSTOM_COMMAND(
-        OUTPUT adios_defs_mod.mod
-        COMMAND $(FC) -c core/adiosf_defs_mod.f90
-        DEPENDS core/adios_defs_mod.f90
+        OUTPUT adios_defs_mod.o
+#        COMMAND $(FC) -c core/adiosf_defs_mod.f90
+        DEPENDS adios_defs_mod.o
         )
+    ADD_CUSTOM_COMMAND(
+        OUTPUT adios_defs_mod.mod
+        DEPENDS adios_defs_mod.o
+    )
     add_custom_command(
         OUTPUT ${CMAKE_CURRENT_SOURCE_DIR}/adios_defs_mod.mod
         COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_BINARY_DIR}/adios_defs_mod.mod ${CMAKE_CURRENT_SOURCE_DIR}
