@@ -12,10 +12,10 @@
 #include <stdint.h>
 #include <assert.h>
 #include "util.h"
-#include "adios_internals.h" // adios_get_type_size()
-#include "adios_subvolume.h"
-#include "adios_transforms_hooks_read.h"
-#include "adios_transforms_reqgroup.h"
+#include "core/adios_internals.h" // adios_get_type_size()
+#include "core/adios_subvolume.h"
+#include "core/transforms/adios_transforms_hooks_read.h"
+#include "core/transforms/adios_transforms_reqgroup.h"
 
 // Implementation of the "identity" transform, which does nothing to
 // the data, but exercises the transform framework for testing.

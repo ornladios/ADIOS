@@ -9,9 +9,9 @@
 #define ADIOS_TRANSFORMS_HOOKS_WRITE_H_
 
 #include <stdint.h>
-#include "adios_bp_v1.h"
-#include "adios_internals.h"
-#include "adios_transforms_common.h"
+#include "core/adios_bp_v1.h"
+#include "core/adios_internals.h"
+#include "core/transforms/adios_transforms_common.h"
 #include "public/adios_error.h"
 
 // Initialize the transform system for adios read/write libraries

@@ -66,6 +66,10 @@ void adios_read_hooks_init (struct adios_read_hooks_struct ** t)
 #endif
 #endif
 
+#if HAVE_ICEE
+       ASSIGN_FNS(icee, ADIOS_READ_METHOD_ICEE);
+#endif
+
 #if HAVE_PHDF5
         //ASSIGN_FNS(hdf5,ADIOS_READ_METHOD_HDF5)
 #endif

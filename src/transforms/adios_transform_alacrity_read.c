@@ -3,9 +3,9 @@
 #include <stdio.h>
 #include <assert.h>
 
-#include "util.h"
-#include "adios_transforms_hooks_read.h"
-#include "adios_transforms_reqgroup.h"
+#include "core/util.h"
+#include "core/transforms/adios_transforms_hooks_read.h"
+#include "core/transforms/adios_transforms_reqgroup.h"
 
 #ifdef ALACRITY
 

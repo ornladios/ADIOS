@@ -652,6 +652,11 @@ if test -z "${HAVE_NCSU_TIMER_TRUE}"; then
     ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${TIMER_LIBS}"
 fi
 
+AM_CONDITIONAL([HAVE_ICEE], [test -z "${HAVE_FLEXPATH_TRUE}"])
+if test -z "${HAVE_FLEXPATH_TRUE}"; then
+    AC_DEFINE(HAVE_ICEE, 1, [ICEE method is enabled])
+fi
+
 AC_SUBST(ADIOSLIB_CPPFLAGS)
 AC_SUBST(ADIOSLIB_CFLAGS)
 AC_SUBST(ADIOSLIB_LDFLAGS)
@@ -747,6 +752,8 @@ AC_CONFIG_FILES([Makefile
                  examples/C/flexpath_arrays/Makefile
                  examples/C/flexpath_arrays/process_select/Makefile
                  examples/C/flexpath_arrays/global_range_select/Makefile
+                 examples/C/icee_arrays/Makefile
+                 examples/C/icee_arrays/array/Makefile
                  examples/C/attributes/Makefile
                  examples/C/manual/Makefile
                  examples/C/global-array/Makefile
@@ -1018,6 +1025,17 @@ if test -z "${HAVE_FLEXPATH_TRUE}"; then
     echo
 else
     echo "  - No FLEXPATH to build FLEXPATH transport method"
+fi
+
+if test -z "${HAVE_ICEE_TRUE}"; then
+    echo "  - ICEE";
+    echo "      - FP_CFLAGS = $FP_CFLAGS";
+    echo "      - FP_CPPFLAGS = $FP_CPPFLAGS";
+    echo "      - FP_LDFLAGS = $FP_LDFLAGS";
+    echo "      - FP_LIBS = $FP_LIBS";
+    echo
+else
+    echo "  - No ICEE to build ICEE transport method"
 fi
 
 if test -z "${HAVE_ZLIB_TRUE}"; then

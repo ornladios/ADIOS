@@ -1,23 +1,23 @@
 #include <assert.h>
 
-#include "adios_bp_v1.h"
-#include "adios_internals.h"
-#include "common_read.h"
+#include "core/adios_bp_v1.h"
+#include "core/adios_internals.h"
+#include "core/common_read.h"
 #include "public/adios_selection.h"
 #include "public/adios_error.h"
 #include "public/adios_types.h"
 #include "public/adios_read_v2.h"
-#include "util.h"
+#include "core/util.h"
 
-#include "adios_selection_util.h"
+#include "core/adios_selection_util.h"
 
-#include "transforms/adios_transforms_reqgroup.h"
-#include "transforms/adios_transforms_common.h"
-#include "transforms/adios_transforms_datablock.h"
-#include "transforms/adios_transforms_hooks_read.h"
-#include "transforms/adios_transforms_read.h"
-#include "transforms/adios_transforms_util.h"
-#include "transforms/adios_patchdata.h"
+#include "core/transforms/adios_transforms_reqgroup.h"
+#include "core/transforms/adios_transforms_common.h"
+#include "core/transforms/adios_transforms_datablock.h"
+#include "core/transforms/adios_transforms_hooks_read.h"
+#include "core/transforms/adios_transforms_read.h"
+#include "core/transforms/adios_transforms_util.h"
+#include "core/transforms/adios_patchdata.h"
 
 // Utilities
 static inline int min(int a, int b) { return a < b ? a : b; }
