@@ -7,4 +7,5 @@ add_subdirectory(global-array-time)
 add_subdirectory(read_all)
 add_subdirectory(stat)
 add_subdirectory(schema)
+add_subdirectory(icee_arrays)
 #SUBDIRS=scalars arrays attributes manual global-array global-array-time read_all stat schema

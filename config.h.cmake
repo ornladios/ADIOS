@@ -105,6 +105,9 @@
 
 #cmakedefine HAVE_IBVERBS 1
 
+/* icee is enabled */
+#cmakedefine HAVE_ICEE 1
+
 /* Define if you have the Infiniband. */
 #cmakedefine HAVE_INFINIBAND 1
 
@@ -265,6 +268,9 @@
 
 /* Datatap is disabled */
 #cmakedefine NO_DATATAP 1
+
+/* Flexpath is disabled */
+#cmakedefine NO_FLEXPATH 1
 
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
 #cmakedefine NO_MINUS_C_MINUS_O 1
