@@ -263,23 +263,31 @@ void getCoordinateFromPoints(uint64_t pos, const ADIOS_SELECTION_POINTS_STRUCT* 
 }
 
 
-void getCoordinateFromBlock(uint64_t pos, const ADIOS_VARBLOCK* sel, int n, uint64_t* coordinates) 
+void getCoordinateFromBlock(uint64_t pos, const ADIOS_VARBLOCK* sel, int n, uint64_t* coordinates, int blockDim) 
 {
+  int fortran_order = futils_is_called_from_fortran();
+  int dimToSlice = n-1;
+
+  if (fortran_order == 1) {
+    dimToSlice = blockDim  - n; // n is from 1-(bb->ndim)
+  }
+
   //log_debug("pos = %lld, n=%d \n", pos, n);
   if (n == 1) {
-      coordinates[n-1] = pos + sel->start[n-1];
+      coordinates[n-1] = pos + sel->start[dimToSlice];
+      log_debug("     coordinate [%d]=%lld\n", n-1, coordinates[n-1]);
       return ;
   } 
  
-  uint64_t lastDimSize= sel->count[n-1];     
+  uint64_t lastDimSize= sel->count[dimToSlice];     
   uint64_t res  = pos % lastDimSize;
 
   //log_debug("      lastDim = %lld, res=%d \n", lastDimSize, res);
-  coordinates[n-1] = res + sel->start[n-1];
+  coordinates[n-1] = res + sel->start[dimToSlice];
   uint64_t stepUp = (pos - res)/lastDimSize;
 
-  //log_debug("      coordinate[%d]=%lld\n", n-1, coordinates[n-1]);
-  getCoordinateFromBlock(stepUp, sel, n-1, coordinates);  
+  log_debug("      coordinate [%d]=%lld\n", n-1, coordinates[n-1]);
+  getCoordinateFromBlock(stepUp, sel, n-1, coordinates, blockDim);  
 }
 
 //check point coordinates
@@ -382,11 +390,17 @@ int64_t getPosInBox(const ADIOS_SELECTION_BOUNDINGBOX_STRUCT* sel, int n, uint64
     return -1;
   }
 
+  int fortran_order = futils_is_called_from_fortran();
+
   int i=0;
   if (n == sel->ndim) { // check validation once
     for (i=0; i<sel->ndim; i++) {
-      uint64_t min = sel->start[i];
-      uint64_t max = sel->count[i] + min;
+      int matchingBoxDim = i;
+      if (fortran_order == 1) {
+	matchingBoxDim = sel->ndim - 1 - i;
+      }
+      uint64_t min = sel->start[matchingBoxDim];
+      uint64_t max = sel->count[matchingBoxDim] + min;
       if (spatialCoordinates[i] >= max) {
 	return -1;
       }
@@ -397,11 +411,21 @@ int64_t getPosInBox(const ADIOS_SELECTION_BOUNDINGBOX_STRUCT* sel, int n, uint64
   }
 
   // spatial Coordinate is valid
-  if (n == 1) {
-    return spatialCoordinates[0]-sel->start[0];
-  }
 
-  return (spatialCoordinates[n-1]-sel->start[n-1]) + sel->count[n-1]*getPosInBox(sel, n-1, spatialCoordinates);
+  if (fortran_order == 1) {
+    int matchingBoxDim = sel->ndim  - n;
+     if (n == 1) {
+       //log_debug("n=1, c[0]=%lld ,  start[%d]=%lld", spatialCoordinates[0], matchingBoxDim, sel->start[matchingBoxDim]);
+       return spatialCoordinates[0] - sel->start[matchingBoxDim];
+     }
+     //log_debug("n=%d, c[n-1]=%lld, start/count[%d]= %lld/%lld \n", n, spatialCoordinates[n-1], matchingBoxDim, sel->start[matchingBoxDim], sel->count[matchingBoxDim]);
+     return (spatialCoordinates[n-1]- sel->start[matchingBoxDim]) + sel->count[matchingBoxDim] * getPosInBox(sel, n-1, spatialCoordinates);
+  } else {
+     if (n == 1) {
+        return spatialCoordinates[0]-sel->start[0];    
+     }
+     return (spatialCoordinates[n-1]-sel->start[n-1]) + sel->count[n-1]*getPosInBox(sel, n-1, spatialCoordinates);
+  }
 }
 
 int64_t getPosInVariable(const ADIOS_VARINFO* v, int n, uint64_t* spatialCoordinates) 
@@ -409,32 +433,37 @@ int64_t getPosInVariable(const ADIOS_VARINFO* v, int n, uint64_t* spatialCoordin
   if (v->ndim <= 0) {
     return -1;
   }
-  
-  int i=0;
 
-  if (n == 1) {
-    //log_debug("\n.....n=1 => %lld\n", spatialCoordinates[0]);
-    return spatialCoordinates[0];
+  int fortran_order = futils_is_called_from_fortran();
+
+  if (fortran_order == 1) {
+    int matchingBoxDim = v->ndim - n;
+    if (n == 1) {
+      return spatialCoordinates[matchingBoxDim];
+    } 
+    return  spatialCoordinates[n-1] + v->dims[matchingBoxDim]*getPosInVariable(v, n-1, spatialCoordinates); 
+  } else {
+    if (n == 1) {
+      return spatialCoordinates[0];
+    }
+
+    return  spatialCoordinates[n-1] + v->dims[n-1]*getPosInVariable(v, n-1, spatialCoordinates); 
   }
 
-  int64_t result =  spatialCoordinates[n-1] + v->dims[n-1]*getPosInVariable(v, n-1, spatialCoordinates); 
-  //log_debug(".... n=%d, %lld + %lld * f[%d]\n", n, spatialCoordinates[n-1],v->dims[n-2], n-1);
-  return result;
 }
 
 
 int64_t getRelativeIdxInBoundingBox(uint64_t currPosInBlock, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT* bb, const ADIOS_VARBLOCK* blockSel)
 {
     uint64_t spatialCoordinates[bb->ndim];
-    getCoordinateFromBlock(currPosInBlock, blockSel, bb->ndim, spatialCoordinates);
+    getCoordinateFromBlock(currPosInBlock, blockSel, bb->ndim, spatialCoordinates, bb->ndim);
     return getPosInBox(bb, bb->ndim, spatialCoordinates);
 }
 
 int64_t getRelativeIdxInVariable(uint64_t currPosInBlock, const ADIOS_VARINFO* v, const ADIOS_VARBLOCK* blockSel)
 {
     uint64_t spatialCoordinates[v->ndim];
-    getCoordinateFromBlock(currPosInBlock, blockSel, v->ndim, spatialCoordinates);
-    //log_debug("   spatial=[%lld, %lld, %lld]    ", spatialCoordinates[0],spatialCoordinates[1],spatialCoordinates[2]);
+    getCoordinateFromBlock(currPosInBlock, blockSel, v->ndim, spatialCoordinates, v->ndim);
     return getPosInVariable(v, v->ndim, spatialCoordinates);
 }
 
@@ -528,6 +557,7 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
 	  currPos = getRelativeIdxInVariable(currPosInBlock, v,  &(v->blockinfo[currBlockIdx]));
 	}
 
+	log_debug("%lld th in block[%d],   =>  in actual box %lld  \n", currPosInBlock, currBlockIdx, currPos);
 	//log_warn("%lld th in block[%d],   =>  in actual %lld, limit: %lld \n", currPosInBlock, currBlockIdx, currPos, q->rawDataSize);
 	//if ((currPos >= 0) && (currPos < q->rawDataSize)) {
 	if (currPos >= 0) {
@@ -1146,7 +1176,7 @@ ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundary, uint64_t
 	   uint64_t spatialCoordinates[v->ndim];
 	   //create bb from block;
 	   int absBlockCounter = query_utils_getGlobalWriteBlockId(wb->index, timeStep, v);
-	   getCoordinateFromBlock(coordinates[i], &(v->blockinfo[absBlockCounter]), v->ndim, spatialCoordinates);
+	   getCoordinateFromBlock(coordinates[i], &(v->blockinfo[absBlockCounter]), v->ndim, spatialCoordinates, v->ndim);
 
 	   fillUp(v->ndim, spatialCoordinates, i, pointArray);
       }
