@@ -50,7 +50,7 @@ void printPoints(const ADIOS_SELECTION_POINTS_STRUCT * pts, const int timestep) 
     }
 }
 
-int performQuery(ADIOS_QUERY_TEST_INFO *queryInfo, ADIOS_FILE *f, int use_streaming)
+int performQuery(ADIOS_QUERY_TEST_INFO *queryInfo, ADIOS_FILE *f, int use_streaming, int read_results)
 {
     int i = 0, timestep = 0 ;
     ADIOS_VARINFO * tempVar = adios_inq_var(f, queryInfo->varName);
@@ -64,51 +64,54 @@ int performQuery(ADIOS_QUERY_TEST_INFO *queryInfo, ADIOS_FILE *f, int use_stream
         fprintf(stderr, "querying on timestep %d \n", timestep);
 
         ADIOS_SELECTION* currBatch = NULL;
- 
-	while (adios_query_evaluate(queryInfo->query, queryInfo->outputSelection, use_streaming ? 0 : timestep, queryInfo->batchSize, &currBatch) >= 0) { 
-	    if (currBatch == NULL) {
-	        break;
-	    } 
-            assert(currBatch->type ==ADIOS_SELECTION_POINTS);
-            const ADIOS_SELECTION_POINTS_STRUCT * retrievedPts = &(currBatch->u.points);
-            /* fprintf(stderr,"retrieved points %" PRIu64 " \n", retrievedPts->npoints); */
 
-            printPoints(retrievedPts, timestep);
+        while (adios_query_evaluate(queryInfo->query, queryInfo->outputSelection, use_streaming ? 0 : timestep, queryInfo->batchSize, &currBatch) >= 0) {
+        	if (currBatch == NULL) {
+        		break;
+        	}
+        	assert(currBatch->type ==ADIOS_SELECTION_POINTS);
+        	const ADIOS_SELECTION_POINTS_STRUCT * retrievedPts = &(currBatch->u.points);
+        	/* fprintf(stderr,"retrieved points %" PRIu64 " \n", retrievedPts->npoints); */
 
-            int elmSize = adios_type_size(tempVar->type, NULL);
-            void *data = malloc(retrievedPts->npoints * elmSize);
+        	printPoints(retrievedPts, timestep);
 
-            // check returned temp data
-            adios_schedule_read (f, currBatch, queryInfo->varName, use_streaming ? 0 : timestep, 1, data);
-            adios_perform_reads(f, 1);
+        	int elmSize = adios_type_size(tempVar->type, NULL);
 
-            fprintf(stderr,"Total data retrieved:%"PRIu64"\n", retrievedPts->npoints);
-            /* if (tempVar->type == adios_double) { */
-            /*     for (i = 0; i < retrievedPts->npoints; i++) { */
-            /*         fprintf(stderr,"%.6f\t", ((double*)data)[i]); */
-            /*     } */
-            /*     fprintf(stderr,"\n"); */
-            /* } */
-            /* else if (tempVar->type == adios_real) { */
-            /*     for (i = 0; i < retrievedPts->npoints; i++) { */
-            /*         fprintf(stderr,"%.6f\t", ((float*)data)[i]); */
-            /*     } */
-            /*     fprintf(stderr,"\n"); */
-            /* } */
+        	if (read_results) {
+        		void *data = malloc(retrievedPts->npoints * elmSize);
 
+        		// read returned temp data
+        		adios_schedule_read (f, currBatch, queryInfo->varName, use_streaming ? 0 : timestep, 1, data);
+        		adios_perform_reads(f, 1);
 
-            free(data);
-            adios_selection_delete(currBatch);
-            currBatch = NULL;
+        		free(data);
+        	}
+
+        	fprintf(stderr,"Total data retrieved:%"PRIu64"\n", retrievedPts->npoints);
+        	/* if (tempVar->type == adios_double) { */
+        	/*     for (i = 0; i < retrievedPts->npoints; i++) { */
+        	/*         fprintf(stderr,"%.6f\t", ((double*)data)[i]); */
+        	/*     } */
+        	/*     fprintf(stderr,"\n"); */
+        	/* } */
+        	/* else if (tempVar->type == adios_real) { */
+        	/*     for (i = 0; i < retrievedPts->npoints; i++) { */
+        	/*         fprintf(stderr,"%.6f\t", ((float*)data)[i]); */
+        	/*     } */
+        	/*     fprintf(stderr,"\n"); */
+        	/* } */
+
+        	adios_selection_delete(currBatch);
+        	currBatch = NULL;
         }
 
         if (use_streaming) {
-			const int err = adios_advance_step(f, 0, 0);
-			if (timestep < queryInfo->fromStep + queryInfo->numSteps - 1) {
-				assert(err == 0);
-			} else {
-				assert(err == err_end_of_stream || err == err_step_notready);
-			}
+        	const int err = adios_advance_step(f, 0, 0);
+        	if (timestep < queryInfo->fromStep + queryInfo->numSteps - 1) {
+        		assert(err == 0);
+        	} else {
+        		assert(err == err_end_of_stream || err == err_step_notready);
+        	}
         }
     }
 
@@ -129,8 +132,8 @@ int main(int argc, char ** argv) {
 
     MPI_Init(&argc, &argv);
 
-    if (argc < 4 || argc > 5) {
-        fprintf(stderr," usage: %s {input bp file} {xml file} {query engine (ALACRITY/FASTBIT)} [stream]\n", argv[0]);
+    if (argc < 4 || argc > 6) {
+        fprintf(stderr," usage: %s {input bp file} {xml file} {query engine (ALACRITY/FASTBIT)} [mode (file/stream)] [read results? (true/false)]\n", argv[0]);
         MPI_Abort(comm, 1);
     }
     else {
@@ -155,8 +158,10 @@ int main(int argc, char ** argv) {
     }
 
     const int use_streaming = (argc >= 5) && (strcasecmp(argv[4], "stream") == 0);
+    const int read_results = (argc >= 6) && (strcasecmp(argv[5], "true") == 0);
 
     fprintf(stderr, "NOTE: Running the query in %s mode\n", use_streaming ? "STREAM" : "FILE");
+    fprintf(stderr, "NOTE: %s read data using query result point selection\n", read_results? "WILL" : "WILL NOT");
 
     // ADIOS init
     adios_read_init_method(method, comm, NULL);
@@ -174,7 +179,7 @@ int main(int argc, char ** argv) {
 
     // perform query
     adios_query_set_method(queryInfo->query, query_method);
-    performQuery(queryInfo, f, use_streaming);
+    performQuery(queryInfo, f, use_streaming, read_results);
 
 
     adios_read_close(f);
