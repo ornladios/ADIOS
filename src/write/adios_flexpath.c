@@ -682,6 +682,20 @@ set_field(int type, FMFieldList* field_list_ptr, int fieldNo, int* size)
 	*size += sizeof(char);
 	break;
 
+    case adios_complex:
+        field_list[fieldNo].field_type = strdup("complex");
+        field_list[fieldNo].field_size = sizeof(complex_dummy);
+        field_list[fieldNo].field_offset = *size;
+        *size += sizeof(complex_dummy);
+        break;
+        
+    case adios_double_complex:
+        field_list[fieldNo].field_type = strdup("double_complex");
+        field_list[fieldNo].field_size = sizeof(double_complex_dummy);
+        field_list[fieldNo].field_offset = *size;
+        *size += sizeof(double_complex_dummy);
+        break;
+
     default:
 	perr("set_field: Unknown Type Error\n");
 	break;
@@ -732,18 +746,12 @@ set_format(struct adios_group_struct *t,
 	   struct adios_var_struct *fields, 
 	   FlexpathWriteFileData *fileData)
 {
-    FMStructDescRec *format = malloc(sizeof(FMStructDescRec)*2);
-    mem_check(format, "format");
-    memset(format, 0, sizeof(FMStructDescRec)*2);
-    
-    FlexpathFMStructure *currentFm = malloc(sizeof(FlexpathFMStructure));
-    mem_check(currentFm, "currentFm");
-    memset(currentFm, 0, sizeof(FlexpathFMStructure));
-
+    FMStructDescRec *format = calloc(4, sizeof(FMStructDescRec));
+    FlexpathFMStructure *currentFm = calloc(1, sizeof(FlexpathFMStructure));
     LIST_INIT(&currentFm->nameList);
     LIST_INIT(&currentFm->dimList);
     currentFm->format = format;
-    format->format_name = strdup(t->name);
+    format[0].format_name = strdup(t->name);
 
     if (t->hashtbl_vars->size(t->hashtbl_vars) == 0) {
 	adios_error(err_invalid_group, "set_format: No Variables In Group\n");
@@ -937,6 +945,32 @@ set_format(struct adios_group_struct *t,
 		{  currentFm->size += (v_offset * sizeof(char));  } 
 		break;
 
+            case adios_complex:
+		field_list[fieldNo].field_type =
+		    (char *) malloc(sizeof(char) * 255);
+		snprintf((char *) field_list[fieldNo].field_type, 255, "complex%s",
+			 dims);
+		field_list[fieldNo].field_size = sizeof(complex_dummy);
+		field_list[fieldNo].field_offset = currentFm->size;
+		if (v_offset == 0 ) // pointer to variably sized array
+		{ currentFm->size += sizeof(void *);  } 
+		else // statically sized array allocated inline
+		{  currentFm->size += (v_offset * sizeof(complex_dummy));  } 
+		break;
+
+            case adios_double_complex:
+		field_list[fieldNo].field_type =
+		    (char *) malloc(sizeof(char) * 255);
+		snprintf((char *) field_list[fieldNo].field_type, 255, "double_complex%s",
+			 dims);
+		field_list[fieldNo].field_size = sizeof(double_complex_dummy);
+		field_list[fieldNo].field_offset = currentFm->size;
+		if (v_offset == 0 ) // pointer to variably sized array
+		{ currentFm->size += sizeof(void *);  } 
+		else // statically sized array allocated inline
+		{  currentFm->size += (v_offset * sizeof(double_complex_dummy)); } 
+		break;
+
 	    default:
 		adios_error(err_invalid_group, 
 			    "set_format: Unknown Type Error %d: name: %s\n", 
@@ -974,11 +1008,16 @@ set_format(struct adios_group_struct *t,
 	field_list[fieldNo].field_size = 0;
     }
 
-    format->field_list = field_list;
-    currentFm->format->struct_size = currentFm->size;
-
-    currentFm->buffer = malloc(currentFm->size);
-    memset(currentFm->buffer, 0, currentFm->size);
+    format[0].field_list = field_list;
+    format[1].format_name = strdup("complex");
+    format[1].field_list = complex_dummy_field_list;
+    format[2].format_name = strdup("double_complex");
+    format[2].field_list = double_complex_dummy_field_list;
+    
+    format[0].struct_size = currentFm->size;
+    format[1].struct_size = sizeof(complex_dummy);
+    format[2].struct_size = sizeof(double_complex_dummy);
+    currentFm->buffer = calloc(1, currentFm->size);
 
     return currentFm;
 }
@@ -988,7 +1027,7 @@ void* copy_buffer(void* buffer, int rank, FlexpathWriteFileData* fileData)
 {
     char* temp = (char*)malloc(fileData->fm->size);
     memcpy(temp, buffer, fileData->fm->size);
-    FMField *f = fileData->fm->format->field_list;
+    FMField *f = fileData->fm->format[0].field_list;
     while (f->field_name != NULL)
     {
         FlexpathVarNode* a;
@@ -998,7 +1037,7 @@ void* copy_buffer(void* buffer, int rank, FlexpathWriteFileData* fileData)
 	       (a->dimensions != NULL)) {
                 FlexpathVarNode* dim = a->dimensions;
                 while(dim) {
-                    FMField *f2 = fileData->fm->format->field_list;
+                    FMField *f2 = fileData->fm->format[0].field_list;
                     while(f2->field_name != NULL) {
                         if(strcmp(f2->field_name, dim->varName)==0) {
                             break;
@@ -1506,7 +1545,7 @@ adios_flexpath_write(
 	return;
     }
     
-    FMFieldList flist = fm->format->field_list;
+    FMFieldList flist = fm->format[0].field_list;
     FMField *field = NULL;
     char *fullname = resolve_path_name(f->path, f->name);
     field = internal_find_field(fullname, flist);
@@ -1516,7 +1555,7 @@ adios_flexpath_write(
 	if (!f->dimensions) {
 	    if (data) {
 		//why wouldn't it have data?
-		memcpy(&fm->buffer[field->field_offset], data, field->field_size);
+		memcpy(&fm->buffer[field->field_offset], data, field->field_size);                
 
 		//scalar quantities can have FlexpathAltNames also so assign those
 		if(field->field_name != NULL) {
