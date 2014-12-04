@@ -50,7 +50,7 @@ void printPoints(const ADIOS_SELECTION_POINTS_STRUCT * pts, const int timestep) 
     }
 }
 
-int performQuery(ADIOS_QUERY_TEST_INFO *queryInfo, ADIOS_FILE *f, int use_streaming, int read_results)
+int performQuery(ADIOS_QUERY_TEST_INFO *queryInfo, ADIOS_FILE *f, int use_streaming, int print_points, int read_results)
 {
     int i = 0, timestep = 0 ;
     ADIOS_VARINFO * tempVar = adios_inq_var(f, queryInfo->varName);
@@ -73,11 +73,12 @@ int performQuery(ADIOS_QUERY_TEST_INFO *queryInfo, ADIOS_FILE *f, int use_stream
         	const ADIOS_SELECTION_POINTS_STRUCT * retrievedPts = &(currBatch->u.points);
         	/* fprintf(stderr,"retrieved points %" PRIu64 " \n", retrievedPts->npoints); */
 
-        	printPoints(retrievedPts, timestep);
-
-        	int elmSize = adios_type_size(tempVar->type, NULL);
+        	if (print_points) {
+        		printPoints(retrievedPts, timestep);
+        	}
 
         	if (read_results) {
+        		int elmSize = adios_type_size(tempVar->type, NULL);
         		void *data = malloc(retrievedPts->npoints * elmSize);
 
         		// read returned temp data
@@ -132,8 +133,8 @@ int main(int argc, char ** argv) {
 
     MPI_Init(&argc, &argv);
 
-    if (argc < 4 || argc > 6) {
-        fprintf(stderr," usage: %s {input bp file} {xml file} {query engine (ALACRITY/FASTBIT)} [mode (file/stream)] [read results? (true/false)]\n", argv[0]);
+    if (argc < 4 || argc > 7) {
+        fprintf(stderr," usage: %s {input bp file} {xml file} {query engine (ALACRITY/FASTBIT)} [mode (FILE/stream)] [print points? (TRUE/false)] [read results? (true/FALSE)]\n", argv[0]);
         MPI_Abort(comm, 1);
     }
     else {
@@ -159,9 +160,11 @@ int main(int argc, char ** argv) {
 
     const int use_streaming = (argc >= 5) && (strcasecmp(argv[4], "stream") == 0);
     const int read_results = (argc >= 6) && (strcasecmp(argv[5], "true") == 0);
+    const int print_points = !(argc >= 7) || (strcasecmp(argv[6], "true") == 0);
 
     fprintf(stderr, "NOTE: Running the query in %s mode\n", use_streaming ? "STREAM" : "FILE");
-    fprintf(stderr, "NOTE: %s read data using query result point selection\n", read_results? "WILL" : "WILL NOT");
+    fprintf(stderr, "NOTE: %s print query result points\n", print_points ? "WILL" : "WILL NOT");
+    fprintf(stderr, "NOTE: %s read data using query result point selection\n", read_results ? "WILL" : "WILL NOT");
 
     // ADIOS init
     adios_read_init_method(method, comm, NULL);
@@ -179,7 +182,7 @@ int main(int argc, char ** argv) {
 
     // perform query
     adios_query_set_method(queryInfo->query, query_method);
-    performQuery(queryInfo, f, use_streaming, read_results);
+    performQuery(queryInfo, f, use_streaming, print_points, read_results);
 
 
     adios_read_close(f);
