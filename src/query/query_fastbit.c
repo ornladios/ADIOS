@@ -434,22 +434,16 @@ int64_t getPosInVariable(const ADIOS_VARINFO* v, int n, uint64_t* spatialCoordin
     return -1;
   }
 
-  int fortran_order = futils_is_called_from_fortran();
+  // 
+  // no need for fortran order here. 
+  //
+  log_debug("getPosInVariables() v->dim[0]=%d sp[%d]=%lld\n", v->dims[0], n-1, spatialCoordinates[n-1]);
 
-  if (fortran_order == 1) {
-    int matchingBoxDim = v->ndim - n;
-    if (n == 1) {
-      return spatialCoordinates[matchingBoxDim];
-    } 
-    return  spatialCoordinates[n-1] + v->dims[matchingBoxDim]*getPosInVariable(v, n-1, spatialCoordinates); 
-  } else {
-    if (n == 1) {
+  if (n == 1) {
       return spatialCoordinates[0];
     }
 
-    return  spatialCoordinates[n-1] + v->dims[n-1]*getPosInVariable(v, n-1, spatialCoordinates); 
-  }
-
+  return  spatialCoordinates[n-1] + v->dims[n-1]*getPosInVariable(v, n-1, spatialCoordinates); 
 }
 
 
