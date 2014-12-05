@@ -43,6 +43,7 @@ void defineFastbitVar(int nblocks, const char* name, int64_t* ids, int adiosType
     char dimStr[100];
     sprintf(dimStr, "%llu", localDim[i]);
     ids[i] = adios_define_var (gAdios_group, name, "", adiosType, dimStr, globalStr, offsetStr);
+    adios_set_transform (ids[i], "identity");
   }
 }
 
@@ -470,7 +471,7 @@ int main (int argc, char** argv)
   
   uint64_t estimatedbytes = getByteEstimation(f, argc, argv);
   printf(" estimated: %lld\n", estimatedbytes);
-  adios_group_size (gAdios_write_file, estimatedbytes*2, &adios_totalsize);     
+  adios_group_size (gAdios_write_file, estimatedbytes*2+1048576, &adios_totalsize);     
 
   printf("=> adios open output file: %s, totalsize allocated %llu bytes... \n", idxFileName, adios_totalsize); 
 
