@@ -174,7 +174,7 @@ function build_indexed_datasets_fastbit() {
   [[ $# -eq 2 ]] || die "ERROR: Internal testing error, invalid parameters to build_indexed_datasets_fastbit: $@"
   
   invoke_dataset_builder "$DSID" "$DSOUTPUT" "none"
-  $FASTBIT_INDEXER_EXE_PATH "$DSOUTPUT"
+  $FASTBIT_INDEXER_EXE_PATH "$DSOUTPUT".bp
 }
 
 function build_datasets() {
