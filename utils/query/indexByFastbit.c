@@ -43,7 +43,7 @@ void defineFastbitVar(int nblocks, const char* name, int64_t* ids, int adiosType
     char dimStr[100];
     sprintf(dimStr, "%llu", localDim[i]);
     ids[i] = adios_define_var (gAdios_group, name, "", adiosType, dimStr, globalStr, offsetStr);
-    adios_set_transform (ids[i], "identity");
+    //adios_set_transform (ids[i], "identity");
   }
 }
 
