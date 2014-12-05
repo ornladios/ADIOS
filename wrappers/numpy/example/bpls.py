@@ -31,7 +31,7 @@ def main():
     
     for k in sorted(f.var.keys()):
         v = f.var[k]
-        print "  %-17s  %-8s  %d*%s" % (np.typename(np.sctype2char(v.type)), v.name, v.nsteps, v.dims)
+        print "  %-17s  %-12s  %d*%s" % (np.typename(np.sctype2char(v.type)), v.name, v.nsteps, v.dims)
             
 
 if __name__ == "__main__":
