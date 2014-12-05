@@ -95,7 +95,7 @@ void adios_infocache_free(adios_infocache **cache_ptr) {
 
 ADIOS_VARINFO * adios_infocache_inq_varinfo(const ADIOS_FILE *fp, adios_infocache *cache, int varid) {
     if (varid >= cache->capacity)
-        expand_infocache(cache, varid);
+        expand_infocache(cache, varid + 1);
 
     // Choose the varinfo array corresponding to whether this inquiry is
     // in the logical or physical view
@@ -111,7 +111,7 @@ ADIOS_VARINFO * adios_infocache_inq_varinfo(const ADIOS_FILE *fp, adios_infocach
 
 ADIOS_TRANSINFO * adios_infocache_inq_transinfo(const ADIOS_FILE *fp, adios_infocache *cache, int varid) {
     if (varid >= cache->capacity)
-        expand_infocache(cache, varid);
+        expand_infocache(cache, varid + 1);
 
     if (cache->transinfos[varid]) {
         return cache->transinfos[varid];

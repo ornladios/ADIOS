@@ -174,7 +174,11 @@ function build_indexed_datasets_fastbit() {
   [[ $# -eq 2 ]] || die "ERROR: Internal testing error, invalid parameters to build_indexed_datasets_fastbit: $@"
   
   invoke_dataset_builder "$DSID" "$DSOUTPUT" "none"
-  $FASTBIT_INDEXER_EXE_PATH "$DSOUTPUT"
+  
+  set -o xtrace
+  $FASTBIT_INDEXER_EXE_LOCAL "$DSOUTPUT".bp ||
+    die "ERROR: $FASTBIT_INDEXER_EXE_LOCAL failed with exit code $?"
+  set +o xtrace
 }
 
 function build_datasets() {
