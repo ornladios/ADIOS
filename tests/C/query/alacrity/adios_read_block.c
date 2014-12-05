@@ -42,7 +42,7 @@ int main(int argc, char ** argv) {
    if (argc >=3) {
 	   block = atoi(argv[2]);
    }
-	void *data = malloc(4 * 44*36*22);
+	void *data = malloc(sizeof(double) * 44*36*22);
 
    ADIOS_SELECTION* currBatch = adios_selection_writeblock(block);
 
