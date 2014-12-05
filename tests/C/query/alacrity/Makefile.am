@@ -5,13 +5,22 @@ INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public -I$(srcdir)/../common
 AUTOMAKE_OPTIONS = no-dependencies
 if HAVE_ALACRITY
 
-noinst_PROGRAMS = adios_read_ext_test adios_build_alac_index adios_alac_query adios_show_bp_file
+noinst_PROGRAMS = adios_read_ext_test adios_build_alac_index adios_alac_query adios_show_bp_file adios_read_block
 #alac_internal_test 
 
 #alac_internal_test_SOURCES = test_query_alac_internal.c 
 #alac_internal_test_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
 #alac_internal_test_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 #alac_internal_test_CPPFLAGS = $(ALACRITY_CPPFLAGS) -I$(top_srcdir)/src/core
+
+
+
+adios_read_block_SOURCES = adios_read_block.c
+adios_read_block_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
+adios_read_block_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+adios_read_block_CPPFLAGS = $(ALACRITY_CPPFLAGS)
+
+
 
 adios_read_ext_test_SOURCES = adios_read_ext_test.c
 adios_read_ext_test_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
