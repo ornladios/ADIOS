@@ -11,7 +11,8 @@
   char gVarNameFastbitIdxBms[10] = "bms";
 
   char gGroupNameFastbitIdx[20] = "notNamed";
-  char gEmptyStr[] = ""; // local string & offset string
+
+  char* gBinningOption = 0;
 
   int64_t       gAdios_group;
   int64_t       gAdios_write_file;
@@ -24,6 +25,7 @@
   long   _indexRefreshMillis;
   long   _fileStartedMillis;
 
+  uint64_t sum_nb=0, sum_nk=0, sum_no=0;
 
 //void printData(void* data, enum ADIOS_DATATYPES type, uint64_t size);
 
@@ -41,6 +43,7 @@ void defineFastbitVar(int nblocks, const char* name, int64_t* ids, int adiosType
     char dimStr[100];
     sprintf(dimStr, "%llu", localDim[i]);
     ids[i] = adios_define_var (gAdios_group, name, "", adiosType, dimStr, globalStr, offsetStr);
+    adios_set_transform (ids[i], "identity");
   }
 }
 
@@ -95,7 +98,7 @@ void fastbitIndex(const char* datasetName, void* data, uint64_t blockSize, FastB
   fastbitErr = fastbit_iapi_register_array(datasetName, ft, data, blockSize);
   assertErr(fastbitErr, "failed to register array with", datasetName);
   
-  fastbitErr = fastbit_iapi_build_index(datasetName, (const char*)0);
+  fastbitErr = fastbit_iapi_build_index(datasetName, (const char*)gBinningOption);
   assertErr(fastbitErr, "failed to build idx with ", datasetName);
   
   
@@ -210,7 +213,7 @@ void buildIndex(ADIOS_FILE* f, ADIOS_VARINFO* v)
   int j=0;
   int k=0;
 
-  //printf("  nsteps=%d, ndim=%d\n", v->nsteps, v->ndim);
+  printf("building index on variable %d, op=%s\n", v->varid, gBinningOption);
   for (i=0; i<v->nsteps; i++) 
   {
       int nBlocksAtStep = v->nblocks[i];
@@ -240,6 +243,7 @@ void buildIndex(ADIOS_FILE* f, ADIOS_VARINFO* v)
        int64_t       var_ids_bms[nblocks];
        int64_t       var_ids_key[nblocks];
        int64_t       var_ids_offset[nblocks];
+
 
        for (j=0; j < v->nblocks[i]; j++) {
 	 sprintf(bmsVarName, "bms-%d-%d-%d", v->varid, i, j);
@@ -285,10 +289,9 @@ void buildIndex(ADIOS_FILE* f, ADIOS_VARINFO* v)
 	    fastbitIndex(datasetName, data, blockSize, ft, &keys, &nk, &offsets, &no, &bms, &nb);
 	    logTime("  indexed on block");
 	    logTimeMillis("  indexed on block");
-	    char nbStr[20], noStr[20], nkStr[20];
-	    sprintf(nbStr, "%llu", nb); 
-	    sprintf(nkStr, "%llu", nk); 
-	    sprintf(noStr, "%llu", no); 
+
+	    printf("    index created =  %llu, %llu, %llu\n", nb, nk, no);
+	    sum_nb += nb; sum_nk += nk, sum_no += no;
 
 	    defineFastbitVar(1,bmsVarName, &var_ids_bms[j], adios_unsigned_integer, &nb,0,0);    			    
 	    defineFastbitVar(1, keyVarName, &var_ids_key[j], adios_double, &nk, 0, 0);
@@ -310,6 +313,11 @@ void buildIndex(ADIOS_FILE* f, ADIOS_VARINFO* v)
 	    verifyData(f, v, blockCounter, i);
        }
 
+       printf(" total   index created =  %llu, %llu, %llu, \n", sum_nb, sum_nk, sum_no);
+       printf(" total   bytes         =  %llu, %llu, %llu, \n", 
+	      adios_type_size(adios_unsigned_integer , NULL)*sum_nb,
+	      adios_type_size(adios_double, NULL)*sum_nk, 
+	      adios_type_size(adios_long, NULL)*sum_no);
        fastbit_cleanup();
        printf("\n");
   } 
@@ -323,13 +331,99 @@ void buildIndexOnAllVar(ADIOS_FILE* f)
   for (i=0; i<numVars; i++) {
     char* varName = f->var_namelist[i];
     ADIOS_VARINFO* v = adios_inq_var(f, varName);
-    printf("\n==> building fastbit index on  %dth variable: %s, ", i, varName);
+    printf("\n==> building fastbit index on  %dth variable: %s, %s ", i, varName, gBinningOption);
     if (v->ndim > 0) {
       buildIndex(f, v);
     } else {
       printf("\t ... skipping scalar ...\n");
     }
     adios_free_varinfo(v);
+  }
+}
+
+uint64_t estimateBytesOnVar(ADIOS_FILE* f, ADIOS_VARINFO* v) 
+{
+    if (v->ndim == 0) {
+      return 0;
+    }
+
+    adios_inq_var_blockinfo(f, v);
+
+    uint64_t result = 0;
+    int i = 0; 
+    int j = 0;
+    for (i=0; i<v->sum_nblocks; i++) {
+      ADIOS_VARBLOCK curr = v->blockinfo[i];
+
+      uint64_t blockSize = fastbit_adios_util_getBlockSize(v, i);
+      result += blockSize;
+      //uint64_t blockDataByteSize = adios_type_size (v->type, v->value) * blockSize0; 
+
+      /*uint64_t blockSize = 1;
+      for (j=0; j<v->ndim; j++) {
+	blockSize = blockSize* curr.count[j];
+      }
+      result += blockSize;
+      */
+    }
+
+    return adios_type_size (v->type, v->value) * result; 
+    //int typeSize = adios_type_size(v->type, NULL);
+    //return result * typeSize;
+}
+
+int64_t getByteEstimationOnFile(ADIOS_FILE* f) 
+{
+  // check all vars
+  int numVars = f->nvars;
+  uint64_t bytes = 0;
+
+  int i=0;
+  for (i=0; i<numVars; i++) {
+    char* varName = f->var_namelist[i];
+    ADIOS_VARINFO* v = adios_inq_var(f, varName);
+
+    uint64_t varSize = estimateBytesOnVar(f, v);
+    printf(" var: %s has size: %lld\n", varName, varSize);
+    bytes += varSize;
+
+    adios_free_varinfo(v);
+  }
+  return bytes;
+
+}
+int64_t getByteEstimation(ADIOS_FILE* f, int argc, char** argv)
+{
+  uint64_t bytes = 0;
+
+  if (argc >= 3) {
+    int i=2;
+    while (i<argc) {
+      const char* varName = argv[i];      
+      if(strstr(varName, "<binning prec") != NULL) {
+	if (gBinningOption == NULL) {
+	   gBinningOption = argv[i];
+	}
+	if (argc == 3) {
+	  return getByteEstimationOnFile(f);
+	}
+	i++;
+	continue;
+      }
+      ADIOS_VARINFO * v = adios_inq_var(f, varName);
+      if (v == NULL) {
+	printf("Invalid variable: %s\n", varName);	
+	return -1;
+      }
+      uint64_t varSize = estimateBytesOnVar(f, v);
+      printf(" var: %s has size: %lld\n", varName, varSize);
+      bytes += varSize;
+      adios_free_varinfo(v);
+      i++;
+    } 
+    return bytes;
+  } else { 
+    return getByteEstimationOnFile(f);
   }
 }
 
@@ -363,7 +457,7 @@ int main (int argc, char** argv)
     return -1;
   }
 
-  adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, (f->file_size)*2/1048576);
+  adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, (f->file_size)*2/1048576 + 5); // +5MB for extra room in buffer
   adios_declare_group (&gAdios_group, gGroupNameFastbitIdx, "", adios_flag_yes);
   adios_select_method (gAdios_group, "MPI", "", "");
 
@@ -374,8 +468,10 @@ int main (int argc, char** argv)
   adios_open (&gAdios_write_file, gGroupNameFastbitIdx, idxFileName, "w", comm_dummy);
 
   uint64_t adios_totalsize;
-  adios_group_size (gAdios_write_file, 2*(f->file_size), &adios_totalsize);     
-
+  
+  uint64_t estimatedbytes = getByteEstimation(f, argc, argv);
+  printf(" estimated: %lld\n", estimatedbytes);
+  adios_group_size (gAdios_write_file, estimatedbytes*2, &adios_totalsize);     
 
   printf("=> adios open output file: %s, totalsize allocated %llu bytes... \n", idxFileName, adios_totalsize); 
 
@@ -383,20 +479,32 @@ int main (int argc, char** argv)
   sumLogTimeMillis(-1);
 
   if (argc >= 3) {
-    int i=2;
-    while (i<argc) {
-      const char* varName = argv[i];
-      ADIOS_VARINFO * v = adios_inq_var(f, varName);
-      if (v == NULL) {
-	printf("No such variable: %s\n", varName);
-	return 0;
-      }
-      printf("building fastbit index on  variable: %s\n", varName);
-      buildIndex(f, v);
-      adios_free_varinfo(v);
-
-      i++;
-    }
+     int i=2;
+     while (i<argc) {
+        const char* varName = argv[i];
+	printf(" ====  %d , var= %s\n", i, varName);
+	if(strstr(varName, "<binning prec") != NULL) {
+	  if (gBinningOption == NULL) {
+	    gBinningOption = argv[i];
+	  }
+	  if (argc == 3) {
+	    buildIndexOnAllVar(f);
+	    break;
+	  }
+	  i++;
+	  continue;
+	} else {
+	  ADIOS_VARINFO * v = adios_inq_var(f, varName);
+	  if (v == NULL) {
+	     printf("No such variable: %s\n", varName);
+	     return 0;
+	   }	
+	  printf("building fastbit index on  variable: %s\n", varName);
+	  buildIndex(f, v);
+	  adios_free_varinfo(v);
+	  i++;
+	}
+     }
   } else {
     buildIndexOnAllVar(f);
   }
