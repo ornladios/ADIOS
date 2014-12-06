@@ -7,7 +7,8 @@
 
 #include <stddef.h>
 #include <stdlib.h>
-#include "adios_infocache.h"
+#include "core/common_read.h"
+#include "core/adios_infocache.h"
 
 // Utilities
 static inline int min(int a, int b) { return a < b ? a : b; }

@@ -20,6 +20,7 @@
 #include "core/qhashtbl.h"
 #include "query/common_query.h"  // finalize query methods
 #include "public/adios_schema.h"
+#include "public/adios_read_ext.h"
 
 // NCSU ALACRITY-ADIOS
 #include "adios_read_hooks.h"
