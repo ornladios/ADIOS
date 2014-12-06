@@ -1459,7 +1459,14 @@ adios_read_icee_inq_var_trans_blockinfo(const ADIOS_FILE *gp,
     return 0;
 }
 
-void 
+int
+adios_read_icee_get_dimension_order (const ADIOS_FILE *adiosfile)
+{
+    log_error("No support yet: %s\n", __FUNCTION__);
+    return 0; // Stub method: always return false (C order)
+}
+
+void
 adios_read_icee_reset_dimension_order (const ADIOS_FILE *adiosfile, 
                                        int is_fortran)
 {
