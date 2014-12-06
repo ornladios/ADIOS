@@ -630,7 +630,8 @@ static int common_read_find_var (const ADIOS_FILE *fp, const char *name, int qui
     if (fp) {
         internals = (struct common_read_internals_struct *) fp->internal_data;
 
-        varid = (int) internals->hashtbl_vars->get (internals->hashtbl_vars, name);
+        // Double cast makes the compiler happy...
+        varid = (int)(int64_t)internals->hashtbl_vars->get (internals->hashtbl_vars, name);
         // varid=0 is "not found", otherwise +1 bigger than actual varid
         varid--;
     }

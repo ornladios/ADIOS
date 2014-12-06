@@ -121,9 +121,10 @@ ADIOS_TRANSINFO * adios_infocache_inq_transinfo(const ADIOS_FILE *fp, adios_info
     	// inq_var in physical view. It probably doesn't matter, but this is the "true"
     	// varinfo as seen by the transport layer, which is the layer to which we
     	// are about to pass the varinfo, so best to make it match.
-    	const data_view_t old_view = common_read_set_data_view(fp, PHYSICAL_DATA_VIEW);
+    	// Note: violate constness temporarily, since we set the view right back again
+    	const data_view_t old_view = common_read_set_data_view((ADIOS_FILE*)fp, PHYSICAL_DATA_VIEW);
         ADIOS_VARINFO *vi = adios_infocache_inq_varinfo(fp, cache, varid);
-        common_read_set_data_view(fp, old_view);
+        common_read_set_data_view((ADIOS_FILE*)fp, old_view);
 
         return cache->transinfos[varid] = common_read_inq_transinfo(fp, vi);
     }
