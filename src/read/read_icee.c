@@ -40,6 +40,7 @@
 #include "core/adios_read_hooks.h"
 #include "core/adios_logger.h"
 #include "public/adios_error.h"
+#include "core/transforms/adios_transforms_common.h"
 //#include "core/adios_icee.h"
 
 // conditional libraries
