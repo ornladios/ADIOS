@@ -873,7 +873,7 @@ int main (int argc, char ** argv)
 
     f = adios_read_open_file (argv[1], ADIOS_READ_METHOD_BP, comm_dummy);
     if (f == NULL) {
-        print ("::%s\n", adios_errmsg());
+        printf ("::%s\n", adios_errmsg());
 	return -1;
     }
 

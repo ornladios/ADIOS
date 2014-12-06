@@ -59,24 +59,26 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     export MPICC=mpicc
     export MPICXX=mpiCC
     export MPIFC=mpif90
+    WITHFLEX=""
+    WITHFGR=""
+    WITHFASTBIT=""
     if [ "$TARGET" == "pgi" ]; then
         export CC=pgcc
         export CXX=pgCC
         export FC=pgf90
         WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/sith/$TARGET"
         WITHFGR="--with-fgr=/ccs/proj/e2e/qliu/tap" 
+        WITHFASTBIT="--with-fastbit=/sw/redhat6/fastbit/svn/rhel6_gnu4.7.2"
     elif [ "$TARGET" == "gnu" ]; then
         export CC=gcc
         export CXX=g++
         export FC=gfortran
         WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/sith/$TARGET"
-        WITHFGR=""
+        WITHFASTBIT="--with-fastbit=/sw/redhat6/fastbit/svn/rhel6_gnu4.7.2"
     elif [ "$TARGET" == "intel" ]; then
         export CC=icc
         export CXX=icpc
         export FC=ifort
-        WITHFLEX=""
-        WITHFGR=""
     else
         echo "TARGET must be pgi or gnu or intel"
         exit 1
@@ -100,6 +102,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         --with-dataspaces=$DATASPACES_DIR \
         $WITHFLEX \
         $WITHFGR \
+        $WITHFASTBIT \
         --with-aplod=/ccs/proj/e2e/ncsu/sith.gnu \
         --with-isobar=/ccs/proj/e2e/ncsu/sith.gnu \
         --with-glib=/ccs/proj/e2e/qliu/glib

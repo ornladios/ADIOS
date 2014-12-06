@@ -1,4 +1,4 @@
-
+s
 AC_INIT([adios], [1.8.0])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR(config)
@@ -803,7 +803,7 @@ AC_CONFIG_FILES([Makefile
                  utils/bp2bp/Makefile
                  utils/list_methods/Makefile
                  utils/bpmeta/Makefile
-		 utils/query/Makefile
+		 utils/fastbit/Makefile
                  examples/Makefile
                  examples/C/Makefile
                  examples/C/scalars/Makefile
@@ -1161,7 +1161,7 @@ if test -z "${HAVE_FASTBIT_TRUE}"; then
     echo "      - FASTBIT_LIBS = $FASTBIT_LIBS";
     echo
 else
-    echo "  - No FASTBIT to build FASTBIT transform method"
+    echo "  - No FASTBIT to build FASTBIT query method"
 fi
 
 if test -z "${HAVE_ALACRITY_TRUE}"; then
@@ -1172,7 +1172,7 @@ if test -z "${HAVE_ALACRITY_TRUE}"; then
     echo "      - ALACRITY_LIBS = $ALACRITY_LIBS";
     echo
 else
-    echo "  - No ALACRITY to build ALACRITY transform method"
+    echo "  - No ALACRITY to build ALACRITY transform & query methods"
 fi
 
 if test -z "${HAVE_RIDCOMPRESS_TRUE}"; then

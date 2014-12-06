@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include "public/adios.h"
 #include "public/adios_read.h"
 #include <iapi.h>
 

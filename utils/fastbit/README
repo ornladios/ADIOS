@@ -1,9 +1,9 @@
 Usage:
 
-* To index a bpfile:
-  ./index_fastbit path/bpFileName
+* To index an ADIOS .bp file:
+  ./adios_index_fastbit path/bpFileName
 * To index variable(s):
-  ./index_fastbit path/bpFileName var1 var2 ..
+  ./adios_index_fastbit path/bpFileName var1 var2 ..
 
 note that the idx file from foo.bp
 will be named foo.idx, and will reside in the same

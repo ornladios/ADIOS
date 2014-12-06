@@ -533,6 +533,9 @@ CLEANFILES += adios_read_mod.mod adios_defs_mod.mod adios_query_mod.mod
 adiosf_read_mod.$(OBJEXT): adiosf_defs_mod.$(OBJEXT)
 adios_read_mod.mod: adiosf_read_mod.$(OBJEXT)
 
+adios_query_mod.$(OBJEXT): adiosf_read_mod.$(OBJEXT)
+adios_query_mod.mod: adios_query_mod.$(OBJEXT)
+
 adios_defs_mod.mod: adiosf_defs_mod.$(OBJEXT)
 
 endif
