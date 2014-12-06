@@ -30,11 +30,11 @@
 #endif
 
 // NCSU ALACRITY-ADIOS - Added header file
-#include "adios_transforms_common.h"
-#include "adios_transforms_hooks.h"
-#include "adios_transforms_read.h"
-#include "adios_transforms_write.h"
-#include "adios_transforms_specparse.h"
+#include "core/transforms/adios_transforms_common.h"
+#include "core/transforms/adios_transforms_hooks.h"
+#include "core/transforms/adios_transforms_read.h"
+#include "core/transforms/adios_transforms_write.h"
+#include "core/transforms/adios_transforms_specparse.h"
 
 struct adios_method_list_struct * adios_methods = 0;
 struct adios_group_list_struct * adios_groups = 0;

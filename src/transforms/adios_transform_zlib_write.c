@@ -3,11 +3,11 @@
 #include <limits.h>
 #include <sys/time.h>
 
-#include "adios_logger.h"
-#include "adios_transforms_common.h"
-#include "adios_transforms_write.h"
-#include "adios_transforms_hooks_write.h"
-#include "adios_transforms_util.h"
+#include "core/adios_logger.h"
+#include "core/transforms/adios_transforms_common.h"
+#include "core/transforms/adios_transforms_write.h"
+#include "core/transforms/adios_transforms_hooks_write.h"
+#include "core/transforms/adios_transforms_util.h"
 
 #ifdef ZLIB
 

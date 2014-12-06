@@ -120,6 +120,32 @@ typedef struct var_msg_ {
     int condition;
 } Var_msg, *Var_msg_ptr;
 
+typedef struct _complex_dummy
+{
+    float r;
+    float i;
+} complex_dummy;
+
+typedef struct _double_complex_dummy
+{
+    double r;
+    double i;
+} double_complex_dummy;
+
+static FMField complex_dummy_field_list[] =
+{
+    {"r", "float", sizeof(float), FMOffset(complex_dummy*, r)},
+    {"i", "float", sizeof(float), FMOffset(complex_dummy*, i)},
+    {NULL, NULL, 0, 0}
+};
+
+static FMField double_complex_dummy_field_list[] =
+{
+    {"r", "double", sizeof(double), FMOffset(double_complex_dummy*, r)},
+    {"i", "double", sizeof(double), FMOffset(double_complex_dummy*, i)},
+    {NULL, NULL, 0, 0}
+};
+
 static FMField update_step_msg_field_list[]=
 {
     {"step", "integer", sizeof(int), FMOffset(update_step_msg*, step)},

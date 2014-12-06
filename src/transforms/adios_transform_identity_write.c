@@ -11,9 +11,9 @@
 #include <stdint.h>
 #include <assert.h>
 
-#include "adios_internals.h"
-#include "adios_transforms_write.h"
-#include "adios_transforms_hooks_write.h"
+#include "core/adios_internals.h"
+#include "core/transforms/adios_transforms_write.h"
+#include "core/transforms/adios_transforms_hooks_write.h"
 
 
 uint16_t adios_transform_identity_get_metadata_size(struct adios_transform_spec *transform_spec) {

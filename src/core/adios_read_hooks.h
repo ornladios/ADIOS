@@ -59,6 +59,9 @@ FORWARD_DECLARE(dataspaces)
 #if HAVE_FLEXPATH
 FORWARD_DECLARE(flexpath)
 #endif
+#if HAVE_ICEE
+FORWARD_DECLARE(icee)
+#endif
 #if HAVE_DIMES
 FORWARD_DECLARE(dimes)
 #endif

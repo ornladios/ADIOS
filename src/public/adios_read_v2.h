@@ -147,6 +147,7 @@ enum ADIOS_READ_METHOD {
         ADIOS_READ_METHOD_DATASPACES    = 3,  /* Read from memory written by DATASPACES method               */
         ADIOS_READ_METHOD_DIMES         = 4,  /* Read from memory written by DIMES method                    */
         ADIOS_READ_METHOD_FLEXPATH      = 5,  /* Read from memory written by FLEXPATH method                 */
+        ADIOS_READ_METHOD_ICEE          = 6,  /* Read from memory written by ICEE method                 */
 };
 
 /** Locking mode for streams. 

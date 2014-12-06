@@ -301,7 +301,7 @@ int adios_add_timing_variables (struct adios_file_struct * fd)
     {
         adios_error (err_invalid_file_pointer,
                      "Invalid handle passed to adios_add_timing_variables\n");
-        return;
+        return 1;
     }
 
     if (!fd->group || !fd->group->prev_timing_obj)

@@ -291,6 +291,10 @@ ffs_type_to_adios_type(const char *ffs_type)
 	return adios_double;
     else if(!strcmp("char", filtered_type))
 	return adios_byte;
+    else if(!strcmp("complex", filtered_type))
+	return adios_complex;
+    else if(!strcmp("double_complex", filtered_type))
+        return adios_double_complex;
     else
 	return adios_unknown;
 }
