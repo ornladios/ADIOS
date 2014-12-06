@@ -131,7 +131,7 @@ static void compute_blockidx_range(const ADIOS_VARINFO *raw_varinfo, int from_st
     }
 }
 
-inline static const ADIOS_SELECTION * create_pg_bounds(int ndim, ADIOS_VARBLOCK *orig_vb) {
+inline static ADIOS_SELECTION * create_pg_bounds(int ndim, ADIOS_VARBLOCK *orig_vb) {
     return common_read_selection_boundingbox(ndim, orig_vb->start, orig_vb->count);
 }
 

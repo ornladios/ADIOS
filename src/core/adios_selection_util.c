@@ -5,6 +5,7 @@
  *      Author: David A. Boyuka II
  */
 
+#include <stddef.h>
 #include <stdlib.h>
 #include <stdint.h>
 #include <assert.h>
@@ -275,10 +276,14 @@ ADIOS_SELECTION * adios_selection_intersect_wb_wb(const ADIOS_SELECTION_WRITEBLO
 		}
 	} else if (wb1->is_sub_pg_selection) {
 		// Else, if only the first selection is sub-PG, so just use its range
-		return copy_selection(wb1);
+		ADIOS_SELECTION *newwb = common_read_selection_writeblock(wb1->index);
+		newwb->u.block = *wb1;
+		return newwb;
 	} else if (wb2->is_sub_pg_selection) {
 		// Else, only the second selection is sub-PG, so just use its range
-		return copy_selection(wb2);
+		ADIOS_SELECTION *newwb = common_read_selection_writeblock(wb2->index);
+		newwb->u.block = *wb2;
+		return newwb;
 	} else {
 		abort(); // Should not be possible'
 		return NULL;

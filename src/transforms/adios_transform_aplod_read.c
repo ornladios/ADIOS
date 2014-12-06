@@ -22,7 +22,8 @@ typedef struct {
     int32_t components[MAX_COMPONENTS];
 } aplod_meta_t;
 
-void parse_aplod_meta(char *transform_metadata, aplod_meta_t *metaout) {
+void parse_aplod_meta(const void *transform_metadata_void, aplod_meta_t *metaout) {
+	const char *transform_metadata = (const char*)transform_metadata_void;
     transform_metadata += sizeof (uint64_t);
 
     metaout->numComponents = *(int8_t*)transform_metadata;
