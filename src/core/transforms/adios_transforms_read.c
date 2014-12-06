@@ -712,7 +712,7 @@ static ADIOS_VARCHUNK * apply_datablock_to_chunk_and_free(adios_datablock *datab
     	static int warning_printed = 0;
     	if (!warning_printed) {
     		const char *transform_name = adios_transform_plugin_primary_xml_alias(reqgroup->transinfo->transform_type);
-    		if (transform_name == "") transform_name = "<name unknown>";
+    		if (!transform_name) transform_name = "<name unknown>";
     		log_warn("Results for a chunked read using a writeblock selection over a %s-transformed "
     				"variable will return correct results, but in the form of ADIOS_VARCHUNKs with "
     				"non-writeblock selections, so it may be difficult to determine which VARCHUNK "
@@ -783,7 +783,7 @@ void adios_transform_cleanup_from_previous_check_reads(adios_transform_read_requ
 		if (readreq->completed) {
 			// If the read request is totally completed, free the whole thing
 			adios_transform_read_request_remove(readreqs_head, readreq);
-			adios_transform_read_request_free(readreq);
+			adios_transform_read_request_free(&readreq);
 		} else if (readreq->lent_varchunk_data) {
 			// Otherwise, free any internal data buffer that was previously given
 			// to the user via an ADIOS_VARCHUNK, but which now may be freed since

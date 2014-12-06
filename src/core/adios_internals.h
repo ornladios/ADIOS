@@ -73,7 +73,7 @@ struct adios_var_struct
     uint32_t bitmap;
 
     // NCSU ALACRITY-ADIOS - Adding transform-related fields
-    uint8_t transform_type;
+    enum ADIOS_TRANSFORM_TYPE transform_type;
     struct adios_transform_spec *transform_spec;
 
     enum ADIOS_DATATYPES pre_transform_type;

@@ -5,6 +5,7 @@
  *      Author: David A. Boyuka II
  */
 
+#include <stddef.h>
 #include <stdlib.h>
 #include "adios_infocache.h"
 
@@ -27,13 +28,13 @@ static void expand_infocache(adios_infocache *cache, int var_capacity) {
     const int newcap = max(max(oldcap * 2, var_capacity), INITIAL_INFOCACHE_SIZE);
 
     if (oldcap == 0) {
-        MALLOC_ARRAY(cache->physical_varinfos, ADIOS_VARINFO, newcap);
-        MALLOC_ARRAY(cache->logical_varinfos, ADIOS_VARINFO, newcap);
-        MALLOC_ARRAY(cache->transinfos, ADIOS_TRANSINFO, newcap);
+        MALLOC_ARRAY(cache->physical_varinfos, ADIOS_VARINFO*, newcap);
+        MALLOC_ARRAY(cache->logical_varinfos, ADIOS_VARINFO*, newcap);
+        MALLOC_ARRAY(cache->transinfos, ADIOS_TRANSINFO*, newcap);
     } else {
-        REALLOC_ARRAY(cache->physical_varinfos, ADIOS_VARINFO, newcap);
-        REALLOC_ARRAY(cache->logical_varinfos, ADIOS_VARINFO, newcap);
-        REALLOC_ARRAY(cache->transinfos, ADIOS_TRANSINFO, newcap);
+        REALLOC_ARRAY(cache->physical_varinfos, ADIOS_VARINFO*, newcap);
+        REALLOC_ARRAY(cache->logical_varinfos, ADIOS_VARINFO*, newcap);
+        REALLOC_ARRAY(cache->transinfos, ADIOS_TRANSINFO*, newcap);
     }
 
     for (i = oldcap; i < newcap; i++) {
