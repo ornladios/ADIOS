@@ -2191,11 +2191,20 @@ typedef struct {
                 for(timestep = 0; timestep < nsteps; timestep ++)
                 {
                     MALLOC(vs->steps->avgs[timestep], sum_size, "average per timestep")
-                    *(vs->steps->avgs[timestep]) = *(sums[timestep]) / cnts[timestep];
+                    if(cnts[timestep]) {
+                        *(vs->steps->avgs[timestep]) = *(sums[timestep]) / cnts[timestep];
+                    } else {
+                        // no summation for this timestep (e.g. constant NAN array)
+                        *(vs->steps->avgs[timestep]) = 0.0;
+                    }
 
                     MALLOC(vs->steps->std_devs[timestep], sum_size, "standard deviation per timestep")
-                    *(vs->steps->std_devs[timestep]) = sqrt(*(sum_squares[timestep]) / cnts[timestep]
+                    if(cnts[timestep]) {
+                        *(vs->steps->std_devs[timestep]) = sqrt(*(sum_squares[timestep]) / cnts[timestep]
                                 - ((*(vs->steps->avgs[timestep]) * (*(vs->steps->avgs[timestep])))));
+                    } else {
+                        *(vs->steps->std_devs[timestep]) = 0.0;
+                    }
 
                     free (sums[timestep]);
                     free (sum_squares[timestep]);
