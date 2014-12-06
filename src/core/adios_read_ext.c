@@ -172,7 +172,9 @@ ADIOS_PG_INTERSECTIONS * adios_find_intersecting_pgs(const ADIOS_FILE *fp, int v
     enum ADIOS_FLAG swap_endianness = (fp->endianness == get_system_endianness()) ? adios_flag_no : adios_flag_yes;
     int to_steps = from_step + nsteps;
 
-    adios_infocache *infocache = common_read_get_file_infocache(fp);
+    // As long as we don't free/destroy it, using the infocache from the file will have no effect on future
+    // operations using the file (except possibly speeding them up, so "constness" is still respected
+    adios_infocache *infocache = common_read_get_file_infocache((ADIOS_FILE*)fp);
 
     ADIOS_PG_INTERSECTIONS *resulting_intersections = (ADIOS_PG_INTERSECTIONS *)calloc(1, sizeof(ADIOS_PG_INTERSECTIONS));
     resulting_intersections->npg = 0;
@@ -186,7 +188,8 @@ ADIOS_PG_INTERSECTIONS * adios_find_intersecting_pgs(const ADIOS_FILE *fp, int v
         adios_error(err_operation_not_supported, "Only bounding box and point selections are currently supported during read on transformed variables.");
     }
 
-    const data_view_t old_view = adios_read_set_data_view(fp, LOGICAL_DATA_VIEW); // Temporarily go to logical data view
+    // Still respecting constness, since we're going to undo this
+    const data_view_t old_view = adios_read_set_data_view((ADIOS_FILE*)fp, LOGICAL_DATA_VIEW); // Temporarily go to logical data view
 
     const ADIOS_VARINFO *varinfo = adios_infocache_inq_varinfo(fp, infocache, varid);
     assert(from_step >= 0 && to_steps <= varinfo->nsteps);
@@ -198,7 +201,8 @@ ADIOS_PG_INTERSECTIONS * adios_find_intersecting_pgs(const ADIOS_FILE *fp, int v
     if (!varinfo->blockinfo)
     	common_read_inq_var_blockinfo(fp, (ADIOS_VARINFO *)varinfo);
 
-    adios_read_set_data_view(fp, old_view); // Reset the data view to whatever it was before
+    // Undoing view set (returning to const state)
+    adios_read_set_data_view((ADIOS_FILE*)fp, old_view); // Reset the data view to whatever it was before
 
     // Assemble read requests for each varblock
     blockidx = start_blockidx;
@@ -206,7 +210,7 @@ ADIOS_PG_INTERSECTIONS * adios_find_intersecting_pgs(const ADIOS_FILE *fp, int v
     timestep_blockidx = 0;
 
     while (blockidx != end_blockidx) { //for (blockidx = startblock_idx; blockidx != endblock_idx; blockidx++) {
-        const ADIOS_SELECTION *pg_bounds_sel;
+        ADIOS_SELECTION *pg_bounds_sel;
         ADIOS_SELECTION *pg_intersection_sel;
 
         vb = &varinfo->blockinfo[blockidx];

@@ -1026,7 +1026,7 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 			// false: PG selection box is intersecting with variable's selection box
 			// true : PG selection box is fully contained within variable's selection box
 			bool isPGCovered = false;
-			const ADIOS_SELECTION * pgSelBox = pg.pg_bounds_sel;
+			ADIOS_SELECTION * pgSelBox = pg.pg_bounds_sel;
 			assert(pgSelBox->type == ADIOS_SELECTION_BOUNDINGBOX );
 			assert(pgSelBox->type == interSelBox->type );
 			const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *pgBB = &(pgSelBox->u.bb);

@@ -64,7 +64,7 @@ typedef struct {
 	int timestep;
 	int blockidx;
 	int blockidx_in_timestep;
-	const ADIOS_SELECTION *pg_bounds_sel;    // it is a global box (offset/start is global)
+	ADIOS_SELECTION *pg_bounds_sel;    // it is a global box (offset/start is global)
 	ADIOS_SELECTION *intersection_sel; // it is a global box (offset/start is global)
 } ADIOS_PG_INTERSECTION ;
 

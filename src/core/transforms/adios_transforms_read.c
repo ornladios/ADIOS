@@ -1,3 +1,4 @@
+#include <stddef.h>
 #include <assert.h>
 
 #include "core/adios_bp_v1.h"
@@ -769,7 +770,7 @@ static ADIOS_VARCHUNK * extract_chunk_from_finished_read_reqgroup(adios_transfor
     reqgroup->orig_data = NULL;
 
     // Transfer ownership of orig_sel
-    chunk->sel = (ADIOS_SELECTION*)reqgroup->orig_sel; // Remove const
+    chunk->sel = copy_selection(reqgroup->orig_sel);
     reqgroup->orig_sel = NULL;
 
     return chunk;
