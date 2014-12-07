@@ -525,7 +525,7 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
     for (currBlockIdx=blockStart; currBlockIdx <= blockEnd; currBlockIdx++) {
       getHandle(timeStep, currBlockIdx, idxFile, q);	      
       if (((FASTBIT_INTERNAL*)(q->queryInternal))->_handle == 0) {
-	log_error(">> Unable to construct fastbit query with NULL \n");
+	log_warn(" Unable to construct fastbit query with NULL. Use _no_o idx method \n");
 	return -1;
       }
       uint64_t count = fastbit_selection_evaluate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle); 
@@ -693,7 +693,8 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
     ierr = fastbit_iapi_attach_index (blockDataName, keys, nk, offsets, no, bms, mybmreader);
       */
     if (ierr < 0) {
-      log_error(" reattaching index failed. fastbit err code = %d\n", ierr);
+      log_debug(" reattaching index failed. %s, fastbit err code = %d\n", blockDataName, ierr);
+      ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle = NULL;
       //result = ierr;
     } else {
       FastBitSelectionHandle h = createHandle(q, blockDataName); //fastbit_selection_osr(blockDataName, getFastbitCompareType(q->_op), q->_value);
@@ -1020,6 +1021,7 @@ int64_t call_fastbit_evaluate(ADIOS_QUERY* q, int timeStep, uint64_t _maxResult)
     
   int64_t estimate = applyIndexIfExists(q, timeStep);
   if (estimate < 0) {   // use no idx
+    log_debug(" use no idx on timestep %d\n", timeStep);
     int errorCode = prepareData(q, timeStep);
     if (errorCode != 0) {
       return -1;
