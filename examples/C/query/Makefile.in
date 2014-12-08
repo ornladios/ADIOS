@@ -425,7 +425,6 @@ adios_read_ext_test_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 @HAVE_ALACRITY_TRUE@	$(ADIOSLIB_LDADD)
 @HAVE_ALACRITY_TRUE@adios_show_bp_file_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 CLEANFILES = *.bp
-EXTRA_DIST = adios_build_alac_index.xml gread_temperature.ch gwrite_temperature.ch job.pbs
 all: all-am
 
 .SUFFIXES:
