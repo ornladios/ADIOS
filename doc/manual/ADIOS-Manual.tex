@@ -60,7 +60,7 @@
 \usepackage{hyperref}
 
 \newcommand{\comment}[1]{}
-\newcommand{\adiosversion}{ADIOS 1.7\xspace}
+\newcommand{\adiosversion}{ADIOS 1.8\xspace}
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Define syntax highlighting for ADIOS
@@ -90,6 +90,9 @@ adios_advance_step, adios_release_step,adios_free_chunk,
 adios_selection_boundingbox, adios_selection_points, adios_selection_writeblock,
 adios_selection_delete, adios_selection_auto, adios_errmsg,
 adios_type_to_string, adios_type_size, adios_get_grouplist,
+% Query API
+adios_query_create, adios_query_combine, adios_query_evaluate, adios_query_free,
+adios_query_estimate, adios_query_set_method, adios_query_is_method_available,
 % Fortran Read
 adios_reset_dimension_order, adios_inq_ngroups, adios_inq_groupnames,
 adios_group_view, adios_inq_file, adios_inq_varnames, adios_inq_attrnames,
@@ -169,6 +172,8 @@ upquote=true,
 \input{transform_plugins}
 
 \input{adios_read_api}
+
+\input{adios_query_api}
 
 \input{utilities}
 
