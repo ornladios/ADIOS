@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-//#define _NOMPI
+#define _NOMPI
 
 #include "adios.h"
 #include "core/adios_logger.h"
@@ -79,6 +79,8 @@ int main (int argc, char ** argv)
 		/* Allocate space for the arrays */
 		t = (double *) malloc (NX*NY*sizeof(double));
 		p = (int *) malloc (NX*sizeof(int));
+
+		ADIOS_VARINFO *v = adios_inq_var(f, "var_double_2Darray");
 
 		sel = adios_selection_boundingbox(2, start, count);
 		adios_schedule_read(f, sel, "var_double_2Darray", 0, 1, t);

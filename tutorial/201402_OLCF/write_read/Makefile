@@ -1,10 +1,10 @@
 ## Chester, Titan
-CC=mpicc
-## Rhea, Sith
-FC=mpif90
+CC=gcc
+## Rhea Sith
+FC=f90
 #CC=cc
 LINKER=${CC}
-AHOME=/home/hobbes/hobbes/ADIOS
+AHOME=/home/hobbes/hobbes/install
 ACONFIG=${AHOME}/adios_config
 
 # required dependencies
@@ -17,11 +17,16 @@ ADIOS_DIR = ${AHOME}
 #ADIOS_INC := -I${HOME}/src/ -I${HOME}/src/public -I${HOME}/vanilla_build ${MXML_INC}
 #ADIOS_FLIB := -L{HOME}/vanilla_build ${MXML_LDFLAGS} -ladiosf ${MXML_LIBS}
 #ADIOS_LIB := -L${HOME}/vanilla_build ${MXML_LDFLAGS} -ladios ${MXML_LIBS} 
-ADIOSREAD_FLIB := -L${HOME} ${MXML_LDFLAGS} -ladiosf ${MXML_LIBS}
+#ADIOSREAD_FLIB := -L${HOME} ${MXML_LDFLAGS} -ladiosf ${MXML_LIBS}
 
-ADIOS_INC := $(shell ${ACONFIG} -c) -I${AHOME}/src
-ADIOS_LIB := $(shell ${ACONFIG} -l)
-ADIOS_FLIB := $(shell ${ACONFIG} -fl)
+# ADIOS_INC := $(shell ${ACONFIG} -c) -I${AHOME}/src
+# ADIOS_LIB := $(shell ${ACONFIG} -l)
+# ADIOS_FLIB := $(shell ${ACONFIG} -fl)
+
+ADIOS_INC := -I${AHOME}/include -I${AHOME}/../ADIOS/src
+ADIOS_LIB := -L${AHOME}/lib -ladios  ${MXML_LDFLAGS} ${MXML_LIBS}
+ADIOS_FLIB := -L${AHOME}/lib -ladiosf  ${MXML_LDFLAGS} ${MXML_LIBS}
+ADIOSREAD_FLIB := -L${AHOME}/lib ${MXML_LDFLAGS} -ladiosf ${MXML_LIBS}
 
 GPP = ${ADIOS_DIR}/bin/gpp.py
 
