@@ -1,0 +1,28 @@
+include make.settings
+
+## Set ADIOS_DIR here or before doing make
+override ADIOS_INC=`${ADIOS_DIR}/bin/adios_config -c -f`
+override ADIOS_FLIB=`${ADIOS_DIR}/bin/adios_config -l -f`
+
+default: genarray_varying test_query
+all: default
+
+genarray_varying.o : genarray_varying.F90 
+	${FC} -g -c ${ADIOS_INC} $<
+
+genarray_varying:  genarray_varying.o
+	${FC} -g -o genarray_varying genarray_varying.o ${ADIOS_FLIB} 
+
+test_query.o : test_query.F90 
+	${FC} -g -c ${ADIOS_INC} $<
+
+test_query:  test_query.o
+	${FC} -g -o test_query test_query.o ${ADIOS_FLIB} 
+
+
+clean:
+	rm -f *.o *.mod *.fh core.*
+	rm -f genarray_varying test_query
+
+distclean: clean
+

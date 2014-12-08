@@ -24,7 +24,7 @@ AM_CONDITIONAL(HAVE_ALACRITY,true)
 AC_ARG_WITH([alacrity],
         [  --with-alacrity=DIR      Location of ALACRITY library],
         [ALACRITY_LDFLAGS="-L$withval/lib";
-         ALACRITY_LIBS="-lalacrity -lridcompress";
+         ALACRITY_LIBS="-lalacrity";
          ALACRITY_CPPFLAGS="-I$withval/include";],
         [with_alacrity=no])
 

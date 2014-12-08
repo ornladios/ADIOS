@@ -15,6 +15,7 @@
 #define ADIOS_TRANSFORMS_DATABLOCK_H_
 
 #include "public/adios_types.h"
+#include <core/transforms/adios_transforms_reqgroup.h>
 
 typedef struct {
     int timestep;                  // timestep of this datablock
@@ -27,6 +28,11 @@ typedef struct {
 } adios_datablock;
 
 // Datablock management
+adios_datablock * adios_datablock_new_whole_pg(
+		const adios_transform_read_request *read_req,
+        const adios_transform_pg_read_request *pg_read_req,
+        void *data);
+
 adios_datablock * adios_datablock_new(
         enum ADIOS_DATATYPES elem_type,
         int timestep,

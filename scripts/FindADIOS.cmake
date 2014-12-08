@@ -171,9 +171,9 @@ if(ADIOS_FOUND)
     #         different sources (quite unlikely)
     #         http://www.cmake.org/pipermail/cmake/2008-November/025128.html
     set(ADIOS_LIBRARY_DIRS "")
-    string(REGEX MATCHALL "-L([A-Za-z_0-9/\\.-]+)" _ADIOS_LIBDIRS "${ADIOS_LINKFLAGS}")
+    string(REGEX MATCHALL " -L([A-Za-z_0-9/\\.-]+)" _ADIOS_LIBDIRS " ${ADIOS_LINKFLAGS}")
     foreach(_LIBDIR ${_ADIOS_LIBDIRS})
-        string(REPLACE "-L" "" _LIBDIR ${_LIBDIR})
+        string(REPLACE " -L" "" _LIBDIR ${_LIBDIR})
         list(APPEND ADIOS_LIBRARY_DIRS ${_LIBDIR})
     endforeach()
     # we could append ${CMAKE_PREFIX_PATH} now but that is not really necessary
@@ -181,9 +181,9 @@ if(ADIOS_FOUND)
     #message(STATUS "ADIOS DIRS to look for libs: ${ADIOS_LIBRARY_DIRS}")
 
     # parse all -lname libraries and find an absolute path for them
-    string(REGEX MATCHALL "-l([A-Za-z_0-9\\.-]+)" _ADIOS_LIBS "${ADIOS_LINKFLAGS}")
+    string(REGEX MATCHALL " -l([A-Za-z_0-9\\.-]+)" _ADIOS_LIBS " ${ADIOS_LINKFLAGS}")
     foreach(_LIB ${_ADIOS_LIBS})
-        string(REPLACE "-l" "" _LIB ${_LIB})
+        string(REPLACE " -l" "" _LIB ${_LIB})
 
         # find static lib: absolute path in -L then default
         find_library(_LIB_DIR NAMES ${_LIB} PATHS ${ADIOS_LIBRARY_DIRS} CMAKE_FIND_ROOT_PATH_BOTH)

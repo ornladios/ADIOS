@@ -42,7 +42,8 @@ host_triplet = @host@
 subdir = .
 DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/adios_config.flags.in \
-	$(srcdir)/config.h.in $(top_srcdir)/configure \
+	$(srcdir)/adios_config.in $(srcdir)/config.h.in \
+	$(top_srcdir)/configure \
 	$(top_srcdir)/utils/skel/lib/skel_have_adios_timing.py.in \
 	AUTHORS COPYING ChangeLog INSTALL NEWS TODO config/compile \
 	config/config.guess config/config.sub config/depcomp \
@@ -59,6 +60,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_alacrity.m4 \
 	$(top_srcdir)/config/ac_dcmf.m4 \
 	$(top_srcdir)/config/ac_dimes.m4 \
 	$(top_srcdir)/config/ac_dmalloc.m4 \
+	$(top_srcdir)/config/ac_fastbit.m4 \
 	$(top_srcdir)/config/ac_fgr.m4 \
 	$(top_srcdir)/config/ac_flexpath.m4 \
 	$(top_srcdir)/config/ac_glib.m4 \
@@ -75,11 +77,16 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_alacrity.m4 \
 	$(top_srcdir)/config/ac_pami.m4 \
 	$(top_srcdir)/config/ac_phdf5.m4 \
 	$(top_srcdir)/config/ac_portals.m4 \
+	$(top_srcdir)/config/ac_ridcompress.m4 \
 	$(top_srcdir)/config/ac_szip.m4 \
 	$(top_srcdir)/config/ac_zlib.m4 \
 	$(top_srcdir)/config/acx_mpi.m4 \
 	$(top_srcdir)/config/acx_pthread.m4 \
-	$(top_srcdir)/config/cercs.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/config/cercs.m4 $(top_srcdir)/config/libtool.m4 \
+	$(top_srcdir)/config/ltoptions.m4 \
+	$(top_srcdir)/config/ltsugar.m4 \
+	$(top_srcdir)/config/ltversion.m4 \
+	$(top_srcdir)/config/lt~obsolete.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
@@ -87,7 +94,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = config.h
 CONFIG_CLEAN_FILES = utils/skel/lib/skel_have_adios_timing.py \
-	adios_config.flags
+	adios_config adios_config.flags
 CONFIG_CLEAN_VPATH_FILES =
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
@@ -188,6 +195,8 @@ ADIOSREADLIB_SEQ_CFLAGS = @ADIOSREADLIB_SEQ_CFLAGS@
 ADIOSREADLIB_SEQ_CPPFLAGS = @ADIOSREADLIB_SEQ_CPPFLAGS@
 ADIOSREADLIB_SEQ_LDADD = @ADIOSREADLIB_SEQ_LDADD@
 ADIOSREADLIB_SEQ_LDFLAGS = @ADIOSREADLIB_SEQ_LDFLAGS@
+ADIOS_TIMERS = @ADIOS_TIMERS@
+ADIOS_TIMER_EVENTS = @ADIOS_TIMER_EVENTS@
 ALACRITY_CPPFLAGS = @ALACRITY_CPPFLAGS@
 ALACRITY_LDFLAGS = @ALACRITY_LDFLAGS@
 ALACRITY_LIBS = @ALACRITY_LIBS@
@@ -245,6 +254,9 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+FASTBIT_CPPFLAGS = @FASTBIT_CPPFLAGS@
+FASTBIT_LDFLAGS = @FASTBIT_LDFLAGS@
+FASTBIT_LIBS = @FASTBIT_LIBS@
 FC = @FC@
 FCFLAGS = @FCFLAGS@
 FCLIBS = @FCLIBS@
@@ -344,11 +356,13 @@ PTHREAD_CC = @PTHREAD_CC@
 PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
 PTHREAD_LIBS = @PTHREAD_LIBS@
 RANLIB = @RANLIB@
+RIDCOMPRESS_CPPFLAGS = @RIDCOMPRESS_CPPFLAGS@
+RIDCOMPRESS_LDFLAGS = @RIDCOMPRESS_LDFLAGS@
+RIDCOMPRESS_LIBS = @RIDCOMPRESS_LIBS@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SKEL_HAVE_ADIOS_TIMING = @SKEL_HAVE_ADIOS_TIMING@
-SKEL_TIMING = @SKEL_TIMING@
 STRIP = @STRIP@
 SZIP_CPPFLAGS = @SZIP_CPPFLAGS@
 SZIP_LDFLAGS = @SZIP_LDFLAGS@
@@ -418,7 +432,7 @@ ACLOCAL_AMFLAGS = -I config
 SUBDIRS = src utils tests examples
 EXTRA_DIST = runconf \
              KNOWN_BUGS \
-             adios_config \
+             adios_config.in \
              scripts/create.nssi.config.sh \
              scripts/kill.nssi.staging.sh \
              scripts/start.nssi.staging.sh \
@@ -491,6 +505,8 @@ $(srcdir)/config.h.in: @MAINTAINER_MODE_TRUE@ $(am__configure_deps)
 distclean-hdr:
 	-rm -f config.h stamp-h1
 utils/skel/lib/skel_have_adios_timing.py: $(top_builddir)/config.status $(top_srcdir)/utils/skel/lib/skel_have_adios_timing.py.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+adios_config: $(top_builddir)/config.status $(srcdir)/adios_config.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 adios_config.flags: $(top_builddir)/config.status $(srcdir)/adios_config.flags.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
@@ -1008,17 +1024,17 @@ uninstall-am: uninstall-binSCRIPTS uninstall-sysconfDATA
 install-data-hook:
 	echo "SRCDIR=\"$(PWD)\"" >> adios_config.flags; \
 	if git rev-parse --git-dir &>/dev/null; then \
-	    echo "GITLOG=\"`git log -n 1 --format=\"Last commit on %ad hash %h\"`\"" > git.status; \
-	    echo "read -d '' GITSTAT <<'_EOF_'" >> git.status; \
-	    git status -uno >> git.status; \
-	    echo "_EOF_" >> git.status; \
+	    echo "GITLOG=\"`git log -n 1 --format=\"Last commit on %ad hash %h\"`\"" > adios_git_status; \
+	    echo "read -d '' GITSTAT <<'_EOF_'" >> adios_git_status; \
+	    git status -uno >> adios_git_status; \
+	    echo "_EOF_" >> adios_git_status; \
 	else \
-	    echo "GITLOG=\"git log not available\"" >> git.status; \
-	    echo "GITSTAT=\"git status not available\"" >> git.status; \
+	    echo "GITLOG=\"git log not available\"" >> adios_git_status; \
+	    echo "GITSTAT=\"git status not available\"" >> adios_git_status; \
 	    echo "Note: git command not found or $(PWD) is not a git repository."; \
 	fi 
-	cp adios_config.flags $(DESTDIR)$(bindir)
-	cp git.status $(DESTDIR)$(bindir)
+	$(INSTALL_DATA) adios_config.flags $(DESTDIR)$(sysconfdir)
+	$(INSTALL_DATA) adios_git_status $(DESTDIR)$(sysconfdir)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

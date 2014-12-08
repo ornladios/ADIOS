@@ -32,6 +32,7 @@
 #include "core/adios_read_hooks.h" // read hooks and adios_read_hooks_struct
 #include "core/transforms/adios_transforms_hooks.h" 
 #include "core/transforms/adios_transforms_read.h"
+#include "query/adios_query_hooks.h"
 
 
 int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype);
@@ -41,6 +42,7 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype);
 static struct adios_transport_struct * adios_transports = 0;
 #endif
 static struct adios_read_hooks_struct * adios_read_hooks = 0;
+static struct adios_query_hooks_struct * adios_query_hooks = 0;
 
 int main (int argc, char ** argv) {
     int  rank, size, i;
@@ -56,6 +58,7 @@ int main (int argc, char ** argv) {
 #endif
     adios_read_hooks_init (&adios_read_hooks);
     adios_transform_read_init();
+    adios_query_hooks_init(&adios_query_hooks);
 
     if(rank==0) {
 
@@ -82,6 +85,14 @@ int main (int argc, char ** argv) {
             printf("    \"%s\"\t: %s\n", 
                     adios_transform_plugin_primary_xml_alias((enum ADIOS_TRANSFORM_TYPE)i),
                     adios_transform_plugin_desc((enum ADIOS_TRANSFORM_TYPE)i));
+            }
+        }
+
+        printf ("Available query methods (in adios_query_set_method()):\n");
+        for (i = 0; i < ADIOS_QUERY_METHOD_COUNT; i++) {
+        	const enum ADIOS_QUERY_METHOD method = (enum ADIOS_QUERY_METHOD)i;
+            if (adios_query_hooks[method].method_name) {
+            	printf("    %s (=%d)\n", adios_query_hooks[method].method_name, i);
             }
         }
     }

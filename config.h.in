@@ -1,5 +1,11 @@
 /* config.h.in.  Generated from configure.ac by autoheader.  */
 
+/* Adios timing is enabled */
+#undef ADIOS_TIMERS
+
+/* Adios timing events are enabled */
+#undef ADIOS_TIMER_EVENTS
+
 /* Define to dummy `main' function (if any) required to link to the Fortran
    libraries. */
 #undef FC_DUMMY_MAIN
@@ -77,6 +83,9 @@
 /* Define to 1 if you have the <dmalloc.h> header file. */
 #undef HAVE_DMALLOC_H
 
+/* Define if we have libfastbit */
+#undef HAVE_FASTBIT
+
 /* Define to 1 if you have the `fdatasync' function. */
 #undef HAVE_FDATASYNC
 
@@ -98,8 +107,14 @@
 /* Define to 1 if you have the <hdf5.h> header file. */
 #undef HAVE_HDF5_H
 
+/* Define to 1 if you have the <iapi.h> header file. */
+#undef HAVE_IAPI_H
+
 /* Define to 1 if you have <infiniband/verbs.h>. */
 #undef HAVE_IBVERBS_H
+
+/* ICEE method is enabled */
+#undef HAVE_ICEE
 
 /* Define if you have the Infiniband. */
 #undef HAVE_INFINIBAND
@@ -215,6 +230,9 @@
 /* Define to 1 if the system has the type `ptl_time_t'. */
 #undef HAVE_PTL_TIME_T
 
+/* Define if you have RIDCOMPRESS. */
+#undef HAVE_RIDCOMPRESS
+
 /* Define to 1 if you have the `sched_yield' function. */
 #undef HAVE_SCHED_YIELD
 
@@ -297,9 +315,6 @@
 /* Define to the necessary symbol if this constant uses a non-standard name on
    your system. */
 #undef PTHREAD_CREATE_JOINABLE
-
-/* Skel timing is enabled */
-#undef SKEL_TIMING
 
 /* Define to 1 if you have the ANSI C header files. */
 #undef STDC_HEADERS

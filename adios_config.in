@@ -8,17 +8,28 @@
 
 MYDIR=`dirname $0`
 
-FLAGSFILE=${MYDIR}/adios_config.flags
+prefix="@prefix@"
+FLAGSFILE="@sysconfdir@/adios_config.flags"
 if [ ! -f ${FLAGSFILE} ]; then
-    echo "ERROR: settings file ${FLAGSFILE} not found."
-    exit 1
+    FLAGSFILE2=${MYDIR}/adios_config.flags
+    if [ ! -f ${FLAGSFILE2} ]; then
+        echo "ERROR: settings file ${FLAGSFILE} not found."
+        exit 1
+    else
+        FLAGSFILE=${FLAGSFILE2}
+    fi
 fi
 . ${FLAGSFILE}
 
-GITSTATFILE=${MYDIR}/git.status
+GITSTATFILE=@sysconfdir@/adios_git_status
+if [ ! -f ${GITSTATFILE} ]; then
+    GITSTATFILE=${MYDIR}/adios_git_status
+fi
 if [ -f ${GITSTATFILE} ]; then
     . ${GITSTATFILE}
 fi
+
+
 
 function Usage () {
     echo "`basename $0` [-d | -c | -l] [-f] [-r] [-s] [-1] [-m] [-v] [-i]

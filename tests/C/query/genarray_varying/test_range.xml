@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<adios-config host-language="C">
+  <adios-group name="range">
+
+    <var name="nproc" path="info" type="integer"/>
+    <attribute name="description" path="info/nproc" value="Number of writers in query app"/>
+    <var name="np1" path="info" type="integer"/>
+    <attribute name="description" path="info/np1" value="Number of processors in 1st(C) dimension"/>
+    <var name="np2" path="info" type="integer"/>
+    <attribute name="description" path="info/np2" value="Number of processors in 2nd dimension"/>
+    <var name="np3" path="info" type="integer"/>
+    <attribute name="description" path="info/np3" value="Number of processors in 3rd dimension"/>
+
+
+    <!-- Auxiliary variables for global array indexing -->
+    <var name="xy/gdim1" path="" type="integer*8"/>
+    <var name="xy/gdim2" path="" type="integer*8"/>
+    <var name="xy/off1" path="" type="integer*8"/>
+    <var name="xy/off2" path="" type="integer*8"/>
+    <var name="xy/ldim1" path="" type="integer*8"/>
+    <var name="xy/ldim2" path="" type="integer*8"/>
+    <var name="xy/hits_gdim" path="" type="integer*8"/>
+    <var name="xy/hits_ldim" path="" type="integer*8"/>
+    <var name="xy/hits_off" path="" type="integer*8"/>
+    <var name="rank" path="" type="integer"/>
+
+
+    <var name="xy/nhits_total" path="" type="integer*8"/>
+    <global-bounds dimensions="xy/gdim1,xy/gdim2" offsets="xy/off1,xy/off2">
+        <var name="xy/original"  path="" type="double" dimensions="xy/ldim1,xy/ldim2"/>
+        <var name="xy/manual"    path="" type="double" dimensions="xy/ldim1,xy/ldim2"/>
+        <var name="xy/queried"   path="" type="double" dimensions="xy/ldim1,xy/ldim2"/>
+    </global-bounds>
+    <global-bounds dimensions="info/nproc" offsets="rank">
+        <var name="xy/nhits"  path="" type="integer*8" dimensions="1"/>
+    </global-bounds>
+    <global-bounds dimensions="xy/hits_gdim,2" offsets="xy/hits_off,0">
+        <var name="xy/hitlist"  path="" type="integer*8" dimensions="xy/hits_ldim,2"/>
+        <var name="xy/hitdata"  path="" type="double" dimensions="xy/hits_ldim,2"/>
+    </global-bounds>
+    
+    <attribute name="description" path="xy"  value="2D surface slice of xyz in X-Y direction"/>
+
+
+  </adios-group>
+
+  <method group="range" method="MPI">verbose=3</method>
+
+  <buffer size-MB="80" allocate-time="now"/>
+
+</adios-config>

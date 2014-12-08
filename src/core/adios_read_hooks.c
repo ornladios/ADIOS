@@ -31,6 +31,7 @@ if (!strcasecmp (buf,b)) \
 (*t) [b].adios_perform_reads_fn = adios_read_##a##_perform_reads; \
 (*t) [b].adios_check_reads_fn = adios_read_##a##_check_reads; \
 (*t) [b].adios_get_attr_byid_fn = adios_read_##a##_get_attr_byid; \
+(*t) [b].adios_get_dimension_order_fn = adios_read_##a##_get_dimension_order; \
 (*t) [b].adios_reset_dimension_order_fn = adios_read_##a##_reset_dimension_order; \
 (*t) [b].adios_get_groupinfo_fn = adios_read_##a##_get_groupinfo; \
 (*t) [b].adios_is_var_timed_fn = adios_read_##a##_is_var_timed; \
@@ -64,6 +65,10 @@ void adios_read_hooks_init (struct adios_read_hooks_struct ** t)
 #if HAVE_FLEXPATH
        ASSIGN_FNS(flexpath, ADIOS_READ_METHOD_FLEXPATH);
 #endif
+#endif
+
+#if HAVE_ICEE
+       ASSIGN_FNS(icee, ADIOS_READ_METHOD_ICEE);
 #endif
 
 #if HAVE_PHDF5

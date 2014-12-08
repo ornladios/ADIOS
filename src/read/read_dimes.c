@@ -10,7 +10,7 @@
 /* Read method for DIMES memory-to-memory coupling */
 /**************************************************/
 
-#include "../config.h"
+#include "config.h"
 #include <stdlib.h>
 #include <string.h>
 #include <errno.h>  /* errno */
@@ -25,6 +25,8 @@
 #include "core/futils.h"
 #include "core/ds_metadata.h"
 #include "core/common_read.h" // common_read_selection_* functions
+
+#include "core/transforms/adios_transforms_common.h" // NCSU ALACRITY-ADIOS
 
 #include "dataspaces.h"
 
@@ -761,16 +763,16 @@ static int get_step (ADIOS_FILE *fp, int step, enum WHICH_VERSION which_version,
                     "Data of '%s' does not exist in DIMES\n", fp->path);
             break;
     case STEP_STREAMTERMINATED:
-            adios_error (err_end_of_stream, 
-                    "Stream '%s' has been terminated. No more steps available\n", fp->path);
+            adios_errno = err_end_of_stream; // not an error that has to be printed
+            log_debug ("Stream '%s' has been terminated. No more steps available\n", fp->path);
             break;
     case STEP_STEPNOTREADY:
-            adios_error (err_step_notready, 
-                    "Step %d in stream '%s' is not yet available\n", step, fp->path);
+            adios_errno = err_step_notready;
+            log_debug ("Step %d in stream '%s' is not yet available\n", step, fp->path);
             break;
     case STEP_STEPDISAPPEARED:
-            adios_error (err_step_disappeared, 
-                    "Step %d in stream '%s' is not available anymore\n", step, fp->path);
+            adios_errno = err_step_disappeared;
+            log_debug ("Step %d in stream '%s' is not available anymore\n", step, fp->path);
             break;
     case STEP_OTHERERROR:
             // These were handled at their places
@@ -972,12 +974,12 @@ int adios_read_dimes_peek_ahead (ADIOS_FILE *fp)
             // we have no more new steps
             if (terminated) {
                 // stream is gone, we read everything 
-                adios_error (err_end_of_stream, 
-                        "Stream '%s' has been terminated. No more steps available\n", fp->path);
+                adios_errno = err_end_of_stream;
+                log_debug ("Stream '%s' has been terminated. No more steps available\n", fp->path);
             } else {
                 // a next step may come 
-                adios_error (err_step_notready, 
-                        "No new step in stream '%s' is not yet available\n", fp->path);
+                adios_errno = err_step_notready;
+                log_debug ("No new step in stream '%s' is not yet available\n", fp->path);
             }
         }
     }
@@ -1220,11 +1222,10 @@ static int adios_read_dimes_get_meta(const char * varname, enum ADIOS_DATATYPES 
         return err_no_memory;
     } 
     else*/ if (err) {
-        adios_error (err_corrupted_variable, "DIMES failed to read variable %s.\n", varname);  
-        return err_corrupted_variable;
+        log_debug ("DIMES failed to read variable %s.\n", varname);  
     }
 
-    return 0;
+    return err;
 }
 
 static int adios_read_dimes_get_meta_collective(const char * varname,
@@ -1267,6 +1268,8 @@ static int adios_read_dimes_get_meta_collective(const char * varname,
     if (rank == root) {
         dspaces_define_gdim(varname, ndims, gdims);
         err =  dspaces_get (varname, version, elemsize, ndims, lb, ub, data);
+        if (err)
+            log_debug ("DIMES failed to read variable %s.\n", varname);  
 
         // set pad to indicate if root rank successfully fetch the meta data
         pad = (int*)buf;
@@ -1287,13 +1290,7 @@ static int adios_read_dimes_get_meta_collective(const char * varname,
     }
 
     free(buf);
-
-    if (err) {
-        adios_error (err_corrupted_variable, "DATASPACES failed to read variable %s.\n", varname);
-        return err_corrupted_variable;
-    }
-
-    return 0;
+    return err;
 }
 
 int adios_read_dimes_schedule_read_byid (const ADIOS_FILE * fp, 
@@ -1723,6 +1720,13 @@ int adios_read_dimes_get_attr_byid (const ADIOS_FILE * fp, int attrid,
     }
     return 0; 
 }
+
+
+int adios_read_dimes_get_dimension_order (const ADIOS_FILE *fp)
+{
+    return 0;
+}
+
 
 void adios_read_dimes_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
 {

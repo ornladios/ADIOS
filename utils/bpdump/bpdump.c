@@ -67,7 +67,7 @@ int main (int argc, char ** argv)
     int rc = 0;
     struct dump_struct dump;
 
-    if (argc < 2)
+    if (argc < 2 || argc > 4)
     {
         fprintf (stderr, "usage: %s [-d [var]|--dump [var]] <filename>\n"
                 ,argv [0]
@@ -83,7 +83,7 @@ int main (int argc, char ** argv)
            )
         {
             dump.do_dump = 1;
-            if (argc > 2)
+            if (argc > 3)
             {
                 dump.dump_var = argv [2];
                 filename = argv [3];
@@ -93,7 +93,7 @@ int main (int argc, char ** argv)
             {
                 dump.dump_var = 0;
                 filename = argv [2];
-                printf("%s %s\n",dump.dump_var,filename);
+                printf("ALLVARS %s\n",filename);
             }
         }
         else
@@ -230,6 +230,7 @@ int main (int argc, char ** argv)
 
             if ( var_header.dims == 0 || 
                  ( dump.do_dump &&
+                   dump.dump_var &&
                    !strcasecmp (dump.dump_var, var_header.name)
                  )
                )
@@ -854,6 +855,7 @@ void print_var_payload (struct adios_var_header_struct_v1 * var_header
                        )
 {
     if (   dump->do_dump
+    	&& dump->dump_var
         && var_header->dims
         && !strcasecmp (dump->dump_var, var_header->name)
        )

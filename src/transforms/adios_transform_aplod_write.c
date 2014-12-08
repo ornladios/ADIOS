@@ -2,11 +2,11 @@
 #include <assert.h>
 #include <limits.h>
 
-#include "adios_logger.h"
-#include "adios_transforms_common.h"
-#include "adios_transforms_write.h"
-#include "adios_transforms_hooks_write.h"
-#include "adios_transforms_util.h"
+#include "core/adios_logger.h"
+#include "core/transforms/adios_transforms_common.h"
+#include "core/transforms/adios_transforms_write.h"
+#include "core/transforms/adios_transforms_hooks_write.h"
+#include "core/transforms/adios_transforms_util.h"
 
 #ifdef APLOD
 
@@ -21,9 +21,11 @@ uint16_t adios_transform_aplod_get_metadata_size(struct adios_transform_spec *tr
     return (sizeof (uint64_t) + sizeof (int8_t) + 8 * sizeof(int32_t));
 }
 
-uint64_t adios_transform_aplod_calc_vars_transformed_size(enum ADIOS_TRANSFORM_TYPE type, uint64_t orig_size, int num_vars)
+void adios_transform_aplod_transformed_size_growth(
+		const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec,
+		uint64_t *constant_factor, double *linear_factor, double *capped_linear_factor, uint64_t *capped_linear_cap)
 {
-    return orig_size;
+	// Do nothing (defaults to "no transform effect on data size")
 }
 
 int adios_transform_aplod_apply(struct adios_file_struct *fd,
@@ -177,9 +179,9 @@ int adios_transform_aplod_apply(struct adios_file_struct *fd,
     // Do I copy the PLODHandle_t object as the metadata or do I serialize it into the buffer as well
     if(var->transform_metadata && var->transform_metadata_len > 0)
     {
-        memcpy (var->transform_metadata, &input_size, sizeof(uint64_t));
-        memcpy (var->transform_metadata + sizeof (uint64_t), &numComponents, sizeof (numComponents));
-        memcpy (var->transform_metadata + sizeof (uint64_t) + sizeof (numComponents), componentVector, numComponents * sizeof (int32_t));
+        memcpy ((char*)var->transform_metadata, &input_size, sizeof(uint64_t));
+        memcpy ((char*)var->transform_metadata + sizeof (uint64_t), &numComponents, sizeof (numComponents));
+        memcpy ((char*)var->transform_metadata + sizeof (uint64_t) + sizeof (numComponents), componentVector, numComponents * sizeof (int32_t));
 
     }
 

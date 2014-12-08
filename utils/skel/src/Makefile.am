@@ -1,5 +1,4 @@
 
-CLEANFILES = *.o
 CC=$(MPICC)
 
 

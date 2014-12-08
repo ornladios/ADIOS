@@ -86,6 +86,12 @@ typedef struct {
         void * internal_data;       /* internal storage for version 2 read API data */
 } ADIOS_VARINFO;
 
+// Needed by ADIOS_TRANSINFO below
+typedef struct {
+    uint64_t * start;      /* offset start point in global array ('ndim' elements)         */
+    uint64_t * count;      /* local sizes in global array ('ndim' elements)                */
+} ADIOS_VARBLOCK;
+
 /* The list of the available read methods */
 enum ADIOS_READ_METHOD {
          ADIOS_READ_METHOD_BP           = 0    /* Read from ADIOS BP file (written by POSIX, MPI etc methods) */

@@ -136,7 +136,7 @@ if test x"$ac_with_portals" = xyes; then
 
             AC_MSG_CHECKING([if portals links with $LDFLAGS $LIBS])
 
-            AC_LINK_IFELSE(AC_LANG_CALL([],[PtlInit]),
+            AC_LINK_IFELSE([AC_LANG_CALL([],[PtlInit])],
                         [PORTALS_LIBS=$extra_LIBS;
                         ac_portals_lib_ok=yes;
                         AC_MSG_RESULT(yes)],
@@ -182,8 +182,8 @@ if test x"$ac_with_portals" = xyes; then
                 CPPFLAGS="$CPPFLAGS $PORTALS_CPPFLAGS"
                 LDFLAGS="$LDFLAGS $PORTALS_LDFLAGS"
 
-                dnl See if Portals will link with the provided flags
-                AC_LINK_IFELSE(AC_LANG_CALL([],[PtlInit]),
+                See if Portals will link with the provided flags
+                AC_LINK_IFELSE([AC_LANG_CALL([],[PtlInit])],
                         [PORTALS_CFLAGS="$PORTALS_CFLAGS $EXTRA_CFLAGS";
                         PORTALS_CPPFLAGS="$PORTALS_CPPFLAGS $EXTRA_CPPFLAGS";
                         PORTALS_LIBS="$PORTALS_LIBS $EXTRA_LIBS";
@@ -246,7 +246,7 @@ if test x"$ac_with_portals" = xyes; then
 
                 dnl See if we have PTL_NO_ACK_REQ or PTL_NOACK_REQ
                 AC_MSG_CHECKING([whether portals uses PTL_NO_ACK_REQ])
-                AC_LINK_IFELSE(AC_LANG_PROGRAM(
+                AC_LINK_IFELSE([AC_LANG_PROGRAM(
                         [#if defined(HAVE_PORTALS3_H)
                          #include <portals3.h>
                          #elif defined(HAVE_PORTALS_PORTALS3_H)
@@ -254,7 +254,7 @@ if test x"$ac_with_portals" = xyes; then
                          #else
                          #error Cound not find include file
                          #endif
-                 ],[int a = PTL_NO_ACK_REQ;]),
+                 ],[int a = PTL_NO_ACK_REQ;])],
                  [# Success
                   AC_DEFINE(HAVE_PTL_NO_ACK_REQ,1,[Define if you have PTL_NO_ACK_REQ.])
                   AC_MSG_RESULT(yes)
@@ -262,7 +262,7 @@ if test x"$ac_with_portals" = xyes; then
                  [
                   AC_MSG_RESULT(no)
                   AC_MSG_CHECKING([whether portals uses PTL_NOACK_REQ])
-                  AC_LINK_IFELSE(AC_LANG_PROGRAM(
+                  AC_LINK_IFELSE([AC_LANG_PROGRAM(
                               [#if defined(HAVE_PORTALS3_H)
                                #include <portals3.h>
                                #elif defined(HAVE_PORTALS_PORTALS3_H)
@@ -270,7 +270,7 @@ if test x"$ac_with_portals" = xyes; then
                                #else
                                #error Cound not find include file
                                #endif
-                       ],[int a = PTL_NOACK_REQ;]),
+                       ],[int a = PTL_NOACK_REQ;])],
                        [# Success
                         AC_DEFINE(HAVE_PTL_NOACK_REQ,1,[Define if you have PTL_NOACK_REQ.])
                         AC_MSG_RESULT(yes)

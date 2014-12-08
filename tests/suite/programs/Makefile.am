@@ -30,7 +30,9 @@ check_C=local_array_time \
 	steps_write \
 	steps_read_file \
 	steps_read_stream \
-	blocks
+	blocks \
+	build_standard_dataset \
+	transforms_writeblock_read
 
 test_C=hashtest copy_subvolume transforms_specparse group_free_test
 
@@ -49,8 +51,8 @@ check_PROGRAMS=$(check_C) $(check_Fortran) $(check_readonly_C) $(check_readonly_
 # Parallel tests should be defined in ../tests/*.sh and executed by ../test.sh
 TESTS=$(test_C)
 
-INCLUDES = $(all_includes)
-INCLUDES += -I$(top_builddir)/src -I$(top_srcdir)/src/public
+AM_CPPFLAGS = $(all_includes)
+AM_CPPFLAGS += -I$(top_builddir)/src -I$(top_srcdir)/src/public
 
 all-local:
 	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
@@ -175,6 +177,14 @@ blocks_SOURCES=blocks.c
 blocks_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 blocks_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 blocks.o: blocks.c
+
+build_standard_dataset_SOURCES = build_standard_dataset.c 
+build_standard_dataset_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
+build_standard_dataset_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+
+transforms_writeblock_read_SOURCES = transforms_writeblock_read.c 
+transforms_writeblock_read_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
+transforms_writeblock_read_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 
 #transforms_SOURCES=transforms.c
 #transforms_CPPFLAGS = -DADIOS_USE_READ_API_1

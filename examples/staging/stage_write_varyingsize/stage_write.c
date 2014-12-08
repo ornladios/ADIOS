@@ -51,7 +51,7 @@ int64_t    fh;     // ADIOS output file handle
 int64_t     gh;     // ADIOS group for output definitions
 uint64_t    write_total; // data size written by one processor
 uint64_t    largest_block; // the largest variable block one process reads
-char     ** group_namelist; // name of ADIOS group
+char       *group_name; // name of ADIOS group
 char       *readbuf; // read buffer
 int         decomp_values[10];
 
@@ -308,14 +308,16 @@ int process_metadata(int step)
     char gdims[256], ldims[256], offs[256];
     uint64_t sum_count;
     ADIOS_VARINFO *v; // shortcut pointer
+    char     ** group_namelist; // name(s) of ADIOS group(s)
 
     if (step == 1)
     {
         /* First step processing */
         // get groupname of stream, then declare for output
         adios_get_grouplist(f, &group_namelist);
-        print0("Group name is %s\n", group_namelist[0]);
-        adios_declare_group(&gh,group_namelist[0],"",adios_flag_yes);
+        group_name = strdup (group_namelist[0]);
+        print0("Group name is %s\n", group_name);
+        adios_declare_group(&gh,group_name,"",adios_flag_yes);
     }
 
     varinfo = (VarInfo *) malloc (sizeof(VarInfo) * f->nvars);
@@ -467,7 +469,7 @@ int read_write(int step)
     uint64_t total_size;
 
     // open output file
-    adios_open (&fh, group_namelist[0], outfilename, (step==1 ? "w" : "a"), comm);
+    adios_open (&fh, group_name, outfilename, (step==1 ? "w" : "a"), comm);
     adios_group_size (fh, write_total, &total_size);
     
     for (i=0; i<f->nvars; i++) 

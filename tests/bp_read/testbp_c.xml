@@ -14,7 +14,7 @@
     <var name="int_5D"  type="integer" dimensions="dim1,dim2,dim3,dim4,dim5"/>
   </adios-group>
 
-  <method group="testbp" method="POSIX"/>
+  <method group="testbp" method="POSIX1"/>
 
   <buffer size-MB="1" allocate-time="now"/>
 

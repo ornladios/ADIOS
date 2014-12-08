@@ -30,9 +30,9 @@
 #include "public/adios_error.h"
 
 // NCSU ALACRITY-ADIOS
-#include "adios_transforms_common.h"
-#include "adios_transforms_read.h"
-#include "adios_transforms_write.h"
+#include "core/transforms/adios_transforms_common.h"
+#include "core/transforms/adios_transforms_read.h"
+#include "core/transforms/adios_transforms_write.h"
 
 #ifdef WITH_NCSU_TIMER
 #include "timer.h"
@@ -170,9 +170,6 @@ int common_adios_open (int64_t * fd, const char * group_name
     else
         fd_p->comm = MPI_COMM_NULL;
 
-#ifdef SKEL_TIMING
-    fd_p->timing_obj = 0;
-#endif
 
 #if 1
     /* Time index magic done here */
@@ -316,6 +313,11 @@ int common_adios_group_size (int64_t fd_p
         }
     }
 
+#ifdef ADIOS_TIMERS
+    int tv_size = adios_add_timing_variables (fd);
+    data_size += tv_size;
+#endif
+
     fd->write_size_bytes = data_size;
 
     uint64_t overhead = adios_calc_overhead_v1 (fd);
@@ -417,6 +419,11 @@ int common_adios_group_size (int64_t fd_p
             adios_write_open_vars_v1 (fd);
         }
     }
+
+#ifdef ADIOS_TIMERS
+    adios_write_timing_variables (fd);
+#endif
+
 
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop ("adios_group_size");
@@ -1106,7 +1113,7 @@ int common_adios_close (int64_t fd_p)
     }
 
 
-#ifdef SKEL_TIMING
+#ifdef ADIOS_TIMER_EVENTS
     char* extension = ".perf";
     int name_len = strlen (fd->name);
     int fn_len = name_len + strlen (extension) + 1;
