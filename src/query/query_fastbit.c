@@ -493,7 +493,11 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
     const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = NULL;
     if (sel == NULL) {
       blockStart=0;
-      blockEnd = v->nblocks[timeStep] -1;      
+      if (v->nsteps == 1) { // could be streaming open
+	blockEnd = v->nblocks[0]-1;
+      } else {
+	blockEnd = v->nblocks[timeStep] -1;      
+      }
       log_debug(" got blockStart = %d, blockEnd = %d\n", blockStart, blockEnd);
     } else {
       bb = &(sel->u.bb);      
@@ -916,11 +920,12 @@ int64_t  applyIndexIfExists (ADIOS_QUERY* q, int timeStep)
   if (idxFile != NULL) {
     //clear_fastbit_internal(q);
       if ((leaf->sel == NULL) || (leaf->sel->type == ADIOS_SELECTION_BOUNDINGBOX)) {
-	  evaluateWithIdxOnBoundingBox(idxFile,  q, timeStep);
-	  result = fastbit_selection_estimate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle);	
+	  if (evaluateWithIdxOnBoundingBox(idxFile,  q, timeStep) >= 0) {
+	     result = fastbit_selection_estimate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle);	
+	  }
       } else if (leaf->sel->type == ADIOS_SELECTION_WRITEBLOCK) {
 	  blockSelectionFastbitHandle(idxFile, q, timeStep);
-	  result= fastbit_selection_estimate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle);       
+	  result= fastbit_selection_estimate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle);       	  
       } 
 
       log_debug("idx evaluated with result=%" PRId64 "\n", result);
