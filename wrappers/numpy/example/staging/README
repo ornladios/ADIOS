@@ -1,0 +1,35 @@
+This is to demonstrate using staging method with Adios python
+wrapper. Writer (adios_write.py) and Reader (adios_read.py) can take
+write method (e.g., POSIX, FLEXPATH, ICEE, etc) and read method (BP,
+FLEXPATH, ICEE, etc), respectively, as an argument.
+
+1. How to run
+-------------
+
+Command line options are as follows:
+
+$ python ./adios_write.py [write method] [parameters]
+$ python ./adios_read.py [read method] [parameters]
+
+
+2. Examples
+-----------
+
+a. File-based communication
+
+First, let's run with files by
+
+$ python ./adios_write.py POSIX
+$ python ./adios_read.py BP
+
+b. ICEE
+
+Now, we can run writer and reader with ICEE staging method:
+
+$ python ./adios_write.py ICEE "verbose=3;cm_port=59990;cm_host=localhost;" &
+$ python ./adios_read.py ICEE "verbose=3;cm_remote_port=59990;cm_remote_host=localhost;"
+
+Note: Users may need to use the MPI-enabled Adios module, adios_mpi,
+instead of serial adios module, adios. Some Adios methods work only
+with MPI. In that case, use import "adios_mpi", not "adios".
+
