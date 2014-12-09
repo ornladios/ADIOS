@@ -699,7 +699,7 @@ ctest -V
 \subsection{Support for Numpy}
 \label{section-install-numpy}
 
-ADIOS also provides two Python/Numpy language bindings developed by Cython; One is a binding for serial ADIOS (default), which requires no MPI, and the other is a MPI-enabled binding (optional). Like Matlab, ADIOS Python/Numpy wrapper requires ADIOS built by the GNU C compiler with relocatable codes. Add -fPIC flag to CFLAGS before configuring ADIOS.
+ADIOS also provides two Python/Numpy language bindings developed by Cython; One is a binding for serial ADIOS (default), which requires no MPI, and the other is a MPI-enabled binding (optional). Like Matlab, ADIOS Python/Numpy wrapper requires ADIOS built by the GNU C compiler with relocatable codes. Add -fPIC flag to CFLAGS before configuring ADIOS. In addition, Python Numpy is required before building Adios Python/Numpy binding and MPI4Py is optional, if users want to build parallel python module.
 
 The following command will build a Python/Numpy binding for serial ADIOS (\verb+adios_config+ and \verb+python+ should be in the path):
 \begin{lstlisting}
@@ -718,15 +718,11 @@ After successful building, you need to install them in a python path. There are 
 \begin{lstlisting}
 python setup.py install
 \end{lstlisting}
-will install python's default installation location. This may require an admin privilege.
-
-If you want to install in a custom directory, type
+will install python's default installation location. This may require an admin privilege. If you want to install in a custom directory, type
 \begin{lstlisting}
 python setup.py install --prefix=/dir/to/install
 \end{lstlisting}
-and append the directory to the \verb+PYTHONPATH+ environment variable
-
-You can also install in your local directory. Use the following command:
+and append the directory to the \verb+PYTHONPATH+ environment variable. You can also install in your local directory. Use the following command:
 \begin{lstlisting}
 python setup.py install --user
 \end{lstlisting}
