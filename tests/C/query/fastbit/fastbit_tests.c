@@ -365,8 +365,9 @@ void manualCheck(ADIOS_QUERY* q, int timestep) {
 	  if (q->predicateOp == ADIOS_LT) {
 	    hits ++;
 	  }
-      } else { // >
+	} else { // >
 	  if (q->predicateOp == ADIOS_GT) {
+	    printf("... %f \n", curr);
 	    hits ++;
 	  }
 	}	  
@@ -457,9 +458,17 @@ int parseQueryXml(const char* xmlQueryFileName)
       ADIOS_QUERY* q = constructQuery(queryNode, f, queryName, batchSize);
       //adios_query_set_method(q, ADIOS_QUERY_METHOD_FASTBIT);
       int timestep = 0;
+      ADIOS_SELECTION* noBox = 0;
       while (timestep <= f->last_step) {
 	int64_t est = adios_query_estimate(q, timestep);
 	printf("\n=> query %s: %s, \n\t estimated  %ld hits on timestep: %d\n", queryName, q->condition, est, timestep);
+	ADIOS_SELECTION* currBatch = NULL;
+	adios_query_evaluate(q, noBox, timestep, batchSize, &currBatch);
+	if (currBatch != NULL) {
+	  printf("\n=> evaluated: %ld hits for %s\n", currBatch->u.points.npoints, q->condition);
+	}
+	adios_selection_delete(currBatch);
+
 	manualCheck(q, timestep);
 	
 	timestep ++;
