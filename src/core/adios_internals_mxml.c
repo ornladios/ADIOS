@@ -1696,10 +1696,10 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                     free (meshgroup);
                 } else if (!strcasecmp (n->value.element.name, "link"))
                 {
-                    char * ref;
-                    char * type;
-                    char * objref;
-                    char * extref;
+                    const char * ref;
+                    const char * type;
+                    const char * objref;
+                    const char * extref;
                     // Get the var name
                     ref = mxmlElementGetAttr (n, "ref");
                     // Get the ref type
@@ -1730,7 +1730,7 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                         return 0;
                     }
                     else if ( ref[0]=='\0')
-                        strcpy (ref, objref);
+                        ref = objref; //strcpy (ref, objref);
                      
                     if (ref)
                     {

@@ -61,8 +61,8 @@ void printPoints(const ADIOS_SELECTION_POINTS_STRUCT * pts) {
 ADIOS_QUERY * createQueryConstraints(ADIOS_FILE* bf, const char* varName,
 		ADIOS_SELECTION* box, const char * lb, const char * hb) {
 	/* lb <= x <= hb */
-	ADIOS_QUERY* q1 = adios_query_create(bf, varName, box, ADIOS_GTEQ, lb);
-	ADIOS_QUERY* q2 = adios_query_create(bf, varName, box, ADIOS_LTEQ, hb);
+	ADIOS_QUERY* q1 = adios_query_create(bf, box, varName, ADIOS_GTEQ, lb);
+	ADIOS_QUERY* q2 = adios_query_create(bf, box, varName, ADIOS_LTEQ, hb);
 	ADIOS_QUERY* q = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
 	return q;
 
@@ -111,14 +111,14 @@ void multiSelection(ADIOS_FILE* bf, const char * b1, const char * b2,
 	ADIOS_QUERY* q1, *q2;
 	int64_t batchSize = 1000;
     if (sel_type == ADIOS_SELECTION_BOUNDINGBOX){
-		q1 = adios_query_create(bf, varName1, box1, ADIOS_GT, b1); // > b1
-		q2 = adios_query_create(bf, varName1, box2, ADIOS_LT, b2); // < b2
+		q1 = adios_query_create(bf, box1, varName1, ADIOS_GT, b1); // > b1
+		q2 = adios_query_create(bf, box2, varName1, ADIOS_LT, b2); // < b2
 
     }else if (sel_type == ADIOS_SELECTION_WRITEBLOCK){
     	ADIOS_SELECTION *block1= adios_selection_writeblock(0); // block 0 ->  1st block
     	ADIOS_SELECTION* block2 = adios_selection_writeblock(2); //block 2 -> 3rd block
-		q1 = adios_query_create(bf, varName1, block1, ADIOS_GT, b1); // > b1
-		q2 = adios_query_create(bf, varName1, block2, ADIOS_LT, b2); // < b2
+		q1 = adios_query_create(bf, block1, varName1, ADIOS_GT, b1); // > b1
+		q2 = adios_query_create(bf, block2, varName1, ADIOS_LT, b2); // < b2
     }
 	// if box has a different shape, e.g. different count values, then combine() returns error
 	ADIOS_QUERY* q = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
@@ -127,7 +127,7 @@ void multiSelection(ADIOS_FILE* bf, const char * b1, const char * b2,
 	ADIOS_SELECTION* outBox = box1;
 	while (1) {
 		ADIOS_SELECTION* currBatch = NULL;
-		int hasMore = adios_query_evaluate(q, timestep, batchSize, outBox, &currBatch);
+		int hasMore = adios_query_evaluate(q, outBox, timestep, batchSize, &currBatch);
 		if (currBatch == NULL) // there is no results at all
 			break;
 
@@ -203,7 +203,7 @@ void oneDefinedBox(ADIOS_FILE* bf, const char * lb, const char * hb,
 
 	while (1) {
 		ADIOS_SELECTION* currBatch = NULL;
-		int hasMore = adios_query_evaluate(q, timestep, batchSize, box1, &currBatch);
+		int hasMore = adios_query_evaluate(q, box1, timestep, batchSize, &currBatch);
 		if (hasMore == 0) { // there is no left results to retrieve
 			break;
 		}
@@ -245,8 +245,8 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF) {
 	const char* value2 = "14";
 	double uvelConstraint = atof(value2);
 
-	ADIOS_QUERY* q1 = adios_query_create(f, varName1, box, ADIOS_LT, value1); // temp < 150.0
-	ADIOS_QUERY* q2 = adios_query_create(f, varName2, box, ADIOS_GT, value2); // uvel > 15
+	ADIOS_QUERY* q1 = adios_query_create(f, box, varName1, ADIOS_LT, value1); // temp < 150.0
+	ADIOS_QUERY* q2 = adios_query_create(f, box, varName2, ADIOS_GT, value2); // uvel > 15
 
 	ADIOS_QUERY* q = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
 
@@ -264,7 +264,7 @@ void oneBoundingBoxForVars(ADIOS_FILE* f, ADIOS_FILE *dataF) {
 		while (1) {
 			ADIOS_SELECTION* currBatch = NULL;
 			adios_query_set_method(q, ADIOS_QUERY_METHOD_ALACRITY);
-			int hasMore = adios_query_evaluate(q, i, batchSize, box, &currBatch);
+			int hasMore = adios_query_evaluate(q, box, i, batchSize, &currBatch);
 
 			if (hasMore == 0) { // there is no left results to retrieve
 				break;

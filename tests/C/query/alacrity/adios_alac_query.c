@@ -62,7 +62,7 @@ int performQuery(ADIOS_QUERY_TEST_INFO *queryInfo, ADIOS_FILE *f)
         fprintf(stderr,"querying on timestep %d \n", timestep );
 
         ADIOS_SELECTION* currBatch = NULL;
-        while ( adios_query_evaluate(queryInfo->query, timestep, queryInfo->batchSize, queryInfo->outputSelection, &currBatch)) {
+        while ( adios_query_evaluate(queryInfo->query, queryInfo->outputSelection, timestep, queryInfo->batchSize, &currBatch)) {
 
             assert(currBatch->type ==ADIOS_SELECTION_POINTS);
             const ADIOS_SELECTION_POINTS_STRUCT * retrievedPts = &(currBatch->u.points);

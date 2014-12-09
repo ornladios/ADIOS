@@ -33,5 +33,4 @@ endif # HAVE_ALACRITY
 
 CLEANFILES = *.bp
 CC=$(MPICC)
-EXTRA_DIST = adios_build_alac_index.xml gread_temperature.ch gwrite_temperature.ch job.pbs
 
