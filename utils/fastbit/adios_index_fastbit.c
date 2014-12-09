@@ -291,7 +291,7 @@ void buildIndex(ADIOS_FILE* f, ADIOS_VARINFO* v)
 	    logTime("  indexed on block");
 	    logTimeMillis("  indexed on block");
 
-	    printf("    index created =  %llu, %llu, %llu\n", nb, nk, no);
+	    printf("    index created =  %llu, %llu, %llu, varid=%d timestep=%d, block=%d\n", nb, nk, no, v->varid, i, j);
 	    sum_nb += nb; sum_nk += nk, sum_no += no;
 
 	    defineFastbitVar(1,bmsVarName, &var_ids_bms[j], adios_unsigned_integer, &nb,0,0);    			    
