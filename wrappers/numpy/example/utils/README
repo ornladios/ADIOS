@@ -23,6 +23,4 @@ Examples are as follows:
 $ wget http://www.unidata.ucar.edu/software/netcdf/examples/ECMWF_ERA-40_subset.nc
 $ python ./ncdf2bp.py ECMWF_ERA-40_subset.nc
 
-Note. This example uses MPI-enabled adios wrapper, adios_mpi. However,
-it works with only 1 process.
 

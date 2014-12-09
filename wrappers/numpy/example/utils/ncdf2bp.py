@@ -5,7 +5,7 @@ Example:
 $ python ./ncdf2bp.py netcdf_file
 """
 
-from adios_mpi import *
+from adios import *
 from scipy.io import netcdf
 import numpy as np
 import sys
@@ -56,7 +56,7 @@ else:
 init_noxml()
 allocate_buffer(BUFFER_ALLOC_WHEN.NOW, 100)
 gid = declare_group ("group", tname, FLAG.YES)
-select_method (gid, "MPI", "verbose=3", "")
+select_method (gid, "POSIX1", "verbose=3", "")
 
 d1size = 0
 for name, val in f.dimensions.items():
