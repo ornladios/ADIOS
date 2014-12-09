@@ -151,6 +151,10 @@ cdef extern from "adios_read.h":
     ctypedef enum ADIOS_READ_METHOD:
         ADIOS_READ_METHOD_BP
         ADIOS_READ_METHOD_BP_AGGREGATE
+        ADIOS_READ_METHOD_DATASPACES
+        ADIOS_READ_METHOD_DIMES
+        ADIOS_READ_METHOD_FLEXPATH
+        ADIOS_READ_METHOD_ICEE
         pass
 
     ctypedef enum ADIOS_LOCKMODE:
@@ -295,7 +299,7 @@ cpdef int read(int64_t fd_p, char * name, np.ndarray val):
 cpdef int close(int64_t fd_p):
     return adios_close(fd_p)
 
-cpdef finalize(int mype = 0):
+cpdef int finalize(int mype = 0):
     return adios_finalize(mype)
 
 ## ====================
@@ -310,8 +314,8 @@ cpdef int allocate_buffer(int when,
                                  buffer_size)
 
 cpdef int64_t declare_group(char * name,
-                            char * time_index,
-                            int stats):
+                            char * time_index = "",
+                            int stats = 1):
     cdef int64_t id = 0
     adios_declare_group (&id,
                          name,
@@ -323,9 +327,9 @@ cpdef int define_var(int64_t group_id,
                      char * name,
                      char * path,
                      int type,
-                     char * dimensions,
-                     char * global_dimensions,
-                     char * local_offsets):
+                     char * dimensions = "",
+                     char * global_dimensions = "",
+                     char * local_offsets = ""):
     return adios_define_var(group_id,
                             name, path,
                             <ADIOS_DATATYPES> type,
@@ -348,8 +352,8 @@ cpdef int define_attribute (int64_t group,
 
 cpdef int select_method (int64_t group,
                          char * method,
-                         char * parameters,
-                         char * base_path):
+                         char * parameters = "",
+                         char * base_path = ""):
     return adios_select_method (group,
                                 method,
                                 parameters,
@@ -413,19 +417,80 @@ cdef printvar(ADIOS_VARINFO * v):
     print '%15s : %s' % ('dims', [v.dims[i] for i in range(v.ndim)])
     print '%15s : %d' % ('nsteps', v.nsteps)
 
+cdef ADIOS_READ_METHOD str2adiosreadmethod(bytes name):
+    if (name == "BP"):
+        method = ADIOS_READ_METHOD_BP
+    elif (name == "BP_AGGREGATE"):
+        method = ADIOS_READ_METHOD_BP_AGGREGATE
+    elif (name == "DATASPACES"):
+        method = ADIOS_READ_METHOD_DATASPACES
+    elif (name == "DIMES"):
+        method = ADIOS_READ_METHOD_DIMES
+    elif (name == "FLEXPATH"):
+        method = ADIOS_READ_METHOD_FLEXPATH
+    elif (name == "ICEE"):
+        method = ADIOS_READ_METHOD_ICEE
+    else:
+        print '[WARN] Invalid read method name:', name, '. Use default BP method'
+        method = ADIOS_READ_METHOD_BP
+        
+    return method
+
+cpdef np2adiostype(type nptype):
+    """ Ignored: int_, intc, intp """
+
+    cdef atype = DATATYPE.unknown
+
+    if (nptype == np.bool_):
+        atype = DATATYPE.integer
+    elif (nptype == np.int8):
+        atype = DATATYPE.byte
+    elif (nptype == np.int16):
+        atype = DATATYPE.short
+    elif (nptype == np.int32):
+        atype = DATATYPE.integer
+    elif (nptype == np.int64):
+        atype = DATATYPE.long
+    elif (nptype == np.uint8):
+        atype = DATATYPE.unsigned_byte
+    elif (nptype == np.uint16):
+        atype = DATATYPE.unsigned_short
+    elif (nptype == np.uint32):
+        atype = DATATYPE.unsigned_integer
+    elif (nptype == np.uint64):
+        atype = DATATYPE.unsigned_long
+    elif (nptype == np.float_):
+        atype = DATATYPE.double
+    elif (nptype == np.float16):
+        atype = DATATYPE.real
+    elif (nptype == np.float32):
+        atype = DATATYPE.real
+    elif (nptype == np.float64):
+        atype = DATATYPE.double
+    elif (nptype == np.complex_):
+        atype = DATATYPE.double_complex
+    elif (nptype == np.complex64):
+        atype = DATATYPE.complex
+    elif (nptype == np.complex128):
+        atype = DATATYPE.double_complex
+    elif (nptype == np.str_):
+        atype = DATATYPE.byte
+
+    return atype
+
 ## ====================
 ## ADIOS Class Definitions for Read
 ## ====================
 
-""" Call adios_read_init_method """
-cpdef read_init(ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP,
-                MPI.Comm comm = MPI.COMM_WORLD,
-                char * parameters = ""):
+cpdef int read_init(char * method_name = "BP",
+                    MPI.Comm comm = MPI.COMM_WORLD,
+                    char * parameters = ""):
+    cdef method = str2adiosreadmethod(method_name)
     return adios_read_init_method (method, comm.ob_mpi, parameters)
 
 
-""" Call adios_read_finalize_method """
-cpdef read_finalize(ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP):
+cpdef int read_finalize(char * method_name = "BP"):
+    cdef method = str2adiosreadmethod(method_name)
     return adios_read_finalize_method (method)
 
 """ Python class for ADIOS_FILE structure """
@@ -446,15 +511,26 @@ cdef class file:
     cpdef public dict var
     cpdef public dict attr
 
-    """ Initialization. Call adios_read_open and populate public members """
+    cpdef public bint is_stream
+
     def __init__(self, char * fname,
-                 ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP,
-                 MPI.Comm comm = MPI.COMM_WORLD):
+                 char * method_name = "BP",
+                 MPI.Comm comm = MPI.COMM_WORLD,
+                 is_stream = False,
+                 ADIOS_LOCKMODE lock_mode = ADIOS_LOCKMODE_ALL,
+                 float timeout_sec = 0.0):
         self.fp = NULL
         self.var = {}
         self.attr = {}
+        self.is_stream = is_stream
+        cdef method = str2adiosreadmethod(method_name)
 
-        self.fp = adios_read_open_file(fname, method, comm.ob_mpi)
+        if (is_stream):
+            self.fp = adios_read_open(fname, method, comm.ob_mpi,
+                                      lock_mode, timeout_sec)
+        else:
+            self.fp = adios_read_open_file(fname, method, comm.ob_mpi)
+            
         assert self.fp != NULL, 'Not an open file'
 
         self.name = fname.split('/')[-1]  ## basename
@@ -462,30 +538,30 @@ cdef class file:
         self.nattrs = self.fp.nattrs
         self.current_step = self.fp.current_step
         self.last_step = self.fp.last_step
-        self.endianness = self.fp.endianness  
-        self.version = self.fp.version     
-        self.file_size = self.fp.file_size   
+        self.endianness = self.fp.endianness
+        self.version = self.fp.version
+        self.file_size = self.fp.file_size
     
         for varname in [self.fp.var_namelist[i] for i in range(self.nvars)]:
             self.var[varname] = var(self, varname)
 
     def __del__(self):
             self.close()
-
-    """ Call adios_read_close """
+            
     cpdef close(self):
         assert self.fp != NULL, 'Not an open file'
         adios_read_close(self.fp)
         self.fp = NULL
-
-    """ Print self """
+        
     cpdef printself(self):
         assert self.fp != NULL, 'Not an open file'
         print '=== AdiosFile ==='
         print '%15s : %lu' % ('fp', <unsigned long> self.fp)
         printfile(self.fp)
 
-""" Python class for ADIOS_VARINFO structure """
+    cpdef advance(self, int last = 0, float timeout_sec = 0.0):
+        return adios_advance_step(self.fp, last, timeout_sec)
+
 cdef class var:
     """ Private Memeber """
     cdef file file
@@ -499,7 +575,6 @@ cdef class var:
     cpdef public tuple dims
     cpdef public int nsteps
 
-    """ Initialization. Call adios_inq_var and populate public members """
     def __init__(self, file file, char * name):
         self.file = file
         self.vp = NULL
@@ -518,16 +593,15 @@ cdef class var:
     def __del__(self):
         self.close()
 
-    """ Call adios_free_varinfo """
     cpdef close(self):
         assert self.vp != NULL, 'Not an open var'
         adios_free_varinfo(self.vp)
         self.vp = NULL
 
-    """ Call adios_schedule_read and adios_perform_reads """
     cpdef read(self, tuple offset = (), tuple count = (), from_steps = 0, nsteps = 1):
         assert self.type is not None, 'Data type is not supported yet'
-        assert from_steps + nsteps <= self.nsteps, 'Step index is out of range'
+        if (self.nsteps > 0):
+            assert from_steps + nsteps <= self.nsteps, 'Step index is out of range'
         
         cdef list lshape = [self.vp.dims[i] for i in range(self.vp.ndim)]
         cdef np.ndarray npshape = np.array(lshape, dtype=np.int64)
@@ -574,7 +648,6 @@ cdef class var:
 ## ADIOS Global functions
 ## ====================
 
-""" Read data in a BP file and return as a numpy array """
 def readvar(fname, varname):
     f = file(fname, comm=MPI.COMM_SELF)
     if not f.var.has_key(varname):
@@ -584,7 +657,6 @@ def readvar(fname, varname):
     v = f.var[varname]
     return v.read(from_steps=0, nsteps=v.nsteps)
 
-""" List attributes of a BP file """
 def bpls(fname):
     f = file(fname, comm=MPI.COMM_SELF)
     return {'nvars': f.nvars,
@@ -593,4 +665,3 @@ def bpls(fname):
             'attrs': tuple([ k for k in f.attr.iterkeys() ]),
             'time_steps': (f.current_step, f.last_step),
             'file_size': f.file_size}
-    

@@ -12,10 +12,8 @@
 import numpy as np
 cimport numpy as np
 
-
-## This is a serial version of Adios. No use of MPI.
-##import mpi4py.MPI as MPI 
-##cimport mpi4py.MPI as MPI
+#import mpi4py.MPI_as MPI_
+#cimport mpi4py.MPI_as MPI
 
 import cython
 cimport cython
@@ -56,6 +54,7 @@ cdef extern from "adios_types.h":
 cdef extern from "adios.h":
     ctypedef int MPI_Comm
     int MPI_COMM_WORLD
+    int MPI_COMM_SELF
 
     ctypedef char* const_char_ptr "const char*"
 
@@ -252,12 +251,12 @@ class BUFFER_ALLOC_WHEN:
     UNKNOWN = 0
     NOW = 1
     LATER = 2
-
+    
 ## ====================
 ## ADIOS Write API
 ## ====================
 
-cpdef int init(char * config, MPI_Comm comm = MPI_COMM_WORLD):
+cpdef init(char * config, MPI_Comm comm = MPI_COMM_WORLD):
     return adios_init(config, comm)
 
 cpdef int64_t open(char * group_name,
@@ -475,6 +474,8 @@ cpdef np2adiostype(type nptype):
         atype = DATATYPE.complex
     elif (nptype == np.complex128):
         atype = DATATYPE.double_complex
+    elif (nptype == np.str_):
+        atype = DATATYPE.byte
 
     return atype
 
@@ -493,6 +494,7 @@ cpdef int read_finalize(char * method_name = "BP"):
     cdef method = str2adiosreadmethod(method_name)
     return adios_read_finalize_method (method)
 
+""" Python class for ADIOS_FILE structure """
 cdef class file:
     """ Private Memeber """
     cpdef ADIOS_FILE * fp
@@ -648,7 +650,7 @@ cdef class var:
 ## ====================
 
 def readvar(fname, varname):
-    f = file(fname)
+    f = file(fname, comm=MPI_COMM_SELF)
     if not f.var.has_key(varname):
         print "No valid variable"
         return
@@ -657,11 +659,10 @@ def readvar(fname, varname):
     return v.read(from_steps=0, nsteps=v.nsteps)
 
 def bpls(fname):
-    f = file(fname)
+    f = file(fname, comm=MPI_COMM_SELF)
     return {'nvars': f.nvars,
             'nattrs': f.nattrs,
             'vars': tuple([ k for k in f.var.iterkeys() ]),
             'attrs': tuple([ k for k in f.attr.iterkeys() ]),
             'time_steps': (f.current_step, f.last_step),
             'file_size': f.file_size}
-
