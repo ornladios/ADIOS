@@ -483,6 +483,7 @@ cpdef np2adiostype(type nptype):
 ## ADIOS Class Definitions for Read
 ## ====================
 
+""" Call adios_read_init_method """
 cpdef int read_init(char * method_name = "BP",
                     MPI_Comm comm = MPI_COMM_WORLD,
                     char * parameters = ""):
@@ -490,6 +491,7 @@ cpdef int read_init(char * method_name = "BP",
     return adios_read_init_method (method, comm, parameters)
 
 
+""" Call adios_read_finalize_method """
 cpdef int read_finalize(char * method_name = "BP"):
     cdef method = str2adiosreadmethod(method_name)
     return adios_read_finalize_method (method)
@@ -514,6 +516,7 @@ cdef class file:
 
     cpdef public bint is_stream
 
+    """ Initialization. Call adios_read_open and populate public members """
     def __init__(self, char * fname,
                  char * method_name = "BP",
                  MPI_Comm comm = MPI_COMM_WORLD,
@@ -549,11 +552,13 @@ cdef class file:
     def __del__(self):
             self.close()
             
+    """ Call adios_read_close """
     cpdef close(self):
         assert self.fp != NULL, 'Not an open file'
         adios_read_close(self.fp)
         self.fp = NULL
         
+    """ Print self """
     cpdef printself(self):
         assert self.fp != NULL, 'Not an open file'
         print '=== AdiosFile ==='
@@ -563,6 +568,7 @@ cdef class file:
     cpdef advance(self, int last = 0, float timeout_sec = 0.0):
         return adios_advance_step(self.fp, last, timeout_sec)
 
+""" Python class for ADIOS_VARINFO structure """
 cdef class var:
     """ Private Memeber """
     cdef file file
@@ -576,6 +582,7 @@ cdef class var:
     cpdef public tuple dims
     cpdef public int nsteps
 
+    """ Initialization. Call adios_inq_var and populate public members """
     def __init__(self, file file, char * name):
         self.file = file
         self.vp = NULL
@@ -594,11 +601,13 @@ cdef class var:
     def __del__(self):
         self.close()
 
+    """ Call adios_free_varinfo """
     cpdef close(self):
         assert self.vp != NULL, 'Not an open var'
         adios_free_varinfo(self.vp)
         self.vp = NULL
 
+    """ Call adios_schedule_read and adios_perform_reads """
     cpdef read(self, tuple offset = (), tuple count = (), from_steps = 0, nsteps = 1):
         assert self.type is not None, 'Data type is not supported yet'
         if (self.nsteps > 0):
