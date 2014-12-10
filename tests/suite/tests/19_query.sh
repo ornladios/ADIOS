@@ -175,7 +175,7 @@ function build_indexed_datasets_fastbit() {
   invoke_dataset_builder "$DSID" "$DSOUTPUT" "none"
   
   set -o xtrace
-  $FASTBIT_INDEXER_EXE_LOCAL "$DSOUTPUT".bp ||
+  $FASTBIT_INDEXER_EXE_LOCAL "$DSOUTPUT".bp "<binning precision=5/>"||
     die "ERROR: $FASTBIT_INDEXER_EXE_LOCAL failed with exit code $?"
   set +o xtrace
 }
