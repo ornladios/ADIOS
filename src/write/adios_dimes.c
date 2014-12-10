@@ -1134,7 +1134,7 @@ void adios_dimes_finalize (int mype, struct adios_method_struct * method)
         for (i=0; i<num_of_streams; i++) {
             info = &stream_info[i];
             /* Put VERSION@fn into space. Indicates that this file will not be extended anymore.  */
-            if (info->iam_rank0 == 0) {
+            if (info->iam_rank0) {
                 if (check_read_status == 2) {
                     check_read_status_var(info->name, info->time_index);
                 }
