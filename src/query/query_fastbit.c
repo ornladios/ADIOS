@@ -1106,7 +1106,7 @@ void fillUp(int dimSize, uint64_t* spatialCoordinates, uint64_t i, uint64_t* poi
 
     if (fortran_order == 1) {
       pointArray[idx] = spatialCoordinates[dimSize-1-k];
-      printf(" points[%lld] = %lld dimSize=%d k=%d sp=%lld", idx, pointArray[idx], dimSize, k, spatialCoordinates[k]); 
+      //printf(" points[%lld] = %lld dimSize=%d k=%d sp=%lld", idx, pointArray[idx], dimSize, k, spatialCoordinates[k]); 
     } else {
       pointArray[idx] = spatialCoordinates[k];
     }
