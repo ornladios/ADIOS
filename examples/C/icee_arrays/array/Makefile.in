@@ -380,7 +380,7 @@ adios_read_SOURCES = adios_read.c
 adios_read_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 adios_read_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 CLEANFILES = *.bp
-EXTRA_DIST = arrays.xml README
+EXTRA_DIST = README.txt
 all: all-am
 
 .SUFFIXES:
@@ -651,7 +651,7 @@ uninstall-am:
 
 
 all-local:
-	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
+	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/README.txt $(builddir)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.
 # Otherwise a system limit (for SysV at least) may be exceeded.

@@ -62,6 +62,7 @@ transforms_read_HDRS = core/transforms/adios_transforms_read.h \
                        core/transforms/adios_transforms_hooks_read.h \
                        core/transforms/adios_transforms_reqgroup.h \
                        core/transforms/adios_transforms_datablock.h \
+                       core/transforms/adios_transforms_transinfo.h \
                        core/transforms/adios_patchdata.h
 
 transforms_write_HDRS = core/transforms/adios_transforms_write.h \
@@ -107,7 +108,7 @@ query_common_SOURCES = $(query_common_HDRS) \
                        query/query_utils.c
 
 # Include source files that are specific to each query plugin
-query_method_HDRS =
+query_method_HDRS = 
 query_method_SOURCES =
 include query/Makefile.plugins
 
@@ -705,13 +706,18 @@ CXX=$(MPICXX)
 EXTRA_DIST = core/adios_bp_v1.h core/adios_endianness.h \
              core/adios_internals.h core/adios_internals_mxml.h core/adios_logger.h \
              core/adios_read_hooks.h core/adios_socket.h core/adios_timing.h \
-             $(transforms_common_HDRS) $(transforms_read_HDRS) $(transforms_write_HDRS) \
-             $(query_common_HDRS) $(query_method_HDRS) \
-             transforms/transform_plugins.h transforms/adios_transform_identity_read.h \
-	     transforms/adios_transform_szip.h \
+	     core/adios_icee.h \
              core/adios_socket.h core/adios_transport_hooks.h \
              core/bp_types.h core/bp_utils.h core/buffer.h core/common_adios.h \
              core/common_read.h core/adios_infocache.h core/futils.h core/globals.h core/ds_metadata.h \
              core/util.h core/flexpath.h core/qhashtbl.h \
+             $(transforms_common_HDRS) $(transforms_read_HDRS) $(transforms_write_HDRS) \
+             $(query_common_HDRS) $(query_method_HDRS) \
+             transforms/transform_plugins.h \
+	     transforms/adios_transform_identity_read.h \
+	     transforms/adios_transform_szip.h \
+	     transforms/adios_transform_alacrity_common.h \
+	     transforms/adios_transform_template_read.c \
+	     transforms/adios_transform_template_write.c \
              nssi/adios_nssi_config.h nssi/aggregation.h nssi/io_timer.h
 

@@ -378,7 +378,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = scalars arrays attributes manual global-array global-array-time read_all stat schema flexpath_arrays transforms query
+SUBDIRS = scalars arrays attributes manual global-array global-array-time read_all stat schema flexpath_arrays transforms query icee_arrays
 all: all-recursive
 
 .SUFFIXES:
