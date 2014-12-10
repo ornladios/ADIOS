@@ -10,8 +10,6 @@
 #include <stdint.h>
 #include <assert.h>
 
-#include <mpi.h>
-#include <adios.h>
 #include <adios_read.h>
 
 #define SHIFT_N(n) { argc -= (n); argv += (n); }

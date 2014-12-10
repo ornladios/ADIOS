@@ -17,8 +17,9 @@
 
 /* This example will create 3 adios groups for writing, then frees them.
 */
-
+#ifndef _NOMPI
 #define _NOMPI
+#endif
 
 #include <stdio.h>
 #include <string.h>
