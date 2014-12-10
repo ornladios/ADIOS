@@ -99,6 +99,10 @@ if(BUILD_WRITE)
                      core/adios_error.c 
                      core/adios_read.c 
                      core/adios_read_v1.c 
+                     core/adios_read_ext.c
+                     core/adios_infocache.c
+                     query/common_query.c
+                     query/adios_query_hooks.c
                      core/common_read.c 
                      core/globals.c 
                      core/adios_timing.c 
@@ -141,6 +145,10 @@ if(BUILD_WRITE)
                      core/adios_error.c 
                      core/adios_read.c 
                      core/adios_read_v1.c 
+                     core/adios_read_ext.c
+                     core/adios_infocache.c
+                     query/common_query.c
+                     query/adios_query_hooks.c
                      core/common_read.c 
                      core/globals.c 
                      core/mpidummy.c 
@@ -173,6 +181,7 @@ if(BUILD_WRITE)
                        core/adios_error.c 
                        core/bp_utils.c                
                        core/common_read.c 
+                       query/common_query.c
                        core/globals.c 
                        core/adios_timing.c 
                        core/adios_read_hooks.c 
@@ -429,6 +438,10 @@ set(libadiosread_a_SOURCES core/adios_bp_v1.c
                       core/adios_error.c 
                       core/adios_read.c 
                       core/adios_read_v1.c 
+                      core/adios_read_ext.c
+                      core/adios_infocache.c
+                      query/common_query.c
+                      query/adios_query_hooks.c
                       core/common_read.c 
                       ${transforms_common_SOURCES} 
                       ${transforms_read_SOURCES} 
@@ -585,6 +598,10 @@ set(libadiosread_nompi_a_SOURCES core/mpidummy.c
                       core/adios_error.c 
                       core/adios_read.c 
                       core/adios_read_v1.c 
+                      core/adios_read_ext.c
+                      core/adios_infocache.c
+                      query/common_query.c
+                      query/adios_query_hooks.c
                       core/common_read.c 
                       ${transforms_common_SOURCES} 
                       ${transforms_read_SOURCES} 
