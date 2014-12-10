@@ -220,7 +220,7 @@ void onBlock(int rank, ADIOS_FILE* f, ADIOS_VARINFO* v, int i, int j, int blockC
 	 sprintf(offsetName, "offset-%d-%d-%d", v->varid, i, j);
 
 	 //	 blockCounter++;
-	 uint64_t blockSize = fastbit_adios_util_getBlockSize(v, blockCounter);
+	 uint64_t blockSize = fastbit_adios_util_getBlockSize(v, i, j); //blockCounter);
 	 uint64_t blockDataByteSize = adios_type_size (v->type, v->value) * blockSize; 
 
 	 char notes[100];
@@ -256,6 +256,8 @@ void onBlock(int rank, ADIOS_FILE* f, ADIOS_VARINFO* v, int i, int j, int blockC
 	    const char* datasetName = "test";
 	    logTime("  data collected, fastbit start indexing"); 
 	    logTimeMillis("  data collected, fastbit start indexing"); 
+	    //fastbit_adios_util_printData(data, v->type, blockBytes/adios_type_size(v->type, v->value));
+
 	    fastbitIndex(datasetName, data, blockSize, ft, &keys, &nk, &offsets, &no, &bms, &nb);
 	    logTime("  indexed on block");
 	    logTimeMillis("  indexed on block");
@@ -354,7 +356,7 @@ uint64_t estimateBytesOnVar(ADIOS_FILE* f, ADIOS_VARINFO* v)
     for (i=0; i<v->sum_nblocks; i++) {
       ADIOS_VARBLOCK curr = v->blockinfo[i];
 
-      uint64_t blockSize = fastbit_adios_util_getBlockSize(v, i);
+      uint64_t blockSize = fastbit_adios_util_getBlockSize(v, -1, i); 
       result += blockSize;
       //uint64_t blockDataByteSize = adios_type_size (v->type, v->value) * blockSize0; 
 
