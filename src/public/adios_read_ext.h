@@ -74,6 +74,8 @@ typedef struct {
 	int npg;
 } ADIOS_PG_INTERSECTIONS;
 
+#ifndef __INCLUDED_FROM_FORTRAN_API__
+
 // Sets the "data view" for this ADIOS file, which determines how ADIOS presents variables through
 // adios_inq_var*, and how reads are evaluated in adios_schedule_reads/adios_check_reads calls.
 // Currently, the choice is between a logical and physical view of the data, which only differ for
@@ -118,5 +120,7 @@ void adios_free_pg_intersections(ADIOS_PG_INTERSECTIONS **intersections);
 // 0: C ordering (row-major), last dimension is the fastest dimension
 // 1: Fortran ordering (column-major), first dimension is the fastest dimension
 int adios_read_get_dimension_order (ADIOS_FILE *);
+
+#endif  /*__INCLUDED_FROM_FORTRAN_API__*/
 
 #endif /* ADIOS_READ_EXT_H_ */
