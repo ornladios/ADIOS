@@ -136,12 +136,13 @@ void recursive_free(ADIOS_QUERY* q) {
     }
     adios_selection_delete(q->sel);
   }
-  adios_query_free(q);
 
   if (left != NULL) {
     recursive_free(left);
     recursive_free(right);
-  } 
+  }
+
+  adios_query_free(q); 
 }
 
 int getInput(char* input, const char* delim, uint64_t** result, int dim)
@@ -372,6 +373,7 @@ void manualCheck(ADIOS_QUERY* q, int timestep) {
 	  }
 	}	  
       }
+      free(output);
       printf("... double check found %d hits\n", hits);
       return;
   }
@@ -413,7 +415,7 @@ int parseQueryXml(const char* xmlQueryFileName)
   ADIOS_FILE * f;
   MPI_Comm    comm_dummy = 0;  // MPI_Comm is defined through adios_read.h 
 
-  adios_read_init_method(ADIOS_READ_METHOD_BP, comm_dummy, "verbose=2");
+  adios_read_init_method(ADIOS_READ_METHOD_BP, comm_dummy, "verbose=20");
 
   mxml_node_t* testsNode = mxmlFindElement(tree, tree, "tests", NULL, NULL, MXML_DESCEND);
 
@@ -460,6 +462,7 @@ int parseQueryXml(const char* xmlQueryFileName)
       int timestep = 0;
       ADIOS_SELECTION* noBox = 0;
       while (timestep <= f->last_step) {
+	printf("\n ...... query=%s, %s, [TimeStep=%d]\n",queryName, q->condition, timestep);
 	int64_t est = adios_query_estimate(q, timestep);
 	printf("\n=> query %s: %s, \n\t estimated  %ld hits on timestep: %d\n", queryName, q->condition, est, timestep);
 	ADIOS_SELECTION* currBatch = NULL;
@@ -467,7 +470,10 @@ int parseQueryXml(const char* xmlQueryFileName)
 	if (currBatch != NULL) {
 	  printf("\n=> evaluated: %ld hits for %s\n", currBatch->u.points.npoints, q->condition);
 	}
-	adios_selection_delete(currBatch);
+	if (currBatch != NULL) {
+	  free (currBatch->u.points.points);
+	  adios_selection_delete(currBatch);
+	}
 
 	manualCheck(q, timestep);
 	
