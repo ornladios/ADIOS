@@ -78,6 +78,13 @@ int common_query_is_method_available(enum ADIOS_QUERY_METHOD method) {
 void common_query_set_method (ADIOS_QUERY* q, enum ADIOS_QUERY_METHOD method) 
 {
     q->method = method;
+
+    if (q->left != NULL) {
+      common_query_set_method(q->left, method);
+    } 
+    if (q->right != NULL) {
+      common_query_set_method(q->right, method);      
+    }
 }
 
 // Choose a query method which can work on this query
@@ -97,12 +104,14 @@ static enum ADIOS_QUERY_METHOD detect_and_set_query_method(ADIOS_QUERY* q)
 		}
 		int found = query_hooks[m].adios_query_can_evaluate_fn(q);
 		if (found) {
-		  q->method = m;
+		  // q->method = m;
+		  common_query_set_method(q, m);
 		  return m;
 		}
 	}
 	// return default that always works
-	q->method = ADIOS_QUERY_METHOD_FASTBIT;
+	//q->method = ADIOS_QUERY_METHOD_FASTBIT;
+	common_query_set_method(q, ADIOS_QUERY_METHOD_FASTBIT);
 	return ADIOS_QUERY_METHOD_FASTBIT;
 }
 
