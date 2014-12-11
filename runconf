@@ -30,7 +30,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     module unload python
     module unload mxml
     module load PE-$TARGET
-    module load mxml/2.6
+    module load mxml/2.9
     MXMLDIR=$MXML_DIR
     module unload mxml
     module load python
@@ -1205,6 +1205,7 @@ elif [ `hostname | cut -c 1-7` == "adiosVM" ]; then
         --with-szip=/opt/szip \
         --with-isobar=/opt/isobar \
         --with-flexpath=/opt/chaos \
+        --with-fastbit=/opt/fastbit \
         --with-hdf5=/opt/hdf5-1.8.12 \
         --with-phdf5=/opt/hdf5-1.8.12-parallel \
         --with-netcdf=/opt/netcdf-4.3.0 \
