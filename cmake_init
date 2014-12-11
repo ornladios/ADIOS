@@ -66,6 +66,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
 
         export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith/$TARGET"
         export FLEXPATH_DIR="/ccs/proj/e2e/chaos/sith/$TARGET"
+        export FASTBIT_DIR="/sw/redhat6/fastbit/svn/rhel6_gnu4.7.2"
     elif [ "$TARGET" == "gnu" ]; then
         module load hdf5/1.8.10
         export SEQ_HDF5_DIR=$HDF5_DIR
@@ -83,9 +84,9 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
 #        export PAR_NC_DIR=$NETCDF_DIR
 #        export PAR_NC_LIBS=""
 #        module unload netcdf/4.1.3_par
-
 #        export DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith/$TARGET"
         export FLEXPATH_DIR="/ccs/proj/e2e/chaos/sith/$TARGET"
+        export FASTBIT_DIR="/sw/redhat6/fastbit/svn/rhel6_gnu4.7.2"
     elif [ "$TARGET" == "intel" ]; then
         module load hdf5/1.8.10
         export SEQ_HDF5_DIR=$HDF5_DIR

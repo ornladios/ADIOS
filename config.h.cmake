@@ -79,6 +79,9 @@
 /* Define to 1 if you have the <dmalloc.h> header file. */
 #cmakedefine  HAVE_DMALLOC_H 1
 
+/* Define if we have libfastbit */
+#cmakedefine HAVE_FASTBIT 1
+
 /* Define to 1 if you have the `fdatasync' function. */
 #cmakedefine HAVE_FDATASYNC 1
 
@@ -99,6 +102,9 @@
 
 /* Define to 1 if you have the <hdf5.h> header file. */
 #cmakedefine HAVE_HDF5_H 1
+
+/* Define to 1 if you have the <iapi.h> header file. */
+#cmakedefine HAVE_IAPI_H 1
 
 /* Define to 1 if you have <infiniband/verbs.h>. */
 #cmakedefine HAVE_IBVERBS_H 1
@@ -217,6 +223,9 @@
 
 /* Define to 1 if the system has the type `ptl_time_t'. */
 #cmakedefine HAVE_PTL_TIME_T 1
+
+/* Define if you have RIDCOMPRESS. */
+#cmakedefine HAVE_RIDCOMPRESS 1
 
 /* Define to 1 if you have the `sched_yield' function. */
 #cmakedefine HAVE_SCHED_YIELD 1
