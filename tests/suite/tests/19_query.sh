@@ -84,7 +84,7 @@ done
 
 # All query engine implementations to test
 ALL_QUERY_ENGINES=$( \
-  $LIST_METHODS_EXE_PATH |
+  $MPIRUN_SERIAL $LIST_METHODS_EXE_PATH |
   awk '
     /^Available/{
       transforms = ($2 == "query")
@@ -140,7 +140,7 @@ function invoke_dataset_builder() {
   [[ $# -eq 3 ]] || die "ERROR: Internal testing error, invalid parameters to invoke_dataset_builder: $@"
   
   set -o xtrace
-  $DATASET_BUILDER_EXE_LOCAL "$DSID" "$DSOUTPUT" "$TRANSFORM_ARG" ||
+  $MPIRUN_SERIAL $DATASET_BUILDER_EXE_LOCAL "$DSID" "$DSOUTPUT" "$TRANSFORM_ARG" ||
     die "ERROR: $DATASET_BUILDER_EXE_LOCAL failed with exit code $? (on dataset $DSID, outputting to $DSOUTPUT, using transform argument $TRANSFORM_ARG)"
   set +o xtrace
   
@@ -237,7 +237,7 @@ function query_datasets() {
           echo "====== COMPUTING EXPECTED OUTPUT OF QUERY $QUERY_NAME ON DATASET $DSID IN $FILEMODE MODE ======"
           echo
           set -o xtrace
-          $MPIRUN_SERIAL "$QUERY_SEQSCAN_EXE_LOCAL" "$NOINDEX_DS" "$QUERY_XML" "$FILEMODE" > "$EXPECTED_POINTS_FILE" ||
+          $MPIRUN_SERIAL "$QUERY_SEQSCAN_EXE_LOCAL" "$NOINDEX_DS" "$QUERY_XML_LOCAL" "$FILEMODE" > "$EXPECTED_POINTS_FILE" ||
             die "ERROR: $QUERY_SEQSCAN_EXE_LOCAL failed with exit code $?"
           set +o xtrace
         
