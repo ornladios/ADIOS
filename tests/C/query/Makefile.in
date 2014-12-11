@@ -381,6 +381,7 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 SUBDIRS = common $(am__append_1) $(am__append_2)
+EXTRA_DIST = query-xmls
 all: all-recursive
 
 .SUFFIXES:
