@@ -219,7 +219,6 @@ void freeQuery(ADIOS_QUERY* query) {
   query->dataSlice = 0;
 
   free(query);
-  query = NULL;
 }
 
 
