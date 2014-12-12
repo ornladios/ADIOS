@@ -15,6 +15,7 @@ static struct adios_query_hooks_struct * query_hooks = 0;
 static int getTotalByteSize (ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* sel, 
 			     uint64_t* total_byte_size, uint64_t* dataSize, int timestep);
 
+int isCompatible(ADIOS_QUERY* q1, ADIOS_QUERY* q2);
 
 static ADIOS_SELECTION* getAdiosDefaultBoundingBox(ADIOS_VARINFO* v) 
 {
@@ -205,7 +206,7 @@ static int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
     }
 }
 
-ADIOS_QUERY* freeQuery(ADIOS_QUERY* query) {
+void* freeQuery(ADIOS_QUERY* query) {
   log_debug("common_free() query: %s \n", query->condition);
 
   free(query->predicateValue);
