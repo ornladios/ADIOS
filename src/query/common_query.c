@@ -206,7 +206,7 @@ static int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
     }
 }
 
-void* freeQuery(ADIOS_QUERY* query) {
+void freeQuery(ADIOS_QUERY* query) {
   log_debug("common_free() query: %s \n", query->condition);
 
   free(query->predicateValue);
@@ -219,7 +219,7 @@ void* freeQuery(ADIOS_QUERY* query) {
   query->dataSlice = 0;
 
   free(query);
-  query = 0;
+  query = NULL;
 }
 
 
