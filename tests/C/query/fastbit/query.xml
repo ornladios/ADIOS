@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 
 <tests>
-
+<!--
   <query name="testNoBox" batchsize="100" bpFile="/global/u1/j/junmin//adios/git/lbnl/data/medium.bp">
     <entry name="q1" varName="/6D/a6_ulong" op="LT" value="1.0"/>
     <entry name="q2" varName="/6D/a6_ulong" op="GT" value="0.0"/> 
@@ -29,6 +29,14 @@
     </op>
   </query>
 
+-->
+<query name="ornl" batchsize="1048576" bpFile="/scratch2/scratchdirs/junmin/bl_flame.3.4536E-03.field.bp">
+    <output type="ADIOS_SELECTION_BOUNDINGBOX" dim="3" start="0,0,0" count="1100,1080,1408"/>
+
+    <entry name="ornl.heat.temp" varName="/temp" op="LE" value="2.0"> 
+        <selection type="ADIOS_SELECTION_BOUNDINGBOX" dim="3" start="0,0,0" count="1100,1080,1408"/>
+    </entry>
+</query>
 
   <query name="testBoundingBox" batchsize="100" bpFile="/global/u1/j/junmin//adios/git/lbnl/data/medium.bp">
     <entry name="q3" varName="/6D/a6_ulong" op="LT" value="1.0">
