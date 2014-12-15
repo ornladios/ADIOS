@@ -49,7 +49,7 @@ uint16_t adios_transform_szip_get_metadata_size(struct adios_transform_spec *tra
     return 0;
 }
 
-uint64_t adios_transform_szip_transformed_size_growth(
+void adios_transform_szip_transformed_size_growth(
 		const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec,
 		uint64_t *constant_factor, double *linear_factor, double *capped_linear_factor, uint64_t *capped_linear_cap)
 {
