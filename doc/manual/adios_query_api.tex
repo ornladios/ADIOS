@@ -9,8 +9,8 @@ The ADIOS Query API (introduced in ADIOS 1.8) extends the Read API with a query 
 \section{How to use the query functions}
 \label{sec:query-howto}
 A query is an AND/OR tree of simple \verb+variable-relation-value+ expressions, like 
-\verb+T <= 10.5+. Let's consider the example, where we have three variables (N-dimensional) arrays, T, P, and V with the same dimension. We want to read the values of variable T, where  \verb+80.0 < P < 90.0 or  V <= 50.0+. The query is a tree of three expressions: \linebreak
-(\verb+P > 80.0+ AND \verb+P < 90.0+ )  OR (\verb+V <= 50.0+).
+\verb+V <= 50.0+. Let's consider the example, where we have three variables (N-dimensional) arrays, T, P, and V with the same dimension. We want to read the values of variable T, where  \verb+80.0 < P < 90.0 or  V <= 50.0+. The query is a tree of three expressions: \linebreak
+(\verb+P > 80.0+ AND \verb+P < 90.0+)  OR (\verb+V <= 50.0+).
 
 First, a selection has to be created to select a subset of the data on which a query is going to be evaluated (on a specific processor). Let's assume we have a bounding box selection 
 \verb+sel+ from a decomposition of the N-dimensional space of the variables. We need to create each expression separately and combine them together into an expression tree.
@@ -26,21 +26,21 @@ q  = adios_query_combine(q3, ADIOS_QUERY_OP_AND, q4);
 \end{lstlisting}
 
 
-\noindent The next step is to evaluate a query. The evaluation is a separate step from reading the data. The result is a point-list selection. The return value is of \verb+ADIOS_SELECTION*+ type, but actually it has \linebreak \verb+ADIOS_SELECTION_POINTS_STRUCT*'+ type, so one can cast to it. A query method can be manually selected, otherwise, the query evaluation first tries to identify which query method is available for the query (currently only FastBit is supported). 
+\noindent The next step is to evaluate a query. The evaluation is a separate step from reading the data. The result is a point-list selection.  A query method can be manually selected, otherwise, the query evaluation first tries to identify which query method is available for the query (currently only FastBit is supported). 
 
 \begin{lstlisting}[alsolanguage=C]
 enum ADIOS_QUERY_METHOD query_method = ADIOS_QUERY_METHOD_FASTBIT;
 adios_query_set_method (q, query_method); // optional call
 ADIOS_SELECTION *hits;
 uint64_t batchSize = 1 000 000 000;
-adios_query_evaluate (q, box, 0, batchSize, &hits);
+adios_query_evaluate (q, box, timestep, batchSize, &hits);
 ...
-adios_schedule_read (f, hits, "xy", 1, 1, data);
+adios_schedule_read (f, hits, "xy", timestep, 1, data);
 adios_perform_reads (f, 1);
 \end{lstlisting}
 
-The number of the hits and the coordinates of the individual points are accessible directly via 
-\linebreak \verb+hits->u.points.npoints+ and \verb+hitlist->u.points.points+, see the \verb+ADIOS_SELECTION_POINTS_STRUCT+ struct in \verb+adios_selection.h+.
+The return value has the \verb+ADIOS_SELECTION*+ type, but actually it is a list of points, so one can use the internal structure. The number of the hits and the coordinates of the individual points are accessible directly via 
+\linebreak \verb+hits->u.points.npoints+ and \verb+hits->u.points.points+, see the \verb+ADIOS_SELECTION_POINTS_STRUCT+ struct in \verb+adios_selection.h+.
 
 Although the internal structures are not copied when combining them together, each sub-query needs to be deleted separately to free all memory at the end. The selection should also be deleted. In ADIOS 1.8, \linebreak \verb+adios_selection_delete()+ never deletes the content of the structure, only the structure itself. Therefore, the point-list must be manually freed, although it was allocated inside the query evaluation function of the ADIOS library. 
 
@@ -85,29 +85,30 @@ There is no default query engine in ADIOS 1.8 therefore, ADIOS must be built wit
 
 
 \subsection{Querying over multiple variables}
-Well, this is the primary example presented in the beginning of this chapter, in section ~\ref{sec:query-howto}.
+Well, this is the primary example presented in the beginning of this chapter, in section ~\ref{sec:query-howto}. The example used here can be found in the source in \verb+examples/C/query/query_vars.c+.
 
 \subsection{Querying over columns of a table}
 \label{sec:query-example-columns}
 Let's assume we have one 2D variable in the ADIOS file, \emph{A}, a table for particle data. Data for one atom is stored in a row, where each column contains a different property of the atom (e.g. energy, velocity and position in each spatial dimension, etc.).
-Let's assume we want to get the values from column 3 of A where column 1 > 10.0 and  column 2 < 20.0.
-In this case, we need a different bounding box selection in each sub-query, and apply the results to a third bounding box. The dimensions of each box are the same (\emph{number of rows} $x$ 1), but the offset is different to select a different column.
+Let's assume we want to get the values from column 3 of A where column 1 = 0 and  column 2 <= 96.
+In this case, we need a different bounding box selection in each sub-query, and apply the results to a third bounding box. The dimensions of each box are the same (\emph{number of rows} $x$ 1), but the offset is different to select a different column. The example used here can be found in the source in \verb+examples/C/query/query_table.c+.
 
 %\begin{lstlisting}[numbers=left, numberstyle=\color{gray}, stepnumber=2,
 \begin{lstlisting}[alsolanguage=C,
                              caption={Query over the columns of a table}, label=code:query_columns]
-uint64_t offs1[] = {0, 0}, offs2[] = {0,1}, offs3[] = {0,2};
+uint64_t offs1[] = {0, 1}, offs2[] = {0,2}, offs3[] = {0,3};
 uint64_t cnt[] = {number_of_rows, 1};  
 ADIOS_SELECTION* col1 = adios_selection_boundingbox(2, offs1, cnt);
 ADIOS_SELECTION* col2 = adios_selection_boundingbox(2, offs2, cnt);
 ADIOS_SELECTION* col3 = adios_selection_boundingbox(2, offs3, cnt);
 ADIOS_QUERY *q1, *q2, *q;
-q1 = adios_query_create(f, "A", col1, ADIOS_GT, "10.0");
-q2 = adios_query_create(f, "A", col2, ADIOS_LT, "20.0");
+q1 = adios_query_create(f, col1, "A", ADIOS_EQ, "0");
+q2 = adios_query_create(f, col2, "A", ADIOS_LTEQ, "96");
 q  = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
-adios_query_evaluate(q, 0, batchSize, col3, &currBatch);
+adios_query_evaluate(q, col3, timestep, batchSize, &hits);
 
 \end{lstlisting}
+
 
 
 %
@@ -181,7 +182,7 @@ int adios_query_is_method_available(enum ADIOS_QUERY_METHOD method);
 \end{lstlisting}
 
 \subsection{adios\_query\_create}
-Create a simple query, an relational expression of a variable and a value, like \verb+V <= 50.0+. 
+Create a simple query, a relational expression of a variable and a value, like \verb+V <= 50.0+. 
 
 \begin{lstlisting}[alsolanguage=C]
 ADIOS_QUERY* adios_query_create (ADIOS_FILE* f,
