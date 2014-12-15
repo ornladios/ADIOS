@@ -66,7 +66,7 @@ static int adios_dimes_initialized = 0;
 static char ds_var_name[MAX_DS_NAMELEN];
 static unsigned int adios_dimes_verbose = 3;
 static int check_read_status = 2; // 0: disable, 1: at every step (not supported yet), 2: at finalize (default value)
-static double check_read_status_timeout_sec = 1;
+static double check_read_status_timeout_sec = 30;
 static int check_read_status_poll_interval_ms = 100;
 // count the number of inits/finalizes (one per adios group using this method
 static unsigned int number_of_inits = 0;
