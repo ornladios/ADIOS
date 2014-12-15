@@ -34,8 +34,8 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = adios_read_ext_test$(EXEEXT) $(am__EXEEXT_1)
-@HAVE_ALACRITY_TRUE@am__append_1 = adios_build_alac_index adios_read_alac_index adios_show_bp_file
+noinst_PROGRAMS = write_vars$(EXEEXT) query_vars$(EXEEXT) \
+	write_table$(EXEEXT) query_table$(EXEEXT)
 subdir = examples/C/query
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -83,46 +83,36 @@ mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
-@HAVE_ALACRITY_TRUE@am__EXEEXT_1 = adios_build_alac_index$(EXEEXT) \
-@HAVE_ALACRITY_TRUE@	adios_read_alac_index$(EXEEXT) \
-@HAVE_ALACRITY_TRUE@	adios_show_bp_file$(EXEEXT)
 PROGRAMS = $(noinst_PROGRAMS)
-am__adios_build_alac_index_SOURCES_DIST = adios_build_alac_index.c
-@HAVE_ALACRITY_TRUE@am_adios_build_alac_index_OBJECTS = adios_build_alac_index-adios_build_alac_index.$(OBJEXT)
-adios_build_alac_index_OBJECTS = $(am_adios_build_alac_index_OBJECTS)
+am_query_table_OBJECTS = query_table.$(OBJEXT)
+query_table_OBJECTS = $(am_query_table_OBJECTS)
 am__DEPENDENCIES_1 =
-@HAVE_ALACRITY_TRUE@adios_build_alac_index_DEPENDENCIES =  \
-@HAVE_ALACRITY_TRUE@	$(top_builddir)/src/libadios.a \
-@HAVE_ALACRITY_TRUE@	$(am__DEPENDENCIES_1)
-adios_build_alac_index_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(adios_build_alac_index_LDFLAGS) $(LDFLAGS) -o $@
-am__adios_read_alac_index_SOURCES_DIST = adios_read_alac_index.c
-@HAVE_ALACRITY_TRUE@am_adios_read_alac_index_OBJECTS = adios_read_alac_index-adios_read_alac_index.$(OBJEXT)
-adios_read_alac_index_OBJECTS = $(am_adios_read_alac_index_OBJECTS)
-@HAVE_ALACRITY_TRUE@adios_read_alac_index_DEPENDENCIES =  \
-@HAVE_ALACRITY_TRUE@	$(top_builddir)/src/libadios.a \
-@HAVE_ALACRITY_TRUE@	$(am__DEPENDENCIES_1)
-adios_read_alac_index_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
-	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(adios_read_alac_index_LDFLAGS) $(LDFLAGS) -o $@
-am_adios_read_ext_test_OBJECTS = adios_read_ext_test.$(OBJEXT)
-adios_read_ext_test_OBJECTS = $(am_adios_read_ext_test_OBJECTS)
-adios_read_ext_test_DEPENDENCIES = $(top_builddir)/src/libadios.a \
+query_table_DEPENDENCIES = $(top_builddir)/src/libadiosread_nompi.a \
 	$(am__DEPENDENCIES_1)
-adios_read_ext_test_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+query_table_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(adios_read_ext_test_LDFLAGS) $(LDFLAGS) -o $@
-am__adios_show_bp_file_SOURCES_DIST = adios_show_bp_file.c
-@HAVE_ALACRITY_TRUE@am_adios_show_bp_file_OBJECTS =  \
-@HAVE_ALACRITY_TRUE@	adios_show_bp_file.$(OBJEXT)
-adios_show_bp_file_OBJECTS = $(am_adios_show_bp_file_OBJECTS)
-@HAVE_ALACRITY_TRUE@adios_show_bp_file_DEPENDENCIES =  \
-@HAVE_ALACRITY_TRUE@	$(top_builddir)/src/libadios.a \
-@HAVE_ALACRITY_TRUE@	$(am__DEPENDENCIES_1)
-adios_show_bp_file_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(query_table_LDFLAGS) $(LDFLAGS) -o $@
+am_query_vars_OBJECTS = query_vars.$(OBJEXT)
+query_vars_OBJECTS = $(am_query_vars_OBJECTS)
+query_vars_DEPENDENCIES = $(top_builddir)/src/libadiosread_nompi.a \
+	$(am__DEPENDENCIES_1)
+query_vars_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
-	$(adios_show_bp_file_LDFLAGS) $(LDFLAGS) -o $@
+	$(query_vars_LDFLAGS) $(LDFLAGS) -o $@
+am_write_table_OBJECTS = write_table.$(OBJEXT)
+write_table_OBJECTS = $(am_write_table_OBJECTS)
+write_table_DEPENDENCIES = $(top_builddir)/src/libadios_nompi.a \
+	$(am__DEPENDENCIES_1)
+write_table_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(write_table_LDFLAGS) $(LDFLAGS) -o $@
+am_write_vars_OBJECTS = write_vars.$(OBJEXT)
+write_vars_OBJECTS = $(am_write_vars_OBJECTS)
+write_vars_DEPENDENCIES = $(top_builddir)/src/libadios_nompi.a \
+	$(am__DEPENDENCIES_1)
+write_vars_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(write_vars_LDFLAGS) $(LDFLAGS) -o $@
 DEFAULT_INCLUDES = -I.@am__isrc@ -I$(top_builddir)
 depcomp =
 am__depfiles_maybe =
@@ -135,13 +125,10 @@ CCLD = $(CC)
 LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
-SOURCES = $(adios_build_alac_index_SOURCES) \
-	$(adios_read_alac_index_SOURCES) \
-	$(adios_read_ext_test_SOURCES) $(adios_show_bp_file_SOURCES)
-DIST_SOURCES = $(am__adios_build_alac_index_SOURCES_DIST) \
-	$(am__adios_read_alac_index_SOURCES_DIST) \
-	$(adios_read_ext_test_SOURCES) \
-	$(am__adios_show_bp_file_SOURCES_DIST)
+SOURCES = $(query_table_SOURCES) $(query_vars_SOURCES) \
+	$(write_table_SOURCES) $(write_vars_SOURCES)
+DIST_SOURCES = $(query_table_SOURCES) $(query_vars_SOURCES) \
+	$(write_table_SOURCES) $(write_vars_SOURCES)
 ETAGS = etags
 CTAGS = ctags
 DISTFILES = $(DIST_COMMON) $(DIST_SOURCES) $(TEXINFOS) $(EXTRA_DIST)
@@ -403,28 +390,24 @@ top_srcdir = @top_srcdir@
 INCLUDES = $(all_includes) -I$(top_srcdir)/src/public \
 	-I$(top_srcdir)/src/query
 AUTOMAKE_OPTIONS = no-dependencies
-adios_read_ext_test_SOURCES = adios_read_ext_test.c
-adios_read_ext_test_LDADD = $(top_builddir)/src/libadios.a \
-	$(ADIOSLIB_LDADD)
-adios_read_ext_test_LDFLAGS = $(ADIOSLIB_LDFLAGS)
-@HAVE_ALACRITY_TRUE@adios_build_alac_index_SOURCES = adios_build_alac_index.c
-@HAVE_ALACRITY_TRUE@adios_build_alac_index_LDADD =  \
-@HAVE_ALACRITY_TRUE@	$(top_builddir)/src/libadios.a \
-@HAVE_ALACRITY_TRUE@	$(ADIOSLIB_LDADD)
-@HAVE_ALACRITY_TRUE@adios_build_alac_index_LDFLAGS = $(ADIOSLIB_LDFLAGS)
-@HAVE_ALACRITY_TRUE@adios_build_alac_index_CPPFLAGS = $(ALACRITY_CPPFLAGS)
-@HAVE_ALACRITY_TRUE@adios_read_alac_index_SOURCES = adios_read_alac_index.c
-@HAVE_ALACRITY_TRUE@adios_read_alac_index_LDADD =  \
-@HAVE_ALACRITY_TRUE@	$(top_builddir)/src/libadios.a \
-@HAVE_ALACRITY_TRUE@	$(ADIOSLIB_LDADD)
-@HAVE_ALACRITY_TRUE@adios_read_alac_index_LDFLAGS = $(ADIOSLIB_LDFLAGS)
-@HAVE_ALACRITY_TRUE@adios_read_alac_index_CPPFLAGS = $(ALACRITY_CPPFLAGS)
-@HAVE_ALACRITY_TRUE@adios_show_bp_file_SOURCES = adios_show_bp_file.c
-@HAVE_ALACRITY_TRUE@adios_show_bp_file_LDADD =  \
-@HAVE_ALACRITY_TRUE@	$(top_builddir)/src/libadios.a \
-@HAVE_ALACRITY_TRUE@	$(ADIOSLIB_LDADD)
-@HAVE_ALACRITY_TRUE@adios_show_bp_file_LDFLAGS = $(ADIOSLIB_LDFLAGS)
-CLEANFILES = *.bp
+write_vars_SOURCES = write_vars.c
+write_vars_LDADD = $(top_builddir)/src/libadios_nompi.a \
+	$(ADIOSLIB_SEQ_LDADD)
+write_vars_LDFLAGS = $(ADIOSLIB_SEQ_LDFLAGS)
+query_vars_SOURCES = query_vars.c
+query_vars_LDADD = $(top_builddir)/src/libadiosread_nompi.a \
+	$(ADIOSREADLIB_SEQ_LDADD)
+query_vars_LDFLAGS = $(ADIOSREADLIB_SEQ_LDFLAGS)
+write_table_SOURCES = write_table.c
+write_table_LDADD = $(top_builddir)/src/libadios_nompi.a \
+	$(ADIOSLIB_SEQ_LDADD)
+write_table_LDFLAGS = $(ADIOSLIB_SEQ_LDFLAGS)
+query_table_SOURCES = query_table.c
+query_table_LDADD = $(top_builddir)/src/libadiosread_nompi.a \
+	$(ADIOSREADLIB_SEQ_LDADD)
+query_table_LDFLAGS = $(ADIOSREADLIB_SEQ_LDFLAGS)
+EXTRA_DIST = README_vars.txt README_table.txt
+CLEANFILES = *.bp *.idx
 all: all-am
 
 .SUFFIXES:
@@ -468,18 +451,18 @@ clean-noinstPROGRAMS:
 	list=`for p in $$list; do echo "$$p"; done | sed 's/$(EXEEXT)$$//'`; \
 	echo " rm -f" $$list; \
 	rm -f $$list
-adios_build_alac_index$(EXEEXT): $(adios_build_alac_index_OBJECTS) $(adios_build_alac_index_DEPENDENCIES) 
-	@rm -f adios_build_alac_index$(EXEEXT)
-	$(adios_build_alac_index_LINK) $(adios_build_alac_index_OBJECTS) $(adios_build_alac_index_LDADD) $(LIBS)
-adios_read_alac_index$(EXEEXT): $(adios_read_alac_index_OBJECTS) $(adios_read_alac_index_DEPENDENCIES) 
-	@rm -f adios_read_alac_index$(EXEEXT)
-	$(adios_read_alac_index_LINK) $(adios_read_alac_index_OBJECTS) $(adios_read_alac_index_LDADD) $(LIBS)
-adios_read_ext_test$(EXEEXT): $(adios_read_ext_test_OBJECTS) $(adios_read_ext_test_DEPENDENCIES) 
-	@rm -f adios_read_ext_test$(EXEEXT)
-	$(adios_read_ext_test_LINK) $(adios_read_ext_test_OBJECTS) $(adios_read_ext_test_LDADD) $(LIBS)
-adios_show_bp_file$(EXEEXT): $(adios_show_bp_file_OBJECTS) $(adios_show_bp_file_DEPENDENCIES) 
-	@rm -f adios_show_bp_file$(EXEEXT)
-	$(adios_show_bp_file_LINK) $(adios_show_bp_file_OBJECTS) $(adios_show_bp_file_LDADD) $(LIBS)
+query_table$(EXEEXT): $(query_table_OBJECTS) $(query_table_DEPENDENCIES) 
+	@rm -f query_table$(EXEEXT)
+	$(query_table_LINK) $(query_table_OBJECTS) $(query_table_LDADD) $(LIBS)
+query_vars$(EXEEXT): $(query_vars_OBJECTS) $(query_vars_DEPENDENCIES) 
+	@rm -f query_vars$(EXEEXT)
+	$(query_vars_LINK) $(query_vars_OBJECTS) $(query_vars_LDADD) $(LIBS)
+write_table$(EXEEXT): $(write_table_OBJECTS) $(write_table_DEPENDENCIES) 
+	@rm -f write_table$(EXEEXT)
+	$(write_table_LINK) $(write_table_OBJECTS) $(write_table_LDADD) $(LIBS)
+write_vars$(EXEEXT): $(write_vars_OBJECTS) $(write_vars_DEPENDENCIES) 
+	@rm -f write_vars$(EXEEXT)
+	$(write_vars_LINK) $(write_vars_OBJECTS) $(write_vars_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)
@@ -495,18 +478,6 @@ distclean-compile:
 
 .c.lo:
 	$(LTCOMPILE) -c -o $@ $<
-
-adios_build_alac_index-adios_build_alac_index.o: adios_build_alac_index.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_build_alac_index_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_build_alac_index-adios_build_alac_index.o `test -f 'adios_build_alac_index.c' || echo '$(srcdir)/'`adios_build_alac_index.c
-
-adios_build_alac_index-adios_build_alac_index.obj: adios_build_alac_index.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_build_alac_index_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_build_alac_index-adios_build_alac_index.obj `if test -f 'adios_build_alac_index.c'; then $(CYGPATH_W) 'adios_build_alac_index.c'; else $(CYGPATH_W) '$(srcdir)/adios_build_alac_index.c'; fi`
-
-adios_read_alac_index-adios_read_alac_index.o: adios_read_alac_index.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_read_alac_index_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_read_alac_index-adios_read_alac_index.o `test -f 'adios_read_alac_index.c' || echo '$(srcdir)/'`adios_read_alac_index.c
-
-adios_read_alac_index-adios_read_alac_index.obj: adios_read_alac_index.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_read_alac_index_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_read_alac_index-adios_read_alac_index.obj `if test -f 'adios_read_alac_index.c'; then $(CYGPATH_W) 'adios_read_alac_index.c'; else $(CYGPATH_W) '$(srcdir)/adios_read_alac_index.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
