@@ -376,7 +376,11 @@ int adios_add_timing_variables (struct adios_file_struct * fd)
 
     if (! adios_find_var_by_name (g, "/__adios__/timer_labels"))
     {
-        sprintf (dim_str,"%i,/__adios__/timer_count", max_label_len+1);
+        if (g->adios_host_language_fortran == adios_flag_yes) { 
+            sprintf (dim_str,"%i,/__adios__/timer_count", max_label_len+1);
+        } else {
+            sprintf (dim_str,"/__adios__/timer_count,%i", max_label_len+1);
+        }
 
         // labels for the timers
         adios_common_define_var ((int64_t)g,        // int64_t group_id 
