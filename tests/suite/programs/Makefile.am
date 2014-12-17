@@ -219,7 +219,8 @@ group_free_test.o: group_free_test.c
 EXTRA_DIST = adios_amr_write.xml adios_amr_write_2vars.xml \
              posix_method.xml local_array_time.xml  \
              write_alternate.xml write_read.xml transforms.xml \
-             path_test.xml adios_transforms.xml
+             path_test.xml adios_transforms.xml \
+	     two_groups.xml set_path.xml set_path_var.xml
 
 CLEANFILES = gwrite_posix_method.fh gread_posix_method.fh 
 
