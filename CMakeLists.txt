@@ -1842,7 +1842,7 @@ CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/adios_config.flags.in ${CMAKE_CURRENT
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/adios_config.in ${CMAKE_CURRENT_BINARY_DIR}/adios_config)
 #####################end of processing adios_config.flags.in #####################
 install(FILES ${CMAKE_BINARY_DIR}/adios_config.flags DESTINATION ${sysconfdir})
-install(PROGRAMS adios_config DESTINATION ${bindir})
+install(PROGRAMS ${CMAKE_BINARY_DIR}/adios_config DESTINATION ${bindir})
 install(FILES ${PROJECT_SOURCE_DIR}/scripts/FindADIOS.cmake DESTINATION ${sysconfdir}) 
 #install(FILES ${PROJECT_SOURCE_DIR}/adios_git_status DESTINATION ${sysconfdir})
 
