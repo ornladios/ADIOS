@@ -449,6 +449,7 @@ EXTRA_DIST = runconf \
 #             wrappers/matlab/adiosreadc.c 
 bin_SCRIPTS = adios_config $(am__append_1)
 sysconf_DATA = scripts/FindADIOS.cmake
+CLEANFILES = adios_config adios_config.flags
 all: config.h
 	$(MAKE) $(AM_MAKEFLAGS) all-recursive
 
@@ -909,6 +910,7 @@ install-strip:
 mostlyclean-generic:
 
 clean-generic:
+	-test -z "$(CLEANFILES)" || rm -f $(CLEANFILES)
 
 distclean-generic:
 	-test -z "$(CONFIG_CLEAN_FILES)" || rm -f $(CONFIG_CLEAN_FILES)
