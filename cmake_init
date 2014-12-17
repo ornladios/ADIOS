@@ -222,7 +222,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         ##########################
         # Titan + staging #
         ##########################
-        TARGET=gnu
+        TARGET=pgi
         echo "Configure on TITAN (XK7) including staging methods for $TARGET env."
         source /opt/modules/default/etc/modules.sh
         module unload szip
@@ -265,8 +265,8 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
             module load dataspaces/1.4.0
             export DATASPACES_DIR=$DATASPACES_DIR
             export FLEXPATH_DIR="/ccs/proj/e2e/chaos/titan/gnu"
-            module load fastbit/svn
-            export FASTBIT_DIR=$FASTBIT_DIR
+#            module load fastbit/svn
+#            export FASTBIT_DIR=$FASTBIT_DIR
             # NSSI needs libstdc++
             export EXTRA_LIBS="${GCC_PATH}/snos/lib64/libstdc++.a"
         else
