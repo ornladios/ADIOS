@@ -874,12 +874,17 @@ else
     echo "  - No research transport methods";
 fi
 
-if test "x$enable_timers" == "xyes"; then
+if test -z "${ADIOS_TIMERS_TRUE}"; then
     echo "  - ADIOS Timing Mechanism Enabled";
-
 else
     echo "  - ADIOS Timing Mechanism Disabled";
 fi
+if test -z "${ADIOS_TIMER_EVENTS_TRUE}"; then
+    echo "  - ADIOS Timing event recording Enabled";
+else
+    echo "  - ADIOS Timing event recording Disabled";
+fi
+
 
 if test -z "${HAVE_MXML_TRUE}"; then
     echo "  - MXML";
