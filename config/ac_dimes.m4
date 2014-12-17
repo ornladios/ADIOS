@@ -81,11 +81,7 @@ else
     save_CPPFLAGS="$CPPFLAGS"
     save_LIBS="$LIBS"
     save_LDFLAGS="$LDFLAGS"
-    if test "x${ac_infiniband_lib_ok}" == "xyes"; then 
-        dnl LIBS="$LIBS -ldspaces -ldscommon -ldart"
-	echo "DIMES currently NOT supported for Infiniband!"
-	AM_CONDITIONAL(HAVE_DIMES, false)
-    elif test "x${ac_portals_lib_ok}" == "xyes"; then 
+    if test "x${ac_portals_lib_ok}" == "xyes"; then 
         dnl LIBS="$LIBS -ldart2 -lspaces"
 	echo "DIMES currently NOT supported for Cray Portals!"
 	AM_CONDITIONAL(HAVE_DIMES, false)
@@ -107,6 +103,11 @@ else
         # Check for the DataSpaces/DIMES library and headers
         if test -z "${HAVE_CRAY_PMI_TRUE}" -a -z "${HAVE_CRAY_UGNI_TRUE}"; then 
             AC_TRY_LINK([#include "dimes_interface.h"],
+                    [int err; dimes_put_sync_all();],
+                    [DIMES_LIBS="-ldspaces -ldscommon -ldart"],
+                    [AM_CONDITIONAL(HAVE_DIMES,false)])
+	elif test "x${ac_infiniband_lib_ok}" == "xyes"; then 
+            AC_TRY_COMPILE([#include "dimes_interface.h"],
                     [int err; dimes_put_sync_all();],
                     [DIMES_LIBS="-ldspaces -ldscommon -ldart"],
                     [AM_CONDITIONAL(HAVE_DIMES,false)])

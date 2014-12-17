@@ -16,7 +16,3 @@ else()
   file(COPY tests/ DESTINATION ${PROJECT_BINARY_DIR}/tests/suite/tests)
 endif()
 
-#install(PROGRAMS cleanup.sh DESTINATION ${PROJECT_BINARY_DIR}/tests/suite)
-#install(DIRECTORY reference USE_SOURCE_PERMISSIONS DESTINATION ${PROJECT_BINARY_DIR}/tests/suite PATTERN ".svn" EXCLUDE)
-#install(PROGRAMS test.sh DESTINATION ${PROJECT_BINARY_DIR}/tests/suite)
-#install(DIRECTORY tests USE_SOURCE_PERMISSIONS DESTINATION ${PROJECT_BINARY_DIR}/tests/suite PATTERN ".svn" EXCLUDE)

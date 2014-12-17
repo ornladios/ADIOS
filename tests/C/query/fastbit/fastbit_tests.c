@@ -21,6 +21,7 @@ static int mybmreader(void *ctx, uint64_t start,uint64_t count, uint32_t *buf) {
 char _gTagQuery[20] = "query";
 char _gTagSel[20] = "selection";
 char _gTagEntry[20] = "entry";
+char _gTagOutput[20] = "output";
 
 char _gAttrAction[20] = "action";
 char _gAttrBPFile[20] = "bpFile";
@@ -35,6 +36,39 @@ char _gAttrSelID[20] = "id";
 char _gAttrSelStart[20] = "start";
 char _gAttrSelCount[20] = "count";
 char _gAttrNode[20] = "node";
+
+
+long _stageRefreshMillis = 0;
+long _lastMeasuredMillis = 0;
+long _queryStartMillis = 0;
+
+void logReport(int stage) {
+  long ms = fastbit_adios_getCurrentTimeMillis();
+
+  if (stage == -1) { // init                                                                                                                                             
+      _lastMeasuredMillis = ms;
+      _stageRefreshMillis = ms;
+      _queryStartMillis   = ms;
+  } else if (stage == 0) { // query                                                                                                               
+      printf("\n==> Total time spent to process this query: %ld millis.\n", ms - _queryStartMillis);
+  }
+}
+
+
+void logTimeMillis(const char* notes)
+{
+  long ms = fastbit_adios_getCurrentTimeMillis();
+
+  if (notes == NULL) {
+    printf("\n");
+    _stageRefreshMillis = ms;
+  } else {
+    long d = ms - _lastMeasuredMillis;
+    printf("   ELAPSED millis: %ld \t%s\n", d, notes);
+  }
+  _lastMeasuredMillis = ms;
+}
+
 
 static int getTotalByteSize (ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* sel,
                              uint64_t* total_byte_size, uint64_t* dataSize, int timestep)
@@ -136,12 +170,13 @@ void recursive_free(ADIOS_QUERY* q) {
     }
     adios_selection_delete(q->sel);
   }
-  adios_query_free(q);
 
   if (left != NULL) {
     recursive_free(left);
     recursive_free(right);
-  } 
+  }
+
+  adios_query_free(q); 
 }
 
 int getInput(char* input, const char* delim, uint64_t** result, int dim)
@@ -164,12 +199,8 @@ int getInput(char* input, const char* delim, uint64_t** result, int dim)
   return -1;
 }
 
-ADIOS_SELECTION* getSel(mxml_node_t* entryNode) {
-    mxml_node_t* selNode = mxmlFindElement(entryNode, entryNode, _gTagSel, NULL, NULL, MXML_DESCEND);
-    if (selNode == NULL) {
-      return NULL;
-    }
 
+ADIOS_SELECTION* getSelFromSelectionNode(mxml_node_t* selNode) {
     const char* type = mxmlElementGetAttr(selNode, _gAttrSelType);
     if (type == NULL) {
       printf("No type specified, treat as NULL\n");
@@ -215,6 +246,16 @@ ADIOS_SELECTION* getSel(mxml_node_t* entryNode) {
 
     return NULL;
 }
+
+ADIOS_SELECTION* getSel(mxml_node_t* entryNode) {
+    mxml_node_t* selNode = mxmlFindElement(entryNode, entryNode, _gTagSel, NULL, NULL, MXML_DESCEND);
+    if (selNode == NULL) {
+      return NULL;
+    }
+
+    return getSelFromSelectionNode(selNode);
+}
+
 
 ADIOS_QUERY* getEntryQuery(mxml_node_t* queryNode, const char* entryName, ADIOS_FILE* f) 
 {
@@ -338,6 +379,7 @@ double getCurrentValue(void* data, uint64_t idx, enum ADIOS_DATATYPES type)
 
 void manualCheck(ADIOS_QUERY* q, int timestep) {
   if ((q->left == NULL) && (q->right == NULL)) {    
+      printf ("... manual check: \n");
       // proceed
       uint64_t totalByteSize;
       uint64_t totalSize;
@@ -357,25 +399,38 @@ void manualCheck(ADIOS_QUERY* q, int timestep) {
 
       for (k=0; k<totalSize; k++) {
 	double curr = getCurrentValue(output, k, q->varinfo->type);
+	//printf ("curr=%lg, vv=%lg\n", curr, vv);
 	if (curr == vv) {
 	  if ((q->predicateOp == ADIOS_EQ) || (q->predicateOp == ADIOS_LTEQ) || (q->predicateOp == ADIOS_GTEQ)) {
 	      hits ++;
 	  }
 	} else if (curr < vv) {
-	  if (q->predicateOp == ADIOS_LT) {
+	  if ((q->predicateOp == ADIOS_LT) || (q->predicateOp == ADIOS_LTEQ)) {
 	    hits ++;
 	  }
-      } else { // >
-	  if (q->predicateOp == ADIOS_GT) {
+	} else { // >
+	  if ((q->predicateOp == ADIOS_GT) || (q->predicateOp == ADIOS_GTEQ)) {
 	    hits ++;
 	  }
 	}	  
       }
+      free(output);
       printf("... double check found %d hits\n", hits);
       return;
   }
   printf("Skip manual check on composite query\n");
   return;
+}
+
+ADIOS_SELECTION* getOutputSelection(mxml_node_t* queryNode) 
+{
+  mxml_node_t* outputSelNode = mxmlFindElement(queryNode, queryNode, _gTagOutput, NULL, NULL, MXML_DESCEND);
+
+  if (outputSelNode == NULL) {
+    return NULL;
+  } else {
+    return getSelFromSelectionNode(outputSelNode);
+  }
 }
 
 int parseQueryXml(const char* xmlQueryFileName) 
@@ -455,13 +510,34 @@ int parseQueryXml(const char* xmlQueryFileName)
       }
 
       ADIOS_QUERY* q = constructQuery(queryNode, f, queryName, batchSize);
+
+      ADIOS_SELECTION* outputBox = getOutputSelection(queryNode);
+      logReport(-1); // init timer
+
       //adios_query_set_method(q, ADIOS_QUERY_METHOD_FASTBIT);
       int timestep = 0;
+      //ADIOS_SELECTION* noBox = 0;
       while (timestep <= f->last_step) {
+	printf("\n ...... query=%s, %s, [TimeStep=%d of %d]\n",queryName, q->condition, timestep, f->last_step);
 	int64_t est = adios_query_estimate(q, timestep);
+	logTimeMillis(" estimated.");
 	printf("\n=> query %s: %s, \n\t estimated  %ld hits on timestep: %d\n", queryName, q->condition, est, timestep);
+	ADIOS_SELECTION* currBatch = NULL;
+	int hasMore = 1; 
+	while (hasMore > 0) {
+	  hasMore = adios_query_evaluate(q, outputBox, timestep, batchSize, &currBatch);
+	  logTimeMillis(" evaluated one batch.");
+	  if (currBatch != NULL) {
+	    printf("\n=> evaluated: %ld hits for %s\n", currBatch->u.points.npoints, q->condition);
+	  }
+	  if (currBatch != NULL) {
+	    free (currBatch->u.points.points);
+	    adios_selection_delete(currBatch);
+	  }
+	}
+	logReport(0);
 	manualCheck(q, timestep);
-	
+	logTimeMillis(" manual check done.");
 	timestep ++;
       }
       
@@ -478,6 +554,7 @@ int parseQueryXml(const char* xmlQueryFileName)
   adios_finalize(rank);
 }
 
+/*
 void testDefaultBoundBox(ADIOS_FILE* f, const char* varName1, const char* varName2, int timestep, const char* value1, const char* value2) 
 {
   printf("\n=============== testing default bound box (no box specified) for all ===========\n");
@@ -767,7 +844,7 @@ void testUseOneWriteBlock(ADIOS_FILE* f, int blockNum, const char* varName1, con
 
   adios_selection_delete(box);
 }
-
+*/
 /*
 void doubleCheckWithIdxOnBlock(ADIOS_FILE* dataFile, const char* basefileName, int blockNum, ADIOS_VARINFO* v, int timestep, double lessThanVal) 
 {

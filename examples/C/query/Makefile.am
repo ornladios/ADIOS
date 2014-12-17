@@ -3,35 +3,32 @@ INCLUDES += -I$(top_srcdir)/src/public -I$(top_srcdir)/src/query
 
 AUTOMAKE_OPTIONS = no-dependencies
 
-noinst_PROGRAMS = adios_read_ext_test
+noinst_PROGRAMS = write_vars query_vars write_table query_table
 
-adios_read_ext_test_SOURCES = adios_read_ext_test.c
-adios_read_ext_test_LDADD = $(top_builddir)/src/libadios.a 
-adios_read_ext_test_LDFLAGS = $(ADIOSLIB_LDFLAGS)
-adios_read_ext_test_LDADD += $(ADIOSLIB_LDADD)
+write_vars_SOURCES = write_vars.c
+write_vars_LDADD = $(top_builddir)/src/libadios_nompi.a 
+write_vars_LDFLAGS = $(ADIOSLIB_SEQ_LDFLAGS)
+write_vars_LDADD += $(ADIOSLIB_SEQ_LDADD)
 
-if HAVE_ALACRITY
-noinst_PROGRAMS += adios_build_alac_index adios_read_alac_index adios_show_bp_file
+query_vars_SOURCES = query_vars.c
+query_vars_LDADD = $(top_builddir)/src/libadiosread_nompi.a 
+query_vars_LDFLAGS = $(ADIOSREADLIB_SEQ_LDFLAGS)
+query_vars_LDADD += $(ADIOSREADLIB_SEQ_LDADD)
 
-adios_build_alac_index_SOURCES = adios_build_alac_index.c
-adios_build_alac_index_LDADD = $(top_builddir)/src/libadios.a 
-adios_build_alac_index_LDFLAGS = $(ADIOSLIB_LDFLAGS)
-adios_build_alac_index_LDADD += $(ADIOSLIB_LDADD)
-adios_build_alac_index_CPPFLAGS = $(ALACRITY_CPPFLAGS)
+write_table_SOURCES = write_table.c
+write_table_LDADD = $(top_builddir)/src/libadios_nompi.a 
+write_table_LDFLAGS = $(ADIOSLIB_SEQ_LDFLAGS)
+write_table_LDADD += $(ADIOSLIB_SEQ_LDADD)
 
-adios_read_alac_index_SOURCES = adios_read_alac_index.c
-adios_read_alac_index_LDADD = $(top_builddir)/src/libadios.a 
-adios_read_alac_index_LDFLAGS = $(ADIOSLIB_LDFLAGS)
-adios_read_alac_index_LDADD += $(ADIOSLIB_LDADD)
-adios_read_alac_index_CPPFLAGS = $(ALACRITY_CPPFLAGS)
+query_table_SOURCES = query_table.c
+query_table_LDADD = $(top_builddir)/src/libadiosread_nompi.a 
+query_table_LDFLAGS = $(ADIOSREADLIB_SEQ_LDFLAGS)
+query_table_LDADD += $(ADIOSREADLIB_SEQ_LDADD)
 
-adios_show_bp_file_SOURCES = adios_show_bp_file.c
-adios_show_bp_file_LDADD = $(top_builddir)/src/libadios.a 
-adios_show_bp_file_LDFLAGS = $(ADIOSLIB_LDFLAGS)
-adios_show_bp_file_LDADD += $(ADIOSLIB_LDADD)
-endif # HAVE_ALACRITY
+EXTRA_DIST = README_vars.txt README_table.txt
 
-CLEANFILES = *.bp
+CLEANFILES = *.bp *.idx
+
 CC=$(MPICC)
-EXTRA_DIST = adios_build_alac_index.xml gread_temperature.ch gwrite_temperature.ch job.pbs
+
 

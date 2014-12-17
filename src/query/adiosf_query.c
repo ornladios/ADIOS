@@ -4,7 +4,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
-#include "public/adios_read.h"
+#define __INCLUDED_FROM_FORTRAN_API__
+#include "public/adios_read_v2.h"
 #include "common_query.h"
 #include "core/futils.h"
 

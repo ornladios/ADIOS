@@ -14,8 +14,8 @@ typedef struct {
 	ADIOS_SELECTION *outputSelection;
 	int fromStep;
 	int numSteps;
-        uint64_t batchSize;
-        char *varName;
+	uint64_t batchSize;
+    const char *varName;
 } ADIOS_QUERY_TEST_INFO;
 
 /*

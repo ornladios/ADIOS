@@ -1,5 +1,11 @@
 #!/usr/bin/env python
-from adios_mpi import *
+"""
+Example:
+
+$ python ./ncdf2bp.py netcdf_file
+"""
+
+from adios import *
 from scipy.io import netcdf
 import numpy as np
 import sys
@@ -37,17 +43,20 @@ tdepvar = {n:v for n,v in var.items() if tname in v.dimensions}
 tindvar = {n:v for n,v in var.items() if tname not in v.dimensions}
 
 ## Time dimension
-assert (len(set([v.dimensions.index(tname) for v in tdepvar.values()]))==1)
-tdx = tdepvar.values()[0].dimensions.index(tname)
+if len(tdepvar) > 0:
+    assert (len(set([v.dimensions.index(tname) for v in tdepvar.values()]))==1)
+    tdx = tdepvar.values()[0].dimensions.index(tname)
 
-assert (all([v.data.shape[tdx] for v in tdepvar.values()]))
-tdim = tdepvar.values()[0].shape[tdx]
+    assert (all([v.data.shape[tdx] for v in tdepvar.values()]))
+    tdim = tdepvar.values()[0].shape[tdx]
+else:
+    tdim = 1
 
 ## Init ADIOS without xml
 init_noxml()
-allocate_buffer(BUFFER_ALLOC_WHEN.NOW, 10)
+allocate_buffer(BUFFER_ALLOC_WHEN.NOW, 100)
 gid = declare_group ("group", tname, FLAG.YES)
-select_method (gid, "MPI", "", "")
+select_method (gid, "POSIX1", "verbose=3", "")
 
 d1size = 0
 for name, val in f.dimensions.items():
@@ -64,34 +73,33 @@ for name, var in dimvar.items():
         continue
     if name in f.dimensions.keys():
         name = "v_" + name
-    print "Variable : %s (%s)" % (name, ','.join(var.dimensions))
-    define_var (gid, name, "", DATATYPE.double,
+    print "Dim variable : %s (%s)" % (name, ','.join(var.dimensions))
+    define_var (gid, name, "", np2adiostype(var.data.dtype.type),
                 ','.join(var.dimensions),
                 "",
                 "")
-    d2size += reduce(operator.mul, var.shape) * 8
+    d2size += var.data.size * var.data.dtype.itemsize
+"""
 
 v1size = 0
 for name, var in tindvar.items():
     print "Variable : %s (%s)" % (name, ','.join(var.dimensions))
-    define_var (gid, name, "", DATATYPE.double,
+    define_var (gid, name, "", np2adiostype(var.data.dtype.type),
                 ','.join(var.dimensions),
                 "",
                 "")
-    v1size += reduce(operator.mul, var.shape) * 8
-"""
-    
+    v1size += var.data.size * var.data.dtype.itemsize
+
 v2size = 0
 for name, var in tdepvar.items():
     print "Variable : %s (%s)" % (name, ','.join(var.dimensions))
-    define_var (gid, name, "", DATATYPE.double,
+    define_var (gid, name, "", np2adiostype(var.data.dtype.type),
                 ','.join(var.dimensions),
                 ','.join([dname for dname in var.dimensions
                           if dname != tname]),
                 "0,0,0")
-    v2size += reduce(operator.mul, var.shape) / tdim * 8
+    v2size += var.data.size * var.data.dtype.itemsize / tdim
 
-print "Count (dim, var) : ", (d1size, v2size)
 
 ## Clean old file
 if os.access(fout, os.F_OK):
@@ -102,7 +110,7 @@ for it in range(tdim):
     print "Time step : %d" % (it)
     
     fd = open("group", fout, "a")
-    groupsize = d1size + v2size
+    groupsize = d1size + v1size + v2size
     set_group_size(fd, groupsize)
 
     for name, val in f.dimensions.items():
@@ -110,16 +118,25 @@ for it in range(tdim):
             continue
         print "Dimension writing : %s (%d)" % (name, val)
         write_int(fd, name, val)
-        
-    for name, var in tdepvar.items():
+
+    for name, var in tindvar.items():
         try:
-            arr = np.array(var.data.take([it], axis=tdx),
-                           dtype=np.float64)
-            print "Variable writing : %s %s" % (name, arr.shape)
+            arr = np.array(var.data,
+                           dtype=var.data.dtype.type)
+            print "Time independent variable writing : %s %s" % (name, arr.shape)
             write(fd, name, arr)
         except ValueError:
             print "Skip:", name
-
+            
+    for name, var in tdepvar.items():
+        try:
+            arr = np.array(var.data.take([it], axis=tdx),
+                           dtype=var.data.dtype)
+            print "Time dependent variable writing : %s %s" % (name, arr.shape)
+            write(fd, name, arr)
+        except ValueError:
+            print "Skip:", name
+    
     close(fd)
     
 f.close()

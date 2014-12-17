@@ -236,7 +236,7 @@ FastBitCompareType fastbit_adios_util_getFastbitCompareType(enum ADIOS_PREDICATE
 
 // k is numbered from 1 to sum_nblocks
 //uint64_t getBlockDataSize(ADIOS_VARINFO* v, int k) // k = blockNumber 
-uint64_t fastbit_adios_util_getBlockSize(ADIOS_VARINFO* v, int k) // k = blockNumber 
+uint64_t fastbit_adios_util_getBlockSize(ADIOS_VARINFO* v, int timestep, int relativeBlockIdx) // k = blockNumber 
 {
   //uint64_t blockBytes = common_read_type_size (v->type, v->value);
   uint64_t blockSize = 1;
@@ -245,6 +245,13 @@ uint64_t fastbit_adios_util_getBlockSize(ADIOS_VARINFO* v, int k) // k = blockNu
   if (v->ndim <= 0) {
     return blockSize;
   }
+
+  int k = 0; // absBlockIdx
+  for (j=0; j<timestep; j++) {
+    k+= v->nblocks[j];
+  }
+
+  k += relativeBlockIdx;
   
   log_debug("\n blockinfo[%d]: [ ", k);
   
