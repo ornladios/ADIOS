@@ -1084,7 +1084,7 @@ set(HAVE_PABLO 0)
 
 # Define if you have PHDF5.
 if(PHDF5)
-  set(PHDF5_LIBS $ENV{PAR_HDF5_LIBS} CACHE STRING "" FORCE)
+  set(PHDF5_LIBS $ENV{PAR_HDF5_LIBS} CACHE STRING "paralllel hdf5 libs")
   set(HAVE_PHDF5 1)
   find_path(PHDF5_INCLUDE_DIR hdf5.h ${PHDF5_DIR}/include)
   if(PHDF5_INCLUDE_DIR)
