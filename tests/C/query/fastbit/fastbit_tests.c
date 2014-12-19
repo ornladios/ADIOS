@@ -938,7 +938,7 @@ int main (int argc, char ** argv)
   return 0;
 
 
-
+#if 0
   
     if (argc < 2) {
         usage(argv[0]);
@@ -1015,5 +1015,5 @@ int main (int argc, char ** argv)
 
     adios_read_close(f);
     return 1;
-    
+#endif    
 }
