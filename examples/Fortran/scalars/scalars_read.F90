@@ -60,15 +60,15 @@ program scalars_read
     ! the above variables contain the value at this point
 
     ! option 2 for scalars: read them from file
-    call adios_schedule_read (f, sel, "var_ubyte", 1, 1, v5, ierr)
-    call adios_schedule_read (f, sel, "var_ushort", 1, 1, v6, ierr)
-    call adios_schedule_read (f, sel, "var_uint", 1, 1, v7, ierr)
-    call adios_schedule_read (f, sel, "var_ulong", 1, 1, v8, ierr)
-    call adios_schedule_read (f, sel, "var_real", 1, 1, v9, ierr)
-    call adios_schedule_read (f, sel, "var_double", 1, 1, v10, ierr)
-    call adios_schedule_read (f, sel, "var_string", 1, 1, v11, ierr)
-    call adios_schedule_read (f, sel, "var_complex", 1, 1, v12, ierr)
-    call adios_schedule_read (f, sel, "var_double_complex", 1, 1, v13, ierr)
+    call adios_schedule_read (f, sel, "var_ubyte", 0, 1, v5, ierr)
+    call adios_schedule_read (f, sel, "var_ushort", 0, 1, v6, ierr)
+    call adios_schedule_read (f, sel, "var_uint", 0, 1, v7, ierr)
+    call adios_schedule_read (f, sel, "var_ulong", 0, 1, v8, ierr)
+    call adios_schedule_read (f, sel, "var_real", 0, 1, v9, ierr)
+    call adios_schedule_read (f, sel, "var_double", 0, 1, v10, ierr)
+    call adios_schedule_read (f, sel, "var_string", 0, 1, v11, ierr)
+    call adios_schedule_read (f, sel, "var_complex", 0, 1, v12, ierr)
+    call adios_schedule_read (f, sel, "var_double_complex", 0, 1, v13, ierr)
     ! no read has been performed yet!
     call adios_perform_reads (f, ierr)
     ! the above variables contain the value only at this point
