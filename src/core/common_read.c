@@ -3284,39 +3284,46 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
             ADIOS_TRANSINFO *transinfo = adios_infocache_inq_transinfo(fp, internals->infocache, varid); //common_read_inq_transinfo(fp, raw_varinfo);    // Get the transform info (i.e. original var info)
             assert(raw_varinfo && transinfo);
 
-            // If this variable is transformed and we are in logical view mode,
-            // delegate to the transform method to generate subrequests
-            // Else, do the normal thing
-            if (internals->data_view == LOGICAL_DATA_VIEW && transinfo && transinfo->transform_type != adios_transform_none) {
-                adios_transform_raw_read_request *subreq;
-                adios_transform_pg_read_request *pg_reqgroup;
-                adios_transform_read_request *new_reqgroup;
+            if (from_steps >= 0 && from_steps + nsteps <= raw_varinfo->nsteps) {
+            	// If this variable is transformed and we are in logical view mode,
+            	// delegate to the transform method to generate subrequests
+            	// Else, do the normal thing
+            	if (internals->data_view == LOGICAL_DATA_VIEW && transinfo && transinfo->transform_type != adios_transform_none) {
+            		adios_transform_raw_read_request *subreq;
+            		adios_transform_pg_read_request *pg_reqgroup;
+            		adios_transform_read_request *new_reqgroup;
 
-                // Generate the read request group and append it to the list
-                new_reqgroup = adios_transform_generate_read_reqgroup(raw_varinfo, transinfo, fp, sel, from_steps, nsteps, param, data);
+            		// Generate the read request group and append it to the list
+            		new_reqgroup = adios_transform_generate_read_reqgroup(raw_varinfo, transinfo, fp, sel, from_steps, nsteps, param, data);
 
-                // Proceed to register the read request and schedule all of its grandchild raw
-                // read requests ONLY IF a non-NULL reqgroup was returned (i.e., the user's
-                // selection intersected at least one PG).
-                if (new_reqgroup) {
-                    adios_transform_read_request_append(&internals->transform_reqgroups, new_reqgroup);
+            		// Proceed to register the read request and schedule all of its grandchild raw
+            		// read requests ONLY IF a non-NULL reqgroup was returned (i.e., the user's
+            		// selection intersected at least one PG).
+            		if (new_reqgroup) {
+            			adios_transform_read_request_append(&internals->transform_reqgroups, new_reqgroup);
 
-                    // Now schedule all of the new subrequests
-                    retval = 0;
-                    for (pg_reqgroup = new_reqgroup->pg_reqgroups; pg_reqgroup; pg_reqgroup = pg_reqgroup->next) {
-                        for (subreq = pg_reqgroup->subreqs; subreq; subreq = subreq->next) {
-                            retval |= internals->read_hooks[internals->method].adios_schedule_read_byid_fn(
-                                            fp, subreq->raw_sel, varid+internals->group_varid_offset, pg_reqgroup->timestep, 1, subreq->data);
-                        }
-                    }
-                }
+            			// Now schedule all of the new subrequests
+            			retval = 0;
+            			for (pg_reqgroup = new_reqgroup->pg_reqgroups; pg_reqgroup; pg_reqgroup = pg_reqgroup->next) {
+            				for (subreq = pg_reqgroup->subreqs; subreq; subreq = subreq->next) {
+            					retval |= internals->read_hooks[internals->method].adios_schedule_read_byid_fn(
+            							fp, subreq->raw_sel, varid+internals->group_varid_offset, pg_reqgroup->timestep, 1, subreq->data);
+            				}
+            			}
+            		}
+            	} else {
+            		// Old functionality
+            		// DON'T FREE varinfo/transinfo, since they are stored in the infocached
+            		// common_read_free_transinfo (raw_varinfo, transinfo);
+            		// common_read_free_varinfo (raw_varinfo);
+
+            		retval = internals->read_hooks[internals->method].adios_schedule_read_byid_fn (fp, sel, varid+internals->group_varid_offset, from_steps, nsteps, data);
+            	}
             } else {
-                // Old functionality
-            	// DON'T FREE varinfo/transinfo, since they are stored in the infocached
-                // common_read_free_transinfo (raw_varinfo, transinfo);
-                // common_read_free_varinfo (raw_varinfo);
-
-                retval = internals->read_hooks[internals->method].adios_schedule_read_byid_fn (fp, sel, varid+internals->group_varid_offset, from_steps, nsteps, data);
+                adios_error (err_invalid_timestep,
+                             "Variable %s does not have timesteps %d to %d (last timestep is %d)\n",
+                             fp->var_namelist[varid], from_steps, from_steps + nsteps - 1, raw_varinfo->nsteps - 1);
+                retval = err_invalid_timestep;
             }
         } else {
             adios_error (err_invalid_varid,
