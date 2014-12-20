@@ -195,7 +195,6 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
 
 void adios_write_timing_variables (struct adios_file_struct * fd)
 {
-
     if (!fd)
     {
         adios_error (err_invalid_file_pointer,
@@ -280,10 +279,15 @@ void adios_write_timing_variables (struct adios_file_struct * fd)
         timers[ct++] = g->prev_timing_obj->times [ADIOS_TIMING_MAX_USER_TIMERS + i];
     }
 
+// DEBUG
+//for (i = 0; i < ct; i++)
+//    printf ("%f,", timers[i]);
+
+
     v = adios_find_var_by_name (g, "/__adios__/timers");
     if (v)
     {
-        common_adios_write_byid (fd, v, &timers);
+        common_adios_write_byid (fd, v, timers);
     }
     else
     {
@@ -347,15 +351,23 @@ int adios_add_timing_variables (struct adios_file_struct * fd)
 
     if (! adios_find_var_by_name (g, "/__adios__/timers"))
     {
-        sprintf (glob_dim_str, "/__adios__/timer_count, %i", size);
-        sprintf (loc_off_str, "0, %i", rank);
+        if (g->adios_host_language_fortran == adios_flag_yes) { 
+            sprintf (loc_off_str, "%i, 0", rank);
+            sprintf (glob_dim_str, "%i,/__adios__/timer_count", size);
+            sprintf (dim_str, "1,/__adios__/timer_count");
+        } else {
+            sprintf (loc_off_str, "0, %i", rank);
+            sprintf (glob_dim_str, "/__adios__/timer_count, %i", size);
+            sprintf (dim_str, "/__adios__/timer_count,1");
+        }
        
         // This is the actual timing data
         adios_common_define_var ((int64_t)g,        // int64_t group_id 
 		      "/__adios__/timers",          // const char * name
 		      "",                           // const char * path
 		      adios_double,                 // enum ADIOS_DATATYPES type
-		      "/__adios__/timer_count, 1",  // const char * dimensions
+		      dim_str,                      // const char * dimensions
+//		      "/__adios__/timer_count, 1",  // const char * dimensions
 		      glob_dim_str,                 // const char * global_dimensions
 		      loc_off_str);                 // const char * local_offsets 
     }
