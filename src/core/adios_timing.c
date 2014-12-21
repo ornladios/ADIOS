@@ -219,16 +219,6 @@ void adios_write_timing_variables (struct adios_file_struct * fd)
 
     struct adios_var_struct * v; 
 
-    v = adios_find_var_by_name (g, "/__adios__/timer_count");
-    if (v)
-    {
-        common_adios_write_byid (fd, v, &timer_count);
-    }
-    else
-    {
-        log_warn ("Unable to write /__adios__/timer_count, continuing");
-    }
-
     if (rank == 0)
     {
         v = adios_find_var_by_name (g, "/__adios__/timer_labels");
@@ -330,20 +320,6 @@ int adios_add_timing_variables (struct adios_file_struct * fd)
     char loc_off_str[256];
 
 
-    tv_size += 4; //timer_count
-
-    if (! adios_find_var_by_name (g, "/__adios__/timer_count"))
-    {
-
-        // number of timers being written
-        adios_common_define_var ((int64_t)g,        // int64_t group_id 
-		      "/__adios__/timer_count",     // const char * name
-		      "",                           // const char * path
-		      adios_integer,                // enum ADIOS_DATATYPES type
-		      "",                           // const char * dimensions
-		      "",                           // const char * global_dimensions
-		      "");                          // const char * local_offsets 
-    }
 
     int timer_count = g->prev_timing_obj->user_count + g->prev_timing_obj->internal_count;
     tv_size += timer_count * size * 8; //timers
@@ -352,13 +328,13 @@ int adios_add_timing_variables (struct adios_file_struct * fd)
     if (! adios_find_var_by_name (g, "/__adios__/timers"))
     {
         if (g->adios_host_language_fortran == adios_flag_yes) { 
-            sprintf (loc_off_str, "0, %i", rank);
-            sprintf (glob_dim_str, "/__adios__/timer_count, %i", size);
-            sprintf (dim_str, "/__adios__/timer_count,1");
+            sprintf (loc_off_str, "0,%i", rank);
+            sprintf (glob_dim_str, "%i,%i", timer_count, size);
+            sprintf (dim_str, "%i,1", timer_count);
         } else {
-            sprintf (loc_off_str, "%i, 0", rank);
-            sprintf (glob_dim_str, "%i,/__adios__/timer_count", size);
-            sprintf (dim_str, "1,/__adios__/timer_count");
+            sprintf (loc_off_str, "%i,0", rank);
+            sprintf (glob_dim_str, "%i,%i", size, timer_count);
+            sprintf (dim_str, "1,%i",timer_count);
         }
        
         // This is the actual timing data
@@ -389,9 +365,9 @@ int adios_add_timing_variables (struct adios_file_struct * fd)
     if (! adios_find_var_by_name (g, "/__adios__/timer_labels"))
     {
         if (g->adios_host_language_fortran == adios_flag_yes) { 
-            sprintf (dim_str,"%i,/__adios__/timer_count", max_label_len+1);
+            sprintf (dim_str,"%i,%i", max_label_len+1, timer_count);
         } else {
-            sprintf (dim_str,"/__adios__/timer_count,%i", max_label_len+1);
+            sprintf (dim_str,"%i,%i", timer_count, max_label_len+1);
         }
 
         // labels for the timers
