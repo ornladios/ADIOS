@@ -352,13 +352,13 @@ int adios_add_timing_variables (struct adios_file_struct * fd)
     if (! adios_find_var_by_name (g, "/__adios__/timers"))
     {
         if (g->adios_host_language_fortran == adios_flag_yes) { 
-            sprintf (loc_off_str, "%i, 0", rank);
-            sprintf (glob_dim_str, "%i,/__adios__/timer_count", size);
-            sprintf (dim_str, "1,/__adios__/timer_count");
-        } else {
             sprintf (loc_off_str, "0, %i", rank);
             sprintf (glob_dim_str, "/__adios__/timer_count, %i", size);
             sprintf (dim_str, "/__adios__/timer_count,1");
+        } else {
+            sprintf (loc_off_str, "%i, 0", rank);
+            sprintf (glob_dim_str, "%i,/__adios__/timer_count", size);
+            sprintf (dim_str, "1,/__adios__/timer_count");
         }
        
         // This is the actual timing data
