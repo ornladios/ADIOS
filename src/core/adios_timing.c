@@ -217,11 +217,18 @@ void adios_write_timing_variables (struct adios_file_struct * fd)
         MPI_Comm_rank (fd->comm, &rank);
     }
 
+    char name_timers[256];
+    char name_labels[256];
+    snprintf (name_timers, 256, "/__adios__/timers_%hu", 
+            (short unsigned int)g->id);
+    snprintf (name_labels, 256, "/__adios__/timer_labels_%hu", 
+            (short unsigned int)g->id);
+
     struct adios_var_struct * v; 
 
     if (rank == 0)
     {
-        v = adios_find_var_by_name (g, "/__adios__/timer_labels");
+        v = adios_find_var_by_name (g, name_labels);
         if (v)
         {
             int max_label_len = 0;
@@ -254,7 +261,7 @@ void adios_write_timing_variables (struct adios_file_struct * fd)
         }
         else
         {
-            log_warn ("Unable to write /__adios__/timer_labels, continuing");
+            log_warn ("Unable to write %s, continuing", name_labels);
         }
     }
 
@@ -274,14 +281,14 @@ void adios_write_timing_variables (struct adios_file_struct * fd)
 //    printf ("%f,", timers[i]);
 
 
-    v = adios_find_var_by_name (g, "/__adios__/timers");
+    v = adios_find_var_by_name (g, name_timers);
     if (v)
     {
         common_adios_write_byid (fd, v, timers);
     }
     else
     {
-        log_warn ("Unable to write /__adios__/timers, continuing");
+        log_warn ("Unable to write %s, continuing", name_timers);
     }
 
     free (timers);
@@ -318,14 +325,19 @@ int adios_add_timing_variables (struct adios_file_struct * fd)
     char dim_str[256];
     char glob_dim_str[256];
     char loc_off_str[256];
-
+    char name_timers[256];
+    char name_labels[256];
+    snprintf (name_timers, 256, "/__adios__/timers_%hu", 
+            (short unsigned int)g->id);
+    snprintf (name_labels, 256, "/__adios__/timer_labels_%hu", 
+            (short unsigned int)g->id);
 
 
     int timer_count = g->prev_timing_obj->user_count + g->prev_timing_obj->internal_count;
     tv_size += timer_count * size * 8; //timers
 
 
-    if (! adios_find_var_by_name (g, "/__adios__/timers"))
+    if (! adios_find_var_by_name (g, name_timers))
     {
         if (g->adios_host_language_fortran == adios_flag_yes) { 
             sprintf (loc_off_str, "0,%i", rank);
@@ -339,11 +351,10 @@ int adios_add_timing_variables (struct adios_file_struct * fd)
        
         // This is the actual timing data
         adios_common_define_var ((int64_t)g,        // int64_t group_id 
-		      "/__adios__/timers",          // const char * name
+		      name_timers,                  // const char * name
 		      "",                           // const char * path
 		      adios_double,                 // enum ADIOS_DATATYPES type
 		      dim_str,                      // const char * dimensions
-//		      "/__adios__/timer_count, 1",  // const char * dimensions
 		      glob_dim_str,                 // const char * global_dimensions
 		      loc_off_str);                 // const char * local_offsets 
     }
@@ -362,7 +373,7 @@ int adios_add_timing_variables (struct adios_file_struct * fd)
 
     tv_size += (max_label_len+1) * timer_count;
 
-    if (! adios_find_var_by_name (g, "/__adios__/timer_labels"))
+    if (! adios_find_var_by_name (g, name_labels))
     {
         if (g->adios_host_language_fortran == adios_flag_yes) { 
             sprintf (dim_str,"%i,%i", max_label_len+1, timer_count);
@@ -372,7 +383,7 @@ int adios_add_timing_variables (struct adios_file_struct * fd)
 
         // labels for the timers
         adios_common_define_var ((int64_t)g,        // int64_t group_id 
-		      "/__adios__/timer_labels",    // const char * name
+		      name_labels,                  // const char * name
 		      "",                           // const char * path
 		      adios_byte,                   // enum ADIOS_DATATYPES type
 		      dim_str,                      // const char * dimensions
