@@ -64,7 +64,10 @@ def get_fortran_groupsize_code (group):
     for v in group.get_vars():
         #print '  count variable "'+v.get_fullpath()+'"'
         if (v.is_scalar() ):
-            groupsize_code_string += ('%d' % type_mapper.get_size (v.get_type() ) + ' &\n                + ')
+            if v.get_type() != 'string':
+                groupsize_code_string += ('%d' % type_mapper.get_size (v.get_type() ) + ' &\n                + ')
+            else:
+                groupsize_code_string += ('len_trim(' + v.get_gwrite() + ')' + ' &\n                + ')
         else:
             groupsize_code_string += ('%d * ' % type_mapper.get_size (v.get_type() ) )
 
