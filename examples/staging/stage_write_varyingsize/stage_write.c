@@ -480,7 +480,7 @@ int read_write(int step)
             ADIOS_SELECTION *sel = adios_selection_boundingbox (varinfo[i].v->ndim,
                     varinfo[i].start, 
                     varinfo[i].count);
-            adios_schedule_read_byid (f, sel, i, 1, 1, readbuf);
+            adios_schedule_read_byid (f, sel, i, 0, 1, readbuf);
             adios_perform_reads (f, 1);   
 
 
