@@ -107,17 +107,17 @@ else
                     [DIMES_LIBS="-ldspaces -ldscommon -ldart"],
                     [AM_CONDITIONAL(HAVE_DIMES,false)])
 	elif test "x${ac_infiniband_lib_ok}" == "xyes"; then 
-            AC_TRY_LINK([#include "dimes_interface.h"],
+            AC_TRY_COMPILE([#include "dimes_interface.h"],
                     [int err; dimes_put_sync_all();],
                     [DIMES_LIBS="-ldspaces -ldscommon -ldart"],
                     [AM_CONDITIONAL(HAVE_DIMES,false)])
 	elif test "x${ac_dcmf_lib_ok}" == "xyes"; then
-            AC_TRY_LINK([#include "dimes_interface.h"],
+            AC_TRY_COMPILE([#include "dimes_interface.h"],
                     [int err; dimes_put_sync_all();],
                     [DIMES_LIBS="-ldspaces -ldscommon -ldart"],
                     [AM_CONDITIONAL(HAVE_DIMES,false)])
 	elif test "x${ac_pami_lib_ok}" == "xyes"; then
-            AC_TRY_LINK([#include "dimes_interface.h"],
+            AC_TRY_COMPILE([#include "dimes_interface.h"],
                     [int err; dimes_put_sync_all();],
                     [DIMES_LIBS="-ldspaces -ldscommon -ldart"],
                     [AM_CONDITIONAL(HAVE_DIMES,false)])
