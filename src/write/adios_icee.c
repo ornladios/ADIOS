@@ -77,14 +77,14 @@ EVsource (*source)[ICEE_MAX_PARALLEL];
 //CManager wpcm;
 //CMConnection pconn;
 
-int n_client = 0;
-int max_client = 1;
-int is_cm_passive = 0;
+static int n_client = 0;
+static int max_client = 1;
+static int is_cm_passive = 0;
 
-icee_fileinfo_rec_ptr_t fp = NULL;
-int reverse_dim = 0;
+static icee_fileinfo_rec_ptr_t fp = NULL;
+static int reverse_dim = 0;
 
-int timestep = 0; // global timestep. Will be increased by 1 at each adios_open
+static int timestep = 0; // global timestep. Will be increased by 1 at each adios_open
 
 /*
  * Thread pool implementation
