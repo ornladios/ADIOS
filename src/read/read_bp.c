@@ -2278,6 +2278,9 @@ typedef struct {
     if (bsum_squares) free (bsum_squares);
     if (gsum_square) free (gsum_square);
 
+    if (cnts) free (cnts);
+    if (bcnts) free (bcnts);
+
     return 0;
 }
 
