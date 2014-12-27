@@ -956,18 +956,44 @@ void common_read_free_varinfo (ADIOS_VARINFO *vp)
             if (sp->std_dev)                       MYFREE(sp->std_dev);
 
             if (sp->steps) {
-                if (sp->steps->mins)        MYFREE(sp->steps->mins);
-                if (sp->steps->maxs)        MYFREE(sp->steps->maxs);
-                if (sp->steps->avgs)        MYFREE(sp->steps->avgs);
-                if (sp->steps->std_devs)    MYFREE(sp->steps->std_devs);
+                int s;
+                if (sp->steps->mins) {
+                    for(s=0; s < vp->nsteps; s++) if (sp->steps->mins[s]) MYFREE(sp->steps->mins[s]);
+                    MYFREE(sp->steps->mins);
+                }
+                if (sp->steps->maxs) {
+                    for(s=0; s < vp->nsteps; s++) if (sp->steps->maxs[s]) MYFREE(sp->steps->maxs[s]);
+                    MYFREE(sp->steps->maxs);
+                }
+                if (sp->steps->avgs) {
+                    for(s=0; s < vp->nsteps; s++) if (sp->steps->avgs[s]) MYFREE(sp->steps->avgs[s]);
+                    MYFREE(sp->steps->avgs);
+                }
+                if (sp->steps->std_devs) {
+                    for(s=0; s < vp->nsteps; s++) if (sp->steps->std_devs[s]) MYFREE(sp->steps->std_devs[s]);
+                    MYFREE(sp->steps->std_devs);
+                }
                 MYFREE(sp->steps);
             }
 
             if (sp->blocks) {
-                if (sp->blocks->mins)        MYFREE(sp->blocks->mins);
-                if (sp->blocks->maxs)        MYFREE(sp->blocks->maxs);
-                if (sp->blocks->avgs)        MYFREE(sp->blocks->avgs);
-                if (sp->blocks->std_devs)    MYFREE(sp->blocks->std_devs);
+                int b, nb = vp->sum_nblocks;
+                if (sp->blocks->mins) {
+                    for(b = 0; b < nb; b++) if (sp->blocks->mins[b]) MYFREE(sp->blocks->mins[b]);
+                    MYFREE(sp->blocks->mins);
+                }
+                if (sp->blocks->maxs) {
+                    for(b = 0; b < nb; b++) if (sp->blocks->maxs[b]) MYFREE(sp->blocks->maxs[b]);
+                    MYFREE(sp->blocks->maxs);
+                }
+                if (sp->blocks->avgs) {
+                    for(b = 0; b < nb; b++) if (sp->blocks->avgs[b]) MYFREE(sp->blocks->avgs[b]);
+                    MYFREE(sp->blocks->avgs);
+                }
+                if (sp->blocks->std_devs) {
+                    for(b = 0; b < nb; b++) if (sp->blocks->std_devs[b]) MYFREE(sp->blocks->std_devs[b]);
+                    MYFREE(sp->blocks->std_devs);
+                }
                 MYFREE(sp->blocks);
             }
 

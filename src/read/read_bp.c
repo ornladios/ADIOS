@@ -2278,6 +2278,9 @@ typedef struct {
     if (bsum_squares) free (bsum_squares);
     if (gsum_square) free (gsum_square);
 
+    if (cnts) free (cnts);
+    if (bcnts) free (bcnts);
+
     return 0;
 }
 
@@ -2374,7 +2377,7 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
 
         // NCSU ALACRITY-ADIOS - If a time dimension was removed above, update
         // dimcount so that dimension copy/swapping works below
-        if (ldims[dimcount - 1] == 0)
+        if (dimcount > 0 && ldims[dimcount - 1] == 0)
             dimcount--;
 
         /*Fix: the function above swaps the dimensions to C order in any case. 

@@ -1440,14 +1440,17 @@ int adios_common_free_group (int64_t id)
         old_root->next = root->next;
     }
 
-    if (g->name)
-        free (g->name);
+    if (g->name)             free (g->name);
+    if (g->group_by)         free (g->group_by);
+    if (g->group_comm)       free (g->group_comm);
+    if (g->time_index_name)  free (g->time_index_name);
 
     adios_common_delete_vardefs (g);
     adios_common_delete_attrdefs (g);
     g->hashtbl_vars->free(g->hashtbl_vars);
 
     free (root);
+    free (g);
 
     return 0;
 }
