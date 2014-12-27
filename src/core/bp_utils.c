@@ -2082,7 +2082,7 @@ int bp_get_dimension_generic_notime (const struct adios_index_characteristic_dim
     if(ndim > 0)
     {
         has_time = gdims[ndim - 1] == 0 &&
-                   ldims[file_is_fortran ? 0 : ndim - 1] == 1;
+                   ldims[file_is_fortran ? ndim - 1 : 0] == 1;
     }
 
     // change all the stuff to C ordering
