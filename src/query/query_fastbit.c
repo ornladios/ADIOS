@@ -679,7 +679,11 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
       
       ADIOS_SELECTION* box = common_read_selection_writeblock(blockIdx);   
       common_read_inq_var_blockinfo(dataFile, v);        
-      common_read_schedule_read_byid(dataFile, box, v->varid, timeStep, 1, NULL, q->dataSlice);
+      int errorCode = common_read_schedule_read_byid(dataFile, box, v->varid, timeStep, 1, NULL, q->dataSlice);
+      if (errorCode != 0) {
+          log_error("      %s:%d  schedule read error code = %d adios_error=%d \n", __func__, __LINE__, errorCode, adios_errno);
+          return errorCode;
+      }
       common_read_perform_reads(dataFile,1);
 
       FastBitDataType  dataType = fastbit_adios_util_getFastbitDataType(q->varinfo->type);
@@ -765,8 +769,12 @@ int readWithTimeStepNoIdx(ADIOS_QUERY* q, int timeStep) {
   FastBitDataType  dataType = fastbit_adios_util_getFastbitDataType(q->varinfo->type);
   FastBitCompareType compareOp = fastbit_adios_util_getFastbitCompareType(q->predicateOp);
 
+  int ts = timeStep;
+  if (q->file->is_streaming) 
+      ts = 0; // if file is opened as stream, the actual 'actual timestep' is always 0
+
   int errorCode = common_read_schedule_read_byid (q->file, q->sel, q->varinfo->varid, 
-                                                  timeStep, 1, NULL,  q->dataSlice);
+                                                  ts, 1, NULL,  q->dataSlice);
   log_debug("      schedule read error code = %d adios_error=%d \n", errorCode, adios_errno);
   if (errorCode != 0) {
     return errorCode;
