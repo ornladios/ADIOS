@@ -649,16 +649,6 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
         blockSize = fastbit_adios_util_getBlockSize(v, timeStep, blockIdx);
     }
 
-    /*
-    free(q->_dataSlice);
-    q->_dataSlice = malloc(common_read_type_size(v->type, v->value)*blockSize);
-
-    common_read_schedule_read_byid(dataFile, box, v->varid, timeStep, 1, NULL, q->_dataSlice);
-    common_read_perform_reads(dataFile,1);
-    
-    //printData(q->_dataSlice, v->type, blockSize);
-    */
-
     int rank;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);      
 
@@ -679,10 +669,18 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
       
       ADIOS_SELECTION* box = common_read_selection_writeblock(blockIdx);   
       common_read_inq_var_blockinfo(dataFile, v);        
-      int errorCode = common_read_schedule_read_byid(dataFile, box, v->varid, timeStep, 1, NULL, q->dataSlice);
+
+      int errorCode = 0;
+      if (dataFile->is_streaming == 1) {
+	errorCode = common_read_schedule_read_byid(dataFile, box, v->varid, 0, 1, NULL, q->dataSlice);
+      } else {
+	errorCode = common_read_schedule_read_byid(dataFile, box, v->varid, timeStep, 1, NULL, q->dataSlice);
+      }
+
       if (errorCode != 0) {
           log_error("      %s:%d  schedule read error code = %d adios_error=%d \n", __func__, __LINE__, errorCode, adios_errno);
-          return errorCode;
+          //return errorCode;
+	  return;
       }
       common_read_perform_reads(dataFile,1);
 
