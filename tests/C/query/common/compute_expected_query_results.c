@@ -11,11 +11,11 @@
 #include <string.h>
 #include <assert.h>
 
-#include <adios_read.h>
 #include <adios_read_ext.h>
 #include <adios_query.h>
 #include <adios_error.h>
 #include <core/adios_logger.h>
+#include <adios_read.h>
 #include "adios_query_xml_parse.h"
 
 #define max(a,b) ((a)>(b)?(a):(b))
@@ -430,6 +430,7 @@ static ADIOS_VARBLOCK * computePGBounds(ADIOS_QUERY *q, ADIOS_SELECTION_WRITEBLO
 		if (wb->is_absolute_index) {
 			abs_wbindex = wb->index;
 		} else {
+//			if (1) {
 			if (q->file->is_streaming) {
 				// In streaming mode, absolute == relative, so just use the index directly
 				abs_wbindex = wb->index;

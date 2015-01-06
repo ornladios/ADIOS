@@ -1,0 +1,4 @@
+BEGIN_FILE_INCLUDE_LIST
+adios.c
+adios_read.c
+END_FILE_INCLUDE_LIST

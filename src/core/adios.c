@@ -30,6 +30,42 @@
 #include "dmalloc.h"
 #endif
 
+#define USE_TAU 1
+
+// Tau
+#ifdef USE_TAU
+
+#include <TAU.h>
+#include <Profile/TauUtil.h>
+#include <Profile/TauEnv.h>
+
+typedef struct adiostracker {
+    struct timeval t1, t2;
+    void *eventBytes;
+    void *eventBandwidth;
+} adiostracker_t;
+
+static int track(adiostracker_t *tracker, struct adios_file_struct *fd)
+{
+    TAU_CONTEXT_EVENT(tracker->eventBytes, fd->write_size_bytes);
+    return 0;
+}
+
+#define ADIOS_TRACK_INIT(tracker, name1, name2)  \
+  static adiostracker_t tracker; \
+  static int init = 0; \
+  if (init == 0 ) { \
+    init = 1; \
+    tracker.eventBytes = 0; \
+    tracker.eventBandwidth = 0; \
+    Tau_get_context_userevent(&tracker.eventBytes, name1); \
+    Tau_get_context_userevent(&tracker.eventBandwidth, name2); \
+  }
+
+#define ADIOS_TRACK(tracker, fd) track(&tracker, fd);
+
+#endif
+
 extern struct adios_transport_struct * adios_transports;
 extern int adios_errno;
 
@@ -322,6 +358,10 @@ int adios_close (int64_t fd_p)
 
         v = v->next;
     }
+
+    ADIOS_TRACK_INIT(t1, "ADIOS Bytes Write", "ADIOS Write Bandwidth(MB/s)");
+    ADIOS_TRACK(t1, fd);
+
     return retval;
 }
 
