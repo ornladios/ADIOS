@@ -132,7 +132,7 @@ struct adios_MPI_thread_data_write
     MPI_File * fh;
     uint64_t * base_offset;
     void * aggr_buff;
-    int * total_data_size;
+    uint64_t * total_data_size;
 };
 
 #if defined(__APPLE__)
@@ -1931,6 +1931,49 @@ uint32_t adios_mpi_amr_calculate_attributes_size (struct adios_file_struct * fd)
     return overhead;
 }
 
+
+/* Help routine to send data size greater than 2 GB */
+int adios_MPI_Send(void *buf, uint64_t count, int dest, int tag,
+             MPI_Comm comm)
+{
+    while (count > INT32_MAX)
+    {
+        MPI_Send (buf, INT32_MAX, MPI_BYTE, dest, tag, comm);
+        count -= INT32_MAX;
+        buf += INT32_MAX;
+    }
+
+    if (count)
+    {
+        int temp_count = (int) count;
+        MPI_Send (buf, temp_count, MPI_BYTE, dest, tag, comm);
+    }
+
+    return 0;
+}
+
+
+/* Help routine to receive data size greater than 2 GB */
+int adios_MPI_Recv(void *buf, uint64_t count, int source,
+                    int tag, MPI_Comm comm, MPI_Status *status)
+{
+    while (count > INT32_MAX)
+    {
+        MPI_Recv (buf, INT32_MAX, MPI_BYTE, source, tag, comm, status);
+        count -= INT32_MAX;
+        buf += INT32_MAX;
+    }
+
+    if (count)
+    {
+        int temp_count = (int) count;
+        MPI_Recv (buf, temp_count, MPI_BYTE, source, tag, comm, status);
+    }
+
+    return 0;
+
+}
+
 void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                             ,struct adios_method_struct * method
                             )
@@ -1959,10 +2002,11 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
             uint64_t buffer_size = 0;
             uint64_t buffer_offset = 0;
             uint64_t index_start1;
-            int * pg_sizes = 0, * disp = 0;
+            uint64_t * pg_sizes = 0, * disp = 0;
             void * aggr_buff = 0, * recv_buff = 0;
             struct adios_MPI_thread_data_write write_thread_data;
-            int i, new_rank, new_group_size, new_rank2, new_group_size2, max_data_size = 0, total_data_size = 0, total_data_size1 = 0;
+            int i, new_rank, new_group_size, new_rank2, new_group_size2;
+            uint64_t max_data_size = 0, total_data_size = 0, total_data_size1 = 0;
             START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
             //MPI_Comm_split (md->group_comm, md->g_color1, md->rank, &md->g_comm1);
             MPI_Comm_rank (md->g_comm1, &new_rank);
@@ -2138,14 +2182,13 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
             if (fd->shared_buffer == adios_flag_yes && !md->g_merging_pgs)
             {
                 //printf ("do not merge pg\n");
-                int pg_size;
+                uint64_t pg_size;
                 MPI_Request request;
                 MPI_Status status;
 
                 pg_size = fd->bytes_written;
-
-                pg_sizes = (int *) malloc (new_group_size * 4);
-                disp = (int *) malloc (new_group_size * 4);
+                pg_sizes = (uint64_t *) malloc (new_group_size * 8);
+                disp = (uint64_t *) malloc (new_group_size * 8);
                 if (pg_sizes == 0 || disp == 0)
                 {
                     adios_error (err_no_memory, "MPI_AMR method: Cannot allocate memory "
@@ -2154,8 +2197,8 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                 }
 
                 START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
-                MPI_Allgather (&pg_size, 1, MPI_INT
-                              ,pg_sizes, 1, MPI_INT
+                MPI_Allgather (&pg_size, 1, MPI_UNSIGNED_LONG_LONG
+                              ,pg_sizes, 1, MPI_UNSIGNED_LONG_LONG
                               ,md->g_comm1);
                 STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
 
@@ -2175,7 +2218,7 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                     if (aggr_buff == 0 || recv_buff == 0)
                     {
                         adios_error (err_no_memory, "MPI_AMR method (with brigade strategy): Cannot allocate "
-                                    "2 x %d bytes for aggregation buffers. "
+                                    "2 x %lu bytes for aggregation buffers. "
                                     "An aggregator process needs a buffer to hold one process' output for writing, "
                                     "while it needs another buffer to concurrently receive another process' output for "
                                     "subsequent writing.\n", 
@@ -2189,7 +2232,7 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                     if (recv_buff == 0)
                     {
                         adios_error (err_no_memory, "MPI_AMR method (with brigade strategy): Cannot allocate "
-                                    "%d bytes for receive buffer in a non-aggregator process. "
+                                    "%lu bytes for receive buffer in a non-aggregator process. "
                                     "This method needs an extra buffer in every process to pass data along "
                                     "towards the aggregator.\n", 
                                     max_data_size);
@@ -2213,8 +2256,8 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                         if (i + 1 < new_group_size)
                         {
                             START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
-                            MPI_Irecv (recv_buff, pg_sizes[i + 1], MPI_BYTE, new_rank + 1
-                                      ,0, md->g_comm1, &request);
+                            adios_MPI_Recv (recv_buff, pg_sizes[i + 1], new_rank + 1
+                                      ,0, md->g_comm1, &status);
                             STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
                         }
 
@@ -2235,10 +2278,6 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
 
                         if (i + 1 < new_group_size)
                         {
-                            START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
-                            MPI_Wait (&request, &status);
-                            STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
-
                             memcpy (aggr_buff, recv_buff, pg_sizes[i + 1]);
                         }
                     }
@@ -2248,7 +2287,7 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                     if (new_rank == new_group_size - 1)
                     {
                         START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
-                        MPI_Send (fd->buffer, pg_size, MPI_BYTE, new_rank - 1
+                        adios_MPI_Send (fd->buffer, pg_size, new_rank - 1
                                  ,0, md->g_comm1);
                         STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
                     }
@@ -2258,17 +2297,17 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                         {
                             START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
                             // Recv data from upstream rank
-                            MPI_Irecv (recv_buff, pg_sizes[i], MPI_BYTE, new_rank + 1
-                                      ,0, md->g_comm1, &request);
+                            adios_MPI_Recv (recv_buff, pg_sizes[i], new_rank + 1
+                                      ,0, md->g_comm1, &status);
 
                             if (i == new_rank + 1)
                                 // Send my data to downstream rank
-                                MPI_Send (fd->buffer, pg_size, MPI_BYTE, new_rank - 1
+                                adios_MPI_Send (fd->buffer, pg_size, new_rank - 1
                                          ,0, md->g_comm1);
 
-                            MPI_Wait (&request, &status);
+                            //MPI_Wait (&request, &status);
                             // Send it to downstream rank
-                            MPI_Send (recv_buff, pg_sizes[i], MPI_BYTE, new_rank - 1
+                            adios_MPI_Send (recv_buff, pg_sizes[i], new_rank - 1
                                      ,0, md->g_comm1);
                             STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
                         }
@@ -2678,10 +2717,11 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
             uint64_t buffer_size = 0;
             uint64_t buffer_offset = 0;
             uint64_t index_start1;
-            int * pg_sizes = 0, * disp = 0, * sendbuf = 0, * recvbuf = 0, * attr_sizes = 0;
+            uint64_t * pg_sizes = 0, * disp = 0;
             void * aggr_buff = 0;
             struct adios_MPI_thread_data_write write_thread_data;
-            int i, new_rank, new_group_size, new_rank2, new_group_size2, total_data_size = 0, total_data_size1 = 0;;
+            int i, new_rank, new_group_size, new_rank2, new_group_size2;
+            uint64_t total_data_size = 0, total_data_size1 = 0;;
 
             START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
             //MPI_Comm_split (md->group_comm, md->g_color1, md->rank, &new_comm);
@@ -2863,12 +2903,16 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
             // if not merge PG's on the aggregator side
             if (fd->shared_buffer == adios_flag_yes && !md->g_merging_pgs)
             {
-                //printf ("do not merge pg\n");
-                int pg_size;
+                uint64_t pg_size;
 
                 pg_size = fd->bytes_written;
-                pg_sizes = (int *) malloc (new_group_size * 4);
-                disp = (int *) malloc (new_group_size * 4);
+                if (pg_size > INT32_MAX)
+                {
+                    log_warn ("Each processor writes out more than %d bytes, Not supported in aggregation mode.\n", 
+                               INT32_MAX);
+                }
+                pg_sizes = (uint64_t *) malloc (new_group_size * 8);
+                disp = (uint64_t *) malloc (new_group_size * 8);
                 if (pg_sizes == 0 || disp == 0)
                 {
                     adios_error (err_no_memory, 
@@ -2880,8 +2924,8 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                 }
 
                 START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
-                MPI_Allgather (&pg_size, 1, MPI_INT
-                              ,pg_sizes, 1, MPI_INT
+                MPI_Allgather (&pg_size, 1, MPI_UNSIGNED_LONG_LONG
+                              ,pg_sizes, 1, MPI_UNSIGNED_LONG_LONG
                               ,md->g_comm1);
                 STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
 
@@ -2895,17 +2939,11 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
 
                 if (is_aggregator (md->rank))
                 {
-                    if (total_data_size > MAX_AGG_BUF)
-                    {
-                        log_warn ("The max allowed aggregation buffer is %d. Requested %d.\n"
-                                "Need to increase the number of aggregators.\n",
-                                MAX_AGG_BUF, total_data_size);
-                    }
                     aggr_buff = malloc (total_data_size);
                     if (aggr_buff == 0)
                     {
                         adios_error (err_no_memory, 
-                                "MPI_AMR method (AG): Cannot allocate %d bytes "
+                                "MPI_AMR method (AG): Cannot allocate %lu bytes "
                                 "for aggregation buffer.\n"
                                 "Need to increase the number of aggregators.\n",
                                 total_data_size);
@@ -2917,6 +2955,8 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                 }
 
                 START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
+                // This needs to be changed in the future to support > 2 GB data.
+                // The compile warning is kept here as a reminder. Q. Liu
                 MPI_Gatherv (fd->buffer, pg_size, MPI_BYTE
                             ,aggr_buff, pg_sizes, disp, MPI_BYTE
                             ,0, md->g_comm1);
@@ -2927,240 +2967,6 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
             if (fd->shared_buffer == adios_flag_yes && md->g_merging_pgs)
             {
                 log_warn ("MPI_AMR method (AG): Merging process blocks is not supported yet\n");
-                // Merge PG's on the aggregator side
-                struct adios_bp_buffer_struct_v1 b;
-                struct adios_process_group_header_struct_v1 pg_header;
-                struct adios_vars_header_struct_v1 vars_header;
-                int pg_size, header_size;
-                uint32_t attr_size;
-                uint64_t vars_count_offset;
-
-                // Unfortunately, we need to walk through the buffer to get vars count
-                b.buff = fd->buffer;
-                b.change_endianness = md->b.change_endianness;
-                b.offset = 0;
-                b.length = fd->bytes_written;
-
-                adios_parse_process_group_header_v1 (&b, &pg_header);
-                vars_count_offset = b.offset;
-                adios_clear_process_group_header_v1 (&pg_header);
-
-                adios_parse_vars_header_v1 (&b, &vars_header);
-                header_size = b.offset;
-                attr_size = adios_mpi_amr_calculate_attributes_size (fd);
-
-                // reset vars count
-                if (vars_header.count * new_group_size > UINT16_MAX)
-                {
-                    adios_error (err_too_many_variables, 
-                        "MPI_AMR method (AG): Variable count exceeds UINT16_MAX (%d), UINT16_MAX");
-                    return;
-                }
-                *(uint16_t *) (b.buff + vars_count_offset) = 
-                                vars_header.count * new_group_size;
-
-                // attributes size is save in the end
-                adios_mpi_amr_buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &attr_size, SHIM_FOOTER_SIZE);
-                fd->bytes_written += SHIM_FOOTER_SIZE;
-            
-                // PG header, vars header, vars, attrs header, attrs, 4 bytes
-                if (is_aggregator(md->rank))
-                {
-                    pg_size = fd->bytes_written;
-                }
-                else
-                {
-                    // Non-aggregator process doesn't need to send pg header + vars header
-                    pg_size = fd->bytes_written - header_size;
-                }
-
-                pg_sizes = (int *) malloc (new_group_size * 4);
-                attr_sizes = (int *) malloc (new_group_size * 4);
-                disp = (int *) malloc (new_group_size * 4);
-                sendbuf = (int *) malloc (2 * 4);
-                recvbuf = (int *) malloc (new_group_size * 2 * 4);
-                if (pg_sizes == 0 || attr_sizes == 0 || disp == 0
-                 || sendbuf == 0 || recvbuf == 0)
-                {
-                    adios_error (err_no_memory, 
-                            "MPI_AMR method (AG): Cannot allocate %llu bytes "
-                            "for send/recv/merge buffers.\n",
-                            5*4*new_group_size + 2*4
-                            );
-                    return;
-                }
-  
-                sendbuf[0] = pg_size;
-                sendbuf[1] = attr_size + SHIM_FOOTER_SIZE;
-
-                START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
-                MPI_Allgather (sendbuf, 2, MPI_INT
-                              ,recvbuf, 2, MPI_INT
-                              ,md->g_comm1);
-                STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
-
-                for (i = 0; i < new_group_size; i++)
-                {
-                    pg_sizes[i] = recvbuf[i * 2];
-                    attr_sizes[i] = recvbuf[i * 2 + 1];
-                }
-   
-                free (sendbuf);
-                free (recvbuf);
-
-                disp[0] = 0;
-                for (i = 1; i < new_group_size; i++)
-                {
-                    disp[i] = disp[i - 1] + pg_sizes[i - 1];
-                }
-                total_data_size = disp[new_group_size - 1]
-                                + pg_sizes[new_group_size - 1];
-
-                if (is_aggregator (md->rank))
-                {
-                    aggr_buff = malloc (total_data_size);
-                    if (aggr_buff == 0)
-                    {
-                        adios_error (err_no_memory, "MPI_AMR method (AG): Cannot allocate "
-                                "%llu bytes for aggregation buffer.\n"
-                                "Need to increase the number of aggregators.\n",
-                                total_data_size);
-                        return;
-                    }
-                }
-                else
-                {
-                }
-
-                if (is_aggregator (md->rank))
-                { 
-                    uint32_t aggr_attr_size = 0;
-                    void * aggr_attr_buff, * temp_aggr_buff, * temp_aggr_attr_buff;
-                    uint16_t new_attr_count = 0, new_attr_len = 0;
-
-                    START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
-                    MPI_Gatherv (fd->buffer, pg_size, MPI_BYTE
-                                ,aggr_buff, pg_sizes, disp, MPI_BYTE
-                                ,0, md->g_comm1);
-                    STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
-
-                    for (i= 0; i < new_group_size; i++)
-                    {
-                        aggr_attr_size += *(uint32_t *)(aggr_buff
-                                                       + disp[i]
-                                                       + pg_sizes[i]
-                                                       - SHIM_FOOTER_SIZE
-                                                       );
-                    }
-
-                    aggr_attr_buff = malloc (aggr_attr_size);
-                    if (aggr_attr_buff == 0)
-                    {
-                        adios_error (err_no_memory, "MPI_AMR method (AG): Cannot allocate "
-                                "%llu bytes for aggregation attribute buffer.\n"
-                                "Need to increase the number of aggregators.\n",
-                                aggr_attr_size);
-                        return;
-                    }
-
-                    temp_aggr_buff = aggr_buff
-                                   + pg_sizes[0]
-                                   - SHIM_FOOTER_SIZE
-                                   - attr_size;
-                    temp_aggr_attr_buff = aggr_attr_buff;
-
-                    for (i= 0; i < new_group_size; i++)
-                    {
-                        uint32_t temp_attr_size = *(uint32_t *)(aggr_buff
-                                                               + disp[i]
-                                                               + pg_sizes[i]
-                                                               - SHIM_FOOTER_SIZE
-                                                               );
-                        void * temp_attr_ptr = aggr_buff + disp[i] + pg_sizes[i] 
-                                             - SHIM_FOOTER_SIZE - temp_attr_size;
-
-                        new_attr_count += *(uint16_t *)temp_attr_ptr;
-
-                        if (i == 0)
-                        {
-                            new_attr_len += *(uint64_t *)(temp_attr_ptr + ATTR_COUNT_SIZE);
-
-                            memcpy (temp_aggr_attr_buff, temp_attr_ptr, temp_attr_size);
-                            temp_aggr_attr_buff += temp_attr_size;
-                        }
-                        else
-                        {
-                            new_attr_len += *(uint64_t *)(temp_attr_ptr + ATTR_COUNT_SIZE)
-                                          - ATTR_COUNT_SIZE - ATTR_LEN_SIZE;
-
-                            memcpy (temp_aggr_attr_buff
-                                   ,temp_attr_ptr + ATTR_COUNT_SIZE + ATTR_LEN_SIZE
-                                   ,temp_attr_size - ATTR_COUNT_SIZE - ATTR_LEN_SIZE
-                                   );
-                            temp_aggr_attr_buff += temp_attr_size - ATTR_COUNT_SIZE - ATTR_LEN_SIZE;
-
-                            memmove (temp_aggr_buff
-                                    ,aggr_buff + disp[i]
-                                    ,pg_sizes[i] - temp_attr_size - SHIM_FOOTER_SIZE
-                                    );
-                            temp_aggr_buff += pg_sizes[i] - temp_attr_size - SHIM_FOOTER_SIZE;
-                        }
-                    }
-
-                    memcpy (temp_aggr_buff, aggr_attr_buff, aggr_attr_size);
-
-                    *(uint16_t *)temp_aggr_buff = new_attr_count;  //attrs count
-                    *(uint64_t *)(temp_aggr_buff + ATTR_COUNT_SIZE) = new_attr_len;  //attrs length
-
-                    free (aggr_attr_buff);
-                }
-                else
-                {
-                    START_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
-                    MPI_Gatherv (fd->buffer + header_size, pg_size, MPI_BYTE
-                                ,aggr_buff, pg_sizes, disp, MPI_BYTE
-                                ,0, md->g_comm1);
-                    STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
-                }
-
-                if (is_aggregator(md->rank))
-                {
-#if 0
-                    uint64_t count = 0;
-                    pthread_join (t, NULL);
-          
-                    write_thread_data.fh = &md->fh;
-                    write_thread_data.base_offset = &fd->base_offset;
-                    write_thread_data.aggr_buff = aggr_buff;
-                    write_thread_data.total_data_size = &total_data_size;
- 
-                    pthread_create (&t, NULL
-                                   ,adios_mpi_amr_do_write_thread
-                                   ,(void *) &write_thread_data
-                                   );
-#endif
-
-#if 0 
-                    count = adios_mpi_amr_striping_unit_write(
-                               md->fh
-                              ,fd->base_offset
-                              ,aggr_buff
-                              ,total_data_size
-                              ,md->block_unit);
-
-                    if (count != total_data_size)
-                    {
-                        adios_error (err_unspecified, 
-                                     "Error in adios_mpi_amr_striping_unit_write()\n");
-                        return;
-                    }
-
-                    free (aggr_buff);
-#endif
-                }
-                else
-                {
-                }
             }
 
             // build index appending to any existing index
@@ -3187,50 +2993,6 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
 
                 // pg_sizes, disp are no longer needed from this point on.
                 free (pg_sizes);
-                free (disp);
-            }
-
-            if (fd->shared_buffer == adios_flag_yes && md->g_merging_pgs)
-            {
-                if (!is_aggregator(md->rank))
-                {
-                    uint64_t var_offset_to_add = 0, attr_offset_to_add = 0;
-                    uint64_t var_base_offset = 0, attr_base_offset = 0; 
-
-                    // change to relative offset
-                    if (md->index->vars_root)
-                    {
-                        var_base_offset = md->index->vars_root->characteristics [0].offset;
-                    }
-
-                    if (md->index->attrs_root)
-                    { 
-                        attr_base_offset = md->index->attrs_root->characteristics [0].offset;
-                    }
-
-                    adios_mpi_amr_subtract_offset (var_base_offset
-                                                   ,attr_base_offset
-                                                   ,md->index
-                                                   );
-
-                    for (i = 0; i < new_group_size; i++)
-                    {
-                        attr_offset_to_add += pg_sizes[i] - attr_sizes[i];  
-                    }
-
-                    for (i = 0; i < new_rank; i++)
-                    {
-                        attr_offset_to_add += attr_sizes[i] - SHIM_FOOTER_SIZE;  
-                        var_offset_to_add += pg_sizes[i] - attr_sizes[i]; 
-                    }
-
-                    adios_mpi_amr_add_offset (0, var_offset_to_add, 
-                                              attr_offset_to_add, md->index);
-                }
-
-                // pg_sizes, attr_sizs, disp are no longer needed from this point on.
-                free (pg_sizes);
-                free (attr_sizes);
                 free (disp);
             }
 
