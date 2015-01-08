@@ -54,4 +54,4 @@ install-data-hook:
 	$(INSTALL_DATA) adios_config.flags $(DESTDIR)$(sysconfdir)
 	$(INSTALL_DATA) adios_git_status $(DESTDIR)$(sysconfdir)
         
-CLEANFILES = adios_config adios_config.flags
+CLEANFILES = 
