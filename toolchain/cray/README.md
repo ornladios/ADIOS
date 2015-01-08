@@ -10,6 +10,8 @@ A collection CMake code for use on various Cray supercomputing systems
 * ToolChain: CMake cross-compiling toolchain files
   * CrayPrgEnv-ToolChain.cmake: The Cray Programming Environment
 
+The toolchain was tested on Titan, eos and chester.
+
 How to use it:
 in ADIOS top source file
 $mkdir build
