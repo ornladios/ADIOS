@@ -48,8 +48,8 @@ int fastbit_adios_util_getRelativeBlockNumForPoint(ADIOS_VARINFO* v,  uint64_t* 
 	
       ADIOS_VARBLOCK curr = v->blockinfo[i];
       for (j=0; j<v->ndim; j++) {
-	int begin = curr.start[j];
-	int end   = curr.start[j]+curr.count[j];
+	uint64_t begin = curr.start[j];
+	uint64_t end   = curr.start[j]+curr.count[j];
 
 	if ((begin <= point[j]) && (point[j] < end)) {
 	  result = i; // relative to the timestep                                                                                                                                      
