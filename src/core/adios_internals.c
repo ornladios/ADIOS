@@ -6299,12 +6299,9 @@ void adios_conca_mesh_att_nam(char ** returnstr, const char * meshname, char * a
 }
 
 // concat link attribute name strings
-void adios_conca_link_att_nam(char ** returnstr, const char * name, char * att_nam) {
+void adios_conca_link_att_nam(char ** returnstr, const char * name, char * att_nam, char counterstr[5]) {
     int slength = 0;
-    slength = strlen("adios_link/")+1;
-    slength = slength + strlen(name);
-    slength = slength + 1;
-    slength = slength + strlen(att_nam);
+    slength = strlen("adios_link/") + strlen(name) + strlen(att_nam) + strlen(counterstr) + 2;
 
     *returnstr = malloc (slength);
 
@@ -6312,6 +6309,7 @@ void adios_conca_link_att_nam(char ** returnstr, const char * name, char * att_n
     strcat(*returnstr,name);
     strcat(*returnstr,"/");
     strcat(*returnstr,att_nam);
+    strcat(*returnstr,counterstr);
 }
 
 // concat var attribute name strings

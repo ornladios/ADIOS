@@ -206,6 +206,61 @@ int common_read_finalize_method(enum ADIOS_READ_METHOD method)
     return retval;
 }
 
+static ADIOS_FILE * common_read_link (ADIOS_FILE * fp)
+{
+    int i;
+    fp->nlinks = 0;
+    fp->link_namelist = NULL;
+
+    if (fp->attr_namelist)
+    {
+        char ** tmp = (char **) malloc (sizeof(char*) * fp->nattrs);
+        for (i=0; i<fp->nattrs; i++)
+        {
+            // find "/adios_link/***/ref-num" attributes for getting the names of links
+            if (strstr (fp->attr_namelist[i], "/adios_link/") == fp->attr_namelist[i])   //// starts with /adios_link/
+            {
+                char *s = fp->attr_namelist[i]+strlen("/adios_link/");
+                char *p = strchr (s, '/');
+                if ( p &&
+                     strstr (p, "/ref-num") == p)
+                {
+                    // retrieve the name of the link
+                    int samelink = 0;
+                    int ilink;
+                    if (fp->nlinks > 0)
+                    {
+                        char * linkname = NULL;
+                        linkname = (char *) malloc (sizeof(char*) * (size_t)(p-s)+1);
+                        memcpy ( linkname, s, (size_t)(p-s) );
+                        for (ilink=0; ilink<fp->nlinks; ilink++)
+                        {
+                            if (!strcmp (linkname, tmp[ilink]))
+                                samelink = 1;
+                        }
+                        free (linkname);
+                    }
+                    if (!fp->nlinks || !samelink)
+                    {
+                        tmp [ fp->nlinks ] = (char *) malloc (sizeof(char*) * (size_t)(p-s)+1);
+                        memcpy ( tmp[ fp->nlinks ], s, (size_t)(p-s) );
+                        tmp[ fp->nlinks ][(p-s)] = '\0';
+                        fp->nlinks++;
+                    }
+                }
+            }
+        }
+        if (fp->nlinks)
+        {
+            fp->link_namelist = (char **) realloc (tmp, sizeof (char *) * fp->nlinks);
+            assert (fp->link_namelist);
+        } else {
+            free (tmp);
+        }
+    }
+    return fp;
+}
+
 static ADIOS_FILE * common_read_mesh (ADIOS_FILE * fp)
 {
     int i;
@@ -373,6 +428,8 @@ ADIOS_FILE * common_read_open (const char * fname,
 
     common_read_mesh (fp);
 
+    common_read_link (fp);
+
     return fp;
 }
 
@@ -443,6 +500,8 @@ ADIOS_FILE * common_read_open_file (const char * fname,
     
     common_read_mesh (fp);
 
+    common_read_link (fp);
+
     return fp;
 }
 
@@ -473,6 +532,11 @@ int common_read_close (ADIOS_FILE *fp)
             for (i=0; i<fp->nmeshes; i++)
                 free(fp->mesh_namelist[i]);
             free(fp->mesh_namelist);
+        }
+        if (fp->nlinks) {
+            for (i=0; i<fp->nlinks; i++)
+                free(fp->link_namelist[i]);
+            free(fp->link_namelist);
         }
                 
         retval = internals->read_hooks[internals->method].adios_read_close_fn (fp);
@@ -1301,6 +1365,116 @@ static int common_check_var_type_to_int (enum ADIOS_DATATYPES * type, void * val
     }
     return data;
 }
+
+ADIOS_LINK * common_read_inq_link_byid (ADIOS_FILE *fp, int linkid)
+{
+    enum ADIOS_DATATYPES attr_type;
+    int attr_size;
+    void * data = NULL;
+    int  read_fail = 0;
+    int i;
+
+    ADIOS_LINK * linkinfo = (ADIOS_LINK *) malloc (sizeof(ADIOS_LINK));
+    //link id
+    linkinfo->id = linkid;
+    //link name
+    linkinfo->name = strdup(fp->link_namelist[linkinfo->id]);
+
+    //check /adios_link/linkinfo->name/ref-num
+    char * attribute = malloc (strlen("/adios_link/")+strlen(linkinfo->name)+strlen("/ref-num")+1 );
+    strcpy (attribute, "/adios_link/");
+    strcat (attribute, linkinfo->name);
+    strcat (attribute, "/ref-num");
+    read_fail = common_read_get_attr_mesh (fp, attribute, &attr_type, &attr_size, &data);
+    free (attribute);
+    if (!read_fail)
+        linkinfo->nrefs = *(int *)data;
+    else
+    {
+        linkinfo->nrefs = 1;
+        log_warn ("Cannot find /adios_link/%s/ref-num. "
+                  "We assume the ref-num is 1.", linkinfo->name);
+    }
+
+    int i_digits;
+    char i_buffer[5];     // support no more than 5 digits
+    linkinfo->type = (enum ADIOS_LINK_TYPE *) malloc (linkinfo->nrefs*sizeof(enum ADIOS_LINK_TYPE));
+    linkinfo->ref_names = (char **)malloc(linkinfo->nrefs*sizeof(char *));
+    linkinfo->ref_files = (char **)malloc(linkinfo->nrefs*sizeof(char *));
+    for (i=0; i<linkinfo->nrefs; i++)
+    {
+        i_digits = sprintf (i_buffer, "%d", i);
+        // start looking for /adios_link/linkinfo->name/objref* according to linkinfo->nrefs
+        attribute = malloc (strlen("/adios_link/")+strlen(linkinfo->name)+strlen("/objref")+i_digits+1 );
+        strcpy (attribute, "/adios_link/");
+        strcat (attribute, linkinfo->name);
+        strcat (attribute, "/objref");
+        strcat (attribute, i_buffer);
+        read_fail = common_read_get_attr_mesh (fp, attribute, &attr_type, &attr_size, &data);
+        if (!read_fail)
+            linkinfo->ref_names[i] = strdup((char *)data);
+        else
+            log_warn("Cannot find objref for %s. "
+                     "It requreis /adios_link/%s/objref%d\n", linkinfo->name, linkinfo->name, i);
+        free (attribute);
+
+        // start looking for /adios_link/linkinfo->name/extref* according to linkinfo->nrefs
+        attribute = malloc (strlen("/adios_link/")+strlen(linkinfo->name)+strlen("/extref")+i_digits+1 );
+        strcpy (attribute, "/adios_link/");
+        strcat (attribute, linkinfo->name);
+        strcat (attribute, "/extref");
+        strcat (attribute, i_buffer);
+        read_fail = common_read_get_attr_mesh (fp, attribute, &attr_type, &attr_size, &data);
+        if (!read_fail)
+        {
+            if(*(char *)data == '\0')
+            {
+                // if the string has no information, we assue it is in the same file
+                log_warn ("attribute /adios_link/%s/extref%d is an empty string. "
+                          "Assume the extref file is the current file.\n", linkinfo->name, i);
+                BP_FILE * fh = GET_BP_FILE (fp);
+                linkinfo->ref_files[i] = strdup (fh->fname);
+            }
+            else
+                linkinfo->ref_files[i] = strdup((char *)data);
+        }
+        else
+        {
+            log_warn("Cannot find extref for %s. It requreis /adios_link/%s/extref%d.\n"
+                     "Assume the extref file is the current file.\n", linkinfo->name, linkinfo->name, i);
+            BP_FILE * fh = GET_BP_FILE (fp);
+            linkinfo->ref_files[i] = strdup (fh->fname);
+        }
+        free (attribute);
+
+        //check /adios_link/linkinfo->name/type* according to linkinfo->nrefs
+        attribute = malloc (strlen("/adios_link/")+strlen(linkinfo->name)+strlen("/type")+i_digits+1 );
+        strcpy (attribute, "/adios_link/");
+        strcat (attribute, linkinfo->name);
+        strcat (attribute, "/type");
+        strcat (attribute, i_buffer);
+        read_fail = common_read_get_attr_mesh (fp, attribute, &attr_type, &attr_size, &data);
+        if (!read_fail)
+        {
+            if ( !strcmp((char *)data, "var") || !strcmp((char *)data, "variable") ||
+                 !strcmp((char *)data, "VAR") || !strcmp((char *)data, "VARIABLE"))
+                linkinfo->type[i] = LINK_VAR;
+            else if ( !strcmp((char *)data, "image") || !strcmp((char *)data, "IMAGE"))
+                linkinfo->type[i] = LINK_IMAGE;
+            else
+                log_warn("The provided type %s is not supported. Please use var OR image.\n", (char *)data);
+        }
+        else
+        {
+            log_warn("Cannot find type for %s. It requreis /adios_link/%s/type%d.\n"
+                     "Assume the type is var.\n", linkinfo->name, linkinfo->name, i);
+            linkinfo->type[i] = LINK_VAR;
+        }
+        free (attribute);
+    }
+    return linkinfo;
+}
+
 int adios_get_uniform_mesh_attr (ADIOS_FILE * fp, ADIOS_MESH *meshinfo, char * attrs)      //attr for origins-num(origins), spacings-num(spacings), maximums-num(maximums)
 {
     int i;
@@ -3165,6 +3339,36 @@ int common_read_complete_meshinfo (ADIOS_FILE *fp, ADIOS_FILE *mp, ADIOS_MESH * 
 
     //return meshinfo;
     return err_no_error;
+}
+
+void common_read_free_linkinfo (ADIOS_LINK * linkinfo)
+{
+    if (linkinfo)
+    {
+        int i;
+        if (linkinfo->name)
+        {
+            free (linkinfo->name);
+            linkinfo->name = NULL;
+        }
+        if (linkinfo->ref_names)
+        {
+            for (i=0; i<linkinfo->nrefs; i++)
+            {
+                free (linkinfo->ref_names[i]);
+                linkinfo->ref_names[i] = NULL;
+            }
+        }
+        if (linkinfo->ref_files)
+        {
+            for (i=0; i<linkinfo->nrefs; i++)
+            {
+                free (linkinfo->ref_files[i]);
+                linkinfo->ref_files[i] = NULL;
+            }
+        }
+        free (linkinfo);
+    }
 }
 
 void common_read_free_meshinfo (ADIOS_MESH * meshinfo)

@@ -17,6 +17,7 @@
 #include "adios_types.h"
 #include "adios_selection.h"
 #include "adios_schema.h"
+#include "adios_link.h"
 #include "adios_read_v2_fwd.h"
 #include "adios_read_ext.h"
 
@@ -373,6 +374,15 @@ int adios_inq_var_stat (ADIOS_FILE *fp, ADIOS_VARINFO * varinfo,
  *  RETURN: 0 OK, !=0 on error (adios_errno value)
  */
 int adios_inq_var_blockinfo (ADIOS_FILE *fp, ADIOS_VARINFO * varinfo);
+
+/** Inquiry a link by index
+*       linkid   index of link (0..fp->nlinks-1)
+*                in fp->link_namelist of ADIOS_FILE struct
+*/
+ADIOS_LINK * adios_inq_link_byid (ADIOS_FILE *fp, int linkid);
+
+/** Free memory used by an ADIOS_LINK struct */
+void adios_free_linkinfo (ADIOS_LINK *linkinfo);
 
 /** Inquiry a mesh by index
 *       meshid   index of mesh (0..fp->nmeshes-1)

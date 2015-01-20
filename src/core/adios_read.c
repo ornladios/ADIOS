@@ -98,6 +98,16 @@ int adios_complete_meshinfo (ADIOS_FILE *datafile, ADIOS_FILE *meshfile, ADIOS_M
     return common_read_complete_meshinfo (datafile, meshfile, meshinfo);
 }
 
+ADIOS_LINK * adios_inq_link_byid (ADIOS_FILE *fp, int linkid)
+{
+    return common_read_inq_link_byid (fp, linkid);
+}
+
+void adios_free_linkinfo (ADIOS_LINK * linkinfo)
+{
+    common_read_free_linkinfo (linkinfo);
+}
+
 void adios_free_meshinfo (ADIOS_MESH *meshinfo)
 {
     common_read_free_meshinfo (meshinfo);
