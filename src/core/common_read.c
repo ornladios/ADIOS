@@ -1431,7 +1431,7 @@ ADIOS_LINK * common_read_inq_link_byid (ADIOS_FILE *fp, int linkid)
             {
                 // if the string has no information, we assue it is in the same file
                 log_warn ("attribute /adios_link/%s/extref%d is an empty string. "
-                          "Assume the extref file is the current file.\n", linkinfo->name, i);
+                          "Assume extref%d file is the current file.\n", linkinfo->name, i, i);
                 BP_FILE * fh = GET_BP_FILE (fp);
                 linkinfo->ref_files[i] = strdup (fh->fname);
             }
