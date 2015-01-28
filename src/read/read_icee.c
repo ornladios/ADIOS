@@ -1404,7 +1404,8 @@ adios_read_icee_inq_var_byid (const ADIOS_FILE * adiosfile, int varid)
         a->varid = vp->varid;
         a->type = vp->type;
         a->ndim = vp->ndims;
-
+        a->nsteps = 1;
+        
         if (vp->ndims == 0)
         {
             a->value = malloc(vp->typesize);
