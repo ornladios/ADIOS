@@ -1694,65 +1694,114 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                     free (meshtime);
                     free (meshfile);
                     free (meshgroup);
-                } else if (!strcasecmp (n->value.element.name, "link"))
+                } else if (!strcasecmp (n->value.element.name, "multilink"))
                 {
-                    const char * ref;
-                    const char * type;
-                    const char * objref;
-                    const char * extref;
-                    // Get the var name
-                    ref = mxmlElementGetAttr (n, "ref");
-                    // Get the ref type
-                    type = mxmlElementGetAttr (n, "type");
-                    // Get the ref var name in external file
-                    objref = mxmlElementGetAttr(n, "objref");
-                    // Get the ref link
-                    extref = mxmlElementGetAttr(n, "extref");
-                    if (!ref)
-                        ref = ""; 
-                    if (!type)
-                        type = "var";
-                    if (!objref)
-                        objref = "";
-                    if (!extref)
-                        extref = "";
-                        
-                    const char * linkvar = 0;
-                    const char * linktype = 0;
-                    const char * linkobjref = 0;
-                    const char * linkextref = 0;
+                    mxml_node_t * n1;   // uesed for multilink
+                    char * ref_prev = "";
+                    char * link_num = 0;
+                    int ref_num = 0;
+                    char tmp_num[5];
 
-                    if ( ref[0]=='\0' && objref[0]=='\0' )
+                    for (n1 = mxmlWalkNext (n, n, MXML_DESCEND)
+                        ;n1
+                        ;n1 = mxmlWalkNext (n1, n, MXML_DESCEND)
+                    )
                     {
-                        log_warn ("config.xml: invalid var link, "
-                                "requires either ref OR objref.\n"
-                                );
-                        return 0;
-                    }
-                    else if ( ref[0]=='\0')
-                        ref = objref; //strcpy (ref, objref);
-                     
-                    if (ref)
-                    {
-                        adios_conca_link_att_nam (&linkvar, ref, "ref");
-                        adios_common_define_attribute (ptr_new_group, linkvar, "/",adios_string, ref, "");
-                    }
-                    if (objref)
-                    {
-                        adios_conca_link_att_nam (&linkobjref, ref, "objref");
-                        adios_common_define_attribute (ptr_new_group, linkobjref, "/",adios_string, objref,  "");
-                    }
-                    if (type)
-                    {
-                        adios_conca_link_att_nam (&linktype, ref, "type");
-                        adios_common_define_attribute (ptr_new_group, linktype, "/",adios_string, type,  "");
-                    }
-                    if (extref)
-                    {
-                        adios_conca_link_att_nam (&linkextref, ref, "extref");
-                        adios_common_define_attribute (ptr_new_group, linkextref, "/",adios_string, extref,  "");
-                    }
+                        if (n1->type != MXML_ELEMENT)
+                        {
+                            continue;
+                        }
+                        if (!strcasecmp (n1->value.element.name, "link"))
+                        {
+                            const char * ref = 0;
+                            const char * type = 0;
+                            const char * objref = 0;
+                            const char * extref = 0;
+                            for (i = 0; i < n1->value.element.num_attrs; i++)
+                            {
+                                mxml_attr_t * attr = &n1->value.element.attrs [i];
 
+                                GET_ATTR("ref",attr,ref,"link")
+                                GET_ATTR("type",attr,type,"link")
+                                GET_ATTR("objref",attr,objref,"link")
+                                GET_ATTR("extref",attr,extref,"link")
+                            }
+                            if (!ref)
+                                ref = "";
+                            if (!type)
+                                type = "var";
+                            if (!objref)
+                                objref = "";
+                            if (!extref)
+                                extref = "";
+//TODO 
+                            char * linkvar = 0;
+                            char * linktype = 0;
+                            char * linkobjref = 0;
+                            char * linkextref = 0;
+
+                            if ( ref[0]=='\0' && objref[0]=='\0' )
+                            {
+                                log_warn ("config.xml: invalid var link, "
+                                          "requires either ref OR objref.\n");
+                                return 0;
+                            }
+                            else if ( ref[0]=='\0')
+                                ref = strdup (objref);
+
+                            if (ref_num == 0 && ref[0]!='\0')
+                            {
+                                ref_prev = strdup (ref);
+                                ref_num++;
+                            }
+                            else
+                            {
+                                int res_cmp = strcmp (ref_prev, ref);
+                                if (res_cmp == 0)
+                                    ref_num++;
+                                else
+                                {
+                                    adios_conca_link_att_nam (&link_num, ref_prev, "ref", "-num");
+                                    snprintf(tmp_num, 5, "%d",ref_num);
+                                    adios_common_define_attribute (ptr_new_group, link_num, "/",adios_integer, tmp_num, "");
+                                    link_num = 0;
+                                    tmp_num[0] = '\0';
+                                    ref_num = 0;
+                                }
+                                if (ref_num == 0 && ref[0]!='\0')
+                                {
+                                    ref_prev = strdup (ref);
+                                    ref_num++;
+                                }
+                            }
+                            snprintf(tmp_num, 5, "%d",ref_num-1);
+                            if (ref)
+                            {
+                                adios_conca_link_att_nam (&linkvar, ref, "ref", tmp_num);
+                                adios_common_define_attribute (ptr_new_group, linkvar, "/",adios_string, ref, "");
+                            }
+                            if (objref)
+                            {
+                                adios_conca_link_att_nam (&linkobjref, ref, "objref", tmp_num);
+                                adios_common_define_attribute (ptr_new_group, linkobjref, "/",adios_string, objref,  "");
+                            }
+                            if (type)
+                            {
+                                adios_conca_link_att_nam (&linktype, ref, "type", tmp_num);
+                                adios_common_define_attribute (ptr_new_group, linktype, "/",adios_string, type,  "");
+                            }
+                            if (extref)
+                            {
+                                adios_conca_link_att_nam (&linkextref, ref, "extref", tmp_num);
+                                adios_common_define_attribute (ptr_new_group, linkextref, "/",adios_string, extref,  "");
+                            }
+                            tmp_num[0] = '\0';
+                        }
+                    }
+                    adios_conca_link_att_nam (&link_num, ref_prev, "ref", "-num");
+                    snprintf(tmp_num, 5, "%d",ref_num);
+                    adios_common_define_attribute (ptr_new_group, link_num, "/",adios_integer, tmp_num, "");
+                    ref_num = 0;
                 } else if (!strcasecmp (n->value.element.name, "gwrite"))
                 {
                     const char * src = 0;
