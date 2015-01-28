@@ -44,6 +44,7 @@ You can also install in your local directory, run
 
 $ python setup.py install --user
 
+
 == Test cases and examples ==
 
 Test cases and example files are located in tests and example
@@ -63,3 +64,14 @@ for the serial version of Adios wrapper. If you need to generated C++
 for MPI-enabled version, try the following
 
 $ make CYTHON=y MPI=y python
+
+
+== Trouble Shooting ==
+
+-. Custom MPICC and MPICXX
+If one needs to use a custom MPICC and MPICXX command (e.g., Titan),
+then use the following command:
+
+$ python setup_mpi.py build_ext --mpicc=cc --mpicxx=CC
+
+
