@@ -1792,6 +1792,8 @@ void print_decomp(ADIOS_VARINFO *vi)
     {
         // arrays
         int ndigits_nblocks;
+        int ndigits_procid;
+        int ndigits_time;
         int ndigits_dims[32];
         int blockid = 0;
         for (k=0; k < vi->ndim; k++) {
@@ -1803,8 +1805,17 @@ void print_decomp(ADIOS_VARINFO *vi)
             fprintf(outf, "        step %*d: ", ndigits_nsteps, i);
             fprintf(outf,"\n");
             ndigits_nblocks = ndigits (vi->nblocks[i]-1);
+            ndigits_procid  = ndigits (vi->blockinfo[blockid+vi->nblocks[i]-1].process_id);
+            ndigits_time    = ndigits (vi->blockinfo[blockid+vi->nblocks[i]-1].time_index);
             for (j=0; j < vi->nblocks[i]; j++) {
-                fprintf(outf,"          block %*d: [", ndigits_nblocks, j);
+                if (verbose < 1) {
+                    fprintf(outf,"          block %*d: [", ndigits_nblocks, j);
+                } else {
+                    fprintf(outf,"          block %*d proc %*u time %*u: [", 
+                        ndigits_nblocks, j, 
+                        ndigits_procid,  vi->blockinfo[blockid].process_id,
+                        ndigits_time,    vi->blockinfo[blockid].time_index);
+                }
                 for (k=0; k < vi->ndim; k++) {
                     if (vi->blockinfo[blockid].count[k]) {
                     fprintf(outf, "%*lld:%*lld", 

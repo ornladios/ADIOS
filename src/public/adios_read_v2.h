@@ -90,8 +90,10 @@ struct _ADIOS_VARSTAT {
 };
 
 struct _ADIOS_VARBLOCK {
-    uint64_t * start;      /* offset start point in global array ('ndim' elements)         */
-    uint64_t * count;      /* local sizes in global array ('ndim' elements)                */
+    uint64_t * start;      /* offset start point in global array ('ndim' elements)                    */
+    uint64_t * count;      /* local sizes in global array ('ndim' elements)                           */
+    uint32_t process_id;   /* a kind of ID of the writing process (likely MPI rank)                   */
+    uint32_t time_index;   /* a kind of timestep info of the writing process >= step of variable      */
 };
 
 enum var_centering

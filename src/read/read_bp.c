@@ -2292,6 +2292,8 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
     uint64_t * ldims, * gdims, * offsets;
     int dummy = -1;
     struct adios_index_var_struct_v1 * var_root;
+    struct bp_index_pg_struct_v1 * pgs = fh->pgs_root;
+    uint32_t current_process_id = pgs->process_id;
     ADIOS_VARBLOCK *blockinfo;
 
     assert (varinfo);
@@ -2329,6 +2331,7 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
     j = 0; 
     for (i = 0; i < nblks; i++)
     {
+        int k; /* to save i or j for the process_id determination step below */
         blockinfo[i].start = (uint64_t *) malloc (dimcount * 8);
         blockinfo[i].count = (uint64_t *) malloc (dimcount * 8);
         assert (blockinfo[i].start && blockinfo[i].count);
@@ -2346,6 +2349,7 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
             				&blk_characteristic->dims;
 
             bp_get_dimension_generic_notime(blk_dims, ldims, gdims, offsets, file_is_fortran);
+            k = i;
         }
         else
         {
@@ -2367,6 +2371,7 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
                 				&blk_characteristic->dims;
 
                 bp_get_dimension_generic_notime(blk_dims, ldims, gdims, offsets, file_is_fortran);
+                k = j;
                 j++;
             }
             else
@@ -2397,6 +2402,18 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
 //            swap_order (dimcount, blockinfo[i].start, &timedim);
 //            swap_order (dimcount, blockinfo[i].count, &timedim);
 //        }
+        
+        /* Find the process ID */
+        //blockinfo[i].process_id = (uint32_t)-1;
+        while (pgs != NULL && 
+               pgs->offset_in_file <= var_root->characteristics[k].offset) 
+        {
+            current_process_id = pgs->process_id;
+            pgs = pgs->next;
+        }
+        blockinfo[i].process_id = current_process_id;
+        blockinfo[i].time_index = var_root->characteristics[k].time_index;
+        
     }
 
     free (ldims);
