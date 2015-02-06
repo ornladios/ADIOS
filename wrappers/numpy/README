@@ -7,6 +7,27 @@ to call the native ADIOS library. This module is built by Cython.
 This module requires ADIOS built with the GNU C compiler with
 relocatable codes. Add -fPIC flag to CFLAGS before configuring ADIOS.
 
+== Quick install with pip ==
+
+ADIOS Python wrapper can be installed with pip. Check if pip is
+installed already. Otherwise, install pip first:
+
+$ wget https://bootstrap.pypa.io/get-pip.py
+$ sudo python get-pip.py
+Or,
+$ python get-pip.py --user
+to install in a local directory, $HOME/.local
+
+Before installing ADIOS Python wrappers, make sure Numpy and MPI4Py
+installed. Otherwise, install them as follows:
+
+$ pip install numpy
+$ pip install mpi4py
+
+Then, install Adios and Adios-MPI wrapper as follows:
+
+$ pip install -i https://testpypi.python.org/pypi adios
+$ pip install -i https://testpypi.python.org/pypi adios_mpi
 
 == Build and install with make ==
 
@@ -65,6 +86,22 @@ for MPI-enabled version, try the following
 
 $ make CYTHON=y MPI=y python
 
+
+== Upload to PyPI ==
+
+Create $HOME/.pypirc as follows:
+[distutils] 
+    index-servers =
+        pypi
+
+[pypi]
+    repository: https://pypi.python.org/pypi
+    username: {{your_username}}
+    password: {{your_password}}
+
+Then, do the followings:
+$ python setup.py register 
+$ python setup.py sdist upload
 
 == Trouble Shooting ==
 

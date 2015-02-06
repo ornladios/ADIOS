@@ -32,7 +32,9 @@ for path in p.communicate()[0].strip().split(" "):
         m1.libraries.append(path.replace('-l', '', 1))
 
 setup(name = 'Adios',
-      version = '1.0',
+      version = '1.0.0',
       description = 'Python Module for Adios',
+      author = 'Jong Choi',
+      author_email = 'yyalli@gmail.com',
       url = 'http://www.olcf.ornl.gov/center-projects/adios/',
       ext_modules = [m1])
