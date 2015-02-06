@@ -26,8 +26,8 @@ $ pip install mpi4py
 
 Then, install Adios and Adios-MPI wrapper as follows:
 
-$ pip install -i https://testpypi.python.org/pypi adios
-$ pip install -i https://testpypi.python.org/pypi adios_mpi
+$ pip install adios
+$ pip install adios_mpi
 
 == Build and install with make ==
 
