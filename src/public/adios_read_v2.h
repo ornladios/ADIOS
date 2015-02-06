@@ -57,25 +57,25 @@ struct _ADIOS_FILE {
 };
 
 struct _ADIOS_VARSTAT {
-        void     * min;            /* minimum value in an array variable, = value for a scalar       */
-        void     * max;            /* maximum value of an array variable (over all steps)            */
-        double   * avg;            /* average value of an array variable (over all steps)            */
-        double   * std_dev;        /* standard deviation value of an array variable (over all steps) */
+        void     * min;            /* minimum value in an array variable, = value for a scalar        */
+        void     * max;            /* maximum value of an array variable (over all steps)             */
+        double   * avg;            /* average value of an array variable (over all steps)             */
+        double   * std_dev;        /* standard deviation value of an array variable (over all steps)  */
 
-        struct ADIOS_STAT_STEP     /* per step statistics (if requested and recorded at writing) */
+        struct ADIOS_STAT_STEP     /* per step statistics (if requested and recorded at writing)      */
         {
-            void     ** mins;      /* minimum per each step (array of 'nsteps' elements)             */
-            void     ** maxs;      /* maximum per each step (array of 'nsteps' elements)             */
-            double   ** avgs;      /* average per each step (array of 'nsteps' elements)             */
-            double   ** std_devs;  /* standard deviation per each step (array of 'nsteps' elements)  */
+            void     ** mins;      /* minimum per each step (array of 'nsteps' elements)              */
+            void     ** maxs;      /* maximum per each step (array of 'nsteps' elements)              */
+            double   ** avgs;      /* average per each step (array of 'nsteps' elements)              */
+            double   ** std_devs;  /* standard deviation per each step (array of 'nsteps' elements)   */
         } *steps;
 
-        struct ADIOS_STAT_BLOCK    /* per block statistics (if requested and recorded at writing) */
+        struct ADIOS_STAT_BLOCK    /* per block statistics (if requested and recorded at writing)     */
         {
-            void     ** mins;      /* minimum per each block (array of 'nblocks' elements)         */
-            void     ** maxs;      /* maximum per each block (array of 'nblocks' elements)         */
-            double   ** avgs;      /* average per each block (array of 'nblocks' elements)         */
-            double   ** std_devs;  /* std deviation per each block (array of 'nblocks' elements)   */
+            void     ** mins;      /* minimum per each block (array of 'sum_nblocks' elements)        */
+            void     ** maxs;      /* maximum per each block (array of 'sum_nblocks' elements)        */
+            double   ** avgs;      /* average per each block (array of 'sum_nblocks' elements)        */
+            double   ** std_devs;  /* std deviation per each block (array of 'sum_nblocks' elements)  */
         } *blocks;
 
         struct ADIOS_HIST           /* Histogram if recorded at writing */
@@ -90,8 +90,10 @@ struct _ADIOS_VARSTAT {
 };
 
 struct _ADIOS_VARBLOCK {
-    uint64_t * start;      /* offset start point in global array ('ndim' elements)         */
-    uint64_t * count;      /* local sizes in global array ('ndim' elements)                */
+    uint64_t * start;      /* offset start point in global array ('ndim' elements)                    */
+    uint64_t * count;      /* local sizes in global array ('ndim' elements)                           */
+    uint32_t process_id;   /* a kind of ID of the writing process (likely MPI rank)                   */
+    uint32_t time_index;   /* a kind of timestep info of the writing process >= step of variable      */
 };
 
 enum var_centering
