@@ -475,6 +475,7 @@ set(include_HEADERS ${include_HEADERS} public/adios.h
                    public/adios_read_v2_fwd.h 
                    public/adios_selection.h
                    public/adios_schema.h
+                   public/adios_link.h
                    public/adios_read_ext.h
                    public/adios_query.h)
 
