@@ -14,8 +14,9 @@
 #include "core/bp_types.h"
 #define VARS_MINIHEADER_SIZE 10
 
-BP_PROC * GET_BP_PROC (const ADIOS_FILE * fp);
-BP_FILE * GET_BP_FILE (const ADIOS_FILE * fp);
+BP_PROC* (*GET_BP_PROC)(const ADIOS_FILE *);
+BP_FILE* (*GET_BP_FILE)(const ADIOS_FILE *);
+
 void bp_alloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size);
 void bp_realloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size);
 int bp_get_endianness( uint32_t change_endianness );

@@ -841,3 +841,8 @@ adios_read_xpmem_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
     adios_error(err_invalid_read_method, "adios_read_xpmem_reset_dimension_order is not implemented.");
 }
 
+int  adios_read_xpmem_get_dimension_order (const ADIOS_FILE *adiosfile)
+{
+	return 1;
+}
+
