@@ -41,8 +41,9 @@ static xpmem_segid_t make_share(char **data, size_t size)
 	segid = xpmem_make(*data, size, XPMEM_PERMIT_MODE, (void *)0600);
 	if(segid == -1)
 	{
-		fprintf(stderr, "error in xpmem_make size = %u data = %p\n",
-		        size, *data);
+	    lerror = errno;
+	    fprintf(stderr, "error in posix_memalign %d %s\n",
+		    lerror, strerror(lerror));		
 		return -1;
 	}
 	return segid;
