@@ -38,10 +38,19 @@ struct adios_transform_spec * adios_transform_parse_spec(const char *transform_s
                                                          struct adios_transform_spec *spec_in);
 
 /*
- * Copies a transform spec struct, creating a new, independent instance
- * with the same contents.
+ * Copies a source transform spec struct into an already-allocated
+ * dest transform spec struct, freeing any buffers previously
+ * held by the dest struct. After this call, src and dst have the same
+ * content (though all pointers are independent).
  */
-struct adios_transform_spec * adios_transform_spec_copy(struct adios_transform_spec *src);
+void adios_transform_spec_copy(struct adios_transform_spec *dst, const struct adios_transform_spec *src);
+
+/*
+ * Frees all memory held by a adios_transform_spec struct and zeros all fields,
+ * but does not free the struct itself.
+ * @param spec the transform spec to free
+ */
+void adios_transform_clear_spec(struct adios_transform_spec *spec);
 
 /*
  * Frees an adios_transform_spec struct.

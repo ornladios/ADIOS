@@ -10,21 +10,36 @@
 
 #include "public/adios_error.h"
 #include "public/adios_types.h"
-#include "common_read.h"
+#include "core/common_read.h"
 
-#include "transforms/adios_transforms_common.h"
-#include "transforms/adios_transforms_read.h"
-#include "transforms/adios_transforms_util.h"
-#include "transforms/adios_transforms_datablock.h"
+#include "core/transforms/adios_transforms_common.h"
+#include "core/transforms/adios_transforms_read.h"
+#include "core/transforms/adios_transforms_util.h"
+#include "core/transforms/adios_transforms_datablock.h"
 
 // Datablock management
+
+adios_datablock * adios_datablock_new_whole_pg(
+		const adios_transform_read_request *read_req,
+        const adios_transform_pg_read_request *pg_read_req,
+        void *data)
+{
+	// Return a datablock using the PG's writeblock (this is
+	// the most compatible option for processing in the
+	// transforms framework)
+	return adios_datablock_new(
+			read_req->transinfo->orig_type,
+			pg_read_req->timestep,
+			pg_read_req->pg_writeblock_sel,
+			data);
+}
 
 adios_datablock * adios_datablock_new(
         enum ADIOS_DATATYPES elem_type,
         int timestep,
         const ADIOS_SELECTION *bounds,
-        void *data) {
-
+        void *data)
+{
     assert(bounds);
     assert(data);
     return adios_datablock_new_ragged_offset(elem_type, timestep, bounds, 0, data);

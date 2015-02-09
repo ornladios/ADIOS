@@ -16,3 +16,5 @@ endif()
 file(COPY config_c.xml DESTINATION ${PROJECT_BINARY_DIR}/tests/C)
 
 add_subdirectory(flexpath_tests)
+add_subdirectory(fgr_tests)
+add_subdirectory(query)

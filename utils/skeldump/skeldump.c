@@ -89,23 +89,23 @@ struct option options[] = {
     {"verbose",              no_argument,          NULL,    'v'},
     {"dump",                 no_argument,          NULL,    'd'},
     {"group",                no_argument,          NULL,    'g'},
-    {"regexp",               no_argument,          NULL,    'e'},
-    {"plot",                 no_argument,          NULL,    'p'},
+//    {"regexp",               no_argument,          NULL,    'e'},
+//    {"plot",                 no_argument,          NULL,    'p'},
     {"output",               required_argument,    NULL,    'o'},
-    {"xml",                  no_argument,          NULL,    'x'},
-    {"start",                required_argument,    NULL,    's'}, 
-    {"count",                required_argument,    NULL,    'c'}, 
-    {"noindex",              no_argument,          NULL,    'y'},
+//    {"xml",                  no_argument,          NULL,    'x'},
+//    {"start",                required_argument,    NULL,    's'}, 
+//    {"count",                required_argument,    NULL,    'c'}, 
+//    {"noindex",              no_argument,          NULL,    'y'},
 //    {"sort",                 no_argument,          NULL,    'r'},
-    {"timestep",             no_argument,          NULL,    't'},
-    {"attrs",                no_argument,          NULL,    'a'},
-    {"attrsonly",            no_argument,          NULL,    'A'},
-    {"long",                 no_argument,          NULL,    'l'},
-    {"string",               no_argument,          NULL,    'S'},
-    {"columns",              required_argument,    NULL,    'n'}, 
-    {"format",               required_argument,    NULL,    'f'}, 
+//    {"timestep",             no_argument,          NULL,    't'},
+//    {"attrs",                no_argument,          NULL,    'a'},
+//    {"attrsonly",            no_argument,          NULL,    'A'},
+//   {"long",                 no_argument,          NULL,    'l'},
+//    {"string",               no_argument,          NULL,    'S'},
+//    {"columns",              required_argument,    NULL,    'n'}, 
+//    {"format",               required_argument,    NULL,    'f'}, 
     {"hidden_attrs",         no_argument,          &hidden_attrs,    true}, 
-    {"decomp",               no_argument,          NULL,    'D'},
+//    {"decomp",               no_argument,          NULL,    'D'},
     //    {"time",                 required_argument,    NULL,    't'}, 
     {NULL,                   0,                    NULL,    0}
 };
@@ -116,9 +116,11 @@ static const char *optstring = "hvepyrtaAldSDg:o:x:s:c:n:f:";
 // help function
 void display_help() {
     //printf( "Usage: %s  \n", prgname);
-    printf("usage: bpls [OPTIONS] file [mask1 mask2 ...]\n"
+    printf("usage: skeldump [OPTIONS] file\n"
+//    printf("usage: skeldump [OPTIONS] file [mask1 mask2 ...]\n"
             "\nList/dump content of a BP file. \n"
-            "A mask can be a shell pattern like with 'ls' e.g. \"*/x?\".\n"
+//            "A mask can be a shell pattern like with 'ls' e.g. \"*/x?\".\n"
+/*
             "Variables with multiple timesteps are reported with an extra dimensions.\n"
             "The time dimension is the first dimension then.\n"
             "\n"
@@ -126,9 +128,7 @@ void display_help() {
             "                               min/max values of arrays (no overhead to get them!)\n"
             "  --attrs     | -a           List/match attributes too\n"
             "  --attrsonly | -A           List attributes only\n"
-            /*
             "  --sort      | -r           Sort names before listing\n"
-            */
             "  --timestep  | -t           Print values of timestep elements\n"
             "  --group     | -g <mask>    List/dump groups matching the mask only\n"
             "  --dump      | -d           Dump matched variables/attributes\n"
@@ -136,9 +136,7 @@ void display_help() {
             "  --regexp    | -e           Treat masks as extended regular expressions\n"
             "  --plot      | -p           Dumps the histogram information that can be read by gnuplot\n"
             "  --output    | -o <path>    Print to a file instead of stdout\n"
-            /*
                "  --xml    | -x            # print as xml instead of ascii text\n"
-             */
             "  --start     | -s \"spec\"    Offset indices in each dimension \n"
             "                               (default is 0 for all dimensions) \n"
             "                               <0 is handled as in python (-1 is last)\n"
@@ -152,21 +150,20 @@ void display_help() {
             "                               instead of the default. E.g. \"%%6.3f\"\n"
             "  --hidden_attrs             Show hidden ADIOS attributes in the file\n"
             "  --decomp    | -D           Show decomposition of variables as layed out in file\n"
-            /*
                "  --time    | -t N [M]      # print data for timesteps N..M only (or only N)\n"
                "                              default is to print all available timesteps\n"
-             */
             "\n"
             "  Examples for slicing:\n"
             "  -s \"0,0,0\"   -c \"1,99,1\":  Print 100 elements (of the 2nd dimension).\n"
             "  -s \"0,0\"     -c \"1,-1\":    Print the whole 2nd dimension however large it is.\n"
             "  -s \"-1,-1\"   -c \"1,1\":     Print the very last element (of a 2D array)\n"
+*/
             "\n"
             "Help options\n"
             "  --help      | -h           Print this help.\n"
             "  --verbose   | -v           Print log about what this program is doing.\n"
             "                               Use multiple -v to increase logging level.\n"
-            "Typical use: bpls -lavr <file>\n"
+            "Typical use: skeldump <file> > <outfile>\n"
             );
 }
 

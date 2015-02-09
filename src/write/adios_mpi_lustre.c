@@ -23,14 +23,14 @@
 #include "core/buffer.h"
 #include "core/util.h"
 
-#ifdef SKEL_TIMING
-#define START_TIMER(t) adios_timing_go (fd->timing_obj, (t) ) 
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
+#define START_TIMER(t) adios_timing_go (fd->group->timing_obj, (t) ) 
 #else
 #define START_TIMER(t) ; 
 #endif
 
-#ifdef SKEL_TIMING
-#define STOP_TIMER(t) adios_timing_stop (fd->timing_obj, (t) )
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
+#define STOP_TIMER(t) adios_timing_stop (fd->group->timing_obj, (t) )
 #else
 #define STOP_TIMER(t) ;
 #endif
@@ -518,7 +518,7 @@ void adios_mpi_lustre_init (const PairStruct * parameters
     adios_buffer_struct_init (&md->b);
 }
 
-#ifdef SKEL_TIMING
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
 // Indices for the timer object
 int ADIOS_TIMER_MPI_LUSTRE_COMM = ADIOS_TIMING_MAX_USER_TIMERS + 0;
 int ADIOS_TIMER_MPI_LUSTRE_IO = ADIOS_TIMING_MAX_USER_TIMERS + 1;
@@ -548,7 +548,7 @@ int adios_mpi_lustre_open (struct adios_file_struct * fd
     }
     fd->group->process_id = md->rank;
 
-#ifdef SKEL_TIMING
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
     int timer_count = 6;
     char ** timer_names = (char**) malloc (timer_count * sizeof (char*) );
     timer_names [0] = "Communication";
@@ -557,8 +557,21 @@ int adios_mpi_lustre_open (struct adios_file_struct * fd
     timer_names [3] = "ad_write";
     timer_names [4] = "ad_close";
     timer_names [5] = "ad_should_buffer";
+   
 
-    fd->timing_obj = adios_timing_create (timer_count, timer_names);
+    // Ensure both timing objects exist
+    // timing_obj should get created at every open
+    // prev_timing_obj should only be created at the first open 
+    if (fd->group)
+    {
+        if (!fd->group->timing_obj)
+            fd->group->timing_obj = adios_timing_create (timer_count, timer_names);
+
+        if (!fd->group->prev_timing_obj)
+            fd->group->prev_timing_obj = adios_timing_create (timer_count, timer_names);
+    }
+
+
 #endif
 
     // we have to wait for the group_size (should_buffer) 
@@ -2095,6 +2108,19 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
     adios_clear_index_v1 (md->index);
 
     STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_AD_CLOSE);
+
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
+
+    //Finished timing this cycle, swap the timing buffers
+    adios_timing_destroy(fd->group->prev_timing_obj);
+    fd->group->prev_timing_obj = fd->group->timing_obj;
+    fd->group->timing_obj = 0;
+
+    // prev_timing_obj points to unwritten timing info, timing_obj is
+    // ready to allocate at the next open
+
+#endif
+
 
 #if COLLECT_METRICS
     print_metrics (md, iteration++);

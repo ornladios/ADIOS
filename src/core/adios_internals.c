@@ -30,11 +30,11 @@
 #endif
 
 // NCSU ALACRITY-ADIOS - Added header file
-#include "adios_transforms_common.h"
-#include "adios_transforms_hooks.h"
-#include "adios_transforms_read.h"
-#include "adios_transforms_write.h"
-#include "adios_transforms_specparse.h"
+#include "core/transforms/adios_transforms_common.h"
+#include "core/transforms/adios_transforms_hooks.h"
+#include "core/transforms/adios_transforms_read.h"
+#include "core/transforms/adios_transforms_write.h"
+#include "core/transforms/adios_transforms_specparse.h"
 
 struct adios_method_list_struct * adios_methods = 0;
 struct adios_group_list_struct * adios_groups = 0;
@@ -976,6 +976,7 @@ int adios_common_define_attribute (int64_t group, const char * name
     }
 
     attr->next = 0;
+    attr->write_offset = 0;
 
     adios_append_attribute (&g->attributes, attr, ++g->member_count);
 
@@ -1048,6 +1049,7 @@ int adios_common_define_attribute_byvalue (int64_t group, const char * name
     }
 
     attr->next = 0;
+    attr->write_offset = 0;
 
     adios_append_attribute (&g->attributes, attr, ++g->member_count);
 
@@ -1309,6 +1311,11 @@ int adios_common_declare_group (int64_t * id, const char * name
     g->meshs = NULL;
     g->mesh_count = 0;
 
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
+    g->timing_obj = 0;
+    g->prev_timing_obj = 0;
+#endif
+
     *id = (int64_t) g;
 
     adios_append_group (g);
@@ -1433,14 +1440,17 @@ int adios_common_free_group (int64_t id)
         old_root->next = root->next;
     }
 
-    if (g->name)
-        free (g->name);
+    if (g->name)             free (g->name);
+    if (g->group_by)         free (g->group_by);
+    if (g->group_comm)       free (g->group_comm);
+    if (g->time_index_name)  free (g->time_index_name);
 
     adios_common_delete_vardefs (g);
     adios_common_delete_attrdefs (g);
     g->hashtbl_vars->free(g->hashtbl_vars);
 
     free (root);
+    free (g);
 
     return 0;
 }
@@ -1838,17 +1848,17 @@ int adios_common_set_transform (int64_t var_id, const char *transform_type_str)
     assert (v);
     // NCSU ALACRITY-ADIOS - parse transform type string, and call the transform layer to
     //   set up the variable as needed
-    struct adios_transform_spec *transform_spec = adios_transform_parse_spec(transform_type_str, v->transform_spec);
-    if (transform_spec->transform_type == adios_transform_unknown) {
+    adios_transform_parse_spec(transform_type_str, v->transform_spec);
+    if (v->transform_spec->transform_type == adios_transform_unknown) {
         adios_error(err_invalid_transform_type, 
                   "Unknown transform type \"%s\" specified for variable \"%s\", ignoring it...\n",
-                  transform_spec->transform_type_str, v->name);
-        transform_spec->transform_type = adios_transform_none;
+                  v->transform_spec->transform_type_str ? v->transform_spec->transform_type_str : "<null>", v->name);
+        v->transform_spec->transform_type = adios_transform_none;
     }
 
     // This function sets the transform_type field. It does nothing if transform_type is none.
     // Note: ownership of the transform_spec struct is given to this function
-    v = adios_transform_define_var(v, transform_spec);
+    v = adios_transform_define_var(v);
     return adios_errno;
 }
 
@@ -2887,7 +2897,6 @@ void adios_copy_var_written (struct adios_group_struct * g, struct adios_var_str
     var_new->data_size = var->data_size;
             var_new->write_count = var->write_count;
     var_new->next = 0;
-            adios_transform_init_transform_var(var_new);
 
     uint64_t size = adios_get_type_size (var->type, var->data);
     switch (var->type)
@@ -2997,6 +3006,7 @@ void adios_copy_var_written (struct adios_group_struct * g, struct adios_var_str
             }
             else
             {
+                adios_transform_init_transform_var(var_new);
                 var_new->stats = 0;
                 var_new->data = malloc (size);
                 memcpy (var_new->data, var->data, size);
@@ -3006,6 +3016,7 @@ void adios_copy_var_written (struct adios_group_struct * g, struct adios_var_str
 
         case adios_string:
             {
+                adios_transform_init_transform_var(var_new);
                 var_new->data = malloc (size + 1);
                 memcpy (var_new->data, var->data, size);
                 ((char *) (var_new->data)) [size] = 0;
@@ -6283,6 +6294,22 @@ void adios_conca_mesh_att_nam(char ** returnstr, const char * meshname, char * a
 
     strcpy(*returnstr,"adios_schema/");
     strcat(*returnstr,meshname);
+    strcat(*returnstr,"/");
+    strcat(*returnstr,att_nam);
+}
+
+// concat link attribute name strings
+void adios_conca_link_att_nam(char ** returnstr, const char * name, char * att_nam) {
+    int slength = 0;
+    slength = strlen("adios_link/")+1;
+    slength = slength + strlen(name);
+    slength = slength + 1;
+    slength = slength + strlen(att_nam);
+
+    *returnstr = malloc (slength);
+
+    strcpy(*returnstr,"adios_link/");
+    strcat(*returnstr,name);
     strcat(*returnstr,"/");
     strcat(*returnstr,att_nam);
 }

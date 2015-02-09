@@ -21,6 +21,9 @@
 #define INIT_MSG 3
 #define EOS_MSG 4
 
+#define FP_FORTRAN_MODE 1
+#define FP_C_MODE 0
+
 #define perr(...) if(getenv("FP_DEBUG")) fprintf(stderr, __VA_ARGS__);
 
 #define fp_log(LOG, ...)                             \
@@ -116,6 +119,32 @@ typedef struct var_msg_ {
     int process_id;
     int condition;
 } Var_msg, *Var_msg_ptr;
+
+typedef struct _complex_dummy
+{
+    float r;
+    float i;
+} complex_dummy;
+
+typedef struct _double_complex_dummy
+{
+    double r;
+    double i;
+} double_complex_dummy;
+
+static FMField complex_dummy_field_list[] =
+{
+    {"r", "float", sizeof(float), FMOffset(complex_dummy*, r)},
+    {"i", "float", sizeof(float), FMOffset(complex_dummy*, i)},
+    {NULL, NULL, 0, 0}
+};
+
+static FMField double_complex_dummy_field_list[] =
+{
+    {"r", "double", sizeof(double), FMOffset(double_complex_dummy*, r)},
+    {"i", "double", sizeof(double), FMOffset(double_complex_dummy*, i)},
+    {NULL, NULL, 0, 0}
+};
 
 static FMField update_step_msg_field_list[]=
 {

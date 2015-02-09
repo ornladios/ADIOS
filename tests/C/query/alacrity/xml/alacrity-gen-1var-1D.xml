@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<adios-config host-language="C">
+    <adios-group name="S3D" coordination-communicator="comm">
+	    <var name="N0" type="integer"/>
+	    <var name="D0" type="integer"/>
+	    <var name="O0" type="integer"/>
+	    <var name="size" type="integer"/>
+	    <var name="rank" type="integer"/>
+	    <global-bounds dimensions="N0" offsets="O0">
+	       <var name="temp" gwrite="t" type="double" dimensions="D0" transform="alacrity"/>
+	    </global-bounds>
+	</adios-group>
+
+<method group="S3D" method="MPI"/>
+
+<buffer size-MB="128" allocate-time="now"/>
+
+</adios-config>
+

@@ -19,6 +19,10 @@ if(HAVE_NETCDF)
   add_subdirectory(bp2ncd)
 endif(HAVE_NETCDF)
 
+if(HAVE_FASTBIT)
+  add_subdirectory(fastbit)
+endif()
+
 add_subdirectory(skel)
 add_subdirectory(skeldump)
 

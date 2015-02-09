@@ -92,8 +92,8 @@ Quick Installation
    For example, to install ADIOS to /usr/local/adios on a machine where
    mpicc and mpif90 are the compilers:
 
-   $ tar zxf adios-1.7.0.tar.gz
-   $ cd adios-1.7.0
+   $ tar zxf adios-1.8.0.tar.gz
+   $ cd adios-1.8.0
    $ CC=mpicc FC=mpif90 ./configure --prefix=/usr/local/adios 
        --with-mxml=<location of mini-xml installation>
        --with-hdf5=<location of HDF5 installation>

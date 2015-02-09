@@ -16,9 +16,11 @@ uint16_t adios_transform_template_get_metadata_size(struct adios_transform_spec 
     return 0; // Set amount of transform-internal metadata space to allocate
 }
 
-uint64_t adios_transform_template_calc_vars_transformed_size(enum ADIOS_TRANSFORM_TYPE type, uint64_t orig_size, int num_vars)
+void adios_transform_template_transformed_size_growth(
+		const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec,
+		uint64_t *constant_factor, double *linear_factor, double *capped_linear_factor, uint64_t *capped_linear_cap)
 {
-    return orig_size; // Compute worst-case size
+	// Set growth factors here (or return immediately to default to "no transform effect on data size")
 }
 
 int adios_transform_template_apply(struct adios_file_struct *fd,
@@ -32,7 +34,7 @@ int adios_transform_template_apply(struct adios_file_struct *fd,
     const void *input_buff = var->data;
 
     // decide the output buffer
-    uint64_t output_size = adios_transform_template_calc_vars_transformed_size(adios_transform_identity, input_size, 1);
+    uint64_t output_size = /* Compute how much output size we need */;
     void* output_buff = NULL;
 
     if (use_shared_buffer) {

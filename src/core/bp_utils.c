@@ -24,7 +24,7 @@
 #define BYTE_ALIGN 8
 #define MINIFOOTER_SIZE 28
 
-#include "adios_transforms_common.h" // NCSU ALACRITY-ADIOS
+#include "core/transforms/adios_transforms_common.h" // NCSU ALACRITY-ADIOS
 
 #ifdef DMALLOC
 #include "dmalloc.h"
@@ -1433,10 +1433,15 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
 
         case adios_characteristic_value:
         {
+            uint8_t i, c, idx;
+            // uint8_t count = adios_get_stat_set_count ((*root)->type);
+            uint8_t count = adios_get_stat_set_count (original_var_type);
+            uint16_t characteristic_size;
+
             (*root)->characteristics [j].value = bp_read_data_from_buffer(b, original_var_type);
             if (!((*root)->characteristics [j].stats))
             {
-                (*root)->characteristics [j].stats = malloc (sizeof(struct adios_index_characteristics_stat_struct *));
+                (*root)->characteristics [j].stats = malloc (count*sizeof(struct adios_index_characteristics_stat_struct *));
                 (*root)->characteristics [j].bitmap = 0;
             }
 
@@ -1445,11 +1450,6 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
             (*root)->characteristics [j].bitmap |= (1 << adios_statistic_cnt);
             (*root)->characteristics [j].bitmap |= (1 << adios_statistic_sum);
             (*root)->characteristics [j].bitmap |= (1 << adios_statistic_sum_square);
-
-            uint8_t i, c, idx;
-            // uint8_t count = adios_get_stat_set_count ((*root)->type);
-            uint8_t count = adios_get_stat_set_count (original_var_type);
-            uint16_t characteristic_size;
 
             for (c = 0; c < count; c ++)
             {
@@ -2074,7 +2074,7 @@ int bp_get_dimension_generic_notime (const struct adios_index_characteristic_dim
         uint64_t *ldims, uint64_t *gdims, uint64_t *offsets,
         int file_is_fortran)
 {
-    int is_global = 0, dummy = 0, has_time;
+    int is_global = 0, dummy = 0, has_time = 0;
     int k;
 
     is_global = bp_get_dimension_generic(dims, ldims, gdims, offsets);
@@ -2088,13 +2088,10 @@ int bp_get_dimension_generic_notime (const struct adios_index_characteristic_dim
         is_global = is_global || gdims[k];
     }*/
 
-    if (!file_is_fortran)
+    if(ndim > 0)
     {
-        has_time = (gdims[ndim - 1] == 0 && ldims[0] == 1);
-    }
-    else
-    {
-        has_time = (gdims[ndim - 1] == 0 && ldims[ndim - 1] == 1);
+        has_time = gdims[ndim - 1] == 0 &&
+                   ldims[file_is_fortran ? ndim - 1 : 0] == 1;
     }
 
     // change all the stuff to C ordering

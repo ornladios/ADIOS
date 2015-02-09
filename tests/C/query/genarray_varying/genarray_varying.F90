@@ -1,0 +1,354 @@
+
+!  ADIOS is freely available under the terms of the BSD license described
+!  in the COPYING file in the top level directory of this source distribution.
+!
+!  Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
+!
+
+!
+!  GENARRAY for staging: same as genarray but appends steps into a single file
+!
+!  Write an ADIOS BP file from many processor for test purposes.
+!
+!  nx * ny * nz     processes write a 3D array, where each process writes an
+!  ndx * ndy * ndz  piece with filling with its rank as integer (4 bytes) value
+!
+!  The size of the local array will be extended with 1 in each dimension at
+!  every step.
+!  The global array size will grow at each step.
+! 
+!
+! (c) Oak Ridge National Laboratory, 2009
+! Author: Norbert Podhorszki
+!
+module genarray_varying_comm
+    ! arguments
+    character(len=256) :: outputfile, inputfile
+    integer :: npx, npy, npz  ! # of processors in x-y-z direction
+    integer :: ndx, ndy, ndz  ! size of array per processor
+    integer :: timesteps      ! number of timesteps to write
+    integer :: sleeptime      ! time to sleep between time steps
+    logical :: common_size    ! .true.  if common local sizes are given as argument
+                              ! .false. if we have to read sizes from a file
+                              ! (not implemented)
+
+    integer :: gndx, gndy, gndz  ! size of the global array
+    integer :: offx,offy,offz    ! offsets of local array in the global array
+    integer :: posx, posy, posz  ! position index in the array
+    integer :: tstep             ! current timestep (1..timesteps)
+
+    real*8, dimension(:,:,:), allocatable :: double_xyz
+    real*8, dimension(:,:), allocatable :: double_xy, double_yz, double_xz
+
+    ! MPI COMM_WORLD is for all codes started up at once on Cray XK6 
+    integer :: wrank, wnproc
+
+    ! MPI 'world' for this app variables
+    integer :: app_comm, color
+    integer :: rank, nproc
+    integer :: ierr
+
+    ! ADIOS variables
+    character (len=200) :: group
+    character (len=200) :: filename
+    !character (len=6)   :: nprocstr
+    integer*8 :: handle, total_size, group_size, adios_totalsize
+    integer   :: err
+
+    real*8 :: start_time, end_time, total_time,gbs,sz
+    real*8 :: io_start_time, io_end_time, io_total_time
+
+
+end module genarray_varying_comm
+
+
+program genarray
+    use genarray_varying_comm
+    implicit none
+    include 'mpif.h'
+
+    !print *,"call MPI_Init "
+    call MPI_Init (ierr)
+    ! World comm spans all applications started with the same aprun command 
+    ! on a Cray XK6
+    !print *,"call MPI_rank (world) "
+    call MPI_Comm_rank (MPI_COMM_WORLD, wrank, ierr)
+    !print *,"call MPI_size (world) "
+    call MPI_Comm_size (MPI_COMM_WORLD, wnproc , ierr)
+    ! Have to split and create a 'world' communicator for genarray only
+    color = 1
+    !print *,"call MPI_split "
+    call MPI_Barrier(MPI_COMM_WORLD, ierr);
+    call MPI_Comm_split (MPI_COMM_WORLD, color, wrank, app_comm, ierr)
+    !call MPI_Comm_dup (MPI_COMM_WORLD, app_comm, ierr)
+    !print *,"call MPI_rank (app) "
+    call MPI_Comm_rank (app_comm, rank, ierr)
+    !print *,"call MPI_size (app) "
+    call MPI_Comm_size (app_comm, nproc , ierr)
+
+    !print *,"call adios_init "
+    call adios_init ("genarray_varying.xml", app_comm, ierr)
+    !print *,"MPI_Barrier "
+    call MPI_Barrier (app_comm, ierr)
+
+    call processArgs()
+    if (rank == 0) then
+        print *,"Output file(s): "//trim(outputfile)//".<step>.bp"
+        print '(" Process number        : ",i0," x ",i0," x ",i0)', npx,npy,npz
+        if (common_size) then
+            print '(" Array size per process at first step: ",i0," x ",i0," x ",i0)', ndx,ndy,ndz
+        else
+            print *," Array sizes per processes taken from file: "//trim(inputfile)
+        endif
+
+        if (nproc .ne. npx*npy*npz) then
+            print '(" Error: Number of processors ",i0,"does not match ndx*ndy*ndz=",i0)', nproc, npx*npy*npz
+            call exit(1)
+        endif
+    endif
+
+    !write (*,*) 'rank ', rank, "init completed"
+    !write (nprocstr,'(i0)') nproc
+
+    call writeArray()
+    ! Terminate
+    call MPI_Barrier (app_comm, ierr)
+    call adios_finalize (rank, ierr)
+    !call MPI_Barrier (MPI_COMM_WORLD, ierr)
+    !print *,"Writer calls MPI_Finalize"
+    call MPI_Finalize (ierr)
+    !print *,"Exit writer code "
+end program genarray
+
+
+!!***************************
+subroutine determineLocalSize()
+    use genarray_varying_comm
+    implicit none
+    if (common_size) then
+       ! tstep=1: we are done since we know them from argument
+       ! after that: always increase them by 1
+       if (tstep>1) then
+          ndx = ndx!+1
+          ndy = ndy!+1
+          ndz = ndz!+1
+       endif
+    else
+       ! have to read from file
+       print *, "To be implemented: read sizes from file 1"
+       call exit(2)
+    endif
+    if (rank == 0) print '(" Array size per process at step ",i0,": ",i0," x ",i0," x ",i0)',tstep,ndx,ndy,ndz
+end subroutine determineLocalSize
+
+!!***************************
+subroutine determineGlobalSize()
+    use genarray_varying_comm
+    implicit none
+    if (common_size) then
+        gndx = npx * ndx
+        gndy = npy * ndy
+        gndz = npz * ndz
+    else
+       ! have to read from file
+       print *, "To be implemented: read sizes from file 2"
+       call exit(2)
+    endif
+end subroutine determineGlobalSize
+
+!!***************************
+subroutine determineOffsets()
+    use genarray_varying_comm
+    implicit none
+    if (common_size) then
+        posx = mod(rank, npx)     ! 1st dim easy: 0, npx, 2npx... are in the same X position
+        posy = mod(rank/npx, npy) ! 2nd dim: (0, npx-1) have the same dim (so divide with npx first)
+        posz = rank/(npx*npy)     ! 3rd dim: npx*npy processes belong into one dim
+        offx = posx * ndx
+        offy = posy * ndy
+        offz = posz * ndz
+    else
+       ! have to read from file
+       print *, "To be implemented: read sizes from file 3"
+       call exit(2)
+    endif
+end subroutine determineOffsets
+
+
+!!***************************
+subroutine generateLocalArray()
+    use genarray_varying_comm
+    implicit none
+    integer :: i,j,k
+    real*8 :: hx,hy,hz,PI, x, y, z
+
+    allocate( double_xyz(1:ndx, 1:ndy, 1:ndz) )
+    if (posz == 0) allocate( double_xy(1:ndx, 1:ndy) )
+    if (posx == 0) allocate( double_yz(1:ndy, 1:ndz) )
+    if (posy == 0) allocate( double_xz(1:ndx, 1:ndz) )
+    PI = 4.0*atan(1.0)
+    hx= 2.0 * PI / (gndx-1)
+    hy= 2.0 * PI / (gndy-1)
+    hz= 2.0 * PI / (gndz-1)
+
+    do k=1,ndz
+        do j=1,ndy
+            do i=1,ndx
+                !! Simple: MPI Rank + z coord/100.0
+                !double_xyz(i,j,k) = 1.0d0*rank + k/100.0
+
+                !! Fancy
+                x = posx*ndx*hx - PI + (i-1) * hx
+                y = posy*ndy*hy - PI + (j-1) * hy
+                z = posz*ndz*hz - PI + (k-1) * hz
+                !double_xyz(i,j,k) = tstep * z
+                !double_xyz(i,j,k) = tstep * (cos(x)+sin(y))
+                !double_xyz(i,j,k) = tstep * (cos(x+z)+sin(y+z))
+                double_xyz(i,j,k) = (cos(x+z+tstep)+sin(y+z))
+
+            enddo
+        enddo
+    enddo
+    if (posz == 0) double_xy(:,:) = double_xyz (:,:,1)
+    if (posx == 0) double_yz(:,:) = double_xyz (1,:,:)
+    if (posy == 0) double_xz(:,:) = double_xyz (:,1,:)
+    !if (posy == 0) then
+    !    do k=1,ndz
+    !        do i=1,ndx
+    !            !write (*,'("Rank ",i3," Pos XZ = ",i3,",",i3)') rank, i, k
+    !            double_xz(i,k) = double_xyz (i,1,k)
+    !            write (*,'("Rank ",i3," xz(",i2,",",i2,")=",f12.6)') rank, i, k, double_xz(i,k)
+    !        enddo
+    !    enddo
+    !endif
+end subroutine generateLocalArray
+
+
+!!***************************
+subroutine writeArray()
+    use genarray_varying_comm
+    implicit none
+    integer*8 adios_handle, adios_groupsize
+    integer adios_err
+    character(2) :: mode = "w"
+    include 'mpif.h'
+
+
+    if (rank==0) print '("Writing: "," filename ",14x,"size(GB)",4x,"io_time(sec)",6x,"GB/s")'
+    do tstep=1,timesteps
+        if (tstep > 1) mode = "a"
+        call determineLocalSize()
+        call determineGlobalSize()
+        call determineOffsets()
+        call generateLocalArray()
+
+        call MPI_BARRIER(app_comm, adios_err)
+        io_start_time = MPI_WTIME()
+        group = "genarray"
+        call adios_open (adios_handle, group, outputfile, mode, app_comm, adios_err)
+        adios_groupsize = 13*4 + 8*ndx*ndy*ndz + 8*ndx*ndy + 8*ndx*ndz + 8*ndy*ndz
+        call adios_group_size (adios_handle, adios_groupsize, adios_totalsize, adios_err)
+        call adios_write (adios_handle, "/dimensions/gndx", gndx, adios_err)
+        call adios_write (adios_handle, "/dimensions/gndy", gndy, adios_err)
+        call adios_write (adios_handle, "/dimensions/gndz", gndz, adios_err)
+        call adios_write (adios_handle, "/info/nproc", nproc, adios_err)
+        call adios_write (adios_handle, "/info/npx", npx, adios_err)
+        call adios_write (adios_handle, "/info/npy", npy, adios_err)
+        call adios_write (adios_handle, "/info/npz", npz, adios_err)
+        call adios_write (adios_handle, "/aux/offx", offx, adios_err)
+        call adios_write (adios_handle, "/aux/offy", offy, adios_err)
+        call adios_write (adios_handle, "/aux/offz", offz, adios_err)
+        call adios_write (adios_handle, "/aux/ndx", ndx, adios_err)
+        call adios_write (adios_handle, "/aux/ndy", ndy, adios_err)
+        call adios_write (adios_handle, "/aux/ndz", ndz, adios_err)
+        call adios_write (adios_handle, "xyz", double_xyz, adios_err)
+        if (posz == 0) call adios_write (adios_handle, "xy", double_xy, adios_err)
+        if (posx == 0) call adios_write (adios_handle, "yz", double_yz, adios_err)
+        if (posy == 0) call adios_write (adios_handle, "xz", double_xz, adios_err)
+        call adios_close (adios_handle, adios_err)
+        call MPI_BARRIER(app_comm ,adios_err)
+        io_end_time = MPI_WTIME()
+        io_total_time = io_end_time - io_start_time
+        sz = adios_totalsize * nproc/1024.d0/1024.d0/1024.d0 !size in GB
+        gbs = sz/io_total_time
+        if (rank==0) print '("Writing: ",a20,d12.2,2x,d12.2,2x,d12.3)', outputfile,sz,io_total_time,gbs
+        if (tstep<timesteps) call sleep(sleeptime)
+        deallocate (double_xyz)
+        if (posz == 0) deallocate (double_xy)
+        if (posx == 0) deallocate (double_yz)
+        if (posy == 0) deallocate (double_xz)
+     end do
+end subroutine writeArray
+
+
+!!***************************
+subroutine usage()
+    print *, "Usage: genarray  output N  M  K  [infile|nx  ny  nz timesteps sleeptime]"
+    print *, "output: name of output file"
+    print *, "N:      number of processes in X dimension"
+    print *, "M:      number of processes in Y dimension"
+    print *, "K:      number of processes in Z dimension"
+    print *, "nx:     local array size in X dimension per processor"
+    print *, "ny:     local array size in Y dimension per processor"
+    print *, "nz:     local array size in Z dimension per processor"
+    print *, "infile: file that describes nx ny nz for each processor"
+    print *, "timesteps: the total number of timesteps to output" 
+    print *, "sleeptime: the time to sleep (s)"
+end subroutine usage
+
+!!***************************
+subroutine processArgs()
+    use genarray_varying_comm
+
+#ifndef __GFORTRAN__
+#ifndef __GNUC__
+    interface
+         integer function iargc()
+         end function iargc
+    end interface
+#endif
+#endif
+
+    character(len=256) :: npx_str, npy_str, npz_str, ndx_str, ndy_str, ndz_str
+    character(len=256) :: time_str,sleep_str
+    integer :: numargs
+
+    !! process arguments
+    numargs = iargc()
+    !print *,"Number of arguments:",numargs
+    if ( numargs < 5 ) then
+        call usage()
+        call exit(1)
+    endif
+    call getarg(1, outputfile)
+    call getarg(2, npx_str)
+    call getarg(3, npy_str)
+    call getarg(4, npz_str)
+    read (npx_str,'(i5)') npx
+    read (npy_str,'(i5)') npy
+    read (npz_str,'(i5)') npz
+    if ( numargs == 5 ) then
+        call getarg(5, inputfile)
+        ndx = 0
+        ndy = 0
+        ndz = 0
+        common_size = .false.
+    else if (numargs == 9) then
+        call getarg(5, ndx_str)
+        call getarg(6, ndy_str)
+        call getarg(7, ndz_str)
+        read (ndx_str,'(i6)') ndx
+        read (ndy_str,'(i6)') ndy
+        read (ndz_str,'(i6)') ndz
+        inputfile=char(0)
+        common_size = .true.
+        call getarg(8, time_str)
+        call getarg(9, sleep_str)
+        read (time_str,'(i6)') timesteps
+        read (sleep_str,'(i6)') sleeptime
+    else
+        call usage()
+        call exit(1)
+    endif
+
+end subroutine processArgs

@@ -1,0 +1,10 @@
+1D_arr_global/reader
+1D_arr_global/writer
+1D_arr_global_noxml/reader
+1D_arr_global_noxml/writer
+maya_append/reader
+maya_append/writer
+maya_noxml/reader
+maya_noxml/writer
+scalar/reader
+scalar/writer

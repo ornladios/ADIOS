@@ -97,6 +97,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_alacrity.m4 \
 	$(top_srcdir)/config/ac_dcmf.m4 \
 	$(top_srcdir)/config/ac_dimes.m4 \
 	$(top_srcdir)/config/ac_dmalloc.m4 \
+	$(top_srcdir)/config/ac_fastbit.m4 \
 	$(top_srcdir)/config/ac_fgr.m4 \
 	$(top_srcdir)/config/ac_flexpath.m4 \
 	$(top_srcdir)/config/ac_glib.m4 \
@@ -113,6 +114,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_alacrity.m4 \
 	$(top_srcdir)/config/ac_pami.m4 \
 	$(top_srcdir)/config/ac_phdf5.m4 \
 	$(top_srcdir)/config/ac_portals.m4 \
+	$(top_srcdir)/config/ac_ridcompress.m4 \
 	$(top_srcdir)/config/ac_szip.m4 \
 	$(top_srcdir)/config/ac_xpmem.m4 \
 	$(top_srcdir)/config/ac_zlib.m4 \
@@ -268,6 +270,8 @@ ADIOSREADLIB_SEQ_CFLAGS = @ADIOSREADLIB_SEQ_CFLAGS@
 ADIOSREADLIB_SEQ_CPPFLAGS = @ADIOSREADLIB_SEQ_CPPFLAGS@
 ADIOSREADLIB_SEQ_LDADD = @ADIOSREADLIB_SEQ_LDADD@
 ADIOSREADLIB_SEQ_LDFLAGS = @ADIOSREADLIB_SEQ_LDFLAGS@
+ADIOS_TIMERS = @ADIOS_TIMERS@
+ADIOS_TIMER_EVENTS = @ADIOS_TIMER_EVENTS@
 ALACRITY_CPPFLAGS = @ALACRITY_CPPFLAGS@
 ALACRITY_LDFLAGS = @ALACRITY_LDFLAGS@
 ALACRITY_LIBS = @ALACRITY_LIBS@
@@ -327,6 +331,9 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+FASTBIT_CPPFLAGS = @FASTBIT_CPPFLAGS@
+FASTBIT_LDFLAGS = @FASTBIT_LDFLAGS@
+FASTBIT_LIBS = @FASTBIT_LIBS@
 FC = $(MPIFC)
 FCFLAGS = @FCFLAGS@
 FCLIBS = @FCLIBS@
@@ -428,11 +435,13 @@ PTHREAD_CC = @PTHREAD_CC@
 PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
 PTHREAD_LIBS = @PTHREAD_LIBS@
 RANLIB = @RANLIB@
+RIDCOMPRESS_CPPFLAGS = @RIDCOMPRESS_CPPFLAGS@
+RIDCOMPRESS_LDFLAGS = @RIDCOMPRESS_LDFLAGS@
+RIDCOMPRESS_LIBS = @RIDCOMPRESS_LIBS@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SKEL_HAVE_ADIOS_TIMING = @SKEL_HAVE_ADIOS_TIMING@
-SKEL_TIMING = @SKEL_TIMING@
 STRIP = @STRIP@
 SZIP_CPPFLAGS = @SZIP_CPPFLAGS@
 SZIP_LDFLAGS = @SZIP_LDFLAGS@
@@ -501,28 +510,28 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-INCLUDES = $(all_includes) -I$(top_builddir)/src \
+AM_CPPFLAGS = $(all_includes) -I$(top_builddir)/src \
 	-I$(top_srcdir)/src/public
 AUTOMAKE_OPTIONS = no-dependencies
 
 # read_coords read_phi read_parts_global read_gena read_gena_pncd read_pixie_all
 genbp_SOURCES = genbp.c
-genbp_CPPFLAGS = $(ADIOSLIB_CPPFLAGS)
+genbp_CPPFLAGS = $(AM_CPPFLAGS) $(ADIOSLIB_CPPFLAGS)
 genbp_CFLAGS = $(ADIOSLIB_CFLAGS)
 genbp_LDADD = $(top_builddir)/src/libadios.a $(top_builddir)/src/libadiosread.a $(ADIOSLIB_LDADD)
 genbp_LDFLAGS = $(ADIOSLIB_LDFLAGS) 
 @BUILD_FORTRAN_TRUE@bp_read_f_SOURCES = bp_read_f.F90
-@BUILD_FORTRAN_TRUE@bp_read_f_CPPFLAGS = $(ADIOSLIB_CPPFLAGS)
+@BUILD_FORTRAN_TRUE@bp_read_f_CPPFLAGS = $(AM_CPPFLAGS) $(ADIOSLIB_CPPFLAGS)
 @BUILD_FORTRAN_TRUE@bp_read_f_CFLAGS = $(ADIOSLIB_CFLAGS)
 @BUILD_FORTRAN_TRUE@bp_read_f_LDADD = $(top_builddir)/src/libadiosreadf.a $(ADIOSREADLIB_LDADD)
 @BUILD_FORTRAN_TRUE@bp_read_f_LDFLAGS = $(ADIOSREADLIB_LDFLAGS) 
 @BUILD_FORTRAN_TRUE@bp_read_f_v1_SOURCES = bp_read_f_v1.F90
-@BUILD_FORTRAN_TRUE@bp_read_f_v1_CPPFLAGS = $(ADIOSLIB_CPPFLAGS)
+@BUILD_FORTRAN_TRUE@bp_read_f_v1_CPPFLAGS = $(AM_CPPFLAGS) $(ADIOSLIB_CPPFLAGS)
 @BUILD_FORTRAN_TRUE@bp_read_f_v1_CFLAGS = $(ADIOSLIB_CFLAGS)
 @BUILD_FORTRAN_TRUE@bp_read_f_v1_LDADD = $(top_builddir)/src/libadiosreadf_v1.a $(ADIOSREADLIB_LDADD)
 @BUILD_FORTRAN_TRUE@bp_read_f_v1_LDFLAGS = $(ADIOSREADLIB_LDFLAGS) 
 bp_read_c_SOURCES = bp_read_c.c
-bp_read_c_CPPFLAGS = -DADIOS_USE_READ_API_1 $(ADIOSLIB_CPPFLAGS)
+bp_read_c_CPPFLAGS = -DADIOS_USE_READ_API_1 $(AM_CPPFLAGS) $(ADIOSLIB_CPPFLAGS)
 bp_read_c_CFLAGS = $(ADIOSLIB_CFLAGS)
 bp_read_c_LDADD = $(top_builddir)/src/libadiosread.a $(ADIOSREADLIB_LDADD)
 bp_read_c_LDFLAGS = $(ADIOSREADLIB_LDFLAGS) 
@@ -530,8 +539,8 @@ FCLINK = \
         $(LIBTOOL) --mode=link --tag F77 $(FC) \
         $(AM_FCFLAGS) $(FCFLAGS) $(LDFLAGS) -o $@
 
-@BUILD_FORTRAN_FALSE@CLEANFILES = *.o bp_read_c genbp read_coords read_phi read_parts_global
-@BUILD_FORTRAN_TRUE@CLEANFILES = *.o bp_read_c bp_read_f genbp read_coords read_phi read_parts_global
+@BUILD_FORTRAN_FALSE@CLEANFILES = bp_read_c genbp read_coords read_phi read_parts_global
+@BUILD_FORTRAN_TRUE@CLEANFILES = bp_read_c bp_read_f genbp read_coords read_phi read_parts_global
 EXTRA_DIST = testbp_c.xml
 all: all-am
 

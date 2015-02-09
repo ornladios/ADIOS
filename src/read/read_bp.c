@@ -27,6 +27,7 @@
 #include "core/adios_logger.h"
 
 #include "core/transforms/adios_transforms_transinfo.h"
+#include "core/transforms/adios_transforms_common.h" // NCSU ALACRITY-ADIOS
 
 #ifdef DMALLOC
 #include "dmalloc.h"
@@ -2191,11 +2192,20 @@ typedef struct {
                 for(timestep = 0; timestep < nsteps; timestep ++)
                 {
                     MALLOC(vs->steps->avgs[timestep], sum_size, "average per timestep")
-                    *(vs->steps->avgs[timestep]) = *(sums[timestep]) / cnts[timestep];
+                    if(cnts[timestep]) {
+                        *(vs->steps->avgs[timestep]) = *(sums[timestep]) / cnts[timestep];
+                    } else {
+                        // no summation for this timestep (e.g. constant NAN array)
+                        *(vs->steps->avgs[timestep]) = 0.0;
+                    }
 
                     MALLOC(vs->steps->std_devs[timestep], sum_size, "standard deviation per timestep")
-                    *(vs->steps->std_devs[timestep]) = sqrt(*(sum_squares[timestep]) / cnts[timestep]
+                    if(cnts[timestep]) {
+                        *(vs->steps->std_devs[timestep]) = sqrt(*(sum_squares[timestep]) / cnts[timestep]
                                 - ((*(vs->steps->avgs[timestep]) * (*(vs->steps->avgs[timestep])))));
+                    } else {
+                        *(vs->steps->std_devs[timestep]) = 0.0;
+                    }
 
                     free (sums[timestep]);
                     free (sum_squares[timestep]);
@@ -2269,6 +2279,9 @@ typedef struct {
     if (bsum_squares) free (bsum_squares);
     if (gsum_square) free (gsum_square);
 
+    if (cnts) free (cnts);
+    if (bcnts) free (bcnts);
+
     return 0;
 }
 
@@ -2278,6 +2291,7 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
     BP_FILE * fh = GET_BP_FILE (fp);
     int i, j, file_is_fortran, nblks, time;
     uint64_t * ldims, * gdims, * offsets;
+    int dummy = -1;
     struct adios_index_var_struct_v1 * var_root;
     ADIOS_VARBLOCK *blockinfo;
 
@@ -2296,12 +2310,11 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
     blockinfo = (ADIOS_VARBLOCK *) malloc (nblks * sizeof (ADIOS_VARBLOCK));
     assert (blockinfo);
 
-    if (use_pretransform_dimensions)
-        assert(var_root->characteristics[0].transform.transform_type != adios_transform_none);
+    const struct adios_index_characteristic_struct_v1 *root_characteristic = &var_root->characteristics[0];
 
     // NCSU ALACRITY-ADIOS - Use pre-transform dimensions if instructed to do so
     int dimcount;
-    if (use_pretransform_dimensions) {
+    if (use_pretransform_dimensions && root_characteristic->transform.transform_type != adios_transform_none) {
         dimcount = var_root->characteristics[0].transform.pre_transform_dimensions.count;
     } else {
         dimcount = var_root->characteristics[0].dims.count;
@@ -2323,11 +2336,17 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
 
         if (!p->streaming)
         {
-            bp_get_dimension_generic_notime (use_pretransform_dimensions ?
-                                             &var_root->characteristics[i].transform.pre_transform_dimensions :
-                                             &var_root->characteristics[i].dims,
-                                             ldims, gdims, offsets, file_is_fortran
-                                            );
+            // NCSU ALACRITY-ADIOS
+            const struct adios_index_characteristic_struct_v1 *blk_characteristic = &var_root->characteristics[i];
+        	// Only use pre-transform dimensions if A) pre-transform dimensions were
+        	// requested, and B) this varblock is actually transformed. Use normal
+        	// dimensions otherwise
+            const struct adios_index_characteristic_dims_struct_v1 *blk_dims =
+            		use_pretransform_dimensions && blk_characteristic->transform.transform_type != adios_transform_none ?
+            				&blk_characteristic->transform.pre_transform_dimensions :
+            				&blk_characteristic->dims;
+
+            bp_get_dimension_generic_notime(blk_dims, ldims, gdims, offsets, file_is_fortran);
         }
         else
         {
@@ -2338,11 +2357,17 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
 
             if (j < var_root->characteristics_count)
             {
-                bp_get_dimension_generic_notime (use_pretransform_dimensions ?
-                                                 &var_root->characteristics[j].transform.pre_transform_dimensions :
-                                                 &var_root->characteristics[j].dims,
-                                                 ldims, gdims, offsets, file_is_fortran
-                                                );
+                // NCSU ALACRITY-ADIOS
+                const struct adios_index_characteristic_struct_v1 *blk_characteristic = &var_root->characteristics[j];
+                // Only use pre-transform dimensions if A) pre-transform dimensions were
+            	// requested, and B) this varblock is actually transformed. Use normal
+            	// dimensions otherwise
+                const struct adios_index_characteristic_dims_struct_v1 *blk_dims =
+                		use_pretransform_dimensions && blk_characteristic->transform.transform_type != adios_transform_none ?
+                				&blk_characteristic->transform.pre_transform_dimensions :
+                				&blk_characteristic->dims;
+
+                bp_get_dimension_generic_notime(blk_dims, ldims, gdims, offsets, file_is_fortran);
                 j++;
             }
             else
@@ -2353,8 +2378,16 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
 
         // NCSU ALACRITY-ADIOS - If a time dimension was removed above, update
         // dimcount so that dimension copy/swapping works below
-        if (ldims[dimcount - 1] == 0)
+        if (dimcount > 0 && ldims[dimcount - 1] == 0)
             dimcount--;
+
+        /*Fix: the function above swaps the dimensions to C order in any case. 
+         * For Fortran callers, we have to swap it back here */
+        if (futils_is_called_from_fortran ())
+        {
+            swap_order (dimcount, ldims, &dummy);
+            swap_order (dimcount, offsets, &dummy);
+        }
 
         memcpy (blockinfo[i].start, offsets, dimcount * 8);
         memcpy (blockinfo[i].count, ldims, dimcount * 8);
@@ -2428,14 +2461,55 @@ ADIOS_TRANSINFO * adios_read_bp_inq_var_transinfo(const ADIOS_FILE *fp, const AD
         transinfo->should_free_transform_metadata = 0;
     }
     transinfo->orig_blockinfo = 0;
+    transinfo->transform_metadatas = 0;
 
     return transinfo;
 }
 
 // NCSU ALACRITY-ADIOS - Adding an inq function to get original (pre-transform) blockinfo for variables from storage
-int adios_read_bp_inq_var_trans_blockinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti) 
-{
+int adios_read_bp_inq_var_trans_blockinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi, ADIOS_TRANSINFO *ti) {
+	assert(fp);
+	assert(vi);
+	assert(ti);
+
+	struct BP_PROC * p = (struct BP_PROC *) fp->fh;
+    BP_FILE * fh = (BP_FILE *) p->fh;
+    struct adios_index_var_struct_v1 * var_root;
+    int i;
+
+    // Perform variable ID mapping, since the input to this function is user-perceived
+    int mapped_id = map_req_varid (fp, vi->varid);
+    var_root = bp_find_var_byid (fh, mapped_id);
+
     ti->orig_blockinfo = inq_var_blockinfo(fp, vi, 1); // 1 -> use original, pretransform dimensions
+    assert(ti->orig_blockinfo);
+
+    // In streaming mode, we need to offset the transform metadata and length
+    // arrays to start at the current timestep. For file mode, no such translation
+    // is needed.
+    int streaming_block_offset;
+    if (p->streaming) {
+    	int time = _adios_step_to_time(fp, var_root, 0);
+    	streaming_block_offset = get_var_start_index(var_root, time);
+    } else {
+    	streaming_block_offset = 0;
+    }
+
+    assert(streaming_block_offset < var_root->characteristics_count);
+    assert(streaming_block_offset + vi->sum_nblocks <= var_root->characteristics_count);
+
+    // Allocate and fill the transform_metadatas array
+    ti->transform_metadatas = (ADIOS_TRANSFORM_METADATA*)malloc(vi->sum_nblocks * sizeof(ADIOS_TRANSFORM_METADATA));
+    assert(ti->transform_metadatas);
+    for (i = 0; i < vi->sum_nblocks; i++) {
+    	const struct adios_index_characteristic_transform_struct *transform_char = &var_root->characteristics[streaming_block_offset + i].transform;
+
+    	ti->transform_metadatas[i] = (ADIOS_TRANSFORM_METADATA){
+    		.length = transform_char->transform_metadata_len,
+    		.content = transform_char->transform_metadata,
+    	};
+    }
+
     return 0;
 }
 
@@ -2460,6 +2534,7 @@ uint64_t get_req_datasize (const ADIOS_FILE * fp, read_request * r, struct adios
     ADIOS_SELECTION * sel = r->sel;
     uint64_t datasize = bp_get_type_size (v->type, "");
     int i, pgidx, ndims;
+    const struct BP_PROC * p = (struct BP_PROC *) fp->fh;
 
     if (sel->type == ADIOS_SELECTION_BOUNDINGBOX)
     {
@@ -2475,10 +2550,12 @@ uint64_t get_req_datasize (const ADIOS_FILE * fp, read_request * r, struct adios
     else if (sel->type == ADIOS_SELECTION_WRITEBLOCK)
     {
         //pgidx = adios_wbidx_to_pgidx (fp, r);
-        // NCSU ALACRITY-ADIOS: Adding absoluet PG indexing
-        pgidx = sel->u.block.is_absolute_index ?
+        // NCSU ALACRITY-ADIOS: Adding absolute PG indexing, but *only* in non-streaming
+    	// mode (absolute writeblocks are interpreted as timestep-relative when in
+    	// streaming mode)
+        pgidx = sel->u.block.is_absolute_index && !p->streaming ?
                     sel->u.block.index :
-                adios_wbidx_to_pgidx (fp, r, 0);
+                    adios_wbidx_to_pgidx (fp, r, 0);
         // NCSU ALACRITY-ADIOS: Adding sub-PG writeblock read support
         if (sel->u.block.is_sub_pg_selection) {
             datasize = sel->u.block.nelements;
@@ -2630,7 +2707,7 @@ int adios_read_bp_perform_reads (const ADIOS_FILE *fp, int blocking)
         // remove head from list
         r = p->local_read_request_list;
         p->local_read_request_list = p->local_read_request_list->next;
-        common_read_selection_delete (r->sel);
+        free_selection (r->sel); //common_read_selection_delete (r->sel);
         r->sel = NULL;
         free(r);
 
@@ -2894,6 +2971,8 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
             // remove head from list
             r = p->local_read_request_list;
             p->local_read_request_list = p->local_read_request_list->next;
+            free_selection (r->sel); //common_read_selection_delete (r->sel);
+            r->sel = NULL;
             free(r);
 
             * chunk = varchunk;
@@ -2923,6 +3002,8 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
                 // remove head from list
                 r = p->local_read_request_list;
                 p->local_read_request_list = p->local_read_request_list->next;
+                free_selection (r->sel); //common_read_selection_delete (r->sel);
+                r->sel = NULL;
                 free(r);
 
                 * chunk = varchunk;
@@ -2943,6 +3024,8 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
             // remove head from list
             r = p->local_read_request_list;
             p->local_read_request_list = p->local_read_request_list->next;
+            free_selection (r->sel); //common_read_selection_delete (r->sel);
+            r->sel = NULL;
             free(r);
 
             r = subreqs;
@@ -2964,6 +3047,8 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
                 // remove head from list
                 r = p->local_read_request_list;
                 p->local_read_request_list = p->local_read_request_list->next;
+                free_selection (r->sel); //common_read_selection_delete (r->sel);
+                r->sel = NULL;
                 free(r);
 
                 * chunk = varchunk;
@@ -3266,6 +3351,12 @@ int adios_read_bp_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_D
     return 0;
 }
 
+int  adios_read_bp_get_dimension_order (const ADIOS_FILE *fp)
+{
+    BP_FILE * fh = GET_BP_FILE (fp);
+    return is_fortran_file (fh);
+}
+
 void adios_read_bp_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
 {
     BP_PROC * p = GET_BP_PROC (fp);
@@ -3494,7 +3585,12 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
 
     for (i = 0; i < r->nsteps; i++)
     {
-        idx = wb->is_absolute_index ? wb->index : adios_wbidx_to_pgidx (fp, r, i);
+        // NCSU ALACRITY-ADIOS: Adding absolute PG indexing, but *only* in non-streaming
+    	// mode (absolute writeblocks are interpreted as timestep-relative when in
+    	// streaming mode)
+        idx = wb->is_absolute_index && !p->streaming ?
+                  wb->index :
+                  adios_wbidx_to_pgidx (fp, r, i);
         //if (!wb->is_absolute_index) printf("Timestep-relative writeblock index used!\n");
         assert (idx >= 0);
 

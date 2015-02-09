@@ -79,6 +79,9 @@
 /* Define to 1 if you have the <dmalloc.h> header file. */
 #cmakedefine  HAVE_DMALLOC_H 1
 
+/* Define if we have libfastbit */
+#cmakedefine HAVE_FASTBIT 1
+
 /* Define to 1 if you have the `fdatasync' function. */
 #cmakedefine HAVE_FDATASYNC 1
 
@@ -100,10 +103,16 @@
 /* Define to 1 if you have the <hdf5.h> header file. */
 #cmakedefine HAVE_HDF5_H 1
 
+/* Define to 1 if you have the <iapi.h> header file. */
+#cmakedefine HAVE_IAPI_H 1
+
 /* Define to 1 if you have <infiniband/verbs.h>. */
 #cmakedefine HAVE_IBVERBS_H 1
 
 #cmakedefine HAVE_IBVERBS 1
+
+/* icee is enabled */
+#cmakedefine HAVE_ICEE 1
 
 /* Define if you have the Infiniband. */
 #cmakedefine HAVE_INFINIBAND 1
@@ -215,6 +224,9 @@
 /* Define to 1 if the system has the type `ptl_time_t'. */
 #cmakedefine HAVE_PTL_TIME_T 1
 
+/* Define if you have RIDCOMPRESS. */
+#cmakedefine HAVE_RIDCOMPRESS 1
+
 /* Define to 1 if you have the `sched_yield' function. */
 #cmakedefine HAVE_SCHED_YIELD 1
 
@@ -266,6 +278,9 @@
 /* Datatap is disabled */
 #cmakedefine NO_DATATAP 1
 
+/* Flexpath is disabled */
+#cmakedefine NO_FLEXPATH 1
+
 /* Define to 1 if your C compiler doesn't accept -c and -o together. */
 #cmakedefine NO_MINUS_C_MINUS_O 1
 
@@ -291,8 +306,8 @@
    your system. */
 #cmakedefine PTHREAD_CREATE_JOINABLE ${PTHREAD_CREATE_JOINABLE}
 
-/* Skel timing is enabled */
-#cmakedefine SKEL_TIMING 1
+/* ADIOS timing is enabled */
+#cmakedefine ADIOS_TIMERS 1
 
 /* research_transports is enabled */
 #define RESEARCH_TRANSPORTS ${RESEARCH_TRANSPORTS}

@@ -38,6 +38,17 @@ if (!strcasecmp (buf,b)) \
 (*t) [b].adios_start_calculation_fn = adios_##a##_start_calculation; \
 (*t) [b].adios_stop_calculation_fn = adios_##a##_stop_calculation;
 
+void adios_free_transports (struct adios_transport_struct * t)
+{
+    int i;
+    for (i=0; i<ADIOS_METHOD_COUNT; i++) {
+        if (t[i].method_name) {
+            free (t[i].method_name);
+            t[i].method_name = 0;
+        }
+    }
+}
+
 void adios_init_transports (struct adios_transport_struct ** t)
 {
     *t = (struct adios_transport_struct *)
@@ -87,6 +98,9 @@ void adios_init_transports (struct adios_transport_struct ** t)
 
 # if HAVE_FLEXPATH
     ASSIGN_FNS(flexpath,ADIOS_METHOD_FLEXPATH,"FLEXPATH")
+# endif
+# if HAVE_ICEE
+    ASSIGN_FNS(icee,ADIOS_METHOD_ICEE,"ICEE")
 # endif
 
     ASSIGN_FNS(posix,ADIOS_METHOD_POSIX,"POSIX")
@@ -170,6 +184,9 @@ int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
 
 #if HAVE_FLEXPATH
     MATCH_STRING_TO_METHOD("FLEXPATH",ADIOS_METHOD_FLEXPATH,0)
+#endif
+#if HAVE_ICEE
+    MATCH_STRING_TO_METHOD("ICEE",ADIOS_METHOD_ICEE,0)
 #endif
 
 #if HAVE_NSSI

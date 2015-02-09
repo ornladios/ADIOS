@@ -1,5 +1,5 @@
-INCLUDES = $(all_includes)
-INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public
+AM_CPPFLAGS = $(all_includes)
+AM_CPPFLAGS += -I$(top_srcdir)/src -I$(top_srcdir)/src/public
 
 AUTOMAKE_OPTIONS = no-dependencies
 
@@ -14,4 +14,3 @@ posix_fgr_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 CLEANFILES = posix_fgr.bp
 CC=$(MPICC)
 
-EXTRA_DIST = posix_fgr.xml

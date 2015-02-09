@@ -4,8 +4,8 @@
 #include <assert.h>
 
 #include "util.h"
-#include "adios_transforms_hooks_read.h"
-#include "adios_transforms_reqgroup.h"
+#include "core/transforms/adios_transforms_hooks_read.h"
+#include "core/transforms/adios_transforms_reqgroup.h"
 
 #ifdef ISOBAR
 
@@ -78,8 +78,8 @@ adios_datablock * adios_transform_isobar_pg_reqgroup_completed(adios_transform_r
     uint64_t compressed_size = (uint64_t)completed_pg_reqgroup->raw_var_length;
     void* compressed_data = completed_pg_reqgroup->subreqs->data;
     
-    uint64_t uncompressed_size_meta = *((uint64_t*)reqgroup->transinfo->transform_metadata);
-    char compress_ok = *((char*)(reqgroup->transinfo->transform_metadata + sizeof(uint64_t)));
+    uint64_t uncompressed_size_meta = *((uint64_t*)completed_pg_reqgroup->transform_metadata);
+    char compress_ok = *((char*)(completed_pg_reqgroup->transform_metadata + sizeof(uint64_t)));
 
     uint64_t uncompressed_size = adios_get_type_size(reqgroup->transinfo->orig_type, "");
     int d = 0;
@@ -113,10 +113,7 @@ adios_datablock * adios_transform_isobar_pg_reqgroup_completed(adios_transform_r
         memcpy(uncompressed_data, compressed_data, compressed_size);
     }
 
-    return adios_datablock_new(reqgroup->transinfo->orig_type,
-                               completed_pg_reqgroup->timestep,
-                               completed_pg_reqgroup->pg_bounds_sel,
-                               uncompressed_data);
+    return adios_datablock_new_whole_pg(reqgroup, completed_pg_reqgroup, uncompressed_data);
 }
 
 adios_datablock * adios_transform_isobar_reqgroup_completed(adios_transform_read_request *completed_reqgroup)

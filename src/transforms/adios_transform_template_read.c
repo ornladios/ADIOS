@@ -45,10 +45,7 @@ adios_datablock * adios_transform_template_pg_reqgroup_completed(adios_transform
 
     // Decompress into orig_buff
 
-    return adios_datablock_new(reqgroup->transinfo->orig_type,
-                               completed_pg_reqgroup->timestep,
-                               completed_pg_reqgroup->pg_bounds_sel,
-                               orig_buff);
+    return adios_datablock_new_whole_pg(reqgroup, completed_pg_reqgroup, orig_buff);
 }
 
 // Do nothing for the full read request complete (typical)

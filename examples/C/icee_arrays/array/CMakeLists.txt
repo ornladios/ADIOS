@@ -1,0 +1,25 @@
+include_directories(${PROJECT_SOURCE_DIR}/src/public)
+include_directories(${PROJECT_SOURCE_DIR}/src)
+include_directories(${PROJECT_SOURCE_DIR}/examples/C/icee_arrays/array)
+link_directories(${PROJECT_BINARY_DIR}/examples/C/icee_arrays/array)
+
+add_executable(adios_write adios_write.c)
+if(MPI_COMPILE_FLAGS)
+  set_target_properties(adios_write PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
+endif()
+if(MPI_LINK_FLAGS)
+  set_target_properties(adios_write PROPERTIES LINK_FLAGS "${MPI_C_LINK_FLAGS}")
+endif()
+target_link_libraries(adios_write adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES})
+
+add_executable(adios_read adios_read.c)
+if(MPI_COMPILE_FLAGS)
+  set_target_properties(adios_read PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
+endif()
+if(MPI_LINK_FLAGS)
+  set_target_properties(adios_read PROPERTIES LINK_FLAGS "${MPI_C_LINK_FLAGS}")
+endif()
+target_link_libraries(adios_read adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES})
+
+file(COPY README.txt 
+        DESTINATION ${PROJECT_BINARY_DIR}/examples/C/icee_arrays/array)

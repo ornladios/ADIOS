@@ -25,6 +25,40 @@
 #include "dimes_interface.h"
 #include "dataspaces.h"
 
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
+#  define START_TIMER(t) adios_timing_go (fd->group->timing_obj, (t) ) 
+#else
+#  define START_TIMER(t) ; 
+#endif
+
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
+#  define STOP_TIMER(t) adios_timing_stop (fd->group->timing_obj, (t) )
+#else
+#  define STOP_TIMER(t) ;
+#endif
+
+// Indices for the timer object
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
+static int T_DIMES_PUT   = ADIOS_TIMING_MAX_USER_TIMERS + 0;
+static int T_GETLOCK     = ADIOS_TIMING_MAX_USER_TIMERS + 1;
+static int T_MPI_BARRIER = ADIOS_TIMING_MAX_USER_TIMERS + 2;
+static int T_MD          = ADIOS_TIMING_MAX_USER_TIMERS + 3;
+static int T_AD_OPEN     = ADIOS_TIMING_MAX_USER_TIMERS + 4;
+static int T_AD_WRITE    = ADIOS_TIMING_MAX_USER_TIMERS + 5;
+static int T_AD_CLOSE    = ADIOS_TIMING_MAX_USER_TIMERS + 6;
+
+static int timer_count = 7;
+static char * timer_names[] = {
+        "dimes_put",
+        "dimes_lock",
+        "mpi_barrier",
+        "metadata",
+        "ad_open",
+        "ad_write",
+        "ad_close",
+};
+#endif
+
 /*#define DATASPACES_NO_VERSIONING  define it at configure as -DDATASPACES_NO_VERSIONING in CFLAGS */
 
 static int adios_dimes_initialized = 0;
@@ -32,7 +66,7 @@ static int adios_dimes_initialized = 0;
 static char ds_var_name[MAX_DS_NAMELEN];
 static unsigned int adios_dimes_verbose = 3;
 static int check_read_status = 2; // 0: disable, 1: at every step (not supported yet), 2: at finalize (default value)
-static double check_read_status_timeout_sec = 1;
+static double check_read_status_timeout_sec = 30;
 static int check_read_status_poll_interval_ms = 100;
 // count the number of inits/finalizes (one per adios group using this method
 static unsigned int number_of_inits = 0;
@@ -317,6 +351,21 @@ int adios_dimes_open (struct adios_file_struct * fd,
         return adios_errno;
     }
 
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
+    // Ensure both timing objects exist
+    // timing_obj should get created at every open for the same file
+    // prev_timing_obj should only be created at the first open 
+    if (fd->group)
+    {
+        if (!fd->group->timing_obj)
+            fd->group->timing_obj = adios_timing_create (timer_count, timer_names);
+
+        if (!fd->group->prev_timing_obj)
+            fd->group->prev_timing_obj = adios_timing_create (timer_count, timer_names);
+    }
+#endif
+    START_TIMER (T_AD_OPEN);
+
     struct adios_dimes_stream_info *info = lookup_dimes_stream_info(fd->name);
     if (!info) {
         return adios_errno;
@@ -327,6 +376,7 @@ int adios_dimes_open (struct adios_file_struct * fd,
     info->time_index++;
     log_info ("adios_dimes_open: open %s, mode=%d, time_index=%d \n",
                         fd->name, fd->mode, info->time_index);
+
 
 #if HAVE_MPI
     // if we have MPI and a communicator, we can get the exact size of this application
@@ -339,12 +389,15 @@ int adios_dimes_open (struct adios_file_struct * fd,
     info->iam_rank0 = (md->rank == 0);
 
     log_debug ("adios_dimes_open: rank=%d call write lock...\n", md->rank);       
+    START_TIMER (T_GETLOCK);
     dspaces_lock_on_write (fd->name, &md->mpi_comm);  
+    STOP_TIMER (T_GETLOCK);
     log_debug ("adios_dimes_open: rank=%d got write lock\n", md->rank);        
     // Free data objects written in the previous steps
     dimes_put_sync_group(fd->name, info->time_index);
     dimes_put_set_group(fd->name, info->time_index);    
 
+    STOP_TIMER (T_AD_OPEN);
     return ret;
 }
 
@@ -376,6 +429,7 @@ void adios_dimes_write (struct adios_file_struct * fd
     if (fd->mode == adios_mode_read) {
         return;
     }
+    START_TIMER (T_AD_WRITE);
 
     struct adios_dimes_data_struct *md = (struct adios_dimes_data_struct *)
                                                             method->method_data;
@@ -478,7 +532,9 @@ void adios_dimes_write (struct adios_file_struct * fd
         gdims_in[i] = gdims[didx[i]];
     }
     dimes_define_gdim(ds_var_name, ndims, gdims_in);
+    START_TIMER (T_DIMES_PUT);
     dimes_put(ds_var_name, version, var_type_size, ndims, lb_in, ub_in, data);
+    STOP_TIMER (T_DIMES_PUT);
 
     dimes_ints_to_str(ndims, didx, didx_str);
     dimes_int64s_to_str(ndims, gdims_in, gdims_str);
@@ -486,6 +542,7 @@ void adios_dimes_write (struct adios_file_struct * fd
     dimes_int64s_to_str(ndims, ub_in, ub_str);
     log_debug ("var_name=%s, dimension ordering=(%s), gdims=(%s), lb=(%s), ub=(%s)\n",
             ds_var_name, didx_str, gdims_str, lb_str, ub_str);
+    STOP_TIMER (T_AD_WRITE);
 }
 
 void adios_dimes_get_write_buffer (struct adios_file_struct * fd
@@ -934,6 +991,7 @@ void adios_dimes_close (struct adios_file_struct * fd
     if (fd->mode == adios_mode_read) {
         return;
     }
+    START_TIMER (T_AD_CLOSE);
 
     struct adios_dimes_data_struct *md = (struct adios_dimes_data_struct *)
                                                 method->method_data;
@@ -945,6 +1003,7 @@ void adios_dimes_close (struct adios_file_struct * fd
     int elemsize, ndim;
     unsigned int version;
 
+    START_TIMER (T_MD);
     // finalize variable info in fd buffer, next we call build_index
     while (a) {
         a->write_offset = 1; // only attributes with !=0 offset will be included in build index
@@ -954,13 +1013,17 @@ void adios_dimes_close (struct adios_file_struct * fd
     //adios_write_close_vars_v1 (fd);
     /* Gather var/attr indices from all processes to rank 0 */
     adios_dimes_gather_indices (fd, method, index);
+    STOP_TIMER (T_MD);
 
     // make sure all processes have finished putting data to the space 
     // before we put metadata from rank 0
+    START_TIMER (T_MPI_BARRIER);
     MPI_Barrier (md->mpi_comm); 
+    STOP_TIMER (T_MPI_BARRIER);
 
     if (md->rank == 0) {
 
+        START_TIMER (T_MD);
         /* Write two adios specific variables with the name of the file and name of the group into the space */
         /* ADIOS Read API fopen() checks these variables to see if writing already happened */
 #ifdef DATASPACES_NO_VERSIONING
@@ -1019,6 +1082,7 @@ void adios_dimes_close (struct adios_file_struct * fd
         dspaces_define_gdim(ds_var_name, ndim, gdims);
         dspaces_put(ds_var_name, 0, elemsize, ndim, lb, ub, version_buf);
         dspaces_put_sync(); //wait on previous put to finish
+        STOP_TIMER (T_MD);
     }
 
 
@@ -1027,12 +1091,25 @@ void adios_dimes_close (struct adios_file_struct * fd
     adios_free_index_v1 (index);
 
     // rank=0 may be in put_sync when others call unlock, which is a global op
+    START_TIMER (T_MPI_BARRIER);
     MPI_Barrier (md->mpi_comm); 
+    STOP_TIMER (T_MPI_BARRIER);
     //log_debug("%s: call dspaces_put_sync()\n", __func__);
     //dspaces_put_sync();
     dimes_put_unset_group();
     log_debug("%s: call dspaces_unlock_on_write(%s)\n", __func__, fd->name);
     dspaces_unlock_on_write(fd->name, &md->mpi_comm);
+
+    STOP_TIMER (T_AD_CLOSE);
+
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
+    //Finished timing this cycle, swap the timing buffers
+    adios_timing_destroy(fd->group->prev_timing_obj);
+    fd->group->prev_timing_obj = fd->group->timing_obj;
+    fd->group->timing_obj = 0;
+    // prev_timing_obj points to unwritten timing info, timing_obj is
+    // ready to allocate at the next open
+#endif
 
     log_info ("%s: exit\n", __func__);
 }
@@ -1057,7 +1134,7 @@ void adios_dimes_finalize (int mype, struct adios_method_struct * method)
         for (i=0; i<num_of_streams; i++) {
             info = &stream_info[i];
             /* Put VERSION@fn into space. Indicates that this file will not be extended anymore.  */
-            if (info->iam_rank0 == 0) {
+            if (info->iam_rank0) {
                 if (check_read_status == 2) {
                     check_read_status_var(info->name, info->time_index);
                 }

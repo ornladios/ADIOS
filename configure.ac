@@ -1,11 +1,12 @@
-
-AC_INIT(configure.ac)
+s
+AC_INIT([adios], [1.8.0])
+AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR(config)
 AC_REVISION($Revision$)
 
 AC_CONFIG_HEADERS(config.h)
-AM_INIT_AUTOMAKE(adios,1.7.0)
+AM_INIT_AUTOMAKE
 
 AM_MAINTAINER_MODE([enable])
 
@@ -99,6 +100,8 @@ AC_SZIP
 AC_ISOBAR
 AC_APLOD
 AC_ALACRITY
+AC_RIDCOMPRESS
+AC_FASTBIT
 AX_NCSU_LIBTIMER
 AC_BGQ
 
@@ -112,14 +115,14 @@ AM_CONDITIONAL([RESEARCH_TRANSPORTS], [test "x$enable_research_transports" == "x
 AC_LANG(C)
 
 
-AC_ARG_ENABLE(skel-timing,
-    [AS_HELP_STRING([--enable-skel-timing],
-        [Include the skel timing mechanism. By default this is not included])])
-AM_CONDITIONAL([SKEL_TIMING], [test "x$enable_skel_timing" == "xyes"])
+AC_ARG_ENABLE(timers,
+    [AS_HELP_STRING([--disable-timers],
+        [Disable the adios timing mechanism. By default the timers are used.])])
+AM_CONDITIONAL([ADIOS_TIMERS], [test "x$enable_timers" != "xno"])
 
 
-if test "x$enable_skel_timing" == "xyes"; then
-    AC_DEFINE(SKEL_TIMING, 1, [Skel timing is enabled])
+if test "x$enable_timers" != "xno"; then
+    AC_DEFINE(ADIOS_TIMERS, 1, [Adios timing is enabled])
     AC_SUBST(SKEL_HAVE_ADIOS_TIMING,True)
     dnl The macro AM_SUBST_NOTMAKE does not work on Hopper with automake 10.1
     dnl AM_SUBST_NOTMAKE(SKEL_HAVE_ADIOS_TIMING,true)
@@ -127,7 +130,19 @@ else
     AC_SUBST(SKEL_HAVE_ADIOS_TIMING,False)
     dnl AM_SUBST_NOTMAKE(SKEL_HAVE_ADIOS_TIMING,false)
 fi
-AC_SUBST(SKEL_TIMING)
+AC_SUBST(ADIOS_TIMERS)
+
+
+AC_ARG_ENABLE(timer-events,
+    [AS_HELP_STRING([--enable-timer-events],
+        [Enable adios timing events. By default the events are not used.])])
+AM_CONDITIONAL([ADIOS_TIMER_EVENTS], [test "x$enable_timer_events" == "xyes"])
+
+
+if test "x$enable_timer_events" == "xyes"; then
+    AC_DEFINE(ADIOS_TIMER_EVENTS, 1, [Adios timing events are enabled])
+fi
+AC_SUBST(ADIOS_TIMER_EVENTS)
 
 
 AC_LANG(C)
@@ -592,6 +607,12 @@ if test -z "${HAVE_ISOBAR_TRUE}"; then
     ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${ISOBAR_LDFLAGS}"
     ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${ISOBAR_LIBS}"
 fi
+
+
+
+
+
+
 if test -z "${HAVE_APLOD_TRUE}"; then
     ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} -DAPLOD ${APLOD_CPPFLAGS}"
     ADIOSLIB_CFLAGS="${ADIOSLIB_CFLAGS} ${APLOD_CFLAGS}"
@@ -637,6 +658,52 @@ if test -z "${HAVE_ALACRITY_TRUE}"; then
     ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${ALACRITY_LIBS}"
 fi
 
+if test -z "${HAVE_RIDCOMPRESS_TRUE}"; then
+    ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} -DRIDCOMPRESS ${RIDCOMPRESS_CPPFLAGS}"
+    ADIOSLIB_CFLAGS="${ADIOSLIB_CFLAGS} ${RIDCOMPRESS_CFLAGS}"
+    ADIOSLIB_LDFLAGS="${ADIOSLIB_LDFLAGS} ${RIDCOMPRESS_LDFLAGS}"
+    ADIOSLIB_LDADD="${ADIOSLIB_LDADD} ${RIDCOMPRESS_LIBS}"
+    ADIOSLIB_SEQ_CPPFLAGS="${ADIOSLIB_SEQ_CPPFLAGS} -DRIDCOMPRESS ${RIDCOMPRESS_CPPFLAGS}"
+    ADIOSLIB_SEQ_CFLAGS="${ADIOSLIB_SEQ_CFLAGS} ${RIDCOMPRESS_CFLAGS}"
+    ADIOSLIB_SEQ_LDFLAGS="${ADIOSLIB_SEQ_LDFLAGS} ${RIDCOMPRESS_LDFLAGS}"
+    ADIOSLIB_SEQ_LDADD="${ADIOSLIB_SEQ_LDADD} ${RIDCOMPRESS_LIBS}"
+    ADIOSLIB_INT_CPPFLAGS="${ADIOSLIB_INT_CPPFLAGS} -DRIDCOMPRESS ${RIDCOMPRESS_CPPFLAGS}"
+    ADIOSLIB_INT_CFLAGS="${ADIOSLIB_INT_CFLAGS} ${RIDCOMPRESS_CFLAGS}"
+    ADIOSLIB_INT_LDFLAGS="${ADIOSLIB_INT_LDFLAGS} ${RIDCOMPRESS_LDFLAGS}"
+    ADIOSLIB_INT_LDADD="${ADIOSLIB_INT_LDADD} ${RIDCOMPRESS_LIBS}"
+    ADIOSREADLIB_CPPFLAGS="${ADIOSREADLIB_CPPFLAGS} -DRIDCOMPRESS ${RIDCOMPRESS_CPPFLAGS}"
+    ADIOSREADLIB_CFLAGS="${ADIOSREADLIB_CFLAGS} ${RIDCOMPRESS_CFLAGS}"
+    ADIOSREADLIB_LDFLAGS="${ADIOSREADLIB_LDFLAGS} ${RIDCOMPRESS_LDFLAGS}"
+    ADIOSREADLIB_LDADD="${ADIOSREADLIB_LDADD} ${RIDCOMPRESS_LIBS}"
+    ADIOSREADLIB_SEQ_CPPFLAGS="${ADIOSREADLIB_SEQ_CPPFLAGS} -DRIDCOMPRESS ${RIDCOMPRESS_CPPFLAGS}"
+    ADIOSREADLIB_SEQ_CFLAGS="${ADIOSREADLIB_SEQ_CFLAGS} ${RIDCOMPRESS_CFLAGS}"
+    ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${RIDCOMPRESS_LDFLAGS}"
+    ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${RIDCOMPRESS_LIBS}"
+fi
+
+if test -z "${HAVE_FASTBIT_TRUE}"; then
+    ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} -DFASTBIT ${FASTBIT_CPPFLAGS}"
+    ADIOSLIB_CFLAGS="${ADIOSLIB_CFLAGS} ${FASTBIT_CFLAGS}"
+    ADIOSLIB_LDFLAGS="${ADIOSLIB_LDFLAGS} ${FASTBIT_LDFLAGS}"
+    ADIOSLIB_LDADD="${ADIOSLIB_LDADD} ${FASTBIT_LIBS}"
+    ADIOSLIB_SEQ_CPPFLAGS="${ADIOSLIB_SEQ_CPPFLAGS} -DFASTBIT ${FASTBIT_CPPFLAGS}"
+    ADIOSLIB_SEQ_CFLAGS="${ADIOSLIB_SEQ_CFLAGS} ${FASTBIT_CFLAGS}"
+    ADIOSLIB_SEQ_LDFLAGS="${ADIOSLIB_SEQ_LDFLAGS} ${FASTBIT_LDFLAGS}"
+    ADIOSLIB_SEQ_LDADD="${ADIOSLIB_SEQ_LDADD} ${FASTBIT_LIBS}"
+    ADIOSLIB_INT_CPPFLAGS="${ADIOSLIB_INT_CPPFLAGS} -DFASTBIT ${FASTBIT_CPPFLAGS}"
+    ADIOSLIB_INT_CFLAGS="${ADIOSLIB_INT_CFLAGS} ${FASTBIT_CFLAGS}"
+    ADIOSLIB_INT_LDFLAGS="${ADIOSLIB_INT_LDFLAGS} ${FASTBIT_LDFLAGS}"
+    ADIOSLIB_INT_LDADD="${ADIOSLIB_INT_LDADD} ${FASTBIT_LIBS}"
+    ADIOSREADLIB_CPPFLAGS="${ADIOSREADLIB_CPPFLAGS} -DFASTBIT ${FASTBIT_CPPFLAGS}"
+    ADIOSREADLIB_CFLAGS="${ADIOSREADLIB_CFLAGS} ${FASTBIT_CFLAGS}"
+    ADIOSREADLIB_LDFLAGS="${ADIOSREADLIB_LDFLAGS} ${FASTBIT_LDFLAGS}"
+    ADIOSREADLIB_LDADD="${ADIOSREADLIB_LDADD} ${FASTBIT_LIBS}"
+    ADIOSREADLIB_SEQ_CPPFLAGS="${ADIOSREADLIB_SEQ_CPPFLAGS} -DFASTBIT ${FASTBIT_CPPFLAGS}"
+    ADIOSREADLIB_SEQ_CFLAGS="${ADIOSREADLIB_SEQ_CFLAGS} ${FASTBIT_CFLAGS}"
+    ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${FASTBIT_LDFLAGS}"
+    ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${FASTBIT_LIBS}"
+fi
+
 if test -z "${HAVE_NCSU_TIMER_TRUE}"; then
     ADIOSLIB_CPPFLAGS="${ADIOSLIB_CPPFLAGS} -DWITH_NCSU_TIMER ${TIMER_CPPFLAGS}"
     ADIOSLIB_CFLAGS="${ADIOSLIB_CFLAGS} ${TIMER_CFLAGS}"
@@ -658,6 +725,11 @@ if test -z "${HAVE_NCSU_TIMER_TRUE}"; then
     ADIOSREADLIB_SEQ_CFLAGS="${ADIOSREADLIB_SEQ_CFLAGS} ${TIMER_CFLAGS}"
     ADIOSREADLIB_SEQ_LDFLAGS="${ADIOSREADLIB_SEQ_LDFLAGS} ${TIMER_LDFLAGS}"
     ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${TIMER_LIBS}"
+fi
+
+AM_CONDITIONAL([HAVE_ICEE], [test -z "${HAVE_FLEXPATH_TRUE}"])
+if test -z "${HAVE_FLEXPATH_TRUE}"; then
+    AC_DEFINE(HAVE_ICEE, 1, [ICEE method is enabled])
 fi
 
 AC_SUBST(ADIOSLIB_CPPFLAGS)
@@ -725,6 +797,10 @@ AC_CONFIG_FILES([Makefile
                  tests/C/flexpath_tests/maya_append/Makefile
                  tests/C/flexpath_tests/scalar/Makefile
                  tests/C/fgr_tests/Makefile
+                 tests/C/query/Makefile
+                 tests/C/query/common/Makefile
+                 tests/C/query/fastbit/Makefile
+                 tests/C/query/alacrity/Makefile
                  tests/Fortran/Makefile
                  tests/genarray/Makefile
                  tests/bp_read/Makefile
@@ -748,6 +824,7 @@ AC_CONFIG_FILES([Makefile
                  utils/bp2bp/Makefile
                  utils/list_methods/Makefile
                  utils/bpmeta/Makefile
+		 utils/fastbit/Makefile
                  examples/Makefile
                  examples/C/Makefile
                  examples/C/scalars/Makefile
@@ -755,6 +832,8 @@ AC_CONFIG_FILES([Makefile
                  examples/C/flexpath_arrays/Makefile
                  examples/C/flexpath_arrays/process_select/Makefile
                  examples/C/flexpath_arrays/global_range_select/Makefile
+                 examples/C/icee_arrays/Makefile
+                 examples/C/icee_arrays/array/Makefile
                  examples/C/attributes/Makefile
                  examples/C/manual/Makefile
                  examples/C/global-array/Makefile
@@ -763,12 +842,14 @@ AC_CONFIG_FILES([Makefile
                  examples/C/read_all/Makefile
                  examples/C/schema/Makefile
                  examples/C/transforms/Makefile
+                 examples/C/query/Makefile
                  examples/Fortran/Makefile
                  examples/Fortran/scalars/Makefile
                  examples/Fortran/arrays/Makefile
                  examples/Fortran/global-array/Makefile
                  examples/Fortran/global-array-time/Makefile
                  examples/Fortran/schema/Makefile
+                 adios_config
                  adios_config.flags
                 ])
 
@@ -814,12 +895,17 @@ else
     echo "  - No research transport methods";
 fi
 
-if test "x$enable_skel_timing" == "xyes"; then
-    echo "  - Skel Timing Mechanism Enabled";
-
+if test -z "${ADIOS_TIMERS_TRUE}"; then
+    echo "  - ADIOS Timing Mechanism Enabled";
 else
-    echo "  - Skel Timing Mechanism Disabled";
+    echo "  - ADIOS Timing Mechanism Disabled";
 fi
+if test -z "${ADIOS_TIMER_EVENTS_TRUE}"; then
+    echo "  - ADIOS Timing event recording Enabled";
+else
+    echo "  - ADIOS Timing event recording Disabled";
+fi
+
 
 if test -z "${HAVE_MXML_TRUE}"; then
     echo "  - MXML";
@@ -1038,6 +1124,18 @@ else
     echo "  - No XPMEM to build XPMEM transport method"
 fi
 
+
+if test -z "${HAVE_ICEE_TRUE}"; then
+    echo "  - ICEE";
+    echo "      - FP_CFLAGS = $FP_CFLAGS";
+    echo "      - FP_CPPFLAGS = $FP_CPPFLAGS";
+    echo "      - FP_LDFLAGS = $FP_LDFLAGS";
+    echo "      - FP_LIBS = $FP_LIBS";
+    echo
+else
+    echo "  - No ICEE to build ICEE transport method"
+fi
+
 if test -z "${HAVE_ZLIB_TRUE}"; then
     echo "  - ZLIB";
     echo "      - ZLIB_CFLAGS = $ZLIB_CFLAGS";
@@ -1093,6 +1191,17 @@ else
     echo "  - No APLOD to build APLOD transform method"
 fi
 
+if test -z "${HAVE_FASTBIT_TRUE}"; then
+    echo "  - FASTBIT";
+    echo "      - FASTBIT_CFLAGS = $FASTBIT_CFLAGS";
+    echo "      - FASTBIT_CPPFLAGS = $FASTBIT_CPPFLAGS";
+    echo "      - FASTBIT_LDFLAGS = $FASTBIT_LDFLAGS";
+    echo "      - FASTBIT_LIBS = $FASTBIT_LIBS";
+    echo
+else
+    echo "  - No FASTBIT to build FASTBIT query method"
+fi
+
 if test -z "${HAVE_ALACRITY_TRUE}"; then
     echo "  - ALACRITY";
     echo "      - ALACRITY_CFLAGS = $ALACRITY_CFLAGS";
@@ -1101,8 +1210,20 @@ if test -z "${HAVE_ALACRITY_TRUE}"; then
     echo "      - ALACRITY_LIBS = $ALACRITY_LIBS";
     echo
 else
-    echo "  - No ALACRITY to build ALACRITY transform method"
+    echo "  - No ALACRITY to build ALACRITY transform & query methods"
 fi
+
+if test -z "${HAVE_RIDCOMPRESS_TRUE}"; then
+    echo "  - RIDCOMPRESS";
+    echo "      - RIDCOMPRESS_CFLAGS = $RIDCOMPRESS_CFLAGS";
+    echo "      - RIDCOMPRESS_CPPFLAGS = $RIDCOMPRESS_CPPFLAGS";
+    echo "      - RIDCOMPRESS_LDFLAGS = $RIDCOMPRESS_LDFLAGS";
+    echo "      - RIDCOMPRESS_LIBS = $RIDCOMPRESS_LIBS";
+    echo
+else
+    echo "  - No RIDCOMPRESS to build RIDCOMPRESS transform method"
+fi
+
 
 if test -z "${HAVE_NCSU_TIMER_TRUE}"; then
     echo "  - NCSU timer lib";

@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <sys/time.h>
+#include <sys/param.h>
 
 #include "public/adios_mpi.h"
 //#include "mpi.h"
@@ -26,7 +27,7 @@
 */
 void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
 {
-#if defined SKEL_TIMING && !defined _NOMPI //No timing information on single process
+#if defined ADIOS_TIMER_EVENTS && !defined _NOMPI //No timing information on single process
 
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     if (!fd)
@@ -36,20 +37,23 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
         return;
     }
 
-    if (!fd->timing_obj)
+    if (!fd->group || !fd->group->prev_timing_obj)
     {
         // No timing info, don't write anything.
         return;
     }
 
-    int size, rank, i, global_event_count, count_to_send;
+    int size=1, rank=0, i, global_event_count, count_to_send;
  
     int * counts;
     int * displs;
     struct adios_timing_event_struct* events;
     MPI_Datatype event_type;
-    MPI_Comm_size (MPI_COMM_WORLD, &size);
-    MPI_Comm_rank (MPI_COMM_WORLD, &rank);
+    if (fd->comm != MPI_COMM_NULL)
+    {
+        MPI_Comm_size (fd->comm, &size);
+        MPI_Comm_rank (fd->comm, &rank);
+    }
 
     if (rank == 0)
     {
@@ -59,8 +63,8 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
     // Collect all of the events on proc 0
     // First, per proc event counts
 
-    count_to_send = (fd->timing_obj->event_count > ADIOS_TIMING_MAX_EVENTS) ?
-                      ADIOS_TIMING_MAX_EVENTS : fd->timing_obj->event_count;
+    count_to_send = (fd->group->prev_timing_obj->event_count > ADIOS_TIMING_MAX_EVENTS) ?
+                      ADIOS_TIMING_MAX_EVENTS : fd->group->prev_timing_obj->event_count;
 
 
     MPI_Gather (
@@ -71,7 +75,7 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
         1,           // recvcount
         MPI_INT,        // recvtype
         0,              // root
-        MPI_COMM_WORLD  // comm
+        fd->comm  // comm
     );
 
     if (rank == 0)
@@ -108,7 +112,7 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
 
     // Now the events
     MPI_Gatherv (
-        &fd->timing_obj->events, // sendbuf
+        &fd->group->prev_timing_obj->events, // sendbuf
         count_to_send, // sendcount
         event_type, // sendtype
         events, //recvbuf
@@ -116,7 +120,7 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
         displs, // displacements
         event_type, // recvtype
         0, // root
-        MPI_COMM_WORLD // comm
+        fd->comm // comm
     );
 
     // Gather the write sizes
@@ -134,13 +138,13 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
         1, //recvcount
         MPI_INT, //recvtype
         0, //root
-        MPI_COMM_WORLD //comm
+        fd->comm //comm
     );
 
     // Write the events to a file
     if (rank == 0)
     {
-        FILE* f = fopen (filename, "w");
+        FILE* f = fopen (filename, "a");
         int event_rank;
 
         for (i = 0; i < size; i++)
@@ -149,10 +153,10 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
         }
 
         // Write the labels
-        for (i = 0; i < fd->timing_obj->internal_count; i++)
+        for (i = 0; i < fd->group->prev_timing_obj->internal_count; i++)
         {
             fprintf (f, ":%i:%s\n", ADIOS_TIMING_MAX_USER_TIMERS + i,
-                     fd->timing_obj->names[ADIOS_TIMING_MAX_USER_TIMERS + i]); 
+                     fd->group->prev_timing_obj->names[ADIOS_TIMING_MAX_USER_TIMERS + i]); 
         }
 
         // Now the event data
@@ -177,139 +181,222 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
     }
 
 #else
-    log_warn ("Timing information is not currently available.\n"
-              "To use the Skel timing functions, you must enable them when building ADIOS.\n"
-              "Use --enable-skel-timing during the configuration step.\n");
-#endif
-
-
-// The old XML timing output
-#if 0
-    int size, rank, i, p;
-    MPI_Comm_size (MPI_COMM_WORLD, &size);
-    MPI_Comm_rank (MPI_COMM_WORLD, &rank);
-
-    double * internal_times = NULL;
-    double * user_times = NULL;
-
-    // Allocate space for aggregation
-    if (rank == 0)
-    {
-        internal_times = (double*) malloc (sizeof (double) *
-                             fd->timing_obj->internal_count * size);
-        user_times = (double*) malloc (sizeof (double) *
-                             fd->timing_obj->user_count * size);
-    }
-
-    // Aggregate timing info on rank 0
-    // Handle internal counts and user counts separately
-
-    MPI_Gather (
-        fd->timing_obj->times + ADIOS_TIMING_MAX_USER_TIMERS,
-        fd->timing_obj->internal_count,  // sendcount
-        MPI_DOUBLE, // sendtype
-        internal_times,
-        fd->timing_obj->internal_count, // recvcount
-        MPI_DOUBLE, // recvtype
-        0, // root
-        MPI_COMM_WORLD
-    );
-
-    MPI_Gather (
-        fd->timing_obj->times,  // sendbuf
-        fd->timing_obj->user_count,  // sendcount
-        MPI_DOUBLE, // sendtype
-        user_times,
-        fd->timing_obj->user_count, // recvcount
-        MPI_DOUBLE, // recvtype
-        0, // root
-        MPI_COMM_WORLD
-    );
-
-
-    // Now write all timing info from rank 0
-
-    if (rank == 0)
-    {
-        FILE* f = fopen (filename, "w");
-
-        // Rank 0 starts the xml and includes the text labels
-        fprintf (f, "<skel_result><adios_timing cores='%i' keys='", size);
-        for (i = 0; i < fd->timing_obj->user_count; i++)
-        {
-            if (fd->timing_obj->names[i])
-            {
-                fprintf (f, "%s, ", fd->timing_obj->names[i]);
-            }
-            else
-            {
-                fprintf (f, "user%i, ", i);
-            }
-        }
-        for (i = 0; i < fd->timing_obj->internal_count; i++)
-        {
-            if (fd->timing_obj->names[ADIOS_TIMING_MAX_USER_TIMERS + i])
-            {
-                fprintf (f, "%s", fd->timing_obj->names[ADIOS_TIMING_MAX_USER_TIMERS + i]);
-            }
-            else
-            {
-                fprintf (f, "internal%i", i);
-            }
-            if (i != fd->timing_obj->internal_count - 1) // Skip trailing comma
-            {
-                fprintf (f, ", ");
-            }
-        }
-        fprintf (f, "' "); // Close the keys attribute
-
-        // Assume there is only one method in play
-        fprintf (f, "method='%s' ", fd->group->methods->method->method);
-
-        struct timeval tv;
-        gettimeofday (&tv, NULL);
-        double time = tv.tv_sec+(tv.tv_usec/1000000.0);
-        fprintf (f, "start_time='%f' ", time);
-
-        fprintf (f, ">\n"); // Close the adios_timing element
-
-
-// Use the aggregated values here
-
-        for (p = 0; p < size; p++)
-        {
-            // This part should be the same for all procs
-            fprintf (f, "<proc id='%i' vals='", p);
-            for (i = 0; i < fd->timing_obj->user_count; i++)
-            {
-                fprintf (f, "%f, ", user_times[p*fd->timing_obj->user_count+i]);
-                //fprintf (f, "%f, ", fd->timing_obj->times[i]);
-            }
-            for (i = 0; i < fd->timing_obj->internal_count; i++)
-            {
-                fprintf (f, "%f", internal_times[p*fd->timing_obj->internal_count+i]);
-                //fprintf (f, "%f", fd->timing_obj->times[ADIOS_TIMING_MAX_USER_TIMERS + i]);
-                if (i != fd->timing_obj->internal_count - 1)
-                {
-                    fprintf (f, ", ");
-                }
-            }
-            fprintf (f, "' />\n");
-        }
-
-
-        fprintf (f, "</adios_timing></skel_result>\n");
-        fclose (f);
-
-    }
+    log_warn ("Timing events are not currently available.\n"
+              "To use the timing events, you must enable them when building ADIOS.\n"
+              "Use --enable-timer-events during the configuration step.\n");
 #endif
 
 }
 
-
-
 //Build the internal functions only when timing is enabled.
-#ifdef SKEL_TIMING
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
+
+
+
+void adios_write_timing_variables (struct adios_file_struct * fd)
+{
+    if (!fd)
+    {
+        adios_error (err_invalid_file_pointer,
+                     "Invalid handle passed to adios_write_timing_variables\n");
+        return;
+    }
+
+    if (!fd->group || !fd->group->prev_timing_obj)
+    {
+        // No timing info, don't write anything.
+        return;
+    }
+
+    struct adios_group_struct * g = fd->group;
+    int timer_count = g->prev_timing_obj->user_count + g->prev_timing_obj->internal_count;
+    
+    int rank=0, i, ct=0;
+    if (fd->comm != MPI_COMM_NULL)
+    {
+        MPI_Comm_rank (fd->comm, &rank);
+    }
+
+    char name_timers[256];
+    char name_labels[256];
+    snprintf (name_timers, 256, "/__adios__/timers_%hu", 
+            (short unsigned int)g->id);
+    snprintf (name_labels, 256, "/__adios__/timer_labels_%hu", 
+            (short unsigned int)g->id);
+
+    struct adios_var_struct * v; 
+
+    if (rank == 0)
+    {
+        v = adios_find_var_by_name (g, name_labels);
+        if (v)
+        {
+            int max_label_len = 0;
+	    for (i = 0; i < g->prev_timing_obj->user_count; i++)
+	    {
+		max_label_len = MAX(max_label_len,
+                    strlen(g->prev_timing_obj->names[i]));
+	    }
+	    for (i = 0; i < g->prev_timing_obj->internal_count; i++)
+	    {
+		max_label_len = MAX(max_label_len,
+                    strlen(g->prev_timing_obj->names[ADIOS_TIMING_MAX_USER_TIMERS + i]));
+	    }
+
+            char * labels = (char*)
+                              malloc ( (max_label_len+1) * timer_count * sizeof (char) );
+
+	    for (i = 0; i < g->prev_timing_obj->user_count; i++)
+	    {
+                strcpy (&labels[(ct++)*(max_label_len+1)], g->prev_timing_obj->names[i]);
+	    }
+	    for (i = 0; i < g->prev_timing_obj->internal_count; i++)
+	    {
+                strcpy (&labels[(ct++)*(max_label_len+1)], 
+                        g->prev_timing_obj->names[ADIOS_TIMING_MAX_USER_TIMERS + i]);
+	    }
+
+            common_adios_write_byid (fd, v, labels);
+            free (labels);
+        }
+        else
+        {
+            log_warn ("Unable to write %s, continuing", name_labels);
+        }
+    }
+
+    double * timers = (double*) malloc (sizeof (double) * timer_count);
+    ct = 0;
+    for (i = 0; i < g->prev_timing_obj->user_count; i++)
+    {
+        timers[ct++] = g->prev_timing_obj->times[i];
+    }
+    for (i = 0; i < g->prev_timing_obj->internal_count; i++)
+    {
+        timers[ct++] = g->prev_timing_obj->times [ADIOS_TIMING_MAX_USER_TIMERS + i];
+    }
+
+// DEBUG
+//for (i = 0; i < ct; i++)
+//    printf ("%f,", timers[i]);
+
+
+    v = adios_find_var_by_name (g, name_timers);
+    if (v)
+    {
+        common_adios_write_byid (fd, v, timers);
+    }
+    else
+    {
+        log_warn ("Unable to write %s, continuing", name_timers);
+    }
+
+    free (timers);
+
+}
+
+int adios_add_timing_variables (struct adios_file_struct * fd)
+{
+
+    if (!fd)
+    {
+        adios_error (err_invalid_file_pointer,
+                     "Invalid handle passed to adios_add_timing_variables\n");
+        return 1;
+    }
+
+    if (!fd->group || !fd->group->prev_timing_obj)
+    {
+        // No timing info, don't write anything.
+        return 0;
+    }
+
+
+    struct adios_group_struct * g = fd->group;
+
+    int i, tv_size = 0; // size of the extra timing variables to be written
+
+    int rank=0, size=1;
+    if (fd->comm != MPI_COMM_NULL) {
+        MPI_Comm_rank (fd->comm, &rank);
+        MPI_Comm_size (fd->comm, &size);
+    }
+
+    char dim_str[256];
+    char glob_dim_str[256];
+    char loc_off_str[256];
+    char name_timers[256];
+    char name_labels[256];
+    snprintf (name_timers, 256, "/__adios__/timers_%hu", 
+            (short unsigned int)g->id);
+    snprintf (name_labels, 256, "/__adios__/timer_labels_%hu", 
+            (short unsigned int)g->id);
+
+
+    int timer_count = g->prev_timing_obj->user_count + g->prev_timing_obj->internal_count;
+    tv_size += timer_count * size * 8; //timers
+
+
+    if (! adios_find_var_by_name (g, name_timers))
+    {
+        if (g->adios_host_language_fortran == adios_flag_yes) { 
+            sprintf (loc_off_str, "0,%i", rank);
+            sprintf (glob_dim_str, "%i,%i", timer_count, size);
+            sprintf (dim_str, "%i,1", timer_count);
+        } else {
+            sprintf (loc_off_str, "%i,0", rank);
+            sprintf (glob_dim_str, "%i,%i", size, timer_count);
+            sprintf (dim_str, "1,%i",timer_count);
+        }
+       
+        // This is the actual timing data
+        adios_common_define_var ((int64_t)g,        // int64_t group_id 
+		      name_timers,                  // const char * name
+		      "",                           // const char * path
+		      adios_double,                 // enum ADIOS_DATATYPES type
+		      dim_str,                      // const char * dimensions
+		      glob_dim_str,                 // const char * global_dimensions
+		      loc_off_str);                 // const char * local_offsets 
+    }
+
+
+    int max_label_len = 0;
+
+    for (i = 0; i < g->prev_timing_obj->user_count; i++)
+    {
+        max_label_len = MAX(max_label_len, strlen(g->prev_timing_obj->names[i]));
+    }
+    for (i = 0; i < g->prev_timing_obj->internal_count; i++)
+    {
+        max_label_len = MAX(max_label_len, strlen(g->prev_timing_obj->names[ADIOS_TIMING_MAX_USER_TIMERS + i]));
+    }
+
+    tv_size += (max_label_len+1) * timer_count;
+
+    if (! adios_find_var_by_name (g, name_labels))
+    {
+        if (g->adios_host_language_fortran == adios_flag_yes) { 
+            sprintf (dim_str,"%i,%i", max_label_len+1, timer_count);
+        } else {
+            sprintf (dim_str,"%i,%i", timer_count, max_label_len+1);
+        }
+
+        // labels for the timers
+        adios_common_define_var ((int64_t)g,        // int64_t group_id 
+		      name_labels,                  // const char * name
+		      "",                           // const char * path
+		      adios_byte,                   // enum ADIOS_DATATYPES type
+		      dim_str,                      // const char * dimensions
+		      "",                           // const char * global_dimensions
+                      "");                          // const char * local_offsets 
+    }
+
+    return tv_size;
+
+}
+
+
+#if 0 // I don't think this is used, can be removed..?
 int adios_get_timing_internal_count (int64_t fd_p, int64_t * tc)
 {
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
@@ -321,18 +408,18 @@ int adios_get_timing_internal_count (int64_t fd_p, int64_t * tc)
         return 1;
     }
 
-    if (! fd->timing_obj)
+    if (! fd->group->prev_timing_obj)
     {
         *tc = 0;
     }
     else
     {
-        *tc = fd->timing_obj->internal_count;
+        *tc = fd->group->prev_timing_obj->internal_count;
     }
 
     return 0;
 }
-
+#endif
 
 int adios_get_timing_name (int64_t fd_p, int64_t index, char* name)
 {
@@ -345,8 +432,8 @@ int adios_get_timing_name (int64_t fd_p, int64_t index, char* name)
         return 1;
     }
 
-    strcpy (name, fd->timing_obj->names[index]);
-    //*name = fd->timing_obj->names[index];
+    strcpy (name, fd->group->prev_timing_obj->names[index]);
+    //*name = fd->group->prev_timing_obj->names[index];
 
     return 0;
 }
@@ -363,7 +450,7 @@ int adios_get_timing_value (int64_t fd_p, int64_t index, double* value)
         return 1;
     }
 
-    *value = fd->timing_obj->times[index];
+    *value = fd->group->prev_timing_obj->times[index];
 
     return 0;
 }
@@ -414,15 +501,10 @@ struct adios_timing_struct *  adios_timing_create (int timer_count, char** timer
                                        malloc (sizeof (struct adios_timing_struct) );
 
     ts->internal_count = timer_count;
-    ts->user_count = 0;
     ts->names = (char**) malloc ( (ADIOS_TIMING_MAX_USER_TIMERS + timer_count) * sizeof (char*) );
     ts->times = (double*) malloc ( (ADIOS_TIMING_MAX_USER_TIMERS + timer_count) * sizeof (double) );
-    ts->event_count = 0;
 
-
-    // Clear all timers
-    memset(ts->times, 0, (ADIOS_TIMING_MAX_USER_TIMERS + timer_count) * sizeof (double) );
-    memset(ts->names, 0, (ADIOS_TIMING_MAX_USER_TIMERS + timer_count) * sizeof (char*) );
+    adios_clear_timers (ts);
 
     for (i = 0; i < timer_count; i++)
     {
@@ -433,7 +515,15 @@ struct adios_timing_struct *  adios_timing_create (int timer_count, char** timer
     return ts;
 }
 
+void adios_clear_timers (struct adios_timing_struct * ts)
+{
+    ts->user_count = 0;
+    ts->event_count = 0;
 
+    // Clear all timers
+    memset(ts->times, 0, (ADIOS_TIMING_MAX_USER_TIMERS + ts->internal_count) * sizeof (double) );
+    memset(ts->names, 0, (ADIOS_TIMING_MAX_USER_TIMERS + ts->internal_count) * sizeof (char*) );
+}
 
 void adios_timing_destroy (struct adios_timing_struct * timing_obj)
 {
@@ -448,6 +538,6 @@ void adios_timing_destroy (struct adios_timing_struct * timing_obj)
     }
 }
 
-#endif // ifdef SKEL_TIMING
+#endif // ifdef ADIOS_TIMERS
 
 
