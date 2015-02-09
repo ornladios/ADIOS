@@ -150,12 +150,6 @@ cdef extern from "adios_selection.h":
 
 cdef extern from "adios_read.h":
     ctypedef enum ADIOS_READ_METHOD:
-        ADIOS_READ_METHOD_BP
-        ADIOS_READ_METHOD_BP_AGGREGATE
-        ADIOS_READ_METHOD_DATASPACES
-        ADIOS_READ_METHOD_DIMES
-        ADIOS_READ_METHOD_FLEXPATH
-        ADIOS_READ_METHOD_ICEE
         pass
 
     ctypedef enum ADIOS_LOCKMODE:
@@ -251,7 +245,16 @@ class BUFFER_ALLOC_WHEN:
     UNKNOWN = 0
     NOW = 1
     LATER = 2
-    
+
+class READ_METHOD:
+    BP            = 0 
+    BP_AGGREGATE  = 1
+    DATASPACES    = 3
+    DIMES         = 4
+    FLEXPATH      = 5
+    ICEE          = 6
+
+
 ## ====================
 ## ADIOS Write API
 ## ====================
@@ -420,20 +423,20 @@ cdef printvar(ADIOS_VARINFO * v):
 
 cdef ADIOS_READ_METHOD str2adiosreadmethod(bytes name):
     if (name == "BP"):
-        method = ADIOS_READ_METHOD_BP
+        method = READ_METHOD.BP
     elif (name == "BP_AGGREGATE"):
-        method = ADIOS_READ_METHOD_BP_AGGREGATE
+        method = READ_METHOD.BP_AGGREGATE
     elif (name == "DATASPACES"):
-        method = ADIOS_READ_METHOD_DATASPACES
+        method = READ_METHOD.DATASPACES
     elif (name == "DIMES"):
-        method = ADIOS_READ_METHOD_DIMES
+        method = READ_METHOD.DIMES
     elif (name == "FLEXPATH"):
-        method = ADIOS_READ_METHOD_FLEXPATH
+        method = READ_METHOD.FLEXPATH
     elif (name == "ICEE"):
-        method = ADIOS_READ_METHOD_ICEE
+        method = READ_METHOD.ICEE
     else:
         print '[WARN] Invalid read method name:', name, '. Use default BP method'
-        method = ADIOS_READ_METHOD_BP
+        method = READ_METHOD.BP
         
     return method
 
