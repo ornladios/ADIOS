@@ -22,7 +22,12 @@ extern "C" {
 #endif
 
 typedef int MPI_Comm;
-typedef uint64_t MPI_Status;
+//typedef uint64_t MPI_Status;
+struct _MPI_Status {
+      int MPI_SOURCE;
+};
+typedef struct _MPI_Status MPI_Status;
+    
 typedef int MPI_File;
 typedef int MPI_Info;
 typedef int MPI_Datatype;  /* Store the byte size of a type in such vars */
