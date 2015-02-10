@@ -244,13 +244,28 @@ adios_read_xpmem_advance_step(ADIOS_FILE *fp, int last, float timeout_sec)
 
 	if(xd->pg->version == 1)
 		xd->pg->version = 0;
-	
+
+	//check if the writer has finalized
+
 	if(xd->pg->readcount < 1)
 		xd->pg->readcount = 1;
 
-	while(xd->pg->version != 1)
-		adios_nanosleep(0, 100000000);
 
+	while(xd->pg->version != 1)
+	{
+		if(xd->pg->finalized == 1)
+		{
+			//writer is exiting .. detach from segment and return the
+			//end of file thing
+			//for now just return -1
+			xd->pg->finalized = 2;
+			xpmem_detach((void*)xd->pg);
+			adios_errno = err_end_of_stream;
+			return -1;
+		}
+		adios_nanosleep(0, 100000000);
+	}
+	
 	free(xf->fp->data);
 
 	log_debug("version = %d readcount = %d\n", xd->pg->version, xd->pg->readcount);
