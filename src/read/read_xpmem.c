@@ -226,8 +226,8 @@ void adios_read_xpmem_release_step(ADIOS_FILE *fp)
 	// if(fp->index->version != 0)
 	// 	fp->index->version = 0;
 
-	if(xd->pg->readcount < 1)
-		xd->pg->readcount = 1;
+	// if(xd->pg->readcount < 1)
+	// 	xd->pg->readcount = 1;
 
 }
 
@@ -242,8 +242,41 @@ adios_read_xpmem_advance_step(ADIOS_FILE *fp, int last, float timeout_sec)
 	// if(fp->index->version != 0)
 	// 	fp->index->version = 0;
 
+	if(xd->pg->version == 1)
+		xd->pg->version = 0;
+	
 	if(xd->pg->readcount < 1)
 		xd->pg->readcount = 1;
+
+	while(xd->pg->version != 1)
+		adios_nanosleep(0, 100000000);
+
+	free(xf->fp->data);
+
+	log_debug("version = %d readcount = %d\n", xd->pg->version, xd->pg->readcount);
+
+		//now the buffer has some data
+	xf->fp->data = (char*)malloc(xf->fp->pg->size);
+	xf->fp->dsize = xf->fp->pg->size;
+	
+
+	//copy the data into a non-shared buffer of the right size
+	//this is equivalent to the pg
+	memcpy(xf->fp->data, xf->fp->pg->buffer, xf->fp->dsize);
+	memcpy(&xf->fp->debug, xf->fp->pg, sizeof(shared_data));
+
+	// //read the data
+// 	xp_read_open(xf->fh, xf->fp);
+
+// //	xp_seek_to_step(fp, -1, show_hidden_attrs);
+
+//     // af->endianness =  bp_get_endianness (f->fh->mfooter.change_endianness);
+// 	// af->version =  f->fh->mfooter.version & ADIOS_VERSION_NUM_MASK;
+// 	// af->current_step = 0;
+// 	// af->last_step = 0;
+// 	fp->current_step = 0;
+// 	fp->last_step = 0;
+	
     return 0;
 }
 

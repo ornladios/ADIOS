@@ -118,6 +118,9 @@ int adios_xpmem_open (struct adios_file_struct * fd
 	    while(p->sp->readcount != 1)
 		    adios_nanosleep(0, 100000000);
 
+    while(p->sp->version != 0)
+	    adios_nanosleep(0, 100000000);
+    
     p->sp->readcount = 0;
     p->sp->version = 0;
 
@@ -254,6 +257,9 @@ void adios_xpmem_close (struct adios_file_struct * fd
 		return;
 	}
 	}
+
+	// adios_posix_close_internal (&p->b);
+	// adios_clear_index_v1 (index);
 
 }
 

@@ -1,13 +1,13 @@
 TARGET=pgi
 
 ## Set ADIOS_DIR here or before doing make
-override ADIOS_DIR=/ccs/proj/e2e/${USER}/ADIOS/sith.${TARGET}
+override ADIOS_DIR=/home/hobbes/hobbes/ADIOS/install
 
 ## mpicc and mpif90 SETTINGS
 CC=mpicc
 FC=mpif90
-CFLAGS=-g
-LDFLAGS=-g
+CFLAGS=-g 
+LDFLAGS=-g -static
 
 ## cc/ftn SETTINGS
 #CC=cc
