@@ -119,6 +119,7 @@ typedef struct _shared_data
 {
 	uint32_t version;
 	uint64_t size;
+	uint32_t finalized;
 	uint32_t readcount;
 	uint32_t offset;
 	uint32_t reader;
