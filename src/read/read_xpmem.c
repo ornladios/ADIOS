@@ -821,10 +821,15 @@ adios_read_xpmem_free_varinfo (ADIOS_VARINFO *adiosvar)
 
 
 ADIOS_TRANSINFO* 
-adios_read_xpmem_inq_var_transinfo(const ADIOS_FILE *gp, const ADIOS_VARINFO *vi)
+adios_read_flexpath_inq_var_transinfo(const ADIOS_FILE *gp, const ADIOS_VARINFO *vi)
 {    
-    return NULL;
+    //adios_error(err_operation_not_supported, "Flexpath does not yet support transforms: var_transinfo.\n");
+    ADIOS_TRANSINFO *trans = malloc(sizeof(ADIOS_TRANSINFO));
+    memset(trans, 0, sizeof(ADIOS_TRANSINFO));
+    trans->transform_type = adios_transform_none;
+    return trans;
 }
+
 
 
 int 
