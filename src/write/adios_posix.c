@@ -1047,7 +1047,7 @@ void adios_posix_close (struct adios_file_struct * fd
                         */
 
                         adios_merge_index_v1 (p->index, new_pg_root, 
-                                              new_vars_root, new_attrs_root);
+                                              new_vars_root, new_attrs_root, 0);
                         new_pg_root = 0;
                         new_vars_root = 0;
                         new_attrs_root = 0;
@@ -1262,18 +1262,15 @@ void adios_posix_close (struct adios_file_struct * fd
                                                         );
                          */
 
-                        adios_merge_index_v1 (p->index,new_pg_root, 
-                                              new_vars_root, new_attrs_root);
+                        // global index would become unsorted on main aggregator during merging 
+                        // so sort timesteps in this case (appending)
+                        adios_merge_index_v1 (p->index, new_pg_root, 
+                                              new_vars_root, new_attrs_root, 1);
                     
                         new_pg_root = 0;
                         new_vars_root = 0;
                         new_attrs_root = 0;
                     }
-
-                    adios_sort_index_v1 (&p->index->pg_root
-                                        ,&p->index->vars_root
-                                        ,&p->index->attrs_root
-                                        );
 
                     p->b.buff = buffer_save;
                     p->b.length = buffer_size_save;

@@ -256,7 +256,7 @@ int main (int argc, char ** argv)
         adios_merge_index_v1 (globalindex, 
                               subindex[tid]->pg_root, 
                               subindex[tid]->vars_root, 
-                              subindex[tid]->attrs_root); 
+                              subindex[tid]->attrs_root, 1); 
     }
     write_index (globalindex, filename);
 
@@ -388,7 +388,7 @@ int process_subfiles (int tid, int startidx, int endidx)
         adios_parse_attributes_index_v1 (b[idx], &new_attrs_root);
         print_attribute_index (tid, new_attrs_root);
 
-        adios_merge_index_v1 (subindex[tid], new_pg_root, new_vars_root, new_attrs_root); 
+        adios_merge_index_v1 (subindex[tid], new_pg_root, new_vars_root, new_attrs_root, 1); 
 
         adios_posix_close_internal (b[idx]);
         adios_shared_buffer_free (b[idx]);

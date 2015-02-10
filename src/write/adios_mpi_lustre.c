@@ -1767,7 +1767,7 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
                                                         );
                          */
                         adios_merge_index_v1 (md->index, new_pg_root, 
-                                              new_vars_root, new_attrs_root);
+                                              new_vars_root, new_attrs_root, 0);
                         new_pg_root = 0;
                         new_vars_root = 0;
                         new_attrs_root = 0;
@@ -2019,7 +2019,7 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
                                                         );
                          */
                         adios_merge_index_v1 (md->index, new_pg_root, 
-                                              new_vars_root, new_attrs_root);
+                                              new_vars_root, new_attrs_root, 0);
                         new_pg_root = 0;
                         new_vars_root = 0;
                         new_attrs_root = 0;

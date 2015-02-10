@@ -3284,7 +3284,7 @@ gettimeofday (&timing.t12, NULL);
                                                  ,&md->old_vars_root
                                                  ,&md->old_attrs_root
                                                  ,new_pg_root, new_vars_root
-                                                 ,new_attrs_root
+                                                 ,new_attrs_root, 0
                                                  );
                             new_pg_root = 0;
                             new_vars_root = 0;
@@ -4451,7 +4451,7 @@ gettimeofday (&timing.t12, NULL);
                                                  ,&md->old_vars_root
                                                  ,&md->old_attrs_root
                                                  ,new_pg_root, new_vars_root
-                                                 ,new_attrs_root
+                                                 ,new_attrs_root, 0
                                                  );
                             new_pg_root = 0;
                             new_vars_root = 0;
@@ -4552,7 +4552,7 @@ gettimeofday (&timing.t13, NULL);
                                                  ,&md->old_vars_root
                                                  ,&md->old_attrs_root
                                                  ,new_pg_root, new_vars_root
-                                                 ,new_attrs_root
+                                                 ,new_attrs_root, 0
                                                  );
                             new_pg_root = 0;
                             new_vars_root = 0;
@@ -4804,7 +4804,7 @@ gettimeofday (&timing.t20, NULL);
                                              ,&md->old_vars_root
                                              ,&md->old_attrs_root
                                              ,new_pg_root, new_vars_root
-                                             ,new_attrs_root
+                                             ,new_attrs_root, 0
                                              );
                         new_pg_root = 0;
                         new_vars_root = 0;

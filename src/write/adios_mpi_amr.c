@@ -2400,7 +2400,7 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                             new_pg_root = 0;
 
                         adios_merge_index_v1 (md->index, new_pg_root, 
-                                              new_vars_root, new_attrs_root);
+                                              new_vars_root, new_attrs_root, 0);
                         new_pg_root = 0;
                         new_vars_root = 0;
                         new_attrs_root = 0;
@@ -2536,9 +2536,11 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                                                             ,&new_attrs_root
                                                             );
 
+                            // global index would become unsorted on main aggregator during merging 
+                            // so sort timesteps if appending
                             adios_merge_index_v1 (md->index, new_pg_root, 
-                                                  new_vars_root, new_attrs_root);
-                            // Note: timesteps are unsorted after this merge (in case of multiple steps (append))
+                                                  new_vars_root, new_attrs_root,
+                                                  (fd->mode == adios_mode_append));
                             new_pg_root = 0;
                             new_vars_root = 0;
                             new_attrs_root = 0;
@@ -2591,14 +2593,6 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                     uint64_t global_index_start = 0;
                     uint16_t flag = 0;
 
-                    if (fd->mode == adios_mode_append)
-                    {
-                        double t=MPI_Wtime();
-                        // global index become unsorted on main aggregator during merging 
-                        adios_sort_index_v1 (&md->index->pg_root
-                                ,&md->index->vars_root ,&md->index->attrs_root);
-                        log_debug ("MPI_AGGREGATE: Index sorting time = %g sec\n", MPI_Wtime()-t);
-                    }
 
                     adios_write_index_v1 (&global_index_buffer, &global_index_buffer_size
                                          ,&global_index_buffer_offset, global_index_start
@@ -3051,7 +3045,7 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                             new_pg_root = 0;
 
                         adios_merge_index_v1 (md->index, new_pg_root, 
-                                              new_vars_root, new_attrs_root);
+                                              new_vars_root, new_attrs_root, 0);
                         new_pg_root = 0;
                         new_vars_root = 0;
                         new_attrs_root = 0;
@@ -3210,8 +3204,11 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                                                         ,&new_attrs_root
                                                         );
 
+                        // global index would become unsorted on main aggregator during merging 
+                        // so sort timesteps if appending
                         adios_merge_index_v1 (md->index, new_pg_root, 
-                                              new_vars_root, new_attrs_root);
+                                              new_vars_root, new_attrs_root, 
+                                              (fd->mode == adios_mode_append));
                         new_pg_root = 0;
                         new_vars_root = 0;
                         new_attrs_root = 0;
@@ -3263,15 +3260,6 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                 uint64_t global_index_buffer_offset = 0;
                 uint64_t global_index_start = 0;
                 uint16_t flag = 0;
-
-                if (fd->mode == adios_mode_append)
-                {
-                    double t=MPI_Wtime();
-                    // global index become unsorted on main aggregator during merging 
-                    adios_sort_index_v1 (&md->index->pg_root
-                            ,&md->index->vars_root ,&md->index->attrs_root);
-                    log_warn ("Index sorting time = %g sec\n", MPI_Wtime()-t);
-                }
 
                 adios_write_index_v1 (&global_index_buffer, &global_index_buffer_size
                                      ,&global_index_buffer_offset, global_index_start

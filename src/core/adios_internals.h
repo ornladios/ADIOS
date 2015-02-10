@@ -550,12 +550,15 @@ void adios_merge_index_v1 (
                   ,struct adios_index_process_group_struct_v1 * new_pg_root
                   ,struct adios_index_var_struct_v1 * new_vars_root
                   ,struct adios_index_attribute_struct_v1 * new_attrs_root
+                  ,int needs_sorting // merge-sort the characteristics to keep the time in order
                   );
 
+/* obsolete, merge the index with sorting
 void adios_sort_index_v1 (struct adios_index_process_group_struct_v1 ** p1
                          ,struct adios_index_var_struct_v1 ** v1
                          ,struct adios_index_attribute_struct_v1 ** a1
                          );
+*/
  
 void adios_clear_index_v1 (struct adios_index_struct_v1 * index); // in each adios_<method>_close()
 void adios_free_index_v1 (struct adios_index_struct_v1 * index);  // in adios_<method>_finalize()

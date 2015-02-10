@@ -2238,6 +2238,7 @@ static void index_append_process_group_v1 (
 static void index_append_var_v1 (
         struct adios_index_struct_v1 *index
         ,struct adios_index_var_struct_v1 * item
+        ,int do_sort
         )
 {
     struct adios_index_var_struct_v1 * olditem;
@@ -2291,39 +2292,110 @@ static void index_append_var_v1 (
             return;
         }
 
-        if (  olditem->characteristics_count
-              + item->characteristics_count
-              > olditem->characteristics_allocated
-           )
+        if (do_sort && item->characteristics_count > 0) 
         {
-            int new_items = (item->characteristics_count == 1)
-                ? 100 : item->characteristics_count;
-            olditem->characteristics_allocated =
-                olditem->characteristics_count + new_items;
-            void * ptr = realloc (
-                    olditem->characteristics,
-                    olditem->characteristics_allocated *
-                        sizeof (struct adios_index_characteristic_struct_v1)
-                    );
-
-            if (ptr)
-            {
-                olditem->characteristics = ptr;
-            }
-            else
+            log_debug ("  ----------- Append index with merging --------------\n");
+            struct adios_index_characteristic_struct_v1 * c;
+            int count = olditem->characteristics_count + item->characteristics_count;
+            c = malloc ( count * sizeof (struct adios_index_characteristic_struct_v1));
+            if (!c)
             {
                 adios_error (err_no_memory, "error allocating memory to build "
                         "var index.  Index aborted\n");
                 return;
             }
-        }
-        memcpy (&olditem->characteristics [olditem->characteristics_count],
-                item->characteristics,
-                item->characteristics_count *
-                    sizeof (struct adios_index_characteristic_struct_v1)
-               );
+            /* Merge the characteristics sorted with time_index */
+            struct adios_index_characteristic_struct_v1 * c1 = olditem->characteristics;
+            struct adios_index_characteristic_struct_v1 * c2 = item->characteristics;
+            uint64_t k1 = 0;
+            uint64_t k2 = 0;
+            struct adios_index_characteristic_struct_v1 * cend = c;
+            log_debug ("  old count=%llu item count=%llu\n", olditem->characteristics_count, item->characteristics_count);
+            while (k1 < olditem->characteristics_count || k2 < item->characteristics_count)
+            {
+                log_debug ("  k1=%llu k2=%llu", k1, k2);
+                /*
+                if (k2 >= item->characteristics_count || c1->time_index <= c2->time_index) {
+                    memcpy (cend, c1, sizeof(struct adios_index_characteristic_struct_v1)); 
+                    log_debug_cont ("  -> choose c1, time_index=%u", c1->time_index);
+                    c1++;
+                    k1++;
+                }
+                else if (k1 >= olditem->characteristics_count || c1->time_index > c2->time_index) {
+                    memcpy (cend, c2, sizeof(struct adios_index_characteristic_struct_v1)); 
+                    log_debug_cont ("  -> choose c2, time_index=%u", c2->time_index);
+                    c2++;
+                    k2++;
+                }*/
+                if (k2 >= item->characteristics_count) {
+                    memcpy (cend, c1, sizeof(struct adios_index_characteristic_struct_v1)); 
+                    log_debug_cont ("  -> only c1, time_index=%u", c1->time_index);
+                    c1++;
+                    k1++;
+                }
+                else if (k1 >= olditem->characteristics_count) {
+                    memcpy (cend, c2, sizeof(struct adios_index_characteristic_struct_v1)); 
+                    log_debug_cont ("  -> only c2, time_index=%u", c2->time_index);
+                    c2++;
+                    k2++;
+                }
+                else if (c1->time_index <= c2->time_index) {
+                    memcpy (cend, c1, sizeof(struct adios_index_characteristic_struct_v1)); 
+                    log_debug_cont ("  -> choose c1, time_index=%u", c1->time_index);
+                    c1++;
+                    k1++;
+                }
+                else {
+                    memcpy (cend, c2, sizeof(struct adios_index_characteristic_struct_v1)); 
+                    log_debug_cont ("  -> choose c2, time_index=%u", c2->time_index);
+                    c2++;
+                    k2++;
+                }
+                cend++;
+                log_debug_cont ("\n");
+            }
+            free (olditem->characteristics);
+            olditem->characteristics = c;
+            olditem->characteristics_allocated = count;
+            olditem->characteristics_count = count;
+             
+        } 
+        else 
+        {
+            if (  olditem->characteristics_count
+                    + item->characteristics_count
+                    > olditem->characteristics_allocated
+               )
+            {
+                int new_items = (item->characteristics_count == 1)
+                    ? 100 : item->characteristics_count;
+                olditem->characteristics_allocated =
+                    olditem->characteristics_count + new_items;
+                void * ptr = realloc (
+                        olditem->characteristics,
+                        olditem->characteristics_allocated *
+                        sizeof (struct adios_index_characteristic_struct_v1)
+                        );
 
-        olditem->characteristics_count += item->characteristics_count;
+                if (ptr)
+                {
+                    olditem->characteristics = ptr;
+                }
+                else
+                {
+                    adios_error (err_no_memory, "error allocating memory to build "
+                            "var index.  Index aborted\n");
+                    return;
+                }
+            }
+            memcpy (&olditem->characteristics [olditem->characteristics_count],
+                    item->characteristics,
+                    item->characteristics_count *
+                    sizeof (struct adios_index_characteristic_struct_v1)
+                   );
+
+            olditem->characteristics_count += item->characteristics_count;
+        }
 
         free (item->characteristics);
         free (item->group_name);
@@ -2404,11 +2476,14 @@ static void index_append_attribute_v1
 }
 
 // lists in new_index will be destroyed as part of the merge operation...
+// needs_sorting: use 1 if the the inserted new list has multiple timesteps
+//                it will merge sort the characteristics to keep the time in order
 void adios_merge_index_v1 (
                    struct adios_index_struct_v1 * main_index
                   ,struct adios_index_process_group_struct_v1 * new_pg_root
                   ,struct adios_index_var_struct_v1 * new_vars_root
                   ,struct adios_index_attribute_struct_v1 * new_attrs_root
+                  ,int needs_sorting
                   )
 {
     // this will just add it on to the end and all should work fine
@@ -2425,7 +2500,7 @@ void adios_merge_index_v1 (
         v_temp = v->next;
         v->next = 0;
         log_debug ("merge index var %s/%s\n", v->var_path, v->var_name);
-        index_append_var_v1 (main_index, v);
+        index_append_var_v1 (main_index, v, needs_sorting);
         v = v_temp;
     }
 
@@ -2438,6 +2513,8 @@ void adios_merge_index_v1 (
     }
 }
 
+#if 0
+// obsolete, merge the index with sorting
 // sort pg/var indexes by time index
 void adios_sort_index_v1 (struct adios_index_process_group_struct_v1 ** p1
         ,struct adios_index_var_struct_v1 ** v1
@@ -2554,6 +2631,7 @@ void adios_sort_index_v1 (struct adios_index_process_group_struct_v1 ** p1
 
     // no need to sort attributes
 }
+#endif 
 
 static void adios_clear_process_groups_index_v1 (
         struct adios_index_process_group_struct_v1 * root
@@ -3417,7 +3495,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
 
             // this fn will either take ownership for free
             log_debug ("build index var %s/%s\n", v_index->var_path, v_index->var_name);
-            index_append_var_v1 (index, v_index);
+            index_append_var_v1 (index, v_index, 0);
         }
 
         v = v->next;

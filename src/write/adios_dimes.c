@@ -680,7 +680,7 @@ static void adios_dimes_gather_indices (struct adios_file_struct * fd
                         ,&new_attrs_root
                         );
                 adios_merge_index_v1 (index, new_pg_root, 
-                                      new_vars_root, new_attrs_root);
+                                      new_vars_root, new_attrs_root, 0);
                 new_pg_root = 0;
                 new_vars_root = 0;
                 new_attrs_root = 0;
