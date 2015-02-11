@@ -20,6 +20,9 @@ static int lerror;
 static uint64_t share_size = 10*1024*1024;
 static uint64_t index_share_size = 1*1024*1024;
 
+#define _USE_HOBBES_
+
+#ifndef _USE_HOBBES_
 static xpmem_segid_t make_share(char **data, size_t size)
 {
 	xpmem_segid_t segid;
@@ -114,6 +117,106 @@ static int read_segid(xpmem_segid_t *segid, char *fname)
 	close(fd);
 	return 0;
 }
+
+#else
+//we use the hobbes specific xpmem functionality from Brian
+#define WELL_KNOWN_ADIOS_ID 1
+
+static xpmem_segid_t make_share(char **data, size_t size)
+{
+	xpmem_segid_t segid = WELL_KNOWN_ADIOS_ID;
+	int ret;
+
+	int flags = XPMEM_MEM_MODE | XPMEM_REQUEST_MODE | XPMEM_SIG_MODE; 
+
+	//we will want to send this fd out of this function in some way
+	int fd;
+	
+	
+	if(size < PAGE_SIZE)
+		size = PAGE_SIZE;
+	ret = posix_memalign((void**)data, PAGE_SIZE, size);
+	if(ret != 0)
+	{
+		lerror = errno;
+		fprintf(stderr, "error in posix_memalign %d %s\n",
+		        lerror, strerror(lerror));		
+		return -1;
+	}
+
+	memset((void*)*data, 0, size);
+
+	segid = xpmem_make_hobbes(*data, size, XPMEM_PERMIT_MODE, (void*)0600,
+	                          flags, segid, &fd);
+	
+	if(segid == -1)
+	{
+	    lerror = errno;
+	    fprintf(stderr, "error in xpmem make hobbes %d %s\n",
+		    lerror, strerror(lerror));		
+		return -1;
+	}
+	if(segid != WELL_KNOWN_ADIOS_ID)
+	{
+		fprintf(stderr, "unable to get well known segid\n");		
+	}
+	
+	return segid;
+}
+
+static int unmake_share(xpmem_segid_t segid, char *data)
+{
+	int ret;
+
+	ret = xpmem_remove(segid);
+	free(data);
+	
+	return ret;
+}
+
+static char *attach_segid( xpmem_segid_t _segid, int size, xpmem_apid_t *apid)
+{
+	struct xpmem_addr addr;
+	char *buff;
+	//we ignore the _segid variable because we are using a
+	//well known segid
+	xpmem_segid_t segid = WELL_KNOWN_ADIOS_ID;
+
+	// if(*apid <= 0)
+	// {
+		*apid = xpmem_get(segid, XPMEM_RDWR, XPMEM_PERMIT_MODE, NULL);
+		if(*apid == -1)
+		{
+			lerror = errno;
+			return NULL;
+		}
+	// }
+	addr.apid = *apid;
+	addr.offset = 0;
+	buff = xpmem_attach(addr, size, NULL);
+	if(buff == (void*)-1)
+	{
+		perror("xpmem_attach");
+		return NULL;
+	}
+
+	return buff;
+}
+
+//since we are using a well known segid it doesn't really matter for us to
+//write the segid to the file
+static int write_segid(xpmem_segid_t segid, char *fname)
+{
+	return 0;
+}
+
+static int read_segid(xpmem_segid_t *segid, char *fname)
+{
+	return 0;
+}
+
+
+#endif
 
 typedef struct _shared_data
 {
