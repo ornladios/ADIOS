@@ -55,7 +55,7 @@ class adios_test(Command):
         raise SystemExit(errno)
     
 setup(name = 'adios_mpi',
-      version = '1.0.1',
+      version = '1.0.2',
       description = 'Python Module for Adios MPI',
       author = 'Jong Choi',
       author_email = 'yyalli@gmail.com',
