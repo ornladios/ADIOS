@@ -62,7 +62,7 @@ void adios_xpmem_init (const PairStruct * parameters
         adios_xpmem_initialized = 1;
     }
 
-    adios_logger_open("xpmem.log", 0);
+    adios_logger_open(NULL, 0);
     
     method->method_data = malloc (sizeof (adios_xpmem_data_struct));
     memset(method->method_data, 0, sizeof(adios_xpmem_data_struct));
