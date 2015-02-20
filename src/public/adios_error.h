@@ -148,6 +148,11 @@ enum ADIOS_ERRCODES {
     // Transform layer errors
     err_invalid_transform_type                = -300, // unknown transform is requested 
 
+    // Query errors
+    err_unsupported_selection                 = -401, // unsupported selection
+    err_invalid_query_value                   = -402, // value passed in expression is invalid
+    err_incompatible_queries                  = -403, // cannot combine two queries
+
     // Miscellaneous
     err_fgr                                   = -900, // FGR lib error
 
@@ -158,6 +163,7 @@ void adios_error (enum ADIOS_ERRCODES errcode, char *fmt, ...);
 void adios_error_at_line (enum ADIOS_ERRCODES errcode, const char* filename, unsigned int linenum, char *fmt, ...);
 
 const char* adios_get_last_errmsg (void);
+void adios_clear_error(void); // reset adios_errno to err_no_err and clear last errmsg
 
 #ifdef __cplusplus
 }

@@ -138,14 +138,14 @@
 
 #include "public/adios.h"
 #include "core/adios_bp_v1.h"
-#include "adios_internals.h"
-#include "adios_endianness.h"
-#include "adios_logger.h"
-#include "bp_utils.h"
+#include "core/adios_internals.h"
+#include "core/adios_endianness.h"
+#include "core/adios_logger.h"
+#include "core/bp_utils.h"
 #include "core/common_adios.h"
 
-#include "adios_transforms_common.h"
-#include "adios_transforms_hooks.h"
+#include "core/transforms/adios_transforms_common.h"
+#include "core/transforms/adios_transforms_hooks.h"
 
 #include <assert.h>
 #include <stdint.h>
@@ -279,6 +279,8 @@ static enum ADIOS_TRANSFORM_TYPE deserialize_transform_type(struct adios_bp_buff
     BUFREAD(b, transform_uid, transform_uid_len);
 
     enum ADIOS_TRANSFORM_TYPE transform_type = adios_transform_find_type_by_uid(transform_uid);
+
+    free(transform_uid);
     return transform_type;
 }
 

@@ -8,9 +8,9 @@
 #ifndef ADIOS_TRANSFORMS_WRITE_H_
 #define ADIOS_TRANSFORMS_WRITE_H_
 
-#include "adios_bp_v1.h"
-#include "adios_internals.h"
-#include "adios_transforms_common.h"
+#include "core/adios_bp_v1.h"
+#include "core/adios_internals.h"
+#include "core/transforms/adios_transforms_common.h"
 
 /*
  * Returns the pre-transform size, in bytes, of a variable. Note: only works on
@@ -25,9 +25,10 @@ uint64_t adios_transform_get_pre_transform_var_size(struct adios_var_struct *var
  * is to be transformed. In the current implementation, this includes converting
  * the variable type to a byte array, storing the old dimension/type metadata,
  * and setting appropriate flag fields.
+ *
+ * Note: the transform to be applied is assumed to be specified in orig_var->transform_spec.
  */
-struct adios_var_struct * adios_transform_define_var(struct adios_var_struct *orig_var,
-                                                     struct adios_transform_spec *transform_spec);
+struct adios_var_struct * adios_transform_define_var(struct adios_var_struct *orig_var);
 
 /*
  * Transforms a given variable orig_var via the given transform type.

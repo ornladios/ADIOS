@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<adios-alac-test-inputs>
+	<vars num="1">
+		<var name="temp"/>
+		<dimension dim="3" dataDim="4,4,4" pgDim="2,2,2" elementSize="4"/>
+	        <pgoffset pgNum="8" pg_0="0,0,0" pg_1="0,2,0" pg_2="2,0,0" pg_3="2,2,0" pg_4="0,0,2" pg_5="0,2,2" pg_6="2,0,2" pg_7="2,2,2"/>
+                <timestep tsnum="2"/>
+	</vars>
+
+        <query num="3" timestep="2">
+            <entry var="temp" op=">=" constraint="0.5"> 
+                <selection type="ADIOS_SELECTION_BOUNDINGBOX" dim="3" start="0,0,0" count="4,4,4"/>
+            </entry>
+            <entry var="temp" op="<=" constraint="1.0"> 
+                <selection type="ADIOS_SELECTION_BOUNDINGBOX" dim="3" start="0,0,0" count="4,4,4"/>
+            </entry>
+
+            <combine op="AND"/>
+
+            <entry var="temp" op=">=" constraint="5.0"> 
+                <selection type="ADIOS_SELECTION_BOUNDINGBOX" dim="3" start="0,0,0" count="4,4,4"/>
+            </entry>
+
+            <combine op="OR"/>
+
+
+        </query>
+  
+</adios-alac-test-inputs>

@@ -78,8 +78,9 @@ PRE_UNINSTALL = :
 POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
-noinst_PROGRAMS = tri2d_f_noxml$(EXEEXT) \
-	tri2d_f_noxml_seperate$(EXEEXT)
+noinst_PROGRAMS = uniform2d_f_noxml$(EXEEXT) \
+	rectilinear2d_f_noxml$(EXEEXT) structured2d_f_noxml$(EXEEXT) \
+	tri2d_f_noxml$(EXEEXT) tri2d_f_noxml_seperate$(EXEEXT)
 subdir = examples/Fortran/schema
 DIST_COMMON = $(srcdir)/Makefile.in $(srcdir)/Makefile.am
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -94,6 +95,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_alacrity.m4 \
 	$(top_srcdir)/config/ac_dcmf.m4 \
 	$(top_srcdir)/config/ac_dimes.m4 \
 	$(top_srcdir)/config/ac_dmalloc.m4 \
+	$(top_srcdir)/config/ac_fastbit.m4 \
 	$(top_srcdir)/config/ac_fgr.m4 \
 	$(top_srcdir)/config/ac_flexpath.m4 \
 	$(top_srcdir)/config/ac_glib.m4 \
@@ -110,6 +112,7 @@ am__aclocal_m4_deps = $(top_srcdir)/config/ac_alacrity.m4 \
 	$(top_srcdir)/config/ac_pami.m4 \
 	$(top_srcdir)/config/ac_phdf5.m4 \
 	$(top_srcdir)/config/ac_portals.m4 \
+	$(top_srcdir)/config/ac_ridcompress.m4 \
 	$(top_srcdir)/config/ac_szip.m4 \
 	$(top_srcdir)/config/ac_xpmem.m4 \
 	$(top_srcdir)/config/ac_zlib.m4 \
@@ -127,15 +130,31 @@ CONFIG_HEADER = $(top_builddir)/config.h
 CONFIG_CLEAN_FILES =
 CONFIG_CLEAN_VPATH_FILES =
 PROGRAMS = $(noinst_PROGRAMS)
-am_tri2d_f_noxml_OBJECTS = tri2d_noxml.$(OBJEXT)
-tri2d_f_noxml_OBJECTS = $(am_tri2d_f_noxml_OBJECTS)
+am_rectilinear2d_f_noxml_OBJECTS = rectilinear2d_noxml.$(OBJEXT)
+rectilinear2d_f_noxml_OBJECTS = $(am_rectilinear2d_f_noxml_OBJECTS)
 am__DEPENDENCIES_1 =
-tri2d_f_noxml_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
+rectilinear2d_f_noxml_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
 	$(am__DEPENDENCIES_1)
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
 am__v_lt_1 = 
+rectilinear2d_f_noxml_LINK = $(LIBTOOL) $(AM_V_lt) --tag=FC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(FCLD) \
+	$(AM_FCFLAGS) $(FCFLAGS) $(rectilinear2d_f_noxml_LDFLAGS) \
+	$(LDFLAGS) -o $@
+am_structured2d_f_noxml_OBJECTS = structured2d_noxml.$(OBJEXT)
+structured2d_f_noxml_OBJECTS = $(am_structured2d_f_noxml_OBJECTS)
+structured2d_f_noxml_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
+	$(am__DEPENDENCIES_1)
+structured2d_f_noxml_LINK = $(LIBTOOL) $(AM_V_lt) --tag=FC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(FCLD) \
+	$(AM_FCFLAGS) $(FCFLAGS) $(structured2d_f_noxml_LDFLAGS) \
+	$(LDFLAGS) -o $@
+am_tri2d_f_noxml_OBJECTS = tri2d_noxml.$(OBJEXT)
+tri2d_f_noxml_OBJECTS = $(am_tri2d_f_noxml_OBJECTS)
+tri2d_f_noxml_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
+	$(am__DEPENDENCIES_1)
 tri2d_f_noxml_LINK = $(LIBTOOL) $(AM_V_lt) --tag=FC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(FCLD) $(AM_FCFLAGS) $(FCFLAGS) \
 	$(tri2d_f_noxml_LDFLAGS) $(LDFLAGS) -o $@
@@ -146,6 +165,14 @@ tri2d_f_noxml_seperate_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
 tri2d_f_noxml_seperate_LINK = $(LIBTOOL) $(AM_V_lt) --tag=FC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(FCLD) \
 	$(AM_FCFLAGS) $(FCFLAGS) $(tri2d_f_noxml_seperate_LDFLAGS) \
+	$(LDFLAGS) -o $@
+am_uniform2d_f_noxml_OBJECTS = uniform2d_noxml.$(OBJEXT)
+uniform2d_f_noxml_OBJECTS = $(am_uniform2d_f_noxml_OBJECTS)
+uniform2d_f_noxml_DEPENDENCIES = $(top_builddir)/src/libadiosf.a \
+	$(am__DEPENDENCIES_1)
+uniform2d_f_noxml_LINK = $(LIBTOOL) $(AM_V_lt) --tag=FC \
+	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(FCLD) \
+	$(AM_FCFLAGS) $(FCFLAGS) $(uniform2d_f_noxml_LDFLAGS) \
 	$(LDFLAGS) -o $@
 AM_V_P = $(am__v_P_@AM_V@)
 am__v_P_ = $(am__v_P_@AM_DEFAULT_V@)
@@ -177,9 +204,12 @@ AM_V_FCLD = $(am__v_FCLD_@AM_V@)
 am__v_FCLD_ = $(am__v_FCLD_@AM_DEFAULT_V@)
 am__v_FCLD_0 = @echo "  FCLD    " $@;
 am__v_FCLD_1 = 
-SOURCES = $(tri2d_f_noxml_SOURCES) $(tri2d_f_noxml_seperate_SOURCES)
-DIST_SOURCES = $(tri2d_f_noxml_SOURCES) \
-	$(tri2d_f_noxml_seperate_SOURCES)
+SOURCES = $(rectilinear2d_f_noxml_SOURCES) \
+	$(structured2d_f_noxml_SOURCES) $(tri2d_f_noxml_SOURCES) \
+	$(tri2d_f_noxml_seperate_SOURCES) $(uniform2d_f_noxml_SOURCES)
+DIST_SOURCES = $(rectilinear2d_f_noxml_SOURCES) \
+	$(structured2d_f_noxml_SOURCES) $(tri2d_f_noxml_SOURCES) \
+	$(tri2d_f_noxml_seperate_SOURCES) $(uniform2d_f_noxml_SOURCES)
 am__can_run_installinfo = \
   case $$AM_UPDATE_INFO_DIR in \
     n|no|NO) false;; \
@@ -227,6 +257,8 @@ ADIOSREADLIB_SEQ_CFLAGS = @ADIOSREADLIB_SEQ_CFLAGS@
 ADIOSREADLIB_SEQ_CPPFLAGS = @ADIOSREADLIB_SEQ_CPPFLAGS@
 ADIOSREADLIB_SEQ_LDADD = @ADIOSREADLIB_SEQ_LDADD@
 ADIOSREADLIB_SEQ_LDFLAGS = @ADIOSREADLIB_SEQ_LDFLAGS@
+ADIOS_TIMERS = @ADIOS_TIMERS@
+ADIOS_TIMER_EVENTS = @ADIOS_TIMER_EVENTS@
 ALACRITY_CPPFLAGS = @ALACRITY_CPPFLAGS@
 ALACRITY_LDFLAGS = @ALACRITY_LDFLAGS@
 ALACRITY_LIBS = @ALACRITY_LIBS@
@@ -286,6 +318,9 @@ ECHO_N = @ECHO_N@
 ECHO_T = @ECHO_T@
 EGREP = @EGREP@
 EXEEXT = @EXEEXT@
+FASTBIT_CPPFLAGS = @FASTBIT_CPPFLAGS@
+FASTBIT_LDFLAGS = @FASTBIT_LDFLAGS@
+FASTBIT_LIBS = @FASTBIT_LIBS@
 FC = $(MPIFC)
 FCFLAGS = @FCFLAGS@
 FCLIBS = @FCLIBS@
@@ -387,11 +422,13 @@ PTHREAD_CC = @PTHREAD_CC@
 PTHREAD_CFLAGS = @PTHREAD_CFLAGS@
 PTHREAD_LIBS = @PTHREAD_LIBS@
 RANLIB = @RANLIB@
+RIDCOMPRESS_CPPFLAGS = @RIDCOMPRESS_CPPFLAGS@
+RIDCOMPRESS_LDFLAGS = @RIDCOMPRESS_LDFLAGS@
+RIDCOMPRESS_LIBS = @RIDCOMPRESS_LIBS@
 SED = @SED@
 SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 SKEL_HAVE_ADIOS_TIMING = @SKEL_HAVE_ADIOS_TIMING@
-SKEL_TIMING = @SKEL_TIMING@
 STRIP = @STRIP@
 SZIP_CPPFLAGS = @SZIP_CPPFLAGS@
 SZIP_LDFLAGS = @SZIP_LDFLAGS@
@@ -460,8 +497,20 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-INCLUDES = $(all_includes) -I$(top_builddir)/src
+AM_CPPFLAGS = $(all_includes) -I$(top_builddir)/src
 AUTOMAKE_OPTIONS = no-dependencies
+uniform2d_f_noxml_SOURCES = uniform2d_noxml.F90
+uniform2d_f_noxml_LDADD = $(top_builddir)/src/libadiosf.a \
+	$(ADIOSLIB_LDADD)
+uniform2d_f_noxml_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+rectilinear2d_f_noxml_SOURCES = rectilinear2d_noxml.F90
+rectilinear2d_f_noxml_LDADD = $(top_builddir)/src/libadiosf.a \
+	$(ADIOSLIB_LDADD)
+rectilinear2d_f_noxml_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+structured2d_f_noxml_SOURCES = structured2d_noxml.F90
+structured2d_f_noxml_LDADD = $(top_builddir)/src/libadiosf.a \
+	$(ADIOSLIB_LDADD)
+structured2d_f_noxml_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 tri2d_f_noxml_SOURCES = tri2d_noxml.F90 
 tri2d_f_noxml_LDADD = $(top_builddir)/src/libadiosf.a \
 	$(ADIOSLIB_LDADD)
@@ -519,6 +568,14 @@ clean-noinstPROGRAMS:
 	echo " rm -f" $$list; \
 	rm -f $$list
 
+rectilinear2d_f_noxml$(EXEEXT): $(rectilinear2d_f_noxml_OBJECTS) $(rectilinear2d_f_noxml_DEPENDENCIES) $(EXTRA_rectilinear2d_f_noxml_DEPENDENCIES) 
+	@rm -f rectilinear2d_f_noxml$(EXEEXT)
+	$(AM_V_FCLD)$(rectilinear2d_f_noxml_LINK) $(rectilinear2d_f_noxml_OBJECTS) $(rectilinear2d_f_noxml_LDADD) $(LIBS)
+
+structured2d_f_noxml$(EXEEXT): $(structured2d_f_noxml_OBJECTS) $(structured2d_f_noxml_DEPENDENCIES) $(EXTRA_structured2d_f_noxml_DEPENDENCIES) 
+	@rm -f structured2d_f_noxml$(EXEEXT)
+	$(AM_V_FCLD)$(structured2d_f_noxml_LINK) $(structured2d_f_noxml_OBJECTS) $(structured2d_f_noxml_LDADD) $(LIBS)
+
 tri2d_f_noxml$(EXEEXT): $(tri2d_f_noxml_OBJECTS) $(tri2d_f_noxml_DEPENDENCIES) $(EXTRA_tri2d_f_noxml_DEPENDENCIES) 
 	@rm -f tri2d_f_noxml$(EXEEXT)
 	$(AM_V_FCLD)$(tri2d_f_noxml_LINK) $(tri2d_f_noxml_OBJECTS) $(tri2d_f_noxml_LDADD) $(LIBS)
@@ -526,6 +583,10 @@ tri2d_f_noxml$(EXEEXT): $(tri2d_f_noxml_OBJECTS) $(tri2d_f_noxml_DEPENDENCIES) $
 tri2d_f_noxml_seperate$(EXEEXT): $(tri2d_f_noxml_seperate_OBJECTS) $(tri2d_f_noxml_seperate_DEPENDENCIES) $(EXTRA_tri2d_f_noxml_seperate_DEPENDENCIES) 
 	@rm -f tri2d_f_noxml_seperate$(EXEEXT)
 	$(AM_V_FCLD)$(tri2d_f_noxml_seperate_LINK) $(tri2d_f_noxml_seperate_OBJECTS) $(tri2d_f_noxml_seperate_LDADD) $(LIBS)
+
+uniform2d_f_noxml$(EXEEXT): $(uniform2d_f_noxml_OBJECTS) $(uniform2d_f_noxml_DEPENDENCIES) $(EXTRA_uniform2d_f_noxml_DEPENDENCIES) 
+	@rm -f uniform2d_f_noxml$(EXEEXT)
+	$(AM_V_FCLD)$(uniform2d_f_noxml_LINK) $(uniform2d_f_noxml_OBJECTS) $(uniform2d_f_noxml_LDADD) $(LIBS)
 
 mostlyclean-compile:
 	-rm -f *.$(OBJEXT)

@@ -126,8 +126,9 @@ enum ADIOS_IO_METHOD {ADIOS_METHOD_UNKNOWN     = -2
               ,ADIOS_METHOD_DIMES        = 21
               ,ADIOS_METHOD_VAR_MERGE   = 22
               ,ADIOS_METHOD_MPI_BGQ     = 23
-                      ,ADIOS_METHOD_XPMEM = 24
-              ,ADIOS_METHOD_COUNT       = 1
+              ,ADIOS_METHOD_XPMEM = 24
+              ,ADIOS_METHOD_ICEE        = 25
+              ,ADIOS_METHOD_COUNT       = 26
 };
 
 // forward declare the functions (or dummies for internals use)
@@ -177,6 +178,9 @@ FORWARD_DECLARE(dimes)
      FORWARD_DECLARE(xpmem)
 #endif	        
 
+#if defined(HAVE_ICEE) && !defined(ADIOS_EMPTY_TRANSPORTS) 
+FORWARD_DECLARE(icee)
+#endif
 
 #undef FORWARD_DECLARE
 #endif

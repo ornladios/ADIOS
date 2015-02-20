@@ -1,5 +1,5 @@
-INCLUDES = $(all_includes)
-INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public
+AM_CPPFLAGS = $(all_includes)
+AM_CPPFLAGS += -I$(top_srcdir)/src -I$(top_srcdir)/src/public
 
 AUTOMAKE_OPTIONS = no-dependencies
 
@@ -16,6 +16,6 @@ arrays_read_SOURCES = arrays_read.c
 arrays_read_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 arrays_read_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 
-CLEANFILES = *.txt
+CLEANFILES = *_writer_info.txt *_writer_ready.txt *_reader_info.txt *_reader_ready.txt *.bp
 CC=$(MPICC)
 EXTRA_DIST = arrays.xml job.pbs

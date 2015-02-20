@@ -399,6 +399,12 @@ int adios_read_nssi_fclose (ADIOS_FILE *fp)
     return 0;
 }
 
+
+int adios_read_nssi_get_dimension_order (const ADIOS_FILE *fp)
+{
+    return 0;
+}
+
 /* This function can be called if user places
    the wrong sequences of dims for a var
 */

@@ -25,7 +25,6 @@
 int main (int argc, char ** argv) 
 {
 	char        filename [256];
-	int         NX, NY; 
 	double      *t;
 	int         *p;
 	enum ADIOS_READ_METHOD method = ADIOS_READ_METHOD_XPMEM;
@@ -47,15 +46,19 @@ int main (int argc, char ** argv)
 	strcpy (filename, "arrays.bp");
 	ADIOS_FILE * f = adios_read_open_file (filename, method, comm);
 
+	int         NX = 10, NY = 100; 
+
+	fprintf(stderr, "NX = %d\tNY=%d\n", NX, NY);
+
 	if(0)
 	{
 		/* Specify a selection that points to a specific writer's block */
 		sel = adios_selection_writeblock (rank);
 
 		/* First get the scalars to calculate the size of the arrays */
-		adios_schedule_read (f, sel, "NX", 0, 1, &NX);
-		adios_schedule_read (f, sel, "NY", 0, 1, &NY);
-		adios_perform_reads (f, 1);
+		// adios_schedule_read (f, sel, "NX", 0, 1, &NX);
+		// adios_schedule_read (f, sel, "NY", 0, 1, &NY);
+		// adios_perform_reads (f, 1);
 
 		printf("rank=%d: NX=%d NY=%d\n", rank, NX, NY);
 
@@ -73,9 +76,15 @@ int main (int argc, char ** argv)
 		uint64_t    start[] = {0,0};
 		uint64_t count[] = {2,2};
 
+		/* Allocate space for the arrays */
+		t = (double *) malloc (NX*NY*sizeof(double));
+		p = (int *) malloc (NX*sizeof(int));
+
+		ADIOS_VARINFO *v = adios_inq_var(f, "var_double_2Darray");
+
 		sel = adios_selection_boundingbox(2, start, count);
-		adios_schedule_read(f, sel, "var_double2Darray", 0, 1, t);
-		adios_perform_read(f, 1);
+		adios_schedule_read(f, sel, "var_double_2Darray", 0, 1, t);
+		adios_perform_reads(f, 1);
 	}
 	
 	/* At this point, we have the data in memory */

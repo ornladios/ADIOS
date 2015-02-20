@@ -1,5 +1,5 @@
-INCLUDES = $(all_includes)
-INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public $(TIMER_CPPFLAGS)
+AM_CPPFLAGS = $(all_includes)
+AM_CPPFLAGS += -I$(top_srcdir)/src -I$(top_srcdir)/src/public $(TIMER_CPPFLAGS)
 
 AUTOMAKE_OPTIONS = no-dependencies
 
@@ -30,4 +30,4 @@ adios_read_wb_subpg_LDADD += $(ADIOSLIB_LDADD)
 
 CLEANFILES = *.bp
 CC=$(MPICC)
-EXTRA_DIST = adios_global.xml gread_temperature.ch gwrite_temperature.ch S3D
+EXTRA_DIST = adios_global.xml gread_temperature.ch gwrite_temperature.ch

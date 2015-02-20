@@ -118,6 +118,9 @@ int adios_xpmem_open (struct adios_file_struct * fd
 	    while(p->sp->readcount != 1)
 		    adios_nanosleep(0, 100000000);
 
+    while(p->sp->version != 0)
+	    adios_nanosleep(0, 100000000);
+    
     p->sp->readcount = 0;
     p->sp->version = 0;
 
@@ -255,12 +258,33 @@ void adios_xpmem_close (struct adios_file_struct * fd
 	}
 	}
 
+	// adios_posix_close_internal (&p->b);
+	// adios_clear_index_v1 (index);
+
 }
 
 void adios_xpmem_finalize (int mype, struct adios_method_struct * method)
 {
 	adios_xpmem_data_struct * p = (adios_xpmem_data_struct *)
 		method->method_data;
+
+	//set the finalize flag on the shared segment
+	p->sp->finalized = 1;
+	
+	//now loop over the readcount
+	while(p->sp->readcount != 1)
+		adios_nanosleep(0, 100000000);
+
+	//now loop on finalized until it is set to 2
+	while(p->sp->finalized != 2)
+		adios_nanosleep(0, 100000000);
+
+	//unmake the segment
+	unmake_share(p->buffer_id, p->b);
+
+	//now we can delete shit and exit
+	free(p);
+	
 	if (adios_xpmem_initialized)
 		adios_xpmem_initialized = 0;
 }

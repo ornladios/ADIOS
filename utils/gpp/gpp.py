@@ -64,7 +64,10 @@ def get_fortran_groupsize_code (group):
     for v in group.get_vars():
         #print '  count variable "'+v.get_fullpath()+'"'
         if (v.is_scalar() ):
-            groupsize_code_string += ('%d' % type_mapper.get_size (v.get_type() ) + ' &\n                + ')
+            if v.get_type() != 'string':
+                groupsize_code_string += ('%d' % type_mapper.get_size (v.get_type() ) + ' &\n                + ')
+            else:
+                groupsize_code_string += ('len_trim(' + v.get_gwrite() + ')' + ' &\n                + ')
         else:
             groupsize_code_string += ('%d * ' % type_mapper.get_size (v.get_type() ) )
 
@@ -150,7 +153,7 @@ def get_fortran_read_statements (group):
         if var.get_dimensions() == None:
             continue
 
-        statements += 'call adios_schedule_read (fp, s, "' + var.get_name() + '", 1, 1, ' + var.get_gwrite() + ', adios_err)\n'
+        statements += 'call adios_schedule_read (fp, s, "' + var.get_name() + '", 0, 1, ' + var.get_gwrite() + ', adios_err)\n'
 
     statements += '\ncall adios_perform_reads (fp, adios_err)\n'
     statements += 'call adios_selection_delete (s)\n'
@@ -175,7 +178,7 @@ def get_c_read_statements (group):
         else:
             var_prefix = '&'
 
-        statements += 'adios_schedule_read (fp, s, "' + var.get_name() + '", 1, 1, ' + var_prefix + var.get_gwrite() + ');\n'
+        statements += 'adios_schedule_read (fp, s, "' + var.get_name() + '", 0, 1, ' + var_prefix + var.get_gwrite() + ');\n'
 
     statements += 'adios_perform_reads (fp, 1);\n'
     statements += 'adios_selection_delete (s);\n'

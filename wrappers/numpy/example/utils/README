@@ -1,0 +1,26 @@
+This directory contains utility scripts to demonstrate how to use
+Adios python wrappers. The following scripts were written to
+demonstrate functionality of Adios python wrapper, rather than to make
+generic tools.
+
+1. bpls.py
+----------
+
+It acts like "bpls" utility provided by Adios. The usage is as
+follows:
+
+$ python ./bpls.py bpfile
+
+
+2. ncdf2bp.py
+-------------
+
+A script to convert a netcdf file to an Adios bp file.
+
+$ python ./ncdf2bp.py netcdf_file
+
+Examples are as follows:
+$ wget http://www.unidata.ucar.edu/software/netcdf/examples/ECMWF_ERA-40_subset.nc
+$ python ./ncdf2bp.py ECMWF_ERA-40_subset.nc
+
+

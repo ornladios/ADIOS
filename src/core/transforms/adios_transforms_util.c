@@ -6,7 +6,7 @@
 
 #include "adios_transforms_common.h"
 #include "adios_transforms_util.h"
-#include "adios_internals.h"
+#include "core/adios_internals.h"
 
 static int buffer_reserve(char ** buffer, uint64_t * buffer_size
                          ,uint64_t * buffer_offset

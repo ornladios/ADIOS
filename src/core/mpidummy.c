@@ -178,12 +178,15 @@ int MPI_File_read(MPI_File fh, void *buf, int count, MPI_Datatype datatype, MPI_
     // FIXME: int count can read only 2GB (*datatype size) array at max
     uint64_t bytes_to_read = count * datatype;  // datatype should hold the size of the type, not an id
     uint64_t bytes_read;
+    uint32_t bread;
     bytes_read = read (fh, buf, bytes_to_read);
     if (bytes_read != bytes_to_read) {
         snprintf(mpierrmsg, MPI_MAX_ERROR_STRING, "could not read %llu bytes. read only: %llu\n", bytes_to_read, bytes_read);
         return -2;
     }
-    *status = bytes_read;
+    bread = (uint32_t)bytes_read;
+    memcpy(status, &bread, sizeof(*status));
+//    *status = ((MPI_Status)bytes_read);
     //printf("MPI_File_read: fh=%d, count=%d, typesize=%d, bytes read=%lld\n", fh, count, datatype, *status);
     return MPI_SUCCESS;
 }
@@ -198,7 +201,7 @@ int MPI_File_seek(MPI_File fh, MPI_Offset offset, int whence)
 
 int MPI_Get_count(MPI_Status *status, MPI_Datatype datatype, int *count) 
 { 
-    *count = (int) *status;
+    *count = (int) *((int*)status);
     return MPI_SUCCESS;
 }
 

@@ -3,70 +3,84 @@
 #include <stdlib.h>
 #include <string.h>
 #include <assert.h>
+#include <math.h>
 
-#include "adios_bp_v1.h"
-#include "common_adios.h"
-#include "adios_logger.h"
-#include "adios_internals.h"
+#include "core/adios_bp_v1.h"
+#include "core/common_adios.h"
+#include "core/adios_logger.h"
+#include "core/adios_internals.h"
 #include "public/adios_types.h"
-#include "util.h"
+#include "core/util.h"
 
-#include "adios_transforms_hooks_write.h"
-#include "adios_transforms_common.h"
-#include "adios_transforms_write.h"
-#include "adios_transforms_specparse.h"
+#include "core/transforms/adios_transforms_hooks_write.h"
+#include "core/transforms/adios_transforms_common.h"
+#include "core/transforms/adios_transforms_write.h"
+#include "core/transforms/adios_transforms_specparse.h"
 
 ////////////////////////////////////////
 // adios_group_size support
 ////////////////////////////////////////
+#define MIN(X, Y) ((X) < (Y) ? (X) : (Y) )
+#define MAX(X, Y) ((X) > (Y) ? (X) : (Y) )
 uint64_t adios_transform_worst_case_transformed_group_size(uint64_t group_size, struct adios_file_struct *fd)
 {
-    // New group size is always at least the original group size
-    uint64_t max_transformed_group_size = group_size;
-    int non_scalar_transformed_var_count = 0;
-
+	uint64_t transformed_group_size = group_size; // The upper bound on how much data /might/ be transformed
     struct adios_var_struct *cur_var;
-    uint64_t transformed_group_size;
-    int transform_type;
 
-    // Table of what transform types have been seen so far.
-    // Allocated on stack; no dynamic memory to clean up.
-    int transform_type_seen[num_adios_transform_types];
-    memset(transform_type_seen, 0, num_adios_transform_types * sizeof(int));
+    // Aggregated scaling information from all transforms
+    // The end result upper bound group size is:
+    // GS' = total_constant_factor + GS' * max_linear_factor + min(GS', max_capped_linear_cap) * max_capped_linear_factor
+    uint64_t total_constant_factor = 0;
+    double max_linear_factor = 1;
+    double max_capped_linear_factor = 0;
+    uint64_t max_capped_linear_cap = 0;
 
-    // Identify all transform methods used, and count the number of non-scalar
-    // variables
+    // Note: the "max capped linear" component is overestimating by combining the highest factor and cap from all transforms
+    // A tighter lower bound could be computed by keeping all capped linear caps/factors and doing some sort of overlap
+    // computation. However, this requires O(n vars) storage and extra logic that isn't worth it, given capped factors are
+    // very rare, and this method gives a tight bound when none are present.
+
     for (cur_var = fd->group->vars; cur_var; cur_var = cur_var->next)
     {
-        // Skip unknown/none transform types and scalar variables
-        if (cur_var->transform_type == adios_transform_none ||
-            !cur_var->dimensions)
+    	if (!cur_var->dimensions) // Scalar var
         {
-            continue;
+    		// Remove the scalar's size from the group size that can be affected by data transforms, and add it as a constant factor
+    		// Even if it's a string, we don't know the content yet, so use an empty string to get minimum size (we are computing an upper bound)
+    		transformed_group_size -= adios_get_type_size(cur_var->type, "");
+    		total_constant_factor += adios_get_type_size(cur_var->type, "");
         }
+    	else if (cur_var->transform_type == adios_transform_none) // Non-transformed, non-scalar var
+    	{
+            // Do nothing
+        }
+    	else // Transformed var
+    	{
+    	    uint64_t constant_factor = 0;
+    	    double linear_factor = 1;
+    	    double capped_linear_factor = 0;
+    	    uint64_t capped_linear_cap = 0;
 
-        transform_type_seen[cur_var->transform_type] = 1;
-        non_scalar_transformed_var_count++;
+    	    // Get the growth factors for this transform method/spec
+    	    adios_transform_transformed_size_growth(cur_var, cur_var->transform_spec, &constant_factor, &linear_factor, &capped_linear_factor, &capped_linear_cap);
+
+    	    // Combine these growth factors into the maximums for computing the worst case
+    	    total_constant_factor += constant_factor;
+    	    max_linear_factor = MAX(max_linear_factor, linear_factor);
+    	    max_capped_linear_factor = MAX(max_capped_linear_factor, capped_linear_factor);
+    	    max_capped_linear_cap = MAX(max_capped_linear_cap, capped_linear_cap);
+    	}
     }
 
-    // For each transform type, get a worst-case group size estimate, and
-    // record the worst of the worst cases
-    for (transform_type = adios_transform_none + 1; transform_type < num_adios_transform_types; transform_type++) {
-        if (!transform_type_seen[transform_type])
-            continue;
+    const uint64_t max_transformed_group_size =
+    		total_constant_factor +
+    		ceil(max_linear_factor * transformed_group_size) +
+    		ceil(max_capped_linear_factor * MIN(transformed_group_size, max_capped_linear_cap));
 
-        transformed_group_size = adios_transform_calc_vars_transformed_size(transform_type, group_size, non_scalar_transformed_var_count);
-
-        if (transformed_group_size > max_transformed_group_size) {
-            max_transformed_group_size = transformed_group_size;
-        }
-    }
-
-    // Return the maximum worst case for the group size. Note that this is
-    // always at least group_size, since it is initialized to that value,
-    // and never decreases.
-    return max_transformed_group_size;
+    // Return the maximum worst case for the group size
+    // (which can never be less than the starting group size)
+    return MAX(group_size, max_transformed_group_size);
 }
+#undef MAX
 
 ////////////////////////////////////////
 // Variable conversion to byte array (preparation for transform)
@@ -287,14 +301,15 @@ static int is_timed_scalar(const struct adios_var_struct *var) {
 
 /*
  * Modifies the given variable's metadata to support the data transform specified by
- * the given transform spec. Also handles error conditions, such as the variable
+ * orig_var->transform_spec. Also handles error conditions, such as the variable
  * being a scalar (which disallows any data transform).
  */
-struct adios_var_struct * adios_transform_define_var(struct adios_var_struct *orig_var,
-                                                     struct adios_transform_spec *transform_spec) {
+struct adios_var_struct * adios_transform_define_var(struct adios_var_struct *orig_var) {
     // First detect error conditions that prevent the transform from being applied
 
+	struct adios_transform_spec *transform_spec = orig_var->transform_spec;
     if (!transform_spec) return orig_var;
+
     // If the variable has a transform, but is a scalar: remove the transform, warn the user, and continue as usual
     if (transform_spec->transform_type != adios_transform_none &&
         (is_scalar(orig_var) || is_timed_scalar(orig_var))) {
@@ -302,7 +317,6 @@ struct adios_var_struct * adios_transform_define_var(struct adios_var_struct *or
                  orig_var->path, orig_var->name, transform_spec->transform_type_str);
 
         orig_var->transform_type = adios_transform_none;
-        orig_var->transform_spec = transform_spec;
         orig_var->transform_spec->transform_type = adios_transform_none;
         return orig_var;
     }
@@ -313,7 +327,6 @@ struct adios_var_struct * adios_transform_define_var(struct adios_var_struct *or
 
     // Set transform type and spec
     orig_var->transform_type = transform_spec->transform_type;
-    orig_var->transform_spec = transform_spec;
 
     // If there is no transform, nothing else to do
     if (transform_spec->transform_type == adios_transform_none)
@@ -351,56 +364,6 @@ uint64_t adios_transform_get_pre_transform_var_size(struct adios_var_struct *var
            adios_get_dimension_space_size(var,
                                           var->pre_transform_dimensions);
 }
-
-static inline uint64_t generate_unique_block_id(const struct adios_file_struct * fd, const struct adios_var_struct *var) {
-    return ((uint64_t)fd->group->process_id << 32) + (uint64_t)var->write_count;
-}
-
-// TODO: Delete this once the new implementation is known to work
-#if 0
-static int adios_transform_store_transformed_length_old(struct adios_file_struct * fd, struct adios_var_struct *var, uint64_t transformed_len) {
-    struct adios_dimension_struct *dim1, *dim2, *dim3;
-    struct adios_dimension_item_struct *pg_id_offset, *byte_length_ldim;
-
-    const uint64_t pg_id = generate_unique_block_id(fd, var);//fd->pg_start_in_file; // Use the current file offset as a unique ID for this PG
-
-    // Get the first two dimensions (which always exist)
-    dim1 = var->dimensions;
-    assert(dim1);
-    dim2 = dim1->next;
-    assert(dim2);
-
-    // Find appropriate dimension items
-    if (fd->group->adios_host_language_fortran == adios_flag_yes)
-        pg_id_offset = &dim2->local_offset;
-    else
-        pg_id_offset = &dim1->local_offset;
-
-    if (dim1->dimension.time_index == adios_flag_yes) {
-        // If the first dimension is a time dimension, then dimension is
-        // upshifted, but only for ->dimension
-        dim3 = dim2->next;
-        assert(dim3);
-        if (fd->group->adios_host_language_fortran == adios_flag_yes)
-            byte_length_ldim = &dim2->dimension;
-        else
-            byte_length_ldim = &dim3->dimension;
-    } else {
-        if (fd->group->adios_host_language_fortran == adios_flag_yes)
-            byte_length_ldim = &dim1->dimension;
-        else
-            byte_length_ldim = &dim2->dimension;
-    }
-
-    // Finally, insert the values into the dimension items
-    pg_id_offset->rank = pg_id;
-    byte_length_ldim->rank = transformed_len;
-
-    //printf(">>> Statistics bitmap at store-time: %08lx\n", var->bitmap);
-
-    return 1;
-}
-#endif
 
 /*
  * Stores the given transformed data length (number of bytes) into the appropriate place
@@ -513,7 +476,7 @@ static void buffer_write (char ** buffer, uint64_t * buffer_size
 // Init
 int adios_transform_init_transform_var(struct adios_var_struct *var) {
     var->transform_type = adios_transform_none;
-    var->transform_spec = adios_transform_parse_spec ("none", NULL);
+    var->transform_spec = adios_transform_parse_spec("none", NULL);
     var->pre_transform_dimensions = 0;
     var->pre_transform_type = adios_unknown;
     //var->transform_type_param_len = 0;
@@ -734,8 +697,12 @@ int adios_transform_copy_transform_characteristic(struct adios_index_characteris
 }
 
 int adios_transform_copy_var_transform(struct adios_var_struct *dst_var, const struct adios_var_struct *src_var) {
-    adios_transform_init_transform_var(dst_var);
+	adios_transform_init_transform_var(dst_var);
+	// Clean out the "none" transform spec added in adios_transform_init_transform_var
+	if (dst_var->transform_spec)
+    	adios_transform_free_spec(&dst_var->transform_spec);
 
+	// Copy simple fields
     dst_var->transform_type = src_var->transform_type;
     dst_var->pre_transform_type = src_var->pre_transform_type;
 
@@ -743,13 +710,15 @@ int adios_transform_copy_var_transform(struct adios_var_struct *dst_var, const s
     // required by the function that calls this, adios_copy_var_written().
     dereference_dimensions_var(&dst_var->pre_transform_dimensions, src_var->pre_transform_dimensions);
 
-    // for parameter
-    dst_var->transform_spec = adios_transform_spec_copy(src_var->transform_spec);
+    // Copy transform spec structure
+    if (!dst_var->transform_spec)
+    	dst_var->transform_spec = adios_transform_parse_spec("none", NULL);
+    adios_transform_spec_copy(dst_var->transform_spec, src_var->transform_spec);
 
+    // Copy any transform-specific metadata
     dst_var->transform_metadata_len = src_var->transform_metadata_len;
-    if (src_var->transform_metadata_len) {
-        dst_var->transform_metadata = malloc(src_var->transform_metadata_len);
-        memcpy(dst_var->transform_metadata, src_var->transform_metadata, src_var->transform_metadata_len);
+    if (src_var->transform_metadata_len && src_var->transform_metadata) {
+        dst_var->transform_metadata = bufdup(src_var->transform_metadata, 1, src_var->transform_metadata_len);
     } else {
         dst_var->transform_metadata = 0;
     }

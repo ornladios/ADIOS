@@ -2,8 +2,8 @@
 #include <stdint.h>
 #include <assert.h>
 #include "util.h"
-#include "adios_transforms_hooks_read.h"
-#include "adios_transforms_reqgroup.h"
+#include "core/transforms/adios_transforms_hooks_read.h"
+#include "core/transforms/adios_transforms_reqgroup.h"
 
 #ifdef SZIP
 
@@ -77,10 +77,7 @@ adios_datablock * adios_transform_szip_pg_reqgroup_completed(adios_transform_rea
         return NULL;
     }
 
-    return adios_datablock_new(reqgroup->transinfo->orig_type,
-                               completed_pg_reqgroup->timestep,
-                               completed_pg_reqgroup->pg_bounds_sel,
-                               orig_buff);
+    return adios_datablock_new_whole_pg(reqgroup, completed_pg_reqgroup, orig_buff);
 }
 
 adios_datablock * adios_transform_szip_reqgroup_completed(adios_transform_read_request *completed_reqgroup)

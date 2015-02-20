@@ -36,6 +36,12 @@
 /* Define if you have BZIP2. */
 /* #undef HAVE_BZIP2 */
 
+/* Define if you have XPMEM. */
+#define HAVE_XPMEM 1
+
+/* Define to 1 if you have the <xpmem.h> header file. */
+#define HAVE_XPMEM_H 1
+
 /* Define to 1 if you have the <bzlib.h> header file. */
 /* #undef HAVE_BZLIB_H */
 

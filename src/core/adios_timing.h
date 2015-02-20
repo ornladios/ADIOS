@@ -13,7 +13,7 @@
 
 
 #define ADIOS_TIMING_MAX_USER_TIMERS 16
-#define ADIOS_TIMING_MAX_EVENTS 256 
+#define ADIOS_TIMING_MAX_EVENTS 1024 
 
 
 struct adios_timing_event_struct
@@ -45,6 +45,7 @@ struct adios_timing_struct
 
 
 struct adios_timing_struct *  adios_timing_create (int timer_count, char** timer_names);
+void adios_clear_timers (struct adios_timing_struct * ts);
 void adios_timing_destroy (struct adios_timing_struct * timing_obj);
 
 void adios_timing_go (struct adios_timing_struct * ts, int64_t index);

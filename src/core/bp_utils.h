@@ -14,10 +14,6 @@
 #include "core/bp_types.h"
 #define VARS_MINIHEADER_SIZE 10
 
-// inline BP_PROC * GET_BP_PROC_BP (const ADIOS_FILE * fp);
-// inline BP_FILE * GET_BP_FILE_BP (const ADIOS_FILE * fp);
-
-//make function pointer
 BP_PROC* (*GET_BP_PROC)(const ADIOS_FILE *);
 BP_FILE* (*GET_BP_FILE)(const ADIOS_FILE *);
 

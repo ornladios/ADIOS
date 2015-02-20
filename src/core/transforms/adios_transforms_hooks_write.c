@@ -2,11 +2,11 @@
 #include <stdint.h>
 #include <assert.h>
 
-#include "adios_logger.h"
-#include "adios_internals.h"
-#include "adios_transforms_common.h"
-#include "adios_transforms_write.h"
-#include "adios_transforms_hooks_write.h"
+#include "core/adios_logger.h"
+#include "core/adios_internals.h"
+#include "core/transforms/adios_transforms_common.h"
+#include "core/transforms/adios_transforms_write.h"
+#include "core/transforms/adios_transforms_hooks_write.h"
 #include "public/adios_selection.h"
 
 /*
@@ -58,9 +58,12 @@ uint16_t adios_transform_get_metadata_size(struct adios_transform_spec *transfor
     return TRANSFORM_WRITE_METHODS[transform_spec->transform_type].transform_get_metadata_size(transform_spec);
 }
 
-uint64_t adios_transform_calc_vars_transformed_size(enum ADIOS_TRANSFORM_TYPE transform_type, uint64_t orig_size, int num_vars) {
-    assert(transform_type >= adios_transform_none && transform_type < num_adios_transform_types);
-    return TRANSFORM_WRITE_METHODS[transform_type].transform_calc_vars_transformed_size(transform_type, orig_size, num_vars);
+void adios_transform_transformed_size_growth(
+		const struct adios_var_struct *var, const struct adios_transform_spec *transform_spec,
+		uint64_t *constant_factor, double *linear_factor, double *capped_linear_factor, uint64_t *capped_linear_cap) {
+
+    assert(var->transform_type >= adios_transform_none && var->transform_type < num_adios_transform_types);
+    TRANSFORM_WRITE_METHODS[var->transform_type].transform_transformed_size_growth(var, transform_spec, constant_factor, linear_factor, capped_linear_factor, capped_linear_cap);
 }
 
 int adios_transform_apply(

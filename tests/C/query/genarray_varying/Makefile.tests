@@ -1,0 +1,29 @@
+include make.settings
+
+## Set ADIOS_DIR here or before doing make
+override ADIOS_INC=`${ADIOS_DIR}/bin/adios_config -c`
+override ADIOS_CLIB=`${ADIOS_DIR}/bin/adios_config -l`
+
+
+default: test_range 
+all: default
+
+OBJS = utils.o decompose_block.o 
+
+%.o: %.c
+	${CC} ${CFLAGS} -c ${ADIOS_INC} $<
+
+test_range: ${OBJS} test_range.o
+	${CC} ${LDFLAGS} -o test_range ${OBJS} test_range.o ${ADIOS_CLIB}
+
+#test_query: ${OBJS} test_query.o
+#	${CC} ${LDFLAGS} -o test_query ${OBJS} test_query.o ${ADIOS_CLIB}
+
+clean:
+	rm -f *.o *.mod *.fh core.*
+	rm -f test_range test_query
+
+
+distclean: clean
+	rm -f log.* *.bp
+

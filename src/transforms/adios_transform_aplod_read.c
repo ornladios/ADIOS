@@ -4,8 +4,8 @@
 #include <assert.h>
 
 #include "util.h"
-#include "adios_transforms_hooks_read.h"
-#include "adios_transforms_reqgroup.h"
+#include "core/transforms/adios_transforms_hooks_read.h"
+#include "core/transforms/adios_transforms_reqgroup.h"
 
 #ifdef APLOD
 
@@ -22,7 +22,8 @@ typedef struct {
     int32_t components[MAX_COMPONENTS];
 } aplod_meta_t;
 
-void parse_aplod_meta(char *transform_metadata, aplod_meta_t *metaout) {
+void parse_aplod_meta(const void *transform_metadata_void, aplod_meta_t *metaout) {
+	const char *transform_metadata = (const char*)transform_metadata_void;
     transform_metadata += sizeof (uint64_t);
 
     metaout->numComponents = *(int8_t*)transform_metadata;
@@ -50,7 +51,7 @@ int adios_transform_aplod_generate_read_subrequests(adios_transform_read_request
 
     // Retrieve APLOD metadata, determine how many components to use
     aplod_meta_t aplodmeta;
-    parse_aplod_meta(reqgroup->transinfo->transform_metadata, &aplodmeta);
+    parse_aplod_meta(pg_reqgroup->transform_metadata, &aplodmeta);
 
     int numComponentsToUse;
     if (!reqgroup->read_param || strcmp(reqgroup->read_param, "") == 0)
@@ -145,7 +146,7 @@ adios_datablock * adios_transform_aplod_pg_reqgroup_completed(adios_transform_re
     int32_t *componentVector = 0;
 
     aplod_meta_t aplodmeta;
-    parse_aplod_meta(reqgroup->transinfo->transform_metadata, &aplodmeta);
+    parse_aplod_meta(completed_pg_reqgroup->transform_metadata, &aplodmeta);
 
     APLODConfig_t *config;
 
@@ -182,7 +183,7 @@ adios_datablock * adios_transform_aplod_pg_reqgroup_completed(adios_transform_re
 
     return adios_datablock_new_ragged_offset(reqgroup->transinfo->orig_type,
                                              completed_pg_reqgroup->timestep,
-                                             completed_pg_reqgroup->pg_bounds_sel,
+                                             completed_pg_reqgroup->pg_writeblock_sel,
                                              raggedOffset,
                                              decompressed_buff);
 }

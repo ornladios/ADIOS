@@ -9,10 +9,10 @@
 #define ADIOS_TRANSFORMS_REQGROUP_H_
 
 #include <stdint.h>
+#include "public/adios_read_v2.h"
+#include "public/adios_types.h"
 #include "core/transforms/adios_transforms_common.h"
 #include "core/transforms/adios_transforms_transinfo.h"
-#include "public/adios_read.h"
-#include "public/adios_types.h"
 
 //
 // Read request-related structs:
@@ -46,10 +46,13 @@ typedef struct _adios_transform_pg_read_request {
     int orig_ndim;                       // Number of dimensions in the original (user-view) dimensions
     const ADIOS_VARBLOCK *raw_varblock;  // Points into adios_transform_read_reqgroup->varinfo->blockinfo; do not free here
     const ADIOS_VARBLOCK *orig_varblock; // Points into adios_transform_read_reqgroup->transinfo->orig_blockinfo; do not free here
+    const void *transform_metadata;      // Transform metadata associated with this PG
+    uint16_t transform_metadata_len;     // Length of the transform metadata associated with this PG
 
     // Various selections to aid in datablock construction
     const ADIOS_SELECTION *pg_intersection_sel;
     const ADIOS_SELECTION *pg_bounds_sel;
+    const ADIOS_SELECTION *pg_writeblock_sel;
 
     // Subrequests
     int num_subreqs;
@@ -65,8 +68,10 @@ typedef struct _adios_transform_pg_read_request {
 typedef struct _adios_transform_read_request {
     int completed; // Whether this request has been completed
 
-    ADIOS_VARCHUNK *lent_varchunk;    // varchunk owned by the common read layer (the transform code,
-                                      // specifically), which was lent to the user as a VARCHUNK.
+    ADIOS_VARCHUNK *lent_varchunk_data; // The data buffer of the last ADIOS_VARCHUNK passed to the user.
+                                        // The user is responsible for cleaning up the VARCHUNK itself, but
+                                        // we must free this buffer ourselves each time a new check_reads is
+                                        // called (or the file is closed)
 
     const ADIOS_FILE        *fp;
 
@@ -119,7 +124,9 @@ adios_transform_pg_read_request * adios_transform_pg_read_request_new(int timest
                                                                       const ADIOS_VARBLOCK *orig_varblock,
                                                                       const ADIOS_VARBLOCK *raw_varblock,
                                                                       const ADIOS_SELECTION *pg_intersection_sel,
-                                                                      const ADIOS_SELECTION *pg_bounds_sel);
+                                                                      const ADIOS_SELECTION *pg_bounds_sel,
+                                                                      const void *transform_metadata,
+                                                                      uint16_t transform_metadata_len);
 void adios_transform_pg_read_request_free(adios_transform_pg_read_request **pg_reqgroup_ptr);
 
 void adios_transform_pg_read_request_append(adios_transform_read_request *reqgroup, adios_transform_pg_read_request *pg_reqgroup);

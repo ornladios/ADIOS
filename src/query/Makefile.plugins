@@ -1,0 +1,9 @@
+if HAVE_FASTBIT
+query_method_SOURCES += query/query_fastbit.c
+query_method_SOURCES += query/fastbit_adios.c
+query_method_HDRS    += query/fastbit_adios.h
+endif # HAVE_FASTBIT
+
+if HAVE_ALACRITY
+query_method_SOURCES += query/query_alac.c
+endif # HAVE_ALACRITY 

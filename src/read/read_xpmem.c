@@ -175,8 +175,9 @@ adios_read_xpmem_open_file(const char * fname, MPI_Comm comm)
     GET_BP_FILE = GET_BP_FILE_XP;    
 
 	//just check to make sure that readcount is 0
-	log_debug("xpmem readcount = %d\n",
-	          f->fp->pg->readcount);
+	log_debug("xpmem readcount = %d proc = %p file=%p\n",
+	          f->fp->pg->readcount,
+	          GET_BP_PROC, GET_BP_FILE);
 
 	//now fp->index contains the index
 	//index size is fp-index->size
@@ -225,8 +226,8 @@ void adios_read_xpmem_release_step(ADIOS_FILE *fp)
 	// if(fp->index->version != 0)
 	// 	fp->index->version = 0;
 
-	if(xd->pg->readcount < 1)
-		xd->pg->readcount = 1;
+	// if(xd->pg->readcount < 1)
+	// 	xd->pg->readcount = 1;
 
 }
 
@@ -241,8 +242,56 @@ adios_read_xpmem_advance_step(ADIOS_FILE *fp, int last, float timeout_sec)
 	// if(fp->index->version != 0)
 	// 	fp->index->version = 0;
 
+	if(xd->pg->version == 1)
+		xd->pg->version = 0;
+
+	//check if the writer has finalized
+
 	if(xd->pg->readcount < 1)
 		xd->pg->readcount = 1;
+
+
+	while(xd->pg->version != 1)
+	{
+		if(xd->pg->finalized == 1)
+		{
+			//writer is exiting .. detach from segment and return the
+			//end of file thing
+			//for now just return -1
+			xd->pg->finalized = 2;
+			xpmem_detach((void*)xd->pg);
+			adios_errno = err_end_of_stream;
+			return -1;
+		}
+		adios_nanosleep(0, 100000000);
+	}
+	
+	free(xf->fp->data);
+
+	log_debug("version = %d readcount = %d\n", xd->pg->version, xd->pg->readcount);
+
+		//now the buffer has some data
+	xf->fp->data = (char*)malloc(xf->fp->pg->size);
+	xf->fp->dsize = xf->fp->pg->size;
+	
+
+	//copy the data into a non-shared buffer of the right size
+	//this is equivalent to the pg
+	memcpy(xf->fp->data, xf->fp->pg->buffer, xf->fp->dsize);
+	memcpy(&xf->fp->debug, xf->fp->pg, sizeof(shared_data));
+
+	// //read the data
+// 	xp_read_open(xf->fh, xf->fp);
+
+// //	xp_seek_to_step(fp, -1, show_hidden_attrs);
+
+//     // af->endianness =  bp_get_endianness (f->fh->mfooter.change_endianness);
+// 	// af->version =  f->fh->mfooter.version & ADIOS_VERSION_NUM_MASK;
+// 	// af->current_step = 0;
+// 	// af->last_step = 0;
+// 	fp->current_step = 0;
+// 	fp->last_step = 0;
+	
     return 0;
 }
 
@@ -822,8 +871,13 @@ adios_read_xpmem_free_varinfo (ADIOS_VARINFO *adiosvar)
 ADIOS_TRANSINFO* 
 adios_read_xpmem_inq_var_transinfo(const ADIOS_FILE *gp, const ADIOS_VARINFO *vi)
 {    
-    return NULL;
+    //adios_error(err_operation_not_supported, "Flexpath does not yet support transforms: var_transinfo.\n");
+    ADIOS_TRANSINFO *trans = malloc(sizeof(ADIOS_TRANSINFO));
+    memset(trans, 0, sizeof(ADIOS_TRANSINFO));
+    trans->transform_type = adios_transform_none;
+    return trans;
 }
+
 
 
 int 
@@ -838,5 +892,10 @@ adios_read_xpmem_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
 {
     //log_debug( "debug: adios_read_xpmem_reset_dimension_order\n");
     adios_error(err_invalid_read_method, "adios_read_xpmem_reset_dimension_order is not implemented.");
+}
+
+int  adios_read_xpmem_get_dimension_order (const ADIOS_FILE *adiosfile)
+{
+	return 1;
 }
 

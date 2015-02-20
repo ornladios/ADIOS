@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<adios-alac-test-inputs>
+	<vars num="1">
+		<dimension dim="2" dataDim="4,4" pgDim="4,4" elementSize="4"/>
+		<var name="temp" />
+                <pgoffset pgNum="1" pg_0="0,0" />
+                <timestep tsnum="1"/>
+                                
+	</vars>
+</adios-alac-test-inputs>
