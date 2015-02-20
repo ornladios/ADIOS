@@ -2629,6 +2629,7 @@ top_srcdir = @top_srcdir@
 AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/src/core -I$(top_srcdir)/src/core/transforms -I$(top_srcdir)/src/core/query
 AUTOMAKE_OPTIONS = no-dependencies
 METASOURCES = AUTO
+BUILT_SOURCES = public/adios_xpmem.h
 @HAVE_NSSI_TRUE@nssi_staging_server_SOURCES = nssi/nssi_staging_server.cpp nssi/aggregation.cpp
 @HAVE_NSSI_TRUE@nssi_staging_server_CFLAGS = $(ADIOSLIB_CFLAGS)
 @HAVE_NSSI_TRUE@nssi_staging_server_CPPFLAGS = $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS) $(MACRODEFFLAG)PTL_IFACE_CLIENT=CRAY_USER_NAL $(MACRODEFFLAG)PTL_IFACE_SERVER=CRAY_USER_NAL
@@ -2650,7 +2651,7 @@ include_HEADERS = public/adios.h public/adios_types.h \
 	public/adios_read_v1_defs.h public/adios_read_v2.h \
 	public/adios_read_v2_fwd.h public/adios_selection.h \
 	public/adios_schema.h public/adios_read_ext.h \
-	public/adios_query.h
+	public/adios_query.h core/adios_logger.h
 nodist_include_HEADERS = $(am__append_43) $(am__append_65)
 lib_LIBRARIES = $(am__append_5) $(am__append_7) libadiosread.a \
 	$(am__append_54) libadiosread_nompi.a $(am__append_76)
@@ -3038,7 +3039,8 @@ EXTRA_DIST = core/adios_bp_v1.h core/adios_endianness.h \
              query/Makefile.plugins.cmake \
              nssi/adios_nssi_config.h nssi/aggregation.h nssi/io_timer.h 
 
-all: all-am
+all: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) all-am
 
 .SUFFIXES:
 .SUFFIXES: .c .cpp .f90 .lo .o .obj
@@ -8392,13 +8394,15 @@ distdir: $(DISTFILES)
 	  fi; \
 	done
 check-am: all-am
-check: check-am
+check: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) check-am
 all-am: Makefile $(LIBRARIES) $(PROGRAMS) $(HEADERS)
 installdirs:
 	for dir in "$(DESTDIR)$(libdir)" "$(DESTDIR)$(bindir)" "$(DESTDIR)$(includedir)" "$(DESTDIR)$(includedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
-install: install-am
+install: $(BUILT_SOURCES)
+	$(MAKE) $(AM_MAKEFLAGS) install-am
 install-exec: install-exec-am
 install-data: install-data-am
 uninstall: uninstall-am
@@ -8429,6 +8433,7 @@ distclean-generic:
 maintainer-clean-generic:
 	@echo "This command is intended for maintainers to use"
 	@echo "it deletes files that may require special tools to rebuild."
+	-test -z "$(BUILT_SOURCES)" || rm -f $(BUILT_SOURCES)
 clean: clean-am
 
 clean-am: clean-binPROGRAMS clean-generic clean-libLIBRARIES \
@@ -8499,7 +8504,7 @@ ps-am:
 uninstall-am: uninstall-binPROGRAMS uninstall-includeHEADERS \
 	uninstall-libLIBRARIES uninstall-nodist_includeHEADERS
 
-.MAKE: install-am install-strip
+.MAKE: all check install install-am install-strip
 
 .PHONY: CTAGS GTAGS TAGS all all-am check check-am clean \
 	clean-binPROGRAMS clean-generic clean-libLIBRARIES \

@@ -38,7 +38,7 @@ sysconf_DATA = scripts/FindADIOS.cmake
 #	    echo "Error: svnversion command not found"; \
 #	fi 
 #	cp adios_config.flags $(DESTDIR)$(bindir)
-        
+
 install-data-hook:
 	echo "SRCDIR=\"$(PWD)\"" >> adios_config.flags; \
 	if git rev-parse --git-dir &>/dev/null; then \
@@ -53,5 +53,5 @@ install-data-hook:
 	fi 
 	$(INSTALL_DATA) adios_config.flags $(DESTDIR)$(sysconfdir)
 	$(INSTALL_DATA) adios_git_status $(DESTDIR)$(sysconfdir)
-        
+
 CLEANFILES = adios_config adios_config.flags

@@ -4,6 +4,7 @@
 #include <errno.h>
 #include <stdio.h>
 #include <xpmem.h>
+#include <adios_logger.h>
 
 
 static int lerror;
@@ -20,6 +21,22 @@ static int lerror;
 static uint64_t share_size = 10*1024*1024;
 static uint64_t index_share_size = 1*1024*1024;
 
+typedef struct _shared_data
+{
+	uint32_t version;
+	uint64_t size;
+	uint32_t finalized;
+	uint32_t readcount;
+	uint32_t offset;
+	uint32_t reader;
+	uint32_t fd;
+	char buffer[1];
+}shared_data;
+
+#define ATOMIC_INCREMENT(X) X++;
+#define ATOMIC_TEST_INCREMENT(X) if(X==0) X++;
+#define ATOMIC_TEST_RESET(X) if(X!=0) X=0;
+
 #define _USE_HOBBES_
 
 #ifndef _USE_HOBBES_
@@ -34,7 +51,7 @@ static xpmem_segid_t make_share(char **data, size_t size)
 	if(ret != 0)
 	{
 		lerror = errno;
-		fprintf(stderr, "error in posix_memalign %d %s\n",
+		log_debug(stderr, "error in posix_memalign %d %s\n",
 		        lerror, strerror(lerror));		
 		return -1;
 	}
@@ -45,7 +62,7 @@ static xpmem_segid_t make_share(char **data, size_t size)
 	if(segid == -1)
 	{
 	    lerror = errno;
-	    fprintf(stderr, "error in posix_memalign %d %s\n",
+	    log_debug(stderr, "error in posix_memalign %d %s\n",
 		    lerror, strerror(lerror));		
 		return -1;
 	}
@@ -97,7 +114,7 @@ static int write_segid(xpmem_segid_t segid, char *fname)
 		return -1;
 	}
 	lseek(fd, 0, SEEK_SET);
-	fprintf(stderr, "segid = %lli\n", segid);
+	log_debug(stderr, "segid = %lli\n", segid);
 	write(fd, &segid, sizeof(xpmem_segid_t));
 	close(fd);
 	return 0;
@@ -113,7 +130,7 @@ static int read_segid(xpmem_segid_t *segid, char *fname)
 	}
 	lseek(fd, 0, SEEK_SET);
 	read(fd, segid, sizeof(xpmem_segid_t));
-	fprintf(stderr, "segid = %lli\n", *segid);
+	log_debug(stderr, "segid = %lli\n", *segid);
 	close(fd);
 	return 0;
 }
@@ -139,7 +156,7 @@ static xpmem_segid_t make_share(char **data, size_t size)
 	if(ret != 0)
 	{
 		lerror = errno;
-		fprintf(stderr, "error in posix_memalign %d %s\n",
+		log_debug(stderr, "error in posix_memalign %d %s\n",
 		        lerror, strerror(lerror));		
 		return -1;
 	}
@@ -152,17 +169,42 @@ static xpmem_segid_t make_share(char **data, size_t size)
 	if(segid == -1)
 	{
 	    lerror = errno;
-	    fprintf(stderr, "error in xpmem make hobbes %d %s\n",
+	    log_debug(stderr, "error in xpmem make hobbes %d %s\n",
 		    lerror, strerror(lerror));		
 		return -1;
 	}
 	if(segid != WELL_KNOWN_ADIOS_ID)
 	{
-		fprintf(stderr, "unable to get well known segid\n");		
+		log_debug(stderr, "unable to get well known segid\n");		
 	}
+
+	//store the fd in the segment
+	((shared_data*)(*data))->fd = fd;
+
+	log_debug("buffer = %p\tfd = %d\n", *data, ((shared_data*)(*data))->fd);
 	
 	return segid;
 }
+
+static int sleep_on_share(shared_data *d)
+{
+	fd_set fds;
+	unsigned long irqs;
+	int status;
+	struct timeval tv;
+
+	FD_ZERO(&fds);
+	FD_SET(d->fd, &fds);
+
+	tv.tv_sec = 1;
+	tv.tv_usec = 0;
+
+	status = select(1, &fds, NULL, NULL, &tv);
+
+	return status;
+		
+}
+
 
 static int unmake_share(xpmem_segid_t segid, char *data)
 {
@@ -218,19 +260,5 @@ static int read_segid(xpmem_segid_t *segid, char *fname)
 
 #endif
 
-typedef struct _shared_data
-{
-	uint32_t version;
-	uint64_t size;
-	uint32_t finalized;
-	uint32_t readcount;
-	uint32_t offset;
-	uint32_t reader;
-	char buffer[1];
-}shared_data;
-
-#define ATOMIC_INCREMENT(X) X++;
-#define ATOMIC_TEST_INCREMENT(X) if(X==0) X++;
-#define ATOMIC_TEST_RESET(X) if(X!=0) X=0;
 
 #endif //adios_xpmem_h

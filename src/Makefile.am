@@ -3,6 +3,8 @@ AM_CPPFLAGS=-I$(top_srcdir) -I$(top_srcdir)/src/core -I$(top_srcdir)/src/core/tr
 AUTOMAKE_OPTIONS = no-dependencies
 METASOURCES=AUTO
 
+BUILT_SOURCES=public/adios_xpmem.h
+
 bin_PROGRAMS=
 if HAVE_NSSI
 
