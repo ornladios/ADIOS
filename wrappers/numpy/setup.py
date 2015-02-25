@@ -9,6 +9,7 @@ import numpy as np
 #from mpidistutils import setup
 from distutils.core import setup
 from distutils.spawn import find_executable
+from distutils.core import Command
 
 import subprocess
 import sys
@@ -40,10 +41,25 @@ for path in p.communicate()[0].strip().split(" "):
     if path.startswith('-l'):
         m1.libraries.append(path.replace('-l', '', 1))
 
-setup(name = 'Adios',
-      version = '1.0.1',
+class adios_test(Command):
+    user_options = []
+    def initialize_options(self):
+        pass
+
+    def finalize_options(self):
+        pass
+
+    def run(self):
+        import subprocess
+        import sys
+        errno = subprocess.call([sys.executable, 'tests/test_adios.py', 'tests/config.xml'])
+        raise SystemExit(errno)
+
+setup(name = 'adios',
+      version = '1.0.2',
       description = 'Python Module for Adios',
       author = 'Jong Choi',
       author_email = 'yyalli@gmail.com',
       url = 'http://www.olcf.ornl.gov/center-projects/adios/',
+      cmdclass={'test': adios_test},
       ext_modules = [m1])

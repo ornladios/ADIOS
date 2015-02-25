@@ -213,6 +213,11 @@ cdef extern from "adios_read.h":
                                        void * data)
     cdef int adios_perform_reads (const ADIOS_FILE *fp, int blocking)
 
+    cdef int adios_get_attr (ADIOS_FILE *fp,
+                             const char * attrname,
+                             ADIOS_DATATYPES  * type,
+                             int * size,
+                             void ** data)
 
 ## ====================
 ## ADIOS Enum (public)
@@ -395,6 +400,8 @@ cdef type adios2nptype(ADIOS_DATATYPES t):
         ntype = np.complex64
     elif t == adios_double_complex:
         ntype = np.complex128
+    elif t == adios_string:
+        ntype = np.str_
     else:
         ntype = None
 
@@ -477,7 +484,7 @@ cpdef np2adiostype(type nptype):
     elif (nptype == np.complex128):
         atype = DATATYPE.double_complex
     elif (nptype == np.str_):
-        atype = DATATYPE.byte
+        atype = DATATYPE.string
 
     return atype
 
@@ -548,8 +555,11 @@ cdef class file:
         self.version = self.fp.version
         self.file_size = self.fp.file_size
     
-        for varname in [self.fp.var_namelist[i] for i in range(self.nvars)]:
-            self.var[varname] = var(self, varname)
+        for name in [self.fp.var_namelist[i] for i in range(self.nvars)]:
+            self.var[name] = var(self, name)
+
+        for name in [self.fp.attr_namelist[i] for i in range(self.nattrs)]:
+            self.attr[name] = self.get_attr(name)
 
     def __del__(self):
             self.close()
@@ -569,6 +579,26 @@ cdef class file:
 
     cpdef advance(self, int last = 0, float timeout_sec = 0.0):
         return adios_advance_step(self.fp, last, timeout_sec)
+
+    cpdef get_attr(self, char * attr_name):
+        cdef ADIOS_DATATYPES type
+        cdef int size
+        cdef int64_t p
+        adios_get_attr(self.fp, attr_name, &type, &size, <void **> &p)
+        ##print '=== Attribute ==='
+        ##print '%15s : %d (%s)' % ('type', type, adios2nptype(type))
+        ##print '%15s : %d' % ('size', size)
+        ##print '%15s : %lu' % ('data', <unsigned long> p)
+
+        cdef DTYPE = adios2nptype(type)
+        if (DTYPE == np.str_):
+            DTYPE = np.dtype((np.str_, size))
+        
+        cdef np.ndarray var = np.zeros(1, dtype=DTYPE)
+        adios_get_attr(self.fp, attr_name, &type, &size, <void **> &var.data)
+        
+        return np.asscalar(var)
+        
 
 """ Python class for ADIOS_VARINFO structure """
 cdef class var:
@@ -646,7 +676,10 @@ cdef class var:
         adios_schedule_read_byid (self.file.fp, sel, self.vp.varid, from_steps, nsteps, <void *> var.data)
         adios_perform_reads(self.file.fp, 1)
 
-        return var
+        if self.ndim == 0:
+            return np.asscalar(var)
+        else:
+            return var
 
     """ Print self """
     cpdef printself(self):

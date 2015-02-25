@@ -1537,14 +1537,14 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                     }
 
                     MPI_Bcast (&fd->group->time_index, 1, MPI_INT, 0, md->g_comm1);
-                    MPI_Bcast (&md->b.pg_index_offset, 1, MPI_INT, 0, md->g_comm1);
+                    MPI_Bcast (&md->b.pg_index_offset, 1, MPI_LONG_LONG, 0, md->g_comm1);
                 } 
                 else //non-aggregators
                 {
                     fd->base_offset = 0;
                     fd->pg_start_in_file = fd->base_offset;
                     MPI_Bcast (&fd->group->time_index, 1, MPI_INT, 0, md->g_comm1);
-                    MPI_Bcast (&md->b.pg_index_offset, 1, MPI_INT, 0, md->g_comm1);
+                    MPI_Bcast (&md->b.pg_index_offset, 1, MPI_LONG_LONG, 0, md->g_comm1);
                 }
 
                 if (md->group_comm == MPI_COMM_NULL)

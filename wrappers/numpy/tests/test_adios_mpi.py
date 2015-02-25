@@ -8,6 +8,7 @@ $ mpiexec -n 4 python ./test_adios_mpi.py
 import adios_mpi as ad
 import numpy as np
 from mpi4py import MPI
+import sys
 
 ## Init
 comm = MPI.COMM_WORLD
@@ -17,7 +18,11 @@ size = comm.Get_size()
 ## Writing
 print "\n>>> Writing ... (rank = %d)\n" % rank
 
-ad.init("config_mpi.xml", comm)
+config = "config_mpi.xml"
+if len(sys.argv) > 1:
+    config = sys.argv[1]
+
+ad.init(config, comm)
 fd = ad.open("temperature", "adios_test_mpi.bp", "w", comm)
 
 NX = 10

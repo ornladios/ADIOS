@@ -111,4 +111,17 @@ then use the following command:
 
 $ python setup_mpi.py build_ext --mpicc=cc --mpicxx=CC
 
+-. Import error due to undefined "clock_gettime" symbol
+
+When getting the following error:
+
+$ python test_adios.py Traceback (most recent call last):
+  File "test_adios.py", line 8, in <module>
+      import adios as ad
+      ImportError: /path/to/adios.so: undefined symbol: clock_gettime
+
+Try to use the following command to install:
+$ pip install --global-option build_ext --global-option -lrt adios
+$ pip install --global-option build_ext --global-option -lrt adios_mpi
+
 

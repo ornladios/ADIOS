@@ -9,8 +9,9 @@ import adios as ad
 import numpy as np
 import getopt, sys
 import os
+import datetime
 
-method = "POSIX"
+method = "POSIX1"
 init = "verbose=3;"
 
 if len(sys.argv) > 1:
@@ -26,6 +27,8 @@ g = ad.declare_group("temperature", "", 1)
 ad.define_var(g, "NX", "", ad.DATATYPE.integer, "", "", "")
 ad.define_var(g, "size", "", ad.DATATYPE.integer, "", "", "")
 ad.define_var(g, "temperature", "", ad.DATATYPE.double, "size,NX", "size,NX", "0,0")
+msg = str(datetime.datetime.now())
+ad.define_attribute(g, "datetime", "", ad.DATATYPE.string, msg, "")
 ad.select_method(g, method, init, "")
 print ">>> Method:", method
 

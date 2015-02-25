@@ -40,7 +40,7 @@ for path in p.communicate()[0].strip().split(" "):
     if path.startswith('-l'):
         m1.libraries.append(path.replace('-l', '', 1))
 
-class PyTest(Command):
+class adios_test(Command):
     user_options = []
     def initialize_options(self):
         pass
@@ -51,14 +51,15 @@ class PyTest(Command):
     def run(self):
         import subprocess
         import sys
-        errno = subprocess.call([sys.executable, 'tests/test_adios.py'])
+        errno = subprocess.call([sys.executable, 'tests/test_adios_mpi.py', 'tests/config_mpi.xml'])
         raise SystemExit(errno)
     
-setup(name = 'Adios_MPI',
-      version = '1.0.1',
+setup(name = 'adios_mpi',
+      version = '1.0.2',
       description = 'Python Module for Adios MPI',
       author = 'Jong Choi',
       author_email = 'yyalli@gmail.com',
       url = 'http://www.olcf.ornl.gov/center-projects/adios/',
+      cmdclass={'test': adios_test},
       executables = [],
       ext_modules = [m1])
