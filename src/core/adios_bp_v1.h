@@ -169,6 +169,7 @@ struct adios_index_attribute_struct_v1
     char * attr_name;
     char * attr_path;
     enum ADIOS_DATATYPES type;
+    int    nelems; // number of elements of type 'type'
 
     uint64_t characteristics_count;
     uint64_t characteristics_allocated;
@@ -266,7 +267,10 @@ struct adios_attribute_struct_v1
     uint32_t var_id;
 
     enum ADIOS_DATATYPES type;
-    uint32_t length;
+    int    nelems;     // number of elements of type 'type'
+    uint32_t length;   // length of attribute value  = nelems*sizeof(type)
+                       // does not include '\0' in a string attribute (so memory
+                       //    used by a string attribute is length+1)
     void * value;
 };
 

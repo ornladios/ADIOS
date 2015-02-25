@@ -29,6 +29,10 @@ program no_xml_write_byid
     integer*8               :: m_adios_group
     integer*8               :: var_id1, var_id2
     character(len=32)       :: local, global, offset
+    !! attributes (from C variables)
+    integer, dimension(5)   :: someints = (/ 5,4,3,2,1 /)
+    real*8, dimension(5)    :: somedoubles = (/ 5.55555, 4.4444, 3.333, 2.22, 1.1 /)
+
 
     call MPI_Init (ierr)
     call MPI_Comm_dup (MPI_COMM_WORLD, comm, ierr)
@@ -64,6 +68,20 @@ program no_xml_write_byid
                           ,local, global, offset, var_id2)
 
     call adios_set_transform (var_id2, "identity", adios_err)
+
+
+    !! add some attributes
+    call adios_define_attribute_byvalue (m_adios_group, &
+            "single_string","", 1, "A single string attribute", adios_err)
+    call adios_define_attribute_byvalue (m_adios_group, &
+            "single_int",   "", 1, someints, adios_err)
+    call adios_define_attribute_byvalue (m_adios_group, &
+            "single_double","", 1, somedoubles, adios_err)
+    call adios_define_attribute_byvalue (m_adios_group, &
+            "five_ints",    "", 5, someints, adios_err)
+    call adios_define_attribute_byvalue (m_adios_group, &
+            "five_double",  "", 5, somedoubles, adios_err)
+
 
     call adios_open (adios_handle, "restart", filename, "w", comm, adios_err)
 

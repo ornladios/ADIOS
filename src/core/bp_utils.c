@@ -59,7 +59,7 @@ inline BP_FILE * GET_BP_FILE (const ADIOS_FILE * fp)
 }
 
 /* prototypes */
-void * bp_read_data_from_buffer(struct adios_bp_buffer_struct_v1 *b, enum ADIOS_DATATYPES type);
+void * bp_read_data_from_buffer(struct adios_bp_buffer_struct_v1 *b, enum ADIOS_DATATYPES type, int nelems);
 int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b, struct adios_index_var_struct_v1 ** root, uint64_t j);
 
 
@@ -998,6 +998,7 @@ int bp_parse_attrs (BP_FILE * fh)
                       malloc (sizeof (struct adios_index_attribute_struct_v1));
             (*root)->next = 0;
         }
+        (*root)->nelems = 1; // initialize to 1 in case there will be no dimension characteristic
         uint8_t flag;
         uint32_t attr_entry_length;
         uint16_t len;
@@ -1040,7 +1041,6 @@ int bp_parse_attrs (BP_FILE * fh)
             (*root)->type = adios_unknown;
         }
 
-
         BUFREAD64(b, characteristics_sets_count)
         (*root)->characteristics_count = characteristics_sets_count;
         (*root)->characteristics_allocated = characteristics_sets_count;
@@ -1075,7 +1075,8 @@ int bp_parse_attrs (BP_FILE * fh)
                 switch (c)
                 {
                     case adios_characteristic_value:
-                        (*root)->characteristics [j].value = bp_read_data_from_buffer(b, (*root)->type);
+                        (*root)->characteristics [j].value = 
+                            bp_read_data_from_buffer(b, (*root)->type, (*root)->nelems);
                         break;
 
                     case adios_characteristic_offset:
@@ -1100,6 +1101,23 @@ int bp_parse_attrs (BP_FILE * fh)
                             BUFREAD16(b, (*root)->characteristics [j].var_id)
                         }
                         break;
+
+                    case adios_characteristic_dimensions:
+                        {
+                            uint16_t dims_length;
+                            BUFREAD8(b,  (*root)->characteristics [j].dims.count);
+                            BUFREAD16(b, dims_length);
+                            (*root)->characteristics [j].dims.dims = (uint64_t *) malloc (dims_length);
+                            int di = 0;
+                            int dims_num = dims_length / sizeof(uint64_t);
+                            for (di = 0; di < dims_num; di ++) {
+                                BUFREAD64(b, ((*root)->characteristics [j].dims.dims)[di]);
+                            }
+                            (*root)->nelems  =  (*root)->characteristics [j].dims.dims[0];
+
+                            break;
+                        }
+
                     default:
                         break;
                 }
@@ -1429,7 +1447,7 @@ int bp_parse_characteristics (struct adios_bp_buffer_struct_v1 * b,
             uint8_t count = adios_get_stat_set_count (original_var_type);
             uint16_t characteristic_size;
 
-            (*root)->characteristics [j].value = bp_read_data_from_buffer(b, original_var_type);
+            (*root)->characteristics [j].value = bp_read_data_from_buffer(b, original_var_type, 1);
             if (!((*root)->characteristics [j].stats))
             {
                 (*root)->characteristics [j].stats = malloc (count*sizeof(struct adios_index_characteristics_stat_struct *));
@@ -1647,8 +1665,8 @@ SET_DATA_3(t) \
             }
 
             (*root)->characteristics [j].bitmap |= (1 << adios_statistic_max);
-            // (*root)->characteristics [j].stats[0][adios_statistic_max].data = bp_read_data_from_buffer(b, (*root)->type);
-            (*root)->characteristics [j].stats[0][adios_statistic_max].data = bp_read_data_from_buffer(b, original_var_type);
+            // (*root)->characteristics [j].stats[0][adios_statistic_max].data = bp_read_data_from_buffer(b, (*root)->type, 1);
+            (*root)->characteristics [j].stats[0][adios_statistic_max].data = bp_read_data_from_buffer(b, original_var_type, 1);
             break;
         }
 
@@ -1662,8 +1680,8 @@ SET_DATA_3(t) \
                 (*root)->characteristics [j].bitmap = 0;
             }
             (*root)->characteristics [j].bitmap |= (1 << adios_statistic_min);
-            // (*root)->characteristics [j].stats[0][adios_statistic_min].data = bp_read_data_from_buffer(b, (*root)->type);
-            (*root)->characteristics [j].stats[0][adios_statistic_min].data = bp_read_data_from_buffer(b, original_var_type);
+            // (*root)->characteristics [j].stats[0][adios_statistic_min].data = bp_read_data_from_buffer(b, (*root)->type, 1);
+            (*root)->characteristics [j].stats[0][adios_statistic_min].data = bp_read_data_from_buffer(b, original_var_type, 1);
             break;
         }
 
@@ -1694,8 +1712,8 @@ SET_DATA_3(t) \
                             struct adios_index_characteristics_hist_struct * hist = (*root)->characteristics [j].stats[c][idx].data;
 
                             BUFREAD32(b, hist->num_breaks)
-                            hist->min = * (double *) bp_read_data_from_buffer(b, adios_double);
-                            hist->max = * (double *) bp_read_data_from_buffer(b, adios_double);
+                            hist->min = * (double *) bp_read_data_from_buffer(b, adios_double, 1);
+                            hist->max = * (double *) bp_read_data_from_buffer(b, adios_double, 1);
 
                             hist->frequencies = malloc((hist->num_breaks + 1) * adios_get_type_size(adios_unsigned_integer, ""));
                             for (bi = 0; bi <= hist->num_breaks; bi ++)
@@ -1706,7 +1724,7 @@ SET_DATA_3(t) \
                             hist->breaks = malloc(hist->num_breaks * adios_get_type_size(adios_double, ""));
                             for (bi = 0; bi < hist->num_breaks; bi ++)
                             {
-                                hist->breaks[bi] = * (double *) bp_read_data_from_buffer(b, adios_double);
+                                hist->breaks[bi] = * (double *) bp_read_data_from_buffer(b, adios_double, 1);
                             }
                         }
                         else
@@ -2428,22 +2446,24 @@ int * get_var_nblocks (struct adios_index_var_struct_v1 * var_root, int nsteps)
     return nblocks;
 }
 
-void * bp_read_data_from_buffer(struct adios_bp_buffer_struct_v1 *b, enum ADIOS_DATATYPES type)
+void * bp_read_data_from_buffer(struct adios_bp_buffer_struct_v1 *b, enum ADIOS_DATATYPES type, int nelems)
 {
     int16_t data_size;
     void * data = 0;
+    int k;
+    char *p;
 
     if (type == adios_string) {
         BUFREAD16(b, data_size)
         data = malloc (data_size + 1);
     } else {
         data_size = bp_get_type_size (type, "");
-        data = malloc (data_size);
+        data = malloc (nelems * data_size);
     }
 
     if (!data) {
         adios_error (err_no_memory,
-                     "bp_read_data_from_buffer: cannot allocate %d bytes\n",data_size);
+                     "bp_read_data_from_buffer: cannot allocate %d bytes\n",nelems*data_size);
         return 0;
     }
 
@@ -2460,42 +2480,57 @@ void * bp_read_data_from_buffer(struct adios_bp_buffer_struct_v1 *b, enum ADIOS_
         case adios_real:
         case adios_double:
         case adios_long_double:
-            memcpy (data, (b->buff + b->offset), data_size);
-            b->offset += data_size;
-            if(b->change_endianness == adios_flag_yes) {
-                switch (data_size) {
-                    case 2:
-                        swap_16_ptr(data);
-                        break;
-                    case 4:
-                        swap_32_ptr(data);
-                        break;
-                    case 8:
-                        swap_64_ptr(data);
-                        break;
-                    case 16:
-                        swap_128_ptr(data);
-                        break;
+            memcpy (data, (b->buff + b->offset), nelems*data_size);
+            if(b->change_endianness == adios_flag_yes && data_size>1) {
+                p = (char *)data;
+                for (k=0; k<nelems; k++) 
+                {
+                    switch (data_size) {
+                        case 2:
+                            swap_16_ptr(p);
+                            break;
+                        case 4:
+                            swap_32_ptr(p);
+                            break;
+                        case 8:
+                            swap_64_ptr(p);
+                            break;
+                        case 16:
+                            swap_128_ptr(p);
+                            break;
+                    }
+                    p += data_size;
                 }
             }
+            b->offset += nelems*data_size;
             break;
 
         case adios_complex:
-            memcpy (data, (b->buff + b->offset), data_size);
+            memcpy (data, (b->buff + b->offset), nelems*data_size);
             if(b->change_endianness == adios_flag_yes) {
-                swap_32_ptr(data); // swap REAL part 4 bytes
-                swap_32_ptr( ((char *)data) + 4); // swap IMG part 4 bytes
+                p = (char *)data;
+                for (k=0; k<nelems; k++) 
+                {
+                    swap_32_ptr(p);   // swap REAL part 4 bytes
+                    swap_32_ptr(p+4); // swap IMG part 4 bytes
+                    p += data_size;
+                }
             }
-            b->offset += data_size;
+            b->offset += nelems*data_size;
             break;
 
         case adios_double_complex:
-            memcpy (data, (b->buff + b->offset), data_size);
+            memcpy (data, (b->buff + b->offset), nelems*data_size);
             if(b->change_endianness == adios_flag_yes) {
-                swap_64_ptr(data); // swap REAL part 8 bytes
-                swap_64_ptr( ((char *)data) + 8); // swap IMG part 8 bytes
+                p = (char *)data;
+                for (k=0; k<nelems; k++) 
+                {
+                    swap_64_ptr(p);   // swap REAL part 8 bytes
+                    swap_64_ptr(p+8); // swap IMG part 8 bytes
+                    p += data_size;
+                }
             }
-            b->offset += data_size;
+            b->offset += nelems*data_size;
             break;
 
         case adios_string:

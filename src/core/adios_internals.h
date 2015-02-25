@@ -100,6 +100,7 @@ struct adios_attribute_struct
     char * name;
     char * path;
     enum ADIOS_DATATYPES type;
+    int    nelems; // number of elements of 'type' in the attribute
     void * value;
     struct adios_var_struct * var;
     uint64_t write_offset;  // offset this var was written at  [for writes]
@@ -435,7 +436,8 @@ int adios_common_define_attribute (int64_t group, const char * name
 int adios_common_define_attribute_byvalue (int64_t group, const char * name
                                   ,const char * path
                                   ,enum ADIOS_DATATYPES type
-                                  ,void * value
+                                  ,int nelems
+                                  ,void * values
                                   );
 
 void adios_append_method (struct adios_method_struct * method);

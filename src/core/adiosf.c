@@ -614,6 +614,55 @@ void FC_FUNC_(adios_define_attribute, ADIOS_DEFINE_ATTRIBUTE)
     *err = adios_errno;
 }
 
+void FC_FUNC_(adios_define_attribute_byvalue, ADIOS_DEFINE_ATTRIBUTE_BYVALUE) 
+    (int64_t * group, const char * name, const char * path, int * type, int * nelems, 
+     void * values, int * err, int name_size, int path_size)
+{
+    char * buf1 = 0;
+    char * buf2 = 0;
+
+    adios_errno = err_no_error;
+    buf1 = futils_fstr_to_cstr (name, name_size);
+    buf2 = futils_fstr_to_cstr (path, path_size);
+
+    if (buf1 != 0 && buf2 != 0) {
+        adios_common_define_attribute_byvalue (*group, buf1, buf2
+                                      ,(enum ADIOS_DATATYPES) *type, *nelems, values);
+        free (buf1);
+        free (buf2);
+    }
+    *err = adios_errno;
+}
+
+/* Name clash resolution: Fortran adios_define_attribute_byvalue is an interface, and its 
+   subroutines cannot call adios_define_attribute_byvalue() in this file directly because 
+   the Fortran compiler interprets it as the call to the interface name. 
+   adios_define_attribute_byvalue_f2c provides the bridge to link the C function with
+   the subroutines. 
+*/
+void FC_FUNC_(adios_define_attribute_byvalue_f2c, ADIOS_DEFINE_ATTRIBUTE_BYVALUE_F2C) 
+    (int64_t * group, const char * name, const char * path, int * type, int * nelems, 
+     void * values, int * err, int name_size, int path_size)
+{
+    FC_FUNC_(adios_define_attribute_byvalue, ADIOS_DEFINE_ATTRIBUTE_BYVALUE) 
+         (group, name, path, type, nelems, values, err, name_size, path_size);
+}
+
+void FC_FUNC_(adios_define_attribute_byvalue_string, ADIOS_DEFINE_ATTRIBUTE_BYVALUE_STRING) 
+    (int64_t * group, const char * name, const char * path, int * type, int * nelems, 
+     char * values, int * err, int name_size, int path_size, int values_size)
+{
+    char * valuestr = futils_fstr_to_cstr (values, values_size);
+
+    if (valuestr != 0) {
+        FC_FUNC_(adios_define_attribute_byvalue, ADIOS_DEFINE_ATTRIBUTE_BYVALUE) 
+             (group, name, path, type, nelems, valuestr, err, name_size, path_size);
+        free (valuestr);
+    } else {
+        adios_error (err_corrupted_attribute, "adios_define_attribute_byvalue(string) called with a string that could not be processed in the C library\n");
+        *err = adios_errno;
+    }
+}
 // delete all attribute definitions from a group
 // Use if you want to define a new set of attribute for the next output step.
 void FC_FUNC_(adios_delete_attrdefs, ADIOS_DELETE_VARDEFS) (int64_t *id, int *err)

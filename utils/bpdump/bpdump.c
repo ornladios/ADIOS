@@ -970,6 +970,7 @@ void print_attrs_header (
 
 void print_attribute (struct adios_attribute_struct_v1 * attribute)
 {
+    int i;
     printf ("\t\tAttribute Name (ID): %s (%d)\n"
            ,attribute->name, attribute->id
            );
@@ -981,10 +982,20 @@ void print_attribute (struct adios_attribute_struct_v1 * attribute)
     else
     {
         printf ("\t\tDatatype: %s\n", adios_type_to_string_int (attribute->type));
-        printf ("\t\tValue: %s\n", bp_value_to_string (attribute->type
-                                                   ,attribute->value
-                                                   )
-               );
+        printf ("\t\t# of elements:   %d\n", attribute->nelems);
+        printf ("\t\tLenght in bytes: %d\n", attribute->length);
+        char * p = (char *) attribute->value;
+        int elemsize = (int) adios_get_type_size (attribute->type, attribute->value);
+        if (attribute->nelems == 1) {
+            printf ("\t\tValue: %s\n", bp_value_to_string (attribute->type ,attribute->value));
+        } else {
+            printf ("\t\tValues: %s", bp_value_to_string (attribute->type, p));
+            for (i=1; i<attribute->nelems; i++) {
+                p += elemsize;
+                printf (", %s", bp_value_to_string (attribute->type, p));
+            }
+            printf ("\n");
+        }
     }
 }
 

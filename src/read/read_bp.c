@@ -3168,8 +3168,13 @@ int adios_read_bp_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_D
     if (attr_root->characteristics[attr_c_index].value)
     {
         /* Attribute has its own value */
-        *size = bp_get_type_size (attr_root->type, attr_root->characteristics[attr_c_index].value);
         *type = attr_root->type;
+        int type_size = bp_get_type_size (attr_root->type, attr_root->characteristics[attr_c_index].value);
+        if (*type == adios_string) {
+            *size = type_size;
+        } else {
+            *size = attr_root->nelems * type_size;
+        }
         *data = (void *) malloc (*size);
         assert (*data);
 

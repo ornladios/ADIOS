@@ -975,6 +975,7 @@ int adios_common_define_attribute (int64_t group, const char * name
         }
     }
 
+    attr->nelems = 1;
     attr->next = 0;
     attr->write_offset = 0;
 
@@ -984,11 +985,12 @@ int adios_common_define_attribute (int64_t group, const char * name
 }
 
 
-/* define an attribute by passing the value directly, not by a string */
+/* define an attribute by passing the values directly, not by a string */
 int adios_common_define_attribute_byvalue (int64_t group, const char * name
         ,const char * path
         ,enum ADIOS_DATATYPES type
-        ,void * value
+        ,int nelems
+        ,void * values
         )
 {
     struct adios_group_struct * g = (struct adios_group_struct *) group;
@@ -998,7 +1000,7 @@ int adios_common_define_attribute_byvalue (int64_t group, const char * name
 
     attr->name = strdup (name);
     attr->path = strdup (path);
-    if (value)
+    if (values)
     {
         if (type == adios_unknown)
         {
@@ -1014,11 +1016,12 @@ int adios_common_define_attribute_byvalue (int64_t group, const char * name
             return 0;
         }
         attr->type = type;
-        size = adios_get_type_size (attr->type, value);
+        attr->nelems = nelems;
+        size = adios_get_type_size (attr->type, values);
         if (size > 0)
         {
-            attr->value = malloc (size);
-            memcpy (attr->value, value, size);
+            attr->value = malloc (nelems*size);
+            memcpy (attr->value, values, nelems*size);
             attr->var = 0;
         }
         else
@@ -2073,7 +2076,7 @@ uint32_t adios_calc_attribute_overhead_v1 (struct adios_attribute_struct * a)
     {
         overhead += 1; // datatype
         overhead += 4; // length of value
-        overhead += adios_get_type_size (a->type, a->value); // value
+        overhead += a->nelems * adios_get_type_size (a->type, a->value); // value
     }
 
     return overhead;
@@ -3517,11 +3520,15 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
             a_index->attr_name = (a->name ? strdup (a->name) : 0L);
             a_index->attr_path = (a->path ? strdup (a->path) : 0L);
             a_index->type = a->type;
+            a_index->nelems = a->nelems;
             a_index->characteristics_count = 1;
             a_index->characteristics_allocated = 1;
-            uint64_t size = adios_get_type_size (a->type, a->value);
+            uint64_t size = a_index->nelems * adios_get_type_size (a->type, a->value);
 
             a_index->characteristics [0].offset = a->write_offset;
+            /*FIXME: this below cannot be correct, calc includes the data size 
+                     itself and the payload offset should point to the beginning 
+                     of the actual data. ADIOS never accesses this data though */
             a_index->characteristics [0].payload_offset = a->write_offset + adios_calc_attribute_overhead_v1 (a);
             a_index->characteristics [0].file_index = fd->subfile_index;
             a_index->characteristics [0].time_index = 0;
@@ -3535,16 +3542,31 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
 
             if (a->value)
             {
-                a_index->characteristics [0].value = malloc (size + 1);
-                ((char *) (a_index->characteristics [0].value)) [size] = 0;
+                if (a->type == adios_string) 
+                    size++;
+                a_index->characteristics [0].value = malloc (size);
+                if (a->type == adios_string) 
+                    ((char *) (a_index->characteristics [0].value)) [size] = 0;
                 memcpy (a_index->characteristics [0].value, a->value, size);
             }
             else
             {
                 a_index->characteristics [0].value = 0;
             }
-            a_index->characteristics [0].dims.count = 0;
-            a_index->characteristics [0].dims.dims = 0;
+
+            if (a_index->nelems > 1) {
+                // for array attributes, save nelems as a dimension characteristic
+                a_index->characteristics [0].dims.count = 1; // 1D array allowed only
+                a_index->characteristics [0].dims.dims = malloc (3*sizeof(uint64_t));
+                a_index->characteristics [0].dims.dims[0] = a_index->nelems; // "local dim"
+                a_index->characteristics [0].dims.dims[1] = a_index->nelems; // "global dim"
+                a_index->characteristics [0].dims.dims[2] = 0;               // "offset"
+            } else {
+                // old attributes up to version 1.8 never had dimensions
+                a_index->characteristics [0].dims.count = 0;
+                a_index->characteristics [0].dims.dims = 0;
+            }
+
             if (a->var)
                 a_index->characteristics [0].var_id = a->var->id;
             else
@@ -4184,9 +4206,36 @@ int adios_write_index_v1 (char ** buffer
             attr_size += 4;
             characteristic_set_length += 4;
 
-            size = adios_get_type_size (attrs_root->type
-                    ,attrs_root->characteristics [i].value
-                    );
+            size = attrs_root->nelems * adios_get_type_size (
+                          attrs_root->type, attrs_root->characteristics [i].value);
+
+            if (attrs_root->characteristics [i].dims.count)
+            {
+                // add a dimensions characteristic
+                characteristic_set_count++;
+                flag = (uint8_t) adios_characteristic_dimensions;
+                buffer_write (buffer, buffer_size, buffer_offset, &flag, 1);
+                index_size += 1;
+                attr_size += 1;
+                characteristic_set_length += 1;
+
+                buffer_write (buffer, buffer_size, buffer_offset, 
+                              &attrs_root->characteristics [i].dims.count, 1);
+                index_size += 1;
+                attr_size += 1;
+                characteristic_set_length += 1;
+
+                len = 3 * sizeof(uint64_t) * attrs_root->characteristics [i].dims.count;
+                buffer_write (buffer, buffer_size, buffer_offset, &len, 2);
+                index_size += 2;
+                attr_size += 2;
+                characteristic_set_length += 2;
+                buffer_write (buffer, buffer_size, buffer_offset,
+                        attrs_root->characteristics [i].dims.dims, len);
+                index_size += len;
+                attr_size += len;
+                characteristic_set_length += len;
+            }
 
             if (attrs_root->characteristics [i].value != 0)
             {
@@ -5312,10 +5361,11 @@ int adios_write_attribute_v1 (struct adios_file_struct * fd
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &flag, 1);
         size += 1;
 
-        uint32_t t = adios_get_type_size (a->type, a->value);
+        uint32_t t = a->nelems * adios_get_type_size (a->type, a->value);
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &t, 4);
         size += 4;
 
+        // terminating 0 of a string is not written here!
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
                 ,a->value, t
                 );

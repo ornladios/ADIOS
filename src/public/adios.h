@@ -136,6 +136,17 @@ int adios_define_attribute (int64_t group,
                             const char * var
                            );
 
+// define an attribute with values. 
+// it can define an (1D) array of scalars, 'nelems' elements
+// 'values' should point to the array of 'nelems' number of values of the specified type
+int adios_define_attribute_byvalue (int64_t group, 
+                            const char * name,
+                            const char * path, 
+                            enum ADIOS_DATATYPES type,
+                            int  nelems,
+                            void * values
+                           );
+
 int adios_delete_attrdefs (int64_t id);
 
 /** This function does similar function as adios_write. It is, however, used

@@ -38,6 +38,9 @@ int main (int argc, char ** argv)
         int         nblocks = 3;
 	MPI_Comm    comm = MPI_COMM_WORLD;
         char g_str[100], o_str[100], l_str[100];
+        // attributes (from C variables)
+        int someints[5] = {5,4,3,2,1};
+        double somedoubles[5] = {5.55555, 4.4444, 3.333, 2.22, 1.1};
 
 	/* ADIOS variables declarations for matching gwrite_temperature.ch */
 	uint64_t    adios_groupsize, adios_totalsize;
@@ -72,7 +75,21 @@ int main (int argc, char ** argv)
                                           );
             adios_set_transform (var_ids[i], "identity");
         }
-   
+
+        // add some attributes
+        adios_define_attribute_byvalue (m_adios_group, 
+                "single_string","", adios_string,  1, "A single string attribute");
+        adios_define_attribute_byvalue (m_adios_group, 
+                "single_int",   "", adios_integer, 1, &someints);
+        adios_define_attribute_byvalue (m_adios_group, 
+                "single_double","", adios_double,  1, &somedoubles);
+        adios_define_attribute_byvalue (m_adios_group, 
+                "five_ints",    "", adios_integer, 5, &someints);
+        adios_define_attribute_byvalue (m_adios_group, 
+                "five_double",  "", adios_double,  5, &somedoubles);
+
+
+
         adios_open (&m_adios_file, "restart", filename, "w", comm);
 
         adios_groupsize = nblocks * (4 + 4 + 4 + NX * 8);

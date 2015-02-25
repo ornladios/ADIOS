@@ -31,6 +31,7 @@ module adios_defs_mod
     integer, parameter :: adios_long_double = 7          ! (16) 
     integer, parameter :: adios_string = 9               ! C strings
     integer, parameter :: adios_complex = 10             ! (8) 
+    integer, parameter :: adios_double_complex = 11      ! (16) 
 
 
     !

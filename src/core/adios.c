@@ -433,6 +433,16 @@ int adios_delete_attrdefs (int64_t id)
     return adios_errno;
 }
 
+int adios_define_attribute_byvalue (int64_t group, 
+                            const char * name, const char * path, 
+                            enum ADIOS_DATATYPES type, int  nelems, void * values
+                           )
+{
+    adios_errno = err_no_error;
+    adios_common_define_attribute_byvalue (group, name, path, type, nelems, values);
+    return adios_errno;
+}
+
 ///////////////////////////////////////////////////////////////////////////////
 
 // adios_common_select_method is in adios_internals_mxml.c

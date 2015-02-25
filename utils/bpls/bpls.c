@@ -560,7 +560,16 @@ int doList_group (ADIOS_FILE *fp)
                 // list (and print) attribute
                 if (readattrs || dump) {
                     fprintf(outf,"  attr   = ");
-                    print_data(value, 0, vartype, false); 
+                    int type_size = adios_type_size (vartype, value);
+                    int nelems = attrsize / type_size;
+                    char *p = (char*)value;
+                    if (nelems>1) fprintf(outf,"{");
+                    for (i=0; i<nelems; i++) { 
+                        if (i>0) fprintf(outf,", ");
+                        print_data(p, 0, vartype, false); 
+                        p += type_size;
+                    }
+                    if (nelems>1) fprintf(outf,"}");
                     fprintf(outf,"\n");
                     matches = false; // already printed
                 } else {
@@ -603,19 +612,19 @@ int doList_group (ADIOS_FILE *fp)
                         if(vartype == adios_complex || vartype == adios_double_complex) {
                             // force printing (double,double) here
                             print_data(vi->statistics->min, 0, adios_double_complex, false); 
-                            fprintf(outf,"/ ");
+                            fprintf(outf," / ");
                             print_data(vi->statistics->max, 0, adios_double_complex, false); 
-                            fprintf(outf,"/ ");
+                            fprintf(outf," / ");
                             print_data(vi->statistics->avg, 0, adios_double_complex, false);
-                            fprintf(outf,"/ ");
+                            fprintf(outf," / ");
                             print_data(vi->statistics->std_dev, 0, adios_double_complex, false);
                         } else {
                             print_data(vi->statistics->min, 0, vartype, false); 
-                            fprintf(outf,"/ ");
+                            fprintf(outf," / ");
                             print_data(vi->statistics->max, 0, vartype, false); 
-                            fprintf(outf,"/ ");
+                            fprintf(outf," / ");
                             print_data(vi->statistics->avg, 0, adios_double, false);
-                            fprintf(outf,"/ ");
+                            fprintf(outf," / ");
                             print_data(vi->statistics->std_dev, 0, adios_double, false);
                         }
 
@@ -1634,53 +1643,53 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype, bool all
     // print next data item 
     switch(adiosvartype) {
         case adios_unsigned_byte:
-            fprintf(outf,(f ? format : "%hhu "), ((unsigned char *) data)[item]);
+            fprintf(outf,(f ? format : "%hhu"), ((unsigned char *) data)[item]);
             break;
         case adios_byte:
-            fprintf(outf,(f ? format : "%hhd "), ((signed char *) data)[item]);
+            fprintf(outf,(f ? format : "%hhd"), ((signed char *) data)[item]);
             break;
         case adios_string:
             fprintf(outf,(f ? format : "\"%s\""), ((char *) data)+item);
             break;
 
         case adios_unsigned_short:  
-            fprintf(outf,(f ? format : "%hu "), ((unsigned short *) data)[item]);
+            fprintf(outf,(f ? format : "%hu"), ((unsigned short *) data)[item]);
             break;
         case adios_short:
-            fprintf(outf,(f ? format : "%hd "), ((signed short *) data)[item]);
+            fprintf(outf,(f ? format : "%hd"), ((signed short *) data)[item]);
             break;
 
         case adios_unsigned_integer:
-            fprintf(outf,(f ? format : "%u "), ((unsigned int *) data)[item]);
+            fprintf(outf,(f ? format : "%u"), ((unsigned int *) data)[item]);
             break;
         case adios_integer:    
-            fprintf(outf,(f ? format : "%d "), ((signed int *) data)[item]);
+            fprintf(outf,(f ? format : "%d"), ((signed int *) data)[item]);
             break;
 
         case adios_unsigned_long:
-            fprintf(outf,(f ? format : "%llu "), ((unsigned long long *) data)[item]);
+            fprintf(outf,(f ? format : "%llu"), ((unsigned long long *) data)[item]);
             break;
         case adios_long:        
-            fprintf(outf,(f ? format : "%lld "), ((signed long long *) data)[item]);
+            fprintf(outf,(f ? format : "%lld"), ((signed long long *) data)[item]);
             break;
 
         case adios_real:
-            fprintf(outf,(f ? format : "%g "), ((float *) data)[item]);
+            fprintf(outf,(f ? format : "%g"), ((float *) data)[item]);
             break;
 
         case adios_double:
-            fprintf(outf,(f ? format : "%g "), ((double *) data)[item]);
+            fprintf(outf,(f ? format : "%g"), ((double *) data)[item]);
             break;
 
 
         case adios_long_double:
-            fprintf(outf,(f ? format : "%Lg "), ((long double *) data)[item]);
+            fprintf(outf,(f ? format : "%Lg"), ((long double *) data)[item]);
             //fprintf(outf,(f ? format : "????????"));
             break;
 
 
         case adios_complex:  
-            fprintf(outf,(f ? format : "(%g,i%g) "), ((float *) data)[2*item], ((float *) data)[2*item+1]);
+            fprintf(outf,(f ? format : "(%g,i%g)"), ((float *) data)[2*item], ((float *) data)[2*item+1]);
             break;
 
         case adios_double_complex:
@@ -1746,6 +1755,8 @@ int print_dataset(void *data, enum ADIOS_DATATYPES adiosvartype,
         if (nextcol == ncols) {
             fprintf(outf,"\n");
             nextcol = 0;
+        } else {
+            fprintf(outf," ");
         }
 
         // increment indices
@@ -1844,7 +1855,7 @@ void print_decomp(ADIOS_VARINFO *vi)
                         fprintf(outf,"N/A ");
                     }
 
-                    fprintf(outf,"/ ");
+                    fprintf(outf," / ");
                     if (vi->statistics->blocks->maxs) {
                         if(vi->type == adios_complex || vi->type == adios_double_complex) {
                             print_data(vi->statistics->blocks->maxs[blockid], 0, adios_double_complex, false); 

@@ -44,20 +44,30 @@ int main (int argc, char ** argv)
         adios_get_attr (f, f->attr_namelist[i], &attr_type, &attr_size, &data);
 
         printf ("rank %d: attr: %s %s = ", rank, adios_type_to_string(attr_type), f->attr_namelist[i]);
-        switch (attr_type)  
+        int type_size = adios_type_size (attr_type, data);
+        int nelems = attr_size / type_size;
+        int k;
+        char *p = (char*)data;
+        for (k=0; k<nelems; k++) 
         {
-            case adios_integer:
-                printf ("%d\n", *(int *)data);
-                break;
-            case adios_double:
-                printf ("%e\n", *(double *)data);
-                break;
-            case adios_string:
-                printf ("%s\n", (char *)data);
-                break;
-            default:
-                printf ("??????\n");
+            if (k>0) printf(", ");
+            switch (attr_type)  
+            {
+                case adios_integer:
+                    printf ("%d", *(int *)p);
+                    break;
+                case adios_double:
+                    printf ("%e", *(double *)p);
+                    break;
+                case adios_string:
+                    printf ("%s", (char *)p);
+                    break;
+                default:
+                    printf ("??????\n");
+            }
+            p=p+type_size;
         }
+        printf("\n");
         free (data);
         data = 0;
     }

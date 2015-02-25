@@ -605,16 +605,39 @@ module adios_write_mod
         module procedure adios_read_logical4_d6
         module procedure adios_read_logical8_d6
     end interface
-    contains
+
 
     !
     !
-    ! ADIOS_WRITE generic interface
+    ! ADIOS_DEFINE_ATTRIBUTE_BYVALUE generic interface
     !
-    ! Usage: call adios_write (fd, varname, data, err)
+    ! Usage: call adios_define_attrribute_byvalue (group_id, attrname, path, nelems, values, err)
     !
     !
-        !
+    interface adios_define_attribute_byvalue
+        module procedure adios_define_attribute_byvalue_int1_d0
+        module procedure adios_define_attribute_byvalue_int2_d0
+        module procedure adios_define_attribute_byvalue_int4_d0
+        module procedure adios_define_attribute_byvalue_int8_d0
+        module procedure adios_define_attribute_byvalue_real4_d0
+        module procedure adios_define_attribute_byvalue_real8_d0
+        module procedure adios_define_attribute_byvalue_complex8_d0
+        module procedure adios_define_attribute_byvalue_complex16_d0
+
+        module procedure adios_define_attribute_byvalue_char_d1
+        module procedure adios_define_attribute_byvalue_int1_d1
+        module procedure adios_define_attribute_byvalue_int2_d1
+        module procedure adios_define_attribute_byvalue_int4_d1
+        module procedure adios_define_attribute_byvalue_int8_d1
+        module procedure adios_define_attribute_byvalue_real4_d1
+        module procedure adios_define_attribute_byvalue_real8_d1
+        module procedure adios_define_attribute_byvalue_complex8_d1
+        module procedure adios_define_attribute_byvalue_complex16_d1
+    end interface
+
+
+    contains
+
     !
     ! ADIOS_WRITE generic interface
     !
@@ -3825,6 +3848,239 @@ module adios_write_mod
         end subroutine
 
     ! end of ADIOS_READ functions
+
+    !
+    !
+    ! ADIOS_DEFINE_ATTRIBUTE_BYVALUE generic interface
+    !
+    ! Usage: call adios_define_attrribute_byvalue (group_id, attrname, path, nelems, values, err)
+    !
+    !
+        ! Special case: CHARACTER*1 array
+        ! This calls a different function to keep the string length information within
+        subroutine adios_define_attribute_byvalue_char_d1 (group_id, attrname, path, nelems, values, err)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: attrname
+            character(*),   intent(in)  :: path
+            integer,        intent(in)  :: nelems
+            character(*),   intent(in)  :: values
+            integer,        intent(out) :: err
+
+            call adios_define_attribute_byvalue_string (group_id, attrname, path, adios_string, nelems, values, err)
+        end subroutine
+
+        ! INTEGER*1 scalar
+        subroutine adios_define_attribute_byvalue_int1_d0 (group_id, attrname, path, nelems, values, err)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: attrname
+            character(*),   intent(in)  :: path
+            integer,        intent(in)  :: nelems
+            integer*1,      intent(in)  :: values
+            integer,        intent(out) :: err
+
+            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_double_complex, adios_byte, values, err)
+        end subroutine
+
+        ! INTEGER*2 scalar
+        subroutine adios_define_attribute_byvalue_int2_d0 (group_id, attrname, path, nelems, values, err)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: attrname
+            character(*),   intent(in)  :: path
+            integer,        intent(in)  :: nelems
+            integer*2,      intent(in)  :: values
+            integer,        intent(out) :: err
+
+            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_short, nelems, values, err)
+        end subroutine
+
+
+        ! INTEGER*4 scalar
+        subroutine adios_define_attribute_byvalue_int4_d0 (group_id, attrname, path, nelems, values, err)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: attrname
+            character(*),   intent(in)  :: path
+            integer,        intent(in)  :: nelems
+            integer*4,      intent(in)  :: values
+            integer,        intent(out) :: err
+
+            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_integer, nelems, values, err)
+        end subroutine
+
+        ! INTEGER*8 scalar
+        subroutine adios_define_attribute_byvalue_int8_d0 (group_id, attrname, path, nelems, values, err)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: attrname
+            character(*),   intent(in)  :: path
+            integer,        intent(in)  :: nelems
+            integer*8,      intent(in)  :: values
+            integer,        intent(out) :: err
+
+            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_long, nelems, values, err)
+        end subroutine
+
+        ! REAL*4 scalar
+        subroutine adios_define_attribute_byvalue_real4_d0 (group_id, attrname, path, nelems, values, err)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: attrname
+            character(*),   intent(in)  :: path
+            integer,        intent(in)  :: nelems
+            real*4,         intent(in)  :: values
+            integer,        intent(out) :: err
+
+            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_real, nelems, values, err)
+        end subroutine
+
+        ! REAL*8 scalar
+        subroutine adios_define_attribute_byvalue_real8_d0 (group_id, attrname, path, nelems, values, err)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: attrname
+            character(*),   intent(in)  :: path
+            integer,        intent(in)  :: nelems
+            real*8,         intent(in)  :: values
+            integer,        intent(out) :: err
+
+            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_double, nelems, values, err)
+        end subroutine
+
+        ! COMPLEX*8 scalar
+        subroutine adios_define_attribute_byvalue_complex8_d0 (group_id, attrname, path, nelems, values, err)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: attrname
+            character(*),   intent(in)  :: path
+            integer,        intent(in)  :: nelems
+            complex*8,      intent(in)  :: values
+            integer,        intent(out) :: err
+
+            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_complex, nelems, values, err)
+        end subroutine
+
+        ! COMPLEX*16 scalar
+        subroutine adios_define_attribute_byvalue_complex16_d0 (group_id, attrname, path, nelems, values, err)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: attrname
+            character(*),   intent(in)  :: path
+            integer,        intent(in)  :: nelems
+            complex*16,     intent(in)  :: values
+            integer,        intent(out) :: err
+
+            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_double_complex, nelems, values, err)
+        end subroutine
+
+
+        ! INTEGER*1 array
+        subroutine adios_define_attribute_byvalue_int1_d1 (group_id, attrname, path, nelems, values, err)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: attrname
+            character(*),   intent(in)  :: path
+            integer,        intent(in)  :: nelems
+            integer*1, dimension(:), intent(in)  :: values
+            integer,        intent(out) :: err
+
+            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_byte, nelems, values, err)
+        end subroutine
+
+        ! INTEGER*2 array
+        subroutine adios_define_attribute_byvalue_int2_d1 (group_id, attrname, path, nelems, values, err)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: attrname
+            character(*),   intent(in)  :: path
+            integer,        intent(in)  :: nelems
+            integer*2, dimension(:), intent(in)  :: values
+            integer,        intent(out) :: err
+
+            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_short, nelems, values, err)
+        end subroutine
+
+        ! INTEGER*4 array
+        subroutine adios_define_attribute_byvalue_int4_d1 (group_id, attrname, path, nelems, values, err)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: attrname
+            character(*),   intent(in)  :: path
+            integer,        intent(in)  :: nelems
+            integer*4, dimension(:), intent(in)  :: values
+            integer,        intent(out) :: err
+
+            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_integer, nelems, values, err)
+        end subroutine
+
+        ! INTEGER*8 array
+        subroutine adios_define_attribute_byvalue_int8_d1 (group_id, attrname, path, nelems, values, err)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: attrname
+            character(*),   intent(in)  :: path
+            integer,        intent(in)  :: nelems
+            integer*8, dimension(:), intent(in)  :: values
+            integer,        intent(out) :: err
+
+            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_long, nelems, values, err)
+        end subroutine
+
+        ! REAL*4 array
+        subroutine adios_define_attribute_byvalue_real4_d1 (group_id, attrname, path, nelems, values, err)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: attrname
+            character(*),   intent(in)  :: path
+            integer,        intent(in)  :: nelems
+            real*4, dimension(:), intent(in)  :: values
+            integer,        intent(out) :: err
+
+            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_real, nelems, values, err)
+        end subroutine
+
+        ! REAL*8 array
+        subroutine adios_define_attribute_byvalue_real8_d1 (group_id, attrname, path, nelems, values, err)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: attrname
+            character(*),   intent(in)  :: path
+            integer,        intent(in)  :: nelems
+            real*8, dimension(:), intent(in)  :: values
+            integer,        intent(out) :: err
+
+            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_double, nelems, values, err)
+        end subroutine
+
+        ! COMPLEX*8 array
+        subroutine adios_define_attribute_byvalue_complex8_d1 (group_id, attrname, path, nelems, values, err)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: attrname
+            character(*),   intent(in)  :: path
+            integer,        intent(in)  :: nelems
+            complex*8, dimension(:), intent(in)  :: values
+            integer,        intent(out) :: err
+
+            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_complex, nelems, values, err)
+        end subroutine
+
+        ! COMPLEX*16 array
+        subroutine adios_define_attribute_byvalue_complex16_d1 (group_id, attrname, path, nelems, values, err)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: attrname
+            character(*),   intent(in)  :: path
+            integer,        intent(in)  :: nelems
+            complex*16, dimension(:), intent(in)  :: values
+            integer,        intent(out) :: err
+
+            call adios_define_attribute_byvalue_f2c (group_id, attrname, path, adios_double_complex, nelems, values, err)
+        end subroutine
+
+    ! end of ADIOS_DEFINE_ATTRIBUTE_BYVALUE functions
 
 end module
 
