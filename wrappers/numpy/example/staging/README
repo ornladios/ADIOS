@@ -19,7 +19,7 @@ a. File-based communication
 
 First, let's run with files by
 
-$ python ./adios_write.py POSIX
+$ python ./adios_write.py POSIX1
 $ python ./adios_read.py BP
 
 b. ICEE

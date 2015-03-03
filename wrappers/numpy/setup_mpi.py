@@ -19,7 +19,13 @@ m1 = Extension('adios_mpi',
                include_dirs = [np.get_include()],
                library_dirs = [],
                libraries = [],
-               extra_objects = [])
+               extra_objects = [],
+               extra_compile_args = ['-Wno-unknown-warning',
+                                     '-Wno-unknown-warning-option',
+                                     '-Wno-cpp',
+                                     '-Wno-#warnings',
+                                     '-Wno-uninitialized',
+                                     '-Wno-unused-function'])
 
 cmd = find_executable("adios_config")
 if cmd == None:
@@ -55,7 +61,7 @@ class adios_test(Command):
         raise SystemExit(errno)
     
 setup(name = 'adios_mpi',
-      version = '1.0.2',
+      version = '1.0.4',
       description = 'Python Module for Adios MPI',
       author = 'Jong Choi',
       author_email = 'yyalli@gmail.com',
