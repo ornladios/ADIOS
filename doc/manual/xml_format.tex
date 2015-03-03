@@ -160,13 +160,16 @@ will be yes.
 \end{itemize}
 
 \subsection{Attributes}
+\label{chapter-xml-attributes}
 The attribute element for adios\_group provides the users with the ability to specify 
 more descriptive information about the variables or group. The attributes can be 
-defined in both static or dynamic fashions. ADIOS supports only scalar attributes, i.e, 
+defined in both static or dynamic fashions. ADIOS supports only scalar attributes in the XML document, i.e, 
 no arrays or vectors are supported. Note that a string is considered a scalar in ADIOS. 
 From ADIOS 1.4, only the root process of the application writes the attribute into 
 the output, therefore, process-dependent information cannot be save as an attribute 
 (by definition, that is a variable information, which should be stored in a variable).
+
+Note, that the non-XML API now allows for defining array attributes, including an array of strings with different lengths, see chapter \ref{section-define-attribute-byvalue}. 
 
 \subsubsection{Declaration}
 

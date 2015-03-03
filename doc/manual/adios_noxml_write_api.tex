@@ -1,4 +1,5 @@
 \chapter{ADIOS No-XML Write API }
+\label{chapter-noxml-api}
 
 ADIOS provides an option of writing data without loading an XML configuration file. 
 This set of APIs is designed to cater to output data , which is not definable from 
@@ -29,7 +30,9 @@ buffer size in MB
 
 \textbf{adios\_define\_var ---} define an ADIOS variable for an ADIOS group
 
-\textbf{adios\_define\_attribute ---} define an ADIOS attribute for an ADIOS group
+\textbf{adios\_define\_attribute ---} define an ADIOS attribute passed in a string for an ADIOS group
+
+\textbf{adios\_define\_attribute\_byvalue ---} define an ADIOS attribute by value for an ADIOS group
 
 \textbf{adios\_write\_byid ---} write a variable, identified by the ID returned by adios\_define\_var, instead of by name
 
@@ -219,8 +222,10 @@ call adios_write_byid (handle, id, v, ierr)
 
 \subsection{adios\_define\_attribute}
 
-This API is used to declare an ADIOS attribute for a particular group. See section 
-5.2.3 for more details on ADIOS attribute.
+This API is used to declare an ADIOS attribute for a particular group. The value is passed in a string, which is converted to the desired type inside the function. It is not appropriate to define a floating-point type attribute with high-precision, and cannot be used to define an array attribute. For those cases, see the next function below, 
+adios\_define\_attribute\_byvalue. 
+
+This function is the equivalent function for the XML-based attribute definition, where the values are represented as strings in the XML document. See section \ref{chapter-xml-attributes} for more detais on ADIOS attribute.
 
 \begin{lstlisting}[alsolanguage=C,caption={},label={}]
 int adios_define_attribute (int64_t group,
@@ -256,6 +261,63 @@ Fortran example:
 \begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
 call adios_define_attribute (m_adios_group, "date", "", 9, &
                              "Feb 2010", "" , ierr)
+\end{lstlisting}
+
+
+\subsection{adios\_define\_attribute\_byvalue}
+\label{section-define-attribute-byvalue}
+
+This API is used to declare an ADIOS attribute by passing the exact value for the desired type in a void* pointer. It also allows to define an array attribute of \verb+nelems+ number of elements. The pointer should point to the array of values. 
+
+\begin{lstlisting}[alsolanguage=C,caption={},label={}]
+int adios_define_attribute_byvalue (int64_t group,
+                                    const char * name, 
+                                    const char * path,
+                                    enum ADIOS_DATATYPES type,
+                                    int nelems,
+                                    void * values)
+\end{lstlisting}
+
+Input:
+\begin{itemize}
+\item group - pointer to the internal group structure (returned by adios\_declare\_group)
+
+\item name - string containing the annotation name of an attribute
+
+\item path - string containing the path of an attribute
+
+\item type  - type of the attribute
+
+\item nelems - number of elements in the array of attributes 
+
+\item values - pointer to a memory buffer that contains the value(s) of the attribute
+ 
+\end{itemize}
+
+Output:
+\begin{itemize}
+\item None
+\end{itemize}
+
+Simple string attributes should be defined with the type \verb+adios_string+, nelems=1 and values should be the \verb+char*+ type pointer. For an attribute of an array of strings, use the type \verb+adios_string_array+, and values should be a pointer of \verb+char**+ type, i.e. values[i] is a string, where $0<=i<nelems$. The length of the individual strings can be different in C.
+
+Fortran example: 
+
+Note that string attributes will loose the trailing space characters in the output. 
+
+\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
+    integer, dimension(5)   :: someints = (/ 5,4,3,2,1 /)
+    real*8, dimension(5)    :: somedoubles = (/ 5.55555, 4.4444, 3.333, 2.22, 1.1 /)
+    character(len=5), dimension(3) :: three_strings = (/ "X    ", "Yy   ", "ZzZ  " /)
+
+    call adios_define_attribute_byvalue (m_adios_group, &
+            "single_string","", 1, "A single string attribute", adios_err)
+    call adios_define_attribute_byvalue (m_adios_group, &
+            "three_strings","", 3, three_strings, adios_err)
+    call adios_define_attribute_byvalue (m_adios_group, &
+            "single_double","", 1, somedoubles, adios_err)
+    call adios_define_attribute_byvalue (m_adios_group, &
+            "five_ints",    "", 5, someints, adios_err)
 \end{lstlisting}
 
 
