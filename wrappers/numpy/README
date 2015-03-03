@@ -29,6 +29,10 @@ Then, install Adios and Adios-MPI wrapper as follows:
 $ pip install adios
 $ pip install adios_mpi
 
+If you want to install in a custom directory, use the following:
+$ pip install --install-option="--prefix=$PREFIX" adios
+$ pip install --install-option="--prefix=$PREFIX" adios_mpi
+
 == Build and install with make ==
 
 A Makefile is included for building. The following commands will

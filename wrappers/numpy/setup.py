@@ -21,11 +21,7 @@ m1 = Extension('adios',
                library_dirs = [],
                libraries = [],
                extra_objects = [],
-               extra_compile_args = ['-Wno-unknown-warning',
-                                     '-Wno-unknown-warning-option',
-                                     '-Wno-cpp',
-                                     '-Wno-#warnings',
-                                     '-Wno-uninitialized',
+               extra_compile_args = ['-Wno-uninitialized',
                                      '-Wno-unused-function'])
 
 cmd = find_executable("adios_config")
@@ -71,7 +67,7 @@ class adios_test(Command):
         test_runner.run(test_suite)
 
 setup(name = 'adios',
-      version = '1.0.4',
+      version = '1.0.5',
       description = 'Python Module for Adios',
       author = 'Jong Choi',
       author_email = 'yyalli@gmail.com',
