@@ -50,13 +50,22 @@ class adios_test(Command):
         pass
 
     def run(self):
-        import subprocess
+        ##import subprocess
+        ##import sys
+        ##errno = subprocess.call([sys.executable, 'tests/test_adios.py', 'tests/config.xml'])
+        ##raise SystemExit(errno)
+        import os
         import sys
-        errno = subprocess.call([sys.executable, 'tests/test_adios.py', 'tests/config.xml'])
-        raise SystemExit(errno)
+        import unittest
+        setup_file = sys.modules['__main__'].__file__
+        setup_dir = os.path.abspath(os.path.dirname(setup_file))
+        test_loader = unittest.defaultTestLoader
+        test_runner = unittest.TextTestRunner()
+        test_suite = test_loader.discover(os.path.join(setup_dir, 'test'))
+        test_runner.run(test_suite)
 
 setup(name = 'adios',
-      version = '1.0.2',
+      version = '1.0.3',
       description = 'Python Module for Adios',
       author = 'Jong Choi',
       author_email = 'yyalli@gmail.com',

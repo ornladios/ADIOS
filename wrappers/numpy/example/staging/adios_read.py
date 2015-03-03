@@ -29,7 +29,7 @@ while True:
     v = f.var['temperature']
     v.printself()
 
-    val = v.read()
+    val = v.read(nsteps=1)
     print val
 
     if (f.advance() < 0):
