@@ -32,6 +32,10 @@ enum ADIOS_DATATYPES {adios_unknown = -1             /* (size) */
                      ,adios_string = 9               /* (?) */
                      ,adios_complex = 10             /* (8) */
                      ,adios_double_complex = 11      /* (16) */
+
+                     /* Only for attributes: char** array of strings.
+                        Number of elements must be known externally */
+                     ,adios_string_array = 12        /* (sizeof(char*)) usually 4 */
                      };
 
 enum ADIOS_FLAG {adios_flag_unknown = 0

@@ -546,9 +546,6 @@ void print_variable_index (int tid, struct adios_index_var_struct_v1 * vars_root
                     if (vars_root->type != adios_string)
                         printf ("\tValue(%s)", bp_value_to_string (vars_root->type,
                                     vars_root->characteristics [i].value));
-                    else
-                        printf ("\tValue(\"%s\")", bp_value_to_string (vars_root->type,
-                                    vars_root->characteristics [i].value));
                 }
                 if (vars_root->characteristics [i].dims.count != 0)
                 {

@@ -3724,6 +3724,7 @@ const char * common_read_type_to_string (enum ADIOS_DATATYPES type)
         case adios_complex:          return "complex";
         case adios_double_complex:   return "double complex";
 
+        case adios_string_array:     return "char*[]";
         default:
         {
             static char buf [50];

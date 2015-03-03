@@ -32,6 +32,7 @@ program no_xml_write_byid
     !! attributes (from C variables)
     integer, dimension(5)   :: someints = (/ 5,4,3,2,1 /)
     real*8, dimension(5)    :: somedoubles = (/ 5.55555, 4.4444, 3.333, 2.22, 1.1 /)
+    character(len=5), dimension(3) :: three_strings = (/ "X    ", "Yy   ", "ZzZ  " /)
 
 
     call MPI_Init (ierr)
@@ -73,6 +74,8 @@ program no_xml_write_byid
     !! add some attributes
     call adios_define_attribute_byvalue (m_adios_group, &
             "single_string","", 1, "A single string attribute", adios_err)
+    call adios_define_attribute_byvalue (m_adios_group, &
+            "three_strings","", 3, three_strings, adios_err)
     call adios_define_attribute_byvalue (m_adios_group, &
             "single_int",   "", 1, someints, adios_err)
     call adios_define_attribute_byvalue (m_adios_group, &

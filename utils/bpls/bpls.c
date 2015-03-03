@@ -1648,9 +1648,15 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype, bool all
         case adios_byte:
             fprintf(outf,(f ? format : "%hhd"), ((signed char *) data)[item]);
             break;
+
         case adios_string:
             fprintf(outf,(f ? format : "\"%s\""), ((char *) data)+item);
             break;
+        case adios_string_array:
+            // we expect one elemet of the array here
+            fprintf(outf,(f ? format : "\"%s\""), *((char **)data+item));
+            break;
+
 
         case adios_unsigned_short:  
             fprintf(outf,(f ? format : "%hu"), ((unsigned short *) data)[item]);

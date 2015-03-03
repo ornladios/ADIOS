@@ -633,6 +633,7 @@ module adios_write_mod
         module procedure adios_define_attribute_byvalue_real8_d1
         module procedure adios_define_attribute_byvalue_complex8_d1
         module procedure adios_define_attribute_byvalue_complex16_d1
+        module procedure adios_define_attribute_byvalue_char_d2
     end interface
 
 
@@ -3867,7 +3868,32 @@ module adios_write_mod
             character(*),   intent(in)  :: values
             integer,        intent(out) :: err
 
-            call adios_define_attribute_byvalue_string (group_id, attrname, path, adios_string, nelems, values, err)
+            call adios_define_attribute_byvalue_string (group_id, attrname, path, nelems, values, err)
+        end subroutine
+
+        ! Special case: CHARACTER*2 array
+        ! This calls a different function to keep the string length information within
+        subroutine adios_define_attribute_byvalue_char_d2 (group_id, attrname, path, nelems, values, err)
+            implicit none
+            integer*8,      intent(in)  :: group_id
+            character(*),   intent(in)  :: attrname
+            character(*),   intent(in)  :: path
+            integer,        intent(in)  :: nelems
+            character(*), dimension(:), intent(in)  :: values
+            integer,        intent(out) :: err
+
+            !character(*) :: v1
+            !v1 = values(1)
+
+            if (nelems <= size(values)) then
+                !write (*,'("String Array: dims = ",i4, "string size=",i4)')  size(values,1), len(values)
+                !write (*,*)  shape(values)
+                call adios_define_attribute_byvalue_string_array (group_id, attrname, path, nelems, &
+                                                                  values, len(values), err)
+            else
+                write (*,'("ADIOS Attribute definition error: ",a,"/",a," string array size =",i4," nelems = ",i4)') &
+                    path, attrname, size(values), nelems
+            endif
         end subroutine
 
         ! INTEGER*1 scalar

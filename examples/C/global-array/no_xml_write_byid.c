@@ -79,6 +79,9 @@ int main (int argc, char ** argv)
         // add some attributes
         adios_define_attribute_byvalue (m_adios_group, 
                 "single_string","", adios_string,  1, "A single string attribute");
+        char *strings[] = {"X","Yy","ZzZ"};
+        adios_define_attribute_byvalue (m_adios_group, 
+                "three_strings","", adios_string_array,  3, strings);
         adios_define_attribute_byvalue (m_adios_group, 
                 "single_int",   "", adios_integer, 1, &someints);
         adios_define_attribute_byvalue (m_adios_group, 

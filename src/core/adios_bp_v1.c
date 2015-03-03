@@ -924,7 +924,13 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
                         uint16_t data_size;
                         void * data = 0;
 
-                        if ((*root)->type == adios_string)
+                        if ((*root)->type == adios_string_array)
+                        {
+                            // there is no length info at this point
+                            data_size = 0;
+                            data = malloc ((*root)->nelems*sizeof(char*));
+                        }
+                        else if ((*root)->type == adios_string)
                         {
                             data_size = *(uint16_t *) (b->buff + b->offset);
                             if(b->change_endianness == adios_flag_yes) {
@@ -1001,9 +1007,28 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
 
                                 b->offset += (*root)->nelems*data_size;
                                 break;
+
                             case adios_string:
                                 memcpy (data, (b->buff + b->offset), data_size);
                                 b->offset += data_size;
+                                break;
+
+                            case adios_string_array:
+                                {
+                                    char ** p = (char**)data;
+                                    int k;
+                                    for (k=0; k < (*root)->nelems; k++) {
+                                        data_size = *(uint16_t *) (b->buff + b->offset);
+                                        if(b->change_endianness == adios_flag_yes) {
+                                            swap_16(data_size);
+                                        }
+                                        b->offset += 2;
+                                        p[k] = malloc (data_size + 1);
+                                        p[k] [data_size] = '\0';
+                                        memcpy (p[k], (b->buff + b->offset), data_size);
+                                        b->offset += data_size;
+                                    }
+                                }
                                 break;
 
                             default:
@@ -1020,7 +1045,7 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
                     case adios_characteristic_offset:
                     {
                         (*root)->characteristics [j].offset =
-                                            *(uint64_t *) (b->buff + b->offset);
+                            *(uint64_t *) (b->buff + b->offset);
                         if(b->change_endianness == adios_flag_yes) {
                             swap_64((*root)->characteristics [j].offset);
                         }
@@ -1032,7 +1057,7 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
                     case adios_characteristic_bitmap:
                     {
                         (*root)->characteristics [j].offset =
-                                            *(uint32_t *) (b->buff + b->offset);
+                            *(uint32_t *) (b->buff + b->offset);
                         if(b->change_endianness == adios_flag_yes) {
                             swap_32((*root)->characteristics [j].offset);
                         }
@@ -1044,7 +1069,7 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
                     case adios_characteristic_payload_offset:
                     {
                         (*root)->characteristics [j].payload_offset =
-                                            *(uint64_t *) (b->buff + b->offset);
+                            *(uint64_t *) (b->buff + b->offset);
                         if(b->change_endianness == adios_flag_yes) {
                             swap_64((*root)->characteristics [j].payload_offset);
                         }
@@ -1056,7 +1081,7 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
                     case adios_characteristic_file_index:
                     {
                         (*root)->characteristics [j].file_index =
-                                            *(uint32_t *) (b->buff + b->offset);
+                            *(uint32_t *) (b->buff + b->offset);
                         if(b->change_endianness == adios_flag_yes) {
                             swap_32((*root)->characteristics [j].file_index);
                         }
@@ -1068,7 +1093,7 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
                     case adios_characteristic_time_index:
                     {
                         (*root)->characteristics [j].time_index =
-                                            *(uint32_t *) (b->buff + b->offset);
+                            *(uint32_t *) (b->buff + b->offset);
                         if(b->change_endianness == adios_flag_yes) {
                             swap_32((*root)->characteristics [j].time_index);
                         }
@@ -1081,7 +1106,7 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
                     {
                         /* BP Format v1: varid/attrid was 16bit, now it's 32 bit */
                         (*root)->characteristics [j].var_id =
-                                            *(uint32_t *) (b->buff + b->offset);
+                            *(uint32_t *) (b->buff + b->offset);
                         if(b->change_endianness == adios_flag_yes) {
                             swap_32((*root)->characteristics [j].var_id);
                         }
@@ -1095,10 +1120,10 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
                     {
                         adios_transform_deserialize_transform_characteristic(&(*root)->characteristics[j].transform, b);
                         /*
-                        (*root)->characteristics [j].transform_type =
-                                            *(uint8_t *) (b->buff + b->offset);
-                        b->offset += 1;
-                        */
+                           (*root)->characteristics [j].transform_type =
+                         *(uint8_t *) (b->buff + b->offset);
+                         b->offset += 1;
+                         */
                         break;
                     }
 
@@ -1129,9 +1154,9 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
                         (*root)->nelems = (*root)->characteristics [j].dims.dims[0];
                         break;
                     }
-                    
+
                     default:
-                        break;
+                    break;
                 }
                 item++;
             }
@@ -1144,7 +1169,7 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
 }
 
 int adios_parse_process_group_header_v1 (struct adios_bp_buffer_struct_v1 * b
-                       ,struct adios_process_group_header_struct_v1 * pg_header
+        ,struct adios_process_group_header_struct_v1 * pg_header
                             )
 {
     if (b->length - b->offset < 24)
@@ -1994,22 +2019,60 @@ int adios_parse_attribute_v1 (struct adios_bp_buffer_struct_v1 * b
         flag = *(b->buff + b->offset);
         attribute->type = (enum ADIOS_DATATYPES) flag;
         b->offset += 1;
-        attribute->length = *(uint32_t *) (b->buff + b->offset);
-        if(b->change_endianness == adios_flag_yes) {
-            swap_32(attribute->length);
-        }
-        b->offset += 4;
-
-        if (attribute->type == adios_string) 
+        if (attribute->type == adios_string_array) 
         {
+            attribute->length = 0;
+            attribute->nelems = *(uint32_t *) (b->buff + b->offset);
+            if(b->change_endianness == adios_flag_yes) {
+                swap_32(attribute->nelems);
+            }
+            b->offset += 4;
+
+            // 4 bytes nelems then nelems times: 4 bytes length + string
+            char ** p = malloc (attribute->nelems*sizeof(char*));
+            int k;
+            uint32_t len;
+            for (k=0; k < attribute->nelems; k++) {
+                // length of one string without terminating 0
+                len = *(uint32_t *) (b->buff + b->offset);
+                if(b->change_endianness == adios_flag_yes) {
+                    swap_32(len);
+                }
+                b->offset += 4;
+                p[k] = malloc (len*sizeof(char)+1);
+                if (p[k]) {
+                    p[k][len] = '\0';
+                    memcpy (p[k], (b->buff + b->offset), len);
+                }
+                b->offset += len;
+                attribute->length += len; 
+            }
+            attribute->value = p;
+
+        }
+        else if (attribute->type == adios_string) 
+        {
+            attribute->length = *(uint32_t *) (b->buff + b->offset);
+            if(b->change_endianness == adios_flag_yes) {
+                swap_32(attribute->length);
+            }
+            b->offset += 4;
+
             // terminating 0 is NOT included in the file
             attribute->value = malloc (attribute->length + 1);
             ((char *) attribute->value) [attribute->length] = '\0';
             memcpy (attribute->value, (b->buff + b->offset), attribute->length);
             attribute->nelems = 1;
+            b->offset += attribute->length;
         } 
         else 
         {
+            attribute->length = *(uint32_t *) (b->buff + b->offset);
+            if(b->change_endianness == adios_flag_yes) {
+                swap_32(attribute->length);
+            }
+            b->offset += 4;
+
             int elemsize = adios_get_type_size (attribute->type, NULL); 
             attribute->nelems = attribute->length / elemsize;
             attribute->value = malloc (attribute->length);
@@ -2024,8 +2087,8 @@ int adios_parse_attribute_v1 (struct adios_bp_buffer_struct_v1 * b
                     p = p + elemsize;
                 }
             }
+            b->offset += attribute->length;
         }
-        b->offset += attribute->length;
     }
 
     return 0;
@@ -2050,7 +2113,10 @@ int adios_clear_attribute_v1 (struct adios_attribute_struct_v1 * attribute)
     attribute->length = 0;
     if (attribute->value)
     {
-        free (attribute->value);
+        if (attribute->type == adios_string_array)
+            free_string_array (attribute->value, attribute->nelems);
+        else
+            free (attribute->value);
         attribute->value = 0;
     }
     return 0;
@@ -2290,6 +2356,9 @@ uint64_t adios_get_type_size (enum ADIOS_DATATYPES type, void * var)
                 return 0;
             else
                 return strlen ((char *) var);
+
+        case adios_string_array:
+            return sizeof (char*);
 
         case adios_short:
         case adios_unsigned_short:

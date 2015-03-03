@@ -24,6 +24,12 @@ typedef struct read_request
 */
 void swap_order(int n, uint64_t *array, int *timedim);
 void change_endianness( void *data, uint64_t slice_size, enum ADIOS_DATATYPES type);
+
+// copy an array of strings with allocation, return pointer
+// also return the sum of string lengths in 'total_length'
+char ** dup_string_array (char ** v, int nelems, int * total_length);
+void free_string_array (char ** v, int nelems);
+
 void copy_data (void *dst, void *src,
                 int idim,
                 int ndim,

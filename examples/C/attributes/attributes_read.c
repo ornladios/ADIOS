@@ -60,7 +60,10 @@ int main (int argc, char ** argv)
                     printf ("%e", *(double *)p);
                     break;
                 case adios_string:
-                    printf ("%s", (char *)p);
+                    printf ("\"%s\"", (char *)p);
+                    break;
+                case adios_string_array:
+                    printf ("\"%s\"", *(char **)p);
                     break;
                 default:
                     printf ("??????\n");

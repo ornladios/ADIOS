@@ -103,10 +103,48 @@ void change_endianness( void *data, uint64_t slice_size, enum ADIOS_DATATYPES ty
             break;
 
         case adios_string:
+        case adios_string_array:
         default:
             /* nothing to do */
             break;
     }
+}
+
+// copy an array of strings with allocation, return pointer
+// also return the sum of string lengths in 'total_length'
+char ** dup_string_array (char ** v, int nelems, int * total_length) 
+{
+    *total_length = 0;
+
+    if (!v || nelems < 1)
+        return NULL;
+
+    char ** p = malloc (nelems*sizeof(char*));
+    if (!p) return NULL;
+
+    int i, len;
+    for (i=0; i<nelems; i++) {
+        if (v[i]) {
+            len = strlen (v[i]) + 1;
+            p[i] = malloc (len*sizeof(char));
+            if (p[i])
+                memcpy (p[i], v[i], len);
+            *total_length += len;
+        } else {
+            p[i] = NULL;
+        }
+    }
+    return p;
+}
+
+void free_string_array (char ** v, int nelems) 
+{
+    int i;
+    for (i=0; i<nelems; i++) {
+        if (v[i]) free (v[i]);
+        v[i] = 0;
+    }
+    free (v);
 }
 
 void copy_data (void *dst, void *src,

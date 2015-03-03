@@ -105,6 +105,8 @@ struct adios_attribute_struct
     struct adios_var_struct * var;
     uint64_t write_offset;  // offset this var was written at  [for writes]
 
+    uint32_t data_size; // data size for an array of strings (type==adios_string_array)
+
     struct adios_attribute_struct * next;
 };
 

@@ -283,6 +283,7 @@ int adios_parse_dimension (const char * dimension
                     switch (attr->var->type)
                     {
                         case adios_string:
+                        case adios_string_array:
                         case adios_real:
                         case adios_double:
                         case adios_long_double:
@@ -307,6 +308,7 @@ int adios_parse_dimension (const char * dimension
                     switch (attr->type)
                     {
                         case adios_string:
+                        case adios_string_array:
                         case adios_real:
                         case adios_double:
                         case adios_long_double:
@@ -333,6 +335,7 @@ int adios_parse_dimension (const char * dimension
             switch (var->type)
             {
                 case adios_string:
+                case adios_string_array:
                 case adios_real:
                 case adios_double:
                 case adios_long_double:
@@ -407,6 +410,7 @@ int adios_parse_dimension (const char * dimension
                     switch (attr->var->type)
                     {
                         case adios_string:
+                        case adios_string_array:
                         case adios_real:
                         case adios_double:
                         case adios_long_double:
@@ -431,6 +435,7 @@ int adios_parse_dimension (const char * dimension
                     switch (attr->type)
                     {
                         case adios_string:
+                        case adios_string_array:
                         case adios_real:
                         case adios_double:
                         case adios_long_double:
@@ -457,6 +462,7 @@ int adios_parse_dimension (const char * dimension
             switch (var->type)
             {
                 case adios_string:
+                case adios_string_array:
                 case adios_real:
                 case adios_double:
                 case adios_long_double:
@@ -530,6 +536,7 @@ int adios_parse_dimension (const char * dimension
                     switch (attr->var->type)
                     {
                         case adios_string:
+                        case adios_string_array:
                         case adios_real:
                         case adios_double:
                         case adios_long_double:
@@ -554,6 +561,7 @@ int adios_parse_dimension (const char * dimension
                     switch (attr->type)
                     {
                         case adios_string:
+                        case adios_string_array:
                         case adios_real:
                         case adios_double:
                         case adios_long_double:
@@ -580,6 +588,7 @@ int adios_parse_dimension (const char * dimension
             switch (var->type)
             {
                 case adios_string:
+                case adios_string_array:
                 case adios_real:
                 case adios_double:
                 case adios_long_double:
@@ -892,6 +901,13 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value, void ** 
                 return 1;
             }
 
+        case adios_string_array:
+            {
+            adios_error (err_unspecified,
+                    "adios_parse_scalar_string: string arrays cannot be processed yet\n");
+            return 1;
+            }
+
         case adios_unknown:
         default:
             adios_error (err_unspecified,
@@ -935,6 +951,7 @@ int adios_common_define_attribute (int64_t group, const char * name
             return 0;
         }
         attr->type = type;
+        attr->data_size = adios_get_type_size (type, (void *)value);
         if (adios_parse_scalar_string (type, (void *) value, &attr->value))
         {
             attr->var = 0;
@@ -957,6 +974,7 @@ int adios_common_define_attribute (int64_t group, const char * name
     else
     {
         attr->value = 0;
+        attr->data_size = 0;
         attr->type = adios_unknown;
         attr->var = adios_find_var_by_name (g, var);
 
@@ -998,8 +1016,6 @@ int adios_common_define_attribute_byvalue (int64_t group, const char * name
         malloc (sizeof (struct adios_attribute_struct));
     uint64_t size;
 
-    attr->name = strdup (name);
-    attr->path = strdup (path);
     if (values)
     {
         if (type == adios_unknown)
@@ -1008,11 +1024,7 @@ int adios_common_define_attribute_byvalue (int64_t group, const char * name
                     "config.xml: attribute element %s has invalid "
                     "type attribute\n",
                     name);
-
-            free (attr->name);
-            free (attr->path);
             free (attr);
-
             return 0;
         }
         attr->type = type;
@@ -1020,8 +1032,24 @@ int adios_common_define_attribute_byvalue (int64_t group, const char * name
         size = adios_get_type_size (attr->type, values);
         if (size > 0)
         {
-            attr->value = malloc (nelems*size);
-            memcpy (attr->value, values, nelems*size);
+            if (type == adios_string_array) {
+                // need to copy strings from a char** array
+                int total_length;
+                attr->value = dup_string_array ((char**)values, nelems, &total_length);
+                if (!attr->value) {
+                    adios_error (err_no_memory, 
+                            "Not enough memory to copy string array attribute %s/%s\n", 
+                            path, name);
+                    free (attr);
+                    return 0;
+                }
+                attr->data_size = total_length;
+
+            } else {
+                attr->value = malloc (nelems*size);
+                memcpy (attr->value, values, nelems*size);
+                attr->data_size = nelems*size;
+            }
             attr->var = 0;
         }
         else
@@ -1029,25 +1057,19 @@ int adios_common_define_attribute_byvalue (int64_t group, const char * name
             adios_error (err_invalid_value_attr,
                     "Attribute element %s has invalid "
                     "value attribute\n", name);
-
             free (attr->value);
-            free (attr->name);
-            free (attr->path);
             free (attr);
-
             return 0;
         }
+        attr->name = strdup (name);
+        attr->path = strdup (path);
     }
     else
     {
         adios_error (err_invalid_value_attr,
                 "Attribute element %s has invalid "
                 "value attribute\n", name);
-
-        free (attr->name);
-        free (attr->path);
         free (attr);
-
         return 0;
     }
 
@@ -1333,7 +1355,10 @@ int adios_common_delete_attrdefs (struct adios_group_struct * g)
     {
         struct adios_attribute_struct * attr = g->attributes;
         g->attributes = g->attributes->next;
-        free (attr->value);
+        if (attr->type == adios_string_array)
+            free_string_array (attr->value, attr->nelems);
+        else
+            free (attr->value);
         free (attr->name);
         free (attr->path);
         free (attr);
@@ -1972,6 +1997,9 @@ static uint16_t adios_calc_var_characteristics_overhead(struct adios_var_struct 
             //overhead += 2; // size
             break;
 
+        case adios_string_array: // not supported for variables
+            break;
+
         default:   // the 12 numeric types
             if (v->dimensions)
             {
@@ -2075,8 +2103,12 @@ uint32_t adios_calc_attribute_overhead_v1 (struct adios_attribute_struct * a)
     else
     {
         overhead += 1; // datatype
-        overhead += 4; // length of value
-        overhead += a->nelems * adios_get_type_size (a->type, a->value); // value
+        overhead += 4; // length of value (or nelems for string array)
+        if (a->type == adios_string_array)
+            // strings + terminating 0s + individual lengths in 32bit
+            overhead += a->data_size + a->nelems + a->nelems*4; 
+        else
+            overhead += a->nelems * adios_get_type_size (a->type, a->value); // value
     }
 
     return overhead;
@@ -2770,8 +2802,12 @@ static void adios_clear_vars_index_v1 (struct adios_index_var_struct_v1 * root)
             // NCSU ALACRITY-ADIOS - Clear the transform metadata
             adios_transform_clear_transform_characteristic(&root->characteristics[i].transform);
 
-            if (root->characteristics [i].value)
-                free (root->characteristics [i].value);
+            /*if (root->characteristics [i].value) {
+                if (root->type == adios_string_array)
+                    free_string_array (root->characteristics [i].value, root->nelems);
+                else
+                    free (root->characteristics [i].value);
+            }*/
         }
 
         if (root->characteristics)
@@ -2899,6 +2935,7 @@ static uint64_t cast_var_data_as_uint64 (const char * parent_name
             return (uint64_t) *(long double *) data;
 
         case adios_string:
+        case adios_string_array:
         case adios_complex:
         case adios_double_complex:
         default:
@@ -3103,6 +3140,11 @@ void adios_copy_var_written (struct adios_group_struct * g, struct adios_var_str
                 ((char *) (var_new->data)) [size] = 0;
 
                 break;
+            }
+        case adios_string_array:
+            {
+                adios_error (err_unspecified, "String arrays are not supported for variables %s:%s:%d\n",
+                        __FILE__,__func__, __LINE__);
             }
         default:
             {
@@ -3488,6 +3530,11 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
 
                         break;
                     }
+                case adios_string_array:
+                    {
+                        adios_error (err_unspecified, "String arrays are not supported for variables %s:%s:%d\n",
+                                __FILE__,__func__, __LINE__);
+                    }
                 default:
                     {
                         adios_error (err_unspecified, "Reached unexpected branch in %s:%s:%d\n",
@@ -3540,6 +3587,9 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
             adios_transform_init_transform_characteristic(&a_index->characteristics[0].transform);
             //a_index->characteristics[0].transform_type = adios_transform_none;
 
+            a_index->characteristics [0].value = a->value;
+            /* Do not copy the attributes to index, since they don't change */
+            /*
             if (a->value)
             {
                 if (a->type == adios_string) 
@@ -3548,11 +3598,13 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
                 if (a->type == adios_string) 
                     ((char *) (a_index->characteristics [0].value)) [size] = 0;
                 memcpy (a_index->characteristics [0].value, a->value, size);
+
             }
             else
             {
                 a_index->characteristics [0].value = 0;
             }
+            */
 
             if (a_index->nelems > 1) {
                 // for array attributes, save nelems as a dimension characteristic
@@ -4206,9 +4258,6 @@ int adios_write_index_v1 (char ** buffer
             attr_size += 4;
             characteristic_set_length += 4;
 
-            size = attrs_root->nelems * adios_get_type_size (
-                          attrs_root->type, attrs_root->characteristics [i].value);
-
             if (attrs_root->characteristics [i].dims.count)
             {
                 // add a dimensions characteristic
@@ -4248,19 +4297,44 @@ int adios_write_index_v1 (char ** buffer
                 index_size += 1;
                 attr_size += 1;
                 characteristic_set_length += 1;
-                if (attrs_root->type == adios_string)
+
+                if (attrs_root->type == adios_string_array)
                 {
-                    uint16_t len = (uint16_t) size;
+
+                    // need to copy each string one by one
+                    // 16bit length + the strings without 0 in a continuous byte array
+                    char **v = attrs_root->characteristics [i].value;
+                    uint16_t len;
+                    int k;
+                    for (k=0; k < attrs_root->nelems; k++) {
+                        len = strlen (v[k]);
+                        buffer_write (buffer, buffer_size, buffer_offset, &len, 2);
+                        buffer_write (buffer, buffer_size, buffer_offset, v[k], len);
+                        index_size += len+2;
+                        attr_size += len+2;
+                        characteristic_set_length += len+2;
+                    }
+
+                } 
+                else 
+                {
+                    size = attrs_root->nelems * adios_get_type_size (
+                            attrs_root->type, attrs_root->characteristics [i].value);
+
+                    if (attrs_root->type == adios_string)
+                    {
+                        uint16_t len = (uint16_t) size;
+                        buffer_write (buffer, buffer_size, buffer_offset
+                                ,&len, 2
+                                );
+                        index_size += 2;
+                        attr_size += 2;
+                        characteristic_set_length += 2;
+                    }
                     buffer_write (buffer, buffer_size, buffer_offset
-                            ,&len, 2
+                            ,attrs_root->characteristics [i].value, size
                             );
-                    index_size += 2;
-                    attr_size += 2;
-                    characteristic_set_length += 2;
                 }
-                buffer_write (buffer, buffer_size, buffer_offset
-                        ,attrs_root->characteristics [i].value, size
-                        );
                 index_size += size;
                 attr_size += size;
                 characteristic_set_length += size;
@@ -5361,15 +5435,36 @@ int adios_write_attribute_v1 (struct adios_file_struct * fd
         buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &flag, 1);
         size += 1;
 
-        uint32_t t = a->nelems * adios_get_type_size (a->type, a->value);
-        buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &t, 4);
-        size += 4;
+        if (a->type == adios_string_array)
+        {
+            buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &a->nelems, 4);
+            size += 4;
+            uint32_t t = a->data_size + 5*a->nelems;
+            /* t = for all strings, sum of 
+                   length of string + terminating 0 + 16bit length info */
+            char ** v = (char**) a->value;
+            int k;
+            uint32_t len;
+            for (k=0; k<a->nelems; k++) {
+                len = strlen (v[k])+1; // include the terminating 0
+                buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &len, 4);
+                buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, v[k], len);
+                size += len+4;
+            }
 
-        // terminating 0 of a string is not written here!
-        buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
-                ,a->value, t
-                );
-        size += t;
+        }
+        else 
+        {
+            uint32_t t = a->nelems * adios_get_type_size (a->type, a->value);
+            buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &t, 4);
+            size += 4;
+
+            // terminating 0 of a string is not written here!
+            buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset
+                    ,a->value, t
+                    );
+            size += t;
+        }
     }
 
     // put in the size we have put in for this attribute
@@ -5602,6 +5697,7 @@ const char * adios_type_to_string_int (int type)
         case adios_long_double:      return "long double";
 
         case adios_string:           return "string";
+        case adios_string_array:     return "string array";
         case adios_complex:          return "complex";
         case adios_double_complex:   return "double complex";
 

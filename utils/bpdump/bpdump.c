@@ -983,7 +983,7 @@ void print_attribute (struct adios_attribute_struct_v1 * attribute)
     {
         printf ("\t\tDatatype: %s\n", adios_type_to_string_int (attribute->type));
         printf ("\t\t# of elements:   %d\n", attribute->nelems);
-        printf ("\t\tLenght in bytes: %d\n", attribute->length);
+        printf ("\t\tLength in bytes: %d\n", attribute->length);
         char * p = (char *) attribute->value;
         int elemsize = (int) adios_get_type_size (attribute->type, attribute->value);
         if (attribute->nelems == 1) {
@@ -1244,10 +1244,19 @@ void print_attributes_index
 
             if (attrs_root->characteristics [i].value)
             {
-                printf ("\t\tValue(%s)", bp_value_to_string (attrs_root->type
-                                        ,attrs_root->characteristics [i].value
-                                        )
-                       );
+                if (attrs_root->nelems == 1) {
+                    printf ("\t\tValue(%s)", bp_value_to_string (attrs_root->type, attrs_root->characteristics [i].value));
+                } else {
+                    char * p = (char *) attrs_root->characteristics [i].value;
+                    int elemsize = (int) adios_get_type_size (attrs_root->type, p);
+                    int k;
+                    printf ("\t\tValues(%s", bp_value_to_string (attrs_root->type, p));
+                    for (k=1; k<attrs_root->nelems; k++) {
+                        p += elemsize;
+                        printf (", %s", bp_value_to_string (attrs_root->type, p));
+                    }
+                    printf (")\n");
+                }
             }
             if (attrs_root->characteristics [i].var_id)
             {

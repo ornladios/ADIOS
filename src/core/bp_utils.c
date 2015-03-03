@@ -2453,7 +2453,10 @@ void * bp_read_data_from_buffer(struct adios_bp_buffer_struct_v1 *b, enum ADIOS_
     int k;
     char *p;
 
-    if (type == adios_string) {
+    if (type == adios_string_array) {
+        data_size = 0;
+        data = malloc (nelems * sizeof(char*));
+    } else if (type == adios_string) {
         BUFREAD16(b, data_size)
         data = malloc (data_size + 1);
     } else {
@@ -2539,6 +2542,20 @@ void * bp_read_data_from_buffer(struct adios_bp_buffer_struct_v1 *b, enum ADIOS_
             ((char *) data) [data_size] = '\0';
             break;
 
+        case adios_string_array:
+            {
+                char ** p = (char**)data;
+                for (k=0; k < nelems; k++) {
+                    BUFREAD16(b, data_size)
+                    p[k] = malloc (data_size + 1);
+                    p[k] [data_size] = '\0';
+                    memcpy (p[k], (b->buff + b->offset), data_size);
+                    b->offset += data_size;
+                }
+            }
+            break;
+
+
         default:
             free (data);
             data = 0;
@@ -2548,7 +2565,7 @@ void * bp_read_data_from_buffer(struct adios_bp_buffer_struct_v1 *b, enum ADIOS_
 }
 
 /*
-void bp_grouping ( BP_FILE * fh_p,
+   void bp_grouping ( BP_FILE * fh_p,
            uint64_t * gh_p)
 {
     BP_FILE * fh = (BP_FILE *) fh_p;
@@ -2937,7 +2954,12 @@ const char * bp_value_to_string (enum ADIOS_DATATYPES type, void * data)
             break;
 
         case adios_string:
-            sprintf (s, "%s", ((char *) data));
+            sprintf (s, "\"%s\"", ((char *) data));
+            break;
+
+        case adios_string_array:
+            // we expect here one of the array elements, which has char * type 
+            sprintf (s, "\"%s\"", ( *(char **)data) );
             break;
 
         case adios_complex:
@@ -3048,6 +3070,9 @@ int bp_get_type_size (enum ADIOS_DATATYPES type, void * var)
                 return 1;
             else
                 return strlen ((char *) var) + 1;
+
+        case adios_string_array:
+            return sizeof(char*);
 
         case adios_short:
         case adios_unsigned_short:

@@ -649,20 +649,61 @@ void FC_FUNC_(adios_define_attribute_byvalue_f2c, ADIOS_DEFINE_ATTRIBUTE_BYVALUE
 }
 
 void FC_FUNC_(adios_define_attribute_byvalue_string, ADIOS_DEFINE_ATTRIBUTE_BYVALUE_STRING) 
-    (int64_t * group, const char * name, const char * path, int * type, int * nelems, 
+    (int64_t * group, const char * name, const char * path, int * nelems, 
      char * values, int * err, int name_size, int path_size, int values_size)
 {
     char * valuestr = futils_fstr_to_cstr (values, values_size);
+    int type = adios_string;
 
-    if (valuestr != 0) {
+    if (valuestr != 0 && *nelems == 1) {
         FC_FUNC_(adios_define_attribute_byvalue, ADIOS_DEFINE_ATTRIBUTE_BYVALUE) 
-             (group, name, path, type, nelems, valuestr, err, name_size, path_size);
+             (group, name, path, &type, nelems, valuestr, err, name_size, path_size);
         free (valuestr);
+    } else {
+        if (*nelems != 1) {
+            adios_error (err_corrupted_attribute, 
+                    "String attributes can only store a single string. "
+                    "For multiple strings (nelems>1), use adios_string_array type\n");
+        } else {
+            adios_error (err_corrupted_attribute, 
+                    "adios_define_attribute_byvalue(string) called with a string "
+                    "that could not be processed in the C library\n");
+        }
+        *err = adios_errno;
+    }
+}
+
+void FC_FUNC_(adios_define_attribute_byvalue_string_array, ADIOS_DEFINE_ATTRIBUTE_BYVALUE_STRING_ARRAY) 
+    (int64_t * group, const char * name, const char * path, int * nelems, 
+     char * values, int * string_size, int * err, int name_size, int path_size, int values_size)
+{
+    /* *string_size = the size of each string in the string array,
+                      = i.e. XXX in  "character(len=XXX), dimension (YYY) :: values"
+       Probably with all compilers, or most, it is also true that values_size = *string_size.
+       'values'  here in the C code is a single byte array storing the strings contiguously 
+    */
+    int k;
+    int type = adios_string_array;
+
+    //printf ("C String Array: nelems=%d, size=%d\n", *nelems, *string_size);
+    char ** strings = (char**) malloc (*nelems * sizeof (char*));
+    char *p = values;
+    if (strings != 0) {
+        for (k=0; k < *nelems; k++) {
+            //printf ("  k=%d, ptr=%p size=%d\n", k, p, *string_size);
+            strings[k] = futils_fstr_to_cstr (p, *string_size);
+            p += *string_size;
+        }
+
+        FC_FUNC_(adios_define_attribute_byvalue, ADIOS_DEFINE_ATTRIBUTE_BYVALUE) 
+             (group, name, path, &type, nelems, strings, err, name_size, path_size);
+        free (strings);
     } else {
         adios_error (err_corrupted_attribute, "adios_define_attribute_byvalue(string) called with a string that could not be processed in the C library\n");
         *err = adios_errno;
     }
 }
+
 // delete all attribute definitions from a group
 // Use if you want to define a new set of attribute for the next output step.
 void FC_FUNC_(adios_delete_attrdefs, ADIOS_DELETE_VARDEFS) (int64_t *id, int *err)
