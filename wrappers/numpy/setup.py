@@ -20,7 +20,8 @@ m1 = Extension('adios',
                include_dirs = [np.get_include()],
                library_dirs = [],
                libraries = [],
-               extra_objects = [])
+               extra_objects = [],
+               extra_compile_args = ['-Wno-#warnings', '-Wno-uninitialized', '-Wno-unused-function'])
 
 cmd = find_executable("adios_config")
 if cmd == None:

@@ -720,7 +720,7 @@ cdef class var:
         self.nsteps = self.vp.nsteps
 
     """ Call adios_schedule_read and adios_perform_reads """
-    cpdef read(self, tuple offset = (), tuple count = (), from_steps = None, nsteps = None):
+    cpdef read(self, tuple offset = (), tuple count = (), from_steps = None, nsteps = None, fill = 0):
         if from_steps is None:
             from_steps = 0 ##self.file.current_step
 
@@ -759,7 +759,7 @@ cdef class var:
         shape = list(npcount)
         if (nsteps > 1):
             shape.insert(0, nsteps)
-        cdef np.ndarray var = np.full(shape, np.NAN, dtype=self.type)
+        cdef np.ndarray var = np.full(shape, fill, dtype=self.type)
 
         cdef ADIOS_SELECTION * sel
         sel = adios_selection_boundingbox (self.vp.ndim, <uint64_t *> npoffset.data, <uint64_t *> npcount.data)
