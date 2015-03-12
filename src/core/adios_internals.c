@@ -2228,8 +2228,12 @@ static void index_append_process_group_v1 (
         // first element
         index->pg_root = item;
     }
-    item->next = 0;
     index->pg_tail = item;
+    /* item may be head of a long list of PGs 
+       (e.g. during global index aggregation in MPI_AGGREGATE)
+       So don't do this: 
+          item->next = 0; 
+    */
 }
 
 static void index_append_var_v1 (
