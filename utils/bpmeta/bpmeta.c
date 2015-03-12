@@ -377,7 +377,7 @@ int process_subfiles (int tid, int startidx, int endidx)
          */
 
         adios_posix_read_process_group_index (b[idx]);
-        adios_parse_process_group_index_v1 (b[idx], &new_pg_root);
+        adios_parse_process_group_index_v1 (b[idx], &new_pg_root, NULL);
         print_pg_index (tid, new_pg_root);
 
         adios_posix_read_vars_index (b[idx]);

@@ -184,6 +184,7 @@ struct adios_index_attribute_struct_v1
 struct adios_index_struct_v1
 {
     struct adios_index_process_group_struct_v1 * pg_root;
+    struct adios_index_process_group_struct_v1 * pg_tail;
     struct adios_index_var_struct_v1           * vars_root;
     struct adios_index_var_struct_v1           * vars_tail;
     struct adios_index_attribute_struct_v1     * attrs_root;
@@ -284,8 +285,9 @@ int adios_parse_version (struct adios_bp_buffer_struct_v1 * b
 // buff must be 16 bytes
 int adios_parse_index_offsets_v1 (struct adios_bp_buffer_struct_v1 * b);
 
-int adios_parse_process_group_index_v1 (struct adios_bp_buffer_struct_v1 * b
-                         ,struct adios_index_process_group_struct_v1 ** pg_root
+int adios_parse_process_group_index_v1 (struct adios_bp_buffer_struct_v1 * b,
+                         struct adios_index_process_group_struct_v1 ** pg_root,
+                         struct adios_index_process_group_struct_v1 ** pg_tail
                          );
 
 int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b

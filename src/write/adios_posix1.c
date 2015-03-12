@@ -174,9 +174,7 @@ int adios_posix1_open (struct adios_file_struct * fd
                         adios_parse_index_offsets_v1 (&p->b);
 
                         adios_posix_read_process_group_index (&p->b);
-                        adios_parse_process_group_index_v1 (&p->b
-                                                           ,&p->index->pg_root
-                                                           );
+                        adios_parse_process_group_index_v1 (&p->b, &p->index->pg_root, &p->index->pg_tail);
 
                         // find the largest time index so we can append properly
                         struct adios_index_process_group_struct_v1 * pg;
@@ -521,7 +519,7 @@ static void adios_posix1_do_read (struct adios_file_struct * fd
             adios_parse_index_offsets_v1 (&p->b);
 
             adios_posix_read_process_group_index (&p->b);
-            adios_parse_process_group_index_v1 (&p->b, &pg_root);
+            adios_parse_process_group_index_v1 (&p->b, &pg_root, NULL);
 #if 1
             adios_posix_read_vars_index (&p->b);
             adios_parse_vars_index_v1 (&p->b, &index->vars_root, NULL, NULL);

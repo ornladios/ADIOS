@@ -402,7 +402,7 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
                         adios_parse_index_offsets_v1 (&p->b);
 
                         adios_posix_read_process_group_index (&p->b);
-                        adios_parse_process_group_index_v1 (&p->b, &p->index->pg_root);
+                        adios_parse_process_group_index_v1 (&p->b, &p->index->pg_root, &p->index->pg_tail);
 
                         // find the largest time index so we can append properly
                         struct adios_index_process_group_struct_v1 * pg;
@@ -774,7 +774,7 @@ static void adios_posix_do_read (struct adios_file_struct * fd
             adios_parse_index_offsets_v1 (&p->b);
 
             adios_posix_read_process_group_index (&p->b);
-            adios_parse_process_group_index_v1 (&p->b, &pg_root);
+            adios_parse_process_group_index_v1 (&p->b, &pg_root, NULL);
 #if 1
             adios_posix_read_vars_index (&p->b);
             adios_parse_vars_index_v1 (&p->b, &index->vars_root, NULL, NULL);
@@ -1035,9 +1035,7 @@ void adios_posix_close (struct adios_file_struct * fd
                         p->b.length = index_sizes [i];
                         p->b.offset = 0;
 
-                        adios_parse_process_group_index_v1 (&p->b
-                                                           ,&new_pg_root
-                                                           );
+                        adios_parse_process_group_index_v1 (&p->b, &new_pg_root, NULL);
                         adios_parse_vars_index_v1 (&p->b, &new_vars_root, NULL, NULL);
                         // do not merge attributes from other processes from 1.4
                         /*
@@ -1251,9 +1249,7 @@ void adios_posix_close (struct adios_file_struct * fd
                         p->b.length = index_sizes [i];
                         p->b.offset = 0;
 
-                        adios_parse_process_group_index_v1 (&p->b
-                                                           ,&new_pg_root
-                                                           );
+                        adios_parse_process_group_index_v1 (&p->b, &new_pg_root, NULL);
                         adios_parse_vars_index_v1 (&p->b, &new_vars_root, NULL, NULL);
                         // do not merge attributes from other processes from 1.4
                         /*

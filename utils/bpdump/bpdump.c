@@ -159,7 +159,7 @@ int main (int argc, char ** argv)
     */
 
     adios_posix_read_process_group_index (b);
-    adios_parse_process_group_index_v1 (b, &pg_root);
+    adios_parse_process_group_index_v1 (b, &pg_root, NULL);
     print_process_group_index (pg_root);
 
     printf (DIVIDER);

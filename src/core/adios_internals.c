@@ -2217,22 +2217,19 @@ int adios_write_process_group_header_v1 (struct adios_file_struct * fd
 }
 
 static void index_append_process_group_v1 (
-        struct adios_index_process_group_struct_v1 ** root
-        ,struct adios_index_process_group_struct_v1 * item
+        struct adios_index_struct_v1 * index,
+        struct adios_index_process_group_struct_v1 * item
         )
 {
-    while (root)
-    {
-        if (!*root)
-        {
-            *root = item;
-            root = 0;
-        }
-        else
-        {
-            root = &(*root)->next;
-        }
+    /* PG's are not merged, simply add to the end of the list */
+    if (index->pg_root) {
+        index->pg_tail->next = item;
+    } else {
+        // first element
+        index->pg_root = item;
     }
+    item->next = 0;
+    index->pg_tail = item;
 }
 
 static void index_append_var_v1 (
@@ -2487,7 +2484,7 @@ void adios_merge_index_v1 (
                   )
 {
     // this will just add it on to the end and all should work fine
-    index_append_process_group_v1 (&main_index->pg_root, new_pg_root);
+    index_append_process_group_v1 (main_index, new_pg_root);
 
     // need to do vars attrs one at a time to merge them properly
     struct adios_index_var_struct_v1 * v = new_vars_root;
@@ -2786,6 +2783,7 @@ struct adios_index_struct_v1 * adios_alloc_index_v1 (int alloc_hashtables)
                 malloc (sizeof(struct adios_index_struct_v1));
     assert (index);
     index->pg_root = NULL;
+    index->pg_tail = NULL;
     index->vars_root = NULL;
     index->vars_tail = NULL;
     index->attrs_root = NULL;
@@ -2824,6 +2822,7 @@ void adios_clear_index_v1 (struct adios_index_struct_v1 * index)
     adios_clear_vars_index_v1 (index->vars_root);
     adios_clear_attributes_index_v1 (index->attrs_root);
     index->pg_root = NULL;
+    index->pg_tail = NULL;
     index->vars_root = NULL;
     index->vars_tail = NULL;
     index->attrs_root = NULL;
@@ -3318,7 +3317,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
     g_item->next = 0;
 
     // build the groups and vars index
-    index_append_process_group_v1 (&index->pg_root, g_item);
+    index_append_process_group_v1 (index, g_item);
 
     while (v)
     {

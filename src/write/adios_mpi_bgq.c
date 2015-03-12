@@ -1311,9 +1311,7 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
                         md->b.length = index_sizes [i];
                         md->b.offset = 0;
 
-                        adios_parse_process_group_index_v1 (&md->b
-                                                           ,&new_pg_root
-                                                           );
+                        adios_parse_process_group_index_v1 (&md->b, &new_pg_root, NULL);
                         adios_parse_vars_index_v1 (&md->b, &new_vars_root, NULL, NULL);
                         adios_parse_attributes_index_v1 (&md->b
                                                         ,&new_attrs_root
@@ -1464,9 +1462,7 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
                             md->b.length = index_sizes [i];
                             md->b.offset = 0;
 
-                            adios_parse_process_group_index_v1 (&md->b
-                                                               ,&new_pg_root
-                                                               );
+                            adios_parse_process_group_index_v1 (&md->b, &new_pg_root, NULL);
                             adios_parse_vars_index_v1 (&md->b, &new_vars_root, NULL, NULL);
                             adios_parse_attributes_index_v1 (&md->b
                                                             ,&new_attrs_root
@@ -1869,9 +1865,7 @@ void adios_mpi_bgq_bg_close (struct adios_file_struct * fd
                         md->b.length = index_sizes [i];
                         md->b.offset = 0;
 
-                        adios_parse_process_group_index_v1 (&md->b
-                                                           ,&new_pg_root
-                                                           );
+                        adios_parse_process_group_index_v1 (&md->b, &new_pg_root, NULL);
                         adios_parse_vars_index_v1 (&md->b, &new_vars_root, NULL, NULL);
                         adios_parse_attributes_index_v1 (&md->b
                                                         ,&new_attrs_root
@@ -1987,9 +1981,7 @@ void adios_mpi_bgq_bg_close (struct adios_file_struct * fd
                         md->b.length = index_sizes [i];
                         md->b.offset = 0;
 
-                        adios_parse_process_group_index_v1 (&md->b
-                                                           ,&new_pg_root
-                                                           );
+                        adios_parse_process_group_index_v1 (&md->b, &new_pg_root, NULL);
                         adios_parse_vars_index_v1 (&md->b, &new_vars_root, NULL, NULL);
                         adios_parse_attributes_index_v1 (&md->b
                                                         ,&new_attrs_root
@@ -2484,9 +2476,7 @@ void adios_mpi_bgq_ag_close (struct adios_file_struct * fd
                         md->b.length = index_sizes [i];
                         md->b.offset = 0;
 
-                        adios_parse_process_group_index_v1 (&md->b
-                                                           ,&new_pg_root
-                                                           );
+                        adios_parse_process_group_index_v1 (&md->b, &new_pg_root, NULL);
                         adios_parse_vars_index_v1 (&md->b, &new_vars_root, NULL, NULL);
                         adios_parse_attributes_index_v1 (&md->b
                                                         ,&new_attrs_root
@@ -2613,9 +2603,7 @@ void adios_mpi_bgq_ag_close (struct adios_file_struct * fd
                         md->b.length = index_sizes [i];
                         md->b.offset = 0;
 
-                        adios_parse_process_group_index_v1 (&md->b
-                                                           ,&new_pg_root
-                                                           );
+                        adios_parse_process_group_index_v1 (&md->b, &new_pg_root, NULL);
                         adios_parse_vars_index_v1 (&md->b, &new_vars_root, NULL, NULL);
                         adios_parse_attributes_index_v1 (&md->b
                                                         ,&new_attrs_root
