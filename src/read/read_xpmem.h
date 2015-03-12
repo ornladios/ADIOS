@@ -999,7 +999,7 @@ static ADIOS_VARCHUNK * read_var_wb (const ADIOS_FILE * fp, read_request * r)
 	xpmem_read_data *xd = xf->fp;
 
 	struct adios_index_var_struct_v1 * v;
-	int i, j, varid, start_idx, idx;
+	int i = 0, j = 0, varid = 0, start_idx = 0, idx = 0;
 	int ndim, has_subfile;
 	uint64_t ldims[32], gdims[32], offsets[32];
 	int size_of_type;

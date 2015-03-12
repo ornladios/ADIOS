@@ -15,7 +15,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <string.h>
-#define _NOMPI
+#undef _NOMPI
 
 #include "adios.h"
 #include "core/adios_logger.h"
@@ -97,7 +97,7 @@ int main (int argc, char ** argv)
 
 	fprintf(stderr, "NX = %d\tNY=%d\n", NX, NY);
 
-	if(0)
+	if(1)
 	{
 		/* Specify a selection that points to a specific writer's block */
 		sel = adios_selection_writeblock (rank);
