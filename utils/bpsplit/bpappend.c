@@ -199,7 +199,7 @@ int read_indexes(char *filename, bool input) {
     adios_posix_read_index_offsets (bp);
     adios_parse_index_offsets_v1 (bp);
     adios_posix_read_process_group_index (bp);
-    adios_parse_process_group_index_v1 (bp, &pg_root);
+    adios_parse_process_group_index_v1 (bp, &pg_root, NULL);
     
     // read and parse variable index
     adios_posix_read_vars_index (bp);
