@@ -2488,8 +2488,6 @@ void adios_merge_index_v1 (
                   )
 {
     // this will just add it on to the end and all should work fine
-    log_warn ("MERGE PG name=%s, pid=%d time=%d, offset=%lld\n", 
-            new_pg_root->group_name, new_pg_root->process_id, new_pg_root->time_index, new_pg_root->offset_in_file);
     index_append_process_group_v1 (main_index, new_pg_root);
 
     // need to do vars attrs one at a time to merge them properly
@@ -3323,8 +3321,6 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
     g_item->next = 0;
 
     // build the groups and vars index
-    log_warn ("APPEND PG name=%s, pid=%d time=%d, offset=%lld\n", 
-            g_item->group_name, g_item->process_id, g_item->time_index, g_item->offset_in_file);
     index_append_process_group_v1 (index, g_item);
 
     while (v)
