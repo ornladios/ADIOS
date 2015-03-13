@@ -758,7 +758,8 @@ cdef class var:
         shape = list(npcount)
         if (nsteps > 1):
             shape.insert(0, nsteps)
-        cdef np.ndarray var = np.full(shape, fill, dtype=self.type)
+        cdef np.ndarray var = np.zeros(shape, dtype=self.type)
+        var[:] = fill
 
         cdef ADIOS_SELECTION * sel
         sel = adios_selection_boundingbox (self.vp.ndim, <uint64_t *> npoffset.data, <uint64_t *> npcount.data)
