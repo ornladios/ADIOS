@@ -9,7 +9,7 @@
 #include "public/adios_error.h"
 #include "core/common_read.h"
 #include "core/adios_logger.h"
-
+#include "query_utils.h"
 static struct adios_query_hooks_struct * query_hooks = 0;
 
 static int getTotalByteSize (ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* sel, 
@@ -777,6 +777,10 @@ int common_query_evaluate(ADIOS_QUERY* q,
 			  uint64_t batchSize, // limited by maxResult
 			  ADIOS_SELECTION** result)
 {  
+	double start = 0, end = 0;
+#ifdef BREAKDOWN
+	start = dclock();
+#endif
   if (q == 0) {
     log_debug("Error: empty query will not be evaluated!");
     return -1;
@@ -825,9 +829,20 @@ int common_query_evaluate(ADIOS_QUERY* q,
     if (query_hooks[m].adios_query_evaluate_fn != NULL) {
       int retval = query_hooks[m].adios_query_evaluate_fn(q, timeStep, batchSize, outputBoundary, result);	      
       if (freeOutputBoundary) common_read_selection_delete(outputBoundary);
+
+#ifdef BREAKDOWN
+      end = dclock();
+      printf("total time [frame + plugin + adios] : %f \n", end - start);
+#endif
       return retval;
     } 
     log_debug ("No selection method is supported for method: %d\n", m);
+
+#ifdef BREAKDOWN
+      end = dclock();
+      printf("total time [frame + plugin + adios] : %f \n", end - start);
+#endif
+
     return -1;
 }
 

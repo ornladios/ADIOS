@@ -35,3 +35,10 @@ int query_utils_file_exists (char * path)
     return 0;
 }
 
+// records the current time-stamp
+double dclock(void) {
+	struct timeval tv;
+	gettimeofday(&tv, 0);
+
+	return (double) tv.tv_sec + (double) tv.tv_usec * 1e-6;
+}

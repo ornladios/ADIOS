@@ -17,6 +17,7 @@
 #include "transforms/adios_transform_alacrity_common.h"
 #include "core/common_read.h"
 #include "common_query.h"
+#include "query_utils.h"
 //#include <alacrity.h>
 
 
@@ -41,6 +42,12 @@ typedef struct{
 
 #define MAX_DIMS 32
 
+// This three variables are used for timing the transformer layer,
+// the reason of being global variables is because calling transformer layer APIs scatter
+// I have to sum every place that calls transformer layer
+#ifdef BREAKDOWN
+	double gTransformTime = 0.0, transStart =0, transEnd = 0;
+#endif
 
 /**** Funcs. that are internal funcs. ********/
 
@@ -147,16 +154,23 @@ bool isLastConvRidInit(const ADIOS_ALAC_BITMAP *b){
 
 
 /*since we are set data view is physical view, the element size is 1 byte */
-
+//this is a basic read function for other read functions , such as readIndex, readLowOrderBytes, readMeta.
 void readTransformedElms(ADIOS_FILE* fp,ADIOS_VARINFO* vi
 		, int startStep, int numStep
 		, int blockId, uint64_t start_elem, uint64_t num_elems, int is_timestep_relative, void * outputData/*out*/){
 	ADIOS_SELECTION *sel = adios_selection_writeblock_bounded(blockId, start_elem, num_elems, is_timestep_relative);
+#ifdef BREAKDOWN
+	transStart = dclock();
+#endif
+
 	common_read_schedule_read_byid(fp, sel, vi->varid, startStep, numStep, NULL, outputData);
 	common_read_perform_reads(fp, 1);
 	// adios_selection_writeblock_bounded internally malloc data for adios_selection
 	// so I need to free it before the next usage
 	common_read_selection_delete(sel);
+#ifdef BREAKDOWN
+	gTransformTime += (dclock() - transStart) ;
+#endif
 }
 
 void readBlockData(int gBlockId /*global block id */, ADIOS_QUERY * adiosQuery, int startStep,
@@ -166,7 +180,13 @@ void readBlockData(int gBlockId /*global block id */, ADIOS_QUERY * adiosQuery, 
 	char * blockData = (char*) (*data);
 	blockData = (char *) malloc(sizeof(char) * dataElmSize * dataElmNum);
 	ADIOS_SELECTION *sel = adios_selection_writeblock_bounded(gBlockId, 0, dataElmNum, 0); // entire PG selection
+#ifdef BREAKDOWN
+	transStart = dclock();
+#endif
 	common_read_schedule_read_byid(adiosQuery->file, sel, varInfo->varid, startStep, 1, NULL, blockData);
+#ifdef BREAKDOWN
+	gTransformTime += (dclock() - transStart) ;
+#endif
 }
 void readIndexData(int blockId, uint64_t offsetSize /*in bytes*/
 		,uint64_t length /*in bytes*/, ADIOS_FILE* fp,ADIOS_VARINFO* vi
@@ -725,10 +745,17 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 	//	assert(tmeta->length == 24);
 
 	adios_transform_alacrity_metadata *alac_metadata = (adios_transform_alacrity_metadata *) malloc(sizeof(adios_transform_alacrity_metadata));
+
+#ifdef BREAKDOWN
+	transStart = dclock();
+#endif
+
 	//the metadata order is alacrity meta, alacrity index, alacrity LoB, raw data (original data)
 	read_alacrity_transform_metadata(tmeta.length, tmeta.content, alac_metadata);
 	//It now assumes LoB along with OD (original data)
-
+#ifdef BREAKDOWN
+	gTransformTime += (dclock() - transStart) ;
+#endif
 
 	//TODO: offset of each PG should be included
 //	printf("PG[%d] has meta size[ %" PRIu64 "], index size[ %" PRIu64 "], and data size[ %" PRIu64 "] \n", blockId, metaSize,  indexSize, dataSize);
@@ -739,6 +766,9 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 	ALMetadata partitionMeta;
 	readPartitionMeta(gBlockId, alac_metadata->meta_size,adiosQuery->file, varInfo
 					,startStep,numStep,&partitionMeta);
+
+
+
 	const uint8_t insigbytes = insigBytesCeil(&partitionMeta);
 
 	//2. find touched bin
@@ -901,6 +931,7 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
  */
 ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, bool estimate) {
 
+
 	if (checkUnsupportedDataType(adiosQuery->varinfo->type)){
 		printf("unsupported data type [%d] at this point \n", adiosQuery->varinfo->type);
 		exit(EXIT_FAILURE);
@@ -912,8 +943,17 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 
 	ADIOS_VARINFO * varInfo = adiosQuery->varinfo;
 
+#ifdef BREAKDOWN
+	gTransformTime = 0;
+	transStart = dclock();
+#endif
 	adios_read_set_data_view(adiosQuery->file, LOGICAL_DATA_VIEW); // switch to the transform view,
  	ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->file, varInfo); // this func. will fill the blockinfo field
+
+#ifdef BREAKDOWN
+	gTransformTime += (dclock() - transStart) ;
+#endif
+
 	int startStep = timeStep, numStep = 1;
 	uint64_t totalElm = adiosQuery->rawDataSize; // no matter bounding box or writeblock selection, the rawDataSize has been calculated in the common query layer
 	ADIOS_ALAC_BITMAP *alacResultBitmap =  (ADIOS_ALAC_BITMAP *) malloc(sizeof(ADIOS_ALAC_BITMAP ));
@@ -952,6 +992,10 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
          static uint64_t ZERO[32] = { 0 };
 		 destcount = varInfo->dims;   deststart = ZERO;
 
+#ifdef BREAKDOWN
+	transStart = dclock();
+#endif
+
          if (varInfo->blockinfo == NULL) {
         	 adios_read_set_data_view(adiosQuery->file, LOGICAL_DATA_VIEW);
              common_read_inq_var_blockinfo(adiosQuery->file, varInfo);
@@ -959,6 +1003,10 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 
 		adios_read_set_data_view(adiosQuery->file, PHYSICAL_DATA_VIEW);
 		ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->file, varInfo);
+
+#ifdef BREAKDOWN
+	gTransformTime += (dclock() - transStart) ;
+#endif
 
 		int totalPG = varInfo->nblocks[timeStep];
 		int blockId, j;
@@ -1013,9 +1061,19 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 		printf("]\n");
 
 #endif
+
+
+#ifdef BREAKDOWN
+	transStart = dclock();
+#endif
 		adios_read_set_data_view(adiosQuery->file, PHYSICAL_DATA_VIEW);
 		ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->file, varInfo);
 		ADIOS_PG_INTERSECTIONS* intersectedPGs = adios_find_intersecting_pgs( adiosQuery->file, varInfo->varid, adiosQuery->sel, timeStep, numStep);
+
+#ifdef BREAKDOWN
+	gTransformTime += (dclock() - transStart) ;
+#endif
+
 		int totalPG = intersectedPGs->npg;
 		int blockId, j;
 
@@ -1067,8 +1125,16 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 		bool isPGCovered = true; // because they are same bounding boxes, they are fully contained
 
 		if (ti->transform_type == adios_get_transform_type_by_uid("ncsu-alacrity")){
+
+#ifdef BREAKDOWN
+	transStart = dclock();
+#endif
 			adios_read_set_data_view(adiosQuery->file, PHYSICAL_DATA_VIEW); // switch to the transform view,
 			ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->file, varInfo); // this func. will fill the blockinfo field
+
+#ifdef BREAKDOWN
+	gTransformTime += (dclock() - transStart) ;
+#endif
 			proc_write_block(globalBlockId,isPGCovered,ti, adiosQuery,startStep,estimate,&alacQuery,lb,hb
 					,srcstart, srccount, deststart, destcount,alacResultBitmap,Corder	);
 		}else {
@@ -1095,6 +1161,10 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	}
 	// NOTE: this is for correctness of reading info later. We switch back to ensure the end-use are not affected
 	adios_read_set_data_view(adiosQuery->file, LOGICAL_DATA_VIEW);
+
+#ifdef BREAKDOWN
+	printf("ADIOS(transformer layer) read time: %f \n", gTransformTime);
+#endif
 	return alacResultBitmap;
 }
 
@@ -1338,7 +1408,11 @@ int adios_query_alac_evaluate(ADIOS_QUERY* q,
 			       ADIOS_SELECTION* outputBoundry,
 			       ADIOS_SELECTION** queryResult)
 {
+	double alacStart = 0, alacEnd = 0;
 
+#ifdef BREAKDOWN
+	alacStart = dclock();
+#endif
 	if (!isInitialized){ // if this is the very first time of calling the queries, we initialize the lookup tables
 		init_lookup();
 		isInitialized= 1;
@@ -1379,6 +1453,11 @@ int adios_query_alac_evaluate(ADIOS_QUERY* q,
 	FREE(b); // NOTE: only free the structure*/
 	FreeALACBITMAP(b);
 	q->resultsReadSoFar += retrievalSize;
+
+#ifdef BREAKDOWN
+	alacEnd= dclock();
+	printf("time [alac plugin + adios] : %f \n", alacEnd - alacStart);
+#endif
 
 	return q->resultsReadSoFar < q->maxResultsDesired;
 }
