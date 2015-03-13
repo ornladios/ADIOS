@@ -185,7 +185,8 @@ int adios_parse_index_offsets_v1 (struct adios_bp_buffer_struct_v1 * b)
 }
 
 int adios_parse_process_group_index_v1 (struct adios_bp_buffer_struct_v1 * b,
-                         struct adios_index_process_group_struct_v1 ** pg_root
+                         struct adios_index_process_group_struct_v1 ** pg_root,
+                         struct adios_index_process_group_struct_v1 ** pg_tail
                          )
 {
     struct adios_index_process_group_struct_v1 ** root;
@@ -278,6 +279,10 @@ int adios_parse_process_group_index_v1 (struct adios_bp_buffer_struct_v1 * b,
             swap_64((*root)->offset_in_file);
         }
         b->offset += 8;
+
+        // record this as the tail
+        if (pg_tail)
+            *pg_tail = (*root);
 
         root = &(*root)->next;
     }
