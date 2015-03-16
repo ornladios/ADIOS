@@ -156,7 +156,7 @@ static xpmem_segid_t make_share(char **data, size_t size)
 	if(ret != 0)
 	{
 		lerror = errno;
-		log_debug(stderr, "error in posix_memalign %d %s\n",
+		log_debug("error in posix_memalign %d %s\n",
 		        lerror, strerror(lerror));		
 		return -1;
 	}
@@ -169,13 +169,13 @@ static xpmem_segid_t make_share(char **data, size_t size)
 	if(segid == -1)
 	{
 	    lerror = errno;
-	    log_debug(stderr, "error in xpmem make hobbes %d %s\n",
+	    log_debug("error in xpmem make hobbes %d %s\n",
 		    lerror, strerror(lerror));		
 		return -1;
 	}
 	if(segid != WELL_KNOWN_ADIOS_ID)
 	{
-		log_debug(stderr, "unable to get well known segid\n");		
+		log_debug("unable to get well known segid\n");		
 	}
 
 	//store the fd in the segment
@@ -196,8 +196,8 @@ static int sleep_on_share(shared_data *d)
 	FD_ZERO(&fds);
 	FD_SET(d->fd, &fds);
 
-	tv.tv_sec = 1;
-	tv.tv_usec = 0;
+	tv.tv_sec = 0;
+	tv.tv_usec = 100000;
 
 	status = select(1, &fds, NULL, NULL, &tv);
 
