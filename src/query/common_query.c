@@ -164,6 +164,12 @@ static int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
 	  timeStep = q->file->current_step;
       }
 
+      if (q->varinfo != NULL) {
+	if (q->onTimeStep  == timeStep) {
+	  return timeStep; // returning call to get more values
+	}
+      }
+
       ADIOS_VARINFO* v = common_read_inq_var(q->file, q->varName);
       if (v == NULL) {
 	adios_error (err_invalid_varname, "Query Invalid variable '%s':\n%s",
@@ -185,7 +191,8 @@ static int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
       }
 
       log_debug("%s, raw data size=%ld\n", q->condition, dataSize);
-      q->dataSlice = malloc(total_byte_size);
+      //q->dataSlice = malloc(total_byte_size);
+      q->dataSlice = 0;
       q->rawDataSize = dataSize;
 
       return timeStep;
@@ -202,6 +209,7 @@ static int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
 
 	return -1;
       }
+      q->rawDataSize = ((ADIOS_QUERY*)(q->left))->rawDataSize;
       return leftTimeStep;
     }
 }
@@ -547,6 +555,7 @@ ADIOS_QUERY* common_query_combine(ADIOS_QUERY* q1,
     result->right = q2;
     result->combineOp = operator;
 
+    result->rawDataSize = q1->rawDataSize;
     //initialize(result);
     return result;
 }
