@@ -10,6 +10,203 @@
 #include <math.h>
 
 
+
+#define BITARRAY
+#define INT_BIT 32
+
+#define BITMASK(b) (1 << ((b) % INT_BIT))
+#define BITSLOT(b) ((b) / INT_BIT)
+#define BITSET(a, b) ((a)[BITSLOT(b)] |= BITMASK(b))
+#define BITCLEAR(a, b) ((a)[BITSLOT(b)] &= ~BITMASK(b))
+#define BITTEST(a, b) ((a)[BITSLOT(b)] & BITMASK(b))
+#define BITNSLOTS(nb) ((nb + INT_BIT - 1) / INT_BIT)
+
+
+uint32_t* bitarray_create(uint64_t max) 
+{
+  //uint32_t* result = malloc(BITNSLOTS(max) * sizeof(uint32_t));
+  //memset(result, 0, BITNSLOTS(max));
+  //uint32_t* result = (uint32_t *)calloc(0, BITNSLOTS(max) * sizeof(uint32_t));
+  uint32_t* result = (uint32_t *)calloc(BITNSLOTS(max),  sizeof(uint32_t));
+  return result;
+}
+
+void bitarray_setbit(uint32_t* array, uint64_t pos)
+{
+  BITSET(array, pos);
+}
+
+static const unsigned char BitsSetTable256[256] = 
+  {
+#   define B2(n) n,     n+1,     n+1,     n+2
+#   define B4(n) B2(n), B2(n+1), B2(n+1), B2(n+2)
+#   define B6(n) B4(n), B4(n+1), B4(n+1), B4(n+2)
+    B6(0), B6(1), B6(1), B6(2)
+  };
+
+//unsigned int v; // count the number of bits set in 32-bit value v
+uint32_t getSetBits(uint32_t v) 
+{
+  uint32_t c = 0; // c is the total bits set in v
+
+  // Option 1:
+  c = BitsSetTable256[v & 0xff] + 
+    BitsSetTable256[(v >> 8) & 0xff] + 
+    BitsSetTable256[(v >> 16) & 0xff] + 
+    BitsSetTable256[v >> 24]; 
+  
+  /*
+  // Option 2:
+  unsigned char * p = (unsigned char *) &v;
+  c = BitsSetTable256[p[0]] + 
+  BitsSetTable256[p[1]] + 
+  BitsSetTable256[p[2]] +
+  BitsSetTable256[p[3]];
+  */
+  return c;
+}
+
+uint64_t  bitarray_countHits(uint32_t* bitarray, uint64_t size) {
+  casestudyLogger_starts("bitarray_count");
+  //struct timespec startT;
+  //casestudyLogger_getRealtime(&startT);
+
+  uint64_t  i=0;
+  uint64_t countHitser = 0;
+  for (i=0; i<size; i++) {
+    countHitser += getSetBits(bitarray[i]);
+  }
+
+  //casestudyLogger_writeout(&startT, "count bit array hits ");
+  casestudyLogger_ends("bitarray_count");
+  return countHitser;
+}
+
+
+uint64_t  bitarray_getHits(uint32_t* bitarray, uint64_t* result, uint64_t size, uint64_t start, uint64_t count)
+{
+  //  printf("\n==> start=%ld count = %ld \n", start, count);
+
+  if (bitarray == NULL) {
+    return -1;
+  }
+
+  uint64_t i, j;
+  uint64_t hitCounter = 0;    
+  uint64_t collected = 0;
+
+  for (i=0; i<size; i++) {
+    int currCount = getSetBits(bitarray[i]);
+    if (hitCounter + currCount > start) {
+       for (j=0; j<INT_BIT; j++) {
+	    uint64_t bitpos = i*INT_BIT+j;
+	    if (BITTEST(bitarray, bitpos)) {
+	      hitCounter += 1;
+	      if (hitCounter > start) {
+		  result[collected] = bitpos;
+		  collected ++;
+		  //printf("bit at %ld is  hit: %ld. ref: [ %ld th]\n", bitpos, hitCounter, collected);
+	      }
+	      if (collected  == count) {
+		return collected;
+	      }
+	    }
+       }
+      break; 
+    } 
+    hitCounter += currCount;    
+  }
+
+  hitCounter += collected;
+  //printf(" hit counter check: %ld\n", hitCounter);
+
+  uint64_t rock = i+1;
+  uint64_t lastrock = 0;
+
+  for (i=rock; i<size; i++) {
+    int currCount = getSetBits(bitarray[i]);
+    if (collected + currCount > count) {
+      lastrock = i;
+      break;
+    } 
+    //collected += currCount;
+    for (j=0; j<INT_BIT; j++) {
+         uint64_t bitpos = i*INT_BIT + j;
+	 if (BITTEST(bitarray, bitpos)) {
+	   result[collected] = bitpos;
+	   collected++;
+	 }
+    }
+  }
+
+  hitCounter += collected;
+  //  printf(" hit counter check: %ld, collected: %ld\n", hitCounter, collected);
+
+  if (lastrock == 0) {
+    printf("done. \n");
+    return collected;
+  }
+
+  // check the last rock
+  rock = i; 
+  for (i=0; i<INT_BIT; i++) {
+    uint64_t bitpos = rock*INT_BIT + i;
+    if (BITTEST(bitarray, bitpos)) {
+        result[collected] = bitpos;
+        collected ++; 
+	//printf("bit at %ld is  hit: %ld. ref: %ld th\n ", bitpos, hitCounter+collected, collected);
+    }
+    if (collected == count) {
+      break;
+    }
+  }
+
+  return collected;
+}
+ 
+
+uint64_t  bitarray_countHitsNative(uint64_t max, uint32_t* bitarray1) {
+  uint64_t countHitser = 0;				
+  uint64_t i;
+
+  printf("array size= %ld \n", BITNSLOTS(max));
+  for (i=0; i<max; i++) {
+    if (BITTEST(bitarray1, i)) {
+      //printf(" ==> bit at: %ld is set. \n",i);
+      countHitser ++;
+    }
+  }
+
+  printf("%ld\n", countHitser);
+  return countHitser;
+}
+
+void bitarray_or(uint32_t* bitarray0, uint32_t* bitarray1, uint32_t* bitarray3, uint64_t arraysize)
+{
+  uint64_t i;
+  for (i=0; i<arraysize; i++) {
+    bitarray3[i] = bitarray0[i] | bitarray1[i];
+  }  
+}
+
+void bitarray_and(uint32_t* bitarray0, uint32_t* bitarray1, uint32_t* bitarray3, uint64_t arraysize)
+{
+  uint64_t i;
+  for (i=0; i<arraysize; i++) {
+    bitarray3[i] = bitarray0[i] & bitarray1[i];
+  }  
+}
+
+
+
+
+
+
+
+
+
+
+
 typedef struct {
   double* _keys; 
   int64_t* _offsets; 
@@ -26,7 +223,7 @@ typedef struct {
 ADIOS_QUERY* getFirstLeaf(ADIOS_QUERY* q);
 void getHandle(int timeStep, int blockIdx, ADIOS_FILE* idxFile, ADIOS_QUERY* q);
 
-
+#define __READ_BMS_AS_NEEDED__
 
 /** A simple reader to be used by FastBit for index reconstruction.  In
     this simple case, the first argument is the whole array storing all the
@@ -38,7 +235,10 @@ void getHandle(int timeStep, int blockIdx, ADIOS_FILE* idxFile, ADIOS_QUERY* q);
 //
 static int adios_bmreader(void *ctx, uint64_t start,uint64_t count, uint32_t *buf)
 {
-#ifdef _READ_BMS_AS_NEEDED
+  struct timespec startT;
+  casestudyLogger_getRealtime(&startT);
+
+#ifdef __READ_BMS_AS_NEEDED__
   FASTBIT_INTERNAL* itn = (FASTBIT_INTERNAL*)ctx;
   // read bms from start to count:
   ADIOS_VARINFO * bmsV = common_read_inq_var (itn->_idxFile, itn->_bmsVarName);
@@ -52,6 +252,7 @@ static int adios_bmreader(void *ctx, uint64_t start,uint64_t count, uint32_t *bu
   common_read_free_varinfo(bmsV);
   common_read_selection_delete(bmsSel);
 
+  casestudyLogger_bms_writeout(&startT, "bmreader_adv visited ");
   return 0;
 #else
   const uint32_t *bms = (uint32_t*)ctx + start;
@@ -59,8 +260,11 @@ static int adios_bmreader(void *ctx, uint64_t start,uint64_t count, uint32_t *bu
   for (j = 0; j < count; ++ j) {
     buf[j] = bms[j];
   }
+
+  casestudyLogger_bms_writeout(&startT, "bmreader visited ");
   return 0;
 #endif
+
 }
 
 
@@ -96,6 +300,7 @@ void create_fastbit_internal (ADIOS_QUERY* q)
 
       MPI_Comm comm_dummy = MPI_COMM_SELF;
       ADIOS_FILE* idxFile = fastbit_adios_util_getFastbitIndexFileToRead(basefileName, comm_dummy);
+      casestudyLogger_setPrefix("  load idx file");
       create_fastbit_internal_idxFile (q, idxFile);
   }
 }
@@ -463,10 +668,12 @@ int64_t getRelativeIdxInVariable(uint64_t currPosInBlock, const ADIOS_VARINFO* v
 
 int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeStep)
 {  
+  
   ADIOS_SELECTION* sel = q->sel;
   ADIOS_VARINFO* v = q->varinfo;
 
   create_fastbit_internal(q);
+  casestudyLogger_setPrefix(" created fastbit internal ");
 
   if (v == NULL) {
     ADIOS_QUERY* left = (ADIOS_QUERY*)(q->left);
@@ -478,8 +685,22 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
     if (evaluateWithIdxOnBoundingBox(idxFile, right, timeStep) < 0) {
       return -1;
     }
-
+#ifdef BITARRAY     
+    free(q->dataSlice);
+    q->dataSlice = bitarray_create(q->rawDataSize);
+    if (q->combineOp == ADIOS_QUERY_OP_OR) {            
+      bitarray_or((uint32_t*)(left->dataSlice), (uint32_t*)(right->dataSlice), (uint32_t*)(q->dataSlice), BITNSLOTS(q->rawDataSize));      
+    } else {
+      bitarray_and((uint32_t*)(left->dataSlice), (uint32_t*)(right->dataSlice), (uint32_t*)(q->dataSlice), BITNSLOTS(q->rawDataSize));      
+    }
+    free(left->dataSlice);
+    free(right->dataSlice);
+    left->dataSlice = 0;
+    right->dataSlice = 0;
+#else
     setCombinedQueryInternal(q);
+#endif
+    return 0;
   } else {
     // is a leaf
     if (q->rawDataSize == 0) {
@@ -517,11 +738,25 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
         adios_error (err_invalid_query_value, "Query processing failed. Unable to continue using index. vid=%d, dim[0]=%lld\n", v->varid, v->dims[0]);
 	return -1;
     }
+
+#ifdef FANCY_QUERY
+#else  
+    #ifdef BITARRAY
+    uint32_t* bitSlice = bitarray_create(q->rawDataSize);
+    #else
     uint16_t* bitSlice = malloc((q->rawDataSize)* sizeof(uint16_t));
 
     for (i=0; i<q->rawDataSize; i++) {
       bitSlice[i] = 0;
     }
+    #endif
+#endif
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);      
+
+    char bitsArrayName[50+strlen(q->condition)];
+    //sprintf(bitsArrayName, "%ld_%d_%s_%d_%d", fastbit_adios_getCurrentTimeMillis(), v->varid, q->condition, timeStep, rank);
+    sprintf(bitsArrayName, "%ld_%d_%d_%d", fastbit_adios_getCurrentTimeMillis(), v->varid, timeStep, rank);
 
     uint64_t currBlockIdx = blockStart;
 
@@ -531,15 +766,30 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
 	sumBlocksBeforeThisTimeStep = v->nblocks[i];
       }
     }
+
+    char casestudyLoggerPrefix[30];
     uint64_t junk=0;
+
     for (currBlockIdx=blockStart; currBlockIdx <= blockEnd; currBlockIdx++) {
+      sprintf(casestudyLoggerPrefix, "block:%d", currBlockIdx);
+      //casestudyLogger_setPrefix(casestudyLoggerPrefix);
+
       getHandle(timeStep, currBlockIdx, idxFile, q);	      
       if (((FASTBIT_INTERNAL*)(q->queryInternal))->_handle == 0) {
 	log_warn(" Unable to construct fastbit query with NULL. Use _no_o idx method \n");
 	return -1;
       }
+
       uint64_t count = fastbit_selection_evaluate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle); 
-      
+
+#ifdef FANCY_QUERY
+      //printf("\nNot that this only works if the region covered exactly by blocks.\n");
+      if (currBlockIdx == blockStart) {
+	fastbit_iapi_register_selection_as_bit_array(bitsArrayName, ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle);
+      } else {
+	fastbit_iapi_extend_bit_array_with_selection(bitsArrayName, ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle);
+      }
+#else
       junk += count;
       log_debug("condition, %s, block: %lld hits = %lld, sum of hits so far: %lld\n", q->condition, currBlockIdx, count, junk);
       //i = currBlockIdx-blockStart;
@@ -566,32 +816,50 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
 	//log_warn("%lld th in block[%d],   =>  in actual %lld, limit: %lld \n", currPosInBlock, currBlockIdx, currPos, q->rawDataSize);
 	//if ((currPos >= 0) && (currPos < q->rawDataSize)) {
 	if (currPos >= 0) {
-	  bitSlice[currPos] = 1;
+          #ifdef BITARRAY
+	    bitarray_setbit(bitSlice, currPos);
+          #else
+	    bitSlice[currPos] = 1;
+          #endif
 	}
-      }
 
+      }
+#endif
       log_debug("----\n");
     }
 
-    int rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &rank);      
+    casestudyLogger_setPrefix(" blocksProcessedIndividually ");
 
-    char bitsArrayName[50+strlen(q->condition)];
-    sprintf(bitsArrayName, "%ld-%d-%s-%d-%d", fastbit_adios_getCurrentTimeMillis(), v->varid, q->condition, timeStep, rank);
     //return fastbit_selection_create(dataType, dataOfInterest, dataSize, compareOp, &vv);
 
+#ifdef FANCY_QUERY
+    //
+    // wrong result
+    //fastbit_iapi_register_array(bitsArrayName, FastBitDataTypeBitRaw, q->dataSlice, q->rawDataSize);
+    //FastBitSelectionHandle h = fastbit_selection_osr(bitsArrayName, FastBitCompareGreater, 0.1);
+    //
+    FastBitSelectionHandle h  = fastbit_selection_osr(bitsArrayName, FastBitCompareGreater, 0.0);
+    fastbit_adios_util_checkNotNull(h, bitsArrayName);    
+    ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle = h;
+
+#else
     free(q->dataSlice);
     q->dataSlice = bitSlice;
 
     fastbit_iapi_free_array_by_addr(q->dataSlice);
-    fastbit_iapi_register_array(bitsArrayName, FastBitDataTypeUShort, q->dataSlice, q->rawDataSize);
 
-    //printData(q->_dataSlice, adios_unsigned_short, q->_rawDataSize); 
-    //fastbit_selection_free(q->_queryInternal);
-    FastBitSelectionHandle h = fastbit_selection_osr(bitsArrayName, FastBitCompareGreater, 0.5);
+  #ifdef BITARRAY
+    ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle = 0;
+  #else
+    fastbit_iapi_register_array(bitsArrayName, FastBitDataTypeUShort, q->dataSlice, q->rawDataSize);
+    FastBitSelectionHandle h = fastbit_selection_osr(bitsArrayName, FastBitCompareGreater, 0);
     fastbit_adios_util_checkNotNull(h, bitsArrayName);    
     ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle = h;
+  #endif
+
+#endif    
  
+    casestudyLogger_setPrefix(" summarized evaluation for bb");
     //fastbit_adios_util_checkNotNull(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, bitsArrayName);
   }
 }
@@ -653,10 +921,15 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);      
 
     char blockDataName[40+strlen(q->condition)];
-    sprintf(blockDataName, "%d-%s-%d-%d-%ld-%d", v->varid, q->condition, timeStep, blockIdx, fastbit_adios_getCurrentTimeMillis(), rank);
+    //sprintf(blockDataName, "%d-%s-%d-%d-%ld-%d", v->varid, q->condition, timeStep, blockIdx, fastbit_adios_getCurrentTimeMillis(), rank);
+    sprintf(blockDataName, "_%d_%d_%d_%ld_%d", v->varid,timeStep, blockIdx, fastbit_adios_getCurrentTimeMillis(), rank);
 
     FASTBIT_INTERNAL* itn = (FASTBIT_INTERNAL*)(q->queryInternal);
-#ifdef _READ_BMS_AS_NEEDED
+
+    struct timespec idxStartT;
+    casestudyLogger_getRealtime(&idxStartT);
+
+#ifdef __READ_BMS_AS_NEEDED__
     log_debug("FastBit will get bms as needed, not at the same time as key/offsets\n");
     if (fastbit_adios_util_readNoBMSFromIndexFile(idxFile, v, timeStep, blockIdx, &(itn->_keys), &nk, &(itn->_offsets), &no, &(itn->_bmsVarName)) < 0)     
 #else
@@ -691,14 +964,16 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
       common_read_selection_delete(box);
       return;
     }
-    
+
+    casestudyLogger_idx_writeout(&idxStartT, "index file visited ");
+
     //int err = fastbit_iapi_register_array(blockDataName, fastbit_adios_util_getFastbitDataType(v->type), q->_dataSlice, blockSize);
     uint64_t nv = blockSize;
     itn->_arrayName = malloc(strlen(blockDataName)+2);
     sprintf(itn->_arrayName, "%s", blockDataName);
     
     int ierr = fastbit_iapi_register_array_index_only(itn->_arrayName, fastbit_adios_util_getFastbitDataType(v->type), &nv, 1 , 
-#ifdef _READ_BMS_AS_NEEDED
+#ifdef __READ_BMS_AS_NEEDED__
 						      itn->_keys, nk, itn->_offsets, no, itn, adios_bmreader);
 #else
 						      itn->_keys, nk, itn->_offsets, no, itn->_bms, adios_bmreader);
@@ -792,7 +1067,8 @@ int readWithTimeStepNoIdx(ADIOS_QUERY* q, int timeStep) {
   MPI_Comm_rank(MPI_COMM_WORLD, &rank);      
 
   char datasetName[strlen(q->condition) + 40];
-  sprintf(datasetName, "noidx-%s-%d-%ld-%d", q->condition, timeStep, fastbit_adios_getCurrentTimeMillis(),rank);  
+  //sprintf(datasetName, "noidx_%s_%d_%ld_%d", q->condition, timeStep, fastbit_adios_getCurrentTimeMillis(),rank);  
+  sprintf(datasetName, "_noidx_%d_%ld_%d", timeStep, fastbit_adios_getCurrentTimeMillis(),rank);  
   setQueryInternal(q, compareOp, dataType, dataSize, datasetName);
 
   return 0;
@@ -937,10 +1213,19 @@ int64_t  applyIndexIfExists (ADIOS_QUERY* q, int timeStep)
   //ADIOS_FILE* idxFile = fastbit_adios_util_getFastbitIndexFileToRead(basefileName, comm_dummy);
     
   if (idxFile != NULL) {
+      casestudyLogger_starts("idxEval");
     //clear_fastbit_internal(q);
       if ((leaf->sel == NULL) || (leaf->sel->type == ADIOS_SELECTION_BOUNDINGBOX)) {
 	  if (evaluateWithIdxOnBoundingBox(idxFile,  q, timeStep) >= 0) {
-	     result = fastbit_selection_estimate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle);	
+	     casestudyLogger_idx_print();
+	     casestudyLogger_setPrefix(" preparedBoundingBox ");
+	     if (((FASTBIT_INTERNAL*)(q->queryInternal))->_handle != 0) {
+	        result = fastbit_selection_estimate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle);	
+		casestudyLogger_setPrefix(" estimateDone ");
+	     } else {
+	        result = bitarray_countHits(q->dataSlice, BITNSLOTS(q->rawDataSize));
+		casestudyLogger_setPrefix(" estimateDoneBitArray ");
+	     }
 	  }
       } else if (leaf->sel->type == ADIOS_SELECTION_WRITEBLOCK) {
 	  blockSelectionFastbitHandle(idxFile, q, timeStep);
@@ -956,6 +1241,8 @@ int64_t  applyIndexIfExists (ADIOS_QUERY* q, int timeStep)
 	//return result;
       } // otherwise, use no idx method
       //common_read_close(idxFile);      
+      casestudyLogger_ends("idxEval");
+      casestudyLogger_bms_print();
   }
   
   
@@ -1064,13 +1351,28 @@ int64_t call_fastbit_evaluate(ADIOS_QUERY* q, int timeStep, uint64_t _maxResult)
      log_debug(":: user required more results. will evaluate again. \n");
   }
 
+  casestudyLogger_starts("evaluatingFastbit");
+
+#ifdef BITARRAY
+  if (q->queryInternal == 0) {
+#else
   if ((q->queryInternal == 0) || (((FASTBIT_INTERNAL*)(q->queryInternal))->_handle == 0)) {
+#endif
     //log_error(">>  Unable to use fastbit to evaluate NULL query.\n"); 
     log_debug("query is NULL, result is NULL.");
     return 0;
   }
-  int64_t numHits = fastbit_selection_evaluate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle); 
+
+  int64_t numHits = -1;
+  if (((FASTBIT_INTERNAL*)(q->queryInternal))->_handle != 0) {
+    numHits = fastbit_selection_evaluate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle); 
+  } else {
+    numHits = bitarray_countHits(q->dataSlice, BITNSLOTS(q->rawDataSize));
+  }
+
   log_debug(":: ==> fastbit_evaluate() num of hits found for [%s] = %lld, at timestep %d \n", q->condition, numHits, timeStep);  
+
+  casestudyLogger_ends("evaluatingFastbit");
 
   if (numHits < 0) {
     return 0;
@@ -1228,6 +1530,7 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
 				  ADIOS_SELECTION* outputBoundary, 
 				  ADIOS_SELECTION** result)
 {
+  casestudyLogger_starts("queryArrived. initfastbit");
   /*
   if (q->_onTimeStep < 0) {
     log_error(":: Error: need to call evaluate first! Exit.\n");
@@ -1235,6 +1538,7 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
   }
   */
   adios_query_fastbit_init();
+  casestudyLogger_ends("queryArrived. initfastbit");
 
   /*if (assertTimeStepValidWithQuery(q) != 0) {
     return -1;
@@ -1260,16 +1564,31 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
       retrivalSize = batchSize;
   }
 
-  uint64_t coordinates[retrivalSize];
+  //uint64_t coordinates[retrivalSize];
+  uint64_t* coordinates = (uint64_t*) calloc(retrivalSize, sizeof(uint64_t));
+  if (coordinates == 0) {
+    log_error("Unable to allocate for coordiantes.");
+    return -1;
+  }
 
-  fastbit_selection_get_coordinates(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, coordinates, retrivalSize, q->resultsReadSoFar);
-    
+  if (((FASTBIT_INTERNAL*)(q->queryInternal))->_handle != 0) {
+    casestudyLogger_starts("getCoordinateFastbit");
+    fastbit_selection_get_coordinates(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, coordinates, retrivalSize, q->resultsReadSoFar);
+    casestudyLogger_ends("getCoordinateFastbit");
+  } else {
+    casestudyLogger_starts("bitarrayGetHits");
+    bitarray_getHits(q->dataSlice, coordinates, BITNSLOTS(q->rawDataSize), q->resultsReadSoFar, retrivalSize);
+    casestudyLogger_ends("bitarrayGetHits");
+  }
+
+  casestudyLogger_starts("toAdiosCoordinate");
   q->resultsReadSoFar += retrivalSize;
   
   if (outputBoundary == 0) {
     ADIOS_QUERY* firstLeaf = getFirstLeaf(q);
     if ((firstLeaf == NULL) || (firstLeaf->varinfo == NULL)) {
 	log_error(":: Error: unable to get a valid first leaf! Exit. \n");
+	free(coordinates);
 	return -1;
       }
     if (firstLeaf->sel == NULL) {
@@ -1283,10 +1602,12 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
     // not sure wheather this is well defined case of combined query?! but the first varibale will be used for block information calculation
     *result = getSpatialCoordinates(outputBoundary, coordinates, retrivalSize, getFirstLeaf(q)->varinfo, timeStep);
 
+    free(coordinates);
     if (*result == 0) {
       return -1;
     }
   }
+  casestudyLogger_ends("toAdiosCoordinate");
   // print results
   /*
   int i=0; 

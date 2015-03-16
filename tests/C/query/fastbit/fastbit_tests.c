@@ -42,20 +42,60 @@ long _stageRefreshMillis = 0;
 long _lastMeasuredMillis = 0;
 long _queryStartMillis = 0;
 
-void logReport(int stage) {
+#define  logTimeMillis(...) {	    \
+    long ms = fastbit_adios_getCurrentTimeMillis(); \
+    long d = ms - _lastMeasuredMillis; \
+    printf("   ELAPSED: %ld millis\t", d);	\
+    long sec = d/1000; \
+    if (sec > 0 ) 					\
+       printf(" = %d sec \t", d/1000);		\
+    long min = sec/60; \
+    if (min > 0) \
+        printf(" = %d min:%d sec ", min, (sec-min*60)); \
+    printf(", "); \
+    fprintf ( stdout, __VA_ARGS__);		\
+    fflush(stdout); \
+    printf("\n"); \
+    _lastMeasuredMillis = ms; \
+  }
+
+
+void logReport(int stage, ADIOS_QUERY* q) {
   long ms = fastbit_adios_getCurrentTimeMillis();
 
-  if (stage == -1) { // init                                                                                                                                             
+  if (stage == -1) { // init
       _lastMeasuredMillis = ms;
       _stageRefreshMillis = ms;
       _queryStartMillis   = ms;
-  } else if (stage == 0) { // query                                                                                                               
-      printf("\n==> Total time spent to process this query: %ld millis.\n", ms - _queryStartMillis);
+  } else if (stage == 0) { // query                                                                      
+    long m = ms-_queryStartMillis;
+    long s = m/1000;
+    long d = s/60;
+    if ((d == 0) && (s == 0)) {
+       printf("   [Total time] processing this query: %ld millis, query: %s\n", m, q->condition);
+    } else if (d == 0) {
+      printf("   [Total time] processing this query: %ld millis = %ld sec, query: %s\n", m, s, q->condition);
+    } else {
+      printf("   [Total time] processing this query: %ld millis = %ld min: %ld sec, query: %s\n", m, d, s-d*60, q->condition);
+    }
+  } else if (stage == 1) { // query                                                                      
+    long m = ms-_queryStartMillis;
+    long s = m/1000;
+    long d = s/60;
+    if ((d == 0) && (s == 0)) {
+       printf("   [Total time] getResultCoodinates this query: %ld millis, query: %s\n", m, q->condition);
+    } else if (d == 0) {
+      printf("   [Total time] getResultCoordinates this query: %ld millis = %ld sec, query: %s\n", m, s, q->condition);
+    } else {
+      printf("   [Total time] getResultCoordinates this query: %ld millis = %ld min: %ld sec, query: %s\n", m, d, s-d*60, q->condition);
+    }
   }
+
 }
 
-
-void logTimeMillis(const char* notes)
+/*
+//void logTimeMillis(const char* notes)
+void logTimeMillis(__VA_ARGS__)
 {
   long ms = fastbit_adios_getCurrentTimeMillis();
 
@@ -64,11 +104,14 @@ void logTimeMillis(const char* notes)
     _stageRefreshMillis = ms;
   } else {
     long d = ms - _lastMeasuredMillis;
-    printf("   ELAPSED millis: %ld \t%s\n", d, notes);
+    //printf("   ELAPSED millis: %ld \t%s\n", d, notes);
+    printf("   ELAPSED millis: %ld \t", d);
+    printf(__VA_ARGS__);
+    printf("\n");
   }
   _lastMeasuredMillis = ms;
 }
-
+*/
 
 static int getTotalByteSize (ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* sel,
                              uint64_t* total_byte_size, uint64_t* dataSize, int timestep)
@@ -377,28 +420,48 @@ double getCurrentValue(void* data, uint64_t idx, enum ADIOS_DATATYPES type)
   return 0;
 }
 
-void manualCheck(ADIOS_QUERY* q, int timestep) {
+void manualCheck(ADIOS_QUERY* q, int timestep, int64_t compareHits) {
   if ((q->left == NULL) && (q->right == NULL)) {    
       printf ("... manual check: \n");
+
       // proceed
       uint64_t totalByteSize;
       uint64_t totalSize;
       
       getTotalByteSize(q->file, q->varinfo, q->sel, &totalByteSize, &totalSize, timestep);
-      
+            
       void* output = malloc (totalByteSize);
 
+      if (output == NULL) {
+	logTimeMillis(" unable to allocate memory for %ld bytes/ skip. \n", totalByteSize);
+	return;
+      }
       adios_schedule_read (q->file, q->sel, q->varName, timestep, 1, output);
       adios_perform_reads (q->file, 1);
 
+      logTimeMillis("    adios reading data out from query: %s, variablesize: %ld\n", q->condition, totalSize);
       uint64_t hits=0;
       uint64_t k=0; 
 
       char* endptr;
       double vv = strtod(q->predicateValue, &endptr);
+      
+      //double min, max;
 
       for (k=0; k<totalSize; k++) {
 	double curr = getCurrentValue(output, k, q->varinfo->type);
+	/*
+	if (k==0) {
+	  min=curr; max=curr;
+	} else {
+	  if (curr < min) {
+	    min = curr;
+	  } else if (curr > max) {
+	    max = curr;
+	  }
+	}
+	*/
+	
 	//printf ("curr=%lg, vv=%lg\n", curr, vv);
 	if (curr == vv) {
 	  if ((q->predicateOp == ADIOS_EQ) || (q->predicateOp == ADIOS_LTEQ) || (q->predicateOp == ADIOS_GTEQ)) {
@@ -415,7 +478,14 @@ void manualCheck(ADIOS_QUERY* q, int timestep) {
 	}	  
       }
       free(output);
-      printf("... double check found %d hits\n", hits);
+      printf("... double check found %d hits ", hits);
+
+      int64_t diff = compareHits - hits;
+      if (diff == 0) {
+	printf("  SUCCESS! \n");
+      } else {
+	printf("  oh no! expecting %d\n", compareHits);
+      }
       return;
   }
   printf("Skip manual check on composite query\n");
@@ -455,6 +525,8 @@ int parseQueryXml(const char* xmlQueryFileName)
     printf("No content in file %s.\n", xmlQueryFileName);
     return -1;
   }
+  
+  printf("Reading: %s\n", xmlQueryFileName);
 
   mxml_node_t* tree = mxmlLoadFile(NULL, fp, MXML_NO_CALLBACK);
   fclose(fp);
@@ -503,49 +575,99 @@ int parseQueryXml(const char* xmlQueryFileName)
 	return -1;
       }
 
+      logReport(-1, NULL);
+      printf("\n ... reading file: %s\n", bpFileName);
+
       f = adios_read_open_file (bpFileName, ADIOS_READ_METHOD_BP, comm_dummy);
       if (f == NULL) {
 	printf("::%s\n", adios_errmsg());
 	return -1;
       }
 
+      logTimeMillis(" adios file read.\n");
       ADIOS_QUERY* q = constructQuery(queryNode, f, queryName, batchSize);
 
       ADIOS_SELECTION* outputBox = getOutputSelection(queryNode);
-      logReport(-1); // init timer
+      logReport(-1, q); // init timer
 
       //adios_query_set_method(q, ADIOS_QUERY_METHOD_FASTBIT);
       int timestep = 0;
+      fastbit_set_verbose_level(0);
       //ADIOS_SELECTION* noBox = 0;
       while (timestep <= f->last_step) {
-	printf("\n ...... query=%s, %s, [TimeStep=%d of %d]\n",queryName, q->condition, timestep, f->last_step);
+	printf("\n==> query=%s, %s, [TimeStep=%d of %d]\n",queryName, q->condition, timestep, f->last_step);
+#ifdef ESTIMATE
 	int64_t est = adios_query_estimate(q, timestep);
-	logTimeMillis(" estimated.");
-	printf("\n=> query %s: %s, \n\t estimated  %ld hits on timestep: %d\n", queryName, q->condition, est, timestep);
+	logTimeMillis(" estimated. %s", q->condition);
+	printf("\n .. query %s: %s, \t estimated  %ld hits on timestep: %d\n", queryName, q->condition, est, timestep);
+#endif
 	ADIOS_SELECTION* currBatch = NULL;
 	int hasMore = 1; 
+
+	int readBatchCounter = 1; // 1 = no read back
+	int64_t numHits = 0;
 	while (hasMore > 0) {
 	  hasMore = adios_query_evaluate(q, outputBox, timestep, batchSize, &currBatch);
-	  logTimeMillis(" evaluated one batch.");
-	  if (currBatch != NULL) {
-	    printf("\n=> evaluated: %ld hits for %s\n", currBatch->u.points.npoints, q->condition);
+	  logTimeMillis(" evaluated one batch: %s \n", q->condition);
+	  if (numHits == 0) {
+	    logReport(0, q);
 	  }
+	  if (currBatch != NULL) {
+	    int currBatchSize = currBatch->u.points.npoints;
+	    numHits += currBatchSize;
+	    printf("\n   evaluated: %ld hits for %s\n", currBatchSize, q->condition);
+	    
+	    if (readBatchCounter < 1) {
+	        if (currBatchSize <= 1048576) { // takes too long otherwise
+	            readBatchCounter ++;
+		    printf("\n   sample once on reading data out from ADIOS\n");
+		    ADIOS_QUERY* leaf = q;
+		    while (leaf->varinfo == NULL) {
+		        leaf = leaf->left;
+		    }
+		    uint64_t output_byte_size = common_read_type_size (leaf->varinfo->type, leaf->varinfo->value);
+		    output_byte_size *= currBatchSize;
+		    
+		    void* output = malloc (output_byte_size+1000);
+		    if (output == NULL) {
+		      logTimeMillis(".. unable to allocate enough memory for %ld bytes. Skip.\n", output_byte_size+1000);
+		    } else {
+		      adios_schedule_read (leaf->file, currBatch, leaf->varName, timestep, 1, output);
+		      adios_perform_reads (leaf->file, 1);
+		      logTimeMillis(" .. read batch data out from ADIOS, batchsize=%ld,  for: %s out of %ld\n", currBatchSize, leaf->condition, leaf->rawDataSize);
+		      free(output);
+		    }
+		}
+	    }
+	  } else {
+	    printf("\n   evaluated 0 hits for %s\n", q->condition);
+	  }
+
 	  if (currBatch != NULL) {
 	    free (currBatch->u.points.points);
 	    adios_selection_delete(currBatch);
 	  }
 	}
-	logReport(0);
-	manualCheck(q, timestep);
-	logTimeMillis(" manual check done.");
-	timestep ++;
+
+	logReport(1, q);
+	logReport(-1, NULL);
+
+	//printf("\n skipping manual check. not enough memory\n");
+	printf("\n numHits = %ld, %s\n", numHits, q->condition);
+	if (numHits > 5000000) {
+	  //manualCheck(q, timestep, numHits);
+	} else {
+	  //printf("\n numHits = %ld\n", numHits);
+	}
+
+	logTimeMillis(" sequential scan done! %s\n", q->condition);
+	timestep ++;      
       }
-      
       recursive_free(q);
       adios_read_close(f);
-      
+	
       //mxmlDelete(queryNode);
-   }
+    }
   
   mxmlDelete(testsNode);
   mxmlDelete(tree);    
@@ -934,11 +1056,16 @@ void usage(char* prog)
 int main (int argc, char ** argv) 
 {
 
-  parseQueryXml("query.xml");
-  return 0;
+  if (argc == 1) {
+    parseQueryXml("query.xml");
+    return 0;
+  } else {
+    parseQueryXml(argv[1]);
+    return 0;
+  }
 
 
-#if 0
+
   
     if (argc < 2) {
         usage(argv[0]);
@@ -1015,5 +1142,5 @@ int main (int argc, char ** argv)
 
     adios_read_close(f);
     return 1;
-#endif    
+    
 }

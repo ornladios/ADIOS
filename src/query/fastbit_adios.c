@@ -7,6 +7,144 @@
 
 #include "fastbit_adios.h"
 
+const char* _prefix="";
+
+
+unsigned long _startMillis = 0;
+struct timespec _bmsVisits;
+struct timespec _idxVisits;
+
+extern void casestudyLogger_starts(const char* ref)
+{
+  _startMillis = fastbit_adios_getCurrentTimeMillis();
+  _bmsVisits.tv_nsec=0;
+  _bmsVisits.tv_sec=0;
+  _idxVisits.tv_nsec=0;
+  _idxVisits.tv_sec=0;
+  printf("==> casestudy %s starts at: %llu sec\n", ref, _startMillis/1000);
+}
+
+extern void casestudyLogger_bms_print()
+{
+  printf("bitmap visit took: %llu sec %llu millisec  accumulated \n",  _bmsVisits.tv_sec, _bmsVisits.tv_nsec/((unsigned long)1000000));
+}
+
+extern void casestudyLogger_idx_print()
+{
+  printf("idx access took: %llu sec %llu millisec  accumulated \n",  _bmsVisits.tv_sec, _bmsVisits.tv_nsec/((unsigned long)1000000));
+}
+
+extern void casestudyLogger_ends(const char* ref)
+{
+  unsigned long endMillis = fastbit_adios_getCurrentTimeMillis();
+  unsigned long diffmillis = endMillis - _startMillis;
+
+  unsigned long diffsec = diffmillis/1000;
+  if (diffsec > 60) {
+    unsigned long diffmin = diffsec/60;
+    diffsec = diffsec - diffmin*60;
+    printf("%s took: %lu millisecs = %lu min & %lu sec \n", ref, diffmillis, diffmin, diffsec);
+  } else {
+    printf("%s took: %lu millisecs = %lu sec\n", ref, diffmillis, diffsec);
+  }
+}
+
+extern void casestudyLogger_getRealtime(struct timespec* spec)
+{
+#ifdef CLOCK_MONOTONIC
+  clock_gettime(CLOCK_MONOTONIC, spec);
+#else
+  clock_gettime(CLOCK_REALTIME, spec);
+#endif
+}
+
+extern void casestudyLogger_setPrefix(const char* prefix)
+{
+  _prefix = prefix;
+
+  unsigned long currMillis = fastbit_adios_getCurrentTimeMillis();
+  unsigned long diffMillis = currMillis-_startMillis;
+  unsigned long diffsec = diffMillis/1000;
+
+  if (diffsec > 60) {
+    unsigned long diffmin = diffsec/60;
+    diffsec = diffsec - diffmin*60;
+    printf("on %s, time passed since start: %lu millisecs = %lu min & %lu sec \n", prefix, diffMillis, diffmin, diffsec);
+  } else {
+    printf("on %s, time passed since start: %lu millisecs = %lu sec\n", prefix, diffMillis, diffsec);
+  }
+
+  //struct timespec curr;
+  //casestudyLogger_getRealtime(&curr);
+  //printf("prefix: %s %llu sec %llu nanosec\n",  _prefix, (uint64_t)(curr.tv_sec), curr.tv_nsec);
+  
+}
+
+extern void casestudyLogger_idx_writeout(struct timespec* start, 
+					 //struct timespec* end,
+					 const char* desc)
+{
+  struct timespec end; 
+  casestudyLogger_getRealtime(&end);
+
+  struct timespec diff; 
+
+  diff.tv_nsec = end.tv_nsec - start->tv_nsec; 
+  diff.tv_sec = end.tv_sec - start->tv_sec; 
+
+  if(diff.tv_nsec < 0 ){
+    diff.tv_nsec += 1000000000; 
+    diff.tv_sec = diff.tv_sec - 1;
+  } 
+
+  //printf("%s %s %llu sec %llu nanosec \n", _prefix, desc, diff.tv_sec, diff.tv_nsec);
+
+  _idxVisits.tv_sec  += diff.tv_sec;
+  _idxVisits.tv_nsec += diff.tv_nsec;
+
+  unsigned long sec = _idxVisits.tv_nsec/(unsigned long)1000000000;
+  if (sec > 0) {
+    _idxVisits.tv_sec += sec;
+    _idxVisits.tv_nsec -= sec*((unsigned long)1000000000);
+  } 
+
+}
+
+
+extern void casestudyLogger_bms_writeout(struct timespec* start, 
+			      //struct timespec* end,
+			      const char* desc)
+{
+  struct timespec end; 
+  casestudyLogger_getRealtime(&end);
+
+  struct timespec diff; 
+
+  diff.tv_nsec = end.tv_nsec - start->tv_nsec; 
+  diff.tv_sec = end.tv_sec - start->tv_sec; 
+
+  if(diff.tv_nsec < 0 ){
+    diff.tv_nsec += 1000000000; 
+    diff.tv_sec = diff.tv_sec - 1;
+  } 
+
+  //printf("%s %s %llu sec %llu nanosec \n", _prefix, desc, diff.tv_sec, diff.tv_nsec);
+
+  _bmsVisits.tv_sec  += diff.tv_sec;
+  _bmsVisits.tv_nsec += diff.tv_nsec;
+
+  unsigned long sec = _bmsVisits.tv_nsec/(unsigned long)1000000000;
+  if (sec > 0) {
+    _bmsVisits.tv_sec += sec;
+    _bmsVisits.tv_nsec -= sec*((unsigned long)1000000000);
+  } 
+  //printf("%s %s %llu sec %llu millisec  accumulated \n", _prefix, desc, _bmsVisits.tv_sec, _bmsVisits.tv_nsec/((unsigned long)1000000));
+}
+
+
+//
+//
+//
 long fastbit_adios_getCurrentTimeMillis() 
 {
   time_t          s;  // Seconds
