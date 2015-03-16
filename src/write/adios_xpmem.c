@@ -97,36 +97,58 @@ void adios_xpmem_init (const PairStruct * parameters
 
 
 int adios_xpmem_open (struct adios_file_struct * fd
-                     ,struct adios_method_struct * method, MPI_Comm comm
-                     )
+                      ,struct adios_method_struct * method, MPI_Comm comm
+	)
 {
-    char * name;
-    adios_xpmem_data_struct * p = (adios_xpmem_data_struct *)
-                                                          method->method_data;
+	char * name;
+	adios_xpmem_data_struct * p = (adios_xpmem_data_struct *)
+		method->method_data;
 
-    if(fd->mode == adios_mode_read || fd->mode == adios_mode_append)
-    {
-	    adios_error(err_operation_not_supported,
-	                "xpmem does not support old read api\n");
-	    return 0;
-    }
+	if(fd->mode == adios_mode_read || fd->mode == adios_mode_append)
+	{
+		adios_error(err_operation_not_supported,
+		            "xpmem does not support old read api\n");
+		return 0;
+	}
 
-    //check if there is a reader attached
+	//check if there is a reader attached
 
-    //wait for readcount to be 1
-    if(p->sp->version != 0)
-	    while(p->sp->readcount != 1)
-		    adios_nanosleep(0, 100000000);
+	//wait for readcount to be 1
+	//if version == 0
+#if 0    
+	if(p->sp->version != 0)
+		while(p->sp->readcount != 1)
+			adios_nanosleep(0, 100000000);
 
-    while(p->sp->version != 0)
-	    adios_nanosleep(0, 100000000);
+	while(p->sp->version != 0)
+		adios_nanosleep(0, 100000000);
+
+	p->sp->readcount = 0;
+	p->sp->version = 0;
+
+#else
+
     
-    p->sp->readcount = 0;
-    p->sp->version = 0;
+    
+	if(p->sp->version != 0)
+	{
+	    
+		//version != 0 so we have written atleast once
+		//we now wait for the signal
+		while(__sync_bool_compare_and_swap(&p->sp->readcount, 1, 0))
+			sleep_on_share(p->sp);
 
-    log_debug("xpmem_open completed\n");
+		//read count is set to 0, but it was 1
+		//so client has read the data
+		p->sp->version = 0; //we reset version
+	}
 
-    return 1;
+
+#endif
+
+	log_debug("xpmem_open completed\n");
+
+	return 1;
 }
 
 enum ADIOS_FLAG adios_xpmem_should_buffer (struct adios_file_struct * fd
@@ -185,6 +207,7 @@ void adios_xpmem_read (struct adios_file_struct * fd
                       ,struct adios_method_struct * method
                       )
 {
+
 	log_error("xpmem does not support old read api\n");
 	adios_error(err_operation_not_supported,
 	            "xpmem does not support old read api\n");
@@ -231,7 +254,7 @@ void adios_xpmem_close (struct adios_file_struct * fd
 		       buffer_offset);
 
 		//confirm buffer locations
-		log_debug("bytes_writter = %d, buffer_offset = %d, total = %d\n",
+		log_debug("bytes_writter = %llu, buffer_offset = %llu, total = %llu\n",
 		          fd->bytes_written, buffer_offset, 
 		          fd->bytes_written + buffer_offset);
 		
@@ -239,7 +262,12 @@ void adios_xpmem_close (struct adios_file_struct * fd
 		p->sp->size = fd->bytes_written + buffer_offset;
             
 		//now set the version to 1
-		ATOMIC_INCREMENT(p->sp->version);
+#if 0		
+		p->sp->version = 1;
+#else
+
+		__sync_fetch_and_add(&p->sp->version, 1);
+#endif
 		
 		adios_free_index_v1(index);
 		free (buffer);
@@ -272,13 +300,20 @@ void adios_xpmem_finalize (int mype, struct adios_method_struct * method)
 	p->sp->finalized = 1;
 	
 	//now loop over the readcount
+#if 0	
 	while(p->sp->readcount != 1)
 		adios_nanosleep(0, 100000000);
 
 	//now loop on finalized until it is set to 2
 	while(p->sp->finalized != 2)
 		adios_nanosleep(0, 100000000);
+	
+#else
 
+	while(__sync_bool_compare_and_swap(&p->sp->finalized, 2, 0))
+		sleep_on_share(p->sp);	
+	
+#endif
 	//unmake the segment
 	unmake_share(p->buffer_id, p->b);
 
