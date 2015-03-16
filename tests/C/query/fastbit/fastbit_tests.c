@@ -1048,10 +1048,6 @@ void doubleCheckWithIdxOnBlock(ADIOS_FILE* dataFile, const char* basefileName, i
 }
 */
 
-void usage(char* prog)
-{
-  printf("Usage: %s <BP-file> [query]\n e.g. ./test_v1 my.bp \"x1 > 10\" \n", prog);
-}
 
 int main (int argc, char ** argv) 
 {
@@ -1063,84 +1059,5 @@ int main (int argc, char ** argv)
     parseQueryXml(argv[1]);
     return 0;
   }
-
-
-
-  
-    if (argc < 2) {
-        usage(argv[0]);
-	return 1;
-    }
-
-    ADIOS_FILE * f;
-    MPI_Comm    comm_dummy = 0;  /* MPI_Comm is defined through adios_read.h */
-
-    f = adios_read_open_file (argv[1], ADIOS_READ_METHOD_BP, comm_dummy);
-    if (f == NULL) {
-        printf ("::%s\n", adios_errmsg());
-	return -1;
-    }
-
-    const char* varName1 = "/Timestep_0/cells/X";
-    const char* varName2 = "/Timestep_0/cells/Y";
-
-    if (argc > 2) {
-      varName1 = argv[2];
-    } 
-
-
-    if (argc > 3) {
-      int blockNum = 0; // relative to timestep
-      int timestep = 1;
-      const char* lessThanVal = argv[3];
-      if (argc > 4) { // e.g.  ./query_fastbit data/record20110203.bp "/var/v1" 1.000 2
-	timestep = atoi(argv[4]);
-      }
-
-      /*    
-      if (argc > 5) {	
-	printf("arg: dataFile var1 value timestep var2\n");
-	varName2 = argv[5];
-	const char* greaterThanVal = argv[6];
-
-	testDefaultBoundBox(f, varName1, varName2,  timestep, lessThanVal, greaterThanVal);
-      }
-      */
-      
-	//testUseOneWriteBlockSimpleLessThan(f, blockNum, varName1, lessThanVal, timestep); 
-	enum ADIOS_PREDICATE_MODE lessT = ADIOS_LT;
-	testNoBoxOnSelection(f, varName1, lessThanVal, timestep, lessT);
-	//testNoBoxOnSelection(f, varName1, lessThanVal, timestep, lessT);
-	enum ADIOS_PREDICATE_MODE greaterT = ADIOS_GT;
-	testNoBoxOnSelection(f, varName1, lessThanVal, timestep, greaterT);
-	//testNoBoxOnSelection(f, varName1, lessThanVal, timestep, greaterT);
-	//testOneBoundBox(f, varName1, lessThanVal, timestep);
-
-	//const char* greaterThanVal = argv[5];
-	//testTwoBoundBoxes(f, varName1, lessThanVal, greaterThanVal, timestep);
-	//}
-
-      /*
-      ADIOS_VARINFO* v = adios_inq_var(f, varName1);
-      doubleCheckWithIdxOnBlock(f, argv[1], blockNum, v, timestep, atof(lessThanVal));
-
-      //uint64_t point[] = {33,31,31};
-      //printf("testing global block #: %d\n", getGlobalBlockNumForPoint(v,point,timestep));
-
-      adios_free_varinfo(v);
-      */
-    }
-    
-    //testNoBoxOnSelection(f, varName1);
-    //testMultiBoundBox(f, varName1, varName1);
-    //testAllDifferentBoundBoxes(f, varName1, varName2);
-    //testUseOneWriteBlock(f, 0, varName1, varName2); 
-
-    
-    //testOneBoundBoxForAllVar(f, varName1, varName2); 
-    //testOnePointList(f, varName1, varName2);
-
-    adios_read_close(f);
-    return 1;
     
 }
