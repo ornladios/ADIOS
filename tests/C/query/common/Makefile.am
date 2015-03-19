@@ -1,6 +1,6 @@
-A_CPPFLAGS = $(all_includes)
-A_CPPFLAGS += $(ADIOSLIB_CPPFLAGS)
-A_CPPFLAGS += -I$(top_srcdir)/src -I$(top_srcdir)/src/public
+AM_CPPFLAGS = $(all_includes)
+AM_CPPFLAGS += $(ADIOSLIB_CPPFLAGS)
+AM_CPPFLAGS += -I$(top_srcdir)/src -I$(top_srcdir)/src/core -I$(top_srcdir)/src/public
 
 AUTOMAKE_OPTIONS = no-dependencies
 
@@ -9,15 +9,17 @@ noinst_LIBRARIES = libparse_test_query_xml.a
 
 libparse_test_query_xml_a_SOURCES = adios_query_xml_parse.c adios_query_xml_parse.h
 libparse_test_query_xml_a_LIBADD = $(top_builddir)/src/libadios.a
+libparse_test_query_xml_a_CPPFLAGS = $(AM_CPPFLAGS)
 
 compute_expected_query_results_SOURCES = compute_expected_query_results.c
 compute_expected_query_results_LDADD = $(builddir)/libparse_test_query_xml.a $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
 compute_expected_query_results_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+compute_expected_query_results_CPPFLAGS = $(AM_CPPFLAGS)
 
 adios_query_test_SOURCES = adios_query_test.c
 adios_query_test_LDADD = libparse_test_query_xml.a $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 adios_query_test_LDFLAGS = $(ADIOSLIB_LDFLAGS)
-adios_query_test_CPPFLAGS = $(ALACRITY_CPPFLAGS)
+adios_query_test_CPPFLAGS = $(ALACRITY_CPPFLAGS) $(AM_CPPFLAGS)
 
 
 CLEANFILES = *.bp

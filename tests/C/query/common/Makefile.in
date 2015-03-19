@@ -139,7 +139,7 @@ libparse_test_query_xml_a_AR = $(AR) $(ARFLAGS)
 libparse_test_query_xml_a_DEPENDENCIES =  \
 	$(top_builddir)/src/libadios.a
 am_libparse_test_query_xml_a_OBJECTS =  \
-	adios_query_xml_parse.$(OBJEXT)
+	libparse_test_query_xml_a-adios_query_xml_parse.$(OBJEXT)
 libparse_test_query_xml_a_OBJECTS =  \
 	$(am_libparse_test_query_xml_a_OBJECTS)
 PROGRAMS = $(noinst_PROGRAMS)
@@ -157,8 +157,7 @@ adios_query_test_LINK = $(LIBTOOL) $(AM_V_lt) --tag=CC \
 	$(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) --mode=link $(CCLD) \
 	$(AM_CFLAGS) $(CFLAGS) $(adios_query_test_LDFLAGS) $(LDFLAGS) \
 	-o $@
-am_compute_expected_query_results_OBJECTS =  \
-	compute_expected_query_results.$(OBJEXT)
+am_compute_expected_query_results_OBJECTS = compute_expected_query_results-compute_expected_query_results.$(OBJEXT)
 compute_expected_query_results_OBJECTS =  \
 	$(am_compute_expected_query_results_OBJECTS)
 compute_expected_query_results_DEPENDENCIES =  \
@@ -494,19 +493,21 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-A_CPPFLAGS = $(all_includes) $(ADIOSLIB_CPPFLAGS) -I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/public
+AM_CPPFLAGS = $(all_includes) $(ADIOSLIB_CPPFLAGS) -I$(top_srcdir)/src \
+	-I$(top_srcdir)/src/core -I$(top_srcdir)/src/public
 AUTOMAKE_OPTIONS = no-dependencies
 noinst_LIBRARIES = libparse_test_query_xml.a
 libparse_test_query_xml_a_SOURCES = adios_query_xml_parse.c adios_query_xml_parse.h
 libparse_test_query_xml_a_LIBADD = $(top_builddir)/src/libadios.a
+libparse_test_query_xml_a_CPPFLAGS = $(AM_CPPFLAGS)
 compute_expected_query_results_SOURCES = compute_expected_query_results.c
 compute_expected_query_results_LDADD = $(builddir)/libparse_test_query_xml.a $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
 compute_expected_query_results_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+compute_expected_query_results_CPPFLAGS = $(AM_CPPFLAGS)
 adios_query_test_SOURCES = adios_query_test.c
 adios_query_test_LDADD = libparse_test_query_xml.a $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 adios_query_test_LDFLAGS = $(ADIOSLIB_LDFLAGS)
-adios_query_test_CPPFLAGS = $(ALACRITY_CPPFLAGS)
+adios_query_test_CPPFLAGS = $(ALACRITY_CPPFLAGS) $(AM_CPPFLAGS)
 CLEANFILES = *.bp
 all: all-am
 
@@ -583,11 +584,23 @@ distclean-compile:
 .c.lo:
 	$(AM_V_CC)$(LTCOMPILE) -c -o $@ $<
 
+libparse_test_query_xml_a-adios_query_xml_parse.o: adios_query_xml_parse.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libparse_test_query_xml_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libparse_test_query_xml_a-adios_query_xml_parse.o `test -f 'adios_query_xml_parse.c' || echo '$(srcdir)/'`adios_query_xml_parse.c
+
+libparse_test_query_xml_a-adios_query_xml_parse.obj: adios_query_xml_parse.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libparse_test_query_xml_a_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o libparse_test_query_xml_a-adios_query_xml_parse.obj `if test -f 'adios_query_xml_parse.c'; then $(CYGPATH_W) 'adios_query_xml_parse.c'; else $(CYGPATH_W) '$(srcdir)/adios_query_xml_parse.c'; fi`
+
 adios_query_test-adios_query_test.o: adios_query_test.c
 	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_query_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_query_test-adios_query_test.o `test -f 'adios_query_test.c' || echo '$(srcdir)/'`adios_query_test.c
 
 adios_query_test-adios_query_test.obj: adios_query_test.c
 	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_query_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_query_test-adios_query_test.obj `if test -f 'adios_query_test.c'; then $(CYGPATH_W) 'adios_query_test.c'; else $(CYGPATH_W) '$(srcdir)/adios_query_test.c'; fi`
+
+compute_expected_query_results-compute_expected_query_results.o: compute_expected_query_results.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(compute_expected_query_results_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o compute_expected_query_results-compute_expected_query_results.o `test -f 'compute_expected_query_results.c' || echo '$(srcdir)/'`compute_expected_query_results.c
+
+compute_expected_query_results-compute_expected_query_results.obj: compute_expected_query_results.c
+	$(AM_V_CC)$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(compute_expected_query_results_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o compute_expected_query_results-compute_expected_query_results.obj `if test -f 'compute_expected_query_results.c'; then $(CYGPATH_W) 'compute_expected_query_results.c'; else $(CYGPATH_W) '$(srcdir)/compute_expected_query_results.c'; fi`
 
 mostlyclean-libtool:
 	-rm -f *.lo
