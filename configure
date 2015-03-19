@@ -28858,7 +28858,7 @@ else
         XPMEM_LIBS="-lxpmem"
     fi
 
-    LIBS="$LIBS $XPMEM_LIBS -lstdc++"
+    LIBS="$LIBS $XPMEM_LIBS"
     LDFLAGS="$LDFLAGS $XPMEM_LDFLAGS"
     CPPFLAGS="$CPPFLAGS $XPMEM_CPPFLAGS"
 
