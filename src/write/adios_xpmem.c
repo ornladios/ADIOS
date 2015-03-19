@@ -35,7 +35,6 @@
 #include "public/adios_error.h"
 #include "core/adios_logger.h"
 
-#include "conv/xpmem_test.hpp"	
 
 //Initialization checks
 static int adios_xpmem_initialized = 0;
