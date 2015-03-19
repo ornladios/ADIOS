@@ -1,7 +1,7 @@
-INCLUDES = $(all_includes)
-INCLUDES += -I$(top_srcdir)/src/public -I$(top_srcdir)/src/query
+AM_CPPFLAGS = $(all_includes)
+AM_CPPFLAGS += -I$(top_srcdir)/src/public -I$(top_srcdir)/src/query
 
-AUTOMAKE_OPTIONS = no-dependencies
+AUTOMAKE_OPTIONS = no-dependencies  subdir-objects
 
 noinst_PROGRAMS = write_vars query_vars write_table query_table
 

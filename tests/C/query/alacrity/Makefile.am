@@ -1,8 +1,8 @@
-INCLUDES = $(all_includes)
-INCLUDES += $(ADIOSLIB_CPPFLAGS)
-INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public -I$(srcdir)/../common/
+AM_CPPFLAGS = $(all_includes)
+AM_CPPFLAGS += $(ADIOSLIB_CPPFLAGS)
+AM_CPPFLAGS += -I$(top_srcdir)/src -I$(top_srcdir)/src/public -I$(srcdir)/../common/
 
-AUTOMAKE_OPTIONS = no-dependencies
+AUTOMAKE_OPTIONS = no-dependencies  subdir-objects
 if HAVE_ALACRITY
 
 noinst_PROGRAMS = adios_read_ext_test adios_build_alac_index adios_alac_query adios_show_bp_file adios_read_block

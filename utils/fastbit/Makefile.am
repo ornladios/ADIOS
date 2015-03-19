@@ -1,8 +1,8 @@
 AUTOMAKE_OPTIONS = no-dependencies
 
-INCLUDES = $(all_includes)
+AM_CPPFLAGS = $(all_includes)
 
-INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/core
+AM_CPPFLAGS += -I$(top_srcdir)/src -I$(top_srcdir)/src/core
 
 
 bin_PROGRAMS = adios_index_fastbit

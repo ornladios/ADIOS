@@ -8,8 +8,8 @@ bin_PROGRAMS = bp2ncd
 bp2ncd_SOURCES = bp2ncd.c
 
 if USE_PARALLEL_COMPILER
-    CC=$(MPICC)
-    CXX=$(MPICXX)
+    # CC=$(MPICC)
+    # CXX=$(MPICXX)
     bp2ncd_CPPFLAGS = $(AM_CPPFLAGS) $(ADIOSLIB_EXTRA_CPPFLAGS) $(ADIOSLIB_CPPFLAGS)
     bp2ncd_CFLAGS = $(ADIOSLIB_CFLAGS) 
     bp2ncd_LDFLAGS = $(ADIOSLIB_LDFLAGS) -static-libtool-libs

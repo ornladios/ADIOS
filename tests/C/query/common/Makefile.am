@@ -1,6 +1,6 @@
-INCLUDES = $(all_includes)
-INCLUDES += $(ADIOSLIB_CPPFLAGS)
-INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public
+A_CPPFLAGS = $(all_includes)
+A_CPPFLAGS += $(ADIOSLIB_CPPFLAGS)
+A_CPPFLAGS += -I$(top_srcdir)/src -I$(top_srcdir)/src/public
 
 AUTOMAKE_OPTIONS = no-dependencies
 

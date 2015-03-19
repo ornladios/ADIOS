@@ -1,7 +1,7 @@
-INCLUDES = $(all_includes)
-INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public
+AM_CPPFLAGS = $(all_includes)
+AM_CPPFLAGS += -I$(top_srcdir)/src -I$(top_srcdir)/src/public
 
-AUTOMAKE_OPTIONS = no-dependencies
+AUTOMAKE_OPTIONS = no-dependencies subdir-objects
 
 all-local:
 	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/README.txt $(builddir)

@@ -1,6 +1,8 @@
+
+#add the subdir for the convinience library
 AM_CPPFLAGS=-I$(top_srcdir) -I$(top_srcdir)/src/core -I$(top_srcdir)/src/core/transforms -I$(top_srcdir)/src/core/query
 
-AUTOMAKE_OPTIONS = no-dependencies
+AUTOMAKE_OPTIONS = no-dependencies subdir-objects
 METASOURCES=AUTO
 
 BUILT_SOURCES=public/adios_xpmem.h
@@ -298,7 +300,7 @@ if HAVE_XPMEM
 libadios_a_SOURCES += write/adios_xpmem.c read/read_xpmem.c
 libadios_nompi_a_SOURCES += write/adios_xpmem.c  read/read_xpmem.c
 if BUILD_FORTRAN
-FortranLibSources += write/adios_xpmem.c  read/read_xpmem.c
+FortranLibSources += write/adios_xpmem.c  read/read_xpmem.c 
 endif
 endif
 
@@ -412,7 +414,7 @@ libadiosf_nompi_v1_a_SOURCES += core/adiosf_defs_mod.f90 \
 nodist_include_HEADERS += adios_write_mod.mod 
 CLEANFILES += adios_write_mod.mod
 
-adiosf_write_mod.$(OBJEXT): adiosf_defs_mod.$(OBJEXT)
+adiosf_write_mod.$(OBJEXT): core/adiosf_defs_mod.$(OBJEXT)
 adios_write_mod.mod: adiosf_write_mod.$(OBJEXT)
 
 endif
@@ -549,13 +551,13 @@ libadiosreadf_a_SOURCES += core/adiosf_defs_mod.f90 \
 nodist_include_HEADERS += adios_read_mod.mod adios_defs_mod.mod adios_query_mod.mod
 CLEANFILES += adios_read_mod.mod adios_defs_mod.mod adios_query_mod.mod
 
-adiosf_read_mod.$(OBJEXT): adiosf_defs_mod.$(OBJEXT)
+adiosf_read_mod.$(OBJEXT): core/adiosf_defs_mod.$(OBJEXT)
 adios_read_mod.mod: adiosf_read_mod.$(OBJEXT)
 
 adios_query_mod.$(OBJEXT): adiosf_read_mod.$(OBJEXT)
 adios_query_mod.mod: adios_query_mod.$(OBJEXT)
 
-adios_defs_mod.mod: adiosf_defs_mod.$(OBJEXT)
+adios_defs_mod.mod: core/adiosf_defs_mod.$(OBJEXT)
 
 endif
 

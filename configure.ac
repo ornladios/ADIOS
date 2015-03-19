@@ -1,4 +1,3 @@
-s
 AC_INIT([adios], [1.8.0])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR(config)
@@ -17,7 +16,7 @@ dnl generates HAVE_STRINGIZE
 AC_PROG_CC
 AM_PROG_CC_C_O
 AC_PROG_CXX
-AC_PROG_RANLIB
+dnl AC_PROG_RANLIB - LT_INIT replaces
 
 AC_LANG(C)
 ACX_MPI([], [AC_MSG_ERROR([could not find mpi library for C])])

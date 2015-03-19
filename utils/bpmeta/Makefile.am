@@ -11,7 +11,7 @@ bpmeta_LDFLAGS = $(ADIOSLIB_INT_LDFLAGS)
 bpmeta_LDADD = $(top_builddir)/src/libadios_internal_nompi.a
 bpmeta_LDADD += $(ADIOSLIB_INT_LDADD)
 
-if USE_PARALLEL_COMPILER
-    CC=$(MPICC)
-    CXX=$(MPICXX)
-endif
+# if USE_PARALLEL_COMPILER
+#     CC=$(MPICC)
+#     CXX=$(MPICXX)
+# endif

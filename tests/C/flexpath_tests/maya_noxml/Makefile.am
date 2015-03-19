@@ -1,7 +1,7 @@
 AM_CPPFLAGS = $(all_includes)
 AM_CPPFLAGS += -I$(top_srcdir)/src -I$(top_srcdir)/src/public -I$(srcdir)/../include
 
-AUTOMAKE_OPTIONS = no-dependencies
+AUTOMAKE_OPTIONS = no-dependencies  subdir-objects
 
 noinst_PROGRAMS = writer_maya_noxml reader_maya_noxml
 

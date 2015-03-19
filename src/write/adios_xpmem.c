@@ -35,7 +35,9 @@
 #include "public/adios_error.h"
 #include "core/adios_logger.h"
 
-//initialization checks
+#include "conv/xpmem_test.hpp"	
+
+//Initialization checks
 static int adios_xpmem_initialized = 0;
 
 //xpmem helper functions
@@ -91,6 +93,8 @@ void adios_xpmem_init (const PairStruct * parameters
               p->sp->offset);
         
     write_segid(p->buffer_id, "xpmem.data");
+
+    test_function(0);
 
 }
 

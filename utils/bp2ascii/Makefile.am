@@ -11,7 +11,7 @@ bp2ascii_LDFLAGS = $(ADIOSLIB_INT_LDFLAGS)
 bp2ascii_LDADD = $(top_builddir)/src/libadios_internal_nompi.a
 bp2ascii_LDADD += $(ADIOSLIB_INT_LDADD)
 
-if USE_PARALLEL_COMPILER
-    CC=$(MPICC)
-    CXX=$(MPICXX)
-endif
+# # if USE_PARALLEL_COMPILER
+# #     CC=$(MPICC)
+# #     CXX=$(MPICXX)
+# endif
