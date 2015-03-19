@@ -93,7 +93,6 @@ void adios_xpmem_init (const PairStruct * parameters
         
     write_segid(p->buffer_id, "xpmem.data");
 
-    test_function(0);
 
 }
 
