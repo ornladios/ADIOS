@@ -156,8 +156,8 @@ static xpmem_segid_t make_share(char **data, size_t size)
 	if(ret != 0)
 	{
 		lerror = errno;
-		log_debug("error in posix_memalign %d %s\n",
-		        lerror, strerror(lerror));		
+		log_debug("error in posix_memalign %d %s\tsize =%d, pagesize = %d\n",
+		          lerror, strerror(lerror), size, PAGE_SIZE);		
 		return -1;
 	}
 
@@ -169,8 +169,8 @@ static xpmem_segid_t make_share(char **data, size_t size)
 	if(segid == -1)
 	{
 	    lerror = errno;
-	    log_debug("error in xpmem make hobbes %d %s\n",
-		    lerror, strerror(lerror));		
+	    log_debug("error in xpmem make hobbes\tsegid=%d %d %s\n",
+	              segid, lerror, strerror(lerror));		
 		return -1;
 	}
 	if(segid != WELL_KNOWN_ADIOS_ID)
