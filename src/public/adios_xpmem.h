@@ -62,8 +62,8 @@ static xpmem_segid_t make_share(char **data, size_t size)
 	if(segid == -1)
 	{
 	    lerror = errno;
-	    log_debug(stderr, "error in posix_memalign %d %s\n",
-		    lerror, strerror(lerror));		
+	    log_debug(stderr, "error in xpmem_make\tsegid=%d %d %s\n",
+	              segid, lerror, strerror(lerror));		
 		return -1;
 	}
 	return segid;
