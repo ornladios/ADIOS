@@ -147,7 +147,7 @@ adios_read_xpmem_open_file(const char * fname, MPI_Comm comm)
 
 	//we will spin until the file is version is updated
 	//incidating that we have some data here
-	
+
 	while(f->fp->pg->version == 0)
 	    adios_nanosleep(0, 100000000);
 
@@ -259,6 +259,8 @@ adios_read_xpmem_advance_step(ADIOS_FILE *fp, int last, float timeout_sec)
 			//end of file thing
 			//for now just return -1
 			xd->pg->finalized = 2;
+			xpmem_signal(xd->data_apid);
+			
 			xpmem_detach((void*)xd->pg);
 			adios_errno = err_end_of_stream;
 			return -1;

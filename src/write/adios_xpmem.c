@@ -54,44 +54,44 @@ typedef struct _xmeminfo
 
  
 void adios_xpmem_init (const PairStruct * parameters
-                      ,struct adios_method_struct * method
-                      )
+                       ,struct adios_method_struct * method
+	)
 {
 	adios_xpmem_data_struct *p = NULL;
-    if (!adios_xpmem_initialized)
-    {
-        adios_xpmem_initialized = 1;
-    }
+	if (!adios_xpmem_initialized)
+	{
+		adios_xpmem_initialized = 1;
+	}
 
-    adios_logger_open(NULL, 0);
+	adios_logger_open(NULL, 0);
     
-    method->method_data = malloc (sizeof (adios_xpmem_data_struct));
-    memset(method->method_data, 0, sizeof(adios_xpmem_data_struct));
+	method->method_data = malloc (sizeof (adios_xpmem_data_struct));
+	memset(method->method_data, 0, sizeof(adios_xpmem_data_struct));
 
-    //store the data struct in the method 
-    p = (adios_xpmem_data_struct*)method->method_data;
+	//store the data struct in the method 
+	p = (adios_xpmem_data_struct*)method->method_data;
     
-    //now create the shared memory space
-    //fake the buffer size to 10 MB
-    p->buffer_id = make_share(&p->b, share_size);
-    memset(p->b, 0, share_size);
-    p->size = share_size;
+	//now create the shared memory space
+	//fake the buffer size to 10 MB
+	p->buffer_id = make_share(&p->b, share_size);
+	memset(p->b, 0, share_size);
+	p->size = share_size;
 
-    log_debug("xpmem initialized\tbuffer_id = %llu \t writing to disk",
-              p->buffer_id);
+	log_debug("xpmem initialized\tbuffer_id = %llu \t writing to disk",
+	          p->buffer_id);
 
-    p->sp = (shared_data*)p->b;
+	p->sp = (shared_data*)p->b;
 
    
-    memset(p->sp, 0, sizeof(shared_data));
+	memset(p->sp, 0, sizeof(shared_data));
 
-    p->sp->offset = (uint64_t)p->sp->buffer - (uint64_t)p->b;
+	p->sp->offset = (uint64_t)p->sp->buffer - (uint64_t)p->b;
         
 
-    log_debug("xpmem data offset = %d",
-              p->sp->offset);
+	log_debug("xpmem data offset = %d",
+	          p->sp->offset);
         
-    write_segid(p->buffer_id, "xpmem.data");
+	write_segid(p->buffer_id, "xpmem.data");
 
 
 }
@@ -302,7 +302,7 @@ void adios_xpmem_finalize (int mype, struct adios_method_struct * method)
 	p->sp->finalized = 1;
 	
 	//now loop over the readcount
-#if 0	
+#if 1	
 	while(p->sp->readcount != 1)
 		adios_nanosleep(0, 100000000);
 

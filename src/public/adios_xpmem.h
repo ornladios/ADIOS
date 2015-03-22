@@ -18,7 +18,7 @@ static int lerror;
 #define LOCK_INDEX	TMP_SHARE_SIZE - 1
 #define COW_LOCK_INDEX	TMP_SHARE_SIZE - 2
 
-static uint64_t share_size = 10*1024*1024;
+static uint64_t share_size = 32*1024*1024;
 static uint64_t index_share_size = 1*1024*1024;
 
 typedef struct _shared_data
@@ -120,6 +120,7 @@ static int write_segid(xpmem_segid_t segid, char *fname)
 	return 0;
 }
 
+
 static int read_segid(xpmem_segid_t *segid, char *fname)
 {
 	int fd = open (fname, O_RDONLY, 0666);
@@ -184,6 +185,11 @@ static xpmem_segid_t make_share(char **data, size_t size)
 	log_debug("buffer = %p\tfd = %d\n", *data, ((shared_data*)(*data))->fd);
 	
 	return segid;
+}
+
+static int signal_share(shared_data *d)
+{
+	
 }
 
 static int sleep_on_share(shared_data *d)

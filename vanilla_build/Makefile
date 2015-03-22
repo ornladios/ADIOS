@@ -21,7 +21,7 @@ libadiosf_nompi_a_COBJS := $(libadiosf_nompi_a_CSRC:.c=.o)
 libadiosf_nompi_a_FOBJS := $(libadiosf_nompi_a_FSRC:.f90=.o)
 
 
-OBJDIRS = core core/transforms transforms read write 
+OBJDIRS = core core/transforms transforms read write query
 
 help:
 	@echo "Settings imported from: make.settings.$(HOST)"
@@ -48,13 +48,16 @@ help:
 	@echo "   FLIBS=-ladiosf $(MXML_LIBS) -lm"
 
 
+%.f90:
+	$(FC) $(CPPFLAGS) $(FFLAGS) -c -D_NOMPI $(INC) $< -o $@
 
-%.o: %.c
+%.o:%.f90
+	$(FC) $(CPPFLAGS) $(FFLAGS) -c -D_NOMPI $(INC) $< -o $@
+
+%.o:%.c
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c -D_NOMPI $(INC) $< -o $@
 
 
-%.o: %.f90
-	$(FC) $(CPPFLAGS) $(FFLAGS) -c -D_NOMPI $(INC) $< -o $@
 
 
 makeobjdirs:
@@ -63,13 +66,13 @@ makeobjdirs:
 	mkdir -p $(OBJDIRS)
 
 
-libadios.a: $(libadios_nompi_a_COBJS) $(libadios_nompi_a_FOBJS)
+libadios.a: $(libadios_nompi_a_COBJS) $(libadiosf_nompi_a_FOBJS)
 	@echo "================================================================="
 	@echo "Create libadios.a"
 	ar rc libadios.a $(libadios_nompi_a_COBJS) $(libadios_nompi_a_FOBJS)
 
 
-libadiosf.a: $(libadiosf_nompi_a_COBJS) $(libadiosf_nompi_a_FOBJS)
+libadiosf.a: $(libadiosf_nompi_a_FOBJS)  $(libadiosf_nompi_a_COBJS) 
 	@echo "================================================================="
 	@echo "Create libadiosf.a"
 	ar rc libadiosf.a $(libadiosf_nompi_a_COBJS) $(libadiosf_nompi_a_FOBJS)
