@@ -1335,6 +1335,7 @@ int adios_common_delete_attrdefs (struct adios_group_struct * g)
         free (attr->path);
         free (attr);
     }
+    return 0;
 }
 
 // Delete all variable (definitions) from a group
