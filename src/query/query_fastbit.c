@@ -1149,7 +1149,8 @@ int evaluateWithIdxOnBoundingBoxWithBitArray(ADIOS_FILE* idxFile, ADIOS_QUERY* q
 	}
       }
       
-      casestudyLogger_frame_writeout(&frameStartT, "block processed");
+      //casestudyLogger_frame_writeout(&frameStartT, "block processed");
+      casestudyLogger_pro_writeout(&frameStartT, "block processed");
       log_debug("----\n");
     }
 
@@ -1724,7 +1725,7 @@ int64_t  applyIndexIfExists (ADIOS_QUERY* q, int timeStep)
   //ADIOS_FILE* idxFile = fastbit_adios_util_getFastbitIndexFileToRead(basefileName, comm_dummy);
     
   if (idxFile != NULL) {
-      casestudyLogger_starts("idxEval");
+    //casestudyLogger_starts("idxEval");
     //clear_fastbit_internal(q);
       if ((leaf->sel == NULL) || (leaf->sel->type == ADIOS_SELECTION_BOUNDINGBOX)) {
 #ifdef BITARRAY     
@@ -1759,7 +1760,7 @@ int64_t  applyIndexIfExists (ADIOS_QUERY* q, int timeStep)
 	//return result;
       } // otherwise, use no idx method
       //common_read_close(idxFile);      
-      casestudyLogger_ends("idxEval");
+      //casestudyLogger_ends("idxEval");
   }
   
   
@@ -1868,7 +1869,7 @@ int64_t call_fastbit_evaluate(ADIOS_QUERY* q, int timeStep, uint64_t _maxResult)
      log_debug(":: user required more results. will evaluate again. \n");
   }
 
-  casestudyLogger_starts("evaluatingFastbit");
+  //casestudyLogger_starts("evaluatingFastbit");
 
 #ifdef BITARRAY
   if (q->queryInternal == 0) {
@@ -1889,7 +1890,7 @@ int64_t call_fastbit_evaluate(ADIOS_QUERY* q, int timeStep, uint64_t _maxResult)
 
   log_debug(":: ==> fastbit_evaluate() num of hits found for [%s] = %lld, at timestep %d \n", q->condition, numHits, timeStep);  
 
-  casestudyLogger_ends("evaluatingFastbit");
+  //casestudyLogger_ends("evaluatingFastbit");
 
   if (numHits < 0) {
     return 0;
@@ -2055,14 +2056,15 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
 {
   casestudyLogger_init();
   casestudyLogger_starts("queryArrived. initfastbit");
+
+  adios_query_fastbit_init();
+
   /*
   if (q->_onTimeStep < 0) {
     log_error(":: Error: need to call evaluate first! Exit.\n");
     return -1;
   }
   */
-  adios_query_fastbit_init();
-  casestudyLogger_ends("queryArrived. initfastbit");
 
   /*if (assertTimeStepValidWithQuery(q) != 0) {
     return -1;
@@ -2146,6 +2148,8 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
   log_debug("]\n\n");
   */
   casestudyLogger_frame_print();
+  casestudyLogger_ends("evaluation_total");
+
   if (q->resultsReadSoFar == q->maxResultsDesired) {
     return 0;
   } else {
