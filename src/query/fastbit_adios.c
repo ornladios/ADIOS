@@ -9,29 +9,74 @@
 
 const char* _prefix="";
 
-
 unsigned long _startMillis = 0;
-struct timespec _bmsVisits;
-struct timespec _idxVisits;
+unsigned long _milestoneMillis = 0;
+
+//struct timespec _bmsVisits;
+//struct timespec _idxVisits;
+
+CollectionPoint _bmsPoint;
+CollectionPoint _idxPoint;
+CollectionPoint _proPoint; // fastbit_evaluate & getCoordinate
+CollectionPoint _framePoint;
+
+void casestudyLogger_initPoints(CollectionPoint* p) 
+{
+  p->_accumulator.tv_nsec = 0;
+  p->_accumulator.tv_sec = 0;
+
+  p->_counter = 0;
+}
+
+void casestudyLogger_init() 
+{
+  casestudyLogger_initPoints(&_bmsPoint);
+  casestudyLogger_initPoints(&_idxPoint);
+  casestudyLogger_initPoints(&_proPoint);
+  casestudyLogger_initPoints(&_framePoint);
+}
+
+extern void casestudyLogger_print(CollectionPoint* p, const char* msg)
+{
+  printf("%s: %llu sec %llu millisec  accumulated, visited: %lu times \n",  msg,  p->_accumulator.tv_sec, p->_accumulator.tv_nsec/((unsigned long)1000000), p->_counter);
+}
 
 extern void casestudyLogger_starts(const char* ref)
 {
   _startMillis = fastbit_adios_getCurrentTimeMillis();
-  _bmsVisits.tv_nsec=0;
+  _milestoneMillis = 0;
+
+  /*_bmsVisits.tv_nsec=0;
   _bmsVisits.tv_sec=0;
   _idxVisits.tv_nsec=0;
   _idxVisits.tv_sec=0;
+  */
   printf("==> casestudy %s starts at: %llu sec\n", ref, _startMillis/1000);
 }
 
+
 extern void casestudyLogger_bms_print()
 {
-  printf("bitmap visit took: %llu sec %llu millisec  accumulated \n",  _bmsVisits.tv_sec, _bmsVisits.tv_nsec/((unsigned long)1000000));
+  //printf("bitmap visit took: %llu sec %llu millisec  accumulated \n",  _bmsVisits.tv_sec, _bmsVisits.tv_nsec/((unsigned long)1000000));
+  casestudyLogger_print(&_bmsPoint, "bitmap visit took");
 }
 
 extern void casestudyLogger_idx_print()
 {
-  printf("idx access took: %llu sec %llu millisec  accumulated \n",  _bmsVisits.tv_sec, _bmsVisits.tv_nsec/((unsigned long)1000000));
+  //printf("idx access took: %llu sec %llu millisec  accumulated \n",  _idxVisits.tv_sec, _idxVisits.tv_nsec/((unsigned long)1000000));
+  casestudyLogger_print(&_idxPoint, "idx access took:");
+}
+
+extern void casestudyLogger_pro_print()
+{
+  //printf("idx access took: %llu sec %llu millisec  accumulated \n",  _idxVisits.tv_sec, _idxVisits.tv_nsec/((unsigned long)1000000));
+  casestudyLogger_print(&_proPoint, "fastbit query process took:");
+}
+
+extern void casestudyLogger_frame_print()
+{
+  //printf("idx access took: %llu sec %llu millisec  accumulated \n",  _idxVisits.tv_sec, _idxVisits.tv_nsec/((unsigned long)1000000));
+  casestudyLogger_print(&_framePoint, "query frame took:");
 }
 
 extern void casestudyLogger_ends(const char* ref)
@@ -66,20 +111,24 @@ extern void casestudyLogger_setPrefix(const char* prefix)
   unsigned long diffMillis = currMillis-_startMillis;
   unsigned long diffsec = diffMillis/1000;
 
+  unsigned long ministepMillis = currMillis - _milestoneMillis;
+  if (_milestoneMillis == 0) {
+    ministepMillis = diffMillis;
+  } 
+    
+
   if (diffsec > 60) {
     unsigned long diffmin = diffsec/60;
     diffsec = diffsec - diffmin*60;
-    printf("on %s, time passed since start: %lu millisecs = %lu min & %lu sec \n", prefix, diffMillis, diffmin, diffsec);
+    printf("on %s, time passed since start: %lu millisecs = %lu min & %lu sec, ministep=%lu milliseconds \n", prefix, diffMillis, diffmin, diffsec, ministepMillis);
   } else {
-    printf("on %s, time passed since start: %lu millisecs = %lu sec\n", prefix, diffMillis, diffsec);
+    printf("on %s, time passed since start: %lu millisecs = %lu sec, ministep=%lu milliseconds\n", prefix, diffMillis, diffsec, ministepMillis);
   }
 
-  //struct timespec curr;
-  //casestudyLogger_getRealtime(&curr);
-  //printf("prefix: %s %llu sec %llu nanosec\n",  _prefix, (uint64_t)(curr.tv_sec), curr.tv_nsec);
-  
+  _milestoneMillis = currMillis;
 }
 
+/*
 extern void casestudyLogger_idx_writeout(struct timespec* start, 
 					 //struct timespec* end,
 					 const char* desc)
@@ -112,7 +161,7 @@ extern void casestudyLogger_idx_writeout(struct timespec* start,
 
 
 extern void casestudyLogger_bms_writeout(struct timespec* start, 
-			      //struct timespec* end,
+                              //struct timespec* end,
 			      const char* desc)
 {
   struct timespec end; 
@@ -139,6 +188,68 @@ extern void casestudyLogger_bms_writeout(struct timespec* start,
     _bmsVisits.tv_nsec -= sec*((unsigned long)1000000000);
   } 
   //printf("%s %s %llu sec %llu millisec  accumulated \n", _prefix, desc, _bmsVisits.tv_sec, _bmsVisits.tv_nsec/((unsigned long)1000000));
+}
+*/
+
+extern void casestudyLogger_writeout(CollectionPoint* p,
+				     struct timespec* start, 
+				     const char* desc)
+{
+  struct timespec end; 
+  casestudyLogger_getRealtime(&end);
+
+  struct timespec diff; 
+
+  diff.tv_nsec = end.tv_nsec - start->tv_nsec; 
+  diff.tv_sec = end.tv_sec - start->tv_sec; 
+
+  if(diff.tv_nsec < 0 ){
+    diff.tv_nsec += 1000000000; 
+    diff.tv_sec = diff.tv_sec - 1;
+  } 
+
+  //printf("%s %s %llu sec %llu nanosec \n", _prefix, desc, diff.tv_sec, diff.tv_nsec);
+
+  p->_accumulator.tv_sec  += diff.tv_sec;
+  p->_accumulator.tv_nsec += diff.tv_nsec;
+
+  unsigned long sec = p->_accumulator.tv_nsec/(unsigned long)1000000000;
+  if (sec > 0) {
+    p->_accumulator.tv_sec += sec;
+    p->_accumulator.tv_nsec -= sec*((unsigned long)1000000000);
+  } 
+  //printf("%s %s %llu sec %llu millisec  accumulated \n", _prefix, desc, _bmsVisits.tv_sec, _bmsVisits.tv_nsec/((unsigned long)1000000));
+  
+  p->_counter ++;
+}
+
+extern void casestudyLogger_idx_writeout(struct timespec* start, 
+					 //struct timespec* end,
+					 const char* desc)
+{
+  casestudyLogger_writeout(&_idxPoint, start, desc);
+}
+
+extern void casestudyLogger_pro_writeout(struct timespec* start, 
+					 //struct timespec* end,
+					 const char* desc)
+{
+  casestudyLogger_writeout(&_proPoint, start, desc);
+}
+
+extern void casestudyLogger_frame_writeout(struct timespec* start, 
+					 //struct timespec* end,
+					 const char* desc)
+{
+  casestudyLogger_writeout(&_framePoint, start, desc);
+  //printf("%s %llu sec %llu millisec  accumulated \n", desc, _framePoint._accumulator.tv_sec, _framePoint._accumulator.tv_nsec/((unsigned long)1000000));
+}
+
+extern void casestudyLogger_bms_writeout(struct timespec* start, 
+					 //struct timespec* end,
+					 const char* desc)
+{
+  casestudyLogger_writeout(&_bmsPoint, start, desc);
 }
 
 
