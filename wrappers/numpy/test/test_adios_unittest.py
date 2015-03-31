@@ -101,5 +101,10 @@ class AdiosTestCase(ut.TestCase):
         self.assertRaises(IndexError, v.__getitem__, Slicee()[::2])
         self.assertRaises(IndexError, v.__getitem__, Slicee()[:,:,:])
 
+    def test_adios_var_array_squeeze(self):
+        v = self.f['temperature']
+        val = v[:,1]
+        self.assertEqual(val.shape, (2,))
+
 if __name__ == '__main__':
     ut.main()
