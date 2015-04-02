@@ -723,7 +723,7 @@ int main (int argc, char ** argv)
     adios_parse_index_offsets_v1 (b);
 
     adios_posix_read_process_group_index (b);
-    adios_parse_process_group_index_v1 (b, &pg_root);
+    adios_parse_process_group_index_v1 (b, &pg_root, NULL);
 
     copy_buffer(b_0, b);
     adios_posix_read_vars_index (b);
