@@ -204,7 +204,7 @@ struct adios_dimension_item_struct
     uint64_t rank;                 // for numerical value
     struct adios_var_struct * var; // for value stored in variable
     struct adios_attribute_struct * attr; // for value stored in attribute
-    enum ADIOS_FLAG time_index;
+    enum ADIOS_FLAG is_time_index;
 };
 
 struct adios_dimension_struct
@@ -461,7 +461,7 @@ int adios_common_declare_group (int64_t * id, const char * name
                                ,enum ADIOS_FLAG host_language_fortran
                                ,const char * coordination_comm
                                ,const char * coordination_var
-                               ,const char * time_index
+                               ,const char * time_index_name
                                ,enum ADIOS_FLAG stats
                                );
 

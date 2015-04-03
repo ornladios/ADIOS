@@ -204,7 +204,7 @@ static uint64_t get_value_for_dim (struct adios_dimension_item_struct * dimensio
     }
     else
     {
-        if (dimension->time_index == adios_flag_yes)
+        if (dimension->is_time_index == adios_flag_yes)
             dim = 1;
         else
             dim = dimension->rank;

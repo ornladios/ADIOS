@@ -248,13 +248,13 @@ int adios_parse_dimension (const char * dimension
     dim->dimension.var = NULL;
     dim->dimension.attr = NULL;
 
-    dim->dimension.time_index = adios_flag_no;
+    dim->dimension.is_time_index = adios_flag_no;
     if ( g->time_index_name &&
          !strcasecmp (g->time_index_name, dimension)
        )
     {
         /* this is time dimension */
-        dim->dimension.time_index = adios_flag_yes;
+        dim->dimension.is_time_index = adios_flag_yes;
     }
     else if (adios_int_is_var (dimension))
     {
@@ -389,7 +389,7 @@ int adios_parse_dimension (const char * dimension
                         && !strcasecmp (g->time_index_name, global_dimension)
                    )
                 {
-                    dim->global_dimension.time_index = adios_flag_yes;
+                    dim->global_dimension.is_time_index = adios_flag_yes;
                 }
                 else
                 {
@@ -512,7 +512,7 @@ int adios_parse_dimension (const char * dimension
                         && !strcasecmp (g->time_index_name, local_offset)
                    )
                 {
-                    dim->local_offset.time_index = adios_flag_yes;
+                    dim->local_offset.is_time_index = adios_flag_yes;
                 }
                 else
                 {
@@ -2014,7 +2014,7 @@ uint16_t adios_calc_var_overhead_v1 (struct adios_var_struct * v)
         overhead += 1; // var flag
         if (    d->dimension.var == NULL
              && d->dimension.attr == NULL
-             && d->dimension.time_index == adios_flag_no
+             && d->dimension.is_time_index == adios_flag_no
            )
         {
             overhead += 8; // value
@@ -2027,7 +2027,7 @@ uint16_t adios_calc_var_overhead_v1 (struct adios_var_struct * v)
         overhead += 1; // var flag
         if (    d->global_dimension.var == NULL
              && d->global_dimension.attr == NULL
-             && d->global_dimension.time_index == adios_flag_no
+             && d->global_dimension.is_time_index == adios_flag_no
            )
         {
             overhead += 8; // value
@@ -2040,7 +2040,7 @@ uint16_t adios_calc_var_overhead_v1 (struct adios_var_struct * v)
         overhead += 1; // var flag
         if (    d->local_offset.var == NULL
              && d->local_offset.attr == NULL
-             && d->local_offset.time_index == adios_flag_no
+             && d->local_offset.is_time_index == adios_flag_no
            )
         {
             overhead += 8; // value
@@ -2948,7 +2948,7 @@ uint64_t adios_get_dim_value (struct adios_dimension_item_struct * dimension)
     }
     else
     {
-        if (dimension->time_index == adios_flag_yes)
+        if (dimension->is_time_index == adios_flag_yes)
             dim = 1;
         else
             dim = dimension->rank;
@@ -3070,15 +3070,15 @@ void adios_copy_var_written (struct adios_group_struct * g, struct adios_var_str
                     d_new->dimension.var = NULL;
                     d_new->dimension.attr = NULL;
                     d_new->dimension.rank = adios_get_dim_value (&d->dimension);
-                    d_new->dimension.time_index = d->dimension.time_index;
+                    d_new->dimension.is_time_index = d->dimension.is_time_index;
                     d_new->global_dimension.var = NULL;
                     d_new->global_dimension.attr = NULL;
                     d_new->global_dimension.rank = adios_get_dim_value (&d->global_dimension);
-                    d_new->global_dimension.time_index = d->global_dimension.time_index;
+                    d_new->global_dimension.is_time_index = d->global_dimension.is_time_index;
                     d_new->local_offset.var = NULL;
                     d_new->local_offset.attr = NULL;
                     d_new->local_offset.rank = adios_get_dim_value (&d->local_offset);
-                    d_new->local_offset.time_index = d->local_offset.time_index;
+                    d_new->local_offset.is_time_index = d->local_offset.is_time_index;
                     d_new->next = 0;
 
                     adios_append_dimension (&var_new->dimensions, d_new);
@@ -3257,15 +3257,15 @@ void adios_copy_var_written (struct adios_var_struct ** root
                             d_new->dimension.var = NULL;
                             d_new->dimension.attr = NULL;
                             d_new->dimension.rank = adios_get_dim_value (&d->dimension);
-                            d_new->dimension.time_index = d->dimension.time_index;
+                            d_new->dimension.is_time_index = d->dimension.is_time_index;
                             d_new->global_dimension.var = NULL;
                             d_new->global_dimension.attr = NULL;
                             d_new->global_dimension.rank = adios_get_dim_value (&d->global_dimension);
-                            d_new->global_dimension.time_index = d->global_dimension.time_index;
+                            d_new->global_dimension.is_time_index = d->global_dimension.is_time_index;
                             d_new->local_offset.var = NULL;
                             d_new->local_offset.attr = NULL;
                             d_new->local_offset.rank = adios_get_dim_value (&d->local_offset);
-                            d_new->local_offset.time_index = d->local_offset.time_index;
+                            d_new->local_offset.is_time_index = d->local_offset.is_time_index;
                             d_new->next = 0;
 
                             adios_append_dimension (&var_new->dimensions, d_new);
@@ -4350,7 +4350,7 @@ static uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
 
     if (    dimension->dimension.var == NULL
          && dimension->dimension.attr == NULL
-         && dimension->dimension.time_index == adios_flag_no
+         && dimension->dimension.is_time_index == adios_flag_no
        )  // it is a number
     {
         size += 8;  // size of value
@@ -4364,7 +4364,7 @@ static uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
 
     if (    dimension->global_dimension.var == NULL
          && dimension->global_dimension.attr == NULL
-         && dimension->global_dimension.time_index == adios_flag_no
+         && dimension->global_dimension.is_time_index == adios_flag_no
        )  // it is a number
     {
         size += 8; // default to a rank
@@ -4378,7 +4378,7 @@ static uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
 
     if (    dimension->local_offset.var == NULL
          && dimension->local_offset.var == NULL
-         && dimension->local_offset.time_index == adios_flag_no
+         && dimension->local_offset.is_time_index == adios_flag_no
        )  // it is a number
     {
         size += 8;  // default to a rank
@@ -4416,7 +4416,7 @@ uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
 
     if (    dimension->dimension.var == NULL
          && dimension->dimension.attr == NULL
-         && dimension->dimension.time_index == adios_flag_no
+         && dimension->dimension.is_time_index == adios_flag_no
        )
     {
         var = 'n';
@@ -4444,7 +4444,7 @@ uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
 
     if (    dimension->global_dimension.var == NULL
          && dimension->global_dimension.attr == NULL
-         && dimension->global_dimension.time_index == adios_flag_no
+         && dimension->global_dimension.is_time_index == adios_flag_no
        )
     {
         var = 'n';
@@ -4472,7 +4472,7 @@ uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
 
     if (    dimension->local_offset.var == NULL
          && dimension->local_offset.attr == NULL
-         && dimension->local_offset.time_index == adios_flag_no
+         && dimension->local_offset.is_time_index == adios_flag_no
        )
     {
         var = 'n';
@@ -5514,7 +5514,7 @@ uint64_t adios_get_dimension_space_size (struct adios_var_struct *var
         }
         else
         {
-            if (d->dimension.time_index == adios_flag_no)
+            if (d->dimension.is_time_index == adios_flag_no)
             {
                 size *= d->dimension.rank;
             }
