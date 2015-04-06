@@ -853,7 +853,7 @@ int hw_var (hid_t root_id
         int  srank, dimindex = 0;
         for ( i = 0; i < rank; i++) {
             h5_localdims [i] = parse_dimension(pvar_root, patt_root, &dims->dimension);
-            if ( dims->dimension.time_index == adios_flag_yes) {
+            if ( dims->dimension.is_time_index == adios_flag_yes) {
                   is_timeindex = adios_flag_yes;
                   dimindex = i;
             }
@@ -1191,7 +1191,7 @@ hsize_t parse_dimension(struct adios_var_struct *pvar_root,
         }
     }
     else {
-        if (dim->time_index == adios_flag_yes)
+        if (dim->is_time_index == adios_flag_yes)
             dimsize = 1;
         else
             dimsize = dim->rank;
