@@ -127,6 +127,13 @@ int common_adios_open (int64_t * fd, const char * group_name
     adios_errno = err_no_error;
     adios_common_get_group (&group_id, group_name);
     g = (struct adios_group_struct *) group_id;
+    if (!g) {
+        adios_error(err_invalid_group, 
+                "adios_open: try to open file %s with undefined group: %s\n", 
+                name, group_name);
+        *fd = 0;
+        return adios_errno;
+    }
     methods = g->methods;
 
     if (!strcasecmp (file_mode, "r"))
