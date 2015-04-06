@@ -1027,6 +1027,21 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
                                   ,&md->status
                                   );
                     adios_parse_process_group_index_v1 (&md->b ,&md->index->pg_root, &md->index->pg_tail);
+                    // find the largest time index so we can append properly
+                    struct adios_index_process_group_struct_v1 * p;
+                    uint32_t max_time_index = 0;
+                    p = md->index->pg_root;
+                    while (p)
+                    {
+                        if (p->time_index > max_time_index)
+                            max_time_index = p->time_index;
+                        p = p->next;
+                    }
+                    fd->group->time_index = ++max_time_index;
+                    MPI_Bcast (&fd->group->time_index, 1, MPI_INT, 0
+                              ,md->group_comm
+                              );
+
 
                     adios_init_buffer_read_vars_index (&md->b);
                     MPI_File_seek (md->fh, md->b.vars_index_offset
@@ -1058,6 +1073,9 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
                 {
                     fd->base_offset = 0;
                     fd->pg_start_in_file = 0;
+                    MPI_Bcast (&fd->group->time_index, 1, MPI_INT, 0
+                              ,md->group_comm
+                              );
                 }
 
                 MPI_File_close (&md->fh);
