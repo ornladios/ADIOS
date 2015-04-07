@@ -11,7 +11,7 @@ AC_ARG_WITH(
 
 dnl If the lib was specified, verify that it exists and can compile
 if test "x$with_fastbit" != xno; then
-    FASTBIT_CPPFLAGS="-I$with_fastbit/include"
+    FASTBIT_CPPFLAGS="-I$with_fastbit/include/fastbit"
     FASTBIT_LDFLAGS="-L$with_fastbit/lib"
     FASTBIT_LIBS="-lfastbit"
 

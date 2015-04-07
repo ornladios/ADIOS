@@ -248,13 +248,13 @@ int adios_parse_dimension (const char * dimension
     dim->dimension.var = NULL;
     dim->dimension.attr = NULL;
 
-    dim->dimension.time_index = adios_flag_no;
+    dim->dimension.is_time_index = adios_flag_no;
     if ( g->time_index_name &&
          !strcasecmp (g->time_index_name, dimension)
        )
     {
         /* this is time dimension */
-        dim->dimension.time_index = adios_flag_yes;
+        dim->dimension.is_time_index = adios_flag_yes;
     }
     else if (adios_int_is_var (dimension))
     {
@@ -392,7 +392,7 @@ int adios_parse_dimension (const char * dimension
                         && !strcasecmp (g->time_index_name, global_dimension)
                    )
                 {
-                    dim->global_dimension.time_index = adios_flag_yes;
+                    dim->global_dimension.is_time_index = adios_flag_yes;
                 }
                 else
                 {
@@ -518,7 +518,7 @@ int adios_parse_dimension (const char * dimension
                         && !strcasecmp (g->time_index_name, local_offset)
                    )
                 {
-                    dim->local_offset.time_index = adios_flag_yes;
+                    dim->local_offset.is_time_index = adios_flag_yes;
                 }
                 else
                 {
@@ -1363,6 +1363,7 @@ int adios_common_delete_attrdefs (struct adios_group_struct * g)
         free (attr->path);
         free (attr);
     }
+    return 0;
 }
 
 // Delete all variable (definitions) from a group
@@ -2044,7 +2045,7 @@ uint16_t adios_calc_var_overhead_v1 (struct adios_var_struct * v)
         overhead += 1; // var flag
         if (    d->dimension.var == NULL
              && d->dimension.attr == NULL
-             && d->dimension.time_index == adios_flag_no
+             && d->dimension.is_time_index == adios_flag_no
            )
         {
             overhead += 8; // value
@@ -2057,7 +2058,7 @@ uint16_t adios_calc_var_overhead_v1 (struct adios_var_struct * v)
         overhead += 1; // var flag
         if (    d->global_dimension.var == NULL
              && d->global_dimension.attr == NULL
-             && d->global_dimension.time_index == adios_flag_no
+             && d->global_dimension.is_time_index == adios_flag_no
            )
         {
             overhead += 8; // value
@@ -2070,7 +2071,7 @@ uint16_t adios_calc_var_overhead_v1 (struct adios_var_struct * v)
         overhead += 1; // var flag
         if (    d->local_offset.var == NULL
              && d->local_offset.attr == NULL
-             && d->local_offset.time_index == adios_flag_no
+             && d->local_offset.is_time_index == adios_flag_no
            )
         {
             overhead += 8; // value
@@ -2252,22 +2253,23 @@ int adios_write_process_group_header_v1 (struct adios_file_struct * fd
 }
 
 static void index_append_process_group_v1 (
-        struct adios_index_process_group_struct_v1 ** root
-        ,struct adios_index_process_group_struct_v1 * item
+        struct adios_index_struct_v1 * index,
+        struct adios_index_process_group_struct_v1 * item
         )
 {
-    while (root)
-    {
-        if (!*root)
-        {
-            *root = item;
-            root = 0;
-        }
-        else
-        {
-            root = &(*root)->next;
-        }
+    /* PG's are not merged, simply add to the end of the list */
+    if (index->pg_root) {
+        index->pg_tail->next = item;
+    } else {
+        // first element
+        index->pg_root = item;
     }
+    index->pg_tail = item;
+    /* item may be head of a long list of PGs 
+       (e.g. during global index aggregation in MPI_AGGREGATE)
+       So don't do this: 
+          item->next = 0; 
+    */
 }
 
 static void index_append_var_v1 (
@@ -2522,7 +2524,7 @@ void adios_merge_index_v1 (
                   )
 {
     // this will just add it on to the end and all should work fine
-    index_append_process_group_v1 (&main_index->pg_root, new_pg_root);
+    index_append_process_group_v1 (main_index, new_pg_root);
 
     // need to do vars attrs one at a time to merge them properly
     struct adios_index_var_struct_v1 * v = new_vars_root;
@@ -2825,6 +2827,7 @@ struct adios_index_struct_v1 * adios_alloc_index_v1 (int alloc_hashtables)
                 malloc (sizeof(struct adios_index_struct_v1));
     assert (index);
     index->pg_root = NULL;
+    index->pg_tail = NULL;
     index->vars_root = NULL;
     index->vars_tail = NULL;
     index->attrs_root = NULL;
@@ -2863,6 +2866,7 @@ void adios_clear_index_v1 (struct adios_index_struct_v1 * index)
     adios_clear_vars_index_v1 (index->vars_root);
     adios_clear_attributes_index_v1 (index->attrs_root);
     index->pg_root = NULL;
+    index->pg_tail = NULL;
     index->vars_root = NULL;
     index->vars_tail = NULL;
     index->attrs_root = NULL;
@@ -2984,7 +2988,7 @@ uint64_t adios_get_dim_value (struct adios_dimension_item_struct * dimension)
     }
     else
     {
-        if (dimension->time_index == adios_flag_yes)
+        if (dimension->is_time_index == adios_flag_yes)
             dim = 1;
         else
             dim = dimension->rank;
@@ -3106,15 +3110,15 @@ void adios_copy_var_written (struct adios_group_struct * g, struct adios_var_str
                     d_new->dimension.var = NULL;
                     d_new->dimension.attr = NULL;
                     d_new->dimension.rank = adios_get_dim_value (&d->dimension);
-                    d_new->dimension.time_index = d->dimension.time_index;
+                    d_new->dimension.is_time_index = d->dimension.is_time_index;
                     d_new->global_dimension.var = NULL;
                     d_new->global_dimension.attr = NULL;
                     d_new->global_dimension.rank = adios_get_dim_value (&d->global_dimension);
-                    d_new->global_dimension.time_index = d->global_dimension.time_index;
+                    d_new->global_dimension.is_time_index = d->global_dimension.is_time_index;
                     d_new->local_offset.var = NULL;
                     d_new->local_offset.attr = NULL;
                     d_new->local_offset.rank = adios_get_dim_value (&d->local_offset);
-                    d_new->local_offset.time_index = d->local_offset.time_index;
+                    d_new->local_offset.is_time_index = d->local_offset.is_time_index;
                     d_new->next = 0;
 
                     adios_append_dimension (&var_new->dimensions, d_new);
@@ -3298,15 +3302,15 @@ void adios_copy_var_written (struct adios_var_struct ** root
                             d_new->dimension.var = NULL;
                             d_new->dimension.attr = NULL;
                             d_new->dimension.rank = adios_get_dim_value (&d->dimension);
-                            d_new->dimension.time_index = d->dimension.time_index;
+                            d_new->dimension.is_time_index = d->dimension.is_time_index;
                             d_new->global_dimension.var = NULL;
                             d_new->global_dimension.attr = NULL;
                             d_new->global_dimension.rank = adios_get_dim_value (&d->global_dimension);
-                            d_new->global_dimension.time_index = d->global_dimension.time_index;
+                            d_new->global_dimension.is_time_index = d->global_dimension.is_time_index;
                             d_new->local_offset.var = NULL;
                             d_new->local_offset.attr = NULL;
                             d_new->local_offset.rank = adios_get_dim_value (&d->local_offset);
-                            d_new->local_offset.time_index = d->local_offset.time_index;
+                            d_new->local_offset.is_time_index = d->local_offset.is_time_index;
                             d_new->next = 0;
 
                             adios_append_dimension (&var_new->dimensions, d_new);
@@ -3363,7 +3367,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
     g_item->next = 0;
 
     // build the groups and vars index
-    index_append_process_group_v1 (&index->pg_root, g_item);
+    index_append_process_group_v1 (index, g_item);
 
     while (v)
     {
@@ -4469,7 +4473,7 @@ static uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
 
     if (    dimension->dimension.var == NULL
          && dimension->dimension.attr == NULL
-         && dimension->dimension.time_index == adios_flag_no
+         && dimension->dimension.is_time_index == adios_flag_no
        )  // it is a number
     {
         size += 8;  // size of value
@@ -4483,7 +4487,7 @@ static uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
 
     if (    dimension->global_dimension.var == NULL
          && dimension->global_dimension.attr == NULL
-         && dimension->global_dimension.time_index == adios_flag_no
+         && dimension->global_dimension.is_time_index == adios_flag_no
        )  // it is a number
     {
         size += 8; // default to a rank
@@ -4497,7 +4501,7 @@ static uint16_t calc_dimension_size (struct adios_dimension_struct * dimension)
 
     if (    dimension->local_offset.var == NULL
          && dimension->local_offset.var == NULL
-         && dimension->local_offset.time_index == adios_flag_no
+         && dimension->local_offset.is_time_index == adios_flag_no
        )  // it is a number
     {
         size += 8;  // default to a rank
@@ -4535,7 +4539,7 @@ uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
 
     if (    dimension->dimension.var == NULL
          && dimension->dimension.attr == NULL
-         && dimension->dimension.time_index == adios_flag_no
+         && dimension->dimension.is_time_index == adios_flag_no
        )
     {
         var = 'n';
@@ -4563,7 +4567,7 @@ uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
 
     if (    dimension->global_dimension.var == NULL
          && dimension->global_dimension.attr == NULL
-         && dimension->global_dimension.time_index == adios_flag_no
+         && dimension->global_dimension.is_time_index == adios_flag_no
        )
     {
         var = 'n';
@@ -4591,7 +4595,7 @@ uint64_t adios_write_dimension_v1 (struct adios_file_struct * fd
 
     if (    dimension->local_offset.var == NULL
          && dimension->local_offset.attr == NULL
-         && dimension->local_offset.time_index == adios_flag_no
+         && dimension->local_offset.is_time_index == adios_flag_no
        )
     {
         var = 'n';
@@ -5655,7 +5659,7 @@ uint64_t adios_get_dimension_space_size (struct adios_var_struct *var
         }
         else
         {
-            if (d->dimension.time_index == adios_flag_no)
+            if (d->dimension.is_time_index == adios_flag_no)
             {
                 size *= d->dimension.rank;
             }

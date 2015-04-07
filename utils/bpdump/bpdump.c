@@ -159,7 +159,7 @@ int main (int argc, char ** argv)
     */
 
     adios_posix_read_process_group_index (b);
-    adios_parse_process_group_index_v1 (b, &pg_root);
+    adios_parse_process_group_index_v1 (b, &pg_root, NULL);
     print_process_group_index (pg_root);
 
     printf (DIVIDER);
@@ -561,7 +561,7 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
             printf ("\t\t\tDim %d l:g:o: ", i++);
             if (d->dimension.var_id == 0)
             {
-                if (d->dimension.time_index == adios_flag_yes)
+                if (d->dimension.is_time_index == adios_flag_yes)
                 {
                     printf ("TIME");
                 }
@@ -581,7 +581,7 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
             {
                 if (d->global_dimension.var_id == 0)
                 {
-                    if (d->global_dimension.time_index == adios_flag_yes)
+                    if (d->global_dimension.is_time_index == adios_flag_yes)
                     {
                         printf (":TIME");
                     }
@@ -596,7 +596,7 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
                 }
                 if (d->local_offset.var_id == 0)
                 {
-                    if (d->local_offset.time_index == adios_flag_yes)
+                    if (d->local_offset.is_time_index == adios_flag_yes)
                     {
                         printf (":TIME");
                     }
@@ -898,7 +898,7 @@ void print_var_payload (struct adios_var_header_struct_v1 * var_header
                 }
                 else
                 {
-                    if (d->dimension.time_index == adios_flag_yes)
+                    if (d->dimension.is_time_index == adios_flag_yes)
                     {
                         *dims_t = 1;
                     }

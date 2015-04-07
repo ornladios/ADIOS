@@ -273,6 +273,11 @@ int adios_close (int64_t fd_p)
 {
     int retval;
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
+    if (!fd)
+    {
+        adios_error (err_invalid_file_pointer, "Invalid handle passed to adios_close\n");
+        return adios_errno;
+    }
     struct adios_var_struct * v = fd->group->vars;
 
     retval = common_adios_close (fd_p);

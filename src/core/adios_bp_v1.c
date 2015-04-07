@@ -185,7 +185,8 @@ int adios_parse_index_offsets_v1 (struct adios_bp_buffer_struct_v1 * b)
 }
 
 int adios_parse_process_group_index_v1 (struct adios_bp_buffer_struct_v1 * b,
-                         struct adios_index_process_group_struct_v1 ** pg_root
+                         struct adios_index_process_group_struct_v1 ** pg_root,
+                         struct adios_index_process_group_struct_v1 ** pg_tail
                          )
 {
     struct adios_index_process_group_struct_v1 ** root;
@@ -278,6 +279,10 @@ int adios_parse_process_group_index_v1 (struct adios_bp_buffer_struct_v1 * b,
             swap_64((*root)->offset_in_file);
         }
         b->offset += 8;
+
+        // record this as the tail
+        if (pg_tail)
+            *pg_tail = (*root);
 
         root = &(*root)->next;
     }
@@ -1394,15 +1399,15 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
 
         (*root)->dimension.rank = 0;
         (*root)->dimension.var_id = 0;
-        (*root)->dimension.time_index = adios_flag_no;
+        (*root)->dimension.is_time_index = adios_flag_no;
 
         (*root)->global_dimension.rank = 0;
         (*root)->global_dimension.var_id = 0;
-        (*root)->global_dimension.time_index = adios_flag_no;
+        (*root)->global_dimension.is_time_index = adios_flag_no;
 
         (*root)->local_offset.rank = 0;
         (*root)->local_offset.var_id = 0;
-        (*root)->local_offset.time_index = adios_flag_no;
+        (*root)->local_offset.is_time_index = adios_flag_no;
 
         flag = *(b->buff + b->offset);
         b->offset += 1;
@@ -1414,7 +1419,7 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
                 swap_32((*root)->dimension.var_id);
             }
             if ((*root)->dimension.var_id == 0)
-                (*root)->dimension.time_index = adios_flag_yes;
+                (*root)->dimension.is_time_index = adios_flag_yes;
             b->offset += 4;
         }
         else
@@ -1438,7 +1443,7 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
                 swap_32((*root)->global_dimension.var_id);
             }
             if ((*root)->global_dimension.var_id == 0)
-                (*root)->global_dimension.time_index = adios_flag_yes;
+                (*root)->global_dimension.is_time_index = adios_flag_yes;
             b->offset += 4;
         }
         else
@@ -1462,7 +1467,7 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
                 swap_32((*root)->local_offset.var_id);
             }
             if ((*root)->local_offset.var_id == 0)
-                (*root)->local_offset.time_index = adios_flag_yes;
+                (*root)->local_offset.is_time_index = adios_flag_yes;
             b->offset += 4;
         }
         else

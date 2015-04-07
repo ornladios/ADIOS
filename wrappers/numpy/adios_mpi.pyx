@@ -758,7 +758,10 @@ cdef class var:
         shape = list(npcount)
         if (nsteps > 1):
             shape.insert(0, nsteps)
-        cdef np.ndarray var = np.full(shape, fill, dtype=self.type)
+        cdef np.ndarray var = np.zeros(shape, dtype=self.type)
+        
+        if len(shape) > 0:
+            var[:] = fill
 
         cdef ADIOS_SELECTION * sel
         sel = adios_selection_boundingbox (self.vp.ndim, <uint64_t *> npoffset.data, <uint64_t *> npcount.data)
@@ -774,7 +777,7 @@ cdef class var:
         ##    return np.asscalar(var)
         ##else:
         ##    return var
-        return var
+        return np.squeeze(var)
 
     """ Print self """
     cpdef printself(self):

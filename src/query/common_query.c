@@ -9,7 +9,7 @@
 #include "public/adios_error.h"
 #include "core/common_read.h"
 #include "core/adios_logger.h"
-
+#include "query_utils.h"
 static struct adios_query_hooks_struct * query_hooks = 0;
 
 static int getTotalByteSize (ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* sel, 
@@ -164,6 +164,12 @@ static int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
 	  timeStep = q->file->current_step;
       }
 
+      if (q->varinfo != NULL) {
+	if (q->onTimeStep  == timeStep) {
+	  return timeStep; // returning call to get more values
+	}
+      }
+
       ADIOS_VARINFO* v = common_read_inq_var(q->file, q->varName);
       if (v == NULL) {
 	adios_error (err_invalid_varname, "Query Invalid variable '%s':\n%s",
@@ -185,7 +191,8 @@ static int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
       }
 
       log_debug("%s, raw data size=%ld\n", q->condition, dataSize);
-      q->dataSlice = malloc(total_byte_size);
+      //q->dataSlice = malloc(total_byte_size);
+      q->dataSlice = 0;
       q->rawDataSize = dataSize;
 
       return timeStep;
@@ -202,6 +209,7 @@ static int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
 
 	return -1;
       }
+      q->rawDataSize = ((ADIOS_QUERY*)(q->left))->rawDataSize;
       return leftTimeStep;
     }
 }
@@ -547,6 +555,7 @@ ADIOS_QUERY* common_query_combine(ADIOS_QUERY* q1,
     result->right = q2;
     result->combineOp = operator;
 
+    result->rawDataSize = q1->rawDataSize;
     //initialize(result);
     return result;
 }
@@ -768,6 +777,10 @@ int common_query_evaluate(ADIOS_QUERY* q,
 			  uint64_t batchSize, // limited by maxResult
 			  ADIOS_SELECTION** result)
 {  
+	double start = 0, end = 0;
+#ifdef BREAKDOWN
+	start = dclock();
+#endif
   if (q == 0) {
     log_debug("Error: empty query will not be evaluated!");
     return -1;
@@ -816,9 +829,20 @@ int common_query_evaluate(ADIOS_QUERY* q,
     if (query_hooks[m].adios_query_evaluate_fn != NULL) {
       int retval = query_hooks[m].adios_query_evaluate_fn(q, timeStep, batchSize, outputBoundary, result);	      
       if (freeOutputBoundary) common_read_selection_delete(outputBoundary);
+
+#ifdef BREAKDOWN
+      end = dclock();
+      printf("total time [frame + plugin + adios] : %f \n", end - start);
+#endif
       return retval;
     } 
     log_debug ("No selection method is supported for method: %d\n", m);
+
+#ifdef BREAKDOWN
+      end = dclock();
+      printf("total time [frame + plugin + adios] : %f \n", end - start);
+#endif
+
     return -1;
 }
 

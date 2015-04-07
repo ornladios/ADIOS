@@ -248,7 +248,7 @@ int ncd_dataset (int ncid
     enum ADIOS_FLAG time_flag;
     while (dims) {
         ++maxrank;
-        if (dims->dimension.time_index == adios_flag_yes) {
+        if (dims->dimension.is_time_index == adios_flag_yes) {
             time_flag = adios_flag_yes;
             time_dimrank = maxrank-1;
             //fprintf(stderr, "Time dim rank = %d\n",time_dimrank); 
@@ -377,7 +377,7 @@ int ncd_dataset (int ncid
                     else {
                         for (i = 0; i < var_dims_count; i++) {
                             if (var_dims [i].id == dims->dimension.var_id) {
-                                if (dims->dimension.time_index == adios_flag_yes) {
+                                if (dims->dimension.is_time_index == adios_flag_yes) {
                                     start_dims[rank] = var_dims[i].rank - 1;
                                     time_index = var_dims[i].rank;
                                     count_dims[rank] = 1;
@@ -455,7 +455,7 @@ int ncd_dataset (int ncid
                     count_dims[rank] = dims->dimension.rank;
                     start_dims[rank] =0; 
                     ERR(retval);
-                    fprintf(stderr, "\t local[%d]: %d\n",rank,dims->dimension.rank);
+                    fprintf(stderr, "\t local[%d]: %llu\n",rank,dims->dimension.rank);
                 } 
             }
             if (dims)
@@ -723,7 +723,7 @@ int main (int argc, char ** argv)
     adios_parse_index_offsets_v1 (b);
 
     adios_posix_read_process_group_index (b);
-    adios_parse_process_group_index_v1 (b, &pg_root);
+    adios_parse_process_group_index_v1 (b, &pg_root, NULL);
 
     copy_buffer(b_0, b);
     adios_posix_read_vars_index (b);

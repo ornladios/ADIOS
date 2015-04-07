@@ -18,7 +18,8 @@ int query_utils_getGlobalWriteBlockId(int idxRelativeToTimeStep, int timeStep, A
 /* Return 1 if path exists on the file system, 0 otherwise */
 int query_utils_file_exists (char * path);
 
-
+//current timestamp
+double dclock(void);
 
 #ifdef __cplusplus
 }

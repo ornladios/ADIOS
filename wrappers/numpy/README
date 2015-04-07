@@ -29,6 +29,10 @@ Then, install Adios and Adios-MPI wrapper as follows:
 $ pip install adios
 $ pip install adios_mpi
 
+If you want to install in a custom directory, use the following:
+$ pip install --install-option="--prefix=$PREFIX" adios
+$ pip install --install-option="--prefix=$PREFIX" adios_mpi
+
 == Build and install with make ==
 
 A Makefile is included for building. The following commands will
@@ -106,10 +110,16 @@ $ python setup.py sdist upload
 == Trouble Shooting ==
 
 -. Custom MPICC and MPICXX
+
 If one needs to use a custom MPICC and MPICXX command (e.g., Titan),
 then use the following command:
 
 $ python setup_mpi.py build_ext --mpicc=cc --mpicxx=CC
+
+Or, to do with pip, try:
+
+$ pip --global-option=build_ext \
+      --global-option=--mpicc=cc --global-option=--mpicxx=CC adios
 
 -. Import error due to undefined "clock_gettime" symbol
 
@@ -121,7 +131,14 @@ $ python test_adios.py Traceback (most recent call last):
       ImportError: /path/to/adios.so: undefined symbol: clock_gettime
 
 Try to use the following command to install:
+
 $ pip install --global-option build_ext --global-option -lrt adios
 $ pip install --global-option build_ext --global-option -lrt adios_mpi
 
+-. "Could not find any downloads that satisfy the requirement" with pip
 
+If the error is caused by a certificate error, then, try 
+
+$ wget http://curl.haxx.se/ca/cacert.pem
+$ pip --cert cacert.pem search adios
+$ pip --cert cacert.pem install adios

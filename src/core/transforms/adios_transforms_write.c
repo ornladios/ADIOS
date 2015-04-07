@@ -90,7 +90,7 @@ static void init_dimension_item(struct adios_dimension_item_struct *dimitem) {
     dimitem->rank = 0;
     dimitem->var = NULL;
     dimitem->attr = NULL;
-    dimitem->time_index = adios_flag_no;
+    dimitem->is_time_index = adios_flag_no;
 }
 
 static struct adios_dimension_struct * new_dimension() {
@@ -109,7 +109,7 @@ static int find_time_dimension_old(struct adios_dimension_struct *dim, struct ad
     struct adios_dimension_struct *cur_dim;
     int i;
     for (i = 0, cur_dim = dim; cur_dim; cur_dim = cur_dim->next, i++ ) {
-        if (cur_dim->dimension.time_index == adios_flag_yes) {
+        if (cur_dim->dimension.is_time_index == adios_flag_yes) {
             if (time_dim) *time_dim = cur_dim;
             return i;
         }
@@ -141,9 +141,9 @@ static int is_dimension_item_zero(struct adios_dimension_item_struct *dim_item) 
 }
 
 static int is_time_dimension(struct adios_dimension_struct *dim) {
-    return dim->dimension.time_index == adios_flag_yes ||
-           dim->global_dimension.time_index == adios_flag_yes ||
-           dim->local_offset.time_index == adios_flag_yes;
+    return dim->dimension.is_time_index == adios_flag_yes ||
+           dim->global_dimension.is_time_index == adios_flag_yes ||
+           dim->local_offset.is_time_index == adios_flag_yes;
 }
 
 #if 0 
@@ -230,7 +230,7 @@ static void adios_transform_attach_byte_array_dimensions_old(struct adios_group_
     // Construct the dimension linked list
     for (i = 0; i < new_ndim; i++) {
         struct adios_dimension_struct *new_dim = new_dimension();
-        new_dim->dimension.time_index = (i == new_time_dim_pos) ? adios_flag_yes : adios_flag_no;
+        new_dim->dimension.is_time_index = (i == new_time_dim_pos) ? adios_flag_yes : adios_flag_no;
         new_dim->dimension.rank = ldims[i];
         new_dim->global_dimension.rank = gdims[i];
         new_dim->local_offset.rank = odims[i];
@@ -258,7 +258,7 @@ static void adios_transform_attach_byte_array_dimensions(struct adios_var_struct
     for (i = 0; i < new_ndim; i++) {
         struct adios_dimension_struct *new_dim = new_dimension();
 
-        new_dim->dimension.time_index = (new_has_time && i == new_time_dim_pos) ? adios_flag_yes : adios_flag_no;
+        new_dim->dimension.is_time_index = (new_has_time && i == new_time_dim_pos) ? adios_flag_yes : adios_flag_no;
 
         // Clear global dimension/local offset arrays to all 0 to indicate a local array
         // For local dimensions, set the time dimension to 1, and the non-time dimension to 0 as a placeholder
@@ -378,7 +378,7 @@ static int adios_transform_store_transformed_length(struct adios_file_struct * f
     assert(dim1);
     dim2 = dim1->next;
 
-    if (dim1->dimension.time_index == adios_flag_yes) {
+    if (dim1->dimension.is_time_index == adios_flag_yes) {
         // If the first dimension is a time dimension, then the byte array dimension must be the second one
         assert(dim2);
         byte_length_ldim = &dim2->dimension;
@@ -510,7 +510,7 @@ static void dereference_dimension_item(struct adios_dimension_item_struct *dst_d
     dst_dim_item->var = NULL;
     dst_dim_item->attr = NULL;
     dst_dim_item->rank = adios_get_dim_value((struct adios_dimension_item_struct *)src_dim_item);
-    dst_dim_item->time_index = src_dim_item->time_index;
+    dst_dim_item->is_time_index = src_dim_item->is_time_index;
 }
 
 /*
