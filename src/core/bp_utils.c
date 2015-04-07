@@ -645,7 +645,8 @@ int bp_read_minifooter (BP_FILE * bp_struct)
     if ((mh->version & ADIOS_VERSION_NUM_MASK) > ADIOS_VERSION_BP_FORMAT) {
         adios_error (err_file_open_error, 
            "Invalid BP file detected. Format version of file seems to be %d, "
-           "which is greater than the highest supported version %d.\n", 
+           "which is greater than the highest supported version %d. "
+           "Maybe try a newer version of ADIOS?\n", 
            (mh->version & ADIOS_VERSION_NUM_MASK), ADIOS_VERSION_BP_FORMAT);
         return 1;
     }

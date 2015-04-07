@@ -1332,6 +1332,7 @@ static void adios_mpi_do_read (struct adios_file_struct * fd
     {
         case 1:
         case 2:
+        case 3:
         {
             // the three section headers
             struct adios_process_group_header_struct_v1 pg_header;

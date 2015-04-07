@@ -13,7 +13,12 @@
 #include "core/adios_transport_hooks.h"
 #include "core/qhashtbl.h"
 
-#define ADIOS_VERSION_BP_FORMAT                      2
+#define ADIOS_VERSION_BP_FORMAT                      3
+/* BP versions 
+ *   1 up until 1.6 release
+ *   2 from 1.7 release: 32 bit variable IDs
+ *   3 from 1.9 release: array attributes
+ */
 #define ADIOS_VERSION_NUM_MASK                       0x000000FF
 #define ADIOS_VERSION_HAVE_SUBFILE                   0x00000100
 #define ADIOS_VERSION_HAVE_TIME_INDEX_CHARACTERISTIC 0x00000200

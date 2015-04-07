@@ -397,6 +397,7 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
                 {
                     case 1:
                     case 2:
+                    case 3:
                         // read the old stuff and set the base offset
                         adios_posix_read_index_offsets (&p->b);
                         adios_parse_index_offsets_v1 (&p->b);
@@ -765,6 +766,7 @@ static void adios_posix_do_read (struct adios_file_struct * fd
     {
         case 1:
         case 2:
+        case 3:
         {
             struct adios_index_struct_v1 * index = adios_alloc_index_v1(0); // no hashtables
             struct adios_index_process_group_struct_v1 * pg_root = index->pg_root;
