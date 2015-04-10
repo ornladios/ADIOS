@@ -890,7 +890,10 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                             max_time_index = p->time_index;
                         p = p->next;
                     }
-                    fd->group->time_index = ++max_time_index;
+                    if (fd->mode == adios_mode_append) {
+                        ++max_time_index;
+                    }
+                    fd->group->time_index = max_time_index;
                     MPI_Bcast (&fd->group->time_index, 1, MPI_INT, 0
                               ,md->group_comm
                               );

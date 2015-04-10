@@ -415,7 +415,10 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
                                 max_time_index = pg->time_index;
                             pg = pg->next;
                         }
-                        fd->group->time_index = ++max_time_index;
+                        if (fd->mode == adios_mode_append) {
+                            ++max_time_index;
+                        }
+                        fd->group->time_index = max_time_index;
 
                         adios_posix_read_vars_index (&p->b);
                         adios_parse_vars_index_v1 (&p->b, &p->index->vars_root, 

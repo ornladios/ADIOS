@@ -188,11 +188,14 @@ int common_adios_open (int64_t * fd, const char * group_name
         */
         g->time_index++;
     }
+    /* FIXME: the time_index is updated in the actual method in case of append/update
+       so this code below is useless */
+#  if 0 
     else if (mode == adios_mode_append)
     {
         g->time_index++;
     }
-    else if (mode == adios_mode_update && g->time_index > 1)
+    else if (mode == adios_mode_update && g->time_index > 0)
     {
         /* Update from Append differs only in the time index. All methods had
            code for Append, now for Update we decrease the counter by one,
@@ -200,6 +203,7 @@ int common_adios_open (int64_t * fd, const char * group_name
         */
         g->time_index--;
     }
+#  endif
     /* time starts from 1 not from 0 (traditionally; now no one cares */
     if (g->time_index == 0)
         g->time_index = 1;
@@ -515,7 +519,7 @@ int common_adios_write_byid (struct adios_file_struct * fd, struct adios_var_str
     // v->data is set to NULL in the above call
 
     if (!adios_errno) {
-        if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
+        if (fd->mode != adios_mode_read)
         {
             adios_copy_var_written (fd->group, v);
         }
