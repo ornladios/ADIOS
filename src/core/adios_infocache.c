@@ -5,8 +5,10 @@
  *      Author: David A. Boyuka II
  */
 
+#include <stddef.h>
 #include <stdlib.h>
-#include "adios_infocache.h"
+#include "core/common_read.h"
+#include "core/adios_infocache.h"
 
 // Utilities
 static inline int min(int a, int b) { return a < b ? a : b; }
@@ -27,13 +29,13 @@ static void expand_infocache(adios_infocache *cache, int var_capacity) {
     const int newcap = max(max(oldcap * 2, var_capacity), INITIAL_INFOCACHE_SIZE);
 
     if (oldcap == 0) {
-        MALLOC_ARRAY(cache->physical_varinfos, ADIOS_VARINFO, newcap);
-        MALLOC_ARRAY(cache->logical_varinfos, ADIOS_VARINFO, newcap);
-        MALLOC_ARRAY(cache->transinfos, ADIOS_TRANSINFO, newcap);
+        MALLOC_ARRAY(cache->physical_varinfos, ADIOS_VARINFO*, newcap);
+        MALLOC_ARRAY(cache->logical_varinfos, ADIOS_VARINFO*, newcap);
+        MALLOC_ARRAY(cache->transinfos, ADIOS_TRANSINFO*, newcap);
     } else {
-        REALLOC_ARRAY(cache->physical_varinfos, ADIOS_VARINFO, newcap);
-        REALLOC_ARRAY(cache->logical_varinfos, ADIOS_VARINFO, newcap);
-        REALLOC_ARRAY(cache->transinfos, ADIOS_TRANSINFO, newcap);
+        REALLOC_ARRAY(cache->physical_varinfos, ADIOS_VARINFO*, newcap);
+        REALLOC_ARRAY(cache->logical_varinfos, ADIOS_VARINFO*, newcap);
+        REALLOC_ARRAY(cache->transinfos, ADIOS_TRANSINFO*, newcap);
     }
 
     for (i = oldcap; i < newcap; i++) {
@@ -119,9 +121,10 @@ ADIOS_TRANSINFO * adios_infocache_inq_transinfo(const ADIOS_FILE *fp, adios_info
     	// inq_var in physical view. It probably doesn't matter, but this is the "true"
     	// varinfo as seen by the transport layer, which is the layer to which we
     	// are about to pass the varinfo, so best to make it match.
-    	const data_view_t old_view = common_read_set_data_view(fp, PHYSICAL_DATA_VIEW);
+    	// Note: violate constness temporarily, since we set the view right back again
+    	const data_view_t old_view = common_read_set_data_view((ADIOS_FILE*)fp, PHYSICAL_DATA_VIEW);
         ADIOS_VARINFO *vi = adios_infocache_inq_varinfo(fp, cache, varid);
-        common_read_set_data_view(fp, old_view);
+        common_read_set_data_view((ADIOS_FILE*)fp, old_view);
 
         return cache->transinfos[varid] = common_read_inq_transinfo(fp, vi);
     }

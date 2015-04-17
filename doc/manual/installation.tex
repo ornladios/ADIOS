@@ -143,9 +143,9 @@ cmake <ADIOS_SOURCEDIR>
 
 The Mini-XML library is used to parse XML configuration files. Mini-XML can be
 downloaded from \url{http://www.msweet.org/downloads.php?L+Z3}. ADIOS works with
-versions 2.5, 2.6 and 2.7. Note that ADIOS does NOT work with version 2.8.
+versions 2.5, 2.6, 2.7 and 2.9. Note that ADIOS does NOT work with version 2.8.
 If you don't have it already installed we suggest to use 
-\url{http://www.msweet.org/files/project3/mxml-2.7.tar.gz}.
+\url{http://www.msweet.org/files/project3/mxml-2.9.tar.gz}.
 
 \subsection{MPI and MPI-IO (required)}
 
@@ -206,7 +206,7 @@ Use the configuration option
 In \adiosversion, three transport methods
 are available for memory-to-memory transfer (staging) of data between two
 applications: The DataSpaces and DIMES libraries from Rutgers University and
-the Flexpath library from Georgia Tech.
+the Flexpath library from Georgia Tech. A wide-are-network transfer method (ICEE) is also available.
 
 \subsubsection{Networking libraries for staging}
 
@@ -284,10 +284,10 @@ At present, the easiest way to get EVPath is to build it directly for your envir
    wget http://www.cc.gatech.edu/systems/projects/EVPath/chaos_bootstrap.pl
 \end{lstlisting}
 to download a bootstrapping perl script.  Then to configure a build
-environment compatible with ADIOS 1.7, run the bootstrap script with
-``adios-1.7'' as a version tag:
+environment compatible with ADIOS 1.8, run the bootstrap script with
+``adios-1.8'' as a version tag:
 \begin{lstlisting}
-  perl ./chaos_bootstrap.pl adios-1.7 [optional install directory]
+  perl ./chaos_bootstrap.pl adios-1.8 [optional install directory]
 \end{lstlisting}
 
 If you leave off the the \verb+[optional install directory]+ argument, the
@@ -314,6 +314,12 @@ Additionally, in the ADIOS XML file, we allow for the user to specify a \verb+Qu
 \begin{lstlisting}
 <method group="arrays" method="FLEXPATH">QUEUE_SIZE=10;</method>
 \end{lstlisting}
+
+
+\subsubsection{ICEE wide-area-network staging method}
+The ICEE method is based on the same EVPath middleware library from Georgia Tech as the Flexpath method, and therefore has the same requirements to build it. So when \verb+--with-flexpath+ is used, the ICEE method will also be built.
+
+
 
 %%% NCSU - Added data transforms text
 
@@ -365,6 +371,24 @@ See Section~\ref{sec:transform_plugins} for instructions on invoking data transf
 as well as some guidance on choosing transforms in practice.
 
 %%% NCSU - End added data transforms text
+
+\subsection{Query methods (optional)}
+\label{sec:installation-query-api}
+
+ADIOS has a Query API and currently it has one query engine for FastBit index. FastBit (\url{https://sdm.lbl.gov/fastbit}) can be downloaded from a public SVN repository:
+
+\begin{lstlisting}[language={}]
+svn co https://codeforge.lbl.gov/anonscm/fastbit/trunk
+\end{lstlisting}
+
+\noindent To enable the FastBit query method, configure ADIOS with the following flag:
+\begin{lstlisting}
+--with-fastbit=DIR    Where DIR is the installation
+                      directory of fastbit
+\end{lstlisting}
+
+
+
 
 \subsection{Read-only installation}
 
@@ -675,7 +699,7 @@ ctest -V
 \subsection{Support for Numpy}
 \label{section-install-numpy}
 
-ADIOS also provides two Python/Numpy language bindings developed by Cython; One is a binding for serial ADIOS (default), which requires no MPI, and the other is a MPI-enabled binding (optional). Like Matlab, ADIOS Python/Numpy wrapper requires ADIOS built by the GNU C compiler with relocatable codes. Add -fPIC flag to CFLAGS before configuring ADIOS.
+ADIOS also provides two Python/Numpy language bindings developed by Cython; One is a binding for serial ADIOS (default), which requires no MPI, and the other is a MPI-enabled binding (optional). Like Matlab, ADIOS Python/Numpy wrapper requires ADIOS built by the GNU C compiler with relocatable codes. Add -fPIC flag to CFLAGS before configuring ADIOS. In addition, Python Numpy is required before building Adios Python/Numpy binding and MPI4Py is optional, if users want to build parallel python module.
 
 The following command will build a Python/Numpy binding for serial ADIOS (\verb+adios_config+ and \verb+python+ should be in the path):
 \begin{lstlisting}
@@ -694,15 +718,11 @@ After successful building, you need to install them in a python path. There are 
 \begin{lstlisting}
 python setup.py install
 \end{lstlisting}
-will install python's default installation location. This may require an admin privilege.
-
-If you want to install in a custom directory, type
+will install python's default installation location. This may require an admin privilege. If you want to install in a custom directory, type
 \begin{lstlisting}
 python setup.py install --prefix=/dir/to/install
 \end{lstlisting}
-and append the directory to the \verb+PYTHONPATH+ environment variable
-
-You can also install in your local directory. Use the following command:
+and append the directory to the \verb+PYTHONPATH+ environment variable. You can also install in your local directory. Use the following command:
 \begin{lstlisting}
 python setup.py install --user
 \end{lstlisting}

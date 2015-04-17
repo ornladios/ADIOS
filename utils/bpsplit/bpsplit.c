@@ -243,7 +243,7 @@ int read_indexes(char *filename) {
     adios_posix_read_index_offsets (in_bp);
     adios_parse_index_offsets_v1 (in_bp);
     adios_posix_read_process_group_index (in_bp);
-    adios_parse_process_group_index_v1 (in_bp, &in_pg_root);
+    adios_parse_process_group_index_v1 (in_bp, &in_pg_root, NULL);
     
     // read and parse variable index
     adios_posix_read_vars_index (in_bp);

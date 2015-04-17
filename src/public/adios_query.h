@@ -69,6 +69,7 @@ typedef struct {
 } ADIOS_QUERY;
    
 
+#ifndef __INCLUDED_FROM_FORTRAN_API__
 
 /* functions */
 
@@ -136,6 +137,8 @@ int  adios_query_evaluate (ADIOS_QUERY* q,
 
 
 void adios_query_free(ADIOS_QUERY* q);
+
+#endif /* __INCLUDED_FROM_FORTRAN_API__ */
 
 #ifdef __cplusplus
 }

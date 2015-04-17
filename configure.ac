@@ -1,4 +1,4 @@
-
+s
 AC_INIT([adios], [1.8.0])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR(config)
@@ -706,6 +706,11 @@ if test -z "${HAVE_NCSU_TIMER_TRUE}"; then
     ADIOSREADLIB_SEQ_LDADD="${ADIOSREADLIB_SEQ_LDADD} ${TIMER_LIBS}"
 fi
 
+AM_CONDITIONAL([HAVE_ICEE], [test -z "${HAVE_FLEXPATH_TRUE}"])
+if test -z "${HAVE_FLEXPATH_TRUE}"; then
+    AC_DEFINE(HAVE_ICEE, 1, [ICEE method is enabled])
+fi
+
 AC_SUBST(ADIOSLIB_CPPFLAGS)
 AC_SUBST(ADIOSLIB_CFLAGS)
 AC_SUBST(ADIOSLIB_LDFLAGS)
@@ -798,7 +803,7 @@ AC_CONFIG_FILES([Makefile
                  utils/bp2bp/Makefile
                  utils/list_methods/Makefile
                  utils/bpmeta/Makefile
-		 utils/query/Makefile
+		 utils/fastbit/Makefile
                  examples/Makefile
                  examples/C/Makefile
                  examples/C/scalars/Makefile
@@ -806,6 +811,8 @@ AC_CONFIG_FILES([Makefile
                  examples/C/flexpath_arrays/Makefile
                  examples/C/flexpath_arrays/process_select/Makefile
                  examples/C/flexpath_arrays/global_range_select/Makefile
+                 examples/C/icee_arrays/Makefile
+                 examples/C/icee_arrays/array/Makefile
                  examples/C/attributes/Makefile
                  examples/C/manual/Makefile
                  examples/C/global-array/Makefile
@@ -867,12 +874,17 @@ else
     echo "  - No research transport methods";
 fi
 
-if test "x$enable_timers" == "xyes"; then
+if test -z "${ADIOS_TIMERS_TRUE}"; then
     echo "  - ADIOS Timing Mechanism Enabled";
-
 else
     echo "  - ADIOS Timing Mechanism Disabled";
 fi
+if test -z "${ADIOS_TIMER_EVENTS_TRUE}"; then
+    echo "  - ADIOS Timing event recording Enabled";
+else
+    echo "  - ADIOS Timing event recording Disabled";
+fi
+
 
 if test -z "${HAVE_MXML_TRUE}"; then
     echo "  - MXML";
@@ -1080,6 +1092,17 @@ else
     echo "  - No FLEXPATH to build FLEXPATH transport method"
 fi
 
+if test -z "${HAVE_ICEE_TRUE}"; then
+    echo "  - ICEE";
+    echo "      - FP_CFLAGS = $FP_CFLAGS";
+    echo "      - FP_CPPFLAGS = $FP_CPPFLAGS";
+    echo "      - FP_LDFLAGS = $FP_LDFLAGS";
+    echo "      - FP_LIBS = $FP_LIBS";
+    echo
+else
+    echo "  - No ICEE to build ICEE transport method"
+fi
+
 if test -z "${HAVE_ZLIB_TRUE}"; then
     echo "  - ZLIB";
     echo "      - ZLIB_CFLAGS = $ZLIB_CFLAGS";
@@ -1143,7 +1166,7 @@ if test -z "${HAVE_FASTBIT_TRUE}"; then
     echo "      - FASTBIT_LIBS = $FASTBIT_LIBS";
     echo
 else
-    echo "  - No FASTBIT to build FASTBIT transform method"
+    echo "  - No FASTBIT to build FASTBIT query method"
 fi
 
 if test -z "${HAVE_ALACRITY_TRUE}"; then
@@ -1154,7 +1177,7 @@ if test -z "${HAVE_ALACRITY_TRUE}"; then
     echo "      - ALACRITY_LIBS = $ALACRITY_LIBS";
     echo
 else
-    echo "  - No ALACRITY to build ALACRITY transform method"
+    echo "  - No ALACRITY to build ALACRITY transform & query methods"
 fi
 
 if test -z "${HAVE_RIDCOMPRESS_TRUE}"; then

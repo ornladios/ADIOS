@@ -7,11 +7,16 @@ $ python ./test_adios.py
 
 import adios as ad
 import numpy as np
+import sys
 
 ## Writing
 print "\n>>> Writing ...\n"
 
-ad.init("config.xml")
+config = "config.xml"
+if len(sys.argv) > 1:
+    config = sys.argv[1]
+
+ad.init(config)
 fd = ad.open("temperature", "adios_test.bp", "w")
 
 NX = 10

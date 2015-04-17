@@ -86,7 +86,7 @@ typedef struct {
         void * internal_data;       /* internal storage for version 2 read API data */
 } ADIOS_VARINFO;
 
-// Needed by ADIOS_TRANSINFO below
+/* Needed by ADIOS_TRANSINFO below */
 typedef struct {
     uint64_t * start;      /* offset start point in global array ('ndim' elements)         */
     uint64_t * count;      /* local sizes in global array ('ndim' elements)                */

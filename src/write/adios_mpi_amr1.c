@@ -2120,7 +2120,7 @@ void adios_mpi_amr1_close (struct adios_file_struct * fd
                                              ,&md->old_vars_root
                                              ,&md->old_attrs_root
                                              ,new_pg_root, new_vars_root
-                                             ,new_attrs_root
+                                             ,new_attrs_root, 0
                                              );
                         new_pg_root = 0;
                         new_vars_root = 0;
@@ -2483,7 +2483,7 @@ printf ("vars_header.count = %d\n", vars_header.count);
                                              ,&md->old_vars_root
                                              ,&md->old_attrs_root
                                              ,new_pg_root, new_vars_root
-                                             ,new_attrs_root
+                                             ,new_attrs_root, 0
                                              );
                         new_pg_root = 0;
                         new_vars_root = 0;

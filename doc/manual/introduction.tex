@@ -82,11 +82,34 @@ Linux clusters and Mac OSX.
 
 %
 %
+\section {What's new in version 1.8}
+The novelties in this version are the Query API to allow for reading data of interest only, and a transport method capable of moving data over the Wide-area-network.  
+\begin{itemize}
+\item Query API, which extends the read API with queries (evaluate a query, then read data points that satisfy the query)
+\item Staging over WAN (wide-area-network) using the ICEE transport method. 
+           
+\item New utilities
+    \begin{itemize}
+    \item \verb+skeldump+ to generate info and code from output data to replay the I/O pattern of the original application
+    \item \verb+bpmeta+ to generate metadata file (.bp) separately after writing the data using \verb+MPI_AGGREGATE+ method with metadata writing turned off
+    \end{itemize}
+
+\item I/O timing statistics and timing events can be collected (see configure options --disable-timers and --enable-timer-events)
+
+\item Usability enhancements
+    \begin{itemize}
+    \item Parallel build of ADIOS (make -j 8)
+    \item Staging with multiple streams allowed
+    \item New stage writer code for staged I/O, where output data (list of variables and their sizes) is changing at every timestep. See \verb+examples/stage_write_varying+
+    \end{itemize}
+     
+\end{itemize}
+
 
 \section {What's new in version 1.7}
 This version brings several improvements for usability and portability. 
 \begin{itemize}
-\item Support for more than 64k variables in a file. This may sound a bit strange but there have been two applications requiring this.
+\item Support for more than 64k variables in a file. 
 \item File system topology aware I/O method for Titan@OLCF. It uses better routing from compute nodes to file system nodes to
            avoid bottlenecks. 
            
@@ -94,7 +117,6 @@ This version brings several improvements for usability and portability.
     \begin{itemize}
     \item \verb+adios_config -m+ to print available write/read methods
     \item CMake Module for \verb+find_package(ADIOS)+
-%    \item This version works fine with mxml 2.8 (the latest version) (and also 2.7...)
     \end{itemize}
     
  \item Additions to non-XML Write API:

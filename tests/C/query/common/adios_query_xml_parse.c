@@ -456,8 +456,8 @@ ADIOS_QUERY_TEST_INFO * parseXml(const char *inputxml, ADIOS_FILE* f) {
 		.outputSelection = outputBox,
 		.fromStep        = fromTimestep,
 		.numSteps        = numTimesteps,
-                .batchSize       = batchsize,
-                .varName         = varNameS,
+        .batchSize       = batchsize,
+        .varName         = varNameS,
 	};
 	return retval;
 }

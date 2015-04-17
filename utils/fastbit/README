@@ -1,0 +1,14 @@
+Usage:
+
+* To index an ADIOS .bp file:
+  ./adios_index_fastbit path/bpFileName
+* To index variable(s):
+  ./adios_index_fastbit path/bpFileName var1 var2 ..
+
+note that the idx file from foo.bp
+will be named foo.idx, and will reside in the same
+dir as in foo.bp
+
+if foo.idx exists, it will be overwritten.
+
+

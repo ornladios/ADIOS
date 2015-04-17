@@ -30,7 +30,7 @@ adios.cpp:  adios.pyx
 	cython --cplus adios.pyx
 
 adios.so:  
-	python setup.py build
+	python setup.py build_ext -lrt
 
 adios_mpi.cpp:  adios_mpi.pyx
 	cython --cplus adios_mpi.pyx

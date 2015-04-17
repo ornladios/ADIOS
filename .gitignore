@@ -25,7 +25,9 @@ Makefile
 
 # ADIOS generated files
 config.h
+adios_config
 adios_config.flags
+adios_git_status
 libtool
 
 # http://www.gnu.org/software/autoconf
@@ -109,12 +111,16 @@ examples/Fortran/global-array/adios_global_no_xml
 examples/Fortran/global-array/no_xml_write_byid
 examples/Fortran/scalars/scalars_read
 examples/Fortran/scalars/scalars_write
+examples/Fortran/schema/rectilinear2d_f_noxml
+examples/Fortran/schema/structured2d_f_noxml
+examples/Fortran/schema/uniform2d_f_noxml
 examples/staging/stage_write/genarray_stream
 examples/staging/stage_write/genarray_stream_comm.mod
 examples/staging/stage_write/stage_write
 src/adios_defs_mod.mod
 src/adios_read_mod.mod
 src/adios_write_mod.mod
+src/adios_query_mod.mod
 tests/C/adios_test_c
 tests/Fortran/adios_test_f
 tests/bp_read/bp_read_c
@@ -159,6 +165,7 @@ utils/bpsplit/bpsplit
 utils/skel/etc/compiler_fragment.mk
 utils/skel/lib/skel_have_adios_timing.py
 utils/skeldump/skeldump
+utils/query/index_fastbit
 
 # NCSU ALACRITY-ADIOS - Some extra files we added
 /myrunconf

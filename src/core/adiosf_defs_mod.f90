@@ -42,6 +42,7 @@ module adios_defs_mod
     integer, parameter :: ADIOS_READ_METHOD_DATASPACES   = 3
     integer, parameter :: ADIOS_READ_METHOD_DIMES        = 4
     integer, parameter :: ADIOS_READ_METHOD_FLEXPATH     = 5
+    integer, parameter :: ADIOS_READ_METHOD_ICEE         = 6
     integer, parameter :: ADIOS_READ_METHOD_BP_STAGED  = ADIOS_READ_METHOD_BP_AGGREGATE
 
     ! 

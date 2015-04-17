@@ -29,11 +29,11 @@
 
 #include "public/adios_error.h"
 #include "public/adios_selection.h"
-#include "common_read.h"
-#include "adios_subvolume.h"
-#include "adios_internals.h" // adios_get_type_size()
-#include "adios_selection_util.h"
-#include "adios_patchdata.h"
+#include "core/common_read.h"
+#include "core/adios_subvolume.h"
+#include "core/adios_internals.h" // adios_get_type_size()
+#include "core/adios_selection_util.h"
+#include "core/transforms/adios_patchdata.h"
 
 #define PATCH_UNIMPL(dsttype,srctype) \
     adios_error_at_line(err_invalid_argument, __FILE__, __LINE__, \

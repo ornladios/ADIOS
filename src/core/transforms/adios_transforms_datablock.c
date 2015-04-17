@@ -10,12 +10,12 @@
 
 #include "public/adios_error.h"
 #include "public/adios_types.h"
-#include "common_read.h"
+#include "core/common_read.h"
 
-#include "transforms/adios_transforms_common.h"
-#include "transforms/adios_transforms_read.h"
-#include "transforms/adios_transforms_util.h"
-#include "transforms/adios_transforms_datablock.h"
+#include "core/transforms/adios_transforms_common.h"
+#include "core/transforms/adios_transforms_read.h"
+#include "core/transforms/adios_transforms_util.h"
+#include "core/transforms/adios_transforms_datablock.h"
 
 // Datablock management
 

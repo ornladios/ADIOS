@@ -7,6 +7,31 @@ to call the native ADIOS library. This module is built by Cython.
 This module requires ADIOS built with the GNU C compiler with
 relocatable codes. Add -fPIC flag to CFLAGS before configuring ADIOS.
 
+== Quick install with pip ==
+
+ADIOS Python wrapper can be installed with pip. Check if pip is
+installed already. Otherwise, install pip first:
+
+$ wget https://bootstrap.pypa.io/get-pip.py
+$ sudo python get-pip.py
+Or,
+$ python get-pip.py --user
+to install in a local directory, $HOME/.local
+
+Before installing ADIOS Python wrappers, make sure Numpy and MPI4Py
+installed. Otherwise, install them as follows:
+
+$ pip install numpy
+$ pip install mpi4py
+
+Then, install Adios and Adios-MPI wrapper as follows:
+
+$ pip install adios
+$ pip install adios_mpi
+
+If you want to install in a custom directory, use the following:
+$ pip install --install-option="--prefix=$PREFIX" adios
+$ pip install --install-option="--prefix=$PREFIX" adios_mpi
 
 == Build and install with make ==
 
@@ -44,6 +69,7 @@ You can also install in your local directory, run
 
 $ python setup.py install --user
 
+
 == Test cases and examples ==
 
 Test cases and example files are located in tests and example
@@ -63,3 +89,56 @@ for the serial version of Adios wrapper. If you need to generated C++
 for MPI-enabled version, try the following
 
 $ make CYTHON=y MPI=y python
+
+
+== Upload to PyPI ==
+
+Create $HOME/.pypirc as follows:
+[distutils] 
+    index-servers =
+        pypi
+
+[pypi]
+    repository: https://pypi.python.org/pypi
+    username: {{your_username}}
+    password: {{your_password}}
+
+Then, do the followings:
+$ python setup.py register 
+$ python setup.py sdist upload
+
+== Trouble Shooting ==
+
+-. Custom MPICC and MPICXX
+
+If one needs to use a custom MPICC and MPICXX command (e.g., Titan),
+then use the following command:
+
+$ python setup_mpi.py build_ext --mpicc=cc --mpicxx=CC
+
+Or, to do with pip, try:
+
+$ pip --global-option=build_ext \
+      --global-option=--mpicc=cc --global-option=--mpicxx=CC adios
+
+-. Import error due to undefined "clock_gettime" symbol
+
+When getting the following error:
+
+$ python test_adios.py Traceback (most recent call last):
+  File "test_adios.py", line 8, in <module>
+      import adios as ad
+      ImportError: /path/to/adios.so: undefined symbol: clock_gettime
+
+Try to use the following command to install:
+
+$ pip install --global-option build_ext --global-option -lrt adios
+$ pip install --global-option build_ext --global-option -lrt adios_mpi
+
+-. "Could not find any downloads that satisfy the requirement" with pip
+
+If the error is caused by a certificate error, then, try 
+
+$ wget http://curl.haxx.se/ca/cacert.pem
+$ pip --cert cacert.pem search adios
+$ pip --cert cacert.pem install adios

@@ -2,11 +2,11 @@
 #include <stdint.h>
 #include <assert.h>
 
-#include "adios_logger.h"
-#include "adios_internals.h"
-#include "adios_transforms_common.h"
-#include "adios_transforms_write.h"
-#include "adios_transforms_hooks_write.h"
+#include "core/adios_logger.h"
+#include "core/adios_internals.h"
+#include "core/transforms/adios_transforms_common.h"
+#include "core/transforms/adios_transforms_write.h"
+#include "core/transforms/adios_transforms_hooks_write.h"
 #include "public/adios_selection.h"
 
 /*

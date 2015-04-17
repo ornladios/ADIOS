@@ -37,7 +37,8 @@ host_triplet = @host@
 @HAVE_ALACRITY_TRUE@noinst_PROGRAMS = adios_read_ext_test$(EXEEXT) \
 @HAVE_ALACRITY_TRUE@	adios_build_alac_index$(EXEEXT) \
 @HAVE_ALACRITY_TRUE@	adios_alac_query$(EXEEXT) \
-@HAVE_ALACRITY_TRUE@	adios_show_bp_file$(EXEEXT)
+@HAVE_ALACRITY_TRUE@	adios_show_bp_file$(EXEEXT) \
+@HAVE_ALACRITY_TRUE@	adios_read_block$(EXEEXT)
 subdir = tests/C/query/alacrity
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -105,6 +106,15 @@ adios_build_alac_index_OBJECTS = $(am_adios_build_alac_index_OBJECTS)
 adios_build_alac_index_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(adios_build_alac_index_LDFLAGS) $(LDFLAGS) -o $@
+am__adios_read_block_SOURCES_DIST = adios_read_block.c
+@HAVE_ALACRITY_TRUE@am_adios_read_block_OBJECTS = adios_read_block-adios_read_block.$(OBJEXT)
+adios_read_block_OBJECTS = $(am_adios_read_block_OBJECTS)
+@HAVE_ALACRITY_TRUE@adios_read_block_DEPENDENCIES =  \
+@HAVE_ALACRITY_TRUE@	$(top_builddir)/src/libadios.a \
+@HAVE_ALACRITY_TRUE@	$(am__DEPENDENCIES_1)
+adios_read_block_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
+	$(adios_read_block_LDFLAGS) $(LDFLAGS) -o $@
 am__adios_read_ext_test_SOURCES_DIST = adios_read_ext_test.c
 @HAVE_ALACRITY_TRUE@am_adios_read_ext_test_OBJECTS = adios_read_ext_test-adios_read_ext_test.$(OBJEXT)
 adios_read_ext_test_OBJECTS = $(am_adios_read_ext_test_OBJECTS)
@@ -135,10 +145,11 @@ LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) $(LIBTOOLFLAGS) \
 	--mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) $(AM_LDFLAGS) \
 	$(LDFLAGS) -o $@
 SOURCES = $(adios_alac_query_SOURCES) \
-	$(adios_build_alac_index_SOURCES) \
+	$(adios_build_alac_index_SOURCES) $(adios_read_block_SOURCES) \
 	$(adios_read_ext_test_SOURCES) $(adios_show_bp_file_SOURCES)
 DIST_SOURCES = $(am__adios_alac_query_SOURCES_DIST) \
 	$(am__adios_build_alac_index_SOURCES_DIST) \
+	$(am__adios_read_block_SOURCES_DIST) \
 	$(am__adios_read_ext_test_SOURCES_DIST) \
 	$(am__adios_show_bp_file_SOURCES_DIST)
 ETAGS = etags
@@ -212,7 +223,6 @@ DEPDIR = @DEPDIR@
 DIMES_CPPFLAGS = @DIMES_CPPFLAGS@
 DIMES_LDFLAGS = @DIMES_LDFLAGS@
 DIMES_LIBS = @DIMES_LIBS@
-DLLTOOL = @DLLTOOL@
 DMALLOC_CPPFLAGS = @DMALLOC_CPPFLAGS@
 DMALLOC_LDFLAGS = @DMALLOC_LDFLAGS@
 DMALLOC_LIBS = @DMALLOC_LIBS@
@@ -272,7 +282,6 @@ LUSTRE_LIBS = @LUSTRE_LIBS@
 MACRODEFFLAG = @MACRODEFFLAG@
 MAINT = @MAINT@
 MAKEINFO = @MAKEINFO@
-MANIFEST_TOOL = @MANIFEST_TOOL@
 MKDIR_P = @MKDIR_P@
 MPICC = @MPICC@
 MPICXX = @MPICXX@
@@ -351,7 +360,6 @@ abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
 abs_top_srcdir = @abs_top_srcdir@
-ac_ct_AR = @ac_ct_AR@
 ac_ct_CC = @ac_ct_CC@
 ac_ct_CXX = @ac_ct_CXX@
 ac_ct_DUMPBIN = @ac_ct_DUMPBIN@
@@ -386,6 +394,7 @@ libdir = @libdir@
 libexecdir = @libexecdir@
 localedir = @localedir@
 localstatedir = @localstatedir@
+lt_ECHO = @lt_ECHO@
 mandir = @mandir@
 mkdir_p = @mkdir_p@
 oldincludedir = @oldincludedir@
@@ -410,6 +419,10 @@ AUTOMAKE_OPTIONS = no-dependencies
 #alac_internal_test_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
 #alac_internal_test_LDFLAGS = $(ADIOSLIB_LDFLAGS)
 #alac_internal_test_CPPFLAGS = $(ALACRITY_CPPFLAGS) -I$(top_srcdir)/src/core
+@HAVE_ALACRITY_TRUE@adios_read_block_SOURCES = adios_read_block.c
+@HAVE_ALACRITY_TRUE@adios_read_block_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
+@HAVE_ALACRITY_TRUE@adios_read_block_LDFLAGS = $(ADIOSLIB_LDFLAGS)
+@HAVE_ALACRITY_TRUE@adios_read_block_CPPFLAGS = $(ALACRITY_CPPFLAGS)
 @HAVE_ALACRITY_TRUE@adios_read_ext_test_SOURCES = adios_read_ext_test.c
 @HAVE_ALACRITY_TRUE@adios_read_ext_test_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD) 
 @HAVE_ALACRITY_TRUE@adios_read_ext_test_LDFLAGS = $(ADIOSLIB_LDFLAGS)
@@ -476,6 +489,9 @@ adios_alac_query$(EXEEXT): $(adios_alac_query_OBJECTS) $(adios_alac_query_DEPEND
 adios_build_alac_index$(EXEEXT): $(adios_build_alac_index_OBJECTS) $(adios_build_alac_index_DEPENDENCIES) 
 	@rm -f adios_build_alac_index$(EXEEXT)
 	$(adios_build_alac_index_LINK) $(adios_build_alac_index_OBJECTS) $(adios_build_alac_index_LDADD) $(LIBS)
+adios_read_block$(EXEEXT): $(adios_read_block_OBJECTS) $(adios_read_block_DEPENDENCIES) 
+	@rm -f adios_read_block$(EXEEXT)
+	$(adios_read_block_LINK) $(adios_read_block_OBJECTS) $(adios_read_block_LDADD) $(LIBS)
 adios_read_ext_test$(EXEEXT): $(adios_read_ext_test_OBJECTS) $(adios_read_ext_test_DEPENDENCIES) 
 	@rm -f adios_read_ext_test$(EXEEXT)
 	$(adios_read_ext_test_LINK) $(adios_read_ext_test_OBJECTS) $(adios_read_ext_test_LDADD) $(LIBS)
@@ -509,6 +525,12 @@ adios_build_alac_index-adios_build_alac_index.o: adios_build_alac_index.c
 
 adios_build_alac_index-adios_build_alac_index.obj: adios_build_alac_index.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_build_alac_index_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_build_alac_index-adios_build_alac_index.obj `if test -f 'adios_build_alac_index.c'; then $(CYGPATH_W) 'adios_build_alac_index.c'; else $(CYGPATH_W) '$(srcdir)/adios_build_alac_index.c'; fi`
+
+adios_read_block-adios_read_block.o: adios_read_block.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_read_block_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_read_block-adios_read_block.o `test -f 'adios_read_block.c' || echo '$(srcdir)/'`adios_read_block.c
+
+adios_read_block-adios_read_block.obj: adios_read_block.c
+	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_read_block_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_read_block-adios_read_block.obj `if test -f 'adios_read_block.c'; then $(CYGPATH_W) 'adios_read_block.c'; else $(CYGPATH_W) '$(srcdir)/adios_read_block.c'; fi`
 
 adios_read_ext_test-adios_read_ext_test.o: adios_read_ext_test.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(adios_read_ext_test_CPPFLAGS) $(CPPFLAGS) $(AM_CFLAGS) $(CFLAGS) -c -o adios_read_ext_test-adios_read_ext_test.o `test -f 'adios_read_ext_test.c' || echo '$(srcdir)/'`adios_read_ext_test.c

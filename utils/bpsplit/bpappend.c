@@ -199,7 +199,7 @@ int read_indexes(char *filename, bool input) {
     adios_posix_read_index_offsets (bp);
     adios_parse_index_offsets_v1 (bp);
     adios_posix_read_process_group_index (bp);
-    adios_parse_process_group_index_v1 (bp, &pg_root);
+    adios_parse_process_group_index_v1 (bp, &pg_root, NULL);
     
     // read and parse variable index
     adios_posix_read_vars_index (bp);
@@ -508,7 +508,7 @@ int append_in_to_out( const char *fileout, const char *filein) {
 
     // merge in old indicies
     adios_merge_index_v1 (idx,
-                          in_pg_root, in_vars_root, in_attrs_root);
+                          in_pg_root, in_vars_root, in_attrs_root, 0);
     adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset, index_start, 
                           idx);
     if (verbose>1) printf("  index size %llu 0x%llx\n", buffer_offset, buffer_offset);

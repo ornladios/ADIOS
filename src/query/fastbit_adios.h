@@ -53,6 +53,12 @@ static int mybmreader(void *ctx, uint64_t start,uint64_t count, uint32_t *buf)
   return 0;
 }
 
+typedef struct {
+  struct timespec _accumulator; // accumate
+  unsigned long   _counter; // how many times collected
+} CollectionPoint; // for logger
+
+
 long fastbit_adios_getCurrentTimeMillis();
 
 int fastbit_adios_util_getRelativeBlockNumForPoint(ADIOS_VARINFO* v,  uint64_t* point, int timestep);

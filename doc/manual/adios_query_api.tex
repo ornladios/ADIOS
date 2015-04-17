@@ -1,0 +1,308 @@
+\chapter{ADIOS Query API}
+\label{chapter:query_api}
+
+\section{Introduction}
+
+The ADIOS Query API (introduced in ADIOS 1.8) extends the Read API with a query evaluation. Using the Read API only when reading a subset of a variable, one creates a selection first to select the subset of interest, then one performs the read operation. The query API gives a new way of creating that selection. A relational expression (of variables and values) can be created and the list of points that satisfy the expression will be the result of a query evaluation. The list of points (a kind of ADIOS selection) can then be directly used in the read functions. 
+
+
+\section{How to use the query functions}
+\label{sec:query-howto}
+A query is an AND/OR tree of simple \verb+variable-relation-value+ expressions, like 
+\verb+V <= 50.0+. Let's consider the example, where we have three variables (N-dimensional) arrays, T, P, and V with the same dimension. We want to read the values of variable T, where  \verb+80.0 < P < 90.0 or  V <= 50.0+. The query is a tree of three expressions: \linebreak
+(\verb+P > 80.0+ AND \verb+P < 90.0+)  OR (\verb+V <= 50.0+).
+
+First, a selection has to be created to select a subset of the data on which a query is going to be evaluated (on a specific processor). Let's assume we have a bounding box selection 
+\verb+sel+ from a decomposition of the N-dimensional space of the variables. We need to create each expression separately and combine them together into an expression tree.
+
+\begin{lstlisting}[alsolanguage=C]
+ADIOS_SELECTION* box = adios_selection_boundingbox(...);
+ADIOS_QUERY *q1, *q2, *q3, *q4, *q;
+q1 = adios_query_create(f, box, "P", ADIOS_GT, "80.0");
+q2 = adios_query_create(f, box, "P", ADIOS_LT, "90.0");
+q3 = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
+q4 = adios_query_create(f, box, "V", ADIOS_LTEQ, "50.0");
+q  = adios_query_combine(q3, ADIOS_QUERY_OP_AND, q4);
+\end{lstlisting}
+
+
+\noindent The next step is to evaluate a query. The evaluation is a separate step from reading the data. The result is a point-list selection.  A query method can be manually selected, otherwise, the query evaluation first tries to identify which query method is available for the query (currently only FastBit is supported). 
+
+\begin{lstlisting}[alsolanguage=C]
+enum ADIOS_QUERY_METHOD query_method = ADIOS_QUERY_METHOD_FASTBIT;
+adios_query_set_method (q, query_method); // optional call
+ADIOS_SELECTION *hits;
+uint64_t batchSize = 1 000 000 000;
+adios_query_evaluate (q, box, timestep, batchSize, &hits);
+...
+adios_schedule_read (f, hits, "xy", timestep, 1, data);
+adios_perform_reads (f, 1);
+\end{lstlisting}
+
+The return value has the \verb+ADIOS_SELECTION*+ type, but actually it is a list of points, so one can use the internal structure. The number of the hits and the coordinates of the individual points are accessible directly via 
+\linebreak \verb+hits->u.points.npoints+ and \verb+hits->u.points.points+, see the \verb+ADIOS_SELECTION_POINTS_STRUCT+ struct in \verb+adios_selection.h+.
+
+Although the internal structures are not copied when combining them together, each sub-query needs to be deleted separately to free all memory at the end. The selection should also be deleted. In ADIOS 1.8, \linebreak \verb+adios_selection_delete()+ never deletes the content of the structure, only the structure itself. Therefore, the point-list must be manually freed, although it was allocated inside the query evaluation function of the ADIOS library. 
+
+\begin{lstlisting}[alsolanguage=C]
+adios_query_free(q);             // free all the query structs
+adios_query_free(q1);
+adios_query_free(q2);
+adios_query_free(q3);
+adios_query_free(q4);
+free (hits->u.points.points);    // free the points manually
+adios_selection_delete(hits);    // free the selection struct
+adios_selection_delete (boxsel); // don't forget the original selection
+\end{lstlisting}
+
+%
+% SECTION: Notes
+%
+\section{Notes}
+
+\subsection{FastBit}
+Currently, ADIOS is using the FastBit indexing library (\url{https://sdm.lbl.gov/fastbit}) created at the Lawrence Berkeley Laboratory. The FastBit index file is separate from the ADIOS data file and it should be created using the \verb+adios_index_fastbit+ utility. FastBit should be installed separately and ADIOS should be configured with it, see section~\ref{sec:installation-query-api}. 
+
+Just as with the write/read and transformation methods, ADIOS is designed to allow for adding new indexing and querying methods later. 
+
+\subsection{Query evaluation in a parallel program}
+The query evaluation is an independent local operation in every process. The parallelization of a query evaluation is to be done by the application by performing the evaluation on a subset of the data. Therefore, a query is created on a selection, which can be a bounding box, writeblock or point-list selection. Then, the result of a query evaluation is a point-list selection, which is a subset of the original selection.  
+
+\subsection{Results too large to handle}
+The evaluate function is designed to return a subset of all possible solutions if there are too many to handle at once. The caller can tell in the \verb+batchSize+ parameter how much points should be returned at maximum. The evaluate function can be called repetitively to get all points in a loop. It's return value indicates if there still are more results to be returned. The memory to hold the point list is allocated in the ADIOS library during evaluation. It must be freed by the application when it's not needed anymore. The memory footprint of a point selection is high: one N dimensional point needs \verb+N*sizeof(uint64_t)+ bytes, so plan accordingly. 
+
+\subsection{Selections everywhere in the query API? Why???}
+It may look like an overcomplicated design that each sub query has it's own input selection and then, the evaluate function takes yet another selection as input. The reason for this is that one may want to evaluate multiple sub-queries on different columns of a table (2D array) and read the data of yet another column from the rows that match the query. See an example at the end of this chapter in section~\ref{sec:query-example-columns}. The requirement about the selections is therefore that their shape matches (dimensionality and size) but not necessarily their locations (offsets).
+
+\subsection{Other notes}
+There is no default query engine in ADIOS 1.8 therefore, ADIOS must be built with FastBit support to get a code using the query API working. If the FastBit index for a particular data file is missing (or a particular variable), FastBit does evaluate the query using the data automatically. In the future, there may be a default simple query method that does not require any external libraries.
+
+
+%
+% SECTION: Examples
+%
+\section{Supported scenarios and samples}
+
+
+\subsection{Querying over multiple variables}
+Well, this is the primary example presented in the beginning of this chapter, in section ~\ref{sec:query-howto}. The example used here can be found in the source in \verb+examples/C/query/query_vars.c+.
+
+\subsection{Querying over columns of a table}
+\label{sec:query-example-columns}
+Let's assume we have one 2D variable in the ADIOS file, \emph{A}, a table for particle data. Data for one atom is stored in a row, where each column contains a different property of the atom (e.g. energy, velocity and position in each spatial dimension, etc.).
+Let's assume we want to get the values from column 3 of A where column 1 = 0 and  column 2 <= 96.
+In this case, we need a different bounding box selection in each sub-query, and apply the results to a third bounding box. The dimensions of each box are the same (\emph{number of rows} $x$ 1), but the offset is different to select a different column. The example used here can be found in the source in \verb+examples/C/query/query_table.c+.
+
+%\begin{lstlisting}[numbers=left, numberstyle=\color{gray}, stepnumber=2,
+\begin{lstlisting}[alsolanguage=C,
+                             caption={Query over the columns of a table}, label=code:query_columns]
+uint64_t offs1[] = {0, 1}, offs2[] = {0,2}, offs3[] = {0,3};
+uint64_t cnt[] = {number_of_rows, 1};  
+ADIOS_SELECTION* col1 = adios_selection_boundingbox(2, offs1, cnt);
+ADIOS_SELECTION* col2 = adios_selection_boundingbox(2, offs2, cnt);
+ADIOS_SELECTION* col3 = adios_selection_boundingbox(2, offs3, cnt);
+ADIOS_QUERY *q1, *q2, *q;
+q1 = adios_query_create(f, col1, "A", ADIOS_EQ, "0");
+q2 = adios_query_create(f, col2, "A", ADIOS_LTEQ, "96");
+q  = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
+adios_query_evaluate(q, col3, timestep, batchSize, &hits);
+
+\end{lstlisting}
+
+
+
+%
+% SECTION: C API
+%
+\section{Query C API description}
+
+Please consult the \verb+adios_query.h+ for the data structures and functions discussed here.  The sequence of evaluating a query on a variable  is
+
+\begin{itemize}
+\renewcommand{\labelitemi}{$-$}
+\item create sub-queries (single expression)
+
+\item combine sub-queries into a query
+
+\item (optionally) select the query method to be used
+
+\item (optionally) estimate the number of points that satisfy the query (a rough upper bound only)
+
+\item evaluate the query
+
+\item schedule and perform reading the data on the selection returned by the evaluation
+
+\item free data structures
+\end{itemize}
+
+%\noindent Example codes using the C API are 
+%
+%\begin{itemize}
+%\renewcommand{\labelitemi}{$-$}
+%\item Well, this is embarrassing, no example code
+%\item tests/suite/programs/write\_read.c
+%\end{itemize}
+
+\subsection{Types and data structures}
+\begin{lstlisting}
+enum ADIOS_QUERY_METHOD
+{
+    ADIOS_QUERY_METHOD_FASTBIT = 0,
+    ADIOS_QUERY_METHOD_ALACRITY = 1,
+    ADIOS_QUERY_METHOD_UNKNOWN = 2,
+    ADIOS_QUERY_METHOD_COUNT = ADIOS_QUERY_METHOD_UNKNOWN
+};
+
+enum ADIOS_PREDICATE_MODE
+{
+    ADIOS_LT = 0,
+    ADIOS_LTEQ = 1,
+    ADIOS_GT = 2,
+    ADIOS_GTEQ = 3,
+    ADIOS_EQ = 4,
+    ADIOS_NE = 5
+};
+
+enum ADIOS_CLAUSE_OP_MODE
+{
+    ADIOS_QUERY_OP_AND = 0,
+    ADIOS_QUERY_OP_OR  = 1
+};
+
+\end{lstlisting}
+
+
+\subsection{adios\_query\_is\_method\_available}
+This function can check if the intended query method is actually available in the actual ADIOS library linked into the running application. 
+
+\noindent The function returns 1 if the method is available, 0 otherwise.
+
+\begin{lstlisting}[alsolanguage=C]
+int adios_query_is_method_available(enum ADIOS_QUERY_METHOD method);
+\end{lstlisting}
+
+\subsection{adios\_query\_create}
+Create a simple query, a relational expression of a variable and a value, like \verb+V <= 50.0+. 
+
+\begin{lstlisting}[alsolanguage=C]
+ADIOS_QUERY* adios_query_create (ADIOS_FILE* f,
+                                 ADIOS_SELECTION* queryBoundary,
+                                 const char* varName,
+                                 enum ADIOS_PREDICATE_MODE op,
+                                 const char* value);
+\end{lstlisting}
+
+\subsection{adios\_query\_combine}
+Combine simple queries into an AND/OR tree. 
+
+\begin{lstlisting}[alsolanguage=C]
+ADIOS_QUERY* adios_query_combine (ADIOS_QUERY* q1,
+                                  enum ADIOS_CLAUSE_OP_MODE operator,
+                                  ADIOS_QUERY* q2);
+\end{lstlisting}
+
+\subsection{adios\_query\_set\_method}
+Select a query method manually for a query evaluation. If not set by the user, a suitable query method is chosen at evaluation automatically. An application usually should not worry about this function but it is available for any case. 
+
+\begin{lstlisting}[alsolanguage=C]
+void adios_query_set_method (ADIOS_QUERY* q, enum ADIOS_QUERY_METHOD method);
+\end{lstlisting}
+
+\subsection{adios\_query\_estimate}
+Estimate the number of hits of the query at a given \verb+timestep+. The estimation is a rough upper bound. Note that it is not needed to call this function to pre-allocate memory before evaluation. The evaluate function is designed to be called repetitively and to return a user-limited number of hits at a time.
+
+\begin{lstlisting}[alsolanguage=C]
+int64_t adios_query_estimate (ADIOS_QUERY* q, int timeStep);
+\end{lstlisting}
+
+\subsection{adios\_query\_evaluate}
+Evaluate a query at a given \verb+timestep+. The number of points in the result \verb+queryResult+ will be limited to \verb+batchSize+. The coordinates of the result points are applied (are relative) to the \verb+outputBoundary+ selection. The memory to hold the result is allocated inside this function, but must be freed by the application later. 
+
+The return value 0 indicates a successful evaluation, which has returned all possible hits. A return value 1 indicates also success but with a result size limited by \verb+batchSize+. In this case, the application may call this function again  to get all the result.
+ 
+\begin{lstlisting}[alsolanguage=C]
+int  adios_query_evaluate (ADIOS_QUERY* q,
+                           ADIOS_SELECTION* outputBoundary,
+                           int timestep,
+                           uint64_t batchSize,
+                           ADIOS_SELECTION** queryResult);
+\end{lstlisting}
+
+\subsection{adios\_query\_free}
+Free the \verb+ADIOS_QUERY+ structure allocated in the \verb+adios_query_create()+ function. It does not free any selections, those should be freed separately.
+
+\begin{lstlisting}[alsolanguage=C]
+adios_query_free(ADIOS_QUERY* q);
+\end{lstlisting}
+
+%
+% SECTION: Fortran API
+%
+\section{Query Fortran API description}
+\label{section:query_fortran_api}
+
+The Fortran API does not deal with the structures of the C api rather it requires 
+several arguments in the function calls.  They are all implemented as subroutines 
+like the write/read Fortran APsI and the last argument is an integer variable to store 
+the error code output of each function (0 meaning successful operation,  except 
+for the evaluate subroutine where 0 and 1 mean both OK, and -1 indicates a problem).
+
+{\color{red}An example code can be found in the source distribution as 
+\verb+tests/bp_read/bp_read_f.F90+.}
+
+A Fortran90 module, \verb+adios_query_mod.mod+ provides the available ADIOS subroutines. 
+Here is the list of the Fortran90 subroutines from \verb+adios_query_mod.mod+. 
+
+\begin{lstlisting}[language=ADIOS,alsolanguage=Fortran]
+subroutine adios_query_create (f, sel, varname, pred, value, q)
+  integer*8,         intent(in)  :: f       ! ADIOS file (from adios_read_open())
+  integer*8,         intent(in)  :: sel     ! ADIOS_SELECTION from read API
+  character(*),      intent(in)  :: varname
+  integer,           intent(in)  :: pred    ! PREDICATE like ADIOS_GT
+  character(*),      intent(in)  :: value   ! comparison value (integer or real)
+  type(ADIOS_QUERY), intent(out) :: q       ! output variable, 0 on error
+end subroutine
+
+subroutine adios_query_combine (q1, op, q2, q)
+  type(ADIOS_QUERY), intent(in)  :: q1   ! Query 1
+  integer,           intent(in)  :: op   ! Clause like ADIOS_QUERY_OP_AND
+  type(ADIOS_QUERY), intent(in)  :: q2   ! Query 2
+  type(ADIOS_QUERY), intent(out) :: q    ! Result Query 
+end subroutine
+
+subroutine adios_query_set_method (q, method)
+  type(ADIOS_QUERY), intent(in)  :: q        ! Query 
+  integer,           intent(in)  :: method   ! e.g. ADIOS_QUERY_METHOD_FASTBIT
+end subroutine
+
+integer*8 function adios_query_estimate (q, timestep)
+  ! return the (estimated) number of points (an upper bound)
+  type(ADIOS_QUERY), intent(in)  :: q        ! Query 
+  integer,           intent(in)  :: timestep ! must be 0 in case of streaming
+end function
+
+subroutine adios_query_evaluate (q, sel_outboundary, timestep, batchsize, 
+                                 sel_result, err)
+  type(ADIOS_QUERY), intent(in)  :: q           ! Query 
+  integer*8,         intent(in)  :: sel_outboundary  ! apply hits on this selection
+  integer,           intent(in)  :: timestep    ! must be 0 when streaming
+  integer*8,         intent(in)  :: batchsize   ! limit result size 
+  integer*8,         intent(out) :: sel_result  ! result selection 
+                                                ! (an ADIOS point selection)
+  integer,           intent(out) :: err         ! 0: OK, no more result
+                                                ! 1: OK, there will be more
+                                                ! -1: error, see adios_errno
+end subroutine
+
+subroutine adios_query_free (q)
+  type(ADIOS_QUERY), intent(in)  :: q
+end subroutine
+
+logical function adios_query_is_method_available (method)
+  integer,           intent(in)  :: method   ! e.g. ADIOS_QUERY_METHOD_FASTBIT
+end function
+\end{lstlisting}
+
+
+
+

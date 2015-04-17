@@ -12,10 +12,10 @@
 #include <stdint.h>
 #include <assert.h>
 #include "util.h"
-#include "adios_internals.h" // adios_get_type_size()
-#include "adios_subvolume.h"
-#include "adios_transforms_hooks_read.h"
-#include "adios_transforms_reqgroup.h"
+#include "core/adios_internals.h" // adios_get_type_size()
+#include "core/adios_subvolume.h"
+#include "core/transforms/adios_transforms_hooks_read.h"
+#include "core/transforms/adios_transforms_reqgroup.h"
 
 // Implementation of the "identity" transform, which does nothing to
 // the data, but exercises the transform framework for testing.
@@ -129,9 +129,9 @@ int adios_transform_generate_read_subrequests_over_original_data(
         int p;
         for (p = 0; p < npoints; p++) {
             const uint64_t *point = &points[p * ndim];
-            const uint64_t offset = compute_linear_offset_in_volume(ndim, point, &pg_reqgroup->pg_bounds_sel->u.bb);
+            const uint64_t offset = compute_linear_offset_in_volume(ndim, point, pg_reqgroup->pg_bounds_sel->u.bb.count);
 
-            const adios_transform_raw_read_request *subreq =
+            adios_transform_raw_read_request *subreq =
                     adios_transform_raw_read_request_new_byte_segment(pg_reqgroup, original_data_offset_in_pg + offset * datum_size, 1, buf + p * datum_size);
             adios_transform_raw_read_request_append(pg_reqgroup, subreq);
         }

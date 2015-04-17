@@ -15,6 +15,7 @@ static struct adios_query_hooks_struct * query_hooks = 0;
 static int getTotalByteSize (ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* sel, 
 			     uint64_t* total_byte_size, uint64_t* dataSize, int timestep);
 
+int isCompatible(ADIOS_QUERY* q1, ADIOS_QUERY* q2);
 
 static ADIOS_SELECTION* getAdiosDefaultBoundingBox(ADIOS_VARINFO* v) 
 {
@@ -78,6 +79,13 @@ int common_query_is_method_available(enum ADIOS_QUERY_METHOD method) {
 void common_query_set_method (ADIOS_QUERY* q, enum ADIOS_QUERY_METHOD method) 
 {
     q->method = method;
+
+    if (q->left != NULL) {
+      common_query_set_method(q->left, method);
+    } 
+    if (q->right != NULL) {
+      common_query_set_method(q->right, method);      
+    }
 }
 
 // Choose a query method which can work on this query
@@ -97,12 +105,14 @@ static enum ADIOS_QUERY_METHOD detect_and_set_query_method(ADIOS_QUERY* q)
 		}
 		int found = query_hooks[m].adios_query_can_evaluate_fn(q);
 		if (found) {
-		  q->method = m;
+		  // q->method = m;
+		  common_query_set_method(q, m);
 		  return m;
 		}
 	}
 	// return default that always works
-	q->method = ADIOS_QUERY_METHOD_FASTBIT;
+	//q->method = ADIOS_QUERY_METHOD_FASTBIT;
+	common_query_set_method(q, ADIOS_QUERY_METHOD_FASTBIT);
 	return ADIOS_QUERY_METHOD_FASTBIT;
 }
 
@@ -154,6 +164,12 @@ static int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
 	  timeStep = q->file->current_step;
       }
 
+      if (q->varinfo != NULL) {
+	if (q->onTimeStep  == timeStep) {
+	  return timeStep; // returning call to get more values
+	}
+      }
+
       ADIOS_VARINFO* v = common_read_inq_var(q->file, q->varName);
       if (v == NULL) {
 	adios_error (err_invalid_varname, "Query Invalid variable '%s':\n%s",
@@ -175,7 +191,8 @@ static int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
       }
 
       log_debug("%s, raw data size=%ld\n", q->condition, dataSize);
-      q->dataSlice = malloc(total_byte_size);
+      //q->dataSlice = malloc(total_byte_size);
+      q->dataSlice = 0;
       q->rawDataSize = dataSize;
 
       return timeStep;
@@ -192,11 +209,12 @@ static int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
 
 	return -1;
       }
+      q->rawDataSize = ((ADIOS_QUERY*)(q->left))->rawDataSize;
       return leftTimeStep;
     }
 }
 
-ADIOS_QUERY* freeQuery(ADIOS_QUERY* query) {
+void freeQuery(ADIOS_QUERY* query) {
   log_debug("common_free() query: %s \n", query->condition);
 
   free(query->predicateValue);
@@ -209,7 +227,6 @@ ADIOS_QUERY* freeQuery(ADIOS_QUERY* query) {
   query->dataSlice = 0;
 
   free(query);
-  query = 0;
 }
 
 
@@ -538,6 +555,7 @@ ADIOS_QUERY* common_query_combine(ADIOS_QUERY* q1,
     result->right = q2;
     result->combineOp = operator;
 
+    result->rawDataSize = q1->rawDataSize;
     //initialize(result);
     return result;
 }

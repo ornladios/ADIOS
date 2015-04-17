@@ -208,7 +208,9 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
         mdfile_name = 0;
     }
 
-    fd->subfile_index = p->rank;
+#ifdef HAVE_MPI
+    fd->subfile_index = p->rank; // Only if HAVE_MPI
+#endif
 
     struct stat s;
     if (stat (subfile_name, &s) == 0)
@@ -400,7 +402,7 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
                         adios_parse_index_offsets_v1 (&p->b);
 
                         adios_posix_read_process_group_index (&p->b);
-                        adios_parse_process_group_index_v1 (&p->b, &p->index->pg_root);
+                        adios_parse_process_group_index_v1 (&p->b, &p->index->pg_root, &p->index->pg_tail);
 
                         // find the largest time index so we can append properly
                         struct adios_index_process_group_struct_v1 * pg;
@@ -772,7 +774,7 @@ static void adios_posix_do_read (struct adios_file_struct * fd
             adios_parse_index_offsets_v1 (&p->b);
 
             adios_posix_read_process_group_index (&p->b);
-            adios_parse_process_group_index_v1 (&p->b, &pg_root);
+            adios_parse_process_group_index_v1 (&p->b, &pg_root, NULL);
 #if 1
             adios_posix_read_vars_index (&p->b);
             adios_parse_vars_index_v1 (&p->b, &index->vars_root, NULL, NULL);
@@ -1033,9 +1035,7 @@ void adios_posix_close (struct adios_file_struct * fd
                         p->b.length = index_sizes [i];
                         p->b.offset = 0;
 
-                        adios_parse_process_group_index_v1 (&p->b
-                                                           ,&new_pg_root
-                                                           );
+                        adios_parse_process_group_index_v1 (&p->b, &new_pg_root, NULL);
                         adios_parse_vars_index_v1 (&p->b, &new_vars_root, NULL, NULL);
                         // do not merge attributes from other processes from 1.4
                         /*
@@ -1045,7 +1045,7 @@ void adios_posix_close (struct adios_file_struct * fd
                         */
 
                         adios_merge_index_v1 (p->index, new_pg_root, 
-                                              new_vars_root, new_attrs_root);
+                                              new_vars_root, new_attrs_root, 0);
                         new_pg_root = 0;
                         new_vars_root = 0;
                         new_attrs_root = 0;
@@ -1249,9 +1249,7 @@ void adios_posix_close (struct adios_file_struct * fd
                         p->b.length = index_sizes [i];
                         p->b.offset = 0;
 
-                        adios_parse_process_group_index_v1 (&p->b
-                                                           ,&new_pg_root
-                                                           );
+                        adios_parse_process_group_index_v1 (&p->b, &new_pg_root, NULL);
                         adios_parse_vars_index_v1 (&p->b, &new_vars_root, NULL, NULL);
                         // do not merge attributes from other processes from 1.4
                         /*
@@ -1260,18 +1258,15 @@ void adios_posix_close (struct adios_file_struct * fd
                                                         );
                          */
 
-                        adios_merge_index_v1 (p->index,new_pg_root, 
-                                              new_vars_root, new_attrs_root);
+                        // global index would become unsorted on main aggregator during merging 
+                        // so sort timesteps in this case (appending)
+                        adios_merge_index_v1 (p->index, new_pg_root, 
+                                              new_vars_root, new_attrs_root, 1);
                     
                         new_pg_root = 0;
                         new_vars_root = 0;
                         new_attrs_root = 0;
                     }
-
-                    adios_sort_index_v1 (&p->index->pg_root
-                                        ,&p->index->vars_root
-                                        ,&p->index->attrs_root
-                                        );
 
                     p->b.buff = buffer_save;
                     p->b.length = buffer_size_save;

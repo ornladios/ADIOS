@@ -75,7 +75,7 @@ All reading methods understand and can serve read requests over such selections.
 First, before opening a file/stream, we have to choose a reading method and initialize it with the \linebreak \verb+adios_read_init_method()+. Also, an \verb+adios_read_finalize_method()+ is necessary at the end of the application run. Note, that there is a separate initialization call for each read method the application intends to use.
 
 A file has to be opened with \verb+adios_read_open_file(fname, method, comm)+ if the application wants to handle it as file (all steps accessible at once). A name, a read method and an MPI communicator should be provided. A stream (or a file handled as a stream) has to be opened with \linebreak
-\verb+adios_read_open(fname, method, comm, lock_mode, timeout_msec)+.  A locking strategy has to be specified and some timeout can be specified for waiting for the stream to appear.  
+\verb+adios_read_open(fname, method, comm, lock_mode, timeout_sec)+.  A locking strategy has to be specified and some timeout can be specified for waiting for the stream to appear.  
 
 In C, a transparent data struct is returned (\verb+ADIOS_FILE+), which enumerates the list of variables and attributes,  the current step and the available steps in the staging memory at the time of opening. The available steps are updated whenever seeking with \verb+adios_advance_step()+. Seeking is allowed to the next available step or to the last (newest) available step, with the possible errors of not finding any new step or finding that the stream has terminated. The current step can be released without advancing the step too, to free resources in the staging area. This optimization call is highly encouraged in every application to give free space to the writing application as early as possible. 
 
@@ -937,13 +937,13 @@ subroutine adios_read_finalize_method (method, err)
 end subroutine
 
 subroutine adios_read_open (fp, fname, method, comm, lockmode, 
-                            timeout_msec, err)
+                            timeout_sec, err)
     integer*8,      intent(out) :: fp
     character(*),   intent(in)  :: fname
     integer,        intent(in)  :: method
     integer,        intent(in)  :: comm
     integer,        intent(in)  :: lockmode
-    integer,        intent(in)  :: timeout_msec
+    real,           intent(in)  :: timeout_sec
     integer,        intent(out) :: err
 end subroutine
 
@@ -1406,12 +1406,12 @@ The opening of a stream has to be repeated in case the stream is not yet availab
 \begin{lstlisting}[numbers=left, numberstyle=\color{gray}, stepnumber=2,
                    caption={While loop to open a stream},  label=code:open_stream]
 fp = adios_read_open ("myfile.bp", ADIOS_READ_METHOD_BP, comm, 
-                      ADIOS_LOCKMODE_CURRENT, timeout_msec);
+                      ADIOS_LOCKMODE_CURRENT, timeout_sec);
 while (adios_errno == err_file_not_found) {
     fprintf (stderr, "rank %d: Wait on stream: %s\n", rank, adios_errmsg());
     sleep(1);
     fp = adios_read_open ("myfile.bp", comm, 
-                          ADIOS_LOCKMODE_CURRENT, timeout_msec);
+                          ADIOS_LOCKMODE_CURRENT, timeout_sec);
 }
 if (adios_errno == err_end_of_stream) {
     // stream has been gone before we tried to open

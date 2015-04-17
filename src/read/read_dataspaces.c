@@ -1108,6 +1108,8 @@ int adios_read_dataspaces_inq_var_blockinfo (const ADIOS_FILE *fp, ADIOS_VARINFO
         varinfo->blockinfo->start[i] = 0;
         varinfo->blockinfo->count[i] = ds->vars[varinfo->varid].dims[i];
     }
+    varinfo->blockinfo->process_id = 0;
+    varinfo->blockinfo->time_index = fp->current_step;
     return 0;
 }
 

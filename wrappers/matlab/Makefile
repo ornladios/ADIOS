@@ -9,17 +9,21 @@ default:
 
 matlab: adiosopenc adiosclosec adiosreadc
 
+INC:=$(shell echo ${ADIOSREAD_SEQ_INC})
+LIB:=$(shell echo ${ADIOSREAD_SEQ_CLIB})
+
 adiosopenc:  
-	mex adiosopenc.c ${MEXOPTS} -D_NOMPI  -DADIOS_USE_READ_API_1 -I. -I../../src/public -L. -L../../src ${ADIOSREAD_SEQ_INC} ${ADIOSREAD_SEQ_CLIB}
+	mex adiosopenc.c  ${MEXOPTS} -D_NOMPI -DADIOS_USE_READ_API_1 -I. -I../../src/public ${INC} -L. -L../../src ${LIB}
 
 adiosreadc: 
-	mex adiosreadc.c ${MEXOPTS} -D_NOMPI -DADIOS_USE_READ_API_1 -I. -I../../src/public -L. -L../../src ${ADIOSREAD_SEQ_INC} ${ADIOSREAD_SEQ_CLIB}
+	mex adiosreadc.c  ${MEXOPTS} -D_NOMPI -DADIOS_USE_READ_API_1 -I. -I../../src/public ${INC} -L. -L../../src ${LIB}
 
 adiosclosec:
-	mex adiosclosec.c ${MEXOPTS} -D_NOMPI -DADIOS_USE_READ_API_1 -I. -I../../src/public -L. -L../../src ${ADIOSREAD_SEQ_INC} ${ADIOSREAD_SEQ_CLIB}
+	mex adiosclosec.c ${MEXOPTS} -D_NOMPI -DADIOS_USE_READ_API_1 -I. -I../../src/public ${INC} -L. -L../../src ${LIB}
 
 #adiosdbgc:
-#	mex adiosdbgc.c ${MEXOPTS} -D_NOMPI -I. -I../../src/public -L. -L../../src ${ADIOSREAD_SEQ_INC} ${ADIOSREAD_SEQ_CLIB}
+#       mex adiosdbgc.c ${MEXOPTS} -D_NOMPI -I. -I../../src/public ${INC} -L. -L../../src ${LIB} 
+
 
 clean:
 	rm -f *.mexa64 core* *.o 

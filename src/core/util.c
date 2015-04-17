@@ -4,6 +4,7 @@
 #include <limits.h>
 #include <errno.h>
 #include <assert.h>
+#include <ctype.h>
 
 #include "config.h"
 #include "core/util.h"

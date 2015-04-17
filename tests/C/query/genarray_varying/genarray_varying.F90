@@ -246,7 +246,7 @@ subroutine writeArray()
         io_start_time = MPI_WTIME()
         group = "genarray"
         call adios_open (adios_handle, group, outputfile, mode, app_comm, adios_err)
-        adios_groupsize = 13*4 + 9*8*ndx*ndy*ndz
+        adios_groupsize = 13*4 + 8*ndx*ndy*ndz + 8*ndx*ndy + 8*ndx*ndz + 8*ndy*ndz
         call adios_group_size (adios_handle, adios_groupsize, adios_totalsize, adios_err)
         call adios_write (adios_handle, "/dimensions/gndx", gndx, adios_err)
         call adios_write (adios_handle, "/dimensions/gndy", gndy, adios_err)

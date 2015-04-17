@@ -113,6 +113,9 @@
 /* Define to 1 if you have <infiniband/verbs.h>. */
 #undef HAVE_IBVERBS_H
 
+/* ICEE method is enabled */
+#undef HAVE_ICEE
+
 /* Define if you have the Infiniband. */
 #undef HAVE_INFINIBAND
 

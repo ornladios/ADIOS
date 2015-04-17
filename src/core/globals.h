@@ -59,4 +59,27 @@ char *get_full_path_name(char *name, char *path);
 
 #endif
 
+#ifdef HAVE_ICEE
+
+#ifndef ICEE_MAX_PARALLEL
+#define ICEE_MAX_PARALLEL 32
+#endif
+
+#ifndef ICEE_MAX_REMOTE
+#define ICEE_MAX_REMOTE 32
+#endif
+
+#include "core/adios_icee.h"
+
+typedef enum {TCP, UDP, ENET, NNTI, IB} icee_transport_t;
+static const char *icee_transport_name[] = {
+    "TCP", "UDP", "ENET", "NNTI", "IB",
+};
+
+void icee_dims_print(const char* name, const int ndims, const uint64_t *dims);
+void icee_varinfo_print(const icee_varinfo_rec_ptr_t vp);
+void icee_fileinfo_print(const void* item);
+void icee_contactinfo_print(const icee_contactinfo_rec_ptr_t cp);
+#endif
+
 #endif  /*__GLOBALS_H__*/

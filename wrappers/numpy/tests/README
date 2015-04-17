@@ -1,0 +1,27 @@
+This directory contains test cases for Adios python binding.
+
+1. Serial adios module test
+---------------------------
+
+$ python ./test_adios.py
+
+will write "adios_test.bp" and read back its contents.
+
+2. Serial writing with timesteps
+--------------------------------
+
+$ python ./test_adios_timesteps.py
+
+will create "adios_test.bp" with 10 timesteps.
+
+
+3. Parallel adios module test
+-----------------------------
+
+$ mpirun -n 4 python ./test_adios_mpi.py
+
+will create "adios_test_mpi.bp" parallely written by 4 MPI
+processes. User can try to increase or decrease the number of MPI
+processes.
+
+

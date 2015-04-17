@@ -1,6 +1,8 @@
 1.8.0 Release Dec 2014
     - Query API 
       - extends the read API with queries
+    - Staging over WAN (wide-area-network)
+      - ICEE method (requires FLEXPATH) 
     - skeldump utility
       - to generate info and code from output data to replay 
         the I/O pattern
@@ -9,7 +11,7 @@
         data using MPI_AGGREGATE method with metadata writing turned off
     - I/O timing statistics and timing events can be collected
     - New stage writer code for staged I/O, where output data 
-      (list of variables and their size) is changing 
+      (list of variables and their sizes) is changing 
       at every timestep. See examples/stage_write_varying
     - fix: staging with multiple streams allowed
     - fix: parallel build (make -j <n>) completes without breaking 

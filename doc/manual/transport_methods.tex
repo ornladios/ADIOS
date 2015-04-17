@@ -515,6 +515,37 @@ existing tools linked with NetCDF 3.x.  However, NetCDF4 provides a backward com
 API, so that these tools can be relinked with NetCDF4.  After relink, these tools 
 can open files in the ``netcdf-4 format''.
 
+\subsection{ICEE}
+ICEE, designed to support in-transit data processing through wide-area networks (WAN), is a transport method for remote staging. ICEE is based on EVPath library (http://www.cc.gatech.edu/systems/projects/EVPath/) to provide full flexibility on different network methods (TCP/IP, UDP, RDMA, etc). In short, ICEE performs push-based data transportation; once a reader (or receiver) registers its connection information to a writer (or sender), the writer pushes data to the reader until the end of data streams.
+
+%In ICEE, an initial connection is established between a writer and a reader by the following steps (based on TCP/IP connection as an example):
+%
+%1. Writer listens on a port, say P1, waiting a client (or multiple) to register. Writer's listening port can be specified by \verb+cm_port+
+%option when calling \verb+adios_select_method+ (when using Adios no xml init) or in an xml file.
+%The following options can be used for initializing writer:
+%\begin{itemize}
+%\item \verb+cm_port+ : writer's listening port
+%\item \verb+max_client+ : number of clients to register (default is 1)
+%\end{itemize}
+%
+%2. A reader needs to know the writer's hostname and port. Then, the reader connects to the writer and registers his connection information (reader's hostname and port). 
+%
+%The following options can be specified on calling \verb+adios_read_init_method+:
+%\begin{itemize}
+%\item \verb+cm_host+ : reader's hostname
+%\item \verb+cm_port+ : reader's port
+%\item \verb+cm_remote_host+ : writer's hostname
+%\item \verb+cm_remote_port+ : writer's port
+%\end{itemize}
+%
+%A reader can register to multiple writers to receive data from
+%multiple sources. Then, use the following option:
+%
+%\begin{itemize}
+%\item \verb+remote_list+ : specify multiple writer's location in the format: hostname1:port1,hostname2:port2,...
+%\end{itemize}
+%
+%3. After successful registration, the writer will push data to the reader.
 
 \section{Research Methods}
 

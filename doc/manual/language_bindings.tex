@@ -334,9 +334,12 @@ cdef class file:
     cpdef public dict attr
     
     """ Initialization. Call adios_read_open and populate public members """
-    def __init__(self, char * fname, 
-                 ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP, 
-                 MPI.Comm comm = MPI.COMM_WORLD)
+    def __init__(self, char * fname,
+                 char * method_name = "BP",
+                 MPI_Comm comm = MPI_COMM_WORLD,
+                 is_stream = False,
+                 ADIOS_LOCKMODE lock_mode = ADIOS_LOCKMODE_ALL,
+                 float timeout_sec = 0.0)
     
     """ Call adios_read_close """
     cpdef close(self)
@@ -395,7 +398,7 @@ def bpls(fname)
 \end{lstlisting}
 
 \subsection{Examples}
-Examples of using ADIOS Python/Numpy functions are shown below. The first example is to write and read ADIOS BP files in a single process. You can find the code in the source distribution: \verb+/wrapper/numpy/tests/test_adios.py+.
+Examples of using ADIOS Python/Numpy functions are shown below. The first example is to write and read ADIOS BP files with a single process. You can find the code in the source distribution: \verb+wrapper/numpy/tests/test_adios.py+.
 
 \begin{lstlisting}[language=ADIOS-python,caption={A Python/Numpy example for writing/reading ADIOS BP file},label={},]
 """ Import ADIOS Python/Numpy wrapper """

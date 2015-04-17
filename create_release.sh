@@ -6,6 +6,7 @@
 #    make dist
 #    extracts adios-VERSION.tar.gz
 #    removes the research transport method files from adios-VERSION/src
+#    adds files that are missed by automake dist targets
 #    remakes the tar.gz
 #
 # Requirements
@@ -69,7 +70,8 @@ echo "Add staging/coupling examples"
 tar -cO examples/staging examples/coupling  --exclude "\.svn" | tar -x -C adios-$VERSION
 
 echo "Add CMAKE build files"
-cp cmake_init toolchain.cmake config.h.cmake adios-$VERSION
+cp cmake_init config.h.cmake adios-$VERSION
+cp -r toolchain adios-$VERSION
 find . -name CMakeLists.txt | grep -v "adios-$VERSION" > cmakefiles.txt
 while read f; do
   echo "cp $f adios-$VERSION/$f"

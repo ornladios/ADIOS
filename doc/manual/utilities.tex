@@ -13,8 +13,17 @@ command followed by the config file name.
 This script provides the necessary compile and linking flags to use ADIOS in your 
 application and the version information of the ADIOS installation. It also 
 lists the write/read transport methods as well as the data transformation methods
-available in the actual ADIOS installation. See Section 
+and query methods available in the actual ADIOS installation. See Section 
 2.5 for how to use it or run \texttt{"}adios\_config -h\texttt{"} to see the options. 
+
+\section{adios\_index\_fastbit}
+
+This tool is used to generate a FastBit index file on a .bp file. It will be a separate file, named 
+<filename>.idx if the data file is <filename>.bp. The format of the index files is also the 
+ADIOS-BP file format. If the index file is present, an ADIOS query will be evaluated by FastBit using this index, which can speed up the reading of data of interest by several orders of magnitude.
+
+\vspace{6pt}
+\noindent {\bf Note:} In ADIOS 1.8, this tool is a sequential code and tries to generate the whole index in one swoop. It may be very slow or buggy for a large dataset.
 
 
 \section{bpls}
@@ -132,6 +141,27 @@ $ bpls g_2x2_2x2_t3.bp -d -s "0,-1,-1" -c "-1,1,1" -n 1 var/int_xyt
     (1,3,3) 15
     (2,3,3) 15
 \end{lstlisting}
+
+
+\section{bpmeta}
+
+The utility \verb+bpmeta+ is used to create the metadata file (.bp) after a large application run when the \verb+MPI_AGGREGATE+ output method  is used with \verb+have_metada_file=0+ option. 
+The collection of metadata to present all data stored in many partial subfiles (under .bp.dir/) during \verb+adios_close()+ can be substantial at large scale (hundreds of thousands of cores) and may become the bottleneck in achieving the highest possible I/O performance. It can be turned off, and then only the data files under .bp.dir/ will be created. \verb+bpmeta+ can then be used on a single compute node or login node to generate the .bp metadata file. 
+
+\begin{lstlisting}[language=bash,caption={},label={}]
+usage: bpmeta [-t <T>] [-n <N>] <filename>
+
+bpmeta processes <filename>.dir/<filename>.<nnn> subfiles and 
+generates a metadata file <filename>.
+
+  --nsubfiles | -n <N>   The number of subfiles to process in
+                           <filename>.dir
+  --nthreads  | -t <T>   Parallel reading with <T> threads.
+                           The main thread is counted in.
+\end{lstlisting}
+
+If the number of files is not given as argument, \verb+bpmeta+ will use system calls to determine the number of files in the directory. The utility runs on a single node but it can use threads to speed up the metadata creation. 
+
 
 \section{bpdump}
 

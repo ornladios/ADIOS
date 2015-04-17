@@ -17,6 +17,7 @@
 #include "adios_types.h"
 #include "adios_selection.h"
 #include "adios_schema.h"
+#include "adios_link.h"
 #include "adios_read_v2_fwd.h"
 #include "adios_read_ext.h"
 
@@ -56,25 +57,25 @@ struct _ADIOS_FILE {
 };
 
 struct _ADIOS_VARSTAT {
-        void     * min;            /* minimum value in an array variable, = value for a scalar       */
-        void     * max;            /* maximum value of an array variable (over all steps)            */
-        double   * avg;            /* average value of an array variable (over all steps)            */
-        double   * std_dev;        /* standard deviation value of an array variable (over all steps) */
+        void     * min;            /* minimum value in an array variable, = value for a scalar        */
+        void     * max;            /* maximum value of an array variable (over all steps)             */
+        double   * avg;            /* average value of an array variable (over all steps)             */
+        double   * std_dev;        /* standard deviation value of an array variable (over all steps)  */
 
-        struct ADIOS_STAT_STEP     /* per step statistics (if requested and recorded at writing) */
+        struct ADIOS_STAT_STEP     /* per step statistics (if requested and recorded at writing)      */
         {
-            void     ** mins;      /* minimum per each step (array of 'nsteps' elements)             */
-            void     ** maxs;      /* maximum per each step (array of 'nsteps' elements)             */
-            double   ** avgs;      /* average per each step (array of 'nsteps' elements)             */
-            double   ** std_devs;  /* standard deviation per each step (array of 'nsteps' elements)  */
+            void     ** mins;      /* minimum per each step (array of 'nsteps' elements)              */
+            void     ** maxs;      /* maximum per each step (array of 'nsteps' elements)              */
+            double   ** avgs;      /* average per each step (array of 'nsteps' elements)              */
+            double   ** std_devs;  /* standard deviation per each step (array of 'nsteps' elements)   */
         } *steps;
 
-        struct ADIOS_STAT_BLOCK    /* per block statistics (if requested and recorded at writing) */
+        struct ADIOS_STAT_BLOCK    /* per block statistics (if requested and recorded at writing)     */
         {
-            void     ** mins;      /* minimum per each block (array of 'nblocks' elements)         */
-            void     ** maxs;      /* maximum per each block (array of 'nblocks' elements)         */
-            double   ** avgs;      /* average per each block (array of 'nblocks' elements)         */
-            double   ** std_devs;  /* std deviation per each block (array of 'nblocks' elements)   */
+            void     ** mins;      /* minimum per each block (array of 'sum_nblocks' elements)        */
+            void     ** maxs;      /* maximum per each block (array of 'sum_nblocks' elements)        */
+            double   ** avgs;      /* average per each block (array of 'sum_nblocks' elements)        */
+            double   ** std_devs;  /* std deviation per each block (array of 'sum_nblocks' elements)  */
         } *blocks;
 
         struct ADIOS_HIST           /* Histogram if recorded at writing */
@@ -89,8 +90,10 @@ struct _ADIOS_VARSTAT {
 };
 
 struct _ADIOS_VARBLOCK {
-    uint64_t * start;      /* offset start point in global array ('ndim' elements)         */
-    uint64_t * count;      /* local sizes in global array ('ndim' elements)                */
+    uint64_t * start;      /* offset start point in global array ('ndim' elements)                    */
+    uint64_t * count;      /* local sizes in global array ('ndim' elements)                           */
+    uint32_t process_id;   /* a kind of ID of the writing process (likely MPI rank)                   */
+    uint32_t time_index;   /* a kind of timestep info of the writing process >= step of variable      */
 };
 
 enum var_centering
@@ -147,6 +150,7 @@ enum ADIOS_READ_METHOD {
         ADIOS_READ_METHOD_DATASPACES    = 3,  /* Read from memory written by DATASPACES method               */
         ADIOS_READ_METHOD_DIMES         = 4,  /* Read from memory written by DIMES method                    */
         ADIOS_READ_METHOD_FLEXPATH      = 5,  /* Read from memory written by FLEXPATH method                 */
+        ADIOS_READ_METHOD_ICEE          = 6,  /* Read from memory written by ICEE method                 */
 };
 
 /** Locking mode for streams. 
@@ -372,6 +376,15 @@ int adios_inq_var_stat (ADIOS_FILE *fp, ADIOS_VARINFO * varinfo,
  *  RETURN: 0 OK, !=0 on error (adios_errno value)
  */
 int adios_inq_var_blockinfo (ADIOS_FILE *fp, ADIOS_VARINFO * varinfo);
+
+/** Inquiry a link by index
+*       linkid   index of link (0..fp->nlinks-1)
+*                in fp->link_namelist of ADIOS_FILE struct
+*/
+ADIOS_LINK * adios_inq_link_byid (ADIOS_FILE *fp, int linkid);
+
+/** Free memory used by an ADIOS_LINK struct */
+void adios_free_linkinfo (ADIOS_LINK *linkinfo);
 
 /** Inquiry a mesh by index
 *       meshid   index of mesh (0..fp->nmeshes-1)

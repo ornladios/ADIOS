@@ -33,7 +33,6 @@ QUERY_TEST_DIR="$TRUNKDIR/tests/C/query"
 QUERY_COMMON_DIR="$QUERY_TEST_DIR/common"
 TEST_PROGRAMS_DIR="$TRUNKDIR/tests/suite/programs"
 UTILS_DIR="$TRUNKDIR/utils"
-QUERY_UTILS_DIR="$UTILS_DIR/query"
 
 # Some external tools to use
 DATASET_BUILDER_EXE_BASENAME="build_standard_dataset"
@@ -85,7 +84,7 @@ done
 
 # All query engine implementations to test
 ALL_QUERY_ENGINES=$( \
-  $LIST_METHODS_EXE_PATH |
+  $MPIRUN_SERIAL $LIST_METHODS_EXE_PATH |
   awk '
     /^Available/{
       transforms = ($2 == "query")
@@ -108,8 +107,8 @@ ALL_QUERY_ENGINES=$( \
 # an external program to build its indexes 
 case $ALL_QUERY_ENGINES in *fastbit*) HAS_FASTBIT=1 ;; esac
 if [ "$HAS_FASTBIT" ]; then
-  FASTBIT_INDEXER_EXE_BASENAME="index_fastbit"
-  FASTBIT_INDEXER_EXE_PATH="$QUERY_UTILS_DIR/$FASTBIT_INDEXER_EXE_BASENAME"
+  FASTBIT_INDEXER_EXE_BASENAME="adios_index_fastbit"
+  FASTBIT_INDEXER_EXE_PATH="$UTILS_DIR/fastbit/$FASTBIT_INDEXER_EXE_BASENAME"
   [ -f "$FASTBIT_INDEXER_EXE_PATH" -a -x "$FASTBIT_INDEXER_EXE_PATH" ] || die "ERROR: $FASTBIT_INDEXER_EXE_PATH is not executable"
 
   FASTBIT_INDEXER_EXE_LOCAL="./$FASTBIT_INDEXER_EXE_BASENAME"
@@ -141,7 +140,7 @@ function invoke_dataset_builder() {
   [[ $# -eq 3 ]] || die "ERROR: Internal testing error, invalid parameters to invoke_dataset_builder: $@"
   
   set -o xtrace
-  $DATASET_BUILDER_EXE_LOCAL "$DSID" "$DSOUTPUT" "$TRANSFORM_ARG" ||
+  $MPIRUN_SERIAL $DATASET_BUILDER_EXE_LOCAL "$DSID" "$DSOUTPUT" "$TRANSFORM_ARG" ||
     die "ERROR: $DATASET_BUILDER_EXE_LOCAL failed with exit code $? (on dataset $DSID, outputting to $DSOUTPUT, using transform argument $TRANSFORM_ARG)"
   set +o xtrace
   
@@ -176,7 +175,7 @@ function build_indexed_datasets_fastbit() {
   invoke_dataset_builder "$DSID" "$DSOUTPUT" "none"
   
   set -o xtrace
-  $FASTBIT_INDEXER_EXE_LOCAL "$DSOUTPUT".bp ||
+  $MPIRUN_SERIAL $FASTBIT_INDEXER_EXE_LOCAL "$DSOUTPUT".bp "<binning precision=5/>"||
     die "ERROR: $FASTBIT_INDEXER_EXE_LOCAL failed with exit code $?"
   set +o xtrace
 }
@@ -238,7 +237,7 @@ function query_datasets() {
           echo "====== COMPUTING EXPECTED OUTPUT OF QUERY $QUERY_NAME ON DATASET $DSID IN $FILEMODE MODE ======"
           echo
           set -o xtrace
-          $MPIRUN_SERIAL "$QUERY_SEQSCAN_EXE_LOCAL" "$NOINDEX_DS" "$QUERY_XML" "$FILEMODE" > "$EXPECTED_POINTS_FILE" ||
+          $MPIRUN_SERIAL "$QUERY_SEQSCAN_EXE_LOCAL" "$NOINDEX_DS" "$QUERY_XML_LOCAL" "$FILEMODE" > "$EXPECTED_POINTS_FILE" ||
             die "ERROR: $QUERY_SEQSCAN_EXE_LOCAL failed with exit code $?"
           set +o xtrace
         

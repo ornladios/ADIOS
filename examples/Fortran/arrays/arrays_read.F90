@@ -46,8 +46,8 @@ program arrays
     ! First get the scalars to calculate the size of the arrays.
     ! Note that we cannot use adios_get_scalar here because that
     !   retrieves the same NX for everyone (from writer rank 0).
-    call adios_schedule_read (f, sel, "NX", 1, 1, NX, ierr)
-    call adios_schedule_read (f, sel, "NY", 1, 1, NY, ierr)
+    call adios_schedule_read (f, sel, "NX", 0, 1, NX, ierr)
+    call adios_schedule_read (f, sel, "NY", 0, 1, NY, ierr)
     call adios_perform_reads (f, ierr)
     write (*,'("rank=",i0," NX=",i0," NY=",i0)') rank, NX, NY
 
@@ -56,8 +56,8 @@ program arrays
     allocate (p(NX))
 
     ! Read the arrays
-    call adios_schedule_read (f, sel, "var_double_2Darray", 1, 1, t, ierr)
-    call adios_schedule_read (f, sel, "var_int_1Darray", 1, 1, p, ierr)
+    call adios_schedule_read (f, sel, "var_double_2Darray", 0, 1, t, ierr)
+    call adios_schedule_read (f, sel, "var_int_1Darray", 0, 1, p, ierr)
     call adios_perform_reads (f, ierr)
 
 

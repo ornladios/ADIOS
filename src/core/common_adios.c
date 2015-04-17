@@ -30,9 +30,9 @@
 #include "public/adios_error.h"
 
 // NCSU ALACRITY-ADIOS
-#include "adios_transforms_common.h"
-#include "adios_transforms_read.h"
-#include "adios_transforms_write.h"
+#include "core/transforms/adios_transforms_common.h"
+#include "core/transforms/adios_transforms_read.h"
+#include "core/transforms/adios_transforms_write.h"
 
 #ifdef WITH_NCSU_TIMER
 #include "timer.h"

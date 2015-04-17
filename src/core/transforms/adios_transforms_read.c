@@ -1,25 +1,26 @@
+#include <stddef.h>
 #include <assert.h>
 
-#include "adios_bp_v1.h"
-#include "adios_internals.h"
-#include "common_read.h"
+#include "core/adios_bp_v1.h"
+#include "core/adios_internals.h"
+#include "core/common_read.h"
 #include "public/adios_selection.h"
 #include "public/adios_error.h"
 #include "public/adios_types.h"
 #include "public/adios_read_v2.h"
 #include "public/adios_read_ext.h"
-#include "adios_logger.h"
-#include "util.h"
+#include "core/adios_logger.h"
+#include "core/util.h"
 
-#include "adios_selection_util.h"
+#include "core/adios_selection_util.h"
 
-#include "transforms/adios_transforms_reqgroup.h"
-#include "transforms/adios_transforms_common.h"
-#include "transforms/adios_transforms_datablock.h"
-#include "transforms/adios_transforms_hooks_read.h"
-#include "transforms/adios_transforms_read.h"
-#include "transforms/adios_transforms_util.h"
-#include "transforms/adios_patchdata.h"
+#include "core/transforms/adios_transforms_reqgroup.h"
+#include "core/transforms/adios_transforms_common.h"
+#include "core/transforms/adios_transforms_datablock.h"
+#include "core/transforms/adios_transforms_hooks_read.h"
+#include "core/transforms/adios_transforms_read.h"
+#include "core/transforms/adios_transforms_util.h"
+#include "core/transforms/adios_patchdata.h"
 
 // Utilities
 #define FREE(p) {if (p){free(p); (p)=NULL;}}
@@ -712,7 +713,7 @@ static ADIOS_VARCHUNK * apply_datablock_to_chunk_and_free(adios_datablock *datab
     	static int warning_printed = 0;
     	if (!warning_printed) {
     		const char *transform_name = adios_transform_plugin_primary_xml_alias(reqgroup->transinfo->transform_type);
-    		if (transform_name == "") transform_name = "<name unknown>";
+    		if (!transform_name) transform_name = "<name unknown>";
     		log_warn("Results for a chunked read using a writeblock selection over a %s-transformed "
     				"variable will return correct results, but in the form of ADIOS_VARCHUNKs with "
     				"non-writeblock selections, so it may be difficult to determine which VARCHUNK "
@@ -769,7 +770,7 @@ static ADIOS_VARCHUNK * extract_chunk_from_finished_read_reqgroup(adios_transfor
     reqgroup->orig_data = NULL;
 
     // Transfer ownership of orig_sel
-    chunk->sel = (ADIOS_SELECTION*)reqgroup->orig_sel; // Remove const
+    chunk->sel = copy_selection(reqgroup->orig_sel);
     reqgroup->orig_sel = NULL;
 
     return chunk;
@@ -783,7 +784,7 @@ void adios_transform_cleanup_from_previous_check_reads(adios_transform_read_requ
 		if (readreq->completed) {
 			// If the read request is totally completed, free the whole thing
 			adios_transform_read_request_remove(readreqs_head, readreq);
-			adios_transform_read_request_free(readreq);
+			adios_transform_read_request_free(&readreq);
 		} else if (readreq->lent_varchunk_data) {
 			// Otherwise, free any internal data buffer that was previously given
 			// to the user via an ADIOS_VARCHUNK, but which now may be freed since
