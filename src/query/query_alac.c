@@ -47,6 +47,10 @@ typedef struct{
 // I have to sum every place that calls transformer layer
 #ifdef BREAKDOWN
 	double gTransformTime = 0.0, transStart =0, transEnd = 0;
+	double metaTotal = 0.0, metaStart=0.0;// timing metadata read
+	double idxTotal = 0.0, idxStart =0.0;  // timing index read
+	double dataTotal = 0.0, dataStart =0.0; // timing low-order byte read
+
 #endif
 
 /**** Funcs. that are internal funcs. ********/
@@ -704,12 +708,20 @@ void resolveQueryBoundary(ADIOS_QUERY *adiosQuery, double *hb, double *lb)
 char * readLowDataAmongBins(ALMetadata *partitionMeta, bin_id_t low_bin , bin_id_t hi_bin
 		, uint64_t lowDataByteStartPos,  ADIOS_QUERY * adiosQuery
 		, int blockId, int startStep, int numStep){
+#ifdef BREAKDOWN
+	dataStart = dclock();
+#endif
+
 	const uint64_t bin_read_len = ALGetDataBinOffset( partitionMeta, hi_bin) - ALGetDataBinOffset( partitionMeta, low_bin); // in bytes
 	uint64_t lowDataBinOffset = lowDataByteStartPos+ ALGetDataBinOffset( partitionMeta, low_bin); /*element offset*/;
 	// low order bytes from low_bin to hi_bin, ITS NOT entire low order byte
 	char * readData= (char *) calloc(bin_read_len, sizeof(char));
 	readLowOrderBytes(blockId,lowDataBinOffset, bin_read_len
 	         , adiosQuery->file, adiosQuery->varinfo, startStep, numStep, (void *)readData);
+
+#ifdef BREAKDOWN
+	dataTotal = dataTotal + (dclock()- dataStart);
+#endif
 	return readData;
 }
 
@@ -717,12 +729,21 @@ char * readLowDataAmongBins(ALMetadata *partitionMeta, bin_id_t low_bin , bin_id
 char * readIndexAmongBins(ALMetadata *partitionMeta, bin_id_t low_bin , bin_id_t hi_bin
 		, uint64_t indexStartPos,  ADIOS_QUERY * adiosQuery
 		, int blockId, int startStep, int numStep){
+
+#ifdef BREAKDOWN
+	idxStart = dclock();
+#endif
+
 	const uint64_t bin_read_len = ALGetIndexBinOffset( partitionMeta, hi_bin) - ALGetIndexBinOffset( partitionMeta, low_bin); // in bytes
 	uint64_t lowDataBinOffset = indexStartPos+ ALGetIndexBinOffset( partitionMeta, low_bin); /*element offset*/;
 	// low order bytes from low_bin to hi_bin, ITS NOT entire low order byte
 	char * readData= (char *) calloc(bin_read_len, sizeof(char));
 	readLowOrderBytes(blockId,lowDataBinOffset, bin_read_len
 	         , adiosQuery->file, adiosQuery->varinfo, startStep, numStep, (void *)readData);
+#ifdef BREAKDOWN
+	idxTotal = idxTotal + (dclock()- idxStart);
+#endif
+
 	return readData;
 }
 
@@ -748,6 +769,7 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 
 #ifdef BREAKDOWN
 	transStart = dclock();
+	metaStart = dclock();
 #endif
 
 	//the metadata order is alacrity meta, alacrity index, alacrity LoB, raw data (original data)
@@ -755,6 +777,7 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 	//It now assumes LoB along with OD (original data)
 #ifdef BREAKDOWN
 	gTransformTime += (dclock() - transStart) ;
+	metaTotal = metaTotal + (dclock()- metaStart);
 #endif
 
 	//TODO: offset of each PG should be included
@@ -1164,6 +1187,9 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 
 #ifdef BREAKDOWN
 	printf("ADIOS(transformer layer) read time: %f \n", gTransformTime);
+	printf("Total PG metadata read time : %f \n", metaTotal);
+	printf("Total index read time : %f \n", idxTotal);
+	printf("Total low-order bytes read time : %f \n", dataTotal);
 #endif
 	return alacResultBitmap;
 }
