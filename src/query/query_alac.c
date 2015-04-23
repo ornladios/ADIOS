@@ -50,6 +50,7 @@ typedef struct{
 	double metaTotal = 0.0, metaStart=0.0;// timing metadata read
 	double idxTotal = 0.0, idxStart =0.0;  // timing index read
 	double dataTotal = 0.0, dataStart =0.0; // timing low-order byte read
+	double procTotal = 0.0, procStart = 0.0; // timing for porc_write_block
 #endif
 
 /**** Funcs. that are internal funcs. ********/
@@ -1118,8 +1119,15 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 			srccount = pgBB->count;
 			// blockId = pg.blockidx; // pg.blockidx is relative block id           //	blockId = pg.blockidx_in_timestep ;
 			if (ti->transform_type == adios_get_transform_type_by_uid("ncsu-alacrity")) {
+#ifdef BREAKDOWN
+	  procStart = dclock();
+#endif
 				proc_write_block(pg.blockidx,isPGCovered,ti, adiosQuery,startStep,estimate,&alacQuery,lb,hb
 						,srcstart, srccount, deststart, destcount,alacResultBitmap,Corder	);
+#ifdef BREAKDOWN
+	  procTotal = procTotal + (dclock() - procStart);
+#endif
+
 			}else {
 				char * blockData  = NULL;
 				uint64_t totalElm = 1;
