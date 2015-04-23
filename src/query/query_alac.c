@@ -936,7 +936,7 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 		}
 		FREE(input_index);
 	}else {
-//		printf("there is no touched bin for constraint \n");
+		printf("there is no touched bin for constraint \n");
 	}
 
 	FREE(alac_metadata);
@@ -1092,12 +1092,13 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 		ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->file, varInfo);
 		ADIOS_PG_INTERSECTIONS* intersectedPGs = adios_find_intersecting_pgs( adiosQuery->file, varInfo->varid, adiosQuery->sel, timeStep, numStep);
 
-#ifdef BREAKDOWN
-	gTransformTime += (dclock() - transStart) ;
-#endif
-
 		int totalPG = intersectedPGs->npg;
 		int blockId, j;
+
+#ifdef BREAKDOWN
+	gTransformTime += (dclock() - transStart) ;
+	printf("DEBUG: # of total PG %d \n", totalPG);
+#endif
 
 		ADIOS_PG_INTERSECTION *  PGs = intersectedPGs->intersections;
 		for (j = 0; j < totalPG; j++) {
