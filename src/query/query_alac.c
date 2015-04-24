@@ -57,6 +57,9 @@ typedef struct{
     double candidateCheckFewBinsTotal = 0.0, candidateCheckFewBinsStart = 0.0;
     double setRidTotal = 0.0, setRidStart = 0.0;
     double proc = 0.0, procFirstTotal = 0.0;
+    double findRangeStart=0.0, findRangeTotal=0.0;
+    double bitmapStart = 0.0, bitmapTotal = 0.0;
+    double alacPartitionMetaTotal=0.0, alacPartitionMetaStart = 0.0;
 #endif
 
 /**** Funcs. that are internal funcs. ********/
@@ -775,9 +778,14 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 	ADIOS_TRANSFORM_METADATA tmeta = tmetas[gBlockId];
 	//	assert(tmeta->length == 24);
 
+#ifdef BREAKDOWN
+	bitmapStart = dclock();
+#endif
+
 	adios_transform_alacrity_metadata *alac_metadata = (adios_transform_alacrity_metadata *) malloc(sizeof(adios_transform_alacrity_metadata));
 
 #ifdef BREAKDOWN
+	bitmapTotal += (dclock - bitmapStart);
 	transStart = dclock();
 	metaStart = dclock();
 #endif
@@ -788,6 +796,7 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 #ifdef BREAKDOWN
 	gTransformTime += (dclock() - transStart) ;
 	metaTotal = metaTotal + (dclock()- metaStart);
+	alacPartitionMetaStart = dclock();
 #endif
 
 	//TODO: offset of each PG should be included
@@ -800,7 +809,10 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 	readPartitionMeta(gBlockId, alac_metadata->meta_size,adiosQuery->file, varInfo
 					,startStep,numStep,&partitionMeta);
 
-
+#ifdef BREAKDOWN
+	alacPartitionMetaTotal += dclock() - alacPartitionMetaStart;
+	findRangeStart = dclock();
+#endif
 
 	const uint8_t insigbytes = insigBytesCeil(&partitionMeta);
 
@@ -809,6 +821,7 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 	_Bool are_bins_touched = findBinRange1C(&partitionMeta, alacQuery, &low_bin,
 			&hi_bin);
 #ifdef BREAKDOWN
+	findRangeTotal += dclock() - findRangeStart;
 	procFirstTotal += dclock() - proc;
 #endif
 	if (are_bins_touched) {
@@ -1282,6 +1295,9 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	printf("Total index read time : %f \n", idxTotal);
 	printf("Total low-order bytes read time : %f \n", dataTotal);
 	printf("Proc write block time : %f \n", procTotal);
+	printf("bitmap initialization : %f \n", bitmapTotal);
+	printf("read Alacrity partition meta : %f \n", alacPartitionMetaTotal);
+	printf("find Range & insigbits : %f \n", findRangeTotal);
 	printf("First part of Proc write block time (before bin_touched) : %f \n", procFirstTotal);
 	printf("Find PG time : %f \n", findPGTotal);
 	printf("Candidate check total time: %f \n", candidateCheckTotal);
