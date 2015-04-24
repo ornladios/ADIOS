@@ -60,6 +60,7 @@ typedef struct{
     double findRangeStart=0.0, findRangeTotal=0.0;
     double bitmapStart = 0.0, bitmapTotal = 0.0;
     double alacPartitionMetaTotal=0.0, alacPartitionMetaStart = 0.0;
+    uint64_t pmCounter = 0, totalPmSize = 0;
 #endif
 
 /**** Funcs. that are internal funcs. ********/
@@ -810,6 +811,8 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 					,startStep,numStep,&partitionMeta);
 
 #ifdef BREAKDOWN
+	pmCounter ++;
+	totalPmSize += alac_metadata->meta_size;
 	alacPartitionMetaTotal += dclock() - alacPartitionMetaStart;
 	findRangeStart = dclock();
 #endif
@@ -1297,6 +1300,7 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	printf("Proc write block time : %f \n", procTotal);
 	printf("bitmap initialization : %f \n", bitmapTotal);
 	printf("read Alacrity partition meta : %f \n", alacPartitionMetaTotal);
+	printf("# of partition meta read times is %"PRIu64", and total partition meta size read: %"PRIu64" KB\n", pmCounter, totalPmSize/1024);
 	printf("find Range & insigbits : %f \n", findRangeTotal);
 	printf("First part of Proc write block time (before bin_touched) : %f \n", procFirstTotal);
 	printf("Find PG time : %f \n", findPGTotal);
