@@ -51,6 +51,10 @@ typedef struct{
 	double idxTotal = 0.0, idxStart =0.0;  // timing index read
 	double dataTotal = 0.0, dataStart =0.0; // timing low-order byte read
 	double procTotal = 0.0, procStart = 0.0; // timing for porc_write_block
+	double findPGTotal = 0.0, findPGStart = 0.0; // timing for porc_write_block
+	double candidateCheckTotal = 0.0, candidateCheckStart = 0.0; // timing for porc_write_block
+	double decodeTotal = 0.0, decodeStart = 0.0; // timing for porc_write_block
+        double candidateCheckFewBinsTotal = 0.0, candidateCheckFewBinsStart = 0.0; 
 #endif
 
 /**** Funcs. that are internal funcs. ********/
@@ -883,16 +887,25 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 				char * lowOrderBytes  = readLowDataAmongBins(&partitionMeta
 						, low_bin,  hi_bin, lowByteStartPos , adiosQuery, gBlockId, startStep, numStep);
 				char *lowOrderPtr = lowOrderBytes; // temporary pointer
+#ifdef BREAKDOWN
+                                printf("total # bin touched %d \n", hi_bin - low_bin  );
+#endif
 
 				// It touches at least 3 bins, so, we need to check RIDs that are in first and last bins
 				if (hi_bin - low_bin > 2) {
 					// low boundary bin, compressed byte offset
 					binCompressedLen = compBinStartOffs[low_bin + 1] - compBinStartOffs[low_bin];
 
+#ifdef BREAKDOWN
+	candidateCheckStart = dclock();
+#endif
 					adios_alac_check_candidate(&partitionMeta, low_bin, low_bin+1 , hb, lb
 							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery  , inputCurPtr /*index bytes of entire PG*/
 							, true  /*need decoding*/ , lowOrderPtr /*it points to the start of `low_bin` */, varInfo->type
 							,alacResultBitmap /*OUT*/,Corder);
+#ifdef BREAKDOWN
+	candidateCheckTotal += dclock() - candidateCheckStart;
+#endif
 					inputCurPtr += binCompressedLen;
 
 					bin_id_t innerlowBin = low_bin + 1;
@@ -902,11 +915,17 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 					for ( bin = innerlowBin; bin < innerHiBin; bin++) {
 						binCompressedLen = compBinStartOffs[bin + 1] - compBinStartOffs[bin];
 
+#ifdef BREAKDOWN
+	decodeStart= dclock();
+#endif
 						uint32_t decodedElm = ALDecompressRIDtoSelBox(isPGCovered
 								, inputCurPtr, binCompressedLen
 								, srcstart, srccount //PG region dimension
 								, deststart, destcount //region dimension of Selection box
 								, ndim , &(alacResultBitmap->bits));
+#ifdef BREAKDOWN
+	decodeTotal += dclock() - decodeStart;
+#endif
 						alacResultBitmap->numSetBits += decodedElm;
 						inputCurPtr += binCompressedLen;
 					}
@@ -915,18 +934,31 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 					binCompressedLen = compBinStartOffs[hi_bin]- compBinStartOffs[hi_bin-1];
 					// point to the low order byte of one bin before hi_bin
 					lowOrderPtr += (( bl->binStartOffsets[hi_bin-1] - bl->binStartOffsets[low_bin]) * insigbytes);
+
+#ifdef BREAKDOWN
+	candidateCheckStart = dclock();
+#endif
 					adios_alac_check_candidate(&partitionMeta, hi_bin-1, hi_bin , hb, lb
 							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , inputCurPtr /*index bytes of entire PG*/
 							, true  /*need decoding*/ , lowOrderPtr /*low order bytes of entire PG*/, varInfo->type
 							,alacResultBitmap /*OUT*/,Corder);
+#ifdef BREAKDOWN
+	candidateCheckTotal += dclock() - candidateCheckStart;
+#endif
 					inputCurPtr += binCompressedLen;
 
 				} else { // for 1 or 2 bins touched, we need to check all RIDs
+#ifdef BREAKDOWN
+	candidateCheckFewBinsStart = dclock();
+#endif
 
 					adios_alac_check_candidate(&partitionMeta, low_bin, hi_bin , hb, lb
 							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , inputCurPtr /*index bytes of entire PG*/
 							, true , lowOrderPtr, varInfo->type
 							,alacResultBitmap /*OUT*/,Corder);
+#ifdef BREAKDOWN
+        candidateCheckFewBinsTotal += dclock()-candidateCheckFewBinsStart;
+#endif
 				}
 
 				FREE(lowOrderBytes);
@@ -937,7 +969,7 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 		}
 		FREE(input_index);
 	}else {
-		printf("there is no touched bin for constraint \n");
+		//printf("there is no touched bin for constraint \n");
 	}
 
 	FREE(alac_metadata);
@@ -1091,8 +1123,15 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 #endif
 		adios_read_set_data_view(adiosQuery->file, PHYSICAL_DATA_VIEW);
 		ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->file, varInfo);
+
+#ifdef BREAKDOWN
+	findPGStart = dclock();
+#endif
 		ADIOS_PG_INTERSECTIONS* intersectedPGs = adios_find_intersecting_pgs( adiosQuery->file, varInfo->varid, adiosQuery->sel, timeStep, numStep);
 
+#ifdef BREAKDOWN
+	findPGTotal += dclock() - findPGStart;
+#endif
 		int totalPG = intersectedPGs->npg;
 		int blockId, j;
 
@@ -1198,6 +1237,11 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	printf("Total PG metadata read time : %f \n", metaTotal);
 	printf("Total index read time : %f \n", idxTotal);
 	printf("Total low-order bytes read time : %f \n", dataTotal);
+	printf("Proc write block time : %f \n", procTotal);
+	printf("Find PG time : %f \n", findPGTotal);
+	printf("Candidate check total time: %f \n", candidateCheckTotal);
+	printf("Decode total time : %f \n", decodeTotal);
+	printf("Candidate check few bins total time : %f \n", candidateCheckFewBinsTotal);
 #endif
 	return alacResultBitmap;
 }
