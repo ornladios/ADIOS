@@ -56,6 +56,7 @@ typedef struct{
 	double decodeTotal = 0.0, decodeStart = 0.0; // timing for porc_write_block
     double candidateCheckFewBinsTotal = 0.0, candidateCheckFewBinsStart = 0.0;
     double setRidTotal = 0.0, setRidStart = 0.0;
+    double proc = 0.0, procFirstTotal = 0.0;
 #endif
 
 /**** Funcs. that are internal funcs. ********/
@@ -757,6 +758,10 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 		, ALUnivariateQuery * alacQuery , double lb , double hb
 		,uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount
 		, ADIOS_ALAC_BITMAP * alacResultBitmap /*OUT*/ , int Corder){
+#ifdef BREAKDOWN
+	proc=dclock();
+#endif
+
 
 #ifdef RIDBUG
 	printf("PG [%d], RIDs relative to PG converted to RIDs relative to output BoundingBox: ", gBlockId);
@@ -803,7 +808,9 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 	bin_id_t low_bin, hi_bin;
 	_Bool are_bins_touched = findBinRange1C(&partitionMeta, alacQuery, &low_bin,
 			&hi_bin);
-
+#ifdef BREAKDOWN
+	procFirstTotal += dclock() - proc;
+#endif
 	if (are_bins_touched) {
 
 		//3. load index size
@@ -884,6 +891,7 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 				} else { // for 1 or 2 bins touched, we need to check all RIDs
 
 #ifdef BREAKDOWN
+		printf("start to data check branch in else branch \n");
 		candidateCheckStart = dclock();
 #endif
 					adios_alac_check_candidate(&partitionMeta, low_bin, hi_bin  , hb, lb
@@ -1274,10 +1282,12 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	printf("Total index read time : %f \n", idxTotal);
 	printf("Total low-order bytes read time : %f \n", dataTotal);
 	printf("Proc write block time : %f \n", procTotal);
+	printf("First part of Proc write block time (before bin_touched) : %f \n", procFirstTotal);
 	printf("Find PG time : %f \n", findPGTotal);
 	printf("Candidate check total time: %f \n", candidateCheckTotal);
 	printf("Decode total time : %f \n", decodeTotal);
 	printf("Candidate check few bins total time : %f \n", candidateCheckFewBinsTotal);
+
 #endif
 	return alacResultBitmap;
 }
