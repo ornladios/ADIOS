@@ -54,7 +54,8 @@ typedef struct{
 	double findPGTotal = 0.0, findPGStart = 0.0; // timing for porc_write_block
 	double candidateCheckTotal = 0.0, candidateCheckStart = 0.0; // timing for porc_write_block
 	double decodeTotal = 0.0, decodeStart = 0.0; // timing for porc_write_block
-        double candidateCheckFewBinsTotal = 0.0, candidateCheckFewBinsStart = 0.0; 
+    double candidateCheckFewBinsTotal = 0.0, candidateCheckFewBinsStart = 0.0;
+    double setRidTotal = 0.0, setRidStart = 0.0;
 #endif
 
 /**** Funcs. that are internal funcs. ********/
@@ -819,6 +820,10 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 			//element offset, instead of byte element
 			uint64_t resultCount = bl->binStartOffsets[hi_bin] - bl->binStartOffsets[low_bin];
 
+#ifdef BREAKDOWN
+		printf("AL II: estimate %d \n", estimate);
+		printf("total # bin touched %d \n", hi_bin - low_bin  );
+#endif
 			if (estimate) {
 				setRidToBits(isPGCovered, srcstart, srccount, deststart, destcount, ndim
 						, (rid_t *)index, resultCount, alacResultBitmap,Corder);
@@ -834,6 +839,10 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 				if (hi_bin - low_bin > 2) {
 					bin_offset_t lowBinElm = bl->binStartOffsets[low_bin + 1] - bl->binStartOffsets[low_bin];
 					uint64_t hiBinElm = bl->binStartOffsets[hi_bin] - bl->binStartOffsets[hi_bin-1];
+
+#ifdef BREAKDOWN
+	candidateCheckStart = dclock();
+#endif
 					// low boundary bin
 					adios_alac_check_candidate(&partitionMeta, low_bin, low_bin+1 , hb, lb
 							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , (char*) decodedRid /*index bytes of entire PG*/
@@ -841,23 +850,49 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 							,alacResultBitmap /*OUT*/,Corder);
 					decodedRid += lowBinElm;
 
+#ifdef BREAKDOWN
+	candidateCheckTotal += (dclock() - candidateCheckStart);
+#endif
+
 					uint64_t innerElm = resultCount- lowBinElm - hiBinElm;
+
+#ifdef BREAKDOWN
+	setRidStart = dclock();
+#endif
 					setRidToBits(isPGCovered, srcstart, srccount, deststart, destcount, ndim
 												, decodedRid, innerElm, alacResultBitmap,Corder);
+
+#ifdef BREAKDOWN
+	setRidTotal += (dclock() - setRidStart);
+#endif
 					decodedRid  +=  innerElm;
 
 					lowOrderPtr2 += (( bl->binStartOffsets[hi_bin-1] - bl->binStartOffsets[low_bin]) * insigbytes);
 					// high boundary bin
+#ifdef BREAKDOWN
+		candidateCheckStart = dclock();
+#endif
 					adios_alac_check_candidate(&partitionMeta, hi_bin-1, hi_bin , hb, lb
 							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , (char *)decodedRid
 							, false , lowOrderPtr2, varInfo->type
 							,alacResultBitmap /*OUT*/,Corder);
 
+#ifdef BREAKDOWN
+	candidateCheckTotal += (dclock() - candidateCheckStart);
+#endif
+
 				} else { // for 1 or 2 bins touched, we need to check all RIDs
+
+#ifdef BREAKDOWN
+		candidateCheckStart = dclock();
+#endif
 					adios_alac_check_candidate(&partitionMeta, low_bin, hi_bin  , hb, lb
 							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , (char*)decodedRid
 							, false , lowOrderPtr2, varInfo->type
 							,alacResultBitmap /*OUT*/,Corder);
+#ifdef BREAKDOWN
+	candidateCheckTotal += (dclock() - candidateCheckStart);
+#endif
 				}
 
 				FREE(lowOrderBytes2);
@@ -869,6 +904,10 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 			uint64_t binCompressedLen;
 			const char *inputCurPtr = input_index;
 
+#ifdef BREAKDOWN
+		printf("ALCompressed II: estimate %d \n", estimate);
+		printf("total # bin touched %d \n", hi_bin - low_bin  );
+#endif
 			if (estimate) {
 				// Now compress each bin in turn
 				bin_id_t bin ;
@@ -887,9 +926,6 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 				char * lowOrderBytes  = readLowDataAmongBins(&partitionMeta
 						, low_bin,  hi_bin, lowByteStartPos , adiosQuery, gBlockId, startStep, numStep);
 				char *lowOrderPtr = lowOrderBytes; // temporary pointer
-#ifdef BREAKDOWN
-                                printf("total # bin touched %d \n", hi_bin - low_bin  );
-#endif
 
 				// It touches at least 3 bins, so, we need to check RIDs that are in first and last bins
 				if (hi_bin - low_bin > 2) {
