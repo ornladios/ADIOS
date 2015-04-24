@@ -785,7 +785,7 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 	adios_transform_alacrity_metadata *alac_metadata = (adios_transform_alacrity_metadata *) malloc(sizeof(adios_transform_alacrity_metadata));
 
 #ifdef BREAKDOWN
-	bitmapTotal += (dclock - bitmapStart);
+	bitmapTotal += (dclock() - bitmapStart);
 	transStart = dclock();
 	metaStart = dclock();
 #endif
