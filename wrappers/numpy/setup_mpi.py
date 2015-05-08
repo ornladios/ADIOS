@@ -123,7 +123,7 @@ class adios_test(Command):
         raise SystemExit(errno)
     
 setup(name = 'adios_mpi',
-      version = '1.0.8',
+      version = '1.8.1-pre-r1',
       description = 'Python Module for Adios MPI',
       author = 'Jong Choi',
       author_email = 'yyalli@gmail.com',

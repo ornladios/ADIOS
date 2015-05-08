@@ -1,12 +1,7 @@
-"""
- ADIOS is freely available under the terms of the BSD license described
- in the COPYING file in the top level directory of this source distribution.
+# -*- coding: utf-8 -*-
+"""ADIOS: ADIOS python module
 
- Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
-"""
-"""
- This is a cython file. To generate a CPP file, use the following command:
- $ cython --cplus adios.pyx
+.. moduleauthor:: Jong Choi <choij@ornl.gov>
 """
 
 import numpy as np
@@ -542,7 +537,8 @@ cdef ADIOS_READ_METHOD str2adiosreadmethod(bytes name):
     return method
 
 cpdef np2adiostype(np.dtype nptype):
-    """ Ignored: int_, intc, intp """
+    """ Convert Numpy.dtype to Adios Datatype
+    """
 
     cdef atype = DATATYPE.unknown
 
@@ -605,29 +601,148 @@ cpdef int read_finalize(char * method_name = "BP"):
     cdef method = str2adiosreadmethod(method_name)
     return adios_read_finalize_method (method)
 
-""" Python class for ADIOS_FILE structure """
+## Python class for ADIOS_FILE structure
 cdef class file:
-    """ Private Memeber """
-    cpdef ADIOS_FILE * fp
+    """The summary line for a class docstring should fit on one line.
 
-    """ Public Memeber """
-    cpdef public bytes name
-    cpdef public int nvars
-    cpdef public int nattrs
-    cpdef public int current_step
-    cpdef public int last_step
-    cpdef public int endianness
-    cpdef public int version
-    cpdef public int file_size
+    If the class has public attributes, they should be documented here
+    in an ``Attributes`` section and follow the same formatting as a
+    function's ``Args`` section.
+
+    Attributes:
+        name (str): The filename (or stream name) associated with
+        nvars (int): The number of variables 
+      
+
+    """
+    ##Attributes:
+    ##    name (str): The filename or stream name associated with  
+    ##    nvars (int): The number of variables  
+    ##    nattrs (int): The number of attributes  
+    ##    current_step (int): The current timestep index  
+    ##    last_step (int): The last timestep index
+    ##    endianness (int): The endianness of the stored data
+    ##    file_size (int): The size of Adios file
+    ##    is_stream (int): Indicating reader type; file reader or stream reader
+
+    ##"""The summary line for a class docstring should fit on one line.
+    ##
+    ##If the class has public attributes, they should be documented here
+    ##in an ``Attributes`` section and follow the same formatting as a
+    ##function's ``Parameters`` section.
+    ##
+    ##Attributes
+    ##----------
+    ##attr1 : str
+    ##    Description of `attr1`.
+    ##attr2 : list of str
+    ##    Description of `attr2`.
+    ##attr3 : int
+    ##    Description of `attr3`.
+    ##
+    ##"""
+    ##"""File class for Adios reading and writing.
+    ##
+    ##.. note::
+    ##This is a note
+    ##
+    ##>>> print get_foobar(10, 20)
+    ##30
+    ##>>> print get_foobar('a', 'b')
+    ##ab
+    ##    
+    ##Args:
+    ##    fname (str): filename.
+    ##    method_name (str, optional): Adios read method (default: BP).
+    ##    comm (MPI_Comm, optional): MPI_comm for parallel read/write (default: MPI_COMM_WORLD)  
+    ##    is_stream (bool, optional): Set True if use stream reader (default: False)
+    ##    lock_mode (int, optional): ADIOS_LOCKMODE for stream reader (default: ADIOS_LOCKMODE_ALL)
+    ##    timeout_sec (float, optional): Timeout seconds for stream reader (default: 0.0)
+    ##
+    ##Attributes
+    ##----------
+    ##attr1 : str
+    ##    Description of `attr1`.
+    ##attr2 : list of str
+    ##    Description of `attr2`.
+    ##attr3 : int
+    ##    Description of `attr3`.
+    ##    
+    ##Attributes:
+    ##    name (str): The filename (or stream name) associated with  
+    ##    nvars (int): The number of variables  
+    ##    nattrs (int): The number of attributes  
+    ##    current_step (int): The current timestep index  
+    ##    last_step (int): The last timestep index
+    ##    endianness (int): The endianness of the stored data
+    ##    file_size (int): The size of Adios file
+    ##    is_stream (int): Indicating reader type; file reader or stream reader
+    ##
+    ##"""
     
+    ## Private Memebe
+    cpdef ADIOS_FILE * fp
+    cpdef bytes name
+    cpdef int nvars
+    cpdef int nattrs
+    cpdef int current_step
+    cpdef int last_step
+    cpdef int endianness
+    cpdef int version
+    cpdef int file_size
+    cpdef bint is_stream
+    
+    ## Public Memeber
     cpdef public dict var
     cpdef public dict attr
 
-    cpdef public bint is_stream
+    property name:
+        """ The filename (or stream name) associated with """
+        def __get__(self):
+            return self.name
 
-    """ Initialization. Call adios_read_open and populate public members """
+    property nvars:
+        """ The number of variables """
+        def __get__(self):
+            return self.nvars
+
+    property nattrs:
+        """ The number of attributes """
+        def __get__(self):
+            return self.nattrs
+
+    property current_step:
+        """ The current timestep index """
+        def __get__(self):
+            return self.current_step
+
+    property last_step:
+        """ The last timestep index """
+        def __get__(self):
+            return self.last_step
+
+    property endianness:
+        """ The endianness of the stored data """
+        def __get__(self):
+            return self.endianness
+
+    property version:
+        """ The version of Adios """        
+        def __get__(self):
+            return self.version
+        
+    property file_sizec:
+        """ The size of Adios file """        
+        def __get__(self):
+            return self.file_size
+
+    property is_stream:
+        """ Indicating reader type; file reader or stream reader """        
+        def __get__(self):
+            return self.is_stream
+
     def __init__(self, char * fname,
-                 char * method_name = "BP",
+                 char * method_name = 'BP',
                  MPI_Comm comm = MPI_COMM_WORLD,
                  is_stream = False,
                  ADIOS_LOCKMODE lock_mode = ADIOS_LOCKMODE_ALL,
@@ -664,20 +779,21 @@ cdef class file:
     def __del__(self):
             self.close()
             
-    """ Call adios_read_close """
     cpdef close(self):
+        """ Close open file"""
         assert self.fp != NULL, 'Not an open file'
         adios_read_close(self.fp)
         self.fp = NULL
         
-    """ Print self """
     cpdef printself(self):
+        """ Print ADIOS_FILE structure"""
         assert self.fp != NULL, 'Not an open file'
         print '=== AdiosFile ==='
         print '%15s : %lu' % ('fp', <unsigned long> self.fp)
         printfile(self.fp)
 
     cpdef advance(self, int last = 0, float timeout_sec = 0.0):
+        """ Advance time steps """
         val = adios_advance_step(self.fp, last, timeout_sec)
         if (val >= 0):
             self.current_step = self.fp.current_step
