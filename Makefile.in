@@ -44,6 +44,7 @@ DIST_COMMON = README $(am__configure_deps) $(srcdir)/Makefile.am \
 	$(srcdir)/Makefile.in $(srcdir)/adios_config.flags.in \
 	$(srcdir)/adios_config.in $(srcdir)/config.h.in \
 	$(top_srcdir)/configure \
+	$(top_srcdir)/src/public/adios_version.h.in \
 	$(top_srcdir)/utils/skel/lib/skel_have_adios_timing.py.in \
 	AUTHORS COPYING ChangeLog INSTALL NEWS TODO config/compile \
 	config/config.guess config/config.sub config/depcomp \
@@ -94,7 +95,7 @@ am__CONFIG_DISTCLEAN_FILES = config.status config.cache config.log \
 mkinstalldirs = $(install_sh) -d
 CONFIG_HEADER = config.h
 CONFIG_CLEAN_FILES = utils/skel/lib/skel_have_adios_timing.py \
-	adios_config adios_config.flags
+	adios_config adios_config.flags src/public/adios_version.h
 CONFIG_CLEAN_VPATH_FILES =
 am__vpath_adj_setup = srcdirstrip=`echo "$(srcdir)" | sed 's|.|.|g'`;
 am__vpath_adj = case $$p in \
@@ -371,6 +372,9 @@ TIMER_CPPFLAGS = @TIMER_CPPFLAGS@
 TIMER_LDFLAGS = @TIMER_LDFLAGS@
 TIMER_LIBS = @TIMER_LIBS@
 VERSION = @VERSION@
+VERSION_MAJOR = @VERSION_MAJOR@
+VERSION_MICRO = @VERSION_MICRO@
+VERSION_MINOR = @VERSION_MINOR@
 ZLIB_CPPFLAGS = @ZLIB_CPPFLAGS@
 ZLIB_LDFLAGS = @ZLIB_LDFLAGS@
 ZLIB_LIBS = @ZLIB_LIBS@
@@ -510,6 +514,8 @@ utils/skel/lib/skel_have_adios_timing.py: $(top_builddir)/config.status $(top_sr
 adios_config: $(top_builddir)/config.status $(srcdir)/adios_config.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 adios_config.flags: $(top_builddir)/config.status $(srcdir)/adios_config.flags.in
+	cd $(top_builddir) && $(SHELL) ./config.status $@
+src/public/adios_version.h: $(top_builddir)/config.status $(top_srcdir)/src/public/adios_version.h.in
 	cd $(top_builddir) && $(SHELL) ./config.status $@
 install-binSCRIPTS: $(bin_SCRIPTS)
 	@$(NORMAL_INSTALL)

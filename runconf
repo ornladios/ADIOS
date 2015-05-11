@@ -54,10 +54,14 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     module unload netcdf
     #module load szip
     module load bzip2
-    #module load dataspaces/1.4.0
+    module load dataspaces/1.5.0
     export MPICC=mpicc
     export MPICXX=mpiCC
     export MPIFC=mpif90
+    export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
+    export CFLAGS="-g -O0 -fPIC" 
+    export CXXFLAGS="-g -O0 -fPIC" 
+    export FCFLAGS="-g -O0 -fPIC" 
     WITHFLEX=""
     WITHFGR=""
     WITHFASTBIT=""
@@ -68,11 +72,13 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/sith/$TARGET"
         WITHFGR="--with-fgr=/ccs/proj/e2e/qliu/tap" 
         WITHFASTBIT="--with-fastbit=/sw/redhat6/fastbit/svn/rhel6_gnu4.7.2"
-        DATASPACES_DIR="/ccs/home/hbui/usr/software/dataspaces-dev"
+        #DATASPACES_DIR="/ccs/home/hbui/usr/software/dataspaces-dev"
     elif [ "$TARGET" == "gnu" ]; then
         export CC=gcc
         export CXX=g++
         export FC=gfortran
+        #export CFLAGS="$CFLAGS -gdwarf-3" 
+        #export FCFLAGS="$FCFLAGS -gdwarf-3" 
         WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/sith/$TARGET"
         WITHFASTBIT="--with-fastbit=/sw/redhat6/fastbit/svn/rhel6_gnu4.7.2"
     elif [ "$TARGET" == "intel" ]; then
@@ -84,8 +90,6 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         exit 1
     fi
         
-    export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK" 
-    export CFLAGS="-g -fPIC" 
     $SRCDIR/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/sith.$TARGET \
         --config-cache \
         --enable-dependency-tracking \
@@ -101,11 +105,11 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         --with-dataspaces=$DATASPACES_DIR \
         --with-dimes=$DATASPACES_DIR \
         $WITHFLEX \
-        $WITHFGR \
         $WITHFASTBIT \
         --with-aplod=/ccs/proj/e2e/ncsu/sith.gnu \
         --with-isobar=/ccs/proj/e2e/ncsu/sith.gnu \
-        --with-glib=/ccs/proj/e2e/qliu/glib
+        #--with-glib=/ccs/proj/e2e/qliu/glib
+        #$WITHFGR \
         #--with-szip=$SZIP_DIR \
         #--with-phdf5=${PAR_HDF5_DIR} \
         #--with-phdf5-libs="${PAR_HDF5_CLIB}" \
@@ -411,7 +415,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         #export CC=mpicc
         #export FC=mpif90
         export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK -DDART_DO_VERSIONING" 
-        export CFLAGS="-fPIC -g -O0" 
+        export CFLAGS="-fPIC -g -O2" 
         LIBS="$EXTRA_LIBS" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/xk6.$TARGET \
         --enable-dependency-tracking \
         --disable-maintainer-mode \

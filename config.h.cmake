@@ -321,14 +321,5 @@
 /* Version number of package */
 #cmakedefine VERSION "${VERSION}"
 
-/* Major version number */
-#define VERSION_MAJOR ${VERSION_MAJOR}
-
-/* Micro version number */ 
-#define VERSION_MICRO ${VERSION_MICRO}
-
-/* Minor version number */
-#define VERSION_MINOR ${VERSION_MINOR}
-
 /* svn revision number */
 #cmakedefine VERSION_SVNREV ${VERSION_SVNREV}

@@ -52,7 +52,7 @@ check_PROGRAMS=$(check_C) $(check_Fortran) $(check_readonly_C) $(check_readonly_
 TESTS=$(test_C)
 
 AM_CPPFLAGS = $(all_includes)
-AM_CPPFLAGS += -I$(top_builddir)/src -I$(top_srcdir)/src/public
+AM_CPPFLAGS += -I$(top_builddir)/src/public  -I$(top_builddir)/src -I$(top_srcdir)/src/public
 
 all-local:
 	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)

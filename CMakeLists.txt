@@ -1372,6 +1372,11 @@ set(VERSION_SVNREV 2007)
 CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/config.h.cmake ${PROJECT_BINARY_DIR}/config.h)
 ################################ end of generating config.h ###############################
 
+#####################start processing src/public/adios_version.h.in #####################
+CONFIGURE_FILE(${CMAKE_CURRENT_SOURCE_DIR}/src/public/adios_version.h.in
+               ${CMAKE_CURRENT_BINARY_DIR}/src/public/adios_version.h @ONLY)
+#####################end of processing src/public/adios_version.h #####################
+
 ################################ start of Fortran processing ##############################
 if(BUILD_FORTRAN)
 enable_language(Fortran)
