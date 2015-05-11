@@ -16,19 +16,19 @@
 
 /* macros for comparing the version */
 #define ADIOS_VERSION_GE(Maj,Min,Pat) \
-       (((ADIOS_VERSION_MAJOR==Maj) && (ADIOS_VERSION_MINOR==Min) && (ADIOS_VERSION_RELEASE>=Pat)) || \
+       (((ADIOS_VERSION_MAJOR==Maj) && (ADIOS_VERSION_MINOR==Min) && (ADIOS_VERSION_PATCH>=Pat)) || \
         ((ADIOS_VERSION_MAJOR==Maj) && (ADIOS_VERSION_MINOR>Min)) || \
         (ADIOS_VERSION_MAJOR>Maj))
 
 #define ADIOS_VERSION_LE(Maj,Min,Pat) \
-       (((ADIOS_VERSION_MAJOR==Maj) && (ADIOS_VERSION_MINOR==Min) && (ADIOS_VERSION_RELEASE<=Pat)) || \
+       (((ADIOS_VERSION_MAJOR==Maj) && (ADIOS_VERSION_MINOR==Min) && (ADIOS_VERSION_PATCH<=Pat)) || \
         ((ADIOS_VERSION_MAJOR==Maj) && (ADIOS_VERSION_MINOR<Min)) || \
         (ADIOS_VERSION_MAJOR<Maj))
 
 /* ADIOS Software release version as strings*/
 #define ADIOS_VERSION_MAJOR_STRING "@VERSION_MAJOR@"
 #define ADIOS_VERSION_MINOR_STRING "@VERSION_MINOR@"
-#define ADIOS_VERSION_MICRO_STRING "@VERSION_MICRO@"
+#define ADIOS_VERSION_PATCH_STRING "@VERSION_MICRO@"
 
 /* BP File format version
  * BP versions 
