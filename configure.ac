@@ -740,16 +740,19 @@ fi
 
 dnl Generate major/minor/micro version numbers
 VERSION_MAJOR=[`echo ${VERSION} | sed -e "s/\..*//"`]
-AC_DEFINE_UNQUOTED(VERSION_MAJOR, ${VERSION_MAJOR}, [Major version number])
+dnl AC_DEFINE_UNQUOTED(VERSION_MAJOR, ${VERSION_MAJOR}, [Major version number])
 VERSION_MINOR=[`echo ${VERSION} | sed -e "s/[0-9]*\.\([0-9]*\).*/\1/"`]
-AC_DEFINE_UNQUOTED(VERSION_MINOR, ${VERSION_MINOR}, [Minor version number])
+dnl AC_DEFINE_UNQUOTED(VERSION_MINOR, ${VERSION_MINOR}, [Minor version number])
 VERSION_MICRO=[`echo ${VERSION} | sed -e "s/[0-9]*\.[0-9]*\.\([0-9]*\).*/\1/"`]
 dnl if micro not defined, here it equals to VERSION; do a minus
 VERSION_MICRO=`echo ${VERSION_MICRO} | sed -e "s/${VERSION}//"`
 if test -z "${VERSION_MICRO}"; then
     VERSION_MICRO=0
 fi
-AC_DEFINE_UNQUOTED(VERSION_MICRO, ${VERSION_MICRO}, [Micro version number])
+dnl AC_DEFINE_UNQUOTED(VERSION_MICRO, ${VERSION_MICRO}, [Micro version number])
+AC_SUBST(VERSION_MAJOR)
+AC_SUBST(VERSION_MINOR)
+AC_SUBST(VERSION_MICRO)
 
 # Get the version of the source we are configuring here
 # Just to print it out at the end of configure
@@ -830,6 +833,7 @@ AC_CONFIG_FILES([Makefile
                  examples/Fortran/schema/Makefile
                  adios_config
                  adios_config.flags
+                 src/public/adios_version.h
                 ])
 
 AC_OUTPUT

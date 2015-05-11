@@ -3,7 +3,7 @@ INCLUDES = $(all_includes)
 # ${ADIOSREADLIB_CPPFLAGS} has all the flags like -DFASTBIT -DALACRITY
 # as well as related includes, so it is needed here
 # 
-INCLUDES += -I$(top_srcdir)/src/ -I$(top_srcdir)/src/public/ $(MXML_CPPFLAGS)
+INCLUDES += -I$(top_builddir)/src/public  -I$(top_srcdir)/src/ -I$(top_srcdir)/src/public/ $(MXML_CPPFLAGS)
 
 AUTOMAKE_OPTIONS = no-dependencies
 

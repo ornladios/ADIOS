@@ -333,6 +333,9 @@ TIMER_CPPFLAGS = @TIMER_CPPFLAGS@
 TIMER_LDFLAGS = @TIMER_LDFLAGS@
 TIMER_LIBS = @TIMER_LIBS@
 VERSION = @VERSION@
+VERSION_MAJOR = @VERSION_MAJOR@
+VERSION_MICRO = @VERSION_MICRO@
+VERSION_MINOR = @VERSION_MINOR@
 ZLIB_CPPFLAGS = @ZLIB_CPPFLAGS@
 ZLIB_LDFLAGS = @ZLIB_LDFLAGS@
 ZLIB_LIBS = @ZLIB_LIBS@
@@ -390,7 +393,8 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-INCLUDES = $(all_includes) $(ADIOSLIB_CPPFLAGS) -I$(top_srcdir)/src \
+INCLUDES = $(all_includes) $(ADIOSLIB_CPPFLAGS) \
+	-I$(top_builddir)/src/public -I$(top_srcdir)/src \
 	-I$(top_srcdir)/src/public
 AUTOMAKE_OPTIONS = no-dependencies
 noinst_LIBRARIES = libparse_test_query_xml.a

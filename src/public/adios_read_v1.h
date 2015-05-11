@@ -15,6 +15,7 @@
 
 #include <stdint.h>
 
+#include "adios_version.h"
 #include "adios_mpi.h"
 #include "adios_read_v1_defs.h"
 #include "adios_types.h"

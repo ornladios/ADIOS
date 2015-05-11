@@ -1,6 +1,6 @@
 include_directories(${PROJECT_SOURCE_DIR}/src/public)
 include_directories(${PROJECT_SOURCE_DIR}/src)
-include_directories(${PROJECT_BINARY_DIR}/src)
+include_directories(${PROJECT_BINARY_DIR}/src ${PROJECT_BINARY_DIR}/src/public)
 include_directories(${PROJECT_SOURCE_DIR}/examples/Fortran/arrays)
 link_directories(${PROJECT_BINARY_DIR}/examples/Fortran/arrays)
 

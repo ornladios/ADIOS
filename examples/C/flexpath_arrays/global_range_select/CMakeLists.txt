@@ -1,6 +1,7 @@
 include_directories(${PROJECT_SOURCE_DIR}/src/public)
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/examples/C/flexpath_arrays/global_range_select)
+include_directories(${PROJECT_BINARY_DIR}/src/public)
 link_directories(${PROJECT_BINARY_DIR}/examples/C/flexpath_arrays/global_range_select)
 
 add_executable(global_arrays_write arrays_write.c)

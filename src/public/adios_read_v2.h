@@ -13,6 +13,7 @@
 
 #include <stdint.h>
 
+#include "adios_version.h"
 #include "adios_mpi.h"
 #include "adios_types.h"
 #include "adios_selection.h"

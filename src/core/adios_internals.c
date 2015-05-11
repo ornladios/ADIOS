@@ -4394,11 +4394,11 @@ int adios_write_index_v1 (char ** buffer
         unsigned char ver;
         snprintf (verstr, 25, "ADIOS-BP v%-14.14s", VERSION);
         buffer_write (buffer, buffer_size, buffer_offset, verstr, 24);
-        ver = VERSION_MAJOR;
+        ver = ADIOS_VERSION_MAJOR;
         buffer_write (buffer, buffer_size, buffer_offset, &ver, 1);
-        ver = VERSION_MINOR;
+        ver = ADIOS_VERSION_MINOR;
         buffer_write (buffer, buffer_size, buffer_offset, &ver, 1);
-        ver = VERSION_MICRO;
+        ver = ADIOS_VERSION_PATCH;
         buffer_write (buffer, buffer_size, buffer_offset, &ver, 1);
         ver = 0;
         buffer_write (buffer, buffer_size, buffer_offset, &ver, 1);

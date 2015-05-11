@@ -1,6 +1,6 @@
 include_directories(${PROJECT_BINARY_DIR})
 include_directories(${PROJECT_SOURCE_DIR}/src ${PROJECT_SOURCE_DIR}/src/core ${PROJECT_SOURCE_DIR}/src/core/transforms)
-include_directories(${PROJECT_BINARY_DIR}/src)
+include_directories(${PROJECT_BINARY_DIR}/src ${PROJECT_BINARY_DIR}/src/public)
 link_directories(${PROJECT_BINARY_DIR}/src)
 
 if(HAVE_NSSI)
@@ -539,6 +539,8 @@ set(libadiosread_a_CPPFLAGS "${libadiosread_a_CPPFLAGS} ${ADIOSLIB_EXTRA_CPPFLAG
 #add library adiosread
 #include_directories(${include_HEADERS})
 install(FILES ${include_HEADERS} DESTINATION ${includedir})
+# install generated header file adios_version.h
+install(FILES ${PROJECT_BINARY_DIR}/src/public/adios_version.h DESTINATION ${includedir})
 add_library(adiosread STATIC ${libadiosread_a_SOURCES})
 set_target_properties(adiosread PROPERTIES COMPILE_FLAGS "${libadiosread_a_CPPFLAGS} ${libadiosread_a_CFLAGS}")
 

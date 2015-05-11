@@ -2393,6 +2393,9 @@ TIMER_CPPFLAGS = @TIMER_CPPFLAGS@
 TIMER_LDFLAGS = @TIMER_LDFLAGS@
 TIMER_LIBS = @TIMER_LIBS@
 VERSION = @VERSION@
+VERSION_MAJOR = @VERSION_MAJOR@
+VERSION_MICRO = @VERSION_MICRO@
+VERSION_MINOR = @VERSION_MINOR@
 ZLIB_CPPFLAGS = @ZLIB_CPPFLAGS@
 ZLIB_LDFLAGS = @ZLIB_LDFLAGS@
 ZLIB_LIBS = @ZLIB_LIBS@
@@ -2450,7 +2453,7 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-AM_CPPFLAGS = -I$(top_srcdir) -I$(top_srcdir)/src/core -I$(top_srcdir)/src/core/transforms -I$(top_srcdir)/src/core/query
+AM_CPPFLAGS = -I$(top_builddir)/src/public -I$(top_srcdir) -I$(top_srcdir)/src/core -I$(top_srcdir)/src/core/transforms -I$(top_srcdir)/src/core/query
 AUTOMAKE_OPTIONS = no-dependencies
 METASOURCES = AUTO
 @HAVE_NSSI_TRUE@nssi_staging_server_SOURCES = nssi/nssi_staging_server.cpp nssi/aggregation.cpp
@@ -2468,9 +2471,9 @@ METASOURCES = AUTO
 @HAVE_NSSI_TRUE@	$(top_builddir)/src/libadios.a \
 @HAVE_NSSI_TRUE@	$(ADIOSLIB_LDADD) $(NSSI_SERVER_LIBS)
 CLEANFILES = $(am__append_35) $(am__append_41) $(am__append_61)
-include_HEADERS = public/adios.h public/adios_types.h \
-	public/adios_read.h public/adios_error.h public/adios_mpi.h \
-	public/mpidummy.h public/adios_read_v1.h \
+include_HEADERS = public/adios.h public/adios_version.h \
+	public/adios_types.h public/adios_read.h public/adios_error.h \
+	public/adios_mpi.h public/mpidummy.h public/adios_read_v1.h \
 	public/adios_read_v1_defs.h public/adios_read_v2.h \
 	public/adios_read_v2_fwd.h public/adios_selection.h \
 	public/adios_schema.h public/adios_link.h \
@@ -2847,6 +2850,7 @@ EXTRA_DIST = core/adios_bp_v1.h core/adios_endianness.h \
              core/bp_types.h core/bp_utils.h core/buffer.h core/common_adios.h \
              core/common_read.h core/adios_infocache.h core/futils.h core/globals.h core/ds_metadata.h \
              core/util.h core/flexpath.h core/qhashtbl.h \
+	     public/adios_version.h.in \
              $(transforms_common_HDRS) $(transforms_read_HDRS) $(transforms_write_HDRS) \
              $(query_common_HDRS) $(query_method_HDRS) \
              transforms/transform_plugins.h \
