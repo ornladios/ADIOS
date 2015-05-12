@@ -15,14 +15,14 @@ class AdiosTestCase(ut.TestCase):
     def tearDown(self):
         ad.finalize()
 
-    def test_write_var(self):
+    def test_writer_var(self):
         self.temp = TempFile()
         
         NX = 10
         val1 = np.array(range(NX), dtype=np.int32)
         val2 = np.array(range(5), dtype='f8')
 
-        fw = ad.Writer(self.temp.path)
+        fw = ad.writer(self.temp.path)
         fw.declare_group("group", method="POSIX1")
         
         fw.define_var("NX")
@@ -39,7 +39,7 @@ class AdiosTestCase(ut.TestCase):
         self.assertTrue((f['val1'][:] == val1).all())
         self.assertTrue((f['val2'][:] == val2).all())
 
-    def test_write_attr(self):
+    def test_writer_attr(self):
         self.temp = TempFile()
         
         NX = 10
@@ -53,7 +53,7 @@ class AdiosTestCase(ut.TestCase):
         single_double = 1.1
         five_double = np.array(range(5), dtype='double')*1.1
         
-        fw = ad.Writer(self.temp.path)
+        fw = ad.writer(self.temp.path)
         fw.declare_group("group", method="POSIX1")
         
         fw.define_attr("single_string")
@@ -72,14 +72,33 @@ class AdiosTestCase(ut.TestCase):
         fw.close()
         
         f = ad.file(self.temp.path)
-        ##import ipdb; ipdb.set_trace()
-        self.assertEqual(f['single_string'], single_string)
+        self.assertEqual(f['single_string'].value, single_string)
         ##self.assertTrue((f['three_string'] == three_string).all())
-        self.assertEqual(f['single_int'], single_int)
-        self.assertTrue((f['five_int'] == five_int).all())
-        self.assertEqual(f['single_double'], single_double)
-        self.assertTrue((f['five_double'] == five_double).all())
+        self.assertEqual(f['single_int'].value, single_int)
+        self.assertTrue((f['five_int'].value == five_int).all())
+        self.assertEqual(f['single_double'].value, single_double)
+        self.assertTrue((f['five_double'].value == five_double).all())
 
+    def test_writer_undefined_var(self):
+        self.temp = TempFile()
+        
+        NX = 10
+        val1 = np.array(range(NX), dtype=np.int32)
+        val2 = np.array(range(5), dtype='f8')
+
+        fw = ad.writer(self.temp.path)
+        fw.declare_group("group", method="POSIX1")
+        
+        fw['NX'] = NX
+        fw['val1'] = val1
+        fw['val2'] = val2
+        fw.close()
+
+        f = ad.file(self.temp.path)
+        self.assertEqual(f['NX'][:], NX)
+        self.assertTrue((f['val1'][:] == val1).all())
+        self.assertTrue((f['val2'][:] == val2).all())
+        
 if __name__ == '__main__':
     ut.main()
         
