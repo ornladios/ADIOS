@@ -1090,11 +1090,24 @@ cdef class writer:
     cpdef bytes gname
     cpdef bytes method
     cpdef bytes method_params
+    cpdef bint is_noxml
     cpdef MPI.Comm comm
 
     cpdef dict var
     cpdef dict attr
 
+    property fname:
+        def __get__(self):
+            return self.fname
+
+    property gname:
+        def __get__(self):
+            return self.gname
+        
+    property is_noxml:
+        def __get__(self):
+            return self.is_noxml
+        
     property var:
         def __get__(self):
             return self.var
@@ -1104,11 +1117,14 @@ cdef class writer:
             return self.attr
         
     def __init__(self,char * fname,
+                 bint is_noxml = True,
+                 char * gname = "",
                  MPI.Comm comm = MPI.COMM_WORLD):
         self.fname = fname
-        self.gname = <bytes>""
+        self.gname = gname
         self.method = <bytes>""
         self.method_params = <bytes>""
+        self.is_noxml = is_noxml
         self.comm = comm
         self.var = dict()
         self.attr = dict()
@@ -1169,20 +1185,20 @@ cdef class writer:
                 extra_var[key] = varinfo(key, n.shape)
                 extra_var[key].value = val
             else:
-                val.define(self.gid)
+                if self.is_noxml: val.define(self.gid)
 
         for key, val in extra_var.iteritems():
-            val.define(self.gid)
+            if self.is_noxml: val.define(self.gid)
             self.var[key] = val
 
         for key, val in self.attr.iteritems():
             if not isinstance(val, attrinfo):
                 extra_attr[key] = attrinfo(key, val, np.array(val).dtype)
             else:
-                val.define(self.gid)
+                if self.is_noxml: val.define(self.gid)
 
         for key, val in extra_attr.iteritems():
-            val.define(self.gid)
+            if self.is_noxml: val.define(self.gid)
 
         groupsize = 0
         for var in self.var.values():
@@ -1207,14 +1223,33 @@ cdef class writer:
 
 cdef class attrinfo:
     cdef bytes name
-    cdef public int is_static # Use define_byvalue, if True
-    cdef public dtype
-    cdef public value # Either varname or nparray
+    cdef bint is_static # Use define_byvalue, if True
+    cdef dtype
+    cdef value # Either varname or nparray
 
+    property name:
+        def __get__(self):
+            return self.name
+
+    property is_static:
+        def __get__(self):
+            return self.is_static
+
+    property dtype:
+        def __get__(self):
+            return self.dtype
+        
+    property value:
+        def __get__(self):
+            return self.value
+        
+        def __set__(self, value):
+            self.value = value
+        
     def __init__(self, char * name,
                  value = None,
                  dtype = None,
-                 int is_static = 0):
+                 bint is_static = 0):
         self.name = name
         self.value = value
         self.dtype = dtype
@@ -1304,6 +1339,15 @@ cdef class varinfo:
 ## ====================
 
 def readvar(fname, varname):
+    """ Retrieve a variable value from an Adios file.
+
+    Args:
+        fname (str): Adios file name
+        varname (str): Variable name to retrieve
+
+    Returns:
+        NumPy ndarray: variable value
+    """
     f = file(fname, comm=MPI.COMM_SELF)
     if not f.var.has_key(varname):
         print "No valid variable"
@@ -1313,6 +1357,14 @@ def readvar(fname, varname):
     return v.read(from_steps=0, nsteps=v.nsteps)
 
 def bpls(fname):
+    """ Return meta data of an Adios file as a Python dictionary object.
+
+    Args:
+        fname (str): Adios file name
+
+    Returns:
+        dict: Adios file meta data
+    """
     f = file(fname, comm=MPI.COMM_SELF)
     return {'nvars': f.nvars,
             'nattrs': f.nattrs,

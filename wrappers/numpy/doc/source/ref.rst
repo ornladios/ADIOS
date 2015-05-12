@@ -7,6 +7,7 @@ API Reference
    :maxdepth: 2
 
 .. automodule:: adios
+   :members: readvar, bpls
 
 .. autoclass:: file
     :members:
@@ -15,4 +16,5 @@ API Reference
 .. autoclass:: var
     :members:
     :exclude-members: __del__, __repr__
+
 

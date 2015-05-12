@@ -98,6 +98,26 @@ class AdiosTestCase(ut.TestCase):
         self.assertEqual(f['NX'][:], NX)
         self.assertTrue((f['val1'][:] == val1).all())
         self.assertTrue((f['val2'][:] == val2).all())
+
+    def test_writer_undefined_var2(self):
+        self.temp = TempFile()
+        
+        NX = 10
+        val1 = np.array(range(NX), dtype=np.int32)
+        val2 = np.array(range(5), dtype='f8')
+
+        fw = ad.writer(self.temp.path)
+        fw.declare_group("group", method="POSIX1")
+        
+        fw.var['NX'] = NX
+        fw.var['val1'] = val1
+        fw.var['val2'] = val2
+        fw.close()
+
+        f = ad.file(self.temp.path)
+        self.assertEqual(f['NX'][:], NX)
+        self.assertTrue((f['val1'][:] == val1).all())
+        self.assertTrue((f['val2'][:] == val2).all())
         
 if __name__ == '__main__':
     ut.main()
