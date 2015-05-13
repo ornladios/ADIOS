@@ -811,6 +811,7 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 					,startStep,numStep,&partitionMeta);
 
 #ifdef BREAKDOWN
+	printf("read partition meta %d with size %"PRIu64"\n", gBlockId, alac_metadata->meta_size);
 	pmCounter ++;
 	totalPmSize += alac_metadata->meta_size;
 	alacPartitionMetaTotal += dclock() - alacPartitionMetaStart;
