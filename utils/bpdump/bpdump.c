@@ -61,6 +61,8 @@ void print_attributes_index
 //const char * value_to_string (enum ADIOS_DATATYPES type, void * data);
 const char * value_to_string_ptr (enum ADIOS_DATATYPES type, void * data, uint64_t element);
 
+int have_subfiles = 0; // global flag indicating if we variables are stored in subfiles (bpdump does not process subfiles)
+
 int main (int argc, char ** argv)
 {
     char * filename;
@@ -112,6 +114,7 @@ int main (int argc, char ** argv)
         dump.dump_var = 0;
     }
 
+    have_subfiles = 0;
     struct adios_bp_buffer_struct_v1 * b = 0;
     uint32_t version = 0;
 
@@ -181,10 +184,27 @@ int main (int argc, char ** argv)
     }
 
 
-    uint64_t element_num = 1;
+    uint64_t pg_num = 0;
     pg = pg_root;
     while (pg)
     {
+
+        pg_num++;
+        /* Avoid processing PG's whose offset is beyond the start of index (they are actually in subfiles) */
+        /* Note: only variables have subfile index, PG's don't so we need to be this indirect in the test */
+        if (pg->offset_in_file >= b->pg_index_offset) 
+        {
+            printf ("Process Group %llu offset is beyond the footer.", pg_num);
+            if (have_subfiles) {
+                printf (" It is probably in a subfile but bpdump does not process subfiles.\n");
+            } else {
+                printf (" Since there are no subfiles, this probably means the BP file is corrupt.\n"
+                        "offset=%llu  footer starts at %llu\n", pg->offset_in_file, b->pg_index_offset);
+            }
+            pg = pg->next;
+            continue;
+        }
+
         int var_dims_count = 0;
         struct var_dim * var_dims = 0;
 
@@ -213,7 +233,7 @@ int main (int argc, char ** argv)
 
         adios_posix_read_process_group (b);
         adios_parse_process_group_header_v1 (b, &pg_header);
-        print_process_group_header (element_num++, &pg_header);
+        print_process_group_header (pg_num, &pg_header);
         //printf ("\tSize of group in fil: %llu bytes\n",  b->read_pg_size);
 
         adios_parse_vars_header_v1 (b, &vars_header);
@@ -1044,6 +1064,10 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
             printf ("\tPayload Offset(%llu)", vars_root->characteristics [i].payload_offset);
             printf ("\tFile Index(%d)", vars_root->characteristics [i].file_index);
             printf ("\tTime Index(%d)", vars_root->characteristics [i].time_index);
+
+            if (vars_root->characteristics [i].file_index != (uint32_t)-1) { 
+                have_subfiles = 1;
+            }
 
     		/* NCSU - Print min, max */
 			if (vars_root->type == adios_complex || vars_root->type == adios_double_complex)
