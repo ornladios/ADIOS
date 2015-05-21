@@ -86,6 +86,7 @@ adios_read_xpmem_init_method (MPI_Comm comm, PairStruct* params)
 	//read the segid
 	memset(fp, 0, sizeof(xpmem_read_data));
 
+    
 	read_segid(&fp->data_segid, "xpmem.data");
 	buffer = attach_segid(fp->data_segid, share_size, &fp->data_apid);
 
@@ -101,7 +102,6 @@ adios_read_xpmem_init_method (MPI_Comm comm, PairStruct* params)
 	fp->pg = (shared_data*)buffer;
 
 	log_info("read init completed\n");
-	
 	return 0;
 }
 
@@ -141,8 +141,6 @@ adios_read_xpmem_open_file(const char * fname, MPI_Comm comm)
 	//af->fh->fh is the BP_FILE
 	//af->fp is the xpmem_read_data
 	
-
-
 	log_info("spinning on version\n");
 
 	//we will spin until the file is version is updated
@@ -150,11 +148,11 @@ adios_read_xpmem_open_file(const char * fname, MPI_Comm comm)
 
 	while(f->fp->pg->version == 0)
 	    adios_nanosleep(0, 100000000);
+    
 
 	//now the buffer has some data
 	f->fp->data = (char*)malloc(f->fp->pg->size);
 	f->fp->dsize = f->fp->pg->size;
-	
 
 	//copy the data into a non-shared buffer of the right size
 	//this is equivalent to the pg
@@ -163,7 +161,7 @@ adios_read_xpmem_open_file(const char * fname, MPI_Comm comm)
 
 	//read the data
 	xp_read_open(f->fh, f->fp);
-
+    
 	xp_seek_to_step(af, -1, show_hidden_attrs);
 
     af->endianness =  bp_get_endianness (f->fh->mfooter.change_endianness);
@@ -182,6 +180,7 @@ adios_read_xpmem_open_file(const char * fname, MPI_Comm comm)
 	//now fp->index contains the index
 	//index size is fp-index->size
 	//copy the buffer out
+
 	
 	return af;  
 }
@@ -280,7 +279,7 @@ adios_read_xpmem_advance_step(ADIOS_FILE *fp, int last, float timeout_sec)
 	//copy the data into a non-shared buffer of the right size
 	//this is equivalent to the pg
 	memcpy(xf->fp->data, xf->fp->pg->buffer, xf->fp->dsize);
-	memcpy(&xf->fp->debug, xf->fp->pg, sizeof(shared_data));
+	// memcpy(&xf->fp->debug, xf->fp->pg, sizeof(shared_data));
 
 	// //read the data
 // 	xp_read_open(xf->fh, xf->fp);

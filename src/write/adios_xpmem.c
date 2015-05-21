@@ -20,7 +20,7 @@
 // xml parser
 #include <mxml.h>
 
-#ifdef HAVE_XPMEM	        
+#ifdef HAVE_XPMEM
 
 //xpmem headers
 #include "public/adios_xpmem.h"
@@ -50,12 +50,7 @@ typedef struct _xmeminfo
 
 
 
-
-
- 
-void adios_xpmem_init (const PairStruct * parameters
-                       ,struct adios_method_struct * method
-	)
+void adios_xpmem_init (const PairStruct * parameters, struct adios_method_struct * method)
 {
 	adios_xpmem_data_struct *p = NULL;
 	if (!adios_xpmem_initialized)
@@ -64,7 +59,7 @@ void adios_xpmem_init (const PairStruct * parameters
 	}
 
 	adios_logger_open(NULL, 0);
-    
+        
 	method->method_data = malloc (sizeof (adios_xpmem_data_struct));
 	memset(method->method_data, 0, sizeof(adios_xpmem_data_struct));
 
@@ -92,7 +87,6 @@ void adios_xpmem_init (const PairStruct * parameters
 	          p->sp->offset);
         
 	write_segid(p->buffer_id, "xpmem.data");
-
 
 }
 
@@ -154,28 +148,27 @@ int adios_xpmem_open (struct adios_file_struct * fd
 }
 
 enum ADIOS_FLAG adios_xpmem_should_buffer (struct adios_file_struct * fd
-                                          ,struct adios_method_struct * method
-                                          )
+                                           ,struct adios_method_struct * method
+    )
 {
-     adios_xpmem_data_struct * p = ( adios_xpmem_data_struct *)
-                                                          method->method_data;
+    adios_xpmem_data_struct * p = ( adios_xpmem_data_struct *)
+        method->method_data;
 
-     log_debug("xpmem should buffer\n");
-     
+    log_debug("xpmem should buffer\n");
+
     //we alwasy return yes so we don't have to deal with the buffering shit
     return adios_flag_yes;
     
 }
 
 void adios_xpmem_write (struct adios_file_struct * fd
-                       ,struct adios_var_struct * v
-                       ,void * data
-                       ,struct adios_method_struct * method
-                       )
+                        ,struct adios_var_struct * v
+                        ,void * data
+                        ,struct adios_method_struct * method
+    )
 {
-     adios_xpmem_data_struct * p = ( adios_xpmem_data_struct *)
-                                                          method->method_data;
-
+    adios_xpmem_data_struct * p = ( adios_xpmem_data_struct *)
+        method->method_data;
 
     if(fd->shared_buffer != adios_flag_yes)
     {
@@ -192,22 +185,22 @@ void adios_xpmem_write (struct adios_file_struct * fd
 //unknown functionality, just let it be
 
 void adios_xpmem_get_write_buffer (struct adios_file_struct * fd
-                                  ,struct adios_var_struct * v
-                                  ,uint64_t * size
-                                  ,void ** buffer
-                                  ,struct adios_method_struct * method
-                                  )
+                                   ,struct adios_var_struct * v
+                                   ,uint64_t * size
+                                   ,void ** buffer
+                                   ,struct adios_method_struct * method
+    )
 {
 	adios_error(err_operation_not_supported,
 	            "xpmem does not support get_write_buffer\n");
 }
 
 void adios_xpmem_read (struct adios_file_struct * fd
-                      ,struct adios_var_struct * v
-                      ,void * buffer
-                      ,uint64_t buffer_size
-                      ,struct adios_method_struct * method
-                      )
+                       ,struct adios_var_struct * v
+                       ,void * buffer
+                       ,uint64_t buffer_size
+                       ,struct adios_method_struct * method
+    )
 {
 
 	log_error("xpmem does not support old read api\n");
@@ -223,6 +216,7 @@ void adios_xpmem_close (struct adios_file_struct * fd
 		method->method_data;
 	struct adios_attribute_struct * a = fd->group->attributes;
 	struct adios_index_struct_v1 * index;
+
     
 	switch (fd->mode)
 	{
@@ -262,7 +256,8 @@ void adios_xpmem_close (struct adios_file_struct * fd
 		
 		//set the sizes for the data
 		p->sp->size = fd->bytes_written + buffer_offset;
-            
+
+        
 		//now set the version to 1
 #if 0		
 		p->sp->version = 1;

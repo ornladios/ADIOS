@@ -52,7 +52,7 @@ ADIOS_SELECTION * scalar_select(void)
 		error("selection failed %d %d %s\n",start[0], end[0], adios_errmsg());
 		return NULL;
 	}
-	
+
 	return sel;
 }
 
