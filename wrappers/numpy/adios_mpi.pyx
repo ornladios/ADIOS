@@ -1050,17 +1050,33 @@ cdef class attr:
 
         cdef int64_t p
         cdef ADIOS_DATATYPES atype
-        cdef int size
+        cdef int bytes
+        cdef list strlist
+        cdef int len
         
-        err = adios_get_attr(self.file.fp, self.name, &atype, &size, <void **> &p)
+        err = adios_get_attr(self.file.fp, self.name, &atype, &bytes, <void **> &p)
 
         if err == 0:
-            self.dtype = adios2npdtype(atype, size)
-            if self.dtype is None:
-                print 'Warning: No support yet: %s (type=%d, size=%d)' % \
-                      (self.name, atype, size)
+            if atype == DATATYPE.string:
+                bytes = bytes - 1 ## Remove the NULL terminal                
+            self.dtype = adios2npdtype(atype, bytes)
+            if atype == DATATYPE.string_array:
+                strlist = list()
+                len = bytes/sizeof(p)
+                for i in range(len):
+                    strlist.append((<char **>p)[i])
+                self.value = np.array(strlist)
+                self.dtype = self.value.dtype
+                    
+            elif self.dtype is None:
+                print 'Warning: No support yet: %s (type=%d, bytes=%d)' % \
+                      (self.name, atype, bytes)
             else:
-                self.value = np.zeros(size/self.dtype.itemsize, dtype=self.dtype)
+                len = bytes/self.dtype.itemsize
+                if len == 1:
+                    self.value = np.array(len, dtype=self.dtype)
+                else:
+                    self.value = np.zeros(len, dtype=self.dtype)
                 self.value.data = <char *> p
         else:
             raise KeyError(name)

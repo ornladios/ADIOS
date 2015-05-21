@@ -73,7 +73,7 @@ class AdiosTestCase(ut.TestCase):
         
         f = ad.file(self.temp.path)
         self.assertEqual(f['single_string'].value, single_string)
-        ##self.assertTrue((f['three_string'] == three_string).all())
+        self.assertTrue((f['three_string'].value == three_string).all())
         self.assertEqual(f['single_int'].value, single_int)
         self.assertTrue((f['five_int'].value == five_int).all())
         self.assertEqual(f['single_double'].value, single_double)
