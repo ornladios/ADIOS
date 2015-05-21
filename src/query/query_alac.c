@@ -46,7 +46,7 @@ typedef struct{
 // the reason of being global variables is because calling transformer layer APIs scatter
 // I have to sum every place that calls transformer layer
 #ifdef BREAKDOWN
-	double gTransformTime = 0.0, transStart =0, transEnd = 0;
+	double preparationTime = 0.0, preparationStart = 0;
 	double metaTotal = 0.0, metaStart=0.0;// timing metadata read
 	double idxTotal = 0.0, idxStart =0.0;  // timing index read
 	double dataTotal = 0.0, dataStart =0.0; // timing low-order byte read
@@ -54,13 +54,8 @@ typedef struct{
 	double findPGTotal = 0.0, findPGStart = 0.0; // timing for porc_write_block
 	double candidateCheckTotal = 0.0, candidateCheckStart = 0.0; // timing for porc_write_block
 	double decodeTotal = 0.0, decodeStart = 0.0; // timing for porc_write_block
-    double candidateCheckFewBinsTotal = 0.0, candidateCheckFewBinsStart = 0.0;
     double setRidTotal = 0.0, setRidStart = 0.0;
-    double proc = 0.0, procFirstTotal = 0.0;
-    double findRangeStart=0.0, findRangeTotal=0.0;
-    double bitmapStart = 0.0, bitmapTotal = 0.0;
     double alacPartitionMetaTotal=0.0, alacPartitionMetaStart = 0.0;
-    uint64_t pmCounter = 0, totalPmSize = 0;
 #endif
 
 /**** Funcs. that are internal funcs. ********/
@@ -173,18 +168,11 @@ void readTransformedElms(ADIOS_FILE* fp,ADIOS_VARINFO* vi
 		, int startStep, int numStep
 		, int blockId, uint64_t start_elem, uint64_t num_elems, int is_timestep_relative, void * outputData/*out*/){
 	ADIOS_SELECTION *sel = adios_selection_writeblock_bounded(blockId, start_elem, num_elems, is_timestep_relative);
-#ifdef BREAKDOWN
-	transStart = dclock();
-#endif
-
 	common_read_schedule_read_byid(fp, sel, vi->varid, startStep, numStep, NULL, outputData);
 	common_read_perform_reads(fp, 1);
 	// adios_selection_writeblock_bounded internally malloc data for adios_selection
 	// so I need to free it before the next usage
 	common_read_selection_delete(sel);
-#ifdef BREAKDOWN
-	gTransformTime += (dclock() - transStart) ;
-#endif
 }
 
 void readBlockData(int gBlockId /*global block id */, ADIOS_QUERY * adiosQuery, int startStep,
@@ -194,13 +182,7 @@ void readBlockData(int gBlockId /*global block id */, ADIOS_QUERY * adiosQuery, 
 	char * blockData = (char*) (*data);
 	blockData = (char *) malloc(sizeof(char) * dataElmSize * dataElmNum);
 	ADIOS_SELECTION *sel = adios_selection_writeblock_bounded(gBlockId, 0, dataElmNum, 0); // entire PG selection
-#ifdef BREAKDOWN
-	transStart = dclock();
-#endif
 	common_read_schedule_read_byid(adiosQuery->file, sel, varInfo->varid, startStep, 1, NULL, blockData);
-#ifdef BREAKDOWN
-	gTransformTime += (dclock() - transStart) ;
-#endif
 }
 void readIndexData(int blockId, uint64_t offsetSize /*in bytes*/
 		,uint64_t length /*in bytes*/, ADIOS_FILE* fp,ADIOS_VARINFO* vi
@@ -532,6 +514,11 @@ int adios_alac_check_candidate(ALMetadata *partitionMeta, bin_id_t startBin, bin
 		, bool decoded  /*true: need decoding */ , char * lowOrderBytes /*low order bytes of from startBin to endBin*/
 		, enum ADIOS_DATATYPES dataType
 		,ADIOS_ALAC_BITMAP * alacResultBitmap /*OUT*/, int Corder){
+
+#ifdef BREAKDOWN
+	candidateCheckStart = dclock();
+#endif
+
 	const ALBinLayout * bl = &(partitionMeta->binLayout);
 	/*assert(adiosQuery->_sel->type == ADIOS_SELECTION_BOUNDINGBOX);
 	const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = &(adiosQuery->_sel->u.bb);
@@ -598,6 +585,11 @@ int adios_alac_check_candidate(ALMetadata *partitionMeta, bin_id_t startBin, bin
 	free(data);
 	if(decoded)
 		free(decodeRids);
+
+#ifdef BREAKDOWN
+	candidateCheckTotal += (dclock() - candidateCheckStart);
+#endif
+
 	return 0;
 
 }
@@ -762,10 +754,6 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 		, ALUnivariateQuery * alacQuery , double lb , double hb
 		,uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount
 		, ADIOS_ALAC_BITMAP * alacResultBitmap /*OUT*/ , int Corder){
-#ifdef BREAKDOWN
-	proc=dclock();
-#endif
-
 
 #ifdef RIDBUG
 	printf("PG [%d], RIDs relative to PG converted to RIDs relative to output BoundingBox: ", gBlockId);
@@ -779,15 +767,9 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 	ADIOS_TRANSFORM_METADATA tmeta = tmetas[gBlockId];
 	//	assert(tmeta->length == 24);
 
-#ifdef BREAKDOWN
-	bitmapStart = dclock();
-#endif
-
 	adios_transform_alacrity_metadata *alac_metadata = (adios_transform_alacrity_metadata *) malloc(sizeof(adios_transform_alacrity_metadata));
 
 #ifdef BREAKDOWN
-	bitmapTotal += (dclock() - bitmapStart);
-	transStart = dclock();
 	metaStart = dclock();
 #endif
 
@@ -795,7 +777,6 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 	read_alacrity_transform_metadata(tmeta.length, tmeta.content, alac_metadata);
 	//It now assumes LoB along with OD (original data)
 #ifdef BREAKDOWN
-	gTransformTime += (dclock() - transStart) ;
 	metaTotal = metaTotal + (dclock()- metaStart);
 	alacPartitionMetaStart = dclock();
 #endif
@@ -811,23 +792,16 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 					,startStep,numStep,&partitionMeta);
 
 #ifdef BREAKDOWN
-	printf("read partition meta %d with size %"PRIu64"\n", gBlockId, alac_metadata->meta_size);
-	pmCounter ++;
-	totalPmSize += alac_metadata->meta_size;
+	//printf("read partition meta %d with size %"PRIu64"\n", gBlockId, alac_metadata->meta_size);
 	alacPartitionMetaTotal += dclock() - alacPartitionMetaStart;
-	findRangeStart = dclock();
 #endif
 
 	const uint8_t insigbytes = insigBytesCeil(&partitionMeta);
 
 	//2. find touched bin
 	bin_id_t low_bin, hi_bin;
-	_Bool are_bins_touched = findBinRange1C(&partitionMeta, alacQuery, &low_bin,
-			&hi_bin);
-#ifdef BREAKDOWN
-	findRangeTotal += dclock() - findRangeStart;
-	procFirstTotal += dclock() - proc;
-#endif
+	_Bool are_bins_touched = findBinRange1C(&partitionMeta, alacQuery, &low_bin, &hi_bin);
+
 	if (are_bins_touched) {
 
 		//3. load index size
@@ -843,11 +817,6 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 			// indexes are inverted indexes that are not compressed,  we build bitmaps for each rid;
 			//element offset, instead of byte element
 			uint64_t resultCount = bl->binStartOffsets[hi_bin] - bl->binStartOffsets[low_bin];
-
-#ifdef BREAKDOWN
-		printf("AL II: estimate %d \n", estimate);
-		printf("total # bin touched %d \n", hi_bin - low_bin  );
-#endif
 			if (estimate) {
 				setRidToBits(isPGCovered, srcstart, srccount, deststart, destcount, ndim
 						, (rid_t *)index, resultCount, alacResultBitmap,Corder);
@@ -864,9 +833,6 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 					bin_offset_t lowBinElm = bl->binStartOffsets[low_bin + 1] - bl->binStartOffsets[low_bin];
 					uint64_t hiBinElm = bl->binStartOffsets[hi_bin] - bl->binStartOffsets[hi_bin-1];
 
-#ifdef BREAKDOWN
-	candidateCheckStart = dclock();
-#endif
 					// low boundary bin
 					adios_alac_check_candidate(&partitionMeta, low_bin, low_bin+1 , hb, lb
 							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , (char*) decodedRid /*index bytes of entire PG*/
@@ -874,9 +840,6 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 							,alacResultBitmap /*OUT*/,Corder);
 					decodedRid += lowBinElm;
 
-#ifdef BREAKDOWN
-	candidateCheckTotal += (dclock() - candidateCheckStart);
-#endif
 
 					uint64_t innerElm = resultCount- lowBinElm - hiBinElm;
 
@@ -893,31 +856,18 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 
 					lowOrderPtr2 += (( bl->binStartOffsets[hi_bin-1] - bl->binStartOffsets[low_bin]) * insigbytes);
 					// high boundary bin
-#ifdef BREAKDOWN
-		candidateCheckStart = dclock();
-#endif
+
 					adios_alac_check_candidate(&partitionMeta, hi_bin-1, hi_bin , hb, lb
 							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , (char *)decodedRid
 							, false , lowOrderPtr2, varInfo->type
 							,alacResultBitmap /*OUT*/,Corder);
 
-#ifdef BREAKDOWN
-	candidateCheckTotal += (dclock() - candidateCheckStart);
-#endif
-
 				} else { // for 1 or 2 bins touched, we need to check all RIDs
 
-#ifdef BREAKDOWN
-		printf("start to data check branch in else branch \n");
-		candidateCheckStart = dclock();
-#endif
 					adios_alac_check_candidate(&partitionMeta, low_bin, hi_bin  , hb, lb
 							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , (char*)decodedRid
 							, false , lowOrderPtr2, varInfo->type
 							,alacResultBitmap /*OUT*/,Corder);
-#ifdef BREAKDOWN
-	candidateCheckTotal += (dclock() - candidateCheckStart);
-#endif
 				}
 
 				FREE(lowOrderBytes2);
@@ -929,10 +879,6 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 			uint64_t binCompressedLen;
 			const char *inputCurPtr = input_index;
 
-#ifdef BREAKDOWN
-		printf("ALCompressed II: estimate %d \n", estimate);
-		printf("total # bin touched %d \n", hi_bin - low_bin  );
-#endif
 			if (estimate) {
 				// Now compress each bin in turn
 				bin_id_t bin ;
@@ -957,16 +903,11 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 					// low boundary bin, compressed byte offset
 					binCompressedLen = compBinStartOffs[low_bin + 1] - compBinStartOffs[low_bin];
 
-#ifdef BREAKDOWN
-	candidateCheckStart = dclock();
-#endif
 					adios_alac_check_candidate(&partitionMeta, low_bin, low_bin+1 , hb, lb
 							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery  , inputCurPtr /*index bytes of entire PG*/
 							, true  /*need decoding*/ , lowOrderPtr /*it points to the start of `low_bin` */, varInfo->type
 							,alacResultBitmap /*OUT*/,Corder);
-#ifdef BREAKDOWN
-	candidateCheckTotal += dclock() - candidateCheckStart;
-#endif
+
 					inputCurPtr += binCompressedLen;
 
 					bin_id_t innerlowBin = low_bin + 1;
@@ -996,30 +937,19 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 					// point to the low order byte of one bin before hi_bin
 					lowOrderPtr += (( bl->binStartOffsets[hi_bin-1] - bl->binStartOffsets[low_bin]) * insigbytes);
 
-#ifdef BREAKDOWN
-	candidateCheckStart = dclock();
-#endif
 					adios_alac_check_candidate(&partitionMeta, hi_bin-1, hi_bin , hb, lb
 							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , inputCurPtr /*index bytes of entire PG*/
 							, true  /*need decoding*/ , lowOrderPtr /*low order bytes of entire PG*/, varInfo->type
 							,alacResultBitmap /*OUT*/,Corder);
-#ifdef BREAKDOWN
-	candidateCheckTotal += dclock() - candidateCheckStart;
-#endif
+
 					inputCurPtr += binCompressedLen;
 
 				} else { // for 1 or 2 bins touched, we need to check all RIDs
-#ifdef BREAKDOWN
-	candidateCheckFewBinsStart = dclock();
-#endif
 
 					adios_alac_check_candidate(&partitionMeta, low_bin, hi_bin , hb, lb
 							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , inputCurPtr /*index bytes of entire PG*/
 							, true , lowOrderPtr, varInfo->type
 							,alacResultBitmap /*OUT*/,Corder);
-#ifdef BREAKDOWN
-        candidateCheckFewBinsTotal += dclock()-candidateCheckFewBinsStart;
-#endif
 				}
 
 				FREE(lowOrderBytes);
@@ -1060,15 +990,11 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	ADIOS_VARINFO * varInfo = adiosQuery->varinfo;
 
 #ifdef BREAKDOWN
-	gTransformTime = 0;
-	transStart = dclock();
+	preparationTime = 0;
 #endif
 	adios_read_set_data_view(adiosQuery->file, LOGICAL_DATA_VIEW); // switch to the transform view,
  	ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->file, varInfo); // this func. will fill the blockinfo field
 
-#ifdef BREAKDOWN
-	gTransformTime += (dclock() - transStart) ;
-#endif
 
 	int startStep = timeStep, numStep = 1;
 	uint64_t totalElm = adiosQuery->rawDataSize; // no matter bounding box or writeblock selection, the rawDataSize has been calculated in the common query layer
@@ -1092,6 +1018,9 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 
 	const int Corder = !futils_is_called_from_fortran(); // Use the dimension order of the caller; the common read layer will also mimic this order
 
+#ifdef BREAKDOWN
+	preparationTime += (dclock() - preparationStart) ;
+#endif
 	/*********** doQuery ***************
 	 *
 	 * 1. Open partition  [locate offsets of meta, data, and index for the partition]
@@ -1108,10 +1037,6 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
          static uint64_t ZERO[32] = { 0 };
 		 destcount = varInfo->dims;   deststart = ZERO;
 
-#ifdef BREAKDOWN
-	transStart = dclock();
-#endif
-
          if (varInfo->blockinfo == NULL) {
         	 adios_read_set_data_view(adiosQuery->file, LOGICAL_DATA_VIEW);
              common_read_inq_var_blockinfo(adiosQuery->file, varInfo);
@@ -1119,10 +1044,6 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 
 		adios_read_set_data_view(adiosQuery->file, PHYSICAL_DATA_VIEW);
 		ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->file, varInfo);
-
-#ifdef BREAKDOWN
-	gTransformTime += (dclock() - transStart) ;
-#endif
 
 		int totalPG = varInfo->nblocks[timeStep];
 		int blockId, j;
@@ -1179,9 +1100,6 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 #endif
 
 
-#ifdef BREAKDOWN
-	transStart = dclock();
-#endif
 		adios_read_set_data_view(adiosQuery->file, PHYSICAL_DATA_VIEW);
 		ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->file, varInfo);
 
@@ -1195,11 +1113,6 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 #endif
 		int totalPG = intersectedPGs->npg;
 		int blockId, j;
-
-#ifdef BREAKDOWN
-	gTransformTime += (dclock() - transStart) ;
-	printf("DEBUG: # of total PG %d \n", totalPG);
-#endif
 
 		ADIOS_PG_INTERSECTION *  PGs = intersectedPGs->intersections;
 		for (j = 0; j < totalPG; j++) {
@@ -1256,16 +1169,9 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 		bool isPGCovered = true; // because they are same bounding boxes, they are fully contained
 
 		if (ti->transform_type == adios_get_transform_type_by_uid("ncsu-alacrity")){
-
-#ifdef BREAKDOWN
-	transStart = dclock();
-#endif
 			adios_read_set_data_view(adiosQuery->file, PHYSICAL_DATA_VIEW); // switch to the transform view,
 			ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->file, varInfo); // this func. will fill the blockinfo field
 
-#ifdef BREAKDOWN
-	gTransformTime += (dclock() - transStart) ;
-#endif
 			proc_write_block(globalBlockId,isPGCovered,ti, adiosQuery,startStep,estimate,&alacQuery,lb,hb
 					,srcstart, srccount, deststart, destcount,alacResultBitmap,Corder	);
 		}else {
@@ -1294,20 +1200,17 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	adios_read_set_data_view(adiosQuery->file, LOGICAL_DATA_VIEW);
 
 #ifdef BREAKDOWN
-	printf("ADIOS(transformer layer) read time: %f \n", gTransformTime);
-	printf("Total PG metadata read time : %f \n", metaTotal);
-	printf("Total index read time : %f \n", idxTotal);
-	printf("Total low-order bytes read time : %f \n", dataTotal);
-	printf("Proc write block time : %f \n", procTotal);
-	printf("bitmap initialization : %f \n", bitmapTotal);
-	printf("read Alacrity partition meta : %f \n", alacPartitionMetaTotal);
-	printf("# of partition meta read times is %"PRIu64", and total partition meta size read: %"PRIu64" KB\n", pmCounter, totalPmSize/1024);
-	printf("find Range & insigbits : %f \n", findRangeTotal);
-	printf("First part of Proc write block time (before bin_touched) : %f \n", procFirstTotal);
-	printf("Find PG time : %f \n", findPGTotal);
-	printf("Candidate check total time: %f \n", candidateCheckTotal);
-	printf("Decode total time : %f \n", decodeTotal);
-	printf("Candidate check few bins total time : %f \n", candidateCheckFewBinsTotal);
+	printf("Preparation time: %f \n", preparationTime);
+	printf("Find total # of PGs touched by the bounding box in the query: %f \n", findPGTotal);
+	printf("One PG processing (Proc write block) time : %f \n", procTotal);
+	printf("The following time should approximately sum up to one PG processing time \n");
+	printf("===>Total time of reading alacrity metadata: %f \n", metaTotal);
+	printf("===>Total time of reading partition meta in Alacrity metadata: %f \n", alacPartitionMetaTotal);
+	printf("===>Total index read time : %f \n", idxTotal);
+	printf("===>Total low-order bytes read time : %f \n", dataTotal);
+	printf("===>Candidate check total time: %f \n", candidateCheckTotal);
+	printf("===>Decode compressed RIDs to bitmap (optional, only applied to compressed indexes: %f \n", decodeTotal);
+	printf("===>Set every RID in the bitmap (optional, only applied to uncompressed indexes: %f \n", setRidTotal);
 
 #endif
 	return alacResultBitmap;
