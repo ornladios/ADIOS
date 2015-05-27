@@ -100,7 +100,7 @@ int adios_xpmem_open (struct adios_file_struct * fd
 	adios_xpmem_data_struct * p = (adios_xpmem_data_struct *)
 		method->method_data;
 
-	if(fd->mode == adios_mode_read || fd->mode == adios_mode_append)
+	if(fd->mode == adios_mode_read)
 	{
 		adios_error(err_operation_not_supported,
 		            "xpmem does not support old read api\n");
