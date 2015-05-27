@@ -221,6 +221,7 @@ void adios_xpmem_close (struct adios_file_struct * fd
 	switch (fd->mode)
 	{
 	case adios_mode_write:
+    case adios_mode_append:
 	{
 		// buffering or not, write the index
 		char * buffer = 0;
