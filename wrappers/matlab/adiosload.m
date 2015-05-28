@@ -22,8 +22,12 @@ if (~exist('prefix', 'var'))
 end
 fp = adiosopen(file);
 for i = 1:length(fp.Groups.Variables)
-    name{i} = fp.Groups.Variables(i).Name;
-    data{i} = adiosread(fp.Groups, fp.Groups.Variables(i).Name);
-    assignin('base',[prefix name{i}],data{i});
+    try
+        name{i} = fp.Groups.Variables(i).Name;
+        data{i} = adiosread(fp.Groups, fp.Groups.Variables(i).Name);
+        assignin('base',[prefix name{i}],data{i});
+    catch
+        warning(['Skip ... ', fp.Groups.Variables(i).Name]);
+    end
 end
 adiosclose(fp);
