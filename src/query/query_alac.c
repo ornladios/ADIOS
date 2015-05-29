@@ -56,6 +56,8 @@ typedef struct{
 	double decodeTotal = 0.0, decodeStart = 0.0; // timing for porc_write_block
     double setRidTotal = 0.0, setRidStart = 0.0;
     double alacPartitionMetaTotal=0.0, alacPartitionMetaStart = 0.0;
+    int numTouchedPGs = 0;
+    bin_id_t numTouchedBins =0;
 #endif
 
 /**** Funcs. that are internal funcs. ********/
@@ -802,6 +804,9 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 	bin_id_t low_bin, hi_bin;
 	_Bool are_bins_touched = findBinRange1C(&partitionMeta, alacQuery, &low_bin, &hi_bin);
 
+#ifdef BREAKDOWN
+	numTouchedBins  += (hi_bin - low_bin);
+#endif
 	if (are_bins_touched) {
 
 		//3. load index size
@@ -1203,6 +1208,8 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 
 #ifdef BREAKDOWN
 	printf("Preparation time: %f \n", preparationTime);
+	printf("Total # of touched PGs: %d \n", numTouchedPGs);
+	printf("Sum touched bin # in all touched PGs: %"PRIu32"\n", numTouchedBins);
 	printf("Find total # of PGs touched by the bounding box in the query: %f \n", findPGTotal);
 	printf("One PG processing (Proc write block) time : %f \n", procTotal);
 	printf("The following time should approximately sum up to one PG processing time \n");
@@ -1211,8 +1218,8 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	printf("===>Total index read time : %f \n", idxTotal);
 	printf("===>Total low-order bytes read time : %f \n", dataTotal);
 	printf("===>Candidate check total time: %f \n", candidateCheckTotal);
-	printf("===>Decode compressed RIDs to bitmap (optional, only applied to compressed indexes: %f \n", decodeTotal);
-	printf("===>Set every RID in the bitmap (optional, only applied to uncompressed indexes: %f \n", setRidTotal);
+	printf("===>Decode compressed RIDs to bitmap (optional, only applied to compressed indexes): %f \n", decodeTotal);
+	printf("===>Set every RID in the bitmap (optional, only applied to uncompressed indexes): %f \n", setRidTotal);
 
 #endif
 	return alacResultBitmap;
