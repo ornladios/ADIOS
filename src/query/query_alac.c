@@ -985,12 +985,12 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 
 	double lb , hb ;
     resolveQueryBoundary(adiosQuery, &hb, &lb); // query constraints
-	//printf("constraint: %s\n", adiosQuery->_condition);
+	//printf("constraint: %s\n", adiosQuery->condition);
 
 	ADIOS_VARINFO * varInfo = adiosQuery->varinfo;
 
 #ifdef BREAKDOWN
-	printf("process %s constraint \n", adiosQuery->_condition);
+	printf("process %s constraint \n", adiosQuery->condition);
 	preparationTime = 0;
 	preparationStart = dclock();
 #endif
