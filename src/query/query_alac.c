@@ -996,7 +996,20 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 
 #ifdef BREAKDOWN
 	printf("process %s constraint \n", adiosQuery->condition);
+	// initialization
 	preparationTime = 0;
+	numTouchedBins =0;
+	numTouchedPGs = 0;
+	findPGTotal =0;
+	procTotal = 0;
+	metaTotal =0;
+	alacPartitionMetaTotal =0;
+	idxTotal =0;
+	dataTotal =0;
+	candidateCheckTotal = 0;
+	decodeTotal =0;
+	setRidTotal =0;
+
 	preparationStart = dclock();
 #endif
 	adios_read_set_data_view(adiosQuery->file, LOGICAL_DATA_VIEW); // switch to the transform view,
@@ -1117,6 +1130,7 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 
 #ifdef BREAKDOWN
 	findPGTotal += dclock() - findPGStart;
+	numTouchedPGs = intersectedPGs->npg;
 #endif
 		int totalPG = intersectedPGs->npg;
 		int blockId, j;
