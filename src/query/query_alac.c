@@ -990,7 +990,9 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	ADIOS_VARINFO * varInfo = adiosQuery->varinfo;
 
 #ifdef BREAKDOWN
+	printf("process %s constraint \n", adiosQuery->_condition);
 	preparationTime = 0;
+	preparationStart = dclock();
 #endif
 	adios_read_set_data_view(adiosQuery->file, LOGICAL_DATA_VIEW); // switch to the transform view,
  	ADIOS_VARTRANSFORM *ti = adios_inq_var_transform(adiosQuery->file, varInfo); // this func. will fill the blockinfo field
