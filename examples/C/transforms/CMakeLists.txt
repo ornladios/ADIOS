@@ -1,6 +1,7 @@
 include_directories(${PROJECT_SOURCE_DIR}/src/public)
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/examples/C/transforms)
+include_directories(${PROJECT_BINARY_DIR}/src/public)
 link_directories(${PROJECT_BINARY_DIR}/examples/C/transforms)
 
 add_executable(transforms_adios_global adios_global.c)

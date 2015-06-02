@@ -2,6 +2,68 @@
 # Author:  Jong Choi
 # Contact: choij@ornl.gov
 
+
+import os
+import sys
+import getopt
+
+## Credit: http://svn.apache.org/repos/asf/subversion/tags/0.20.1/subversion/bindings/swig/python/setup.py
+def _do_usage():
+  print "Usage: setup.py [OPTIONS] build"
+  print "       setup.py install [--prefix PREFIX]"
+  print "       setup.py install_lib [--install-dir DIR]"
+  print ""
+  print "Options:"
+  print "   -I dir      " + \
+        "search DIR for includes (multiple instances allowed)"
+  print "   -L dir      " + \
+        "search DIR for libraries (multiple instances allowed)"
+  print "   -C option   " + \
+        "pass OPTION to the compiler at compile time (multiple instances " + \
+        "allowed)"
+  print "   -R option   " + \
+        "pass OPTION to the compiler at link time (multiple instances " + \
+        "allowed)"
+  sys.exit(0)
+
+# Default option values
+include_dirs = []
+library_dirs = []
+extra_compile_args = []
+extra_link_args = []
+
+# No args?  Give usage.
+if len(sys.argv) < 2:
+  _do_usage()
+
+# Parse the command-line arguments, keeping what we want and letting
+# distutils have the rest.  Distutils parameters should come after
+# the target as in 'python setup.py build --prefix=/usr/local' and
+# parameters for us should appear before the target as in
+# 'python setup.py -I/usr/include build'.
+options, leftovers = getopt.getopt(sys.argv[1:], "I:L:C:R:h",
+                                   ["help"])
+for option in options:
+  if option[0] == '-I':
+    include_dirs.append(option[1])
+  if option[0] == '-L':
+    library_dirs.append(option[1])
+  if option[0] == '-C':
+    extra_compile_args.append(option[1])
+  if option[0] == '-R':
+    extra_link_args.append(option[1])
+  if option[0] == '-h':
+    _do_usage()
+
+  if option[0] == '--help':
+    _do_usage()
+
+  # All long options just get passed through
+  if option[0][:2] == '--':
+    leftovers.append(option[0])
+    leftovers.append(option[1])
+sys.argv[1:] = leftovers
+
 from distutils.extension import Extension
 import numpy as np
 
@@ -13,15 +75,19 @@ from distutils.core import Command
 
 import subprocess
 
+include_dirs.insert(0, np.get_include())
+extra_compile_args.insert(0, '-Wno-uninitialized')
+extra_compile_args.insert(0, '-Wno-unused-function')
+
 m1 = Extension('adios_mpi', 
                sources=['adios_mpi.cpp'], 
                define_macros=[],
-               include_dirs = [np.get_include()],
-               library_dirs = [],
+               include_dirs = include_dirs,
+               library_dirs = library_dirs,
                libraries = [],
                extra_objects = [],
-               extra_compile_args = ['-Wno-uninitialized',
-                                     '-Wno-unused-function'])
+               extra_compile_args = extra_compile_args,
+               extra_link_args = extra_link_args)
 
 cmd = find_executable("adios_config")
 if cmd == None:
@@ -57,7 +123,7 @@ class adios_test(Command):
         raise SystemExit(errno)
     
 setup(name = 'adios_mpi',
-      version = '1.0.8',
+      version = '1.8.1-pre-r1',
       description = 'Python Module for Adios MPI',
       author = 'Jong Choi',
       author_email = 'yyalli@gmail.com',

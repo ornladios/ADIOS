@@ -1,4 +1,4 @@
-AM_CPPFLAGS=-I$(top_srcdir) -I$(top_srcdir)/src/core -I$(top_srcdir)/src/core/transforms -I$(top_srcdir)/src/core/query
+AM_CPPFLAGS=-I$(top_builddir)/src/public -I$(top_srcdir) -I$(top_srcdir)/src/core -I$(top_srcdir)/src/core/transforms -I$(top_srcdir)/src/core/query
 
 AUTOMAKE_OPTIONS = no-dependencies
 METASOURCES=AUTO
@@ -409,6 +409,7 @@ endif
 endif   # BUILD_WRITE
 
 include_HEADERS += public/adios.h \
+                   public/adios_version.h \
                    public/adios_types.h \
                    public/adios_read.h \
                    public/adios_error.h \
@@ -711,6 +712,7 @@ EXTRA_DIST = core/adios_bp_v1.h core/adios_endianness.h \
              core/bp_types.h core/bp_utils.h core/buffer.h core/common_adios.h \
              core/common_read.h core/adios_infocache.h core/futils.h core/globals.h core/ds_metadata.h \
              core/util.h core/flexpath.h core/qhashtbl.h \
+	     public/adios_version.h.in \
              $(transforms_common_HDRS) $(transforms_read_HDRS) $(transforms_write_HDRS) \
              $(query_common_HDRS) $(query_method_HDRS) \
              transforms/transform_plugins.h \

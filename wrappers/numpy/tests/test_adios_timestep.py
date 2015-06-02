@@ -42,7 +42,7 @@ v = f.var['temperature']
 v.printself()
 
 for i in range(10):
-    val = v.read(from_steps=i)
+    val = v.read(from_steps=i, nsteps=1)
     print "step =", i
     print val
     

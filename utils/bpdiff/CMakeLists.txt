@@ -2,6 +2,7 @@ include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/utils/bpdiff)
 include_directories(${PROJECT_SOURCE_DIR}/src/public)
 include_directories(${PROJECT_SOURCE_DIR}/src/core)
+include_directories(${PROJECT_BINARY_DIR}/src/public)
 link_directories(${PROJECT_BINARY_DIR}/utils/bpdiff)
 
 add_executable(bpdiff bpdiff.c decompose_block.c utils.c)

@@ -22,6 +22,7 @@
 Makefile
 !examples/coupling/Makefile
 !examples/staging/stage_write/Makefile
+!wrappers/numpy/doc/Makefile
 
 # ADIOS generated files
 config.h

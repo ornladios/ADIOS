@@ -1,5 +1,5 @@
 AM_CPPFLAGS = $(all_includes)
-AM_CPPFLAGS += -I$(top_builddir)/src
+AM_CPPFLAGS += -I$(top_builddir)/src/public  -I$(top_builddir)/src
 
 AUTOMAKE_OPTIONS = no-dependencies
 

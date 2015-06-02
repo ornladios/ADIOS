@@ -1,6 +1,6 @@
 INCLUDES = $(all_includes)
 INCLUDES += $(ADIOSLIB_CPPFLAGS)
-INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/public -I$(srcdir)/../common/
+INCLUDES += -I$(top_builddir)/src/public -I$(top_srcdir)/src -I$(top_srcdir)/src/public -I$(srcdir)/../common/
 
 AUTOMAKE_OPTIONS = no-dependencies
 if HAVE_ALACRITY

@@ -1,6 +1,7 @@
 include_directories(${PROJECT_SOURCE_DIR}/src)
 include_directories(${PROJECT_SOURCE_DIR}/src/public)
 include_directories(${PROJECT_SOURCE_DIR}/tests/C/flexpath_tests/include)
+include_directories(${PROJECT_BINARY_DIR}/src/public)
 link_directories(${PROJECT_BINARY_DIR}/src)
 
 add_executable(writer_global writer.c ../common/utils.c)

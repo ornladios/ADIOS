@@ -290,7 +290,7 @@ static void parse_dimension_size(
             }
         }
     } else {
-        if (dim->time_index == adios_flag_yes) {
+        if (dim->is_time_index == adios_flag_yes) {
             *dimsize = NC_UNLIMITED;
             *dimsize = 1;
         } else {
@@ -318,7 +318,7 @@ static void parse_dimension_name(
             sprintf(dimname, "%s_dim", dim->attr->var->name);
         }
     } else {
-        if (dim->time_index == adios_flag_yes) {
+        if (dim->is_time_index == adios_flag_yes) {
             sprintf(dimname, "%s_dim", group->time_index_name);
         } else {
             if (dim->rank > 0) {
@@ -526,7 +526,7 @@ static int decipher_dims(
 
     dims=pvar->dimensions;
     while (dims) {
-        if ((dims->dimension.time_index == adios_flag_yes) &&
+        if ((dims->dimension.is_time_index == adios_flag_yes) &&
             (dims->dimension.var == NULL && dims->dimension.attr == NULL)) {
             has_timedim = adios_flag_yes;
             timedim_index = local_dim_count;
@@ -549,9 +549,9 @@ static int decipher_dims(
             has_localoffsets=adios_flag_yes;
             local_offset_count++;
         }
-        if (DEBUG>3) printf("gdims[%d].rank=%llu; var=%d, attr=%d, time_index=%d\n", i, dims->global_dimension.rank, dims->global_dimension.var, dims->global_dimension.attr, dims->global_dimension.time_index);
-        if (DEBUG>3) printf("ldims[%d].rank=%llu; var=%d, attr=%d, time_index=%d\n", i, dims->dimension.rank, dims->dimension.var, dims->dimension.attr, dims->dimension.time_index);
-        if (DEBUG>3) printf("loffs[%d].rank=%llu; var=%d, attr=%d, time_index=%d\n", i, dims->local_offset.rank, dims->local_offset.var, dims->local_offset.attr, dims->local_offset.time_index);
+        if (DEBUG>3) printf("gdims[%d].rank=%llu; var=%d, attr=%d, is_time_index=%d\n", i, dims->global_dimension.rank, dims->global_dimension.var, dims->global_dimension.attr, dims->global_dimension.is_time_index);
+        if (DEBUG>3) printf("ldims[%d].rank=%llu; var=%d, attr=%d, is_time_index=%d\n", i, dims->dimension.rank, dims->dimension.var, dims->dimension.attr, dims->dimension.is_time_index);
+        if (DEBUG>3) printf("loffs[%d].rank=%llu; var=%d, attr=%d, is_time_index=%d\n", i, dims->local_offset.rank, dims->local_offset.var, dims->local_offset.attr, dims->local_offset.is_time_index);
         i++;
         dims = dims->next;
     }
@@ -581,8 +581,8 @@ static int decipher_dims(
         parse_dimension_name(group, pvar_root, patt_root, &dims->global_dimension, dimname);
         //ncd_gen_name(nc4_global_dimnames[i], pvar->path, dimname);
         ncd_gen_name(nc4_global_dimnames[i], "", dimname);
-        if (DEBUG>3) printf("global_dimension[%d]->name==%s, ->rank==%llu, ->var==%d, ->attr==%d, time_index==%d\n",
-                i, nc4_global_dimnames[i], dims->global_dimension.rank, dims->global_dimension.var, dims->global_dimension.attr, dims->global_dimension.time_index);
+        if (DEBUG>3) printf("global_dimension[%d]->name==%s, ->rank==%llu, ->var==%d, ->attr==%d, is_time_index==%d\n",
+                i, nc4_global_dimnames[i], dims->global_dimension.rank, dims->global_dimension.var, dims->global_dimension.attr, dims->global_dimension.is_time_index);
         if (dims) {
             dims = dims -> next;
         }
@@ -592,8 +592,8 @@ static int decipher_dims(
         parse_dimension_name(group, pvar_root, patt_root, &dims->dimension, dimname);
         //ncd_gen_name(nc4_local_dimnames[i], pvar->path, dimname);
         ncd_gen_name(nc4_local_dimnames[i], "", dimname);
-        if (DEBUG>3) printf("local_dimension[%d]->name ==%s, ->rank==%llu, ->var==%d, ->attr==%d, time_index==%d\n",
-                i, nc4_local_dimnames[i], dims->dimension.rank, dims->dimension.var, dims->dimension.attr, dims->dimension.time_index);
+        if (DEBUG>3) printf("local_dimension[%d]->name ==%s, ->rank==%llu, ->var==%d, ->attr==%d, is_time_index==%d\n",
+                i, nc4_local_dimnames[i], dims->dimension.rank, dims->dimension.var, dims->dimension.attr, dims->dimension.is_time_index);
         if (dims) {
             dims = dims -> next;
         }
@@ -603,8 +603,8 @@ static int decipher_dims(
         parse_dimension_name(group, pvar_root, patt_root, &dims->local_offset, dimname);
         //ncd_gen_name(nc4_local_offset_names[i], pvar->path, dimname);
         ncd_gen_name(nc4_local_offset_names[i], "", dimname);
-        if (DEBUG>3) printf("local_offset[%d]->name    ==%s, ->rank==%llu, ->var==%d, ->attr==%d, time_index==%d\n",
-                i, nc4_local_offset_names[i], dims->local_offset.rank, dims->local_offset.var, dims->local_offset.attr, dims->local_offset.time_index);
+        if (DEBUG>3) printf("local_offset[%d]->name    ==%s, ->rank==%llu, ->var==%d, ->attr==%d, is_time_index==%d\n",
+                i, nc4_local_offset_names[i], dims->local_offset.rank, dims->local_offset.var, dims->local_offset.attr, dims->local_offset.is_time_index);
         if (dims) {
             dims = dims -> next;
         }

@@ -49,7 +49,7 @@ if rank == 0:
 
     val = v.read()
     print val
-    assert (int(sum(sum(val))) == (size*NX-1)*(size*NX)/2)
+    assert (int(np.sum(val)) == (size*NX-1)*(size*NX)/2)
     f.close()
 
 print "\n>>> Done.\n"

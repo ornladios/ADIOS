@@ -55,8 +55,8 @@ class AdiosTestCase(ut.TestCase):
         self.assertEqual(self.f.attr.keys(), ['desc'])
 
     def test_adios_attr(self):
-        self.assertEqual(self.f.attr['desc'], self.msg)
-        self.assertEqual(self.f['desc'], self.msg)
+        self.assertEqual(self.f.attr['desc'].value, self.msg)
+        self.assertEqual(self.f.attr['desc'].dtype, np.dtype('S14'))
 
     def test_adios_file_getitem(self):
         self.assertRaises(TypeError, self.f.__getitem__, Slicee()[1])

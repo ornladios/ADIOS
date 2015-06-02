@@ -1,12 +1,7 @@
-"""
- ADIOS is freely available under the terms of the BSD license described
- in the COPYING file in the top level directory of this source distribution.
+# -*- coding: utf-8 -*-
+"""ADIOS: ADIOS python module
 
- Copyright (c) 2008 - 2009.  UT-BATTELLE, LLC. All rights reserved.
-"""
-"""
- This is a cython file. To generate a CPP file, use the following command:
- $ cython --cplus adios.pyx
+.. moduleauthor:: Jong Choi <choij@ornl.gov>
 """
 
 import numpy as np
@@ -17,6 +12,15 @@ cimport numpy as np
 
 import cython
 cimport cython
+
+from libc.stdlib cimport malloc, free
+from cpython.string cimport PyString_AsString
+
+cdef char ** to_cstring_array(list_str):
+    cdef char **ret = <char **>malloc(len(list_str) * sizeof(char *))
+    for i in xrange(len(list_str)):
+        ret[i] = PyString_AsString(list_str[i])
+    return ret
 
 ## ====================
 ## ADIOS Exported Functions
@@ -42,6 +46,7 @@ cdef extern from "adios_types.h":
         adios_string
         adios_complex
         adios_double_complex
+        adios_string_array
 
     ctypedef enum ADIOS_BUFFER_ALLOC_WHEN:
         ADIOS_BUFFER_ALLOC_UNKNOWN
@@ -107,6 +112,13 @@ cdef extern from "adios.h":
                                      ADIOS_DATATYPES type,
                                      char * value,
                                      char * var)
+
+    cdef int adios_define_attribute_byvalue (int64_t group,
+                                             char * name,
+                                             char * path,
+                                             ADIOS_DATATYPES type,
+                                             int nelems,
+                                             void * values)
     
     cdef int adios_select_method (int64_t group,
                                   char * method,
@@ -242,6 +254,7 @@ class DATATYPE:
     string = 9
     complex = 10
     double_complex = 11
+    string_array = 12
 
 class FLAG:
     UNKNOWN = 0
@@ -367,13 +380,13 @@ cpdef int64_t declare_group(char * name,
 cpdef int define_var(int64_t group_id,
                      char * name,
                      char * path,
-                     int type,
+                     int atype,
                      char * dimensions = "",
                      char * global_dimensions = "",
                      char * local_offsets = ""):
     return adios_define_var(group_id,
                             name, path,
-                            <ADIOS_DATATYPES> type,
+                            <ADIOS_DATATYPES> atype,
                             dimensions,
                             global_dimensions,
                             local_offsets)
@@ -381,15 +394,58 @@ cpdef int define_var(int64_t group_id,
 cpdef int define_attribute (int64_t group,
                             char * name,
                             char * path,
-                            int type,
+                            int atype,
                             char * value,
                             char * var):
     return adios_define_attribute (group,
                                    name,
                                    path,
-                                   <ADIOS_DATATYPES> type,
+                                   <ADIOS_DATATYPES> atype,
                                    value,
                                    var)
+
+cpdef int define_attribute_byvalue (int64_t group,
+                                    char * name,
+                                    char * path,
+                                    val):
+    cdef np.ndarray val_
+    if isinstance(val, (np.ndarray)):
+        if val.flags.contiguous:
+            val_ = val
+        else:
+            val_ = np.array(val, copy=True)
+    else:
+        val_ = np.array(val)
+
+    atype = np2adiostype(val_.dtype)
+
+    cdef char * pt1
+    cdef char ** pt2
+    if (val_.dtype.char == 'S'):
+        if (val_.size == 1):
+            pt1 = PyString_AsString(val)
+            adios_define_attribute_byvalue (group,
+                                            name,
+                                            path,
+                                            DATATYPE.string,
+                                            1,
+                                            <void *> pt1)
+        else:
+            pt2 = to_cstring_array(val)
+            adios_define_attribute_byvalue (group,
+                                            name,
+                                            path,
+                                            DATATYPE.string_array,
+                                            len(val),
+                                            <void *> pt2)
+            free(pt2)
+    else:
+        adios_define_attribute_byvalue (group,
+                                        name,
+                                        path,
+                                        <ADIOS_DATATYPES> atype,
+                                        val_.size,
+                                        <void *> val_.data)
 
 cpdef int select_method (int64_t group,
                          char * method,
@@ -480,8 +536,9 @@ cdef ADIOS_READ_METHOD str2adiosreadmethod(bytes name):
         
     return method
 
-cpdef np2adiostype(type nptype):
-    """ Ignored: int_, intc, intp """
+cpdef np2adiostype(np.dtype nptype):
+    """ Convert Numpy.dtype to Adios Datatype
+    """
 
     cdef atype = DATATYPE.unknown
 
@@ -517,8 +574,10 @@ cpdef np2adiostype(type nptype):
         atype = DATATYPE.complex
     elif (nptype == np.complex128):
         atype = DATATYPE.double_complex
-    elif (nptype == np.str_):
+    elif (nptype.char == 'S'):
         atype = DATATYPE.string
+    else:
+        atype = DATATYPE.unknown
 
     return atype
 
@@ -542,29 +601,88 @@ cpdef int read_finalize(char * method_name = "BP"):
     cdef method = str2adiosreadmethod(method_name)
     return adios_read_finalize_method (method)
 
-""" Python class for ADIOS_FILE structure """
+## Python class for ADIOS_FILE structure
 cdef class file:
-    """ Private Memeber """
-    cpdef ADIOS_FILE * fp
+    """
+    file class for Adios file read and write.
 
-    """ Public Memeber """
-    cpdef public bytes name
-    cpdef public int nvars
-    cpdef public int nattrs
-    cpdef public int current_step
-    cpdef public int last_step
-    cpdef public int endianness
-    cpdef public int version
-    cpdef public int file_size
+    Args:
+        fname (str): filename.
+        method_name (str, optional): Adios read method (default: 'BP').
+        comm (MPI_Comm, optional): MPI_comm for parallel read/write (default: MPI_COMM_WORLD).
+        is_stream (bool, optional): Set True if use stream reader (default: False).
+        lock_mode (int, optional): ADIOS_LOCKMODE for stream reader (default: ADIOS_LOCKMODE_ALL).
+        timeout_sec (float, optional): Timeout seconds for stream reader (default: 0.0).
+
+    Example:
     
+    >>> import adios as ad
+    >>> f = ad.file('adiosfile.bp')
+    
+    """
+    
+    cpdef ADIOS_FILE * fp
+    cpdef bytes name
+    cpdef int nvars
+    cpdef int nattrs
+    cpdef int current_step
+    cpdef int last_step
+    cpdef int endianness
+    cpdef int version
+    cpdef int file_size
+    cpdef bint is_stream
+    
+    ## Public Memeber
     cpdef public dict var
     cpdef public dict attr
 
-    cpdef public bint is_stream
+    property name:
+        """ The filename (or stream name) associated with. """
+        def __get__(self):
+            return self.name
 
-    """ Initialization. Call adios_read_open and populate public members """
+    property nvars:
+        """ The number of variables. """
+        def __get__(self):
+            return self.nvars
+
+    property nattrs:
+        """ The number of attributes. """
+        def __get__(self):
+            return self.nattrs
+
+    property current_step:
+        """ The current timestep index. """
+        def __get__(self):
+            return self.current_step
+
+    property last_step:
+        """ The last timestep index. """
+        def __get__(self):
+            return self.last_step
+
+    property endianness:
+        """ The endianness of the stored data. """
+        def __get__(self):
+            return self.endianness
+
+    property version:
+        """ The version of Adios. """
+        def __get__(self):
+            return self.version
+        
+    property file_sizec:
+        """ The size of Adios file. """
+        def __get__(self):
+            return self.file_size
+
+    property is_stream:
+        """ Indicating reader type; file reader or stream reader """
+        def __get__(self):
+            return self.is_stream
+
     def __init__(self, char * fname,
-                 char * method_name = "BP",
+                 char * method_name = 'BP',
                  MPI_Comm comm = MPI_COMM_WORLD,
                  is_stream = False,
                  ADIOS_LOCKMODE lock_mode = ADIOS_LOCKMODE_ALL,
@@ -596,25 +714,36 @@ cdef class file:
             self.var[name] = var(self, name)
 
         for name in [self.fp.attr_namelist[i] for i in range(self.nattrs)]:
-            self.attr[name] = self.get_attr(name)
+            self.attr[name] = attr(self, name)
 
     def __del__(self):
-            self.close()
+        """ Close file on destruction. """
+        self.close()
             
-    """ Call adios_read_close """
     cpdef close(self):
+        """ Close the open file. """
         assert self.fp != NULL, 'Not an open file'
         adios_read_close(self.fp)
         self.fp = NULL
         
-    """ Print self """
     cpdef printself(self):
+        """ Print native ADIOS_FILE structure. """
         assert self.fp != NULL, 'Not an open file'
         print '=== AdiosFile ==='
         print '%15s : %lu' % ('fp', <unsigned long> self.fp)
         printfile(self.fp)
 
     cpdef advance(self, int last = 0, float timeout_sec = 0.0):
+        """
+        Advance a timestep for stream reader.
+
+        Args:
+            last (int, optional): last timestep index (default: 0).
+            timeout_sec (float, optional): timeout seconds (default: 0.0).
+
+        Returns:
+            int: 0 if successful, non-zero otherwise.
+        """
         val = adios_advance_step(self.fp, last, timeout_sec)
         if (val >= 0):
             self.current_step = self.fp.current_step
@@ -624,31 +753,25 @@ cdef class file:
                 v.advance()
                 
         return val
-
-    cpdef get_attr(self, char * attr_name):
-        cdef ADIOS_DATATYPES type
-        cdef int size
-        cdef int64_t p
-        adios_get_attr(self.fp, attr_name, &type, &size, <void **> &p)
-        ##print '=== Attribute ==='
-        ##print '%15s : %d (%s)' % ('type', type, adios2nptype(type))
-        ##print '%15s : %d' % ('size', size)
-        ##print '%15s : %lu' % ('data', <unsigned long> p)
-
-        cdef DTYPE = adios2npdtype(type, size)
-        cdef np.ndarray var = np.zeros(1, dtype=DTYPE)
-        adios_get_attr(self.fp, attr_name, &type, &size, <void **> &var.data)
         
-        return np.asscalar(var)
-        
-    def __getitem__(self, index):
-        if not isinstance(index, tuple):
-            index = (index,)
+    def __getitem__(self, varname):
+        """
+        Return Adios variable.
 
-        if len(index) > 1:
-            raise KeyError(index)
+        Args:
+            varname (str): variable name.
+
+        Raises:
+            KeyError: If no varname exists.
+
+        """
+        if not isinstance(varname, tuple):
+            varname = (varname,)
+
+        if len(varname) > 1:
+            raise KeyError(varname)
         
-        for key_ in index:
+        for key_ in varname:
             if not isinstance(key_, str):
                 raise TypeError("Unhashable type")
 
@@ -660,6 +783,7 @@ cdef class file:
                 raise KeyError(key_)
         
     def __repr__(self):
+        """ Return string reprentation. """
         return ("AdiosFile (path=%r, nvars=%r, var=%r, nattrs=%r, attr=%r, "
                 "current_step=%r, last_step=%r, file_size=%r)") % \
                 (self.fp.path,
@@ -671,21 +795,58 @@ cdef class file:
                  self.last_step,
                  self.file_size)
 
-""" Python class for ADIOS_VARINFO structure """
 cdef class var:
-    """ Private Memeber """
+    """
+    Adios variable class.
+
+    Args:
+        file (file): Associated file class
+        name (str): variable name
+
+    Note:
+        Users do not need to create this class manually.
+    """
+    
     cdef file file
     cdef ADIOS_VARINFO * vp
 
-    """ Public Memeber """
-    cpdef public bytes name
-    cpdef public int varid
-    cpdef public np.dtype type
-    cpdef public int ndim
-    cpdef public tuple dims
-    cpdef public int nsteps
+    cpdef bytes name
+    cpdef int varid
+    cpdef np.dtype dtype
+    cpdef int ndim
+    cpdef tuple dims
+    cpdef int nsteps
 
-    """ Initialization. Call adios_inq_var and populate public members """
+    property name:
+        """ The variable name. """
+        def __get__(self):
+            return self.name
+    
+    property varid:
+        """ Internal variable id. """
+        def __get__(self):
+            return self.varid
+    
+    property dtype:
+        """ Variable type as in numpy.dtype. """
+        def __get__(self):
+            return self.dtype
+
+    property ndim:
+        """ The number of dimension of the variable. """
+        def __get__(self):
+            return self.ndim
+
+    property dims:
+        """ The shape of the variable. """
+        def __get__(self):
+            return self.dims
+
+    property nsteps:
+        """ The number of time steps of the variable. """
+        def __get__(self):
+            return self.nsteps
+
     def __init__(self, file file, char * name):
         self.file = file
         self.vp = NULL
@@ -701,9 +862,9 @@ cdef class var:
         self.nsteps = self.vp.nsteps
 
         if self.vp.type == DATATYPE.string:
-            self.type = adios2npdtype(self.vp.type, len(<char*> self.vp.value))
+            self.dtype = adios2npdtype(self.vp.type, len(<char*> self.vp.value))
         else:
-            self.type = adios2npdtype(self.vp.type)
+            self.dtype = adios2npdtype(self.vp.type)
 
     def __del__(self):
         self.close()
@@ -725,9 +886,9 @@ cdef class var:
             from_steps = 0 ##self.file.current_step
 
         if nsteps is None:
-            nsteps = self.file.last_step - self.file.current_step + 1
+            nsteps = self.file.last_step - from_steps + 1
 
-        assert self.type is not None, 'Data type is not supported yet'
+        assert self.dtype is not None, 'Data type is not supported yet'
         if (self.nsteps > 0) and (from_steps + nsteps > self.nsteps):
             raise IndexError('Step index is out of range: from_steps=%r, nsteps=%r' % (from_steps, nsteps))
         
@@ -759,7 +920,7 @@ cdef class var:
         shape = list(npcount)
         if (nsteps > 1):
             shape.insert(0, nsteps)
-        cdef np.ndarray var = np.zeros(shape, dtype=self.type)
+        cdef np.ndarray var = np.zeros(shape, dtype=self.dtype)
         
         if len(shape) > 0:
             var[:] = fill
@@ -789,9 +950,9 @@ cdef class var:
         printvar(self.vp)
         
     def __repr__(self):
-        return "AdiosVar (varid=%r, type=%r, ndim=%r, dims=%r, nsteps=%r)" % \
+        return "AdiosVar (varid=%r, dtype=%r, ndim=%r, dims=%r, nsteps=%r)" % \
                (self.varid,
-                self.type,
+                self.dtype,
                 self.ndim,
                 self.dims,
                 self.nsteps)
@@ -848,12 +1009,362 @@ cdef class var:
                          count=count_,
                          from_steps=from_steps_,
                          nsteps=nsteps_)
+
+cdef class attr:
+    """
+    Adios attribute class.
+    
+    Attribute values are loaded on initialization.
+
+    Args:
+        attr_name (str): attribute name
+
+    Raises:
+        KeyError: If no attribute name exists.
+
+    Note:
+        Users do not need to create this class manually.        
+    """
+    cdef file file
+    cpdef bytes name
+    cpdef np.dtype dtype
+    cdef np.ndarray value
+
+    property name:
+        """ The attribute name """
+        def __get__(self):
+            return self.name
+
+    property dtype:
+        """ The attribute type as in numpy.dtype """
+        def __get__(self):
+            return self.dtype
+
+    property value:
+        """ The attribute's value """
+        def __get__(self):
+            return self.value
+
+    def __init__(self, file file, char * name):
+        self.file = file
+        self.name = name
+
+        cdef int64_t p
+        cdef ADIOS_DATATYPES atype
+        cdef int bytes
+        cdef list strlist
+        cdef int len
+        
+        err = adios_get_attr(self.file.fp, self.name, &atype, &bytes, <void **> &p)
+
+        if err == 0:
+            if atype == DATATYPE.string:
+                bytes = bytes - 1 ## Remove the NULL terminal                
+            self.dtype = adios2npdtype(atype, bytes)
+            if atype == DATATYPE.string_array:
+                strlist = list()
+                len = bytes/sizeof(p)
+                for i in range(len):
+                    strlist.append((<char **>p)[i])
+                self.value = np.array(strlist)
+                self.dtype = self.value.dtype
+                    
+            elif self.dtype is None:
+                print 'Warning: No support yet: %s (type=%d, bytes=%d)' % \
+                      (self.name, atype, bytes)
+            else:
+                len = bytes/self.dtype.itemsize
+                if len == 1:
+                    self.value = np.array(len, dtype=self.dtype)
+                else:
+                    self.value = np.zeros(len, dtype=self.dtype)
+                self.value.data = <char *> p
+        else:
+            raise KeyError(name)
+
+    def __repr__(self):
+        return "AdiosAttr (name=%r, dtype=%r)" % \
+               (self.name, self.dtype)
+
+
+## Helper dict
+cdef class smartdict(dict):
+    cdef factory
+    def __init__(self, factory):
+        dict.__init__(self)
+        self.factory = factory
+        
+    def __setitem__(self, key, value):
+        if key in dict.keys(self):
+            dict.__setitem__(self, key, value)
+        else:
+            self.factory(key, value)
+
+cdef class writer:
+    
+    cdef int64_t gid
+    cpdef bytes fname
+    cpdef bytes gname
+    cpdef bytes method
+    cpdef bytes method_params
+    cpdef bint is_noxml
+    cpdef MPI_Comm comm
+
+    cpdef dict var
+    cpdef dict attr
+
+    property fname:
+        def __get__(self):
+            return self.fname
+
+    property gname:
+        def __get__(self):
+            return self.gname
+        
+    property is_noxml:
+        def __get__(self):
+            return self.is_noxml
+        
+    property var:
+        def __get__(self):
+            return self.var
+
+    property attr:
+        def __get__(self):
+            return self.attr
+        
+    def __init__(self,char * fname,
+                 bint is_noxml = True,
+                 char * gname = "",
+                 MPI_Comm comm = MPI_COMM_WORLD):
+        self.fname = fname
+        self.gname = gname
+        self.method = <bytes>""
+        self.method_params = <bytes>""
+        self.is_noxml = is_noxml
+        self.comm = comm
+        self.var = dict()
+        self.attr = dict()
+
+    ##def __var_factory__(self, name, value):
+    ##    print "var_factory:", name, value
+    ##
+    ##def __attr_factory__(self, name, value):
+    ##    print "attr_factory:", name, value
+
+    def declare_group(self, char * gname,
+                      char * method = "POSIX1",
+                      char * method_params = ""):
+        self.gid = declare_group(gname, "", 1)
+        self.gname = gname
+        self.method = method
+        self.method_params = method_params
+        select_method(self.gid, self.method, self.method_params, "")
+
+    def define_var(self, char * varname,
+                   ldim = tuple(),
+                   gdim = tuple(),
+                   offset = tuple()):
+        self.var[varname] = varinfo(varname, ldim, gdim, offset)
+
+    def define_attr(self, char * attrname):
+        self.attr[attrname] = attrinfo(attrname, is_static=True)
+
+    def define_dynamic_attr(self, char * attrname,
+                            char * varname,
+                            dtype):
+        self.attr[attrname] = attrinfo(attrname, varname, dtype, is_static=False)
+    def __setitem__(self, name, val):
+        if self.var.has_key(name):
+            self.var[name].value = val
+        elif self.attr.has_key(name):
+            self.attr[name].value = val
+        else:
+            self.var[name] = val
+        
+    def __getitem__(self, name):
+        if self.var.has_key(name):
+            return self.var[name].value
+        elif self.attr.has_key(name):
+            return self.attr[name].value
+        else:
+            raise KeyError(name)
+    
+    def close(self):
+        fd = open(self.gname, self.fname, "w")
+
+        extra_var = dict()
+        extra_attr = dict()
+
+        for key, val in self.var.iteritems():
+            if not isinstance(val, varinfo):
+                n = np.array(val)
+                extra_var[key] = varinfo(key, n.shape)
+                extra_var[key].value = val
+            else:
+                if self.is_noxml: val.define(self.gid)
+
+        for key, val in extra_var.iteritems():
+            if self.is_noxml: val.define(self.gid)
+            self.var[key] = val
+
+        for key, val in self.attr.iteritems():
+            if not isinstance(val, attrinfo):
+                extra_attr[key] = attrinfo(key, val, np.array(val).dtype)
+            else:
+                if self.is_noxml: val.define(self.gid)
+
+        for key, val in extra_attr.iteritems():
+            if self.is_noxml: val.define(self.gid)
+
+        groupsize = 0
+        for var in self.var.values():
+            groupsize = groupsize + var.bytes()
+
+        set_group_size(fd, groupsize)
+
+        for var in self.var.values():
+            var.write(fd)
+            
+        close(fd)
+    
+    def __repr__(self):
+        return ("AdiosWriter (fname=%r, gname=%r, "
+                "method=%r, method_params=%r, var=%r, ttr=%r)") % \
+                (self.fname,
+                 self.gname,
+                 self.method,
+                 self.method_params,
+                 self.var.keys(),
+                 self.attr.keys())
+
+cdef class attrinfo:
+    cdef bytes name
+    cdef bint is_static # Use define_byvalue, if True
+    cdef dtype
+    cdef value # Either varname or nparray
+
+    property name:
+        def __get__(self):
+            return self.name
+
+    property is_static:
+        def __get__(self):
+            return self.is_static
+
+    property dtype:
+        def __get__(self):
+            return self.dtype
+        
+    property value:
+        def __get__(self):
+            return self.value
+        
+        def __set__(self, value):
+            self.value = value
+        
+    def __init__(self, char * name,
+                 value = None,
+                 dtype = None,
+                 bint is_static = 0):
+        self.name = name
+        self.value = value
+        self.dtype = dtype
+        self.is_static = is_static
+
+    def define(self, int64_t gid):
+        if self.is_static:
+            if self.value is None:
+                raise TypeError("Value is none")
+            
+            define_attribute_byvalue(gid, self.name, "", self.value)
+        else:
+            ##atype = np2adiostype(np.dtype(self.dtype))
+            ##define_attribute(gid, self.name, "",
+            ##                 atype, "", str(self.value))
+            raise NotImplementedError            
+        
+    def __repr__(self):
+        return ("AdiosAttrinfo (name=%r, is_static=%r, value=%r, dtype=%r)") % \
+                (self.name,
+                 self.is_static,
+                 self.value,
+                 self.dtype)
+
+cdef class varinfo:
+    cdef bytes name
+    cdef public ldim
+    cdef public gdim
+    cdef public offset
+    cdef public value
+
+    def __init__(self, char * name,
+                 ldim = tuple(),
+                 gdim = tuple(),
+                 offset = tuple()):
+        self.name = name
+        self.ldim = ldim
+        self.gdim = gdim
+        self.offset = offset
+        
+    def define(self, int64_t gid):
+        if self.value is None:
+            raise TypeError("Value is none")
+
+        ldim_ = self.ldim
+        if isinstance(self.ldim, (tuple, list)):
+            ldim_ = tuple(self.ldim)
+
+        gdim_ = self.gdim
+        if isinstance(self.gdim, (tuple, list)):
+            gdim_ = tuple(self.gdim)
+
+        offset_ = self.offset
+        if isinstance(self.offset, (tuple, list)):
+            offset_ = tuple(self.offset)
+
+        val_ = self.value
+        if not isinstance(self.value, (np.ndarray)):
+            val_ = np.array(self.value)
+
+        atype = np2adiostype(val_.dtype)
+        define_var(gid, self.name, "", atype,
+                   str(ldim_).strip('(,)'),
+                   str(gdim_).strip('(,)'),
+                   str(offset_).strip('(,)'))
+
+    def bytes(self):
+        val_ = self.value
+        if not isinstance(self.value, (np.ndarray)):
+            val_ = np.array(self.value)
+        
+        return val_.size * val_.itemsize
+    
+    def write(self, int64_t fd): 
+        val_ = self.value
+        if not isinstance(self.value, (np.ndarray)):
+            val_ = np.array(self.value)
+        
+        write(fd, self.name, val_)
+    
+    def __repr__(self):
+        return ("AdiosVarinfo (name=%r, ldim=%r, gdim=%r, offset=%r, value=%r)") % \
+                (self.name, self.ldim, self.gdim, self.offset, self.value)
         
 ## ====================
 ## ADIOS Global functions
 ## ====================
 
 def readvar(fname, varname):
+    """ Retrieve a variable value from an Adios file.
+
+    Args:
+        fname (str): Adios file name
+        varname (str): Variable name to retrieve
+
+    Returns:
+        NumPy ndarray: variable value
+    """
     f = file(fname, comm=MPI_COMM_SELF)
     if not f.var.has_key(varname):
         print "No valid variable"
@@ -863,6 +1374,14 @@ def readvar(fname, varname):
     return v.read(from_steps=0, nsteps=v.nsteps)
 
 def bpls(fname):
+    """ Return meta data of an Adios file as a Python dictionary object.
+
+    Args:
+        fname (str): Adios file name
+
+    Returns:
+        dict: Adios file meta data
+    """
     f = file(fname, comm=MPI_COMM_SELF)
     return {'nvars': f.nvars,
             'nattrs': f.nattrs,
