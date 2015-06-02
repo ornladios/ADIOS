@@ -64,6 +64,7 @@ struct adios_POSIX_data_struct
     int rank;
     int size;
 #endif
+    int g_have_mdf;
 };
 
 
@@ -90,6 +91,7 @@ void adios_posix_init (const PairStruct * parameters
     p->rank = 0;
     p->size = 0;
 #endif
+    p->g_have_mdf = 1;
 }
 
 
@@ -113,6 +115,28 @@ int adios_posix_open (struct adios_file_struct * fd
     char * name_with_rank, rank_string[16];
     struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
                                                           method->method_data;
+
+    char *temp_string, *m_size;
+
+    temp_string = (char *) malloc (strlen (method->parameters) + 1);
+    strcpy (temp_string, method->parameters);
+    trim_spaces (temp_string);
+
+    if ( (m_size = strstr (temp_string, "have_metadata_file")) )
+    {
+        char * m = strchr (m_size, '=');
+        char * n = strtok (m, ";");
+
+        if (!n)
+            p->g_have_mdf = atoi (n + 1);
+        else
+            p->g_have_mdf = atoi (m + 1);
+    }
+    else
+    {
+        // by default, write metadata file. 
+        p->g_have_mdf = 1;
+    }
 
 #if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
     int timer_count = 7;
@@ -276,7 +300,7 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
 
 #ifdef HAVE_MPI
             // open metadata file
-            if (p->group_comm != MPI_COMM_SELF)
+            if (p->group_comm != MPI_COMM_SELF && p->g_have_mdf)
             {
                 if (p->rank == 0)
                 {
@@ -999,7 +1023,7 @@ void adios_posix_close (struct adios_file_struct * fd
             adios_posix_do_write (fd, method, buffer, buffer_offset); // Buffered vars written here
             STOP_TIMER (ADIOS_TIMER_POSIX_IO);
 #ifdef HAVE_MPI
-            if (p->group_comm != MPI_COMM_SELF)
+            if (p->group_comm != MPI_COMM_SELF && p->g_have_mdf)
             {
                 if (p->rank == 0)
                 {
@@ -1212,7 +1236,7 @@ void adios_posix_close (struct adios_file_struct * fd
             adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
                                  ,index_start, p->index);
 #ifdef HAVE_MPI
-            if (p->group_comm != MPI_COMM_SELF)
+            if (p->group_comm != MPI_COMM_SELF && p->g_have_mdf)
             {
                 if (p->rank == 0)
                 {
