@@ -45,14 +45,18 @@ typedef struct{
 // This three variables are used for timing the transformer layer,
 // the reason of being global variables is because calling transformer layer APIs scatter
 // I have to sum every place that calls transformer layer
+double ckSpatialCheck = 0.0;
+double ckSetBitMap = 0.0; // timing is in the macro in which the pair of "#ifdef" and "#endif" can not be used
 #ifdef BREAKDOWN
 	double preparationTime = 0.0, preparationStart = 0;
 	double metaTotal = 0.0, metaStart=0.0;// timing metadata read
 	double idxTotal = 0.0, idxStart =0.0;  // timing index read
+	uint64_t idxReadSize = 0, dataReadSize =0; // in KB
 	double dataTotal = 0.0, dataStart =0.0; // timing low-order byte read
 	double procTotal = 0.0, procStart = 0.0; // timing for porc_write_block
 	double findPGTotal = 0.0, findPGStart = 0.0; // timing for porc_write_block
-	double candidateCheckTotal = 0.0, candidateCheckStart = 0.0; // timing for porc_write_block
+	double candidateCheckTotal = 0.0, candidateCheckStart = 0.0;
+	double ckRids = 0.0, ckReconstituteStart= 0.0, ckReconstitute=0.0;
 	double decodeTotal = 0.0, decodeStart = 0.0; // timing for porc_write_block
     double setRidTotal = 0.0, setRidStart = 0.0;
     double alacPartitionMetaTotal=0.0, alacPartitionMetaStart = 0.0;
@@ -430,14 +434,19 @@ static inline rid_t ridConversionWithoutCheck(const rid_t rid/*relative to local
 /*
  * usage: this MACRO tightly depends on the usage context,
  * which requires the context to declare the exact variables
- */
+  */
 #define CHECK_ELEMENT(code) { \
 		for(el= 0; el < totalElm; el ++){              \
 			if ((code)){                               \
 				rid = decodeRids[el];                  \
-				if (ridConversionWithCheck(rid, srcstart,srccount, deststart,destcount, dim, &newRid, Corder)){  \
+				double tmps = dclock();                 \
+				bool flag = ridConversionWithCheck(rid, srcstart,srccount, deststart,destcount, dim, &newRid, Corder); \
+				ckSpatialCheck += (dclock()-tmps);     \
+				if (flag){  \
+					double tmps2 = dclock();           \
 					setBitsinBitMap(newRid, alacResultBitmap);       \
 					alacResultBitmap->numSetBits ++;   \
+					ckSetBitMap += (dclock() - tmps2);   \
 				}                                      \
 			}                                          \
 		}                                              \
@@ -539,9 +548,16 @@ int adios_alac_check_candidate(ALMetadata *partitionMeta, bin_id_t startBin, bin
 		decodeRids = (uint32_t *) inputCurPtr;
 	}
 
+#ifdef BREAKDOWN
+	ckRids += (dclock()- candidateCheckStart);
+	ckReconstituteStart = dclock();
+#endif
 	char * data = (char *) malloc(partitionMeta->elementSize*totalElm); // recovered data in bytes
 	reconstituteData(partitionMeta, startBin, endBin,
 										 lowOrderBytes, data);
+#ifdef BREAKDOWN
+	ckReconstitute += (dclock() - ckReconstituteStart);
+#endif
 	//Following variables are needed for the micros definition
 	rid_t newRid;
 	enum ADIOS_PREDICATE_MODE op = adiosQuery->predicateOp;
@@ -725,6 +741,7 @@ char * readLowDataAmongBins(ALMetadata *partitionMeta, bin_id_t low_bin , bin_id
 
 #ifdef BREAKDOWN
 	dataTotal = dataTotal + (dclock()- dataStart);
+	dataReadSize += (bin_read_len/1024) ; // in KB
 #endif
 	return readData;
 }
@@ -746,6 +763,7 @@ char * readIndexAmongBins(ALMetadata *partitionMeta, bin_id_t low_bin , bin_id_t
 	         , adiosQuery->file, adiosQuery->varinfo, startStep, numStep, (void *)readData);
 #ifdef BREAKDOWN
 	idxTotal = idxTotal + (dclock()- idxStart);
+	idxReadSize += (bin_read_len/1024); // in KB
 #endif
 
 	return readData;
@@ -1005,11 +1023,14 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	metaTotal =0;
 	alacPartitionMetaTotal =0;
 	idxTotal =0;
+	idxReadSize = 0;
 	dataTotal =0;
+	dataReadSize = 0;
 	candidateCheckTotal = 0;
+	ckRids = 0; ckReconstitute = 0; ckSpatialCheck = 0; ckSetBitMap = 0;
+
 	decodeTotal =0;
 	setRidTotal =0;
-
 	preparationStart = dclock();
 #endif
 	adios_read_set_data_view(adiosQuery->file, LOGICAL_DATA_VIEW); // switch to the transform view,
@@ -1230,8 +1251,15 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	printf("===>Total time of reading alacrity metadata: %f \n", metaTotal);
 	printf("===>Total time of reading partition meta in Alacrity metadata: %f \n", alacPartitionMetaTotal);
 	printf("===>Total index read time : %f \n", idxTotal);
+	printf("===>Total index read size (in KB): %"PRIu64"\n", idxReadSize);
 	printf("===>Total low-order bytes read time : %f \n", dataTotal);
-	printf("===>Candidate check total time: %f \n", candidateCheckTotal);
+	printf("===>Total low-order bytes read size (in KB): %"PRIu64"\n", dataReadSize);
+	printf("===>Candidate check total time: %f (below times should sum up to this)\n", candidateCheckTotal);
+	printf("======>Rids Decoded (if compressed) in Candidate check %f \n", ckRids);
+	printf("======>Reconstitute data in Candidate check %f \n", ckReconstitute);
+	printf("======>Spatial check (whether in the BB) in Candidate check %f \n", ckSpatialCheck);
+	printf("======>Set bitmaps after pass the spatial check in Candidate check %f \n", ckSetBitMap);
+
 	printf("===>Decode compressed RIDs to bitmap (optional, only applied to compressed indexes): %f \n", decodeTotal);
 	printf("===>Set every RID in the bitmap (optional, only applied to uncompressed indexes): %f \n", setRidTotal);
 
@@ -1479,7 +1507,7 @@ int adios_query_alac_evaluate(ADIOS_QUERY* q,
 			       ADIOS_SELECTION* outputBoundry,
 			       ADIOS_SELECTION** queryResult)
 {
-	double alacStart = 0, alacEnd = 0;
+	double alacStart = 0, bimapToCoordinates= 0;
 
 #ifdef BREAKDOWN
 	alacStart = dclock();
@@ -1514,7 +1542,17 @@ int adios_query_alac_evaluate(ADIOS_QUERY* q,
 	}
 
 	const int Corder = !futils_is_called_from_fortran(); // Use the dimension order of the caller; the common read layer will also mimic this order
+#ifdef BREAKDOWN
+	bimapToCoordinates = dclock();
+#endif
+
 	adios_query_alac_build_results(retrievalSize, outputBoundry, b, q->varinfo, queryResult, Corder);
+
+#ifdef BREAKDOWN
+	printf("Time of converting the final resultant bitmap to coordinates: %f \n", dclock() - bimapToCoordinates );
+#endif
+
+
 	// b->lastConvRid is updated in the above func., so the bitmap serializing function has to wait until the above function is finished
 	q->queryInternal = convertALACBitmapTomemstream(b);
 
@@ -1526,8 +1564,7 @@ int adios_query_alac_evaluate(ADIOS_QUERY* q,
 	q->resultsReadSoFar += retrievalSize;
 
 #ifdef BREAKDOWN
-	alacEnd= dclock();
-	printf("time [alac plugin + adios] : %f \n", alacEnd - alacStart);
+	printf("time [alac plugin + adios] : %f \n", dclock() - alacStart);
 #endif
 
 	return q->resultsReadSoFar < q->maxResultsDesired;
