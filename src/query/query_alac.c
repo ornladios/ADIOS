@@ -57,11 +57,13 @@ double ckSetBitMap = 0.0; // timing is in the macro in which the pair of "#ifdef
 	double findPGTotal = 0.0, findPGStart = 0.0; // timing for porc_write_block
 	double candidateCheckTotal = 0.0, candidateCheckStart = 0.0;
 	double ckRids = 0.0, ckReconstituteStart= 0.0, ckReconstitute=0.0;
+	uint64_t ckTotalElm = 0;
 	double decodeTotal = 0.0, decodeStart = 0.0; // timing for porc_write_block
     double setRidTotal = 0.0, setRidStart = 0.0;
     double alacPartitionMetaTotal=0.0, alacPartitionMetaStart = 0.0;
     int numTouchedPGs = 0;
     bin_id_t numTouchedBins =0;
+
 #endif
 
 /**** Funcs. that are internal funcs. ********/
@@ -549,6 +551,7 @@ int adios_alac_check_candidate(ALMetadata *partitionMeta, bin_id_t startBin, bin
 	}
 
 #ifdef BREAKDOWN
+	ckTotalElm += totalElm;
 	ckRids += (dclock()- candidateCheckStart);
 	ckReconstituteStart = dclock();
 #endif
@@ -822,11 +825,11 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 	bin_id_t low_bin, hi_bin;
 	_Bool are_bins_touched = findBinRange1C(&partitionMeta, alacQuery, &low_bin, &hi_bin);
 
+
+	if (are_bins_touched) {
 #ifdef BREAKDOWN
 	numTouchedBins  += (hi_bin - low_bin);
 #endif
-	if (are_bins_touched) {
-
 		//3. load index size
 		uint64_t indexStartPos =  alac_metadata->index_offset ;
 		char * index = readIndexAmongBins(&partitionMeta
@@ -1255,11 +1258,11 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	printf("===>Total low-order bytes read time : %f \n", dataTotal);
 	printf("===>Total low-order bytes read size (in KB): %"PRIu64"\n", dataReadSize);
 	printf("===>Candidate check total time: %f (below times should sum up to this)\n", candidateCheckTotal);
+	printf("======>The number of total elements/Rids examined in Candidate check: %"PRIu64"\n", ckTotalElm);
 	printf("======>Rids Decoded (if compressed) in Candidate check %f \n", ckRids);
 	printf("======>Reconstitute data in Candidate check %f \n", ckReconstitute);
 	printf("======>Spatial check (whether in the BB) in Candidate check %f \n", ckSpatialCheck);
 	printf("======>Set bitmaps after pass the spatial check in Candidate check %f \n", ckSetBitMap);
-
 	printf("===>Decode compressed RIDs to bitmap (optional, only applied to compressed indexes): %f \n", decodeTotal);
 	printf("===>Set every RID in the bitmap (optional, only applied to uncompressed indexes): %f \n", setRidTotal);
 
