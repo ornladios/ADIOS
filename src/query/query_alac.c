@@ -895,12 +895,14 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 									, low_bin,  hi_bin, indexStartPos, adiosQuery, gBlockId, startStep, numStep);
 		char * input_index = index;
 		const ALBinLayout * bl = &(partitionMeta.binLayout);
+
 		ALIndex* indexPtr = &index;
 
 #ifdef BREAKDOWN
 	numTouchedBins  += (hi_bin - low_bin);
 
-	printf("Touched PG[%d]: the # of touched bins [%"PRIu32"], and each bin has the # of elements [", gBlockId, (hi_bin- low_bin) );
+	printf("Touched PG[%d]: the # of total bins[%"PRIu32"] & touched bins [%"PRIu32"], each touched bin has element #: [", gBlockId, bl->numBins , (hi_bin- low_bin));
+
 	bin_id_t bin ;
 	for ( bin = low_bin; bin < hi_bin; bin++) {
 		printf("%"PRIu64",", bl->binStartOffsets[bin+1] - bl->binStartOffsets[bin]);
