@@ -521,6 +521,66 @@ int checkUnsupportedDataType(enum ADIOS_DATATYPES dataType) {
 	return !( (dataType == adios_real ) ||
 			 (dataType == adios_double) ) ;
 }
+
+
+void reconstituteElementsUint64T(const ALMetadata *meta, bin_id_t start_bin, bin_id_t end_bin,
+		                         char *start_bin_input, char *start_bin_output) {
+
+	const ALBinLayout * const bl = &meta->binLayout;
+	int insigbytes = insigBytesCeil(meta);
+	int insigbits = (meta->elementSize << 3) - meta->significantBits;
+
+	uint64_t reconst_elem;
+	uint64_t high_mask;
+	uint64_t *next_output = (uint64_t*)start_bin_output;
+	char *next_input = (char*)start_bin_input;
+
+	// First reconstitute the values // Iterate through the bins backwards
+	bin_id_t bin = start_bin;
+	for (; bin < end_bin; bin++) {
+		const bin_offset_t off_start = bl->binStartOffsets[bin];
+		const bin_offset_t off_end = bl->binStartOffsets[bin + 1];
+
+		high_mask = ((uint64_t)bl->binValues[bin]) << insigbits;
+		// Iterate through the elements backwards
+		bin_offset_t off = off_start;
+		for (; off < off_end; off++) {
+			GET_BUFFER_ELEMENT(reconst_elem, next_input, insigbytes);
+			reconst_elem |= high_mask;
+			*next_output++ = reconst_elem;
+			next_input += insigbytes;
+		}
+	}
+}
+
+/*
+ * reassemble the low-order byte & bin header value to the original value
+ * for lower-order bins ( [start_bin , end_bin) )
+ * I copied the implementation from the alacrity in order to profile the performance
+ */
+void reconstituteData2(const ALMetadata *meta, bin_id_t start_bin, bin_id_t end_bin,
+		                         char *start_bin_input, char *start_bin_output){
+	switch (meta->elementSize) {
+	case sizeof(uint64_t):
+		reconstituteElementsUint64T( meta, start_bin, end_bin, start_bin_input, start_bin_output);
+		break;
+	case sizeof(uint32_t):
+		 //TODO
+		break;
+	case sizeof(uint16_t):
+		//TODO
+		break;
+	case sizeof(uint8_t):
+		//TODO:
+		break;
+	default:
+		eprintf("Unsupported element size %d in %s\n", (int)meta->elementSize, __FUNCTION__);
+		assert(false);
+	}
+	return ;
+}
+
+
 int adios_alac_check_candidate(ALMetadata *partitionMeta, bin_id_t startBin, bin_id_t endBin , double hb, double lb
 		, uint64_t *srcstart, uint64_t *srccount, uint64_t *deststart, uint64_t *destcount, int dim
 		, ADIOS_QUERY * adiosQuery , const char *inputCurPtr /*index bytes of entire PG*/
@@ -556,8 +616,10 @@ int adios_alac_check_candidate(ALMetadata *partitionMeta, bin_id_t startBin, bin
 	ckReconstituteStart = dclock();
 #endif
 	char * data = (char *) malloc(partitionMeta->elementSize*totalElm); // recovered data in bytes
-	reconstituteData(partitionMeta, startBin, endBin,
-										 lowOrderBytes, data);
+	// reconstituteData(partitionMeta, startBin, endBin, lowOrderBytes, data); //this takes quite amount of time when the data size is large
+
+	reconstituteData2(partitionMeta, startBin, endBin, lowOrderBytes, data);
+
 #ifdef BREAKDOWN
 	ckReconstitute += (dclock() - ckReconstituteStart);
 #endif
@@ -825,11 +887,8 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 	bin_id_t low_bin, hi_bin;
 	_Bool are_bins_touched = findBinRange1C(&partitionMeta, alacQuery, &low_bin, &hi_bin);
 
-
 	if (are_bins_touched) {
-#ifdef BREAKDOWN
-	numTouchedBins  += (hi_bin - low_bin);
-#endif
+
 		//3. load index size
 		uint64_t indexStartPos =  alac_metadata->index_offset ;
 		char * index = readIndexAmongBins(&partitionMeta
@@ -837,6 +896,18 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 		char * input_index = index;
 		const ALBinLayout * bl = &(partitionMeta.binLayout);
 		ALIndex* indexPtr = &index;
+
+#ifdef BREAKDOWN
+	numTouchedBins  += (hi_bin - low_bin);
+
+	printf("Touched PG[%d]: the # of touched bins [%"PRIu32"], and each bin has the # of elements [", gBlockId, (hi_bin- low_bin) );
+	bin_id_t bin ;
+	for ( bin = low_bin; bin < hi_bin; bin++) {
+		printf("%"PRIu64",", bl->binStartOffsets[bin+1] - bl->binStartOffsets[bin]);
+	}
+	printf("]\n");
+#endif
+
 		//TODO: distinguish the offset btw two bins for compressed and uncompressed index
 		// is the offset byte-level or element-level?
 		if (partitionMeta.indexMeta.indexForm == ALInvertedIndex) {
