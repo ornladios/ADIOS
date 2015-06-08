@@ -957,7 +957,7 @@ static void read_chunk (const ADIOS_FILE * fp,
 
     if (has_subfile)
     {
-        sfh = get_BP_file_handle (fh->sfh, file_idx);
+        sfh = get_BP_subfile_handle (fh, file_idx);   
 
         if (!sfh)
         {
@@ -994,7 +994,7 @@ static void read_chunk (const ADIOS_FILE * fp,
                 return;
             }
 
-            add_BP_file_handle (&fh->sfh, new_h);
+            add_BP_subfile_handle (fh, new_h);
             sfh = &new_h->fh;
 
             free (name_no_path);
@@ -2145,7 +2145,7 @@ ADIOS_FILE * adios_read_bp_staged_open_file (const char * fname, MPI_Comm comm)
     assert (fh);
     fh->fname = (fname ? strdup (fname) : 0L);
     fh->mpi_fh = 0;
-    fh->sfh = 0;
+    fh->subfile_handles.n_handles = 0;
     fh->comm = comm;
     fh->gvar_h = 0;
     fh->pgs_root = 0;

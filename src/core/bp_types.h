@@ -48,14 +48,23 @@ struct BP_file_handle
     uint32_t file_index;
     MPI_File fh;
     struct BP_file_handle * next;
+    struct BP_file_handle * prev;
 };
 
-typedef struct BP_file_handle BP_file_handle_list;
+struct BP_file_handle_header
+{
+    uint32_t n_handles; // number of handles open
+    struct BP_file_handle * head;
+    struct BP_file_handle * tail; 
+    int warning_printed; // 1 if already printed the warning
+};
+
+typedef struct BP_file_handle_header BP_file_handle_list;
 
 typedef struct BP_FILE {
     MPI_File mpi_fh;
     char * fname; // Main file name is needed to calculate subfile names
-    BP_file_handle_list * sfh; // This list links all the subfiles handle together
+    BP_file_handle_list subfile_handles; // This list links all the subfiles handle together
     MPI_Comm comm;
     struct adios_bp_buffer_struct_v1 * b;
     struct bp_index_pg_struct_v1 * pgs_root;

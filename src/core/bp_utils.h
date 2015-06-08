@@ -14,6 +14,7 @@
 #include "core/bp_types.h"
 #define VARS_MINIHEADER_SIZE 10
 
+BP_FILE * BP_FILE_alloc (const char * fname, MPI_Comm comm);
 BP_PROC * GET_BP_PROC (const ADIOS_FILE * fp);
 BP_FILE * GET_BP_FILE (const ADIOS_FILE * fp);
 void bp_alloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size);
@@ -30,9 +31,9 @@ int bp_read_close (struct adios_bp_buffer_struct_v1 * b);
 int bp_read_open (const char * filename,
         MPI_Comm comm,
         BP_FILE * fh);
-MPI_File * get_BP_file_handle(struct BP_file_handle * l, uint32_t file_index);
-void add_BP_file_handle (struct BP_file_handle ** l, struct BP_file_handle * n);
-void close_all_BP_files (struct BP_file_handle * l);
+MPI_File * get_BP_subfile_handle(BP_FILE *fh, uint32_t file_index);
+void add_BP_subfile_handle (struct BP_FILE *fh, struct BP_file_handle * n);
+void close_all_BP_subfiles (BP_FILE * fh);
 int get_time (struct adios_index_var_struct_v1 * v, int step);
 int bp_open (const char * fname,
              MPI_Comm comm,

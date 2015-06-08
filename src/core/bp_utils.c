@@ -372,11 +372,15 @@ thod returns.
     return varinfo;
 }
 
-MPI_File * get_BP_file_handle(struct BP_file_handle * l, uint32_t file_index)
+MPI_File * get_BP_subfile_handle(BP_FILE *fh, uint32_t file_index)
 {
-    if (!l)
+    BP_file_handle_list *lst = &fh->subfile_handles; //just for simplifying typing
+    printf ("%s # of handles=%d, search for file_index=%d, fh=%p\n", __func__, lst->n_handles, file_index, fh);
+    if (!lst->head)
         return 0;
 
+    struct BP_file_handle *l = lst->head;
+    
     while (l)
     {
         if (l->file_index == file_index)
@@ -388,17 +392,87 @@ MPI_File * get_BP_file_handle(struct BP_file_handle * l, uint32_t file_index)
     return 0;
 }
 
-void add_BP_file_handle (struct BP_file_handle ** l, struct BP_file_handle * n)
+void init_subfile_handle (BP_FILE *fh)
+{
+    BP_file_handle_list *lst = &fh->subfile_handles; //just for simplifying typing
+    lst->n_handles = 0;
+    lst->warning_printed = 0;
+}
+
+BP_FILE * BP_FILE_alloc (const char * fname, MPI_Comm comm)
+{
+    BP_FILE *fh = (BP_FILE *) malloc (sizeof (BP_FILE));
+    assert (fh);
+
+    fh->fname = (fname ? strdup (fname) : 0L);
+    fh->comm = comm;
+    fh->gvar_h = 0;
+    fh->pgs_root = 0;
+    fh->vars_root = 0;
+    fh->attrs_root = 0;
+    fh->vars_table = 0;
+    fh->b = malloc (sizeof (struct adios_bp_buffer_struct_v1));
+    assert (fh->b);
+    BP_file_handle_list *lst = &fh->subfile_handles; //just for simplifying typing
+    fh->subfile_handles.n_handles = 0;
+    fh->subfile_handles.warning_printed = 0;
+    fh->subfile_handles.head = NULL;
+    fh->subfile_handles.tail = NULL;
+    return fh;
+}
+
+static const int MAX_HANDLES = 512;
+static void close_BP_subfile (struct BP_file_handle * sfh)
+{
+    if (sfh)
+        MPI_File_close (&sfh->fh);
+}
+
+void add_BP_subfile_handle (BP_FILE * fh, struct BP_file_handle * n)
 {
     if (!n)
         return;
 
-    n->next = *l;
-    *l = n;
+    BP_file_handle_list *lst = &fh->subfile_handles; //just for simplifying typing
+
+    // link the newcomer as first (head)
+    n->next = lst->head;
+    if (lst->head) {
+        lst->head->prev = n;
+    }
+    lst->head = n;
+
+    // set tail if this is first element
+    if (!lst->tail) {
+        lst->tail = n;
+    }
+    lst->n_handles++;
+    
+    printf ("%s # of handles=%d, now added file_index=%d, fh=%p\n", __func__, lst->n_handles, n->file_index, fh);
+    
+    // Don't run out of file descriptiors by keeping the number in check
+    if (lst->n_handles > MAX_HANDLES)
+    {
+        if (!lst->warning_printed) {
+            log_warn ("Number of subfiles of file %s opened in a single process reached %d "
+            "which indicates an inefficient reading pattern.\n", fh->fname, lst->n_handles);
+            lst->warning_printed = 1;
+        }
+        // remove the tail
+        lst->tail->prev->next = NULL;
+        struct BP_file_handle * oldest = lst->tail;
+        lst->tail = lst->tail->prev;
+        close_BP_subfile (oldest);
+        free (oldest);
+        lst->n_handles--;
+    }
 }
 
-void close_all_BP_files (struct BP_file_handle * l)
+void close_all_BP_subfiles (BP_FILE * fh)
 {
+    BP_file_handle_list * lst = &fh->subfile_handles;
+
+    struct BP_file_handle *l = lst->head;
     struct BP_file_handle * n;
 
     while (l)
@@ -410,6 +484,10 @@ void close_all_BP_files (struct BP_file_handle * l)
 
         l = n;
     }
+
+    lst->n_handles = 0;
+    lst->head = NULL;
+    lst->tail = NULL;
 }
 
 int bp_close (BP_FILE * fh)
@@ -426,8 +504,7 @@ int bp_close (BP_FILE * fh)
     if (fh->mpi_fh)
         MPI_File_close (&mpi_fh);
 
-    if (fh->sfh)
-        close_all_BP_files (fh->sfh);
+    close_all_BP_subfiles (fh);
 
     if (fh->b) {
         adios_posix_close_internal (fh->b);

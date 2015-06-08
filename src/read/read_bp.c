@@ -85,9 +85,7 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r, int st
         fh->b->offset = 0;                                                                  \
                                                                                             \
         MPI_File * sfh;                                                                     \
-        sfh = get_BP_file_handle (fh->sfh                                                   \
-                                 ,v->characteristics[start_idx + idx].file_index            \
-                                 );                                                         \
+        sfh = get_BP_subfile_handle (fh, v->characteristics[start_idx + idx].file_index);   \
         if (!sfh)                                                                           \
         {                                                                                   \
             int err;                                                                        \
@@ -122,9 +120,7 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r, int st
                fprintf (stderr, "can not open file %s\n", name);                            \
                return 0;                                                                    \
            }                                                                                \
-           add_BP_file_handle (&fh->sfh                                                     \
-                              ,new_h                                                        \
-                              );                                                            \
+           add_BP_subfile_handle (fh, new_h);                                                  \
            sfh = &new_h->fh;                                                                \
                                                                                             \
            free (name_no_path);                                                             \
@@ -179,9 +175,7 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r, int st
 // To read subfiles
 #define MPI_FILE_READ_OPS2_BUF(buf)                                                         \
         MPI_File * sfh;                                                                     \
-        sfh = get_BP_file_handle (fh->sfh                                                   \
-                                 ,v->characteristics[start_idx + idx].file_index            \
-                                 );                                                         \
+        sfh = get_BP_subfile_handle (fh, v->characteristics[start_idx + idx].file_index);   \
         if (!sfh)                                                                           \
         {                                                                                   \
             int err;                                                                        \
@@ -216,9 +210,7 @@ static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r, int st
                fprintf (stderr, "can not open file %s\n", name);                            \
                return 0;                                                                    \
            }                                                                                \
-           add_BP_file_handle (&fh->sfh                                                     \
-                              ,new_h                                                        \
-                              );                                                            \
+           add_BP_subfile_handle (fh, new_h);                                                 \
            sfh = &new_h->fh;                                                                \
                                                                                             \
            free (name_no_path);                                                             \
@@ -292,19 +284,7 @@ static BP_FILE * open_file (const char * fname, MPI_Comm comm)
         return 0;
     }
 
-    fh = (BP_FILE *) malloc (sizeof (BP_FILE));
-    assert (fh);
-
-    fh->fname = (fname ? strdup (fname) : 0L);
-    fh->sfh = 0;
-    fh->comm = comm;
-    fh->gvar_h = 0;
-    fh->pgs_root = 0;
-    fh->vars_root = 0;
-    fh->attrs_root = 0;
-    fh->vars_table = 0;
-    fh->b = malloc (sizeof (struct adios_bp_buffer_struct_v1));
-    assert (fh->b);
+    fh = BP_FILE_alloc (fname, comm);
 
     bp_open (fname, comm, fh);
 
@@ -1137,19 +1117,7 @@ static int open_stream (ADIOS_FILE * fp, const char * fname,
         return err_file_not_found;
     }
 
-    fh = (BP_FILE *) malloc (sizeof (BP_FILE));
-    assert (fh);
-
-    fh->fname = (fname ? strdup (fname) : 0L);
-    fh->sfh = 0;
-    fh->comm = comm;
-    fh->gvar_h = 0;
-    fh->pgs_root = 0;
-    fh->vars_root = 0;
-    fh->attrs_root = 0;
-    fh->vars_table = 0;
-    fh->b = malloc (sizeof (struct adios_bp_buffer_struct_v1));
-    assert (fh->b);
+    fh = BP_FILE_alloc (fname, comm);
 
     p = (BP_PROC *) malloc (sizeof (BP_PROC));
     assert (p);
@@ -1209,19 +1177,7 @@ ADIOS_FILE * adios_read_bp_open_file (const char * fname, MPI_Comm comm)
 
     MPI_Comm_rank (comm, &rank);
 
-    fh = (BP_FILE *) malloc (sizeof (BP_FILE));
-    assert (fh);
-
-    fh->fname = (fname ? strdup (fname) : 0L);
-    fh->sfh = 0;
-    fh->comm = comm;
-    fh->gvar_h = 0;
-    fh->pgs_root = 0;
-    fh->vars_root = 0;
-    fh->attrs_root = 0;
-    fh->vars_table = 0;
-    fh->b = malloc (sizeof (struct adios_bp_buffer_struct_v1));
-    assert (fh->b);
+    fh = BP_FILE_alloc (fname, comm);
 
     p = (BP_PROC *) malloc (sizeof (BP_PROC));
     assert (p);
