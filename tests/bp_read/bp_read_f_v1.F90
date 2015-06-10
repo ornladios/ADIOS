@@ -173,12 +173,12 @@ subroutine processArgs(path)
     character(len=256), intent(out) :: path
 
 #ifndef __GFORTRAN__
-#ifndef __GNUC__
+!#ifndef __GNUC__
     interface
          integer function iargc()
          end function iargc
     end interface
-#endif
+!#endif
 #endif
 
     integer :: numargs

@@ -316,12 +316,12 @@ subroutine processArgs()
     use coupling_reader_2D_comm
 
 #ifndef __GFORTRAN__
-#ifndef __GNUC__
+!#ifndef __GNUC__
     interface
          integer function iargc()
          end function iargc
     end interface
-#endif
+!#endif
 #endif
 
     character(len=256) :: npx_str, npy_str, method_str, mode_str, ts_str

@@ -384,6 +384,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         module swap craype-interlagos craype-istanbul
         module swap cray-libsci
         module load dataspaces/1.4.0
+        unset EXTRA_CFLAGS
         unset EXTRA_LIBS
         unset LDFLAGS
         if [ "$TARGET" == "pgi" ]; then
@@ -402,6 +403,8 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
             #export EXTRA_LIBS="/opt/gcc/4.8.2/snos/lib64/libstdc++.a"
             #module swap gcc gcc/4.4.4
             #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
+        elif [ "$TARGET" == "cray" ]; then
+            export EXTRA_CFLAGS="-h gnu"
         fi
      
         # NOTE hdf5-parallel module does not work with C++ compiler
@@ -415,7 +418,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         #export CC=mpicc
         #export FC=mpif90
         export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK -DDART_DO_VERSIONING" 
-        export CFLAGS="-fPIC -g -O2" 
+        export CFLAGS="-fPIC -g -O2 ${EXTRA_CFLAGS}" 
         LIBS="$EXTRA_LIBS" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/${USER}/ADIOS/xk6.$TARGET \
         --enable-dependency-tracking \
         --disable-maintainer-mode \
@@ -479,13 +482,16 @@ elif [ `hostname | cut -c 1-4` == "eos-" ]; then
           unset LDFLAGS 
           export EXTRA_LIBS="/opt/gcc/4.8.1/snos/lib64/libstdc++.a"
           module swap gcc gcc/4.8.1
+      elif [ "$TARGET" == "cray" ]; then
+          export EXTRA_CFLAGS="-h gnu"
       else
           unset LDFLAGS 
           unset EXTRA_LIBS 
+          unset EXTRA_CFLAGS 
       fi
       module load mxml
       module load pmi
-      CFLAGS="-g -fPIC" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/eos.$TARGET \
+      CFLAGS="-g -fPIC ${EXTRA_CFLAGS}" ${SRCDIR}/configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/eos.$TARGET \
           --enable-dependency-tracking \
           --with-cray-pmi=/opt/cray/pmi/default \
           --with-cray-ugni-incdir=/opt/cray/gni-headers/default/include \
@@ -529,9 +535,12 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
           export EXTRA_LIBS="/opt/gcc/4.7.1/snos/lib64/libstdc++.a"
           export FLEXPATH="--with-flexpath=/ccs/proj/e2e/chaos/titan/gnu"
           #module swap gcc gcc/4.4.4
+      elif [ "$TARGET" == "cray" ]; then
+          export EXTRA_CFLAGS="-h gnu"
       else
           unset LDFLAGS 
           unset EXTRA_LIBS 
+          unset EXTRA_CFLAGS 
       fi
       #module load szip
       #module load xt-papi
@@ -541,7 +550,7 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
       # use the two lines below for openmpi
       #export CC=mpicc
       #export FC=mpif90
-      CFLAGS="-g -fPIC" LDFLAGS="$CRAY_RCA_POST_LINK_OPTS" \
+      CFLAGS="-g -fPIC ${EXTRA_CFLAGS}" LDFLAGS="$CRAY_RCA_POST_LINK_OPTS" \
       ${SRCDIR}/configure --prefix=/ccs/proj/e2e/pnorbert/ADIOS/chester.$TARGET \
           --enable-dependency-tracking \
           --with-cray-pmi=/opt/cray/pmi/default \
@@ -640,12 +649,20 @@ elif [ `hostname | cut -c 1-6` == "edison" ]; then
         export FC=ifort
         export LDFLAGS=""
         WITHDART=""
+    elif [ "$TARGET" == "cray" ]; then
+        export EXTRA_CFLAGS="-h gnu"
+        export CC=cc
+        export CXX=CC
+        export FC=ftn
+        export LDFLAGS=""
+        WITHDART=""
+        export EXTRA_CFLAGS="-h gnu"
     else
         echo "TARGET must be pgi or gnu or intel"
         exit 1
     fi
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
-    export CFLAGS="-fPIC"
+    export CFLAGS="-fPIC ${EXTRA_CFLAGS}"
     ${SRCDIR}/configure --prefix=/global/homes/p/pnorbert/adios/master/edison/$TARGET \
         --enable-dependency-tracking \
         --with-mxml=$HOME/mxml/mxml.edison \
@@ -696,12 +713,20 @@ elif [ `hostname | cut -c 1-6` == "hopper" ]; then
         export FC=ifort
         export LDFLAGS=""
         WITHDART=""
+    elif [ "$TARGET" == "cray" ]; then
+        export EXTRA_CFLAGS="-h gnu"
+        export CC=cc
+        export CXX=CC
+        export FC=ftn
+        export LDFLAGS=""
+        WITHDART=""
+        export EXTRA_CFLAGS="-h gnu"
     else
         echo "TARGET must be pgi or gnu or intel"
         exit 1
     fi
     export CPPFLAGS="-DMPICH_IGNORE_CXX_SEEK"
-    export CFLAGS="-fPIC"
+    export CFLAGS="-fPIC ${EXTRA_CFLAGS}"
     ${SRCDIR}/configure --prefix=/project/projectdirs/m499/adios/devel-hopper-$TARGET \
         --enable-dependency-tracking \
         --with-mxml=$HOME/mxml/mxml.hopper \

@@ -30,12 +30,12 @@ program read_gena
   
   
 #ifndef __GFORTRAN__
-#ifndef __GNUC__
+!#ifndef __GNUC__
     interface
          integer function iargc()
          end function iargc
     end interface
-#endif
+!#endif
 #endif
 
  
