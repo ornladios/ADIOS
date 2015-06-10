@@ -375,7 +375,7 @@ thod returns.
 MPI_File * get_BP_subfile_handle(BP_FILE *fh, uint32_t file_index)
 {
     BP_file_handle_list *lst = &fh->subfile_handles; //just for simplifying typing
-    printf ("%s # of handles=%d, search for file_index=%d, fh=%p\n", __func__, lst->n_handles, file_index, fh);
+    //printf ("%s # of handles=%d, search for file_index=%d, fh=%p\n", __func__, lst->n_handles, file_index, fh);
     if (!lst->head)
         return 0;
 
@@ -448,7 +448,7 @@ void add_BP_subfile_handle (BP_FILE * fh, struct BP_file_handle * n)
     }
     lst->n_handles++;
     
-    printf ("%s # of handles=%d, now added file_index=%d, fh=%p\n", __func__, lst->n_handles, n->file_index, fh);
+    //printf ("%s # of handles=%d, now added file_index=%d, fh=%p\n", __func__, lst->n_handles, n->file_index, fh);
     
     // Don't run out of file descriptiors by keeping the number in check
     if (lst->n_handles > MAX_HANDLES)
