@@ -499,8 +499,12 @@ static int common_adios_write_transform_helper(struct adios_file_struct * fd, st
             // Update the buffer back to the end of the header+payload
             fd->offset = end_offset;
         } else {
+            // either no transformation happened (original data is in v->data), or
+            // data was transformed into v->adata
+            if (v->adata) {
+                v->data = v->adata;
+            }
             // write payload
-            v->data = v->adata;
             adios_write_var_payload_v1 (fd, v);
 
             // fd->offset now points to the end of the header+payload

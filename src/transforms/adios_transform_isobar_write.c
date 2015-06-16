@@ -135,7 +135,7 @@ int adios_transform_isobar_apply(struct adios_file_struct *fd,
         // Write directly to the shared buffer
         output_buff = fd->buffer + fd->offset;
     }
-    else    // Else, fall back to var->data memory allocation
+    else    // Else, fall back to var->adata memory allocation
     {
         *wrote_to_shared_buffer = 0;
         output_buff = malloc(output_size);
@@ -168,7 +168,7 @@ int adios_transform_isobar_apply(struct adios_file_struct *fd,
     }
     else
     {
-        var->data = output_buff;
+        var->adata = output_buff;
         var->data_size = actual_output_size;
         var->free_data = adios_flag_yes;
     }

@@ -238,10 +238,10 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
     }
     */
 
-    if (v->data)
+    if (v->adata)
     {
-        free (v->data);
-        v->data = 0;
+        free (v->adata);
+        v->adata = 0;
     }
 
     // Q.L. 10-2010. To fix a memory leak problem.
@@ -305,8 +305,8 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
             case adios_long_double:
             case adios_complex:
             case adios_double_complex:
-                v->data = malloc (element_size);
-                if (!v->data)
+                v->adata = malloc (element_size);
+                if (!v->adata)
                 {
                     adios_error (err_no_memory, 
                                  "In adios_write, cannot allocate %lld bytes to copy scalar %s\n",
@@ -316,11 +316,12 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
                     return;
                 }
 
-                memcpy ((char *) v->data, var, element_size);
+                memcpy ((char *) v->adata, var, element_size);
+                v->data = v->adata;
                 break;
             case adios_string:
-                v->data = futils_fstr_to_cstr (var, var_size);
-                if (!v->data)
+                v->adata = futils_fstr_to_cstr (var, var_size);
+                if (!v->adata)
                 {
                     adios_error (err_no_memory, 
                                  "In adios_write, cannot allocate %lld bytes to copy string %s\n",
@@ -329,6 +330,7 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
                     free (buf1);
                     return;
                 }
+                v->data = v->adata;
                 break;
 
             default:
