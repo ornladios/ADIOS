@@ -2723,8 +2723,8 @@ void adios_cleanup ()
             // NCSU ALACRITY-ADIOS - Clean transform metadata
             adios_transform_clear_transform_var(adios_groups->group->vars);
 
-            if (adios_groups->group->vars->data)
-                free (adios_groups->group->vars->data);
+            if (adios_groups->group->vars->adata)
+                free (adios_groups->group->vars->adata);
 
             free (adios_groups->group->vars);
             adios_groups->group->vars = vars;

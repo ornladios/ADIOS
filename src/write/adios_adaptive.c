@@ -2184,7 +2184,7 @@ enum ADIOS_FLAG adios_adaptive_should_buffer (struct adios_file_struct * fd
 
 void adios_adaptive_write (struct adios_file_struct * fd
                           ,struct adios_var_struct * v
-                          ,void * data
+                          ,const void * data
                           ,struct adios_method_struct * method
                           )
 {
@@ -2197,10 +2197,10 @@ void adios_adaptive_write (struct adios_file_struct * fd
         {
             if (v->free_data == adios_flag_yes)
             {
-                if (v->data)
+                if (v->adata)
                 {
-                    free (v->data);
-                    v->data = 0;
+                    free (v->adata);
+                    v->data = v->adata = 0;
                 }
                 adios_method_buffer_free (v->data_size);
             }
@@ -2282,13 +2282,13 @@ void adios_adaptive_get_write_buffer (struct adios_file_struct * fd
         return;
     }
 
-    if (v->data && v->free_data)
+    if (v->adata && v->free_data)
     {
         adios_method_buffer_free (v->data_size);
-        if (v->data)
+        if (v->adata)
         {
-            free (v->data);
-            v->data = 0;
+            free (v->adata);
+            v->data = v->adata = 0;
         }
     }
 

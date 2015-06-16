@@ -1426,8 +1426,8 @@ int adios_common_delete_vardefs (struct adios_group_struct * g)
         // NCSU ALACRITY-ADIOS - Clean transform metadata
         adios_transform_clear_transform_var(var);
 
-        if (var->data)
-            free (var->data);
+        if (var->adata) 
+            free (var->adata);
 
         free (var);
     }
@@ -1749,6 +1749,7 @@ int64_t adios_common_define_var (int64_t group_id, const char * name
     v->parent_var = NULL;
 
     v->data = 0;
+    v->adata = 0;
     v->write_offset = 0;
 
     v->data_size = 0;
@@ -2958,9 +2959,9 @@ uint64_t adios_get_dim_value (struct adios_dimension_item_struct * dimension)
     if (dimension->var != 0)
     {
         struct adios_var_struct * var = dimension->var;
-        if (var->data)
+        if (var->adata)
         {
-            dim = cast_var_data_as_uint64 (var->name, var->type, var->data);
+            dim = cast_var_data_as_uint64 (var->name, var->type, var->adata);
         }
         else
         {
@@ -2972,9 +2973,9 @@ uint64_t adios_get_dim_value (struct adios_dimension_item_struct * dimension)
         struct adios_attribute_struct * attr = dimension->attr;
         if (attr->var)
         {
-            if (attr->var->data)
+            if (attr->var->adata)
             {
-                dim = cast_var_data_as_uint64 (attr->var->name,attr->var->type,attr->var->data);
+                dim = cast_var_data_as_uint64 (attr->var->name,attr->var->type,attr->var->adata);
             }
             else
             {
@@ -3016,6 +3017,7 @@ void adios_copy_var_written (struct adios_group_struct * g, struct adios_var_str
     var_new->stats = 0;
     var_new->free_data = var->free_data;
     var_new->data = 0;
+    var_new->adata = 0;
     var_new->data_size = var->data_size;
             var_new->write_count = var->write_count;
     var_new->next = 0;
@@ -3130,8 +3132,9 @@ void adios_copy_var_written (struct adios_group_struct * g, struct adios_var_str
             {
                 adios_transform_init_transform_var(var_new);
                 var_new->stats = 0;
-                var_new->data = malloc (size);
-                memcpy (var_new->data, var->data, size);
+                var_new->adata = malloc (size);
+                memcpy (var_new->adata, var->data, size);
+                var_new->data = var_new->adata;
             }
 
             break;
@@ -3139,9 +3142,10 @@ void adios_copy_var_written (struct adios_group_struct * g, struct adios_var_str
         case adios_string:
             {
                 adios_transform_init_transform_var(var_new);
-                var_new->data = malloc (size + 1);
-                memcpy (var_new->data, var->data, size);
-                ((char *) (var_new->data)) [size] = 0;
+                var_new->adata = malloc (size + 1);
+                memcpy (var_new->adata, var->data, size);
+                ((char *) (var_new->adata)) [size] = 0;
+                var_new->data = var_new->adata;
 
                 break;
             }
@@ -5047,7 +5051,7 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
         {
             int i, j, c, count = 3;
             struct adios_stat_struct ** stats = var->stats;
-            float * data = var->data;
+            const float * data = var->data;
             i = j = 0;
 
             while (var->bitmap >> j) {
@@ -5176,7 +5180,7 @@ int adios_generate_var_characteristics_v1 (struct adios_file_struct * fd, struct
         {
             int i, j, c, count = 3;
             struct adios_stat_struct ** stats = var->stats;
-            double * data = var->data;
+            const double * data = var->data;
             i = j = 0;
 
             while (var->bitmap >> j) {
@@ -5536,41 +5540,41 @@ int adios_write_close_attributes_v1 (struct adios_file_struct * fd)
 int adios_multiply_dimensions (uint64_t * size
         ,struct adios_var_struct * var
         ,enum ADIOS_DATATYPES type
-        ,void * data
+        ,const void * data
         )
 {
     switch (type)
     {
         case adios_unsigned_byte:
-            *size *= (*(uint8_t *) data);
+            *size *= (*(const uint8_t *) data);
             return 1;
 
         case adios_byte:
-            *size *= (*(int8_t *) data);
+            *size *= (*(const int8_t *) data);
             return 1;
 
         case adios_unsigned_short:
-            *size *= (*(uint16_t *) data);
+            *size *= (*(const uint16_t *) data);
             return 1;
 
         case adios_short:
-            *size *= (*(int16_t *) data);
+            *size *= (*(const int16_t *) data);
             return 1;
 
         case adios_unsigned_integer:
-            *size *= (*(uint32_t *) data);
+            *size *= (*(const uint32_t *) data);
             return 1;
 
         case adios_integer:
-            *size *= (*(int32_t *) data);
+            *size *= (*(const int32_t *) data);
             return 1;
 
         case adios_unsigned_long:
-            *size *= (*(uint64_t *) data);
+            *size *= (*(const uint64_t *) data);
             return 1;
 
         case adios_long:
-            *size *= (*(int64_t *) data);
+            *size *= (*(const int64_t *) data);
             return 1;
 
         default:
@@ -5673,7 +5677,7 @@ uint64_t adios_get_dimension_space_size (struct adios_var_struct *var
 }
 
 // NCSU ALACRITY-ADIOS: Refactored to call the above dimension space compute code
-uint64_t adios_get_var_size (struct adios_var_struct * var, void * data)
+uint64_t adios_get_var_size (struct adios_var_struct * var, const void * data)
 {
     uint64_t size = adios_get_type_size (var->type, data);
     if (var->dimensions)

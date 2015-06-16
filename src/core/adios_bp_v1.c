@@ -2348,7 +2348,7 @@ void adios_posix_close_internal (struct adios_bp_buffer_struct_v1 * b)
     adios_buffer_struct_clear (b);
 }
 
-uint64_t adios_get_type_size (enum ADIOS_DATATYPES type, void * var)
+uint64_t adios_get_type_size (enum ADIOS_DATATYPES type, const void * var)
 {
     switch (type)
     {
@@ -2360,7 +2360,7 @@ uint64_t adios_get_type_size (enum ADIOS_DATATYPES type, void * var)
             if (!var)
                 return 0;
             else
-                return strlen ((char *) var);
+                return strlen ((const char *) var);
 
         case adios_string_array:
             return sizeof (char*);

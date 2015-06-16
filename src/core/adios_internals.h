@@ -63,7 +63,8 @@ struct adios_var_struct
     uint64_t write_offset;  // offset this var was written at  [for writes]
 
     enum ADIOS_FLAG free_data;    // primarily used for writing
-    void * data;                  // primarily used for reading
+    const void * data;           // user data pointer 
+    void * adata;                // data field if allocated inside adios (then, data->adata)
     uint64_t data_size;           // primarily used for reading
     uint32_t write_count; // added to support multiple writes for transform layer.
                           // Might needed for other things in the future.
@@ -326,7 +327,7 @@ typedef enum ADIOS_FLAG (* ADIOS_SHOULD_BUFFER_FN)
                                        );
 typedef void (* ADIOS_WRITE_FN) (struct adios_file_struct * fd
                                 ,struct adios_var_struct * v
-                                ,void * data
+                                ,const void * data
                                 ,struct adios_method_struct * method
                                 );
 typedef void (* ADIOS_GET_WRITE_BUFFER_FN) (struct adios_file_struct * fd
@@ -572,11 +573,11 @@ int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value, void ** 
 // NCSU ALACRITY-ADIOS - This function was static, but is now needed in adios_transforms_*.c
 uint8_t count_dimensions (const struct adios_dimension_struct * dimensions);
 
-uint64_t adios_get_type_size (enum ADIOS_DATATYPES type, void * var);
+uint64_t adios_get_type_size (enum ADIOS_DATATYPES type, const void * var);
 // NCSU ALACRITY-ADIOS - added this for use in the transform layer
 uint64_t adios_get_dimension_space_size (struct adios_var_struct * var
                                         ,struct adios_dimension_struct * d);
-uint64_t adios_get_var_size (struct adios_var_struct * var, void * data);
+uint64_t adios_get_var_size (struct adios_var_struct * var, const void * data);
 uint64_t adios_get_dim_value (struct adios_dimension_item_struct * dimension);
 uint64_t adios_get_stat_size (void * data, enum ADIOS_DATATYPES type, enum ADIOS_STAT stat_id);
 uint8_t adios_get_stat_set_count (enum ADIOS_DATATYPES type);

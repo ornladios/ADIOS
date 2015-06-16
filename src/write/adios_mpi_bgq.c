@@ -986,10 +986,10 @@ void adios_mpi_bgq_get_write_buffer (struct adios_file_struct * fd
         return;
     }
 
-    if (v->data && v->free_data)
+    if (v->adata && v->free_data)
     {
         adios_method_buffer_free (v->data_size);
-        free (v->data);
+        free (v->adata);
     }
 
     mem_allowed = adios_method_buffer_alloc (*size);

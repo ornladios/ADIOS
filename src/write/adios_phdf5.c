@@ -62,7 +62,7 @@ void adios_phdf5_close (struct adios_file_struct * fd
                      ){}
 void adios_phdf5_write (struct adios_file_struct * fd
                        ,struct adios_var_struct * v
-                       ,void * data
+                       ,const void * data
                        ,struct adios_method_struct * method
                        ){}
 void adios_phdf5_read (struct adios_file_struct * fd
@@ -215,7 +215,7 @@ int adios_phdf5_open(struct adios_file_struct *fd
 
 void adios_phdf5_write (struct adios_file_struct * fd
                        ,struct adios_var_struct * v
-                       ,void * data
+                       ,const void * data
                        ,struct adios_method_struct * method
                        )
 {
@@ -253,7 +253,7 @@ void adios_phdf5_read (struct adios_file_struct * fd
                                                        method->method_data;
     if(fd->mode == adios_mode_read)
     {
-       v->data = buffer;
+       v->adata = buffer;
        v->data_size = buffersize;
        
        if (md->rank==0) {
@@ -267,7 +267,7 @@ void adios_phdf5_read (struct adios_file_struct * fd
               ,fd->group->adios_host_language_fortran
               ,md->rank
               ,md->size);
-       v->data = 0;
+       v->adata = 0;
        if (md->rank==0) {
            fprintf(stderr, "read var: %s! end\n", v->name);
            //fprintf(stderr, "-------------------------\n");
@@ -523,7 +523,7 @@ int hr_var (hid_t root_id
         h5_dataset_id = H5Dopen (grp_ids[level], pvar->name);
         if ( h5_dataset_id > 0) {
             H5Dread (h5_dataset_id, h5_type_id, H5S_ALL
-                          ,H5S_ALL, h5_plist_id, pvar->data
+                          ,H5S_ALL, h5_plist_id, pvar->adata
                           );
             H5Dclose (h5_dataset_id);
             err_code = 0;
@@ -609,7 +609,7 @@ int hr_var (hid_t root_id
                 h5_dataset_id  = H5Dopen ( grp_ids[level], pvar->name);
                 if (h5_dataset_id > 0) {
                     H5Dread (h5_dataset_id, h5_type_id, h5_memspace_id
-                            ,h5_dataspace_id, h5_plist_id, pvar->data
+                            ,h5_dataspace_id, h5_plist_id, pvar->adata
                             );
                     H5Dclose (h5_dataset_id);
                     err_code = 0;
@@ -646,7 +646,7 @@ int hr_var (hid_t root_id
             h5_dataset_id  = H5Dopen ( grp_ids[level], pvar->name);
             if ( h5_dataset_id > 0) {
                 H5Dread (h5_dataset_id, h5_type_id, H5S_ALL
-                        ,H5S_ALL, h5_plist_id, pvar->data
+                        ,H5S_ALL, h5_plist_id, pvar->adata
                         );
                 H5Dclose (h5_dataset_id);
                 err_code = 0;

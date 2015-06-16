@@ -338,7 +338,7 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
     }
 
     *err = common_adios_write (fd, v, var);
-    if (fd->mode == adios_mode_write || fd->mode == adios_mode_append)
+    if (fd->mode != adios_mode_read)
     {
         adios_copy_var_written (fd->group, v);
     }

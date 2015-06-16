@@ -547,7 +547,7 @@ enum ADIOS_FLAG adios_posix_should_buffer (struct adios_file_struct * fd
 
 void adios_posix_write (struct adios_file_struct * fd
                        ,struct adios_var_struct * v
-                       ,void * data
+                       ,const void * data
                        ,struct adios_method_struct * method
                        )
 {
@@ -562,7 +562,7 @@ void adios_posix_write (struct adios_file_struct * fd
         {
             if (v->free_data == adios_flag_yes)
             {
-                free (v->data);
+                free (v->adata);
                 adios_method_buffer_free (v->data_size);
             }
         }
@@ -666,10 +666,10 @@ void adios_posix_get_write_buffer (struct adios_file_struct * fd
         return;
     }
 
-    if (v->data && v->free_data)
+    if (v->adata && v->free_data)
     {
         adios_method_buffer_free (v->data_size);
-        free (v->data);
+        free (v->adata);
     }
 
     mem_allowed = adios_method_buffer_alloc (*size);
@@ -717,7 +717,7 @@ void adios_posix_read (struct adios_file_struct * fd
                       ,struct adios_method_struct * method
                       )
 {
-    v->data = buffer;
+    v->data = v->adata = buffer;
     v->data_size = buffer_size;
 }
 
@@ -866,7 +866,7 @@ static void adios_posix_do_read (struct adios_file_struct * fd
 
                 if (v1)
                 {
-                    var_payload.payload = v1->data;
+                    var_payload.payload = v1->adata;
                     adios_parse_var_data_payload_v1 (&p->b, &var_header
                                                     ,&var_payload
                                                     ,v1->data_size

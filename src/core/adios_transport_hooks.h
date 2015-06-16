@@ -26,7 +26,7 @@ enum ADIOS_FLAG adios_##a##_should_buffer (struct adios_file_struct * fd \
                                           ) {return 0;} \
 void adios_##a##_write (struct adios_file_struct * fd \
                        ,struct adios_var_struct * v \
-                       ,void * data \
+                       ,const void * data \
                        ,struct adios_method_struct * method \
                        ) {} \
 void adios_##a##_get_write_buffer (struct adios_file_struct * fd \
@@ -61,7 +61,7 @@ enum ADIOS_FLAG adios_##a##_should_buffer (struct adios_file_struct * fd \
                                           ); \
 void adios_##a##_write (struct adios_file_struct * fd \
                        ,struct adios_var_struct * v \
-                       ,void * data \
+                       ,const void * data \
                        ,struct adios_method_struct * method \
                        ); \
 void adios_##a##_get_write_buffer (struct adios_file_struct * fd \

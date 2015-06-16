@@ -931,7 +931,7 @@ extern void
 adios_icee_write(
     struct adios_file_struct *fd, 
     struct adios_var_struct *f, 
-    void *data, 
+    const void *data, 
     struct adios_method_struct *method) 
 {
     log_debug ("%s\n", __FUNCTION__);
@@ -1010,7 +1010,7 @@ adios_icee_write(
         }
     }
     
-    vp->data = f->data;
+    vp->data = (char*)f->data;
     if (adios_verbose_level > 5) icee_varinfo_print(vp);
 
     fp->nvars++;

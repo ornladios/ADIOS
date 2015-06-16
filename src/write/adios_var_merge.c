@@ -46,7 +46,7 @@ static int *proc_map;
 static int *sequence;
 
 static void aggr_chunks(char **output, int *procs, int ndims, uint64_t *ldims_list, uint64_t *gdims, uint64_t *size_list, uint64_t totalsize, int nchunks, int rank, int level, int type_size);
-static uint64_t do_spatial_aggr(int level, int *procs, int ndims, uint64_t *ldims, uint64_t *offsets, char *new_ldims, int rank,  void *data, uint64_t varsize, void *output, int type_size, MPI_Comm comm);
+static uint64_t do_spatial_aggr(int level, int *procs, int ndims, uint64_t *ldims, uint64_t *offsets, char *new_ldims, int rank,  const void *data, uint64_t varsize, void *output, int type_size, MPI_Comm comm);
 
 
 //store the info of the client processes for spatial aggregation
@@ -105,7 +105,7 @@ struct aggr_client *aggr1d_clients[2]; //fixed to maximum of 2 level of aggregat
 
 static uint64_t cast_var_data_as_uint64 (const char * parent_name
                                         ,enum ADIOS_DATATYPES type
-                                        ,void * data
+                                        ,const void * data
                                         )
 {
     if (!data)
@@ -119,37 +119,37 @@ static uint64_t cast_var_data_as_uint64 (const char * parent_name
     switch (type)
     {
         case adios_byte:
-            return (uint64_t) *(int8_t *) data;
+            return (uint64_t) *(const int8_t *) data;
 
         case adios_short:
-            return (uint64_t) *(int16_t *) data;
+            return (uint64_t) *(const int16_t *) data;
 
         case adios_integer:
-            return (uint64_t) *(int32_t *) data;
+            return (uint64_t) *(const int32_t *) data;
 
         case adios_long:
-            return (uint64_t) *(int64_t *) data;
+            return (uint64_t) *(const int64_t *) data;
 
         case adios_unsigned_byte:
-            return (uint64_t) *(uint8_t *) data;
+            return (uint64_t) *(const uint8_t *) data;
 
         case adios_unsigned_short:
-            return (uint64_t) *(uint16_t *) data;
+            return (uint64_t) *(const uint16_t *) data;
 
         case adios_unsigned_integer:
-            return (uint64_t) *(uint32_t *) data;
+            return (uint64_t) *(const uint32_t *) data;
 
         case adios_unsigned_long:
-            return (uint64_t) *(uint64_t *) data;
+            return (uint64_t) *(const uint64_t *) data;
 
         case adios_real:
-            return (uint64_t) *(float *) data;
+            return (uint64_t) *(const float *) data;
 
         case adios_double:
-            return (uint64_t) *(double *) data;
+            return (uint64_t) *(const double *) data;
 
         case adios_long_double:
-            return (uint64_t) *(long double *) data;
+            return (uint64_t) *(const long double *) data;
 
         case adios_string:
         case adios_complex:
@@ -972,7 +972,7 @@ static struct aggr_var_struct *allocate_vars(int varcnt, struct aggr_var_struct 
 
 void adios_var_merge_write (struct adios_file_struct * fd
                      ,struct adios_var_struct * v
-                     ,void * data
+                     ,const void * data
                      ,struct adios_method_struct * method
                      )
 
@@ -1323,7 +1323,7 @@ static void cal_gdims(int ndims, uint64_t *p_offsets, uint64_t *offsets, uint64_
     }
 }
 
-static uint64_t do_spatial_aggr(int level, int *procs, int ndims, uint64_t *ldims, uint64_t *offsets, char *new_ldims, int rank,  void *data, uint64_t varsize, void *output, int type_size, MPI_Comm comm)
+static uint64_t do_spatial_aggr(int level, int *procs, int ndims, uint64_t *ldims, uint64_t *offsets, char *new_ldims, int rank,  const void *data, uint64_t varsize, void *output, int type_size, MPI_Comm comm)
 {
     //struct adios_var_struct * v = g->vars;
     int i, j, k, lev;
@@ -1467,7 +1467,7 @@ static uint64_t do_spatial_aggr(int level, int *procs, int ndims, uint64_t *ldim
 
             /*clients send out the data*/
             if(lev==0)
-                MPI_Send(data, varsize, MPI_BYTE, my_aggregator[ndims-1][lev], rank, comm);
+                MPI_Send((void*)data, varsize, MPI_BYTE, my_aggregator[ndims-1][lev], rank, comm);
             else
                 MPI_Send(tmpbuf, varsize, MPI_BYTE, my_aggregator[ndims-1][lev], rank, comm);
 

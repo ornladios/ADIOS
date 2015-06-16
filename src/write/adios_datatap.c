@@ -672,7 +672,7 @@ extern enum ADIOS_FLAG adios_datatap_should_buffer (struct adios_file_struct * f
 extern void
 adios_datatap_write(struct adios_file_struct *fd,
                     struct adios_var_struct *f,
-                    void *data, struct adios_method_struct *method)
+                    const void *data, struct adios_method_struct *method)
 {
     struct fm_structure *fm;
     dmd *mdata = (dmd *) method->method_data;

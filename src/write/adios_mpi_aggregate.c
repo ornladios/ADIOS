@@ -785,7 +785,7 @@ enum ADIOS_FLAG adios_mpi_aggregate_should_buffer (struct adios_file_struct * fd
 
 void adios_mpi_aggregate_write (struct adios_file_struct * fd
                      ,struct adios_var_struct * v
-                     ,void * data
+                     ,const void * data
                      ,struct adios_method_struct * method
                      )
 {
@@ -798,7 +798,7 @@ void adios_mpi_aggregate_write (struct adios_file_struct * fd
         {
             if (v->free_data == adios_flag_yes)
             {
-                free (v->data);
+                free (v->adata);
                 adios_method_buffer_free (v->data_size);
             }
         }
@@ -868,10 +868,10 @@ void adios_mpi_aggregate_get_write_buffer (struct adios_file_struct * fd
         return;
     }
 
-    if (v->data && v->free_data)
+    if (v->adata && v->free_data)
     {
         adios_method_buffer_free (v->data_size);
-        free (v->data);
+        free (v->adata);
     }
 
     mem_allowed = adios_method_buffer_alloc (*size);

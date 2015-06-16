@@ -445,89 +445,6 @@ int common_adios_group_size (int64_t fd_p
     return adios_errno;
 }
 
-int common_adios_write_byid (struct adios_file_struct * fd, struct adios_var_struct * v, void * var)
-{
-    struct adios_method_list_struct * m = fd->group->methods;
-
-    adios_errno = err_no_error;
-    if (m && m->next == NULL && m->method->m == ADIOS_METHOD_NULL)
-    {
-        return adios_errno;
-    }
-
-    if (v->data)
-    {
-        free (v->data);
-        v->data = 0;
-    }
-
-    if (v->dimensions)
-    {
-        v->data = var;
-    }
-    else
-    {
-        uint64_t element_size = adios_get_type_size (v->type, var);
-
-        switch (v->type)
-        {
-            case adios_byte:
-            case adios_short:
-            case adios_integer:
-            case adios_long:
-            case adios_unsigned_byte:
-            case adios_unsigned_short:
-            case adios_unsigned_integer:
-            case adios_unsigned_long:
-            case adios_real:
-            case adios_double:
-            case adios_long_double:
-            case adios_complex:
-            case adios_double_complex:
-                v->data = malloc (element_size);
-                if (!v->data)
-                {
-                    adios_error (err_no_memory,
-                                 "In adios_write, cannot allocate %lld bytes to copy scalar %s\n",
-                                 element_size, v->name);
-                    return adios_errno;
-                }
-
-                memcpy ((char *) v->data, var, element_size);
-                break;
-
-            case adios_string:
-                v->data = malloc (element_size + 1);
-                if (!v->data)
-                {
-                    adios_error (err_no_memory,
-                                 "In adios_write, cannot allocate %lld bytes to copy string %s\n",
-                                 element_size, v->name);
-                    return adios_errno;
-                }
-                ((char *) v->data) [element_size] = 0;
-                memcpy ((char *) v->data, var, element_size);
-                break;
-
-            default:
-                v->data = 0;
-                break;
-        }
-    }
-
-    common_adios_write (fd, v, var);
-    // v->data is set to NULL in the above call
-
-    if (!adios_errno) {
-        if (fd->mode != adios_mode_read)
-        {
-            adios_copy_var_written (fd->group, v);
-        }
-    }
-
-    return adios_errno;
-}
-
 static int common_adios_write_transform_helper(struct adios_file_struct * fd, struct adios_var_struct * v) {
     int use_shared_buffer = (fd->shared_buffer == adios_flag_yes);
     int wrote_to_shared_buffer = 0;
@@ -574,14 +491,16 @@ static int common_adios_write_transform_helper(struct adios_file_struct * fd, st
         // v->data_size and v->free_data. Else, write the payload to the shared
         // buffer (the other v->* fields have already been updated)
         if (wrote_to_shared_buffer) {
-            v->data = fd->buffer + payload_offset;
+            v->adata = fd->buffer + payload_offset;
             v->data_size = end_offset - payload_offset;
             v->free_data = adios_flag_no;
+            v->data = v->adata;
 
             // Update the buffer back to the end of the header+payload
             fd->offset = end_offset;
         } else {
             // write payload
+            v->data = v->adata;
             adios_write_var_payload_v1 (fd, v);
 
             // fd->offset now points to the end of the header+payload
@@ -604,7 +523,7 @@ static int common_adios_write_transform_helper(struct adios_file_struct * fd, st
  * structures. This is because C and Fortran implementations of adios_write are
  * different for some part and this is the common part.
  */
-int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct * v, void * var)
+int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct * v, const void * var)
 {
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_start ("adios_write");
@@ -675,9 +594,9 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
         //   as this flag is hardly ever used, I don't know whether this is
         //   using the flag correctly or not. Need verification with
         //   Gary/Norbert/someone knowledgable about ADIOS internals.
-        if (v->transform_type != adios_transform_none && v->free_data == adios_flag_yes && v->data)
-            free(v->data);
-        v->data = 0;
+        if (v->transform_type != adios_transform_none && v->free_data == adios_flag_yes && v->adata)
+            free(v->adata);
+        v->data = v->adata = 0;
     }
 
     v->write_count++;
@@ -685,6 +604,95 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
     timer_stop ("adios_write");
 #endif
     // printf ("var: %s written %d\n", v->name, v->write_count);
+    return adios_errno;
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
+int common_adios_write_byid (struct adios_file_struct * fd, struct adios_var_struct * v, const void * var)
+{
+    struct adios_method_list_struct * m = fd->group->methods;
+
+    adios_errno = err_no_error;
+    if (m && m->next == NULL && m->method->m == ADIOS_METHOD_NULL)
+    {
+        return adios_errno;
+    }
+
+    if (v->adata)
+    {
+        free (v->adata);
+        v->adata = 0;
+    }
+
+    if (v->dimensions)
+    {
+        v->data = var;
+    }
+    else
+    {
+        uint64_t element_size = adios_get_type_size (v->type, var);
+
+        switch (v->type)
+        {
+            case adios_byte:
+            case adios_short:
+            case adios_integer:
+            case adios_long:
+            case adios_unsigned_byte:
+            case adios_unsigned_short:
+            case adios_unsigned_integer:
+            case adios_unsigned_long:
+            case adios_real:
+            case adios_double:
+            case adios_long_double:
+            case adios_complex:
+            case adios_double_complex:
+                v->adata = malloc (element_size);
+                if (!v->adata)
+                {
+                    adios_error (err_no_memory,
+                                 "In adios_write, cannot allocate %lld bytes to copy scalar %s\n",
+                                 element_size, v->name);
+                    return adios_errno;
+                }
+
+                memcpy ((char *) v->adata, var, element_size);
+                v->data = v->adata;
+                break;
+
+            case adios_string:
+                v->adata = malloc (element_size + 1);
+                if (!v->adata)
+                {
+                    adios_error (err_no_memory,
+                                 "In adios_write, cannot allocate %lld bytes to copy string %s\n",
+                                 element_size, v->name);
+                    return adios_errno;
+                }
+                ((char *) v->adata) [element_size] = 0;
+                memcpy ((char *) v->adata, var, element_size);
+                v->data = v->adata;
+                break;
+
+            default:
+                v->data = 0;
+                break;
+        }
+    }
+
+    common_adios_write (fd, v, var);
+    // v->data is set to NULL in the above call for arrays, 
+    // but it's pointing to v->adata, which is allocated in ADIOS, for scalars
+    // to remember their value if used as dimension in forthcoming writes of arrays.
+
+    if (!adios_errno) {
+        if (fd->mode != adios_mode_read)
+        {
+            adios_copy_var_written (fd->group, v);
+        }
+    }
+
     return adios_errno;
 }
 
@@ -1056,10 +1064,10 @@ int common_adios_close (int64_t fd_p)
     while (v)
     {
         v->write_offset = 0;
-        if (v->data)
+        if (v->adata)
         {
-            free (v->data);
-            v->data = 0;
+            free (v->adata);
+            v->data = v->adata = 0;
         }
 
         v = v->next;
@@ -1115,8 +1123,10 @@ int common_adios_close (int64_t fd_p)
         // NCSU ALACRITY-ADIOS - Clear transform metadata
         adios_transform_clear_transform_var(fd->group->vars_written);
 
-        if (fd->group->vars_written->data)
-            free (fd->group->vars_written->data);
+        if (fd->group->vars_written->adata) {
+            free (fd->group->vars_written->adata);
+            fd->group->vars_written->data = fd->group->vars_written->adata = 0;
+        }
 
         v = fd->group->vars_written->next;
         free (fd->group->vars_written);

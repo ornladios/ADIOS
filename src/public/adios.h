@@ -50,7 +50,7 @@ int adios_group_size (int64_t fd_p,
                       uint64_t * total_size
                      ); 
 
-int adios_write (int64_t fd_p, const char * name, void * var);
+int adios_write (int64_t fd_p, const char * name, const void * var);
 
 int adios_get_write_buffer (int64_t fd_p, 
                             const char * name,
@@ -155,7 +155,7 @@ int adios_delete_attrdefs (int64_t id);
  * 1. numbers, instead of a variable, are used to annotate array dimensions, and
  * 2. a variable is written mutiple times on a processor (e.g., AMR codes)
  */
-int adios_write_byid (int64_t fd_p, int64_t id, void * var);
+int adios_write_byid (int64_t fd_p, int64_t id, const void * var);
 
 /** Set the application's ID for adios_read_init()
  *  when using a staging method (DATASPACES, DIMES, NSSI or DATATAP).

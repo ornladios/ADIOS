@@ -87,7 +87,7 @@ int adios_group_size (int64_t fd_p, uint64_t data_size
  * passing variable names, user is expected to pass variable id, which is returned
  * from adios_define_var call. Therefore, this function is only used in the no-xml way.
  */
-int adios_write_byid (int64_t fd_p, int64_t id, void * var)
+int adios_write_byid (int64_t fd_p, int64_t id, const void * var)
 {
     return common_adios_write_byid ((struct adios_file_struct *) fd_p, (struct adios_var_struct *) id, var);
 }
@@ -96,7 +96,7 @@ int adios_write_byid (int64_t fd_p, int64_t id, void * var)
 /* This C api function is a bit different from the Fortran api funcion, but
  * they call the same common_adios_write()
  */
-int adios_write (int64_t fd_p, const char * name, void * var)
+int adios_write (int64_t fd_p, const char * name, const void * var)
 {
     int retval;
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;

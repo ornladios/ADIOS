@@ -426,7 +426,7 @@ adios_mpi_lustre_get_striping_unit(MPI_File fh, char *filename)
 static uint64_t
 adios_mpi_lustre_striping_unit_write(MPI_File    fh,
                               MPI_Offset  offset,
-                              void        *buf,
+                              const void *buf,
                               uint64_t    len,
                               uint64_t    block_unit 
                               )
@@ -444,7 +444,7 @@ adios_mpi_lustre_striping_unit_write(MPI_File    fh,
     if (block_unit > 0) {
         MPI_Offset  rem_off = offset;
         uint64_t    rem_size = len;
-        char       *buf_ptr = buf;
+        const char       *buf_ptr = buf;
 
         err = 0;
         while (rem_size > 0) {
@@ -455,7 +455,7 @@ adios_mpi_lustre_striping_unit_write(MPI_File    fh,
 #ifdef _WKL_CHECK_STRIPE_IO
 printf("adios_mpi_lustre_striping_unit_write offset=%12lld len=%12d\n",offset,write_len);offset+=write_len;
 #endif
-            MPI_File_write (fh, buf_ptr, write_len, MPI_BYTE, &status);
+            MPI_File_write (fh, (char*)buf_ptr, write_len, MPI_BYTE, &status);
             MPI_Get_count(&status, MPI_BYTE, &ret_len);
             if (ret_len < 0) {err = ret_len; break;}
             err += ret_len;
@@ -470,11 +470,11 @@ printf("adios_mpi_lustre_striping_unit_write offset=%12lld len=%12d\n",offset,wr
         uint64_t to_write = len;
         int write_len = 0;
         int count;
-        char * buf_ptr = buf;
+        const char * buf_ptr = buf;
         while (total_written < len)
         {
             write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
-            MPI_File_write (fh, buf_ptr, write_len, MPI_BYTE, &status);
+            MPI_File_write (fh, (char*)buf_ptr, write_len, MPI_BYTE, &status);
             MPI_Get_count(&status, MPI_BYTE, &count);
             if (count != write_len)
             {
@@ -1321,7 +1321,7 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
 
 void adios_mpi_lustre_write (struct adios_file_struct * fd
                      ,struct adios_var_struct * v
-                     ,void * data
+                     ,const void * data
                      ,struct adios_method_struct * method
                      )
 {
@@ -1337,7 +1337,7 @@ void adios_mpi_lustre_write (struct adios_file_struct * fd
         {
             if (v->free_data == adios_flag_yes)
             {
-                free (v->data);
+                free (v->adata);
                 adios_method_buffer_free (v->data_size);
             }
         }
@@ -1427,10 +1427,10 @@ void adios_mpi_lustre_get_write_buffer (struct adios_file_struct * fd
         return;
     }
 
-    if (v->data && v->free_data)
+    if (v->adata && v->free_data)
     {
         adios_method_buffer_free (v->data_size);
-        free (v->data);
+        free (v->adata);
     }
 
     mem_allowed = adios_method_buffer_alloc (*size);
@@ -1477,7 +1477,7 @@ void adios_mpi_lustre_read (struct adios_file_struct * fd
                     ,struct adios_method_struct * method
                     )
 {
-    v->data = buffer;
+    v->data = v->adata = buffer;
     v->data_size = buffer_size;
 }
 
@@ -1541,7 +1541,7 @@ static void adios_mpi_lustre_do_read (struct adios_file_struct * fd
 
                 if (v1)
                 {
-                    var_payload.payload = v1->data;
+                    var_payload.payload = v1->adata;
                     adios_parse_var_data_payload_v1 (&md->b, &var_header
                                                     ,&var_payload
                                                     ,v1->data_size

@@ -40,9 +40,8 @@ int common_adios_group_size (int64_t fd_p, uint64_t data_size
                      ,uint64_t * total_size
                      );
 
-//int common_adios_write (int64_t fd_p, const char * name, void * var);
-int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct * v, void * var);
-int common_adios_write_byid (struct adios_file_struct * fd, struct adios_var_struct * v, void * var);
+int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct * v, const void * var);
+int common_adios_write_byid (struct adios_file_struct * fd, struct adios_var_struct * v, const void * var);
 
 int common_adios_get_write_buffer (int64_t fd_p, const char * name
                            ,uint64_t * size
