@@ -1452,7 +1452,7 @@ void adios_mpi_close (struct adios_file_struct * fd
             struct adios_var_struct * v = fd->group->vars;
             while (v)
             {
-                v->data = 0;
+                v->data = v->adata = 0;
                 v = v->next;
             }
 

@@ -1585,7 +1585,7 @@ void adios_nc4_close(
         struct adios_var_struct * v = fd->group->vars;
         while (v)
         {
-            v->data = 0;
+            v->data = v->adata = 0;
             v = v->next;
         }
 

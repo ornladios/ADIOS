@@ -823,6 +823,7 @@ struct adios_var_struct * adios_mpi_amr_copy_var (struct adios_var_struct * v)
     v_new->stats = 0;
     v_new->free_data = v->free_data;
     v_new->data = 0;
+    v_new->adata = 0;
     v_new->data_size = v->data_size;
     v_new->next = 0;
 
