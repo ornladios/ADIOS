@@ -6,6 +6,11 @@ link_directories(${PROJECT_BINARY_DIR}/test/suite/programs/examples/global_array
 
 add_executable(global_array_write_C global_array_write_C.c)
 target_link_libraries(global_array_write_C adios ${ADIOSLIB_LDADD})
+add_custom_command(
+	OUTPUT gwrite_temperature.ch
+	COMMAND ${PROJECT_SOURCE_DIR}/utils/gpp/gpp.py ${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/global_array/global_array_C.xml
+	DEPENDS global_array_C.xml
+	)
 
 add_executable(global_array_read_C global_array_read_C.c)
 target_link_libraries(global_array_read_C adiosread ${ADIOSREADLIB_LDADD})
@@ -26,6 +31,11 @@ endforeach()
 if(BUILD_FORTRAN)
     add_executable(global_array_write_F global_array_write_F.F90)
     target_link_libraries(global_array_write_F adiosf ${ADIOSLIB_LDADD})
+    add_custom_command(
+	OUTPUT gwrite_temperature.fh
+	COMMAND ${PROJECT_SOURCE_DIR}/utils/gpp/gpp.py ${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/global_array/global_array_F.xml
+	DEPENDS global_array_F.xml
+	)
 endif
 
 

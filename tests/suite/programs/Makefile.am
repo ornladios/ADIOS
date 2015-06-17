@@ -57,7 +57,7 @@ AM_CPPFLAGS = $(all_includes)
 AM_CPPFLAGS += -I$(top_builddir)/src/public  -I$(top_builddir)/src -I$(top_srcdir)/src/public
 
 all-local:
-	test "$(srcdir)" = "$(builddir)" || cp $(srcdir)/*.xml $(builddir)
+	test "$(srcdir)" = "$(builddir)" || cp -p $(srcdir)/*.xml $(builddir)
 
 #############################
 # Build rules for each test #
