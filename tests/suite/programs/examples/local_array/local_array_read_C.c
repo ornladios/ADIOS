@@ -50,8 +50,8 @@ int main (int argc, char ** argv)
 
     CASCADE_BEGIN(comm,rank,size)
     printf("rank=%d: NX=%d NY=%d\n", rank, NX, NY);
-    //fflush(stdout);
-    //fdatasync(STDOUT_FILENO);
+    fflush(stdout);
+    fsync(STDOUT_FILENO);
     CASCADE_END(comm,rank,size)
 
     /* Allocate space for the arrays */
@@ -75,7 +75,7 @@ int main (int argc, char ** argv)
         printf(", %6.2f", t[5*NY+j]);
     printf("]\n");
     fflush(stdout);
-    fdatasync(STDOUT_FILENO);
+    fsync(STDOUT_FILENO);
     CASCADE_END(comm,rank,size)
 
     free (t);
