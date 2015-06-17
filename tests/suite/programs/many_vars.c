@@ -31,6 +31,7 @@
 int NVARS = 1;
 int NBLOCKS = 1;
 int NSTEPS = 1;
+int REDEFINE = 0; // 1: delete and redefine variable definitions at each step to test adios_delete_vardefs()
 static const char FILENAME[] = "many_vars.bp";
 #define VALUE(rank, step, block) (step * 10000 + 10*rank + block)
 
@@ -118,10 +119,11 @@ void fini_vars()
 
 void Usage() 
 {
-    printf("Usage: many_vars <nvars> <nblocks> <nsteps>\n" 
+    printf("Usage: many_vars <nvars> <nblocks> <nsteps> [redef]\n" 
             "    <nvars>:   Number of variables to generate\n"
             "    <nblocks>: Number of blocks per process to write\n"
-            "    <nsteps>:  Number of write cycles (to same file)\n");
+            "    <nsteps>:  Number of write cycles (to same file)\n"
+            "    [redef]:   delete and redefine variables at every step\n");
 }
 
 void define_vars ();
@@ -155,6 +157,14 @@ int main (int argc, char ** argv)
         NSTEPS = i;
     }
 
+    if (argc > 4) {
+        if (!strncasecmp (argv[4], "redef", 5)) {
+            printf("Delete and redefine variable definitions at each step.\n");
+            REDEFINE=1;
+        }
+    }
+
+
     alloc_vars();
     adios_init_noxml (comm);
     adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 100);
@@ -167,12 +177,21 @@ int main (int argc, char ** argv)
     adios_select_method (m_adios_group, "MPI", "", "");
 
 
-    define_vars();
     set_gdim();
     
     for (i=0; i<NSTEPS; i++) {
         if (!err) {
+            if (i==0 || REDEFINE) {
+                printf("-- Define variables.\n");
+                define_vars();
+            }
+
             err = write_file (i); 
+
+            if (REDEFINE) {
+                printf("-- Delete variable definitions.\n");
+                adios_delete_vardefs(m_adios_group);
+            }
         }
     }
 
