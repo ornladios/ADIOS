@@ -788,6 +788,9 @@ AC_CONFIG_FILES([Makefile
                  tests/bp_read/Makefile
                  tests/suite/Makefile
                  tests/suite/programs/Makefile
+                 tests/suite/programs/examples/Makefile
+                 tests/suite/programs/examples/scalars/Makefile
+                 tests/suite/programs/examples/global_array/Makefile
                  utils/Makefile
                  utils/skeldump/Makefile
                  utils/skel/Makefile

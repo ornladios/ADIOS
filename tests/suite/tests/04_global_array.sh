@@ -20,35 +20,35 @@ if [ $MAXPROCS -lt $PROCS ]; then
 fi
 
 # copy codes and inputs to . 
-cp $TRUNKDIR/examples/C/global-array/adios_global .
-cp $TRUNKDIR/examples/C/global-array/adios_read_global .
-cp $TRUNKDIR/examples/C/global-array/adios_global.xml .
+cp $SRCDIR/programs/examples/global_array/global_array_write_C .
+cp $SRCDIR/programs/examples/global_array/global_array_read_C .
+cp $SRCDIR/programs/examples/global_array/global_array_C.xml .
 
 # Insert transform=X if requested by user
 add_transform_to_xmls
 
-echo "Run C adios_global"
-$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./adios_global
+echo "Run C global_array_write_C"
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./global_array_write_C
 EX=$?
-if [ ! -f adios_global.bp ]; then
-    echo "ERROR: C version of adios_global failed. No BP file is created. Exit code=$EX"
+if [ ! -f global_array_C.bp ]; then
+    echo "ERROR: global_array_write_C failed. No BP file is created. Exit code=$EX"
     exit 1
 fi
 
 echo "Check output with bpls"
-$TRUNKDIR/utils/bpls/bpls -la adios_global.bp -d -n 10  | grep -v -e endianness -e 'file size' > c_bpls.txt
+$TRUNKDIR/utils/bpls/bpls -la global_array_C.bp -d -n 10  | grep -v -e endianness -e 'file size' > c_bpls.txt
 diff -q c_bpls.txt $SRCDIR/reference/global_array_bpls.txt
 if [ $? != 0 ]; then
-    echo "ERROR: C version of adios_global produced a file different from the reference."
-    echo "Compare \"bpls -la $PWD/adios_global.bp -d -n 10 | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/global_array_bpls.txt"
+    echo "ERROR: global_array_write_C produced a file different from the reference."
+    echo "Compare \"bpls -la $PWD/global_array_C.bp -d -n 10 | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/global_array_bpls.txt"
     exit 1
 fi
 
-echo "Run C adios_read_global"
-$MPIRUN $NP_MPIRUN $READPROCS $EXEOPT ./adios_read_global | sort > c_read.txt
+echo "Run C global_array_read_C"
+$MPIRUN $NP_MPIRUN $READPROCS $EXEOPT ./global_array_read_C | sort > c_read.txt
 EX=$?
 if [ $? != 0 ]; then
-    echo "ERROR: C version of adios_read_global exited with $EX"
+    echo "ERROR: global_array_read_C exited with $EX"
     echo "Check $PWD/c_read.txt"
     exit 1
 fi
@@ -56,7 +56,7 @@ fi
 echo "Check output"
 diff -q c_read.txt $SRCDIR/reference/global_array_read.txt
 if [ $? != 0 ]; then
-    echo "ERROR: C version of adios_read_global produced a file different from the reference."
+    echo "ERROR: global_array_read_C produced a file different from the reference."
     echo "$PWD/c_read.txt to reference $SRCDIR/reference/global_array_read.txt"
     exit 1
 fi
@@ -67,28 +67,26 @@ if [ $HAVE_FORTRAN != yes ]; then
 fi
 # run the Fortran tests too if available
 
-mv adios_global.xml adios_global_c.xml
-mv adios_global.bp adios_global_c.bp
-cp $TRUNKDIR/examples/Fortran/global-array/adios_global adios_global_f
-cp $TRUNKDIR/examples/Fortran/global-array/adios_global.xml .
+cp $SRCDIR/programs/examples/global_array/global_array_write_F .
+cp $SRCDIR/programs/examples/global_array/global_array_F.xml .
 
 # Insert transform=X if requested by user
 add_transform_to_xmls
 
-echo "Run Fortran adios_global_f"
-$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./adios_global_f
+echo "Run Fortran global_array_write_F"
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./global_array_write_F
 EX=$?
-if [ ! -f adios_global.bp ]; then
-    echo "ERROR: Fortran version of adios_global failed. No BP file is created. Exit code=$EX"
+if [ ! -f global_array_F.bp ]; then
+    echo "ERROR: global_array_write_F failed. No BP file is created. Exit code=$EX"
     exit 1
 fi
 
 echo "Check output with bpls"
-$TRUNKDIR/utils/bpls/bpls -la adios_global.bp -d -n 10 | grep -v -e endianness -e 'file size' > f_bpls.txt
+$TRUNKDIR/utils/bpls/bpls -la global_array_F.bp -d -n 10 | grep -v -e endianness -e 'file size' > f_bpls.txt
 diff -q f_bpls.txt $SRCDIR/reference/global_array_bpls.txt
 if [ $? != 0 ]; then
-    echo "ERROR: Fortran version of adios_global produced a file different from the reference."
-    echo "Compare \"bpls -lav $PWD/adios_global.bp -d -n 10 | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/global_array_bpls.txt"
+    echo "ERROR: global_array_write_F produced a file different from the reference."
+    echo "Compare \"bpls -lav $PWD/global_array_F.bp -d -n 10 | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/global_array_bpls.txt"
     exit 1
 fi
 

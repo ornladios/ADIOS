@@ -1,0 +1,33 @@
+include_directories(${PROJECT_SOURCE_DIR}/src/public)
+include_directories(${PROJECT_SOURCE_DIR}/src)
+include_directories(${PROJECT_SOURCE_DIR}/examples/C/global-array)
+include_directories(${PROJECT_BINARY_DIR}/src/public)
+link_directories(${PROJECT_BINARY_DIR}/test/suite/programs/examples/global_array)
+
+add_executable(global_array_write_C global_array_write_C.c)
+target_link_libraries(global_array_write_C adios ${ADIOSLIB_LDADD})
+
+add_executable(global_array_read_C global_array_read_C.c)
+target_link_libraries(global_array_read_C adiosread ${ADIOSREADLIB_LDADD})
+#set_target_properties(global_array_read_C PROPERTIES COMPILE_FLAGS "-DADIOS_USE_READ_API_1")
+
+set (PROGS global_array_write_C global_array_read_C)
+
+foreach (PROG ${PROGS} )
+  if(MPI_COMPILE_FLAGS)
+    set_target_properties(${PROG} PROPERTIES COMPILE_FLAGS "${MPI_C_COMPILE_FLAGS}")
+  endif()
+  if(MPI_LINK_FLAGS)
+    set_target_properties(${PROG} PROPERTIES LINK_FLAGS "${MPI_C_LINK_FLAGS}")
+  endif()
+  target_link_libraries(${PROG} adios ${MPI_C_LIBRARIES})
+endforeach()
+
+if(BUILD_FORTRAN)
+    add_executable(global_array_write_F global_array_write_F.F90)
+    target_link_libraries(global_array_write_F adiosf ${ADIOSLIB_LDADD})
+endif
+
+
+#install(FILES adios_global.xml gread_temperature.ch gwrite_temperature.ch job.pbs DESTINATION ${PROJECT_BINARY_DIR}/examples/C/global-array)
+

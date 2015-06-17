@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<adios-config host-language="Fortran">
+  <adios-group name="temperature">
+    <var name="NX" type="integer"/>
+    <var name="size" type="integer"/>
+    <var name="rank" type="integer"/>
+    <global-bounds dimensions="NX,size" offsets="0,rank">
+         <var name="temperature" gwrite="t" 
+              type="double" dimensions="NX,1"/>
+    </global-bounds>
+    <attribute name="temperature/description" 
+               value="Global array written from 'size' processes" 
+               type="string"/>
+  </adios-group>
+
+  <method group="temperature" method="MPI"/>
+
+  <buffer size-MB="2" allocate-time="now"/>
+
+</adios-config>
+

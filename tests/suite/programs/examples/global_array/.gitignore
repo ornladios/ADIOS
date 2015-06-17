@@ -1,0 +1,13 @@
+adios_global
+adios_global_2files
+adios_global_no_xml
+adios_read_chunk
+adios_read_global
+adios_read_global_no_xml
+adios_read_gpp
+adios_read_writeblock
+no_xml_write_byid
+read_no_xml_write_byid
+adios_global_aggregate_by_color
+
+adios_global.bp.dir/

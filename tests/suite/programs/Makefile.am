@@ -36,6 +36,8 @@ check_C=local_array_time \
 
 test_C=hashtest copy_subvolume transforms_specparse group_free_test
 
+SUBDIRS=examples
+
 endif
 
 if BUILD_FORTRAN

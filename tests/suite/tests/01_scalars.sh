@@ -20,33 +20,33 @@ if [ $MAXPROCS -lt $PROCS ]; then
 fi
 
 # copy codes and inputs to . 
-cp $TRUNKDIR/examples/C/scalars/scalars_read .
-cp $TRUNKDIR/examples/C/scalars/scalars_write .
-cp $TRUNKDIR/examples/C/scalars/scalars.xml .
+cp $SRCDIR/programs/examples/scalars/scalars_read_C .
+cp $SRCDIR/programs/examples/scalars/scalars_write_C .
+cp $SRCDIR/programs/examples/scalars/scalars_C.xml .
 
 # Insert transform=X if requested by user
 add_transform_to_xmls
 
 echo "Run C scalars_write"
-echo $MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./scalars_write
-$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./scalars_write
+echo $MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./scalars_write_C
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./scalars_write_C
 EX=$?
-if [ ! -f scalars.bp ]; then
+if [ ! -f scalars_C.bp ]; then
     echo "ERROR: C version of scalars_write failed. No BP file is created. Exit code=$EX"
     exit 1
 fi
 
 echo "Check output with bpls"
-$TRUNKDIR/utils/bpls/bpls -lav scalars.bp | grep -v -e endianness -e 'file size' > c_bpls.txt
+$TRUNKDIR/utils/bpls/bpls -lav scalars_C.bp | grep -v -e endianness -e 'file size' > c_bpls.txt
 diff -q c_bpls.txt $SRCDIR/reference/scalars_write_bpls.txt
 if [ $? != 0 ]; then
     echo "ERROR: C version of scalars_write produced a file different from the reference."
-    echo "Compare \"bpls -lav $PWD/scalars.bp | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/scalars_write_bpls.txt"
+    echo "Compare \"bpls -lav $PWD/scalars_C.bp | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/scalars_write_bpls.txt"
     exit 1
 fi
 
 echo "Run C scalars_read"
-$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./scalars_read > c_read.txt
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./scalars_read_C > c_read.txt
 EX=$?
 if [ $? != 0 ]; then
     echo "ERROR: C version of scalars_read failed with exit code $EX"
@@ -65,34 +65,32 @@ if [ $HAVE_FORTRAN != yes ]; then
 fi
 # run the Fortran tests too if available
 
-mv scalars.xml scalars_c.xml
-mv scalars.bp scalars_c.bp
-cp $TRUNKDIR/examples/Fortran/scalars/scalars_read fortran_read
-cp $TRUNKDIR/examples/Fortran/scalars/scalars_write fortran_write
-cp $TRUNKDIR/examples/Fortran/scalars/scalars.xml .
+cp $SRCDIR/programs/examples/scalars/scalars_read_F .
+cp $SRCDIR/programs/examples/scalars/scalars_write_F .
+cp $SRCDIR/programs/examples/scalars/scalars_F.xml .
 
 # Insert transform=X if requested by user
 add_transform_to_xmls
 
 echo "Run Fortran scalar_write"
-$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./fortran_write
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./scalars_write_F
 EX=$?
-if [ ! -f scalars.bp ]; then
+if [ ! -f scalars_F.bp ]; then
     echo "ERROR: Fortran version of scalars_write failed. No BP file is created. Exit code=$EX"
     exit 1
 fi
 
 echo "Check output with bpls"
-$TRUNKDIR/utils/bpls/bpls -lav scalars.bp | grep -v -e endianness -e 'file size' > f_bpls.txt
+$TRUNKDIR/utils/bpls/bpls -lav scalars_F.bp | grep -v -e endianness -e 'file size' > f_bpls.txt
 diff -q f_bpls.txt $SRCDIR/reference/scalars_write_bpls.txt
 if [ $? != 0 ]; then
     echo "ERROR: Fortran version of scalars_write produced a file different from the reference"
-    echo "Compare \"bpls -lav scalars.bp | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/scalars_write_bpls.txt"
+    echo "Compare \"bpls -lav scalars_F.bp | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/scalars_write_bpls.txt"
     exit 1
 fi
 
 echo "Run Fortran scalars_read"
-$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./fortran_read > f_read.txt
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./scalars_read_F > f_read.txt
 EX=$?
 if [ $? != 0 ]; then
     echo "ERROR: Fortran version of scalars_read failed with exit code $EX"

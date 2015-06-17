@@ -1,0 +1,1 @@
+SUBDIRS=scalars global_array
