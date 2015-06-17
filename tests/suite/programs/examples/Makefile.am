@@ -1,1 +1,1 @@
-SUBDIRS=scalars global_array
+SUBDIRS=attributes scalars local_array global_array

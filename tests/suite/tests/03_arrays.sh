@@ -1,7 +1,7 @@
 #!/bin/bash
 #
-# Test if adios can write and read arrays correctly
-# Uses codes from examples/C/arrays 
+# Test if adios can write and read local_array_C correctly
+# Uses codes from examples/C/local_array_C 
 #
 # Environment variables set by caller:
 # MPIRUN        Run command
@@ -19,42 +19,42 @@ if [ $MAXPROCS -lt $PROCS ]; then
 fi
 
 # copy codes and inputs to . 
-cp $TRUNKDIR/examples/C/arrays/arrays_read .
-cp $TRUNKDIR/examples/C/arrays/arrays_write .
-cp $TRUNKDIR/examples/C/arrays/arrays.xml .
+cp $SRCDIR/programs/examples/local_array/local_array_write_C .
+cp $SRCDIR/programs/examples/local_array/local_array_read_C .
+cp $SRCDIR/programs/examples/local_array/local_array_C.xml .
 
 # Insert transform=X if requested by user
 add_transform_to_xmls
 
-echo "Run C arrays_write"
-$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./arrays_write
+echo "Run C local_array_write_C"
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./local_array_write_C
 EX=$?
-if [ ! -f arrays.bp ]; then
-    echo "ERROR: C version of arrays_write failed. No BP file is created. Exit code=$EX"
+if [ ! -f local_array_C.bp ]; then
+    echo "ERROR: C version of local_array_write_C failed. No BP file is created. Exit code=$EX"
     exit 1
 fi
 
 echo "Check output with bpls"
-$TRUNKDIR/utils/bpls/bpls -lav arrays.bp | grep -v -e endianness -e 'file size' > c_bpls.txt
-diff -q c_bpls.txt $SRCDIR/reference/arrays_bpls.txt
+$TRUNKDIR/utils/bpls/bpls -lav local_array_C.bp | grep -v -e endianness -e 'file size' > c_bpls.txt
+diff -q c_bpls.txt $SRCDIR/reference/local_array_C_bpls.txt
 if [ $? != 0 ]; then
-    echo "ERROR: C version of arrays_write produced a file different from the reference."
-    echo "Compare \"bpls -lav $PWD/arrays.bp | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/arrays_bpls.txt"
+    echo "ERROR: C version of local_array_write_C produced a file different from the reference."
+    echo "Compare \"bpls -lav $PWD/local_array_C.bp | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/local_array_C_bpls.txt"
     exit 1
 fi
 
-echo "Run C arrays_read"
-$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./arrays_read | sort > c_read.txt
+echo "Run C local_array_read_C"
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./local_array_read_C > c_read.txt
 EX=$?
 if [ $? != 0 ]; then
-    echo "ERROR: C version of arrays_read failed with exit code $EX"
+    echo "ERROR: C version of local_array_read_C failed with exit code $EX"
     exit 1
 fi
 echo "Check output"
-diff -q c_read.txt $SRCDIR/reference/arrays_read.txt
+diff -q c_read.txt $SRCDIR/reference/local_array_C_read.txt
 if [ $? != 0 ]; then
-    echo "ERROR: C version of arrays_read produced an output different from the reference."
-    echo "Compare $PWD/c_read.txt reference $SRCDIR/reference/arrays_read.txt"
+    echo "ERROR: C version of local_array_read_C produced an output different from the reference."
+    echo "Compare $PWD/c_read.txt reference $SRCDIR/reference/local_array_C_read.txt"
     exit 1
 fi
 

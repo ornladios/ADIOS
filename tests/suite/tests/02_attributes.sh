@@ -20,41 +20,41 @@ if [ $MAXPROCS -lt $PROCS ]; then
 fi
 
 # copy codes and inputs to . 
-cp $TRUNKDIR/examples/C/attributes/attributes_read .
-cp $TRUNKDIR/examples/C/attributes/attributes_write .
-cp $TRUNKDIR/examples/C/attributes/attributes.xml .
+cp $SRCDIR/programs/examples/attributes/attributes_read_C .
+cp $SRCDIR/programs/examples/attributes/attributes_write_C .
+cp $SRCDIR/programs/examples/attributes/attributes_C.xml .
 
 # Insert transform=X if requested by user
 add_transform_to_xmls
 
-echo "Run C attributes_write"
-$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./attributes_write
+echo "Run C attributes_write_C"
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./attributes_write_C
 EX=$?
-if [ ! -f attributes.bp ]; then
-    echo "ERROR: C version of attributes_write failed. No BP file is created. Exit code=$EX"
+if [ ! -f attributes_C.bp ]; then
+    echo "ERROR: attributes_write_C failed. No BP file is created. Exit code=$EX"
     exit 1
 fi
 
 echo "Check output with bpls"
-$TRUNKDIR/utils/bpls/bpls -lav attributes.bp | grep -v -e endianness -e 'file size' > c_bpls.txt
+$TRUNKDIR/utils/bpls/bpls -lav attributes_C.bp | grep -v -e endianness -e 'file size' > c_bpls.txt
 diff -q c_bpls.txt $SRCDIR/reference/attributes_bpls.txt
 if [ $? != 0 ]; then
-    echo "ERROR: C version of attributes_write produced a file different from the reference."
-    echo "Compare \"bpls -lav $PWD/attributes.bp | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/attributes_bpls.txt"
+    echo "ERROR: attributes_write_C produced a file different from the reference."
+    echo "Compare \"bpls -lav $PWD/attributes_C.bp | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/attributes_bpls.txt"
     exit 1
 fi
 
-echo "Run C attributes_read"
-$MPIRUN $NP_MPIRUN $READPROCS $EXEOPT ./attributes_read | sort > c_read.txt
+echo "Run C attributes_read_C"
+$MPIRUN $NP_MPIRUN $READPROCS $EXEOPT ./attributes_read_C | sort > c_read.txt
 EX=$?
 if [ $? != 0 ]; then
-    echo "ERROR: C version of attributes_read failed with exit code $EX"
+    echo "ERROR: attributes_read_C failed with exit code $EX"
     exit 1
 fi
 echo "Check output"
 diff -q c_read.txt $SRCDIR/reference/attributes_read.txt
 if [ $? != 0 ]; then
-    echo "ERROR: C version of attributes_read produced an output different from the reference."
+    echo "ERROR: attributes_read_C produced an output different from the reference."
     echo "Compare $PWD/c_read.txt reference $SRCDIR/reference/attributes_read.txt"
     exit 1
 fi

@@ -35,6 +35,7 @@
         MPI_Isend (&cascade_token, 1, MPI_INT,      \
                    rank+1, rank, comm, &request);   \
     }                                               \
+    MPI_Barrier(comm);                              \
 } /* closes the opening bracket of CASCADE_START */
 
 
