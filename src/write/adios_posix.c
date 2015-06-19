@@ -1118,6 +1118,7 @@ void adios_posix_close (struct adios_file_struct * fd
                     }
 
                     close (p->mf);
+                    free (global_index_buffer);
                 }
                 else
                 {
