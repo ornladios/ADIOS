@@ -19,43 +19,65 @@ if [ $MAXPROCS -lt $PROCS ]; then
 fi
 
 # copy codes and inputs to . 
-cp $TRUNKDIR/examples/C/global-array-time/adios_globaltime .
-cp $TRUNKDIR/examples/C/global-array-time/adios_read_globaltime .
-cp $TRUNKDIR/examples/C/global-array-time/adios_globaltime.xml .
+cp $SRCDIR/programs/examples/global_array_time/global_array_time_write_C .
+cp $SRCDIR/programs/examples/global_array_time/global_array_time_read_as_file_C .
+cp $SRCDIR/programs/examples/global_array_time/global_array_time_read_as_stream_C .
+cp $SRCDIR/programs/examples/global_array_time/global_array_time_C.xml .
 
 # Insert transform=X if requested by user
 add_transform_to_xmls
 
-echo "Run C adios_globaltime"
-$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./adios_globaltime
+echo "Run C global_array_time_write_C"
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./global_array_time_write_C
 EX=$?
-if [ ! -f adios_globaltime.bp ]; then
-    echo "ERROR: C version of adios_globaltime failed. No BP file is created. Exit code=$EX"
+if [ ! -f global_array_time_C.bp ]; then
+    echo "ERROR: global_array_time_write_C failed. No BP file is created. Exit code=$EX"
     exit 1
 fi
 
 echo "Check output with bpls"
-$TRUNKDIR/utils/bpls/bpls -la adios_globaltime.bp | grep -v -e endianness -e 'file size' > c_bpls.txt
+$TRUNKDIR/utils/bpls/bpls -la global_array_time_C.bp | grep -v -e endianness -e 'file size' > c_bpls.txt
 diff -q c_bpls.txt $SRCDIR/reference/global_array_time_bpls.txt
 if [ $? != 0 ]; then
-    echo "ERROR: C version of adios_globaltime produced a file different from the reference."
-    echo "Compare \"bpls -la $PWD/adios_globaltime.bp | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/global_array_time_bpls.txt"
+    echo "ERROR: global_array_time_write_C produced a file different from the reference."
+    echo "Compare \"bpls -la $PWD/global_array_time_C.bp | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/global_array_time_bpls.txt"
 fi
 
-echo "Run C adios_read_globaltime"
-$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./adios_read_globaltime > c_read.txt
+###################################################
+echo "Run C global_array_time_read_as_file_C"
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./global_array_time_read_as_file_C 
 EX=$?
 if [ $? != 0 ]; then
-    echo "ERROR: C version of adios_read_globaltime exited with $EX"
-    echo "Check $PWD/c_read.txt"
+    echo "ERROR: global_array_time_read_as_file_C exited with $EX"
+    echo "Check $PWD/c_read_as_file.txt"
     exit 1
 fi
 
 echo "Check output"
-diff -q c_read.txt $SRCDIR/reference/global_array_time_read.txt
+cat log_read_as_file_C.[0-9]* | grep -F -v -e "DEBUG:" -e "INFO:" -e "WARN:" > c_read_as_file.txt
+diff -q c_read_as_file.txt $SRCDIR/reference/global_array_time_read_as_file.txt
 if [ $? != 0 ]; then
-    echo "ERROR: C version of adios_read_globaltime produced a file different from the reference."
-    echo "$PWD/c_read.txt to reference $SRCDIR/reference/global_array_time_read.txt"
+    echo "ERROR: global_array_time_read_as_file_C produced a file different from the reference."
+    echo "$PWD/c_read_as_file.txt to reference $SRCDIR/reference/global_array_time_read_as_file.txt"
+    exit 1
+fi
+
+###################################################
+echo "Run C global_array_time_read_as_stream_C"
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./global_array_time_read_as_stream_C > c_read_as_stream.txt
+EX=$?
+if [ $? != 0 ]; then
+    echo "ERROR: global_array_time_read_as_stream_C exited with $EX"
+    echo "Check $PWD/c_read_as_stream.txt"
+    exit 1
+fi
+
+echo "Check output"
+cat log_read_as_stream_C.[0-9]* | grep -F -v -e "DEBUG:" -e "INFO:" -e "WARN:" > c_read_as_stream.txt
+diff -q c_read_as_stream.txt $SRCDIR/reference/global_array_time_read_as_stream.txt
+if [ $? != 0 ]; then
+    echo "ERROR: global_array_time_read_as_stream_C produced a stream different from the reference."
+    echo "$PWD/c_read_as_stream.txt to reference $SRCDIR/reference/global_array_time_read_as_stream.txt"
     exit 1
 fi
 
@@ -63,30 +85,29 @@ fi
 if [ $HAVE_FORTRAN != yes ]; then
     exit 0
 fi
+###################################################
 # run the Fortran tests too if available
 
-mv adios_globaltime.xml adios_globaltime_c.xml
-mv adios_globaltime.bp adios_globaltime_c.bp
-cp $TRUNKDIR/examples/Fortran/global-array-time/adios_globaltime adios_globaltime_f
-cp $TRUNKDIR/examples/Fortran/global-array-time/adios_globaltime.xml .
+cp $SRCDIR/programs/examples/global_array_time/global_array_time_write_F .
+cp $SRCDIR/programs/examples/global_array_time/global_array_time_F.xml .
 
 # Insert transform=X if requested by user
 add_transform_to_xmls
 
-echo "Run Fortran adios_globaltime_f"
-$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./adios_globaltime_f
+echo "Run Fortran global_array_time_write_F"
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./global_array_time_write_F
 EX=$?
-if [ ! -f adios_globaltime.bp ]; then
-    echo "ERROR: Fortran version of adios_globaltime failed. No BP file is created. Exit code=$EX"
+if [ ! -f global_array_time_F.bp ]; then
+    echo "ERROR: Fortran version of global_array_time_write_C failed. No BP file is created. Exit code=$EX"
     exit 1
 fi
 
 echo "Check output with bpls"
-$TRUNKDIR/utils/bpls/bpls -la adios_globaltime.bp | grep -v -e endianness -e 'file size' > f_bpls.txt
+$TRUNKDIR/utils/bpls/bpls -la global_array_time_F.bp | grep -v -e endianness -e 'file size' > f_bpls.txt
 diff -q f_bpls.txt $SRCDIR/reference/global_array_time_bpls.txt
 if [ $? != 0 ]; then
-    echo "ERROR: Fortran version of adios_globaltime produced a file different from the reference."
-    echo "Compare \"bpls -la $PWD/adios_globaltime.bp | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/global_array_time_bpls.txt"
+    echo "ERROR: global_array_time_write_F produced a file different from the reference."
+    echo "Compare \"bpls -la $PWD/global_array_time_F.bp | grep -v -e endianness -e 'file size'\" to reference $SRCDIR/reference/global_array_time_bpls.txt"
     exit 1
 fi
 

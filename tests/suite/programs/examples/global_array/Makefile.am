@@ -23,9 +23,7 @@ global_array_read_C_LDADD += $(ADIOSREADLIB_LDADD)
 
 CLEANFILES = *.bp *.ch *.fh
 CC=$(MPICC)
-EXTRA_DIST = global_array_C.xml global_array_F.xml \
-             gread_temperature.ch gwrite_temperature.ch \
-             gread_temperature.fh gwrite_temperature.fh
+EXTRA_DIST = global_array_C.xml global_array_F.xml 
 
 
 if BUILD_FORTRAN

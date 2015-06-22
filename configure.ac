@@ -793,6 +793,7 @@ AC_CONFIG_FILES([Makefile
                  tests/suite/programs/examples/scalars/Makefile
                  tests/suite/programs/examples/local_array/Makefile
                  tests/suite/programs/examples/global_array/Makefile
+                 tests/suite/programs/examples/global_array_time/Makefile
                  utils/Makefile
                  utils/skeldump/Makefile
                  utils/skel/Makefile

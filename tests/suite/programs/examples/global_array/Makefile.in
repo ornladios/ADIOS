@@ -407,10 +407,7 @@ global_array_read_C_LDADD = $(top_builddir)/src/libadiosread.a \
 	$(ADIOSREADLIB_LDADD)
 global_array_read_C_LDFLAGS = $(ADIOSREADLIB_LDFLAGS)
 CLEANFILES = *.bp *.ch *.fh
-EXTRA_DIST = global_array_C.xml global_array_F.xml \
-             gread_temperature.ch gwrite_temperature.ch \
-             gread_temperature.fh gwrite_temperature.fh
-
+EXTRA_DIST = global_array_C.xml global_array_F.xml 
 @BUILD_FORTRAN_TRUE@global_array_write_F_SOURCES = global_array_write_F.F90
 @BUILD_FORTRAN_TRUE@global_array_write_F_LDADD =  \
 @BUILD_FORTRAN_TRUE@	$(top_builddir)/src/libadiosf.a \
