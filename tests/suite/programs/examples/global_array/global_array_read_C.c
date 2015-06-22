@@ -22,7 +22,7 @@
 #include <string.h>
 #include "mpi.h"
 #include "adios_read.h"
-#include "core/cascade_macro.h"
+#include "core/adios_logger.h"
 
 int main (int argc, char ** argv) 
 {
@@ -37,12 +37,13 @@ int main (int argc, char ** argv)
     MPI_Comm_rank (comm, &rank);
     MPI_Comm_size (comm, &size);
 
-    adios_read_init_method (method, comm, "verbose=3");
+    adios_read_init_method (method, comm, "verbose=4");
+    adios_logger_open ("log_read_C", rank);
 
     ADIOS_FILE * f = adios_read_open ("global_array_C.bp", method, comm, ADIOS_LOCKMODE_NONE, 0);
     if (f == NULL)
     {
-        printf ("%s\n", adios_errmsg());
+        log_error ("%s\n", adios_errmsg());
         return -1;
     }
 
@@ -62,7 +63,7 @@ int main (int argc, char ** argv)
     data = malloc (slice_size * v->dims[1] * sizeof (double));
     if (data == NULL)
     {
-        fprintf (stderr, "malloc failed.\n");
+        log_error (stderr, "malloc failed.\n");
         return -1;
     }
 
@@ -71,20 +72,19 @@ int main (int argc, char ** argv)
     adios_schedule_read (f, sel, "temperature", 0, 1, data);
     adios_perform_reads (f, 1);
 
-    CASCADE_BEGIN(comm,rank,size)
     for (i = 0; i < slice_size; i++) {
-        printf ("rank %d: [%lld,%d:%lld]", rank, start[0]+i, 0, slice_size);
+        log_test ("rank %d: [%lld,%d:%lld]", rank, start[0]+i, 0, slice_size);
         for (j = 0; j < v->dims[1]; j++)
-            printf (" %6.6g", * ((double *)data + i * v->dims[1] + j));
-        printf ("\n");
+            log_test (" %6.6g", * ((double *)data + i * v->dims[1] + j));
+        log_test ("\n");
     }
-    CASCADE_END(comm,rank,size)
 
     free (data);
 
     adios_read_close (f);
     MPI_Barrier (comm);
     adios_read_finalize_method (method);
+    adios_logger_close();
     MPI_Finalize ();
     return 0;
 }

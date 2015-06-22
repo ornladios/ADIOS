@@ -44,13 +44,15 @@ if [ $? != 0 ]; then
 fi
 
 echo "Run C local_array_read_C"
-$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./local_array_read_C > c_read.txt
+$MPIRUN $NP_MPIRUN $PROCS $EXEOPT ./local_array_read_C 
 EX=$?
 if [ $? != 0 ]; then
     echo "ERROR: C version of local_array_read_C failed with exit code $EX"
     exit 1
 fi
+
 echo "Check output"
+cat log_read_C.[0-9]* | grep -F -v -e "DEBUG:" -e "INFO:" -e "WARN:" > c_read.txt
 diff -q c_read.txt $SRCDIR/reference/local_array_C_read.txt
 if [ $? != 0 ]; then
     echo "ERROR: C version of local_array_read_C produced an output different from the reference."

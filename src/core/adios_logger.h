@@ -38,4 +38,12 @@ void adios_logger_close();
 #define log_info_cont(...) adios_logger(3, 0, __VA_ARGS__)
 #define log_debug_cont(...) adios_logger(4, 0, __VA_ARGS__)
 
+/* Simple printf for programs in the test suite, that log into separate 
+ * files per process 
+ */ 
+#define  log_test(...) { \
+    if (!adios_logf) adios_logf=stderr; \
+    fprintf (adios_logf, __VA_ARGS__); \
+}
+
 #endif

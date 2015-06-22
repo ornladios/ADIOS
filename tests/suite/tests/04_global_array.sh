@@ -45,15 +45,16 @@ if [ $? != 0 ]; then
 fi
 
 echo "Run C global_array_read_C"
-$MPIRUN $NP_MPIRUN $READPROCS $EXEOPT ./global_array_read_C | sort > c_read.txt
+$MPIRUN $NP_MPIRUN $READPROCS $EXEOPT ./global_array_read_C 
 EX=$?
 if [ $? != 0 ]; then
     echo "ERROR: global_array_read_C exited with $EX"
-    echo "Check $PWD/c_read.txt"
+    echo "Check $PWD/log_read_C.* for each process' output"
     exit 1
 fi
 
 echo "Check output"
+cat log_read_C.[0-9]* | grep -F -v -e "DEBUG:" -e "INFO:" -e "WARN:" > c_read.txt
 diff -q c_read.txt $SRCDIR/reference/global_array_read.txt
 if [ $? != 0 ]; then
     echo "ERROR: global_array_read_C produced a file different from the reference."

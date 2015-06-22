@@ -45,13 +45,14 @@ if [ $? != 0 ]; then
 fi
 
 echo "Run C attributes_read_C"
-$MPIRUN $NP_MPIRUN $READPROCS $EXEOPT ./attributes_read_C | sort > c_read.txt
+$MPIRUN $NP_MPIRUN $READPROCS $EXEOPT ./attributes_read_C 
 EX=$?
 if [ $? != 0 ]; then
     echo "ERROR: attributes_read_C failed with exit code $EX"
     exit 1
 fi
 echo "Check output"
+cat log_read_C.[0-9]* | grep -F -v -e "DEBUG:" -e "INFO:" -e "WARN:" > c_read.txt
 diff -q c_read.txt $SRCDIR/reference/attributes_read.txt
 if [ $? != 0 ]; then
     echo "ERROR: attributes_read_C produced an output different from the reference."

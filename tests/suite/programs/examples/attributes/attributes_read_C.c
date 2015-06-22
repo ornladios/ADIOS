@@ -16,7 +16,7 @@
 #include <string.h>
 #include "mpi.h"
 #include "adios_read.h"
-#include "core/cascade_macro.h"
+#include "core/adios_logger.h"
 
 int main (int argc, char ** argv) 
 {
@@ -32,55 +32,55 @@ int main (int argc, char ** argv)
     MPI_Comm_size (comm, &size);
 
     adios_read_init_method (method, comm, "verbose=3");
+    adios_logger_open ("log_read_C", rank);
     ADIOS_FILE * f = adios_read_open ("attributes_C.bp", method, comm, ADIOS_LOCKMODE_NONE, 0.0);
     if (f == NULL)
     {
-        printf ("%s\n", adios_errmsg());
+        log_error ("%s\n", adios_errmsg());
         return -1;
     }
 
-    CASCADE_BEGIN(comm,rank,size)
     for (i = 0; i < f->nattrs; i++)
     {
 
         adios_get_attr (f, f->attr_namelist[i], &attr_type, &attr_size, &data);
 
-        printf ("rank %d: attr: %s %s = ", rank, adios_type_to_string(attr_type), f->attr_namelist[i]);
+        log_test("rank %d: attr: %s %s = ", rank, adios_type_to_string(attr_type), f->attr_namelist[i]);
         int type_size = adios_type_size (attr_type, data);
         int nelems = attr_size / type_size;
         int k;
         char *p = (char*)data;
         for (k=0; k<nelems; k++) 
         {
-            if (k>0) printf(", ");
+            if (k>0) log_test(", ");
             switch (attr_type)  
             {
                 case adios_integer:
-                    printf ("%d", *(int *)p);
+                    log_test ("%d", *(int *)p);
                     break;
                 case adios_double:
-                    printf ("%e", *(double *)p);
+                    log_test ("%e", *(double *)p);
                     break;
                 case adios_string:
-                    printf ("\"%s\"", (char *)p);
+                    log_test ("\"%s\"", (char *)p);
                     break;
                 case adios_string_array:
-                    printf ("\"%s\"", *(char **)p);
+                    log_test ("\"%s\"", *(char **)p);
                     break;
                 default:
-                    printf ("??????\n");
+                    log_test ("??????\n");
             }
             p=p+type_size;
         }
-        printf("\n");
+        log_test("\n");
         free (data);
         data = 0;
     }
-    CASCADE_END(comm,rank,size)
 
     adios_read_close (f);
     MPI_Barrier (comm);
     adios_read_finalize_method (ADIOS_READ_METHOD_BP);
+    adios_logger_close();
     MPI_Finalize ();
     return 0;
 }

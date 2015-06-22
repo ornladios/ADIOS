@@ -18,7 +18,7 @@
 #include <string.h>
 #include "mpi.h"
 #include "adios_read.h"
-#include "core/cascade_macro.h"
+#include "core/adios_logger.h"
 
 int main (int argc, char ** argv) 
 {
@@ -36,6 +36,7 @@ int main (int argc, char ** argv)
     MPI_Comm_size (comm, &size);
 
     adios_read_init_method (method, comm, "verbose=3");
+    adios_logger_open ("log_read_C", rank);
 
     strcpy (filename, "local_array_C.bp");
     ADIOS_FILE * f = adios_read_open (filename, method, comm, ADIOS_LOCKMODE_NONE, 0);
@@ -48,11 +49,7 @@ int main (int argc, char ** argv)
     adios_schedule_read (f, sel, "NY", 0, 1, &NY);
     adios_perform_reads (f, 1);
 
-    CASCADE_BEGIN(comm,rank,size)
-    printf("rank=%d: NX=%d NY=%d\n", rank, NX, NY);
-    fflush(stdout);
-    fsync(STDOUT_FILENO);
-    CASCADE_END(comm,rank,size)
+    log_test("rank=%d: NX=%d NY=%d\n", rank, NX, NY);
 
     /* Allocate space for the arrays */
     t = (double *) malloc (NX*NY*sizeof(double));
@@ -64,19 +61,15 @@ int main (int argc, char ** argv)
     adios_perform_reads (f, 1);
 
     /* At this point, we have the data in memory */
-    CASCADE_BEGIN(comm,rank,size)
-    printf("rank=%d: p = [%d", rank, p[0]);
+    log_test("rank=%d: p = [%d", rank, p[0]);
     for (i = 1; i < NX; i++)
-        printf(", %d", p[i]);
-    printf("]\n");
+        log_test(", %d", p[i]);
+    log_test("]\n");
     
-    printf("rank=%d: t[5,*] = [%6.2f", rank, t[5*NY]);
+    log_test("rank=%d: t[5,*] = [%6.2f", rank, t[5*NY]);
     for (j = 1; j < NY; j++)
-        printf(", %6.2f", t[5*NY+j]);
-    printf("]\n");
-    fflush(stdout);
-    fsync(STDOUT_FILENO);
-    CASCADE_END(comm,rank,size)
+        log_test(", %6.2f", t[5*NY+j]);
+    log_test("]\n");
 
     free (t);
     free (p);
@@ -84,6 +77,7 @@ int main (int argc, char ** argv)
     adios_read_close (f);
     MPI_Barrier (comm);
     adios_read_finalize_method (method);
+    adios_logger_close();
     MPI_Finalize ();
 
     return 0;
