@@ -1,3 +1,24 @@
+1.9.0 Release Jul 2015
+    - Array attributes are supported
+      - e.g axes = {"X","Y","Z"}
+    - adios_define_attribute_byvalue()
+      - to define scalar attributes with program variables instead of string values
+    - Update mode when appending to a file
+      - to add variables to last timestep instead of a new one 
+    - Python/Numpy wrapper improvements:
+      - Numpy-style array notations
+        e.g, var[1:5, 2:10], var[1:5. :], var[:5,...]
+      - Support for ADIOS write APIs
+      - Hint/docstring support
+      - Support for pip install and update
+    - fix: memory leak in POSIX method
+    - fix: adios_write() now accepts const * void data from C++ apps
+    - fix: Cray compiler support
+    - fix: reading of compressed, zero size arrays on some processes
+    - fix: scaling bugs in aggregate method writing > 2GB per process or
+           aggregating data into a file over 4GB
+
+
 1.8.0 Release Dec 2014
     - Query API 
       - extends the read API with queries
