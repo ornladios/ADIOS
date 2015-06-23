@@ -84,9 +84,9 @@ The group name should match one of the groups defined in the XML file. The I/O h
 The third argument, \textit{file\_name}, is a string representing the name of 
 the file. 
 The fourth argument \textit{mode} is a string containing a file access mode. 
-It can be one of these three mode specifiers: ``r,'' ``w,'' or ``a.'' Currently, 
-ADIOS supports three access modes: ``write or create if file does not exist,'' 
-``read,'' and ``append file.'' 
+It can be one of these four mode specifiers: ``r,'' ``w,''  ``a.'' or ``u''. Currently, 
+ADIOS supports four access modes: ``write or create if file does not exist,'' 
+``read,'' ``append file,'' and ``update file.'' Appending increases the built-in timestep in the file, so when reading, the variables appear at different timesteps. Updating adds variables to the latest timestep in the file.
 The last argument is the MPI communicator \textit{comm} that includes all
 processes that write to the file. Individual writes can be called by individual processes, but \textit{adios\_group\_size} and \textit{adios\_close} are collective operations, that all processes under this communicator should call. 
 
@@ -185,7 +185,7 @@ is strict. If the ``path'' attribute is used in the XML, simply referring to the
 the variable at both writing and reading. 
 
 \begin{lstlisting}[alsolanguage=C,caption={},label={}]
-int adios_write (int64_t fd_p, const char * var_name, void * var)
+int adios_write (int64_t fd_p, const char * var_name, const void * var)
 \end{lstlisting}
 
 Input:
@@ -358,7 +358,8 @@ Here is the list of the Fortran90 subroutines from \verb+adios_write_mod.mod+.
 In the list below \verb+GENERIC+ word indicates that you 
 can use that function with any data type at the indicated argument; it is not
 a Fortran90 keyword. The actual module source defines all possible combinations 
-of type and dimensionality for such subroutines. 
+of type and dimensionality for such subroutines. For attribute definition, \verb+GENERIC+ 
+stands for a scalar value or a 1-dimensional array of any type. 
 
 \begin{lstlisting}[language=ADIOS,alsolanguage=Fortran]
 subroutine adios_init (config, comm, err)
@@ -467,6 +468,15 @@ subroutine adios_define_attribute (group_id, attrname, path, attrtype, value, va
     integer,        intent(in)  :: attrtype
     character(*),   intent(in)  :: value
     character(*),   intent(in)  :: varname
+    integer,        intent(out) :: err
+end subroutine
+
+subroutine adios_define_attribute_byvalue (group_id, attrname, path, nelems, values, err)
+    integer*8,      intent(in)  :: group_id
+    character(*),   intent(in)  :: attrname
+    character(*),   intent(in)  :: path
+    integer,        intent(in)  :: nelems
+    GENERIC,   intent(in)  :: values
     integer,        intent(out) :: err
 end subroutine
 

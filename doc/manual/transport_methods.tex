@@ -51,22 +51,23 @@ methods, which take an indeterminate amount of time.  Another useful feature of
 this I/O is that it quickly allows users to test out the system and determine whether 
 bugs are caused by the I/O system or by other places in the codes.
 
+
 \subsection{POSIX}
 
-The simplest method provided in ADIOS just does binary POSIX I/O operations. Currently, 
-it does not support shared file writing or reading and has limited additional functionality. 
+The simplest method provided in ADIOS just does binary POSIX I/O operations. 
 The main purpose for the POSIX I/O method is to provide a simple way to migrate 
 a one-file-per-process I/O routine to ADIOS and to test the results without introducing 
 any complexity from MPI-IO or other I/O methods. Performance gains just by using 
 this transport method are likely due to our aggressive buffering for better streaming 
 performance to storage. The buffering method writes out files in BP format, which 
-is a compact, self-describing format. 
+is a compact, self-describing format.
 
-Additional features may be added to the ADIOS POSIX transport method over time. 
-A new transport method with a related name, such as POSIX-ASCII, may be provided 
-to perform I/O with additional features. The POSIX-ASCII example would write out 
-a text version of the data formatted nicely according to some parameters provided 
-in the XML file.
+ADIOS also writes a global metadata file (actually, the file name used in the open call
+will be the metadata file), so any reading process can access data written from any process.
+The metadata writing can be turned off by using a method parameter
+
+\verb+<method group="temperature" method="POSIX">"have_metadata_file=0"</method>+
+
 
 \subsection{MPI}
 
@@ -226,6 +227,16 @@ not required. The method automatically calculates the data size from each proces
 and sets the proper aggregation parameters. Also note that in previous versions
 of ADIOS (before 1.4), the MPI\_AGGREGATE method was refered to as the MPI\_AMR
 method. 
+
+There are other parameters for this method to tune it to your specific needs:
+
+\begin{itemize}
+\item \textbf{have\_metadata\_file=0} Turns off gathering and writing the global metadata, which is a time consuming operation at large scale. The global metadata can be created post-mortem using the \verb+bpmeta+ tool.
+\item \textbf{striping=0} Turns off setting the Lustre target for each subfile, and let Lustre choose it automatically. Each subfile will be striped across the default number of stripes instead of one target. It may increase performance or decrease it.
+\item \textbf{stripe\_count={\em N}} sets the stripe count for each subfile. Default is 1.
+\item \textbf{stripe\_size={\em N}} sets the stripe size for each subfile. Default is the Lustre default and is irrelevant for the default method settings but you can control it if necessary.
+\item \textbf{random\_offset=1} Let's Lustre choose the target disk(s) for each file but stripe count and size can be controlled by the method (in contrast, striping=0 takes away any influence from the method).
+\end{itemize}
 
 
 \subsection{VAR\_MERGE}
