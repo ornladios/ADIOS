@@ -1,5 +1,4 @@
-s
-AC_INIT([adios], [1.8.0])
+AC_INIT([adios], [1.9.0])
 AC_CONFIG_SRCDIR([configure.ac])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR(config)
