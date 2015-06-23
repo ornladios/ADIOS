@@ -13,11 +13,27 @@ add_custom_command(
 	DEPENDS global_array_C.xml
 	)
 
+add_executable(global_array_write_noxml_C global_array_write_noxml_C.c)
+target_link_libraries(global_array_write_noxml_C adios ${ADIOSLIB_LDADD})
+
+add_executable(global_array_write_byid_noxml_C global_array_write_byid_noxml_C.c)
+target_link_libraries(global_array_write_byid_noxml_C adios ${ADIOSLIB_LDADD})
+
+add_executable(global_array_aggregate_by_color_C global_array_aggregate_by_color_C.c)
+target_link_libraries(global_array_aggregate_by_color_C adios ${ADIOSLIB_LDADD})
+
 add_executable(global_array_read_C global_array_read_C.c)
 target_link_libraries(global_array_read_C adiosread ${ADIOSREADLIB_LDADD})
-#set_target_properties(global_array_read_C PROPERTIES COMPILE_FLAGS "-DADIOS_USE_READ_API_1")
 
-set (PROGS global_array_write_C global_array_read_C)
+add_executable(global_array_read_noxml_C global_array_read_noxml_C.c)
+target_link_libraries(global_array_read_noxml_C adiosread ${ADIOSREADLIB_LDADD})
+
+add_executable(global_array_read_byid_noxml_C global_array_read_byid_noxml_C.c)
+target_link_libraries(global_array_read_byid_noxml_C adiosread ${ADIOSREADLIB_LDADD})
+
+#set_target_properties(global_array_read_noxml_C PROPERTIES COMPILE_FLAGS "-DADIOS_USE_READ_API_1")
+
+set (PROGS global_array_write_C global_array_read_C global_array_write_noxml_C global_array_read_noxml_C)
 
 foreach (PROG ${PROGS} )
   if(MPI_COMPILE_FLAGS)
@@ -37,6 +53,10 @@ if(BUILD_FORTRAN)
 	COMMAND ${PROJECT_SOURCE_DIR}/utils/gpp/gpp.py ${PROJECT_SOURCE_DIR}/tests/suite/programs/examples/global_array/global_array_F.xml
 	DEPENDS global_array_F.xml
 	)
+    add_executable(global_array_write_noxml_F global_array_write_noxml_F.F90)
+    target_link_libraries(global_array_write_noxml_F adiosf ${ADIOSLIB_LDADD})
+    add_executable(global_array_write_byid_noxml_F global_array_write_byid_noxml_F.F90)
+    target_link_libraries(global_array_write_byid_noxml_F adiosf ${ADIOSLIB_LDADD})
 endif
 
 
