@@ -11,6 +11,7 @@
       - Support for ADIOS write APIs
       - Hint/docstring support
       - Support for pip install and update
+    - Added adios_version.h to provide release and file format versions
     - fix: memory leak in POSIX method
     - fix: adios_write() now accepts const * void data from C++ apps
     - fix: Cray compiler support
