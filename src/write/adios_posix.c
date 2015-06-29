@@ -519,9 +519,10 @@ enum ADIOS_FLAG adios_posix_should_buffer (struct adios_file_struct * fd
         if (s != fd->bytes_written)
         {
             fprintf (stderr, "POSIX method tried to write %llu, "
-                             "only wrote %lld\n"
+                             "only wrote %lld. %s:%d\n"
                     ,fd->bytes_written
                     ,(int64_t)s
+                    ,__func__, __LINE__
                     );
         }
         fd->base_offset += s;
@@ -583,9 +584,10 @@ void adios_posix_write (struct adios_file_struct * fd
         if (s != fd->bytes_written)
         {
             fprintf (stderr, "POSIX method tried to write %llu, "
-                             "only wrote %lld\n"
+                             "only wrote %lld. %s:%d\n"
                     ,fd->bytes_written
                     ,(int64_t)s
+                    ,__func__, __LINE__
                     );
         }
         fd->base_offset += s;
@@ -636,9 +638,10 @@ void adios_posix_write (struct adios_file_struct * fd
         if (s != var_size)
         {
             fprintf (stderr, "POSIX method tried to write %llu, "
-                             "only wrote %lld\n"
+                             "only wrote %lld. %s:%d\n"
                     ,var_size
                     ,(int64_t)s
+                    ,__func__, __LINE__
                     );
         }
         fd->base_offset += s;
@@ -939,9 +942,10 @@ void adios_posix_close (struct adios_file_struct * fd
                 if (s != fd->vars_start)
                 {
                     fprintf (stderr, "POSIX method tried to write %llu, "
-                                     "only wrote %lld\n"
+                                     "only wrote %lld. %s:%d\n"
                             ,fd->vars_start
                             ,(int64_t)s
+                            ,__func__, __LINE__
                             );
                 }
                 fd->offset = 0;
@@ -970,9 +974,10 @@ void adios_posix_close (struct adios_file_struct * fd
                         if (s != fd->bytes_written)
                         {
                             fprintf (stderr, "POSIX method tried to write %llu, "
-                                    "only wrote %lld\n"
+                                    "only wrote %lld. %s:%d\n"
                                     ,fd->bytes_written
                                     ,(int64_t)s
+                                    ,__func__, __LINE__
                                     );
                         }
                         fd->base_offset += s;
@@ -997,9 +1002,10 @@ void adios_posix_close (struct adios_file_struct * fd
                 if (s != p->vars_header_size)
                 {
                     fprintf (stderr, "POSIX method tried to write %llu, "
-                                     "only wrote %lld\n"
+                                     "only wrote %lld. %s:%d\n"
                             ,p->vars_header_size
                             ,(int64_t)s
+                            ,__func__, __LINE__
                             );
                 }
                 fd->offset = 0;
@@ -1111,9 +1117,10 @@ void adios_posix_close (struct adios_file_struct * fd
                     if (s != global_index_buffer_offset)
                     {
                         fprintf (stderr, "POSIX method tried to write %llu, "
-                                         "only wrote %lld\n"
+                                         "only wrote %lld. %s:%d\n"
                                          ,fd->bytes_written
                                          ,(int64_t)s
+                                         ,__func__, __LINE__
                                 );
                     }
 
@@ -1163,9 +1170,10 @@ void adios_posix_close (struct adios_file_struct * fd
                 if (s != fd->vars_start)
                 {
                     fprintf (stderr, "POSIX method tried to write %llu, "
-                                     "only wrote %lld\n"
+                                     "only wrote %lld. %s:%d\n"
                             ,fd->vars_start
                             ,(int64_t)s
+                            ,__func__, __LINE__
                             );
                 }
                 fd->offset = 0;
@@ -1191,9 +1199,10 @@ void adios_posix_close (struct adios_file_struct * fd
                         if (s != fd->bytes_written)
                         {
                             fprintf (stderr, "POSIX method tried to write %llu, "
-                                    "only wrote %lld\n"
+                                    "only wrote %lld. %s:%d\n"
                                     ,fd->bytes_written
                                     ,(int64_t)s
+                                    ,__func__, __LINE__
                                     );
                         }
                         fd->base_offset += s;
@@ -1218,9 +1227,10 @@ void adios_posix_close (struct adios_file_struct * fd
                 if (s != p->vars_header_size)
                 {
                     fprintf (stderr, "POSIX method tried to write %llu, "
-                                     "only wrote %lld\n"
+                                     "only wrote %lld. %s:%d\n"
                             ,p->vars_header_size
                             ,(int64_t)s
+                            ,__func__, __LINE__
                             );
                 }
                 fd->offset = 0;
@@ -1330,9 +1340,10 @@ void adios_posix_close (struct adios_file_struct * fd
                     if (s != global_index_buffer_offset)
                     {
                         fprintf (stderr, "POSIX method tried to write %llu, "
-                                         "only wrote %lld, Mode: a\n"
+                                         "only wrote %lld, Mode: a. %s:%d\n"
                                          ,global_index_buffer_offset
                                          ,(int64_t)s
+                                         ,__func__, __LINE__
                                 );
                     }
 
