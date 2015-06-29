@@ -50,6 +50,7 @@ int read_box (char *filename)
     MPI_Comm                comm                = MPI_COMM_WORLD;
 
     enum ADIOS_READ_METHOD        method  = ADIOS_READ_METHOD_BP;
+    adios_read_init_method (method, comm, "");
     ADIOS_FILE              *f       = adios_read_open_file (filename, method, comm);
     ADIOS_VARINFO           *varinfo = adios_inq_var (f, varname_xform [0]);
     ADIOS_SELECTION         *sel1;
@@ -134,7 +135,7 @@ int read_box (char *filename)
 
     adios_free_varinfo (varinfo);
     adios_read_close (f);
-    adios_read_finalize_method (ADIOS_READ_METHOD_BP);
+    adios_read_finalize_method (method);
 
     return retval;
 }

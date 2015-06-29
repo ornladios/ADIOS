@@ -44,7 +44,7 @@ if [ $? != 0 ]; then
 fi
 rm c1.txt c2.txt
 
-for VAR in t_none t_identity t_aplod t_isobar
+for VAR in t_none t_identity t_aplod t_isobar t_zlib  t_bzip2
 do
     echo "  $VAR"
     grep "$VAR"  ${TEST_NAME}_bpls.txt > c1.txt
