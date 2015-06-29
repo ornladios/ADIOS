@@ -63,7 +63,8 @@ void common_query_finalize()
 	    query_hooks[m].adios_query_finalize_fn();
 	  }
         }
-        free(query_hooks);
+        // Do not free query_hooks here because they are initialized only once
+        // in common_query_init ---> adios_query_hooks_init()
         query_hooks_initialized = 0;
     }
 }
