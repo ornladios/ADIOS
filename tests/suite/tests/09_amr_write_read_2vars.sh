@@ -13,6 +13,9 @@
 PROCS=32
 READPROCS=4
 
+echo "WARNING: This test is turned off"
+exit 77  # not failure, just skip
+
 if [ $MAXPROCS -lt $PROCS ]; then
     echo "WARNING: Needs $PROCS processes at least"
     exit 77  # not failure, just skip
