@@ -45,19 +45,18 @@ static ADIOS_SELECTION* getAdiosDefaultBoundingBox(ADIOS_VARINFO* v)
   return result;
 }
 
+static int query_hooks_initialized = 0;
 void common_query_init()
 {
-    static int did_init = 0;
-    if (!did_init) {
+    if (!query_hooks_initialized) {
         adios_query_hooks_init(&query_hooks);
-        did_init = 1;
+        query_hooks_initialized = 1;
     }
 }
 
 void common_query_finalize()
 {
-    static int did_finalize = 0;
-    if (!did_finalize) {
+    if (query_hooks_initialized) {
         enum ADIOS_QUERY_METHOD m;
         for (m=0; m < ADIOS_QUERY_METHOD_COUNT; m++) {
 	  if (query_hooks[m].adios_query_finalize_fn != NULL) {
@@ -65,7 +64,7 @@ void common_query_finalize()
 	  }
         }
         free(query_hooks);
-        did_finalize = 1;
+        query_hooks_initialized = 0;
     }
 }
 
