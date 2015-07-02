@@ -23,6 +23,10 @@
 int64_t getPosInBox(const ADIOS_SELECTION_BOUNDINGBOX_STRUCT* sel, int n, uint64_t* spatialCoordinates, int fortran_order);
 int64_t getPosInVariable(const ADIOS_VARINFO* v, int n, uint64_t* spatialCoordinates, int fortran_order);
 
+void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFile, ADIOS_QUERY* q, uint64_t blockSize);
+
+FastBitSelectionHandle createHandle(ADIOS_QUERY* q, const char* registeredArrayName);
+
 static inline void scan_r2(int dim, const uint64_t* const dimSize, uint64_t pos,  uint64_t * const result, uint64_t* const scan_start, int d, uint64_t curr0, uint64_t base)
 {
   uint64_t i=0;
@@ -125,17 +129,18 @@ static inline void scan2d(const uint64_t* const dimSize, uint64_t pos,  uint64_t
 }
 
 
-static void simple_scan(int64_t* coordinateArray, uint64_t count, ADIOS_VARINFO* v, uint64_t* blockstart, uint64_t* blockcount,const ADIOS_SELECTION_BOUNDINGBOX_STRUCT* bb)
+static void simple_scan(int64_t* coordinateArray, uint64_t start, uint64_t count, 
+			ADIOS_VARINFO* v, uint64_t* blockstart, uint64_t* blockcount,const ADIOS_SELECTION_BOUNDINGBOX_STRUCT* bb)
 {
   if (v->ndim == 1) { // to do: check
       uint64_t i = 0;
       uint64_t pos = 0; // pos in variable
       for (i=0; i<count; i++) {
-	   pos = coordinateArray[i] + blockstart[0];
+	   pos = coordinateArray[i+start] + blockstart[0];
 	   if (bb == NULL) {
-	     coordinateArray[i] = pos;
+	     coordinateArray[i+start] = pos;
 	   } else {
-	     coordinateArray[i] = pos - bb->start[0];
+	     coordinateArray[i+start] = pos - bb->start[0];
 	   }
       }
       return;
@@ -147,28 +152,28 @@ static void simple_scan(int64_t* coordinateArray, uint64_t count, ADIOS_VARINFO*
     uint64_t pos = 0; // pos in variable
     uint64_t i=0;
     for (i=0; i<count; i++) {
-         pos = coordinateArray[i];     
+         pos = coordinateArray[i+start];     
 	 scan2d(blockcount, pos, result, scan_start) ;      
 	 scan_start[0] = result[0];
 	 
 	 result[0] += blockstart[0];
 	 result[1] += blockstart[1];
 	 if (bb != NULL) {
-	   coordinateArray[i] = getPosInBox(bb, bb->ndim, result, 0); 
+	   coordinateArray[i+start] = getPosInBox(bb, bb->ndim, result, 0); 
 	 } else {
-	   coordinateArray[i] = getPosInVariable(v, v->ndim, result, 0); 
+	   coordinateArray[i+start] = getPosInVariable(v, v->ndim, result, 0); 
 	 }
     }
     return;
   }
 
   if (v->ndim == 3) {
-    uint64_t scan_start[3] = {0,0,0};
+    uint64_t scan_start[3] = {0,0,0}; //{blockstart[0],blockstart[1], blockstart[2]};
     uint64_t result[3] = {0,0,0};
     uint64_t pos = 0; // pos in variable
     uint64_t i=0;
     for (i=0; i<count; i++) {
-         pos = coordinateArray[i];     
+         pos = coordinateArray[i+start];     
 	 scan3d(blockcount, pos, result, scan_start) ;      
 	 scan_start[0] = result[0];
 	 scan_start[1] = result[1];
@@ -176,11 +181,14 @@ static void simple_scan(int64_t* coordinateArray, uint64_t count, ADIOS_VARINFO*
 	 result[0] += blockstart[0];
 	 result[1] += blockstart[1];
 	 result[2] += blockstart[2];
+	 
 	 if (bb != NULL) { 
-	   coordinateArray[i] = getPosInBox(bb, bb->ndim, result, 0); 
+	   coordinateArray[i+start] = getPosInBox(bb, bb->ndim, result, 0); 
 	 } else {
-	   coordinateArray[i] = getPosInVariable(v, v->ndim, result, 0); 
+	   coordinateArray[i+start] = getPosInVariable(v, v->ndim, result, 0); 
 	 }
+
+	 //printf(" %llu, %llu pos=%llu, (%llu, %llu, %llu) => [%lld] = %lld  \n", i, start, pos, result[0], result[1], result[2], i+start, coordinateArray[i+start]);
     }
   }
 }
@@ -210,7 +218,8 @@ static void arraymath_init(uint64_t* left,  int size)
 }
 
 
-static void recursive_scan(int64_t* coordinateArray, uint64_t count, ADIOS_VARINFO* v, uint64_t* blockstart, uint64_t* blockcount,const ADIOS_SELECTION_BOUNDINGBOX_STRUCT* bb)
+static void recursive_scan(int64_t* coordinateArray, uint64_t start, uint64_t count, ADIOS_VARINFO* v, 
+			   uint64_t* blockstart, uint64_t* blockcount,const ADIOS_SELECTION_BOUNDINGBOX_STRUCT* bb)
 {
 
   uint64_t scan_start[v->ndim]; 
@@ -228,26 +237,27 @@ static void recursive_scan(int64_t* coordinateArray, uint64_t count, ADIOS_VARIN
   }
 
   for (i=0; i<count; i++) {
-      pos = coordinateArray[i];     
+      pos = coordinateArray[i+start];     
       scan_r2(v->ndim, blockcount,  pos, result, scan_start, 0, 0, startBase) ;      
 
       arraymath_assign(scan_start, result, v->ndim);	 
       arraymath_pluseq(result, blockstart, v->ndim);
 
       if (bb != NULL) { 
-	coordinateArray[i] = getPosInBox(bb, bb->ndim, result, 0); 
+	coordinateArray[i+start] = getPosInBox(bb, bb->ndim, result, 0); 
       } else {
-	coordinateArray[i] = getPosInVariable(v, v->ndim, result, 0); 
+	coordinateArray[i+start] = getPosInVariable(v, v->ndim, result, 0); 
       }
   } 
 }
 
-static void fastscan(int64_t* coordinateArray, uint64_t count, ADIOS_VARINFO* v, uint64_t* blockstart, uint64_t* blockcount,const ADIOS_SELECTION_BOUNDINGBOX_STRUCT* bb)
+static void fastscan(int64_t* coordinateArray, uint64_t start, uint64_t count, ADIOS_VARINFO* v, uint64_t* blockstart, uint64_t* blockcount,
+		     const ADIOS_SELECTION_BOUNDINGBOX_STRUCT* bb)
 {
   if (v->ndim <= 3) {
-      simple_scan(coordinateArray, count, v, blockstart, blockcount, bb);
+    simple_scan(coordinateArray, start, count, v, blockstart, blockcount, bb);
   } else {
-      recursive_scan(coordinateArray, count, v, blockstart, blockcount, bb);
+    recursive_scan(coordinateArray, start, count, v, blockstart, blockcount, bb);
   }
 }
 
@@ -255,7 +265,7 @@ static void fastscan(int64_t* coordinateArray, uint64_t count, ADIOS_VARINFO* v,
 // map pos back to coordinates
 //
 static inline void posToSpace(uint64_t pos, const int isFortranClient,  
-			      const uint64_t * const dimSize , uint64_t * const coordinates, const int dim,  const uint64_t* const start) {
+			     const uint64_t * const dimSize , uint64_t * const coordinates, const int dim,  const uint64_t* const start) {
   uint32_t i;
   uint64_t curr = pos;
 
@@ -291,6 +301,10 @@ uint32_t* bitarray_create(uint64_t max)
   return result;
 }
 
+void bitarray_unsetbit(uint32_t* array, uint64_t pos)
+{
+  BITCLEAR(array, pos);
+}
 void bitarray_setbit(uint32_t* array, uint64_t pos)
 {
   BITSET(array, pos);
@@ -332,7 +346,7 @@ uint64_t  bitarray_countHits(uint32_t* bitarray, uint64_t size) {
 
   uint64_t  i=0;
   uint64_t countHitser = 0;
-  for (i=0; i<size; i++) {
+  for (i=0; i<size; i++) {    
     countHitser += getSetBits(bitarray[i]);
   }
 
@@ -402,7 +416,7 @@ uint64_t  bitarray_getHits(uint32_t* bitarray, uint64_t* result, uint64_t size, 
   //  printf(" hit counter check: %ld, collected: %ld\n", hitCounter, collected);
 
   if (lastrock == 0) {
-    printf("done. \n");
+    //printf("done. \n");
     return collected;
   }
 
@@ -428,7 +442,7 @@ uint64_t  bitarray_countHitsNative(uint64_t max, uint32_t* bitarray1) {
   uint64_t countHitser = 0;				
   uint64_t i;
 
-  printf("array size= %ld \n", BITNSLOTS(max));
+  // printf("array size= %ld \n", BITNSLOTS(max));
   for (i=0; i<max; i++) {
     if (BITTEST(bitarray1, i)) {
       //printf(" ==> bit at: %ld is set. \n",i);
@@ -436,7 +450,7 @@ uint64_t  bitarray_countHitsNative(uint64_t max, uint32_t* bitarray1) {
     }
   }
 
-  printf("%ld\n", countHitser);
+  //printf("%ld\n", countHitser);
   return countHitser;
 }
 
@@ -480,9 +494,9 @@ typedef struct {
  
 
 ADIOS_QUERY* getFirstLeaf(ADIOS_QUERY* q);
-void getHandle(int timeStep, int blockIdx, ADIOS_FILE* idxFile, ADIOS_QUERY* q);
+void getHandle(int timeStep, int blockIdx, ADIOS_FILE* idxFile, ADIOS_QUERY* q, uint64_t blockSize);
 
-#define __READ_BMS_AS_NEEDED__
+//#define __READ_BMS_AS_NEEDED__
 
 /** A simple reader to be used by FastBit for index reconstruction.  In
     this simple case, the first argument is the whole array storing all the
@@ -947,6 +961,9 @@ int isSameRegion(const ADIOS_VARINFO* v, const ADIOS_SELECTION_BOUNDINGBOX_STRUC
   return 1;
 }
 
+//
+// absBlockIdx is needed as this is what blockinfo[] takes to get measure of a block (in order to coordinates from a given 1-d pos)
+//
 int64_t getRelativeIdx(uint64_t currPosInBlock,  const ADIOS_VARINFO* v, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT* bb, int absBlockIdx, int timestep)
 {
   ADIOS_VARBLOCK* blockSel = &(v->blockinfo[absBlockIdx]);
@@ -985,50 +1002,996 @@ int64_t getRelativeIdxInVariable(uint64_t currPosInBlock, const ADIOS_VARINFO* v
     return getPosInVariable(v, v->ndim, spatialCoordinates, isFortranClient);
 }
 */
+//
+// the calculated block start/end  are relative to given timestep
+//
+int getBlockCoveredOnBB(int* blockStart, int* blockEnd, uint64_t* sumBlocksBeforeThisTimeStep, ADIOS_QUERY* q, int timeStep)
+{
+    ADIOS_SELECTION* sel = q->sel;
+    ADIOS_VARINFO* v = q->varinfo;
 
-
-int evaluateWithIdxOnBoundingBoxWithBitArray(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeStep)
-{  
-  
-  ADIOS_SELECTION* sel = q->sel;
-  ADIOS_VARINFO* v = q->varinfo;
-
-  create_fastbit_internal(q);
-  casestudyLogger_setPrefix(" created fastbit internal ");
-
-  if (v == NULL) {
-    ADIOS_QUERY* left = (ADIOS_QUERY*)(q->left);
-    ADIOS_QUERY* right = (ADIOS_QUERY*)(q->right);
-
-    if (evaluateWithIdxOnBoundingBoxWithBitArray(idxFile, left, timeStep) < 0) {
-      return -1;
-    }
-    if (evaluateWithIdxOnBoundingBoxWithBitArray(idxFile, right, timeStep) < 0) {
-      return -1;
-    }
-
-    casestudyLogger_setPrefix(" merge bitarray ");
-    free(q->dataSlice);
-    q->dataSlice = bitarray_create(q->rawDataSize);
-    if (q->combineOp == ADIOS_QUERY_OP_OR) {            
-      bitarray_or((uint32_t*)(left->dataSlice), (uint32_t*)(right->dataSlice), (uint32_t*)(q->dataSlice), BITNSLOTS(q->rawDataSize));      
+    int i=0;
+    const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = NULL;
+    if (sel == NULL) {
+        *blockStart=0;
+	if (v->nsteps == 1) { // could be streaming open
+	  *blockEnd = v->nblocks[0]-1;
+	} else {
+	  *blockEnd = v->nblocks[timeStep] -1;      
+	}
+	log_debug(" got blockStart = %d, blockEnd = %d\n", *blockStart, *blockEnd);
     } else {
-      bitarray_and((uint32_t*)(left->dataSlice), (uint32_t*)(right->dataSlice), (uint32_t*)(q->dataSlice), BITNSLOTS(q->rawDataSize));      
-    }
-    free(left->dataSlice);
-    free(right->dataSlice);
-    left->dataSlice = 0;
-    right->dataSlice = 0;
-    return 0;
-  } else {
-    // is a leaf
-    if (q->rawDataSize == 0) {
-      return 0;
+        bb = &(sel->u.bb);      
+	if (v->blockinfo == NULL) {
+	  common_read_inq_var_blockinfo(q->file, v);
+	}
+	*blockStart = fastbit_adios_util_getRelativeBlockNumForPoint(v,bb->start,timeStep);
+	uint64_t end[v->ndim];
+	for (i=0; i<v->ndim; i++) {
+	  end[i] = bb->start[i]+bb->count[i]-1;
+	}
+	*blockEnd = fastbit_adios_util_getRelativeBlockNumForPoint(v, end, timeStep);
+	log_debug(" figured blockStart = %d, blockEnd = %d\n", *blockStart, *blockEnd);
     }
 
+    if ((*blockStart < 0) || (*blockEnd < 0) || (*blockStart > *blockEnd)) {
+        adios_error (err_invalid_query_value, "Query processing failed. Unable to continue using index. vid=%d, dim[0]=%lld\n", v->varid, v->dims[0]);
+	return -1;
+    }
+    casestudyLogger_setPrefix(" computed block ids to scan");
+
+    if (v->nsteps > 1) { // non streaming case
+      for (i=0;i<timeStep; i++) {
+	*sumBlocksBeforeThisTimeStep += v->nblocks[i];
+      }
+    }
+
+    return 0;
+} // getBlockCoveredOnBB
+
+
+void getIncrement(uint64_t absBlockIdx, uint64_t* increment, int packSize, int timeStep, ADIOS_VARINFO* v)
+{
+  int i=0;
+  for (i=0; i<packSize; i++) {
+    uint64_t blockSize = fastbit_adios_util_getBlockSize(v, timeStep, absBlockIdx+i);
+    if (i == 0) {
+      increment[i] = blockSize;
+    } else {
+      increment[i] = blockSize + increment[i-1];
+    }
+  }
+}
+
+void locateBlockFromPack(uint64_t currPosInPack, uint64_t* absBlockIdx, uint64_t* posInBlock, uint64_t* packIncrementByBlock, int packSize)
+{
+  if (currPosInPack > packIncrementByBlock[packSize-1]) {
+      *absBlockIdx=-1;
+      *posInBlock = -1;
+      printf(" ERROR: %llu th element will not be found  in pack starting at block:%llu", currPosInPack, *absBlockIdx);
+  }
+
+  uint64_t packStarts = *absBlockIdx;
+  int i=0;
+  for (i=0; i<packSize; i++) {    
+    if (currPosInPack < packIncrementByBlock[i]) {
+      *absBlockIdx = i + packStarts;
+      *posInBlock = packIncrementByBlock[i] - currPosInPack;
+      break;
+    }
+  }
+}
+
+int recursiveIdentify(uint64_t* packIncrementByBlock, uint64_t currPosInPack, int start, int end)
+{
+  //printf(".... start=%d end = %d, currpos=%llu \n", start, end, currPosInPack);
+  if (end - start == 1) {
+    if (currPosInPack > packIncrementByBlock[start]) {
+      //printf("     ===> %llu\n", end);
+      return end;
+    } else {
+      //printf("     ===> %llu\n", start);
+      return start;
+    }
+  }
+
+  int pos = (start+end)/2;
+
+  if (currPosInPack > packIncrementByBlock[pos]) {
+    return recursiveIdentify(packIncrementByBlock, currPosInPack, pos, end);
+  } else {
+    return recursiveIdentify(packIncrementByBlock, currPosInPack, start, pos);
+  }
+
+}
+int identifyBlockInPack(uint64_t* packIncrementByBlock, uint64_t currPosInPack, int packSize)
+{
+#ifdef SIZEN
+  int i=0;
+  for (i=0; i<packSize; i++) {
+    if (currPosInPack < packIncrementByBlock[i]) {
+      return i;
+    }
+  }
+#else
+  return recursiveIdentify(packIncrementByBlock, currPosInPack, 0, packSize);
+#endif
+  return -1;
+}
+// coordinateArray is hits within the whole pack
+// this function sorts the hits with actual blocks
+// say a pack has N blocks, relative block ids are from 0 to (N-1), 
+// since hits are sorted, so we figure out start-a count-a rests in block-a
+// etc
+void sort(uint64_t* coordinateArray, uint64_t arraySize,  uint64_t* packIncrementByBlock, uint64_t* starts, uint64_t* counts, int* relativeBlockIds, int packSize)
+{
+  int i=0;
+  int whichBlock;
+  uint64_t arrayCounter = 0;
+
+  for (i=0; i<packSize; i++) {
+    relativeBlockIds[i]  = -1;
+  }
+  
+  if (arraySize == 0) {
+    return;
+  }
+
+  relativeBlockIds[0] = identifyBlockInPack(packIncrementByBlock, coordinateArray[0], packSize);
+  starts[0] = 0;
+
+  int lastBlock = identifyBlockInPack(packIncrementByBlock, coordinateArray[arraySize -1], packSize);
+
+  if (relativeBlockIds[0] == lastBlock) {
+      counts[0] = arraySize;
+      return;
+  }
+  
+  int bcounter =0 ; 
+  while (true) {
+    for (arrayCounter=starts[bcounter]+1; arrayCounter<arraySize; arrayCounter++) {
+      //int bid = recursiveIdentify(packIncrementByBlock, coordinateArray[arrayCounter], relativeBlockIds[0], packSize);
+	int bid = identifyBlockInPack(packIncrementByBlock, coordinateArray[arrayCounter], packSize);
+        //int bid = coordinateArray[arrayCounter]/packIncrementByBlock[0];
+
+      if (bid > relativeBlockIds[bcounter]) {
+	 counts[bcounter] = arrayCounter-starts[bcounter];
+	 bcounter++;
+	 starts[bcounter] = arrayCounter;
+	 relativeBlockIds[bcounter] = bid;
+	 break;
+      }
+    }
+
+    if (relativeBlockIds[bcounter] == lastBlock) {
+      counts[bcounter] = arraySize - starts[bcounter];
+      break;
+    }
+  }
+}
+
+
+void loopThrough(uint64_t dimMultiplier, uint64_t accumulatedPos, int currDim, ADIOS_VARINFO* var, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT* bb, uint32_t* bbSlice)
+{
+  int i = 0;
+  if (currDim == var->ndim-1) {
+    for (i=0; i<bb->count[currDim]; i++) {
+      uint64_t pos = accumulatedPos + (i+bb->start[currDim]);
+      bitarray_setbit(bbSlice, pos);
+    }
+    return;
+  } 
+
+  for (i=0; i<bb->count[currDim]; i++) {
+      uint64_t m = dimMultiplier/var->dims[currDim];
+      uint64_t pos = accumulatedPos + (i+bb->start[currDim]) * m;
+      loopThrough(m, pos, currDim+1, var, bb, bbSlice);
+  }
+}
+
+//
+// create bit slice that mark 1 if within BB, 0 elsewise
+//
+uint32_t* bitarray_create_markBB(uint64_t knownSize, ADIOS_VARINFO* var, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT* bb)
+{
+  uint32_t* bbSlice = bitarray_create(knownSize);
+
+  if (bb->ndim == 1) {
+    int i=0;
+    for (i = 0; i<bb->count[0]; i++) {
+      uint64_t pos = (i+bb->start[0]);
+      bitarray_setbit(bbSlice, pos);
+    }
+    return bbSlice;
+  }
+
+  if (bb->ndim == 2) {
+    int i=0, j=0;
+    for (i = 0; i<bb->count[0]; i++) {
+      for (j=0; j<bb->count[1]; j++) {
+	uint64_t pos = (i+bb->start[0]) * var->dims[1] + (j+bb->start[1]);
+	bitarray_setbit(bbSlice, pos);
+      }
+    }
+    return bbSlice;
+  }
+
+  /*
+  if (bb->ndim == 3) {
+    int x=0, y=0, z=0;
+    for (x=0; x<bb->count[0]; x++) {
+      for (y=0; y<bb->count[1]; y++) {
+	for (z=0; z<bb->count[2]; z++) {
+	  uint64_t pos = (x+bb->start[0]) * var->dims[1]*var->dims[2] + (y+bb->start[1]) * var->dims[2] + (z+bb->start[2]);
+	  bitarray_setbit(bbSlice, pos);
+	}
+      }     
+    }
+    return bbSlice;
+  }
+  */
+  int i=0;
+  uint64_t dimOneToN=1;
+  for (i=1; i<bb->ndim; i++) {
+    dimOneToN *= var->dims[i];
+  }
+
+  for (i = 0; i<bb->count[0]; i++) {
+    uint64_t pos = (i+bb->start[0]) * dimOneToN;
+    loopThrough(dimOneToN, pos, 1, var, bb, bbSlice);
+  }
+
+  return bbSlice;
+}
+
+
+void loopThroughAndAssign(uint64_t varDimOneToN, uint64_t bbDimOneToN, uint64_t rpos_sofar, uint64_t pos_sofar, int currDim, ADIOS_VARINFO* var, 
+			  const ADIOS_SELECTION_BOUNDINGBOX_STRUCT* bb, uint32_t* bitSlice, uint32_t* resultSlice, uint64_t knownSize)
+{
+  int i = 0;
+  if (currDim == var->ndim-1) {
+    for (i=0; i<bb->count[currDim]; i++) {
+      uint64_t rpos = rpos_sofar + (i+bb->start[currDim]);
+      uint64_t pos =  pos_sofar + i;
+
+      if ((rpos < knownSize) && BITTEST(resultSlice, rpos)) {
+	bitarray_setbit(bitSlice, pos);
+      }
+    }
+    return;
+  } 
+
+  for (i=0; i<bb->count[currDim]; i++) {
+      uint64_t mv = varDimOneToN/(var->dims[currDim]);
+      uint64_t mb = bbDimOneToN/(bb->count[currDim]);
+      uint64_t rpos = rpos_sofar + (i+bb->start[currDim]) * mv;
+      uint64_t pos  = pos_sofar + (i) * mb;
+      loopThroughAndAssign(mv, mb, rpos, pos, currDim+1, var, bb, bitSlice, resultSlice, knownSize);
+  }
+}
+
+void bitMapBack(uint32_t* bitSlice, uint32_t* resultSlice, ADIOS_VARINFO* var, const ADIOS_SELECTION_BOUNDINGBOX_STRUCT* bb, uint64_t knownSize)
+{
+  int i=0;
+  if (var->ndim == 1) {
+    for (i=0; i<bb->count[0]; i++) {
+      uint64_t rpos = i+bb->start[0];
+      uint64_t pos = i;
+      if ((rpos < knownSize) && BITTEST(resultSlice, rpos)) {
+	bitarray_setbit(bitSlice, pos);
+      }
+    }
+    return;
+  } 
+
+  uint64_t varDimOneToN=1;
+  uint64_t bbDimOneToN = 1;
+  for (i=1; i<bb->ndim; i++) {
+    varDimOneToN *= var->dims[i];
+    bbDimOneToN *= bb->count[i];    
+  }
+
+  for (i = 0; i<bb->count[0]; i++) {
+    uint64_t rpos = (i+bb->start[0]) * varDimOneToN;
+    uint64_t pos = i * bbDimOneToN;
+    loopThroughAndAssign(varDimOneToN, bbDimOneToN, rpos, pos, 1, var, bb, bitSlice, resultSlice, knownSize);
+  }
+}
+
+ //
+ //
+void setBitArray(ADIOS_VARINFO* var, uint32_t* bitSlice, int64_t* coordinateArray, uint64_t count, uint64_t adjustment,
+		 const ADIOS_SELECTION_BOUNDINGBOX_STRUCT* bb, uint64_t eleStarts, uint64_t eleEnds)
+{
+  uint64_t knownSize = eleEnds+1; // at most this many elements. + 1 is due to C arrays starts at 0. 
+  printf(">>>>>>>>>>> TEMPORORY >>>>>>>>>>> TESTING  %llu\n", knownSize);
+  uint32_t* hitsSlice = bitarray_create(knownSize);
+  uint32_t* resultSlice = bitarray_create(knownSize);
+
+  uint32_t* bbSlice = bitarray_create_markBB(knownSize, var, bb);
+ 
+  int k=0;
+  for (k=0; k<count; k++) {
+    int64_t currPosInVar = coordinateArray[k] + adjustment;
+    if (currPosInVar < knownSize) {
+      bitarray_setbit(hitsSlice, currPosInVar);
+    }
+  }
+
+  bitarray_and(hitsSlice, bbSlice,  resultSlice, BITNSLOTS(knownSize));      
+ 
+  // ok
+  int n = bitarray_countHits(resultSlice, BITNSLOTS(knownSize));      
+  printf("Testing out Got hits = %llu \n", n);
+  
+  free(bbSlice);
+  free(hitsSlice);
+
+  bitMapBack(bitSlice, resultSlice, var, bb, knownSize);
+
+  free(resultSlice);
+}
+
+
+void setBitArray0(ADIOS_VARINFO* var, uint32_t* bitSlice, int64_t* coordinateArray, uint64_t count, uint64_t adjustment,
+		 const ADIOS_SELECTION_BOUNDINGBOX_STRUCT* bb, uint64_t eleStarts, uint64_t eleEnds)
+{
+  int isFortranClient = 0;
+
+  int k=0;
+  for (k=0; k<count; k++) {
+    int64_t currPosInBlock = coordinateArray[k] + adjustment;
+      
+    if ((currPosInBlock >= eleStarts) && (currPosInBlock <= eleEnds)) {	  
+        uint64_t spatialCoordinates[bb->ndim];
+	getCoordinateFromVariable(currPosInBlock, var, var->ndim, spatialCoordinates);
+	//posToSpace(currPosInBlock, isFortranClient, bb->count, spatialCoordinates, bb->ndim, bb->start);
+	int64_t p = getPosInBox(bb, bb->ndim, spatialCoordinates, isFortranClient);
+	if (p >= 0) {
+	  bitarray_setbit(bitSlice, p);
+	} 
+    }
+  }
+}
+
+
+int mEvaluateBBRangeFancyQueryOnWhole(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeStep)
+{
+  char bitsArrayName[60];
+  sprintf(bitsArrayName, "%llu_%d", fastbit_adios_getCurrentTimeMillis(), timeStep);
+
+  uint64_t s = 0;
+  uint64_t startRef = 0;
+
+
+  ADIOS_VARINFO* v = getFirstLeaf(q)->varinfo;
+
+  uint64_t eleStarts = 0;
+  uint64_t eleEnds = q->rawDataSize;
+
+  uint64_t totalEle = 1;
+  const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = NULL;
+
+  if (getFirstLeaf(q)->sel != NULL) {
+    bb = &(getFirstLeaf(q)->sel->u.bb);
+    eleStarts = getPosInVariable(v, v->ndim, bb->start, 0);
+    uint64_t end[v->ndim];
+    int coversAll = 1;
+    int i = 0;
+    for (i=0; i<v->ndim; i++) {
+      end[i] = bb->start[i]+bb->count[i]-1;
+      totalEle *= v->dims[i];
+      if (v->dims[i] > bb->count[i]) {
+	coversAll = 0;
+      }
+    }
+
+    if (coversAll == 1) {
+      return mEvaluateTestFullRangeFancyQueryOnWhole(idxFile, q, timeStep);
+    }
+
+    eleEnds = getPosInVariable(v, v->ndim, end, 0);
+    
+  } else {
+    return mEvaluateTestFullRangeFancyQueryOnWhole(idxFile, q, timeStep);
+  }
+
+  ADIOS_VARINFO* packVar = common_read_inq_var (idxFile, "elements");
+  uint64_t recommended_index_ele = 0;
+  common_read_schedule_read (idxFile, NULL, "elements",           0, 1, NULL, &recommended_index_ele);
+  common_read_perform_reads(idxFile, 1);
+
+  //printf("dataSize from: %llu to %llu, elements = %lu\n", eleStarts, eleEnds, recommended_index_ele);
+
+  uint64_t start[v->ndim], count[v->ndim];
+  uint64_t split = totalEle/recommended_index_ele;
+  uint32_t* bitSlice = NULL;
+
+  int64_t eleBoxStarts = -1; 
+  if (split == 0) {
+      // index is on the whole timestep
+      getHandle(timeStep, 0, idxFile,  q,  totalEle);
+      uint64_t count = fastbit_selection_evaluate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle); 	
+      int64_t  coordinateArray[count];
+      fastbit_selection_get_coordinates(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, coordinateArray, count, 0);      
+      
+      // set bits
+      bitSlice = bitarray_create(q->rawDataSize);
+      setBitArray(v, bitSlice, coordinateArray, count, 0, bb, eleStarts, eleEnds);
+  } else {
+      int boxCounter = 0;
+      while (startRef < v->dims[0]) {
+	uint64_t count[v->ndim];
+	uint64_t boxSize = 1;
+	
+	start[0] = startRef;
+	startRef += v->dims[0]/split;
+	if (startRef >= v->dims[0]) {
+	  startRef = v->dims[0];
+	}
+	count[0] = startRef - start[0];
+	boxSize *=count[0];
+	for (s=1; s < v->ndim; s++) {
+	  start[s] = 0;
+	  count[s] = v->dims[s];
+	  boxSize *= count[s];
+	}
+
+	if ((bb->count[0]+bb->start[0] >= start[0]) && (start[0]+count[0] > bb->start[0])) 
+	{
+	  //printf("check: bb from %llu to %llu, box from %llu to %llu\n", bb->start[0], bb->count[0]+bb->start[0], start[0], start[0]+count[0]);
+	  if (eleBoxStarts == -1) {
+	    eleBoxStarts = getPosInVariable(v, v->ndim, start, 0);
+	  }
+	  getHandle(timeStep, start[0], idxFile, q, boxSize);	  
+	
+	  // has to call evaluate before calling either register_selection_as_bit_array() or extend_bit_array()
+	  uint64_t countMe = fastbit_selection_evaluate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle); 
+	  
+	  if (boxCounter == 0) {
+	    fastbit_iapi_register_selection_as_bit_array(bitsArrayName, ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle);
+	  } else {
+	    fastbit_iapi_extend_bit_array_with_selection(bitsArrayName, ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle);
+	  }
+	}
+      
+	boxCounter++;
+      }
+  }
+
+  FastBitSelectionHandle h  =  fastbit_selection_osr(bitsArrayName, FastBitCompareGreater, 0.0);//createHandle(q, bitsArrayName);
+
+  fastbit_adios_util_checkNotNull(h, bitsArrayName);    
+  ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle = h;
+
+  uint64_t resultCount = fastbit_selection_evaluate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle); 	
+  //printf("resultCount = %llu, adjustment = %llu\n", resultCount, eleBoxStarts);
+  int64_t  coordinateArray[resultCount];
+  fastbit_selection_get_coordinates(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, coordinateArray, resultCount, 0);      
+  casestudyLogger_setPrefix(" got coordinates bb");
+
+  bitSlice = bitarray_create(q->rawDataSize);
+  setBitArray(v, bitSlice, coordinateArray, resultCount, eleBoxStarts, bb, eleStarts, eleEnds);
+
+  free(q->dataSlice);
+  q->dataSlice = bitSlice;
+  
+  fastbit_iapi_free_array_by_addr(q->dataSlice);
+  ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle = 0;
+
+  casestudyLogger_setPrefix(" summarized evaluation for bb");  
+}
+
+
+ //
+ // 
+ //
+
+int mEvaluateTestFullRangeFancyQueryOnWhole(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeStep)
+{
+  char bitsArrayName[60];
+  sprintf(bitsArrayName, "%llu_%d", fastbit_adios_getCurrentTimeMillis(), timeStep);
+
+  uint64_t s = 0;
+  uint64_t startRef = 0;
+
+  ADIOS_VARINFO* packVar = common_read_inq_var (idxFile, "elements");
+  uint64_t recommended_index_ele = 0;
+  common_read_schedule_read (idxFile, NULL, "elements",           0, 1, NULL, &recommended_index_ele);
+  common_read_perform_reads(idxFile, 1);
+
+  uint64_t dataSize = q->rawDataSize;
+
+
+  uint64_t start[getFirstLeaf(q)->varinfo->ndim], count[getFirstLeaf(q)->varinfo->ndim];
+  uint64_t split = q->rawDataSize/recommended_index_ele;
+  //uint32_t* bitSlice = bitarray_create(q->rawDataSize);
+  uint32_t* bitSlice = NULL;
+
+  if (split == 0) {
+      // index is on the whole timestep
+      getHandle(timeStep, 0, idxFile,  q,  dataSize);
+      uint64_t count = fastbit_selection_evaluate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle); 	
+      int64_t  coordinateArray[count];
+      fastbit_selection_get_coordinates(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, coordinateArray, count, 0);      
+      
+      int k=0;
+      // set bits
+      bitSlice = bitarray_create(q->rawDataSize);
+      for (k=0; k<count; k++) {
+	int64_t currPosInBlock = coordinateArray[k];
+	if (currPosInBlock >= 0) {
+	  bitarray_setbit(bitSlice, currPosInBlock);
+	}
+      }
+  } else {
+      int boxCounter = 0;
+      ADIOS_VARINFO* v = getFirstLeaf(q)->varinfo;
+      while (startRef < v->dims[0]) {
+	uint64_t count[v->ndim];
+	uint64_t boxSize = 1;
+	
+	start[0] = startRef;
+	startRef += v->dims[0]/split;
+	if (startRef >= v->dims[0]) {
+	  startRef = v->dims[0];
+	}
+	count[0] = startRef - start[0];
+	boxSize *=count[0];
+	for (s=1; s < v->ndim; s++) {
+	  start[s] = 0;
+	  count[s] = v->dims[s];
+	  boxSize *= count[s];
+	}
+	
+	//getHandleFromBlockAtLeafQuery(timeStep, start[0], idxFile,  q,  boxSize);
+	//
+	getHandle(timeStep, start[0], idxFile, q, boxSize);
+	
+	// has to call evaluate before calling either register_selection_as_bit_array() or extend_bit_array()
+	uint64_t countMe = fastbit_selection_evaluate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle); 
+
+	if (boxCounter == 0) {
+	  fastbit_iapi_register_selection_as_bit_array(bitsArrayName, ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle);
+	} else {
+	  fastbit_iapi_extend_bit_array_with_selection(bitsArrayName, ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle);
+	}
+      
+	boxCounter++;
+      }
+  }
+
+  FastBitSelectionHandle h  =  fastbit_selection_osr(bitsArrayName, FastBitCompareGreater, 0.0);//createHandle(q, bitsArrayName);
+
+  fastbit_adios_util_checkNotNull(h, bitsArrayName);    
+  ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle = h;
+
+  uint64_t resultCount = fastbit_selection_evaluate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle); 	
+
+  int64_t  coordinateArray[resultCount];
+  fastbit_selection_get_coordinates(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, coordinateArray, resultCount, 0);      
+  casestudyLogger_setPrefix(" got coordinates bb");
+
+  if (resultCount > q->rawDataSize/2) {
+      int k;
+      bitSlice = bitarray_create(q->rawDataSize);
+
+      for (k=0; k<resultCount; k++) {
+	int64_t currPosInBlock = coordinateArray[k];
+	if (currPosInBlock >= 0) {
+	  bitarray_setbit(bitSlice, currPosInBlock);
+	}
+      } 
+      
+  } else {
+    bitSlice = bitarray_create(q->rawDataSize);
+    int k;
+    for (k=0; k<resultCount; k++) {
+      int64_t currPosInBlock = coordinateArray[k];
+      if (currPosInBlock >= 0) {
+	bitarray_setbit(bitSlice, currPosInBlock);
+      }
+    } 
+  }
+
+  free(q->dataSlice);
+  q->dataSlice = bitSlice;
+  
+  fastbit_iapi_free_array_by_addr(q->dataSlice);
+  ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle = 0;
+
+  casestudyLogger_setPrefix(" summarized evaluation for bb");  
+}
+
+
+ // with fancy query, on leaf node
+int mEvaluateTestFullRange(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeStep)
+{
+
+  char bitsArrayName[60];
+  sprintf(bitsArrayName, "%ld_%d_%d", fastbit_adios_getCurrentTimeMillis(), q->varinfo->varid, timeStep);
+
+  uint64_t s = 0;
+  uint64_t dataSize = 1;
+  uint64_t start[q->varinfo->ndim], count[q->varinfo->ndim];
+  for (s=0; s<q->varinfo->ndim; s++) {
+    dataSize *= q->varinfo->dims[s];
+  }
+
+  uint64_t startRef = 0;
+
+  ADIOS_VARINFO* packVar = common_read_inq_var (idxFile, "elements");
+  uint64_t recommended_index_ele = 0;
+  common_read_schedule_read (idxFile, NULL, "elements",           0, 1, NULL, &recommended_index_ele);
+  common_read_perform_reads(idxFile, 1);
+
+  //printf("dataSize = %llu, elements = %lu\n", dataSize, recommended_index_ele);
+
+  uint64_t split = dataSize/recommended_index_ele;
+  //uint32_t* bitSlice = bitarray_create(q->rawDataSize);
+  uint32_t* bitSlice = NULL;
+
+  if (split == 0) {
+      // index is on the whole timestep
+      getHandleFromBlockAtLeafQuery(timeStep, 0, idxFile,  q,  q->rawDataSize);
+      uint64_t count = fastbit_selection_evaluate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle); 	
+      int64_t  coordinateArray[count];
+      fastbit_selection_get_coordinates(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, coordinateArray, count, 0);      
+      
+      int k=0;
+      // set bits
+      bitSlice = bitarray_create(q->rawDataSize);
+      for (k=0; k<count; k++) {
+	int64_t currPosInBlock = coordinateArray[k];
+	if (currPosInBlock >= 0) {
+	  bitarray_setbit(bitSlice, currPosInBlock);
+	}
+      }
+  } else {
+      int boxCounter = 0;
+      while (startRef < q->varinfo->dims[0]) {
+	uint64_t count[q->varinfo->ndim];
+	uint64_t boxSize = 1;
+	
+	start[0] = startRef;
+	startRef += q->varinfo->dims[0]/split;
+	if (startRef >= q->varinfo->dims[0]) {
+	  startRef = q->varinfo->dims[0];
+	}
+	count[0] = startRef - start[0];
+	boxSize *=count[0];
+	for (s=1; s < q->varinfo->ndim; s++) {
+	  start[s] = 0;
+	  count[s] = q->varinfo->dims[s];
+	  boxSize *= count[s];
+	}
+	
+	getHandleFromBlockAtLeafQuery(timeStep, start[0], idxFile,  q,  boxSize);
+	/*
+	// index is on box identified by start/count
+	uint64_t resultCount = fastbit_selection_evaluate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle); 	
+	int64_t  coordinateArray[resultCount];
+	fastbit_selection_get_coordinates(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, coordinateArray, resultCount, 0);      
+	
+	int64_t startPosInVar = getPosInVariable(q->varinfo, q->varinfo->ndim, start, 0);
+	printf("result count=%lu, startPos=%lld, (%llu, %llu, %llu) \n", resultCount, startPosInVar, start[0], start[1], start[2]);
+	
+	int k=0;
+	// set bits
+	for (k=0; k<resultCount; k++) {
+	  int64_t currPosInBlock = coordinateArray[k]+startPosInVar;
+	  if (currPosInBlock >= 0) {
+	    bitarray_setbit(bitSlice, currPosInBlock);
+	  }
+	} 
+	*/
+	
+	// has to call evaluate before calling either register_selection_as_bit_array() or extend_bit_array()
+	uint64_t countMe = fastbit_selection_evaluate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle); 
+
+	if (boxCounter == 0) {
+	  fastbit_iapi_register_selection_as_bit_array(bitsArrayName, ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle);
+	} else {
+	  fastbit_iapi_extend_bit_array_with_selection(bitsArrayName, ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle);
+	}
+      
+	boxCounter++;
+      }
+  }
+
+  FastBitSelectionHandle h  =  fastbit_selection_osr(bitsArrayName, FastBitCompareGreater, 0.0);//createHandle(q, bitsArrayName);
+
+  fastbit_adios_util_checkNotNull(h, bitsArrayName);    
+  ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle = h;
+
+  uint64_t resultCount = fastbit_selection_evaluate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle); 	
+  //printf("resultCount = %llu\n", resultCount);
+  int64_t  coordinateArray[resultCount];
+  fastbit_selection_get_coordinates(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, coordinateArray, resultCount, 0);      
+  casestudyLogger_setPrefix(" got coordinates bb");
+
+  if (resultCount > q->rawDataSize/2) {
+      int k;
+      bitSlice = bitarray_create(q->rawDataSize);
+
+      for (k=0; k<resultCount; k++) {
+	int64_t currPosInBlock = coordinateArray[k];
+	if (currPosInBlock >= 0) {
+	  bitarray_setbit(bitSlice, currPosInBlock);
+	}
+      } 
+      
+  } else {
+    bitSlice = bitarray_create(q->rawDataSize);
+    int k;
+    for (k=0; k<resultCount; k++) {
+      int64_t currPosInBlock = coordinateArray[k];
+      if (currPosInBlock >= 0) {
+	bitarray_setbit(bitSlice, currPosInBlock);
+      }
+    } 
+  }
+
+
+  free(q->dataSlice);
+  q->dataSlice = bitSlice;
+  
+  fastbit_iapi_free_array_by_addr(q->dataSlice);
+  
+  ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle = 0;
+  
+  casestudyLogger_setPrefix(" summarized evaluation for bb");
+  
+}
+
+/*
+int mEvaluateTestFullRangeNoFancyQuery(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeStep)
+{
+  uint64_t s = 0;
+  uint64_t dataSize = 1;
+  uint64_t start[q->varinfo->ndim], count[q->varinfo->ndim];
+  for (s=0; s<q->varinfo->ndim; s++) {
+    dataSize *= q->varinfo->dims[s];
+ }
+
+  uint64_t startRef = 0;
+
+  ADIOS_VARINFO* packVar = common_read_inq_var (idxFile, "elements");
+  uint64_t recommended_index_ele = 0;
+  common_read_schedule_read (idxFile, NULL, "elements",           0, 1, NULL, &recommended_index_ele);
+  common_read_perform_reads(idxFile, 1);
+
+  //printf("dataSize = %llu, elements = %lu\n", dataSize, recommended_index_ele);
+
+  uint64_t split = dataSize/recommended_index_ele;
+
+  uint32_t* bitSlice = bitarray_create(q->rawDataSize);
+
+  if (split == 0) {
+      // index is on the whole timestep
+      uint64_t count = fastbit_selection_evaluate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle); 	
+      int64_t  coordinateArray[count];
+      fastbit_selection_get_coordinates(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, coordinateArray, count, 0);      
+      
+      int k=0;
+      // set bits
+      for (k=0; k<count; k++) {
+	int64_t currPosInBlock = coordinateArray[k];
+	if (currPosInBlock >= 0) {
+	  bitarray_setbit(bitSlice, currPosInBlock);
+	}
+      }
+  } else {
+      int boxCounter = 0;
+      while (startRef < q->varinfo->dims[0]) {
+	uint64_t count[q->varinfo->ndim];
+	uint64_t boxSize = 1;
+	
+	start[0] = startRef;
+	startRef += q->varinfo->dims[0]/split;
+	if (startRef >= q->varinfo->dims[0]) {
+	  startRef = q->varinfo->dims[0];
+	}
+	count[0] = startRef - start[0];
+	boxSize *=count[0];
+	for (s=1; s < q->varinfo->ndim; s++) {
+	  start[s] = 0;
+	  count[s] = q->varinfo->dims[s];
+	  boxSize *= count[s];
+	}
+	
+	getHandleFromBlockAtLeafQuery(timeStep, start[0], idxFile,  q,  boxSize);
+	// index is on box identified by start/count
+	uint64_t resultCount = fastbit_selection_evaluate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle); 	
+	int64_t  coordinateArray[resultCount];
+	fastbit_selection_get_coordinates(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, coordinateArray, resultCount, 0);      
+	
+	int64_t startPosInVar = getPosInVariable(q->varinfo, q->varinfo->ndim, start, 0);
+	//printf("result count=%lu, startPos=%lld, (%llu, %llu, %llu) \n", resultCount, startPosInVar, start[0], start[1], start[2]);
+	
+	int k=0;
+	// set bits
+	for (k=0; k<resultCount; k++) {
+	  int64_t currPosInBlock = coordinateArray[k]+startPosInVar;
+	  if (currPosInBlock >= 0) {
+	    bitarray_setbit(bitSlice, currPosInBlock);
+	  }
+	}      
+	boxCounter++;
+      }
+  }
+
+  free(q->dataSlice);
+  q->dataSlice = bitSlice;
+  
+  fastbit_iapi_free_array_by_addr(q->dataSlice);
+  
+  ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle = 0;
+  
+  casestudyLogger_setPrefix(" summarized evaluation for bb");  
+}
+*/
+//
+// idx can be based on (m)ultiple blocks
+//
+int mEvaluateWithIdxOnBBoxWithBitArrayOnVar(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeStep)
+{
+    int blockStart=0; // relative
+    int blockEnd = 0; // relative
+
+    uint64_t sumBlocksBeforeThisTimeStep = 0;
+
+    int i=0;
+
+    if (getBlockCoveredOnBB(&blockStart, &blockEnd, &sumBlocksBeforeThisTimeStep, q, timeStep) != 0) {
+      return -1;
+    }
+
+    uint32_t* bitSlice = bitarray_create(q->rawDataSize);
+
+    int rank;
+    MPI_Comm_rank(MPI_COMM_WORLD, &rank);      
+    char bitsArrayName[60];
+    sprintf(bitsArrayName, "%ld_%d_%d_%d", fastbit_adios_getCurrentTimeMillis(), q->varinfo->varid, timeStep, rank);
+
+    uint64_t currBlockIdx = blockStart;
+
+    casestudyLogger_setPrefix(" start scanning");
+    char casestudyLoggerPrefix[30];
+    
+    ADIOS_VARINFO* packVar = common_read_inq_var (idxFile, "pack");
+    int packSize = -1;
+    common_read_schedule_read (idxFile, NULL, "pack",           0, 1, NULL, &packSize);
+    common_read_perform_reads(idxFile, 1);
+        
+    uint64_t virtualBlockStart = blockStart/packSize;
+    uint64_t virtualBlockEnds = blockEnd/packSize;
+    
+    if (q->file->is_streaming == 1) {
+      if (packSize > q->varinfo->sum_nblocks) {
+	packSize = q->varinfo->sum_nblocks;
+      }
+    } else {
+      if (packSize > q->varinfo->nblocks[timeStep]) {
+	packSize = q->varinfo->nblocks[timeStep];
+      }
+    }
+
+      
+    const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = NULL;
+    if (q->sel != NULL) {
+      bb = &(q->sel->u.bb);      
+    }	
+
+    int k=0;
+    uint64_t absBlockIdx = 0;
+
+    for (currBlockIdx= virtualBlockStart; currBlockIdx <= virtualBlockEnds; currBlockIdx++) {
+      //getHandle(timeStep, currBlockIdx*packSize, idxFile, q);	      
+	absBlockIdx = currBlockIdx*packSize+sumBlocksBeforeThisTimeStep;	
+
+	uint64_t packIncrementByBlock[packSize];
+	if (q->file->is_streaming == 1) {
+	  getIncrement(absBlockIdx, packIncrementByBlock, packSize, -1, q->varinfo);
+	} else {
+	  getIncrement(absBlockIdx, packIncrementByBlock, packSize, timeStep, q->varinfo);
+	}
+
+        getHandleFromBlockAtLeafQuery(timeStep, currBlockIdx*packSize, idxFile,  q, packIncrementByBlock[packSize-1]);
+
+	if (((FASTBIT_INTERNAL*)(q->queryInternal))->_handle == 0) {
+	    log_warn(" Unable to construct fastbit query with NULL. Use _no_o idx method \n");
+	    return -1;
+	}
+	
+	sprintf(casestudyLoggerPrefix, "block:%d", currBlockIdx);
+	casestudyLogger_setPrefix(casestudyLoggerPrefix);
+	
+	struct timespec evalStartT; casestudyLogger_getRealtime(&evalStartT);	
+	uint64_t count = fastbit_selection_evaluate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle); 	
+
+	int64_t  coordinateArray[count];
+	fastbit_selection_get_coordinates(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, coordinateArray, count, 0);      
+
+	casestudyLogger_pro_writeout(&evalStartT, "fastbitevaluated");	
+	struct timespec frameStartT; casestudyLogger_getRealtime(&frameStartT);
+
+ 	clear_fastbit_internal_recursive(q);
+
+	if (isSameRegion(q->varinfo, bb, timeStep)) { 
+	    // bb covers all 
+	    // no need to do mapping , to do: check
+	} else {
+	    uint64_t posInBlock;
+	    int isFortranClient = futils_is_called_from_fortran();
+	    if (isFortranClient) { // to do: check
+	      for (k=0; k<count; k++) {
+		uint64_t currPosInPack = coordinateArray[k];		
+	        locateBlockFromPack(currPosInPack, &absBlockIdx, &posInBlock, packIncrementByBlock, packSize);
+		coordinateArray[k] =  getRelativeIdx(posInBlock, q->varinfo, bb, absBlockIdx, timeStep); 	
+	      }
+	    } else { // fastscan on c-clients
+	      uint64_t starts[packSize]; uint64_t counts[packSize]; int relativeBlockIds[packSize];
+	      sort(coordinateArray, count, packIncrementByBlock, starts, counts, relativeBlockIds, packSize);
+
+	      for (k=0; k<packSize; k++) {		
+		if (relativeBlockIds[k] >= 0) {
+		    uint64_t currIdx = absBlockIdx + relativeBlockIds[k];		  
+		    //printf("starts[%d] = %llu counts[%d] = %llu, relativeIdx=%lld, hits=%llu  \n", k, starts[k], k, counts[k], relativeBlockIds[k], count);
+		    ADIOS_VARBLOCK* blockSel = &(q->varinfo->blockinfo[currIdx]);
+		    if (relativeBlockIds[k] > 0) {
+		      int m = 0; 
+		      for (m =starts[k]; m<starts[k]+counts[k]; m++) {
+			//printf(" adjust coordinateArray[%ld],  %lld - %lld \n", m, coordinateArray[m], packIncrementByBlock[relativeBlockIds[k]-1]);
+			coordinateArray[m] = coordinateArray[m] - packIncrementByBlock[relativeBlockIds[k]-1];
+			
+		      }
+		    }
+		    fastscan(coordinateArray, starts[k], counts[k], q->varinfo, blockSel->start, blockSel->count, bb);	
+		} else {
+		    break;
+		}
+	      }
+	    }
+	}
+	// set bits
+	for (k=0; k<count; k++) {
+	  int64_t currPosInSel = coordinateArray[k];
+	  if (currPosInSel >= 0) {
+	    bitarray_setbit(bitSlice, currPosInSel);
+	  }
+	}
+	
+	//casestudyLogger_frame_writeout(&frameStartT, "block processed");
+	casestudyLogger_frame_writeout(&frameStartT, "block processed");
+	log_debug("----\n");
+    }
+    
+    casestudyLogger_setPrefix(" blocksProcessedIndividually!");
+
+    //return fastbit_selection_create(dataType, dataOfInterest, dataSize, compareOp, &vv);
+
+    free(q->dataSlice);
+    q->dataSlice = bitSlice;
+
+    fastbit_iapi_free_array_by_addr(q->dataSlice);
+
+    ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle = 0;
+ 
+    casestudyLogger_setPrefix(" summarized evaluation for bb");
+    //fastbit_adios_util_checkNotNull(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, bitsArrayName);
+}
+//
+// for index that based on one block 
+//
+int evaluateWithIdxOnBBoxWithBitArrayOnVar0(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeStep)
+{
     int blockStart=0; // relative
     int blockEnd = 0; // relative
     int i=0;
+
+    ADIOS_SELECTION* sel = q->sel;
+    ADIOS_VARINFO* v = q->varinfo;
 
     const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = NULL;
     if (sel == NULL) {
@@ -1058,7 +2021,7 @@ int evaluateWithIdxOnBoundingBoxWithBitArray(ADIOS_FILE* idxFile, ADIOS_QUERY* q
 	return -1;
     }
 
-  casestudyLogger_setPrefix(" computed block ids to scan");
+    casestudyLogger_setPrefix(" computed block ids to scan");
 
     uint32_t* bitSlice = bitarray_create(q->rawDataSize);
 
@@ -1072,15 +2035,15 @@ int evaluateWithIdxOnBoundingBoxWithBitArray(ADIOS_FILE* idxFile, ADIOS_QUERY* q
     uint64_t sumBlocksBeforeThisTimeStep = 0;
     if (v->nsteps > 1) { // non streaming case
       for (i=0;i<timeStep; i++) {
-	sumBlocksBeforeThisTimeStep = v->nblocks[i];
+	sumBlocksBeforeThisTimeStep += v->nblocks[i];
       }
     }
 
     casestudyLogger_setPrefix(" start scanning");
     char casestudyLoggerPrefix[30];
-
+    
     for (currBlockIdx=blockStart; currBlockIdx <= blockEnd; currBlockIdx++) {
-      getHandle(timeStep, currBlockIdx, idxFile, q);	      
+      getHandle(timeStep, currBlockIdx, idxFile, q, 0);	      
       if (((FASTBIT_INTERNAL*)(q->queryInternal))->_handle == 0) {
 	log_warn(" Unable to construct fastbit query with NULL. Use _no_o idx method \n");
 	return -1;
@@ -1137,7 +2100,7 @@ int evaluateWithIdxOnBoundingBoxWithBitArray(ADIOS_FILE* idxFile, ADIOS_QUERY* q
 	    }
 	} else { // fastscan on c-clients
 	    ADIOS_VARBLOCK* blockSel = &(v->blockinfo[absBlockIdx]);
-	    fastscan(coordinateArray, count, v, blockSel->start, blockSel->count, bb);	
+	    fastscan(coordinateArray, 0, count, v, blockSel->start, blockSel->count, bb);	
 	}
       }
 
@@ -1167,6 +2130,55 @@ int evaluateWithIdxOnBoundingBoxWithBitArray(ADIOS_FILE* idxFile, ADIOS_QUERY* q
  
     casestudyLogger_setPrefix(" summarized evaluation for bb");
     //fastbit_adios_util_checkNotNull(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, bitsArrayName);
+}
+
+int evaluateWithIdxOnBoundingBoxWithBitArray(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeStep)
+{  
+
+  // printf(" ======== Testing out using fastbit to consolidate ======= \n");
+  //mEvaluateTestFullRangeFancyQueryOnWhole(idxFile, q, timeStep);
+
+  printf(" ======== Testing out using fastbit to consolidate ======= \n");
+  mEvaluateBBRangeFancyQueryOnWhole(idxFile, q, timeStep);
+  return 0;
+
+  //ADIOS_SELECTION* sel = q->sel;
+  ADIOS_VARINFO* v = q->varinfo;
+
+  create_fastbit_internal(q);
+  casestudyLogger_setPrefix(" created fastbit internal ");
+
+  if (v == NULL) {
+    ADIOS_QUERY* left = (ADIOS_QUERY*)(q->left);
+    ADIOS_QUERY* right = (ADIOS_QUERY*)(q->right);
+
+    if (evaluateWithIdxOnBoundingBoxWithBitArray(idxFile, left, timeStep) < 0) {
+      return -1;
+    }
+    if (evaluateWithIdxOnBoundingBoxWithBitArray(idxFile, right, timeStep) < 0) {
+      return -1;
+    }
+
+    casestudyLogger_setPrefix(" merge bitarray ");
+    free(q->dataSlice);
+    q->dataSlice = bitarray_create(q->rawDataSize);
+    if (q->combineOp == ADIOS_QUERY_OP_OR) {            
+      bitarray_or((uint32_t*)(left->dataSlice), (uint32_t*)(right->dataSlice), (uint32_t*)(q->dataSlice), BITNSLOTS(q->rawDataSize));      
+    } else {
+      bitarray_and((uint32_t*)(left->dataSlice), (uint32_t*)(right->dataSlice), (uint32_t*)(q->dataSlice), BITNSLOTS(q->rawDataSize));      
+    }
+    free(left->dataSlice);
+    free(right->dataSlice);
+    left->dataSlice = 0;
+    right->dataSlice = 0;
+    return 0;
+  } else {
+    // is a leaf
+    if (q->rawDataSize == 0) {
+      return 0;
+    }
+    //return mEvaluateWithIdxOnBBoxWithBitArrayOnVar(idxFile, q, timeStep);
+    return mEvaluateTestFullRange(idxFile, q, timeStep);
   }
 }
 
@@ -1268,7 +2280,7 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
     uint64_t sumBlocksBeforeThisTimeStep = 0;
     if (v->nsteps > 1) { // non streaming case
       for (i=0;i<timeStep; i++) {
-	sumBlocksBeforeThisTimeStep = v->nblocks[i];
+	sumBlocksBeforeThisTimeStep += v->nblocks[i];
       }
     }
 
@@ -1276,7 +2288,7 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
     char casestudyLoggerPrefix[30];
 
     for (currBlockIdx=blockStart; currBlockIdx <= blockEnd; currBlockIdx++) {
-      getHandle(timeStep, currBlockIdx, idxFile, q);	      
+      getHandle(timeStep, currBlockIdx, idxFile, q, 0);	      
       if (((FASTBIT_INTERNAL*)(q->queryInternal))->_handle == 0) {
 	log_warn(" Unable to construct fastbit query with NULL. Use _no_o idx method \n");
 	return -1;
@@ -1403,7 +2415,7 @@ FastBitSelectionHandle createHandle(ADIOS_QUERY* q, const char* registeredArrayN
 }
 
 
-void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFile, ADIOS_QUERY* q) 
+void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFile, ADIOS_QUERY* q, uint64_t blockSize) 
 {
   //double *keys = NULL; int64_t*offsets= NULL; uint32_t *bms = NULL;  
     uint64_t nk, no, nb;
@@ -1421,11 +2433,13 @@ void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFi
       common_read_inq_var_blockinfo(dataFile, v);
     }
 
-    uint64_t blockSize = 0;
-    if (q->file->is_streaming == 1) {
+    //uint64_t blockSize = 0;
+    if (blockSize == 0) {
+      if (q->file->is_streaming == 1) {
         blockSize = fastbit_adios_util_getBlockSize(v, -1, blockIdx);
-    } else {
+      } else {
         blockSize = fastbit_adios_util_getBlockSize(v, timeStep, blockIdx);
+      }
     }
 
     int rank;
@@ -1558,6 +2572,10 @@ int readWithTimeStepNoIdx(ADIOS_QUERY* q, int timeStep) {
   if (q->file->is_streaming) 
       ts = 0; // if file is opened as stream, the actual 'actual timestep' is always 0
 
+  if (q->dataSlice == NULL) {
+    q->dataSlice = malloc(common_read_type_size(q->varinfo->type, q->varinfo->value)*q->rawDataSize);
+  }
+
   int errorCode = common_read_schedule_read_byid (q->file, q->sel, q->varinfo->varid, 
                                                   ts, 1, NULL,  q->dataSlice);
   log_debug("      schedule read error code = %d adios_error=%d \n", errorCode, adios_errno);
@@ -1670,7 +2688,7 @@ void blockSelectionFastbitHandle(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
   if (q->varinfo != NULL) {
     const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb = &(q->sel->u.block);
     //int absBlockCounter = query_utils_getGlobalWriteBlockId(wb->index, timeStep, q->_var);    
-    getHandleFromBlockAtLeafQuery(timeStep, wb->index, idxFile, q);
+    getHandleFromBlockAtLeafQuery(timeStep, wb->index, idxFile, q, 0);
   } else {
     blockSelectionFastbitHandle(idxFile, q->left, timeStep);
     blockSelectionFastbitHandle(idxFile, q->right, timeStep);
@@ -1680,15 +2698,15 @@ void blockSelectionFastbitHandle(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
 }
 
 
-void getHandle(int timeStep, int blockIdx, ADIOS_FILE* idxFile, ADIOS_QUERY* q) 
+void getHandle(int timeStep, int blockIdx, ADIOS_FILE* idxFile, ADIOS_QUERY* q, uint64_t blockSize) 
 {
   ADIOS_FILE* dataFile = q->file;
   ADIOS_VARINFO* v = q->varinfo;
 
   FastBitSelectionHandle result = NULL;
   if (v == NULL) {
-    getHandle(timeStep, blockIdx, idxFile, q->left);
-    getHandle(timeStep, blockIdx, idxFile, q->right);
+    getHandle(timeStep, blockIdx, idxFile, q->left, blockSize);
+    getHandle(timeStep, blockIdx, idxFile, q->right, blockSize);
 
     setCombinedQueryInternal(q);
     /*
@@ -1701,7 +2719,7 @@ void getHandle(int timeStep, int blockIdx, ADIOS_FILE* idxFile, ADIOS_QUERY* q)
       q->_queryInternal = fastbit_selection_combine(left->_queryInternal, FastBitCombineOr, right->_queryInternal);
       } */   
   } else {
-    getHandleFromBlockAtLeafQuery(timeStep, blockIdx, idxFile, q);
+    getHandleFromBlockAtLeafQuery(timeStep, blockIdx, idxFile, q, blockSize);
   }     
 }
 
@@ -2078,7 +3096,7 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
   int timeStep = adios_get_actual_timestep(q, incomingTimestep);
 
   call_fastbit_evaluate(q, timeStep, 0);
-  log_debug("::\t max=%llu  lastRead=%llu batchsize=\n", q->maxResultsDesired, q->resultsReadSoFar, batchSize);
+  log_debug("::\t max=%llu  lastRead=%llu batchsize=%llu\n", q->maxResultsDesired, q->resultsReadSoFar, batchSize);
 
   uint64_t retrivalSize = q->maxResultsDesired - q->resultsReadSoFar;
   if (retrivalSize == 0) {

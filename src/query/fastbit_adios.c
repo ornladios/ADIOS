@@ -502,6 +502,10 @@ uint64_t fastbit_adios_util_getBlockSize(ADIOS_VARINFO* v, int timestep, int rel
 
   k += relativeBlockIdx;
   
+  if (k > v->sum_nblocks-1) {
+    return 0;
+  }
+
   log_debug("\n blockinfo[%d]: [ ", k);
   
   for (j=0; j<v->ndim; j++) 
@@ -588,6 +592,25 @@ static const char * value_to_string (enum ADIOS_DATATYPES type, void * data, int
   return s;
 }
 
+void getVarNames(char* bmsVarName, char* keyVarName, char* offsetName, ADIOS_VARINFO* v, int timestep, uint64_t blockNum) {
+
+  /*
+  sprintf(bmsVarName, "bms-%d-%d-block-%d", v->varid, timestep, blockNum);
+  sprintf(keyVarName, "key-%d-%d-block-%d", v->varid, timestep, blockNum);
+  sprintf(offsetName, "offset-%d-%d-block-%d", v->varid, timestep, blockNum);
+  */
+
+  sprintf(bmsVarName, "bms-%d-%d-box-%d", v->varid, timestep, blockNum);
+  sprintf(keyVarName, "key-%d-%d-box-%d", v->varid, timestep, blockNum);
+  sprintf(offsetName, "offset-%d-%d-box-%d", v->varid, timestep, blockNum);
+
+  /*
+  sprintf(bmsVarName, "bms-%d-%d-%d", v->varid, timestep, blockNum);
+  sprintf(keyVarName, "key-%d-%d-%d", v->varid, timestep, blockNum);
+  sprintf(offsetName, "offset-%d-%d-%d", v->varid, timestep, blockNum);
+  */
+
+}
 //
 //
 // caller frees keys, offsets and bms.
@@ -601,10 +624,14 @@ int fastbit_adios_util_readNoBMSFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO
   char offsetName[100];
 
   *bmsVarName = malloc(100);
+
+  getVarNames(*bmsVarName, keyVarName, offsetName, v, timestep, blockNum);
+
+  /*
   sprintf(*bmsVarName, "bms-%d-%d-%d", v->varid, timestep, blockNum);
   sprintf(keyVarName, "key-%d-%d-%d", v->varid, timestep, blockNum);
   sprintf(offsetName, "offset-%d-%d-%d", v->varid, timestep, blockNum);
-
+  */
   log_debug("reading from index file: %s for variables: %s %s %s \n", idxFile->path, *bmsVarName, keyVarName, offsetName);
 
   ADIOS_VARINFO * keyV = common_read_inq_var (idxFile, keyVarName);
@@ -649,7 +676,7 @@ int fastbit_adios_util_readNoBMSFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO
   return 0;
 }
 
-int fastbit_adios_util_readFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, int timestep, int blockNum, 
+int fastbit_adios_util_readFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, int timestep, uint64_t blockNum, 
 					 double** keys, uint64_t* nk, int64_t** offsets, uint64_t* no,
 					 uint32_t** bms, uint64_t* nb)
 
@@ -658,10 +685,12 @@ int fastbit_adios_util_readFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, 
   char keyVarName[100];
   char offsetName[100];
 
+  getVarNames(bmsVarName, keyVarName,  offsetName, v, timestep, blockNum);
+  /*
   sprintf(bmsVarName, "bms-%d-%d-%d", v->varid, timestep, blockNum);
   sprintf(keyVarName, "key-%d-%d-%d", v->varid, timestep, blockNum);
   sprintf(offsetName, "offset-%d-%d-%d", v->varid, timestep, blockNum);
-
+  */
   log_debug("reading from index file: %s for variables: %s %s %s \n", idxFile->path, bmsVarName, keyVarName, offsetName);
 
   ADIOS_VARINFO * bmsV = common_read_inq_var (idxFile, bmsVarName);
