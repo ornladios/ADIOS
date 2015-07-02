@@ -14,6 +14,9 @@
   char gGroupNameFastbitIdx[20] = "notNamed";
 
   char* gBinningOption = 0;
+  char* gIdxFileName = 0;
+  int   pack = 4800; // # of blocks to index with per process 
+  uint64_t recommended_index_ele = 20000000; // 20M elements
 
   int64_t       gAdios_group;
   int64_t       gAdios_write_file;
@@ -28,7 +31,12 @@
 
   uint64_t sum_nb=0, sum_nk=0, sum_no=0;
 
+  uint64_t workCounter=0;
+
+#define BOX
 //void printData(void* data, enum ADIOS_DATATYPES type, uint64_t size);
+void processData(void* data, uint64_t dataCount, int rank, int timestep, char* selName, FastBitDataType ft, ADIOS_VARINFO* v);
+
 
 void defineFastbitVar(int nblocks, const char* name, int64_t* ids, int adiosType, uint64_t* localDim, const char* globalStr, uint64_t* offset)
 {
@@ -46,6 +54,20 @@ void defineFastbitVar(int nblocks, const char* name, int64_t* ids, int adiosType
     ids[i] = adios_define_var (gAdios_group, name, "", adiosType, dimStr, globalStr, offsetStr);
     //adios_set_transform (ids[i], "identity");
   }
+}
+
+int64_t defineAdiosVar(const char* name,  int adiosType, uint64_t localDim, const char* globalStr, uint64_t offset)
+{
+    char offsetStr[100] = "";
+    if (offset != 0) {
+      sprintf(offsetStr, "%llu", offset);
+    } 
+
+    char dimStr[100];
+    sprintf(dimStr, "%llu", localDim);
+    int64_t id =  adios_define_var (gAdios_group, name, "", adiosType, dimStr, globalStr, offsetStr);
+    printf("id = %ld \n", id);
+    return id;
 }
 
 
@@ -203,87 +225,285 @@ void sumLogTime(int stage) {
   */
 }
 
+
+/*
+void onSelection(int rank, ADIOS_FILE* f, ADIOS_VARINFO* v, int timestep, char* selName,  ADIOS_SELECTION* sel, uint64_t selCount, FastBitDataType ft)
+{
+      char bmsVarName[100];
+      char keyVarName[100];
+      char offsetName[100];
+
+      int64_t       var_ids_bms;
+      int64_t       var_ids_key;
+      int64_t       var_ids_offset;
+             
+      sprintf(bmsVarName, "bms-%d-%d-%s", v->varid, timestep, selName);
+      sprintf(keyVarName, "key-%d-%d-%s", v->varid, timestep, selName);
+      sprintf(offsetName, "offset-%d-%d-%s", v->varid, timestep, selName);
+      
+      uint64_t selByteSize = adios_type_size (v->type, v->value) * selCount; 
+      
+      char notes[100];
+      logTime(NULL); logTimeMillis(NULL);
+      
+      sprintf(notes, "  reading data from adios  on varid=%d, time=%d, name=%s, bytes=%ld", v->varid, timestep, selName,  selByteSize);
+      
+      logTime(notes); logTimeMillis(notes);
+      localtime(&indexRefresh);      
+      
+      void* data = malloc (selByteSize);
+
+      int err = adios_schedule_read_byid(f, sel, v->varid, timestep, 1, data);
+      if (!err) {	
+	err = adios_perform_reads(f, 1);
+      } else {
+	printf("Unable to read sel %s at timestep: %d \n", selName, timestep);
+	return;
+	//break;
+      }
+
+      
+      double* keys = NULL;
+      int64_t *offsets = NULL;
+      uint32_t *bms = NULL;
+      uint64_t nk=0, no=0, nb=0;
+      
+      const char* datasetName = "test";
+      logTime("  data collected, fastbit start indexing"); 
+      logTimeMillis("  data collected, fastbit start indexing"); 
+      
+      fastbitIndex(datasetName, data, selCount, ft, &keys, &nk, &offsets, &no, &bms, &nb);
+      logTime("  indexed on block");
+      logTimeMillis("  indexed on block");
+      
+      printf("    rank:%d, index created =  %llu, %llu, %llu, on var:%d, timestep: %d, selection %s\n", rank, nb, nk, no, v->varid, timestep, selName);
+      sum_nb += nb; sum_nk += nk, sum_no += no;
+
+      adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 500); // +5MB for extra room in buffer
+      adios_declare_group (&gAdios_group, gGroupNameFastbitIdx, "", adios_flag_yes);
+      adios_select_method (gAdios_group, "MPI", "", "");
+
+      adios_open (&gAdios_write_file, gGroupNameFastbitIdx, gIdxFileName, "w", MPI_COMM_WORLD);
+
+      uint64_t estimatedbytes = (nb+nk+no)*adios_type_size(adios_double, NULL);
+      uint64_t adios_totalsize;     
+      adios_group_size (gAdios_write_file, estimatedbytes +1048576, &adios_totalsize);     
+
+      printf("=> adios open output file: %s, rank %d allocated %llu bytes... \n", gIdxFileName, rank, adios_totalsize); 
+
+
+      defineFastbitVar(1, bmsVarName, &var_ids_bms, adios_unsigned_integer, &nb,0,0);    			    
+      defineFastbitVar(1, keyVarName, &var_ids_key, adios_double, &nk, 0, 0);
+      defineFastbitVar(1, offsetName, &var_ids_offset, adios_long, &no, 0, 0); 
+
+
+      logTime("  write starts");
+      logTimeMillis("  write starts");
+
+      adios_write_byid(gAdios_write_file, var_ids_bms, bms);
+      adios_write_byid(gAdios_write_file, var_ids_key, keys);
+      adios_write_byid(gAdios_write_file, var_ids_offset, offsets);
+
+      logTime("  write ends");
+      logTimeMillis("  write ends");
+      sumLogTime(1);
+      sumLogTimeMillis(1);
+      
+      adios_selection_delete(sel);
+      free(data);	 
+      data = NULL;
+      
+} // onselection
+*/
+
+void onMultiBlock(int rank, ADIOS_FILE* f, ADIOS_VARINFO* v, int timestep, int blockStart,  int blockEnd, FastBitDataType ft)
+{
+  int i=0;
+  
+  char selName[100];
+  sprintf(selName, "block-%d", blockStart, blockEnd);
+
+  uint64_t blockSizeArray[blockEnd-blockStart];
+
+  uint64_t totalCount = 0;
+  for (i = blockStart; i< blockEnd; i++) {
+      blockSizeArray[i-blockStart] = fastbit_adios_util_getBlockSize(v, timestep, i); 
+      //totalBytes += blockSizeArray[i-blockStart] * adios_type_size (v->type, v->value);
+      totalCount += blockSizeArray[i-blockStart];
+  }
+
+  //void* data = malloc (totalBytes);
+  double* data = (double *) calloc (totalCount, sizeof (double));
+
+  uint64_t currStart = 0;
+  for (i = blockStart; i < blockEnd; i++) {
+      ADIOS_SELECTION* blockSel = adios_selection_writeblock(i);
+      
+      int err = adios_schedule_read_byid(f, blockSel, v->varid, timestep, 1, &data[currStart]);
+      currStart += blockSizeArray[i-blockStart];
+      if (!err) {	
+	err = adios_perform_reads(f, 1);
+      } else {
+	printf("Unable to read block %d at timestep: %d \n", i, timestep);
+	return;
+	//break;
+      }
+  }
+  
+  processData(data, totalCount, rank, timestep, selName, ft, v);
+      //processData(void* data, uint64_t dataCount, int rank, int timestep, char* selName, FastBitDataType ft, ADIOS_VARINFO* v)
+
+} // on multi block
+
+
+void onBox(int rank, ADIOS_FILE* f, ADIOS_VARINFO* v, int timestep, uint64_t* start, uint64_t* count,  FastBitDataType ft)
+{
+  int i=0;
+  
+  char selName[100];
+  sprintf(selName, "box-%lu", start[0]);
+
+
+  uint64_t totalCount = 1;
+  for (i = 0; i<v->ndim; i++) {
+      totalCount *= count[i];
+  }
+
+  double* data = (double *) calloc (totalCount, sizeof (double));
+
+  uint64_t currStart = 0;
+
+  ADIOS_SELECTION* boxSel = adios_selection_boundingbox(v->ndim, start, count);
+  
+  int err = adios_schedule_read_byid(f, boxSel, v->varid, timestep, 1, &data);
+
+  if (!err) {	
+    err = adios_perform_reads(f, 1);
+  }    
+  
+  processData(data, totalCount, rank, timestep, selName, ft, v);
+
+} // on box
+
+
+void processData(void* data, uint64_t dataCount, int rank, int timestep, char* selName, FastBitDataType ft, ADIOS_VARINFO* v)
+{
+      char bmsVarName[100];
+      char keyVarName[100];
+      char offsetName[100];
+
+      int64_t       var_ids_bms;
+      int64_t       var_ids_key;
+      int64_t       var_ids_offset;
+             
+      sprintf(bmsVarName, "bms-%d-%d-%s", v->varid, timestep, selName);
+      sprintf(keyVarName, "key-%d-%d-%s", v->varid, timestep, selName);
+      sprintf(offsetName, "offset-%d-%d-%s", v->varid, timestep, selName);
+      
+
+      double* keys = NULL;
+      int64_t *offsets = NULL;
+      uint32_t *bms = NULL;
+      uint64_t nk=0, no=0, nb=0;
+      
+      const char* datasetName = "test";
+      logTime("  data collected, fastbit start indexing"); 
+      logTimeMillis("  data collected, fastbit start indexing"); 
+	    //fastbit_adios_util_printData(data, v->type, blockBytes/adios_type_size(v->type, v->value));
+      
+      fastbitIndex(datasetName, data, dataCount, ft, &keys, &nk, &offsets, &no, &bms, &nb);
+
+      logTime("  indexed on block");
+      logTimeMillis("  indexed on block");
+      
+      printf("  RANK:%d, index created =  %llu, %llu, %llu, on var:%d, timestep: %d, block %s\n", rank, nb, nk, no, v->varid, timestep, selName);
+      sum_nb += nb; sum_nk += nk, sum_no += no;
+
+      
+      defineFastbitVar(1, bmsVarName, &var_ids_bms, adios_unsigned_integer, &nb,0,0);    			    
+      defineFastbitVar(1, keyVarName, &var_ids_key, adios_double, &nk, 0, 0);
+      defineFastbitVar(1, offsetName, &var_ids_offset, adios_long, &no, 0, 0); 
+
+      printf("bms[0] = %llu, bms[1]=%llu \n", bms[0], bms[1]);
+      //var_ids_bms = defineAdiosVar(bmsVarName, adios_unsigned_integer, nb, 0, 0);
+      //var_ids_key = defineAdiosVar(keyVarName, adios_double, nk, 0, 0);
+      //var_ids_offset = defineAdiosVar(offsetName, adios_long, no, 0, 0);
+
+
+      logTime("  write starts");
+      logTimeMillis("  write starts");
+
+      adios_write_byid(gAdios_write_file, var_ids_bms, bms);
+      adios_write_byid(gAdios_write_file, var_ids_key, keys);
+      adios_write_byid(gAdios_write_file, var_ids_offset, offsets);
+
+      logTime("  write ends");
+      logTimeMillis("  write ends");
+      sumLogTime(1);
+      sumLogTimeMillis(1);
+      
+      free(data);	 
+      data = NULL;
+      free(bms); bms = NULL;
+      free(keys); keys = NULL;
+      free(offsets); offsets = NULL;
+
+     
+}
 void onBlock(int rank, ADIOS_FILE* f, ADIOS_VARINFO* v, int i, int j, int blockCounter, FastBitDataType ft)
 {
       char bmsVarName[100];
       char keyVarName[100];
       char offsetName[100];
 
-       int64_t       var_ids_bms[v->nblocks[i]];
-       int64_t       var_ids_key[v->nblocks[i]];
-       int64_t       var_ids_offset[v->nblocks[i]];
+      int64_t       var_ids_bms[v->nblocks[i]];
+      int64_t       var_ids_key[v->nblocks[i]];
+      int64_t       var_ids_offset[v->nblocks[i]];
+             
+      sprintf(bmsVarName, "bms-%d-%d-%d", v->varid, i, j);
+      sprintf(keyVarName, "key-%d-%d-%d", v->varid, i, j);
+      sprintf(offsetName, "offset-%d-%d-%d", v->varid, i, j);
+      
+
+      uint64_t blockSize = fastbit_adios_util_getBlockSize(v, i, j); 
+      uint64_t blockDataByteSize = adios_type_size (v->type, v->value) * blockSize; 
+      
+      char notes[100];
+      logTime(NULL); logTimeMillis(NULL);
+      
+      sprintf(notes, "  reading data from adios  on varid=%d, time=%d, block: %d, size=%ld bytes=%ld", v->varid, i, j, blockSize, blockDataByteSize);
+      
+      logTime(notes); logTimeMillis(notes);
+      localtime(&indexRefresh);
+      
+      //printf("   %d th block / (%d), size= %llu bytes=%llu", j, blockSize, blockCounter, blockDataByteSize);
+      
+      void* data = malloc (blockDataByteSize);
+      ADIOS_SELECTION* blockSel = adios_selection_writeblock(j);
+      
+      //adios_selcton_writeblock(num),  0 <= num <  nblocks[timestep]
+      //ADIOS_SELECTION* blockSel = adios_selection_writeblock(blockCounter);
+      int err = adios_schedule_read_byid(f, blockSel, v->varid, i, 1, data);
+      if (!err) {	
+	err = adios_perform_reads(f, 1);
+      } else {
+	printf("Unable to read block %d at timestep: %d \n", j, i);
+	return;
+	//break;
+      }
+      //fastbit_adios_util_printData(data, v->type, blockSize);
+
+      char selName[20];
+      sprintf(selName, "block-%d", j);
+      processData(data, blockSize, rank, i, selName, ft, v);
+
+      //processData(void* data, uint64_t dataCount, int rank, int timestep, char* selName, FastBitDataType ft, ADIOS_VARINFO* v)
 
 
-       
-	 sprintf(bmsVarName, "bms-%d-%d-%d", v->varid, i, j);
-	 sprintf(keyVarName, "key-%d-%d-%d", v->varid, i, j);
-	 sprintf(offsetName, "offset-%d-%d-%d", v->varid, i, j);
+      adios_selection_delete(blockSel);
+      verifyData(f, v, blockCounter, i);
+} // onblock
 
-	 //	 blockCounter++;
-	 uint64_t blockSize = fastbit_adios_util_getBlockSize(v, i, j); //blockCounter);
-	 uint64_t blockDataByteSize = adios_type_size (v->type, v->value) * blockSize; 
-
-	 char notes[100];
-	 logTime(NULL); logTimeMillis(NULL);
-
-	 sprintf(notes, "  reading data from adios  on varid=%d, time=%d, block: %d, size=%ld bytes=%ld", v->varid, i, j, blockSize, blockDataByteSize);
-
-	 logTime(notes); logTimeMillis(notes);
-	 localtime(&indexRefresh);
-
-	    //printf("   %d th block / (%d), size= %llu bytes=%llu", j, blockSize, blockCounter, blockDataByteSize);
-	    
-	    void* data = malloc (blockDataByteSize);
-	    ADIOS_SELECTION* blockSel = adios_selection_writeblock(j);
-
-	    //adios_selcton_writeblock(num),  0 <= num <  nblocks[timestep]
-	    //ADIOS_SELECTION* blockSel = adios_selection_writeblock(blockCounter);
-	    int err = adios_schedule_read_byid(f, blockSel, v->varid, i, 1, data);
-	    if (!err) {	
-	      err = adios_perform_reads(f, 1);
-	    } else {
-	      printf("Unable to read block %d at timestep: %d \n", j, i);
-	      return;
-	      //break;
-	    }
-	    //fastbit_adios_util_printData(data, v->type, blockSize);
-	   
-	    double* keys = NULL;
-	    int64_t *offsets = NULL;
-	    uint32_t *bms = NULL;
-	    uint64_t nk=0, no=0, nb=0;
-	    
-	    const char* datasetName = "test";
-	    logTime("  data collected, fastbit start indexing"); 
-	    logTimeMillis("  data collected, fastbit start indexing"); 
-	    //fastbit_adios_util_printData(data, v->type, blockBytes/adios_type_size(v->type, v->value));
-
-	    fastbitIndex(datasetName, data, blockSize, ft, &keys, &nk, &offsets, &no, &bms, &nb);
-	    logTime("  indexed on block");
-	    logTimeMillis("  indexed on block");
-
-	    printf("    rank:%d, index created =  %llu, %llu, %llu, on var:%d, timestep: %d, block %d\n", rank, nb, nk, no, v->varid, i, j);
-	    sum_nb += nb; sum_nk += nk, sum_no += no;
-
-	    defineFastbitVar(1,bmsVarName, &var_ids_bms[j], adios_unsigned_integer, &nb,0,0);    			    
-	    defineFastbitVar(1, keyVarName, &var_ids_key[j], adios_double, &nk, 0, 0);
-	    defineFastbitVar(1, offsetName, &var_ids_offset[j], adios_long, &no, 0, 0); 
-
-	    logTime("  write starts");
-	    logTimeMillis("  write starts");
-	    adios_write_byid(gAdios_write_file, var_ids_bms[j], bms);
-	    adios_write_byid(gAdios_write_file, var_ids_key[j], keys);
-	    adios_write_byid(gAdios_write_file, var_ids_offset[j], offsets);
-	    logTime("  write ends");
-	    logTimeMillis("  write ends");
-	    sumLogTime(1);
-	    sumLogTimeMillis(1);
-
-	    adios_selection_delete(blockSel);
-	    free(data);	 
-
-	    verifyData(f, v, blockCounter, i);
-}
 
 void buildIndex_mpi(ADIOS_FILE* f, ADIOS_VARINFO* v, int rank, int size)
 {
@@ -299,23 +519,98 @@ void buildIndex_mpi(ADIOS_FILE* f, ADIOS_VARINFO* v, int rank, int size)
   int blockCounter = -1;
   FastBitDataType ft = fastbit_adios_util_getFastbitDataType(v->type);
 
+
+#ifdef SINGLE_BLOCK
   for (i=0; i < v->nsteps; i++) {
        int nblocks = v->nblocks[i];
-
-       for (j=0; j < v->nblocks[i]; j++) {
+       for (j=0; j < nblocks; j++) {
 	 blockCounter++;
 	 if (blockCounter % size == rank) {
+
 	   onBlock(rank, f, v, i, j, blockCounter, ft);
+
+	   fastbit_cleanup();
 	 }
        }
+
        printf(" rank %d, varid %d, timestep %d  total index created =  %llu, %llu, %llu, \n", rank, v->varid, i, sum_nb, sum_nk, sum_no);
        printf(" rank %d, varid %d, timestep %d  total bytes         =  %llu, %llu, %llu, \n", rank, v->varid, i,
 	      adios_type_size(adios_unsigned_integer , NULL)*sum_nb,
 	      adios_type_size(adios_double, NULL)*sum_nk, 
 	      adios_type_size(adios_long, NULL)*sum_no);
-       fastbit_cleanup();
+
        printf("\n");
   }
+#endif
+
+#ifdef MULTI_BLOCK
+  for (i=0; i<v->nsteps; i++) {
+    int nblocks = v->nblocks[i];
+    int blockStart = 0;
+    int blockEnd = blockStart+pack;
+
+   
+    while (blockStart < nblocks) {
+      if (blockEnd > nblocks) {
+	blockEnd = nblocks;
+      } 
+      printf("block start=%d, end=%d, max=%d\n", blockStart, blockEnd, nblocks);
+      
+      if (workCounter % size == rank) {
+	printf("%ld  mod %ld == %d \n", workCounter,  size, rank);
+	onMultiBlock(rank, f, v, i, blockStart, blockEnd, ft);
+	fastbit_cleanup();
+      }
+
+      workCounter ++;
+
+      blockStart += pack;
+      blockEnd = blockStart+pack;
+    }
+
+    fastbit_cleanup();
+  }
+#endif
+
+#ifdef BOX
+  for (i=0; i<v->nsteps; i++) {
+    uint64_t s = 0;
+    uint64_t dataSize = 1;
+    uint64_t start[v->ndim];
+    for (s=0; s<v->ndim; s++) {
+      dataSize *= v->dims[s];
+      start[s] = 0;
+    }
+    
+    uint64_t split = dataSize/recommended_index_ele;
+    uint64_t startRef = 0;
+    if (split == 0) {
+      if (rank == 0) {
+	onBox(rank, f, v, i, start, v->dims, ft);
+      }
+    } else {
+      while (startRef < v->dims[0]) {
+	uint64_t count[v->ndim];
+	start[0] = startRef;
+	startRef += v->dims[0]/split;
+	if (startRef >= v->dims[0]) {
+	  startRef = v->dims[0];	  
+	}
+	count[0] = startRef - start[0];
+	for (s=1; s<v->ndim; s++) {
+	  start[s] = 0;
+	  count[s] = v->dims[s];
+	}
+
+	if (workCounter % size == rank) {
+	  onBox(rank, f, v, i, start, count, ft);
+	}
+
+	workCounter ++;
+      }
+    }    
+  }
+#endif
 }
 
 void buildIndexOnAllVar(ADIOS_FILE* f, int rank, int size) 
@@ -371,6 +666,42 @@ uint64_t estimateBytesOnVar(ADIOS_FILE* f, ADIOS_VARINFO* v)
     return adios_type_size (v->type, v->value) * result; 
     //int typeSize = adios_type_size(v->type, NULL);
     //return result * typeSize;
+}
+
+int getJobCounter(ADIOS_FILE* f)
+{
+  int numVars = f->nvars;
+  int counter = 0;
+
+  int i=0, k=0;
+  for (i=0; i<numVars; i++) {
+    char* varName = f->var_namelist[i];
+    ADIOS_VARINFO* v = adios_inq_var(f, varName);
+    if (v->ndim == 0) {
+      continue;
+    }
+    for (k=0; k<v->nsteps; k++) {
+#ifdef MULTI_BOX
+      int nblocks = v->nblocks[k];
+      printf("var = %s, timestep = %ld,  nblocks=%ld\n", varName, k, nblocks);
+      int remainder = nblocks % pack;
+      counter += nblocks/pack;
+#endif
+#ifdef BOX
+      int j=0;
+      uint64_t totalElements =1;
+      for (j=0; j<v->ndim; j++) {
+	totalElements *= v->dims[j];
+      }
+      int remainder = totalElements % recommended_index_ele;      
+      counter += totalElements/recommended_index_ele;      
+#endif
+      if (remainder > 0) {
+	counter += 1;
+      }
+    }
+  }
+  return counter;
 }
 
 int64_t getByteEstimationOnFile(ADIOS_FILE* f, int rank) 
@@ -439,15 +770,12 @@ int main (int argc, char** argv)
   //MPI_Comm    comm_dummy = 0;  // MPI_Comm is defined through adios_read.h 
   MPI_Comm comm_dummy = MPI_COMM_WORLD;
 
-
   int         rank, size;
   MPI_Init (&argc, &argv);			   
   MPI_Comm_rank (comm_dummy, &rank);
   MPI_Comm_size (comm_dummy, &size);
 
   adios_init_noxml (comm_dummy);
-
-  char *idxFileName;
   
   if (argc < 2) {
     printf("Usage: index_fastbit fileName (attrName)");
@@ -459,28 +787,56 @@ int main (int argc, char** argv)
     printf ("::%s\n", adios_errmsg());
     return -1;
   }
-
+  
+  /*
   adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, (f->file_size)*2/1048576 + 5); // +5MB for extra room in buffer
   adios_declare_group (&gAdios_group, gGroupNameFastbitIdx, "", adios_flag_yes);
   adios_select_method (gAdios_group, "MPI", "", "");
+  */
+  gIdxFileName = fastbit_adios_util_getFastbitIndexFileName(argv[1]);
+  unlink(gIdxFileName);
 
-  
-  idxFileName = fastbit_adios_util_getFastbitIndexFileName(argv[1]);
+      adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 500); // +5MB for extra room in buffer
+      adios_declare_group (&gAdios_group, gGroupNameFastbitIdx, "", adios_flag_yes);
+      adios_select_method (gAdios_group, "MPI", "", "");
 
-  unlink(idxFileName);
-  adios_open (&gAdios_write_file, gGroupNameFastbitIdx, idxFileName, "w", comm_dummy);
+      adios_open (&gAdios_write_file, gGroupNameFastbitIdx, gIdxFileName, "w", MPI_COMM_WORLD);
 
-  uint64_t adios_totalsize;
-  
-  uint64_t estimatedbytes = getByteEstimation(f, rank, argc, argv);
-  // each processor is writing call this function, so the eventual size would add up 
-  adios_group_size (gAdios_write_file, estimatedbytes/size+1048576, &adios_totalsize);     
+#ifdef MULTI_BLOCK
+      int testid = adios_define_var (gAdios_group, "pack", "", adios_integer , 0, 0, 0);
+#endif
+#ifdef BOX
+      int testid = adios_define_var (gAdios_group, "elements", "", adios_integer , 0, 0, 0);
+#endif
+      //uint64_t estimatedbytes = (nb+nk+no)*adios_type_size(adios_double, NULL);
+      int jobCounter = getJobCounter(f);
+      uint64_t estimatedbytes =  getByteEstimationOnFile(f, rank);
+      if (size > 1) {
+	int maxJobsPP = jobCounter/size + 1;
+        estimatedbytes = estimatedbytes * maxJobsPP /jobCounter +1048576;
+      }
+      //uint64_t estimatedbytes =  getByteEstimationOnFile(f, rank)/size ;
+      estimatedbytes += 1048576;
+      uint64_t adios_totalsize;      // adios_group_size needs to be call before any write_byid, Otherwise write_byid does nothing 
+      adios_group_size (gAdios_write_file, estimatedbytes , &adios_totalsize);     
 
-  printf("=> adios open output file: %s, rank %d allocated %llu bytes... \n", idxFileName, rank, adios_totalsize); 
+      printf("=> .. adios open output file: %s, rank %d allocated %llu bytes... \n", gIdxFileName, rank, adios_totalsize); 
+      // IMPORTANT: 
+      // can only call open/close once in a process
+      // otherwise data is tangled or only the data in the last open/close call is recorded
+
+#ifdef MULTI_BLOCK
+      adios_write_byid(gAdios_write_file, testid, &pack);
+#endif
+#ifdef BOX
+      adios_write_byid(gAdios_write_file, testid, &recommended_index_ele);
+#endif
+
 
   sumLogTime(-1);
   sumLogTimeMillis(-1);
 
+  
   if (argc >= 3) {
      int i=2;
      while (i<argc) {
@@ -511,6 +867,7 @@ int main (int argc, char** argv)
     buildIndexOnAllVar(f, rank, size);
   }
 
+
   sumLogTime(0);
   sumLogTimeMillis(0);
 
@@ -523,9 +880,9 @@ int main (int argc, char** argv)
 
 
   // read back:
-  f = adios_read_open_file (idxFileName, ADIOS_READ_METHOD_BP, comm_dummy);
+  f = adios_read_open_file (gIdxFileName, ADIOS_READ_METHOD_BP, comm_dummy);
   if (f == NULL) {
-    printf("No such file: %s \n", idxFileName);
+    printf("No such file: %s \n", gIdxFileName);
     return 0;
   }
 
@@ -550,14 +907,14 @@ int main (int argc, char** argv)
   adios_read_close(f);
 
   if (rank == 0) {
-    printf(" ==>  index file is at: %s\n", idxFileName);
+    printf(" ==>  index file is at: %s\n", gIdxFileName);
   }
 
   // clean up
   MPI_Barrier (comm_dummy);
   adios_finalize (rank);
   MPI_Finalize ();
-  free (idxFileName);
+  free (gIdxFileName);
 
   fastbit_cleanup();
   return 0;
