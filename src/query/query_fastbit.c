@@ -1304,7 +1304,7 @@ void setBitArray(ADIOS_VARINFO* var, uint32_t* bitSlice, int64_t* coordinateArra
 		 const ADIOS_SELECTION_BOUNDINGBOX_STRUCT* bb, uint64_t eleStarts, uint64_t eleEnds)
 {
   uint64_t knownSize = eleEnds+1; // at most this many elements. + 1 is due to C arrays starts at 0. 
-  printf(">>>>>>>>>>> TEMPORORY >>>>>>>>>>> TESTING  %llu\n", knownSize);
+
   uint32_t* hitsSlice = bitarray_create(knownSize);
   uint32_t* resultSlice = bitarray_create(knownSize);
 
@@ -1322,7 +1322,7 @@ void setBitArray(ADIOS_VARINFO* var, uint32_t* bitSlice, int64_t* coordinateArra
  
   // ok
   int n = bitarray_countHits(resultSlice, BITNSLOTS(knownSize));      
-  printf("Testing out Got hits = %llu \n", n);
+
   
   free(bbSlice);
   free(hitsSlice);
@@ -1373,27 +1373,26 @@ int mEvaluateBBRangeFancyQueryOnWhole(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int t
   const ADIOS_SELECTION_BOUNDINGBOX_STRUCT *bb = NULL;
 
   if (getFirstLeaf(q)->sel != NULL) {
-    bb = &(getFirstLeaf(q)->sel->u.bb);
-    eleStarts = getPosInVariable(v, v->ndim, bb->start, 0);
-    uint64_t end[v->ndim];
-    int coversAll = 1;
-    int i = 0;
-    for (i=0; i<v->ndim; i++) {
-      end[i] = bb->start[i]+bb->count[i]-1;
-      totalEle *= v->dims[i];
-      if (v->dims[i] > bb->count[i]) {
-	coversAll = 0;
+      bb = &(getFirstLeaf(q)->sel->u.bb);
+      eleStarts = getPosInVariable(v, v->ndim, bb->start, 0);
+      uint64_t end[v->ndim];
+      int coversAll = 1;
+      int i = 0;
+      for (i=0; i<v->ndim; i++) {
+	end[i] = bb->start[i]+bb->count[i]-1;
+	totalEle *= v->dims[i];
+	if (v->dims[i] > bb->count[i]) {
+	  coversAll = 0;
+	}
       }
-    }
-
-    if (coversAll == 1) {
-      return mEvaluateTestFullRangeFancyQueryOnWhole(idxFile, q, timeStep);
-    }
-
-    eleEnds = getPosInVariable(v, v->ndim, end, 0);
-    
+      
+      if (coversAll == 1) {
+	return mEvaluateTestFullRangeFancyQueryOnWhole(idxFile, q, timeStep);
+      }
+      
+      eleEnds = getPosInVariable(v, v->ndim, end, 0);      
   } else {
-    return mEvaluateTestFullRangeFancyQueryOnWhole(idxFile, q, timeStep);
+      return mEvaluateTestFullRangeFancyQueryOnWhole(idxFile, q, timeStep);
   }
 
   ADIOS_VARINFO* packVar = common_read_inq_var (idxFile, "elements");
@@ -1418,6 +1417,15 @@ int mEvaluateBBRangeFancyQueryOnWhole(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int t
       // set bits
       bitSlice = bitarray_create(q->rawDataSize);
       setBitArray(v, bitSlice, coordinateArray, count, 0, bb, eleStarts, eleEnds);
+
+      free(q->dataSlice);
+      q->dataSlice = bitSlice;
+      
+      fastbit_iapi_free_array_by_addr(q->dataSlice);
+      ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle = 0;
+      
+      casestudyLogger_setPrefix(" summarized evaluation for bb");  
+      return;
   } else {
       int boxCounter = 0;
       while (startRef < v->dims[0]) {
@@ -1524,6 +1532,14 @@ int mEvaluateTestFullRangeFancyQueryOnWhole(ADIOS_FILE* idxFile, ADIOS_QUERY* q,
 	  bitarray_setbit(bitSlice, currPosInBlock);
 	}
       }
+      free(q->dataSlice);
+      q->dataSlice = bitSlice;
+      
+      fastbit_iapi_free_array_by_addr(q->dataSlice);
+      ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle = 0;
+      
+      casestudyLogger_setPrefix(" summarized evaluation for bb");  
+      return;
   } else {
       int boxCounter = 0;
       ADIOS_VARINFO* v = getFirstLeaf(q)->varinfo;
@@ -2135,13 +2151,10 @@ int evaluateWithIdxOnBBoxWithBitArrayOnVar0(ADIOS_FILE* idxFile, ADIOS_QUERY* q,
 int evaluateWithIdxOnBoundingBoxWithBitArray(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeStep)
 {  
 
-  // printf(" ======== Testing out using fastbit to consolidate ======= \n");
-  //mEvaluateTestFullRangeFancyQueryOnWhole(idxFile, q, timeStep);
-
-  printf(" ======== Testing out using fastbit to consolidate ======= \n");
   mEvaluateBBRangeFancyQueryOnWhole(idxFile, q, timeStep);
   return 0;
 
+#ifdef NEVER
   //ADIOS_SELECTION* sel = q->sel;
   ADIOS_VARINFO* v = q->varinfo;
 
@@ -2180,6 +2193,7 @@ int evaluateWithIdxOnBoundingBoxWithBitArray(ADIOS_FILE* idxFile, ADIOS_QUERY* q
     //return mEvaluateWithIdxOnBBoxWithBitArrayOnVar(idxFile, q, timeStep);
     return mEvaluateTestFullRange(idxFile, q, timeStep);
   }
+#endif
 }
 
 int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeStep)
