@@ -38,7 +38,11 @@ void casestudyLogger_init()
 
 extern void casestudyLogger_print(CollectionPoint* p, const char* msg)
 {
+#ifdef TIMESTUDY
   printf("%s: %llu sec %llu millisec  accumulated, visited: %lu times \n",  msg,  p->_accumulator.tv_sec, p->_accumulator.tv_nsec/((unsigned long)1000000), p->_counter);
+#else
+  log_debug("%s: %llu sec %llu millisec  accumulated, visited: %lu times \n",  msg,  p->_accumulator.tv_sec, p->_accumulator.tv_nsec/((unsigned long)1000000), p->_counter);
+#endif
 }
 
 extern void casestudyLogger_starts(const char* ref)
@@ -51,7 +55,9 @@ extern void casestudyLogger_starts(const char* ref)
   _idxVisits.tv_nsec=0;
   _idxVisits.tv_sec=0;
   */
+#ifdef TIMESTUDY
   printf("==> casestudy %s starts at: %llu sec\n", ref, _startMillis/1000);
+#endif
 }
 
 
@@ -84,6 +90,7 @@ extern void casestudyLogger_ends(const char* ref)
   unsigned long endMillis = fastbit_adios_getCurrentTimeMillis();
   unsigned long diffmillis = endMillis - _startMillis;
 
+#ifdef TIMESTUDY
   unsigned long diffsec = diffmillis/1000;
   if (diffsec > 60) {
     unsigned long diffmin = diffsec/60;
@@ -92,6 +99,7 @@ extern void casestudyLogger_ends(const char* ref)
   } else {
     printf("%s took: %lu millisecs = %lu sec\n", ref, diffmillis, diffsec);
   }
+#endif
 }
 
 extern void casestudyLogger_getRealtime(struct timespec* spec)
@@ -117,6 +125,7 @@ extern void casestudyLogger_setPrefix(const char* prefix)
   } 
     
 
+#ifdef TIMESTUDY
   if (diffsec > 60) {
     unsigned long diffmin = diffsec/60;
     diffsec = diffsec - diffmin*60;
@@ -124,7 +133,7 @@ extern void casestudyLogger_setPrefix(const char* prefix)
   } else {
     printf("on %s, time passed since start: %lu millisecs = %lu sec, ministep=%lu milliseconds\n", prefix, diffMillis, diffsec, ministepMillis);
   }
-
+#endif
   _milestoneMillis = currMillis;
 }
 
