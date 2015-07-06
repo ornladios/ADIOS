@@ -13,7 +13,6 @@ Reading data
 In this quick start guide, we assume we have an Adios bp file (name:
 adios_test.bp) contains the following three variables and one attribute:
 ::
-
    $ bpls -lva adios_test.bp
    integer  NX                        scalar = 10
    integer  size                      scalar = 2
@@ -85,6 +84,60 @@ dictionary-style:
 
 Writing data
 ------------
+
+Now, we will show how we can create the Adios BP file used in the
+previous section:
+::
+
+   $ bpls -lva adios_test.bp
+   integer  NX                        scalar = 10
+   integer  size                      scalar = 2
+   double   temperature               {2, 10} = 0 / 19 / 9.5 / 5.76628
+   string   /temperature/description  attr   = "Global array written from 'size' processes"
+
+
+First, we load necessary modules and prepare our Numpy data to save:
+
+>>> import adios as ad
+>>> import numpy as np
+
+>>> NX = 10
+>>> size = 2
+>>> t = np.array(range(NX*size), dtype=np.float64)
+>>> tt = t.reshape((size, NX))
+
+I.e., we have two scalar variables (NX and size) and one 2-D array (tt).
+
+Then, we initialize Adios and specify a buffer size (10MB) which Adios
+can work with:
+
+>>> ad.init_noxml()
+>>> ad.allocate_buffer (ad.BUFFER_ALLOC_WHEN.NOW, 10);
+
+Then, we give a file name to create and specify a group with Adios method:
+
+>>> fw = ad.writer(fname)
+>>> fw.declare_group('group', method='POSIX1')
+
+"POSIX1" is one of many Adios's write methods. Others are "MPI",
+"MPI_AGGREGATE", "FLEXPATH", "DATASPACES", etc. More detailed
+descriptions are in the Adios manual.
+
+Now, we assign our values:
+
+>>> fw['NX'] = NX
+>>> fw['size'] = size
+>>> fw['temperature'] = tt
+
+To write an attribute, we can do as follows:
+
+>>> fw.attr['/temperature/description'] = "Global array written from 'size' processes"
+
+Finally, we let Adios to write a file by calling "close"
+
+>>> fw.close()
+
+
 
 
           
