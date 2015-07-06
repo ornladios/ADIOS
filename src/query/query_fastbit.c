@@ -1397,7 +1397,12 @@ int mEvaluateBBRangeFancyQueryOnWhole(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int t
   int coversAll = 1;
   int i = 0;
   for (i=0; i<v->ndim; i++) {
-    end[i] = regionStart[i]+regionCount[i]-1;
+    if (regionCount[i] > 0) {
+      end[i] = regionStart[i]+regionCount[i]-1;
+    } else {
+      end[i] = regionStart[i];
+    }
+
     totalEle *= v->dims[i];
     if (v->dims[i] > regionCount[i]) {
       coversAll = 0;
