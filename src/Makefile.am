@@ -251,17 +251,17 @@ libadiosf_nompi_a_CFLAGS = $(MACRODEFFLAG)_NOMPI $(ADIOSLIB_SEQ_CFLAGS)
 
 if HAVE_DATASPACES
 libadios_a_SOURCES += write/adios_dataspaces.c read/read_dataspaces.c
-libadios_nompi_a_SOURCES += write/adios_dataspaces.c read/read_dataspaces.c
+#libadios_nompi_a_SOURCES += write/adios_dataspaces.c read/read_dataspaces.c
 if BUILD_FORTRAN
-FortranLibSources += write/adios_dataspaces.c read/read_dataspaces.c
+FortranLibMPISources += write/adios_dataspaces.c read/read_dataspaces.c
 endif
 endif
 
 if HAVE_DIMES
 libadios_a_SOURCES += write/adios_dimes.c read/read_dimes.c
-libadios_nompi_a_SOURCES += write/adios_dimes.c read/read_dimes.c
+#libadios_nompi_a_SOURCES += write/adios_dimes.c read/read_dimes.c
 if BUILD_FORTRAN
-FortranLibSources += write/adios_dimes.c read/read_dimes.c
+FortranLibMPISources += write/adios_dimes.c read/read_dimes.c
 endif
 endif
 
@@ -566,12 +566,12 @@ libadiosread_nompi_a_SOURCES = core/mpidummy.c\
                       read/read_bp.c 
 
 					  
-if HAVE_DATASPACES
-libadiosread_nompi_a_SOURCES += read/read_dataspaces.c
-endif
-if HAVE_DIMES
-libadiosread_nompi_a_SOURCES += read/read_dimes.c
-endif
+#if HAVE_DATASPACES
+#libadiosread_nompi_a_SOURCES += read/read_dataspaces.c
+#endif
+#if HAVE_DIMES
+#libadiosread_nompi_a_SOURCES += read/read_dimes.c
+#endif
 if HAVE_DATATAP
 libadiosread_nompi_a_SOURCES += read/read_datatap.c
 endif
@@ -614,12 +614,12 @@ FortranReadSeqLibSource = core/mpidummy.c\
                           core/util.c \
                           core/qhashtbl.c \
                           read/read_bp.c 
-if HAVE_DATASPACES
-FortranReadSeqLibSource += read/read_dataspaces.c
-endif
-if HAVE_DIMES
-FortranReadSeqLibSource += read/read_dimes.c
-endif
+#if HAVE_DATASPACES
+#FortranReadSeqLibSource += read/read_dataspaces.c
+#endif
+#if HAVE_DIMES
+#FortranReadSeqLibSource += read/read_dimes.c
+#endif
 if HAVE_DATATAP
 FortranReadSeqLibSource += read/read_datatap.c
 endif

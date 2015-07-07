@@ -54,7 +54,7 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     module unload netcdf
     #module load szip
     module load bzip2
-    module load dataspaces/1.5.0
+    #module load dataspaces/1.5.0
     export MPICC=mpicc
     export MPICXX=mpiCC
     export MPIFC=mpif90
@@ -65,13 +65,15 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     WITHFLEX=""
     WITHFGR=""
     WITHFASTBIT=""
+    unset DATASPACES_DIR
     if [ "$TARGET" == "pgi" ]; then
         export CC=pgcc
         export CXX=pgCC
         export FC=pgf90
         WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/sith/$TARGET"
         WITHFGR="--with-fgr=/ccs/proj/e2e/qliu/tap" 
-        WITHFASTBIT="--with-fastbit=/sw/redhat6/fastbit/svn/rhel6_gnu4.7.2"
+        WITHFASTBIT="--with-fastbit=/sw/redhat6/fastbit/svn/rhel6_gnu4.4.7"
+        DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith-tcp/1.6.pgi"
         #DATASPACES_DIR="/ccs/home/hbui/usr/software/dataspaces-dev"
     elif [ "$TARGET" == "gnu" ]; then
         export CC=gcc
@@ -80,7 +82,8 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         #export CFLAGS="$CFLAGS -gdwarf-3" 
         #export FCFLAGS="$FCFLAGS -gdwarf-3" 
         WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/sith/$TARGET"
-        WITHFASTBIT="--with-fastbit=/sw/redhat6/fastbit/svn/rhel6_gnu4.7.2"
+        WITHFASTBIT="--with-fastbit=/sw/redhat6/fastbit/svn/rhel6_gnu4.8.2"
+        DATASPACES_DIR="/ccs/proj/e2e/dataspaces/sith-tcp/1.6.gnu"
     elif [ "$TARGET" == "intel" ]; then
         export CC=icc
         export CXX=icpc
@@ -102,12 +105,12 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
         --with-netcdf-libs="${SEQ_NC_CLIB}" \
         --with-zlib \
         --with-bzip2=$BZIP2_DIR \
-        --with-dataspaces=$DATASPACES_DIR \
-        --with-dimes=$DATASPACES_DIR \
+        --without-infiniband --with-dataspaces=$DATASPACES_DIR \
         $WITHFLEX \
         $WITHFASTBIT \
         --with-aplod=/ccs/proj/e2e/ncsu/sith.gnu \
         --with-isobar=/ccs/proj/e2e/ncsu/sith.gnu \
+        #--with-dimes=$DATASPACES_DIR \
         #--with-glib=/ccs/proj/e2e/qliu/glib
         #$WITHFGR \
         #--with-szip=$SZIP_DIR \

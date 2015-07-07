@@ -90,7 +90,16 @@ void adios_init_transports (struct adios_transport_struct ** t)
     ASSIGN_FNS(nssi_filter,ADIOS_METHOD_NSSI_FILTER,"NSSI_FILTER")
 #    endif
 
+#    if HAVE_DATASPACES
+    ASSIGN_FNS(dataspaces,ADIOS_METHOD_DATASPACES,"DATASPACES")
+#    endif
+
+#    if HAVE_DIMES
+    ASSIGN_FNS(dimes,ADIOS_METHOD_DIMES,"DIMES")
+#    endif
+
 #  endif /* _NOMPI */
+
 
 #  if HAVE_DATATAP
     ASSIGN_FNS(datatap,ADIOS_METHOD_DATATAP,"DATATAP")
@@ -105,14 +114,6 @@ void adios_init_transports (struct adios_transport_struct ** t)
 
     ASSIGN_FNS(posix,ADIOS_METHOD_POSIX,"POSIX")
     ASSIGN_FNS(posix1,ADIOS_METHOD_POSIX1,"POSIX1")
-
-#  if HAVE_DATASPACES
-    ASSIGN_FNS(dataspaces,ADIOS_METHOD_DATASPACES,"DATASPACES")
-#  endif
-
-#  if HAVE_DIMES
-    ASSIGN_FNS(dimes,ADIOS_METHOD_DIMES,"DIMES")
-#  endif
 
 #  ifndef NO_RESEARCH_TRANSPORTS
     //ASSIGN_FNS(provenance,ADIOS_METHOD_PROVENANCE)

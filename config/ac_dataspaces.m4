@@ -132,7 +132,11 @@ else
                     [DATASPACES_LIBS="-ldspaces -ldscommon -ldart"],
                     [AM_CONDITIONAL(HAVE_DATASPACES,false)])
         else
-            AM_CONDITIONAL(HAVE_DATASPACES,false)
+            dnl Now TCP is working #AM_CONDITIONAL(HAVE_DATASPACES,false)
+            AC_TRY_COMPILE([#include "dataspaces.h"],
+                    [int err; err = dspaces_init(1,1,0,"");],
+                    [DATASPACES_LIBS="-ldspaces -ldscommon -ldart"],
+                    [AM_CONDITIONAL(HAVE_DATASPACES,false)])
         fi
     fi
 
