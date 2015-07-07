@@ -369,8 +369,8 @@ top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
 AUTOMAKE_OPTIONS = no-dependencies
-INCLUDES = $(all_includes) -I$(top_srcdir)/src \
-	-I$(top_srcdir)/src/core
+INCLUDES = $(all_includes) -I$(top_builddir)/src/public \
+	-I$(top_srcdir)/src -I$(top_srcdir)/src/core
 adios_index_fastbit_SOURCES = adios_index_fastbit.c 
 adios_index_fastbit_CPPFLAGS = $(ADIOSLIB_CPPFLAGS) $(ADIOSLIB_CFLAGS) $(ADIOSLIB_EXTRA_CPPFLAGS)
 adios_index_fastbit_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)

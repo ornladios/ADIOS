@@ -2,7 +2,7 @@ AUTOMAKE_OPTIONS = no-dependencies
 
 INCLUDES = $(all_includes)
 
-INCLUDES += -I$(top_srcdir)/src -I$(top_srcdir)/src/core
+INCLUDES += -I$(top_builddir)/src/public -I$(top_srcdir)/src -I$(top_srcdir)/src/core
 
 
 bin_PROGRAMS = adios_index_fastbit
