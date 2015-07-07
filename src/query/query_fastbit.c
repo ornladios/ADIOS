@@ -2149,6 +2149,66 @@ int evaluateWithIdxOnBoundingBoxWithBitArray(ADIOS_FILE* idxFile, ADIOS_QUERY* q
 
 }
 
+
+int evaluateWithIdxOnBlockWithBitArray(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeStep)
+{  
+  
+  ADIOS_VARINFO* v = q->varinfo;
+
+  create_fastbit_internal(q);
+  casestudyLogger_setPrefix(" created fastbit internal ");
+
+  if (v == NULL) {
+    ADIOS_QUERY* left = (ADIOS_QUERY*)(q->left);
+    ADIOS_QUERY* right = (ADIOS_QUERY*)(q->right);
+
+    if (evaluateWithIdxOnBlockWithBitArray(idxFile, left, timeStep) < 0) {
+      return -1;
+    }
+    if (evaluateWithIdxOnBlockWithBitArray(idxFile, right, timeStep) < 0) {
+      return -1;
+    }
+
+    casestudyLogger_setPrefix(" merge bitarray ");
+    free(q->dataSlice);
+    q->dataSlice = bitarray_create(q->rawDataSize);
+    if (q->combineOp == ADIOS_QUERY_OP_OR) {            
+      bitarray_or((uint32_t*)(left->dataSlice), (uint32_t*)(right->dataSlice), (uint32_t*)(q->dataSlice), BITNSLOTS(q->rawDataSize));      
+    } else {
+      bitarray_and((uint32_t*)(left->dataSlice), (uint32_t*)(right->dataSlice), (uint32_t*)(q->dataSlice), BITNSLOTS(q->rawDataSize));      
+    }
+    free(left->dataSlice);
+    free(right->dataSlice);
+    left->dataSlice = 0;
+    right->dataSlice = 0;
+    return 0;
+  } else {
+    // is a leaf
+    if (q->rawDataSize == 0) {
+      return 0;
+    }
+
+    if (q->sel != NULL) {
+       const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb = &(q->sel->u.block);
+       
+       int absBlockCounter = wb->index;
+       if (!q->file->is_streaming) 
+	 absBlockCounter = query_utils_getGlobalWriteBlockId(wb->index, timeStep, v);
+       
+       if (v->blockinfo == NULL) {
+	 common_read_inq_var_blockinfo(q->file, v);
+       }
+       
+       ADIOS_VARBLOCK* blockSel = &(v->blockinfo[absBlockCounter]);
+       
+       mEvaluateBBRangeFancyQueryOnWhole(idxFile, q, timeStep, blockSel->start, blockSel->count);           
+       return 0;
+    }
+    return -1;
+  }
+
+}
+
 int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeStep)
 {  
   
@@ -2733,20 +2793,7 @@ int64_t  applyIndexIfExists (ADIOS_QUERY* q, int timeStep)
 	  }
       } else if (leaf->sel->type == ADIOS_SELECTION_WRITEBLOCK) {
 #ifdef BITARRAY
-	    const ADIOS_SELECTION_WRITEBLOCK_STRUCT *wb = &(leaf->sel->u.block);
-	    
-	    int absBlockCounter = wb->index;
-
-	    if (!leaf->file->is_streaming) 
-	      absBlockCounter = query_utils_getGlobalWriteBlockId(wb->index, timeStep, leaf->varinfo);
-
-	    if (leaf->varinfo->blockinfo == NULL) {
-	      common_read_inq_var_blockinfo(q->file, leaf->varinfo);
-	    }
-	    
-	    ADIOS_VARBLOCK* blockSel = &(leaf->varinfo->blockinfo[absBlockCounter]);
-
-	    mEvaluateBBRangeFancyQueryOnWhole(idxFile, q, timeStep, blockSel->start, blockSel->count);
+	    evaluateWithIdxOnBlockWithBitArray(idxFile, q, timeStep);
 #else
 	    blockSelectionFastbitHandle(idxFile, q, timeStep);
 #endif
