@@ -799,6 +799,10 @@ cdef class var:
     """
     Adios variable class.
 
+    Unlike attributes whose values are populated on initilization,
+    variable's values will be returned by explicitly calling read() or
+    array access interface ([]).  
+
     Args:
         file (file): Associated file class
         name (str): variable name
@@ -833,7 +837,7 @@ cdef class var:
             return self.dtype
 
     property ndim:
-        """ The number of dimension of the variable. """
+        """ The number of dimensions of the variable. """
         def __get__(self):
             return self.ndim
 
@@ -869,19 +873,65 @@ cdef class var:
     def __del__(self):
         self.close()
 
-    """ Call adios_free_varinfo """
     cpdef close(self):
+        """ Close and free variable information """
         assert self.vp != NULL, 'Not an open var'
         adios_free_varinfo(self.vp)
         self.vp = NULL
 
     cpdef advance(self):
+        """ Update variable information after the stream advanced """
         self.vp = adios_inq_var(self.file.fp, self.name)
         assert self.vp != NULL, 'Not a valid var'
         self.nsteps = self.vp.nsteps
 
-    """ Call adios_schedule_read and adios_perform_reads """
     cpdef read(self, tuple offset = (), tuple count = (), from_steps = None, nsteps = None, fill = 0):
+        """ Perform read.
+
+        Read data from an ADIOS BP file. Subset reading is
+        supported. Without any options, this will read out a whole
+        data.
+
+        Args:
+            offset (tuple of int, optional): offset (default: ())
+            count (tuple of int, optional): count (default: ())
+            from_steps (int, optional): starting step index (default: None)
+            nsteps (int, optional): number of time dimensions (default: None)
+            fill (value, optional): default fill value (default: 0)
+
+        Returns:
+            NumPy ndarray
+            
+        Raises:
+            IndexError: If dimension is mismatched or out of the boundary.
+
+
+        Example:
+
+        The following command will read the full data:
+        
+        >>> var.read()
+
+        which is equvalent to
+
+        >>> var[]
+
+
+        The following command is for subset reading:
+        
+        >>> var.read(offset=(1,2), count=(3,4))
+
+        which will return an 3x4 array offset by (1,2) in the original
+        data. With Numpy's array notation, the following command does the same job:
+
+        >>> var[1:4, 2:6]
+
+        Similarly, the following two commands are same:
+
+        >>> var.read(count=(5,6))
+        >>> var[:5, :6]
+        
+        """
         if from_steps is None:
             from_steps = 0 ##self.file.current_step
 
@@ -941,8 +991,8 @@ cdef class var:
         ##    return var
         return np.squeeze(var)
 
-    """ Print self """
     cpdef printself(self):
+        """ Print native ADIOS_VARINFO structure. """
         assert self.vp != NULL, 'Not an open variable'
         print '=== AdiosVariable ==='
         print '%15s : %lu' % ('vp', <unsigned long> self.vp)
@@ -1083,8 +1133,8 @@ cdef class attr:
             raise KeyError(name)
 
     def __repr__(self):
-        return "AdiosAttr (name=%r, dtype=%r)" % \
-               (self.name, self.dtype)
+        return "AdiosAttr (name=%r, dtype=%r, value=%r)" % \
+               (self.name, self.dtype, self.value)
 
 
 ## Helper dict
@@ -1101,6 +1151,20 @@ cdef class smartdict(dict):
             self.factory(key, value)
 
 cdef class writer:
+    """
+    writer class for Adios write.
+
+    Args:
+        fname (str): filename.
+        is_noxml (bool, optional): Set True if use noxml APIs (default: True).
+        comm (MPI_Comm, optional): MPI_comm for parallel read/write (default: MPI_COMM_WORLD).
+
+    Example:
+    
+    >>> import adios as ad
+    >>> f = ad.writer('adiosfile.bp')
+    
+    """
     
     cdef int64_t gid
     cpdef bytes fname
@@ -1114,31 +1178,34 @@ cdef class writer:
     cpdef dict attr
 
     property fname:
+        """ The filename to write. """
         def __get__(self):
             return self.fname
 
     property gname:
+        """ The groupname associated with the file. """
         def __get__(self):
             return self.gname
         
     property is_noxml:
+        """ Boolean to indicate using No-XML or not. """
         def __get__(self):
             return self.is_noxml
         
     property var:
+        """ Dictionary of variables to write. """
         def __get__(self):
             return self.var
 
     property attr:
+        """ Dictionary of attributes to write. """
         def __get__(self):
             return self.attr
         
     def __init__(self,char * fname,
                  bint is_noxml = True,
-                 char * gname = "",
                  MPI_Comm comm = MPI_COMM_WORLD):
         self.fname = fname
-        self.gname = gname
         self.method = <bytes>""
         self.method_params = <bytes>""
         self.is_noxml = is_noxml
@@ -1155,6 +1222,19 @@ cdef class writer:
     def declare_group(self, char * gname,
                       char * method = "POSIX1",
                       char * method_params = ""):
+        """
+        Define a group associated with the file.
+
+        Args:
+            gname (str): group name.
+            method (str, optional): Adios write method (default: 'POSIX1')
+            method_params (str, optional): parameters for the write method (default: '')
+
+        Example:
+
+        >>>  fw.declare_group('group', method='MPI_, method_params='verbose=3')
+        
+        """
         self.gid = declare_group(gname, "", 1)
         self.gname = gname
         self.method = method
@@ -1165,9 +1245,32 @@ cdef class writer:
                    ldim = tuple(),
                    gdim = tuple(),
                    offset = tuple()):
+        """
+        Define a variable associated with the file.
+
+        Args:
+            varname (str): variable name.
+            ldim (tuple, optional): local dimension (default: tuple())
+            gdim (tuple, optional): global dimension (default: tuple())
+            offset (tuple, optional): offset (default: tuple())
+
+        Example:
+
+        Write 'temperature' variable of size of 2x3 array.
+
+        >>>  fw.define_var ('temperature', (2,3))
+        
+        """
         self.var[varname] = varinfo(varname, ldim, gdim, offset)
 
     def define_attr(self, char * attrname):
+        """
+        Define attribute in the file.
+
+        Args:
+            attrname (str): attribute name.
+        """
+
         self.attr[attrname] = attrinfo(attrname, is_static=True)
 
     def define_dynamic_attr(self, char * attrname,
@@ -1191,6 +1294,9 @@ cdef class writer:
             raise KeyError(name)
     
     def close(self):
+        """
+        Write variables and attributes to a file and close the writer.
+        """
         fd = open(self.gname, self.fname, "w")
 
         extra_var = dict()
@@ -1230,7 +1336,7 @@ cdef class writer:
     
     def __repr__(self):
         return ("AdiosWriter (fname=%r, gname=%r, "
-                "method=%r, method_params=%r, var=%r, ttr=%r)") % \
+                "method=%r, method_params=%r, var=%r, attr=%r)") % \
                 (self.fname,
                  self.gname,
                  self.method,
@@ -1266,7 +1372,7 @@ cdef class attrinfo:
     def __init__(self, char * name,
                  value = None,
                  dtype = None,
-                 bint is_static = 0):
+                 bint is_static = True):
         self.name = name
         self.value = value
         self.dtype = dtype
@@ -1328,10 +1434,11 @@ cdef class varinfo:
             val_ = np.array(self.value)
 
         atype = np2adiostype(val_.dtype)
+        ## No space allowed
         define_var(gid, self.name, "", atype,
-                   str(ldim_).strip('(,)'),
-                   str(gdim_).strip('(,)'),
-                   str(offset_).strip('(,)'))
+                   str(ldim_).replace(' ', '').strip('(,)'),
+                   str(gdim_).replace(' ', '').strip('(,)'),
+                   str(offset_).replace(' ', '').strip('(,)'))
 
     def bytes(self):
         val_ = self.value

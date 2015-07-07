@@ -269,7 +269,7 @@ new_flexpath_reader_file(const char *fname)
 }
 
 enum ADIOS_DATATYPES
-ffs_type_to_adios_type(const char *ffs_type)
+ffs_type_to_adios_type(const char *ffs_type, int size)
 
 {
     char *bracket = "[";
@@ -284,22 +284,41 @@ ffs_type_to_adios_type(const char *ffs_type)
         filtered_type = strncpy(filtered_type, ffs_type, posfound);
     }
 
-    if (!strcmp("integer", filtered_type))
-	return adios_integer;
+    if (!strcmp("integer", filtered_type)) {
+	if (size == sizeof(int)) {
+	    return adios_integer;
+	} else if (size == sizeof(long)) {
+	    return adios_long;
+	}
+    }
+    else if (!strcmp("unsigned integer", filtered_type)) {
+	    if (size == sizeof(unsigned int)) {
+		return adios_unsigned_integer;
+	    } else if (size == sizeof(unsigned long)) {
+		return adios_unsigned_long;
+	    }
+	}	   
     else if(!strcmp("float", filtered_type))
 	return adios_real;
     else if(!strcmp("string", filtered_type))
 	return adios_string;
-    else if(!strcmp("double", filtered_type))
-	return adios_double;
+    else if(!strcmp("double", filtered_type)) {
+	if (size == sizeof(double)) {
+	    return adios_double;
+	} else if (size == sizeof(long double)) {
+	    return adios_long_double;
+	}
+    }
     else if(!strcmp("char", filtered_type))
 	return adios_byte;
     else if(!strcmp("complex", filtered_type))
 	return adios_complex;
     else if(!strcmp("double_complex", filtered_type))
         return adios_double_complex;
-    else
+    else {
+	fprintf(stderr, "returning unknown for: ffs_type: %s\n", ffs_type);
 	return adios_unknown;
+    }
 }
 
 ADIOS_VARINFO*
@@ -595,7 +614,7 @@ setup_flexpath_vars(FMField *f, int *num)
 	curr_var->chunks =  malloc(sizeof(flexpath_var_chunk)*curr_var->num_chunks);
 	memset(curr_var->chunks, 0, sizeof(flexpath_var_chunk)*curr_var->num_chunks);
 	curr_var->sel = NULL;
-	curr_var->type = ffs_type_to_adios_type(f->field_type);
+	curr_var->type = ffs_type_to_adios_type(f->field_type, f->field_size);
 	flexpath_var *temp = vars;
 	curr_var->next = temp;
 	vars = curr_var;

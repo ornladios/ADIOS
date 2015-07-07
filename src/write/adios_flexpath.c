@@ -631,7 +631,7 @@ set_field(int type, FMFieldList* field_list_ptr, int fieldNo, int* size)
     FMFieldList field_list = *field_list_ptr;
     switch (type) {
     case adios_unknown:
-	perr("set_field: Bad Type Error\n");
+	fprintf(stderr, "set_field: Bad Type Error %d\n", type);
 	break;
 
     case adios_unsigned_integer:
@@ -640,13 +640,7 @@ set_field(int type, FMFieldList* field_list_ptr, int fieldNo, int* size)
 	field_list[fieldNo].field_offset = *size;
 	*size += sizeof(unsigned int);
 	break;
-
-    case adios_unsigned_long:
-	field_list[fieldNo].field_type = strdup("unsigned long");
-	field_list[fieldNo].field_size = sizeof(unsigned long);
-	field_list[fieldNo].field_offset = *size;
-	*size += sizeof(unsigned long);
-
+	
     case adios_integer:
 	field_list[fieldNo].field_type = strdup("integer");
 	field_list[fieldNo].field_size = sizeof(int);
@@ -654,7 +648,7 @@ set_field(int type, FMFieldList* field_list_ptr, int fieldNo, int* size)
 	*size += sizeof(int);
 	break;
 
-    case adios_real:
+    case adios_real:       
 	field_list[fieldNo].field_type = strdup("float");
 	field_list[fieldNo].field_size = sizeof(float);
 	field_list[fieldNo].field_offset = *size;
@@ -669,10 +663,17 @@ set_field(int type, FMFieldList* field_list_ptr, int fieldNo, int* size)
 	break;
 
     case adios_double:
-	field_list[fieldNo].field_type = strdup("float");
+	field_list[fieldNo].field_type = strdup("double");
 	field_list[fieldNo].field_size = sizeof(double);
 	field_list[fieldNo].field_offset = *size;
 	*size += sizeof(double);
+	break;
+
+    case adios_long_double:
+	field_list[fieldNo].field_type = strdup("double");
+	field_list[fieldNo].field_size = sizeof(long double);
+	field_list[fieldNo].field_offset = *size;
+	*size += sizeof(long double);
 	break;
 
     case adios_byte:
@@ -680,6 +681,20 @@ set_field(int type, FMFieldList* field_list_ptr, int fieldNo, int* size)
 	field_list[fieldNo].field_size = sizeof(char);
 	field_list[fieldNo].field_offset = *size;
 	*size += sizeof(char);
+	break;
+
+    case adios_long:
+	field_list[fieldNo].field_type = strdup("integer");
+	field_list[fieldNo].field_size = sizeof(long);
+	field_list[fieldNo].field_offset = *size;
+	*size += sizeof(long);
+	break;
+	
+    case adios_unsigned_long:
+	field_list[fieldNo].field_type = strdup("unsigned integer");
+	field_list[fieldNo].field_size = sizeof(unsigned long);
+	field_list[fieldNo].field_offset = *size;
+	*size += sizeof(unsigned long);
 	break;
 
     case adios_complex:
@@ -697,7 +712,7 @@ set_field(int type, FMFieldList* field_list_ptr, int fieldNo, int* size)
         break;
 
     default:
-	perr("set_field: Unknown Type Error\n");
+	fprintf(stderr, "set_field: Unknown Type Error %d\n", type);
 	break;
     }
     *field_list_ptr = field_list;
@@ -884,21 +899,6 @@ set_format(struct adios_group_struct *t,
 		{  currentFm->size += (v_offset * sizeof(unsigned int));  } 
 		break;
 
-	    case adios_unsigned_long: // needs to be unsigned integer in ffs
-                // to distinguish on reader_side, I have to look at the size also
-		field_list[fieldNo].field_type =
-		    (char *) malloc(sizeof(char) * 255);
-		snprintf((char *) field_list[fieldNo].field_type, 255,
-			 "unsigned long%s", dims);
-		field_list[fieldNo].field_size = sizeof(unsigned long);
-		      
-		field_list[fieldNo].field_offset = currentFm->size;
-		if (v_offset == 0 ) // pointer to variably sized array
-		{ currentFm->size += sizeof(void *);  } 
-		else // statically sized array allocated inline
-		{  currentFm->size += (v_offset * sizeof(unsigned long));  } 
-		break;
-
 	    case adios_real:
 		field_list[fieldNo].field_type =
 		    (char *) malloc(sizeof(char) * 255);
@@ -931,6 +931,19 @@ set_format(struct adios_group_struct *t,
 		else // statically sized array allocated inline
 		{  currentFm->size += (v_offset * sizeof(double));  } 
 		break;
+		
+	    case adios_long_double:
+		field_list[fieldNo].field_type =
+		    (char *) malloc(sizeof(char) * 255);
+		snprintf((char *) field_list[fieldNo].field_type, 255,
+			 "double%s", dims);
+		field_list[fieldNo].field_size = sizeof(long double);
+		field_list[fieldNo].field_offset = currentFm->size;
+		if (v_offset == 0 ) // pointer to variably sized array
+		{ currentFm->size += sizeof(void *);  } 
+		else // statically sized array allocated inline
+		{  currentFm->size += (v_offset * sizeof(long double));  } 
+		break;
 
 	    case adios_byte:
 		field_list[fieldNo].field_type =
@@ -945,7 +958,37 @@ set_format(struct adios_group_struct *t,
 		{  currentFm->size += (v_offset * sizeof(char));  } 
 		break;
 
-            case adios_complex:
+	    case adios_long: // needs to be unsigned integer in ffs
+                // to distinguish on reader_side, I have to look at the size also
+		field_list[fieldNo].field_type =
+		    (char *) malloc(sizeof(char) * 255);
+		snprintf((char *) field_list[fieldNo].field_type, 255,
+			 "integer%s", dims);
+		field_list[fieldNo].field_size = sizeof(long);
+		      
+		field_list[fieldNo].field_offset = currentFm->size;
+		if (v_offset == 0 ) // pointer to variably sized array
+		{ currentFm->size += sizeof(void *);  } 
+		else // statically sized array allocated inline
+		{  currentFm->size += (v_offset * sizeof(long));  } 
+		break;
+		
+	    case adios_unsigned_long: // needs to be unsigned integer in ffs
+                // to distinguish on reader_side, I have to look at the size also
+		field_list[fieldNo].field_type =
+		    (char *) malloc(sizeof(char) * 255);
+		snprintf((char *) field_list[fieldNo].field_type, 255,
+			 "unsigned integer%s", dims);
+		field_list[fieldNo].field_size = sizeof(unsigned long);
+		      
+		field_list[fieldNo].field_offset = currentFm->size;
+		if (v_offset == 0 ) // pointer to variably sized array
+		{ currentFm->size += sizeof(void *);  } 
+		else // statically sized array allocated inline
+		{  currentFm->size += (v_offset * sizeof(unsigned long));  } 
+		break;
+
+	    case adios_complex:
 		field_list[fieldNo].field_type =
 		    (char *) malloc(sizeof(char) * 255);
 		snprintf((char *) field_list[fieldNo].field_type, 255, "complex%s",
@@ -1013,7 +1056,7 @@ set_format(struct adios_group_struct *t,
     format[1].field_list = complex_dummy_field_list;
     format[2].format_name = strdup("double_complex");
     format[2].field_list = double_complex_dummy_field_list;
-    
+
     format[0].struct_size = currentFm->size;
     format[1].struct_size = sizeof(complex_dummy);
     format[2].struct_size = sizeof(double_complex_dummy);
@@ -1557,6 +1600,7 @@ adios_flexpath_write(
 		//why wouldn't it have data?
 		if (f->type == adios_string) {
 		    strcpy(&fm->buffer[field->field_offset], (char*)data);
+		    //fprintf(stderr, "string is %s\n", (char*)(&fm->buffer[field->field_offset]));
 		} else {
 		    memcpy(&fm->buffer[field->field_offset], data, field->field_size);
 		}

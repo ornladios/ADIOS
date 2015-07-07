@@ -375,7 +375,7 @@ void onBox(int rank, ADIOS_FILE* f, ADIOS_VARINFO* v, int timestep, uint64_t* st
 
   ADIOS_SELECTION* boxSel = adios_selection_boundingbox(v->ndim, start, count);
   
-  int err = adios_schedule_read_byid(f, boxSel, v->varid, timestep, 1, &data);
+  int err = adios_schedule_read_byid(f, boxSel, v->varid, timestep, 1, data);
 
   if (!err) {	
     err = adios_perform_reads(f, 1);
@@ -815,8 +815,9 @@ int main (int argc, char** argv)
 	int maxJobsPP = jobCounter/size + 1;
         estimatedbytes = estimatedbytes * maxJobsPP /jobCounter +1048576;
       }
-      //uint64_t estimatedbytes =  getByteEstimationOnFile(f, rank)/size ;
+
       estimatedbytes += 1048576;
+
       uint64_t adios_totalsize;      // adios_group_size needs to be call before any write_byid, Otherwise write_byid does nothing 
       adios_group_size (gAdios_write_file, estimatedbytes , &adios_totalsize);     
 

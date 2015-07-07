@@ -11,13 +11,13 @@
 
 # default values
 XXX=`which aprun &>/dev/null`
-if [ $? == 0 ]; then
-    MPIRUN="aprun -q"
-    NP_MPIRUN=-n
-else
+#if [ $? == 0 ]; then
+#    MPIRUN="aprun -q"
+#    NP_MPIRUN=-n
+#else
     MPIRUN=mpirun
     NP_MPIRUN=-np
-fi
+#fi
 KEEPOUTPUT=no
 MAXPROCS=128
 
