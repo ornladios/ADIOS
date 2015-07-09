@@ -79,9 +79,26 @@ const char * fastbit_adios_util_value_to_string (enum ADIOS_DATATYPES type, void
 uint64_t fastbit_adios_util_getAdiosBlockSize(ADIOS_VARINFO* v, int k); // k = blockNumber;
 
   
-int fastbit_adio_util_readFromFastbitIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, int timestep, int blockNum, 
-					       double** keys, uint64_t* nkeys, int64_t** offsets, uint64_t* no,
-					       uint32_t** bms, uint64_t* nb);
+int fastbit_adios_util_readNoBMSFromIndexFile (ADIOS_FILE* idxFile, 
+                                               ADIOS_VARINFO* v, 
+                                               int timestep, 
+                                               int blockNum, 
+					       double** keys, 
+                                               uint64_t* nk, 
+                                               int64_t** offsets, 
+                                               uint64_t* no,
+					       char** bmsVarName);
+
+int fastbit_adios_util_readFromFastbitIndexFile (ADIOS_FILE* idxFile, 
+                                                 ADIOS_VARINFO* v, 
+                                                 int timestep, 
+                                                 int blockNum, 
+					         double** keys, 
+                                                 uint64_t* nkeys, 
+                                                 int64_t** offsets, 
+                                                 uint64_t* no,
+					         uint32_t** bms, 
+                                                 uint64_t* nb);
   
 #ifdef __cplusplus
 }

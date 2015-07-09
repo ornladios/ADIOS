@@ -39,9 +39,9 @@ void casestudyLogger_init()
 extern void casestudyLogger_print(CollectionPoint* p, const char* msg)
 {
 #ifdef TIMESTUDY
-  printf("%s: %llu sec %llu millisec  accumulated, visited: %lu times \n",  msg,  p->_accumulator.tv_sec, p->_accumulator.tv_nsec/((unsigned long)1000000), p->_counter);
+  printf("%s: %llu sec %llu millisec  accumulated, visited: %lu times \n",  msg,  (unsigned long long)p->_accumulator.tv_sec, (unsigned long long)p->_accumulator.tv_nsec/((unsigned long)1000000), p->_counter);
 #else
-  log_debug("%s: %llu sec %llu millisec  accumulated, visited: %lu times \n",  msg,  p->_accumulator.tv_sec, p->_accumulator.tv_nsec/((unsigned long)1000000), p->_counter);
+  log_debug("%s: %llu sec %llu millisec  accumulated, visited: %lu times \n",  msg,  (unsigned long long)p->_accumulator.tv_sec, (unsigned long long)p->_accumulator.tv_nsec/((unsigned long)1000000), p->_counter);
 #endif
 }
 
@@ -601,7 +601,7 @@ static const char * value_to_string (enum ADIOS_DATATYPES type, void * data, int
   return s;
 }
 
-void getVarNames(char* bmsVarName, char* keyVarName, char* offsetName, ADIOS_VARINFO* v, int timestep, uint64_t blockNum) {
+void getVarNames(char* bmsVarName, char* keyVarName, char* offsetName, ADIOS_VARINFO* v, int timestep, int blockNum) {
 
   /*
   sprintf(bmsVarName, "bms-%d-%d-block-%d", v->varid, timestep, blockNum);
@@ -685,7 +685,7 @@ int fastbit_adios_util_readNoBMSFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO
   return 0;
 }
 
-int fastbit_adios_util_readFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, int timestep, uint64_t blockNum, 
+int fastbit_adios_util_readFromIndexFile(ADIOS_FILE* idxFile, ADIOS_VARINFO* v, int timestep, int blockNum, 
 					 double** keys, uint64_t* nk, int64_t** offsets, uint64_t* no,
 					 uint32_t** bms, uint64_t* nb)
 

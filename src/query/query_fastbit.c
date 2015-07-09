@@ -1376,7 +1376,7 @@ void checkHits(ADIOS_VARINFO* v, ADIOS_QUERY* q, uint64_t boxStart, uint64_t* re
 int mEvaluateBBRangeFancyQueryOnWhole(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeStep, uint64_t* regionStart, uint64_t* regionCount)
 {
   char bitsArrayName[60];
-  sprintf(bitsArrayName, "%llu_%d", fastbit_adios_getCurrentTimeMillis(), timeStep);
+  sprintf(bitsArrayName, "%ld_%d", fastbit_adios_getCurrentTimeMillis(), timeStep);
 
   uint64_t s = 0;
   uint64_t startRef = 0;
@@ -1516,7 +1516,7 @@ void checkHitsDefault(ADIOS_QUERY* q)
 int mEvaluateTestFullRangeFancyQueryOnWhole(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeStep)
 {
   char bitsArrayName[60];
-  sprintf(bitsArrayName, "%llu_%d", fastbit_adios_getCurrentTimeMillis(), timeStep);
+  sprintf(bitsArrayName, "%ld_%d", fastbit_adios_getCurrentTimeMillis(), timeStep);
 
   uint64_t s = 0;
   uint64_t startRef = 0;
@@ -1807,7 +1807,7 @@ int mEvaluateWithIdxOnBBoxWithBitArrayOnVar(ADIOS_FILE* idxFile, ADIOS_QUERY* q,
 	    return -1;
 	}
 	
-	sprintf(casestudyLoggerPrefix, "block:%d", currBlockIdx);
+	sprintf(casestudyLoggerPrefix, "block:%llu", currBlockIdx);
 	casestudyLogger_setPrefix(casestudyLoggerPrefix);
 	
 	struct timespec evalStartT; casestudyLogger_getRealtime(&evalStartT);	
@@ -1952,7 +1952,7 @@ int evaluateWithIdxOnBBoxWithBitArrayOnVar0(ADIOS_FILE* idxFile, ADIOS_QUERY* q,
 	return -1;
       }
 
-      sprintf(casestudyLoggerPrefix, "block:%d", currBlockIdx);
+      sprintf(casestudyLoggerPrefix, "block:%llu", currBlockIdx);
       casestudyLogger_setPrefix(casestudyLoggerPrefix);
 
       struct timespec evalStartT;
@@ -2321,7 +2321,7 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
 	return -1;
       }
 
-      sprintf(casestudyLoggerPrefix, "block:%d", currBlockIdx);
+      sprintf(casestudyLoggerPrefix, "block:%llu", currBlockIdx);
       casestudyLogger_setPrefix(casestudyLoggerPrefix);
 
       struct timespec evalStartT;
