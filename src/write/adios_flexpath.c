@@ -801,7 +801,6 @@ set_format(struct adios_group_struct *t,
                 // attach appropriate attrs for dimensions	
                 for (; adim != NULL; adim = adim->next) {
                     num_dims++;		    
-                    
 		    // have to change get_alt_name to append FPVAR at the start of each varname.
                     char *vname = get_dim_name(&adim->dimension);
                     if (vname) {
@@ -819,6 +818,9 @@ set_format(struct adios_group_struct *t,
 			char *aname = get_alt_name(fullname, gname);
 			dims=add_var(dims, strdup(aname), NULL, 0);
 			set_attr_dimensions(fullname, aname, num_dims, fileData->attrs);
+		    }
+		    if (adim->global_dimension.rank > 0) {
+			fileData->globalCount++;
 		    }
                 }
             }
@@ -1599,8 +1601,8 @@ adios_flexpath_write(
 	    if (data) {
 		//why wouldn't it have data?
 		if (f->type == adios_string) {
-		    strcpy(&fm->buffer[field->field_offset], (char*)data);
-		    //fprintf(stderr, "string is %s\n", (char*)(&fm->buffer[field->field_offset]));
+		    char *tmpstr = strdup((char*)data);
+		    set_FMPtrField_by_name(flist, fullname, fm->buffer, tmpstr);
 		} else {
 		    memcpy(&fm->buffer[field->field_offset], data, field->field_size);
 		}
@@ -1615,10 +1617,10 @@ adios_flexpath_write(
 			    //check if there are FlexpathAltNames
 			    FlexpathAltName *a = NULL;
 			    for (a = d->altList.lh_first; a != NULL; a = a->entries.le_next) {
-				/* fprintf(stderr, "ALTNAME: %s, DIM: %s FIELD: %s\n",  */
-				/* 	a->name, d->name, field->field_name); */
 				if (f->type == adios_string) {
-				    (strcpy(&fm->buffer[a->field->field_offset], (char*)data));
+				    char *tmpstr = strdup((char*)data);
+				    set_FMPtrField_by_name(flist, fullname, fm->buffer, tmpstr);
+				    //(strcpy(&fm->buffer[a->field->field_offset], (char*)data));
 				} else {
 				    memcpy(&fm->buffer[a->field->field_offset], 
 					   data, 
