@@ -313,88 +313,211 @@ cpdef int select_method (int64_t group,
 \end{lstlisting}
 
 \subsection{APIs for Reading}
-The ADIOS python/numpy wrapper provides ADIOS read related classes and APIs as follows (defined in Cython syntax). Like in the writing, MPI related arguments can be ignored in the serial binding.
+After ADIOS version 1.9.0, ADIOS python/numpy wrapper provides Numpy style array notation. For an example, the following commands are equivalent:
+\begin{lstlisting}[language=Python,caption={Numpy style reading},label={},]
+>>> f['temperature'].read(); 
+>>> f['temperature'][:]
+\end{lstlisting}
+
+Numpy style slicing is supported in a same way:
+\begin{lstlisting}[language=Python,caption={Numpy style slicing},label={},]
+>>> f['temperature'].read(offset=(0,0), count=(2,5)); 
+>>> f['temperature'][0:2,0:5]
+\end{lstlisting}
+
+More details of read APIs are as follows (defined in Cython syntax). Like in the writing, MPI related arguments can be ignored in the serial binding.
 \begin{lstlisting}[language=cython,caption={Read functions},label={},]
-""" Python class for ADIOS_FILE structure """
 cdef class file:
-    """ Private Memeber """
-    cpdef ADIOS_FILE * fp
+    """
+    file class for Adios file read and write.
 
-    """ Public Memeber """
-    cpdef public bytes name
-    cpdef public int nvars
-    cpdef public int nattrs
-    cpdef public int current_step
-    cpdef public int last_step
-    cpdef public int endianness
-    cpdef public int version
-    cpdef public int file_size
-    
-    cpdef public dict var
-    cpdef public dict attr
-    
-    """ Initialization. Call adios_read_open and populate public members """
-    def __init__(self, char * fname,
-                 char * method_name = "BP",
-                 MPI_Comm comm = MPI_COMM_WORLD,
-                 is_stream = False,
-                 ADIOS_LOCKMODE lock_mode = ADIOS_LOCKMODE_ALL,
-                 float timeout_sec = 0.0)
-    
-    """ Call adios_read_close """
-    cpdef close(self)
+    Args:
+        fname (str): filename.
+        method_name (str, optional): Adios read method (default: 'BP').
+        comm (MPI_Comm, optional): MPI_comm for parallel read/write 
+                                   (default: MPI_COMM_WORLD).
+        is_stream (bool, optional): Set True if use stream reader 
+                                    (default: False).
+        lock_mode (int, optional): ADIOS_LOCKMODE for stream reader 
+                                   (default: ADIOS_LOCKMODE_ALL).
+        timeout_sec (float, optional): Timeout seconds for stream reader
+                                       (default: 0.0) .
+    """
+
+    property name:
+        """ The filename (or stream name) associated with. """
+    property nvars:
+        """ The number of variables. """
+    property nattrs:
+        """ The number of attributes. """
+    property current_step:
+        """ The current timestep index. """
+    property last_step:
+        """ The last timestep index. """
+    property endianness:
+        """ The endianness of the stored data. """
+    property version:
+        """ The version of Adios. """
+    property file_sizec:
+        """ The size of Adios file. """
+    property is_stream:
+        """ Indicating reader type; file reader or stream reader """
+
+    cpdef close(self):
+        """ Close the open file. """
         
-    """ Print self """
-    cpdef printself(self)
+    cpdef printself(self):
+        """ Print native ADIOS_FILE structure. """
 
-""" Python class for ADIOS_VARINFO structure """
+    cpdef advance(self, int last = 0, float timeout_sec = 0.0):
+        """
+        Advance a timestep for stream reader.
+
+        Args:
+            last (int, optional): last timestep index (default: 0).
+            timeout_sec (float, optional): timeout seconds (default: 0.0).
+
+        Returns:
+            int: 0 if successful, non-zero otherwise.
+        """
+        
+    def __getitem__(self, varname):
+        """
+        Return Adios variable.
+
+        Args:
+            varname (str): variable name.
+
+        Raises:
+            KeyError: If no varname exists.
+
+        """
+        
+    def __repr__(self):
+        """ Return string representation. """
+
+
 cdef class var:
-    """ Private Memeber """
-    cdef file file
-    cdef ADIOS_VARINFO * vp
+    """
+    Adios variable class.
 
-    """ Public Memeber """
-    cpdef public bytes name
-    cpdef public int varid
-    cpdef public type type
-    cpdef public int ndim
-    cpdef public tuple dims
-    cpdef public int nsteps
+    Unlike attributes whose values are populated on initialization,
+    variable's values will be returned by explicitly calling read() or
+    array access interface ([]).  
+
+    Args:
+        file (file): Associated file class
+        name (str): variable name
+
+    Note:
+        Users do not need to create this class manually.
+    """
     
-    """ Initialization. Call adios_inq_var and populate public members """
-    def __init__(self, file file, char * name)
+    property name:
+        """ The variable name. """
+    
+    property varid:
+        """ Internal variable id. """
+    
+    property dtype:
+        """ Variable type as in numpy.dtype. """
+
+    property ndim:
+        """ The number of dimensions of the variable. """
+
+    property dims:
+        """ The shape of the variable. """
+
+    property nsteps:
+        """ The number of time steps of the variable. """
+
+    cpdef close(self):
+        """ Close and free variable information """
+
+    cpdef advance(self):
+        """ Update variable information after the stream advanced """
+
+    cpdef read(self, tuple offset = (), tuple count = (), from_steps = None, 
+                     nsteps = None, fill = 0):
+        """ Perform read.
+
+        Read data from an ADIOS BP file. Subset reading is
+        supported. Without any options, this will read out a whole
+        data.
+
+        Args:
+            offset (tuple of int, optional): offset (default: ())
+            count (tuple of int, optional): count (default: ())
+            from_steps (int, optional): starting step index (default: None)
+            nsteps (int, optional): number of time dimensions (default: None)
+            fill (value, optional): default fill value (default: 0)
+
+        Returns:
+            NumPy ndarray
+            
+        Raises:
+            IndexError: If dimension is mismatched or out of the boundary.
+
+        """
+
+    cpdef printself(self):
+        """ Print native ADIOS_VARINFO structure. """
+
+    def __repr__(self):
+        """ Return string representation. """
         
-    """ Call adios_free_varinfo """
-    cpdef close(self)
-        
-    """ Call adios_schedule_read and adios_perform_reads """
-    cpdef read(self, tuple offset = (), tuple count = (),
-               from_steps = 0, nsteps = 1)
 
-    """ Print self """
-    cpdef printself(self)
+cdef class attr:
+    """
+    Adios attribute class.
+    
+    Attribute values are loaded on initialization.
 
-""" Call adios_read_init_method """
-cpdef read_init(ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP,
-                MPI.Comm comm = MPI.COMM_WORLD,
-                char * parameters = "")
+    Args:
+        attr_name (str): attribute name
 
-""" Call adios_read_finalize_method """
-cpdef read_finalize(ADIOS_READ_METHOD method = ADIOS_READ_METHOD_BP)
+    Raises:
+        KeyError: If no attribute name exists.
 
+    Note:
+        Users do not need to create this class manually.        
+    """
+
+    property name:
+        """ The attribute name """
+    property dtype:
+        """ The attribute type as in numpy.dtype """
+    property value:
+        """ The attribute's value """
+
+    def __repr__(self):
+        """ Return string representation. """
 \end{lstlisting}
 
 \subsection{Utility functions}
 Besides exposing ADIOS APIs directly, we provide utility functions users can call in python in a simple way
 
 \begin{lstlisting}[language=cython,caption={Utility functions},label={},]
+def readvar(fname, varname):
+    """ Retrieve a variable value from an Adios file.
 
-""" Read data in a BP file and return as a numpy array """
-def readvar(fname, varname)
+    Args:
+        fname (str): Adios file name
+        varname (str): Variable name to retrieve
 
-""" List attributes of a BP file """
-def bpls(fname)
+    Returns:
+        NumPy ndarray: variable value
+    """
 
+def bpls(fname):
+    """ Return meta data of an Adios file as a Python dictionary object.
+
+    Args:
+        fname (str): Adios file name
+
+    Returns:
+        dict: Adios file meta data
+    """
 \end{lstlisting}
 
 \subsection{Examples}
