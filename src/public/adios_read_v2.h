@@ -99,8 +99,8 @@ struct _ADIOS_VARBLOCK {
 
 enum var_centering
 {
-    point = 1,            // unstructured mesh point centering
-    cell = 2              // unstructured mesh cell centering
+    point = 1,            /* unstructured mesh point centering */
+    cell = 2              /* unstructured mesh cell centering */
 };
 
 struct _ADIOS_VARMESH {
@@ -136,7 +136,7 @@ struct _ADIOS_VARINFO {
 struct _ADIOS_VARCHUNK {
         int                   varid;    /* variable index (0..ADIOS_FILE.nvars-1)              */
         enum ADIOS_DATATYPES  type;     /* type of variable                                    */
-        // NCSU ALACRITY-ADIOS - Added timestep information into varchunks
+        /* NCSU ALACRITY-ADIOS - Added timestep information into varchunks */
         int                   from_steps; /* the first timestep in the returned data             */
         int                   nsteps;     /* the number of timesteps in the returned data        */
         ADIOS_SELECTION     * sel;      /* sub-selection of requested selection                */
@@ -451,7 +451,7 @@ int adios_schedule_read_byid (const ADIOS_FILE * fp,
                               int                     nsteps,
                               void                  * data);
 
-// NCSU ALACRITY-ADIOS: Support for those transforms that can change reading behavior (e.g., level-of-detail)
+/* NCSU ALACRITY-ADIOS: Support for those transforms that can change reading behavior (e.g., level-of-detail) */
 int adios_schedule_read_param (const ADIOS_FILE * fp,
                                const ADIOS_SELECTION * sel,
                                const char            * varname,

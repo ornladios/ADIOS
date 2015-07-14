@@ -24,22 +24,22 @@ typedef struct
 
 typedef struct
 {
-    int use_single_var;        // 1 means coordinates-single-var,0 means coordinates-multi-var
+    int use_single_var;        /* 1 means coordinates-single-var,0 means coordinates-multi-var */
     int num_dimensions;
     uint64_t * dimensions;
-    char ** coordinates;       // name of the variable(s) containing the rectilinear spacing values
+    char ** coordinates;       /* name of the variable(s) containing the rectilinear spacing values */
 } MESH_RECTILINEAR;
 
 typedef struct
 {
-    int use_single_var;        // 1 means points-single-var, 0 mean points-multi-var
+    int use_single_var;        /* 1 means points-single-var, 0 mean points-multi-var */
     int num_dimensions;
     uint64_t * dimensions;
     int nspaces;
-    char ** points;            // name of the variable(s) containing the point coordinates 
+    char ** points;            /* name of the variable(s) containing the point coordinates  */
 } MESH_STRUCTURED;
 
-// ADIOS Schema: supported cell types
+/* ADIOS Schema: supported cell types */
 enum ADIOS_CELL_TYPE
 {
      ADIOS_CELL_PT         = 1
@@ -56,7 +56,7 @@ typedef struct
 {
     int nspaces;
     uint64_t npoints;
-    int nvar_points;           // how much vars for points-multi-var, 1 for points-single-var
+    int nvar_points;           /* how much vars for points-multi-var, 1 for points-single-var */
     char ** points;
     int ncsets;
     uint64_t * ccounts;
@@ -65,11 +65,11 @@ typedef struct
 } MESH_UNSTRUCTURED;
 
 
-typedef struct {   //type returned by adios_inq_mesh for read method
+typedef struct {   /*type returned by adios_inq_mesh for read method */
     int id;
     char * name;
-    char * file_name; // 0 means mesh struct from the same file, otherwise mesh struct from externel file 
-    int time_varying;           //0 means not time-varying, 1 means time-varying
+    char * file_name; /* 0 means mesh struct from the same file, otherwise mesh struct from externel file  */
+    int time_varying;           /*0 means not time-varying, 1 means time-varying */
     enum ADIOS_MESH_TYPE type;
     union
     {
