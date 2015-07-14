@@ -697,7 +697,7 @@ static int common_read_find_var (const ADIOS_FILE *fp, const char *name, int qui
         // Double cast makes the compiler happy...
         varid = (int)(int64_t)internals->hashtbl_vars->get (internals->hashtbl_vars, name);
         // varid=0 is "not found", otherwise +1 bigger than actual varid
-        varid--;
+        varid--; // we added varid+1 originally to avoid double meanings of 0 (value and not-found)
     }
 
     if (varid == -1) {
@@ -706,6 +706,9 @@ static int common_read_find_var (const ADIOS_FILE *fp, const char *name, int qui
         else
             adios_errno = err_invalid_varname;
     }
+
+    // map the global varid back to the current group view's varid
+    varid -= internals->group_varid_offset;
     return varid;
 }
 
