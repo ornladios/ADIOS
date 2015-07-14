@@ -107,6 +107,12 @@ Then, do the followings:
 $ python setup.py register 
 $ python setup.py sdist upload
 
+
+== Build Document ==
+
+Need sphinx. Install as follows:
+$ pip install Sphinx
+
 == Trouble Shooting ==
 
 -. Custom MPICC and MPICXX

@@ -10848,13 +10848,13 @@ static PyObject *__pyx_pf_5adios_4file_10__getitem__(struct __pyx_obj_5adios_fil
  *                 raise KeyError(key_)
  * 
  *     def __repr__(self):             # <<<<<<<<<<<<<<
- *         """ Return string reprentation. """
+ *         """ Return string representation. """
  *         return ("AdiosFile (path=%r, nvars=%r, var=%r, nattrs=%r, attr=%r, "
  */
 
 /* Python wrapper */
 static PyObject *__pyx_pw_5adios_4file_13__repr__(PyObject *__pyx_v_self); /*proto*/
-static char __pyx_doc_5adios_4file_12__repr__[] = " Return string reprentation. ";
+static char __pyx_doc_5adios_4file_12__repr__[] = " Return string representation. ";
 #if CYTHON_COMPILING_IN_CPYTHON
 struct wrapperbase __pyx_wrapperbase_5adios_4file_12__repr__;
 #endif
@@ -10888,7 +10888,7 @@ static PyObject *__pyx_pf_5adios_4file_12__repr__(struct __pyx_obj_5adios_file *
 
   /* "adios.pyx":787
  *     def __repr__(self):
- *         """ Return string reprentation. """
+ *         """ Return string representation. """
  *         return ("AdiosFile (path=%r, nvars=%r, var=%r, nattrs=%r, attr=%r, "             # <<<<<<<<<<<<<<
  *                 "current_step=%r, last_step=%r, file_size=%r)") % \
  *                 (self.fp.path,
@@ -11018,7 +11018,7 @@ static PyObject *__pyx_pf_5adios_4file_12__repr__(struct __pyx_obj_5adios_file *
   __pyx_t_8 = 0;
 
   /* "adios.pyx":788
- *         """ Return string reprentation. """
+ *         """ Return string representation. """
  *         return ("AdiosFile (path=%r, nvars=%r, var=%r, nattrs=%r, attr=%r, "
  *                 "current_step=%r, last_step=%r, file_size=%r)") % \             # <<<<<<<<<<<<<<
  *                 (self.fp.path,
@@ -11035,7 +11035,7 @@ static PyObject *__pyx_pf_5adios_4file_12__repr__(struct __pyx_obj_5adios_file *
  *                 raise KeyError(key_)
  * 
  *     def __repr__(self):             # <<<<<<<<<<<<<<
- *         """ Return string reprentation. """
+ *         """ Return string representation. """
  *         return ("AdiosFile (path=%r, nvars=%r, var=%r, nattrs=%r, attr=%r, "
  */
 
@@ -23153,7 +23153,7 @@ static PyTypeObject __pyx_type_5adios_var = {
   0, /*tp_setattro*/
   0, /*tp_as_buffer*/
   Py_TPFLAGS_DEFAULT|Py_TPFLAGS_HAVE_VERSION_TAG|Py_TPFLAGS_CHECKTYPES|Py_TPFLAGS_HAVE_NEWBUFFER|Py_TPFLAGS_BASETYPE|Py_TPFLAGS_HAVE_GC, /*tp_flags*/
-  "var(file file, char *name)\n\n    Adios variable class.\n\n    Unlike attributes whose values are populated on initilization,\n    variable's values will be returned by explicitly calling read() or\n    array access interface ([]).  \n\n    Args:\n        file (file): Associated file class\n        name (str): variable name\n\n    Note:\n        Users do not need to create this class manually.\n    ", /*tp_doc*/
+  "var(file file, char *name)\n\n    Adios variable class.\n\n    Unlike attributes whose values are populated on initialization,\n    variable's values will be returned by explicitly calling read() or\n    array access interface ([]).  \n\n    Args:\n        file (file): Associated file class\n        name (str): variable name\n\n    Note:\n        Users do not need to create this class manually.\n    ", /*tp_doc*/
   __pyx_tp_traverse_5adios_var, /*tp_traverse*/
   __pyx_tp_clear_5adios_var, /*tp_clear*/
   0, /*tp_richcompare*/

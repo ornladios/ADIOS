@@ -782,7 +782,7 @@ cdef class file:
                 raise KeyError(key_)
         
     def __repr__(self):
-        """ Return string reprentation. """
+        """ Return string representation. """
         return ("AdiosFile (path=%r, nvars=%r, var=%r, nattrs=%r, attr=%r, "
                 "current_step=%r, last_step=%r, file_size=%r)") % \
                 (self.fp.path,
@@ -798,7 +798,7 @@ cdef class var:
     """
     Adios variable class.
 
-    Unlike attributes whose values are populated on initilization,
+    Unlike attributes whose values are populated on initialization,
     variable's values will be returned by explicitly calling read() or
     array access interface ([]).  
 
