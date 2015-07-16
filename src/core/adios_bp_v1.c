@@ -1746,6 +1746,17 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
 
     var_header->payload_size = length_of_var - (b->offset - initial_offset);
 
+    /* At this point we are at the payload, processed all metadata.
+       If offset and payload_offset was not read in, let's calculate them here
+       b->offset was 0 when reading in the whole PG and start processing with
+       parsing the process group. 
+        initial_offset points to the beginning of this variable's metadata.
+        b->offset points to the beginning of this variable's payload.
+    */
+    if (var_header->characteristics.offset == 0)
+        var_header->characteristics.offset = b->read_pg_offset + initial_offset;
+    if (var_header->characteristics.payload_offset == 0)
+        var_header->characteristics.payload_offset = b->read_pg_offset + b->offset;
     return 0;
 }
 
