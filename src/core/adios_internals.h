@@ -568,6 +568,17 @@ void adios_sort_index_v1 (struct adios_index_process_group_struct_v1 ** p1
 void adios_clear_index_v1 (struct adios_index_struct_v1 * index); // in each adios_<method>_close()
 void adios_free_index_v1 (struct adios_index_struct_v1 * index);  // in adios_<method>_finalize()
 
+/* Other index operations made visible for the recovery tool */
+void index_append_process_group_v1 ( 
+            struct adios_index_struct_v1 * index, 
+            struct adios_index_process_group_struct_v1 * item
+            );
+void index_append_var_v1 (
+        struct adios_index_struct_v1 *index,
+        struct adios_index_var_struct_v1 * item,
+        int do_sort
+        );
+
 int adios_parse_scalar_string (enum ADIOS_DATATYPES type, char * value, void ** out);
 
 // NCSU ALACRITY-ADIOS - This function was static, but is now needed in adios_transforms_*.c

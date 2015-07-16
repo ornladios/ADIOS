@@ -2253,7 +2253,7 @@ int adios_write_process_group_header_v1 (struct adios_file_struct * fd
     return 0;
 }
 
-static void index_append_process_group_v1 (
+void index_append_process_group_v1 (
         struct adios_index_struct_v1 * index,
         struct adios_index_process_group_struct_v1 * item
         )
@@ -2273,7 +2273,7 @@ static void index_append_process_group_v1 (
     */
 }
 
-static void index_append_var_v1 (
+void index_append_var_v1 (
         struct adios_index_struct_v1 *index
         ,struct adios_index_var_struct_v1 * item
         ,int do_sort
