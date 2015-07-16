@@ -124,8 +124,12 @@ void store_scalar_dimensions (
     }
 }
 
-
-uint64_t get_dimension (struct adios_dimension_item_struct_v1 * d)
+/* Return the actual dimension/offset value.
+   If it points to a scalar variable, get its value.
+   If it's time return the value provided by the caller 
+     (should be 1 for a dimension, 0 for an offset)
+ */
+uint64_t get_dimension (struct adios_dimension_item_struct_v1 * d, int return_for_time)
 {
     int id = d->var_id; 
     uint64_t dim = 0;
@@ -133,7 +137,7 @@ uint64_t get_dimension (struct adios_dimension_item_struct_v1 * d)
     {
         if (d->is_time_index == adios_flag_yes)
         {
-            dim = 0;
+            dim = return_for_time;
         }
         else
         {
@@ -245,11 +249,11 @@ void process_dimensions (
         for (j = 0; j < v_index->characteristics [0].dims.count; j++)
         {
             v_index->characteristics [0].dims.dims [j * 3 + 0] =
-                get_dimension (&d->dimension);
+                get_dimension (&d->dimension, 1);
             v_index->characteristics [0].dims.dims [j * 3 + 1] =
-                get_dimension (&d->global_dimension);
+                get_dimension (&d->global_dimension, 0);
             v_index->characteristics [0].dims.dims [j * 3 + 2] =
-                get_dimension (&d->local_offset);
+                get_dimension (&d->local_offset, 0);
 
             d = d->next;
         }
