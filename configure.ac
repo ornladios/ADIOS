@@ -811,6 +811,7 @@ AC_CONFIG_FILES([Makefile
                  utils/bp2bp/Makefile
                  utils/list_methods/Makefile
                  utils/bpmeta/Makefile
+                 utils/bprecover/Makefile
 		 utils/fastbit/Makefile
                  examples/Makefile
                  examples/C/Makefile
