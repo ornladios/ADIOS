@@ -180,7 +180,7 @@ void print_written_info()
     printf ("\n------- Information recorded on rank 0 (read will compare to this info)  --------\n");
     for (s = 0; s < nsteps; s++) {
         printf ("Step %d:\n", s);
-        printf ("  Global dim = %d\n", gdims[s]);
+        printf ("  Global dim = %llu\n", gdims[s]);
         for (r = 0; r < size; r++) {
             for (b = 0; b < nblocks_per_step; b++) {
                 printf ("  rank %d: block %d: size=%llu, offset=%llu\n", r, b+1, 
@@ -498,7 +498,7 @@ int read_scalar_stepbystep ()
             if (value != 
                     block_count [f->current_step*nblocks_per_step*size]) 
             {
-                printf ("\tERROR expected = %d", 
+                printf ("\tERROR expected = %llu", 
                         block_count [f->current_step*nblocks_per_step*size]);
                 nerrors++;
             }

@@ -271,7 +271,7 @@ int read_file ()
     log ("Read and check data in %s\n", FILENAME);
     f = adios_read_open_file (FILENAME, ADIOS_READ_METHOD_BP, comm);
     if (f == NULL) {
-        printE ("Error at opening file: %s\n", rank, adios_errmsg());
+        printE ("Error at opening file: %s\n", adios_errmsg());
         return 1;
     }
 
@@ -405,7 +405,7 @@ int read_stream ()
     f = adios_read_open (FILENAME, ADIOS_READ_METHOD_BP, comm,
                          ADIOS_LOCKMODE_NONE, 0.0);
     if (f == NULL) {
-        printE ("Error at opening file as stream: %s\n", rank, adios_errmsg());
+        printE ("Error at opening file as stream: %s\n", adios_errmsg());
         return 1;
     }
 

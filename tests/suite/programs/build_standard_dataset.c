@@ -753,7 +753,8 @@ int main(int argc, char **argv) {
 			dataset = &DATASETS[i];
 
 	if (dataset == NULL) {
-		fprintf(stderr, "Error: '%s' does not name a dataset packaged in this executable\n");
+		fprintf(stderr, "Error: '%s' does not name a dataset packaged in this executable\n", 
+                        dataset_id);
 		usage_and_exit();
 	}
 

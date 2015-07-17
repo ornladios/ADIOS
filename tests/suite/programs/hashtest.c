@@ -143,8 +143,8 @@ int dotest ()
     }
     time (&tget);
     tget = tget - tbegin;
-    printf("Timing: put %d elements in %d seconds, got them back in %d seconds\n",
-            npaths*nvars, tput, tget);
+    printf("Timing: put %d elements in %ld seconds, got them back in %ld seconds\n",
+            npaths*nvars, (long)tput, (long)tget);
 
     /* Print hashtable */
     printf("============== PRINT HASHTABLE ============\n");

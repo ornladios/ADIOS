@@ -56,7 +56,7 @@ void alloc_vars()
     size_t n;
 
     n = (size_t)ldim1 * (size_t)ldim2;
-    log ("Allocate 2 arrays of %llu integers...\n",n);
+    log ("Allocate 2 arrays of %llu integers...\n",(unsigned long long)n);
     a2  = (int*) malloc (n * sizeof(int));
     r2  = (int*) malloc (n * sizeof(int));
 }
@@ -81,7 +81,7 @@ void set_vars(int step)
     set_offsets();
 
     n = (size_t)ldim1 * (size_t)ldim2;
-    log ("  Fill up array of %llu elements to value %d...\n",n,v);
+    log ("  Fill up array of %llu elements to value %d...\n",(unsigned long long)n,v);
     for (i=0; i<n; i++) a2[i] = v;
 }
 
@@ -202,7 +202,7 @@ int write_file (int step)
     te = MPI_Wtime();
 
     if (rank==0) {
-        log ("  Write time for step %d was %6.3lf seconds\n", rank, step, te-tb);
+        log ("  Write time for step %d was %6.3lf seconds\n", step, te-tb);
     }
     MPI_Barrier (comm);
     return 0;
@@ -287,7 +287,7 @@ int read_file ()
     log ("Read and check data in %s\n", FILENAME);
     f = adios_read_open_file (FILENAME, ADIOS_READ_METHOD_BP, comm);
     if (f == NULL) {
-        printE ("Error at opening file: %s\n", rank, adios_errmsg());
+        printE ("Error at opening file: %s\n", adios_errmsg());
         return 1;
     }
 

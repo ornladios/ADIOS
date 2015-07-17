@@ -180,7 +180,7 @@ int read_file ()
     log ("Read and check data in %s\n", FILENAME);
     f = adios_read_open_file (FILENAME, ADIOS_READ_METHOD_BP, comm);
     if (f == NULL) {
-        printE ("Error at opening file: %s\n", rank, adios_errmsg());
+        printE ("Error at opening file: %s\n", adios_errmsg());
         return 1;
     }
 
@@ -229,7 +229,7 @@ int read_by_group ()
     log ("Read and check data in %s\n", FILENAME);
     f = adios_read_open_file (FILENAME, ADIOS_READ_METHOD_BP, comm);
     if (f == NULL) {
-        printE ("Error at opening file: %s\n", rank, adios_errmsg());
+        printE ("Error at opening file: %s\n", adios_errmsg());
         return 1;
     }
 
@@ -238,7 +238,7 @@ int read_by_group ()
     log ("  Limit view to first group only\n");
     err = adios_group_view (f, 0);
     if (err) {
-        printE ("Error in adios_group_view: %s\n", rank, adios_errmsg());
+        printE ("Error in adios_group_view: %s\n", adios_errmsg());
         goto endread;
     }
 
@@ -259,7 +259,7 @@ int read_by_group ()
     log ("  Limit view to second group only\n");
     err = adios_group_view (f, 1);
     if (err) {
-        printE ("Error in adios_group_view: %s\n", rank, adios_errmsg());
+        printE ("Error in adios_group_view: %s\n", adios_errmsg());
         goto endread;
     }
 

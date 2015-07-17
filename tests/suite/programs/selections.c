@@ -336,7 +336,7 @@ int read_points ()
     f = adios_read_open (FILENAME, read_method, comm,
                          ADIOS_LOCKMODE_CURRENT, 0.0);
     if (f == NULL) {
-        printE ("Error at opening file: %s\n", rank, adios_errmsg());
+        printE ("Error at opening file: %s\n", adios_errmsg());
         return 1;
     }
 

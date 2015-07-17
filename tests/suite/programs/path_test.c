@@ -247,7 +247,7 @@ int read_file (char *fname)
     log ("Read and check data in %s\n", fname);
     f = adios_read_open_file (fname, ADIOS_READ_METHOD_BP, comm);
     if (f == NULL) {
-        printE ("Error at opening file: %s\n", rank, adios_errmsg());
+        printE ("Error at opening file: %s\n", adios_errmsg());
         return 1;
     }
 

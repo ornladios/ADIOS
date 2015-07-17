@@ -154,7 +154,7 @@ int write_file (int step)
     uint64_t       groupsize=0, totalsize;
 
     log ("Write step %d to %s\n", step, FILENAME);
-    adios_open (&fh, "connect", FILENAME, (step ? "a" : "w"), &subcomm);
+    adios_open (&fh, "connect", FILENAME, (step ? "a" : "w"), subcomm);
     
     groupsize  = 3 * sizeof(int);                           // dimensions 
     groupsize += ldim1 * sizeof(int);                       // 1D 
