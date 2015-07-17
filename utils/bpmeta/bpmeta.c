@@ -206,7 +206,7 @@ int main (int argc, char ** argv)
         }
         if (verbose)
             printf ("Process subfiles from %d to %d with thread %d\n", 
-                    targs[tid].startidx, targs[tid].endidx, targs[tid]);
+                    targs[tid].startidx, targs[tid].endidx, targs[tid].tid);
 
         if (tid < nthreads-1) {
             /* Start worker thread. */
