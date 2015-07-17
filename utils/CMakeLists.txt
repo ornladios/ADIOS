@@ -4,6 +4,8 @@ add_subdirectory(bp2ascii)
 add_subdirectory(bpsplit)
 add_subdirectory(bpls)
 add_subdirectory(bpdiff)
+add_subdirectory(bpmeta)
+add_subdirectory(bprecover)
 add_subdirectory(list_methods)
 
 if(BUILD_WRITE)
