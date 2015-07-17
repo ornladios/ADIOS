@@ -588,7 +588,7 @@ int hr_var (hid_t root_id
 
         for (i=0;i<rank;i++) {
             if(myrank==0) 
-                printf("\tDIMS var:%s dim[%d]:  %d %d %d\n",pvar->name
+                printf("\tDIMS var:%s dim[%d]:  %llu %llu %llu\n",pvar->name
                          ,i, h5_globaldims[i], h5_localdims[i], h5_offsets[i]);
         }
         H5Sclose(h5_dataspace_id); 
@@ -774,7 +774,7 @@ int hw_var (hid_t root_id
              if (dims)
                  dims = dims -> next;
              if (debug && myrank==0) {
-                 printf("\t%s[%d]: g(%d):l(%d):o(%d)\n"
+                 printf("\t%s[%d]: g(%llu):l(%llu):o(%llu)\n"
                        ,pvar->name,i
                        ,h5_globaldims[i]
                        ,h5_localdims[i]
@@ -808,7 +808,7 @@ int hw_var (hid_t root_id
           
         h5_dataspace_id = H5Screate_simple (rank, h5_globaldims, NULL);
         if ( h5_dataspace_id < 0 && rank ==2) { 
-            fprintf (stderr, "PHDF5 ERROR: cannot create dataspace for var: %s %d %d %d\n"\
+            fprintf (stderr, "PHDF5 ERROR: cannot create dataspace for var: %s %d %llu %llu\n"\
                     ,pvar->name, rank, h5_globaldims[0], h5_globaldims[1]);
             return -1; 
          } 
@@ -887,7 +887,7 @@ int hw_var (hid_t root_id
                 h5_memspace_id = H5Screate_simple (rank, h5_localdims, NULL);
                 //H5Sset_extent_simple (h5_dataspace_id, rank, h5_globaldims, NULL);
                 //H5Sget_simple_extent_dims (h5_dataspace_id, h5_offsets, h5_globaldims);
-                fprintf(stderr, "var %s has time index %d %d \n"
+                fprintf(stderr, "var %s has time index %llu %llu \n"
                        ,pvar->name, h5_offsets[1], h5_globaldims[1]); 
             }
             else {
