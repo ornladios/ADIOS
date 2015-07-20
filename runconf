@@ -21,13 +21,13 @@ if [ `hostname | cut -c 1-4` == "sith" ]; then
     echo "Configure on SITH for $TARGET env. for user ${USER}"
     module unload hdf5
     module unload netcdf
+    module unload mxml
+    module unload python
     module unload PE-gnu
     module unload PE-pgi
     module unload PE-intel
     module unload PE-pathscale
     module unload pgi gcc intel pathscale
-    module unload python
-    module unload mxml
     module load PE-$TARGET
     module load mxml/2.9
     MXMLDIR=$MXML_DIR
