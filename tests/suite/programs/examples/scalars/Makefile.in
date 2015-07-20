@@ -417,7 +417,7 @@ scalars_read_C_LDADD = $(top_builddir)/src/libadiosread.a \
 	$(ADIOSREADLIB_LDADD)
 scalars_read_C_LDFLAGS = $(ADIOSREADLIB_LDFLAGS)
 CLEANFILES = *.bp *.ch *.fh
-EXTRA_DIST = scalars_C.xml scalars_F.xml write_scalars.ch gread_scalars.ch gwrite_scalars.fh gread_scalars.fh
+EXTRA_DIST = scalars_C.xml scalars_F.xml 
 @BUILD_FORTRAN_TRUE@scalars_write_F_SOURCES = scalars_write_F.F90
 @BUILD_FORTRAN_TRUE@scalars_write_F_LDADD =  \
 @BUILD_FORTRAN_TRUE@	$(top_builddir)/src/libadiosf.a \

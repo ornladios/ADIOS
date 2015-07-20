@@ -23,7 +23,7 @@ scalars_read_C_LDADD += $(ADIOSREADLIB_LDADD)
 
 CLEANFILES = *.bp *.ch *.fh
 CC=$(MPICC)
-EXTRA_DIST = scalars_C.xml scalars_F.xml write_scalars.ch gread_scalars.ch gwrite_scalars.fh gread_scalars.fh
+EXTRA_DIST = scalars_C.xml scalars_F.xml 
 
 
 if BUILD_FORTRAN
