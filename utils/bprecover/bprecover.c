@@ -260,8 +260,8 @@ int find_pg (int fd, uint64_t offset, uint64_t file_size, uint64_t * pgsize_repo
         return 0;
     }
 
-    if (pgsize + offset > file_size) {
-        printf ("   === Offset + PG reported size > file size. This is not a (good) PG.\n");
+    if (pgsize + offset > file_size + 1024*1024*1024 /* a GB index??? */ ) {
+        printf ("   === Offset + PG reported size >> file size. This is not a (good) PG.\n");
         return 0;
     }
 
@@ -495,10 +495,15 @@ int main (int argc, char ** argv)
     b = malloc (sizeof (struct adios_bp_buffer_struct_v1));
     adios_buffer_struct_init (b);
 
+    int flags = O_RDONLY;
+    if (do_write_index)
+        flags = O_RDWR;
 
-    int fd = open (filename, O_RDWR);
+    int fd = open (filename, flags);
     if (fd < 0) {
         fprintf (stderr, "recover: cannot open file %s\n", filename);
+        if (errno)
+            fprintf (stderr, "%s\n", strerror(errno));
         return -1;
     }
 
