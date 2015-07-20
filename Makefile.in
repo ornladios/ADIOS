@@ -437,6 +437,7 @@ SUBDIRS = src utils tests examples
 EXTRA_DIST = runconf \
              KNOWN_BUGS \
              adios_config.in \
+             adios_config.flags.cmake \
              scripts/create.nssi.config.sh \
              scripts/kill.nssi.staging.sh \
              scripts/start.nssi.staging.sh \
