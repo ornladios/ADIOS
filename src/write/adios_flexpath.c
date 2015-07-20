@@ -192,9 +192,9 @@ char*
 resolve_path_name(char *path, char *name)
 {
     char *fullname = NULL;
-    if(name) {
-        if(path) {
-            if(strcmp(path, "")) {
+    if (name) {
+        if (path) {
+            if (strcmp(path, "")) {
                 fullname = malloc(strlen(path) + strlen(name) + 2);
                 strcpy(fullname, path);
                 strcat(fullname, "/");
@@ -238,7 +238,7 @@ set_flush_id_atom(attr_list attrs, int value)
 {
     atom_t dst_atom = attr_atom_from_string("fp_flush_id");
     int dst;
-    if(!get_int_attr(attrs, dst_atom, &dst)) {
+    if (!get_int_attr(attrs, dst_atom, &dst)) {
         add_int_attr(attrs, dst_atom, value);
     }
     set_int_attr(attrs, dst_atom, value);
@@ -251,7 +251,7 @@ set_size_atom(attr_list attrs, int value)
 {
     atom_t dst_atom = attr_atom_from_string("fp_size");
     int size;
-    if(!get_int_attr(attrs, dst_atom, &size)) {
+    if (!get_int_attr(attrs, dst_atom, &size)) {
         add_int_attr(attrs, dst_atom, value);
     }
     set_int_attr(attrs, dst_atom, value);
@@ -264,7 +264,7 @@ set_dst_rank_atom(attr_list attrs, int value)
 {
     atom_t dst_atom = attr_atom_from_string("fp_dst_rank");
     int dst;
-    if(!get_int_attr(attrs, dst_atom, &dst)) {
+    if (!get_int_attr(attrs, dst_atom, &dst)) {
         add_int_attr(attrs, dst_atom, value);
     }
     set_int_attr(attrs, dst_atom, value);
@@ -277,7 +277,7 @@ set_dst_condition_atom(attr_list attrs, int condition)
 {
     atom_t dst_atom = attr_atom_from_string("fp_dst_condition");
     int dst;
-    if(!get_int_attr(attrs, dst_atom, &dst)) {
+    if (!get_int_attr(attrs, dst_atom, &dst)) {
 	add_int_attr(attrs, dst_atom, condition);
     }
     set_int_attr(attrs, dst_atom, condition);
@@ -327,7 +327,7 @@ op_free(void* eventData, void* clientData)
 {
     fp_write_log("OP", "freeing an op message\n");
     op_msg* op = (op_msg*) eventData;
-    if(op->file_name) {
+    if (op->file_name) {
         free(op->file_name);
     }
     free(op);
@@ -337,7 +337,7 @@ op_free(void* eventData, void* clientData)
 int 
 queue_count(FlexpathQueueNode** queue) 
 {
-    if(*queue==NULL) {
+    if (*queue==NULL) {
         return 0;
     }
     int count = 1;
@@ -360,7 +360,7 @@ threaded_enqueue(
     int max_size) 
 {
     pthread_mutex_lock(mutex);
-    if(max_size > 0) {
+    if (max_size > 0) {
 	while (queue_count(queue) > max_size) {
 	    pthread_cond_wait(condition, mutex);
 	}
@@ -393,13 +393,13 @@ threaded_dequeue(
         prev=tail;
         tail=tail->next;
     }
-    if(prev) {
+    if (prev) {
         prev->next = NULL;
     } else {
         *queue = NULL;
     }
     pthread_mutex_unlock(mutex);
-    if(signal_dequeue==1) {
+    if (signal_dequeue==1) {
         pthread_cond_broadcast(condition);
     }
     return tail;
@@ -413,7 +413,7 @@ threaded_peek(FlexpathQueueNode** queue,
 {
     pthread_mutex_lock(mutex);
     int q = queue_count(queue);
-    if(q == 0) {	
+    if (q == 0) {	
 	pthread_cond_wait(condition, mutex);
     }
     FlexpathQueueNode* tail;
@@ -429,7 +429,7 @@ threaded_peek(FlexpathQueueNode** queue,
 FlexpathVarNode* 
 add_var(FlexpathVarNode* queue, char* varName, FlexpathVarNode* dims, int rank)
 {
-    if(queue) {
+    if (queue) {
         queue->next=add_var(queue->next, varName, dims, rank);
         return queue;
     } else {
@@ -446,7 +446,7 @@ add_var(FlexpathVarNode* queue, char* varName, FlexpathVarNode* dims, int rank)
 void 
 free_vars(FlexpathVarNode* queue)
 {
-    if(queue) {
+    if (queue) {
         free_vars(queue->next);
         free(queue->varName);
         free(queue);
@@ -458,14 +458,14 @@ FlexpathVarNode*
 queue_contains(FlexpathVarNode* queue, const char* name, int rank) 
 {
     int compare_rank = 0;
-    if(rank >= 0 ) {
+    if (rank >= 0 ) {
         compare_rank = 1;
     }
     FlexpathVarNode* tmp = queue;
     while (tmp) {
-        if(strcmp(tmp->varName, name)==0) {
-            if(compare_rank) {
-                if(tmp->rank == rank) {
+        if (strcmp(tmp->varName, name)==0) {
+            if (compare_rank) {
+                if (tmp->rank == rank) {
                     return tmp;
                 }
             } else {
@@ -534,21 +534,22 @@ get_var_offsets(struct adios_var_struct *v,
 		      uint64_t **local_dimensions,
 		      uint64_t **global_dimensions)
 {
-    struct adios_dimension_struct * dim_list = v->dimensions;	    
-
+    struct adios_dimension_struct * dim_list = v->dimensions;
     int ndims = 0;
     while (dim_list) {
         ndims++;
         dim_list = dim_list->next;
     }
-    dim_list = v->dimensions;	    
-
-    if(ndims) {		
+    dim_list = v->dimensions;
+    
+    if (ndims) {
+	uint64_t global = adios_get_dim_value(&dim_list->global_dimension);
+	if (global == 0) { return 0;}
         uint64_t *local_offsets = (uint64_t*)malloc(sizeof(uint64_t) * ndims);
         uint64_t *local_sizes = (uint64_t*)malloc(sizeof(uint64_t) * ndims);
 	uint64_t *global_sizes = (uint64_t*)malloc(sizeof(uint64_t) * ndims);
         int n = 0; 
-        while (dim_list) {		
+        while (dim_list) {
             local_sizes[n] = (uint64_t)adios_get_dim_value(&dim_list->dimension);
             local_offsets[n] = (uint64_t)adios_get_dim_value(&dim_list->local_offset);
 	    global_sizes[n] = (uint64_t)adios_get_dim_value(&dim_list->global_dimension);
@@ -572,40 +573,40 @@ char *multiqueue_action = "{\n\
     int flush_data_count = 0; \n\
     int my_rank = -1;\n\
     attr_list mine;\n\
-    if(EVcount_varMsg()>0) {\n\
+    if (EVcount_varMsg()>0) {\n\
         EVdiscard_and_submit_varMsg(0, 0);\n\
     }\n\
-    if(EVcount_update_step_msg() > 1) {\n\
+    if (EVcount_update_step_msg() > 1) {\n\
         EVdiscard_update_step_msg(0);\n\
     }\n\
-    if(EVcount_drop_evgroup_msg()>0) {\n\
-       if(EVcount_evgroup()>0) {\n\
+    if (EVcount_drop_evgroup_msg()>0) {\n\
+       if (EVcount_evgroup()>0) {\n\
           EVdiscard_evgroup(0);\n\
        }\n\
        EVdiscard_and_submit_drop_evgroup_msg(0,0);\n\
     }\n\
-    if(EVcount_op_msg()>0) {\n\
+    if (EVcount_op_msg()>0) {\n\
         op_msg *msg = EVdata_op_msg(0);\n\
         mine = EVget_attrs_op_msg(0);\n\
         found = attr_ivalue(mine, \"fp_dst_rank\");\n\
-        if(found > 0) {\n\
+        if (found > 0) {\n\
             EVdiscard_and_submit_op_msg(found, 0);\n\
         } else {\n\
             EVdiscard_and_submit_op_msg(0,0);\n\
         }\n\
     }\n\
-    if(EVcount_flush()>0) {\n\
+    if (EVcount_flush()>0) {\n\
         flush *c = EVdata_flush(0);\n\
-         if(c->type == 2) { \n\
-             if(EVcount_evgroup()>0) {\n\
+         if (c->type == 2) { \n\
+             if (EVcount_evgroup()>0) {\n\
                evgroup *g = EVdata_evgroup(0); \n\
                g->condition = c->condition;\n\
                EVsubmit(c->process_id+1, g);\n\
                EVdiscard_flush(0);\n\
              }\n\
          }\n\
-         else if(c->type == 3) {\n\
-            if(EVcount_update_step_msg()>0) {\n\
+         else if (c->type == 3) {\n\
+            if (EVcount_update_step_msg()>0) {\n\
                update_step_msg *stepmsg = EVdata_update_step_msg(0);\n\
                stepmsg->condition = c->condition;\n\
                EVsubmit(c->process_id+1, stepmsg);\n\
@@ -617,7 +618,7 @@ char *multiqueue_action = "{\n\
             flush_data_count++;\n\
          }\n\
     }\n\
-    if(EVcount_anonymous()>0) {\n\
+    if (EVcount_anonymous()>0) {\n\
         mine = EVget_attrs_anonymous(0);\n\
         found = attr_ivalue(mine, \"fp_dst_rank\");\n\
         EVdiscard_and_submit_anonymous(found+1,0);\n\
@@ -733,7 +734,7 @@ internal_find_field(char *name, FMFieldList flist)
 void 
 mem_check(void* ptr, const char* str) 
 {
-    if(!ptr) {
+    if (!ptr) {
         adios_error(err_no_memory, "Cannot allocate memory for flexpath %s.", str);
     }
 }
@@ -791,11 +792,11 @@ set_format(struct adios_group_struct *t,
 
 	// use the mangled name for the field.
 	field_list[fieldNo].field_name = fullname;
-        if(fullname!=NULL) {
+        if (fullname!=NULL) {
             int num_dims = 0;
             char atom_name[200] = "";
             FlexpathVarNode *dims=NULL;
-            if(adios_var->dimensions) {
+            if (adios_var->dimensions) {
                 struct adios_dimension_struct *adim = adios_var->dimensions;  
 		
                 // attach appropriate attrs for dimensions	
@@ -812,7 +813,7 @@ set_format(struct adios_group_struct *t,
 			set_attr_dimensions(fullname, aname, num_dims, fileData->attrs);
 		    }
                     char *gname = get_dim_name(&adim->global_dimension);
-		    if(gname) {
+		    if (gname) {
 			fileData->globalCount++;
 			//char *name = find_fixed_name(currentFm, gname);
 			char *aname = get_alt_name(fullname, gname);
