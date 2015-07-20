@@ -50,15 +50,13 @@ const char * value_to_string_ptr (enum ADIOS_DATATYPES type, void * data, uint64
 
 int have_subfiles = 0; // global flag indicating if we variables are stored in subfiles (bpdump does not process subfiles)
 
-int MAX_GROUP_NAME_LENGTH = 32; // could be 65535 but who does that??? 
-
 /* Temporarily store scalar's values to be used to determine
    an array's dimensions. Indexed by variable id (which is the reference 
    in the array dimension to the scalar)
 */
 #define MAX_DIMENSION_INDEX 1024
 uint64_t dim_value[MAX_DIMENSION_INDEX];
-const uint64_t INVALID_DIM = (uint64_t) -1;
+const uint64_t INVALID_DIM = (uint64_t) -1L;
 
 void init_dimensions ()
 {
@@ -78,7 +76,7 @@ void store_scalar_dimensions (
     {
         if (var_header->id < MAX_DIMENSION_INDEX) {
             uint64_t size = adios_get_type_size (var_header->type, var_payload->payload);
-            uint64_t d = 0;
+            uint64_t d = 0L;
             switch (var_header->type)
             {
                 case adios_byte:
@@ -132,7 +130,7 @@ void store_scalar_dimensions (
 uint64_t get_dimension (struct adios_dimension_item_struct_v1 * d, int return_for_time)
 {
     int id = d->var_id; 
-    uint64_t dim = 0;
+    uint64_t dim = 0L;
     if (id == 0)
     {
         if (d->is_time_index == adios_flag_yes)
@@ -169,6 +167,22 @@ uint64_t get_dimension (struct adios_dimension_item_struct_v1 * d, int return_fo
 }
 
 
+int MAX_GROUP_NAME_LENGTH = 64; // could be 65535 but who does that??? 
+
+/* print char with printable char or its \xxx code
+   return 1 if its ASCII 32..126, usable for names in ADIOS
+*/
+int print_namechar (char c)
+{
+    if (32 <= c && c <= 126) {
+        // SPACE, symbols, alphanumeric
+        printf ("%c",c);
+        return 1;
+    } else {
+        printf (" \\%3.3hhu", c);
+        return 0;
+    }
+}
 
 int looks_like_PG (const char * buf, int blen)
 {
@@ -178,8 +192,10 @@ int looks_like_PG (const char * buf, int blen)
     // host_language_fortran flag, single char
     char fort = buf[offset]; 
     offset += 1;
-    printf ("       Fortran flag char should be one y or n: %c\n", fort);
-    if (fort != 'y' && fort != 'n' && fort != 'x')
+    printf ("       Fortran flag char should be 'y' or 'n': '");
+    print_namechar (fort);
+    printf ("'\n");
+    if (fort != 'y' && fort != 'n')
         return 0; 
 
     // group name length, 16 bit
@@ -190,10 +206,73 @@ int looks_like_PG (const char * buf, int blen)
     if (namelen > MAX_GROUP_NAME_LENGTH)
         return 0;
 
+    char gname[MAX_GROUP_NAME_LENGTH];
+    memcpy (gname, buf+offset, namelen);
+    offset += namelen;
 
+    int i;
+    int validname = 1;
+    printf ("       Group name: \"");
+    for (i = 0; i < namelen; i++)
+    {
+        validname &= print_namechar(gname[i]);
+    }
+    printf ("\"\n");
+
+    if (!validname) {
+        printf ("       Group name contains characters that are invalid for a name\n");
+        return 0;
+    }
+
+    return 1;
 }
 
+/* Look for a PG at a given offset. If it looks like a PG, 
+   return 1 and also return the reported PG size.
+   pgsize_reported is changed only when returning 1.
+*/
+int find_pg (int fd, uint64_t offset, uint64_t file_size, uint64_t * pgsize_reported) 
+{
 
+    const int N_READ_AHEAD = 1024;
+    char buf[N_READ_AHEAD]; // temporary buffer to read data in and parse for info
+
+    printf ("Look for a Process Group (PG) at offset %llu\n", offset);
+    lseek (fd, offset, SEEK_SET);
+    // read a few bytes in
+    errno = 0;
+    int blen = read (fd, buf, N_READ_AHEAD);
+
+    if (blen < 8) {
+        printf ("  === Could not read even 8 bytes. Finish PG reading\n");
+        if (errno) {
+            printf ("  Error when reading: %s\n", strerror(errno));
+        }
+        return 0;
+    }
+
+    uint64_t pgsize;
+    pgsize = *(uint64_t*) buf;  // first 8 bytes is size of PG
+    printf ("  PG reported size: %llu\n", pgsize);
+
+    if (pgsize < 28) {
+        printf ("   === PG reported size is too small. This is not a (good) PG.\n");
+        return 0;
+    }
+
+    if (pgsize + offset > file_size) {
+        printf ("   === Offset + PG reported size > file size. This is not a (good) PG.\n");
+        return 0;
+    }
+
+    if (!looks_like_PG (buf, blen)) {
+        return 0;
+    }
+
+    // All tests passed, it seems to be a PG
+    *pgsize_reported = pgsize;
+    return 1;
+}
 
 
 void add_pg_to_index (
@@ -332,8 +411,8 @@ void add_var_to_index (
 void write_index (int fd, uint64_t file_offset, struct adios_index_struct_v1 *  index)
 {
     char * buffer = NULL;
-    uint64_t buffer_size = 0;
-    uint64_t buffer_offset = 0;
+    uint64_t buffer_size = 0L;
+    uint64_t buffer_offset = 0L;
     adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset, file_offset, index);
     adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
     printf ("Index metadata size is %llu bytes\n", buffer_offset);
@@ -439,45 +518,22 @@ int main (int argc, char ** argv)
     //struct adios_index_attribute_struct_v1 * attrs_root = 0;
 
 
-    uint64_t pg_num = 0;
-    uint64_t curr_offset = 0;
+    uint64_t pg_num = 0L;
+    uint64_t curr_offset = 0L;
+    uint64_t new_offset = 0L;
     uint64_t pgsize_reported; // size of current pg (as indicated in PG header (wrongly))
     uint64_t pgsize_actual; // size of current pg based on processing (accurate)
-    const int N_READ_AHEAD = 1024;
-    char buf[N_READ_AHEAD]; // temporary buffer to read data in and parse for info
+    int found_pg = 0;
+
+    printf (DIVIDER);
+    found_pg = find_pg (fd, new_offset, file_size, &pgsize_reported);
 
     // pass over the PGs from beginning of file
-    while (curr_offset < file_size)
+    while (found_pg)
     {
-        printf (DIVIDER);
-        printf ("Look for a PG %llu at offset %llu\n", pg_num, curr_offset);
-        lseek (fd, curr_offset, SEEK_SET);
-        // read a few bytes in, use b->buff temporarily so we can use adios functions
-        errno = 0;
-        int blen = read (fd, buf, N_READ_AHEAD);
-
-        if (blen < 8) {
-            printf (" === Could not read even 8 bytes. Finish PG reading\n");
-            if (errno) {
-                printf ("Error when reading: %s\n", strerror(errno));
-            }
-            break;  
-        }
-       
-        pgsize_actual = 0;
-        pgsize_reported = *(uint64_t*) buf;  // first 8 bytes is size of PG
-        printf ("PG size: %llu\n", pgsize_reported);
-
-        if (pgsize_reported + curr_offset > file_size) {
-            printf (" === Offset + PG size > file size. Finish PG reading\n");
-            break;  
-        }
-
-        if (!looks_like_PG (buf, blen)) {
-            break;  
-        }
-
+        curr_offset = new_offset;
         pg_num++;
+        printf ("PG %llu found at offset %llu\n", pg_num, curr_offset);
 
 
         /* Let's process the group */
@@ -542,7 +598,7 @@ int main (int argc, char ** argv)
                 free (var_payload.payload);
                 var_payload.payload = 0;
             }
-            printf ("\n");
+            //printf ("\n");
 
         }
 
@@ -552,8 +608,8 @@ int main (int argc, char ** argv)
         for (i = 0; i < attrs_header.count; i++)
         {
             adios_parse_attribute_v1 (b, &attribute);
-            print_attribute (&attribute);
-            printf ("\n");
+            //print_attribute (&attribute);
+            //printf ("\n");
         }
 
         pgsize_actual = b->offset;
@@ -561,9 +617,26 @@ int main (int argc, char ** argv)
 
         pg = pg->next;
         
-        curr_offset += pgsize_actual;
 
+        printf (DIVIDER);
+        found_pg = 0;
+        if (curr_offset + pgsize_actual < file_size) 
+        {
+            new_offset =  curr_offset + pgsize_actual;
+            found_pg = find_pg (fd, curr_offset+pgsize_actual, file_size, &pgsize_reported);
+        }
+        if (!found_pg && 
+            pgsize_actual != pgsize_reported &&
+            curr_offset + pgsize_reported < file_size) 
+        {
+            new_offset =  curr_offset + pgsize_reported;
+            found_pg = find_pg (fd, curr_offset+pgsize_reported, file_size, &pgsize_reported);
+        }
     }
+
+    // The end of the last successfully processed PG
+    // This will be the start of the index data
+    curr_offset += pgsize_actual;
 
     printf (DIVIDER);
     printf ("Found %llu PGs to be processable\n", pg_num);
@@ -699,7 +772,7 @@ void print_process_group_header (uint64_t num
 {
     struct adios_method_info_struct_v1 * m;
 
-    printf ("Process Group: %llu\n", num);
+    //printf ("Process Group: %llu\n", num);
     printf ("\tGroup Name: %s\n", pg_header->name);
     printf ("\tHost Language Fortran?: %c\n"
            ,(pg_header->host_language_fortran == adios_flag_yes ? 'Y' : 'N')
