@@ -88,8 +88,7 @@ if [ "${SRCDIR:0:1}" != "/" ]; then
 fi
 
 # check if Fortran codes were built
-S=`grep BUILD_FORTRAN_TRUE $SRCDIR/$TRUNKDISTANCE/Makefile`
-if [ -z ${S#BUILD_FORTRAN_TRUE = } ]; then
+if [ -f $SRCDIR/$TRUNKDISTANCE/src/libadiosf.a ]; then
     HAVE_FORTRAN=yes
 else
     echo "WARNING: Fortran binaries are not built, so test will not use them"
