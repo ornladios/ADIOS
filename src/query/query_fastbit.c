@@ -3037,7 +3037,9 @@ ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundary, uint64_t
 	   uint64_t spatialCoordinates[bb->ndim];
 	   //getCoordinateFromBox(coordinates[i], bb, bb->ndim, spatialCoordinates);
 	   posToSpace(coordinates[i], isFortranClient, bb->count, spatialCoordinates, bb->ndim, bb->start);
-	   fillUp(bb->ndim, spatialCoordinates, i, pointArray, isFortranClient);
+	   //fillUp(bb->ndim, spatialCoordinates, i, pointArray, isFortranClient);
+
+	   fillUp(bb->ndim, spatialCoordinates, i, pointArray, 0); // already fortran coordinates from posToSpace(.. isFortranClient ..)
       }
       ADIOS_SELECTION* result =  common_read_selection_points(bb->ndim, retrivalSize, pointArray);    
       //free(pointArray); // user has to free this
@@ -3079,8 +3081,8 @@ ADIOS_SELECTION* getSpatialCoordinates(ADIOS_SELECTION* outputBoundary, uint64_t
 	   ADIOS_VARBLOCK* blockSel = &(v->blockinfo[absBlockCounter]);
 	   posToSpace(coordinates[i], isFortranClient, blockSel->count, spatialCoordinates, v->ndim, blockSel->start);
 
-
-	   fillUp(v->ndim, spatialCoordinates, i, pointArray, isFortranClient);
+	   //fillUp(v->ndim, spatialCoordinates, i, pointArray, isFortranClient); 
+	   fillUp(v->ndim, spatialCoordinates, i, pointArray, 0); // already fortran coordinates from posToSpace(.. isFortranClient ..)
       }
       ADIOS_SELECTION* result = common_read_selection_points(v->ndim, retrivalSize, pointArray);
       //free(pointArray); // user has to free this
