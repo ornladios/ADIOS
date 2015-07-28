@@ -589,7 +589,8 @@ static uint8_t adios_transform_serialize_transform(enum ADIOS_TRANSFORM_TYPE tra
     serialize_transform_type(transform_type, write_length, buffer, buffer_size, buffer_offset);
 
     // Write the pre-transform datatype
-    buffer_write(buffer, buffer_size, buffer_offset, &pre_transform_type, 1);
+    flag = (uint8_t) pre_transform_type; // convert down to a single byte
+    buffer_write(buffer, buffer_size, buffer_offset, &flag, 1);
     *write_length += 1;
 
     // Write the number of pre-transform dimensions

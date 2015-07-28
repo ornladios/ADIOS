@@ -58,7 +58,7 @@ program no_xml_write_byid
                           ,"", 6 &
                           ,local, global, offset, var_id1)
 
-    call adios_set_transform (var_id1, "none", adios_err)
+    call adios_set_transform (var_id1, "identity", adios_err)
 
 
     write (offset, "(I3)") O + NX
@@ -68,7 +68,7 @@ program no_xml_write_byid
                           ,"", 6 &
                           ,local, global, offset, var_id2)
 
-    call adios_set_transform (var_id2, "none", adios_err)
+    call adios_set_transform (var_id2, "identity", adios_err)
 
 
     !! add some attributes

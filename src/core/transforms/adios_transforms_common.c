@@ -294,7 +294,9 @@ int adios_transform_deserialize_transform_characteristic(struct adios_index_char
     //BUFREAD8(b, transform->transform_type);
     transform->transform_type = deserialize_transform_type(b);
 
-    BUFREAD8(b, transform->pre_transform_type);
+    uint8_t flag; // type represented as single byte in file/buffer
+    BUFREAD8(b, flag);
+    transform->pre_transform_type = (enum ADIOS_DATATYPES) flag;
     BUFREAD8(b, transform->pre_transform_dimensions.count);
 
     BUFREAD16(b, len);
