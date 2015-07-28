@@ -2885,7 +2885,7 @@ int common_read_complete_meshinfo (ADIOS_FILE *fp, ADIOS_FILE *mp, ADIOS_MESH * 
                     if (!read_fail)
                     {
                         adios_errno = err_no_error;
-                        meshinfo->unstructured->npoints = common_check_var_type_to_uint64 (&attr_size, data);
+                        meshinfo->unstructured->npoints = common_check_var_type_to_uint64 (&attr_type, data);
                         if (adios_errno < 0)
                         {
                             log_warn ("Unstructured mesh %s var type of npoints is not supported. "
@@ -2957,7 +2957,7 @@ int common_read_complete_meshinfo (ADIOS_FILE *fp, ADIOS_FILE *mp, ADIOS_MESH * 
                     if (!read_fail)
                     {
                         adios_errno = err_no_error;
-                        meshinfo->unstructured->nspaces = common_check_var_type_to_int (&attr_size, data);
+                        meshinfo->unstructured->nspaces = common_check_var_type_to_int (&attr_type, data);
                         if (adios_errno < 0)
                             log_warn ("Unstructured mesh %s var type of nspaces is not suported, "
                                       "use points dim %d for nspaces\n",
