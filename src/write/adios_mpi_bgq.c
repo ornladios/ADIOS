@@ -1013,7 +1013,7 @@ void adios_mpi_bgq_write (struct adios_file_struct * fd
         {
             if (v->free_data == adios_flag_yes)
             {
-                free (v->data);
+                free (v->adata);
                 adios_method_buffer_free (v->data_size);
             }
         }
@@ -1096,7 +1096,7 @@ void adios_mpi_bgq_read (struct adios_file_struct * fd
                     ,struct adios_method_struct * method
                     )
 {
-    v->data = buffer;
+    v->data = v->adata = buffer;
     v->data_size = buffer_size;
 }
 
@@ -1167,7 +1167,7 @@ static void adios_mpi_bgq_do_read (struct adios_file_struct * fd
 
                 if (v1)
                 {
-                    var_payload.payload = v1->data;
+                    var_payload.payload = v1->adata;
                     adios_parse_var_data_payload_v1 (&md->b, &var_header
                                                     ,&var_payload
                                                     ,v1->data_size
