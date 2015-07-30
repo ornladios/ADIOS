@@ -243,10 +243,6 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
     fd->subfile_index = p->rank; // Only if HAVE_MPI
 #endif
 
-    struct stat s;
-    if (stat (subfile_name, &s) == 0)
-        p->b.file_size = s.st_size;
-
     switch (fd->mode)
     {
         case adios_mode_read:
@@ -432,6 +428,9 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
                     // in at the end and set the base_offset for the old index
                     // start
                     uint32_t version;
+                    struct stat s;
+                    if (fstat (p->b.f, &s) == 0)
+                        p->b.file_size = s.st_size;
                     adios_posix_read_version (&p->b);
                     adios_parse_version (&p->b, &version);
 
