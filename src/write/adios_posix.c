@@ -504,9 +504,9 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
                 fd->base_offset = 0;
                 fd->pg_start_in_file = 0;
             }
-            printf ("adios_posix_open append/update, old_file=%d, index_is_in_memory=%d, "
-                    "base_offset=%lld, pg_start=%lld\n", 
-                    old_file, p->index_is_in_memory, fd->base_offset, fd->pg_start_in_file);
+            //printf ("adios_posix_open append/update, old_file=%d, index_is_in_memory=%d, "
+            //        "base_offset=%lld, pg_start=%lld\n", 
+            //        old_file, p->index_is_in_memory, fd->base_offset, fd->pg_start_in_file);
 
             p->index_is_in_memory = 1; // to notify future append steps about the good news
             break;
@@ -1344,8 +1344,8 @@ void adios_posix_close (struct adios_file_struct * fd
                     {
                         index_offsets [i] = total_size;
                         total_size += index_sizes [i];
-                        printf ("index %d offset %d  size %d  total size %u\n",
-                                i, index_offsets[i], index_sizes[i], total_size);
+                        //printf ("index %d offset %d  size %d  total size %u\n",
+                        //         i, index_offsets[i], index_sizes[i], total_size);
                     }
 
                     recv_buffer = malloc (total_size);
@@ -1368,8 +1368,8 @@ void adios_posix_close (struct adios_file_struct * fd
                         p->b.length = index_sizes [i];
                         p->b.offset = 0;
 
-                        printf ("parse index %d offset %d  size %d\n",
-                                i, index_offsets[i], index_sizes[i]);
+                        //printf ("parse index %d offset %d  size %d\n",
+                        //        i, index_offsets[i], index_sizes[i]);
                         adios_parse_process_group_index_v1 (&p->b, &new_pg_root, NULL);
                         adios_parse_vars_index_v1 (&p->b, &new_vars_root, NULL, NULL);
                         // do not merge attributes from other processes from 1.4
