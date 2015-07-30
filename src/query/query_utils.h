@@ -4,7 +4,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
+#include <sys/time.h>
 #include "public/adios_query.h"
 
 /* helper functions for all query methods */

@@ -11,9 +11,9 @@
 #include <string.h>
 #include <errno.h>
 #include <arpa/inet.h>
-#include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <fcntl.h>
 #include <unistd.h>
 #include "public/adios_types.h"
 #include "core/adios_internals.h"
@@ -23,7 +23,7 @@
 #include "public/adios_error.h"
 #include "transforms/adios_transforms_write.h"
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined(__CYGWIN__)
 #    define O_LARGEFILE 0
 #endif
 

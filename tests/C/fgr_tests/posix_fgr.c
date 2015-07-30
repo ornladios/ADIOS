@@ -18,6 +18,7 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <stdint.h>
+#define __USE_LINUX_IOCTL_DEFS
 #include <sys/ioctl.h>
 //#include <lustre/lustre_user.h>
 //#endif

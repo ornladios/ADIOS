@@ -27,6 +27,10 @@
 #include "core/buffer.h"
 #include "core/util.h"
 
+#if defined(__APPLE__) || defined(__CYGWIN__)
+#    define O_LARGEFILE 0
+#endif
+
 static int adios_posix1_initialized = 0;
 
 struct adios_POSIX1_data_struct

@@ -146,6 +146,7 @@ struct adios_MPI_thread_data_write
 //#define ADIOS_LUSTRE
 
 //#ifdef ADIOS_LUSTRE
+#define __USE_LINUX_IOCTL_DEFS
 #include <sys/ioctl.h>
 //#include <lustre/lustre_user.h>
 //#endif

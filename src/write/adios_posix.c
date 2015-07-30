@@ -28,7 +28,7 @@
 #include "core/buffer.h"
 #include "core/util.h"
 
-#if defined(__APPLE__) 
+#if defined(__APPLE__) || defined(__CYGWIN__)
 #    define O_LARGEFILE 0
 #endif
 
