@@ -2253,12 +2253,29 @@ int adios_write_process_group_header_v1 (struct adios_file_struct * fd
     return 0;
 }
 
+/*static void print_pglist (struct adios_index_process_group_struct_v1 *pg_root, const char * print_header)
+{
+    printf ("%s: ", print_header);
+    while (pg_root) {
+        printf ("(id %d T %d)->",pg_root->process_id, pg_root->time_index);
+        pg_root = pg_root->next;
+    }
+    printf ("nil\n");
+}*/
+
 void index_append_process_group_v1 (
         struct adios_index_struct_v1 * index,
         struct adios_index_process_group_struct_v1 * item
         )
 {
+    //printf ("--- Append process group ----\n");
+    //print_pglist (index->pg_root, "Current");
+    //print_pglist (item,           "Item(s)");
     /* PG's are not merged, simply add to the end of the list */
+    /* This is actually not correct. PG's should be ordered by time, not by process ID,
+       but it is irrelevant because this information is never used anywhere. Right?
+       See bpdump output PG list is ordered by time for a single process output. 
+    */
     if (index->pg_root) {
         index->pg_tail->next = item;
     } else {
@@ -2270,7 +2287,13 @@ void index_append_process_group_v1 (
        (e.g. during global index aggregation in MPI_AGGREGATE)
        So don't do this: 
           item->next = 0; 
+          Instead, go down to last element to set as tail 
     */
+    while (item->next) {
+        item = item->next;
+        index->pg_tail = item;
+    }
+    //print_pglist (index->pg_root, "Result");
 }
 
 void index_append_var_v1 (
