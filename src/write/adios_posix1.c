@@ -80,7 +80,9 @@ int adios_posix1_open (struct adios_file_struct * fd
         {
             p->b.f = open (name, O_RDONLY
 #ifndef __APPLE__
+#ifndef __CYGWIN__
 | O_LARGEFILE
+#endif
 #endif
 );
             if (p->b.f == -1)
@@ -101,7 +103,9 @@ int adios_posix1_open (struct adios_file_struct * fd
         {
             p->b.f = open (name, O_WRONLY | O_CREAT | O_TRUNC
 #ifndef __APPLE__
+#ifndef __CYGWIN__
 | O_LARGEFILE
+#endif
 #endif
                             ,  S_IRUSR | S_IWUSR
                              | S_IRGRP | S_IWGRP
@@ -129,15 +133,19 @@ int adios_posix1_open (struct adios_file_struct * fd
             int old_file = 1;
             p->b.f = open (name, O_RDWR
 #ifndef __APPLE__
+#ifndef __CYGWIN__
 | O_LARGEFILE
 #endif
+#endif			   
 );
             if (p->b.f == -1)
             {
                 old_file = 0;
                 p->b.f = open (name,  O_WRONLY | O_CREAT
 #ifndef __APPLE__
+#ifndef __CYGWIN__
 | O_LARGEFILE
+#endif
 #endif
                                 ,  S_IRUSR | S_IWUSR
                                  | S_IRGRP | S_IWGRP

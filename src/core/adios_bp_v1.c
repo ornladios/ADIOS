@@ -23,7 +23,7 @@
 #include "public/adios_error.h"
 #include "transforms/adios_transforms_write.h"
 
-#if defined(__APPLE__)
+#if defined(__APPLE__) || defined(__CYGWIN__)
 #    define O_LARGEFILE 0
 #endif
 

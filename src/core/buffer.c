@@ -34,7 +34,7 @@ void      adios_buffer_alloc_percentage_set (int v)     { adios_buffer_alloc_per
 void      adios_buffer_alloc_when_set (enum ADIOS_BUFFER_ALLOC_WHEN v)   { adios_buffer_alloc_when = v; }
 enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when_get (void)   { return adios_buffer_alloc_when; }
 
-#if defined (__APPLE__)
+#if defined (__APPLE__) 
 // See e.g. http://www.opensource.apple.com/source/system_cmds/system_cmds-496/vm_stat.tproj/vm_stat.c
 // for the code for the vm_stat command.
 // http://www.opensource.apple.com/source/xnu/xnu-792.6.61/osfmk/man/host_statistics.html?txt
