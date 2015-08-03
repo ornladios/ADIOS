@@ -16,6 +16,7 @@
 #else
 #    include <sys/vfs.h>
 #endif
+#define __USE_LINUX_IOCTL_DEFS
 #include <sys/ioctl.h>
 #include <assert.h>
 

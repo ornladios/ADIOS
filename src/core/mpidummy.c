@@ -19,7 +19,7 @@
 
 #include "public/mpidummy.h"
 
-#if defined(__APPLE__) || defined(__WIN32__) 
+#if defined(__APPLE__) || defined(__WIN32__) || defined(__CYGWIN__) 
 #    define lseek64 lseek
 #    define open64  open
 #endif

@@ -281,8 +281,7 @@
 /* Define to 1 if you have the <zlib.h> header file. */
 #undef HAVE_ZLIB_H
 
-/* Define to the sub-directory in which libtool stores uninstalled libraries.
-   */
+/* Define to the sub-directory where libtool stores uninstalled libraries. */
 #undef LT_OBJDIR
 
 /* Datatap is disabled */
@@ -324,3 +323,6 @@
 
 /* Version number of package */
 #undef VERSION
+
+/* Define if you use CYGWIN. */
+#undef __USE_LINUX_IOCTL_DEFS

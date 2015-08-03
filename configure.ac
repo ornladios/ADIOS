@@ -27,6 +27,8 @@ AC_ARG_ENABLE(fortran,
     [AS_HELP_STRING([--disable-fortran],[disable Fortran test programs in ADIOS.])])
 AM_CONDITIONAL([BUILD_FORTRAN], [test "x$enable_fortran" != "xno"])
 
+AC_CANONICAL_HOST
+
 if test "x$enable_fortran" != "xno"; then
     AC_PROG_FC
     AC_PROG_FC_C_O
@@ -168,6 +170,8 @@ fi
 AC_SUBST(MACRODEFFLAG)
 
 
+
+
 dnl Use PHDF5 for bp2h5 if no sequential HDF5 was found
 if test -z "${HAVE_PHDF5_TRUE}" -a -z "${HAVE_HDF5_FALSE}"; then
     HDF5_CPPFLAGS="${PHDF5_CPPFLAGS}"
@@ -191,6 +195,21 @@ if test -z "${HAVE_NC4PAR_TRUE}" -a -z "${HAVE_NETCDF_FALSE}"; then
     AM_CONDITIONAL(USE_PARALLEL_COMPILER,true)
     AC_MSG_NOTICE([Use NC4PAR for sequential NETCDF tools])
 fi
+
+opsys=''
+canonical=${host}
+
+case "${canonical}" in
+     *-*-cygwin )
+        AM_CONDITIONAL(HAVE_CYGWIN, true)
+        AC_DEFINE(__USE_LINUX_IOCTL_DEFS,1,[Define if you use CYGWIN.])
+     ;;
+     * )
+        AM_CONDITIONAL(HAVE_CYGWIN, false)
+     ;;
+esac
+
+
 
 
 dnl Generate flags for adios lib creation which depends on the packages we found
