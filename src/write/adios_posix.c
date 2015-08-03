@@ -386,8 +386,8 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
 
                         return 0;
                     }
-                    p->file_is_open = 1;
                 }
+                p->file_is_open = 1;
             }
 
 #ifdef HAVE_MPI
@@ -1528,6 +1528,7 @@ void adios_posix_finalize (int mype, struct adios_method_struct * method)
         adios_posix_close_internal (&p->b);
         p->file_is_open = 0;
     }
+    p->index_is_in_memory = 0; 
 
     adios_free_index_v1 (p->index);
 
