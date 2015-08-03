@@ -201,8 +201,11 @@ canonical=${host}
 
 case "${canonical}" in
      *-*-cygwin )
-     AM_CONDITIONAL(HAVE_CYGWIN, true)
-     AC_DEFINE(__USE_LINUX_IOCTL_DEFS,1,[Define if you use CYGWIN.])
+        AM_CONDITIONAL(HAVE_CYGWIN, true)
+        AC_DEFINE(__USE_LINUX_IOCTL_DEFS,1,[Define if you use CYGWIN.])
+     ;;
+     * )
+        AM_CONDITIONAL(HAVE_CYGWIN, false)
      ;;
 esac
 
