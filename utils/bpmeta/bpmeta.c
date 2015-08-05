@@ -198,12 +198,12 @@ int main (int argc, char ** argv)
     {
         startidx = endidx + 1;
         endidx = startidx + K - 1;
-        targs[tid].tid = tid;
-        targs[tid].startidx = startidx;
-        targs[tid].endidx = endidx;
         if (tid < L) {
             endidx++;
         }
+        targs[tid].tid = tid;
+        targs[tid].startidx = startidx;
+        targs[tid].endidx = endidx;
         if (verbose)
             printf ("Process subfiles from %d to %d with thread %d\n", 
                     targs[tid].startidx, targs[tid].endidx, targs[tid].tid);
