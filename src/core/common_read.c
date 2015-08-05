@@ -705,6 +705,7 @@ static int common_read_find_var (const ADIOS_FILE *fp, const char *name, int qui
             adios_error (err_invalid_varname, "Variable '%s' is not found!\n", name);
         else
             adios_errno = err_invalid_varname;
+        return -1;
     }
 
     // map the global varid back to the current group view's varid
@@ -3469,7 +3470,7 @@ int common_read_schedule_read (const ADIOS_FILE      * fp,
                                void                  * data)
 
 {
-    int retval;
+    int retval = 0;
 
     adios_errno = err_no_error;
     if (fp) {
@@ -3498,7 +3499,7 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
 
 {
     struct common_read_internals_struct * internals = (struct common_read_internals_struct *) fp->internal_data;
-    int retval;
+    int retval = 0; 
 
     internals = (struct common_read_internals_struct *) fp->internal_data;
 
@@ -3532,14 +3533,14 @@ int common_read_schedule_read_byid (const ADIOS_FILE      * fp,
             		// Proceed to register the read request and schedule all of its grandchild raw
             		// read requests ONLY IF a non-NULL reqgroup was returned (i.e., the user's
             		// selection intersected at least one PG).
+            		retval = 0;
             		if (new_reqgroup) {
             			adios_transform_read_request_append(&internals->transform_reqgroups, new_reqgroup);
 
             			// Now schedule all of the new subrequests
-            			retval = 0;
-            			for (pg_reqgroup = new_reqgroup->pg_reqgroups; pg_reqgroup; pg_reqgroup = pg_reqgroup->next) {
-            				for (subreq = pg_reqgroup->subreqs; subreq; subreq = subreq->next) {
-            					retval |= internals->read_hooks[internals->method].adios_schedule_read_byid_fn(
+            			for (pg_reqgroup = new_reqgroup->pg_reqgroups; retval==0 && pg_reqgroup; pg_reqgroup = pg_reqgroup->next) {
+            				for (subreq = pg_reqgroup->subreqs; retval==0 && subreq; subreq = subreq->next) {
+            					retval = internals->read_hooks[internals->method].adios_schedule_read_byid_fn(
             							fp, subreq->raw_sel, varid+internals->group_varid_offset, pg_reqgroup->timestep, 1, subreq->data);
             				}
             			}
