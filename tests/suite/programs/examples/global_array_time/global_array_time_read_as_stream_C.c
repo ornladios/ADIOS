@@ -54,7 +54,7 @@ int main (int argc, char ** argv)
         retval = adios_errno;
     }
     else if (f == NULL) {
-        error ("rank %d: Error at opening stream: %s\n", rank, adios_errmsg());
+        log_error ("rank %d: Error at opening stream: %s\n", rank, adios_errmsg());
         retval = adios_errno;
     }
     else
