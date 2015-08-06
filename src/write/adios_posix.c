@@ -1,4 +1,4 @@
-/* 
+           /* 
  * ADIOS is freely available under the terms of the BSD license described
  * in the COPYING file in the top level directory of this source distribution.
  *
@@ -65,9 +65,13 @@ struct adios_POSIX_data_struct
     int size;
 #endif
     int g_have_mdf;
+    int file_is_open; // = 1 if in append mode we leave the file open (close at finalize)
+    int index_is_in_memory; // = 1 when index is kept in memory, no need to read from file. =1 after first 'append/update' is completed but not after first 'write'.
+    uint64_t pg_start_next; // remember end of PG data for future append steps
 };
 
 
+/* For each group and each method, init is called, 'method' is unique for each call */
 void adios_posix_init (const PairStruct * parameters
                       ,struct adios_method_struct * method
                       )
@@ -92,6 +96,9 @@ void adios_posix_init (const PairStruct * parameters
     p->size = 0;
 #endif
     p->g_have_mdf = 1;
+    p->file_is_open = 0;  // = 1 when posix file is open (used in append mode only)
+    p->index_is_in_memory = 0; 
+    p->pg_start_next = 0;
 }
 
 
@@ -100,10 +107,11 @@ void adios_posix_init (const PairStruct * parameters
 int ADIOS_TIMER_POSIX_COMM = ADIOS_TIMING_MAX_USER_TIMERS + 0;
 int ADIOS_TIMER_POSIX_IO = ADIOS_TIMING_MAX_USER_TIMERS + 1;
 int ADIOS_TIMER_POSIX_MD = ADIOS_TIMING_MAX_USER_TIMERS + 2;
-int ADIOS_TIMER_POSIX_AD_OPEN = ADIOS_TIMING_MAX_USER_TIMERS + 3;
-int ADIOS_TIMER_POSIX_AD_WRITE = ADIOS_TIMING_MAX_USER_TIMERS + 4;
-int ADIOS_TIMER_POSIX_AD_CLOSE = ADIOS_TIMING_MAX_USER_TIMERS + 5;
-int ADIOS_TIMER_POSIX_AD_SHOULD_BUFFER = ADIOS_TIMING_MAX_USER_TIMERS + 6;
+int ADIOS_TIMER_POSIX_GMD = ADIOS_TIMING_MAX_USER_TIMERS + 3;
+int ADIOS_TIMER_POSIX_AD_OPEN = ADIOS_TIMING_MAX_USER_TIMERS + 4;
+int ADIOS_TIMER_POSIX_AD_SHOULD_BUFFER = ADIOS_TIMING_MAX_USER_TIMERS + 5;
+int ADIOS_TIMER_POSIX_AD_WRITE = ADIOS_TIMING_MAX_USER_TIMERS + 6;
+int ADIOS_TIMER_POSIX_AD_CLOSE = ADIOS_TIMING_MAX_USER_TIMERS + 7;
 #endif
 
 int adios_posix_open (struct adios_file_struct * fd
@@ -139,15 +147,16 @@ int adios_posix_open (struct adios_file_struct * fd
     }
 
 #if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
-    int timer_count = 7;
+    int timer_count = 8;
     char ** timer_names = (char**) malloc (timer_count * sizeof (char*) );
     timer_names [0] = "Communication";
     timer_names [1] = "I/O";
-    timer_names [2] = "Metadata";
-    timer_names [3] = "ad_open";
-    timer_names [4] = "ad_write";
-    timer_names [5] = "ad_close";
-    timer_names [6] = "ad_should_buffer";
+    timer_names [2] = "Local metadata";
+    timer_names [3] = "Global metadata";
+    timer_names [4] = "ad_open";
+    timer_names [5] = "ad_group_size";
+    timer_names [6] = "ad_write";
+    timer_names [7] = "ad_close";
 
 
     // Ensure both timing objects exist
@@ -236,10 +245,6 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
     fd->subfile_index = p->rank; // Only if HAVE_MPI
 #endif
 
-    struct stat s;
-    if (stat (subfile_name, &s) == 0)
-        p->b.file_size = s.st_size;
-
     switch (fd->mode)
     {
         case adios_mode_read:
@@ -255,6 +260,7 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
             }
             fd->base_offset = 0;
             fd->pg_start_in_file = 0;
+            p->file_is_open = 1;
 
             break;
         }
@@ -300,6 +306,7 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
 
 #ifdef HAVE_MPI
             // open metadata file
+            START_TIMER (ADIOS_TIMER_POSIX_GMD);
             if (p->group_comm != MPI_COMM_SELF && p->g_have_mdf)
             {
                 if (p->rank == 0)
@@ -323,9 +330,11 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
                     }
                 }
             }
+            STOP_TIMER (ADIOS_TIMER_POSIX_GMD);
 #endif
             fd->base_offset = 0;
             fd->pg_start_in_file = 0;
+            p->file_is_open = 1;
 
             break;
         }
@@ -334,8 +343,13 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
         case adios_mode_update:
         {
             int old_file = 1;
+            
 #ifdef HAVE_MPI
-            if (p->group_comm != MPI_COMM_SELF)
+            /* FIXME: we need to do this synchronisation only if we don't have
+               the subdirectory already created. p->index_is_in_memory will be
+               true from the second append call, at which point this subdir
+               must exist */
+            if (p->group_comm != MPI_COMM_SELF && !p->index_is_in_memory)
             {
                 if (p->rank == 0)
                 {
@@ -352,123 +366,157 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
                 MPI_Barrier (p->group_comm);
             }
 #endif
-            p->b.f = open (subfile_name, O_RDWR | O_LARGEFILE);
-            if (p->b.f == -1)
+           
+
+            // if file was not closed in previous append steps, then we are good, otherwise open file
+            if (!p->file_is_open) 
             {
-                old_file = 0;
-                p->b.f = open (subfile_name,  O_WRONLY | O_CREAT | O_LARGEFILE
-                                ,  S_IRUSR | S_IWUSR
-                                 | S_IRGRP | S_IWGRP
-                                 | S_IROTH | S_IWOTH
-                                );
+                p->b.f = open (subfile_name, O_RDWR | O_LARGEFILE);
                 if (p->b.f == -1)
                 {
-                    fprintf (stderr, "adios_posix_open failed for "
-                                     "base_path %s, name %s\n"
-                            ,method->base_path, fd->name
-                            );
+                    old_file = 0;
+                    p->b.f = open (subfile_name,  O_WRONLY | O_CREAT | O_LARGEFILE,
+                                  S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH);
+                    if (p->b.f == -1)
+                    {
+                        fprintf (stderr, "adios_posix_open failed to create  file %s\n" ,subfile_name);
 
-                    free (subfile_name);
-                    free (mdfile_name);
+                        free (subfile_name);
+                        free (mdfile_name);
 
-                    return 0;
+                        return 0;
+                    }
                 }
+                p->file_is_open = 1;
             }
+
 #ifdef HAVE_MPI
-            // open metadata file
-            if (p->group_comm != MPI_COMM_SELF)
+            // open metadata file by rank 0, if user wants to write it
+            START_TIMER (ADIOS_TIMER_POSIX_GMD);
+            if (p->group_comm != MPI_COMM_SELF && 
+                p->g_have_mdf &&
+                p->rank == 0)
             {
-                if (p->rank == 0)
+                p->mf = open (mdfile_name, O_WRONLY | O_TRUNC | O_LARGEFILE
+                        , S_IRUSR | S_IWUSR
+                        | S_IRGRP | S_IWGRP
+                        | S_IROTH | S_IWOTH
+                        );
+                if (p->mf == -1)
                 {
-                    p->mf = open (mdfile_name, O_WRONLY | O_TRUNC | O_LARGEFILE
-                                              , S_IRUSR | S_IWUSR
-                                              | S_IRGRP | S_IWGRP
-                                              | S_IROTH | S_IWOTH
-                                 );
+                    p->mf = open (mdfile_name, O_WRONLY| O_CREAT | O_LARGEFILE
+                            , S_IRUSR | S_IWUSR
+                            | S_IRGRP | S_IWGRP
+                            | S_IROTH | S_IWOTH
+                            );
                     if (p->mf == -1)
                     {
-                        p->mf = open (mdfile_name, O_WRONLY| O_CREAT | O_LARGEFILE
-                                                 , S_IRUSR | S_IWUSR
-                                                 | S_IRGRP | S_IWGRP
-                                             | S_IROTH | S_IWOTH
-                                     );
-                        if (p->mf == -1)
-                        {
-                            fprintf (stderr, "adios_posix_open failed for "
-                                             "base_path %s, name %s\n"
-                                    ,method->base_path, fd->name
+                        fprintf (stderr, "adios_posix_open failed to create  file %s\n" ,mdfile_name);
+                        free (subfile_name);
+                        free (mdfile_name);
+
+                        return 0;
+                    }
+                }
+            }
+            STOP_TIMER (ADIOS_TIMER_POSIX_GMD);
+#endif
+            START_TIMER (ADIOS_TIMER_POSIX_MD);
+            if (old_file)
+            {
+                // There is previous data in file. Metadata is in memory 
+                // from the second append step. Metadata is only in the 
+                // existing file at first append (even if the file was
+                // created by a 'w' mode write step in this run
+
+                if (!p->index_is_in_memory)
+                {
+                    // now we have to read the old stuff so we can merge it
+                    // in at the end and set the base_offset for the old index
+                    // start
+                    uint32_t version;
+                    struct stat s;
+                    if (fstat (p->b.f, &s) == 0)
+                        p->b.file_size = s.st_size;
+                    adios_posix_read_version (&p->b);
+                    adios_parse_version (&p->b, &version);
+
+                    switch (version & ADIOS_VERSION_NUM_MASK)
+                    {
+                        case 1:
+                        case 2:
+                        case 3:
+                            // read the old stuff and set the base offset
+                            adios_posix_read_index_offsets (&p->b);
+                            adios_parse_index_offsets_v1 (&p->b);
+
+                            adios_posix_read_process_group_index (&p->b);
+                            adios_parse_process_group_index_v1 (&p->b, &p->index->pg_root, &p->index->pg_tail);
+
+                            // find the largest time index so we can append properly
+                            struct adios_index_process_group_struct_v1 * pg;
+                            uint32_t max_time_index = 0;
+                            pg = p->index->pg_root;
+                            while (pg)
+                            {
+                                if (pg->time_index > max_time_index)
+                                    max_time_index = pg->time_index;
+                                pg = pg->next;
+                            }
+                            if (fd->mode == adios_mode_append) {
+                                ++max_time_index;
+                            }
+                            fd->group->time_index = max_time_index;
+
+                            adios_posix_read_vars_index (&p->b);
+                            adios_parse_vars_index_v1 (&p->b, &p->index->vars_root, 
+                                    p->index->hashtbl_vars,
+                                    &p->index->vars_tail);
+
+                            adios_posix_read_attributes_index (&p->b);
+                            adios_parse_attributes_index_v1 (&p->b, &p->index->attrs_root);
+
+                            // write data where previous steps finished (minus the index)
+                            fd->base_offset = p->b.end_of_pgs;
+                            fd->pg_start_in_file = p->b.end_of_pgs;
+
+                            break;
+
+                        default:
+                            fprintf (stderr, "Unknown bp version: %d.  "
+                                    "Cannot append\n"
+                                    ,version
                                     );
 
                             free (subfile_name);
                             free (mdfile_name);
 
                             return 0;
-                        }
                     }
                 }
-            }
-#endif
-            if (old_file)
-            {
-                // now we have to read the old stuff so we can merge it
-                // in at the end and set the base_offset for the old index
-                // start
-                uint32_t version;
-                adios_posix_read_version (&p->b);
-                adios_parse_version (&p->b, &version);
-
-                switch (version & ADIOS_VERSION_NUM_MASK)
+                else 
                 {
-                    case 1:
-                    case 2:
-                    case 3:
-                        // read the old stuff and set the base offset
-                        adios_posix_read_index_offsets (&p->b);
-                        adios_parse_index_offsets_v1 (&p->b);
-
-                        adios_posix_read_process_group_index (&p->b);
-                        adios_parse_process_group_index_v1 (&p->b, &p->index->pg_root, &p->index->pg_tail);
-
-                        // find the largest time index so we can append properly
-                        struct adios_index_process_group_struct_v1 * pg;
-                        uint32_t max_time_index = 0;
-                        pg = p->index->pg_root;
-                        while (pg)
-                        {
-                            if (pg->time_index > max_time_index)
-                                max_time_index = pg->time_index;
-                            pg = pg->next;
-                        }
-                        if (fd->mode == adios_mode_append) {
-                            ++max_time_index;
-                        }
-                        fd->group->time_index = max_time_index;
-
-                        adios_posix_read_vars_index (&p->b);
-                        adios_parse_vars_index_v1 (&p->b, &p->index->vars_root, 
-                                                   p->index->hashtbl_vars,
-                                                   &p->index->vars_tail);
-
-                        adios_posix_read_attributes_index (&p->b);
-                        adios_parse_attributes_index_v1 (&p->b, &p->index->attrs_root);
-
-                        fd->base_offset = p->b.end_of_pgs;
-                        fd->pg_start_in_file = p->b.end_of_pgs;
-                        break;
-
-                    default:
-                        fprintf (stderr, "Unknown bp version: %d.  "
-                                         "Cannot append\n"
-                                ,version
-                                );
-
-                        free (subfile_name);
-                        free (mdfile_name);
-
-                        return 0;
+                    // index is in memory, update time index and offsets
+                    if (fd->mode == adios_mode_append) {
+                        fd->group->time_index++;
+                    }
+                    // use offsets set at the end of previous append step
+                    fd->base_offset = p->pg_start_next;
+                    fd->pg_start_in_file = p->pg_start_next;
                 }
             }
+            else 
+            {
+                // there is no previous data, start from offset 0
+                fd->base_offset = 0;
+                fd->pg_start_in_file = 0;
+            }
+            STOP_TIMER (ADIOS_TIMER_POSIX_MD);
+            //printf ("adios_posix_open append/update, old_file=%d, index_is_in_memory=%d, "
+            //        "base_offset=%lld, pg_start=%lld\n", 
+            //        old_file, p->index_is_in_memory, fd->base_offset, fd->pg_start_in_file);
 
+            p->index_is_in_memory = 1; // to notify future append steps about the good news
             break;
         }
 
@@ -513,9 +561,9 @@ enum ADIOS_FLAG adios_posix_should_buffer (struct adios_file_struct * fd
         adios_write_process_group_header_v1 (fd, fd->write_size_bytes);
 
         lseek (p->b.f, fd->base_offset, SEEK_SET);
-        START_TIMER (ADIOS_TIMER_POSIX_MD);
+        START_TIMER (ADIOS_TIMER_POSIX_IO);
         ssize_t s = write (p->b.f, fd->buffer, fd->bytes_written);
-        STOP_TIMER (ADIOS_TIMER_POSIX_MD);
+        STOP_TIMER (ADIOS_TIMER_POSIX_IO);
         if (s != fd->bytes_written)
         {
             fprintf (stderr, "POSIX method tried to write %llu, "
@@ -578,9 +626,9 @@ void adios_posix_write (struct adios_file_struct * fd
     {
         // var payload sent for sizing information
         adios_write_var_header_v1 (fd, v);
-        START_TIMER (ADIOS_TIMER_POSIX_MD);
+        START_TIMER (ADIOS_TIMER_POSIX_IO);
         ssize_t s = write (p->b.f, fd->buffer, fd->bytes_written);
-        STOP_TIMER (ADIOS_TIMER_POSIX_MD);
+        STOP_TIMER (ADIOS_TIMER_POSIX_IO);
         if (s != fd->bytes_written)
         {
             fprintf (stderr, "POSIX method tried to write %llu, "
@@ -737,8 +785,14 @@ static void adios_posix_do_write (struct adios_file_struct * fd
 
     if (fd->shared_buffer == adios_flag_yes)
     {
-        lseek (p->b.f, p->b.end_of_pgs, SEEK_SET);
-        if (p->b.end_of_pgs + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
+        off_t offset = fd->pg_start_in_file;
+        if (p->b.end_of_pgs > fd->pg_start_in_file)
+            offset = p->b.end_of_pgs;
+
+        //lseek (p->b.f, p->b.end_of_pgs, SEEK_SET);
+        //if (p->b.end_of_pgs + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
+        lseek (p->b.f, offset, SEEK_SET);
+        if (offset + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
             fprintf (stderr, "adios_posix_write exceeds pg bound. File is corrupted. "
                              "Need to enlarge group size. \n");
 
@@ -768,6 +822,9 @@ static void adios_posix_do_write (struct adios_file_struct * fd
             }
         }
     }
+
+    // remember end of PG data (before index) in case future append needs it
+    p->pg_start_next = fd->pg_start_in_file + bytes_written;
 
     // index location calculation:
     // for buffered, base_offset = 0, fd->offset = write loc
@@ -968,9 +1025,9 @@ void adios_posix_close (struct adios_file_struct * fd
                         if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
                             fprintf (stderr, "adios_posix_write exceeds pg bound. File is corrupted. "
                                     "Need to enlarge group size. \n");
-                        START_TIMER (ADIOS_TIMER_POSIX_MD);
+                        START_TIMER (ADIOS_TIMER_POSIX_IO);
                         ssize_t s = write (p->b.f, fd->buffer, fd->bytes_written);
-                        STOP_TIMER (ADIOS_TIMER_POSIX_MD);
+                        STOP_TIMER (ADIOS_TIMER_POSIX_IO);
                         if (s != fd->bytes_written)
                         {
                             fprintf (stderr, "POSIX method tried to write %llu, "
@@ -996,9 +1053,9 @@ void adios_posix_close (struct adios_file_struct * fd
                 adios_write_close_attributes_v1 (fd);
                 fd->offset = lseek (p->b.f, p->vars_start, SEEK_SET);
                 // fd->vars_start gets updated with the size written
-                START_TIMER (ADIOS_TIMER_POSIX_MD);
+                START_TIMER (ADIOS_TIMER_POSIX_IO);
                 s = write (p->b.f, fd->buffer, p->vars_header_size);
-                STOP_TIMER (ADIOS_TIMER_POSIX_MD);
+                STOP_TIMER (ADIOS_TIMER_POSIX_IO);
                 if (s != p->vars_header_size)
                 {
                     fprintf (stderr, "POSIX method tried to write %llu, "
@@ -1018,17 +1075,18 @@ void adios_posix_close (struct adios_file_struct * fd
             uint64_t buffer_offset = 0;
             uint64_t index_start = fd->base_offset + fd->offset;
 
-            // build index
+            START_TIMER (ADIOS_TIMER_POSIX_MD);
+            // build new index for this step
             adios_build_index_v1 (fd, p->index);
             // if collective, gather the indexes from the rest and call
             // adios_merge_index_v1 (&new_pg_root, &new_vars_root, pg, vars);
             adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
                                  ,index_start, p->index);
             adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
-            START_TIMER (ADIOS_TIMER_POSIX_IO);
-            adios_posix_do_write (fd, method, buffer, buffer_offset); // Buffered vars written here
-            STOP_TIMER (ADIOS_TIMER_POSIX_IO);
+            STOP_TIMER (ADIOS_TIMER_POSIX_MD);
+
 #ifdef HAVE_MPI
+            START_TIMER (ADIOS_TIMER_POSIX_GMD);
             if (p->group_comm != MPI_COMM_SELF && p->g_have_mdf)
             {
                 if (p->rank == 0)
@@ -1111,9 +1169,9 @@ void adios_posix_close (struct adios_file_struct * fd
                                                 ,&global_index_buffer_offset
                                                 ,flag
                                                 );
-                    START_TIMER (ADIOS_TIMER_POSIX_MD);
+                    START_TIMER (ADIOS_TIMER_POSIX_IO);
                     ssize_t s = write (p->mf, global_index_buffer, global_index_buffer_offset);
-                    STOP_TIMER (ADIOS_TIMER_POSIX_MD);
+                    STOP_TIMER (ADIOS_TIMER_POSIX_IO);
                     if (s != global_index_buffer_offset)
                     {
                         fprintf (stderr, "POSIX method tried to write %llu, "
@@ -1144,7 +1202,22 @@ void adios_posix_close (struct adios_file_struct * fd
                     STOP_TIMER (ADIOS_TIMER_POSIX_COMM);
                 }
             }
+            STOP_TIMER (ADIOS_TIMER_POSIX_GMD);
 #endif
+
+            // write buffered data and index now
+            START_TIMER (ADIOS_TIMER_POSIX_IO);
+            adios_posix_do_write (fd, method, buffer, buffer_offset); // Buffered vars written here
+            STOP_TIMER (ADIOS_TIMER_POSIX_IO);
+
+            // close the file assuming we are done in 'w' mode
+            adios_posix_close_internal (&p->b);
+            p->file_is_open = 0;
+            // in 'w' mode we forget about index, first append needs to read it from file
+            adios_clear_index_v1 (p->index); 
+            // notify future append steps that write mode does not keep the index in memory
+            p->index_is_in_memory = 0; 
+
             free (buffer);
 
             break;
@@ -1193,9 +1266,9 @@ void adios_posix_close (struct adios_file_struct * fd
                     while (a)
                     {
                         adios_write_attribute_v1 (fd, a);
-                        START_TIMER (ADIOS_TIMER_POSIX_MD);
+                        START_TIMER (ADIOS_TIMER_POSIX_IO);
                         ssize_t s = write (p->b.f, fd->buffer, fd->bytes_written);
-                        STOP_TIMER (ADIOS_TIMER_POSIX_MD);
+                        STOP_TIMER (ADIOS_TIMER_POSIX_IO);
                         if (s != fd->bytes_written)
                         {
                             fprintf (stderr, "POSIX method tried to write %llu, "
@@ -1221,9 +1294,9 @@ void adios_posix_close (struct adios_file_struct * fd
                 adios_write_close_attributes_v1 (fd);
                 fd->offset = lseek (p->b.f, p->vars_start, SEEK_SET);
                 // fd->vars_start gets updated with the size written
-                START_TIMER (ADIOS_TIMER_POSIX_MD);
+                START_TIMER (ADIOS_TIMER_POSIX_IO);
                 s = write (p->b.f, fd->buffer, p->vars_header_size);
-                STOP_TIMER (ADIOS_TIMER_POSIX_MD);
+                STOP_TIMER (ADIOS_TIMER_POSIX_IO);
                 if (s != p->vars_header_size)
                 {
                     fprintf (stderr, "POSIX method tried to write %llu, "
@@ -1242,11 +1315,25 @@ void adios_posix_close (struct adios_file_struct * fd
             uint64_t buffer_offset = 0;
             uint64_t index_start = fd->base_offset + fd->offset;
 
-            // build index
-            adios_build_index_v1 (fd, p->index);
+            START_TIMER (ADIOS_TIMER_POSIX_MD);
+            // build index for current step and merge it into the 
+            // existing index for previous steps
+            struct adios_index_struct_v1 * current_index;
+            current_index = adios_alloc_index_v1(1); // no hashtables
+            adios_build_index_v1 (fd, current_index);
+            // new timestep so sorting is not needed during merge
+            adios_merge_index_v1 (p->index, current_index->pg_root, 
+                    current_index->vars_root, current_index->attrs_root, 0);
             adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
                                  ,index_start, p->index);
+            // free current_index structure but do not clear it's content, which is merged
+            // into p->index
+            adios_free_index_v1 (current_index);
+            adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
+            STOP_TIMER (ADIOS_TIMER_POSIX_MD);
+
 #ifdef HAVE_MPI
+            START_TIMER (ADIOS_TIMER_POSIX_GMD);
             if (p->group_comm != MPI_COMM_SELF && p->g_have_mdf)
             {
                 if (p->rank == 0)
@@ -1255,7 +1342,16 @@ void adios_posix_close (struct adios_file_struct * fd
                     int * index_offsets = malloc (4 * p->size);
                     char * recv_buffer = 0;
                     int i;
-                    uint32_t size = 0, total_size = 0;
+                    uint32_t size = buffer_size;
+                    uint32_t total_size = 0;
+
+                    // Need to make a temporary copy of p->index and merge
+                    // into that. p->index (or rank 0)  must be kept intact for 
+                    // future append steps.
+                    // Therefore rank 0 will parse it's own buffer too
+                    // and merge it into a new index
+                    struct adios_index_struct_v1 * gindex;
+                    gindex = adios_alloc_index_v1(1); // no hashtables
 
                     START_TIMER (ADIOS_TIMER_POSIX_COMM);
                     MPI_Gather (&size, 1, MPI_INT
@@ -1268,9 +1364,12 @@ void adios_posix_close (struct adios_file_struct * fd
                     {
                         index_offsets [i] = total_size;
                         total_size += index_sizes [i];
+                        //printf ("index %d offset %d  size %d  total size %u\n",
+                        //         i, index_offsets[i], index_sizes[i], total_size);
                     }
 
                     recv_buffer = malloc (total_size);
+                    memcpy (recv_buffer, buffer, index_sizes[0]);
 
                     START_TIMER (ADIOS_TIMER_POSIX_COMM);
                     MPI_Gatherv (&size, 0, MPI_BYTE
@@ -1283,24 +1382,24 @@ void adios_posix_close (struct adios_file_struct * fd
                     uint64_t buffer_size_save = p->b.length;
                     uint64_t offset_save = p->b.offset;
 
-                    for (i = 1; i < p->size; i++)
+                    for (i = 0; i < p->size; i++)
                     {
                         p->b.buff = recv_buffer + index_offsets [i];
                         p->b.length = index_sizes [i];
                         p->b.offset = 0;
 
+                        //printf ("parse index %d offset %d  size %d\n",
+                        //        i, index_offsets[i], index_sizes[i]);
                         adios_parse_process_group_index_v1 (&p->b, &new_pg_root, NULL);
                         adios_parse_vars_index_v1 (&p->b, &new_vars_root, NULL, NULL);
                         // do not merge attributes from other processes from 1.4
-                        /*
-                        adios_parse_attributes_index_v1 (&p->b
-                                                        ,&new_attrs_root
-                                                        );
-                         */
+                        if (i==0) {
+                            adios_parse_attributes_index_v1 (&p->b, &new_attrs_root);
+                        }
 
                         // global index would become unsorted on main aggregator during merging 
                         // so sort timesteps in this case (appending)
-                        adios_merge_index_v1 (p->index, new_pg_root, 
+                        adios_merge_index_v1 (gindex, new_pg_root, 
                                               new_vars_root, new_attrs_root, 1);
                     
                         new_pg_root = 0;
@@ -1324,7 +1423,7 @@ void adios_posix_close (struct adios_file_struct * fd
 
                     adios_write_index_v1 (&global_index_buffer, &global_index_buffer_size
                                          ,&global_index_buffer_offset, global_index_start
-                                         ,p->index);
+                                         ,gindex);
 
                     flag |= ADIOS_VERSION_HAVE_SUBFILE;
 
@@ -1334,9 +1433,9 @@ void adios_posix_close (struct adios_file_struct * fd
                                                 ,flag
                                                 );
 
-                    START_TIMER (ADIOS_TIMER_POSIX_MD);
+                    START_TIMER (ADIOS_TIMER_POSIX_IO);
                     ssize_t s = write (p->mf, global_index_buffer, global_index_buffer_offset);
-                    STOP_TIMER (ADIOS_TIMER_POSIX_MD);
+                    STOP_TIMER (ADIOS_TIMER_POSIX_IO);
                     if (s != global_index_buffer_offset)
                     {
                         fprintf (stderr, "POSIX method tried to write %llu, "
@@ -1350,6 +1449,8 @@ void adios_posix_close (struct adios_file_struct * fd
                     close (p->mf);
 
                     free (global_index_buffer);
+                    adios_clear_index_v1 (gindex);
+                    adios_free_index_v1 (gindex);
                 }
                 else
                 {
@@ -1366,11 +1467,13 @@ void adios_posix_close (struct adios_file_struct * fd
                     STOP_TIMER (ADIOS_TIMER_POSIX_COMM);
                 }
             }
+            STOP_TIMER (ADIOS_TIMER_POSIX_GMD);
 #endif
-            adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
-            START_TIMER (ADIOS_TIMER_POSIX_MD);
+
+            // write buffered data and index now
+            START_TIMER (ADIOS_TIMER_POSIX_IO);
             adios_posix_do_write (fd, method, buffer, buffer_offset);
-            STOP_TIMER (ADIOS_TIMER_POSIX_MD);
+            STOP_TIMER (ADIOS_TIMER_POSIX_IO);
 
             free (buffer);
 
@@ -1399,9 +1502,6 @@ void adios_posix_close (struct adios_file_struct * fd
         }
     }
 
-    adios_posix_close_internal (&p->b);
-    adios_clear_index_v1 (p->index);
-
     STOP_TIMER (ADIOS_TIMER_POSIX_AD_CLOSE);
 
 #if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
@@ -1418,11 +1518,20 @@ void adios_posix_close (struct adios_file_struct * fd
 
 }
 
+/* For each group's each method, a finalize function is called */ 
 void adios_posix_finalize (int mype, struct adios_method_struct * method)
 {
     struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
                                                           method->method_data;
+    if (p->file_is_open) {
+        adios_clear_index_v1 (p->index); // append and update methods never cleared the index
+        adios_posix_close_internal (&p->b);
+        p->file_is_open = 0;
+    }
+    p->index_is_in_memory = 0; 
+
     adios_free_index_v1 (p->index);
+
     if (adios_posix_initialized)
         adios_posix_initialized = 0;
 }
