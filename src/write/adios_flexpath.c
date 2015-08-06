@@ -1347,7 +1347,9 @@ adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method
     char * transport = getenv("CMTransport");
     if (transport == NULL) {
 	if (CMlisten(flexpathWriteData.cm) == 0) {
-	    fprintf(stderr, "error: unable to initialize connection manager.\n");
+	    int rank;
+	    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+	    fprintf(stderr, "error: writer %d unable to initialize connection manager.\n", rank);
 	    exit(1);
 	}
     } else {
