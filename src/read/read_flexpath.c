@@ -1121,10 +1121,15 @@ adios_read_flexpath_init_method (MPI_Comm comm, PairStruct* params)
 
     fp_read_data->cm = CManager_create();
     if (transport == NULL) {
-	if (CMlisten(fp_read_data->cm) == 0) {
-	    fprintf(stderr, "Flexpath ERROR: reader %d unable to initialize connection manager.\n",
-		fp_read_data->rank);
-	}
+      int listened = 0;
+      while (listened == 0) {
+	  if (CMlisten(fp_read_data->cm) == 0) {
+	      fprintf(stderr, "Flexpath ERROR: reader %d unable to initialize connection manager. Trying again.\n",
+		      fp_read_data->rank);
+	  } else {
+	      listened = 1;
+	  }
+      }
     } else {
 	listen_list = create_attr_list();
 	add_attr(listen_list, fp_read_data->CM_TRANSPORT, Attr_String,

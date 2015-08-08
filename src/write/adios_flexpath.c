@@ -1346,11 +1346,15 @@ adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method
     atom_t CM_TRANSPORT = attr_atom_from_string("CM_TRANSPORT");
     char * transport = getenv("CMTransport");
     if (transport == NULL) {
-	if (CMlisten(flexpathWriteData.cm) == 0) {
-	    int rank;
-	    MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-	    fprintf(stderr, "error: writer %d unable to initialize connection manager.\n", rank);
-	    exit(1);
+	int listened = 0;
+	while (listened == 0) {
+	    if (CMlisten(flexpathWriteData.cm) == 0) {
+		int rank;
+		MPI_Comm_rank(MPI_COMM_WORLD, &rank);
+		fprintf(stderr, "error: writer %d unable to initialize connection manager. Trying again.\n", rank);	       
+	    } else {
+		listened = 1;
+	    }
 	}
     } else {
 	attr_list listen_list = create_attr_list();
