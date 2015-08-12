@@ -42,16 +42,17 @@ endif
 
 if BUILD_FORTRAN
 check_readonly_Fortran=
+test_F=selection_api
 if BUILD_WRITE
 check_Fortran=posix_method
 endif
 endif
 
-check_PROGRAMS=$(check_C) $(check_Fortran) $(check_readonly_C) $(check_readonly_Fortran) $(test_C)
+check_PROGRAMS=$(check_C) $(check_Fortran) $(check_readonly_C) $(check_readonly_Fortran) $(test_C) $(test_F)
 
 # Sequential tests to be executed by "make check" can be defined right here in TESTS
 # Parallel tests should be defined in ../tests/*.sh and executed by ../test.sh
-TESTS=$(test_C)
+TESTS=$(test_C) $(test_F)
 
 AM_CPPFLAGS = $(all_includes)
 AM_CPPFLAGS += -I$(top_builddir)/src/public  -I$(top_builddir)/src -I$(top_srcdir)/src/public
@@ -70,6 +71,10 @@ posix_method_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
 posix_method.o: gwrite_posix_method.fh 
 gwrite_posix_method.fh: posix_method.xml
 	$(top_builddir)/utils/gpp/gpp.py $(srcdir)/posix_method.xml
+
+selection_api_SOURCES=selection_api.F90
+selection_api_LDADD = $(top_builddir)/src/libadiosreadf.a $(ADIOSREADLIB_LDADD)
+selection_api_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
 
 local_array_time_SOURCES=local_array_time.c
 local_array_time_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)

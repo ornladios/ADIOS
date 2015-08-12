@@ -187,6 +187,63 @@ module adios_read_mod
             integer*8,      intent(in)           :: sel
         end subroutine
 
+        subroutine adios_selection_get_type (sel, seltype)
+            implicit none
+            integer*8,      intent(in)           :: sel
+            integer,        intent(out)          :: seltype
+            ! see adios_defs_mod module for ADIOS_SELECTION_TYPE_* types
+        end subroutine
+
+        subroutine adios_selection_get_ndim (sel, ndim)
+            implicit none
+            integer*8,      intent(in)           :: sel
+            integer,        intent(out)          :: ndim
+            ! ndim for Bounding Box and Points selections, =1 on Writeblock and Auto
+        end subroutine
+
+        subroutine adios_selection_get_boundingbox (sel, start, count)
+            implicit none
+            integer*8,      intent(in)              :: sel
+            integer*8, dimension(*), intent(out)  :: start
+            integer*8, dimension(*), intent(out)  :: count
+            ! undefined behavior for non-bounding box selections
+            ! allocated array should be provided by caller
+        end subroutine
+
+        subroutine adios_selection_get_npoints (sel, npoints)
+            implicit none
+            integer*8,      intent(in)           :: sel
+            integer*8,      intent(out)          :: npoints
+            ! # of points in a Points selections, =0 for all others
+        end subroutine
+
+        subroutine adios_selection_get_points (sel, points, from_index, npoints)
+            implicit none
+            integer*8,      intent(in)              :: sel
+            integer*8, dimension(*), intent(inout)  :: points
+            integer*8,      intent(in)              :: from_index
+            integer*8,      intent(in)              :: npoints
+            ! array of n-dimensional points in a Points selections, 
+            ! npoints number of points returned from index 'from_index'
+            ! from_index starts from 0
+            ! allocated array should be provided by caller
+            ! undefined behavior for non-point selections
+        end subroutine
+
+        subroutine adios_selection_get_index (sel, index)
+            implicit none
+            integer*8,      intent(in)           :: sel
+            integer,        intent(out)          :: index
+            ! index in Writeblock selections, =0 for all others
+        end subroutine
+
+        subroutine adios_selection_get_hints (sel, hints)
+            implicit none
+            integer*8,      intent(in)       :: sel
+            character(*),   intent(inout)    :: hints
+            ! allocated character array should be provided by caller
+            ! necessary length is unknown
+        end subroutine
     end interface
 
     !

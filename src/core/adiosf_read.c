@@ -550,17 +550,110 @@ void FC_FUNC_(adios_selection_auto, ADIOS_SELECTION_AUTO) (int64_t *fsel, char *
     char *hintstr = futils_fstr_to_cstr(hints, hints_len);
     ADIOS_SELECTION * sel = common_read_selection_auto (hintstr);
     *fsel = (int64_t) sel;
-    free (hintstr);
+    /* Cannot free hintstr here because the selection simply uses the pointer without copy */
 }
 
 void FC_FUNC_(adios_selection_delete, ADIOS_SELECTION_AUTO) (int64_t *fsel)
 {
     ADIOS_SELECTION * sel = (ADIOS_SELECTION *) *fsel;
+    if (sel->type == ADIOS_SELECTION_AUTO) {
+        /* free here the autoselection hints string */
+        free (sel->u.autosel.hints);
+    }
     common_read_selection_delete (sel);
     *fsel = 0;
 }
 
+void FC_FUNC_(adios_selection_get_type, ADIOS_SELECTION_GET_TYPE) (int64_t * fsel, int *seltype)
+{   
+    ADIOS_SELECTION * sel = (ADIOS_SELECTION *) *fsel;
+    *seltype = (int) sel->type;
+}
 
+void FC_FUNC_(adios_selection_get_ndim, ADIOS_SELECTION_GET_NDIM) (int64_t * fsel, int *ndim)
+{   
+    ADIOS_SELECTION * sel = (ADIOS_SELECTION *) *fsel;
+    switch (sel->type) {
+        case ADIOS_SELECTION_BOUNDINGBOX:
+            *ndim = (int) sel->u.bb.ndim;
+            break;
+        case ADIOS_SELECTION_POINTS:
+            *ndim = (int) sel->u.points.ndim;
+            break;
+        default:
+            *ndim = 1;
+            break;
+    }
+}
+
+void FC_FUNC_(adios_selection_get_boundingbox, ADIOS_SELECTION_GET_BOUNDINGBOX) (int64_t * fsel, uint64_t *start, uint64_t *count)
+{   
+    int i;
+    ADIOS_SELECTION * sel = (ADIOS_SELECTION *) *fsel;
+    switch (sel->type) {
+        case ADIOS_SELECTION_BOUNDINGBOX:
+            for (i=0; i < sel->u.bb.ndim; i++) {
+                start[i] = sel->u.bb.start[i];
+                count[i] = sel->u.bb.count[i];
+            }
+            break;
+        default:
+            break;
+    }
+}
+
+void FC_FUNC_(adios_selection_get_npoints, ADIOS_SELECTION_GET_NPOINTS) (int64_t * fsel, uint64_t *npoints)
+{   
+    ADIOS_SELECTION * sel = (ADIOS_SELECTION *) *fsel;
+    switch (sel->type) {
+        case ADIOS_SELECTION_POINTS:
+            *npoints = sel->u.points.npoints;
+            break;
+        default:
+            *npoints = 0;
+            break;
+    }
+}
+
+void FC_FUNC_(adios_selection_get_points, ADIOS_SELECTION_GET_POINTS) (int64_t * fsel, uint64_t *points, uint64_t *from_index, uint64_t *npoints)
+{   
+    int i;
+    uint64_t *src;
+    ADIOS_SELECTION * sel = (ADIOS_SELECTION *) *fsel;
+    switch (sel->type) {
+        case ADIOS_SELECTION_POINTS:
+            src = sel->u.points.points + *from_index;
+            memcpy (points, src, *npoints * sel->u.points.ndim * sizeof(uint64_t));
+            break;
+        default:
+            break;
+    }
+}
+
+void FC_FUNC_(adios_selection_get_index, ADIOS_SELECTION_GET_INDEX) (int64_t * fsel, int *index)
+{   
+    ADIOS_SELECTION * sel = (ADIOS_SELECTION *) *fsel;
+    switch (sel->type) {
+        case ADIOS_SELECTION_WRITEBLOCK:
+            *index = sel->u.block.index;
+            break;
+        default:
+            *index = 0;
+            break;
+    }
+}
+
+void FC_FUNC_(adios_selection_get_hints, ADIOS_SELECTION_GET_HINTS) (int64_t * fsel, char *hints, int hints_len)
+{   
+    ADIOS_SELECTION * sel = (ADIOS_SELECTION *) *fsel;
+    switch (sel->type) {
+        case ADIOS_SELECTION_AUTO:
+            futils_cstr_to_fstr( sel->u.autosel.hints, (char *)hints, hints_len);
+            break;
+        default:
+            break;
+    }
+}
 /**************************************************************************/
 /*                  Specific function for each data type                  */
 /**************************************************************************/

@@ -54,6 +54,14 @@ module adios_defs_mod
     integer, parameter :: ADIOS_LOCKMODE_CURRENT = 0
     integer, parameter :: ADIOS_LOCKMODE_ALL     = 0
 
+    
+    !
+    ! Selection types
+    !
+    integer, parameter :: ADIOS_SELECTION_TYPE_BOUNDINGBOX  = 0
+    integer, parameter :: ADIOS_SELECTION_TYPE_POINTS       = 1
+    integer, parameter :: ADIOS_SELECTION_TYPE_WRITEBLOCK   = 2
+    integer, parameter :: ADIOS_SELECTION_TYPE_AUTO         = 3
 
     !
     ! ADIOS error codes
