@@ -34,8 +34,8 @@ POST_UNINSTALL = :
 build_triplet = @build@
 host_triplet = @host@
 check_PROGRAMS = $(am__EXEEXT_1) $(am__EXEEXT_2) $(am__EXEEXT_3) \
-	$(am__EXEEXT_3) $(am__EXEEXT_4)
-TESTS = $(am__EXEEXT_4)
+	$(am__EXEEXT_3) $(am__EXEEXT_4) $(am__EXEEXT_5)
+TESTS = $(am__EXEEXT_4) $(am__EXEEXT_5)
 subdir = tests/suite/programs
 DIST_COMMON = $(srcdir)/Makefile.am $(srcdir)/Makefile.in
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
@@ -108,6 +108,7 @@ am__EXEEXT_3 =
 @BUILD_WRITE_TRUE@	copy_subvolume$(EXEEXT) \
 @BUILD_WRITE_TRUE@	transforms_specparse$(EXEEXT) \
 @BUILD_WRITE_TRUE@	group_free_test$(EXEEXT)
+@BUILD_FORTRAN_TRUE@am__EXEEXT_5 = selection_api$(EXEEXT)
 am_adios_amr_write_OBJECTS = adios_amr_write.$(OBJEXT)
 adios_amr_write_OBJECTS = $(am_adios_amr_write_OBJECTS)
 am__DEPENDENCIES_1 =
@@ -242,6 +243,13 @@ reuse_dim_DEPENDENCIES = $(top_builddir)/src/libadios.a \
 reuse_dim_LINK = $(LIBTOOL) --tag=CC $(AM_LIBTOOLFLAGS) \
 	$(LIBTOOLFLAGS) --mode=link $(CCLD) $(AM_CFLAGS) $(CFLAGS) \
 	$(reuse_dim_LDFLAGS) $(LDFLAGS) -o $@
+am_selection_api_OBJECTS = selection_api.$(OBJEXT)
+selection_api_OBJECTS = $(am_selection_api_OBJECTS)
+selection_api_DEPENDENCIES = $(top_builddir)/src/libadiosreadf.a \
+	$(am__DEPENDENCIES_1)
+selection_api_LINK = $(LIBTOOL) --tag=FC $(AM_LIBTOOLFLAGS) \
+	$(LIBTOOLFLAGS) --mode=link $(FCLD) $(AM_FCFLAGS) $(FCFLAGS) \
+	$(selection_api_LDFLAGS) $(LDFLAGS) -o $@
 am_selections_OBJECTS = selections.$(OBJEXT)
 selections_OBJECTS = $(am_selections_OBJECTS)
 selections_DEPENDENCIES = $(top_builddir)/src/libadios.a \
@@ -352,7 +360,8 @@ SOURCES = $(adios_amr_write_SOURCES) $(adios_amr_write_2vars_SOURCES) \
 	$(group_free_test_SOURCES) $(hashtest_SOURCES) \
 	$(local_array_time_SOURCES) $(many_vars_SOURCES) \
 	$(path_test_SOURCES) $(posix_method_SOURCES) \
-	$(reuse_dim_SOURCES) $(selections_SOURCES) $(set_path_SOURCES) \
+	$(reuse_dim_SOURCES) $(selection_api_SOURCES) \
+	$(selections_SOURCES) $(set_path_SOURCES) \
 	$(set_path_var_SOURCES) $(steps_read_file_SOURCES) \
 	$(steps_read_stream_SOURCES) $(steps_write_SOURCES) \
 	$(transforms_specparse_SOURCES) \
@@ -368,7 +377,8 @@ DIST_SOURCES = $(adios_amr_write_SOURCES) \
 	$(group_free_test_SOURCES) $(hashtest_SOURCES) \
 	$(local_array_time_SOURCES) $(many_vars_SOURCES) \
 	$(path_test_SOURCES) $(posix_method_SOURCES) \
-	$(reuse_dim_SOURCES) $(selections_SOURCES) $(set_path_SOURCES) \
+	$(reuse_dim_SOURCES) $(selection_api_SOURCES) \
+	$(selections_SOURCES) $(set_path_SOURCES) \
 	$(set_path_var_SOURCES) $(steps_read_file_SOURCES) \
 	$(steps_read_stream_SOURCES) $(steps_write_SOURCES) \
 	$(transforms_specparse_SOURCES) \
@@ -717,6 +727,7 @@ check_readonly_C =
 @BUILD_WRITE_TRUE@test_C = hashtest copy_subvolume transforms_specparse group_free_test
 @BUILD_WRITE_TRUE@SUBDIRS = examples
 @BUILD_FORTRAN_TRUE@check_readonly_Fortran = 
+@BUILD_FORTRAN_TRUE@test_F = selection_api
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@check_Fortran = posix_method
 AM_CPPFLAGS = $(all_includes) -I$(top_builddir)/src/public \
 	-I$(top_builddir)/src -I$(top_srcdir)/src/public
@@ -729,6 +740,9 @@ AM_CPPFLAGS = $(all_includes) -I$(top_builddir)/src/public \
 posix_method_SOURCES = posix_method.F90
 posix_method_LDADD = $(top_builddir)/src/libadiosf.a $(ADIOSLIB_LDADD)
 posix_method_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
+selection_api_SOURCES = selection_api.F90
+selection_api_LDADD = $(top_builddir)/src/libadiosreadf.a $(ADIOSREADLIB_LDADD)
+selection_api_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_LDFLAGS)
 local_array_time_SOURCES = local_array_time.c
 local_array_time_LDADD = $(top_builddir)/src/libadios.a $(ADIOSLIB_LDADD)
 local_array_time_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_LDFLAGS)
@@ -933,6 +947,9 @@ posix_method$(EXEEXT): $(posix_method_OBJECTS) $(posix_method_DEPENDENCIES)
 reuse_dim$(EXEEXT): $(reuse_dim_OBJECTS) $(reuse_dim_DEPENDENCIES) 
 	@rm -f reuse_dim$(EXEEXT)
 	$(reuse_dim_LINK) $(reuse_dim_OBJECTS) $(reuse_dim_LDADD) $(LIBS)
+selection_api$(EXEEXT): $(selection_api_OBJECTS) $(selection_api_DEPENDENCIES) 
+	@rm -f selection_api$(EXEEXT)
+	$(selection_api_LINK) $(selection_api_OBJECTS) $(selection_api_LDADD) $(LIBS)
 selections$(EXEEXT): $(selections_OBJECTS) $(selections_DEPENDENCIES) 
 	@rm -f selections$(EXEEXT)
 	$(selections_LINK) $(selections_OBJECTS) $(selections_LDADD) $(LIBS)
