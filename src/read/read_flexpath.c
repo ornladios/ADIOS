@@ -71,6 +71,7 @@ typedef struct _bridge_info
 
 typedef struct _flexpath_read_request
 {
+    long pad1, pad2, pad3, pad4, pad5;
     int num_pending;
     int num_completed;
     int condition;
@@ -262,7 +263,7 @@ new_flexpath_reader_file(const char *fname)
     fp->file_name = strdup(fname);
     fp->writer_coordinator = -1;
     fp->last_writer_step = -1;
-    fp->req = (flexpath_read_request) {.num_pending = 0, .num_completed = 0, .condition = -1};
+    fp->req = (flexpath_read_request) {.pad1 = 0, .pad2 = 0, .pad3 = 0, .pad4 = 0, .pad5=0,.num_pending = 0, .num_completed = 0, .condition = -1};
     pthread_mutex_init(&fp->data_mutex, NULL);
     pthread_cond_init(&fp->data_condition, NULL);
     return fp;
@@ -929,7 +930,8 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
     get_double_attr(attrs, attr_atom_from_string("fp_starttime"), &data_start);
     get_int_attr(attrs, attr_atom_from_string(FP_RANK_ATTR_NAME), &writer_rank);
     get_int_attr(attrs, attr_atom_from_string("fp_flush_id"), &flush_id);
-
+    /* fprintf(stderr, "\treader rank:%d:got data from writer:%d:step:%d\n", */
+    /* 	    fp->rank, writer_rank, fp->mystep); */
     FMContext context = CMget_FMcontext(cm);
     void *base_data = FMheader_skip(context, vevent);
     FMFormat format = FMformat_from_ID(context, vevent);
@@ -1084,7 +1086,11 @@ raw_handler(CManager cm, void *vevent, int len, void *client_data, attr_list att
 
 
     fp->req.num_completed++;
+    /* fprintf(stderr, "\t\treader rank:%d:step:%d:num_completed:%d:num_pending:%d\n", */
+    /* 	    fp->rank, fp->mystep, fp->req.num_completed, fp->req.num_pending); */
     if (fp->req.num_completed == fp->req.num_pending) {
+	/* fprintf(stderr, "\t\treader rank:%d:step:%d:signalling_on:%d\n", */
+	/* 	fp->rank, fp->mystep, fp->req.condition); */
         CMCondition_signal(fp_read_data->cm, fp->req.condition);
     }
 
@@ -1124,8 +1130,8 @@ adios_read_flexpath_init_method (MPI_Comm comm, PairStruct* params)
       int listened = 0;
       while (listened == 0) {
 	  if (CMlisten(fp_read_data->cm) == 0) {
-	      fprintf(stderr, "Flexpath ERROR: reader %d unable to initialize connection manager. Trying again.\n",
-		      fp_read_data->rank);
+	      fprintf(stderr, "Flexpath ERROR: reader %d:pid:%d unable to initialize connection manager. Trying again.\n",
+		      fp_read_data->rank, (int)getpid());
 	  } else {
 	      listened = 1;
 	  }
@@ -1405,11 +1411,14 @@ void adios_read_flexpath_release_step(ADIOS_FILE *adiosfile) {
 
 int
 adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_sec)
-{
+{    
     flexpath_reader_file *fp = (flexpath_reader_file*)adiosfile->fh;
+    //fprintf(stderr, "reader_rank:%d:calling advance_step:step:%d\n", fp->rank, fp->mystep);
     MPI_Barrier(fp->comm);
     int count = 0; // for perf measurements
+    //fprintf(stderr, "reader_rank:%d:advance_step:sending flush step to coordinator:%d:step:%d\n", fp->rank, fp->writer_coordinator,fp->mystep);
     send_flush_msg(fp, fp->writer_coordinator, STEP, 1);
+    //fprintf(stderr, "reader_rank:%d:advance_step:advance_step:after sending flush step to:%d:step:%d\n", fp->rank, fp->writer_coordinator,fp->mystep);
     //put this on a timer, so to speak, for timeout_sec
     while (fp->mystep == fp->last_writer_step) {
 	if (fp->writer_finalized) {
@@ -1417,7 +1426,9 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
 	    return err_end_of_stream;
 	}
 	CMsleep(fp_read_data->cm, 1);
+	//fprintf(stderr, "reader_rank:%d:advance_step:while loop sending flush step to coordinator:%d:step:%d\n", fp->rank, fp->writer_coordinator,fp->mystep);
 	send_flush_msg(fp, fp->writer_coordinator, STEP, 1);
+	//fprintf(stderr, "reader_rank:%d:advance_step:after while loop sending flush step to coordinator:%d:step:%d\n", fp->rank, fp->writer_coordinator,fp->mystep);
     }
 
     int i=0;
@@ -1443,11 +1454,15 @@ adios_read_flexpath_advance_step(ADIOS_FILE *adiosfile, int last, float timeout_
     fp->req.num_completed = 0;
     fp->req.num_pending = 1;
     fp->req.condition = CMCondition_get(fp_read_data->cm, NULL);
+    //fprintf(stderr, "reader_rank:%d:advance_step:while loop sending flush DATA to coordinator:%d:step:%d\n", fp->rank, fp->writer_coordinator,fp->mystep);
     send_flush_msg(fp, fp->writer_coordinator, DATA, 0);
     CMCondition_wait(fp_read_data->cm, fp->req.condition);
+    //fprintf(stderr, "reader_rank:%d:advance_step:while loop after flush DATA to coordinator:%d:step:%d\n", fp->rank, fp->writer_coordinator,fp->mystep);
     // should only happen if there are more steps available.
     // writer should have advanced.
+    //fprintf(stderr, "reader_rank:%d:advance_step:while loop sending flush EVGROUP to coordinator:%d:step:%d\n", fp->rank, fp->writer_coordinator,fp->mystep);
     send_flush_msg(fp, fp->writer_coordinator, EVGROUP, 1);
+    //fprintf(stderr, "reader_rank:%d:advance_step:while loop after flush EVGROUP to coordinator:%d:step:%d\n", fp->rank, fp->writer_coordinator,fp->mystep);
     return 0;
 }
 
@@ -1527,16 +1542,23 @@ int adios_read_flexpath_perform_reads(const ADIOS_FILE *adiosfile, int blocking)
 
     for (i = 0; i<num_sendees; i++) {
 	int sendee = fp->sendees[i];
-        batchcount++;
+	batchcount++;
 	total_sent++;
+		/* fprintf(stderr, "reader rank:%d:flush_data to writer:%d:of:%d:step:%d:batch:%d:total_sent:%d\n", */
+		/* 	fp->rank, sendee, num_sendees, fp->mystep, batchcount, total_sent); */
 	send_flush_msg(fp, sendee, DATA, 0);
 
 	if ((total_sent % FP_BATCH_SIZE == 0) || (total_sent == num_sendees)) {
             fp->req.num_pending = batchcount;
+
+	    /* fprintf(stderr, "\t\treader rank:%d:blocking on:%d:step:%d\n", */
+	    /* 	    fp->rank, fp->req.condition, fp->mystep); */
             CMCondition_wait(fp_read_data->cm, fp->req.condition);
+	    /* fprintf(stderr, "\t\treader rank:%d:after blocking:%d:step:%d\n", */
+	    /* 	    fp->rank, fp->req.condition, fp->mystep); */
 	    fp->req.num_completed = 0;
-	    fp->req.num_pending = 0;
-	    total_sent = 0;
+	    //fp->req.num_pending = 0;
+	    //total_sent = 0;
             batchcount = 0;
             fp->req.condition = CMCondition_get(fp_read_data->cm, NULL);
 	}

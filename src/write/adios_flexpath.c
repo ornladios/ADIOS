@@ -1108,6 +1108,7 @@ process_data_flush(FlexpathWriteFileData *fileData,
 		   Flush_msg *flushMsg, 
 		   FlexpathQueueNode *dataNode)
 {
+    //fprintf(stderr, "writer:%d:processing flush for reader:%d:reader_step:%d:writer_step:%d\n", fileData->rank, flushMsg->process_id, fileData->readerStep, fileData->writerStep);
     void* temp = copy_buffer(dataNode->data, flushMsg->process_id, fileData);
    
     fileData->attrs = set_dst_rank_atom(fileData->attrs, flushMsg->process_id);
@@ -1119,6 +1120,7 @@ process_data_flush(FlexpathWriteFileData *fileData,
     }
     //EVsubmit_general(fileData->dataSource, temp, data_free, fileData->attrs);
     EVsubmit_general(fileData->dataSource, temp, NULL, fileData->attrs);
+    //fprintf(stderr, "writer:%d:processed flush for reader:%d:reader_step:%d:writer_step:%d\n", fileData->rank, flushMsg->process_id, fileData->readerStep, fileData->writerStep);
 }
 
 void
@@ -1233,9 +1235,11 @@ flush_handler(CManager cm, void* vevent, void* client_data, attr_list attrs)
     FlexpathWriteFileData* fileData = (FlexpathWriteFileData*) client_data;
     Flush_msg* msg = (Flush_msg*) vevent;
     int err = EVtake_event_buffer(cm, vevent);
+    //fprintf(stderr, "writer:%d:got_flush for reader:%d:reader_step:%d:writer_step:%d\n", fileData->rank, msg->process_id, fileData->readerStep, fileData->writerStep);
     threaded_enqueue(&fileData->controlQueue, msg, DATA_FLUSH, 
 		     &fileData->controlMutex, &fileData->controlCondition,
 		     -1);
+    //fprintf(stderr, "writer:%d:enqueued flush for reader:%d:reader_step:%d:writer_step:%d\n", fileData->rank, msg->process_id, fileData->readerStep, fileData->writerStep);
     return 0;
 }
 
@@ -1351,7 +1355,7 @@ adios_flexpath_init(const PairStruct *params, struct adios_method_struct *method
 	    if (CMlisten(flexpathWriteData.cm) == 0) {
 		int rank;
 		MPI_Comm_rank(MPI_COMM_WORLD, &rank);
-		fprintf(stderr, "error: writer %d unable to initialize connection manager. Trying again.\n", rank);	       
+		fprintf(stderr, "error: writer %d:pid:%d unable to initialize connection manager. Trying again.\n", rank, (int)getpid());
 	    } else {
 		listened = 1;
 	    }
