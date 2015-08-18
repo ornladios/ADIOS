@@ -1019,7 +1019,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
     {
         int err;
         // write the process group header
-        adios_write_process_group_header_v1 (fd, fd->write_size_bytes);
+        adios_write_open_process_group_header_v1 (fd);
 
         MPI_File_seek (md->fh, fd->base_offset, MPI_SEEK_SET);
 #if 0

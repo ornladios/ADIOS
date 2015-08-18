@@ -1573,7 +1573,7 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
     {
         uint64_t count;
         // write the process group header
-        adios_write_process_group_header_v1 (fd, fd->write_size_bytes);
+        adios_write_open_process_group_header_v1 (fd);
 
         if (is_aggregator (md->rank))
         {
@@ -1685,7 +1685,7 @@ void adios_mpi_amr_write (struct adios_file_struct * fd
                     ,aggr_buff, bytes_written, disp, MPI_BYTE
                     ,0, md->g_comm1);
 
-        fd->vars_written += new_group_size - 1;
+        fd->nvars_written += new_group_size - 1;
 
         uint64_t count = 0;
         if (is_aggregator(md->rank))

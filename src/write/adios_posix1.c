@@ -254,7 +254,7 @@ enum ADIOS_FLAG adios_posix1_should_buffer (struct adios_file_struct * fd
     if (fd->shared_buffer == adios_flag_no && fd->mode != adios_mode_read)
     {
         // write the process group header
-        adios_write_process_group_header_v1 (fd, fd->write_size_bytes);
+        adios_write_open_process_group_header_v1 (fd);
 
         lseek (p->b.f, fd->base_offset, SEEK_SET);
         ssize_t s = write (p->b.f, fd->buffer, fd->bytes_written);

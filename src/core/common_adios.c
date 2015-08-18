@@ -94,21 +94,24 @@ int common_adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_allo
                                  ,uint64_t buffer_size)
 {
     adios_errno = err_no_error;
-    adios_buffer_size_requested_set (buffer_size * 1024 * 1024);
-    adios_buffer_alloc_when_set (adios_buffer_alloc_when);
-    adios_set_buffer_size ();
+    log_warn ("adios_allocate_buffer is not supported anymore\n");
+    //adios_buffer_size_requested_set (buffer_size * 1024 * 1024);
+    //adios_buffer_alloc_when_set (adios_buffer_alloc_when);
+    //adios_set_buffer_size ();
     return adios_errno;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
 // Drew: used for experiments
-uint32_t pinned_timestep = 0;
+static uint32_t pinned_timestep = 0;
 void adios_pin_timestep(uint32_t ts) {
   pinned_timestep = ts;
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-int common_adios_open (int64_t * fd, const char * group_name
+static const char ADIOS_ATTR_PATH[] = "/__adios__";
+
+int common_adios_open (int64_t * fd_p, const char * group_name
                 ,const char * name, const char * file_mode, MPI_Comm comm
                )
 {
@@ -118,7 +121,7 @@ int common_adios_open (int64_t * fd, const char * group_name
 #endif
 
     int64_t group_id = 0;
-    struct adios_file_struct * fd_p = (struct adios_file_struct *)
+    struct adios_file_struct * fd = (struct adios_file_struct *)
                                   malloc (sizeof (struct adios_file_struct));
     struct adios_group_struct * g = 0;
     struct adios_method_list_struct * methods = 0;
@@ -131,10 +134,9 @@ int common_adios_open (int64_t * fd, const char * group_name
         adios_error(err_invalid_group, 
                 "adios_open: try to open file %s with undefined group: %s\n", 
                 name, group_name);
-        *fd = 0;
+        *fd_p = 0;
         return adios_errno;
     }
-    methods = g->methods;
 
     if (!strcasecmp (file_mode, "r"))
         mode = adios_mode_read;
@@ -153,29 +155,30 @@ int common_adios_open (int64_t * fd, const char * group_name
                         "adios_open: unknown file mode: %s, supported r,w,a,u\n",
                         file_mode);
 
-                    *fd = 0;
+                    *fd_p = 0;
 
                     return adios_errno;
                 }
 
-    fd_p->name = strdup (name);
-    fd_p->subfile_index = -1; // subfile index is by default -1
-    fd_p->group = g;
-    fd_p->mode = mode;
-    fd_p->data_size = 0;
-    fd_p->buffer = 0;
-    fd_p->offset = 0;
-    fd_p->bytes_written = 0;
-    fd_p->buffer_size = 0;
-    fd_p->vars_start = 0;
-    fd_p->vars_written = 0;
-    fd_p->write_size_bytes = 0;
-    fd_p->base_offset = 0;
-    fd_p->pg_start_in_file = 0;
+    fd->name = strdup (name);
+    fd->subfile_index = -1; // subfile index is by default -1
+    fd->group = g;
+    fd->mode = mode;
+    fd->buffer = 0;
+    fd->shared_buffer = adios_flag_no;
+    fd->offset = 0;
+    fd->bytes_written = 0;
+    fd->buffer_size = 0;
+    fd->nvars_written = 0;
+    fd->vars_start = 0;
+    fd->nattrs_written = 0;
+    fd->attrs_start = 0;
+    fd->base_offset = 0;
+    fd->pg_start_in_file = 0;
     if (comm != MPI_COMM_NULL)
-        MPI_Comm_dup(comm, &fd_p->comm);
+        MPI_Comm_dup(comm, &fd->comm);
     else
-        fd_p->comm = MPI_COMM_NULL;
+        fd->comm = MPI_COMM_NULL;
 
 
 #if 1
@@ -217,6 +220,7 @@ int common_adios_open (int64_t * fd, const char * group_name
     if (pinned_timestep > 0)
         g->time_index = pinned_timestep;
 
+    methods = g->methods;
     while (methods)
     {
         if (   methods->method->m != ADIOS_METHOD_UNKNOWN
@@ -225,13 +229,121 @@ int common_adios_open (int64_t * fd, const char * group_name
            )
         {
             adios_transports [methods->method->m].adios_open_fn
-                                                 (fd_p, methods->method, fd_p->comm);
+                                                 (fd, methods->method, fd->comm);
         }
 
         methods = methods->next;
     }
 
-    *fd = (int64_t) fd_p;
+    *fd_p = (int64_t) fd;
+
+    if ( !adios_errno )
+    {
+        /* Add ADIOS internal attributes now */
+        if ( fd->mode != adios_mode_read &&
+             (fd->group->process_id == 0 || fd->subfile_index != -1)
+           )
+        {
+            struct timeval tp;
+            char epoch[16];
+            gettimeofday(&tp, NULL);
+            sprintf(epoch, "%d", (int) tp.tv_sec);
+
+            int def_adios_init_attrs = 1;
+            // if we append/update, define these attributes only at the first step
+            if (fd->mode != adios_mode_write && fd->group->time_index > 1)
+                def_adios_init_attrs = 0;
+
+            if (def_adios_init_attrs) {
+                log_debug ("Define ADIOS extra attributes, "
+                        "time = %d, rank = %d, epoch = %s subfile=%d\n",
+                        fd->group->time_index, fd->group->process_id, epoch, fd->subfile_index);
+
+                adios_common_define_attribute ((int64_t)fd->group, "version", ADIOS_ATTR_PATH,
+                        adios_string, VERSION, NULL);
+
+                adios_common_define_attribute ((int64_t)fd->group, "create_time_epoch", ADIOS_ATTR_PATH,
+                        adios_integer, epoch, NULL);
+                adios_common_define_attribute ((int64_t)fd->group, "update_time_epoch", ADIOS_ATTR_PATH,
+                        adios_integer, epoch, NULL);
+                // id of last attribute is fd->group->member_count
+                fd->group->attrid_update_epoch = fd->group->member_count;
+
+            }
+            /* FIXME: this code works fine, it does not duplicate the attribute,
+               but the index will still contain all copies and the read will see
+               only the first one. Thus updating an attribute does not work
+               in practice.
+             */
+            else
+            {
+                // update attribute of update time (define would duplicate it)
+                struct adios_attribute_struct * attr = adios_find_attribute_by_id
+                    (fd->group->attributes, fd->group->attrid_update_epoch);
+                if (attr) {
+                    log_debug ("Update ADIOS extra attribute name=%s, "
+                            "time = %d, rank = %d, epoch = %s, subfile=%d\n",
+                            attr->name, fd->group->time_index, fd->group->process_id,
+                            epoch, fd->subfile_index);
+
+                    free(attr->value);
+                    adios_parse_scalar_string (adios_integer, (void *) epoch, &attr->value);
+                }
+            }
+        }
+
+#       ifdef ADIOS_TIMERS
+        /* Add timer variable definitions to this output */
+        adios_add_timing_variables (fd);
+#       endif
+
+        /* Now ask the methods if anyone wants common-layer BP formatted buffering */
+        methods = g->methods;
+        while (methods)
+        {
+            enum ADIOS_FLAG should_buffer = adios_flag_yes;
+            if (   methods->method->m != ADIOS_METHOD_UNKNOWN
+                    && methods->method->m != ADIOS_METHOD_NULL
+                    && adios_transports [methods->method->m].adios_should_buffer_fn
+               )
+            {
+                should_buffer = adios_transports [methods->method->m].
+                                            adios_should_buffer_fn (fd, methods->method);
+            }
+
+            if (should_buffer == adios_flag_yes) 
+                fd->shared_buffer = adios_flag_yes;
+
+            methods = methods->next;
+        }
+
+
+        if (fd->shared_buffer == adios_flag_yes)
+        {
+            /* Allocate BP buffer with a default size */
+            if (!adios_databuffer_resize (fd, DATABUFFER_DEFAULT_SIZE)) 
+            {
+                // write the process group header
+                adios_write_open_process_group_header_v1 (fd);
+
+                // setup for writing vars
+                adios_write_open_vars_v1 (fd);
+            }
+            else
+            {
+                adios_error (err_no_memory, 
+                             "Cannot allocate %llu bytes for buffered output "
+                             "of group %s in adios_open(). Output will fail.\n", 
+                             fd->buffer_size, g->name);
+
+                /*fd->buffer_size = 0; 
+                fd->offset = 0;
+                fd->bytes_written = 0;*/
+                return adios_errno;
+            }
+        }
+
+    }
 
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop ("adios_open");
@@ -240,16 +352,14 @@ int common_adios_open (int64_t * fd, const char * group_name
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-static const char ADIOS_ATTR_PATH[] = "/__adios__";
 
-int common_adios_group_size (int64_t fd_p
-                     ,uint64_t data_size
-                     ,uint64_t * total_size
-                     )
+int common_adios_group_size (int64_t fd_p, uint64_t data_size, uint64_t * total_size)
 {
+
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_start ("adios_group_size");
 #endif
+
     adios_errno = err_no_error;
     struct adios_file_struct * fd = (struct adios_file_struct *) fd_p;
     if (!fd)
@@ -257,13 +367,10 @@ int common_adios_group_size (int64_t fd_p
         adios_error (err_invalid_file_pointer, "Invalid handle passed to adios_group_size\n");
         return adios_errno;
     }
+
     struct adios_method_list_struct * m = fd->group->methods;
     if (m && m->next == NULL && m->method->m == ADIOS_METHOD_NULL)
     {
-        // nothing to do so just return
-        fd->shared_buffer = adios_flag_no;
-        fd->write_size_bytes = 0;
-        fd->buffer = 0;
         *total_size = 0;
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop ("adios_group_size");
@@ -271,75 +378,18 @@ int common_adios_group_size (int64_t fd_p
         return err_no_error;
     }
 
-    /* Add ADIOS internal attributes now (should be before calculating the overhead) */
-    if (fd->mode != adios_mode_read &&
-         (fd->group->process_id == 0 || fd->subfile_index != -1)
-       )
-    {
-        struct timeval tp;
-        char epoch[16];
-        gettimeofday(&tp, NULL);
-        sprintf(epoch, "%d", (int) tp.tv_sec);
-
-        int def_adios_init_attrs = 1;
-        // if we append/update, define these attributes only at the first step
-        if (fd->mode != adios_mode_write && fd->group->time_index > 1)
-            def_adios_init_attrs = 0;
-
-        if (def_adios_init_attrs) {
-            log_debug ("Define ADIOS extra attributes, "
-                       "time = %d, rank = %d, epoch = %s subfile=%d\n",
-                       fd->group->time_index, fd->group->process_id, epoch, fd->subfile_index);
-
-            adios_common_define_attribute ((int64_t)fd->group, "version", ADIOS_ATTR_PATH,
-                    adios_string, VERSION, NULL);
-
-            adios_common_define_attribute ((int64_t)fd->group, "create_time_epoch", ADIOS_ATTR_PATH,
-                    adios_integer, epoch, NULL);
-            adios_common_define_attribute ((int64_t)fd->group, "update_time_epoch", ADIOS_ATTR_PATH,
-                    adios_integer, epoch, NULL);
-            // id of last attribute is fd->group->member_count
-            fd->group->attrid_update_epoch = fd->group->member_count;
-
-        }
-        /* FIXME: this code works fine, it does not duplicate the attribute,
-           but the index will still contain all copies and the read will see
-           only the first one. Thus updating an attribute does not work
-           in practice.
-         */
-        else
-        {
-            // update attribute of update time (define would duplicate it)
-            struct adios_attribute_struct * attr = adios_find_attribute_by_id
-                   (fd->group->attributes, fd->group->attrid_update_epoch);
-            if (attr) {
-                log_debug ("Update ADIOS extra attribute name=%s, "
-                           "time = %d, rank = %d, epoch = %s, subfile=%d\n",
-                           attr->name, fd->group->time_index, fd->group->process_id,
-                           epoch, fd->subfile_index);
-
-                free(attr->value);
-                adios_parse_scalar_string (adios_integer, (void *) epoch, &attr->value);
-            }
-        }
+    if (fd->buffer_size == 0) {
+        *total_size = 0; 
+        return err_no_error;
     }
 
+
 #ifdef ADIOS_TIMERS
-    int tv_size = adios_add_timing_variables (fd);
-    data_size += tv_size;
+    data_size += fd->group->tv_size;
 #endif
 
-    fd->write_size_bytes = data_size;
-
     uint64_t overhead = adios_calc_overhead_v1 (fd);
-
     *total_size = data_size + overhead;
-
-    // try to reserve a buffer using the adios_method_buffer_alloc
-    // if it does not give the correct amount, overflow.  Make sure
-    // the amount given is big enough for the first part of the file.
-
-    fd->write_size_bytes += overhead;
 
     // NCSU ALACRITY-ADIOS - Current solution to group_size problem: find
     // the most "expansive" transform method used in the file, and assume
@@ -356,84 +406,17 @@ int common_adios_group_size (int64_t fd_p
         *total_size += (wc_transformed_size - data_size);
     }
 
-    uint64_t allocated = adios_method_buffer_alloc (fd->write_size_bytes);
-    if (allocated != fd->write_size_bytes)
+    if (*total_size > fd->buffer_size) 
     {
-        fd->shared_buffer = adios_flag_no;
-
-        log_warn ("adios_group_size (%s): Not buffering. "
-                  "needs: %llu available: %llu.\n",
-                  fd->group->name, fd->write_size_bytes, allocated);
-    }
-    else
-    {
-        fd->shared_buffer = adios_flag_yes;
-    }
-
-    // Drew: for experiments
-    if (pinned_timestep != 0)
-        fd->group->time_index = pinned_timestep;
-
-    // call each transport method to coordinate the write and handle
-    // if an overflow is detected.
-    // now tell each transport attached that it is being written
-    while (m)
-    {
-        enum ADIOS_FLAG should_buffer = adios_flag_yes;
-        if (   m->method->m != ADIOS_METHOD_UNKNOWN
-            && m->method->m != ADIOS_METHOD_NULL
-            && adios_transports [m->method->m].adios_should_buffer_fn
-           )
+        if (adios_databuffer_resize (fd, *total_size))
         {
-            should_buffer = adios_transports [m->method->m].
-                                            adios_should_buffer_fn (fd
-                                                                   ,m->method
-                                                                   );
-        }
-
-        if (should_buffer == adios_flag_no)     // can't write directly since
-            fd->shared_buffer = adios_flag_no;  // some might want to share
-
-        m = m->next;
-    }
-
-    // Drew: for experiments
-    if (pinned_timestep != 0)
-        fd->group->time_index = pinned_timestep;
-
-    if (fd->shared_buffer == adios_flag_no)
-    {
-        adios_method_buffer_free (allocated);
-        fd->buffer = 0;
-        fd->offset = 0;
-        fd->bytes_written = 0;
-    }
-    else
-    {
-        fd->buffer = malloc (fd->write_size_bytes);
-        fd->buffer_size = fd->write_size_bytes;
-        fd->offset = 0;
-        fd->bytes_written = 0;
-        if (!fd->buffer)
-        {
-            adios_error (err_no_memory, "Cannot allocate %llu bytes for buffered output.\n",
-                    fd->write_size_bytes);
-
-            return adios_errno;
-        }
-        else
-        {
-            // write the process group header
-            adios_write_process_group_header_v1 (fd, *total_size);
-
-            // setup for writing vars
-            adios_write_open_vars_v1 (fd);
+            log_warn ("Cannot reallocate data buffer to %llu bytes "
+                    "for group %s in adios_group_size(). Continue buffering "
+                    "with buffer size %llu MB\n",
+                    *total_size, fd->group->name, fd->buffer_size/1048576);
         }
     }
 
-#ifdef ADIOS_TIMERS
-    adios_write_timing_variables (fd);
-#endif
 
 
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
@@ -444,6 +427,7 @@ int common_adios_group_size (int64_t fd_p
 
     return adios_errno;
 }
+
 
 static int common_adios_write_transform_helper(struct adios_file_struct * fd, struct adios_var_struct * v) {
     int use_shared_buffer = (fd->shared_buffer == adios_flag_yes);
@@ -548,11 +532,67 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
     {
         if (fd->shared_buffer == adios_flag_yes)
         {
-            // var payload sent for sizing information
-            adios_write_var_header_v1 (fd, v);
+            uint64_t size = adios_calc_var_overhead_v1(v);
+            size += adios_get_var_size (v, v->data);
 
-            // write payload
-            adios_write_var_payload_v1 (fd, v);
+            if (fd->buffer_size < fd->offset + size)
+            {
+                /* Trouble: this variable does not fit into the current buffer */
+                // First, try to realloc the buffer 
+                uint64_t extrasize = DATABUFFER_DEFAULT_SIZE;
+                if (extrasize < size)
+                    extrasize = size;
+                if (adios_databuffer_resize (fd, fd->buffer_size + extrasize))
+                {
+                    /* Second, let the method deal with it */
+                    log_debug ("adios_write(): buffer needs to be dumped before buffering variable %s/%s\n", v->path, v->name);
+                    // these calls don't extend the buffer
+                    adios_write_close_vars_v1 (fd);
+                    adios_write_close_process_group_header_v1 (fd);
+
+                    /* Ask the method to do something with the current buffer and 
+                       let us know if we should:
+                       1. continue buffering from start with a new PG or
+                       2. skip writing variables from now on
+                     */
+
+                    enum ADIOS_FLAG start_new_pg = adios_flag_yes;
+                    m = fd->group->methods;
+                    while (m)
+                    {
+                        if (   m->method->m != ADIOS_METHOD_UNKNOWN
+                                && m->method->m != ADIOS_METHOD_NULL
+                                && adios_transports [m->method->m].adios_write_fn
+                           )
+                        {
+                            log_error ("adios_write(): would call overflow fn here but does not exist %s/%s\n", v->path, v->name);
+                            //start_new_pg = adios_transports [m->method->m].adios_buffer_overflow_fn
+                            //    (fd, m->method);
+                        }
+                        /* FIXME: last method determines the value of start_new_pg here. This whole
+                           buffer overflow thing does not work if there are multiple methods called */
+
+                        m = m->next;
+                    }
+
+                    if (start_new_pg) {
+                        /* Start buffering from scratch (a new PG) */
+                        fd->offset = 0;
+                        adios_write_open_process_group_header_v1 (fd);
+                        adios_write_open_vars_v1 (fd);
+                    }
+                }
+            }
+
+            /* Now buffer only if we have the buffer for it */
+            if (fd->buffer_size < fd->offset + size)
+            {
+                // var payload sent for sizing information
+                adios_write_var_header_v1 (fd, v);
+
+                // write payload
+                adios_write_var_payload_v1 (fd, v);
+            }
         }
     }
     // Else, do a transform
@@ -575,6 +615,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
     }
 
     // now tell each transport attached that it is being written
+    m = fd->group->methods;
     while (m)
     {
         if (   m->method->m != ADIOS_METHOD_UNKNOWN
@@ -1002,6 +1043,7 @@ int common_adios_close (int64_t fd_p)
 
         return adios_errno;
     }
+
     struct adios_method_list_struct * m = fd->group->methods;
     if (m && m->next == NULL && m->method->m == ADIOS_METHOD_NULL)
     {
@@ -1012,6 +1054,11 @@ int common_adios_close (int64_t fd_p)
 #endif
         return 0;
     }
+
+#ifdef ADIOS_TIMERS
+    adios_write_timing_variables (fd);
+#endif
+
 
     struct adios_attribute_struct * a = fd->group->attributes;
     struct adios_var_struct * v = fd->group->vars;
@@ -1027,17 +1074,33 @@ int common_adios_close (int64_t fd_p)
            in the index.
            One should write the newly created attributes only in append mode.
         */
-        adios_write_open_attributes_v1 (fd);
-
-        if (!fd->group->process_id || fd->subfile_index != -1) {
-            // from ADIOS 1.4, only rank 0 writes attributes (or to subfiles)
-            while (a) {
-                adios_write_attribute_v1 (fd, a);
-                a = a->next;
+        uint64_t asize = adios_calc_attrs_overhead_v1(fd);
+        if (fd->buffer_size < fd->offset + asize) 
+        {
+            /* Trouble, attributes just don't fit into the end of buffer */
+            // try to extend the buffer first
+            if (adios_databuffer_resize (fd, fd->buffer_size + asize))
+            {
+                /* FIXME:  Well, drop them in this case */
+                log_error ("adios_close(): There is not enough buffer to write the attributes. "
+                        "They will be missing from the output\n");
             }
         }
 
-        adios_write_close_attributes_v1 (fd);
+        if (fd->buffer_size >= fd->offset + asize) 
+        {
+            adios_write_open_attributes_v1 (fd);
+            if (!fd->group->process_id || fd->subfile_index != -1) {
+                // from ADIOS 1.4, only rank 0 writes attributes (or to subfiles)
+                while (a) {
+                    adios_write_attribute_v1 (fd, a);
+                    a = a->next;
+                }
+            }
+            adios_write_close_attributes_v1 (fd);
+        }
+
+        adios_write_close_process_group_header_v1 (fd);
     }
 
     // in order to get the index assembled, we need to do it in the
@@ -1058,11 +1121,7 @@ int common_adios_close (int64_t fd_p)
 
     if (fd->shared_buffer == adios_flag_yes)
     {
-        adios_method_buffer_free (fd->write_size_bytes);
-        free (fd->buffer);
-        fd->buffer_size = 0;
-        fd->buffer = 0;
-        fd->offset = 0;
+        adios_databuffer_free (fd);
     }
 
     while (v)

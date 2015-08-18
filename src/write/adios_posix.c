@@ -553,6 +553,8 @@ enum ADIOS_FLAG adios_posix_should_buffer (struct adios_file_struct * fd
                                           ,struct adios_method_struct * method
                                           )
 {
+    return adios_flag_yes;
+/*
     struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
                                                           method->method_data;
 
@@ -561,7 +563,7 @@ enum ADIOS_FLAG adios_posix_should_buffer (struct adios_file_struct * fd
     if (fd->shared_buffer == adios_flag_no && fd->mode != adios_mode_read)
     {
         // write the process group header
-        adios_write_process_group_header_v1 (fd, fd->write_size_bytes);
+        adios_write_open_process_group_header_v1 (fd);
 
         lseek (p->b.f, fd->base_offset, SEEK_SET);
         START_TIMER (ADIOS_TIMER_POSIX_IO);
@@ -595,6 +597,7 @@ enum ADIOS_FLAG adios_posix_should_buffer (struct adios_file_struct * fd
     STOP_TIMER (ADIOS_TIMER_POSIX_AD_SHOULD_BUFFER);
 
     return fd->shared_buffer;   // buffer if there is space
+*/
 }
 
 void adios_posix_write (struct adios_file_struct * fd
@@ -650,7 +653,7 @@ void adios_posix_write (struct adios_file_struct * fd
         adios_write_var_payload_v1 (fd, v);
         uint64_t var_size = adios_get_var_size (v, v->data);
         if (fd->base_offset + var_size > fd->pg_start_in_file + fd->write_size_bytes)
-            fprintf (stderr, "adios_posix_write exceeds pg bound. File is corrupted. "
+            fprintf (stderr, "adios_posix_write exceeds pg bound. #1 File is corrupted. "
                              "Need to enlarge group size. \n"); 
 
         int32_t to_write;
@@ -796,7 +799,7 @@ static void adios_posix_do_write (struct adios_file_struct * fd
         //if (p->b.end_of_pgs + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
         lseek (p->b.f, offset, SEEK_SET);
         if (offset + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
-            fprintf (stderr, "adios_posix_write exceeds pg bound. File is corrupted. "
+            fprintf (stderr, "adios_posix_write exceeds pg bound. #2 File is corrupted. "
                              "Need to enlarge group size. \n");
 
         if (fd->bytes_written > MAX_MPIWRITE_SIZE)
@@ -1026,7 +1029,7 @@ void adios_posix_close (struct adios_file_struct * fd
                     {
                         adios_write_attribute_v1 (fd, a);
                         if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
-                            fprintf (stderr, "adios_posix_write exceeds pg bound. File is corrupted. "
+                            fprintf (stderr, "adios_posix_write exceeds pg bound. #3 File is corrupted. "
                                     "Need to enlarge group size. \n");
                         START_TIMER (ADIOS_TIMER_POSIX_IO);
                         ssize_t s = write (p->b.f, fd->buffer, fd->bytes_written);

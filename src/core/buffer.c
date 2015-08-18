@@ -18,6 +18,47 @@
 #include "core/adios_logger.h"
 #include "public/adios_error.h"
 
+#define BYTE_ALIGN 8
+
+int adios_databuffer_resize (struct adios_file_struct *fd, uint64_t size)
+{
+    int retval = 0;
+    // try to alloc/realloc a buffer to requested size
+    // align usable buffer to BYTE_ALIGN bytes
+    void * b = realloc (fd->allocated_bufptr, size +  BYTE_ALIGN - 1);
+    if (b)
+    {
+        fd->allocated_bufptr = b;
+        uint64_t p = (uint64_t) fd->allocated_bufptr;
+        fd->buffer = (char *) ((p + BYTE_ALIGN - 1) & ~(BYTE_ALIGN - 1));
+        fd->buffer_size = size;
+
+    }
+    else
+    {
+        retval = 1;
+        log_warn ("Cannot allocate %llu bytes for buffered output "
+                "of group %s in adios_group_size(). Continue buffering "
+                "with buffer size %llu MB\n",
+                size, fd->group->name, fd->buffer_size/1048576);
+    }
+
+    return retval;
+}
+
+int adios_databuffer_free (struct adios_file_struct *fd)
+{
+    if (fd->allocated_bufptr)
+        free (fd->allocated_bufptr);
+    fd->allocated_bufptr = 0;
+    fd->buffer = 0;
+    fd->buffer_size = 0;
+    fd->offset = 0;
+    fd->bytes_written = 0;
+}
+
+
+
 // buffer sizing may be problematic.  To get a more accurate picture, check:
 // http://chandrashekar.info/vault/linux-system-programs.html
 static uint64_t adios_buffer_size_requested = 0;
@@ -53,9 +94,9 @@ static inline size_t adios_get_avphys_pages ()
     // See mach/host_info.h
     host_info_outCnt = HOST_VM_INFO_COUNT;
     if (host_statistics(mach_host_self(),
-                        HOST_VM_INFO,
-                        (host_info_t)&host_info,
-                        &host_info_outCnt) != KERN_SUCCESS ) {
+                HOST_VM_INFO,
+                (host_info_t)&host_info,
+                &host_info_outCnt) != KERN_SUCCESS ) {
         log_error("adios_get_avphys_pages (): host_statistics failed.\n");
         return 0;   // Best we can do
     }
@@ -86,11 +127,11 @@ int adios_set_buffer_size ()
 
         pagesize = sysconf (_SC_PAGE_SIZE);
         pages =  adios_get_avphys_pages ();
-    
+
         if (adios_buffer_alloc_percentage)
         {
             adios_buffer_size_max =   (pages * pagesize / 100.0)
-                                    * adios_buffer_size_requested;
+                * adios_buffer_size_requested;
         }
         else
         {
@@ -102,13 +143,13 @@ int adios_set_buffer_size ()
             else
             {
                 adios_error (err_no_memory,
-                             "adios_allocate_buffer (): insufficient memory: "
-                             "%llu requested, %llu available.  Using "
-                             "available.\n",
-                             adios_buffer_size_requested,
-                             (uint64_t)(((uint64_t) pagesize) * pages));
+                        "adios_allocate_buffer (): insufficient memory: "
+                        "%llu requested, %llu available.  Using "
+                        "available.\n",
+                        adios_buffer_size_requested,
+                        (uint64_t)(((uint64_t) pagesize) * pages));
                 adios_buffer_size_max = (uint64_t)((uint64_t) pagesize) * pages;
-           }
+            }
         }
 
         adios_buffer_size_remaining = adios_buffer_size_max;
@@ -145,8 +186,8 @@ int adios_method_buffer_free (uint64_t size)
     if (size + adios_buffer_size_remaining > adios_buffer_size_max)
     {
         adios_error (err_invalid_buffer, 
-                     "ERROR: attempt to return more bytes to buffer "
-                     "pool than were originally available\n");
+                "ERROR: attempt to return more bytes to buffer "
+                "pool than were originally available\n");
 
         adios_buffer_size_remaining = adios_buffer_size_max;
 

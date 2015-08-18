@@ -2116,6 +2116,18 @@ uint32_t adios_calc_attribute_overhead_v1 (struct adios_attribute_struct * a)
     return overhead;
 }
 
+uint32_t adios_calc_attrs_overhead_v1 (struct adios_file_struct * fd)
+{
+    uint32_t overhead = 0;
+    struct adios_attribute_struct * a = fd->group->attributes;
+    while (a)
+    {
+        overhead += adios_calc_attribute_overhead_v1 (a);
+        a = a->next;
+    }
+    return overhead;
+}
+  
 uint64_t adios_calc_overhead_v1 (struct adios_file_struct * fd)
 {
     uint64_t overhead = 0;
@@ -2169,9 +2181,7 @@ uint64_t adios_calc_overhead_v1 (struct adios_file_struct * fd)
     return overhead;
 }
 
-int adios_write_process_group_header_v1 (struct adios_file_struct * fd
-        ,uint64_t total_size
-        )
+int adios_write_open_process_group_header_v1 (struct adios_file_struct * fd)
 {
     struct adios_group_struct * g = fd->group;
 
@@ -2179,6 +2189,9 @@ int adios_write_process_group_header_v1 (struct adios_file_struct * fd
     struct adios_var_struct * var;
     uint16_t len;
 
+    uint64_t total_size = 0L;
+    // actual total size is written when closing the group header
+    fd->pg_start = fd->offset;
     buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &total_size, 8);
 
     flag = (g->adios_host_language_fortran == adios_flag_yes ? 'y' : 'n');
@@ -2250,6 +2263,14 @@ int adios_write_process_group_header_v1 (struct adios_file_struct * fd
     if (fd->bytes_written < fd->offset)
         fd->bytes_written = fd->offset;
 
+    return 0;
+}
+
+int adios_write_close_process_group_header_v1 (struct adios_file_struct * fd)
+{
+    // close the PG area: write the total size to the beginning of the buffer
+    uint64_t size = fd->offset - fd->pg_start;
+    buffer_write (&fd->buffer, &fd->buffer_size, &fd->pg_start, &size, 8);
     return 0;
 }
 
@@ -5394,7 +5415,7 @@ uint64_t adios_write_var_header_v1 (struct adios_file_struct * fd
 
     buffer_write (&fd->buffer, &fd->buffer_size, &start, &total_size, 8);
 
-    fd->vars_written++;
+    fd->nvars_written++;
 
     if (fd->bytes_written < fd->offset)
         fd->bytes_written = fd->offset;
@@ -5501,7 +5522,7 @@ int adios_write_attribute_v1 (struct adios_file_struct * fd
     // put in the size we have put in for this attribute
     buffer_write (&fd->buffer, &fd->buffer_size, &start, &size, 4);
 
-    fd->vars_written++;
+    fd->nattrs_written++;
 
     if (fd->bytes_written < fd->offset)
         fd->bytes_written = fd->offset;
@@ -5511,7 +5532,7 @@ int adios_write_attribute_v1 (struct adios_file_struct * fd
 
 int adios_write_open_vars_v1 (struct adios_file_struct * fd)
 {
-    fd->vars_written = 0;
+    fd->nvars_written = 0;
 
     // it is now setup to write the vars and then the attrs on close
     fd->vars_start = fd->offset;
@@ -5528,7 +5549,7 @@ int adios_write_close_vars_v1 (struct adios_file_struct * fd)
 {
     // close the var area (count and total size) and write the attributes
     uint64_t size = fd->offset - fd->vars_start;
-    buffer_write (&fd->buffer, &fd->buffer_size, &fd->vars_start, &fd->vars_written, 4);
+    buffer_write (&fd->buffer, &fd->buffer_size, &fd->vars_start, &fd->nvars_written, 4);
 
     buffer_write (&fd->buffer, &fd->buffer_size, &fd->vars_start, &size, 8);
 
@@ -5537,9 +5558,9 @@ int adios_write_close_vars_v1 (struct adios_file_struct * fd)
 
 int adios_write_open_attributes_v1 (struct adios_file_struct * fd)
 {
-    fd->vars_start = fd->offset;   // save the start of attr area for size
+    fd->attrs_start = fd->offset;   // save the start of attr area for size
     fd->offset += (4 + 8);         // space to write the count and size
-    fd->vars_written = 0;
+    fd->nattrs_written = 0;
 
     if (fd->bytes_written < fd->offset)
         fd->bytes_written = fd->offset;
@@ -5550,10 +5571,10 @@ int adios_write_open_attributes_v1 (struct adios_file_struct * fd)
 int adios_write_close_attributes_v1 (struct adios_file_struct * fd)
 {
     // write attribute count and total size
-    uint64_t size = fd->offset - fd->vars_start;
-    buffer_write (&fd->buffer, &fd->buffer_size, &fd->vars_start, &fd->vars_written, 4);
+    uint64_t size = fd->offset - fd->attrs_start;
+    buffer_write (&fd->buffer, &fd->buffer_size, &fd->attrs_start, &fd->nattrs_written, 4);
 
-    buffer_write (&fd->buffer, &fd->buffer_size, &fd->vars_start, &size, 8);
+    buffer_write (&fd->buffer, &fd->buffer_size, &fd->attrs_start, &size, 8);
 
     return 0;
 }
