@@ -371,7 +371,7 @@ void build_offsets (struct adios_bp_buffer_struct_v1 * b
 
 static void
 adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
-                            struct adios_file_struct *fd, char *name)
+                            struct adios_file_struct *fd)
 {
     if (md->group_comm != MPI_COMM_NULL)
     {
@@ -382,10 +382,10 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
                                            * md->size);
             int i;
 
-            offsets [0] = fd->write_size_bytes;
+            offsets [0] = fd->bytes_written; // = the size of data in buffer on this processor
 // mpixlc_r on Eugene doesn't support 64 bit mode. Therefore the following may have problem
 // on Eugene for large data size since MPI_LONG_LONG is 32bit 
-            MPI_Gather (&(fd->write_size_bytes), 1, MPI_LONG_LONG
+            MPI_Gather (&(fd->bytes_written), 1, MPI_LONG_LONG
                        ,offsets, 1, MPI_LONG_LONG
                        ,0, md->group_comm);
 
@@ -452,7 +452,7 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
         else
         {
             MPI_Offset offset[1];
-            offset[0] = fd->write_size_bytes;
+            offset[0] = fd->bytes_written;
 
             MPI_Gather (offset, 1, MPI_LONG_LONG
                        ,0, 1, MPI_LONG_LONG
@@ -469,7 +469,7 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
     }
     else
     {
-        md->b.pg_index_offset = fd->write_size_bytes;
+        md->b.pg_index_offset = fd->bytes_written;
     }
 }
 
@@ -739,10 +739,6 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
             gettimeofday (&timing.t16, NULL);
 #endif
 
-            // figure out the offsets and create the file with proper striping
-            // before the MPI_File_open is called
-            adios_mpi_build_file_offset (md, fd, name);
-            //set_stripe_size (fd, md, name);
 #if COLLECT_METRICS
             gettimeofday (&timing.t5, NULL);
 #endif
@@ -942,10 +938,6 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                     MPI_File_close (&md->fh);
             }
 
-            // figure out the offsets and create the file with proper striping
-            // before the MPI_File_open is called
-            adios_mpi_build_file_offset (md, fd, name);
-            //set_stripe_size (fd, md, name);
 
             // cascade the opens to avoid trashing the metadata server
             if (previous == -1)
@@ -1015,6 +1007,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
 
     free (name);
 
+#if 0
     if (fd->shared_buffer == adios_flag_no && fd->mode != adios_mode_read)
     {
         int err;
@@ -1086,6 +1079,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
         fd->bytes_written = 0;
         adios_shared_buffer_free (&md->b);
     }
+#endif //0
 
 #if COLLECT_METRICS
     gettimeofday (&timing.t22, NULL);
@@ -1119,6 +1113,7 @@ void adios_mpi_write (struct adios_file_struct * fd
         }
     }
 
+#if 0
     if (fd->shared_buffer == adios_flag_no)
     {
         int err;
@@ -1238,6 +1233,8 @@ void adios_mpi_write (struct adios_file_struct * fd
         fd->bytes_written = 0;
         adios_shared_buffer_free (&md->b);
     }
+#endif //0
+
 #if COLLECT_METRICS
     if (timing.write_count == timing.write_size)
     {
@@ -1467,7 +1464,7 @@ void adios_mpi_close (struct adios_file_struct * fd
             uint64_t buffer_offset = 0;
             uint64_t index_start = md->b.pg_index_offset;
             int err;
-
+#if 0
             if (fd->shared_buffer == adios_flag_no)
             {
                 MPI_Offset new_off;
@@ -1663,11 +1660,17 @@ void adios_mpi_close (struct adios_file_struct * fd
                 fd->offset = 0;
                 fd->bytes_written = 0;
             }
+#endif //0
 
 #if COLLECT_METRICS
             gettimeofday (&timing.t19, NULL);
             gettimeofday (&timing.t12, NULL);
 #endif
+            // figure out the offsets
+            // before writing out the buffer and build the index based on target offsets
+            adios_mpi_build_file_offset (md, fd);
+            //set_stripe_size (fd, md, name);
+
             // build index appending to any existing index
             adios_build_index_v1 (fd, md->index);
             // if collective, gather the indexes from the rest and call
@@ -1767,14 +1770,14 @@ void adios_mpi_close (struct adios_file_struct * fd
                 }
 
                 if (fd->base_offset + fd->bytes_written > 
-                    fd->pg_start_in_file + fd->write_size_bytes) 
+                    fd->pg_start_in_file + fd->bytes_written) 
                 {
                     adios_error (err_out_of_bound, 
                             "MPI method, rank %d: size of buffered data exceeds pg bound.\n"
-                            "File is corrupted. Need to enlarge group size in adios_group_size().\n"
+                            "File is corrupted.\n"
                             "Group size=%llu, offset at end of variable buffer=%llu\n",
                             md->rank, 
-                            fd->write_size_bytes,
+                            fd->bytes_written,
                             fd->base_offset - fd->pg_start_in_file + fd->bytes_written);
                 }
 
@@ -1901,6 +1904,7 @@ timeval_subtract (&timing.t8, &b, &a);
             uint64_t index_start = md->b.pg_index_offset;
             int err;
 
+#if 0
             if (fd->shared_buffer == adios_flag_no)
             {
                 MPI_Offset new_off;
@@ -2096,6 +2100,12 @@ timeval_subtract (&timing.t8, &b, &a);
                 fd->offset = 0;
                 fd->bytes_written = 0;
             }
+#endif //0
+
+            // figure out the offsets
+            // before writing out the buffer and build the index based on target offsets
+            adios_mpi_build_file_offset (md, fd);
+            //set_stripe_size (fd, md, name);
 
             // build index appending to any existing index
             adios_build_index_v1 (fd, md->index);
@@ -2181,14 +2191,14 @@ timeval_subtract (&timing.t8, &b, &a);
             if (fd->shared_buffer == adios_flag_yes)
             {
                 if (fd->base_offset + fd->bytes_written > 
-                    fd->pg_start_in_file + fd->write_size_bytes) 
+                    fd->pg_start_in_file + fd->bytes_written) 
                 {
                     adios_error (err_out_of_bound, 
                             "MPI method, rank %d: size of buffered data exceeds pg bound.\n"
                             "File is corrupted. Need to enlarge group size in adios_group_size().\n"
                             "Group size=%llu, offset at end of variable buffer=%llu\n",
                             md->rank, 
-                            fd->write_size_bytes,
+                            fd->bytes_written,
                             fd->base_offset - fd->pg_start_in_file + fd->bytes_written);
                 }
                 // everyone writes their data

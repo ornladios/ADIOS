@@ -826,11 +826,15 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
                                                   );
 
                     // round up to LUSTRE_STRIPE_UNIT (64KB)
+#if 0
                     if (fd->write_size_bytes % LUSTRE_STRIPE_UNIT)
                         offsets [0] =  (fd->write_size_bytes / LUSTRE_STRIPE_UNIT + 1)
                                      * LUSTRE_STRIPE_UNIT;
                     else
                         offsets [0] = fd->write_size_bytes;
+#else
+                    offsets [0] = 65536;
+#endif
 
                     MPI_Gather (MPI_IN_PLACE, 1, MPI_LONG_LONG
                                ,offsets, 1, MPI_LONG_LONG
@@ -865,11 +869,15 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
                 else
                 {
                     MPI_Offset offset;
+#if 0
                     if (fd->write_size_bytes % LUSTRE_STRIPE_UNIT)
                         offset =  (fd->write_size_bytes / LUSTRE_STRIPE_UNIT + 1)
                                   * LUSTRE_STRIPE_UNIT;
                     else
                         offset = fd->write_size_bytes;
+#else
+                    offset = 65536;
+#endif
 
                     MPI_Gather (&offset, 1, MPI_LONG_LONG
                                ,0, 1, MPI_LONG_LONG
@@ -886,7 +894,7 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
             }
             else
             {
-                md->b.pg_index_offset = fd->write_size_bytes;
+                //FIXME: this is unknown with no group_size: md->b.pg_index_offset = fd->write_size_bytes;
             }
 
 #if COLLECT_METRICS
@@ -1150,11 +1158,15 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
                                                    * md->size
                                                   );
 
+#if 0
                     if (fd->write_size_bytes % LUSTRE_STRIPE_UNIT)
                         offsets [0] =  (fd->write_size_bytes / LUSTRE_STRIPE_UNIT + 1)
                                      * LUSTRE_STRIPE_UNIT;
                     else
                         offsets [0] = fd->write_size_bytes;
+#else
+                    offsets [0] = 65536;
+#endif
 
                     MPI_Gather (MPI_IN_PLACE, 1, MPI_LONG_LONG
                                ,offsets, 1, MPI_LONG_LONG
@@ -1182,11 +1194,15 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
                 else
                 {
                     MPI_Offset offset;
+#if 0
                     if (fd->write_size_bytes % LUSTRE_STRIPE_UNIT)
                         offset =  (fd->write_size_bytes / LUSTRE_STRIPE_UNIT + 1)
                                      * LUSTRE_STRIPE_UNIT;
                     else
                         offset = fd->write_size_bytes;
+#else
+                    offset = 65536;
+#endif
 
 
                     MPI_Gather (&offset, 1, MPI_LONG_LONG
@@ -1204,7 +1220,7 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
             }
             else
             {
-                md->b.pg_index_offset = fd->write_size_bytes;
+                //FIXME: this is unknown with no group_size: md->b.pg_index_offset = fd->write_size_bytes;
             }
 
             // cascade the opens to avoid trashing the metadata server
@@ -1275,6 +1291,7 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
 
     free (name);
 
+#if 0
     if (fd->shared_buffer == adios_flag_no && fd->mode != adios_mode_read)
     {
         // write the process group header
@@ -1310,6 +1327,7 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
         fd->bytes_written = 0;
         adios_shared_buffer_free (&md->b);
     }
+#endif //0
 
     STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_AD_SHOULD_BUFFER);
 
@@ -1348,6 +1366,7 @@ void adios_mpi_lustre_write (struct adios_file_struct * fd
         }
     }
 
+#if 0
     if (fd->shared_buffer == adios_flag_no)
     {
         // var payload sent for sizing information
@@ -1398,6 +1417,7 @@ void adios_mpi_lustre_write (struct adios_file_struct * fd
         fd->bytes_written = 0;
         adios_shared_buffer_free (&md->b);
     }
+#endif //0
 
     STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_AD_WRITE);
 
@@ -1623,6 +1643,7 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
             uint64_t buffer_offset = 0;
             uint64_t index_start = md->b.pg_index_offset;
 
+#if 0
             if (fd->shared_buffer == adios_flag_no)
             {
                 MPI_Offset new_off;
@@ -1668,7 +1689,7 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
                     while (a)
                     {
                         adios_write_attribute_v1 (fd, a);
-                        if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
+                        if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->bytes_written)
                             fprintf (stderr, "adios_mpi_write exceeds pg bound. File is corrupted. "
                                     "Need to enlarge group size. \n");
                         START_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
@@ -1721,6 +1742,7 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
                 fd->offset = 0;
                 fd->bytes_written = 0;
             }
+#endif //0
 
 #if COLLECT_METRICS
             gettimeofday (&t19, NULL);
@@ -1822,7 +1844,7 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
             if (fd->shared_buffer == adios_flag_yes)
             {
                 // everyone writes their data
-                if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
+                if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->bytes_written)
                     fprintf (stderr, "adios_mpi_write exceeds pg bound. File is corrupted. "
                              "Need to enlarge group size. \n");
 

@@ -53,11 +53,11 @@ static int buffer_write (char ** buffer, uint64_t * buffer_size
 
 
 int shared_buffer_write(struct adios_file_struct *fd, const void * data, uint64_t size) {
-    return buffer_write(&fd->buffer, &fd->buffer_size, &fd->offset, data, size, fd->write_size_bytes);
+    return buffer_write(&fd->buffer, &fd->buffer_size, &fd->offset, data, size, fd->buffer_size /*fd->write_size_bytes*/);
 }
 
 int shared_buffer_reserve(struct adios_file_struct *fd, uint64_t size) {
-    return buffer_reserve(&fd->buffer, &fd->buffer_size, &fd->offset, size, fd->write_size_bytes);
+    return buffer_reserve(&fd->buffer, &fd->buffer_size, &fd->offset, size, fd->buffer_size /*fd->write_size_bytes*/);
 }
 
 int shared_buffer_mark_written(struct adios_file_struct *fd, uint64_t size) {

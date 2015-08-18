@@ -402,7 +402,6 @@ int common_adios_group_size (int64_t fd_p, uint64_t data_size, uint64_t * total_
         log_debug("Computed worst-case bound on transformed data for a group size of %llu is %llu; increasing group size to match.\n",
                   data_size, wc_transformed_size);
 
-        fd->write_size_bytes += (wc_transformed_size - data_size);
         *total_size += (wc_transformed_size - data_size);
     }
 

@@ -1444,7 +1444,7 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
             }
             else
             {
-                md->b.pg_index_offset = fd->write_size_bytes;
+                md->b.pg_index_offset = 0; //FIXME: it was fd->write_size_bytes;
             }
 
             /*log_debug ("rank %d: WRITE: end_of_pgs=%llu bytes_written=%llu pg_start_in_file=%llu"
@@ -1551,7 +1551,7 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
                 if (md->group_comm == MPI_COMM_NULL)
                 {
                     // FIXME: what is this?
-                    md->b.pg_index_offset = fd->write_size_bytes;
+                    md->b.pg_index_offset = 0; //FIXME: it was fd->write_size_bytes;
                 }
             }
             break;
@@ -2019,6 +2019,7 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
             MPI_Comm_size (md->g_comm2, &new_group_size2);
             STOP_TIMER (ADIOS_TIMER_MPI_AMR_COMM);
 
+#if 0
             if (fd->shared_buffer == adios_flag_no)
             {
                 MPI_Offset new_off;
@@ -2179,6 +2180,7 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
 
                 MPI_File_seek (md->fh, fd->base_offset, MPI_SEEK_SET);
             }
+#endif //0
 
             // if not merge PG's on the aggregator side
             if (fd->shared_buffer == adios_flag_yes && !md->g_merging_pgs)
