@@ -167,6 +167,7 @@ struct adios_group_struct
     // previous cycle is kept in prev_timing_obj, and is written before close
     struct adios_timing_struct * timing_obj;
     struct adios_timing_struct * prev_timing_obj;
+    uint64_t tv_size; // the additional data size used by timing variables
 #endif
 };
 
@@ -183,7 +184,6 @@ struct adios_file_struct
     int32_t subfile_index; // needs to be set in ADIOS method if generates subfiles
     struct adios_group_struct * group;
     enum ADIOS_METHOD_MODE mode;
-    uint64_t data_size;
     uint64_t write_size_bytes;
 
     enum ADIOS_FLAG shared_buffer;
@@ -192,13 +192,17 @@ struct adios_file_struct
 
     uint64_t base_offset;   // where writing last ocurred
 
-    char * buffer;          // buffer we use for building the output
+    char * allocated_bufptr;  // actual allocated buffer before alignment
+    char * buffer;          // buffer we use for building the output (aligned, made from allocated_bufptr)
     uint64_t offset;        // current offset to write at
     uint64_t bytes_written; // largest offset into buffer written to
     uint64_t buffer_size;   // how big the buffer is currently
 
-    uint64_t vars_start;    // offset for where to put the var/attr count
-    uint32_t vars_written;  // count of vars/attrs to write
+    uint64_t pg_start;      // offset in buffer where to put PG size (it should be 0 to point to buffer[0])
+    uint64_t vars_start;    // offset for where to put the vars count
+    uint32_t nvars_written;  // count of vars to write
+    uint64_t attrs_start;    // offset for where to put the attr count
+    uint32_t nattrs_written;  // count of attrs to write
 
     MPI_Comm comm;          // duplicate of comm received in adios_open()
 };
@@ -497,6 +501,7 @@ int adios_common_free_group (int64_t id);
 uint16_t adios_calc_var_characteristics_dims_overhead(struct adios_dimension_struct * d);
 uint16_t adios_calc_var_overhead_v1 (struct adios_var_struct * v);
 uint32_t adios_calc_attribute_overhead_v1 (struct adios_attribute_struct * a);
+uint32_t adios_calc_attrs_overhead_v1 (struct adios_file_struct * fd);
 uint64_t adios_calc_overhead_v1 (struct adios_file_struct * fd);
 
 int adios_write_version_v1 (char ** buffer
@@ -508,9 +513,8 @@ int adios_write_version_flag_v1 (char ** buffer
                            ,uint64_t * buffer_offset
                            ,uint32_t flag
                            );
-int adios_write_process_group_header_v1 (struct adios_file_struct * fd
-                                        ,uint64_t total_size
-                                        );
+int adios_write_open_process_group_header_v1 (struct adios_file_struct * fd);
+int adios_write_close_process_group_header_v1 (struct adios_file_struct * fd);
 
 void adios_copy_var_written (struct adios_group_struct * g,
                              struct adios_var_struct * var);

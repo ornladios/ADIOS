@@ -9,7 +9,16 @@
 #define ADIOS_BUFFER_H
 
 #include "public/adios_types.h"
+#include "core/adios_internals.h"
 
+/* Data buffer in adios_open() will be allocated with this default size
+   if no better size information is available */
+#define DATABUFFER_DEFAULT_SIZE 16777216L
+
+int adios_databuffer_resize (struct adios_file_struct *fd, uint64_t size);
+int adios_databuffer_free (struct adios_file_struct *fd);
+
+/* OBSOLETE functions */
 void      adios_buffer_size_requested_set (uint64_t v);
 uint64_t  adios_buffer_size_requested_get (void);
 void      adios_buffer_size_max_set (uint64_t v);

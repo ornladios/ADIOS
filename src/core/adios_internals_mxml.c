@@ -1982,6 +1982,7 @@ static int parseMethod (mxml_node_t * node)
     return 1;
 }
 
+/*
 static int parseBuffer (mxml_node_t * node)
 {
     const char * size_MB = 0;
@@ -2091,6 +2092,7 @@ static int parseBuffer (mxml_node_t * node)
 
     return 1;
 }
+*/
 
 
 void PRINT_MXML_NODE (mxml_node_t *root)
@@ -2308,9 +2310,10 @@ int adios_parse_config (const char * config, MPI_Comm comm)
             {
                 if (!strcasecmp (node->value.element.name, "buffer"))
                 {
-                    if (!parseBuffer (node))
-                        break;
-                    saw_buffer = 1;
+                    log_warn ("config.xml: the 'buffer' element is not supported anymore\n");
+                    //if (!parseBuffer (node))
+                    //    break;
+                    //saw_buffer = 1;
                 }
                 else
                 {
@@ -2357,14 +2360,14 @@ int adios_parse_config (const char * config, MPI_Comm comm)
 
         return 0;
     }
-    if (!saw_buffer)
+    /*if (!saw_buffer)
     {
         adios_error (err_no_buffer_defined, "config.xml: must define the buffer element in "
                 "config.xml\n"
                 );
 
         return 0;
-    }
+    }*/
 
     return 1;
 }

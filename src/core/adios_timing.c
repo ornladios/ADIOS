@@ -391,6 +391,7 @@ int adios_add_timing_variables (struct adios_file_struct * fd)
                       "");                          // const char * local_offsets 
     }
 
+    g->tv_size = tv_size;
     return tv_size;
 
 }
