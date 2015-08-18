@@ -184,7 +184,6 @@ struct adios_file_struct
     int32_t subfile_index; // needs to be set in ADIOS method if generates subfiles
     struct adios_group_struct * group;
     enum ADIOS_METHOD_MODE mode;
-    uint64_t write_size_bytes;
 
     enum ADIOS_FLAG shared_buffer;
 
