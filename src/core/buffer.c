@@ -22,7 +22,10 @@
 
 int adios_databuffer_resize (struct adios_file_struct *fd, uint64_t size)
 {
+    /* This function works as malloc if fd->allocated_bufptr is NULL, so
+       there is no need for a separate first-allocation function */
     int retval = 0;
+
     // try to alloc/realloc a buffer to requested size
     // align usable buffer to BYTE_ALIGN bytes
     void * b = realloc (fd->allocated_bufptr, size +  BYTE_ALIGN - 1);

@@ -205,6 +205,7 @@ struct adios_file_struct
 
     MPI_Comm comm;          // duplicate of comm received in adios_open()
 };
+void adios_file_struct_init (struct adios_file_struct * fd);
 
 struct adios_dimension_item_struct
 {

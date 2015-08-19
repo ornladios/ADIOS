@@ -128,6 +128,7 @@ int common_adios_open (int64_t * fd_p, const char * group_name
     enum ADIOS_METHOD_MODE mode;
 
     adios_errno = err_no_error;
+    adios_file_struct_init (fd);
     adios_common_get_group (&group_id, group_name);
     g = (struct adios_group_struct *) group_id;
     if (!g) {
@@ -164,21 +165,8 @@ int common_adios_open (int64_t * fd_p, const char * group_name
     fd->subfile_index = -1; // subfile index is by default -1
     fd->group = g;
     fd->mode = mode;
-    fd->buffer = 0;
-    fd->shared_buffer = adios_flag_no;
-    fd->offset = 0;
-    fd->bytes_written = 0;
-    fd->buffer_size = 0;
-    fd->nvars_written = 0;
-    fd->vars_start = 0;
-    fd->nattrs_written = 0;
-    fd->attrs_start = 0;
-    fd->base_offset = 0;
-    fd->pg_start_in_file = 0;
     if (comm != MPI_COMM_NULL)
         MPI_Comm_dup(comm, &fd->comm);
-    else
-        fd->comm = MPI_COMM_NULL;
 
 
 #if 1
@@ -335,10 +323,6 @@ int common_adios_open (int64_t * fd_p, const char * group_name
                              "Cannot allocate %llu bytes for buffered output "
                              "of group %s in adios_open(). Output will fail.\n", 
                              fd->buffer_size, g->name);
-
-                /*fd->buffer_size = 0; 
-                fd->offset = 0;
-                fd->bytes_written = 0;*/
                 return adios_errno;
             }
         }
@@ -584,7 +568,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
             }
 
             /* Now buffer only if we have the buffer for it */
-            if (fd->buffer_size < fd->offset + size)
+            if (fd->buffer_size > fd->offset + size)
             {
                 // var payload sent for sizing information
                 adios_write_var_header_v1 (fd, v);
@@ -594,8 +578,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
             }
         }
     }
-    // Else, do a transform
-    else
+    else // Else, do a transform
     {
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_start ("adios_transform");

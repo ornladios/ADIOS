@@ -39,6 +39,28 @@
 struct adios_method_list_struct * adios_methods = 0;
 struct adios_group_list_struct * adios_groups = 0;
 
+void adios_file_struct_init (struct adios_file_struct * fd)
+{
+    fd->name = NULL;
+    fd->subfile_index = -1; // subfile index is by default -1
+    fd->group = NULL;
+    fd->mode = adios_mode_write;
+    fd->pg_start_in_file = 0;
+    fd->base_offset = 0;
+    fd->allocated_bufptr = NULL;
+    fd->buffer = NULL;
+    fd->shared_buffer = adios_flag_no;
+    fd->offset = 0;
+    fd->bytes_written = 0;
+    fd->buffer_size = 0;
+    fd->pg_start = 0;
+    fd->vars_start = 0;
+    fd->nvars_written = 0;
+    fd->attrs_start = 0;
+    fd->nattrs_written = 0;
+    fd->comm = MPI_COMM_NULL;
+}
+
 int adios_int_is_var (const char * temp) // 1 == yes, 0 == no
 {
     if (!temp)
