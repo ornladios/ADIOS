@@ -407,8 +407,8 @@ uint64_t mGetRange(ADIOS_SELECTION_POINTS_STRUCT* pts, uint64_t* start, uint64_t
 		if (i == 0) {
 		  start[k] = 0; max[k] = 0;
 		}
-		idx += k;
-		uint64_t curr = pts->points[idx];
+		//idx +=k;idx		
+		uint64_t curr = pts->points[idx+k];
 		if ((start[k] == 0)) { 
 		  start[k] = curr; max[k] = curr;
 		} else if (start[k] > curr) {
@@ -422,6 +422,7 @@ uint64_t mGetRange(ADIOS_SELECTION_POINTS_STRUCT* pts, uint64_t* start, uint64_t
 	    uint64_t bbsize = 1;
 	    for (k=0; k<pts->ndim; k++) {
 	      bbsize *= max[k] - start[k]+1;
+	      printf("... bb at %ld dimention: [%ld, %ld]\n", k, max[k], start[k]);
 	    }
 
 	    uint64_t BBSIZELIMIT = 20000000; 	    
@@ -431,6 +432,7 @@ uint64_t mGetRange(ADIOS_SELECTION_POINTS_STRUCT* pts, uint64_t* start, uint64_t
 	        nBB += 1;
 	    }
 
+	    printf("... nBB=%ld \n", nBB);
 	    //return bbsize;
 	    return nBB;
 
