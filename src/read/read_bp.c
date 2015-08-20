@@ -398,45 +398,46 @@ static int get_new_step (ADIOS_FILE * fp, const char * fname, MPI_Comm comm, int
 //
 uint64_t mGetRange(ADIOS_SELECTION_POINTS_STRUCT* pts, uint64_t* start, uint64_t* max)
 {
-  uint64_t i=0, idx=0, k=0; 
-            for (i = 0; i < pts->npoints; i++)
-            {
-	      idx = i * pts->ndim;
-	      //printf("%dth = [%d, %d] \n", i, sel->u.points.points[idx], sel->u.points.points[idx+1]);
-	      for (k = 0; k < pts->ndim; k++) {
-		if (i == 0) {
-		  start[k] = 0; max[k] = 0;
-		}
-		//idx +=k;idx		
-		uint64_t curr = pts->points[idx+k];
-		if ((start[k] == 0)) { 
-		  start[k] = curr; max[k] = curr;
-		} else if (start[k] > curr) {
-		  start[k] = curr;
-		} else if (max[k] < curr) {
-		  max[k] = curr;
-		}		  
-	      }	      
-	    }
-
-	    uint64_t bbsize = 1;
-	    for (k=0; k<pts->ndim; k++) {
-	      bbsize *= max[k] - start[k]+1;
-	      printf("... bb at %ld dimention: [%ld, %ld]\n", k, max[k], start[k]);
-	    }
-
-	    uint64_t BBSIZELIMIT = 20000000; 	    
-	    uint64_t nBB = bbsize/BBSIZELIMIT ;
-	      
-	    if (nBB * BBSIZELIMIT != bbsize) {
-	        nBB += 1;
-	    }
-
-	    printf("... nBB=%ld \n", nBB);
-	    //return bbsize;
-	    return nBB;
-
+   uint64_t i=0, idx=0, k=0; 
+   for (i = 0; i < pts->npoints; i++)
+   {
+     idx = i * pts->ndim;
+     //printf("%ldth = [%ld, %ld, %ld] \n", i, pts->points[idx], pts->points[idx+1], pts->points[idx+2]);
+     for (k = 0; k < pts->ndim; k++) {
+        if (i == 0) {
+	  start[k] = pts->points[k]; max[k] = pts->points[k];
+	  continue;
+	}
+	//idx +=k;idx		
+	uint64_t curr = pts->points[idx+k];
+	if ((start[k] > curr)) { 
+	  start[k] = curr; //max[k] = curr;
+	} 
+	if (max[k] < curr) {
+	    max[k] = curr;
+	}		  
+     }	      
+     //printf("start[0]=%ld  max[0]=%ld \n", start[0], max[0]);
+   }
+   
+   uint64_t bbsize = 1;
+   for (k=0; k<pts->ndim; k++) {
+     bbsize *= max[k] - start[k]+1;
+     printf("... bb at %ld dimention: [%ld, %ld]\n", k, max[k], start[k]);
+   }
+   
+   uint64_t BBSIZELIMIT = 20000000; 	    
+   uint64_t nBB = bbsize/BBSIZELIMIT ;
+   
+   if (nBB * BBSIZELIMIT != bbsize) {
+     nBB += 1;
+   }
+   
+   printf("... nBB=%ld \n", nBB);
+   //return bbsize;
+   return nBB;   
 }
+
 /* This routine processes a read request and returns data in ADIOS_VARCHUNK.
    If the selection type is not bounding box, convert it. The basic file reading
    functionality is implemented in read_var_bb() routine.
@@ -519,13 +520,14 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
 	    
 	    uint64_t nBB = mGetRange(&(sel->u.points), start, max);
 
+	    uint64_t regularHeight = (max[0]-start[0]+1)/nBB;
 	    for (j=0; j<nBB; j++) {
 	      if (j == nBB-1) {
-		nsel->u.bb.count[0] = (max[0]-start[0]+1) - (nBB-1)*(max[0]-start[0]+1)/nBB;
+		nsel->u.bb.count[0] = (max[0]-start[0]+1) - (nBB-1)*regularHeight;
 	      } else {
-		nsel->u.bb.count[0] = (max[0]-start[0]+1)/nBB;
+		nsel->u.bb.count[0] = regularHeight;
 	      }
-	      nsel->u.bb.start[0] = start[0] + j * (max[0]-start[0]+1)/nBB;
+	      nsel->u.bb.start[0] = start[0] + j * regularHeight;
 
 	      uint64_t currBBSize = nsel->u.bb.count[0];
 	      // other dimentions
@@ -549,14 +551,14 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
 
               for (i = 0; i < sel->u.points.npoints; i++) {	      
 		  idx = i * sel->u.points.ndim;
-		  uint64_t idxInBB = 0;
+		  int64_t idxInBB = 0;
 		  for (k=0; k<sel->u.points.ndim; k++) {
-		    idx += k;
-		    uint64_t curr = sel->u.points.points[idx];
+		    //idx += k;
+		    uint64_t curr = sel->u.points.points[idx+k];
 		    if ((curr >= nsel->u.bb.start[k]) && (curr < nsel->u.bb.start[k] + nsel->u.bb.count[k])) {
 		      idxInBB += (curr - nsel->u.bb.start[k])* product[k];
 		    } else {
-		      idxInBB == -1;
+		      idxInBB = -1;
 		      break;
 		    }
 		  }
@@ -564,6 +566,7 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
 		  if (idxInBB >= 0) {
 		    memcpy((r->data)+i*size_of_type, (char*)(nr->data)+idxInBB*size_of_type, size_of_type);
 		    //printf(" checking: %.3f vs %.3f \n", ((double*)(nr->data))[idxInBB], ((double*)(r->data))[i]);
+		    //printf("checking: [%ld th bb]  [point %ld],  idxInBB=%ld value %.3f vs %.3f\n",j, i, idxInBB, ((double*)(nr->data))[idxInBB], ((double*)(r->data))[i]);
 		  }
 	      }
 	      
