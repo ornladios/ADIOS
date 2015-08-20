@@ -740,7 +740,7 @@ int adios_mpi_open (struct adios_file_struct * fd
             }
             else
             {
-                fd->base_offset = 0;
+                fd->base_offset = 0; // these values will be determined correctly in adios_mpi_close much later
                 fd->pg_start_in_file = 0;
 
                 if (md->rank == 0)
@@ -892,16 +892,20 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
                                     + biggest_size;
 #else
 
-            uint64_t last_offset = offsets [0];
+            uint64_t last_pgsize = offsets [0];
             offsets [0] = fd->base_offset;
+            //printf ("offsets[%d] = {%llu", md->size, offsets[0]);
             for (i = 1; i < md->size; i++)
             {
                 uint64_t this_offset = offsets [i];
-                offsets [i] = offsets [i - 1] + last_offset;
-                last_offset = this_offset;
+                offsets [i] = offsets [i - 1] + last_pgsize;
+                last_pgsize = this_offset;
+                //printf ("  %llu", offsets[i]);
             }
+            //printf (" }\n");
             md->b.pg_index_offset =   offsets [md->size - 1]
-                                    + last_offset;
+                                    + last_pgsize;
+            //printf (" last_pgsize = %llu, pg_index_offset = %llu\n", last_pgsize, md->b.pg_index_offset);
 #endif
             MPI_Scatter (offsets, 1, MPI_LONG_LONG
                         ,MPI_IN_PLACE, 1, MPI_LONG_LONG
@@ -928,6 +932,7 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
             fd->base_offset = offset [0];
             fd->pg_start_in_file = fd->base_offset;
         }
+        //printf ("rank %d: base_offset = %llu, pg_start_in_file = %llu\n", md->rank, fd->base_offset, fd->pg_start_in_file);
     }
     else
     {
@@ -1526,6 +1531,11 @@ void adios_mpi_close (struct adios_file_struct * fd
             adios_mpi_build_file_offset (md, fd);
             //set_stripe_size (fd, md, name);
 
+            // need to fix the offsets in rank>0 processes, where base_offset was 0 until now
+            if (md->rank != 0) {
+                adios_increase_offsets_v1(fd, fd->base_offset);
+            }
+
             // build index appending to any existing index
             adios_build_index_v1 (fd, md->index);
             // if collective, gather the indexes from the rest and call
@@ -1960,6 +1970,11 @@ timeval_subtract (&timing.t8, &b, &a);
             // before writing out the buffer and build the index based on target offsets
             adios_mpi_build_file_offset (md, fd);
             //set_stripe_size (fd, md, name);
+
+            // need to fix the offsets in rank>0 processes, where base_offset was 0 until now
+            if (md->rank != 0) {
+                adios_increase_offsets_v1(fd, fd->base_offset);
+            }
 
             // build index appending to any existing index
             adios_build_index_v1 (fd, md->index);

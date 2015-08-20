@@ -550,6 +550,8 @@ int adios_write_index_v1 (char ** buffer
                          ,struct adios_index_struct_v1 * index
                          );
 
+void adios_increase_offsets_v1 (struct adios_file_struct * fd, uint64_t extra_offset);
+
 void adios_build_index_v1 (struct adios_file_struct * fd
                          ,struct adios_index_struct_v1 * index
                        );

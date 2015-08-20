@@ -3419,6 +3419,39 @@ void adios_copy_var_written (struct adios_var_struct ** root
 }
 #endif
 
+/* Since no group_size(), the fd->base_offset is unknown (set to 0) in non-root processes and 
+   adios_write_var_header_v1() registers written variables with offsets relative to 0 not the
+   actual beginning of the PG.
+   This function is called from the methods in adios_close() to fix the var/attr offsets
+   before building the index 
+*/
+void adios_increase_offsets_v1 (struct adios_file_struct * fd, uint64_t extra_offset)
+{
+    struct adios_group_struct * g = fd->group;
+    struct adios_var_struct * v = g->vars_written;
+    struct adios_attribute_struct * a = g->attributes;
+    while (v)
+    {
+        // write_offset==0 is special, indicates that the variable was never written with adios_write
+        // skip those
+        if (v->write_offset != 0)
+        {
+            v->write_offset += extra_offset;
+        }
+        v = v->next;
+    }
+    while (a)
+    {
+        // write_offset==0 is special, indicates that the attribute was never written (how so?)
+        // skip those
+        if (a->write_offset != 0)
+        {
+            a->write_offset += extra_offset;
+        }
+        a = a->next;
+    }
+}
+
 void adios_build_index_v1 (struct adios_file_struct * fd,
                            struct adios_index_struct_v1 * index)
 {
