@@ -303,41 +303,6 @@ void adios_mpi_init (const PairStruct * parameters
 #endif
 }
 
-int adios_mpi_open (struct adios_file_struct * fd
-                   ,struct adios_method_struct * method, MPI_Comm comm
-                   )
-{
-    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
-                                                    method->method_data;
-
-#if COLLECT_METRICS
-    gettimeofday (&timing.t0, NULL); // only used on rank == size - 1, but we don't
-                              // have the comm yet to get the rank/size
-#endif
-    adios_buffer_struct_clear (&md->b);
-
-    md->group_comm = comm;
-    if (md->group_comm != MPI_COMM_NULL)
-    {
-        MPI_Comm_rank (md->group_comm, &md->rank);
-        MPI_Comm_size (md->group_comm, &md->size);
-    }
-    fd->group->process_id = md->rank;
-
-#if COLLECT_METRICS
-    timing.write_count = 0;
-    timing.write_size = 0;
-    if (timing.t24) free (timing.t24);
-    timing.t24 = 0;
-#endif
-
-    // we have to wait for the group_size (should_buffer) 
-    // to calculate stripe sizes from output sizes of the processes
-    // before we can do an open for any of the modes
-
-    return 1;
-}
-
 static
 void build_offsets (struct adios_bp_buffer_struct_v1 * b
                    ,MPI_Offset * offsets, int size, char * group_name
@@ -369,183 +334,27 @@ void build_offsets (struct adios_bp_buffer_struct_v1 * b
     }
 }
 
-static void
-adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
-                            struct adios_file_struct *fd)
-{
-    if (md->group_comm != MPI_COMM_NULL)
-    {
-        if (md->rank == 0)
-        {
-            // make one space for offset and one for size
-            MPI_Offset * offsets = malloc(sizeof (MPI_Offset)
-                                           * md->size);
-            int i;
-
-            offsets [0] = fd->bytes_written; // = the size of data in buffer on this processor
-// mpixlc_r on Eugene doesn't support 64 bit mode. Therefore the following may have problem
-// on Eugene for large data size since MPI_LONG_LONG is 32bit 
-            MPI_Gather (&(fd->bytes_written), 1, MPI_LONG_LONG
-                       ,offsets, 1, MPI_LONG_LONG
-                       ,0, md->group_comm);
-
-// top section: make things a consistent stripe size
-// bottom section: just pack the file
-#if 0
-            // find the largest and use that as a basis for stripe
-            // size for each process writing
-            uint64_t biggest_size = 0;
-            for (i = 0; i < md->size; i++)
-            {
-                if (offsets [i] > biggest_size)
-                    biggest_size = offsets [i];
-            }
-            // now round up to the next stripe size increment (Lustre: 64 KB)
-#define STRIPE_INCREMENT (64 * 1024)
-            // (according to the Lustre reps, use 1 MB instead of 64 KB?)
-//#define STRIPE_INCREMENT (1024 * 1024)
-            if (biggest_size % (STRIPE_INCREMENT))
-            {
-                biggest_size = (  ((biggest_size / STRIPE_INCREMENT) + 1)
-                                * STRIPE_INCREMENT
-                               );
-            }
-            // also round up the base_offset, just in case
-            if (fd->base_offset % (STRIPE_INCREMENT))
-            {
-                fd->base_offset = (  ((fd->base_offset / STRIPE_INCREMENT) + 1)
-                                   * STRIPE_INCREMENT
-                                  );
-            }
-#undef STRIPE_INCREMENT
-            offsets [0 + 0] = fd->base_offset;
-            offsets [0 + 1] = biggest_size;
-
-            for (i = 1; i < md->size; i++)
-            {
-                offsets [i * 2 + 0] = offsets [(i - 1) * 2 + 0] + biggest_size;
-                offsets [i * 2 + 1] = biggest_size;
-            }
-            md->b.pg_index_offset =   offsets [(md->size - 1) * 2 + 0]
-                                    + biggest_size;
-#else
-
-            uint64_t last_offset = offsets [0];
-            offsets [0] = fd->base_offset;
-            for (i = 1; i < md->size; i++)
-            {
-                uint64_t this_offset = offsets [i];
-                offsets [i] = offsets [i - 1] + last_offset;
-                last_offset = this_offset;
-            }
-            md->b.pg_index_offset =   offsets [md->size - 1]
-                                    + last_offset;
-#endif
-            MPI_Scatter (offsets, 1, MPI_LONG_LONG
-                        ,MPI_IN_PLACE, 1, MPI_LONG_LONG
-                        ,0, md->group_comm
-                        );
-            fd->base_offset = offsets [0];
-            fd->pg_start_in_file = fd->base_offset;
-            free (offsets);
-        }
-        else
-        {
-            MPI_Offset offset[1];
-            offset[0] = fd->bytes_written;
-
-            MPI_Gather (offset, 1, MPI_LONG_LONG
-                       ,0, 1, MPI_LONG_LONG
-                       ,0, md->group_comm
-                       );
-
-            MPI_Scatter (0, 1, MPI_LONG_LONG
-                        ,offset, 1, MPI_LONG_LONG
-                        ,0, md->group_comm
-                        );
-            fd->base_offset = offset [0];
-            fd->pg_start_in_file = fd->base_offset;
-        }
-    }
-    else
-    {
-        md->b.pg_index_offset = fd->bytes_written;
-    }
-}
-
-#if 0
-// LUSTRE Structure
-// from /usr/include/lustre/lustre_user.h
-#define LUSTRE_SUPER_MAGIC 0x0BD00BD0
-#  define LOV_USER_MAGIC 0x0BD10BD0
-#  define LL_IOC_LOV_SETSTRIPE  _IOW ('f', 154, long)
-#  define LL_IOC_LOV_GETSTRIPE  _IOW ('f', 155, long)
-struct lov_user_ost_data {           // per-stripe data structure
-        uint64_t l_object_id;        // OST object ID
-        uint64_t l_object_gr;        // OST object group (creating MDS number)
-        uint32_t l_ost_gen;          // generation of this OST index
-        uint32_t l_ost_idx;          // OST index in LOV
-} __attribute__((packed));
-struct lov_user_md {                 // LOV EA user data (host-endian)
-        uint32_t lmm_magic;          // magic number = LOV_USER_MAGIC_V1
-        uint32_t lmm_pattern;        // LOV_PATTERN_RAID0, LOV_PATTERN_RAID1
-        uint64_t lmm_object_id;      // LOV object ID
-        uint64_t lmm_object_gr;      // LOV object group
-        uint32_t lmm_stripe_size;    // size of stripe in bytes
-        uint16_t lmm_stripe_count;   // num stripes in use for this object
-        uint16_t lmm_stripe_offset;  // starting stripe offset in lmm_objects
-        struct lov_user_ost_data  lmm_objects[0]; // per-stripe data
-} __attribute__((packed));
-
-// do the magic ioctl calls to set Lustre's stripe size
-static void set_stripe_size (struct adios_file_struct * fd
-                            ,struct adios_MPI_data_struct * md
-                            ,const char * filename
-                            )
-{
-    struct statfs fsbuf;
-    int err;
-
-    // Note: Since each file might have different write_buffer,
-    // So we will reset write_buffer even buffer_size != 0
-    err = statfs (filename, &fsbuf);
-    if (!err && fsbuf.f_type == LUSTRE_SUPER_MAGIC)
-    {
-        int f;
-        int old_mask;
-        int perm;
-
-        old_mask = umask (022);
-        umask (old_mask);
-        perm = old_mask ^ 0666;
-
-        f = open (filename, O_RDONLY | O_CREAT, perm);
-        if (f != -1)
-        {
-            struct lov_user_md lum;
-            lum.lmm_magic = LOV_USER_MAGIC;
-            lum.lmm_stripe_size = md->biggest_size;
-            err = ioctl (f, LL_IOC_LOV_SETSTRIPE, (void *) &lum);
-            // if err != 0, the must not be Lustre
-            lum.lmm_stripe_count = 0;
-            err = ioctl (f, LL_IOC_LOV_GETSTRIPE, (void *) &lum);
-            // if err != 0, the must not be Lustre
-            if (err == 0)
-            {
-                md->storage_targets = lum.lmm_stripe_count;
-            }
-            close (f);
-        }
-    }
-}
-#endif
-
-enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
-                                        ,struct adios_method_struct * method
-                                        )
+int adios_mpi_open (struct adios_file_struct * fd
+                   ,struct adios_method_struct * method, MPI_Comm comm
+                   )
 {
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
-                                                      method->method_data;
+                                                    method->method_data;
+
+#if COLLECT_METRICS
+    gettimeofday (&timing.t0, NULL); // only used on rank == size - 1, but we don't
+                              // have the comm yet to get the rank/size
+#endif
+    adios_buffer_struct_clear (&md->b);
+
+    md->group_comm = comm;
+    if (md->group_comm != MPI_COMM_NULL)
+    {
+        MPI_Comm_rank (md->group_comm, &md->rank);
+        MPI_Comm_size (md->group_comm, &md->size);
+    }
+    fd->group->process_id = md->rank;
+
     char * name;
     int err;
     int flag;    // used for coordinating the MPI_File_open
@@ -789,7 +598,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                         md->rank, name, e);
                 free (name);
 
-                return adios_flag_no;
+                return 0;
             }
 #if COLLECT_METRICS
             gettimeofday (&timing.t6, NULL);
@@ -828,7 +637,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                                 md->rank, name, e);
                         free (name);
 
-                        return adios_flag_no;
+                        return 0;
                     }
                 }
                 MPI_Bcast (&old_file, 1, MPI_INT, 0, md->group_comm);
@@ -987,7 +796,7 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
                         md->rank, name, e);
                 free (name);
 
-                return adios_flag_no;
+                return 0;
             }
 
             break;
@@ -1001,90 +810,137 @@ enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
 
             free (name);
 
-            return adios_flag_no;
+            return 0;
         }
     }
 
     free (name);
 
-#if 0
-    if (fd->shared_buffer == adios_flag_no && fd->mode != adios_mode_read)
-    {
-        int err;
-        // write the process group header
-        adios_write_open_process_group_header_v1 (fd);
-
-        MPI_File_seek (md->fh, fd->base_offset, MPI_SEEK_SET);
-#if 0
-        err = MPI_File_write (md->fh, fd->buffer, fd->bytes_written, MPI_BYTE
-                             ,&md->status
-                             );
-#endif
-        {
-            uint64_t total_written = 0;
-            uint64_t to_write = fd->bytes_written;
-            int write_len = 0;
-            int count;
-            char * buf_ptr = fd->buffer;
-            while (total_written < fd->bytes_written)
-            {
-                write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
-                err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
-                MPI_Get_count(&md->status, MPI_BYTE, &count);
-                if (count != write_len)
-                {
-                    err = count;
-                    break;
-                }
-                total_written += count;
-                buf_ptr += count;
-                to_write -= count;
-                //err = total_written;
-            }
-        }
-        if (err != MPI_SUCCESS)
-        {
-            char e [MPI_MAX_ERROR_STRING];
-            int len = 0;
-            memset (e, 0, MPI_MAX_ERROR_STRING);
-            MPI_Error_string (err, e, &len);
-            adios_error (err_write_error, 
-                         "MPI method, rank %d: adios_group_size() failed to "
-                         "write header to %s: '%s'\n",
-                         md->rank, fd->name, e);
-            free (name);
-
-            return adios_flag_no;
-        }
-
-        int count;
-        MPI_Get_count (&md->status, MPI_BYTE, &count);
-        if (count != fd->bytes_written)
-        {
-            log_warn ("a:MPI method tried to write %llu, only wrote %d\n",
-                      fd->bytes_written, count);
-        }
-        fd->base_offset += count;
-        fd->offset = 0;
-        fd->bytes_written = 0;
-        adios_shared_buffer_free (&md->b);
-
-        // setup for writing vars
-        adios_write_open_vars_v1 (fd);
-        md->vars_start = fd->base_offset;
-        md->vars_header_size = fd->offset;
-        fd->base_offset += fd->offset;
-        MPI_File_seek (md->fh, md->vars_header_size, MPI_SEEK_CUR);
-        fd->offset = 0;
-        fd->bytes_written = 0;
-        adios_shared_buffer_free (&md->b);
-    }
-#endif //0
-
 #if COLLECT_METRICS
     gettimeofday (&timing.t22, NULL);
 #endif
-    return fd->shared_buffer;
+
+#if COLLECT_METRICS
+    timing.write_count = 0;
+    timing.write_size = 0;
+    if (timing.t24) free (timing.t24);
+    timing.t24 = 0;
+#endif
+
+    return 1;
+}
+
+
+static void
+adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
+                            struct adios_file_struct *fd)
+{
+    if (md->group_comm != MPI_COMM_NULL)
+    {
+        if (md->rank == 0)
+        {
+            // make one space for offset and one for size
+            MPI_Offset * offsets = malloc(sizeof (MPI_Offset)
+                                           * md->size);
+            int i;
+
+            offsets [0] = fd->bytes_written; // = the size of data in buffer on this processor
+// mpixlc_r on Eugene doesn't support 64 bit mode. Therefore the following may have problem
+// on Eugene for large data size since MPI_LONG_LONG is 32bit 
+            MPI_Gather (&(fd->bytes_written), 1, MPI_LONG_LONG
+                       ,offsets, 1, MPI_LONG_LONG
+                       ,0, md->group_comm);
+
+// top section: make things a consistent stripe size
+// bottom section: just pack the file
+#if 0
+            // find the largest and use that as a basis for stripe
+            // size for each process writing
+            uint64_t biggest_size = 0;
+            for (i = 0; i < md->size; i++)
+            {
+                if (offsets [i] > biggest_size)
+                    biggest_size = offsets [i];
+            }
+            // now round up to the next stripe size increment (Lustre: 64 KB)
+#define STRIPE_INCREMENT (64 * 1024)
+            // (according to the Lustre reps, use 1 MB instead of 64 KB?)
+//#define STRIPE_INCREMENT (1024 * 1024)
+            if (biggest_size % (STRIPE_INCREMENT))
+            {
+                biggest_size = (  ((biggest_size / STRIPE_INCREMENT) + 1)
+                                * STRIPE_INCREMENT
+                               );
+            }
+            // also round up the base_offset, just in case
+            if (fd->base_offset % (STRIPE_INCREMENT))
+            {
+                fd->base_offset = (  ((fd->base_offset / STRIPE_INCREMENT) + 1)
+                                   * STRIPE_INCREMENT
+                                  );
+            }
+#undef STRIPE_INCREMENT
+            offsets [0 + 0] = fd->base_offset;
+            offsets [0 + 1] = biggest_size;
+
+            for (i = 1; i < md->size; i++)
+            {
+                offsets [i * 2 + 0] = offsets [(i - 1) * 2 + 0] + biggest_size;
+                offsets [i * 2 + 1] = biggest_size;
+            }
+            md->b.pg_index_offset =   offsets [(md->size - 1) * 2 + 0]
+                                    + biggest_size;
+#else
+
+            uint64_t last_offset = offsets [0];
+            offsets [0] = fd->base_offset;
+            for (i = 1; i < md->size; i++)
+            {
+                uint64_t this_offset = offsets [i];
+                offsets [i] = offsets [i - 1] + last_offset;
+                last_offset = this_offset;
+            }
+            md->b.pg_index_offset =   offsets [md->size - 1]
+                                    + last_offset;
+#endif
+            MPI_Scatter (offsets, 1, MPI_LONG_LONG
+                        ,MPI_IN_PLACE, 1, MPI_LONG_LONG
+                        ,0, md->group_comm
+                        );
+            fd->base_offset = offsets [0];
+            fd->pg_start_in_file = fd->base_offset;
+            free (offsets);
+        }
+        else
+        {
+            MPI_Offset offset[1];
+            offset[0] = fd->bytes_written;
+
+            MPI_Gather (offset, 1, MPI_LONG_LONG
+                       ,0, 1, MPI_LONG_LONG
+                       ,0, md->group_comm
+                       );
+
+            MPI_Scatter (0, 1, MPI_LONG_LONG
+                        ,offset, 1, MPI_LONG_LONG
+                        ,0, md->group_comm
+                        );
+            fd->base_offset = offset [0];
+            fd->pg_start_in_file = fd->base_offset;
+        }
+    }
+    else
+    {
+        md->b.pg_index_offset = fd->bytes_written;
+    }
+}
+
+
+enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
+                                        ,struct adios_method_struct * method
+                                        )
+{
+    return adios_flag_yes;
 }
 
 void adios_mpi_write (struct adios_file_struct * fd
@@ -1462,7 +1318,6 @@ void adios_mpi_close (struct adios_file_struct * fd
             char * buffer = 0;
             uint64_t buffer_size = 0;
             uint64_t buffer_offset = 0;
-            uint64_t index_start = md->b.pg_index_offset;
             int err;
 #if 0
             if (fd->shared_buffer == adios_flag_no)
@@ -1821,7 +1676,7 @@ void adios_mpi_close (struct adios_file_struct * fd
             if (md->rank == 0)
             {
                 adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
-                                     ,index_start, md->index);
+                                     ,md->b.pg_index_offset, md->index);
                 adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 
                 MPI_File_seek (md->fh, md->b.pg_index_offset, MPI_SEEK_SET);
@@ -1901,7 +1756,6 @@ timeval_subtract (&timing.t8, &b, &a);
             char * buffer = 0;
             uint64_t buffer_size = 0;
             uint64_t buffer_offset = 0;
-            uint64_t index_start = md->b.pg_index_offset;
             int err;
 
 #if 0
@@ -2246,7 +2100,7 @@ timeval_subtract (&timing.t8, &b, &a);
             if (md->rank == 0)
             {
                 adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
-                                     ,index_start, md->index);
+                                     ,md->b.pg_index_offset, md->index);
                 adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 
                 MPI_File_seek (md->fh, md->b.pg_index_offset, MPI_SEEK_SET);
