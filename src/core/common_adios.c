@@ -1101,11 +1101,6 @@ int common_adios_close (int64_t fd_p)
         }
     }
 
-    if (fd->shared_buffer == adios_flag_yes)
-    {
-        adios_databuffer_free (fd);
-    }
-
     while (v)
     {
         v->write_offset = 0;
@@ -1178,8 +1173,18 @@ int common_adios_close (int64_t fd_p)
         fd->group->vars_written = v;
     }
 
+    if (fd->name)
+    {
+        free (fd->name);
+        fd->name = 0;
+    }
+
+    if (fd->comm != MPI_COMM_NULL) {
+        MPI_Comm_free (&fd->comm);
+    }
 
 #ifdef ADIOS_TIMER_EVENTS
+    /* This has to come here before freeing the buffer that zeros out fd->bytes_written */
     char* extension = ".perf";
     int name_len = strlen (fd->name);
     int fn_len = name_len + strlen (extension) + 1;
@@ -1191,17 +1196,13 @@ int common_adios_close (int64_t fd_p)
 #endif
 
 
-    if (fd->name)
+    if (fd->shared_buffer == adios_flag_yes)
     {
-        free (fd->name);
-        fd->name = 0;
+        adios_databuffer_free (fd);
     }
 
-    if (fd->comm != MPI_COMM_NULL) {
-        MPI_Comm_free (&fd->comm);
-    }
+    free (fd);
 
-    free ((void *) fd_p);
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop ("adios_close");
     timer_stop ("adios_open_to_close");
@@ -1226,7 +1227,6 @@ int common_adios_close (int64_t fd_p)
 
     //timer_reset_timers ();
 #endif
-
 
     return adios_errno;
 }

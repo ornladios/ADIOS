@@ -123,6 +123,7 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
         fd->comm // comm
     );
 
+    /* FIXME: fd->bytes_written is 64bit data, but this code plays with ints */
     // Gather the write sizes
     int *write_sizes = NULL;
     if (rank == 0)
@@ -131,7 +132,7 @@ void adios_timing_write_xml_common (int64_t fd_p, const char* filename)
     }
 
     MPI_Gather (
-        &fd->write_size_bytes, //sendbuf
+        &fd->bytes_written, //sendbuf
         1, //sendcount
         MPI_INT, //sendtype
         write_sizes, //recvbuf
