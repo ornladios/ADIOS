@@ -258,6 +258,9 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
 
                 return 0;
             }
+            struct stat s;
+            if (fstat (p->b.f, &s) == 0)
+                p->b.file_size = s.st_size;
             fd->base_offset = 0;
             fd->pg_start_in_file = 0;
             p->file_is_open = 1;
