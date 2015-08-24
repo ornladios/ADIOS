@@ -63,6 +63,12 @@ int adios_transform_variable_data(struct adios_file_struct * fd,
                                   int *wrote_to_shared_buffer);
 
 /*
+ * Computes the worse-case required size for a variable.
+ * Use by common_adios_write() to check if variable is going to fit into the buffer.
+ */
+uint64_t adios_transform_worst_case_transformed_var_size(struct adios_var_struct * v);
+
+/*
  * Computes the worse-case required group size for an entire group.
  * Checks all variables in the group to find which transform types are used,
  * and chooses the worst of the worst-case group sizes to return.

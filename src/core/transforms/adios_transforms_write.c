@@ -22,6 +22,53 @@
 ////////////////////////////////////////
 #define MIN(X, Y) ((X) < (Y) ? (X) : (Y) )
 #define MAX(X, Y) ((X) > (Y) ? (X) : (Y) )
+
+uint64_t adios_transform_worst_case_transformed_var_size(struct adios_var_struct * v)
+{
+    uint64_t vsize = adios_calc_var_overhead_v1(v);
+
+    // Get size of original data. Note that transformed size has not been calculated at this point.
+    // If v is transformed array, original dimensions are stored in pre_transformed_dimensions,
+    // so temporarily change pointer here
+    struct adios_dimension_struct * save_dims = v->dimensions;
+    enum ADIOS_DATATYPES save_type = v->type;
+    if (v->transform_type != adios_transform_none) {
+        v->dimensions = v->pre_transform_dimensions;
+        v->type = v->pre_transform_type;
+    }
+
+    vsize += adios_get_var_size (v, v->data);
+
+    if (v->transform_type != adios_transform_none) {
+        v->dimensions = save_dims;
+        v->type = save_type;
+    }
+
+    if (v->transform_type == adios_transform_none || !v->dimensions)
+    {
+        // for all scalars and non-transformed arrays, we are done
+        return vsize;
+    }
+
+    // Aggregated scaling information from all transforms
+    // The end result upper bound group size is:
+    // S' = total_constant_factor + S' * linear_factor + min(S',capped_linear_cap) * capped_linear_factor
+    uint64_t constant_factor = 0;
+    double linear_factor = 1;
+    double capped_linear_factor = 0;
+    uint64_t capped_linear_cap = 0;
+
+    // Get the growth factors for this transform method/spec
+    adios_transform_transformed_size_growth(v, v->transform_spec, &constant_factor, &linear_factor, &capped_linear_factor, &capped_linear_cap);
+
+    const uint64_t max_transformed_var_size =
+    		constant_factor +
+    		ceil(linear_factor * vsize) +
+    		ceil(capped_linear_factor * MIN(vsize, capped_linear_cap));
+
+    return max_transformed_var_size;
+}
+
 uint64_t adios_transform_worst_case_transformed_group_size(uint64_t group_size, struct adios_file_struct *fd)
 {
 	uint64_t transformed_group_size = group_size; // The upper bound on how much data /might/ be transformed
