@@ -13,7 +13,9 @@
  *
 */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
+#include <errno.h>
 #include "mpi.h"
 #include "adios.h"
 
@@ -21,11 +23,20 @@
 #include "dmalloc.h"
 #endif
 
+void print_usage (int argc, char ** argv)
+{
+    printf ("%s [nsteps]\n"
+            "    nsteps: Number of steps\n",
+            argv[0]
+           );
+}
+
 int main (int argc, char ** argv) 
 {
 	char        filename [256];
 	int         rank, size, i;
-	int         NX = 10, G, O; 
+	int         NX = 1000, G, O; 
+        int         nsteps = 5;
 	double      t[NX];
 	MPI_Comm    comm = MPI_COMM_WORLD;
 
@@ -37,18 +48,35 @@ int main (int argc, char ** argv)
 	MPI_Comm_rank (comm, &rank);
 	MPI_Comm_size (comm, &size);
 
+        if (argc > 1) {
+            char *ep;
+            errno = 0;
+            long int n = strtol (argv[1], &ep, 10); 
+            if (!errno) {
+                if (*ep != '\0') {
+                    printf ("Argument is not an integer: %s. Use default nsteps = %d\n", argv[1], nsteps);
+                } else {
+                    nsteps = n;
+                }
+            } else {
+                printf ("Error when converting argument '%s': %s\n"
+                        "Use default nsteps = %d\n",
+                        argv[1], strerror(errno), nsteps);
+            }
+        }
+
         G = 2 * NX * size;
 
 	strcpy (filename, "adios_globaltime.bp");
 
 	adios_init_noxml (comm);
-        adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 10);
+        //adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 10);
 
         int64_t       m_adios_group;
         int64_t       m_adios_file;
 
         adios_declare_group (&m_adios_group, "restart", "", adios_flag_yes);
-        adios_select_method (m_adios_group, "MPI", "", "");
+        adios_select_method (m_adios_group, "POSIX", "verbose=3", "");
 
         adios_define_var (m_adios_group, "NX"
                      ,"", adios_integer
@@ -65,20 +93,21 @@ int main (int argc, char ** argv)
                          ,"", adios_integer
                          ,0, 0, 0);
     
-            adios_define_var (m_adios_group, "temperature"
+            int64_t var_id = adios_define_var (m_adios_group, "temperature"
                          ,"", adios_double
                          ,"NX", "G", "O");
+            adios_set_transform (var_id, "none");
         }
 
-        for (it =0; it < 5; it++) {
+        for (it = 0; it < nsteps; it++) {
 
             for (i = 0; i < NX; i++)
                 t[i] = rank + it*0.1 + 0.01;
 
-        	adios_open (&m_adios_file, "restart", filename, "a", comm);
+        	adios_open (&m_adios_file, "restart", filename, (it==0 ? "w" : "a"), comm);
         	adios_groupsize = 4 + 4 + 4 + NX * 8
                         	+ 4 + 4 + 4 + NX * 8;
-        	adios_group_size (m_adios_file, adios_groupsize, &adios_totalsize);
+        	//adios_group_size (m_adios_file, adios_groupsize, &adios_totalsize);
 
         	adios_write(m_adios_file, "NX", (void *) &NX);
         	adios_write(m_adios_file, "G", (void *) &G);
