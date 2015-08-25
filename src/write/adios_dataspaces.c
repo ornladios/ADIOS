@@ -266,22 +266,11 @@ int adios_dataspaces_open (struct adios_file_struct * fd,
     return ret;
 }
 
-enum ADIOS_FLAG adios_dataspaces_should_buffer (struct adios_file_struct * fd
-                                         ,struct adios_method_struct * method
-                                         )
+enum BUFFERING_STRATEGY adios_dataspaces_should_buffer (struct adios_file_struct * fd
+                                                       ,struct adios_method_struct * method
+                                                       )
 {
-    
-    //if (fd->shared_buffer == adios_flag_no && fd->mode != adios_mode_read)
-    //{
-        // write the process group header
-        //adios_write_process_group_header_v1 (fd, fd->write_size_bytes);
-        //adios_write_open_vars_v1 (fd);
-    //} else {
-    //    log_warn("WARNING: %s expects that fd->shared_buffer is false\n", __func__);
-    //}
-    
-
-    return adios_flag_no;  // this will take care of it
+    return no_buffering;  
 }
 
 
@@ -846,6 +835,12 @@ void ds_pack_file_info (int time, int nvars, int nattrs, int group_index_len, ch
     b += sizeof(int);
     memcpy (b, groupname, namelen);  /* 24-: group name */
     b[namelen] = 0;
+}
+
+void adios_dataspaces_buffer_overflow (struct adios_file_struct * fd, 
+                                       struct adios_method_struct * method)
+{
+    // this call never happens without shared buffering
 }
 
 void adios_dataspaces_close (struct adios_file_struct * fd

@@ -26,6 +26,7 @@
 #include "core/adios_internals.h"
 #include "core/buffer.h"
 #include "core/util.h"
+#include "core/adios_logger.h"
 
 static int adios_posix1_initialized = 0;
 
@@ -244,11 +245,11 @@ int adios_posix1_open (struct adios_file_struct * fd
     return 1;
 }
 
-enum ADIOS_FLAG adios_posix1_should_buffer (struct adios_file_struct * fd
-                                          ,struct adios_method_struct * method
-                                          )
+enum BUFFERING_STRATEGY adios_posix1_should_buffer (struct adios_file_struct * fd
+                                                   ,struct adios_method_struct * method
+                                                   )
 {
-    return adios_flag_yes;
+    return continue_with_new_pg;
 #if 0
     struct adios_POSIX1_data_struct * p = (struct adios_POSIX1_data_struct *)
                                                           method->method_data;
@@ -636,6 +637,17 @@ static void adios_posix1_do_read (struct adios_file_struct * fd
     }
 
     adios_buffer_struct_clear (&p->b);
+}
+
+
+void adios_posix1_buffer_overflow (struct adios_file_struct * fd, 
+                                   struct adios_method_struct * method)
+{
+    struct adios_POSIX1_data_struct * p = (struct adios_POSIX1_data_struct *)
+                                                 method->method_data;
+    log_error ("POSIX1 method only works with complete buffering of data between adios_open() "
+               "and adios_close(). Variables that do not fit into the buffer will not be "
+               "written by this method to file %s\n", fd->name);
 }
 
 void adios_posix1_close (struct adios_file_struct * fd

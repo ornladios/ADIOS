@@ -1272,9 +1272,9 @@ static char * get_subfile_name (char *base_path, char *filename, int color)
     return subfilename;
 }
 
-enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
-                                            ,struct adios_method_struct * method
-                                            )
+enum BUFFERING_STRATEGY adios_mpi_amr_should_buffer (struct adios_file_struct * fd
+                                                    ,struct adios_method_struct * method
+                                                    )
 {
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                       method->method_data;
@@ -1609,7 +1609,7 @@ enum ADIOS_FLAG adios_mpi_amr_should_buffer (struct adios_file_struct * fd
 
     STOP_TIMER (ADIOS_TIMER_MPI_AMR_AD_SHOULD_BUFFER);
 
-    return fd->shared_buffer;
+    return stop_on_overflow;
 }
 
 void adios_mpi_amr_write (struct adios_file_struct * fd
@@ -3361,6 +3361,18 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
     }
 
     adios_clear_index_v1 (md->index);
+}
+
+void adios_mpi_amr_buffer_overflow (struct adios_file_struct * fd, 
+                                    struct adios_method_struct * method)
+{
+    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
+                                                 method->method_data;
+    adios_error (err_buffer_overflow, 
+            "rank %d: MPI_AGGREGATE method only works with complete buffering of data between adios_open() "
+            "and adios_close(). Portions of global arrays, that do not fit into the "
+            "buffer on some processors will not be written by this method to %s\n", 
+            md->rank, fd->name);
 }
 
 void adios_mpi_amr_close (struct adios_file_struct * fd

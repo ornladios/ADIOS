@@ -32,6 +32,7 @@ if (!strcasecmp (buf,b)) \
 (*t) [b].adios_write_fn = adios_##a##_write; \
 (*t) [b].adios_get_write_buffer_fn = adios_##a##_get_write_buffer; \
 (*t) [b].adios_read_fn = adios_##a##_read; \
+(*t) [b].adios_buffer_overflow_fn = adios_##a##_buffer_overflow; \
 (*t) [b].adios_close_fn = adios_##a##_close; \
 (*t) [b].adios_finalize_fn = adios_##a##_finalize; \
 (*t) [b].adios_end_iteration_fn = adios_##a##_end_iteration; \

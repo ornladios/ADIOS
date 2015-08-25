@@ -941,11 +941,11 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
 }
 
 
-enum ADIOS_FLAG adios_mpi_should_buffer (struct adios_file_struct * fd
-                                        ,struct adios_method_struct * method
-                                        )
+enum BUFFERING_STRATEGY adios_mpi_should_buffer (struct adios_file_struct * fd
+                                                ,struct adios_method_struct * method
+                                                )
 {
-    return adios_flag_yes;
+    return stop_on_overflow;
 }
 
 void adios_mpi_write (struct adios_file_struct * fd
@@ -1283,6 +1283,19 @@ static void adios_mpi_do_read (struct adios_file_struct * fd
 
     adios_buffer_struct_clear (&md->b);
 }
+
+void adios_mpi_buffer_overflow (struct adios_file_struct * fd, 
+                                struct adios_method_struct * method)
+{
+    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
+                                                 method->method_data;
+    adios_error (err_buffer_overflow, 
+            "rank %d: MPI method only works with complete buffering of data between adios_open() "
+            "and adios_close(). Portions of global arrays, that do not fit into the "
+            "buffer on some processors will not be written by this method to %s\n", 
+            md->rank, fd->name);
+}
+
 
 void adios_mpi_close (struct adios_file_struct * fd
                      ,struct adios_method_struct * method

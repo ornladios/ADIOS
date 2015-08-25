@@ -48,6 +48,7 @@ enum ADIOS_BUFFER_ALLOC_WHEN {ADIOS_BUFFER_ALLOC_UNKNOWN
                              ,ADIOS_BUFFER_ALLOC_LATER
                              };
 
+
 #ifdef __cplusplus
 }
 #endif

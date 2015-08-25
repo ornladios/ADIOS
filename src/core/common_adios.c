@@ -18,6 +18,7 @@
 // xml parser
 #include <mxml.h>
 
+#include "core/types.h"
 #include "core/adios_internals.h"
 #include "core/adios_internals_mxml.h"
 #include "core/common_adios.h"
@@ -287,28 +288,36 @@ int common_adios_open (int64_t * fd_p, const char * group_name
         methods = g->methods;
         while (methods)
         {
-            enum ADIOS_FLAG should_buffer = adios_flag_yes;
+            enum BUFFERING_STRATEGY bufstrat = no_buffering;
             if (   methods->method->m != ADIOS_METHOD_UNKNOWN
                     && methods->method->m != ADIOS_METHOD_NULL
                     && adios_transports [methods->method->m].adios_should_buffer_fn
                )
             {
-                should_buffer = adios_transports [methods->method->m].
+                bufstrat = adios_transports [methods->method->m].
                                             adios_should_buffer_fn (fd, methods->method);
             }
 
-            if (should_buffer == adios_flag_yes) 
+            if (bufstrat != no_buffering) {
                 fd->shared_buffer = adios_flag_yes;
+                fd->bufstrat = bufstrat;
+                /* FIXME: last method determines the value of buffering strategy here. This whole
+                   buffer overflow thing does not work if there are multiple methods called 
+                   and they want something else (stop vs continue vs continue with new PG
+                 */
+            }
 
             methods = methods->next;
         }
 
 
-        if (fd->shared_buffer == adios_flag_yes)
+        if (fd->bufstrat != no_buffering)
         {
             /* Allocate BP buffer with a default size */
             if (!adios_databuffer_resize (fd, DATABUFFER_DEFAULT_SIZE)) 
             {
+                fd->bufstate = buffering_ongoing;
+
                 // write the process group header
                 adios_write_open_process_group_header_v1 (fd);
 
@@ -317,6 +326,7 @@ int common_adios_open (int64_t * fd_p, const char * group_name
             }
             else
             {
+                fd->bufstate = buffering_stopped;
                 adios_error (err_no_memory, 
                              "Cannot allocate %llu bytes for buffered output "
                              "of group %s in adios_open(). Output will fail.\n", 
@@ -380,14 +390,15 @@ int common_adios_group_size (int64_t fd_p, uint64_t data_size, uint64_t * total_
     // (see the comment in the top of adios_transforms.c, under section
     // 'The "group size" problem,' for more details)
     uint64_t wc_transformed_size = adios_transform_worst_case_transformed_group_size(data_size, fd);
-    if (wc_transformed_size > data_size) {
+    if (wc_transformed_size > data_size)
+    {
         log_debug("Computed worst-case bound on transformed data for a group size of %llu is %llu; increasing group size to match.\n",
                   data_size, wc_transformed_size);
 
         *total_size += (wc_transformed_size - data_size);
     }
 
-    if (*total_size > fd->buffer_size) 
+    if (*total_size > fd->buffer_size && fd->bufstate == buffering_ongoing) 
     {
         if (adios_databuffer_resize (fd, *total_size))
         {
@@ -411,11 +422,19 @@ int common_adios_group_size (int64_t fd_p, uint64_t data_size, uint64_t * total_
 
 
 static int common_adios_write_transform_helper(struct adios_file_struct * fd, struct adios_var_struct * v) {
-    int use_shared_buffer = (fd->shared_buffer == adios_flag_yes);
+    int use_shared_buffer = (fd->bufstrat != no_buffering);
     int wrote_to_shared_buffer = 0;
 
-    // If we are using the shared buffer, transform the data directly into it
-    if (use_shared_buffer) {
+    if (fd->bufstrat == no_buffering)
+    {
+        int ret = adios_transform_variable_data(fd, v, use_shared_buffer, &wrote_to_shared_buffer);
+        assert(!wrote_to_shared_buffer);
+        assert(v->data);
+        return ret;
+    } 
+    else if (fd->bufstate == buffering_ongoing) 
+    {
+        // If we are using the shared buffer, transform the data directly into it
         uint16_t header_size = adios_calc_var_overhead_v1(v);
         uint64_t header_offset;
         uint64_t payload_offset;
@@ -464,6 +483,11 @@ static int common_adios_write_transform_helper(struct adios_file_struct * fd, st
             // Update the buffer back to the end of the header+payload
             fd->offset = end_offset;
         } else {
+            /* FIXME: This branch should not happen for memory reasons. 
+               The buffer either had enough space to store the transformation 
+               in place, or buffering has stopped.
+               However, identity transform does no buffering, so we do it here.
+             */
             // either no transformation happened (original data is in v->data), or
             // data was transformed into v->adata
             if (v->adata) {
@@ -477,14 +501,8 @@ static int common_adios_write_transform_helper(struct adios_file_struct * fd, st
 
         // Success!
         return 1;
-    } else {
-        int ret = adios_transform_variable_data(fd, v, use_shared_buffer, &wrote_to_shared_buffer);
-
-        assert(!wrote_to_shared_buffer);
-        assert(v->data);
-
-        return ret;
     }
+    /* else: shared buffer but buffering has stopped, nothing needs to be done */
 }
 
 ///////////////////////////////////////////////////////////////////////////////
@@ -505,7 +523,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
     adios_generate_var_characteristics_v1 (fd, v);
 
     uint64_t vsize = 0;
-    if (fd->shared_buffer == adios_flag_yes)
+    if (fd->bufstate == buffering_ongoing)
     {
         // Second, estimate the size needed for buffering and extend buffer when needed
         // and handle the error if buffer cannot be extended
@@ -522,53 +540,56 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
             {
                 /* Second, let the method deal with it */
                 log_debug ("adios_write(): buffer needs to be dumped before buffering variable %s/%s\n", v->path, v->name);
-                // these calls don't extend the buffer
+                // these calls don't extend the buffer but we will get a completed PG here
                 adios_write_close_vars_v1 (fd);
                 adios_write_close_process_group_header_v1 (fd);
 
-                /* Ask the method to do something with the current buffer and 
-                   let us know if we should:
+                /* Ask the method to do something with the current buffer then we either
                    1. continue buffering from start with a new PG or
-                   2. skip writing variables from now on
+                   2. skip buffering variables from now on, then method gets the same buffer again in close()
                  */
 
-                enum ADIOS_FLAG start_new_pg = adios_flag_yes;
                 m = fd->group->methods;
                 while (m)
                 {
                     if (   m->method->m != ADIOS_METHOD_UNKNOWN
                             && m->method->m != ADIOS_METHOD_NULL
-                            && adios_transports [m->method->m].adios_write_fn
+                            && adios_transports [m->method->m].adios_buffer_overflow_fn
                        )
                     {
-                        log_error ("adios_write(): would call overflow fn here but does not exist %s/%s\n", v->path, v->name);
-                        //start_new_pg = adios_transports [m->method->m].adios_buffer_overflow_fn
-                        //    (fd, m->method);
+                        adios_transports [m->method->m].adios_buffer_overflow_fn (fd, m->method);
                     }
-                    /* FIXME: last method determines the value of start_new_pg here. This whole
-                       buffer overflow thing does not work if there are multiple methods called */
-
                     m = m->next;
                 }
 
-                // special case: fd->buffer_size is smaller than this single variable, and the extension failed:
-                // try to extend it to contain this single variable (plus headers)
-                if (fd->buffer_size < vsize + 1024)
+                if (fd->bufstrat == continue_with_new_pg) 
                 {
-                    if (adios_databuffer_resize (fd, vsize+1024))
+                    // special case: fd->buffer_size is smaller than this single variable, and the extension failed:
+                    // try to extend it to contain this single variable (plus headers) in the next PG
+                    if (fd->buffer_size < vsize + 1024)
                     {
-                        log_error ("adios_write(): buffer cannot accommodate variable %s/%s "
-                                   "with its storage size of %llu bytes at all. "
-                                   "This variable won't be written.\n", v->path, v->name, vsize);
+                        if (adios_databuffer_resize (fd, vsize+1024))
+                        {
+                            adios_error (err_no_memory, "adios_write(): buffer cannot accommodate variable %s/%s "
+                                    "with its storage size of %llu bytes at all. "
+                                    "This variable won't be written.\n", v->path, v->name, vsize);
+                        }
+                        /* FIXME: so maybe we should give the method a chance to write this variable directly? */
                     }
-                    /* FIXME: so maybe we should give the method a chance to write this variable directly? */
-                }
-
-                if (start_new_pg) {
                     /* Start buffering from scratch (a new PG) */
                     fd->offset = 0;
                     adios_write_open_process_group_header_v1 (fd);
                     adios_write_open_vars_v1 (fd);
+                } 
+                else if (fd->bufstrat == stop_on_overflow)
+                {
+                    fd->bufstate = buffering_stopped;
+                    if (!adios_errno)
+                    {
+                        // method is expected to throw an error in this case but we can ensure it here
+                        // to signal error upward to not count this var in index
+                        adios_errno = err_buffer_overflow; 
+                    }
                 }
             }
         }
@@ -578,7 +599,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
     // buffer immediately, if one exists)
     if (v->transform_type == adios_transform_none)
     {
-        if (fd->shared_buffer == adios_flag_yes)
+        if (fd->bufstate == buffering_ongoing)
         {
             /* Now buffer only if we have the buffer for it */
             if (fd->buffer_size > fd->offset + vsize)
@@ -609,25 +630,28 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
 #endif
     }
 
-    // now tell each transport attached that it is being written
-    m = fd->group->methods;
-    while (m)
+    // now tell each transport attached that it is being written unless buffering is stopped
+    if (fd->bufstate == buffering_ongoing || fd->bufstrat == no_buffering)
     {
-        if (   m->method->m != ADIOS_METHOD_UNKNOWN
-            && m->method->m != ADIOS_METHOD_NULL
-            && adios_transports [m->method->m].adios_write_fn
-           )
+        m = fd->group->methods;
+        while (m)
         {
-            adios_transports [m->method->m].adios_write_fn
-                                   (fd, v, var, m->method);
-        }
+            if (   m->method->m != ADIOS_METHOD_UNKNOWN
+                    && m->method->m != ADIOS_METHOD_NULL
+                    && adios_transports [m->method->m].adios_write_fn
+               )
+            {
+                adios_transports [m->method->m].adios_write_fn
+                    (fd, v, var, m->method);
+            }
 
-        m = m->next;
+            m = m->next;
+        }
     }
 
-    // NCSU ALACRITY-ADIOS - Free transform-method-allocated data buffers
     if (v->dimensions)
     {
+        // NCSU ALACRITY-ADIOS - Free transform-method-allocated data buffers
         // TODO: Is this correct? Normally v->data is a user buffer, so we
         //   can't free it. However, after a transform, we probably do need
         //   to free it. We mark this by setting the free_data flag. However,
@@ -635,11 +659,16 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
         //   using the flag correctly or not. Need verification with
         //   Gary/Norbert/someone knowledgable about ADIOS internals.
         if (v->transform_type != adios_transform_none && v->free_data == adios_flag_yes && v->adata)
+        {
             free(v->adata);
-        v->data = v->adata = 0;
+        }
+        v->data = v->adata = 0; // throw away pointers to user data in case of arrays to avoid trying
+                                // to free them in possible forthcoming adios_write() of the same variable
     }
 
-    v->write_count++;
+    if (!adios_errno) {
+        v->write_count++;
+    }
 #if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
     timer_stop ("adios_write");
 #endif
@@ -647,147 +676,6 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
     return adios_errno;
 }
 
-#if 0
-int old_common_adios_write (struct adios_file_struct * fd, struct adios_var_struct * v, const void * var)
-{
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
-    timer_start ("adios_write");
-#endif
-    adios_errno = err_no_error;
-    struct adios_method_list_struct * m = fd->group->methods;
-
-    // NCSU ALACRITY-ADIOS - Do some processing here depending on the transform
-    //   type specified (if any)
-
-    // First, before doing any transform (or none), compute variable statistics,
-    // as we can't do this after the data is transformed
-    adios_generate_var_characteristics_v1 (fd, v);
-
-    // If no transform is specified, do the normal thing (write to shared
-    // buffer immediately, if one exists)
-    if (v->transform_type == adios_transform_none)
-    {
-        if (fd->shared_buffer == adios_flag_yes)
-        {
-            uint64_t size = adios_calc_var_overhead_v1(v);
-            size += adios_get_var_size (v, v->data);
-
-            if (fd->buffer_size < fd->offset + size)
-            {
-                /* Trouble: this variable does not fit into the current buffer */
-                // First, try to realloc the buffer 
-                uint64_t extrasize = DATABUFFER_DEFAULT_SIZE;
-                if (extrasize < size)
-                    extrasize = size;
-                if (adios_databuffer_resize (fd, fd->buffer_size + extrasize))
-                {
-                    /* Second, let the method deal with it */
-                    log_debug ("adios_write(): buffer needs to be dumped before buffering variable %s/%s\n", v->path, v->name);
-                    // these calls don't extend the buffer
-                    adios_write_close_vars_v1 (fd);
-                    adios_write_close_process_group_header_v1 (fd);
-
-                    /* Ask the method to do something with the current buffer and 
-                       let us know if we should:
-                       1. continue buffering from start with a new PG or
-                       2. skip writing variables from now on
-                     */
-
-                    enum ADIOS_FLAG start_new_pg = adios_flag_yes;
-                    m = fd->group->methods;
-                    while (m)
-                    {
-                        if (   m->method->m != ADIOS_METHOD_UNKNOWN
-                                && m->method->m != ADIOS_METHOD_NULL
-                                && adios_transports [m->method->m].adios_write_fn
-                           )
-                        {
-                            log_error ("adios_write(): would call overflow fn here but does not exist %s/%s\n", v->path, v->name);
-                            //start_new_pg = adios_transports [m->method->m].adios_buffer_overflow_fn
-                            //    (fd, m->method);
-                        }
-                        /* FIXME: last method determines the value of start_new_pg here. This whole
-                           buffer overflow thing does not work if there are multiple methods called */
-
-                        m = m->next;
-                    }
-
-                    if (start_new_pg) {
-                        /* Start buffering from scratch (a new PG) */
-                        fd->offset = 0;
-                        adios_write_open_process_group_header_v1 (fd);
-                        adios_write_open_vars_v1 (fd);
-                    }
-                }
-            }
-
-            /* Now buffer only if we have the buffer for it */
-            if (fd->buffer_size > fd->offset + size)
-            {
-                // var payload sent for sizing information
-                adios_write_var_header_v1 (fd, v);
-
-                // write payload
-                adios_write_var_payload_v1 (fd, v);
-            }
-        }
-    }
-    else // Else, do a transform
-    {
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
-    timer_start ("adios_transform");
-#endif
-        int success = common_adios_write_transform_helper(fd, v);
-        if (success) {
-            // Make it appear as if the user had supplied the transformed data
-            var = v->data;
-        } else {
-            log_error("Error: unable to apply transform %s to variable %s; likely ran out of memory, check previous error messages\n", adios_transform_plugin_primary_xml_alias(v->transform_type), v->name);
-            // FIXME: Reverse the transform metadata and write raw data as usual
-        }
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
-    timer_stop ("adios_transform");
-#endif
-    }
-
-    // now tell each transport attached that it is being written
-    m = fd->group->methods;
-    while (m)
-    {
-        if (   m->method->m != ADIOS_METHOD_UNKNOWN
-            && m->method->m != ADIOS_METHOD_NULL
-            && adios_transports [m->method->m].adios_write_fn
-           )
-        {
-            adios_transports [m->method->m].adios_write_fn
-                                   (fd, v, var, m->method);
-        }
-
-        m = m->next;
-    }
-
-    // NCSU ALACRITY-ADIOS - Free transform-method-allocated data buffers
-    if (v->dimensions)
-    {
-        // TODO: Is this correct? Normally v->data is a user buffer, so we
-        //   can't free it. However, after a transform, we probably do need
-        //   to free it. We mark this by setting the free_data flag. However,
-        //   as this flag is hardly ever used, I don't know whether this is
-        //   using the flag correctly or not. Need verification with
-        //   Gary/Norbert/someone knowledgable about ADIOS internals.
-        if (v->transform_type != adios_transform_none && v->free_data == adios_flag_yes && v->adata)
-            free(v->adata);
-        v->data = v->adata = 0;
-    }
-
-    v->write_count++;
-#if defined(WITH_NCSU_TIMER) && defined(TIMER_LEVEL) && (TIMER_LEVEL <= 0)
-    timer_stop ("adios_write");
-#endif
-    // printf ("var: %s written %d\n", v->name, v->write_count);
-    return adios_errno;
-}
-#endif //0
 
 ///////////////////////////////////////////////////////////////////////////////
 int common_adios_write_byid (struct adios_file_struct * fd, struct adios_var_struct * v, const void * var)
@@ -802,6 +690,7 @@ int common_adios_write_byid (struct adios_file_struct * fd, struct adios_var_str
 
     if (v->adata)
     {
+        assert (v->dimensions==NULL); // this must happen only for scalars where we copied the value
         free (v->adata);
         v->adata = 0;
     }
@@ -867,11 +756,9 @@ int common_adios_write_byid (struct adios_file_struct * fd, struct adios_var_str
     // but it's pointing to v->adata, which is allocated in ADIOS, for scalars
     // to remember their value if used as dimension in forthcoming writes of arrays.
 
-    if (!adios_errno) {
-        if (fd->mode != adios_mode_read)
-        {
-            adios_copy_var_written (fd->group, v);
-        }
+    if (!adios_errno && fd->mode != adios_mode_read)
+    {
+        adios_copy_var_written (fd->group, v);
     }
 
     return adios_errno;
@@ -1201,44 +1088,55 @@ int common_adios_close (int64_t fd_p)
     struct adios_attribute_struct * a = fd->group->attributes;
     struct adios_var_struct * v = fd->group->vars;
 
-    if (fd->shared_buffer == adios_flag_yes && fd->mode != adios_mode_read )
+    if (fd->mode != adios_mode_read )
     {
-        adios_write_close_vars_v1 (fd);
-
-        /* FIXME: this strategy writes all attributes defined in time step 0
-           and thus duplicates them in the PGs and in the attribute index.
-           For write mode, where files are new, this is good.
-           For append/update it is unnecessary and replicates the attributes
-           in the index.
-           One should write the newly created attributes only in append mode.
-        */
-        uint64_t asize = adios_calc_attrs_overhead_v1(fd);
-        if (fd->buffer_size < fd->offset + asize) 
+        if (fd->bufstate == buffering_ongoing)
         {
-            /* Trouble, attributes just don't fit into the end of buffer */
-            // try to extend the buffer first
-            if (adios_databuffer_resize (fd, fd->buffer_size + asize))
-            {
-                /* FIXME:  Well, drop them in this case */
-                log_error ("adios_close(): There is not enough buffer to write the attributes. "
-                        "They will be missing from the output\n");
-            }
+            adios_write_close_vars_v1 (fd);
         }
 
-        if (fd->buffer_size >= fd->offset + asize) 
+        /* Even if buffering has stopped on overflow, let's try to squeeze in the attributes 
+           to the end of the buffer */
+        if (fd->bufstrat != no_buffering)
         {
-            adios_write_open_attributes_v1 (fd);
+            /* FIXME: this strategy writes all attributes defined in time step 0
+               and thus duplicates them in the PGs and in the attribute index.
+               For write mode, where files are new, this is good.
+               For append/update it is unnecessary and replicates the attributes
+               in the index.
+               One should write the newly created attributes only in append mode.
+             */
+            uint64_t asize = 12; // 12 bytes to store empty attribute list in a PG (the opening bytes)
             if (!fd->group->process_id || fd->subfile_index != -1) {
-                // from ADIOS 1.4, only rank 0 writes attributes (or to subfiles)
-                while (a) {
-                    adios_write_attribute_v1 (fd, a);
-                    a = a->next;
+                // from ADIOS 1.4, only rank 0 writes attributes (or each process to its subfile)
+                asize = adios_calc_attrs_overhead_v1(fd); // size of full attribute list
+            }
+            if (fd->buffer_size < fd->offset + asize) 
+            {
+                /* Trouble, attributes just don't fit into the end of buffer */
+                // try to extend the buffer first
+                if (adios_databuffer_resize (fd, fd->buffer_size + asize))
+                {
+                    /* FIXME:  Well, drop them in this case */
+                    log_error ("adios_close(): There is not enough buffer to write the attributes. "
+                            "They will be missing from the output\n");
                 }
             }
-            adios_write_close_attributes_v1 (fd);
-        }
 
-        adios_write_close_process_group_header_v1 (fd);
+            if (fd->buffer_size >= fd->offset + asize) 
+            {
+                adios_write_open_attributes_v1 (fd); // this writes 12 bytes into the buffer
+                if (!fd->group->process_id || fd->subfile_index != -1) {
+                    while (a) {
+                        adios_write_attribute_v1 (fd, a);
+                        a = a->next;
+                    }
+                }
+                adios_write_close_attributes_v1 (fd);
+            }
+
+            adios_write_close_process_group_header_v1 (fd);
+        }
     }
 
     // in order to get the index assembled, we need to do it in the
@@ -1352,7 +1250,7 @@ int common_adios_close (int64_t fd_p)
 #endif
 
 
-    if (fd->shared_buffer == adios_flag_yes)
+    if (fd->bufstrat != no_buffering)
     {
         adios_databuffer_free (fd);
     }

@@ -1333,7 +1333,7 @@ void adios_nc4_init(
 //    md->size       = 0;
 }
 
-enum ADIOS_FLAG adios_nc4_should_buffer(
+enum BUFFERING_STRATEGY adios_nc4_should_buffer(
         struct adios_file_struct *fd,
         struct adios_method_struct *method)
 {
@@ -1416,7 +1416,7 @@ enum ADIOS_FLAG adios_nc4_should_buffer(
 
     free(name);
 
-    return adios_flag_no;
+    return no_buffering;
 }
 
 int adios_nc4_open(

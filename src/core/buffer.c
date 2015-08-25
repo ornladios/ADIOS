@@ -20,30 +20,43 @@
 
 #define BYTE_ALIGN 8
 
+static uint64_t adios_buffer_size_max = 14000; // max buffer size per group
+
 int adios_databuffer_resize (struct adios_file_struct *fd, uint64_t size)
 {
     /* This function works as malloc if fd->allocated_bufptr is NULL, so
        there is no need for a separate first-allocation function */
     int retval = 0;
 
-    // try to alloc/realloc a buffer to requested size
-    // align usable buffer to BYTE_ALIGN bytes
-    void * b = realloc (fd->allocated_bufptr, size +  BYTE_ALIGN - 1);
-    if (b)
+    if (size <= adios_buffer_size_max) 
     {
-        fd->allocated_bufptr = b;
-        uint64_t p = (uint64_t) fd->allocated_bufptr;
-        fd->buffer = (char *) ((p + BYTE_ALIGN - 1) & ~(BYTE_ALIGN - 1));
-        fd->buffer_size = size;
+        // try to alloc/realloc a buffer to requested size
+        // align usable buffer to BYTE_ALIGN bytes
+        void * b = realloc (fd->allocated_bufptr, size +  BYTE_ALIGN - 1);
+        if (b)
+        {
+            fd->allocated_bufptr = b;
+            uint64_t p = (uint64_t) fd->allocated_bufptr;
+            fd->buffer = (char *) ((p + BYTE_ALIGN - 1) & ~(BYTE_ALIGN - 1));
+            log_info ("Data buffer extended from %llu to %llu bytes\n", fd->buffer_size, size);
+            fd->buffer_size = size;
 
+        }
+        else
+        {
+            retval = 1;
+            log_warn ("Cannot allocate %llu bytes for buffered output of group %s. "
+                      "Continue buffering with buffer size %llu MB\n",
+                      size, fd->group->name, fd->buffer_size/1048576);
+        }
     }
     else
     {
         retval = 1;
-        log_warn ("Cannot allocate %llu bytes for buffered output "
-                "of group %s in adios_group_size(). Continue buffering "
-                "with buffer size %llu MB\n",
-                size, fd->group->name, fd->buffer_size/1048576);
+        log_warn ("Cannot allocate %llu bytes for buffered output of group %s "
+                " because max allowed is %llu bytes. "
+                "Continue buffering with buffer size %llu MB\n",
+                size, fd->group->name, adios_buffer_size_max, fd->buffer_size/1048576);
     }
 
     return retval;
@@ -65,7 +78,6 @@ int adios_databuffer_free (struct adios_file_struct *fd)
 // buffer sizing may be problematic.  To get a more accurate picture, check:
 // http://chandrashekar.info/vault/linux-system-programs.html
 static uint64_t adios_buffer_size_requested = 0;
-static uint64_t adios_buffer_size_max = 0;
 static uint64_t adios_buffer_size_remaining = 0;
 static int adios_buffer_alloc_percentage = 0;  // 1 = yes, 0 = no
 static enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when = ADIOS_BUFFER_ALLOC_UNKNOWN;
