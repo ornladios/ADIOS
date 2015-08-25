@@ -50,9 +50,10 @@ void adios_phdf5_init(const PairStruct * parameters
                      ,struct adios_method_struct * method
                      ){}
 void adios_phdf5_finalize (int mype, struct adios_method_struct * method){}
-enum ADIOS_FLAG adios_phdf5_should_buffer (struct adios_file_struct * fd
-                            ,struct adios_method_struct * method
-                            ){ return adios_flag_unknown; }
+enum BUFFERING_STRATEGY adios_phdf5_should_buffer (
+                     struct adios_file_struct * fd
+                    ,struct adios_method_struct * method
+                    ){ return no_buffering; }
 int adios_phdf5_open(struct adios_file_struct *fd
                     ,struct adios_method_struct * method
                     ,MPI_Comm comm
@@ -133,13 +134,11 @@ void adios_phdf5_init(const PairStruct * parameters
     md->size = 0;
     md->group_comm = MPI_COMM_NULL;
 }
-enum ADIOS_FLAG adios_phdf5_should_buffer (struct adios_file_struct * fd
-                            ,struct adios_method_struct * method
-                            )
+enum BUFFERING_STRATEGY adios_phdf5_should_buffer (struct adios_file_struct * fd
+                                                  ,struct adios_method_struct * method
+                                                  )
 {
-    //struct adios_phdf5_data_struct * md = (struct adios_phdf5_data_struct *)
-    //                                                  method->method_data;
-    return adios_flag_no;
+    return no_buffering;
 }
  
 int adios_phdf5_open(struct adios_file_struct *fd
@@ -281,6 +280,13 @@ static void adios_phdf5_do_read (struct adios_file_struct * fd
                               )
 {
 // This function is not useful for phdf5 since adios_read/write do real read/write 
+}
+
+
+void adios_phdf5_buffer_overflow (struct adios_file_struct * fd, 
+                                  struct adios_method_struct * method)
+{
+    // this never happens without shared buffering
 }
 
 void adios_phdf5_close (struct adios_file_struct * fd

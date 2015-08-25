@@ -50,6 +50,8 @@ void adios_file_struct_init (struct adios_file_struct * fd)
     fd->allocated_bufptr = NULL;
     fd->buffer = NULL;
     fd->shared_buffer = adios_flag_no;
+    fd->bufstrat = no_buffering;
+    fd->bufstate = buffering_stopped;
     fd->offset = 0;
     fd->bytes_written = 0;
     fd->buffer_size = 0;

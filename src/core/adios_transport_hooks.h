@@ -13,6 +13,7 @@
 #include <string.h>
 #include "core/util.h" /* PairStruct* */
 #include "public/adios_mpi.h"
+#include "core/types.h" /* enum BUFFERING_OVERFLOW_STRATEGY */
 
 #define FORWARD_DECLARE_EMPTY(a) \
 void adios_##a##_init (const PairStruct * parameters \
@@ -21,9 +22,9 @@ void adios_##a##_init (const PairStruct * parameters \
 int adios_##a##_open (struct adios_file_struct * fd \
                      ,struct adios_method_struct * method, MPI_Comm comm \
                      ) {return 0;} \
-enum ADIOS_FLAG adios_##a##_should_buffer (struct adios_file_struct * fd \
-                                          ,struct adios_method_struct * method \
-                                          ) {return 0;} \
+enum BUFFERING_STRATEGY adios_##a##_should_buffer (struct adios_file_struct * fd \
+                                                  ,struct adios_method_struct * method \
+                                                  ) {return no_buffering;} \
 void adios_##a##_write (struct adios_file_struct * fd \
                        ,struct adios_var_struct * v \
                        ,const void * data \
@@ -41,6 +42,9 @@ void adios_##a##_read (struct adios_file_struct * fd \
                       ,uint64_t buffer_size \
                       ,struct adios_method_struct * method \
                       ) {} \
+void adios_##a##_buffer_overflow (struct adios_file_struct * fd \
+                                 ,struct adios_method_struct * method \
+                                 ) {} \
 void adios_##a##_close (struct adios_file_struct * fd \
                        ,struct adios_method_struct * method \
                        ) {} \
@@ -56,9 +60,9 @@ void adios_##a##_init (const PairStruct * parameters \
 int adios_##a##_open (struct adios_file_struct * fd \
                      ,struct adios_method_struct * method, MPI_Comm comm \
                      ); \
-enum ADIOS_FLAG adios_##a##_should_buffer (struct adios_file_struct * fd \
-                                          ,struct adios_method_struct * method \
-                                          ); \
+enum BUFFERING_STRATEGY adios_##a##_should_buffer (struct adios_file_struct * fd \
+                                                  ,struct adios_method_struct * method \
+                                                  ); \
 void adios_##a##_write (struct adios_file_struct * fd \
                        ,struct adios_var_struct * v \
                        ,const void * data \
@@ -76,6 +80,9 @@ void adios_##a##_read (struct adios_file_struct * fd \
                       ,uint64_t buffer_size \
                       ,struct adios_method_struct * method \
                       ); \
+void adios_##a##_buffer_overflow (struct adios_file_struct * fd \
+                                 ,struct adios_method_struct * method \
+                                 ); \
 void adios_##a##_close (struct adios_file_struct * fd \
                        ,struct adios_method_struct * method \
                        ); \

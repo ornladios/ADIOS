@@ -905,8 +905,8 @@ int adios_var_merge_open (struct adios_file_struct * fd
     return 1;
 }
 
-enum ADIOS_FLAG adios_var_merge_should_buffer (struct adios_file_struct * fd
-                                         ,struct adios_method_struct * method)
+enum BUFFERING_STRATEGY adios_var_merge_should_buffer (struct adios_file_struct * fd
+                                                      ,struct adios_method_struct * method)
 {
 
     switch (fd->mode)
@@ -931,7 +931,7 @@ enum ADIOS_FLAG adios_var_merge_should_buffer (struct adios_file_struct * fd
     }
 
     //this method handles its own buffering
-    return adios_flag_no;
+    return no_buffering;
 }
 
 #if 0
@@ -1194,6 +1194,16 @@ void release_resource()
         free(vars);
         vars=next;
     }
+}
+
+void adios_var_merge_buffer_overflow (struct adios_file_struct * fd, 
+                                      struct adios_method_struct * method)
+{
+    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
+                                                 method->method_data;
+    log_error ("rank %d: VAR_MERGE method only works with complete buffering of data between adios_open() "
+               "and adios_close(). Variables that do not fit into the buffer will not be "
+               "written by this method to file %s\n", md->rank, fd->name);
 }
 
 void adios_var_merge_close (struct adios_file_struct * fd

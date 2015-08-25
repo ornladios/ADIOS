@@ -13,6 +13,7 @@
 #include <math.h>
 #include <string.h>
 #include <stdint.h>
+#include <assert.h>
 
 // see if we have MPI or other tools
 #include "config.h"
@@ -27,6 +28,7 @@
 #include "core/adios_internals.h"
 #include "core/buffer.h"
 #include "core/util.h"
+#include "core/adios_logger.h"
 
 #if defined(__APPLE__)  || defined(__CYGWIN__)
 #    define O_LARGEFILE 0
@@ -68,6 +70,11 @@ struct adios_POSIX_data_struct
     int file_is_open; // = 1 if in append mode we leave the file open (close at finalize)
     int index_is_in_memory; // = 1 when index is kept in memory, no need to read from file. =1 after first 'append/update' is completed but not after first 'write'.
     uint64_t pg_start_next; // remember end of PG data for future append steps
+
+    uint64_t total_bytes_written;  /* bytes including all PGs written during one open()..close() with overflows
+          index position will be fd->base_offset + total_bytes_written
+          it is calculated but not used; fd->pg_start_in_file will point to index beginning
+          */
 };
 
 
@@ -99,6 +106,7 @@ void adios_posix_init (const PairStruct * parameters
     p->file_is_open = 0;  // = 1 when posix file is open (used in append mode only)
     p->index_is_in_memory = 0; 
     p->pg_start_next = 0;
+    p->total_bytes_written = 0;
 }
 
 
@@ -244,6 +252,8 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
 #ifdef HAVE_MPI
     fd->subfile_index = p->rank; // Only if HAVE_MPI
 #endif
+
+    p->total_bytes_written = 0; // counts bytes written only in this open()..close() step
 
     switch (fd->mode)
     {
@@ -549,55 +559,11 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
     return 1;
 }
 
-enum ADIOS_FLAG adios_posix_should_buffer (struct adios_file_struct * fd
-                                          ,struct adios_method_struct * method
-                                          )
+enum BUFFERING_STRATEGY adios_posix_should_buffer (struct adios_file_struct * fd
+                                                  ,struct adios_method_struct * method
+                                                  )
 {
-    return adios_flag_yes;
-#if 0
-    struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
-                                                          method->method_data;
-
-    START_TIMER (ADIOS_TIMER_POSIX_AD_SHOULD_BUFFER);
-
-    if (fd->shared_buffer == adios_flag_no && fd->mode != adios_mode_read)
-    {
-        // write the process group header
-        adios_write_open_process_group_header_v1 (fd);
-
-        lseek (p->b.f, fd->base_offset, SEEK_SET);
-        START_TIMER (ADIOS_TIMER_POSIX_IO);
-        ssize_t s = write (p->b.f, fd->buffer, fd->bytes_written);
-        STOP_TIMER (ADIOS_TIMER_POSIX_IO);
-        if (s != fd->bytes_written)
-        {
-            fprintf (stderr, "POSIX method tried to write %llu, "
-                             "only wrote %lld. %s:%d\n"
-                    ,fd->bytes_written
-                    ,(int64_t)s
-                    ,__func__, __LINE__
-                    );
-        }
-        fd->base_offset += s;
-        fd->offset = 0;
-        fd->bytes_written = 0;
-        adios_shared_buffer_free (&p->b);
-
-        // setup for writing vars
-        adios_write_open_vars_v1 (fd);
-        p->vars_start = lseek (p->b.f, fd->offset, SEEK_CUR);  // save loc
-        p->vars_header_size = p->vars_start - fd->base_offset;  // the size
-        p->vars_start -= fd->offset; // adjust to start of header
-        fd->base_offset += fd->offset;  // add the size of the vars header
-        fd->offset = 0;
-        fd->bytes_written = 0;
-        adios_shared_buffer_free (&p->b);
-    }
-
-    STOP_TIMER (ADIOS_TIMER_POSIX_AD_SHOULD_BUFFER);
-
-    return fd->shared_buffer;   // buffer if there is space
-#endif //0
+    return continue_with_new_pg;
 }
 
 void adios_posix_write (struct adios_file_struct * fd
@@ -627,84 +593,6 @@ void adios_posix_write (struct adios_file_struct * fd
             return;
         }
     }
-
-#if 0
-    if (fd->shared_buffer == adios_flag_no)
-    {
-        // var payload sent for sizing information
-        adios_write_var_header_v1 (fd, v);
-        START_TIMER (ADIOS_TIMER_POSIX_IO);
-        ssize_t s = write (p->b.f, fd->buffer, fd->bytes_written);
-        STOP_TIMER (ADIOS_TIMER_POSIX_IO);
-        if (s != fd->bytes_written)
-        {
-            fprintf (stderr, "POSIX method tried to write %llu, "
-                             "only wrote %lld. %s:%d\n"
-                    ,fd->bytes_written
-                    ,(int64_t)s
-                    ,__func__, __LINE__
-                    );
-        }
-        fd->base_offset += s;
-        fd->offset = 0;
-        fd->bytes_written = 0;
-        adios_shared_buffer_free (&p->b);
-
-        // write payload
-        adios_write_var_payload_v1 (fd, v);
-        uint64_t var_size = adios_get_var_size (v, v->data);
-        if (fd->base_offset + var_size > fd->pg_start_in_file + fd->bytes_written)
-            fprintf (stderr, "adios_posix_write exceeds pg bound. #1 File is corrupted. "
-                             "Need to enlarge group size. \n"); 
-
-        int32_t to_write;
-        uint64_t bytes_written = 0;
-        if (var_size > MAX_MPIWRITE_SIZE)
-        {
-            to_write = MAX_MPIWRITE_SIZE;
-        }
-        else
-        {
-            to_write = (int32_t) fd->bytes_written;
-        }
-
-        while (bytes_written < var_size)
-        {
-            START_TIMER (ADIOS_TIMER_POSIX_IO);
-            bytes_written += write (p->b.f, v->data + bytes_written, to_write);
-            STOP_TIMER (ADIOS_TIMER_POSIX_IO);
-            if (var_size > bytes_written)
-            {
-                if (var_size - bytes_written > MAX_MPIWRITE_SIZE)
-                {
-                    to_write = MAX_MPIWRITE_SIZE;
-                }
-                else
-                {
-                    to_write = var_size - bytes_written;
-                }
-            }
-        }
-
-        START_TIMER (ADIOS_TIMER_POSIX_IO);
-        s = write (p->b.f, v->data, var_size);
-        STOP_TIMER (ADIOS_TIMER_POSIX_IO);
-        s = bytes_written;
-        if (s != var_size)
-        {
-            fprintf (stderr, "POSIX method tried to write %llu, "
-                             "only wrote %lld. %s:%d\n"
-                    ,var_size
-                    ,(int64_t)s
-                    ,__func__, __LINE__
-                    );
-        }
-        fd->base_offset += s;
-        fd->offset = 0;
-        fd->bytes_written = 0;
-        adios_shared_buffer_free (&p->b);
-    }
-#endif //0
 
     STOP_TIMER (ADIOS_TIMER_POSIX_AD_WRITE);
 }
@@ -780,10 +668,8 @@ void adios_posix_read (struct adios_file_struct * fd
     v->data_size = buffer_size;
 }
 
-static void adios_posix_do_write (struct adios_file_struct * fd
+static void adios_posix_write_pg (struct adios_file_struct * fd
                                  ,struct adios_method_struct * method
-                                 ,char * buffer
-                                 ,uint64_t buffer_size
                                  )
 {
     struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
@@ -791,65 +677,92 @@ static void adios_posix_do_write (struct adios_file_struct * fd
     int32_t to_write;
     uint64_t bytes_written = 0;
 
-    if (fd->shared_buffer == adios_flag_yes)
+    off_t offset = fd->pg_start_in_file;
+    if (p->b.end_of_pgs > fd->pg_start_in_file)
+        offset = p->b.end_of_pgs;
+
+    /*printf ("Write PG: pg_start_in_file = %llu  pg_start_next = %llu  "
+            "base_offset = %llu  offset = %llu  total_bytes_written = %llu\n",
+            fd->pg_start_in_file, p->pg_start_next, fd->base_offset, fd->offset, p->total_bytes_written);*/
+
+    assert (fd->pg_start_in_file == p->pg_start_next);
+    //lseek (p->b.f, p->b.end_of_pgs, SEEK_SET);
+    //if (p->b.end_of_pgs + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
+    lseek (p->b.f, offset, SEEK_SET);
+    // now a strange test to check if you understand the code ;-) this should never be true.
+    if (offset + fd->bytes_written > fd->pg_start_in_file + fd->buffer_size)
+        fprintf (stderr, "adios_posix_write exceeds pg bound. #2 File is corrupted. "
+                "Need to enlarge group size. \n");
+
+    if (fd->bytes_written > MAX_MPIWRITE_SIZE)
     {
-        off_t offset = fd->pg_start_in_file;
-        if (p->b.end_of_pgs > fd->pg_start_in_file)
-            offset = p->b.end_of_pgs;
+        to_write = MAX_MPIWRITE_SIZE;
+    }
+    else
+    {
+        to_write = (int32_t) fd->bytes_written;
+    }
 
-        //lseek (p->b.f, p->b.end_of_pgs, SEEK_SET);
-        //if (p->b.end_of_pgs + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
-        lseek (p->b.f, offset, SEEK_SET);
-        // now a strange test to check if you understand the code. this should never be true.
-        if (offset + fd->bytes_written > fd->pg_start_in_file + fd->buffer_size)
-            fprintf (stderr, "adios_posix_write exceeds pg bound. #2 File is corrupted. "
-                             "Need to enlarge group size. \n");
-
-        if (fd->bytes_written > MAX_MPIWRITE_SIZE)
+    while (bytes_written < fd->bytes_written)
+    {
+        write (p->b.f, fd->buffer, to_write);
+        bytes_written += to_write;
+        if (fd->bytes_written > bytes_written)
         {
-            to_write = MAX_MPIWRITE_SIZE;
-        }
-        else
-        {
-            to_write = (int32_t) fd->bytes_written;
-        }
-
-        while (bytes_written < fd->bytes_written)
-        {
-            write (p->b.f, fd->buffer, to_write);
-            bytes_written += to_write;
-            if (fd->bytes_written > bytes_written)
+            if (fd->bytes_written - bytes_written > MAX_MPIWRITE_SIZE)
             {
-                if (fd->bytes_written - bytes_written > MAX_MPIWRITE_SIZE)
-                {
-                    to_write = MAX_MPIWRITE_SIZE;
-                }
-                else
-                {
-                    to_write = fd->bytes_written - bytes_written;
-                }
+                to_write = MAX_MPIWRITE_SIZE;
+            }
+            else
+            {
+                to_write = fd->bytes_written - bytes_written;
             }
         }
     }
 
+    p->total_bytes_written += bytes_written;
+    fd->pg_start_in_file += bytes_written; // next PG will be written to this in overflow or close()
+    fd->base_offset += bytes_written; // variable offsets are calculated from this
     // remember end of PG data (before index) in case future append needs it
-    p->pg_start_next = fd->pg_start_in_file + bytes_written;
+    p->pg_start_next = fd->pg_start_in_file;
 
-    // index location calculation:
-    // for buffered, base_offset = 0, fd->offset = write loc
-    // for unbuffered, base_offset = write loc, fd->offset = 0
-    // for append buffered, base_offset = start, fd->offset = size
-    lseek (p->b.f, fd->base_offset + fd->offset, SEEK_SET);
-    write (p->b.f, buffer, buffer_size);
+    /*printf ("Completed PG: pg_start_in_file = %llu  pg_start_next = %llu  "
+            "base_offset = %llu  offset = %llu  total_bytes_written = %llu  bytes_written = %llu\n",
+            fd->pg_start_in_file, p->pg_start_next, fd->base_offset, fd->offset, p->total_bytes_written, bytes_written);*/
 
 }
 
-static void adios_posix_do_read (struct adios_file_struct * fd
-                                ,struct adios_method_struct * method
-                                )
+static void adios_posix_write_index (struct adios_file_struct * fd
+        ,struct adios_method_struct * method
+        ,char * buffer
+        ,uint64_t buffer_size
+        )
 {
     struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
                                                           method->method_data;
+    // index location calculation:
+    // for buffered, base_offset = 0
+    // for append buffered, base_offset = start
+    //lseek (p->b.f, fd->base_offset + fd->offset, SEEK_SET);
+
+    // index location calculation: fd->pg_start_in_file points to the end of the last written PG
+    // so we can use it too
+    /*printf ("Write Index: pg_start_in_file = %llu  pg_start_next = %llu  "
+            "base_offset = %llu  offset = %llu  total_bytes_written = %llu\n",
+            fd->pg_start_in_file, p->pg_start_next, fd->base_offset, fd->offset, p->total_bytes_written);*/
+
+    assert (fd->pg_start_in_file == p->pg_start_next);
+    assert (fd->pg_start_in_file == fd->base_offset);
+    lseek (p->b.f, fd->pg_start_in_file, SEEK_SET);
+    write (p->b.f, buffer, buffer_size);
+}
+
+static void adios_posix_do_read (struct adios_file_struct * fd
+        ,struct adios_method_struct * method
+        )
+{
+    struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
+        method->method_data;
     struct adios_var_struct * v = fd->group->vars;
 
     uint32_t version = 0;
@@ -973,6 +886,17 @@ static void adios_posix_do_read (struct adios_file_struct * fd
     adios_buffer_struct_clear (&p->b);
 }
 
+void adios_posix_buffer_overflow (struct adios_file_struct * fd, 
+                                  struct adios_method_struct * method)
+{
+    struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
+                                                 method->method_data;
+    /* We get a full PG at this point that we can write out now. 
+       The index should be built in close() after writing the rest of a PG there.
+    */
+    adios_posix_write_pg (fd, method); // Buffered vars written here
+}
+
 void adios_posix_close (struct adios_file_struct * fd
                        ,struct adios_method_struct * method
                        )
@@ -991,93 +915,6 @@ void adios_posix_close (struct adios_file_struct * fd
     {
         case adios_mode_write:
         {
-            if (fd->shared_buffer == adios_flag_no)
-            {
-                off_t new_off;
-                // set it up so that it will start at 0, but have correct sizes
-                new_off = lseek (p->b.f, 0, SEEK_CUR);
-                fd->offset = fd->base_offset - p->vars_start;
-                fd->vars_start = 0;
-                fd->buffer_size = 0;
-                adios_write_close_vars_v1 (fd);
-                // fd->vars_start gets updated with the size written
-                fd->offset = lseek (p->b.f, p->vars_start, SEEK_SET);
-                START_TIMER (ADIOS_TIMER_POSIX_IO);
-                ssize_t s = write (p->b.f, fd->buffer, p->vars_header_size);
-                STOP_TIMER (ADIOS_TIMER_POSIX_IO);
-                if (s != fd->vars_start)
-                {
-                    fprintf (stderr, "POSIX method tried to write %llu, "
-                                     "only wrote %lld. %s:%d\n"
-                            ,fd->vars_start
-                            ,(int64_t)s
-                            ,__func__, __LINE__
-                            );
-                }
-                fd->offset = 0;
-                fd->bytes_written = 0;
-                adios_shared_buffer_free (&p->b);
-
-                new_off = lseek (p->b.f, new_off, SEEK_SET);  // go back to end
-                adios_write_open_attributes_v1 (fd);
-                p->vars_start = lseek (p->b.f, fd->offset, SEEK_CUR); // save loc
-                p->vars_header_size = p->vars_start - fd->base_offset;
-                p->vars_start -= fd->offset; // adjust to start of header
-                fd->base_offset += fd->offset;  // add size of header
-                fd->offset = 0;
-                fd->bytes_written = 0;
-
-                if (!fd->group->process_id) { // from ADIOS 1.4, only rank 0 writes attributes
-                    while (a)
-                    {
-                        adios_write_attribute_v1 (fd, a);
-                        if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->offset)
-                            fprintf (stderr, "adios_posix_write exceeds pg bound. #3 File is corrupted. "
-                                    "Need to enlarge group size. \n");
-                        START_TIMER (ADIOS_TIMER_POSIX_IO);
-                        ssize_t s = write (p->b.f, fd->buffer, fd->bytes_written);
-                        STOP_TIMER (ADIOS_TIMER_POSIX_IO);
-                        if (s != fd->bytes_written)
-                        {
-                            fprintf (stderr, "POSIX method tried to write %llu, "
-                                    "only wrote %lld. %s:%d\n"
-                                    ,fd->bytes_written
-                                    ,(int64_t)s
-                                    ,__func__, __LINE__
-                                    );
-                        }
-                        fd->base_offset += s;
-                        fd->offset = 0;
-                        fd->bytes_written = 0;
-                        adios_shared_buffer_free (&p->b);
-
-                        a = a->next;
-                    }
-                }
-
-                // set it up so that it will start at 0, but have correct sizes
-                fd->offset = fd->base_offset - p->vars_start;
-                fd->vars_start = 0;
-                fd->buffer_size = 0;
-                adios_write_close_attributes_v1 (fd);
-                fd->offset = lseek (p->b.f, p->vars_start, SEEK_SET);
-                // fd->vars_start gets updated with the size written
-                START_TIMER (ADIOS_TIMER_POSIX_IO);
-                s = write (p->b.f, fd->buffer, p->vars_header_size);
-                STOP_TIMER (ADIOS_TIMER_POSIX_IO);
-                if (s != p->vars_header_size)
-                {
-                    fprintf (stderr, "POSIX method tried to write %llu, "
-                                     "only wrote %lld. %s:%d\n"
-                            ,p->vars_header_size
-                            ,(int64_t)s
-                            ,__func__, __LINE__
-                            );
-                }
-                fd->offset = 0;
-                fd->bytes_written = 0;
-            }
-
             // buffering or not, write the index
             char * buffer = 0;
             uint64_t buffer_size = 0;
@@ -1216,7 +1053,8 @@ void adios_posix_close (struct adios_file_struct * fd
 
             // write buffered data and index now
             START_TIMER (ADIOS_TIMER_POSIX_IO);
-            adios_posix_do_write (fd, method, buffer, buffer_offset); // Buffered vars written here
+            adios_posix_write_pg (fd, method); // Buffered vars written here
+            adios_posix_write_index (fd, method, buffer, buffer_offset); // index written here
             STOP_TIMER (ADIOS_TIMER_POSIX_IO);
 
             // close the file assuming we are done in 'w' mode
@@ -1235,89 +1073,6 @@ void adios_posix_close (struct adios_file_struct * fd
         case adios_mode_append:
         case adios_mode_update:
         {
-            if (fd->shared_buffer == adios_flag_no)
-            {
-                off_t new_off;
-                // set it up so that it will start at 0, but have correct sizes
-                new_off = lseek (p->b.f, 0, SEEK_CUR);
-                fd->offset = fd->base_offset - p->vars_start;
-                fd->vars_start = 0;
-                fd->buffer_size = 0;
-                adios_write_close_vars_v1 (fd);
-                // fd->vars_start gets updated with the size written
-                fd->offset = lseek (p->b.f, p->vars_start, SEEK_SET);
-                START_TIMER (ADIOS_TIMER_POSIX_IO);
-                ssize_t s = write (p->b.f, fd->buffer, p->vars_header_size);
-                STOP_TIMER (ADIOS_TIMER_POSIX_IO);
-                if (s != fd->vars_start)
-                {
-                    fprintf (stderr, "POSIX method tried to write %llu, "
-                                     "only wrote %lld. %s:%d\n"
-                            ,fd->vars_start
-                            ,(int64_t)s
-                            ,__func__, __LINE__
-                            );
-                }
-                fd->offset = 0;
-                fd->bytes_written = 0;
-                adios_shared_buffer_free (&p->b);
-
-                new_off = lseek (p->b.f, new_off, SEEK_SET);  // go back to end
-                adios_write_open_attributes_v1 (fd);
-                p->vars_start = lseek (p->b.f, fd->offset, SEEK_CUR); // save loc
-                p->vars_header_size = p->vars_start - fd->base_offset;
-                p->vars_start -= fd->offset; // adjust to start of header
-                fd->base_offset += fd->offset;  // add size of header
-                fd->offset = 0;
-                fd->bytes_written = 0;
-
-                if (!fd->group->process_id) { // from ADIOS 1.4, only rank 0 writes attributes
-                    while (a)
-                    {
-                        adios_write_attribute_v1 (fd, a);
-                        START_TIMER (ADIOS_TIMER_POSIX_IO);
-                        ssize_t s = write (p->b.f, fd->buffer, fd->bytes_written);
-                        STOP_TIMER (ADIOS_TIMER_POSIX_IO);
-                        if (s != fd->bytes_written)
-                        {
-                            fprintf (stderr, "POSIX method tried to write %llu, "
-                                    "only wrote %lld. %s:%d\n"
-                                    ,fd->bytes_written
-                                    ,(int64_t)s
-                                    ,__func__, __LINE__
-                                    );
-                        }
-                        fd->base_offset += s;
-                        fd->offset = 0;
-                        fd->bytes_written = 0;
-                        adios_shared_buffer_free (&p->b);
-
-                        a = a->next;
-                    }
-                }
-
-                // set it up so that it will start at 0, but have correct sizes
-                fd->offset = fd->base_offset - p->vars_start;
-                fd->vars_start = 0;
-                fd->buffer_size = 0;
-                adios_write_close_attributes_v1 (fd);
-                fd->offset = lseek (p->b.f, p->vars_start, SEEK_SET);
-                // fd->vars_start gets updated with the size written
-                START_TIMER (ADIOS_TIMER_POSIX_IO);
-                s = write (p->b.f, fd->buffer, p->vars_header_size);
-                STOP_TIMER (ADIOS_TIMER_POSIX_IO);
-                if (s != p->vars_header_size)
-                {
-                    fprintf (stderr, "POSIX method tried to write %llu, "
-                                     "only wrote %lld. %s:%d\n"
-                            ,p->vars_header_size
-                            ,(int64_t)s
-                            ,__func__, __LINE__
-                            );
-                }
-                fd->offset = 0;
-                fd->bytes_written = 0;
-            }
 
             char * buffer = 0;
             uint64_t buffer_size = 0;
@@ -1481,7 +1236,8 @@ void adios_posix_close (struct adios_file_struct * fd
 
             // write buffered data and index now
             START_TIMER (ADIOS_TIMER_POSIX_IO);
-            adios_posix_do_write (fd, method, buffer, buffer_offset);
+            adios_posix_write_pg (fd, method); // Buffered vars written here
+            adios_posix_write_index (fd, method, buffer, buffer_offset); // index written here
             STOP_TIMER (ADIOS_TIMER_POSIX_IO);
 
             free (buffer);

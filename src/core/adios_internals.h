@@ -16,6 +16,7 @@
 #include "core/adios_transport_hooks.h"
 #include "core/adios_bp_v1.h"
 #include "core/qhashtbl.h"
+#include "core/types.h"
 #include "public/adios_schema.h"
 
 // NCSU ALACRITY-ADIOS: Include needed for the transform spec struct
@@ -185,7 +186,9 @@ struct adios_file_struct
     struct adios_group_struct * group;
     enum ADIOS_METHOD_MODE mode;
 
-    enum ADIOS_FLAG shared_buffer;
+    enum ADIOS_FLAG shared_buffer; // yes: common layer does the buffering (in BP format)
+    enum BUFFERING_STRATEGY bufstrat; // how to do buffering (no_buffering <-> shared_buffer==adios_flag_no)
+    enum BUFFERING_STATE bufstate; // is buffering still going on (depends on overflow strategy)
 
     uint64_t pg_start_in_file; //  where this pg started in the file
 
@@ -194,7 +197,7 @@ struct adios_file_struct
     char * allocated_bufptr;  // actual allocated buffer before alignment
     char * buffer;          // buffer we use for building the output (aligned, made from allocated_bufptr)
     uint64_t offset;        // current offset to write at
-    uint64_t bytes_written; // largest offset into buffer written to
+    uint64_t bytes_written; // largest offset into buffer written to, = offset after calling _v1() functions
     uint64_t buffer_size;   // how big the buffer is currently
 
     uint64_t pg_start;      // offset in buffer where to put PG size (it should be 0 to point to buffer[0])
@@ -325,7 +328,7 @@ typedef void (* ADIOS_INIT_FN) (const PairStruct * parameters
 typedef int (* ADIOS_OPEN_FN) (struct adios_file_struct * fd
                               ,struct adios_method_struct * method, MPI_Comm comm
                               );
-typedef enum ADIOS_FLAG (* ADIOS_SHOULD_BUFFER_FN)
+typedef enum BUFFERING_STRATEGY (* ADIOS_SHOULD_BUFFER_FN)
                                        (struct adios_file_struct * fd
                                        ,struct adios_method_struct * method
                                        );
@@ -346,6 +349,9 @@ typedef void (* ADIOS_READ_FN) (struct adios_file_struct * fd
                                ,uint64_t buffer_size
                                ,struct adios_method_struct * method
                                );
+typedef void (* ADIOS_BUFFER_OVERFLOW_FN) (struct adios_file_struct * fd 
+                                          ,struct adios_method_struct * method 
+                                          ); 
 typedef void (* ADIOS_CLOSE_FN) (struct adios_file_struct * fd
                                 ,struct adios_method_struct * method
                                 );
@@ -367,6 +373,7 @@ struct adios_transport_struct
     ADIOS_WRITE_FN adios_write_fn;
     ADIOS_GET_WRITE_BUFFER_FN adios_get_write_buffer_fn;
     ADIOS_READ_FN adios_read_fn;
+    ADIOS_BUFFER_OVERFLOW_FN adios_buffer_overflow_fn;
     ADIOS_CLOSE_FN adios_close_fn;
     ADIOS_FINALIZE_FN adios_finalize_fn;
     ADIOS_END_ITERATION_FN adios_end_iteration_fn;

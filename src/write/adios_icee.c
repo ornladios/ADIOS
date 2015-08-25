@@ -1114,10 +1114,10 @@ adios_icee_finalize(int mype, struct adios_method_struct *method)
 }
 
 // provides unknown functionality
-extern enum ADIOS_FLAG 
+extern enum BUFFERING_STRATEGY 
 adios_icee_should_buffer (struct adios_file_struct * fd,struct adios_method_struct * method) 
 {
-    return adios_flag_no;
+    return no_buffering;
 }
 
 // provides unknown functionality

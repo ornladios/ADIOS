@@ -17,11 +17,13 @@
 #include <mxml.h>
 
 #include "public/adios_mpi.h"
+#include "public/adios_error.h"
 #include "core/adios_transport_hooks.h"
 #include "core/adios_bp_v1.h"
 #include "core/adios_internals.h"
 #include "core/buffer.h"
 #include "core/util.h"
+#include "core/adios_logger.h"
 
 #if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
 #define START_TIMER(t) adios_timing_go (fd->group->timing_obj, (t) ) 
@@ -612,9 +614,9 @@ void build_offsets (struct adios_bp_buffer_struct_v1 * b
     }
 }
 
-enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
-                                        ,struct adios_method_struct * method
-                                        )
+enum BUFFERING_STRATEGY adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
+                                                       ,struct adios_method_struct * method
+                                                       )
 {
     int i;
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
@@ -1334,7 +1336,7 @@ enum ADIOS_FLAG adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
 #if COLLECT_METRICS
     gettimeofday (&t22, NULL);
 #endif
-    return fd->shared_buffer;
+    return stop_on_overflow;
 }
 
 void adios_mpi_lustre_write (struct adios_file_struct * fd
@@ -1600,6 +1602,19 @@ static void adios_mpi_lustre_do_read (struct adios_file_struct * fd
     }
 
     adios_buffer_struct_clear (&md->b);
+}
+
+
+void adios_mpi_lustre_buffer_overflow (struct adios_file_struct * fd, 
+                                       struct adios_method_struct * method)
+{
+    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
+                                                 method->method_data;
+    adios_error (err_buffer_overflow, 
+            "rank %d: MPI_LUSTRE method only works with complete buffering of data between adios_open() "
+            "and adios_close(). Portions of global arrays, that do not fit into the "
+            "buffer on some processors will not be written by this method to %s\n", 
+            md->rank, fd->name);
 }
 
 void adios_mpi_lustre_close (struct adios_file_struct * fd

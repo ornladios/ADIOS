@@ -1799,10 +1799,17 @@ adios_flexpath_finalize(int mype, struct adios_method_struct *method)
 }
 
 // provides unknown functionality
-extern enum ADIOS_FLAG 
+extern enum BUFFERING_STRATEGY 
 adios_flexpath_should_buffer (struct adios_file_struct * fd,struct adios_method_struct * method) 
 {
-    return adios_flag_no;
+    return no_buffering;  
+}
+
+extern void 
+adios_flexpath_buffer_overflow (struct adios_file_struct * fd, 
+                                struct adios_method_struct * method)
+{
+    // this call never happens without shared buffering
 }
 
 // provides unknown functionality
