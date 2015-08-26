@@ -342,7 +342,7 @@ void FC_FUNC_(adios_write, ADIOS_WRITE)
     *err = common_adios_write (fd, v, var);
     if (!adios_errno && fd->mode != adios_mode_read)
     {
-        adios_copy_var_written (fd->group, v);
+        adios_copy_var_written (fd, v);
     }
 
     free (buf1);

@@ -57,8 +57,6 @@ struct adios_POSIX_data_struct
     // old index structs we read in and have to be merged in
     struct adios_index_struct_v1 * index;
 
-    uint64_t vars_start;
-    uint64_t vars_header_size;
 #ifdef HAVE_MPI
     // Metadata file handle
     int mf;
@@ -72,8 +70,8 @@ struct adios_POSIX_data_struct
     uint64_t pg_start_next; // remember end of PG data for future append steps
 
     uint64_t total_bytes_written;  /* bytes including all PGs written during one open()..close() with overflows
-          index position will be fd->base_offset + total_bytes_written
-          it is calculated but not used; fd->pg_start_in_file will point to index beginning
+          index position will be fd->current_pg->pg_start_in_file + total_bytes_written
+          it is calculated but not used; fd->current_pg->pg_start_in_file will point to index beginning
           */
 };
 
@@ -94,8 +92,6 @@ void adios_posix_init (const PairStruct * parameters
     p = (struct adios_POSIX_data_struct *) method->method_data;
     adios_buffer_struct_init (&p->b);
     p->index = adios_alloc_index_v1(1); // with hashtables
-    p->vars_start = 0;
-    p->vars_header_size = 0;
 #ifdef HAVE_MPI
     p->mf = 0;
     p->group_comm = MPI_COMM_NULL;
@@ -271,8 +267,6 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
             struct stat s;
             if (fstat (p->b.f, &s) == 0)
                 p->b.file_size = s.st_size;
-            fd->base_offset = 0;
-            fd->pg_start_in_file = 0;
             p->file_is_open = 1;
 
             break;
@@ -345,9 +339,8 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
             }
             STOP_TIMER (ADIOS_TIMER_POSIX_GMD);
 #endif
-            fd->base_offset = 0;
-            fd->pg_start_in_file = 0;
             p->file_is_open = 1;
+            p->pg_start_next = 0;
 
             break;
         }
@@ -490,8 +483,7 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
                             adios_parse_attributes_index_v1 (&p->b, &p->index->attrs_root);
 
                             // write data where previous steps finished (minus the index)
-                            fd->base_offset = p->b.end_of_pgs;
-                            fd->pg_start_in_file = p->b.end_of_pgs;
+                            p->pg_start_next = p->b.end_of_pgs;
 
                             break;
 
@@ -513,21 +505,17 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
                     if (fd->mode == adios_mode_append) {
                         fd->group->time_index++;
                     }
-                    // use offsets set at the end of previous append step
-                    fd->base_offset = p->pg_start_next;
-                    fd->pg_start_in_file = p->pg_start_next;
                 }
             }
             else 
             {
                 // there is no previous data, start from offset 0
-                fd->base_offset = 0;
-                fd->pg_start_in_file = 0;
+                p->pg_start_next = 0;
             }
             STOP_TIMER (ADIOS_TIMER_POSIX_MD);
             //printf ("adios_posix_open append/update, old_file=%d, index_is_in_memory=%d, "
-            //        "base_offset=%lld, pg_start=%lld\n", 
-            //        old_file, p->index_is_in_memory, fd->base_offset, fd->pg_start_in_file);
+            //        "pg_start=%lld\n", 
+            //        old_file, p->index_is_in_memory, p>pg_start_next);
 
             p->index_is_in_memory = 1; // to notify future append steps about the good news
             break;
@@ -677,22 +665,23 @@ static void adios_posix_write_pg (struct adios_file_struct * fd
     int32_t to_write;
     uint64_t bytes_written = 0;
 
-    off_t offset = fd->pg_start_in_file;
-    if (p->b.end_of_pgs > fd->pg_start_in_file)
+    // use offsets set at the end of previous append step
+    // fd->current_pg->pg_start_in_file needs to be correctly set before
+    // calling adios_build_index_v1()
+    fd->current_pg->pg_start_in_file = p->pg_start_next;
+
+    off_t offset = fd->current_pg->pg_start_in_file;
+
+    /* FIXME: what is this check? Should never happen ? */
+    assert (p->b.end_of_pgs <= fd->current_pg->pg_start_in_file);
+    if (p->b.end_of_pgs > fd->current_pg->pg_start_in_file)
         offset = p->b.end_of_pgs;
 
     /*printf ("Write PG: pg_start_in_file = %llu  pg_start_next = %llu  "
-            "base_offset = %llu  offset = %llu  total_bytes_written = %llu\n",
-            fd->pg_start_in_file, p->pg_start_next, fd->base_offset, fd->offset, p->total_bytes_written);*/
+            "buffer offset = %llu  total_bytes_written = %llu\n",
+            fd->current_pg->pg_start_in_file, p->pg_start_next, fd->offset, p->total_bytes_written);*/
 
-    assert (fd->pg_start_in_file == p->pg_start_next);
-    //lseek (p->b.f, p->b.end_of_pgs, SEEK_SET);
-    //if (p->b.end_of_pgs + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
     lseek (p->b.f, offset, SEEK_SET);
-    // now a strange test to check if you understand the code ;-) this should never be true.
-    if (offset + fd->bytes_written > fd->pg_start_in_file + fd->buffer_size)
-        fprintf (stderr, "adios_posix_write exceeds pg bound. #2 File is corrupted. "
-                "Need to enlarge group size. \n");
 
     if (fd->bytes_written > MAX_MPIWRITE_SIZE)
     {
@@ -721,14 +710,13 @@ static void adios_posix_write_pg (struct adios_file_struct * fd
     }
 
     p->total_bytes_written += bytes_written;
-    fd->pg_start_in_file += bytes_written; // next PG will be written to this in overflow or close()
-    fd->base_offset += bytes_written; // variable offsets are calculated from this
-    // remember end of PG data (before index) in case future append needs it
-    p->pg_start_next = fd->pg_start_in_file;
+    // remember end of PG data (before index) in case overflow or close, or future append needs it
+    // also, next PG will be written to this offset in overflow or close()
+    p->pg_start_next += bytes_written; 
 
     /*printf ("Completed PG: pg_start_in_file = %llu  pg_start_next = %llu  "
-            "base_offset = %llu  offset = %llu  total_bytes_written = %llu  bytes_written = %llu\n",
-            fd->pg_start_in_file, p->pg_start_next, fd->base_offset, fd->offset, p->total_bytes_written, bytes_written);*/
+            "buffer offset = %llu  total_bytes_written = %llu  bytes_written = %llu\n",
+            fd->current_pg->pg_start_in_file, p->pg_start_next, fd->offset, p->total_bytes_written, bytes_written);*/
 
 }
 
@@ -740,20 +728,12 @@ static void adios_posix_write_index (struct adios_file_struct * fd
 {
     struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
                                                           method->method_data;
-    // index location calculation:
-    // for buffered, base_offset = 0
-    // for append buffered, base_offset = start
-    //lseek (p->b.f, fd->base_offset + fd->offset, SEEK_SET);
+    // index location: p->pg_start_next points to the end of the last written PG
+    /*printf ("Write Index: pg_start_next = %llu  "
+            "buffer size = %llu total_bytes_written = %llu\n",
+            p->pg_start_next, buffer_size, p->total_bytes_written);*/
 
-    // index location calculation: fd->pg_start_in_file points to the end of the last written PG
-    // so we can use it too
-    /*printf ("Write Index: pg_start_in_file = %llu  pg_start_next = %llu  "
-            "base_offset = %llu  offset = %llu  total_bytes_written = %llu\n",
-            fd->pg_start_in_file, p->pg_start_next, fd->base_offset, fd->offset, p->total_bytes_written);*/
-
-    assert (fd->pg_start_in_file == p->pg_start_next);
-    assert (fd->pg_start_in_file == fd->base_offset);
-    lseek (p->b.f, fd->pg_start_in_file, SEEK_SET);
+    lseek (p->b.f, p->pg_start_next, SEEK_SET);
     write (p->b.f, buffer, buffer_size);
 }
 
@@ -919,9 +899,20 @@ void adios_posix_close (struct adios_file_struct * fd
             char * buffer = 0;
             uint64_t buffer_size = 0;
             uint64_t buffer_offset = 0;
-            uint64_t index_start = fd->base_offset + fd->offset;
+
+            // write buffered data now
+            START_TIMER (ADIOS_TIMER_POSIX_IO);
+            adios_posix_write_pg (fd, method); 
+            STOP_TIMER (ADIOS_TIMER_POSIX_IO);
+
+            // Note: adios_posix_write_pg() sets the fd->current_pg->pg_start_in_file
+            // to the correct offset, which is used in the build index. If you want 
+            // to move the write_pg after building the index, set the offset here in advance:
+            //    fd->current_pg->pg_start_in_file = p->pg_start_next;
+            //    index_start = p->pg_start_next + fd->offset
 
             START_TIMER (ADIOS_TIMER_POSIX_MD);
+            uint64_t index_start = p->pg_start_next;
             // build new index for this step
             adios_build_index_v1 (fd, p->index);
             // if collective, gather the indexes from the rest and call
@@ -1051,10 +1042,9 @@ void adios_posix_close (struct adios_file_struct * fd
             STOP_TIMER (ADIOS_TIMER_POSIX_GMD);
 #endif
 
-            // write buffered data and index now
+            // write buffered index now
             START_TIMER (ADIOS_TIMER_POSIX_IO);
-            adios_posix_write_pg (fd, method); // Buffered vars written here
-            adios_posix_write_index (fd, method, buffer, buffer_offset); // index written here
+            adios_posix_write_index (fd, method, buffer, buffer_offset); 
             STOP_TIMER (ADIOS_TIMER_POSIX_IO);
 
             // close the file assuming we are done in 'w' mode
@@ -1077,9 +1067,20 @@ void adios_posix_close (struct adios_file_struct * fd
             char * buffer = 0;
             uint64_t buffer_size = 0;
             uint64_t buffer_offset = 0;
-            uint64_t index_start = fd->base_offset + fd->offset;
+
+            // write buffered data now
+            START_TIMER (ADIOS_TIMER_POSIX_IO);
+            adios_posix_write_pg (fd, method); 
+            STOP_TIMER (ADIOS_TIMER_POSIX_IO);
+
+            // Note: adios_posix_write_pg() sets the fd->current_pg->pg_start_in_file
+            // to the correct offset, which is used in the build index. If you want 
+            // to move the write_pg after building the index, set the offset here in advance:
+            //    fd->current_pg->pg_start_in_file = p->pg_start_next;
+            //    index_start = p->pg_start_next + fd->offset
 
             START_TIMER (ADIOS_TIMER_POSIX_MD);
+            uint64_t index_start = p->pg_start_next;
             // build index for current step and merge it into the 
             // existing index for previous steps
             struct adios_index_struct_v1 * current_index;
@@ -1234,10 +1235,9 @@ void adios_posix_close (struct adios_file_struct * fd
             STOP_TIMER (ADIOS_TIMER_POSIX_GMD);
 #endif
 
-            // write buffered data and index now
+            // write buffered index now
             START_TIMER (ADIOS_TIMER_POSIX_IO);
-            adios_posix_write_pg (fd, method); // Buffered vars written here
-            adios_posix_write_index (fd, method, buffer, buffer_offset); // index written here
+            adios_posix_write_index (fd, method, buffer, buffer_offset); 
             STOP_TIMER (ADIOS_TIMER_POSIX_IO);
 
             free (buffer);

@@ -145,8 +145,6 @@ struct adios_group_struct
     struct adios_var_struct * vars;
     struct adios_var_struct * vars_tail;  // last variable in the list 'vars'
     qhashtbl_t *hashtbl_vars;
-    struct adios_var_struct * vars_written;
-    struct adios_var_struct * vars_written_tail; // last variable in 'vars_written'
     struct adios_attribute_struct * attributes;
     char * group_comm;
     char * group_by;
@@ -179,6 +177,18 @@ struct adios_group_list_struct
     struct adios_group_list_struct * next;
 };
 
+/* List of PGs in a file struct to store variables related to each PG written
+   in one open()...close() cycle. If there is no buffer overflow, there will
+   be a single PG written 
+*/
+struct adios_pg_struct
+{
+    uint64_t pg_start_in_file; //  where this pg start in file, handled by methods!
+    struct adios_var_struct * vars_written;
+    struct adios_var_struct * vars_written_tail; // last variable in 'vars_written'
+    struct adios_pg_struct  * next;
+};
+
 struct adios_file_struct
 {
     char * name;
@@ -190,8 +200,12 @@ struct adios_file_struct
     enum BUFFERING_STRATEGY bufstrat; // how to do buffering (no_buffering <-> shared_buffer==adios_flag_no)
     enum BUFFERING_STATE bufstate; // is buffering still going on (depends on overflow strategy)
 
-    uint64_t pg_start_in_file; //  where this pg started in the file
+    struct adios_pg_struct * pgs_written;
+    struct adios_pg_struct * current_pg; // points to last PG in the list, which is being created in buffer
 
+
+    /*FIXME: remove these two */
+    uint64_t pg_start_in_file; //  where this pg started in the file
     uint64_t base_offset;   // where writing last ocurred
 
     char * allocated_bufptr;  // actual allocated buffer before alignment
@@ -462,6 +476,9 @@ void adios_add_method_to_group (struct adios_method_list_struct ** root
 
 void adios_append_group (struct adios_group_struct * group);
 
+struct adios_pg_struct * add_new_pg_written (struct adios_file_struct * fd);
+void adios_free_pglist (struct adios_file_struct * fd);
+
 //void adios_append_var (struct adios_group_struct * g, struct adios_var_struct * var);
 
 void adios_append_dimension (struct adios_dimension_struct ** root
@@ -523,7 +540,7 @@ int adios_write_version_flag_v1 (char ** buffer
 int adios_write_open_process_group_header_v1 (struct adios_file_struct * fd);
 int adios_write_close_process_group_header_v1 (struct adios_file_struct * fd);
 
-void adios_copy_var_written (struct adios_group_struct * g,
+void adios_copy_var_written (struct adios_file_struct * fd,
                              struct adios_var_struct * var);
 
 // data is only there for sizing
@@ -556,8 +573,6 @@ int adios_write_index_v1 (char ** buffer
                          ,uint64_t index_start
                          ,struct adios_index_struct_v1 * index
                          );
-
-void adios_increase_offsets_v1 (struct adios_file_struct * fd, uint64_t extra_offset);
 
 void adios_build_index_v1 (struct adios_file_struct * fd
                          ,struct adios_index_struct_v1 * index
