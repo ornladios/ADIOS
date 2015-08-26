@@ -45,6 +45,8 @@ void adios_file_struct_init (struct adios_file_struct * fd)
     fd->subfile_index = -1; // subfile index is by default -1
     fd->group = NULL;
     fd->mode = adios_mode_write;
+    fd->pgs_written = NULL;
+    fd->current_pg = NULL;
     fd->pg_start_in_file = 0;
     fd->base_offset = 0;
     fd->allocated_bufptr = NULL;
@@ -1346,8 +1348,6 @@ int adios_common_declare_group (int64_t * id, const char * name
     g->vars = NULL;
     g->vars_tail = NULL;
     g->hashtbl_vars = qhashtbl(500);
-    g->vars_written = NULL;
-    g->vars_written_tail = NULL;
     g->attributes = NULL;
     g->group_by = (coordination_var ? strdup (coordination_var) : 0L);
     g->group_comm = (coordination_comm ? strdup (coordination_comm) : 0L);
@@ -1370,6 +1370,108 @@ int adios_common_declare_group (int64_t * id, const char * name
     adios_append_group (g);
 
     return 1;
+}
+
+struct adios_pg_struct * add_new_pg_written (struct adios_file_struct * fd)
+{
+    struct adios_pg_struct * pg = (struct adios_pg_struct *) 
+        malloc (sizeof(struct adios_pg_struct));
+    if (pg) 
+    {
+        pg->pg_start_in_file = 0L;
+        pg->vars_written = NULL;
+        pg->vars_written_tail = NULL;
+        pg->next = NULL;
+        if (!fd->pgs_written) 
+        {
+            fd->pgs_written = pg;
+            fd->current_pg = pg;
+        }
+        else
+        {
+            // add to end of list pointed by current_pg
+            assert (fd->current_pg);
+            fd->current_pg->next = pg;
+            fd->current_pg = pg;
+        }
+    }
+    return pg;
+}
+
+void adios_free_pglist (struct adios_file_struct *fd)
+{
+    struct adios_pg_struct * pg = fd->pgs_written;
+    struct adios_pg_struct * pnext;
+    while (pg)
+    {
+        /* clean up copied variables */
+        struct adios_var_struct * vars_written = pg->vars_written;
+        while (vars_written)
+        {
+            if (vars_written->name)
+                free (vars_written->name);
+            if (vars_written->path)
+                free (vars_written->path);
+
+            while (vars_written->dimensions)
+            {
+                struct adios_dimension_struct * dimensions
+                    = vars_written->dimensions->next;
+
+                free (vars_written->dimensions);
+                vars_written->dimensions = dimensions;
+            }
+
+            // NCSU - Clear stat
+            if (vars_written->stats)
+            {
+                uint8_t j = 0, idx = 0;
+                uint8_t c = 0, count = adios_get_stat_set_count(vars_written->type);
+
+                for (c = 0; c < count; c ++)
+                {
+                    while (vars_written->bitmap >> j)
+                    {
+                        if ((vars_written->bitmap >> j) & 1)
+                        {
+                            if (j == adios_statistic_hist)
+                            {
+                                struct adios_hist_struct * hist = (struct adios_hist_struct *) (vars_written->stats[c][idx].data);
+                                free (hist->breaks);
+                                free (hist->frequencies);
+                                free (hist);
+                            }
+                            else
+                                free (vars_written->stats[c][idx].data);
+
+                            idx ++;
+                        }
+                        j ++;
+                    }
+                    free (vars_written->stats[c]);
+                }
+                free (vars_written->stats);
+            }
+
+            // NCSU ALACRITY-ADIOS - Clear transform metadata
+            adios_transform_clear_transform_var(vars_written);
+
+            if (vars_written->adata) {
+                free (vars_written->adata);
+                vars_written->data = vars_written->adata = 0;
+            }
+
+            struct adios_var_struct * v = vars_written->next;
+            free (vars_written);
+            vars_written = v;
+        }
+
+        pnext = pg->next;
+        free (pg);
+        pg = pnext;
+    }
+    fd->pgs_written = NULL;
+    fd->current_pg = NULL;
 }
 
 // Delete all attribute (definitions) from a group
@@ -3067,8 +3169,10 @@ uint64_t adios_get_dim_value (struct adios_dimension_item_struct * dimension)
     return dim;
 }
 
-void adios_copy_var_written (struct adios_group_struct * g, struct adios_var_struct * var)
+void adios_copy_var_written (struct adios_file_struct * fd, struct adios_var_struct * var)
 {
+    assert(fd);
+    struct adios_group_struct * g = fd->group;
     assert(g);
     struct adios_var_struct * var_new;
 
@@ -3232,23 +3336,25 @@ void adios_copy_var_written (struct adios_group_struct * g, struct adios_var_str
 
     /* Insert new variable into the copy list */
 
+    struct adios_pg_struct * pg = fd->current_pg;
+    assert(pg);
     /* Note: many routines parse the list of variables through the ->next pointer with
      * "while (v) { ...; v=v->next }
      * So we don't make a double linked circular list, just a simple list, with
      * having an extra pointer to the tail
      */
-    if (!g->vars_written) {
-        // first variable: g->vars_written     : V => (null)
-        //                 g->vars_written_tail: V => (null)
+    if (!pg->vars_written) {
+        // first variable: pg->vars_written     : V => (null)
+        //                 pg->vars_written_tail: V => (null)
         var_new->next = NULL;
-        g->vars_written = var_new;      // V => (null)
-        g->vars_written_tail = var_new; // V => (null)
+        pg->vars_written = var_new;      // V => (null)
+        pg->vars_written_tail = var_new; // V => (null)
     } else {
        var_new->next = NULL;
        // append var to tail
-       g->vars_written_tail->next = var_new;  // g->vars => ... => tail => V => (null)
+       pg->vars_written_tail->next = var_new;  // pg->vars_written => ... => tail => V => (null)
        // new tail is var
-       g->vars_written_tail = var_new;
+       pg->vars_written_tail = var_new;
     }
 
 }
@@ -3421,246 +3527,233 @@ void adios_copy_var_written (struct adios_var_struct ** root
 }
 #endif
 
-/* Since no group_size(), the fd->base_offset is unknown (set to 0) in non-root processes and 
+
+/* Build the index from the variables written in all PGs during open()...close().
+
+   The method needs to supply the target file offsets for each PG in fd->pgs_written.
+
+   Since the removal of group_size(), the starting offset of a PG is not always known (so is always set to 0).
    adios_write_var_header_v1() registers written variables with offsets relative to 0 not the
    actual beginning of the PG.
-   This function is called from the methods in adios_close() to fix the var/attr offsets
-   before building the index 
 */
-void adios_increase_offsets_v1 (struct adios_file_struct * fd, uint64_t extra_offset)
-{
-    struct adios_group_struct * g = fd->group;
-    struct adios_var_struct * v = g->vars_written;
-    struct adios_attribute_struct * a = g->attributes;
-    while (v)
-    {
-        // write_offset==0 is special, indicates that the variable was never written with adios_write
-        // skip those
-        if (v->write_offset != 0)
-        {
-            v->write_offset += extra_offset;
-        }
-        v = v->next;
-    }
-    while (a)
-    {
-        // write_offset==0 is special, indicates that the attribute was never written (how so?)
-        // skip those
-        if (a->write_offset != 0)
-        {
-            a->write_offset += extra_offset;
-        }
-        a = a->next;
-    }
-}
-
 void adios_build_index_v1 (struct adios_file_struct * fd,
                            struct adios_index_struct_v1 * index)
 {
     struct adios_group_struct * g = fd->group;
-    struct adios_var_struct * v = g->vars_written;
-    struct adios_attribute_struct * a = g->attributes;
-    struct adios_index_process_group_struct_v1 * g_item;
+    struct adios_pg_struct * pg = fd->pgs_written;
+    int pgid = 0;
 
-    g_item = (struct adios_index_process_group_struct_v1 *)
-        malloc (sizeof (struct adios_index_process_group_struct_v1));
-    g_item->group_name = (g->name ? strdup (g->name) : 0L);
-    g_item->adios_host_language_fortran = g->adios_host_language_fortran;
-    g_item->process_id = g->process_id;
-    g_item->time_index_name = (g->time_index_name ? strdup (g->time_index_name) : 0L);
-    g_item->time_index = g->time_index;
-    g_item->offset_in_file = fd->pg_start_in_file;
-    g_item->next = 0;
-
-    // build the groups and vars index
-    index_append_process_group_v1 (index, g_item);
-
-    while (v)
+    while (pg)
     {
-        // only add items that were written to the index
-        if (v->write_offset != 0)
+        /* Create a PG entry in index */
+        struct adios_index_process_group_struct_v1 * g_item;
+        g_item = (struct adios_index_process_group_struct_v1 *)
+            malloc (sizeof (struct adios_index_process_group_struct_v1));
+        g_item->group_name = (g->name ? strdup (g->name) : 0L);
+        g_item->adios_host_language_fortran = g->adios_host_language_fortran;
+        g_item->process_id = g->process_id;
+        g_item->time_index_name = (g->time_index_name ? strdup (g->time_index_name) : 0L);
+        g_item->time_index = g->time_index;
+        g_item->offset_in_file = pg->pg_start_in_file;
+        g_item->next = 0;
+
+        // build the groups and vars index
+        index_append_process_group_v1 (index, g_item);
+
+        /* For each written variable, create a variable entry in the index */
+        struct adios_var_struct * v = pg->vars_written;
+        while (v)
         {
-            struct adios_index_var_struct_v1 * v_index;
-            v_index = malloc (sizeof (struct adios_index_var_struct_v1));
-            v_index->characteristics = malloc (
-                    sizeof (struct adios_index_characteristic_struct_v1)
-                    );
-
-            v_index->id = v->id;
-            v_index->group_name = (g->name ? strdup (g->name) : 0L);
-            v_index->var_name = (v->name ? strdup (v->name) : 0L);
-            v_index->var_path = (v->path ? strdup (v->path) : 0L);
-            v_index->type = v->type;
-            v_index->characteristics_count = 1;
-            v_index->characteristics_allocated = 1;
-            v_index->characteristics [0].offset = v->write_offset;
-            // Find the old var in g->vars.
-            // We need this to calculate the correct payload_offset, because that
-            // holds the variable references in the dimensions, while v-> contains
-            // only numerical values
-            struct adios_var_struct * old_var = v->parent_var;
-            v_index->characteristics [0].payload_offset = v->write_offset
-                + adios_calc_var_overhead_v1 (old_var)
-                - strlen (old_var->path)  // take out the length of path defined in XML
-                + strlen (v->path); // add length of the actual, current path of this var
-            v_index->characteristics [0].file_index = fd->subfile_index;
-            v_index->characteristics [0].time_index = g_item->time_index;
-
-            v_index->characteristics [0].value = 0;
-            v_index->characteristics [0].dims.count = 0;
-
-            // NCSU - Initializing stat related info in index
-            v_index->characteristics [0].bitmap = 0;
-            v_index->characteristics [0].stats = 0;
-            // NCSU ALACRITY-ADIOS - Initialize the transform metadata
-            adios_transform_init_transform_characteristic(&v_index->characteristics[0].transform);
-            //v_index->characteristics [0].transform_type = adios_transform_none;
-
-            uint64_t size = adios_get_type_size (v->type, v->data);
-            switch (v->type)
+            // only add items that were written to the index
+            assert (v->write_offset > 0); // v is vars_written, so yes it was written actually
+            //if (v->write_offset != 0)
             {
-                case adios_byte:
-                case adios_unsigned_byte:
-                case adios_short:
-                case adios_unsigned_short:
-                case adios_integer:
-                case adios_unsigned_integer:
-                case adios_long:
-                case adios_unsigned_long:
-                case adios_real:
-                case adios_double:
-                case adios_long_double:
-                case adios_complex:
-                case adios_double_complex:
-                    if (v->dimensions)
-                    {
-                        uint8_t c;
-                        uint8_t j;
-                        struct adios_dimension_struct * d = v->dimensions;
+                struct adios_index_var_struct_v1 * v_index;
+                v_index = malloc (sizeof (struct adios_index_var_struct_v1));
+                v_index->characteristics = malloc (
+                        sizeof (struct adios_index_characteristic_struct_v1)
+                        );
 
-                        // NCSU - Copy statistics from var struct to index
-                        enum ADIOS_DATATYPES original_var_type = adios_transform_get_var_original_type_var (v);
+                v_index->id = v->id;
+                v_index->group_name = (g->name ? strdup (g->name) : 0L);
+                v_index->var_name = (v->name ? strdup (v->name) : 0L);
+                v_index->var_path = (v->path ? strdup (v->path) : 0L);
+                v_index->type = v->type;
+                v_index->characteristics_count = 1;
+                v_index->characteristics_allocated = 1;
+                v_index->characteristics [0].offset = v->write_offset + pg->pg_start_in_file;
+                // Find the old var in g->vars.
+                // We need this to calculate the correct payload_offset, because that
+                // holds the variable references in the dimensions, while v-> contains
+                // only numerical values
+                struct adios_var_struct * old_var = v->parent_var;
+                v_index->characteristics [0].payload_offset = v_index->characteristics [0].offset
+                    + adios_calc_var_overhead_v1 (old_var)
+                    - strlen (old_var->path)  // take out the length of path defined in XML
+                    + strlen (v->path); // add length of the actual, current path of this var
+                v_index->characteristics [0].file_index = fd->subfile_index;
+                v_index->characteristics [0].time_index = g_item->time_index;
 
-                        uint8_t count = adios_get_stat_set_count(original_var_type);
-                        uint8_t idx = 0;
-                        uint64_t characteristic_size;
+                v_index->characteristics [0].value = 0;
+                v_index->characteristics [0].dims.count = 0;
 
-                        v_index->characteristics [0].bitmap = v->bitmap;
-                        v_index->characteristics [0].stats = malloc (count * sizeof(struct adios_index_characteristics_stat_struct *));
+                // NCSU - Initializing stat related info in index
+                v_index->characteristics [0].bitmap = 0;
+                v_index->characteristics [0].stats = 0;
+                // NCSU ALACRITY-ADIOS - Initialize the transform metadata
+                adios_transform_init_transform_characteristic(&v_index->characteristics[0].transform);
+                //v_index->characteristics [0].transform_type = adios_transform_none;
 
-                        // Set of characteristics will be repeated thrice for complex numbers
-                        for (c = 0; c < count; c ++)
+                uint64_t size = adios_get_type_size (v->type, v->data);
+                switch (v->type)
+                {
+                    case adios_byte:
+                    case adios_unsigned_byte:
+                    case adios_short:
+                    case adios_unsigned_short:
+                    case adios_integer:
+                    case adios_unsigned_integer:
+                    case adios_long:
+                    case adios_unsigned_long:
+                    case adios_real:
+                    case adios_double:
+                    case adios_long_double:
+                    case adios_complex:
+                    case adios_double_complex:
+                        if (v->dimensions)
                         {
-                            v_index->characteristics [0].stats[c] = calloc(ADIOS_STAT_LENGTH, sizeof (struct adios_index_characteristics_stat_struct));
+                            uint8_t c;
+                            uint8_t j;
+                            struct adios_dimension_struct * d = v->dimensions;
 
-                            j = idx = 0;
-                            while (v_index->characteristics [0].bitmap >> j)
+                            // NCSU - Copy statistics from var struct to index
+                            enum ADIOS_DATATYPES original_var_type = adios_transform_get_var_original_type_var (v);
+
+                            uint8_t count = adios_get_stat_set_count(original_var_type);
+                            uint8_t idx = 0;
+                            uint64_t characteristic_size;
+
+                            v_index->characteristics [0].bitmap = v->bitmap;
+                            v_index->characteristics [0].stats = malloc (count * sizeof(struct adios_index_characteristics_stat_struct *));
+
+                            // Set of characteristics will be repeated thrice for complex numbers
+                            for (c = 0; c < count; c ++)
                             {
-                                if ((v_index->characteristics [0].bitmap >> j) & 1)
+                                v_index->characteristics [0].stats[c] = calloc(ADIOS_STAT_LENGTH, sizeof (struct adios_index_characteristics_stat_struct));
+
+                                j = idx = 0;
+                                while (v_index->characteristics [0].bitmap >> j)
                                 {
-                                    if (v->stats[c][idx].data != NULL)
+                                    if ((v_index->characteristics [0].bitmap >> j) & 1)
                                     {
-                                        if (j == adios_statistic_hist)
+                                        if (v->stats[c][idx].data != NULL)
                                         {
-                                            v_index->characteristics [0].stats[c][idx].data = (struct adios_index_characteristics_hist_struct *) malloc (sizeof(struct adios_index_characteristics_hist_struct));
+                                            if (j == adios_statistic_hist)
+                                            {
+                                                v_index->characteristics [0].stats[c][idx].data = (struct adios_index_characteristics_hist_struct *) malloc (sizeof(struct adios_index_characteristics_hist_struct));
 
-                                            struct adios_hist_struct * v_hist = v->stats[c][idx].data;
-                                            struct adios_hist_struct * v_index_hist = v_index->characteristics [0].stats[c][idx].data;
+                                                struct adios_hist_struct * v_hist = v->stats[c][idx].data;
+                                                struct adios_hist_struct * v_index_hist = v_index->characteristics [0].stats[c][idx].data;
 
-                                            v_index_hist->min = v_hist->min;
-                                            v_index_hist->max = v_hist->max;
-                                            v_index_hist->num_breaks = v_hist->num_breaks;
+                                                v_index_hist->min = v_hist->min;
+                                                v_index_hist->max = v_hist->max;
+                                                v_index_hist->num_breaks = v_hist->num_breaks;
 
-                                            v_index_hist->frequencies = malloc ((v_hist->num_breaks + 1) * adios_get_type_size(adios_unsigned_integer, ""));
-                                            memcpy (v_index_hist->frequencies, v_hist->frequencies, (v_hist->num_breaks + 1) * adios_get_type_size(adios_unsigned_integer, ""));
-                                            v_index_hist->breaks = malloc ((v_hist->num_breaks) * adios_get_type_size(adios_double, ""));
-                                            memcpy (v_index_hist->breaks, v_hist->breaks, (v_hist->num_breaks) * adios_get_type_size(adios_double, ""));
+                                                v_index_hist->frequencies = malloc ((v_hist->num_breaks + 1) * adios_get_type_size(adios_unsigned_integer, ""));
+                                                memcpy (v_index_hist->frequencies, v_hist->frequencies, (v_hist->num_breaks + 1) * adios_get_type_size(adios_unsigned_integer, ""));
+                                                v_index_hist->breaks = malloc ((v_hist->num_breaks) * adios_get_type_size(adios_double, ""));
+                                                memcpy (v_index_hist->breaks, v_hist->breaks, (v_hist->num_breaks) * adios_get_type_size(adios_double, ""));
+                                            }
+                                            else
+                                            {
+                                                characteristic_size = adios_get_stat_size(v->stats[c][idx].data, original_var_type, j);
+                                                v_index->characteristics [0].stats[c][idx].data = malloc (characteristic_size);
+                                                memcpy (v_index->characteristics [0].stats[c][idx].data, v->stats[c][idx].data, characteristic_size);
+                                            }
+
+                                            idx ++;
                                         }
-                                        else
-                                        {
-                                            characteristic_size = adios_get_stat_size(v->stats[c][idx].data, original_var_type, j);
-                                            v_index->characteristics [0].stats[c][idx].data = malloc (characteristic_size);
-                                            memcpy (v_index->characteristics [0].stats[c][idx].data, v->stats[c][idx].data, characteristic_size);
-                                        }
-
-                                        idx ++;
                                     }
+                                    j ++;
                                 }
-                                j ++;
                             }
+                            // NCSU - End of copy, for statistics
+
+                            // NCSU ALACRITY-ADIOS - copy transform type field
+                            adios_transform_copy_transform_characteristic(&v_index->characteristics[0].transform, v);
+
+                            c = count_dimensions (v->dimensions);
+                            v_index->characteristics [0].dims.count = c;
+                            // (local, global, local offset)
+                            v_index->characteristics [0].dims.dims = malloc
+                                (3 * 8 * v_index->characteristics [0].dims.count);
+                            for (j = 0; j < c; j++)
+                            {
+                                v_index->characteristics [0].dims.dims [j * 3 + 0] =
+                                    adios_get_dim_value (&d->dimension);
+                                v_index->characteristics [0].dims.dims [j * 3 + 1] =
+                                    adios_get_dim_value (&d->global_dimension);
+                                v_index->characteristics [0].dims.dims [j * 3 + 2] =
+                                    adios_get_dim_value (&d->local_offset);
+
+                                d = d->next;
+                            }
+                            v_index->characteristics [0].value = 0;
                         }
-                        // NCSU - End of copy, for statistics
 
-                        // NCSU ALACRITY-ADIOS - copy transform type field
-                        adios_transform_copy_transform_characteristic(&v_index->characteristics[0].transform, v);
-
-                        c = count_dimensions (v->dimensions);
-                        v_index->characteristics [0].dims.count = c;
-                        // (local, global, local offset)
-                        v_index->characteristics [0].dims.dims = malloc
-                            (3 * 8 * v_index->characteristics [0].dims.count);
-                        for (j = 0; j < c; j++)
+                        if (v->data)
                         {
-                            v_index->characteristics [0].dims.dims [j * 3 + 0] =
-                                adios_get_dim_value (&d->dimension);
-                            v_index->characteristics [0].dims.dims [j * 3 + 1] =
-                                adios_get_dim_value (&d->global_dimension);
-                            v_index->characteristics [0].dims.dims [j * 3 + 2] =
-                                adios_get_dim_value (&d->local_offset);
+                            // NCSU - Copy statistics from var struct to index
+                            v_index->characteristics [0].bitmap = 0;
+                            v_index->characteristics [0].stats = 0;
+                            // NCSU ALACRITY-ADIOS - Clear the transform metadata
+                            // This is probably redundant with above code, but do it anyway to be safe
+                            adios_transform_clear_transform_characteristic(&v_index->characteristics[0].transform);
 
-                            d = d->next;
+                            v_index->characteristics [0].value = malloc (size);
+                            memcpy (v_index->characteristics [0].value, v->data
+                                    ,size
+                                   );
+                            v_index->characteristics [0].dims.count = 0;
+                            v_index->characteristics [0].dims.dims = 0;
                         }
-                        v_index->characteristics [0].value = 0;
-                    }
-
-                    if (v->data)
-                    {
-                        // NCSU - Copy statistics from var struct to index
-                        v_index->characteristics [0].bitmap = 0;
-                        v_index->characteristics [0].stats = 0;
-                        // NCSU ALACRITY-ADIOS - Clear the transform metadata
-                        // This is probably redundant with above code, but do it anyway to be safe
-                        adios_transform_clear_transform_characteristic(&v_index->characteristics[0].transform);
-
-                        v_index->characteristics [0].value = malloc (size);
-                        memcpy (v_index->characteristics [0].value, v->data
-                                ,size
-                               );
-                        v_index->characteristics [0].dims.count = 0;
-                        v_index->characteristics [0].dims.dims = 0;
-                    }
-
-                    break;
-
-                case adios_string:
-                    {
-                        v_index->characteristics [0].value = malloc (size + 1);
-                        memcpy (v_index->characteristics [0].value, v->data, size);
-                        ((char *) (v_index->characteristics [0].value)) [size] = 0;
 
                         break;
-                    }
-                case adios_string_array:
-                    {
-                        adios_error (err_unspecified, "String arrays are not supported for variables %s:%s:%d\n",
-                                __FILE__,__func__, __LINE__);
-                    }
-                default:
-                    {
-                        adios_error (err_unspecified, "Reached unexpected branch in %s:%s:%d\n",
-                                __FILE__,__func__, __LINE__);
-                    }
-            }
-            v_index->next = 0;
 
-            // this fn will either take ownership for free
-            log_debug ("build index var %s/%s\n", v_index->var_path, v_index->var_name);
-            index_append_var_v1 (index, v_index, 0);
+                    case adios_string:
+                        {
+                            v_index->characteristics [0].value = malloc (size + 1);
+                            memcpy (v_index->characteristics [0].value, v->data, size);
+                            ((char *) (v_index->characteristics [0].value)) [size] = 0;
+
+                            break;
+                        }
+                    case adios_string_array:
+                        {
+                            adios_error (err_unspecified, "String arrays are not supported for variables %s:%s:%d\n",
+                                    __FILE__,__func__, __LINE__);
+                        }
+                    default:
+                        {
+                            adios_error (err_unspecified, "Reached unexpected branch in %s:%s:%d\n",
+                                    __FILE__,__func__, __LINE__);
+                        }
+                }
+                v_index->next = 0;
+
+                // this fn will either take ownership for free
+                log_debug ("build index var %s/%s\n", v_index->var_path, v_index->var_name);
+                index_append_var_v1 (index, v_index, 0);
+            }
+
+            v = v->next;
         }
 
-        v = v->next;
+        pg = pg->next;
+        pgid++;
     }
 
+    struct adios_attribute_struct * a = g->attributes;
     while (a)
     {
         // only add items that were written to the index
@@ -3682,11 +3775,13 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
             a_index->characteristics_allocated = 1;
             uint64_t size = a_index->nelems * adios_get_type_size (a->type, a->value);
 
-            a_index->characteristics [0].offset = a->write_offset;
+            // pg_file_offsets [pgid] is now the last PG's start offset, which is the base
+            // offset for attributes
+            a_index->characteristics [0].offset = a->write_offset + fd->current_pg->pg_start_in_file;
             /*FIXME: this below cannot be correct, calc includes the data size 
                      itself and the payload offset should point to the beginning 
                      of the actual data. ADIOS never accesses this data though */
-            a_index->characteristics [0].payload_offset = a->write_offset + adios_calc_attribute_overhead_v1 (a);
+            a_index->characteristics [0].payload_offset = a_index->characteristics [0].offset  + adios_calc_attribute_overhead_v1 (a);
             a_index->characteristics [0].file_index = fd->subfile_index;
             a_index->characteristics [0].time_index = 0;
 

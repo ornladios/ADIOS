@@ -224,7 +224,14 @@ int common_adios_open (int64_t * fd_p, const char * group_name
         methods = methods->next;
     }
 
-    *fd_p = (int64_t) fd;
+    if (!adios_errno) 
+    {
+        *fd_p = (int64_t) fd;
+    } else 
+    {
+        free (fd_p);
+        fd_p = 0L;
+    }
 
     if ( !adios_errno && fd->mode != adios_mode_read )
     {
@@ -278,6 +285,12 @@ int common_adios_open (int64_t * fd_p, const char * group_name
                 }
             }
         }
+
+        /* Add first PG to the group */
+        assert (!fd->pgs_written);
+        assert (!fd->current_pg);
+        add_new_pg_written (fd);
+
 
 #ifdef ADIOS_TIMERS
         /* Add timer variable definitions to this output */
@@ -580,6 +593,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
                     fd->offset = 0;
                     adios_write_open_process_group_header_v1 (fd);
                     adios_write_open_vars_v1 (fd);
+                    add_new_pg_written (fd);
                 } 
                 else if (fd->bufstrat == stop_on_overflow)
                 {
@@ -647,6 +661,10 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
 
             m = m->next;
         }
+    }
+    else
+    {
+        adios_errno = err_buffer_overflow; // signal error but don't print anything anymore
     }
 
     if (v->dimensions)
@@ -758,7 +776,7 @@ int common_adios_write_byid (struct adios_file_struct * fd, struct adios_var_str
 
     if (!adios_errno && fd->mode != adios_mode_read)
     {
-        adios_copy_var_written (fd->group, v);
+        adios_copy_var_written (fd, v);
     }
 
     return adios_errno;
@@ -1167,65 +1185,8 @@ int common_adios_close (int64_t fd_p)
         v = v->next;
     }
 
-    while (fd->group->vars_written)
-    {
-        if (fd->group->vars_written->name)
-            free (fd->group->vars_written->name);
-        if (fd->group->vars_written->path)
-            free (fd->group->vars_written->path);
-
-        while (fd->group->vars_written->dimensions)
-        {
-            struct adios_dimension_struct * dimensions
-                            = fd->group->vars_written->dimensions->next;
-
-            free (fd->group->vars_written->dimensions);
-            fd->group->vars_written->dimensions = dimensions;
-        }
-
-        // NCSU - Clear stat
-        if (fd->group->vars_written->stats)
-        {
-            uint8_t j = 0, idx = 0;
-            uint8_t c = 0, count = adios_get_stat_set_count(fd->group->vars_written->type);
-
-            for (c = 0; c < count; c ++)
-            {
-                while (fd->group->vars_written->bitmap >> j)
-                {
-                    if ((fd->group->vars_written->bitmap >> j) & 1)
-                    {
-                        if (j == adios_statistic_hist)
-                        {
-                            struct adios_hist_struct * hist = (struct adios_hist_struct *) (fd->group->vars_written->stats[c][idx].data);
-                            free (hist->breaks);
-                            free (hist->frequencies);
-                            free (hist);
-                        }
-                        else
-                            free (fd->group->vars_written->stats[c][idx].data);
-
-                        idx ++;
-                    }
-                    j ++;
-                }
-                free (fd->group->vars_written->stats[c]);
-            }
-            free (fd->group->vars_written->stats);
-        }
-
-        // NCSU ALACRITY-ADIOS - Clear transform metadata
-        adios_transform_clear_transform_var(fd->group->vars_written);
-
-        if (fd->group->vars_written->adata) {
-            free (fd->group->vars_written->adata);
-            fd->group->vars_written->data = fd->group->vars_written->adata = 0;
-        }
-
-        v = fd->group->vars_written->next;
-        free (fd->group->vars_written);
-        fd->group->vars_written = v;
-    }
+    /* clean-up all copied variables with statistics and data in all PGs attached to this file */
+    adios_free_pglist (fd);
 
     if (fd->name)
     {

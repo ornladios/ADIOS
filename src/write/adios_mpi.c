@@ -542,8 +542,6 @@ int adios_mpi_open (struct adios_file_struct * fd
 
         case adios_mode_write:
         {
-            fd->base_offset = 0;
-            fd->pg_start_in_file = 0;
 #if COLLECT_METRICS                     
             gettimeofday (&timing.t16, NULL);
 #endif
@@ -724,13 +722,12 @@ int adios_mpi_open (struct adios_file_struct * fd
                                   );
                     adios_parse_attributes_index_v1 (&md->b, &md->index->attrs_root);
 
-                    fd->base_offset = md->b.end_of_pgs;
-                    fd->pg_start_in_file = fd->base_offset;
+                    // remember the end of the last PG in file. The new PG written now
+                    // will have an offset updated from here. 
+                    // md->b.end_of_pgs points to this position
                 }
                 else
                 {
-                    fd->base_offset = 0;
-                    fd->pg_start_in_file = 0;
                     MPI_Bcast (&fd->group->time_index, 1, MPI_INT, 0
                               ,md->group_comm
                               );
@@ -740,9 +737,6 @@ int adios_mpi_open (struct adios_file_struct * fd
             }
             else
             {
-                fd->base_offset = 0; // these values will be determined correctly in adios_mpi_close much later
-                fd->pg_start_in_file = 0;
-
                 if (md->rank == 0)
                     MPI_File_close (&md->fh);
             }
@@ -893,7 +887,7 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
 #else
 
             uint64_t last_pgsize = offsets [0];
-            offsets [0] = fd->base_offset;
+            offsets [0] = md->b.end_of_pgs; // 0 or where to append to existing data
             //printf ("offsets[%d] = {%llu", md->size, offsets[0]);
             for (i = 1; i < md->size; i++)
             {
@@ -911,8 +905,7 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
                         ,MPI_IN_PLACE, 1, MPI_LONG_LONG
                         ,0, md->group_comm
                         );
-            fd->base_offset = offsets [0];
-            fd->pg_start_in_file = fd->base_offset;
+            fd->current_pg->pg_start_in_file = offsets[0];
             free (offsets);
         }
         else
@@ -929,14 +922,14 @@ adios_mpi_build_file_offset(struct adios_MPI_data_struct *md,
                         ,offset, 1, MPI_LONG_LONG
                         ,0, md->group_comm
                         );
-            fd->base_offset = offset [0];
-            fd->pg_start_in_file = fd->base_offset;
+            fd->current_pg->pg_start_in_file = offset[0];
         }
-        //printf ("rank %d: base_offset = %llu, pg_start_in_file = %llu\n", md->rank, fd->base_offset, fd->pg_start_in_file);
+        printf ("rank %d: pg_start_in_file = %llu\n", md->rank, fd->current_pg->pg_start_in_file);
     }
     else
     {
         md->b.pg_index_offset = fd->bytes_written;
+        fd->current_pg->pg_start_in_file = md->b.end_of_pgs; // 0 or where to append to existing data
     }
 }
 
@@ -974,127 +967,6 @@ void adios_mpi_write (struct adios_file_struct * fd
         }
     }
 
-#if 0
-    if (fd->shared_buffer == adios_flag_no)
-    {
-        int err;
-        // var payload sent for sizing information
-        adios_write_var_header_v1 (fd, v);
-
-#if 0
-        err = MPI_File_write (md->fh, fd->buffer, fd->bytes_written
-                             ,MPI_BYTE, &md->status
-                             );
-#endif
-        {
-            uint64_t total_written = 0;
-            uint64_t to_write = fd->bytes_written;
-            int write_len = 0;
-            int count;
-            char * buf_ptr = fd->buffer;
-            while (total_written < fd->bytes_written)
-            {
-                write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
-                err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
-                MPI_Get_count(&md->status, MPI_BYTE, &count);
-                if (count != write_len)
-                {
-                    err = count;
-                    break;
-                }
-                total_written += count;
-                buf_ptr += count;
-                to_write -= count;
-                //err = total_written;
-            }
-        }
-        if (err != MPI_SUCCESS) 
-        {              
-            char e [MPI_MAX_ERROR_STRING];
-            int len = 0;
-            memset (e, 0, MPI_MAX_ERROR_STRING);
-            MPI_Error_string (err, e, &len);
-            adios_error (err_write_error, 
-                         "MPI method, rank %d: adios_write() of header of variable %s to "
-                         "file %s failed: '%s'\n ",
-                         md->rank, v->name, fd->name, e);       
-        }
-
-        int count;
-        MPI_Get_count (&md->status, MPI_BYTE, &count);
-        if (count != fd->bytes_written)
-        {
-            log_warn ("MPI method, rank %d: tried to write %llu bytes, "
-                      "only wrote %d of header of variable %s\n",
-                      md->rank, fd->bytes_written, count, v->name);
-        }
-        fd->base_offset += count;
-        fd->offset = 0;
-        fd->bytes_written = 0;
-        adios_shared_buffer_free (&md->b);
-
-        // write payload
-        // adios_write_var_payload_v1 (fd, v);
-        uint64_t var_size = adios_get_var_size (v, v->data);
-
-        if (fd->base_offset + var_size > fd->pg_start_in_file + fd->write_size_bytes)
-            adios_error (err_out_of_bound, 
-                         "MPI method, rank %d: adios_write() of variable %s exceeds pg bound.\n"
-                         "File is corrupted. Need to enlarge group size in adios_group_size().\n"
-                         "Group size=%llu, offset at end of this variable data=%llu\n",
-                         md->rank, v->name, 
-                         fd->write_size_bytes,
-                         fd->base_offset - fd->pg_start_in_file + var_size);
-#if 0
-        err = MPI_File_write (md->fh, v->data, var_size, MPI_BYTE, &md->status);
-#endif
-        {
-            uint64_t total_written = 0;
-            uint64_t to_write = var_size;
-            int write_len = 0;
-            int count;
-            const char * buf_ptr = v->data;
-            while (total_written < var_size)
-            {
-                write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
-                err = MPI_File_write (md->fh, (char*)buf_ptr, write_len, MPI_BYTE, &md->status);
-                MPI_Get_count(&md->status, MPI_BYTE, &count);
-                if (count != write_len)
-                {
-                    err = count;
-                    break;
-                }
-                total_written += count;
-                buf_ptr += count;
-                to_write -= count;
-                //err = total_written;
-            }
-        }
-        if (err != MPI_SUCCESS) 
-        {              
-            char e [MPI_MAX_ERROR_STRING];
-            int len = 0;
-            memset (e, 0, MPI_MAX_ERROR_STRING);
-            MPI_Error_string (err, e, &len);
-            adios_error (err_write_error, 
-                         "MPI method, rank %d: adios_write() of variable %s to "
-                         "file %s failed: '%s'\n ",
-                         md->rank, v->name, fd->name, e);       
-        }
-
-        MPI_Get_count (&md->status, MPI_BYTE, &count);
-        if (count != var_size)
-        {
-            log_warn ("MPI method, rank %d: tried to write %llu bytes, "
-                      "only wrote %d of variable %s\n",
-                      md->rank, var_size, count, v->name);
-        }
-        fd->base_offset += count;
-        fd->offset = 0;
-        fd->bytes_written = 0;
-        adios_shared_buffer_free (&md->b);
-    }
-#endif //0
 
 #if COLLECT_METRICS
     if (timing.write_count == timing.write_size)
@@ -1337,203 +1209,6 @@ void adios_mpi_close (struct adios_file_struct * fd
             uint64_t buffer_size = 0;
             uint64_t buffer_offset = 0;
             int err;
-#if 0
-            if (fd->shared_buffer == adios_flag_no)
-            {
-                MPI_Offset new_off;
-                // set it up so that it will start at 0, but have correct sizes
-                MPI_File_get_position (md->fh, &new_off);
-                fd->offset = fd->base_offset - md->vars_start;
-                fd->vars_start = 0;
-                fd->buffer_size = 0;
-                adios_write_close_vars_v1 (fd);
-                // fd->vars_start gets updated with the size written
-                MPI_File_seek (md->fh, md->vars_start, MPI_SEEK_SET);
-#if 0
-                err = MPI_File_write (md->fh, fd->buffer, md->vars_header_size
-                                     ,MPI_BYTE, &md->status
-                                     );
-#endif
-                {
-                    uint64_t total_written = 0;
-                    uint64_t to_write = md->vars_header_size;
-                    int write_len = 0;
-                    int count;
-                    char * buf_ptr = fd->buffer;
-                    while (total_written < md->vars_header_size)
-                    {
-                        write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
-                        err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
-                        MPI_Get_count(&md->status, MPI_BYTE, &count);
-                        if (count != write_len)
-                        {
-                            err = count;
-                            break;
-                        }
-                        total_written += count;
-                        buf_ptr += count;
-                        to_write -= count;
-                        //err = total_written;
-                    }
-                }
-                if (err != MPI_SUCCESS) 
-                {              
-                    char e [MPI_MAX_ERROR_STRING];
-                    int len = 0;
-                    memset (e, 0, MPI_MAX_ERROR_STRING);
-                    MPI_Error_string (err, e, &len);
-                    adios_error (err_write_error, 
-                         "MPI method, rank %d: adios_close(): writing of variable header "
-                         "of %llu bytes to file %s failed: '%s'\n",
-                         md->rank, md->vars_header_size, fd->name, e);       
-                }
-
-                int count;
-                MPI_Get_count (&md->status, MPI_BYTE, &count);
-                if (count != md->vars_header_size)
-                {
-                    log_warn ("MPI method, rank %d: adios_close() tried to write %llu bytes "
-                              "of variable header but only wrote %d\n",
-                              md->rank, md->vars_header_size, count);
-                }
-                fd->offset = 0;
-                fd->bytes_written = 0;
-                adios_shared_buffer_free (&md->b);
-
-                adios_write_open_attributes_v1 (fd);
-                md->vars_start = new_off;
-                md->vars_header_size = fd->offset;
-                MPI_File_seek (md->fh, new_off + md->vars_header_size
-                              ,MPI_SEEK_SET
-                              ); // go back to end, but after attr header
-                fd->base_offset += fd->offset;  // add size of header
-                fd->offset = 0;
-                fd->bytes_written = 0;
-
-                if (!fd->group->process_id) { // from ADIOS 1.4, only rank 0 writes attributes
-                    while (a)
-                    {
-                        adios_write_attribute_v1 (fd, a);
-                        if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
-                            adios_error (err_out_of_bound, 
-                                    "MPI method, rank %d: writing of the attributes exceeds pg bound.\n"
-                                    "File is corrupted. Need to enlarge group size in adios_group_size().\n"
-                                    "Group size=%llu, offset at end of this variable data=%llu\n",
-                                    md->rank, 
-                                    fd->write_size_bytes,
-                                    fd->base_offset - fd->pg_start_in_file + fd->bytes_written);
-#if 0
-                        err = MPI_File_write (md->fh, fd->buffer, fd->bytes_written
-                                ,MPI_BYTE, &md->status
-                                );
-#endif
-                        {
-                            uint64_t total_written = 0;
-                            uint64_t to_write = fd->bytes_written;
-                            int write_len = 0;
-                            int count;
-                            char * buf_ptr = fd->buffer;
-                            while (total_written < fd->bytes_written)
-                            {
-                                write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
-                                err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
-                                MPI_Get_count(&md->status, MPI_BYTE, &count);
-                                if (count != write_len)
-                                {
-                                    err = count;
-                                    break;
-                                }
-                                total_written += count;
-                                buf_ptr += count;
-                                to_write -= count;
-                                //err = total_written;
-                            }
-                        }
-                        if (err != MPI_SUCCESS) 
-                        {              
-                            char e [MPI_MAX_ERROR_STRING];
-                            int len = 0;
-                            memset (e, 0, MPI_MAX_ERROR_STRING);
-                            MPI_Error_string (err, e, &len);
-                            adios_error (err_write_error, 
-                                    "MPI method, rank %d: adios_close(): writing of attributes "
-                                    "of %llu bytes to file %s failed: '%s'\n",
-                                    md->rank, fd->bytes_written, fd->name, e);       
-                        }
-
-                        MPI_Get_count (&md->status, MPI_BYTE, &count);
-                        if (count != fd->bytes_written)
-                        {
-                            log_warn ("MPI method, rank %d: adios_close() tried to write "
-                                      "%llu bytes of attributes but only wrote %d\n",
-                                      md->rank, fd->bytes_written, count);
-                        }
-                        fd->base_offset += count;
-                        fd->offset = 0;
-                        fd->bytes_written = 0;
-                        adios_shared_buffer_free (&md->b);
-
-                        a = a->next;
-                    }
-                }
-
-                // set it up so that it will start at 0, but have correct sizes
-                fd->offset = fd->base_offset - md->vars_start;
-                fd->vars_start = 0;
-                fd->buffer_size = 0;
-                adios_write_close_attributes_v1 (fd);
-                MPI_File_seek (md->fh, md->vars_start, MPI_SEEK_SET);
-                // fd->vars_start gets updated with the size written
-#if 0
-                err = MPI_File_write (md->fh, fd->buffer, md->vars_header_size
-                                     ,MPI_BYTE, &md->status
-                                     );
-#endif
-                {
-                    uint64_t total_written = 0;
-                    uint64_t to_write = md->vars_header_size;
-                    int write_len = 0;
-                    int count;
-                    char * buf_ptr = fd->buffer;
-                    while (total_written < md->vars_header_size)
-                    {
-                        write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
-                        err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
-                        MPI_Get_count(&md->status, MPI_BYTE, &count);
-                        if (count != write_len)
-                        {
-                            err = count;
-                            break;
-                        }
-                        total_written += count;
-                        buf_ptr += count;
-                        to_write -= count;
-                        //err = total_written;
-                    }
-                }
-                if (err != MPI_SUCCESS) 
-                {              
-                    char e [MPI_MAX_ERROR_STRING];
-                    int len = 0;
-                    memset (e, 0, MPI_MAX_ERROR_STRING);
-                    MPI_Error_string (err, e, &len);
-                    adios_error (err_write_error, 
-                            "MPI method, rank %d: adios_close(): writing of variable header "
-                            "of %llu bytes to file %s failed: '%s'\n",
-                            md->rank, md->vars_header_size, fd->name, e);       
-                }
-
-                MPI_Get_count (&md->status, MPI_BYTE, &count);
-                if (count != md->vars_header_size)
-                {
-                    log_warn ("MPI method, rank %d: adios_close() tried to write %llu bytes "
-                              "of variable header but only wrote %d\n",
-                              md->rank, md->vars_header_size, count);
-                }
-                fd->offset = 0;
-                fd->bytes_written = 0;
-            }
-#endif //0
 
 #if COLLECT_METRICS
             gettimeofday (&timing.t19, NULL);
@@ -1544,13 +1219,10 @@ void adios_mpi_close (struct adios_file_struct * fd
             adios_mpi_build_file_offset (md, fd);
             //set_stripe_size (fd, md, name);
 
-            // need to fix the offsets in rank>0 processes, where base_offset was 0 until now
-            if (md->rank != 0) {
-                adios_increase_offsets_v1(fd, fd->base_offset);
-            }
-
             // build index appending to any existing index
+            // need to fix the offsets of variables, where the base offset was 0
             adios_build_index_v1 (fd, md->index);
+
             // if collective, gather the indexes from the rest and call
             if (md->group_comm != MPI_COMM_NULL)
             {
@@ -1634,6 +1306,8 @@ void adios_mpi_close (struct adios_file_struct * fd
 #endif
             if (fd->shared_buffer == adios_flag_yes)
             {
+                // everyone writes their data
+                MPI_File_seek (md->fh, fd->current_pg->pg_start_in_file, MPI_SEEK_SET);
                 // if we need to write > 2 GB, need to do it in parts
                 // since count is limited to MAX_MPIWRITE_SIZE (signed 32-bit max).
                 uint64_t bytes_written = 0;
@@ -1647,25 +1321,8 @@ void adios_mpi_close (struct adios_file_struct * fd
                     to_write = (int32_t) fd->bytes_written;
                 }
 
-                if (fd->base_offset + fd->bytes_written > 
-                    fd->pg_start_in_file + fd->bytes_written) 
-                {
-                    adios_error (err_out_of_bound, 
-                            "MPI method, rank %d: size of buffered data exceeds pg bound.\n"
-                            "File is corrupted.\n"
-                            "Group size=%llu, offset at end of variable buffer=%llu\n",
-                            md->rank, 
-                            fd->bytes_written,
-                            fd->base_offset - fd->pg_start_in_file + fd->bytes_written);
-                }
-
                 while (bytes_written < fd->bytes_written)
                 {
-                    // everyone writes their data
-
-                    MPI_File_seek (md->fh, fd->base_offset + bytes_written
-                                  ,MPI_SEEK_SET
-                                  );
                     err = MPI_File_write (md->fh, fd->buffer + bytes_written
                                          ,to_write, MPI_BYTE, &md->status
                                          );
@@ -1781,215 +1438,13 @@ timeval_subtract (&timing.t8, &b, &a);
             uint64_t buffer_offset = 0;
             int err;
 
-#if 0
-            if (fd->shared_buffer == adios_flag_no)
-            {
-                MPI_Offset new_off;
-                // set it up so that it will start at 0, but have correct sizes
-                MPI_File_get_position (md->fh, &new_off);
-                fd->offset = fd->base_offset - md->vars_start;
-                fd->vars_start = 0;
-                fd->buffer_size = 0;
-                adios_write_close_vars_v1 (fd);
-                // fd->vars_start gets updated with the size written
-                MPI_File_seek (md->fh, md->vars_start, MPI_SEEK_SET);
-#if 0
-                err = MPI_File_write (md->fh, fd->buffer, md->vars_header_size
-                                     ,MPI_BYTE, &md->status
-                                     );
-#endif
-                {              
-                    uint64_t total_written = 0;
-                    uint64_t to_write = md->vars_header_size;
-                    int write_len = 0;
-                    int count;
-                    char * buf_ptr = fd->buffer;
-                    while (total_written < md->vars_header_size)
-                    {
-                        write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
-                        err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
-                        MPI_Get_count(&md->status, MPI_BYTE, &count);
-                        if (count != write_len)
-                        {
-                            err = count;
-                            break;
-                        }
-                        total_written += count;
-                        buf_ptr += count;
-                        to_write -= count;
-                        //err = total_written;
-                    }
-                }              
-                if (err != MPI_SUCCESS) 
-                {              
-                    char e [MPI_MAX_ERROR_STRING];
-                    int len = 0;
-                    memset (e, 0, MPI_MAX_ERROR_STRING);
-                    MPI_Error_string (err, e, &len);
-                    adios_error (err_write_error, 
-                         "MPI method, rank %d: adios_close(): writing of variable header "
-                         "of %llu bytes to file %s failed: '%s'\n",
-                         md->rank, md->vars_header_size, fd->name, e);       
-                }
-
-                int count;
-                MPI_Get_count (&md->status, MPI_BYTE, &count);
-                if (count != md->vars_header_size)
-                {
-                    log_warn ("MPI method, rank %d: adios_close() tried to write %llu bytes "
-                              "of variable header but only wrote %d\n",
-                              md->rank, md->vars_header_size, count);
-                }
-                fd->offset = 0;
-                fd->bytes_written = 0;
-                adios_shared_buffer_free (&md->b);
-
-                adios_write_open_attributes_v1 (fd);
-                md->vars_start = new_off;
-                md->vars_header_size = fd->offset;
-                MPI_File_seek (md->fh, new_off + md->vars_header_size
-                              ,MPI_SEEK_SET
-                              ); // go back to end, but after attr header
-                fd->base_offset += fd->offset;  // add size of header
-                fd->offset = 0;
-                fd->bytes_written = 0;
-
-                if (!fd->group->process_id) { // from ADIOS 1.4, only rank 0 writes attributes
-                    while (a)
-                    {
-                        adios_write_attribute_v1 (fd, a);
-                        if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->write_size_bytes)
-                            adios_error (err_out_of_bound, 
-                                    "MPI method, rank %d: writing of the attributes exceeds pg bound.\n"
-                                    "File is corrupted. Need to enlarge group size in adios_group_size().\n"
-                                    "Group size=%llu, offset at end of this variable data=%llu\n",
-                                    md->rank, 
-                                    fd->write_size_bytes,
-                                    fd->base_offset - fd->pg_start_in_file + fd->bytes_written);
-#if 0
-                        err = MPI_File_write (md->fh, fd->buffer, fd->bytes_written
-                                ,MPI_BYTE, &md->status
-                                );
-#endif
-                        {
-                            uint64_t total_written = 0;
-                            uint64_t to_write = fd->bytes_written;
-                            int write_len = 0;
-                            int count;
-                            char * buf_ptr = fd->buffer;
-                            while (total_written < fd->bytes_written)
-                            {
-                                write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
-                                err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
-                                MPI_Get_count(&md->status, MPI_BYTE, &count);
-                                if (count != write_len)
-                                {
-                                    err = count;
-                                    break;
-                                }
-                                total_written += count;
-                                buf_ptr += count;
-                                to_write -= count;
-                                //err = total_written;
-                            }
-                        }              
-                        if (err != MPI_SUCCESS) 
-                        {              
-                            char e [MPI_MAX_ERROR_STRING];
-                            int len = 0;
-                            memset (e, 0, MPI_MAX_ERROR_STRING);
-                            MPI_Error_string (err, e, &len);
-                            adios_error (err_write_error, 
-                                    "MPI method, rank %d: adios_close(): writing of attributes "
-                                    "of %llu bytes to file %s failed: '%s'\n",
-                                    md->rank, fd->bytes_written, fd->name, e);       
-                        }
-
-                        MPI_Get_count (&md->status, MPI_BYTE, &count);
-                        if (count != fd->bytes_written)
-                        {
-                            log_warn ("MPI method, rank %d: adios_close() tried to write "
-                                      "%llu bytes of attributes but only wrote %d\n",
-                                      md->rank, fd->bytes_written, count);
-                        }
-                        fd->base_offset += count;
-                        fd->offset = 0;
-                        fd->bytes_written = 0;
-                        adios_shared_buffer_free (&md->b);
-
-                        a = a->next;
-                    }
-                }
-
-                // set it up so that it will start at 0, but have correct sizes
-                fd->offset = fd->base_offset - md->vars_start;
-                fd->vars_start = 0;
-                fd->buffer_size = 0;
-                adios_write_close_attributes_v1 (fd);
-                MPI_File_seek (md->fh, md->vars_start, MPI_SEEK_SET);
-                // fd->vars_start gets updated with the size written
-#if 0
-                err = MPI_File_write (md->fh, fd->buffer, md->vars_header_size
-                                     ,MPI_BYTE, &md->status
-                                     );
-#endif
-                {              
-                    uint64_t total_written = 0;
-                    uint64_t to_write = md->vars_header_size;
-                    int write_len = 0;
-                    int count;
-                    char * buf_ptr = fd->buffer;
-                    while (total_written < md->vars_header_size)
-                    {
-                        write_len = (to_write > MAX_MPIWRITE_SIZE) ? MAX_MPIWRITE_SIZE : to_write;
-                        err = MPI_File_write (md->fh, buf_ptr, write_len, MPI_BYTE, &md->status);
-                        MPI_Get_count(&md->status, MPI_BYTE, &count);
-                        if (count != write_len)
-                        {
-                            err = count;
-                            break;
-                        }
-                        total_written += count;
-                        buf_ptr += count;
-                        to_write -= count;
-                        //err = total_written;
-                    }
-                }              
-                if (err != MPI_SUCCESS) 
-                {              
-                    char e [MPI_MAX_ERROR_STRING];
-                    int len = 0;
-                    memset (e, 0, MPI_MAX_ERROR_STRING);
-                    MPI_Error_string (err, e, &len);
-                    adios_error (err_write_error, 
-                            "MPI method, rank %d: adios_close(): writing of variable header "
-                            "of %llu bytes to file %s failed: '%s'\n",
-                            md->rank, md->vars_header_size, fd->name, e);       
-                }
-
-                MPI_Get_count (&md->status, MPI_BYTE, &count);
-                if (count != md->vars_header_size)
-                {
-                    log_warn ("MPI method, rank %d: adios_close() tried to write %llu bytes "
-                              "of variable header but only wrote %d\n",
-                              md->rank, md->vars_header_size, count);
-                }
-                fd->offset = 0;
-                fd->bytes_written = 0;
-            }
-#endif //0
-
             // figure out the offsets
             // before writing out the buffer and build the index based on target offsets
             adios_mpi_build_file_offset (md, fd);
             //set_stripe_size (fd, md, name);
 
-            // need to fix the offsets in rank>0 processes, where base_offset was 0 until now
-            if (md->rank != 0) {
-                adios_increase_offsets_v1(fd, fd->base_offset);
-            }
-
             // build index appending to any existing index
+            // need to fix the offsets of variables, where the base offset was 0
             adios_build_index_v1 (fd, md->index);
             // if collective, gather the indexes from the rest and call
             if (md->group_comm != MPI_COMM_NULL)
@@ -2072,19 +1527,8 @@ timeval_subtract (&timing.t8, &b, &a);
 
             if (fd->shared_buffer == adios_flag_yes)
             {
-                if (fd->base_offset + fd->bytes_written > 
-                    fd->pg_start_in_file + fd->bytes_written) 
-                {
-                    adios_error (err_out_of_bound, 
-                            "MPI method, rank %d: size of buffered data exceeds pg bound.\n"
-                            "File is corrupted. Need to enlarge group size in adios_group_size().\n"
-                            "Group size=%llu, offset at end of variable buffer=%llu\n",
-                            md->rank, 
-                            fd->bytes_written,
-                            fd->base_offset - fd->pg_start_in_file + fd->bytes_written);
-                }
                 // everyone writes their data
-                MPI_File_seek (md->fh, fd->base_offset, MPI_SEEK_SET);
+                MPI_File_seek (md->fh, fd->current_pg->pg_start_in_file, MPI_SEEK_SET);
 #if 0
                 err = MPI_File_write (md->fh, fd->buffer, fd->bytes_written
                                      ,MPI_BYTE, &md->status
