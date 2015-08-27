@@ -203,11 +203,6 @@ struct adios_file_struct
     struct adios_pg_struct * pgs_written;
     struct adios_pg_struct * current_pg; // points to last PG in the list, which is being created in buffer
 
-
-    /*FIXME: remove these two */
-    uint64_t pg_start_in_file; //  where this pg started in the file
-    uint64_t base_offset;   // where writing last ocurred
-
     char * allocated_bufptr;  // actual allocated buffer before alignment
     char * buffer;          // buffer we use for building the output (aligned, made from allocated_bufptr)
     uint64_t offset;        // current offset to write at
