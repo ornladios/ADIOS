@@ -47,8 +47,6 @@ void adios_file_struct_init (struct adios_file_struct * fd)
     fd->mode = adios_mode_write;
     fd->pgs_written = NULL;
     fd->current_pg = NULL;
-    fd->pg_start_in_file = 0;
-    fd->base_offset = 0;
     fd->allocated_bufptr = NULL;
     fd->buffer = NULL;
     fd->shared_buffer = adios_flag_no;
@@ -5529,7 +5527,8 @@ uint64_t adios_write_var_header_v1 (struct adios_file_struct * fd
     uint16_t len;
 
     uint64_t start = fd->offset;  // save to write the size
-    v->write_offset = fd->offset + fd->base_offset; // save offset in file
+    v->write_offset = fd->offset; // save offset relative to beginning of buffer
+                                  // PG start offset in file will be added later in adios_build_index_v1()
     fd->offset += 8;              // save space for the size
     total_size += 8;              // makes final parsing easier
 
@@ -5603,7 +5602,8 @@ int adios_write_attribute_v1 (struct adios_file_struct * fd
 
     // save space for attr length
     start = fd->offset;
-    a->write_offset = fd->offset + fd->base_offset; // save offset in file
+    a->write_offset = fd->offset; // save offset relative to beginning of buffer
+                                  // PG start offset in file will be added later in adios_build_index_v1()
     fd->offset += 4;
 
     buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &a->id, 4);

@@ -47,6 +47,7 @@ struct adios_MPI_data_struct
     MPI_Request req;
     MPI_Status status;
     MPI_Comm group_comm;
+    MPI_Info info;      // set with base hints for Lustre
     int rank;
     int size;
 
@@ -206,6 +207,9 @@ struct lov_user_md {                 // LOV EA user data (host-endian)
 struct obd_uuid {
         char uuid[40];
 };
+
+
+#define LUSTRE_STRIPE_UNIT 65536
 
 static void trim_spaces (char * str)
 {
@@ -508,6 +512,10 @@ void adios_mpi_lustre_init (const PairStruct * parameters
     md->fh = 0;
     md->req = 0;
     memset (&md->status, 0, sizeof (MPI_Status));
+    MPI_Info_create (&md->info);
+    MPI_Info_set (md->info, "romio_ds_read", "disable");
+    MPI_Info_set (md->info, "romio_ds_write", "disable");
+    MPI_Info_set (md->info, "ind_wr_buffer_size", "16777216");
     md->rank = 0;
     md->size = 0;
     md->group_comm = method->init_comm;//unused, adios_open sets current comm
@@ -520,74 +528,12 @@ void adios_mpi_lustre_init (const PairStruct * parameters
     adios_buffer_struct_init (&md->b);
 }
 
-#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
-// Indices for the timer object
-int ADIOS_TIMER_MPI_LUSTRE_COMM = ADIOS_TIMING_MAX_USER_TIMERS + 0;
-int ADIOS_TIMER_MPI_LUSTRE_IO = ADIOS_TIMING_MAX_USER_TIMERS + 1;
-int ADIOS_TIMER_MPI_LUSTRE_MD = ADIOS_TIMING_MAX_USER_TIMERS + 2;
-int ADIOS_TIMER_MPI_LUSTRE_AD_WRITE = ADIOS_TIMING_MAX_USER_TIMERS + 3;
-int ADIOS_TIMER_MPI_LUSTRE_AD_CLOSE = ADIOS_TIMING_MAX_USER_TIMERS + 4;
-int ADIOS_TIMER_MPI_LUSTRE_AD_SHOULD_BUFFER = ADIOS_TIMING_MAX_USER_TIMERS + 5;
-#endif
-
-
-int adios_mpi_lustre_open (struct adios_file_struct * fd
-                   ,struct adios_method_struct * method, MPI_Comm comm
-                   )
-{
-    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
-                                                    method->method_data;
-
-#if COLLECT_METRICS
-    gettimeofday (&t0, NULL); // only used on rank == size - 1, but we don't
-                              // have the comm yet to get the rank/size
-#endif
-    md->group_comm = comm;
-    if (md->group_comm != MPI_COMM_NULL)
-    {
-        MPI_Comm_rank (md->group_comm, &md->rank);
-        MPI_Comm_size (md->group_comm, &md->size);
-    }
-    fd->group->process_id = md->rank;
-
-#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
-    int timer_count = 6;
-    char ** timer_names = (char**) malloc (timer_count * sizeof (char*) );
-    timer_names [0] = "Communication";
-    timer_names [1] = "I/O";
-    timer_names [2] = "Metadata";
-    timer_names [3] = "ad_write";
-    timer_names [4] = "ad_close";
-    timer_names [5] = "ad_should_buffer";
-   
-
-    // Ensure both timing objects exist
-    // timing_obj should get created at every open
-    // prev_timing_obj should only be created at the first open 
-    if (fd->group)
-    {
-        if (!fd->group->timing_obj)
-            fd->group->timing_obj = adios_timing_create (timer_count, timer_names);
-
-        if (!fd->group->prev_timing_obj)
-            fd->group->prev_timing_obj = adios_timing_create (timer_count, timer_names);
-    }
-
-
-#endif
-
-    // we have to wait for the group_size (should_buffer) 
-    // to calculate stripe sizes from output sizes of the processes
-    // before we can do an open for any of the modes
-
-    return 1;
-}
 
 static
-void build_offsets (struct adios_bp_buffer_struct_v1 * b
-                   ,MPI_Offset * offsets, uint64_t size, char * group_name
-                   ,struct adios_index_struct_v1 * index
-                   )
+void build_read_offsets (struct adios_bp_buffer_struct_v1 * b
+                        ,MPI_Offset * offsets, uint64_t size, char * group_name
+                        ,struct adios_index_struct_v1 * index
+                        )
 {
     struct adios_index_process_group_struct_v1 * pg_root = index->pg_root;
     while (pg_root)
@@ -614,13 +560,70 @@ void build_offsets (struct adios_bp_buffer_struct_v1 * b
     }
 }
 
-enum BUFFERING_STRATEGY adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
-                                                       ,struct adios_method_struct * method
-                                                       )
+
+// Indices for the timer object
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
+static int ADIOS_TIMER_COMM         = ADIOS_TIMING_MAX_USER_TIMERS + 0;
+static int ADIOS_TIMER_IO           = ADIOS_TIMING_MAX_USER_TIMERS + 1;
+static int ADIOS_TIMER_LOCALMD      = ADIOS_TIMING_MAX_USER_TIMERS + 2;
+static int ADIOS_TIMER_GLOBALMD     = ADIOS_TIMING_MAX_USER_TIMERS + 3;
+static int ADIOS_TIMER_AD_OPEN      = ADIOS_TIMING_MAX_USER_TIMERS + 4;
+static int ADIOS_TIMER_AD_WRITE     = ADIOS_TIMING_MAX_USER_TIMERS + 5;
+static int ADIOS_TIMER_AD_OVERFLOW  = ADIOS_TIMING_MAX_USER_TIMERS + 6;
+static int ADIOS_TIMER_AD_CLOSE     = ADIOS_TIMING_MAX_USER_TIMERS + 7;
+#endif
+
+
+int adios_mpi_lustre_open (struct adios_file_struct * fd
+                   ,struct adios_method_struct * method, MPI_Comm comm
+                   )
 {
-    int i;
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
-                                                      method->method_data;
+                                                    method->method_data;
+
+#if COLLECT_METRICS
+    gettimeofday (&t0, NULL); // only used on rank == size - 1, but we don't
+                              // have the comm yet to get the rank/size
+#endif
+    md->group_comm = comm;
+    if (md->group_comm != MPI_COMM_NULL)
+    {
+        MPI_Comm_rank (md->group_comm, &md->rank);
+        MPI_Comm_size (md->group_comm, &md->size);
+    }
+    fd->group->process_id = md->rank;
+
+#if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
+    int timer_count = 8;
+    char ** timer_names = (char**) malloc (timer_count * sizeof (char*) );
+    timer_names [0] = "Communication   ";
+    timer_names [1] = "I/O             ";
+    timer_names [2] = "Local metadata  ";
+    timer_names [3] = "Global metadata ";
+    timer_names [4] = "adios_open()    ";
+    timer_names [5] = "adios_write()   ";
+    timer_names [6] = "adios_overflow()";
+    timer_names [7] = "adios_close()   ";
+
+
+    // Ensure both timing objects exist
+    // timing_obj should get created at every open
+    // prev_timing_obj should only be created at the first open 
+    if (fd->group)
+    {
+        if (!fd->group->timing_obj)
+            fd->group->timing_obj = adios_timing_create (timer_count, timer_names);
+
+        if (!fd->group->prev_timing_obj)
+            fd->group->prev_timing_obj = adios_timing_create (timer_count, timer_names);
+    }
+
+
+#endif
+
+    START_TIMER (ADIOS_TIMER_AD_OPEN);
+
+    int i;
     char * name;
     int err;
     int flag;    // used for coordinating the MPI_File_open
@@ -633,9 +636,6 @@ enum BUFFERING_STRATEGY adios_mpi_lustre_should_buffer (struct adios_file_struct
     gettimeofday (&t21, NULL);
 #endif
 
-    START_TIMER (ADIOS_TIMER_MPI_LUSTRE_AD_SHOULD_BUFFER);
-
-
     name = malloc (strlen (method->base_path) + strlen (fd->name) + 1);
     sprintf (name, "%s%s", method->base_path, fd->name);
 
@@ -646,9 +646,6 @@ enum BUFFERING_STRATEGY adios_mpi_lustre_should_buffer (struct adios_file_struct
     previous = md->rank - 1;
     current = md->rank;
 
-    fd->base_offset = 0;
-
-#define LUSTRE_STRIPE_UNIT 65536
 
     switch (fd->mode)
     {
@@ -720,8 +717,7 @@ enum BUFFERING_STRATEGY adios_mpi_lustre_should_buffer (struct adios_file_struct
                               );
                 adios_parse_attributes_index_v1 (&md->b, &md->index->attrs_root);
 #endif
-
-                fd->base_offset = md->b.end_of_pgs;
+                // md->b.end_of_pgs points to the end of the last PG in file
             }
 
             if (   md->group_comm != MPI_COMM_NULL
@@ -736,9 +732,9 @@ enum BUFFERING_STRATEGY adios_mpi_lustre_should_buffer (struct adios_file_struct
                     memset (offsets, 0, sizeof (MPI_Offset) * md->size * 3);
 
                     // go through the pg index to build the offsets array
-                    build_offsets (&md->b, offsets, md->size
-                                  ,fd->group->name, md->index
-                                  );
+                    build_read_offsets (&md->b, offsets, md->size
+                                       ,fd->group->name, md->index
+                                       );
                     MPI_Scatter (offsets, 3, MPI_LONG_LONG
                                 ,MPI_IN_PLACE, 3, MPI_LONG_LONG
                                 ,0, md->group_comm
@@ -813,91 +809,10 @@ enum BUFFERING_STRATEGY adios_mpi_lustre_should_buffer (struct adios_file_struct
 
         case adios_mode_write:
         {
-            fd->base_offset = 0;
-            fd->pg_start_in_file = 0;
 #if COLLECT_METRICS                     
             gettimeofday (&t16, NULL);
 #endif
 
-            if (md->group_comm != MPI_COMM_NULL)
-            {
-                if (md->rank == 0)
-                {
-                    MPI_Offset * offsets = malloc (  sizeof (MPI_Offset)
-                                                   * md->size
-                                                  );
-
-                    // round up to LUSTRE_STRIPE_UNIT (64KB)
-#if 0
-                    if (fd->write_size_bytes % LUSTRE_STRIPE_UNIT)
-                        offsets [0] =  (fd->write_size_bytes / LUSTRE_STRIPE_UNIT + 1)
-                                     * LUSTRE_STRIPE_UNIT;
-                    else
-                        offsets [0] = fd->write_size_bytes;
-#else
-                    offsets [0] = 65536;
-#endif
-
-                    MPI_Gather (MPI_IN_PLACE, 1, MPI_LONG_LONG
-                               ,offsets, 1, MPI_LONG_LONG
-                               ,0, md->group_comm
-                               );
-
-                    uint64_t last_offset = offsets [0];
-                    offsets [0] = fd->base_offset;
-                    for (i = 1; i < md->size; i++)
-                    {
-                        uint64_t this_offset = offsets [i];
-                        offsets [i] = offsets [i - 1] + last_offset;
-                        last_offset = this_offset;
-                    }
-                    // How to handle that each processor has varying amount of data??
-                    md->striping_unit = offsets[1] - offsets[0];
-                    if (md->striping_unit > 4 * 1024 * (uint64_t) (1024 * 1024L))
-                    {
-                        md->striping_unit = 4 * 1024 * (uint64_t) (1024 * 1024L);
-                    }
-
-                    md->b.pg_index_offset =   offsets [md->size - 1]
-                                            + last_offset;
-                    MPI_Scatter (offsets, 1, MPI_LONG_LONG
-                                ,MPI_IN_PLACE, 1, MPI_LONG_LONG
-                                ,0, md->group_comm
-                                );
-                    fd->base_offset = offsets [0];
-                    fd->pg_start_in_file = fd->base_offset;
-                    free (offsets);
-                }
-                else
-                {
-                    MPI_Offset offset;
-#if 0
-                    if (fd->write_size_bytes % LUSTRE_STRIPE_UNIT)
-                        offset =  (fd->write_size_bytes / LUSTRE_STRIPE_UNIT + 1)
-                                  * LUSTRE_STRIPE_UNIT;
-                    else
-                        offset = fd->write_size_bytes;
-#else
-                    offset = 65536;
-#endif
-
-                    MPI_Gather (&offset, 1, MPI_LONG_LONG
-                               ,0, 1, MPI_LONG_LONG
-                               ,0, md->group_comm
-                               );
-
-                    MPI_Scatter (0, 1, MPI_LONG_LONG
-                                ,&offset, 1, MPI_LONG_LONG
-                                ,0, md->group_comm
-                                );
-                    fd->base_offset = offset;
-                    fd->pg_start_in_file = fd->base_offset;
-                }
-            }
-            else
-            {
-                //FIXME: this is unknown with no group_size: md->b.pg_index_offset = fd->write_size_bytes;
-            }
 
 #if COLLECT_METRICS
             gettimeofday (&t6, NULL);
@@ -969,36 +884,46 @@ enum BUFFERING_STRATEGY adios_mpi_lustre_should_buffer (struct adios_file_struct
         }
 
         case adios_mode_append:
+        case adios_mode_update:
         {
             int old_file = 1;
             adios_buffer_struct_clear (&md->b);
 
-            err = MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_RDONLY
-                                ,MPI_INFO_NULL, &md->fh
-                                );
-
-            if (err != MPI_SUCCESS)
+            if (md->group_comm == MPI_COMM_NULL || md->rank == 0)
             {
-                old_file = 0;
-                err = MPI_File_open (MPI_COMM_SELF, name
-                                    ,MPI_MODE_WRONLY | MPI_MODE_CREATE
-                                    ,MPI_INFO_NULL, &md->fh
+                err = MPI_File_open (MPI_COMM_SELF, name, MPI_MODE_RDONLY
+                                    ,md->info, &md->fh
                                     );
 
                 if (err != MPI_SUCCESS)
                 {
-                    char e [MPI_MAX_ERROR_STRING];
-                    int len = 0;
-                    memset (e, 0, MPI_MAX_ERROR_STRING);
-                    MPI_Error_string (err, e, &len);
-                    fprintf (stderr, "MPI open write failed for %s: '%s'\n"
-                            ,name, e
-                            );
-                    free (name);
+                    old_file = 0;
+                    MPI_File_close (&md->fh);
+                    err = MPI_File_open (MPI_COMM_SELF, name
+                                        ,MPI_MODE_WRONLY | MPI_MODE_CREATE
+                                        ,md->info, &md->fh
+                                        );
 
-                    return adios_flag_no;
+                    if (err != MPI_SUCCESS)
+                    {
+                        char e [MPI_MAX_ERROR_STRING];
+                        int len = 0;
+                        memset (e, 0, MPI_MAX_ERROR_STRING);
+                        MPI_Error_string (err, e, &len);
+                        fprintf (stderr, "MPI open write failed for %s: '%s'\n"
+                                ,name, e
+                                );
+                        free (name);
+
+                        return adios_flag_no;
+                    }
                 }
-                md->striping_unit = adios_mpi_lustre_get_striping_unit(md->fh, name);
+                MPI_Bcast (&old_file, 1, MPI_INT, 0, md->group_comm);
+            }
+            else
+            {
+                if (md->group_comm != MPI_COMM_NULL)
+                    MPI_Bcast (&old_file, 1, MPI_INT, 0, md->group_comm);
             }
 
             if (old_file)
@@ -1036,7 +961,9 @@ enum BUFFERING_STRATEGY adios_mpi_lustre_should_buffer (struct adios_file_struct
                     MPI_File_read (md->fh, md->b.buff, md->b.pg_size, MPI_BYTE
                                   ,&md->status
                                   );
+
                     adios_parse_process_group_index_v1 (&md->b ,&md->index->pg_root, &md->index->pg_tail);
+
                     // find the largest time index so we can append properly
                     struct adios_index_process_group_struct_v1 * p;
                     uint32_t max_time_index = 0;
@@ -1079,151 +1006,25 @@ enum BUFFERING_STRATEGY adios_mpi_lustre_should_buffer (struct adios_file_struct
                                                     ,&md->index->attrs_root
                                                     );
 
-                    fd->base_offset = md->b.end_of_pgs;
-                    fd->pg_start_in_file = fd->base_offset;
+                    // remember the end of the last PG in file. The new PG written now
+                    // will have an offset updated from here. 
+                    // md->b.end_of_pgs points to this position
+
+                    MPI_File_close (&md->fh);
                 }
                 else
                 {
-                    fd->base_offset = 0;
-                    fd->pg_start_in_file = 0;
                     MPI_Bcast (&fd->group->time_index, 1, MPI_INT, 0
                               ,md->group_comm
                               );
                 }
-
-                MPI_File_close (&md->fh);
             }
             else
-            {
-                fd->base_offset = 0;
-                fd->pg_start_in_file = 0;
-            }
-#if 0
-            // cascade the opens to avoid trashing the metadata server
-            if (previous == -1)
-            {
-                // we know it exists, because we created it if it didn't
-                // when reading the old file so can just open wronly
-                // but adding the create for consistency with write mode
-                // so it is easier to merge write/append later
-                err = MPI_File_open (MPI_COMM_SELF, name
-                                    ,MPI_MODE_WRONLY | MPI_MODE_CREATE
-                                    ,MPI_INFO_NULL
-                                    ,&md->fh
-                                    );
-                md->striping_unit = adios_mpi_lustre_get_striping_unit(md->fh, name);
-                if (next != -1)
-                {
-                    MPI_Isend (&flag, 1, MPI_INT, next, current
-                              ,md->group_comm, &md->req
-                              );
-                }
-            }
-            else
-            {
-                MPI_Recv (&flag, 1, MPI_INT, previous, previous
-                         ,md->group_comm, &md->status
-                         );
-                if (next != -1)
-                {
-                    MPI_Isend (&flag, 1, MPI_INT, next, current
-                              ,md->group_comm, &md->req
-                              );
-                }
-                err = MPI_File_open (MPI_COMM_SELF, name
-                                    ,MPI_MODE_WRONLY
-                                    ,MPI_INFO_NULL
-                                    ,&md->fh
-                                    );
-                md->striping_unit = adios_mpi_lustre_get_striping_unit(md->fh, name);
-            }
-
-            if (err != MPI_SUCCESS)
-            {
-                char e [MPI_MAX_ERROR_STRING];
-                int len = 0;
-                memset (e, 0, MPI_MAX_ERROR_STRING);
-                MPI_Error_string (err, e, &len);
-                fprintf (stderr, "MPI open write failed for %s: '%s'\n"
-                        ,name, e
-                        );
-                free (name);
-
-                return adios_flag_no;
-            }
-#endif
-            if (md->group_comm != MPI_COMM_NULL)
             {
                 if (md->rank == 0)
-                {
-                    MPI_Offset * offsets = malloc (  sizeof (MPI_Offset)
-                                                   * md->size
-                                                  );
-
-#if 0
-                    if (fd->write_size_bytes % LUSTRE_STRIPE_UNIT)
-                        offsets [0] =  (fd->write_size_bytes / LUSTRE_STRIPE_UNIT + 1)
-                                     * LUSTRE_STRIPE_UNIT;
-                    else
-                        offsets [0] = fd->write_size_bytes;
-#else
-                    offsets [0] = 65536;
-#endif
-
-                    MPI_Gather (MPI_IN_PLACE, 1, MPI_LONG_LONG
-                               ,offsets, 1, MPI_LONG_LONG
-                               ,0, md->group_comm
-                               );
-
-                    uint64_t last_offset = offsets [0];
-                    offsets [0] = fd->base_offset;
-                    for (i = 1; i < md->size; i++)
-                    {
-                        uint64_t this_offset = offsets [i];
-                        offsets [i] = offsets [i - 1] + last_offset;
-                        last_offset = this_offset;
-                    }
-                    md->b.pg_index_offset =   offsets [md->size - 1]
-                                            + last_offset;
-                    MPI_Scatter (offsets, 1, MPI_LONG_LONG
-                                ,MPI_IN_PLACE, 1, MPI_LONG_LONG
-                                ,0, md->group_comm
-                                );
-                    fd->base_offset = offsets [0];
-                    fd->pg_start_in_file = fd->base_offset;
-                    free (offsets);
-                }
-                else
-                {
-                    MPI_Offset offset;
-#if 0
-                    if (fd->write_size_bytes % LUSTRE_STRIPE_UNIT)
-                        offset =  (fd->write_size_bytes / LUSTRE_STRIPE_UNIT + 1)
-                                     * LUSTRE_STRIPE_UNIT;
-                    else
-                        offset = fd->write_size_bytes;
-#else
-                    offset = 65536;
-#endif
-
-
-                    MPI_Gather (&offset, 1, MPI_LONG_LONG
-                               ,0, 1, MPI_LONG_LONG
-                               ,0, md->group_comm
-                               );
-
-                    MPI_Scatter (0, 1, MPI_LONG_LONG
-                                ,&offset, 1, MPI_LONG_LONG
-                                ,0, md->group_comm
-                                );
-                    fd->base_offset = offset;
-                    fd->pg_start_in_file = fd->base_offset;
-                }
+                    MPI_File_close (&md->fh);
             }
-            else
-            {
-                //FIXME: this is unknown with no group_size: md->b.pg_index_offset = fd->write_size_bytes;
-            }
+
 
             // cascade the opens to avoid trashing the metadata server
             if (previous == -1)
@@ -1237,7 +1038,6 @@ enum BUFFERING_STRATEGY adios_mpi_lustre_should_buffer (struct adios_file_struct
                                     ,MPI_INFO_NULL
                                     ,&md->fh
                                     );
-                md->striping_unit = adios_mpi_lustre_get_striping_unit(md->fh, name);
                 if (next != -1)
                 {   
                     MPI_Isend (&flag, 1, MPI_INT, next, current
@@ -1261,7 +1061,6 @@ enum BUFFERING_STRATEGY adios_mpi_lustre_should_buffer (struct adios_file_struct
                                     ,MPI_INFO_NULL
                                     ,&md->fh
                                     );
-                md->striping_unit = adios_mpi_lustre_get_striping_unit(md->fh, name);
             }
 
             if (err != MPI_SUCCESS)
@@ -1278,12 +1077,15 @@ enum BUFFERING_STRATEGY adios_mpi_lustre_should_buffer (struct adios_file_struct
                 return adios_flag_no;
             }
 
+            md->striping_unit = adios_mpi_lustre_get_striping_unit(md->fh, name);
             break;
         }
 
         default:
         {
-            fprintf (stderr, "Unknown file mode: %d\n", fd->mode);
+            adios_error (err_invalid_file_mode,
+                    "MPI method: Unknown file mode requested: %d\n",
+                    fd->mode);
 
             free (name);
 
@@ -1293,49 +1095,91 @@ enum BUFFERING_STRATEGY adios_mpi_lustre_should_buffer (struct adios_file_struct
 
     free (name);
 
-#if 0
-    if (fd->shared_buffer == adios_flag_no && fd->mode != adios_mode_read)
-    {
-        // write the process group header
-        adios_write_open_process_group_header_v1 (fd);
-
-        uint64_t count;
-        count = adios_mpi_lustre_striping_unit_write(
-                          md->fh,
-                          fd->base_offset,
-                          fd->buffer,
-                          fd->bytes_written,
-                          md->block_unit);
-        if (count != fd->bytes_written)
-        {
-            fprintf (stderr, "a:MPI method tried to write %llu, "
-                             "only wrote %llu\n"
-                    ,fd->bytes_written
-                    ,count
-                    );
-        }
-        fd->base_offset += count;
-        fd->offset = 0;
-        fd->bytes_written = 0;
-        adios_shared_buffer_free (&md->b);
-
-        // setup for writing vars
-        adios_write_open_vars_v1 (fd);
-        md->vars_start = fd->base_offset;
-        md->vars_header_size = fd->offset;
-        fd->base_offset += fd->offset;
-        MPI_File_seek (md->fh, md->vars_header_size, MPI_SEEK_CUR);
-        fd->offset = 0;
-        fd->bytes_written = 0;
-        adios_shared_buffer_free (&md->b);
-    }
-#endif //0
-
-    STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_AD_SHOULD_BUFFER);
+    STOP_TIMER (ADIOS_TIMER_AD_OPEN);
 
 #if COLLECT_METRICS
     gettimeofday (&t22, NULL);
 #endif
+    return adios_flag_yes;
+}
+
+static void build_file_offsets (struct adios_MPI_data_struct *md,
+                               struct adios_file_struct *fd)
+{
+    int i;
+    if (md->group_comm != MPI_COMM_NULL)
+    {
+        if (md->rank == 0)
+        {
+            MPI_Offset * offsets = malloc (  sizeof (MPI_Offset) * md->size);
+
+            // round up to LUSTRE_STRIPE_UNIT (64KB)
+            if (fd->bytes_written % LUSTRE_STRIPE_UNIT)
+                offsets [0] =  (fd->bytes_written / LUSTRE_STRIPE_UNIT + 1) * LUSTRE_STRIPE_UNIT;
+            else
+                offsets [0] = fd->bytes_written;
+
+            MPI_Gather (MPI_IN_PLACE, 1, MPI_LONG_LONG
+                    ,offsets, 1, MPI_LONG_LONG
+                    ,0, md->group_comm
+                    );
+
+            uint64_t last_pgsize = offsets [0];
+            offsets [0] = md->b.end_of_pgs; // 0 or where to append to existing data
+            for (i = 1; i < md->size; i++)
+            {
+                uint64_t this_offset = offsets [i];
+                offsets [i] = offsets [i - 1] + last_pgsize;
+                last_pgsize = this_offset;
+            }
+            // How to handle that each processor has varying amount of data??
+            md->striping_unit = offsets[1] - offsets[0];
+            if (md->striping_unit > 4 * 1024 * (uint64_t) (1024 * 1024L))
+            {
+                md->striping_unit = 4 * 1024 * (uint64_t) (1024 * 1024L);
+            }
+
+            md->b.pg_index_offset =   offsets [md->size - 1]
+                                    + last_pgsize;
+
+            MPI_Scatter (offsets, 1, MPI_LONG_LONG
+                    ,MPI_IN_PLACE, 1, MPI_LONG_LONG
+                    ,0, md->group_comm
+                    );
+            fd->current_pg->pg_start_in_file = offsets[0];
+            free (offsets);
+        }
+        else
+        {
+            MPI_Offset offset[1];
+            if (fd->bytes_written % LUSTRE_STRIPE_UNIT)
+                offset[0] =  (fd->bytes_written / LUSTRE_STRIPE_UNIT + 1) * LUSTRE_STRIPE_UNIT;
+            else
+                offset[0] = fd->bytes_written;
+
+            MPI_Gather (offset, 1, MPI_LONG_LONG
+                    ,0, 1, MPI_LONG_LONG
+                    ,0, md->group_comm
+                    );
+
+            MPI_Scatter (0, 1, MPI_LONG_LONG
+                    ,offset, 1, MPI_LONG_LONG
+                    ,0, md->group_comm
+                    );
+            fd->current_pg->pg_start_in_file = offset[0];
+        }
+    }
+    else
+    {
+        md->b.pg_index_offset = fd->bytes_written;
+        fd->current_pg->pg_start_in_file = md->b.end_of_pgs; // 0 or where to append to existing data
+    }
+}
+
+enum BUFFERING_STRATEGY adios_mpi_lustre_should_buffer (struct adios_file_struct * fd
+                                                       ,struct adios_method_struct * method
+                                                       )
+{
     return stop_on_overflow;
 }
 
@@ -1348,7 +1192,7 @@ void adios_mpi_lustre_write (struct adios_file_struct * fd
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                       method->method_data;
 
-    START_TIMER (ADIOS_TIMER_MPI_LUSTRE_AD_WRITE);
+    START_TIMER (ADIOS_TIMER_AD_WRITE);
 
 
     if (v->got_buffer == adios_flag_yes)
@@ -1368,61 +1212,7 @@ void adios_mpi_lustre_write (struct adios_file_struct * fd
         }
     }
 
-#if 0
-    if (fd->shared_buffer == adios_flag_no)
-    {
-        // var payload sent for sizing information
-        adios_write_var_header_v1 (fd, v);
-
-        uint64_t count;
-        count = adios_mpi_lustre_striping_unit_write(
-                          md->fh,
-                          -1,
-                          fd->buffer,
-                          fd->bytes_written,
-                          md->block_unit);
-        if (count != fd->bytes_written)
-        {
-            fprintf (stderr, "b:MPI method tried to write %llu, "
-                             "only wrote %llu\n"
-                    ,fd->bytes_written
-                    ,count
-                    );
-        }
-        fd->base_offset += count;
-        fd->offset = 0;
-        fd->bytes_written = 0;
-        adios_shared_buffer_free (&md->b);
-
-        // write payload
-        // adios_write_var_payload_v1 (fd, v);
-        uint64_t var_size = adios_get_var_size (v, v->data);
-        if (fd->base_offset + var_size > fd->pg_start_in_file + fd->write_size_bytes) 
-            fprintf (stderr, "adios_mpi_write exceeds pg bound. File is corrupted. "
-                             "Need to enlarge group size. \n");
-        count = adios_mpi_lustre_striping_unit_write(
-                          md->fh,
-                          -1,
-                          v->data,
-                          var_size,
-                          md->block_unit);
-        if (count != var_size)
-        {
-            fprintf (stderr, "c:MPI method tried to write %llu, "
-                             "only wrote %llu\n"
-                    ,var_size
-                    ,count
-                    );
-        }
-        fd->base_offset += count;
-        fd->offset = 0;
-        fd->bytes_written = 0;
-        adios_shared_buffer_free (&md->b);
-    }
-#endif //0
-
-    STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_AD_WRITE);
-
+    STOP_TIMER (ADIOS_TIMER_AD_WRITE);
 
 #if COLLECT_METRICS
     static int writes_seen = 0;
@@ -1633,7 +1423,7 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
     static int iteration = 0;
 #endif
 
-    START_TIMER (ADIOS_TIMER_MPI_LUSTRE_AD_CLOSE);
+    START_TIMER (ADIOS_TIMER_AD_CLOSE);
 
     switch (fd->mode)
     {
@@ -1656,120 +1446,20 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
             char * buffer = 0;
             uint64_t buffer_size = 0;
             uint64_t buffer_offset = 0;
-            uint64_t index_start = md->b.pg_index_offset;
-
-#if 0
-            if (fd->shared_buffer == adios_flag_no)
-            {
-                MPI_Offset new_off;
-                // set it up so that it will start at 0, but have correct sizes
-                MPI_File_get_position (md->fh, &new_off);
-                fd->offset = fd->base_offset - md->vars_start;
-                fd->vars_start = 0;
-                fd->buffer_size = 0;
-                adios_write_close_vars_v1 (fd);
-                // fd->vars_start gets updated with the size written
-                uint64_t count;
-                START_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
-                count = adios_mpi_lustre_striping_unit_write(
-                                  md->fh,
-                                  md->vars_start,
-                                  fd->buffer,
-                                  md->vars_header_size,
-                                  md->block_unit);
-                STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
-                if (count != md->vars_header_size)
-                {
-                    fprintf (stderr, "d:MPI method tried to write %llu, "
-                                     "only wrote %llu\n"
-                            ,md->vars_header_size
-                            ,count
-                            );
-                }
-                fd->offset = 0;
-                fd->bytes_written = 0;
-                adios_shared_buffer_free (&md->b);
-
-                adios_write_open_attributes_v1 (fd);
-                md->vars_start = new_off;
-                md->vars_header_size = fd->offset;
-                MPI_File_seek (md->fh, new_off + md->vars_header_size
-                              ,MPI_SEEK_SET
-                              ); // go back to end, but after attr header
-                fd->base_offset += fd->offset;  // add size of header
-                fd->offset = 0;
-                fd->bytes_written = 0;
-
-                if (!fd->group->process_id) { // from ADIOS 1.4, only rank 0 writes attributes
-                    while (a)
-                    {
-                        adios_write_attribute_v1 (fd, a);
-                        if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->bytes_written)
-                            fprintf (stderr, "adios_mpi_write exceeds pg bound. File is corrupted. "
-                                    "Need to enlarge group size. \n");
-                        START_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
-                        count = adios_mpi_lustre_striping_unit_write(
-                                md->fh,
-                                -1,
-                                fd->buffer,
-                                fd->bytes_written,
-                                md->block_unit);
-                        STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
-                        if (count != fd->bytes_written)
-                        {
-                            fprintf (stderr, "e:MPI method tried to write %llu, "
-                                    "only wrote %llu\n"
-                                    ,fd->bytes_written
-                                    ,count
-                                    );
-                        }
-                        fd->base_offset += count;
-                        fd->offset = 0;
-                        fd->bytes_written = 0;
-                        adios_shared_buffer_free (&md->b);
-
-                        a = a->next;
-                    }
-                }
-
-                // set it up so that it will start at 0, but have correct sizes
-                fd->offset = fd->base_offset - md->vars_start;
-                fd->vars_start = 0;
-                fd->buffer_size = 0;
-                START_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
-                adios_write_close_attributes_v1 (fd);
-                // fd->vars_start gets updated with the size written
-                count = adios_mpi_lustre_striping_unit_write(
-                                  md->fh,
-                                  md->vars_start,
-                                  fd->buffer,
-                                  md->vars_header_size,
-                                  md->block_unit);
-                STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
-                if (count != md->vars_header_size)
-                {
-                    fprintf (stderr, "f:MPI method tried to write %llu, "
-                                     "only wrote %llu\n"
-                            ,md->vars_header_size
-                            ,count
-                            );
-                }
-                fd->offset = 0;
-                fd->bytes_written = 0;
-            }
-#endif //0
 
 #if COLLECT_METRICS
             gettimeofday (&t19, NULL);
-#endif
-#if COLLECT_METRICS
             gettimeofday (&t7, NULL);
-#endif
-#if COLLECT_METRICS
             gettimeofday (&t12, NULL);
 #endif
+
+            // figure out the offsets
+            // before writing out the buffer and build the index based on target offsets
+            build_file_offsets (md, fd);
+
             // build index appending to any existing index
             adios_build_index_v1 (fd, md->index);
+
             // if collective, gather the indexes from the rest and call
             if (md->group_comm != MPI_COMM_NULL)
             {
@@ -1782,12 +1472,12 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
                     uint32_t total_size = 0;
                     int i;
 
-                    START_TIMER (ADIOS_TIMER_MPI_LUSTRE_COMM);
+                    START_TIMER (ADIOS_TIMER_COMM);
                     MPI_Gather (&size, 1, MPI_INT
                                ,index_sizes, 1, MPI_INT
                                ,0, md->group_comm
                                );
-                    STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_COMM);
+                    STOP_TIMER (ADIOS_TIMER_COMM);
 
                     for (i = 0; i < md->size; i++)
                     {
@@ -1797,12 +1487,12 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
 
                     recv_buffer = malloc (total_size);
 
-                    START_TIMER (ADIOS_TIMER_MPI_LUSTRE_COMM);
+                    START_TIMER (ADIOS_TIMER_COMM);
                     MPI_Gatherv (&size, 0, MPI_BYTE
                                 ,recv_buffer, index_sizes, index_offsets
                                 ,MPI_BYTE, 0, md->group_comm
                                 );
-                    STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_COMM);
+                    STOP_TIMER (ADIOS_TIMER_COMM);
 
                     char * buffer_save = md->b.buff;
                     uint64_t buffer_size_save = md->b.length;
@@ -1841,7 +1531,7 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
                     adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
                                          ,0, md->index);
 
-                    START_TIMER (ADIOS_TIMER_MPI_LUSTRE_COMM);
+                    START_TIMER (ADIOS_TIMER_COMM);
                     MPI_Gather (&buffer_offset, 1, MPI_INT, 0, 0, MPI_INT
                                ,0, md->group_comm
                                );
@@ -1849,52 +1539,45 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
                                 ,0, 0, 0, MPI_BYTE
                                 ,0, md->group_comm
                                 );
-                    STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_COMM);
+                    STOP_TIMER (ADIOS_TIMER_COMM);
                 }
             }
 
 #if COLLECT_METRICS
             gettimeofday (&t13, NULL);
 #endif
-            if (fd->shared_buffer == adios_flag_yes)
-            {
-                // everyone writes their data
-                if (fd->base_offset + fd->bytes_written > fd->pg_start_in_file + fd->bytes_written)
-                    fprintf (stderr, "adios_mpi_write exceeds pg bound. File is corrupted. "
-                             "Need to enlarge group size. \n");
 
-                START_TIMER (ADIOS_TIMER_MPI_LUSTRE_IO);
-                adios_mpi_lustre_striping_unit_write(
-                                  md->fh,
-                                  fd->base_offset,
-                                  fd->buffer,
-                                  fd->bytes_written,
-                                  md->block_unit);
-                STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_IO);
-            }
+            /* Write the data buffer */
 
+            START_TIMER (ADIOS_TIMER_IO);
+            adios_mpi_lustre_striping_unit_write(
+                    md->fh,
+                    fd->current_pg->pg_start_in_file,
+                    fd->buffer,
+                    fd->bytes_written,
+                    md->block_unit);
+            STOP_TIMER (ADIOS_TIMER_IO);
+
+            /* Rank 0 write the index */
             if (md->rank == 0)
             {
                 adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
-                                     ,index_start, md->index);
+                                     ,md->b.pg_index_offset, md->index);
                 adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 
-                START_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
+                START_TIMER (ADIOS_TIMER_GLOBALMD);
                 adios_mpi_lustre_striping_unit_write(
                                   md->fh,
                                   md->b.pg_index_offset,
                                   buffer,
                                   buffer_offset,
                                   md->block_unit);
-                STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
+                STOP_TIMER (ADIOS_TIMER_GLOBALMD);
             }
+
 #if COLLECT_METRICS
             gettimeofday (&t8, NULL);
-#endif
-#if COLLECT_METRICS
             gettimeofday (&t20, NULL);
-#endif
-#if COLLECT_METRICS
             gettimeofday (&t14, NULL);
 #endif
 
@@ -1916,107 +1599,15 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
         }
 
         case adios_mode_append:
+        case adios_mode_update:
         {
             char * buffer = 0;
             uint64_t buffer_size = 0;
             uint64_t buffer_offset = 0;
-            uint64_t index_start = md->b.pg_index_offset;
 
-            if (fd->shared_buffer == adios_flag_no)
-            {
-                MPI_Offset new_off;
-                // set it up so that it will start at 0, but have correct sizes
-                MPI_File_get_position (md->fh, &new_off);
-                fd->offset = fd->base_offset - md->vars_start;
-                fd->vars_start = 0;
-                fd->buffer_size = 0;
-                adios_write_close_vars_v1 (fd);
-                // fd->vars_start gets updated with the size written
-                uint64_t count;
-                START_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
-                count = adios_mpi_lustre_striping_unit_write(
-                                  md->fh,
-                                  md->vars_start,
-                                  fd->buffer,
-                                  md->vars_header_size,
-                                  md->block_unit);
-                STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
-                if (count != md->vars_header_size)
-                {
-                    fprintf (stderr, "d:MPI method tried to write %llu, "
-                                     "only wrote %llu\n"
-                            ,md->vars_header_size
-                            ,count
-                            );
-                }
-                fd->offset = 0;
-                fd->bytes_written = 0;
-                adios_shared_buffer_free (&md->b);
-
-                adios_write_open_attributes_v1 (fd);
-                md->vars_start = new_off;
-                md->vars_header_size = fd->offset;
-                MPI_File_seek (md->fh, new_off + md->vars_header_size
-                              ,MPI_SEEK_SET
-                              ); // go back to end, but after attr header
-                fd->base_offset += fd->offset;  // add size of header
-                fd->offset = 0;
-                fd->bytes_written = 0;
-
-                if (!fd->group->process_id) { // from ADIOS 1.4, only rank 0 writes attributes
-                    while (a)
-                    {
-                        adios_write_attribute_v1 (fd, a);
-                        START_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
-                        count = adios_mpi_lustre_striping_unit_write(
-                                md->fh,
-                                -1,
-                                fd->buffer,
-                                fd->bytes_written,
-                                md->block_unit);
-                        STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
-                        if (count != fd->bytes_written)
-                        {
-                            fprintf (stderr, "e:MPI method tried to write %llu, "
-                                    "only wrote %llu\n"
-                                    ,fd->bytes_written
-                                    ,count
-                                    );
-                        }
-                        fd->base_offset += count;
-                        fd->offset = 0;
-                        fd->bytes_written = 0;
-                        adios_shared_buffer_free (&md->b);
-
-                        a = a->next;
-                    }
-                }
-
-                // set it up so that it will start at 0, but have correct sizes
-                fd->offset = fd->base_offset - md->vars_start;
-                fd->vars_start = 0;
-                fd->buffer_size = 0;
-                adios_write_close_attributes_v1 (fd);
-                // fd->vars_start gets updated with the size written
-                START_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
-                count = adios_mpi_lustre_striping_unit_write(
-                                  md->fh,
-                                  md->vars_start,
-                                  fd->buffer,
-                                  md->vars_header_size,
-                                  md->block_unit);
-                STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
-                if (count != md->vars_header_size)
-                {
-                    fprintf (stderr, "f:MPI method tried to write %llu, "
-                                     "only wrote %llu\n"
-                            ,md->vars_header_size
-                            ,count
-                            );
-                }
-                fd->offset = 0;
-                fd->bytes_written = 0;
-            }
+            // figure out the offsets
+            // before writing out the buffer and build the index based on target offsets
+            build_file_offsets (md, fd);
 
             // build index appending to any existing index
             adios_build_index_v1 (fd, md->index);
@@ -2032,12 +1623,12 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
                     uint32_t total_size = 0;
                     int i;
 
-                    START_TIMER (ADIOS_TIMER_MPI_LUSTRE_COMM);
+                    START_TIMER (ADIOS_TIMER_COMM);
                     MPI_Gather (&size, 1, MPI_INT
                                ,index_sizes, 1, MPI_INT
                                ,0, md->group_comm
                                );
-                    STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_COMM);
+                    STOP_TIMER (ADIOS_TIMER_COMM);
 
                     for (i = 0; i < md->size; i++)
                     {
@@ -2047,12 +1638,12 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
 
                     recv_buffer = malloc (total_size);
 
-                    START_TIMER (ADIOS_TIMER_MPI_LUSTRE_COMM);
+                    START_TIMER (ADIOS_TIMER_COMM);
                     MPI_Gatherv (&size, 0, MPI_BYTE
                                 ,recv_buffer, index_sizes, index_offsets
                                 ,MPI_BYTE, 0, md->group_comm
                                 );
-                    STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_COMM);
+                    STOP_TIMER (ADIOS_TIMER_COMM);
 
                     char * buffer_save = md->b.buff;
                     uint64_t buffer_size_save = md->b.length;
@@ -2091,7 +1682,7 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
                     adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
                                          ,0, md->index);
 
-                    START_TIMER (ADIOS_TIMER_MPI_LUSTRE_COMM);
+                    START_TIMER (ADIOS_TIMER_COMM);
                     MPI_Gather (&buffer_offset, 1, MPI_INT, 0, 0, MPI_INT
                                ,0, md->group_comm
                                );
@@ -2099,37 +1690,35 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
                                 ,0, 0, 0, MPI_BYTE
                                 ,0, md->group_comm
                                 );
-                    STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_COMM);
+                    STOP_TIMER (ADIOS_TIMER_COMM);
                 }
             }
 
-            if (fd->shared_buffer == adios_flag_yes)
-            {
-                // everyone writes their data
-                START_TIMER (ADIOS_TIMER_MPI_LUSTRE_IO);
-                adios_mpi_lustre_striping_unit_write(
-                                  md->fh,
-                                  fd->base_offset,
-                                  fd->buffer,
-                                  fd->bytes_written,
-                                  md->block_unit);
-                STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_IO);
-            }
+            /* Write data buffer */
+            START_TIMER (ADIOS_TIMER_IO);
+            adios_mpi_lustre_striping_unit_write(
+                    md->fh,
+                    fd->current_pg->pg_start_in_file,
+                    fd->buffer,
+                    fd->bytes_written,
+                    md->block_unit);
+            STOP_TIMER (ADIOS_TIMER_IO);
 
+            /* Rank 0 write index buffer */
             if (md->rank == 0)
             {
                 adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
-                                     ,index_start, md->index);
+                                     ,md->b.pg_index_offset, md->index);
                 adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 
-                START_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
+                START_TIMER (ADIOS_TIMER_GLOBALMD);
                 adios_mpi_lustre_striping_unit_write(
                                   md->fh,
                                   md->b.pg_index_offset,
                                   buffer,
                                   buffer_offset,
                                   md->block_unit);
-                STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_MD);
+                STOP_TIMER (ADIOS_TIMER_GLOBALMD);
             }
 
             free (buffer);
@@ -2139,7 +1728,9 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
 
         default:
         {
-            fprintf (stderr, "Unknown file mode: %d\n", fd->mode);
+            adios_error (err_invalid_file_mode,
+                    "MPI method: Unknown file mode: %d in adios_close()\n",
+                    fd->mode);
         }
     }
 
@@ -2161,7 +1752,7 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
 
     adios_clear_index_v1 (md->index);
 
-    STOP_TIMER (ADIOS_TIMER_MPI_LUSTRE_AD_CLOSE);
+    STOP_TIMER (ADIOS_TIMER_AD_CLOSE);
 
 #if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
 

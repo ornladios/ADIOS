@@ -108,14 +108,14 @@ void adios_posix_init (const PairStruct * parameters
 
 // Indices for the timer object
 #if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
-int ADIOS_TIMER_POSIX_COMM = ADIOS_TIMING_MAX_USER_TIMERS + 0;
-int ADIOS_TIMER_POSIX_IO = ADIOS_TIMING_MAX_USER_TIMERS + 1;
-int ADIOS_TIMER_POSIX_MD = ADIOS_TIMING_MAX_USER_TIMERS + 2;
-int ADIOS_TIMER_POSIX_GMD = ADIOS_TIMING_MAX_USER_TIMERS + 3;
-int ADIOS_TIMER_POSIX_AD_OPEN = ADIOS_TIMING_MAX_USER_TIMERS + 4;
-int ADIOS_TIMER_POSIX_AD_SHOULD_BUFFER = ADIOS_TIMING_MAX_USER_TIMERS + 5;
-int ADIOS_TIMER_POSIX_AD_WRITE = ADIOS_TIMING_MAX_USER_TIMERS + 6;
-int ADIOS_TIMER_POSIX_AD_CLOSE = ADIOS_TIMING_MAX_USER_TIMERS + 7;
+static int ADIOS_TIMER_COMM         = ADIOS_TIMING_MAX_USER_TIMERS + 0;
+static int ADIOS_TIMER_IO           = ADIOS_TIMING_MAX_USER_TIMERS + 1;
+static int ADIOS_TIMER_LOCALMD      = ADIOS_TIMING_MAX_USER_TIMERS + 2;
+static int ADIOS_TIMER_GLOBALMD     = ADIOS_TIMING_MAX_USER_TIMERS + 3;
+static int ADIOS_TIMER_AD_OPEN      = ADIOS_TIMING_MAX_USER_TIMERS + 4;
+static int ADIOS_TIMER_AD_WRITE     = ADIOS_TIMING_MAX_USER_TIMERS + 5;
+static int ADIOS_TIMER_AD_OVERFLOW  = ADIOS_TIMING_MAX_USER_TIMERS + 6;
+static int ADIOS_TIMER_AD_CLOSE     = ADIOS_TIMING_MAX_USER_TIMERS + 7;
 #endif
 
 int adios_posix_open (struct adios_file_struct * fd
@@ -158,8 +158,8 @@ int adios_posix_open (struct adios_file_struct * fd
     timer_names [2] = "Local metadata";
     timer_names [3] = "Global metadata";
     timer_names [4] = "ad_open";
-    timer_names [5] = "ad_group_size";
-    timer_names [6] = "ad_write";
+    timer_names [5] = "ad_write";
+    timer_names [6] = "ad_overflow";
     timer_names [7] = "ad_close";
 
 
@@ -178,7 +178,7 @@ int adios_posix_open (struct adios_file_struct * fd
 
 #endif
 
-START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
+START_TIMER (ADIOS_TIMER_AD_OPEN);
 
 #ifdef HAVE_MPI
     // Need to figure out new the new fd->name, such as restart.bp.0, restart.bp.1....
@@ -313,7 +313,7 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
 
 #ifdef HAVE_MPI
             // open metadata file
-            START_TIMER (ADIOS_TIMER_POSIX_GMD);
+            START_TIMER (ADIOS_TIMER_GLOBALMD);
             if (p->group_comm != MPI_COMM_SELF && p->g_have_mdf)
             {
                 if (p->rank == 0)
@@ -337,7 +337,7 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
                     }
                 }
             }
-            STOP_TIMER (ADIOS_TIMER_POSIX_GMD);
+            STOP_TIMER (ADIOS_TIMER_GLOBALMD);
 #endif
             p->file_is_open = 1;
             p->pg_start_next = 0;
@@ -398,7 +398,7 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
 
 #ifdef HAVE_MPI
             // open metadata file by rank 0, if user wants to write it
-            START_TIMER (ADIOS_TIMER_POSIX_GMD);
+            START_TIMER (ADIOS_TIMER_GLOBALMD);
             if (p->group_comm != MPI_COMM_SELF && 
                 p->g_have_mdf &&
                 p->rank == 0)
@@ -425,9 +425,9 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
                     }
                 }
             }
-            STOP_TIMER (ADIOS_TIMER_POSIX_GMD);
+            STOP_TIMER (ADIOS_TIMER_GLOBALMD);
 #endif
-            START_TIMER (ADIOS_TIMER_POSIX_MD);
+            START_TIMER (ADIOS_TIMER_LOCALMD);
             if (old_file)
             {
                 // There is previous data in file. Metadata is in memory 
@@ -512,7 +512,7 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
                 // there is no previous data, start from offset 0
                 p->pg_start_next = 0;
             }
-            STOP_TIMER (ADIOS_TIMER_POSIX_MD);
+            STOP_TIMER (ADIOS_TIMER_LOCALMD);
             //printf ("adios_posix_open append/update, old_file=%d, index_is_in_memory=%d, "
             //        "pg_start=%lld\n", 
             //        old_file, p->index_is_in_memory, p>pg_start_next);
@@ -542,7 +542,7 @@ START_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
         free (mdfile_name);
     }
 
-    STOP_TIMER (ADIOS_TIMER_POSIX_AD_OPEN);
+    STOP_TIMER (ADIOS_TIMER_AD_OPEN);
 
     return 1;
 }
@@ -563,7 +563,7 @@ void adios_posix_write (struct adios_file_struct * fd
     struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
                                                           method->method_data;
 
-    START_TIMER (ADIOS_TIMER_POSIX_AD_WRITE);
+    START_TIMER (ADIOS_TIMER_AD_WRITE);
 
     if (v->got_buffer == adios_flag_yes)
     {
@@ -582,7 +582,7 @@ void adios_posix_write (struct adios_file_struct * fd
         }
     }
 
-    STOP_TIMER (ADIOS_TIMER_POSIX_AD_WRITE);
+    STOP_TIMER (ADIOS_TIMER_AD_WRITE);
 }
 
 void adios_posix_get_write_buffer (struct adios_file_struct * fd
@@ -871,10 +871,15 @@ void adios_posix_buffer_overflow (struct adios_file_struct * fd,
 {
     struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
                                                  method->method_data;
+    START_TIMER (ADIOS_TIMER_AD_OVERFLOW);
     /* We get a full PG at this point that we can write out now. 
        The index should be built in close() after writing the rest of a PG there.
     */
+    START_TIMER (ADIOS_TIMER_IO);
     adios_posix_write_pg (fd, method); // Buffered vars written here
+    STOP_TIMER (ADIOS_TIMER_IO);
+
+    STOP_TIMER (ADIOS_TIMER_AD_OVERFLOW);
 }
 
 void adios_posix_close (struct adios_file_struct * fd
@@ -889,7 +894,7 @@ void adios_posix_close (struct adios_file_struct * fd
     struct adios_index_var_struct_v1 * new_vars_root = 0;
     struct adios_index_attribute_struct_v1 * new_attrs_root = 0;
 
-    START_TIMER (ADIOS_TIMER_POSIX_AD_CLOSE);
+    START_TIMER (ADIOS_TIMER_AD_CLOSE);
 
     switch (fd->mode)
     {
@@ -901,9 +906,9 @@ void adios_posix_close (struct adios_file_struct * fd
             uint64_t buffer_offset = 0;
 
             // write buffered data now
-            START_TIMER (ADIOS_TIMER_POSIX_IO);
+            START_TIMER (ADIOS_TIMER_IO);
             adios_posix_write_pg (fd, method); 
-            STOP_TIMER (ADIOS_TIMER_POSIX_IO);
+            STOP_TIMER (ADIOS_TIMER_IO);
 
             // Note: adios_posix_write_pg() sets the fd->current_pg->pg_start_in_file
             // to the correct offset, which is used in the build index. If you want 
@@ -911,7 +916,7 @@ void adios_posix_close (struct adios_file_struct * fd
             //    fd->current_pg->pg_start_in_file = p->pg_start_next;
             //    index_start = p->pg_start_next + fd->offset
 
-            START_TIMER (ADIOS_TIMER_POSIX_MD);
+            START_TIMER (ADIOS_TIMER_LOCALMD);
             uint64_t index_start = p->pg_start_next;
             // build new index for this step
             adios_build_index_v1 (fd, p->index);
@@ -920,10 +925,10 @@ void adios_posix_close (struct adios_file_struct * fd
             adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
                                  ,index_start, p->index);
             adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
-            STOP_TIMER (ADIOS_TIMER_POSIX_MD);
+            STOP_TIMER (ADIOS_TIMER_LOCALMD);
 
 #ifdef HAVE_MPI
-            START_TIMER (ADIOS_TIMER_POSIX_GMD);
+            START_TIMER (ADIOS_TIMER_GLOBALMD);
             if (p->group_comm != MPI_COMM_SELF && p->g_have_mdf)
             {
                 if (p->rank == 0)
@@ -934,12 +939,12 @@ void adios_posix_close (struct adios_file_struct * fd
                     int i;
                     uint32_t size = 0, total_size = 0;
 
-                    START_TIMER (ADIOS_TIMER_POSIX_COMM);
+                    START_TIMER (ADIOS_TIMER_COMM);
                     MPI_Gather (&size, 1, MPI_INT
                                ,index_sizes, 1, MPI_INT
                                ,0, p->group_comm
                                );
-                    STOP_TIMER (ADIOS_TIMER_POSIX_COMM);
+                    STOP_TIMER (ADIOS_TIMER_COMM);
 
                     for (i = 0; i < p->size; i++)
                     {
@@ -948,12 +953,12 @@ void adios_posix_close (struct adios_file_struct * fd
                     }
 
                     recv_buffer = malloc (total_size);
-                    START_TIMER (ADIOS_TIMER_POSIX_COMM);
+                    START_TIMER (ADIOS_TIMER_COMM);
                     MPI_Gatherv (&size, 0, MPI_BYTE
                                 ,recv_buffer, index_sizes, index_offsets
                                 ,MPI_BYTE, 0, p->group_comm
                                 );
-                    STOP_TIMER (ADIOS_TIMER_POSIX_COMM);
+                    STOP_TIMER (ADIOS_TIMER_COMM);
 
                     char * buffer_save = p->b.buff;
                     uint64_t buffer_size_save = p->b.length;
@@ -1006,9 +1011,9 @@ void adios_posix_close (struct adios_file_struct * fd
                                                 ,&global_index_buffer_offset
                                                 ,flag
                                                 );
-                    START_TIMER (ADIOS_TIMER_POSIX_IO);
+                    START_TIMER (ADIOS_TIMER_IO);
                     ssize_t s = write (p->mf, global_index_buffer, global_index_buffer_offset);
-                    STOP_TIMER (ADIOS_TIMER_POSIX_IO);
+                    STOP_TIMER (ADIOS_TIMER_IO);
                     if (s != global_index_buffer_offset)
                     {
                         fprintf (stderr, "POSIX method tried to write %llu, "
@@ -1024,7 +1029,7 @@ void adios_posix_close (struct adios_file_struct * fd
                 }
                 else
                 {
-                    START_TIMER (ADIOS_TIMER_POSIX_COMM);
+                    START_TIMER (ADIOS_TIMER_COMM);
                     // Added this explicit cast to avoid truncation of low-order bytes on BGP
                     int i_buffer_size = (int) buffer_size;
                     MPI_Gather (&i_buffer_size, 1, MPI_INT
@@ -1036,16 +1041,16 @@ void adios_posix_close (struct adios_file_struct * fd
                                 ,0, 0, 0, MPI_BYTE
                                 ,0, p->group_comm
                                 );
-                    STOP_TIMER (ADIOS_TIMER_POSIX_COMM);
+                    STOP_TIMER (ADIOS_TIMER_COMM);
                 }
             }
-            STOP_TIMER (ADIOS_TIMER_POSIX_GMD);
+            STOP_TIMER (ADIOS_TIMER_GLOBALMD);
 #endif
 
             // write buffered index now
-            START_TIMER (ADIOS_TIMER_POSIX_IO);
+            START_TIMER (ADIOS_TIMER_IO);
             adios_posix_write_index (fd, method, buffer, buffer_offset); 
-            STOP_TIMER (ADIOS_TIMER_POSIX_IO);
+            STOP_TIMER (ADIOS_TIMER_IO);
 
             // close the file assuming we are done in 'w' mode
             adios_posix_close_internal (&p->b);
@@ -1069,9 +1074,9 @@ void adios_posix_close (struct adios_file_struct * fd
             uint64_t buffer_offset = 0;
 
             // write buffered data now
-            START_TIMER (ADIOS_TIMER_POSIX_IO);
+            START_TIMER (ADIOS_TIMER_IO);
             adios_posix_write_pg (fd, method); 
-            STOP_TIMER (ADIOS_TIMER_POSIX_IO);
+            STOP_TIMER (ADIOS_TIMER_IO);
 
             // Note: adios_posix_write_pg() sets the fd->current_pg->pg_start_in_file
             // to the correct offset, which is used in the build index. If you want 
@@ -1079,7 +1084,7 @@ void adios_posix_close (struct adios_file_struct * fd
             //    fd->current_pg->pg_start_in_file = p->pg_start_next;
             //    index_start = p->pg_start_next + fd->offset
 
-            START_TIMER (ADIOS_TIMER_POSIX_MD);
+            START_TIMER (ADIOS_TIMER_LOCALMD);
             uint64_t index_start = p->pg_start_next;
             // build index for current step and merge it into the 
             // existing index for previous steps
@@ -1095,10 +1100,10 @@ void adios_posix_close (struct adios_file_struct * fd
             // into p->index
             adios_free_index_v1 (current_index);
             adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
-            STOP_TIMER (ADIOS_TIMER_POSIX_MD);
+            STOP_TIMER (ADIOS_TIMER_LOCALMD);
 
 #ifdef HAVE_MPI
-            START_TIMER (ADIOS_TIMER_POSIX_GMD);
+            START_TIMER (ADIOS_TIMER_GLOBALMD);
             if (p->group_comm != MPI_COMM_SELF && p->g_have_mdf)
             {
                 if (p->rank == 0)
@@ -1118,12 +1123,12 @@ void adios_posix_close (struct adios_file_struct * fd
                     struct adios_index_struct_v1 * gindex;
                     gindex = adios_alloc_index_v1(1); // no hashtables
 
-                    START_TIMER (ADIOS_TIMER_POSIX_COMM);
+                    START_TIMER (ADIOS_TIMER_COMM);
                     MPI_Gather (&size, 1, MPI_INT
                                ,index_sizes, 1, MPI_INT
                                ,0, p->group_comm
                                );
-                    STOP_TIMER (ADIOS_TIMER_POSIX_COMM);
+                    STOP_TIMER (ADIOS_TIMER_COMM);
 
                     for (i = 0; i < p->size; i++)
                     {
@@ -1136,12 +1141,12 @@ void adios_posix_close (struct adios_file_struct * fd
                     recv_buffer = malloc (total_size);
                     memcpy (recv_buffer, buffer, index_sizes[0]);
 
-                    START_TIMER (ADIOS_TIMER_POSIX_COMM);
+                    START_TIMER (ADIOS_TIMER_COMM);
                     MPI_Gatherv (&size, 0, MPI_BYTE
                                 ,recv_buffer, index_sizes, index_offsets
                                 ,MPI_BYTE, 0, p->group_comm
                                 );
-                    STOP_TIMER (ADIOS_TIMER_POSIX_COMM);
+                    STOP_TIMER (ADIOS_TIMER_COMM);
 
                     char * buffer_save = p->b.buff;
                     uint64_t buffer_size_save = p->b.length;
@@ -1198,9 +1203,9 @@ void adios_posix_close (struct adios_file_struct * fd
                                                 ,flag
                                                 );
 
-                    START_TIMER (ADIOS_TIMER_POSIX_IO);
+                    START_TIMER (ADIOS_TIMER_IO);
                     ssize_t s = write (p->mf, global_index_buffer, global_index_buffer_offset);
-                    STOP_TIMER (ADIOS_TIMER_POSIX_IO);
+                    STOP_TIMER (ADIOS_TIMER_IO);
                     if (s != global_index_buffer_offset)
                     {
                         fprintf (stderr, "POSIX method tried to write %llu, "
@@ -1219,7 +1224,7 @@ void adios_posix_close (struct adios_file_struct * fd
                 }
                 else
                 {
-                    START_TIMER (ADIOS_TIMER_POSIX_COMM);
+                    START_TIMER (ADIOS_TIMER_COMM);
                     MPI_Gather (&buffer_size, 1, MPI_INT
                                ,0, 0, MPI_INT
                                ,0, p->group_comm
@@ -1229,16 +1234,16 @@ void adios_posix_close (struct adios_file_struct * fd
                                 ,0, 0, 0, MPI_BYTE
                                 ,0, p->group_comm
                                 );
-                    STOP_TIMER (ADIOS_TIMER_POSIX_COMM);
+                    STOP_TIMER (ADIOS_TIMER_COMM);
                 }
             }
-            STOP_TIMER (ADIOS_TIMER_POSIX_GMD);
+            STOP_TIMER (ADIOS_TIMER_GLOBALMD);
 #endif
 
             // write buffered index now
-            START_TIMER (ADIOS_TIMER_POSIX_IO);
+            START_TIMER (ADIOS_TIMER_IO);
             adios_posix_write_index (fd, method, buffer, buffer_offset); 
-            STOP_TIMER (ADIOS_TIMER_POSIX_IO);
+            STOP_TIMER (ADIOS_TIMER_IO);
 
             free (buffer);
 
@@ -1267,7 +1272,7 @@ void adios_posix_close (struct adios_file_struct * fd
         }
     }
 
-    STOP_TIMER (ADIOS_TIMER_POSIX_AD_CLOSE);
+    STOP_TIMER (ADIOS_TIMER_AD_CLOSE);
 
 #if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
 
