@@ -650,8 +650,6 @@ int adios_mpi_bgq_open (struct adios_file_struct * fd
     // before we can do an open for any of the modes
 
     int i;
-    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
-                                                      method->method_data;
     char * name, * name_no_path, * ch;
     char * d_name;
     int err;
@@ -1045,18 +1043,6 @@ uint32_t adios_mpi_bgq_calculate_attributes_size (struct adios_file_struct * fd)
     return overhead;
 }
 
-void adios_mpi_lustre_buffer_overflow (struct adios_file_struct * fd,
-        struct adios_method_struct * method)
-{
-    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
-                                                  method->method_data;
-    adios_error (err_buffer_overflow,
-            "rank %d: MPI_BGQ method only works with complete buffering of data between adios_open() "
-            "and adios_close(). Portions of global arrays, that do not fit into the "
-            "buffer on some processors will not be written by this method to %s\n",
-            md->rank, fd->name);
-}
-
 
 void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
                                  ,struct adios_method_struct * method
@@ -1111,6 +1097,10 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
                 to_write = (int32_t) fd->bytes_written;
             }    
 
+            // figure out the offsets
+            // before writing out the buffer and build the index based on target offsets
+            build_file_offsets (md, fd);
+
             START_TIMER (ADIOS_TIMER_IO);
             while (bytes_written < fd->bytes_written)
             {
@@ -1151,10 +1141,6 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
 
             /* Build the local index */
             START_TIMER (ADIOS_TIMER_LOCALMD);
-            // figure out the offsets
-            // before writing out the buffer and build the index based on target offsets
-            build_file_offsets (md, fd);
-
             // build index appending to any existing index
             adios_build_index_v1 (fd, md->index);
             STOP_TIMER (ADIOS_TIMER_LOCALMD);
