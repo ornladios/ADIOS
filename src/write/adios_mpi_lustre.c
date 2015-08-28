@@ -1453,12 +1453,14 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
             gettimeofday (&t12, NULL);
 #endif
 
+            START_TIMER (ADIOS_TIMER_LOCALMD);
             // figure out the offsets
             // before writing out the buffer and build the index based on target offsets
             build_file_offsets (md, fd);
 
             // build index appending to any existing index
             adios_build_index_v1 (fd, md->index);
+            STOP_TIMER (ADIOS_TIMER_LOCALMD);
 
             // if collective, gather the indexes from the rest and call
             if (md->group_comm != MPI_COMM_NULL)
@@ -1605,12 +1607,15 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
             uint64_t buffer_size = 0;
             uint64_t buffer_offset = 0;
 
+            START_TIMER (ADIOS_TIMER_LOCALMD);
             // figure out the offsets
             // before writing out the buffer and build the index based on target offsets
             build_file_offsets (md, fd);
 
             // build index appending to any existing index
             adios_build_index_v1 (fd, md->index);
+            STOP_TIMER (ADIOS_TIMER_LOCALMD);
+
             // if collective, gather the indexes from the rest and call
             if (md->group_comm != MPI_COMM_NULL)
             {
