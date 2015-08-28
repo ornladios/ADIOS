@@ -1361,6 +1361,7 @@ int adios_common_declare_group (int64_t * id, const char * name
 #if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
     g->timing_obj = 0;
     g->prev_timing_obj = 0;
+    g->tv_size = 0;
 #endif
 
     *id = (int64_t) g;

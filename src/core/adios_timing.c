@@ -306,9 +306,17 @@ int adios_add_timing_variables (struct adios_file_struct * fd)
         return 1;
     }
 
-    if (!fd->group || !fd->group->prev_timing_obj)
+    if (!fd->group)
+    {
+        adios_error (err_invalid_group_struct,
+                     "Invalid group of the file struct passed to adios_add_timing_variables\n");
+        return 1;
+    }
+
+    if (!fd->group->prev_timing_obj)
     {
         // No timing info, don't write anything.
+        fd->group->tv_size = 0;
         return 0;
     }
 
