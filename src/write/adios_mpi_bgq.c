@@ -89,8 +89,6 @@ struct adios_MPI_data_struct
 
     struct adios_bp_buffer_struct_v1 b;
     struct adios_index_struct_v1 * index;
-    uint64_t vars_start;
-    uint64_t vars_header_size;
 
     int * g_is_aggregator;
     int g_num_aggregators;
@@ -499,92 +497,6 @@ void * adios_mpi_bgq_do_write_thread (void * param)
     return NULL;
 }
 
-static void adios_var_to_comm (const char * comm_name
-                              ,enum ADIOS_FLAG host_language_fortran
-                              ,void * data
-                              ,MPI_Comm * comm
-                              )
-{
-    if (data)
-    {
-        int t = *(int *) data;
-
-        if (!comm_name)
-        {
-            if (!t)
-            {
-                log_warn ("MPI_BGQ method: Communicator not provided and none "
-                        "listed in XML.  Defaulting to MPI_COMM_SELF\n");
-
-                *comm = MPI_COMM_SELF;
-            }
-            else
-            {
-                if (host_language_fortran == adios_flag_yes)
-                {
-                    *comm = MPI_Comm_f2c (t);
-                }
-                else
-                {
-                    *comm = *(MPI_Comm *) data;
-                }
-            }
-        }
-        else
-        {
-            if (!strcmp (comm_name, ""))
-            {
-                if (!t)
-                {
-                    log_warn ("MPI_BGQ method: Communicator not provided and none "
-                            "listed in XML.  Defaulting to MPI_COMM_SELF\n");
-
-                    *comm = MPI_COMM_SELF;
-                }
-                else
-                {
-                    if (host_language_fortran == adios_flag_yes)
-                    {
-                        *comm = MPI_Comm_f2c (t);
-                    }
-                    else
-                    {
-                        *comm = *(MPI_Comm *) data;
-                    }
-                }
-            }
-            else
-            {
-                if (!t)
-                {
-                    log_warn ("MPI_BGQ method: Communicator not provided but one is "
-                            "listed in XML.  Defaulting to MPI_COMM_WORLD\n");
-
-                    *comm = MPI_COMM_WORLD;
-                }
-                else
-                {
-                    if (host_language_fortran == adios_flag_yes)
-                    {
-                        *comm = MPI_Comm_f2c (t);
-                    }
-                    else
-                    {
-                        *comm = *(MPI_Comm *) data;
-                    }
-                }
-            }
-        }
-    }
-    else
-    {
-        log_warn ("MPI_BGQ method: Coordination-communication not provided. "
-                  "Using MPI_COMM_WORLD instead\n"
-                 );
-
-        *comm = MPI_COMM_WORLD;
-    }
-}
 
 void adios_mpi_bgq_init (const PairStruct * parameters
                          ,struct adios_method_struct * method
@@ -611,8 +523,6 @@ void adios_mpi_bgq_init (const PairStruct * parameters
     md->file_comm_rank = 0;
     md->file_comm_size = 0;
     md->index = adios_alloc_index_v1(1); // with hashtables;
-    md->vars_start = 0;
-    md->vars_header_size = 0;
 
     md->g_is_aggregator = 0;
     md->g_num_aggregators = 0;
@@ -621,7 +531,7 @@ void adios_mpi_bgq_init (const PairStruct * parameters
     md->n_partitions = 0;
     md->g_offsets = 0;
     md->open_thread_data = 0;
-    md->g_io_type = ADIOS_MPI_BGQ_IO_BG;
+    md->g_io_type = ADIOS_MPI_BGQ_IO_SIMPLE;
     md->g_have_mdf = 1;
 
     adios_buffer_struct_init (&md->b);
@@ -629,13 +539,14 @@ void adios_mpi_bgq_init (const PairStruct * parameters
 
 #if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
 // Indices for the timer object
-static int ADIOS_TIMER_MPI_BGQ_COMM = ADIOS_TIMING_MAX_USER_TIMERS + 0;
-static int ADIOS_TIMER_MPI_BGQ_IO = ADIOS_TIMING_MAX_USER_TIMERS + 1;
-static int ADIOS_TIMER_MPI_BGQ_MD = ADIOS_TIMING_MAX_USER_TIMERS + 2;
-static int ADIOS_TIMER_MPI_BGQ_AD_OPEN = ADIOS_TIMING_MAX_USER_TIMERS + 3;
-static int ADIOS_TIMER_MPI_BGQ_AD_SHOULD_BUFFER = ADIOS_TIMING_MAX_USER_TIMERS + 4;
-static int ADIOS_TIMER_MPI_BGQ_AD_WRITE = ADIOS_TIMING_MAX_USER_TIMERS + 4;
-static int ADIOS_TIMER_MPI_BGQ_AD_CLOSE = ADIOS_TIMING_MAX_USER_TIMERS + 6;
+static int ADIOS_TIMER_COMM         = ADIOS_TIMING_MAX_USER_TIMERS + 0;
+static int ADIOS_TIMER_IO           = ADIOS_TIMING_MAX_USER_TIMERS + 1;
+static int ADIOS_TIMER_LOCALMD      = ADIOS_TIMING_MAX_USER_TIMERS + 2;
+static int ADIOS_TIMER_GLOBALMD     = ADIOS_TIMING_MAX_USER_TIMERS + 3;
+static int ADIOS_TIMER_AD_OPEN      = ADIOS_TIMING_MAX_USER_TIMERS + 4;
+static int ADIOS_TIMER_AD_WRITE     = ADIOS_TIMING_MAX_USER_TIMERS + 5;
+static int ADIOS_TIMER_OVERFLOW     = ADIOS_TIMING_MAX_USER_TIMERS + 6;
+static int ADIOS_TIMER_AD_CLOSE     = ADIOS_TIMING_MAX_USER_TIMERS + 7;
 #endif
 
 int adios_mpi_bgq_open (struct adios_file_struct * fd
@@ -653,15 +564,16 @@ int adios_mpi_bgq_open (struct adios_file_struct * fd
     }
 
 #if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
-    int timer_count = 7;
+    int timer_count = 8;
     char ** timer_names = (char**) malloc (timer_count * sizeof (char*) );
-    timer_names [0] = "Communication";
-    timer_names [1] = "I/O";
-    timer_names [2] = "Metadata";
-    timer_names [3] = "ad_open";
-    timer_names [4] = "ad_should_buffer";
-    timer_names [5] = "ad_write";
-    timer_names [6] = "ad_close";
+    timer_names [0] = "Communication   ";
+    timer_names [1] = "I/O             ";
+    timer_names [2] = "Local metadata  ";
+    timer_names [3] = "Global metadata ";
+    timer_names [4] = "adios_open()    ";
+    timer_names [5] = "adios_write()   ";
+    timer_names [6] = "adios_overflow()";
+    timer_names [7] = "adios_close()   ";
 
     // Ensure both timing objects exist
     // timing_obj should get created at every open
@@ -676,7 +588,7 @@ int adios_mpi_bgq_open (struct adios_file_struct * fd
     }
 #endif
 
-    START_TIMER (ADIOS_TIMER_MPI_BGQ_AD_OPEN);
+    START_TIMER (ADIOS_TIMER_AD_OPEN);
 
     // The following code is BGQ specific
 #define UNIT_A 2
@@ -737,44 +649,6 @@ int adios_mpi_bgq_open (struct adios_file_struct * fd
     // to calculate stripe sizes from output sizes of the processes
     // before we can do an open for any of the modes
 
-    STOP_TIMER (ADIOS_TIMER_MPI_BGQ_AD_OPEN);
-    return 1;
-}
-
-static
-void build_offsets (struct adios_bp_buffer_struct_v1 * b
-                   ,MPI_Offset * offsets, uint64_t size, char * group_name
-                   ,struct adios_index_process_group_struct_v1 * pg_root
-                   )
-{
-    while (pg_root)
-    {
-        if (!strcasecmp (pg_root->group_name, group_name))
-        {
-            MPI_Offset size = 0;
-
-            if (pg_root->next)
-            {
-                size = pg_root->next->offset_in_file - pg_root->offset_in_file;
-            }
-            else
-            {
-                size = b->pg_index_offset - pg_root->offset_in_file;
-            }
-
-            offsets [pg_root->process_id * 3] = pg_root->offset_in_file;
-            offsets [pg_root->process_id * 3 + 1] = size;
-            offsets [pg_root->process_id * 3 + 2] = b->version;
-        }
-
-        pg_root = pg_root->next;
-    }
-}
-
-enum BUFFERING_STRATEGY adios_mpi_bgq_should_buffer (struct adios_file_struct * fd
-                                                    ,struct adios_method_struct * method
-                                                    )
-{
     int i;
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                       method->method_data;
@@ -784,17 +658,15 @@ enum BUFFERING_STRATEGY adios_mpi_bgq_should_buffer (struct adios_file_struct * 
     int sig;    // used for coordinating the MPI_File_open
     uint16_t flag;
 
-    START_TIMER (ADIOS_TIMER_MPI_BGQ_AD_SHOULD_BUFFER);
 
     name = malloc (strlen (method->base_path) + strlen (fd->name) + 1);
     sprintf (name, "%s%s", method->base_path, fd->name);
 
-    fd->base_offset = 0;
-
     switch (fd->mode)
     {
-        case adios_mode_append:
         case adios_mode_read:
+        case adios_mode_append:
+        case adios_mode_update:
         {
             adios_error (err_invalid_file_mode, "MPI_BGQ method: specified mode is not supported.\n");
             break;
@@ -802,14 +674,6 @@ enum BUFFERING_STRATEGY adios_mpi_bgq_should_buffer (struct adios_file_struct * 
 
         case adios_mode_write:
         {
-            if (fd->shared_buffer == adios_flag_no)
-            {
-                adios_error (err_no_memory, "MPI_BGQ method: ADIOS buffer needs to be enlarged! "
-                                             "Currently don't support un-buffered writes.\n");
-                exit (1);
-                break;
-            }
-
             adios_mpi_bgq_set_aggregation_parameters (method->parameters, md);
 
             if (md->partition_id == 0 && md->file_comm_rank == 0)
@@ -852,149 +716,107 @@ enum BUFFERING_STRATEGY adios_mpi_bgq_should_buffer (struct adios_file_struct * 
 
             free (name_no_path);
 
-            if (fd->shared_buffer == adios_flag_yes)
-            {
-                // open subfiles. Everyone should do that, which is different
-                // from AMR method.
-                md->open_thread_data = (struct adios_MPI_thread_data_open *) malloc (sizeof (struct adios_MPI_thread_data_open));
-                md->open_thread_data->md = md;
-                md->open_thread_data->parameters = method->parameters;
+            // open subfiles. Everyone should do that, which is different
+            // from AMR method.
+            md->open_thread_data = (struct adios_MPI_thread_data_open *) malloc (sizeof (struct adios_MPI_thread_data_open));
+            md->open_thread_data->md = md;
+            md->open_thread_data->parameters = method->parameters;
 
-                adios_mpi_bgq_do_open_thread ((void *) md->open_thread_data);
-            }
-
-            fd->base_offset = 0;
-            fd->pg_start_in_file = 0;
-
-            if (md->group_comm != MPI_COMM_NULL)
-            {
-                if (md->file_comm_rank == 0)
-                {
-                    MPI_Offset * offsets = malloc (sizeof (MPI_Offset)
-                                                   * md->file_comm_size
-                                                  );
-
-                    // round up to GPFS block size (8 MiB)
-                    if (fd->write_size_bytes % BLOCK_UNIT)
-                    {
-                        offsets [0] =  (fd->write_size_bytes / BLOCK_UNIT + 1)
-                                     * BLOCK_UNIT;
-                    }
-                    else
-                    {
-                        offsets [0] = fd->write_size_bytes;
-                    }
-
-                    MPI_Gather (MPI_IN_PLACE, 1, MPI_LONG_LONG
-                               ,offsets, 1, MPI_LONG_LONG
-                               ,0, md->file_comm
-                               );
-
-                    uint64_t last_offset = offsets [0];
-                    offsets [0] = fd->base_offset;
-                    for (i = 1; i < md->file_comm_size; i++)
-                    {
-                        uint64_t this_offset = offsets [i];
-                        offsets [i] = offsets [i - 1] + last_offset;
-                        last_offset = this_offset;
-                    }
-
-                    md->b.pg_index_offset =   offsets [md->file_comm_size - 1]
-                                            + last_offset;
-                    MPI_Scatter (offsets, 1, MPI_LONG_LONG
-                                ,MPI_IN_PLACE, 1, MPI_LONG_LONG
-                                ,0, md->file_comm
-                                );
-
-                    fd->base_offset = offsets [0];
-                    fd->pg_start_in_file = fd->base_offset;
-
-                    free (offsets);
-                }
-                else
-                {
-                    MPI_Offset offset;
-                    if (fd->write_size_bytes % BLOCK_UNIT)
-                    {
-                        offset =  (fd->write_size_bytes / BLOCK_UNIT + 1)
-                                  * BLOCK_UNIT;
-                    }
-                    else
-                    {
-                        offset = fd->write_size_bytes;
-                    }
-
-                    MPI_Gather (&offset, 1, MPI_LONG_LONG
-                               ,0, 1, MPI_LONG_LONG
-                               ,0, md->file_comm
-                               );
-
-                    MPI_Scatter (0, 1, MPI_LONG_LONG
-                                ,&offset, 1, MPI_LONG_LONG
-                                ,0, md->file_comm
-                                );
-                    fd->base_offset = offset;
-                    fd->pg_start_in_file = fd->base_offset;
-                }
-            }
-            else
-            {
-                md->b.pg_index_offset = fd->write_size_bytes;
-            }
-
+            adios_mpi_bgq_do_open_thread ((void *) md->open_thread_data);
             break;
         }
 
         default:
         {
             adios_error (err_invalid_file_mode, "MPI_BGQ method: Unknown file mode requested: %d\n", fd->mode);
-
             free (name);
-
-            return adios_flag_no;
+            return 0;
         }
     }
 
     free (name);
 
-    if (fd->shared_buffer == adios_flag_no && fd->mode != adios_mode_read)
+    STOP_TIMER (ADIOS_TIMER_AD_OPEN);
+    return 1;
+}
+
+static void build_file_offsets (struct adios_MPI_data_struct *md,
+                                       struct adios_file_struct *fd)
+{
+    int i;
+    if (md->group_comm != MPI_COMM_NULL)
     {
-        uint64_t count;
-        // write the process group header
-        adios_write_process_group_header_v1 (fd, fd->write_size_bytes);
-
-        if (is_aggregator (md->rank))
+        if (md->file_comm_rank == 0)
         {
-            count = adios_mpi_bgq_striping_unit_write(
-                                  md->fh
-                                 ,fd->base_offset
-                                 ,fd->buffer
-                                 ,fd->bytes_written
-                                 );
-            if (count != fd->bytes_written)
+            MPI_Offset * offsets = malloc (sizeof (MPI_Offset) * md->file_comm_size);
+
+            // round up to GPFS block size (8 MiB)
+            if (fd->bytes_written % BLOCK_UNIT)
+                offsets [0] =  (fd->bytes_written / BLOCK_UNIT + 1) * BLOCK_UNIT;
+            else
+                offsets [0] = fd->bytes_written;
+
+            MPI_Gather (MPI_IN_PLACE, 1, MPI_LONG_LONG
+                    ,offsets, 1, MPI_LONG_LONG
+                    ,0, md->file_comm
+                    );
+
+            uint64_t last_pgsize = offsets [0];
+            offsets [0] = md->b.end_of_pgs; // = 0 or where to append to existing data (if append was supported)
+            for (i = 1; i < md->file_comm_size; i++)
             {
-                log_warn ("a:MPI_BGQ method tried to write %llu, only wrote %llu\n", 
-                          fd->bytes_written, count);
+                uint64_t this_offset = offsets [i];
+                offsets [i] = offsets [i - 1] + last_pgsize;
+                last_pgsize = this_offset;
             }
+
+            md->b.pg_index_offset =   offsets [md->file_comm_size - 1]
+                                    + last_pgsize;
+            MPI_Scatter (offsets, 1, MPI_LONG_LONG
+                    ,MPI_IN_PLACE, 1, MPI_LONG_LONG
+                    ,0, md->file_comm
+                    );
+
+            fd->current_pg->pg_start_in_file = offsets[0];
+            free (offsets);
         }
-        fd->base_offset += count;
-        fd->offset = 0;
-        fd->bytes_written = 0;
-        adios_shared_buffer_free (&md->b);
+        else
+        {
+            MPI_Offset offset[1];
+            if (fd->bytes_written % BLOCK_UNIT)
+            {
+                offset[0] =  (fd->bytes_written / BLOCK_UNIT + 1)
+                    * BLOCK_UNIT;
+            }
+            else
+            {
+                offset[0] = fd->bytes_written;
+            }
 
-        // setup for writing vars
-        adios_write_open_vars_v1 (fd);
-        md->vars_start = fd->base_offset;
-        md->vars_header_size = fd->offset;
-        fd->base_offset += fd->offset;
-        MPI_File_seek (md->fh, md->vars_header_size, MPI_SEEK_CUR);
-        fd->offset = 0;
-        fd->bytes_written = 0;
-        adios_shared_buffer_free (&md->b);
+            MPI_Gather (offset, 1, MPI_LONG_LONG
+                    ,0, 1, MPI_LONG_LONG
+                    ,0, md->file_comm
+                    );
+
+            MPI_Scatter (0, 1, MPI_LONG_LONG
+                    ,offset, 1, MPI_LONG_LONG
+                    ,0, md->file_comm
+                    );
+            fd->current_pg->pg_start_in_file = offset[0];
+        }
     }
+    else
+    {
+        md->b.pg_index_offset = fd->bytes_written;     
+        fd->current_pg->pg_start_in_file = md->b.end_of_pgs; // 0 or where to append to existing data
+    }
+}
 
-    STOP_TIMER (ADIOS_TIMER_MPI_BGQ_AD_SHOULD_BUFFER);
 
+enum BUFFERING_STRATEGY adios_mpi_bgq_should_buffer (struct adios_file_struct * fd
+                                                    ,struct adios_method_struct * method
+                                                    )
+{
     return stop_on_overflow;
 }
 
@@ -1006,7 +828,7 @@ void adios_mpi_bgq_write (struct adios_file_struct * fd
 {
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                       method->method_data;
-    START_TIMER (ADIOS_TIMER_MPI_BGQ_AD_WRITE);
+    START_TIMER (ADIOS_TIMER_AD_WRITE);
     if (v->got_buffer == adios_flag_yes)
     {
         if (data != v->data)  // if the user didn't give back the same thing
@@ -1024,11 +846,7 @@ void adios_mpi_bgq_write (struct adios_file_struct * fd
         }
     }
 
-    if (fd->shared_buffer == adios_flag_no)
-    {
-        log_warn ("The ADIOS buffer in the XML is not large enough for buffering.\n");
-    }
-    STOP_TIMER (ADIOS_TIMER_MPI_BGQ_AD_WRITE);
+    STOP_TIMER (ADIOS_TIMER_AD_WRITE);
 }
 
 void adios_mpi_bgq_get_write_buffer (struct adios_file_struct * fd
@@ -1227,6 +1045,19 @@ uint32_t adios_mpi_bgq_calculate_attributes_size (struct adios_file_struct * fd)
     return overhead;
 }
 
+void adios_mpi_lustre_buffer_overflow (struct adios_file_struct * fd,
+        struct adios_method_struct * method)
+{
+    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
+                                                  method->method_data;
+    adios_error (err_buffer_overflow,
+            "rank %d: MPI_BGQ method only works with complete buffering of data between adios_open() "
+            "and adios_close(). Portions of global arrays, that do not fit into the "
+            "buffer on some processors will not be written by this method to %s\n",
+            md->rank, fd->name);
+}
+
+
 void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
                                  ,struct adios_method_struct * method
                                  )
@@ -1240,7 +1071,7 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
     struct adios_index_var_struct_v1 * new_vars_root = 0;
     struct adios_index_attribute_struct_v1 * new_attrs_root = 0;
 
-    START_TIMER (ADIOS_TIMER_MPI_BGQ_AD_CLOSE);
+    START_TIMER (ADIOS_TIMER_AD_CLOSE);
     switch (fd->mode)
     {
         case adios_mode_read:
@@ -1256,87 +1087,77 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
             char * buffer = 0;
             uint64_t buffer_size = 0;
             uint64_t buffer_offset = 0;
-            uint64_t index_start = md->b.pg_index_offset, index_start1;
             int * disp = 0, * sendbuf = 0, * recvbuf = 0, * attr_sizes = 0;
             void * * recv_buff = 0;
             struct adios_MPI_thread_data_write write_thread_data;
             int i, max_data_size = 0, total_data_size = 0, total_data_size1 = 0;
             MPI_Comm new_comm2;
 
-            START_TIMER (ADIOS_TIMER_MPI_BGQ_COMM);
+            START_TIMER (ADIOS_TIMER_COMM);
             MPI_Comm_split (md->group_comm, md->file_comm_rank, md->rank, &new_comm2);
-            STOP_TIMER (ADIOS_TIMER_MPI_BGQ_COMM);
+            STOP_TIMER (ADIOS_TIMER_COMM);
 
-            if (fd->shared_buffer == adios_flag_yes)
+            /* Write data block (PG) */
+            // if we need to write > 2 GB, need to do it in parts
+            // since count is limited to MAX_MPIWRITE_SIZE (signed 32-bit max).
+            uint64_t bytes_written = 0; 
+            int32_t to_write = 0; 
+            if (fd->bytes_written > MAX_MPIWRITE_SIZE)
             {    
-                // if we need to write > 2 GB, need to do it in parts
-                // since count is limited to MAX_MPIWRITE_SIZE (signed 32-bit max).
-                uint64_t bytes_written = 0; 
-                int32_t to_write = 0; 
-                if (fd->bytes_written > MAX_MPIWRITE_SIZE)
-                {    
-                    to_write = MAX_MPIWRITE_SIZE;
-                }    
-                else 
-                {    
-                    to_write = (int32_t) fd->bytes_written;
-                }    
+                to_write = MAX_MPIWRITE_SIZE;
+            }    
+            else 
+            {    
+                to_write = (int32_t) fd->bytes_written;
+            }    
 
-                if (fd->base_offset + fd->bytes_written > 
-                    fd->pg_start_in_file + fd->write_size_bytes) 
-                {    
-                    adios_error (err_out_of_bound, 
-                            "MPI_BGQ method, rank %d: size of buffered data exceeds pg bound.\n"
-                            "File is corrupted. Need to enlarge group size in adios_group_size().\n"
-                            "Group size=%llu, offset at end of variable buffer=%llu\n",
-                            md->rank, 
-                            fd->write_size_bytes,
-                            fd->base_offset - fd->pg_start_in_file + fd->bytes_written);
-                }    
+            START_TIMER (ADIOS_TIMER_IO);
+            while (bytes_written < fd->bytes_written)
+            {
+                // everyone writes their data
+                MPI_File_seek (md->fh, fd->current_pg->pg_start_in_file + bytes_written
+                        ,MPI_SEEK_SET
+                        );   
+                int err = MPI_File_write (md->fh, fd->buffer + bytes_written
+                        ,to_write, MPI_BYTE, &md->status
+                        );
 
-                START_TIMER (ADIOS_TIMER_MPI_BGQ_IO);
-                while (bytes_written < fd->bytes_written)
+                if (err != MPI_SUCCESS)
                 {
-                    // everyone writes their data
-                    MPI_File_seek (md->fh, fd->base_offset + bytes_written
-                                  ,MPI_SEEK_SET
-                                  );   
-                    int err = MPI_File_write (md->fh, fd->buffer + bytes_written
-                                         ,to_write, MPI_BYTE, &md->status
-                                         );
-
-                    if (err != MPI_SUCCESS)
+                    char e [MPI_MAX_ERROR_STRING];
+                    int len = 0;
+                    memset (e, 0, MPI_MAX_ERROR_STRING);
+                    MPI_Error_string (err, e, &len);
+                    adios_error (err_write_error,
+                            "MPI_BGQ method, rank %d: adios_close(): writing of buffered data "
+                            "[%llu..%llu] to file %s failed: '%s'\n",
+                            md->rank, bytes_written, bytes_written+to_write-1,
+                            fd->name, e);
+                }
+                bytes_written += to_write;
+                if (fd->bytes_written > bytes_written)
+                {
+                    if (fd->bytes_written - bytes_written > MAX_MPIWRITE_SIZE)
                     {
-                        char e [MPI_MAX_ERROR_STRING];
-                        int len = 0;
-                        memset (e, 0, MPI_MAX_ERROR_STRING);
-                        MPI_Error_string (err, e, &len);
-                        adios_error (err_write_error,
-                                "MPI_BGQ method, rank %d: adios_close(): writing of buffered data "
-                                "[%llu..%llu] to file %s failed: '%s'\n",
-                                md->rank, bytes_written, bytes_written+to_write-1,
-                                fd->name, e);
+                        to_write = MAX_MPIWRITE_SIZE;
                     }
-                    bytes_written += to_write;
-                    if (fd->bytes_written > bytes_written)
+                    else
                     {
-                        if (fd->bytes_written - bytes_written > MAX_MPIWRITE_SIZE)
-                        {
-                            to_write = MAX_MPIWRITE_SIZE;
-                        }
-                        else
-                        {
-                            to_write = fd->bytes_written - bytes_written;
-                        }
+                        to_write = fd->bytes_written - bytes_written;
                     }
                 }
-                STOP_TIMER (ADIOS_TIMER_MPI_BGQ_IO);
             }
+            STOP_TIMER (ADIOS_TIMER_IO);
+
+            /* Build the local index */
+            START_TIMER (ADIOS_TIMER_LOCALMD);
+            // figure out the offsets
+            // before writing out the buffer and build the index based on target offsets
+            build_file_offsets (md, fd);
 
             // build index appending to any existing index
-            START_TIMER (ADIOS_TIMER_MPI_BGQ_MD);
             adios_build_index_v1 (fd, md->index);
-            STOP_TIMER (ADIOS_TIMER_MPI_BGQ_MD);
+            STOP_TIMER (ADIOS_TIMER_LOCALMD);
 
             // if collective, gather the indexes from the rest and call
             if (md->group_comm != MPI_COMM_NULL)
@@ -1351,12 +1172,12 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
                     uint32_t size = 0, total_size = 0;
                     int i;
 
-                    START_TIMER (ADIOS_TIMER_MPI_BGQ_COMM);
+                    START_TIMER (ADIOS_TIMER_COMM);
                     MPI_Gather (&size, 1, MPI_INT
                                ,index_sizes, 1, MPI_INT
                                ,0, md->file_comm
                                );
-                    STOP_TIMER (ADIOS_TIMER_MPI_BGQ_COMM);
+                    STOP_TIMER (ADIOS_TIMER_COMM);
 
                     for (i = 0; i < md->file_comm_size; i++)
                     {
@@ -1367,18 +1188,18 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
                     recv_buffer = malloc (total_size);
                     assert (recv_buffer);
 
-                    START_TIMER (ADIOS_TIMER_MPI_BGQ_COMM);
+                    START_TIMER (ADIOS_TIMER_COMM);
                     MPI_Gatherv (&size, 0, MPI_BYTE
                                 ,recv_buffer, index_sizes, index_offsets
                                 ,MPI_BYTE, 0, md->file_comm
                                 );
-                    STOP_TIMER (ADIOS_TIMER_MPI_BGQ_COMM);
+                    STOP_TIMER (ADIOS_TIMER_COMM);
 
                     char * buffer_save = md->b.buff;
                     uint64_t buffer_size_save = md->b.length;
                     uint64_t offset_save = md->b.offset;
 
-                    START_TIMER (ADIOS_TIMER_MPI_BGQ_MD);
+                    START_TIMER (ADIOS_TIMER_LOCALMD);
                     for (i = 1; i < md->file_comm_size; i++)
                     {
                         md->b.buff = recv_buffer + index_offsets [i];
@@ -1405,18 +1226,18 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
                     free (recv_buffer);
                     free (index_sizes);
                     free (index_offsets);
-                    STOP_TIMER (ADIOS_TIMER_MPI_BGQ_MD);
+                    STOP_TIMER (ADIOS_TIMER_LOCALMD);
                 }
                 else
                 {
-                    START_TIMER (ADIOS_TIMER_MPI_BGQ_MD);
+                    START_TIMER (ADIOS_TIMER_LOCALMD);
                     adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
                                          ,0, md->index);
-                    STOP_TIMER (ADIOS_TIMER_MPI_BGQ_MD);
+                    STOP_TIMER (ADIOS_TIMER_LOCALMD);
 
                     uint32_t temp_buffer_size = buffer_offset;
 
-                    START_TIMER (ADIOS_TIMER_MPI_BGQ_COMM);
+                    START_TIMER (ADIOS_TIMER_COMM);
 /*
                     MPI_Gather ((uint32_t *)&buffer_size, 1, MPI_INT, 0, 0, MPI_INT
                                ,0, md->file_comm
@@ -1435,7 +1256,7 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
                                 ,0, 0, 0, MPI_BYTE
                                 ,0, md->file_comm
                                 );
-                    STOP_TIMER (ADIOS_TIMER_MPI_BGQ_COMM);
+                    STOP_TIMER (ADIOS_TIMER_COMM);
                 }
             }
 
@@ -1443,21 +1264,13 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
             // out indexes in each subfile
             if (md->file_comm_rank == 0)
             {
-                uint32_t flag = 0;
                 int err;
 
-                START_TIMER (ADIOS_TIMER_MPI_BGQ_MD);
-                index_start = md->b.pg_index_offset;;
+                START_TIMER (ADIOS_TIMER_LOCALMD);
+                uint64_t index_start = md->b.pg_index_offset;
 
-                adios_write_index_v1 (&buffer, &buffer_size
-                                     ,&buffer_offset, index_start
-                                     ,md->index
-                                     );
-
-                adios_write_version_flag_v1 (&buffer, &buffer_size, &buffer_offset, flag);
                 adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
-                                     ,index_start, md->index
-                                     );
+                                     ,index_start, md->index);
                 adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 
                 MPI_File_seek (md->fh, md->b.pg_index_offset, MPI_SEEK_SET);
@@ -1499,7 +1312,7 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
                             "of %llu bytes to file %s failed: '%s'\n",
                             md->rank, buffer_offset, fd->name, e);
                 }
-                STOP_TIMER (ADIOS_TIMER_MPI_BGQ_MD);
+                STOP_TIMER (ADIOS_TIMER_LOCALMD);
             }
 
             if (md->g_have_mdf)
@@ -1514,12 +1327,12 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
                         char * recv_buffer = 0;
                         uint32_t size = 0, total_size = 0;
 
-                        START_TIMER (ADIOS_TIMER_MPI_BGQ_COMM);
+                        START_TIMER (ADIOS_TIMER_COMM);
                         MPI_Gather (&size, 1, MPI_INT
                                    ,index_sizes, 1, MPI_INT
                                    ,0, new_comm2
                                    );
-                        STOP_TIMER (ADIOS_TIMER_MPI_BGQ_COMM);
+                        STOP_TIMER (ADIOS_TIMER_COMM);
 
                         for (i = 0; i < md->n_partitions; i++)
                         {
@@ -1530,18 +1343,18 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
                         recv_buffer = malloc (total_size);
                         assert (recv_buffer);
 
-                        START_TIMER (ADIOS_TIMER_MPI_BGQ_COMM);
+                        START_TIMER (ADIOS_TIMER_COMM);
                         MPI_Gatherv (&size, 0, MPI_BYTE
                                     ,recv_buffer, index_sizes, index_offsets
                                     ,MPI_BYTE, 0, new_comm2
                                     );
-                        STOP_TIMER (ADIOS_TIMER_MPI_BGQ_COMM);
+                        STOP_TIMER (ADIOS_TIMER_COMM);
 
                         char * buffer_save = md->b.buff;
                         uint64_t buffer_size_save = md->b.length;
                         uint64_t offset_save = md->b.offset;
 
-                        START_TIMER (ADIOS_TIMER_MPI_BGQ_MD);
+                        START_TIMER (ADIOS_TIMER_GLOBALMD);
                         for (i = 1; i < md->n_partitions; i++)
                         {
                             md->b.buff = recv_buffer + index_offsets [i];
@@ -1570,7 +1383,7 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
                         free (recv_buffer);
                         free (index_sizes);
                         free (index_offsets);
-                        STOP_TIMER (ADIOS_TIMER_MPI_BGQ_MD);
+                        STOP_TIMER (ADIOS_TIMER_GLOBALMD);
                     }
                     else
                     {
@@ -1578,14 +1391,14 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
                         uint64_t buffer_size2 = 0;
                         uint64_t buffer_offset2 = 0;
 
-                        START_TIMER (ADIOS_TIMER_MPI_BGQ_MD);
+                        START_TIMER (ADIOS_TIMER_GLOBALMD);
                         adios_write_index_v1 (&buffer2, &buffer_size2, &buffer_offset2
                                              ,0, md->index
                                              );
-                        STOP_TIMER (ADIOS_TIMER_MPI_BGQ_MD);
+                        STOP_TIMER (ADIOS_TIMER_GLOBALMD);
                         uint32_t temp_buffer_size2 = buffer_offset2;
 
-                        START_TIMER (ADIOS_TIMER_MPI_BGQ_COMM);
+                        START_TIMER (ADIOS_TIMER_COMM);
 /*
                         MPI_Gather (&buffer_size2, 1, MPI_INT
                                    ,0, 0, MPI_INT
@@ -1604,7 +1417,7 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
                                     ,0, 0, 0, MPI_BYTE
                                     ,0, new_comm2
                                     );
-                        STOP_TIMER (ADIOS_TIMER_MPI_BGQ_COMM);
+                        STOP_TIMER (ADIOS_TIMER_COMM);
 
                         if (buffer2)
                         {
@@ -1626,7 +1439,7 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
                     uint64_t global_index_start = 0;
                     uint16_t flag = 0;
 
-                    START_TIMER (ADIOS_TIMER_MPI_BGQ_MD);
+                    START_TIMER (ADIOS_TIMER_GLOBALMD);
                     adios_write_index_v1 (&global_index_buffer, &global_index_buffer_size
                                          ,&global_index_buffer_offset, global_index_start
                                          ,md->index
@@ -1654,7 +1467,7 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
                         global_index_buffer_size = 0;
                         global_index_buffer_offset = 0;
                     }
-                    STOP_TIMER (ADIOS_TIMER_MPI_BGQ_MD);
+                    STOP_TIMER (ADIOS_TIMER_GLOBALMD);
                 }
             }
 
@@ -1695,7 +1508,7 @@ void adios_mpi_bgq_simple_close (struct adios_file_struct * fd
     md->req = 0;
     memset (&md->status, 0, sizeof (MPI_Status));
 
-    STOP_TIMER (ADIOS_TIMER_MPI_BGQ_AD_CLOSE);
+    STOP_TIMER (ADIOS_TIMER_AD_CLOSE);
 
 #if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
 
@@ -1834,7 +1647,7 @@ void adios_mpi_bgq_bg_close (struct adios_file_struct * fd
 
                 if (is_aggregator (md->rank))
                 {
-                    index_start1 = 0;
+                    uint64_t index_start1 = 0;
                     for (i = 0; i < new_group_size; i++)
                     {
                         if (i + 1 < new_group_size)
