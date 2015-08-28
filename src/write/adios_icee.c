@@ -1120,6 +1120,12 @@ adios_icee_should_buffer (struct adios_file_struct * fd,struct adios_method_stru
     return no_buffering;
 }
 
+extern void 
+adios_icee_buffer_overflow (struct adios_file_struct * fd,
+                            struct adios_method_struct * method)
+{
+}
+
 // provides unknown functionality
 extern void 
 adios_icee_end_iteration(struct adios_method_struct *method) 

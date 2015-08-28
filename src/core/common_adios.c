@@ -50,6 +50,8 @@ extern int adios_errno;
 int common_adios_init (const char * config, MPI_Comm comm)
 {
     // parse the config file
+    if (comm == MPI_COMM_NULL)
+        comm = MPI_COMM_SELF;
     adios_errno = err_no_error;
     adios_parse_config (config, comm);
     return adios_errno;
@@ -59,6 +61,8 @@ int common_adios_init (const char * config, MPI_Comm comm)
 // all XML file pieces will be provided by another series of calls
 int common_adios_init_noxml (MPI_Comm comm)
 {
+    if (comm == MPI_COMM_NULL)
+        comm = MPI_COMM_SELF;
     adios_errno = err_no_error;
     adios_local_config (comm);
     return adios_errno;
@@ -166,7 +170,11 @@ int common_adios_open (int64_t * fd_p, const char * group_name
     fd->subfile_index = -1; // subfile index is by default -1
     fd->group = g;
     fd->mode = mode;
-    if (comm != MPI_COMM_NULL)
+    if (comm == MPI_COMM_NULL)
+        fd->comm = MPI_COMM_NULL;
+    else if (comm == MPI_COMM_SELF)
+        fd->comm = MPI_COMM_SELF;
+    else
         MPI_Comm_dup(comm, &fd->comm);
 
 
@@ -1194,7 +1202,7 @@ int common_adios_close (int64_t fd_p)
         fd->name = 0;
     }
 
-    if (fd->comm != MPI_COMM_NULL) {
+    if (fd->comm != MPI_COMM_NULL && fd->comm != MPI_COMM_SELF) {
         MPI_Comm_free (&fd->comm);
     }
 
