@@ -299,14 +299,13 @@ am__libadios_a_SOURCES_DIST = core/adios.c core/common_adios.c \
 	query/fastbit_adios.h query/adios_query.c read/read_bp.c \
 	read/read_bp_staged.c read/read_bp_staged1.c write/adios_mpi.c \
 	write/adios_mpi_lustre.c write/adios_mpi_amr.c \
-	write/adios_posix.c write/adios_posix1.c \
-	write/adios_var_merge.c write/adios_mpi_bgq.c \
-	write/adios_dataspaces.c read/read_dataspaces.c \
-	write/adios_dimes.c read/read_dimes.c write/adios_datatap.c \
-	read/read_datatap.c write/adios_phdf5.c write/adios_nc4.c \
-	write/adios_flexpath.c read/read_flexpath.c write/adios_icee.c \
-	read/read_icee.c nssi/adios_nssi_config.c write/adios_nssi.c \
-	nssi/adios_nssi_filter.c read/read_nssi.c
+	write/adios_posix.c write/adios_var_merge.c \
+	write/adios_mpi_bgq.c write/adios_dataspaces.c \
+	read/read_dataspaces.c write/adios_dimes.c read/read_dimes.c \
+	write/adios_datatap.c read/read_datatap.c write/adios_phdf5.c \
+	write/adios_nc4.c write/adios_flexpath.c read/read_flexpath.c \
+	write/adios_icee.c read/read_icee.c nssi/adios_nssi_config.c \
+	write/adios_nssi.c nssi/adios_nssi_filter.c read/read_nssi.c
 am__objects_1 =
 am__objects_2 = $(am__objects_1) \
 	libadios_a-adios_transforms_common.$(OBJEXT) \
@@ -399,7 +398,6 @@ am__objects_13 = $(am__objects_12) libadios_a-adios_query.$(OBJEXT)
 @BUILD_WRITE_TRUE@	libadios_a-adios_mpi_lustre.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_mpi_amr.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_posix.$(OBJEXT) \
-@BUILD_WRITE_TRUE@	libadios_a-adios_posix1.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_a-adios_var_merge.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	$(am__objects_14) $(am__objects_15) \
 @BUILD_WRITE_TRUE@	$(am__objects_16) $(am__objects_17) \
@@ -562,9 +560,9 @@ am__libadios_nompi_a_SOURCES_DIST = core/adios.c core/common_adios.c \
 	core/adios_transport_hooks.c core/adios_socket.c \
 	core/adios_logger.c core/util.c core/qhashtbl.c read/read_bp.c \
 	read/read_bp_staged.c read/read_bp_staged1.c \
-	write/adios_posix.c write/adios_posix1.c write/adios_datatap.c \
-	read/read_datatap.c write/adios_flexpath.c \
-	read/read_flexpath.c write/adios_icee.c read/read_icee.c
+	write/adios_posix.c write/adios_datatap.c read/read_datatap.c \
+	write/adios_flexpath.c read/read_flexpath.c write/adios_icee.c \
+	read/read_icee.c
 am__objects_33 = $(am__objects_1) \
 	libadios_nompi_a-adios_transforms_common.$(OBJEXT) \
 	libadios_nompi_a-adios_transforms_hooks.$(OBJEXT) \
@@ -650,7 +648,6 @@ am__objects_43 = $(am__objects_42) \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-read_bp_staged.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-read_bp_staged1.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	libadios_nompi_a-adios_posix.$(OBJEXT) \
-@BUILD_WRITE_TRUE@	libadios_nompi_a-adios_posix1.$(OBJEXT) \
 @BUILD_WRITE_TRUE@	$(am__objects_44) $(am__objects_45) \
 @BUILD_WRITE_TRUE@	$(am__objects_46)
 libadios_nompi_a_OBJECTS = $(am_libadios_nompi_a_OBJECTS)
@@ -717,10 +714,9 @@ am__libadiosf_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	core/adios_transport_hooks.c core/adios_socket.c \
 	core/adios_logger.c core/util.c core/qhashtbl.c read/read_bp.c \
 	read/read_bp_staged.c read/read_bp_staged1.c \
-	write/adios_posix.c write/adios_posix1.c write/adios_datatap.c \
-	read/read_datatap.c write/adios_flexpath.c \
-	read/read_flexpath.c write/adios_icee.c read/read_icee.c \
-	nssi/adios_nssi_config.c write/adios_nssi.c \
+	write/adios_posix.c write/adios_datatap.c read/read_datatap.c \
+	write/adios_flexpath.c read/read_flexpath.c write/adios_icee.c \
+	read/read_icee.c nssi/adios_nssi_config.c write/adios_nssi.c \
 	nssi/adios_nssi_filter.c read/read_nssi.c write/adios_mpi.c \
 	write/adios_mpi_lustre.c write/adios_mpi_amr.c \
 	write/adios_var_merge.c write/adios_mpi_bgq.c \
@@ -810,7 +806,6 @@ am__objects_57 = $(am__objects_56) libadiosf_a-adiosf_query.$(OBJEXT)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-read_bp_staged.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-read_bp_staged1.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_posix.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_a-adios_posix1.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_58) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_59) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_60) \
@@ -907,10 +902,9 @@ am__libadiosf_nompi_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	core/adios_transport_hooks.c core/adios_socket.c \
 	core/adios_logger.c core/util.c core/qhashtbl.c read/read_bp.c \
 	read/read_bp_staged.c read/read_bp_staged1.c \
-	write/adios_posix.c write/adios_posix1.c write/adios_datatap.c \
-	read/read_datatap.c write/adios_flexpath.c \
-	read/read_flexpath.c write/adios_icee.c read/read_icee.c \
-	nssi/adios_nssi_config.c write/adios_nssi.c \
+	write/adios_posix.c write/adios_datatap.c read/read_datatap.c \
+	write/adios_flexpath.c read/read_flexpath.c write/adios_icee.c \
+	read/read_icee.c nssi/adios_nssi_config.c write/adios_nssi.c \
 	nssi/adios_nssi_filter.c read/read_nssi.c core/mpidummy.c \
 	core/adiosf_read.c core/adiosf_defs_mod.f90 \
 	core/adiosf_write_mod.f90 core/adiosf_read_mod.f90 \
@@ -1002,7 +996,6 @@ am__objects_79 = $(am__objects_78) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_a-read_bp_staged.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_a-read_bp_staged1.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_a-adios_posix.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_a-adios_posix1.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_80) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_81) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_82) \
@@ -1080,10 +1073,9 @@ am__libadiosf_nompi_v1_a_SOURCES_DIST = core/adiosf.c \
 	core/adios_transport_hooks.c core/adios_socket.c \
 	core/adios_logger.c core/util.c core/qhashtbl.c read/read_bp.c \
 	read/read_bp_staged.c read/read_bp_staged1.c \
-	write/adios_posix.c write/adios_posix1.c write/adios_datatap.c \
-	read/read_datatap.c write/adios_flexpath.c \
-	read/read_flexpath.c write/adios_icee.c read/read_icee.c \
-	nssi/adios_nssi_config.c write/adios_nssi.c \
+	write/adios_posix.c write/adios_datatap.c read/read_datatap.c \
+	write/adios_flexpath.c read/read_flexpath.c write/adios_icee.c \
+	read/read_icee.c nssi/adios_nssi_config.c write/adios_nssi.c \
 	nssi/adios_nssi_filter.c read/read_nssi.c core/mpidummy.c \
 	core/adiosf_read_v1.c core/adiosf_defs_mod.f90 \
 	core/adiosf_write_mod.f90
@@ -1173,7 +1165,6 @@ am__objects_96 = $(am__objects_95) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_v1_a-read_bp_staged.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_v1_a-read_bp_staged1.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_v1_a-adios_posix.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_nompi_v1_a-adios_posix1.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_97) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_98) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_99) \
@@ -1249,10 +1240,9 @@ am__libadiosf_v1_a_SOURCES_DIST = core/adiosf.c core/common_adios.c \
 	core/adios_transport_hooks.c core/adios_socket.c \
 	core/adios_logger.c core/util.c core/qhashtbl.c read/read_bp.c \
 	read/read_bp_staged.c read/read_bp_staged1.c \
-	write/adios_posix.c write/adios_posix1.c write/adios_datatap.c \
-	read/read_datatap.c write/adios_flexpath.c \
-	read/read_flexpath.c write/adios_icee.c read/read_icee.c \
-	nssi/adios_nssi_config.c write/adios_nssi.c \
+	write/adios_posix.c write/adios_datatap.c read/read_datatap.c \
+	write/adios_flexpath.c read/read_flexpath.c write/adios_icee.c \
+	read/read_icee.c nssi/adios_nssi_config.c write/adios_nssi.c \
 	nssi/adios_nssi_filter.c read/read_nssi.c write/adios_mpi.c \
 	write/adios_mpi_lustre.c write/adios_mpi_amr.c \
 	write/adios_var_merge.c write/adios_mpi_bgq.c \
@@ -1348,7 +1338,6 @@ am__objects_113 = $(am__objects_112) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-read_bp_staged.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-read_bp_staged1.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-adios_posix.$(OBJEXT) \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	libadiosf_v1_a-adios_posix1.$(OBJEXT) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_114) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_115) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__objects_116) \
@@ -2587,12 +2576,11 @@ query_F_SOURCES = $(query_SOURCES) query/adiosf_query.c
 @BUILD_WRITE_TRUE@	read/read_bp_staged.c read/read_bp_staged1.c \
 @BUILD_WRITE_TRUE@	write/adios_mpi.c write/adios_mpi_lustre.c \
 @BUILD_WRITE_TRUE@	write/adios_mpi_amr.c write/adios_posix.c \
-@BUILD_WRITE_TRUE@	write/adios_posix1.c write/adios_var_merge.c \
-@BUILD_WRITE_TRUE@	$(am__append_6) $(am__append_9) \
-@BUILD_WRITE_TRUE@	$(am__append_11) $(am__append_13) \
-@BUILD_WRITE_TRUE@	$(am__append_16) $(am__append_21) \
-@BUILD_WRITE_TRUE@	$(am__append_23) $(am__append_26) \
-@BUILD_WRITE_TRUE@	$(am__append_29)
+@BUILD_WRITE_TRUE@	write/adios_var_merge.c $(am__append_6) \
+@BUILD_WRITE_TRUE@	$(am__append_9) $(am__append_11) \
+@BUILD_WRITE_TRUE@	$(am__append_13) $(am__append_16) \
+@BUILD_WRITE_TRUE@	$(am__append_21) $(am__append_23) \
+@BUILD_WRITE_TRUE@	$(am__append_26) $(am__append_29)
 @BUILD_WRITE_TRUE@libadios_nompi_a_SOURCES = core/adios.c \
 @BUILD_WRITE_TRUE@	core/common_adios.c core/adios_internals.c \
 @BUILD_WRITE_TRUE@	core/adios_internals_mxml.c \
@@ -2611,9 +2599,8 @@ query_F_SOURCES = $(query_SOURCES) query/adiosf_query.c
 @BUILD_WRITE_TRUE@	core/adios_socket.c core/adios_logger.c \
 @BUILD_WRITE_TRUE@	core/util.c core/qhashtbl.c read/read_bp.c \
 @BUILD_WRITE_TRUE@	read/read_bp_staged.c read/read_bp_staged1.c \
-@BUILD_WRITE_TRUE@	write/adios_posix.c write/adios_posix1.c \
-@BUILD_WRITE_TRUE@	$(am__append_14) $(am__append_24) \
-@BUILD_WRITE_TRUE@	$(am__append_27)
+@BUILD_WRITE_TRUE@	write/adios_posix.c $(am__append_14) \
+@BUILD_WRITE_TRUE@	$(am__append_24) $(am__append_27)
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@FortranLibSources =  \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	core/adiosf.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	core/common_adios.c \
@@ -2644,7 +2631,6 @@ query_F_SOURCES = $(query_SOURCES) query/adiosf_query.c
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	read/read_bp_staged.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	read/read_bp_staged1.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	write/adios_posix.c \
-@BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	write/adios_posix1.c \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_15) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_25) \
 @BUILD_FORTRAN_TRUE@@BUILD_WRITE_TRUE@	$(am__append_28) \
@@ -3412,12 +3398,6 @@ libadios_a-adios_posix.o: write/adios_posix.c
 libadios_a-adios_posix.obj: write/adios_posix.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_posix.obj `if test -f 'write/adios_posix.c'; then $(CYGPATH_W) 'write/adios_posix.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_posix.c'; fi`
 
-libadios_a-adios_posix1.o: write/adios_posix1.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_posix1.o `test -f 'write/adios_posix1.c' || echo '$(srcdir)/'`write/adios_posix1.c
-
-libadios_a-adios_posix1.obj: write/adios_posix1.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_posix1.obj `if test -f 'write/adios_posix1.c'; then $(CYGPATH_W) 'write/adios_posix1.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_posix1.c'; fi`
-
 libadios_a-adios_var_merge.o: write/adios_var_merge.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_a_CPPFLAGS) $(CPPFLAGS) $(libadios_a_CFLAGS) $(CFLAGS) -c -o libadios_a-adios_var_merge.o `test -f 'write/adios_var_merge.c' || echo '$(srcdir)/'`write/adios_var_merge.c
 
@@ -4126,12 +4106,6 @@ libadios_nompi_a-adios_posix.o: write/adios_posix.c
 libadios_nompi_a-adios_posix.obj: write/adios_posix.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-adios_posix.obj `if test -f 'write/adios_posix.c'; then $(CYGPATH_W) 'write/adios_posix.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_posix.c'; fi`
 
-libadios_nompi_a-adios_posix1.o: write/adios_posix1.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-adios_posix1.o `test -f 'write/adios_posix1.c' || echo '$(srcdir)/'`write/adios_posix1.c
-
-libadios_nompi_a-adios_posix1.obj: write/adios_posix1.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-adios_posix1.obj `if test -f 'write/adios_posix1.c'; then $(CYGPATH_W) 'write/adios_posix1.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_posix1.c'; fi`
-
 libadios_nompi_a-adios_datatap.o: write/adios_datatap.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadios_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadios_nompi_a_CFLAGS) $(CFLAGS) -c -o libadios_nompi_a-adios_datatap.o `test -f 'write/adios_datatap.c' || echo '$(srcdir)/'`write/adios_datatap.c
 
@@ -4527,12 +4501,6 @@ libadiosf_a-adios_posix.o: write/adios_posix.c
 
 libadiosf_a-adios_posix.obj: write/adios_posix.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_posix.obj `if test -f 'write/adios_posix.c'; then $(CYGPATH_W) 'write/adios_posix.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_posix.c'; fi`
-
-libadiosf_a-adios_posix1.o: write/adios_posix1.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_posix1.o `test -f 'write/adios_posix1.c' || echo '$(srcdir)/'`write/adios_posix1.c
-
-libadiosf_a-adios_posix1.obj: write/adios_posix1.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_posix1.obj `if test -f 'write/adios_posix1.c'; then $(CYGPATH_W) 'write/adios_posix1.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_posix1.c'; fi`
 
 libadiosf_a-adios_datatap.o: write/adios_datatap.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_a_CFLAGS) $(CFLAGS) -c -o libadiosf_a-adios_datatap.o `test -f 'write/adios_datatap.c' || echo '$(srcdir)/'`write/adios_datatap.c
@@ -5032,12 +5000,6 @@ libadiosf_nompi_a-adios_posix.o: write/adios_posix.c
 libadiosf_nompi_a-adios_posix.obj: write/adios_posix.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_a-adios_posix.obj `if test -f 'write/adios_posix.c'; then $(CYGPATH_W) 'write/adios_posix.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_posix.c'; fi`
 
-libadiosf_nompi_a-adios_posix1.o: write/adios_posix1.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_a-adios_posix1.o `test -f 'write/adios_posix1.c' || echo '$(srcdir)/'`write/adios_posix1.c
-
-libadiosf_nompi_a-adios_posix1.obj: write/adios_posix1.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_a-adios_posix1.obj `if test -f 'write/adios_posix1.c'; then $(CYGPATH_W) 'write/adios_posix1.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_posix1.c'; fi`
-
 libadiosf_nompi_a-adios_datatap.o: write/adios_datatap.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_a-adios_datatap.o `test -f 'write/adios_datatap.c' || echo '$(srcdir)/'`write/adios_datatap.c
 
@@ -5470,12 +5432,6 @@ libadiosf_nompi_v1_a-adios_posix.o: write/adios_posix.c
 libadiosf_nompi_v1_a-adios_posix.obj: write/adios_posix.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_v1_a-adios_posix.obj `if test -f 'write/adios_posix.c'; then $(CYGPATH_W) 'write/adios_posix.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_posix.c'; fi`
 
-libadiosf_nompi_v1_a-adios_posix1.o: write/adios_posix1.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_v1_a-adios_posix1.o `test -f 'write/adios_posix1.c' || echo '$(srcdir)/'`write/adios_posix1.c
-
-libadiosf_nompi_v1_a-adios_posix1.obj: write/adios_posix1.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_v1_a-adios_posix1.obj `if test -f 'write/adios_posix1.c'; then $(CYGPATH_W) 'write/adios_posix1.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_posix1.c'; fi`
-
 libadiosf_nompi_v1_a-adios_datatap.o: write/adios_datatap.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_nompi_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_nompi_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_nompi_v1_a-adios_datatap.o `test -f 'write/adios_datatap.c' || echo '$(srcdir)/'`write/adios_datatap.c
 
@@ -5907,12 +5863,6 @@ libadiosf_v1_a-adios_posix.o: write/adios_posix.c
 
 libadiosf_v1_a-adios_posix.obj: write/adios_posix.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_posix.obj `if test -f 'write/adios_posix.c'; then $(CYGPATH_W) 'write/adios_posix.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_posix.c'; fi`
-
-libadiosf_v1_a-adios_posix1.o: write/adios_posix1.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_posix1.o `test -f 'write/adios_posix1.c' || echo '$(srcdir)/'`write/adios_posix1.c
-
-libadiosf_v1_a-adios_posix1.obj: write/adios_posix1.c
-	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_posix1.obj `if test -f 'write/adios_posix1.c'; then $(CYGPATH_W) 'write/adios_posix1.c'; else $(CYGPATH_W) '$(srcdir)/write/adios_posix1.c'; fi`
 
 libadiosf_v1_a-adios_datatap.o: write/adios_datatap.c
 	$(CC) $(DEFS) $(DEFAULT_INCLUDES) $(INCLUDES) $(libadiosf_v1_a_CPPFLAGS) $(CPPFLAGS) $(libadiosf_v1_a_CFLAGS) $(CFLAGS) -c -o libadiosf_v1_a-adios_datatap.o `test -f 'write/adios_datatap.c' || echo '$(srcdir)/'`write/adios_datatap.c

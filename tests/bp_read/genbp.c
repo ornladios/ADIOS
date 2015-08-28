@@ -21,7 +21,7 @@ int main (int argc, char ** argv)
     char * type_name = "testbp";
     char * filename = "testbp_c.bp";
     int64_t io_handle;  // io handle
-    MPI_Comm comm = MPI_COMM_WORLD;
+    MPI_Comm comm = MPI_COMM_SELF;
     int rank;
 
     int dim1 = 10;   // dimension 1
@@ -69,7 +69,11 @@ int main (int argc, char ** argv)
     }
 
     MPI_Init (&argc, &argv);
-    MPI_Comm_rank (comm, &rank);
+    if (comm != MPI_COMM_NULL)
+        MPI_Comm_rank (comm, &rank);
+    else
+        rank = 0;
+
     if (adios_init ("testbp_c.xml", comm))
         return -1;
 

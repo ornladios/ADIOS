@@ -75,7 +75,7 @@ int main (int argc, char ** argv)
         adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 1);
 
         adios_declare_group (&g, "vars", "", adios_flag_yes);
-        adios_select_method (g, "POSIX1", "", "");
+        adios_select_method (g, "POSIX", "", "");
 
         Tid = adios_define_var (g, "T" ,"", adios_double, dimstr, dimstr, "0,0");
         adios_set_transform (Tid, "none");

@@ -25,7 +25,6 @@ available write methods (in XML <method> element or in adios_select_method()):
     "DATASPACES"
     "PHDF5"
     "MPI_LUSTRE"
-    "POSIX1"
     "NC4"
     "MPI_AGGREGATE"
     "FLEXPATH"
@@ -62,12 +61,25 @@ this transport method are likely due to our aggressive buffering for better stre
 performance to storage. The buffering method writes out files in BP format, which 
 is a compact, self-describing format.
 
-ADIOS also writes a global metadata file (actually, the file name used in the open call
-will be the metadata file), so any reading process can access data written from any process.
+When adios_open() is called with a filename \verb+data.bp+ and an MPI communicator with
+\verb+N+ processes, there will be \verb+N+ files created in a directory called
+\verb+data.bp.dir/+, the individual file names as \verb+data.bp.dir\data.bp.R+ where 
+\verb+R+ is the rank of each process. 
+
+ADIOS also writes a global metadata file called \verb+data.bp+,
+so any reading process can access data written from any process.
+Since the metadata collection requires global gathering communicating from all processors,
+it can present a large I/O overhead at frequent use of the method. 
 The metadata writing can be turned off by using a method parameter
 
 \verb+<method group="temperature" method="POSIX">"have_metadata_file=0"</method>+
 
+\noindent The metadata file can be generated post-mortem using the \verb+bpmeta+ tool.
+
+As a special case, if the communicator passed in \verb+adios_open()+ is \verb+MPI_COMM_SELF+, the passed filename
+is used to create a single file by the process and write both data and metadata into this file. 
+Therefore, the file name must be unique among processors. This behavior is inherited from the 
+now-removed POSIX1 method. 
 
 \subsection{MPI}
 
