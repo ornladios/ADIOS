@@ -66,7 +66,8 @@ int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype,
 
   switch( sendtype )
   {
-    case MPI_INT : n = sizeof( int ) ;
+    case MPI_INT : n = sizeof( int );
+                   break;
     default      : return MPI_ERR_TYPE ;
   }
   nsent = n * sendcnt ;
@@ -74,6 +75,7 @@ int MPI_Gather(void *sendbuf, int sendcnt, MPI_Datatype sendtype,
   switch( recvtype )
   {
     case MPI_INT : nrecv = sizeof( int ) ;
+                   break;
     default      : return MPI_ERR_TYPE ;
   }
   nrecv = n * recvcnt ;
@@ -118,6 +120,7 @@ int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype,
   switch( sendtype )
   {
     case MPI_INT : n = sizeof( int ) ;
+                   break;
     default      : return MPI_ERR_TYPE ;
   }
   nsent = n * sendcnt ;
@@ -125,6 +128,7 @@ int MPI_Scatter(void *sendbuf, int sendcnt, MPI_Datatype sendtype,
   switch( recvtype )
   {
     case MPI_INT : nrecv = sizeof( int ) ;
+                   break;
     default      : return MPI_ERR_TYPE ;
   }
   nrecv = n * recvcnt ;
