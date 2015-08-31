@@ -1047,10 +1047,8 @@ void * adios_mpi_amr_do_reopen_thread (void * param)
         // will have an offset updated from here. 
         // md->b.end_of_pgs points to this position
 
-        /*log_debug ("rank %d: APPEND: end_of_pgs=%llu bytes_written=%llu pg_start_in_file=%llu"
-                  "  write_size_bytes=%llu  pg_index_offset=%llu\n", md->rank, 
-                  md->b.end_of_pgs, fd->bytes_written, td->fd->pg_start_in_file, 
-                  td->fd->write_size_bytes, md->b.pg_index_offset);*/
+       // printf ("rank %d: APPEND: end_of_pgs=%llu bytes_written=%llu  pg_index_offset=%llu\n", 
+       //         md->rank, md->b.end_of_pgs, fd->bytes_written, md->b.pg_index_offset);
     } 
     else 
     {
@@ -1758,8 +1756,8 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
                         write_thread_data.aggr_buff = (i == 0) ? fd->buffer : aggr_buff;
                         write_thread_data.total_data_size = &pg_sizes[i];
 
-                        /*log_debug ("rank %d: Write PG to subfile %d, offset=%llu, size=%u\n", md->rank,
-                               fd->subfile_index, *write_thread_data.base_offset, pg_sizes[i]); */
+                        //printf ("rank %d: Write PG to subfile %d, offset=%llu, size=%u\n", md->rank,
+                        //       fd->subfile_index, *write_thread_data.base_offset, pg_sizes[i]);
 
                         // This write call is not threaded
                         START_TIMER (ADIOS_TIMER_IO);
@@ -1816,33 +1814,22 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
             }
 
 
-            // build index appending to any existing index
-            fd->current_pg->pg_start_in_file = 0; // we will fix the target file offset below
-            adios_build_index_v1 (fd, md->index);
-
+            /* Before building index, determine the actual offset where this PG starts */
+            fd->current_pg->pg_start_in_file = md->b.pg_index_offset; // aggregator's starting offset (!0 on append)
             if (!md->g_merging_pgs)
             {
-                if (!is_aggregator(md->rank))
+                for (i = 0; i < new_rank; i++)
                 {
-                    uint64_t var_offset_to_add = md->b.pg_index_offset; // aggregator's starting offset (!0 on append)
-                    uint64_t attr_offset_to_add = md->b.pg_index_offset;
-                    uint64_t pg_offset_to_add = md->b.pg_index_offset;
-
-                    for (i = 0; i < new_rank; i++)
-                    {
-                        attr_offset_to_add += pg_sizes[i];
-                        var_offset_to_add += pg_sizes[i];
-                        pg_offset_to_add += pg_sizes[i];
-                    }
-
-                    adios_mpi_amr_add_offset (pg_offset_to_add, var_offset_to_add,
-                                              attr_offset_to_add, md->index);
+                    fd->current_pg->pg_start_in_file += pg_sizes[i];
                 }
 
-                // pg_sizes, disp are no longer needed from this point on.
                 FREE (pg_sizes);
                 FREE (disp);
             }
+
+            // build index appending to any existing index
+            printf ("rank %d: Build index with PG offset %llu\n", md->rank, fd->current_pg->pg_start_in_file);
+            adios_build_index_v1 (fd, md->index);
 
             // if collective, gather the indexes from the rest and call
             if (md->group_comm != MPI_COMM_NULL)
@@ -2251,12 +2238,15 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                 STOP_TIMER (ADIOS_TIMER_COMM);
 
                 disp[0] = 0;
+                //if (md->rank==0) fprintf (stderr, "rank %d: pg_size[0]=%llu ", md->rank, pg_sizes[0]); 
                 for (i = 1; i < new_group_size; i++)
                 {
                     disp[i] = disp[i - 1] + pg_sizes[i - 1];
+                    //if (md->rank==0) fprintf (stderr, "pg_size[%d]=%llu ", i, pg_sizes[i]); 
                 }
                 total_data_size = disp[new_group_size - 1]
                                 + pg_sizes[new_group_size - 1];
+                //if (md->rank==0) fprintf (stderr, "total=%llu\n", total_data_size); 
 
                 if (is_aggregator (md->rank))
                 {
@@ -2277,9 +2267,26 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
 
                 START_TIMER (ADIOS_TIMER_COMM);
                 // This needs to be changed in the future to support > 2 GB data.
-                // The compile warning is kept here as a reminder. Q. Liu
-                MPI_Gatherv (fd->buffer, pg_size, MPI_BYTE
-                            ,aggr_buff, pg_sizes, disp, MPI_BYTE
+                int * int_pg_sizes = (int*) malloc (new_group_size * sizeof(int));
+                int * int_disp = (int*) malloc (new_group_size * sizeof(int));
+                int int_total_data_size = (int) total_data_size;
+                for (i = 0; i < new_group_size; i++)
+                {
+                    int_pg_sizes[i] = pg_sizes[i];
+                    int_disp[i] = disp[i];
+                }
+                if (total_data_size != (uint64_t) int_total_data_size)
+                {
+                    adios_error (err_unspecified, 
+                            "MPI_AGGRGATE with aggregate_type=1 does not handle >2GB buffers. "
+                            "If each process writes less than 2GB, then increase the number of aggregators "
+                            "so that the total data size on each aggregator is still < 2GB. "
+                            "If some process has more than 2GB data, use aggregate_type=2 "
+                            "(the default aggregation method)."
+                            );
+                }
+                MPI_Gatherv (fd->buffer, (int)pg_size, MPI_BYTE
+                            ,aggr_buff, int_pg_sizes, int_disp, MPI_BYTE
                             ,0, md->g_comm1);
                 STOP_TIMER (ADIOS_TIMER_COMM);
             }
@@ -2289,33 +2296,22 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                 log_warn ("MPI_AMR method (AG): Merging process blocks is not supported yet\n");
             }
 
-            // build index appending to any existing index
-            fd->current_pg->pg_start_in_file = 0; // we will fix the target file offset below
-            adios_build_index_v1 (fd, md->index);
-
+            /* Before building index, determine the actual offset where this PG starts */
+            fd->current_pg->pg_start_in_file = md->b.pg_index_offset; // aggregator's starting offset (!0 on append)
             if (!md->g_merging_pgs)
             {
-                if (!is_aggregator(md->rank))
+                for (i = 0; i < new_rank; i++)
                 {
-                    uint64_t var_offset_to_add = md->b.pg_index_offset;
-                    uint64_t attr_offset_to_add = md->b.pg_index_offset;
-                    uint64_t pg_offset_to_add = md->b.pg_index_offset;
-
-                    for (i = 0; i < new_rank; i++)
-                    {
-                        attr_offset_to_add += pg_sizes[i];
-                        var_offset_to_add += pg_sizes[i];
-                        pg_offset_to_add += pg_sizes[i];
-                    }
-
-                    adios_mpi_amr_add_offset (pg_offset_to_add, var_offset_to_add,
-                                              attr_offset_to_add, md->index);
+                    fd->current_pg->pg_start_in_file += pg_sizes[i];
                 }
 
-                // pg_sizes, disp are no longer needed from this point on.
-                free (pg_sizes);
-                free (disp);
+                FREE (pg_sizes);
+                FREE (disp);
             }
+
+            // build index appending to any existing index
+            //fprintf (stderr,"rank %d: Build index with PG offset %llu\n", md->rank, fd->current_pg->pg_start_in_file);
+            adios_build_index_v1 (fd, md->index);
 
             // if collective, gather the indexes from the rest and call
             if (md->group_comm != MPI_COMM_NULL)
@@ -2336,11 +2332,23 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                                );
                     STOP_TIMER (ADIOS_TIMER_COMM);
 
+                    //if (md->rank==0) fprintf (stderr, "rank %d: ", md->rank);
                     for (i = 0; i < new_group_size; i++)
                     {
                         index_offsets [i] = total_size;
                         total_size += index_sizes [i];
+                        //if (md->rank==0) fprintf (stderr, "index_sizes[%d]=%d ", i, index_sizes[i]); 
                     } 
+                    //if (md->rank==0) fprintf (stderr, " total index size=%u\n", total_size);
+
+                    /*DEBUG if (md->rank==0) {
+                        fprintf (stderr, "rank %d: ", md->rank);
+                        for (i = 0; i < new_group_size; i++)
+                        {
+                            fprintf (stderr, "index_offsets[%d]=%d ", i, index_offsets[i]); 
+                        } 
+                        fprintf (stderr, " total index size=%u: ", total_size);
+                    }*/
 
                     recv_buffer = malloc (total_size);
 
@@ -2389,11 +2397,13 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                     adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
                                          ,0, md->index);
 
+                    //fprintf (stderr, "rank %d: buffer size = %llu buffer offset=%llu\n", md->rank, buffer_size, buffer_offset);
                     START_TIMER (ADIOS_TIMER_COMM);
-                    MPI_Gather (&buffer_size, 1, MPI_INT, 0, 0, MPI_INT
+                    uint32_t index_size = (uint32_t) buffer_offset;
+                    MPI_Gather (&index_size, 1, MPI_INT, 0, 0, MPI_INT
                                ,0, md->g_comm1
                                );
-                    MPI_Gatherv (buffer, buffer_size, MPI_BYTE
+                    MPI_Gatherv (buffer, index_size, MPI_BYTE
                                 ,0, 0, 0, MPI_BYTE
                                 ,0, md->g_comm1
                                 );
@@ -2415,7 +2425,8 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                 index_start  = md->b.pg_index_offset; // = end of PGs of previous timesteps
                 index_start += total_data_size; //old index start before append + currently written PGs
                 /*DEBUG*/
-                /*log_warn ("rank %d: write index start=%llu  pg_index_offset=%llu  total_data_size=%u\n", 
+                /*
+                fprintf (stderr, "rank %d: write index start=%llu  pg_index_offset=%llu  total_data_size=%llu\n", 
                         md->rank, index_start, md->b.pg_index_offset, total_data_size);
                 struct adios_index_process_group_struct_v1 *pg_root = md->index->pg_root;
                 i=0;
@@ -2425,9 +2436,13 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
                     i++;
                 }*/
 
+                //fprintf (stderr, "rank %d: Before write_index: buffer size = %llu buffer offset=%llu\n", 
+                //                  md->rank, buffer_size, buffer_offset);
                 adios_write_index_v1 (&buffer, &buffer_size
                                      ,&buffer_offset, index_start
                                      ,md->index);
+                //fprintf (stderr, "rank %d: After write_index: buffer size = %llu buffer offset=%llu\n", 
+                //                  md->rank, buffer_size, buffer_offset);
 //FIXME
                 //adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset, flag);
                 adios_write_version_flag_v1 (&buffer, &buffer_size, &buffer_offset, flag);
@@ -2443,6 +2458,8 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
 
                 index_start1 = md->b.pg_index_offset; // starting point to write data at this moment
                 total_data_size1 = total_data_size + buffer_offset;
+                //fprintf (stderr,"rank %d: Write index+data with PG offset %llu, sizes %llu + %llu = %llu bytes\n", 
+                //        md->rank, index_start1, total_data_size, buffer_offset, total_data_size1);
 
                 write_thread_data.fh = &md->fh;
                 write_thread_data.base_offset = &index_start1;
