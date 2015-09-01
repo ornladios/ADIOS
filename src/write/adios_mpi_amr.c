@@ -1828,7 +1828,7 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
             }
 
             // build index appending to any existing index
-            printf ("rank %d: Build index with PG offset %llu\n", md->rank, fd->current_pg->pg_start_in_file);
+            //printf ("rank %d: Build index with PG offset %llu\n", md->rank, fd->current_pg->pg_start_in_file);
             adios_build_index_v1 (fd, md->index);
 
             // if collective, gather the indexes from the rest and call
