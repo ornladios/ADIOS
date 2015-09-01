@@ -872,7 +872,7 @@ static void build_file_offsets (struct adios_MPI_data_struct *md,
                         );
             fd->current_pg->pg_start_in_file = offset[0];
         }
-        printf ("rank %d: pg_start_in_file = %llu\n", md->rank, fd->current_pg->pg_start_in_file);
+        //printf ("rank %d: pg_start_in_file = %llu\n", md->rank, fd->current_pg->pg_start_in_file);
     }
     else
     {
