@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <unistd.h>   /* _SC_PAGE_SIZE, _SC_AVPHYS_PAGES */
+#include <limits.h>   /* ULLONG_MAX */
 
 #if defined(__APPLE__)
 #    include <mach/mach.h>
@@ -20,7 +21,15 @@
 
 #define BYTE_ALIGN 8
 
-static uint64_t adios_buffer_size_max = 14000; // max buffer size per group
+// max buffer size per file opened
+static uint64_t adios_buffer_size_max = 
+#ifdef UULONG_MAX
+    UULONG_MAX;
+#else
+    18446744073709551615ULL; 
+#endif
+
+void adios_buffer_size_max_set (uint64_t v)  { adios_buffer_size_max = v; }
 
 int adios_databuffer_resize (struct adios_file_struct *fd, uint64_t size)
 {
@@ -38,7 +47,7 @@ int adios_databuffer_resize (struct adios_file_struct *fd, uint64_t size)
             fd->allocated_bufptr = b;
             uint64_t p = (uint64_t) fd->allocated_bufptr;
             fd->buffer = (char *) ((p + BYTE_ALIGN - 1) & ~(BYTE_ALIGN - 1));
-            log_info ("Data buffer extended from %llu to %llu bytes\n", fd->buffer_size, size);
+            log_debug ("Data buffer extended from %llu to %llu bytes\n", fd->buffer_size, size);
             fd->buffer_size = size;
 
         }
@@ -74,6 +83,13 @@ int adios_databuffer_free (struct adios_file_struct *fd)
 }
 
 
+/* OBSOLETE BELOW
+
+   However, write methods still use them in get_write_buffer() functions that don't work anymore
+   and in adios_write() functions to "free" requested amount in get_write_buffer().
+ 
+ */
+
 
 // buffer sizing may be problematic.  To get a more accurate picture, check:
 // http://chandrashekar.info/vault/linux-system-programs.html
@@ -84,7 +100,6 @@ static enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when = ADIOS_BUFFER_ALLOC
 
 void      adios_buffer_size_requested_set (uint64_t v)  { adios_buffer_size_requested = v; }
 uint64_t  adios_buffer_size_requested_get (void)        { return adios_buffer_size_requested; }
-void      adios_buffer_size_max_set (uint64_t v)        { adios_buffer_size_max = v; }
 void      adios_buffer_size_remaining_set (uint64_t v)  { adios_buffer_size_remaining = v; }
 void      adios_buffer_alloc_percentage_set (int v)     { adios_buffer_alloc_percentage = v; }
 void      adios_buffer_alloc_when_set (enum ADIOS_BUFFER_ALLOC_WHEN v)   { adios_buffer_alloc_when = v; }

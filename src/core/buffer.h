@@ -13,8 +13,7 @@
 
 /* Data buffer in adios_open() will be allocated with this default size
    if no better size information is available */
-//#define DATABUFFER_DEFAULT_SIZE 16777216L
-#define DATABUFFER_DEFAULT_SIZE 1024L
+#define DATABUFFER_DEFAULT_SIZE 16777216L
 
 int adios_databuffer_resize (struct adios_file_struct *fd, uint64_t size);
 int adios_databuffer_free (struct adios_file_struct *fd);
