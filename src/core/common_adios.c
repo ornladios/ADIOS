@@ -99,7 +99,9 @@ int common_adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_allo
                                  ,uint64_t buffer_size)
 {
     adios_errno = err_no_error;
-    log_warn ("adios_allocate_buffer is not supported anymore\n");
+    log_warn ("adios_allocate_buffer is not supported anymore. "
+              "Use adios_set_max_buffer_size(size_in_MB) to set the maximum allowed "
+              "buffer size for each adios_open()...adios_close() operation.\n");
     //adios_buffer_size_requested_set (buffer_size * 1024 * 1024);
     //adios_buffer_alloc_when_set (adios_buffer_alloc_when);
     //adios_set_buffer_size ();
@@ -335,7 +337,8 @@ int common_adios_open (int64_t * fd_p, const char * group_name
         if (fd->bufstrat != no_buffering)
         {
             /* Allocate BP buffer with a default size */
-            if (!adios_databuffer_resize (fd, DATABUFFER_DEFAULT_SIZE)) 
+            uint64_t bufsize = adios_databuffer_get_extension_size (fd);
+            if (!adios_databuffer_resize (fd, bufsize)) 
             {
                 fd->bufstate = buffering_ongoing;
 
@@ -554,7 +557,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
         {
             /* Trouble: this variable does not fit into the current buffer */
             // First, try to realloc the buffer 
-            uint64_t extrasize = DATABUFFER_DEFAULT_SIZE;
+            uint64_t extrasize = adios_databuffer_get_extension_size (fd);
             if (extrasize < vsize)
                 extrasize = vsize;
             if (adios_databuffer_resize (fd, fd->buffer_size + extrasize))
@@ -593,9 +596,12 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
                         {
                             adios_error (err_no_memory, "adios_write(): buffer cannot accommodate variable %s/%s "
                                     "with its storage size of %llu bytes at all. "
-                                    "This variable won't be written.\n", v->path, v->name, vsize);
+                                    "No more variables will be written.\n", v->path, v->name, vsize);
+                                    //"This variable won't be written.\n", v->path, v->name, vsize);
+                            fd->bufstate = buffering_stopped;
+                            /* FIXME: This stops all writing, not just this variable! */
+                            /* FIXME: so maybe we should give the method a chance to write this variable directly? */
                         }
-                        /* FIXME: so maybe we should give the method a chance to write this variable directly? */
                     }
                     /* Start buffering from scratch (a new PG) */
                     fd->offset = 0;

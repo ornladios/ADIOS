@@ -67,6 +67,13 @@ int adios_allocate_buffer (enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+void adios_set_max_buffer_size (uint64_t max_buffer_size_MB)
+{
+    if (max_buffer_size_MB > 0)
+        adios_databuffer_set_max_size (max_buffer_size_MB * 1024L * 1024L);
+}
+
+///////////////////////////////////////////////////////////////////////////////
 int adios_open (int64_t * fd, const char * group_name, const char * name
                ,const char * mode, MPI_Comm comm
                )

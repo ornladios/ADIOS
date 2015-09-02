@@ -10,6 +10,7 @@
 #include <stdint.h>
 #include <unistd.h>   /* _SC_PAGE_SIZE, _SC_AVPHYS_PAGES */
 #include <limits.h>   /* ULLONG_MAX */
+#include <assert.h>
 
 #if defined(__APPLE__)
 #    include <mach/mach.h>
@@ -21,15 +22,37 @@
 
 #define BYTE_ALIGN 8
 
+/* Data buffer in adios_open() will be allocated with this default size
+   if no better size information is available */
+#define DATABUFFER_DEFAULT_SIZE 16777216L
+
 // max buffer size per file opened
-static uint64_t adios_buffer_size_max = 
+static uint64_t max_size = 
 #ifdef UULONG_MAX
     UULONG_MAX;
 #else
     18446744073709551615ULL; 
 #endif
 
-void adios_buffer_size_max_set (uint64_t v)  { adios_buffer_size_max = v; }
+void adios_databuffer_set_max_size (uint64_t v)  { max_size = v; }
+
+uint64_t adios_databuffer_get_extension_size (struct adios_file_struct *fd)
+{
+    uint64_t size = DATABUFFER_DEFAULT_SIZE;
+    if (size > max_size - fd->buffer_size)
+    {
+        if (fd->buffer_size <= max_size)
+        {
+            size = max_size - fd->buffer_size;
+        }
+        else 
+        {
+            /* Something is terribly wrong, this should not happen */
+            size = 0;
+        }
+    }
+    return size;
+}
 
 int adios_databuffer_resize (struct adios_file_struct *fd, uint64_t size)
 {
@@ -37,7 +60,7 @@ int adios_databuffer_resize (struct adios_file_struct *fd, uint64_t size)
        there is no need for a separate first-allocation function */
     int retval = 0;
 
-    if (size <= adios_buffer_size_max) 
+    if (size <= max_size) 
     {
         // try to alloc/realloc a buffer to requested size
         // align usable buffer to BYTE_ALIGN bytes
@@ -65,7 +88,7 @@ int adios_databuffer_resize (struct adios_file_struct *fd, uint64_t size)
         log_warn ("Cannot allocate %llu bytes for buffered output of group %s "
                 " because max allowed is %llu bytes. "
                 "Continue buffering with buffer size %llu MB\n",
-                size, fd->group->name, adios_buffer_size_max, fd->buffer_size/1048576);
+                size, fd->group->name, max_size, fd->buffer_size/1048576);
     }
 
     return retval;
@@ -149,8 +172,8 @@ static inline size_t adios_get_avphys_pages ()
 
 int adios_set_buffer_size ()
 {
-    //if (!adios_buffer_size_max) // not called before
-    if (adios_buffer_size_max < adios_buffer_size_requested) // not called before
+    //if (!max_size) // not called before
+    if (max_size < adios_buffer_size_requested) // not called before
     {
         long pagesize;
         long pages;
@@ -160,7 +183,7 @@ int adios_set_buffer_size ()
 
         if (adios_buffer_alloc_percentage)
         {
-            adios_buffer_size_max =   (pages * pagesize / 100.0)
+            max_size =   (pages * pagesize / 100.0)
                 * adios_buffer_size_requested;
         }
         else
@@ -168,7 +191,7 @@ int adios_set_buffer_size ()
             if (pagesize * pages >= adios_buffer_size_requested)
             {
                 // sufficient memory, do nothing
-                adios_buffer_size_max = adios_buffer_size_requested;
+                max_size = adios_buffer_size_requested;
             }
             else
             {
@@ -178,11 +201,11 @@ int adios_set_buffer_size ()
                         "available.\n",
                         adios_buffer_size_requested,
                         (uint64_t)(((uint64_t) pagesize) * pages));
-                adios_buffer_size_max = (uint64_t)((uint64_t) pagesize) * pages;
+                max_size = (uint64_t)((uint64_t) pagesize) * pages;
             }
         }
 
-        adios_buffer_size_remaining = adios_buffer_size_max;
+        adios_buffer_size_remaining = max_size;
 
         return 1;
     }
@@ -213,13 +236,13 @@ uint64_t adios_method_buffer_alloc (uint64_t size)
 
 int adios_method_buffer_free (uint64_t size)
 {
-    if (size + adios_buffer_size_remaining > adios_buffer_size_max)
+    if (size + adios_buffer_size_remaining > max_size)
     {
         adios_error (err_invalid_buffer, 
                 "ERROR: attempt to return more bytes to buffer "
                 "pool than were originally available\n");
 
-        adios_buffer_size_remaining = adios_buffer_size_max;
+        adios_buffer_size_remaining = max_size;
 
         return 0;
     }
