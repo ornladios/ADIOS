@@ -30,7 +30,7 @@ I/O implementation on supported platforms:
 
 \textbf{adios\_open---}open the group associated with the file
 
-\textbf{adios\_group\_size---}pass the group size to allocate the memory
+\textbf{adios\_group\_size---} optional. Pass the group size to allocate the memory for buffering
 
 \textbf{adios\_write---}write the data either to internal buffer or disk
 
@@ -114,8 +114,12 @@ call adios_open (handle, "restart", "restart.bp", "w", comm, ierr)
 \end{lstlisting}
 
 \subsubsection{adios\_group\_size}
-This function passes the size of the group to the internal ADIOS transport structure 
-to facilitate the internal buffer management and to construct the group index table. 
+This optional function passes the size of the group to the internal ADIOS transport structure 
+to facilitate the internal buffer management. ADIOS allocates a certain buffer in adios\_open()
+for the data. During writing (adios\_write()), if there is more data is written than what the
+buffer can hold, ADIOS tries to extend the buffer. This group size call can tell ADIOS how big buffer 
+to allocate before the first write call. 
+
 The first argument is the file handle. The second argument is the size of the payload 
 (in bytes) for the group opened in the adios\_open routine that the specific process 
 is going to write into the file. 
@@ -127,13 +131,14 @@ of the data can be retrieved from the file itself. The third argument is the ret
 value for the total size of this group, which is the payload size increased with the 
 metadata overhead. The value can be used for performance benchmarks, such as I/O speed. 
 
-Note that in the XML file, you should specify a buffer size for ADIOS. The buffer is 
+Note that in the XML file, you can specify a buffer size for ADIOS. The buffer is 
 used to collect all outputs between one adios\_open -- adios\_close cycle, and all data
 is written out during adios\_close. This maximizes the benefits of large I/O chunks and
 is one of the key contributors of the superior performance of ADIOS file I/O. 
 If the buffer is not sufficiently large enough to hold all data for the output,
-ADIOS methods fall back to write data to the target at each adios\_write, that will
-result in much worse write performance.
+ADIOS methods either fall back to write data to the target in smaller chunks, that will
+result in much worse write performance, or will simply not write more than what fits
+in the buffer (an error message will be printed).
 
 \begin{lstlisting}[alsolanguage=C]
 int adios_group_size (int64_t * fd_p, uint64_t group_size, 
@@ -488,9 +493,9 @@ subroutine adios_select_method (group_id, method, parameters, base_path, err)
     integer,        intent(out) :: err
 end subroutine
 
-subroutine adios_allocate_buffer (sizeMB, err)
+subroutine adios_set_max_buffer_size (sizeMB)
+    implicit none
     integer,        intent(in)  :: sizeMB
-    integer,        intent(out) :: err
 end subroutine
 \end{lstlisting}
 

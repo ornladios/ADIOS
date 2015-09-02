@@ -61,7 +61,7 @@ this transport method are likely due to our aggressive buffering for better stre
 performance to storage. The buffering method writes out files in BP format, which 
 is a compact, self-describing format.
 
-When adios_open() is called with a filename \verb+data.bp+ and an MPI communicator with
+When adios\_open() is called with a filename \verb+data.bp+ and an MPI communicator with
 \verb+N+ processes, there will be \verb+N+ files created in a directory called
 \verb+data.bp.dir/+, the individual file names as \verb+data.bp.dir\data.bp.R+ where 
 \verb+R+ is the rank of each process. 
@@ -511,7 +511,7 @@ add a unique prefix to the variable name.  A rank-based prefix is an example.
 		<var name="atoms " type="real" dimensions="nparam,ntracked"/> 
 	</adios-group>
 	<method group="atoms" method="NC4"/> 
-	<buffer size-MB="1" allocate-time="now"/> 
+	<buffer max-size-MB="1"/> 
 </adios-config>
 \end{lstlisting}
 
