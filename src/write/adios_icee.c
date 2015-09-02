@@ -69,7 +69,7 @@ static int icee_num_parallel = 0;
 
 CManager icee_write_cm;
 EVsource icee_write_source;
-CMConnection icee_write_cm_conn; // connection for passive mode
+CMConnection icee_write_cm_conn[ICEE_MAX_PARALLEL]; // connection for passive mode
 
 CManager (*cm)[ICEE_MAX_PARALLEL];
 EVsource (*source)[ICEE_MAX_PARALLEL];
@@ -583,7 +583,7 @@ on_icee_passivecheckin_request (CManager cm, CMConnection conn, icee_passivechec
 {
     log_debug("%s\n", __FUNCTION__);
 
-    icee_write_cm_conn = conn; // save connection
+    icee_write_cm_conn[n_client] = conn; // save connection
     n_client++;
 
     return;
@@ -1062,8 +1062,10 @@ adios_icee_close(struct adios_file_struct *fd, struct adios_method_struct *metho
         else
         {
             CMFormat fm = CMlookup_format(icee_write_cm, icee_fileinfo_format_list);
-            if (CMwrite(icee_write_cm_conn, fm, (void*)fp) != 1)
-                log_error ("Sending fileinfo failed\n");
+            int i;
+            for (i=0; i<n_client; i++)
+                if (CMwrite(icee_write_cm_conn[i], fm, (void*)fp) != 1)
+                    log_error ("Sending fileinfo failed\n");
         }
 
         // Free

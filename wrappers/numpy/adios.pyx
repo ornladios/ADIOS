@@ -1172,6 +1172,7 @@ cdef class writer:
     cpdef bytes method
     cpdef bytes method_params
     cpdef bint is_noxml
+    cpdef bytes mode
     cpdef MPI_Comm comm
 
     cpdef dict var
@@ -1192,6 +1193,11 @@ cdef class writer:
         def __get__(self):
             return self.is_noxml
         
+    property mode:
+        """ Writing mode: overrite or append. """
+        def __get__(self):
+            return self.mode
+        
     property var:
         """ Dictionary of variables to write. """
         def __get__(self):
@@ -1204,11 +1210,13 @@ cdef class writer:
         
     def __init__(self,char * fname,
                  bint is_noxml = True,
+                 char * mode = "w",
                  MPI_Comm comm = MPI_COMM_WORLD):
         self.fname = fname
         self.method = <bytes>""
         self.method_params = <bytes>""
         self.is_noxml = is_noxml
+        self.mode = mode
         self.comm = comm
         self.var = dict()
         self.attr = dict()
@@ -1297,7 +1305,7 @@ cdef class writer:
         """
         Write variables and attributes to a file and close the writer.
         """
-        fd = open(self.gname, self.fname, "w")
+        fd = open(self.gname, self.fname, self.mode)
 
         extra_var = dict()
         extra_attr = dict()
@@ -1336,13 +1344,14 @@ cdef class writer:
     
     def __repr__(self):
         return ("AdiosWriter (fname=%r, gname=%r, "
-                "method=%r, method_params=%r, var=%r, attr=%r)") % \
+                "method=%r, method_params=%r, var=%r, attr=%r, mode=%r)") % \
                 (self.fname,
                  self.gname,
                  self.method,
                  self.method_params,
                  self.var.keys(),
-                 self.attr.keys())
+                 self.attr.keys(),
+                 self.mode)
 
 cdef class attrinfo:
     cdef bytes name

@@ -164,7 +164,7 @@ void display_help() {
             "  --help      | -h           Print this help.\n"
             "  --verbose   | -v           Print log about what this program is doing.\n"
             "                               Use multiple -v to increase logging level.\n"
-            "Typical use: bpls -lavr <file>\n"
+            "Typical use: bpls -lav <file>\n"
             );
 }
 
