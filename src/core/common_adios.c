@@ -336,8 +336,13 @@ int common_adios_open (int64_t * fd_p, const char * group_name
 
         if (fd->bufstrat != no_buffering)
         {
-            /* Allocate BP buffer with a default size */
-            uint64_t bufsize = adios_databuffer_get_extension_size (fd);
+            /* Allocate BP buffer with remembered size or max size or default size */
+            uint64_t bufsize;
+            if (g->last_buffer_size > 0)
+                bufsize = g->last_buffer_size;
+            else
+                bufsize = adios_databuffer_get_extension_size (fd);
+
             if (!adios_databuffer_resize (fd, bufsize)) 
             {
                 fd->bufstate = buffering_ongoing;
@@ -1227,6 +1232,10 @@ int common_adios_close (int64_t fd_p)
 
     if (fd->bufstrat != no_buffering)
     {
+        if (fd->group->last_buffer_size < fd->buffer_size) {
+            // remember how much buffer we used for the next cycle
+            fd->group->last_buffer_size = fd->buffer_size;
+        }
         adios_databuffer_free (fd);
     }
 
