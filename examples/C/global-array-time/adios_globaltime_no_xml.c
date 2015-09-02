@@ -35,7 +35,7 @@ int main (int argc, char ** argv)
 {
 	char        filename [256];
 	int         rank, size, i;
-	int         NX = 1000, G, O; 
+	int         NX = 100, G, O; 
         int         nsteps = 5;
 	double      t[NX];
 	MPI_Comm    comm = MPI_COMM_WORLD;
@@ -70,7 +70,7 @@ int main (int argc, char ** argv)
 	strcpy (filename, "adios_globaltime.bp");
 
 	adios_init_noxml (comm);
-        //adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 10);
+        adios_set_max_buffer_size (10);
 
         int64_t       m_adios_group;
         int64_t       m_adios_file;
