@@ -336,27 +336,19 @@ methods, described in Chapter \ref{chapter-methods}:
 
 \section{Buffer specification}
 \label{section-xml-buffers-pecification}
-The buffer element defines the attributes for internal buffer size and creating 
-time that apply to the whole application (Listing~\ref{list-example-xml}). The attribute allocate-time 
-is identified as being either{\small  ``}now'' or ``oncall'' to indicate when the 
-buffer should be allocated. An ``oncall'' attribute waits until the programmer 
-decides that all memory needed for calculation has been allocated. It then calls 
-upon ADIOS to allocate buffer. There are two alternative attributes for users to 
-define the buffer size: MB and free-memory-percentage. 
+The buffer element defines the the allowed maximum buffer size in MBs for ADIOS (Listing~\ref{list-example-xml}). 
+During an adios\_open()...adios\_close() operation, all data in adios\_write() calls are buffered before writing to the
+file system. One can limit the allowable maximum if necessary forthis buffering. Note, that if there are two ADIOS outputs
+going on at the same time, ADIOS will allocate two separate buffers each with the specified maximum limit.
 
 \subsection{Declaration}
 \begin{lstlisting}[language=XML]
-<buffer size-MB="100"
-    allocate-time="now" />
+<buffer max-size-MB="100"/>
 \end{lstlisting}
 
 Required:
 \begin{itemize}
-\item size-MB - the user-defined size of  buffer in megabytes. ADIOS can at most allocate 
-from compute nodes. It is exclusive with free-memory-percentage.
-\item free-memory percentage - the user-defined percentage from 0 to 100\% of free memory 
-available on the machine. It is exclusive with size-MB.
-\item allocate-time - indicates when the buffer should be allocated
+\item max-size-MB - the user-defined size of  buffer in megabytes 
 \end{itemize}
 
 \section{Enabling Histogram}
@@ -432,7 +424,7 @@ are provided.
     
     <method group=" temperature " method="MPI"/>
     
-    <buffer size-MB="1" allocate-time="now"/>
+    <buffer max-size-MB="1"/>
     <analysis adios-group="temperature" var="t" break-points="0, 100, 200, 300"/> 
 </adios-config>
 \end{lstlisting}

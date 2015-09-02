@@ -86,7 +86,7 @@ Therefore, our configuration file is constructed as shown in Listing~\ref{c_prog
 
 <method group="temperature" method="POSIX"/>
 
-<buffer size-MB="1" allocate-time="now"/>
+<buffer max-size-MB="1"/>
 
 </adios-config>
 \end{lstlisting}\label{c_programming:config.xml}
@@ -376,7 +376,7 @@ array of size NX and the result is a two dimensional array of size PxNX. Figure
     </adios-group>
 
 <method group="temperature" method="MPI"/>
-<buffer size-MB="2" allocate-time="now"/>
+<buffer max-size-MB="2"/>
 
 </adios-config>
 \end{lstlisting}
@@ -518,7 +518,7 @@ it must be the last one.
             type="string"/>
     </adios-group>
 <method group="temperature" method="MPI"/>
-<buffer size-MB="1" allocate-time="now"/>
+<buffer max-size-MB="1"/>
 </adios-config>
 \end{lstlisting}
 
@@ -585,7 +585,7 @@ time-index="iter">
 </adios-group>
 
  	<method group="temperature" method="MPI"/>
- 	<buffer size-MB="5" allocate-time="now"/>
+ 	<buffer max-size-MB="5"/>
  	<analysis adios-group="temperature" var="temperature"
  		break-points="0, 100, 1000, 10000" />
 </adios-config>

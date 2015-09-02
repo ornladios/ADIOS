@@ -23,8 +23,7 @@ a specific transport method.
 
 \textbf{adios\_init\_noxml ---} initialize no-XML ADIOS
 
-\textbf{adios\_allocate\_buffer ---} specify ADIOS buffer allocation strategy and 
-buffer size in MB
+\textbf{adios\_set\_max\_buffer\_size ---} specify maximum size for ADIOS buffer in MB
 
 \textbf{adios\_declare\_group ---} declare an ADIOS group 
 
@@ -60,36 +59,49 @@ Fortran example:
 call adios_init_noxml (comm, ierr)
 \end{lstlisting}
 
-
-\subsection{adios\_allocate\_buffer}
-
-The adios\_allocate\_buffer routine allocates a memory buffer for ADIOS to buffer all writes before writing all data at once. 
+\subsection{adios\_set\_max\_buffer\_size}
+This routine sets a maximum on the buffer size used by ADIOS to buffer data in one adios\_open()...adios\_close() operation.
+If multiple operations are going on at the same time, each buffer will be limited independently.
 
 \begin{lstlisting}[alsolanguage=C,caption={},label={}]
-int adios_allocate_buffer (
-    enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when,
-    uint64_t buffer_size)
+void adios_set_max_buffer_size (uint64_t buffer_size)
 \end{lstlisting}
 
-Input: 
-\begin{itemize}
-\item adios\_buffer\_alloc\_when - indicates when ADIOS buffer should be allocated. 
-The value can be either {\small ADIOS\_BUFFER\_ALLOC\_NOW} or 
-{\small ADIOS\_BUFFER\_ALLOC\_LATER}. See Section \ref{section-xml-buffers-pecification} 
-for more details on ADIOS buffer.
-\item buffer\_size - the size of ADIOS buffer in MB. 
-\end{itemize}
-
-
-Fortran example: 
+Fortran example:
 \begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
-call adios_allocate_buffer (sizeMB, ierr)
+call adios_set_max_buffer_size (sizeMB)
 \end{lstlisting}
 
-Note that, as opposed to the C function, the Fortran subroutine doesn't have 
-adios\_buffer\_alloc\_when argument as it supports only the 
-{\small ADIOS\_BUFFER\_ALLOC\_NOW} option.
 
+%\subsection{adios\_allocate\_buffer}
+%
+%The adios\_allocate\_buffer routine allocates a memory buffer for ADIOS to buffer all writes before writing all data at once. 
+%
+%\begin{lstlisting}[alsolanguage=C,caption={},label={}]
+%int adios_allocate_buffer (
+%    enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when,
+%    uint64_t buffer_size)
+%\end{lstlisting}
+%
+%Input: 
+%\begin{itemize}
+%\item adios\_buffer\_alloc\_when - indicates when ADIOS buffer should be allocated. 
+%The value can be either {\small ADIOS\_BUFFER\_ALLOC\_NOW} or 
+%{\small ADIOS\_BUFFER\_ALLOC\_LATER}. See Section \ref{section-xml-buffers-pecification} 
+%for more details on ADIOS buffer.
+%\item buffer\_size - the size of ADIOS buffer in MB. 
+%\end{itemize}
+%
+%
+%Fortran example: 
+%\begin{lstlisting}[alsolanguage=Fortran,caption={},label={}]
+%call adios_allocate_buffer (sizeMB, ierr)
+%\end{lstlisting}
+%
+%Note that, as opposed to the C function, the Fortran subroutine doesn't have 
+%adios\_buffer\_alloc\_when argument as it supports only the 
+%{\small ADIOS\_BUFFER\_ALLOC\_NOW} option.
+%
 
 \subsection{adios\_declare\_group}
 
@@ -385,7 +397,7 @@ program adios_global
     call MPI_Comm_rank (comm, rank, ierr) 
     call MPI_Comm_size (comm, size, ierr)
     call adios_init_noxml (comm, ierr)
-    call adios_allocate_buffer (10, ierr)
+    call adios_set_max_buffer_size (10)
     call adios_declare_group (m_adios_group, "restart", "iter", 1, ierr) 
     call adios_select_method (m_adios_group, "MPI", "", "", ierr)
     
