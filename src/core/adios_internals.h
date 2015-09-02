@@ -160,6 +160,7 @@ struct adios_group_struct
     enum ADIOS_FLAG all_unique_mesh_names;
 
     int attrid_update_epoch; // ID of special attribute "/__adios__/update_time_epoch" to find it fast
+    uint64_t last_buffer_size; // remember how much buffer we used in previous output steps
 
 #if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
     // Using a "double buffering" approach. Current write cycle stored in timing_obj, while timing info from
