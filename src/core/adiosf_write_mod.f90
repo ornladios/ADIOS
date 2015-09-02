@@ -161,11 +161,9 @@ module adios_write_mod
             integer,        intent(out) :: err
         end subroutine
 
-
-        subroutine adios_allocate_buffer (sizeMB, err)
+        subroutine adios_set_max_buffer_size (sizeMB)
             implicit none
             integer,        intent(in)  :: sizeMB
-            integer,        intent(out) :: err
         end subroutine
 
         subroutine adios_define_schema_version (group_id, schema_version)
@@ -297,6 +295,13 @@ module adios_write_mod
             character(*),   intent(in)  :: npoints
             character(*),   intent(in)  :: nspace
             character(*),   intent(in)  :: name
+        end subroutine
+
+        !! This function is deprecated
+        subroutine adios_allocate_buffer (sizeMB, err)
+            implicit none
+            integer,        intent(in)  :: sizeMB
+            integer,        intent(out) :: err
         end subroutine
 
     end interface

@@ -84,11 +84,14 @@ int adios_close (int64_t fd_p);
 // ADIOS No-XML API's
 int adios_init_noxml (MPI_Comm comm);
 
-// To allocate ADIOS buffer
+// To allocate ADIOS buffer OBSOLETE
 int adios_allocate_buffer (
         enum ADIOS_BUFFER_ALLOC_WHEN adios_buffer_alloc_when,
         uint64_t buffer_size
         );
+
+// To set maximum buffer size for each adios_open()...adios_close() operation.
+void adios_set_max_buffer_size (uint64_t max_buffer_size_MB);
 
 // To declare a ADIOS group
 int adios_declare_group (int64_t * id, 

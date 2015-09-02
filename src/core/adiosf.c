@@ -74,6 +74,14 @@ void FC_FUNC_(adios_allocate_buffer, ADIOS_ALLOCATE_BUFFER) (int *sizeMB, int * 
 }
 
 ///////////////////////////////////////////////////////////////////////////////
+void FC_FUNC_(adios_set_max_buffer_size, ADIOS_SET_MAX_BUFFER_SIZE) (int *max_buffer_size_MB)
+{
+    if (*max_buffer_size_MB > 0)
+        adios_databuffer_set_max_size ((uint64_t)*max_buffer_size_MB * 1024L * 1024L);
+}
+
+
+///////////////////////////////////////////////////////////////////////////////
 void FC_FUNC_(adios_open, ADIOS_OPEN) 
     (int64_t * fd, const char * group_name, const char * name
     ,const char * mode, MPI_Fint *comm, int * err

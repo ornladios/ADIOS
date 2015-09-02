@@ -1982,37 +1982,28 @@ static int parseMethod (mxml_node_t * node)
     return 1;
 }
 
-/*
+
 static int parseBuffer (mxml_node_t * node)
 {
     const char * size_MB = 0;
-    const char * free_memory_percentage = 0;
-    const char * allocate_time = 0;
+    const char * max_size_MB = 0;
 
     int i;
 
-    int size = -1;
 
     for (i = 0; i < node->value.element.num_attrs; i++)
     {
         mxml_attr_t * attr = &node->value.element.attrs [i];
-
         GET_ATTR("size-MB",attr,size_MB,"method")
-            GET_ATTR("free-memory-percentage",attr,free_memory_percentage,"method")
-            GET_ATTR("allocate-time",attr,allocate_time,"method")
-            log_warn ("config.xml: unknown attribute '%s' on %s "
-                    "(ignored)\n"
-                    ,attr->name
-                    ,"buffer"
-                    );
+        GET_ATTR("max-size-MB",attr,max_size_MB,"method")
+        log_warn ("config.xml: unknown attribute '%s' on %s (ignored)\n", attr->name, "buffer");
     }
 
 
-
-    if ((!size_MB && !free_memory_percentage) || !allocate_time)
+    if (!size_MB && !max_size_MB)
     {
-        adios_error (err_invalid_buffer_size, "config.xml: must define allocate-time and either "
-                "size-MB or free-memory-percentage for "
+        adios_error (err_invalid_buffer_size, "config.xml: must define either "
+                "size-MB or max-size-MB "
                 "buffer element\n"
                 );
 
@@ -2020,79 +2011,37 @@ static int parseBuffer (mxml_node_t * node)
     }
     else
     {
-        if (!strcasecmp (allocate_time, "now"))
+        if (size_MB && max_size_MB)
         {
-            adios_buffer_alloc_when_set (ADIOS_BUFFER_ALLOC_NOW);
-        }
-        else
-        {
-            if (!strcasecmp (allocate_time, "oncall"))
-            {
-                adios_buffer_alloc_when_set (ADIOS_BUFFER_ALLOC_LATER);
-            }
-            else
-            {
-                adios_error (err_invalid_buffer_size, "config.xml: buffer allocate-time %s "
-                        "invalid. ('now' or 'oncall')\n"
-                        ,allocate_time
-                        );
-
-                return 0;
-            }
+            log_warn ("config.xml: both size-MB and max-size-MB are present in buffer element. "
+                    "Both mean the same thing, so max-size-MB will be used.\n");
         }
 
-        if (size_MB)
-        {
-            adios_buffer_alloc_percentage_set (0);
-            size = atoi (size_MB);
-            if (size_MB == 0)
-            {
-                adios_error (err_invalid_buffer_size, "config.xml: buffer size-MB is either 0 or "
-                        "cannot be parsed: %s"
-                        ,size_MB
-                        );
+        const char * sizestr;
+        char * end;
+        long int size = -1;
 
-                return 0;
-            }
+        if (max_size_MB)
+            sizestr = max_size_MB;        
+        else if (size_MB)
+            sizestr = size_MB;
 
-            if (size < 1)
-                size = 1; // we need a minimum 1 MB buffer
-
-            adios_buffer_size_requested_set ((uint64_t) size * 1024 * 1024);
-        }
-        else
-        {
-            adios_buffer_alloc_percentage_set (1);
-            size = atoi (free_memory_percentage);
-            if (size > 0 && size <= 100)
-            {
-                adios_buffer_size_requested_set ((uint64_t) size);
-            }
-            else
-            {
-                adios_error (err_invalid_buffer_size, "config.xml: buffer free-memory-percentage %s "
-                        "is not an integer between 1 and 100\n"
-                        ,free_memory_percentage
-                        );
-
-                return 0;
-            }
+        size = atoi (sizestr);
+        errno = 0;
+        size = strtol(sizestr, &end, 10);
+        if (errno || (end != 0 && *end != '\0')) {
+            adios_error (err_invalid_buffer_size, "config.xml: buffer size cannot be parsed: %s\n", sizestr);
+            return 0;
         }
 
-        if (adios_buffer_alloc_when_get() == ADIOS_BUFFER_ALLOC_NOW)
-        {
-
-            // Do not attempt to allocate the buffer when this is being called from adios_lint
-#ifndef _INTERNAL
-            return adios_set_buffer_size ();
-#endif
-
+        if (size > 0) {
+            adios_databuffer_set_max_size ((uint64_t) size * 1024L * 1024L);
         }
     }
 
     return 1;
 }
-*/
+
 
 
 void PRINT_MXML_NODE (mxml_node_t *root)
@@ -2310,10 +2259,9 @@ int adios_parse_config (const char * config, MPI_Comm comm)
             {
                 if (!strcasecmp (node->value.element.name, "buffer"))
                 {
-                    log_warn ("config.xml: the 'buffer' element is not supported anymore\n");
-                    //if (!parseBuffer (node))
-                    //    break;
-                    //saw_buffer = 1;
+                    if (!parseBuffer (node))
+                        break;
+                    saw_buffer = 1;
                 }
                 else
                 {

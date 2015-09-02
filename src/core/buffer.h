@@ -11,17 +11,30 @@
 #include "public/adios_types.h"
 #include "core/adios_internals.h"
 
-/* Data buffer in adios_open() will be allocated with this default size
-   if no better size information is available */
-#define DATABUFFER_DEFAULT_SIZE 16777216L
+/* Set the maximum buffer size usable by one adios_open()...adios_close() operation */
+void  adios_databuffer_set_max_size (uint64_t v);
 
+/* Return a size with which the buffer can be extended up to the maximum.
+   It returns a default size unless the existing buffer size plus the default size is
+   greater than the max size. In that case it returns max size - current size.
+   It does not mean that realloc will succeed.
+   It does not return current size + something, just the something.
+*/
+uint64_t adios_databuffer_get_extension_size (struct adios_file_struct *fd);
+
+/* Resize (or create) the buffer to 'size' if size is less than maximum. 
+   It does NOT resize the buffer up to the maximum if size is greater than the maximum
+*/
 int adios_databuffer_resize (struct adios_file_struct *fd, uint64_t size);
 int adios_databuffer_free (struct adios_file_struct *fd);
 
-/* OBSOLETE functions */
+
+
+/*
+   OBSOLETE functions, cannot remove until disfunctional method functions are revised 
+*/
 void      adios_buffer_size_requested_set (uint64_t v);
 uint64_t  adios_buffer_size_requested_get (void);
-void      adios_buffer_size_max_set (uint64_t v);
 void      adios_buffer_size_remaining_set (uint64_t v);
 void      adios_buffer_alloc_percentage_set (int v);
 void      adios_buffer_alloc_when_set (enum ADIOS_BUFFER_ALLOC_WHEN v);
