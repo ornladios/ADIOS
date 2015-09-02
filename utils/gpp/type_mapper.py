@@ -29,7 +29,9 @@ c_types = {
     'unsigned double' : 'unsigned double',
     'unsigned real*8' : 'unsigned double',
     'complex' : 'complex',
-    'double complex' : 'double complex'
+    'complex*8' : 'complex',
+    'double complex' : 'double complex',
+    'complex*16' : 'double complex'
 }
 
 fortran_types = {
@@ -60,8 +62,10 @@ fortran_types = {
     'real*8' : 'real*8',
     'unsigned double' : 'unsigned real*8',
     'unsigned real*8' : 'unsigned real*8',
-    'complex' : 'complex',
-    'double complex' : 'double complex'
+    'complex' : 'complex*8',
+    'complex*8' : 'complex*8',
+    'double complex' : 'complex*16',
+    'complex*16' : 'complex*16'
 }
 
 type_sizes = {
@@ -93,7 +97,9 @@ type_sizes = {
     'unsigned double' : 8,
     'unsigned real*8' : 8,
     'complex' : 8,
-    'double complex' : 16
+    'complex*8' : 8,
+    'double complex' : 16,
+    'complex*16' : 16
 }
 
 def get_c_type (parsed_type):
