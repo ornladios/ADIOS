@@ -29,6 +29,8 @@ c_types = {
     'unsigned double' : 'unsigned double',
     'unsigned real*8' : 'unsigned double',
     'complex' : 'complex',
+    'complex*8' : 'complex',      
+    'complex*16' : 'double complex', 
     'double complex' : 'double complex'
 }
 
@@ -61,6 +63,8 @@ fortran_types = {
     'unsigned double' : 'unsigned real*8',
     'unsigned real*8' : 'unsigned real*8',
     'complex' : 'complex',
+    'complex*8' : 'complex',      
+    'complex*16' : 'double complex',    
     'double complex' : 'double complex'
 }
 
@@ -93,6 +97,8 @@ type_sizes = {
     'unsigned double' : 8,
     'unsigned real*8' : 8,
     'complex' : 8,
+    'complex*8' : 8,      
+    'complex*16' : 16,    
     'double complex' : 16
 }
 
