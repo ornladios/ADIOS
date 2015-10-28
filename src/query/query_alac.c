@@ -887,180 +887,192 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 	bin_id_t low_bin, hi_bin;
 	_Bool are_bins_touched = findBinRange1C(&partitionMeta, alacQuery, &low_bin, &hi_bin);
 
-	if (are_bins_touched) {
-
-		//3. load index size
-		uint64_t indexStartPos =  alac_metadata->index_offset ;
-		char * index = readIndexAmongBins(&partitionMeta
-									, low_bin,  hi_bin, indexStartPos, adiosQuery, gBlockId, startStep, numStep);
-		char * input_index = index;
-		const ALBinLayout * bl = &(partitionMeta.binLayout);
-
-		ALIndex* indexPtr = &index;
-
-#ifdef BREAKDOWN
-	numTouchedBins  += (hi_bin - low_bin);
-
-	printf("Touched PG[%d]: the # of total bins[%"PRIu32"] & touched bins [%"PRIu32"], each touched bin has element #: [", gBlockId, bl->numBins , (hi_bin- low_bin));
-
-	bin_id_t bin ;
-	for ( bin = low_bin; bin < hi_bin; bin++) {
-		printf("%"PRIu64",", bl->binStartOffsets[bin+1] - bl->binStartOffsets[bin]);
+	if (!are_bins_touched) {
+		FREE(alac_metadata);
+		return ;
 	}
-	printf("]\n");
+
+
+
+	//3. load index size
+	uint64_t indexStartPos =  alac_metadata->index_offset ;
+	char * index = readIndexAmongBins(&partitionMeta
+								, low_bin,  hi_bin, indexStartPos, adiosQuery, gBlockId, startStep, numStep);
+	char * input_index = index;
+	const ALBinLayout * bl = &(partitionMeta.binLayout);
+
+	ALIndex* indexPtr = &index;
+
+#ifdef BREAKDOWN
+numTouchedBins  += (hi_bin - low_bin);
+
+printf("Touched PG[%d]: the # of total bins[%"PRIu32"] & touched bins [%"PRIu32"], each touched bin has element #: [", gBlockId, bl->numBins , (hi_bin- low_bin));
+
+bin_id_t bin ;
+for ( bin = low_bin; bin < hi_bin; bin++) {
+	printf("%"PRIu64",", bl->binStartOffsets[bin+1] - bl->binStartOffsets[bin]);
+}
+printf("]\n");
 #endif
 
-		//TODO: distinguish the offset btw two bins for compressed and uncompressed index
-		// is the offset byte-level or element-level?
-		if (partitionMeta.indexMeta.indexForm == ALInvertedIndex) {
-			// indexes are inverted indexes that are not compressed,  we build bitmaps for each rid;
-			//element offset, instead of byte element
-			uint64_t resultCount = bl->binStartOffsets[hi_bin] - bl->binStartOffsets[low_bin];
-			if (estimate) {
+	//TODO: distinguish the offset btw two bins for compressed and uncompressed index
+	// is the offset byte-level or element-level?
+	if (partitionMeta.indexMeta.indexForm == ALInvertedIndex) {
+		// indexes are inverted indexes that are not compressed,  we build bitmaps for each rid;
+		//element offset, instead of byte element
+		uint64_t resultCount = bl->binStartOffsets[hi_bin] - bl->binStartOffsets[low_bin];
+		if (estimate) {
+			setRidToBits(isPGCovered, srcstart, srccount, deststart, destcount, ndim
+					, (rid_t *)index, resultCount, alacResultBitmap,Corder);
+
+		} else {
+			uint64_t lowByteStartPos2 = alac_metadata->lob_offset;
+			rid_t * decodedRid = (rid_t *) index;
+
+			// It touches at least 3 bins, so, we need to check RIDs that are in first and last bins
+			if (hi_bin - low_bin > 2) {
+				bin_offset_t lowBinElm = bl->binStartOffsets[low_bin + 1] - bl->binStartOffsets[low_bin];
+				uint64_t hiBinElm = bl->binStartOffsets[hi_bin] - bl->binStartOffsets[hi_bin-1];
+
+				// low boundary bin
+				char * lobLowBin= readLowDataAmongBins(&partitionMeta
+													,low_bin, low_bin+1,  lowByteStartPos2, adiosQuery, gBlockId, startStep, numStep);
+				adios_alac_check_candidate(&partitionMeta, low_bin, low_bin+1 , hb, lb
+						, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , (char*) decodedRid /*index bytes of entire PG*/
+						, false  /*don't need decoding*/ , lobLowBin, varInfo->type
+						,alacResultBitmap /*OUT*/,Corder);
+				decodedRid += lowBinElm;
+				FREE(lobLowBin);
+
+				uint64_t innerElm = resultCount- lowBinElm - hiBinElm;
+
+#ifdef BREAKDOWN
+setRidStart = dclock();
+#endif
 				setRidToBits(isPGCovered, srcstart, srccount, deststart, destcount, ndim
-						, (rid_t *)index, resultCount, alacResultBitmap,Corder);
+											, decodedRid, innerElm, alacResultBitmap,Corder);
 
-			} else {
-				uint64_t lowByteStartPos2 = alac_metadata->lob_offset;
+#ifdef BREAKDOWN
+setRidTotal += (dclock() - setRidStart);
+#endif
+				decodedRid  +=  innerElm;
+
+				// high boundary bin
+				char * lobHighBin= readLowDataAmongBins(&partitionMeta
+								  					,hi_bin-1, hi_bin,  lowByteStartPos2, adiosQuery, gBlockId, startStep, numStep);
+
+				adios_alac_check_candidate(&partitionMeta, hi_bin-1, hi_bin , hb, lb
+						, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , (char *)decodedRid
+						, false , lobHighBin, varInfo->type
+						,alacResultBitmap /*OUT*/,Corder);
+				FREE(lobHighBin);
+
+			} else { // for 1 or 2 bins touched, we need to check all RIDs
+
 				char * lowOrderBytes2  = readLowDataAmongBins(&partitionMeta
-										,low_bin, hi_bin,  lowByteStartPos2, adiosQuery, gBlockId, startStep, numStep);
+													,low_bin, hi_bin,  lowByteStartPos2, adiosQuery, gBlockId, startStep, numStep);
 				char *lowOrderPtr2 = lowOrderBytes2; // temporary pointer
-				rid_t * decodedRid = (rid_t *) index;
-
-				// It touches at least 3 bins, so, we need to check RIDs that are in first and last bins
-				if (hi_bin - low_bin > 2) {
-					bin_offset_t lowBinElm = bl->binStartOffsets[low_bin + 1] - bl->binStartOffsets[low_bin];
-					uint64_t hiBinElm = bl->binStartOffsets[hi_bin] - bl->binStartOffsets[hi_bin-1];
-
-					// low boundary bin
-					adios_alac_check_candidate(&partitionMeta, low_bin, low_bin+1 , hb, lb
-							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , (char*) decodedRid /*index bytes of entire PG*/
-							, false  /*don't need decoding*/ , lowOrderPtr2, varInfo->type
-							,alacResultBitmap /*OUT*/,Corder);
-					decodedRid += lowBinElm;
-
-
-					uint64_t innerElm = resultCount- lowBinElm - hiBinElm;
-
-#ifdef BREAKDOWN
-	setRidStart = dclock();
-#endif
-					setRidToBits(isPGCovered, srcstart, srccount, deststart, destcount, ndim
-												, decodedRid, innerElm, alacResultBitmap,Corder);
-
-#ifdef BREAKDOWN
-	setRidTotal += (dclock() - setRidStart);
-#endif
-					decodedRid  +=  innerElm;
-
-					lowOrderPtr2 += (( bl->binStartOffsets[hi_bin-1] - bl->binStartOffsets[low_bin]) * insigbytes);
-					// high boundary bin
-
-					adios_alac_check_candidate(&partitionMeta, hi_bin-1, hi_bin , hb, lb
-							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , (char *)decodedRid
-							, false , lowOrderPtr2, varInfo->type
-							,alacResultBitmap /*OUT*/,Corder);
-
-				} else { // for 1 or 2 bins touched, we need to check all RIDs
-
-					adios_alac_check_candidate(&partitionMeta, low_bin, hi_bin  , hb, lb
-							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , (char*)decodedRid
-							, false , lowOrderPtr2, varInfo->type
-							,alacResultBitmap /*OUT*/,Corder);
-				}
-
+				adios_alac_check_candidate(&partitionMeta, low_bin, hi_bin  , hb, lb
+						, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , (char*)decodedRid
+						, false , lowOrderPtr2, varInfo->type
+						,alacResultBitmap /*OUT*/,Corder);
 				FREE(lowOrderBytes2);
-
 			}
 
-		}else if (partitionMeta.indexMeta.indexForm == ALCompressedInvertedIndex) {
-			const uint64_t *compBinStartOffs = partitionMeta.indexMeta.u.ciim.indexBinStartOffsets;
-			uint64_t binCompressedLen;
-			const char *inputCurPtr = input_index;
 
-			if (estimate) {
+
+		}
+
+	}else if (partitionMeta.indexMeta.indexForm == ALCompressedInvertedIndex) {
+		const uint64_t *compBinStartOffs = partitionMeta.indexMeta.u.ciim.indexBinStartOffsets;
+		uint64_t binCompressedLen;
+		const char *inputCurPtr = input_index;
+
+		if (estimate) {
+			// Now compress each bin in turn
+			bin_id_t bin ;
+			for ( bin = low_bin; bin < hi_bin; bin++) {
+				binCompressedLen = compBinStartOffs[bin + 1] - compBinStartOffs[bin];
+				uint32_t decodedElm = ALDecompressRIDtoSelBox(isPGCovered , inputCurPtr, binCompressedLen
+						, srcstart, srccount /*PG region dimension*/ , deststart, destcount /*region dimension of Selection box*/
+						, ndim , &(alacResultBitmap->bits));
+				inputCurPtr += binCompressedLen;
+				alacResultBitmap->numSetBits += decodedElm;
+			}
+
+		}else{
+			// element count of touched bins, which is also the count of low order data
+			uint64_t lowByteStartPos = alac_metadata->lob_offset;
+
+
+			// It touches at least 3 bins, so, we need to check RIDs that are in first and last bins
+			if (hi_bin - low_bin > 2) {
+				// low boundary bin, compressed byte offset
+				binCompressedLen = compBinStartOffs[low_bin + 1] - compBinStartOffs[low_bin];
+
+				// low boundary bin
+				char * lobLowBin= readLowDataAmongBins(&partitionMeta
+													,low_bin, low_bin+1,  lowByteStartPos, adiosQuery, gBlockId, startStep, numStep);
+				adios_alac_check_candidate(&partitionMeta, low_bin, low_bin+1 , hb, lb
+						, srcstart, srccount, deststart, destcount, ndim,  adiosQuery  , inputCurPtr /*index bytes of entire PG*/
+						, true  /*need decoding*/ , lobLowBin /*it points to the start of `low_bin` */, varInfo->type
+						,alacResultBitmap /*OUT*/,Corder);
+				inputCurPtr += binCompressedLen;
+				FREE(lobLowBin);
+
+
+				bin_id_t innerlowBin = low_bin + 1;
+				bin_id_t innerHiBin = hi_bin -1;
+				bin_id_t bin;
 				// Now compress each bin in turn
-				bin_id_t bin ;
-				for ( bin = low_bin; bin < hi_bin; bin++) {
+				for ( bin = innerlowBin; bin < innerHiBin; bin++) {
 					binCompressedLen = compBinStartOffs[bin + 1] - compBinStartOffs[bin];
-					uint32_t decodedElm = ALDecompressRIDtoSelBox(isPGCovered , inputCurPtr, binCompressedLen
-							, srcstart, srccount /*PG region dimension*/ , deststart, destcount /*region dimension of Selection box*/
+
+#ifdef BREAKDOWN
+decodeStart= dclock();
+#endif
+					uint32_t decodedElm = ALDecompressRIDtoSelBox(isPGCovered
+							, inputCurPtr, binCompressedLen
+							, srcstart, srccount //PG region dimension
+							, deststart, destcount //region dimension of Selection box
 							, ndim , &(alacResultBitmap->bits));
-					inputCurPtr += binCompressedLen;
+#ifdef BREAKDOWN
+decodeTotal += dclock() - decodeStart;
+#endif
 					alacResultBitmap->numSetBits += decodedElm;
+					inputCurPtr += binCompressedLen;
 				}
 
-			}else{
-				// element count of touched bins, which is also the count of low order data
-				uint64_t lowByteStartPos = alac_metadata->lob_offset;
+				// high boundary bin
+				binCompressedLen = compBinStartOffs[hi_bin]- compBinStartOffs[hi_bin-1];
+				char * lobHighBin= readLowDataAmongBins(&partitionMeta
+												  					,hi_bin-1, hi_bin,  lowByteStartPos, adiosQuery, gBlockId, startStep, numStep);
+
+				adios_alac_check_candidate(&partitionMeta, hi_bin-1, hi_bin , hb, lb
+						, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , inputCurPtr /*index bytes of entire PG*/
+						, true  /*need decoding*/ , lobHighBin /*low order bytes of entire PG*/, varInfo->type
+						,alacResultBitmap /*OUT*/,Corder);
+				inputCurPtr += binCompressedLen;
+				FREE(lobHighBin);
+
+			} else { // for 1 or 2 bins touched, we need to check all RIDs
 				char * lowOrderBytes  = readLowDataAmongBins(&partitionMeta
-						, low_bin,  hi_bin, lowByteStartPos , adiosQuery, gBlockId, startStep, numStep);
+								, low_bin,  hi_bin, lowByteStartPos , adiosQuery, gBlockId, startStep, numStep);
 				char *lowOrderPtr = lowOrderBytes; // temporary pointer
-
-				// It touches at least 3 bins, so, we need to check RIDs that are in first and last bins
-				if (hi_bin - low_bin > 2) {
-					// low boundary bin, compressed byte offset
-					binCompressedLen = compBinStartOffs[low_bin + 1] - compBinStartOffs[low_bin];
-
-					adios_alac_check_candidate(&partitionMeta, low_bin, low_bin+1 , hb, lb
-							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery  , inputCurPtr /*index bytes of entire PG*/
-							, true  /*need decoding*/ , lowOrderPtr /*it points to the start of `low_bin` */, varInfo->type
-							,alacResultBitmap /*OUT*/,Corder);
-
-					inputCurPtr += binCompressedLen;
-
-					bin_id_t innerlowBin = low_bin + 1;
-					bin_id_t innerHiBin = hi_bin -1;
-					bin_id_t bin;
-					// Now compress each bin in turn
-					for ( bin = innerlowBin; bin < innerHiBin; bin++) {
-						binCompressedLen = compBinStartOffs[bin + 1] - compBinStartOffs[bin];
-
-#ifdef BREAKDOWN
-	decodeStart= dclock();
-#endif
-						uint32_t decodedElm = ALDecompressRIDtoSelBox(isPGCovered
-								, inputCurPtr, binCompressedLen
-								, srcstart, srccount //PG region dimension
-								, deststart, destcount //region dimension of Selection box
-								, ndim , &(alacResultBitmap->bits));
-#ifdef BREAKDOWN
-	decodeTotal += dclock() - decodeStart;
-#endif
-						alacResultBitmap->numSetBits += decodedElm;
-						inputCurPtr += binCompressedLen;
-					}
-
-					// high boundary bin
-					binCompressedLen = compBinStartOffs[hi_bin]- compBinStartOffs[hi_bin-1];
-					// point to the low order byte of one bin before hi_bin
-					lowOrderPtr += (( bl->binStartOffsets[hi_bin-1] - bl->binStartOffsets[low_bin]) * insigbytes);
-
-					adios_alac_check_candidate(&partitionMeta, hi_bin-1, hi_bin , hb, lb
-							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , inputCurPtr /*index bytes of entire PG*/
-							, true  /*need decoding*/ , lowOrderPtr /*low order bytes of entire PG*/, varInfo->type
-							,alacResultBitmap /*OUT*/,Corder);
-
-					inputCurPtr += binCompressedLen;
-
-				} else { // for 1 or 2 bins touched, we need to check all RIDs
-
-					adios_alac_check_candidate(&partitionMeta, low_bin, hi_bin , hb, lb
-							, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , inputCurPtr /*index bytes of entire PG*/
-							, true , lowOrderPtr, varInfo->type
-							,alacResultBitmap /*OUT*/,Corder);
-				}
-
+				adios_alac_check_candidate(&partitionMeta, low_bin, hi_bin , hb, lb
+						, srcstart, srccount, deststart, destcount, ndim,  adiosQuery , inputCurPtr /*index bytes of entire PG*/
+						, true , lowOrderPtr, varInfo->type
+						,alacResultBitmap /*OUT*/,Corder);
 				FREE(lowOrderBytes);
 			}
-		} else {
-			printf("index form %d in alacrity is not supported", partitionMeta.indexMeta.indexForm);
-			exit(EXIT_FAILURE);
+
+
 		}
-		FREE(input_index);
-	}else {
-		//printf("there is no touched bin for constraint \n");
+	} else {
+		printf("index form %d in alacrity is not supported", partitionMeta.indexMeta.indexForm);
+		exit(EXIT_FAILURE);
 	}
+	FREE(input_index);
 
 	FREE(alac_metadata);
 
@@ -1089,6 +1101,7 @@ ADIOS_ALAC_BITMAP* adios_alac_uniengine(ADIOS_QUERY * adiosQuery, int timeStep, 
 	ADIOS_VARINFO * varInfo = adiosQuery->varinfo;
 
 #ifdef BREAKDOWN
+	printf("**************************\n");
 	printf("process %s constraint \n", adiosQuery->condition);
 	// initialization
 	preparationTime = 0;
@@ -1640,7 +1653,7 @@ int adios_query_alac_evaluate(ADIOS_QUERY* q,
 	q->resultsReadSoFar += retrievalSize;
 
 #ifdef BREAKDOWN
-	printf("time [alac plugin + adios] : %f \n", dclock() - alacStart);
+	printf("Total Time [alac plugin + adios] : %f \n", dclock() - alacStart);
 #endif
 
 	return q->resultsReadSoFar < q->maxResultsDesired;
