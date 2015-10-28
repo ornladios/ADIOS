@@ -19,7 +19,9 @@ class AdiosTestCase(ut.TestCase):
         ad.define_var(g, "size", "", ad.DATATYPE.integer, "", "", "")
         ad.define_var(g, "temperature", "", ad.DATATYPE.double, "size,NX", "size,NX", "0,0")
         self.msg = "this is a test"
+        self.unit = "C"
         ad.define_attribute(g, "desc", "", ad.DATATYPE.string, self.msg, "")
+        ad.define_attribute(g, "temperature/unit", "", ad.DATATYPE.string, self.unit, "")
         ad.select_method(g, "POSIX1", "verbose=3", "")
 
         fd = ad.open("temperature", self.temp.path, "w")
@@ -46,13 +48,13 @@ class AdiosTestCase(ut.TestCase):
             pass
         
     def test_adios_file(self):
-        self.assertEqual(self.f.nattrs, 1)
+        self.assertEqual(self.f.nattrs, 2)
         self.assertEqual(self.f.nvars, 3)
         self.assertEqual(self.f.current_step, 0)
         self.assertEqual(self.f.last_step, 0)
         self.assertEqual(sorted(self.f.var.keys()),
                          sorted(['NX', 'size', 'temperature']))
-        self.assertEqual(self.f.attr.keys(), ['desc'])
+        self.assertEqual(self.f.attr.keys(), ['temperature/unit', 'desc'])
 
     def test_adios_attr(self):
         self.assertEqual(self.f.attr['desc'].value, self.msg)
@@ -90,7 +92,7 @@ class AdiosTestCase(ut.TestCase):
         self.assertTrue((v.read(offset=(0,5), count=(2,5)) == v[:,5:]).all())
         self.assertTrue((v.read(offset=(0,5), count=(2,5)) == v[:,-5:]).all())
 
-    def test_adios_var_getitem(self):        
+    def test_adios_var_getitem(self):
         v = self.f['temperature']
         val = v.read()
         self.assertTrue((val == v[...,...]).all())
@@ -105,6 +107,10 @@ class AdiosTestCase(ut.TestCase):
         v = self.f['temperature']
         val = v[:,1]
         self.assertEqual(val.shape, (2,))
+
+    def test_adios_var_getattr(self):
+        v = self.f['temperature']
+        self.assertEqual(v.attrs['unit'].value, self.unit)
 
 if __name__ == '__main__':
     ut.main()
