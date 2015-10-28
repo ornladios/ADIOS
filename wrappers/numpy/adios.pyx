@@ -16,6 +16,8 @@ cimport cython
 from libc.stdlib cimport malloc, free
 from cpython.string cimport PyString_AsString
 
+import os
+
 cdef char ** to_cstring_array(list_str):
     cdef char **ret = <char **>malloc(len(list_str) * sizeof(char *))
     for i in xrange(len(list_str)):
@@ -288,6 +290,8 @@ cpdef __parse_index(index, ndim):
             fixed.extend([slice(None)] * (ndim-length-len(fixed)+1))
         elif isinstance(slice_, (int, long)):
             fixed.append(slice(slice_, slice_+1, None))
+        elif isinstance(slice_, (float)):
+            fixed.append(slice(int(slice_), int(slice_)+1, None))
         else:
             fixed.append(slice_)
         length -= 1
@@ -635,6 +639,8 @@ cdef class file:
     ## Public Memeber
     cpdef public dict var
     cpdef public dict attr
+    cpdef public vars
+    cpdef public attrs
 
     property name:
         """ The filename (or stream name) associated with. """
@@ -710,11 +716,14 @@ cdef class file:
         self.version = self.fp.version
         self.file_size = self.fp.file_size
     
+        for name in [self.fp.attr_namelist[i] for i in range(self.nattrs)]:
+            self.attr[name] = attr(self, name)
+
         for name in [self.fp.var_namelist[i] for i in range(self.nvars)]:
             self.var[name] = var(self, name)
 
-        for name in [self.fp.attr_namelist[i] for i in range(self.nattrs)]:
-            self.attr[name] = attr(self, name)
+        self.attrs = self.attr
+        self.vars = self.var
 
     def __del__(self):
         """ Close file on destruction. """
@@ -820,6 +829,7 @@ cdef class var:
     cpdef int ndim
     cpdef tuple dims
     cpdef int nsteps
+    cpdef dict attrs
 
     property name:
         """ The variable name. """
@@ -851,6 +861,10 @@ cdef class var:
         def __get__(self):
             return self.nsteps
 
+    property attrs:
+        def __get__(self):
+            return self.attrs
+
     def __init__(self, file file, char * name):
         self.file = file
         self.vp = NULL
@@ -869,6 +883,11 @@ cdef class var:
             self.dtype = adios2npdtype(self.vp.type, len(<char*> self.vp.value))
         else:
             self.dtype = adios2npdtype(self.vp.type)
+
+        self.attrs = {}
+        for name in self.file.attr.keys():
+            if name.startswith(self.name + '/'):
+                self.attrs[name.replace(self.name + '/', '')] = self.file.attr[name]
 
     def __del__(self):
         self.close()
@@ -1022,6 +1041,8 @@ cdef class var:
         for slice_ in index_:
             if isinstance(slice_.step, (int, long)) and (slice_.step != 1):
                 raise IndexError("Step size (%d) is not supported." % (slice_.step))
+            if isinstance(slice_.step, float) and (int(slice_.step) != 1):
+                raise IndexError("Step size (%d) is not supported." % (int(slice_.step)))
             if isinstance(slice_, str):
                 raise IndexError("Name index (%r) is not supported." % (slice_))
         
@@ -1466,6 +1487,14 @@ cdef class varinfo:
     def __repr__(self):
         return ("AdiosVarinfo (name=%r, ldim=%r, gdim=%r, offset=%r, value=%r)") % \
                 (self.name, self.ldim, self.gdim, self.offset, self.value)
+
+## Aliases
+File = file
+Var = var
+Attr = attr
+Writer = writer
+Attrinfo = attrinfo
+Varinfo = varinfo
         
 ## ====================
 ## ADIOS Global functions
