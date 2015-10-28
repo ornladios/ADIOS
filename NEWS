@@ -1,3 +1,7 @@
+...
+    - Fortran API for inquiring selections
+    - fix: bpmeta does not skip any subfiles when used with threads
+
 1.9.0 Release Jul 2015
     - Array attributes are supported
       - e.g axes = {"X","Y","Z"}
