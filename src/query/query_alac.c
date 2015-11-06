@@ -892,28 +892,51 @@ void proc_write_block(int gBlockId /*its a global block id*/, bool isPGCovered, 
 		return ;
 	}
 
+	const ALBinLayout * bl = &(partitionMeta.binLayout);
 
+
+#ifdef BREAKDOWN
+	numTouchedBins  += (hi_bin - low_bin);
+
+	printf("****Touched PG[%d]: the # of total bins[%"PRIu32"] & touched bins [%"PRIu32"], each touched bin has element #: [", gBlockId, bl->numBins , (hi_bin- low_bin));
+
+	bin_id_t bin ;
+	for ( bin = low_bin; bin < hi_bin; bin++) {
+		printf("%"PRIu32",", bl->binStartOffsets[bin+1] - bl->binStartOffsets[bin]);
+	}
+	printf("]\n");
+#endif
+
+	bool fullyContained = false;
+	if (hi_bin - low_bin == bl->numBins) {
+
+		// with regards to the 3th & 4th arguments,  they are 0 or 1, false or true. You want per-block statistics, so call with (fp, vi, 0, 1) arguments
+		common_read_inq_var_stat(adiosQuery->file, varInfo, 0, 1); // retrieve the statistics structure per-block
+
+#ifdef BREAKDOWN
+		printf("****Touched PG[%d] has all bins retrieved \n", gBlockId);
+		printf("****Touched PG[%d] is fully covered by the selection region [%d] \n", gBlockId, isPGCovered);
+		printf("****Var info has statistics: [%s]  \n", varInfo->statistics != NULL ? "yes" : "no");
+#endif
+
+		if (isPGCovered && varInfo->statistics && varInfo->statistics->blocks) {
+				ADIOS_VARSTAT *stat = varInfo->statistics;
+				double min =  *(double*)stat->blocks->mins[gBlockId];
+				double max =  *(double*)stat->blocks->maxs[gBlockId];
+				fullyContained =  (lb <= min && hb >= max) ;
+		#ifdef BREAKDOWN
+			    printf("*****PG [%d] is fully contained [%s], min [%f], max [%f], query low bound [%f], and query high bound [%f] \n ", gBlockId, fullyContained ? "true": "false", min, max, lb, hb);
+		#endif
+		}
+	}
 
 	//3. load index size
 	uint64_t indexStartPos =  alac_metadata->index_offset ;
 	char * index = readIndexAmongBins(&partitionMeta
 								, low_bin,  hi_bin, indexStartPos, adiosQuery, gBlockId, startStep, numStep);
 	char * input_index = index;
-	const ALBinLayout * bl = &(partitionMeta.binLayout);
-
 	ALIndex* indexPtr = &index;
 
-#ifdef BREAKDOWN
-numTouchedBins  += (hi_bin - low_bin);
-
-printf("Touched PG[%d]: the # of total bins[%"PRIu32"] & touched bins [%"PRIu32"], each touched bin has element #: [", gBlockId, bl->numBins , (hi_bin- low_bin));
-
-bin_id_t bin ;
-for ( bin = low_bin; bin < hi_bin; bin++) {
-	printf("%"PRIu64",", bl->binStartOffsets[bin+1] - bl->binStartOffsets[bin]);
-}
-printf("]\n");
-#endif
 
 	//TODO: distinguish the offset btw two bins for compressed and uncompressed index
 	// is the offset byte-level or element-level?
@@ -921,10 +944,17 @@ printf("]\n");
 		// indexes are inverted indexes that are not compressed,  we build bitmaps for each rid;
 		//element offset, instead of byte element
 		uint64_t resultCount = bl->binStartOffsets[hi_bin] - bl->binStartOffsets[low_bin];
-		if (estimate) {
+		if (estimate || fullyContained) {
+
+if ( fullyContained ) {
+#ifdef BREAKDOWN
+		    printf("*****PG [%d] is fully contained in both spatial and value selections, we set all bits at once without doing ALACRITY process\n ", gBlockId);
+#endif
+}
+
+			 // fullyContained: since this PG is fully contained in the spatial selection as well as in the value constraint, we now just set the entire bitmap, without doing the ALACRITY process
 			setRidToBits(isPGCovered, srcstart, srccount, deststart, destcount, ndim
 					, (rid_t *)index, resultCount, alacResultBitmap,Corder);
-
 		} else {
 			uint64_t lowByteStartPos2 = alac_metadata->lob_offset;
 			rid_t * decodedRid = (rid_t *) index;
@@ -988,8 +1018,14 @@ setRidTotal += (dclock() - setRidStart);
 		uint64_t binCompressedLen;
 		const char *inputCurPtr = input_index;
 
-		if (estimate) {
+		if (estimate || fullyContained) {
+			 // fullyContained: since this PG is fully contained in the spatial selection as well as in the value constraint, we now just set the entire bitmap, without doing the ALACRITY process
 			// Now compress each bin in turn
+if ( fullyContained ) {
+#ifdef BREAKDOWN
+			printf("*****PG [%d] is fully contained in both spatial and value selections, we set all bits at once without doing ALACRITY process\n ", gBlockId);
+#endif
+}
 			bin_id_t bin ;
 			for ( bin = low_bin; bin < hi_bin; bin++) {
 				binCompressedLen = compBinStartOffs[bin + 1] - compBinStartOffs[bin];
@@ -1364,7 +1400,8 @@ static void dump_bitmap_word(FILE *stream, uint64_t word, int nbits) {
 		bitstr[i] = bit ? '1' : '0';
 	}
 	bitstr[nbits] = 0;
-	fprintf(stream, bitstr);
+	fprintf(stream, "%s", bitstr);
+
 }
 
 static void dump_bitmap(FILE *stream, ADIOS_ALAC_BITMAP *bitmap) {
