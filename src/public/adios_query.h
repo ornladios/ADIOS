@@ -78,12 +78,12 @@ int adios_query_is_method_available(enum ADIOS_QUERY_METHOD method);
 ADIOS_QUERY* adios_query_create (ADIOS_FILE* f, 
                                  ADIOS_SELECTION* queryBoundary,
                                  const char* varName,
-                                 enum ADIOS_PREDICATE_MODE op,
+                                 enum ADIOS_PREDICATE_MODE queryOp,
                                  const char* value); 
 
 
 ADIOS_QUERY* adios_query_combine (ADIOS_QUERY* q1, 
-                                  enum ADIOS_CLAUSE_OP_MODE operator,		    
+                                  enum ADIOS_CLAUSE_OP_MODE combineOp,		    
                                   ADIOS_QUERY* q2);
 
 /* 
