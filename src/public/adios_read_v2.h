@@ -125,6 +125,8 @@ struct _ADIOS_VARINFO {
         int      * nblocks;         /* Number of blocks that comprise this variable in a step
                                        It is an array of 'nsteps' integers                            */
         int        sum_nblocks;     /* Number of all blocks of all steps, the sum of the nblocks array*/
+        int        nattrs;          /* Number of attributes with the name <variable_fullpath>/<name>  */
+        int      * attr_ids;        /* Attribute ids in an array, use fp->attr_namelist[<id>] for names */
         ADIOS_VARSTAT  *statistics; /* Statistics, retrieved in separate call: adios_inq_var_stat()   */
         ADIOS_VARBLOCK *blockinfo;  /* Spatial arrangement of written blocks, 
                                        retrieved in separate call: adios_inq_var_blockinfo()       

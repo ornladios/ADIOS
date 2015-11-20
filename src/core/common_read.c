@@ -823,6 +823,44 @@ ADIOS_VARINFO * common_read_inq_var_byid (const ADIOS_FILE *fp, int varid)
     return vi;
 }
 
+/* Make a list of attributes (ids) of a specific variable
+ * where the attribute name = full path of variable / name
+ */
+void common_read_get_attrs_for_variable (const ADIOS_FILE *fp, ADIOS_VARINFO *vi)
+{
+    struct common_read_internals_struct * internals;
+    char * varpath;
+    int i; 
+    assert (vi != NULL);
+    assert (fp != NULL);
+    vi->nattrs = 0;
+    vi->attr_ids = (int *) malloc (fp->nattrs * sizeof(int));
+    internals = (struct common_read_internals_struct *) fp->internal_data;
+    varpath = fp->var_namelist [vi->varid];
+    log_debug ("Look for attributes of variable %s...\n", varpath);
+    int varlen = strlen (varpath);
+    for (i=0; i<fp->nattrs; i++)
+    {
+        // attr must be <varpath> + / + something without /
+        const char * attr = fp->attr_namelist[i];
+        int attlen = strlen (attr);
+        if (attlen > varlen + 1)
+        {
+            if (!strncmp(varpath, attr, varlen))
+            {
+                if (attr[varlen] == '/' &&
+                    !strchr (attr+varlen+1, '/'))
+                {
+                    log_debug ("    Found attr %s\n", attr);
+                    vi->attr_ids [vi->nattrs] = i;
+                    vi->nattrs++;
+                }
+            }
+        }
+        vi->attr_ids = (int *) realloc (vi->attr_ids, vi->nattrs * sizeof(int));
+    }
+}
+
 // NCSU ALACRITY-ADIOS - Renaming of common_read_inq_var_byid, named 'raw'
 //   because it is oblivious to the original metadata as stored in TRANSINFO
 ADIOS_VARINFO * common_read_inq_var_raw_byid (const ADIOS_FILE *fp, int varid)
@@ -841,6 +879,10 @@ ADIOS_VARINFO * common_read_inq_var_raw_byid (const ADIOS_FILE *fp, int varid)
                 /* Translate real varid to the group varid presented to the user */
                 retval->varid = varid;
                 retval->meshinfo = NULL; // initialize here because it's a common layer addition
+                /* Get attributes related to the variable */
+                retval->nattrs = 0;
+                retval->attr_ids = NULL;
+                common_read_get_attrs_for_variable (fp, retval);
             }
         } else {
             adios_error (err_invalid_varid,
