@@ -797,19 +797,29 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
     # Mac #
     #######
     echo "Configure on Mac"
-    # Installed MacPorts and GCC4.4 and OpenMPI 1.4.2 ports 
+    # Originally installed MacPorts and GCC4.4 and OpenMPI 1.4.2 ports 
+    #    export CC=/opt/local/bin/gcc-mp-4.4
+    #    export FC=/opt/local/bin/gfortran-mp-4.4
+    #    export CXX=/opt/local/bin/g++-mp-4.4
+    #    export MPICC=/opt/local/bin/openmpicc
+    #    export MPIFC=/opt/local/bin/openmpif90
+    #    export MPICXX=/opt/local/bin/openmpicxx
+    #
     # But should work with default mpicc and gcc, using --disable-fortran
-    export CC=/opt/local/bin/gcc-mp-4.4
-    export FC=/opt/local/bin/gfortran-mp-4.4
-    export CXX=/opt/local/bin/g++-mp-4.4
-    export MPICC=/opt/local/bin/openmpicc
-    export MPIFC=/opt/local/bin/openmpif90
-    export MPICXX=/opt/local/bin/openmpicxx
+    # Homebrew installation of openmpi
+    export CC=gcc
+    export FC=gfortran
+    export CXX=g++
+    export MPICC=/usr/local/bin/mpicc
+    export MPIFC=/usr/local/bin/mpif90
+    export MPICXX=/usr/local/bin/mpicxx
+
     CFLAGS="-g -DO_LARGEFILE=0 -fno-common" ${SRCDIR}/configure --prefix=/opt/adios \
-        --with-mxml=/opt/mxml \
-        --with-netcdf=/opt/netcdf \
-        --with-phdf5=/opt/hdf5 \
-        --with-hdf5=/opt/hdf5.seq
+        --with-mxml=/opt/adios \
+        --disable-fortran \
+    #        --with-netcdf=/opt/netcdf \
+    #        --with-phdf5=/opt/hdf5 \
+    #        --with-hdf5=/opt/hdf5.seq
 
 
 elif [ `hostname | cut -c 1-7` == "ubuntu" ]; then

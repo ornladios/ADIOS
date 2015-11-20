@@ -70,6 +70,7 @@ int main( int argc, char ** argv)
     float angles[num_points];
     float cos_of_angles[num_points];
     float sin_of_angles[num_points];
+    float tan_of_angles[num_points];
     float pi;
 
     // Obtain pi once for all
@@ -96,9 +97,11 @@ int main( int argc, char ** argv)
         for (i=0; i<num_points; i++) {
             cos_of_angles[i] = cos(angles[i]*timestep);
             sin_of_angles[i] = sin(angles[i]*timestep);
+            tan_of_angles[i] = tan(angles[i]*timestep);
         }
 
         adios_groupsize = 4 + 4 \
+                + 4*num_points \
                 + 4*num_points \
                 + 4*num_points;
         if (timestep == 0 && rank == 0) {
@@ -115,6 +118,7 @@ int main( int argc, char ** argv)
         }
         adios_write (adios_handle, "cos", cos_of_angles);
         adios_write (adios_handle, "sin", sin_of_angles);
+        adios_write (adios_handle, "tan", tan_of_angles);
 
         adios_close (adios_handle);
 

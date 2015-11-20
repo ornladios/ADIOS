@@ -7,7 +7,8 @@
     <var name="angles" gwrite="anglevalues" type="float" dimensions="num_points"/>
     <var name="t"   gwrite="timestep" type="float" dimensions="iter"/>
     <var name="cos" gwrite="cos_of_anglevalues" type="float" dimensions="iter,num_points"/>
-    <var name="sin" gwrite="sin_of_anglevalues" type="float" dimensions="iter,num_points"/>
+    <var name="sin" gwrite="sin_of_anglevalues" type="float" dimensions="1,num_points"/>
+    <var name="tan" gwrite="tan_of_anglevalues" type="float" dimensions="num_points"/>
     <attribute name="description" path="/" 
         value="File to test if ADIOS can read a local array over time" 
         type="string"/>

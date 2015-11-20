@@ -2371,7 +2371,8 @@ void bp_get_dimensions_generic (const ADIOS_FILE * fp, struct adios_index_var_st
     {
         j = 0;
         /* local array */
-        for (i = 0; i < * ndim; i++)
+        int n = *ndim;
+        for (i = 0; i < n; i++)
         {
             /* size of time dimension is always registered as 1 for an array */
             if (ldims[i] == 1 && var_root->characteristics_count > 1)

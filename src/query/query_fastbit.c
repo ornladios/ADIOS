@@ -621,6 +621,7 @@ void clear_fastbit_internal(ADIOS_QUERY* query)
   
   if (query->hasParent == 0) {
     fastbit_selection_free(s->_handle); 
+    s->_handle == NULL;
   }   
 
   //s = NULL;
@@ -631,16 +632,48 @@ void clear_fastbit_internal(ADIOS_QUERY* query)
 void clear_fastbit_internal_recursive(ADIOS_QUERY* query) 
 {
   clear_fastbit_internal(query);
+
+  /*
   if (query->hasParent != 0) {
-    fastbit_selection_free( ((FASTBIT_INTERNAL*)(query->queryInternal))->_handle); 
+    if (((FASTBIT_INTERNAL*)(query->queryInternal))->_handle != NULL) {
+      fastbit_selection_free( ((FASTBIT_INTERNAL*)(query->queryInternal))->_handle); 
+    }
   }
+*/
  
   if (query->left != NULL) {
-    clear_fastbit_internal(query->left);
+    clear_fastbit_internal_recursive(query->left);
   }
   if (query->right != NULL) {
-    clear_fastbit_internal(query->right);
+    clear_fastbit_internal_recursive(query->right);
   }
+}
+
+void clean_fastbit_trace(ADIOS_QUERY* q) 
+{
+
+  if (q == NULL) {
+    return;
+  }
+
+  clear_fastbit_internal_recursive(q);
+  /*
+  if (q->left == NULL) {
+      free (((FASTBIT_INTERNAL*)(q->queryInternal))->_bms); ((FASTBIT_INTERNAL*)(q->queryInternal))->_bms = NULL; 
+      free (((FASTBIT_INTERNAL*)(q->queryInternal))->_keys); ((FASTBIT_INTERNAL*)(q->queryInternal))->_keys = NULL; 
+      free (((FASTBIT_INTERNAL*)(q->queryInternal))->_offsets); ((FASTBIT_INTERNAL*)(q->queryInternal))->_offsets = NULL; 
+      free (((FASTBIT_INTERNAL*)(q->queryInternal))->_offsets); ((FASTBIT_INTERNAL*)(q->queryInternal))->_offsets = NULL; 
+      fastbit_selection_free(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle);
+      return;
+  }
+
+  ADIOS_QUERY* lq = (ADIOS_QUERY*)(q->left);
+  ADIOS_QUERY* rq = (ADIOS_QUERY*)(q->right);
+
+  clean_fastbit_trace(lq);
+  clean_fastbit_trace(rq);
+
+  */
 }
 
 
@@ -1357,7 +1390,8 @@ void setBitArray0(ADIOS_VARINFO* var, uint32_t* bitSlice, int64_t* coordinateArr
 void checkHits(ADIOS_VARINFO* v, ADIOS_QUERY* q, uint64_t boxStart, uint64_t* regionStart, uint64_t* regionCount, uint64_t eleStarts, uint64_t eleEnds)
 {
       uint64_t count = fastbit_selection_evaluate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle); 	
-      int64_t  coordinateArray[count];
+      //uint64_t  coordinateArray[count];				
+      uint64_t* coordinateArray = malloc(count*sizeof(uint64_t));
       fastbit_selection_get_coordinates(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, coordinateArray, count, 0);      
       
       // set bits
@@ -1371,6 +1405,7 @@ void checkHits(ADIOS_VARINFO* v, ADIOS_QUERY* q, uint64_t boxStart, uint64_t* re
       ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle = 0;
 
       casestudyLogger_setPrefix(" summarized evaluation for bb");  
+      free(coordinateArray);
 }
 
 int mEvaluateBBRangeFancyQueryOnWhole(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeStep, uint64_t* regionStart, uint64_t* regionCount)
@@ -1431,7 +1466,7 @@ int mEvaluateBBRangeFancyQueryOnWhole(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int t
       // index is on the whole timestep
       getHandle(timeStep, 0, idxFile,  q,  totalEle);
       checkHits(v, q, 0, regionStart, regionCount, eleStarts, eleEnds); 
-      return;
+      return 0;
   } else {
       int boxCounter = 0;
       while (startRef < v->dims[0]) {
@@ -1466,6 +1501,7 @@ int mEvaluateBBRangeFancyQueryOnWhole(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int t
 	  } else {
 	    fastbit_iapi_extend_bit_array_with_selection(bitsArrayName, ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle);
 	  }
+	  clean_fastbit_trace(q);	  
 	}
       
 	boxCounter++;
@@ -1486,7 +1522,8 @@ void checkHitsDefault(ADIOS_QUERY* q)
 {
   uint64_t resultCount = fastbit_selection_evaluate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle); 	
 
-  int64_t  coordinateArray[resultCount];
+  //uint64_t  coordinateArray[resultCount];
+  uint64_t* coordinateArray = malloc(resultCount*sizeof(uint64_t));
   fastbit_selection_get_coordinates(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, coordinateArray, resultCount, 0);      
   casestudyLogger_setPrefix(" got coordinates bb");
 
@@ -1507,7 +1544,7 @@ void checkHitsDefault(ADIOS_QUERY* q)
   ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle = 0;
 
   casestudyLogger_setPrefix(" summarized evaluation for bb");  
-
+  free(coordinateArray);
 }
  //
  // 
@@ -1539,7 +1576,7 @@ int mEvaluateTestFullRangeFancyQueryOnWhole(ADIOS_FILE* idxFile, ADIOS_QUERY* q,
       getHandle(timeStep, 0, idxFile,  q,  dataSize);
 
       checkHitsDefault(q);
-      return;
+      return 0;
   } else {
       int boxCounter = 0;
       while (startRef < v->dims[0]) {
@@ -1565,13 +1602,14 @@ int mEvaluateTestFullRangeFancyQueryOnWhole(ADIOS_FILE* idxFile, ADIOS_QUERY* q,
 	
 	// has to call evaluate before calling either register_selection_as_bit_array() or extend_bit_array()
 	uint64_t countMe = fastbit_selection_evaluate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle); 
-
+	//printf("  boxCounter=%d, countme=%ld \n", boxCounter, countMe);
 	if (boxCounter == 0) {
 	  fastbit_iapi_register_selection_as_bit_array(bitsArrayName, ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle);
 	} else {
 	  fastbit_iapi_extend_bit_array_with_selection(bitsArrayName, ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle);
 	}
-      
+
+	clean_fastbit_trace(q);
 	boxCounter++;
       }
   }
@@ -1581,6 +1619,7 @@ int mEvaluateTestFullRangeFancyQueryOnWhole(ADIOS_FILE* idxFile, ADIOS_QUERY* q,
   ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle = h;
 
   checkHitsDefault(q);
+  return 0;
 }
 
 
@@ -1615,7 +1654,8 @@ int mEvaluateTestFullRange(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeStep)
       // index is on the whole timestep
       getHandleFromBlockAtLeafQuery(timeStep, 0, idxFile,  q,  q->rawDataSize);
       uint64_t count = fastbit_selection_evaluate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle); 	
-      int64_t  coordinateArray[count];
+      //uint64_t  coordinateArray[count];
+      uint64_t* coordinateArray = malloc(count*sizeof(uint64_t));
       fastbit_selection_get_coordinates(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, coordinateArray, count, 0);      
       
       int k=0;
@@ -1635,7 +1675,8 @@ int mEvaluateTestFullRange(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeStep)
       ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle = 0;
       
       casestudyLogger_setPrefix(" summarized evaluation for bb");  
-      return;
+      free(coordinateArray);
+      return 0;
   } else {
       int boxCounter = 0;
       while (startRef < q->varinfo->dims[0]) {
@@ -1683,6 +1724,8 @@ int mEvaluateTestFullRange(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeStep)
 	} else {
 	  fastbit_iapi_extend_bit_array_with_selection(bitsArrayName, ((FASTBIT_INTERNAL*)(q->queryInternal))->_handle);
 	}
+
+	clean_fastbit_trace(q);
       
 	boxCounter++;
       }
@@ -1695,7 +1738,8 @@ int mEvaluateTestFullRange(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeStep)
 
   uint64_t resultCount = fastbit_selection_evaluate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle); 	
   //printf("resultCount = %llu\n", resultCount);
-  int64_t  coordinateArray[resultCount];
+  //  uint64_t  coordinateArray[resultCount];
+  uint64_t* coordinateArray = malloc(resultCount*sizeof(uint64_t));
   fastbit_selection_get_coordinates(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, coordinateArray, resultCount, 0);      
   casestudyLogger_setPrefix(" got coordinates bb");
 
@@ -1721,7 +1765,7 @@ int mEvaluateTestFullRange(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeStep)
     } 
   }
 
-
+  free(coordinateArray);
   free(q->dataSlice);
   q->dataSlice = bitSlice;
   
@@ -1813,7 +1857,8 @@ int mEvaluateWithIdxOnBBoxWithBitArrayOnVar(ADIOS_FILE* idxFile, ADIOS_QUERY* q,
 	struct timespec evalStartT; casestudyLogger_getRealtime(&evalStartT);	
 	uint64_t count = fastbit_selection_evaluate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle); 	
 
-	int64_t  coordinateArray[count];
+	//uint64_t  coordinateArray[count];
+	uint64_t* coordinateArray = malloc(count*sizeof(uint64_t));
 	fastbit_selection_get_coordinates(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, coordinateArray, count, 0);      
 
 	casestudyLogger_pro_writeout(&evalStartT, "fastbitevaluated");	
@@ -1868,6 +1913,7 @@ int mEvaluateWithIdxOnBBoxWithBitArrayOnVar(ADIOS_FILE* idxFile, ADIOS_QUERY* q,
 	//casestudyLogger_frame_writeout(&frameStartT, "block processed");
 	casestudyLogger_frame_writeout(&frameStartT, "block processed");
 	log_debug("----\n");
+	free(coordinateArray);
     }
     
     casestudyLogger_setPrefix(" blocksProcessedIndividually!");
@@ -1960,7 +2006,8 @@ int evaluateWithIdxOnBBoxWithBitArrayOnVar0(ADIOS_FILE* idxFile, ADIOS_QUERY* q,
 
       uint64_t count = fastbit_selection_evaluate(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle); 
 
-      int64_t  coordinateArray[count];
+      //uint64_t  coordinateArray[count];
+      uint64_t* coordinateArray = malloc(count*sizeof(uint64_t));
       fastbit_selection_get_coordinates(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, coordinateArray, count, 0);      
 
       casestudyLogger_pro_writeout(&evalStartT, "fastbitevaluated");
@@ -2018,6 +2065,7 @@ int evaluateWithIdxOnBBoxWithBitArrayOnVar0(ADIOS_FILE* idxFile, ADIOS_QUERY* q,
       //casestudyLogger_frame_writeout(&frameStartT, "block processed");
       casestudyLogger_pro_writeout(&frameStartT, "block processed");
       log_debug("----\n");
+      free(coordinateArray);
     }
 
     casestudyLogger_setPrefix(" blocksProcessedIndividually!");
@@ -2338,7 +2386,8 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
       }
 #else
       //i = currBlockIdx-blockStart;
-      uint64_t  coordinateArray[count];
+      //uint64_t  coordinateArray[count];
+      uint64_t* coordinateArray = malloc(count*sizeof(uint64_t));
       fastbit_selection_get_coordinates(((FASTBIT_INTERNAL*)(q->queryInternal))->_handle, coordinateArray, count, 0);      
 
       casestudyLogger_pro_writeout(&evalStartT, "fastbitevaluated");
@@ -2376,6 +2425,7 @@ int evaluateWithIdxOnBoundingBox(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeSt
 #endif
       //casestudyLogger_setPrefix(" block processed");
       log_debug("----\n");
+      free(coordinateArray);
     }
 
     casestudyLogger_setPrefix(" blocksProcessedIndividually ");
@@ -3179,6 +3229,7 @@ int  adios_query_fastbit_evaluate(ADIOS_QUERY* q,
     } else {
       *result = getSpatialCoordinates(firstLeaf->sel, coordinates, retrivalSize, firstLeaf->varinfo, timeStep);
     }
+    free(coordinates);
   } else {
     //*result = getSpatialCoordinates(outputBoundary, coordinates, retrivalSize);
     // variable needs to be in place to handle the block information
@@ -3253,6 +3304,8 @@ void  adios_query_fastbit_free(ADIOS_QUERY* query)
 
   clear_fastbit_internal(query);
   free(query->queryInternal);
+
+  //fastbit_iapi_free_all();
 
 }
 
