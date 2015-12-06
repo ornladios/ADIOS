@@ -67,7 +67,7 @@ class adios_test(Command):
         test_runner.run(test_suite)
 
 setup(name = 'adios',
-      version = '1.9.0',
+      version = '1.9.1b1',
       description = 'Python Module for Adios',
       author = 'Jong Choi',
       author_email = 'yyalli@gmail.com',
