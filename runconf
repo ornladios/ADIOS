@@ -386,7 +386,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         module load PrgEnv-$TARGET
         module swap craype-interlagos craype-istanbul
         module swap cray-libsci
-        module load dataspaces/1.4.0
+        module load dataspaces # /1.6.0
         unset EXTRA_CFLAGS
         unset EXTRA_LIBS
         unset LDFLAGS
@@ -398,8 +398,14 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
             #DATASPACES_DIR="/ccs/proj/e2e/dataspaces/titan/$TARGET"
             WITHFLEX=""
         elif [ "$TARGET" == "gnu" ]; then
+            export CC=gcc
+            export FC=gfortran
+            export CXX=g++
+            export MPICC=cc
+            export MPIFC=ftn
+            export MPICXX=CC
             # NSSI/FLEXPATH/FASTBIT needs libstdc++
-            export LDFLAGS="-pgcpplibs" 
+            export LDFLAGS="" 
             export EXTRA_LIBS="${GCC_PATH}/snos/lib64/libstdc++.a"
             WITHFLEX="--with-flexpath=/ccs/proj/e2e/chaos/titan/$TARGET"
             # FASTBIT needs libstdc++
@@ -430,6 +436,7 @@ elif [ `hostname | cut -c 1-5` == "titan" ]; then
         --with-cray-ugni-libdir=/opt/cray/ugni/default/lib64 \
         --with-dataspaces=$DATASPACES_DIR \
         --with-dimes=$DATASPACES_DIR \
+        --without-infiniband \
         $WITHFLEX \
         --with-fastbit=$FASTBIT_DIR \
         --with-lustre \
@@ -533,9 +540,15 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
           export LDFLAGS="-pgcpplibs" 
           unset EXTRA_LIBS 
       elif [ "$TARGET" == "gnu" ]; then
+          export CC=gcc
+          export FC=gfortran
+          export CXX=g++
+          export MPICC=cc
+          export MPIFC=ftn
+          export MPICXX=CC
           # NSSI needs libstdc++
           unset LDFLAGS 
-          export EXTRA_LIBS="/opt/gcc/4.7.1/snos/lib64/libstdc++.a"
+          export EXTRA_LIBS="${GCC_PATH}/snos/lib64/libstdc++.a"
           export FLEXPATH="--with-flexpath=/ccs/proj/e2e/chaos/titan/gnu"
           #module swap gcc gcc/4.4.4
       elif [ "$TARGET" == "cray" ]; then
