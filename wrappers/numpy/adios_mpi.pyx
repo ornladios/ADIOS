@@ -305,8 +305,13 @@ cpdef __parse_index(index, ndim):
 ## ADIOS Write API
 ## ====================
 
+cdef MPI.Comm init_comm
+cdef MPI.Comm read_init_comm
+
 cpdef init(char * config, MPI.Comm comm = MPI.COMM_WORLD):
-    return adios_init(config, comm.ob_mpi)
+    global init_comm
+    init_comm = comm.Clone()
+    return adios_init(config, init_comm.ob_mpi)
 
 cpdef int64_t open(char * group_name,
                    char * name,
@@ -362,8 +367,11 @@ cpdef int finalize(int mype = 0):
 ## ====================
 ## ADIOS No-XML API
 ## ====================
+
 cpdef int init_noxml(MPI.Comm comm = MPI.COMM_WORLD):
-    return adios_init_noxml(comm.ob_mpi)
+    global init_comm
+    init_comm = comm.Clone()
+    return adios_init_noxml(init_comm.ob_mpi)
 
 cpdef int allocate_buffer(int when,
                           uint64_t buffer_size):
@@ -595,8 +603,10 @@ cpdef str adiostype2string (ADIOS_DATATYPES type):
 cpdef int read_init(char * method_name = "BP",
                     MPI.Comm comm = MPI.COMM_WORLD,
                     char * parameters = ""):
+    global read_init_comm
+    read_init_comm = comm.Clone()
     cdef method = str2adiosreadmethod(method_name)
-    return adios_read_init_method (method, comm.ob_mpi, parameters)
+    return adios_read_init_method (method, read_init_comm.ob_mpi, parameters)
 
 
 """ Call adios_read_finalize_method """
