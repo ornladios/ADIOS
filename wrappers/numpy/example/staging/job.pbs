@@ -1,0 +1,58 @@
+#!/bin/bash -l
+#PBS -j oe
+#PBS -N python_adios_staging
+#PBS -l nodes=1:ppn=32
+#PBS -l walltime=0:10:00
+#PBS -V
+
+#RUNCMD="aprun -n"
+RUNCMD="mpirun -n"
+SERVER=$DATASPACES_DIR/bin/dataspaces_server
+
+WRITEPROC=1
+STAGINGPROC=1
+READPROC=1
+let "PROCALL=WRITEPROC+READPROC"
+
+# clean-up previous run
+rm -f log.* core* conf dataspaces.conf
+
+# Prepare config file for DataSpaces
+echo "## Config file for DataSpaces
+ndim = 2
+dims = 100,100
+max_versions = 10
+#max_readers =" $READPROC " 
+#lock_type = 2
+" > dataspaces.conf
+
+# Run DataSpaces
+echo "-- Start DataSpaces server "$SERVER" on $STAGINGPROC PEs, -s$STAGINGPROC -c$PROCALL"
+$RUNCMD $STAGINGPROC $SERVER -s$STAGINGPROC -c$PROCALL >& log.server &
+
+## Give some time for the servers to load and startup
+sleep 1s
+while [ ! -f conf ]; do
+    echo "-- File conf is not yet available from server. Sleep more"
+    sleep 1s
+done
+sleep 3s  # wait server to fill up the conf file
+
+## Export the main server config to the environment
+while read line; do
+    export set "${line}"
+done < conf
+
+echo "-- DataSpaces IDs: P2TNID = $P2TNID   P2TPID = $P2TPID"
+
+# Start STAGE_READ
+echo "-- Start GENARRAY on $READPROC PEs"
+$RUNCMD $READPROC python ./adios_read_mpi.py DATASPACES "verbose=3" >& log.reader &
+
+# Start STAGE_WRITE
+echo "-- Start STAGE_WRITE on $WRITEPROC PEs"
+$RUNCMD $WRITEPROC python ./adios_write_mpi.py DATASPACES "verbose=3" >& log.writer &
+
+echo "-- Wait until all applications exit. Run 'tail -F log.server log.reader log.writer' to see status"
+wait
+rm -f conf
