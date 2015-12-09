@@ -367,8 +367,8 @@ elif [ `hostname | cut -c 1-7` == "chester" ]; then
       module load ugni
       export PAR_HDF5_DIR=$HDF5_DIR
       export PAR_HDF5_LIBS=${HDF5_DIR}/lib/libhdf5_parallel.a
-      export PAR_NC_DIR=${NETCDF_DIR}
-      export PAR_NC_LIBS=${NETCDF_DIR}/lib/libnetcdf_parallel.a
+      #export PAR_NC_DIR=${NETCDF_DIR}
+      #export PAR_NC_LIBS=${NETCDF_DIR}/lib/libnetcdf_parallel.a
       export LUSTRE_DIR=/usr/lib64
       export BZIP2_DIR=${SYSROOT_DIR}/usr
       export CRAY_PMI_DIR=$(echo "${CRAY_PMI_POST_LINK_OPTS}" | sed 's|.*-L\([^ ]*\)/lib64.*|\1|')
