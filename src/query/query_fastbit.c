@@ -5,7 +5,9 @@
 #include <string.h>
 #include "core/common_read.h"
 #include "core/adios_logger.h"
+#include "core/futils.h"
 #include "fastbit_adios.h"
+#include "common_query.h"
 #include <iapi.h>
 #include <math.h>
 
@@ -26,6 +28,7 @@ int64_t getPosInVariable(const ADIOS_VARINFO* v, int n, uint64_t* spatialCoordin
 void getHandleFromBlockAtLeafQuery(int timeStep, int blockIdx, ADIOS_FILE* idxFile, ADIOS_QUERY* q, uint64_t blockSize);
 
 FastBitSelectionHandle createHandle(ADIOS_QUERY* q, const char* registeredArrayName);
+int mEvaluateTestFullRangeFancyQueryOnWhole(ADIOS_FILE* idxFile, ADIOS_QUERY* q, int timeStep);
 
 static inline void scan_r2(int dim, const uint64_t* const dimSize, uint64_t pos,  uint64_t * const result, uint64_t* const scan_start, int d, uint64_t curr0, uint64_t base)
 {
