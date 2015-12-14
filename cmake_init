@@ -527,7 +527,7 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
 #    export FC=/opt/local/bin/openmpif90
 #    export CXX=/opt/local/bin/openmpicxx
     export CC=/usr/local/bin/mpicc
-#    export FC=/usr/local/bin/mpif90
+    export FC=/usr/local/bin/mpif90
     export CXX=/usr/local/bin/mpicxx
     CFLAGS="-g -DO_LARGEFILE=0 -fno-common" 
     export BUILD_WRITE=ON
@@ -538,6 +538,8 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
 #        --with-netcdf=/opt/netcdf \
 #        --with-phdf5=/opt/hdf5 \
 #        --with-hdf5=/opt/hdf5.seq
+    # Homebrew installation of openmpi
+    export MXML_DIR=/opt/adios
 
 
 elif [ `hostname | cut -c 1-7` == "ubuntu" ]; then
