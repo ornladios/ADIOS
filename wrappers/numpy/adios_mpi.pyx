@@ -4,6 +4,8 @@
 .. moduleauthor:: Jong Choi <choij@ornl.gov>
 """
 
+cdef extern from "mpi-compat.h": pass
+
 import numpy as np
 cimport numpy as np
 

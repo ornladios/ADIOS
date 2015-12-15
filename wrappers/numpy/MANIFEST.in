@@ -1,2 +1,3 @@
 include mpi.cfg
+include mpi-compat.h 
 include conf/*.py

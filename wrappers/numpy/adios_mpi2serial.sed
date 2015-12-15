@@ -3,6 +3,7 @@
 ## Example:
 ## sed -f adios_mpi2serial.sed adios_mpi.pyx > adios.pyx
 ##
+s/^cdef extern from \"mpi-compat.h\": pass/#cdef extern from \"mpi-compat.h\": pass/g
 s/^import mpi4py.MPI/#import mpi4py.MPI/g
 s/^cimport mpi4py.MPI/#cimport mpi4py.MPI/g
 s/MPI./MPI_/g
