@@ -819,17 +819,18 @@ elif [ `hostname | cut -c 1-4` == "dyn9" -o `hostname | cut -c 1-3` == "pnb" ]; 
     #    export MPICXX=/opt/local/bin/openmpicxx
     #
     # But should work with default mpicc and gcc, using --disable-fortran
-    # Homebrew installation of openmpi
-    export CC=gcc
-    export FC=gfortran
-    export CXX=g++
+    # Homebrew installation of openmpi and gfortran (from gcc 4.9.2)
+    #   but using Apple's default gcc compiler
+    export CC=/usr/bin/gcc
+    export FC=/usr/local/bin/gfortran
+    export CXX=/usr/bin/g++
     export MPICC=/usr/local/bin/mpicc
     export MPIFC=/usr/local/bin/mpif90
     export MPICXX=/usr/local/bin/mpicxx
 
     CFLAGS="-g -DO_LARGEFILE=0 -fno-common" ${SRCDIR}/configure --prefix=/opt/adios \
         --with-mxml=/opt/adios \
-        --disable-fortran \
+    #    --disable-fortran \
     #        --with-netcdf=/opt/netcdf \
     #        --with-phdf5=/opt/hdf5 \
     #        --with-hdf5=/opt/hdf5.seq
