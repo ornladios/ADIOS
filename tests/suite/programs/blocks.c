@@ -199,6 +199,7 @@ int print_varinfo (ADIOS_FILE *f, int start_step)
 
     v = adios_inq_var (f, "t");
     adios_inq_var_blockinfo (f, v);
+    adios_inq_var_stat (f, v, 0, 1);
 
     printf ("ndim = %d\n",  v->ndim);
     printf ("dims[%llu]",  v->dims[0]);
