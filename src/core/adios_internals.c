@@ -1069,6 +1069,17 @@ int adios_common_define_attribute_byvalue (int64_t group, const char * name
                 }
                 attr->data_size = total_length;
 
+            } else if (type == adios_string) {
+                if (nelems > 1) {
+                    adios_error (err_no_memory, 
+                            "Defining a string attribute (%s/%s) with multiple elements is not supported.\n"
+                            "Define a 'string array' type attribute.\n",
+                            path, name);
+                }
+                attr->value = calloc (size+1,1);
+                memcpy (attr->value, values, size);
+                attr->data_size = size;
+
             } else {
                 attr->value = malloc (nelems*size);
                 memcpy (attr->value, values, nelems*size);
