@@ -237,3 +237,17 @@ void adios_selection_delete (ADIOS_SELECTION *sel)
 }
 
 
+
+#ifdef _NOMPI
+void adios_read_set_relay_client(MPIRelay_client *relayclient)
+{
+    readclient = relayclient;
+    relay_set = 1;
+}
+
+MPIRelay_client*
+adios_read_get_relay_client()
+{
+    return readclient;
+}
+#endif

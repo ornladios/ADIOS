@@ -26,6 +26,11 @@
 #include "core/adios_logger.h"
 #include "core/adios_timing.h"
 
+#ifdef _NOMPI
+#include <mpirelay_client.h>
+#endif
+
+
 #ifdef DMALLOC
 #include "dmalloc.h"
 #endif
@@ -33,9 +38,23 @@
 extern struct adios_transport_struct * adios_transports;
 extern int adios_errno;
 
+#ifdef _NOMPI
+void
+adios_set_mpirelay_client(MPIRelay_client *client)
+{
+    globals_adios_set_mpirelay_client(client);
+}
+#endif
+
 int adios_set_application_id (int id)
 {
     globals_adios_set_application_id (id);
+    return err_no_error;
+}
+
+int adios_set_container_name (char *name)
+{
+    globals_adios_set_container_name(name);
     return err_no_error;
 }
 

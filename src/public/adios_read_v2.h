@@ -26,6 +26,12 @@
 extern "C" {
 #endif
 
+#ifdef _NOMPI
+#include <mpirelay_client.h>
+    static int relay_set = 0;
+    static  MPIRelay_client *readclient = NULL;
+#endif
+    
 /*************************/
 /* Types used in the API */
 /*************************/
@@ -590,6 +596,12 @@ void adios_print_fileinfo (ADIOS_FILE *fp);
 
 #endif  /*__INCLUDED_FROM_FORTRAN_API__*/
 
+
+#ifdef _NOMPI
+extern void adios_read_set_relay_client(MPIRelay_client *relayclient);
+#endif
+    
+    
 #ifdef __cplusplus
 }
 #endif

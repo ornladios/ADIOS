@@ -11,8 +11,38 @@
 
 #include "globals.h"
 
+#ifdef _NOMPI
+#include <mpirelay_client.h>
+#endif
+
 static int globals_adios_appid = -1;
 static int globals_adios_was_set = 0;
+
+static int globals_adios_name_set = 0;
+static char *container_name = NULL;
+
+
+#ifdef _NOMPI
+int mpirelay_set = 0;
+MPIRelay_client *mpirclient = NULL;
+#endif
+
+#ifdef _NOMPI
+void
+globals_adios_set_mpirelay_client(MPIRelay_client *client)
+{
+    mpirclient = client;
+    mpirelay_set = 1;
+}
+
+MPIRelay_client*
+globals_adios_get_mpirelay_client(int *was_set)
+{
+    *was_set = mpirelay_set;
+    return mpirclient;
+}
+#endif
+
 void globals_adios_set_application_id (int id)
 {
     globals_adios_appid = id;
@@ -23,6 +53,25 @@ int globals_adios_get_application_id (int *was_set)
 {
     *was_set = globals_adios_was_set;
     return globals_adios_appid;
+}
+
+void
+globals_adios_set_container_name (char *cname)
+{
+    container_name = strdup(cname);
+    globals_adios_name_set = 1;
+}
+
+char*
+globals_adios_get_container_name (int *name_set)
+{
+    *name_set = globals_adios_name_set;
+    if (globals_adios_name_set) { 
+	return strdup(container_name);
+    }
+    else {
+	return NULL;
+    }
 }
 
 #ifdef HAVE_DATASPACES

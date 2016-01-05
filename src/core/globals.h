@@ -12,13 +12,24 @@
 #define __GLOBALS_H__
 
 #include "config.h"
-
+#ifdef _NOMPI
+#include <mpirelay_client.h>
+#endif
 /** Set an application ID for this program. 
  *  This function is necessary for methods who needs a unique ID from each participating applications.
  *  Currently, this is the DATASPACES/DIMES methods for code coupling of independent applications.
  *
  *  This function is called from the applicatin through adios_set_application_id()
  */
+
+#ifdef _NOMPI
+void
+globals_adios_set_mpirelay_client(MPIRelay_client *client);
+
+MPIRelay_client*
+globals_adios_get_mpirelay_client(int *was_set);
+#endif
+
 void globals_adios_set_application_id (int id);
 
 
@@ -27,6 +38,12 @@ void globals_adios_set_application_id (int id);
   * It also returns a boolean was_set, 0 if it was not set, 1 otherwise.
   */
 int globals_adios_get_application_id (int *was_set);
+
+void
+globals_adios_set_container_name (char *name);
+
+char*
+globals_adios_get_container_name (int *name_set);
 
 
 /* Note: would be nice a <string, int> map for arbitrary globals */
