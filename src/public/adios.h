@@ -15,6 +15,13 @@
 #include "adios_types.h"
 #include "adios_error.h"
 
+#ifdef _NOMPI
+#include <mpirelay_client.h>
+#endif
+
+#ifndef _NOMPI
+#include <mpirelay_server.h>
+#endif
 // ADIOS - Adaptable IO System
 
 #ifdef __cplusplus
@@ -32,6 +39,15 @@ extern "C" {
 // Global setup using the XML file
 // Only processes of the provided communicator can later participate
 // in any adios activity
+
+#ifdef _NOMPI
+    void adios_set_mpirelay_client(MPIRelay_client *client);
+#endif
+
+#ifndef _NOMPI
+    void adios_set_mpirelay_server(MPIRelay_server *server);
+#endif
+    
 int adios_init (const char * config, MPI_Comm comm);
 
 int adios_finalize (int mype);

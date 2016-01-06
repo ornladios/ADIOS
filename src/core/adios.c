@@ -26,11 +26,6 @@
 #include "core/adios_logger.h"
 #include "core/adios_timing.h"
 
-#ifdef _NOMPI
-#include <mpirelay_client.h>
-#endif
-
-
 #ifdef DMALLOC
 #include "dmalloc.h"
 #endif
@@ -43,6 +38,13 @@ void
 adios_set_mpirelay_client(MPIRelay_client *client)
 {
     globals_adios_set_mpirelay_client(client);
+}
+#endif
+
+#ifndef _NOMPI
+adios_set_mpirelay_server(MPIRelay_server *server)
+{
+    globals_adios_set_mpirelay_server(server);
 }
 #endif
 

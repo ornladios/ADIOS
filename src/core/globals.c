@@ -23,8 +23,13 @@ static char *container_name = NULL;
 
 
 #ifdef _NOMPI
-int mpirelay_set = 0;
+int mpirelay_client_set = 0;
 MPIRelay_client *mpirclient = NULL;
+#endif
+
+#ifndef _NOMPI
+int mpirelay_server_set = 0;
+MPIRelay_server *mpirserver = NULL;
 #endif
 
 #ifdef _NOMPI
@@ -32,14 +37,30 @@ void
 globals_adios_set_mpirelay_client(MPIRelay_client *client)
 {
     mpirclient = client;
-    mpirelay_set = 1;
+    mpirelay_client_set = 1;
 }
 
 MPIRelay_client*
 globals_adios_get_mpirelay_client(int *was_set)
 {
-    *was_set = mpirelay_set;
+    *was_set = mpirelay_client_set;
     return mpirclient;
+}
+#endif
+
+#ifndef _NOMPI
+void
+globals_adios_set_mpirelay_server(MPIRelay_server *server)
+{
+    mpirserver = server;
+    mpirelay_server_set = 1;
+}
+
+MPIRelay_server*
+globals_adios_get_mpirelay_server(int *was_set)
+{
+    *was_set = mpirelay_server_set;
+    return mpirserver;
 }
 #endif
 

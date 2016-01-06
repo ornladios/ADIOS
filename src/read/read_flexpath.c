@@ -44,6 +44,7 @@
 #include "config.h"
 #include "public/adios.h"
 #include "public/adios_types.h"
+#include "core/globals.h"
 
 #include "public/adios_read_v2.h"
 #include "core/adios_read_hooks.h"
@@ -1505,9 +1506,11 @@ adios_read_flexpath_init_method (MPI_Comm comm, PairStruct* params)
 
     int name_set;
     int id_set;
-    char *cname = (char*)globals_adios_get_container_name(&name_set);
+    char *cname = globals_adios_get_container_name(&name_set);
     int replica_id = globals_adios_get_application_id(&id_set);
 
+    fprintf(stderr, "\t\t NAME: %s ID: %d\n", cname, replica_id);
+    
     char *string_list;
     char data_contact_info[CONTACT_LENGTH];
     if (!local->tunnel) {

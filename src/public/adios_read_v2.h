@@ -596,7 +596,21 @@ void adios_print_fileinfo (ADIOS_FILE *fp);
 
 #endif  /*__INCLUDED_FROM_FORTRAN_API__*/
 
+extern void
+adios_read_set_container_name(char *name);
 
+extern char*
+adios_read_get_container_name(int *was_set);
+    
+extern void
+adios_read_set_replica_id(int id);
+
+extern int
+adios_read_get_replica_id(int *was_set);
+
+
+    
+    
 #ifdef _NOMPI
 extern void adios_read_set_relay_client(MPIRelay_client *relayclient);
 #endif

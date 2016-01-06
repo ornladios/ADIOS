@@ -15,6 +15,10 @@
 #ifdef _NOMPI
 #include <mpirelay_client.h>
 #endif
+
+#ifndef _NOMPI
+#include <mpirelay_server.h>
+#endif
 /** Set an application ID for this program. 
  *  This function is necessary for methods who needs a unique ID from each participating applications.
  *  Currently, this is the DATASPACES/DIMES methods for code coupling of independent applications.
@@ -28,6 +32,14 @@ globals_adios_set_mpirelay_client(MPIRelay_client *client);
 
 MPIRelay_client*
 globals_adios_get_mpirelay_client(int *was_set);
+#endif
+
+#ifndef _NOMPI
+void
+globals_adios_set_mpirelay_server(MPIRelay_server *server);
+
+MPIRelay_server*
+globals_adios_get_mpirelay_server(int *was_set);
 #endif
 
 void globals_adios_set_application_id (int id);

@@ -229,7 +229,14 @@ static char *getFixedName(char *name);
 
 // mode 0 = control contact, mode 1 = data contact
 #ifdef _NOMPI
-char*
+/* char* */
+/* gather_contacts2(MPIRelay_client *client, char *endpoint, int root, int myrank); */
+
+/* char* */
+/* gather_hostnames2(MPIRelay_client *client, int root, int myrank); */
+
+
+static char*
 gather_contacts2(MPIRelay_client *client, char *endpoint, int root, int myrank)
 {
     int worldsize = MPIRelay_client_size(client);
@@ -247,7 +254,7 @@ gather_contacts2(MPIRelay_client *client, char *endpoint, int root, int myrank)
     return recvbuf;
 }
 
-char*
+static char*
 gather_hostnames2(MPIRelay_client *client, int root, int myrank)
 {
     int worldsize = MPIRelay_client_size(client);

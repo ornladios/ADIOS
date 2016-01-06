@@ -2021,10 +2021,17 @@ adios_flexpath_open(struct adios_file_struct *fd,
 			     &data_contact_info[0],
 			     cname,
 			     WRITER_REPLICA);
-
-    char *allcontacts = gather_contacts(file_data->mpiComm, &data_contact_info[0], 0, file_data->rank);
-    char *allhosts = gather_hostnames(file_data->mpiComm, 0, file_data->rank);
-
+#ifdef _NOMPI
+    char *allcontacts; // fill these out
+    char *allhosts;
+#endif
+    
+#ifndef _NOMPI
+    char *allcontacts =
+	gather_contacts(file_data->mpiComm, &data_contact_info[0], 0, file_data->rank);
+    char *allhosts =
+	gather_hostnames(file_data->mpiComm, 0, file_data->rank);
+#endif
     if (file_data->rank == 0) {
 	report_new_replica(local.ctx, allcontacts, allhosts);
     }

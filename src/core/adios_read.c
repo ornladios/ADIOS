@@ -13,6 +13,10 @@
 #include "core/common_read.h"
 #define BYTE_ALIGN 8
 
+static char *container_name;
+static int replica_id;
+static int cname_was_set;
+static int replica_id_was_set;
 
 const char *adios_errmsg ()
 {
@@ -236,6 +240,18 @@ void adios_selection_delete (ADIOS_SELECTION *sel)
     common_read_selection_delete (sel);
 }
 
+
+void
+adios_read_set_container_name(char *name)
+{
+    globals_adios_set_container_name(name);
+}
+
+void
+adios_read_set_replica_id(int id)
+{
+    globals_adios_set_application_id(id);
+}
 
 
 #ifdef _NOMPI
