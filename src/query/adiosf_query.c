@@ -6,7 +6,7 @@
 
 #define __INCLUDED_FROM_FORTRAN_API__
 #include "public/adios_read_v2.h"
-#include "common_query.h"
+#include "query/common_query.h"
 #include "core/futils.h"
 
 
@@ -89,13 +89,13 @@ void FC_FUNC_(adios_query_evaluate,ADIOS_QUERY_EVALUATE) (
         int      * err
         )
 {
-    ADIOS_SELECTION * result;
+    ADIOS_QUERY_RESULT * result;
     int ret;
-    *err = common_query_evaluate( (ADIOS_QUERY*)*q, 
+    result = common_query_evaluate( (ADIOS_QUERY*)*q, 
                                   (ADIOS_SELECTION*) *sel_outputboundary,
                                   *timestep, 
-                                  *batchsize, 
-                                  &result);
+                                  *batchsize);
+    *err = result->status;
     if (!*err) {
         *sel_result = (int64_t)result;
     } else {

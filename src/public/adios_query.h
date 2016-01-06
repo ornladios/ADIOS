@@ -7,15 +7,13 @@ extern "C" {
 
 #include "adios_read.h"
 
-//#define ADIOS_QUERY_METHOD_COUNT  2
-
-//int gCurrentTimeStep;
 
 enum ADIOS_QUERY_METHOD 
 {
-    ADIOS_QUERY_METHOD_FASTBIT = 0,
-    ADIOS_QUERY_METHOD_ALACRITY = 1,
-    ADIOS_QUERY_METHOD_UNKNOWN = 2,
+    ADIOS_QUERY_METHOD_MINMAX   = 0,
+    ADIOS_QUERY_METHOD_FASTBIT  = 1,
+    ADIOS_QUERY_METHOD_ALACRITY = 2,
+    ADIOS_QUERY_METHOD_UNKNOWN  = 3,
     ADIOS_QUERY_METHOD_COUNT = ADIOS_QUERY_METHOD_UNKNOWN
 };
     
@@ -68,6 +66,38 @@ typedef struct {
     int deleteSelectionWhenFreed;
 } ADIOS_QUERY;
    
+
+enum ADIOS_QUERY_RESULT_STATUS 
+{
+    ADIOS_QUERY_RESULT_ERROR = -1,
+    ADIOS_QUERY_NO_MORE_RESULTS  = 0,
+    ADIOS_QUERY_HAS_MORE_RESULTS = 1
+};
+
+typedef struct {
+    enum ADIOS_QUERY_METHOD         method_used; 
+    enum ADIOS_QUERY_RESULT_STATUS  status;
+    int                             nresults;   // number of ADIOS_SELECTION entries in returned array
+    ADIOS_SELECTION                *selections; // single array of ADIOS_SELECTION (structs)
+    /* 
+       if result is from: ADIOS_QUERY_RESULT *result = adios_query_evaluate(...)
+       then  result->selections[i] is a struct, not a pointer  
+
+       FASTBIT and ALACRITY returns a single selection (nresults=1), whose type is ADIOS_SELECTION_POINTS
+           Number of points that satisfy the query = result->selection->u.points.npoints
+           Delete the selection and the result by calling:
+              free (result->selections->u.points.points);
+              free (result->selections);
+              free (result);
+       MINMAX returns multiple selections, each of them is of type ADIOS_SELECTION_WRITEBLOCK
+           Block id of the Nth returned writeblock selection = result->selection[N].u.block.index
+           Delete all selections at once then the result itself by calling  
+              free (result->selections);
+              free (result);
+     */
+} ADIOS_QUERY_RESULT;
+
+
 
 #ifndef __INCLUDED_FROM_FORTRAN_API__
 
@@ -129,12 +159,12 @@ int64_t adios_query_estimate (ADIOS_QUERY* q, int timeStep);
  *
  */
 
-int  adios_query_evaluate (ADIOS_QUERY* q, 
-			   ADIOS_SELECTION* outputBoundary,// must supply to get results
-			   int timestep,
-			   uint64_t batchSize, // limited by maxResult
-			   ADIOS_SELECTION** queryResult);
-
+ADIOS_QUERY_RESULT * adios_query_evaluate (
+                        ADIOS_QUERY* q, 
+			ADIOS_SELECTION* outputBoundary, // must supply to get results
+			int timestep,
+			uint64_t batchSize // limit on number of blocks/points returned at once
+                     );
 
 void adios_query_free(ADIOS_QUERY* q);
 

@@ -97,8 +97,8 @@ typedef struct {
 /** Selection for reading a subset of a variable. 
  *   A selection is an additive list of bounding boxes and point-sets 
  */
-/*typedef struct ADIOS_SELECTION_STRUCT  ADIOS_SELECTION; */
-typedef struct { 
+typedef struct ADIOS_SELECTION_STRUCT  ADIOS_SELECTION; 
+struct ADIOS_SELECTION_STRUCT  {
        enum ADIOS_SELECTION_TYPE    type; /* Type of selection */
        union {
             ADIOS_SELECTION_BOUNDINGBOX_STRUCT bb;
@@ -106,8 +106,8 @@ typedef struct {
             ADIOS_SELECTION_WRITEBLOCK_STRUCT block;
             ADIOS_SELECTION_AUTO_STRUCT autosel;
        } u;
-       /*ADIOS_SELECTION             *next;*/
-} ADIOS_SELECTION;
+       //ADIOS_SELECTION             *next;
+};
 
 #ifndef __INCLUDED_FROM_FORTRAN_API__
 

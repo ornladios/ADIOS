@@ -39,13 +39,12 @@ void adios_query_set_timestep(int timeStep)
   return common_query_set_timestep(timeStep);
 }
 */
-int  adios_query_evaluate(ADIOS_QUERY* q, 
+ADIOS_QUERY_RESULT * adios_query_evaluate(ADIOS_QUERY* q, 
 			  ADIOS_SELECTION* outputBoundary,
 			  int timeStep, 
-			  uint64_t batchSize, // limited by maxResult
-			  ADIOS_SELECTION** queryResult)
+			  uint64_t batchSize)
 {
-  return common_query_evaluate(q, outputBoundary, timeStep,  batchSize, queryResult);
+  return common_query_evaluate(q, outputBoundary, timeStep,  batchSize);
 }
 
 void adios_query_free(ADIOS_QUERY* q)

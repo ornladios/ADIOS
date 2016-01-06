@@ -1,3 +1,5 @@
+set(query_method_SOURCES ${query_method_SOURCES} query/query_minmax.c)
+
 if(HAVE_FASTBIT)
 set(query_method_SOURCES ${query_method_SOURCES} query/query_fastbit.c)
 set(query_method_SOURCES ${query_method_SOURCES} query/fastbit_adios.c)

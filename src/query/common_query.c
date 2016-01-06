@@ -771,29 +771,35 @@ static ADIOS_SELECTION * convertWriteblockToBoundingBox(ADIOS_QUERY *q, ADIOS_SE
     return bb;
 }
 
-int common_query_evaluate(ADIOS_QUERY* q, 
+ADIOS_QUERY_RESULT * common_query_evaluate(ADIOS_QUERY* q, 
 			  ADIOS_SELECTION* outputBoundary, 
 			  int timeStep, 
-			  uint64_t batchSize, // limited by maxResult
-			  ADIOS_SELECTION** result)
+			  uint64_t batchSize)
 {  
-	double start = 0, end = 0;
+    double start = 0, end = 0;
+    ADIOS_QUERY_RESULT *result = (ADIOS_QUERY_RESULT *) malloc (sizeof(ADIOS_QUERY_RESULT));
+    assert (result);
+    result->method_used = ADIOS_QUERY_METHOD_UNKNOWN;
+    result->nresults = 0;
+    result->selections = NULL;
 #ifdef BREAKDOWN
 	start = dclock();
 #endif
   if (q == 0) {
     log_debug("Error: empty query will not be evaluated!");
-    return -1;
+    return result;
   }
     int actualTimeStep = adios_check_query_at_timestep(q, timeStep);
     if (actualTimeStep == -1) {
-      return -1;
+        result->status = ADIOS_QUERY_RESULT_ERROR;
+        return result;
     }
 
     /*
     if (checkCompatibility(q) != 0) {
       log_error("query components are not compatible at this time step.\n");
-      return -1;
+      result->status = ADIOS_QUERY_RESULT_ERROR;
+      return result;
     }
     */
     /*
@@ -801,11 +807,13 @@ int common_query_evaluate(ADIOS_QUERY* q,
         int updateResult = updateBlockSizeIfNeeded(q, timeStep);
         if (updateResult < 0) {
             log_error("Error with this timestep %d. Can not proceed. \n", timeStep);
-            return -1;
+            result->status = ADIOS_QUERY_RESULT_ERROR;
+            return result;
         }
         if (updateResult > 0) { // blocks were updated. check compatitibity
             if (checkCompatibility(q) <= 0) {
-                return -1;
+                result->status = ADIOS_QUERY_RESULT_ERROR;
+                return result;
             }
         }
     }
@@ -814,36 +822,38 @@ int common_query_evaluate(ADIOS_QUERY* q,
     if ((outputBoundary != NULL) && (outputBoundary->type == ADIOS_SELECTION_WRITEBLOCK)) {
         outputBoundary = convertWriteblockToBoundingBox(q, &outputBoundary->u.block, timeStep);
         if (!outputBoundary) {
-	  adios_error(err_invalid_argument,
+            adios_error(err_invalid_argument,
 		      "Attempt to use writeblock output selection on a query where not "
 		      "all variables participating have the same varblock bounding box "
 		      "at that writeblock index (index = %d)\n",
 		      outputBoundary->u.block.index);
-	  return -1;
+            result->status = ADIOS_QUERY_RESULT_ERROR;
+            return result;
         }
         freeOutputBoundary = 1;
     }
 
     enum ADIOS_QUERY_METHOD m = detect_and_set_query_method (q);
 
-    if (query_hooks[m].adios_query_evaluate_fn != NULL) {
-      int retval = query_hooks[m].adios_query_evaluate_fn(q, timeStep, batchSize, outputBoundary, result);	      
-      if (freeOutputBoundary) common_read_selection_delete(outputBoundary);
-
-#ifdef BREAKDOWN
-      end = dclock();
-      printf("total time [frame + plugin + adios] : %f \n", end - start);
-#endif
-      return retval;
+    if (query_hooks[m].adios_query_evaluate_fn != NULL) 
+    {
+        query_hooks[m].adios_query_evaluate_fn(q, timeStep, batchSize, outputBoundary, result);
+        result->method_used = m;
+        if (freeOutputBoundary) common_read_selection_delete(outputBoundary);
     } 
-    log_debug ("No selection method is supported for method: %d\n", m);
+    else 
+    { 
+        log_debug ("No selection method is supported for method: %d\n", m);
+        result->method_used = ADIOS_QUERY_METHOD_UNKNOWN;
+        result->status = ADIOS_QUERY_RESULT_ERROR;
+    }
 
 #ifdef BREAKDOWN
       end = dclock();
       printf("total time [frame + plugin + adios] : %f \n", end - start);
 #endif
 
-    return -1;
+    return result;
 }
 
 

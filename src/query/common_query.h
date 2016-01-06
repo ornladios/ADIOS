@@ -16,7 +16,9 @@ void common_query_init();
 //void common_query_set_method(enum ADIOS_QUERY_METHOD method);
 
 int common_query_is_method_available(enum ADIOS_QUERY_METHOD method);
-  int adios_get_actual_timestep(ADIOS_QUERY* q, int timeStep);
+int adios_get_actual_timestep(ADIOS_QUERY* q, int timeStep);
+
+void common_query_set_method (ADIOS_QUERY* q, enum ADIOS_QUERY_METHOD method);
 
 ADIOS_QUERY* common_query_create(ADIOS_FILE* f, 				 
 				 ADIOS_SELECTION* queryBoundry,
@@ -33,11 +35,10 @@ int64_t common_query_estimate(ADIOS_QUERY* q, int timestep);
 
 //void common_query_set_timestep(int timeStep);
 
-int common_query_evaluate(ADIOS_QUERY* q, 
+ADIOS_QUERY_RESULT * common_query_evaluate(ADIOS_QUERY* q, 
 			  ADIOS_SELECTION* outputBoundry,
 			  int timestep,
-			  uint64_t batchSize, 
-			  ADIOS_SELECTION** result);
+			  uint64_t batchSize);
 
 void common_query_free(ADIOS_QUERY* q);
 

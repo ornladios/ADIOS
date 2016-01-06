@@ -94,7 +94,7 @@ int adios_databuffer_resize (struct adios_file_struct *fd, uint64_t size)
     return retval;
 }
 
-int adios_databuffer_free (struct adios_file_struct *fd)
+void adios_databuffer_free (struct adios_file_struct *fd)
 {
     if (fd->allocated_bufptr)
         free (fd->allocated_bufptr);
