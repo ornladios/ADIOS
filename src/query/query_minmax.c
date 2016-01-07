@@ -533,13 +533,6 @@ static int can_evaluate(ADIOS_QUERY* q, int timestep, ADIOS_SELECTION **sel, int
 // Return the total number of results available, -1 on error
 static int do_evaluate_now (ADIOS_QUERY *q, int timestep)
 {
-    const int absoluteTimestep = adios_get_actual_timestep(q, timestep);
-    // timestep is always 0 for streaming; the absolute timestep for files
-    // absoluteTimestep makes it possible to realize we have a new step
-    // in a stream here
-
-    // this is the first call to evaluate the query for a new timestep
-
     // run the can_evaluate routine to get the statistics and block info
     ADIOS_SELECTION *qsel;
     int nblocks;
@@ -556,7 +549,6 @@ static int do_evaluate_now (ADIOS_QUERY *q, int timestep)
     INTERNAL(q)->current_blockid = 0;
 
     q->resultsReadSoFar = 0;
-    q->onTimeStep = absoluteTimestep;
 
     // evaluate query for ALL blocks, fill q->queryInternal->blocks bool array 
     q->maxResultsDesired =  minmax_process(q, timestep, false);
@@ -582,19 +574,20 @@ int adios_query_minmax_can_evaluate(ADIOS_QUERY* q)
 }
 
 
-int64_t adios_query_minmax_estimate(ADIOS_QUERY* q, int timestep) {
-    /*
-    ADIOS_SELECTION *qsel;
-    int nblocks;
-    int supported = can_evaluate (q, timestep, &qsel, &nblocks);
-    if (!supported) {
-        adios_error (err_incompatible_queries, 
-                "The query is not compatible with the minmax method\n");
-        return -1;
+int64_t adios_query_minmax_estimate(ADIOS_QUERY* q, int timestep) 
+{
+    const int absoluteTimestep = adios_get_actual_timestep(q, timestep);
+    // timestep is always 0 for streaming; the absolute timestep for files
+    // absoluteTimestep makes it possible to realize we have a new step
+    // in a stream here
+
+    int retval = do_evaluate_now (q, timestep);
+    if (retval > -1) {
+        // this is treated as the first call to evaluate the query for a new timestep
+        // so no need to evaluate again when the evaluate function is called for the same timestep
+        q->onTimeStep = absoluteTimestep;
     }
-    return nblocks;
-    */
-    return do_evaluate_now (q, timestep);
+    return retval;
 }
 
 
