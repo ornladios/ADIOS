@@ -157,7 +157,6 @@ if(BUILD_WRITE)
                      write/adios_mpi_lustre.c
                      write/adios_mpi_amr.c
                      write/adios_posix.c
-                     write/adios_posix1.c
                      write/adios_var_merge.c)
 
     if(HAVE_BGQ)
@@ -196,7 +195,7 @@ if(BUILD_WRITE)
                      read/read_bp_staged.c 
                      read/read_bp_staged1.c 
                      write/adios_posix.c 
-                     write/adios_posix1.c)
+                     )
 
 #start adiosf.a and adiosf_v1.a
     if(BUILD_FORTRAN)
@@ -229,7 +228,7 @@ if(BUILD_WRITE)
                        read/read_bp_staged.c 
                        read/read_bp_staged1.c 
                        write/adios_posix.c 
-                       write/adios_posix1.c)
+                       )
 
         set(FortranLibMPISources write/adios_mpi.c
                          write/adios_mpi_lustre.c
