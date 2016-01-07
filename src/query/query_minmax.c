@@ -231,8 +231,8 @@ static int minmax_evaluate_node (ADIOS_QUERY* q, int timestep, int nblocks, char
                     uint64_t *pg_count = q->varinfo->blockinfo[i+block_start_idx].count;
                     int k;
                     for (k = 0; k < bb.ndim; k++) {
-                        if (bb.start[k]+bb.count[k] < pg_start[k] ||
-                            pg_start[k]+pg_count[k] < bb.start[k] )
+                        if (bb.start[k]+bb.count[k] <= pg_start[k] ||
+                            pg_start[k]+pg_count[k] <= bb.start[k] )
                             blocks[i] = 0;
                     }
                 } 
