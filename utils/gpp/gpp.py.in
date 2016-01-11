@@ -22,10 +22,10 @@ def checkXML (config_file, path):
     if rv == 0:
         return 'success'
     elif rv == 32512:  # System unable to find adios_lint command
-        print "Unable to find adios_lint. Proceeding with code generation"
+        print("Unable to find adios_lint. Proceeding with code generation.")
         return 'success'
     else:
-        print "gpp.py failed."
+        print("gpp.py failed.")
         return 'failure'
 
 
@@ -58,11 +58,11 @@ def get_c_groupsize_code (group):
 
 
 def get_fortran_groupsize_code (group):
-    #print 'Get Fortran Groupsize code for group "'+group.get_name()+'"'
+    #print('Get Fortran Groupsize code for group "'+group.get_name()+'"')
     groupsize_code_string = ''
     groupsize_code_string += 'adios_groupsize = '
     for v in group.get_vars():
-        #print '  count variable "'+v.get_fullpath()+'"'
+        #print('  count variable "'+v.get_fullpath()+'"')
         if (v.is_scalar() ):
             if v.get_type() != 'string':
                 groupsize_code_string += ('%d' % type_mapper.get_size (v.get_type() ) + ' &\n                + ')
@@ -72,7 +72,7 @@ def get_fortran_groupsize_code (group):
             groupsize_code_string += ('%d * ' % type_mapper.get_size (v.get_type() ) )
 
             for d in v.get_dimensions():
-                #print '  count dim "'+d+'"'
+                #print('  count dim "'+d+'"')
                 # need to check whether this is the timestep
                 groupsize_code_string += '(' + d + ') * '
 
@@ -85,7 +85,7 @@ def get_fortran_groupsize_code (group):
 
     groupsize_code_string += '\ncall adios_group_size (adios_handle, adios_groupsize, adios_totalsize, adios_err)'
 
-    #print 'Done Fortran Groupsize'
+    #print('Done Fortran Groupsize')
     return groupsize_code_string;
 
 
@@ -215,7 +215,7 @@ def generate_fortran (config):
 
 
 def generate_c (config):
-    #print "c"
+    #print("c")
 
     # Output a gwrite_*.ch file for each group in the config
     for group in config.get_groups():
@@ -247,7 +247,7 @@ def main (argv=None):
   
     # Must be called with one argument, the name of the xml file
     if len (sys.argv) != 2:
-        print 'Usage: gpp.py <config file>\n'
+        print('Usage: gpp.py <config file>\n')
         return 1
 
 
@@ -268,7 +268,7 @@ def main (argv=None):
     elif lang == 'c' or lang == 'cpp':
         generate_c (config)
     else:
-        print "Fatal: Language unknown or unspecified"
+        print("Fatal: Language unknown or unspecified")
         raise SystemExit
 
 
