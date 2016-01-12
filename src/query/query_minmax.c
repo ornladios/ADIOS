@@ -44,6 +44,7 @@ static void free_internal (ADIOS_QUERY *q)
         if (qi->blocks)
             free (qi->blocks);
         free (qi);
+        q->queryInternal = NULL;
     }
 }
 
@@ -626,6 +627,7 @@ void adios_query_minmax_evaluate(ADIOS_QUERY* q,
             queryResult->status = ADIOS_QUERY_RESULT_ERROR;
             return;
         }
+        q->onTimeStep = absoluteTimestep;
         INTERNAL(q)->outputBoundary = outputBoundry;
     } 
     else 
