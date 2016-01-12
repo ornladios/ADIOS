@@ -32,7 +32,8 @@ check_C=local_array_time \
 	steps_read_stream \
 	blocks \
 	build_standard_dataset \
-	transforms_writeblock_read
+	transforms_writeblock_read \
+	query_minmax
 
 test_C=hashtest copy_subvolume transforms_specparse group_free_test
 
@@ -222,6 +223,12 @@ group_free_test_LDADD = $(top_builddir)/src/libadios_nompi.a $(ADIOSLIB_SEQ_LDAD
 group_free_test_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_SEQ_LDFLAGS)
 group_free_test_CPPFLAGS = -I$(top_srcdir)/src $(ADIOSLIB_SEQ_CPPFLAGS) -I$(top_builddir)/src/public
 group_free_test.o: group_free_test.c
+
+query_minmax_SOURCES=query_minmax.c
+query_minmax_LDADD = $(top_builddir)/src/libadios_nompi.a $(ADIOSLIB_SEQ_LDADD)
+query_minmax_LDFLAGS = $(AM_LDFLAGS) $(ADIOSLIB_SEQ_LDFLAGS)
+query_minmax_CPPFLAGS = -I$(top_srcdir)/src $(ADIOSLIB_SEQ_CPPFLAGS) -I$(top_builddir)/src/public
+query_minmax.o: query_minmax.c
 
 EXTRA_DIST = adios_amr_write.xml adios_amr_write_2vars.xml \
              posix_method.xml local_array_time.xml  \
