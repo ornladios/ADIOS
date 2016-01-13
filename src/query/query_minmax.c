@@ -23,7 +23,9 @@
 typedef struct {
     int nblocks;
     char *blocks;  // 0-1 boolean flag for each writeblock, 1=matches query
+    int is_outputBoundary_set; // did we set outputBoundary
     ADIOS_SELECTION *outputBoundary; // remember output selection from first eval call (for one step)
+    ADIOS_SELECTION *rightmostsel; // rightmost leaf's selection saved at top, from can_evaluate()
 
     int current_blockid; // end of last evaluation (remember it to be able 
                          // to continue in consecutive evaluate calls)
@@ -387,16 +389,6 @@ static int minmax_process(ADIOS_QUERY* q, int timestep, bool estimate)
     ADIOS_SELECTION *nullsel = NULL;
     int nmatches = minmax_process_rec(q, timestep, nblocks, blocks, &nullsel, estimate); 
     
-    /* FIXME: obsolete: count the number of matches block IDs 
-    int i;
-    int nmatch = 0;
-    for (i = 0; i < nblocks; i++)
-    {
-        if (blocks[i])
-            nmatch++;
-    }
-    */
-
     return nmatches;
 }
 
@@ -482,7 +474,7 @@ static int can_evaluate(ADIOS_QUERY* q, int timestep, ADIOS_SELECTION **sel, int
            ) 
         {
             if (!q->varinfo)
-                common_read_inq_var (q->file, q->varName); // get per block statistics
+                q->varinfo = common_read_inq_var (q->file, q->varName); // get per block statistics
             if (!q->varinfo->statistics)
                 common_read_inq_var_stat (q->file, q->varinfo, 0, 1); // get per block statistics
             if (!q->varinfo->blockinfo)
@@ -548,8 +540,9 @@ static int do_evaluate_now (ADIOS_QUERY *q, int timestep)
     create_internal (q);
     internal_alloc_blocks (q, nblocks);
     INTERNAL(q)->current_blockid = 0;
-
+    INTERNAL(q)->rightmostsel = qsel;
     q->resultsReadSoFar = 0;
+    INTERNAL(q)->is_outputBoundary_set = 0;
 
     // evaluate query for ALL blocks, fill q->queryInternal->blocks bool array 
     q->maxResultsDesired =  minmax_process(q, timestep, false);
@@ -620,7 +613,7 @@ void adios_query_minmax_evaluate(ADIOS_QUERY* q,
             queryResult->status = ADIOS_QUERY_RESULT_ERROR;
             return;
         }
-        */
+         */
 
         int nresults = do_evaluate_now (q, timestep);
         if (nresults == -1) {
@@ -629,17 +622,33 @@ void adios_query_minmax_evaluate(ADIOS_QUERY* q,
         }
         q->onTimeStep = absoluteTimestep;
         INTERNAL(q)->outputBoundary = outputBoundry;
+        INTERNAL(q)->is_outputBoundary_set = 1;
     } 
     else 
     { 
         assert (q->queryInternal);
-        if (((MINMAX_INTERNAL*)(q->queryInternal))->outputBoundary != outputBoundry) {
-            adios_error (err_incompatible_queries, 
+        if (!INTERNAL(q)->is_outputBoundary_set)
+        {
+            INTERNAL(q)->outputBoundary = outputBoundry;
+        }
+        else if (((MINMAX_INTERNAL*)(q->queryInternal))->outputBoundary != outputBoundry)
+        {
+            adios_error (err_incompatible_queries,
                     "%s: follow-up query evaluation calls must use the same outputBoundary selection"
                     "as the first evaluation call\n", __func__);
             queryResult->status = ADIOS_QUERY_RESULT_ERROR;
             return;
         }
+    }
+
+    /* FIXME: This check ought to be done before evaluating the query at the first call, but
+     * internal->rightmostsel is only set after can_evaluate() was executed in do_evaluate_now().
+     */
+    if (!selections_are_minmax_compatible (INTERNAL(q)->rightmostsel, INTERNAL(q)->outputBoundary)) {
+        adios_error (err_incompatible_queries,
+                "%s: the outputBoundary selection is not compatible with the "
+                "selections used in the query conditions\n", __func__);
+        return;
     }
 
     // calculate how many results we will return at this time
