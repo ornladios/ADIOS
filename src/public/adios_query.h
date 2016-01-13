@@ -113,7 +113,7 @@ ADIOS_QUERY* adios_query_create (ADIOS_FILE* f,
 
 
 ADIOS_QUERY* adios_query_combine (ADIOS_QUERY* q1, 
-                                  enum ADIOS_CLAUSE_OP_MODE combineOp,		    
+                                  enum ADIOS_CLAUSE_OP_MODE combineOp,
                                   ADIOS_QUERY* q2);
 
 /* 
@@ -147,10 +147,10 @@ int64_t adios_query_estimate (ADIOS_QUERY* q, int timeStep);
  * 
  * IN:  q               query
  *      timestep        timestep of interest
- *	batchSize       max size of results to return of this call
+ *      batchSize       max size of results to return of this call
  *      outputBoundary  query results will be mapped to this selection
- *	                outputBoundary must match the selections used when construct the query
- *			if NULL, then will use the first selection used in query
+ *                      outputBoundary must match the selections used when construct the query
+ * if NULL, then will use the first selection used in query
  * OUT: queryResult     list of points
  *                      NULL if no result      
  * RETURN:  -1: error
@@ -160,10 +160,10 @@ int64_t adios_query_estimate (ADIOS_QUERY* q, int timeStep);
  */
 
 ADIOS_QUERY_RESULT * adios_query_evaluate (
-                        ADIOS_QUERY* q, 
-			ADIOS_SELECTION* outputBoundary, // must supply to get results
-			int timestep,
-			uint64_t batchSize // limit on number of blocks/points returned at once
+                         ADIOS_QUERY* q,
+                         ADIOS_SELECTION* outputBoundary, // must supply to get results
+                         int timestep,
+                         uint64_t batchSize // limit on number of blocks/points returned at once
                      );
 
 void adios_query_free(ADIOS_QUERY* q);

@@ -13,7 +13,7 @@
 static struct adios_query_hooks_struct * query_hooks = 0;
 
 static int getTotalByteSize (ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* sel, 
-			     uint64_t* total_byte_size, uint64_t* dataSize, int timestep);
+                 uint64_t* total_byte_size, uint64_t* dataSize, int timestep);
 
 int isCompatible(ADIOS_QUERY* q1, ADIOS_QUERY* q2);
 
@@ -59,9 +59,9 @@ void common_query_finalize()
     if (query_hooks_initialized) {
         enum ADIOS_QUERY_METHOD m;
         for (m=0; m < ADIOS_QUERY_METHOD_COUNT; m++) {
-	  if (query_hooks[m].adios_query_finalize_fn != NULL) {
-	    query_hooks[m].adios_query_finalize_fn();
-	  }
+      if (query_hooks[m].adios_query_finalize_fn != NULL) {
+        query_hooks[m].adios_query_finalize_fn();
+      }
         }
         // Do not free query_hooks here because they are initialized only once
         // in common_query_init ---> adios_query_hooks_init()
@@ -70,10 +70,10 @@ void common_query_finalize()
 }
 
 int common_query_is_method_available(enum ADIOS_QUERY_METHOD method) {
-	if (method < 0 || method >= ADIOS_QUERY_METHOD_COUNT)
-		return 0;
-	else
-		return (query_hooks[method].adios_query_evaluate_fn != 0);
+    if (method < 0 || method >= ADIOS_QUERY_METHOD_COUNT)
+        return 0;
+    else
+        return (query_hooks[method].adios_query_evaluate_fn != 0);
 }
 
 void common_query_set_method (ADIOS_QUERY* q, enum ADIOS_QUERY_METHOD method) 
@@ -91,29 +91,29 @@ void common_query_set_method (ADIOS_QUERY* q, enum ADIOS_QUERY_METHOD method)
 // Choose a query method which can work on this query
 static enum ADIOS_QUERY_METHOD detect_and_set_query_method(ADIOS_QUERY* q)
 {
-	enum ADIOS_QUERY_METHOD m;
-	if (q->method != ADIOS_QUERY_METHOD_UNKNOWN) {
-		// Was set by user manually
-		return q->method;
-	}
-	// Look for a method that can evaluate this query
-	for (m=0; m < ADIOS_QUERY_METHOD_COUNT; m++) {
-		// without checking whether *evaluate_fn is defined,
-		// it causes crash when idx is not used for fastbit. (i.e. m=0, returns 0, m=1, crashes at "found = nullpoiint(q)"
-		if (query_hooks[m].adios_query_can_evaluate_fn == NULL) {
-		  continue;
-		}
-		int found = query_hooks[m].adios_query_can_evaluate_fn(q);
-		if (found) {
-		  // q->method = m;
-		  common_query_set_method(q, m);
-		  return m;
-		}
-	}
-	// return default that always works
-	//q->method = ADIOS_QUERY_METHOD_FASTBIT;
-	common_query_set_method(q, ADIOS_QUERY_METHOD_FASTBIT);
-	return ADIOS_QUERY_METHOD_FASTBIT;
+    enum ADIOS_QUERY_METHOD m;
+    if (q->method != ADIOS_QUERY_METHOD_UNKNOWN) {
+        // Was set by user manually
+        return q->method;
+    }
+    // Look for a method that can evaluate this query
+    for (m=0; m < ADIOS_QUERY_METHOD_COUNT; m++) {
+        // without checking whether *evaluate_fn is defined,
+        // it causes crash when idx is not used for fastbit. (i.e. m=0, returns 0, m=1, crashes at "found = nullpoiint(q)"
+        if (query_hooks[m].adios_query_can_evaluate_fn == NULL) {
+          continue;
+        }
+        int found = query_hooks[m].adios_query_can_evaluate_fn(q);
+        if (found) {
+          // q->method = m;
+          common_query_set_method(q, m);
+          return m;
+        }
+    }
+    // return default that always works
+    //q->method = ADIOS_QUERY_METHOD_FASTBIT;
+    common_query_set_method(q, ADIOS_QUERY_METHOD_FASTBIT);
+    return ADIOS_QUERY_METHOD_FASTBIT;
 }
 
 int adios_get_actual_timestep(ADIOS_QUERY* q, int timeStep)
@@ -151,33 +151,33 @@ static int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
     if ((q->left == NULL) && (q->right == NULL)) 
     {      // leaf 
       if ((q->file == NULL) || (q->varName == NULL)) {
-	  log_error ("Query has no file or var info\n");
-	  return -1;
+      log_error ("Query has no file or var info\n");
+      return -1;
       }
 
       if ((q->file->is_streaming == 1) && (timeStep != 0)) {
-	adios_error(err_invalid_query_value, "TimeStep for streaming file should always be 0.\n");
-	return -1;
+    adios_error(err_invalid_query_value, "TimeStep for streaming file should always be 0.\n");
+    return -1;
       }
 
       if (q->file->is_streaming == 1) {
-	  timeStep = q->file->current_step;
+      timeStep = q->file->current_step;
       }
 
       if (q->varinfo != NULL) {
-	if (q->onTimeStep  == timeStep) {
-	  return timeStep; // returning call to get more values
-	}
+    if (q->onTimeStep  == timeStep) {
+      return timeStep; // returning call to get more values
+    }
       }
 
       ADIOS_VARINFO* v = common_read_inq_var(q->file, q->varName);
       if (v == NULL) {
-	adios_error (err_invalid_varname, "Query Invalid variable '%s':\n%s",
-		     q->varName, adios_get_last_errmsg());
-	return -1;
+    adios_error (err_invalid_varname, "Query Invalid variable '%s':\n%s",
+             q->varName, adios_get_last_errmsg());
+    return -1;
       }
       if (q->varinfo != NULL) {
-	common_read_free_varinfo(q->varinfo);
+    common_read_free_varinfo(q->varinfo);
       }
       q->varinfo = v;
 
@@ -187,7 +187,7 @@ static int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
 
       if (getTotalByteSize(q->file, v, q->sel, &total_byte_size, &dataSize, timeStep) < 0) {
         adios_error(err_incompatible_queries, "Unable to create query.");
-	return -1;
+    return -1;
       }
 
       log_debug("%s, raw data size=%llu\n", q->condition, dataSize);
@@ -201,13 +201,13 @@ static int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
       int rightTimeStep = adios_check_query_at_timestep(q->right, timeStep);
 
       if ((rightTimeStep == -1) || (leftTimeStep == -1)) {
-	return -1;
+    return -1;
       }
       if (isCompatible(q->left, q->right) != 0) {
         adios_error (err_incompatible_queries, 
-		     "Found queries' selections are not compatible actual timestep: %d.\n", leftTimeStep);
+             "Found queries' selections are not compatible actual timestep: %d.\n", leftTimeStep);
 
-	return -1;
+    return -1;
       }
       q->rawDataSize = ((ADIOS_QUERY*)(q->left))->rawDataSize;
       return leftTimeStep;
@@ -246,7 +246,7 @@ void common_query_free(ADIOS_QUERY* q)
   if (q->method != ADIOS_QUERY_METHOD_UNKNOWN) {
       assert(q->method < ADIOS_QUERY_METHOD_COUNT);
       if (query_hooks[q->method].adios_query_free_fn != NULL) {
-	query_hooks[q->method].adios_query_free_fn(q);
+    query_hooks[q->method].adios_query_free_fn(q);
       }
   }
 
@@ -254,7 +254,7 @@ void common_query_free(ADIOS_QUERY* q)
 }
 
 static int getTotalByteSize (ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* sel, 
-			     uint64_t* total_byte_size, uint64_t* dataSize, int timestep)                             
+                 uint64_t* total_byte_size, uint64_t* dataSize, int timestep)
 {
   *total_byte_size = common_read_type_size (v->type, v->value);    
   *dataSize = 1; 
@@ -264,7 +264,7 @@ static int getTotalByteSize (ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* s
     for (s=0; s<v->ndim; s++) {
          *total_byte_size *=v->dims[s];
          *dataSize *= v->dims[s];
-         //	log_debug(" dim %" PRIu64 "default count %" PRIu64 "\n", s, v->dims[s]);
+         //    log_debug(" dim %" PRIu64 "default count %" PRIu64 "\n", s, v->dims[s]);
     }
     return 0;
   }
@@ -279,16 +279,16 @@ static int getTotalByteSize (ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* s
       int s=0;
 
       for (s=0; s<v->ndim; s++) {
-	   if (start[s]+count[s] > v->dims[s]) {
-	     log_error(" Invalid bounding box at %dth dim: start %" PRIu64 " + count %" PRIu64 " exceeds dim size: %" PRIu64 "\n", s, start[s], count[s], v->dims[s]);
-	     return -1;
-	   }
-	   *total_byte_size *=count[s];
-	   *dataSize *= count[s];
-//	   log_debug(" dim %" PRIu64 "count %" PRIu64 " \n", s, count[s]);
+       if (start[s]+count[s] > v->dims[s]) {
+         log_error(" Invalid bounding box at %dth dim: start %" PRIu64 " + count %" PRIu64 " exceeds dim size: %" PRIu64 "\n", s, start[s], count[s], v->dims[s]);
+         return -1;
+       }
+       *total_byte_size *=count[s];
+       *dataSize *= count[s];
+//       log_debug(" dim %" PRIu64 "count %" PRIu64 " \n", s, count[s]);
       }
       
-//	   log_debug("\tThe data size is = %" PRIu64 " \n", *dataSize);
+//       log_debug("\tThe data size is = %" PRIu64 " \n", *dataSize);
       break;
     }
   case ADIOS_SELECTION_POINTS:
@@ -307,31 +307,31 @@ static int getTotalByteSize (ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* s
       int min = v->nblocks[0];
       int absBlockCounter = wb->index;
 
-      if (v->nsteps > 1) {	// all timesteps are known, can get abs
-	for (i=0; i<v->nsteps; i++) 
-	  {
-	    int nBlocksAtStep = v->nblocks[i];	  
-	    if (nBlocksAtStep < min) {
-	      min = nBlocksAtStep;
-	    }
-	    log_debug("\t\t   currstep=%d nblocks=%d\n", i, nBlocksAtStep);
-	    if (i < timestep) {
-	      absBlockCounter += nBlocksAtStep;
-	    }
-	  }
+      if (v->nsteps > 1) {    // all timesteps are known, can get abs
+    for (i=0; i<v->nsteps; i++)
+      {
+        int nBlocksAtStep = v->nblocks[i];
+        if (nBlocksAtStep < min) {
+          min = nBlocksAtStep;
+        }
+        log_debug("\t\t   currstep=%d nblocks=%d\n", i, nBlocksAtStep);
+        if (i < timestep) {
+          absBlockCounter += nBlocksAtStep;
+        }
+      }
       }
 
       if (wb->index > min) {
-	  log_error("Error: Unable to handle this block index %d over all the timesteps. Stop.\n", wb->index);
-	  return -1;
+      log_error("Error: Unable to handle this block index %d over all the timesteps. Stop.\n", wb->index);
+      return -1;
       }
 
       int j=0;
       for (j=0; j<v->ndim; j++)
-	{
+    {
           *total_byte_size *= v->blockinfo[absBlockCounter].count[j];
           *dataSize *= v->blockinfo[absBlockCounter].count[j];
-	}
+    }
 
       log_debug("\t\t   block %d, abs id:%d, bytes: %" PRIu64 ", size =  %" PRIu64 " \n", wb->index, absBlockCounter, *total_byte_size, *dataSize);
 
@@ -359,17 +359,17 @@ static void initialize(ADIOS_QUERY* result)
 
 
 ADIOS_QUERY* common_query_create(ADIOS_FILE* f, 
-				 ADIOS_SELECTION* queryBoundary,
-				 const char* varName,
-				 enum ADIOS_PREDICATE_MODE op,
-				 const char* value)
+                 ADIOS_SELECTION* queryBoundary,
+                 const char* varName,
+                 enum ADIOS_PREDICATE_MODE op,
+                 const char* value)
 {
     log_debug("[Is caller using Fortran?] %d\n", futils_is_called_from_fortran());
   //syncTimeStep(f);
     if (query_hooks == NULL) {
-	adios_error(err_operation_not_supported,
-		    "ADIOS Query Library Error: Query environment is not initialized.\n");
-	return NULL;
+    adios_error(err_operation_not_supported,
+            "ADIOS Query Library Error: Query environment is not initialized.\n");
+    return NULL;
         //exit(EXIT_FAILURE);
     }
 
@@ -380,7 +380,7 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f,
         {
             adios_error (err_unsupported_selection, 
                     "Query create: selection type is not supported in queries. "
-                    "Choose either boundingbox, points or writeblock selection\n");	       
+                    "Choose either boundingbox, points or writeblock selection\n");
             return NULL;
         }
     }
@@ -394,17 +394,17 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f,
         return NULL;
     }
 
-	// NOTE: No longer replacing default bounding box here; each query engine
-	// should handle q->sel == NULL by themselves, as this is a clearer indication
+    // NOTE: No longer replacing default bounding box here; each query engine
+    // should handle q->sel == NULL by themselves, as this is a clearer indication
     // to the query engine that the user is query the whole dataset rather than some
     // subset
-	//    int defaultBoundaryUsed = 0;
-	//    if (queryBoundary == NULL) {
-	//#ifdef ALACRITY
-	//        queryBoundary = getAdiosDefaultBoundingBox(v);
-	//        defaultBoundaryUsed = 1;
-	//#endif
-	//    }
+    //    int defaultBoundaryUsed = 0;
+    //    if (queryBoundary == NULL) {
+    //#ifdef ALACRITY
+    //        queryBoundary = getAdiosDefaultBoundingBox(v);
+    //        defaultBoundaryUsed = 1;
+    //#endif
+    //    }
 
     //
     // create selection string for fastbit
@@ -443,43 +443,42 @@ ADIOS_QUERY* common_query_create(ADIOS_FILE* f,
 
     return result;
 }
-			
-static int isSelectionCompatible(ADIOS_SELECTION* first, ADIOS_SELECTION* second)			  
-{
-  if ((first == NULL) || (second == NULL)) {
-    return 0;
-  }
 
-  switch (first->type) {
-  case  ADIOS_SELECTION_BOUNDINGBOX:    
-    if (second->type != ADIOS_SELECTION_BOUNDINGBOX) {
-        log_error("Error! Not supported: comparing bounding box to another type \n");
-	return -1;
+static int isSelectionCompatible(ADIOS_SELECTION* first, ADIOS_SELECTION* second)
+{
+    if ((first == NULL) || (second == NULL)) {
+        return 0;
     }
-    
-    return 0;
-  case ADIOS_SELECTION_POINTS:
-    if (second->type != ADIOS_SELECTION_POINTS) {
-        log_error("Error! Not supported: comparing adios points to another type \n");
-	return -1;
+
+    switch (first->type) {
+        case  ADIOS_SELECTION_BOUNDINGBOX:
+            if (second->type != ADIOS_SELECTION_BOUNDINGBOX) {
+                log_error("Error! Not supported: comparing bounding box to another type \n");
+                return -1;
+            }
+            return 0;
+        case ADIOS_SELECTION_POINTS:
+            if (second->type != ADIOS_SELECTION_POINTS) {
+                log_error("Error! Not supported: comparing adios points to another type \n");
+                return -1;
+            }
+            const ADIOS_SELECTION_POINTS_STRUCT *pt1 = &(first->u.points);
+            const ADIOS_SELECTION_POINTS_STRUCT *pt2 = &(second->u.points);
+
+            if (pt1 -> npoints != pt2->npoints) {
+                log_error("Error! point selections have different size. %llu != %llu\n", pt1->npoints, pt2->npoints);
+                return -1;
+            }
+            return 1;
+        case ADIOS_SELECTION_WRITEBLOCK:
+            if (second->type != ADIOS_SELECTION_WRITEBLOCK) {
+                log_error("Error! Not supported: comparing adios blocks to another type \n");
+                return -1;
+            }
+            return 0;
+        default:
+            return 0;
     }
-    const ADIOS_SELECTION_POINTS_STRUCT *pt1 = &(first->u.points);
-    const ADIOS_SELECTION_POINTS_STRUCT *pt2 = &(second->u.points);
-    
-    if (pt1 -> npoints != pt2->npoints) {
-      log_error("Error! point selections have different size. %llu != %llu\n", pt1->npoints, pt2->npoints);
-      return -1;
-    }
-    return 1;
-  case ADIOS_SELECTION_WRITEBLOCK:
-    if (second->type != ADIOS_SELECTION_WRITEBLOCK) {
-        log_error("Error! Not supported: comparing adios blocks to another type \n");
-	return -1;
-    }      
-    return 0;
-  default:
-    return 0;
-  }    
 }
 
 /* static uint64_t getVariableSize(ADIOS_VARINFO* v) 
@@ -495,33 +494,35 @@ static int isSelectionCompatible(ADIOS_SELECTION* first, ADIOS_SELECTION* second
 //
 // return 0 if yes.
 //
-int isCompatible(ADIOS_QUERY* q1, ADIOS_QUERY* q2) {
-  if ((q1->left == 0) && (q2->left == 0)) { // both are leaves
-    if (q1->rawDataSize != q2->rawDataSize) {
-      log_error("Error! Not supported: combining query with different sizes!\n");
-      return -1;
+int isCompatible(ADIOS_QUERY* q1, ADIOS_QUERY* q2)
+{
+    if ((q1->left == 0) && (q2->left == 0)) { // both are leaves
+        if (q1->rawDataSize != q2->rawDataSize) {
+            log_error(
+                    "Error! Not supported: combining query with different sizes!\n");
+            return -1;
+        }
+        if ((q1->sel != NULL) && (q2->sel != NULL)) {
+            return isSelectionCompatible(q1->sel, q2->sel);
+        }
+        // all other cases, as long as data sizes match, fastbit can work on it.
+        return 0;
     }
-    if ((q1->sel != NULL) && (q2->sel != NULL)) {
-      return isSelectionCompatible(q1->sel, q2->sel);
-    } 
-    // all other cases, as long as data sizes match, fastbit can work on it.
+
+    if (q1->left != NULL) {
+        return isCompatible(q1->left, q2);
+    }
+
+    if (q2->left != NULL) {
+        return isCompatible(q1, q2->left);
+    }
+
     return 0;
-  }
-
-  if (q1->left != NULL) {
-    return isCompatible(q1->left, q2);
-  } 
-
-  if (q2->left != NULL) {
-    return isCompatible(q1, q2->left);
-  }
-  
-  return 0;
 }
 
 ADIOS_QUERY* common_query_combine(ADIOS_QUERY* q1, 
-				  enum ADIOS_CLAUSE_OP_MODE operator,		    
-				  ADIOS_QUERY* q2)
+                  enum ADIOS_CLAUSE_OP_MODE operator,
+                  ADIOS_QUERY* q2)
 {
     // combine selection sel3 = q1.fastbitSelection & q2.fastbitSelection
     //create a new query (q1.cond :op: q2.cond, sel3);
@@ -535,7 +536,7 @@ ADIOS_QUERY* common_query_combine(ADIOS_QUERY* q1,
 
     if (isCompatible(q1, q2) != 0) {
         adios_error (err_incompatible_queries, 
-		     "Query combine: the two queries' selections are not compatible.\n");
+             "Query combine: the two queries' selections are not compatible.\n");
         return NULL;
     }
 
@@ -563,17 +564,17 @@ ADIOS_QUERY* common_query_combine(ADIOS_QUERY* q1,
 int64_t common_query_estimate(ADIOS_QUERY* q, int timestep)
 {
     if (q == NULL) {
-      return -1;
+        return -1;
     }
-    enum ADIOS_QUERY_METHOD m = detect_and_set_query_method (q);
+    enum ADIOS_QUERY_METHOD m = detect_and_set_query_method(q);
     if (query_hooks[m].adios_query_estimate_fn != NULL) {
-      int actualTimeStep = adios_check_query_at_timestep(q, timestep);
-      if (actualTimeStep == -1) {
-	return -1;
-      }
+        int actualTimeStep = adios_check_query_at_timestep(q, timestep);
+        if (actualTimeStep == -1) {
+            return -1;
+        }
 
-      return query_hooks[m].adios_query_estimate_fn(q, timestep);
-    }		
+        return query_hooks[m].adios_query_estimate_fn(q, timestep);
+    }
 
     log_debug("No estimate function was supported for method %d\n", m);
     return -1;
@@ -638,12 +639,12 @@ static int updateBlockSizeIfNeeded(ADIOS_QUERY* q, int timeStep)
             return -1;
         }
 
-	// // this is removed b/c if using read_open() instead of read_open_file(), then var->nstep will always be 1
+    // // this is removed b/c if using read_open() instead of read_open_file(), then var->nstep will always be 1
         //if (gCurrentTimeStep > q->varinfo->nsteps) {
-	//  log_error("The given timestep %d exceeds variable (id %d)'s nsteps. \n", gCurrentTimeStep, q->varinfo->varid);
-	//  return -1;
+    //  log_error("The given timestep %d exceeds variable (id %d)'s nsteps. \n", gCurrentTimeStep, q->varinfo->varid);
+    //  return -1;
         //}
-	//
+    //
         if (q->sel->type != ADIOS_SELECTION_WRITEBLOCK) {
             return 0;
         }
@@ -680,7 +681,8 @@ static int checkCompatibility(ADIOS_QUERY* q)
     return 0; // ok, no need to check  
 }
 */
-static ADIOS_VARBLOCK * computePGBounds(ADIOS_QUERY *q, int wbindex, int timestep, int *out_ndim) 
+static ADIOS_VARBLOCK * computePGBounds(ADIOS_QUERY *q, int wbindex,
+        int timestep, int *out_ndim)
 {
     if (!q->left && !q->right) {
         // In this case, we have reached a leaf query node, so directly
@@ -698,10 +700,11 @@ static ADIOS_VARBLOCK * computePGBounds(ADIOS_QUERY *q, int wbindex, int timeste
         // no variable name cited in the error, so perhaps better error handling would
         // be desirable in the future
         //const int abs_wbindex = adios_get_absolute_writeblock_index(q->varinfo, wbindex, timestep);
-	int abs_wbindex = wbindex;
-	if (q->varinfo->nsteps > 1) { // varinfo contains ALL timesteps, not just one step, so streaming mode files will not need call this func
-	  abs_wbindex = adios_get_absolute_writeblock_index(q->varinfo, wbindex, timestep);
-	}
+        int abs_wbindex = wbindex;
+        if (q->varinfo->nsteps > 1) { // varinfo contains ALL timesteps, not just one step, so streaming mode files will not need call this func
+            abs_wbindex = adios_get_absolute_writeblock_index(q->varinfo,
+                    wbindex, timestep);
+        }
 
         // Finally, return ndim and the varblock
         *out_ndim = q->varinfo->ndim;
@@ -711,20 +714,23 @@ static ADIOS_VARBLOCK * computePGBounds(ADIOS_QUERY *q, int wbindex, int timeste
         // ndim and varblock from that subtree directly, since there's
         // nothing to compare against
 
-        ADIOS_QUERY *present_subtree = q->left ? (ADIOS_QUERY*)q->left : (ADIOS_QUERY*)q->right;
+        ADIOS_QUERY *present_subtree =
+                q->left ? (ADIOS_QUERY*) q->left : (ADIOS_QUERY*) q->right;
         return computePGBounds(present_subtree, wbindex, timestep, out_ndim);
     } else {
         // In this final case, we have two subtrees, and we must compare
         // the resultant varblock from each one to ensure they are equal
         // before returning
 
-        ADIOS_QUERY *left = (ADIOS_QUERY *)q->left;
-        ADIOS_QUERY *right = (ADIOS_QUERY *)q->right;
+        ADIOS_QUERY *left = (ADIOS_QUERY *) q->left;
+        ADIOS_QUERY *right = (ADIOS_QUERY *) q->right;
 
         // Next, retrieve the ndim and varblock for each subtree
         int left_ndim, right_ndim;
-        ADIOS_VARBLOCK *left_vb = computePGBounds(left, wbindex, timestep, &left_ndim);
-        ADIOS_VARBLOCK *right_vb = computePGBounds(right, wbindex, timestep, &right_ndim);
+        ADIOS_VARBLOCK *left_vb = computePGBounds(left, wbindex, timestep,
+                &left_ndim);
+        ADIOS_VARBLOCK *right_vb = computePGBounds(right, wbindex, timestep,
+                &right_ndim);
 
         // If either subtree returns an invalid (NULL) varblock, fail immediately
         if (!left_vb || !right_vb) {
@@ -743,8 +749,8 @@ static ADIOS_VARBLOCK * computePGBounds(ADIOS_QUERY *q, int wbindex, int timeste
         // failing if any coordinate is not equal between the subtrees
         int i;
         for (i = 0; i < ndim; i++) {
-            if (left_vb->start[i] != right_vb->start[i] ||
-                    left_vb->count[i] != right_vb->count[i]) {
+            if (left_vb->start[i] != right_vb->start[i] || left_vb->count[i] != right_vb->count[i])
+            {
                 return NULL;
             }
         }
@@ -764,17 +770,17 @@ static ADIOS_SELECTION * convertWriteblockToBoundingBox(ADIOS_QUERY *q, ADIOS_SE
     int pg_ndim;
     ADIOS_VARBLOCK *pg_bounds = computePGBounds(q, wb->index, timestep, &pg_ndim);
     if (!pg_bounds)
-    	return NULL;
+        return NULL;
 
     ADIOS_SELECTION *bb = common_read_selection_boundingbox(pg_ndim, pg_bounds->start, pg_bounds->count);
-							    
+
     return bb;
 }
 
 ADIOS_QUERY_RESULT * common_query_evaluate(ADIOS_QUERY* q, 
-			  ADIOS_SELECTION* outputBoundary, 
-			  int timeStep, 
-			  uint64_t batchSize)
+              ADIOS_SELECTION* outputBoundary,
+              int timeStep,
+              uint64_t batchSize)
 {  
     double start = 0, end = 0;
     ADIOS_QUERY_RESULT *result = (ADIOS_QUERY_RESULT *) malloc (sizeof(ADIOS_QUERY_RESULT));
@@ -783,12 +789,12 @@ ADIOS_QUERY_RESULT * common_query_evaluate(ADIOS_QUERY* q,
     result->nresults = 0;
     result->selections = NULL;
 #ifdef BREAKDOWN
-	start = dclock();
+    start = dclock();
 #endif
-  if (q == 0) {
-    log_debug("Error: empty query will not be evaluated!");
-    return result;
-  }
+    if (q == 0) {
+        log_debug("Error: empty query will not be evaluated!");
+        return result;
+    }
     int actualTimeStep = adios_check_query_at_timestep(q, timeStep);
     if (actualTimeStep == -1) {
         result->status = ADIOS_QUERY_RESULT_ERROR;
@@ -823,10 +829,10 @@ ADIOS_QUERY_RESULT * common_query_evaluate(ADIOS_QUERY* q,
         outputBoundary = convertWriteblockToBoundingBox(q, &outputBoundary->u.block, timeStep);
         if (!outputBoundary) {
             adios_error(err_invalid_argument,
-		      "Attempt to use writeblock output selection on a query where not "
-		      "all variables participating have the same varblock bounding box "
-		      "at that writeblock index (index = %d)\n",
-		      outputBoundary->u.block.index);
+              "Attempt to use writeblock output selection on a query where not "
+              "all variables participating have the same varblock bounding box "
+              "at that writeblock index (index = %d)\n",
+              outputBoundary->u.block.index);
             result->status = ADIOS_QUERY_RESULT_ERROR;
             return result;
         }

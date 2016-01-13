@@ -2,22 +2,22 @@
 #include "common_query.h"
 
 int adios_query_is_method_available(enum ADIOS_QUERY_METHOD method) {
-	return common_query_is_method_available(method);
+    return common_query_is_method_available(method);
 }
 
 ADIOS_QUERY* adios_query_create(ADIOS_FILE* f, 
-				ADIOS_SELECTION* queryBoundary,
-				const char* varName,
-				enum ADIOS_PREDICATE_MODE queryOp,
-				const char* value)
+                ADIOS_SELECTION* queryBoundary,
+                const char* varName,
+                enum ADIOS_PREDICATE_MODE queryOp,
+                const char* value)
 {
   return common_query_create(f, queryBoundary, varName, queryOp, value);
 }
-					
+
 
 ADIOS_QUERY* adios_query_combine(ADIOS_QUERY* q1, 
-				 enum ADIOS_CLAUSE_OP_MODE combineOperator,		    
-				 ADIOS_QUERY* q2)
+                 enum ADIOS_CLAUSE_OP_MODE combineOperator,
+                 ADIOS_QUERY* q2)
 {
   return common_query_combine(q1, combineOperator, q2);
 }
@@ -40,9 +40,9 @@ void adios_query_set_timestep(int timeStep)
 }
 */
 ADIOS_QUERY_RESULT * adios_query_evaluate(ADIOS_QUERY* q, 
-			  ADIOS_SELECTION* outputBoundary,
-			  int timeStep, 
-			  uint64_t batchSize)
+              ADIOS_SELECTION* outputBoundary,
+              int timeStep,
+              uint64_t batchSize)
 {
   return common_query_evaluate(q, outputBoundary, timeStep,  batchSize);
 }
