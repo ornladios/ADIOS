@@ -674,18 +674,23 @@ void adios_query_minmax_evaluate(ADIOS_QUERY* q,
 
 int adios_query_minmax_free(ADIOS_QUERY* query) {
 
-    // free the tree in a bottom-to-up manner
     if (query == NULL) 
         return 0;
+    free_internal (query);
+    /*
+       Do not free the tree in a bottom-to-up manner
+       because every query piece is supposed to be freed
+       by the user one by one
+    */
+    /*
     if (query->left == NULL && query->right == NULL) {
-        free_internal (query);
         return 1;
     } else if  (query->right) {
         return adios_query_minmax_free(query->right);
     } else if (query->left) {
         return adios_query_minmax_free(query->left);
     }
-
+    */
     return 1;
 }
 
