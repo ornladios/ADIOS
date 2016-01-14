@@ -63,14 +63,25 @@ int performQuery(ADIOS_QUERY_TEST_INFO *queryInfo, ADIOS_FILE *f, int use_stream
     for (timestep = queryInfo->fromStep; timestep < queryInfo->fromStep + queryInfo->numSteps; timestep ++) {
         fprintf(stderr, "querying on timestep %d \n", timestep);
 
-        ADIOS_SELECTION* currBatch = NULL;
-
-        while (adios_query_evaluate(queryInfo->query, queryInfo->outputSelection, use_streaming ? 0 : timestep, queryInfo->batchSize, &currBatch) >= 0) {
-        	if (currBatch == NULL) {
+        while (1)
+        {
+            ADIOS_QUERY_RESULT *currBatch = NULL;
+            currBatch = adios_query_evaluate(
+                            queryInfo->query,
+                            queryInfo->outputSelection,
+                            use_streaming ? 0 : timestep,
+                            queryInfo->batchSize
+                        );
+            if (currBatch == NULL) {
         		break;
         	}
-        	assert(currBatch->type ==ADIOS_SELECTION_POINTS);
-        	const ADIOS_SELECTION_POINTS_STRUCT * retrievedPts = &(currBatch->u.points);
+            if (currBatch->status == ADIOS_QUERY_RESULT_ERROR) {
+                fprintf(stderr, "ERROR in querying evaluation: %s \n", adios_errmsg());
+                break;
+            }
+
+        	assert(currBatch->selections->type == ADIOS_SELECTION_POINTS);
+        	const ADIOS_SELECTION_POINTS_STRUCT * retrievedPts = &(currBatch->selections->u.points);
         	/* fprintf(stderr,"retrieved points %" PRIu64 " \n", retrievedPts->npoints); */
 
         	if (print_points) {
@@ -82,7 +93,7 @@ int performQuery(ADIOS_QUERY_TEST_INFO *queryInfo, ADIOS_FILE *f, int use_stream
         		void *data = malloc(retrievedPts->npoints * elmSize);
 
         		// read returned temp data
-        		adios_schedule_read (f, currBatch, queryInfo->varName, use_streaming ? 0 : timestep, 1, data);
+        		adios_schedule_read (f, currBatch->selections, queryInfo->varName, use_streaming ? 0 : timestep, 1, data);
         		adios_perform_reads(f, 1);
 
         		free(data);
@@ -102,8 +113,8 @@ int performQuery(ADIOS_QUERY_TEST_INFO *queryInfo, ADIOS_FILE *f, int use_stream
         	/*     fprintf(stderr,"\n"); */
         	/* } */
 
-        	adios_selection_delete(currBatch);
-        	currBatch = NULL;
+        	free(currBatch->selections);
+        	free(currBatch);
         }
 
         if (use_streaming) {
