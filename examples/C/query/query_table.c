@@ -96,7 +96,7 @@ void print_points (ADIOS_SELECTION *hits, int *KE)
     printf ("\n");
 }
 
-void query_columns(ADIOS_FILE* f, int nrows, int ncols)
+void query_columns(ADIOS_FILE* f, enum ADIOS_QUERY_METHOD method, int nrows, int ncols)
 {
 
     printf("\n====== querying over columns of a table  =======\n");
@@ -113,6 +113,7 @@ void query_columns(ADIOS_FILE* f, int nrows, int ncols)
     q2 = adios_query_create(f, col2, "A", ADIOS_LTEQ, "96"); // select Potential <= 96
     q  = adios_query_combine(q1, ADIOS_QUERY_OP_AND, q2);
     printf("Query: %s\n",q->condition);
+    adios_query_set_method (q, method);
 
     if (q!= NULL) {
         int timestep = 0;
@@ -120,8 +121,19 @@ void query_columns(ADIOS_FILE* f, int nrows, int ncols)
         int nBatches = 1;
         while (1) {
             /* Evaluate query, get the list of points (of a limited number at once) */
-            ADIOS_SELECTION* hits = NULL;
-            int hasMore = adios_query_evaluate(q, col3, timestep, batchSize, &hits);
+            ADIOS_QUERY_RESULT *result = adios_query_evaluate(q, col3, timestep, batchSize);
+
+            if (result->status == ADIOS_QUERY_RESULT_ERROR) {
+                printf ("Query evaluation failed with error: %s\n", adios_errmsg());
+                break;
+            }
+
+            if (result->nresults == 0) {
+                printf ("Zero results returned in batch %d\n", nBatches);
+                break;
+            }
+
+            ADIOS_SELECTION* hits = result->selections;;
             printf("Number of hits returned in batch %d = %lld \n",nBatches, hits->u.points.npoints);
 
             if (hits->u.points.npoints > 0) {
@@ -140,7 +152,7 @@ void query_columns(ADIOS_FILE* f, int nrows, int ncols)
             free(hits->u.points.points);
             adios_selection_delete(hits);
 
-            if (hasMore <= 0) {
+            if (result->status == ADIOS_QUERY_NO_MORE_RESULTS) {
                 break;
             }
             nBatches++;
@@ -161,6 +173,22 @@ int main (int argc, char ** argv)
     ADIOS_FILE * f;
     MPI_Comm    comm_dummy = 0;  /* MPI_Comm is defined through adios.h/adios_read.h */
     adios_read_init_method(ADIOS_READ_METHOD_BP,0,"");
+    enum ADIOS_QUERY_METHOD method;
+
+    adios_read_init_method(ADIOS_READ_METHOD_BP,0,"");
+
+    if (adios_query_is_method_available(ADIOS_QUERY_METHOD_ALACRITY)) {
+        method = ADIOS_QUERY_METHOD_ALACRITY;
+        printf ("Set query method to ALACRITY\n");
+    } else if (adios_query_is_method_available(ADIOS_QUERY_METHOD_FASTBIT)) {
+        method = ADIOS_QUERY_METHOD_FASTBIT;
+        printf ("Set query method to FASTBIT\n");
+    } else {
+        printf ("This query test on tabular data is only supported by accurate "
+                "point-based query methods like FASTBIT and ALACRITY. "
+                "No such method is available in this ADIOS build.\n");
+        return 1;
+    }
 
     printf("File : %s\n",filename);
     f = adios_read_open_file (filename, ADIOS_READ_METHOD_BP, comm_dummy);
@@ -186,7 +214,7 @@ int main (int argc, char ** argv)
 
     printf ("Variable A has %lld rows and %lld columns\n", v->dims[0], v->dims[1]);
 
-    query_columns(f, v->dims[0], v->dims[1]); 
+    query_columns(f, method, v->dims[0], v->dims[1]);
     adios_read_close(f);
     adios_read_finalize_method (ADIOS_READ_METHOD_BP);
     return 0;
