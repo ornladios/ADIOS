@@ -615,8 +615,8 @@ void adios_query_minmax_evaluate(ADIOS_QUERY* q,
         }
          */
 
-        int nresults = do_evaluate_now (q, timestep);
-        if (nresults == -1) {
+        int nselections = do_evaluate_now (q, timestep);
+        if (nselections == -1) {
             queryResult->status = ADIOS_QUERY_RESULT_ERROR;
             return;
         }
@@ -654,7 +654,7 @@ void adios_query_minmax_evaluate(ADIOS_QUERY* q,
     // calculate how many results we will return at this time
     uint64_t retrievalSize = q->maxResultsDesired - q->resultsReadSoFar;
     if (retrievalSize <= 0) {
-        queryResult->nresults = 0;
+        queryResult->nselections = 0;
         queryResult->selections = NULL;
         queryResult->status = ADIOS_QUERY_NO_MORE_RESULTS;
         return;
@@ -664,7 +664,8 @@ void adios_query_minmax_evaluate(ADIOS_QUERY* q,
     }
 
     queryResult->selections = build_results (q, retrievalSize, outputBoundry);
-    queryResult->nresults = retrievalSize;
+    queryResult->nselections = retrievalSize;
+    queryResult->npoints = 0;
 
     q->resultsReadSoFar += retrievalSize;
 

@@ -40,6 +40,17 @@ ADIOS_QUERY_RESULT * common_query_evaluate(ADIOS_QUERY* q,
 			  int timestep,
 			  uint64_t batchSize);
 
+int common_query_read_boundingbox (
+        ADIOS_FILE *f,
+        ADIOS_QUERY *q,
+        const char *varname,
+        int timestep,
+        unsigned int nselections,
+        ADIOS_SELECTION *selections,
+        ADIOS_SELECTION *bb,
+        void *data
+   );
+
 void common_query_free(ADIOS_QUERY* q);
 
 // called from Read finalize only; 

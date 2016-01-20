@@ -328,7 +328,7 @@ int query_as_file ()
                    "tried to get all at once\n");
         }
 
-        log ("    Query returned %d blocks as result\n", result->nresults);
+        log ("    Query returned %d blocks as result\n", result->nselections);
         free (result->selections);
 
         MPI_Barrier (comm);

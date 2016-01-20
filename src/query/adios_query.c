@@ -47,6 +47,21 @@ ADIOS_QUERY_RESULT * adios_query_evaluate(ADIOS_QUERY* q,
   return common_query_evaluate(q, outputBoundary, timeStep,  batchSize);
 }
 
+
+int adios_query_read_boundingbox (
+        ADIOS_FILE *f,
+        ADIOS_QUERY *q,
+        const char *varname,
+        int timestep,
+        unsigned int nselections,
+        ADIOS_SELECTION *selections,
+        ADIOS_SELECTION *bb,
+        void *data
+   )
+{
+    return common_query_read_boundingbox (f, q, varname, timestep, nselections, selections, bb, data);
+}
+
 void adios_query_free(ADIOS_QUERY* q)
 {
   common_query_free(q);

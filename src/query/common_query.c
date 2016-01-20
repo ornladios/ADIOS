@@ -70,7 +70,7 @@ void common_query_finalize()
 }
 
 int common_query_is_method_available(enum ADIOS_QUERY_METHOD method) {
-    if (method < 0 || method >= ADIOS_QUERY_METHOD_COUNT)
+    if (method >= ADIOS_QUERY_METHOD_COUNT)
         return 0;
     else
         return (query_hooks[method].adios_query_evaluate_fn != 0);
@@ -786,8 +786,9 @@ ADIOS_QUERY_RESULT * common_query_evaluate(ADIOS_QUERY* q,
     ADIOS_QUERY_RESULT *result = (ADIOS_QUERY_RESULT *) malloc (sizeof(ADIOS_QUERY_RESULT));
     assert (result);
     result->method_used = ADIOS_QUERY_METHOD_UNKNOWN;
-    result->nresults = 0;
+    result->nselections = 0;
     result->selections = NULL;
+    result->npoints= 0;
 #ifdef BREAKDOWN
     start = dclock();
 #endif

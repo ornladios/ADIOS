@@ -103,6 +103,7 @@ transforms_write_SOURCES = $(transforms_write_HDRS) \
 query_common_HDRS = query/common_query.h query/adios_query_hooks.h query/query_utils.h
 query_common_SOURCES = $(query_common_HDRS) \
                        query/common_query.c  \
+                       query/common_query_read.c  \
                        query/adios_query_hooks.c \
                        query/query_utils.c
 

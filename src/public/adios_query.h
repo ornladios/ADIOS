@@ -77,20 +77,25 @@ enum ADIOS_QUERY_RESULT_STATUS
 typedef struct {
     enum ADIOS_QUERY_METHOD         method_used; 
     enum ADIOS_QUERY_RESULT_STATUS  status;
-    int                             nresults;   // number of ADIOS_SELECTION entries in returned array
-    ADIOS_SELECTION                *selections; // single array of ADIOS_SELECTION (structs)
+    int                             nselections; // number of ADIOS_SELECTION entries in returned array
+    ADIOS_SELECTION                *selections;  // single array of ADIOS_SELECTION (structs)
+    uint64_t                        npoints;     // total number of data points returned in point selections
     /* 
        if result is from: ADIOS_QUERY_RESULT *result = adios_query_evaluate(...)
        then  result->selections[i] is a struct, not a pointer  
 
-       FASTBIT and ALACRITY returns a single selection (nresults=1), whose type is ADIOS_SELECTION_POINTS
-           Number of points that satisfy the query = result->selection->u.points.npoints
+       FASTBIT and ALACRITY returns an array of selections, whose type is ADIOS_SELECTION_POINTS
+           Number of points that satisfy the query = npoints =
+                   = result->selection[i].u.points.npoints, i=0,..,nselections-1
            Delete the selection and the result by calling:
-              free (result->selections->u.points.points);
+              for (i=0; i < result->nselections; i++) {
+                  free (result->selections[i].u.points.points);
+              }
               free (result->selections);
               free (result);
        MINMAX returns multiple selections, each of them is of type ADIOS_SELECTION_WRITEBLOCK
            Block id of the Nth returned writeblock selection = result->selection[N].u.block.index
+           npoints is 0.
            Delete all selections at once then the result itself by calling  
               free (result->selections);
               free (result);
@@ -165,6 +170,32 @@ ADIOS_QUERY_RESULT * adios_query_evaluate (
                          int timestep,
                          uint64_t batchSize // limit on number of blocks/points returned at once
                      );
+
+/*
+ * Reading functions
+ */
+
+/* Read in data of 'varname' for all selections in 'selections' for timesteps
+ * and copy them into 'data' which has a bounding box selection.
+ * If a data point falls outside the bounding box, it will not be copied.
+ * Memory for each query selection is allocated and freed automatically in this function.
+ * Memory for 'data' should be allocated by the user and cover the 'bb' boundingbox.
+ * Query should be evaluated before calling this function and 'selections' and 'nselections'
+ * should come from ADIOS_QUERY_RESULT, although not necessarily all of them.
+ * Returns 0 on success, and the adios_errno value on any error.
+ */
+int adios_query_read_boundingbox (
+        ADIOS_FILE *f,
+        ADIOS_QUERY *q,
+        const char *varname,
+        int timestep,
+        unsigned int nselections,
+        ADIOS_SELECTION *selections,
+        ADIOS_SELECTION *bb,
+        void *data
+   );
+
+
 
 void adios_query_free(ADIOS_QUERY* q);
 
