@@ -30,21 +30,23 @@ void change_endianness( void *data, uint64_t slice_size, enum ADIOS_DATATYPES ty
 char ** dup_string_array (char ** v, int nelems, int * total_length);
 void free_string_array (char ** v, int nelems);
 
-void copy_data (void *dst, void *src,
-                int idim,
-                int ndim,
-                uint64_t* size_in_dset,
-                uint64_t* ldims,
-                const uint64_t * readsize,
-                uint64_t dst_stride,
-                uint64_t src_stride,
-                uint64_t dst_offset,
-                uint64_t src_offset,
-                uint64_t ele_num,
-                int      size_of_type,
-                enum ADIOS_FLAG change_endiness,
-                enum ADIOS_DATATYPES type
-                );
+/* Copy data from one n-dimensional block to another, where the two blocks logically somewhat overlap.
+ */
+void adios_util_copy_data (void *dst, void *src,
+                           int idim,
+                           int ndim,
+                           uint64_t* size_in_dset,
+                           uint64_t* ldims,
+                           const uint64_t * readsize,
+                           uint64_t dst_stride,
+                           uint64_t src_stride,
+                           uint64_t dst_offset,
+                           uint64_t src_offset,
+                           uint64_t ele_num,
+                           int      size_of_type,
+                           enum ADIOS_FLAG change_endiness,
+                           enum ADIOS_DATATYPES type
+);
 void alloc_namelist (char ***namelist, int length);
 void free_namelist (char **namelist, int length);
 void list_insert_read_request_tail (read_request ** h, read_request * q);

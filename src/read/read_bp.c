@@ -1043,7 +1043,7 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                         dset_offset = offset_in_dset[i] + dset_offset * ldims[i];
                     }
 
-                    copy_data (data
+                    adios_util_copy_data (data
                               ,fh->b->buff + fh->b->offset
                               ,0
                               ,hole_break

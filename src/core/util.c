@@ -147,7 +147,7 @@ void free_string_array (char ** v, int nelems)
     free (v);
 }
 
-void copy_data (void *dst, void *src,
+void adios_util_copy_data (void *dst, void *src,
         int idim,
         int ndim,
         uint64_t* size_in_dset,
@@ -191,7 +191,7 @@ void copy_data (void *dst, void *src,
         }
         src_offset_new =src_offset + i * src_stride * src_step;
         dst_offset_new = dst_offset + i * dst_stride * dst_step;
-        copy_data ( dst, src, idim+1, ndim, size_in_dset,
+        adios_util_copy_data ( dst, src, idim+1, ndim, size_in_dset,
                 ldims,readsize,
                 dst_stride, src_stride,
                 dst_offset_new, src_offset_new,
