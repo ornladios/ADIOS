@@ -128,7 +128,7 @@ void query_columns(ADIOS_FILE* f, enum ADIOS_QUERY_METHOD method, int nrows, int
                 break;
             }
 
-            if (result->nresults == 0) {
+            if (result->nselections == 0) {
                 printf ("Zero results returned in batch %d\n", nBatches);
                 break;
             }

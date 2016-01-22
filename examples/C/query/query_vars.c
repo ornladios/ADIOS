@@ -81,7 +81,7 @@ void query_OneBoundBoxForAllVars(ADIOS_FILE* f, enum ADIOS_QUERY_METHOD method)
                 break;
             }
 
-            if (result->nresults == 0) {
+            if (result->nselections == 0) {
                 printf ("Zero results returned in batch %d\n", nBatches);
                 break;
             }
@@ -116,12 +116,12 @@ void query_OneBoundBoxForAllVars(ADIOS_FILE* f, enum ADIOS_QUERY_METHOD method)
             {
                 // we have multiple selections, each one is a writeblock
                 printf("Number of blocks returned in batch %d = %d \n",nBatches,
-                        result->nresults);
+                        result->nselections);
                 ADIOS_VARINFO *vP = adios_inq_var (f, "P");
                 adios_inq_var_blockinfo(f, vP);
 
                 int i;
-                for (i=0; i < result->nresults; i++)
+                for (i=0; i < result->nselections; i++)
                 {
                     uint64_t nelems = 1;
                     int j;
