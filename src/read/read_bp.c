@@ -2366,8 +2366,11 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
     int dummy = -1;
     struct adios_index_var_struct_v1 * var_root;
     struct bp_index_pg_struct_v1 * pgs = fh->pgs_root;
-    uint32_t current_process_id = pgs->process_id;
     ADIOS_VARBLOCK *blockinfo;
+    // variables to heuristicly calculate the process_id of a PG in a subfile
+    uint32_t current_process_id = pgs->process_id;
+    uint32_t deduced_file_index = 0;
+    int64_t current_offset = -1;
 
     assert (varinfo);
 
@@ -2478,6 +2481,8 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
         
         /* Find the process ID */
         //blockinfo[i].process_id = (uint32_t)-1;
+        /*
+        // old routine fine for single bp file (no subfiles)
         while (pgs != NULL && 
                pgs->offset_in_file <= var_root->characteristics[k].offset) 
         {
@@ -2486,7 +2491,36 @@ static ADIOS_VARBLOCK * inq_var_blockinfo(const ADIOS_FILE * fp, const ADIOS_VAR
         }
         blockinfo[i].process_id = current_process_id;
         blockinfo[i].time_index = var_root->characteristics[k].time_index;
-        
+        */
+
+        /* sub-files' PGs start from 0 offset again and again
+           unfortunately the pgs don't have info on subfile index, which is 
+           only stored in the variable characteristics. 
+           Assumption: process_ids go from 0..n, and all the pgs are ordered
+           incrementally in subfiles according to process_ids.
+           This is true so far by all writing methods.
+        */
+        current_process_id = pgs->process_id;
+        while (pgs != NULL) {
+            if ((int64_t)pgs->offset_in_file <= current_offset) {
+                deduced_file_index++;
+            }
+            if ((int32_t)deduced_file_index > (int32_t)var_root->characteristics[k].file_index) {
+                deduced_file_index--; 
+                /* pgs and current_offset does not change anymore and we enter the while 
+                   loop again for the next block and will increase this counter again */
+                break;
+            }
+            if (deduced_file_index == var_root->characteristics[k].file_index &&
+                    pgs->offset_in_file > var_root->characteristics[k].offset) {
+                break;
+            }
+            current_offset = pgs->offset_in_file;
+            current_process_id = pgs->process_id;
+            pgs = pgs->next;
+        }
+        blockinfo[i].process_id = current_process_id;
+        blockinfo[i].time_index = var_root->characteristics[k].time_index;
     }
 
     free (ldims);
