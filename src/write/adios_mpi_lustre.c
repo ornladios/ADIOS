@@ -211,21 +211,6 @@ struct obd_uuid {
 
 #define LUSTRE_STRIPE_UNIT 65536
 
-static void trim_spaces (char * str)
-{
-    char * t = str, * p = NULL;
-    while (*t != '\0')
-    {
-        if (*t == ' ')
-        {
-            p = t + 1;
-            strcpy (t, p);
-        }
-        else
-            t++;
-    }
-
-}
 
 static void
 adios_mpi_lustre_set_striping_unit(char *filename, char *parameters, struct adios_MPI_data_struct * md)

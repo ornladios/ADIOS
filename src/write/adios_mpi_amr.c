@@ -180,21 +180,6 @@ struct obd_uuid {
 #include "fgr.h"
 #endif
 
-static void trim_spaces (char * str)
-{
-    char * t = str, * p = NULL;
-    while (*t != '\0')
-    {
-        if (*t == ' ')
-        {
-            p = t + 1;
-            strcpy (t, p);
-        }
-        else
-            t++;
-    }
-
-}
 
 int * allocOSTList (int n_ost)
 {

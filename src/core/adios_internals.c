@@ -24,6 +24,7 @@
 #include "core/adios_bp_v1.h"
 #include "core/qhashtbl.h"
 #include "core/adios_logger.h"
+#include "core/util.h"
 
 #ifdef DMALLOC
 #include "dmalloc.h"
@@ -1619,22 +1620,6 @@ int adios_common_free_group (int64_t id)
     free (g);
 
     return 0;
-}
-
-void trim_spaces (char * str)
-{
-    char * t = str, * p = NULL;
-    while (*t != '\0')
-    {
-        if (*t == ' ')
-        {
-            p = t + 1;
-            strcpy (t, p);
-        }
-        else
-            t++;
-    }
-
 }
 
 static void tokenize_dimensions (const char * str, char *** tokens, int * count)

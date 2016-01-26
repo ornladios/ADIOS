@@ -509,9 +509,7 @@ double adios_stat_cor_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char *
         time_end = min;
     }
     // Check the bounds of time
-    if (    (time_start >= 0) && (time_start <= min)
-            &&      (time_end >= 0)   && (time_end <= min)
-            &&  (time_start <= time_end))
+    if (time_start <= min && time_end <= min && time_start <= time_end)
     {
         if(viy == NULL) //user must want to run covariance against itself
         {
@@ -716,9 +714,7 @@ double adios_stat_cov_v1 (ADIOS_VARINFO_V1 * vix, ADIOS_VARINFO_V1 * viy, char *
         time_end = min;
     }
     // Check the bounds of time
-    if (    (time_start >= 0) && (time_start <= min)
-            &&      (time_end >= 0)   && (time_end <= min)
-            &&  (time_start <= time_end))
+    if (time_start <= min && time_end <= min && time_start <= time_end)
     {
         if(viy == NULL) //user must want to run covariance against itself
         {

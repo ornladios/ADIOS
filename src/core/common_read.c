@@ -261,6 +261,12 @@ static ADIOS_FILE * common_read_link (ADIOS_FILE * fp)
     return fp;
 }
 
+int common_read_get_attr_mesh (const ADIOS_FILE * fp,
+                            const char * attrname,
+                            enum ADIOS_DATATYPES * type,
+                            int * size,
+                            void ** data);
+
 static ADIOS_FILE * common_read_mesh (ADIOS_FILE * fp)
 {
     int i;
@@ -310,17 +316,18 @@ static ADIOS_FILE * common_read_mesh (ADIOS_FILE * fp)
             {
                 enum ADIOS_DATATYPES attr_type;
                 int attr_size;
-                char * meshname = NULL;
+                void * attrdata = NULL;
                 int  read_fail = 0;
                 //check if this name refers to an external mesh
-                common_read_get_attr_mesh (fp, fp->attr_namelist[i], &attr_type, &attr_size, &meshname);
+                common_read_get_attr_mesh (fp, fp->attr_namelist[i], &attr_type, &attr_size, &attrdata);
+                char *meshname = (char*) attrdata;
                 if (attr_type == adios_string)
                 {
                     char * meshfile = malloc ( strlen("/adios_schema/")+strlen(meshname)+strlen("/mesh-file")+1 );
                     strcpy (meshfile, "/adios_schema/");
                     strcat (meshfile, meshname);
                     strcat (meshfile, "/mesh-file");
-                    char * data = NULL;
+                    void * data = NULL;
                     read_fail = common_read_get_attr_mesh (fp, meshfile, &attr_type, &attr_size, &data);
                     if (!read_fail)
                     {

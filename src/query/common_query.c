@@ -17,6 +17,7 @@ static int getTotalByteSize (ADIOS_FILE* f, ADIOS_VARINFO* v, ADIOS_SELECTION* s
 
 int isCompatible(ADIOS_QUERY* q1, ADIOS_QUERY* q2);
 
+#if 0
 static ADIOS_SELECTION* getAdiosDefaultBoundingBox(ADIOS_VARINFO* v) 
 {
   if (v->ndim == 0) {
@@ -44,6 +45,7 @@ static ADIOS_SELECTION* getAdiosDefaultBoundingBox(ADIOS_VARINFO* v)
   ADIOS_SELECTION* result =  common_read_selection_boundingbox(v->ndim, start, count);
   return result;
 }
+#endif
 
 static int query_hooks_initialized = 0;
 void common_query_init()

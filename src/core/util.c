@@ -411,7 +411,8 @@ ADIOS_SELECTION * copy_selection (const ADIOS_SELECTION * sel)
 
 void free_selection (ADIOS_SELECTION * sel)
 {
-    sel->type = sel->type;
+    if (!sel)
+        return;
 
     if (sel->type == ADIOS_SELECTION_BOUNDINGBOX)
     {
@@ -512,6 +513,22 @@ int get_unique_nids (MPI_Comm comm, uint32_t ** nids)
                    *nids, 1, MPI_INT,
                    comm);
     return unique (*nids, size);
+}
+
+void trim_spaces (char * str)
+{
+    char * t = str, * p = NULL;
+    while (*t != '\0')
+    {
+        if (*t == ' ')
+        {
+            p = t + 1;
+            strcpy (t, p);
+        }
+        else
+            t++;
+    }
+
 }
 
 /*******************************************************

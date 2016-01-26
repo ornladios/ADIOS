@@ -474,6 +474,11 @@ void adios_dimes_write (struct adios_file_struct * fd
 
     //snprintf(dspaces_type_var_name, MAX_DS_NAMELEN, "TYPE@%s", ds_var_name);
     
+    /* The next line is just to fix adios_build_index_v1() call not to abort on 
+     * offset=0 variables (in case of files, written variables have offset > 0)
+     */
+    v->write_offset = 1; 
+
     /* non-global variables are put in space ONLY by rank = 0 process */
     if (gdims[0] == 0 && md->rank != 0) {
         //fprintf(stderr, "rank=%d var_name=%s is not global. Skip\n", md->rank, ds_var_name);
@@ -488,7 +493,6 @@ void adios_dimes_write (struct adios_file_struct * fd
     //}
     
      
-    v->write_offset = 1; // only !=0 offsets will be included in build index
     /* This is not needed here, this is already called in common_adios_write() 
     adios_generate_var_characteristics_v1 (fd, v); // characteristics will be included in build index
     adios_write_var_characteristics_v1 (fd, v);

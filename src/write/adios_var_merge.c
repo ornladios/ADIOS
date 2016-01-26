@@ -29,7 +29,6 @@
 #define FORWARD 0
 #define REVERSE 1
 
-extern struct adios_transport_struct * adios_transports;
 static int varcnt=0;
 static char io_method[16]; //the IO method for data output
 static char io_parameters[256]; //the IO method parameters
@@ -926,7 +925,7 @@ enum BUFFERING_STRATEGY adios_var_merge_should_buffer (struct adios_file_struct 
         default:
         {
             adios_error (err_invalid_file_mode, "VAR_MERGE method: Unknown file mode requested: %d\n", fd->mode);
-            return adios_flag_no;
+            return no_buffering;
         }
     }
 
