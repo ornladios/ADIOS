@@ -48,12 +48,14 @@ struct adios_timing_struct *  adios_timing_create (int timer_count, char** timer
 void adios_clear_timers (struct adios_timing_struct * ts);
 void adios_timing_destroy (struct adios_timing_struct * timing_obj);
 
+int adios_add_timing_variables (struct adios_file_struct * fd);
+
 void adios_timing_go (struct adios_timing_struct * ts, int64_t index);
 void adios_timing_stop (struct adios_timing_struct * ts, int64_t index);
 
-
 void adios_timing_declare_user_timers (int64_t fd_p, int user_timer_count, char** user_timer_names);
 
+void adios_write_timing_variables (struct adios_file_struct * fd);
 
 /* Print out all gathered info */
 void adios_timing_write_xml_common (int64_t fd_p, const char* filename);

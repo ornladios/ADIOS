@@ -532,6 +532,7 @@ static int common_adios_write_transform_helper(struct adios_file_struct * fd, st
         return 1;
     }
     /* else: shared buffer but buffering has stopped, nothing needs to be done */
+    return 1;
 }
 
 ///////////////////////////////////////////////////////////////////////////////

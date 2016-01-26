@@ -18,6 +18,7 @@
 #include "public/adios.h"
 #include "public/adios_error.h"
 #include "core/globals.h"
+#include "core/buffer.h"
 #include "core/common_adios.h"
 #include "core/adios_bp_v1.h"
 #include "core/adios_internals.h"

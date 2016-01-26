@@ -423,7 +423,7 @@ uint64_t mGetRange(ADIOS_SELECTION_POINTS_STRUCT* pts, uint64_t* start, uint64_t
    uint64_t bbsize = 1;
    for (k=0; k<pts->ndim; k++) {
      bbsize *= max[k] - start[k]+1;
-     printf("... bb at %ld dimention: [%ld, %ld]\n", k, max[k], start[k]);
+     printf("... bb at %llu dimention: [%llu, %llu]\n", k, max[k], start[k]);
    }
    
    uint64_t BBSIZELIMIT = 20000000; 	    
@@ -433,7 +433,7 @@ uint64_t mGetRange(ADIOS_SELECTION_POINTS_STRUCT* pts, uint64_t* start, uint64_t
      nBB += 1;
    }
    
-   printf("... nBB=%ld \n", nBB);
+   printf("... nBB=%llu\n", nBB);
    //return bbsize;
    return nBB;   
 }
@@ -2612,7 +2612,7 @@ int adios_read_bp_inq_var_trans_blockinfo(const ADIOS_FILE *fp, const ADIOS_VARI
     // is needed.
     int streaming_block_offset;
     if (p->streaming) {
-    	int time = _adios_step_to_time(fp, var_root, 0);
+    	int time = adios_step_to_time_v1(fp, var_root, 0);
     	streaming_block_offset = get_var_start_index(var_root, time);
     } else {
     	streaming_block_offset = 0;

@@ -15,6 +15,7 @@
 #include "public/adios.h"
 #include "public/adios_read.h"
 #include "public/adios_error.h"
+#include "public/adios_version.h"
 #include "core/bp_utils.h"
 #include "core/adios_internals.h"
 #include "core/adios_bp_v1.h"
@@ -159,7 +160,7 @@ int get_time (struct adios_index_var_struct_v1 * v, int step)
  * say, the 1th dump, 3rd dump, 5th dump. The corresponding step
  * should be 0, 1, 2 for it.
  */
-int _adios_step_to_time (const ADIOS_FILE * fp, struct adios_index_var_struct_v1 * v, int from_steps)
+int adios_step_to_time_v1 (const ADIOS_FILE * fp, struct adios_index_var_struct_v1 * v, int from_steps)
 {
     BP_PROC * p = GET_BP_PROC (fp);
     BP_FILE * fh = GET_BP_FILE (fp);
@@ -194,7 +195,7 @@ int adios_step_to_time (const ADIOS_FILE * fp, int varid, int from_steps)
     mapped_varid = p->varid_mapping[varid];
     v = bp_find_var_byid (fh, mapped_varid);
 
-    return _adios_step_to_time (fp, v, from_steps);
+    return adios_step_to_time_v1 (fp, v, from_steps);
 }
 
 int bp_read_open (const char * filename,

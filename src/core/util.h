@@ -56,6 +56,7 @@ ADIOS_SELECTION * copy_selection (const ADIOS_SELECTION * sel);
 void free_selection (ADIOS_SELECTION * sel);
 // This helper routine returns a vector of unique NID's
 int get_nids (MPI_Comm comm, uint32_t * nids);
+void trim_spaces (char * str);
 
 /*******************************************************
    Processing parameter lists
