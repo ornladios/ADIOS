@@ -105,7 +105,7 @@ class AdiosTestCase(ut.TestCase):
     def test_adios_var_array_squeeze(self):
         v = self.f['temperature']
         val = v[:,1]
-        self.assertEqual(val.shape, (2,))
+        self.assertEqual(val.shape, (2,1))
 
 if __name__ == '__main__':
     ut.main()

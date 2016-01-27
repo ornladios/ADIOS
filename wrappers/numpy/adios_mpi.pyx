@@ -1019,7 +1019,10 @@ cdef class var:
         ##    return np.asscalar(var)
         ##else:
         ##    return var
-        return np.squeeze(var)
+
+        ## No squeeze anymore (Jan 2016)
+        ##return np.squeeze(var)
+        return var
 
     cpdef printself(self):
         """ Print native ADIOS_VARINFO structure. """
