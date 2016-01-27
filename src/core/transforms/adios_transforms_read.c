@@ -405,8 +405,6 @@ static uint64_t apply_datablock_to_buffer_local_selections(
         ADIOS_SELECTION **out_inter_sel, int want_out_inter_sel,
         enum ADIOS_FLAG swap_endianness)
 {
-	int may_have_intersection = 1;
-
 	// For writeblock selections, we can use adios_patch_data_to_local,
 	// but first we must determine the bounding box of the writeblock selection
     const ADIOS_SELECTION *vb_bounds_sel = create_writeblock_bounds(&output_sel->u.block, datablock->timestep, raw_varinfo, transinfo);
@@ -415,7 +413,7 @@ static uint64_t apply_datablock_to_buffer_local_selections(
     // if we need to allocate a fitting output buffer
     if (want_out_inter_sel || !*output_buffer) {
         *out_inter_sel = adios_selection_intersect_local(datablock->bounds, output_sel, datablock->timestep, raw_varinfo, transinfo);
-        may_have_intersection = (*out_inter_sel ? 1 : 0);
+        //int may_have_intersection = (*out_inter_sel ? 1 : 0);
     }
 
     // Allocate the output buffer if needed (inter_sel is populated by previous if statement)

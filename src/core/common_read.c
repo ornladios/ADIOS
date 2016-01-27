@@ -835,14 +835,12 @@ ADIOS_VARINFO * common_read_inq_var_byid (const ADIOS_FILE *fp, int varid)
  */
 void common_read_get_attrs_for_variable (const ADIOS_FILE *fp, ADIOS_VARINFO *vi)
 {
-    struct common_read_internals_struct * internals;
     char * varpath;
     int i; 
     assert (vi != NULL);
     assert (fp != NULL);
     vi->nattrs = 0;
     vi->attr_ids = (int *) malloc (fp->nattrs * sizeof(int));
-    internals = (struct common_read_internals_struct *) fp->internal_data;
     varpath = fp->var_namelist [vi->varid];
     log_debug ("Look for attributes of variable %s...\n", varpath);
     int varlen = strlen (varpath);

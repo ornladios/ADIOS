@@ -2072,7 +2072,6 @@ int adios_parse_config (const char * config, MPI_Comm comm)
     mxml_node_t * root = NULL;
     int saw_datagroup = 0;
     int saw_method = 0;
-    int saw_buffer = 0;
     char * schema_version = 0;
 
     if (!adios_transports_initialized)
@@ -2258,7 +2257,6 @@ int adios_parse_config (const char * config, MPI_Comm comm)
                 {
                     if (!parseBuffer (node))
                         break;
-                    saw_buffer = 1;
                 }
                 else
                 {
@@ -2305,14 +2303,6 @@ int adios_parse_config (const char * config, MPI_Comm comm)
 
         return 0;
     }
-    /*if (!saw_buffer)
-    {
-        adios_error (err_no_buffer_defined, "config.xml: must define the buffer element in "
-                "config.xml\n"
-                );
-
-        return 0;
-    }*/
 
     return 1;
 }
