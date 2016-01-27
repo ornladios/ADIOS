@@ -310,7 +310,7 @@ int hw_makeh5 (char * fnamein, char * fnameout)
                     var_payload.payload = 0;
                 }
                 /*
-                   printf("var id=%d name=%s rank=%d offset=%llu\n", 
+                   printf("var id=%d name=%s rank=%d offset=%" PRIu64 "\n",
                    var_header.id, 
                    var_header.name,
                    var_dims[var_dims_count-1].rank,
@@ -333,7 +333,7 @@ int hw_makeh5 (char * fnamein, char * fnameout)
                             var_dims [var_dims_count].rank = var_dims [j].rank;
                             var_dims [var_dims_count].offset = var_dims [j].offset;
                             /*
-                               printf("attribute: %s  vid= %llu rank: %llu\n",attribute.name,
+                               printf("attribute: %s  vid= %" PRIu64 " rank: %" PRIu64 "\n",attribute.name,
                                attribute.id,var_dims[var_dims_count].rank);
                                */
                             j = var_dims_count;
@@ -413,7 +413,7 @@ int hw_makeh5 (char * fnamein, char * fnameout)
                     while (d) {
                         if (d->dimension.var_id != 0) {
                             for (i = 0; i < var_dims_count; i++) {
-                                //printf("%s: %d %llu \n",var_header.name,
+                                //printf("%s: %d %" PRIu64 " \n",var_header.name,
                         //i,var_dims [i].rank); 
                         if (var_dims [i].id == d->dimension.var_id){ 
                             *dims_t = var_dims [i].rank; 
@@ -557,12 +557,12 @@ int hw_makeh5 (char * fnamein, char * fnameout)
 		}
 		else {
                     for (j = vars_header.count; j <var_dims_count; j++) {
-                        //printf("id=%d rank=%d %llu\n",attribute.var_id,attribute.var_id,var_dims[j].offset);
+                        //printf("id=%d rank=%d %" PRIu64 "\n",attribute.var_id,attribute.var_id,var_dims[j].offset);
 		       if (attribute.id== var_dims[j].id) { 
                             if (var_dims[j].rank> 0) {
                                 //printf("\tattribute %s -> id (%d): %d\n",
                                 //     attribute.name,attribute.var_id, var_dims[j].rank);
-                                //printf("\tattribute %s -> id (%d):value (%llu)\n"
+                                //printf("\tattribute %s -> id (%d):value (%" PRIu64 ")\n"
                                 //      ,attribute.name
                                 //      ,attribute.id
                                 //      ,var_dims[j].rank);
@@ -1599,11 +1599,11 @@ const char * value_to_string (enum ADIOS_DATATYPES type, void * data)
             break;
 
         case adios_long:
-            sprintf (s, "%lld", *(((int64_t *) data)));
+            sprintf (s, "%" PRId64, *(((int64_t *) data)));
             break;
 
         case adios_unsigned_long:
-            sprintf (s, "%llu", *(((uint64_t *) data)));
+            sprintf (s, "%" PRIu64, *(((uint64_t *) data)));
             break;
 
         case adios_real:
@@ -1644,7 +1644,7 @@ void print_process_group_header (uint64_t num
     int i;
     struct adios_method_info_struct_v1 * m;
 
-    printf ("Process Group: %llu\n", num);
+    printf ("Process Group: %" PRIu64 "\n", num);
     printf ("\tGroup Name: %s\n", pg_header->name);
     printf ("\tHost Language Fortran?: %c\n"
            ,(pg_header->host_language_fortran == adios_flag_yes ? 'Y' : 'N')

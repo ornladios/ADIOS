@@ -18,10 +18,12 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <inttypes.h>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <errno.h>
+#include <math.h>
 #include "mpi.h"
 #include "utils.h"
 #include "decompose.h"
@@ -45,8 +47,6 @@ char   outfilename[256];   // File to write
 char   methodname[16];     // ADIOS write method
 char   methodparams[256];  // ADIOS write method
 
-static const int max_read_buffer_size  = 1024*1024*1024;
-static const int max_write_buffer_size = 1024*1024*1024;
 
 // Global variables
 int         rank, numproc;
@@ -219,9 +219,9 @@ int process_metadata()
         // print variable type and dimensions
         print0("    %-9s  %s", adios_type_to_string(v1->type), f1->var_namelist[i]);
         if (v1->ndim > 0) {
-            print0("[%llu", v1->dims[0]);
+            print0("[%" PRIu64, v1->dims[0]);
             for (j = 1; j < v1->ndim; j++)
-                print0(", %llu", v1->dims[j]);
+                print0(", %" PRIu64, v1->dims[j]);
             print0("] :\n");
         } else {
             print0("\tscalar\n");
@@ -244,9 +244,9 @@ int process_metadata()
         // print variable type and dimensions
         print0("    %-9s  %s", adios_type_to_string(v2->type), f2->var_namelist[i]);
         if (v2->ndim > 0) {
-            print0("[%llu", v2->dims[0]);
+            print0("[%" PRIu64, v2->dims[0]);
             for (j = 1; j < v2->ndim; j++)
-                print0(", %llu", v2->dims[j]);
+                print0(", %" PRIu64, v2->dims[j]);
             print0("] :\n");
         } else {
             print0("\tscalar\n");
@@ -257,7 +257,8 @@ int process_metadata()
      
     for(i=0; i<f1->nvars; i++){
 	    v1 = varinfo1[i].v;
-	    for(j=i; j!=i-1; ((j++)%(f2->nvars))){
+	    //for(j=i; j!=i-1; ((j++)%(f2->nvars))){
+	    for(j=i; j!=i-1; j = (j % f2->nvars)+1){
 	      v2 = varinfo2[j].v;
 	      if(strcmp(f1->var_namelist[i], f2->var_namelist[j]) == 0 &&
 	        strcmp(adios_type_to_string(v1->type), adios_type_to_string(v2->type))==0){
@@ -427,14 +428,14 @@ int compare_data(char * variable_name, void *data1, void *data2, int item, enum 
         case adios_unsigned_long:
             if(((unsigned long long*) data1)[item] != ((unsigned long long*) data2)[item])//not identical
             {
-                print("%s : %llu in %s | %llu in %s\n", variable_name, ((unsigned long long*) data1)[item], infilename1, ((unsigned long long*) data2)[item], infilename2);
+                print("%s : %" PRIu64 " in %s | %" PRIu64 " in %s\n", variable_name, ((unsigned long long*) data1)[item], infilename1, ((unsigned long long*) data2)[item], infilename2);
                 ret++;
             }
             break;
         case adios_long:
             if(((unsigned long long*) data1)[item] != ((unsigned long long*) data2)[item])//not identical
             {
-                print("%s : %lld in %s | %lld in %s\n", variable_name, ((signed long long*) data1)[item], infilename1, ((signed long long*) data2)[item], infilename2);
+                print("%s : %" PRId64 " in %s | %" PRId64 " in %s\n", variable_name, ((signed long long*) data1)[item], infilename1, ((signed long long*) data2)[item], infilename2);
                 ret++;
             }
             break;
@@ -443,7 +444,7 @@ int compare_data(char * variable_name, void *data1, void *data2, int item, enum 
                 float a, b;
                 a = ((float *) data1)[item];
                 b = ((float *) data2)[item];
-                if(abs(a-b)> fuzz_factor){
+                if(fabs(a-b)> fuzz_factor){
                     print("%s : %g in %s | %g in %s\n", variable_name, a, infilename1, b, infilename2);
                     ret++;
                 }
@@ -454,7 +455,7 @@ int compare_data(char * variable_name, void *data1, void *data2, int item, enum 
                 double aa, bb;
                 aa = ((double *) data1)[item];
                 bb = ((double *) data2)[item];
-                if(abs(aa-bb)> fuzz_factor){
+                if(fabs(aa-bb)> fuzz_factor){
                     print("%s : %g in %s | %g in %s\n", variable_name, aa, infilename1, bb, infilename2);
                     ret++;
                 }
@@ -471,7 +472,7 @@ int compare_data(char * variable_name, void *data1, void *data2, int item, enum 
                 a12 = ((float *) data1)[2*item+1];
                 b11 = ((float *) data2)[2*item];
                 b12 = ((float *) data2)[2*item+1];
-                if(abs(a11-b11)> fuzz_factor || abs(a12-b12)>fuzz_factor){
+                if(fabs(a11-b11)> fuzz_factor || fabs(a12-b12)>fuzz_factor){
                     print("%s : %g i%g in %s | %g i%g in %s\n", variable_name, a11, b11, infilename1, a12, b12, infilename2);
                     ret++;
                 }
@@ -485,7 +486,7 @@ int compare_data(char * variable_name, void *data1, void *data2, int item, enum 
                 a22 = ((float *) data1)[2*item+1];
                 b21 = ((float *) data2)[2*item];
                 b22 = ((float *) data2)[2*item+1];
-                if(abs(a21-b21)> fuzz_factor || abs(a22-b22)>fuzz_factor){
+                if(fabs(a21-b21)> fuzz_factor || fabs(a22-b22)>fuzz_factor){
                     print("%s : %g i%g in %s | %g i%g in %s\n", variable_name, a21, b21, infilename1, a22, b22, infilename2);
                     ret++;
                 }

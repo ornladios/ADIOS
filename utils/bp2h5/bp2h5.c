@@ -261,11 +261,11 @@ const char * value_to_string (enum ADIOS_DATATYPES type, void * data, int idx)
             break;
 
         case adios_long:
-            sprintf (s, "%lld", ((int64_t *) data)[idx]);
+            sprintf (s, "%" PRId64, ((int64_t *) data)[idx]);
             break;
 
         case adios_unsigned_long:
-            sprintf (s, "%llu", ((uint64_t *) data)[idx]);
+            sprintf (s, "%" PRIu64, ((uint64_t *) data)[idx]);
             break;
 
         case adios_real:
@@ -375,15 +375,15 @@ int readVar(ADIOS_GROUP *gp, ADIOS_VARINFO *vi, const char * name)
     else
       ct = icount[j];
     if (verbose>2) 
-      printf("    j=%d, st=%llu ct=%llu\n", j, st, ct);
+      printf("    j=%d, st=%" PRIu64 " ct=%" PRIu64 "\n", j, st, ct);
     start_t[j] = st;
     count_t[j] = ct;
     nelems *= ct;
     if (verbose>1) 
-      printf("    s[%d]=%llu, c[%d]=%llu, n=%llu\n", j, start_t[j], j, count_t[j], nelems);
+      printf("    s[%d]=%" PRIu64 ", c[%d]=%" PRIu64 ", n=%" PRIu64 "\n", j, start_t[j], j, count_t[j], nelems);
   }
   if (verbose>1) {
-    printf(" total size of data to read = %llu\n", nelems*elemsize);
+    printf(" total size of data to read = %" PRIu64 "\n", nelems*elemsize);
   }
   maxreadn = MAX_BUFFERSIZE/elemsize;
   if (nelems < maxreadn)
@@ -419,7 +419,7 @@ int readVar(ADIOS_GROUP *gp, ADIOS_VARINFO *vi, const char * name)
     sum = sum * (uint64_t) count_t[i];
     actualreadn = actualreadn * readn[i];
   }
-  if (verbose>1) printf("    read %d elements at once, %lld in total (nelems=%lld)\n", actualreadn, sum, nelems);
+  if (verbose>1) printf("    read %d elements at once, %" PRId64 " in total (nelems=%" PRId64 ")\n", actualreadn, sum, nelems);
 
 
   // init s and c
@@ -489,7 +489,7 @@ int readVar(ADIOS_GROUP *gp, ADIOS_VARINFO *vi, const char * name)
     H5Dclose(dataset);
     //H5Tclose(h5_type_id);
 
-    if (verbose>2) printf("  read %lld bytes\n", bytes_read);
+    if (verbose>2) printf("  read %" PRId64 " bytes\n", bytes_read);
 
     // print slice
 

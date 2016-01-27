@@ -15,6 +15,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <inttypes.h>
 
 #ifndef __USE_LARGEFILE64
 #define __USE_LARGEFILE64
@@ -256,13 +257,13 @@ int read_indexes(char *filename) {
     if (verbose>1) {
         printf (DIVIDER);
         printf ("Process Groups Index:\n");
-        printf ("End of process groups       = %llu\n", in_bp->end_of_pgs);
-        printf ("Process Groups Index Offset = %llu\n", in_bp->pg_index_offset);
-        printf ("Process Groups Index Size   = %llu\n", in_bp->pg_size);
-        printf ("Variable Index Offset       = %llu\n", in_bp->vars_index_offset);
-        printf ("Variable Index Size         = %llu\n", in_bp->vars_size);
-        printf ("Attribute Index Offset      = %llu\n", in_bp->attrs_index_offset);
-        printf ("Attribute Index Size        = %llu\n", in_bp->attrs_size);
+        printf ("End of process groups       = %" PRIu64 "\n", in_bp->end_of_pgs);
+        printf ("Process Groups Index Offset = %" PRIu64 "\n", in_bp->pg_index_offset);
+        printf ("Process Groups Index Size   = %" PRIu64 "\n", in_bp->pg_size);
+        printf ("Variable Index Offset       = %" PRIu64 "\n", in_bp->vars_index_offset);
+        printf ("Variable Index Size         = %" PRIu64 "\n", in_bp->vars_size);
+        printf ("Attribute Index Offset      = %" PRIu64 "\n", in_bp->attrs_index_offset);
+        printf ("Attribute Index Size        = %" PRIu64 "\n", in_bp->attrs_size);
     }
 
     return excode;
@@ -396,7 +397,7 @@ void split_pg_index( uint32_t from, uint32_t to) {
 
         if (section == 1)  {
             // recalculate the offset of the outgoing group to the position in the output
-            if (verbose>1) printf("    group time %d offset %lld -> %lld\n", 
+            if (verbose>1) printf("    group time %d offset %" PRId64 " -> %" PRId64 "\n",
                             pg->time_index, pg->offset_in_file, pg->offset_in_file - out_offset_start);
             pg->offset_in_file -= out_offset_start;
         }
@@ -410,7 +411,7 @@ void split_pg_index( uint32_t from, uint32_t to) {
         out_offset_end = tail_pg_root->offset_in_file; // end points to a byte which is not copied!
     else
         out_offset_end = in_bp->pg_index_offset; // pg index is right after all the pg data in the bp file
-    if (verbose>1) printf("  offset start = %llu  end = %llu\n", out_offset_start, out_offset_end);
+    if (verbose>1) printf("  offset start = %" PRIu64 "  end = %" PRIu64 "\n", out_offset_start, out_offset_end);
 }
 
 /** Determine the start and beginning offsets in input file (of groups) that should be
@@ -432,7 +433,7 @@ void determine_pg_offsets() {
         out_offset_start = 0;
         out_offset_end = 0;
     }
-    if (verbose>1) printf("  offset start = %llu  end = %llu\n", out_offset_start, out_offset_end);
+    if (verbose>1) printf("  offset start = %" PRIu64 "  end = %" PRIu64 "\n", out_offset_start, out_offset_end);
 }
 */
 
@@ -547,17 +548,17 @@ int write_out( const char *fileout, const char *filein) {
     ssize_t bytes_read, bytes_written;
     uint64_t bytes_to_copy = out_offset_end - out_offset_start; // end byte should not be copied
     uint64_t bytes_copied  = 0;
-    if (verbose>1) printf("  seek in input file to %llu\n", out_offset_start);
+    if (verbose>1) printf("  seek in input file to %" PRIu64 "\n", out_offset_start);
     lseek64 (in_bp->f, out_offset_start, SEEK_SET);
     while (bytes_copied < bytes_to_copy) {
         bytes_read = read( in_bp->f, (void *)buf, COPYBUFSIZE);
         if (bytes_read < 0) {
-            fprintf(stderr, "Error at reading input file %s from offset %llu: %s\n", 
+            fprintf(stderr, "Error at reading input file %s from offset %" PRIu64 ": %s\n",
                     filein, out_offset_start+bytes_copied, strerror(errno));
             close(f);
             return 2;
         } else if (bytes_read == 0) {
-            fprintf(stderr, "Error unexpected end of input file %s at offset %llu: %s\n", 
+            fprintf(stderr, "Error unexpected end of input file %s at offset %" PRIu64 ": %s\n",
                     filein, out_offset_start+bytes_copied, strerror(errno));
             close(f);
             return 3;
@@ -568,26 +569,26 @@ int write_out( const char *fileout, const char *filein) {
 
         bytes_written = write( f, (void *) buf, bytes_read);
         if (bytes_written != bytes_read) {
-            fprintf(stderr, "Error: could not write %d bytes to output file %s at offset %llu: %s\n", 
-                    bytes_read, fileout, out_offset_start+bytes_copied, strerror(errno));
+            fprintf(stderr, "Error: could not write %" PRId64 " bytes to output file %s at offset %" PRIu64 ": %s\n",
+                    (long long)bytes_read, fileout, out_offset_start+bytes_copied, strerror(errno));
             close(f);
             return 4;
         }
 
         bytes_copied += bytes_written;
     }
-    if (verbose>1) printf("  written %llu %llx bytes of data into %s\n", bytes_copied, bytes_copied, fileout);
+    if (verbose>1) printf("  written %" PRIu64 " %llx bytes of data into %s\n", bytes_copied, bytes_copied, fileout);
 
     // write indexes and version into a buffer
     char * buffer = NULL;
     uint64_t buffer_size = 0;
     uint64_t buffer_offset = 0;
     adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset, bytes_copied, idx);
-    if (verbose>1) printf("  index size %llu 0x%llx\n", buffer_offset, buffer_offset);
+    if (verbose>1) printf("  index size %" PRIu64 " 0x%llx\n", buffer_offset, buffer_offset);
     adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 
     // write buffer out
-    if (verbose>1) printf("  write %llu 0x%llx bytes of indexes into %s\n", buffer_offset, buffer_offset, fileout);
+    if (verbose>1) printf("  write %" PRIu64 " 0x%llx bytes of indexes into %s\n", buffer_offset, buffer_offset, fileout);
     bytes_written = write (f, buffer, buffer_offset);
 
     if (verbose>1) printf("  written %zu 0x%zx bytes of indexes into %s\n", bytes_written, bytes_written, fileout);

@@ -20,6 +20,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <unistd.h>
+#include <inttypes.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -452,7 +453,7 @@ void print_file_size(uint64_t size)
     }
     if (r > 511)
         s++;
-    printf ("  file size:     %lld %s\n", s, sm[idx]); 
+    printf ("  file size:     %" PRId64 " %s\n", s, sm[idx]);
 }
 
 
@@ -586,9 +587,9 @@ int doList_group (ADIOS_FILE *fp)
                 if (timed) 
                     fprintf(outf, "%d*", vi->nsteps);
                 if (vi->ndim > 0) {
-                    fprintf(outf,"{%lld", vi->dims[0]);
+                    fprintf(outf,"{%" PRId64, vi->dims[0]);
                     for (j=1; j < vi->ndim; j++) {
-                        fprintf(outf,", %lld", vi->dims[j]);
+                        fprintf(outf,", %" PRId64, vi->dims[j]);
                     }
                     fprintf(outf,"}");
                 } else {
@@ -748,9 +749,9 @@ int doList_group (ADIOS_FILE *fp)
 #define PRINT_ARRAY(str, ndim, dims, loopvar, format) \
     fprintf(outf,"%s",str); \
     if (ndim > 0) { \
-        fprintf(outf,"{"#format, dims[0]); \
+        fprintf(outf,"{%"#format, dims[0]); \
         for (loopvar=1; loopvar < ndim; loopvar++) { \
-            fprintf(outf,", "#format, dims[loopvar]); \
+            fprintf(outf,", %"#format, dims[loopvar]); \
         } \
         fprintf(outf,"}\n"); \
     } else { \
@@ -790,24 +791,24 @@ void printMeshes (ADIOS_FILE  *fp)
                     PRINT_ARRAY("    dimensions:   ", 
                                  mi->uniform->num_dimensions, 
                                  mi->uniform->dimensions, 
-                                 j, %lld)
+                                 j, lld)
                     if (mi->uniform->origins) {
                         PRINT_ARRAY("    origins:      ", 
                                      mi->uniform->num_dimensions, 
                                      mi->uniform->origins, 
-                                     j, %g) 
+                                     j, g)
                     }
                     if (mi->uniform->spacings) {
                         PRINT_ARRAY ("    spacings:     ", 
                                      mi->uniform->num_dimensions, 
                                      mi->uniform->spacings,
-                                     j, %g)
+                                     j, g)
                     }
                     if (mi->uniform->maximums) {
                         PRINT_ARRAY ("    maximums:     ", 
                                      mi->uniform->num_dimensions, 
                                      mi->uniform->maximums,
-                                     j, %g)
+                                     j, g)
                     }
                     break;
 
@@ -816,7 +817,7 @@ void printMeshes (ADIOS_FILE  *fp)
                     PRINT_ARRAY("    dimensions:   ", 
                                 mi->rectilinear->num_dimensions, 
                                 mi->rectilinear->dimensions, 
-                                j, %lld)
+                                j, lld)
                     if (mi->rectilinear->use_single_var) {
                         fprintf(outf, "    coordinates:  single-var: \"%s\"\n", 
                                 mi->rectilinear->coordinates[0]);
@@ -835,7 +836,7 @@ void printMeshes (ADIOS_FILE  *fp)
                     PRINT_ARRAY("    dimensions:   ", 
                                 mi->structured->num_dimensions, 
                                 mi->structured->dimensions, 
-                                j, %lld);
+                                j, lld);
                     if (mi->structured->use_single_var) {
                         fprintf(outf, "    points:       single-var: \"%s\"\n", 
                                 mi->structured->points[0]);
@@ -853,7 +854,7 @@ void printMeshes (ADIOS_FILE  *fp)
                 case ADIOS_MESH_UNSTRUCTURED:
                     fprintf(outf, "unstructured\n");
                     if (mi->unstructured->nvar_points <= 1) {
-                        fprintf(outf, "    npoints:      %lld\n", mi->unstructured->npoints);
+                        fprintf(outf, "    npoints:      %" PRId64 "\n", mi->unstructured->npoints);
                         fprintf(outf, "    points:       single-var: \"%s\"\n", 
                                 mi->unstructured->points[0]);
                     } else {
@@ -868,7 +869,7 @@ void printMeshes (ADIOS_FILE  *fp)
                     for (i=0; i < mi->unstructured->ncsets; i++) { 
                         fprintf(outf, "    cell set %d:\n", i);
                         fprintf(outf, "      cell type:  %d\n", mi->unstructured->ctypes[i]);
-                        fprintf(outf, "      ncells:     %llu\n", mi->unstructured->ccounts[i]);
+                        fprintf(outf, "      ncells:     %" PRIu64 "\n", mi->unstructured->ccounts[i]);
                         fprintf(outf, "      cells var:  \"%s\"\n", mi->unstructured->cdata[i]);
                     }
                     fprintf(outf, "    nspaces:      %d\n", mi->unstructured->nspaces);
@@ -1148,7 +1149,7 @@ int getTypeInfo( enum ADIOS_DATATYPES adiosvartype, int* elemsize)
 }
 
 #define PRINT_DIMS64(str, v, n, loopvar) printf("%s = { ", str); \
-    for (loopvar=0; loopvar<n;loopvar++) printf("%lld ", v[loopvar]);    \
+    for (loopvar=0; loopvar<n;loopvar++) printf("%" PRId64 " ", v[loopvar]);    \
 printf("}")
 /** Read data of a variable and print 
  * Return: 0: ok, != 0 on error
@@ -1196,13 +1197,13 @@ int readVar(ADIOS_FILE *fp, ADIOS_VARINFO *vi, const char * name, bool timed)
             ct = icount[0];
 
         if (verbose>2) 
-            printf("    j=0, st=%llu ct=%llu\n", st, ct);
+            printf("    j=0, st=%" PRIu64 " ct=%" PRIu64 "\n", st, ct);
 
         start_t[0] = st;
         count_t[0] = ct;
         nelems *= ct;
         if (verbose>1) 
-            printf("    s[0]=%llu, c[0]=%llu, n=%llu\n", 
+            printf("    s[0]=%" PRIu64 ", c[0]=%" PRIu64 ", n=%" PRIu64 "\n",
                     start_t[0], count_t[0], nelems);
         
         tidx = 1;
@@ -1220,18 +1221,18 @@ int readVar(ADIOS_FILE *fp, ADIOS_VARINFO *vi, const char * name, bool timed)
             ct = icount[j+tidx];
 
         if (verbose>2) 
-            printf("    j=%d, st=%llu ct=%llu\n", j+tidx, st, ct);
+            printf("    j=%d, st=%" PRIu64 " ct=%" PRIu64 "\n", j+tidx, st, ct);
 
         start_t[j+tidx] = st;
         count_t[j+tidx] = ct;
         nelems *= ct;
         if (verbose>1) 
-            printf("    s[%d]=%llu, c[%d]=%llu, n=%llu\n", 
+            printf("    s[%d]=%" PRIu64 ", c[%d]=%" PRIu64 ", n=%" PRIu64 "\n",
                     j+tidx, start_t[j+tidx], j+tidx, count_t[j+tidx], nelems);
     }
 
     if (verbose>1) {
-        printf(" total size of data to read = %llu\n", nelems*elemsize);
+        printf(" total size of data to read = %" PRIu64 "\n", nelems*elemsize);
     }
 
     print_slice_info(vi->ndim, vi->dims, timed, vi->nsteps, start_t, count_t);
@@ -1271,7 +1272,7 @@ int readVar(ADIOS_FILE *fp, ADIOS_VARINFO *vi, const char * name, bool timed)
         sum = sum * (uint64_t) count_t[i];
         actualreadn = actualreadn * readn[i];
     }
-    if (verbose>1) printf("    read %d elements at once, %lld in total (nelems=%lld)\n", actualreadn, sum, nelems);
+    if (verbose>1) printf("    read %d elements at once, %" PRId64 " in total (nelems=%" PRId64 ")\n", actualreadn, sum, nelems);
 
 
     // init s and c
@@ -1320,7 +1321,7 @@ int readVar(ADIOS_FILE *fp, ADIOS_VARINFO *vi, const char * name, bool timed)
             return 11;
         }
 
-        //if (verbose>2) printf("  read %lld bytes\n", bytes_read);
+        //if (verbose>2) printf("  read %" PRId64 " bytes\n", bytes_read);
 
         // print slice
         print_dataset(data, vi->type, s, c, tdims, ndigits_dims); 
@@ -1464,9 +1465,9 @@ void print_slice_info(int ndim, uint64_t *dims, int timed, int nsteps, uint64_t 
             isaslice = true;
     }
     if (isaslice) {
-        fprintf(outf,"%c   slice (%lld:%lld", commentchar, s[0], s[0]+c[0]-1);
+        fprintf(outf,"%c   slice (%" PRId64 ":%" PRId64, commentchar, s[0], s[0]+c[0]-1);
         for (i=1; i<tdim; i++) {
-            fprintf(outf,", %lld:%lld", s[i], s[i]+c[i]-1);
+            fprintf(outf,", %" PRId64 ":%" PRId64, s[i], s[i]+c[i]-1);
         }
         fprintf(outf,")\n");
     }
@@ -1572,9 +1573,9 @@ int print_data_characteristics(void * min, void * max, double * avg, double * st
             break;
 
         case adios_unsigned_long:
-            if (min) fprintf(outf,(f ? format : "%10llu  "), (* (unsigned long long *) min));
+            if (min) fprintf(outf,(f ? format : "%10" PRIu64 "  "), (* (unsigned long long *) min));
             else fprintf(outf, "      null  ");
-            if (max) fprintf(outf,(f ? format : "%10llu  "), (* (unsigned long long *) max));
+            if (max) fprintf(outf,(f ? format : "%10" PRIu64 "  "), (* (unsigned long long *) max));
             else fprintf(outf, "      null  ");
             if (avg) fprintf(outf, "%10.2f  ", * avg);
             else fprintf(outf, "      null  ");
@@ -1582,9 +1583,9 @@ int print_data_characteristics(void * min, void * max, double * avg, double * st
             else fprintf(outf, "      null  ");
             break;
         case adios_long:
-            if (min) fprintf(outf,(f ? format : "%10lld  "), (* (long long *) min));
+            if (min) fprintf(outf,(f ? format : "%10" PRId64 "  "), (* (long long *) min));
             else fprintf(outf, "      null  ");
-            if (max) fprintf(outf,(f ? format : "%10lld  "), (* (long long *) max));
+            if (max) fprintf(outf,(f ? format : "%10" PRId64 "  "), (* (long long *) max));
             else fprintf(outf, "      null  ");
             if (avg) fprintf(outf, "%10.2f  ", * avg);
             else fprintf(outf, "      null  ");
@@ -1673,10 +1674,10 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype, bool all
             break;
 
         case adios_unsigned_long:
-            fprintf(outf,(f ? format : "%llu"), ((unsigned long long *) data)[item]);
+            fprintf(outf,(f ? format : "%" PRIu64), ((unsigned long long *) data)[item]);
             break;
         case adios_long:        
-            fprintf(outf,(f ? format : "%lld"), ((signed long long *) data)[item]);
+            fprintf(outf,(f ? format : "%" PRId64), ((signed long long *) data)[item]);
             break;
 
         case adios_real:
@@ -1731,9 +1732,9 @@ int print_dataset(void *data, enum ADIOS_DATATYPES adiosvartype,
         idxstr[0] = '\0'; // empty idx string
         if (nextcol == 0) {
             if (!noindex && tdims > 0) {
-                sprintf(idxstr,"    (%*lld",ndigits[0], ids[0]);
+                sprintf(idxstr,"    (%*" PRId64,ndigits[0], ids[0]);
                 for (i=1; i<tdims; i++) {
-                    sprintf(buf,",%*lld",ndigits[i],ids[i]);
+                    sprintf(buf,",%*" PRId64,ndigits[i],ids[i]);
                     strcat(idxstr, buf);
                 }
                 strcat(idxstr,")    ");
@@ -1835,7 +1836,7 @@ void print_decomp(ADIOS_VARINFO *vi)
                 }
                 for (k=0; k < vi->ndim; k++) {
                     if (vi->blockinfo[blockid].count[k]) {
-                    fprintf(outf, "%*lld:%*lld", 
+                    fprintf(outf, "%*" PRId64 ":%*" PRId64,
                             ndigits_dims[k],
                             vi->blockinfo[blockid].start[k],
                             ndigits_dims[k],
