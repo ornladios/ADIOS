@@ -2356,7 +2356,7 @@ int adios_read_bp_staged_perform_reads (const ADIOS_FILE *fp, int blocking)
 
     int * sizes = malloc (pvt->group_size * 4);
     int * offsets = malloc (pvt->group_size * 4);
-    void * recv_buffer;
+    void * recv_buffer = NULL;
 
     MPI_Gather (&size, 1, MPI_INT
                ,sizes, 1, MPI_INT

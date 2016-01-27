@@ -444,7 +444,6 @@ uint64_t mGetRange(ADIOS_SELECTION_POINTS_STRUCT* pts, uint64_t* start, uint64_t
 */
 static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
 {
-    BP_PROC * p = GET_BP_PROC (fp);
     BP_FILE * fh = GET_BP_FILE (fp);
 
     int size_of_type;
@@ -452,7 +451,7 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
     uint64_t i;
     read_request * nr;
     ADIOS_SELECTION * sel, * nsel;
-    ADIOS_VARCHUNK * chunk;
+    ADIOS_VARCHUNK * chunk = NULL;
 
     log_debug ("read_var()\n");
     sel = r->sel;
@@ -486,108 +485,108 @@ static ADIOS_VARCHUNK * read_var (const ADIOS_FILE * fp, read_request * r)
             nsel->u.bb.count = (uint64_t *) malloc (nsel->u.bb.ndim * 8);
             assert (nsel->u.bb.start && nsel->u.bb.count);
 
-	 if ((sel->u.points.npoints < 100) || (r->nsteps > 1)) {
-            for (i = 0; i < nsel->u.bb.ndim; i++)
-            {
-                nsel->u.bb.count[i] = 1;
-	    }
+            if ((sel->u.points.npoints < 100) || (r->nsteps > 1)) {
+                for (i = 0; i < nsel->u.bb.ndim; i++)
+                {
+                    nsel->u.bb.count[i] = 1;
+                }
 
-            for (i = 0; i < sel->u.points.npoints; i++)
-            {
-                memcpy (nsel->u.bb.start, sel->u.points.points + i * sel->u.points.ndim, sel->u.points.ndim * 8);
+                for (i = 0; i < sel->u.points.npoints; i++)
+                {
+                    memcpy (nsel->u.bb.start, sel->u.points.points + i * sel->u.points.ndim, sel->u.points.ndim * 8);
 
-                chunk = read_var_bb (fp, nr);
-                nr->data = (char *) nr->data + size_of_type; // NCSU ALACRITY-ADIOS - Potential bug here; what if nsteps > 1? Shouldn't the buffer advance by size_of_type * nsteps?
-                common_read_free_chunk (chunk);
+                    chunk = read_var_bb (fp, nr);
+                    nr->data = (char *) nr->data + size_of_type; // NCSU ALACRITY-ADIOS - Potential bug here; what if nsteps > 1? Shouldn't the buffer advance by size_of_type * nsteps?
+                    common_read_free_chunk (chunk);
+                }
+
+                free_selection (nsel);
+                free (nr);
+
+                chunk = (ADIOS_VARCHUNK *) malloc (sizeof (ADIOS_VARCHUNK));
+                assert (chunk);
+
+                chunk->varid = r->varid;
+                chunk->type = v->type;
+                // NCSU ALACRITY-ADIOS - Added timestep information into varchunks
+                chunk->from_steps = r->from_steps;
+                chunk->nsteps = r->nsteps;
+                chunk->sel = copy_selection (r->sel);
+                chunk->data = r->data;
+            } else { // Trying something new
+                uint64_t start[sel->u.points.ndim], max[sel->u.points.ndim];
+                uint64_t idx = 0, k=0, j=0;
+
+                uint64_t nBB = mGetRange(&(sel->u.points), start, max);
+
+                uint64_t regularHeight = (max[0]-start[0]+1)/nBB;
+                for (j=0; j<nBB; j++) {
+                    if (j == nBB-1) {
+                        nsel->u.bb.count[0] = (max[0]-start[0]+1) - (nBB-1)*regularHeight;
+                    } else {
+                        nsel->u.bb.count[0] = regularHeight;
+                    }
+                    nsel->u.bb.start[0] = start[0] + j * regularHeight;
+
+                    uint64_t currBBSize = nsel->u.bb.count[0];
+                    // other dimentions
+                    for (k=1; k<sel->u.points.ndim; k++) {
+                        nsel->u.bb.count[k] = (max[k] - start[k]+1);
+                        nsel->u.bb.start[k] = start[k];
+                        currBBSize *= nsel->u.bb.count[k];
+                    }
+
+                    uint64_t product[sel->u.points.ndim];
+                    for (k=0; k<sel->u.points.ndim; k++) {
+                        if (k==0) {
+                            product[k] = currBBSize/nsel->u.bb.count[k];
+                        } else {
+                            product[k] = product[k-1]/nsel->u.bb.count[k];
+                        }
+                    }
+
+                    nr->data = malloc(currBBSize * size_of_type);
+                    chunk = read_var_bb (fp, nr);
+
+                    for (i = 0; i < sel->u.points.npoints; i++) {
+                        idx = i * sel->u.points.ndim;
+                        int64_t idxInBB = 0;
+                        for (k=0; k<sel->u.points.ndim; k++) {
+                            //idx += k;
+                            uint64_t curr = sel->u.points.points[idx+k];
+                            if ((curr >= nsel->u.bb.start[k]) && (curr < nsel->u.bb.start[k] + nsel->u.bb.count[k])) {
+                                idxInBB += (curr - nsel->u.bb.start[k])* product[k];
+                            } else {
+                                idxInBB = -1;
+                                break;
+                            }
+                        }
+
+                        if (idxInBB >= 0) {
+                            memcpy((r->data)+i*size_of_type, (char*)(nr->data)+idxInBB*size_of_type, size_of_type);
+                            //printf(" checking: %.3f vs %.3f \n", ((double*)(nr->data))[idxInBB], ((double*)(r->data))[i]);
+                            //printf("checking: [%ld th bb]  [point %ld],  idxInBB=%ld value %.3f vs %.3f\n",j, i, idxInBB, ((double*)(nr->data))[idxInBB], ((double*)(r->data))[i]);
+                        }
+                    }
+
+                    free(nr->data);
+                    common_read_free_chunk (chunk);
+                }
+                free_selection (nsel);
+                free (nr);
+
+                chunk = (ADIOS_VARCHUNK *) malloc (sizeof (ADIOS_VARCHUNK));
+                assert (chunk);
+
+                chunk->varid = r->varid;
+                chunk->type = v->type;
+                // NCSU ALACRITY-ADIOS - Added timestep information into varchunks
+                chunk->from_steps = r->from_steps;
+                chunk->nsteps = r->nsteps;
+                chunk->sel = copy_selection (r->sel);
+                chunk->data = r->data;
             }
-
-            free_selection (nsel);
-            free (nr);
-
-            chunk = (ADIOS_VARCHUNK *) malloc (sizeof (ADIOS_VARCHUNK));
-            assert (chunk);
-
-            chunk->varid = r->varid;
-            chunk->type = v->type;
-            // NCSU ALACRITY-ADIOS - Added timestep information into varchunks
-            chunk->from_steps = r->from_steps;
-            chunk->nsteps = r->nsteps;
-            chunk->sel = copy_selection (r->sel);
-            chunk->data = r->data;
-	 } else { // Trying something new
-	    uint64_t start[sel->u.points.ndim], max[sel->u.points.ndim];
-	    uint64_t idx = 0, k=0, j=0;
-	    
-	    uint64_t nBB = mGetRange(&(sel->u.points), start, max);
-
-	    uint64_t regularHeight = (max[0]-start[0]+1)/nBB;
-	    for (j=0; j<nBB; j++) {
-	      if (j == nBB-1) {
-		nsel->u.bb.count[0] = (max[0]-start[0]+1) - (nBB-1)*regularHeight;
-	      } else {
-		nsel->u.bb.count[0] = regularHeight;
-	      }
-	      nsel->u.bb.start[0] = start[0] + j * regularHeight;
-
-	      uint64_t currBBSize = nsel->u.bb.count[0];
-	      // other dimentions
-	      for (k=1; k<sel->u.points.ndim; k++) {
-		nsel->u.bb.count[k] = (max[k] - start[k]+1);
-		nsel->u.bb.start[k] = start[k];
-		currBBSize *= nsel->u.bb.count[k];
-	      }
-
-	      uint64_t product[sel->u.points.ndim];
-	      for (k=0; k<sel->u.points.ndim; k++) {
-		if (k==0) {
-		  product[k] = currBBSize/nsel->u.bb.count[k];
-		} else {
-		  product[k] = product[k-1]/nsel->u.bb.count[k];
-		}
-	      }
-
-	      nr->data = malloc(currBBSize * size_of_type);
-	      chunk = read_var_bb (fp, nr);
-
-              for (i = 0; i < sel->u.points.npoints; i++) {	      
-		  idx = i * sel->u.points.ndim;
-		  int64_t idxInBB = 0;
-		  for (k=0; k<sel->u.points.ndim; k++) {
-		    //idx += k;
-		    uint64_t curr = sel->u.points.points[idx+k];
-		    if ((curr >= nsel->u.bb.start[k]) && (curr < nsel->u.bb.start[k] + nsel->u.bb.count[k])) {
-		      idxInBB += (curr - nsel->u.bb.start[k])* product[k];
-		    } else {
-		      idxInBB = -1;
-		      break;
-		    }
-		  }
-		  
-		  if (idxInBB >= 0) {
-		    memcpy((r->data)+i*size_of_type, (char*)(nr->data)+idxInBB*size_of_type, size_of_type);
-		    //printf(" checking: %.3f vs %.3f \n", ((double*)(nr->data))[idxInBB], ((double*)(r->data))[i]);
-		    //printf("checking: [%ld th bb]  [point %ld],  idxInBB=%ld value %.3f vs %.3f\n",j, i, idxInBB, ((double*)(nr->data))[idxInBB], ((double*)(r->data))[i]);
-		  }
-	      }
-	      
-	      free(nr->data);
-	      common_read_free_chunk (chunk);
-	    }
-	    free_selection (nsel);
-	    free (nr);
-	    
-	    chunk = (ADIOS_VARCHUNK *) malloc (sizeof (ADIOS_VARCHUNK));
-	    assert (chunk);
-	    
-	    chunk->varid = r->varid;
-	    chunk->type = v->type;
-	    // NCSU ALACRITY-ADIOS - Added timestep information into varchunks
-	    chunk->from_steps = r->from_steps;
-	    chunk->nsteps = r->nsteps;
-	    chunk->sel = copy_selection (r->sel);
-	    chunk->data = r->data;	    	    
-	 }
-	 break;
+            break;
         case ADIOS_SELECTION_WRITEBLOCK:
             chunk = read_var_wb (fp, r);
             break;
@@ -1573,7 +1572,6 @@ typedef struct {
     int i, j, c, count = 1, timestep;
     int size, sum_size, nsteps, prev_timestep;
     int nb; // total number of blocks (varinfo->sum_nblocks)
-    BP_PROC * p = GET_BP_PROC (fp);
     BP_FILE * fh = GET_BP_FILE (fp);
 
     ADIOS_VARSTAT * vs;
@@ -2540,7 +2538,6 @@ int adios_read_bp_inq_var_blockinfo (const ADIOS_FILE * fp, ADIOS_VARINFO * vari
 
 // NCSU ALACRITY-ADIOS - Adding an inq function to get the new transform metadata from storage
 ADIOS_TRANSINFO * adios_read_bp_inq_var_transinfo(const ADIOS_FILE *fp, const ADIOS_VARINFO *vi) {
-    BP_PROC * p = GET_BP_PROC (fp);
     BP_FILE * fh = GET_BP_FILE (fp);
     struct adios_index_var_struct_v1 * var_root;
     int file_is_fortran;
@@ -2845,7 +2842,6 @@ int adios_read_bp_perform_reads (const ADIOS_FILE *fp, int blocking)
  */
 static read_request * split_req (const ADIOS_FILE * fp, const read_request * r, int buffer_size)
 {
-    BP_PROC * p = GET_BP_PROC (fp);
     BP_FILE * fh = GET_BP_FILE (fp);
 
     read_request * h = 0;
@@ -3066,7 +3062,6 @@ static read_request * split_req (const ADIOS_FILE * fp, const read_request * r, 
 int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
 {
     BP_PROC * p = GET_BP_PROC (fp);
-    BP_FILE * fh = GET_BP_FILE (fp);
 
     read_request * r;
     ADIOS_VARCHUNK * varchunk;
@@ -3190,7 +3185,6 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
 int adios_read_bp_get_attr_byid (const ADIOS_FILE * fp, int attrid, enum ADIOS_DATATYPES * type, int * size, void ** data)
 {
     int i;
-    BP_PROC * p = GET_BP_PROC (fp);
     BP_FILE * fh = GET_BP_FILE (fp);
     struct adios_index_attribute_struct_v1 * attr_root;
     struct adios_index_var_struct_v1 * var_root, * v1;
@@ -3487,7 +3481,6 @@ int  adios_read_bp_get_dimension_order (const ADIOS_FILE *fp)
 
 void adios_read_bp_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
 {
-    BP_PROC * p = GET_BP_PROC (fp);
     BP_FILE * fh = GET_BP_FILE (fp);
     struct bp_index_pg_struct_v1 ** root = &(fh->pgs_root);
     struct bp_minifooter * mh = &(fh->mfooter);
@@ -3502,7 +3495,6 @@ void adios_read_bp_reset_dimension_order (const ADIOS_FILE *fp, int is_fortran)
 
 void adios_read_bp_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***group_namelist, uint32_t **nvars_per_group, uint32_t **nattrs_per_group)
 {
-    BP_PROC * p = GET_BP_PROC (fp);
     BP_FILE * fh = GET_BP_FILE (fp);
     int i, j, offset;
 
@@ -3557,7 +3549,6 @@ void adios_read_bp_get_groupinfo (const ADIOS_FILE *fp, int *ngroups, char ***gr
  */
 int adios_read_bp_is_var_timed (const ADIOS_FILE *fp, int varid)
 {
-    BP_PROC * p = GET_BP_PROC (fp);
     BP_FILE * fh = GET_BP_FILE (fp);
 
     struct adios_index_var_struct_v1 * v;
@@ -3625,7 +3616,6 @@ static int map_req_varid (const ADIOS_FILE * fp, int varid)
  */
 static int adios_wbidx_to_pgidx (const ADIOS_FILE * fp, read_request * r, int step_offset)
 {
-    BP_PROC * p = GET_BP_PROC (fp);
     BP_FILE * fh = GET_BP_FILE (fp);
 
     int time, start_idx, stop_idx, c, idx;

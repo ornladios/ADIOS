@@ -779,9 +779,9 @@ int common_query_evaluate(ADIOS_QUERY* q,
 			  uint64_t batchSize, // limited by maxResult
 			  ADIOS_SELECTION** result)
 {  
-	double start = 0, end = 0;
 #ifdef BREAKDOWN
-	start = dclock();
+    double start = 0, end = 0;
+    start = dclock();
 #endif
   if (q == 0) {
     log_debug("Error: empty query will not be evaluated!");

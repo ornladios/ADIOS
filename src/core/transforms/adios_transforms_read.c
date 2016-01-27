@@ -315,8 +315,6 @@ adios_transform_read_request * adios_transform_generate_read_reqgroup(const ADIO
                                                                       const ADIOS_SELECTION *sel, int from_steps, int nsteps, const char *param, void *data) {
     // Declares
     adios_transform_read_request *new_readreq;
-    int blockidx, timestep, timestep_blockidx;
-    int start_blockidx, end_blockidx;
 
     enum ADIOS_FLAG swap_endianness = (fp->endianness == get_system_endianness()) ? adios_flag_no : adios_flag_yes;
 
@@ -664,9 +662,8 @@ static int apply_datablock_to_result_and_free(adios_datablock *datablock,
  * request group, identifies that data (if any), and returns it as an
  * ADIOS_VARCHUNK. Additionally, free the datablock.
  */
-static ADIOS_VARCHUNK * apply_datablock_to_chunk_and_free(adios_datablock *datablock, adios_transform_read_request *reqgroup) {
-    ADIOS_SELECTION *inter_sel;
-
+static ADIOS_VARCHUNK * apply_datablock_to_chunk_and_free(adios_datablock *datablock, adios_transform_read_request *reqgroup)
+{
     assert(datablock); assert(reqgroup);
     assert(reqgroup->orig_sel);
 

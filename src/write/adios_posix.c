@@ -560,11 +560,7 @@ void adios_posix_write (struct adios_file_struct * fd
                        ,struct adios_method_struct * method
                        )
 {
-    struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
-                                                          method->method_data;
-
     START_TIMER (ADIOS_TIMER_AD_WRITE);
-
     if (v->got_buffer == adios_flag_yes)
     {
         if (data != v->data)  // if the user didn't give back the same thing
@@ -581,7 +577,6 @@ void adios_posix_write (struct adios_file_struct * fd
             return;
         }
     }
-
     STOP_TIMER (ADIOS_TIMER_AD_WRITE);
 }
 
@@ -869,8 +864,6 @@ static void adios_posix_do_read (struct adios_file_struct * fd
 void adios_posix_buffer_overflow (struct adios_file_struct * fd, 
                                   struct adios_method_struct * method)
 {
-    struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
-                                                 method->method_data;
     START_TIMER (ADIOS_TIMER_AD_OVERFLOW);
     /* We get a full PG at this point that we can write out now. 
        The index should be built in close() after writing the rest of a PG there.
@@ -888,8 +881,6 @@ void adios_posix_close (struct adios_file_struct * fd
 {
     struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
                                                           method->method_data;
-    struct adios_attribute_struct * a = fd->group->attributes;
-
     struct adios_index_process_group_struct_v1 * new_pg_root = 0;
     struct adios_index_var_struct_v1 * new_vars_root = 0;
     struct adios_index_attribute_struct_v1 * new_attrs_root = 0;

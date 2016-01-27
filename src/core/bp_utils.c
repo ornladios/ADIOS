@@ -163,7 +163,6 @@ int get_time (struct adios_index_var_struct_v1 * v, int step)
 int adios_step_to_time_v1 (const ADIOS_FILE * fp, struct adios_index_var_struct_v1 * v, int from_steps)
 {
     BP_PROC * p = GET_BP_PROC (fp);
-    BP_FILE * fh = GET_BP_FILE (fp);
     int t, time;
 
     t = fp->current_step + from_steps;
@@ -414,7 +413,6 @@ BP_FILE * BP_FILE_alloc (const char * fname, MPI_Comm comm)
     fh->vars_table = 0;
     fh->b = malloc (sizeof (struct adios_bp_buffer_struct_v1));
     assert (fh->b);
-    BP_file_handle_list *lst = &fh->subfile_handles; //just for simplifying typing
     fh->subfile_handles.n_handles = 0;
     fh->subfile_handles.warning_printed = 0;
     fh->subfile_handles.head = NULL;
@@ -2335,16 +2333,11 @@ void bp_get_dimensions_generic (const ADIOS_FILE * fp, struct adios_index_var_st
             i++;
         }
 
-        if (i < var_root->characteristics_count)
-        {
-            var_dims = use_pretransform_dimensions ?
+        assert(i < var_root->characteristics_count);
+        var_dims = use_pretransform_dimensions ?
                        &var_root->characteristics[i].transform.pre_transform_dimensions
                      : &var_root->characteristics[i].dims;
-        }
-        else
-        {
-            // shouldn't be here
-        }
+
     }
 
     has_time_index_characteristic = fh->mfooter.version & ADIOS_VERSION_HAVE_TIME_INDEX_CHARACTERISTIC;

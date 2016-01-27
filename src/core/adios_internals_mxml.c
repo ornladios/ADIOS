@@ -1179,8 +1179,6 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
             const char * read_flag = 0;
             const char * transform_type = 0; // NCSU ALACRITY-ADIOS
             enum ADIOS_DATATYPES t1;
-            char  * mpath1 = 0;
-            char  * mpath2 = 0;
 
             for (i = 0; i < n->value.element.num_attrs; i++)
             {
@@ -1372,10 +1370,9 @@ static int parseGroup (mxml_node_t * node, char * schema_version)
                         const char * gwrite = 0;
                         const char * gread = 0;
                         const char * read_flag = 0;
-                    const char * transform_type = 0; // NCSU ALACRITY-ADIOS
+                        const char * transform_type = 0; // NCSU ALACRITY-ADIOS
                         enum ADIOS_DATATYPES t1;
-                        char * mpath1 = 0;
-                        char * mpath2 = 0;
+
 
                         for (i = 0; i < n1->value.element.num_attrs; i++)
                         {
@@ -2023,7 +2020,7 @@ static int parseBuffer (mxml_node_t * node)
 
         if (max_size_MB)
             sizestr = max_size_MB;        
-        else if (size_MB)
+        else
             sizestr = size_MB;
 
         size = atoi (sizestr);

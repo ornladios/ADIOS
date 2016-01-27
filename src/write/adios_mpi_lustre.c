@@ -554,7 +554,7 @@ static int ADIOS_TIMER_LOCALMD      = ADIOS_TIMING_MAX_USER_TIMERS + 2;
 static int ADIOS_TIMER_GLOBALMD     = ADIOS_TIMING_MAX_USER_TIMERS + 3;
 static int ADIOS_TIMER_AD_OPEN      = ADIOS_TIMING_MAX_USER_TIMERS + 4;
 static int ADIOS_TIMER_AD_WRITE     = ADIOS_TIMING_MAX_USER_TIMERS + 5;
-static int ADIOS_TIMER_AD_OVERFLOW  = ADIOS_TIMING_MAX_USER_TIMERS + 6;
+//static int ADIOS_TIMER_AD_OVERFLOW  = ADIOS_TIMING_MAX_USER_TIMERS + 6;
 static int ADIOS_TIMER_AD_CLOSE     = ADIOS_TIMING_MAX_USER_TIMERS + 7;
 #endif
 
@@ -608,7 +608,6 @@ int adios_mpi_lustre_open (struct adios_file_struct * fd
 
     START_TIMER (ADIOS_TIMER_AD_OPEN);
 
-    int i;
     char * name;
     int err;
     int flag;    // used for coordinating the MPI_File_open
@@ -1174,9 +1173,6 @@ void adios_mpi_lustre_write (struct adios_file_struct * fd
                      ,struct adios_method_struct * method
                      )
 {
-    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
-                                                      method->method_data;
-
     START_TIMER (ADIOS_TIMER_AD_WRITE);
 
 
@@ -1397,7 +1393,7 @@ void adios_mpi_lustre_close (struct adios_file_struct * fd
 {
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                  method->method_data;
-    struct adios_attribute_struct * a = fd->group->attributes;
+    //struct adios_attribute_struct * a = fd->group->attributes;
 
     struct adios_index_process_group_struct_v1 * new_pg_root = 0;
     struct adios_index_var_struct_v1 * new_vars_root = 0;

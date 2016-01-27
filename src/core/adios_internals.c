@@ -3769,7 +3769,7 @@ void adios_build_index_v1 (struct adios_file_struct * fd,
             a_index->nelems = a->nelems;
             a_index->characteristics_count = 1;
             a_index->characteristics_allocated = 1;
-            uint64_t size = a_index->nelems * adios_get_type_size (a->type, a->value);
+            //uint64_t size = a_index->nelems * adios_get_type_size (a->type, a->value);
 
             // pg_file_offsets [pgid] is now the last PG's start offset, which is the base
             // offset for attributes
@@ -4390,7 +4390,7 @@ int adios_write_index_v1 (char ** buffer
 
         for (i = 0; i < attrs_root->characteristics_count; i++)
         {
-            uint64_t size;
+            uint64_t size = 0;
             uint8_t characteristic_set_count = 0;
             uint32_t characteristic_set_length = 0;
 
@@ -5642,7 +5642,7 @@ int adios_write_attribute_v1 (struct adios_file_struct * fd
         {
             buffer_write (&fd->buffer, &fd->buffer_size, &fd->offset, &a->nelems, 4);
             size += 4;
-            uint32_t t = a->data_size + 5*a->nelems;
+            //uint32_t t = a->data_size + 5*a->nelems;
             /* t = for all strings, sum of 
                    length of string + terminating 0 + 16bit length info */
             char ** v = (char**) a->value;
@@ -6112,7 +6112,8 @@ int adios_common_define_mesh_timeSeriesFormat (const char * timeseries,
     char * ptr_end;
     d1 = strdup (timeseries);
 
-    double tmp_d = strtod (d1, &ptr_end);
+    /*double tmp_d = */
+    strtod (d1, &ptr_end);
     if (!(ptr_end && ptr_end[0]==0))
     {
         adios_conca_mesh_att_nam(&format_att_nam, name, "time-series-format");
