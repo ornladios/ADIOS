@@ -9,6 +9,7 @@
 #define __BP_UTILS_H__
 
 #include <stdio.h>
+#include <inttypes.h>
 #include <sys/types.h>
 #include "public/adios_read.h" // ADIOS_FILE*
 #include "core/bp_types.h"

@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <ctype.h>
 
+
 #include "config.h"
 #include "core/util.h"
 #include "core/bp_utils.h"
@@ -41,7 +42,7 @@ void change_endianness( void *data, uint64_t slice_size, enum ADIOS_DATATYPES ty
        log_error ("Adios error in bp_utils.c:change_endianness(): "
                   "An array's endianness is to be converted but the size of array "
                   "is not dividable by the size of the elements: "
-                  "size = %lld, element size = %d\n", slice_size, size_of_type);
+                  "size = %" PRIu64 ", element size = %d\n", slice_size, size_of_type);
     }
 
     switch (type)

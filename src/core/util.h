@@ -2,6 +2,7 @@
 #define UTIL_H_
 
 #include <stdint.h>
+#include <inttypes.h>
 #include "public/adios_mpi.h"
 #include "public/adios_types.h"
 #include "public/adios_selection.h"

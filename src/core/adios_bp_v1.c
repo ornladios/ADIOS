@@ -38,7 +38,7 @@ static void alloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size)
     b->allocated_buff_ptr = malloc (size + BYTE_ALIGN - 1);
     if (!b->allocated_buff_ptr)
     {
-        adios_error(err_no_memory, "BP_V1: Cannot allocate %llu\n",
+        adios_error(err_no_memory, "BP_V1: Cannot allocate %" PRIu64 "\n",
                 size);
         b->buff = 0;
         b->length = 0;
@@ -59,7 +59,7 @@ static void realloc_aligned (struct adios_bp_buffer_struct_v1 * b
                                     );
     if (!b->allocated_buff_ptr)
     {
-        adios_error(err_no_memory, "BP_V1: Cannot allocate %llu\n",
+        adios_error(err_no_memory, "BP_V1: Cannot allocate %" PRIu64 "\n",
                 size);
         b->buff = 0;
         b->length = 0;
@@ -120,7 +120,7 @@ int adios_parse_version (struct adios_bp_buffer_struct_v1 * b,
     {
         adios_error(err_invalid_buffer_version, "adios_parse_version requires"
                 "a buffer of at least "
-                "4 bytes.  Only %llu were provided\n", b->length);
+                "4 bytes.  Only %" PRIu64 " were provided\n", b->length);
         return 1;
     }
 
@@ -149,7 +149,7 @@ int adios_parse_index_offsets_v1 (struct adios_bp_buffer_struct_v1 * b)
     {
         adios_error(err_invalid_buffer_index, "adios_parse_index_offsets_v1"
                 "requires a buffer of at least 24 bytes."
-                "Only %llu were provided\n", b->length - b->offset);
+                "Only %" PRId64 " were provided\n", b->length - b->offset);
         return 1;
     }
 
@@ -194,7 +194,7 @@ int adios_parse_process_group_index_v1 (struct adios_bp_buffer_struct_v1 * b,
     {
         adios_error(err_invalid_buffer_group, "adios_parse_process_group_index_v1"
                 "requires a buffer of at least 16 bytes."
-                "Only %llu were provided\n", b->length - b->offset);
+                "Only %" PRId64 " were provided\n", b->length - b->offset);
         return 1;
     }
 
@@ -302,7 +302,7 @@ int adios_parse_vars_index_v1 (struct adios_bp_buffer_struct_v1 * b
     {
         adios_error(err_invalid_buffer_vars, "adios_parse_vars_index_v1"
                 "requires a buffer of at least 10 bytes."
-                "Only %llu were provided\n", b->length - b->offset);
+                "Only %" PRId64 " were provided\n", b->length - b->offset);
         return 1;
     }
 
@@ -796,7 +796,7 @@ int adios_parse_attributes_index_v1 (struct adios_bp_buffer_struct_v1 * b
     {
         adios_error(err_invalid_buffer_attrs, "adios_parse_attributes_index_v1 "
                 "requires a buffer of at least 10 bytes."
-                "Only %llu were provided\n", b->length - b->offset);
+                "Only %" PRId64 " were provided\n", b->length - b->offset);
 
         return 1;
     }
@@ -1181,7 +1181,7 @@ int adios_parse_process_group_header_v1 (struct adios_bp_buffer_struct_v1 * b
     {
         adios_error(err_invalid_buffer_group, "adios_parse_process_group_header_v1"
                 "requires a buffer of at least 24 bytes. "
-                "Only %llu were provided\n",b->length - b->offset);
+                "Only %" PRId64 " were provided\n",b->length - b->offset);
         return 1;
     }
 
@@ -1284,7 +1284,7 @@ int adios_parse_vars_header_v1 (struct adios_bp_buffer_struct_v1 * b
     {
         adios_error(err_invalid_buffer_vars, "adios_parse_vars_header_v1"
                 "requires a buffer of at least 12 bytes. "
-                "Only %llu were provided\n", b->length - b->offset);
+                "Only %" PRId64 " were provided\n", b->length - b->offset);
 
         vars_header->count = 0;
         vars_header->length = 0;
@@ -1314,7 +1314,7 @@ int adios_parse_var_data_header_v1 (struct adios_bp_buffer_struct_v1 * b
     {
         adios_error(err_invalid_buffer_vars, "adios_parse_var_data_header_v1"
                 "requires a buffer of at least 23 bytes."
-                "Only %llu were provided\n", b->length - b->offset);
+                "Only %" PRId64 " were provided\n", b->length - b->offset);
 
         return 1;
     }
@@ -1881,7 +1881,7 @@ int adios_parse_var_data_payload_v1 (struct adios_bp_buffer_struct_v1 * b
     {
         adios_error(err_invalid_buffer_vars, "adios_parse_var_data_payload_v1"
                 " for name %s path %s requires a buffer of at least "
-                "%llu bytes. Only %llu were provided\n", var_header->name, 
+                "%" PRIu64 " bytes. Only %" PRIu64 " were provided\n", var_header->name,
                 var_header->path, var_header->payload_size, 
                 b->length - b->offset);
 
@@ -1894,8 +1894,8 @@ int adios_parse_var_data_payload_v1 (struct adios_bp_buffer_struct_v1 * b
        )
     {
         adios_error(err_invalid_buffer_vars, "reading var name %s path %s"
-                "requires a buffer of at least %llu bytes.  "
-                "Only %llu were provided\n" , var_header->name, 
+                "requires a buffer of at least %" PRIu64 " bytes.  "
+                "Only %" PRIu64 " were provided\n" , var_header->name,
                 var_header->path, var_header->payload_size, 
                 payload_buffer_size);
 
@@ -1940,7 +1940,7 @@ int adios_parse_attributes_header_v1 (struct adios_bp_buffer_struct_v1 * b
     {
         adios_error(err_invalid_buffer_attrs, "adios_parse_attributes_header_v1"
                 "requires a buffer of at least 10 bytes.  "
-                "Only %llu were provided\n", b->length - b->offset);
+                "Only %" PRId64 " were provided\n", b->length - b->offset);
 
         attrs_header->count = 0;
         attrs_header->length = 0;
@@ -1974,7 +1974,7 @@ int adios_parse_attribute_v1 (struct adios_bp_buffer_struct_v1 * b
     {
         adios_error(err_invalid_buffer_attrs, "adios_parse_attribute_data_payload_v1"
                 "requires a buffer of at least 15 bytes.  "
-                "Only %llu were provided\n", b->length - b->offset);
+                "Only %" PRId64 " were provided\n", b->length - b->offset);
 
         return 1;
     }
@@ -2216,7 +2216,7 @@ void adios_posix_read_version (struct adios_bp_buffer_struct_v1 * b)
 
     r = read (b->f, b->buff, 28);
     if (r != 28)
-        log_warn("could not read 28 bytes. read only: %llu\n", r);
+        log_warn("could not read 28 bytes. read only: %" PRIu64 "\n", r);
 }
 
 void adios_init_buffer_read_index_offsets (struct adios_bp_buffer_struct_v1 * b)
@@ -2261,7 +2261,7 @@ void adios_posix_read_vars_index (struct adios_bp_buffer_struct_v1 * b)
     r = read (b->f, b->buff, b->vars_size);
 
     if (r != b->vars_size)
-        log_warn("reading vars_index: wanted %llu, read: %llu\n"
+        log_warn("reading vars_index: wanted %" PRIu64 ", read: %" PRIu64 "\n"
                 ,b->vars_size, r
                 );
 }
@@ -2283,7 +2283,7 @@ void adios_posix_read_attributes_index (struct adios_bp_buffer_struct_v1 * b)
     r = read (b->f, b->buff, b->attrs_size);
 
     if (r != b->attrs_size)
-        log_warn("reading attributess_index: wanted %llu, read: %llu\n",
+        log_warn("reading attributess_index: wanted %" PRIu64 ", read: %" PRIu64 "\n",
                 b->attrs_size, r);
 }
 
@@ -2308,8 +2308,8 @@ uint64_t adios_posix_read_process_group (struct adios_bp_buffer_struct_v1 * b)
     if (pg_size != b->read_pg_size)
     {
         log_warn("adios_read_process_group: "
-                "Tried to read: %llu, but only got: "
-                "%llu error: %s\n", b->read_pg_size, 
+                "Tried to read: %" PRIu64 ", but only got: "
+                "%" PRIu64 " error: %s\n", b->read_pg_size,
                 pg_size, strerror(errno));
 
         pg_size = 0;

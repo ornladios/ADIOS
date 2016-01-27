@@ -514,7 +514,7 @@ START_TIMER (ADIOS_TIMER_AD_OPEN);
             }
             STOP_TIMER (ADIOS_TIMER_LOCALMD);
             //printf ("adios_posix_open append/update, old_file=%d, index_is_in_memory=%d, "
-            //        "pg_start=%lld\n", 
+            //        "pg_start=%" PRId64 "\n",
             //        old_file, p->index_is_in_memory, p>pg_start_next);
 
             p->index_is_in_memory = 1; // to notify future append steps about the good news
@@ -614,7 +614,7 @@ void adios_posix_get_write_buffer (struct adios_file_struct * fd
         if (!*buffer)
         {
             adios_method_buffer_free (mem_allowed);
-            fprintf (stderr, "Out of memory allocating %llu bytes for %s\n"
+            fprintf (stderr, "Out of memory allocating %" PRIu64 " bytes for %s\n"
                     ,*size, v->name
                     );
             v->got_buffer = adios_flag_no;
@@ -635,7 +635,7 @@ void adios_posix_get_write_buffer (struct adios_file_struct * fd
     else
     {
         adios_method_buffer_free (mem_allowed);
-        fprintf (stderr, "OVERFLOW: Cannot allocate requested buffer of %llu "
+        fprintf (stderr, "OVERFLOW: Cannot allocate requested buffer of %" PRIu64 " "
                          "bytes for %s\n"
                 ,*size
                 ,v->name
@@ -677,8 +677,8 @@ static void adios_posix_write_pg (struct adios_file_struct * fd
     if (p->b.end_of_pgs > fd->current_pg->pg_start_in_file)
         offset = p->b.end_of_pgs;
 
-    /*printf ("Write PG: pg_start_in_file = %llu  pg_start_next = %llu  "
-            "buffer offset = %llu  total_bytes_written = %llu\n",
+    /*printf ("Write PG: pg_start_in_file = %" PRIu64 "  pg_start_next = %" PRIu64 "  "
+            "buffer offset = %" PRIu64 "  total_bytes_written = %" PRIu64 "\n",
             fd->current_pg->pg_start_in_file, p->pg_start_next, fd->offset, p->total_bytes_written);*/
 
     lseek (p->b.f, offset, SEEK_SET);
@@ -714,8 +714,8 @@ static void adios_posix_write_pg (struct adios_file_struct * fd
     // also, next PG will be written to this offset in overflow or close()
     p->pg_start_next += bytes_written; 
 
-    /*printf ("Completed PG: pg_start_in_file = %llu  pg_start_next = %llu  "
-            "buffer offset = %llu  total_bytes_written = %llu  bytes_written = %llu\n",
+    /*printf ("Completed PG: pg_start_in_file = %" PRIu64 "  pg_start_next = %" PRIu64 "  "
+            "buffer offset = %" PRIu64 "  total_bytes_written = %" PRIu64 "  bytes_written = %" PRIu64 "\n",
             fd->current_pg->pg_start_in_file, p->pg_start_next, fd->offset, p->total_bytes_written, bytes_written);*/
 
 }
@@ -729,8 +729,8 @@ static void adios_posix_write_index (struct adios_file_struct * fd
     struct adios_POSIX_data_struct * p = (struct adios_POSIX_data_struct *)
                                                           method->method_data;
     // index location: p->pg_start_next points to the end of the last written PG
-    /*printf ("Write Index: pg_start_next = %llu  "
-            "buffer size = %llu total_bytes_written = %llu\n",
+    /*printf ("Write Index: pg_start_next = %" PRIu64 "  "
+            "buffer size = %" PRIu64 " total_bytes_written = %" PRIu64 "\n",
             p->pg_start_next, buffer_size, p->total_bytes_written);*/
 
     lseek (p->b.f, p->pg_start_next, SEEK_SET);
@@ -1016,8 +1016,8 @@ void adios_posix_close (struct adios_file_struct * fd
                     STOP_TIMER (ADIOS_TIMER_IO);
                     if (s != global_index_buffer_offset)
                     {
-                        fprintf (stderr, "POSIX method tried to write %llu, "
-                                         "only wrote %lld. %s:%d\n"
+                        fprintf (stderr, "POSIX method tried to write %" PRIu64 ", "
+                                         "only wrote %" PRId64 ". %s:%d\n"
                                          ,fd->bytes_written
                                          ,(int64_t)s
                                          ,__func__, __LINE__
@@ -1208,8 +1208,8 @@ void adios_posix_close (struct adios_file_struct * fd
                     STOP_TIMER (ADIOS_TIMER_IO);
                     if (s != global_index_buffer_offset)
                     {
-                        fprintf (stderr, "POSIX method tried to write %llu, "
-                                         "only wrote %lld, Mode: a. %s:%d\n"
+                        fprintf (stderr, "POSIX method tried to write %" PRIu64 ", "
+                                         "only wrote %" PRId64 ", Mode: a. %s:%d\n"
                                          ,global_index_buffer_offset
                                          ,(int64_t)s
                                          ,__func__, __LINE__

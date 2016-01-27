@@ -132,7 +132,7 @@ static void _buffer_write (char ** buffer, uint64_t * buffer_size
         else
         {
             fprintf (stderr, "Cannot allocate memory in buffer_write.  "
-                             "Requested: %llu\n", *buffer_offset + size + 1000);
+                             "Requested: %" PRIu64 "\n", *buffer_offset + size + 1000);
 
             return;
         }
@@ -294,8 +294,8 @@ static void get_data_addr (const ADIOS_FILE * fp, int varid,
                 {
                     adios_error (err_out_of_bound,
                                  "Error: Variable (id=%d) out of bound ("
-                                 "the data in dimension %d to read is %llu elements from index %llu"
-                                 " but the actual data is [0,%llu])",
+                                 "the data in dimension %d to read is %" PRIu64 " elements from index %" PRIu64
+                                 " but the actual data is [0,%" PRId64 "])",
                                  varid, j + 1, count[j], start[j], gdims[j] - 1);
                     return;
                 }
@@ -354,7 +354,7 @@ static void sort_read_requests (BP_PROC * p)
     read_request * n = 0, * t, * t_prev, * next;
     while (r)
     {
-//printf ("[%d]: r->ra->offset = %llu\n", p->rank, r->ra->offset);
+//printf ("[%d]: r->ra->offset = %" PRIu64 "\n", p->rank, r->ra->offset);
         rr_r = (rr_pvt_struct *) r->priv;
         t = n;
         t_prev = 0;
@@ -734,8 +734,8 @@ static read_request * split_read_requests (const ADIOS_FILE * fp, read_request *
                   || (start[j] + count[j] > gdims[j]))
                 {
                     fprintf (stderr, "Error: Variable (id=%d, %s) out of bound ("
-                        "the data in dimension %d to read is %llu elements from index %llu"
-                        " but the actual data is [0,%llu])\n",
+                        "the data in dimension %d to read is %" PRIu64 " elements from index %" PRIu64
+                        " but the actual data is [0,%" PRId64 "])\n",
                         varid, v->var_name, j + 1, count[j], start[j], gdims[j] - 1);
                     return 0;
                 }
@@ -1085,8 +1085,8 @@ static void do_read (const ADIOS_FILE * fp)
                            &offset, 
                            &payload_size
                           );
-//printf ("o_start.offset = %llu\n", o_start->ra->offset);
-//printf ("o_prev_end.offset = %llu\n", o_prev_end->ra->offset);
+//printf ("o_start.offset = %" PRIu64 "\n", o_start->ra->offset);
+//printf ("o_prev_end.offset = %" PRIu64 "\n", o_prev_end->ra->offset);
 
             //t4 = MPI_Wtime ();
             // read a chunk from file into internal buffer
@@ -1267,8 +1267,8 @@ static void read_buffer (const ADIOS_FILE * fp,
                   || (start[j] + count[j] > gdims[j]))
                 {
                     log_error ("Error: Variable (id=%d) out of bound ("
-                        "the data in dimension %d to read is %llu elements from index %llu"
-                        " but the actual data is [0,%llu])",
+                        "the data in dimension %d to read is %" PRIu64 " elements from index %" PRIu64
+                        " but the actual data is [0,%" PRId64 "])",
                         varid, j+1, count[j], start[j], gdims[j] - 1);
                     return;
                 }
@@ -1655,7 +1655,7 @@ static void broadcast_fh_buffer (ADIOS_FILE * fp)
 int rank;
 MPI_Comm_rank (MPI_COMM_WORLD, &rank);
 if (rank == 0)
-fprintf (stderr, "bc %s bo 1 = %llu, bo 2 = %llu, len = %d\n", vars_root->var_name, bo, buffer_offset, len);
+fprintf (stderr, "bc %s bo 1 = %" PRIu64 ", bo 2 = %" PRIu64 ", len = %d\n", vars_root->var_name, bo, buffer_offset, len);
 */
             _buffer_write (&buffer, &buffer_size, &buffer_offset, 
                            &len, 2);

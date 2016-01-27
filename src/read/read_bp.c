@@ -423,7 +423,7 @@ uint64_t mGetRange(ADIOS_SELECTION_POINTS_STRUCT* pts, uint64_t* start, uint64_t
    uint64_t bbsize = 1;
    for (k=0; k<pts->ndim; k++) {
      bbsize *= max[k] - start[k]+1;
-     printf("... bb at %llu dimention: [%llu, %llu]\n", k, max[k], start[k]);
+     printf("... bb at %" PRIu64 " dimention: [%" PRIu64 ", %" PRIu64 "]\n", k, max[k], start[k]);
    }
    
    uint64_t BBSIZELIMIT = 20000000; 	    
@@ -433,7 +433,7 @@ uint64_t mGetRange(ADIOS_SELECTION_POINTS_STRUCT* pts, uint64_t* start, uint64_t
      nBB += 1;
    }
    
-   printf("... nBB=%llu\n", nBB);
+   printf("... nBB=%" PRIu64 "\n", nBB);
    //return bbsize;
    return nBB;   
 }
@@ -812,8 +812,8 @@ static ADIOS_VARCHUNK * read_var_bb (const ADIOS_FILE *fp, read_request * r)
                       || (start[j] + count[j] > gdims[j]))
                     {
                         adios_error ( err_out_of_bound, "Error: Variable (id=%d) out of bound 1("
-                            "the data in dimension %d to read is %llu elements from index %llu"
-                            " but the actual data is [0,%llu])\n",
+                            "the data in dimension %d to read is %" PRIu64 " elements from index %" PRIu64
+                            " but the actual data is [0,%" PRId64 "])\n",
                             r->varid, j + 1, count[j], start[j], gdims[j] - 1);
                         return 0;
                     }
@@ -2879,7 +2879,7 @@ static read_request * split_req (const ADIOS_FILE * fp, const read_request * r, 
         log_debug ("pos = ");
         for (i = 0; i < ndim; i++)
         {
-            log_debug_cont ("%llu ", pos[i]);
+            log_debug_cont ("%" PRIu64 " ", pos[i]);
         }
         log_debug_cont ("\n");
 
@@ -2916,7 +2916,7 @@ static read_request * split_req (const ADIOS_FILE * fp, const read_request * r, 
         log_debug ("subbb = ");
         for (i = 0; i < ndim; i++)
         {
-            log_debug_cont ("%llu ", subbb[i]);
+            log_debug_cont ("%" PRIu64 " ", subbb[i]);
         }
         log_debug_cont ("\n");
 
@@ -2963,7 +2963,7 @@ static read_request * split_req (const ADIOS_FILE * fp, const read_request * r, 
             log_debug ("bb: (");
             for (i = 0; i < ndim; i++)
             {
-                log_debug_cont ("%llu", newreq->sel->u.bb.start[i]);
+                log_debug_cont ("%" PRIu64 "", newreq->sel->u.bb.start[i]);
                 if (i != ndim - 1)
                 {
                     log_debug_cont (",");
@@ -2972,7 +2972,7 @@ static read_request * split_req (const ADIOS_FILE * fp, const read_request * r, 
             log_debug_cont (") (");
             for (i = 0; i < ndim; i++)
             {
-                log_debug_cont ("%llu", newreq->sel->u.bb.start[i] + newreq->sel->u.bb.count[i] - 1);
+                log_debug_cont ("%" PRId64 "", newreq->sel->u.bb.start[i] + newreq->sel->u.bb.count[i] - 1);
                 if (i != ndim - 1)
                 {
                     log_debug_cont (",");
@@ -3112,7 +3112,7 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
         // memory is large enough to contain the data
         if (chunk_buffer_size >= p->local_read_request_list->datasize)
         {
-            log_debug ("adios_read_bp_check_reads(): memory is large enough to contain the data (%llu)\n",
+            log_debug ("adios_read_bp_check_reads(): memory is large enough to contain the data (%" PRIu64 ")\n",
                        p->local_read_request_list->datasize);
             assert (p->local_read_request_list->datasize);
             p->b = realloc (p->b, p->local_read_request_list->datasize);
@@ -3139,7 +3139,7 @@ int adios_read_bp_check_reads (const ADIOS_FILE * fp, ADIOS_VARCHUNK ** chunk)
         }
         else // memory is smaller than what it takes to read the entire thing in.
         {
-            log_debug ("adios_read_bp_check_reads(): memory is not large enough to contain the data (%llu)\n",
+            log_debug ("adios_read_bp_check_reads(): memory is not large enough to contain the data (%" PRIu64 ")\n",
                        p->local_read_request_list->datasize);
             read_request * subreqs = split_req (fp, p->local_read_request_list, chunk_buffer_size);
             assert (subreqs);

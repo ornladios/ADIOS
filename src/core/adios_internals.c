@@ -2055,7 +2055,7 @@ static void buffer_write (char ** buffer, uint64_t * buffer_size
         else
         {
             adios_error (err_no_memory, "Cannot allocate memory in buffer_write.  "
-                    "Requested: %llu\n", *buffer_offset + size + 1000000);
+                    "Requested: %" PRIu64 "\n", *buffer_offset + size + 1000000);
             return;
         }
     }
@@ -2515,10 +2515,10 @@ void index_append_var_v1 (
             uint64_t k1 = 0;
             uint64_t k2 = 0;
             struct adios_index_characteristic_struct_v1 * cend = c;
-            log_debug ("  old count=%llu item count=%llu\n", olditem->characteristics_count, item->characteristics_count);
+            log_debug ("  old count=%" PRIu64 " item count=%" PRIu64 "\n", olditem->characteristics_count, item->characteristics_count);
             while (k1 < olditem->characteristics_count || k2 < item->characteristics_count)
             {
-                log_debug ("  k1=%llu k2=%llu", k1, k2);
+                log_debug ("  k1=%" PRIu64 " k2=%" PRIu64 "", k1, k2);
                 /*
                 if (k2 >= item->characteristics_count || c1->time_index <= c2->time_index) {
                     memcpy (cend, c1, sizeof(struct adios_index_characteristic_struct_v1)); 

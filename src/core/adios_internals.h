@@ -9,6 +9,7 @@
 #define ADIOS_INTERNALS_H
 
 #include <stdint.h>
+#include <inttypes.h>
 #include <stdlib.h>
 
 // need the enum for the transports

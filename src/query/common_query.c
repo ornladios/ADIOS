@@ -192,7 +192,7 @@ static int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
 	return -1;
       }
 
-      log_debug("%s, raw data size=%llu\n", q->condition, dataSize);
+      log_debug("%s, raw data size=%" PRIu64 "\n", q->condition, dataSize);
       //q->dataSlice = malloc(total_byte_size);
       q->dataSlice = 0;
       q->rawDataSize = dataSize;
@@ -469,7 +469,7 @@ static int isSelectionCompatible(ADIOS_SELECTION* first, ADIOS_SELECTION* second
     const ADIOS_SELECTION_POINTS_STRUCT *pt2 = &(second->u.points);
     
     if (pt1 -> npoints != pt2->npoints) {
-      log_error("Error! point selections have different size. %llu != %llu\n", pt1->npoints, pt2->npoints);
+      log_error("Error! point selections have different size. %" PRIu64 " != %" PRIu64 "\n", pt1->npoints, pt2->npoints);
       return -1;
     }
     return 1;

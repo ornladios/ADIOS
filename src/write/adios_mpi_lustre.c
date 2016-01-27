@@ -1237,7 +1237,7 @@ void adios_mpi_lustre_get_write_buffer (struct adios_file_struct * fd
         if (!*buffer)
         {
             adios_method_buffer_free (mem_allowed);
-            fprintf (stderr, "Out of memory allocating %llu bytes for %s\n"
+            fprintf (stderr, "Out of memory allocating %" PRIu64 " bytes for %s\n"
                     ,*size, v->name
                     );
             v->got_buffer = adios_flag_no;
@@ -1258,8 +1258,7 @@ void adios_mpi_lustre_get_write_buffer (struct adios_file_struct * fd
     else
     {
         adios_method_buffer_free (mem_allowed);
-        fprintf (stderr, "OVERFLOW: Cannot allocate requested buffer of %llu "
-                         "bytes for %s\n"
+        fprintf (stderr, "OVERFLOW: Cannot allocate requested buffer of %" PRIu64 " bytes for %s\n"
                 ,*size
                 ,v->name
                 );

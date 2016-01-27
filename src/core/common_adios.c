@@ -357,7 +357,7 @@ int common_adios_open (int64_t * fd_p, const char * group_name
             {
                 fd->bufstate = buffering_stopped;
                 adios_error (err_no_memory, 
-                             "Cannot allocate %llu bytes for buffered output "
+                             "Cannot allocate %" PRIu64 " bytes for buffered output "
                              "of group %s in adios_open(). Output will fail.\n", 
                              fd->buffer_size, g->name);
                 return adios_errno;
@@ -421,7 +421,7 @@ int common_adios_group_size (int64_t fd_p, uint64_t data_size, uint64_t * total_
     uint64_t wc_transformed_size = adios_transform_worst_case_transformed_group_size(data_size, fd);
     if (wc_transformed_size > data_size)
     {
-        log_debug("Computed worst-case bound on transformed data for a group size of %llu is %llu; increasing group size to match.\n",
+        log_debug("Computed worst-case bound on transformed data for a group size of %" PRIu64 " is %" PRIu64 "; increasing group size to match.\n",
                   data_size, wc_transformed_size);
 
         *total_size += (wc_transformed_size - data_size);
@@ -431,9 +431,9 @@ int common_adios_group_size (int64_t fd_p, uint64_t data_size, uint64_t * total_
     {
         if (adios_databuffer_resize (fd, *total_size))
         {
-            log_warn ("Cannot reallocate data buffer to %llu bytes "
+            log_warn ("Cannot reallocate data buffer to %" PRIu64 " bytes "
                     "for group %s in adios_group_size(). Continue buffering "
-                    "with buffer size %llu MB\n",
+                    "with buffer size %" PRIu64 " MB\n",
                     *total_size, fd->group->name, fd->buffer_size/1048576L);
         }
     }
@@ -601,7 +601,7 @@ int common_adios_write (struct adios_file_struct * fd, struct adios_var_struct *
                         if (adios_databuffer_resize (fd, vsize+1024))
                         {
                             adios_error (err_no_memory, "adios_write(): buffer cannot accommodate variable %s/%s "
-                                    "with its storage size of %llu bytes at all. "
+                                    "with its storage size of %" PRIu64 " bytes at all. "
                                     "No more variables will be written.\n", v->path, v->name, vsize);
                                     //"This variable won't be written.\n", v->path, v->name, vsize);
                             fd->bufstate = buffering_stopped;
