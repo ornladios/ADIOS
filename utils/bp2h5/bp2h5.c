@@ -90,24 +90,17 @@ char** bp_dirparser(char *str, int *nLevel);
 
 int main (int argc, char ** argv)  
 {
-    char        filename [256]; 
-    int         rank, size, gidx, i, j, k,l;
+    int         gidx, i, j;
     MPI_Comm    comm_dummy = MPI_COMM_WORLD;  /* MPI_Comm is defined through adios_read.h */
-    enum ADIOS_DATATYPES attr_type;
-    void      * data = NULL;
-    uint64_t    start[] = {0,0,0,0,0,0,0,0,0,0};
-    uint64_t    count[MAX_DIMS], hcount[MAX_DIMS], bytes_read = 0;
+    uint64_t    count[MAX_DIMS];
     herr_t      h5_err;
     char        h5name[256],aname[256],fname[256];
-    int         dims [MAX_DIMS];
-    int         h5rank[MAX_DIMS];
     int         h5i, level;
-    hid_t       grp_id [GMAX+1], space_id, dataset_id;
-    hid_t       memspace_id, dataspace_id, att_id;
+    hid_t       grp_id [GMAX+1], space_id;
+    hid_t       att_id;
     char        ** grp_name;
-    hid_t       type_id;
     hid_t       h5_type_id;
-    hsize_t     adims;
+
 
     if (argc < 2) {
         printf("Usage: %s <BP-file> <HDF5-file>\n", argv[0]);
@@ -143,7 +136,6 @@ int main (int argc, char ** argv)
 /* First create all of the groups */
         grp_id [0] = HDF5_FILE;
         for (i = 0; i < g->vars_count; i++) {
-             ADIOS_VARINFO * v = adios_inq_var_byid (g, i);
              strcpy(h5name,g->var_namelist[i]);
              grp_name = bp_dirparser (h5name, &level);
              for (j = 0; j < level-1; j++) {
@@ -204,7 +196,6 @@ int main (int argc, char ** argv)
             h5_err = bp_getH5TypeId (atype, &h5_type_id);
 
             // let's create the attribute
-            adims = 1;
             if (atype==adios_string) H5Tset_size(h5_type_id,strlen(adata)); 
             space_id = H5Screate(H5S_SCALAR); // just a scalar
             att_id = H5Acreate(HDF5_FILE, g->attr_namelist[i], h5_type_id, space_id,H5P_DEFAULT);
@@ -224,7 +215,7 @@ int main (int argc, char ** argv)
     h5_err =  H5Fclose(HDF5_FILE);
 
     MPI_Finalize();
-    return 0;
+    return (int)h5_err;
 }
 
 
@@ -284,6 +275,10 @@ const char * value_to_string (enum ADIOS_DATATYPES type, void * data, int idx)
             return (char*) ((char *)data+idx);
             break;
 
+        case adios_string_array:
+            return (char*) *((char **)data+idx);
+            break;
+
         case adios_complex:
             sprintf (s, "(%g, %g)", 
                     ((float *) data)[2*idx], ((float *) data)[2*idx+1]);
@@ -293,6 +288,9 @@ const char * value_to_string (enum ADIOS_DATATYPES type, void * data, int idx)
             sprintf (s, "(%lg, %lg)", 
                     ((double *) data)[2*idx], ((double *) data)[2*idx+1]);
             break;
+
+        default:
+        	break;
     }
 
     return s;
@@ -340,7 +338,7 @@ int readVar(ADIOS_GROUP *gp, ADIOS_VARINFO *vi, const char * name)
   int      readn[MAX_DIMS];   // how big chunk to read in in each dimension?
   int64_t  bytes_read;     // retval from adios_get_var()
   int      incdim;            // used in incremental reading in
-  hid_t    grp_id, space_id, dataset, global_memspace, dataspace;
+  hid_t    dataset, global_memspace;
   hid_t    local_memspace, h5_ndim ;
   hid_t    h5_err;
   hid_t    h5_type_id;
@@ -465,7 +463,7 @@ int readVar(ADIOS_GROUP *gp, ADIOS_VARINFO *vi, const char * name)
     dataset = H5Dopen(HDF5_FILE,name);
     if (dataset> 0) {
        global_memspace = H5Dget_space(dataset);
-       hid_t rank_old = H5Sget_simple_extent_ndims(global_memspace);
+       //hid_t rank_old = H5Sget_simple_extent_ndims(global_memspace);
        hsize_t *maxdims = (hsize_t *) malloc (h5_ndim * sizeof (hsize_t));
        h5_err = H5Sget_simple_extent_dims(global_memspace,maxdims,NULL);
        free(maxdims);
@@ -523,7 +521,7 @@ int readVar(ADIOS_GROUP *gp, ADIOS_VARINFO *vi, const char * name)
   H5Sclose(global_memspace);
 
   free(data);
-  return 0;
+  return (int)h5_err;
 }
 
 int getTypeInfo( enum ADIOS_DATATYPES adiosvartype, int* elemsize)
@@ -584,11 +582,9 @@ int getTypeInfo( enum ADIOS_DATATYPES adiosvartype, int* elemsize)
   return 0;
 }
 
-static int nextcol=0;  // column index to start with (can have lines split in two calls)
-
 int bp_getH5TypeId(enum ADIOS_DATATYPES type, hid_t* h5_type_id)
 {
-    int size, status=0;
+    int status=0;
 
     switch (type)
     {
