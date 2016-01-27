@@ -407,10 +407,10 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype)
             break;
 
         case adios_unsigned_long:
-            printf ("%" PRIu64, ((unsigned long long *) data)[item]);
+            printf ("%" PRIu64, ((uint64_t *) data)[item]);
             break;
         case adios_long:        
-            printf ("%" PRId64, ((signed long long *) data)[item]);
+            printf ("%" PRId64, ((int64_t *) data)[item]);
             break;
 
         case adios_real:

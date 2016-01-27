@@ -274,7 +274,7 @@ int copy_file( const char *filein, const char *fileout) {
     while (bytes_read > 0) {
         bytes_written = write( outf, (void *) buf, bytes_read);
         if (bytes_written != bytes_read) {
-            fprintf(stderr, "Error: could not write %" PRId64 " bytes to output file %s at offset 0: %s\n",
+            fprintf(stderr, "Error: could not write %lld bytes to output file %s at offset 0: %s\n",
                     (long long)bytes_read, fileout, strerror(errno));
             close(inf);
             close(outf);
@@ -290,7 +290,7 @@ int copy_file( const char *filein, const char *fileout) {
         close(outf);
         return 2;
     }
-    if (verbose>1) printf("  copied %" PRIu64 " (0x%llx) bytes of data into %s\n", bytes_copied, bytes_copied, fileout);
+    if (verbose>1) printf("  copied %" PRIu64 " (0x%" PRIx64 ") bytes of data into %s\n", bytes_copied, bytes_copied, fileout);
 
     close(inf);
     close(outf);
@@ -395,14 +395,14 @@ int recover(int f) {
     // write old index into a buffer
     adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset, index_start, 
                           idx);
-    if (verbose>1) fprintf(stderr, "  original index size %" PRIu64 " 0x%llx\n", buffer_offset, buffer_offset);
+    if (verbose>1) fprintf(stderr, "  original index size %" PRIu64 " 0x%" PRIx64 "\n", buffer_offset, buffer_offset);
     adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 
     adios_clear_index_v1 (idx);
     adios_free_index_v1 (idx);
 
     // write index buffer out
-    if (verbose>1) fprintf(stderr, "  write %" PRIu64 " 0x%llx bytes of indexes...\n", buffer_offset, buffer_offset);
+    if (verbose>1) fprintf(stderr, "  write %" PRIu64 " 0x%" PRIx64 " bytes of indexes...\n", buffer_offset, buffer_offset);
     bytes_written = write (f, buffer, buffer_offset);
     free(buffer);
     if (bytes_written == -1) {
@@ -452,11 +452,11 @@ int append_in_to_out( const char *fileout, const char *filein) {
     off_t    pos;
     lseek64 (in_bp->f, 0, SEEK_SET);
     if (verbose>1) 
-        printf("  seek in output to end of group data, %" PRIu64 " (0x%llx) \n",
+        printf("  seek in output to end of group data, %" PRIu64 " (0x%" PRIx64 ") \n",
                 out_bp->pg_index_offset, out_bp->pg_index_offset);
     pos = lseek64 (f, out_bp->pg_index_offset, SEEK_SET); // seek behind groups, overwrite old index
     if (pos != out_bp->pg_index_offset) {
-            fprintf(stderr, "Error: cannot seek to offset %" PRIu64 " (0x%llx) in file %s: %s\n",
+            fprintf(stderr, "Error: cannot seek to offset %" PRIu64 " (0x%" PRIx64 ") in file %s: %s\n",
                     out_bp->pg_index_offset, out_bp->pg_index_offset, filein, strerror(errno));
             close(f);
             return 2;
@@ -483,7 +483,7 @@ int append_in_to_out( const char *fileout, const char *filein) {
 
         bytes_written = write( f, (void *) buf, bytes_read);
         if (bytes_written != bytes_read) {
-            fprintf(stderr, "Error: could not write %" PRId64 " bytes to output file %s at offset %" PRIu64 ": %s\n",
+            fprintf(stderr, "Error: could not write %lld bytes to output file %s at offset %" PRIu64 ": %s\n",
                     (long long)bytes_read, fileout, out_bp->pg_index_offset+bytes_copied, strerror(errno));
             recover(f);
             close(f);
@@ -492,7 +492,7 @@ int append_in_to_out( const char *fileout, const char *filein) {
 
         bytes_copied += bytes_written;
     }
-    if (verbose>1) printf("  written %" PRIu64 " (0x%llx) bytes of data into %s\n", bytes_copied, bytes_copied, fileout);
+    if (verbose>1) printf("  written %" PRIu64 " (0x%" PRIx64 ") bytes of data into %s\n", bytes_copied, bytes_copied, fileout);
 
     // Append input indexes into the output indexes
     char * buffer = 0;
@@ -505,18 +505,18 @@ int append_in_to_out( const char *fileout, const char *filein) {
     idx->vars_root = out_vars_root;
     idx->attrs_root = out_attrs_root;
 
-    if (verbose>1) printf("  index starts at %" PRIu64 " (0x%llx)\n", index_start, index_start);
+    if (verbose>1) printf("  index starts at %" PRIu64 " (0x%" PRIx64 ")\n", index_start, index_start);
 
     // merge in old indicies
     adios_merge_index_v1 (idx,
                           in_pg_root, in_vars_root, in_attrs_root, 0);
     adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset, index_start, 
                           idx);
-    if (verbose>1) printf("  index size %" PRIu64 " 0x%llx\n", buffer_offset, buffer_offset);
+    if (verbose>1) printf("  index size %" PRIu64 " 0x%" PRIx64 "\n", buffer_offset, buffer_offset);
     adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 
     // write index buffer out
-    if (verbose>1) printf("  write %" PRIu64 " 0x%llx bytes of indexes into %s\n", buffer_offset, buffer_offset, fileout);
+    if (verbose>1) printf("  write %" PRIu64 " 0x%" PRIx64 " bytes of indexes into %s\n", buffer_offset, buffer_offset, fileout);
     bytes_written = write (f, buffer, buffer_offset);
 
     if (verbose>1) printf("  written %zu 0x%zx bytes of indexes into %s\n", bytes_written, bytes_written, fileout);

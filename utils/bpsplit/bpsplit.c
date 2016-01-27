@@ -569,7 +569,7 @@ int write_out( const char *fileout, const char *filein) {
 
         bytes_written = write( f, (void *) buf, bytes_read);
         if (bytes_written != bytes_read) {
-            fprintf(stderr, "Error: could not write %" PRId64 " bytes to output file %s at offset %" PRIu64 ": %s\n",
+            fprintf(stderr, "Error: could not write %lld bytes to output file %s at offset %" PRIu64 ": %s\n",
                     (long long)bytes_read, fileout, out_offset_start+bytes_copied, strerror(errno));
             close(f);
             return 4;
@@ -577,18 +577,18 @@ int write_out( const char *fileout, const char *filein) {
 
         bytes_copied += bytes_written;
     }
-    if (verbose>1) printf("  written %" PRIu64 " %llx bytes of data into %s\n", bytes_copied, bytes_copied, fileout);
+    if (verbose>1) printf("  written %" PRIu64 " %" PRIx64 " bytes of data into %s\n", bytes_copied, bytes_copied, fileout);
 
     // write indexes and version into a buffer
     char * buffer = NULL;
     uint64_t buffer_size = 0;
     uint64_t buffer_offset = 0;
     adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset, bytes_copied, idx);
-    if (verbose>1) printf("  index size %" PRIu64 " 0x%llx\n", buffer_offset, buffer_offset);
+    if (verbose>1) printf("  index size %" PRIu64 " 0x%" PRIx64 "\n", buffer_offset, buffer_offset);
     adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset);
 
     // write buffer out
-    if (verbose>1) printf("  write %" PRIu64 " 0x%llx bytes of indexes into %s\n", buffer_offset, buffer_offset, fileout);
+    if (verbose>1) printf("  write %" PRIu64 " 0x%" PRIx64 " bytes of indexes into %s\n", buffer_offset, buffer_offset, fileout);
     bytes_written = write (f, buffer, buffer_offset);
 
     if (verbose>1) printf("  written %zu 0x%zx bytes of indexes into %s\n", bytes_written, bytes_written, fileout);

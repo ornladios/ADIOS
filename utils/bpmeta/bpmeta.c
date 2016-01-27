@@ -314,7 +314,7 @@ int write_index (struct adios_index_struct_v1 * index, char * fname)
     else if (bytes_written != (ssize_t) buffer_offset) 
     {
         fprintf (stderr, "Failed to write metadata of %" PRId64 " bytes to file %s. "
-                "Only wrote %" PRId64 " bytes\n", buffer_offset, fname, (long long)bytes_written);
+                "Only wrote %lld bytes\n", buffer_offset, fname, (long long)bytes_written);
     }
     close(f);
     return 0;

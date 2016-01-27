@@ -178,7 +178,7 @@ int main( int argc, char *argv[] ) {
     ////prgname = strdup(argv[0]);
 
     /* other variables */
-    int c, last_c='_';
+    int c;
     /* Process the arguments */
     while ((c = getopt_long(argc, argv, optstring, options, NULL)) != -1) {
         switch (c) {
@@ -291,7 +291,6 @@ int main( int argc, char *argv[] ) {
                 printf("Processing default: %c\n", c);
                 break;
         } /* end switch */
-        last_c = c;
     } /* end while */
 
     /* Check if we have a file defined */
@@ -469,7 +468,6 @@ int doList_group (ADIOS_FILE *fp)
     ADIOS_VARINFO **vis; 
     enum ADIOS_DATATYPES vartype;
     int     i, j, n;             // loop vars
-    int     status;
     int     attrsize;                       // info about one attribute
     bool    matches;
     int     len, maxlen, maxtypelen;
@@ -618,7 +616,7 @@ int doList_group (ADIOS_FILE *fp)
                 }
 
                 if (longopt || plot) {
-                    status = adios_inq_var_stat (fp, vi, timestep && timed, 0);
+                    adios_inq_var_stat (fp, vi, timestep && timed, 0);
                 }
 
                 if (plot && vi->statistics && vi->statistics->histogram) {
@@ -1455,9 +1453,9 @@ int print_data_characteristics(void * min, void * max, double * avg, double * st
             break;
 
         case adios_unsigned_long:
-            if (min) fprintf(outf,(f ? format : "%10" PRIu64 "  "), (* (unsigned long long *) min));
+            if (min) fprintf(outf,(f ? format : "%10llu  "), (* (unsigned long long *) min));
             else fprintf(outf, "      null  ");
-            if (max) fprintf(outf,(f ? format : "%10" PRIu64 "  "), (* (unsigned long long *) max));
+            if (max) fprintf(outf,(f ? format : "%10llu  "), (* (unsigned long long *) max));
             else fprintf(outf, "      null  ");
             if (avg) fprintf(outf, "%10.2f  ", * avg);
             else fprintf(outf, "      null  ");
@@ -1465,9 +1463,9 @@ int print_data_characteristics(void * min, void * max, double * avg, double * st
             else fprintf(outf, "      null  ");
             break;
         case adios_long:
-            if (min) fprintf(outf,(f ? format : "%10" PRId64 "  "), (* (long long *) min));
+            if (min) fprintf(outf,(f ? format : "%10lld  "), (* (long long *) min));
             else fprintf(outf, "      null  ");
-            if (max) fprintf(outf,(f ? format : "%10" PRId64 "  "), (* (long long *) max));
+            if (max) fprintf(outf,(f ? format : "%10lld  "), (* (long long *) max));
             else fprintf(outf, "      null  ");
             if (avg) fprintf(outf, "%10.2f  ", * avg);
             else fprintf(outf, "      null  ");
@@ -1555,10 +1553,10 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype, bool all
             break;
 
         case adios_unsigned_long:
-            fprintf(outf,(f ? format : "%" PRIu64 " "), ((unsigned long long *) data)[item]);
+            fprintf(outf,(f ? format : "%llu "), ((unsigned long long *) data)[item]);
             break;
         case adios_long:        
-            fprintf(outf,(f ? format : "%" PRId64 " "), ((signed long long *) data)[item]);
+            fprintf(outf,(f ? format : "%lld "), ((signed long long *) data)[item]);
             break;
 
         case adios_real:
@@ -1686,20 +1684,11 @@ int print_decomp(ADIOS_VARINFO *vi)
     else 
     {
         // arrays
-        int ndigits_nblocks;
-        int ndigits_dims[32];
-        for (k=0; k < vi->ndim; k++) {
-            // get digit lengths for each dimension
-            ndigits_dims[k] = ndigits (vi->dims[k]-1);
-        }
-
         for (i=0; i < /*vi->nsteps*/1; i++) { // For now, just look at the first step xx
             fprintf(outf, "    decomposition: [");
             fprintf(outf,"\n");
-            ndigits_nblocks = ndigits (vi->nblocks[i]-1);
             for (j=0; j < vi->nblocks[i]; j++) {
                 fprintf(outf,"        [");
-                //fprintf(outf,"        block %*d: [", ndigits_nblocks, j);
                 for (k=0; k < vi->ndim; k++) {
                     fprintf(outf, "[%" PRId64 ",%" PRId64 "]",
                             vi->blockinfo[j].start[k],

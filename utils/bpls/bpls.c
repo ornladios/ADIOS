@@ -758,6 +758,17 @@ int doList_group (ADIOS_FILE *fp)
         fprintf(outf,"empty\n"); \
     }
 
+#define PRINT_ARRAY64(str, ndim, dims, loopvar) \
+    fprintf(outf,"%s",str); \
+    if (ndim > 0) { \
+        fprintf(outf,"{%" PRId64, dims[0]); \
+        for (loopvar=1; loopvar < ndim; loopvar++) { \
+            fprintf(outf,", %" PRId64, dims[loopvar]); \
+        } \
+        fprintf(outf,"}\n"); \
+    } else { \
+        fprintf(outf,"empty\n"); \
+    }
 
 void printMeshes (ADIOS_FILE  *fp)
 {
@@ -785,13 +796,14 @@ void printMeshes (ADIOS_FILE  *fp)
                adios_complete_meshinfo (fp, meshfp, mi); 
             }
             fprintf(outf, "    type:         ");
+
             switch (mi->type) {
                 case ADIOS_MESH_UNIFORM:
                     fprintf(outf, "uniform\n");
-                    PRINT_ARRAY("    dimensions:   ", 
+                    PRINT_ARRAY64("    dimensions:   ",
                                  mi->uniform->num_dimensions, 
                                  mi->uniform->dimensions, 
-                                 j, lld)
+                                 j)
                     if (mi->uniform->origins) {
                         PRINT_ARRAY("    origins:      ", 
                                      mi->uniform->num_dimensions, 
@@ -814,10 +826,10 @@ void printMeshes (ADIOS_FILE  *fp)
 
                 case ADIOS_MESH_RECTILINEAR:
                     fprintf(outf, "rectilinear\n");
-                    PRINT_ARRAY("    dimensions:   ", 
+                    PRINT_ARRAY64("    dimensions:   ",
                                 mi->rectilinear->num_dimensions, 
                                 mi->rectilinear->dimensions, 
-                                j, lld)
+                                j)
                     if (mi->rectilinear->use_single_var) {
                         fprintf(outf, "    coordinates:  single-var: \"%s\"\n", 
                                 mi->rectilinear->coordinates[0]);
@@ -833,10 +845,10 @@ void printMeshes (ADIOS_FILE  *fp)
 
                 case ADIOS_MESH_STRUCTURED:
                     fprintf(outf, "structured\n");
-                    PRINT_ARRAY("    dimensions:   ", 
+                    PRINT_ARRAY64("    dimensions:   ",
                                 mi->structured->num_dimensions, 
                                 mi->structured->dimensions, 
-                                j, lld);
+                                j);
                     if (mi->structured->use_single_var) {
                         fprintf(outf, "    points:       single-var: \"%s\"\n", 
                                 mi->structured->points[0]);
@@ -1573,9 +1585,9 @@ int print_data_characteristics(void * min, void * max, double * avg, double * st
             break;
 
         case adios_unsigned_long:
-            if (min) fprintf(outf,(f ? format : "%10" PRIu64 "  "), (* (unsigned long long *) min));
+            if (min) fprintf(outf,(f ? format : "%10llu  "), (* (unsigned long long *) min));
             else fprintf(outf, "      null  ");
-            if (max) fprintf(outf,(f ? format : "%10" PRIu64 "  "), (* (unsigned long long *) max));
+            if (max) fprintf(outf,(f ? format : "%10llu  "), (* (unsigned long long *) max));
             else fprintf(outf, "      null  ");
             if (avg) fprintf(outf, "%10.2f  ", * avg);
             else fprintf(outf, "      null  ");
@@ -1583,9 +1595,9 @@ int print_data_characteristics(void * min, void * max, double * avg, double * st
             else fprintf(outf, "      null  ");
             break;
         case adios_long:
-            if (min) fprintf(outf,(f ? format : "%10" PRId64 "  "), (* (long long *) min));
+            if (min) fprintf(outf,(f ? format : "%10lld  "), (* (long long *) min));
             else fprintf(outf, "      null  ");
-            if (max) fprintf(outf,(f ? format : "%10" PRId64 "  "), (* (long long *) max));
+            if (max) fprintf(outf,(f ? format : "%10lld  "), (* (long long *) max));
             else fprintf(outf, "      null  ");
             if (avg) fprintf(outf, "%10.2f  ", * avg);
             else fprintf(outf, "      null  ");
@@ -1674,10 +1686,10 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype, bool all
             break;
 
         case adios_unsigned_long:
-            fprintf(outf,(f ? format : "%" PRIu64), ((unsigned long long *) data)[item]);
+            fprintf(outf,(f ? format : "%llu"), ((unsigned long long *) data)[item]);
             break;
         case adios_long:        
-            fprintf(outf,(f ? format : "%" PRId64), ((signed long long *) data)[item]);
+            fprintf(outf,(f ? format : "%lld"), ((signed long long *) data)[item]);
             break;
 
         case adios_real:

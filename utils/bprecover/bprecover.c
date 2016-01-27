@@ -109,7 +109,7 @@ void store_scalar_dimensions (
                            var_header->path, var_header->name);
                     break;
             }
-            dim_value [var_header->id] = *(unsigned int *) var_payload->payload;
+            dim_value [var_header->id] = d;
 
 
         } else {
@@ -422,7 +422,7 @@ void write_index (int fd, uint64_t file_offset, struct adios_index_struct_v1 *  
         lseek (fd, file_offset, SEEK_SET);
         ssize_t s = write (fd, buffer, buffer_offset);
         if (s != buffer_offset) {
-            printf ("ERROR: Only wrote %" PRIu64 " bytes of index data instead of the attempted %" PRIu64 " bytes\n",
+            printf ("ERROR: Only wrote %llu bytes of index data instead of the attempted %" PRIu64 " bytes\n",
                     (unsigned long long)s, buffer_offset);
         } else {
             printf ("Wrote index to file offset %" PRIu64 ". Size is %" PRIu64 " bytes\n", file_offset, buffer_offset);

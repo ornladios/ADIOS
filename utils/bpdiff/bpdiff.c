@@ -428,14 +428,14 @@ int compare_data(char * variable_name, void *data1, void *data2, int item, enum 
         case adios_unsigned_long:
             if(((unsigned long long*) data1)[item] != ((unsigned long long*) data2)[item])//not identical
             {
-                print("%s : %" PRIu64 " in %s | %" PRIu64 " in %s\n", variable_name, ((unsigned long long*) data1)[item], infilename1, ((unsigned long long*) data2)[item], infilename2);
+                print("%s : %llu in %s | %llu in %s\n", variable_name, ((unsigned long long*) data1)[item], infilename1, ((unsigned long long*) data2)[item], infilename2);
                 ret++;
             }
             break;
         case adios_long:
             if(((unsigned long long*) data1)[item] != ((unsigned long long*) data2)[item])//not identical
             {
-                print("%s : %" PRId64 " in %s | %" PRId64 " in %s\n", variable_name, ((signed long long*) data1)[item], infilename1, ((signed long long*) data2)[item], infilename2);
+                print("%s : %lld in %s | %lld in %s\n", variable_name, ((signed long long*) data1)[item], infilename1, ((signed long long*) data2)[item], infilename2);
                 ret++;
             }
             break;
