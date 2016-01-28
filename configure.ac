@@ -155,10 +155,6 @@ AC_LANG(C)
 AM_CONDITIONAL([HAVE_DATATAP], [test x$datatap != xdisable])
 
 
-dnl CC="$MPICC"
-dnl CXX="$MPICXX"
-dnl FC="$MPIFC"
-
 dnl Unset if MPILIBS == " ", a byproduct of config/acx_mpi.m4 on success
 if test "x y" == "x${MPILIBS}y"; then
     MPILIBS=""
@@ -167,7 +163,8 @@ if test -n "${MPILIBS}"; then
     LIBS="${MPILIBS} ${LIBS}"
 fi
 
-AM_CONDITIONAL(USE_PARALLEL_COMPILER,false)
+AM_CONDITIONAL(USE_PARALLEL_HDF5_FOR_UTILS,false)
+AM_CONDITIONAL(USE_PARALLEL_NETCDF_FOR_UTILS,false)
 
 if test -z "${MACRODEFFLAG}"; then
     MACRODEFFLAG="-D"
@@ -185,9 +182,13 @@ if test -z "${HAVE_PHDF5_TRUE}" -a -z "${HAVE_HDF5_FALSE}"; then
     HDF5_LIBS="${PHDF5_LIBS}"
     AM_CONDITIONAL(HAVE_HDF5,true)
     AC_DEFINE(HAVE_HDF5,1,[Define if you have HDF5.])
-    AM_CONDITIONAL(USE_PARALLEL_COMPILER,true)
+    AM_CONDITIONAL(USE_PARALLEL_HDF5_FOR_UTILS,true)
     AC_MSG_NOTICE([Use PHDF5 for sequential HDF5 tools])
+    BP2H5_CC="${MPICC}"
+else
+    BP2H5_CC="${CC}"
 fi
+AC_SUBST(BP2H5_CC)
 
 dnl Use NC4PAR for bp2ncd if no sequential NETCDF was found
 if test -z "${HAVE_NC4PAR_TRUE}" -a -z "${HAVE_NETCDF_FALSE}"; then
@@ -197,9 +198,13 @@ if test -z "${HAVE_NC4PAR_TRUE}" -a -z "${HAVE_NETCDF_FALSE}"; then
     NETCDF_LIBS="${NC4PAR_LIBS}"
     AM_CONDITIONAL(HAVE_NETCDF,true)
     AC_DEFINE(HAVE_NETCDF,1,[Define if you have NETCDF.])
-    AM_CONDITIONAL(USE_PARALLEL_COMPILER,true)
+    AM_CONDITIONAL(USE_PARALLEL_NETCDF_FOR_UTILS,true)
     AC_MSG_NOTICE([Use NC4PAR for sequential NETCDF tools])
+    BP2NCD_CC="${MPICC}"
+else
+    BP2NCD_CC="${CC}"
 fi
+AC_SUBST(BP2NCD_CC)
 
 opsys=''
 canonical=${host}
@@ -756,9 +761,14 @@ AC_SUBST(ADIOSREADLIB_SEQ_LDFLAGS)
 AC_SUBST(ADIOSREADLIB_SEQ_LDADD)
 AC_SUBST(ADIOSLIB_EXTRA_CPPFLAGS)
 
-if test -z "${USE_PARALLEL_COMPILER_TRUE}"; then
-        AC_DEFINE(USE_PARALLEL_COMPILER, 1, [Need to use MPI compiler for sequential utils])
-        echo "#### Defined USE_PARALLEL_COMPILER to = [${USE_PARALLEL_COMPILER}]"
+if test -z "${USE_PARALLEL_HDF5_FOR_UTILS_TRUE}"; then
+        AC_DEFINE(USE_PARALLEL_HDF5_FOR_UTILS, 1, [Need to use MPI compiler for sequential HDF5 utils])
+        echo "#### Defined USE_PARALLEL_HDF5_FOR_UTILS to = [${USE_PARALLEL_HDF5_FOR_UTILS}]"
+fi
+
+if test -z "${USE_PARALLEL_NETCDF_FOR_UTILS_TRUE}"; then
+        AC_DEFINE(USE_PARALLEL_HDF5_FOR_UTILS, 1, [Need to use MPI compiler for sequential NetCDF utils])
+        echo "#### Defined USE_PARALLEL_NETCDF_FOR_UTILS to = [${USE_PARALLEL_NETCDF_FOR_UTILS}]"
 fi
 
 dnl Generate major/minor/micro version numbers

@@ -28,9 +28,7 @@ list_methods_readonly_nompi_CPPFLAGS = $(AM_CPPFLAGS) $(ADIOSREADLIB_SEQ_CPPFLAG
 list_methods_readonly_nompi_LDFLAGS = $(ADIOSREADLIB_SEQ_LDFLAGS) 
 list_methods_readonly_nompi_LDADD =  $(top_builddir)/src/libadiosread_nompi.a $(ADIOSREADLIB_SEQ_LDADD)
 
-#if USE_PARALLEL_COMPILER
 CC=$(MPICC)
 CXX=$(MPICXX)
-#endif
 
 
