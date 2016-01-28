@@ -11,14 +11,12 @@ noinst_PROGRAMS =
 
 # Only compile these test programs if we have FastBit, since they rely on FastBit
 if HAVE_FASTBIT
-CC=$(MPICC)
 
 noinst_PROGRAMS += fastbit_tests
 
 fastbit_tests_SOURCES = fastbit_tests.c
 fastbit_tests_CPPFLAGS = ${MACRODEFFLAG}_NOMPI $(AM_CPPFLAGS)
-fastbit_tests_LDADD = $(top_builddir)/src/libadiosread_nompi.a $(top_builddir)/src/libadios_nompi.a $(ADIOSREADLIB_LDADD) ${MXML_LIBS}
-fastbit_tests_LDFLAGS = $(ADIOSREADLIB_LDFLAGS) ${MXML_LDFLAGS}
+fastbit_tests_LDADD = $(top_builddir)/src/libadiosread_nompi.a $(ADIOSREADLIB_SEQ_LDADD) ${MXML_LIBS}
+fastbit_tests_LDFLAGS = $(ADIOSREADLIB_SEQ_LDFLAGS) ${MXML_LDFLAGS}
 
 endif # HAVE_FASTBIT
-CC=$(MPICC)
