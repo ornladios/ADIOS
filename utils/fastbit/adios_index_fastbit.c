@@ -46,11 +46,11 @@ void defineFastbitVar(int nblocks, const char* name, int64_t* ids, int adiosType
     //int offset= i*5;
     char offsetStr[100] = "";
     if (offset != NULL) {
-      sprintf(offsetStr, "%llu", offset[i]);
+      sprintf(offsetStr, "%" PRIu64, offset[i]);
     } 
 
     char dimStr[100];
-    sprintf(dimStr, "%llu", localDim[i]);
+    sprintf(dimStr, "%" PRIu64, localDim[i]);
     ids[i] = adios_define_var (gAdios_group, name, "", adiosType, dimStr, globalStr, offsetStr);
     //adios_set_transform (ids[i], "identity");
   }
@@ -60,11 +60,11 @@ int64_t defineAdiosVar(const char* name,  int adiosType, uint64_t localDim, cons
 {
     char offsetStr[100] = "";
     if (offset != 0) {
-      sprintf(offsetStr, "%llu", offset);
+      sprintf(offsetStr, "%" PRIu64, offset);
     } 
 
     char dimStr[100];
-    sprintf(dimStr, "%llu", localDim);
+    sprintf(dimStr, "%" PRIu64, localDim);
     int64_t id =  adios_define_var (gAdios_group, name, "", adiosType, dimStr, globalStr, offsetStr);
     printf("id = %ld \n", id);
     return id;
@@ -86,7 +86,7 @@ void verifyData(ADIOS_FILE* f, ADIOS_VARINFO* v, int k, int timestep)
       for (j=0; j<v->ndim; j++) 
       {  
 	  blockBytes *= v->blockinfo[k].count[j];
-	  //printf("%llu:%llu ", v->blockinfo[k].start[j], v->blockinfo[k].count[j]);
+	  //printf("%" PRIu64 ":%" PRIu64 " ", v->blockinfo[k].start[j], v->blockinfo[k].count[j]);
       }
 
       void* data = NULL;
@@ -128,7 +128,7 @@ void fastbitIndex(const char* datasetName, void* data, uint64_t blockSize, FastB
   fastbitErr = fastbit_iapi_deconstruct_index(datasetName, keys, nk, offsets, no, bms, nb);
   assertErr(fastbitErr, "failed with fastbit_iapi_deconstruct on ", datasetName);
   
-  //printf("nk/no/nb %lld %lld %lld\n", *nk, *no, *nb);
+  //printf("nk/no/nb %" PRId64 " %" PRId64 " %" PRId64 "\n", *nk, *no, *nb);
   
   fastbit_iapi_free_all();
 
@@ -276,7 +276,7 @@ void onSelection(int rank, ADIOS_FILE* f, ADIOS_VARINFO* v, int timestep, char* 
       logTime("  indexed on block");
       logTimeMillis("  indexed on block");
       
-      printf("    rank:%d, index created =  %llu, %llu, %llu, on var:%d, timestep: %d, selection %s\n", rank, nb, nk, no, v->varid, timestep, selName);
+      printf("    rank:%d, index created =  %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", on var:%d, timestep: %d, selection %s\n", rank, nb, nk, no, v->varid, timestep, selName);
       sum_nb += nb; sum_nk += nk, sum_no += no;
 
       adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 500); // +5MB for extra room in buffer
@@ -289,7 +289,7 @@ void onSelection(int rank, ADIOS_FILE* f, ADIOS_VARINFO* v, int timestep, char* 
       uint64_t adios_totalsize;     
       adios_group_size (gAdios_write_file, estimatedbytes +1048576, &adios_totalsize);     
 
-      printf("=> adios open output file: %s, rank %d allocated %llu bytes... \n", gIdxFileName, rank, adios_totalsize); 
+      printf("=> adios open output file: %s, rank %d allocated %" PRIu64 " bytes... \n", gIdxFileName, rank, adios_totalsize);
 
 
       defineFastbitVar(1, bmsVarName, &var_ids_bms, adios_unsigned_integer, &nb,0,0);    			    
@@ -416,7 +416,7 @@ void processData(void* data, uint64_t dataCount, int rank, int timestep, char* s
       logTime("  indexed on block");
       logTimeMillis("  indexed on block");
       
-      printf("  RANK:%d, index created =  %llu, %llu, %llu, on var:%d, timestep: %d, block %s\n", rank, nb, nk, no, v->varid, timestep, selName);
+      printf("  RANK:%d, index created =  %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", on var:%d, timestep: %d, block %s\n", rank, nb, nk, no, v->varid, timestep, selName);
       sum_nb += nb; sum_nk += nk, sum_no += no;
 
       
@@ -424,7 +424,7 @@ void processData(void* data, uint64_t dataCount, int rank, int timestep, char* s
       defineFastbitVar(1, keyVarName, &var_ids_key, adios_double, &nk, 0, 0);
       defineFastbitVar(1, offsetName, &var_ids_offset, adios_long, &no, 0, 0); 
 
-      printf("bms[0] = %llu, bms[1]=%llu \n", bms[0], bms[1]);
+      printf("bms[0] = %" PRIu64 ", bms[1]=%" PRIu64 " \n", bms[0], bms[1]);
       //var_ids_bms = defineAdiosVar(bmsVarName, adios_unsigned_integer, nb, 0, 0);
       //var_ids_key = defineAdiosVar(keyVarName, adios_double, nk, 0, 0);
       //var_ids_offset = defineAdiosVar(offsetName, adios_long, no, 0, 0);
@@ -476,7 +476,7 @@ void onBlock(int rank, ADIOS_FILE* f, ADIOS_VARINFO* v, int i, int j, int blockC
       logTime(notes); logTimeMillis(notes);
       localtime(&indexRefresh);
       
-      //printf("   %d th block / (%d), size= %llu bytes=%llu", j, blockSize, blockCounter, blockDataByteSize);
+      //printf("   %d th block / (%d), size= %" PRIu64 " bytes=%" PRIu64, j, blockSize, blockCounter, blockDataByteSize);
       
       void* data = malloc (blockDataByteSize);
       ADIOS_SELECTION* blockSel = adios_selection_writeblock(j);
@@ -533,8 +533,8 @@ void buildIndex_mpi(ADIOS_FILE* f, ADIOS_VARINFO* v, int rank, int size)
 	 }
        }
 
-       printf(" rank %d, varid %d, timestep %d  total index created =  %llu, %llu, %llu, \n", rank, v->varid, i, sum_nb, sum_nk, sum_no);
-       printf(" rank %d, varid %d, timestep %d  total bytes         =  %llu, %llu, %llu, \n", rank, v->varid, i,
+       printf(" rank %d, varid %d, timestep %d  total index created =  %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", \n", rank, v->varid, i, sum_nb, sum_nk, sum_no);
+       printf(" rank %d, varid %d, timestep %d  total bytes         =  %" PRIu64 ", %" PRIu64 ", %" PRIu64 ", \n", rank, v->varid, i,
 	      adios_type_size(adios_unsigned_integer , NULL)*sum_nb,
 	      adios_type_size(adios_double, NULL)*sum_nk, 
 	      adios_type_size(adios_long, NULL)*sum_no);
@@ -717,7 +717,7 @@ int64_t getByteEstimationOnFile(ADIOS_FILE* f, int rank)
 
     uint64_t varSize = estimateBytesOnVar(f, v);
     if (rank == 0) {
-      printf(" var: %s has size: %lld\n", varName, varSize);
+      printf(" var: %s has size: %" PRId64 "\n", varName, varSize);
     }
     bytes += varSize;
 
@@ -750,7 +750,7 @@ int64_t getByteEstimation(ADIOS_FILE* f, int rank, int argc, char** argv)
 	return -1;
       }
       uint64_t varSize = estimateBytesOnVar(f, v);
-      printf(" var: %s has size: %lld\n", varName, varSize);
+      printf(" var: %s has size: %" PRId64 "\n", varName, varSize);
       bytes += varSize;
       adios_free_varinfo(v);
       i++;
@@ -821,7 +821,7 @@ int main (int argc, char** argv)
       uint64_t adios_totalsize;      // adios_group_size needs to be call before any write_byid, Otherwise write_byid does nothing 
       adios_group_size (gAdios_write_file, estimatedbytes , &adios_totalsize);     
 
-      printf("=> .. adios open output file: %s, rank %d allocated %llu bytes... \n", gIdxFileName, rank, adios_totalsize); 
+      printf("=> .. adios open output file: %s, rank %d allocated %" PRIu64 " bytes... \n", gIdxFileName, rank, adios_totalsize);
       // IMPORTANT: 
       // can only call open/close once in a process
       // otherwise data is tangled or only the data in the last open/close call is recorded

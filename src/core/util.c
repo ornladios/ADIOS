@@ -6,6 +6,7 @@
 #include <assert.h>
 #include <ctype.h>
 
+
 #include "config.h"
 #include "core/util.h"
 #include "core/bp_utils.h"
@@ -41,7 +42,7 @@ void change_endianness( void *data, uint64_t slice_size, enum ADIOS_DATATYPES ty
        log_error ("Adios error in bp_utils.c:change_endianness(): "
                   "An array's endianness is to be converted but the size of array "
                   "is not dividable by the size of the elements: "
-                  "size = %lld, element size = %d\n", slice_size, size_of_type);
+                  "size = %" PRIu64 ", element size = %d\n", slice_size, size_of_type);
     }
 
     switch (type)
@@ -411,7 +412,8 @@ ADIOS_SELECTION * copy_selection (const ADIOS_SELECTION * sel)
 
 void free_selection (ADIOS_SELECTION * sel)
 {
-    sel->type = sel->type;
+    if (!sel)
+        return;
 
     if (sel->type == ADIOS_SELECTION_BOUNDINGBOX)
     {
@@ -512,6 +514,22 @@ int get_unique_nids (MPI_Comm comm, uint32_t ** nids)
                    *nids, 1, MPI_INT,
                    comm);
     return unique (*nids, size);
+}
+
+void trim_spaces (char * str)
+{
+    char * t = str, * p = NULL;
+    while (*t != '\0')
+    {
+        if (*t == ' ')
+        {
+            p = t + 1;
+            strcpy (t, p);
+        }
+        else
+            t++;
+    }
+
 }
 
 /*******************************************************

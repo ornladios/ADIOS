@@ -9,6 +9,7 @@
 #define ADIOS_INTERNALS_H
 
 #include <stdint.h>
+#include <inttypes.h>
 #include <stdlib.h>
 
 // need the enum for the transports
@@ -513,6 +514,7 @@ int adios_common_define_var_characteristics  (struct adios_group_struct * g
                                              );
 
 void adios_common_get_group (int64_t * group_id, const char * name);
+int adios_common_delete_attrdefs (struct adios_group_struct * g);
 int adios_common_delete_vardefs (struct adios_group_struct * g);
 int adios_common_free_group (int64_t id);
 
@@ -632,6 +634,7 @@ int adios_int_is_var (const char * temp); // 1 == yes, 0 == no
 int adios_int_is_num (char * temp); // 1 == yes, 0 == no
 void adios_conca_mesh_numb_att_nam (char ** returnstr, const char * meshname, char * att_nam, char counterstr[5]);
 void adios_conca_mesh_att_nam (char ** returnstr, const char * meshname, char * att_nam);
+void adios_conca_link_att_nam(char ** returnstr, const char * name, char * att_nam, char counterstr[5]);
 
 // No-XML API
 int adios_common_define_schema_version (struct adios_group_struct * new_group, char * schema_version);

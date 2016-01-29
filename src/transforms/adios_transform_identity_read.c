@@ -81,6 +81,8 @@ void compute_sieving_offsets_for_pg_selection(const ADIOS_SELECTION *intersect_s
 
     case ADIOS_SELECTION_AUTO:
         /* Unsupported */
+        start_off = 0;
+        end_off = 0;
         break;
     }
 

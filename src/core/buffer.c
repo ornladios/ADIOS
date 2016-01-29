@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include <unistd.h>   /* _SC_PAGE_SIZE, _SC_AVPHYS_PAGES */
 #include <limits.h>   /* ULLONG_MAX */
 #include <assert.h>
@@ -70,31 +71,31 @@ int adios_databuffer_resize (struct adios_file_struct *fd, uint64_t size)
             fd->allocated_bufptr = b;
             uint64_t p = (uint64_t) fd->allocated_bufptr;
             fd->buffer = (char *) ((p + BYTE_ALIGN - 1) & ~(BYTE_ALIGN - 1));
-            log_debug ("Data buffer extended from %llu to %llu bytes\n", fd->buffer_size, size);
+            log_debug ("Data buffer extended from %" PRIu64 " to %" PRIu64 " bytes\n", fd->buffer_size, size);
             fd->buffer_size = size;
 
         }
         else
         {
             retval = 1;
-            log_warn ("Cannot allocate %llu bytes for buffered output of group %s. "
-                      "Continue buffering with buffer size %llu MB\n",
+            log_warn ("Cannot allocate %" PRIu64 " bytes for buffered output of group %s. "
+                      "Continue buffering with buffer size %" PRIu64 " MB\n",
                       size, fd->group->name, fd->buffer_size/1048576);
         }
     }
     else
     {
         retval = 1;
-        log_warn ("Cannot allocate %llu bytes for buffered output of group %s "
-                " because max allowed is %llu bytes. "
-                "Continue buffering with buffer size %llu MB\n",
+        log_warn ("Cannot allocate %" PRIu64 " bytes for buffered output of group %s "
+                " because max allowed is %" PRIu64 " bytes. "
+                "Continue buffering with buffer size %" PRIu64 " MB\n",
                 size, fd->group->name, max_size, fd->buffer_size/1048576);
     }
 
     return retval;
 }
 
-int adios_databuffer_free (struct adios_file_struct *fd)
+void adios_databuffer_free (struct adios_file_struct *fd)
 {
     if (fd->allocated_bufptr)
         free (fd->allocated_bufptr);
@@ -197,7 +198,7 @@ int adios_set_buffer_size ()
             {
                 adios_error (err_no_memory,
                         "adios_allocate_buffer (): insufficient memory: "
-                        "%llu requested, %llu available.  Using "
+                        "%" PRIu64 " requested, %" PRIu64 " available.  Using "
                         "available.\n",
                         adios_buffer_size_requested,
                         (uint64_t)(((uint64_t) pagesize) * pages));

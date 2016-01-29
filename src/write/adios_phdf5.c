@@ -189,6 +189,7 @@ int adios_phdf5_open(struct adios_file_struct *fd
         }
         case adios_mode_write:
         case adios_mode_append:
+        case adios_mode_update:
             md->fh = H5Fcreate (name, H5F_ACC_EXCL, H5P_DEFAULT, fapl_id);
             if (md->fh < 0)
             {
@@ -275,12 +276,12 @@ void adios_phdf5_read (struct adios_file_struct * fd
     }
 }
 
-static void adios_phdf5_do_read (struct adios_file_struct * fd
+/*static void adios_phdf5_do_read (struct adios_file_struct * fd
                               ,struct adios_method_struct * method
                               )
 {
 // This function is not useful for phdf5 since adios_read/write do real read/write 
-}
+}*/
 
 
 void adios_phdf5_buffer_overflow (struct adios_file_struct * fd, 
@@ -353,11 +354,9 @@ int hw_attribute ( hid_t root_id
 
     H5Eset_auto ( NULL, NULL);
     int i, rank = 0, level;
-    char * name;
-    herr_t  status; 
     hid_t   h5_plist_id, h5_type_id, h5_dataspace_id;
-    hid_t h5_attribute_id, h5_memspace_id, grp_ids[NUM_GP];
-    hsize_t * h5_globaldims, * h5_localdims, * h5_offsets, * h5_strides; 
+    hid_t h5_attribute_id, grp_ids[NUM_GP];
+    hsize_t * h5_localdims;
     struct adios_dimension_struct * dims;
     struct adios_var_struct * var_linked;
     enum ADIOS_FLAG flag = adios_flag_unknown;
@@ -493,8 +492,6 @@ int hr_var (hid_t root_id
 
     H5Eset_auto ( NULL, NULL);
     int i, rank = 0, level, err_code = -2;
-    char * name;
-    herr_t  status; 
     hid_t   h5_plist_id, h5_type_id, h5_dataspace_id, h5_dataset_id, h5_memspace_id, grp_ids[NUM_GP];
     struct adios_dimension_struct * dims = pvar->dimensions;
     enum ADIOS_FLAG flag_yes = adios_flag_yes;
@@ -659,7 +656,7 @@ int hr_var (hid_t root_id
             }
             else
                 fprintf ( stderr, "PHDF5 ERROR:  cannot create dataset id for var: %s\n", pvar->name);
-            status = H5Sclose (h5_dataspace_id);
+            H5Sclose (h5_dataspace_id);
         }
         else
             fprintf (stderr, "PHDF5 ERROR: cannot create dataset space %s for var!\n", pvar->name);
@@ -681,8 +678,6 @@ int hw_var (hid_t root_id
 
     H5Eset_auto ( NULL, NULL);
     int i, rank = 0, level;
-    char * name;
-    herr_t  status; 
     hid_t   h5_plist_id, h5_type_id, h5_dataspace_id, h5_dataset_id, h5_memspace_id, grp_ids[NUM_GP];
     struct adios_dimension_struct * dims = pvar->dimensions;
     enum ADIOS_FLAG flag_yes = adios_flag_yes;
@@ -723,14 +718,13 @@ int hw_var (hid_t root_id
                 fprintf (stderr, "PHDF5 ERROR: can not create scalar %s in hw_var!\n", pvar->name); 
         }
         if (h5_dataset_id>0 ) {
-            status = -1;
-            if ( myrank==1)
-                status = H5Dwrite (h5_dataset_id, h5_type_id, H5S_ALL
-                                  ,H5S_ALL, h5_plist_id, pvar->data
-                                  );
+        	if ( myrank==1)
+        		H5Dwrite (h5_dataset_id, h5_type_id, H5S_ALL
+        				  ,H5S_ALL, h5_plist_id, pvar->data
+        		         );
             //printf("groupid=%d level=%d datasetid=%d\n",grp_ids[level],level,h5_dataset_id);
-            //printf("write dataset: name=%s/%s status=%d myrank=%d\n"
-            //         , pvar->path,pvar->name,status, myrank);
+            //printf("write dataset: name=%s/%s myrank=%d\n"
+            //         , pvar->path,pvar->name,myrank);
             H5Dclose (h5_dataset_id); 
         }
         H5Sclose (h5_dataspace_id); 
@@ -819,7 +813,7 @@ int hw_var (hid_t root_id
             return -1; 
          } 
 
-         status = H5Sselect_hyperslab (h5_dataspace_id, H5S_SELECT_SET
+         H5Sselect_hyperslab (h5_dataspace_id, H5S_SELECT_SET
                                   ,h5_offsets, h5_strides, h5_localdims, 0 
                                   );
 
@@ -842,13 +836,13 @@ int hw_var (hid_t root_id
                       " var: %s\n"
                      ,pvar->name);
             return -1; 
-         } 
-         status = H5Dwrite (h5_dataset_id, h5_type_id, h5_memspace_id 
+        }
+        H5Dwrite (h5_dataset_id, h5_type_id, h5_memspace_id
                            ,h5_dataspace_id, h5_plist_id, pvar->data
                            );
-        status = H5Dclose (h5_dataset_id);
-        status = H5Sclose (h5_dataspace_id);
-        status = H5Sclose (h5_memspace_id);
+        H5Dclose (h5_dataset_id);
+        H5Sclose (h5_dataspace_id);
+        H5Sclose (h5_memspace_id);
         free (h5_gbdims);  
         free (h5_strides);  
     }
@@ -856,7 +850,7 @@ int hw_var (hid_t root_id
         h5_localdims = (hsize_t *) malloc (rank * sizeof(hsize_t));
         hid_t h5p_dset_id;
         enum ADIOS_FLAG is_timeindex = adios_flag_no;
-        int  srank, dimindex = 0;
+        int  dimindex = 0;
         for ( i = 0; i < rank; i++) {
             h5_localdims [i] = parse_dimension(pvar_root, patt_root, &dims->dimension);
             if ( dims->dimension.is_time_index == adios_flag_yes) {
@@ -879,7 +873,7 @@ int hw_var (hid_t root_id
                     h5_strides [i] = 1; 
                 }
                 h5_dataspace_id = H5Dget_space(h5_dataset_id);
-                srank = H5Sget_simple_extent_ndims (h5_dataspace_id);
+                H5Sget_simple_extent_ndims (h5_dataspace_id);
                 //fprintf(stderr, "var %s has time index %d %d \n"
                 //       ,pvar->name, h5_offsets[1], h5_globaldims[1]); 
                 H5Sget_simple_extent_dims (h5_dataspace_id, h5_globaldims, NULL);
@@ -962,7 +956,7 @@ int hw_var (hid_t root_id
  */
 int getH5TypeId(enum ADIOS_DATATYPES type, hid_t* h5_type_id \
                ,enum ADIOS_FLAG fortran_flag) {
-    int size, status=0;
+    int status=0;
     switch (type)
     {
         case adios_byte:

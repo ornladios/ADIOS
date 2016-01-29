@@ -16,6 +16,7 @@
 #include "core/adios_transport_hooks.h"
 #include "core/futils.h"
 #include "core/globals.h"
+#include "core/buffer.h"
 #include "public/adios_error.h"
 #include "core/adios_logger.h"
 #include "core/adios_timing.h"

@@ -11,7 +11,7 @@
 #include "core/adios_infocache.h"
 
 // Utilities
-static inline int min(int a, int b) { return a < b ? a : b; }
+//static inline int min(int a, int b) { return a < b ? a : b; }
 static inline int max(int a, int b) { return a > b ? a : b; }
 #define MALLOC_ARRAY(arr,type,len) { (arr) = (type *)malloc((len) * sizeof(type)); }
 #define CALLOC_ARRAY(arr,type,len) { (arr) = (type *)calloc((len), sizeof(type)); }
