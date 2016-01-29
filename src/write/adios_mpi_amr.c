@@ -305,7 +305,7 @@ adios_mpi_amr_set_striping_unit(struct adios_MPI_data_struct * md, char *paramet
     uint16_t striping_count = 0;
     char     *temp_string, *p_count,*p_size;
     int fd, old_mask, perm, n_ost_skipping, n_ost, n, i, should_striping;
-    int random_offset_flag, name_len;
+    int random_offset_flag;
 
     temp_string = (char *) malloc (strlen (parameters) + 1);
     strcpy (temp_string, parameters);
@@ -719,6 +719,7 @@ adios_mpi_amr_set_aggregation_parameters(char * parameters, struct adios_MPI_dat
     }
 }
 
+/*
 static void adios_mpi_amr_buffer_write (char ** buffer, uint64_t * buffer_size
                                        ,uint64_t * buffer_offset
                                        ,const void * data, uint64_t size
@@ -744,6 +745,7 @@ static void adios_mpi_amr_buffer_write (char ** buffer, uint64_t * buffer_size
     memcpy (*buffer + *buffer_offset, data, size);
     *buffer_offset += size;
 }
+*/
 
 static uint64_t
 adios_mpi_amr_striping_unit_write(MPI_File   fh
@@ -1222,8 +1224,7 @@ int adios_mpi_amr_open (struct adios_file_struct * fd
     adios_buffer_struct_clear (&md->b);
 
 
-    char * name, * name_no_path, * ch;
-    int err;
+    char * name;
     //int sig;    // used for coordinating the MPI_File_open
 
     START_TIMER (ADIOS_TIMER_AD_OPEN);
@@ -1352,7 +1353,6 @@ int adios_mpi_amr_open (struct adios_file_struct * fd
             // so the index merging procedure will result in a complete metadata again
             if (md->rank == 0)
             {
-                struct lov_user_md lum;
                 int f;
                 md->g_num_ost = 1024; // default num_ost, maybe updated below
 
@@ -1445,8 +1445,6 @@ enum BUFFERING_STRATEGY adios_mpi_amr_should_buffer (struct adios_file_struct * 
                                                     ,struct adios_method_struct * method
                                                     )
 {
-    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
-                                                      method->method_data;
     return stop_on_overflow;
 }
 
@@ -1457,8 +1455,6 @@ void adios_mpi_amr_write (struct adios_file_struct * fd
                          )
 {
     START_TIMER (ADIOS_TIMER_AD_WRITE);
-    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
-                                                      method->method_data;
     if (v->got_buffer == adios_flag_yes)
     {
         if (data != v->data)  // if the user didn't give back the same thing
@@ -1548,7 +1544,7 @@ void adios_mpi_amr_read (struct adios_file_struct * fd
 }
 
 
-static
+/*static
 uint32_t adios_mpi_amr_calculate_attributes_size (struct adios_file_struct * fd)
 {
     uint32_t overhead = 0;
@@ -1565,7 +1561,7 @@ uint32_t adios_mpi_amr_calculate_attributes_size (struct adios_file_struct * fd)
     }
 
     return overhead;
-}
+}*/
 
 
 /* Help routine to send data size greater than 2 GB */
@@ -1616,8 +1612,6 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
 {
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                  method->method_data;
-    struct adios_attribute_struct * a = fd->group->attributes;
-
     struct adios_index_process_group_struct_v1 * new_pg_root = 0;
     struct adios_index_var_struct_v1 * new_vars_root = 0;
     struct adios_index_attribute_struct_v1 * new_attrs_root = 0;
@@ -1658,7 +1652,6 @@ void adios_mpi_amr_bg_close (struct adios_file_struct * fd
             {
                 //printf ("do not merge pg\n");
                 uint64_t pg_size;
-                MPI_Request request;
                 MPI_Status status;
 
                 pg_size = fd->bytes_written;
@@ -2154,7 +2147,6 @@ void adios_mpi_amr_ag_close (struct adios_file_struct * fd
 {
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                  method->method_data;
-    struct adios_attribute_struct * a = fd->group->attributes;
 
     struct adios_index_process_group_struct_v1 * new_pg_root = 0;
     struct adios_index_var_struct_v1 * new_vars_root = 0;

@@ -192,7 +192,7 @@ static int adios_check_query_at_timestep(ADIOS_QUERY* q, int timeStep)
     return -1;
       }
 
-      log_debug("%s, raw data size=%llu\n", q->condition, dataSize);
+      log_debug("%s, raw data size=%" PRIu64 "\n", q->condition, dataSize);
       //q->dataSlice = malloc(total_byte_size);
       q->dataSlice = 0;
       q->rawDataSize = dataSize;

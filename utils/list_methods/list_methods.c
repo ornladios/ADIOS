@@ -16,6 +16,7 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include <unistd.h>
 #include <string.h>
 #include <sys/stat.h>
@@ -31,6 +32,7 @@
 #include "core/adios_internals.h" // write hooks and adios_transport_struct
 #include "core/adios_read_hooks.h" // read hooks and adios_read_hooks_struct
 #include "core/transforms/adios_transforms_hooks.h" 
+#include "core/transforms/adios_transforms_hooks_read.h"
 #include "core/transforms/adios_transforms_read.h"
 #include "query/adios_query_hooks.h"
 
@@ -385,6 +387,10 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype)
         case adios_string:
             printf ("\"%s\"", ((char *) data)+item);
             break;
+        case adios_string_array:
+            // we expect one elemet of the array here
+            printf("\"%s\"", *((char **)data+item));
+            break;
 
         case adios_unsigned_short:
             printf ("%hu", ((unsigned short *) data)[item]);
@@ -401,10 +407,10 @@ int print_data(void *data, int item, enum ADIOS_DATATYPES adiosvartype)
             break;
 
         case adios_unsigned_long:
-            printf ("%llu", ((unsigned long long *) data)[item]);
+            printf ("%" PRIu64, ((uint64_t *) data)[item]);
             break;
         case adios_long:        
-            printf ("%lld", ((signed long long *) data)[item]);
+            printf ("%" PRId64, ((int64_t *) data)[item]);
             break;
 
         case adios_real:

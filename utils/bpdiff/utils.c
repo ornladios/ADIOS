@@ -37,10 +37,10 @@ void int64s_to_str (int n, uint64_t *values, char *s)
         s[0] = '\0';
         return;
     }
-    sprintf(s,"%llu", values[0]);
+    sprintf(s,"%" PRIu64, values[0]);
     for (i=1; i<n; i++)
     {
-        sprintf (v,",%llu", values[i]);
+        sprintf (v,",%" PRIu64, values[i]);
         strcat (s,v);
     }
 }
@@ -79,11 +79,11 @@ const char * value_to_string (enum ADIOS_DATATYPES type, void * data, int idx)
             break;
 
         case adios_long:
-            sprintf (s, "%lld", ((int64_t *) data)[idx]);
+            sprintf (s, "%" PRId64, ((int64_t *) data)[idx]);
             break;
 
         case adios_unsigned_long:
-            sprintf (s, "%llu", ((uint64_t *) data)[idx]);
+            sprintf (s, "%" PRIu64, ((uint64_t *) data)[idx]);
             break;
 
         case adios_real:

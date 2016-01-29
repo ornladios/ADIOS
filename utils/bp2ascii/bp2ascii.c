@@ -118,14 +118,14 @@ int main (int argc, char ** argv)
     struct adios_var_header_struct_v1 var_header;
     struct adios_var_payload_struct_v1 var_payload;
     uint64_t offset, var_len;
-    printf("characteristics count: %llu\n", element_counts); 
+    printf("characteristics count: %" PRIu64 "\n", element_counts);
 
     for (i = 0; i < element_counts; i++)
     {
         offset = vars_root->characteristics[i].offset;
         b->read_pg_offset = pg_root->offset_in_file;
 
-        printf("offset: %llu read_pg_offset=%llu\n", offset, b->read_pg_offset);
+        printf("offset: %" PRIu64 " read_pg_offset=%" PRIu64 "\n", offset, b->read_pg_offset);
         if (pg_root->next)
         {
             b->read_pg_size =   pg_root->next->offset_in_file
@@ -145,8 +145,8 @@ int main (int argc, char ** argv)
 
         read (b->f,b->buff+8, var_len);
 
-        printf("var length: %llu offset: %llu\n",var_len, offset);
-        printf ("payload_size %llux\n", var_header.payload_size);
+        printf("var length: %" PRIu64 " offset: %" PRIu64 "\n",var_len, offset);
+        printf ("payload_size %" PRIu64 "x\n", var_header.payload_size);
 
         adios_parse_var_data_header_v1 (b, &var_header);
         print_var_header (&var_header);
@@ -204,6 +204,9 @@ int main (int argc, char ** argv)
             case adios_string:
                     fprintf(outf, "%s ", (char *)var_payload.payload);
                     break;
+            case adios_string_array:
+                    fprintf(outf, "%s ", *(char **)var_payload.payload);
+                    break;
             case adios_complex:
                 for (j=0; j<(var_header.payload_size)/8;j++) 
                     fprintf(outf, "%f + %fi", *((float  *)var_payload.payload+2*j),*((float  *)var_payload.payload+j*2+1));
@@ -228,7 +231,7 @@ void print_process_group_header (uint64_t num
 {
     struct adios_method_info_struct_v1 * m;
 
-    printf ("Process Group: %llu\n", num);
+    printf ("Process Group: %" PRIu64 "\n", num);
     printf ("\tGroup Name: %s\n", pg_header->name);
     printf ("\tHost Language Fortran?: %c\n"
            ,(pg_header->host_language_fortran == adios_flag_yes ? 'Y' : 'N')
@@ -257,7 +260,7 @@ void print_process_group_index (
         printf ("\tProcess ID: %d\n", pg_root->process_id);
         printf ("\tTime Name: %s\n", pg_root->time_index_name);
         printf ("\tTime: %d\n", pg_root->time_index);
-        printf ("\tOffset in File: %llu\n", pg_root->offset_in_file);
+        printf ("\tOffset in File: %" PRIu64 "\n", pg_root->offset_in_file);
 
         pg_root = pg_root->next;
     }

@@ -9,6 +9,7 @@
 
 #include <stdio.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include "adios_types.h"
 
 #define MAX3(a,b,c) (a > b ? (a > c ? a : c) : (b > c ? b : c))

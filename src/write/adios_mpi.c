@@ -895,9 +895,6 @@ void adios_mpi_write (struct adios_file_struct * fd
                      ,struct adios_method_struct * method
                      )
 {
-    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
-                                                      method->method_data;
-
     if (v->got_buffer == adios_flag_yes)
     {
         if (data != v->data)  // if the user didn't give back the same thing
@@ -1123,7 +1120,7 @@ void adios_mpi_close (struct adios_file_struct * fd
 {
     struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
                                                  method->method_data;
-    struct adios_attribute_struct * a = fd->group->attributes;
+    //struct adios_attribute_struct * a = fd->group->attributes;
 
     struct adios_index_process_group_struct_v1 * new_pg_root = 0;
     struct adios_index_var_struct_v1 * new_vars_root = 0;

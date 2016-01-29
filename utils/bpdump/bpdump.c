@@ -152,13 +152,13 @@ int main (int argc, char ** argv)
     adios_parse_index_offsets_v1 (b);
 
     /*
-    printf ("End of process groups       = %llu\n", b->end_of_pgs);
-    printf ("Process Groups Index Offset = %llu\n", b->pg_index_offset);
-    printf ("Process Groups Index Size   = %llu\n", b->pg_size);
-    printf ("Variable Index Offset       = %llu\n", b->vars_index_offset);
-    printf ("Variable Index Size         = %llu\n", b->vars_size);
-    printf ("Attribute Index Offset      = %llu\n", b->attrs_index_offset);
-    printf ("Attribute Index Size        = %llu\n", b->attrs_size);
+    printf ("End of process groups       = %" PRIu64 "\n", b->end_of_pgs);
+    printf ("Process Groups Index Offset = %" PRIu64 "\n", b->pg_index_offset);
+    printf ("Process Groups Index Size   = %" PRIu64 "\n", b->pg_size);
+    printf ("Variable Index Offset       = %" PRIu64 "\n", b->vars_index_offset);
+    printf ("Variable Index Size         = %" PRIu64 "\n", b->vars_size);
+    printf ("Attribute Index Offset      = %" PRIu64 "\n", b->attrs_index_offset);
+    printf ("Attribute Index Size        = %" PRIu64 "\n", b->attrs_size);
     */
 
     adios_posix_read_process_group_index (b);
@@ -194,12 +194,12 @@ int main (int argc, char ** argv)
         /* Note: only variables have subfile index, PG's don't so we need to be this indirect in the test */
         if (pg->offset_in_file >= b->pg_index_offset) 
         {
-            printf ("Process Group %llu offset is beyond the footer.", pg_num);
+            printf ("Process Group %" PRIu64 " offset is beyond the footer.", pg_num);
             if (have_subfiles) {
                 printf (" It is probably in a subfile but bpdump does not process subfiles.\n");
             } else {
                 printf (" Since there are no subfiles, this probably means the BP file is corrupt.\n"
-                        "offset=%llu  footer starts at %llu\n", pg->offset_in_file, b->pg_index_offset);
+                        "offset=%" PRIu64 "  footer starts at %" PRIu64 "\n", pg->offset_in_file, b->pg_index_offset);
             }
             pg = pg->next;
             continue;
@@ -234,7 +234,7 @@ int main (int argc, char ** argv)
         adios_posix_read_process_group (b);
         adios_parse_process_group_header_v1 (b, &pg_header);
         print_process_group_header (pg_num, &pg_header);
-        //printf ("\tSize of group in fil: %llu bytes\n",  b->read_pg_size);
+        //printf ("\tSize of group in fil: %" PRIu64 " bytes\n",  b->read_pg_size);
 
         adios_parse_vars_header_v1 (b, &vars_header);
         print_vars_header (&vars_header);
@@ -350,11 +350,11 @@ const char * value_to_string (enum ADIOS_DATATYPES type, void * data)
             break;
 
         case adios_long:
-            sprintf (s, "%lld", *(((int64_t *) data)));
+            sprintf (s, "%" PRId64, *(((int64_t *) data)));
             break;
 
         case adios_unsigned_long:
-            sprintf (s, "%llu", *(((uint64_t *) data)));
+            sprintf (s, "%" PRIu64, *(((uint64_t *) data)));
             break;
 
         case adios_real:
@@ -443,14 +443,14 @@ const char * value_to_string_ptr (enum ADIOS_DATATYPES type, void * data, uint64
         case adios_long:
         {
             int64_t * p = (int64_t *) data;
-            sprintf (s, "%lld", p [element]);
+            sprintf (s, "%" PRId64, p [element]);
             break;
         }
 
         case adios_unsigned_long:
         {
             uint64_t * p = (uint64_t *) data;
-            sprintf (s, "%llu", p [element]);
+            sprintf (s, "%" PRIu64, p [element]);
             break;
         }
 
@@ -476,6 +476,7 @@ const char * value_to_string_ptr (enum ADIOS_DATATYPES type, void * data, uint64
         }
 
         case adios_string:
+        case adios_string_array:
         {
             //char * p = (char *) data;
             //sprintf (s, "%s", p [element]);
@@ -514,7 +515,7 @@ void print_process_group_header (uint64_t num
 {
     struct adios_method_info_struct_v1 * m;
 
-    printf ("Process Group: %llu\n", num);
+    printf ("Process Group: %" PRIu64 "\n", num);
     printf ("\tGroup Name: %s\n", pg_header->name);
     printf ("\tHost Language Fortran?: %c\n"
            ,(pg_header->host_language_fortran == adios_flag_yes ? 'Y' : 'N')
@@ -547,7 +548,7 @@ void print_characteristic_dims(struct adios_index_characteristic_dims_struct_v1 
             printf (",");
         if (dims->dims [j * 3 + 1] != 0)
         {
-            printf ("%llu:%llu:%llu"
+            printf ("%" PRIu64 ":%" PRIu64 ":%" PRIu64
                    ,dims->dims [j * 3 + 0]
                    ,dims->dims [j * 3 + 1]
                    ,dims->dims [j * 3 + 2]
@@ -555,7 +556,7 @@ void print_characteristic_dims(struct adios_index_characteristic_dims_struct_v1 
         }
         else
         {
-            printf ("%llu"
+            printf ("%" PRIu64
                    ,dims->dims [j * 3 + 0]
                    );
         }
@@ -587,12 +588,12 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
                 }
                 else
                 {
-                    printf ("R(%llu)", d->dimension.rank);
+                    printf ("R(%" PRIu64 ")", d->dimension.rank);
                 }
             }
             else
             {
-                printf ("V(%hu)", d->dimension.var_id);
+                printf ("V(%u)", d->dimension.var_id);
             }
 
             if (   d->global_dimension.var_id != 0
@@ -607,12 +608,12 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
                     }
                     else
                     {
-                        printf (":R(%llu)", d->global_dimension.rank);
+                        printf (":R(%" PRIu64 ")", d->global_dimension.rank);
                     }
                 }
                 else
                 {
-                    printf (":V(%hu)", d->global_dimension.var_id);
+                    printf (":V(%u)", d->global_dimension.var_id);
                 }
                 if (d->local_offset.var_id == 0)
                 {
@@ -622,12 +623,12 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
                     }
                     else
                     {
-                        printf (":R(%llu)\n", d->local_offset.rank);
+                        printf (":R(%" PRIu64 ")\n", d->local_offset.rank);
 		    }
                 }
                 else
                 {
-                    printf (":V(%hu)\n", d->local_offset.var_id);
+                    printf (":V(%u)\n", d->local_offset.var_id);
                 }
             }
             printf ("\n");
@@ -636,7 +637,7 @@ void print_var_header (struct adios_var_header_struct_v1 * var_header)
 	}
     }
     printf ("\t\tCharacteristics:\n");
-    printf ("\t\t\tOffset(%llu)", var_header->characteristics.offset);
+    printf ("\t\t\tOffset(%" PRIu64 ")", var_header->characteristics.offset);
 
     /* NCSU - Print min, max */
 
@@ -950,9 +951,9 @@ void print_var_payload (struct adios_var_header_struct_v1 * var_header
                 for (i = 0; i < ranks; i++)
                 {
                     if (i > 0)
-                        c += printf (",%llu", position [i]);
+                        c += printf (",%" PRIu64, position [i]);
                     else
-                        c += printf ("%llu", position [i]);
+                        c += printf ("%" PRIu64, position [i]);
                 }
                 c += printf ("] ");
                 c += printf ("%s ", value_to_string_ptr (var_header->type
@@ -1029,7 +1030,7 @@ void print_process_group_index (
         printf ("\tProcess ID: %d\n", pg_root->process_id);
         printf ("\tTime Name: %s\n", pg_root->time_index_name);
         printf ("\tTime: %d\n", pg_root->time_index);
-        printf ("\tOffset in File: %llu\n", pg_root->offset_in_file);
+        printf ("\tOffset in File: %" PRIu64 "\n", pg_root->offset_in_file);
 
         pg_root = pg_root->next;
     }
@@ -1054,14 +1055,14 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
         const char * typestr = adios_type_to_string_int (vars_root->type);
         printf ("\tDatatype: %s\n", typestr);
         //printf ("\tDatatype: %s\n", adios_type_to_string_int (vars_root->type));
-        printf ("\tVars Characteristics: %llu\n"
+        printf ("\tVars Characteristics: %" PRIu64 "\n"
                ,vars_root->characteristics_count
                );
         uint64_t i;
         for (i = 0; i < vars_root->characteristics_count; i++)
         {
-            printf ("\tOffset(%llu)", vars_root->characteristics [i].offset);
-            printf ("\tPayload Offset(%llu)", vars_root->characteristics [i].payload_offset);
+            printf ("\tOffset(%" PRIu64 ")", vars_root->characteristics [i].offset);
+            printf ("\tPayload Offset(%" PRIu64 ")", vars_root->characteristics [i].payload_offset);
             printf ("\tFile Index(%d)", vars_root->characteristics [i].file_index);
             printf ("\tTime Index(%d)", vars_root->characteristics [i].time_index);
 
@@ -1136,7 +1137,7 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
                         != 0
                        )
                     {
-                        printf ("%llu:%llu:%llu"
+                        printf ("%" PRIu64 ":%" PRIu64 ":%" PRIu64
                          ,vars_root->characteristics [i].dims.dims [j * 3 + 0]
                          ,vars_root->characteristics [i].dims.dims [j * 3 + 1]
                          ,vars_root->characteristics [i].dims.dims [j * 3 + 2]
@@ -1144,7 +1145,7 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
                     }
                     else
                     {
-                        printf ("%llu"
+                        printf ("%" PRIu64
                          ,vars_root->characteristics [i].dims.dims [j * 3 + 0]
                                );
                     }
@@ -1169,7 +1170,7 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
                         != 0
                        )
                     {
-                        printf ("%llu:%llu:%llu"
+                        printf ("%" PRIu64 ":%" PRIu64 ":%" PRIu64
                          ,dims->dims [j * 3 + 0]
                          ,dims->dims [j * 3 + 1]
                          ,dims->dims [j * 3 + 2]
@@ -1177,7 +1178,7 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
                     }
                     else
                     {
-                        printf ("%llu"
+                        printf ("%" PRIu64
                          ,dims->dims [j * 3 + 0]
                                );
                     }
@@ -1213,14 +1214,14 @@ void print_attributes_index
                    );
 	}
         printf ("\tDatatype: %s\n", adios_type_to_string_int (attrs_root->type));
-        printf ("\tAttribute Characteristics: %llu\n"
+        printf ("\tAttribute Characteristics: %" PRIu64 "\n"
                ,attrs_root->characteristics_count
                );
         uint64_t i;
         for (i = 0; i < attrs_root->characteristics_count; i++)
         {
-            printf ("\t\tOffset(%llu)", attrs_root->characteristics [i].offset);
-            printf ("\t\tPayload Offset(%llu)", attrs_root->characteristics [i].payload_offset);
+            printf ("\t\tOffset(%" PRIu64 ")", attrs_root->characteristics [i].offset);
+            printf ("\t\tPayload Offset(%" PRIu64 ")", attrs_root->characteristics [i].payload_offset);
             printf ("\t\tFile Index(%d)", attrs_root->characteristics [i].file_index);
             printf ("\t\tTime Index(%d)", attrs_root->characteristics [i].time_index);
 
@@ -1299,7 +1300,7 @@ void print_attributes_index
                         != 0
                        )
                     {
-                        printf ("%llu:%llu:%llu"
+                        printf ("%" PRIu64 ":%" PRIu64 ":%" PRIu64
                          ,attrs_root->characteristics [i].dims.dims [j * 3 + 0]
                          ,attrs_root->characteristics [i].dims.dims [j * 3 + 1]
                          ,attrs_root->characteristics [i].dims.dims [j * 3 + 2]
@@ -1307,7 +1308,7 @@ void print_attributes_index
                     }
                     else
                     {
-                        printf ("%llu"
+                        printf ("%" PRIu64
                          ,attrs_root->characteristics [i].dims.dims [j * 3 + 0]
                                );
                     }

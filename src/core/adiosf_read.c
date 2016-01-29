@@ -617,7 +617,6 @@ void FC_FUNC_(adios_selection_get_npoints, ADIOS_SELECTION_GET_NPOINTS) (int64_t
 
 void FC_FUNC_(adios_selection_get_points, ADIOS_SELECTION_GET_POINTS) (int64_t * fsel, uint64_t *points, uint64_t *from_index, uint64_t *npoints)
 {   
-    int i;
     uint64_t *src;
     ADIOS_SELECTION * sel = (ADIOS_SELECTION *) *fsel;
     switch (sel->type) {

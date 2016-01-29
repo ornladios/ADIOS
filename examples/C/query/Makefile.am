@@ -1,5 +1,4 @@
-INCLUDES = $(all_includes)
-INCLUDES += -I$(top_builddir)/src/public  -I$(top_srcdir)/src/public -I$(top_srcdir)/src/query
+AM_CPPFLAGS = $(all_includes) -I$(top_builddir)/src/public  -I$(top_srcdir)/src/public -I$(top_srcdir)/src/query
 
 AUTOMAKE_OPTIONS = no-dependencies
 

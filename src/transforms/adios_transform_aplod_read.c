@@ -6,6 +6,7 @@
 #include "util.h"
 #include "core/transforms/adios_transforms_hooks_read.h"
 #include "core/transforms/adios_transforms_reqgroup.h"
+#include "core/adios_internals.h" // adios_get_type_size()
 
 #ifdef APLOD
 
@@ -141,9 +142,6 @@ adios_datablock * adios_transform_aplod_pg_reqgroup_completed(adios_transform_re
     uint32_t numElements = arm->numElements;
     uint64_t decompressed_len = numElements * elementSize;
     void* decompressed_buff = malloc (decompressed_len);
-
-    int8_t numComponents = 0;
-    int32_t *componentVector = 0;
 
     aplod_meta_t aplodmeta;
     parse_aplod_meta(completed_pg_reqgroup->transform_metadata, &aplodmeta);

@@ -17,7 +17,7 @@ static int buffer_reserve(char ** buffer, uint64_t * buffer_size
     {
         if (*buffer_offset + size + 1000 > max_size) {
             fprintf (stderr, "Cannot allocate memory in buffer_write.  "
-                             "Requested: %llu, Maximum: %llu\n", *buffer_offset + size + 1000, max_size);
+                             "Requested: %" PRIu64 ", Maximum: %" PRIu64 "\n", *buffer_offset + size + 1000, max_size);
             return 0;
         }
 
@@ -30,7 +30,7 @@ static int buffer_reserve(char ** buffer, uint64_t * buffer_size
         else
         {
             fprintf (stderr, "Cannot allocate memory in buffer_write.  "
-                             "Requested: %llu\n", *buffer_offset + size + 1000);
+                             "Requested: %" PRIu64 "\n", *buffer_offset + size + 1000);
 
             return 0;
         }

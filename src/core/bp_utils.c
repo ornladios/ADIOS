@@ -71,7 +71,7 @@ void bp_alloc_aligned (struct adios_bp_buffer_struct_v1 * b, uint64_t size)
     b->allocated_buff_ptr =  malloc (size + BYTE_ALIGN - 1);
     if (!b->allocated_buff_ptr)
     {
-        adios_error ( err_no_memory, "Cannot allocate %llu bytes\n", size);
+        adios_error ( err_no_memory, "Cannot allocate %" PRIu64 " bytes\n", size);
 
         b->buff = NULL;
         b->length = 0;
@@ -92,7 +92,7 @@ void bp_realloc_aligned (struct adios_bp_buffer_struct_v1 * b
                                     );
     if (!b->allocated_buff_ptr)
     {
-        adios_error ( err_no_memory, "Cannot allocate %llu bytes\n", size);
+        adios_error ( err_no_memory, "Cannot allocate %" PRIu64 " bytes\n", size);
 
         b->buff = NULL;
         b->length = 0;
@@ -163,7 +163,6 @@ int get_time (struct adios_index_var_struct_v1 * v, int step)
 int adios_step_to_time_v1 (const ADIOS_FILE * fp, struct adios_index_var_struct_v1 * v, int from_steps)
 {
     BP_PROC * p = GET_BP_PROC (fp);
-    BP_FILE * fh = GET_BP_FILE (fp);
     int t, time;
 
     t = fp->current_step + from_steps;
@@ -414,7 +413,6 @@ BP_FILE * BP_FILE_alloc (const char * fname, MPI_Comm comm)
     fh->vars_table = 0;
     fh->b = malloc (sizeof (struct adios_bp_buffer_struct_v1));
     assert (fh->b);
-    BP_file_handle_list *lst = &fh->subfile_handles; //just for simplifying typing
     fh->subfile_handles.n_handles = 0;
     fh->subfile_handles.warning_printed = 0;
     fh->subfile_handles.head = NULL;
@@ -736,7 +734,7 @@ int bp_read_minifooter (BP_FILE * bp_struct)
     // validity check  
     if (b->pg_index_offset > b->file_size) {
         adios_error (err_file_open_error,
-                "Invalid BP file detected. PG index offset (%lld) > file size (%lld)\n",
+                "Invalid BP file detected. PG index offset (%" PRIu64 ") > file size (%" PRIu64 ")\n",
                 b->pg_index_offset, b->file_size);
         return 1;
     }
@@ -746,13 +744,13 @@ int bp_read_minifooter (BP_FILE * bp_struct)
     // validity check  
     if (b->vars_index_offset > b->file_size) {
         adios_error (err_file_open_error,
-                "Invalid BP file detected. Variable index offset (%lld) > file size (%lld)\n",
+                "Invalid BP file detected. Variable index offset (%" PRIu64 ") > file size (%" PRIu64 ")\n",
                 b->vars_index_offset, b->file_size);
         return 1;
     }
     if (b->vars_index_offset < b->pg_index_offset) {
         adios_error (err_file_open_error,
-                "Invalid BP file detected. Variable index offset (%lld) < PG index offset (%lld)\n",
+                "Invalid BP file detected. Variable index offset (%" PRIu64 ") < PG index offset (%" PRIu64 ")\n",
                 b->vars_index_offset, b->pg_index_offset);
         return 1;
     }
@@ -763,13 +761,13 @@ int bp_read_minifooter (BP_FILE * bp_struct)
     // validity check  
     if (b->attrs_index_offset > b->file_size) {
         adios_error (err_file_open_error,
-                "Invalid BP file detected. Attribute index offset (%lld) > file size (%lld)\n",
+                "Invalid BP file detected. Attribute index offset (%" PRIu64 ") > file size (%" PRIu64 ")\n",
                 b->attrs_index_offset, b->file_size);
         return 1;
     }
     if (b->attrs_index_offset < b->vars_index_offset) {
         adios_error (err_file_open_error,
-                "Invalid BP file detected. Attribute index offset (%lld) < Variable index offset (%lld)\n",
+                "Invalid BP file detected. Attribute index offset (%" PRIu64 ") < Variable index offset (%" PRIu64 ")\n",
                 b->attrs_index_offset, b->vars_index_offset);
         return 1;
     }
@@ -1054,7 +1052,7 @@ int bp_parse_attrs (BP_FILE * fh)
     if (b->length - b->offset < VARS_MINIHEADER_SIZE) {
         adios_error (err_invalid_buffer,
                      "adios_parse_attrs_index_v1 requires a buffer "
-                     "of at least %d bytes.  Only %llu were provided\n",
+                     "of at least %d bytes.  Only %" PRId64 " were provided\n",
                      VARS_MINIHEADER_SIZE,
                      b->length - b->offset);
 
@@ -1315,7 +1313,7 @@ int bp_parse_vars (BP_FILE * fh)
     if (b->length - b->offset < VARS_MINIHEADER_SIZE) {
         adios_error (err_invalid_buffer,
                      "bp_parse_vars requires a buffer "
-                     "of at least %d bytes.  Only %llu were provided\n",
+                     "of at least %d bytes.  Only %" PRId64 " were provided\n",
                      VARS_MINIHEADER_SIZE,
                      b->length - b->offset);
 
@@ -2229,7 +2227,7 @@ int bp_get_dimension_generic_notime (const struct adios_index_characteristic_dim
                             "in the first dimension. l:g:o = (");
                     for (k = 0; k < ndim; k++)
                     {
-                        log_error_cont ("%llu:%llu:%llu%s",
+                        log_error_cont ("%" PRIu64 ":%" PRIu64 ":%" PRIu64 "%s",
                                 ldims[k], gdims[k], offsets[k],
                                 (k<ndim-1 ? ", " : "") );
                     }
@@ -2253,7 +2251,7 @@ int bp_get_dimension_generic_notime (const struct adios_index_characteristic_dim
                             "dimension in the last dimension. l:g:o = (");
                     for (k = 0; k < ndim; k++)
                     {
-                        log_error_cont ("%llu:%llu:%llu%s",
+                        log_error_cont ("%" PRIu64 ":%" PRIu64 ":%" PRIu64 "%s",
                                 ldims[k], gdims[k], offsets[k],
                                 (k<ndim-1 ? ", " : "") );
                     }
@@ -2335,16 +2333,11 @@ void bp_get_dimensions_generic (const ADIOS_FILE * fp, struct adios_index_var_st
             i++;
         }
 
-        if (i < var_root->characteristics_count)
-        {
-            var_dims = use_pretransform_dimensions ?
+        assert(i < var_root->characteristics_count);
+        var_dims = use_pretransform_dimensions ?
                        &var_root->characteristics[i].transform.pre_transform_dimensions
                      : &var_root->characteristics[i].dims;
-        }
-        else
-        {
-            // shouldn't be here
-        }
+
     }
 
     has_time_index_characteristic = fh->mfooter.version & ADIOS_VERSION_HAVE_TIME_INDEX_CHARACTERISTIC;
@@ -2412,7 +2405,7 @@ void bp_get_dimensions_generic (const ADIOS_FILE * fp, struct adios_index_var_st
                                "in the first dimension. l:g:o = (");
                     for (i = 0; i < * ndim; i++)
                     {
-                        log_error_cont ("%llu:%llu:%llu%s",
+                        log_error_cont ("%" PRIu64 ":%" PRIu64 ":%" PRIu64 "%s",
                                         ldims[i], gdims[i], offsets[i],
                                         (i<*ndim-1 ? ", " : "") );
                     }
@@ -2430,7 +2423,7 @@ void bp_get_dimensions_generic (const ADIOS_FILE * fp, struct adios_index_var_st
                                "dimension in the last dimension. l:g:o = (");
                     for (i = 0; i < * ndim; i++)
                     {
-                        log_error_cont ("%llu:%llu:%llu%s",
+                        log_error_cont ("%" PRIu64 ":%" PRIu64 ":%" PRIu64 "%s",
                                         ldims[i], gdims[i], offsets[i],
                                         (i<*ndim-1 ? ", " : "") );
                     }
@@ -2737,7 +2730,7 @@ int bp_read_pgs (BP_FILE * bp_struct)
         MPI_Get_count (&status, MPI_BYTE, &r);
     }
     if (r != b->pg_size)
-        log_error("could not read %llu bytes. read only: %llu\n",
+        log_error("could not read %" PRIu64 " bytes. read only: %" PRIu64 "\n",
                 b->pg_size, r);
 
     return 0;
@@ -2773,7 +2766,7 @@ int bp_read_vars (BP_FILE * bp_struct)
         MPI_Get_count (&status, MPI_BYTE, &r);
     }
     if (r != b->vars_size)
-        log_error ("could not read %llu bytes. read only: %llu\n",
+        log_error ("could not read %" PRIu64 " bytes. read only: %" PRIu64 "\n",
                 b->vars_size, r);
 
     return 0;
@@ -2843,10 +2836,10 @@ void print_vars_index_top (struct adios_index_var_struct_v1 * vars_root)
                 if (j>0)
                     printf (", ");
                 if (pdims->dims [j*3 + 1] != 0) {
-                    printf ("%llu", pdims->dims [j*3 + 1]);
+                    printf ("%" PRIu64 "", pdims->dims [j*3 + 1]);
                 }
                 else {
-                    printf ("%llu", pdims->dims [j*3 + 0]);
+                    printf ("%" PRIu64 "", pdims->dims [j*3 + 0]);
                 }
             }
             printf (")");
@@ -2869,12 +2862,12 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
                    ,vars_root->var_name, vars_root->group_name, vars_root->id
                    );
         }
-        printf ("\tVars Characteristics: %llu\n"
+        printf ("\tVars Characteristics: %" PRIu64 "\n"
                ,vars_root->characteristics_count
                );
         uint64_t i;
         for (i = 0; i < vars_root->characteristics_count; i++) {
-            printf ("\t\tOffset(%llu)", vars_root->characteristics [i].offset);
+            printf ("\t\tOffset(%" PRIu64 ")", vars_root->characteristics [i].offset);
             if (vars_root->characteristics [i].min)
             {
                 printf ("\t\tMin(%s)", value_to_string (vars_root->type
@@ -2908,7 +2901,7 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
                         != 0
                        )
                     {
-                        printf ("%llu:%llu:%llu"
+                        printf ("%" PRIu64 ":%" PRIu64 ":%" PRIu64 ""
                          ,vars_root->characteristics [i].dims.dims [j * 3 + 0]
                          ,vars_root->characteristics [i].dims.dims [j * 3 + 1]
                          ,vars_root->characteristics [i].dims.dims [j * 3 + 2]
@@ -2916,7 +2909,7 @@ void print_vars_index (struct adios_index_var_struct_v1 * vars_root)
                     }
                     else
                     {
-                        printf ("%llu"
+                        printf ("%" PRIu64 ""
                          ,vars_root->characteristics [i].dims.dims [j * 3 + 0]
                                );
                     }
@@ -3014,11 +3007,11 @@ const char * bp_value_to_string (enum ADIOS_DATATYPES type, void * data)
             break;
 
         case adios_long:
-            sprintf (s, "%lld", *(((int64_t *) data)));
+            sprintf (s, "%" PRId64 "", *(((int64_t *) data)));
             break;
 
         case adios_unsigned_long:
-            sprintf (s, "%llu", *(((uint64_t *) data)));
+            sprintf (s, "%" PRIu64 "", *(((uint64_t *) data)));
             break;
 
         case adios_real:
