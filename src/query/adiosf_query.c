@@ -92,7 +92,6 @@ void FC_FUNC_(adios_query_evaluate,ADIOS_QUERY_EVALUATE) (
         )
 {
     ADIOS_QUERY_RESULT * result;
-    int ret;
     result = common_query_evaluate( (ADIOS_QUERY*)*q, 
                                   (ADIOS_SELECTION*) *sel_outputboundary,
                                   *timestep, 

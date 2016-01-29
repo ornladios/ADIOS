@@ -25,11 +25,12 @@ static uint64_t get_nelements (int ndim, uint64_t *dims)
 }
 
 // get the size of a block in bytes
+/*
 static uint64_t get_blocksize_bytes (int ndim, uint64_t *dims, enum ADIOS_DATATYPES type)
 {
     return adios_type_size (type, NULL) * get_nelements (ndim, dims);
 }
-
+*/
 
 static ADIOS_VARINFO * adios_query_find_varinfo (ADIOS_FILE *f, ADIOS_QUERY *q, const char *varname)
 {
@@ -303,7 +304,7 @@ static void adios_query_copy_block_to_bb (ADIOS_VARINFO * vi, int block_index, c
         if (block_nrows)
         {
             uint64_t slice_size = block_nrows * n_cont_elems * elemsize;
-            uint64_t read_offset = block_startrow * n_cont_elems * elemsize;
+            //uint64_t read_offset = block_startrow * n_cont_elems * elemsize;
             uint64_t write_offset = bb_startrow * n_cont_elems * elemsize;
             // write_offset += block_start_offset * elemsize; THIS IS WRONG
             log_debug ("%s: Copy %llu bytes from block to bb at offset = %llu\n", __func__, slice_size, write_offset);

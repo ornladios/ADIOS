@@ -784,7 +784,6 @@ ADIOS_QUERY_RESULT * common_query_evaluate(ADIOS_QUERY* q,
               int timeStep,
               uint64_t batchSize)
 {  
-    double start = 0, end = 0;
     ADIOS_QUERY_RESULT *result = (ADIOS_QUERY_RESULT *) malloc (sizeof(ADIOS_QUERY_RESULT));
     assert (result);
     result->method_used = ADIOS_QUERY_METHOD_UNKNOWN;
@@ -792,6 +791,7 @@ ADIOS_QUERY_RESULT * common_query_evaluate(ADIOS_QUERY* q,
     result->selections = NULL;
     result->npoints= 0;
 #ifdef BREAKDOWN
+    double start = 0, end = 0;
     start = dclock();
 #endif
     if (q == 0) {

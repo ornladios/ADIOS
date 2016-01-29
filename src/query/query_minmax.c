@@ -591,9 +591,8 @@ void adios_query_minmax_evaluate(ADIOS_QUERY* q,
                    ADIOS_SELECTION* outputBoundry,
                    ADIOS_QUERY_RESULT * queryResult)
 {
-    double tStart = 0, tEnd = 0;
-
 #ifdef BREAKDOWN
+    double tStart = 0, tEnd = 0;
     tStart = dclock();
 #endif
     const int absoluteTimestep = adios_get_actual_timestep(q, timestep);
