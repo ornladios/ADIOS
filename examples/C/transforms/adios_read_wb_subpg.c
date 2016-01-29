@@ -64,7 +64,7 @@ int main (int argc, char ** argv)
         adios_schedule_read (f, wbsel, "temperature", 0, 1, data);
         adios_perform_reads (f, 1);
 
-        printf("Sub-PG writeblock for block %d reading elements in linear range [%llu, %llu):\n",
+        printf("Sub-PG writeblock for block %d reading elements in linear range [%" PRIu64 ", %" PRIu64 "):\n",
                wbsel->u.block.index, wbsel->u.block.element_offset, wbsel->u.block.element_offset + wbsel->u.block.nelements);
         printf("[ ");
         for (i = 0; i < wbsel->u.block.nelements; i++)

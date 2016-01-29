@@ -61,7 +61,7 @@ int main (int argc, char ** argv)
         adios_schedule_read (f, sel1, "temperature", 0, 1, data);
         adios_perform_reads (f, 1);
 
-        printf("Subvolume at (%llu,%llu) of size (%llu,%llu):\n", start[0], start[1], count[0], count[1]);
+        printf("Subvolume at (%" PRIu64 ",%" PRIu64 ") of size (%" PRIu64 ",%" PRIu64 "):\n", start[0], start[1], count[0], count[1]);
         for (i = 0; i < count[0]; i++) {
             printf("[ ");
             for (j = 0; j < count[1]; j++) {

@@ -239,7 +239,7 @@ int main (int argc, char ** argv)
         C[i] = 1.0*rank;    
  
     char * schema_version = "1.1";
-    char * dimemsions = "nx_global,ny_global";
+    //char * dimemsions = "nx_global,ny_global";
  
 	adios_init_noxml (comm);
     adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 50);

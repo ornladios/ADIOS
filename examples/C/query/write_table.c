@@ -83,40 +83,39 @@ char Elements[3][9] = {
 
 int main (int argc, char ** argv) 
 {
-	int         size, i, block;
 	MPI_Comm    comm = 0; // dummy mpi 
 
 	/* ADIOS variables declarations for matching gwrite_temperature.ch */
 	uint64_t  adios_groupsize, adios_totalsize;
-        int64_t   g;
-        int64_t   f;
-        char dimstr[32];
+	int64_t   g;
+	int64_t   f;
+	char dimstr[32];
 
 	adios_init_noxml (comm);
-        adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 1);
+	adios_allocate_buffer (ADIOS_BUFFER_ALLOC_NOW, 1);
 
-        adios_declare_group (&g, "table", "", adios_flag_yes);
-        adios_select_method (g, "POSIX", "", "");
+	adios_declare_group (&g, "table", "", adios_flag_yes);
+	adios_select_method (g, "POSIX", "", "");
 
 	sprintf (dimstr, "%d,%d", NX, NY);
-        adios_define_var (g, "A" ,"", adios_integer, dimstr, dimstr, "0,0");
+	adios_define_var (g, "A" ,"", adios_integer, dimstr, dimstr, "0,0");
 	sprintf (dimstr, "%d,%d", n_of_elements, Elements_length);
-        adios_define_var (g, "Elements" ,"", adios_byte, dimstr, dimstr, "0,0");
+	adios_define_var (g, "Elements" ,"", adios_byte, dimstr, dimstr, "0,0");
 	sprintf (dimstr, "%d,%d", NY, Columns_length);
-        adios_define_var (g, "Columns" ,"", adios_byte, dimstr, dimstr, "0,0");
-   
-   
-        adios_open (&f, "table", "table.bp", "w", comm);
+	adios_define_var (g, "Columns" ,"", adios_byte, dimstr, dimstr, "0,0");
 
-        adios_groupsize = NX*NY*sizeof(int32_t)           /* size of A */
-                        + n_of_elements * Elements_length /* size of Elements */
-                        + NY * Columns_length;            /* size of Columns */
 
-        adios_group_size (f, adios_groupsize, &adios_totalsize);
+	adios_open (&f, "table", "table.bp", "w", comm);
+
+	adios_groupsize = NX*NY*sizeof(int32_t)           /* size of A */
+	+ n_of_elements * Elements_length /* size of Elements */
+	+ NY * Columns_length;            /* size of Columns */
+
+	adios_group_size (f, adios_groupsize, &adios_totalsize);
 	adios_write (f, "A", A);
 	adios_write (f, "Elements", Elements);
 	adios_write (f, "Columns", Columns);
-        adios_close (f);
+	adios_close (f);
 
 	adios_finalize (0);
 	return 0;
