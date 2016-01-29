@@ -19,6 +19,7 @@ from libc.stdlib cimport malloc, free
 from cpython.string cimport PyString_AsString
 
 import os
+from ._hl import selections as sel
 
 cdef char ** to_cstring_array(list_str):
     cdef char **ret = <char **>malloc(len(list_str) * sizeof(char *))
@@ -618,7 +619,7 @@ cpdef int read_finalize(char * method_name = "BP"):
     return adios_read_finalize_method (method)
 
 ## Python class for ADIOS_FILE structure
-cdef class file:
+cdef class file(object):
     """
     file class for Adios file read and write.
 
@@ -816,7 +817,7 @@ cdef class file:
                  self.last_step,
                  self.file_size)
 
-cdef class var:
+cdef class var(object):
     """
     Adios variable class.
 
@@ -916,7 +917,8 @@ cdef class var:
         assert self.vp != NULL, 'Not a valid var'
         self.nsteps = self.vp.nsteps
 
-    cpdef read(self, tuple offset = (), tuple count = (), from_steps = None, nsteps = None, fill = 0):
+    cpdef read(self, tuple offset = (), tuple count = (), tuple scalar = (),
+               from_steps = None, nsteps = None, fill = 0, step_scalar = True):
         """ Perform read.
 
         Read data from an ADIOS BP file. Subset reading is
@@ -926,9 +928,11 @@ cdef class var:
         Args:
             offset (tuple of int, optional): offset (default: ())
             count (tuple of int, optional): count (default: ())
+            scalar (tuple of bool, optional): scalar (default: ())
             from_steps (int, optional): starting step index (default: None)
             nsteps (int, optional): number of time dimensions (default: None)
             fill (value, optional): default fill value (default: 0)
+            step_scalar (bool, optional): add time dim or not (default: True)
 
         Returns:
             NumPy ndarray
@@ -970,6 +974,7 @@ cdef class var:
             nsteps = self.file.last_step - from_steps + 1
 
         assert self.dtype is not None, 'Data type is not supported yet'
+
         if (self.nsteps > 0) and (from_steps + nsteps > self.nsteps):
             raise IndexError('Step index is out of range: from_steps=%r, nsteps=%r' % (from_steps, nsteps))
 
@@ -989,17 +994,23 @@ cdef class var:
         else:
             npcount = np.array(count, dtype=np.int64)
 
-        if npshape.ndim != npoffset.ndim:
-            raise IndexError('Offset dimension mismatch (offset dim: %r)' % (npoffset.ndim))
+        if len(scalar) == 0:
+            scalar = tuple((False,) * len(npshape))
 
-        if npshape.ndim != npcount.ndim:
-            raise IndexError('Count dimension mismatch (count dim: %r)' % (npcount.ndim))
+        if len(npshape) != len(npoffset):
+            raise IndexError('Offset dimension mismatch (offset dim: %r)' % len(npoffset))
+
+        if len(npshape) != len(npcount):
+            raise IndexError('Count dimension mismatch (count dim: %r)' % len(npcount))
+
+        if len(npshape) != len(scalar):
+            raise IndexError('Scalar dimension mismatch (scalar dim: %r)' % len(scalar))
 
         if (npshape < npcount + npoffset).any():
             raise IndexError('Requested is larger than the shape.')
 
-        shape = list(npcount)
-        if (nsteps > 1):
+        shape = [x for x, y in zip(npcount, scalar) if not y]
+        if (nsteps > 1) or (self.nsteps>1 and not step_scalar):
             shape.insert(0, nsteps)
         cdef np.ndarray var = np.zeros(shape, dtype=self.dtype)
 
@@ -1015,12 +1026,10 @@ cdef class var:
         adios_schedule_read_byid (self.file.fp, sel, self.vp.varid, from_steps, nsteps, <void *> var.data)
         adios_perform_reads(self.file.fp, 1)
 
-        ## Try not to return as scalar to be consistent
-        ##if (var.ndim == 0):
-        ##    return np.asscalar(var)
-        ##else:
-        ##    return var
-        return np.squeeze(var)
+        if (var.ndim == 0):
+            return np.asscalar(var)
+        else:
+            return var
 
     cpdef printself(self):
         """ Print native ADIOS_VARINFO structure. """
@@ -1039,61 +1048,33 @@ cdef class var:
                 self.nsteps)
 
     def __getitem__(self, index):
-        ndim_ = self.ndim
-        if (self.nsteps) > 1: ndim_ += 1
+        shape = list(self.dims)
+        if self.nsteps > 1:
+            shape.insert(0, self.nsteps)
+        asel = sel.select(shape, index)
+        ##print "asel:", asel.mshape, asel.sel
 
-        index_ = __parse_index(index, ndim_)
-
-        if (ndim_ > 0) and (len(index_) > ndim_):
-            raise IndexError("Too many indices for data")
-
-        if (ndim_ == 0) and (len(index_) > 1):
-            raise IndexError("Too many indices for data")
-
-        for slice_ in index_:
-            if isinstance(slice_.step, (int, long)) and (slice_.step != 1):
-                raise IndexError("Step size (%d) is not supported." % (slice_.step))
-            if isinstance(slice_.step, float) and (int(slice_.step) != 1):
-                raise IndexError("Step size (%d) is not supported." % (int(slice_.step)))
-            if isinstance(slice_, str):
-                raise IndexError("Name index (%r) is not supported." % (slice_))
-
-        if (self.nsteps) > 1:
-            dims_ = list(self.dims)
-            dims_.insert(0, self.nsteps)
-            indices = tuple(x[0].indices(x[1]) for x in zip(index_, dims_))
-            z = zip(*indices)
-
-            from_steps_ = z[0][0]
-            nsteps_ = (z[1][0] - z[0][0]-1)%self.nsteps+1
-            offset_ = z[0][1:]
-            count_ = tuple((np.subtract(z[1][1:], z[0][1:])-1)%dims_[1:]+1)
-        else:
-            indices = tuple(x[0].indices(x[1]) for x in zip(index_, self.dims))
-            z = zip(*indices)
-
-            if len(z) == 0:
-                from_steps_ = 0
-                nsteps_ = self.nsteps
-                offset_ = ()
-                count_ = ()
+        if isinstance(asel, sel.SimpleSelection):
+            if (self.nsteps) > 1:
+                return self.read(offset=asel.sel[0][1:],
+                                 count=asel.sel[1][1:],
+                                 scalar=asel.sel[3][1:],
+                                 from_steps=asel.sel[0][0],
+                                 nsteps=asel.sel[1][0],
+                                 step_scalar=asel.sel[3][0])
             else:
-                from_steps_ = 0
-                nsteps_ = self.nsteps
-                offset_ = z[0]
-                count_ = tuple((np.subtract(z[1], z[0])-1)%self.dims+1)
+                return self.read(offset=asel.sel[0],
+                                 count=asel.sel[1],
+                                 scalar=asel.sel[3],
+                                 from_steps=0,
+                                 nsteps=1)
 
-        ##print "from_steps", from_steps_
-        ##print "nsteps", nsteps_
-        ##print "offset", offset_
-        ##print "count", count_
+        elif isinstance(asel, sel.PointSelection):
+            raise NotImplementedError("PointSelection has not implemented yet")
+        else:
+            raise NotImplementedError("Not implemented yet")
 
-        return self.read(offset=offset_,
-                         count=count_,
-                         from_steps=from_steps_,
-                         nsteps=nsteps_)
-
-cdef class attr:
+cdef class attr(object):
     """
     Adios attribute class.
 
@@ -1183,7 +1164,7 @@ cdef class smartdict(dict):
         else:
             self.factory(key, value)
 
-cdef class writer:
+cdef class writer(object):
     """
     writer class for Adios write.
 
@@ -1386,7 +1367,7 @@ cdef class writer:
                  self.attr.keys(),
                  self.mode)
 
-cdef class attrinfo:
+cdef class attrinfo(object):
     cdef bytes name
     cdef bint is_static # Use define_byvalue, if True
     cdef dtype
@@ -1439,7 +1420,7 @@ cdef class attrinfo:
                  self.value,
                  self.dtype)
 
-cdef class varinfo:
+cdef class varinfo(object):
     cdef bytes name
     cdef public ldim
     cdef public gdim
