@@ -11,9 +11,9 @@ class AdiosTestCase(ut.TestCase):
 
     def setUp(self):
         self.temp = TempFile()
-        
+
         ad.init_noxml()
-        
+
         ad.allocate_buffer (ad.BUFFER_ALLOC_WHEN.NOW, 10);
         g = ad.declare_group("temperature", "", ad.FLAG.YES)
         ad.define_var(g, "NX", "", ad.DATATYPE.integer, "", "", "")
@@ -41,14 +41,14 @@ class AdiosTestCase(ut.TestCase):
         ad.finalize()
 
         self.f = ad.file(self.temp.path)
-        
+
     def tearDown(self):
         try:
             if self.f:
                 self.f.close()
         except:
             pass
-        
+
     def test_adios_file(self):
         self.assertEqual(self.f.current_step, 0)
         self.assertEqual(self.f.last_step, 4)
@@ -68,6 +68,7 @@ class AdiosTestCase(ut.TestCase):
 
     def test_adios_var_array(self):
         v = self.f['temperature']
+
         self.assertEqual(v.ndim, 2)
         self.assertEqual(v.dims, (2L, 10L))
         self.assertEqual(v.nsteps, 5)
@@ -77,17 +78,29 @@ class AdiosTestCase(ut.TestCase):
 
         self.assertEqual(val.ndim, v.ndim + 1)
         self.assertEqual(val.shape, (5, self.size, self.NX))
-        
+
         self.assertTrue((val == v[:]).all())
         self.assertTrue((val == v[:,:]).all())
         self.assertTrue((val == v[:,:,:]).all())
-        self.assertRaises(IndexError, v.__getitem__, Slicee()[::2])
-        self.assertRaises(IndexError, v.__getitem__, Slicee()[:,:,:,:])
+        self.assertRaises(NotImplementedError, v.__getitem__, Slicee()[::2])
+        self.assertRaises(TypeError, v.__getitem__, Slicee()[:,:,:,:])
 
         self.assertTrue((v.read(offset=(0,5), count=(2,5)) == v[:,:,5:]).all())
         self.assertTrue((v.read(offset=(0,5), count=(2,5)) == v[:,:,-5:]).all())
 
-    def test_adios_var_getitem(self):        
+    def test_adios_var_array_squeeze(self):
+        v = self.f['temperature']
+        self.assertEqual(v[...].shape, (5,2,10))
+        self.assertEqual(v[1,...].shape, (2,10))
+        self.assertEqual(v[:,1,...].shape, (5,10))
+        self.assertEqual(v[:,1].shape, (5,10))
+        self.assertEqual(v[:,:,1].shape, (5,2))
+        self.assertEqual(v[...,1].shape, (5,2))
+
+        self.assertEqual(v[1:2,...].shape, (1,2,10))
+        self.assertEqual(v[:,1:2,...].shape, (5,1,10))
+
+    def test_adios_var_getitem(self):
         v = self.f['temperature']
 
         self.assertTrue((v[0,] == v.read(from_steps=0, nsteps=1)).all())
@@ -101,10 +114,11 @@ class AdiosTestCase(ut.TestCase):
         self.assertTrue((v[-1,...] == v.read(from_steps=4, nsteps=1)).all())
         self.assertTrue((v[-2,...] == v.read(from_steps=3, nsteps=1)).all())
 
-        self.assertTrue((v[:,...,-1] == v.read(offset=(0,9), count=(2,1))).all())
+        #import ipdb; ipdb.set_trace()
+        self.assertTrue((v[:,...,-1] == v.read(offset=(0,9), count=(2,1), scalar=(False,True))).all())
         self.assertTrue((v[:,...,-3:-1] == v.read(offset=(0,7), count=(2,2))).all())
 
-        self.assertRaises(IndexError, v.__getitem__, Slicee()[:,:,-1:-2])
+        self.assertRaises(ValueError, v.__getitem__, Slicee()[:,:,-1:-2])
 
 if __name__ == '__main__':
     ut.main()
