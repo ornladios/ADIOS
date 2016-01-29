@@ -468,7 +468,7 @@ static int isSelectionCompatible(ADIOS_SELECTION* first, ADIOS_SELECTION* second
             const ADIOS_SELECTION_POINTS_STRUCT *pt2 = &(second->u.points);
 
             if (pt1 -> npoints != pt2->npoints) {
-                log_error("Error! point selections have different size. %llu != %llu\n", pt1->npoints, pt2->npoints);
+                log_error("Error! point selections have different size. %" PRIu64 " != %" PRIu64 "\n", pt1->npoints, pt2->npoints);
                 return -1;
             }
             return 1;

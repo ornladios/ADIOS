@@ -300,14 +300,14 @@ static void adios_query_copy_block_to_bb (ADIOS_VARINFO * vi, int block_index, c
             }
         }
 
-        log_debug ("%s: number of rows to copy = %llu\n", __func__, block_nrows);
+        log_debug ("%s: number of rows to copy = %" PRIu64 "\n", __func__, block_nrows);
         if (block_nrows)
         {
             uint64_t slice_size = block_nrows * n_cont_elems * elemsize;
             //uint64_t read_offset = block_startrow * n_cont_elems * elemsize;
             uint64_t write_offset = bb_startrow * n_cont_elems * elemsize;
             // write_offset += block_start_offset * elemsize; THIS IS WRONG
-            log_debug ("%s: Copy %llu bytes from block to bb at offset = %llu\n", __func__, slice_size, write_offset);
+            log_debug ("%s: Copy %" PRIu64 " bytes from block to bb at offset = %" PRIu64 "\n", __func__, slice_size, write_offset);
             if (slice_size > 0) {
                 memcpy (bb_data + write_offset, block_data, slice_size);
             }
@@ -400,7 +400,7 @@ static void adios_query_copy_block_to_bb (ADIOS_VARINFO * vi, int block_index, c
         log_debug ("%s: Block calculation:\n", __func__);
         for (i = 0; i < ndim; i++)
         {
-            log_debug ("   block_nrows[%d]=%llu\tblock_startrow[%d]=%llu\tbb_startrow=[%d]=%llu\n",
+            log_debug ("   block_nrows[%d]=%" PRIu64 "\tblock_startrow[%d]=%" PRIu64 "\tbb_startrow=[%d]=%" PRIu64 "\n",
                     i, block_nrows[i], i, block_startrow[i], i, bb_startrow[i]);
             block_startrow[i] = 0;
         }
@@ -414,7 +414,7 @@ static void adios_query_copy_block_to_bb (ADIOS_VARINFO * vi, int block_index, c
             bb_offset = bb_startrow[i] + bb_offset * bb->u.bb.count[i];
         }
 
-        log_debug ("%s: Copy from block to bb, cont_elems = %llu, block_stride = %llu, bb_stride = %llu\n",
+        log_debug ("%s: Copy from block to bb, cont_elems = %" PRIu64 ", block_stride = %" PRIu64 ", bb_stride = %" PRIu64 "\n",
                 __func__, n_cont_elems, block_stride, bb_stride);
 
         adios_util_copy_data (bb_data
