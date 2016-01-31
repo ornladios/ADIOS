@@ -120,5 +120,16 @@ class AdiosTestCase(ut.TestCase):
 
         self.assertRaises(ValueError, v.__getitem__, Slicee()[:,:,-1:-2])
 
+    def test_adios_var_read_points(self):
+        v = self.f['temperature']
+        x1 = ((0,0),)
+        x2 = ((0,0),(0,1),)
+        x3 = ((0,0),(0,1),(0,2),)
+
+        self.assertEqual(len(v.read_points()), 0)
+        ##self.assertTrue((v.read_points(x1) == self.tt[0,0:1]).all())
+        ##self.assertTrue((v.read_points(x2) == self.tt[0,0:2]).all())
+        ##self.assertTrue((v.read_points(x3) == self.tt[0,0:3]).all())
+
 if __name__ == '__main__':
     ut.main()

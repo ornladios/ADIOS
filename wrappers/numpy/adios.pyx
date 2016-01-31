@@ -161,9 +161,15 @@ cdef extern from "adios_selection.h":
         ADIOS_SELECTION_TYPE    type
         ADIOS_SELECTION_UNION   u
 
-    cdef ADIOS_SELECTION * adios_selection_boundingbox (int ndim,
+    cdef ADIOS_SELECTION * adios_selection_boundingbox (uint64_t ndim,
                                                         const uint64_t *start,
                                                         const uint64_t *count)
+
+    cdef ADIOS_SELECTION * adios_selection_points (uint64_t ndim,
+                                                   uint64_t npoints,
+                                                   const uint64_t *points)
+
+    cdef void adios_selection_delete (ADIOS_SELECTION * sel)
 
 cdef extern from "adios_read.h":
     ctypedef enum ADIOS_READ_METHOD:
@@ -917,6 +923,62 @@ cdef class var(object):
         assert self.vp != NULL, 'Not a valid var'
         self.nsteps = self.vp.nsteps
 
+    cpdef read_points(self, tuple points = (), from_steps = None, nsteps = None):
+        """ Perform points read.
+
+        Read data from an ADIOS BP file based on the given list of point index.
+
+        Args:
+            points (tuple of int, optional): points index defined by ((o1,o2,...,oN),...) (default: ())
+            from_steps (int, optional): starting step index (default: None)
+            nsteps (int, optional): number of time dimensions (default: None)
+
+        Returns:
+            NumPy 1-D ndarray
+
+        Raises:
+            IndexError: If dimension is mismatched or out of the boundary.
+        """
+        if from_steps is None:
+            from_steps = 0 ##self.file.current_step
+
+        if nsteps is None:
+            nsteps = self.file.last_step - from_steps + 1
+
+        assert self.dtype is not None, 'Data type is not supported yet'
+
+        if (self.nsteps > 0) and (from_steps + nsteps > self.nsteps):
+            raise IndexError('Step index is out of range: from_steps=%r, nsteps=%r' % (from_steps, nsteps))
+
+        if not isinstance(points, tuple):
+            points = (points,)
+
+        if len(points) > 1:
+            plen = len(points[0])
+            if not all([len(x) == plen for x in points]):
+                raise IndexError('All points must have the same length %r' % (points,))
+
+        cpdef uint64_t ndim = self.ndim
+        cpdef uint64_t npoints = len(points)
+        ##print 'ndim, npoints = %r, %r' % (ndim, npoints)
+
+        cdef np.ndarray nppoints = np.array(points, dtype=np.int64, order='C')
+        ##print 'nppoints.ndim = %r' % (nppoints.ndim)
+        ##print 'nppoints.shape = (%r, %r)' % (nppoints.shape[0], nppoints.shape[1])
+
+        cdef np.ndarray var = np.zeros((npoints * nsteps,), dtype=self.dtype)
+        ##print 'nppoints.ndim = %r' % (nppoints.ndim)
+        ##print 'nppoints.shape = (%r, %r)' % (nppoints.shape[0], nppoints.shape[1])
+
+        cdef ADIOS_SELECTION * sel
+        sel = adios_selection_points (ndim, npoints, <uint64_t *> nppoints.data)
+
+        adios_schedule_read_byid (self.file.fp, sel, self.vp.varid, from_steps, nsteps, <void *> var.data)
+        adios_perform_reads(self.file.fp, 1)
+        adios_selection_delete(sel)
+
+        return var
+
     cpdef read(self, tuple offset = (), tuple count = (), tuple scalar = (),
                from_steps = None, nsteps = None, fill = 0, step_scalar = True):
         """ Perform read.
@@ -1025,6 +1087,7 @@ cdef class var(object):
 
         adios_schedule_read_byid (self.file.fp, sel, self.vp.varid, from_steps, nsteps, <void *> var.data)
         adios_perform_reads(self.file.fp, 1)
+        adios_selection_delete(sel)
 
         if (var.ndim == 0):
             return np.asscalar(var)

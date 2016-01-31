@@ -119,5 +119,20 @@ class AdiosTestCase(ut.TestCase):
         v = self.f['temperature']
         self.assertEqual(v.attrs['unit'].value, self.unit)
 
+    def test_adios_var_read_points(self):
+        v = self.f['temperature']
+        x1 = ((0,0),)
+        x2 = ((0,0),(0,1),)
+        x3 = ((0,0),(0,1),(0,2),)
+
+        #import ipdb; ipdb.set_trace()
+        self.assertEqual(len(v.read_points()), 0)
+        self.assertTrue((v.read_points(x1) == self.tt[0,0:1]).all())
+        self.assertTrue((v.read_points(x2) == self.tt[0,0:2]).all())
+        self.assertTrue((v.read_points(x3) == self.tt[0,0:3]).all())
+
+        xerr = ((0,0),(0,1),(0,2,0),)
+        self.assertRaises(IndexError, v.read_points, xerr)
+
 if __name__ == '__main__':
     ut.main()
