@@ -134,5 +134,15 @@ class AdiosTestCase(ut.TestCase):
         xerr = ((0,0),(0,1),(0,2,0),)
         self.assertRaises(IndexError, v.read_points, xerr)
 
+    def test_adios_var_read_fancy(self):
+        v = self.f['temperature']
+        m = np.arange(10) % 3 != 0
+
+        self.assertTrue((v[:,m] == self.tt[:,m]).all())
+        self.assertTrue((v[1,m] == self.tt[1,m]).all())
+        self.assertEqual(v[1,m].shape, (6,))
+        self.assertTrue((v[:1,m] == self.tt[:1,m]).all())
+        self.assertRaises(ValueError, v.__getitem__, Slicee()[3,m])
+
 if __name__ == '__main__':
     ut.main()

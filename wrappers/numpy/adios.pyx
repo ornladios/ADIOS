@@ -1110,12 +1110,11 @@ cdef class var(object):
                 self.dims,
                 self.nsteps)
 
-    def __getitem__(self, index):
+    def __getitem__(self, args):
         shape = list(self.dims)
         if self.nsteps > 1:
             shape.insert(0, self.nsteps)
-        asel = sel.select(shape, index)
-        ##print "asel:", asel.mshape, asel.sel
+        asel = sel.select(shape, args)
 
         if isinstance(asel, sel.SimpleSelection):
             if (self.nsteps) > 1:
@@ -1132,8 +1131,31 @@ cdef class var(object):
                                  from_steps=0,
                                  nsteps=1)
 
-        elif isinstance(asel, sel.PointSelection):
-            raise NotImplementedError("PointSelection has not implemented yet")
+        elif isinstance(asel, sel.FancySelection):
+            shape = list(asel.sel[0][1])
+            shape[asel.morder[0]] = 0
+            var = np.ndarray(shape, dtype=self.dtype)
+            for idx, obj in enumerate(asel.sel):
+                if (self.nsteps) > 1:
+                    v = self.read(offset=obj[0][1:],
+                                  count=obj[1][1:],
+                                  scalar=obj[3][1:],
+                                  from_steps=obj[0][0],
+                                  nsteps=obj[1][0],
+                                  step_scalar=obj[3][0])
+                else:
+                    v = self.read(offset=obj[0],
+                                  count=obj[1],
+                                  scalar=obj[3],
+                                  from_steps=0,
+                                  nsteps=1)
+
+                var = np.concatenate((var, v), axis=asel.morder[idx])
+
+            var = np.reshape(var, asel.mshape)
+
+            return var
+
         else:
             raise NotImplementedError("Not implemented yet")
 

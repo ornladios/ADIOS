@@ -82,7 +82,7 @@ class AdiosTestCase(ut.TestCase):
         self.assertTrue((val == v[:]).all())
         self.assertTrue((val == v[:,:]).all())
         self.assertTrue((val == v[:,:,:]).all())
-        self.assertRaises(NotImplementedError, v.__getitem__, Slicee()[::2])
+        #self.assertRaises(NotImplementedError, v.__getitem__, Slicee()[::2])
         self.assertRaises(TypeError, v.__getitem__, Slicee()[:,:,:,:])
 
         self.assertTrue((v.read(offset=(0,5), count=(2,5)) == v[:,:,5:]).all())
@@ -130,6 +130,16 @@ class AdiosTestCase(ut.TestCase):
         ##self.assertTrue((v.read_points(x1) == self.tt[0,0:1]).all())
         ##self.assertTrue((v.read_points(x2) == self.tt[0,0:2]).all())
         ##self.assertTrue((v.read_points(x3) == self.tt[0,0:3]).all())
+
+    def test_adios_var_read_fancy(self):
+        v = self.f['temperature']
+        m0 = np.arange(2) % 2 != 0
+        m1 = np.arange(10) % 3 != 0
+
+        self.assertEqual(v[:,:,m1].shape, (5,2,6))
+        self.assertEqual(v[:,m0,m1].shape, (5,1,6))
+        self.assertEqual(v[:,1,m1].shape, (5,6))
+        self.assertEqual(v[1,1,m1].shape, (6,))
 
 if __name__ == '__main__':
     ut.main()
