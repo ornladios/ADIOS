@@ -42,7 +42,8 @@ int main (int argc, char ** argv)
 
 	/* ADIOS variables declarations for matching gwrite_temperature.ch */
 	int         it;
-	uint64_t    adios_groupsize, adios_totalsize;
+	uint64_t    adios_groupsize;
+	//uint64_t    adios_totalsize;
 
 	MPI_Init (&argc, &argv);
 	MPI_Comm_rank (comm, &rank);

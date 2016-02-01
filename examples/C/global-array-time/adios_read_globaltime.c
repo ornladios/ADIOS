@@ -64,7 +64,7 @@ int main (int argc, char ** argv)
     adios_perform_reads (f, 1);
 
     if (rank == 0) 
-        printf ("Array size of temperature [0:%lld,0:%lld]\n", v->dims[0], v->dims[1]);   
+        printf ("Array size of temperature [0:%" PRIu64 ",0:%" PRIu64 "]\n", v->dims[0], v->dims[1]);
 
     if (rank > 0) {
         MPI_Recv (&token, 1, MPI_INT, rank-1, 0, comm, &status);
@@ -73,7 +73,7 @@ int main (int argc, char ** argv)
     printf("------------------------------------------------\n");
     printf("rank=%d: \n", rank);
     for (i = 0; i < 2; i++) {
-        printf ("step %lld = [\n", step+i);   
+        printf ("step %" PRIu64 " = [\n", step+i);
         for (j = 0; j < v->dims[0]; j++) {
             printf (" [");
             for (k = 0; k < v->dims[1]; k++) {

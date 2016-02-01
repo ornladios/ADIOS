@@ -58,7 +58,7 @@ int main (int argc, char ** argv)
         for (i = 0; i < varinfo->ndim; i++)
         {
             datasize *= varinfo->dims[i];
-            printf ("%llu", varinfo->dims[i]);
+            printf ("%" PRIu64, varinfo->dims[i]);
             if (i != varinfo->ndim - 1)
             {
                 printf (",");
@@ -160,7 +160,7 @@ int main (int argc, char ** argv)
         adios_selection_delete (sel2);
 */
     }
-while (1);
+
     adios_free_varinfo (varinfo);
     adios_read_close (f);
 

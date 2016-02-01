@@ -24,7 +24,7 @@ int main (int argc, char ** argv)
     MPI_Comm    comm_dummy = 0;  /* MPI_Comm is defined through adios_read.h */
     void      * data = NULL;
     uint64_t    start[] = {0,0,0,0,0,0,0,0,0,0};
-    uint64_t    count[10], bytes_read = 0;
+    uint64_t    count[10];
     ADIOS_SELECTION *sel;
 
     if (argc < 2) {
@@ -61,9 +61,9 @@ int main (int argc, char ** argv)
                 if (v->nsteps > 1) {
                     printf(" %d*",v->nsteps);
                 }
-                printf("[%lld",v->dims[0]);
+                printf("[%" PRIu64,v->dims[0]);
                 for (j = 1; j < v->ndim; j++)
-                    printf(", %lld",v->dims[j]);
+                    printf(", %" PRIu64,v->dims[j]);
                 //printf("] = \n");
                 
                 if (v->type == adios_integer)
@@ -89,9 +89,9 @@ int main (int argc, char ** argv)
                         adios_perform_reads (f, 1);
 
                         printf("      Step %d:\n", t);
-                        if (bytes_read < 0) {
+                        if (adios_errno) {
                             printf ("%s\n", adios_errmsg());
-                        } else if (bytes_read > 1024*1024) {
+                        } else if (total_size > 1024*1024) {
                             printf ("Too big to print\n");
                         } else if (v->ndim == 1) {
                             printf ("        [");
@@ -181,11 +181,11 @@ const char * value_to_string (enum ADIOS_DATATYPES type, void * data, int idx)
             break;
 
         case adios_long:
-            sprintf (s, "%lld", ((int64_t *) data)[idx]);
+            sprintf (s, "%" PRId64, ((int64_t *) data)[idx]);
             break;
 
         case adios_unsigned_long:
-            sprintf (s, "%llu", ((uint64_t *) data)[idx]);
+            sprintf (s, "%" PRIu64, ((uint64_t *) data)[idx]);
             break;
 
         case adios_real:
@@ -202,6 +202,10 @@ const char * value_to_string (enum ADIOS_DATATYPES type, void * data, int idx)
 
         case adios_string:
             return (char*) ((char *)data+idx);
+            break;
+
+        case adios_string_array:
+            return (char*) *((char **)data+idx);
             break;
 
         case adios_complex:

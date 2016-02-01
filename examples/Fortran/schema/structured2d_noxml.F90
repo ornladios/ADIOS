@@ -58,7 +58,7 @@ program structured2d_f_noxml
     real*8, dimension(:), allocatable       :: X   ! X coordinate
     real*8, dimension(:), allocatable       :: Y   ! Y coordinate 
     real*8, dimension(:), allocatable       :: data
-    character(:), allocatable               :: schema_version, dimemsions
+    character(len=20)                       :: schema_version, dimemsions
 
     integer*4               :: rank, i, j, ierr, adios_err
     integer*4               :: ndx, ndy                            ! size of array per processor

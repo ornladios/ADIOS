@@ -40,8 +40,6 @@ int main (int argc, char ** argv)
     int    cm_port = 59999;
     char*  cm_remote_host = "localhost";
     int    cm_remote_port = 59997;
-    int    is_multi_writers = 0;
-    char*  remote_list = "";
     int    max_client = 1;
     char   initstring [512];
     int    verbose_level = 3;
