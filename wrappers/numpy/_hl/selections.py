@@ -137,7 +137,7 @@ class FancySelection(Selection):
                 x,y,z = _translate_int(int(arg), length)
                 arg = (slice(x, x+y, z),)
                 s = True
-            elif isinstance(arg, np.ndarray):
+            elif isinstance(arg, (np.ndarray, list, tuple)):
                 if hasattr(arg, 'dtype') and arg.dtype == np.dtype('bool'):
                     if len(arg.shape) != 1:
                         raise TypeError("Boolean indexing arrays must be 1-D")
@@ -148,13 +148,15 @@ class FancySelection(Selection):
             scalarlist.append(s)
         assert(len(slicelist) == self.ndim)
         assert(len(scalarlist) == self.ndim)
+        if sum([len(x)>1 for x in slicelist]) > 1:
+            raise TypeError("Multi-block subselection more than 2 dimenions is not currently allowed for advanced selection")
+
 
         sellist = []
         for args in itertools.product(*slicelist):
             start, count, step, scalar = _handle_simple(self.shape, args)
             sellist.append((start, count, step, scalar))
         self._sel = tuple(sellist)
-        #self._scalar = tuple(scalarlist)
 
         ## Compute merge orders
         dims = []
