@@ -46,7 +46,7 @@ array(10, dtype=int32)
 
 Equivalently, we can use Numpy-style interface:
 
->>> f['NX'][:]
+>>> f['NX'][...]
 array(10, dtype=int32)
 
 
@@ -70,7 +70,7 @@ Attribute reading is similar:
 >>> at
 AdiosAttr (name='/temperature/description', type=dtype('S43'))
 >>> at.value
-array(["Global array written from 'size' processes"], 
+array(["Global array written from 'size' processes"],
       dtype='|S43')
 
 Unless attribute's name is not conflict with any variable name in the
@@ -136,8 +136,3 @@ To write an attribute, we can do as follows:
 Finally, we let Adios to write a file by calling "close"
 
 >>> fw.close()
-
-
-
-
-          
