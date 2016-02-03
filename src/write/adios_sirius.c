@@ -15,11 +15,8 @@
 
 // xml parser
 #include <mxml.h>
-
-// add by Kimmy 10/15/2012
 #include <sys/types.h>
 #include <sys/stat.h>
-// end of change
 
 #include "public/adios_mpi.h"
 #include "public/adios_error.h"
@@ -33,14 +30,6 @@
 #if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
 #include "core/adios_timing.h"
 #endif
-
-
-enum ADIOS_SIRIUS_IO_TYPE
-{
-    ADIOS_SIRIUS_IO_NONE = 0,
-    ADIOS_SIRIUS_IO_AG   = 1, // simple all to one aggregation
-    ADIOS_SIRIUS_IO_BG   = 2, // Brigade aggregation
-};
 
 static int adios_sirius_initialized = 0;
 
@@ -76,7 +65,7 @@ static int adios_sirius_initialized = 0;
 #endif
 
 
-struct adios_MPI_data_struct
+struct adios_sirius_data_struct
 {
     MPI_File fh;
     MPI_File mfh;
@@ -112,18 +101,17 @@ struct adios_MPI_data_struct
     pthread_t g_swt; // subfile open thread, metadata file open thread, subfile write thread
     struct adios_MPI_thread_data_open * open_thread_data;
     struct adios_MPI_thread_data_reopen * reopen_thread_data;
-    enum ADIOS_SIRIUS_IO_TYPE g_io_type;
 };
 
 struct adios_MPI_thread_data_open
 {
-    struct adios_MPI_data_struct * md;
+    struct adios_sirius_data_struct * md;
     char * parameters;
 };
 
 struct adios_MPI_thread_data_reopen
 {
-    struct adios_MPI_data_struct * md;
+    struct adios_sirius_data_struct * md;
     struct adios_file_struct * fd;
 };
 
@@ -175,10 +163,6 @@ struct lov_user_md {                 // LOV EA user data (host-endian)
 struct obd_uuid {
         char uuid[40];
 };
-
-#ifdef HAVE_FGR
-#include "fgr.h"
-#endif
 
 
 int * allocOSTList (int n_ost)
@@ -241,63 +225,10 @@ int * parseOSTSkipping (int * ost_list, char * str, int n_ost)
     return ost_list;
 }
 
-#ifdef HAVE_FGR
-int find_myost (MPI_Comm comm)
-{
-    uint32_t * nids, * osts, myid, ost_id;
-    int i, nnids = get_unique_nids (comm, &nids);
-
-    osts = (uint32_t *) malloc (nnids * 4);
-
-    if (fgr_nid2ost (nids, osts, nnids, ATLAS) == true)
-    {
-/*
-int rank;
-MPI_Comm_rank (MPI_COMM_WORLD, &rank);
-if (rank == 0)
-{         
-        printf ("nids:");
-        for (i = 0; i < nnids; i++)
-        {
-            printf ("%d:%d ", nids[i], osts[i]);
-        }
-        printf ("\n");
-}
-*/
-        myid = nid_atoi();
-        for (i = 0; i < nnids; i++)
-        {
-            if (nids[i] == myid)
-            {
-                ost_id = osts[i];
-                break;
-            }
-        }
-
-        if (i == nnids)
-        {
-printf ("something is wrong\n");
-            // something is wrong
-        }
-
-        free (nids);
-        free (osts);
-#define ATLAS_OFFSET 1008
-        return (ost_id >= ATLAS_OFFSET ? ost_id - ATLAS_OFFSET : ost_id);
-    }
-    else
-    {
-printf ("something is wrong with FGR\n");
-        free (nids);
-        free (osts);
-        return -1;
-    }
-}
-#endif
 
 static void
 //adios_sirius_set_striping_unit(MPI_File fh, char *filename, char *parameters)
-adios_sirius_set_striping_unit(struct adios_MPI_data_struct * md, char *parameters)
+adios_sirius_set_striping_unit(struct adios_sirius_data_struct * md, char *parameters)
 {
     char * filename = md->subfile_name;
     int err = 0;
@@ -430,20 +361,7 @@ adios_sirius_set_striping_unit(struct adios_MPI_data_struct * md, char *paramete
             i++;
         }
 
-#ifdef HAVE_FGR
-       int ost_id = find_myost (md->g_comm2);
-       if (ost_id >= 0)
-       {
-           lum.lmm_stripe_offset = ost_id;
-       }
-       else
-       {
-printf ("why is here\n");
-           lum.lmm_stripe_offset = (random_offset_flag ? -1 : i);
-       }
-#else
         lum.lmm_stripe_offset = (random_offset_flag ? -1 : i);
-#endif
         ioctl (fd, LL_IOC_LOV_SETSTRIPE
               ,(void *) &lum
               );
@@ -461,7 +379,7 @@ printf ("why is here\n");
 }
 
 static void
-adios_sirius_set_have_mdf (char * parameters, struct adios_MPI_data_struct * md)
+adios_sirius_set_have_mdf (char * parameters, struct adios_sirius_data_struct * md)
 {
     char *temp_string, *p_size;
 
@@ -489,7 +407,7 @@ adios_sirius_set_have_mdf (char * parameters, struct adios_MPI_data_struct * md)
 }
 
 static void
-adios_sirius_set_aggregation_parameters(char * parameters, struct adios_MPI_data_struct * md)
+adios_sirius_set_aggregation_parameters(char * parameters, struct adios_sirius_data_struct * md)
 {
     int i, aggr_group_size, remain, index;
     int nproc = md->size, rank = md->rank;
@@ -574,11 +492,6 @@ adios_sirius_set_aggregation_parameters(char * parameters, struct adios_MPI_data
         else
             md->g_color1 = atoi (p + 1);
     }
-    else
-    {
-        // by default, use BG
-        md->g_io_type = ADIOS_SIRIUS_IO_BG;
-    }
 
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
@@ -638,22 +551,6 @@ adios_sirius_set_aggregation_parameters(char * parameters, struct adios_MPI_data
     // set up which ost's to skip
     strcpy (temp_string, parameters);
     trim_spaces (temp_string);
-
-    if ( (p_size = strstr (temp_string, "aggregation_type")) )
-    {
-        char * p = strchr (p_size, '=');
-        char * q = strtok (p, ";");
-
-        if (!q)
-            md->g_io_type = atoi (q + 1);
-        else
-            md->g_io_type = atoi (p + 1);
-    }
-    else
-    {
-        // by default, use BG
-        md->g_io_type = ADIOS_SIRIUS_IO_BG;
-    }
 
     free (temp_string);
 
@@ -976,7 +873,7 @@ void * adios_sirius_do_open_thread (void * param)
 void * adios_sirius_do_reopen_thread (void * param)
 {
     struct adios_MPI_thread_data_reopen * td = (struct adios_MPI_thread_data_reopen *) param;
-    struct adios_MPI_data_struct * md = td->md;
+    struct adios_sirius_data_struct * md = td->md;
     struct adios_file_struct * fd = td->fd;
     int err;
 
@@ -1090,15 +987,15 @@ void adios_sirius_init (const PairStruct * parameters
                          ,struct adios_method_struct * method
                          )
 {
-    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
+    struct adios_sirius_data_struct * md = (struct adios_sirius_data_struct *)
                                                     method->method_data;
     if (!adios_sirius_initialized)
     {
         adios_sirius_initialized = 1;
     }
 
-    method->method_data = malloc (sizeof (struct adios_MPI_data_struct));
-    md = (struct adios_MPI_data_struct *) method->method_data;
+    method->method_data = malloc (sizeof (struct adios_sirius_data_struct));
+    md = (struct adios_sirius_data_struct *) method->method_data;
     md->fh = 0;
     md->mfh = 0;
     md->subfile_name = 0;
@@ -1125,16 +1022,8 @@ void adios_sirius_init (const PairStruct * parameters
     md->g_ost_skipping_list = 0;
     md->open_thread_data = 0;
     md->reopen_thread_data = 0;
-    md->g_io_type = ADIOS_SIRIUS_IO_BG;
 
     adios_buffer_struct_init (&md->b);
-
-#ifdef HAVE_FGR
-    if (fgr_init (0) == false)
-    {
-        adios_error (err_fgr, "fgr_init() error\n");
-    }
-#endif
 }
 
 
@@ -1179,7 +1068,7 @@ int adios_sirius_open (struct adios_file_struct * fd
                         ,struct adios_method_struct * method, MPI_Comm comm
                         )
 {
-    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
+    struct adios_sirius_data_struct * md = (struct adios_sirius_data_struct *)
                                                     method->method_data;
 
     md->group_comm = comm;
@@ -1445,7 +1334,7 @@ enum BUFFERING_STRATEGY adios_sirius_should_buffer (struct adios_file_struct * f
                                                     ,struct adios_method_struct * method
                                                     )
 {
-    return stop_on_overflow;
+    return no_buffering;
 }
 
 void adios_sirius_write (struct adios_file_struct * fd
@@ -1544,26 +1433,6 @@ void adios_sirius_read (struct adios_file_struct * fd
 }
 
 
-/*static
-uint32_t adios_sirius_calculate_attributes_size (struct adios_file_struct * fd)
-{
-    uint32_t overhead = 0;
-    struct adios_attribute_struct * a = fd->group->attributes;
-
-    overhead += 2; // attributes count
-    overhead += 8; // attributes length
-
-    while (a)
-    {
-        overhead += adios_calc_attribute_overhead_v1 (a);
-
-        a = a->next;
-    }
-
-    return overhead;
-}*/
-
-
 /* Help routine to send data size greater than 2 GB */
 int adios_MPI_Send(void *buf, uint64_t count, int dest, int tag,
              MPI_Comm comm)
@@ -1606,15 +1475,17 @@ int adios_MPI_Recv(void *buf, uint64_t count, int source,
 
 }
 
-void adios_sirius_bg_close (struct adios_file_struct * fd
+void adios_sirius_close (struct adios_file_struct * fd
                             ,struct adios_method_struct * method
                             )
 {
-    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
+    struct adios_sirius_data_struct * md = (struct adios_sirius_data_struct *)
                                                  method->method_data;
     struct adios_index_process_group_struct_v1 * new_pg_root = 0;
     struct adios_index_var_struct_v1 * new_vars_root = 0;
     struct adios_index_attribute_struct_v1 * new_attrs_root = 0;
+
+    START_TIMER (ADIOS_TIMER_AD_CLOSE);
 
     switch (fd->mode)
     {
@@ -1660,7 +1531,7 @@ void adios_sirius_bg_close (struct adios_file_struct * fd
                 if (pg_sizes == 0 || disp == 0)
                 {
                     adios_error (err_no_memory, "SIRIUS method: Cannot allocate memory "
-                                "for merging process blocks (sirius_bg_close)\n");
+                                "for merging process blocks (sirius_close)\n");
                     return;
                 }
 
@@ -2138,580 +2009,7 @@ void adios_sirius_bg_close (struct adios_file_struct * fd
     }
 
     adios_clear_index_v1 (md->index);
-    return;
-}
 
-void adios_sirius_ag_close (struct adios_file_struct * fd
-                            ,struct adios_method_struct * method
-                            )
-{
-    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
-                                                 method->method_data;
-
-    struct adios_index_process_group_struct_v1 * new_pg_root = 0;
-    struct adios_index_var_struct_v1 * new_vars_root = 0;
-    struct adios_index_attribute_struct_v1 * new_attrs_root = 0;
-
-    switch (fd->mode)
-    {
-        case adios_mode_read:
-        {
-            adios_error (err_invalid_file_mode, 
-                        "Only \"w\" mode is supported by SIRIUS Aggregation IO\n");
-            break;
-        }
-        case adios_mode_write:
-        case adios_mode_append:
-        case adios_mode_update:
-        {
-            char * buffer = 0;
-            uint64_t buffer_size = 0;
-            uint64_t buffer_offset = 0;
-            uint64_t index_start1;
-            uint64_t * pg_sizes = 0, * disp = 0;
-            void * aggr_buff = 0;
-            struct adios_MPI_thread_data_write write_thread_data;
-            int i, new_rank, new_group_size, new_rank2, new_group_size2;
-            uint64_t total_data_size = 0, total_data_size1 = 0;;
-
-            START_TIMER (ADIOS_TIMER_COMM);
-            //MPI_Comm_split (md->group_comm, md->g_color1, md->rank, &new_comm);
-            MPI_Comm_rank (md->g_comm1, &new_rank);
-            MPI_Comm_size (md->g_comm1, &new_group_size);
-
-            //MPI_Comm_split (md->group_comm, md->g_color2, md->rank, &new_comm2);
-            MPI_Comm_rank (md->g_comm2, &new_rank2);
-            MPI_Comm_size (md->g_comm2, &new_group_size2);
-            STOP_TIMER (ADIOS_TIMER_COMM);
-
-
-            // if not merge PG's on the aggregator side
-            if (!md->g_merging_pgs)
-            {
-                uint64_t pg_size;
-
-                pg_size = fd->bytes_written;
-                if (pg_size > INT32_MAX)
-                {
-                    log_warn ("Each processor writes out more than %d bytes, Not supported in aggregation mode.\n", 
-                               INT32_MAX);
-                }
-                pg_sizes = (uint64_t *) malloc (new_group_size * 8);
-                disp = (uint64_t *) malloc (new_group_size * 8);
-                if (pg_sizes == 0 || disp == 0)
-                {
-                    adios_error (err_no_memory, 
-                            "SIRIUS method (AG): Cannot allocate buffers (%d bytes) "
-                            "for merging process blocks.\n",
-                            2*4*new_group_size
-                            );
-                    return;
-                }
-
-                START_TIMER (ADIOS_TIMER_COMM);
-                MPI_Allgather (&pg_size, 1, MPI_UNSIGNED_LONG_LONG
-                              ,pg_sizes, 1, MPI_UNSIGNED_LONG_LONG
-                              ,md->g_comm1);
-                STOP_TIMER (ADIOS_TIMER_COMM);
-
-                disp[0] = 0;
-                //if (md->rank==0) fprintf (stderr, "rank %d: pg_size[0]=%llu ", md->rank, pg_sizes[0]); 
-                for (i = 1; i < new_group_size; i++)
-                {
-                    disp[i] = disp[i - 1] + pg_sizes[i - 1];
-                    //if (md->rank==0) fprintf (stderr, "pg_size[%d]=%llu ", i, pg_sizes[i]); 
-                }
-                total_data_size = disp[new_group_size - 1]
-                                + pg_sizes[new_group_size - 1];
-                //if (md->rank==0) fprintf (stderr, "total=%llu\n", total_data_size); 
-
-                if (is_aggregator (md->rank))
-                {
-                    aggr_buff = malloc (total_data_size);
-                    if (aggr_buff == 0)
-                    {
-                        adios_error (err_no_memory, 
-                                "SIRIUS method (AG): Cannot allocate %lu bytes "
-                                "for aggregation buffer.\n"
-                                "Need to increase the number of aggregators.\n",
-                                total_data_size);
-                        return;
-                    }
-                }
-                else
-                {
-                }
-
-                START_TIMER (ADIOS_TIMER_COMM);
-                // This needs to be changed in the future to support > 2 GB data.
-                int * int_pg_sizes = (int*) malloc (new_group_size * sizeof(int));
-                int * int_disp = (int*) malloc (new_group_size * sizeof(int));
-                int int_total_data_size = (int) total_data_size;
-                for (i = 0; i < new_group_size; i++)
-                {
-                    int_pg_sizes[i] = pg_sizes[i];
-                    int_disp[i] = disp[i];
-                }
-                if (total_data_size != (uint64_t) int_total_data_size)
-                {
-                    adios_error (err_unspecified, 
-                            "MPI_AGGRGATE with aggregate_type=1 does not handle >2GB buffers. "
-                            "If each process writes less than 2GB, then increase the number of aggregators "
-                            "so that the total data size on each aggregator is still < 2GB. "
-                            "If some process has more than 2GB data, use aggregate_type=2 "
-                            "(the default aggregation method)."
-                            );
-                }
-                MPI_Gatherv (fd->buffer, (int)pg_size, MPI_BYTE
-                            ,aggr_buff, int_pg_sizes, int_disp, MPI_BYTE
-                            ,0, md->g_comm1);
-                STOP_TIMER (ADIOS_TIMER_COMM);
-            }
-            else 
-            {
-                // Merge PG's on the aggregator side
-                log_warn ("SIRIUS method (AG): Merging process blocks is not supported yet\n");
-            }
-
-            /* Before building index, determine the actual offset where this PG starts */
-            fd->current_pg->pg_start_in_file = md->b.pg_index_offset; // aggregator's starting offset (!0 on append)
-            if (!md->g_merging_pgs)
-            {
-                for (i = 0; i < new_rank; i++)
-                {
-                    fd->current_pg->pg_start_in_file += pg_sizes[i];
-                }
-
-                FREE (pg_sizes);
-                FREE (disp);
-            }
-
-            // build index appending to any existing index
-            //fprintf (stderr,"rank %d: Build index with PG offset %llu\n", md->rank, fd->current_pg->pg_start_in_file);
-            adios_build_index_v1 (fd, md->index);
-
-            // if collective, gather the indexes from the rest and call
-            if (md->group_comm != MPI_COMM_NULL)
-            {
-                // Collect index from all MPI processors
-                if (is_aggregator (md->rank))
-                {
-                    int * index_sizes = malloc (4 * new_group_size);
-                    int * index_offsets = malloc (4 * new_group_size);
-                    char * recv_buffer = 0;
-                    uint32_t size = 0, total_size = 0;
-                    int i;
-
-                    START_TIMER (ADIOS_TIMER_COMM);
-                    MPI_Gather (&size, 1, MPI_INT
-                               ,index_sizes, 1, MPI_INT
-                               ,0, md->g_comm1
-                               );
-                    STOP_TIMER (ADIOS_TIMER_COMM);
-
-                    //if (md->rank==0) fprintf (stderr, "rank %d: ", md->rank);
-                    for (i = 0; i < new_group_size; i++)
-                    {
-                        index_offsets [i] = total_size;
-                        total_size += index_sizes [i];
-                        //if (md->rank==0) fprintf (stderr, "index_sizes[%d]=%d ", i, index_sizes[i]); 
-                    } 
-                    //if (md->rank==0) fprintf (stderr, " total index size=%u\n", total_size);
-
-                    /*DEBUG if (md->rank==0) {
-                        fprintf (stderr, "rank %d: ", md->rank);
-                        for (i = 0; i < new_group_size; i++)
-                        {
-                            fprintf (stderr, "index_offsets[%d]=%d ", i, index_offsets[i]); 
-                        } 
-                        fprintf (stderr, " total index size=%u: ", total_size);
-                    }*/
-
-                    recv_buffer = malloc (total_size);
-
-                    START_TIMER (ADIOS_TIMER_COMM);
-                    MPI_Gatherv (&size, 0, MPI_BYTE
-                                ,recv_buffer, index_sizes, index_offsets
-                                ,MPI_BYTE, 0, md->g_comm1
-                                );
-                    STOP_TIMER (ADIOS_TIMER_COMM);
-
-                    char * buffer_save = md->b.buff;
-                    uint64_t buffer_size_save = md->b.length;
-                    uint64_t offset_save = md->b.offset;
-
-                    for (i = 1; i < new_group_size; i++)
-                    {
-                        md->b.buff = recv_buffer + index_offsets [i];
-                        md->b.length = index_sizes [i];
-                        md->b.offset = 0;
-
-                        adios_parse_process_group_index_v1 (&md->b, &new_pg_root, NULL);
-                        adios_parse_vars_index_v1 (&md->b, &new_vars_root, NULL, NULL);
-                        adios_parse_attributes_index_v1 (&md->b
-                                                        ,&new_attrs_root
-                                                        );
-                        if (md->g_merging_pgs)
-                            new_pg_root = 0;
-
-                        adios_merge_index_v1 (md->index, new_pg_root, 
-                                              new_vars_root, new_attrs_root, 0);
-                        new_pg_root = 0;
-                        new_vars_root = 0;
-                        new_attrs_root = 0;
-                    }
-
-                    md->b.buff = buffer_save;
-                    md->b.length = buffer_size_save;
-                    md->b.offset = offset_save;
-
-                    free (recv_buffer);
-                    free (index_sizes);
-                    free (index_offsets);
-                }
-                else
-                {
-                    adios_write_index_v1 (&buffer, &buffer_size, &buffer_offset
-                                         ,0, md->index);
-
-                    //fprintf (stderr, "rank %d: buffer size = %llu buffer offset=%llu\n", md->rank, buffer_size, buffer_offset);
-                    START_TIMER (ADIOS_TIMER_COMM);
-                    uint32_t index_size = (uint32_t) buffer_offset;
-                    MPI_Gather (&index_size, 1, MPI_INT, 0, 0, MPI_INT
-                               ,0, md->g_comm1
-                               );
-                    MPI_Gatherv (buffer, index_size, MPI_BYTE
-                                ,0, 0, 0, MPI_BYTE
-                                ,0, md->g_comm1
-                                );
-                    STOP_TIMER (ADIOS_TIMER_COMM);
-                }
-            }
-
-            // write out indexes in each subfile
-            if (is_aggregator (md->rank))
-            {
-                uint32_t flag = 0;
-#if 0
-                pthread_join (t, NULL);
-                FREE (aggr_buff);
-
-                MPI_File_get_position (md->fh, (MPI_Offset *)&index_start);
-#endif
-                uint64_t index_start; // = end of PGs, where the index starts
-                index_start  = md->b.pg_index_offset; // = end of PGs of previous timesteps
-                index_start += total_data_size; //old index start before append + currently written PGs
-                /*DEBUG*/
-                /*
-                fprintf (stderr, "rank %d: write index start=%llu  pg_index_offset=%llu  total_data_size=%llu\n", 
-                        md->rank, index_start, md->b.pg_index_offset, total_data_size);
-                struct adios_index_process_group_struct_v1 *pg_root = md->index->pg_root;
-                i=0;
-                while (pg_root) {
-                    log_warn ("rank %d: pg %d offset=%llu\n", md->rank, i, pg_root->offset_in_file);
-                    pg_root = pg_root->next;
-                    i++;
-                }*/
-
-                //fprintf (stderr, "rank %d: Before write_index: buffer size = %llu buffer offset=%llu\n", 
-                //                  md->rank, buffer_size, buffer_offset);
-                adios_write_index_v1 (&buffer, &buffer_size
-                                     ,&buffer_offset, index_start
-                                     ,md->index);
-                //fprintf (stderr, "rank %d: After write_index: buffer size = %llu buffer offset=%llu\n", 
-                //                  md->rank, buffer_size, buffer_offset);
-//FIXME
-                //adios_write_version_v1 (&buffer, &buffer_size, &buffer_offset, flag);
-                adios_write_version_flag_v1 (&buffer, &buffer_size, &buffer_offset, flag);
-
-                aggr_buff = realloc (aggr_buff, total_data_size + buffer_offset);
-                memcpy (aggr_buff + total_data_size, buffer, buffer_offset); 
-
-                // Waiting for the subfile to open if pthread is enabled
-                if (md->g_threading)
-                {
-                    pthread_join (md->g_sot, NULL);
-                }
-
-                index_start1 = md->b.pg_index_offset; // starting point to write data at this moment
-                total_data_size1 = total_data_size + buffer_offset;
-                //fprintf (stderr,"rank %d: Write index+data with PG offset %llu, sizes %llu + %llu = %llu bytes\n", 
-                //        md->rank, index_start1, total_data_size, buffer_offset, total_data_size1);
-
-                write_thread_data.fh = &md->fh;
-                write_thread_data.base_offset = &index_start1;
-                write_thread_data.aggr_buff = aggr_buff;
-                write_thread_data.total_data_size = &total_data_size1;
-
-                // Threading the write so that we can overlap write with index collection.
-                if (md->g_threading)
-                {
-                    pthread_create (&md->g_swt, NULL
-                            ,adios_sirius_do_write_thread
-                            ,(void *) &write_thread_data
-                            );
-                }
-                else
-                {
-                    START_TIMER (ADIOS_TIMER_IO);
-                    adios_sirius_do_write_thread ((void *) &write_thread_data);
-                    STOP_TIMER (ADIOS_TIMER_IO);
-                }
-#if 0
-                adios_sirius_striping_unit_write(
-                                  md->fh,
-                                  -1,
-                                  buffer,
-                                  buffer_offset,
-                                  md->block_unit);
-#endif
-            }
-
-            // collect index among aggregators
-            if (is_aggregator (md->rank))
-            {
-                if (md->rank == 0)
-                {
-                    int * index_sizes = malloc (4 * new_group_size2);
-                    int * index_offsets = malloc (4 * new_group_size2);
-                    char * recv_buffer = 0;
-                    uint32_t size = 0, total_size = 0;
-
-                    START_TIMER (ADIOS_TIMER_COMM);
-                    MPI_Gather (&size, 1, MPI_INT
-                               ,index_sizes, 1, MPI_INT
-                               ,0, md->g_comm2
-                               );
-                    STOP_TIMER (ADIOS_TIMER_COMM);
-
-                    for (i = 0; i < new_group_size2; i++)
-                    {
-                        index_offsets [i] = total_size;
-                        total_size += index_sizes [i];
-                    }
-
-                    recv_buffer = malloc (total_size);
-
-                    START_TIMER (ADIOS_TIMER_COMM);
-                    MPI_Gatherv (&size, 0, MPI_BYTE
-                                ,recv_buffer, index_sizes, index_offsets
-                                ,MPI_BYTE, 0, md->g_comm2
-                                );
-                    STOP_TIMER (ADIOS_TIMER_COMM);
-
-                    char * buffer_save = md->b.buff;
-                    uint64_t buffer_size_save = md->b.length;
-                    uint64_t offset_save = md->b.offset;
-
-                    for (i = 1; i < new_group_size2; i++)
-                    {
-                        md->b.buff = recv_buffer + index_offsets [i];
-                        md->b.length = index_sizes [i];
-                        md->b.offset = 0;
-
-                        adios_parse_process_group_index_v1 (&md->b, &new_pg_root, NULL);
-                        adios_parse_vars_index_v1 (&md->b, &new_vars_root, NULL, NULL);
-                        adios_parse_attributes_index_v1 (&md->b
-                                                        ,&new_attrs_root
-                                                        );
-
-                        // global index would become unsorted on main aggregator during merging 
-                        // so sort timesteps if appending
-                        adios_merge_index_v1 (md->index, new_pg_root, 
-                                              new_vars_root, new_attrs_root, 
-                                              (fd->mode == adios_mode_append));
-                        new_pg_root = 0;
-                        new_vars_root = 0;
-                        new_attrs_root = 0;
-                    }
-
-                    md->b.buff = buffer_save;
-                    md->b.length = buffer_size_save;
-                    md->b.offset = offset_save;
-
-                    free (recv_buffer);
-                    free (index_sizes);
-                    free (index_offsets);
-                }
-                else
-                {
-                    char * buffer2 = 0;
-                    uint64_t buffer_size2 = 0;
-                    uint64_t buffer_offset2 = 0;
-
-                    adios_write_index_v1 (&buffer2, &buffer_size2, &buffer_offset2
-                                         ,0, md->index);
-
-                    START_TIMER (ADIOS_TIMER_COMM);
-                    MPI_Gather (&buffer_size2, 1, MPI_INT
-                               ,0, 0, MPI_INT
-                               ,0, md->g_comm2
-                               );
-                    MPI_Gatherv (buffer2, buffer_size2, MPI_BYTE
-                                ,0, 0, 0, MPI_BYTE
-                                ,0, md->g_comm2
-                                );
-                    STOP_TIMER (ADIOS_TIMER_COMM);
-
-                    if (buffer2)
-                    {
-                        free (buffer2);
-                        buffer2 = 0;
-                        buffer_size2 = 0;
-                        buffer_offset2 = 0;
-                    }
-                }
-            }
-
-            // write out the metadata file from rank 0
-            if (md->rank == 0)
-            {
-                char * global_index_buffer = 0;
-                uint64_t global_index_buffer_size = 0;
-                uint64_t global_index_buffer_offset = 0;
-                uint64_t global_index_start = 0;
-                uint16_t flag = 0;
-
-                adios_write_index_v1 (&global_index_buffer, &global_index_buffer_size
-                                     ,&global_index_buffer_offset, global_index_start
-                                     ,md->index
-                                     );
-
-                flag |= ADIOS_VERSION_HAVE_SUBFILE;
-
-                adios_write_version_flag_v1 (&global_index_buffer
-                                            ,&global_index_buffer_size
-                                            ,&global_index_buffer_offset
-                                            ,flag
-                                            );
-/*
-                adios_write_version_v1 (&global_index_buffer
-                                       ,&global_index_buffer_size
-                                       ,&global_index_buffer_offset
-                                       );
-*/
-#if 0
-                unlink (fd->name);
-
-                MPI_File_open (MPI_COMM_SELF, fd->name
-                              ,MPI_MODE_RDWR | MPI_MODE_CREATE
-                              ,MPI_INFO_NULL, &m_file
-                              );
-#endif
-                START_TIMER (ADIOS_TIMER_GLOBALMD);
-                adios_sirius_striping_unit_write(
-                                  md->mfh,
-                                  -1,
-                                  global_index_buffer,
-                                  global_index_buffer_offset
-                                  );
-                STOP_TIMER (ADIOS_TIMER_GLOBALMD);
-
-                if (global_index_buffer)
-                {
-                    free (global_index_buffer);
-                    global_index_buffer = 0;
-                    global_index_buffer_size = 0;
-                    global_index_buffer_offset = 0;
-                }
-            }
-
-            if (is_aggregator (md->rank))
-            {
-                if (md->g_threading)
-                {
-                    pthread_join (md->g_swt, NULL);
-                }
-
-                FREE (aggr_buff);
-            }
-            FREE (buffer);
-            buffer_size = 0;
-            buffer_offset = 0;
-
-            md->g_num_aggregators = 0;
-            md->g_have_mdf = 1;
-            md->is_color_set = 0;
-            md->g_color1 = 0;
-            md->g_color2 = 0;
-
-            FREE (md->subfile_name);
-            FREE (md->g_is_aggregator);
-            FREE (md->g_ost_skipping_list);
-            FREE (md->g_offsets);
-            FREE (md->open_thread_data);
-            FREE (md->reopen_thread_data);
-            break;
-        }
-
-        default:
-        {
-            adios_error (err_invalid_file_mode, 
-                    "SIRIUS method (AG): Unknown file mode (%d) at close time\n",
-                    fd->mode);
-        }
-    }
-
-    if (md && md->fh)
-        MPI_File_close (&md->fh);
-
-    if (md && md->mfh)
-        MPI_File_close (&md->mfh);
-
-    if (   md->group_comm != MPI_COMM_WORLD
-        && md->group_comm != MPI_COMM_SELF
-        && md->group_comm != MPI_COMM_NULL
-       )
-    {
-        md->group_comm = MPI_COMM_NULL;
-    }
-
-    md->fh = 0;
-    md->mfh = 0;
-    md->req = 0;
-    memset (&md->status, 0, sizeof (MPI_Status));
-    if (md->g_ost_skipping_list) {
-        free (md->g_ost_skipping_list);
-        md->g_ost_skipping_list = NULL;
-    }
-
-    adios_clear_index_v1 (md->index);
-}
-
-void adios_sirius_buffer_overflow (struct adios_file_struct * fd,
-                                    struct adios_method_struct * method)
-{
-    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
-                                                 method->method_data;
-    adios_error (err_buffer_overflow, 
-            "rank %d: MPI_AGGREGATE method only works with complete buffering of data between adios_open() "
-            "and adios_close(). Portions of global arrays, that do not fit into the "
-            "buffer on some processors will not be written by this method to %s\n", 
-            md->rank, fd->name);
-}
-
-void adios_sirius_close (struct adios_file_struct * fd
-                     ,struct adios_method_struct * method
-                     )
-{
-    START_TIMER (ADIOS_TIMER_AD_CLOSE);
-    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
-                                                 method->method_data;
-    if (md->g_io_type == ADIOS_SIRIUS_IO_AG)
-    {
-        adios_sirius_ag_close (fd, method);
-    }
-    else if (md->g_io_type == ADIOS_SIRIUS_IO_BG)
-    {
-        adios_sirius_bg_close (fd, method);
-    }
-    else
-    {
-        adios_error (err_invalid_write_method, "SIRIUS method: unknown I/O type (%d). "
-                "Only SIRIUS_AGGREGATION and SIRIUS_BRIGADE are supported\n",
-                md->g_io_type);
-        return;
-    }
     STOP_TIMER (ADIOS_TIMER_AD_CLOSE);
 
 #if defined ADIOS_TIMERS || defined ADIOS_TIMER_EVENTS
@@ -2725,18 +2023,28 @@ void adios_sirius_close (struct adios_file_struct * fd
     // ready to allocate at the next open
 
 #endif
-
+    return;
 }
+
+void adios_sirius_buffer_overflow (struct adios_file_struct * fd,
+                                    struct adios_method_struct * method)
+{
+    struct adios_sirius_data_struct * md = (struct adios_sirius_data_struct *)
+                                                 method->method_data;
+    adios_error (err_buffer_overflow,
+            "rank %d: SIRIUS method only works with complete buffering of data between adios_open() "
+            "and adios_close(). Portions of global arrays, that do not fit into the "
+            "buffer on some processors will not be written by this method to %s\n",
+            md->rank, fd->name);
+}
+
 
 void adios_sirius_finalize (int mype, struct adios_method_struct * method)
 {
-    struct adios_MPI_data_struct * md = (struct adios_MPI_data_struct *)
+    struct adios_sirius_data_struct * md = (struct adios_sirius_data_struct *)
                                                  method->method_data;
     adios_free_index_v1 (md->index);
 
-#ifdef HAVE_FGR
-    fgr_finalize ();
-#endif
     if (adios_sirius_initialized)
         adios_sirius_initialized = 0;
 }

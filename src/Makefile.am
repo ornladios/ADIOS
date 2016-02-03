@@ -191,7 +191,7 @@ libadios_nompi_a_SOURCES = core/adios.c \
                      read/read_bp.c \
                      read/read_bp_staged.c \
                      read/read_bp_staged1.c \
-                     write/adios_posix.c 
+                     write/adios_posix.c
 
 
 if BUILD_FORTRAN
@@ -224,13 +224,14 @@ FortranLibSources = core/adiosf.c \
                      read/read_bp.c \
                      read/read_bp_staged.c \
                      read/read_bp_staged1.c \
-                     write/adios_posix.c \
-                     write/adios_sirius.c 
+                     write/adios_posix.c 
+
 
 FortranLibMPISources =  write/adios_mpi.c \
                      write/adios_mpi_lustre.c \
                      write/adios_mpi_amr.c \
-                     write/adios_var_merge.c
+                     write/adios_var_merge.c \
+                     write/adios_sirius.c 
 if HAVE_BGQ
 FortranLibMPISources += write/adios_mpi_bgq.c  
 endif
