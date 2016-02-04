@@ -794,7 +794,7 @@ static void init_layout_flag(struct adios_MPI_data_struct *md)
         md->layout[i]=-1;
 }
 
-void init_output_parameters(const PairStruct *params)
+static void init_output_parameters(const PairStruct *params)
 {
     const PairStruct *p = params;
 

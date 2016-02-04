@@ -68,6 +68,7 @@ void adios_init_transports (struct adios_transport_struct ** t)
 #    endif
     //Tian's method
     ASSIGN_FNS(var_merge,ADIOS_METHOD_VAR_MERGE,"VAR_MERGE")
+    ASSIGN_FNS(sirius,ADIOS_METHOD_SIRIUS,"SIRIUS")
 #      ifndef NO_RESEARCH_TRANSPORTS
     //ASSIGN_FNS(mpi_stripe,ADIOS_METHOD_MPI_STRIPE)
     //ASSIGN_FNS(mpi_cio,ADIOS_METHOD_MPI_CIO)
@@ -116,7 +117,6 @@ void adios_init_transports (struct adios_transport_struct ** t)
     ASSIGN_FNS(posix,ADIOS_METHOD_POSIX,"POSIX")
     // POSIX1 removed, POSIX with MPI_COMM_NULL does the same
     //ASSIGN_FNS(posix1,ADIOS_METHOD_POSIX1,"POSIX1") 
-    ASSIGN_FNS(posix,ADIOS_METHOD_SIRIUS,"SIRIUS")
 #  ifndef NO_RESEARCH_TRANSPORTS
     //ASSIGN_FNS(provenance,ADIOS_METHOD_PROVENANCE)
 #  endif
@@ -139,6 +139,7 @@ int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
 #endif
     // Tian's method
     MATCH_STRING_TO_METHOD("VAR_MERGE",ADIOS_METHOD_VAR_MERGE,1)
+    MATCH_STRING_TO_METHOD("SIRIUS",ADIOS_METHOD_SIRIUS,0)
 
     MATCH_STRING_TO_METHOD("MPI_AGGREGATE",ADIOS_METHOD_MPI_AMR,1)
 #ifndef NO_RESEARCH_TRANSPORTS
@@ -160,7 +161,6 @@ int adios_parse_method (const char * buf, enum ADIOS_IO_METHOD * method
     // POSIX1 removed, POSIX with MPI_COMM_NULL does the same
     MATCH_STRING_TO_METHOD("POSIX1",ADIOS_METHOD_POSIX,0)
     MATCH_STRING_TO_METHOD("FB",ADIOS_METHOD_POSIX,0)
-    MATCH_STRING_TO_METHOD("SIRIUS",ADIOS_METHOD_SIRIUS,0)
 
 
 #if HAVE_DATASPACES
