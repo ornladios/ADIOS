@@ -188,7 +188,7 @@ static void init_output_parameters(const PairStruct *params)
              } else {
                  log_error ("Invalid 'path' parameter given to the SIRIUS"
                              "method: '%s'\n", p->value);
-                 io_parameters[level_paths] = NULL;
+                 io_paths[level_paths] = NULL;
              }
              level_paths++;
         } else {
@@ -266,6 +266,7 @@ int adios_sirius_open (struct adios_file_struct * fd
              for (l=0; l < nlevels; l++)
              {
                 md->level[l].filename = malloc (strlen(io_paths[l]) + strlen(fd->name) + 1);
+                sprintf (md->level[l].filename, "%s/%s", io_paths[l], fd->name);
                 convert_file_mode(fd->mode, mode);
                 common_adios_open( &(md->level[l].fd), md->level[l].grp_name, md->level[l].filename, mode, comm);
              }
