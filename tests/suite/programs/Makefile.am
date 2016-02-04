@@ -212,7 +212,7 @@ transforms_specparse_CPPFLAGS = -I$(top_srcdir)/src $(ADIOSLIB_SEQ_CPPFLAGS)
 #transforms_specparse.o: transforms_specparse.c
 
 hashtest_SOURCES=hashtest.c
-hashtest_LDADD = $(top_builddir)/src/libadios_a-qhashtbl.o
+hashtest_LDADD = $(top_builddir)/src/core/libadios_a-qhashtbl.o
 hashtest_LDFLAGS = $(AM_LDFLAGS) 
 hashtest_CPPFLAGS = -I$(top_srcdir)/src
 hashtest.o: hashtest.c
