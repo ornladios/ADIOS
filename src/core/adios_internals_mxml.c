@@ -1906,7 +1906,7 @@ static int parseMethod (mxml_node_t * node)
     const char * base_path = 0;
     const char * method = 0;
     const char * group = 0;
-    const char * parameters = 0;
+    char * parameters = 0;
     int p1;
     int i1;
     int i;
@@ -1928,14 +1928,24 @@ static int parseMethod (mxml_node_t * node)
     }
 
     // Check for parameters, if they exist
+    parameters = NULL;
+    size_t len_parameters = 0;
     n = mxmlWalkNext (node, node, MXML_DESCEND);
-    if (n != NULL)
+    while (n && n->type == MXML_TEXT)
     {
-        parameters = n->value.text.string;
-    }
-    else
-    {
-        parameters = NULL;
+        size_t len = strlen(n->value.text.string);
+        if (len)
+        {
+            char *p = realloc (parameters, len_parameters + len + 1);
+            if (p)
+            {
+                parameters = p;
+                memcpy (parameters+len_parameters, n->value.text.string, len+1);
+                len_parameters += len;
+            }
+        }
+        n = mxmlWalkNext (n, node, MXML_DESCEND);
+        //printf ("Parameters content: [%s]\n", parameters);
     }
 
     if (!priority)
@@ -1946,8 +1956,10 @@ static int parseMethod (mxml_node_t * node)
         i1 = 1;
     else
         i1 = atoi (iterations);
-    if (!parameters)
+    if (!parameters) {
         parameters = "";
+        len_parameters = 0; // to indicate that we don't need to free it at the end of this function
+    }
     if (!base_path)
         base_path = "";
     else
@@ -1968,15 +1980,10 @@ static int parseMethod (mxml_node_t * node)
     if (!method)
         method = "";
 
-    if (!adios_common_select_method (p1, method, parameters, group
-                ,base_path, i1
-                )
-       )
-    {
-        return 0;
-    }
-
-    return 1;
+    int ret = adios_common_select_method (p1, method, parameters, group, base_path, i1);
+    if (len_parameters)
+        free (parameters);
+    return ret;
 }
 
 
