@@ -26,11 +26,6 @@ typedef struct read_request
 void swap_order(int n, uint64_t *array, int *timedim);
 void change_endianness( void *data, uint64_t slice_size, enum ADIOS_DATATYPES type);
 
-// copy an array of strings with allocation, return pointer
-// also return the sum of string lengths in 'total_length'
-char ** dup_string_array (char ** v, int nelems, int * total_length);
-void free_string_array (char ** v, int nelems);
-
 void copy_data (void *dst, void *src,
                 int idim,
                 int ndim,
@@ -46,8 +41,6 @@ void copy_data (void *dst, void *src,
                 enum ADIOS_FLAG change_endiness,
                 enum ADIOS_DATATYPES type
                 );
-void alloc_namelist (char ***namelist, int length);
-void free_namelist (char **namelist, int length);
 void list_insert_read_request_tail (read_request ** h, read_request * q);
 void list_insert_read_request_next (read_request ** h, read_request * q);
 void list_append_read_request_list (read_request ** h, read_request * q);
@@ -57,28 +50,6 @@ ADIOS_SELECTION * copy_selection (const ADIOS_SELECTION * sel);
 void free_selection (ADIOS_SELECTION * sel);
 // This helper routine returns a vector of unique NID's
 int get_nids (MPI_Comm comm, uint32_t * nids);
-void trim_spaces (char * str);
-
-/*******************************************************
-   Processing parameter lists
-**********************************************************/
-/*
-   Process a ;-separated and possibly multi-line text and 
-   create a list of name=value pairs from each 
-   item which has a "name=value" pattern. Whitespaces are removed. 
-   Input is not modified. Space is allocated;
-   Also, simple "name" or "name=" patterns are processed and 
-   returned with value=NULL. 
-*/
-struct PairStruct {
-    char * name;
-    char * value;
-    struct PairStruct * next;
-};
-typedef struct PairStruct PairStruct;
-
-PairStruct * text_to_name_value_pairs (const char * text);
-void free_name_value_pairs (PairStruct * pairs);
 
 /**********************************************************
    Timing

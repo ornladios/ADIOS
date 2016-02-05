@@ -18,6 +18,7 @@
 #include "core/adios_bp_v1.h"
 #include "core/qhashtbl.h"
 #include "core/types.h"
+#include "core/strutil.h" /* PairStruct* */
 #include "public/adios_schema.h"
 
 // NCSU ALACRITY-ADIOS: Include needed for the transform spec struct
