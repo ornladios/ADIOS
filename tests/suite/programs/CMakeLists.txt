@@ -34,10 +34,7 @@ set(WRITE_PROGS2 adios_staged_read
 
 set(WRITE_PROGS ${WRITE_PROGS1}
                 ${WRITE_PROGS2}
-                copy_subvolume
-                transforms_specparse
-                hashtest
-                group_free_test)
+                )
 
 if(BUILD_WRITE)
   foreach (PROG ${WRITE_PROGS} )
@@ -58,11 +55,6 @@ if(BUILD_WRITE)
     target_link_libraries(${PROG} adiosread ${ADIOSREADLIB_LDADD} ${MPI_C_LIBRARIES})
   endforeach()
 
-  target_link_libraries(copy_subvolume adiosread_nompi ${ADIOSREADLIB_SEQ_LDADD})
-  target_link_libraries(transforms_specparse adios_nompi ${ADIOSLIB_SEQ_LDADD})
-#  target_link_libraries(hashtest ${PROJECT_BINARY_DIR}/src/libadios_a-qhashtbl.o)
-  target_link_libraries(hashtest adios ${ADIOSLIB_LDADD} ${MPI_C_LIBRARIES})
-  target_link_libraries(group_free_test adios_nompi ${ADIOSLIB_SEQ_LDADD})
 endif(BUILD_WRITE)
 
 if(BUILD_FORTRAN)
