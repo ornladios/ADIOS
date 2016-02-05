@@ -9,7 +9,7 @@
 # 4. add files to CLEANFILES that should be deleted at 'make clean'
 # 5. add to EXTRA_DIST any non-source files that should go with the distribution
 
-test_C = hashtest copy_subvolume
+test_C = hashtest copy_subvolume text_to_pairstruct
 if BUILD_WRITE
     test_C += transforms_specparse group_free_test
 endif
@@ -50,6 +50,12 @@ copy_subvolume_LDADD = $(top_builddir)/src/libadiosread_nompi.a $(ADIOSREADLIB_S
 copy_subvolume_LDFLAGS = $(AM_LDFLAGS) $(ADIOSREADLIB_SEQ_LDFLAGS)
 copy_subvolume_CPPFLAGS = -I$(top_srcdir)/src $(ADIOSREADLIB_SEQ_CPPFLAGS) -I$(top_builddir)/src/public
 copy_subvolume.o: copy_subvolume.c
+
+text_to_pairstruct_SOURCES=text_to_pairstruct.c
+text_to_pairstruct_LDADD = $(top_builddir)/src/core/libadios_a-strutil.o
+text_to_pairstruct_LDFLAGS = $(AM_LDFLAGS) 
+text_to_pairstruct_CPPFLAGS = -I$(top_srcdir)/src
+text_to_pairstruct.o: text_to_pairstruct.c
 
 #
 # C Tests built only with write-enabled
