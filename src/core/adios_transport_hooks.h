@@ -11,7 +11,7 @@
 #include "config.h"
 #include <stdint.h>
 #include <string.h>
-#include "core/util.h" /* PairStruct* */
+#include "core/strutil.h" /* PairStruct* */
 #include "public/adios_mpi.h"
 #include "core/types.h" /* enum BUFFERING_OVERFLOW_STRATEGY */
 
