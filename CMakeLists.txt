@@ -600,6 +600,21 @@ if(CRAY_PMI)
   endif()
 endif()
 
+#find the sirirus library
+if(DEFINED ENV{SIRIUS})
+  set(SIRIUS_DIR "$ENV{SIRIUS}" CACHE STRING "Path to Sirius Directory")
+  message("looking for sirius in ${SIRIUS_DIR}")
+
+  find_path(SIRIUS_INC
+    NAMES split-interface.h
+    HINTS "${SIRIUS_DIR}/include" "${SIRIUS_DIR}/splitconvert")
+
+  find_library(SIRIUS_LIB
+    NAMES splitdoubles libsplitdoubles
+    HINTS "${SIRIUS_DIR}/lib" "${SIRIUS_DIR}/splitconvert")  
+endif()
+  
+
 # Define if you have CRAY_UGNI.
 set(HAVE_CRAY_UGNI 0)
 if(CRAY_UGNI)

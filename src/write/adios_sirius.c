@@ -25,6 +25,7 @@
 #include "core/util.h"
 
 #include "mpi.h"
+#include "split-interface.h"
 
 #define MAXLEVEL 10
 
@@ -32,6 +33,8 @@ static char *io_method[MAXLEVEL]; //the IO methods for data output for each leve
 static char *io_parameters[MAXLEVEL]; //the IO method parameters
 static char *io_paths[MAXLEVEL]; //the IO method output paths (prefix to filename)
 static int nlevels=1; // Number of storage levels
+
+
 
 struct var_struct
 {
@@ -79,9 +82,9 @@ struct adios_sirius_data_struct
 
 // temporary solution for compiling error
 static int declare_group (int64_t * id, const char * name
-                        ,const char * time_index
-                        ,enum ADIOS_FLAG stats
-                        )
+                          ,const char * time_index
+                          ,enum ADIOS_FLAG stats
+    )
 {
     int ret;
     ret = adios_common_declare_group (id, name, adios_flag_yes
@@ -89,7 +92,7 @@ static int declare_group (int64_t * id, const char * name
                                       ,""
                                       ,time_index
                                       ,stats
-                                      );
+        );
     if (ret == 1) {
         struct adios_group_struct * g = (struct adios_group_struct *) *id;
         g->all_unique_var_names = adios_flag_no;
@@ -99,9 +102,9 @@ static int declare_group (int64_t * id, const char * name
 
 // temporary solution for compiling error
 static int select_method (int64_t group, const char * method
-                        ,const char * parameters
-                        ,const char * base_path
-                        )
+                          ,const char * parameters
+                          ,const char * base_path
+    )
 {
     return adios_common_select_method_by_group_id (0, method, parameters, group ,base_path, 0);
 }
@@ -127,25 +130,25 @@ static int convert_file_mode(enum ADIOS_METHOD_MODE mode, char * file_mode)
 {
     switch (mode)
     {
-        case adios_mode_read:
-            strcpy(file_mode,"r");
-            break;
+    case adios_mode_read:
+        strcpy(file_mode,"r");
+        break;
 
-        case adios_mode_write:
-            strcpy(file_mode,"w");
-            break;
+    case adios_mode_write:
+        strcpy(file_mode,"w");
+        break;
 
-        case adios_mode_append:
-            strcpy(file_mode,"a");
-            break;
+    case adios_mode_append:
+        strcpy(file_mode,"a");
+        break;
 
-        case adios_mode_update:
-            strcpy(file_mode,"u");
-            break;
-        default:
-            fprintf (stderr, "adios_open: unknown file mode: %s\n", file_mode);
-            return -1;
-            break;
+    case adios_mode_update:
+        strcpy(file_mode,"u");
+        break;
+    default:
+        fprintf (stderr, "adios_open: unknown file mode: %s\n", file_mode);
+        return -1;
+        break;
     }
     return 0;
 }
@@ -176,24 +179,24 @@ static void init_output_parameters(const PairStruct *params)
                 log_debug ("parameters %d set to %s for SIRIUS method\n", level_params, io_parameters[level_params]);
             } else {
                 log_error ("Invalid 'parameters' parameter given to the SIRIUS"
-                            "method: '%s'\n", p->value);
+                           "method: '%s'\n", p->value);
                 io_parameters[level_params] = NULL;
             }
             level_params++;
         } else if (!strcasecmp (p->name, "path")) {
-             errno = 0;
-             io_paths[level_paths] = strdup (p->value);
-             if (!errno) {
-                 log_debug ("path %d set to %s for SIRIUS method\n", level_paths, io_parameters[level_paths]);
-             } else {
-                 log_error ("Invalid 'path' parameter given to the SIRIUS"
-                             "method: '%s'\n", p->value);
-                 io_paths[level_paths] = NULL;
-             }
-             level_paths++;
+            errno = 0;
+            io_paths[level_paths] = strdup (p->value);
+            if (!errno) {
+                log_debug ("path %d set to %s for SIRIUS method\n", level_paths, io_parameters[level_paths]);
+            } else {
+                log_error ("Invalid 'path' parameter given to the SIRIUS"
+                           "method: '%s'\n", p->value);
+                io_paths[level_paths] = NULL;
+            }
+            level_paths++;
         } else {
             log_error ("Parameter name %s is not recognized by the SIRIUS "
-                        "method\n", p->name);
+                       "method\n", p->name);
         }
         p = p->next;
     }
@@ -203,10 +206,10 @@ static void init_output_parameters(const PairStruct *params)
 
 
 void adios_sirius_init(const PairStruct * parameters,
-                     struct adios_method_struct * method)
+                       struct adios_method_struct * method)
 {
     struct adios_sirius_data_struct * md = (struct adios_sirius_data_struct *)
-                                                    method->method_data;
+        method->method_data;
 
     method->method_data = malloc (sizeof (struct adios_sirius_data_struct));
     md = (struct adios_sirius_data_struct *) method->method_data;
@@ -231,59 +234,59 @@ static void init_method_parameters(struct adios_sirius_data_struct * md)
 
 
 int adios_sirius_open (struct adios_file_struct * fd
-                   ,struct adios_method_struct * method, MPI_Comm comm)
+                       ,struct adios_method_struct * method, MPI_Comm comm)
 {
 
     struct adios_sirius_data_struct * md = (struct adios_sirius_data_struct *)
-                                                    method->method_data;
+        method->method_data;
     char mode[2];
     int l;
 
     switch (fd->mode)
     {
-        case adios_mode_read:
+    case adios_mode_read:
+    {
+        adios_error (err_invalid_file_mode, "SIRIUS method: Read mode is not supported.\n");
+        return -1;
+    }
+    case adios_mode_append:
+    case adios_mode_update:
+    case adios_mode_write:
+    {
+        md->group_comm = comm;
+        if (md->group_comm != MPI_COMM_NULL)
         {
-            adios_error (err_invalid_file_mode, "SIRIUS method: Read mode is not supported.\n");
-            return -1;
+            MPI_Comm_rank (md->group_comm, &md->rank);
+            MPI_Comm_size (md->group_comm, &md->size);
         }
-        case adios_mode_append:
-        case adios_mode_update:
-        case adios_mode_write:
-        {
-            md->group_comm = comm;
-            if (md->group_comm != MPI_COMM_NULL)
-            {
-                MPI_Comm_rank (md->group_comm, &md->rank);
-                MPI_Comm_size (md->group_comm, &md->size);
-            }
-            fd->group->process_id = md->rank;
+        fd->group->process_id = md->rank;
 
-            //need to get the parameters form XML
-             //init_output_parameters(method->parameters);
-             init_method_parameters(md);
-             define_iogroups(method);
+        //need to get the parameters form XML
+        //init_output_parameters(method->parameters);
+        init_method_parameters(md);
+        define_iogroups(method);
 
-             for (l=0; l < nlevels; l++)
-             {
-                md->level[l].filename = malloc (strlen(io_paths[l]) + strlen(fd->name) + 1);
-                sprintf (md->level[l].filename, "%s/%s", io_paths[l], fd->name);
-                convert_file_mode(fd->mode, mode);
-                common_adios_open( &(md->level[l].fd), md->level[l].grp_name, md->level[l].filename, mode, comm);
-             }
-             break;
-        }
-        default:
+        for (l=0; l < nlevels; l++)
         {
-            adios_error (err_invalid_file_mode, "SIRIUS method: Unknown file mode requested: %d\n", fd->mode);
-            return adios_flag_no;
+            md->level[l].filename = malloc (strlen(io_paths[l]) + strlen(fd->name) + 1);
+            sprintf (md->level[l].filename, "%s/%s", io_paths[l], fd->name);
+            convert_file_mode(fd->mode, mode);
+            common_adios_open( &(md->level[l].fd), md->level[l].grp_name, md->level[l].filename, mode, comm);
         }
+        break;
+    }
+    default:
+    {
+        adios_error (err_invalid_file_mode, "SIRIUS method: Unknown file mode requested: %d\n", fd->mode);
+        return adios_flag_no;
+    }
     }
 
     return 1;
 }
 
 enum BUFFERING_STRATEGY adios_sirius_should_buffer (struct adios_file_struct * fd
-                                                      ,struct adios_method_struct * method)
+                                                    ,struct adios_method_struct * method)
 {
     //this method handles its own buffering
     return no_buffering;
@@ -399,45 +402,53 @@ static char * print_dimensions (int ndims, uint64_t *values)
 }
 
 void adios_sirius_write (struct adios_file_struct * fd
-                     ,struct adios_var_struct * v
-                     ,const void * data
-                     ,struct adios_method_struct * method
-                     )
+                         ,struct adios_var_struct * v
+                         ,const void * data
+                         ,struct adios_method_struct * method
+    )
 
 {
     struct adios_sirius_data_struct * md = (struct adios_sirius_data_struct *)
-                                                    method->method_data;
+        method->method_data;
     struct var_struct *var;
 
     int l;
+    //for each variable
+    //we need to create a splitdouble
+    //then decide the levels
+    int ndims=count_dimensions(v->dimensions);
+    int type_size=adios_get_type_size(v->type,data);
+    uint64_t varsize;
+    uint64_t ldims[16], offsets[16], gdims[16], alldims[48];
+    uint64_t nelems;
+    void *splithandle = NULL;
+    
     for (l=0; l < nlevels; l++)
     {
         if (alloc_var (md, l) != err_no_error)
             return;
 
         /*
-        if(md->level[l].varcnt==0) {
-            md->level[l].vars = (struct var_struct *) malloc (sizeof(struct var_struct));
-            md->level[l].vars->prev=NULL;
-            md->level[l].vars_head=md->level[l].vars; //assign the header of the variable list
-        }
-        else {
-            tmp=md->level[l].vars;
-            md->level[l].vars->next = (struct var_struct*) malloc (sizeof(struct var_struct));
-            md->level[l].vars = md->level[l].vars->next;
-            md->level[l].vars->prev=tmp;
-        }
+          if(md->level[l].varcnt==0) {
+          md->level[l].vars = (struct var_struct *) malloc (sizeof(struct var_struct));
+          md->level[l].vars->prev=NULL;
+          md->level[l].vars_head=md->level[l].vars; //assign the header of the variable list
+          }
+          else {
+          tmp=md->level[l].vars;
+          md->level[l].vars->next = (struct var_struct*) malloc (sizeof(struct var_struct));
+          md->level[l].vars = md->level[l].vars->next;
+          md->level[l].vars->prev=tmp;
+          }
 
-        //initial the variable structure
-        init_var(var, v, ndims);
+          //initial the variable structure
+          init_var(var, v, ndims);
         */
 
         md->level[l].varcnt++;
         var = md->level[l].vars;
 
         //number of the dimensions of this variable
-        int ndims=count_dimensions(v->dimensions);
-        int type_size=adios_get_type_size(v->type,data);
 
         if (!ndims)
         {
@@ -456,43 +467,122 @@ void adios_sirius_write (struct adios_file_struct * fd
         }
         else
         {
-            //multidimensional data: split it up into levels
-            uint64_t varsize;
-            uint64_t ldims[16], offsets[16], gdims[16];
-
-            //retrieve the dimensions and chunk size of the original variable
-            uint64_t nelems = get_var_dimensions (v, ndims, gdims, ldims, offsets);
+            //get the number of elements
+            nelems = get_var_dimensions (v, ndims, gdims, ldims, offsets);
             varsize = nelems * type_size;
+        
+            
+            //check if the type is a double
+            if(v->type == adios_double)
+            {
+                //we can split this double up
+                //check if we have already allocated the splitter
+                if(splithandle == NULL)                    
+                {
+                    //we can split this
+                    //initialize the splitter
+                    splithandle = initialize_splitter(nelems);
+                    //now feed the data into the splitter
+                    split_doubles(data, splithandle);
+                    //now data has been split
+                }
 
-            // name the variable
-            int len = 5 + strlen (v->name);
-            var->name = (char *) malloc (len);
-            sprintf(var->name, "%s/L%d",v->name, l);
-            var->path = strdup (v->path);
-            var->type = adios_byte;
+                // name the variable
+                int len = 5 + strlen (v->name);
+                var->name = (char *) malloc (len);
+                sprintf(var->name, "%s/L%d",v->name, l);
+                var->path = strdup (v->path);
+                var->type = adios_byte;
+
+                for(int i = 0; i < ndims && i < 16; i ++)
+                {
+                    alldims[i] = ldims[i];                                        
+                }
+                for( i = 0; i < ndims && i < 16; i ++)
+                {
+                    alldims[i+ndims] = gdims[i];                                        
+                }
+                for( i = 0; i < ndims && i < 16; i ++)
+                {
+                    alldims[i+ndims*2] = offsets[i];                                        
+                }
+                
+                adios_common_define_attribute_byvalue (md->level[l].grp, "dimensions", v->name, adios_integer, 1, &ndims);
+                adios_common_define_attribute_byvalue (md->level[l].grp, "dims", v->name, adios_integer, (ndims*3), alldims);
+
+                if(l == 0)
+                {
+                    //level 0 so we write out the top
+            
+                    /* FIXME: decompose here the data into multiple levels */
+                    // right now just write everything at every level
+                    gdims[0] = ldims[0] = offsets[0] = nelems;
+                    var->global_dimensions = print_dimensions (1, gdims);
+                    var->local_dimensions  = print_dimensions (1, ldims);
+                    var->local_offsets     = print_dimensions (1, offsets);
+                    var->size = varsize;
+                    
+
+                    //now get the top byte array
+                    var->data = get_split_top(splithandle, nelems);
+                    
+                    /* End of decomposition code */
+        
+                }
+                else if(l == 1)
+                {
+                    //we write out the bottom
+                    gdims[0] = ldims[0] = offsets[0] = nelems;
+                    var->global_dimensions = print_dimensions (1, gdims);
+                    var->local_dimensions  = print_dimensions (1, ldims);
+                    var->local_offsets     = print_dimensions (1, offsets);
+                    var->size = varsize;
+                    
+                    //now get the top byte array
+                    var->data = get_split_bot(splithandle, nelems);
+                    
+                }
+                else
+                {
+                    //too many levels
+                    //print some sort of error but no real need to break out here
+                }
+                
+            }
+            else
+            {
+                //we can't really do anything with non-doubles at the
+                //moment
+                //we just redefine the variable exactly as it came in
+                //we store all non-split vars in the
+                //level 0 file
+                if(l == 0)
+                {
+                    //only in level 0 do we need to store this variable
+                    var->name = strdup (v->name);
+                    var->path = strdup (v->path);
+                    var->type = v->type;
+                    var->size = varsize;
+                    var->data = v->data;
+                    var->global_dimensions = print_dimensions (ndims, gdims);
+                    var->local_dimensions  = print_dimensions (ndims, ldims);
+                    var->local_offsets     = print_dimensions (ndims, offsets);
+                }
+                else
+                {
+                    //do not output to the lower layers
+                    var->size = 0;
+                }
+            }
 
 
-
-            /* FIXME: decompose here the data into multiple levels */
-            // right now just write everything at every level
-            var->type = v->type;
-            var->global_dimensions = print_dimensions (ndims, gdims);
-            var->local_dimensions  = print_dimensions (ndims, ldims);
-            var->local_offsets     = print_dimensions (ndims, offsets);
-            var->size = varsize;
-            var->data = v->data;
-
-            /* End of decomposition code */
-
-
-
-
-
+            
+            
             if (var->size > 0)
             {
                 // define the variable for this level
                 adios_common_define_var (md->level[l].grp, var->name, var->path, var->type,
-                        var->local_dimensions, var->global_dimensions, var->local_offsets);
+                                         var->local_dimensions, var->global_dimensions, var->local_offsets);
                 signed char t = (char) var->type;
                 adios_common_define_attribute_byvalue (md->level[l].grp, "type", var->name, adios_byte, 1, &t);
                 adios_common_define_attribute_byvalue (md->level[l].grp, "level", var->name, adios_integer, 1, &l);
@@ -513,22 +603,24 @@ void adios_sirius_write (struct adios_file_struct * fd
         if (ndims > 0)
             var->data = NULL;
     }
+
+    free_splitter(splithandle);
 }
 
 void adios_sirius_read (struct adios_file_struct * fd
-                    ,struct adios_var_struct * v, void * buffer
-                    ,uint64_t buffer_size
-                    ,struct adios_method_struct * method
-                    )
+                        ,struct adios_var_struct * v, void * buffer
+                        ,uint64_t buffer_size
+                        ,struct adios_method_struct * method
+    )
 
 {
 }
 
 void adios_sirius_buffer_overflow (struct adios_file_struct * fd,
-                                      struct adios_method_struct * method)
+                                   struct adios_method_struct * method)
 {
     struct adios_sirius_data_struct * md = (struct adios_sirius_data_struct *)
-                                                 method->method_data;
+        method->method_data;
     log_error ("rank %d: SIRIUS method only works with complete buffering of data between adios_open() "
                "and adios_close(). Variables that do not fit into the buffer will not be "
                "written by this method to file %s\n", md->rank, fd->name);
@@ -561,47 +653,47 @@ void release_resource_at_close (struct adios_sirius_data_struct * md)
 }
 
 void adios_sirius_close (struct adios_file_struct * fd
-                     ,struct adios_method_struct * method
-                     )
+                         ,struct adios_method_struct * method
+    )
 {
     struct adios_sirius_data_struct * md = (struct adios_sirius_data_struct *)
-                                                    method->method_data;
+        method->method_data;
 
     switch (fd->mode)
     {
-        case adios_mode_read:
+    case adios_mode_read:
+    {
+        adios_error (err_invalid_file_mode, "SIRIUS method: Read mode is not supported.\n");
+        break;
+    }
+    case adios_mode_append:
+    case adios_mode_update:
+    case adios_mode_write:
+    {
+        int l;
+        for (l=0; l < nlevels; l++)
         {
-            adios_error (err_invalid_file_mode, "SIRIUS method: Read mode is not supported.\n");
-            break;
+            common_adios_close (md->level[l].fd);
         }
-        case adios_mode_append:
-        case adios_mode_update:
-        case adios_mode_write:
-        {
-            int l;
-            for (l=0; l < nlevels; l++)
-            {
-                common_adios_close (md->level[l].fd);
-            }
-            release_resource_at_close (md);
-            break;
-        }
-        default:
-        {
-            adios_error (err_invalid_file_mode, "SIRIUS method: Unknown file mode requested: %d\n", fd->mode);
-            break;
-        }
+        release_resource_at_close (md);
+        break;
+    }
+    default:
+    {
+        adios_error (err_invalid_file_mode, "SIRIUS method: Unknown file mode requested: %d\n", fd->mode);
+        break;
+    }
     }
 
     return;
 }
 
 void adios_sirius_get_write_buffer (struct adios_file_struct * fd
-                                ,struct adios_var_struct * v
-                                ,uint64_t * size
-                                ,void ** buffer
-                                ,struct adios_method_struct * method
-                                )
+                                    ,struct adios_var_struct * v
+                                    ,uint64_t * size
+                                    ,void ** buffer
+                                    ,struct adios_method_struct * method
+    )
 {
 }
 
