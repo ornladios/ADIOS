@@ -184,7 +184,6 @@ PairStruct * text_to_name_value_pairs (const char * text)
          * A value might be a long string containing ;
          * e.g.  methodparams = "aggr=5;ost=3;verbose=1"; method = MPI_AGGREGATE;
          */
-        char * startsearch = item;
         quote1 = strchr (item, '"');
         delim  = strchr (item, ';');
         if (quote1 && delim && delim > quote1) // ; is after opening "
@@ -195,7 +194,6 @@ PairStruct * text_to_name_value_pairs (const char * text)
 
                 if (quote2)
                 {
-                    startsearch = quote2;
                     delim = strchr (quote2, ';');
                 }
                 else
